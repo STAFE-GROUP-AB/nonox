@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $pay_code_id
  * @property string $status
  * @property ?int $payroll_run_id
+ * @property ?CarbonImmutable $priced_on
  */
 class TimeReport extends Model
 {
@@ -38,6 +39,7 @@ class TimeReport extends Model
         'pay_code_id',
         'project_id',
         'status',
+        'priced_on',
     ];
 
     /** @return array<string, string> */
@@ -45,6 +47,7 @@ class TimeReport extends Model
     {
         return [
             'date' => 'immutable_date',
+            'priced_on' => 'immutable_date',
         ];
     }
 

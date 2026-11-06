@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\IncomeTaxPartner;
+use App\Models\K10Owner;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Modules\Payroll\Models\Employee;
@@ -94,6 +95,23 @@ class DataSubjectExportController
     }
 
     /**
+     * Everything the company holds about one K10 owner (ADR-062): every
+     * inkomstår with the same personnummer, or the same row when none is
+     * stored. Another company's owner answers 404.
+     */
+    public function k10Owner(Request $request, K10Owner $k10Owner): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $company = Company::query()->findOrFail($k10Owner->company_id);
+
+        abort_unless(ArchivedCompany::reading(fn (): bool => $user->hasTeamPermission($company, 'fiscal-years:manage')), 403);
+        $this->log($request, $k10Owner, 'k10_owner');
+
+        return $this->download(DataSubjectExport::k10Owner($k10Owner), 'registerutdrag-k10-agare-'.$k10Owner->id);
+    }
+
+    /**
      * Everything the current company's inbox received from one address, as
      * JSON or CSV (?format=csv). Only the current company's messages are
      * searched. The audit entry holds a keyed hash of the address, not the
@@ -129,7 +147,7 @@ class DataSubjectExportController
         return $this->download(DataSubjectExport::inboxSender($email), 'registerutdrag-inkorg');
     }
 
-    private function log(Request $request, Customer|Supplier|Employee|Person|IncomeTaxPartner $subject, string $kind): void
+    private function log(Request $request, Customer|Supplier|Employee|Person|IncomeTaxPartner|K10Owner $subject, string $kind): void
     {
         /** @var User $user */
         $user = $request->user();

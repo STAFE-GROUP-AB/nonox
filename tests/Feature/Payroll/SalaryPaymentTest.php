@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Payables\SavePaymentBankSettings;
+use App\Models\AuditLog;
 use App\Modules\Payroll\Actions\AddPayrollAccounts;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Actions\SalaryPaymentFile;
@@ -31,7 +32,7 @@ beforeEach(function () {
 it('writes a pain.001 salary file with category SALA to each employee\'s bank account', function () {
     app(SavePaymentBankSettings::class)($this->owner, $this->company, ['payment_bank' => 'HANDELSBANKEN', 'iban' => 'SE45 5000 0000 0583 9825 7466', 'bank_agreement_id' => '5566778899']);
 
-    $file = app(SalaryPaymentFile::class)($this->owner, $this->run->fresh());
+    $file = app(SalaryPaymentFile::class)($this->owner, $this->run->fresh(), true);
     $xml = simplexml_load_string($file['xml']);
     $xml->registerXPathNamespace('p', 'urn:iso:std:iso:20022:tech:xsd:pain.001.001.03');
     $net = Payslip::query()->sole()->net_ore->ore;
@@ -46,12 +47,12 @@ it('writes a pain.001 salary file with category SALA to each employee\'s bank ac
 });
 
 it('refuses a salary file without the company\'s bank or an employee\'s account', function () {
-    expect(fn () => app(SalaryPaymentFile::class)($this->owner, $this->run->fresh()))->toThrow(ValidationException::class, 'Välj bank');
+    expect(fn () => app(SalaryPaymentFile::class)($this->owner, $this->run->fresh(), true))->toThrow(ValidationException::class, 'Välj bank');
 
     app(SavePaymentBankSettings::class)($this->owner, $this->company, ['payment_bank' => 'HANDELSBANKEN', 'iban' => 'SE45 5000 0000 0583 9825 7466', 'bank_agreement_id' => '5566778899']);
     Employee::query()->update(['bank_account' => null]);
 
-    expect(fn () => app(SalaryPaymentFile::class)($this->owner, $this->run->fresh()))->toThrow(ValidationException::class, 'Bankkonto saknas för Anna Kock');
+    expect(fn () => app(SalaryPaymentFile::class)($this->owner, $this->run->fresh(), true))->toThrow(ValidationException::class, 'Bankkonto saknas för Anna Kock');
 });
 
 it('books tax and contributions against the tax account once, after the salary is posted', function () {
@@ -71,4 +72,16 @@ it('books tax and contributions against the tax account once, after the salary i
         ->and($by(1630))->toBe(-($payslip->tax_ore->ore + $payslip->employer_contribution_ore->ore))
         ->and($run->taxVoucher->voucher_date->toDateString())->toBe('2026-05-12')
         ->and(fn () => $this->runs->postTax($this->owner, $run->fresh(), CarbonImmutable::parse('2026-05-12')))->toThrow(ValidationException::class, 'bara en gång');
+});
+
+it('refuses the salary file without "Jag har granskat siffrorna" and records the confirmation when given', function () {
+    app(SavePaymentBankSettings::class)($this->owner, $this->company, ['payment_bank' => 'HANDELSBANKEN', 'iban' => 'SE45 5000 0000 0583 9825 7466', 'bank_agreement_id' => '5566778899']);
+
+    expect(fn () => app(SalaryPaymentFile::class)($this->owner, $this->run->fresh()))->toThrow(ValidationException::class, 'granskat siffrorna');
+    expect(AuditLog::query()->where('action', 'figures.reviewed')->count())->toBe(0);
+
+    app(SalaryPaymentFile::class)($this->owner, $this->run->fresh(), true);
+
+    $row = AuditLog::query()->where('action', 'figures.reviewed')->sole();
+    expect($row->user_id)->toBe($this->owner->id)->and($row->payload)->toBe(['filing' => 'salary_payment_file']);
 });

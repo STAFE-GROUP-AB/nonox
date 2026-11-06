@@ -2,7 +2,7 @@
 beskrivning: Mina datum visar företagets sista dagar för moms, deklarationer och årsredovisning, och du kan få dem i din egen kalender med påminnelser.
 ordning: 125
 rutter: [guide.dates]
-sokord: [mina datum, frister, deadline, sista dag, kalender, prenumerera, ics, google kalender, outlook, apple kalender, påminnelse, momsdatum]
+sokord: [mina datum, frister, deadline, sista dag, kalender, prenumerera, ics, google kalender, outlook, apple kalender, påminnelse, momsdatum, kundhändelser, från skatteverket, skatteverket väntar]
 ---
 
 # Mina datum
@@ -80,6 +80,42 @@ Klicka på **Så räknar vi** för att se varje konto och dess saldo. Ett konto 
 > Siffrorna bygger på det som är bokfört till och med i dag. Obokförda fakturor och kvitton syns inte, och inte heller utkast. Under siffrorna står datumet de gäller och den senast bokförda verifikationen. Bokför företaget med kontantmetoden bokförs momsen på en faktura först när den betalas, så obetalda fakturor finns inte med. Skatter som inte är bokförda som skulder, till exempel slutlig skatt och kvarskatt, räknas inte.
 
 Är momsen att betala mer än pengarna på banken visas **Momsen att betala är mer än pengarna på banken**, med en länk till artikeln om att sätta undan pengar för moms och skatt i Företagsguiden.
+
+## Från Skatteverket
+
+Under **Från Skatteverket** visar NONOX Skatteverkets kundhändelser om företaget: korta meddelanden om vad som har hänt i företagets ärenden hos Skatteverket, till exempel att en momsdeklaration har kommit in, att Skatteverket har fattat ett beslut eller att Skatteverket behöver en komplettering. Varje händelse säger också om Skatteverket väntar på något från företaget.
+
+Delen är märkt **Beta**. Den visas bara när installationen är kopplad till Skatteverket, och bara för den som får se rapporterna. Den visas också när Företagsguiden är avstängd.
+
+Händelserna är personliga: du ser bara de händelser du själv har hämtat, efter din egen inloggning hos Skatteverket. Skatteverket lämnar ut händelserna till den som företräder företaget och själv gör hämtningen, och de kan omfattas av sekretess. Vill en kollega se dem loggar hen in och hämtar sina egna. Det står också på sidan: **Händelser hämtas och visas för den som själv har loggat in hos Skatteverket.**
+
+> [!NOTE]
+> På nonox.app är kopplingen inte påslagen än. Den är byggd mot Skatteverkets testtjänst och provas där av ett fåtal pilotanvändare. Till dess läser du händelserna på Mina sidor hos Skatteverket.
+
+### Hämta händelserna
+
+1. Klicka på **Logga in hos Skatteverket med e-legitimation**. Du loggar in hos Skatteverket, inte i NONOX, till exempel med BankID. Inloggningen gäller i ungefär en timme. Gäller din inloggning bara andra tjänster, till exempel momsdeklarationen eller skattekontot, står det **Din inloggning hos Skatteverket gäller inte kundhändelser.** Logga in igen; den nya inloggningen gäller då både kundhändelserna och tjänsterna du redan var inloggad i.
+2. Klicka på **Hämta från Skatteverket**. NONOX bekräftar till exempel med **Kundhändelserna är hämtade från Skatteverket. 3 nya händelser.** Bredvid knappen står när händelserna senast hämtades.
+
+NONOX hämtar händelserna bara när du klickar, aldrig av sig själv. Skatteverket visar händelser två år bakåt. Du kan hämta fem gånger i minuten. Skatteverket kontrollerar vid varje hämtning att du får företräda företaget, som firmatecknare, styrelseledamot eller ombud. Saknar du behörighet står det **Skatteverket säger att du saknar behörighet att ta del av företagets kundhändelser**.
+
+Kundhändelser kan bara hämtas för juridiska personer, till exempel aktiebolag och handelsbolag. För en enskild firma står **Kundhändelser från Skatteverket kan bara hämtas för juridiska personer**, och händelserna finns på Mina sidor hos Skatteverket.
+
+### Läs händelserna
+
+- **Skatteverket väntar på företaget** listar först de händelser där Skatteverket väntar på något från företaget. De är märkta **Väntar på företaget**, och samma antal står på din översikt. En händelse räknas inte längre när Skatteverket ser ärendet som klart, eller när en senare händelse i samma ärende har kommit, till exempel att deklarationen Skatteverket bad om har kommit in. Då står **En senare händelse i samma ärende har kommit.**
+- **Andra händelser** är resten, de senaste först. Klicka på **Visa alla händelser** för att se alla.
+
+Varje händelse visas med Skatteverkets egen rubrik och beskrivning, utan att NONOX kortar dem, och med tiden för händelsen. Ibland står också **Förfallodag**, **Skatteverket ser ärendet som klart.**, **Skatteslag**, **Ämne**, **Referens**, **Hör ihop med** och **Avisering från Skatteverket**. Har Skatteverket en länk till en e-tjänst visas den, till exempel **Öppna hos Skatteverket**. Den öppnas i en ny flik. Bara adresser på skatteverket.se blir länkar; en annan adress i händelsen visas som text under **Adress i händelsen (inte till skatteverket.se, visas inte som länk)**, så att du ser hela händelsen utan att råka klicka dig vidare.
+
+När du har tagit hand om en händelse som väntar på företaget klickar du på **Markera som hanterad**. Händelsen flyttas till **Andra händelser** med **Markerad som hanterad** och dagen, och räknas inte längre på din översikt. Markeringen gäller bara din kopia; Skatteverket får inte veta något om det, och ärendet hos Skatteverket är som förut. Ångrar du dig klickar du på **Markera som inte hanterad**.
+
+### Bra att veta om kundhändelserna
+
+- NONOX sparar dina händelser bara för dig och tar bort varje händelse två år efter den, som Skatteverket gör, eller när ditt konto tas bort. Skatteverkets texter kan innehålla personuppgifter.
+- Händelserna får bara hämtas för att få återkoppling om företagets ärenden hos Skatteverket.
+- Skatteverket loggar alla anrop från NONOX (auditloggning) och sparar loggarna i upp till 5 år. Skatteverket använder dem för att förebygga och utreda säkerhetsincidenter.
+- En händelse är inte ett datum som NONOX räknar fram. Datumen i listan nedan kommer från företagets inställningar, inte från Skatteverkets händelser.
 
 ## Mina datum visar inte
 

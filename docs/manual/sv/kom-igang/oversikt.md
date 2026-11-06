@@ -8,7 +8,7 @@ sokord: [börja, starta, nytt konto, registrera, introduktion, första gången]
 
 Det här avsnittet tar dig från noll till ett företag där du kan bokföra och fakturera. Det är skrivet för dig som driver ett företag eller sköter bokföringen åt någon, och det förutsätter inga förkunskaper om NONOX.
 
-NONOX är i öppen beta fram till lanseringen av version 1.0 den 1 januari 2027. Under betan ställer du dig i kö och loggar in när du är godkänd, eller när ett företag har bjudit in dig.
+NONOX är i öppen beta fram till lanseringen av version 1.0 den 1 februari 2027. Under betan ställer du dig i kö och loggar in när du är godkänd, eller när ett företag har bjudit in dig.
 
 Sedan går det mesta fort: du loggar in med en kod som du får i mejlet, skapar företaget på några minuter och får sedan en lista på översikten som visar vad som är klokt att göra härnäst.
 

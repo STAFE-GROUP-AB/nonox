@@ -49,7 +49,7 @@
 
     @if($companies === [])
         <div class="problem">
-            <p>{{ __('Du kan inte ansluta appen till något företag. Det krävs att du är ägare eller administratör, att modulen NONOX Connect är påslagen under Moduler och att företaget tillåter appen.') }}</p>
+            <p>{{ __('Du kan inte ansluta appen till något företag. Det krävs att du är ägare eller administratör, att modulen NONOX API är påslagen under Moduler och att företaget tillåter appen.') }}</p>
         </div>
     @else
         <div class="field" style="margin-top:1.75rem">

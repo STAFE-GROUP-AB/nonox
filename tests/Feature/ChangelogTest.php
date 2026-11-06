@@ -232,7 +232,7 @@ it('groups the changes by phase under the background, with the goal first', func
 
     expect(array_column($phases, 'id'))->toBe(['version-1-0', 'beta-0-9', 'forberedelser', 'grund'])
         ->and($phases[0]['kommande'])->toBeTrue()
-        ->and($phases[0]['fran'])->toBe('2027-01-01');
+        ->and($phases[0]['fran'])->toBe('2027-02-01');
 
     $html = $this->get('/andringslogg')->assertOk()
         ->assertSeeInOrder([
@@ -243,9 +243,9 @@ it('groups the changes by phase under the background, with the goal first', func
             'AI-stödd utveckling under mänsklig ledning',
             'lagtexten, BAS, SIE och Skatteverkets dokumentation',
             'öppen beta',
-            'version 1.0 den 1 januari 2027',
+            'version 1.0 den 1 februari 2027',
             'aria-labelledby="fas-version-1-0"',
-            'Mål · 1 januari 2027',
+            'Mål · 1 februari 2027',
             'aria-labelledby="fas-beta-0-9"',
             'Sedan 29 oktober 2026',
             'aria-labelledby="fas-forberedelser"',

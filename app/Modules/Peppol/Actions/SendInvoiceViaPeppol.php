@@ -59,6 +59,7 @@ class SendInvoiceViaPeppol
             $receiver = PeppolIdentifier::tryFrom($customer->peppol_id);
 
             $reason = match (true) {
+                AccessPoints::isPaused() => AccessPoints::pausedMessage(),
                 $company->isTestCompany() => __('Ett testföretag skickar inga fakturor via Peppol.'),
                 ! $participant instanceof PeppolParticipant || ! $participant->canSend() => __('Företaget är inte kopplat till Peppol ännu. Se Företagsinställningar → Moduler → Peppol e-faktura.'),
                 $receiver === null => __('Kunden saknar Peppol-ID. Lägg till det i kundregistret.'),

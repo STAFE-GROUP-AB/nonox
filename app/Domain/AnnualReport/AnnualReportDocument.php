@@ -6,6 +6,7 @@ namespace App\Domain\AnnualReport;
 
 use App\Domain\Assets\AssetCategory;
 use App\Domain\Company\LegalForm;
+use App\Domain\Company\ReportingFramework;
 use App\Models\AnnualReport;
 use App\Models\Company;
 use App\Models\FiscalYear;
@@ -30,10 +31,38 @@ use Dompdf\Options;
  */
 final class AnnualReportDocument
 {
-    /** Legal forms whose annual report this document is made for. */
+    /**
+     * Whether NONOX makes this company's annual report: an aktiebolag or an
+     * ekonomisk förening that applies K2. The document states in note 1 that
+     * it follows BFNAR 2016:10, which is false for a company on K3, so a K3
+     * company (and any other framework) is refused until a K3 report exists
+     * (ADR-059, stage F.1).
+     */
     public static function supports(Company $company): bool
     {
+        return self::supportsLegalForm($company) && $company->reporting_framework === ReportingFramework::K2;
+    }
+
+    /**
+     * Legal forms that prepare an annual report NONOX is made for, whatever
+     * the framework. The income tax return (INK2) follows the legal form only.
+     */
+    public static function supportsLegalForm(Company $company): bool
+    {
         return in_array($company->legal_form, [LegalForm::Ab, LegalForm::EkonomiskForening], true);
+    }
+
+    /** Why NONOX does not make the company's annual report, in Swedish, or null when it does. */
+    public static function refusal(Company $company): ?string
+    {
+        $refusal = match (true) {
+            ! self::supportsLegalForm($company) => __('Årsredovisningen görs här för aktiebolag och ekonomiska föreningar.'),
+            $company->reporting_framework === ReportingFramework::K3 => __('NONOX tar ännu inte fram årsredovisningar enligt K3 (BFNAR 2012:1). Företaget har valt K3, och en årsredovisning enligt K2 skulle inte stämma med det regelverket.'),
+            $company->reporting_framework === ReportingFramework::K1 => __('NONOX tar fram årsredovisningar enligt K2. Företaget har valt K1, som inte används för en årsredovisning.'),
+            default => null,
+        };
+
+        return is_string($refusal) ? $refusal : null;
     }
 
     /**
@@ -46,10 +75,12 @@ final class AnnualReportDocument
             $free = $accounts->freeEquity();
             $dividend = $report->dividend_ore->ore;
 
-            return [
+            // The printed figures: lines in whole kronor, sums of the rounded lines (PrintedFigures).
+            return PrintedFigures::apply([
                 'company' => $company,
                 'fiscalYear' => $fiscalYear,
                 'report' => $report,
+                'previousYear' => $accounts->previousYear,
                 'previousLabel' => $accounts->previousYear?->label() ?? $fiscalYear->start_date->subDay()->toDateString(),
                 'income' => $accounts->incomeStatement(),
                 'hasPreviousIncome' => $accounts->previousYear !== null,
@@ -62,8 +93,9 @@ final class AnnualReportDocument
                 'fixedAssets' => $accounts->fixedAssetNotes(),
                 'certificate' => self::certificate($company, $fiscalYear, $report, $free),
                 'pledged' => self::pledged($report),
+                'contingent' => $report->contingent_liabilities_ore,
                 'depreciation' => self::depreciationPrinciples(),
-            ];
+            ]);
         });
     }
 
@@ -122,7 +154,7 @@ final class AnnualReportDocument
      * The ställda säkerheter entered, per kind in the order of BFNAR
      * 2016:10 p. 18.13 (#92).
      *
-     * @return list<array{label: string, amount: int}>
+     * @return list<array{kind: string, label: string, amount: int}>
      */
     public static function pledged(AnnualReport $report): array
     {
@@ -133,7 +165,7 @@ final class AnnualReportDocument
 
             if ($amount !== 0) {
                 $label = $kind === PledgedAssetKind::Other && filled($report->pledged_other_text) ? (string) $report->pledged_other_text : $kind->label();
-                $rows[] = ['label' => $label, 'amount' => $amount];
+                $rows[] = ['kind' => $kind->value, 'label' => $label, 'amount' => $amount];
             }
         }
 

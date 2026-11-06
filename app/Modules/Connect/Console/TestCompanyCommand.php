@@ -21,7 +21,7 @@ final class TestCompanyCommand extends Command
         {email : The e-mail address of the user who will own the test company}
         {--name= : The company name (default: Testföretaget AB)}';
 
-    protected $description = 'Create a test company with demo data for trying the NONOX Connect API';
+    protected $description = 'Create a test company with demo data for trying the NONOX API';
 
     public function handle(CreateTestCompany $create): int
     {

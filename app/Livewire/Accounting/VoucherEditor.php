@@ -9,8 +9,10 @@ use App\Actions\Accounting\PostVoucher;
 use App\Actions\Accounting\RemoveAttachment;
 use App\Actions\Accounting\SaveDraftVoucher;
 use App\Actions\Assets\AssetProposals;
+use App\Actions\Vat\ProposeImportVat;
 use App\Domain\Accounting\AccountBalances;
 use App\Domain\Accounting\VoucherTemplate;
+use App\Domain\Vat\ImportVat;
 use App\Domain\Vat\SalesVatRules;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Livewire\Payables\SupplierInvoiceEditor;
@@ -83,6 +85,32 @@ class VoucherEditor extends Component
     public ?array $aiResult = null;
 
     public string $templateAmount = '';
+
+    /** Importmoms från tullräkning (ADR-057): handelsvaror or ravaror. */
+    public string $importKind = ImportVat::GOODS;
+
+    /** The tullräkning's date; the VAT belongs to the period it was issued in (ML 7 kap. 27 §). */
+    public string $importDate = '';
+
+    public string $importReference = '';
+
+    /**
+     * A decision from Tullverket that lowers an earlier base: the rows are
+     * booked the other way round, dated with the decision.
+     *
+     * TODO(legal-verify): which period a lowering decision from Tullverket
+     * belongs to (the decision's date, as here, or the original
+     * tullräkning's period); ML 7 kap. 27 § names only the tullräkning.
+     */
+    public bool $importReduce = false;
+
+    /**
+     * One line per VAT rate on the tullräkning, amounts as typed. Comes from
+     * the browser; ProposeImportVat checks it.
+     *
+     * @var list<array<string, mixed>>
+     */
+    public array $importLines = [['rate' => '2500', 'customs_value' => '', 'duty' => '', 'incidental' => '']];
 
     /**
      * The posted balance of each account at the voucher date (account number
@@ -193,6 +221,63 @@ class VoucherEditor extends Component
                 ? __('Raderna är ifyllda. Välj kostnadskonto på den första raden.')
                 : __('Raderna är ifyllda.'),
         );
+    }
+
+    public function addImportLine(): void
+    {
+        $this->importLines[] = ['rate' => '2500', 'customs_value' => '', 'duty' => '', 'incidental' => ''];
+    }
+
+    public function removeImportLine(int $index): void
+    {
+        $this->importLines = array_values(array_filter($this->importLines, fn (int $key): bool => $key !== $index, ARRAY_FILTER_USE_KEY));
+
+        if ($this->importLines === []) {
+            $this->addImportLine();
+        }
+    }
+
+    /**
+     * Fills the date, the description and the rows from a tullräkning
+     * (ProposeImportVat). Nothing is saved: the person checks the rows and
+     * posts the voucher as usual.
+     */
+    public function applyImportVat(ProposeImportVat $propose): void
+    {
+        $this->resetErrorBag();
+
+        try {
+            $proposal = $propose($this->user(), $this->company(), [
+                'date' => $this->importDate,
+                'reference' => $this->importReference,
+                'kind' => $this->importKind,
+                'reduce' => $this->importReduce,
+                'lines' => $this->importLines,
+            ]);
+        } catch (ValidationException $exception) {
+            foreach ($exception->errors() as $field => $messages) {
+                $this->addError('import_'.$field, $messages[0]);
+            }
+
+            return;
+        }
+
+        $this->voucherDate = $proposal['date'];
+        $this->description = $proposal['description'];
+        $this->rows = [
+            ...array_map(fn (array $row): array => [
+                'account' => trim($row['account'].' '.$row['name']),
+                'debit' => $row['debit_ore'] > 0 ? Money::ofOre($row['debit_ore'])->format(withCurrency: false) : '',
+                'credit' => $row['credit_ore'] > 0 ? Money::ofOre($row['credit_ore'])->format(withCurrency: false) : '',
+                'description' => '',
+                'cost_center' => '',
+                'project' => '',
+            ], $proposal['rows']),
+            $this->blankRow(),
+        ];
+
+        $this->refreshBalances();
+        $this->toast(__('Raderna för importmomsen är ifyllda. Kontrollera dem och bifoga tullräkningen innan du bokför.'));
     }
 
     /**

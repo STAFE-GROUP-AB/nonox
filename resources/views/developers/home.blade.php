@@ -57,8 +57,8 @@
     <p class="dv-eyebrow">{{ $spec['info']['title'] }} · v{{ $spec['info']['version'] }}</p>
     <h1 id="dv-title">{{ $en ? 'Build on Swedish bookkeeping that is open for real.' : 'Bygg mot svensk bokföring som är öppen på riktigt.' }}</h1>
     <p class="dv-lead">{{ $en
-        ? 'NONOX Connect is the API of NONOX: read the chart of accounts, create and post vouchers, attach documents and keep customers and suppliers in sync. Free, with no add-on fee, secured with OAuth 2.0 and passkeys, and documented down to every error code.'
-        : 'NONOX Connect är NONOX API: läs kontoplanen, skapa och bokför verifikationer, lägg till underlag och håll kunder och leverantörer i synk. Gratis och utan tilläggsavgift, skyddat med OAuth 2.0 och passkeys, och dokumenterat ner till varje felkod.' }}</p>
+        ? 'NONOX API is the API of NONOX: read the chart of accounts, create and post vouchers, attach documents and keep customers and suppliers in sync. Free, with no add-on fee, secured with OAuth 2.0 and passkeys, and documented down to every error code.'
+        : 'NONOX API är NONOX API: läs kontoplanen, skapa och bokför verifikationer, lägg till underlag och håll kunder och leverantörer i synk. Gratis och utan tilläggsavgift, skyddat med OAuth 2.0 och passkeys, och dokumenterat ner till varje felkod.' }}</p>
     <div class="dv-actions">
       <a class="dv-btn dv-btn-primary" href="#kom-igang">{{ $en ? 'Get started in five minutes' : 'Kom igång på fem minuter' }}</a>
       <a class="dv-btn dv-btn-ghost" href="{{ Dev::url('developers.reference', [], $lang) }}">{{ Dev::t('reference', $lang) }}</a>
@@ -114,8 +114,8 @@
     <ol class="dv-steps">
       <li>
         <div>
-          <h3>{{ $en ? 'Turn on NONOX Connect' : 'Slå på NONOX Connect' }}</h3>
-          <p>{{ $en ? 'As owner or administrator of a company, open Inställningar → Moduler and turn on NONOX Connect. Use a company of your own for testing.' : 'Som ägare eller administratör i ett företag: öppna Inställningar → Moduler och slå på NONOX Connect. Testa gärna i ett eget företag.' }}</p>
+          <h3>{{ $en ? 'Turn on NONOX API' : 'Slå på NONOX API' }}</h3>
+          <p>{{ $en ? 'As owner or administrator of a company, open Inställningar → Moduler and turn on NONOX API. Use a company of your own for testing.' : 'Som ägare eller administratör i ett företag: öppna Inställningar → Moduler och slå på NONOX API. Testa gärna i ett eget företag.' }}</p>
         </div>
       </li>
       <li>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Support\Agi;
 
+use App\Modules\Payroll\Domain\Benefits\FuelBenefit;
 use App\Modules\Payroll\Domain\Engine\PayslipLineResult;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\PayCode;
@@ -127,8 +128,8 @@ final class AgiDeclaration
      * the other benefits; when it pays for the car or fuel, the reduction is
      * moved there so no field goes below nothing.
      *
-     * @param  array{cash: int, other: int, car: int, fuel: int}  $amounts
-     * @return array{cash: int, other: int, car: int, fuel: int}
+     * @param  array{cash: int, other: int, car: int, fuel: int, fuel_paid: int}  $amounts
+     * @return array{cash: int, other: int, car: int, fuel: int, fuel_paid: int}
      */
     private static function ownPaymentAcrossBenefits(array $amounts): array
     {
@@ -151,7 +152,7 @@ final class AgiDeclaration
      */
     private static function individual(Employee $employee, Collection $payslips, Collection $codes): ?AgiIndividual
     {
-        $amounts = ['cash' => 0, 'other' => 0, 'car' => 0, 'fuel' => 0];
+        $amounts = ['cash' => 0, 'other' => 0, 'car' => 0, 'fuel' => 0, 'fuel_paid' => 0];
         $free = $amounts;
         // Which benefits existed in the month, also when the employee's own payment takes the value to 0 (ruta 012/013, #79).
         $had = ['other' => false, 'car' => false];
@@ -184,11 +185,26 @@ final class AgiDeclaration
                 }
 
                 $field = match (true) {
+                    // Ruta 098: the employee's payment for fuel; 018 keeps the whole value (Skatteverket, agbeskrivning).
+                    ($line->explanation['source'] ?? null) === FuelBenefit::PAYMENT_SOURCE => 'fuel_paid',
                     in_array($code, self::CAR_BENEFIT, true) => 'car',
                     in_array($code, self::FUEL_BENEFIT, true) => 'fuel',
                     ($line->explanation['benefit'] ?? false) === true => 'other',
                     default => 'cash',
                 };
+
+                if ($field === 'fuel_paid') {
+                    // TODO(legal-verify): avgiftsfri fuel (ruta 134) has no 098 of its own; the payment lowers 134 there.
+                    if ($isFree) {
+                        $free['fuel'] += $amount;
+
+                        continue;
+                    }
+
+                    $amounts['fuel_paid'] -= $amount;
+
+                    continue;
+                }
 
                 if ($isFree) {
                     $free[$field] += $amount;
@@ -248,6 +264,7 @@ final class AgiDeclaration
             activityType: $employee->tax_residence === 'NON_RESIDENT_A_SINK' ? $employee->activity_type : null,
             hadOtherBenefit: $had['other'],
             hadCarBenefit: $had['car'],
+            fuelPaidKronor: intdiv($amounts['fuel_paid'], self::ORE_PER_KRONA),
         );
     }
 }

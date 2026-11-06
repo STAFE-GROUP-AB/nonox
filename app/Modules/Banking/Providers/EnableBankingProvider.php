@@ -211,7 +211,7 @@ final class EnableBankingProvider implements BankDataProvider
             return;
         }
 
-        throw new ProviderFailed("Enable Banking answered {$response->status()} when the session was closed.");
+        throw new ProviderFailed("Enable Banking answered {$response->status()} when the session was closed.", retryable: $response->serverError() || $response->status() === 429);
     }
 
     /** @param array<mixed> $row */
@@ -289,7 +289,7 @@ final class EnableBankingProvider implements BankDataProvider
         if (! $response->successful()) {
             $code = $response->json('error');
 
-            throw new ProviderFailed('Enable Banking answered '.$response->status().(is_string($code) ? " ({$code})" : '').'.');
+            throw new ProviderFailed('Enable Banking answered '.$response->status().(is_string($code) ? " ({$code})" : '').'.', retryable: $response->serverError() || $response->status() === 429);
         }
 
         $body = $response->json();
@@ -307,7 +307,7 @@ final class EnableBankingProvider implements BankDataProvider
         try {
             return $call();
         } catch (ConnectionException) {
-            throw new ProviderFailed('Enable Banking could not be reached.');
+            throw new ProviderFailed('Enable Banking could not be reached.', retryable: true);
         }
     }
 

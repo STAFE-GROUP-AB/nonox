@@ -7,15 +7,17 @@
                         <span class="font-medium">{{ $transmission->status->label() }}</span>
                         · {{ __('till :id', ['id' => $transmission->receiver]) }}
                         · <span class="tabular-nums">{{ ($transmission->delivered_at ?? $transmission->failed_at ?? $transmission->sent_at ?? $transmission->queued_at)->setTimezone(config('app.timezone'))->format('Y-m-d H:i') }}</span>
-                        @if($transmission->status === App\Modules\Peppol\Domain\TransmissionStatus::Failed && $transmission->last_error)
-                            <span class="block text-red-700">{{ __('Fel: :error', ['error' => $transmission->last_error]) }}</span>
+                        @if($transmission->supportText())
+                            <span @class(['block', 'text-red-700' => $transmission->status === App\Modules\Peppol\Domain\TransmissionStatus::Failed, 'text-gray-600' => $transmission->status !== App\Modules\Peppol\Domain\TransmissionStatus::Failed])>{{ $transmission->supportText() }}</span>
                         @endif
                     </li>
                 @endforeach
             </ul>
         @endif
 
-        @if($unsupported !== null)
+        @if($paused)
+            <p role="status" class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{{ App\Modules\Peppol\Support\AccessPoints::pausedMessage() }}</p>
+        @elseif($unsupported !== null)
             <p class="text-sm text-gray-600">{{ $unsupported }}</p>
         @elseif(blank($customer->peppol_id))
             <p class="text-sm text-gray-600">{{ __('Kunden har inget Peppol-ID. Lägg till det i kundregistret för att kunna skicka e-faktura.') }}</p>

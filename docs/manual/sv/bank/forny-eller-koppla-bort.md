@@ -26,6 +26,8 @@ Välj **Bank** i menyn. Under **Kopplade banker** står varje bank med status oc
 
 Innan medgivandet går ut får alla som får hantera Bank ett mejl, en gång per medgivande, och på Översikt under **Att göra** står **Förnya bankkopplingen till …** med datumet. När det har gått ut står det **Koppla … igen**.
 
+Dagen efter slutdatumet markerar NONOX kopplingen som **Medgivandet har gått ut** av sig själv, utan att fråga banken, och slutar hämta. Det som redan hämtats finns kvar.
+
 ## Så här förnyar du
 
 1. Välj **Bank** i menyn.

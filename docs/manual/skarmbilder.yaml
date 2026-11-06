@@ -127,6 +127,7 @@ fakturering/forsaljning-till-utlandet: { foretag: konsult, rutt: invoicing.invoi
 
 moms/oss: { foretag: butik, rutt: vat.euReports, visa: 'text=OSS, försäljning till privatpersoner i andra EU-länder' }
 moms/periodisk-sammanstallning: { foretag: konsult, rutt: vat.euReports }
+moms/importmoms: { foretag: butik, rutt: accounting.vouchers.create, klick: ['text=Importmoms från tullräkning'], del: '[data-import-vat]' }
 
 leverantorer/betalfiler: { foretag: konsult, rutt: payables.batches.index }
 leverantorer/kreditnotor: { foretag: konsult, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { kind: CREDIT } } }

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\AgiSubmissions;
+use App\Modules\Payroll\Actions\ImportPayrollRules;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Actions\SaveEmployee;
+use App\Modules\Payroll\Domain\Benefits\CarBenefitCalculator;
+use App\Modules\Payroll\Domain\Benefits\CarBenefitCar;
 use App\Modules\Payroll\Livewire\Employees;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollRun;
@@ -331,8 +334,17 @@ it('taxes semesterersättning as an engångsbelopp (Skatteverket, Engångsbelopp
     expect($code->tax_method)->toBe('ONE_OFF');
 })->todo('AUD-LON-07: the pay code SEMESTERERSATTNING and the default setting vacation_payout_tax tax it by the table');
 
-it('computes the car benefit from the car\'s data (IL 61 kap. 5, 8 a, 9 §§)')
-    ->todo('AUD-LON-08: Benefit and benefit.car.formula exist but nothing computes a car benefit; the user types the value (example: nybilspris 400 000 kr, fordonsskatt 1 800 kr → 82 108 kr/år = 6 842 kr/mån)');
+it('computes the car benefit from the car\'s data (IL 61 kap. 5, 8 a, 9 §§)', function () {
+    // AUD-LON-08, fixed by Lön → Förmånsbilar (ADR-061; full cases in tests/Feature/Payroll/CarBenefitTest.php):
+    // nybilspris 400 000 kr, fordonsskatt 1 800 kr → 17 168 + 11 140 + 52 000 + 1 800 = 82 108 kr/år = 6 842 kr/mån.
+    $rules = collect(ImportPayrollRules::file(2026)['rules'])->keyBy('key');
+    $value = (new CarBenefitCalculator)->calculate(
+        new CarBenefitCar(40_000_000, 0, 2025, CarbonImmutable::parse('2025-03-01'), CarBenefitCar::PETROL, 180_000),
+        2026, (array) $rules['benefit.car.formula']['value'], (array) $rules['benefit.car.scope']['value'], (int) $rules['prisbasbelopp']['value']['ore'],
+    );
+
+    expect([$value->yearlyOre, $value->monthlyOre])->toBe([8_210_800, 684_200]);
+});
 
 it('pays a mileage allowance entered as an amount (IL 12 kap. 5 §, Skatteverket 25 kr/mil)', function () {
     $dan = LonSupport::employee($this->owner, $this->company, '19750505');

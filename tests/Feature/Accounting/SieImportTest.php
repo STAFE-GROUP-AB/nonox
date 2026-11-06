@@ -519,3 +519,30 @@ it('reads in a sole trader\'s broken year as it was kept, with a warning', funct
     expect($import->blockers())->toBe([])
         ->and(implode(' ', $import->report['warnings']))->toContain('slutar inte den 31 december');
 });
+
+it('blocks a file whose opening balances do not sum to zero', function () {
+    $unbalanced = sieImportFile(['#IB 0 1930 1000.00', '#IB 0 2081 -900.50']);
+
+    $import = analyseSie($this->owner, $this->company, $unbalanced);
+
+    expect(implode(' ', $import->blockers()))->toContain('ingående balanser')->toContain('99,50')
+        ->and(analyseSie($this->owner, $this->company, sieImportFile(['#IB 0 1930 1000.00', '#IB 0 2081 -1000.00']))->blockers())->toBe([]);
+});
+
+it('claims that every account matches the file only when balances or results were compared', function () {
+    $bare = importSieFile($this->owner, $this->company, sieImportFile([
+        sieImportVoucher('A', 1, '20260110', ['#TRANS 1930 {} 100.00', '#TRANS 3001 {} -100.00']),
+    ]));
+    expect($bare->result)->toMatchArray(['checked_closing' => false, 'checked_results' => false]);
+
+    Livewire::test(SieImportReport::class, ['sieImport' => $bare])
+        ->assertDontSee('varje konto stämmer med filen')
+        ->assertSee('bara antalet verifikationer är kontrollerat');
+});
+
+it('says every account matches the file when the closing balances were compared', function () {
+    $full = importSieFile($this->owner, $this->company, (string) file_get_contents(SIE_IMPORT_FIXTURE));
+
+    Livewire::test(SieImportReport::class, ['sieImport' => $full])
+        ->assertSee('varje konto stämmer med filen');
+});

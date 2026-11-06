@@ -13,5 +13,7 @@ final readonly class FetchResult
         public int $payments = 0,
         public bool $consentEnded = false,
         public ?string $error = null,
+        // The provider may answer later (down, timed out, rate limited): a queued fetch is tried again after a pause.
+        public bool $retryable = false,
     ) {}
 }

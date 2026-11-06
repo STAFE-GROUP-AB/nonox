@@ -15,6 +15,11 @@ use Carbon\CarbonImmutable;
  * message id (GrpHdr/MsgId), the payment information id (PmtInfId) and the
  * end-to-end id of the payment. $reference identifies the answer itself, so
  * that reading the same answer twice changes nothing.
+ *
+ * A debit booked in kronor for a payment instructed in another currency
+ * carries the instruction too ($instructedCurrency, $instructedAmountMinor,
+ * from camt AmtDtls/InstdAmt): $amountOre is then what the bank took in
+ * kronor.
  */
 final readonly class OutgoingPaymentEvent
 {
@@ -39,6 +44,8 @@ final readonly class OutgoingPaymentEvent
         public ?string $creditorName = null,
         public ?string $reasonCode = null,
         public ?string $reasonText = null,
+        public ?string $instructedCurrency = null,
+        public ?int $instructedAmountMinor = null,
     ) {}
 
     /** Whether the answer is about a whole file or payment information block rather than one payment. */

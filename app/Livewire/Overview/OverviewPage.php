@@ -10,7 +10,9 @@ use App\Domain\Deadlines\DeadlineCompletion;
 use App\Domain\Guide\MoneyNotYours;
 use App\Domain\Overview\Overview;
 use App\Domain\Overview\OverviewCache;
+use App\Livewire\Guide\SkatteverketEvents;
 use App\Models\Company;
+use App\Models\SkatteverketEvent;
 use App\Models\User;
 use App\Support\Guide\Guide;
 use Carbon\CarbonImmutable;
@@ -55,6 +57,9 @@ class OverviewPage extends Component
             ? $moneyNotYours->summary($company, $today)
             : ['figures' => null, 'vat' => []];
 
+        // Från Skatteverket (ADR-054 stage 4): the person's own events where Skatteverket waits for the company, one count, not cached, so marking one handled shows at once.
+        $skatteverketAwaiting = SkatteverketEvents::isOfferedTo($user, $company) ? SkatteverketEvent::query()->fetchedBy($user)->awaitingCompany()->count() : 0;
+
         return view('livewire.overview.page', [
             'user' => $user,
             'company' => $company,
@@ -67,6 +72,7 @@ class OverviewPage extends Component
             'moneyFigures' => $money['figures'],
             'moneyVat' => $money['vat'],
             'setAsideUrl' => Guide::article('moms-och-skatt', 'satt-undan-pengar', false) === null ? null : Guide::url('moms-och-skatt', 'satt-undan-pengar'),
+            'skatteverketAwaiting' => $skatteverketAwaiting,
             'nextDates' => array_map(fn (array $item): Deadline => Deadline::fromArray($item), $nextDates),
         ]);
     }

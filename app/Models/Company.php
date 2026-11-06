@@ -47,6 +47,8 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * @property bool $eu_sales_quarterly_goods Skatteverket's decision: periodisk sammanställning for goods per quarter (SFL 35 kap. 4 §, #65)
  * @property ?CarbonImmutable $eu_sales_quarterly_goods_from the first day of the quarter the decision applies from
  * @property ReportingFramework $reporting_framework
+ * @property ?CarbonImmutable $k2_conditions_confirmed_at when the K2 conditions of BFNAR 2025:2 were confirmed (owner decision 16)
+ * @property ?int $k2_conditions_confirmed_by
  * @property int $fiscal_year_start_month
  * @property ?CarbonImmutable $locked_until_date
  * @property ?CarbonImmutable $archived_at
@@ -156,6 +158,7 @@ class Company extends JetstreamTeam
             'fiscal_year_start_month' => 'integer',
             'locked_until_date' => 'immutable_date',
             'archived_at' => 'immutable_datetime',
+            'k2_conditions_confirmed_at' => 'immutable_datetime',
             'is_test_company' => 'boolean',
             'asset_acquisition_accounts' => 'array',
             'asset_small_value_threshold_ore' => 'integer',

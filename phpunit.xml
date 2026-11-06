@@ -35,6 +35,8 @@
         <env name="NONOX_BANKING_DRIVER" value="" force="true"/>
         <env name="ENABLE_BANKING_APPLICATION_ID" value="" force="true"/>
         <env name="ENABLE_BANKING_PRIVATE_KEY_PATH" value="" force="true"/>
+        <!-- Empty, so a developer's .env never points the tests at a taxonomy; set it on the command line to run the taxonomy checks (ADR-058). -->
+        <env name="BOLAGSVERKET_TAXONOMY_DIR" value=""/>
         <env name="SKATTEVERKET_ENVIRONMENT" value="test" force="true"/>
         <env name="SKATTEVERKET_OAUTH_CLIENT_ID" value="" force="true"/>
         <env name="SKATTEVERKET_OAUTH_CLIENT_SECRET" value="" force="true"/>

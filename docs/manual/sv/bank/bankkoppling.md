@@ -20,7 +20,7 @@ Med modulen **Bank** kopplar du företagets bankkonton till NONOX med BankID. D�
 
 - **Modulen måste vara påslagen.** En ägare eller administratör slår på **Bank** under **Inställningar för företaget → Moduler**. Läs [Moduler](/manual/installningar/moduler).
 - **Installationen måste ha en leverantör av öppen bankdata.** NONOX hämtar bankdata genom en licensierad leverantör (Enable Banking). Saknas avtalet säger modulsidan *Bankkopplingen är inte inställd på den här installationen* och modulen går inte att slå på.
-- **På nonox.app** erbjuds modulen inte än. Den slås på när de juridiska frågorna kring tjänsten är besvarade. Kör ni NONOX själva behöver ni ett eget avtal med leverantören.
+- **På nonox.app** erbjuds modulen inte än: där finns inget avtal med en leverantör av öppen bankdata. Den slås på när avtalet är klart och de juridiska frågorna kring tjänsten är besvarade. Till dess läser du in bankens filer, se [Bankfiler](/manual/bank/bankfiler). Kör ni NONOX själva behöver ni ett eget avtal med leverantören.
 - Kontoplanen behöver ett konto för banken mellan 1900 och 1999, till exempel 1930.
 - Du behöver rollen ägare, administratör eller redovisningskonsult för att koppla banker. Bokförare och revisorer kan se transaktionerna.
 
@@ -53,6 +53,22 @@ Klart. Transaktionerna hämtas vid nästa hämtning, eller direkt om du trycker 
 - **Handelsbanken** kräver en fullmakt för öppen bankdata för företagskonton. Den ordnar du i banken.
 - **Nordea** har olika val för Nordea Business och Corporate; välj det som stämmer med hur företaget loggar in i banken.
 - **Länsförsäkringar** vill ha personnummer innan godkännandet, och NONOX skickar det inte än. Kopplingen kan därför misslyckas.
+
+## När banken inte svarar
+
+Går banken eller leverantören inte att nå försöker NONOX igen av sig själv, med längre och längre mellanrum: efter en kvart, en timme, fyra timmar, tolv timmar och sedan en gång per dygn. Samma transaktion sparas ändå bara en gång.
+
+- Efter ett misslyckat försök står det *Senaste hämtningen misslyckades. NONOX försöker igen vid nästa hämtning.* vid banken.
+- Efter tre misslyckade försök i rad står det *Banken har inte gått att nå de senaste … gångerna. NONOX försöker igen tidigast …*, och på Översikt under **Att göra** står **Hämtningen från … fungerar inte**.
+- Lyckas nästa hämtning försvinner meddelandena av sig själva. Kvarstår felet i ett dygn, kontakta den som driftar NONOX.
+
+## När bankkopplingen är tillfälligt avstängd
+
+Den som driftar NONOX kan stänga av bankkopplingen för alla företag på en gång, till exempel om leverantören har driftstörningar. Då står det överst på sidan Bank:
+
+*Bankkopplingen är tillfälligt avstängd av den som driftar NONOX. Inget hämtas från banken just nu. Det som redan har hämtats finns kvar, och hämtningen fortsätter när kopplingen är på igen.*
+
+Medan den är avstängd syns inte **Koppla en bank**, **Hämta nu** eller **Koppla igen med BankID**. Du kan fortfarande matcha transaktioner som redan har hämtats, göra bankavstämningar och koppla bort en bank. Påminnelser om medgivanden skickas när kopplingen är på igen.
 
 ## Vanliga frågor
 

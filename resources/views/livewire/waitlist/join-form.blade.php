@@ -11,7 +11,7 @@
                 <li>Du loggar in med din e-postadress och en kod som vi mejlar. Inga lösenord.</li>
                 <li>Första gången lägger du upp ditt företag. Det tar några minuter.</li>
             </ol>
-            <p class="wl-note">NONOX är i öppen beta. Skarp lansering av version 1.0 sker den 1 januari 2027, och det du lägger in under betan ligger kvar.</p>
+            <p class="wl-note">NONOX är i öppen beta. Skarp lansering av version 1.0 sker den 1 februari 2027, och det du lägger in under betan ligger kvar.</p>
             <p class="wl-small">Ångrar du dig, eller vill du att vi tar bort dina uppgifter? Svara på bekräftelsemejlet så tar vi bort dem. <a href="{{ route('legal.privacy') }}">Så behandlar vi dina personuppgifter</a></p>
         </div>
     @else

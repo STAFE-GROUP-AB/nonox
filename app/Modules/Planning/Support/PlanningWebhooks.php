@@ -11,7 +11,7 @@ use App\Modules\Planning\Models\Publication;
 use Carbon\CarbonImmutable;
 
 /**
- * Announces Planering's events to NONOX Connect (ADR-032). Call these inside
+ * Announces Planering's events to NONOX API (ADR-032). Call these inside
  * the action's transaction: the events are dispatched after it commits, so
  * a rolled-back publication or attestation is never announced. Connect
  * listens; Planering does not know about webhooks.

@@ -54,6 +54,7 @@ final class AgiXml
         'SkatteplOvrigaFormanerUlagAG' => '012',
         'SkatteplBilformanUlagAG' => '013',
         'DrivmVidBilformanUlagAG' => '018',
+        'BetForDrivmVidBilformanUlagAG' => '098',
         'AvrakningAvgiftsfriErs' => '010',
         'KontantErsattningEjUlagSA' => '131',
         'SkatteplOvrigaFormanerEjUlagSA' => '132',
@@ -133,6 +134,7 @@ final class AgiXml
             $this->amount($iu, 'SkatteplOvrigaFormanerUlagAG', $individual->otherBenefitsKronor, $individual->hadOtherBenefit);
             $this->amount($iu, 'SkatteplBilformanUlagAG', $individual->carBenefitKronor, $individual->hadCarBenefit || $individual->fuelBenefitKronor > 0);
             $this->amount($iu, 'DrivmVidBilformanUlagAG', $individual->fuelBenefitKronor);
+            $this->amount($iu, 'BetForDrivmVidBilformanUlagAG', $individual->fuelPaidKronor);
             $this->amount($iu, 'AvrakningAvgiftsfriErs', $individual->earlierFreeKronor);
             $this->amount($iu, 'KontantErsattningEjUlagSA', $individual->freeCashKronor);
             $this->amount($iu, 'SkatteplOvrigaFormanerEjUlagSA', $individual->freeOtherBenefitsKronor);

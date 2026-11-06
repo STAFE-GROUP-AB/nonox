@@ -153,3 +153,25 @@ it('reads decimal amounts into öre without floating point', function () {
         ->and(Amount::toOre('99.990'))->toBe(9_999)
         ->and(fn () => Amount::toOre('1,5'))->toThrow(ProviderFailed::class);
 });
+
+it('marks no answer, a time-out, 429 and 5xx as worth trying again, and a refused request as not', function () {
+    Http::preventStrayRequests();
+    Http::fake([
+        '*/accounts/a503/transactions*' => Http::response(['error' => 'ASPSP_ERROR'], 503),
+        '*/accounts/a429/transactions*' => Http::response(['error' => 'ASPSP_RATE_LIMIT_EXCEEDED'], 429),
+        '*/accounts/a400/transactions*' => Http::response(['error' => 'WRONG_REQUEST_PARAMETERS'], 400),
+        '*/accounts/down/transactions*' => fn () => throw new ConnectionException('timed out'),
+    ]);
+
+    $retryable = [];
+
+    foreach (['a503', 'a429', 'a400', 'down'] as $account) {
+        try {
+            $this->provider->transactions('sess-1', $account, CarbonImmutable::parse('2026-03-01'));
+        } catch (ProviderFailed $exception) {
+            $retryable[$account] = $exception->retryable;
+        }
+    }
+
+    expect($retryable)->toBe(['a503' => true, 'a429' => true, 'a400' => false, 'down' => true]);
+});

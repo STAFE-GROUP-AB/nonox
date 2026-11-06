@@ -58,7 +58,7 @@ function invoiceAnswer(array $overrides = []): array
     return [
         'supplier_name' => 'Grossisten AB', 'supplier_org_number' => '556036-0793', 'supplier_vat_number' => '', 'supplier_bankgiro' => '', 'supplier_plusgiro' => '', 'supplier_iban' => '',
         'supplier_address' => '', 'supplier_postal_code' => '', 'supplier_city' => '', 'supplier_email' => '', 'supplier_phone' => '',
-        'invoice_number' => '7001', 'ocr' => '7001234', 'invoice_date' => '2026-03-02', 'due_date' => '2026-04-01', 'currency' => 'SEK',
+        'invoice_number' => '7001', 'ocr' => '7001233', 'invoice_date' => '2026-03-02', 'due_date' => '2026-04-01', 'currency' => 'SEK',
         'total' => 1568.0, 'vat_total' => 168.0, 'is_credit_note' => false, 'vat_treatment' => 'DOMESTIC', 'description' => 'Livsmedel och dryck',
         'rows' => [
             ['account' => 4010, 'amount_excl_vat' => 1000.0, 'vat_rate_percent' => 12, 'description' => 'Livsmedel'],
@@ -112,7 +112,7 @@ it('fills in a supplier invoice from the PDF through the chosen provider and sav
         ->assertDispatched('toast')
         ->assertSet('supplierId', (string) $this->supplier->id)
         ->assertSet('invoiceNumber', '7001')
-        ->assertSet('ocr', '7001234')
+        ->assertSet('ocr', '7001233')
         ->assertSet('invoiceDate', '2026-03-02')
         ->assertSet('dueDate', '2026-04-01')
         ->assertSet('total', "1\u{a0}568,00")

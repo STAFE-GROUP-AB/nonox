@@ -197,7 +197,7 @@
             <h3>{{ __('Not :number :label', ['number' => $noteNumber, 'label' => __('Eventualförpliktelser')]) }}</h3>
             <table>
                 <thead><tr><th></th><th class="num">{{ $fiscalYear->end_date->toDateString() }}</th></tr></thead>
-                <tbody><tr><td>{{ $report->contingent_liabilities_text ?: __('Eventualförpliktelser') }}</td><td class="num">{{ $kr($report->contingent_liabilities_ore ?? 0) }}</td></tr></tbody>
+                <tbody><tr><td>{{ $report->contingent_liabilities_text ?: __('Eventualförpliktelser') }}</td><td class="num">{{ $contingent === null ? '' : $kr($contingent) }}</td></tr></tbody>
             </table>
         @endif
 

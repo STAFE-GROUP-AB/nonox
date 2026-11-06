@@ -482,7 +482,7 @@ describe('a nought in 012 and 013 (#79)', function () {
     it('writes 013 with a fuel benefit even when the car benefit is 0 (Skatteverket, ruta 018)', function () {
         $dan = LonSupport::employee($this->owner, $this->company, '19750505');
         $run = $this->runs->create($this->owner, $this->company, '2026-04');
-        LonSupport::input($this->owner, $run, $dan, 'DRIVMEDELSFORMAN', ['amount' => '1 200']);
+        LonSupport::rawInput($run, $dan, 'DRIVMEDELSFORMAN', ['amount' => '1 200']);
         $field = fixAgiField(fixAgiSubmission($this->runs, $this->owner, $this->admin, $this->company, $run));
 
         expect($field('//agd:IU/agd:DrivmVidBilformanUlagAG[@faltkod="018"]'))->toBe('1200')
@@ -526,6 +526,8 @@ describe('the employee\'s own payment for a benefit (#80)', function () {
         $code = PayCode::query()->where('code', 'FORMAN_EGENBETALNING')->sole();
         $liability = Account::query()->where('number', 2890)->value('id');
         $code->forceFill(['credit_account_id' => $liability])->save();
+        // The fuel payment pay code (ADR-061 addendum) also credits 7388; unlink it so the account can go.
+        PayCode::query()->where('code', 'DRIVMEDEL_BETALNING')->update(['credit_account_id' => null]);
         Account::query()->where('number', 7388)->delete();
 
         (require base_path('app/Modules/Payroll/database/migrations/2026_11_16_140000_book_own_benefit_payment_on_7388.php'))->up();

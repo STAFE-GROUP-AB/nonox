@@ -2,9 +2,9 @@
 
 This guide takes you from nothing to a posted voucher through the API. You need a company in NONOX where you are owner or administrator, and a passkey on your account. Try it in a company of your own first; there is no separate sandbox yet.
 
-## 1. Turn on NONOX Connect
+## 1. Turn on NONOX API
 
-The API is a module and is off by default. Open **Inställningar → Moduler** (Settings → Modules) and turn on **NONOX Connect**. While the module is off, every call for the company answers `404`, as if the API did not exist.
+The API is a module and is off by default. Open **Inställningar → Moduler** (Settings → Modules) and turn on **NONOX API**. While the module is off, every call for the company answers `404`, as if the API did not exist.
 
 In the module's settings a company can also limit which apps may connect and which IP addresses may call the API.
 

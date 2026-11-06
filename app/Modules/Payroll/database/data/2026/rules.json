@@ -645,6 +645,33 @@
             "source_quote": "61 kap. 5 §: summan av 0,29 prisbasbelopp, ett ränterelaterat belopp (nybilspris × (70 procent av statslåneräntan + 0,01), lägst 0,5 procent), ett prisrelaterat belopp (13 procent av nybilspriset) och bilens fordonsskatt; 8 a §; 9 §. Statslåneränta 30 november 2025: 2,55 procent (https://skatteverket.se/download/18.1522bf3f19aea8075ba3285/1767885159120/belopp-och-procentsatser-for-inkomstaret-2026.pdf)."
         },
         {
+            "key": "benefit.car.scope",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "formula_from_taxable_on": "2021-07-01",
+                "reductions_from_taxable_on": "2022-07-01",
+                "old_model_age_years": 6,
+                "old_model_min_prisbasbelopp": 4
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "61 kap. 7 §: bilmodell som är sex år eller äldre … fyra prisbasbelopp. SFS 2021:479: bilar som blir skattepliktiga … den 1 juli 2021 eller senare. SFS 2022:479: … efter den 30 juni 2022.",
+            "source_read_on": "2026-11-06",
+            "status": "researched"
+        },
+        {
+            "key": "benefit.fuel.factor",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "tax_factor_bp": 12000
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 61 kap. 10 §: drivmedel … marknadsvärdet multiplicerat med 1,2. Socialavgiftslagen (2000:980) 2 kap. 10 a § punkt 2: drivmedelsförmån … ska beräknas till marknadsvärdet (https://data.riksdagen.se/dokument/sfs-2000-980.text).",
+            "source_read_on": "2026-11-06",
+            "status": "researched"
+        },
+        {
             "key": "agi.field_codes",
             "valid_from": "2026-01-01",
             "valid_to": null,

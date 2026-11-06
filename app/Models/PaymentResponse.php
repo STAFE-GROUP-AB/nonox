@@ -68,6 +68,10 @@ class PaymentResponse extends Model
         'batch_closed' => 'Betalfilen är redan makulerad eller betald.',
         'not_found' => 'Ingen betalning i någon betalfil passar.',
         'currency' => 'Betalningen är i en annan valuta än kronor.',
+        'foreign_whole' => 'Banken bokförde flera betalningar som ett belopp, men betalningar i utländsk valuta bokförs en och en med de kronor banken tog för just den. Läs in avisering per betalning.',
+        'foreign_amount' => 'Beloppet banken drog stämmer inte med betalningen i utländsk valuta i filen (valuta, belopp eller kronor saknas).',
+        'foreign_unconfirmed' => 'Banken uppgav inte beloppet i utländsk valuta. Kontrollera kronorna mot kontoutdraget och bekräfta.',
+        'foreign_rate' => 'Kronorna avviker mer än 5 procent (lägst 500 och högst 5 000 kronor) från Riksbankens kurs på bokföringsdagen, eller från fakturans kurs. Kontrollera mot kontoutdraget och bekräfta.',
         'booking_failed' => 'Betalningen kunde inte bokföras automatiskt, till exempel för att perioden är låst. Bekräfta för att se varför.',
     ];
 
@@ -90,6 +94,8 @@ class PaymentResponse extends Model
         'creditor_name',
         'reason_code',
         'reason_text',
+        'instructed_currency',
+        'instructed_amount_minor',
         'match',
         'batch_id',
         'batch_item_id',

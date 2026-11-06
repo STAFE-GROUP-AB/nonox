@@ -6,6 +6,7 @@ namespace App\Modules\Inbox\Actions;
 
 use App\Domain\Accounting\SieImport\SieTransaction;
 use App\Domain\Accounting\SieImport\SieVoucher;
+use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Payables\SupplierMatcher;
 use App\Models\Account;
 use App\Models\Company;
@@ -276,13 +277,28 @@ class InterpretInboxMessage
             ];
         }
 
+        // Öresavrundning stated in the e-invoice (BT-114) becomes its own row on the rounding account, as on NONOX's own invoices.
+        $rounding = 0;
+
+        if ($invoice->roundingOre !== 0 && array_sum($byRate) + $invoice->vatOre + $invoice->roundingOre === $invoice->payableOre && Account::query()->where('number', InvoiceBooking::ROUNDING)->where('is_active', true)->exists()) {
+            $rounding = $invoice->roundingOre;
+            $rows[] = [
+                'account' => (string) InvoiceBooking::ROUNDING,
+                'amount' => Money::ofOre($rounding)->format(withCurrency: false),
+                'description' => __('Öresavrundning'),
+                'vat_rate' => 0,
+                // Never learnt into the supplier's template (ApproveInboxMessage::learn).
+                'rounding' => true,
+            ];
+        }
+
         if ($supplier === null) {
             $warnings[] = ['code' => 'NO_SUPPLIER', 'message' => __(':name finns inte i leverantörsregistret. Lägg till leverantören innan fakturan registreras.', ['name' => $invoice->supplierName])];
         } else {
             $warnings = [...$warnings, ...InboxChecks::bankDetails($supplier, $invoice->bankgiro, $invoice->plusgiro, $invoice->iban), ...InboxChecks::duplicateInvoice($supplier->id, $invoice->invoiceNumber, $invoice->isCreditNote ? -$invoice->payableOre : $invoice->payableOre)];
         }
 
-        if (array_sum($byRate) + $invoice->vatOre !== $invoice->payableOre) {
+        if (array_sum($byRate) + $invoice->vatOre + $rounding !== $invoice->payableOre) {
             $warnings[] = ['code' => 'PEPPOL_SUM', 'message' => __('Fakturaraderna och momsen blir inte fakturans belopp att betala. Kontrollera raderna.')];
         }
 

@@ -94,10 +94,12 @@ Läs [Inköp från utlandet](/manual/leverantorer/inkop-fran-utlandet).
 
 | Konton | Vad | Ruta |
 |---|---|---|
-| 4545–4547 | Beskattningsunderlag vid import | 50 |
+| 4085–4087 | Beskattningsunderlag vid import av handelsvaror (25 / 12 / 6 %) | 50 |
+| 4545–4547 | Beskattningsunderlag vid import av råvaror och material (25 / 12 / 6 %) | 50 |
 | 2615 / 2625 / 2635 | Utgående moms på import 25 / 12 / 6 % | 60 / 61 / 62 |
+| 2645 | Ingående moms på importen | 48 |
 
-Import av varor från länder utanför EU görs inte automatiskt från leverantörsfakturor ännu. Bokför du import för hand på kontona ovan kommer den med i rutorna.
+Underlaget är tullvärdet från Tullverkets tullräkning, inte leverantörens faktura. Läs [Importmoms från tullräkning](/manual/moms/importmoms).
 
 ## Ruta 49
 

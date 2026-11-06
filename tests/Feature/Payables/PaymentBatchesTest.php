@@ -14,6 +14,7 @@ use App\Domain\Payables\PaymentBank;
 use App\Domain\Payables\PaymentBatchStatus;
 use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Livewire\Payables\PaymentBatches;
+use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
@@ -76,10 +77,10 @@ it('saves the bank for payment files and checks the IBAN', function () {
 
 it('makes a pain.001 file with OCR for bankgiro and a message for plusgiro', function () {
     useHandelsbanken($this->owner, $this->company);
-    $food = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '1620,00', '4455667');
+    $food = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '1620,00', '4455663');
     $power = approvedSupplierInvoice($this->owner, $this->company, $this->power, '500,50', number: 'EL-12');
 
-    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$food->id, $power->id], CarbonImmutable::parse('2026-03-12'));
+    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$food->id, $power->id], CarbonImmutable::parse('2026-03-12'), true);
     $xml = Storage::disk('local')->get($batch->file_path);
     $doc = new DOMDocument;
     $doc->loadXML($xml);
@@ -100,17 +101,17 @@ it('makes a pain.001 file with OCR for bankgiro and a message for plusgiro', fun
         ->and($text('//p:CdtTrfTxInf/p:Amt/p:InstdAmt'))->toBe(['500.50', '1620.00'])
         ->and($text('//p:CdtrAcct/p:Id/p:Othr/p:Id'))->toBe(['4123451', '50501055'])
         ->and($text('//p:CdtrAgt//p:MmbId'))->toBe(['9500', '9900'])
-        ->and($text('//p:CdtrRefInf/p:Ref'))->toBe(['4455667'])
+        ->and($text('//p:CdtrRefInf/p:Ref'))->toBe(['4455663'])
         ->and($text('//p:RmtInf/p:Ustrd'))->toBe(['Faktura EL-12']);
 });
 
 it('follows each bank\'s own guide', function (string $bank, ?string $scheme, array $serviceLevel, array $bankgiroAgent, array $plusgiroAgent, ?string $purpose) {
     $this->company->forceFill(['bankgiro' => '5402-9681'])->save();
     app(SavePaymentBankSettings::class)($this->owner, $this->company, ['payment_bank' => $bank, 'iban' => 'SE4550000000058398257466', 'bank_agreement_id' => '165566778899']);
-    $food = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '100', '4455667');
+    $food = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '100', '4455663');
     $power = approvedSupplierInvoice($this->owner, $this->company, $this->power, '50');
 
-    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$food->id, $power->id], CarbonImmutable::parse('2026-03-12'));
+    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$food->id, $power->id], CarbonImmutable::parse('2026-03-12'), true);
     $doc = new DOMDocument;
     $doc->loadXML(Storage::disk('local')->get($batch->file_path));
     $path = new DOMXPath($doc);
@@ -140,9 +141,9 @@ it('pays from the company bankgiro with the amount beside the OCR at Swedbank', 
 
     $this->company->forceFill(['bankgiro' => '5402-9681'])->save();
     app(SavePaymentBankSettings::class)($this->owner, $this->company, ['payment_bank' => 'SWEDBANK', 'iban' => 'SE4550000000058398257466', 'bank_agreement_id' => '123456789123B001']);
-    $food = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '1620', '4455667');
+    $food = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '1620', '4455663');
 
-    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$food->id], CarbonImmutable::parse('2026-03-12'));
+    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$food->id], CarbonImmutable::parse('2026-03-12'), true);
     $doc = new DOMDocument;
     $doc->loadXML(Storage::disk('local')->get($batch->file_path));
     $path = new DOMXPath($doc);
@@ -153,7 +154,7 @@ it('pays from the company bankgiro with the amount beside the OCR at Swedbank', 
         ->and($text('//p:DbtrAcct/p:Id/p:Othr/p:SchmeNm/p:Prtry'))->toBe(['BGNR'])
         ->and($text('//p:DbtrAcct/p:Id/p:IBAN'))->toBe([])
         ->and($text('//p:Strd/p:RfrdDocAmt/p:RmtdAmt'))->toBe(['1620.00'])
-        ->and($text('//p:Strd/p:CdtrRefInf/p:Ref'))->toBe(['4455667']);
+        ->and($text('//p:Strd/p:CdtrRefInf/p:Ref'))->toBe(['4455663']);
 });
 
 it('pays to the bankgiro the supplier had when the invoice was registered', function () {
@@ -161,13 +162,13 @@ it('pays to the bankgiro the supplier had when the invoice was registered', func
     $invoice = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '100');
     app(SaveSupplier::class)($this->owner, $this->company, ['name' => 'Grossisten AB', 'bankgiro' => '5402-9681', 'payment_terms_days' => 30], $this->wholesaler);
 
-    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12'));
+    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12'), true);
 
     expect(Storage::disk('local')->get($batch->file_path))->toContain('<Id>50501055</Id>')->not->toContain('54029681');
 });
 
 it('refuses invoices that are not approved, already in a file, or have no giro number', function () {
-    expect(fn () => app(CreatePaymentBatch::class)($this->owner, $this->company, [], CarbonImmutable::parse('2026-03-12')))->toThrow(ValidationException::class, 'Fyll i bank');
+    expect(fn () => app(CreatePaymentBatch::class)($this->owner, $this->company, [], CarbonImmutable::parse('2026-03-12'), true))->toThrow(ValidationException::class, 'Fyll i bank');
 
     useHandelsbanken($this->owner, $this->company);
     $invoice = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '100');
@@ -175,15 +176,15 @@ it('refuses invoices that are not approved, already in a file, or have no giro n
     $noGiro = app(SaveSupplier::class)($this->owner, $this->company, ['name' => 'Kontanta AB', 'payment_terms_days' => 30, 'default_account' => 4010]);
     $cashOnly = approvedSupplierInvoice($this->owner, $this->company, $noGiro, '75');
 
-    app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12'));
+    app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12'), true);
 
-    expect(fn () => app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id, $draft->id, $cashOnly->id], CarbonImmutable::parse('2026-03-12')))
+    expect(fn () => app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id, $draft->id, $cashOnly->id], CarbonImmutable::parse('2026-03-12'), true))
         ->toThrow(ValidationException::class)
-        ->and(fn () => app(CreatePaymentBatch::class)($this->owner, $this->company, [$cashOnly->id], CarbonImmutable::parse('2026-03-09')))
+        ->and(fn () => app(CreatePaymentBatch::class)($this->owner, $this->company, [$cashOnly->id], CarbonImmutable::parse('2026-03-09'), true))
         ->toThrow(ValidationException::class, 'passerad');
 
     try {
-        app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id, $draft->id, $cashOnly->id], CarbonImmutable::parse('2026-03-12'));
+        app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id, $draft->id, $cashOnly->id], CarbonImmutable::parse('2026-03-12'), true);
     } catch (ValidationException $exception) {
         expect(implode(' ', $exception->errors()['batch']))
             ->toContain('finns redan i en betalfil')
@@ -197,10 +198,10 @@ it('books every payment when the bank has paid, and frees the invoices when canc
     $food = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '1620');
     $power = approvedSupplierInvoice($this->owner, $this->company, $this->power, '500');
 
-    $first = app(CreatePaymentBatch::class)($this->owner, $this->company, [$power->id], CarbonImmutable::parse('2026-03-12'));
+    $first = app(CreatePaymentBatch::class)($this->owner, $this->company, [$power->id], CarbonImmutable::parse('2026-03-12'), true);
     app(SettlePaymentBatch::class)->cancel($this->owner, $first);
 
-    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$food->id, $power->id], CarbonImmutable::parse('2026-03-12'));
+    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$food->id, $power->id], CarbonImmutable::parse('2026-03-12'), true);
     app(ApprovePaymentBatch::class)($this->owner, $batch);
     app(SettlePaymentBatch::class)->confirm($this->owner, $batch);
 
@@ -217,7 +218,7 @@ it('books every payment when the bank has paid, and frees the invoices when canc
 
 describe('in the browser', function () {
     it('sets up the bank, makes a file, approves, downloads and confirms it, with toasts', function () {
-        $invoice = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '1620', '4455667');
+        $invoice = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '1620', '4455663');
 
         $component = Livewire::test(PaymentBatches::class)
             ->assertSet('editingBank', true)
@@ -229,6 +230,7 @@ describe('in the browser', function () {
             ->assertSet('selected', [])
             ->set('selected', [$invoice->id])
             ->set('executionDate', '2026-03-12')
+            ->set('figuresReviewed', true)
             ->call('create')
             ->assertDispatched('toast', message: 'Betalfil 1 är skapad med 1 betalningar. Den behöver godkännas innan den kan laddas ned och läsas in i internetbanken.');
 
@@ -244,4 +246,17 @@ describe('in the browser', function () {
         [$stranger] = Bookkeeping::company();
         $this->actingAs($stranger)->get(route('payables.batches.file', $batch))->assertNotFound();
     });
+});
+
+it('refuses a payment file without "Jag har granskat siffrorna" and records the confirmation when given', function () {
+    useHandelsbanken($this->owner, $this->company);
+    $invoice = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '100');
+
+    expect(fn () => app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12')))->toThrow(ValidationException::class, 'granskat siffrorna');
+    expect(SupplierPaymentBatch::query()->count())->toBe(0)->and(AuditLog::query()->where('action', 'figures.reviewed')->count())->toBe(0);
+
+    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12'), true);
+
+    $row = AuditLog::query()->where('action', 'figures.reviewed')->sole();
+    expect($row->user_id)->toBe($this->owner->id)->and($row->subject_id)->toBe((string) $batch->id)->and($row->payload)->toBe(['filing' => 'payment_batch']);
 });

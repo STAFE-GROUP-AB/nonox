@@ -35,7 +35,10 @@ Peppol-operatören kontrollerar först vem företaget är och registrerar det se
 ## Bra att veta
 
 - E-fakturans fil sparas precis som den kom, som original och underlag till leverantörsfakturan. Du hämtar den med **Ladda ner originalet (.xml)** i inkorgen.
-- Samma e-faktura två gånger tas emot en gång.
+- Samma e-faktura två gånger tas emot en gång, också om Peppol-operatören skickar den igen eller NONOX hämtar den både när den kommer och vid nästa kontroll.
+- Har e-fakturan öresavrundning blir avrundningen en egen rad på konto 3740 i förslaget, så att raderna och momsen blir beloppet att betala utan att du behöver räkna om.
+- Svarar Peppol-operatören inte när en e-faktura ska hämtas ligger den kvar hos operatören och hämtas vid nästa kontroll, inom en kvart. Ingenting tappas bort.
+- Är Peppol tillfälligt avstängt av den som driftar NONOX ligger nya e-fakturor kvar hos Peppol-operatören och hämtas när Peppol är på igen.
 - Kommer en e-faktura när mottagningen är avstängd sparas den ändå, i karantän i inkorgen, eftersom den är adresserad till företaget. Stänger du av mottagningen tas företaget bort ur Peppols adressbok.
 - En avvisad e-faktura tas inte bort automatiskt efter sju dagar som avvisad e-post; den sparas med räkenskapsinformationen.
 - En e-faktura till ett annat Peppol-ID än företagets tas aldrig emot.

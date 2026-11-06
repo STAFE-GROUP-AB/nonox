@@ -25,7 +25,7 @@ describe('the Peppol UBL reader', function () {
             ->and($invoice->supplierOrgNumber)->toBe('5599001236')
             ->and($invoice->supplierVatNumber)->toBe('SE559900123601')
             ->and($invoice->bankgiro)->toBe('7654320')
-            ->and($invoice->ocr)->toBe('100452')
+            ->and($invoice->ocr)->toBe('100453')
             ->and($invoice->payableOre)->toBe(181_000)
             ->and($invoice->vatOre)->toBe(31_000)
             ->and($invoice->totalExclVatOre)->toBe(150_000)

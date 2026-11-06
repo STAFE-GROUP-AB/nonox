@@ -12,7 +12,13 @@
         @endforeach
     </nav>
 
-    @if(! $supported)
+    @if(! $supported && $legalFormSupported)
+        <x-ui.empty-state :title="$k3 ? __('Årsredovisning enligt K3 finns inte ännu') : __('Inte för det här regelverket')">
+            <span class="block">{{ $refusal }}</span>
+            <span class="mt-2 block">{{ __('Bokföringen, bokslutet och inkomstdeklarationen fungerar som vanligt. Årsredovisningen upprättar du i ett program som stöder regelverket, eller med hjälp av en redovisningskonsult: ladda ner årets SIE-fil under Räkenskapsår och läs in den där.') }}</span>
+            <span class="mt-2 block">{{ __('Har företaget valt regelverk av misstag, och uppfyller det villkoren för K2, kan en ägare eller administratör ändra regelverket under Inställningar för företaget.') }}</span>
+        </x-ui.empty-state>
+    @elseif(! $supported)
         <x-ui.empty-state :title="__('Inte för den här företagsformen')">{{ __('Årsredovisningen görs här för aktiebolag och ekonomiska föreningar. Enskilda firmor upprättar ingen årsredovisning utan ett förenklat årsbokslut.') }}</x-ui.empty-state>
     @else
         <div class="grid gap-6 xl:grid-cols-[minmax(0,26rem)_1fr]">
@@ -71,6 +77,12 @@
                         <a href="{{ route('accounting.annualReport.pdf', $fiscalYear) }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Ladda ner PDF') }}</a>
                     </div>
                     <p class="text-xs text-gray-500">{{ __('Gör bokslutet först så att årets resultat och skatt är bokförda. Revisionsberättelsen läggs till utanför systemet.') }}</p>
+                    @if($ixbrl)
+                        <div class="space-y-2 rounded-2xl bg-stone-50 p-4 ring-1 ring-stone-200">
+                            <a href="{{ route('accounting.annualReport.ixbrl', $fiscalYear) }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Ladda ner som iXBRL (Beta)') }}</a>
+                            <p class="text-xs text-gray-500">{{ __('Samma årsredovisning som PDF:en, som en fil avsedd för digital inlämning till Bolagsverket. NONOX lämnar inte in filen åt dig än, och fastställelseintyget skrivs under hos Bolagsverket, inte i NONOX. Går en rad inte att märka upp får du veta vilken.') }}</p>
+                        </div>
+                    @endif
                 </form>
             </x-ui.card>
 

@@ -6,6 +6,7 @@ namespace App\Modules\Peppol\Models;
 
 use App\Models\Invoice;
 use App\Modules\Peppol\Domain\TransmissionStatus;
+use App\Modules\Peppol\Jobs\TransmitPeppolDocument;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -59,6 +60,32 @@ class PeppolTransmission extends Model
             'delivered_at' => 'immutable_datetime',
             'failed_at' => 'immutable_datetime',
         ];
+    }
+
+    /**
+     * What went wrong, in Swedish, for the person on the invoice page. The
+     * provider's own text stays in last_error for the operator and is never
+     * shown: it is in English and can name codes nobody can act on.
+     */
+    public function supportText(): ?string
+    {
+        if ($this->status === TransmissionStatus::Queued) {
+            return match (true) {
+                $this->last_error === TransmitPeppolDocument::PAUSED => (string) __('Väntar: Peppol är tillfälligt avstängt av den som driftar NONOX. E-fakturan skickas när Peppol är på igen.'),
+                $this->last_error !== null => (string) __('Peppol-operatören svarade inte. NONOX försöker igen automatiskt med längre och längre mellanrum.'),
+                default => null,
+            };
+        }
+
+        if ($this->status !== TransmissionStatus::Failed) {
+            return null;
+        }
+
+        return match (true) {
+            $this->refused => (string) __('Peppol-operatören tog inte emot e-fakturan. Kontrollera kundens Peppol-ID och fakturans uppgifter och skicka igen. Kvarstår felet, kontakta den som driftar NONOX.'),
+            $this->provider_reference !== null => (string) __('E-fakturan kom fram till Peppol-operatören, men mottagarens operatör tog inte emot den. Kontrollera Peppol-ID:t med kunden och skicka igen, eller skicka fakturan med e-post.'),
+            default => (string) __('Peppol-operatören gick inte att nå. Skicka igen om en stund. Det blir samma e-faktura, så kunden får den inte två gånger.'),
+        };
     }
 
     /** @return BelongsTo<Invoice, $this> */

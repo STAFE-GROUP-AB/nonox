@@ -16,7 +16,7 @@ use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
- * NONOX Connect's settings under Moduler (ADR-032): which apps may ask for
+ * NONOX API's settings under Moduler (ADR-032): which apps may ask for
  * access, and an optional list of addresses the API may be called from.
  */
 class ConnectSettingsForm extends Component
@@ -56,7 +56,7 @@ class ConnectSettingsForm extends Component
             'ip_allowlist' => $this->ipAllowlist,
         ]);
 
-        $this->toast(__('Inställningarna för NONOX Connect är sparade.'));
+        $this->toast(__('Inställningarna för NONOX API är sparade.'));
     }
 
     public function render(): View

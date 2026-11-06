@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.104
-- Datum: 2026-11-05
+- Version: 0.115
+- Datum: 2026-11-06
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -690,6 +690,11 @@ year").
   den gäller ett annat organisationsnummer, om en verifikation inte
   balanserar eller ligger utanför räkenskapsåret, om verifikationerna redan är
   inlästa, om räkenskapsåret är stängt eller om perioden är låst.
+- Filen läses inte heller in om dess ingående balanser (`#IB`) inte summerar till
+  noll. Rapporten visar summan, och ingen bokföring skapas på en öppningsbalans
+  som inte går ihop. Rapporten efter inläsningen säger att varje konto stämmer
+  med filen bara när utgående balanser eller resultat fanns att jämföra; annars
+  anges att bara antalet verifikationer har kontrollerats.
 - Allt läses in i en enda databastransaktion: räkenskapsår, konton, serier,
   ingående balanser och verifikationer. Verifikationerna bokförs som vanliga
   bokförda verifikationer med källan "SIE-import" och ingår i kedjan av
@@ -789,6 +794,10 @@ year").
   under. Ingenting bokförs av utskicket; momsen bokförs som förut.
   Behandlingshistoriken får `vat.skatteverket_checked`, `vat.skatteverket_sent`
   och `vat.skatteverket_refreshed`.
+
+#### Bekräftelse före inlämning och betalfil
+
+Före varje inlämning till en myndighet och varje betalfil kräver NONOX att den som skickar har kryssat i **Jag har granskat siffrorna**: kunden, inte NONOX, ansvarar för att uppgifterna är riktiga. Det gäller momsdeklarationen till Skatteverket, arbetsgivardeklarationen (AGI) till Skatteverket, betalfiler för leverantörsbetalningar (pain.001) och lönefilen. Kravet kontrolleras i åtgärden (`App\Support\Review\ReviewConfirmation`), inte bara i gränssnittet; utan bekräftelse avvisas anropet innan något skickas eller skapas. Varje bekräftelse skrivs i behandlingshistoriken som `figures.reviewed` med användare, filtyp och objektets id, aldrig fri text. Nedladdningar av redan skapade filer (SRU, SIE, momsfilen, AGI-filen) är utdrag och inte inlämningar och kräver ingen bekräftelse.
 
 ### 4.14 Årsskifte
 
@@ -1361,6 +1370,30 @@ Peppol-operatör (accesspunkt); NONOX är inte själv en accesspunkt.
   utgående och ingående moms. Kreditnotor från leverantörer bokförs med
   omvända belopp och kvittas mot en faktura eller betalas tillbaka
   ([ADR-016](../adr/ADR-016-supplier-credit-and-foreign-purchases.md)).
+- Import av varor från länder utanför EU
+  ([ADR-057](../adr/ADR-057-import-vat.md)): leverantörens faktura
+  registreras med momshanteringen *Varor från ett land utanför EU (import)*
+  och bokförs utan moms på det kostnadskonto användaren väljer. Importmomsen
+  bokförs från Tullverkets tullräkning som en vanlig verifikation: formuläret
+  *Importmoms från tullräkning* under Ny verifikation räknar fram raderna ur
+  tullvärde, tull och avgifter och bikostnader per momssats
+  (mervärdesskattelagen 2023:200 8 kap. 24–27 §§), användaren kontrollerar
+  dem, bifogar tullräkningen och bokför med samma kontroller som andra
+  verifikationer. Underlaget debiteras 4085–4087 (handelsvaror) eller
+  4545–4547 (råvaror och material), ruta 50, och krediteras 4080 eller 4540
+  så att resultatet inte påverkas; momsen, satsen på underlaget per sats
+  avrundad till hela ören, krediteras 2615/2625/2635 (ruta 60–62) och
+  debiteras 2645 (ruta 48). Verifikationen får tullräkningens datum, så momsen
+  redovisas i den perioden både med fakturametoden och kontantmetoden (7 kap.
+  27 och 41 §§). Ett ändrat beslut som sänker underlaget bokförs med samma
+  rader åt andra hållet, med datumet för Tullverkets ändrade beslut (vilken
+  period ett sådant beslut hör till är inte bekräftat, `TODO(legal-verify)`).
+  Kontona 4085–4087 och 4545–4547 avvisas på leverantörens faktura med
+  momshanteringen import, eftersom de ger ruta 50 och underlaget annars
+  skulle räknas två gånger. Saknade BAS-konton läggs till och skrivs till
+  behandlingshistoriken. Full avdragsrätt antas (`TODO(legal-verify)`), och
+  motkontot 4080/4540 är ett eget val eftersom BAS 2026 saknar ett
+  (`TODO(legal-verify)`).
 - Leverantörsfakturor i utländsk valuta
   ([ADR-025](../adr/ADR-025-exchange-differences.md)): fakturan sparar valuta
   (ISO 4217), beloppet i valutan (i hundradelar) och kursen den bokförs till
@@ -1492,6 +1525,64 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
 - **Valuta.** Betalfiler betalar bara kronor, så kursdifferenser uppstår inte
   här. Ett svar i annan valuta bokförs inte automatiskt.
 
+### 5a1c. Betalfiler i utländsk valuta
+
+([ADR-014](../adr/ADR-014-payment-files.md), tillägget om utländsk valuta, och
+[ADR-025](../adr/ADR-025-exchange-differences.md)). Koden finns i
+`App\Domain\Payables\ForeignPayment`, `App\Support\Pain001\CreditTransferFile`,
+`App\Actions\Payables\CreatePaymentBatch` och `ApplyPaymentResponses`.
+
+- **Vad som kan tas med.** En attesterad leverantörsfaktura i annan valuta än
+  kronor, för banker vars egen guide för utlandsbetalningar är genomgången
+  (`PaymentBank::foreignPayments()`: Handelsbanken och Nordea). Valutan ska
+  vara AUD, CAD, CHF, CZK, DKK, EUR, GBP, NOK, PLN eller USD. Betalningen
+  görs i fakturans valuta från företagets kronokonto; det som återstår i
+  valutan betalas. Leverantörens namn, IBAN, BIC, land och adress hämtas ur
+  leverantörsunderlaget från när fakturan registrerades (för äldre
+  underlag utan land gäller IBAN:s landskod, och utan ort kan fakturan inte
+  betalas via fil); betalningskoden hämtas ur registret nu eftersom den inte
+  kan styra om pengar.
+- **Filen.** Betalningarna delas i ett `PmtInf` per valuta (kronor först; en
+  SEPA-betalning i euro för sig). Första blocket har filens meddelande-id som
+  `PmtInfId`, övriga `<meddelande-id>/2`, `/3` …, och varje betalning sparar
+  sitt block (`payment_info_id`). Varje utlandsbetalning har `InstdAmt` i
+  valutan, `ChrgBr` SLEV för SEPA-betalning i euro och SHAR annars,
+  mottagarens agent som BIC, mottagaren med namn och adress (land, ort,
+  postnummer, adressrad), kontot som IBAN och meddelandet "Invoice <nummer>".
+  Betalningen markeras med Skatteverkets betalningskod (`RgltryRptg`) om
+  leverantören har en; den krävs när betalningen, räknad med fakturans kurs,
+  överstiger 120 000 kronor (150 000 kronor med 25 procents marginal för
+  bankens kurs). Texterna rensas till SWIFT-tecken (a–z, 0–9, `/ - ? : ( ) . , ' +`
+  och mellanslag; å, ä, ö blir a, a, o) och kortas till bankernas längder
+  (namn och adressrad 70, ort 35, postnummer 16, meddelande 140). En
+  betalfil har betalningar i en valuta. IBAN kontrolleras (landets längd och
+  kontrollsiffror, mod 97) när leverantören sparas och när filen görs. Källor: se ADR-014, tillägget.
+- **Belopp i filen.** Posten i betalfilen (`supplier_payment_batch_items`)
+  sparar valutan, beloppet i valutan (`foreign_amount_minor`) och, i
+  `amount_ore`, de kronor som väntas till fakturans kurs. Betalfilens
+  `total_ore` är bara kronor; belopp i valuta summeras per valuta.
+- **Bokföring.** Ingenting bokförs när filen skapas eller godkänns, och
+  filen kan inte markeras som betald för hand så länge en betalning i valuta
+  väntar. Betalningen bokförs först när bankens debiteringsavisering (camt.054
+  eller camt.053) visar att den är dragen: avisering med de kronor banken tog
+  (`Ntry/Amt`) och det beställda beloppet (`AmtDtls/InstdAmt`). Den bokförs
+  via `PaySupplierInvoice` i serie E på bankens bokföringsdag: 2440 debet med
+  fakturans andel i kronor, 1930 kredit med bankens kronor och skillnaden på
+  7960 (förlust, debet) eller 3960 (vinst, kredit), exakt som en betalning
+  registrerad för hand (ADR-025). Automatiskt bara när aviseringen gäller
+  exakt den betalningen (på referens), valutan och beloppet i valutan stämmer
+  med filen, kronorna ligger inom 5 procent (minst 500 och högst 5 000 kronor) av
+  Riksbankens kurs på bokföringsdagen, eller av fakturans kurs när
+  Riksbankens kurs inte kan hämtas, och filen är godkänd. Saknas det beställda beloppet, avviker kronorna mer, eller
+  gäller aviseringen flera betalningar i ett belopp, bokförs inget
+  automatiskt; en person bekräftar förslaget eller beloppet avvisas.
+  En avisering i valuta utan kronor bokförs inte.
+- **Bankens statusrapport** för ett betalningsblock (pain.002 utan
+  end-to-end-id men med blockets `PmtInfId`) gäller bara betalningarna i det
+  blocket.
+- **Leverantörsregistret** har land och betalningskod
+  (`suppliers.payment_code`, tre siffror).
+
 ## 5a2. Anläggningsregister
 
 - Under Bokföring → Anläggningar registreras tillgångar som skrivs av över
@@ -1607,6 +1698,54 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   som ingen banktransaktion bokförd senast datumet är matchad mot. Personen
   kontrollerar och sparar som vanligt; inget sparas automatiskt.
 
+## 5a4a. Skattekontot (ADR-054 etapp 3)
+
+- Under Bokföring → Skattekontot hämtas företagets skattekonto genom
+  Skatteverkets API Skattekonto v2 (RAML 2.1.0) när en person med
+  behörigheten att se rapporter klickar: saldot (Skatteverkets och
+  Kronofogdens del, preliminär ränta, OCR-nummer, nästa avstämningsdag),
+  tidigare och kommande transaktioner och utbetalningsspärrar. Personen
+  loggar in hos Skatteverket med e-legitimation; Skatteverket avgör vid varje
+  anrop om personen får ta del av skattekontot. Utbetalningskontot hämtas inte.
+- Saldot på 1630 räknas som vid bankavstämningen: ingående balans plus
+  bokförda verifikationer till och med avstämningsdagen. Är avstämningsdagen i
+  dag jämförs med den dag skattekontot senast uppdaterades. Skillnaden är 1630
+  minus Skatteverkets del av skattekontot; Kronofogdens del visas för sig.
+- En transaktion räknas som bokförd när den är bokförd från skattekontot,
+  när en bokförd verifikation ändrar 1630 med exakt samma belopp samma dag
+  (transaktionsdagen eller ränteberäkningsdagen), eller när dagens återstående
+  transaktioner tillsammans är exakt en verifikation den dagen. Varje
+  verifikation används en gång. Verifikationer som inte motsvaras av en
+  transaktion visas för sig. En rättad verifikation används aldrig, och inte
+  heller en rättelse som bara vänder den.
+- En transaktion som saknas bokförs bara när en person med behörigheten att
+  bokföra verifikationer har valt motkonto och bekräftat. Transaktionen läses
+  då på nytt från Skatteverket och måste fortfarande saknas. Den bokförs som
+  en verifikation i serie A, daterad transaktionsdagen, med 1630 mot det valda
+  kontot och Skatteverkets text som beskrivning, genom samma utkast och
+  bokföring som en verifikation som skrivs in för hand (källa MANUAL, med
+  hänvisning till raden i `tax_account_postings`). Kronofogdens transaktioner
+  och transaktioner utan belopp bokförs för hand.
+- `tax_account_postings` sparar per företag Skatteverkets transaktions-id,
+  datum, belopp, motkonto och vem som bekräftade. En rad i kraft per
+  transaktion: samma transaktion kan inte bokföras två gånger. Har
+  verifikationen rättats får transaktionen bokföras igen, och den tidigare
+  raden markeras då som ersatt (`superseded_at`) i samma transaktion. Raderna
+  kan inte ändras eller tas bort (modellen och en PostgreSQL-trigger), utom att
+  markeras som ersatta en gång. Inget annat från skattekontot sparas. Bokföringen skrivs i behandlingshistoriken
+  (`tax_account.transaction_booked`) med transaktions-id, belopp, konto,
+  föreslaget konto och verifikationsnummer.
+- Motkontot föreslås bara för texter i Skatteverkets egna exempel (inbetalning,
+  moms, arbetsgivaravgift och avdragen skatt med månad, debiterad
+  preliminärskatt och intäktsränta för juridiska personer), och förväljs bara
+  när kontot är aktivt i kontoplanen. För arbetsgivaravgift förväljs 2730 när
+  lönemodulen är påslagen och kontot finns (lönemodulen bokför skulden där),
+  annars det av 2730 och 2731 som finns, och finns båda det med kreditsaldo.
+  Hämtningen är begränsad till fem gånger per person och minut.
+  `TODO(legal-verify)`: om skattekontoutdraget ska sparas som verifikation
+  utöver uppgifterna från API:et, och hur preliminärskatt och ränta bokförs i
+  enskild firma och handelsbolag.
+
 ## 5a5. Bokslut
 
 - Under Bokföring → Bokslut görs bokslutet per räkenskapsår i fyra steg.
@@ -1628,10 +1767,54 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   verifikationen gjorts manuellt, till exempel när Riksbanken saknar kurs.
 - **Bokslutsverifikationer** bokförs den sista dagen i året i serie A.
   Skatten (8910 mot 2512) anges av användaren; noll sparas utan verifikation.
-  Därefter bokas årets resultat efter skatt på 8999 mot 2099 (2019 för
+  För aktiebolag och ekonomiska föreningar räknar NONOX fram ett förslag
+  (nästa punkt) som användaren bekräftar i stället. Därefter bokas årets resultat efter skatt på 8999 mot 2099 (2019 för
   enskild firma, handelsbolag och kommanditbolag), så att resultaträkningen
   går jämnt ut. Bokförs något i året efteråt bokas mellanskillnaden på samma
   sätt. Saknade konton läggs till med BAS-namn.
+- **Förslag till årets skatt** (aktiebolag och ekonomisk förening,
+  [ADR-056](../adr/ADR-056-tax-in-the-closing.md); Beta, enligt AI-utredning
+  2026-11-06, juristgranskning återstår): först svarar användaren för
+  räkenskapsåret om företaget är ett privatbostadsföretag (IL 2 kap. 17 §,
+  till exempel en bostadsrättsförening) eller ett investmentföretag (39 kap.
+  14 §). Svaret sparas i `closing_checks` (nycklarna `tax_ordinary`,
+  `tax_private_housing`, `tax_investment`) och i behandlingshistoriken
+  (`closing.tax_status_answered`). Utan svaret "inget av dem" görs inget
+  förslag och skatten bokförs med eget belopp (39 kap. 25 §, 30 kap. 1 §).
+  Därefter räknar `TaxProposal` rad för rad
+  fram bokfört resultat före skatt, justeringarna i INK2S (ifyllda under
+  Inkomstdeklaration, eller förslag ur bokföringen: kostnader på 6072, 6982,
+  6992 och 8423 läggs till i fält 7653 och intäkter på 8314 dras av i fält
+  7754, schablonintäkten i fält 7654), återföring av periodiseringsfonder
+  (äldst först, i öre så att en helt återförd fond blir noll; en fond ska
+  återföras senast det sjätte beskattningsåret efter avsättningen, räknat i
+  företagets räkenskapsår när fondens år finns i NONOX och annars i
+  kalenderår, med det som redan återförts i året avräknat; lägre återföring
+  vägras, IL 30 kap. 7 §),
+  överskottet före årets avsättning, årets avsättning (frivillig, högst 25
+  procent av överskottet, IL 30 kap. 5 §), skattemässigt överskott eller
+  underskott, beskattningsbar inkomst avrundad nedåt till helt tiotal kronor
+  (IL 1 kap. 7 §) och skatten med årets skattesats (20,6 procent för år som
+  börjar 2021 eller senare, IL 65 kap. 10 §). Reglerna ligger som data med
+  källa i `database/data/corporate-tax/rules.json`; ett år utan skattesats
+  får inget förslag. Ingenting bokförs automatiskt: först när en person med
+  `fiscal-years:manage` bekräftar beloppet som visades, och inget hinder
+  återstår, bokförs en
+  verifikation i serie A den sista dagen med återföringen (fondkontot mot
+  8819), avsättningen (8811 mot 2120 + årets slutsiffra, eller 2130 + siffran
+  när det första kontot redan har ett saldo) och skatten (8910 mot 2512),
+  genom `SaveDraftVoucher` och `PostVoucher`. Har skatten ändrats sedan
+  beloppet visades vägras bekräftelsen. Bekräftelsen vägras också när
+  företaget har periodiseringsfonder vid årets början men schablonintäkten
+  (fält 7654) saknas (IL 30 kap. 6 a §). Bekräftelserutan räknar upp de rader
+  som bokförs. Förslaget erbjuds inte när skatt
+  redan är bokförd på 8900–8989, och fonddelen utelämnas när en fond redan
+  är bokförd i året. Bekräftelsen sparas som `TAX` i `year_end_entries` och i
+  behandlingshistoriken (`closing.tax_proposal_confirmed` med skatt,
+  skattesats, belopp, fondkonto och verifikation). Den görs en gång; en fel
+  verifikation rättas med en rättelseverifikation. Enskild firma,
+  handelsbolag och kommanditbolag får bara en upplysning om att skatten tas
+  ut hos ägarna; ideella föreningar och stiftelser bokför skatten för hand.
 - **Stäng året.** Kräver att hela checklistan är klar, att tidigare år är
   stängda och behörigheten att låsa perioder. Utgående balanser förs till
   nästa år (som skapas vid behov), året får status stängt med tid och person,
@@ -1699,6 +1882,18 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   resultat- och dispositionspost sparas i
   `year_end_entries`, som databasen inte låter ändra eller ta bort.
 - Bokslutet kräver behörigheten att hantera räkenskapsår.
+- **K2-villkoren bekräftas en gång (ägarbeslut 16).** För ett K2-företag vars
+  räkenskapsår börjar efter 2025-12-31 visar bokslutet villkoren i BFNAR
+  2016:10 punkt 1.1A–1.1C enligt BFNAR 2025:2 (samma text som vid val av K2) och
+  kräver en bekräftelse innan bokslutet fortsätter: checklistan har punkten
+  "K2-villkoren är bekräftade" och åtgärderna i bokslutet (bocka av punkter,
+  skatt, resultat, obetalda fakturor, omvärdering, stängning) vägras tills den
+  är gjord. Bekräftelsen sparas på företaget (`k2_conditions_confirmed_at`
+  och `_by`), gäller alla senare år och skrivs i behandlingshistoriken
+  (`company.k2_conditions_confirmed`, bara id:n). Ett företag som bekräftade
+  villkoren när det valde K2 efter ändringen får tidsstämpeln direkt och
+  frågas inte. Behörighet: att hantera räkenskapsår, som övriga åtgärder i
+  bokslutet. TODO(legal-verify): att en bekräftelse per företag räcker.
 
 ## 5a6. Årsredovisning (K2)
 
@@ -1784,9 +1979,52 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   resultatdispositionen; finns ingen lämnas tomma rader. Bolagsverkets
   formkrav har inte kunnat läsas. Enligt granskning 2026-11-02,
   juristgranskning återstår (BS-AUD-BOK-10, #91).
+- Belopp i hela kronor (sedan 2026-11-06, `PrintedFigures`): varje rad
+  avrundas till närmaste krona, en halv krona bort från noll, och varje
+  delsumma, avsnittssumma och total är summan av de avrundade raderna; förut
+  kapades öret på varje belopp för sig. Årets resultat i balansräkningen är
+  resultaträkningens avrundade resultat. Skiljer tillgångar och eget kapital
+  och skulder efter avrundningen läggs skillnaden på Övriga skulder
+  (kortfristiga). I förändringar i eget kapital tas ingående och utgående
+  belopp ur den avrundade balansräkningen och det som avrundningen lämnar i
+  en kolumn läggs på Balanseras i ny räkning (annars Övriga förändringar,
+  annars Utdelning). Fritt eget kapital i resultatdispositionen är
+  balansräkningens avrundade belopp. Gränsen för utdelning
+  (`DividendLimit`) räknas fortfarande exakt i öre. Var en
+  avrundningsdifferens ska stå är inte juridiskt kontrollerat.
 - Rapporten visas som sida och laddas ner som PDF. Revisionsberättelsen
   läggs till utanför systemet. Digital inlämning till
   Bolagsverket (iXBRL) finns ännu inte.
+- För ett aktiebolag kan samma rapport laddas ner som iXBRL-fil (XHTML med
+  märkta uppgifter enligt taxonomin K2 aktiebolag 2024-09-12 och
+  fastställelseintyget 2020-12-01), i beta (ADR-058, etapp E.2). Filen byggs
+  ur samma uppgifter som PDF:en (`AnnualReportDocument::data()`), med samma
+  belopp i hela kronor; ingenting bokförs, sparas eller skickas. Har
+  årsredovisningen en rad, not eller text som taxonomin saknar en
+  motsvarighet till (till exempel Maskiner och inventarier som en rad), eller
+  saknas texten om verksamheten, görs ingen fil och användaren får veta vad
+  det gäller. Fastställelseintyget tas med när fastställelsedagen är
+  ifylld; det skrivs under hos Bolagsverket, inte i NONOX. Är
+  `BOLAGSVERKET_TAXONOMY_DIR` satt kontrolleras varje begrepp mot taxonomin
+  innan filen lämnas ut.
+- Årsredovisningen görs bara för ett företag vars regelverk är K2 (sedan
+  2026-11-06, ADR-059 etapp F.1). Dokumentet skriver i not 1 att det följer
+  BFNAR 2016:10 och iXBRL-filen märks enligt K2-taxonomin, vilket inte stämmer
+  för ett företag som har valt K3 (BFNAR 2012:1). För ett aktiebolag eller en
+  ekonomisk förening med K3 (eller K1) visar sidan en förklaring i stället för
+  formuläret; förhandsvisningen, PDF:en och iXBRL-filen nekas (403) och
+  texterna kan inte sparas. Inkomstdeklaration 2 tas fram som förut, eftersom
+  den följer företagsformen. Arkivpaketet innehåller ingen årsredovisning,
+  varken för K2 eller K3. Ingenting i bokföringen ändras.
+- Villkoren för K2 som användaren bekräftar när företaget skapas eller
+  regelverket ändras omfattar för aktiebolag och ekonomiska föreningar även
+  BFNAR 2016:10 punkt 1.1A–1.1C i lydelsen enligt BFNAR 2025:2 (räkenskapsår
+  som börjar efter den 31 december 2025). Företag som redan har bekräftat K2
+  behöver inte bekräfta på nytt; det är ett mänskligt beslut (ADR-059).
+  Enligt AI-utredning 2026-11-06, juristgranskning återstår.
+- K2-dokumentet och K2-iXBRL-filen jämförs byte för byte med låsta filer i
+  `tests/Fixtures/annual-report/`, så att arbetet med K3 inte kan ändra dem
+  av misstag.
 - Kräver behörigheten att hantera räkenskapsår.
 
 ## 5a7. Inkomstdeklaration 2 (SRU)
@@ -1806,6 +2044,14 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   konsult biträtt och om årsredovisningen reviderats. Överskott eller
   underskott förs till INK2 punkt 1.1 eller 1.2. Justeringarna sparas i
   `income_tax_returns`.
+- Ej avdragsgilla kostnader och skattefria intäkter (INK2S 4.3 c, fält 7653,
+  och 4.5 c, fält 7754; ADR-056): systemet föreslår nettot på 6072, 6982,
+  6992 och 8423 (kostnader som inte får dras av, IL 16 kap. 2 §, 9 kap. 8
+  och 9 §§) och på 8314 (skattefria räntor, IL 8 kap. 7 §), avrundat till
+  hela kronor. Kontona är data med källa i
+  `database/data/corporate-tax/rules.json`. Ett inmatat belopp ersätter
+  förslaget, även 0. Enligt AI-utredning 2026-11-06, juristgranskning
+  återstår.
 - Schablonintäkt på periodiseringsfonder (INK2S 4.6 a, fält 7654, IL 30 kap.
   6 a §): systemet föreslår ingående saldo på 2110–2149 vid
   beskattningsårets ingång × statslåneräntan vid utgången av november året
@@ -2269,6 +2515,32 @@ lönebeskeden låsta i databasen.
   reglerna, och den anställdes egen betalning dras från nettolönen och sänker
   förmånsvärdet. Förmånsvärdet bokförs inte som en egen kostnad; den verkliga
   kostnaden bokfördes vid inköpet och avgifterna på förmånen ligger i 7510.
+- Bilförmån räknas av NONOX för bilar i registret Lön → Förmånsbilar
+  ([ADR-061](../adr/ADR-061-car-benefit.md)): årsvärdet är 0,29
+  prisbasbelopp + nybilspris × (70 % av statslåneräntan i november året före,
+  lägst 0,5 %, + 1 %) + 13 % av nybilspriset + fordonsskatten
+  (inkomstskattelagen 61 kap. 5 §), med extrautrustning (8 §), lägst fyra
+  prisbasbelopp för en bilmodell sex år eller äldre (7 §), nedsättning för
+  miljöbil (8 a §) och 75 % vid minst 3 000 mil i tjänsten (9 §). Varje del
+  avrundas nedåt till hela kronor. Den ordinarie lönekörningen tar med en
+  tolftedel som löneart Bilförmån för varje månad den anställda har bilen
+  någon dag, med beräkningen i radens förklaring, och den anställdas egna
+  betalning som Egen betalning för förmån (7388). Bilar som blev
+  skattepliktiga före 1 juli 2021, miljöbilar före 1 juli 2022 och två bilar
+  samma månad räknas inte: körningen stoppas tills värdet läggs in för hand.
+  En bil som funnits med i en attesterad månad kan bara få en sista dag, och
+  en period får inte ta in en attesterad månad som bilen inte fanns i.
+  Bokföringen är densamma som när värdet skrevs in för hand.
+- Drivmedelsförmån skrivs in som förmånsvärdet (marknadsvärdet × 1,2,
+  inkomstskattelagen 61 kap. 10 §). Skatteavdraget räknas på förmånsvärdet,
+  arbetsgivaravgiften på marknadsvärdet (förmånsvärdet / 1,2, avrundat till
+  öre; socialavgiftslagen 2 kap. 10 a § punkt 2). Den anställdas betalning för
+  drivmedlet minskar båda och bokförs i kredit på 7388; arbetsgivar-
+  deklarationen har hela förmånsvärdet i ruta 018 och betalningen i ruta 098.
+  Lönearten Drivmedelsförmån kan bara läggas in, för hand eller från en
+  lönefil, för en anställd som har en förmånsbil i registret som gäller någon
+  dag i månaden; drivmedel till en egen bil är vanlig lön och inte en förmån
+  (inkomstskattelagen 61 kap. 10 a §).
 - Milersättning och inrikes traktamente är skattefria upp till reglernas belopp
   och betalas med nettolönen (7331, 7321); det som betalas över blir
   skattepliktig lön (7332, 7322).
@@ -2775,7 +3047,17 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
   förfallodag, bankgiro, plusgiro eller IBAN och OCR. Okänd leverantör,
   ändrade betaluppgifter och dubbletter ger varningar. Godkännandet går genom
   `SaveSupplierInvoice` och `RegisterSupplierInvoice` som vanligt;
-  originalet kopplas som underlag.
+  originalet kopplas som underlag. Öresavrundning som står i e-fakturan
+  (BT-114, `PayableRoundingAmount`) blir en egen rad på konto 3740 i
+  förslaget när raderna, momsen och avrundningen tillsammans blir beloppet
+  att betala; annars varnar inkorgen (`PEPPOL_SUM`).
+- **Driftstörningar.** Svarar operatören inte när ett dokument hämtas ligger
+  det kvar hos operatören och hämtas vid nästa kontroll; fönstret för
+  kontrollen flyttas inte förbi dokument som inte har hämtats. Den som
+  driftar NONOX kan pausa Peppol (`NONOX_PEPPOL_PAUSED`): då hämtas och
+  skickas ingenting, webhooken svarar 503 så att operatören skickar igen,
+  och e-fakturor som väntar på att skickas skickas en gång när pausen tas
+  bort (samma dokument och samma idempotensnyckel).
 - E-postkontrollerna (lista över godkända avsändare, SPF/DKIM/DMARC) gäller
   inte Peppol, där avsändaren identifieras av sin accesspunkt.
 
@@ -2926,8 +3208,16 @@ betalningar görs fortfarande med betalfiler som signeras i banken.
   bort matchningen. Modulen skapar eller bokför aldrig verifikationer själv.
 - **Medgivandets slut.** Den som får hantera Bank får e-post en gång före
   slutdatumet (standard 14 dagar) och ser det under Att göra. När banken
-  inte längre godtar medgivandet markeras kopplingen som utgången utan att
-  något annat påverkas. Bortkoppling ber leverantören avsluta medgivandet;
+  inte längre godtar medgivandet, eller slutdatumet har passerat, markeras
+  kopplingen som utgången utan att något annat påverkas; efter slutdatumet
+  frågas banken inte.
+- **Driftstörningar.** En hämtning som misslyckas försöks igen efter 15
+  minuter, 1, 4 och 12 timmar och sedan en gång per dygn; en köad hämtning
+  släpps tillbaka i kön högst två gånger. Hämtningen är idempotent, så ett
+  nytt försök sparar aldrig en transaktion två gånger. Efter tre misslyckade
+  försök i rad visas det under Att göra. Den som driftar NONOX kan pausa
+  leverantören (`NONOX_BANKING_PAUSED`): då frågas den inte alls, inget
+  markeras som fel, och det som redan har hämtats finns kvar. Bortkoppling ber leverantören avsluta medgivandet;
   sessionen glöms även om leverantören inte svarar.
 - **Säkerhet.** Session, leverantörens kontoid och IBAN lagras krypterade
   och skrivs aldrig i loggar eller behandlingshistorik. Svaret från banken
@@ -3662,9 +3952,10 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   BFNAR 2006:1 säger vad som ska bokföras, inte hur det tas bort), och i
   vilken momsperiod momsen på dem redovisas (Mervärdesskattelag 2023:200,
   7 kap.).
-- Import av varor från länder utanför EU (ruta 50, 60–62) är inte byggd ännu;
-  vilket datum som styr växelkursen för varor från andra EU-länder ska
-  bekräftas.
+- Import av varor från länder utanför EU (ADR-057): att motkontot 4080/4540
+  för underlaget är godtagbart när BAS 2026 saknar ett eget, och hur
+  begränsad avdragsrätt ska hanteras; vilket datum som styr växelkursen för
+  varor från andra EU-länder ska bekräftas.
 - Leverantörsfakturor i utländsk valuta: att Riksbankens mittkurs på
   fakturadatumet är rätt bokföringskurs (ML 8 kap. 21 § nämner ECB:s kurs
   för momsens beskattningsunderlag); att realiserade kursdifferenser på
@@ -3980,3 +4271,14 @@ kontrollerat dem mot källan. Särskilt:
 | 0.102 | 2026-11-04 | Sista dagar för moms och arbetsgivardeklaration (också: helårsmoms för ideell förening och stiftelse den 26:e i andra månaden efter året när det inte är känt att de lämnar inkomstdeklaration, och inköp av tjänster utanför EU, ruta 22, räknas som EU-handel) (avsnitt om översikten, ADR-051 etapp 2): en dag flyttas förbi lördag, söndag, helgdag, midsommarafton, julafton och nyårsafton (lag (1930:173) 2 §); arbetsgivardeklarationens dag räknas enligt SFL 26 kap. 26, 30 och 32 §§ för varje år, med Skatteverkets lista som kontroll, och den större gruppen betalar den 12:e (den 17:e i januari) före deklarationen den 26:e (SFL 62 kap. 3 §). Arbetsgivardeklarationens grupp följer företagets egna uppgifter för moms och omsättning, inte löneinställningen. Mina datum räknar fram företagets datum utan att ändra bokföringen. |
 | 0.103 | 2026-11-05 | NE-bilagan för enskild firma och Inkomstdeklaration 4 för handelsbolag och kommanditbolag ur bokföringen som SRU-filer (avsnitt 5a8, ADR-053): fält ur BAS-kontona, räntefördelning, periodiseringsfond, expansionsfond och schablonavdrag för egenavgifter beräknade ur det användaren bekräftar, årets parametrar som data med källa, delägare med krypterade person- och organisationsnummer; ingenting bokförs. |
 | 0.104 | 2026-11-05 | Momsdeklarationen till Skatteverket genom Skatteverkets API (avsnitt 4.13, ADR-054): inloggning hos Skatteverket med e-legitimation, kontroll, utkast låst för underskrift, kvittens och beslutade belopp; ingenting bokförs av utskicket. |
+| 0.105 | 2026-11-06 | Lansering av Bank och Peppol (avsnitt 5g och 5e.1, tillägg till ADR-034 och ADR-050): nödstopp per leverantör som pausar hämtning och sändning utan att nycklarna tas bort, nya försök med växande pauser när leverantören inte svarar, medgivanden som har passerat slutdatumet markeras som utgångna utan att banken frågas, och öresavrundning i en mottagen e-faktura blir en egen rad på konto 3740 i förslaget till leverantörsfaktura som en person attesterar. |
+| 0.106 | 2026-11-06 | Förslag till årets skatt i bokslutet för aktiebolag och ekonomiska föreningar (avsnitt 5a5, ADR-056): beräkningen rad för rad ur bokföringen och inkomstdeklarationen, med återföring av och avsättning till periodiseringsfond, avrundning nedåt till helt tiotal kronor och årets skattesats som data med källa; en verifikation med fond och skatt bokförs först när en person har svarat att företaget varken är privatbostadsföretag eller investmentföretag och bekräftar beloppet; återföring under det som ska återföras och saknad schablonintäkt vägras. Fält 7653 och 7754 i INK2S föreslås ur BAS-kontona för ej avdragsgilla kostnader och skattefria intäkter. |
+| 0.107 | 2026-11-06 | Import av varor från länder utanför EU (ADR-057, avsnittet om leverantörsfakturor): momshanteringen Varor från ett land utanför EU (import) på leverantörsfakturor, utan moms från fakturan, och formuläret Importmoms från tullräkning under Ny verifikation som föreslår raderna ur tullvärde, tull och bikostnader per momssats. Underlaget på 4085–4087 eller 4545–4547 (ruta 50, nu även 4085–4087), momsen på 2615/2625/2635 (ruta 60–62) och 2645 (ruta 48), med tullräkningens datum oavsett bokföringsmetod (ML 2023:200 7 kap. 27 och 41 §§, 8 kap. 24–27 §§). Användaren bokför verifikationen själv. Kontona 4085–4087 och 4545–4547 kan inte användas på leverantörens faktura för import, så att underlaget inte räknas två gånger. Rättat samtidigt: ruta 20 läser även 4075–4077 (Inköp av handelsvaror från annat EU-land) och ruta 23 även 4065–4067 (Inköp av handelsvaror i Sverige, omvänd betalningsskyldighet) enligt BAS 2026. |
+| 0.108 | 2026-11-06 | Skattekontot från Skatteverket (avsnitt 5a4a, ADR-054 etapp 3): saldo och transaktioner hämtas och ställs mot 1630 samma dag, transaktioner paras försiktigt med verifikationer på belopp och dag (rättade verifikationer räknas inte), och en transaktion som saknas bokförs i serie A först när en person har valt motkonto och bekräftat; `tax_account_postings` kan bara läggas till och hindrar att samma transaktion bokförs två gånger, utom efter en rättelse, och inget annat från skattekontot sparas. |
+| 0.109 | 2026-11-06 | Årsredovisningen som iXBRL-fil för aktiebolag (avsnitt 5a6, ADR-058 etapp E.2): samma uppgifter och belopp som PDF:en, märkta enligt taxonomin K2 aktiebolag 2024-09-12 och fastställelseintyget 2020-12-01, i beta; en rad utan motsvarighet i taxonomin ger ingen fil; ingenting bokförs eller skickas. Årsredovisningens belopp (PDF och iXBRL) avrundas rad för rad till närmaste krona och summorna är summan av de avrundade raderna; en avrundningsdifferens i balansräkningen läggs på Övriga skulder. |
+| 0.110 | 2026-11-06 | Årsredovisningen bara enligt K2 (avsnitt 5a6, ADR-059 etapp F.1): ett aktiebolag eller en ekonomisk förening som har valt K3 (eller K1) får en förklaring i stället för en årsredovisning enligt K2; förhandsvisning, PDF och iXBRL nekas och texterna sparas inte; inkomstdeklarationen påverkas inte. Villkoren för K2 omfattar BFNAR 2016:10 punkt 1.1A–1.1C enligt BFNAR 2025:2. Ingenting bokförs. |
+| 0.111 | 2026-11-06 | Betalfiler i utländsk valuta (avsnitt 5a1c, ADR-014 tillägget): en leverantörsfaktura i valuta kan betalas i valutan till ett IBAN via betalfil för Handelsbanken och Nordea; betalningen bokförs först när bankens avisering (camt.054) visar de kronor banken tog, med kursdifferensen på 3960/7960 (oförändrad bokföring, ADR-025). Ingenting bokförs när filen skapas. |
+| 0.112 | 2026-11-06 | Bilförmån räknas automatiskt (avsnitt 5b, ADR-061): registret Lön → Förmånsbilar ger varje månad en rad Bilförmån med en tolftedel av årsvärdet enligt inkomstskattelagen 61 kap. 5–9 §§ och den anställdas egna betalning (7388); förmånsvärdet bokförs som förut inte som kostnad, bara skatten och arbetsgivaravgiften på det. Äldre bilar räknas inte utan stoppar körningen. |
+| 0.113 | 2026-11-06 | Skärpt utlandsbetalning via betalfil (avsnitt 5a1c): automatisk bokföring bara inom 5 procent (500–5 000 kronor) av bankens dagskurs; betalningskod från 120 000 kronor; IBAN kontrolleras; SWIFT-tecken; en valuta per fil; land och adress ur leverantörsunderlaget. Ingen ny bokföringsregel. |
+| 0.114 | 2026-11-06 | Drivmedelsförmån rättad (avsnitt 5b, ADR-061): skatteavdraget räknas som förut på förmånsvärdet (marknadsvärdet × 1,2), men arbetsgivaravgiften nu på marknadsvärdet (socialavgiftslagen 2 kap. 10 a §); tidigare togs avgiften på hela förmånsvärdet. Den anställdas betalning för drivmedlet (löneart Egen betalning för drivmedel vid bilförmån, 7388) minskar den skattepliktiga förmånen och avgiftsunderlaget och redovisas i ruta 098, medan 018 har hela förmånsvärdet. Attesterade och bokförda löner ändras inte. Förmånsbilar: en period får inte omfatta en attesterad månad som bilen inte fanns i, och bara en bil per månad. |
+| 0.115 | 2026-11-06 | Bekräftelse och kontroller före inlämning (ägarbeslut 10 och 16): momsdeklarationen och arbetsgivardeklarationen till Skatteverket, betalfilen för leverantörsbetalningar och lönefilen kräver att användaren bekräftar "Jag har granskat siffrorna", och bekräftelsen sparas i behandlingshistoriken (`figures.reviewed`); ett K2-företag bekräftar de nya K2-villkoren (BFNAR 2025:2) en gång innan bokslutet för ett räkenskapsår som börjar efter 2025-12-31 kan fortsätta (`company.k2_conditions_confirmed`). SIE-importen stoppar en fil vars ingående balanser inte summerar till noll, och rapporten säger bara att varje konto stämmer när utgående balanser eller resultat har kontrollerats. Drivmedelsförmån kräver en förmånsbil i perioden. OCR-nummer på leverantörsfakturor kontrolleras med kontrollsiffran. Parametrarna för NE och INK4 2026 är inte längre markerade som kontrollerade, så beräkningen spärras tills en människa har kontrollerat dem. |

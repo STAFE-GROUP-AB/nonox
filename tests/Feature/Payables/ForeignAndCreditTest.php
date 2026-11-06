@@ -108,7 +108,7 @@ it('reverses a credit note, offsets it against an invoice and pays the rest by f
         ->and(linesOf($voucher))->toBe([2440 => 0]);
 
     app(SavePaymentBankSettings::class)($this->owner, $this->company, ['payment_bank' => 'SEB', 'iban' => 'SE4550000000058398257466', 'bank_agreement_id' => 'ABCDEFGHIJ']);
-    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12'));
+    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12'), true);
     expect($batch->total_ore->ore)->toBe(100_000);
 });
 
@@ -124,7 +124,7 @@ it('books money back on a credit note and refuses it in a payment file', functio
 
     $another = supplierDocument($this->owner, $this->company, $this->supplier, '50', [['amount' => '40']], credit: true, vat: '10');
     app(SavePaymentBankSettings::class)($this->owner, $this->company, ['payment_bank' => 'NORDEA', 'iban' => 'SE4550000000058398257466', 'bank_agreement_id' => 'A1']);
-    expect(fn () => app(CreatePaymentBatch::class)($this->owner, $this->company, [$another->id], CarbonImmutable::parse('2026-03-12')))
+    expect(fn () => app(CreatePaymentBatch::class)($this->owner, $this->company, [$another->id], CarbonImmutable::parse('2026-03-12'), true))
         ->toThrow(ValidationException::class);
 });
 

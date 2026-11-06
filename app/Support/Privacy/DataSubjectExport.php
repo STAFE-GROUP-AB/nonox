@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\FiscalYear;
 use App\Models\IncomeTaxPartner;
 use App\Models\Invoice;
+use App\Models\K10Owner;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\User;
@@ -92,6 +93,35 @@ final class DataSubjectExport
             'leverantor' => $supplier->only(['number', 'name', 'org_number', 'vat_number', 'email', 'phone', 'address_line1', 'postal_code', 'city', 'country', 'bankgiro', 'plusgiro', 'iban', 'bic']),
             'leverantorsfakturor' => SupplierInvoice::query()->where('supplier_id', $supplier->id)->orderBy('invoice_date')->get()
                 ->map(fn (SupplierInvoice $invoice): array => ['nummer' => $invoice->invoice_number, 'datum' => $invoice->invoice_date->toDateString(), 'belopp_ore' => $invoice->total_ore->ore, 'status' => $invoice->status->value])->all(),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public static function k10Owner(K10Owner $owner): array
+    {
+        $rows = K10Owner::query()->where('company_id', $owner->company_id)->orderBy('income_year')->orderBy('id')->get()
+            ->filter(fn (K10Owner $row): bool => $row->id === $owner->id || (filled($owner->identity) && $row->identity === $owner->identity));
+
+        return [
+            'utdrag' => self::meta('Ägare med K10-underlag'),
+            'k10_agare' => $rows->map(fn (K10Owner $row): array => [
+                'inkomstar' => $row->income_year,
+                'namn' => $row->name,
+                'personnummer' => $row->identity,
+                'kopplad_anstalld_id' => $row->employee_id,
+                'make_eller_maka_agare_id' => $row->spouse_owner_id,
+                'antal_aktier_vid_arets_ingang' => $row->shares_owned,
+                'kopte_aktierna' => $row->acquired_on?->toDateString(),
+                'agarandelar_i_andra_famansforetag_procent' => $row->other_holdings_bp === null ? null : $row->other_holdings_bp / 100,
+                'omkostnadsbelopp_kronor' => $row->cost_basis_kronor,
+                'sparat_utdelningsutrymme_kronor' => $row->saved_space_kronor,
+                'egen_kontant_ersattning_kronor' => $row->own_pay_kronor,
+                'narstaendes_kontanta_ersattning_kronor' => $row->related_pay_kronor,
+                'loner_i_foretaget_kronor' => $row->company_pay_kronor,
+                'loner_i_dotterforetag_kronor' => $row->subsidiary_pay_kronor,
+                'utdelning_kronor' => $row->dividend_kronor,
+                'har_overlatit_aktier' => $row->transferred_shares,
+            ])->values()->all(),
         ];
     }
 

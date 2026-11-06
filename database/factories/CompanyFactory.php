@@ -40,6 +40,8 @@ class CompanyFactory extends Factory
             'vat_period' => VatPeriod::Quarterly,
             'vat_registered' => true,
             'reporting_framework' => ReportingFramework::K2,
+            // As if K2 was chosen with the conditions confirmed; a test of the reconfirmation clears it.
+            'k2_conditions_confirmed_at' => now(),
             'bas_version' => CreateCompany::BAS_VERSION,
             'f_skatt' => true,
             'employer_registered' => false,

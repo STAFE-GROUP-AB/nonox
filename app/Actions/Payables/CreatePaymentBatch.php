@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Payables;
 
 use App\Actions\Accounting\AttachToVoucher;
+use App\Domain\Payables\ForeignPayment;
 use App\Domain\Payables\PaymentBank;
 use App\Domain\Payables\PaymentBatchStatus;
 use App\Domain\Payables\SupplierInvoiceStatus;
@@ -17,6 +18,7 @@ use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Pain001\CreditTransfer;
 use App\Support\Pain001\CreditTransferFile;
+use App\Support\Review\ReviewConfirmation;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
@@ -28,7 +30,9 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Makes a payment file (pain.001.001.03) for approved supplier invoices,
- * paying what remains of each on the chosen date. Payment details come from
+ * paying what remains of each on the chosen date: kronor to bankgiro and
+ * plusgiro, and for the banks whose guide has been read (PaymentBank::foreignPayments)
+ * invoices in a foreign currency to an IBAN, in that currency (ForeignPayment). Payment details come from
  * the supplier as it was when the invoice was registered, so a changed bank
  * number in the register cannot redirect an invoice already approved. The
  * file is stored as made; nothing is booked until the batch is confirmed.
@@ -38,9 +42,11 @@ class CreatePaymentBatch
     /**
      * @param  list<string>  $invoiceIds
      */
-    public function __invoke(User $user, Company $company, array $invoiceIds, CarbonImmutable $executionDate): SupplierPaymentBatch
+    public function __invoke(User $user, Company $company, array $invoiceIds, CarbonImmutable $executionDate, bool $figuresReviewed = false): SupplierPaymentBatch
     {
         Gate::forUser($user)->authorize('create', [SupplierPaymentBatch::class, $company]);
+
+        ReviewConfirmation::demand($figuresReviewed, 'figures_reviewed');
 
         if (! $company->payment_bank instanceof PaymentBank || blank($company->iban) || blank($company->bank_agreement_id)) {
             throw ValidationException::withMessages(['batch' => __('Fyll i bank, IBAN och avtals-id under Betalfiler innan du skapar en betalfil.')]);
@@ -60,7 +66,7 @@ class CreatePaymentBatch
 
         return CurrentCompany::run($company, fn (): SupplierPaymentBatch => DB::transaction(function () use ($user, $company, $invoiceIds, $executionDate): SupplierPaymentBatch {
             /** @var Collection<int, SupplierInvoice> $invoices */
-            $invoices = SupplierInvoice::query()->whereIn('id', $invoiceIds)->lockForUpdate()->orderBy('due_date')->orderBy('number')->get();
+            $invoices = SupplierInvoice::query()->with('supplier')->whereIn('id', $invoiceIds)->lockForUpdate()->orderBy('due_date')->orderBy('number')->get();
 
             if ($invoices->count() !== count(array_unique($invoiceIds))) {
                 throw ValidationException::withMessages(['batch' => __('En av fakturorna finns inte.')]);
@@ -79,7 +85,7 @@ class CreatePaymentBatch
             $errors = [];
 
             foreach ($invoices as $invoice) {
-                $transfer = $this->transfer($invoice, in_array($invoice->id, $inOpenBatch, true), $number);
+                $transfer = $this->transfer($invoice, in_array($invoice->id, $inOpenBatch, true), $number, $company->payment_bank);
 
                 is_string($transfer)
                     ? $errors[] = $transfer
@@ -88,6 +94,12 @@ class CreatePaymentBatch
 
             if ($errors !== []) {
                 throw ValidationException::withMessages(['batch' => $errors]);
+            }
+
+            // One currency per file until a bank has tested a file that sums amounts in several currencies in GrpHdr/CtrlSum.
+            // TODO(provider-verify): allow mixed files after a test through each bank's test service.
+            if (count(array_unique(array_map(fn (CreditTransfer $transfer): string => $transfer->currency, $transfers))) > 1) {
+                throw ValidationException::withMessages(['batch' => __('En betalfil kan bara ha betalningar i en valuta. Skapa en betalfil för kronor och en för varje annan valuta.')]);
             }
 
             $messageId = 'NONOX-'.$number.'-'.Str::upper(Str::random(12));
@@ -114,20 +126,35 @@ class CreatePaymentBatch
                 'debtor_bic' => $company->payment_bank->bic(),
                 'message_id' => $messageId,
                 'payment_count' => count($transfers),
-                'total_ore' => array_sum(array_map(fn (CreditTransfer $transfer): int => $transfer->amountOre, $transfers)),
+                // Kronor only: payments in a foreign currency are totalled in their own currency (items), as the bank takes the kronor at its own rate.
+                'total_ore' => array_sum(array_map(fn (CreditTransfer $transfer): int => $transfer->isForeign() ? 0 : $transfer->amountOre, $transfers)),
                 'file_path' => $path,
                 'file_sha256' => hash('sha256', $xml),
                 'created_by' => $user->id,
             ]);
 
+            $blocks = [];
+
+            foreach (CreditTransferFile::groups(array_values($transfers)) as $block => $group) {
+                foreach ($group as $member) {
+                    $blocks[$member->endToEndId] = CreditTransferFile::paymentInfoId($messageId, $block);
+                }
+            }
+
             foreach ($transfers as $invoiceId => $transfer) {
                 SupplierPaymentBatchItem::create([
                     'batch_id' => $batch->id,
                     'supplier_invoice_id' => $invoiceId,
-                    'amount_ore' => $transfer->amountOre,
+                    // Kronor: what the bank takes. Foreign currency: the kronor expected at the booking rate, replaced by the bank's debit notification.
+                    'amount_ore' => $transfer->estimatedOre ?? $transfer->amountOre,
                     'end_to_end_id' => $transfer->endToEndId,
+                    'currency' => $transfer->currency,
+                    'foreign_amount_minor' => $transfer->isForeign() ? $transfer->amountOre : null,
+                    'payment_info_id' => $blocks[$transfer->endToEndId],
                 ]);
             }
+
+            ReviewConfirmation::record('payment_batch', $batch, $company, $user);
 
             Audit::record('payment_batch.created', $batch, [
                 'number' => $number,
@@ -135,6 +162,8 @@ class CreatePaymentBatch
                 'execution_date' => $executionDate->toDateString(),
                 'payments' => count($transfers),
                 'total_ore' => $batch->total_ore->ore,
+                'foreign_payments' => count(array_filter($transfers, fn (CreditTransfer $transfer): bool => $transfer->isForeign())),
+                'currencies' => array_values(array_unique(array_map(fn (CreditTransfer $transfer): string => $transfer->currency, $transfers))),
                 'sha256' => $batch->file_sha256,
             ], $company, $user);
 
@@ -145,7 +174,7 @@ class CreatePaymentBatch
     /**
      * The payment for one invoice, or why it cannot be paid.
      */
-    private function transfer(SupplierInvoice $invoice, bool $inOpenBatch, int $batchNumber): CreditTransfer|string
+    private function transfer(SupplierInvoice $invoice, bool $inOpenBatch, int $batchNumber, PaymentBank $bank): CreditTransfer|string
     {
         $title = $invoice->title();
         $supplier = $invoice->supplier_snapshot ?? [];
@@ -158,13 +187,17 @@ class CreatePaymentBatch
             return __(':title är inte attesterad och obetald.', ['title' => $title]);
         }
 
-        // A payment file pays kronor to bankgiro and plusgiro only.
-        if ($invoice->isForeign()) {
-            return __(':title är i :currency. Betala den i internetbanken och registrera betalningen på fakturan.', ['title' => $title, 'currency' => $invoice->invoice_currency]);
-        }
-
         if ($inOpenBatch) {
             return __(':title finns redan i en betalfil som väntar på banken.', ['title' => $title]);
+        }
+
+        // A payment abroad: invoices in another currency go to an IBAN (ForeignPayment); the end-to-end id is the same.
+        if ($invoice->isForeign()) {
+            if ($invoice->supplier === null) {
+                return __(':title: leverantören finns inte längre. Betala den i internetbanken.', ['title' => $title]);
+            }
+
+            return ForeignPayment::transfer($invoice, $bank, "LF{$invoice->number}-{$batchNumber}", $invoice->supplier);
         }
 
         $bankgiro = preg_replace('/\D/', '', (string) ($supplier['bankgiro'] ?? ''));

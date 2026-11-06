@@ -268,6 +268,54 @@
         }
     },
     "overtime": {
+        "comp_time": {
+            "hours_per_hour": {
+                "DH_OT_A": [
+                    { "valid_from": "2025-04-01", "factor": "1.5" },
+                    { "valid_from": "2026-04-01", "factor": "1.35" }
+                ],
+                "DH_OT_70": "1.75",
+                "DH_OT_100": "2",
+                "DH_MT_A": [
+                    { "valid_from": "2026-04-01", "factor": "1.35" }
+                ],
+                "DH_MT_70": "1.75",
+                "DH_MT_100": "2"
+            },
+            "requires_agreement": true,
+            "source": "D1#§ 9.6 s. 37–38"
+        },
+        "kinds": {
+            "ranks": ["FIRST", "REST", "HIGH"],
+            "first_hours": { "minutes": 120, "per": "DAY", "kind": "FIRST", "source": "D1#§ 9.2 s. 35–36" },
+            "rest_kind": "REST",
+            "not_adjoining_kind": "REST",
+            "day_off_kind": "REST",
+            "windows": [
+                { "kind": "REST", "days": ["MON", "TUE", "WED", "THU", "FRI"], "from": "20:00", "to": "24:00", "source": "D1#§ 9.2 s. 35–36" },
+                { "kind": "HIGH", "days": ["SAT"], "from": "12:00", "to": "24:00", "source": "D1#§ 9.2 s. 35–36" },
+                { "kind": "HIGH", "day_type": "LORDAG_LIK", "source": "D1#§ 9.2 s. 35–36" },
+                { "kind": "HIGH", "day_type": "HELGDAG", "source": "D1#§ 9.2 s. 35–36" },
+                { "kind": "HIGH", "day_off_only": true, "days": ["SAT"], "from": "00:00", "to": "24:00", "source": "D1#§ 9.2 s. 35–36" },
+                {
+                    "kind": "HIGH",
+                    "day_off_only": true,
+                    "spans": [
+                        { "day": "JULAFTON", "from": "00:00", "to": "24:00" },
+                        { "day": "NYARSAFTON", "from": "00:00", "to": "24:00" },
+                        { "day": "MIDSOMMARAFTON", "from": "00:00", "to": "24:00" }
+                    ],
+                    "source": "D1#§ 9.2 s. 35–36"
+                }
+            ],
+            "codes": {
+                "OVERTIME": { "FIRST": "DH_OT_A", "REST": "DH_OT_70", "HIGH": "DH_OT_100" },
+                "EXTRA_TIME": { "FIRST": "DH_MT_A", "REST": "DH_MT_70", "HIGH": "DH_MT_100" }
+            },
+            "day_off_minimum": { "minutes": 180, "source": "D1#§ 9.1 s. 35" },
+            "ob_overlap": { "method": "HIGHEST_ONLY", "source": "D1#§ 8.1 Anm. s. 33; § 9.1 Anm. s. 35; § 9.3 Anm. s. 36; § 9.5 Anm. 2 s. 37" },
+            "source": "D1#§ 9.1–9.2 s. 34–36; § 9.5 s. 37"
+        },
         "hourly_paid": {
             "supplement_codes": {
                 "DH_OT_A": "DH_OT_A_TL",
@@ -307,7 +355,10 @@
         "Urmakarnas egna minimilöner per anställningsår (D1 bilaga 3 s. 62–63) är inte med; ingen egen grupp här ännu.",
         "Anställningstidstillägg efter 5 år i företaget (155 kr/mån eller 0,93 kr/tim 2025, 160 kr eller 0,96 kr/tim 2026, D1 § 7.2 E s. 26) utges utöver minimilönen och är inte data ännu.",
         "Deltid med månadslön räknas som timmar/vecka × timlön × 166 / 38,25 (D1 § 7.3 B.4 s. 28); den formeln är inte data ännu.",
-        "Mertid från 2026-04-01 ersätts som övertid (D1 § 9.5 s. 37) och övertid på fridag ger minst 3 timmar (§ 9.1); inte data ännu.",
+        "Övertid delas per tillfälle i de två första timmarna per dag före och efter ordinarie tid, övrig övertid på vardag och efter 20.00 mån–fre (70 %) samt lördag och aftnar efter 12.00, sön- och helgdag och fridag på lördag eller afton (100 %); mertid från 2026-04-01 på samma sätt (D1 § 9.2, § 9.5). En fridag med övertid ger minst 3 timmar för heltidsanställda (§ 9.1). TODO(legal-verify): om övertid 00.00–06.00 en vardagsmorgon är 70 %.",
+        "När övertid eller mertid sammanfaller med OB ger avtalet bara den procentuellt högsta (D1 § 8.1 Anm., § 9.1 Anm., § 9.3 Anm., § 9.5 Anm. 2). NONOX drar tillbaka den lägre för de minuterna när perioden räknas. TODO(legal-verify): om OB också ska dras när övertiden tas ut som komptid.",
+        "Lägsta ersättningen på fridag (minst 3 timmar, D1 § 9.1) betalas med dagens övertidssats; en fridag har bara en art (70 % vardag, 100 % lördag, afton, sön- och helgdag, § 9.2). § 9.1 anger ingen annan sats. TODO(legal-verify).",
+        "Mertid ger ingen mertidsersättning vid byte av pass på den anställdes initiativ eller under högst två dagar per frånvaroperiod när den täcker annans frånvaro (D1 § 9.5); NONOX kan inte se orsaken, ta i så fall tiden från lönekörningen.",
         "Frånvaroavdrag 4,6 % per dag, sjuklön och restid är inte data i den här versionen ännu.",
         "TODO(legal-verify): hängavtalets namn och eventuell avgift har inte hittats; ingen HANGAVTAL-variant finns."
     ],

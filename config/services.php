@@ -5,6 +5,18 @@ declare(strict_types=1);
 return [
 
     /*
+     * Bolagsverket (ADR-058). taxonomy_dir: an unpacked taxonomy package
+     * from taxonomier.se (the 2026-08-31 package with K2 aktiebolag
+     * 2024-09-12 and the fastställelseintyg 2020-12-01). It is never part
+     * of the repository (its licence forbids modifying it). When it is set,
+     * every concept in an iXBRL annual report is checked against it before
+     * the file is offered; empty means no check.
+     */
+    'bolagsverket' => [
+        'taxonomy_dir' => env('BOLAGSVERKET_TAXONOMY_DIR'),
+    ],
+
+    /*
      * Skatteverket's XML schema for arbetsgivardeklarationen (version 1.1),
      * downloaded from skatteverket.se into this directory. When it is set,
      * every generated file is validated against it before it is saved.
@@ -81,7 +93,7 @@ return [
     ],
 
     /*
-     * NONOX Connect (ADR-032): the public API and OAuth 2.0. Access tokens
+     * NONOX API (ADR-032): the public API and OAuth 2.0. Access tokens
      * live at most 15 minutes (a longer value is capped), refresh tokens are
      * rotated on every use, and API keys must expire within max_key_days.
      * Rate limits are per credential and per company, per minute.
@@ -95,6 +107,8 @@ return [
         // Per IP address before a credential is checked, and for the token endpoint.
         'rate_limit_per_ip' => (int) env('NONOX_CONNECT_RATE_LIMIT_PER_IP', 600),
         'rate_limit_token_endpoint' => (int) env('NONOX_CONNECT_RATE_LIMIT_TOKEN_ENDPOINT', 30),
+        // MCP messages per credential and minute at /api/mcp (ADR-063), inside the limits above.
+        'mcp_rate_limit_per_credential' => (int) env('NONOX_CONNECT_MCP_RATE_LIMIT_PER_CREDENTIAL', 60),
         'idempotency_hours' => 24,
         // Seconds a passkey confirmation counts as fresh for granting access or creating an API key.
         'step_up_seconds' => 300,
@@ -162,6 +176,9 @@ return [
 
     'banking' => [
         'driver' => env('NONOX_BANKING_DRIVER'),
+        // Kill switch (ADR-034, launch hardening): true pauses every bank data provider, or a comma list pauses those
+        // (e.g. "enable_banking"). The keys stay; nothing is sent to the provider until it is removed again.
+        'paused' => env('NONOX_BANKING_PAUSED', false),
         'enable_banking' => [
             'application_id' => env('ENABLE_BANKING_APPLICATION_ID'),
             'private_key_path' => env('ENABLE_BANKING_PRIVATE_KEY_PATH'),
@@ -182,6 +199,9 @@ return [
      */
     'peppol' => [
         'driver' => env('NONOX_PEPPOL_DRIVER'),
+        // Kill switch (ADR-050, launch hardening): true pauses every access point, or a comma list pauses those
+        // (e.g. "qvalia"). The keys stay; queued sendings wait and received documents stay at the access point.
+        'paused' => env('NONOX_PEPPOL_PAUSED', false),
         // A received e-invoice above this is left at the access point and the operator is alerted (100 MB).
         'max_document_kb' => (int) env('NONOX_PEPPOL_MAX_DOCUMENT_KB', 102400),
         'qvalia' => [

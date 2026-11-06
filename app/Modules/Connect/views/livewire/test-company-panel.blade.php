@@ -1,6 +1,6 @@
 <section class="space-y-3">
     <h2 class="text-base font-semibold text-gray-900">{{ __('Testföretag för API:t') }}</h2>
-    <p class="text-sm text-gray-600">{{ __('Vill du eller en utvecklare prova API:t utan att röra den riktiga bokföringen? Skapa ett testföretag. Det blir ett eget företag med påhittade kunder, leverantörer, artiklar, verifikationer och fakturor, och NONOX Connect påslaget. Det märks tydligt på varje sida, mejlar aldrig fakturor till någon och räknas inte med i statistik eller debitering.') }}</p>
+    <p class="text-sm text-gray-600">{{ __('Vill du eller en utvecklare prova API:t utan att röra den riktiga bokföringen? Skapa ett testföretag. Det blir ett eget företag med påhittade kunder, leverantörer, artiklar, verifikationer och fakturor, och NONOX API påslaget. Det märks tydligt på varje sida, mejlar aldrig fakturor till någon och räknas inte med i statistik eller debitering.') }}</p>
 
     @if($owned->isNotEmpty())
         <p class="text-sm text-gray-700">{{ __('Dina testföretag:') }} {{ $owned->pluck('name')->implode(', ') }}</p>

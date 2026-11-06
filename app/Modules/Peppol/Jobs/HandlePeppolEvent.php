@@ -67,6 +67,11 @@ class HandlePeppolEvent implements ShouldQueue
 
     public function handle(ModuleManager $modules, AcceptPeppolDocument $accept, RecordTransmissionStatus $record): void
     {
+        // Paused by the operator: the document stays at the access point and peppol:sync fetches it (and the status) later.
+        if (AccessPoints::isPaused()) {
+            return;
+        }
+
         // A delivery update needs the module; an incoming document is taken anyway (into quarantine), never dropped.
         if ($this->type === WebhookEvent::DELIVERY && ! $modules->isEnabled(PeppolModule::KEY, $this->companyId)) {
             return;

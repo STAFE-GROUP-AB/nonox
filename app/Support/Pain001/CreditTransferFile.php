@@ -70,11 +70,32 @@ final class CreditTransferFile
         $xml->endElement();
         $xml->endElement();
 
+        foreach (self::groups($transfers) as $number => $group) {
+            self::paymentInformation($xml, $bank, self::paymentInfoId($messageId, $number), $group, $executionDate, $debtorName, $debtorIban, $debtorBankgiro, $categoryPurpose);
+        }
+
+        $xml->endElement();
+        $xml->endElement();
+        $xml->endDocument();
+
+        return $xml->outputMemory();
+    }
+
+    /**
+     * One PmtInf: one debit account, one execution date and one currency (a
+     * SEPA payment in euro is its own block). Charges are given per payment.
+     *
+     * @param  list<CreditTransfer>  $group
+     */
+    private static function paymentInformation(XMLWriter $xml, PaymentBank $bank, string $paymentInfoId, array $group, CarbonImmutable $executionDate, string $debtorName, string $debtorIban, ?string $debtorBankgiro, ?string $categoryPurpose): void
+    {
+        $groupTotal = self::amount(array_sum(array_map(fn (CreditTransfer $transfer): int => $transfer->amountOre, $group)));
         $xml->startElement('PmtInf');
-        $xml->writeElement('PmtInfId', $messageId);
+        $xml->writeElement('PmtInfId', $paymentInfoId);
         $xml->writeElement('PmtMtd', 'TRF');
-        $xml->writeElement('NbOfTxs', (string) count($transfers));
-        $xml->writeElement('CtrlSum', $total);
+        $xml->writeElement('NbOfTxs', (string) count($group));
+        $xml->writeElement('CtrlSum', $groupTotal);
+
         if ($bank->serviceLevel() !== null || $categoryPurpose !== null) {
             $xml->startElement('PmtTpInf');
 
@@ -129,20 +150,21 @@ final class CreditTransferFile
         $xml->endElement();
         $xml->endElement();
 
-        foreach ($transfers as $transfer) {
+        foreach ($group as $transfer) {
             self::transfer($xml, $bank, $transfer);
         }
 
         $xml->endElement();
-        $xml->endElement();
-        $xml->endElement();
-        $xml->endDocument();
-
-        return $xml->outputMemory();
     }
 
     private static function transfer(XMLWriter $xml, PaymentBank $bank, CreditTransfer $transfer): void
     {
+        if ($transfer->isForeign()) {
+            self::foreignTransfer($xml, $bank, $transfer);
+
+            return;
+        }
+
         $xml->startElement('CdtTrfTxInf');
         $xml->startElement('PmtId');
         $xml->writeElement('EndToEndId', $transfer->endToEndId);
@@ -231,6 +253,88 @@ final class CreditTransferFile
         $xml->endElement();
     }
 
+    /**
+     * A payment abroad in the invoice's currency, to an IBAN, from the
+     * company's kronor account (ADR-014 addendum). After Handelsbanken's
+     * guide 1.8.1, chapter 6.2: creditor address with country mandatory,
+     * creditor agent preferably BIC, account as IBAN, ChrgBr mandatory;
+     * regulatory reporting as RgltryRptg/Dtls/Cd (here also Nordea's Ctry).
+     * ChrgBr: SLEV for a SEPA payment in euro (Nordea: "each debtor and
+     * creditor pay own cost. Default for SEPA"), otherwise SHAR (Nordea:
+     * only SHAR or SLEV for international payments from Sweden).
+     */
+    private static function foreignTransfer(XMLWriter $xml, PaymentBank $bank, CreditTransfer $transfer): void
+    {
+        $xml->startElement('CdtTrfTxInf');
+        $xml->startElement('PmtId');
+        $xml->writeElement('EndToEndId', $transfer->endToEndId);
+        $xml->endElement();
+        $xml->startElement('Amt');
+        $xml->startElement('InstdAmt');
+        $xml->writeAttribute('Ccy', $transfer->currency);
+        $xml->text(self::amount($transfer->amountOre));
+        $xml->endElement();
+        $xml->endElement();
+        $xml->writeElement('ChrgBr', $transfer->sepa ? 'SLEV' : 'SHAR');
+
+        if ($transfer->bic !== null) {
+            $xml->startElement('CdtrAgt');
+            $xml->startElement('FinInstnId');
+            $xml->writeElement('BIC', $transfer->bic);
+            $xml->endElement();
+            $xml->endElement();
+        }
+
+        $xml->startElement('Cdtr');
+        $xml->writeElement('Nm', SwiftText::clean($transfer->creditorName, 70));
+        $xml->startElement('PstlAdr');
+
+        // Nordea: if other address elements than the country are given, the town is required.
+        if ($transfer->creditorTown !== null) {
+            if ($transfer->creditorPostalCode !== null && SwiftText::clean($transfer->creditorPostalCode, 16) !== '') {
+                $xml->writeElement('PstCd', SwiftText::clean($transfer->creditorPostalCode, 16));
+            }
+
+            $xml->writeElement('TwnNm', SwiftText::clean($transfer->creditorTown, 35));
+        }
+
+        $xml->writeElement('Ctry', (string) $transfer->creditorCountry);
+
+        if ($transfer->creditorAddressLine !== null && SwiftText::clean($transfer->creditorAddressLine, 70) !== '') {
+            $xml->writeElement('AdrLine', SwiftText::clean($transfer->creditorAddressLine, 70));
+        }
+
+        $xml->endElement();
+        $xml->endElement();
+
+        $xml->startElement('CdtrAcct');
+        $xml->startElement('Id');
+        $xml->writeElement('IBAN', $transfer->accountNumber);
+        $xml->endElement();
+        $xml->endElement();
+
+        if ($transfer->regulatoryCode !== null) {
+            $xml->startElement('RgltryRptg');
+            $xml->startElement('Dtls');
+
+            if ($bank->regulatoryReportingCountry()) {
+                $xml->writeElement('Ctry', 'SE');
+            }
+
+            $xml->writeElement('Cd', $transfer->regulatoryCode);
+            $xml->endElement();
+            $xml->endElement();
+        }
+
+        if ($transfer->message !== null) {
+            $xml->startElement('RmtInf');
+            $xml->writeElement('Ustrd', SwiftText::clean($transfer->message, 140));
+            $xml->endElement();
+        }
+
+        $xml->endElement();
+    }
+
     private static function country(XMLWriter $xml, PaymentBank $bank): void
     {
         if (! $bank->agentCountry()) {
@@ -240,6 +344,36 @@ final class CreditTransferFile
         $xml->startElement('PstlAdr');
         $xml->writeElement('Ctry', 'SE');
         $xml->endElement();
+    }
+
+    /**
+     * The payments split into blocks: kronor first (to giro numbers, as
+     * before), then one block per currency, a SEPA payment in euro apart from
+     * other euro payments. The order of the payments is kept inside a block.
+     *
+     * @param  list<CreditTransfer>  $transfers
+     * @return list<list<CreditTransfer>>
+     */
+    public static function groups(array $transfers): array
+    {
+        $groups = [];
+
+        foreach ($transfers as $transfer) {
+            $groups[$transfer->currency.($transfer->sepa ? '-SEPA' : '')][] = $transfer;
+        }
+
+        uksort($groups, fn (string $a, string $b): int => [$a !== 'SEK', $a] <=> [$b !== 'SEK', $b]);
+
+        return array_values($groups);
+    }
+
+    /**
+     * PmtInfId of a block: the first carries the file's message id (as every
+     * file before foreign currency did), the rest add the block's number.
+     */
+    public static function paymentInfoId(string $messageId, int $block): string
+    {
+        return $block === 0 ? $messageId : "{$messageId}/".($block + 1);
     }
 
     /** Öre as the decimal amount the schema expects, "1250.00". */

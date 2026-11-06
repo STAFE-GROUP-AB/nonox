@@ -69,7 +69,7 @@ Nej. Du kan fortfarande använda systemets **OB-tillägg** och **Övertid** med 
 Ja. Skriver du ett belopp används det, och avtalets sats räknas inte.
 
 **Räknar NONOX mertid för deltidsanställda?**
-Gröna Riks och Detaljhandeln ger mertidstillägg från den 1 april 2026, och de finns som avtalets lönearter, till exempel **Mertid, två första timmarna i anslutning (Gröna Riks)**. Övriga avtal prissätter inte mertid ännu. Med modulen Planering skickas tid utöver den avtalade veckoarbetstiden till lönen på den löneart för mertid som du väljer; se [OB och övertid i lönen](/manual/planering/ob-och-overtid-i-lonen). Se också [Det här gör Avtal inte ännu](/manual/avtal/det-har-gor-avtal-inte-annu).
+Gröna Riks och Detaljhandeln ger mertidstillägg från den 1 april 2026, och de finns som avtalets lönearter, till exempel **Mertid, två första timmarna i anslutning (Gröna Riks)**. Övriga avtal prissätter inte mertid ännu. Med modulen Planering delas övertid och mertid i Gröna Riks och Detaljhandeln upp per art (i anslutning, därutöver, inte i anslutning, kväll, helg och fridag) på avtalets lönearter; för andra avtal skickas tiden på den löneart du väljer; se [OB och övertid i lönen](/manual/planering/ob-och-overtid-i-lonen). Se också [Det här gör Avtal inte ännu](/manual/avtal/det-har-gor-avtal-inte-annu).
 
 ## Läs också
 

@@ -20,11 +20,15 @@ use Illuminate\Support\Str;
 final class SkatteverketClient
 {
     /**
-     * @param  array<string, mixed>|null  $body
+     * @param  array<string, mixed>|null  $body  a JSON body
+     * @param  ?string  $raw  a body sent as it is, e.g. the AGI XML, with $contentType
+     * @param  ?string  $contentType  the Content-Type of a call without a body, for operations whose RAML requires one
+     * @param  list<int>  $answers  error statuses returned as a response instead of thrown, for operations that answer them with content (AGD 409 with "tillstand")
+     * @param  ?string  $noAnswer  the text when Skatteverket does not answer in time, for an operation that may have reached it anyway (the AGD upload)
      *
      * @throws SkatteverketFailed
      */
-    public static function send(string $accessToken, string $method, string $url, ?array $body = null, string $correlationHeader = 'skv_client_correlation_id'): Response
+    public static function send(string $accessToken, string $method, string $url, ?array $body = null, string $correlationHeader = 'skv_client_correlation_id', ?string $raw = null, ?string $contentType = null, array $answers = [], ?string $noAnswer = null): Response
     {
         $request = Http::withHeaders([
             'client_id' => Skatteverket::apiClientId(),
@@ -33,14 +37,23 @@ final class SkatteverketClient
         ])->withToken($accessToken)->acceptJson()->timeout(30);
 
         try {
-            $response = $body === null
-                ? $request->send($method, $url)
-                : $request->asJson()->send($method, $url, ['json' => $body]);
+            $response = match (true) {
+                $raw !== null => $request->withBody($raw, $contentType ?? 'application/octet-stream')->send($method, $url),
+                $body !== null => $request->asJson()->send($method, $url, ['json' => $body]),
+                $contentType !== null => $request->contentType($contentType)->send($method, $url),
+                default => $request->send($method, $url),
+            };
         } catch (ConnectionException) {
-            throw new SkatteverketFailed(503, __('Skatteverket svarar inte just nu. Försök igen om en stund.'));
+            throw $noAnswer === null
+                ? new SkatteverketFailed(503, __('Skatteverket svarar inte just nu. Försök igen om en stund.'))
+                : new SkatteverketFailed(504, $noAnswer, SkatteverketFailed::NO_ANSWER);
         }
 
-        if ($response->successful()) {
+        if ($noAnswer !== null && $response->status() === 504) {
+            throw new SkatteverketFailed(504, $noAnswer, SkatteverketFailed::NO_ANSWER);
+        }
+
+        if ($response->successful() || in_array($response->status(), $answers, true)) {
             return $response;
         }
 
@@ -52,6 +65,12 @@ final class SkatteverketClient
         $status = $response->status();
         $message = $response->json('meddelandeTillAnvandare');
         $code = $response->json('kod');
+        $error = $response->json('error');
+
+        // The token lacks the API's scope (AGD RAML: "invalid_scope", "The required scopes are not authorized"): a sign-in made before the stage was built.
+        if ($status === 403 && is_string($error) && str_contains(mb_strtolower($error), 'scope')) {
+            return new SkatteverketFailed($status, __('Inloggningen hos Skatteverket gäller inte den här tjänsten. Logga in hos Skatteverket igen.'), 'invalid_scope', signInAgain: true);
+        }
 
         if (is_string($message) && $message !== '') {
             return new SkatteverketFailed($status, $message, is_scalar($code) ? (string) $code : null);

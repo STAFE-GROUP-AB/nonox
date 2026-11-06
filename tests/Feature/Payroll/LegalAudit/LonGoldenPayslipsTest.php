@@ -67,7 +67,7 @@ it('pays a monthly salary of 32 000 kr: table 33 column 1, 31,42 %, voucher L, A
     $this->runs->calculate($this->owner, $run);
     $this->runs->approve($this->admin, $run->fresh());
     // The bank file is made from the approved run, before it is paid.
-    $file = simplexml_load_string(app(SalaryPaymentFile::class)($this->owner, $run->fresh())['xml']);
+    $file = simplexml_load_string(app(SalaryPaymentFile::class)($this->owner, $run->fresh(), true)['xml']);
     $file->registerXPathNamespace('p', 'urn:iso:std:iso:20022:tech:xsd:pain.001.001.03');
     $this->runs->markPaid($this->owner, $run->fresh());
     $run = $this->runs->post($this->owner, $run->fresh());

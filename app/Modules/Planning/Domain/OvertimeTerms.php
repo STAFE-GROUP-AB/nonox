@@ -124,6 +124,18 @@ final readonly class OvertimeTerms
      */
     public static function occasions(DayComparison $day): array
     {
+        return array_map(fn (array $occasion): int => $occasion['minutes'], self::occasionIntervals($day));
+    }
+
+    /**
+     * The stretches of worked time outside the planned intervals in time
+     * order, with their start and end (Unix seconds) and whether they adjoin
+     * a planned interval (start where one ends, or end where one starts).
+     *
+     * @return list<array{start: int, end: int, minutes: int, adjoining: bool}>
+     */
+    public static function occasionIntervals(DayComparison $day): array
+    {
         $planned = [];
 
         foreach ($day->planned as $interval) {
@@ -165,9 +177,17 @@ final readonly class OvertimeTerms
             foreach ($segments as [$start, $end]) {
                 $minutes = intdiv($end - $start, 60);
 
-                if ($minutes > 0) {
-                    $occasions[] = $minutes;
+                if ($minutes <= 0) {
+                    continue;
                 }
+
+                $adjoining = false;
+
+                foreach ($planned as [$from, $to]) {
+                    $adjoining = $adjoining || $start === $to || $end === $from;
+                }
+
+                $occasions[] = ['start' => $start, 'end' => $end, 'minutes' => $minutes, 'adjoining' => $adjoining];
             }
         }
 

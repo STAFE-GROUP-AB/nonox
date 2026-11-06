@@ -37,7 +37,7 @@ class Suppliers extends Component
     use ShowsToasts;
     use WithPagination;
 
-    public const array FIELDS = ['name', 'org_number', 'vat_number', 'email', 'phone', 'address_line1', 'postal_code', 'city', 'bankgiro', 'plusgiro', 'iban', 'bic', 'payment_terms_days', 'default_account'];
+    public const array FIELDS = ['name', 'org_number', 'vat_number', 'email', 'phone', 'address_line1', 'postal_code', 'city', 'country', 'bankgiro', 'plusgiro', 'iban', 'bic', 'payment_code', 'payment_terms_days', 'default_account'];
 
     #[Url(as: 'sok', except: '')]
     public string $search = '';

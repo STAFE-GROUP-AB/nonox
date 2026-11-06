@@ -79,7 +79,7 @@ En passkey går inte att gissa, läcka eller lura av dig på en falsk webbplats,
 På alla aktuella telefoner, surfplattor och datorer. Säger webbläsaren att passkeys inte stöds, ladda om sidan eller prova en annan webbläsare.
 
 **Behövs passkey för API-nycklar?**
-Du behöver en passkey för att godkänna appar och skapa API-nycklar i [NONOX Connect](/manual/installningar/nonox-connect). Själva nycklarna används sedan utan passkey.
+Du behöver en passkey för att godkänna appar och skapa API-nycklar i [NONOX API](/manual/installningar/nonox-connect). Själva nycklarna används sedan utan passkey.
 
 ## Läs också
 

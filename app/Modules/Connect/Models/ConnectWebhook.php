@@ -44,7 +44,7 @@ class ConnectWebhook extends Model
     /** Turned off by NONOX after a delivery failed every attempt. */
     public const string DISABLED_FAILING = 'failing';
 
-    /** Turned off because NONOX Connect was turned off for the company. */
+    /** Turned off because NONOX API was turned off for the company. */
     public const string DISABLED_MODULE = 'module_disabled';
 
     protected $table = 'connect_webhooks';

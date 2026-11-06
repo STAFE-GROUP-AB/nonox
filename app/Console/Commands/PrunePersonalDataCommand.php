@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Migration\Fortnox\FortnoxConnection;
 use App\Models\DeadlineCalendarFeed;
 use App\Models\LoginCode;
+use App\Models\SkatteverketEvent;
 use App\Models\SkatteverketToken;
 use App\Models\TeamInvitation;
 use App\Models\VatSubmission;
@@ -28,7 +29,7 @@ use Illuminate\Support\Facades\DB;
  * stale invitations, tokens of moves that were abandoned, and rejected
  * absence and outlay requests that never reached the payroll or the books,
  * and staff ledger entries and people whose retention period is over
- * (PruneStaffLedger), Mina datum calendar links stopped 30 days ago, Skatteverket sign-ins that have run out (ADR-054), and CRM contact people and prospects with no
+ * (PruneStaffLedger), Mina datum calendar links stopped 30 days ago, Skatteverket sign-ins that have run out and customer events two years old or without their fetcher (ADR-054), and CRM contact people and prospects with no
  * activity for the company's set number of months (PruneCrm, ADR-043).
  *
  * TODO(legal-verify): the periods in RETENTION (see docs/gdpr/lagringstider.md).
@@ -45,6 +46,8 @@ class PrunePersonalDataCommand extends Command
         'revoked_calendar_links' => 30,
         // Skatteverket keeps an unsigned VAT draft 30 days (ADR-054).
         'vat_signing_links' => 30,
+        // Skatteverket removes a customer event after two years (ADR-054 stage 4).
+        'skatteverket_events' => SkatteverketEvent::RETENTION_DAYS,
     ];
 
     protected $signature = 'privacy:prune';
@@ -88,9 +91,16 @@ class PrunePersonalDataCommand extends Command
             // Skatteverket removes an unsigned draft 30 days after it was sent; its signing link (which can hold a sole trader's personnummer) goes with it.
             $signingLinks = VatSubmission::query()->whereNotNull('signing_link')->where('sent_at', '<', $now->subDays(self::RETENTION['vat_signing_links']))->update(['signing_link' => null]);
 
+            // A customer event Skatteverket itself no longer keeps (Tjänstebeskrivning Kundhändelser 2.2.3); one without a time goes two years after it was last fetched.
+            // An event whose fetcher's account is gone has nobody left to show it to (it is shown only to the fetcher, ADR-054 stage 4).
+            $eventsCutoff = $now->subDays(self::RETENTION['skatteverket_events']);
+            $events = SkatteverketEvent::query()
+                ->where(fn ($query) => $query->whereNull('fetched_by')->orWhere('occurred_at', '<', $eventsCutoff)->orWhere(fn ($query) => $query->whereNull('occurred_at')->where('fetched_at', '<', $eventsCutoff)))
+                ->delete();
+
             $calendarLinks = DeadlineCalendarFeed::query()->whereNotNull('revoked_at')->where('revoked_at', '<', $now->subDays(self::RETENTION['revoked_calendar_links']))->delete();
 
-            return ['login_codes' => $codes, 'invitations' => $invitations, 'fortnox_tokens' => $tokens, 'absences' => $absences, 'expenses' => $expenses, 'calendar_links' => $calendarLinks, 'skatteverket_sign_ins' => $skatteverket, 'vat_signing_links' => $signingLinks];
+            return ['login_codes' => $codes, 'invitations' => $invitations, 'fortnox_tokens' => $tokens, 'absences' => $absences, 'expenses' => $expenses, 'calendar_links' => $calendarLinks, 'skatteverket_sign_ins' => $skatteverket, 'vat_signing_links' => $signingLinks, 'skatteverket_events' => $events];
         }));
 
         $staffLedger = ArchivedCompany::maintenance(fn (): array => app(PruneStaffLedger::class)());

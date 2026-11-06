@@ -1,0 +1,9 @@
+{
+    "eventId": "evt-0f2c1a7e-0001",
+    "eventType": "new_document",
+    "accountRegNo": "SE5563343689",
+    "documentType": "Invoice",
+    "direction": "incoming",
+    "integrationId": "int-in-4711",
+    "occurredAt": "2026-03-02T09:58:12Z"
+}

@@ -31,7 +31,8 @@ final class SkatteverketAuth
     /** Skatteverket: a refresh token lives 65 minutes. */
     private const int REFRESH_MINUTES = 65;
 
-    public static function authorizeUrl(string $state, string $redirectUri): string
+    /** @param  list<string>  $scopes  the scopes to ask for (Skatteverket::scopesFor) */
+    public static function authorizeUrl(string $state, string $redirectUri, array $scopes): string
     {
         return Skatteverket::personAuthorizationServer().'/authorize?'.http_build_query([
             'response_type' => 'code',
@@ -39,29 +40,49 @@ final class SkatteverketAuth
             'redirect_uri' => $redirectUri,
             'state' => $state,
             // TODO(provider-verify): Skatteverket allows several scopes in one token but does not state the separator; OAuth 2.0 (RFC 6749 3.3) uses a space. Confirm in the test service.
-            'scope' => implode(' ', Skatteverket::SCOPES),
+            'scope' => implode(' ', $scopes),
         ], '', '&', PHP_QUERY_RFC3986);
     }
 
-    /** Exchanges the code from the callback and stores the person's tokens. */
-    public static function exchange(User $user, string $code, string $redirectUri): SkatteverketToken
+    /**
+     * Exchanges the code from the callback and stores the person's tokens.
+     * When Skatteverket's answer names no scopes, the token is taken to
+     * hold the ones asked for.
+     *
+     * @param  list<string>  $scopes  the scopes the sign-in asked for
+     */
+    public static function exchange(User $user, string $code, string $redirectUri, array $scopes): SkatteverketToken
     {
-        return self::store($user, self::token([
+        $token = self::token([
             'grant_type' => 'authorization_code',
             'code' => $code,
             'redirect_uri' => $redirectUri,
-        ]));
+        ]);
+
+        return self::store($user, [...$token, 'scope' => $token['scope'] ?? implode(' ', $scopes)]);
+    }
+
+    /**
+     * The scopes a sign-in should ask for: the service's, and those of the
+     * person's sign-in that is still usable, so signing in for one service
+     * does not end the other (one token per person; ADR-054 stage 2).
+     *
+     * @return list<string>
+     */
+    public static function scopesToRequest(User $user, string $service): array
+    {
+        return array_values(array_intersect(Skatteverket::SCOPES, array_unique([...(self::grantedScopes($user) ?? []), ...Skatteverket::scopesFor($service)])));
     }
 
     /**
      * A valid access token for the person, refreshed when it has run out and
      * the refresh token still lives; null means: sign in with Skatteverket.
      */
-    public static function accessToken(User $user): ?string
+    public static function accessToken(User $user, ?string $scope = null): ?string
     {
         $token = SkatteverketToken::query()->where('user_id', $user->id)->first();
 
-        if ($token === null) {
+        if ($token === null || ! self::covers($token, $scope)) {
             return null;
         }
 
@@ -99,7 +120,10 @@ final class SkatteverketAuth
 
         try {
             // TODO(provider-verify): the refresh request is not described by Skatteverket; this is the OAuth 2.0 form (RFC 6749 6). Confirm in the test service.
-            return self::store($user, self::token(['grant_type' => 'refresh_token', 'refresh_token' => (string) $token->refresh_token]), $token->refresh_expires_at)->access_token;
+            $refreshed = self::token(['grant_type' => 'refresh_token', 'refresh_token' => (string) $token->refresh_token]);
+
+            // A refreshed token without a scope answer keeps the scopes of the sign-in.
+            return self::store($user, [...$refreshed, 'scope' => $refreshed['scope'] ?? $token->scope], $token->refresh_expires_at)->access_token;
         } catch (SkatteverketFailed $exception) {
             // A refused refresh ends the sign-in; an outage at Skatteverket does not.
             if (in_array($exception->status, [400, 401], true)) {
@@ -112,11 +136,51 @@ final class SkatteverketAuth
         }
     }
 
-    public static function isSignedIn(User $user): bool
+    /**
+     * Whether the person's sign-in can still be used, and, with a scope, also
+     * for that API: a sign-in made before a stage was built lacks the stage's
+     * scope and counts as not signed in for it, so the person signs in again.
+     */
+    public static function isSignedIn(User $user, ?string $scope = null): bool
     {
-        return SkatteverketToken::query()->where('user_id', $user->id)
+        $granted = self::grantedScopes($user);
+
+        return $granted !== null && ($scope === null || in_array($scope, $granted, true));
+    }
+
+    /**
+     * The scopes of the person's sign-in that can still be used, or null
+     * when there is none. One query, for pages that check several scopes.
+     *
+     * @return ?list<string>
+     */
+    public static function grantedScopes(User $user): ?array
+    {
+        $token = SkatteverketToken::query()->where('user_id', $user->id)
             ->where(fn ($query) => $query->where('expires_at', '>', now()->addSeconds(self::MARGIN_SECONDS))->orWhere('refresh_expires_at', '>', now()->addSeconds(self::MARGIN_SECONDS)))
-            ->exists();
+            ->first();
+
+        return $token === null ? null : self::scopesOf($token);
+    }
+
+    /**
+     * Whether a sign-in covers the scope. A sign-in that holds a still usable
+     * token but lacks the scope is not used for that API.
+     */
+    public static function covers(SkatteverketToken $token, ?string $scope): bool
+    {
+        if ($scope === null) {
+            return true;
+        }
+
+        return in_array($scope, self::scopesOf($token), true);
+    }
+
+    /** @return list<string> */
+    private static function scopesOf(SkatteverketToken $token): array
+    {
+        // TODO(provider-verify): Skatteverket's token answer is assumed to name the granted scopes like OAuth 2.0 (RFC 6749 5.1, separated by spaces); a comma is accepted too. Confirm in the test service.
+        return preg_split('/[\s,]+/', trim($token->scope), -1, PREG_SPLIT_NO_EMPTY) ?: [];
     }
 
     public static function forget(User $user): void
@@ -126,7 +190,7 @@ final class SkatteverketAuth
 
     /**
      * @param  array<string, string>  $grant
-     * @return array{access_token: string, expires_in: int, refresh_token: ?string, scope: string}
+     * @return array{access_token: string, expires_in: int, refresh_token: ?string, scope: ?string}
      */
     private static function token(array $grant): array
     {
@@ -152,7 +216,7 @@ final class SkatteverketAuth
             'access_token' => $accessToken,
             'expires_in' => max(0, (int) ($response->json('expires_in') ?? 3600)),
             'refresh_token' => is_string($refresh) && $refresh !== '' ? $refresh : null,
-            'scope' => (string) ($response->json('scope') ?? implode(' ', Skatteverket::SCOPES)),
+            'scope' => is_string($response->json('scope')) && trim($response->json('scope')) !== '' ? $response->json('scope') : null,
         ];
     }
 

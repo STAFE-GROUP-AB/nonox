@@ -48,6 +48,8 @@ final readonly class AgiIndividual
         public ?string $activityType = null,
         public bool $hadOtherBenefit = false,
         public bool $hadCarBenefit = false,
+        /** Ruta 098: what the employee paid for the fuel by net deduction. */
+        public int $fuelPaidKronor = 0,
     ) {}
 
     /** @return array<string, int|bool|string> */
@@ -71,6 +73,7 @@ final readonly class AgiIndividual
             'activity_type' => (string) $this->activityType,
             'had_other_benefit' => $this->hadOtherBenefit,
             'had_car_benefit' => $this->hadCarBenefit,
+            'fuel_paid' => $this->fuelPaidKronor,
         ];
     }
 }

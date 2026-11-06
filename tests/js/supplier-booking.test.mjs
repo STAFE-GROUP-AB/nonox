@@ -35,3 +35,9 @@ test('reverse charge: the buyer books both input and output VAT', () => {
 test('nothing while an amount cannot be read', () => {
     assert.equal(supplierVoucher({ rows: [{ account: '4010', amount: 'mycket', vat_rate: '2500' }], total: '125', vat: '25', treatment: 'DOMESTIC', credit: false, accounts }), null);
 });
+
+test('goods from outside the EU: no VAT from the invoice, the import VAT comes from the tullräkning', () => {
+    const lines = supplierVoucher({ rows: [{ account: '4010', amount: '1000', vat_rate: '2500' }], total: '1000', vat: '250', treatment: 'NON_EU_GOODS', credit: false, accounts });
+
+    assert.deepEqual(lines.map((line) => [line.account, line.amount]), [[4010, 100000], [2440, -100000]]);
+});

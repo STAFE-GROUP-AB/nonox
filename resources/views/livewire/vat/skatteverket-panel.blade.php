@@ -15,7 +15,7 @@
 
     @if(! $signedIn)
         <div class="mt-5">
-            <a href="{{ route('skatteverket.signIn', ['tillbaka' => $back]) }}" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg bg-accent-600 text-sm font-semibold text-white hover:bg-accent-700">{{ __('Logga in hos Skatteverket med e-legitimation') }}</a>
+            <a href="{{ route('skatteverket.signIn', ['tillbaka' => $back, 'tjanst' => 'moms']) }}" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg bg-accent-600 text-sm font-semibold text-white hover:bg-accent-700">{{ __('Logga in hos Skatteverket med e-legitimation') }}</a>
             <p class="mt-2 text-xs text-gray-500">{{ __('Du loggar in hos Skatteverket, inte i NONOX, med e-legitimation, till exempel BankID. Skatteverket kontrollerar vid varje steg att du är behörig firmatecknare, deklarationsombud, ombud för momsdeklaration eller representant för enkla bolag eller partrederi. Inloggningen gäller i ungefär en timme.') }}</p>
         </div>
     @else
@@ -26,7 +26,8 @@
                     <x-button type="button" x-show="! confirming" x-on:click="confirming = true">{{ __('Skicka till Skatteverket') }}</x-button>
                     <div x-show="confirming" x-cloak class="flex flex-wrap items-center gap-3">
                         <span class="text-sm text-gray-700">{{ __('Rutorna skickas som utkast och låses för underskrift. Har NONOX redan skickat ett låst utkast för perioden låses det upp och ersätts.') }}</span>
-                        <x-button type="button" wire:click="send" wire:loading.attr="disabled">{{ __('Ja, skicka utkastet') }}</x-button>
+                        <x-ui.review-confirmation model="figuresReviewed" />
+                        <x-button type="button" wire:click="send" wire:loading.attr="disabled" :disabled="! $figuresReviewed">{{ __('Ja, skicka utkastet') }}</x-button>
                         <button type="button" class="text-sm text-gray-600 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>
                     </div>
                 </div>

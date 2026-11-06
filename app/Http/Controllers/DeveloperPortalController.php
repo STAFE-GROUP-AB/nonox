@@ -32,8 +32,8 @@ class DeveloperPortalController
             'spec' => $spec,
             'pageTitle' => $lang === 'en' ? 'NONOX API for developers – open, free and documented' : 'NONOX API för utvecklare – öppet, gratis och dokumenterat',
             'pageDescription' => $lang === 'en'
-                ? 'The NONOX Connect API: OAuth 2.0 with PKCE, API keys, idempotent writes and a full reference with code samples in curl, PHP, JavaScript and Python.'
-                : 'NONOX Connect, API:t för NONOX: OAuth 2.0 med PKCE, API-nycklar, idempotenta anrop och en fullständig referens med kodexempel i curl, PHP, JavaScript och Python.',
+                ? 'The NONOX API: OAuth 2.0 with PKCE, API keys, idempotent writes and a full reference with code samples in curl, PHP, JavaScript and Python.'
+                : 'NONOX API, API:t för NONOX: OAuth 2.0 med PKCE, API-nycklar, idempotenta anrop och en fullständig referens med kodexempel i curl, PHP, JavaScript och Python.',
         ]);
     }
 
@@ -68,8 +68,8 @@ class DeveloperPortalController
             'spec' => ApiSpec::data(),
             'pageTitle' => ($lang === 'en' ? 'API reference' : 'API-referens').' – NONOX API',
             'pageDescription' => $lang === 'en'
-                ? 'Every endpoint of the NONOX Connect API with parameters, schemas, responses, errors and code samples, generated from the OpenAPI file.'
-                : 'Varje anrop i NONOX Connect med parametrar, scheman, svar, fel och kodexempel, genererat från OpenAPI-filen.',
+                ? 'Every endpoint of the NONOX API with parameters, schemas, responses, errors and code samples, generated from the OpenAPI file.'
+                : 'Varje anrop i NONOX API med parametrar, scheman, svar, fel och kodexempel, genererat från OpenAPI-filen.',
         ]);
     }
 
@@ -105,7 +105,7 @@ class DeveloperPortalController
             'next' => null,
             'source' => 'docs/api/CHANGELOG.md',
             'pageTitle' => ($lang === 'en' ? 'Changelog' : 'Ändringar').' – NONOX API',
-            'pageDescription' => $lang === 'en' ? 'Every change to the NONOX Connect API, newest first.' : 'Varje ändring i NONOX Connect, den senaste först.',
+            'pageDescription' => $lang === 'en' ? 'Every change to the NONOX API, newest first.' : 'Varje ändring i NONOX API, den senaste först.',
         ]);
     }
 

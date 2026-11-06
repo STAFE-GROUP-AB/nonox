@@ -22,7 +22,7 @@ final class ConnectAppCommand extends Command
         {redirect* : One or more exact redirect URIs}
         {--public : A public client (mobile or desktop app) without a secret; PKCE protects it}';
 
-    protected $description = 'Register an OAuth app for NONOX Connect';
+    protected $description = 'Register an OAuth app for NONOX API';
 
     public function handle(ClientRepository $clients): int
     {

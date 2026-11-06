@@ -76,6 +76,65 @@
         </form>
     </details>
 
+    <details data-import-vat class="rounded-xl border border-gray-200 bg-white px-6 py-4 sm:px-8" @if(collect($errors->keys())->contains(fn ($key) => str_starts_with($key, 'import_'))) open @endif>
+        <summary class="cursor-pointer font-semibold text-gray-900">{{ __('Importmoms från tullräkning') }}</summary>
+        <p class="mt-2 text-sm text-gray-600">{{ __('För varor från ett land utanför EU. Skriv beloppen från Tullverkets tullräkning. Beskattningsunderlaget är tullvärdet plus tull och bikostnader fram till första bestämmelseorten i Sverige. Momsen redovisas i perioden för tullräkningens datum, både som utgående och ingående moms.') }}</p>
+        <form wire:submit="applyImportVat" class="mt-4 space-y-4">
+            <div class="grid gap-4 sm:grid-cols-3">
+                <x-ui.field for="import_date" :label="$importReduce ? __('Datum för Tullverkets ändrade beslut') : __('Tullräkningens datum')" error="import_date">
+                    <input id="import_date" type="date" class="{{ $input }} mt-1" wire:model="importDate">
+                </x-ui.field>
+                <x-ui.field for="import_reference" :label="__('Tullräkningens nummer (frivilligt)')" error="import_reference">
+                    <input id="import_reference" type="text" class="{{ $input }} mt-1" wire:model="importReference" maxlength="60">
+                </x-ui.field>
+                <x-ui.field for="import_kind" :label="__('Vad är varorna?')" error="import_kind">
+                    <select id="import_kind" class="{{ $input }} mt-1" wire:model="importKind">
+                        <option value="{{ App\Domain\Vat\ImportVat::GOODS }}">{{ __('Handelsvaror') }}</option>
+                        <option value="{{ App\Domain\Vat\ImportVat::MATERIALS }}">{{ __('Råvaror och material') }}</option>
+                    </select>
+                </x-ui.field>
+            </div>
+            @error('import_lines') <p class="text-sm text-accent-700" role="alert">{{ $message }}</p> @enderror
+            <div class="space-y-3">
+                @foreach($importLines as $index => $line)
+                    <div class="grid gap-3 rounded-lg border border-gray-200 p-3 sm:grid-cols-[8rem_1fr_1fr_1fr_auto] sm:items-start" wire:key="import-line-{{ $index }}">
+                        <x-ui.field for="import_rate_{{ $index }}" :label="__('Momssats')" error="import_lines.{{ $index }}.rate">
+                            <select id="import_rate_{{ $index }}" class="{{ $input }} mt-1" wire:model="importLines.{{ $index }}.rate">
+                                <option value="2500">25 %</option>
+                                <option value="1200">12 %</option>
+                                <option value="600">6 %</option>
+                            </select>
+                        </x-ui.field>
+                        <x-ui.field for="import_customs_value_{{ $index }}" :label="__('Tullvärde')" error="import_lines.{{ $index }}.customs_value">
+                            <input id="import_customs_value_{{ $index }}" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="importLines.{{ $index }}.customs_value" placeholder="0,00">
+                        </x-ui.field>
+                        <x-ui.field for="import_duty_{{ $index }}" :label="__('Tull och avgifter')" error="import_lines.{{ $index }}.duty">
+                            <input id="import_duty_{{ $index }}" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="importLines.{{ $index }}.duty" placeholder="0,00">
+                        </x-ui.field>
+                        <x-ui.field for="import_incidental_{{ $index }}" :label="__('Bikostnader i Sverige')" error="import_lines.{{ $index }}.incidental">
+                            <input id="import_incidental_{{ $index }}" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="importLines.{{ $index }}.incidental" placeholder="0,00">
+                        </x-ui.field>
+                        <div class="sm:pt-6">
+                            <button type="button" class="inline-flex items-center px-3 py-2 max-sm:min-h-11 rounded-lg text-sm text-gray-600 hover:bg-gray-50" wire:click="removeImportLine({{ $index }})" aria-label="{{ __('Ta bort raden :line', ['line' => $index + 1]) }}">{{ __('Ta bort') }}</button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            <p class="text-sm text-gray-500">{{ __('En rad per momssats. Bikostnader är till exempel frakt och försäkring från gränsen till första bestämmelseorten i Sverige, om de inte redan ingår i tullvärdet. Tullen och speditörens avgift bokför du som kostnader från sina egna fakturor.') }}</p>
+            <label class="flex items-start gap-3 text-sm">
+                <input type="checkbox" class="mt-0.5 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500" wire:model.live="importReduce">
+                <span>
+                    <span class="font-medium text-gray-900">{{ __('Ändrat beslut som sänker underlaget') }}</span>
+                    <span class="block text-gray-600">{{ __('Skriv hur mycket underlaget minskar. Raderna bokförs åt andra hållet.') }}</span>
+                </span>
+            </label>
+            <div class="flex flex-wrap gap-3">
+                <button type="button" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:click="addImportLine">{{ __('Lägg till momssats') }}</button>
+                <button type="submit" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:loading.attr="disabled" wire:target="applyImportVat">{{ __('Fyll i rader för importmoms') }}</button>
+            </div>
+        </form>
+    </details>
+
     <x-ui.card :title="__('Rader')" :description="__('Skriv kontonummer eller kontonamn och välj i listan. Tab eller Enter tar dig till nästa fält, och en ny rad dyker upp av sig själv.')">
         <div class="md:overflow-x-auto">
             <table class="block w-full text-sm md:table">

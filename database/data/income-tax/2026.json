@@ -1,7 +1,7 @@
 {
     "year": 2026,
-    "note": "Parameters for inkomstår 2026 (NE-bilagan, beskattningsperiod 2026P4). Researched 2026-11-05 from the cited primary sources. A year without a file here, or with verified false, is blocked for the calculations that need it.",
-    "verified": true,
+    "note": "Parameters for inkomstår 2026 (NE-bilagan, beskattningsperiod 2026P4). Researched 2026-11-05 from the cited primary sources; not yet checked by a human (owner decision 2026-11-06, consultant checklist docs/granskning/skatt-ne-ink4-ink2-k10.md). A year without a file here, or with verified false, is blocked for the calculations that need it.",
+    "verified": false,
     "parameters": {
         "statslaneranta_bp": {
             "value": 255,

@@ -134,4 +134,34 @@ enum PaymentBank: string
     {
         return $this === self::Swedbank;
     }
+
+    /**
+     * Whether payment files to creditors abroad are offered for this bank:
+     * only for banks whose own guide for cross-border payments from Sweden
+     * has been read (ADR-014, addendum on foreign currency). The others keep
+     * paying kronor to giro numbers only.
+     *
+     * Read: Handelsbanken, ISO 20022 CustomerCreditTransferInitiation
+     * Pain.001 version 3, Country Specific Information, version 1.8.1
+     * (1 July 2025), chapter 6.2; Nordea, Corporate eGateway MIG
+     * pain.001.001.03 version 3.3 (16 September 2026) and Examples per
+     * payment type, Nordic countries, version 2.4 (7 October 2026), 6.1.
+     *
+     * TODO(provider-verify): Danske Bank, SEB, Swedbank and Länsförsäkringar
+     * - read each bank's cross-border chapter before switching this on.
+     */
+    public function foreignPayments(): bool
+    {
+        return in_array($this, [self::Handelsbanken, self::Nordea], true);
+    }
+
+    /**
+     * Nordea's RgltryRptg/Dtls requires the country of the entity that needs
+     * the report ("Ctry: Required"); Handelsbanken's example gives the code
+     * alone.
+     */
+    public function regulatoryReportingCountry(): bool
+    {
+        return $this === self::Nordea;
+    }
 }

@@ -1,0 +1,16 @@
+{
+	"nastaAvstamningsdatum": "2019-06-01",
+	"senastUppdaterad": "2019-05-06T03:04:05Z",
+	"utbetalningssparrinformation": [
+		{
+			"sparridentitet": 111186,
+			"datumFrom": "2019-04-19",
+			"sparrbelopp": 3000
+		},
+		{
+			"sparridentitet": 111185,
+			"datumFrom": "2019-04-19",
+			"totalsparr": true
+		}
+	]
+}

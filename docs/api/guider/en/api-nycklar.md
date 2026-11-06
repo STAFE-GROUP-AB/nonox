@@ -45,7 +45,7 @@ When the person's role changes, the key's access shrinks from the next call. Whe
 
 The list under **Anslutningar** shows when each key was last used and from which address. A key can be revoked at once, and the next call answers `401`. Every key created or revoked, and every write, is in the company's audit trail.
 
-Turning NONOX Connect off for the company revokes every key, after a warning that has to be confirmed.
+Turning NONOX API off for the company revokes every key, after a warning that has to be confirmed.
 
 ## Security in short
 

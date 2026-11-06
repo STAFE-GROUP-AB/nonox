@@ -43,6 +43,8 @@ class SkatteverketPanel extends Component
     /** @var ?array{status: string, resultat: list<array{status: string, kod: string, beskrivning: string}>} */
     public ?array $check = null;
 
+    public bool $figuresReviewed = false;
+
     public function mount(): void
     {
         abort_unless(Skatteverket::isAvailableTo($this->user()) && $this->user()->hasTeamPermission($this->company(), 'vat:prepare'), 403);
@@ -63,7 +65,8 @@ class SkatteverketPanel extends Component
     public function send(SendVatReturnToSkatteverket $send): void
     {
         $this->attempt(function () use ($send): void {
-            $submission = $send($this->user(), $this->fiscalYear(), $this->periodStart());
+            $submission = $send($this->user(), $this->fiscalYear(), $this->periodStart(), $this->figuresReviewed);
+            $this->figuresReviewed = false;
             $this->check = ['status' => (string) $submission->check_status, 'resultat' => $submission->check_results ?? []];
 
             $submission->status === VatSubmissionStatus::ReadyToSign
@@ -94,7 +97,7 @@ class SkatteverketPanel extends Component
         $company = $this->company();
 
         return view('livewire.vat.skatteverket-panel', [
-            'signedIn' => SkatteverketAuth::isSignedIn($this->user()),
+            'signedIn' => SkatteverketAuth::isSignedIn($this->user(), Skatteverket::SCOPE_MOMS),
             'submission' => VatSubmission::query()->whereDate('period_start', $this->periodStart())->first(),
             'canSend' => $this->user()->hasTeamPermission($company, 'vat:submit'),
             'test' => Skatteverket::isTest(),

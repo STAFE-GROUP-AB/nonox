@@ -23,6 +23,9 @@ Med modulen **Bank** kopplar du företagets bankkonton till NONOX med BankID. Tr
 
 Modulen bygger på öppen bankdata (PSD2) via en leverantör som har avtal med bankerna. Därför måste den som driftar NONOX ha ett sådant avtal innan modulen går att slå på. Saknas det står det **Bankkopplingen är inte inställd på den här installationen** när du försöker slå på modulen.
 
+> [!NOTE]
+> I den driftade tjänsten på nonox.app finns inget sådant avtal än, så där går modulen inte att slå på. Läs in bankens filer i stället; se [Bankfiler](/manual/bank/bankfiler). Kör ni NONOX själva behöver ni ett eget avtal med leverantören.
+
 Slå på modulen under **Inställningar för företaget → Moduler**; se [Moduler](/manual/installningar/moduler).
 
 ## Inställningar

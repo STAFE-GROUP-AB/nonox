@@ -15,7 +15,7 @@ Ingenting bokförs av sig självt. Varje fil granskas på samma sätt som när d
 
 ## Innan du börjar
 
-- Modulen **NONOX Connect** måste vara påslagen. Se [NONOX Connect](/manual/installningar/nonox-connect).
+- Modulen **NONOX API** måste vara påslagen. Se [NONOX API](/manual/installningar/nonox-connect).
 - Du behöver vara ägare eller administratör och själv få läsa in SIE-filer.
 - Du behöver en passkey för att lägga till nycklar. Se [Passkeys och inloggningar](/manual/installningar/passkeys-och-inloggningar).
 - Den som driftar NONOX måste ha satt upp SFTP-servern. Står det att SFTP inte är uppsatt på servern går det inte att slå på.
@@ -67,7 +67,7 @@ Klicka på **Lägg SIE-fil för innevarande år i /ut**. Då hamnar en SIE4-fil 
 
 ## Stänga av
 
-Klicka på **Stäng av SFTP**. Ingen kan logga in förrän du slår på det igen. Nycklarna sparas. Stänger du av hela NONOX Connect tas också nycklarna bort.
+Klicka på **Stäng av SFTP**. Ingen kan logga in förrän du slår på det igen. Nycklarna sparas. Stänger du av hela NONOX API tas också nycklarna bort.
 
 ## Bra att veta
 
@@ -78,6 +78,6 @@ Klicka på **Stäng av SFTP**. Ingen kan logga in förrän du slår på det igen
 
 ## Läs också
 
-- [NONOX Connect](/manual/installningar/nonox-connect)
+- [NONOX API](/manual/installningar/nonox-connect)
 - [SIE-filer](/manual/bokforing/sie)
 - [Utvecklare: SFTP för SIE-filer](/utvecklare/sftp)

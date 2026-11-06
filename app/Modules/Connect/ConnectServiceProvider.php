@@ -29,6 +29,10 @@ use App\Modules\Connect\Livewire\ConsentScreen;
 use App\Modules\Connect\Livewire\SftpManager;
 use App\Modules\Connect\Livewire\TestCompanyPanel;
 use App\Modules\Connect\Livewire\WebhooksManager;
+use App\Modules\Connect\Mcp\LimitMcpBody;
+use App\Modules\Connect\Mcp\McpEndpoint;
+use App\Modules\Connect\Mcp\McpGate;
+use App\Modules\Connect\Mcp\McpServiceProvider;
 use App\Modules\Connect\Models\ConnectApp;
 use App\Modules\Connect\OAuth\ConnectAccessTokenRepository;
 use App\Modules\Connect\OAuth\ConnectAuthCodeRepository;
@@ -56,6 +60,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Mcp\Server\Middleware\ValidateMcpHeaders;
 use Laravel\Passport\Bridge\AccessTokenRepository;
 use Laravel\Passport\Bridge\AuthCodeRepository;
 use Laravel\Passport\Bridge\RefreshTokenRepository;
@@ -63,7 +68,7 @@ use Laravel\Passport\Passport;
 use Livewire\Livewire;
 
 /**
- * Registers NONOX Connect (ADR-032): the module, Passport configured for
+ * Registers NONOX API (ADR-032): the module, Passport configured for
  * authorization code + PKCE and rotating refresh tokens only, the OAuth
  * endpoints, API v1 and the pages under Anslutningar.
  */
@@ -80,6 +85,9 @@ class ConnectServiceProvider extends ServiceProvider
         $this->app->bind(AuthCodeRepository::class, ConnectAuthCodeRepository::class);
         $this->app->bind(AccessTokenRepository::class, ConnectAccessTokenRepository::class);
         $this->app->bind(RefreshTokenRepository::class, ConnectRefreshTokenRepository::class);
+
+        // laravel/mcp without its Passport scope, global middleware and routes/ai.php (ADR-063).
+        $this->app->register(McpServiceProvider::class);
     }
 
     public function boot(): void
@@ -173,5 +181,11 @@ class ConnectServiceProvider extends ServiceProvider
             ->name('connect.api.')
             ->middleware([ConnectJson::class, 'throttle:connect-ip', AuthenticateConnect::class, ConnectRateLimit::class, AuditApiWrites::class, SubstituteBindings::class])
             ->group(__DIR__.'/routes/api.php');
+
+        // The MCP server for AI assistants (ADR-063): the same credential, company binding and limits as /api/v1,
+        // only read and draft scopes (McpGate), and the tools run the REST routes above. No AuditApiWrites: every tool call is logged by the tool.
+        Route::post('api/mcp', McpEndpoint::class)
+            ->middleware([LimitMcpBody::class, ConnectJson::class, 'throttle:connect-ip', AuthenticateConnect::class, ConnectRateLimit::class, McpGate::class, ValidateMcpHeaders::class])
+            ->name('connect.mcp');
     }
 }

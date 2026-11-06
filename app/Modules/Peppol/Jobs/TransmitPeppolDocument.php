@@ -18,6 +18,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
@@ -27,6 +28,10 @@ use Throwable;
  * id) goes with every attempt, so a retry after a time-out does not send
  * the invoice twice. A provider that is down or rate-limits is tried again
  * with growing pauses; a refused document fails at once.
+ *
+ * While the operator has paused the access point the job leaves the
+ * transmission queued, marked PAUSED, without using an attempt;
+ * peppol:sync queues it again once the pause is lifted.
  */
 class TransmitPeppolDocument implements ShouldQueue
 {
@@ -35,6 +40,9 @@ class TransmitPeppolDocument implements ShouldQueue
     use Queueable;
 
     public int $tries = 6;
+
+    /** last_error of a transmission waiting for the operator's pause to end (never shown as it is). */
+    public const string PAUSED = 'Paused by the operator.';
 
     public function __construct(
         public readonly int $companyId,
@@ -57,6 +65,12 @@ class TransmitPeppolDocument implements ShouldQueue
             $transmission = PeppolTransmission::query()->find($this->transmissionId);
 
             if (! $transmission instanceof PeppolTransmission || $transmission->status !== TransmissionStatus::Queued) {
+                return;
+            }
+
+            if (AccessPoints::isPaused($transmission->driver)) {
+                $transmission->forceFill(['last_error' => self::PAUSED])->save();
+
                 return;
             }
 
@@ -91,6 +105,7 @@ class TransmitPeppolDocument implements ShouldQueue
             $transmission = PeppolTransmission::query()->find($this->transmissionId);
 
             if ($transmission instanceof PeppolTransmission) {
+                Log::warning('Peppol: a sending failed.', ['company_id' => $this->companyId, 'transmission_id' => $transmission->id, 'driver' => $transmission->driver, 'retryable' => true, 'attempts' => $transmission->attempts]);
                 app(RecordTransmissionStatus::class)($transmission, TransmissionStatus::Failed, error: $exception instanceof AccessPointFailed ? $exception->getMessage() : 'The access point could not be reached.');
             }
         });
@@ -107,6 +122,8 @@ class TransmitPeppolDocument implements ShouldQueue
         }
 
         $transmission->forceFill(['refused' => ! $exception->retryable])->save();
+        // Ids only: never the receiver's Peppol ID (it can be a sole trader's personal identity number) or the document.
+        Log::warning('Peppol: a sending failed.', ['company_id' => $this->companyId, 'transmission_id' => $transmission->id, 'driver' => $transmission->driver, 'retryable' => $exception->retryable, 'attempts' => $transmission->attempts]);
         $record($transmission, TransmissionStatus::Failed, error: $exception->getMessage());
     }
 }

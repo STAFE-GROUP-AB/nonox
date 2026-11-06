@@ -30,6 +30,10 @@ Under **Att göra** samlar NONOX allt som väntar på någon med din roll, i den
 
 Kortet **Pengar som inte är dina** visar hur mycket av pengarna på banken som är moms, personalskatt och arbetsgivaravgifter, och vad som blir **Kvar efter moms och skatter**. Det bygger på det som är bokfört, och obokförda fakturor och kvitton syns inte. Kortet visas när Företagsguiden är påslagen, för den som får se rapporterna. Klicka på **Så räknar vi** för att se varje konto i [Mina datum](/manual/kom-igang/mina-datum#pengar-som-inte-ar-dina).
 
+## Från Skatteverket
+
+Väntar Skatteverket på något från företaget visar översikten kortet **Från Skatteverket**, till exempel **1 händelse från Skatteverket väntar på företaget.** Antalet bygger på kundhändelserna som du själv senast hämtade från Skatteverket; kollegor ser sina egna. Klicka på **Läs händelserna** för att läsa dem på [Mina datum](/manual/kom-igang/mina-datum#fran-skatteverket). Kortet visas bara när installationen är kopplad till Skatteverket, för den som får se rapporterna, och försvinner när händelserna är markerade som hanterade.
+
 ## Senaste verifikationer
 
 De fem senast bokförda verifikationerna. Rör en verifikation bank eller kassa (konto 1900–1999) visas hur mycket pengar som kom in (plus) eller gick ut (minus). Övriga verifikationer, till exempel en kundfaktura som inte är betald än, visas utan tecken eftersom inga pengar har rört sig. Klicka på **Visa alla** för hela listan.

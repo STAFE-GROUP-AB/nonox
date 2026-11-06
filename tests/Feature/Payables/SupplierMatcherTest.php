@@ -13,7 +13,7 @@ beforeEach(function () {
     CurrentCompany::set($this->company);
     $save = app(SaveSupplier::class);
     $this->signals = $save($this->owner, $this->company, ['name' => '37signals LLC', 'payment_terms_days' => 30]);
-    $this->vultr = $save($this->owner, $this->company, ['name' => 'Vultr Holdings, LLC', 'iban' => 'US12 3456 7890 1234 5678 90', 'email' => 'billing@vultr.com', 'payment_terms_days' => 30]);
+    $this->vultr = $save($this->owner, $this->company, ['name' => 'Vultr Holdings, LLC', 'iban' => 'IE29 AIBK 9311 5212 3456 78', 'email' => 'billing@vultr.com', 'payment_terms_days' => 30]);
     $this->grossisten = $save($this->owner, $this->company, ['name' => 'Grossisten AB', 'bankgiro' => '50501055', 'payment_terms_days' => 30]);
 });
 
@@ -24,7 +24,7 @@ it('finds a foreign supplier by its name without legal form, case or punctuation
 });
 
 it('prefers numbers and IBAN over the name, and the e-mail domain unless it is a free mail service', function () {
-    expect(SupplierMatcher::find(['name' => 'Något helt annat', 'iban' => 'us12345678901234567890'])?->id)->toBe($this->vultr->id)
+    expect(SupplierMatcher::find(['name' => 'Något helt annat', 'iban' => 'ie29aibk93115212345678'])?->id)->toBe($this->vultr->id)
         ->and(SupplierMatcher::find(['name' => 'Okänd', 'email' => 'invoices@vultr.com'])?->id)->toBe($this->vultr->id)
         ->and(SupplierMatcher::find(['name' => 'Grossist', 'bankgiro' => '5050-1055'])?->id)->toBe($this->grossisten->id)
         ->and(SupplierMatcher::find(['name' => 'Okänd', 'email' => 'someone@gmail.com']))->toBeNull()

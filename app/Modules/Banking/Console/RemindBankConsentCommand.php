@@ -6,10 +6,12 @@ namespace App\Modules\Banking\Console;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Banking\Actions\ExpireBankConsents;
 use App\Modules\Banking\BankingModule;
 use App\Modules\Banking\Domain\ConnectionStatus;
 use App\Modules\Banking\Mail\BankConsentExpiringMail;
 use App\Modules\Banking\Models\BankConnection;
+use App\Modules\Banking\Support\BankDataProviders;
 use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
@@ -21,7 +23,10 @@ use Illuminate\Support\Facades\Mail;
  * Once a day: reminds the people who manage the bank connections that a
  * consent runs out soon, once per consent, by the company's setting
  * (default 14 days before). Renewing takes a new BankID approval in the
- * bank; NONOX cannot extend a consent by itself.
+ * bank; NONOX cannot extend a consent by itself. Consents past their end
+ * are marked as expired first. No reminder goes out while the operator has
+ * paused the provider (renewing is not possible then); it goes once the
+ * provider is back, since reminded_at is still empty.
  */
 class RemindBankConsentCommand extends Command
 {
@@ -29,9 +34,10 @@ class RemindBankConsentCommand extends Command
 
     protected $description = 'Påminner om bankkopplingar vars medgivande snart går ut (NONOX Bank)';
 
-    public function handle(ModuleManager $modules): int
+    public function handle(ModuleManager $modules, ExpireBankConsents $expire): int
     {
         $sent = 0;
+        $paused = BankDataProviders::isPaused();
 
         foreach ($modules->companiesWith(BankingModule::KEY) as $companyId) {
             $company = Company::query()->find($companyId);
@@ -40,14 +46,15 @@ class RemindBankConsentCommand extends Command
                 continue;
             }
 
+            $expire($company);
             $settings = $modules->settings(BankingModule::KEY, $company);
 
-            if (! BankingModule::setting($settings, 'reconsent_reminders')) {
+            if ($paused || ! BankingModule::setting($settings, 'reconsent_reminders')) {
                 continue;
             }
 
             $days = (int) BankingModule::setting($settings, 'reconsent_reminder_days');
-            $this->info("Kontrollerar {$company->name}...");
+            $this->info("Kontrollerar företag {$company->id}...");
             $sent += CurrentCompany::run($company, fn (): int => $this->remind($company, $days));
         }
 

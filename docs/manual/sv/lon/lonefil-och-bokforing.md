@@ -20,7 +20,7 @@ Lönefilen använder samma bankuppgifter som betalfilerna för leverantörsfaktu
 ## Så här betalar du ut lönen
 
 1. Öppna den attesterade lönekörningen.
-2. Klicka på **Hämta lönefil till banken**.
+2. Kryssa i **Jag har granskat siffrorna** (du som kund ansvarar för att uppgifterna är riktiga) och klicka på **Hämta lönefil till banken**. Utan ikryssad ruta går knappen inte att trycka på.
 3. Logga in i internetbanken och läs in filen som en betalfil. Kontrollera antal och summa och godkänn betalningen i banken.
 4. När banken har betalat: klicka på **Markera som utbetald** i NONOX.
 

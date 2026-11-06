@@ -15,6 +15,7 @@ use App\Modules\Payroll\PayrollModule;
 use App\Support\Audit\Audit;
 use App\Support\Pain001\CreditTransfer;
 use App\Support\Pain001\CreditTransferFile;
+use App\Support\Review\ReviewConfirmation;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Gate;
@@ -37,11 +38,12 @@ class SalaryPaymentFile
     public function __construct(private readonly ModuleManager $modules) {}
 
     /** @return array{xml: string, filename: string} */
-    public function __invoke(User $user, PayrollRun $run): array
+    public function __invoke(User $user, PayrollRun $run, bool $figuresReviewed = false): array
     {
         $company = Company::query()->findOrFail($run->company_id);
         $this->modules->ensureEnabled(PayrollModule::KEY, $company);
         Gate::forUser($user)->authorize('pay', $run);
+        ReviewConfirmation::demand($figuresReviewed, 'figures_reviewed');
 
         if (! $company->payment_bank instanceof PaymentBank || blank($company->iban) || blank($company->bank_agreement_id)) {
             throw ValidationException::withMessages(['run' => [__('Välj bank och fyll i IBAN och avtals-id under Leverantörer → Betalningar först. Lönefilen använder samma bankuppgifter.')]]);
@@ -107,6 +109,8 @@ class SalaryPaymentFile
                 preg_replace('/\D/', '', (string) $company->bankgiro),
                 self::CATEGORY_PURPOSE,
             );
+
+            ReviewConfirmation::record('salary_payment_file', $run, $company, $user);
 
             // Who took a file with whose salaries, and how much in all; never the accounts.
             Audit::record('payroll.payment_file_created', $run, [

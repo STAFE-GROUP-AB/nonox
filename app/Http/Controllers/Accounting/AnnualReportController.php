@@ -9,6 +9,8 @@ use App\Models\AnnualReport;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
+use App\Support\Ixbrl\IxbrlRefused;
+use App\Support\Ixbrl\K2AnnualReportIxbrl;
 use App\Support\Toast;
 use App\Support\WorkQuota;
 use Illuminate\Http\RedirectResponse;
@@ -16,7 +18,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 /**
- * The annual report of a fiscal year as a page to preview and as a PDF.
+ * The annual report of a fiscal year as a page to preview, as a PDF and,
+ * for an aktiebolag, as an iXBRL file for digital filing (Beta, ADR-058).
  */
 class AnnualReportController
 {
@@ -43,6 +46,28 @@ class AnnualReportController
         return response(AnnualReportDocument::pdf($company, $fiscalYear, $report), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.AnnualReportDocument::filename($company, $fiscalYear).'"',
+        ]);
+    }
+
+    /**
+     * The same report as an Inline XBRL file (XHTML). NONOX does not file
+     * it; when it cannot be made, the user is told what is missing.
+     */
+    public function ixbrl(Request $request, FiscalYear $fiscalYear): Response|RedirectResponse
+    {
+        [$company, $report] = $this->resolve($request, $fiscalYear);
+
+        try {
+            $xhtml = K2AnnualReportIxbrl::render($company, $fiscalYear, $report);
+        } catch (IxbrlRefused $refused) {
+            Toast::flash($refused->getMessage(), 'error');
+
+            return back();
+        }
+
+        return response($xhtml, 200, [
+            'Content-Type' => 'application/xhtml+xml; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.K2AnnualReportIxbrl::filename($company, $fiscalYear).'"',
         ]);
     }
 

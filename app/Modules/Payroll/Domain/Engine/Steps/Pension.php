@@ -17,7 +17,7 @@ use Brick\Math\RoundingMode;
  * employment's pension plan, one rate on pay up to 7.5 income base amounts a
  * year and another above, and the special payroll tax on the premium. Both
  * are the employer's costs: on the payslip for information, never in gross
- * or net pay, and booked 7410/2740 and 7530/2730.
+ * or net pay, and booked 7410/2740 and 7530/2514.
  *
  * TODO(legal-verify): the plan rates are the company's (collective agreement
  * or own policy); which pay is pension basis follows the pay codes' cash pay.

@@ -15,16 +15,21 @@ use App\Domain\Accounting\VoucherSource;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Closing\ClosingAccounts;
 use App\Domain\Closing\ClosingChecklist;
+use App\Domain\Closing\CorporateTaxRules;
 use App\Domain\Closing\CurrencyRevaluation;
 use App\Domain\Closing\DividendLimit;
+use App\Domain\Closing\K2Reconfirmation;
+use App\Domain\Closing\TaxProposal;
 use App\Domain\Closing\UnpaidInvoices;
 use App\Domain\Closing\YearResult;
 use App\Domain\Company\AccountingMethod;
+use App\Domain\IncomeTax\IncomeTaxForms;
 use App\Domain\Payables\SupplierInvoiceBooking;
 use App\Models\Account;
 use App\Models\ClosingCheck;
 use App\Models\Company;
 use App\Models\FiscalYear;
+use App\Models\IncomeTaxReturn;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Models\YearEndEntry;
@@ -65,6 +70,7 @@ class YearEndClosing
         $company = $this->companyOf($fiscalYear);
         $this->authorize($user, $company);
         $this->ensureOpen($fiscalYear);
+        $this->ensureK2Confirmed($company, $fiscalYear);
 
         if (! array_key_exists($key, ClosingChecklist::MANUAL) && ! array_key_exists($key, ClosingChecklist::CONFIRMABLE)) {
             throw ValidationException::withMessages(['key' => __('Okänd punkt i checklistan.')]);
@@ -119,6 +125,7 @@ class YearEndClosing
         $company = $this->companyOf($fiscalYear);
         $this->authorize($user, $company);
         $this->ensureOpen($fiscalYear);
+        $this->ensureK2Confirmed($company, $fiscalYear);
 
         if (ClosingAccounts::isOwnerTaxed($company)) {
             throw ValidationException::withMessages(['tax' => __('Företagsformen betalar ingen egen inkomstskatt; ägarna beskattas.')]);
@@ -160,6 +167,142 @@ class YearEndClosing
     }
 
     /**
+     * The person's answer to whether the company is a privatbostadsföretag
+     * (IL 2 kap. 17 §, for instance a bostadsrättsförening) or an
+     * investmentföretag (IL 39 kap. 14 §) for the year: one of
+     * TaxProposal::STATUSES, kept as a closing check. Without the answer
+     * "neither" no tax is proposed (ADR-056).
+     */
+    public function answerTaxStatus(User $user, FiscalYear $fiscalYear, string $status): void
+    {
+        $company = $this->companyOf($fiscalYear);
+        $this->authorize($user, $company);
+        $this->ensureOpen($fiscalYear);
+        $this->ensureK2Confirmed($company, $fiscalYear);
+
+        if (! TaxProposal::appliesTo($company) || ! in_array($status, TaxProposal::STATUSES, true)) {
+            throw ValidationException::withMessages(['status' => __('Välj ett av svaren.')]);
+        }
+
+        CurrentCompany::run($company, fn () => DB::transaction(function () use ($user, $company, $fiscalYear, $status): void {
+            FiscalYear::query()->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();
+
+            if (YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->where('type', YearEndEntry::TAX)->exists()) {
+                throw ValidationException::withMessages(['status' => __('Årets skatt är redan bokförd.')]);
+            }
+
+            ClosingCheck::query()->where('fiscal_year_id', $fiscalYear->id)->whereIn('key', array_diff(TaxProposal::STATUSES, [$status]))->delete();
+            ClosingCheck::query()->firstOrCreate(['fiscal_year_id' => $fiscalYear->id, 'key' => $status], ['checked_by' => $user->id]);
+            Audit::record('closing.tax_status_answered', $fiscalYear, ['status' => $status], $company, $user);
+        }));
+    }
+
+    /**
+     * Books the proposed income tax (TaxProposal, ADR-056) once a person has
+     * reviewed it: one voucher on the last day with the reversal of old
+     * periodiseringsfonder (fund account against 8819), this year's
+     * allocation (8811 against the new fund account) and the tax (8910
+     * against 2512). Zero tax and no fund records that there is no tax,
+     * without a voucher, as bookTax does. Never called by the system itself.
+     *
+     * The person confirms the amount they saw: when the books changed in
+     * between, the proposal is refused and must be looked at again. Booked
+     * once; a wrong voucher is corrected with a correcting voucher.
+     */
+    public function confirmTaxProposal(User $user, FiscalYear $fiscalYear, string $reversal, string $allocation, int $confirmedTaxOre): YearEndEntry
+    {
+        $company = $this->companyOf($fiscalYear);
+        $this->authorize($user, $company);
+        $this->ensureOpen($fiscalYear);
+        $this->ensureK2Confirmed($company, $fiscalYear);
+
+        if (! TaxProposal::appliesTo($company)) {
+            throw ValidationException::withMessages(['tax' => ClosingAccounts::isOwnerTaxed($company)
+                ? __('Företagsformen betalar ingen egen inkomstskatt; ägarna beskattas.')
+                : __('NONOX räknar bara fram skatten för aktiebolag och ekonomiska föreningar. Bokför skatten för hand.')]);
+        }
+
+        // Empty proposes the reversal the law requires (TaxProposal::for).
+        $reversalKronor = trim($reversal) === '' ? null : $this->kronor($reversal, 'reversal');
+        $allocationKronor = $this->kronor($allocation, 'allocation');
+
+        return CurrentCompany::run($company, fn (): YearEndEntry => DB::transaction(function () use ($user, $company, $fiscalYear, $reversalKronor, $allocationKronor, $confirmedTaxOre): YearEndEntry {
+            FiscalYear::query()->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();
+
+            if (YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->where('type', YearEndEntry::TAX)->exists()) {
+                throw ValidationException::withMessages(['tax' => __('Årets skatt är redan bokförd. Rätta verifikationen om den blev fel.')]);
+            }
+
+            if (YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->where('type', YearEndEntry::RESULT)->exists()) {
+                throw ValidationException::withMessages(['tax' => __('Årets resultat är redan bokat. Bokför skatten före resultatet.')]);
+            }
+
+            $return = IncomeTaxReturn::query()->where('fiscal_year_id', $fiscalYear->id)->where('form', IncomeTaxReturn::INK2)->first();
+            $proposal = TaxProposal::for($company, $fiscalYear, $return, $reversalKronor, $allocationKronor);
+            $tax = $proposal->taxOreOrNull() ?? 0;
+            $reversalKronor = $proposal->reversalKronor;
+
+            if ($proposal->status() !== null && ! $proposal->isOrdinary()) {
+                throw ValidationException::withMessages(['tax' => $proposal->status() === TaxProposal::STATUS_PRIVATE_HOUSING
+                    ? __('Ett privatbostadsföretag tar inte upp inkomster och drar inte av utgifter för sin fastighet (inkomstskattelagen 39 kap. 25 §) och får inte sätta av till periodiseringsfond. Bokför skatten för hand.')
+                    : __('Ett investmentföretag har egna skatteregler (inkomstskattelagen 39 kap. 14 §) och får inte sätta av till periodiseringsfond. Bokför skatten för hand.')]);
+            }
+
+            if (($blocker = $proposal->blockers()[0] ?? null) !== null) {
+                throw ValidationException::withMessages(['tax' => $blocker]);
+            }
+
+            if ($proposal->fundBookedByHand() && ($reversalKronor !== 0 || $allocationKronor !== 0)) {
+                throw ValidationException::withMessages(['allocation' => __('En periodiseringsfond är redan bokförd i året. Bokför ändringar av den för hand.')]);
+            }
+
+            if ($reversalKronor > $proposal->reversibleKronor()) {
+                throw ValidationException::withMessages(['reversal' => __('Återföringen kan vara högst :amount, summan av periodiseringsfonderna vid årets början.', ['amount' => IncomeTaxForms::kronor($proposal->reversibleKronor())])]);
+            }
+
+            if ($allocationKronor > $proposal->maxAllocationKronor()) {
+                throw ValidationException::withMessages(['allocation' => __('Avsättningen kan vara högst :amount, 25 procent av överskottet före avsättningen (inkomstskattelagen 30 kap. 5 §).', ['amount' => IncomeTaxForms::kronor($proposal->maxAllocationKronor())])]);
+            }
+
+            $fundAccount = $allocationKronor > 0 ? $proposal->newFundAccount() : null;
+
+            if ($allocationKronor > 0 && $fundAccount === null) {
+                throw ValidationException::withMessages(['allocation' => __('Båda BAS-kontona för årets periodiseringsfond har redan ett saldo. Bokför avsättningen för hand.')]);
+            }
+
+            if ($tax !== $confirmedTaxOre) {
+                throw ValidationException::withMessages(['tax' => __('Beräkningen har ändrats sedan den visades. Granska den igen innan du bekräftar.')]);
+            }
+
+            $rows = $proposal->voucherRows();
+
+            $voucher = null;
+
+            if ($rows !== []) {
+                foreach (array_unique(array_column($rows, 'account')) as $number) {
+                    $this->ensureTaxAccount($number, $fiscalYear, $user, $company);
+                }
+
+                $voucher = $this->book->rows($user, $company, $fiscalYear->end_date, __('Årets skatt :year', ['year' => $fiscalYear->label()]), self::SERIES, $rows, VoucherSource::Closing, $fiscalYear);
+            }
+
+            $entry = YearEndEntry::create(['fiscal_year_id' => $fiscalYear->id, 'type' => YearEndEntry::TAX, 'amount_ore' => $tax, 'voucher_id' => $voucher?->id, 'created_by' => $user->id]);
+            Audit::record('closing.tax_proposal_confirmed', $fiscalYear, [
+                'tax_ore' => $tax,
+                'rate_bp' => $proposal->rateBp(),
+                'taxable_kronor' => $proposal->taxableKronor(),
+                'rounded_kronor' => TaxProposal::roundedTaxable($proposal->taxableKronor()),
+                'reversal_kronor' => $reversalKronor,
+                'allocation_kronor' => $allocationKronor,
+                'fund_account' => $fundAccount,
+                'voucher' => $voucher?->reference(),
+            ], $company, $user);
+
+            return $entry;
+        }));
+    }
+
+    /**
      * Under kontantmetoden, books the customer and supplier invoices unpaid
      * on the last day of the year (UnpaidInvoices, BFL 5 kap. 2 §): one
      * voucher per side on the last day, 1510 against revenue and output VAT
@@ -174,6 +317,7 @@ class YearEndClosing
         $company = $this->companyOf($fiscalYear);
         $this->authorize($user, $company);
         $this->ensureOpen($fiscalYear);
+        $this->ensureK2Confirmed($company, $fiscalYear);
 
         if ($company->accounting_method !== AccountingMethod::Kontantmetoden) {
             throw ValidationException::withMessages(['unpaid' => __('Bara företag med kontantmetoden bokför obetalda fakturor vid årets slut.')]);
@@ -242,6 +386,7 @@ class YearEndClosing
         $company = $this->companyOf($fiscalYear);
         $this->authorize($user, $company);
         $this->ensureOpen($fiscalYear);
+        $this->ensureK2Confirmed($company, $fiscalYear);
 
         if ($fiscalYear->end_date->isAfter(CarbonImmutable::today())) {
             throw ValidationException::withMessages(['revaluation' => __('Omvärderingen görs efter årets sista dag, med kursen den dagen.')]);
@@ -315,6 +460,7 @@ class YearEndClosing
         $company = $this->companyOf($fiscalYear);
         $this->authorize($user, $company);
         $this->ensureOpen($fiscalYear);
+        $this->ensureK2Confirmed($company, $fiscalYear);
 
         return CurrentCompany::run($company, fn (): YearEndEntry => DB::transaction(function () use ($user, $company, $fiscalYear): YearEndEntry {
             FiscalYear::query()->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();
@@ -358,6 +504,7 @@ class YearEndClosing
         }
 
         $this->ensureOpen($fiscalYear);
+        $this->ensureK2Confirmed($company, $fiscalYear);
 
         return CurrentCompany::run($company, fn (): FiscalYear => DB::transaction(function () use ($user, $company, $fiscalYear): FiscalYear {
             // The year-creation lock first, as SIE import and the carry-forward take it (ADR-010): closing and an SIE import of the same year no longer wait on each other in opposite order.
@@ -469,6 +616,14 @@ class YearEndClosing
         }));
     }
 
+    /** Owner decision 16: the K2 conditions are confirmed before the closing continues. */
+    private function ensureK2Confirmed(Company $company, FiscalYear $fiscalYear): void
+    {
+        if (K2Reconfirmation::isPending($company, $fiscalYear)) {
+            throw ValidationException::withMessages(['k2' => __('Bekräfta villkoren för K2 högst upp på sidan innan du fortsätter med bokslutet.')]);
+        }
+    }
+
     private function ensureOpen(FiscalYear $fiscalYear): void
     {
         if (! ($fiscalYear->fresh() ?? $fiscalYear)->isOpen()) {
@@ -487,6 +642,48 @@ class YearEndClosing
 
         $account = Account::create(['number' => $number, 'name' => $name, 'type' => AccountType::forNumber($number)]);
         Audit::record('account.created', $account, ['number' => $number, 'name' => $name, 'reason' => 'exchange_difference'], $company, $user);
+    }
+
+    /** Adds the tax and periodiseringsfond accounts from BAS when the chart lacks them. */
+    private function ensureTaxAccount(int $number, FiscalYear $fiscalYear, User $user, Company $company): void
+    {
+        if (in_array($number, [ClosingAccounts::TAX_EXPENSE, ClosingAccounts::TAX_LIABILITY], true)) {
+            ClosingAccounts::ensure($number);
+
+            return;
+        }
+
+        if (Account::query()->where('number', $number)->exists()) {
+            return;
+        }
+
+        $accounts = CorporateTaxRules::accounts('tax_allocation_reserve_accounts');
+        $name = match (true) {
+            $number === $accounts['allocation'] => __('Avsättning till periodiseringsfond'),
+            $number === $accounts['reversal'] => __('Återföring från periodiseringsfond'),
+            $number >= $accounts['second'] => __('Periodiseringsfond :year – nr 2', ['year' => $fiscalYear->end_date->year]),
+            default => __('Periodiseringsfond :year', ['year' => $fiscalYear->end_date->year]),
+        };
+
+        $account = Account::create(['number' => $number, 'name' => $name, 'type' => AccountType::forNumber($number)]);
+        Audit::record('account.created', $account, ['number' => $number, 'reason' => 'tax_allocation_reserve'], $company, $user);
+    }
+
+    /** Whole kronor, at least 0; empty is 0. */
+    private function kronor(string $value, string $field): int
+    {
+        $value = trim($value);
+        $ore = $value === '' ? 0 : $this->money($value, $field);
+
+        if ($ore < 0) {
+            throw ValidationException::withMessages([$field => __('Skriv beloppet utan minustecken.')]);
+        }
+
+        if ($ore % 100 !== 0) {
+            throw ValidationException::withMessages([$field => __('Skriv beloppet i hela kronor.')]);
+        }
+
+        return intdiv($ore, 100);
     }
 
     private function companyOf(FiscalYear $fiscalYear): Company

@@ -50,7 +50,7 @@
     <p class="wl-eyebrow">Öppen beta</p>
     <h1 id="wl-rubrik">{{ $closed ? 'Kön till NONOX.' : 'Ställ dig i kö till NONOX.' }}</h1>
     <p style="margin-top:22px">NONOX är i <strong>öppen beta</strong>. Vi släpper in nya företag i den takt vi hinner hjälpa dem, så att varje start blir bra.@unless($closed) Svara på några frågor så hör vi av oss.@endunless</p>
-    <p><strong>Skarp lansering av version 1.0 sker den 1 januari 2027.</strong> Det du lägger in under betan ligger kvar, vi rensar ingenting när betan är över.</p>
+    <p><strong>Skarp lansering av version 1.0 sker den 1 februari 2027.</strong> Det du lägger in under betan ligger kvar, vi rensar ingenting när betan är över.</p>
     <ul class="wl-facts">
       <li>Du får ett mejl direkt som bekräftar att du står i kö.</li>
       <li>När vi har godkänt dig får du ett nytt mejl, och sedan loggar du in med en kod. Inga lösenord.</li>

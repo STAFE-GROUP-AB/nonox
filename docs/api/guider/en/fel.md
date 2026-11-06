@@ -49,7 +49,7 @@ The list is generated from the OpenAPI file, so it is always complete. `detail` 
 | `400` | Fix the call. Usually the `Idempotency-Key` is missing or the body is not a JSON object. |
 | `401` | Refresh the access token (OAuth) and try once more. When it answers `401` again, or `invalid_grant` on the refresh, the connection was revoked: ask the person to connect again. For an API key: it has expired or was revoked. |
 | `403` | Do not retry. Read `code`: a scope is missing, the address is not allowed, the company is archived or no longer allows the app. |
-| `404` | The record does not exist, belongs to another company, or NONOX Connect is off for the company. The API deliberately does not tell them apart. |
+| `404` | The record does not exist, belongs to another company, or NONOX API is off for the company. The API deliberately does not tell them apart. |
 | `409` | A call with the same `Idempotency-Key` is running. Wait `Retry-After` seconds and retry with the same key. |
 | `415` | Send `Content-Type: application/json` (or `multipart/form-data` for attachments). |
 | `422` | Fix the data according to `errors`, or use a new `Idempotency-Key` for a new operation. |

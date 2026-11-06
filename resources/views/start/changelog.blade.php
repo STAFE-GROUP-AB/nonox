@@ -104,7 +104,7 @@
       <h2 id="cl-bakgrund">Bakgrund</h2>
       <p>NONOX började i januari 2026 med den grundläggande arkitekturen och en funktionsspecifikation. Mellan februari och september 2026 pågick förberedelserna utanför koden: samtal med företag, funktionslistan, arbetssättet och webbplatsens innehåll. Från oktober 2026 har systemet byggts i full skala, med AI-stödd utveckling under mänsklig ledning.</p>
       <p>Specifikationerna skrivs utifrån lagtexten, BAS, SIE och Skatteverkets dokumentation. Varje lagregel finns som data med en källa, och arbetet går igenom juridisk genomgång, oberoende kontroller och tusentals automatiska tester. Loggen nedan visar varje leverans sedan dess.</p>
-      <p>NONOX är i öppen beta. Målet är version 1.0 den 1 januari 2027.</p>
+      <p>NONOX är i öppen beta. Målet är version 1.0 den 1 februari 2027.</p>
     </aside>
     <div class="cl-meta">
       <a href="{{ route('roadmap') }}" class="cmp-link">Se färdplanen</a>

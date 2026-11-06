@@ -31,9 +31,12 @@ Sidan finns under **Bokföring → Moms**.
 
 När installationen är kopplad till Skatteverket finns rutan **Lämna deklarationen till Skatteverket** under deklarationen. Då behöver du inte ladda ner någon fil.
 
+> [!NOTE]
+> På nonox.app är kopplingen inte påslagen än. Den är byggd mot Skatteverkets testtjänst och provas där av ett fåtal pilotanvändare, och den slås på för alla när avtalet med Skatteverket är klart. Till dess laddar du ner filen och lämnar den hos Skatteverket.
+
 1. Klicka på **Logga in hos Skatteverket med e-legitimation**. Du loggar in hos Skatteverket, inte i NONOX, med e-legitimation, till exempel BankID. Skatteverket kontrollerar vid varje steg att du är behörig firmatecknare, deklarationsombud, ombud för momsdeklaration eller representant för enkla bolag eller partrederi. Inloggningen gäller i ungefär en timme.
 2. Klicka på **Låt Skatteverket kontrollera**. Skatteverket kontrollerar rutorna utan att spara något och visar sina egna fel och varningar. Ett fel måste rättas; en varning stoppar inte, men kontrollera beloppen.
-3. Klicka på **Skicka till Skatteverket** och sedan **Ja, skicka utkastet**. Rutorna sparas som ett utkast i företagets eget utrymme hos Skatteverket och låses för underskrift. Har NONOX redan skickat ett låst utkast för perioden låses det upp och ersätts. Hittar Skatteverkets kontroll fel som stoppar sparas inget, och felen visas.
+3. Klicka på **Skicka till Skatteverket**, kryssa i **Jag har granskat siffrorna** (du som kund ansvarar för att uppgifterna är riktiga) och klicka på **Ja, skicka utkastet**. Rutorna sparas som ett utkast i företagets eget utrymme hos Skatteverket och låses för underskrift. Har NONOX redan skickat ett låst utkast för perioden låses det upp och ersätts. Hittar Skatteverkets kontroll fel som stoppar sparas inget, och felen visas.
 4. Klicka på **Skriv under hos Skatteverket**. Skatteverkets sida öppnas i en ny flik. Där loggar du in med e-legitimation, granskar deklarationen och skriver under.
 5. Kom tillbaka och klicka på **Hämta status från Skatteverket**. Kvittensnumret visas när deklarationen är lämnad, och när Skatteverket har fattat beslut ser du om beslutet stämmer med det NONOX skickade.
 
@@ -59,7 +62,7 @@ Rutan räknas fram av de bokförda verifikationerna. Utkast räknas aldrig med.
 **Ladda ner fil till Skatteverket** ger en fil med rutorna i det format Skatteverket tar emot för momsdeklarationer, så att du inte behöver skriva in beloppen för hand.
 
 > [!NOTE]
-> Filformatet och kopplingen mellan konton och rutor är ännu inte juridiskt kontrollerade i NONOX. Rutorna 06, 07, 08 och 37 har inga konton ännu och fylls aldrig i. Har företaget sådan försäljning eller sådana inköp, fyll i dem i Skatteverkets e-tjänst och fråga din redovisningskonsult.
+> Filformatet och kopplingen mellan konton och rutor är ännu inte juridiskt kontrollerade i NONOX. Ruta 06 (momspliktiga uttag) fylls från kontona 3401–3403 och ruta 08 (hyresinkomster vid frivillig beskattning) från konto 3913. Ruta 07 (vinstmarginalbeskattning) räknas från momsen på kontona 2616, 2626 och 2636, delad med skattesatsen. Rutorna 37 och 38 (mellanmans inköp och försäljning vid trepartshandel) har inget konto i BAS och fylls bara av konton som du själv har kopplat till rutan under **Bokföring → Kontoplan**. Läs [Kontoplan](/manual/bokforing/kontoplan). Har företaget sådan verksamhet, kontrollera de rutorna mot underlaget innan du lämnar deklarationen och fråga din redovisningskonsult.
 
 ## Det här händer i bokföringen
 

@@ -93,6 +93,10 @@ final class PeppolModule implements Module
 
     public function canEnable(Company $company): ModuleCheck
     {
+        if (AccessPoints::isPaused()) {
+            return new ModuleCheck(blockers: [AccessPoints::pausedMessage()]);
+        }
+
         return AccessPoints::isConfigured()
             ? ModuleCheck::allow()
             : new ModuleCheck(blockers: [__('Peppol är inte inställt på den här installationen. Den som driftar NONOX behöver ett avtal med en Peppol-operatör (accesspunkt).')]);

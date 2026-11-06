@@ -9,6 +9,7 @@ use App\Actions\Accounting\PostVoucher;
 use App\Actions\Accounting\SaveDraftVoucher;
 use App\Actions\Payables\RegisterSupplierInvoice;
 use App\Actions\Payables\SaveSupplierInvoice;
+use App\Domain\Invoicing\InvoiceBooking;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\User;
@@ -340,6 +341,11 @@ class ApproveInboxMessage
 
             foreach ((array) (((array) ($proposal['invoice'] ?? []))['rows'] ?? []) as $row) {
                 $row = (array) $row;
+
+                // The öresavrundning row is not a line of goods or services: learning it would put a later 0 % line on 3740.
+                if (($row['rounding'] ?? false) === true || (int) ($row['account'] ?? 0) === InvoiceBooking::ROUNDING) {
+                    continue;
+                }
 
                 if (($row['account'] ?? '') !== '' && isset($row['vat_rate'])) {
                     $accounts[(string) (int) $row['vat_rate']] = (int) $row['account'];

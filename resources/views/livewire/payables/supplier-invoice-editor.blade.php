@@ -42,7 +42,7 @@
     @php
         $bookingAccounts = [
             'names' => $accounts->mapWithKeys(fn ($account) => [$account->number => $account->name])->all(),
-            'vat' => collect($treatments)->mapWithKeys(fn ($treatment) => [$treatment->value => ['input' => $treatment->inputVatAccount(), 'output' => [2500 => $treatment->outputVatAccount(2500), 1200 => $treatment->outputVatAccount(1200), 600 => $treatment->outputVatAccount(600)]]])->all(),
+            'vat' => collect($treatments)->filter(fn ($treatment) => $treatment->buyerIsLiable())->mapWithKeys(fn ($treatment) => [$treatment->value => ['input' => $treatment->inputVatAccount(), 'output' => [2500 => $treatment->outputVatAccount(2500), 1200 => $treatment->outputVatAccount(1200), 600 => $treatment->outputVatAccount(600)]]])->all(),
             'payables' => App\Domain\Payables\SupplierInvoiceBooking::PAYABLES,
             'inputVat' => App\Domain\Payables\SupplierInvoiceBooking::INPUT_VAT,
         ];
@@ -82,6 +82,7 @@
                             <option value="{{ $treatment->value }}">{{ $treatment->label() }}</option>
                         @endforeach
                     </select>
+                    <p class="mt-1 text-sm text-gray-500" x-show="treatment === 'NON_EU_GOODS'" x-cloak>{{ __('Leverantören tar inte ut svensk moms, och du räknar inte moms på fakturan. Momsen på importen bokför du från Tullverkets tullräkning: under Ny verifikation, Importmoms från tullräkning.') }}</p>
                     <p class="mt-1 text-sm text-gray-500" x-show="buyerLiable" x-cloak>{{ __('Fakturan har ingen svensk moms. Du redovisar momsen själv och drar av den samtidigt. Kontot väljs efter momssatsen så att beloppen hamnar i rätt ruta i momsdeklarationen.') }}</p>
                 </x-ui.field>
                 <label class="flex items-start gap-3 text-sm sm:col-span-2">
@@ -122,7 +123,7 @@
                 <x-ui.field for="supplier_invoice_total" :label="$currency === 'SEK' ? __('Att betala, inkl. moms') : __('Att betala i kronor, inkl. moms')" error="total">
                     <input id="supplier_invoice_total" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" x-model="total" x-on:blur="fillSingleRow()" placeholder="0,00">
                 </x-ui.field>
-                <div x-show="! buyerLiable">
+                <div x-show="swedishVat">
                     <x-ui.field for="supplier_invoice_vat" :label="__('Varav moms')" error="vat" :hint="__('Summan av momsen på fakturan, alla momssatser.')">
                         <input id="supplier_invoice_vat" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" x-model="vat" x-on:blur="fillSingleRow()" placeholder="0,00">
                     </x-ui.field>

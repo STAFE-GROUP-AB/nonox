@@ -25,7 +25,7 @@ Beloppet i kronor måste vara valutabeloppet gånger kursen, med högst en krona
 
 ## Så här registrerar du betalningen
 
-Fakturor i utländsk valuta betalar du i internetbanken – de kan inte tas med i en betalfil.
+Har du Handelsbanken eller Nordea kan en faktura i utländsk valuta tas med i en betalfil, en valuta per fil. Läs [Betalfiler](/manual/leverantorer/betalfiler). Hos övriga banker betalar du den i internetbanken och registrerar betalningen på fakturan.
 
 1. Öppna den attesterade fakturan.
 2. Fyll i **Betaldag**.
@@ -55,7 +55,7 @@ Enligt kontantmetoden bokförs kostnaden och momsen vid betalningen till faktura
 
 ## Det här går inte än
 
-- Fakturor i utländsk valuta kan inte tas med i betalfiler.
+- Fakturor i utländsk valuta kan bara tas med i betalfiler hos Handelsbanken och Nordea, och bara om leverantörens uppgifter är kompletta. Hos övriga banker betalar du i internetbanken.
 - Kreditnotor och fakturor i utländsk valuta kan inte kvittas mot varandra.
 
 > [!NOTE]

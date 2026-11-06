@@ -23,6 +23,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $supplier_invoice_id
  * @property Money $amount_ore
  * @property string $end_to_end_id
+ * @property string $currency
+ * @property ?int $foreign_amount_minor
+ * @property ?string $payment_info_id
  * @property ?int $supplier_payment_id
  * @property ?string $bank_status
  * @property ?CarbonImmutable $bank_status_at
@@ -44,6 +47,9 @@ class SupplierPaymentBatchItem extends Model
         'supplier_invoice_id',
         'amount_ore',
         'end_to_end_id',
+        'currency',
+        'foreign_amount_minor',
+        'payment_info_id',
     ];
 
     /** @return array<string, string> */
@@ -53,6 +59,12 @@ class SupplierPaymentBatchItem extends Model
             'amount_ore' => MoneyCast::class,
             'bank_status_at' => 'immutable_datetime',
         ];
+    }
+
+    /** A payment in a foreign currency: amount_ore is the kronor expected, the amount paid is foreign_amount_minor. */
+    public function isForeign(): bool
+    {
+        return $this->currency !== 'SEK';
     }
 
     public function isPaid(): bool

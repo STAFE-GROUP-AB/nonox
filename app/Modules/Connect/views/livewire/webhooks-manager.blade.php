@@ -60,7 +60,7 @@
                             @if($webhook->disabled_reason === 'failing')
                                 {{ __('Avstängd :date: mottagaren svarade inte på ungefär ett dygn.', ['date' => $webhook->disabled_at?->timezone('Europe/Stockholm')->format('Y-m-d H:i')]) }}
                             @elseif($webhook->disabled_reason === 'module_disabled')
-                                {{ __('Avstängd när NONOX Connect stängdes av.') }}
+                                {{ __('Avstängd när NONOX API stängdes av.') }}
                             @else
                                 {{ __('Avstängd.') }}
                             @endif

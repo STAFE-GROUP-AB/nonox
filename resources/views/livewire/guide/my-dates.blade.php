@@ -143,6 +143,9 @@
         </section>
     @endif
 
+    {{-- Från Skatteverket (ADR-054 stage 4): renders nothing unless the integration is offered to the person. --}}
+    <livewire:guide.skatteverket-events />
+
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div class="min-w-0 space-y-8">
             <nav aria-label="{{ __('Visa datum för') }}" data-dates-filters>

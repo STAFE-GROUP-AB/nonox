@@ -57,7 +57,7 @@ Under **Lön → Regler** ser du alla, med namn på svenska och värdet utskrive
 - **Arbetsgivardeklarationen** – fältkoder, filformat och deklarationsdagarna.
 
 > [!NOTE]
-> Regionalt stöd för arbetsgivaravgifter finns som regel men dras inte av i lönen ännu. Har företaget rätt till stödet: prata med er redovisningskonsult.
+> Regionalt stöd för arbetsgivaravgifter dras av i lönen när inställningen **Regionalt stöd** är ikryssad under Lön → Inställningar: 10 procent av avgiftsunderlaget, inom bolagets månadstak och inte under ålderspensionsavgiften, och inte för den som fyllt 67 vid årets början. Kryssa bara i om företaget uppfyller villkoren i lagen. Osäker: prata med er redovisningskonsult.
 
 ## Skattetabellerna
 

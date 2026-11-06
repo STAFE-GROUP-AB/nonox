@@ -12,6 +12,7 @@ use App\Modules\Peppol\Actions\RecordTransmissionStatus;
 use App\Modules\Peppol\Domain\AccessPointFailed;
 use App\Modules\Peppol\Domain\PeppolDocumentTooLarge;
 use App\Modules\Peppol\Domain\TransmissionStatus;
+use App\Modules\Peppol\Jobs\TransmitPeppolDocument;
 use App\Modules\Peppol\Models\PeppolParticipant;
 use App\Modules\Peppol\Models\PeppolTransmission;
 use App\Modules\Peppol\PeppolModule;
@@ -28,6 +29,8 @@ use Throwable;
  * have arrived, and while the module is on asks how documents sent in the
  * last 14 days fared.
  * Scheduled every 15 minutes; each company runs in its own context.
+ * Does nothing while the operator has paused the access point; after the
+ * pause it first queues again the sendings that waited for it.
  */
 class SyncPeppolCommand extends Command
 {
@@ -42,6 +45,14 @@ class SyncPeppolCommand extends Command
 
             return self::SUCCESS;
         }
+
+        if (AccessPoints::isPaused()) {
+            $this->warn('Peppol is paused (NONOX_PEPPOL_PAUSED): nothing is fetched or sent.');
+
+            return self::SUCCESS;
+        }
+
+        $this->resumePaused();
 
         // Every company linked to the access point, whether the module is on or not: a document that arrives for a
         // company must never be left behind (it goes to quarantine when the company does not receive).
@@ -118,5 +129,26 @@ class SyncPeppolCommand extends Command
         $this->comment('Peppol sync done for '.count($ids).' companies.');
 
         return self::SUCCESS;
+    }
+
+    /** Sendings that waited for the operator's pause are queued again, each once (the mark is cleared first). */
+    private function resumePaused(): void
+    {
+        // Across companies to find them; each job then runs inside its own company.
+        $waiting = CompanyScope::bypass(fn () => PeppolTransmission::query()
+            ->where('status', TransmissionStatus::Queued->value)
+            ->where('last_error', TransmitPeppolDocument::PAUSED)
+            ->orderBy('queued_at')
+            ->limit(500)
+            ->get(['id', 'company_id']));
+
+        foreach ($waiting as $transmission) {
+            $cleared = CompanyScope::bypass(fn (): int => PeppolTransmission::query()->whereKey($transmission->id)->where('last_error', TransmitPeppolDocument::PAUSED)->update(['last_error' => null]));
+
+            if ($cleared === 1) {
+                $this->info("Queueing transmission `{$transmission->id}` again after the pause...");
+                TransmitPeppolDocument::dispatch($transmission->company_id, $transmission->id);
+            }
+        }
     }
 }

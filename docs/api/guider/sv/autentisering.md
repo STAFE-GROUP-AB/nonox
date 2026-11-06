@@ -88,7 +88,7 @@ Saknas `code_challenge`, eller är metoden inte `S256`, skickas personen tillbak
 Personen loggar in om det behövs och ser på svenska vilken app det är och vad den ber om. Hen väljer ett av sina företag och godkänner. Det går bara när:
 
 - personen är **ägare eller administratör** i företaget;
-- NONOX Connect är påslaget för företaget och företaget inte är arkiverat;
+- NONOX API är påslaget för företaget och företaget inte är arkiverat;
 - företaget tillåter appen (om det har valt att bara tillåta vissa appar);
 - personen **bekräftar med sin passkey** i samma stund. En inloggad session räcker inte, så den som bara har kommit åt en mejlkorg kan inte släppa in en app.
 

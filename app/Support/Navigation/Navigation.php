@@ -10,6 +10,7 @@ use App\Modules\Crm\CrmModule;
 use App\Modules\ModuleManager;
 use App\Modules\ModuleRegistry;
 use App\Support\Hq\HqAccess;
+use App\Support\Skatteverket\Skatteverket;
 use Closure;
 use Illuminate\Support\Str;
 
@@ -66,6 +67,7 @@ final class Navigation
             ['label' => __('Kunder'), 'route' => 'hq.customers'],
             ['label' => __('Inställningar'), 'route' => 'hq.settings'],
             ['label' => __('Företagsregistret'), 'route' => 'hq.registry'],
+            ['label' => __('Integrationer'), 'route' => 'hq.integrations'],
         ], $currentRoute) : [];
 
         return new NavSection(__('HQ'), 'hq.waitlist', $patterns, $active, $children);
@@ -152,7 +154,7 @@ final class Navigation
                 'label' => __('Bokföring'),
                 'route' => 'accounting.vouchers.index',
                 'patterns' => ['accounting.*', 'vat.*'],
-                'children' => fn (User $user, Company $company): array => $this->bookkeeping($can),
+                'children' => fn (User $user, Company $company): array => $this->bookkeeping($can, $user),
             ],
         ];
 
@@ -175,8 +177,10 @@ final class Navigation
             $sections[] = [
                 'label' => __('Mina företag'),
                 'route' => 'companies.overview',
-                'patterns' => ['companies.overview'],
-                'children' => fn (User $user, Company $company): array => [],
+                'patterns' => ['companies.overview', 'group.*'],
+                'children' => fn (User $user, Company $company): array => [
+                    ['label' => __('Koncernöversikt'), 'route' => 'group.overview', 'active' => ['group.overview']],
+                ],
             ];
         }
 
@@ -187,7 +191,7 @@ final class Navigation
      * @param  Closure(string): bool  $can
      * @return list<ChildLink>
      */
-    private function bookkeeping(Closure $can): array
+    private function bookkeeping(Closure $can, User $user): array
     {
         $ongoing = __('Löpande');
         $reports = __('Rapporter och moms');
@@ -197,6 +201,7 @@ final class Navigation
         $links = [
             ['label' => __('Verifikationer'), 'route' => 'accounting.vouchers.index', 'group' => $ongoing],
             $can('vouchers:post') ? ['label' => __('Bankavstämning'), 'route' => 'accounting.bankReconciliation', 'group' => $ongoing] : null,
+            $can('reports:view') && Skatteverket::isAvailableTo($user) ? ['label' => __('Skattekontot'), 'route' => 'accounting.taxAccount', 'group' => $ongoing] : null,
             $can('fiscal-years:manage') ? ['label' => __('Periodiseringar'), 'route' => 'accounting.accruals', 'group' => $ongoing] : null,
             $can('fiscal-years:manage') ? ['label' => __('Anläggningar'), 'route' => 'accounting.fixedAssets', 'group' => $ongoing] : null,
             $can('import:sie') ? ['label' => __('Läs in SIE-fil'), 'route' => 'accounting.sieImports.index', 'group' => $ongoing] : null,
@@ -207,7 +212,7 @@ final class Navigation
             ['label' => __('Räkenskapsår'), 'route' => 'accounting.fiscalYears', 'group' => $closing],
             $can('fiscal-years:manage') ? ['label' => __('Bokslut'), 'route' => 'accounting.closing', 'group' => $closing] : null,
             $can('fiscal-years:manage') ? ['label' => __('Årsredovisning'), 'route' => 'accounting.annualReport', 'group' => $closing] : null,
-            $can('fiscal-years:manage') ? ['label' => __('Inkomstdeklaration'), 'route' => 'accounting.incomeTax', 'group' => $closing] : null,
+            $can('fiscal-years:manage') ? ['label' => __('Inkomstdeklaration'), 'route' => 'accounting.incomeTax', 'active' => ['accounting.incomeTax', 'accounting.incomeTax.*', 'accounting.k10', 'accounting.k10.*'], 'group' => $closing] : null,
             ['label' => __('Kontoplan'), 'route' => 'accounting.accounts', 'group' => $settings],
             ['label' => __('Verifikationsserier'), 'route' => 'accounting.voucherSeries', 'group' => $settings],
             ['label' => __('Kostnadsställen'), 'route' => 'accounting.costCenters', 'group' => $settings],

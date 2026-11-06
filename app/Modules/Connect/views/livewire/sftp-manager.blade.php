@@ -4,7 +4,7 @@
     'not_set_up' => __('SFTP är inte uppsatt på servern.'),
     'disabled' => __('SFTP är avstängt.'),
     'company_archived' => __('Företaget är arkiverat.'),
-    'module_off' => __('NONOX Connect är avstängt.'),
+    'module_off' => __('NONOX API är avstängt.'),
     'responsible_lacks_rights' => __('Den ansvariga personen får inte längre läsa in SIE-filer eller hantera anslutningar. Slå på SFTP igen för att bli ansvarig själv.'),
 ])
 <section class="space-y-3" x-data="{

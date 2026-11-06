@@ -45,6 +45,10 @@ class ConnectBank
         BankingGate::manage($user, $company);
         app(ModuleManager::class)->ensureEnabled(BankingModule::KEY, $company);
 
+        if (BankDataProviders::isPaused()) {
+            throw ValidationException::withMessages(['institution' => BankDataProviders::pausedMessage()]);
+        }
+
         if (! in_array($psuType, self::PSU_TYPES, true)) {
             throw ValidationException::withMessages(['psuType' => __('Välj om kontot är ett företagskonto eller ett privatkonto.')]);
         }
@@ -108,6 +112,10 @@ class ConnectBank
     {
         BankingGate::manage($user, $company);
         app(ModuleManager::class)->ensureEnabled(BankingModule::KEY, $company);
+
+        if (BankDataProviders::isPaused($flow['provider'])) {
+            throw ValidationException::withMessages(['institution' => BankDataProviders::pausedMessage()]);
+        }
 
         $provider = BankDataProviders::make($flow['provider']);
         $grant = $provider->completeAuthorisation($code);

@@ -159,5 +159,7 @@
     ":count konto skiljer från de utgående balanserna för :from.|:count konton skiljer från de utgående balanserna för :from.": ":count konto skiljer från de utgående balanserna för :from.|:count konton skiljer från de utgående balanserna för :from.",
     ":count konto skiljer från de utgående balanserna för :from. Uppdatera de ingående balanserna under Räkenskapsår.|:count konton skiljer från de utgående balanserna för :from. Uppdatera de ingående balanserna under Räkenskapsår.": ":count konto skiljer från de utgående balanserna för :from. Uppdatera de ingående balanserna under Räkenskapsår.|:count konton skiljer från de utgående balanserna för :from. Uppdatera de ingående balanserna under Räkenskapsår.",
     "Passerat för :count dag sedan|Passerat för :count dagar sedan": "Passerat för :count dag sedan|Passerat för :count dagar sedan",
-    "{1} En ny anmälan det senaste dygnet:|[2,*] :count nya anmälningar det senaste dygnet:": "{1} En ny anmälan det senaste dygnet:|[2,*] :count nya anmälningar det senaste dygnet:"
+    "{1} En ny anmälan det senaste dygnet:|[2,*] :count nya anmälningar det senaste dygnet:": "{1} En ny anmälan det senaste dygnet:|[2,*] :count nya anmälningar det senaste dygnet:",
+    "{1} Ett företag i koncernen visas inte, eftersom du inte har tillgång till dess rapporter.|[2,*] :count företag i koncernen visas inte, eftersom du inte har tillgång till deras rapporter.": "{1} Ett företag i koncernen visas inte, eftersom du inte har tillgång till dess rapporter.|[2,*] :count företag i koncernen visas inte, eftersom du inte har tillgång till deras rapporter.",
+    "{1} ett företag|[2,*] :count företag": "{1} ett företag|[2,*] :count företag"
 }

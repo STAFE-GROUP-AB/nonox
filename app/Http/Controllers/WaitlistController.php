@@ -25,7 +25,7 @@ class WaitlistController
             'closed' => ! InstanceSettings::current()->waitlistOpen(),
             'registrationOpen' => InstanceSettings::current()->selfRegistrationOpen(),
             'pageTitle' => 'Ställ dig i kö – NONOX öppen beta',
-            'pageDescription' => 'NONOX är i öppen beta. Ställ dig i kö så släpper vi in dig. Skarp lansering av version 1.0 den 1 januari 2027.',
+            'pageDescription' => 'NONOX är i öppen beta. Ställ dig i kö så släpper vi in dig. Skarp lansering av version 1.0 den 1 februari 2027.',
         ]);
     }
 }

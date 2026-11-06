@@ -131,6 +131,7 @@ final class UblInvoiceParser implements InvoiceDocumentParser
             vatBreakdown: $breakdown,
             embeddedDocument: $this->embedded($xpath, $root),
             buyerReference: $this->text($xpath, 'cbc:BuyerReference', $root),
+            roundingOre: self::ore($this->text($xpath, 'cac:LegalMonetaryTotal/cbc:PayableRoundingAmount', $root) ?? '0'),
         );
     }
 

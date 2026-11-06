@@ -18,6 +18,7 @@ Avsnittet är för dig som sköter den löpande bokföringen. Bankavstämningen 
 
 - [Bankavstämning](/manual/bank/bankavstamning) – stäm av ett bank- eller kassakonto mot kontoutdraget, steg för steg.
 - [Skillnader i bankavstämningen](/manual/bank/skillnader-i-avstamningen) – vad du gör när saldona inte stämmer.
+- [Skattekontot](/manual/bank/skattekontot) – stäm av konto 1630 mot skattekontot hos Skatteverket och bokför det som saknas (Beta).
 
 ## Bankens filer
 

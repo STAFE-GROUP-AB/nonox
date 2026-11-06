@@ -50,13 +50,13 @@
       <div class="al-price" style="background:var(--accl)">
         <span style="font-size:14px;font-weight:600">NONOX, fem anställda</span>
         <b style="color:var(--acct)">{{ $kr($nonox['per_year']) }}<span style="font-size:15px;font-weight:600;letter-spacing:0">/år</span></b>
-        <span style="font-size:13px">Alla delar ingår. 0 kr om du kör själv.</span>
+        <span style="font-size:13px">Alla delar ingår. 0 kr om du kör själv. NONOX Connect (Peppol, Skatteverket, bank) är ett tillägg som kostar extra: leverantörens pris + 10 %, från 2027-01-11.</span>
       </div>
       @if($saving > 0)
         <div class="al-price" style="background:#15171C;color:#F7F5F0">
           <span style="font-size:14px;font-weight:600;color:#D9D7D1">Du sparar</span>
           <b style="color:#FF5A36">{{ $kr($saving) }}<span style="font-size:15px;font-weight:600;letter-spacing:0">/år</span></b>
-          <span style="font-size:13px;color:#D9D7D1">Listpriser hämtade {{ \Illuminate\Support\Str::of($comparison['fetched_at'])->replace(' ', ' kl. ') }}.</span>
+          <span style="font-size:13px;color:#D9D7D1">Listpriser hämtade {{ \Illuminate\Support\Str::of($other['fetched_at'] ?? $comparison['fetched_at'])->replace(' ', ' kl. ') }}.</span>
         </div>
       @endif
     </div>

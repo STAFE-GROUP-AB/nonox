@@ -181,6 +181,15 @@ it('keeps 2027 blocked: its parameter file is there, unverified, with the schabl
         ->and(IncomeTaxParameters::for(2027))->toBeNull();
 });
 
+it('keeps 2026 blocked in production until a human has checked its parameters', function () {
+    $data = json_decode((string) file_get_contents(database_path('data/income-tax/2026.json')), true);
+
+    config(['nonox.income_tax_data_path' => database_path('data/income-tax')]);
+
+    expect($data['verified'])->toBeFalse()
+        ->and(IncomeTaxParameters::for(2026))->toBeNull();
+});
+
 it('writes the NE as an SRU file, golden', function () {
     neSaved($this, ['7713' => '1 000'], ['activity' => 'Snickeri', 'capital_base' => '100 000', 'positive_allocation' => '8 550']);
     $files = Bookkeeping::unzipSru($this->returns->sruZip($this->owner, $this->year));

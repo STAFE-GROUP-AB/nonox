@@ -1,6 +1,6 @@
-# NONOX Connect – utvecklarguide
+# NONOX API – utvecklarguide
 
-NONOX Connect är NONOX öppna API. Andra program – integrationsplattformar, kassasystem, egna skript – kan läsa och skriva bokföringen i ett företag, men bara det de har fått rätt till och bara i det företag de har anslutits till.
+NONOX API är NONOX öppna API. Andra program – integrationsplattformar, kassasystem, egna skript – kan läsa och skriva bokföringen i ett företag, men bara det de har fått rätt till och bara i det företag de har anslutits till.
 
 Den fullständiga beskrivningen av varje anrop, med exempel, finns i [`openapi.yaml`](openapi.yaml) (OpenAPI 3.1). Den filen är facit; den här guiden förklarar hur delarna hänger ihop. Beslut och säkerhetsmodell: [ADR-032](../adr/ADR-032-public-api-and-nonox-connect.md).
 
@@ -16,7 +16,7 @@ Den publika utvecklarwebben finns på [nonox.app/utvecklare](https://nonox.app/u
 
 ## 1. Slå på modulen
 
-API:t är en modul och är avstängt från början. En ägare eller administratör slår på **NONOX Connect** under Inställningar → Moduler. Så länge modulen är avstängd svarar varje anrop för företaget `404`, som om API:t inte fanns. Stängs modulen av kopplas alla appar bort, alla API-nycklar återkallas och alla webhooks stängs av.
+API:t är en modul och är avstängt från början. En ägare eller administratör slår på **NONOX API** under Inställningar → Moduler. Så länge modulen är avstängd svarar varje anrop för företaget `404`, som om API:t inte fanns. Stängs modulen av kopplas alla appar bort, alla API-nycklar återkallas och alla webhooks stängs av.
 
 Under modulens inställningar kan företaget välja att bara tillåta vissa appar och begränsa hela API:t till vissa IP-adresser eller nät.
 
@@ -325,7 +325,7 @@ $ok = $t !== null && abs(time() - $t) <= 300
 
 ## 15. Testföretag
 
-För att prova API:t utan att röra riktig bokföring finns testföretag: egna företag med påhittade kunder, leverantörer, artiklar, kostnadsställen, verifikationer, en skapad och delbetald faktura, ett fakturautkast och en leverantörsfaktura som väntar på attest – allt gjort med samma funktioner som appen. NONOX Connect är påslaget.
+För att prova API:t utan att röra riktig bokföring finns testföretag: egna företag med påhittade kunder, leverantörer, artiklar, kostnadsställen, verifikationer, en skapad och delbetald faktura, ett fakturautkast och en leverantörsfaktura som väntar på attest – allt gjort med samma funktioner som appen. NONOX API är påslaget.
 
 - Den som driftar: `php artisan connect:test-company utvecklare@exempel.se --name="Prova API AB"` (användaren måste finnas).
 - En ägare eller administratör: **Anslutningar → Testföretag för API:t**. Högst tre per person.

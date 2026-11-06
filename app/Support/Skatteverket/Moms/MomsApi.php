@@ -7,6 +7,7 @@ namespace App\Support\Skatteverket\Moms;
 use App\Support\Skatteverket\Skatteverket;
 use App\Support\Skatteverket\SkatteverketClient;
 use App\Support\Skatteverket\SkatteverketFailed;
+use App\Support\Skatteverket\SkatteverketLink;
 
 /**
  * Skatteverket's API Momsdeklaration v1 (RAML 1.0.25, library 1.0.38).
@@ -111,20 +112,10 @@ final class MomsApi
         ];
     }
 
-    /**
-     * Only a link to Skatteverket's own site is shown to the user. Browsers
-     * read a backslash as a slash and drop what is before an "@", so a link
-     * with either, or with whitespace, is refused before the host is read.
-     */
+    /** Only a link to Skatteverket's own site is shown to the user (SkatteverketLink). */
     public static function isSkatteverketLink(string $link): bool
     {
-        if (! str_starts_with($link, 'https://') || preg_match('/[\\\\@\s\x00-\x1f\x7f]/', $link) === 1) {
-            return false;
-        }
-
-        $host = parse_url($link, PHP_URL_HOST);
-
-        return is_string($host) && preg_match('/^[a-z0-9.-]+$/', $host) === 1 && ($host === 'skatteverket.se' || str_ends_with($host, '.skatteverket.se'));
+        return SkatteverketLink::isSkatteverket($link);
     }
 
     private static function url(string $path): string

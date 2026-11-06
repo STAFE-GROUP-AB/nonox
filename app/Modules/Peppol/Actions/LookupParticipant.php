@@ -30,6 +30,10 @@ class LookupParticipant
         abort_unless($user->hasTeamPermission($company, 'invoices:create') || $user->hasTeamPermission($company, 'invoices:send'), 403);
         $this->modules->ensureEnabled(PeppolModule::KEY, $company);
 
+        if (AccessPoints::isPaused()) {
+            throw ValidationException::withMessages(['peppol_id' => AccessPoints::pausedMessage()]);
+        }
+
         $participant = PeppolIdentifier::tryFrom($identifier)
             ?? throw ValidationException::withMessages(['peppol_id' => __('Skriv Peppol-ID som schema och nummer, till exempel 0007:5561234567.')]);
 

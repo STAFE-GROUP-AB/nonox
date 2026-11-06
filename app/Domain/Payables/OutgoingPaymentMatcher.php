@@ -53,7 +53,10 @@ final class OutgoingPaymentMatcher
         /** @var Collection<int, SupplierPaymentBatch> $batches */
         $batches = $messageIds === [] ? collect() : SupplierPaymentBatch::query()
             ->with('items.invoice')
-            ->whereIn('message_id', $messageIds)
+            ->where(fn (Builder $query) => $query
+                ->whereIn('message_id', $messageIds)
+                // A block of a file with payments in several currencies has its own PmtInfId (ADR-014 addendum).
+                ->orWhereHas('items', fn (Builder $item) => $item->whereIn('payment_info_id', $messageIds)))
             ->get();
 
         $matches = [];
@@ -85,9 +88,18 @@ final class OutgoingPaymentMatcher
         $fileIds = array_filter([$event->originalMessageId, $event->paymentInfoId]);
 
         if ($event->endToEndId === null) {
-            $batch = $batches->first(fn (SupplierPaymentBatch $batch): bool => in_array($batch->message_id, $fileIds, true));
+            $batch = $batches->first(fn (SupplierPaymentBatch $batch): bool => in_array($batch->message_id, $fileIds, true)
+                || $batch->items->contains(fn (SupplierPaymentBatchItem $item): bool => in_array($item->payment_info_id, $fileIds, true)));
 
-            return $batch === null ? null : new PaymentMatch($batch, array_values($batch->items->all()), PaymentResponse::BY_REFERENCE);
+            if ($batch === null) {
+                return null;
+            }
+
+            // An answer about one payment information block concerns only the payments written in it.
+            $block = $event->paymentInfoId === null ? collect() : $batch->items->where('payment_info_id', $event->paymentInfoId);
+            $items = $block->isNotEmpty() ? $block : $batch->items;
+
+            return new PaymentMatch($batch, array_values($items->all()), PaymentResponse::BY_REFERENCE);
         }
 
         $candidates = $items->where('end_to_end_id', $event->endToEndId);
@@ -117,6 +129,7 @@ final class OutgoingPaymentMatcher
      */
     private function byAmount(OutgoingPaymentEvent $event, array $taken): ?PaymentMatch
     {
+        // Payments abroad are matched by their references only: the bank's kronor are not known beforehand.
         if ($event->amountOre === null || $event->date === null || ($event->currency !== null && $event->currency !== 'SEK')) {
             return null;
         }
@@ -126,7 +139,7 @@ final class OutgoingPaymentMatcher
         $account = $event->creditorAccount === null ? null : preg_replace('/\D/', '', $event->creditorAccount);
 
         $candidates = $this->openItems()->filter(function (SupplierPaymentBatchItem $item) use ($event, $date, $account, $taken): bool {
-            if (isset($taken[$item->id]) || $item->amount_ore->ore !== $event->amountOre || $item->batch === null) {
+            if (isset($taken[$item->id]) || $item->isForeign() || $item->amount_ore->ore !== $event->amountOre || $item->batch === null) {
                 return false;
             }
 

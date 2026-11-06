@@ -134,7 +134,7 @@ it('shows the pages of Lön while payroll is on', function () {
     $open = openSection($this->owner, $this->company, 'payroll.employees');
 
     expect($open?->label)->toBe('Lön')
-        ->and(pageLabels($open))->toBe(['Lönekörningar', 'Ansökningar', 'Anställda', 'Arbetsgivardeklaration', 'Rapporter', 'Semesterår', 'Semesterskuld', 'Komptid', 'Regler', 'Flytt av lönedata', 'Kom igång'])
+        ->and(pageLabels($open))->toBe(['Lönekörningar', 'Ansökningar', 'Anställda', 'Arbetsgivardeklaration', 'Rapporter', 'Semesterår', 'Semesterskuld', 'Komptid', 'Förmånsbilar', 'Regler', 'Flytt av lönedata', 'Kom igång'])
         ->and($open?->current()?->label)->toBe('Anställda')
         ->and(openSection($this->owner, $this->company, 'payroll.index')?->current()?->label)->toBe('Kom igång');
 
@@ -165,7 +165,7 @@ it('adds HQ with Kö and Kunder last for an HQ admin, also without a company', f
 
     expect($hq->label)->toBe('HQ')
         ->and($hq->active)->toBeTrue()
-        ->and(pageLabels($hq))->toBe(['Kö', 'Kunder', 'Inställningar', 'Företagsregistret'])
+        ->and(pageLabels($hq))->toBe(['Kö', 'Kunder', 'Inställningar', 'Företagsregistret', 'Integrationer'])
         ->and($hq->current()?->label)->toBe('Kunder')
         ->and(collect($sections)->filter(fn (NavSection $section): bool => $section->active))->toHaveCount(1);
 

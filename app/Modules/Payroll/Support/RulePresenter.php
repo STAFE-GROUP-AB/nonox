@@ -29,6 +29,8 @@ final class RulePresenter
         'benefit.meal.breakfast' => 'Kostförmån, frukost',
         'benefit.meal.lunch_or_dinner' => 'Kostförmån, lunch eller middag',
         'benefit.car.formula' => 'Bilförmån, beräkning',
+        'benefit.car.scope' => 'Bilförmån, vilka bilar som räknas',
+        'benefit.fuel.factor' => 'Drivmedelsförmån, uppräkning',
         'per_diem.domestic.full' => 'Traktamente i Sverige, hel dag',
         'per_diem.domestic.half' => 'Traktamente i Sverige, halv dag',
         'per_diem.domestic.night' => 'Nattraktamente',
@@ -136,6 +138,12 @@ final class RulePresenter
                 array_map('strval', array_keys($value)),
                 array_values($value),
             ),
+            'benefit.car.scope' => [
+                self::say('Beräkningen gäller bilar som blev skattepliktiga från :date', ['date' => $value['formula_from_taxable_on'] ?? '']),
+                self::say('Nedsättning för miljöbil gäller bilar som blev skattepliktiga från :date', ['date' => $value['reductions_from_taxable_on'] ?? '']),
+                self::say('Bilmodell som är :years år eller äldre: nybilspris minst :count prisbasbelopp', ['years' => $value['old_model_age_years'] ?? '', 'count' => $value['old_model_min_prisbasbelopp'] ?? '']),
+            ],
+            'benefit.fuel.factor' => [self::say('Skatteavdrag på marknadsvärdet × :factor, arbetsgivaravgifter på marknadsvärdet', ['factor' => str_replace('.', ',', (string) (((int) ($value['tax_factor_bp'] ?? 0)) / 10000))])],
             'agi.schema_version' => [self::say('XML-schema version :version', ['version' => $value['version'] ?? ''])],
             default => self::generic($value),
         });

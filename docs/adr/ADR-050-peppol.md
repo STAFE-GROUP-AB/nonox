@@ -337,3 +337,56 @@ permissions). Receiving needs the inbox module.
   name live features (`IndustryPagesTest`). When the feature goes live: mark
   it live, add a landing card with a real screenshot, and add a neutral
   comparison row with competitor values taken only from their own pages.
+
+## Addendum 2026-11-06: launch hardening
+
+- **Kill switch.** `services.peppol.paused` (`NONOX_PEPPOL_PAUSED`): `true`
+  pauses every access point, a comma list the ones named (`qvalia`). The
+  keys stay. While paused: sending, the participant lookup, registration,
+  deregistration and `peppol:link` are refused with a Swedish message; the
+  invoice panel and the module settings show it and hide **Kontrollera
+  mottagaren** and **Skicka via Peppol**; the module cannot be turned on;
+  `TransmitPeppolDocument` leaves the transmission QUEUED marked
+  `TransmitPeppolDocument::PAUSED` without using an attempt; `peppol:sync`
+  does nothing (so `last_polled_at` does not move and nothing is passed by);
+  `HandlePeppolEvent` returns; the webhook answers 503 with `Retry-After`,
+  so the provider delivers again. When the pause is lifted `peppol:sync`
+  first queues every waiting transmission again, once (the mark is cleared
+  with a conditional update), and the job sends it with the same stored
+  document and idempotency key. `AccessPoints::make()` refuses a paused
+  driver as a retryable failure, so nothing is ever marked as refused
+  because of the pause.
+- **Swedish support texts.** `PeppolTransmission::supportText()` and
+  `PeppolParticipant::supportText()` turn what happened into Swedish for
+  the invoice panel and the settings: refused by the access point,
+  delivered to the access point but refused by the receiver's, unreachable
+  (send again: the same document), waiting for a retry, and waiting for the
+  pause. The provider's own text stays in `last_error` for the operator
+  and is no longer shown to users.
+- **Logging.** A sending that finally fails is logged as `Peppol: a sending
+  failed.` with company id, transmission id, driver, retryable and attempts;
+  never the receiver's Peppol ID (it can be a sole trader's personal
+  identity number) or the document.
+- **The fetch asks for XML only.** The Qvalia driver sent
+  `Accept: application/json, application/xml` when fetching a received
+  document (the JSON default of every request was kept). It now replaces
+  the header with `application/xml`, so the provider is asked for the UBL
+  as received.
+- **Öresavrundning in a received e-invoice.** The UBL reader reads BT-114
+  (`PayableRoundingAmount`); the inbox's proposal gets the rounding as its
+  own row on 3740, the account NONOX's own invoices use, when lines, VAT and
+  rounding add up to the amount payable. Before, such an invoice (most
+  Swedish ones) could not be approved without editing the rows.
+- **Receipt end to end.** `tests/Feature/Peppol/PeppolReceiptTest.php` runs
+  the Qvalia driver against synthetic fixtures shaped after Qvalia's public
+  documentation (`tests/Fixtures/peppol/qvalia/*.json`, not recorded from
+  the real service) from the signed webhook and the poll to a supplier
+  invoice (and supplier credit) draft, with tenancy (a document never lands
+  in another company, another company's secret is refused) and idempotency
+  (redelivered events and the poll make one message and one invoice).
+- **Monitoring.** `IntegrationHealth` (/hq → Integrationer,
+  `php artisan integrations:status`): linked companies, participants with
+  an error, polls older than an hour, queued sendings and those older than
+  an hour, sendings waiting for the pause, failures and unhandled events in
+  the last week.
+- Go-live checklist: `docs/status/lansering-peppol.md`.

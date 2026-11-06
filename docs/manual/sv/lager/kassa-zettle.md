@@ -72,4 +72,4 @@ Välj **Koppla bort**. NONOX ber Zettle att glömma kopplingen och raderar nyckl
 
 Under **Logg** vid kassan ser du vad som har hänt: när kassan kopplades, hur många köp som hämtades och vad som inte gick att skicka.
 
-Se också [Kassa: Onslip](/manual/lager/kassa-onslip), [Artiklar i lager](/manual/lager/artiklar) och [NONOX Connect](/manual/installningar/nonox-connect).
+Se också [Kassa: Onslip](/manual/lager/kassa-onslip), [Artiklar i lager](/manual/lager/artiklar) och [NONOX API](/manual/installningar/nonox-connect).

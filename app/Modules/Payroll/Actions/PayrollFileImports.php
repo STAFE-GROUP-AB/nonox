@@ -8,6 +8,7 @@ use App\Actions\Accounting\AttachToVoucher;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\ModuleManager;
+use App\Modules\Payroll\Domain\Benefits\FuelBenefit;
 use App\Modules\Payroll\Domain\PersonalNumber;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
@@ -226,8 +227,13 @@ class PayrollFileImports
         }
 
         $now = now();
+        $fuelCodeIds = PayCode::query()->where('code', FuelBenefit::CODE)->pluck('id')->all();
 
         foreach ($lines as $line) {
+            if (in_array($line->pay_code_id, $fuelCodeIds, true)) {
+                FuelBenefit::assertCompanyCar($run, (int) $line->employee_id, FuelBenefit::CODE);
+            }
+
             $input = PayrollInput::create([
                 'payroll_run_id' => $run->id,
                 'employee_id' => $line->employee_id,

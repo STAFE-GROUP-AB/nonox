@@ -13,11 +13,13 @@ use App\Modules\Payroll\Actions\ImportPayrollRules;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\PayCode;
+use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollRuleVersion;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Tax\TaxTableImporter;
 use App\Support\Luhn;
+use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Tests\Support\Payroll;
 
@@ -68,6 +70,22 @@ final class LonSupport
             'employee_id' => $employee->id,
             'pay_code_id' => CurrentCompany::run(Company::query()->findOrFail($run->company_id), fn () => PayCode::query()->where('code', $code)->value('id')),
             ...$input,
+        ]);
+    }
+
+    /**
+     * Adds an input straight to the run, past the checks in PayrollRuns::addInput (for tests of the engine alone).
+     *
+     * @param  array{amount?: string}  $input
+     */
+    public static function rawInput(PayrollRun $run, Employee $employee, string $code, array $input): void
+    {
+        PayrollInput::create([
+            'payroll_run_id' => $run->id,
+            'employee_id' => $employee->id,
+            'pay_code_id' => CurrentCompany::run(Company::query()->findOrFail($run->company_id), fn () => PayCode::query()->where('code', $code)->value('id')),
+            'amount_ore' => Money::parse($input['amount'])->ore,
+            'source' => 'MANUAL',
         ]);
     }
 

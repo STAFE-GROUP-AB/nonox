@@ -1,5 +1,5 @@
 ---
-beskrivning: NONOX är i öppen beta fram till lanseringen av version 1.0 den 1 januari 2027. Så ställer du dig i kö, och så kommer du in när du är godkänd eller inbjuden.
+beskrivning: NONOX är i öppen beta fram till lanseringen av version 1.0 den 1 februari 2027. Så ställer du dig i kö, och så kommer du in när du är godkänd eller inbjuden.
 ordning: 5
 rutter: [waitlist]
 sokord: [kö, ställ dig i kö, beta, öppen beta, skapa konto, registrera, nytt konto, godkänd, lansering, version 1.0, väntelista]
@@ -7,7 +7,7 @@ sokord: [kö, ställ dig i kö, beta, öppen beta, skapa konto, registrera, nytt
 
 # Tillgång under betan
 
-NONOX är i öppen beta. Vi släpper in nya företag i den takt vi hinner hjälpa dem, så att varje start blir bra. Skarp lansering av version 1.0 sker den **1 januari 2027**. Det du lägger in under betan ligger kvar, vi rensar ingenting när betan är över.
+NONOX är i öppen beta. Vi släpper in nya företag i den takt vi hinner hjälpa dem, så att varje start blir bra. Skarp lansering av version 1.0 sker den **1 februari 2027**. Det du lägger in under betan ligger kvar, vi rensar ingenting när betan är över.
 
 Du kan inte skapa ett konto själv. Det finns två vägar in: du ställer dig i kö och blir godkänd, eller så bjuder ett företag in dig.
 

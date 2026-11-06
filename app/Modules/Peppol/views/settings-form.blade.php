@@ -1,5 +1,8 @@
 @php($input = 'mt-1 block w-full max-w-xs border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs tabular-nums')
 <div class="space-y-5">
+    @if($paused)
+        <p role="status" class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{{ App\Modules\Peppol\Support\AccessPoints::pausedMessage() }}</p>
+    @endif
     <form wire:submit="save" class="space-y-5">
         <x-ui.field for="peppol-identifier" :label="__('Företagets Peppol-ID')" :hint="__('Företagets organisationsnummer med 0007 framför, till exempel 0007:5561234567. En enskild firma kan använda ett GLN (0088) i stället för personnumret.')" error="identifier">
             <input id="peppol-identifier" type="text" wire:model="identifier" class="{{ $input }}" autocomplete="off" spellcheck="false">
@@ -20,8 +23,8 @@
                 <div><dt class="text-gray-500">{{ __('Godkänt') }}</dt><dd class="tabular-nums">{{ $participant->consent_at->setTimezone(config('app.timezone'))->format('Y-m-d H:i') }}</dd></div>
             @endif
         </dl>
-        @if($participant?->last_error)
-            <p class="mt-2 text-red-700">{{ __('Senaste felet från Peppol-operatören: :error', ['error' => $participant->last_error]) }}</p>
+        @if($participant?->supportText())
+            <p class="mt-2 text-red-700">{{ $participant->supportText() }}</p>
         @endif
         <p class="mt-3 text-gray-600">{{ __('För att kunna ta emot e-fakturor måste företaget finnas i Peppols adressbok. Peppol-operatören kontrollerar först vem företaget är och registrerar det sedan. Det behövs inte för att bara skicka.') }}</p>
         <form wire:submit="register" class="mt-3 space-y-3">

@@ -75,6 +75,27 @@ class PeppolParticipant extends Model
     }
 
     /** Linked to an account with the access-point provider, so documents can go out. */
+    /**
+     * The last error from the access point, in Swedish, for the settings
+     * page. NONOX's own Swedish messages are shown as they are; the
+     * provider's text (English, codes) only to the operator.
+     */
+    public function supportText(): ?string
+    {
+        if ($this->last_error === null || $this->last_error === '') {
+            return null;
+        }
+
+        $own = [
+            __('En mottagen e-faktura är för stor för att tas emot och ligger kvar hos Peppol-operatören. Kontakta den som driftar NONOX.'),
+            __('Peppol-operatören svarade inte. Registreringen kontrolleras igen.'),
+        ];
+
+        return in_array($this->last_error, $own, true)
+            ? $this->last_error
+            : __('Peppol-operatören svarade med ett fel. NONOX försöker igen automatiskt. Kvarstår felet, kontakta den som driftar NONOX.');
+    }
+
     public function canSend(): bool
     {
         return $this->provider_account !== null;

@@ -158,7 +158,7 @@ final class AnnualAccounts
      * TODO(legal-verify): how many years K2 requires, and whether a broken
      * or extended first year needs a note.
      *
-     * @return list<array{label: string, net_sales: int, after_financial: int, solidity: ?float}>
+     * @return list<array{label: string, start: string, end: string, net_sales: int, after_financial: int, solidity: ?float}>
      */
     public function multiYear(int $years = 4): array
     {
@@ -166,7 +166,7 @@ final class AnnualAccounts
         $accounts = $this;
 
         for ($i = 0; $i < $years; $i++) {
-            $rows[] = ['label' => $accounts->fiscalYear->label(), 'net_sales' => $accounts->netSales(), 'after_financial' => $accounts->resultAfterFinancialItems(), 'solidity' => $accounts->solidity()];
+            $rows[] = ['label' => $accounts->fiscalYear->label(), 'start' => $accounts->fiscalYear->start_date->toDateString(), 'end' => $accounts->fiscalYear->end_date->toDateString(), 'net_sales' => $accounts->netSales(), 'after_financial' => $accounts->resultAfterFinancialItems(), 'solidity' => $accounts->solidity()];
 
             if ($accounts->previousYear === null) {
                 break;
@@ -187,7 +187,7 @@ final class AnnualAccounts
      * TODO(legal-verify): whether "mellan åren" means every pair shown in
      * the overview or only this year against the previous one.
      *
-     * @param  list<array{label: string, net_sales: int, after_financial: int, solidity: ?float}>|null  $rows  multiYear(), if already computed
+     * @param  list<array{label: string, start: string, end: string, net_sales: int, after_financial: int, solidity: ?float}>|null  $rows  multiYear(), if already computed
      * @return list<array{from: string, to: string, from_amount: int, to_amount: int}>
      */
     public function netSalesVariations(?array $rows = null): array

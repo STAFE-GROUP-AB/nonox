@@ -12,6 +12,8 @@ use Tests\Support\FakeEuroRates;
 
 abstract class TestCase extends BaseTestCase
 {
+    private static bool $incomeTaxDataWritten = false;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -22,6 +24,37 @@ abstract class TestCase extends BaseTestCase
         // Work deferred until after the response (defer(), e.g. the login code mail) runs at once in tests:
         // Livewire's test requests skip the middleware that would run it. A test of the deferral calls withDefer().
         $this->withoutDefer();
+
+        // The calculations treat the researched 2026 income tax parameters as verified, so they can be
+        // tested before a human has checked them; production stays blocked until the file says verified.
+        config(['nonox.income_tax_data_path' => $this->incomeTaxDataVerifiedFor(2026)]);
+    }
+
+    private function incomeTaxDataVerifiedFor(int $year): string
+    {
+        $directory = storage_path('framework/testing/income-tax');
+
+        if (self::$incomeTaxDataWritten) {
+            return $directory;
+        }
+
+        self::$incomeTaxDataWritten = true;
+
+        if (! is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        foreach (glob(database_path('data/income-tax/*.json')) ?: [] as $file) {
+            $data = json_decode((string) file_get_contents($file), true, flags: JSON_THROW_ON_ERROR);
+
+            if ($data['year'] === $year) {
+                $data['verified'] = true;
+            }
+
+            file_put_contents($directory.'/'.basename($file), json_encode($data, JSON_THROW_ON_ERROR));
+        }
+
+        return $directory;
     }
 
     /**

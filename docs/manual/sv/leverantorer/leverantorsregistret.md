@@ -19,7 +19,7 @@ Registret finns under **Register → Leverantörer**. För varje leverantör ser
 1. Gå till **Register → Leverantörer** och klicka på **Ny leverantör**. Formuläret visar vilket nummer leverantören får.
 2. Skriv **Namn** och, för en svensk leverantör, **Organisationsnummer**.
 3. Klicka på **Hämta uppgifter** om knappen finns, så fylls namn och adress i från Bolagsverket (se nedan).
-4. Fyll i hur leverantören vill ha betalt: **Bankgiro**, **Plusgiro** eller, för en utländsk leverantör, **IBAN (utländsk leverantör)** och **BIC**.
+4. Fyll i hur leverantören vill ha betalt: **Bankgiro**, **Plusgiro** eller, för en utländsk leverantör, **IBAN (utländsk leverantör)** och **BIC**. För en utländsk leverantör fyller du också i **Land (landskod)**, till exempel DE, och **Ort**, och vid betalningar från 120 000 kronor **Betalningskod för utlandsbetalning** (tre siffror). Läs [Betalfiler till banken](/manual/leverantorer/betalfiler).
 5. Ange **Betalningsvillkor, dagar**. Det styr förfallodagen när du lämnar den tom på en faktura.
 6. Skriv ett konto i **Konto för fakturorna**, till exempel 4010 för varuinköp. Kontot föreslås på varje ny faktura från leverantören.
 7. Klicka på **Spara**.

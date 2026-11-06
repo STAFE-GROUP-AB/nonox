@@ -37,5 +37,7 @@ final readonly class PeppolInvoice
         public array $vatBreakdown,
         public ?array $embeddedDocument,
         public ?string $buyerReference,
+        // BT-114 PayableRoundingAmount: öresavrundning, so lines + VAT + rounding = payable.
+        public int $roundingOre = 0,
     ) {}
 }

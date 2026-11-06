@@ -39,11 +39,19 @@ class PeppolWebhookController
 
                 return $secret === null || $secret === '' ? [] : [$secret];
             };
-            $events = AccessPoints::make($driver)->webhookEvents($request, $secrets);
+            // Verified first, also while paused, so an unsigned request learns nothing about the pause.
+            $paused = AccessPoints::isPaused($driver);
+            $events = AccessPoints::make($driver, evenWhenPaused: true)->webhookEvents($request, $secrets, markSeen: ! $paused);
         } catch (AccessPointFailed $exception) {
             Log::warning('Peppol webhook refused.', ['driver' => $driver, 'reason' => $exception->getMessage()]);
 
             return response('', 401);
+        }
+
+        // Paused by the operator: 503 to a verified request, so the provider delivers the event again later (and
+        // peppol:sync catches up). Its event id was not recorded, so the redelivery is handled.
+        if ($paused) {
+            return response('', 503, ['Retry-After' => '900']);
         }
 
         foreach ($events as $event) {

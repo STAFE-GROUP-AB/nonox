@@ -16,6 +16,7 @@ use App\Modules\Payroll\Domain\Engine\Steps\NetPay;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
+use App\Modules\Payroll\Models\Benefit;
 use App\Modules\Payroll\Models\CompTimeEntry;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
@@ -31,6 +32,7 @@ use App\Modules\Payroll\Models\SickPayPeriod;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\Models\WorkSchedule;
 use App\Modules\Payroll\Support\Calendar\SwedishHolidays;
+use App\Modules\Payroll\Support\CarBenefits;
 use App\Modules\Payroll\Support\CompTimeLedger;
 use App\Modules\Payroll\Support\Vacation\VacationLedger;
 use Brick\Math\BigDecimal;
@@ -49,7 +51,7 @@ final class ContextBuilder
     /** How far back the sick history is read: twelve months for the occasions and the agreement's days from day 15, plus the chain before them. */
     public const int SICK_HISTORY_MONTHS = 15;
 
-    public function __construct(private readonly VacationLedger $vacation, private readonly PayrollExtensions $extensions) {}
+    public function __construct(private readonly VacationLedger $vacation, private readonly PayrollExtensions $extensions, private readonly CarBenefits $cars) {}
 
     /**
      * @param  Collection<int, PayrollInput>  $inputs  the employee's inputs in the run
@@ -66,6 +68,14 @@ final class ContextBuilder
         // Skatteverket's jämkning decision is followed for payments on the days it is in force (SFL 11 kap. 27 §).
         $adjustment = $employee->taxAdjustmentOn($run->payment_date);
 
+        $entered = array_values($inputs->map(function (PayrollInput $input) use ($payCodes): PayInput {
+            $code = $payCodes->get($input->pay_code_id) ?? throw new PayrollBlockedException(__('En löneart saknas.'));
+
+            return new PayInput($code->code, $input->note ?: $code->name_sv, $code->category, $code->is_taxable, $code->tax_method, $code->is_contribution_basis, $code->is_vacation_basis,
+                $input->quantity === null ? null : (string) $input->quantity, $input->rate_ore?->ore, $input->amount_ore?->ore,
+                $code->isAgreementPriced() ? array_filter([Additions::AGREEMENT_PRICED => true, 'date_from' => $input->date_from?->toDateString(), 'date_to' => $input->date_to?->toDateString()]) : []);
+        })->all());
+
         $context = new PayrollContext(
             birthDate: $employee->birth_date,
             taxResidence: $employee->tax_residence,
@@ -81,13 +91,7 @@ final class ContextBuilder
             periodStart: $periodStart,
             periodEnd: $periodEnd,
             paymentDate: $run->payment_date,
-            inputs: [...array_values($inputs->map(function (PayrollInput $input) use ($payCodes): PayInput {
-                $code = $payCodes->get($input->pay_code_id) ?? throw new PayrollBlockedException(__('En löneart saknas.'));
-
-                return new PayInput($code->code, $input->note ?: $code->name_sv, $code->category, $code->is_taxable, $code->tax_method, $code->is_contribution_basis, $code->is_vacation_basis,
-                    $input->quantity === null ? null : (string) $input->quantity, $input->rate_ore?->ore, $input->amount_ore?->ore,
-                    $code->isAgreementPriced() ? array_filter([Additions::AGREEMENT_PRICED => true, 'date_from' => $input->date_from?->toDateString(), 'date_to' => $input->date_to?->toDateString()]) : []);
-            })->all()), ...$this->timeReports($timeReports ?? collect(), $payCodes), ...$this->lateTimeReports($lateTimeReports, $payCodes), ...$this->outlays($run, $employee), ...$this->retroactive($run, $employment, $payCodes)],
+            inputs: [...$entered, ...$this->timeReports($timeReports ?? collect(), $payCodes), ...$this->lateTimeReports($lateTimeReports, $payCodes), ...$this->outlays($run, $employee), ...$this->retroactive($run, $employment, $payCodes), ...$this->carBenefits($run, $employee, $employment, $payCodes, $entered)],
             accumulators: Accumulator::query()
                 ->where('employee_id', $employee->id)
                 ->where('scope', 'CALENDAR_YEAR')
@@ -265,8 +269,9 @@ final class ContextBuilder
             $code = $payCodes->get($codeId) ?? throw new PayrollBlockedException(__('En löneart saknas.'));
             $byDate = [];
 
-            foreach ($own->sortBy(fn (TimeReport $report): string => $report->date->toDateString()) as $report) {
-                $date = $report->date->toDateString();
+            // A report can be priced on another day than it is paid with (priced_on: overtime of a period sent with its last day, ADR-033 H.1).
+            foreach ($own->sortBy(fn (TimeReport $report): string => ($report->priced_on ?? $report->date)->toDateString()) as $report) {
+                $date = ($report->priced_on ?? $report->date)->toDateString();
                 $byDate[$date] = (string) BigDecimal::of($byDate[$date] ?? '0')->plus((string) $report->hours);
             }
 
@@ -387,6 +392,79 @@ final class ContextBuilder
 
             return new PayInput('UTLAGG', ExpenseClaims::label($expense), 'EXPENSE', false, 'NONE', false, false, amountOre: $expense->amount_ore->ore);
         })->all());
+    }
+
+    /** @var array{run: int, cars: Collection<int|string, Collection<int, Benefit>>, carriers: array<int, int>, rules: RuleSet}|null the run's cars, loaded once by prepareCars() */
+    private ?array $preparedCars = null;
+
+    /**
+     * Loads the run's company cars once (Lön → Förmånsbilar, ADR-061): every
+     * car by employee, which employment carries them (the one that started
+     * last, when an employee has two in the month), and the rules for the
+     * month's calendar year — the run's own when the payment day is in the
+     * same year.
+     *
+     * @param  Collection<int, Employment>  $employments  the employments in the run
+     */
+    public function prepareCars(PayrollRun $run, Collection $employments, RuleSet $rules): void
+    {
+        $periodStart = $run->periodStart();
+        $carriers = [];
+
+        foreach ($employments->sortBy(fn (Employment $employment): string => $employment->start_date->toDateString().'#'.str_pad((string) $employment->id, 12, '0', STR_PAD_LEFT)) as $employment) {
+            $carriers[$employment->employee_id] = $employment->id;
+        }
+
+        $this->preparedCars = [
+            'run' => $run->id,
+            'cars' => $run->type === 'REGULAR' ? Benefit::query()->where('type', Benefit::CAR)->whereIn('employee_id', array_keys($carriers))->get()->groupBy('employee_id') : collect(),
+            'carriers' => $carriers,
+            'rules' => $rules->date->year === $periodStart->year ? $rules : RuleSet::for($periodStart),
+        ];
+    }
+
+    /**
+     * A fingerprint of the car rules the run used when they are not the
+     * payment day's (December paid in January), for the run's rule snapshot.
+     */
+    public function carRulesHash(RuleSet $rules): string
+    {
+        $carRules = $this->preparedCars['rules'] ?? $rules;
+
+        return $carRules === $rules ? '' : $carRules->snapshotHash();
+    }
+
+    /**
+     * The registered company cars for the month, only in the regular run and
+     * on the carrying employment's payslip.
+     *
+     * @param  Collection<int, PayCode>  $payCodes
+     * @param  list<PayInput>  $entered
+     * @return list<PayInput>
+     */
+    private function carBenefits(PayrollRun $run, Employee $employee, Employment $employment, Collection $payCodes, array $entered): array
+    {
+        if ($run->type !== 'REGULAR') {
+            return [];
+        }
+
+        if ($this->preparedCars === null || $this->preparedCars['run'] !== $run->id) {
+            $this->prepareCars($run, Employment::query()
+                ->where('employee_id', $employee->id)
+                ->whereDate('start_date', '<=', $run->periodEnd()->toDateString())
+                ->where(fn ($query) => $query->whereNull('end_date')->orWhereDate('end_date', '>=', $run->periodStart()->toDateString()))
+                ->get(), RuleSet::for($run->periodStart()));
+        }
+
+        /** @var array{run: int, cars: Collection<int|string, Collection<int, Benefit>>, carriers: array<int, int>, rules: RuleSet} $prepared */
+        $prepared = $this->preparedCars;
+        $cars = $prepared['cars']->get($employee->id);
+
+        if ($cars === null || ($prepared['carriers'][$employee->id] ?? null) !== $employment->id) {
+            return [];
+        }
+
+        return $this->cars->payInputs($cars, $run->periodStart(), $payCodes, $entered, $prepared['rules']);
     }
 
     /**

@@ -68,7 +68,7 @@ final class PayslipDraft
 
     public function contributionBasis(): int
     {
-        return $this->sum(fn (PayslipLineResult $line): bool => $line->contributionBasis);
+        return array_sum(array_map(fn (PayslipLineResult $line): int => $line->contributionOre ?? $line->amountOre, array_values(array_filter($this->lines, fn (PayslipLineResult $line): bool => $line->contributionBasis))));
     }
 
     public function netItems(): int

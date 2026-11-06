@@ -28,8 +28,16 @@ De här punkterna bockas av av sig själva när bokföringen visar att de är kl
 | **Periodiseringarna är bokförda** | Alla periodiseringar är bokförda till och med årets sista månad. |
 | **Obetalda fakturor vid årets slut är bokförda** | Bara med kontantmetoden: kund- och leverantörsfakturor som är obetalda den sista dagen är bokförda i steg 2. Gäller inte med fakturametoden eller om inga fakturor är obetalda. Läs [Obetalda fakturor vid årets slut](/manual/bokslut/kontantmetoden-vid-arets-slut). |
 | **Valutafordringar och valutaskulder är omvärderade** | Obetalda kund- och leverantörsfakturor i utländsk valuta är värderade till kursen den sista dagen, i steg 2. Gäller inte utan sådana fakturor. Med kontantmetoden bokför du först de obetalda fakturorna. |
-| **Årets skatt är bokförd** | Skatten är bokförd i steg 2, eller noll angivet. Gäller inte enskild firma, handelsbolag och kommanditbolag. |
+| **Årets skatt är bokförd** | Skatten är bokförd i steg 2, eller noll angivet. För aktiebolag och ekonomiska föreningar granskar och bekräftar du NONOX förslag till skatt; ingenting bokförs innan du har bekräftat. Gäller inte enskild firma, handelsbolag och kommanditbolag. |
 | **Årets resultat är bokfört** | Årets resultat är bokat i steg 2. |
+
+## K2-villkoren bekräftar du en gång
+
+Är företaget redovisat enligt K2 och räkenskapsåret börjar efter den 31 december 2025 visas rutan **Bekräfta villkoren för K2 innan du fortsätter** överst på sidan, och checklistan har punkten **K2-villkoren är bekräftade**. Villkoren för K2 ändrades genom BFNAR 2025:2 (BFNAR 2016:10 punkt 1.1A–1.1C), och rutan visar samma villkor som när du valde K2 för företaget.
+
+Uppfyller företaget villkoren klickar du på **Företaget uppfyller villkoren för K2**. Därefter kan du fortsätta med bokslutet. Tills du har bekräftat går det inte att bocka av punkter, boka bokslutsverifikationer eller stänga året. Du bekräftar en gång för företaget och får inte frågan igen, inte heller för senare år. Har du redan bekräftat villkoren när du valde K2 eller ändrade företagets uppgifter efter ändringen visas rutan inte.
+
+Uppfyller företaget inte villkoren ska det byta till K3. Länken **Byt till K3 i inställningarna** tar dig till företagets inställningar. NONOX sparar vem som bekräftade och när.
 
 ## Punkterna du bekräftar
 

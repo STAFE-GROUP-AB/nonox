@@ -88,7 +88,7 @@ Without `code_challenge`, or with a method other than `S256`, the person is sent
 The person signs in if needed and sees, in Swedish, which app it is and what it asks for. They choose one of their companies and approve. That works only when:
 
 - the person is **owner or administrator** of the company;
-- NONOX Connect is on for the company and the company is not archived;
+- NONOX API is on for the company and the company is not archived;
 - the company allows the app (if it has chosen to allow only some apps);
 - the person **confirms with their passkey** right then. A signed-in session is not enough, so someone who has only taken over a mailbox cannot let an app in.
 

@@ -33,10 +33,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?CarbonImmutable $last_fetched_at
  * @property ?string $last_error
  * @property ?CarbonImmutable $reminded_at
+ * @property int $consecutive_failures
+ * @property ?CarbonImmutable $next_attempt_at
  */
 class BankConnection extends Model
 {
     use BelongsToCompany;
+
+    /** After this many failed fetches in a row Översikt and the bank page say so. */
+    public const int FAILURES_TO_TELL = 3;
 
     /** @var list<string> */
     protected $fillable = [
@@ -55,6 +60,8 @@ class BankConnection extends Model
         'last_fetched_at',
         'last_error',
         'reminded_at',
+        'consecutive_failures',
+        'next_attempt_at',
     ];
 
     /** @var list<string> */
@@ -71,12 +78,20 @@ class BankConnection extends Model
             'revoked_at' => 'immutable_datetime',
             'last_fetched_at' => 'immutable_datetime',
             'reminded_at' => 'immutable_datetime',
+            'consecutive_failures' => 'integer',
+            'next_attempt_at' => 'immutable_datetime',
         ];
     }
 
     public function isActive(): bool
     {
         return $this->status === ConnectionStatus::Active && $this->session_id !== null;
+    }
+
+    /** Whether the provider has failed so many times in a row that a person should know. */
+    public function keepsFailing(): bool
+    {
+        return $this->isActive() && $this->consecutive_failures >= self::FAILURES_TO_TELL;
     }
 
     /** Days left of the consent, or null when the bank gave no end. */

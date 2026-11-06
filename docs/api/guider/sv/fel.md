@@ -49,7 +49,7 @@ Listan genereras från OpenAPI-filen, så den är alltid komplett.
 | `400` | Rätta anropet. Oftast saknas `Idempotency-Key` eller så är kroppen inte ett JSON-objekt. |
 | `401` | Förnya access token (OAuth) och försök en gång till. Ger det `401` igen, eller `invalid_grant` vid förnyelsen, har anslutningen återkallats: be personen ansluta igen. För en API-nyckel: nyckeln har gått ut eller återkallats. |
 | `403` | Försök inte igen. Läs `code`: en behörighet saknas, adressen är inte tillåten, företaget är arkiverat eller tillåter inte längre appen. |
-| `404` | Posten finns inte, tillhör ett annat företag, eller så är NONOX Connect avstängt för företaget. API:t skiljer medvetet inte på dem. |
+| `404` | Posten finns inte, tillhör ett annat företag, eller så är NONOX API avstängt för företaget. API:t skiljer medvetet inte på dem. |
 | `409` | Ett anrop med samma `Idempotency-Key` pågår. Vänta `Retry-After` sekunder och försök igen med samma nyckel. |
 | `415` | Skicka `Content-Type: application/json` (eller `multipart/form-data` för underlag). |
 | `422` | Rätta uppgifterna efter `errors`, eller använd en ny `Idempotency-Key` för en ny åtgärd. |

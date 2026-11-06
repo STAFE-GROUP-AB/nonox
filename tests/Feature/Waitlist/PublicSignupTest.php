@@ -70,14 +70,14 @@ it('shows the open beta banner with the launch date on the public pages', functi
     $this->get(publicPath($path))->assertOk()
         ->assertSee('data-beta-banner', false)
         ->assertSee('Öppen beta')
-        ->assertSee('skarp lansering av version 1.0 den 1 januari 2027');
+        ->assertSee('skarp lansering av version 1.0 den 1 februari 2027');
 })->with(publicPages());
 
 it('has a "Ställ dig i kö" button in the header and keeps a small "Logga in" link', function () {
     $this->get('/')->assertOk()
         ->assertSee('Ställ dig i kö')
         ->assertSee('Logga in')
-        ->assertSee('Skarp lansering av version 1.0 sker den 1 januari 2027.');
+        ->assertSee('Skarp lansering av version 1.0 sker den 1 februari 2027.');
 });
 
 it('has no self-registration route: /registrera leads to the queue and nothing accepts a sign-up', function () {

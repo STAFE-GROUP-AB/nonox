@@ -45,11 +45,29 @@ Du ser *Faktura 1029 är på väg till kunden via Peppol.* Statusen står i samm
 | **I kö** | Fakturan väntar på att lämnas till Peppol-operatören. |
 | **Skickad till Peppol** | Operatören har tagit emot fakturan och skickar den vidare. |
 | **Levererad** | Kundens Peppol-operatör har bekräftat att den tog emot fakturan. |
-| **Misslyckades** | Fakturan kom inte fram. Felet står under statusen. Rätta det och tryck på **Skicka igen via Peppol**. |
+| **Misslyckades** | Fakturan kom inte fram. Vad som hände står under statusen, se nedan. Rätta det och tryck på **Skicka igen via Peppol**. |
 
 En kreditfaktura skickas på samma sätt och blir en kreditnota som hänvisar till fakturan den krediterar.
 
 Avtalsfakturor till en kund som är inställd på Peppol skickas via Peppol av sig själva när avtalet skickar fakturorna automatiskt.
+
+## Om något går fel
+
+Svarar inte Peppol-operatören försöker NONOX igen av sig själv, med längre och längre mellanrum, i upp till några timmar. Under tiden står fakturan kvar som **I kö** med texten *Peppol-operatören svarade inte. NONOX försöker igen automatiskt med längre och längre mellanrum.*
+
+| Texten under statusen | Gör så här |
+|---|---|
+| *Peppol-operatören gick inte att nå. Skicka igen om en stund. …* | Tryck på **Skicka igen via Peppol** senare. Det blir samma e-faktura, så kunden får den inte två gånger. |
+| *Peppol-operatören tog inte emot e-fakturan. …* | Kontrollera kundens Peppol-ID och fakturans uppgifter, och skicka igen. Kvarstår felet, kontakta den som driftar NONOX. |
+| *E-fakturan kom fram till Peppol-operatören, men mottagarens operatör tog inte emot den. …* | Kontrollera Peppol-ID:t med kunden, eller skicka fakturan med e-post. |
+
+## När Peppol är tillfälligt avstängt
+
+Den som driftar NONOX kan stänga av Peppol för alla företag på en gång, till exempel om operatören har driftstörningar. Då står det i rutan **Skicka som e-faktura (Peppol)** och i modulens inställningar:
+
+*Peppol är tillfälligt avstängt av den som driftar NONOX. Inga e-fakturor skickas eller hämtas just nu. …*
+
+Knapparna **Kontrollera mottagaren** och **Skicka via Peppol** syns inte då. En faktura som redan väntade står kvar som **I kö** med *Väntar: Peppol är tillfälligt avstängt …* och skickas av sig själv, en gång, när Peppol är på igen.
 
 ## Det här skickas inte via Peppol
 

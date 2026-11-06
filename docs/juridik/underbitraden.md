@@ -22,6 +22,10 @@ De här underbiträdena behandlar personuppgifter för {foretag} när vi driftar
 
 **Inte underbiträden, men mottagare om företaget tillåter det (koppling till Google- eller Microsoft-kalender i CRM, inte tillgänglig ännu):** när en användare kopplar sin egen Google- eller Microsoft-kalender skriver NONOX användarens planerade CRM-aktiviteter dit (som standard bara typ och företag). Google och Microsoft är då företagets eller användarens egen leverantör, inte vårt underbiträde. Det kan bara ske om företaget har slagit på det under CRM:s inställningar. Google LLC och Microsoft Corporation är certifierade under EU–US Data Privacy Framework, och uppgifterna kan lagras utanför EU/EES.
 
+**Inte underbiträde: Skatteverket.** När en användare loggar in hos Skatteverket från NONOX skickar NONOX momsdeklarationen och arbetsgivardeklarationen dit och hämtar svar, skattekontot och Skatteverkets meddelanden om företaget. Skatteverket är en myndighet och självständigt personuppgiftsansvarig för sin behandling, inte vårt underbiträde. Uppgifterna från Skatteverket tas bara emot på servrarna i Sverige. Se [integritetspolicyn]({integritet}), avsnitt 4.
+
+**Inte underbiträden, men mottagare om företaget kopplar dem: AI-assistenter (inte tillgängliga ännu).** När ett företag kopplar en AI-assistent, till exempel Claude, ChatGPT eller Cursor, till NONOX genom NONOX API och MCP-servern, får assistentens leverantör det som assistenten läser med företagets nyckel. Leverantören är företagets eget val och behandlar uppgifterna enligt företagets avtal med den, inte vårt underbiträde. Den kan finnas utanför EU/EES. Se [integritetspolicyn]({integritet}), avsnitt 4.
+
 **Kalenderlänk i CRM:** en kalenderlänk som en användare prenumererar på hämtas av den kalendertjänst användaren själv väljer. Den tjänsten är användarens eget val och inte vårt underbiträde.
 
 <!-- Förberett för Peppol e-faktura (ADR-050). Läggs in i tabellen "Bara om företaget själv slår på det" när avtalet med operatören är tecknat, samtidigt som versionen höjs (LegalPageController::VERSION) och kunderna får 30 dagars besked:

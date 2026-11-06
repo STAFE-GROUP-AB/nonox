@@ -574,6 +574,12 @@ final class SieImportAnalyser
             return;
         }
 
+        $sum = array_sum($this->plan->openingBalances);
+
+        if ($sum !== 0) {
+            $this->plan->block(__('Filens ingående balanser (#IB) går inte ihop: de summerar till :amount i stället för 0. Rätta filen i det program den kommer från och exportera den igen.', ['amount' => Money::ofOre($sum)->format()]));
+        }
+
         $existing = $fiscalYear === null ? [] : OpeningBalance::query()
             ->where('opening_balances.fiscal_year_id', $fiscalYear->id)
             ->join('accounts', 'accounts.id', '=', 'opening_balances.account_id')

@@ -30,7 +30,10 @@ class RevokeBankConnection
         CurrentCompany::run($company, function () use ($user, $company, $connection): void {
             $closedAtProvider = true;
 
-            if ($connection->session_id !== null) {
+            // While the operator has paused the provider nothing is sent to it; the bank's consent then runs out by itself.
+            if ($connection->session_id !== null && BankDataProviders::isPaused($connection->provider)) {
+                $closedAtProvider = false;
+            } elseif ($connection->session_id !== null) {
                 try {
                     BankDataProviders::make($connection->provider)->revoke($connection->session_id);
                 } catch (ProviderFailed $exception) {

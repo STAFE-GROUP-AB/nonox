@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "kund": {
+      "identifierare": "165563343689",
+      "typ": "Organisationsnummer"
+    },
+    "anvandare": "191010101234",
+    "version": "4.0",
+    "hamtatDatum": "2026-02-15T10:00:00+01:00",
+    "roller": ["Firmatecknare"]
+  },
+  "kundhandelser": [
+    {
+      "kundhandelseId": "skv-test-0001",
+      "kundhandelseTyp": "SKV.MOMS.TY_KOMPLETTERING_BEGARD_V1",
+      "producent": "skatteverket.beskattning.moms",
+      "tidpunkt": "2026-02-10T09:15:00+01:00",
+      "rubrik": "Skatteverket behöver en komplettering av momsdeklarationen för december 2025",
+      "beskrivning": "Vi behöver fler uppgifter för att kunna handlägga momsdeklarationen.\nSkicka in kompletteringen senast den 3 mars 2026.",
+      "sprak": "sv",
+      "producentarendetKraverKundatgard": true,
+      "producentarendetKlart": false,
+      "utokadInformation": {
+        "forfallodatum": "2026-03-03",
+        "aviseringsmeddelande": "Du har ett nytt meddelande från Skatteverket.",
+        "kopplingsId": "moms-komplettering-2025-12",
+        "kundamne": "Moms",
+        "korrespondensReferens": "KORR-2026-0042",
+        "foretagsform": "Aktiebolag"
+      },
+      "referenser": {
+        "producentarende": "MOMS-2025-12-0001",
+        "etjanst": {
+          "url": "https://www.skatteverket.se/foretag/etjansterochblanketter",
+          "lanktext": "Komplettera hos Skatteverket"
+        }
+      }
+    },
+    {
+      "kundhandelseId": "skv-test-0002",
+      "kundhandelseTyp": "SKV.MOMS.TY_MOMSDEKLARATION_MOTTAGEN_V1",
+      "producent": "skatteverket.beskattning.moms",
+      "tidpunkt": "2026-01-12T14:02:11+01:00",
+      "rubrik": "Skatteverket har tagit emot en momsdeklaration för december 2025",
+      "beskrivning": "Momsdeklarationen har kommit in till Skatteverket.",
+      "sprak": "sv",
+      "producentarendetKraverKundatgard": false,
+      "producentarendetKlart": false
+    },
+    {
+      "kundhandelseId": "skv-test-0003",
+      "kundhandelseTyp": "SKV.ARLIGBESKATTNING.TY_INK2_BESLUT_V1",
+      "producent": "skatteverket",
+      "tidpunkt": "2025-12-01T08:00:00+01:00",
+      "rubrik": "Beslut om inkomstdeklaration 2025",
+      "beskrivning": "Skatteverket har fattat beslut om inkomstdeklarationen.",
+      "sprak": "sv",
+      "producentarendetKraverKundatgard": false,
+      "producentarendetKlart": true,
+      "referenser": {
+        "etjanst": [
+          "https://example.com/inte-skatteverket",
+          {"url": "https://skatteverket.se.example.com/falsk", "lanktext": "Falsk länk"}
+        ]
+      }
+    }
+  ]
+}

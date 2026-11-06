@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Laravel\Passport\Passport;
 
 /**
- * NONOX Connect (ADR-032): the public API, OAuth 2.0 for apps and API keys
+ * NONOX API (ADR-032, ADR-064; key `connect`): the public API, OAuth 2.0 for apps and API keys
  * for scripts. Off by default; while it is off every API call for the
  * company answers 404.
  */
@@ -44,7 +44,7 @@ final class ConnectModule implements Module
 
     public function name(): string
     {
-        return __('NONOX Connect');
+        return __('NONOX API');
     }
 
     public function description(): string

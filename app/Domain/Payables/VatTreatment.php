@@ -12,8 +12,10 @@ namespace App\Domain\Payables;
  * (boxes 30–32) and the same amount as input VAT on 2645 or 2647 (box 48).
  * Sources: Skatteverket, "Fylla i momsdeklarationen"; BAS 2026 v2 (ADR-016).
  *
- * Import of goods from outside the EU is not here: its VAT is based on the
- * customs value from Tullverket, not on the supplier's invoice.
+ * Goods from outside the EU (NonEuGoods): the supplier charges no Swedish
+ * VAT and the buyer does not calculate any from the invoice either. The
+ * import VAT is based on the customs value on Tullverket's tullräkning and is
+ * booked from it (App\Domain\Vat\ImportVat, ADR-057).
  */
 enum VatTreatment: string
 {
@@ -21,6 +23,7 @@ enum VatTreatment: string
     case EuGoods = 'EU_GOODS';
     case EuServices = 'EU_SERVICES';
     case NonEuServices = 'NON_EU_SERVICES';
+    case NonEuGoods = 'NON_EU_GOODS';
     case SeReverseGoods = 'SE_REVERSE_GOODS';
     case SeReverseServices = 'SE_REVERSE_SERVICES';
 
@@ -57,6 +60,7 @@ enum VatTreatment: string
             self::EuGoods => __('Varor från ett annat EU-land'),
             self::EuServices => __('Tjänster från ett annat EU-land'),
             self::NonEuServices => __('Tjänster från ett land utanför EU'),
+            self::NonEuGoods => __('Varor från ett land utanför EU (import)'),
             self::SeReverseGoods => __('Varor i Sverige, omvänd betalningsskyldighet'),
             self::SeReverseServices => __('Tjänster i Sverige, omvänd betalningsskyldighet (till exempel bygg)'),
         };
@@ -75,10 +79,20 @@ enum VatTreatment: string
         return $this === self::EuGoods;
     }
 
-    /** Whether the buyer, not the supplier, accounts for the VAT. */
+    /**
+     * Whether the buyer, not the supplier, accounts for the VAT on the
+     * invoice itself. Not for goods from outside the EU: their VAT follows
+     * the tullräkning, not the invoice (ADR-057).
+     */
     public function buyerIsLiable(): bool
     {
-        return $this !== self::Domestic;
+        return $this !== self::Domestic && $this !== self::NonEuGoods;
+    }
+
+    /** Whether the invoice may carry Swedish VAT charged by the supplier. */
+    public function chargesSwedishVat(): bool
+    {
+        return $this === self::Domestic;
     }
 
     /** The cost account for a row at the given rate, or null when the user chooses it. */
@@ -92,7 +106,7 @@ enum VatTreatment: string
         };
 
         $base = match ($this) {
-            self::Domestic => null,
+            self::Domestic, self::NonEuGoods => null,
             self::EuGoods => 4515,
             self::EuServices => 4535,
             self::NonEuServices => 4531,

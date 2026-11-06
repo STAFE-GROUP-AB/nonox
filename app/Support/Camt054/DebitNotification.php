@@ -125,15 +125,32 @@ final class DebitNotification implements OutgoingPaymentReport
         $events = [];
 
         foreach ($details as $index => $detail) {
-            $amount = $this->xml->amount('AmtDtls/TxAmt/Amt', $detail)
-                ?? $this->xml->amount('AmtDtls/InstdAmt/Amt', $detail)
-                ?? (count($details) === 1 ? $entryAmount : null);
-            $currency = $this->xml->currency('AmtDtls/TxAmt/Amt', $detail)
-                ?? $this->xml->currency('AmtDtls/InstdAmt/Amt', $detail)
-                ?? $entryCurrency;
+            $instructedAmount = $this->xml->amount('AmtDtls/InstdAmt/Amt', $detail);
+            $instructedCurrency = $this->xml->currency('AmtDtls/InstdAmt/Amt', $detail);
+            $amount = $this->xml->amount('AmtDtls/TxAmt/Amt', $detail);
+            $currency = $this->xml->currency('AmtDtls/TxAmt/Amt', $detail);
+
+            // A payment abroad: the entry (or the transaction amount) is what the bank took, the instructed amount what was ordered.
+            $instructed = null;
+
+            if ($instructedAmount !== null && $instructedCurrency !== null) {
+                $booked = $currency ?? (count($details) === 1 ? $entryCurrency : null);
+
+                if ($booked !== null && $booked !== $instructedCurrency) {
+                    $instructed = [$instructedCurrency, abs($instructedAmount)];
+                    $amount ??= $entryAmount;
+                    $currency ??= $entryCurrency;
+                }
+            }
+
+            if ($instructed === null) {
+                $amount ??= $instructedAmount ?? (count($details) === 1 ? $entryAmount : null);
+                $currency ??= $instructedCurrency ?? $entryCurrency;
+            }
+
             $reference = $entryReference === null ? null : (count($details) === 1 ? $entryReference : "{$entryReference}:".($index + 1));
 
-            $events[] = $this->event($kind, $detail, $entry, $bookingDate, $amount, $currency, $reference, $batchMessageId, $batchPaymentInfoId, $seen);
+            $events[] = $this->event($kind, $detail, $entry, $bookingDate, $amount, $currency, $reference, $batchMessageId, $batchPaymentInfoId, $seen, $instructed);
         }
 
         return $events;
@@ -141,8 +158,9 @@ final class DebitNotification implements OutgoingPaymentReport
 
     /**
      * @param  array<string, int>  $seen
+     * @param  array{0: string, 1: int}|null  $instructed  currency and hundredths ordered, when the debit is in another currency
      */
-    private function event(string $kind, DOMElement $detail, DOMElement $entry, CarbonImmutable $bookingDate, ?int $amount, ?string $currency, ?string $entryReference, ?string $batchMessageId, ?string $batchPaymentInfoId, array &$seen): OutgoingPaymentEvent
+    private function event(string $kind, DOMElement $detail, DOMElement $entry, CarbonImmutable $bookingDate, ?int $amount, ?string $currency, ?string $entryReference, ?string $batchMessageId, ?string $batchPaymentInfoId, array &$seen, ?array $instructed = null): OutgoingPaymentEvent
     {
         $messageId = $this->reference($this->xml->text('Refs/MsgId', $detail)) ?? $batchMessageId;
         $paymentInfoId = $this->reference($this->xml->text('Refs/PmtInfId', $detail)) ?? $batchPaymentInfoId;
@@ -173,6 +191,8 @@ final class DebitNotification implements OutgoingPaymentReport
             creditorName: self::clip($creditor, 255),
             reasonCode: $kind === OutgoingPaymentEvent::RETURNED ? self::clip($this->xml->text('RtrInf/Rsn/Cd', $detail) ?? $this->xml->text('RtrInf/Rsn/Prtry', $detail), 10) : null,
             reasonText: $reasonText === null ? null : mb_substr($reasonText, 0, 500),
+            instructedCurrency: $instructed[0] ?? null,
+            instructedAmountMinor: $instructed[1] ?? null,
         );
     }
 

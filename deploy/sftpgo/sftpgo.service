@@ -1,4 +1,4 @@
-# SFTPGo for NONOX Connect (ADR-032, "SFTP"). Based on the unit in
+# SFTPGo for NONOX API (ADR-032, "SFTP"). Based on the unit in
 # SFTPGo v2.7.6 (init/sftpgo.service), with the file system narrowed to the
 # directories SFTPGo needs. Install as /etc/systemd/system/sftpgo.service.
 [Unit]

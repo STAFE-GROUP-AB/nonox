@@ -1,0 +1,53 @@
+{
+	"nastaAvstamningsdatum": "2019-06-01",
+	"senastUppdaterad": "2019-05-06T03:04:05Z",
+	"informationstext": ["Test av informationstext"],
+	"ocrNummer": "1948040320946",
+	"datumFrom": "2017-10-28",
+	"tidigareTransaktioner": [
+		{
+			"transaktionsidentitet": 746876987,
+			"transaktionsdatum": "2019-04-16",
+			"ranteberakningsdatum": "2019-04-13",
+			"transaktionstext": "Inbetalning bokförd 190412",
+			"beloppSkatteverket": 1292
+		},
+		{
+			"transaktionsidentitet": 746876988,
+			"transaktionsdatum": "2019-04-16",
+			"ranteberakningsdatum": "2019-04-13",
+			"transaktionstext": "Debiterad preliminärskatt",
+			"beloppSkatteverket": -1292
+		},
+		{
+		"transaktionsidentitet": 746876989,
+			"transaktionsdatum": "2019-04-16",
+			"ranteberakningsdatum": "2019-04-12",
+			"transaktionstext": "Inbetalning bokförd 190411",
+			"beloppSkatteverket": 5402
+		},
+		{
+			"transaktionsidentitet": 746876990,
+			"transaktionsdatum": "2019-04-16",
+			"ranteberakningsdatum": "2019-04-13",
+			"transaktionstext": "Avdragen skatt mars 2019",
+			"beloppSkatteverket": -3000
+		},
+		{
+			"transaktionsidentitet": 746876991,
+			"transaktionsdatum": "2019-04-16",
+			"ranteberakningsdatum": "2019-04-13",
+			"transaktionstext": "Arbetsgivaravgift mars 2019",
+			"beloppSkatteverket": -2402
+		}
+	],
+	"kommandeTransaktioner": [
+		{
+			"transaktionsdatum": "2019-03-13",
+			"forfallodatum": "2019-05-13",
+			"ranteberakningsdatum": "2019-05-14",
+			"transaktionstext": "Debiterad prelimniärskatt",
+			"beloppSkatteverket": -1292
+		}
+	]
+}

@@ -86,7 +86,8 @@ final class Features
         'control_visit' => ['name' => 'Kontrollbesök i personalliggaren', 'status' => self::LIVE, 'readme' => 'Kontrollbesöket ("Skatteverket är här") visar och exporterar liggaren', 'module' => 'Personalliggare'],
         'inbox' => ['name' => 'Inkorg för fakturor och kvitton', 'status' => self::LIVE, 'readme' => 'En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem', 'module' => 'Inkorg'],
         'daily_reports' => ['name' => 'Dagsrapporter från kassasystemet', 'status' => self::LIVE, 'readme' => 'dagsrapporter läses utan AI, med mallar som en person godkänt', 'module' => 'Inkorg'],
-        'bank_feed' => ['name' => 'Bankkoppling med BankID', 'status' => self::LIVE, 'readme' => 'Företagets bankkonton kopplas med BankID genom öppen bankdata (PSD2)', 'module' => 'Bank'],
+        // Built (ADR-034) and dormant on the hosted service until the operator has an agreement with an open-banking provider; a self-hoster can switch it on with their own agreement.
+        'bank_feed' => ['name' => 'Bankkoppling med BankID', 'status' => self::SOON, 'readme' => 'Bankkoppling med BankID genom öppen bankdata (PSD2)', 'module' => 'Bank'],
         'ai' => ['name' => 'NONOX AI läser underlag', 'status' => self::LIVE, 'readme' => 'Läser leverantörsfakturor, kvitton och utlägg direkt när de laddats upp eller fotograferats, och föreslår konton och belopp med företagets egen nyckel', 'module' => 'NONOX AI'],
         'multi_company' => ['name' => 'Flera företag per användare', 'status' => self::LIVE, 'readme' => 'Flera företag per användare med roller'],
         'roles' => ['name' => 'Roller för konsult, attestant och revisor', 'status' => self::LIVE, 'readme' => 'ägare, administratör, redovisningskonsult, bokförare, attestant och revisor'],
@@ -111,14 +112,14 @@ final class Features
         'audit_log' => ['name' => 'Behandlingshistorik', 'status' => self::LIVE, 'readme' => 'Behandlingshistorik över allt som görs'],
         'branding' => ['name' => 'Egen logga och färger', 'status' => self::LIVE, 'readme' => 'Eget varumärke: logga och färger'],
         'payment_file_matching' => ['name' => 'Automatisk avstämning av betalfiler', 'status' => self::LIVE, 'readme' => 'Automatisk avstämning av betalfiler mot bankens svar'],
-        'non_eu_goods_import' => ['name' => 'Import av varor från länder utanför EU', 'status' => self::SOON, 'readme' => 'Import av varor från länder utanför EU'],
+        'non_eu_goods_import' => ['name' => 'Import av varor från länder utanför EU', 'status' => self::LIVE, 'readme' => 'Import av varor från länder utanför EU: leverantörens faktura bokförs utan moms'],
         'ixbrl' => ['name' => 'Digital inlämning av årsredovisningen', 'status' => self::SOON, 'readme' => 'Digital inlämning av årsredovisningen till Bolagsverket (iXBRL)'],
-        'public_api' => ['name' => 'Öppet API med webhooks', 'status' => self::LIVE, 'readme' => 'webhooks som signeras', 'module' => 'NONOX Connect'],
+        'public_api' => ['name' => 'Öppet API med webhooks', 'status' => self::LIVE, 'readme' => 'webhooks som signeras', 'module' => 'NONOX API'],
         'pos_integrations' => ['name' => 'Färdiga kopplingar från kassasystem', 'status' => self::SOON, 'readme' => 'Färdiga kopplingar från kassasystem'],
         // Built (ADR-050) and dormant until the operator has an agreement with a Peppol access-point provider.
-        'peppol' => ['name' => 'E-faktura via Peppol', 'status' => self::SOON, 'readme' => 'E-faktura via Peppol', 'module' => 'Peppol e-faktura'],
+        'peppol' => ['name' => 'E-faktura via Peppol genom Qvalia, i version 1.0', 'status' => self::SOON, 'readme' => 'E-faktura via Peppol genom Qvalia, i version 1.0', 'module' => 'Peppol e-faktura'],
         // Stage 1 built (ADR-054) and dormant until the operator's agreement with Skatteverket is signed.
-        'skatteverket_api' => ['name' => 'Momsdeklarationen till Skatteverket utan fil – du skriver under hos Skatteverket', 'status' => self::SOON, 'readme' => 'Momsdeklarationen till Skatteverket utan fil'],
+        'skatteverket_api' => ['name' => 'Momsdeklaration, arbetsgivardeklaration, skattekonto och Skatteverkets meddelanden utan filer, i version 1.0 – du skriver under hos Skatteverket', 'status' => self::SOON, 'readme' => 'Momsdeklaration, arbetsgivardeklaration, skattekonto och Skatteverkets meddelanden utan filer, i version 1.0'],
     ];
 
     /**
@@ -129,9 +130,10 @@ final class Features
      */
     private const array SOON_PHRASES = [
         'payment_file_matching' => ['avstämning av betalfiler'],
-        'non_eu_goods_import' => ['import av varor'],
         'ixbrl' => ['iXBRL', 'digital inlämning av årsredovisningen'],
         'pos_integrations' => ['direktkoppling', 'kopplas direkt'],
+        'bank_feed' => ['bankkoppling', 'kopplas med bankid'],
+        'skatteverket_api' => ['lämnas med bankid', 'direkt till skatteverket'],
     ];
 
     /** @return array<string, array{name: string, status: string, readme: string, module?: string}> */

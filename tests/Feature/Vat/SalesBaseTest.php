@@ -152,3 +152,18 @@ it('accepts a VAT rounded to whole kronor as rounding, not a missing base', func
     expect($return->exact[5])->toBe(9_960)
         ->and($return->unexplained)->toBe(0);
 });
+
+it('words a negative unexplained amount as output VAT given back without a matching cut in the sales', function () {
+    // VAT of 2 500 kr paid back to a customer, with no credit on a revenue account: a base of 10 000 kr too much in box 05.
+    salesBaseBook($this->owner, $this->company, '2026-03-02', [
+        ['account' => 2611, 'debit_ore' => 250_000],
+        ['account' => 1930, 'credit_ore' => 250_000],
+    ]);
+
+    expect(salesBaseReturn($this->year)->unexplained)->toBe(-1_000_000);
+
+    Livewire::test(VatReturns::class)->set('period', '2026-01-01')
+        ->assertSee('Återförd utgående moms utan minskad försäljning i ruta 05')
+        ->assertSee('Ruta 05 är 10 000 kr högre')
+        ->assertDontSee('-10 000');
+});

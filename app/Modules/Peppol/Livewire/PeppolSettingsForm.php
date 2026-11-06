@@ -12,6 +12,7 @@ use App\Modules\ModuleManager;
 use App\Modules\Peppol\Actions\SavePeppolSettings;
 use App\Modules\Peppol\Domain\RegistrationStatus;
 use App\Modules\Peppol\Models\PeppolParticipant;
+use App\Modules\Peppol\Support\AccessPoints;
 use App\Support\Peppol\PeppolIdentifier;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\Auth;
@@ -72,6 +73,7 @@ class PeppolSettingsForm extends Component
         return view('peppol::settings-form', [
             'participant' => CurrentCompany::run($company, fn (): ?PeppolParticipant => PeppolParticipant::query()->first()),
             'inboxOn' => app(ModuleManager::class)->isEnabled(InboxModule::KEY, $company),
+            'paused' => AccessPoints::isPaused(),
         ]);
     }
 

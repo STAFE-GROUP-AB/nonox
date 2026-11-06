@@ -29,6 +29,7 @@ use Illuminate\Validation\ValidationException;
  * @property ?string $plusgiro
  * @property ?string $iban
  * @property ?string $bic
+ * @property ?string $payment_code
  * @property int $payment_terms_days
  * @property ?int $default_account_id
  * @property bool $is_active
@@ -55,6 +56,7 @@ class Supplier extends Model
         'plusgiro',
         'iban',
         'bic',
+        'payment_code',
         'payment_terms_days',
         'default_account_id',
         'is_active',
@@ -96,7 +98,7 @@ class Supplier extends Model
     {
         return [
             'number' => $this->number,
-            ...$this->only(['name', 'org_number', 'vat_number', 'bankgiro', 'plusgiro', 'iban', 'bic']),
+            ...$this->only(['name', 'org_number', 'vat_number', 'bankgiro', 'plusgiro', 'iban', 'bic', 'country', 'address_line1', 'postal_code', 'city']),
         ];
     }
 

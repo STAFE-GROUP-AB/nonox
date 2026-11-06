@@ -45,7 +45,7 @@ use Symfony\Component\Mime\Email;
  * - Bank: connected through the app's own test bank (only where the
  *   installation uses it, never a real bank), with the last weeks of the
  *   business account's payments as the bank's transactions.
- * - NONOX Connect: an API key for the cash register system, when the
+ * - NONOX API: an API key for the cash register system, when the
  *   server has its OAuth keys.
  *
  * NONOX AI is left off: turning it on would send documents to an AI
@@ -228,7 +228,7 @@ final class ModulesExtras extends DemoExtra
         return $transactions;
     }
 
-    /** An API key for the cash register system, when the server can run NONOX Connect. */
+    /** An API key for the cash register system, when the server can run NONOX API. */
     private function connect(DemoContext $context): void
     {
         if (! ConnectModule::hasSigningKeys()) {

@@ -179,7 +179,7 @@ final readonly class AgreementRules
      * Comp time for overtime (gap G8): hours of leave per overtime hour,
      * per agreement code. Null when the agreement has no comp-time rule.
      *
-     * @return ?array{hours_per_hour: array<string, string>, source: string}
+     * @return ?array{hours_per_hour: array<string, string|list<array{valid_from: string, factor: string}>>, source: string}
      */
     public function compTime(): ?array
     {
@@ -192,10 +192,83 @@ final readonly class AgreementRules
         $factors = [];
 
         foreach ((array) ($rule['hours_per_hour'] ?? []) as $code => $factor) {
-            $factors[(string) $code] = (string) $factor;
+            $factors[(string) $code] = is_array($factor)
+                ? array_values(array_map(fn (mixed $step): array => ['valid_from' => (string) ($step['valid_from'] ?? ''), 'factor' => (string) ($step['factor'] ?? '')], array_filter($factor, 'is_array')))
+                : (string) $factor;
         }
 
         return ['hours_per_hour' => $factors, 'source' => (string) ($rule['source'] ?? '')];
+    }
+
+    /**
+     * The hours of leave per overtime hour for a code on a day (H.1): a
+     * single factor, or the step in force that day when the factor changes
+     * with the rate (Detaljhandeln § 9.6: 1,5 h for 50 % until 2026-03-31,
+     * 1 h 21 min for 35 % from 2026-04-01). Null when the agreement has no
+     * factor for the code on that day.
+     */
+    public function compTimeFactor(string $code, CarbonImmutable $day): ?string
+    {
+        $factor = $this->compTime()['hours_per_hour'][$code] ?? null;
+
+        if (! is_array($factor)) {
+            return $factor;
+        }
+
+        $chosen = null;
+
+        foreach ($factor as $step) {
+            if ($step['valid_from'] <= $day->toDateString()) {
+                $chosen = $step['factor'];
+            }
+        }
+
+        return $chosen;
+    }
+
+    /**
+     * The agreement's kinds of overtime and mertid per occasion (H.1,
+     * datamodell §8): adjoining ordinary time or not, the first hours of
+     * the day, a day off, and time windows that give a higher kind, each
+     * kind with its code for overtime and for mertid. Null when the
+     * agreement has no kinds; the period's overtime then goes on one code.
+     *
+     * @return ?array{ranks: list<string>, first: ?array{minutes: int, kind: string, source: string}, rest_kind: string, not_adjoining_kind: string, day_off_kind: string, windows: list<array<string, mixed>>, codes: array{OVERTIME: array<string, string>, EXTRA_TIME: array<string, string>}, day_off_minimum: ?array{minutes: int, source: string}, ob_overlap: ?array{source: string}, source: string}
+     */
+    public function overtimeKinds(): ?array
+    {
+        $rule = $this->rules['overtime']['kinds'] ?? null;
+
+        if (! is_array($rule) || ! is_array($rule['ranks'] ?? null) || $rule['ranks'] === []) {
+            return null;
+        }
+
+        $ranks = array_values(array_map('strval', $rule['ranks']));
+        $first = is_array($rule['first_hours'] ?? null) && is_int($rule['first_hours']['minutes'] ?? null)
+            ? ['minutes' => $rule['first_hours']['minutes'], 'kind' => (string) ($rule['first_hours']['kind'] ?? $ranks[0]), 'source' => (string) ($rule['first_hours']['source'] ?? '')]
+            : null;
+        $codes = ['OVERTIME' => [], 'EXTRA_TIME' => []];
+
+        foreach (['OVERTIME', 'EXTRA_TIME'] as $type) {
+            foreach ((array) ($rule['codes'][$type] ?? []) as $kind => $code) {
+                $codes[$type][(string) $kind] = (string) $code;
+            }
+        }
+
+        $minimum = $rule['day_off_minimum'] ?? null;
+
+        return [
+            'ranks' => $ranks,
+            'first' => $first,
+            'rest_kind' => (string) ($rule['rest_kind'] ?? $ranks[0]),
+            'not_adjoining_kind' => (string) ($rule['not_adjoining_kind'] ?? $rule['rest_kind'] ?? $ranks[0]),
+            'day_off_kind' => (string) ($rule['day_off_kind'] ?? $rule['not_adjoining_kind'] ?? $ranks[0]),
+            'windows' => array_values(array_filter((array) ($rule['windows'] ?? []), 'is_array')),
+            'codes' => $codes,
+            'day_off_minimum' => is_array($minimum) && is_int($minimum['minutes'] ?? null) ? ['minutes' => $minimum['minutes'], 'source' => (string) ($minimum['source'] ?? '')] : null,
+            'ob_overlap' => is_array($rule['ob_overlap'] ?? null) && ($rule['ob_overlap']['method'] ?? null) === 'HIGHEST_ONLY' ? ['source' => (string) ($rule['ob_overlap']['source'] ?? '')] : null,
+            'source' => (string) ($rule['source'] ?? ''),
+        ];
     }
 
     /**

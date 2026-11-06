@@ -1,10 +1,10 @@
 ---
-beskrivning: Skapa arbetsgivardeklarationen (AGI) som fil för utbetalningsmånaden, lämna in den hos Skatteverket, markera den som inlämnad och gör rättelser.
+beskrivning: Skapa arbetsgivardeklarationen (AGI) för utbetalningsmånaden, lämna in den hos Skatteverket som fil eller via Skatteverkets API, markera den som inlämnad och gör rättelser.
 ordning: 140
 roller: [owner, accountant, payroll_admin]
 modul: payroll
 rutter: [payroll.agi, payroll.agi.file]
-sokord: [AGI, arbetsgivardeklaration, individuppgift, huvuduppgift, Skatteverket, deklarera lön, rättelse AGI, XML]
+sokord: [AGI, arbetsgivardeklaration, individuppgift, huvuduppgift, Skatteverket, deklarera lön, rättelse AGI, XML, API, eget utrymme, granskningslänk, kontrollresultat]
 ---
 
 # Arbetsgivardeklaration (AGI)
@@ -38,6 +38,33 @@ Det är ägaren, redovisningskonsulten och löneadministratören som kan skapa o
 
 > [!TIP]
 > Upptäcker du ett fel innan du har lämnat in filen: rätta det och klicka på **Skapa filen på nytt**.
+
+## Lämna deklarationen via Skatteverkets API
+
+När installationen är kopplad till Skatteverket finns rutan **Lämna arbetsgivardeklarationen via Skatteverkets API** under tabellen, märkt **Beta**. Då läser NONOX in filen direkt i företagets eget utrymme hos Skatteverket, och du behöver inte ladda upp den själv.
+
+> [!NOTE]
+> På nonox.app är kopplingen inte påslagen än. Den är byggd mot Skatteverkets testtjänst och provas där av ett fåtal pilotanvändare. Till dess hämtar du filen och lämnar den hos Skatteverket som ovan.
+
+1. Skapa arbetsgivardeklarationen för månaden som vanligt och välj månaden under **Utbetalningsmånad** i rutan.
+2. Klicka på **Logga in hos Skatteverket med e-legitimation**. Du loggar in hos Skatteverket, inte i NONOX, till exempel med BankID. Skatteverket kontrollerar vid varje steg att du får företräda arbetsgivaren, till exempel som firmatecknare, deklarationsombud eller registreringsombud för arbetsgivardeklaration. Inloggningen gäller i ungefär en timme. Gäller din inloggning bara momsdeklarationen behöver du logga in igen; NONOX ber då om tillgång till båda.
+3. Klicka på **Skicka filen till Skatteverket**, kryssa i **Jag har granskat siffrorna** (du som kund ansvarar för att uppgifterna är riktiga) och klicka på **Ja, skicka filen**. Är perioden låst hos Skatteverket, eller håller deklarationen på att skrivas under, skickas ingenting. Har du redan läst in en fil för månaden som inte är underskriven tas den bort när den nya är sparad, så att bara den nya finns kvar; blir den nya inte sparad finns den förra kvar. En underskriven deklaration rör NONOX aldrig: den nya filen blir en rättelse.
+4. Vänta en stund och klicka på **Hämta kontrollresultat**. Skatteverket kontrollerar filen på några sekunder till några minuter, beroende på hur många individuppgifter den har. Bara den som skickade filen kan hämta resultatet, spara, ta bort eller skapa granskningslänken; rutan visar vem som skickade den. En fil som någon annan skickade går också att ta bort på Mina sidor.
+5. Läs vad rutan säger. Blev filen inte mottagen står det **Ingenting har sparats i företagets eget utrymme hos Skatteverket** och varför. Svarade Skatteverket inte i tid kan filen ha kommit fram ändå: titta på Mina sidor eller hämta status innan du skickar igen.
+   - **Sparad i eget utrymme hos Skatteverket**: kontrollen hittade inga stoppande fel.
+   - **Fel i kontrollen, inte sparad**: Skatteverkets fel står i rutan. Klicka på **Spara ändå i eget utrymme** om du vill rätta felen på Mina sidor, eller **Ta bort hos Skatteverket** om du vill rätta i NONOX och skicka en ny fil. Väljer du inget tar Skatteverket bort underlaget efter 24 timmar.
+   - **Avvisad av Skatteverket, inte sparad**: filen gick inte att läsa eller följde inte Skatteverkets format. Ingenting är sparat.
+6. Klicka på **Skapa granskningslänk** och sedan på **Granska och skicka in på Mina sidor**. Skatteverkets granskningssida öppnas i en ny flik. Där loggar en behörig företrädare in med e-legitimation, granskar deklarationen och skickar in den.
+7. Kom tillbaka och klicka på **Hämta status från Skatteverket**. Där ser du periodens status hos Skatteverket, sista dag att deklarera och betala, händelserna och kvittenserna. Markera sedan filen som inlämnad i tabellen, med kvittensnumret.
+
+Kan Skatteverket inte skapa länken säger rutan varför: underlag läses fortfarande in, perioden beräknas, deklarationen skrivs under eller är redan inskickad, eller så finns felaktiga underlag. Då visas **Öppna Skatteverkets felrapport**, som öppnar felrapporten på Mina sidor.
+
+> [!IMPORTANT]
+> Att läsa in underlaget är inte att lämna deklarationen. Skyldigheten att lämna den är inte fullgjord förrän en behörig person har granskat och skickat in den i Skatteverkets e-tjänst Arbetsgivardeklaration på Mina sidor. Där går underlaget också att ändra.
+
+Felmeddelandena är Skatteverkets egna. Ett **Stoppande fel** måste rättas innan deklarationen kan skickas in. Ett **Rimlighetsfel** stoppar inte, men kontrollera uppgiften. Specifikationsnumret är den anställdes nummer i NONOX. Felen visas när du hämtar dem och sparas inte i NONOX, eftersom de kan återge uppgifter ur filen.
+
+Skatteverket loggar alla anrop från NONOX och sparar loggarna i upp till 5 år för att förebygga och utreda säkerhetsincidenter. NONOX sparar Skatteverkets inlämnings-id, statusar, antal fel och varningar, granskningslänken och kvittensnumret, aldrig personnummer, namn eller vem som skrev under. **Logga ut från Skatteverket** avslutar inloggningen i NONOX direkt.
 
 ## Deklarationsdagen
 
@@ -73,7 +100,7 @@ En rättelse innehåller alla individuppgifter för månaden igen. En anställd 
 ## Vanliga frågor
 
 **Kan NONOX lämna deklarationen direkt till Skatteverket?**
-Inte ännu. Du hämtar filen och lämnar den i Skatteverkets e-tjänst.
+NONOX kan läsa in filen i företagets eget utrymme hos Skatteverket när installationen är kopplad till Skatteverket (se ovan), men själva inlämningen gör en behörig person på Mina sidor. Utan koppling hämtar du filen och lämnar den i Skatteverkets e-tjänst.
 
 **Varför kan jag inte skapa deklarationen?**
 Läs meddelandet. Vanliga orsaker: **En lönekörning i månaden är inte attesterad**, organisationsnummer eller telefonnummer saknas, ett personnummer är fel, eller regeln för filformatet är inte kontrollerad.

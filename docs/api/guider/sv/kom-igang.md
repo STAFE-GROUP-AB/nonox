@@ -2,9 +2,9 @@
 
 Den här guiden tar dig från ingenting till en bokförd verifikation via API:t. Du behöver ett företag i NONOX där du är ägare eller administratör, och en passkey på ditt konto. Testa gärna i ett eget företag först; det finns ännu ingen separat testmiljö.
 
-## 1. Slå på NONOX Connect
+## 1. Slå på NONOX API
 
-API:t är en modul och är avstängt från början. Öppna **Inställningar → Moduler** och slå på **NONOX Connect**. Så länge modulen är avstängd svarar varje anrop för företaget `404`, som om API:t inte fanns.
+API:t är en modul och är avstängt från början. Öppna **Inställningar → Moduler** och slå på **NONOX API**. Så länge modulen är avstängd svarar varje anrop för företaget `404`, som om API:t inte fanns.
 
 Under modulens inställningar kan företaget också begränsa vilka appar som får ansluta och vilka IP-adresser som får anropa API:t.
 

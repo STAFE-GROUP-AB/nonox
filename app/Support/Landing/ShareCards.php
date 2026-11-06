@@ -118,7 +118,7 @@ final class ShareCards
                 'eyebrow' => 'NONOX för utvecklare',
                 'title' => 'Ändringar',
                 'accent' => 'i API:t.',
-                'text' => 'Varje ändring i NONOX Connect, den senaste först.',
+                'text' => 'Varje ändring i NONOX API, den senaste först.',
             ],
         ];
 

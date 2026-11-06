@@ -18,8 +18,8 @@
     },
     {
       "id": "lansering-1-0",
-      "rubrik": "Lansering av version 1.0 den 1 januari 2027",
-      "beskrivning": "NONOX är i öppen beta. Nya företag ställer sig i kö och släpps in i den takt vi hinner hjälpa dem. Den 1 januari 2027 lanseras version 1.0 skarpt, och det som lagts in under betan ligger kvar.",
+      "rubrik": "Lansering av version 1.0 den 1 februari 2027",
+      "beskrivning": "NONOX är i öppen beta. Nya företag ställer sig i kö och släpps in i den takt vi hinner hjälpa dem. Den 1 februari 2027 lanseras version 1.0 skarpt, och det som lagts in under betan ligger kvar.",
       "status": "Pågår",
       "omrade": "Övrigt",
       "uppdaterad": "2026-11-02"
@@ -44,7 +44,7 @@
     {
       "id": "peppol-accesspunkt",
       "rubrik": "Skicka och ta emot e-faktura via Peppol",
-      "beskrivning": "Kundfakturor skickas som e-faktura genom en Peppol-operatör, så att kunden får fakturan direkt i sitt eget system, och e-fakturor från leverantörer hamnar i inkorgen. Funktionen är byggd och slås på när avtalet med operatören är klart.",
+      "beskrivning": "Kundfakturor skickas som e-faktura genom en Peppol-operatör, så att kunden får fakturan direkt i sitt eget system, och e-fakturor från leverantörer hamnar i inkorgen. Funktionen är byggd och kommer i version 1.0 genom Qvalia. Den slås på när den första kunden vill skicka e-faktura.",
       "status": "Pågår",
       "omrade": "Fakturering",
       "uppdaterad": "2026-11-04"
@@ -61,34 +61,53 @@
     {
       "id": "skatteverket-direkt",
       "rubrik": "Direktkoppling till Skatteverket",
-      "beskrivning": "Lämna momsdeklaration och arbetsgivardeklaration och läs av skattekontot direkt från NONOX, utan att ladda upp filer.",
-      "status": "Planerat",
+      "beskrivning": "Lämna momsdeklaration och arbetsgivardeklaration och läs av skattekontot direkt från NONOX, utan att ladda upp filer. Momsdeklarationen, arbetsgivardeklarationen, skattekontot och Skatteverkets meddelanden är byggda och provas i Skatteverkets testtjänst. De kommer i version 1.0; ansökan om driftsatt tjänst är inskickad till Skatteverket. Till dess lämnar du deklarationerna med fil.",
+      "status": "Pågår",
       "omrade": "Moms",
-      "uppdaterad": "2026-11-02"
+      "uppdaterad": "2026-11-06",
+      "kommentar": "Arbetsgivardeklarationen, skattekontot och Skatteverkets kundhändelser är också byggda mot testtjänsten och provas av pilotanvändarna. Inget av det är påslaget för vanliga användare på nonox.app än."
     },
     {
       "id": "ixbrl",
       "rubrik": "Digital inlämning av årsredovisningen",
       "beskrivning": "Skicka årsredovisningen digitalt till Bolagsverket i det format de tar emot (iXBRL).",
-      "status": "Planerat",
+      "status": "Pågår",
       "omrade": "Bokslut",
-      "uppdaterad": "2026-11-02"
+      "uppdaterad": "2026-11-06",
+      "kommentar": "Aktiebolag kan ladda ner årsredovisningen som iXBRL-fil (beta). Att lämna in den från NONOX kräver ett avtal med Bolagsverket och kommer senare."
     },
     {
       "id": "bankkoppling-i-drift",
       "rubrik": "Bankkoppling i drift",
-      "beskrivning": "Bankkopplingen med BankID finns redan för den som kör NONOX själv. I den tjänst vi driftar slås den på när de juridiska frågorna är besvarade.",
+      "beskrivning": "Bankkopplingen med BankID är byggd och kan användas av den som kör NONOX själv med ett eget avtal med en leverantör av öppen bankdata. I den tjänst vi driftar på nonox.app finns inget sådant avtal än, så där läser du in bankens filer. Den slås på när avtalet är klart och de juridiska frågorna är besvarade.",
       "status": "Planerat",
       "omrade": "Bank",
-      "uppdaterad": "2026-11-02"
+      "uppdaterad": "2026-11-06"
     },
     {
-      "id": "import-utanfor-eu",
-      "rubrik": "Import av varor från länder utanför EU",
-      "beskrivning": "Bokför import av varor med tull och importmoms rätt, från fakturan till momsdeklarationen.",
+      "id": "k3-arsredovisning",
+      "rubrik": "Årsredovisning enligt K3",
+      "beskrivning": "I dag tar NONOX bara fram årsredovisningar enligt K2. Har företaget valt K3 säger sidan det, i stället för att visa en K2-rapport. K3 byggs i steg, och större företag och ekonomiska föreningar på K3 kommer senare, om alls.",
       "status": "Planerat",
-      "omrade": "Moms",
-      "uppdaterad": "2026-11-02"
+      "omrade": "Bokslut",
+      "uppdaterad": "2026-11-06"
+    },
+    {
+      "id": "koncernredovisning",
+      "rubrik": "Koncernredovisning",
+      "beskrivning": "Koncernöversikten ger resultat och balans för dina företag bredvid varandra, som ett internt underlag med förslag på elimineringar. En koncernredovisning enligt årsredovisningslagen, med konsolidering, finns inte.",
+      "status": "Önskemål",
+      "omrade": "Bokslut",
+      "uppdaterad": "2026-11-06",
+      "kommentar": "Vi har inte bestämt oss ännu."
+    },
+    {
+      "id": "overtidsarter-fler-avtal",
+      "rubrik": "Övertidsarter i fler kollektivavtal",
+      "beskrivning": "Övertid och mertid delas upp per art enligt avtalet för Gröna Riks och Detaljhandeln. För övriga avtal går periodens övertid på en löneart. Nästa luckor är bland annat ålderstillägg, helgdagar och semester.",
+      "status": "Planerat",
+      "omrade": "Avtal",
+      "uppdaterad": "2026-11-06"
     },
     {
       "id": "lonegrupp-ai",

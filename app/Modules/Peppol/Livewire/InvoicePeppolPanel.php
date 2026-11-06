@@ -13,6 +13,7 @@ use App\Modules\Peppol\Actions\LookupParticipant;
 use App\Modules\Peppol\Actions\SendInvoiceViaPeppol;
 use App\Modules\Peppol\Models\PeppolParticipant;
 use App\Modules\Peppol\Models\PeppolTransmission;
+use App\Modules\Peppol\Support\AccessPoints;
 use App\Support\Peppol\UblInvoiceWriter;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -77,6 +78,7 @@ class InvoicePeppolPanel extends Component
             'participant' => PeppolParticipant::query()->first(),
             'unsupported' => UblInvoiceWriter::unsupportedReason($invoice, $company),
             'canSend' => $this->user()->can('send', $invoice),
+            'paused' => AccessPoints::isPaused(),
         ]);
     }
 

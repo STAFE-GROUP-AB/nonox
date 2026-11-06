@@ -15,6 +15,22 @@
         @endforeach
     </nav>
 
+    @if($k2Conditions !== null)
+        <section class="rounded-3xl bg-amber-50 px-5 py-4 ring-1 ring-amber-300" aria-labelledby="k2-conditions-title" data-k2-conditions>
+            <h2 id="k2-conditions-title" class="font-semibold text-ink">{{ __('Bekräfta villkoren för K2 innan du fortsätter') }}</h2>
+            <p class="mt-1 text-sm text-gray-800">{{ __('Villkoren för K2 har ändrats genom BFNAR 2025:2 och gäller för räkenskapsår som börjar efter den 31 december 2025. Du bekräftar dem en gång för företaget, och bokslutet kan inte fortsätta innan du har gjort det.') }}</p>
+            <div class="mt-3 space-y-2 text-sm text-gray-800">
+                @foreach(explode("\n\n", $k2Conditions) as $paragraph)
+                    <p>{{ $paragraph }}</p>
+                @endforeach
+            </div>
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+                <x-button type="button" wire:click="confirmK2Conditions" wire:loading.attr="disabled">{{ __('Företaget uppfyller villkoren för K2') }}</x-button>
+                <a href="{{ route('teams.show', $company) }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Uppfyller inte företaget villkoren? Byt till K3 i inställningarna.') }}</a>
+            </div>
+        </section>
+    @endif
+
     <section class="grid gap-3 sm:grid-cols-3">
         <div class="rounded-3xl bg-ink px-5 py-4 text-white shadow-xs">
             <p class="text-sm text-stone-300">{{ $profit >= 0 ? __('Resultat före skatt') : __('Förlust före skatt') }}</p>
@@ -138,21 +154,130 @@
                 </div>
             @endif
 
-            @unless($ownerTaxed)
-                <div>
+            @if($ownerTaxed)
+                <div data-tax-owner-note>
                     <p class="font-semibold text-ink">{{ __('Årets skatt') }}</p>
+                    <p class="mt-1 text-sm text-gray-700">{{ __('Enskild firma, handelsbolag och kommanditbolag betalar ingen egen inkomstskatt. Överskottet beskattas hos ägaren eller delägarna i deras egna deklarationer, så ingen skatt bokförs i företaget och ingen verifikation skapas här.') }}</p>
+                </div>
+            @else
+                <div data-tax-step>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <p class="font-semibold text-ink">{{ __('Årets skatt') }}</p>
+                        @if($proposalApplies)<x-ui.badge tone="accent">{{ __('Beta') }}</x-ui.badge>@endif
+                    </div>
                     @if($taxEntry !== null)
                         <p class="mt-1 text-sm text-gray-700">{{ $taxEntry->amount_ore->ore === 0 ? __('Ingen skatt för året.') : __(':amount bokfört på 8910 mot 2512.', ['amount' => $taxEntry->amount_ore->format()]) }}</p>
                     @elseif($fiscalYear->isOpen())
-                        <form wire:submit="bookTax" class="mt-2 flex flex-wrap items-end gap-4">
-                            <x-ui.field for="closing_tax" class="w-full max-w-md" :label="__('Inkomstskatt, kr')" :hint="$profit > 0 ? __('Räkna fram skatten på det skattemässiga resultatet. Som jämförelse är 20,6 % av resultatet före skatt :amount.', ['amount' => $kr(intdiv($profit * 206 + 500, 1000))]) : __('Ingen vinst, så oftast ingen skatt. Skriv 0.')">
-                                <input id="closing_tax" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="tax">
-                            </x-ui.field>
-                            <x-button>{{ __('Bokför skatten') }}</x-button>
-                        </form>
+                        @php
+                            $taxStatus = $taxProposal?->status();
+                        @endphp
+                        @if($taxProposal !== null)
+                            <fieldset class="mt-2" data-tax-status>
+                                <legend class="text-sm font-medium text-ink">{{ __('Är företaget ett privatbostadsföretag, till exempel en bostadsrättsförening, eller ett investmentföretag?') }}</legend>
+                                <p class="text-xs text-gray-500">{{ __('Ett privatbostadsföretag är en förening eller ett aktiebolag som till klart övervägande del upplåter bostäder åt sina medlemmar eller delägare i hus som det äger (inkomstskattelagen 2 kap. 17 §).') }}</p>
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                    @foreach([\App\Domain\Closing\TaxProposal::STATUS_ORDINARY => __('Nej, inget av dem'), \App\Domain\Closing\TaxProposal::STATUS_PRIVATE_HOUSING => __('Ja, privatbostadsföretag'), \App\Domain\Closing\TaxProposal::STATUS_INVESTMENT => __('Ja, investmentföretag')] as $status => $statusLabel)
+                                        <button type="button" wire:key="tax-status-{{ $status }}" wire:click="answerTaxStatus('{{ $status }}')" @class([
+                                            'rounded-full px-4 py-2 text-sm font-semibold transition',
+                                            'bg-ink text-white' => $taxStatus === $status,
+                                            'bg-stone-200/60 text-gray-800 hover:bg-stone-200' => $taxStatus !== $status,
+                                        ]) aria-pressed="{{ $taxStatus === $status ? 'true' : 'false' }}">{{ $statusLabel }}</button>
+                                    @endforeach
+                                </div>
+                            </fieldset>
+                        @endif
+                        @if($taxProposal !== null && $taxStatus === \App\Domain\Closing\TaxProposal::STATUS_PRIVATE_HOUSING)
+                            <p class="mt-3 text-sm text-gray-700" data-tax-manual-reason>{{ __('Ett privatbostadsföretag tar inte upp inkomster och drar inte av utgifter som hör till fastigheten (inkomstskattelagen 39 kap. 25 §) och får inte sätta av till periodiseringsfond (30 kap. 1 §). NONOX räknar därför inte fram skatten. Bokför den med ett eget belopp nedan.') }}</p>
+                        @elseif($taxProposal !== null && $taxStatus === \App\Domain\Closing\TaxProposal::STATUS_INVESTMENT)
+                            <p class="mt-3 text-sm text-gray-700" data-tax-manual-reason>{{ __('Ett investmentföretag har egna skatteregler (inkomstskattelagen 39 kap. 14 §) och får inte sätta av till periodiseringsfond (30 kap. 1 §). NONOX räknar därför inte fram skatten. Bokför den med ett eget belopp nedan.') }}</p>
+                        @elseif($taxProposal !== null && $taxStatus === null)
+                            <p class="mt-3 text-sm text-gray-700">{{ __('Svara på frågan ovan, så räknar NONOX fram ett förslag till årets skatt.') }}</p>
+                        @elseif($taxProposal !== null)
+                            @php
+                                $taxOre = $taxProposal->taxOreOrNull();
+                                $rate = $taxProposal->rateBp();
+                                $rateEntry = \App\Domain\Closing\CorporateTaxRules::rateEntryFor($fiscalYear);
+                                $whole = fn (int $kronor): string => \App\Domain\IncomeTax\IncomeTaxForms::kronor($kronor);
+                                $funds = $taxProposal->funds();
+                                $fundLocked = $taxProposal->fundBookedByHand();
+                                $blockers = $taxProposal->blockers();
+                            @endphp
+                            <p class="mt-1 text-sm text-gray-700">{{ __('NONOX räknar fram ett förslag till årets inkomstskatt från bokföringen och det du har fyllt i under Inkomstdeklaration. Granska raderna. Ingenting bokförs förrän du bekräftar.') }}</p>
+                            <div class="mt-3 overflow-x-auto">
+                                <table class="w-full text-sm" data-tax-lines>
+                                    <caption class="sr-only">{{ __('Skatteberäkning') }}</caption>
+                                    <thead>
+                                        <tr class="text-left text-gray-500">
+                                            <th scope="col" class="py-1 pr-4 font-medium">{{ __('Rad') }}</th>
+                                            <th scope="col" class="py-1 pr-4 font-medium">{{ __('Varifrån') }}</th>
+                                            <th scope="col" class="py-1 text-right font-medium">{{ __('Belopp') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-stone-100">
+                                        @foreach($taxProposal->lines() as $line)
+                                            <tr wire:key="tax-line-{{ $line['key'] }}" @class(['font-semibold text-ink' => $line['total']])>
+                                                <td class="py-1.5 pr-4">{{ $line['label'] }}@if($line['field'] !== null) <span class="text-gray-500">({{ __('fält :code', ['code' => $line['field']]) }})</span>@endif</td>
+                                                <td class="py-1.5 pr-4 text-gray-600">{{ $line['origin'] }}</td>
+                                                <td @class(['py-1.5 text-right tabular-nums', 'text-red-700' => $line['kronor'] < 0])>{{ $whole($line['kronor']) }}</td>
+                                            </tr>
+                                        @endforeach
+                                        <tr class="font-semibold text-ink">
+                                            <td class="py-1.5 pr-4">{{ $rate === null ? __('Inkomstskatt') : __('Inkomstskatt :rate %', ['rate' => rtrim(rtrim(\App\Domain\IncomeTax\IncomeTaxForms::percent($rate), '0'), ',')]) }}</td>
+                                            <td class="py-1.5 pr-4 font-normal text-gray-600">
+                                                {{ __('Inkomstskattelagen 65 kap. 10 §') }}
+                                                @if($rateEntry !== null)· <a href="{{ $rateEntry['source_url'] }}" class="underline" target="_blank" rel="noopener">{{ __('Källa') }}</a>@endif
+                                            </td>
+                                            <td class="py-1.5 text-right tabular-nums" data-tax-amount>{{ $taxOre === null ? '–' : $kr($taxOre) }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @if(! $fundLocked)
+                                <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                                    @if($funds !== [])
+                                        <x-ui.field for="closing_reversal" :label="__('Återföring av periodiseringsfond, kr')" :error="'reversal'" :hint="__('Fonder vid årets början: :funds. Den äldsta återförs först. Fonder som är sex år eller äldre ska återföras i år: :mandatory.', ['funds' => collect($funds)->map(fn (array $fund): string => $fund['account'].($fund['year'] !== null ? ' ('.$fund['year'].')' : '').' '.$whole($fund['kronor']))->implode(', '), 'mandatory' => $whole($taxProposal->mandatoryReversalKronor())])">
+                                            <input id="closing_reversal" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model.live.debounce.400ms="reversal" placeholder="{{ $taxProposal->mandatoryReversalKronor() }}">
+                                        </x-ui.field>
+                                    @endif
+                                    <x-ui.field for="closing_allocation" :label="__('Avsättning till periodiseringsfond, kr')" :error="'allocation'" :hint="__('Frivillig. Högst :max, 25 procent av överskottet före avsättningen. Lämna 0 om du inte vill sätta av något.', ['max' => $whole($taxProposal->maxAllocationKronor())])">
+                                        <input id="closing_allocation" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model.live.debounce.400ms="allocation" placeholder="0">
+                                    </x-ui.field>
+                                </div>
+                                @if($taxProposal->maxAllocationKronor() > 0)
+                                    <button type="button" class="mt-2 text-sm font-semibold text-accent-800 underline" wire:click="useMaxAllocation">{{ __('Använd högsta avsättning') }}</button>
+                                @endif
+                            @endif
+
+                            @foreach($blockers as $blocker)
+                                <p class="mt-3 rounded-xl bg-accent-50 px-3 py-2 text-sm text-accent-900" data-tax-blocker>{{ $blocker }}</p>
+                            @endforeach
+
+                            @foreach($taxProposal->warnings() as $warning)
+                                <p class="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900" data-tax-warning>{{ $warning }}</p>
+                            @endforeach
+
+                            <p class="mt-3 text-xs text-gray-500">{{ __('Beta: reglerna kommer från inkomstskattelagen, Skatteverket och BAS-kontoplanen och är ännu inte granskade av en jurist. Du ansvarar för att beloppen stämmer med deklarationen.') }}</p>
+
+                            @if($blockers === [])
+                                <x-button type="button" class="mt-3" wire:click="confirmTaxProposal({{ $taxOre ?? 0 }})" wire:loading.attr="disabled" wire:dirty.attr="disabled" wire:target="reversal,allocation,confirmTaxProposal" wire:confirm="{{ $taxProposal->confirmationText() }}">{{ __('Bekräfta och bokför skatten') }}</x-button>
+                            @endif
+                        @elseif(! $proposalApplies)
+                            <p class="mt-1 text-sm text-gray-700">{{ __('NONOX räknar bara fram skatten för aktiebolag och ekonomiska föreningar. Föreningar och stiftelser har egna skatteregler. Räkna fram skatten och bokför den här.') }}</p>
+                        @endif
+
+                        <details class="mt-4" @if(! $proposalApplies || ($taxStatus !== null && $taxStatus !== \App\Domain\Closing\TaxProposal::STATUS_ORDINARY)) open @endif>
+                            <summary class="cursor-pointer text-sm font-semibold text-ink">{{ __('Bokför ett eget belopp i stället') }}</summary>
+                            <form wire:submit="bookTax" class="mt-2 flex flex-wrap items-end gap-4">
+                                <x-ui.field for="closing_tax" class="w-full max-w-md" :label="__('Inkomstskatt, kr')" :hint="$profit > 0 ? __('Räkna fram skatten på det skattemässiga resultatet. Som jämförelse är 20,6 % av resultatet före skatt :amount.', ['amount' => $kr(intdiv($profit * 206 + 500, 1000))]) : __('Ingen vinst, så oftast ingen skatt. Skriv 0.')">
+                                    <input id="closing_tax" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="tax">
+                                </x-ui.field>
+                                <x-button wire:confirm="{{ __('Bokföra beloppet som årets skatt på 8910 mot 2512? En bokförd verifikation kan inte ändras, bara rättas med en ny.') }}">{{ __('Bokför skatten') }}</x-button>
+                            </form>
+                        </details>
                     @endif
                 </div>
-            @endunless
+            @endif
 
             <div>
                 <p class="font-semibold text-ink">{{ __('Årets resultat') }}</p>

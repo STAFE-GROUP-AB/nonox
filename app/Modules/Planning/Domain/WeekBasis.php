@@ -22,6 +22,7 @@ final readonly class WeekBasis
      * @param  array<string, int>  $minutes  pay code => minutes to send, sorted by code
      * @param  list<Deviation>  $deviations
      * @param  list<array{kind: string, code: ?string, worked: int, factor: string, minutes: int, source: string}>  $compTime
+     * @param  list<array{type: string, code: string, date: string, minutes: int, minimum: bool}>  $parts  the minutes per kind, code and day worked (the day the rate is taken from) when the agreement splits overtime by kind (OvertimeKinds), else empty; OB_OVERLAP parts are negative
      */
     public function __construct(
         public int $overtimeMinutes,
@@ -30,12 +31,19 @@ final readonly class WeekBasis
         public array $deviations,
         public array $compTime = [],
         public string $choice = self::PAY,
+        public array $parts = [],
     ) {}
 
     /** @param  list<array{kind: string, code: ?string, worked: int, factor: string, minutes: int, source: string}>  $compTime */
     public function withCompTime(array $compTime, string $choice): self
     {
-        return new self($this->overtimeMinutes, $this->extraTimeMinutes, $this->minutes, $this->deviations, $compTime, $choice);
+        return new self($this->overtimeMinutes, $this->extraTimeMinutes, $this->minutes, $this->deviations, $compTime, $choice, $this->parts);
+    }
+
+    /** @param  list<Deviation>  $deviations */
+    public function withDeviations(array $deviations): self
+    {
+        return new self($this->overtimeMinutes, $this->extraTimeMinutes, $this->minutes, $deviations, $this->compTime, $this->choice, $this->parts);
     }
 
     public function hasExtraTime(): bool

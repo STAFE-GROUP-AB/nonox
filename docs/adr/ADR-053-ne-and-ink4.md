@@ -1,6 +1,6 @@
 # ADR-053: NE-bilaga and Inkomstdeklaration 4
 
-- Status: Proposed (legal and accounting review before merge)
+- Status: Accepted (merged 2026-11-05 in b3ddab0b after the code review (19cf170c) and the tax review (c75122d5); the `TODO(legal-verify)` items below are still open and nothing here is legally verified)
 - Date: 2026-11-05
 - Related: ADR-010 (INK2), ADR-051 (Företagsguiden), research in the PR
 

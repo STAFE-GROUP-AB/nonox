@@ -41,7 +41,7 @@ same schema but differ in a few fields. Sources read for this decision:
 - **Payees.** Bankgiro (`CdtrAcct/Id/Othr`, `SchmeNm/Prtry` BGNR) and plusgiro
   (`SchmeNm/Cd` BBAN). An OCR reference goes in `Strd/CdtrRefInf` with code
   SCOR; without OCR a short message "Faktura <supplier's invoice number>" goes
-  in `Ustrd`. Payments to bank accounts and abroad are not offered yet.
+  in `Ustrd`. Payments abroad were not offered at first; see "Payments abroad in a foreign currency" below.
 - **Per bank** (`PaymentBank`):
   - Handelsbanken: initiating party id with scheme `BANK`, category purpose
     `SUPP`, creditor agent as clearing member id under `SESBA`, 9900 for
@@ -168,3 +168,129 @@ Decisions:
 - Signing in the bank is the bank's approval of the payment; within NONOX the
   invoice is attested and the payment file approved, by different people
   unless the company has turned separate approval off.
+
+## Payments abroad in a foreign currency (added 2026-11-06)
+
+Task D.5. Before this, an approved supplier invoice in another currency was
+refused by `CreatePaymentBatch` and paid in the internet bank (ADR-025). It
+can now be paid by file, in its own currency, from the company's kronor
+account.
+
+Sources read for this part (read 2026-11-06):
+
+- Handelsbanken, *ISO 20022 CustomerCreditTransferInitiation Pain.001 version
+  3, Country Specific Information*, version 1.8.1 (1 July 2025), chapter 6
+  (Sweden), 6.2 *Cross-border payments*: the creditor's address with country
+  is mandatory; creditor agent preferably BIC; creditor account as IBAN where
+  available; `ChrgBr` mandatory; unstructured message at most 140 characters;
+  "payments with an equivalent amount" (`EqvtAmt`) is an alternative that we do
+  not use; EUR payments within Europe (SEPA) are classified by the bank
+  itself with service level NURG or SEPA and category purpose SUPP;
+  *Regulatory reporting cross-border payment* with `RgltryRptg/Dtls/Cd`
+  (Skatteverket's payment codes, for payments above a counter value set by
+  the tax authority).
+- Nordea, *Corporate eGateway Message Implementation Guideline
+  pain.001.001.03*, version 3.3 (16 September 2026): `ChrgBr` (SLEV is the
+  default for SEPA and used also when SHAR is sent for a payment that
+  qualifies; only SHAR or SLEV for payments to and from EU/EEA; DEBT not
+  within the EEA); creditor agent "not required for payments to SEPA
+  participant countries in any currency"; `RgltryRptg` "Sweden: Required for
+  international payments above 150.000 SEK", with `Dtls/Ctry` required and
+  `Dtls/Cd` three digits; `EqvtAmt` only for international payments from
+  Denmark and Norway. *Examples per payment type – pain.001.001.03 Nordic
+  countries*, version 2.4 (7 October 2026), example 6.1 (a cross-border
+  payment with `InstdAmt` in USD, `CdtrAgt/BIC`, creditor `PstlAdr`,
+  `RgltryRptg`).
+- Skatteverket, *Kontrolluppgift om betalningar från eller till utlandet
+  (KU80 och KU81)*: the reporting duty is tied to 150 000 kronor.
+
+Decisions:
+
+- **Which banks.** Only banks whose cross-border chapter has been read:
+  Handelsbanken and Nordea (`PaymentBank::foreignPayments()`). For Danske
+  Bank, SEB, Swedbank and Länsförsäkringar the invoice is still refused with
+  the old advice (pay in the internet bank).
+  `TODO(provider-verify)`: read their guides, then switch them on.
+- **Which invoices.** Currency in AUD, CAD, CHF, CZK, DKK, EUR, GBP, NOK, PLN,
+  USD (two decimals); the supplier needs an IBAN (from the snapshot taken at
+  registration, like the bank details of a giro payment), a BIC unless the
+  payment is a SEPA payment, a country other than Sweden and a town. Address
+  and payment code come from the register as it is now, since they cannot
+  redirect money. Accounts that are not IBANs (US, for instance) are not
+  supported; `TODO(provider-verify)`.
+- **Amount and debit account.** `InstdAmt` is the invoice's remaining amount
+  in its currency, `DbtrAcct/Ccy` stays SEK and the bank converts (the cross
+  currency payment both guides describe). `EqvtAmt` is not used: the invoice
+  fixes the foreign amount, not the kronor.
+- **Charges.** `ChrgBr` at transaction level: SLEV for EUR to an IBAN in the
+  SEPA area (the EU, EEA, Switzerland and Monaco, as in Handelsbanken's
+  guide), SHAR otherwise. DEBT and CRED are never written.
+- **Blocks.** One `PmtInf` per currency, kronor first, and a SEPA euro block
+  apart from other euro payments. The first block keeps the file's message
+  id as `PmtInfId` (so files without foreign payments are unchanged), the
+  rest add `/2`, `/3`. Each batch item stores its block (`payment_info_id`),
+  so a status report about one block rejects only its payments.
+  `GrpHdr/CtrlSum` sums the numbers irrespective of currency, as ISO 20022
+  defines it; `TODO(provider-verify)` that both banks accept a mixed file.
+- **Regulatory reporting.** The supplier has a three-digit `payment_code`
+  (Skatteverket's list). It is written as `RgltryRptg/Dtls/Cd` whenever set
+  (Nordea also gets `Ctry` SE). It is required, with a Swedish message, when
+  the payment, at the invoice's booking rate, exceeds 150 000 kronor.
+  `TODO(legal-verify)`: whether the limit is judged on the bank's kronor
+  rather than on the booking rate; a payment close to the limit may need the
+  code although the check passed.
+- **Remittance.** `Ustrd` "Invoice <number>" (plus " ref <OCR>"), in English
+  because the supplier abroad reads it. No structured Swedish OCR reference
+  is written for payments abroad.
+- **Names and characters.** Names are cut at 70 characters, the message at
+  140. `TODO(provider-verify)`: Nordea replaces characters SWIFT does not
+  allow; we do not transliterate.
+- **Booking only on the bank's word.** Confirming the file by hand is refused
+  while a payment in a foreign currency waits: the kronor are not known. The
+  debit notification (camt.054 or camt.053) gives them. The reader keeps the
+  instructed amount (`AmtDtls/InstdAmt`) when the entry was booked in kronor
+  (`payment_responses.instructed_currency`, `instructed_amount_minor`). A
+  payment abroad is booked on its own debit, by reference, through
+  `PaySupplierInvoice` with the bank's kronor and the foreign amount, so the
+  exchange difference is the bank's actual (ADR-025: 2440, 1930, 3960/7960).
+  It is booked automatically only when the instructed currency and amount
+  equal the file's, the kronor are within 5 percent (at least 500, at most
+  5 000 kronor; our own limits, not a bank rule) of Riksbanken's mid rate on
+  the bank's booking day, or of the kronor expected at the invoice's rate
+  when no rate can be had, and the file is approved; otherwise a person confirms or the answer is left unmatched.
+  A debit in a foreign currency without kronor, or one booked as a single
+  amount for several payments, is never booked.
+- **Item amount.** `amount_ore` of an item abroad is the kronor expected; the
+  batch's `total_ore` counts kronor payments only, and the foreign amounts are
+  shown per currency.
+
+### Hardening after review (2026-11-06)
+
+- **Auto-booking tolerance** as above (was 25 percent of the invoice-date
+  estimate, which let 1 000 USD at 10,00 book up to 2 499 kr of exchange loss
+  unseen).
+- **Payment code** required from 120 000 kronor at the invoice rate (the
+  limit 150 000 kr divided by a 25 percent margin for the bank's rate), and
+  always written when filled in. `TODO(legal-verify)` stays: the limit and
+  its basis.
+- **IBAN** is checked (`Iban`: country length from the registry, mod 97-10) in
+  `SaveSupplier` and again in `ForeignPayment`; a typed supplier country must
+  match the IBAN's. A country left empty is placed by the IBAN.
+- **SWIFT characters.** `SwiftText` transliterates to the SWIFT Latin set and
+  strips control characters before cutting at the guides' lengths: creditor
+  name and address line 70, town 35, postcode 16, message 140 (Handelsbanken
+  6.2: 140). Payments to giro numbers are written exactly as before (tested
+  against the output of the code before D.5).
+- **One currency per file.** A batch that mixes currencies is refused until a
+  bank has accepted a file whose `GrpHdr/CtrlSum` adds amounts in different
+  currencies. `TODO(provider-verify)`. The several blocks a currency can need
+  (SEPA and other euro payments) stay in one file.
+- **Snapshot.** The supplier snapshot now carries country, address line,
+  postcode and town; SEPA and `ChrgBr` follow the IBAN's country, the creditor
+  address the snapshot. An invoice registered before has no town and cannot be
+  paid by file.
+- A defect found in review and fixed: with two or more payments in one block
+  the closing element of the block was written after the first payment; the
+  tests now compare with the earlier output and check a block with two
+  payments.
+

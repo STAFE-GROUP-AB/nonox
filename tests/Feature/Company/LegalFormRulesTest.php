@@ -253,7 +253,8 @@ it('shows the conditions in the company form and refuses K1 for an aktiebolag th
 
     Livewire::test(CreateCompanyForm::class)
         ->assertSee('K2 får bara användas av mindre företag')
-        ->assertSee('Publika aktiebolag')
+        ->assertSee('publika aktiebolag')
+        ->assertSee('punkt 1.1B')
         ->set('reporting_framework', 'K1')
         ->assertSee('K1 (förenklat årsbokslut) kan bara användas av enskilda firmor')
         ->set('reporting_framework', 'K3')

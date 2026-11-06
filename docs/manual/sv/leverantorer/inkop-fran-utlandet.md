@@ -21,6 +21,7 @@ NONOX gör det åt dig när du väljer rätt alternativ under **Vem redovisar mo
 | **Varor från ett annat EU-land** | Varor från ett momsregistrerat företag i ett annat EU-land. |
 | **Tjänster från ett annat EU-land** | Tjänster från ett företag i ett annat EU-land. |
 | **Tjänster från ett land utanför EU** | Till exempel en programvarutjänst från ett företag utanför EU. |
+| **Varor från ett land utanför EU (import)** | Varor från till exempel Kina eller USA. Fakturan bokförs utan moms; momsen bokför du från Tullverkets tullräkning. Läs [Importmoms från tullräkning](/manual/moms/importmoms). |
 | **Varor i Sverige, omvänd betalningsskyldighet** | Svenska inköp av varor där köparen ska redovisa momsen. |
 | **Tjänster i Sverige, omvänd betalningsskyldighet (till exempel bygg)** | Till exempel byggtjänster från en underentreprenör. |
 
@@ -62,7 +63,6 @@ Undantag: **varor från ett annat EU-land** bokförs alltid när fakturan regist
 
 ## Det här går inte än
 
-- **Import av varor från länder utanför EU.** Momsen på import räknas på tullvärdet från Tullverket, inte på leverantörens faktura, och det är inte byggt ännu.
 - **Anläggningstillgång från ett sådant inköp.** Raderna bokförs på inköpskonton, så formuläret föreslår ingen tillgång i anläggningsregistret.
 
 ## Vanliga frågor
@@ -79,5 +79,6 @@ Registrera fakturan med det alternativ som gäller det mesta, eller dela upp den
 ## Läs också
 
 - [Omvänd betalningsskyldighet](/manual/moms/omvand-betalningsskyldighet)
+- [Importmoms från tullräkning](/manual/moms/importmoms)
 - [Hur momsen hamnar i rätt ruta](/manual/moms/moms-och-konton)
 - [Kontrollera momsnummer i VIES](/manual/moms/vies)

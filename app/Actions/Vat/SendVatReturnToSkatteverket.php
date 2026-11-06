@@ -10,6 +10,7 @@ use App\Models\FiscalYear;
 use App\Models\User;
 use App\Models\VatSubmission;
 use App\Support\Audit\Audit;
+use App\Support\Review\ReviewConfirmation;
 use App\Support\Skatteverket\Moms\DraftRefused;
 use App\Support\Skatteverket\Moms\MomsPeriod;
 use App\Support\Skatteverket\SkatteverketFailed;
@@ -31,13 +32,15 @@ class SendVatReturnToSkatteverket
      * @throws SkatteverketFailed
      * @throws DraftRefused
      */
-    public function __invoke(User $user, FiscalYear $fiscalYear, CarbonImmutable $start): VatSubmission
+    public function __invoke(User $user, FiscalYear $fiscalYear, CarbonImmutable $start, bool $figuresReviewed = false): VatSubmission
     {
         $company = Company::query()->findOrFail($fiscalYear->company_id);
 
         if (! $user->hasTeamPermission($company, 'vat:submit')) {
             throw new AuthorizationException;
         }
+
+        ReviewConfirmation::require($figuresReviewed, 'figures_reviewed', 'vat_return', $fiscalYear, $company, $user);
 
         return CurrentCompany::run($company, function () use ($user, $company, $fiscalYear, $start): VatSubmission {
             $moms = MomsPeriod::resolve($user, $company, $fiscalYear, $start);

@@ -31,7 +31,7 @@ function supplierInvoiceBody(int $supplierId): array
     return [
         'supplier_id' => $supplierId,
         'invoice_number' => 'F-2026-118',
-        'ocr' => '4005',
+        'ocr' => '4002',
         'invoice_date' => '2026-03-03',
         'total_ore' => 125000,
         'vat_ore' => 25000,

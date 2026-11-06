@@ -4,23 +4,28 @@ declare(strict_types=1);
 
 namespace App\Livewire\Accounting;
 
+use App\Actions\Closing\ConfirmK2Conditions;
 use App\Actions\Closing\YearEndClosing;
 use App\Domain\Closing\ClosingAccounts;
 use App\Domain\Closing\ClosingChecklist;
 use App\Domain\Closing\CurrencyRevaluation;
 use App\Domain\Closing\DividendLimit;
+use App\Domain\Closing\K2Reconfirmation;
+use App\Domain\Closing\TaxProposal;
 use App\Domain\Closing\UnpaidInvoices;
 use App\Domain\Closing\YearResult;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\ClosingCheck;
 use App\Models\Company;
 use App\Models\FiscalYear;
+use App\Models\IncomeTaxReturn;
 use App\Models\User;
 use App\Models\YearEndEntry;
 use App\Support\Money\Money;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use InvalidArgumentException;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -43,6 +48,12 @@ class ClosingPage extends Component
 
     public string $openingReason = '';
 
+    /** The reversal of old periodiseringsfonder in whole kronor; empty proposes what the law requires. */
+    public string $reversal = '';
+
+    /** This year's allocation to a periodiseringsfond in whole kronor. */
+    public string $allocation = '';
+
     public function mount(): void
     {
         abort_unless($this->user()->hasTeamPermission($this->company(), 'fiscal-years:manage'), 403);
@@ -52,6 +63,15 @@ class ClosingPage extends Component
             $this->year = (int) (FiscalYear::query()->where('status', 'OPEN')->whereDate('end_date', '<', now()->toDateString())->orderBy('start_date')->value('id')
                 ?? FiscalYear::query()->orderByDesc('start_date')->value('id'));
         }
+    }
+
+    /** Owner decision 16: the K2 conditions as amended by BFNAR 2025:2, confirmed once per company. */
+    public function confirmK2Conditions(ConfirmK2Conditions $confirm): void
+    {
+        $this->attempt(function () use ($confirm): void {
+            $confirm($this->user(), $this->fiscalYear());
+            $this->toast(__('K2-villkoren är bekräftade. Du kan fortsätta med bokslutet.'));
+        });
     }
 
     public function check(YearEndClosing $closing, string $key, bool $checked): void
@@ -76,6 +96,31 @@ class ClosingPage extends Component
             $this->reset('tax');
             $this->toast($entry->amount_ore->ore === 0 ? __('Noterat att året inte ger någon skatt.') : __('Skatten :amount är bokförd.', ['amount' => $entry->amount_ore->format()]));
         });
+    }
+
+    /** Books the reviewed tax proposal; the amount shown is the amount confirmed (ADR-056). */
+    public function confirmTaxProposal(YearEndClosing $closing, int $taxOre): void
+    {
+        $this->attempt(function () use ($closing, $taxOre): void {
+            $entry = $closing->confirmTaxProposal($this->user(), $this->fiscalYear(), $this->reversal, $this->allocation, $taxOre);
+            $this->reset('reversal', 'allocation');
+            $this->toast($entry->amount_ore->ore === 0 ? __('Beräkningen är bekräftad. Året ger ingen skatt.') : __('Beräkningen är bekräftad och skatten :amount är bokförd.', ['amount' => $entry->amount_ore->format()]));
+        });
+    }
+
+    /** Whether the company is a privatbostadsföretag or an investmentföretag; only "neither" gives a tax proposal. */
+    public function answerTaxStatus(YearEndClosing $closing, string $status): void
+    {
+        $this->attempt(function () use ($closing, $status): void {
+            $closing->answerTaxStatus($this->user(), $this->fiscalYear(), $status);
+            $this->toast(__('Svaret är sparat.'));
+        });
+    }
+
+    /** Fills in the largest allocation the law allows. */
+    public function useMaxAllocation(): void
+    {
+        $this->allocation = (string) ($this->proposal()?->maxAllocationKronor() ?? 0);
     }
 
     public function bookUnpaidInvoices(YearEndClosing $closing): void
@@ -138,6 +183,8 @@ class ClosingPage extends Component
             'years' => FiscalYear::query()->orderByDesc('start_date')->get(),
             'fiscalYear' => $fiscalYear,
             'items' => $items,
+            'k2Conditions' => K2Reconfirmation::isPending($this->company(), $fiscalYear) ? K2Reconfirmation::conditions($this->company()) : null,
+            'company' => $this->company(),
             'complete' => ClosingChecklist::isComplete($items),
             'result' => YearResult::of($fiscalYear),
             'taxEntry' => $entries->firstWhere('type', YearEndEntry::TAX),
@@ -156,6 +203,8 @@ class ClosingPage extends Component
                 ? DividendLimit::freeEquityOre($fiscalYear)
                 : null,
             'ownerTaxed' => ClosingAccounts::isOwnerTaxed($this->company()),
+            'taxProposal' => $fiscalYear->isOpen() && $entries->firstWhere('type', YearEndEntry::TAX) === null ? $this->proposal() : null,
+            'proposalApplies' => TaxProposal::appliesTo($this->company()),
             'resultAccount' => ClosingAccounts::resultNumber($this->company()),
             'next' => $next,
             'canClose' => $this->user()->hasTeamPermission($this->company(), 'periods:lock'),
@@ -168,6 +217,30 @@ class ClosingPage extends Component
             $action();
         } catch (ValidationException $exception) {
             $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+        }
+    }
+
+    /** The tax proposal with what the person has typed; an amount that cannot be read counts as 0 until it is confirmed. */
+    private function proposal(): ?TaxProposal
+    {
+        $company = $this->company();
+
+        if (! TaxProposal::appliesTo($company)) {
+            return null;
+        }
+
+        $fiscalYear = $this->fiscalYear();
+        $return = IncomeTaxReturn::query()->where('fiscal_year_id', $fiscalYear->id)->where('form', IncomeTaxReturn::INK2)->first();
+
+        return TaxProposal::for($company, $fiscalYear, $return, $this->reversal === '' ? null : self::kronorOrZero($this->reversal), self::kronorOrZero($this->allocation));
+    }
+
+    private static function kronorOrZero(string $value): int
+    {
+        try {
+            return trim($value) === '' ? 0 : max(intdiv(Money::parse($value)->ore, 100), 0);
+        } catch (InvalidArgumentException) {
+            return 0;
         }
     }
 

@@ -1,16 +1,16 @@
-# NONOX Connect API v1 (ADR-032): the single source of truth for the API and
+# NONOX API v1 (ADR-032): the single source of truth for the API and
 # its developer site. tests/Feature/Connect/OpenApiSpecTest.php fails when a
 # route under /api/v1 is missing here. All example data is synthetic.
 openapi: 3.1.0
 info:
-  title: 'NONOX Connect API'
-  version: 1.8.0
+  title: 'NONOX API'
+  version: 1.9.0
   description: |-
     The public API of NONOX Ekonomisystem, an open-source Swedish bookkeeping system.
 
     **Authentication.** Apps use OAuth 2.0 authorization code with PKCE (S256 is required for every client; implicit, password, client credentials and device grants do not exist). An owner or administrator approves the app on the Swedish consent screen with a passkey and chooses one company. Access tokens live at most 15 minutes; refresh tokens rotate on every use, and a refresh token (or authorization code) used twice revokes the whole grant. Scripts use API keys (`nnx_…`) created under Anslutningar: one company, chosen scopes, mandatory expiry, optional IP allowlist, shown once and stored hashed. Send either as `Authorization: Bearer …`; cookies are never accepted.
 
-    **One company per credential.** Every token and key belongs to exactly one company. Another company's ids answer 404. While NONOX Connect is turned off for the company, every call answers 404. An archived company can only be read.
+    **One company per credential.** Every token and key belongs to exactly one company. Another company's ids answer 404. While NONOX API is turned off for the company, every call answers 404. An archived company can only be read.
 
     **Effective rights.** A request may do what its scopes allow AND what the person who granted the app or created the key may do in the company right now, evaluated on every request. A changed role reduces access at once; a person who leaves the company takes the credential's access with them.
 
@@ -5248,7 +5248,7 @@ paths:
                         supplier_id: 9
                         supplier_name: 'Leverantören Exempel AB'
                         invoice_number: F-2026-118
-                        ocr: '4005'
+                        ocr: '4002'
                         invoice_date: '2026-03-03'
                         due_date: '2026-04-02'
                         description: Kontorsmaterial
@@ -5322,7 +5322,7 @@ paths:
                 value:
                   supplier_id: 9
                   invoice_number: F-2026-118
-                  ocr: '4005'
+                  ocr: '4002'
                   invoice_date: '2026-03-03'
                   total_ore: 125000
                   vat_ore: 25000
@@ -5367,7 +5367,7 @@ paths:
                       supplier_id: 9
                       supplier_name: 'Leverantören Exempel AB'
                       invoice_number: F-2026-118
-                      ocr: '4005'
+                      ocr: '4002'
                       invoice_date: '2026-03-03'
                       due_date: '2026-04-02'
                       description: Kontorsmaterial
@@ -5486,7 +5486,7 @@ paths:
                       supplier_id: 9
                       supplier_name: 'Leverantören Exempel AB'
                       invoice_number: F-2026-118
-                      ocr: '4005'
+                      ocr: '4002'
                       invoice_date: '2026-03-03'
                       due_date: '2026-04-02'
                       description: Kontorsmaterial
@@ -5585,7 +5585,7 @@ paths:
                       supplier_id: 9
                       supplier_name: 'Leverantören Exempel AB'
                       invoice_number: F-2026-118
-                      ocr: '4005'
+                      ocr: '4002'
                       invoice_date: '2026-03-03'
                       due_date: '2026-04-02'
                       description: Kontorsmaterial
@@ -5741,7 +5741,7 @@ paths:
                       supplier_id: 9
                       supplier_name: 'Leverantören Exempel AB'
                       invoice_number: F-2026-118
-                      ocr: '4005'
+                      ocr: '4002'
                       invoice_date: '2026-03-03'
                       due_date: '2026-04-02'
                       description: Kontorsmaterial
@@ -5858,7 +5858,7 @@ paths:
                       supplier_id: 9
                       supplier_name: 'Leverantören Exempel AB'
                       invoice_number: F-2026-118
-                      ocr: '4005'
+                      ocr: '4002'
                       invoice_date: '2026-03-03'
                       due_date: '2026-04-02'
                       description: Kontorsmaterial
@@ -5969,7 +5969,7 @@ paths:
                       supplier_id: 9
                       supplier_name: 'Leverantören Exempel AB'
                       invoice_number: F-2026-118
-                      ocr: '4005'
+                      ocr: '4002'
                       invoice_date: '2026-03-03'
                       due_date: '2026-04-02'
                       description: Kontorsmaterial
@@ -10381,7 +10381,7 @@ components:
                 detail: 'Företaget tillåter inte längre den här appen.'
                 instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
     NotFound:
-      description: "Not found. Also the answer for another company's ids (existence is never revealed) and for every call while NONOX Connect is turned off for the company."
+      description: "Not found. Also the answer for another company's ids (existence is never revealed) and for every call while NONOX API is turned off for the company."
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -12398,6 +12398,7 @@ components:
             - EU_GOODS
             - EU_SERVICES
             - NON_EU_SERVICES
+            - NON_EU_GOODS
             - SE_REVERSE_GOODS
             - SE_REVERSE_SERVICES
             - null
@@ -12490,6 +12491,7 @@ components:
             - EU_GOODS
             - EU_SERVICES
             - NON_EU_SERVICES
+            - NON_EU_GOODS
             - SE_REVERSE_GOODS
             - SE_REVERSE_SERVICES
             - null

@@ -219,7 +219,7 @@
         <span class="fg-meta" style="color:#FF8A6D">Med NONOX</span>
         <h3>Öppet och ditt</h3>
         <ul style="color:#D9D7D1">
-          @foreach(['Gratis att köra själv, eller 995 kr om året med drift. Alla moduler ingår.', 'Öppen källkod. All data kan exporteras, när som helst.', 'Byggt efter Bokföringslagen, med låsta verifikationer och behandlingshistorik.'] as $item)
+          @foreach(['Gratis att köra själv, eller 995 kr om året med drift. Alla moduler ingår. NONOX Connect (Peppol, Skatteverket, bank) är ett tillägg som kostar extra: leverantörens pris + 10 %, från 2027-01-11.', 'Öppen källkod. All data kan exporteras, när som helst.', 'Byggt efter Bokföringslagen, med låsta verifikationer och behandlingshistorik.'] as $item)
             <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5A36" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>{{ $item }}</li>
           @endforeach
         </ul>

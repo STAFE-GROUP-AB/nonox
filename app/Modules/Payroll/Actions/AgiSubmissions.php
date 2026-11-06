@@ -40,9 +40,11 @@ use Illuminate\Validation\ValidationException;
  * Files are validated against Skatteverket's schema when its files are
  * installed (services.skatteverket.agi_schema_dir).
  *
- * TODO(legal-verify): direct submission through Skatteverket's API (v2),
- * and the declaration of an enskild firma, whose employer id is the owner's
- * personal number.
+ * Reading the file into Skatteverket's own space through its API is
+ * AgiSkatteverketUploads (ADR-054, stage 2).
+ *
+ * TODO(legal-verify): the declaration of an enskild firma, whose employer id
+ * is the owner's personal number.
  */
 class AgiSubmissions
 {

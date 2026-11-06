@@ -1,0 +1,5 @@
+{
+    "status": "error",
+    "type": "E_RATE_LIMITED",
+    "message": "Too many requests"
+}

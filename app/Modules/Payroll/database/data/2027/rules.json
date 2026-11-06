@@ -370,6 +370,14 @@
             ],
             "source_url": "https://data.riksdagen.se/dokument/sfs-2011-1244.text",
             "note": "Skatteförfarandelagen 11 kap. 20 § (30 % on pay that is not the main income), added 2026-11-02 for #75. TODO(legal-verify): amendments in force from 2027-01-01 not checked."
+        },
+        {
+            "keys": [
+                "benefit.car.scope",
+                "benefit.fuel.factor"
+            ],
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "note": "Inkomstskattelagen 61 kap. 7 och 10 §§ and the transitional provisions of SFS 2021:479 and 2022:479, ändrad t.o.m. SFS 2026:1393, and socialavgiftslagen 2 kap. 10 a §, ändrad t.o.m. SFS 2026:493 (read 2026-11-06). TODO(legal-verify): amendments in force from 2027-01-01 after the budget bill."
         }
     ]
 }

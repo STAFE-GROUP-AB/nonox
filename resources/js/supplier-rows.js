@@ -23,7 +23,12 @@ document.addEventListener('alpine:init', () => {
 
         /** Whether the buyer accounts for the VAT, so the invoice itself carries none. */
         get buyerLiable() {
-            return this.treatment !== 'DOMESTIC';
+            return this.treatment !== 'DOMESTIC' && this.treatment !== 'NON_EU_GOODS';
+        },
+
+        /** Whether the supplier may charge Swedish VAT; goods from outside the EU carry none (ADR-057). */
+        get swedishVat() {
+            return this.treatment === 'DOMESTIC';
         },
 
         /** The VAT the buyer accounts for: each rate on the sum of its rows. */
@@ -52,7 +57,7 @@ document.addEventListener('alpine:init', () => {
         /** The total minus the VAT minus the rows, in öre; null while something cannot be read. */
         get remaining() {
             const total = parseOre(this.total);
-            const vat = this.buyerLiable ? 0 : parseOre(this.vat);
+            const vat = this.swedishVat ? parseOre(this.vat) : 0;
             const amounts = this.rows.map((row) => parseOre(row.amount));
 
             if (total === null || vat === null || amounts.includes(null)) {

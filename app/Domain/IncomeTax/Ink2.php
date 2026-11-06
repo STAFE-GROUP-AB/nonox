@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Domain\IncomeTax;
 
 use App\Domain\AnnualReport\AnnualAccounts;
+use App\Domain\Closing\CorporateTaxRules;
+use App\Domain\Closing\TaxProposal;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\IncomeTaxReturn;
@@ -207,12 +209,35 @@ final class Ink2
         // administration fees); the booked net of BAS 74xx is only a proposal.
         $pension = self::kronor($this->accounts->movementOf(Ink2Codes::PENSION_ACCOUNTS[0], Ink2Codes::PENSION_ACCOUNTS[1]));
 
+        // TODO(legal-verify): that 6072, 6982, 6992 and 8423 hold only costs that may not be deducted, and 8314 only income that is not taxable (ADR-056).
+        $marked = [];
+
+        foreach (CorporateTaxRules::adjustments() as $code => $adjustment) {
+            $marked[$code] = array_sum(array_map(fn (int $number): int => $this->accounts->movementOf($number, $number), $adjustment['accounts']));
+        }
+
         return $this->proposals = [
             Ink2Codes::S_STANDARD_INCOME => $standardIncome === null ? null : self::kronor($standardIncome),
             Ink2Codes::PENSION_BASIS => max($pension, 0),
             Ink2Codes::PENSION_BASIS_NEGATIVE => max(-$pension, 0),
             Ink2Codes::S_PENSION_COSTS => max($pension, 0),
+            Ink2Codes::S_NON_DEDUCTIBLE => max(self::kronor($marked[Ink2Codes::S_NON_DEDUCTIBLE] ?? 0), 0),
+            Ink2Codes::S_NON_TAXABLE => max(self::kronor(-($marked[Ink2Codes::S_NON_TAXABLE] ?? 0)), 0),
         ];
+    }
+
+    /**
+     * The tax on the taxable surplus as the books stand, in öre: the surplus
+     * rounded down to whole tens of kronor (IL 1 kap. 7 §) at the rate for
+     * the year (IL 65 kap. 10 §, CorporateTaxRules). Null when the rate for
+     * the year is not in the data. Without a new periodiseringsfond; the
+     * closing step (TaxProposal) adds that.
+     */
+    public function proposedTaxOre(): ?int
+    {
+        $rate = CorporateTaxRules::rateFor($this->fiscalYear);
+
+        return $rate === null ? null : TaxProposal::taxOre(TaxProposal::roundedTaxable($this->taxableKronor()), $rate);
     }
 
     /** Whether a person has entered the field, 0 included. */

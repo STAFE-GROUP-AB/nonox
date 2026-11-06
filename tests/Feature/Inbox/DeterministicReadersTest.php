@@ -85,7 +85,7 @@ it('reads a Peppol invoice into a supplier invoice, matched on the organisation 
         ->and($message->warnings)->toBe([])
         ->and($invoice['supplier_id'])->toBe($supplier->id)
         ->and($invoice['invoice_number'])->toBe('F-10045')
-        ->and($invoice['ocr'])->toBe('100452')
+        ->and($invoice['ocr'])->toBe('100453')
         ->and($invoice['rows'])->toHaveCount(2)
         // The invoice image embedded in the XML is kept as an attachment and becomes the invoice file.
         ->and($message->attachments)->toHaveCount(2)

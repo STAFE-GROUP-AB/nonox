@@ -16,6 +16,7 @@ use App\Models\SupplierInvoice;
 use App\Models\SupplierPaymentBatch;
 use App\Models\SupplierPaymentBatchItem;
 use App\Models\User;
+use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -57,7 +58,8 @@ class PaymentBatches extends Component
         $this->editingBank = $company->payment_bank === null;
         $this->selected = array_values(array_map(
             fn (mixed $id): string => (string) $id,
-            $this->payable()->where('due_date', '<=', CarbonImmutable::today()->addDays(7)->toDateString())->pluck('id')->all(),
+            // Kronor only: a file holds one currency, so invoices in a foreign currency are chosen by hand.
+            $this->payable()->where('invoice_currency', 'SEK')->where('due_date', '<=', CarbonImmutable::today()->addDays(7)->toDateString())->pluck('id')->all(),
         ));
     }
 
@@ -69,14 +71,17 @@ class PaymentBatches extends Component
         $this->toast(__('Bankuppgifterna för betalfiler är sparade.'));
     }
 
+    public bool $figuresReviewed = false;
+
     public function create(CreatePaymentBatch $create): void
     {
         $date = CarbonImmutable::createFromFormat('!Y-m-d', $this->executionDate)
             ?: throw ValidationException::withMessages(['execution_date' => __('Välj betaldag.')]);
 
-        $batch = $create($this->user(), $this->company(), $this->selected, $date);
+        $batch = $create($this->user(), $this->company(), $this->selected, $date, $this->figuresReviewed);
 
         $this->selected = [];
+        $this->figuresReviewed = false;
         $this->toast(__(':title är skapad med :count betalningar. Den behöver godkännas innan den kan laddas ned och läsas in i internetbanken.', ['title' => $batch->title(), 'count' => $batch->payment_count]));
     }
 
@@ -141,6 +146,7 @@ class PaymentBatches extends Component
                 ->orderByDesc('number')
                 ->limit(50)
                 ->get(),
+            'foreignTotals' => $this->foreignTotals(),
             'canCreate' => $this->user()->can('create', [SupplierPaymentBatch::class, $this->company()]),
             // Checked once for the page rather than through the policy per batch, which would query the company each time.
             'canApprove' => $this->user()->hasTeamPermission($this->company(), 'payments:approve'),
@@ -151,8 +157,10 @@ class PaymentBatches extends Component
     }
 
     /**
-     * Approved invoices in kronor that are not already in a file waiting for
-     * the bank. One in another currency is paid in the internet bank.
+     * Approved invoices that are not already in a file waiting for the bank.
+     * One in another currency is offered only for a bank whose guide for
+     * payments abroad has been read (PaymentBank::foreignPayments); otherwise
+     * it is paid in the internet bank.
      *
      * @return Builder<SupplierInvoice>
      */
@@ -161,10 +169,30 @@ class PaymentBatches extends Component
         return SupplierInvoice::query()
             ->where('status', SupplierInvoiceStatus::Approved->value)
             ->where('kind', SupplierInvoice::INVOICE)
-            ->where('invoice_currency', 'SEK')
+            ->when(! $this->company()->payment_bank?->foreignPayments(), fn (Builder $query) => $query->where('invoice_currency', 'SEK'))
             ->whereDoesntHave('batchItems', fn (Builder $query) => $query
                 ->where(fn (Builder $item) => $item->whereNull('bank_status')->orWhere('bank_status', '!=', SupplierPaymentBatchItem::REJECTED))
                 ->whereHas('batch', fn (Builder $batch) => $batch->where('status', PaymentBatchStatus::Created->value)));
+    }
+
+    /**
+     * What each file pays in other currencies, as "1 200,00 EUR, 350,00 USD"; one query for the listed files.
+     *
+     * @return array<string, string>
+     */
+    private function foreignTotals(): array
+    {
+        $totals = SupplierPaymentBatchItem::query()
+            ->where('currency', '!=', 'SEK')
+            ->selectRaw('batch_id, currency, sum(foreign_amount_minor) as total')
+            ->groupBy('batch_id', 'currency')
+            ->orderBy('currency')
+            ->toBase()
+            ->get();
+
+        return $totals->groupBy('batch_id')
+            ->map(fn ($rows): string => $rows->map(fn ($row): string => Money::ofOre((int) $row->total)->format(withCurrency: false).' '.$row->currency)->implode(', '))
+            ->all();
     }
 
     private function user(): User

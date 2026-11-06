@@ -65,7 +65,7 @@ beforeEach(function () {
     $this->power = app(SaveSupplier::class)($this->owner, $this->company, ['name' => 'Elbolaget AB', 'plusgiro' => '4123451', 'payment_terms_days' => 10, 'default_account' => 5010]);
     $this->food = brInvoice($this->owner, $this->company, $this->wholesaler, '1620', 'F-1');
     $this->bill = brInvoice($this->owner, $this->company, $this->power, '500,50', 'EL-12');
-    $this->batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$this->food->id, $this->bill->id], CarbonImmutable::parse('2026-03-12'));
+    $this->batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$this->food->id, $this->bill->id], CarbonImmutable::parse('2026-03-12'), true);
     app(ApprovePaymentBatch::class)($this->owner, $this->batch);
     $this->batch = $this->batch->fresh();
 });
@@ -233,7 +233,7 @@ it('rejects every payment when the bank rejects the whole file, and cancels the 
         ->and(brItem($this->batch, $this->food)->rejectionReason())->toBe('Filen har fel format. (FF01)');
 
     // Both invoices can be paid in a new file.
-    $next = app(CreatePaymentBatch::class)($this->owner, $this->company, [$this->food->id, $this->bill->id], CarbonImmutable::parse('2026-03-13'));
+    $next = app(CreatePaymentBatch::class)($this->owner, $this->company, [$this->food->id, $this->bill->id], CarbonImmutable::parse('2026-03-13'), true);
     expect($next->payment_count)->toBe(2);
 });
 
@@ -267,7 +267,7 @@ it('suggests a debit without references by amount, date and bankgiro, and books 
 
 it('does not suggest when the bankgiro differs or two payments fit', function () {
     $other = brInvoice($this->owner, $this->company, $this->wholesaler, '1620', 'F-2');
-    app(CreatePaymentBatch::class)($this->owner, $this->company, [$other->id], CarbonImmutable::parse('2026-03-12'));
+    app(CreatePaymentBatch::class)($this->owner, $this->company, [$other->id], CarbonImmutable::parse('2026-03-12'), true);
 
     $result = brUpload($this->owner, $this->company, brCamt054([
         ['reference' => 'NOREF-1', 'amount' => '1620.00', 'account' => '5050-1055'],
@@ -280,7 +280,7 @@ it('does not suggest when the bankgiro differs or two payments fit', function ()
 
 it('holds a debit for a file that is not approved until it is, and lets a person dismiss an answer', function () {
     $invoice = brInvoice($this->owner, $this->company, $this->wholesaler, '300', 'F-3');
-    $unapproved = app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12'));
+    $unapproved = app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12'), true);
     $item = brItem($unapproved, $invoice);
 
     brUpload($this->owner, $this->company, brCamt054([['reference' => 'BOOK-7', 'amount' => '300.00', 'e2e' => $item->end_to_end_id, 'message_id' => $unapproved->message_id]]));
@@ -341,7 +341,7 @@ it('leaves a returned payment to a person, and a rejection after booking too', f
 it('books under kontantmetoden exactly as a manual payment does, with the costs on the payment', function () {
     $this->company->forceFill(['accounting_method' => 'KONTANTMETODEN'])->save();
     $invoice = brInvoice($this->owner, $this->company, $this->wholesaler, '1250', 'K-1');
-    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12'));
+    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12'), true);
     app(ApprovePaymentBatch::class)($this->owner, $batch);
     $item = brItem($batch, $invoice);
 
@@ -452,7 +452,7 @@ it('never lets one company\'s file touch another company\'s payments', function 
         app(SavePaymentBankSettings::class)($otherOwner, $other, ['payment_bank' => 'HANDELSBANKEN', 'iban' => 'SE45 5000 0000 0583 9825 7466', 'bank_agreement_id' => '1']);
         $supplier = app(SaveSupplier::class)($otherOwner, $other, ['name' => 'Annan AB', 'bankgiro' => '5050-1055', 'payment_terms_days' => 30, 'default_account' => 4010]);
         $invoice = brInvoice($otherOwner, $other, $supplier, '1620', 'B-1');
-        $batch = app(CreatePaymentBatch::class)($otherOwner, $other, [$invoice->id], CarbonImmutable::parse('2026-03-12'));
+        $batch = app(CreatePaymentBatch::class)($otherOwner, $other, [$invoice->id], CarbonImmutable::parse('2026-03-12'), true);
         app(ApprovePaymentBatch::class)($otherOwner, $batch);
 
         return $batch->fresh();

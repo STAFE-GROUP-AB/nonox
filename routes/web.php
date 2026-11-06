@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Accounting\AnnualReportController;
 use App\Http\Controllers\Accounting\ArchivePackageController;
 use App\Http\Controllers\Accounting\IncomeTaxSruController;
+use App\Http\Controllers\Accounting\K10Controller;
 use App\Http\Controllers\Accounting\ReportCsvController;
 use App\Http\Controllers\Accounting\SieExportController;
 use App\Http\Controllers\Accounting\SieImportController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\DataSubjectExportController;
 use App\Http\Controllers\DeveloperPortalController;
 use App\Http\Controllers\FirmLogoController;
 use App\Http\Controllers\GettingStartedController;
+use App\Http\Controllers\Group\GroupCsvController;
 use App\Http\Controllers\GuideController;
 use App\Http\Controllers\GuideTipsController;
 use App\Http\Controllers\IndustryController;
@@ -141,6 +143,8 @@ Route::prefix('hq')->name('hq.')->middleware(EnsureHqAdmin::class)->group(functi
     Route::view('/installningar', 'hq.settings')->name('settings');
     // The company register for prospecting (ADR-047): imports and exclusions after objections.
     Route::view('/foretagsregistret', 'hq.registry')->name('registry');
+    // The bank feed and Peppol across the installation, with the kill switches (ADR-034, ADR-050).
+    Route::view('/integrationer', 'hq.integrations')->name('integrations');
 });
 // The passkey step for a signed-in session that has to pass it (RequirePasskey, ADR-029).
 Route::view('/logga-in/passkey', 'auth.passkey')->middleware('auth')->name('passkeys.challenge');
@@ -171,6 +175,9 @@ Route::middleware([
         Route::post('/kan-folja', 'followable')->name('followable');
     });
     Route::view('/mina-foretag', 'companies.overview')->name('companies.overview');
+    // The user's own groups of companies, for internal reporting (ADR-060); spans companies like Mina företag.
+    Route::view('/koncern', 'group.overview')->name('group.overview');
+    Route::get('/koncern/{group}/csv', GroupCsvController::class)->whereNumber('group')->name('group.csv');
     // Across every company the user belongs to (ADR-028).
     Route::view('/uppgifter', 'tasks.index')->name('tasks.index');
     Route::redirect('/mina-uppgifter', '/uppgifter');
@@ -193,6 +200,7 @@ Route::middleware([
         Route::get('/registerutdrag/anstalld/{employee}', [DataSubjectExportController::class, 'employee'])->whereNumber('employee')->name('privacy.export.employee');
         Route::get('/registerutdrag/personal/{person}', [DataSubjectExportController::class, 'staffLedgerPerson'])->whereNumber('person')->name('privacy.export.staffLedgerPerson');
         Route::get('/registerutdrag/delagare/{incomeTaxPartner}', [DataSubjectExportController::class, 'incomeTaxPartner'])->whereNumber('incomeTaxPartner')->name('privacy.export.incomeTaxPartner');
+        Route::get('/registerutdrag/k10-agare/{k10Owner}', [DataSubjectExportController::class, 'k10Owner'])->whereNumber('k10Owner')->name('privacy.export.k10Owner');
         Route::get('/registerutdrag/inkorg', [DataSubjectExportController::class, 'inboxSender'])->name('privacy.export.inboxSender');
         Route::put('/oversikt/kom-igang', [GettingStartedController::class, 'update'])->name('dashboard.gettingStarted');
         Route::post('/sok', SearchController::class)->middleware('throttle:search')->name('search');
@@ -261,12 +269,18 @@ Route::middleware([
         Route::view('/anlaggningar', 'accounting.fixed-assets')->name('accounting.fixedAssets');
         Route::view('/periodiseringar', 'accounting.accruals')->name('accounting.accruals');
         Route::view('/bankavstamning', 'accounting.bank-reconciliation')->name('accounting.bankReconciliation');
+        Route::view('/skattekontot', 'accounting.tax-account')->name('accounting.taxAccount');
         Route::view('/bokslut', 'accounting.closing')->name('accounting.closing');
         Route::view('/arsredovisning', 'accounting.annual-report')->name('accounting.annualReport');
         Route::get('/arsredovisning/{fiscalYear}', [AnnualReportController::class, 'show'])->whereNumber('fiscalYear')->name('accounting.annualReport.show');
         Route::get('/arsredovisning/{fiscalYear}/pdf', [AnnualReportController::class, 'pdf'])->whereNumber('fiscalYear')->name('accounting.annualReport.pdf');
+        Route::get('/arsredovisning/{fiscalYear}/ixbrl', [AnnualReportController::class, 'ixbrl'])->whereNumber('fiscalYear')->name('accounting.annualReport.ixbrl');
         Route::view('/inkomstdeklaration', 'accounting.income-tax')->name('accounting.incomeTax');
         Route::get('/inkomstdeklaration/{fiscalYear}/sru', IncomeTaxSruController::class)->whereNumber('fiscalYear')->name('accounting.incomeTax.sru');
+        Route::view('/inkomstdeklaration/k10', 'accounting.k10')->name('accounting.k10');
+        Route::get('/inkomstdeklaration/k10/{k10Owner}', [K10Controller::class, 'show'])->whereNumber('k10Owner')->name('accounting.k10.show');
+        Route::get('/inkomstdeklaration/k10/{k10Owner}/pdf', [K10Controller::class, 'pdf'])->whereNumber('k10Owner')->name('accounting.k10.pdf');
+        Route::get('/inkomstdeklaration/k10/{k10Owner}/sru', [K10Controller::class, 'sru'])->whereNumber('k10Owner')->name('accounting.k10.sru');
         Route::get('/importera-sie', [SieImportController::class, 'index'])->name('accounting.sieImports.index');
         Route::post('/importera-sie', [SieImportController::class, 'store'])->name('accounting.sieImports.store');
         Route::get('/importera-sie/{sieImport}', [SieImportController::class, 'show'])

@@ -23,7 +23,7 @@ use App\Modules\Connect\Http\Controllers\Api\V1\VoucherController;
 use Illuminate\Support\Facades\Route;
 
 /*
- * NONOX Connect, API v1 (ADR-032). Every route names its scope; every POST
+ * NONOX API, API v1 (ADR-032). Every route names its scope; every POST
  * needs an Idempotency-Key. docs/api/openapi.yaml describes each route and
  * tests/Feature/Connect/OpenApiSpecTest.php fails when one is missing there.
  */

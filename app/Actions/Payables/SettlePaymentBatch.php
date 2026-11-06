@@ -8,6 +8,7 @@ use App\Domain\Payables\PaymentBatchStatus;
 use App\Domain\Payables\PaymentResponseStatus;
 use App\Models\PaymentResponse;
 use App\Models\SupplierPaymentBatch;
+use App\Models\SupplierPaymentBatchItem;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Iso20022\OutgoingPaymentEvent;
@@ -20,7 +21,9 @@ use Illuminate\Validation\ValidationException;
  * Settles a payment file once the bank has answered: confirmed, every
  * invoice in it that the bank has not already reported as paid or rejected
  * gets its payment on the execution date (series E); cancelled, the
- * invoices are free to pay again, unless part of the file is already paid. Either way the file itself
+ * invoices are free to pay again, unless part of the file is already paid.
+ * A payment in a foreign currency is never booked by confirming the file:
+ * the bank's debit notification gives the kronor (ApplyPaymentResponses). Either way the file itself
  * stays as it was. Only an approved file can be confirmed (ApprovePaymentBatch);
  * any open file can be cancelled.
  */
@@ -44,7 +47,14 @@ class SettlePaymentBatch
                 throw ValidationException::withMessages(['batch' => __('Betalfilen är inte godkänd. Någon med rätt att godkänna betalningar behöver godkänna den innan den kan markeras som betald.')]);
             }
 
-            foreach ($batch->items()->with('invoice')->get() as $item) {
+            $items = $batch->items()->with('invoice')->get();
+
+            // The kronor the bank took for a payment abroad are known only from the bank's debit notification (ADR-014 addendum), so nothing is booked on a guess.
+            if ($items->contains(fn (SupplierPaymentBatchItem $item): bool => $item->isForeign() && $item->isPending())) {
+                throw ValidationException::withMessages(['batch' => __('Filen har betalningar i utländsk valuta. Läs in bankens avisering (camt.054) under Läs in bankens svar, så bokförs de med de kronor banken tog. Utan avisering bokförs ingenting.')]);
+            }
+
+            foreach ($items as $item) {
                 // Payments the bank already reported as paid or rejected (ApplyPaymentResponses) are done.
                 if (! $item->isPending()) {
                     continue;

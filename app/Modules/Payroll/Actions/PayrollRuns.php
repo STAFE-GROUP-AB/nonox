@@ -12,6 +12,7 @@ use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
 use App\Modules\ModuleManager;
+use App\Modules\Payroll\Domain\Benefits\FuelBenefit;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollCalculator;
 use App\Modules\Payroll\Domain\Engine\Steps\Allowances;
@@ -138,6 +139,8 @@ class PayrollRuns
             Employee::query()->findOrFail((int) $validated['employee_id']);
             $payCode = PayCode::query()->where('is_active', true)->findOrFail((int) $validated['pay_code_id']);
             $allowance = isset(Allowances::TAX_FREE[$payCode->code]);
+
+            FuelBenefit::assertCompanyCar($run, (int) $validated['employee_id'], $payCode->code);
 
             // An allowance is tax-free per mil or day, so the number is needed; an amount alone would be paid as nothing (#76).
             if ($allowance && blank($validated['quantity'] ?? null)) {
@@ -306,6 +309,8 @@ class PayrollRuns
             }
 
             $this->extensions->prepare($run, $employments);
+            // The company cars of the run in one query (ADR-061).
+            $this->contexts->prepareCars($run, $employments, $rules);
             /** @var array<int, array<string, int>> $runDeltas */
             $runDeltas = [];
             // Regional support is capped per month for the whole company (lag 2001:1170 5 §, #78).
@@ -418,7 +423,7 @@ class PayrollRuns
                 'status' => PayrollRun::CALCULATED,
                 'calculated_by' => $user->id,
                 'calculated_at' => now(),
-                'rule_snapshot_hash' => $rules->snapshotHash(),
+                'rule_snapshot_hash' => $this->contexts->carRulesHash($rules) === '' ? $rules->snapshotHash() : hash('sha256', $rules->snapshotHash().$this->contexts->carRulesHash($rules)),
             ])->save();
 
             Audit::record('payroll.run_calculated', $run, ['period' => $run->period, 'payslips' => count($results), 'time_reports' => count($claimed), 'rule_snapshot_hash' => $run->rule_snapshot_hash], $company, $user);
@@ -658,9 +663,9 @@ class PayrollRuns
     }
 
     /**
-     * Books the run's withheld tax (2710) and its contributions and special
-     * payroll tax (2730) against the tax account, on the day Skatteverket
-     * draws them (PAYROLL_MODULE.md B.12). Once per run.
+     * Books the run's withheld tax (2710) and its contributions (2730) against
+     * the tax account, on the day Skatteverket draws them; special payroll tax
+     * on pension (2514) stays until it is paid (PAYROLL_MODULE.md B.12). Once per run.
      */
     public function postTax(User $user, PayrollRun $run, CarbonImmutable $date): PayrollRun
     {

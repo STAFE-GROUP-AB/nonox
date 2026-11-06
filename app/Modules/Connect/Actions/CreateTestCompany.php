@@ -35,7 +35,7 @@ use Throwable;
 /**
  * Creates a test company (Testföretag, ADR-032) for trying NONOX and its
  * API: a company of its own, owned by the person, clearly marked in every
- * page, with NONOX Connect turned on and invented demo data made through
+ * page, with NONOX API turned on and invented demo data made through
  * the ordinary Actions: customers, suppliers, articles, cost centres, a
  * project, posted vouchers, an issued and part-paid invoice, a draft
  * invoice and a supplier invoice waiting for approval.

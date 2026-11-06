@@ -29,8 +29,9 @@ Avsnittet är för ägaren, administratören och redovisningskonsulten – de ro
 
 - [Årsredovisning enligt K2](/manual/bokslut/arsredovisning)
 - [Inkomstdeklaration 2 och SRU-filer](/manual/bokslut/inkomstdeklaration)
+- [K10-underlag för ägarna](/manual/bokslut/k10)
 - [Arkivpaketet](/manual/bokslut/arkivpaket) – spara årets räkenskapsinformation i sju år.
 - [Nytt räkenskapsår och ingående balanser](/manual/bokslut/nytt-rakenskapsar)
 
 > [!IMPORTANT]
-> NONOX räknar och bokför, men räknar inte fram skatten och gör inga skattemässiga bedömningar åt dig. Gör bokslutet tillsammans med din redovisningskonsult om du är osäker.
+> NONOX räknar och bokför, och föreslår årets skatt för aktiebolag (beta) som du granskar och bekräftar. Förslaget är inte granskat av en redovisningskonsult, och NONOX gör inga andra skattemässiga bedömningar åt dig. Gör bokslutet tillsammans med din redovisningskonsult om du är osäker.

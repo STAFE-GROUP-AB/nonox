@@ -1,0 +1,113 @@
+{
+    "note": "The rules NONOX uses for the proposed income tax of a limited company or an ekonomisk förening in the year-end closing (ADR-056). Researched 2026-11-06 from the cited primary sources (Inkomstskattelag (1999:1229) as amended up to SFS 2026:1393 on riksdagen.se, Skatteverket, BAS kontoplan 2026). Nothing here is legally verified: every rule has status 'researched' until a person with legal responsibility has checked it. A fiscal year whose start date matches no rate gets no proposal.",
+    "rates": [
+        {
+            "starts_from": "2021-01-01",
+            "starts_before": null,
+            "rate_bp": 2060,
+            "status": "researched",
+            "read": "2026-11-06",
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
+            "source_quote": "IL 65 kap. 10 §: För juridiska personer är den statliga inkomstskatten 20,6 procent av den beskattningsbara inkomsten. Lag (2018:1206)."
+        },
+        {
+            "starts_from": "2019-01-01",
+            "starts_before": "2021-01-01",
+            "rate_bp": 2140,
+            "status": "researched",
+            "read": "2026-11-06",
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
+            "source_quote": "Övergångsbestämmelser till lag (2018:1206) p. 11: Vid tillämpning av 65 kap. 10 § i den nya lydelsen ska avseende beskattningsår som börjar efter den 31 december 2018 men före 1 januari 2021 för juridiska personer den statliga inkomstskatten vara 21,4 procent av den beskattningsbara inkomsten i stället för 20,6 procent."
+        }
+    ],
+    "rules": {
+        "taxable_income_rounding_kronor": {
+            "value": 10,
+            "status": "researched",
+            "read": "2026-11-06",
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
+            "source_quote": "IL 1 kap. 7 §: Juridiska personers skatt ska beräknas på den beskattningsbara inkomsten. Denna ska beräknas på följande sätt. Överskottet i inkomstslaget näringsverksamhet minskas med allmänna avdrag. Det återstående beloppet avrundas nedåt till helt tiotal kronor och är den fastställda och den beskattningsbara inkomsten."
+        },
+        "tax_allocation_reserve_share_bp": {
+            "value": 2500,
+            "status": "researched",
+            "read": "2026-11-06",
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
+            "source_quote": "IL 30 kap. 5 §: Juridiska personer får dra av högst ett belopp som motsvarar 25 procent av överskottet av näringsverksamheten före avdraget."
+        },
+        "tax_allocation_reserve_basis": {
+            "value": "after_deficit_and_reversal_before_allocation",
+            "status": "researched",
+            "read": "2026-11-06",
+            "source_url": "https://www.skatteverket.se/foretag/drivaforetag/foretagsformer/aktiebolag/periodiseringsfond",
+            "source_quote": "Det är beskattningsårets skattemässiga överskott som utgör underlag för beräkningen av avdraget, efter avdrag för tidigare års underskott och återföring av tidigare periodiseringsfonder, men före årets avdrag för periodiseringsfond."
+        },
+        "tax_allocation_reserve_booked": {
+            "value": true,
+            "status": "researched",
+            "read": "2026-11-06",
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
+            "source_quote": "IL 30 kap. 3 §: Juridiska personer som är skyldiga att upprätta årsredovisning eller årsbokslut enligt bokföringslagen (1999:1078) får göra avdrag bara om motsvarande avsättning görs i räkenskaperna. 4 §: Varje års avsättning i näringsverksamheten ska bilda en egen fond."
+        },
+        "tax_allocation_reserve_reversal_years": {
+            "value": 6,
+            "status": "researched",
+            "read": "2026-11-06",
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
+            "source_quote": "IL 30 kap. 7 §: Avdrag för avsättning till en periodiseringsfond ska återföras senast det sjätte beskattningsåret efter det beskattningsår då avdraget gjordes. När återföring av avdrag för avsättning till periodiseringsfond sker, ska det tidigast gjorda avdraget återföras först."
+        },
+        "tax_allocation_reserve_excluded": {
+            "value": "privatbostadsföretag, investmentföretag",
+            "status": "researched",
+            "read": "2026-11-06",
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
+            "source_quote": "IL 30 kap. 1 § andra stycket: Avdrag får dock inte göras av privatbostadsföretag och investmentföretag."
+        },
+        "private_housing_company": {
+            "value": "no proposal",
+            "status": "researched",
+            "read": "2026-11-06",
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
+            "source_quote": "IL 2 kap. 17 §: Med privatbostadsföretag avses en svensk ekonomisk förening eller ett svenskt aktiebolag vars verksamhet 1. till klart övervägande del består i att åt sina medlemmar eller delägare tillhandahålla bostäder i byggnader som ägs av föreningen eller bolaget, eller 2. uteslutande eller så gott som uteslutande består i att åt sina medlemmar eller delägare tillhandahålla garage eller någon annan för deras personliga räkning avsedd anordning i byggnader som ägs av föreningen eller bolaget. IL 39 kap. 25 §: Ett privatbostadsföretag ska i fråga om en fastighet i Sverige, utöver vad som sägs i 26 och 27 §§, inte ta upp inkomster och inte dra av utgifter som är hänförliga till fastigheten. Lag (2007:1419)."
+        },
+        "investment_company": {
+            "value": "no proposal",
+            "status": "researched",
+            "read": "2026-11-06",
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
+            "source_quote": "IL 39 kap. 14 §: För investmentföretag gäller, utöver vad som följer av övriga bestämmelser i denna lag, följande: 1. Kapitalvinster på delägarrätter ska inte tas upp och kapitalförluster på delägarrätter får inte dras av. … 2. Ett belopp som för helt år motsvarar 1,5 procent av värdet på delägarrätter vid beskattningsårets ingång ska tas upp."
+        },
+        "tax_allocation_reserve_accounts": {
+            "value": {"first": 2120, "second": 2130, "allocation": 8811, "reversal": 8819},
+            "status": "researched",
+            "read": "2026-11-06",
+            "source_url": "https://www.bas.se/wp-content/uploads/2026/04/BAS_kontoplan_2026_v2.pdf",
+            "source_quote": "BAS kontoplan 2026: 2120 Periodiseringsfond 2020, 2121 Periodiseringsfond 2021 … 2127 Periodiseringsfond 2027, 2129 Periodiseringsfond 2019; 2130 Periodiseringsfond 2020 – nr 2 … 2139 Periodiseringsfond 2019 – nr 2; 8811 Avsättning till periodiseringsfond; 8819 Återföring från periodiseringsfond."
+        },
+        "tax_accounts": {
+            "value": {"expense": 8910, "liability": 2512},
+            "status": "researched",
+            "read": "2026-11-06",
+            "source_url": "https://www.bas.se/wp-content/uploads/2026/04/BAS_kontoplan_2026_v2.pdf",
+            "source_quote": "BAS kontoplan 2026: 8910 Skatt som belastar årets resultat; 2512 Beräknad inkomstskatt."
+        }
+    },
+    "adjustments": {
+        "7653": {
+            "label": "Bokförda kostnader som inte får dras av",
+            "accounts": [6072, 6982, 6992, 8423],
+            "status": "researched",
+            "read": "2026-11-06",
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
+            "source_quote": "IL 16 kap. 2 § (representation: avdrag bara med omedelbart samband och skäligt belopp), IL 9 kap. 8 § (räntor på skatt enligt 65 kap. 2 §, 4 § första stycket, 5–13 och 19 §§ skatteförfarandelagen får inte dras av), IL 9 kap. 9 § (böter och offentligrättsliga sanktionsavgifter får inte dras av). BAS kontoplan 2026 (https://www.bas.se/wp-content/uploads/2026/04/BAS_kontoplan_2026_v2.pdf): 6072 Representation, ej avdragsgill; 6982 Föreningsavgifter, ej avdragsgilla; 6992 Övriga externa kostnader, ej avdragsgilla; 8423 Räntekostnader för skatter och avgifter."
+        },
+        "7754": {
+            "label": "Bokförda intäkter som inte ska tas upp",
+            "accounts": [8314],
+            "status": "researched",
+            "read": "2026-11-06",
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
+            "source_quote": "IL 8 kap. 7 §: Räntor på återbetald skatt, tull eller avgift enligt följande bestämmelser är skattefria: … 65 kap. 2 §, 4 § tredje stycket samt 16, 17 och 20 §§ skatteförfarandelagen (2011:1244). BAS kontoplan 2026: 8314 Skattefria ränteintäkter."
+        }
+    }
+}

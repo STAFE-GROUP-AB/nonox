@@ -150,7 +150,16 @@ final class Ink2Codes
      * Codes the system proposes from the books. An entered amount, 0
      * included, replaces the proposal; an empty field keeps it.
      */
-    public const array PROPOSED = [self::S_STANDARD_INCOME, self::PENSION_BASIS, self::PENSION_BASIS_NEGATIVE, self::S_PENSION_COSTS];
+    public const array PROPOSED = [self::S_STANDARD_INCOME, self::PENSION_BASIS, self::PENSION_BASIS_NEGATIVE, self::S_PENSION_COSTS, self::S_NON_DEDUCTIBLE, self::S_NON_TAXABLE];
+
+    /**
+     * INK2S 4.3 c and 4.5 c, proposed from the BAS accounts whose names say
+     * the cost is not deductible or the income not taxable (CorporateTaxRules,
+     * database/data/corporate-tax/rules.json; ADR-056).
+     */
+    public const int S_NON_DEDUCTIBLE = 7653;
+
+    public const int S_NON_TAXABLE = 7754;
 
     /**
      * Fields a person can enter that do not change the taxable result:

@@ -111,6 +111,11 @@ class UpdateCompanyDetails
             'eu_sales_quarterly_goods_from' => $this->quarterlyGoodsFrom($company, $validated),
         ])->save();
 
+        if ($company->reporting_framework === ReportingFramework::K2 && $confirmed['framework_conditions_confirmed'] && $company->k2_conditions_confirmed_at === null) {
+            // The K2 conditions were shown and confirmed in the form (owner decision 16): not asked again in the closing.
+            $company->forceFill(['k2_conditions_confirmed_at' => now(), 'k2_conditions_confirmed_by' => $user->id])->save();
+        }
+
         $changes = self::withoutAmounts(Audit::changes($before, $this->snapshot($company)));
 
         if ($changes['after'] !== []) {

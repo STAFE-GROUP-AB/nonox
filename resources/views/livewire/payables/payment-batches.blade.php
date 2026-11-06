@@ -69,7 +69,10 @@
                                     <td class="py-2 pr-4"><a href="{{ route('payables.invoices.show', $invoice) }}" class="font-semibold text-accent-600 hover:text-accent-700">{{ $invoice->number }}</a></td>
                                     <td class="py-2 pr-4">{{ $invoice->supplierName() }}</td>
                                     <td class="py-2 pr-4 tabular-nums">
-                                        @if(filled($snapshot['bankgiro'] ?? null))
+                                        @if($invoice->isForeign())
+                                            {{ __('IBAN :iban', ['iban' => $snapshot['iban'] ?? __('Saknas')]) }}
+                                            <span class="block text-xs text-gray-500">{{ __('Betalas i :currency.', ['currency' => $invoice->invoice_currency]) }}</span>
+                                        @elseif(filled($snapshot['bankgiro'] ?? null))
                                             {{ __('Bankgiro :number', ['number' => $snapshot['bankgiro']]) }}
                                         @elseif(filled($snapshot['plusgiro'] ?? null))
                                             {{ __('Plusgiro :number', ['number' => $snapshot['plusgiro']]) }}
@@ -79,7 +82,14 @@
                                         <span class="block text-xs text-gray-500">{{ $invoice->ocr ? __('OCR :ocr', ['ocr' => $invoice->ocr]) : __('Meddelande: faktura :number', ['number' => $invoice->invoice_number ?? $invoice->number]) }}</span>
                                     </td>
                                     <td @class(['py-2 pr-4 tabular-nums', 'text-accent-700' => $invoice->isOverdue()])>{{ $invoice->due_date->toDateString() }}</td>
-                                    <td class="py-2 text-right"><x-ui.amount :money="$invoice->remaining()" /></td>
+                                    <td class="py-2 text-right">
+                                        @if($invoice->isForeign())
+                                            <span class="block tabular-nums">{{ $invoice->formatForeign($invoice->foreignRemaining()) }}</span>
+                                            <span class="block text-xs text-gray-500">{{ __('ca :amount', ['amount' => $invoice->remaining()->format()]) }}</span>
+                                        @else
+                                            <x-ui.amount :money="$invoice->remaining()" />
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -90,9 +100,10 @@
                     <x-ui.field for="execution_date" :label="__('Betaldag')" error="execution_date">
                         <input id="execution_date" type="date" class="{{ $input }} mt-1" wire:model="executionDate" min="{{ now()->toDateString() }}">
                     </x-ui.field>
+                    <x-ui.review-confirmation model="figuresReviewed" />
                     <div class="flex items-center gap-4">
                         <p class="text-sm">{{ count($selected) === 1 ? __('1 faktura vald,') : __(':count fakturor valda,', ['count' => count($selected)]) }} <x-ui.amount :money="Money::ofOre($selectedTotal)" class="font-semibold" /></p>
-                        <x-button wire:loading.attr="disabled" :disabled="$selected === []">{{ __('Skapa betalfil') }}</x-button>
+                        <x-button wire:loading.attr="disabled" :disabled="$selected === [] || ! $figuresReviewed">{{ __('Skapa betalfil') }}</x-button>
                     </div>
                 </form>
                 @error('batch') <p class="mt-2 text-sm text-accent-700" role="alert">{{ $message }}</p> @enderror
@@ -124,7 +135,14 @@
                                 <span class="block text-accent-700">{{ $batch->rejected_count === 1 ? __('1 betalning avvisades av banken.') : __(':count betalningar avvisades av banken.', ['count' => $batch->rejected_count]) }}</span>
                             @endif
                         </span>
-                        <x-ui.amount :money="$batch->total_ore" class="font-medium" />
+                        <span class="text-right font-medium">
+                            @if(! $batch->total_ore->isZero() || ! isset($foreignTotals[$batch->id]))
+                                <x-ui.amount :money="$batch->total_ore" class="font-medium" />
+                            @endif
+                            @isset($foreignTotals[$batch->id])
+                                <span class="block tabular-nums">{{ $foreignTotals[$batch->id] }}</span>
+                            @endisset
+                        </span>
                         <x-ui.badge :tone="$batch->status === PaymentBatchStatus::Confirmed ? 'success' : 'neutral'">{{ $batch->statusLabel() }}</x-ui.badge>
                         @if($batch->canBeDownloaded())
                             <a href="{{ route('payables.batches.file', $batch) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ __('Ladda ned fil') }}</a>
@@ -136,7 +154,7 @@
                                 <span x-data="{ confirming: false }" class="flex items-center gap-3">
                                     <button type="button" class="font-medium text-accent-600 hover:text-accent-700" x-show="! confirming" x-on:click="confirming = true">{{ __('Godkänn betalningen') }}</button>
                                     <span x-show="confirming" x-cloak class="flex flex-wrap items-center gap-2">
-                                        <span class="text-gray-700">{{ __('När du godkänner kan filen laddas ned och läsas in i banken: :count betalningar på sammanlagt :total med betaldag :date. Godkännandet går inte att ångra.', ['count' => $batch->payment_count, 'total' => $batch->total_ore->format(), 'date' => $batch->execution_date->toDateString()]) }}</span>
+                                        <span class="text-gray-700">{{ __('När du godkänner kan filen laddas ned och läsas in i banken: :count betalningar på sammanlagt :total med betaldag :date. Godkännandet går inte att ångra.', ['count' => $batch->payment_count, 'total' => $batch->total_ore->format().(isset($foreignTotals[$batch->id]) ? ' + '.$foreignTotals[$batch->id] : ''), 'date' => $batch->execution_date->toDateString()]) }}</span>
                                         <x-button type="button" wire:click="approve('{{ $batch->id }}')" wire:loading.attr="disabled">{{ __('Ja, godkänn') }}</x-button>
                                         <button type="button" class="text-gray-600 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>
                                     </span>

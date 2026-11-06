@@ -24,6 +24,7 @@ Du hittar rapporterna under **Bokföring → Rapporter**. Längst upp väljer du
 
 - [Filter och jämförelser](/manual/rapporter/filter-och-jamforelse) – period, kostnadsställe, projekt och jämförelse med förra året.
 - [Skriv ut och exportera](/manual/rapporter/skriv-ut-och-exportera) – PDF via utskrift och CSV-fil för Excel.
+- [Koncernöversikt](/manual/rapporter/koncernoversikt) – resultat och balans för flera av dina företag bredvid varandra, med förslag på elimineringar. Ett internt underlag, ingen koncernredovisning.
 - [Översikten](/manual/kom-igang/oversikten) och dess [Statistik och prognos](/manual/kom-igang/oversikten#statistik-och-prognos) (i Kom igång) – nyckeltalen, Att göra och Statistik och prognos på startsidan.
 
 > [!TIP]

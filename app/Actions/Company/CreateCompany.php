@@ -53,6 +53,11 @@ class CreateCompany implements CreatesTeams
             /** @var Company $company */
             $company = $user->ownedTeams()->create($this->attributes($validated));
 
+            // The K2 conditions were shown and confirmed in the form (owner decision 16): not asked again in the closing.
+            if ($company->reporting_framework === ReportingFramework::K2 && ($validated['framework_confirmed'] ?? false)) {
+                $company->forceFill(['k2_conditions_confirmed_at' => now(), 'k2_conditions_confirmed_by' => $user->id])->save();
+            }
+
             // AGENTS.md §3.4 steps 3-5: chart of accounts, first fiscal year,
             // default voucher series.
             ($this->initialiseBookkeeping)($company, $user);

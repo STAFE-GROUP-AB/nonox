@@ -54,6 +54,9 @@ return [
     ],
 
     // The date the open beta ends and version 1.0 launches, shown on the public pages.
-    'launch_date' => '2027-01-01',
+    'launch_date' => '2027-02-01',
+
+    // Where the per-year income tax parameters live (IncomeTaxParameters). Tests point it at a copy.
+    'income_tax_data_path' => database_path('data/income-tax'),
 
 ];

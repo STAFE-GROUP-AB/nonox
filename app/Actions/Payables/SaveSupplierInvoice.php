@@ -8,6 +8,7 @@ use App\Actions\Accounting\AttachToVoucher;
 use App\Actions\Assets\AssetProposals;
 use App\Domain\Accounting\AccountType;
 use App\Domain\Payables\VatTreatment;
+use App\Domain\Vat\ImportVat;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\CostCenter;
@@ -19,9 +20,11 @@ use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Currency\ExchangeRate;
 use App\Support\FileName;
+use App\Support\Luhn;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Closure;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -60,7 +63,11 @@ class SaveSupplierInvoice
         $validated = Validator::make($input, [
             'supplier_id' => ['required', 'integer'],
             'invoice_number' => ['nullable', 'string', 'max:50'],
-            'ocr' => ['nullable', 'string', 'regex:/^\d{2,25}$/'],
+            'ocr' => ['nullable', 'string', 'regex:/^\d{2,25}$/', function (string $attribute, mixed $value, Closure $fail): void {
+                if (! Luhn::isValid((string) $value)) {
+                    $fail(__('OCR-numret stämmer inte: den sista siffran är en kontrollsiffra som inte passar de andra. Kontrollera numret mot fakturan.'));
+                }
+            }],
             'invoice_date' => ['required', 'date_format:Y-m-d'],
             'due_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:invoice_date'],
             'description' => ['nullable', 'string', 'max:255'],
@@ -91,7 +98,7 @@ class SaveSupplierInvoice
             $treatment = VatTreatment::tryFrom((string) ($validated['vat_treatment'] ?? '')) ?? VatTreatment::Domestic;
             $credit = (bool) ($validated['credit'] ?? false);
             $total = $this->amount((string) $validated['total'], 'total', __('Beloppet att betala går inte att läsa. Skriv till exempel 1 249,00.'));
-            $vat = $treatment->buyerIsLiable()
+            $vat = ! $treatment->chargesSwedishVat()
                 ? Money::zero()
                 : $this->amount((string) ($validated['vat'] ?? '0'), 'vat', __('Momsen går inte att läsa. Skriv till exempel 249,80.'));
 
@@ -212,6 +219,10 @@ class SaveSupplierInvoice
         $errors = [];
         $result = [];
 
+        $defaultNumber = $treatment === VatTreatment::NonEuGoods && $supplier->default_account_id !== null
+            ? (int) Account::query()->whereKey($supplier->default_account_id)->value('number')
+            : 0;
+
         foreach ($rows as $index => $row) {
             $line = $index + 1;
             $number = (int) ($row['account'] ?? 0);
@@ -219,6 +230,15 @@ class SaveSupplierInvoice
 
             if ($accountId === null) {
                 $errors["rows.{$index}.account"] = __('Rad :line: kontot finns inte i kontoplanen.', ['line' => $line]);
+
+                continue;
+            }
+
+            // The import base accounts feed box 50; on the supplier's invoice they would count the goods twice (ADR-057).
+            $resolved = $number === 0 ? $defaultNumber : $number;
+
+            if ($treatment === VatTreatment::NonEuGoods && in_array($resolved, ImportVat::baseAccounts(), true)) {
+                $errors["rows.{$index}.account"] = __('Rad :line: konto :number är bara för verifikationen från tullräkningen och ger ruta 50 i momsdeklarationen. Kontera varorna på till exempel 4080 Import av handelsvaror eller 4010 Inköp av handelsvaror i Sverige.', ['line' => $line, 'number' => $resolved]);
 
                 continue;
             }

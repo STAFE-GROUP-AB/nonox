@@ -33,6 +33,8 @@ use App\Models\Invoice;
 use App\Models\InvoicePayment;
 use App\Models\InvoiceReminder;
 use App\Models\InvoiceRow;
+use App\Models\K10Owner;
+use App\Models\K10Year;
 use App\Models\MonthCloseCheck;
 use App\Models\NumberSeries;
 use App\Models\OpeningBalance;
@@ -45,6 +47,7 @@ use App\Models\RecurringInvoiceRow;
 use App\Models\SalesDocument;
 use App\Models\SalesDocumentRow;
 use App\Models\SieImport;
+use App\Models\SkatteverketEvent;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceRow;
@@ -55,6 +58,7 @@ use App\Models\Task;
 use App\Models\TaskChecklistItem;
 use App\Models\TaskComment;
 use App\Models\TaskRecurrence;
+use App\Models\TaxAccountPosting;
 use App\Models\User;
 use App\Models\VatNumberCheck;
 use App\Models\VatReport;
@@ -133,6 +137,7 @@ use App\Modules\Inventory\Models\StockValuation;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\AgiSubmission;
+use App\Modules\Payroll\Models\AgiUpload;
 use App\Modules\Payroll\Models\Benefit;
 use App\Modules\Payroll\Models\CollectiveAgreement;
 use App\Modules\Payroll\Models\CompTimeEntry;
@@ -224,6 +229,8 @@ const COMPANY_SCOPED_MODELS = [
     VoucherRowHistory::class => 'voucherRowHistoryAttributes',
     VatReport::class => 'vatReportAttributes',
     VatSubmission::class => ['period_start' => '2026-01-01', 'period_end' => '2026-01-31', 'status' => 'ready_to_sign', 'boxes' => [49 => 1200]],
+    TaxAccountPosting::class => ['transaction_id' => 746876987, 'transaction_date' => '2026-02-12', 'amount_ore' => -125_000, 'account_number' => 2650],
+    SkatteverketEvent::class => ['event_id' => 'skv-tenancy-1', 'type' => 'SKV.TEST.TY_TEST_V1', 'producer' => 'skatteverket', 'title' => 'Händelse', 'description' => 'Beskrivning', 'language' => 'sv', 'requires_action' => true, 'case_closed' => false, 'fetched_at' => '2026-02-15 10:00:00'],
     ArchivePackage::class => 'archivePackageAttributes',
     ClientProfile::class => 'clientProfileAttributes',
     FixedAsset::class => 'fixedAssetAttributes',
@@ -231,6 +238,8 @@ const COMPANY_SCOPED_MODELS = [
     AnnualReport::class => 'annualReportAttributes',
     IncomeTaxReturn::class => 'incomeTaxReturnAttributes',
     IncomeTaxPartner::class => 'incomeTaxPartnerAttributes',
+    K10Year::class => 'k10YearAttributes',
+    K10Owner::class => 'k10OwnerAttributes',
     ClosingCheck::class => 'closingCheckAttributes',
     YearEndEntry::class => 'yearEndEntryAttributes',
     BankReconciliation::class => 'bankReconciliationAttributes',
@@ -292,6 +301,7 @@ const COMPANY_SCOPED_MODELS = [
     VacationLiabilitySnapshot::class => 'payrollVacationLiabilityAttributes',
     VacationYearClosing::class => 'payrollVacationYearClosingAttributes',
     AgiSubmission::class => 'payrollAgiSubmissionAttributes',
+    AgiUpload::class => 'payrollAgiUploadAttributes',
     PayrollYearClosing::class => 'payrollYearClosingAttributes',
     PayrollMigration::class => 'payrollMigrationAttributes',
     VacationOpeningBalance::class => 'payrollVacationOpeningAttributes',
@@ -775,6 +785,16 @@ function yearEndEntryAttributes(): array
         'amount_ore' => 1_648_000,
         'created_by' => User::factory()->create()->id,
     ];
+}
+
+function k10YearAttributes(): array
+{
+    return ['income_year' => 2026, 'shares_total' => 100, 'updated_by' => User::factory()->create()->id];
+}
+
+function k10OwnerAttributes(): array
+{
+    return ['income_year' => 2026, 'name' => 'Hemlig ägare', 'identity' => '191212121212', 'shares_owned' => 50, 'updated_by' => User::factory()->create()->id];
 }
 
 function incomeTaxPartnerAttributes(): array
@@ -1265,6 +1285,16 @@ function payrollAgiSubmissionAttributes(): array
     ];
 }
 
+function payrollAgiUploadAttributes(): array
+{
+    $submission = AgiSubmission::create(payrollAgiSubmissionAttributes());
+
+    return [
+        'agi_submission_id' => $submission->id, 'period' => '2026-03', 'upload_id' => random_int(1, 1_000_000_000), 'sha256' => $submission->sha256,
+        'status' => 'SAVED', 'uploaded_by' => User::factory()->create()->id, 'uploaded_at' => now(),
+    ];
+}
+
 function payrollTimeReportAttributes(): array
 {
     return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'date' => '2026-03-02', 'hours' => '8', 'pay_code_id' => PayCode::create(payrollPayCodeAttributes())->id];
@@ -1494,7 +1524,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [VatNumberCheck::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class];
+const APPEND_ONLY = [VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

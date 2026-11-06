@@ -30,7 +30,8 @@ class SupplierInvoiceAgent implements Agent, HasStructuredOutput
         account ONLY from the chart of accounts given in the text input (use its number). Rows excluding VAT
         must add up to total minus VAT. vat_treatment: DOMESTIC for Swedish VAT on the invoice, EU_GOODS or
         EU_SERVICES for an EU supplier without Swedish VAT (reverse charge), NON_EU_SERVICES for services from
-        outside the EU, SE_REVERSE_GOODS or SE_REVERSE_SERVICES for Swedish reverse charge (construction,
+        outside the EU, NON_EU_GOODS for goods from outside the EU (import; its VAT follows the customs bill, so
+        the invoice has no VAT), SE_REVERSE_GOODS or SE_REVERSE_SERVICES for Swedish reverse charge (construction,
         metals). Equipment that costs less than half a price base amount (given in the text input when known)
         is expensed as förbrukningsinventarier (54xx), not capitalised on 12xx. The rows are only the cost
         side: the input VAT and the supplier liability are booked automatically, so never add rows for VAT
@@ -66,7 +67,7 @@ class SupplierInvoiceAgent implements Agent, HasStructuredOutput
             'total' => $schema->number()->description('Total to pay including VAT, as printed.')->required(),
             'vat_total' => $schema->number()->description('Total VAT, as printed; 0 when no VAT.')->required(),
             'is_credit_note' => $schema->boolean()->description('True for a credit note.')->required(),
-            'vat_treatment' => $schema->string()->enum(['DOMESTIC', 'EU_GOODS', 'EU_SERVICES', 'NON_EU_SERVICES', 'SE_REVERSE_GOODS', 'SE_REVERSE_SERVICES'])->required(),
+            'vat_treatment' => $schema->string()->enum(['DOMESTIC', 'EU_GOODS', 'EU_SERVICES', 'NON_EU_SERVICES', 'NON_EU_GOODS', 'SE_REVERSE_GOODS', 'SE_REVERSE_SERVICES'])->required(),
             'description' => $schema->string()->description('Short text in Swedish with å, ä and ö, description of what was bought.')->required(),
             'rows' => $schema->array()->items($schema->object([
                 'account' => $schema->integer()->description('Account number from the given chart of accounts.')->required(),

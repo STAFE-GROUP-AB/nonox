@@ -17,8 +17,9 @@ use Carbon\CarbonImmutable;
 
 /**
  * NONOX Banking's part of "Att göra" on Översikt: bank connections whose
- * consent runs out soon or has run out, and fetched transactions not
- * matched to the ledger yet. Two queries.
+ * consent runs out soon or has run out, connections whose provider keeps
+ * failing, and fetched transactions not matched to the ledger yet. Two
+ * queries.
  */
 final class BankingTodos implements TodoProvider
 {
@@ -31,11 +32,27 @@ final class BankingTodos implements TodoProvider
             $connections = BankConnection::query()
                 ->where(fn ($query) => $query
                     ->where('status', ConnectionStatus::Expired->value)
-                    ->orWhere(fn ($query) => $query->where('status', ConnectionStatus::Active->value)->where('valid_until', '<=', $today->addDays($days)->endOfDay())))
+                    ->orWhere(fn ($query) => $query->where('status', ConnectionStatus::Active->value)->where('valid_until', '<=', $today->addDays($days)->endOfDay()))
+                    ->orWhere(fn ($query) => $query->where('status', ConnectionStatus::Active->value)->where('consecutive_failures', '>=', BankConnection::FAILURES_TO_TELL)))
                 ->orderBy('valid_until')
-                ->get(['id', 'institution_name', 'status', 'valid_until']);
+                ->get(['id', 'institution_name', 'status', 'valid_until', 'consecutive_failures']);
 
             foreach ($connections as $connection) {
+                if ($connection->status === ConnectionStatus::Active && $connection->consecutive_failures >= BankConnection::FAILURES_TO_TELL) {
+                    $items[] = new TodoItem(
+                        "banking-failing-{$connection->id}",
+                        'bank',
+                        __('Hämtningen från :bank fungerar inte', ['bank' => $connection->institution_name]),
+                        __('Banken har inte gått att nå de senaste :count gångerna. NONOX försöker igen med längre mellanrum. Kvarstår felet, kontakta den som driftar NONOX.', ['count' => $connection->consecutive_failures]),
+                        route('banking.index'),
+                        TodoItem::PRIORITY_BANK,
+                    );
+                }
+
+                if ($connection->status === ConnectionStatus::Active && ($connection->valid_until === null || $connection->valid_until->greaterThan($today->addDays($days)->endOfDay()))) {
+                    continue;
+                }
+
                 $expired = $connection->status === ConnectionStatus::Expired;
                 $items[] = new TodoItem(
                     "banking-consent-{$connection->id}",

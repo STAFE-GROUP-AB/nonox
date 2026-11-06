@@ -1,15 +1,15 @@
 ---
-beskrivning: Koppla andra program till NONOX med NONOX Connect – godkänn appar, skapa API-nycklar för egna skript och lägg till webhooks. Allt gäller ett företag i taget.
+beskrivning: Koppla andra program till NONOX med NONOX API – godkänn appar, skapa API-nycklar för egna skript och lägg till webhooks. Allt gäller ett företag i taget.
 ordning: 40
 roller: [owner, admin]
 modul: connect
 rutter: [connect.index, connect.authorize]
-sokord: [API, integration, koppla, ansluta app, API-nyckel, token, webhook, kassasystem, e-handel, OAuth, Anslutningar, SFTP]
+sokord: [API, integration, koppla, ansluta app, API-nyckel, token, webhook, kassasystem, e-handel, OAuth, Anslutningar, SFTP, AI-assistent, MCP, Claude, ChatGPT]
 ---
 
-# NONOX Connect
+# NONOX API
 
-NONOX Connect är NONOX öppna API. Med det kan andra program läsa och skriva i bokföringen: ett kassasystem som skickar dagens försäljning, en webbutik som skapar fakturor, eller ett eget skript som hämtar rapporter. Det ingår utan extra kostnad.
+NONOX API är NONOX öppna API. Med det kan andra program läsa och skriva i bokföringen: ett kassasystem som skickar dagens försäljning, en webbutik som skapar fakturor, eller ett eget skript som hämtar rapporter. Det ingår utan extra kostnad.
 
 Du behöver inte vara utvecklare för att använda det här. Den här artikeln beskriver det du gör i NONOX: slår på modulen, godkänner appar, skapar nycklar och lägger till webhooks. Hur API:t anropas står på utvecklarwebben, [/utvecklare](/utvecklare).
 
@@ -24,7 +24,7 @@ Du behöver inte vara utvecklare för att använda det här. Den här artikeln b
 
 ## Så här kommer du igång
 
-1. Slå på modulen **NONOX Connect** under **Inställningar för företaget → Moduler**. Se [Moduler](/manual/installningar/moduler).
+1. Slå på modulen **NONOX API** under **Inställningar för företaget → Moduler**. Se [Moduler](/manual/installningar/moduler).
 2. Lägg till en passkey på din profil om du inte har en. Det krävs för att godkänna appar, skapa nycklar och lägga till webhooks. Se [Passkeys och inloggningar](/manual/installningar/passkeys-och-inloggningar).
 3. Öppna **Anslutningar** i menyn.
 
@@ -57,6 +57,22 @@ Du skickas sedan tillbaka till appen. Appen syns under **Anslutna appar**, med v
 
 Ägaren får ett mejl om varje ny nyckel. Klicka på **Återkalla** för att stänga av en nyckel direkt; allt som använder den slutar fungera.
 
+## Koppla en AI-assistent (beta)
+
+En AI-assistent, till exempel Claude, ChatGPT eller Cursor, kan kopplas till NONOX med MCP. Den kan då svara på frågor om bokföringen och förbereda verifikationer och fakturor åt dig.
+
+Assistenten kan **läsa** kontoplan, verifikationer, rapporter, kunder, fakturor och leverantörer, och **skapa utkast** till verifikationer och kundfakturor. Den kan aldrig bokföra, rätta, skicka, kreditera, betala, attestera eller ta bort något, och den når ingenting från Skatteverket. Varje utkast ligger kvar som utkast tills du eller någon annan har granskat det och bokfört eller skickat det i NONOX.
+
+1. Skapa en egen API-nyckel för assistenten, som ovan. Ge den ett **Namn** som "AI-assistent".
+2. Kryssa bara i de **Behörigheter** som assistenten ska ha, och bara bland de här: läsa verifikationer, skapa utkast till verifikationer, läsa rapporter, läsa kunder och fakturor, skapa utkast till kundfakturor, och läsa leverantörer och leverantörsfakturor (den behörigheten ger också rätt att lägga till leverantörer och utkast till leverantörsfakturor, men inte att registrera dem, eftersom det bokför). Har nyckeln någon annan behörighet, till exempel att bokföra eller skicka fakturor, vägrar NONOX att använda den för en AI-assistent.
+3. Välj ett nära datum vid **Gäller till och med**.
+4. Klistra in nyckeln i assistentens inställningar för MCP, med adressen som står på utvecklarwebben under [AI-assistenter (MCP)](/utvecklare/ai-assistenter).
+
+> [!WARNING]
+> Ge aldrig assistenten en nyckel som också används av ett annat program. Behöver du sluta använda assistenten, klicka på **Återkalla** vid nyckeln.
+
+Allt assistenten gör skrivs i behandlingshistoriken. Ett utkast som assistenten har skapat hittar du bland verifikationerna och fakturorna som vanligt.
+
 ## Lägga till en webhook
 
 1. Öppna **Anslutningar** och gå till **Webhooks**.
@@ -76,7 +92,7 @@ Under **Inställningar** på modulens kort under **Moduler** väljer du:
 
 ## Testföretag
 
-Vill du eller en utvecklare prova API:t utan att röra den riktiga bokföringen? Under **Testföretag för API:t** klickar du på **Skapa testföretag**. Det blir ett eget företag med påhittade kunder, leverantörer, verifikationer och fakturor och NONOX Connect påslaget. Det är tydligt märkt på varje sida och mejlar aldrig fakturor till någon. Du kan ha högst tre testföretag.
+Vill du eller en utvecklare prova API:t utan att röra den riktiga bokföringen? Under **Testföretag för API:t** klickar du på **Skapa testföretag**. Det blir ett eget företag med påhittade kunder, leverantörer, verifikationer och fakturor och NONOX API påslaget. Det är tydligt märkt på varje sida och mejlar aldrig fakturor till någon. Du kan ha högst tre testföretag.
 
 ## Bra att veta
 
@@ -93,6 +109,7 @@ Zettle och Onslip kopplar du utan API-nycklar, med modulen Kassakopplingar under
 
 - [Utvecklare: API-nycklar](/utvecklare/api-nycklar)
 - [Utvecklare: Webhooks](/utvecklare/webhooks)
+- [Utvecklare: AI-assistenter (MCP)](/utvecklare/ai-assistenter)
 - [SFTP för SIE-filer](/manual/installningar/sftp-for-sie-filer)
 - [Moduler](/manual/installningar/moduler)
 - [Passkeys och inloggningar](/manual/installningar/passkeys-och-inloggningar)

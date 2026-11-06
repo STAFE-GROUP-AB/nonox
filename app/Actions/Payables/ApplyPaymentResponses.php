@@ -15,6 +15,7 @@ use App\Models\SupplierPaymentBatch;
 use App\Models\SupplierPaymentBatchItem;
 use App\Models\User;
 use App\Support\Audit\Audit;
+use App\Support\Currency\RiksbankRates;
 use App\Support\Iso20022\OutgoingPaymentEvent;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +44,10 @@ use Illuminate\Validation\ValidationException;
  */
 class ApplyPaymentResponses
 {
+    private const int FOREIGN_MIN_TOLERANCE_ORE = 50_000;
+
+    private const int FOREIGN_MAX_TOLERANCE_ORE = 500_000;
+
     public function __construct(private readonly PaySupplierInvoice $pay) {}
 
     /**
@@ -90,6 +95,8 @@ class ApplyPaymentResponses
                     'end_to_end_id' => $event->endToEndId,
                     'amount_ore' => $event->amountOre,
                     'currency' => $event->currency,
+                    'instructed_currency' => $event->instructedCurrency,
+                    'instructed_amount_minor' => $event->instructedAmountMinor,
                     'date' => $event->date,
                     'creditor_account' => $event->creditorAccount,
                     'creditor_name' => $event->creditorName,
@@ -253,15 +260,23 @@ class ApplyPaymentResponses
         $pending = array_values(array_filter($match->items, fn (SupplierPaymentBatchItem $item): bool => $item->isPending()));
         $rejected = array_filter($match->items, fn (SupplierPaymentBatchItem $item): bool => $item->isRejected());
         $expected = array_sum(array_map(fn (SupplierPaymentBatchItem $item): int => $item->amount_ore->ore, $pending));
+        $foreign = array_values(array_filter($pending, fn (SupplierPaymentBatchItem $item): bool => $item->isForeign()));
+        $single = count($pending) === 1 ? $pending[0] : null;
 
         [$status, $note] = match (true) {
             $response->currency !== null && $response->currency !== 'SEK' => [PaymentResponseStatus::Unmatched, 'currency'],
             $pending === [] && $rejected !== [] && count($rejected) === count($match->items) => [PaymentResponseStatus::Unmatched, 'item_rejected'],
             $pending === [] => [PaymentResponseStatus::Duplicate, null],
             $batch === null || ! $batch->isOpen() => [PaymentResponseStatus::Unmatched, 'batch_closed'],
-            $response->amount_ore !== null && $response->amount_ore->ore !== $expected => [PaymentResponseStatus::Unmatched, 'amount_differs'],
+            // A payment abroad is booked alone, with the kronor the bank took for it (ADR-014 addendum).
+            $foreign !== [] && $single === null => [PaymentResponseStatus::Unmatched, 'foreign_whole'],
+            $single !== null && $single->isForeign() && ($response->amount_ore === null || $response->amount_ore->ore <= 0
+                || ($response->instructed_currency !== null && ($response->instructed_currency !== $single->currency || $response->instructed_amount_minor !== $single->foreign_amount_minor))) => [PaymentResponseStatus::Unmatched, 'foreign_amount'],
+            $foreign === [] && $response->amount_ore !== null && $response->amount_ore->ore !== $expected => [PaymentResponseStatus::Unmatched, 'amount_differs'],
             $this->paidElsewhere($pending) => [PaymentResponseStatus::Unmatched, 'paid_elsewhere'],
             ! $batch->isApproved() => [PaymentResponseStatus::Suggested, 'not_approved'],
+            $single !== null && $single->isForeign() && $response->instructed_currency === null && ! $confirmed => [PaymentResponseStatus::Suggested, 'foreign_unconfirmed'],
+            $single !== null && $single->isForeign() && ! $confirmed && $this->rateDeviates($single, $response) => [PaymentResponseStatus::Suggested, 'foreign_rate'],
             $user === null || (! $confirmed && ! $match->byReference()) => [PaymentResponseStatus::Suggested, null],
             default => [null, null],
         };
@@ -275,12 +290,15 @@ class ApplyPaymentResponses
         $paidOn = $response->date ?? $batch->execution_date;
 
         try {
-            $payments = DB::transaction(function () use ($user, $pending, $paidOn): array {
+            $payments = DB::transaction(function () use ($user, $pending, $paidOn, $response): array {
                 $payments = [];
 
                 foreach ($pending as $item) {
                     $invoice = $item->invoice ?? throw ValidationException::withMessages(['response' => __('Fakturan finns inte.')]);
-                    $payment = ($this->pay)($user, $invoice, $paidOn, $item->amount_ore);
+                    // A payment abroad is booked with the kronor the bank took and the foreign amount it paid, so the exchange difference is the bank's actual (ADR-025).
+                    $payment = $item->isForeign()
+                        ? ($this->pay)($user, $invoice, $paidOn, $response->amount_ore ?? throw ValidationException::withMessages(['response' => __('Kronorna saknas i bankens avisering.')]), foreignAmount: $item->foreign_amount_minor)
+                        : ($this->pay)($user, $invoice, $paidOn, $item->amount_ore);
                     $item->forceFill(['supplier_payment_id' => $payment->id])->save();
                     $payments[] = $payment->id;
                 }
@@ -310,12 +328,47 @@ class ApplyPaymentResponses
     }
 
     /**
+     * Whether the kronor the bank took differ too much from what the payment
+     * should cost to be booked without a person looking: more than 5 percent
+     * of the reference, but at least 500 and at most 5 000 kronor. The
+     * reference is Riksbanken's mid rate on the bank's booking day when it
+     * can be had, otherwise the kronor expected at the invoice's rate. The
+     * limits are our own, not a bank's.
+     */
+    private function rateDeviates(SupplierPaymentBatchItem $item, PaymentResponse $response): bool
+    {
+        $reference = $item->amount_ore->ore;
+        $day = $response->date?->toDateString();
+        $rate = $day === null ? null : app(RiksbankRates::class)->rate($item->currency, $day);
+
+        if ($rate !== null) {
+            $reference = $rate->toOre((int) $item->foreign_amount_minor);
+        }
+
+        $allowed = min(max(intdiv($reference * 5, 100), self::FOREIGN_MIN_TOLERANCE_ORE), self::FOREIGN_MAX_TOLERANCE_ORE);
+
+        return abs((int) $response->amount_ore?->ore - $reference) > $allowed;
+    }
+
+    /**
      * @param  list<SupplierPaymentBatchItem>  $items
      */
     private function paidElsewhere(array $items): bool
     {
         foreach ($items as $item) {
-            if ($item->invoice === null || $item->invoice->remaining()->ore < $item->amount_ore->ore) {
+            if ($item->invoice === null) {
+                return true;
+            }
+
+            if ($item->isForeign()) {
+                if ($item->invoice->foreignRemaining() === null || $item->invoice->foreignRemaining() < (int) $item->foreign_amount_minor) {
+                    return true;
+                }
+
+                continue;
+            }
+
+            if ($item->invoice->remaining()->ore < $item->amount_ore->ore) {
                 return true;
             }
         }

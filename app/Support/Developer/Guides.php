@@ -53,6 +53,10 @@ final class Guides
             'sv' => ['SFTP för SIE-filer', 'Lämna SIE-filer i företagets SFTP-mapp med en SSH-nyckel: anslutning, mappar, gränser och vad som händer med filen.'],
             'en' => ['SFTP for SIE files', "Deliver SIE files to the company's SFTP drop with an SSH key: connecting, folders, limits and what happens to the file."],
         ],
+        'ai-assistenter' => [
+            'sv' => ['AI-assistenter (MCP)', 'Koppla en AI-assistent till NONOX med MCP: en egen nyckel, vilka verktyg som finns, och varför den bara kan läsa och skapa utkast.'],
+            'en' => ['AI assistants (MCP)', 'Connect an AI assistant to NONOX over MCP: a key of its own, the tools there are, and why it can only read and create drafts.'],
+        ],
         'egen-drift' => [
             'sv' => ['Egen drift', 'API:t på en NONOX som du driftar själv: adresser, nycklar för signering, appar och gränser.'],
             'en' => ['Self-hosting', 'The API on a NONOX you run yourself: addresses, signing keys, apps and limits.'],

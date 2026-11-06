@@ -21,7 +21,7 @@ final class IncomeTaxParameters
     /** The parameters of an inkomstår, or null when they are missing or not verified. */
     public static function for(int $year): ?self
     {
-        $path = database_path("data/income-tax/{$year}.json");
+        $path = config('nonox.income_tax_data_path', database_path('data/income-tax'))."/{$year}.json";
 
         if (! is_file($path)) {
             return null;

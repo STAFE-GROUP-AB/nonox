@@ -126,7 +126,7 @@
             "text": "NONOX har ingen tidrapportering eller fakturering av byråns egna arvoden mot klienterna i dag."
         },
         {
-            "text": "Årsredovisningen blir en PDF. Digital inlämning till Bolagsverket är inte byggd ännu, och bokslutet räknar inte fram skatten.",
+            "text": "Årsredovisningen blir en PDF. Aktiebolag kan ladda ner den som iXBRL-fil (beta), men digital inlämning till Bolagsverket är inte byggd ännu. Bokslutet föreslår årets skatt för aktiebolag (beta), men en person granskar och bekräftar förslaget, och det är inte granskat av en redovisningskonsult.",
             "feature": "ixbrl"
         }
     ],

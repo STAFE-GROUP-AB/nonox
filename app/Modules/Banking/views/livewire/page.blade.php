@@ -3,8 +3,11 @@
     $secondary = 'inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold text-gray-800 ring-1 ring-stone-300 hover:ring-stone-400 disabled:opacity-50';
 @endphp
 <div class="space-y-6">
+    @if($paused)
+        <p role="status" class="rounded-2xl bg-accent-50 p-4 text-sm text-gray-800 ring-1 ring-accent-200">{{ App\Modules\Banking\Support\BankDataProviders::pausedMessage() }}</p>
+    @endif
     <x-ui.card :title="__('Kopplade banker')" :description="__('Varje koppling är ett medgivande som du ger i banken med BankID. Det gäller en begränsad tid, som banken bestämmer (oftast 90 eller 180 dagar), och kan kopplas bort när som helst.')">
-        @if($canManage && ! $connecting)
+        @if($canManage && ! $connecting && ! $paused)
             <x-slot:cta><x-button type="button" wire:click="startConnecting">{{ __('Koppla en bank') }}</x-button></x-slot:cta>
         @endif
 
@@ -52,16 +55,18 @@
                                     @endif
                                     {{ $connection->last_fetched_at === null ? __('Inte hämtad ännu.') : __('Senast hämtad :time.', ['time' => $connection->last_fetched_at->format('Y-m-d H:i')]) }}
                                 </p>
-                                @if($connection->last_error !== null)
+                                @if($connection->keepsFailing())
+                                    <p class="mt-1 text-sm text-accent-700">{{ __('Banken har inte gått att nå de senaste :count gångerna. NONOX försöker igen tidigast :time. Kvarstår felet i ett dygn, kontakta den som driftar NONOX.', ['count' => $connection->consecutive_failures, 'time' => ($connection->next_attempt_at ?? now())->setTimezone(config('app.timezone'))->format('Y-m-d H:i')]) }}</p>
+                                @elseif($connection->last_error !== null)
                                     <p class="mt-1 text-sm text-accent-700">{{ __('Senaste hämtningen misslyckades. NONOX försöker igen vid nästa hämtning.') }}</p>
                                 @endif
                             </div>
                             @if($canManage)
                                 <div class="flex flex-wrap gap-2">
-                                    @if($connection->isActive())
+                                    @if($connection->isActive() && ! $paused)
                                         <button type="button" class="{{ $secondary }}" wire:click="fetch({{ $connection->id }})" wire:loading.attr="disabled">{{ __('Hämta nu') }}</button>
                                     @endif
-                                    @if($connection->isActive() && $daysLeft !== null && $daysLeft <= 30 || ! $connection->isActive())
+                                    @if(! $paused && ($connection->isActive() && $daysLeft !== null && $daysLeft <= 30 || ! $connection->isActive()))
                                         <button type="button" class="{{ $secondary }}" wire:click="startConnecting">{{ __('Koppla igen med BankID') }}</button>
                                     @endif
                                     @if($connection->isActive())

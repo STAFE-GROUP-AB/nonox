@@ -112,6 +112,10 @@ final class BankingModule implements Module, ProvidesTodos
 
     public function canEnable(Company $company): ModuleCheck
     {
+        if (BankDataProviders::isPaused()) {
+            return new ModuleCheck(blockers: [BankDataProviders::pausedMessage()]);
+        }
+
         return BankDataProviders::isConfigured()
             ? ModuleCheck::allow()
             : new ModuleCheck(blockers: [__('Bankkopplingen är inte inställd på den här installationen. Den som driftar NONOX behöver ett avtal med en leverantör av öppen bankdata.')]);

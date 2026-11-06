@@ -27,7 +27,9 @@ use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\Models\StockValuation;
 use App\Modules\ModuleManager;
 use App\Support\Money\Money;
+use App\Support\Skatteverket\Skatteverket;
 use App\Support\Tenancy\CurrentCompany;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * The year-end checklist: points the system checks itself from the books,
@@ -82,6 +84,13 @@ final class ClosingChecklist
             $openingFingerprint = $confirmed->firstWhere('key', self::OPENING)?->fingerprint;
             $items = [];
 
+            if (K2Reconfirmation::applies($company, $fiscalYear)) {
+                $pending = K2Reconfirmation::isPending($company, $fiscalYear);
+                $items[] = self::item('k2', __('K2-villkoren är bekräftade'), $pending
+                    ? __('Bekräfta villkoren för K2 som ändrades genom BFNAR 2025:2 högst upp på sidan. Du behöver bara göra det en gång. Uppfyller företaget inte villkoren ska det byta till K3 i företagets inställningar.')
+                    : __('Villkoren för K2 (BFNAR 2016:10 punkt 1.1A–1.1C) är bekräftade för företaget.'), $pending ? self::TODO : self::OK, null);
+            }
+
             $drafts = Voucher::query()->where('fiscal_year_id', $fiscalYear->id)->where('status', VoucherStatus::Draft->value)->count();
             $items[] = self::item('drafts', __('Inga utkast i året'), $drafts === 0
                 ? __('Alla verifikationer i året är bokförda.')
@@ -119,6 +128,8 @@ final class ClosingChecklist
                     'url' => match ($key) {
                         'receivables' => route('accounting.ledgers', ['typ' => LedgerReconciliation::CUSTOMERS, 'datum' => $fiscalYear->end_date->toDateString()]),
                         'payables' => route('accounting.ledgers', ['typ' => LedgerReconciliation::SUPPLIERS, 'datum' => $fiscalYear->end_date->toDateString()]),
+                        // The tax account from Skatteverket, only for a person the integration is offered to (ADR-054 stage 3).
+                        'tax_account' => Skatteverket::isAvailableTo(Auth::user()) ? route('accounting.taxAccount', ['datum' => $fiscalYear->end_date->toDateString()]) : null,
                         default => null,
                     },
                 ];
@@ -129,7 +140,11 @@ final class ClosingChecklist
 
             if ($taxed) {
                 $taxBooked = YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->where('type', YearEndEntry::TAX)->exists();
-                $items[] = self::item('tax', __('Årets skatt är bokförd'), $taxBooked ? __('Skatten är bokförd på 8910 och 2512.') : __('Bokför årets inkomstskatt nedan, eller noll om det inte blir någon skatt.'), $taxBooked ? self::OK : self::TODO, null);
+                $items[] = self::item('tax', __('Årets skatt är bokförd'), match (true) {
+                    $taxBooked => __('Skatten är bokförd på 8910 och 2512.'),
+                    TaxProposal::appliesTo($company) => __('Granska skatteberäkningen nedan och bekräfta den. Ingenting bokförs innan du har bekräftat.'),
+                    default => __('Bokför årets inkomstskatt nedan, eller noll om det inte blir någon skatt.'),
+                }, $taxBooked ? self::OK : self::TODO, null);
             }
 
             $items[] = self::item('result', __('Årets resultat är bokfört'), match (true) {

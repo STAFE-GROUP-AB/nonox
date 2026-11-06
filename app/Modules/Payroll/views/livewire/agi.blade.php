@@ -108,4 +108,8 @@
             </div>
         </x-ui.card>
     @endif
+
+    @if($skatteverket)
+        <livewire:payroll.agi-skatteverket key="agi-skatteverket" />
+    @endif
 </div>

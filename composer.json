@@ -18,6 +18,7 @@
         "laravel/ai": "^1.2",
         "laravel/framework": "^13.0",
         "laravel/jetstream": "^5.5",
+        "laravel/mcp": "^1.1",
         "laravel/passkeys": "^0.2",
         "laravel/passport": "^13.10",
         "laravel/sanctum": "^4.3",
@@ -92,7 +93,9 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": []
+            "dont-discover": [
+                "laravel/mcp"
+            ]
         }
     },
     "config": {

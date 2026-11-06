@@ -35,7 +35,7 @@ class WaitlistConfirmationMail extends Mailable implements ShouldQueue
         ]);
     }
 
-    /** The launch date of version 1.0 in Swedish, such as "1 januari 2027". */
+    /** The launch date of version 1.0 in Swedish, such as "1 februari 2027". */
     public static function launchDate(): string
     {
         return CarbonImmutable::parse((string) config('nonox.launch_date'))->settings(['locale' => 'sv'])->translatedFormat('j F Y');

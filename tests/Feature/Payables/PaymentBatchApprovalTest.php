@@ -62,7 +62,7 @@ beforeEach(function () {
         return $invoice;
     };
 
-    $this->batch = fn (User $user, string $number = 'F-1'): SupplierPaymentBatch => app(CreatePaymentBatch::class)($user, $this->company, [($this->invoice)($number)->id], CarbonImmutable::parse('2026-03-12'));
+    $this->batch = fn (User $user, string $number = 'F-1'): SupplierPaymentBatch => app(CreatePaymentBatch::class)($user, $this->company, [($this->invoice)($number)->id], CarbonImmutable::parse('2026-03-12'), true);
 });
 
 it('lets someone else approve the file while separate approval is on, and audits it', function () {

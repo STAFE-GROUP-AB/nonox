@@ -60,7 +60,7 @@ it('shows the form on /ko with the open beta and the launch date', function () {
     $this->get('/ko')
         ->assertOk()
         ->assertSee('Ställ dig i kö till NONOX.')
-        ->assertSee('Skarp lansering av version 1.0 sker den 1 januari 2027.')
+        ->assertSee('Skarp lansering av version 1.0 sker den 1 februari 2027.')
         ->assertSee('Vad vill du testa i NONOX?')
         ->assertSee('Varför vill du byta system?')
         ->assertSee(route('legal.privacy'), false)
@@ -85,7 +85,7 @@ it('queues an applicant, lowercases the address, hashes the IP and mails a confi
         ->assertHasNoErrors()
         ->assertSet('done', true)
         ->assertSee('Du står i kö')
-        ->assertSee('1 januari 2027');
+        ->assertSee('1 februari 2027');
 
     $entry = WaitlistEntry::query()->sole();
 
@@ -218,6 +218,6 @@ it('mails the confirmation in Swedish with the launch date', function () {
     $html = (new WaitlistConfirmationMail('Kim'))->render();
 
     expect($html)->toContain('Tack, Kim! Du står i kö.')
-        ->toContain('1 januari 2027')
+        ->toContain('1 februari 2027')
         ->toContain(route('legal.privacy'));
 });

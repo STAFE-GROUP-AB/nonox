@@ -11,7 +11,11 @@
     {{-- What happened, or what happens next --}}
     @if($import->status === SieImportStatus::Completed)
         <x-ui.card :title="__('Filen är inläst')">
-            <p class="text-gray-700">{{ __(':count verifikationer är bokförda i räkenskapsåret :year, och varje konto stämmer med filen.', ['count' => $result['vouchers_imported'] ?? 0, 'year' => $import->fiscalYear?->label()]) }}</p>
+            @if(($result['checked_closing'] ?? false) || ($result['checked_results'] ?? false))
+                <p class="text-gray-700">{{ __(':count verifikationer är bokförda i räkenskapsåret :year, och varje konto stämmer med filen.', ['count' => $result['vouchers_imported'] ?? 0, 'year' => $import->fiscalYear?->label()]) }}</p>
+            @else
+                <p class="text-gray-700">{{ __(':count verifikationer är bokförda i räkenskapsåret :year. Filen hade inga saldon att jämföra med, så bara antalet verifikationer är kontrollerat.', ['count' => $result['vouchers_imported'] ?? 0, 'year' => $import->fiscalYear?->label()]) }}</p>
+            @endif
             <ul class="mt-4 space-y-1 text-sm text-gray-600">
                 <li>✓ {{ __('Antal verifikationer: :here här, :file i filen.', ['here' => $result['vouchers_imported'] ?? 0, 'file' => $result['vouchers_in_file'] ?? 0]) }}</li>
                 @if($result['checked_closing'] ?? false)

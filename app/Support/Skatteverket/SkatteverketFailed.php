@@ -14,10 +14,14 @@ use RuntimeException;
  */
 final class SkatteverketFailed extends RuntimeException
 {
+    /** The call may have reached Skatteverket, but no answer came in time. */
+    public const string NO_ANSWER = 'no_answer';
+
     public function __construct(
         public readonly int $status,
         public readonly string $userMessage,
         public readonly ?string $errorCode = null,
+        public readonly bool $signInAgain = false,
     ) {
         parent::__construct("Skatteverket answered {$status}".($errorCode === null ? '' : " ({$errorCode})"));
     }
@@ -25,6 +29,6 @@ final class SkatteverketFailed extends RuntimeException
     /** The session with Skatteverket has ended; the user must sign in again. */
     public function needsSignIn(): bool
     {
-        return $this->status === 401;
+        return $this->status === 401 || $this->signInAgain;
     }
 }

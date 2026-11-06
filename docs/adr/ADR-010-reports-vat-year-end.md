@@ -638,3 +638,36 @@ finns särskilda skäl".
   opening balances; this split is our design.
 - No posted voucher, number or hash is touched: opening balances are not
   vouchers (ADR-008).
+
+## Annual report amounts in whole kronor (2026-11-06, review of ADR-058 E.2)
+
+- **Problem.** The annual report printed every amount cut to whole kronor on
+  its own (`intdiv`), lines and sums alike. With öre in the ledger a sum
+  could differ from its printed lines (100,60 + 100,60 printed 100 + 100 =
+  201), which a reader notices and which breaks the calculation
+  relationships of the iXBRL file (ADR-058).
+- **Rule relied on.** None prescribes the method: ÅRL and BFNAR 2016:10 let
+  the report state its unit ("Om inte annat särskilt anges redovisas alla
+  belopp i hela kronor"); the taxonomy's calculation linkbase requires that
+  a reported total equals the sum of its reported items.
+- **Decision.** `App\Domain\AnnualReport\PrintedFigures`, applied in
+  `AnnualReportDocument::data()` for the PDF and the iXBRL file alike: each
+  line rounds to the nearest krona, half a krona away from zero; every
+  subtotal, section sum and total is the sum of the rounded lines. The
+  balance sheet's year result is the income statement's rounded result; a
+  fixed asset line with a note is the note's rounded book value. If the two
+  sides of the balance sheet then differ, the difference goes to the
+  short-term line Övriga skulder (created if absent). In the specification of
+  changes in equity, opening and closing come from the rounded balance
+  sheet, the year's result row is the rounded result, and what rounding
+  leaves in a column goes to Balanseras i ny räkning, else Övriga
+  förändringar, else Utdelning (an Övriga förändringar row is added if none
+  of them has an amount). The disposition's free equity is the balance
+  sheet's rounded Fritt eget kapital. `DividendLimit`, the booked
+  disposition and the fastställelseintyg's decision text stay exact in öre.
+- **What changes in the PDF.** With öre in the ledger: a line can be one
+  krona higher than before (half-up instead of cut), every sum now equals
+  its printed lines, and a 1–2 krona line Övriga skulder can appear. With
+  whole-kronor bookkeeping nothing changes.
+- TODO(legal-verify): which line K2 practice puts a rounding difference on;
+  Övriga skulder and Balanseras i ny räkning are choices, not sourced.

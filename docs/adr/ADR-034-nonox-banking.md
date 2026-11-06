@@ -219,3 +219,52 @@ are not included yet.
 - Accounts in other currencies than the company's cannot be mapped yet, so
   they are not fetched.
 - The archive package does not include fetched transactions yet.
+
+## Addendum 2026-11-06: launch hardening
+
+Before the module is offered on a hosted installation (it is dormant until
+the operator has an agreement with Enable Banking and the legal questions
+above are answered), its failure modes were reviewed.
+
+- **Kill switch.** `services.banking.paused` (`NONOX_BANKING_PAUSED`):
+  `true` pauses every provider, a comma list pauses the providers named
+  (`enable_banking`). The keys stay. While paused nothing is sent to the
+  provider: `bank:fetch` queues nothing, `FetchBankData` answers `paused`
+  without marking the connection, connecting and the bank's callback are
+  refused with a Swedish message, the bank page shows the message and hides
+  **Koppla en bank**, **Hämta nu** and **Koppla igen med BankID**, the
+  module cannot be turned on, and no renewal reminder is sent (it goes once
+  the pause ends). Revoking still works, locally only
+  (`closed_at_provider: false`). `BankDataProviders::make()` refuses a
+  paused provider as a last guard. Matching, reconciliation and the data
+  already fetched are not affected. Parsed by `App\Support\Integrations\ProviderPause`.
+- **Retryable failures.** `ProviderFailed` carries `retryable`: no answer,
+  time-outs, 429 and 5xx are retryable; other 4xx are not. A failed fetch
+  counts `consecutive_failures` and sets `next_attempt_at` 15 minutes,
+  1, 4 and 12 hours and then 24 hours ahead; `bank:fetch` skips a
+  connection until then (it hammers neither the provider nor the bank's cap
+  of four fetches a day without the user present). `FetchBankDataJob` has
+  three tries and releases itself for the same pause on a retryable
+  failure. Fetching stays idempotent (fingerprints), so retries never store
+  a transaction twice. A success resets both columns. After three failures
+  in a row (`BankConnection::FAILURES_TO_TELL`) the bank page and Översikt
+  ("Hämtningen från … fungerar inte") say so in Swedish.
+  `TODO(provider-verify)`: whether a request that Enable Banking answers
+  with 5xx still counts against the bank's daily cap.
+- **Consent expiry.** `ExpireBankConsents` marks an active connection whose
+  `valid_until` has passed as EXPIRED, forgets the session id and audits
+  `banking.consent_ended` with `reason: valid_until`, without asking the
+  provider. It runs in `bank:fetch` (hourly) and `bank:remind-consent`
+  (daily), also while paused.
+- **Logging.** A failed fetch is logged as `Banking: a fetch failed.` with
+  company id, connection id, provider, retryable and the failure count
+  only; never a session id, an account or a response body. Commands print
+  company ids, not names.
+- **Monitoring.** `App\Support\Integrations\IntegrationHealth`, shown in
+  /hq → Integrationer and by `php artisan integrations:status` (exit code 1
+  when something needs attention, `--json` for a monitoring cron): active
+  connections, retrying, failing, consents ending within 14 days, the last
+  successful fetch, and whether the provider is configured or paused.
+  Counts only, across companies, in one query.
+- Go-live checklist: `docs/status/lansering-bank.md`. Payment initiation
+  stays out of scope; the options are in ADR-055 (proposed).

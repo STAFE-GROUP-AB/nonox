@@ -29,6 +29,7 @@ use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Fetches booked transactions and balances for a connection's mapped
@@ -40,6 +41,10 @@ use Illuminate\Support\Facades\DB;
  * camt.054 file. A debit that matches a payment in a payment file becomes
  * an answer to confirm on the payment files page (ADR-014). Nothing is
  * booked here: a person confirms every match and every payment.
+ *
+ * A provider that fails is tried again after growing pauses
+ * (next_attempt_at, BACKOFF_MINUTES); while the operator has paused the
+ * provider nothing is asked and nothing is marked.
  */
 class FetchBankData
 {
@@ -50,6 +55,26 @@ class FetchBankData
     public const int OVERLAP_DAYS = 5;
 
     private const int MAX_PAGES = 200;
+
+    /** Pause before the next try after 1, 2, 3, 4 and 5+ failures in a row. */
+    public const array BACKOFF_MINUTES = [15, 60, 240, 720, 1440];
+
+    public static function backoffMinutes(int $failures): int
+    {
+        return self::BACKOFF_MINUTES[max(0, min($failures, count(self::BACKOFF_MINUTES)) - 1)];
+    }
+
+    /** When the provider was last asked: the last fetch, or the last failed attempt (worked back from its pause). */
+    public static function lastAttemptAt(BankConnection $connection): ?CarbonImmutable
+    {
+        $failed = $connection->next_attempt_at?->subMinutes(self::backoffMinutes($connection->consecutive_failures));
+
+        return match (true) {
+            $failed === null => $connection->last_fetched_at,
+            $connection->last_fetched_at === null => $failed,
+            default => $failed->greaterThan($connection->last_fetched_at) ? $failed : $connection->last_fetched_at,
+        };
+    }
 
     public function __invoke(Company $company, BankConnection $connection, ?User $by = null): FetchResult
     {
@@ -76,6 +101,16 @@ class FetchBankData
             return new FetchResult(error: 'inactive');
         }
 
+        if (BankDataProviders::isPaused($connection->provider)) {
+            return new FetchResult(error: 'paused');
+        }
+
+        // Waiting out the pause after a failure: a backlog job or a scheduled run does not ask the bank (each call can
+        // count against its cap of four a day). A person's "Hämta nu" may, after BankingPage's own quarter-hour guard.
+        if ($by === null && $connection->next_attempt_at !== null && $connection->next_attempt_at->isFuture()) {
+            return new FetchResult(error: 'backoff');
+        }
+
         $provider = BankDataProviders::make($connection->provider);
         $sessionId = (string) $connection->session_id;
         $accounts = $connection->accounts()->where('is_active', true)->whereNotNull('account_id')->get();
@@ -90,18 +125,25 @@ class FetchBankData
                 }
             }
         } catch (ConsentEnded) {
-            $connection->forceFill(['status' => ConnectionStatus::Expired, 'session_id' => null, 'last_error' => null])->save();
+            $connection->forceFill(['status' => ConnectionStatus::Expired, 'session_id' => null, 'last_error' => null, 'consecutive_failures' => 0, 'next_attempt_at' => null])->save();
             Audit::record('banking.consent_ended', $connection, ['bank' => $connection->institution_name, ...$totals], $company, $by);
 
             return new FetchResult(...$totals, consentEnded: true);
         } catch (ProviderFailed $exception) {
-            $connection->forceFill(['last_error' => mb_substr($exception->getMessage(), 0, 500)])->save();
-            Audit::record('banking.fetch_failed', $connection, ['bank' => $connection->institution_name, 'error' => $exception->getMessage(), ...$totals], $company, $by);
+            $failures = $connection->consecutive_failures + 1;
+            $connection->forceFill([
+                'last_error' => mb_substr($exception->getMessage(), 0, 500),
+                'consecutive_failures' => $failures,
+                'next_attempt_at' => now()->addMinutes(self::backoffMinutes($failures)),
+            ])->save();
+            // Ids and the provider only: never a session id, an account or what the bank said.
+            Log::warning('Banking: a fetch failed.', ['company_id' => $company->id, 'connection_id' => $connection->id, 'provider' => $connection->provider, 'retryable' => $exception->retryable, 'failures' => $failures]);
+            Audit::record('banking.fetch_failed', $connection, ['bank' => $connection->institution_name, 'error' => $exception->getMessage(), 'retryable' => $exception->retryable, 'failures' => $failures, ...$totals], $company, $by);
 
-            return new FetchResult(...$totals, error: $exception->getMessage());
+            return new FetchResult(...$totals, error: $exception->getMessage(), retryable: $exception->retryable);
         }
 
-        $connection->forceFill(['last_fetched_at' => now(), 'last_error' => null])->save();
+        $connection->forceFill(['last_fetched_at' => now(), 'last_error' => null, 'consecutive_failures' => 0, 'next_attempt_at' => null])->save();
         Audit::record('banking.fetched', $connection, ['bank' => $connection->institution_name, 'accounts' => $accounts->count(), ...$totals], $company, $by);
 
         return new FetchResult(...$totals);

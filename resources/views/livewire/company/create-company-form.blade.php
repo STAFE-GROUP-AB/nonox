@@ -148,10 +148,10 @@
                 <p class="mt-2 text-sm text-red-700">{{ $frameworkRefusal }}</p>
             @elseif($frameworkConditions)
                 <div class="mt-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
-                    <p>{{ $frameworkConditions }}</p>
+                    <p class="whitespace-pre-line">{{ $frameworkConditions }}</p>
                     <label class="mt-3 flex items-start gap-3">
                         <x-checkbox wire:model="framework_confirmed" class="mt-0.5" />
-                        <span>{{ __('Företaget uppfyller villkoren. Är du osäker, välj K3 eller fråga din redovisningskonsult.') }}</span>
+                        <span>{{ __('Företaget uppfyller villkoren ovan. Är du osäker, fråga din redovisningskonsult innan du väljer. Väljer du K3 tar NONOX ännu inte fram årsredovisningen; bokföring, bokslut och inkomstdeklaration fungerar som vanligt.') }}</span>
                     </label>
                     <x-input-error for="framework_confirmed" class="mt-2" />
                 </div>

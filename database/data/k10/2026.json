@@ -1,0 +1,75 @@
+{
+    "income_year": 2026,
+    "period": "2026P4",
+    "status": "researched",
+    "researched_on": "2026-11-06",
+    "note": "K10 (kvalificerade andelar i fåmansföretag) for inkomstår 2026, the first year of the gränsbelopp rules of SFS 2025:1361 (övergångsbestämmelse 2: first applied for beskattningsår starting after 2025-12-31). Read from the consolidated Inkomstskattelag (1999:1229), as amended up to SFS 2026:1393, and Skatteverket's pages. Status researched: sourced, not reviewed by a lawyer. A parameter with any other status, or a year without a file, blocks the calculation.",
+    "parameters": {
+        "basic_amount_ibb_multiple": {
+            "value": 4,
+            "status": "researched",
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 57 kap. 11 § första stycket 1: ett belopp som motsvarar fyra inkomstbasbelopp (grundbeloppet) fördelat med lika belopp på andelarna i företaget. Lag (2025:1361)."
+        },
+        "income_base_amount_previous_year_ore": {
+            "value": 8060000,
+            "status": "researched",
+            "source_url": "https://www.skatteverket.se/foretag/drivaforetag/foretagsformer/famansforetag/andradereglerinforinkomstdeklarationen2027.4.4a54dc8b19aa6175a152359.html",
+            "source_quote": "I beräkningen använder du inkomstbasbeloppet för året före inkomståret. För inkomstår 2026 använder du alltså inkomstbasbeloppet för 2025 som är 80 600 kronor. (IL 57 kap. 9 §: inkomstbasbeloppet enligt 58 kap. 26 och 27 §§ socialförsäkringsbalken för året före beskattningsåret.)"
+        },
+        "income_base_amount_year_ore": {
+            "value": 8340000,
+            "status": "researched",
+            "source_url": "https://www.skatteverket.se/privat/skatter/beloppochprocent/2026.4.1522bf3f19aea8075ba21.html",
+            "source_quote": "Inkomstbasbeloppet för år 2026 har fastställts till 83 400 kronor. (Used only for the 90 inkomstbasbelopp cap in IL 57 kap. 20 a §, which takes the amount for the beskattningsår.)"
+        },
+        "salary_deduction_ibb_multiple": {
+            "value": 8,
+            "status": "researched",
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 57 kap. 16 § första stycket: Det lönebaserade utrymmet är 50 procent av den del av delägarens andel av löneunderlaget som överstiger åtta inkomstbasbelopp. Lag (2025:1361)."
+        },
+        "salary_space_share_bp": {
+            "value": 5000,
+            "status": "researched",
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 57 kap. 16 § första stycket: Det lönebaserade utrymmet är 50 procent av den del av delägarens andel av löneunderlaget som överstiger åtta inkomstbasbelopp. Det lönebaserade utrymmet fördelas med lika belopp på delägarens andelar i företaget."
+        },
+        "salary_space_cap_multiple": {
+            "value": 50,
+            "status": "researched",
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 57 kap. 16 § tredje stycket: Det lönebaserade utrymmet för delägarens samtliga andelar får inte överstiga ett belopp som motsvarar 50 gånger sådan kontant ersättning som avses i 17 § första stycket och som delägaren eller någon närstående har fått från företaget och dess dotterföretag under året före beskattningsåret."
+        },
+        "cost_basis_threshold_ore": {
+            "value": 10000000,
+            "status": "researched",
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 57 kap. 11 § andra stycket: Ränta på omkostnadsbeloppet beräknas för andelar av samma slag och sort, på den del av andelarnas sammanlagda omkostnadsbelopp enligt 12 § som överstiger 100 000 kronor."
+        },
+        "cost_basis_interest_add_bp": {
+            "value": 900,
+            "status": "researched",
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 57 kap. 11 § andra stycket: Räntesatsen uppgår till statslåneräntan ökad med nio procentenheter. Räntebeloppet ska fördelas med lika belopp på delägarens andelar av samma slag och sort."
+        },
+        "statslaneranta_bp": {
+            "value": 255,
+            "status": "researched",
+            "source_url": "https://www.skatteverket.se/privat/skatter/beloppochprocent/2026.4.1522bf3f19aea8075ba21.html",
+            "source_quote": "Statslåneräntan 30 november 2025: 2,55 procent. (IL 57 kap. 8 §: statslåneräntan vid utgången av november året före beskattningsåret, som lägst 0 procent.)"
+        },
+        "dividend_capital_share": {
+            "value": {"numerator": 2, "denominator": 3},
+            "status": "researched",
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 57 kap. 20 §: Utdelning på en kvalificerad andel ska tas upp i inkomstslaget tjänst till den del den överstiger gränsbeloppet. Utdelning upp till gränsbeloppet ska tas upp till två tredjedelar i inkomstslaget kapital. Lag (2007:1419)."
+        },
+        "employment_income_cap_ibb_multiple": {
+            "value": 90,
+            "status": "researched",
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 57 kap. 20 a §: Utdelning ska inte tas upp i inkomstslaget tjänst till den del det skulle medföra att den skattskyldige och närstående, som inräknas i samma närståendekrets enligt 56 kap. 5 §, under beskattningsåret från ett företag sammanlagt i inkomstslaget tjänst tagit upp högre belopp än som motsvarar 90 inkomstbasbelopp enligt 58 kap. 26 och 27 §§ socialförsäkringsbalken för beskattningsåret. (K10 2026 p. 2.3: Inkomst av tjänst (max 7 506 000 kr).)"
+        }
+    }
+}

@@ -13,6 +13,42 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-06: MCP-server (beta)
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-06: MCP server (beta)
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Tillagt
+
+- **MCP**: `POST /api/mcp` är en MCP-server för AI-assistenter, ovanpå samma nycklar och OAuth-token som API:t. Verktygen läser kontoplan, verifikationer, rapporter, kunder, fakturor och leverantörer och skapar utkast till verifikationer och kundfakturor; inget verktyg bokför, skickar, betalar eller tar bort. En nyckel med andra behörigheter än läsa och skapa utkast nekas med `403 mcp_scope_not_allowed`. Se [AI-assistenter (MCP)](/utvecklare/ai-assistenter). REST-API:t v1 är oförändrat.
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+
+- **MCP**: `POST /api/mcp` is an MCP server for AI assistants, on the same keys and OAuth tokens as the API. Its tools read the chart of accounts, vouchers, reports, customers, invoices and suppliers and create draft vouchers and draft customer invoices; no tool posts, sends, pays or deletes. A key with scopes beyond reading and creating drafts is refused with `403 mcp_scope_not_allowed`. See [AI assistants (MCP)](/utvecklare/ai-assistenter). The REST API v1 is unchanged.
+<!-- /lang -->
+
+<!-- lang:sv -->
+## 2026-11-06: v1.9.0
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-06: v1.9.0
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Tillagt
+
+- **Leverantörsfakturor**: `vat_treatment` kan vara `NON_EU_GOODS`, varor från ett land utanför EU (import). Fakturan har ingen svensk moms och ingen moms räknas fram ur den; importmomsen bokförs från Tullverkets tullräkning i appen.
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+
+- **Supplier invoices**: `vat_treatment` can be `NON_EU_GOODS`, goods from a country outside the EU (import). The invoice carries no Swedish VAT and none is calculated from it; the import VAT is booked from Swedish Customs' customs bill in the app.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-04: v1.8.0
 <!-- /lang -->
 <!-- lang:en -->

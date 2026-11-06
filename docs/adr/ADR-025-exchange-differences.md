@@ -71,11 +71,11 @@ difference (kursdifferens) was not booked at all, so 2440 never cleared.
   added with its BAS name when first needed, and logged
   (`account.created`, reason `exchange_difference`), like the VAT accounts in
   ADR-016. A deactivated one is not reactivated; posting then fails.
-- **Payment files and offsets.** pain.001 files carry SEK to bankgiro and
-  plusgiro only (`CreditTransferFile` writes `Ccy="SEK"`), so invoices in
-  another currency are left out of the payment-file list and refused by
-  `CreatePaymentBatch`; they are paid in the internet bank and registered on
-  the invoice. Offsetting a credit note against an invoice is refused when
+- **Payment files and offsets.** pain.001 files first carried SEK to bankgiro and
+  plusgiro only, so invoices in another currency were refused by
+  `CreatePaymentBatch` and paid in the internet bank. Since 2026-11-06 they
+  can be paid by file for Handelsbanken and Nordea (ADR-014, addendum);
+  other banks still refuse them. Offsetting a credit note against an invoice is refused when
   either is in another currency, since it would need foreign amounts and an
   exchange difference of its own.
 - **Shown.** The invoice page shows the foreign total and booking rate next to
@@ -193,8 +193,8 @@ and https://www.bfn.se/wp-content/uploads/vl12-1-k3-kons20251215.pdf.
 
 ## Not built yet (next steps)
 
-- Foreign currency in payment files (pain.001 with a foreign `Ccy` and IBAN
-  creditor accounts) and offsets between foreign documents.
+- Offsets between foreign documents. (Foreign currency in payment files was
+  built 2026-11-06, see ADR-014's addendum.)
 - Bank accounts kept in another currency (a euro account, its own
   revaluation), and overpayments in a foreign currency (refused, as in
   kronor).
@@ -234,3 +234,16 @@ and https://www.bfn.se/wp-content/uploads/vl12-1-k3-kons20251215.pdf.
 - `TODO(legal-verify)`: that realised differences on trade payables belong on
   3960/7960 ("av rörelsekaraktär") and not among the financial items in
   class 8 (which the BAS data in this repository does not list).
+
+## Payment files abroad: the booking (2026-11-06)
+
+A supplier invoice paid by a payment file (ADR-014, addendum) is booked by
+the same `PaySupplierInvoice` as a payment registered by hand, with the
+kronor and the booking day from the bank's debit notification (camt.054):
+2440 debit the share of the invoice's kronor, 1930 credit the kronor the bank
+took, and 3960 (gain) or 7960 (loss) for the difference. Nothing is booked
+when the file is made, approved or confirmed by hand; the debit
+notification's instructed amount (`AmtDtls/InstdAmt`) must equal the foreign
+amount in the file. The accounts, the rounding and the settling of 2440 are
+those above; no accounting rule changed.
+

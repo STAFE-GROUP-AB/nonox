@@ -1,7 +1,7 @@
-# SFTPGo for NONOX Connect (SFTP for SIE files)
+# SFTPGo for NONOX API (SFTP for SIE files)
 
 This folder describes how to run [SFTPGo](https://github.com/drakkan/sftpgo)
-as the SFTP server behind NONOX Connect's "SFTP för SIE-filer" (ADR-032,
+as the SFTP server behind NONOX API's "SFTP för SIE-filer" (ADR-032,
 section "SFTP"). **Nothing here is installed automatically.** Whoever runs
 the installation decides whether to offer SFTP and does the steps below.
 Until NONOX has the hook secret, the host and the users' directory, SFTP is

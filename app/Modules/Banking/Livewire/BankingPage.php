@@ -67,6 +67,13 @@ class BankingPage extends Component
     public function startConnecting(): void
     {
         $this->authorizeManage();
+
+        if (BankDataProviders::isPaused()) {
+            $this->toast(BankDataProviders::pausedMessage(), 'error');
+
+            return;
+        }
+
         $this->connecting = true;
     }
 
@@ -114,8 +121,16 @@ class BankingPage extends Component
         $this->authorizeManage();
         $connection = BankConnection::query()->findOrFail($connectionId);
 
+        if (BankDataProviders::isPaused($connection->provider)) {
+            $this->toast(BankDataProviders::pausedMessage(), 'error');
+
+            return;
+        }
+
         // A bank may count every fetch; one a quarter of an hour is plenty by hand.
-        if ($connection->last_fetched_at !== null && $connection->last_fetched_at->greaterThan(CarbonImmutable::now()->subMinutes(15))) {
+        $lastAttempt = FetchBankData::lastAttemptAt($connection);
+
+        if ($lastAttempt !== null && $lastAttempt->greaterThan(CarbonImmutable::now()->subMinutes(15))) {
             $this->toast(__('Banken hämtades nyss. Försök igen om en kvart.'), 'error');
 
             return;
@@ -212,7 +227,8 @@ class BankingPage extends Component
             'transactions' => $transactions,
             'proposals' => $account instanceof BankFeedAccount && $transactions !== null ? $matcher->proposals($account, $transactions->getCollection()) : [],
             'ledgerAccounts' => Account::query()->whereBetween('number', [BankReconciliations::FIRST_ACCOUNT, BankReconciliations::LAST_ACCOUNT])->where('is_active', true)->orderBy('number')->get(['id', 'number', 'name']),
-            'institutions' => $this->connecting ? $this->institutions() : [],
+            'institutions' => $this->connecting && ! BankDataProviders::isPaused() ? $this->institutions() : [],
+            'paused' => BankDataProviders::isPaused(),
             'canManage' => $this->user()->hasTeamPermission($this->company(), 'banking:manage'),
             'canMatch' => $this->user()->hasTeamPermission($this->company(), 'vouchers:post'),
             'today' => CarbonImmutable::today(),

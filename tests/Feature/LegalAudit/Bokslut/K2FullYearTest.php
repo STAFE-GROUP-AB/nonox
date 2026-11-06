@@ -45,6 +45,7 @@ use App\Domain\AnnualReport\AnnualAccounts;
 use App\Domain\AnnualReport\AnnualReportDocument;
 use App\Domain\Assets\AssetCategory;
 use App\Domain\Closing\ClosingChecklist;
+use App\Domain\Closing\TaxProposal;
 use App\Domain\Company\VatPeriod;
 use App\Domain\IncomeTax\Ink2;
 use App\Domain\Insights\BusinessKpis;
@@ -315,12 +316,17 @@ it('closes the year only when the checklist is done, carries the balances and di
     expect($rows)->toBe([2099 => 26_161_500, 2098 => -16_161_500, 2898 => -10_000_000]);
 });
 
-it('AUD-BOK-1: proposes the income tax from the taxable income, rounded down to tens, at 20,6 % (IL 1 kap. 7 §, IL 65 kap. 14 §)', function () {
-    // Today the user types the tax; nothing computes 332 007 → 332 000 × 20,6 % = 68 392.
+it('AUD-BOK-1: proposes the income tax from the taxable income, rounded down to tens, at 20,6 % (IL 1 kap. 7 §, IL 65 kap. 10 §)', function () {
+    // 332 007 → 332 000 × 20,6 % = 68 392 (ADR-056: TaxProposal, confirmed by a person in the closing).
     $ink2 = Ink2::for($this->company, $this->year, IncomeTaxReturn::query()->sole());
 
-    expect($ink2->proposedTaxKronor())->toBe(68_392);
-})->todo('AUD-BOK-1: no tax calculation; YearEndClosing::bookTax accepts any amount and is not checked against INK2 4.15');
+    expect($ink2->proposedTaxOre())->toBe(6_839_200);
+
+    $this->closing->answerTaxStatus($this->owner, $this->year, TaxProposal::STATUS_ORDINARY);
+    $entry = $this->closing->confirmTaxProposal($this->owner, $this->year, '', '', 6_839_200);
+
+    expect($entry->amount_ore->ore)->toBe(6_839_200);
+});
 
 it('AUD-BOK-7: shows the year\'s result on the overview also after it has been booked to 2099 (BusinessKpis)', function () {
     $this->closing->bookTax($this->owner, $this->year, '68 392');

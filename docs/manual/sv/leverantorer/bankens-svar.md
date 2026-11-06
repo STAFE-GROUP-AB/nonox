@@ -26,6 +26,11 @@ Hämta filerna i internetbanken, där du hämtar andra filer i ISO 20022- eller 
 
 Du behöver inte läsa in alla. Statusrapporten och debiteringsaviseringen räcker.
 
+
+## Betalningar i utländsk valuta
+
+En betalning i utländsk valuta bokförs av debiteringsaviseringen (camt.054), med de kronor banken drog och det belopp i valutan som beställdes. Skillnaden mot fakturans kurs bokförs som kursvinst (3960) eller kursförlust (7960). Bokförs betalningen bara automatiskt när kronorna ligger nära Riksbankens kurs på bokföringsdagen (kan kursen inte hämtas gäller fakturans kurs): högst 5 procent ifrån, men minst 500 och som mest 5 000 kronor. Står beloppet i valutan inte i aviseringen, eller avviker kronorna mer, får du ett förslag att kontrollera mot kontoutdraget och bekräfta med **Bekräfta**. En avisering som bara är i valuta, utan kronor, bokförs inte.
+
 ## Så här läser du in bankens svar
 
 1. Gå till **Inköp → Betalfiler**.

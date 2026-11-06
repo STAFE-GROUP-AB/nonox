@@ -14,6 +14,8 @@ Sidan **Bokföring → Inkomstdeklaration** visar den deklaration som gäller f�
 - **Enskild firma**: NE-bilagan, som du lämnar med din egen Inkomstdeklaration 1. Se [Enskild firma: NE-bilagan](#enskild-firma-ne-bilagan).
 - **Handelsbolag och kommanditbolag**: Inkomstdeklaration 4 (INK4R, INK4S och en INK4DU per delägare). Se [Handelsbolag: Inkomstdeklaration 4](#handelsbolag-inkomstdeklaration-4).
 
+Ägarna i ett aktiebolag lämnar ofta blankett K10 med sin egen deklaration; underlaget finns på en egen sida, se [K10-underlag för ägarna](/manual/bokslut/k10).
+
 NONOX fyller i deklarationen fält för fält ur bokföringen, räknar fram det skattemässiga resultatet med det du anger och gör SRU-filerna till Skatteverket. Ingenting bokförs. En ideell förening eller stiftelse deklarerar direkt i Skatteverkets e-tjänst.
 
 ## Aktiebolag: Inkomstdeklaration 2

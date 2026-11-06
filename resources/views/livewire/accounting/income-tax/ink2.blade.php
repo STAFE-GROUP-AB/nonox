@@ -3,6 +3,9 @@
     $input = 'block w-full rounded-xl border-stone-300 shadow-xs focus:border-accent-500 focus:ring-accent-500';
     $kr = fn (int $kronor): string => number_format($kronor, 0, ',', "\u{a0}")."\u{a0}kr";
 @endphp
+    @if($company->legal_form === \App\Domain\Company\LegalForm::Ab)
+        <p class="rounded-2xl bg-stone-100 px-4 py-3 text-sm text-gray-700" data-k10-link>{{ __('Ägarna lämnar blankett K10 för sina aktier med sin egen deklaration.') }} <a href="{{ route('accounting.k10') }}" class="font-medium text-accent-700 underline">{{ __('K10-underlag för ägarna') }}</a></p>
+    @endif
     @php($taxable = $ink2->taxableKronor())
     <section class="grid gap-3 sm:grid-cols-3">
         <div class="rounded-3xl bg-white px-5 py-4 shadow-xs ring-1 ring-stone-200">

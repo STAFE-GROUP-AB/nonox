@@ -136,7 +136,7 @@ final class LogAccessPoint implements PeppolAccessPoint
         return null;
     }
 
-    public function webhookEvents(Request $request, Closure $secrets): array
+    public function webhookEvents(Request $request, Closure $secrets, bool $markSeen = true): array
     {
         throw new AccessPointFailed('The log driver has no webhook.');
     }

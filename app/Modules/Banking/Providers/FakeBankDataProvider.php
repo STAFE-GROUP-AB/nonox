@@ -14,6 +14,7 @@ use App\Modules\Banking\Domain\ProviderBalance;
 use App\Modules\Banking\Domain\ProviderTransaction;
 use App\Modules\Banking\Domain\TransactionPage;
 use App\Modules\Banking\Support\ConsentEnded;
+use App\Modules\Banking\Support\ProviderFailed;
 use Carbon\CarbonImmutable;
 
 /**
@@ -41,11 +42,15 @@ final class FakeBankDataProvider implements BankDataProvider
     /** @var list<string> session ids revoked through revoke() */
     public static array $revoked = [];
 
+    /** @var list<ProviderFailed> thrown, one per call, by the next data calls (a provider that is down or refuses) */
+    public static array $failures = [];
+
     public static function reset(): void
     {
         self::$transactions = [];
         self::$ended = [];
         self::$revoked = [];
+        self::$failures = [];
     }
 
     public function key(): string
@@ -115,6 +120,12 @@ final class FakeBankDataProvider implements BankDataProvider
 
     private function guard(string $sessionId): void
     {
+        $failure = array_shift(self::$failures);
+
+        if ($failure instanceof ProviderFailed) {
+            throw $failure;
+        }
+
         if ($this->consentStatus($sessionId)->hasEnded()) {
             throw new ConsentEnded('The fake bank no longer accepts the consent.');
         }

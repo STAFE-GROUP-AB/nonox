@@ -36,6 +36,12 @@ class LinkPeppolAccountCommand extends Command
             return self::FAILURE;
         }
 
+        if (AccessPoints::isPaused()) {
+            $this->error('Peppol is paused (NONOX_PEPPOL_PAUSED); remove the pause before linking an account.');
+
+            return self::FAILURE;
+        }
+
         return CurrentCompany::run($company, function () use ($company): int {
             $participant = PeppolParticipant::query()->first();
             $identifier = $participant instanceof PeppolParticipant ? $participant->identifier : (PeppolIdentifier::usesPersonalIdentityNumber($company) ? null : PeppolIdentifier::forOrganisationNumber($company->org_number)?->toString());

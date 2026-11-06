@@ -17,6 +17,7 @@ Avsnittet är för dig som ansvarar för momsen: ägaren, administratören eller
 - [Momsperiod och bokföringsmetod](/manual/moms/momsperiod-och-bokforingsmetod) – hur ofta ni redovisar, och vad fakturametoden och kontantmetoden betyder för momsen.
 - [Hur momsen hamnar i rätt ruta](/manual/moms/moms-och-konton) – vilka konton som blir vilken ruta.
 - [Omvänd betalningsskyldighet](/manual/moms/omvand-betalningsskyldighet) – när köparen redovisar momsen.
+- [Importmoms från tullräkning](/manual/moms/importmoms) – varor från länder utanför EU.
 
 ## EU-handel
 

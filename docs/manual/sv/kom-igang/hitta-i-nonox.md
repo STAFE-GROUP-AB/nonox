@@ -47,7 +47,7 @@ Längst ner står ditt namn och din e-postadress, och där finns:
 Menyn visar bara det du har behörighet till och det som är påslaget i företaget. Om en sida som beskrivs i manualen saknas hos dig beror det nästan alltid på något av det här:
 
 - **Din roll.** En attestant ser till exempel inte rapporterna, och en bokförare ser inte **Bokslut**. Överst i varje artikel i manualen står vilka roller den gäller för. Se [Roller och behörigheter](/manual/kom-igang/roller-och-behorigheter).
-- **En modul är avstängd.** Lön, Personalliggare, Inkorg, Bank, NONOX AI och NONOX Connect slås på per företag av en ägare eller administratör.
+- **En modul är avstängd.** Lön, Personalliggare, Inkorg, Bank, NONOX AI och NONOX API slås på per företag av en ägare eller administratör.
 - **Fel företag.** Kontrollera namnet högst upp i menyn.
 - **Företaget är arkiverat.** Då kan allt läsas men inget ändras, och knappar för att ändra syns inte.
 

@@ -16,7 +16,7 @@ namespace App\Support\Landing;
  * of employees without a single figure that is not in the data file.
  *
  * @phpstan-type PriceModel array{base_per_month: int, per_employee_per_month: ?int, included_employees: int, comparable?: bool}
- * @phpstan-type Program array{slug: string, name: string, plan: string, per_year: int, per_month?: int, price_note: string, source: ?string, verified: bool, price_model?: PriceModel}
+ * @phpstan-type Program array{slug: string, name: string, plan: string, per_year: int, per_month?: int, price_note: string, source: ?string, fetched_at?: string, verified: bool, price_model?: PriceModel}
  * @phpstan-type Quote array{slug: string, name: string, plan: string, per_year: ?int, formula: string, price_note: string, source: ?string, verified: bool, comparable: bool}
  */
 final class Comparison

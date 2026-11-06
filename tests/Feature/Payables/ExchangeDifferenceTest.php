@@ -223,11 +223,11 @@ it('keeps invoices in another currency out of payment files and offsets', functi
     $invoice = dollarSupplierInvoice($this->owner, $this->company, $this->supplier, '100', '10', '1000');
     app(SavePaymentBankSettings::class)($this->owner, $this->company, ['payment_bank' => 'SEB', 'iban' => 'SE4550000000058398257466', 'bank_agreement_id' => 'ABCDEFGHIJ']);
 
-    expect(fn () => app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12')))
+    expect(fn () => app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12'), true))
         ->toThrow(ValidationException::class);
 
     try {
-        app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12'));
+        app(CreatePaymentBatch::class)($this->owner, $this->company, [$invoice->id], CarbonImmutable::parse('2026-03-12'), true);
     } catch (ValidationException $exception) {
         expect(collect($exception->errors())->flatten()->first())->toContain('är i USD. Betala den i internetbanken');
     }

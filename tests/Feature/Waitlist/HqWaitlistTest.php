@@ -169,7 +169,7 @@ it('approves an entry only with a fresh passkey: creates the user, mails them an
 it('mails the approval in Swedish with a link to /logga-in', function () {
     $html = (new WaitlistApprovedMail('Kim'))->render();
 
-    expect($html)->toContain('Välkommen in, Kim!')->toContain(route('login'))->toContain('1 januari 2027');
+    expect($html)->toContain('Välkommen in, Kim!')->toContain(route('login'))->toContain('1 februari 2027');
     expect((new WaitlistApprovedMail('Kim'))->envelope()->subject)->toBe('Du är godkänd – logga in i NONOX');
 });
 

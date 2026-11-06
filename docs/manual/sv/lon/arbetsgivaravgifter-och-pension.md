@@ -38,7 +38,7 @@ I arbetsgivardeklarationen redovisas lön utan avgift i en egen ruta (131). Den 
 > Procentsatser, födelseår, månadstak och datum står under **Lön → Regler**, med länk till Skatteverket, och används först när de är kontrollerade. NONOX skriver inga siffror i koden. Se [Regler och skattetabeller](/manual/lon/regler-och-skattetabeller).
 
 > [!NOTE]
-> En del räknar NONOX inte ännu: regionalt stöd (avdrag för företag i vissa delar av landet) dras inte av. Prata med er redovisningskonsult om det gäller er.
+> Regionalt stöd (avdrag för företag i vissa delar av landet) dras av när inställningen **Regionalt stöd** är ikryssad under Lön → Inställningar: 10 procent av avgiftsunderlaget, inom månadstaket och inte under ålderspensionsavgiften, och inte för den som fyllt 67 vid årets början. Är inställningen inte ikryssad dras inget av. Prata med er redovisningskonsult om ni är osäkra på om det gäller er.
 
 ### Det här händer i bokföringen
 

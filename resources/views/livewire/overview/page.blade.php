@@ -161,6 +161,18 @@
                 </x-ui.card>
             @endif
 
+            @if($skatteverketAwaiting > 0)
+                {{-- Från Skatteverket (ADR-054 stage 4): customer events where Skatteverket waits for the company. --}}
+                <x-ui.card :title="__('Från Skatteverket')" class="min-w-0" data-overview-skatteverket>
+                    <x-slot:action>
+                        <x-ui.badge tone="accent">{{ __('Beta') }}</x-ui.badge>
+                    </x-slot:action>
+                    <p class="text-sm text-gray-700">{{ $skatteverketAwaiting === 1 ? __('1 händelse från Skatteverket väntar på företaget.') : __(':count händelser från Skatteverket väntar på företaget.', ['count' => $skatteverketAwaiting]) }}</p>
+                    <p class="mt-1 text-xs text-gray-500">{{ __('Enligt kundhändelserna som senast hämtades från Skatteverket.') }}</p>
+                    <div class="mt-3"><x-ui.link :href="route('guide.dates').'#fran-skatteverket'">{{ __('Läs händelserna') }}</x-ui.link></div>
+                </x-ui.card>
+            @endif
+
             @if($moneyFigures)
                 {{-- Momsbufferten (ADR-051, stage 3): what of the money in the bank is not the company's. --}}
                 <x-ui.card :title="__('Pengar som inte är dina')" :description="$company->isVatRegistered() ? __('Moms och skatt som ska till Skatteverket, enligt bokföringen.') : __('Skatt som ska till Skatteverket, enligt bokföringen.')" class="min-w-0" data-overview-money>

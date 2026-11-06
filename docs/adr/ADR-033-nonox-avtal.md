@@ -306,6 +306,101 @@ now built:
 - Karens per sjuklöneperiod and its carry across runs are in the payroll
   engine (ADR-012, `sick_pay_periods`).
 
+### H.1: overtime kinds per occasion and comp-time factors per date (2026-11-06)
+
+Gröna Riks (§ 12 p. 1.2, p. 2.2) and Detaljhandeln (§ 9.1, 9.2, 9.5, 9.6)
+pay overtime and mertid by *where* the time lies: the two first hours
+adjoining ordinary time, the rest, time not adjoining, a day off, and
+(Detaljhandeln) the evening after 20.00, Saturday and the eves after
+12.00, Sundays and public holidays. Before H.1 a period's overtime went on
+the one code chosen under Planering → Inställningar. Model change (data
+format `nonox.agreement/1`, additive; datamodell §8):
+
+- `overtime.kinds`: `ranks` (lowest paid first), `first_hours` (minutes per
+  day), `rest_kind`, `not_adjoining_kind`, `day_off_kind`, `windows` that
+  raise the kind (`days`, `day_type` or inline `spans`; `day_off_only`),
+  `codes` per kind for `OVERTIME` and `EXTRA_TIME`, and `day_off_minimum`
+  (Detaljhandeln: at least three hours paid for overtime on a day off).
+- `overtime.comp_time.hours_per_hour` may give a list of
+  `{valid_from, factor}` steps per code (Detaljhandeln: 1.5 for 50 % until
+  2026-03-31, 1.35 for 35 % from 2026-04-01).
+- Engine: `Planning\Domain\OvertimeKinds` (pure) classifies each day's
+  stretches outside the plan with the same threshold and rounding as
+  `OvertimeTerms::day`, and `PayrollBasis::week` lays the period's
+  overtime and mertid on the kinds, highest first; the rest (leave counted
+  as worked, codes without a rate that day) stays on the company's code.
+  Hourly-paid staff get each kind's supplement-only code. Comp time is
+  earned per code with the factor in force on the day the time was worked
+  (corrected after review, see below).
+- The kinds apply when the company's code for overtime (or mertid) is empty
+  or one of the agreement's codes; a code of the company's own keeps the old
+  behaviour. Payroll is unchanged: the time reports are priced by the
+  existing `AgreementPricer`, and no account or voucher changes.
+
+Open (`TODO(legal-verify)`): which stretches are the overtime when the
+period's netting leaves less than the stretches (neither agreement says;
+GR § 9 p. 3 s. 14 only settles över- and undertid within the period. NONOX
+takes the highest first, which can pay more than the agreement requires,
+and says so on the attest row); Gröna Riks' two first hours per day or per
+occasion (NONOX: per day); Detaljhandeln 70 % for overtime 00.00–06.00 on a
+weekday morning; Detaljhandeln's minimum on a day off when only part of the
+day is overtime after netting. Not built: Detaljhandeln's exceptions from
+mertid pay (§ 9.5).
+
+**H.1 corrections after review (2026-11-06).** Re-read against GR
+2025–2027 and D1 HA2025-110:
+
+- *Rate and comp-time factor by the day worked.* GR § 12 p. 1.2 s. 19 ("fr.o.m.
+  den 1 april 2026 35 %") and D1 § 9.2 s. 35 ("för övertidsarbete som utförs
+  till och med den 31 mars 2026") tie the rate to when the overtime is
+  performed. Each stretch now keeps its date; the period's overtime is still
+  sent with the period's last day, but each time report carries
+  `time_reports.priced_on` (new nullable column) and the payroll run prices it
+  on that day. Comp time takes the factor of the day worked
+  (D1 § 9.6 s. 37–38).
+- *Comp-time factors confirmed.* GR § 12 p. 1.2 s. 19 and p. 2.2 s. 20 give
+  1.5 h for a) and b) and 2 h for c) without a date, although the a) rate
+  steps 45 → 35 % on 2026-04-01; the factors are undated in the data on
+  purpose. D1 § 9.6 s. 37–38: 1 h 30 min for 50 % (until 2026-03-31), 1 h 21
+  min for 35 % (from 2026-04-01), 1 h 45 min for 70 %, 2 h for 100 %.
+- *Day-off minimum.* D1 § 9.1 s. 35: "Vid övertidsarbete på dag som på grund
+  av arbetstidens förläggning är fridag utges ersättning för minst tre
+  timmar", in the section for full-time staff, naming no rate. In D1 a day
+  off has one kind (70 % on a weekday, 100 % on a Saturday, an eve, a Sunday
+  or a holiday, § 9.2), so the top-up is paid on that day's code with the
+  hourly pay. `TODO(legal-verify)` that this is the intended rate.
+
+**H.1b: only the higher of OB and overtime (Detaljhandeln, 2026-11-06).**
+D1 § 8.1 Anm. s. 33, § 9.1 Anm. s. 35, § 9.3 Anm. s. 36 and § 9.5 Anm. 2
+s. 37: when overtime or mertid falls on OB time, only the percentually
+higher compensation is paid. Before this NONOX paid both (OB is split from
+every worked minute per day; overtime is counted per period). Decision:
+
+- Data: `overtime.kinds.ob_overlap: {method: HIGHEST_ONLY, source}` (only
+  Detaljhandeln has it).
+- When the period's overtime is laid on the stretches, each allocated
+  stretch is split by the agreement's OB windows. Per minute the two
+  percentages are compared on the day worked: overtime ≥ OB → the OB is
+  taken back; OB > overtime (only 18.15–20.00 against the first two hours'
+  35 %) → the overtime supplement is taken back on its supplement-only code
+  (`*_TL`), so the minute keeps the hourly pay and the higher percentage.
+- The take-back is a negative time report sent with the period's last day
+  and priced on the day worked, with a note on the attest row naming the
+  minutes, the code and the source. Days already attested keep their OB
+  reports; nothing approved or posted is changed. A period whose month is
+  already approved is corrected in the next run as before.
+- Not when OB is included in the salary, and not when the overtime is taken
+  as comp time (then a note says the OB is still paid; `TODO(legal-verify)`).
+- Not for a stretch of which only part is overtime after netting (which of
+  its minutes is not known), and not for a day that was not itself sent to
+  payroll or a take-back whose pay code is missing: then both are paid and
+  the attest row says so. Leaving a take-back out can only pay more, never
+  less than the higher of OB and overtime.
+- Accounts and vouchers are unchanged (the same pay codes and accounts), so
+  the systemdokumentation is not changed; the amounts on the salary voucher
+  are lower where both were paid before.
+
+
 ## Legal questions (all `TODO(legal-verify)`)
 
 1. **Copyright in agreement texts.** A collective agreement is a private

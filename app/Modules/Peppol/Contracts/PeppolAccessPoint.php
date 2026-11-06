@@ -77,12 +77,15 @@ interface PeppolAccessPoint
     /**
      * Verifies a webhook request (signature, age, replay) and reads it.
      * $secrets gives the signing secrets for a provider account; the body is
-     * trusted only after the signature matched one of them.
+     * trusted only after the signature matched one of them. With $markSeen
+     * false the request is only verified: its event id is not recorded, so
+     * the same event delivered again later is still handled (used while the
+     * operator has paused the access point).
      *
      * @param  Closure(string): list<string>  $secrets
      * @return list<WebhookEvent>
      *
      * @throws AccessPointFailed when it cannot be verified
      */
-    public function webhookEvents(Request $request, Closure $secrets): array;
+    public function webhookEvents(Request $request, Closure $secrets, bool $markSeen = true): array;
 }

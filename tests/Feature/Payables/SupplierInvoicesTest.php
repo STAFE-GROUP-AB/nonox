@@ -53,7 +53,7 @@ function groceryInvoice(User $user, Company $company, Supplier $supplier, ?Uploa
     return app(SaveSupplierInvoice::class)($user, $company, [
         'supplier_id' => $supplier->id,
         'invoice_number' => 'F-778',
-        'ocr' => '4455667',
+        'ocr' => '4455663',
         'invoice_date' => '2026-03-05',
         'total' => '1 620,00',
         'vat' => '220,00',
@@ -266,4 +266,15 @@ describe('in the browser', function () {
         $this->get(route('payables.invoices.index'))->assertOk()->assertDontSee('Ny leverantörsfaktura');
         $this->get(route('payables.invoices.create'))->assertForbidden();
     });
+});
+
+it('refuses an OCR reference whose check digit is wrong', function () {
+    $invoice = fn (string $ocr) => app(SaveSupplierInvoice::class)($this->owner, $this->company, [
+        'supplier_id' => $this->supplier->id, 'invoice_date' => '2026-03-05', 'total' => '100', 'vat' => '0', 'ocr' => $ocr,
+        'rows' => [['account' => '4010', 'amount' => '100']],
+    ]);
+
+    expect(fn () => $invoice('4455667'))->toThrow(ValidationException::class, 'OCR-numret stämmer inte')
+        ->and($invoice('4455663')->ocr)->toBe('4455663')
+        ->and($invoice('')->ocr)->toBeNull();
 });

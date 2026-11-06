@@ -152,7 +152,7 @@ it('is offered only to the pilot users when the installation lists them', functi
     $this->get(route('skatteverket.callback', ['code' => 'c', 'state' => 's']))->assertNotFound();
     Livewire::test(VatReturns::class, ['period' => '2026-01-01'])->assertDontSee('Lämna deklarationen till Skatteverket');
     Livewire::test(SkatteverketPanel::class, ['fiscalYearId' => $this->year->id, 'start' => '2026-01-01'])->assertForbidden();
-    expect(fn () => app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january))
+    expect(fn () => app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january, true))
         ->toThrow(ValidationException::class);
 
     $this->owner->forceFill(['email' => 'pilot@example.se'])->save();
@@ -172,7 +172,7 @@ it('shows the panel with what sending means, and asks for e-legitimation first',
         ->assertSee('säkerhetsincidenter och otillbörlig användning')
         ->assertSee('Logga in hos Skatteverket med e-legitimation')
         ->assertDontSee('Skicka till Skatteverket')
-        ->call('send')
+        ->set('figuresReviewed', true)->call('send')
         ->assertDispatched('toast', message: 'Logga in hos Skatteverket med e-legitimation först.');
 });
 
@@ -203,7 +203,7 @@ it('sends the draft locked for signing and shows Skatteverket\'s signing link on
         ->push(['sparad' => true, 'last' => true, 'kontrollResultat' => ['status' => 'OK', 'resultat' => []], 'signeringsLank' => 'https://skatteverket.se.evil.example/x'])]);
 
     Livewire::test(SkatteverketPanel::class, ['fiscalYearId' => $this->year->id, 'start' => '2026-01-01'])
-        ->call('send')
+        ->set('figuresReviewed', true)->call('send')
         ->assertDispatched('toast', message: 'Utkastet är skickat och låst hos Skatteverket. Skriv under hos Skatteverket för att lämna deklarationen.')
         ->assertSee('Skriv under hos Skatteverket')
         ->assertSee(SKV_SIGNING, escape: false);
@@ -217,7 +217,7 @@ it('sends the draft locked for signing and shows Skatteverket\'s signing link on
         ->and(AuditLog::query()->where('action', 'vat.skatteverket_sent')->sole()->payload)->toEqual(['period_end' => '2026-01-31', 'locked' => true, 'status' => 'OK']);
 
     // A link to any other site is never shown.
-    app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january);
+    app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january, true);
     expect(VatSubmission::query()->sole()->signing_link)->toBeNull()
         ->and(VatSubmission::query()->sole()->locked)->toBeTrue();
 });
@@ -229,13 +229,13 @@ it('shows Skatteverket\'s own error text, and ends the sign-in on 401', function
         ->push(['error' => 'Invalid token'], 401)]);
 
     Livewire::test(SkatteverketPanel::class, ['fiscalYearId' => $this->year->id, 'start' => '2026-01-01'])
-        ->call('send')
+        ->set('figuresReviewed', true)->call('send')
         ->assertDispatched('toast', message: 'Behörighet saknas för aktör att företräda redovisare.');
 
     expect(VatSubmission::query()->count())->toBe(0)->and(SkatteverketToken::query()->count())->toBe(1);
 
     Livewire::test(SkatteverketPanel::class, ['fiscalYearId' => $this->year->id, 'start' => '2026-01-01'])
-        ->call('send')
+        ->set('figuresReviewed', true)->call('send')
         ->assertDispatched('toast', message: 'Inloggningen hos Skatteverket har gått ut. Logga in hos Skatteverket igen.');
 
     expect(SkatteverketToken::query()->count())->toBe(0);
@@ -287,7 +287,7 @@ it('lets only those who may submit VAT send, and everyone with the VAT page chec
     $auditor = Bookkeeping::member($this->company, 'auditor');
     $accountant = Bookkeeping::member($this->company, 'accountant');
 
-    expect(fn () => app(SendVatReturnToSkatteverket::class)($auditor, $this->year, $this->january))->toThrow(AuthorizationException::class)
+    expect(fn () => app(SendVatReturnToSkatteverket::class)($auditor, $this->year, $this->january, true))->toThrow(AuthorizationException::class)
         ->and($accountant->hasTeamPermission($this->company, 'vat:submit'))->toBeTrue();
 });
 
@@ -328,7 +328,7 @@ it('shows Skatteverket\'s errors when it refuses to save the draft', function ()
     Http::fake([SKV_API.'/utkast/*' => Http::response(['sparad' => false, 'last' => false, 'kontrollResultat' => ['status' => 'ERROR', 'resultat' => [['status' => 'ERROR', 'kod' => 'FK009', 'beskrivning' => 'Ruta 49 stämmer inte.']]], 'signeringsLank' => null])]);
 
     Livewire::test(SkatteverketPanel::class, ['fiscalYearId' => $this->year->id, 'start' => '2026-01-01'])
-        ->call('send')
+        ->set('figuresReviewed', true)->call('send')
         ->assertDispatched('toast', message: 'Skatteverket sparade inte utkastet, eftersom kontrollen hittade fel. Felen står nedan.')
         ->assertSee('FK009')
         ->assertSee('Ruta 49 stämmer inte.');
@@ -344,7 +344,7 @@ it('unlocks its own locked draft before sending a new one, and keeps the earlier
         SKV_API.'/utkast/*' => Http::response(['sparad' => true, 'last' => true, 'kontrollResultat' => ['status' => 'OK', 'resultat' => []], 'signeringsLank' => SKV_SIGNING]),
     ]);
 
-    app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january);
+    app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january, true);
 
     Http::assertSentInOrder([
         fn (Request $request): bool => $request->method() === 'DELETE' && $request->url() === SKV_API.'/las/165563343689/202601',
@@ -382,7 +382,7 @@ it('unlocks and tries once more when Skatteverket says a draft NONOX did not loc
             ->push(['sparad' => true, 'last' => true, 'kontrollResultat' => ['status' => 'OK', 'resultat' => []], 'signeringsLank' => SKV_SIGNING]),
     ]);
 
-    $submission = app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january);
+    $submission = app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january, true);
 
     expect($submission->status)->toBe(VatSubmissionStatus::ReadyToSign);
     Http::assertSentCount(3);
@@ -396,11 +396,11 @@ it('stops when the draft is being signed, and no longer offers the old link once
         SKV_API.'/utkast/*' => Http::response(['kod' => '503', 'meddelandeTillAnvandare' => 'Tjänsten är inte tillgänglig.'], 503),
     ]);
 
-    expect(fn () => app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january))
+    expect(fn () => app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january, true))
         ->toThrow(SkatteverketFailed::class, 'Skatteverket answered 409');
     expect(VatSubmission::query()->sole()->signing_link)->toBe(SKV_SIGNING);
 
-    expect(fn () => app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january))->toThrow(SkatteverketFailed::class);
+    expect(fn () => app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january, true))->toThrow(SkatteverketFailed::class);
     $submission = VatSubmission::query()->sole();
     expect($submission->status)->toBe(VatSubmissionStatus::Draft)
         ->and($submission->locked)->toBeFalse()
@@ -431,4 +431,34 @@ it('clears signing links of drafts Skatteverket has removed', function () {
 
     expect(VatSubmission::query()->sole()->signing_link)->toBeNull()
         ->and(VatSubmission::query()->sole()->locked)->toBeTrue();
+});
+
+it('does not count a sign-in made only for the employer declaration as signed in for the VAT return', function () {
+    SkatteverketToken::query()->create(['user_id' => $this->owner->id, 'access_token' => 'agd-token', 'refresh_token' => 'r', 'scope' => 'agd agdredovisningperiod', 'expires_at' => now()->addHour(), 'refresh_expires_at' => now()->addMinutes(65)]);
+    Http::fake();
+
+    Livewire::test(SkatteverketPanel::class, ['fiscalYearId' => $this->year->id, 'start' => '2026-01-01'])
+        ->assertSee('Logga in hos Skatteverket med e-legitimation')
+        ->assertSee('tjanst=moms', escape: false)
+        ->assertDontSee('Skicka till Skatteverket')
+        ->call('checkReturn')
+        ->assertDispatched('toast', message: 'Din inloggning hos Skatteverket gäller inte momsdeklarationen. Logga in hos Skatteverket igen.');
+
+    expect(fn () => app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january, true))->toThrow(ValidationException::class);
+    Http::assertNothingSent();
+    expect(SkatteverketToken::query()->sole()->access_token)->toBe('agd-token');
+});
+
+it('refuses to send the momsdeklaration without "Jag har granskat siffrorna" and records the confirmation when given', function () {
+    signedInWithSkatteverket();
+    Http::fake([SKV_API.'/utkast/*' => Http::response(['sparad' => true, 'last' => true, 'kontrollResultat' => ['status' => 'OK', 'resultat' => []], 'signeringsLank' => SKV_SIGNING])]);
+
+    expect(fn () => app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january))->toThrow(ValidationException::class, 'granskat siffrorna');
+    Http::assertNothingSent();
+    expect(AuditLog::query()->where('action', 'figures.reviewed')->count())->toBe(0);
+
+    app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january, true);
+
+    $row = AuditLog::query()->where('action', 'figures.reviewed')->sole();
+    expect($row->user_id)->toBe($this->owner->id)->and($row->payload)->toBe(['filing' => 'vat_return']);
 });

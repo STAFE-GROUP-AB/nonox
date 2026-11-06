@@ -56,6 +56,7 @@ class SavePeppolSettings
             ($receive || $register) && $participant->scheme === PeppolIdentifier::ORGANISATION_NUMBER && PeppolIdentifier::usesPersonalIdentityNumber($company) => __('En enskild firma registreras med ett GLN (0088), så att personnumret inte publiceras i Peppols öppna adressbok.'),
             $receive && ! $this->modules->isEnabled(InboxModule::KEY, $company) => __('Slå på Inkorg först. E-fakturor som tas emot hamnar i inkorgen för attest.'),
             $register && ! $consent => __('Bekräfta att du får företräda företaget och godkänner registreringen.'),
+            $register && AccessPoints::isPaused() => AccessPoints::pausedMessage(),
             default => null,
         };
 
@@ -107,6 +108,11 @@ class SavePeppolSettings
         }
 
         if ($participant->canSend()) {
+            // Never marked as removed without the access point removing it, so wait while it is paused.
+            if (AccessPoints::isPaused($participant->provider)) {
+                throw ValidationException::withMessages(['identifier' => AccessPoints::pausedMessage()]);
+            }
+
             try {
                 AccessPoints::make($participant->provider)->deregister($participant);
             } catch (AccessPointFailed|ConnectionException $exception) {

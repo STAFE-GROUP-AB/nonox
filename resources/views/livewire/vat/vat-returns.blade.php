@@ -137,8 +137,13 @@
 
                 @if(abs($return->unexplained) >= 100)
                     <div class="mt-4 rounded-lg bg-amber-50 p-4 text-sm text-amber-950" role="status">
-                        <p class="font-semibold">{{ __('Utgående moms utan försäljning i ruta 05') }}</p>
-                        <p class="mt-1">{{ __('Momsen på försäljning i Sverige motsvarar :amount kr mer i underlag än det som är bokfört på intäktskonton. Det kan till exempel vara en såld inventarie, där priset är bokfört mot tillgångskontot. Lägg till underlaget i ruta 05 när du lämnar deklarationen, eller rätta bokföringen.', ['amount' => number_format(intdiv($return->unexplained, 100), 0, ',', ' ')]) }}</p>
+                        @if($return->unexplained > 0)
+                            <p class="font-semibold">{{ __('Utgående moms utan försäljning i ruta 05') }}</p>
+                            <p class="mt-1">{{ __('Momsen på försäljning i Sverige motsvarar :amount kr mer i underlag än det som är bokfört på intäktskonton. Det kan till exempel vara en såld inventarie, där priset är bokfört mot tillgångskontot. Lägg till underlaget i ruta 05 när du lämnar deklarationen, eller rätta bokföringen.', ['amount' => number_format(intdiv(abs($return->unexplained), 100), 0, ',', ' ')]) }}</p>
+                        @else
+                            <p class="font-semibold">{{ __('Återförd utgående moms utan minskad försäljning i ruta 05') }}</p>
+                            <p class="mt-1">{{ __('Ruta 05 är :amount kr högre än den utgående momsen motsvarar, eftersom momsen har återförts men intäkten inte minskats lika mycket. Det beror oftast på en kreditnota eller en konstaterad kundförlust. Minska underlaget i ruta 05 när du lämnar deklarationen, eller rätta bokföringen.', ['amount' => number_format(intdiv(abs($return->unexplained), 100), 0, ',', ' ')]) }}</p>
+                        @endif
                     </div>
                 @endif
 

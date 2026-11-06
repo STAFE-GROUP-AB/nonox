@@ -45,7 +45,7 @@ Får personen en annan roll minskar nyckelns åtkomst från nästa anrop. Lämna
 
 Listan under **Anslutningar** visar för varje nyckel när den senast användes och från vilken adress. En nyckel kan återkallas direkt, och då ger nästa anrop `401`. Varje nyckel som skapas eller återkallas, och varje skrivande anrop, står i företagets behandlingshistorik.
 
-Stängs NONOX Connect av för företaget återkallas alla nycklar, efter en varning som måste bekräftas.
+Stängs NONOX API av för företaget återkallas alla nycklar, efter en varning som måste bekräftas.
 
 ## Säkerhet i korthet
 

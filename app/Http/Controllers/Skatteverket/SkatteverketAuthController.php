@@ -34,15 +34,18 @@ class SkatteverketAuthController
         /** @var User $user */
         $user = $request->user();
         $state = Str::random(40);
+        // Only the scopes of the service the sign-in starts from, plus those the person's still usable sign-in holds (ADR-054 stage 2).
+        $scopes = SkatteverketAuth::scopesToRequest($user, Skatteverket::service((string) $request->query('tjanst', '')));
 
         $request->session()->put(self::SESSION, [
             'state' => $state,
             'user_id' => $user->id,
+            'scopes' => $scopes,
             'back' => self::safeBack((string) $request->query('tillbaka', '')),
             'at' => now()->getTimestamp(),
         ]);
 
-        return redirect()->away(SkatteverketAuth::authorizeUrl($state, route('skatteverket.callback')));
+        return redirect()->away(SkatteverketAuth::authorizeUrl($state, route('skatteverket.callback'), $scopes));
     }
 
     public function callback(Request $request): RedirectResponse
@@ -75,7 +78,7 @@ class SkatteverketAuthController
         }
 
         try {
-            SkatteverketAuth::exchange($user, (string) $request->query('code'), route('skatteverket.callback'));
+            SkatteverketAuth::exchange($user, (string) $request->query('code'), route('skatteverket.callback'), array_values(array_intersect(Skatteverket::SCOPES, array_filter((array) ($flow['scopes'] ?? Skatteverket::scopesFor('moms')), 'is_string'))));
         } catch (SkatteverketFailed $exception) {
             report($exception);
             Toast::flash($exception->userMessage, 'error');

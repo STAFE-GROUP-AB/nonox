@@ -3,7 +3,7 @@ beskrivning: Betala många attesterade leverantörsfakturor på en gång med en 
 ordning: 60
 roller: [owner, admin, accountant, bookkeeper, approver]
 rutter: [payables.batches.index, payables.batches.file]
-sokord: [betalfil, pain.001, iso 20022, filöverföring, betalningsförslag, leverantörsbetalningar, bankfil, lb-fil, godkänna betalning]
+sokord: [utlandsbetalning, valuta, euro, sepa, betalfil, pain.001, iso 20022, filöverföring, betalningsförslag, leverantörsbetalningar, bankfil, lb-fil, godkänna betalning]
 ---
 
 # Betalfiler till banken
@@ -40,7 +40,7 @@ Swedbank och sparbankerna betalar från företagets bankgiro. Har ni valt dem m�
 1. Gå till **Inköp → Betalfiler**. Under **Att betala** visas attesterade fakturor som inte redan finns i en betalfil. Fakturor som förfaller inom en vecka är förvalda.
 2. Kryssa i de fakturor du vill betala.
 3. Välj **Betaldag**. Den kan inte vara passerad.
-4. Kontrollera antalet och summan och klicka på **Skapa betalfil**.
+4. Kontrollera antalet och summan, kryssa i **Jag har granskat siffrorna** (du som kund ansvarar för att uppgifterna är riktiga) och klicka på **Skapa betalfil**.
 
 Filen får status **Skapad, väntar på banken** och syns under **Betalfiler**.
 
@@ -79,10 +79,29 @@ Ingenting bokförs när filen skapas eller godkänns. När du markerar filen som
 
 Själva filen sparas som den skapades, med en kontrollsumma, och kan inte ändras.
 
+## Fakturor i utländsk valuta
+
+Har du Handelsbanken eller Nordea kan en attesterad faktura i EUR, USD, GBP, NOK, DKK, CHF, PLN, CAD, AUD eller CZK betalas med en betalfil. Varje betalfil har en enda valuta, så fakturor i olika valutor och kronefakturor går i var sin fil. Betalningen görs i fakturans valuta från företagets kronokonto, och banken växlar. Under **Att betala** visas beloppet i valutan med ungefärligt belopp i kronor under, och leverantörens IBAN.
+
+Leverantören måste vara komplett under **Register → Leverantörer**:
+
+1. **IBAN (utländsk leverantör)** och **BIC**. BIC kan utebli för en betalning i euro inom SEPA-området.
+2. **Land (landskod)**, till exempel DE, och **Ort**. Adressen skickas med betalningen.
+3. **Betalningskod för utlandsbetalning**, tre siffror från Skatteverkets lista, till exempel 410 för datatjänster. Koden skickas med när den är ifylld, och krävs när betalningen är över 120 000 kronor till fakturans kurs, eftersom bankens kurs kan göra den större än 150 000 kronor, där rapporteringen börjar.
+
+IBAN, BIC, land och adress hämtas från leverantören som den var när fakturan registrerades; en ändring i registret efteråt påverkar alltså inte en faktura som redan är attesterad. IBAN kontrolleras med kontrollsiffror och landets längd när du sparar leverantören, och landet ska stämma med IBAN:s landskod. Saknas något visar **Skapa betalfil** vad som ska kompletteras.
+
+En betalfil kan bara ha en valuta. Skapa en betalfil för kronor och en för varje annan valuta. Bokstäver som banker utomlands inte tar emot, som å, ä, ö och ü, skrivs i filen som a, a, o och u.
+
+Bankavgifterna delas mellan er och mottagaren: du betalar din banks avgift och mottagaren sin.
+
+> [!WARNING]
+> En betalning i utländsk valuta bokförs inte när du klickar på **Banken har betalat**. Kronorna vet bara banken. Läs in bankens avisering (camt.054) under **Läs in bankens svar**: då bokförs betalningen med de kronor banken tog, och skillnaden mot fakturans kurs bokförs som kursvinst (3960) eller kursförlust (7960). Läs [Bankens svar på betalfilen](/manual/leverantorer/bankens-svar).
+
 ## Fakturor som inte kan tas med
 
 - **Kreditnotor** – kvitta dem mot en faktura i stället. Läs [Kreditnotor](/manual/leverantorer/kreditnotor).
-- **Fakturor i utländsk valuta** – betala dem i internetbanken och registrera betalningen på fakturan.
+- **Fakturor i utländsk valuta** – kan tas med om ni har Handelsbanken eller Nordea och leverantörens uppgifter är kompletta (se Fakturor i utländsk valuta ovan). Hos övriga banker betalar du dem i internetbanken och registrerar betalningen på fakturan.
 - **Fakturor utan bankgiro eller plusgiro** – betalningsuppgiften hämtas från leverantören som den var när fakturan registrerades. Fanns den inte då, betala i internetbanken.
 - **Fakturor som redan finns i en betalfil** som väntar på banken.
 

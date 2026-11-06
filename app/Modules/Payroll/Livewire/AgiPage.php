@@ -13,6 +13,7 @@ use App\Modules\Payroll\Models\AgiSubmission;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Agi\AgiDeadlines;
+use App\Support\Skatteverket\Skatteverket;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -39,6 +40,7 @@ class AgiPage extends Component
     public function generate(AgiSubmissions $submissions, string $period): void
     {
         $submission = $submissions->generate($this->user(), $this->company(), $period);
+        $this->dispatch('agi-generated', period: $submission->period);
 
         $this->toast($submission->sequence > 1
             ? __('Rättelsen för :period är skapad. Hämta filen och lämna in den hos Skatteverket.', ['period' => $period])
@@ -104,6 +106,8 @@ class AgiPage extends Component
             'next' => $next,
             'canSubmit' => $this->can('payroll:agi-submit'),
             'companyId' => $this->company()->id,
+            // ADR-054 stage 2: shown only where the installation has an agreement and the person is a pilot user.
+            'skatteverket' => Skatteverket::isAvailableTo($this->user()),
         ]);
     }
 

@@ -162,7 +162,8 @@ final class QvaliaAccessPoint implements PeppolAccessPoint
     public function fetch(PeppolParticipant $receiver, string $reference, string $documentType): InboundDocument
     {
         $path = $documentType === 'CreditNote' ? 'creditnotes' : 'invoices';
-        $response = $this->http()->accept('application/xml')
+        // Only XML: the UBL exactly as received (acceptJson() in http() would otherwise be sent as well).
+        $response = $this->http()->replaceHeaders(['Accept' => 'application/xml'])
             ->get($this->transactionPath($receiver, $path, 'incoming'), ['integrationId' => $reference, 'includeRead' => 'true']);
 
         if (! $response->successful() || trim($response->body()) === '') {
@@ -238,7 +239,7 @@ final class QvaliaAccessPoint implements PeppolAccessPoint
      * The time must be within five minutes and the event id
      * (X-Qvalia-Event-Id) not seen before.
      */
-    public function webhookEvents(Request $request, Closure $secrets): array
+    public function webhookEvents(Request $request, Closure $secrets, bool $markSeen = true): array
     {
         $body = $request->getContent();
         [$timestamp, $signatures] = self::parseSignature((string) $request->header('X-Qvalia-Signature'));
@@ -276,6 +277,11 @@ final class QvaliaAccessPoint implements PeppolAccessPoint
 
         if (! is_array($payload) || $eventId === '') {
             throw new AccessPointFailed('The webhook body cannot be read.');
+        }
+
+        // Verified only (paused): nothing recorded, so the redelivery after the pause is handled.
+        if (! $markSeen) {
+            return [];
         }
 
         // Delivery is at least once: an event id already handled is acknowledged and ignored.

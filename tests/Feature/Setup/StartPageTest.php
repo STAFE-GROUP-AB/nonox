@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use App\Support\Landing\Comparison;
 use App\Support\Landing\LandingPage;
 use App\Support\SetupStatus;
 use Illuminate\Support\Facades\Artisan;
@@ -208,7 +209,15 @@ it('has an alternative page per program and 404 for an unknown one', function ()
         ->assertSee('Personalliggare')
         ->assertSee('<link rel="canonical" href="'.route('alternative', 'fortnox').'">', false);
 
-    $this->get(route('alternative', 'bjorn-lunden'))->assertOk()->assertSee('ej verifierat');
+    // Every program's page says whether its price is verified with the vendor.
+    foreach (Comparison::data()['programs'] as $program) {
+        if ($program['slug'] === 'nonox') {
+            continue;
+        }
+
+        $page = $this->get(route('alternative', $program['slug']))->assertOk();
+        $program['verified'] ? $page->assertDontSee('ej verifierat hos leverantören') : $page->assertSee('ej verifierat hos leverantören');
+    }
     $this->get(route('alternative', 'nonox'))->assertNotFound();
     $this->get('/alternativ-till-okant')->assertNotFound();
 });

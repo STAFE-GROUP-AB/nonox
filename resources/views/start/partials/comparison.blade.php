@@ -79,5 +79,5 @@
       <li><strong>{{ $program['name'] }}:</strong> {{ $program['plan'] }}. {{ $program['price_note'] }}@if($program['source']) <a href="{{ $program['source'] }}" rel="nofollow noopener" target="_blank">Källa</a>@endif</li>
     @endforeach
   </ul>
-  <p>Funktionerna gäller det jämförda paketet enligt prissidan och leverantörens egna produktsidor. Står en funktion inte där skriver vi "Anges ej", även om den kan finnas i ett annat paket.@isset($comparison['features_checked_at']) Raderna för lager, streckkodsskanning, CRM, API, bankkoppling, schema, inkorg och tolkning kontrollerades {{ \Illuminate\Support\Str::of($comparison['features_checked_at'])->replace(' ', ' kl. ') }}.@endisset</p>
+  <p>Funktionerna gäller det jämförda paketet enligt prissidan och leverantörens egna produktsidor. Står en funktion inte där skriver vi "Anges ej", även om den kan finnas i ett annat paket. NONOX tar bara fram årsredovisning enligt K2, inte K3, och raden om bokslut och årsredovisning gäller det.@isset($comparison['features_checked_at']) Raderna för lager, streckkodsskanning, CRM, API, bankkoppling, schema, inkorg och tolkning kontrollerades {{ \Illuminate\Support\Str::of($comparison['features_checked_at'])->replace(' ', ' kl. ') }}.@endisset</p>
 </details>

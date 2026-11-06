@@ -33,7 +33,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>Ladda ner NONOX gratis</a>
       </div>
       <p style="margin:18px 0 0;font-size:14px;color:var(--muted)">Ingen bindningstid. Exportera all data när du vill.</p>
-      <p id="oppen-beta" style="margin:24px 0 0;max-width:680px;padding:16px 18px;border-radius:16px;border:1px solid var(--line);background:var(--card);font-size:15.5px;line-height:1.55;color:var(--ink);text-wrap:pretty"><strong>NONOX är i öppen beta.</strong> @if(App\Support\Instance\InstanceSettings::current()->selfRegistrationOpen())Du kan skapa ett konto direkt med din e-post.@elseif(App\Support\Instance\InstanceSettings::current()->waitlistOpen())Ställ dig i kö så släpper vi in dig i den takt vi hinner hjälpa alla.@else Kön är stängd just nu, så att vi hinner hjälpa dem som redan står i den.@endif Skarp lansering av version 1.0 sker den 1 januari 2027. Det du lägger in under betan ligger kvar, vi rensar ingenting när betan är över.</p>
+      <p id="oppen-beta" style="margin:24px 0 0;max-width:680px;padding:16px 18px;border-radius:16px;border:1px solid var(--line);background:var(--card);font-size:15.5px;line-height:1.55;color:var(--ink);text-wrap:pretty"><strong>NONOX är i öppen beta.</strong> @if(App\Support\Instance\InstanceSettings::current()->selfRegistrationOpen())Du kan skapa ett konto direkt med din e-post.@elseif(App\Support\Instance\InstanceSettings::current()->waitlistOpen())Ställ dig i kö så släpper vi in dig i den takt vi hinner hjälpa alla.@else Kön är stängd just nu, så att vi hinner hjälpa dem som redan står i den.@endif Skarp lansering av version 1.0 sker den 1 februari 2027. Det du lägger in under betan ligger kvar, vi rensar ingenting när betan är över.</p>
     </div>
     <aside data-reveal="" aria-labelledby="lp-incl-rubrik">
       <div class="lp-incl">
@@ -338,8 +338,9 @@
     </div>
     <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;margin:56px 0 20px">
       <h3 style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(24px,2.6vw,30px);letter-spacing:-0.025em">Vi sköter driften</h3>
-      <p style="margin:0;font-size:14.5px;color:var(--muted)">Pris per företag och år, exkl. moms. Alla moduler ingår.</p>
+      <p style="margin:0;font-size:14.5px;color:var(--muted)">Pris per företag och år, exkl. moms. Alla moduler ingår. NONOX Connect (Peppol, Skatteverket, bank) är ett tillägg som kostar extra: leverantörens pris + 10 %, från 2027-01-11.</p>
     </div>
+    <p style="margin:0 0 20px;max-width:760px;font-size:14.5px;line-height:1.6;color:var(--muted);text-wrap:pretty">Tillägg som kostar extra, från 2027-01-11 (kommer med version 1.0): <strong style="color:var(--ink)">NONOX Connect</strong>, ett separat tillägg för kopplingar som våra leverantörer tar betalt för, som Peppol, Skatteverkets tjänster och bank. Priset är leverantörens pris plus 10 %, och vi visar båda delarna var för sig. Modulerna ingår som förut, och NONOX API (API-nycklar, webhooks och MCP) är fortfarande en modul.</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:14px">
       @foreach($plans as $p)
         <article class="lp20" data-reveal="" style="position:relative;background:var(--card);border:{{ $p['border'] }};border-radius:22px;padding:26px 22px 22px;display:flex;flex-direction:column;gap:6px;transition:transform .25s ease,box-shadow .25s ease">
@@ -412,7 +413,7 @@
     <div data-reveal="" style="max-width:900px">
       <p style="margin:0 0 16px;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--acct)">Jämför</p>
       <h2 id="jamfor-rubrik" style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(36px,5.6vw,72px);line-height:1;letter-spacing:-0.04em;text-wrap:balance">Ett gratis alternativ till Fortnox, Visma och Bokio.</h2>
-      <p style="margin:24px 0 0;max-width:720px;font-size:18px;line-height:1.55;color:var(--muted);text-wrap:pretty">Samma grund som de stora ekonomisystemen: bokföring, fakturering, lön, moms och bokslut. Skillnaden är att NONOX är öppen källkod, att alla delar ingår och att du kan köra det själv utan kostnad.</p>
+      <p style="margin:24px 0 0;max-width:720px;font-size:18px;line-height:1.55;color:var(--muted);text-wrap:pretty">Samma grund som de stora ekonomisystemen: bokföring, fakturering, lön, moms och bokslut. Skillnaden är att NONOX är öppen källkod, att alla moduler ingår (kopplingarna i tillägget NONOX Connect kostar extra från 2027-01-11) och att du kan köra det själv utan kostnad.</p>
     </div>
     <div data-reveal="" style="margin-top:clamp(36px,5vw,56px)">
       @include('start.partials.comparison', ['highlight' => null])

@@ -29,7 +29,11 @@
                         <button type="button" class="text-gray-600 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>
                     </span>
                 @elseif($canPay)
-                    <a href="{{ route('payroll.runs.payment-file', $run) }}" class="text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Hämta lönefil till banken') }}</a>
+                    <form method="GET" action="{{ route('payroll.runs.payment-file', $run) }}" x-data="{ reviewed: false }" class="flex flex-wrap items-center gap-3">
+                        <x-ui.review-confirmation x-model="reviewed" />
+                        <input type="hidden" name="figures_reviewed" x-bind:value="reviewed ? 1 : 0">
+                        <button type="submit" class="text-sm font-medium text-accent-600 hover:text-accent-700 disabled:cursor-not-allowed disabled:opacity-50" x-bind:disabled="! reviewed">{{ __('Hämta lönefil till banken') }}</button>
+                    </form>
                     <x-button type="button" wire:click="markPaid" wire:loading.attr="disabled">{{ __('Markera som utbetald') }}</x-button>
                 @elseif($canPost)
                     <x-button type="button" wire:click="post" wire:loading.attr="disabled">{{ __('Bokför lönen') }}</x-button>

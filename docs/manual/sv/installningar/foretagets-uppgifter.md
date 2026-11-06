@@ -52,7 +52,9 @@ Uppgifterna ska stämma med Skatteverkets beslut. Är du osäker, fråga din red
 
 ### Regelverk och räkenskapsår kontrolleras när du ändrar dem
 
-- Byter du till K1 eller K2 visas villkoren för regelverket. Kryssa i **Företaget uppfyller villkoren** innan du sparar. K1 går bara att välja för enskilda firmor och ideella föreningar.
+- Byter du till K1 eller K2 visas villkoren för regelverket. Kryssa i **Företaget uppfyller villkoren ovan** innan du sparar. K1 går bara att välja för enskilda firmor och ideella föreningar.
+- För ett aktiebolag och en ekonomisk förening räknar villkoren för K2 också upp de företag som inte får använda K2 enligt Bokföringsnämndens regler (BFNAR 2016:10 punkt 1.1A–1.1C i lydelsen enligt BFNAR 2025:2). De gäller för räkenskapsår som börjar efter den 31 december 2025, och för ett företag som har startat efter den 30 juni 2025 med förlängt räkenskapsår redan för räkenskapsår som börjar efter den 30 juni 2025, om räkenskapsåret ska avslutas den 31 december 2026 eller senare. För tidigare räkenskapsår gäller en äldre lydelse, som NONOX inte visar. Det gäller till exempel publika aktiebolag, moderföretag som upprättar koncernredovisning, företag med kryptotillgångar och – om företaget inte är mycket litet – företag med en väsentlig uppskjuten skatteskuld eller med byggnader som ger minst 75 procent av nettoomsättningen. Ett företag som redan har bekräftat K2 får ingen ny fråga; kontrollera villkoren själv före bokslutet.
+- Byter du till K3 tar NONOX inte fram årsredovisningen. Se [Årsredovisning enligt K2](/manual/bokslut/arsredovisning#om-foretaget-anvander-k3).
 - En enskild firma kan inte byta till en annan startmånad än januari. Ett handels- eller kommanditbolag som byter till en annan månad får bekräfta att ingen fysisk person beskattas för bolagets inkomst.
 - Ser ett val som redan är sparat fel ut, till exempel K1 för ett aktiebolag eller en enskild firma med brutet räkenskapsår, visas en gul varning överst. NONOX ändrar ingenting själv och stoppar inte att du sparar annat. Kontrollera med din redovisningskonsult och ändra om det behövs.
 

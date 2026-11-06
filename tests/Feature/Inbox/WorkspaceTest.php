@@ -190,7 +190,7 @@ it('reads a PDF invoice and a receipt with NONOX AI when it is on, without anyon
     SupplierInvoiceAgent::fake([[
         'supplier_name' => 'Grossisten Exempel AB', 'supplier_org_number' => '559900-1236', 'supplier_vat_number' => '', 'supplier_bankgiro' => '123-4566', 'supplier_plusgiro' => '', 'supplier_iban' => '',
         'supplier_address' => '', 'supplier_postal_code' => '', 'supplier_city' => '', 'supplier_email' => '', 'supplier_phone' => '',
-        'invoice_number' => '7001', 'ocr' => '7001234', 'invoice_date' => '2026-10-20', 'due_date' => '2026-11-19', 'currency' => 'SEK',
+        'invoice_number' => '7001', 'ocr' => '7001233', 'invoice_date' => '2026-10-20', 'due_date' => '2026-11-19', 'currency' => 'SEK',
         'total' => 1250.0, 'vat_total' => 250.0, 'is_credit_note' => false, 'vat_treatment' => 'DOMESTIC', 'description' => 'Kaffe',
         'rows' => [['account' => 4010, 'amount_excl_vat' => 1000.0, 'vat_rate_percent' => 25, 'description' => 'Kaffe']], 'notes' => '',
     ]]);

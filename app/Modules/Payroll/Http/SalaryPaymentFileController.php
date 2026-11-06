@@ -24,7 +24,7 @@ class SalaryPaymentFileController
         $user = $request->user();
 
         try {
-            $result = $file($user, $run);
+            $result = $file($user, $run, $request->boolean('figures_reviewed'));
         } catch (ValidationException $exception) {
             return redirect()->route('payroll.runs.show', $run)->withErrors(['payment_file' => collect($exception->errors())->flatten()->first()]);
         }

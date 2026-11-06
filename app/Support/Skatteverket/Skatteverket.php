@@ -14,13 +14,47 @@ use App\Models\User;
  */
 final class Skatteverket
 {
+    /** Stage 1: API Momsdeklaration. */
+    public const string SCOPE_MOMS = 'momsdeklaration';
+
+    /** Stage 2: API Arbetsgivardeklaration inlämning. */
+    public const string SCOPE_AGD = 'agd';
+
+    /** Stage 2: API Arbetsgivardeklaration hantera redovisningsperiod. */
+    public const string SCOPE_AGD_PERIOD = 'agdredovisningperiod';
+
+    /** Stage 3: API Skattekonto v2. */
+    public const string SCOPE_SKATTEKONTO = 'ska';
+
+    /** Stage 4: API Kundhändelser v4. */
+    public const string SCOPE_KUNDHANDELSER = 'kundhandelser';
+
     /**
-     * The scopes a sign-in asks for: only those of the stages that are built
-     * (ADR-054). The registration also holds agd, agdredovisningperiod, ska
-     * and kundhandelser; each is added here with its stage, never before
-     * (GDPR art. 5.1 c, Allmänna villkor 4.2).
+     * The scopes of the stages that are built (ADR-054); a sign-in asks only
+     * for those of the service it starts from (scopesFor). Each scope is
+     * added here with its stage, never before (GDPR art. 5.1 c, Allmänna
+     * villkor 4.2).
      */
-    public const array SCOPES = ['momsdeklaration'];
+    public const array SCOPES = [self::SCOPE_MOMS, self::SCOPE_AGD, self::SCOPE_AGD_PERIOD, self::SCOPE_SKATTEKONTO, self::SCOPE_KUNDHANDELSER];
+
+    /** The services a sign-in can start from (the query value "tjanst"), and their scopes. */
+    public const array SERVICES = [
+        'moms' => [self::SCOPE_MOMS],
+        'arbetsgivardeklaration' => [self::SCOPE_AGD, self::SCOPE_AGD_PERIOD],
+        'skattekonto' => [self::SCOPE_SKATTEKONTO],
+        'kundhandelser' => [self::SCOPE_KUNDHANDELSER],
+    ];
+
+    /** @return list<string> the scopes of a service; an unknown service is the VAT return, as before stage 2 */
+    public static function scopesFor(string $service): array
+    {
+        return self::SERVICES[$service] ?? self::SERVICES['moms'];
+    }
+
+    public static function service(string $service): string
+    {
+        return array_key_exists($service, self::SERVICES) ? $service : 'moms';
+    }
 
     public static function isConfigured(): bool
     {

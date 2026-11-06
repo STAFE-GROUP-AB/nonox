@@ -3,8 +3,8 @@
     {
       "id": "version-1-0",
       "namn": "Version 1.0",
-      "beskrivning": "Målet är version 1.0 den 1 januari 2027, när betan är klar och det som står kvar på färdplanen före 1.0 är levererat.",
-      "fran": "2027-01-01",
+      "beskrivning": "Målet är version 1.0 den 1 februari 2027, när betan är klar och det som står kvar på färdplanen före 1.0 är levererat.",
+      "fran": "2027-02-01",
       "till": null,
       "kommande": true
     },
@@ -31,6 +31,198 @@
     }
   ],
   "poster": [
+    {
+      "id": "2026-11-06-rattat-kontroller-lon-sie-ocr-moms",
+      "datum": "2026-11-06T13:30:00+01:00",
+      "rubrik": "Fler kontroller i lön, SIE-inläsning, OCR och moms",
+      "beskrivning": "Drivmedelsförmån kan bara läggas in för den som har en förmånsbil i månaden, en SIE-fil vars ingående balanser inte summerar till noll stoppas, och ett OCR-nummer med fel kontrollsiffra på en leverantörsfaktura nekas. Inläsningsrapporten säger att varje konto stämmer bara när saldon jämförts, och momssidan har en egen text när ruta 05 är högre än den utgående momsen motsvarar.",
+      "typ": "Rättat",
+      "omrade": "Bokföring"
+    },
+    {
+      "id": "2026-11-06-bekrafta-granskade-siffror",
+      "datum": "2026-11-06T10:00:00+01:00",
+      "rubrik": "Bekräfta att du har granskat siffrorna före inlämning och betalfil",
+      "beskrivning": "Innan du skickar momsdeklarationen eller arbetsgivardeklarationen till Skatteverket, eller skapar en betalfil eller lönefil, kryssar du i Jag har granskat siffrorna. Du som kund ansvarar för att uppgifterna är riktiga, och bekräftelsen sparas i behandlingshistoriken.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
+      "id": "2026-11-06-k2-villkor-bekrafta-i-bokslutet",
+      "datum": "2026-11-06T09:30:00+01:00",
+      "rubrik": "K2-företag bekräftar de nya villkoren i bokslutet",
+      "beskrivning": "Första gången bokslutet öppnas för ett räkenskapsår som börjar efter 2025 visas de ändrade villkoren för K2 (BFNAR 2025:2), och de måste bekräftas innan bokslutet kan fortsätta. Bekräftelsen görs en gång per företag, och den som redan bekräftat villkoren när K2 valdes får inte frågan. Uppfyller företaget inte villkoren pekar sidan mot K3.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
+      "id": "2026-11-06-nonox-api-nytt-namn",
+      "datum": "2026-11-06T07:58:00+01:00",
+      "rubrik": "NONOX Connect heter nu NONOX API",
+      "beskrivning": "Modulen för API-nycklar, appar, webhooks, SFTP och MCP heter NONOX API, och den fungerar som förut. Namnet NONOX Connect används framöver för ett separat tillägg med kopplingar som leverantörerna tar betalt för, till leverantörens pris plus 10 %.",
+      "typ": "Förbättrat",
+      "omrade": "Connect/API"
+    },
+    {
+      "id": "2026-11-06-k10-underlag",
+      "datum": "2026-11-06T07:55:00+01:00",
+      "rubrik": "K10-underlag för ägarna i aktiebolag (beta)",
+      "beskrivning": "Under Bokföring → Inkomstdeklaration finns nu K10-underlag för varje ägare med kvalificerade aktier, enligt de nya reglerna från inkomstår 2026: grundbelopp, lönebaserat utrymme ur lönekörningarna eller lönekontona, ränta på omkostnadsbeloppet, sparat utdelningsutrymme och årets utdelning från konto 2898. Underlaget går att ladda ner som PDF och som SRU-fil för blankett K10. Det är ett förslag i beta som inte är granskat av en jurist; ingenting bokförs eller skickas, och ägaren lämnar K10 själv.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
+      "id": "2026-11-06-ai-assistenter-via-mcp",
+      "datum": "2026-11-06T07:40:00+01:00",
+      "rubrik": "Koppla en AI-assistent till bokföringen (beta)",
+      "beskrivning": "NONOX Connect har nu en MCP-server, så att en AI-assistent som Claude eller ChatGPT kan läsa kontoplan, verifikationer, rapporter, kunder och fakturor med en egen API-nyckel. Assistenten kan också skapa utkast till verifikationer och kundfakturor, men aldrig bokföra, skicka, betala eller ta bort något: varje utkast väntar på att en person granskar det i NONOX. Funktionen är i beta och beskrivs under Utvecklare → AI-assistenter (MCP).",
+      "typ": "Nytt",
+      "omrade": "Connect/API"
+    },
+    {
+      "id": "2026-11-06-drivmedelsforman-arbetsgivaravgift",
+      "datum": "2026-11-06T07:05:00+01:00",
+      "rubrik": "Arbetsgivaravgift på drivmedelsförmån rättad",
+      "beskrivning": "Arbetsgivaravgiften på drivmedelsförmån räknades på hela förmånsvärdet, marknadsvärdet gånger 1,2, men ska enligt Skatteverket räknas på marknadsvärdet; avgiften blev därför ungefär 20 procent för hög på drivmedlet. Nu räknas den rätt, och den anställdas betalning för drivmedel läggs in med en egen löneart och redovisas i ruta 098. Har ni lagt in drivmedelsförmån tidigare, se över de perioderna med er redovisningskonsult; redan attesterade löner ändras inte.",
+      "typ": "Rättat",
+      "omrade": "Lön"
+    },
+    {
+      "id": "2026-11-06-bilforman-raknas-automatiskt",
+      "datum": "2026-11-06T06:50:00+01:00",
+      "rubrik": "Bilförmånen räknas automatiskt",
+      "beskrivning": "Under Lön → Förmånsbilar registrerar du företagets bilar en gång, och NONOX räknar förmånsvärdet efter inkomstskattelagen med nybilspris, fordonsskatt, nedsättning för miljöbil och 75 procent vid minst 3 000 mil i tjänsten. Lönekörningen tar med en tolftedel varje månad den anställda har bilen, drar den anställdas egen betalning och redovisar värdet i ruta 013. Funktionen är i beta; bilar som blev skattepliktiga före 1 juli 2021 räknas inte.",
+      "typ": "Nytt",
+      "omrade": "Lön"
+    },
+    {
+      "id": "2026-11-06-betalfiler-i-utlandsk-valuta",
+      "datum": "2026-11-06T06:40:00+01:00",
+      "rubrik": "Betalfiler för leverantörsfakturor i utländsk valuta",
+      "beskrivning": "Med Handelsbanken eller Nordea kan en attesterad faktura i till exempel euro eller dollar nu ligga i betalfilen och betalas i sin egen valuta till leverantörens IBAN. Betalningen bokförs först när du läser in bankens avisering, med de kronor banken tog och kursdifferensen på 3960 eller 7960; fyll i land, ort och vid behov betalningskod på leverantören. Övriga banker betalar du fortfarande i internetbanken, och en betalfil har bara en valuta.",
+      "typ": "Nytt",
+      "omrade": "Leverantörer"
+    },
+    {
+      "id": "2026-11-06-detaljhandeln-ob-eller-overtid",
+      "datum": "2026-11-06T05:55:00+01:00",
+      "rubrik": "Detaljhandeln: bara det högsta av OB och övertid",
+      "beskrivning": "När övertid eller mertid ligger på OB-tid betalar NONOX nu bara den procentuellt högsta ersättningen, som Detaljhandelsavtalet säger, och övertid betalas med satsen för dagen den arbetades även när veckan går över den 1 april. Tidigare betalades både OB och övertid för samma tid. Har ni Detaljhandelsavtalet och övertid efter 18.15 i perioder som skickats till lönen före i dag, se över dem och rätta i nästa lönekörning.",
+      "typ": "Rättat",
+      "omrade": "Lön"
+    },
+    {
+      "id": "2026-11-06-overtidsarter-grona-riks-och-detaljhandeln",
+      "datum": "2026-11-06T05:35:00+01:00",
+      "rubrik": "Övertid och mertid per art enligt Gröna Riks och Detaljhandeln",
+      "beskrivning": "Med Planering och Avtal delas veckans övertid och mertid nu upp per art enligt avtalet: de två första timmarna i anslutning till passet, tid därutöver, tid som inte ansluter och en fridag, och i Detaljhandeln också kväll efter 20.00, helg och fridag på lördag. Varje art skickas på avtalets egen löneart och komptid räknas med avtalets faktor per art, i Detaljhandeln med den faktor som gäller före och efter den 1 april 2026. En heltidsanställd i Detaljhandeln som gör övertid en fridag får ersättning för minst tre timmar.",
+      "typ": "Nytt",
+      "omrade": "Lön"
+    },
+    {
+      "id": "2026-11-06-koncernoversikt",
+      "datum": "2026-11-06T05:25:00+01:00",
+      "rubrik": "Koncernöversikt för dig som äger flera företag",
+      "beskrivning": "Under Mina företag → Koncernöversikt samlar du dina företag i en koncern och ser resultat och balans bredvid varandra, med en summakolumn, en ägarandel som visas och förslag på koncerninterna elimineringar. Det är ett internt underlag och ingen koncernredovisning: du ser bara företag där du själv får se rapporter, och ingenting bokförs.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
+      "id": "2026-11-06-ingen-k2-arsredovisning-for-k3",
+      "datum": "2026-11-06T04:45:00+01:00",
+      "rubrik": "Ingen K2-årsredovisning för företag som valt K3",
+      "beskrivning": "Har företaget valt K3 visar Bokföring → Årsredovisning nu att NONOX ännu inte tar fram årsredovisningar enligt K3, i stället för en årsredovisning som sade att den följde K2. Bokföringen, bokslutet och inkomstdeklarationen fungerar som vanligt, och årets SIE-fil kan läsas in i ett program som stöder K3. Villkoren som visas när du väljer K2 räknar nu också upp de företag som inte får använda K2 från räkenskapsår som börjar efter den 31 december 2025.",
+      "typ": "Rättat",
+      "omrade": "Bokslut"
+    },
+    {
+      "id": "2026-11-06-arsredovisningens-belopp-gar-jamnt-ut",
+      "datum": "2026-11-06T04:30:00+01:00",
+      "rubrik": "Årsredovisningens summor stämmer med raderna",
+      "beskrivning": "Varje rad i årsredovisningen avrundas nu till närmaste hela krona, och varje summa är summan av de avrundade raderna. Tidigare kapades öret på varje rad och summa för sig, så att en summa kunde skilja en krona från raderna. Blir tillgångar och eget kapital och skulder olika efter avrundningen läggs skillnaden på raden Övriga skulder under kortfristiga skulder.",
+      "typ": "Rättat",
+      "omrade": "Bokslut"
+    },
+    {
+      "id": "2026-11-06-arsredovisning-som-ixbrl",
+      "datum": "2026-11-06T04:00:00+01:00",
+      "rubrik": "Årsredovisningen som iXBRL-fil (beta)",
+      "beskrivning": "Under Bokföring → Årsredovisning kan ett aktiebolag ladda ner årsredovisningen som iXBRL-fil, avsedd för digital inlämning till Bolagsverket, med samma belopp som PDF:en. NONOX lämnar inte in filen åt dig än, och fastställelseintyget skrivs under hos Bolagsverket. Har årsredovisningen en rad som taxonomin för K2 saknar, till exempel Maskiner och inventarier som en rad, får du veta det i stället för en fil.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
+      "id": "2026-11-06-kundhandelser-fran-skatteverket",
+      "datum": "2026-11-06T03:15:00+01:00",
+      "rubrik": "Kundhändelser från Skatteverket förbereds",
+      "beskrivning": "På Mina datum, under Från Skatteverket, kan NONOX hämta Skatteverkets kundhändelser om företaget efter att du loggat in hos Skatteverket med e-legitimation, och visa dem för dig med Skatteverkets egen text; kollegor hämtar sina egna. Händelser där Skatteverket väntar på företaget kommer först och räknas på din översikt tills du markerar dem som hanterade. Funktionen är byggd mot Skatteverkets testtjänst och provas av pilotanvändare; till dess läser du händelserna på Mina sidor.",
+      "typ": "Nytt",
+      "omrade": "Övrigt"
+    },
+    {
+      "id": "2026-11-06-ruta-20-och-23-handelsvaror",
+      "datum": "2026-11-06T02:45:00+01:00",
+      "rubrik": "Ruta 20 och 23 tar med BAS-kontona för handelsvaror",
+      "beskrivning": "Inköp av handelsvaror från ett annat EU-land på 4075–4077 kommer nu med i ruta 20, och inköp av handelsvaror i Sverige med omvänd betalningsskyldighet på 4065–4067 i ruta 23. Tidigare räknades bara råvaror och material på 4515–4517 och 4415–4417. Har du bokfört på de nya kontona, kontrollera momsdeklarationerna för perioderna det gäller.",
+      "typ": "Rättat",
+      "omrade": "Moms"
+    },
+    {
+      "id": "2026-11-06-importmoms-fran-tullrakning",
+      "datum": "2026-11-06T02:35:00+01:00",
+      "rubrik": "Importmoms från Tullverkets tullräkning",
+      "beskrivning": "Importerar du varor från ett land utanför EU registrerar du leverantörens faktura utan moms och bokför importmomsen från tullräkningen under Ny verifikation, Importmoms från tullräkning. Du skriver tullvärdet, tullen och bikostnaderna per momssats, och NONOX föreslår raderna till rutorna 50, 60–62 och 48 med tullräkningens datum, som du kontrollerar och bokför. Kontokopplingen är inte juridiskt granskad än.",
+      "typ": "Nytt",
+      "omrade": "Moms"
+    },
+    {
+      "id": "2026-11-06-skattekontot-fran-skatteverket",
+      "datum": "2026-11-06T02:30:00+01:00",
+      "rubrik": "Skattekontot från Skatteverket förbereds",
+      "beskrivning": "Under Bokföring, Skattekontot kan NONOX hämta saldot, transaktionerna och utbetalningsspärrarna på skattekontot efter att du loggat in hos Skatteverket med e-legitimation, och ställa dem bredvid konto 1630. Transaktioner som saknas i bokföringen bokför du en i taget med ett föreslaget konto som du själv kontrollerar och bekräftar. Funktionen är byggd mot Skatteverkets testtjänst och provas av pilotanvändare; till dess stämmer du av mot skattekontot på Mina sidor.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
+      "id": "2026-11-06-skatt-i-bokslutet",
+      "datum": "2026-11-06T01:35:00+01:00",
+      "rubrik": "Förslag till årets skatt i bokslutet",
+      "beskrivning": "För aktiebolag och ekonomiska föreningar räknar bokslutet nu fram årets inkomstskatt rad för rad, med periodiseringsfond och källor till varje regel. Ingenting bokförs förrän du har granskat och bekräftat beräkningen. Steget är en beta och reglerna är ännu inte juristgranskade.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
+      "id": "2026-11-06-peppol-redo-for-lansering",
+      "datum": "2026-11-06T01:30:00+01:00",
+      "rubrik": "Peppol e-faktura förbereds för att slås på",
+      "beskrivning": "En e-faktura med öresavrundning blir nu ett förslag till leverantörsfaktura som går ihop utan att du räknar om, med avrundningen på konto 3740. När något går fel med en sändning står det på svenska vad som hände och vad du kan göra, och den som driftar NONOX kan pausa Peppol utan att något tappas bort. Modulen slås på i den driftade tjänsten när avtalet med en Peppol-operatör är klart.",
+      "typ": "Förbättrat",
+      "omrade": "Leverantörer"
+    },
+    {
+      "id": "2026-11-06-bankkopplingen-redo-for-lansering",
+      "datum": "2026-11-06T01:29:00+01:00",
+      "rubrik": "Bankkopplingen tål driftstörningar bättre",
+      "beskrivning": "Svarar banken inte försöker NONOX igen med längre och längre mellanrum, och efter tre misslyckade försök i rad syns det under Att göra. Ett medgivande som har passerat sitt slutdatum markeras som utgånget av sig självt, och den som driftar NONOX kan pausa bankkopplingen utan att något som redan hämtats försvinner. Modulen slås på i den driftade tjänsten när avtalet med en leverantör av öppen bankdata är klart.",
+      "typ": "Förbättrat",
+      "omrade": "Bank"
+    },
+    {
+      "id": "2026-11-06-arbetsgivardeklarationen-till-skatteverket",
+      "datum": "2026-11-06T01:20:00+01:00",
+      "rubrik": "Arbetsgivardeklarationen direkt till Skatteverket förbereds",
+      "beskrivning": "NONOX kan läsa in arbetsgivardeklarationens fil i företagets eget utrymme hos Skatteverket efter att du loggat in hos Skatteverket med e-legitimation, visa Skatteverkets kontroll, skapa länken till granskningen på Mina sidor och hämta periodens status och kvittenser. Funktionen är byggd mot Skatteverkets testtjänst och provas av pilotanvändare; till dess lämnar du deklarationen med filen som förut.",
+      "typ": "Nytt",
+      "omrade": "Lön"
+    },
+    {
+      "id": "2026-11-06-sanningsrevision-av-webbplatsen",
+      "datum": "2026-11-06T01:15:00+01:00",
+      "rubrik": "Webbplatsen säger tydligare vad som är i drift på nonox.app",
+      "beskrivning": "Bankkopplingen med BankID står nu som på väg, eftersom den driftade tjänsten ännu inte har något avtal med en leverantör av öppen bankdata, och att lämna momsdeklarationen direkt till Skatteverket står som byggt men bara i Skatteverkets testtjänst för pilotanvändare. Jämförelsen har fått Accounted med värden från dess egna sidor, Björn Lundéns pris är kontrollerat mot den egna prissidan och raden om flera bolag under en inloggning är uppdaterad. Sidan Alternativ till säger bara att NONOX skiljer sig där jämförelsen visar det.",
+      "typ": "Rättat",
+      "omrade": "Webbplats"
+    },
     {
       "id": "2026-11-05-momsdeklarationen-till-skatteverket",
       "datum": "2026-11-05T12:10:00+01:00",

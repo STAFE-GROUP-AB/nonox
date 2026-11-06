@@ -6,6 +6,7 @@ namespace App\Actions\Payables;
 
 use App\Domain\Company\GiroNumber;
 use App\Domain\Company\OrganisationNumber;
+use App\Domain\Payables\Iban;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\NumberSeries;
@@ -48,6 +49,8 @@ class SaveSupplier
             'address_line1' => ['nullable', 'string', 'max:255'],
             'postal_code' => ['nullable', 'string', 'max:20'],
             'city' => ['nullable', 'string', 'max:255'],
+            'country' => ['nullable', 'string', 'size:2', 'alpha'],
+            'payment_code' => ['nullable', 'string', 'regex:/^\d{3}$/'],
             'bankgiro' => ['nullable', 'string', function (string $attribute, mixed $value, Closure $fail): void {
                 if (GiroNumber::bankgiro((string) $value) === null) {
                     $fail(__('Bankgironumret stämmer inte. Kontrollera siffrorna.'));
@@ -58,7 +61,13 @@ class SaveSupplier
                     $fail(__('Plusgironumret stämmer inte. Kontrollera siffrorna.'));
                 }
             }],
-            'iban' => ['nullable', 'string', 'max:42', 'regex:/^[A-Z]{2}\d{2}[A-Z0-9 ]{10,38}$/i'],
+            'iban' => ['nullable', 'string', 'max:42', function (string $attribute, mixed $value, Closure $fail): void {
+                $problem = Iban::problem((string) $value);
+
+                if ($problem !== null) {
+                    $fail($problem);
+                }
+            }],
             'bic' => ['nullable', 'string', 'regex:/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/i'],
             'payment_terms_days' => ['required', 'integer', 'between:0,365'],
             'default_account' => ['nullable', 'integer', 'between:1000,8999'],
@@ -66,6 +75,9 @@ class SaveSupplier
         ], [
             'vat_number.regex' => __('Momsregistreringsnumret ska börja med landskoden, till exempel SE556677889901.'),
             'iban.regex' => __('IBAN ska börja med landskoden, till exempel SE45 5000 0000 0583 9825 7466.'),
+            'country.size' => __('Landet skrivs med landskod på två bokstäver, till exempel DE.'),
+            'country.alpha' => __('Landet skrivs med landskod på två bokstäver, till exempel DE.'),
+            'payment_code.regex' => __('Betalningskoden är tre siffror, till exempel 410.'),
             'bic.regex' => __('BIC ska vara 8 eller 11 tecken, till exempel ESSESESS.'),
         ], [
             'name' => __('namn'),
@@ -74,12 +86,24 @@ class SaveSupplier
             'default_account' => __('konto'),
         ])->validate();
 
+        // A country that is typed must be the IBAN's country; left empty, the supplier is placed by its IBAN when paying.
+        $typedCountry = strtoupper(trim((string) ($input['country'] ?? '')));
+        $ibanCountry = Iban::country((string) ($validated['iban'] ?? ''));
+
+        if ($typedCountry !== '' && $ibanCountry !== null && $typedCountry !== $ibanCountry) {
+            throw ValidationException::withMessages(['iban' => __('IBAN börjar med :iban men landet är :country. Kontrollera landet eller IBAN.', ['iban' => $ibanCountry, 'country' => $typedCountry])]);
+        }
+
         $attributes = array_map(fn (mixed $value): mixed => is_string($value) ? (trim($value) === '' ? null : trim($value)) : $value, $validated);
 
         foreach (['org_number' => fn (string $value) => OrganisationNumber::tryFrom($value)?->formatted(), 'bankgiro' => GiroNumber::bankgiro(...), 'plusgiro' => GiroNumber::plusgiro(...)] as $field => $format) {
             if (isset($attributes[$field])) {
                 $attributes[$field] = $format((string) $attributes[$field]);
             }
+        }
+
+        if (array_key_exists('country', $attributes)) {
+            $attributes['country'] = strtoupper((string) ($attributes['country'] ?? 'SE'));
         }
 
         foreach (['iban', 'bic'] as $field) {

@@ -25,7 +25,7 @@ Du äger din data, kan granska varje rad kod och alltid ta med dig allt ut.
 
 ---
 
-> **Öppen beta.** Den driftade tjänsten på [nonox.app](https://nonox.app) är i öppen beta fram till den skarpa lanseringen av version 1.0 den **1 januari 2027**. Nya användare [ställer sig i kö](https://nonox.app/ko) och släpps in när de är godkända, eller kommer in via en inbjudan från ett företag. Programmet är öppen källkod och kan laddas ner och köras själv utan kö.
+> **Öppen beta.** Den driftade tjänsten på [nonox.app](https://nonox.app) är i öppen beta fram till den skarpa lanseringen av version 1.0 den **1 februari 2027**. Nya användare [ställer sig i kö](https://nonox.app/ko) och släpps in när de är godkända, eller kommer in via en inbjudan från ett företag. Programmet är öppen källkod och kan laddas ner och köras själv utan kö.
 
 ## Varför NONOX
 
@@ -60,6 +60,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - För redovisningsbyråer och ägare med flera bolag: summor och en gemensam "Att göra" för alla klienter, med filter per konsult, deadline och typ, och sparade vyer. Sista dag för moms och AGI, ansvarig konsult och byråns egna anteckningar.
 - **Månadsstängning:** en rad per klient med bankavstämning, leverantörs- och kundfakturor, moms, lön och AGI, periodiseringar och rapport, som fylls i från bokföringen där det går.
 - **Uppgifter** (`/uppgifter`): delegera mellan byrån och kundens användare åt båda hållen, med kommentarer, checklistor, återkommande uppgifter (till exempel moms varje månad), notiser och ett valfritt dagligt mejl.
+- **Koncernöversikt** (`/koncern`, ADR-060): för ägare av holding- och dotterbolag. Egna koncerner av de företag där du får se rapporter, med resultat och balans per företag bredvid varandra och en summakolumn, en ägarandel som bara visas, och förslag på koncerninterna elimineringar av markerade konton. Ett internt underlag och ingen koncernredovisning enligt ÅRL: ingenting bokförs, och ett företag försvinner ur vyn direkt när du tappar behörigheten till det.
 
 ### Försäljning
 - Fakturor med OCR-nummer, PDF och utskick via e-post, bokförda automatiskt enligt fakturametoden eller kontantmetoden.
@@ -75,6 +76,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Automatisk avstämning av betalfiler mot bankens svar: statusrapporten (pain.002), debiteringsaviseringen (camt.054) eller kontoutdraget (camt.053) läses in, varje betalning hittas på referensen i betalfilen, avvisade betalningar visas med bankens orsak på svenska och fakturan kan betalas igen, och det banken har betalat bokförs i serie E. Samma svar bokförs aldrig två gånger. Med bankkopplingen föreslås betalningarna ut direkt från banken.
 - En tolkad faktura kopplas till leverantören som redan finns i registret, även en utländsk utan organisationsnummer (momsnummer, IBAN, e-postdomän eller namn), och ett liknande namn föreslås i stället för att leverantören läggs till igen.
 - Kreditnotor från leverantörer, inköp från andra EU-länder, tjänster från länder utanför EU och omvänd betalningsskyldighet, med momsen i rätt rutor.
+- Import av varor från länder utanför EU: leverantörens faktura bokförs utan moms, och du skriver in beloppen från Tullverkets tullräkning (tullvärde, tull och bikostnader per momssats), så föreslår NONOX verifikationen för importmomsen till rutorna 50, 60–62 och 48 med tullräkningens datum.
 
 ### Register
 - Kunder, artiklar och leverantörer med pris, moms och konto. Per kund syns vad den fakturerats i år och vad som är obetalt.
@@ -83,7 +85,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 ### Bokföring
 - **Löpande:** verifikationer med obruten numrering, utkast, rättelser, konteringsmallar och underlag som kan fotograferas med mobilen. Kontosaldot syns direkt när du väljer konto och efter varje rad. Bankavstämning, periodiseringar, anläggningsregister med avskrivningar (tillgången kan skapas direkt när inköpet bokförs), och inläsning av SIE4 i två steg med avstämning.
 - **Rapporter och moms:** saldobalans, resultat- och balansrapport, huvudbok, kontoanalys och verifikationslista per period och kostnadsställe, som PDF och CSV. Klicka på ett konto för att se dess huvudbok och vidare till verifikationen. Momsdeklaration med fil till Skatteverket, och EU-rapporter: periodisk sammanställning, underlag för OSS i kronor och euro (ECB:s kurs för kvartalets sista dag) och VIES-kontroll. Försäljning till privatpersoner i andra EU-länder får svensk moms under tröskelvärdet 99 680 kr och köparlandets moms via OSS över det eller när företaget valt det.
-- **Bokslut:** räkenskapsår och årsskifte med varning när ingående balanser inte längre stämmer med förra årets utgående, bokslut med checklista och låsning, obetalda fakturor bokförda vid årets slut med kontantmetoden, omvärdering av obetalda kund- och leverantörsfakturor i utländsk valuta till balansdagens kurs, årsredovisning enligt K2 som PDF, och inkomstdeklaration 2 som SRU-filer. NE-bilagan för enskild firma och Inkomstdeklaration 4 för handelsbolag med INK4DU per delägare tas fram på samma sätt, med räntefördelning, periodiseringsfond, expansionsfond och schablonavdrag för egenavgifter räknade ur det du bekräftar.
+- **Bokslut:** räkenskapsår och årsskifte med varning när ingående balanser inte längre stämmer med förra årets utgående, bokslut med checklista och låsning, obetalda fakturor bokförda vid årets slut med kontantmetoden, omvärdering av obetalda kund- och leverantörsfakturor i utländsk valuta till balansdagens kurs, årsredovisning enligt K2 som PDF, och inkomstdeklaration 2 som SRU-filer. Ett aktiebolag kan också ladda ner årsredovisningen som iXBRL-fil (beta), men NONOX lämnar inte in den, och årsredovisning enligt K3 tas inte fram. Bokslutet föreslår årets skatt för aktiebolag och ekonomiska föreningar (beta); en person granskar och bekräftar förslaget innan något bokförs, det är inte granskat av en redovisningskonsult och föreningarnas särregler hanteras inte. NE-bilagan för enskild firma och Inkomstdeklaration 4 för handelsbolag med INK4DU per delägare tas fram på samma sätt, med räntefördelning, periodiseringsfond, expansionsfond och schablonavdrag för egenavgifter räknade ur det du bekräftar. Ägarna i ett aktiebolag får K10-underlag (beta) enligt reglerna från inkomstår 2026, med gränsbelopp, lönebaserat utrymme ur lönekörningarna eller lönekontona och årets utdelning, som PDF och SRU-fil; ingenting bokförs eller skickas.
 - **Inställningar:** kontoplan enligt BAS 2026, verifikationsserier, kostnadsställen och projekt.
 - En bokförd verifikation kan aldrig ändras, och databasen själv vägrar. En kedja av kontrollsummor avslöjar ändringar i efterhand och kontrolleras varje natt.
 
@@ -102,12 +104,12 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Företaget väljer avtal och om det är bundet som medlem eller genom hängavtal; varje anställning får avtal, lönegrupp och branschvana.
 - Redan uppdelade timmar för OB och övertid, inmatade eller från en löneunderlagsfil, prissätts med avtalets sats för arbetsdagen, och lönebeskedet visar version och källa. Minimilönen kontrolleras per lönegrupp, ålder och branschvana och ger en varning på lönekörningen. Avtalskalender med aftnar och storhelger.
 - Med NONOX AI påslaget läses hängavtal och anställningsavtal som text där personnummer, bankuppgifter och adresser är dolda, och AI:n föreslår avtal, lönegrupp och andra uppgifter med citat och sida. Inget förs in förrän en person godkänner det.
-- Med Planering: OB avrundas enligt avtalet, övertid och mertid räknas per vecka eller per beräkningsperiod för rullande scheman, och övertiden kan tas ut som komptid med avtalets faktor. Komptidssaldot förs i lönen och syns på lönespecen och i Min sida. Sjuklönen räknas från det publicerade schemat med OB, och karensavdraget vid oregelbunden tid på den attesterade tiden före sjukperioden (annars schemat).
+- Med Planering: OB avrundas enligt avtalet, övertid och mertid räknas per vecka eller per beräkningsperiod för rullande scheman, delas i Gröna Riks och Detaljhandeln upp per övertidsart enligt avtalet (i anslutning, därutöver, inte i anslutning, kväll, helg och fridag), i Detaljhandeln med bara det högsta av OB och övertid på samma tid, varje timme med satsen för dagen den arbetades, och övertiden kan tas ut som komptid med avtalets faktor per art. Komptidssaldot förs i lönen och syns på lönespecen och i Min sida. Sjuklönen räknas från det publicerade schemat med OB, och karensavdraget vid oregelbunden tid på den attesterade tiden före sjukperioden (annars schemat).
 - Avtalets semester (procentsats, semestertillägg och lägsta semesterlön per dag), tjänstepension (SAF-LO, ITP 1) och avtalsförsäkringar räknas och bokförs med lönen, och underlaget till Fora och Collectum laddas ner per månad. Provision med garanti, jour, beredskap, restid och kostavdrag räknas med avtalets satser.
 - Lokala avtal: företagets avvikelser från branschavtalet läggs in för hand eller läses av NONOX AI, och används i lönen först när en behörig person har kontrollerat dem.
 - Gyllene lönespecar för varje avtal, uträknade för hand ur avtalsfilerna, körs i testerna.
 - Avtalets sjuklön, även utan Planering: avtalets timvärde (12/52, 12,2/52, månadens arbetstimmar, 4,6 % per dag), karens i tid, och tjänstemännens sjukavdrag från dag 15 med taket 105 dagar på tolv månader, direkt övergång och fasta tillägg och rörlig lön i månadslönen.
-- Inte byggt ännu: övertidstillägg för timanställda, kost och bostad i avtalets månadslön vid sjukdom, ITP 2, och Foras och Collectums egna filformat.
+- Inte byggt ännu: övertidsarter i andra avtal än Gröna Riks och Detaljhandeln, kost och bostad i avtalets månadslön vid sjukdom, ITP 2, och Foras och Collectums egna filformat.
 
 ### Personalliggare (modul)
 - Lokaler och personal med in- och utcheckning i en kiosk på en surfplatta, som fungerar även utan internet, med kod, personlig QR-kod eller mobil incheckning.
@@ -159,7 +161,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Peppol-fakturor, SIE-filer och dagsrapporter läses utan AI, med mallar som en person godkänt.
 - Gallring: avvisad post tas bort efter 7 dagar, och karantän som ingen hanterat efter 90 dagar.
 
-### NONOX Connect – öppet API (modul)
+### NONOX API – öppet API (modul)
 - Ett API för andra program: kontoplan, momskoder, räkenskapsår och låsta perioder, verifikationer (utkast, bokföring, rättelse och underlag), kunder, artiklar, kostnadsställen och projekt, kundfakturor (utkast, skapa, mejla, kreditera, betalningar och PDF), leverantörsfakturor (registrering, attest av någon annan och betalning), in- och utbetalningar, rapporter, momsdeklaration per period och SIE-export. Beskrivet i OpenAPI med exempel och dokumenterat för utvecklare på [nonox.app/utvecklare](https://nonox.app/utvecklare) (guider, referens och kodexempel i curl, PHP, JavaScript och Python, på svenska och engelska) och i [docs/api](docs/api/README.md). Gratis, utan tilläggsavgift.
 - Appar ansluts med OAuth 2.0 (med PKCE) och godkänns av en ägare eller administratör med passkey, ett företag i taget. API-nycklar för egna skript har alltid ett slutdatum och visas bara en gång.
 - En anslutning får aldrig mer än personen som gav den får göra just då. Varje skrivning kräver en Idempotency-Key och loggas.
@@ -167,7 +169,8 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Testföretag med påhittade uppgifter för den som vill prova API:t, tydligt märkta och utan utskick.
 - SFTP för SIE-filer: ett kassasystem eller en byrå lämnar SIE-filer i företagets egen SFTP-mapp, med inloggning bara med SSH-nyckel som läggs till med passkey. Varje fil granskas som en vanlig SIE-inläsning och väntar på att en person bekräftar; ingenting bokförs automatiskt. En SIE4-fil för året kan läggas ut för hämtning. Kräver att den som driftar sätter upp SFTP-servern SFTPGo, se [deploy/sftpgo](deploy/sftpgo/README.md).
 
-### Bank (modul)
+### Bank (modul) – byggd, inte i drift på nonox.app
+Modulen är byggd (ADR-034) men erbjuds inte i den driftade tjänsten på nonox.app än, eftersom det krävs ett avtal med en leverantör av öppen bankdata. Den som kör NONOX själv kan slå på den med ett eget avtal. Det här gör den:
 - Företagets bankkonton kopplas med BankID genom öppen bankdata (PSD2), och transaktioner och saldon hämtas automatiskt en till fyra gånger per dygn i stället för att filer laddas upp. NONOX kan bara läsa, aldrig betala; betalfiler signeras fortfarande i banken.
 - Varje bankkonto kopplas till ett konto i bokföringen (till exempel 1930). Transaktionerna föreslås mot bokförda rader och inbetalningar mot obetalda fakturor, och bankens saldo fylls i bankavstämningen. En person bekräftar alltid; modulen bokför aldrig själv.
 - Påminnelse med e-post och under Att göra innan medgivandet går ut (högst 180 dagar), och bortkoppling när som helst. Kräver att den som driftar NONOX har avtal med Enable Banking; i den driftade tjänsten slås modulen på när de juridiska frågorna är besvarade.
@@ -192,10 +195,10 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 ### På väg
 - Tvåvägssynk med Google Kalender och Outlook för CRM: byggd, och slås på när tjänsten är registrerad hos Google och Microsoft och företaget tillåter det.
 - Utländsk valuta: betalfiler i utländsk valuta.
-- Import av varor från länder utanför EU.
-- Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).
-- Momsdeklarationen till Skatteverket utan fil, efter inloggning hos Skatteverket med e-legitimation; du skriver under hos Skatteverket (byggd mot Skatteverkets testtjänst; slås på när avtalet med Skatteverket är klart). Därefter arbetsgivardeklarationen, skattekontot och Skatteverkets meddelanden.
-- E-faktura via Peppol: skicka kundfakturor och ta emot leverantörsfakturor i inkorgen enligt Peppol BIS Billing 3.0. Byggt, och slås på när vi har ett avtal med en Peppol-operatör (ADR-050).
+- Digital inlämning av årsredovisningen till Bolagsverket (iXBRL). Aktiebolag kan redan ladda ner årsredovisningen som iXBRL-fil (beta); NONOX lämnar inte in den än, och fastställelseintyget skrivs under hos Bolagsverket.
+- Momsdeklaration, arbetsgivardeklaration, skattekonto och Skatteverkets meddelanden utan filer, i version 1.0. Momsdeklarationen till Skatteverket utan fil, efter inloggning hos Skatteverket med e-legitimation; du skriver under hos Skatteverket (byggd mot Skatteverkets testtjänst och provas där av ett fåtal pilotanvändare; kommer i version 1.0; ansökan om driftsatt tjänst är inskickad). Till dess laddar du ner filen och lämnar den hos Skatteverket. Arbetsgivardeklarationen, skattekontot och Skatteverkets kundhändelser är också byggda mot testtjänsten och provas av samma pilotanvändare; inget av det är påslaget för vanliga användare på nonox.app.
+- Bankkoppling med BankID genom öppen bankdata (PSD2) på nonox.app: modulen Bank är byggd (se ovan) och slås på i den driftade tjänsten när det finns ett avtal med en leverantör av öppen bankdata. Till dess läser du in bankens filer.
+- E-faktura via Peppol genom Qvalia, i version 1.0: skicka kundfakturor och ta emot leverantörsfakturor i inkorgen enligt Peppol BIS Billing 3.0. Byggt, och slås på när den första kunden vill skicka e-faktura (ADR-050).
 - Färdiga kopplingar från kassasystem och e-handel, direkt eller via de integrationsplattformar som programmen redan använder. API:t och webhooks finns; kopplingarna byggs mot dem.
 
 Det som pågår, är planerat eller önskat står på färdplanen på webbplatsen (`/fardplan`), och allt som har levererats, och de utredningar och granskningar som ligger bakom, står med datum och klockslag i ändringsloggen (`/andringslogg`, med RSS-flöde), grupperat efter projektets faser. Båda skrivs på vanlig svenska för den som inte läser koden; posterna finns i `docs/andringslogg` och `docs/fardplan` och hålls aktuella enligt [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -345,10 +348,11 @@ grep -A30 "Subject: Din inloggningskod" storage/logs/laravel.log | grep -oE "\b[
 - `APP_URL` med serverns riktiga adress (`https://…`).
 - Riktig e-post, till exempel `MAIL_MAILER=smtp` eller `mailgun`. Med `log` kommer inga inloggningskoder fram.
 - **Bakom en proxy eller CDN** (till exempel Cloudflare med orange moln, eller en lastbalanserare): skriv proxyns adressintervall, kommaseparerade, i `TRUSTED_PROXIES`. Annars ser NONOX proxyns adress i stället för besökarens, och spärrarna mot för många inloggningsförsök slår mot alla besökare samtidigt. För Cloudflare finns intervallen på https://www.cloudflare.com/ips/. Lämnas raden tom litar NONOX inte på någon proxy, vilket är rätt när ingen proxy används. Skriv aldrig `*` om servern också går att nå utan proxyn, för då kan vem som helst ange sin egen adress.
-- För det öppna API:t (modulen NONOX Connect): kör `php artisan passport:keys` en gång, eller sätt `PASSPORT_PRIVATE_KEY` och `PASSPORT_PUBLIC_KEY`. Utan nycklar går modulen inte att slå på. Appar registreras med `php artisan connect:app "Namn" https://app.example/callback`. Gränserna för antal anrop och tokens livslängd ställs in med `NONOX_CONNECT_*`, se `.env.example` och [docs/api](docs/api/README.md). API-nycklar och tokens fungerar bara mot `/api/v1`, aldrig mot vanliga sidor.
+- För det öppna API:t (modulen NONOX API): kör `php artisan passport:keys` en gång, eller sätt `PASSPORT_PRIVATE_KEY` och `PASSPORT_PUBLIC_KEY`. Utan nycklar går modulen inte att slå på. Appar registreras med `php artisan connect:app "Namn" https://app.example/callback`. Gränserna för antal anrop och tokens livslängd ställs in med `NONOX_CONNECT_*`, se `.env.example` och [docs/api](docs/api/README.md). API-nycklar och tokens fungerar bara mot `/api/v1`, aldrig mot vanliga sidor.
 - För SFTP för SIE-filer (frivilligt): installera SFTPGo enligt [deploy/sftpgo/README.md](deploy/sftpgo/README.md) och sätt `NONOX_SFTPGO_HOOK_SECRET`, `NONOX_SFTP_HOST` och `NONOX_SFTP_ROOT` (se `.env.example`). Utan dem är SFTP avstängt.
 - För att hämta företagsuppgifter med organisationsnumret (frivilligt): anmäl dig som API-kund hos Bolagsverket för *API för värdefulla datamängder* (gratis), och sätt `COMPANY_REGISTRY_DRIVER=bolagsverket`, `BOLAGSVERKET_CLIENT_ID`, `BOLAGSVERKET_CLIENT_SECRET` och `BOLAGSVERKET_ENVIRONMENT` (`test` eller `prod`). Utan dem syns inte knappen *Hämta uppgifter*. Se [ADR-035](docs/adr/ADR-035-company-lookup.md).
 - För att prospektera i CRM (frivilligt): läs in företagsregistret ur SCB:s och Bolagsverkets öppna data med `php artisan registry:import scb-bulk` och sedan `php artisan registry:import bolagsverket-bulk` (gratis, ingen nyckel, några minuter, cirka 1,2 miljoner juridiska personer), och sätt `COMPANY_REGISTER_IMPORT=true` för att uppdatera varje vecka. Med en egen API-nyckel från SCB (gratis, sök på registreraafr.scb.se, `SCB_AFR_API_KEY`) kommer storleksklass, län, kommun och spärrar med (`registry:import scb-api`). Se [ADR-047](docs/adr/ADR-047-crm-prospecting.md).
+- För att kontrollera iXBRL-årsredovisningen mot Bolagsverkets taxonomi (frivilligt): kör `scripts/fetch-xbrl-taxonomy.sh`. Den hämtar det fastlåsta taxonomipaketet, kontrollerar SHA-256 och skriver ut mappen, som du sätter som `BOLAGSVERKET_TAXONOMY_DIR`. Se [ADR-058](docs/adr/ADR-058-digital-annual-report.md).
 
 Kör `php artisan config:cache` efter varje ändring i `.env` på servern.
 
@@ -383,7 +387,7 @@ Kör du NONOX på din egen dator (`APP_ENV=local`) och öppnar sidan på samma d
 - [Beslut (ADR)](docs/adr/) – varför systemet är byggt som det är: verifikationer, SIE, kostnadsställen, rapporter och moms.
 - [Manual](https://nonox.app/manual) – manualen för användare: kom igång, bokföring, fakturor, moms, bokslut, lön och en egen del för anställda (Min sida och personalliggaren), med sök. Artiklarna skrivs i Markdown i [docs/manual/sv](docs/manual/sv) enligt [skrivreglerna](docs/manual/SKRIVREGLER.md). Knappen **Hjälp** i appen öppnar artikeln om sidan du står på.
 - [Företagsguiden](https://nonox.app/foretagsguiden) – guiden till att starta och driva företag, med källor. Artiklarna och startplanen skrivs i [docs/foretagsguiden](docs/foretagsguiden) enligt [skrivreglerna](docs/foretagsguiden/SKRIVREGLER.md), och varje artikel måste ha källor från en myndighet eller lagtexten.
-- [Utvecklare och API](https://nonox.app/utvecklare) – den publika utvecklarwebben för NONOX Connect: guider, en referens som genereras från [docs/api/openapi.yaml](docs/api/openapi.yaml), kodexempel och [ändringar](docs/api/CHANGELOG.md). Guiderna ligger i [docs/api/guider](docs/api/guider), på svenska och engelska.
+- [Utvecklare och API](https://nonox.app/utvecklare) – den publika utvecklarwebben för NONOX API: guider, en referens som genereras från [docs/api/openapi.yaml](docs/api/openapi.yaml), kodexempel och [ändringar](docs/api/CHANGELOG.md). Guiderna ligger i [docs/api/guider](docs/api/guider), på svenska och engelska.
 - [Branschsidor](docs/branscher/README.md) – sidorna per bransch på [nonox.app/branscher](https://nonox.app/branscher), deras adresser och reglerna för innehållet. Funktionerna de nämner kontrolleras mot listan ovan.
 - [AGENTS.md](AGENTS.md) – specifikationen och reglerna för alla som bidrar, människor som AI.
 
@@ -413,6 +417,8 @@ DB_DATABASE=nonox_test php artisan migrate --force
 ```
 
 Kör `DB_DATABASE=nonox_test php artisan migrate --force` igen när nya migrationer har tillkommit.
+
+Taxonomitestet för iXBRL-årsredovisningen hoppas över om `BOLAGSVERKET_TAXONOMY_DIR` saknas. CI kör det alltid. Lokalt: `BOLAGSVERKET_TAXONOMY_DIR="$(scripts/fetch-xbrl-taxonomy.sh)" DB_DATABASE=nonox_test vendor/bin/pest tests/Feature/AnnualReport/IxbrlAnnualReportTest.php`.
 
 ### Demoföretag per bransch
 
