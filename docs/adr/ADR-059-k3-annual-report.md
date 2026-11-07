@@ -853,6 +853,15 @@ annual-report pages.
 - S1-P3 does not check that the year is a K3 year. S1-P11 writes policies from the first K3
   year only.
 
+- S1-P6 review: K2's `PrintedFigures` puts any difference between the two sides of the
+  balance sheet on Övriga skulder, with no limit. A real imbalance is therefore hidden, for
+  example a balance on BAS 2000–2079 in an AB or on 9xxx. The K3 path refuses the sheet when
+  the difference is larger than rounding can explain. The K2 path keeps its behaviour so
+  the golden files stay unchanged, and remains a follow-up: it should show the same refusal,
+  with a warning in the closing.
+- The bilaga 2 items 14, 15 and 17 ("med särskild uppgift om … koncernföretag") need a
+  delpost or note in S1-P9/P10, with the BAS accounts confirmed by the accountant (H10).
+
 ### A.4 Packages
 
 Each package: branch `spec/s1/<slug>`, own worktree and test database
