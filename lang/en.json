@@ -10380,5 +10380,11 @@
     "förvärvsdag": "acquisition date",
     "Innehavet ligger till grund för en koncern. Bara den som är ägare eller administratör i alla företag i koncernen kan ändra det.": "The holding is the basis of a group. Only someone who is an owner or administrator in every company in the group can change it.",
     "Organisationsnumret kan inte ändras när innehavet ligger till grund för en koncern. Registrera ett nytt innehav i stället.": "The organisation number cannot be changed while the holding is the basis of a group. Record a new holding instead.",
-    "Innehavet kan inte sparas: det ger mer än 100 procent av rösterna i bolaget inom en koncern som företaget ingår i.": "The holding cannot be saved: it gives more than 100 per cent of the votes in the company within a group this company belongs to."
+    "Innehavet kan inte sparas: det ger mer än 100 procent av rösterna i bolaget inom en koncern som företaget ingår i.": "The holding cannot be saved: it gives more than 100 per cent of the votes in the company within a group this company belongs to.",
+    "Räkenskapsåret :label är stängt. Regelverket för ett stängt år kan inte ändras.": "Fiscal year :label is closed. The framework of a closed year cannot be changed.",
+    "Årsredovisningen för :label är fastställd. Regelverket för året kan inte ändras.": "The annual report for :label has been adopted. The framework of the year cannot be changed.",
+    "Alla räkenskapsår är stängda. Skapa nästa räkenskapsår under Räkenskapsår och byt sedan regelverk.": "Every fiscal year is closed. Create the next fiscal year under Fiscal years, then change the framework.",
+    "Valet gäller räkenskapsåret :year och de år som följer. Tidigare år behåller sitt regelverk.": "The choice applies to fiscal year :year and the years after it. Earlier years keep their framework.",
+    "Varför byter företaget regelverk? (frivilligt)": "Why is the company changing framework? (optional)",
+    "Sparas med räkenskapsåret, så att det går att se senare varför regelverket byttes.": "Saved with the fiscal year, so you can see later why the framework was changed."
 }

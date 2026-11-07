@@ -19,12 +19,15 @@ declare(strict_types=1);
  * test with NONOX_UPDATE_GOLDEN=1 and review the diff before committing.
  */
 
+use App\Actions\Accounting\CreateNextFiscalYear;
 use App\Actions\AnnualReport\SaveAnnualReport;
 use App\Actions\Banking\BankReconciliations;
 use App\Actions\Closing\YearEndClosing;
+use App\Actions\Company\ChangeReportingFramework;
 use App\Domain\Accounting\AccountType;
 use App\Domain\AnnualReport\AnnualReportDocument;
 use App\Domain\Closing\ClosingChecklist;
+use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\VatPeriod;
 use App\Models\Account;
 use App\Models\AnnualReport;
@@ -168,4 +171,19 @@ it('renders the K2 annual report of a loss-making company with öre exactly as t
 
     goldenReportCompare('k2-loss.html', AnnualReportDocument::html($company, $year, $report));
     goldenReportCompare('k2-loss.xhtml', K2AnnualReportIxbrl::render($company, $year, $report));
+});
+
+it('renders the 2026 K2 report exactly as the golden files after the company moves to K3 for 2027', function () {
+    // ADR-059, A.2.1 (S1-P1): the framework is the fiscal year's, so an earlier K2 year keeps its report.
+    [$company, $year, $report] = goldenLossReport();
+    $owner = User::query()->findOrFail($company->user_id);
+    $next = app(CreateNextFiscalYear::class)($owner, $company);
+    app(ChangeReportingFramework::class)($owner, $next, ReportingFramework::K3);
+    $company = $company->fresh();
+
+    expect($company->reporting_framework)->toBe(ReportingFramework::K3)
+        ->and(AnnualReportDocument::supports($company, $next))->toBeFalse();
+
+    goldenReportCompare('k2-loss.html', AnnualReportDocument::html($company, $year->fresh(), $report));
+    goldenReportCompare('k2-loss.xhtml', K2AnnualReportIxbrl::render($company, $year->fresh(), $report));
 });

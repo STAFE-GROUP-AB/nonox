@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-07-regelverk-per-rakenskapsar",
+      "datum": "2026-11-07T09:30:00+01:00",
+      "rubrik": "Regelverket K1, K2 eller K3 gäller per räkenskapsår",
+      "beskrivning": "Byter företaget regelverk i inställningarna gäller det senaste öppna räkenskapsåret och åren efter, medan tidigare år behåller sitt. Ett företag som går över till K3 kan därför fortfarande ta fram årsredovisningen för ett tidigare K2-år. Bytet sparas på året med en frivillig anledning och i behandlingshistoriken.",
+      "typ": "Förbättrat",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-07-ne-bilagan-sru-sparrad",
       "datum": "2026-11-07T01:30:00+01:00",
       "rubrik": "NE-bilagan som SRU-fil är spärrad tills årets satser är kontrollerade",

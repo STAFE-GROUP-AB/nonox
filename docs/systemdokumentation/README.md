@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.115
-- Datum: 2026-11-06
+- Version: 0.116
+- Datum: 2026-11-07
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -420,6 +420,21 @@ All tid i NONOX är svensk tid (Europe/Stockholm). Tidszonen är fast i koden, b
   Bekräftelsen loggas i behandlingshistoriken. Reglerna gäller när företaget
   skapas och när värdet ändras i inställningarna; ett sparat värde som ser fel
   ut behålls och visas med en varning.
+- Regelverket hör till räkenskapsåret (sedan 2026-11-07, ADR-059 tillägg
+  A.2.1). Varje år har sitt eget regelverk (`fiscal_years.reporting_framework`),
+  eftersom BFNAR 2025:2 och 2025:3 gäller efter när räkenskapsåret börjar och
+  ett byte sker vid en årsgräns. Ett nytt år får regelverket från året före,
+  annars företagets. Företagets regelverk (`teams.reporting_framework`) är det
+  senaste årets och gäller som förval för nästa år. Ett byte i inställningarna
+  gäller det senaste öppna året och de år som skapas efter det; tidigare år
+  behåller sitt. Ett stängt år och ett år vars årsredovisning har fastställts
+  kan inte byta regelverk, och har företaget bara stängda år måste nästa år
+  skapas först. Bara ägare och administratörer (`company:update`) kan byta.
+  Bytet sparas på året med tidpunkt, person och en frivillig anledning, och
+  skrivs i behandlingshistoriken (`fiscal_year.framework_changed`, med årets
+  id och regelverket före och efter, aldrig anledningen). När kolumnen
+  infördes fick varje befintligt år företagets dåvarande regelverk; ingen
+  verifikation ändrades.
 - Reglerna ovan bygger på AI-utredning 2026-11-02; juristgranskning återstår
   (ADR-010).
 - Ett nytt räkenskapsår skapas alltid direkt efter det senaste, så att åren aldrig
@@ -1882,8 +1897,8 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   resultat- och dispositionspost sparas i
   `year_end_entries`, som databasen inte låter ändra eller ta bort.
 - Bokslutet kräver behörigheten att hantera räkenskapsår.
-- **K2-villkoren bekräftas en gång (ägarbeslut 16).** För ett K2-företag vars
-  räkenskapsår börjar efter 2025-12-31 visar bokslutet villkoren i BFNAR
+- **K2-villkoren bekräftas en gång (ägarbeslut 16).** För ett räkenskapsår
+  med regelverket K2 som börjar efter 2025-12-31 visar bokslutet villkoren i BFNAR
   2016:10 punkt 1.1A–1.1C enligt BFNAR 2025:2 (samma text som vid val av K2) och
   kräver en bekräftelse innan bokslutet fortsätter: checklistan har punkten
   "K2-villkoren är bekräftade" och åtgärderna i bokslutet (bocka av punkter,
@@ -2007,8 +2022,11 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   ifylld; det skrivs under hos Bolagsverket, inte i NONOX. Är
   `BOLAGSVERKET_TAXONOMY_DIR` satt kontrolleras varje begrepp mot taxonomin
   innan filen lämnas ut.
-- Årsredovisningen görs bara för ett företag vars regelverk är K2 (sedan
-  2026-11-06, ADR-059 etapp F.1). Dokumentet skriver i not 1 att det följer
+- Årsredovisningen görs bara för ett räkenskapsår vars regelverk är K2 (sedan
+  2026-11-06, ADR-059 etapp F.1; per år sedan 2026-11-07, avsnitt 3). Ett
+  företag som byter till K3 från ett visst år kan alltså fortfarande ta fram
+  årsredovisningen för ett tidigare K2-år, och den blir identisk med före
+  bytet. Dokumentet skriver i not 1 att det följer
   BFNAR 2016:10 och iXBRL-filen märks enligt K2-taxonomin, vilket inte stämmer
   för ett företag som har valt K3 (BFNAR 2012:1). För ett aktiebolag eller en
   ekonomisk förening med K3 (eller K1) visar sidan en förklaring i stället för
@@ -4297,3 +4315,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.113 | 2026-11-06 | Skärpt utlandsbetalning via betalfil (avsnitt 5a1c): automatisk bokföring bara inom 5 procent (500–5 000 kronor) av bankens dagskurs; betalningskod från 120 000 kronor; IBAN kontrolleras; SWIFT-tecken; en valuta per fil; land och adress ur leverantörsunderlaget. Ingen ny bokföringsregel. |
 | 0.114 | 2026-11-06 | Drivmedelsförmån rättad (avsnitt 5b, ADR-061): skatteavdraget räknas som förut på förmånsvärdet (marknadsvärdet × 1,2), men arbetsgivaravgiften nu på marknadsvärdet (socialavgiftslagen 2 kap. 10 a §); tidigare togs avgiften på hela förmånsvärdet. Den anställdas betalning för drivmedlet (löneart Egen betalning för drivmedel vid bilförmån, 7388) minskar den skattepliktiga förmånen och avgiftsunderlaget och redovisas i ruta 098, medan 018 har hela förmånsvärdet. Attesterade och bokförda löner ändras inte. Förmånsbilar: en period får inte omfatta en attesterad månad som bilen inte fanns i, och bara en bil per månad. |
 | 0.115 | 2026-11-06 | Bekräftelse och kontroller före inlämning (ägarbeslut 10 och 16): momsdeklarationen och arbetsgivardeklarationen till Skatteverket, betalfilen för leverantörsbetalningar och lönefilen kräver att användaren bekräftar "Jag har granskat siffrorna", och bekräftelsen sparas i behandlingshistoriken (`figures.reviewed`); ett K2-företag bekräftar de nya K2-villkoren (BFNAR 2025:2) en gång innan bokslutet för ett räkenskapsår som börjar efter 2025-12-31 kan fortsätta (`company.k2_conditions_confirmed`). SIE-importen stoppar en fil vars ingående balanser inte summerar till noll, och rapporten säger bara att varje konto stämmer när utgående balanser eller resultat har kontrollerats. Drivmedelsförmån kräver en förmånsbil i perioden. OCR-nummer på leverantörsfakturor kontrolleras med kontrollsiffran. Parametrarna för NE och INK4 2026 är inte längre markerade som kontrollerade, så beräkningen spärras tills en människa har kontrollerat dem. Rättelserna som driftsattes separat under versionsnumret 0.105 samma morgon (rutorna 20 och 23, årsredovisning bara enligt K2, belopp i hela kronor, övertid och mertid per art i Gröna Riks och Detaljhandeln, arbetsgivaravgift på drivmedelsförmån) ingår i 0.107, 0.109, 0.110 och 0.114 och i avsnitt 5h. |
+| 0.116 | 2026-11-07 | Regelverket (K1/K2/K3) hör till räkenskapsåret (avsnitt 3, ADR-059 tillägg A.2.1): varje år har sitt eget, ett nytt år ärver det föregående årets, och ett byte i företagsinställningarna gäller det senaste öppna året. Stängda år och år med fastställd årsredovisning kan inte byta. Bytet sparas på året och i behandlingshistoriken (`fiscal_year.framework_changed`). Årsredovisningen och K2-bekräftelsen i bokslutet följer årets regelverk, så ett tidigare K2-år behåller sin årsredovisning när företaget byter till K3. Befintliga år fick företagets regelverk; ingen verifikation ändrades. |

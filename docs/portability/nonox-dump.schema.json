@@ -76,7 +76,11 @@
         "status": {"enum": ["OPEN", "CLOSED"]},
         "closed_at": {"type": ["string", "null"]},
         "closed_by": {"type": ["integer", "null"]},
-        "ledger_head_hash": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+        "ledger_head_hash": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "reporting_framework": {"enum": ["K1", "K2", "K3"]},
+        "reporting_framework_changed_at": {"type": ["string", "null"]},
+        "reporting_framework_changed_by": {"type": ["integer", "null"]},
+        "reporting_framework_change_reason": {"type": ["string", "null"]}
       }
     },
     "counter": {

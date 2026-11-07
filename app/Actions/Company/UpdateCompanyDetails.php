@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Company;
 
+use App\Domain\Accounting\FiscalYearStatus;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Company\CompanySetupRules;
 use App\Domain\Company\GiroNumber;
@@ -13,12 +14,15 @@ use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\VatExemption;
 use App\Domain\Company\VatPeriod;
 use App\Models\Company;
+use App\Models\FiscalYear;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
+use App\Support\Tenancy\CompanyScope;
 use Brick\Math\Exception\MathException;
 use Carbon\CarbonImmutable;
 use Closure;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -74,6 +78,7 @@ class UpdateCompanyDetails
             'eu_sales_quarterly_goods_from' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'industry' => ['sometimes', 'nullable', Rule::enum(Industry::class)],
             'guide_enabled' => ['sometimes', 'boolean'],
+            'framework_change_reason' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ], CompanySetupRules::messages(), [
             'oss_elected_from' => __('datum för beskattning i köparens land'),
             'eu_sales_quarterly_goods_from' => __('första kvartalet beslutet gäller'),
@@ -81,13 +86,15 @@ class UpdateCompanyDetails
             'website' => __('webbplats'),
             'industry' => __('bransch'),
             'preliminary_tax_monthly' => __('debiterad preliminärskatt per månad'),
+            'framework_change_reason' => __('anledning'),
         ])->validateWithBag('updateCompanyDetails');
 
         $confirmed = [
             'framework_conditions_confirmed' => (bool) ($validated['framework_confirmed'] ?? false),
             'calendar_year_exempt_confirmed' => (bool) ($validated['calendar_year_exempt'] ?? false),
         ];
-        unset($validated['framework_confirmed'], $validated['calendar_year_exempt']);
+        $reason = is_string($validated['framework_change_reason'] ?? null) ? $validated['framework_change_reason'] : null;
+        unset($validated['framework_confirmed'], $validated['calendar_year_exempt'], $validated['framework_change_reason']);
 
         if (array_key_exists('preliminary_tax_monthly', $validated)) {
             // Momsbufferten (ADR-051, stage 3): the amount from the decision, as the company enters it; NONOX never computes it.
@@ -96,6 +103,27 @@ class UpdateCompanyDetails
         }
 
         $before = $this->snapshot($company);
+
+        DB::transaction(function () use ($user, $company, $validated, $confirmed, $reason, $before): void {
+            $this->save($user, $company, $validated, $confirmed, $reason, $before);
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @param  array{framework_conditions_confirmed: bool, calendar_year_exempt_confirmed: bool}  $confirmed
+     * @param  array<string, mixed>  $before
+     */
+    private function save(User $user, Company $company, array $validated, array $confirmed, ?string $reason, array $before): void
+    {
+        $framework = ReportingFramework::from((string) $validated['reporting_framework']);
+
+        if ($framework !== $company->reporting_framework && $this->changeFrameworkOfLatestYear($user, $company, $framework, $reason, $confirmed['framework_conditions_confirmed'])) {
+            // ChangeReportingFramework has set the company column as the latest year's framework.
+            $company->refresh();
+            unset($validated['reporting_framework']);
+        }
+
         $vatRegistered = $validated['vat_period'] !== VatPeriod::None->value;
         $number = OrganisationNumber::tryFrom($company->org_number);
 
@@ -121,6 +149,41 @@ class UpdateCompanyDetails
         if ($changes['after'] !== []) {
             Audit::record('company.updated', $company, [...$changes, ...array_filter($confirmed)], $company);
         }
+    }
+
+    /**
+     * The framework belongs to the fiscal year (ADR-059, A.2.1). A change on
+     * the settings page applies to the latest open year, and from there to
+     * the years that follow it; earlier years keep theirs. A company without
+     * fiscal years only has the default, which is changed as before (false).
+     *
+     * @throws ValidationException when every year is closed
+     */
+    private function changeFrameworkOfLatestYear(User $user, Company $company, ReportingFramework $framework, ?string $reason, bool $confirmed): bool
+    {
+        // Safe: limited to this company explicitly; the action may run without a current company.
+        [$hasYears, $latestOpen] = CompanyScope::bypass(fn (): array => [
+            FiscalYear::query()->where('company_id', $company->id)->exists(),
+            FiscalYear::query()->where('company_id', $company->id)->where('status', FiscalYearStatus::Open)->orderByDesc('start_date')->first(),
+        ]);
+
+        if (! $hasYears) {
+            return false;
+        }
+
+        if (! $latestOpen instanceof FiscalYear) {
+            throw ValidationException::withMessages([
+                'reporting_framework' => __('Alla räkenskapsår är stängda. Skapa nästa räkenskapsår under Räkenskapsår och byt sedan regelverk.'),
+            ])->errorBag('updateCompanyDetails');
+        }
+
+        try {
+            app(ChangeReportingFramework::class)($user, $latestOpen, $framework, $reason, ['framework_confirmed' => $confirmed]);
+        } catch (ValidationException $exception) {
+            throw $exception->errorBag('updateCompanyDetails');
+        }
+
+        return true;
     }
 
     /**

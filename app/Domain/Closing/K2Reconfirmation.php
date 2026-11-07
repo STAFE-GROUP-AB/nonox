@@ -26,7 +26,8 @@ final class K2Reconfirmation
     /** Whether the company must have confirmed the conditions for the year, confirmed or not. */
     public static function applies(Company $company, FiscalYear $fiscalYear): bool
     {
-        return $company->reporting_framework === ReportingFramework::K2
+        // The year's own framework (ADR-059, A.2.1): a company on K3 from 2027 still confirms for a K2 year 2026.
+        return $fiscalYear->reporting_framework === ReportingFramework::K2
             && $fiscalYear->start_date->toDateString() > self::LAST_OLD_DAY;
     }
 

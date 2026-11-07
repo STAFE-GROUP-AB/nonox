@@ -62,6 +62,8 @@ it('does not ask for a fiscal year that starts in 2025', function () {
 
 it('does not ask a K3 company', function () {
     $this->company->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
+    // The framework is the fiscal year's (ADR-059, A.2.1).
+    $this->year->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
 
     expect(K2Reconfirmation::applies($this->company->fresh(), $this->year))->toBeFalse()
         ->and(checklistItem('k2'))->toBeNull();

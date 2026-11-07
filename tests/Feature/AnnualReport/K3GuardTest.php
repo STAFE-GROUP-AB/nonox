@@ -69,6 +69,8 @@ it('makes the annual report of a K2 aktiebolag as before', function () {
 
 it('explains on the page that NONOX does not make a K3 annual report yet', function () {
     $this->company->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
+    // The framework is the fiscal year's (ADR-059, A.2.1).
+    $this->year->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
 
     Livewire::test(AnnualReportPage::class)
         ->assertSee('Årsredovisning enligt K3 finns inte ännu')
@@ -81,6 +83,8 @@ it('explains on the page that NONOX does not make a K3 annual report yet', funct
 
 it('refuses the preview, the PDF and the iXBRL file of a K3 company', function () {
     $this->company->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
+    // The framework is the fiscal year's (ADR-059, A.2.1).
+    $this->year->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
 
     $this->get(route('accounting.annualReport.show', $this->year))->assertForbidden();
     $this->get(route('accounting.annualReport.pdf', $this->year))->assertForbidden();
@@ -94,6 +98,8 @@ it('refuses the preview, the PDF and the iXBRL file of a K3 company', function (
 
 it('does not save the texts of a K3 annual report, but keeps the income tax return', function () {
     $this->company->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
+    // The framework is the fiscal year's (ADR-059, A.2.1).
+    $this->year->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
 
     expect(fn () => app(SaveAnnualReport::class)($this->owner, $this->year, ['average_employees' => '0']))
         ->toThrow(ValidationException::class, 'NONOX tar ännu inte fram årsredovisningar enligt K3')
@@ -104,6 +110,8 @@ it('does not save the texts of a K3 annual report, but keeps the income tax retu
 
 it('refuses a company on K1 with its own explanation', function () {
     $this->company->forceFill(['reporting_framework' => ReportingFramework::K1])->save();
+    // The framework is the fiscal year's (ADR-059, A.2.1).
+    $this->year->forceFill(['reporting_framework' => ReportingFramework::K1])->save();
 
     expect(AnnualReportDocument::supports($this->company))->toBeFalse()
         ->and(AnnualReportDocument::refusal($this->company))->toContain('Företaget har valt K1');
@@ -118,6 +126,8 @@ it('refuses a company on K1 with its own explanation', function () {
 it('puts no annual report in the archive package of a K3 company', function () {
     Storage::fake('local');
     $this->company->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
+    // The framework is the fiscal year's (ADR-059, A.2.1).
+    $this->year->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
 
     $names = k3GuardArchiveFiles(app(CreateArchivePackage::class)($this->owner, $this->year));
 

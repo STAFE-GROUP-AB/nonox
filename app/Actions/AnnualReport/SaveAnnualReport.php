@@ -37,7 +37,7 @@ class SaveAnnualReport
             throw new AuthorizationException;
         }
 
-        $refusal = AnnualReportDocument::refusal($company);
+        $refusal = AnnualReportDocument::refusal($company, $fiscalYear);
 
         if ($refusal !== null) {
             throw ValidationException::withMessages(['report' => $refusal]);

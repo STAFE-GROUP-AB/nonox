@@ -7,7 +7,6 @@ namespace App\Support\Ixbrl;
 use App\Domain\AnnualReport\AnnualReportDocument;
 use App\Domain\AnnualReport\K2Taxonomy;
 use App\Domain\Company\LegalForm;
-use App\Domain\Company\ReportingFramework;
 use App\Models\AnnualReport;
 use App\Models\Company;
 use App\Models\FiscalYear;
@@ -40,9 +39,11 @@ final class K2AnnualReportIxbrl
             throw new IxbrlRefused([__('Företagsformen')], __('iXBRL-filen görs bara för aktiebolag än så länge.'));
         }
 
-        // The file is tagged with the K2 taxonomy and says BFNAR 2016:10 in note 1 (ADR-059).
-        if ($company->reporting_framework !== ReportingFramework::K2) {
-            throw new IxbrlRefused([__('Regelverket')], (string) AnnualReportDocument::refusal($company));
+        // The file is tagged with the K2 taxonomy and says BFNAR 2016:10 in note 1; the year's framework decides (ADR-059, A.2.1).
+        $refusal = AnnualReportDocument::refusal($company, $fiscalYear);
+
+        if ($refusal !== null) {
+            throw new IxbrlRefused([__('Regelverket')], $refusal);
         }
 
         $data = AnnualReportDocument::data($company, $fiscalYear, $report);
