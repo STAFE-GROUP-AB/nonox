@@ -10,9 +10,10 @@ follow the spec and the S2 rule sheet (`docs/specs/rules/s2.md`, researcher bran
 2026-11-07); its corrections C1 (group contributions are K3 6.6, not ch. 35) and C2 (a
 group cash flow statement is always part of group accounts) are applied here.
 
-All three companies are fictional. Organisation numbers `559999-3309` (Moder),
-`559999-3408` (Produktion) and `559999-3507` (Försäljning) are invented test numbers in
-the 559999 series; they pass Luhn and belong to no one.
+All three companies are fictional. Organisation numbers `559999-6021` (Moder),
+`559900-1236` (Produktion) and `556123-4567` (Försäljning) are test numbers
+already used elsewhere in the repository's tests; they pass Luhn. Nothing here
+describes the company that may hold such a number.
 
 ## Files
 
