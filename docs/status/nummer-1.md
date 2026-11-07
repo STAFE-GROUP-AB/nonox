@@ -343,3 +343,29 @@ Open legal-verify items:
 - var avrundningsdifferensen i balansräkningen ska ligga.
 Human decisions needed: H9 (konto 2089 för fonden för utvecklingsutgifter, kontroll mot BAS 2026), H10.
 Next package: S1-P7 förändringar i eget kapital.
+
+---
+
+Package: S1-P7, förändringar i eget kapital enligt K3 6.3 (ADR-059, A.1 p. 5, A.4)
+Status: done (kod, inget som syns för användaren ännu)
+Evidence: `tests/Feature/AnnualReport/K3/K3EquityStatementTest.php` (25 tester) och `tests/Unit/AnnualReport/K3/K3EquityStatementTest.php`.
+- F-S1-a:s förändringar i eget kapital 2025 och 2026 stämmer på öret, rad för rad och kolumn för kolumn.
+- Raderna följer K3 6.3 a–e. En rest som inte passar någon rad spärrar årsredovisningen med en svensk förklaring som namnger konton och verifikationer. "Övriga förändringar" skrivs aldrig ut.
+- Avrundningsdifferensen i PrintedFigures är nu en spärr med förklaring i stället för ett undantag.
+- Rättelseverifikationer nettas mot det de rättar. En rättelse av ett tidigare års verifikation som ändrar eget kapital spärrar tills rad b används (S1-P12).
+- Utdelning känns igen bara när 2898 ensamt bär samma belopp som minskningen; utdelning ett förlustår fungerar.
+- K2-utskriften är byte för byte oförändrad. En fråga, oberoende av antalet verifikationer.
+- En oberoende granskning (K3 6.3–6.5 och ÅRL 6:2 andra stycket kontrollerade ordagrant mot BFN och riksdagen) och två omkontroller; alla P1/P2 rättade.
+- Hela sviten 6 561 gröna, phpstan och pint rena.
+Rule ids covered: S1-R8.3.
+Public claim now allowed: inget nytt.
+Public claim still not allowed: "Årsredovisning enligt K3".
+Open legal-verify items:
+- övergången K2→K3 och rättelse av fel från tidigare år på rad b (H7, S1-P12);
+- nyemission och återbetalt tillskott som egna rader under d;
+- 2093 och 2898 som kännetecken för tillskott och utdelning;
+- kvarstående 2099 visas som omföring utan stämmobeslut;
+- skatteeffekter som redovisas i eget kapital (K3 kap. 29) saknar källa och spärrar.
+Follow-ups: S1-P14 frågeplanen voucher_rows × vouchers utan statistik (gäller även AnnualAccounts::ledger()); S1-P12 ska ta K3-kolumnerna från K3EquityStatement::columns(); ordalydelsen för en bakåtdaterad rättelse.
+Human decisions needed: H7, H9, H10.
+Next package: S1-P8 kassaflödesanalys.
