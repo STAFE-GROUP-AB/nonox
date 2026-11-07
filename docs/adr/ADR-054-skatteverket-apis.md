@@ -140,8 +140,8 @@ Kundhändelser RAML 4.0.5.
   refresh request (OAuth 2.0 form): confirm in the test service.
 - `TODO(legal-verify)`: a ten-digit personnummer stored with "-" for a sole
   trader aged 100 or more is read a century too late.
-- Production needs the agreement signed by AI Reports Sweden AB's
-  firmatecknare on Mina sidor; the production keys come by e-mail and SMS.
+- Production needs the agreement signed by GrantPilot AB's
+  firmatecknare on Mina sidor; the production keys come by e-mail and SMS. The test and production applications of 2026-11-05 and 2026-11-06 were filed in the name of AI Reports Sweden AB; the operator is GrantPilot AB from 2027-01-11 (owner decision 2026-11-07) and the agreement cannot be transferred (Allmänna villkor 13.2), so GrantPilot AB applies again.
 
 ## Consequences
 

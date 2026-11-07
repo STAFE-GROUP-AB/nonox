@@ -20,7 +20,7 @@ Senast uppdaterad: 2026-11-06.
 
 **Beslut 2026-11-06 (Andreas):** kontot hos Qvalia är skapat men startas först när den första kunden vill ha Peppol. Publikt säger vi att Peppol via Qvalia ingår i version 1.0. Funktionen står kvar som "kommer snart" och slås inte på förrän kontot är aktivt.
 
-- **Fråga:** ska AI Reports Sweden AB teckna avtal med en accesspunktsleverantör (t.ex. Qvalia), och på vilka villkor?
+- **Fråga:** ska GrantPilot AB teckna avtal med en accesspunktsleverantör (t.ex. Qvalia), och på vilka villkor?
 - **Alternativ:** teckna nu; vänta till efter 1.0; fortsätta utan Peppol i den hostade tjänsten.
 - **Rekommendation:** teckna före 1.0. Peppol är byggt (ADR-050) och väntar bara på nycklar.
 - **Blockerar:** e-faktura i den hostade tjänsten, och att funktionen får kallas live.
@@ -122,16 +122,16 @@ Senast uppdaterad: 2026-11-06.
 
 ## 12. Avtal med Bolagsverket om digital inlämning av årsredovisningen
 
-**Beslut 2026-11-06 (Andreas): hela vägen till version 1.0.** Andreas laddar ner Bolagsverkets tekniska dokument och ansöker om avtal för AI Reports Sweden AB. Klientcertifikatet beställs (beslut 13). Därefter byggs E.4–E.5 mot Bolagsverkets testmiljö.
+**Beslut 2026-11-06 (Andreas): hela vägen till version 1.0.** Andreas laddar ner Bolagsverkets tekniska dokument och ansöker om avtal för GrantPilot AB. Klientcertifikatet beställs (beslut 13). Därefter byggs E.4–E.5 mot Bolagsverkets testmiljö.
 
-- **Fråga:** ska AI Reports Sweden AB teckna avtal med Bolagsverket om API:et för inlämning av digitala årsredovisningar (version 2.1)? Avtalet skrivs under av firmatecknaren.
+- **Fråga:** ska GrantPilot AB teckna avtal med Bolagsverket om API:et för inlämning av digitala årsredovisningar (version 2.1)? Avtalet skrivs under av firmatecknaren.
 - **Rekommendation:** ja, efter steg E.3 i ADR-058. Då kan våra testfiler godkännas i Bolagsverkets acceptansmiljö innan avtalet tecknas.
 - **Blockerar:** steg E.5, inlämningen. Steg E.2 och E.3, att skapa och kontrollera filen, blockeras inte.
 - **Senast:** 2027-01-15.
 
 ## 13. Klientcertifikat för Bolagsverket
 
-**Beslut 2026-11-06 (Andreas):** AI Reports Sweden AB beställer ett organisationscertifikat, till exempel från Expisoft eller Steria. Den privata nyckeln skapas på servern för nonox.app, utanför release-katalogen, och lämnar aldrig servern. Instruktionen skrivs när Bolagsverkets anslutningsanvisning är läst.
+**Beslut 2026-11-06 (Andreas):** GrantPilot AB beställer ett organisationscertifikat, till exempel från Expisoft eller Steria. Den privata nyckeln skapas på servern för nonox.app, utanför release-katalogen, och lämnar aldrig servern. Instruktionen skrivs när Bolagsverkets anslutningsanvisning är läst.
 
 - **Fråga:** vilken utfärdare används för klientcertifikatet, och vem håller den privata nyckeln? Den ska ligga på servern och aldrig i repot.
 - **Blockerar:** steg E.3 mot Bolagsverkets testmiljö och steg E.5.
@@ -185,4 +185,6 @@ Senast uppdaterad: 2026-11-06.
 
 - **Fråga:** ansökningarna till Skatteverket, Enable Banking och Qvalia görs i AI Reports Sweden AB:s namn, men nonox.app drivs i dag av Stafe Development AB enligt serverinställningen. Enligt Skatteverkets villkor är det avtalsparten som blir personuppgiftsbiträde, och avtalet får inte överlåtas (villkor 13.2).
 - **Beslut 2026-11-06 (Andreas):** AI Reports Sweden AB ska driva nonox.app. Bytet aviseras tillsammans med version 1.6 av villkoren, 60 dagar i förväg. Serverinställningen ändras först när den nya versionen träder i kraft.
+- **Ändrat beslut 2026-11-07 (Andreas):** **GrantPilot AB** (org.nr 559443-4697, Blomstergatan 6, 591 70 Motala) driver nonox.app från 2027-01-11 i stället för AI Reports Sweden AB. Stafe Development AB står kvar som utvecklare av NONOX. Kunderna får en rättelse till aviseringen av version 1.6, och serverinställningen ändras till GrantPilot AB den 11 januari.
+- **Följd:** ansökningarna till Skatteverket (testtjänst och driftsatt tjänst), Enable Banking och Qvalia gjordes i AI Reports Sweden AB:s namn. Skatteverkets avtal kan inte överlåtas (villkor 13.2), så GrantPilot AB ansöker på nytt hos Skatteverket, och kontona hos Enable Banking och Qvalia flyttas till GrantPilot AB eller skapas på nytt.
 - **Blockerar:** produktionsnycklarna hos Skatteverket och avtalen med bank och Peppol i drift.

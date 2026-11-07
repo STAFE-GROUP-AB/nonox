@@ -403,7 +403,7 @@ Each is marked in code where it applies.
 ## Human decisions
 
 1. **Agreement with Bolagsverket** for the reception service, signed by the
-   operator company's firmatecknare (AI Reports Sweden AB, per the external
+   operator company's firmatecknare (GrantPilot AB, per the external
    agreements list), and the testbank/test-file review.
 2. **Client certificate**: which issuer and who holds the private key on the
    hosted service (Bolagsverket's requirements are unread).
