@@ -83,7 +83,7 @@
       "id": "2026-11-06-nonox-api-nytt-namn",
       "datum": "2026-11-06T07:58:00+01:00",
       "rubrik": "NONOX Connect heter nu NONOX API",
-      "beskrivning": "Modulen för API-nycklar, appar, webhooks, SFTP och MCP heter NONOX API, och den fungerar som förut. Namnet NONOX Connect används framöver för ett separat tillägg med kopplingar som leverantörerna tar betalt för, till leverantörens pris plus 10 %.",
+      "beskrivning": "Modulen för API-nycklar, appar, webhooks och SFTP heter NONOX API, och den fungerar som förut. Namnet NONOX Connect används framöver för ett separat tillägg med kopplingar som leverantörerna tar betalt för, till leverantörens pris plus 10 %.",
       "typ": "Förbättrat",
       "omrade": "Connect/API"
     },
@@ -98,8 +98,8 @@
     {
       "id": "2026-11-06-ai-assistenter-via-mcp",
       "datum": "2026-11-06T07:40:00+01:00",
-      "rubrik": "Koppla en AI-assistent till bokföringen (beta)",
-      "beskrivning": "NONOX Connect har nu en MCP-server, så att en AI-assistent som Claude eller ChatGPT kan läsa kontoplan, verifikationer, rapporter, kunder och fakturor med en egen API-nyckel. Assistenten kan också skapa utkast till verifikationer och kundfakturor, men aldrig bokföra, skicka, betala eller ta bort något: varje utkast väntar på att en person granskar det i NONOX. Funktionen är i beta och beskrivs under Utvecklare → AI-assistenter (MCP).",
+      "rubrik": "Koppla en AI-assistent till bokföringen (indraget, kommer)",
+      "beskrivning": "Indraget 2026-11-07, MCP-servern är inte tillgänglig ännu: NONOX API ska få en MCP-server, så att en AI-assistent som Claude eller ChatGPT kan läsa kontoplan, verifikationer, rapporter, kunder och fakturor med en egen API-nyckel. Assistenten kan också skapa utkast till verifikationer och kundfakturor, men aldrig bokföra, skicka, betala eller ta bort något: varje utkast väntar på att en person granskar det i NONOX. Funktionen öppnas först när integritetspolicyn har uppdaterats, och beskrivs under Utvecklare → AI-assistenter (MCP).",
       "typ": "Nytt",
       "omrade": "Connect/API"
     },

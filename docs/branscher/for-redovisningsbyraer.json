@@ -148,7 +148,7 @@
         },
         {
             "q": "Vad kostar NONOX för en byrå?",
-            "a": "I egen drift ingenting, oavsett hur många klientföretag ni har. Med drift hos oss kostar varje företag {pris} per år upp till {max} anställda, med alla delar inräknade."
+            "a": "I egen drift ingenting, oavsett hur många klientföretag ni har. Med drift hos oss kostar varje företag {pris} per år upp till {max} anställda, med alla moduler inräknade. NONOX Connect (Peppol, Skatteverket, bank) är ett tillägg som kostar extra: leverantörens pris + 10 %, från 2027-01-11."
         },
         {
             "q": "Kan klienten och revisorn vara med i samma system?",

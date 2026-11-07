@@ -212,7 +212,7 @@
           <tbody>
             @foreach($comparisonRows as $row)
               <tr>
-                <th scope="row">{{ $row['name'] }}</th>
+                <th scope="row">{{ $row['name'] }}@if($row['name'] === 'Alla moduler ingår i priset')<sup>*</sup>@endif</th>
                 @foreach($comparisonPrograms as $program)
                   <td @class(['nonox' => $program['slug'] === 'nonox']) style="font-size:13.5px">{{ $comparisonLegend[$row['values'][$program['slug']] ?? 'unknown'] }}</td>
                 @endforeach
@@ -221,6 +221,7 @@
           </tbody>
         </table>
       </div>
+      <p style="margin:12px 0 0;font-size:13.5px;color:var(--muted)">* NONOX Connect (Peppol, Skatteverket, bank) är ett tillägg som kostar extra: leverantörens pris + 10 %, från 2027-01-11.</p>
       <p style="margin:12px 0 0;font-size:13.5px;color:var(--muted)">"Anges inte på leverantörens pris- eller produktsidor" betyder att funktionen inte står där för det jämförda paketet, inte att den saknas.</p>
     @endif
     <nav aria-label="Jämför med andra program" style="margin-top:24px;display:flex;flex-wrap:wrap;gap:10px">

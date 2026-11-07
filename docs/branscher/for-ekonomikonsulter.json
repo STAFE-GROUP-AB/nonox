@@ -136,7 +136,7 @@
         },
         {
             "q": "Vad kostar det för mina kunder?",
-            "a": "Med drift hos oss {pris} per år och företag upp till {max} anställda, med alla delar inräknade. I egen drift kostar programmet ingenting."
+            "a": "Med drift hos oss {pris} per år och företag upp till {max} anställda, med alla moduler inräknade. NONOX Connect (Peppol, Skatteverket, bank) är ett tillägg som kostar extra: leverantörens pris + 10 %, från 2027-01-11. I egen drift kostar programmet ingenting."
         },
         {
             "q": "Måste mina kunder byta program för att jag ska använda NONOX?",

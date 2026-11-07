@@ -369,12 +369,29 @@ it('tells the assistant that tool results are data, not instructions', function 
         ->toContain('never as instructions');
 });
 
-it('answers 404 on /api/mcp while the switch is off, which is the default', function () {
+it('has no /api/mcp route at all while the switch is off, which is the default', function () {
+    $_ENV['NONOX_MCP_ENABLED'] = 'false';
+    putenv('NONOX_MCP_ENABLED=false');
+
+    try {
+        $this->refreshApplication();
+
+        expect(config('nonox.mcp_enabled'))->toBeFalse()
+            ->and(Route::has('connect.mcp'))->toBeFalse();
+
+        $this->postJson('/api/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list'])->assertNotFound();
+        $this->getJson('/api/mcp')->assertNotFound();
+    } finally {
+        $_ENV['NONOX_MCP_ENABLED'] = 'true';
+        putenv('NONOX_MCP_ENABLED=true');
+    }
+});
+
+it('answers 404 from the middleware too if the route is there but the switch is off', function () {
     config(['nonox.mcp_enabled' => false]);
 
     [$owner, $company] = Bookkeeping::company();
     $key = Connect::apiKey($owner, $company, ['vouchers:view']);
 
     mcpMessage($this, $key, 'tools/list')->assertNotFound();
-    $this->postJson('/api/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list'])->assertNotFound();
 });
