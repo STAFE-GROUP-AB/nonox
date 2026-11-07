@@ -227,3 +227,39 @@ Public claim still not allowed: att AI-assistenter kan bokföra, skicka eller be
 Open legal-verify items: AI-leverantörer som mottagare (beslut 18).
 Human decisions needed: 18
 Next package: —
+
+---
+
+Package: Spår A 2026-11-07, sanna publika påståenden
+Status: done
+Evidence: `tests/Feature/PublicClaimsGuardTest.php` (påståendet att allt ingår kräver noten om NONOX Connect; NE lovas inte medan parametrarna är okontrollerade), `tests/Feature/Connect/McpServerTest.php` (MCP avstängt som standard, ingen rutt). Två granskningsomgångar, inga kvarvarande fynd av medelhög eller högre allvarlighet. Hela sviten 6 338 gröna efter sammanslagning.
+Rule ids covered: marknadsföringslagen 10 § (noten bredvid påståendet), ägarbeslut 18.
+Public claim now allowed: inget nytt.
+Public claim still not allowed: NE-bilagan som SRU-fil, AI-assistenter via MCP.
+Open legal-verify items: `docs/juridik/regelverk.md` anger Stafe Development AB som driftbolag till 2027-01-11; importen från Fortnox är inte provad mot ett riktigt konto.
+Human decisions needed: inga nya.
+Next package: —
+
+---
+
+Package: S2-1.1, koncernmodell och behörighet (ADR-060, tillägg 2026-11-07)
+Status: done (kod, inget som syns för användaren)
+Evidence: `tests/Tenancy/CorporateGroupTenancyTest.php`, `tests/Feature/Group/CorporateGroupTest.php`. Tre granskningsomgångar med fokus på tenancy; alla fynd rättade (innehav som en koncern vilar på, roller som överlever medlemskap, röstorakel, låsordning, ägarbyte). Hela sviten 6 338 gröna.
+Rule ids covered: S2-R1d, S2-R10, rättelse C7.
+Public claim now allowed: inget nytt.
+Public claim still not allowed: "Koncernredovisning", "konsoliderad koncernrapport".
+Open legal-verify items: användar-id i andra bolags behandlingshistorik (`docs/gdpr/registerforteckning.md`).
+Human decisions needed: S2-D1, S2-H5, S2-H6 (punkt 20 i manskliga-beslut.md).
+Next package: S2-1.2, översiktsskärmen.
+
+---
+
+Package: F10 paket 1, JSON-export av bokföringens kärna (ADR-065, Proposed)
+Status: done (kod, inget som syns för användaren)
+Evidence: `tests/Feature/Portability/{JsonDumpWriterTest,JsonDumpHardeningTest,SchemaPortabilityTest}.php` (31 tester), publicerat schema `docs/portability/nonox-dump.schema.json`. Två säkerhetsgranskningar; alla fynd rättade. Hela sviten 6 338 gröna.
+Rule ids covered: —
+Public claim now allowed: inget nytt.
+Public claim still not allowed: "Exportera all data", import till en ny installation.
+Open legal-verify items: export av en kunds lön och CRM-uppgifter av en konsult (F10-3).
+Human decisions needed: F10-1, F10-2, F10-3.
+Next package: F10 paket 2, exportjobb, kryptering och nedladdning.
