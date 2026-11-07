@@ -261,5 +261,60 @@ Rule ids covered: —
 Public claim now allowed: inget nytt.
 Public claim still not allowed: "Exportera all data", import till en ny installation.
 Open legal-verify items: export av en kunds lön och CRM-uppgifter av en konsult (F10-3).
-Human decisions needed: F10-1, F10-2, F10-3.
+Human decisions needed: F10-2, F10-3 (F10-1 beslutad 2026-11-07, se ADR-065).
 Next package: F10 paket 2, exportjobb, kryptering och nedladdning.
+
+---
+
+Package: S1-P1, regelverk per räkenskapsår (ADR-059, tillägg 2026-11-07, A.2.1)
+Status: done (kod och inställningar)
+Evidence: `tests/Feature/Company/FrameworkPerFiscalYearTest.php` och `AnnualReportGoldenTest`. Där visas att 2026 års K2-årsredovisning är byte för byte densamma sedan 2027 bytt till K3. En oberoende granskning och två omkontroller; alla fynd rättade:
+- bytet når året som håller på att stängas;
+- NE-bilagan följer årets regelverk;
+- låsordningen mot fastställelsen;
+- ingen K2-bekräftelse utan ett verkligt byte.
+Rule ids covered: S1-R1.4, K3 1.4/1.6.
+Public claim now allowed: inget nytt (K3-årsredovisningen vägras fortfarande).
+Public claim still not allowed: "Årsredovisning enligt K3".
+Open legal-verify items: inga nya.
+Human decisions needed: inga.
+Next package: S1-P4 komponenter (väntar på H4), S1-P6 K3-uppställning.
+
+---
+
+Package: S1-P2, storleksprövning och K3-regler som data (ADR-059, A.2.2, A.2.5)
+Status: done (kod, inget som syns för användaren ännu)
+Evidence: `tests/Unit/AnnualReport/K3/{K3RulesTest,K3CompanySizeTest}.php`, `tests/Feature/AnnualReport/K3/K3CompanySizeFiguresTest.php` och `tests/Tenancy/PriorYearSizeFigureTenancyTest.php`.
+- BFN:s exempel 1–3 ur Vägledning Gränsvärden (2026-09-14) är tester.
+- F-S1-a ger större för 2025 och 2026.
+- En oberoende granskning och en omkontroll; alla fynd rättade:
+  - samma två gränsvärden två år i rad;
+  - nystartat företag är mindre först efter en persons bekräftelse;
+  - medelantalet anställda avrundas till hela personer;
+  - exakt jämförelse av omräknad omsättning;
+  - stiftelser och ideella föreningar avgörs av en person.
+Rule ids covered: S1-R9, R9.1, R9.2, R1.3 första stycket, R1.4.
+Public claim now allowed: inget nytt.
+Public claim still not allowed: att NONOX avgör om ett företag är större.
+Open legal-verify items:
+- avrundning av medelantalet före jämförelsen med gränsvärdet, och uppåt vid x,5;
+- vilka företagsformer ÅRL 1:3 tredje stycket omfattar (BFL 2:2–3);
+- ÅRL:s lydelser före 2016 och K2 1.1C före 2026.
+Human decisions needed: inga (H8 besvarad av BFN).
+Next package: S1-P8 kassaflödesanalys, S1-P11.
+
+---
+
+Package: S1-P3, redovisningsprinciper för K3 (ADR-059, A.2.3)
+Status: done (kod, ingen skärm ännu)
+Evidence: `tests/Feature/AnnualReport/K3/{AccountingPoliciesTest,AccountingPoliciesFirstYearTest}.php`, `tests/Unit/AnnualReport/K3/K3PolicyKeyTest.php` och `tests/Tenancy/AccountingPolicyTenancyTest.php`. K3 25.3, 23.31 och kommentaren till 10.2 är kontrollerade mot BFN:s text. En oberoende granskning och två omkontroller; alla fynd rättade:
+- svaren om övergången gäller bara sitt eget år;
+- principbyte enligt K3 10.2 och 23.37 spärrar K3-dokumentet, men inte en start efter "inga" eller kassaflödesanalysen;
+- en ändring av det första räkenskapsåret flyttar principerna;
+- fastställda år skyddas.
+Rule ids covered: S1-R2, R5, R6, R7.1, R7.6, R10, K3 10.2, 23.37.
+Public claim now allowed: inget nytt.
+Public claim still not allowed: "Årsredovisning enligt K3".
+Open legal-verify items: inga nya. Fastställelsedagen är ett fält som går att ändra (uppföljning i S1-P11).
+Human decisions needed: H4 (komponentpolicyn är inte byggd).
+Next package: S1-P11.
