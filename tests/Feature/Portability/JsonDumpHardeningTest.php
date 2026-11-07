@@ -199,16 +199,16 @@ it('fails closed without a saved company and leaves no current company behind', 
 });
 
 it('leaves out a sole trader\'s and a private person\'s organisation number unless personal numbers are asked for', function () {
-    $this->company->forceFill(['legal_form' => 'EF', 'org_number' => '8507099805'])->save();
-    app(SaveCustomer::class)($this->owner, $this->company, ['name' => 'Privat Person', 'org_number' => '8507099805', 'payment_terms_days' => 30]);
+    $this->company->forceFill(['legal_form' => 'EF', 'org_number' => '1212121212'])->save();
+    app(SaveCustomer::class)($this->owner, $this->company, ['name' => 'Privat Person', 'org_number' => '1212121212', 'payment_terms_days' => 30]);
     app(SaveCustomer::class)($this->owner, $this->company, ['name' => 'Bolaget AB', 'org_number' => '5563343689', 'payment_terms_days' => 30]);
-    Supplier::create(['number' => 1, 'name' => 'Enskild firma', 'org_number' => '8507099805', 'country' => 'SE']);
+    Supplier::create(['number' => 1, 'name' => 'Enskild firma', 'org_number' => '1212121212', 'country' => 'SE']);
 
     app(JsonDumpWriter::class)->write($this->company, $this->dir);
     $raw = (string) file_get_contents($this->dir.'/dump.json');
     $dump = dumpOf($this->dir);
 
-    expect($raw)->not->toContain('850709')
+    expect($raw)->not->toContain('121212')
         ->and($raw)->toContain('556334-3689')
         ->and($dump['company']['org_number'])->toBeNull()
         ->and(schemaProblems($dump))->toBe([]);
@@ -216,7 +216,7 @@ it('leaves out a sole trader\'s and a private person\'s organisation number unle
     File::deleteDirectory($this->dir);
     app(JsonDumpWriter::class)->write($this->company, $this->dir, includePersonalNumbers: true);
 
-    expect((string) file_get_contents($this->dir.'/dump.json'))->toContain('850709');
+    expect((string) file_get_contents($this->dir.'/dump.json'))->toContain('121212');
 });
 
 it('leaves out the organisation number of a sole-trader company whatever it looks like', function () {
@@ -230,10 +230,10 @@ it('leaves out the organisation number of a sole-trader company whatever it look
 it('tells personal numbers from organisation numbers', function (string $number, bool $personal) {
     expect(PersonalNumber::looksLike($number))->toBe($personal);
 })->with([
-    ['850709-9805', true],
-    ['198507099805', true],
+    ['121212-1212', true],
+    ['191212121212', true],
     ['556334-3689', false],
-    ['8507099806', false],
+    ['1212121213', false],
     ['', false],
 ]);
 
