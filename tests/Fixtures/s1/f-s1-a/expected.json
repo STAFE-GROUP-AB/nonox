@@ -1,0 +1,652 @@
+{
+  "fixture": "F-S1-a",
+  "status": "ready (frozen 2026-11-07)",
+  "conventions": {
+    "amounts": "integer öre",
+    "income_statement_sign": "income positive, costs negative, results signed",
+    "balance_sheet_sign": "every line positive as presented (an asset or a liability/equity amount); totals equal",
+    "cash_flow_sign": "inflow positive, outflow negative",
+    "keys_starting_with_underscore": "specification lines, not printed as their own row"
+  },
+  "size_classification": {
+    "rule_ids": [
+      "S1-R9",
+      "S1-R9.1",
+      "S1-R9.2",
+      "S1-R9.3",
+      "S1-R2"
+    ],
+    "measured_years": "the two fiscal years immediately preceding the reporting year (S1-R9.1): FY2025 uses 2023 and 2024, FY2026 uses 2024 and 2025",
+    "thresholds": {
+      "medelantal_anstallda_over": 50,
+      "balansomslutning_over_ore": 4000000000,
+      "nettoomsattning_over_ore": 8000000000
+    },
+    "years": {
+      "2023": {
+        "medelantal_anstallda": 30,
+        "balansomslutning": 4500000000,
+        "nettoomsattning": 8800000000,
+        "source": "assumption, outside the ledger"
+      },
+      "2024": {
+        "medelantal_anstallda": 30,
+        "balansomslutning": 4577500000,
+        "nettoomsattning": 9000000000,
+        "nettoomsattning_source": "assumption, outside the ledger"
+      },
+      "2025": {
+        "medelantal_anstallda": 30,
+        "balansomslutning": 4575304000,
+        "nettoomsattning": 9000000000
+      },
+      "2026": {
+        "medelantal_anstallda": 30,
+        "balansomslutning": 4814644482,
+        "nettoomsattning": 9600000000
+      }
+    },
+    "result": {
+      "2025": "storre_foretag (2023 and 2024: balansomslutning and nettoomsattning exceeded)",
+      "2026": "storre_foretag (2024 and 2025: balansomslutning and nettoomsattning exceeded)"
+    },
+    "same_two_criteria_both_years": true,
+    "cash_flow_statement_required": true
+  },
+  "income_statement": {
+    "2025": {
+      "nettoomsattning": 9000000000,
+      "ravaror_och_fornodenheter": -6140000000,
+      "ovriga_externa_kostnader": -546000000,
+      "personalkostnader": -1820167000,
+      "avskrivningar_materiella_anlaggningstillgangar": -140400000,
+      "rorelseresultat": 353433000,
+      "rantekostnader_och_liknande_resultatposter": -46200000,
+      "resultat_efter_finansiella_poster": 307233000,
+      "bokslutsdispositioner_forandring_periodiseringsfonder": -60000000,
+      "resultat_fore_skatt": 247233000,
+      "skatt_pa_arets_resultat": -52030038,
+      "arets_resultat": 195202962,
+      "_skatt_aktuell_8910": -42982518,
+      "_skatt_uppskjuten_8940": -9047520
+    },
+    "2026": {
+      "nettoomsattning": 9600000000,
+      "ravaror_och_fornodenheter": -6420000000,
+      "ovriga_externa_kostnader": -546000000,
+      "personalkostnader": -1899019000,
+      "avskrivningar_materiella_anlaggningstillgangar": -152400000,
+      "rorelseresultat": 582581000,
+      "rantekostnader_och_liknande_resultatposter": -41400000,
+      "resultat_efter_finansiella_poster": 541181000,
+      "bokslutsdispositioner_forandring_periodiseringsfonder": -100000000,
+      "resultat_fore_skatt": 441181000,
+      "skatt_pa_arets_resultat": -92480816,
+      "arets_resultat": 348700184,
+      "_skatt_aktuell_8910": -83433296,
+      "_skatt_uppskjuten_8940": -9047520
+    }
+  },
+  "balance_sheet": {
+    "2024-12-31": {
+      "tillgangar": {
+        "byggnader_och_mark": 2164000000,
+        "maskiner_och_andra_tekniska_anlaggningar": 576000000,
+        "summa_materiella_anlaggningstillgangar": 2740000000,
+        "summa_anlaggningstillgangar": 2740000000,
+        "ravaror_och_fornodenheter": 600000000,
+        "kundfordringar": 937500000,
+        "ovriga_fordringar": 0,
+        "aktuella_skattefordringar": 0,
+        "kassa_och_bank": 300000000,
+        "summa_omsattningstillgangar": 1837500000,
+        "summa_tillgangar": 4577500000
+      },
+      "eget_kapital_och_skulder": {
+        "aktiekapital": 50000000,
+        "summa_bundet_eget_kapital": 50000000,
+        "balanserad_vinst_eller_forlust": 1860653800,
+        "arets_resultat": 240000000,
+        "summa_fritt_eget_kapital": 2100653800,
+        "summa_eget_kapital": 2150653800,
+        "periodiseringsfonder": 150000000,
+        "summa_obeskattade_reserver": 150000000,
+        "uppskjuten_skatteskuld": 90475200,
+        "summa_avsattningar": 90475200,
+        "langfristiga_skulder_till_kreditinstitut": 1080000000,
+        "summa_langfristiga_skulder": 1080000000,
+        "kortfristiga_skulder_till_kreditinstitut": 120000000,
+        "leverantorsskulder": 643750000,
+        "skatteskulder": 40000000,
+        "ovriga_skulder": 118633000,
+        "upplupna_kostnader_och_forutbetalda_intakter": 183988000,
+        "summa_kortfristiga_skulder": 1106371000,
+        "summa_eget_kapital_och_skulder": 4577500000
+      }
+    },
+    "2025-12-31": {
+      "tillgangar": {
+        "byggnader_och_mark": 2119600000,
+        "maskiner_och_andra_tekniska_anlaggningar": 480000000,
+        "summa_materiella_anlaggningstillgangar": 2599600000,
+        "summa_anlaggningstillgangar": 2599600000,
+        "ravaror_och_fornodenheter": 640000000,
+        "kundfordringar": 937500000,
+        "ovriga_fordringar": 0,
+        "aktuella_skattefordringar": 0,
+        "kassa_och_bank": 398204000,
+        "summa_omsattningstillgangar": 1975704000,
+        "summa_tillgangar": 4575304000
+      },
+      "eget_kapital_och_skulder": {
+        "aktiekapital": 50000000,
+        "summa_bundet_eget_kapital": 50000000,
+        "balanserad_vinst_eller_forlust": 1980653800,
+        "arets_resultat": 195202962,
+        "summa_fritt_eget_kapital": 2175856762,
+        "summa_eget_kapital": 2225856762,
+        "periodiseringsfonder": 210000000,
+        "summa_obeskattade_reserver": 210000000,
+        "uppskjuten_skatteskuld": 99522720,
+        "summa_avsattningar": 99522720,
+        "langfristiga_skulder_till_kreditinstitut": 960000000,
+        "summa_langfristiga_skulder": 960000000,
+        "kortfristiga_skulder_till_kreditinstitut": 120000000,
+        "leverantorsskulder": 643750000,
+        "skatteskulder": 6982518,
+        "ovriga_skulder": 118633000,
+        "upplupna_kostnader_och_forutbetalda_intakter": 190559000,
+        "summa_kortfristiga_skulder": 1079924518,
+        "summa_eget_kapital_och_skulder": 4575304000
+      }
+    },
+    "2026-12-31": {
+      "tillgangar": {
+        "byggnader_och_mark": 2075200000,
+        "maskiner_och_andra_tekniska_anlaggningar": 612000000,
+        "summa_materiella_anlaggningstillgangar": 2687200000,
+        "summa_anlaggningstillgangar": 2687200000,
+        "ravaror_och_fornodenheter": 700000000,
+        "kundfordringar": 1000000000,
+        "ovriga_fordringar": 0,
+        "aktuella_skattefordringar": 0,
+        "kassa_och_bank": 427444482,
+        "summa_omsattningstillgangar": 2127444482,
+        "summa_tillgangar": 4814644482
+      },
+      "eget_kapital_och_skulder": {
+        "aktiekapital": 50000000,
+        "summa_bundet_eget_kapital": 50000000,
+        "balanserad_vinst_eller_forlust": 2025856762,
+        "arets_resultat": 348700184,
+        "summa_fritt_eget_kapital": 2374556946,
+        "summa_eget_kapital": 2424556946,
+        "periodiseringsfonder": 310000000,
+        "summa_obeskattade_reserver": 310000000,
+        "uppskjuten_skatteskuld": 108570240,
+        "summa_avsattningar": 108570240,
+        "langfristiga_skulder_till_kreditinstitut": 840000000,
+        "summa_langfristiga_skulder": 840000000,
+        "kortfristiga_skulder_till_kreditinstitut": 120000000,
+        "leverantorsskulder": 675000000,
+        "skatteskulder": 11433296,
+        "ovriga_skulder": 127954000,
+        "upplupna_kostnader_och_forutbetalda_intakter": 197130000,
+        "summa_kortfristiga_skulder": 1131517296,
+        "summa_eget_kapital_och_skulder": 4814644482
+      }
+    }
+  },
+  "cash_flow_statement": {
+    "method": "indirect",
+    "method_note": "K3 7.8 allows direct or indirect; this fixture uses indirect as a choice",
+    "starting_point": "resultat_efter_finansiella_poster",
+    "2025": {
+      "resultat_efter_finansiella_poster": 307233000,
+      "justering_avskrivningar": 140400000,
+      "betald_inkomstskatt": -76000000,
+      "kassaflode_fore_forandring_av_rorelsekapital": 371633000,
+      "forandring_varulager": -40000000,
+      "forandring_rorelsefordringar": 0,
+      "forandring_rorelseskulder": 6571000,
+      "kassaflode_fran_den_lopande_verksamheten": 338204000,
+      "forvarv_av_materiella_anlaggningstillgangar": 0,
+      "kassaflode_fran_investeringsverksamheten": 0,
+      "amortering_av_lan": -120000000,
+      "utbetald_utdelning": -120000000,
+      "kassaflode_fran_finansieringsverksamheten": -240000000,
+      "arets_kassaflode": 98204000,
+      "likvida_medel_vid_arets_borjan": 300000000,
+      "likvida_medel_vid_arets_slut": 398204000,
+      "tillaggsupplysning_betald_ranta": 46200000,
+      "tillaggsupplysning_erhallen_ranta": 0
+    },
+    "2026": {
+      "resultat_efter_finansiella_poster": 541181000,
+      "justering_avskrivningar": 152400000,
+      "betald_inkomstskatt": -78982518,
+      "kassaflode_fore_forandring_av_rorelsekapital": 614598482,
+      "forandring_varulager": -60000000,
+      "forandring_rorelsefordringar": -62500000,
+      "forandring_rorelseskulder": 47142000,
+      "kassaflode_fran_den_lopande_verksamheten": 539240482,
+      "forvarv_av_materiella_anlaggningstillgangar": -240000000,
+      "kassaflode_fran_investeringsverksamheten": -240000000,
+      "amortering_av_lan": -120000000,
+      "utbetald_utdelning": -150000000,
+      "kassaflode_fran_finansieringsverksamheten": -270000000,
+      "arets_kassaflode": 29240482,
+      "likvida_medel_vid_arets_borjan": 398204000,
+      "likvida_medel_vid_arets_slut": 427444482,
+      "tillaggsupplysning_betald_ranta": 41400000,
+      "tillaggsupplysning_erhallen_ranta": 0
+    }
+  },
+  "changes_in_equity": {
+    "2025": [
+      {
+        "rad": "Belopp vid årets ingång",
+        "aktiekapital": 50000000,
+        "balanserat_resultat": 1860653800,
+        "arets_resultat": 240000000,
+        "summa": 2150653800
+      },
+      {
+        "rad": "Omföring av föregående års resultat enligt årsstämmans beslut",
+        "aktiekapital": 0,
+        "balanserat_resultat": 240000000,
+        "arets_resultat": -240000000,
+        "summa": 0
+      },
+      {
+        "rad": "Utdelning (transaktion med ägare)",
+        "aktiekapital": 0,
+        "balanserat_resultat": -120000000,
+        "arets_resultat": 0,
+        "summa": -120000000
+      },
+      {
+        "rad": "Årets resultat",
+        "aktiekapital": 0,
+        "balanserat_resultat": 0,
+        "arets_resultat": 195202962,
+        "summa": 195202962
+      },
+      {
+        "rad": "Belopp vid årets utgång",
+        "aktiekapital": 50000000,
+        "balanserat_resultat": 1980653800,
+        "arets_resultat": 195202962,
+        "summa": 2225856762
+      }
+    ],
+    "2026": [
+      {
+        "rad": "Belopp vid årets ingång",
+        "aktiekapital": 50000000,
+        "balanserat_resultat": 1980653800,
+        "arets_resultat": 195202962,
+        "summa": 2225856762
+      },
+      {
+        "rad": "Omföring av föregående års resultat enligt årsstämmans beslut",
+        "aktiekapital": 0,
+        "balanserat_resultat": 195202962,
+        "arets_resultat": -195202962,
+        "summa": 0
+      },
+      {
+        "rad": "Utdelning (transaktion med ägare)",
+        "aktiekapital": 0,
+        "balanserat_resultat": -150000000,
+        "arets_resultat": 0,
+        "summa": -150000000
+      },
+      {
+        "rad": "Årets resultat",
+        "aktiekapital": 0,
+        "balanserat_resultat": 0,
+        "arets_resultat": 348700184,
+        "summa": 348700184
+      },
+      {
+        "rad": "Belopp vid årets utgång",
+        "aktiekapital": 50000000,
+        "balanserat_resultat": 2025856762,
+        "arets_resultat": 348700184,
+        "summa": 2424556946
+      }
+    ]
+  },
+  "component_depreciation": {
+    "rule_ids": [
+      "S1-R3"
+    ],
+    "building_B1": [
+      {
+        "component_id": "B1-stomme",
+        "namn": "Stomme",
+        "konto_anskaffning": 1111,
+        "konto_ack_avskrivning": 1119,
+        "konto_avskrivning": 7820,
+        "nyttjandeperiod_ar": 80,
+        "startdatum": "2015-01-01",
+        "per_ar": {
+          "2025": {
+            "anskaffningsvarde": 1440000000,
+            "ackumulerade_avskrivningar_ib": 180000000,
+            "arets_avskrivning": 18000000,
+            "ackumulerade_avskrivningar_ub": 198000000,
+            "redovisat_varde_ub": 1242000000,
+            "manadsavskrivning": 1500000
+          },
+          "2026": {
+            "anskaffningsvarde": 1440000000,
+            "ackumulerade_avskrivningar_ib": 198000000,
+            "arets_avskrivning": 18000000,
+            "ackumulerade_avskrivningar_ub": 216000000,
+            "redovisat_varde_ub": 1224000000,
+            "manadsavskrivning": 1500000
+          }
+        }
+      },
+      {
+        "component_id": "B1-tak",
+        "namn": "Tak",
+        "konto_anskaffning": 1111,
+        "konto_ack_avskrivning": 1119,
+        "konto_avskrivning": 7820,
+        "nyttjandeperiod_ar": 30,
+        "startdatum": "2015-01-01",
+        "per_ar": {
+          "2025": {
+            "anskaffningsvarde": 216000000,
+            "ackumulerade_avskrivningar_ib": 72000000,
+            "arets_avskrivning": 7200000,
+            "ackumulerade_avskrivningar_ub": 79200000,
+            "redovisat_varde_ub": 136800000,
+            "manadsavskrivning": 600000
+          },
+          "2026": {
+            "anskaffningsvarde": 216000000,
+            "ackumulerade_avskrivningar_ib": 79200000,
+            "arets_avskrivning": 7200000,
+            "ackumulerade_avskrivningar_ub": 86400000,
+            "redovisat_varde_ub": 129600000,
+            "manadsavskrivning": 600000
+          }
+        }
+      },
+      {
+        "component_id": "B1-fasad",
+        "namn": "Fasad",
+        "konto_anskaffning": 1111,
+        "konto_ack_avskrivning": 1119,
+        "konto_avskrivning": 7820,
+        "nyttjandeperiod_ar": 40,
+        "startdatum": "2015-01-01",
+        "per_ar": {
+          "2025": {
+            "anskaffningsvarde": 192000000,
+            "ackumulerade_avskrivningar_ib": 48000000,
+            "arets_avskrivning": 4800000,
+            "ackumulerade_avskrivningar_ub": 52800000,
+            "redovisat_varde_ub": 139200000,
+            "manadsavskrivning": 400000
+          },
+          "2026": {
+            "anskaffningsvarde": 192000000,
+            "ackumulerade_avskrivningar_ib": 52800000,
+            "arets_avskrivning": 4800000,
+            "ackumulerade_avskrivningar_ub": 57600000,
+            "redovisat_varde_ub": 134400000,
+            "manadsavskrivning": 400000
+          }
+        }
+      },
+      {
+        "component_id": "B1-installationer",
+        "namn": "Installationer (stammar, el, ventilation)",
+        "konto_anskaffning": 1111,
+        "konto_ack_avskrivning": 1119,
+        "konto_avskrivning": 7820,
+        "nyttjandeperiod_ar": 25,
+        "startdatum": "2015-01-01",
+        "per_ar": {
+          "2025": {
+            "anskaffningsvarde": 360000000,
+            "ackumulerade_avskrivningar_ib": 144000000,
+            "arets_avskrivning": 14400000,
+            "ackumulerade_avskrivningar_ub": 158400000,
+            "redovisat_varde_ub": 201600000,
+            "manadsavskrivning": 1200000
+          },
+          "2026": {
+            "anskaffningsvarde": 360000000,
+            "ackumulerade_avskrivningar_ib": 158400000,
+            "arets_avskrivning": 14400000,
+            "ackumulerade_avskrivningar_ub": 172800000,
+            "redovisat_varde_ub": 187200000,
+            "manadsavskrivning": 1200000
+          }
+        }
+      },
+      {
+        "component_id": "B1-mark",
+        "namn": "Mark",
+        "konto_anskaffning": 1130,
+        "nyttjandeperiod_ar": null,
+        "skrivs_inte_av": true,
+        "per_ar": {
+          "2025": {
+            "anskaffningsvarde": 400000000,
+            "arets_avskrivning": 0,
+            "redovisat_varde_ub": 400000000
+          },
+          "2026": {
+            "anskaffningsvarde": 400000000,
+            "arets_avskrivning": 0,
+            "redovisat_varde_ub": 400000000
+          }
+        }
+      }
+    ],
+    "machines": [
+      {
+        "asset_id": "M1",
+        "namn": "Produktionslinje 1",
+        "konto_anskaffning": 1210,
+        "konto_ack_avskrivning": 1219,
+        "konto_avskrivning": 7831,
+        "nyttjandeperiod_ar": 10,
+        "startdatum": "2021-01-01",
+        "per_ar": {
+          "2025": {
+            "anskaffningsvarde": 960000000,
+            "ackumulerade_avskrivningar_ib": 384000000,
+            "arets_avskrivning": 96000000,
+            "ackumulerade_avskrivningar_ub": 480000000,
+            "redovisat_varde_ub": 480000000
+          },
+          "2026": {
+            "anskaffningsvarde": 960000000,
+            "ackumulerade_avskrivningar_ib": 480000000,
+            "arets_avskrivning": 96000000,
+            "ackumulerade_avskrivningar_ub": 576000000,
+            "redovisat_varde_ub": 384000000
+          }
+        }
+      },
+      {
+        "asset_id": "M2",
+        "namn": "Svarv- och fräscell 2",
+        "konto_anskaffning": 1210,
+        "konto_ack_avskrivning": 1219,
+        "konto_avskrivning": 7831,
+        "nyttjandeperiod_ar": 10,
+        "startdatum": "2026-07-01",
+        "per_ar": {
+          "2026": {
+            "anskaffningsvarde": 240000000,
+            "ackumulerade_avskrivningar_ib": 0,
+            "arets_avskrivning": 12000000,
+            "ackumulerade_avskrivningar_ub": 12000000,
+            "redovisat_varde_ub": 228000000
+          }
+        }
+      }
+    ],
+    "totals": {
+      "2025": {
+        "byggnad_7820": 44400000,
+        "maskiner_7831": 96000000
+      },
+      "2026": {
+        "byggnad_7820": 44400000,
+        "maskiner_7831": 108000000
+      }
+    }
+  },
+  "deferred_tax": {
+    "rule_ids": [
+      "S1-R4",
+      "S1-R4.1",
+      "S1-R4.2",
+      "S1-R4.3",
+      "S1-R4.4",
+      "S1-R4.6",
+      "S1-R4.7"
+    ],
+    "rate_bp": 2060,
+    "classification": "avsättning (K3 29.31); change in the income statement (29.22); not discounted (29.25)",
+    "note_5_36_required": "yes, större företag (S1-R4.7); need not cover untaxed reserves",
+    "items": {
+      "2024-12-31": {
+        "datum": "2024-12-31",
+        "byggnad_redovisat_varde": 1764000000,
+        "byggnad_skattemassigt_varde": 1324800000,
+        "temporar_skillnad": 439200000,
+        "skattesats_bp": 2060,
+        "uppskjuten_skatteskuld": 90475200
+      },
+      "2025-12-31": {
+        "datum": "2025-12-31",
+        "byggnad_redovisat_varde": 1719600000,
+        "byggnad_skattemassigt_varde": 1236480000,
+        "temporar_skillnad": 483120000,
+        "skattesats_bp": 2060,
+        "uppskjuten_skatteskuld": 99522720
+      },
+      "2026-12-31": {
+        "datum": "2026-12-31",
+        "byggnad_redovisat_varde": 1675200000,
+        "byggnad_skattemassigt_varde": 1148160000,
+        "temporar_skillnad": 527040000,
+        "skattesats_bp": 2060,
+        "uppskjuten_skatteskuld": 108570240
+      }
+    },
+    "change_booked": {
+      "2025": 9047520,
+      "2026": 9047520
+    },
+    "voucher_accounts": {
+      "debit": 8940,
+      "credit": 2240
+    },
+    "untaxed_reserves_excluded": {
+      "rule": "K3 29.37: in the legal entity deferred tax on obeskattade reserver is not shown separately; untaxed reserves stay gross",
+      "periodiseringsfonder": {
+        "2024-12-31": 150000000,
+        "2025-12-31": 210000000,
+        "2026-12-31": 310000000
+      },
+      "deferred_tax_not_recognised_info_only": {
+        "2024-12-31": 30900000,
+        "2025-12-31": 43260000,
+        "2026-12-31": 63860000
+      }
+    },
+    "other_temporary_differences": "none: land book = tax value; machines tax value = book value (räkenskapsenlig avskrivning per plan)"
+  },
+  "current_tax": {
+    "rule_ids": [
+      "S1-R4"
+    ],
+    "2025": {
+      "res_fin": 307233000,
+      "nondeductible": 2400000,
+      "book_bdep": 44400000,
+      "tax_bdep": 88320000,
+      "funds_start": 150000000,
+      "schablon": 2940000,
+      "surplus": 268653000,
+      "cap": 67163250,
+      "alloc": 60000000,
+      "taxable": 208653000,
+      "cur_tax": 42982518,
+      "bank_min": 268502000
+    },
+    "2026": {
+      "res_fin": 541181000,
+      "nondeductible": 2400000,
+      "book_bdep": 44400000,
+      "tax_bdep": 88320000,
+      "funds_start": 210000000,
+      "schablon": 5355000,
+      "surplus": 505016000,
+      "cap": 126254000,
+      "alloc": 100000000,
+      "taxable": 405016000,
+      "cur_tax": 83433296,
+      "bank_min": 193564482
+    },
+    "note": "bank_min is the lowest bank balance seen at a month-end in the generator, kept for information"
+  },
+  "tax_note": {
+    "2025": {
+      "aktuell_skatt": 42982518,
+      "uppskjuten_skatt": 9047520,
+      "summa": 52030038
+    },
+    "2026": {
+      "aktuell_skatt": 83433296,
+      "uppskjuten_skatt": 9047520,
+      "summa": 92480816
+    }
+  },
+  "lease": {
+    "rule_ids": [
+      "S1-R5"
+    ],
+    "contract_id": "L1",
+    "classification_k3_20_3": "finansiellt",
+    "company_policy_k3_20_29": "operational_in_legal_entity (applies to all finance leases of the company, not per contract)",
+    "recognised_as": "operationellt",
+    "implicit_rate_monthly": 0.003542,
+    "implicit_rate_annual_nominal": 0.0425,
+    "pv_of_minimum_lease_payments_at_implicit_rate_ore": 135000000,
+    "expense_5220": {
+      "2025": 30000000,
+      "2026": 30000000
+    },
+    "balance_sheet_effect": "none: no asset and no liability recognised",
+    "note_required_because": "K3 20.14 operating-lease note applies to a större företag (S1-R5.1)",
+    "future_minimum_lease_payments": {
+      "2025-12-31": {
+        "inom_ett_ar": 30000000,
+        "mellan_ett_och_fem_ar": 90100000,
+        "senare_an_fem_ar": 0
+      },
+      "2026-12-31": {
+        "inom_ett_ar": 30000000,
+        "mellan_ett_och_fem_ar": 60100000,
+        "senare_an_fem_ar": 0
+      }
+    }
+  },
+  "average_employees": {
+    "2025": 30,
+    "2026": 30
+  }
+}

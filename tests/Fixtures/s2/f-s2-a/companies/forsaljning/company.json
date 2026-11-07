@@ -1,0 +1,120 @@
+{
+  "fixture": "F-S2-a",
+  "company_key": "forsaljning",
+  "synthetic": true,
+  "legal_name": "Fiktiva Koncernen Försäljning AB",
+  "org_number": "559999-3507",
+  "org_number_note": "Fictional test number (559999-series, passes Luhn). Not a real company.",
+  "legal_form": "AB",
+  "reporting_framework": "K3",
+  "fiscal_year": {
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
+  },
+  "accounting_method": "FAKTURAMETODEN",
+  "vat_registered": true,
+  "average_employees": 4,
+  "chart_of_accounts": [
+    {
+      "number": 1510,
+      "name": "Kundfordringar"
+    },
+    {
+      "number": 1630,
+      "name": "Avräkning för skatter och avgifter (skattekonto)"
+    },
+    {
+      "number": 1930,
+      "name": "Företagskonto/checkkonto/affärskonto"
+    },
+    {
+      "number": 2081,
+      "name": "Aktiekapital"
+    },
+    {
+      "number": 2091,
+      "name": "Balanserad vinst eller förlust"
+    },
+    {
+      "number": 2099,
+      "name": "Årets resultat"
+    },
+    {
+      "number": 2460,
+      "name": "Leverantörsskulder till koncernföretag"
+    },
+    {
+      "number": 2512,
+      "name": "Beräknad inkomstskatt"
+    },
+    {
+      "number": 2611,
+      "name": "Utgående moms på försäljning inom Sverige, 25 %"
+    },
+    {
+      "number": 2640,
+      "name": "Ingående moms"
+    },
+    {
+      "number": 2650,
+      "name": "Redovisningskonto för moms"
+    },
+    {
+      "number": 2710,
+      "name": "Personalskatt"
+    },
+    {
+      "number": 2731,
+      "name": "Avräkning lagstadgade sociala avgifter"
+    },
+    {
+      "number": 2860,
+      "name": "Kortfristiga skulder till koncernföretag"
+    },
+    {
+      "number": 3001,
+      "name": "Försäljning inom Sverige, 25 % moms"
+    },
+    {
+      "number": 4011,
+      "name": "Inköp varor från koncernföretag (custom subaccount)"
+    },
+    {
+      "number": 5010,
+      "name": "Lokalhyra"
+    },
+    {
+      "number": 5910,
+      "name": "Annonsering"
+    },
+    {
+      "number": 6591,
+      "name": "Koncerngemensamma tjänster från moderföretaget (custom subaccount)"
+    },
+    {
+      "number": 7210,
+      "name": "Löner till tjänstemän"
+    },
+    {
+      "number": 7510,
+      "name": "Arbetsgivaravgifter"
+    },
+    {
+      "number": 8830,
+      "name": "Lämnade koncernbidrag"
+    },
+    {
+      "number": 8910,
+      "name": "Skatt som belastar årets resultat"
+    }
+  ],
+  "series": {
+    "A": "Manuell",
+    "B": "Kundfakturor",
+    "C": "Kundinbetalningar",
+    "D": "Leverantörsfakturor",
+    "E": "Leverantörsbetalningar",
+    "L": "Lön",
+    "M": "Moms"
+  }
+}

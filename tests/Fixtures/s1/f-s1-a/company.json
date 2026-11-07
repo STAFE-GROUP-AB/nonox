@@ -1,0 +1,330 @@
+{
+  "fixture": "F-S1-a",
+  "status": "ready (frozen 2026-11-07)",
+  "synthetic": true,
+  "legal_name": "Fiktiva Komponentverkstaden AB",
+  "org_number": "559999-3101",
+  "org_number_note": "Fictional test number (559999-series, passes Luhn). Not a real company.",
+  "legal_form": "AB",
+  "country": "SE",
+  "fiscal_years": [
+    {
+      "start_date": "2025-01-01",
+      "end_date": "2025-12-31",
+      "framework": "K3"
+    },
+    {
+      "start_date": "2026-01-01",
+      "end_date": "2026-12-31",
+      "framework": "K3"
+    }
+  ],
+  "reporting_framework": "K3",
+  "k3_since": "first fiscal year (the company has always applied K3; no transition in this fixture)",
+  "accounting_method": "FAKTURAMETODEN",
+  "vat_registered": true,
+  "vat_period": "MONTHLY",
+  "base_currency": "SEK",
+  "average_employees": {
+    "2024": 30,
+    "2025": 30,
+    "2026": 30
+  },
+  "owner": {
+    "name": "Fiktiv Ägare Holding AB",
+    "org_number": "559999-3200",
+    "share_bp": 10000,
+    "note": "fictional"
+  },
+  "income_statement_format": "kostnadsslagsindelad",
+  "accounting_policies": {
+    "components": "applied (K3 17.4, 17.13)",
+    "leasing": "operational_in_legal_entity (K3 20.29: all finance leases of the company are accounted for as operating leases; company-wide policy, not per contract)",
+    "deferred_tax": "recognised on temporary differences except untaxed reserves (K3 29.19, 29.37)",
+    "intangibles": "expense (no internally generated intangibles exist)",
+    "borrowing_costs": "expense (K3 25.3)",
+    "financial_instruments": "chapter_11 (acquisition cost)",
+    "fixed_price_contracts": "not applicable (no contracts in progress)"
+  },
+  "chart_of_accounts": [
+    {
+      "number": 1111,
+      "name": "Byggnader på egen mark",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 1119,
+      "name": "Ackumulerade avskrivningar på byggnader",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 1130,
+      "name": "Mark",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 1210,
+      "name": "Maskiner och andra tekniska anläggningar",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 1219,
+      "name": "Ackumulerade avskrivningar på maskiner och andra tekniska anläggningar",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 1410,
+      "name": "Lager av råvaror",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 1510,
+      "name": "Kundfordringar",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 1630,
+      "name": "Avräkning för skatter och avgifter (skattekonto)",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 1930,
+      "name": "Företagskonto/checkkonto/affärskonto",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 2081,
+      "name": "Aktiekapital",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 2091,
+      "name": "Balanserad vinst eller förlust",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 2099,
+      "name": "Årets resultat",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 2124,
+      "name": "Periodiseringsfond 2024",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 2125,
+      "name": "Periodiseringsfond 2025",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 2126,
+      "name": "Periodiseringsfond 2026",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 2240,
+      "name": "Avsättningar för uppskjutna skatter",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 2350,
+      "name": "Andra långfristiga skulder till kreditinstitut",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 2410,
+      "name": "Andra kortfristiga låneskulder till kreditinstitut",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 2440,
+      "name": "Leverantörsskulder",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 2512,
+      "name": "Beräknad inkomstskatt",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 2611,
+      "name": "Utgående moms på försäljning inom Sverige, 25 %",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 2640,
+      "name": "Ingående moms",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 2650,
+      "name": "Redovisningskonto för moms",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 2710,
+      "name": "Personalskatt",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 2731,
+      "name": "Avräkning lagstadgade sociala avgifter",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 2898,
+      "name": "Outtagen vinstutdelning",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 2920,
+      "name": "Upplupna semesterlöner",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 2940,
+      "name": "Upplupna lagstadgade sociala och andra avgifter",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 3001,
+      "name": "Försäljning inom Sverige, 25 % moms",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 4010,
+      "name": "Inköp material och varor",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 4600,
+      "name": "Legoarbeten och underentreprenader",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 4910,
+      "name": "Förändring av lager av råvaror",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 5170,
+      "name": "Reparation och underhåll av fastighet",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 5220,
+      "name": "Hyra av inventarier och verktyg",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 5310,
+      "name": "El för drift",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 5460,
+      "name": "Förbrukningsmaterial",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 5910,
+      "name": "Annonsering",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 6072,
+      "name": "Representation, ej avdragsgill",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 6310,
+      "name": "Företagsförsäkringar",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 6540,
+      "name": "IT-tjänster",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 6550,
+      "name": "Konsultarvoden",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 6570,
+      "name": "Bankkostnader",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 7010,
+      "name": "Löner till kollektivanställda",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 7210,
+      "name": "Löner till tjänstemän",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 7220,
+      "name": "Löner till företagsledare",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 7290,
+      "name": "Förändring av semesterlöneskuld",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 7510,
+      "name": "Arbetsgivaravgifter",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 7519,
+      "name": "Sociala avgifter för semester- och löneskulder",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 7820,
+      "name": "Avskrivningar på byggnader och markanläggningar",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 7831,
+      "name": "Avskrivningar på maskiner och andra tekniska anläggningar",
+      "in_repo_bas_2026_k3_seed": false
+    },
+    {
+      "number": 8410,
+      "name": "Räntekostnader för långfristiga skulder",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 8811,
+      "name": "Avsättning till periodiseringsfond",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 8910,
+      "name": "Skatt som belastar årets resultat",
+      "in_repo_bas_2026_k3_seed": true
+    },
+    {
+      "number": 8940,
+      "name": "Uppskjuten skatt",
+      "in_repo_bas_2026_k3_seed": false
+    }
+  ],
+  "series": {
+    "A": "Manuell",
+    "B": "Kundfakturor",
+    "C": "Kundinbetalningar",
+    "D": "Leverantörsfakturor",
+    "E": "Leverantörsbetalningar",
+    "L": "Lön",
+    "M": "Moms"
+  }
+}

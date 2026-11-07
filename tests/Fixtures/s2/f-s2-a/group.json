@@ -1,0 +1,116 @@
+{
+  "fixture": "F-S2-a",
+  "name": "Fiktiva Koncernen",
+  "reporting_currency": "SEK",
+  "parent": "moder",
+  "members": [
+    {
+      "company": "moder",
+      "role": "parent"
+    },
+    {
+      "company": "produktion",
+      "role": "subsidiary",
+      "ownership_bp": 10000,
+      "voting_bp": 10000,
+      "acquired_at": "2019-03-01",
+      "disposed_at": null,
+      "how": "founded by the parent (nyemission at registration)",
+      "cost_of_shares_ore": 100000000,
+      "share_capital_at_acquisition_ore": 100000000,
+      "parent_account": 1310
+    },
+    {
+      "company": "forsaljning",
+      "role": "subsidiary",
+      "ownership_bp": 10000,
+      "voting_bp": 10000,
+      "acquired_at": "2021-09-01",
+      "disposed_at": null,
+      "how": "founded by the parent (nyemission at registration)",
+      "cost_of_shares_ore": 50000000,
+      "share_capital_at_acquisition_ore": 50000000,
+      "parent_account": 1310
+    }
+  ],
+  "account_map": "identity: all three companies use BAS 2026 with the same custom subaccounts; group chart = BAS",
+  "intercompany_account_marks": {
+    "moder": {
+      "shares": [
+        1310
+      ],
+      "receivable": [
+        1320,
+        1560,
+        1660
+      ],
+      "sales": [
+        3021
+      ],
+      "interest_income": [
+        8250
+      ],
+      "group_contribution_received": [
+        8820
+      ]
+    },
+    "produktion": {
+      "payable": [
+        2360,
+        2460,
+        2860
+      ],
+      "receivable": [
+        1560
+      ],
+      "equity_in_subsidiary": [
+        2081
+      ],
+      "sales": [
+        3011
+      ],
+      "purchases": [
+        6591
+      ],
+      "interest_expense": [
+        8410
+      ]
+    },
+    "forsaljning": {
+      "payable": [
+        2460,
+        2860
+      ],
+      "equity_in_subsidiary": [
+        2081
+      ],
+      "purchases": [
+        4011,
+        6591
+      ],
+      "group_contribution_given": [
+        8830
+      ]
+    }
+  },
+  "intercompany_loan": {
+    "lender": "moder",
+    "borrower": "produktion",
+    "principal_ore": 500000000,
+    "start": "2026-01-02",
+    "rate_bp": 500,
+    "interest_2026_ore": 25000000,
+    "interest_basis": "full calendar year 2026 (assumption: day count not modelled)",
+    "repayment": "2030-12-31, bullet"
+  },
+  "group_contribution": {
+    "from": "forsaljning",
+    "to": "moder",
+    "amount_ore": 80000000,
+    "decided": "2026-12-31",
+    "paid": null,
+    "treatment_in_companies": "bokslutsdisposition (8830 given, 8820 received), K3 6.6",
+    "tax": "deductible for the giver, taxable for the receiver (IL 35 kap., conditions assumed met)"
+  },
+  "inventory_note": "Försäljning AB holds no inventory: it buys from Produktion AB only against confirmed customer orders and delivers directly. Produktion AB holds only raw materials bought externally. No unrealised internal profit exists at 2026-01-01 or 2026-12-31."
+}

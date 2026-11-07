@@ -1,0 +1,45 @@
+{
+  "convention": "balance_ore: debit positive, credit negative; sums to 0",
+  "2026-01-01": [
+    {
+      "account": 1210,
+      "name": "Maskiner och andra tekniska anläggningar",
+      "balance_ore": 400000000
+    },
+    {
+      "account": 1219,
+      "name": "Ackumulerade avskrivningar på maskiner och andra tekniska anläggningar",
+      "balance_ore": -80000000
+    },
+    {
+      "account": 1410,
+      "name": "Lager av råvaror",
+      "balance_ore": 150000000
+    },
+    {
+      "account": 1930,
+      "name": "Företagskonto/checkkonto/affärskonto",
+      "balance_ore": 120000000
+    },
+    {
+      "account": 2081,
+      "name": "Aktiekapital",
+      "balance_ore": -100000000
+    },
+    {
+      "account": 2091,
+      "name": "Balanserad vinst eller förlust",
+      "balance_ore": -360000000
+    },
+    {
+      "account": 2099,
+      "name": "Årets resultat",
+      "balance_ore": -90000000
+    },
+    {
+      "account": 2125,
+      "name": "Periodiseringsfond 2025",
+      "balance_ore": -40000000
+    }
+  ]
+}

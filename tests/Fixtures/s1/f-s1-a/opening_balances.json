@@ -1,0 +1,233 @@
+{
+  "convention": "balance_ore: debit positive, credit negative; each date sums to 0",
+  "2025-01-01": [
+    {
+      "account": 1111,
+      "name": "Byggnader på egen mark",
+      "balance_ore": 2208000000
+    },
+    {
+      "account": 1119,
+      "name": "Ackumulerade avskrivningar på byggnader",
+      "balance_ore": -444000000
+    },
+    {
+      "account": 1130,
+      "name": "Mark",
+      "balance_ore": 400000000
+    },
+    {
+      "account": 1210,
+      "name": "Maskiner och andra tekniska anläggningar",
+      "balance_ore": 960000000
+    },
+    {
+      "account": 1219,
+      "name": "Ackumulerade avskrivningar på maskiner och andra tekniska anläggningar",
+      "balance_ore": -384000000
+    },
+    {
+      "account": 1410,
+      "name": "Lager av råvaror",
+      "balance_ore": 600000000
+    },
+    {
+      "account": 1510,
+      "name": "Kundfordringar",
+      "balance_ore": 937500000
+    },
+    {
+      "account": 1930,
+      "name": "Företagskonto/checkkonto/affärskonto",
+      "balance_ore": 300000000
+    },
+    {
+      "account": 2081,
+      "name": "Aktiekapital",
+      "balance_ore": -50000000
+    },
+    {
+      "account": 2091,
+      "name": "Balanserad vinst eller förlust",
+      "balance_ore": -1860653800
+    },
+    {
+      "account": 2099,
+      "name": "Årets resultat",
+      "balance_ore": -240000000
+    },
+    {
+      "account": 2124,
+      "name": "Periodiseringsfond 2024",
+      "balance_ore": -150000000
+    },
+    {
+      "account": 2240,
+      "name": "Avsättningar för uppskjutna skatter",
+      "balance_ore": -90475200
+    },
+    {
+      "account": 2350,
+      "name": "Andra långfristiga skulder till kreditinstitut",
+      "balance_ore": -1080000000
+    },
+    {
+      "account": 2410,
+      "name": "Andra kortfristiga låneskulder till kreditinstitut",
+      "balance_ore": -120000000
+    },
+    {
+      "account": 2440,
+      "name": "Leverantörsskulder",
+      "balance_ore": -643750000
+    },
+    {
+      "account": 2512,
+      "name": "Beräknad inkomstskatt",
+      "balance_ore": -40000000
+    },
+    {
+      "account": 2650,
+      "name": "Redovisningskonto för moms",
+      "balance_ore": -48000000
+    },
+    {
+      "account": 2710,
+      "name": "Personalskatt",
+      "balance_ore": -34500000
+    },
+    {
+      "account": 2731,
+      "name": "Avräkning lagstadgade sociala avgifter",
+      "balance_ore": -36133000
+    },
+    {
+      "account": 2920,
+      "name": "Upplupna semesterlöner",
+      "balance_ore": -140000000
+    },
+    {
+      "account": 2940,
+      "name": "Upplupna lagstadgade sociala och andra avgifter",
+      "balance_ore": -43988000
+    }
+  ],
+  "2026-01-01": [
+    {
+      "account": 1111,
+      "name": "Byggnader på egen mark",
+      "balance_ore": 2208000000
+    },
+    {
+      "account": 1119,
+      "name": "Ackumulerade avskrivningar på byggnader",
+      "balance_ore": -488400000
+    },
+    {
+      "account": 1130,
+      "name": "Mark",
+      "balance_ore": 400000000
+    },
+    {
+      "account": 1210,
+      "name": "Maskiner och andra tekniska anläggningar",
+      "balance_ore": 960000000
+    },
+    {
+      "account": 1219,
+      "name": "Ackumulerade avskrivningar på maskiner och andra tekniska anläggningar",
+      "balance_ore": -480000000
+    },
+    {
+      "account": 1410,
+      "name": "Lager av råvaror",
+      "balance_ore": 640000000
+    },
+    {
+      "account": 1510,
+      "name": "Kundfordringar",
+      "balance_ore": 937500000
+    },
+    {
+      "account": 1930,
+      "name": "Företagskonto/checkkonto/affärskonto",
+      "balance_ore": 398204000
+    },
+    {
+      "account": 2081,
+      "name": "Aktiekapital",
+      "balance_ore": -50000000
+    },
+    {
+      "account": 2091,
+      "name": "Balanserad vinst eller förlust",
+      "balance_ore": -1980653800
+    },
+    {
+      "account": 2099,
+      "name": "Årets resultat",
+      "balance_ore": -195202962
+    },
+    {
+      "account": 2124,
+      "name": "Periodiseringsfond 2024",
+      "balance_ore": -150000000
+    },
+    {
+      "account": 2125,
+      "name": "Periodiseringsfond 2025",
+      "balance_ore": -60000000
+    },
+    {
+      "account": 2240,
+      "name": "Avsättningar för uppskjutna skatter",
+      "balance_ore": -99522720
+    },
+    {
+      "account": 2350,
+      "name": "Andra långfristiga skulder till kreditinstitut",
+      "balance_ore": -960000000
+    },
+    {
+      "account": 2410,
+      "name": "Andra kortfristiga låneskulder till kreditinstitut",
+      "balance_ore": -120000000
+    },
+    {
+      "account": 2440,
+      "name": "Leverantörsskulder",
+      "balance_ore": -643750000
+    },
+    {
+      "account": 2512,
+      "name": "Beräknad inkomstskatt",
+      "balance_ore": -6982518
+    },
+    {
+      "account": 2650,
+      "name": "Redovisningskonto för moms",
+      "balance_ore": -48000000
+    },
+    {
+      "account": 2710,
+      "name": "Personalskatt",
+      "balance_ore": -34500000
+    },
+    {
+      "account": 2731,
+      "name": "Avräkning lagstadgade sociala avgifter",
+      "balance_ore": -36133000
+    },
+    {
+      "account": 2920,
+      "name": "Upplupna semesterlöner",
+      "balance_ore": -145000000
+    },
+    {
+      "account": 2940,
+      "name": "Upplupna lagstadgade sociala och andra avgifter",
+      "balance_ore": -45559000
+    }
+  ],
+  "2026-01-01_note": "Derived: closing balances 2025 with the 2025 result (all classes 3-8) moved to 2099 Årets resultat. A system that rolls the year over itself must arrive at exactly these balances."
+}

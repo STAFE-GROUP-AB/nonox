@@ -1,0 +1,898 @@
+{
+  "fixture": "F-S2-a",
+  "status": "ready (frozen 2026-11-07)",
+  "conventions": {
+    "amounts": "integer öre",
+    "income_statement_sign": "income positive, costs negative",
+    "balance_sheet_sign": "lines positive as presented",
+    "elimination_rows": "debit/credit as booked in the group ledger; never written into a company ledger"
+  },
+  "companies": {
+    "moder": {
+      "income_statement_2026": {
+        "nettoomsattning": 240000000,
+        "handelsvaror": 0,
+        "ravaror_och_fornodenheter": 0,
+        "ovriga_externa_kostnader": -30000000,
+        "personalkostnader": -118278000,
+        "avskrivningar_materiella_anlaggningstillgangar": 0,
+        "rorelseresultat": 91722000,
+        "resultat_fran_ovriga_vardepapper_och_fordringar_som_ar_anlaggningstillgangar": 25000000,
+        "rantekostnader_och_liknande_resultatposter": 0,
+        "resultat_efter_finansiella_poster": 116722000,
+        "bokslutsdispositioner_mottagna_koncernbidrag": 80000000,
+        "bokslutsdispositioner_lamnade_koncernbidrag": 0,
+        "bokslutsdispositioner_forandring_periodiseringsfonder": 0,
+        "resultat_fore_skatt": 196722000,
+        "skatt_pa_arets_resultat": -40524732,
+        "arets_resultat": 156197268
+      },
+      "balance_sheet": {
+        "2026-01-01": {
+          "tillgangar": {
+            "maskiner_och_andra_tekniska_anlaggningar": 0,
+            "andelar_i_koncernforetag": 150000000,
+            "fordringar_hos_koncernforetag_langfristiga": 0,
+            "summa_anlaggningstillgangar": 150000000,
+            "ravaror_och_fornodenheter": 0,
+            "kundfordringar": 0,
+            "fordringar_hos_koncernforetag_kortfristiga": 0,
+            "ovriga_fordringar": 0,
+            "aktuella_skattefordringar": 0,
+            "kassa_och_bank": 650000000,
+            "summa_omsattningstillgangar": 650000000,
+            "summa_tillgangar": 800000000
+          },
+          "eget_kapital_och_skulder": {
+            "aktiekapital": 50000000,
+            "balanserad_vinst_eller_forlust": 620000000,
+            "arets_resultat": 130000000,
+            "summa_eget_kapital": 800000000,
+            "periodiseringsfonder": 0,
+            "uppskjuten_skatteskuld": 0,
+            "skulder_till_koncernforetag_langfristiga": 0,
+            "leverantorsskulder": 0,
+            "skulder_till_koncernforetag_kortfristiga": 0,
+            "skatteskulder": 0,
+            "ovriga_skulder": 0,
+            "upplupna_kostnader_och_forutbetalda_intakter": 0,
+            "summa_eget_kapital_och_skulder": 800000000
+          }
+        },
+        "2026-12-31": {
+          "tillgangar": {
+            "maskiner_och_andra_tekniska_anlaggningar": 0,
+            "andelar_i_koncernforetag": 150000000,
+            "fordringar_hos_koncernforetag_langfristiga": 500000000,
+            "summa_anlaggningstillgangar": 650000000,
+            "ravaror_och_fornodenheter": 0,
+            "kundfordringar": 0,
+            "fordringar_hos_koncernforetag_kortfristiga": 117500000,
+            "ovriga_fordringar": 0,
+            "aktuella_skattefordringar": 0,
+            "kassa_och_bank": 202828500,
+            "summa_omsattningstillgangar": 320328500,
+            "summa_tillgangar": 970328500
+          },
+          "eget_kapital_och_skulder": {
+            "aktiekapital": 50000000,
+            "balanserad_vinst_eller_forlust": 750000000,
+            "arets_resultat": 156197268,
+            "summa_eget_kapital": 956197268,
+            "periodiseringsfonder": 0,
+            "uppskjuten_skatteskuld": 0,
+            "skulder_till_koncernforetag_langfristiga": 0,
+            "leverantorsskulder": 0,
+            "skulder_till_koncernforetag_kortfristiga": 0,
+            "skatteskulder": 4524732,
+            "ovriga_skulder": 9606500,
+            "upplupna_kostnader_och_forutbetalda_intakter": 0,
+            "summa_eget_kapital_och_skulder": 970328500
+          }
+        }
+      },
+      "tax": {
+        "resultat_efter_finansiella_poster": 116722000,
+        "koncernbidrag": 80000000,
+        "periodiseringsfonder_vid_arets_ingang": 0,
+        "schablonintakt": 0,
+        "overskott": 196722000,
+        "beskattningsbar_inkomst": 196722000,
+        "skatt": 40524732
+      }
+    },
+    "produktion": {
+      "income_statement_2026": {
+        "nettoomsattning": 4200000000,
+        "handelsvaror": 0,
+        "ravaror_och_fornodenheter": -2370000000,
+        "ovriga_externa_kostnader": -300000000,
+        "personalkostnader": -1182780000,
+        "avskrivningar_materiella_anlaggningstillgangar": -84000000,
+        "rorelseresultat": 263220000,
+        "resultat_fran_ovriga_vardepapper_och_fordringar_som_ar_anlaggningstillgangar": 0,
+        "rantekostnader_och_liknande_resultatposter": -25000000,
+        "resultat_efter_finansiella_poster": 238220000,
+        "bokslutsdispositioner_mottagna_koncernbidrag": 0,
+        "bokslutsdispositioner_lamnade_koncernbidrag": 0,
+        "bokslutsdispositioner_forandring_periodiseringsfonder": 0,
+        "resultat_fore_skatt": 238220000,
+        "skatt_pa_arets_resultat": -49283440,
+        "arets_resultat": 188936560
+      },
+      "balance_sheet": {
+        "2026-01-01": {
+          "tillgangar": {
+            "maskiner_och_andra_tekniska_anlaggningar": 320000000,
+            "andelar_i_koncernforetag": 0,
+            "fordringar_hos_koncernforetag_langfristiga": 0,
+            "summa_anlaggningstillgangar": 320000000,
+            "ravaror_och_fornodenheter": 150000000,
+            "kundfordringar": 0,
+            "fordringar_hos_koncernforetag_kortfristiga": 0,
+            "ovriga_fordringar": 0,
+            "aktuella_skattefordringar": 0,
+            "kassa_och_bank": 120000000,
+            "summa_omsattningstillgangar": 270000000,
+            "summa_tillgangar": 590000000
+          },
+          "eget_kapital_och_skulder": {
+            "aktiekapital": 100000000,
+            "balanserad_vinst_eller_forlust": 360000000,
+            "arets_resultat": 90000000,
+            "summa_eget_kapital": 550000000,
+            "periodiseringsfonder": 40000000,
+            "uppskjuten_skatteskuld": 0,
+            "skulder_till_koncernforetag_langfristiga": 0,
+            "leverantorsskulder": 0,
+            "skulder_till_koncernforetag_kortfristiga": 0,
+            "skatteskulder": 0,
+            "ovriga_skulder": 0,
+            "upplupna_kostnader_och_forutbetalda_intakter": 0,
+            "summa_eget_kapital_och_skulder": 590000000
+          }
+        },
+        "2026-12-31": {
+          "tillgangar": {
+            "maskiner_och_andra_tekniska_anlaggningar": 716000000,
+            "andelar_i_koncernforetag": 0,
+            "fordringar_hos_koncernforetag_langfristiga": 0,
+            "summa_anlaggningstillgangar": 716000000,
+            "ravaror_och_fornodenheter": 180000000,
+            "kundfordringar": 312500000,
+            "fordringar_hos_koncernforetag_kortfristiga": 125000000,
+            "ovriga_fordringar": 0,
+            "aktuella_skattefordringar": 0,
+            "kassa_och_bank": 315285000,
+            "summa_omsattningstillgangar": 932785000,
+            "summa_tillgangar": 1648785000
+          },
+          "eget_kapital_och_skulder": {
+            "aktiekapital": 100000000,
+            "balanserad_vinst_eller_forlust": 450000000,
+            "arets_resultat": 188936560,
+            "summa_eget_kapital": 738936560,
+            "periodiseringsfonder": 40000000,
+            "uppskjuten_skatteskuld": 0,
+            "skulder_till_koncernforetag_langfristiga": 500000000,
+            "leverantorsskulder": 250000000,
+            "skulder_till_koncernforetag_kortfristiga": 37500000,
+            "skatteskulder": 1283440,
+            "ovriga_skulder": 81065000,
+            "upplupna_kostnader_och_forutbetalda_intakter": 0,
+            "summa_eget_kapital_och_skulder": 1648785000
+          }
+        }
+      },
+      "tax": {
+        "resultat_efter_finansiella_poster": 238220000,
+        "koncernbidrag": 0,
+        "periodiseringsfonder_vid_arets_ingang": 40000000,
+        "schablonintakt": 1020000,
+        "overskott": 239240000,
+        "beskattningsbar_inkomst": 239240000,
+        "skatt": 49283440
+      }
+    },
+    "forsaljning": {
+      "income_statement_2026": {
+        "nettoomsattning": 1800000000,
+        "handelsvaror": -1200000000,
+        "ravaror_och_fornodenheter": 0,
+        "ovriga_externa_kostnader": -180000000,
+        "personalkostnader": -315408000,
+        "avskrivningar_materiella_anlaggningstillgangar": 0,
+        "rorelseresultat": 104592000,
+        "resultat_fran_ovriga_vardepapper_och_fordringar_som_ar_anlaggningstillgangar": 0,
+        "rantekostnader_och_liknande_resultatposter": 0,
+        "resultat_efter_finansiella_poster": 104592000,
+        "bokslutsdispositioner_mottagna_koncernbidrag": 0,
+        "bokslutsdispositioner_lamnade_koncernbidrag": -80000000,
+        "bokslutsdispositioner_forandring_periodiseringsfonder": 0,
+        "resultat_fore_skatt": 24592000,
+        "skatt_pa_arets_resultat": -5065952,
+        "arets_resultat": 19526048
+      },
+      "balance_sheet": {
+        "2026-01-01": {
+          "tillgangar": {
+            "maskiner_och_andra_tekniska_anlaggningar": 0,
+            "andelar_i_koncernforetag": 0,
+            "fordringar_hos_koncernforetag_langfristiga": 0,
+            "summa_anlaggningstillgangar": 0,
+            "ravaror_och_fornodenheter": 0,
+            "kundfordringar": 0,
+            "fordringar_hos_koncernforetag_kortfristiga": 0,
+            "ovriga_fordringar": 0,
+            "aktuella_skattefordringar": 0,
+            "kassa_och_bank": 180000000,
+            "summa_omsattningstillgangar": 180000000,
+            "summa_tillgangar": 180000000
+          },
+          "eget_kapital_och_skulder": {
+            "aktiekapital": 50000000,
+            "balanserad_vinst_eller_forlust": 80000000,
+            "arets_resultat": 50000000,
+            "summa_eget_kapital": 180000000,
+            "periodiseringsfonder": 0,
+            "uppskjuten_skatteskuld": 0,
+            "skulder_till_koncernforetag_langfristiga": 0,
+            "leverantorsskulder": 0,
+            "skulder_till_koncernforetag_kortfristiga": 0,
+            "skatteskulder": 0,
+            "ovriga_skulder": 0,
+            "upplupna_kostnader_och_forutbetalda_intakter": 0,
+            "summa_eget_kapital_och_skulder": 180000000
+          }
+        },
+        "2026-12-31": {
+          "tillgangar": {
+            "maskiner_och_andra_tekniska_anlaggningar": 0,
+            "andelar_i_koncernforetag": 0,
+            "fordringar_hos_koncernforetag_langfristiga": 0,
+            "summa_anlaggningstillgangar": 0,
+            "ravaror_och_fornodenheter": 0,
+            "kundfordringar": 187500000,
+            "fordringar_hos_koncernforetag_kortfristiga": 0,
+            "ovriga_fordringar": 0,
+            "aktuella_skattefordringar": 6934048,
+            "kassa_och_bank": 232376000,
+            "summa_omsattningstillgangar": 426810048,
+            "summa_tillgangar": 426810048
+          },
+          "eget_kapital_och_skulder": {
+            "aktiekapital": 50000000,
+            "balanserad_vinst_eller_forlust": 130000000,
+            "arets_resultat": 19526048,
+            "summa_eget_kapital": 199526048,
+            "periodiseringsfonder": 0,
+            "uppskjuten_skatteskuld": 0,
+            "skulder_till_koncernforetag_langfristiga": 0,
+            "leverantorsskulder": 0,
+            "skulder_till_koncernforetag_kortfristiga": 205000000,
+            "skatteskulder": 0,
+            "ovriga_skulder": 22284000,
+            "upplupna_kostnader_och_forutbetalda_intakter": 0,
+            "summa_eget_kapital_och_skulder": 426810048
+          }
+        }
+      },
+      "tax": {
+        "resultat_efter_finansiella_poster": 104592000,
+        "koncernbidrag": -80000000,
+        "periodiseringsfonder_vid_arets_ingang": 0,
+        "schablonintakt": 0,
+        "overskott": 24592000,
+        "beskattningsbar_inkomst": 24592000,
+        "skatt": 5065952
+      }
+    }
+  },
+  "intercompany_checks": {
+    "goods_3011_vs_4011": 1200000000,
+    "fees_3021_vs_6591": 240000000,
+    "interest_8250_vs_8410": 25000000,
+    "group_contribution_8820_vs_8830": 80000000,
+    "loan_1320_vs_2360": 500000000,
+    "trade_1560_vs_2460": {
+      "produktion_from_forsaljning": 125000000,
+      "moder_from_produktion": 12500000,
+      "moder_from_forsaljning": 0
+    },
+    "other_1660_vs_2860": {
+      "moder_from_produktion_interest": 25000000,
+      "moder_from_forsaljning_group_contribution": 80000000
+    },
+    "mismatches": [],
+    "tax_balances_not_offset": "current tax receivable/payable of different companies are shown gross in the group (no netting between taxpayers)"
+  },
+  "eliminations": {
+    "2026-12-31": [
+      {
+        "id": "E1",
+        "type": "sales_purchases",
+        "date": "2026-12-31",
+        "description": "Koncernintern försäljning av varor Produktion → Försäljning",
+        "rule_ids": [
+          "S2-R4"
+        ],
+        "rows": [
+          {
+            "company": "produktion",
+            "account": 3011,
+            "debit_ore": 1200000000,
+            "credit_ore": 0
+          },
+          {
+            "company": "forsaljning",
+            "account": 4011,
+            "debit_ore": 0,
+            "credit_ore": 1200000000
+          }
+        ]
+      },
+      {
+        "id": "E2",
+        "type": "sales_purchases",
+        "date": "2026-12-31",
+        "description": "Koncernarvoden moderföretaget → dotterföretagen",
+        "rule_ids": [
+          "S2-R4"
+        ],
+        "rows": [
+          {
+            "company": "moder",
+            "account": 3021,
+            "debit_ore": 240000000,
+            "credit_ore": 0
+          },
+          {
+            "company": "produktion",
+            "account": 6591,
+            "debit_ore": 0,
+            "credit_ore": 120000000
+          },
+          {
+            "company": "forsaljning",
+            "account": 6591,
+            "debit_ore": 0,
+            "credit_ore": 120000000
+          }
+        ]
+      },
+      {
+        "id": "E3",
+        "type": "interest",
+        "date": "2026-12-31",
+        "description": "Ränta på koncernlån",
+        "rule_ids": [
+          "S2-R4"
+        ],
+        "rows": [
+          {
+            "company": "moder",
+            "account": 8250,
+            "debit_ore": 25000000,
+            "credit_ore": 0
+          },
+          {
+            "company": "produktion",
+            "account": 8410,
+            "debit_ore": 0,
+            "credit_ore": 25000000
+          }
+        ]
+      },
+      {
+        "id": "E4",
+        "type": "group_contribution",
+        "date": "2026-12-31",
+        "description": "Koncernbidrag Försäljning → moderföretaget",
+        "rule_ids": [
+          "S2-R7"
+        ],
+        "rows": [
+          {
+            "company": "moder",
+            "account": 8820,
+            "debit_ore": 80000000,
+            "credit_ore": 0
+          },
+          {
+            "company": "forsaljning",
+            "account": 8830,
+            "debit_ore": 0,
+            "credit_ore": 80000000
+          }
+        ]
+      },
+      {
+        "id": "E5",
+        "type": "loan",
+        "date": "2026-12-31",
+        "description": "Koncernlån moderföretaget → Produktion",
+        "rule_ids": [
+          "S2-R4"
+        ],
+        "rows": [
+          {
+            "company": "produktion",
+            "account": 2360,
+            "debit_ore": 500000000,
+            "credit_ore": 0
+          },
+          {
+            "company": "moder",
+            "account": 1320,
+            "debit_ore": 0,
+            "credit_ore": 500000000
+          }
+        ]
+      },
+      {
+        "id": "E6",
+        "type": "receivable_payable",
+        "date": "2026-12-31",
+        "description": "Kundfordran/leverantörsskuld varor december (inkl. moms)",
+        "rule_ids": [
+          "S2-R4"
+        ],
+        "rows": [
+          {
+            "company": "forsaljning",
+            "account": 2460,
+            "debit_ore": 125000000,
+            "credit_ore": 0
+          },
+          {
+            "company": "produktion",
+            "account": 1560,
+            "debit_ore": 0,
+            "credit_ore": 125000000
+          }
+        ]
+      },
+      {
+        "id": "E7",
+        "type": "receivable_payable",
+        "date": "2026-12-31",
+        "description": "Kundfordran/leverantörsskuld koncernarvode december Produktion (inkl. moms)",
+        "rule_ids": [
+          "S2-R4"
+        ],
+        "rows": [
+          {
+            "company": "produktion",
+            "account": 2460,
+            "debit_ore": 12500000,
+            "credit_ore": 0
+          },
+          {
+            "company": "moder",
+            "account": 1560,
+            "debit_ore": 0,
+            "credit_ore": 12500000
+          }
+        ]
+      },
+      {
+        "id": "E8",
+        "type": "receivable_payable",
+        "date": "2026-12-31",
+        "description": "Upplupen ränta koncernlån",
+        "rule_ids": [
+          "S2-R4"
+        ],
+        "rows": [
+          {
+            "company": "produktion",
+            "account": 2860,
+            "debit_ore": 25000000,
+            "credit_ore": 0
+          },
+          {
+            "company": "moder",
+            "account": 1660,
+            "debit_ore": 0,
+            "credit_ore": 25000000
+          }
+        ]
+      },
+      {
+        "id": "E9",
+        "type": "receivable_payable",
+        "date": "2026-12-31",
+        "description": "Obetalt koncernbidrag",
+        "rule_ids": [
+          "S2-R4",
+          "S2-R7"
+        ],
+        "rows": [
+          {
+            "company": "forsaljning",
+            "account": 2860,
+            "debit_ore": 80000000,
+            "credit_ore": 0
+          },
+          {
+            "company": "moder",
+            "account": 1660,
+            "debit_ore": 0,
+            "credit_ore": 80000000
+          }
+        ]
+      },
+      {
+        "id": "E10",
+        "type": "shares_equity",
+        "date": "2026-12-31",
+        "description": "Kapitaleliminering: andelar i dotterföretag mot dotterföretagens aktiekapital vid bildandet (inget förvärvat övervärde)",
+        "rule_ids": [
+          "S2-R4"
+        ],
+        "rows": [
+          {
+            "company": "produktion",
+            "account": 2081,
+            "debit_ore": 100000000,
+            "credit_ore": 0
+          },
+          {
+            "company": "forsaljning",
+            "account": 2081,
+            "debit_ore": 50000000,
+            "credit_ore": 0
+          },
+          {
+            "company": "moder",
+            "account": 1310,
+            "debit_ore": 0,
+            "credit_ore": 150000000
+          }
+        ]
+      }
+    ],
+    "2026-01-01": [
+      {
+        "id": "E10-IB",
+        "type": "shares_equity",
+        "date": "2026-01-01",
+        "description": "Kapitaleliminering vid årets ingång (samma som E10)",
+        "rule_ids": [
+          "S2-R4"
+        ],
+        "rows": [
+          {
+            "company": "produktion",
+            "account": 2081,
+            "debit_ore": 100000000,
+            "credit_ore": 0
+          },
+          {
+            "company": "forsaljning",
+            "account": 2081,
+            "debit_ore": 50000000,
+            "credit_ore": 0
+          },
+          {
+            "company": "moder",
+            "account": 1310,
+            "debit_ore": 0,
+            "credit_ore": 150000000
+          }
+        ]
+      }
+    ],
+    "net_of_all_rows": 0,
+    "net_effect_on_group_result": 0,
+    "total_eliminated_income_statement": 1545000000,
+    "total_eliminated_balance_sheet": 892500000
+  },
+  "consolidated_stage1": {
+    "label": "Intern koncernrapport, inte en koncernredovisning enligt ÅRL",
+    "rule_ids": [
+      "S2-R4b",
+      "S2-R7",
+      "S2-R14"
+    ],
+    "income_statement_2026": {
+      "nettoomsattning": 4800000000,
+      "handelsvaror": 0,
+      "ravaror_och_fornodenheter": -2370000000,
+      "ovriga_externa_kostnader": -270000000,
+      "personalkostnader": -1616466000,
+      "avskrivningar_materiella_anlaggningstillgangar": -84000000,
+      "rorelseresultat": 459534000,
+      "resultat_fran_ovriga_vardepapper_och_fordringar_som_ar_anlaggningstillgangar": 0,
+      "rantekostnader_och_liknande_resultatposter": 0,
+      "resultat_efter_finansiella_poster": 459534000,
+      "bokslutsdispositioner_mottagna_koncernbidrag": 0,
+      "bokslutsdispositioner_lamnade_koncernbidrag": 0,
+      "bokslutsdispositioner_forandring_periodiseringsfonder": 0,
+      "resultat_fore_skatt": 459534000,
+      "skatt_pa_arets_resultat": -94874124,
+      "arets_resultat": 364659876
+    },
+    "balance_sheet": {
+      "2026-01-01": {
+        "tillgangar": {
+          "maskiner_och_andra_tekniska_anlaggningar": 320000000,
+          "andelar_i_koncernforetag": 0,
+          "fordringar_hos_koncernforetag_langfristiga": 0,
+          "summa_anlaggningstillgangar": 320000000,
+          "ravaror_och_fornodenheter": 150000000,
+          "kundfordringar": 0,
+          "fordringar_hos_koncernforetag_kortfristiga": 0,
+          "ovriga_fordringar": 0,
+          "aktuella_skattefordringar": 0,
+          "kassa_och_bank": 950000000,
+          "summa_omsattningstillgangar": 1100000000,
+          "summa_tillgangar": 1420000000
+        },
+        "eget_kapital_och_skulder": {
+          "aktiekapital": 50000000,
+          "balanserad_vinst_eller_forlust": 1060000000,
+          "arets_resultat": 270000000,
+          "summa_eget_kapital": 1380000000,
+          "periodiseringsfonder": 40000000,
+          "uppskjuten_skatteskuld": 0,
+          "skulder_till_koncernforetag_langfristiga": 0,
+          "leverantorsskulder": 0,
+          "skulder_till_koncernforetag_kortfristiga": 0,
+          "skatteskulder": 0,
+          "ovriga_skulder": 0,
+          "upplupna_kostnader_och_forutbetalda_intakter": 0,
+          "summa_eget_kapital_och_skulder": 1420000000
+        }
+      },
+      "2026-12-31": {
+        "tillgangar": {
+          "maskiner_och_andra_tekniska_anlaggningar": 716000000,
+          "andelar_i_koncernforetag": 0,
+          "fordringar_hos_koncernforetag_langfristiga": 0,
+          "summa_anlaggningstillgangar": 716000000,
+          "ravaror_och_fornodenheter": 180000000,
+          "kundfordringar": 500000000,
+          "fordringar_hos_koncernforetag_kortfristiga": 0,
+          "ovriga_fordringar": 0,
+          "aktuella_skattefordringar": 6934048,
+          "kassa_och_bank": 750489500,
+          "summa_omsattningstillgangar": 1437423548,
+          "summa_tillgangar": 2153423548
+        },
+        "eget_kapital_och_skulder": {
+          "aktiekapital": 50000000,
+          "balanserad_vinst_eller_forlust": 1330000000,
+          "arets_resultat": 364659876,
+          "summa_eget_kapital": 1744659876,
+          "periodiseringsfonder": 40000000,
+          "uppskjuten_skatteskuld": 0,
+          "skulder_till_koncernforetag_langfristiga": 0,
+          "leverantorsskulder": 250000000,
+          "skulder_till_koncernforetag_kortfristiga": 0,
+          "skatteskulder": 5808172,
+          "ovriga_skulder": 112955500,
+          "upplupna_kostnader_och_forutbetalda_intakter": 0,
+          "summa_eget_kapital_och_skulder": 2153423548
+        }
+      }
+    },
+    "summed_before_eliminations": {
+      "nettoomsattning": 6240000000,
+      "arets_resultat": 364659876
+    }
+  },
+  "consolidated_stage2": {
+    "rule_ids": [
+      "S2-R1",
+      "S2-R1c",
+      "S2-R2",
+      "S2-R3",
+      "S2-R4",
+      "S2-R4b",
+      "S2-R4d",
+      "S2-R6",
+      "S2-R7",
+      "S2-R11",
+      "S2-R12"
+    ],
+    "framework": "K3 (BFNAR 2012:1), voluntary group accounts of a mindre koncern; the parent therefore also uses K3 in its own annual report (K2 1.1A c, S2-R3)",
+    "subsidiaries_formed_not_acquired": "Both subsidiaries were founded by the parent; this is not a rörelseförvärv, so there is no acquisition analysis in substance: shares at cost equal the share capital subscribed, eliminated against it; all later reserves are group equity (assumption, see README; H2 does not apply to new formations as read here)",
+    "untaxed_reserves_split": {
+      "company": "produktion",
+      "account": 2125,
+      "periodiseringsfond": 40000000,
+      "deferred_tax_liability_20_6": 8240000,
+      "equity_part": 31760000,
+      "change_in_2026": 0,
+      "group_income_statement_effect": 0
+    },
+    "acquisition_analyses": [
+      {
+        "company": "produktion",
+        "acquired_at": "2019-03-01",
+        "how": "founded by the parent",
+        "cost": 100000000,
+        "identifiable_net_assets": 100000000,
+        "goodwill": 0,
+        "untaxed_reserves_at_acquisition": 0
+      },
+      {
+        "company": "forsaljning",
+        "acquired_at": "2021-09-01",
+        "how": "founded by the parent",
+        "cost": 50000000,
+        "identifiable_net_assets": 50000000,
+        "goodwill": 0,
+        "untaxed_reserves_at_acquisition": 0
+      }
+    ],
+    "non_controlling_interests": 0,
+    "unrealised_internal_profit": 0,
+    "income_statement_2026": {
+      "nettoomsattning": 4800000000,
+      "handelsvaror": 0,
+      "ravaror_och_fornodenheter": -2370000000,
+      "ovriga_externa_kostnader": -270000000,
+      "personalkostnader": -1616466000,
+      "avskrivningar_materiella_anlaggningstillgangar": -84000000,
+      "rorelseresultat": 459534000,
+      "resultat_fran_ovriga_vardepapper_och_fordringar_som_ar_anlaggningstillgangar": 0,
+      "rantekostnader_och_liknande_resultatposter": 0,
+      "resultat_efter_finansiella_poster": 459534000,
+      "bokslutsdispositioner_mottagna_koncernbidrag": 0,
+      "bokslutsdispositioner_lamnade_koncernbidrag": 0,
+      "bokslutsdispositioner_forandring_periodiseringsfonder": 0,
+      "resultat_fore_skatt": 459534000,
+      "skatt_pa_arets_resultat": -94874124,
+      "arets_resultat": 364659876
+    },
+    "income_statement_note": "Same as stage 1: the untaxed reserve did not change in 2026, so no deferred tax movement; koncernbidrag eliminated.",
+    "balance_sheet": {
+      "2026-01-01": {
+        "tillgangar": {
+          "maskiner_och_andra_tekniska_anlaggningar": 320000000,
+          "andelar_i_koncernforetag": 0,
+          "fordringar_hos_koncernforetag_langfristiga": 0,
+          "summa_anlaggningstillgangar": 320000000,
+          "ravaror_och_fornodenheter": 150000000,
+          "kundfordringar": 0,
+          "fordringar_hos_koncernforetag_kortfristiga": 0,
+          "ovriga_fordringar": 0,
+          "aktuella_skattefordringar": 0,
+          "kassa_och_bank": 950000000,
+          "summa_omsattningstillgangar": 1100000000,
+          "summa_tillgangar": 1420000000
+        },
+        "eget_kapital_och_skulder": {
+          "aktiekapital": 50000000,
+          "balanserad_vinst_eller_forlust": 1091760000,
+          "arets_resultat": 270000000,
+          "summa_eget_kapital": 1411760000,
+          "periodiseringsfonder": 0,
+          "uppskjuten_skatteskuld": 8240000,
+          "skulder_till_koncernforetag_langfristiga": 0,
+          "leverantorsskulder": 0,
+          "skulder_till_koncernforetag_kortfristiga": 0,
+          "skatteskulder": 0,
+          "ovriga_skulder": 0,
+          "upplupna_kostnader_och_forutbetalda_intakter": 0,
+          "summa_eget_kapital_och_skulder": 1420000000
+        }
+      },
+      "2026-12-31": {
+        "tillgangar": {
+          "maskiner_och_andra_tekniska_anlaggningar": 716000000,
+          "andelar_i_koncernforetag": 0,
+          "fordringar_hos_koncernforetag_langfristiga": 0,
+          "summa_anlaggningstillgangar": 716000000,
+          "ravaror_och_fornodenheter": 180000000,
+          "kundfordringar": 500000000,
+          "fordringar_hos_koncernforetag_kortfristiga": 0,
+          "ovriga_fordringar": 0,
+          "aktuella_skattefordringar": 6934048,
+          "kassa_och_bank": 750489500,
+          "summa_omsattningstillgangar": 1437423548,
+          "summa_tillgangar": 2153423548
+        },
+        "eget_kapital_och_skulder": {
+          "aktiekapital": 50000000,
+          "balanserad_vinst_eller_forlust": 1361760000,
+          "arets_resultat": 364659876,
+          "summa_eget_kapital": 1776419876,
+          "periodiseringsfonder": 0,
+          "uppskjuten_skatteskuld": 8240000,
+          "skulder_till_koncernforetag_langfristiga": 0,
+          "leverantorsskulder": 250000000,
+          "skulder_till_koncernforetag_kortfristiga": 0,
+          "skatteskulder": 5808172,
+          "ovriga_skulder": 112955500,
+          "upplupna_kostnader_och_forutbetalda_intakter": 0,
+          "summa_eget_kapital_och_skulder": 2153423548
+        }
+      }
+    },
+    "equity_reconciliation": {
+      "opening": 1411760000,
+      "arets_resultat": 364659876,
+      "dividends": 0,
+      "closing": 1776419876
+    },
+    "group_equity_presentation_k3_4_9": {
+      "2026-01-01": {
+        "aktiekapital": 50000000,
+        "ovrigt_tillskjutet_kapital": 0,
+        "annat_eget_kapital_inklusive_arets_resultat": 1361760000,
+        "_varav_arets_resultat": 270000000,
+        "innehav_utan_bestammande_inflytande": 0,
+        "summa_eget_kapital": 1411760000
+      },
+      "2026-12-31": {
+        "aktiekapital": 50000000,
+        "ovrigt_tillskjutet_kapital": 0,
+        "annat_eget_kapital_inklusive_arets_resultat": 1726419876,
+        "_varav_arets_resultat": 364659876,
+        "innehav_utan_bestammande_inflytande": 0,
+        "summa_eget_kapital": 1776419876
+      },
+      "note": "S2-R12: group equity is not split into bundet/fritt; the equity share of untaxed reserves sits in Annat eget kapital (K3 4.12)"
+    },
+    "changes_in_equity_2026": [
+      {
+        "rad": "Belopp vid årets ingång",
+        "aktiekapital": 50000000,
+        "ovrigt_tillskjutet_kapital": 0,
+        "annat_eget_kapital": 1361760000,
+        "summa": 1411760000
+      },
+      {
+        "rad": "Årets resultat",
+        "aktiekapital": 0,
+        "ovrigt_tillskjutet_kapital": 0,
+        "annat_eget_kapital": 364659876,
+        "summa": 364659876
+      },
+      {
+        "rad": "Belopp vid årets utgång",
+        "aktiekapital": 50000000,
+        "ovrigt_tillskjutet_kapital": 0,
+        "annat_eget_kapital": 1726419876,
+        "summa": 1776419876
+      }
+    ],
+    "cash_flow_statement_2026": {
+      "resultat_efter_finansiella_poster": 459534000,
+      "justering_avskrivningar": 84000000,
+      "betald_inkomstskatt": -96000000,
+      "kassaflode_fore_forandring_av_rorelsekapital": 447534000,
+      "forandring_varulager": -30000000,
+      "forandring_rorelsefordringar": -500000000,
+      "forandring_rorelseskulder": 362955500,
+      "kassaflode_fran_den_lopande_verksamheten": 280489500,
+      "forvarv_av_materiella_anlaggningstillgangar": -480000000,
+      "kassaflode_fran_investeringsverksamheten": -480000000,
+      "kassaflode_fran_finansieringsverksamheten": 0,
+      "arets_kassaflode": -199510500,
+      "likvida_medel_vid_arets_borjan": 950000000,
+      "likvida_medel_vid_arets_slut": 750489500,
+      "method": "indirect (K3 7.8 choice)",
+      "rule_ids": [
+        "S2-R4d"
+      ],
+      "note": "Always part of statutory group accounts (ÅRL 7 kap. 4 §), even for a mindre koncern. Tax receivable/payable of each company is not netted; tax paid = sum over companies of (opening liability + current tax − closing liability)."
+    },
+    "comparatives": "none: first group accounts, opening balance sheet 2026-01-01 given; whether K3 ch. 35 applies to first group accounts is open (S2-R11, H4)"
+  },
+  "size_test_group": {
+    "rule_ids": [
+      "S2-R1",
+      "S2-R1c"
+    ],
+    "measured_years": "the two fiscal years preceding 2026 (2024 and 2025); their figures are not in this fixture (assumption: same scale as 2026, far below the limits)",
+    "method": "eliminated (limits 50 / 40 MSEK / 80 MSEK); gross alternative 48 / 96 MSEK also not exceeded",
+    "average_employees": 20,
+    "net_turnover_after_eliminations": 4800000000,
+    "balance_sheet_total_after_eliminations": 2153423548,
+    "result": "mindre koncern: no duty to prepare group accounts; stage 2 output is voluntary"
+  }
+}
