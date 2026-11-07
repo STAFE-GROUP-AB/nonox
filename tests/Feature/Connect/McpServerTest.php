@@ -395,3 +395,18 @@ it('answers 404 from the middleware too if the route is there but the switch is 
 
     mcpMessage($this, $key, 'tools/list')->assertNotFound();
 });
+
+it('ships with the MCP server switched off when NONOX_MCP_ENABLED is not set', function () {
+    $saved = $_ENV['NONOX_MCP_ENABLED'] ?? null;
+    unset($_ENV['NONOX_MCP_ENABLED'], $_SERVER['NONOX_MCP_ENABLED']);
+    putenv('NONOX_MCP_ENABLED');
+
+    try {
+        $config = require base_path('config/nonox.php');
+
+        expect($config['mcp_enabled'])->toBeFalse();
+    } finally {
+        $_ENV['NONOX_MCP_ENABLED'] = $saved ?? 'true';
+        putenv('NONOX_MCP_ENABLED='.($saved ?? 'true'));
+    }
+});
