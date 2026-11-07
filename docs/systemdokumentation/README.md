@@ -2206,8 +2206,10 @@ Enligt AI-utredning 2026-11-07, juristgranskning återstår (ADR-059, tillägg
   tillskott som rättas från 100 000 till 120 000 kr visas som ett tillskott på
   120 000 kr, och ett par som inte ändrar eget kapital alls (till exempel en
   kostnad som av misstag bokats mot 2091 och rättats till ett kostnadskonto)
-  faller bort. En rättelse av en verifikation från ett tidigare år klassas för
-  sig; en ren återföring hamnar på samma rad som det den återför.
+  faller bort. En rättelse av en verifikation från ett tidigare räkenskapsår
+  som ändrar eget kapital är rättelse av fel, som hör till punktens rad b:
+  den stoppar specifikationen, med båda verifikationerna och originalets
+  räkenskapsår angivna, tills rad b byggs (beslut H7, TODO(legal-verify)).
 - Det som finns kvar av föregående års resultat på 2099 vid årets slut visas,
   som i balansräkningen, under balanserad vinst eller förlust och redovisas
   på raden Omföring av föregående års resultat, även om årsstämman inte har

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Domain\AnnualReport;
 
-use App\Domain\Accounting\VoucherSource;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Closing\ClosingAccounts;
 use App\Models\VoucherRow;
 use Illuminate\Support\Facades\DB;
 use LogicException;
+use stdClass;
 
 /**
  * The specification of changes in equity of a K3 annual report (ADR-059
@@ -61,8 +61,10 @@ use LogicException;
  *   the re-booked rows in one voucher) is netted with the voucher it
  *   corrects when that is in the year, so the pair is classified by its
  *   net as the original's kind (a pair with no net equity change drops
- *   out); a correction of a voucher outside the year is classified alone,
- *   and a pure reversal goes on the row of what it reverses.
+ *   out); a correction of an earlier year's voucher that changes equity is
+ *   refused (an error correction belongs to row b, below), and a correction
+ *   whose original in the year did not touch equity is classified by what it
+ *   books.
  * Row b (retroactive application, where NONOX puts the K2-to-K3 transition,
  * A.1 point 5) is reserved: the transition voucher's source is human
  * decision H7 (S1-P12), so no voucher reaches the row yet and a transition
@@ -84,7 +86,9 @@ use LogicException;
  * as the marks of a contribution and a dividend (H9/H10, BAS 2026 chart);
  * a previous result left on 2099 printed as "Omföring av föregående års
  * resultat" without a decision of the annual meeting behind it; tax effects
- * recognised in equity (K3 29, 6.3 comment) have no source and block.
+ * recognised in equity (K3 29, 6.3 comment) have no source and block; a
+ * correction of an earlier year's error (K3 10, 6.3 b) is refused until row b
+ * is built in S1-P12 (H7).
  *
  * TODO(S1-P12/P10): the columns of the K3 document must come from columns()
  * here: a post that is zero at both ends but moved during the year is in the
@@ -161,6 +165,9 @@ final class K3EquityStatement
     /** @var list<array{voucher: string, accounts: list<int>}> */
     private array $unclassified = [];
 
+    /** @var list<array{voucher: string, accounts: list<int>}> corrections of an earlier year's voucher */
+    private array $earlierCorrections = [];
+
     /** @var list<int> */
     private array $openingDifferences = [];
 
@@ -228,6 +235,10 @@ final class K3EquityStatement
             $parts[] = __('verifikation :voucher ändrar eget kapital på konto :accounts utan att höra till någon av punktens rader', ['voucher' => $voucher['voucher'], 'accounts' => implode(', ', $voucher['accounts'])]);
         }
 
+        foreach ($this->earlierCorrections as $correction) {
+            $parts[] = __(':correction och ändrar eget kapital på konto :accounts; rättelse av fel från ett tidigare år hör till punktens rad b, som ännu inte används', ['correction' => $correction['voucher'], 'accounts' => implode(', ', $correction['accounts'])]);
+        }
+
         if ($this->openingDifferences !== []) {
             $parts[] = __('den ingående balansen på konto :accounts skiljer sig från föregående års utgående balans', ['accounts' => implode(', ', $this->openingDifferences)]);
         }
@@ -252,7 +263,7 @@ final class K3EquityStatement
     {
         $accounts = [...$this->openingDifferences];
 
-        foreach ($this->unclassified as $voucher) {
+        foreach ([...$this->unclassified, ...$this->earlierCorrections] as $voucher) {
             array_push($accounts, ...$voucher['accounts']);
         }
 
@@ -372,7 +383,7 @@ final class K3EquityStatement
      * each voucher that marks whether any of its accounts is in equity (no
      * IN subquery, whose semi join was planned badly; S1-P7 review).
      *
-     * @return list<array{id: string, references: list<string>, source: string, corrects: ?string, rows: array<int, int>}>
+     * @return list<array{id: string, references: list<string>, source: string, corrects: ?string, earlier: ?string, rows: array<int, int>}>
      */
     private function vouchers(): array
     {
@@ -385,12 +396,22 @@ final class K3EquityStatement
             ->groupBy('voucher_rows.voucher_id', 'vouchers.source', 'vouchers.number', 'vouchers.corrects_voucher_id', 'voucher_series.code', 'accounts.number')
             ->selectRaw('voucher_rows.voucher_id, vouchers.source, vouchers.number AS voucher_number, vouchers.corrects_voucher_id, voucher_series.code AS series_code, accounts.number AS account_number, SUM(voucher_rows.credit_ore) - SUM(voucher_rows.debit_ore) AS net_credit, BOOL_OR(accounts.number BETWEEN ? AND ?) OVER (PARTITION BY voucher_rows.voucher_id) AS touches_equity', self::EQUITY_ACCOUNTS);
 
+        // The voucher a correction corrects, looked up by its key for the few equity rows
+        // only (a lateral join, so the lookup is by primary key whatever the statistics).
+        $original = DB::table('vouchers as originals')
+            ->join('voucher_series as original_series', 'original_series.id', '=', 'originals.series_id')
+            ->join('fiscal_years as original_years', 'original_years.id', '=', 'originals.fiscal_year_id')
+            ->whereColumn('originals.id', 'year_rows.corrects_voucher_id')
+            ->selectRaw('originals.fiscal_year_id AS original_year_id, originals.number AS original_number, original_series.code AS original_series_code, original_years.start_date AS original_start, original_years.end_date AS original_end');
+
         $result = DB::query()
             ->fromSub($rows, 'year_rows')
-            ->where('touches_equity', true)
-            ->orderBy('series_code')
-            ->orderBy('voucher_number')
-            ->orderBy('account_number')
+            ->leftJoinLateral($original, 'original')
+            ->where('year_rows.touches_equity', true)
+            ->orderBy('year_rows.series_code')
+            ->orderBy('year_rows.voucher_number')
+            ->orderBy('year_rows.account_number')
+            ->select(['year_rows.*', 'original.*'])
             ->get();
 
         $vouchers = [];
@@ -402,6 +423,7 @@ final class K3EquityStatement
                 'references' => [$row->series_code.$row->voucher_number],
                 'source' => (string) $row->source,
                 'corrects' => $row->corrects_voucher_id === null ? null : (string) $row->corrects_voucher_id,
+                'earlier' => self::earlierOriginal($row, $this->accounts->fiscalYear->id),
                 'rows' => [],
             ];
             $vouchers[$id]['rows'][(int) $row->account_number] = (int) $row->net_credit;
@@ -411,16 +433,34 @@ final class K3EquityStatement
     }
 
     /**
+     * The voucher an in-year correction corrects, as "A12 från räkenskapsåret
+     * 2025", when that voucher is in an earlier fiscal year; else null.
+     */
+    private static function earlierOriginal(stdClass $row, int $fiscalYearId): ?string
+    {
+        if ($row->original_year_id === null || (int) $row->original_year_id === $fiscalYearId) {
+            return null;
+        }
+
+        $start = substr((string) $row->original_start, 0, 4);
+        $end = substr((string) $row->original_end, 0, 4);
+
+        return __(':voucher från räkenskapsåret :year', ['voucher' => $row->original_series_code.$row->original_number, 'year' => $start === $end ? $start : "{$start}/{$end}"]);
+    }
+
+    /**
      * A correcting voucher (CorrectVoucher writes the reversal and any
      * re-booked rows in one voucher) is netted with the voucher it corrects
      * when both are in the year, along the whole chain of corrections, so the
      * pair is classified by what was finally booked: a pair that leaves no
      * equity change drops out, and a re-booked amount lands on the original's
-     * row with its signed net. A correction whose original is not in the
-     * year is classified alone.
+     * row with its signed net. A correction whose original is in an earlier
+     * fiscal year carries that original ("A12 från räkenskapsåret 2025") and
+     * is refused by classify() when it changes equity; one whose original is
+     * in the year but outside equity is classified alone.
      *
-     * @param  list<array{id: string, references: list<string>, source: string, corrects: ?string, rows: array<int, int>}>  $vouchers
-     * @return list<array{references: list<string>, alone: bool, rows: array<int, int>}>
+     * @param  list<array{id: string, references: list<string>, source: string, corrects: ?string, earlier: ?string, rows: array<int, int>}>  $vouchers
+     * @return list<array{references: list<string>, earlier: ?string, rows: array<int, int>}>
      */
     private static function withCorrections(array $vouchers): array
     {
@@ -439,7 +479,7 @@ final class K3EquityStatement
             $key = $root['id'];
             $groups[$key] ??= [
                 'references' => [],
-                'alone' => $root['source'] === VoucherSource::Correction->value,
+                'earlier' => $root['earlier'] === null ? null : (string) __('rättelseverifikation :correction rättar verifikation :original', ['correction' => $root['references'][0], 'original' => $root['earlier']]),
                 'rows' => [],
             ];
             $groups[$key]['references'] = [...$groups[$key]['references'], ...$voucher['references']];
@@ -457,7 +497,7 @@ final class K3EquityStatement
      * of K3 6.3, or records it as unclassified. Nothing is added unless the
      * whole voucher is classified.
      *
-     * @param  array{references: list<string>, alone: bool, rows: array<int, int>}  $voucher
+     * @param  array{references: list<string>, earlier: ?string, rows: array<int, int>}  $voucher
      * @return list<string> the equity columns the voucher touches
      */
     private function classify(array $voucher): array
@@ -487,6 +527,16 @@ final class K3EquityStatement
         }
 
         if ($equityAccounts === [] || $this->booksTheYearsResult($counter)) {
+            return $touched;
+        }
+
+        // A correction of an error from an earlier year belongs to 6.3 b (S1-P12, H7), which no
+        // voucher reaches yet: it is refused, never shown as an owner transaction.
+        if ($voucher['earlier'] !== null) {
+            $accounts = array_keys($equityAccounts);
+            sort($accounts);
+            $this->earlierCorrections[] = ['voucher' => $voucher['earlier'], 'accounts' => $accounts];
+
             return $touched;
         }
 
@@ -533,11 +583,6 @@ final class K3EquityStatement
         if ($equity !== []) {
             $accounts = array_values(array_filter(array_keys($equityAccounts), fn (int $number): bool => $number !== self::YEAR_RESULT_ACCOUNT));
             $kind = self::ownerTransaction($equity, $accounts, $counter);
-
-            // A correction of a voucher outside the year: a pure reversal goes on the row of what it reverses.
-            if ($kind === null && $voucher['alone']) {
-                $kind = self::ownerTransaction(array_map(fn (int $amount): int => -$amount, $equity), $accounts, array_map(fn (int $amount): int => -$amount, $counter));
-            }
 
             if ($kind === null) {
                 $this->unclassified[] = ['voucher' => implode(', ', $voucher['references']), 'accounts' => self::accountsBehind($equityAccounts, $equity)];
@@ -697,7 +742,7 @@ final class K3EquityStatement
     {
         $explained = [...$this->openingDifferences];
 
-        foreach ($this->unclassified as $voucher) {
+        foreach ([...$this->unclassified, ...$this->earlierCorrections] as $voucher) {
             array_push($explained, ...$voucher['accounts']);
         }
 

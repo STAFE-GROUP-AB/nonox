@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Accounting\AnalyseSieFile;
+use App\Actions\Accounting\CarryForwardBalances;
 use App\Actions\Accounting\ConfirmSieImport;
 use App\Actions\Accounting\CorrectVoucher;
 use App\Actions\Accounting\PostVoucher;
@@ -415,4 +416,33 @@ it('S1-R8.3 specifies a year imported from SIE with opening balances and the dis
         ->and($amounts['prior_result_transfer'])->toBe(['share_capital' => 0, 'retained' => 20_000_000, 'year_result' => -20_000_000])
         ->and($amounts['dividend'])->toBe(['share_capital' => 0, 'retained' => -5_000_000, 'year_result' => 0])
         ->and($amounts['closing']['retained'])->toBe(90_000_000);
+});
+
+it('S1-R8.3 refuses a correction in 2026 of an equity voucher from 2025 and names both vouchers (row b, S1-P12)', function (array $rows) {
+    $original = postEquityVoucher($this->fixture, '2025-06-01', 'Ägartransaktion 2025', $rows);
+    app(CarryForwardBalances::class)($this->fixture->owner, $this->fixture->years[2025]->fresh());
+    $correction = app(CorrectVoucher::class)($this->fixture->owner, $original, 'Fel', '2026-03-02');
+
+    $statement = k3Equity($this->fixture->years[2026]);
+
+    expect($statement->refusal())->toContain("rättelseverifikation {$correction->reference()} rättar verifikation {$original->reference()} från räkenskapsåret 2025")
+        ->and($statement->residualAccounts())->not->toBe([])
+        ->and(fn () => $statement->rows())->toThrow(K3EquityStatementRefused::class);
+})->with([
+    'a contribution reversed' => [[[1930, 10_000_000, 0], [2093, 0, 10_000_000]]],
+    'a dividend reversed' => [[[2091, 40_000, 0], [2898, 0, 40_000]]],
+]);
+
+it('S1-R8.3 classifies a correction that moves an amount of the same year onto equity by what it books', function () {
+    Account::create(['number' => 2093, 'name' => 'Erhållna aktieägartillskott', 'type' => AccountType::forNumber(2093), 'is_active' => true]);
+    $original = postEquityVoucher($this->fixture, '2026-03-01', 'Intäkt', [[1930, 10_000_000, 0], [3990, 0, 10_000_000]]);
+    app(CorrectVoucher::class)($this->fixture->owner, $original, 'Var tillskott', '2026-03-02', [
+        ['account' => 1930, 'debit_ore' => 10_000_000, 'credit_ore' => 0],
+        ['account' => 2093, 'debit_ore' => 0, 'credit_ore' => 10_000_000],
+    ]);
+
+    $statement = k3Equity($this->fixture->years[2026]);
+
+    expect($statement->refusal())->toBeNull()
+        ->and(k3EquityAmounts($statement)['shareholder_contribution']['retained'])->toBe(10_000_000);
 });

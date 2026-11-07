@@ -10507,5 +10507,8 @@
     "den ingående balansen på konto :accounts skiljer sig från föregående års utgående balans": "the opening balance on account :accounts differs from the previous year's closing balance",
     "posten :post går inte ihop med årets verifikationer (konto :accounts)": "the item :post does not reconcile with the year's vouchers (account :accounts)",
     "Förändringarna i eget kapital kan inte specificeras enligt K3 punkt 6.3: :reasons. Punkten har ingen rad för övriga förändringar, så årsredovisningen kan inte upprättas förrän det är rättat.": "The changes in equity cannot be specified under K3 point 6.3: :reasons. The point has no row for other changes, so the annual report cannot be prepared until this is corrected.",
-    "En avrundningsdifferens i posten :post i specifikationen av förändringar i eget kapital har ingen rad att läggas på, och K3 punkt 6.3 har ingen rad för övriga förändringar.": "A rounding difference in the item :post of the statement of changes in equity has no row to go to, and K3 point 6.3 has no row for other changes."
+    "En avrundningsdifferens i posten :post i specifikationen av förändringar i eget kapital har ingen rad att läggas på, och K3 punkt 6.3 har ingen rad för övriga förändringar.": "A rounding difference in the item :post of the statement of changes in equity has no row to go to, and K3 point 6.3 has no row for other changes.",
+    "rättelseverifikation :correction rättar verifikation :original": "correcting voucher :correction corrects voucher :original",
+    ":voucher från räkenskapsåret :year": ":voucher from the fiscal year :year",
+    ":correction och ändrar eget kapital på konto :accounts; rättelse av fel från ett tidigare år hör till punktens rad b, som ännu inte används": ":correction and changes equity on account :accounts; the correction of an error from an earlier year belongs to row b of the point, which is not yet used"
 }
