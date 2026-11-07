@@ -1,6 +1,9 @@
 # AI-assistenter (MCP)
 
-NONOX har en MCP-server, så att en AI-assistent (till exempel Claude, ChatGPT, Cursor eller VS Code) kan läsa bokföringen och förbereda verifikationer och fakturor. MCP, Model Context Protocol, är det sätt som assistenterna anropar andra program på. Servern ligger ovanpå NONOX API och använder samma nycklar, samma behörigheter och samma gränser som API:t. Den är i **beta**.
+> [!IMPORTANT]
+> **MCP-servern är inte tillgänglig ännu.** Adressen nedan svarar 404 tills integritetspolicyn har uppdaterats med AI-leverantörer som mottagare. Sidan beskriver hur den kommer att fungera.
+
+NONOX får en MCP-server, så att en AI-assistent (till exempel Claude, ChatGPT, Cursor eller VS Code) kan läsa bokföringen och förbereda verifikationer och fakturor. MCP, Model Context Protocol, är det sätt som assistenterna anropar andra program på. Servern ligger ovanpå NONOX API och använder samma nycklar, samma behörigheter och samma gränser som API:t. Den är i **beta**.
 
 > [!IMPORTANT]
 > En AI-assistent kan bara **läsa** och **skapa utkast**. Den kan inte bokföra, rätta, skicka, kreditera, betala, attestera, ändra eller ta bort något. Varje utkast väntar i NONOX tills en person har granskat det och bokfört eller skickat det.

@@ -1,6 +1,9 @@
 # AI assistants (MCP)
 
-NONOX has an MCP server, so an AI assistant (for example Claude, ChatGPT, Cursor or VS Code) can read the bookkeeping and prepare vouchers and invoices. MCP, the Model Context Protocol, is how assistants call other programs. The server sits on top of NONOX API and uses the same keys, the same scopes and the same limits as the API. It is in **beta**.
+> [!IMPORTANT]
+> **The MCP server is not available yet.** The address below answers 404 until the privacy policy has been updated to name AI providers as recipients. This page describes how it will work.
+
+NONOX will have an MCP server, so an AI assistant (for example Claude, ChatGPT, Cursor or VS Code) can read the bookkeeping and prepare vouchers and invoices. MCP, the Model Context Protocol, is how assistants call other programs. The server sits on top of NONOX API and uses the same keys, the same scopes and the same limits as the API. It is in **beta**.
 
 > [!IMPORTANT]
 > An AI assistant can only **read** and **create drafts**. It cannot post, correct, send, credit, pay, approve, change or delete anything. Every draft waits in NONOX until a person has reviewed it and posted or sent it.

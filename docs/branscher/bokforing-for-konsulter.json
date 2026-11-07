@@ -25,7 +25,7 @@
     },
     "solutions": {
         "heading": "Det här gör NONOX åt ditt konsultbolag.",
-        "intro": "Allt nedan finns i NONOX i dag, och allt ingår i priset. Lön är en modul som du slår på under Inställningar → Moduler.",
+        "intro": "Allt nedan finns i NONOX i dag, och modulerna ingår i priset; tillägget NONOX Connect kostar extra. Lön är en modul som du slår på under Inställningar → Moduler.",
         "items": [
             {"title": "Avtalsfakturor som skickas själva", "text": "Lägg upp ett avtal med kunden, så skapas fakturan varje månad, kvartal, halvår eller år. Den får OCR-nummer, går ut som PDF med e-post och betalningen matchas på OCR-numret när du läser in bankens fil.", "features": ["recurring_invoices", "invoices", "incoming_payments"]},
             {"title": "EU-kunder med rätt text och rapport", "text": "Fakturor till företag i andra EU-länder får rätt konto, momsruta och fakturatext, i kronor eller i kundens valuta. Kundens momsregistreringsnummer kan kontrolleras mot EU:s register, och den periodiska sammanställningen blir en fil till Skatteverket.", "features": ["eu_invoices", "eu_reports", "foreign_currency_sales"]},

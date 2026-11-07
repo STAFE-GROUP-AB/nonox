@@ -30,6 +30,7 @@ use App\Modules\Connect\Livewire\SftpManager;
 use App\Modules\Connect\Livewire\TestCompanyPanel;
 use App\Modules\Connect\Livewire\WebhooksManager;
 use App\Modules\Connect\Mcp\LimitMcpBody;
+use App\Modules\Connect\Mcp\McpEnabled;
 use App\Modules\Connect\Mcp\McpEndpoint;
 use App\Modules\Connect\Mcp\McpGate;
 use App\Modules\Connect\Mcp\McpServiceProvider;
@@ -184,8 +185,11 @@ class ConnectServiceProvider extends ServiceProvider
 
         // The MCP server for AI assistants (ADR-063): the same credential, company binding and limits as /api/v1,
         // only read and draft scopes (McpGate), and the tools run the REST routes above. No AuditApiWrites: every tool call is logged by the tool.
-        Route::post('api/mcp', McpEndpoint::class)
-            ->middleware([LimitMcpBody::class, ConnectJson::class, 'throttle:connect-ip', AuthenticateConnect::class, ConnectRateLimit::class, McpGate::class, ValidateMcpHeaders::class])
-            ->name('connect.mcp');
+        // The route exists only while nonox.mcp_enabled is on (owner decision 18); McpEnabled is a second guard.
+        if (config('nonox.mcp_enabled')) {
+            Route::post('api/mcp', McpEndpoint::class)
+                ->middleware([McpEnabled::class, LimitMcpBody::class, ConnectJson::class, 'throttle:connect-ip', AuthenticateConnect::class, ConnectRateLimit::class, McpGate::class, ValidateMcpHeaders::class])
+                ->name('connect.mcp');
+        }
     }
 }

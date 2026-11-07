@@ -54,8 +54,8 @@ final class Guides
             'en' => ['SFTP for SIE files', "Deliver SIE files to the company's SFTP drop with an SSH key: connecting, folders, limits and what happens to the file."],
         ],
         'ai-assistenter' => [
-            'sv' => ['AI-assistenter (MCP)', 'Koppla en AI-assistent till NONOX med MCP: en egen nyckel, vilka verktyg som finns, och varför den bara kan läsa och skapa utkast.'],
-            'en' => ['AI assistants (MCP)', 'Connect an AI assistant to NONOX over MCP: a key of its own, the tools there are, and why it can only read and create drafts.'],
+            'sv' => ['AI-assistenter (MCP)', 'Kommer: koppla en AI-assistent till NONOX med MCP, med en egen nyckel som bara kan läsa och skapa utkast. Inte tillgängligt ännu.'],
+            'en' => ['AI assistants (MCP)', 'Coming: connect an AI assistant to NONOX over MCP, with a key of its own that can only read and create drafts. Not available yet.'],
         ],
         'egen-drift' => [
             'sv' => ['Egen drift', 'API:t på en NONOX som du driftar själv: adresser, nycklar för signering, appar och gränser.'],

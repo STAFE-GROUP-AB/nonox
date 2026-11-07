@@ -27,7 +27,7 @@ class AlternativeController
         $faqs = [
             ['q' => "Är NONOX ett bra alternativ till {$other['name']}?", 'a' => 'NONOX har det ett svenskt företag behöver: bokföring, fakturering, lön, moms, bokslut och årsredovisning. '.self::differenceText($other)],
             ['q' => "Kan jag flytta min bokföring från {$other['name']}?", 'a' => "Ja. Exportera en SIE4-fil för varje räkenskapsår från {$other['name']} och läs in dem i NONOX. Hela historiken följer med, och NONOX stämmer av varje år innan något sparas. Flyttguiden visar alla steg."],
-            ['q' => "Vad kostar NONOX jämfört med {$other['name']}?", 'a' => 'Att köra NONOX själv kostar ingenting. Med drift hos oss kostar det 995 kr om året för upp till 10 anställda, alla delar inräknade. Tabellen visar listpriset hos '.$other['name'].' för ett företag med fem anställda.'],
+            ['q' => "Vad kostar NONOX jämfört med {$other['name']}?", 'a' => 'Att köra NONOX själv kostar ingenting. Med drift hos oss kostar det 995 kr om året för upp till 10 anställda, alla moduler inräknade. NONOX Connect (Peppol, Skatteverket, bank) är ett tillägg som kostar extra: leverantörens pris + 10 %, från 2027-01-11. Tabellen visar listpriset hos '.$other['name'].' för ett företag med fem anställda.'],
             ['q' => 'Följer NONOX Bokföringslagen?', 'a' => 'NONOX är byggt efter Bokföringslagen och Bokföringsnämndens regler, med verifikationer som inte kan ändras i efterhand, behandlingshistorik, systemdokumentation och arkivering.'],
             ['q' => 'Är jag inlåst i NONOX?', 'a' => 'Nej. All bokföring kan exporteras som SIE4 och som ett komplett arkivpaket när du vill, och koden är öppen.'],
         ];
@@ -56,7 +56,7 @@ class AlternativeController
     {
         $claims = [
             'Öppen källkod' => 'att NONOX är öppen källkod',
-            'Alla moduler ingår i priset' => 'att alla delar ingår i priset',
+            'Alla moduler ingår i priset' => 'att alla moduler ingår i priset (tillägget NONOX Connect kostar extra)',
             'Kör på egen server' => 'att du kan köra det själv helt gratis',
         ];
 

@@ -23,6 +23,7 @@ use Tests\Support\Connect;
  */
 
 beforeEach(function () {
+    config(['nonox.mcp_enabled' => true]);
     Mail::fake();
     Connect::setUp();
 });

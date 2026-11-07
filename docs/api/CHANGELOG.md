@@ -20,6 +20,13 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+**Indraget 2026-11-07: inte tillgänglig ännu.** MCP-servern öppnas först när integritetspolicyn har uppdaterats med AI-leverantörer som mottagare. Tills dess svarar `/api/mcp` 404. Posten nedan beskriver hur den kommer att fungera.
+<!-- /lang -->
+<!-- lang:en -->
+**Withdrawn 2026-11-07: not available yet.** The MCP server opens only once the privacy policy has been updated to name AI providers as recipients. Until then `/api/mcp` answers 404. The entry below describes how it will work.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ### Tillagt
 
 - **MCP**: `POST /api/mcp` är en MCP-server för AI-assistenter, ovanpå samma nycklar och OAuth-token som API:t. Verktygen läser kontoplan, verifikationer, rapporter, kunder, fakturor och leverantörer och skapar utkast till verifikationer och kundfakturor; inget verktyg bokför, skickar, betalar eller tar bort. En nyckel med andra behörigheter än läsa och skapa utkast nekas med `403 mcp_scope_not_allowed`. Se [AI-assistenter (MCP)](/utvecklare/ai-assistenter). REST-API:t v1 är oförändrat.

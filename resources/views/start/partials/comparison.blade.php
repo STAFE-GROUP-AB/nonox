@@ -34,7 +34,7 @@
     <tbody>
       @foreach($comparison['features'] as $feature)
         <tr>
-          <th scope="row" class="cmp-feature-col">{{ $feature['name'] }}</th>
+          <th scope="row" class="cmp-feature-col">{{ $feature['name'] }}@if($feature['name'] === 'Alla moduler ingår i priset')<sup>*</sup>@endif</th>
           @foreach($programs as $program)
             @php($value = $feature['values'][$program['slug']] ?? 'unknown')
             <td @class(['cmp-nonox' => $program['slug'] === 'nonox'])>
@@ -61,6 +61,7 @@
     </tbody>
   </table>
 </div>
+<p class="cmp-note-connect" style="margin:12px 0 0;font-size:13.5px;color:var(--muted)">* NONOX Connect (Peppol, Skatteverket, bank) är ett tillägg som kostar extra: leverantörens pris + 10 %, från 2027-01-11.</p>
 <div class="cmp-legend">
   <span>{!! $icon['yes'] !!} Ingår</span>
   <span>{!! $icon['per'] !!} Ingår, med avgift per anställd eller lönebesked</span>

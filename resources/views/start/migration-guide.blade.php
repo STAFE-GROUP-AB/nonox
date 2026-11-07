@@ -122,7 +122,7 @@
         ['Kan vi byta mitt i räkenskapsåret?', 'Ja. Hela årets bokföring läses in, och lönen fortsätter med beloppen hittills i år. Byt helst direkt efter en momsdeklaration.'],
         ['Försvinner något på vägen?', 'Nej. Varje verifikation behåller sitt originalnummer, antingen som nummer eller sparat på verifikationen, och NONOX stoppar inläsningen om ett år inte balanserar. Avstämningen i steg 7 bekräftar resten.'],
         ['Vad händer med underlagen?', 'De är din räkenskapsinformation och sparas i sju år. Spara dem i ditt arkiv från steg 2. Inläsning av underlag direkt till verifikationerna kommer snart.'],
-        ['Vad kostar det?', 'Att köra NONOX själv är gratis. Vill du att vi sköter driften kostar det 995 kr om året för upp till 10 anställda och 1 995 kr om året upp till 25.'],
+        ['Vad kostar det?', 'Att köra NONOX själv är gratis. Vill du att vi sköter driften kostar det 995 kr om året för upp till 10 anställda och 1 995 kr om året upp till 25. NONOX Connect (Peppol, Skatteverket, bank) är ett tillägg som kostar extra: leverantörens pris + 10 %, från 2027-01-11.'],
         ['Kan vår redovisningskonsult göra flytten?', 'Ja. Bjud in konsulten till företaget i NONOX, så kan hen läsa in filerna och stämma av.'],
         ['Kan vi flytta tillbaka?', 'Alltid. NONOX exporterar hela bokföringen som SIE4 och ett komplett arkivpaket. Ingen inlåsning, åt något håll.'],
     ];

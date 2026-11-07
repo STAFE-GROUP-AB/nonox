@@ -57,9 +57,11 @@ Du skickas sedan tillbaka till appen. Appen syns under **Anslutna appar**, med v
 
 Ägaren får ett mejl om varje ny nyckel. Klicka på **Återkalla** för att stänga av en nyckel direkt; allt som använder den slutar fungera.
 
-## Koppla en AI-assistent (beta)
+## Koppla en AI-assistent (kommer)
 
-En AI-assistent, till exempel Claude, ChatGPT eller Cursor, kan kopplas till NONOX med MCP. Den kan då svara på frågor om bokföringen och förbereda verifikationer och fakturor åt dig.
+> **Inte tillgängligt ännu.** MCP-servern öppnas först när integritetspolicyn har uppdaterats med AI-leverantörer som mottagare. Tills dess svarar adressen 404 och stegen nedan går inte att följa.
+
+En AI-assistent, till exempel Claude, ChatGPT eller Cursor, ska kunna kopplas till NONOX med MCP. Den ska då kunna svara på frågor om bokföringen och förbereda verifikationer och fakturor åt dig.
 
 Assistenten kan **läsa** kontoplan, verifikationer, rapporter, kunder, fakturor och leverantörer, och **skapa utkast** till verifikationer och kundfakturor. Den kan aldrig bokföra, rätta, skicka, kreditera, betala, attestera eller ta bort något, och den når ingenting från Skatteverket. Varje utkast ligger kvar som utkast tills du eller någon annan har granskat det och bokfört eller skickat det i NONOX.
 

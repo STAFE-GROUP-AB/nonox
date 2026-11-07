@@ -101,7 +101,7 @@
             },
             {
                 "title": "Bokslut, årsredovisning och INK2 i varje klient",
-                "text": "Bokslut med checklista och låsning, periodiseringar och anläggningsregister, årsredovisning enligt K2 som PDF, och inkomstdeklarationen som SRU-filer: INK2, NE-bilagan för enskild firma och INK4 för handelsbolag. Inga tillval per klient.",
+                "text": "Bokslut med checklista och låsning, periodiseringar och anläggningsregister, årsredovisning enligt K2 som PDF, och inkomstdeklarationen som SRU-filer: INK2 och INK4 för handelsbolag; NE-bilagan för enskild firma öppnas när en människa har kontrollerat årets satser. Inga tillval per klient.",
                 "features": [
                     "year_end",
                     "accruals_assets"
@@ -148,7 +148,7 @@
         },
         {
             "q": "Vad kostar NONOX för en byrå?",
-            "a": "I egen drift ingenting, oavsett hur många klientföretag ni har. Med drift hos oss kostar varje företag {pris} per år upp till {max} anställda, med alla delar inräknade."
+            "a": "I egen drift ingenting, oavsett hur många klientföretag ni har. Med drift hos oss kostar varje företag {pris} per år upp till {max} anställda, med alla moduler inräknade. NONOX Connect (Peppol, Skatteverket, bank) är ett tillägg som kostar extra: leverantörens pris + 10 %, från 2027-01-11."
         },
         {
             "q": "Kan klienten och revisorn vara med i samma system?",
