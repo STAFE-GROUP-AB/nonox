@@ -373,7 +373,7 @@ final class PrintedFigures
             }
         }
 
-        throw new K3EquityStatementRefused(__('En avrundningsdifferens i posten :post i specifikationen av förändringar i eget kapital har ingen rad att läggas på, och K3 punkt 6.3 har ingen rad för övriga förändringar.', ['post' => K3EquityStatement::columnLabel($column)]));
+        throw new K3EquityStatementRefused(__('En avrundningsdifferens i posten :post i specifikationen av förändringar i eget kapital har ingen rad att läggas på, och K3 punkt 6.3 har ingen rad för övriga förändringar.', ['post' => K3EquityStatement::columnLabel($column)]), K3EquityStatement::columnAccounts($column));
     }
 
     /**

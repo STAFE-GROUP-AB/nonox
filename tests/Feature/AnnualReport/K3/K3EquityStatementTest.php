@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Actions\Accounting\AnalyseSieFile;
+use App\Actions\Accounting\ConfirmSieImport;
+use App\Actions\Accounting\CorrectVoucher;
 use App\Actions\Accounting\PostVoucher;
 use App\Actions\Accounting\SaveDraftVoucher;
 use App\Domain\Accounting\AccountType;
@@ -14,9 +17,13 @@ use App\Domain\AnnualReport\PrintedFigures;
 use App\Models\Account;
 use App\Models\FiscalYear;
 use App\Models\OpeningBalance;
+use App\Models\Voucher;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Tests\Support\Bookkeeping;
 use Tests\Support\S1Fixture;
 
 /*
@@ -47,7 +54,7 @@ const F_S1_A_EQUITY_COLUMNS = [
  *
  * @param  list<array{0: int, 1: int, 2: int}>  $rows
  */
-function postEquityVoucher(S1Fixture $fixture, string $date, string $description, array $rows): void
+function postEquityVoucher(S1Fixture $fixture, string $date, string $description, array $rows): Voucher
 {
     foreach ($rows as [$number]) {
         if (! Account::query()->where('number', $number)->exists()) {
@@ -61,7 +68,8 @@ function postEquityVoucher(S1Fixture $fixture, string $date, string $description
         'series' => 'A',
         'rows' => array_map(fn (array $row): array => ['account' => $row[0], 'debit_ore' => $row[1], 'credit_ore' => $row[2]], $rows),
     ]);
-    app(PostVoucher::class)($fixture->owner, $draft);
+
+    return app(PostVoucher::class)($fixture->owner, $draft);
 }
 
 function k3Equity(FiscalYear $year): K3EquityStatement
@@ -264,4 +272,147 @@ it('S1-R8.3 reads the equity vouchers with one query, however many there are', f
 
     expect($short)->toBe(1)
         ->and($count())->toBe($short);
+
+    // With fresh planner statistics the query still finishes at once (an IN subquery
+    // planned as a nested loop semi join did not; S1-P7 review). ANALYZE only updates
+    // statistics and may run inside the test's transaction.
+    DB::statement('ANALYZE vouchers, voucher_rows, accounts');
+    $started = microtime(true);
+    expect($count())->toBe(1)
+        ->and(microtime(true) - $started)->toBeLessThan(10.0);
+});
+
+it('S1-R8.3 shows a loss year\'s disposition with a dividend (2099 credit, 2098 debit, 2898 credit) as a transfer and a dividend', function () {
+    postEquityVoucher($this->fixture, '2026-05-20', 'Resultatdisposition: förlust och utdelning', [[2099, 0, 1_000_000], [2098, 1_500_000, 0], [2898, 0, 500_000]]);
+
+    $statement = k3Equity($this->fixture->years[2026]);
+    $amounts = k3EquityAmounts($statement);
+
+    expect($statement->refusal())->toBeNull()
+        ->and($amounts['dividend'])->toBe(['share_capital' => 0, 'retained' => -150_500_000, 'year_result' => 0])
+        ->and($amounts['prior_result_transfer']['year_result'])->toBe(-195_202_962);
+});
+
+it('S1-R8.3 nets a correction that re-books a contribution with its original: 100 000 corrected to 120 000 is a contribution of 120 000', function () {
+    $original = postEquityVoucher($this->fixture, '2026-03-01', 'Aktieägartillskott', [[1930, 10_000_000, 0], [2093, 0, 10_000_000]]);
+    app(CorrectVoucher::class)($this->fixture->owner, $original, 'Fel belopp', '2026-03-02', [
+        ['account' => 1930, 'debit_ore' => 12_000_000, 'credit_ore' => 0],
+        ['account' => 2093, 'debit_ore' => 0, 'credit_ore' => 12_000_000],
+    ]);
+
+    $statement = k3Equity($this->fixture->years[2026]);
+    $amounts = k3EquityAmounts($statement);
+
+    expect($statement->refusal())->toBeNull()
+        ->and($amounts['shareholder_contribution']['retained'])->toBe(12_000_000)
+        ->and($amounts)->not->toHaveKey('contribution_repayment');
+});
+
+it('S1-R8.3 drops a contribution that a correction reverses in full', function () {
+    $before = k3Equity($this->fixture->years[2026])->rows();
+    $original = postEquityVoucher($this->fixture, '2026-03-01', 'Aktieägartillskott', [[1930, 10_000_000, 0], [2093, 0, 10_000_000]]);
+    app(CorrectVoucher::class)($this->fixture->owner, $original, 'Bokades i fel företag', '2026-03-02');
+
+    expect(k3Equity($this->fixture->years[2026])->rows())->toBe($before);
+});
+
+it('S1-R8.3 keeps a dividend corrected up or down on the dividend row', function (int $corrected) {
+    $original = postEquityVoucher($this->fixture, '2026-05-20', 'Utdelning', [[2091, 4_000_000, 0], [2898, 0, 4_000_000]]);
+    app(CorrectVoucher::class)($this->fixture->owner, $original, 'Ändrat belopp', '2026-05-21', [
+        ['account' => 2091, 'debit_ore' => $corrected, 'credit_ore' => 0],
+        ['account' => 2898, 'debit_ore' => 0, 'credit_ore' => $corrected],
+    ]);
+
+    $statement = k3Equity($this->fixture->years[2026]);
+    $amounts = k3EquityAmounts($statement);
+
+    expect($statement->refusal())->toBeNull()
+        ->and($amounts['dividend']['retained'])->toBe(-150_000_000 - $corrected)
+        ->and(array_keys($amounts))->toBe(['opening', 'prior_result_transfer', 'dividend', 'year_result', 'closing']);
+})->with([
+    'up from 40 000 to 50 000' => 5_000_000,
+    'down from 40 000 to 30 000' => 3_000_000,
+]);
+
+it('S1-R8.3 lets an expense booked against 2091 by mistake drop out once it is corrected to an expense account', function () {
+    $original = postEquityVoucher($this->fixture, '2026-03-01', 'Fel konto', [[2091, 50_000, 0], [1930, 0, 50_000]]);
+
+    expect(k3Equity($this->fixture->years[2026])->residualAccounts())->toBe([2091]);
+
+    app(CorrectVoucher::class)($this->fixture->owner, $original, 'Fel konto', '2026-03-02', [
+        ['account' => 6110, 'debit_ore' => 50_000, 'credit_ore' => 0],
+        ['account' => 1930, 'debit_ore' => 0, 'credit_ore' => 50_000],
+    ]);
+
+    expect(k3Equity($this->fixture->years[2026])->refusal())->toBeNull();
+});
+
+it('S1-R8.3 refuses a debit on 2099 against a liability and names 2099', function () {
+    postEquityVoucher($this->fixture, '2026-05-20', 'Okänd', [[2099, 100_000, 0], [2440, 0, 100_000]]);
+
+    $statement = k3Equity($this->fixture->years[2026]);
+
+    expect($statement->residualAccounts())->toBe([2099])
+        ->and($statement->refusal())->toContain('konto 2099')
+        ->and($statement->refusal())->not->toContain('konto  ');
+});
+
+it('S1-R8.3 refuses a dividend voucher whose counter accounts are not 2898 alone with the same amount', function () {
+    postEquityVoucher($this->fixture, '2026-05-20', 'Blandad', [[2091, 100_000, 0], [2898, 0, 40_000], [2440, 0, 60_000]]);
+
+    expect(k3Equity($this->fixture->years[2026])->residualAccounts())->toBe([2091]);
+});
+
+it('S1-R8.3 refuses own shares (2094) and a repayment of share capital (2081 against 2898)', function (array $rows, int $account) {
+    postEquityVoucher($this->fixture, '2026-06-01', 'Ägartransaktion utan rad', $rows);
+
+    expect(k3Equity($this->fixture->years[2026])->residualAccounts())->toBe([$account]);
+})->with([
+    'own shares bought back' => [[[2094, 1_000_000, 0], [1930, 0, 1_000_000]], 2094],
+    'share capital repaid' => [[[2081, 1_000_000, 0], [2898, 0, 1_000_000]], 2081],
+]);
+
+it('S1-R8.3 starts the first year in the books (no previous year) from the opening balances', function () {
+    $accounts = AnnualAccounts::for($this->fixture->years[2025], K3Schedule::class);
+    $opening = k3EquityAmounts(K3EquityStatement::of($accounts))['opening'];
+
+    expect($accounts->previousYear)->toBeNull()
+        ->and($opening)->toBe([
+            'share_capital' => -$accounts->openingOf(2081, 2081),
+            'retained' => -$accounts->openingOf(2091, 2091),
+            'year_result' => -$accounts->openingOf(2099, 2099),
+        ]);
+});
+
+it('S1-R8.3 specifies a year imported from SIE with opening balances and the disposition as an imported voucher', function () {
+    Storage::fake('local');
+    $this->travelTo(CarbonImmutable::parse('2026-10-29 10:00:00'));
+    [$owner, $company] = Bookkeeping::company();
+    $company->forceFill(['org_number' => '556334-3689'])->save();
+    CurrentCompany::set($company);
+    $this->actingAs($owner);
+
+    $lines = [
+        '#FLAGGA 0', '#FORMAT PC8', '#SIETYP 4', '#ORGNR 556334-3689', '#RAR 0 20260101 20261231',
+        '#KONTO 1930 "Företagskonto"', '#KONTO 2081 "Aktiekapital"', '#KONTO 2091 "Balanserad vinst eller förlust"',
+        '#KONTO 2099 "Årets resultat"', '#KONTO 2898 "Outtagen vinstutdelning"',
+        '#IB 0 1930 1000000.00', '#IB 0 2081 -50000.00', '#IB 0 2091 -750000.00', '#IB 0 2099 -200000.00',
+        "#VER A 1 20260520 \"Resultatdisposition\"\r\n{\r\n#TRANS 2099 {} 200000.00\r\n#TRANS 2091 {} -150000.00\r\n#TRANS 2898 {} -50000.00\r\n}",
+    ];
+    $file = UploadedFile::fake()->createWithContent('bokforing.se', (string) iconv('UTF-8', 'CP437', implode("\r\n", $lines)."\r\n"));
+    $import = app(AnalyseSieFile::class)($owner, $company, $file);
+    app(ConfirmSieImport::class)($owner, $import);
+
+    $year = FiscalYear::query()->whereDate('start_date', '2026-01-01')->firstOrFail();
+    $accounts = AnnualAccounts::for($year, K3Schedule::class);
+    $statement = K3EquityStatement::of($accounts);
+    $amounts = k3EquityAmounts($statement);
+
+    expect(Voucher::query()->where('source', 'IMPORT_SIE')->count())->toBe(1)
+        ->and($accounts->previousYear)->toBeNull()
+        ->and($statement->refusal())->toBeNull()
+        ->and($amounts['opening'])->toBe(['share_capital' => 5_000_000, 'retained' => 75_000_000, 'year_result' => 20_000_000])
+        ->and($amounts['prior_result_transfer'])->toBe(['share_capital' => 0, 'retained' => 20_000_000, 'year_result' => -20_000_000])
+        ->and($amounts['dividend'])->toBe(['share_capital' => 0, 'retained' => -5_000_000, 'year_result' => 0])
+        ->and($amounts['closing']['retained'])->toBe(90_000_000);
 });

@@ -8,6 +8,7 @@ use App\Domain\Accounting\VoucherSource;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Closing\ClosingAccounts;
 use App\Models\VoucherRow;
+use Illuminate\Support\Facades\DB;
 use LogicException;
 
 /**
@@ -43,18 +44,25 @@ use LogicException;
  * equity account (BAS 2080–2099), each read with its counter accounts:
  * - the year's result booked to equity (8990–8999 against equity, the
  *   CLOSING voucher of YearEndClosing::bookResult) is row a, not a change;
- * - a debit on 2099 (the previous year's result, moved by the disposition of
- *   YearEndClosing::dispose or a plain voucher of the same shape) is a
- *   transfer to Balanserad vinst eller förlust (e); what is left of the
- *   previous result on 2099 is shown there too, as the balance sheet does;
- * - a decrease of free equity against 2898 (Outtagen vinstutdelning) is a
- *   dividend (d); a change on 2093 only (Erhållna aktieägartillskott) a
- *   contribution or its repayment (d); an increase of share capital and share
- *   premium only a new issue (d);
+ * - any change on 2099, of either sign and whatever the counter accounts,
+ *   is the previous year's result moving to Balanserad vinst eller förlust
+ *   (e): a profit moved by the disposition of YearEndClosing::dispose or a
+ *   plain voucher of the same shape, or a loss year's disposition that
+ *   credits 2099; what is left of the previous result on 2099 at the end of
+ *   the year is shown there too, as the balance sheet does;
+ * - a decrease of free equity whose only counter account is 2898 (Outtagen
+ *   vinstutdelning), with the same amount, is a dividend (d); a change on
+ *   2093 only (Erhållna aktieägartillskott) a contribution or its repayment
+ *   (d); an increase of share capital and share premium only a new issue (d);
  * - a voucher with only equity rows is a transfer (e): to or from the fund
  *   for development expenses (2089, S1-R10, ÅRL 4 kap. 2 § andra stycket and
  *   8 §) on rows of their own, anything else as other transfers;
- * - a correcting voucher (CORRECTION) lands on the row of what it corrects.
+ * - a correcting voucher (CORRECTION, from CorrectVoucher: the reversal and
+ *   the re-booked rows in one voucher) is netted with the voucher it
+ *   corrects when that is in the year, so the pair is classified by its
+ *   net as the original's kind (a pair with no net equity change drops
+ *   out); a correction of a voucher outside the year is classified alone,
+ *   and a pure reversal goes on the row of what it reverses.
  * Row b (retroactive application, where NONOX puts the K2-to-K3 transition,
  * A.1 point 5) is reserved: the transition voucher's source is human
  * decision H7 (S1-P12), so no voucher reaches the row yet and a transition
@@ -63,19 +71,28 @@ use LogicException;
  *
  * K3 6.3 has no row for other changes, and the rule sheet treats a residual
  * as a blocking error (ADR-059 A.1 point 5): a change that fits none of the
- * rows, an opening balance that differs from last year's closing balance, or
- * a post whose rows do not add up refuses the statement with the accounts
- * and vouchers behind it (refusal(), K3EquityStatementRefused). Nothing is
- * ever printed as "Övriga förändringar".
+ * rows (own shares on 2094, a repayment of share capital, a dividend mixed
+ * with other counter accounts), an opening balance that differs from last
+ * year's closing balance, or a post whose rows do not add up refuses the
+ * statement with the accounts and vouchers behind it (refusal(),
+ * K3EquityStatementRefused). Nothing is ever printed as "Övriga
+ * förändringar".
  *
  * TODO(legal-verify): the K2-to-K3 transition in row b rather than c (A.1
  * point 5, the accountant checklist); a new issue and the repayment of a
  * contribution as rows of their own under d; the BAS accounts 2093 and 2898
- * as the marks of a contribution and a dividend (H9/H10, BAS 2026 chart).
+ * as the marks of a contribution and a dividend (H9/H10, BAS 2026 chart);
+ * a previous result left on 2099 printed as "Omföring av föregående års
+ * resultat" without a decision of the annual meeting behind it; tax effects
+ * recognised in equity (K3 29, 6.3 comment) have no source and block.
  *
- * One query (the equity vouchers of the year with their rows, grouped by
- * voucher and account), whatever the number of vouchers; the rest is read
- * from AnnualAccounts, which has already read the ledger.
+ * TODO(S1-P12/P10): the columns of the K3 document must come from columns()
+ * here: a post that is zero at both ends but moved during the year is in the
+ * statement but not in AnnualAccounts::equityColumns().
+ *
+ * One query (the year's posted rows grouped by voucher and account, kept
+ * when the voucher touches equity), whatever the number of vouchers; the rest
+ * is read from AnnualAccounts, which has already read the ledger.
  */
 final class K3EquityStatement
 {
@@ -249,6 +266,41 @@ final class K3EquityStatement
         return $accounts;
     }
 
+    /**
+     * The equity columns of the statement, in order: the balance sheet's
+     * equity posts plus any post a voucher moved during the year.
+     *
+     * @return list<string>
+     */
+    public function columns(): array
+    {
+        return $this->columns;
+    }
+
+    /**
+     * The BAS accounts of an equity column (2099 for the year's result).
+     *
+     * @return list<int>
+     */
+    public static function columnAccounts(string $column): array
+    {
+        if ($column === 'year_result') {
+            return [self::YEAR_RESULT_ACCOUNT];
+        }
+
+        $accounts = [];
+
+        foreach (K3Schedule::BALANCE as $line) {
+            if ($line['key'] === $column) {
+                foreach ($line['ranges'] as [$from, $to]) {
+                    array_push($accounts, ...range($from, $to));
+                }
+            }
+        }
+
+        return $accounts;
+    }
+
     /** The label of an equity column (a K3 balance sheet line, or the year's result). */
     public static function columnLabel(string $column): string
     {
@@ -302,7 +354,7 @@ final class K3EquityStatement
 
         $touched = array_column($this->accounts->equityColumns(), 'key');
 
-        foreach ($this->vouchers() as $voucher) {
+        foreach (self::withCorrections($this->vouchers()) as $voucher) {
             $touched = [...$touched, ...$this->classify($voucher)];
         }
 
@@ -315,65 +367,111 @@ final class K3EquityStatement
 
     /**
      * The posted vouchers of the year with a row on an equity account, each
-     * with its rows summed per account, credit positive.
+     * with its rows summed per account, credit positive. One query: the
+     * year's posted rows grouped by voucher and account, with a window over
+     * each voucher that marks whether any of its accounts is in equity (no
+     * IN subquery, whose semi join was planned badly; S1-P7 review).
      *
-     * @return list<array{reference: string, source: string, rows: array<int, int>}>
+     * @return list<array{id: string, references: list<string>, source: string, corrects: ?string, rows: array<int, int>}>
      */
     private function vouchers(): array
     {
-        $fiscalYearId = $this->accounts->fiscalYear->id;
-
-        $equityVoucherIds = VoucherRow::query()
-            ->join('vouchers as equity_vouchers', 'equity_vouchers.id', '=', 'voucher_rows.voucher_id')
-            ->join('accounts as equity_accounts', 'equity_accounts.id', '=', 'voucher_rows.account_id')
-            ->where('equity_vouchers.fiscal_year_id', $fiscalYearId)
-            ->whereBetween('equity_accounts.number', self::EQUITY_ACCOUNTS)
-            ->select('voucher_rows.voucher_id');
-
         $rows = VoucherRow::query()
             ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
             ->join('accounts', 'accounts.id', '=', 'voucher_rows.account_id')
             ->join('voucher_series', 'voucher_series.id', '=', 'vouchers.series_id')
-            ->where('vouchers.fiscal_year_id', $fiscalYearId)
+            ->where('vouchers.fiscal_year_id', $this->accounts->fiscalYear->id)
             ->where('vouchers.status', VoucherStatus::Posted->value)
-            ->whereIn('voucher_rows.voucher_id', $equityVoucherIds)
-            ->groupBy('voucher_rows.voucher_id', 'vouchers.source', 'vouchers.number', 'voucher_series.code', 'accounts.number')
-            ->orderBy('voucher_series.code')
-            ->orderBy('vouchers.number')
-            ->orderBy('accounts.number')
-            ->selectRaw('voucher_rows.voucher_id, vouchers.source, vouchers.number AS voucher_number, voucher_series.code AS series_code, accounts.number AS account_number, SUM(voucher_rows.credit_ore) - SUM(voucher_rows.debit_ore) AS net_credit')
+            ->groupBy('voucher_rows.voucher_id', 'vouchers.source', 'vouchers.number', 'vouchers.corrects_voucher_id', 'voucher_series.code', 'accounts.number')
+            ->selectRaw('voucher_rows.voucher_id, vouchers.source, vouchers.number AS voucher_number, vouchers.corrects_voucher_id, voucher_series.code AS series_code, accounts.number AS account_number, SUM(voucher_rows.credit_ore) - SUM(voucher_rows.debit_ore) AS net_credit, BOOL_OR(accounts.number BETWEEN ? AND ?) OVER (PARTITION BY voucher_rows.voucher_id) AS touches_equity', self::EQUITY_ACCOUNTS);
+
+        $result = DB::query()
+            ->fromSub($rows, 'year_rows')
+            ->where('touches_equity', true)
+            ->orderBy('series_code')
+            ->orderBy('voucher_number')
+            ->orderBy('account_number')
             ->get();
 
         $vouchers = [];
 
-        foreach ($rows as $row) {
-            $id = (string) $row->getAttribute('voucher_id');
+        foreach ($result as $row) {
+            $id = (string) $row->voucher_id;
             $vouchers[$id] ??= [
-                'reference' => $row->getAttribute('series_code').$row->getAttribute('voucher_number'),
-                'source' => (string) $row->getAttribute('source'),
+                'id' => $id,
+                'references' => [$row->series_code.$row->voucher_number],
+                'source' => (string) $row->source,
+                'corrects' => $row->corrects_voucher_id === null ? null : (string) $row->corrects_voucher_id,
                 'rows' => [],
             ];
-            $vouchers[$id]['rows'][(int) $row->getAttribute('account_number')] = (int) $row->getAttribute('net_credit');
+            $vouchers[$id]['rows'][(int) $row->account_number] = (int) $row->net_credit;
         }
 
         return array_values($vouchers);
     }
 
     /**
-     * Puts one voucher's equity changes on the rows of K3 6.3, or records it
-     * as unclassified.
+     * A correcting voucher (CorrectVoucher writes the reversal and any
+     * re-booked rows in one voucher) is netted with the voucher it corrects
+     * when both are in the year, along the whole chain of corrections, so the
+     * pair is classified by what was finally booked: a pair that leaves no
+     * equity change drops out, and a re-booked amount lands on the original's
+     * row with its signed net. A correction whose original is not in the
+     * year is classified alone.
      *
-     * @param  array{reference: string, source: string, rows: array<int, int>}  $voucher
+     * @param  list<array{id: string, references: list<string>, source: string, corrects: ?string, rows: array<int, int>}>  $vouchers
+     * @return list<array{references: list<string>, alone: bool, rows: array<int, int>}>
+     */
+    private static function withCorrections(array $vouchers): array
+    {
+        $byId = array_column($vouchers, null, 'id');
+        $groups = [];
+
+        foreach ($vouchers as $voucher) {
+            $root = $voucher;
+            $seen = [];
+
+            while ($root['corrects'] !== null && isset($byId[$root['corrects']]) && ! isset($seen[$root['id']])) {
+                $seen[$root['id']] = true;
+                $root = $byId[$root['corrects']];
+            }
+
+            $key = $root['id'];
+            $groups[$key] ??= [
+                'references' => [],
+                'alone' => $root['source'] === VoucherSource::Correction->value,
+                'rows' => [],
+            ];
+            $groups[$key]['references'] = [...$groups[$key]['references'], ...$voucher['references']];
+
+            foreach ($voucher['rows'] as $number => $change) {
+                $groups[$key]['rows'][$number] = ($groups[$key]['rows'][$number] ?? 0) + $change;
+            }
+        }
+
+        return array_values($groups);
+    }
+
+    /**
+     * Puts one voucher's (or one corrected pair's) equity changes on the rows
+     * of K3 6.3, or records it as unclassified. Nothing is added unless the
+     * whole voucher is classified.
+     *
+     * @param  array{references: list<string>, alone: bool, rows: array<int, int>}  $voucher
      * @return list<string> the equity columns the voucher touches
      */
     private function classify(array $voucher): array
     {
-        $equity = [];
         $equityAccounts = [];
         $counter = [];
+        $touched = [];
 
         foreach ($voucher['rows'] as $number => $change) {
             $column = self::columnOf($number);
+
+            if ($column !== null) {
+                $touched[] = $column;
+            }
 
             if ($change === 0) {
                 continue;
@@ -385,63 +483,94 @@ final class K3EquityStatement
                 continue;
             }
 
-            $equity[$column] = ($equity[$column] ?? 0) + $change;
-            $equityAccounts[$number] = $column;
+            $equityAccounts[$number] = $change;
         }
 
-        $touched = array_keys($equity);
-        $equity = array_filter($equity);
-
-        if ($equity === [] || $this->booksTheYearsResult($counter)) {
+        if ($equityAccounts === [] || $this->booksTheYearsResult($counter)) {
             return $touched;
         }
 
-        // The previous year's result leaves 2099 for Balanserad vinst eller förlust (6.3 e).
+        $equity = [];
+
+        foreach ($equityAccounts as $number => $change) {
+            $column = (string) self::columnOf($number);
+            $equity[$column] = ($equity[$column] ?? 0) + $change;
+        }
+
+        $equity = array_filter($equity);
+        $plan = [];
+
+        // Any change on 2099 is the previous year's result moving to (or back
+        // from) Balanserad vinst eller förlust (6.3 e), whatever its sign and
+        // counter accounts: a loss year's disposition credits 2099.
         $previousResult = $equity['year_result'] ?? 0;
 
-        if ($previousResult < 0 || ($previousResult > 0 && $counter === [])) {
-            $this->add('prior_result_transfer', ['year_result' => $previousResult, 'retained' => -$previousResult]);
+        if ($previousResult !== 0) {
+            $plan[] = ['prior_result_transfer', ['year_result' => $previousResult, 'retained' => -$previousResult]];
             unset($equity['year_result']);
             $equity['retained'] = ($equity['retained'] ?? 0) + $previousResult;
-            $touched[] = 'retained';
             $equity = array_filter($equity);
+            $touched[] = 'retained';
         }
 
-        if ($equity === []) {
-            return $touched;
-        }
-
-        if ($counter === []) {
+        if ($equity !== [] && $counter === []) {
             $fund = $equity['development_fund'] ?? 0;
 
             if ($fund !== 0) {
-                $this->add($fund > 0 ? 'to_development_fund' : 'from_development_fund', ['development_fund' => $fund, 'retained' => -$fund]);
+                $plan[] = [$fund > 0 ? 'to_development_fund' : 'from_development_fund', ['development_fund' => $fund, 'retained' => -$fund]];
                 unset($equity['development_fund']);
                 $equity['retained'] = ($equity['retained'] ?? 0) + $fund;
-                $touched[] = 'retained';
                 $equity = array_filter($equity);
             }
 
             if ($equity !== []) {
-                $this->add('equity_transfers', $equity);
+                $plan[] = ['equity_transfers', $equity];
             }
 
-            return $touched;
+            $equity = [];
         }
 
-        $kind = $this->ownerTransaction($equity, $equityAccounts, $counter, $voucher['source']);
+        if ($equity !== []) {
+            $accounts = array_values(array_filter(array_keys($equityAccounts), fn (int $number): bool => $number !== self::YEAR_RESULT_ACCOUNT));
+            $kind = self::ownerTransaction($equity, $accounts, $counter);
 
-        if ($kind === null) {
-            $accounts = array_keys(array_filter($equityAccounts, fn (string $column): bool => isset($equity[$column])));
-            sort($accounts);
-            $this->unclassified[] = ['voucher' => $voucher['reference'], 'accounts' => $accounts];
+            // A correction of a voucher outside the year: a pure reversal goes on the row of what it reverses.
+            if ($kind === null && $voucher['alone']) {
+                $kind = self::ownerTransaction(array_map(fn (int $amount): int => -$amount, $equity), $accounts, array_map(fn (int $amount): int => -$amount, $counter));
+            }
 
-            return $touched;
+            if ($kind === null) {
+                $this->unclassified[] = ['voucher' => implode(', ', $voucher['references']), 'accounts' => self::accountsBehind($equityAccounts, $equity)];
+
+                return $touched;
+            }
+
+            $plan[] = [$kind, $equity];
         }
 
-        $this->add($kind, $equity);
+        foreach ($plan as [$row, $amounts]) {
+            $this->add($row, $amounts);
+        }
 
         return $touched;
+    }
+
+    /**
+     * The equity accounts of an unclassified voucher in the posts left after
+     * the previous year's result moved, or else all of its equity accounts,
+     * so a refusal always names an account.
+     *
+     * @param  array<int, int>  $equityAccounts
+     * @param  array<string, int>  $equity
+     * @return list<int>
+     */
+    private static function accountsBehind(array $equityAccounts, array $equity): array
+    {
+        $accounts = array_values(array_filter(array_keys($equityAccounts), fn (int $number): bool => $number !== self::YEAR_RESULT_ACCOUNT && isset($equity[(string) self::columnOf($number)])));
+        $accounts = $accounts === [] ? array_keys($equityAccounts) : $accounts;
+        sort($accounts);
+
+        return $accounts;
     }
 
     /** @param  array<int, int>  $counter */
@@ -462,34 +591,33 @@ final class K3EquityStatement
 
     /**
      * The owner transaction (6.3 d) a voucher with counter accounts outside
-     * equity is, or null when it is none of them.
+     * equity is, or null when it is none of them. A dividend is a decrease
+     * of free equity whose only counter account is 2898, with the same amount.
      *
      * @param  array<string, int>  $equity  the change per column, without the previous year's result
-     * @param  array<int, string>  $equityAccounts  equity account => column
+     * @param  list<int>  $accounts  the equity accounts with a change, without 2099
      * @param  array<int, int>  $counter  the change per counter account
      */
-    private function ownerTransaction(array $equity, array $equityAccounts, array $counter, string $source): ?string
+    private static function ownerTransaction(array $equity, array $accounts, array $counter): ?string
     {
+        $total = array_sum($equity);
         $positive = array_filter($equity, fn (int $amount): bool => $amount > 0);
 
         if ($positive !== [] && count($positive) !== count($equity)) {
             return null;
         }
 
-        // A correcting voucher reverses what it corrects: it goes on the same row.
-        $increase = ($positive !== []) !== ($source === VoucherSource::Correction->value);
         $columns = array_keys($equity);
-        $accounts = array_keys(array_filter($equityAccounts, fn (string $column): bool => isset($equity[$column])));
 
-        if (! $increase && isset($counter[ClosingAccounts::DIVIDEND]) && array_diff($columns, self::DIVIDEND_COLUMNS) === []) {
+        if ($total < 0 && $counter === [ClosingAccounts::DIVIDEND => -$total] && array_diff($columns, self::DIVIDEND_COLUMNS) === []) {
             return 'dividend';
         }
 
         if ($accounts === [self::CONTRIBUTION_ACCOUNT]) {
-            return $increase ? 'shareholder_contribution' : 'contribution_repayment';
+            return $total > 0 ? 'shareholder_contribution' : 'contribution_repayment';
         }
 
-        if ($increase && array_diff($columns, self::NEW_ISSUE_COLUMNS) === []) {
+        if ($total > 0 && array_diff($columns, self::NEW_ISSUE_COLUMNS) === []) {
             return 'new_issue';
         }
 
@@ -584,7 +712,8 @@ final class K3EquityStatement
                 continue;
             }
 
-            $inColumn = array_values(array_filter($this->accounts->numbers(), fn (int $number): bool => self::columnOf($number) === $column));
+            // The balance sheet shows what 2099 holds beyond the year's result under retained earnings.
+            $inColumn = array_values(array_filter($this->accounts->numbers(), fn (int $number): bool => self::columnOf($number) === $column || ($column === 'retained' && $number === self::YEAR_RESULT_ACCOUNT)));
 
             if (array_intersect($inColumn, $explained) !== []) {
                 continue;

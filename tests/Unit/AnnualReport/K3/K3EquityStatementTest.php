@@ -63,6 +63,7 @@ it('S1-R8.3 refuses, with a reason, a K3 rounding leftover that no row can take'
     } catch (K3EquityStatementRefused $refusal) {
         expect($refusal->reason)->toContain('Aktiekapital')
             ->and($refusal->reason)->toContain('6.3')
-            ->and($refusal->getMessage())->toBe($refusal->reason);
+            ->and($refusal->getMessage())->toBe($refusal->reason)
+            ->and($refusal->accounts)->toBe([2081]);
     }
 });
