@@ -16,6 +16,7 @@ use App\Models\BankTransaction;
 use App\Models\ClientProfile;
 use App\Models\ClosingCheck;
 use App\Models\Company;
+use App\Models\CompanyAccountingPolicy;
 use App\Models\CompanyGuideStep;
 use App\Models\CompanyHolding;
 use App\Models\CompanyModule;
@@ -241,6 +242,7 @@ const COMPANY_SCOPED_MODELS = [
     IncomeTaxPartner::class => 'incomeTaxPartnerAttributes',
     K10Year::class => 'k10YearAttributes',
     K10Owner::class => 'k10OwnerAttributes',
+    CompanyAccountingPolicy::class => ['key' => 'leasing', 'value' => 'classify', 'applies_from' => '2026-01-01'],
     CompanyHolding::class => ['held_org_number' => '556036-0793', 'held_name' => 'Hemligt Dotterbolag AB', 'capital_bp' => 10000, 'voting_bp' => 10000, 'control_basis' => 'VOTES', 'acquired_on' => '2024-01-01'],
     ClosingCheck::class => 'closingCheckAttributes',
     YearEndEntry::class => 'yearEndEntryAttributes',
