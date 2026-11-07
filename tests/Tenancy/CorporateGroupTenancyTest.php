@@ -336,3 +336,21 @@ it('keeps one active holding per holder and held company in the database, and bl
         ->and(fn () => DB::transaction(fn () => CurrentCompany::run($this->p, fn () => cgtHoldingInB($this)->delete())))->toThrow(QueryException::class)
         ->and(CurrentCompany::run($this->p, fn () => CompanyHolding::query()->count()))->toBe(2);
 });
+
+it('gives an administrator of the holder alone the same answer whatever other members hold (no oracle)', function () {
+    // Y is an outside company. Pia administers P only; B's holding in Y is not hers to learn.
+    $y = ['held_org_number' => '556036-0793', 'held_name' => 'Utomstående AB', 'capital' => '50', 'voting' => '50', 'control_basis' => 'NONE', 'acquired_on' => '2024-01-01'];
+    $pia = Bookkeeping::member($this->p, 'admin');
+
+    app(RecordHolding::class)($this->olle->fresh(), $this->b, [...$y, 'voting' => '60']);
+    $alone = app(RecordHolding::class)($pia->fresh(), $this->p, $y);
+
+    // With B at 60 % Pia can still raise P's share to anything up to 100 %: no refusal reveals B's share.
+    foreach (['51', '90', '100'] as $voting) {
+        expect(app(RecordHolding::class)($pia->fresh(), $this->p, [...$y, 'voting' => $voting], $alone->id)->voting_bp)->toBe((int) $voting * 100);
+    }
+
+    // Whoever administers the group still gets the group's rule, and the conflict is the group's to resolve.
+    expect(fn () => app(RecordHolding::class)($this->olle->fresh(), $this->p, [...$y, 'voting' => '41'], $alone->id))
+        ->toThrow(ValidationException::class, 'mer än 100 procent av rösterna');
+});

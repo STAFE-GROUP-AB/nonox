@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Company\TransferOwnership;
 use App\Actions\Group\ConfirmGroupMember;
 use App\Actions\Group\CreateCorporateGroup;
 use App\Actions\Group\GrantGroupRole;
@@ -22,6 +23,7 @@ use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /*
@@ -459,4 +461,37 @@ it('freezes administration while a member is archived, until that member is remo
     app(RemoveGroupMember::class)($this->bOwner->fresh(), $group->id, $this->b->id);
 
     expect($group->members()->pluck('company_id')->all())->toBe([$this->p->id]);
+});
+
+it('keeps a viewer role through ownership transfers of the parent and never revives a stale one', function () {
+    cgHolding($this->olle, $this->p, $this->a);
+    $group = cgGroup($this);
+    cgConfirm($this->olle, $group, $this->a);
+    $viggo = User::factory()->create(['name' => 'Viggo']);
+    $this->p->users()->attach($viggo, ['role' => 'approver']);
+    app(GrantGroupRole::class)($this->olle->fresh(), $group->id, $viggo->id);
+    $level = fn (User $user): GroupAccessLevel => GroupAccess::for($user->fresh())->levelFor($group->fresh());
+
+    // Viggo becomes owner of P (he has no reports:view in A, so only the role shows him the group).
+    app(TransferOwnership::class)($this->olle->fresh(), $this->p->fresh(), $viggo->id);
+
+    expect($level($viggo))->toBe(GroupAccessLevel::Consolidated)
+        ->and(CorporateGroupRole::query()->sole()->parent_membership_id)->toBeNull()
+        ->and(AuditLog::query()->where('action', 'corporate_group.roles_rebound')->where('company_id', $this->p->id)->count())->toBe(1);
+
+    // And back: Viggo keeps the role as administrator, bound to his new membership.
+    app(TransferOwnership::class)($viggo->fresh(), $this->p->fresh(), $this->olle->id);
+
+    expect($level($viggo))->toBe(GroupAccessLevel::Consolidated)
+        ->and(CorporateGroupRole::query()->sole()->parent_membership_id)->toBe((int) DB::table('team_user')->where('team_id', $this->p->id)->where('user_id', $viggo->id)->value('id'));
+
+    // He leaves P and is invited again: no role. Made owner once more: still none, the stale role stays stale.
+    $this->p->users()->detach($viggo);
+    $this->p->users()->attach($viggo, ['role' => 'approver']);
+
+    expect($level($viggo))->toBe(GroupAccessLevel::None);
+
+    app(TransferOwnership::class)($this->olle->fresh(), $this->p->fresh(), $viggo->id);
+
+    expect($level($viggo))->toBe(GroupAccessLevel::None);
 });
