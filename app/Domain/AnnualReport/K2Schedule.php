@@ -123,4 +123,18 @@ final class K2Schedule
     ];
 
     public const array ASSET_SECTIONS = ['fixed', 'current'];
+
+    /**
+     * The rows of the equity specification that take what rounding leaves
+     * over in a column, in order; with none of them, PrintedFigures adds an
+     * "Övriga förändringar" row (see PrintedFigures).
+     *
+     * @var list<string>
+     */
+    public const array EQUITY_ROUNDING_ROWS = ['carried_forward', 'other', 'dividend'];
+
+    public const bool EQUITY_ROUNDING_ADDS_ROW = true;
+
+    /** Whether PrintedFigures refuses a balance sheet that rounding cannot explain; K2 books any difference on Övriga skulder. */
+    public const bool REFUSES_UNBALANCED_SHEET = false;
 }

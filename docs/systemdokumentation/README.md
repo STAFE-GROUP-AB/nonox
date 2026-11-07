@@ -2126,6 +2126,52 @@ Beskrivs i [ADR-059](../adr/ADR-059-k3-annual-report.md), tillägget
 - Ingen skärm och ingen K3-årsredovisning använder principerna ännu, och
   ingenting i bokföringen ändras.
 
+### 5a6.2 Uppställning av resultat- och balansräkning enligt K3 (förberedelse)
+
+Enligt AI-utredning 2026-11-07, juristgranskning återstår (ADR-059, tillägg
+2026-11-07, paket S1-P6).
+
+- K3-årsredovisningens rader bildas av BAS-kontointervall i `K3Schedule`, på
+  samma sätt som K2-raderna i `K2Schedule`. Resultaträkningen är
+  kostnadsslagsindelad och följer årsredovisningslagen bilaga 2 i dess
+  ordning, med delresultaten Rörelseresultat, Resultat efter finansiella poster
+  och Resultat före skatt (K3 5.2). Balansräkningen följer bilaga 1 i dess
+  ordning, med långfristiga och kortfristiga skulder under egna rubriker
+  (K3 4.7) och eget kapital uppdelat i bundet och fritt (årsredovisningslagen
+  3 kap. 10 a §).
+- Uppskjuten skattefordran (BAS 137x) är en egen rad bland de finansiella
+  anläggningstillgångarna och uppskjuten skatteskuld (BAS 224x) en egen rad
+  bland avsättningarna (K3 29.19, 29.31 och kommentaren till 4.3); aktuella
+  skattefordringar (BAS 164x) är en egen rad bland fordringarna. Övriga
+  avsättningar för skatter (BAS 225x) är en egen rad direkt efter den
+  uppskjutna skatteskulden (bilaga 1 C.2). Obeskattade
+  reserver visas brutto (K3 29.37), uppdelade på periodiseringsfonder,
+  överavskrivningar, ersättningsfonder och andra obeskattade reserver. Fond för
+  utvecklingsutgifter (BAS 2089) är en egen rad i bundet eget kapital
+  (årsredovisningslagen 3 kap. 10 a §); vilket BAS-konto som är fonden ska en
+  människa bekräfta (beslut H9).
+- Kontointervallen kommer från BAS 2026-referenserna i den svenska
+  taxonomin (`se-gen-base-rbas2026`), som knyter varje post i K3-taxonomin till
+  BAS-konton. Konton som referenserna inte nämner ligger kvar på den rad som
+  motsvarar deras K2-rad, och delar K3 upp den raden, på delningens
+  "Övriga"-rad. Varje rad anger sin källa. Inköpskontona (BAS 4000–4999)
+  fördelas som i K2: Råvaror och förnödenheter, utom konton markerade som
+  handelsvaror. Varje konto hamnar på exakt en rad, och K3 täcker samma konton
+  som K2.
+- Avrundningen till hela kronor (`PrintedFigures`) är densamma som för K2:
+  varje rad avrundas och varje summa är summan av de avrundade raderna, och en
+  skillnad mellan balansräkningens sidor läggs på Övriga skulder. För K3
+  gäller det bara en skillnad som avrundningen kan förklara (högst 50 öre per
+  avrundat belopp); en större skillnad, eller en skillnad redan i de exakta
+  beloppen, till exempel ett saldo på ett konto som ingen rad tar med, gör att
+  balansräkningen inte tas fram. I
+  specifikationen av eget kapital läggs en avrundningsrest för K3 aldrig på en
+  ny rad "Övriga förändringar" (K3 6.3 har ingen sådan rad), utan på en befintlig
+  rad med belopp i kolumnen.
+- Siffrorna läses med lika många databasfrågor som för K2, oberoende av antalet
+  verifikationer. K2-årsredovisningen är oförändrad tecken för tecken.
+- Ingen skärm visar K3-uppställningen ännu, och ingenting i bokföringen ändras.
+
 ## 5a7. Inkomstdeklaration 2 (SRU)
 
 - Under Bokföring → Inkomstdeklaration tas INK2 med INK2R och INK2S fram ur
