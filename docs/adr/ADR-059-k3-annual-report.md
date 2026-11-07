@@ -971,6 +971,57 @@ accounts (S2); computing successiv vinstavräkning, the capitalisation model,
 capitalised borrowing costs, finance leases in the balance sheet and chapter 12
 fair value (all refused by policy).
 
+#### As built (S1-P8, 2026-11-07, after review)
+
+Source: BFN's consolidated K3 (vl12-1-k3-kons20251215), chapter 7, pp. 57–63.
+
+- **Design.** `CashFlowStatement` (indirect method, K3 7.9) reads two things.
+  Operating activities come from each account's balance change in the year
+  (AnnualAccounts), every account in exactly one `CashFlowAccounts` category.
+  Investing and financing are read voucher by voucher with one grouped query
+  per year (windows over each voucher, no IN subquery; planned as hash joins
+  after `ANALYZE`). Corrections are netted with their originals. Each voucher's
+  net on the accounts is a gross line (7.11): acquisition, borrowing,
+  repayment. A used overdraft (2330, 2480) is netted under 7.12 b. Owner
+  transactions come from `K3EquityStatement`; dividends paid are the decided
+  dividend less the increase on 2898 (7.16). Income tax paid is a separate
+  operating line (7.17). Interest and dividends are a separate section
+  (7.14), inflow positive, staying in operating (7.15). The activities
+  reconcile with the change in likvida medel (1900–1999) by construction and
+  are checked. `CashFlowPrintedFigures` rounds to whole kronor with sums of
+  rounded lines; a rounding leftover goes to a working capital line or
+  refuses. `forYear()` applies the policy, the size and the legal form.
+  Query count: 2 per year (equity statement, voucher read), 9 with the
+  previous year beside it.
+- **Blocks** (Swedish reason with accounts, and vouchers where relevant; never
+  an "övrigt" row): an account with a movement and no category (1660–1699,
+  2000–2079, 2860–2879, 9xxx and others); a transaction without payment in
+  investing or financing (K3 chapter 7 kommentar "Transaktioner som inte
+  medför betalningar": an asset against a loan, a loan converted to equity,
+  a dividend set off against a receivable, an acquisition against a trade
+  payable not paid with the same amount in the year); a disposal of an
+  intangible or tangible fixed asset; gains and losses on disposals,
+  non-cash financial items and group contributions; currency differences
+  (3960–3969, 7960–7969, 8230–8239, 8330–8339, 8430–8439) until 7.13 is
+  built; depreciation, deferred tax and appropriations that do not net
+  against their balance sheet accounts; a 19xx account with a negative
+  balance; opening likvida medel that differ from last year's closing
+  balance; a refused equity statement; the direct method; `none` for a
+  större företag, an undetermined size or an ekonomisk förening (a
+  bostadsrättsförening must have one, ÅRL 2:1 andra stycket, and NONOX does
+  not record which kind of förening it is).
+- **TODO(legal-verify):** the account mapping (1800–1899 as investing, 1970
+  and 1990 as cash, 2893 as a loan, the income tax accounts, the dividend,
+  interest and currency ranges, of which only 8010, 8210 and 8310 are in
+  NONOX's BAS seed); 1660–1689 and 2860–2879 left blocking until their
+  category is decided; netting overdrafts under 7.12 b; the rule that an
+  acquisition on supplier credit is paid when a payment of the same amount
+  follows; accepting a result account beside a loan movement when cash covers
+  it; the line labels; the rounding line. F-S1-a states interest paid as a
+  positive amount despite its own sign convention; the test negates it and
+  the Fixture author should correct the fixture. F-S1-c was written by the
+  P8 builder and waits for an independent check.
+
 ### A.5 Test plan and performance
 
 **Unit tests per rule id** (Pest, `tests/Unit/AnnualReport/K3/…`), named with the

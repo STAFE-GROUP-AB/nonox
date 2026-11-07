@@ -82,7 +82,7 @@ final class CashFlowPrintedFigures
 
         foreach (array_keys($values) as $key) {
             $line = CashFlowStatement::LINES[$key];
-            $figures += ! $line['subtotal'] && $line['section'] !== 'supplementary' ? 1 : 0;
+            $figures += ! $line['subtotal'] && $line['section'] !== 'interest_dividends' ? 1 : 0;
         }
 
         if (abs($left) > 50 * $figures) {

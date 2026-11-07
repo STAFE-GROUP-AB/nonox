@@ -12,7 +12,7 @@ legal-entity exemption from deferred tax, 20.29 as a company-wide policy, and th
 flow method as a choice.
 
 Everything here is synthetic. The company, its owner, the property, the lessor and the
-organisation numbers are fictional. `559999-3101` (company) and `559999-3200` (owner)
+organisation numbers are fictional. `559999-6013` (company) and `559999-3200` (owner)
 are invented test numbers in the 559999 series used elsewhere in the tests; they pass
 Luhn and do not belong to anyone.
 

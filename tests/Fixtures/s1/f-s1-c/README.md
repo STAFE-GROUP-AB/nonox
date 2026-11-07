@@ -7,8 +7,8 @@ Fixture for spec item **S1 K3 annual report** (`docs/specs/nummer-1-spec.md`, Pa
 "F-S1-c: company that falls below cash-flow requirement thresholds, proving the
 statement is optional") and ADR-059 A.5 (packages S1-P8 and S1-P2).
 
-Everything here is synthetic. The company and `559999-3606` are invented (559999
-series, passes Luhn, used by no one).
+Everything here is synthetic. The company is invented; `559999-6013` is the test
+organisation number the repository already uses elsewhere (it passes Luhn).
 
 ## Files
 
@@ -76,7 +76,8 @@ at 2026-12-31: 2 868 760.
 | **Årets kassaflöde** | **508 760** | |
 | Likvida medel vid årets början / slut | 970 000 / 1 478 760 | 1930 |
 
-Supplementary: interest paid 20 000, interest received 0.
+Interest and dividends (K3 7.14, inflow positive): interest paid −20 000, interest
+received 0, dividends received 0.
 
 ## Self-check (2026-11-07)
 

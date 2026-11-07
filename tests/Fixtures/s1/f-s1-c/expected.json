@@ -60,7 +60,7 @@
       "arets_kassaflode": 50876000,
       "likvida_medel_vid_arets_borjan": 97000000,
       "likvida_medel_vid_arets_slut": 147876000,
-      "tillaggsupplysning_betald_ranta": 2000000,
+      "tillaggsupplysning_betald_ranta": -2000000,
       "tillaggsupplysning_erhallen_ranta": 0
     }
   }

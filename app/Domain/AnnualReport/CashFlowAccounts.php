@@ -23,20 +23,31 @@ namespace App\Domain\AnnualReport;
  *   cash effect is investing or financing (7.9 a), and adds the changes of
  *   inventory, receivables, payables and other operating items (7.9 b);
  * - income tax paid is shown separately under operating (7.17); dividends paid
- *   are financing (7.16); interest paid and received stay in operating (the
- *   7.15 option, F-S1-a assumption A7).
+ *   are financing (7.16); interest and dividends received stay in operating
+ *   (7.15: "Räntor och erhållna utdelningar ska hänföras till den löpande
+ *   verksamheten"), and the payments of interest and dividends are shown
+ *   separately (7.14);
+ * - "Ett företag ska redovisa effekten av orealiserade valutakursförändringar
+ *   i likvida medel skild från kassaflöden från den löpande verksamheten,
+ *   investeringsverksamheten och finansieringsverksamheten" (7.13), which
+ *   NONOX cannot yet do, so currency differences block (NOT_BUILT currency).
  *
  * TODO(legal-verify): every account range below is NONOX's mapping, not K3's
  * text. In particular: 1800–1899 short-term investments as investing rather
  * than likvida medel (7.4 c lets "kortfristiga, likvida placeringar" be cash,
  * "vanligen tre månader eller kortare"); 1970 Särskilda bankkonton and 1990
  * Redovisningsmedel inside likvida medel; 1660–1699 and 2860–2879 (amounts
- * with group companies and owners: trade or loans?); 2893 Skulder till
+ * with group companies, owners and related parties: operating, investing or
+ * financing?) left without a category, so they block; 2893 Skulder till
  * närstående personer as a loan; 1640–1649, 2250–2259, 2510–2512,
  * 2517–2519, 8910–8939 and 8980–8989 as income tax (7.17) while 2513–2516
  * (property tax, special payroll tax, yield tax) are operating payables;
- * the fixed asset groups netted per year (acquisitions and disposals not
- * shown gross); loans netted (borrowing and repayment not shown gross).
+ * the BAS ranges of dividends received (8010–8019, 8110–8113, 8210–8219,
+ * 8340–8349) and interest received (8250–8269, 8310–8319, 8360–8369),
+ * of which only 8010, 8210 and 8310 are in NONOX's BAS 2026 seed;
+ * 8114–8119 blocked as unknown; the currency ranges (3960–3969, 7960–7969,
+ * 8230–8239, 8330–8339, 8430–8439); overdrafts netted as quick-turnover
+ * items (7.12 b).
  */
 final class CashFlowAccounts
 {
@@ -81,8 +92,25 @@ final class CashFlowAccounts
     /** Equity (2080–2099), the year's result booked to it (8990–8999) and unpaid dividends (2898): read with K3EquityStatement. */
     public const string EQUITY = 'equity';
 
-    /** Borrowing and repayment, used overdrafts included (financing). */
+    /** Borrowing and repayment (financing), shown gross (K3 7.11). */
     public const string LOANS = 'loans';
+
+    /**
+     * A used overdraft (2330, 2480): financing, never cash (K3 7.4 kommentar),
+     * shown net as "in- och utbetalningar av stora belopp som avser poster som
+     * omsätts snabbt och har kort löptid" (K3 7.12 b).
+     */
+    public const string OVERDRAFT = 'overdraft';
+
+    /**
+     * The categories of investing and financing activities. A voucher that
+     * moves one of them against a counter account that is no payment is a
+     * transaction "som inte medför in- och utbetalningar" (K3 chapter 7
+     * kommentar) and blocks the statement.
+     *
+     * @var list<string>
+     */
+    public const array INVESTING_FINANCING = [self::INTANGIBLE, self::TANGIBLE, self::FINANCIAL_ASSETS, self::SHORT_INVESTMENTS, self::LOANS, self::OVERDRAFT, self::EQUITY];
 
     /**
      * Account ranges, first match wins: [from, to, category].
@@ -95,7 +123,7 @@ final class CashFlowAccounts
         [1300, 1399, self::FINANCIAL_ASSETS],
         [1400, 1499, self::INVENTORY],
         [1640, 1649, self::INCOME_TAX],
-        [1500, 1689, self::RECEIVABLES],
+        [1500, 1659, self::RECEIVABLES],
         [1700, 1799, self::RECEIVABLES],
         [1800, 1899, self::SHORT_INVESTMENTS],
         [2080, 2099, self::EQUITY],
@@ -103,9 +131,10 @@ final class CashFlowAccounts
         [2240, 2249, self::DEFERRED_TAX],
         [2250, 2259, self::INCOME_TAX],
         [2200, 2299, self::PROVISIONS],
+        [2330, 2339, self::OVERDRAFT],
+        [2480, 2489, self::OVERDRAFT],
         [2300, 2399, self::LOANS],
         [2410, 2419, self::LOANS],
-        [2480, 2489, self::LOANS],
         [2400, 2499, self::PAYABLES],
         [2510, 2512, self::INCOME_TAX],
         [2513, 2516, self::PAYABLES],
@@ -137,18 +166,26 @@ final class CashFlowAccounts
      * effect belongs to investing or financing, or which are not cash at
      * all, so 7.9 a requires an adjustment NONOX does not yet make. A movement
      * on one of them blocks the statement with the reason (never a silent
-     * misclassification). Also group contributions (koncernbidrag).
+     * misclassification). Also group contributions (koncernbidrag) and
+     * currency differences (K3 7.13, 7.9 a kommentar: "orealiserade
+     * valutakursvinster och valutakursförluster").
      *
      * @var list<array{0: int, 1: int, 2: string}> [from, to, reason]
      */
     public const array NOT_BUILT = [
+        [3960, 3969, 'currency'],
+        [7960, 7969, 'currency'],
+        [8230, 8239, 'currency'],
+        [8330, 8339, 'currency'],
+        [8430, 8439, 'currency'],
         [3970, 3979, 'disposal'],
         [7970, 7979, 'disposal'],
         [8020, 8039, 'financial'],
         [8070, 8089, 'financial'],
-        [8120, 8139, 'financial'],
+        [8114, 8139, 'financial'],
         [8170, 8189, 'financial'],
-        [8220, 8249, 'financial'],
+        [8220, 8229, 'financial'],
+        [8240, 8249, 'financial'],
         [8270, 8289, 'financial'],
         [8320, 8329, 'financial'],
         [8350, 8359, 'financial'],
@@ -161,13 +198,40 @@ final class CashFlowAccounts
     /** Fixed assets with accumulated depreciation accounts (x8, x9): BAS 1000–1299. */
     public const array DEPRECIABLE = [1000, 1299];
 
+    /**
+     * Advances and work in progress, which carry no accumulated depreciation:
+     * the K3Schedule lines intangible_advances (108x) and
+     * construction_in_progress (118x, 128x), taken from the rbas2026
+     * mapping. 1088, 1188 and 1288 are advances, not accumulated write-downs.
+     *
+     * @var list<array{0: int, 1: int}>
+     */
+    public const array ADVANCES = [[1080, 1089], [1180, 1189], [1280, 1289]];
+
+    /** Trade payables (BAS 2440–2449): an acquisition on supplier credit is paid through them. */
+    public const array TRADE_PAYABLES = [2440, 2449];
+
+    /** VAT accounts (BAS 2600–2699): allowed beside a payment for an acquisition. */
+    public const array VAT = [2600, 2699];
+
+    /**
+     * Every account a voucher must touch to be read voucher by voucher (the
+     * investing and financing categories, a superset in plain ranges).
+     *
+     * @var list<array{0: int, 1: int}>
+     */
+    public const array VOUCHER_LEVEL = [[1000, 1399], [1800, 1899], [2080, 2099], [2300, 2399], [2410, 2419], [2480, 2489], [2840, 2849], [2893, 2893], [2898, 2898]];
+
     /** Interest expense (BAS 8400–8429) and accrued interest (2960–2969), for "betald ränta". */
     public const array INTEREST_EXPENSE = [[8400, 8429]];
 
     public const array ACCRUED_INTEREST_EXPENSE = [[2960, 2969]];
 
-    /** Interest income (BAS 8250–8269, 8310–8319) and accrued interest income (1760–1769), for "erhållen ränta". */
-    public const array INTEREST_INCOME = [[8250, 8269], [8310, 8319]];
+    /** Interest income (BAS 8250–8269, 8310–8319, 8360–8369) and accrued interest income (1760–1769), for "erhållen ränta". */
+    public const array INTEREST_INCOME = [[8250, 8269], [8310, 8319], [8360, 8369]];
+
+    /** Dividends received (K3 7.14, 7.15): BAS 8010–8019, 8110–8113, 8210–8219, 8340–8349. */
+    public const array DIVIDENDS_RECEIVED = [[8010, 8019], [8110, 8113], [8210, 8219], [8340, 8349]];
 
     public const array ACCRUED_INTEREST_INCOME = [[1760, 1769]];
 
@@ -179,7 +243,7 @@ final class CashFlowAccounts
         }
 
         if ($number >= self::DEPRECIABLE[0] && $number <= self::DEPRECIABLE[1]) {
-            if (in_array($number % 10, [8, 9], true)) {
+            if (in_array($number % 10, [8, 9], true) && ! self::inRanges($number, self::ADVANCES)) {
                 return self::ACCUMULATED;
             }
 
@@ -195,7 +259,7 @@ final class CashFlowAccounts
         return null;
     }
 
-    /** Why the statement cannot yet place an account's movement ('disposal', 'financial', 'group_contribution'), or null. */
+    /** Why the statement cannot yet place an account's movement ('currency', 'disposal', 'financial', 'group_contribution'), or null. */
     public static function notBuilt(int $number): ?string
     {
         foreach (self::NOT_BUILT as [$from, $to, $reason]) {

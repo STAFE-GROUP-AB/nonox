@@ -10539,7 +10539,6 @@
     "Principen :value för kassaflödesanalysen känns inte igen. Välj ingen kassaflödesanalys eller indirekt metod.": "The cash flow statement policy :value is not recognised. Choose no cash flow statement or the indirect method.",
     "Upptagna lån": "Borrowings",
     "Utbetald utdelning": "Dividends paid",
-    "anskaffningsvärdet på konto :accounts har minskat under året, och avyttring och utrangering av anläggningstillgångar kan ännu inte visas": "the cost on account :accounts has decreased during the year, and disposals and scrapping of fixed assets cannot be shown yet",
     "föregående år": "previous year",
     "förändringarna i eget kapital kan inte specificeras (:reason)": "the changes in equity cannot be specified (:reason)",
     "förändringen av eget kapital på konto :accounts motsvarar inte utdelningar, tillskott och nyemissioner enligt specifikationen av förändringar i eget kapital": "the change in equity on account :accounts does not match the dividends, contributions and new issues in the statement of changes in equity",
@@ -10555,5 +10554,15 @@
     "konto :accounts: bokslutsdispositionerna motsvarar inte förändringen av de obeskattade reserverna": "account :accounts: the appropriations do not match the change in untaxed reserves",
     "likvida medel vid årets början på konto :accounts skiljer sig från föregående års utgående balans": "cash and cash equivalents at the beginning of the year on account :accounts differ from last year's closing balance",
     "Årets kassaflöde": "Cash flow for the year",
-    "årets kassaflöde (:flow öre) är inte lika med förändringen av likvida medel (:change öre)": "the cash flow for the year (:flow öre) does not equal the change in cash and cash equivalents (:change öre)"
+    "årets kassaflöde (:flow öre) är inte lika med förändringen av likvida medel (:change öre)": "the cash flow for the year (:flow öre) does not equal the change in cash and cash equivalents (:change öre)",
+    "Avyttring av kortfristiga placeringar": "Disposal of short-term investments",
+    "En ekonomisk förening kan vara en bostadsrättsförening, och en bostadsrättsförening ska ha en kassaflödesanalys i årsredovisningen (årsredovisningslagen 2 kap. 1 § andra stycket). NONOX vet inte vilken sorts förening det är; välj indirekt metod.": "An economic association may be a housing cooperative, and a housing cooperative must include a cash flow statement in its annual report (Annual Accounts Act, chapter 2, section 1, second paragraph). NONOX does not know which kind of association it is; choose the indirect method.",
+    "Erhållen utdelning": "Dividends received",
+    "Förvärv av kortfristiga placeringar": "Acquisition of short-term investments",
+    "Förändring av checkräkningskredit": "Change in overdraft facility",
+    "in- och utbetalningarna på konto :accounts går inte ihop med kontonas förändring under året": "the receipts and payments on account :accounts do not agree with the accounts' change during the year",
+    "konto :accounts är valutakursdifferenser; effekten av orealiserade valutakursförändringar i likvida medel ska visas skild från de tre verksamheterna (K3 punkt 7.13) och orealiserade kursdifferenser justeras bort (punkt 7.9 a), vilket NONOX ännu inte gör": "account :accounts holds currency differences; the effect of unrealised exchange rate changes on cash and cash equivalents must be shown apart from the three activities (K3 point 7.13) and unrealised differences adjusted out (point 7.9 a), which NONOX does not do yet",
+    "verifikation :vouchers bokför ett förvärv på konto :accounts mot en leverantörsskuld som inte betalas under året med samma belopp; ett förvärv mot en obetald skuld är ingen utbetalning (K3 kapitel 7, kommentaren om transaktioner som inte medför betalningar)": "voucher :vouchers books an acquisition on account :accounts against a trade payable that is not paid with the same amount during the year; an acquisition against an unpaid liability is no payment (K3 chapter 7, the comment on transactions without payments)",
+    "verifikation :vouchers bokför konto :accounts utan betalning; en transaktion i investerings- eller finansieringsverksamheten som inte medför in- eller utbetalningar ska inte ingå i kassaflödet (K3 kapitel 7, kommentaren om transaktioner som inte medför betalningar), och NONOX kan ännu inte visa den på annan plats": "voucher :vouchers books account :accounts without a payment; an investing or financing transaction that involves no receipts or payments must not be part of the cash flow (K3 chapter 7, the comment on transactions without payments), and NONOX cannot yet show it elsewhere",
+    "verifikation :vouchers minskar anskaffningsvärdet på konto :accounts, och avyttring och utrangering av anläggningstillgångar kan ännu inte visas (K3 punkt 7.6)": "voucher :vouchers reduces the cost on account :accounts, and disposals and scrapping of fixed assets cannot be shown yet (K3 point 7.6)"
 }

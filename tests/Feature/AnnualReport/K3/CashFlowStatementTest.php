@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Accounting\CorrectVoucher;
 use App\Actions\Accounting\PostVoucher;
 use App\Actions\Accounting\SaveDraftVoucher;
 use App\Actions\AnnualReport\SavePriorYearSizeFigures;
@@ -18,6 +19,7 @@ use App\Domain\AnnualReport\K3PolicyKey;
 use App\Domain\AnnualReport\K3Schedule;
 use App\Domain\AnnualReport\K3SizeClass;
 use App\Domain\AnnualReport\PrintedFigures;
+use App\Domain\Company\LegalForm;
 use App\Models\Account;
 use App\Models\CompanyAccountingPolicy;
 use App\Models\FiscalYear;
@@ -95,6 +97,11 @@ describe('F-S1-a', function () {
             expect($statement->refusal())->toBeNull("{$year} refusal");
 
             foreach ($expected as $key => $amount) {
+                // F-S1-a states interest paid as a positive amount although its own convention is
+                // "inflow positive, outflow negative"; the statement keeps one sign convention
+                // (reported to the Fixture author, S1-P8 review P3).
+                $amount = $key === 'tillaggsupplysning_betald_ranta' ? -$amount : $amount;
+
                 expect($statement->amounts())->toHaveKey($key)
                     ->and($statement->amounts()[$key])->toBe($amount, "{$year} {$key}");
             }
@@ -133,10 +140,12 @@ describe('F-S1-a', function () {
             ->and($rows['utbetald_utdelning'])->toMatchArray(['section' => 'financing', 'point' => '7.16', 'amount' => -150_000_000, 'previous' => -120_000_000])
             ->and($rows['justering_avskrivningar']['point'])->toBe('7.9 a')
             ->and($rows['forandring_rorelseskulder']['point'])->toBe('7.9 b')
+            ->and($rows['forvarv_av_materiella_anlaggningstillgangar']['point'])->toBe('7.6, 7.11')
+            ->and($rows['amortering_av_lan']['point'])->toBe('7.7, 7.11')
             ->and($rows['forvarv_av_materiella_anlaggningstillgangar']['previous'])->toBe(0)
             ->and($rows['likvida_medel_vid_arets_borjan']['amount'])->toBe(398_204_000)
             ->and($rows['likvida_medel_vid_arets_borjan']['previous'])->toBe(300_000_000)
-            ->and($rows['tillaggsupplysning_betald_ranta'])->toMatchArray(['amount' => 41_400_000, 'previous' => 46_200_000, 'section' => 'supplementary'])
+            ->and($rows['tillaggsupplysning_betald_ranta'])->toMatchArray(['amount' => -41_400_000, 'previous' => -46_200_000, 'section' => 'interest_dividends', 'point' => '7.14'])
             ->and($rows->pluck('label')->filter(fn (string $label): bool => str_contains(mb_strtolower($label), 'övrig'))->all())->toBe([]);
 
         // The first year in the books has no previous year beside it.
@@ -182,15 +191,16 @@ describe('F-S1-a', function () {
             ->and($statement->refusal())->toContain('avskrivningar');
     });
 
-    it('S1-R2.1 treats a used overdraft (2330, 2480) as financing, never as likvida medel (K3 7.4 kommentar)', function () {
+    it('S1-R2.1 treats a used overdraft (2330, 2480) as financing, netted under K3 7.12 b, never as likvida medel (7.4 kommentar)', function () {
         postCashFlowVoucher($this->fixture, '2026-11-30', 'Utnyttjad checkräkningskredit', [[1930, 50_000_000, 0], [2480, 0, 50_000_000]]);
         postCashFlowVoucher($this->fixture, '2026-11-30', 'Långfristig checkräkningskredit', [[1930, 20_000_000, 0], [2330, 0, 20_000_000]]);
 
         $amounts = cashFlow($this->fixture->years[2026])->amounts();
 
-        // The amortisation of 1 200 000 kr and the new overdrafts are netted (TODO(legal-verify) in CashFlowAccounts).
+        // Loans stay gross (7.11): the amortisation of 1 200 000 kr is not netted with the overdraft.
         expect($amounts['upptagna_lan'])->toBe(0)
-            ->and($amounts['amortering_av_lan'])->toBe(-50_000_000)
+            ->and($amounts['amortering_av_lan'])->toBe(-120_000_000)
+            ->and($amounts['forandring_av_checkrakningskredit'])->toBe(70_000_000)
             ->and($amounts['arets_kassaflode'])->toBe(29_240_482 + 70_000_000)
             ->and($amounts['likvida_medel_vid_arets_slut'])->toBe(427_444_482 + 70_000_000);
     });
@@ -247,6 +257,150 @@ describe('F-S1-a', function () {
 
         expect($statement)->toBeInstanceOf(CashFlowStatement::class)
             ->and($statement?->amounts()['arets_kassaflode'])->toBe(29_240_482);
+    });
+
+    it('S1-R2 refuses no cash flow statement for an ekonomisk förening, which may be a bostadsrättsförening (ÅRL 2 kap. 1 § andra stycket)', function () {
+        $year = $this->fixture->years[2026];
+        setCashFlowPolicy($this->fixture, $year, 'none');
+        $accounts = AnnualAccounts::for($year, K3Schedule::class);
+
+        expect(fn () => CashFlowStatement::forYear($accounts, K3Policies::forYear($year), K3SizeClass::Mindre, LegalForm::EkonomiskForening))
+            ->toThrow(CashFlowStatementRefused::class, 'bostadsrättsförening');
+
+        $this->fixture->company->forceFill(['legal_form' => LegalForm::EkonomiskForening->value])->save();
+
+        expect(fn () => CashFlowStatement::forYear($accounts, K3Policies::forYear($year), K3SizeClass::Mindre))
+            ->toThrow(CashFlowStatementRefused::class, 'bostadsrättsförening');
+
+        $this->fixture->company->forceFill(['legal_form' => LegalForm::Ab->value])->save();
+
+        expect(CashFlowStatement::forYear($accounts, K3Policies::forYear($year), K3SizeClass::Mindre))->toBeNull();
+    });
+
+    it('K3 7 kommentar: blocks a car bought with a loan paid straight to the dealer, which is no cash flow', function () {
+        postCashFlowVoucher($this->fixture, '2026-05-01', 'Billån', [[1240, 40_000_000, 0], [2350, 0, 40_000_000]]);
+
+        $statement = cashFlow($this->fixture->years[2026]);
+
+        expect($statement->refusal())->toContain('1240')
+            ->and($statement->refusal())->toContain('2350')
+            ->and($statement->refusal())->toContain('utan betalning')
+            ->and($statement->refusedAccounts())->toContain(1240, 2350);
+    });
+
+    it('K3 7 kommentar: blocks a machine bought on supplier credit still unpaid at the year end', function () {
+        postCashFlowVoucher($this->fixture, '2026-12-20', 'Maskin på kredit', [[1210, 10_000_000, 0], [2440, 0, 10_000_000]]);
+
+        $statement = cashFlow($this->fixture->years[2026]);
+
+        expect($statement->refusal())->toContain('1210')
+            ->and($statement->refusal())->toContain('2440');
+    });
+
+    it('K3 7.6: a machine bought on supplier credit and paid in the year is an investing outflow', function () {
+        postCashFlowVoucher($this->fixture, '2026-10-01', 'Maskin på kredit', [[1210, 10_000_000, 0], [2640, 2_500_000, 0], [2440, 0, 12_500_000]]);
+        postCashFlowVoucher($this->fixture, '2026-10-30', 'Betalning maskin', [[2440, 12_500_000, 0], [1930, 0, 12_500_000]]);
+
+        $statement = cashFlow($this->fixture->years[2026]);
+
+        expect($statement->refusal())->toBeNull()
+            ->and($statement->amounts()['forvarv_av_materiella_anlaggningstillgangar'])->toBe(-240_000_000 - 10_000_000)
+            ->and($statement->amounts()['arets_kassaflode'])->toBe(29_240_482 - 12_500_000);
+    });
+
+    it('K3 7 kommentar: blocks an owner loan converted to a shareholder contribution (konvertering av skuld till eget kapital)', function () {
+        postCashFlowVoucher($this->fixture, '2026-02-01', 'Lån från ägare', [[1930, 5_000_000, 0], [2393, 0, 5_000_000]]);
+        postCashFlowVoucher($this->fixture, '2026-06-01', 'Lån omvandlat till tillskott', [[2393, 5_000_000, 0], [2093, 0, 5_000_000]]);
+
+        $statement = cashFlow($this->fixture->years[2026]);
+
+        expect($statement->refusal())->toContain('2393')
+            ->and($statement->refusal())->toContain('2093');
+    });
+
+    it('K3 7 kommentar: blocks a dividend set off against a receivable from the owner', function () {
+        postCashFlowVoucher($this->fixture, '2026-11-30', 'Beslut extra utdelning', [[2091, 1_000_000, 0], [2898, 0, 1_000_000]]);
+        postCashFlowVoucher($this->fixture, '2026-12-01', 'Utdelning kvittad', [[2898, 1_000_000, 0], [1385, 0, 1_000_000]]);
+
+        $statement = cashFlow($this->fixture->years[2026]);
+
+        expect($statement->refusal())->toContain('2898')
+            ->and($statement->refusal())->toContain('1385');
+    });
+
+    it('S1-R2.1 blocks a movement on receivables from group companies, owners and related parties (1660–1689)', function () {
+        postCashFlowVoucher($this->fixture, '2026-02-01', 'Lån till ägare', [[1685, 1_000_000, 0], [1930, 0, 1_000_000]]);
+
+        $statement = cashFlow($this->fixture->years[2026]);
+
+        expect($statement->unclassifiedAccounts())->toBe([1685])
+            ->and($statement->refusal())->toContain('1685');
+    });
+
+    it('K3 7.11: shows borrowing and repayment gross, never netted', function () {
+        postCashFlowVoucher($this->fixture, '2026-02-01', 'Nytt banklån', [[1930, 100_000_000, 0], [2350, 0, 100_000_000]]);
+        postCashFlowVoucher($this->fixture, '2026-11-01', 'Lösen av lån', [[2350, 100_000_000, 0], [1930, 0, 100_000_000]]);
+
+        $amounts = cashFlow($this->fixture->years[2026])->amounts();
+
+        // The reclassification of next year's amortisation (2350 to 2410) moves no cash and adds nothing.
+        expect($amounts['upptagna_lan'])->toBe(100_000_000)
+            ->and($amounts['amortering_av_lan'])->toBe(-120_000_000 - 100_000_000)
+            ->and($amounts['arets_kassaflode'])->toBe(29_240_482);
+    });
+
+    it('K3 7.11: a correction is netted with the voucher it corrects, so it does not inflate the gross figures', function () {
+        $original = postCashFlowVoucher($this->fixture, '2026-02-01', 'Nytt banklån', [[1930, 100_000_000, 0], [2350, 0, 100_000_000]]);
+        app(CorrectVoucher::class)($this->fixture->owner, $original, 'Fel belopp', '2026-02-02', [
+            ['account' => 1930, 'debit_ore' => 80_000_000, 'credit_ore' => 0],
+            ['account' => 2350, 'debit_ore' => 0, 'credit_ore' => 80_000_000],
+        ]);
+        $reversed = postCashFlowVoucher($this->fixture, '2026-03-01', 'Lån i fel företag', [[1930, 50_000_000, 0], [2350, 0, 50_000_000]]);
+        app(CorrectVoucher::class)($this->fixture->owner, $reversed, 'Fel företag', '2026-03-02');
+
+        $amounts = cashFlow($this->fixture->years[2026])->amounts();
+
+        expect($amounts['upptagna_lan'])->toBe(80_000_000)
+            ->and($amounts['amortering_av_lan'])->toBe(-120_000_000);
+    });
+
+    it('S1-R2.1 treats an advance for a machine (BAS 1288) as an investing outflow, not as accumulated depreciation', function () {
+        postCashFlowVoucher($this->fixture, '2026-10-01', 'Förskott maskin', [[1288, 2_000_000, 0], [1930, 0, 2_000_000]]);
+
+        $statement = cashFlow($this->fixture->years[2026]);
+
+        expect($statement->refusal())->toBeNull()
+            ->and($statement->amounts()['forvarv_av_materiella_anlaggningstillgangar'])->toBe(-240_000_000 - 2_000_000);
+    });
+
+    it('K3 7.13: blocks currency differences until their effect on likvida medel can be shown separately', function (int $account, int $counter) {
+        postCashFlowVoucher($this->fixture, '2026-03-01', 'Till valutakonto', [[1940, 10_000_000, 0], [1930, 0, 10_000_000]]);
+        postCashFlowVoucher($this->fixture, '2026-12-31', 'Omräkning', [[$counter, 300_000, 0], [$account, 0, 300_000]]);
+
+        $statement = cashFlow($this->fixture->years[2026]);
+
+        expect($statement->refusal())->toContain((string) $account)
+            ->and($statement->refusal())->toContain('valutakurs');
+    })->with([
+        'gain on a EUR bank account' => [8330, 1940],
+        'operating gain' => [3960, 1510],
+    ]);
+
+    it('K3 7.13, 7.9 a: blocks an unrealised currency loss on a loan', function () {
+        postCashFlowVoucher($this->fixture, '2026-12-31', 'Omräkning EUR-lån', [[8430, 500_000, 0], [2350, 0, 500_000]]);
+
+        expect(cashFlow($this->fixture->years[2026])->refusal())->toContain('8430');
+    });
+
+    it('K3 7.14: shows dividends received separately, in operating activities (7.15)', function () {
+        postCashFlowVoucher($this->fixture, '2026-05-01', 'Utdelning aktier', [[1930, 700_000, 0], [8210, 0, 700_000]]);
+
+        $statement = cashFlow($this->fixture->years[2026]);
+        $rows = collect($statement->rows())->keyBy('key');
+
+        expect($statement->refusal())->toBeNull()
+            ->and($rows['tillaggsupplysning_erhallen_utdelning'])->toMatchArray(['amount' => 700_000, 'point' => '7.14'])
+            ->and($statement->amounts()['resultat_efter_finansiella_poster'])->toBe(541_181_000 + 700_000);
     });
 
     it('S1-R2.1 refuses the direct method, which NONOX does not build, and a missing policy', function () {
@@ -313,10 +467,10 @@ describe('F-S1-a', function () {
             postCashFlowVoucher($this->fixture, sprintf('2026-%02d-21', $month), 'Inköp av maskin', [[1210, 100_000, 0], [1930, 0, 100_000]]);
         }
 
-        // One query for the equity statement; for the previous year beside it, AnnualAccounts
-        // (the year's lookup, accounts, opening balances, movements, goods-for-resale accounts)
-        // and its equity statement.
-        expect($short)->toBe(7)
+        // Per year one query for the equity statement and one for the vouchers that touch
+        // investing and financing accounts; for the previous year beside it also AnnualAccounts
+        // (the year's lookup, accounts, opening balances, movements, goods-for-resale accounts).
+        expect($short)->toBe(9)
             ->and($count())->toBe($short);
 
         // With fresh planner statistics the queries still finish at once (S1-P7 review:

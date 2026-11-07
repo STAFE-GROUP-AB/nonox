@@ -41,14 +41,19 @@ it('S1-R2.1 places the BAS accounts: 19xx cash, overdrafts 2330 and 2480 loans, 
 })->with([
     [1930, CashFlowAccounts::CASH],
     [1910, CashFlowAccounts::CASH],
-    [2330, CashFlowAccounts::LOANS],
-    [2480, CashFlowAccounts::LOANS],
+    [2330, CashFlowAccounts::OVERDRAFT],
+    [2480, CashFlowAccounts::OVERDRAFT],
     [2350, CashFlowAccounts::LOANS],
     [2410, CashFlowAccounts::LOANS],
     [2893, CashFlowAccounts::LOANS],
     [1119, CashFlowAccounts::ACCUMULATED],
     [1229, CashFlowAccounts::ACCUMULATED],
     [1018, CashFlowAccounts::ACCUMULATED],
+    // Advances and work in progress (K3Schedule, from the rbas2026 mapping: 108x, 118x, 128x) carry no depreciation.
+    [1088, CashFlowAccounts::INTANGIBLE],
+    [1188, CashFlowAccounts::TANGIBLE],
+    [1288, CashFlowAccounts::TANGIBLE],
+    [1289, CashFlowAccounts::TANGIBLE],
     [1210, CashFlowAccounts::TANGIBLE],
     [1130, CashFlowAccounts::TANGIBLE],
     [1070, CashFlowAccounts::INTANGIBLE],
@@ -81,6 +86,13 @@ it('S1-R2.1 places the BAS accounts: 19xx cash, overdrafts 2330 and 2480 loans, 
     [2010, null],
     [1690, null],
     [2865, null],
+    [1660, null],
+    [1680, null],
+    [1685, null],
+    [3960, null],
+    [7960, null],
+    [8330, null],
+    [8430, null],
     [9100, null],
     [3973, null],
     [7970, null],
@@ -92,6 +104,8 @@ it('S1-R2.1 names why a range is not built yet', function () {
     expect(CashFlowAccounts::notBuilt(3973))->toBe('disposal')
         ->and(CashFlowAccounts::notBuilt(8270))->toBe('financial')
         ->and(CashFlowAccounts::notBuilt(8830))->toBe('group_contribution')
+        ->and(CashFlowAccounts::notBuilt(3960))->toBe('currency')
+        ->and(CashFlowAccounts::notBuilt(8430))->toBe('currency')
         ->and(CashFlowAccounts::notBuilt(8410))->toBeNull();
 });
 
