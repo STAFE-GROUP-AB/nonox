@@ -148,12 +148,12 @@ it('refuses a company that reports in another currency than the parent (S2-R10)'
 });
 
 it('refuses a company whose votes within the group add up to more than 100 percent', function () {
+    // Recorded before P and B form a group, so no group's vote check ran yet.
     cgHolding($this->olle, $this->p, $this->b);
-    $group = cgGroup($this);
-    cgConfirm($this->olle, $group, $this->b);
-
     cgHolding($this->olle, $this->p, $this->a, '60');
     cgHolding($this->olle, $this->b, $this->a, '50');
+    $group = cgGroup($this);
+    cgConfirm($this->olle, $group, $this->b);
 
     expect(fn () => cgConfirm($this->olle, $group, $this->a))->toThrow(ValidationException::class, 'Innehaven i Dotter A AB har tillsammans mer än 100 procent av rösterna.')
         ->and($group->members()->pluck('company_id')->all())->not->toContain($this->a->id);
@@ -385,4 +385,78 @@ it('ignores members disposed of before the period when deciding full access', fu
     expect($access->levelFor($group))->toBe(GroupAccessLevel::None)
         ->and($access->levelFor($group, CarbonImmutable::parse('2025-06-01')))->toBe(GroupAccessLevel::None)
         ->and($access->levelFor($group, CarbonImmutable::parse('2026-01-01')))->toBe(GroupAccessLevel::Full);
+});
+
+it('re-runs the 100 percent vote check whenever a holding of a group member is recorded or changed', function () {
+    cgHolding($this->olle, $this->p, $this->b);
+    $group = cgGroup($this);
+    cgConfirm($this->olle, $group, $this->b);
+    $ofP = cgHolding($this->olle, $this->p, $this->a, '50');
+
+    // B is in P's group: B's 60 % next to P's 50 % would make 110 % of A's votes within the group.
+    expect(fn () => cgHolding($this->olle, $this->b, $this->a, '60'))->toThrow(ValidationException::class, 'mer än 100 procent av rösterna i bolaget inom en koncern som företaget ingår i');
+
+    cgHolding($this->olle, $this->b, $this->a, '50');
+
+    expect(fn () => app(RecordHolding::class)($this->olle->fresh(), $this->p, cgHoldingInput($this->a, '51'), $ofP->id))->toThrow(ValidationException::class, 'mer än 100 procent av rösterna')
+        ->and($ofP->fresh()?->voting_bp)->toBe(5000);
+
+    // A disposed holding does not count.
+    app(RecordHolding::class)($this->olle->fresh(), $this->p, [...cgHoldingInput($this->a, '50'), 'disposed_on' => '2025-01-01'], $ofP->id);
+
+    expect(cgHolding($this->olle, $this->p, $this->a, '50')->voting_bp)->toBe(5000);
+});
+
+it('lets the company holding a member withdraw that membership without seeing the group', function () {
+    cgHolding($this->olle, $this->p, $this->a);
+    cgHolding($this->olle, $this->a, $this->c);
+    $group = cgGroup($this);
+    cgConfirm($this->olle, $group, $this->a);
+    cgConfirm($this->olle, $group, $this->c);
+    $stranger = User::factory()->withCompany()->create();
+
+    expect(GroupAccess::for($this->aOwner->fresh())->levelFor($group))->toBe(GroupAccessLevel::None)
+        ->and(fn () => app(RemoveGroupMember::class)($stranger->fresh(), $group->id, $this->c->id))->toThrow(ModelNotFoundException::class);
+
+    // A's owner may take out C, which is held through A's own holding.
+    app(RemoveGroupMember::class)($this->aOwner->fresh(), $group->id, $this->c->id);
+
+    expect($group->members()->pluck('company_id')->all())->toEqualCanonicalizing([$this->p->id, $this->a->id]);
+});
+
+it('freezes administration while a member is archived, until that member is removed by the group or withdrawn by its owner', function () {
+    cgHolding($this->olle, $this->p, $this->a);
+    cgHolding($this->olle, $this->p, $this->b);
+    $group = cgGroup($this);
+    cgConfirm($this->olle, $group, $this->a);
+    cgConfirm($this->olle, $group, $this->b);
+    $this->a->forceFill(['archived_at' => now()])->save();
+    $viewer = User::factory()->create();
+    $this->p->users()->attach($viewer, ['role' => 'approver']);
+
+    cgHolding($this->olle, $this->p, $this->c);
+
+    expect(GroupAccess::for($this->olle->fresh())->administers($group))->toBeFalse()
+        ->and(fn () => app(GrantGroupRole::class)($this->olle->fresh(), $group->id, $viewer->id))->toThrow(AuthorizationException::class)
+        ->and(fn () => cgConfirm($this->olle, $group, $this->c))->toThrow(AuthorizationException::class);
+
+    // Petra administers P and B and sees A's reports, but administers neither A nor anything archived:
+    // she may take out the archived A, and only A.
+    $petra = User::factory()->create();
+    $this->p->users()->attach($petra, ['role' => 'admin']);
+    $this->b->users()->attach($petra, ['role' => 'admin']);
+    $this->a->users()->attach($petra, ['role' => 'accountant']);
+    $this->b->users()->updateExistingPivot($this->olle->id, ['role' => 'accountant']);
+
+    expect(fn () => app(GrantGroupRole::class)($petra->fresh(), $group->id, $viewer->id))->toThrow(AuthorizationException::class);
+
+    app(RemoveGroupMember::class)($petra->fresh(), $group->id, $this->a->id);
+    $this->b->users()->updateExistingPivot($this->olle->id, ['role' => 'admin']);
+
+    expect(GroupAccess::for($this->olle->fresh())->administers($group->fresh()))->toBeTrue();
+
+    $this->b->forceFill(['archived_at' => now()])->save();
+    app(RemoveGroupMember::class)($this->bOwner->fresh(), $group->id, $this->b->id);
+
+    expect($group->members()->pluck('company_id')->all())->toBe([$this->p->id]);
 });

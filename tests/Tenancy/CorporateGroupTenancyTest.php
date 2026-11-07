@@ -11,16 +11,21 @@ use App\Actions\Group\RevokeGroupRole;
 use App\Domain\Firm\Memberships;
 use App\Domain\Group\GroupAccess;
 use App\Domain\Group\GroupAccessLevel;
+use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\CompanyHolding;
 use App\Models\CorporateGroup;
+use App\Models\CorporateGroupRole;
 use App\Models\User;
 use App\Modules\Connect\Actions\CreateApiKey;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Tests\Support\Bookkeeping;
 
 /*
@@ -62,7 +67,8 @@ function cgtAttempts(User $user, CorporateGroup $group, Company $company): array
         'confirm' => fn () => app(ConfirmGroupMember::class)($user->fresh(), $group->id, $company),
         'remove' => fn () => app(RemoveGroupMember::class)($user->fresh(), $group->id, $company->id),
         'grant' => fn () => app(GrantGroupRole::class)($user->fresh(), $group->id, $user->id),
-        'revoke' => fn () => app(RevokeGroupRole::class)($user->fresh(), $group->id, $user->id),
+        // Someone else's role: giving up one's own works even at NONE (tested below).
+        'revoke' => fn () => app(RevokeGroupRole::class)($user->fresh(), $group->id, $user->id + 100_000),
     ];
 }
 
@@ -218,4 +224,115 @@ it('names the held company by organisation number, never by another tenant\'s id
     $foreignKeys = collect(Schema::getForeignKeys('company_holdings'))->map(fn (array $key): array => [$key['columns'], $key['foreign_table']])->all();
 
     expect($foreignKeys)->toBe([[['company_id'], 'teams']]);
+});
+
+/** P's holding that grounds B's membership. */
+function cgtHoldingInB(object $test): CompanyHolding
+{
+    return CurrentCompany::run($test->p, fn () => CompanyHolding::query()->where('held_org_number', $test->b->org_number)->sole());
+}
+
+/** @param array<string, string> $extra */
+function cgtHoldingInput(Company $held, array $extra = []): array
+{
+    return [
+        'held_org_number' => $held->org_number, 'held_name' => $held->name, 'capital' => '100', 'voting' => '100',
+        'control_basis' => 'VOTES', 'acquired_on' => '2024-01-01', ...$extra,
+    ];
+}
+
+it('lets an administrator of the holder alone neither back-date, re-point nor change a holding that grounds a membership', function () {
+    // Pia administers P only. Editing P's holding in B would take B out of the group without B's consent.
+    $pia = Bookkeeping::member($this->p, 'admin');
+    $holding = cgtHoldingInB($this);
+    $partial = User::factory()->create();
+    $this->p->users()->attach($partial, ['role' => 'accountant']);
+    $this->a->users()->attach($partial, ['role' => 'accountant']);
+
+    foreach ([
+        'back-date' => ['disposed_on' => '2025-01-01'],
+        're-point' => ['held_org_number' => $this->a->org_number],
+        'votes' => ['voting' => '40'],
+    ] as $change) {
+        expect(fn () => app(RecordHolding::class)($pia->fresh(), $this->p, cgtHoldingInput($this->b, $change), $holding->id))
+            ->toThrow(AuthorizationException::class);
+    }
+
+    $fresh = $holding->fresh();
+
+    expect($fresh?->held_org_number)->toBe($this->b->org_number)
+        ->and($fresh?->voting_bp)->toBe(10000)
+        ->and($fresh?->disposed_on)->toBeNull()
+        ->and(GroupAccess::for($partial->fresh())->levelFor($this->group, CarbonImmutable::parse('2026-01-01')))->toBe(GroupAccessLevel::None);
+});
+
+it('freezes the organisation number of a grounding holding even for whoever administers the group', function () {
+    expect(fn () => app(RecordHolding::class)($this->olle->fresh(), $this->p, cgtHoldingInput($this->b, ['held_org_number' => '556036-0793']), cgtHoldingInB($this)->id))
+        ->toThrow(ValidationException::class, 'Organisationsnumret kan inte ändras när innehavet ligger till grund för en koncern.');
+
+    // Whoever administers every member may record the disposal.
+    $disposed = app(RecordHolding::class)($this->olle->fresh(), $this->p, cgtHoldingInput($this->b, ['disposed_on' => '2025-12-31']), cgtHoldingInB($this)->id);
+
+    expect($disposed->disposed_on?->toDateString())->toBe('2025-12-31');
+});
+
+it('exposes one inclusion rule for which members a period needs', function () {
+    app(RecordHolding::class)($this->olle->fresh(), $this->p, cgtHoldingInput($this->b, ['disposed_on' => '2025-12-31']), cgtHoldingInB($this)->id);
+    $access = GroupAccess::for($this->olle->fresh());
+
+    expect($access->includedCompanyIds($this->group))->toEqualCanonicalizing([$this->p->id, $this->a->id, $this->b->id])
+        ->and($access->includedCompanyIds($this->group, CarbonImmutable::parse('2025-06-01')))->toEqualCanonicalizing([$this->p->id, $this->a->id, $this->b->id])
+        ->and($access->includedCompanyIds($this->group, CarbonImmutable::parse('2026-01-01')))->toEqualCanonicalizing([$this->p->id, $this->a->id]);
+});
+
+it('does not revive a viewer role when its holder leaves the parent and is invited again', function () {
+    $viewer = Bookkeeping::member($this->p, 'approver');
+    app(GrantGroupRole::class)($this->olle->fresh(), $this->group->id, $viewer->id);
+    $this->p->users()->detach($viewer);
+    $this->travel(1)->minutes();
+    $this->p->users()->attach($viewer, ['role' => 'approver']);
+
+    cgtAssertNothing($viewer, $this->group, $this->a);
+
+    // A new grant, for the new membership, is needed and is logged.
+    app(GrantGroupRole::class)($this->olle->fresh(), $this->group->id, $viewer->id);
+
+    expect(GroupAccess::for($viewer->fresh())->levelFor($this->group))->toBe(GroupAccessLevel::Consolidated)
+        ->and(CorporateGroupRole::query()->where('user_id', $viewer->id)->count())->toBe(1)
+        ->and(AuditLog::query()->where('action', 'corporate_group.role_granted')->count())->toBe(6);
+});
+
+it('does not revive a viewer role even when the new membership starts in the same second', function () {
+    $viewer = Bookkeeping::member($this->p, 'approver');
+    app(GrantGroupRole::class)($this->olle->fresh(), $this->group->id, $viewer->id);
+    $this->p->users()->detach($viewer);
+    $this->p->users()->attach($viewer, ['role' => 'approver']);
+
+    expect(GroupAccess::for($viewer->fresh())->levelFor($this->group))->toBe(GroupAccessLevel::None);
+});
+
+it('lets a former member of the parent give up their own role without seeing the group', function () {
+    $viewer = Bookkeeping::member($this->p, 'approver');
+    app(GrantGroupRole::class)($this->olle->fresh(), $this->group->id, $viewer->id);
+    $this->p->users()->detach($viewer);
+
+    app(RevokeGroupRole::class)($viewer->fresh(), $this->group->id, $viewer->id);
+
+    expect(CorporateGroupRole::query()->count())->toBe(0)
+        ->and(AuditLog::query()->where('action', 'corporate_group.role_revoked')->count())->toBe(3)
+        ->and(fn () => app(RevokeGroupRole::class)($viewer->fresh(), $this->group->id, $viewer->id))->toThrow(ModelNotFoundException::class);
+});
+
+it('keeps one active holding per holder and held company in the database, and blocks deleting a grounding holding', function () {
+    // Each attempt in its own savepoint, so the failed statement does not abort the test's transaction.
+    expect(fn () => DB::transaction(fn () => CurrentCompany::run($this->p, fn () => CompanyHolding::create([
+        'held_org_number' => $this->a->org_number, 'held_name' => 'Dubblett', 'capital_bp' => 1, 'voting_bp' => 1,
+        'control_basis' => 'NONE', 'acquired_on' => '2025-01-01',
+    ]))))->toThrow(QueryException::class);
+
+    $holdingFk = collect(Schema::getForeignKeys('corporate_group_members'))->firstWhere('columns', ['holding_id']);
+
+    expect($holdingFk['on_delete'] ?? null)->toBe('no action')
+        ->and(fn () => DB::transaction(fn () => CurrentCompany::run($this->p, fn () => cgtHoldingInB($this)->delete())))->toThrow(QueryException::class)
+        ->and(CurrentCompany::run($this->p, fn () => CompanyHolding::query()->count()))->toBe(2);
 });
