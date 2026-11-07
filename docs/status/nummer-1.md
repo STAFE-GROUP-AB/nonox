@@ -369,3 +369,28 @@ Open legal-verify items:
 Follow-ups: S1-P14 frågeplanen voucher_rows × vouchers utan statistik (gäller även AnnualAccounts::ledger()); S1-P12 ska ta K3-kolumnerna från K3EquityStatement::columns(); ordalydelsen för en bakåtdaterad rättelse.
 Human decisions needed: H7, H9, H10.
 Next package: S1-P8 kassaflödesanalys.
+
+---
+
+Package: S1-P8, kassaflödesanalys enligt K3 kapitel 7, indirekt metod (ADR-059, A.4)
+Status: done (kod, inget som syns för användaren ännu)
+Evidence: `tests/Feature/AnnualReport/K3/CashFlowStatementTest.php` och `tests/Unit/AnnualReport/K3/CashFlowPrintedFiguresTest.php`; ny fixtur F-S1-c (mindre företag utan kassaflödesanalys).
+- F-S1-a:s kassaflödesanalys 2025 och 2026 stämmer på öret mot expected.json; analysen stämmer alltid mot förändringen i likvida medel (1900–1999) eller vägras.
+- Investerings- och finansieringsflöden visas brutto (7.11); checkräkningskrediten netto på egen rad (7.12 b). Räntor och utdelningar separat (7.14), betald inkomstskatt separat (7.17), utbetald utdelning under finansiering (7.16).
+- Transaktioner utan betalning spärrar med namngivna verifikationer: köp mot lån, leverantörskredit som inte är betald via leverantörsreskontran samma år, omvandling av lån till tillskott, kvittning. Orealiserade valutakursdifferenser spärrar tills 7.13 är byggd.
+- Policy och storlek: `none` ger ingen analys för ett mindre företag men vägras för ett större företag, okänd storlek och varje ekonomisk förening (bostadsrättsförening, ÅRL 2:1); `direct` vägras.
+- Ett fast antal frågor (19 med föregående år), säkert även med inaktuell statistik. Alla frågor är filtrerade på företag.
+- En oberoende granskning mot K3 kapitel 7 och ÅRL 2:1 och 6:5 samt tre omkontroller; alla P1/P2 rättade.
+- F-S1-a: maskin M2 bokförd direkt mot bank, betald ränta med minustecken, serie E utan lucka (Lead-godkänt). Organisationsnummer i F-S1-a och F-S2-a utbytta mot repots befintliga testnummer.
+- Hela sviten 6 672 gröna, phpstan och pint rena.
+Rule ids covered: S1-R2, S1-R2.1.
+Public claim now allowed: inget nytt.
+Public claim still not allowed: "Årsredovisning enligt K3", "Kassaflödesanalys".
+Open legal-verify items:
+- kontomappningen (1800–1899 som investering, 1970/1990 som likvida medel, 2893 som lån, inkomstskattekonton, utdelnings-, ränte- och valutaintervall);
+- 1660–1689 och 2860–2879 spärrar tills kategorin är bestämd (1680 är vanligt);
+- checkräkningskrediten netto enligt 7.12 b;
+- radtexter och vilken rad som tar en avrundningsrest.
+Follow-ups: S1-P14 K3EquityStatement-frågans plan med inaktuell statistik; en korrekt ombokad betalningsverifikation får fakturan att se obetald ut (spärrar, fel belopp skrivs aldrig ut).
+Human decisions needed: H4, H7, H9, H10.
+Next package: S1-P9.
