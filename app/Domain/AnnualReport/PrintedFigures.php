@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\AnnualReport;
 
+use DomainException;
+
 /**
  * The annual report's figures as they are printed: every line rounded to
  * whole kronor, and every subtotal, section sum and total the sum of the
@@ -32,6 +34,14 @@ namespace App\Domain\AnnualReport;
  * "Övriga förändringar", else "Utdelning"; a column with none of them gets
  * an "Övriga förändringar" row.
  * TODO(legal-verify): the same question for the equity specification.
+ *
+ * K3 (ADR-059 A.3, S1-P6): the same rounding with K3Schedule's lines and
+ * sections. The balance sheet difference goes to the same Övriga skulder
+ * line (K3Schedule key other_liabilities; the same TODO). In the equity
+ * specification the leftover goes to "Balanseras i ny räkning", else
+ * "Utdelning", else another change row with an amount in the column; K3 6.3
+ * has no residual row, so none is ever added (S1-R8.3), and a leftover with
+ * no row to take it is an error.
  */
 final class PrintedFigures
 {
@@ -45,16 +55,17 @@ final class PrintedFigures
 
     /**
      * @param  array<string, mixed>  $data  AnnualReportDocument::data() with exact figures
+     * @param  class-string<K2Schedule>|class-string<K3Schedule>  $schedule  the layout the figures were built with (ADR-059 A.3)
      * @return array<string, mixed> the same with the printed figures
      */
-    public static function apply(array $data): array
+    public static function apply(array $data, string $schedule = K2Schedule::class): array
     {
         $hasPrevious = $data['hasPreviousIncome'] === true;
-        $data['income'] = self::income($data['income'], $hasPrevious);
+        $data['income'] = self::income($data['income'], $hasPrevious, $schedule);
         $results = self::incomeValues($data['income']);
         $data['fixedAssets'] = self::fixedAssets($data['fixedAssets']);
-        $data['balance'] = self::balance($data['balance'], $results, $hasPrevious, $data['fixedAssets']);
-        $data['equityChanges'] = self::equity($data['equityChanges'], $data['balance'], $results['amount']['year_result'] ?? 0);
+        $data['balance'] = self::balance($data['balance'], $results, $hasPrevious, $data['fixedAssets'], $schedule);
+        $data['equityChanges'] = self::equity($data['equityChanges'], $data['balance'], $results['amount']['year_result'] ?? 0, $schedule);
         $data['multiYear'] = self::multiYear($data['multiYear'], $results, $hasPrevious);
         $data['netSalesVariations'] = self::variations($data['netSalesVariations'], $data['multiYear']);
         $data['disposition'] = self::disposition($data['balance'], (int) $data['disposition']['dividend']);
@@ -66,14 +77,15 @@ final class PrintedFigures
 
     /**
      * @param  list<array{key: string, label: string, amount: int, previous: ?int, subtotal: bool}>  $lines
+     * @param  class-string<K2Schedule>|class-string<K3Schedule>  $schedule
      * @return list<array{key: string, label: string, amount: int, previous: ?int, subtotal: bool}>
      */
-    private static function income(array $lines, bool $hasPrevious): array
+    private static function income(array $lines, bool $hasPrevious, string $schedule): array
     {
         $values = ['amount' => [], 'previous' => []];
         $subtotals = [];
 
-        foreach (K2Schedule::INCOME_SUBTOTALS as $subtotal) {
+        foreach ($schedule::INCOME_SUBTOTALS as $subtotal) {
             $subtotals[$subtotal['key']] = $subtotal['lines'];
         }
 
@@ -134,9 +146,10 @@ final class PrintedFigures
      * @param  array{sections: list<array{key: string, label: string, lines: list<array{key: string, label: string, amount: int, previous: int}>, amount: int, previous: int}>}  $sheet
      * @param  array{amount: array<string, int>, previous: array<string, int>}  $results
      * @param  list<array{key: string, book_value: int}>  $notes
+     * @param  class-string<K2Schedule>|class-string<K3Schedule>  $schedule
      * @return array{sections: list<array{key: string, label: string, lines: list<array{key: string, label: string, amount: int, previous: int}>, amount: int, previous: int}>, assets: int, assets_previous: int, equity_liabilities: int, equity_liabilities_previous: int, equity: int, equity_previous: int}
      */
-    private static function balance(array $sheet, array $results, bool $hasPrevious, array $notes): array
+    private static function balance(array $sheet, array $results, bool $hasPrevious, array $notes, string $schedule): array
     {
         $bookValues = array_column($notes, 'book_value', 'key');
         $lines = [];
@@ -157,7 +170,7 @@ final class PrintedFigures
             $other = 0;
 
             foreach ($lines as $line) {
-                in_array($line['section'], K2Schedule::ASSET_SECTIONS, true) ? $assets += $line[$field] : $other += $line[$field];
+                in_array($line['section'], $schedule::ASSET_SECTIONS, true) ? $assets += $line[$field] : $other += $line[$field];
             }
 
             if ($assets !== $other) {
@@ -166,12 +179,12 @@ final class PrintedFigures
             }
         }
 
-        $order = array_flip([...array_column(K2Schedule::BALANCE, 'key'), 'year_result']);
+        $order = array_flip([...array_column($schedule::BALANCE, 'key'), 'year_result']);
         $order['year_result'] = $order['retained'] + 0.5;
         uasort($lines, fn (array $a, array $b): int => $order[$a['key']] <=> $order[$b['key']]);
         $sections = [];
 
-        foreach (K2Schedule::SECTIONS as $key => $label) {
+        foreach ($schedule::SECTIONS as $key => $label) {
             $sectionLines = [];
             $amount = 0;
             $previous = 0;
@@ -194,7 +207,7 @@ final class PrintedFigures
 
         foreach ($sections as $section) {
             $groups = [
-                'assets' => in_array($section['key'], K2Schedule::ASSET_SECTIONS, true),
+                'assets' => in_array($section['key'], $schedule::ASSET_SECTIONS, true),
                 'equity_liabilities' => in_array($section['key'], $liabilities, true),
                 'equity' => in_array($section['key'], ['restricted', 'free'], true),
             ];
@@ -213,9 +226,10 @@ final class PrintedFigures
     /**
      * @param  list<array{key: string, label: string, amounts: array<string, int>, total: int}>  $rows
      * @param  array{sections: list<array{lines: list<array{key: string, amount: int, previous: int}>}>}  $sheet
+     * @param  class-string<K2Schedule>|class-string<K3Schedule>  $schedule
      * @return list<array{key: string, label: string, amounts: array<string, int>, total: int}>
      */
-    private static function equity(array $rows, array $sheet, int $yearResult): array
+    private static function equity(array $rows, array $sheet, int $yearResult, string $schedule): array
     {
         $balance = [];
 
@@ -262,15 +276,7 @@ final class PrintedFigures
                 continue;
             }
 
-            $target = 'other';
-
-            foreach (['carried_forward', 'other', 'dividend'] as $candidate) {
-                if (($byKey[$candidate]['amounts'][$column] ?? 0) !== 0) {
-                    $target = $candidate;
-
-                    break;
-                }
-            }
+            $target = self::roundingRow($byKey, $column, $schedule);
 
             if (! isset($amounts[$target])) {
                 $amounts[$target] = array_fill_keys($columns, 0);
@@ -280,7 +286,14 @@ final class PrintedFigures
             $amounts[$target][$column] += $left;
         }
 
-        $order = ['opening', 'dividend', 'carried_forward', 'year_result', 'other', 'closing'];
+        // The rows keep their order (for K2: opening, dividend, carried forward, year's result,
+        // other, closing); an "Övriga förändringar" row added above goes right before closing.
+        $order = array_keys($byKey);
+
+        if (isset($amounts['other']) && ! isset($byKey['other'])) {
+            array_splice($order, max(0, (int) array_search('closing', $order, true)), 0, ['other']);
+        }
+
         $result = [];
 
         foreach ($order as $key) {
@@ -290,6 +303,37 @@ final class PrintedFigures
         }
 
         return $result;
+    }
+
+    /**
+     * The row that takes what rounding leaves over in an equity column: the
+     * first of the schedule's EQUITY_ROUNDING_ROWS with an amount in the
+     * column. K2 falls back to an "Övriga förändringar" row (created when
+     * missing); K3 never adds that row (K3 6.3 has none, S1-R8.3) and uses
+     * another change row with an amount in the column instead.
+     *
+     * @param  array<string, array{key: string, amounts: array<string, int>}>  $rows  the exact rows by key
+     * @param  class-string<K2Schedule>|class-string<K3Schedule>  $schedule
+     */
+    private static function roundingRow(array $rows, string $column, string $schedule): string
+    {
+        foreach ($schedule::EQUITY_ROUNDING_ROWS as $candidate) {
+            if (($rows[$candidate]['amounts'][$column] ?? 0) !== 0) {
+                return $candidate;
+            }
+        }
+
+        if ($schedule::EQUITY_ROUNDING_ADDS_ROW) {
+            return 'other';
+        }
+
+        foreach ($rows as $key => $row) {
+            if (! in_array($key, ['opening', 'closing', 'year_result'], true) && ($row['amounts'][$column] ?? 0) !== 0) {
+                return $key;
+            }
+        }
+
+        throw new DomainException("A rounding difference in the equity column {$column} has no change row to go to.");
     }
 
     /**

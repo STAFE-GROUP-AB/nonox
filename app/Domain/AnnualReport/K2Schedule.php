@@ -123,4 +123,15 @@ final class K2Schedule
     ];
 
     public const array ASSET_SECTIONS = ['fixed', 'current'];
+
+    /**
+     * The rows of the equity specification that take what rounding leaves
+     * over in a column, in order; with none of them, PrintedFigures adds an
+     * "Övriga förändringar" row (see PrintedFigures).
+     *
+     * @var list<string>
+     */
+    public const array EQUITY_ROUNDING_ROWS = ['carried_forward', 'other', 'dividend'];
+
+    public const bool EQUITY_ROUNDING_ADDS_ROW = true;
 }

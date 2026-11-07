@@ -14,8 +14,9 @@ use App\Models\YearEndEntry;
 use Illuminate\Support\Collection;
 
 /**
- * The figures of a K2 annual report for one fiscal year, with the previous
- * year beside them: income statement, balance sheet, the multi-year
+ * The figures of an annual report for one fiscal year in the layout of a
+ * schedule (K2Schedule by default, K3Schedule for a K3 report), with the
+ * previous year beside them: income statement, balance sheet, the multi-year
  * overview, changes in equity, the free equity at the meeting's disposal
  * and the note on fixed assets. Amounts are öre, shown the way the report
  * shows them: income and assets positive, costs negative, equity and
@@ -33,23 +34,30 @@ final class AnnualAccounts
     /** @var array<int, int> purchase accounts marked as goods for resale (K2Schedule::PURCHASES) */
     private array $resale;
 
+    /**
+     * @param  class-string<K2Schedule>|class-string<K3Schedule>  $schedule  the layout of the statements (ADR-059 A.3: K2 unless a K3 report asks for K3)
+     */
     public function __construct(
         public readonly FiscalYear $fiscalYear,
         public readonly ?FiscalYear $previousYear,
+        public readonly string $schedule = K2Schedule::class,
     ) {
         $this->current = self::ledger($fiscalYear);
         $this->previous = $previousYear === null ? null : self::ledger($previousYear);
         $this->resale = Account::query()
-            ->whereBetween('number', K2Schedule::PURCHASES)
-            ->where('sru_code', K2Schedule::GOODS_FOR_RESALE_SRU)
+            ->whereBetween('number', $schedule::PURCHASES)
+            ->where('sru_code', $schedule::GOODS_FOR_RESALE_SRU)
             ->pluck('number')->map(fn (mixed $number): int => (int) $number)->values()->all();
     }
 
-    public static function for(FiscalYear $fiscalYear): self
+    /**
+     * @param  class-string<K2Schedule>|class-string<K3Schedule>  $schedule
+     */
+    public static function for(FiscalYear $fiscalYear, string $schedule = K2Schedule::class): self
     {
         $previous = FiscalYear::query()->whereDate('end_date', $fiscalYear->start_date->subDay()->toDateString())->first();
 
-        return new self($fiscalYear, $previous);
+        return new self($fiscalYear, $previous, $schedule);
     }
 
     /**
@@ -60,7 +68,7 @@ final class AnnualAccounts
         $lines = [];
         $values = ['current' => [], 'previous' => []];
 
-        foreach (K2Schedule::INCOME as $line) {
+        foreach ($this->schedule::INCOME as $line) {
             $amount = -$this->lineMovement($this->current, $line['ranges'], $line['resale'] ?? null);
             $previous = $this->previous === null ? null : -$this->lineMovement($this->previous, $line['ranges'], $line['resale'] ?? null);
             $values['current'][$line['key']] = $amount;
@@ -70,7 +78,7 @@ final class AnnualAccounts
                 $lines[] = ['key' => $line['key'], 'label' => __($line['label']), 'amount' => $amount, 'previous' => $previous, 'subtotal' => false];
             }
 
-            $subtotal = K2Schedule::INCOME_SUBTOTALS[$line['key']] ?? null;
+            $subtotal = $this->schedule::INCOME_SUBTOTALS[$line['key']] ?? null;
 
             if ($subtotal !== null) {
                 $sum = array_sum(array_intersect_key($values['current'], array_flip($subtotal['lines'])));
@@ -113,10 +121,10 @@ final class AnnualAccounts
         $previous = $this->previous === null ? $this->columns($this->current, opening: true) : $this->columns($this->previous, opening: false);
         $sections = [];
 
-        foreach (K2Schedule::SECTIONS as $section => $label) {
+        foreach ($this->schedule::SECTIONS as $section => $label) {
             $lines = [];
 
-            foreach (array_filter(K2Schedule::BALANCE, fn (array $line): bool => $line['section'] === $section) as $line) {
+            foreach (array_filter($this->schedule::BALANCE, fn (array $line): bool => $line['section'] === $section) as $line) {
                 $this->addLine($lines, $line['key'], __($line['label']), $current[$line['key']], $previous[$line['key']]);
             }
 
@@ -141,8 +149,8 @@ final class AnnualAccounts
 
         return [
             'sections' => $sections,
-            'assets' => $total(K2Schedule::ASSET_SECTIONS, 'amount'),
-            'assets_previous' => $total(K2Schedule::ASSET_SECTIONS, 'previous'),
+            'assets' => $total($this->schedule::ASSET_SECTIONS, 'amount'),
+            'assets_previous' => $total($this->schedule::ASSET_SECTIONS, 'previous'),
             'equity_liabilities' => $total($liabilityKeys, 'amount'),
             'equity_liabilities_previous' => $total($liabilityKeys, 'previous'),
             'equity' => $total($equityKeys, 'amount'),
@@ -172,7 +180,7 @@ final class AnnualAccounts
                 break;
             }
 
-            $accounts = self::for($accounts->previousYear);
+            $accounts = self::for($accounts->previousYear, $this->schedule);
         }
 
         return $rows;
@@ -317,13 +325,38 @@ final class AnnualAccounts
             }
         }
 
-        $lines['retained'] ??= ['key' => 'retained', 'label' => __('Balanserat resultat'), 'amount' => 0, 'previous' => 0];
+        $retained = $this->schedule === K3Schedule::class ? __('Balanserad vinst eller förlust') : __('Balanserat resultat');
+        $lines['retained'] ??= ['key' => 'retained', 'label' => $retained, 'amount' => 0, 'previous' => 0];
         $lines['year_result'] ??= ['key' => 'year_result', 'label' => __('Årets resultat'), 'amount' => 0, 'previous' => 0];
 
-        $order = array_flip(['share_capital', 'reserve', 'retained', 'year_result']);
+        $order = array_flip($this->equityOrder());
         uksort($lines, fn (string $a, string $b): int => ($order[$a] ?? 9) <=> ($order[$b] ?? 9));
 
         return $lines;
+    }
+
+    /**
+     * The order of the equity columns: the schedule's bound and free equity
+     * lines with the year's result right after retained earnings. For K2
+     * this is share_capital, reserve, retained, year_result, as before.
+     *
+     * @return list<string>
+     */
+    private function equityOrder(): array
+    {
+        $order = [];
+
+        foreach ($this->schedule::BALANCE as $line) {
+            if (in_array($line['section'], ['restricted', 'free'], true)) {
+                $order[] = $line['key'];
+            }
+
+            if ($line['key'] === 'retained') {
+                $order[] = 'year_result';
+            }
+        }
+
+        return $order;
     }
 
     /**
@@ -357,7 +390,7 @@ final class AnnualAccounts
     {
         $notes = [];
 
-        foreach (array_filter(K2Schedule::BALANCE, fn (array $line): bool => in_array($line['key'], K2Schedule::FIXED_ASSET_LINES, true)) as $line) {
+        foreach (array_filter($this->schedule::BALANCE, fn (array $line): bool => in_array($line['key'], $this->schedule::FIXED_ASSET_LINES, true)) as $line) {
             $cost = ['opening' => 0, 'additions' => 0, 'disposals' => 0, 'closing' => 0];
             $depreciation = ['opening' => 0, 'disposals' => 0, 'charge' => 0, 'closing' => 0];
 
@@ -403,8 +436,8 @@ final class AnnualAccounts
         $at = fn (int $from, int $to): int => $opening ? $this->sum($ledger, $from, $to, opening: true) : $this->closing($ledger, $from, $to);
         $columns = [];
 
-        foreach (K2Schedule::BALANCE as $line) {
-            $sign = in_array($line['section'], K2Schedule::ASSET_SECTIONS, true) ? 1 : -1;
+        foreach ($this->schedule::BALANCE as $line) {
+            $sign = in_array($line['section'], $this->schedule::ASSET_SECTIONS, true) ? 1 : -1;
             $columns[$line['key']] = $sign * array_sum(array_map(fn (array $range): int => $at($range[0], $range[1]), $line['ranges']));
         }
 
