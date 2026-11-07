@@ -74,7 +74,7 @@ Alla moduler ingår i priset. **NONOX Connect** är inte en modul utan ett separ
 - **Du väljer själv.** En koppling är avstängd tills du slår på den, och du kan stänga av den när som helst. En avstängd koppling kostar ingenting.
 - **Priset är leverantörens pris plus 10 %.** Innan du slår på en koppling visar vi leverantörens pris och påslaget var för sig, och fakturan anger samma sak. Priserna är exklusive moms.
 - **Ändrar leverantören sitt pris** ändras ditt pris i samma mån. Vi meddelar dig så snart vi fått beskedet, och du kan stänga av kopplingen innan det nya priset gäller.
-- **NONOX API** (API-nycklar, webhooks och MCP) är en modul och ingår i priset.
+- **NONOX API** (API-nycklar och webhooks) är en modul och ingår i priset. En MCP-server för AI-assistenter kommer, men är inte tillgänglig ännu.
 
 Det exakta villkoret finns i de [allmänna villkoren](/villkor), avsnitt 5.
 

@@ -27,7 +27,7 @@
     {
       "id": "juristgranskning",
       "rubrik": "Juristgranskning av regelverket",
-      "beskrivning": "Bokföring, moms, fakturering, bokslut och lön har gåtts igenom mot lagtexten med AI och en oberoende andra kontroll. Nu granskar en jurist slutsatserna.",
+      "beskrivning": "Bokföring, moms, fakturering, bokslut och lön har gåtts igenom mot lagtexten med AI och en oberoende andra kontroll. En jurist ska granska slutsatserna; det är inte påbörjat.",
       "status": "Pågår",
       "omrade": "Övrigt",
       "uppdaterad": "2026-11-02",
@@ -44,7 +44,7 @@
     {
       "id": "peppol-accesspunkt",
       "rubrik": "Skicka och ta emot e-faktura via Peppol",
-      "beskrivning": "Kundfakturor skickas som e-faktura genom en Peppol-operatör, så att kunden får fakturan direkt i sitt eget system, och e-fakturor från leverantörer hamnar i inkorgen. Funktionen är byggd och kommer i version 1.0 genom Qvalia. Den slås på när den första kunden vill skicka e-faktura.",
+      "beskrivning": "Kundfakturor skickas som e-faktura genom en Peppol-operatör, så att kunden får fakturan direkt i sitt eget system, och e-fakturor från leverantörer hamnar i inkorgen. Funktionen är byggd och kommer i version 1.0 genom Qvalia. Den slås på när den första kunden vill skicka e-faktura. Peppol ingår i tillägget NONOX Connect, som kostar extra: leverantörens pris + 10 %, från 2027-01-11.",
       "status": "Pågår",
       "omrade": "Fakturering",
       "uppdaterad": "2026-11-04"
@@ -119,14 +119,6 @@
       "kommentar": "Förslaget används inte förrän bedömningen är gjord."
     },
     {
-      "id": "betalfiler-valuta",
-      "rubrik": "Betalfiler i utländsk valuta",
-      "beskrivning": "Betala leverantörsfakturor i andra valutor med samma betalfil som i dag.",
-      "status": "Planerat",
-      "omrade": "Leverantörer",
-      "uppdaterad": "2026-11-02"
-    },
-    {
       "id": "docker",
       "rubrik": "Färdigt Docker-paket",
       "beskrivning": "Kör NONOX på egen server med ett färdigt paket, utan att installera PHP och databasen för hand.",
@@ -140,14 +132,6 @@
       "beskrivning": "Kör NONOX lokalt på datorn som ett vanligt program.",
       "status": "Planerat",
       "omrade": "Övrigt",
-      "uppdaterad": "2026-11-02"
-    },
-    {
-      "id": "bilforman",
-      "rubrik": "Bilförmån räknas ut automatiskt",
-      "beskrivning": "Ange bilens nybilspris och övriga uppgifter, så räknar NONOX ut förmånsvärdet i stället för att du skriver in det själv.",
-      "status": "Planerat",
-      "omrade": "Lön",
       "uppdaterad": "2026-11-02"
     },
     {

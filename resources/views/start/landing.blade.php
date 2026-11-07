@@ -43,7 +43,7 @@
             <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>{{ $item['label'] }}</li>
           @endforeach
         </ul>
-        <p class="lp-incl-note">Inga tilläggsmoduler att köpa, vare sig du kör själv eller låter oss sköta driften. NONOX AI använder företagets egen nyckel hos en AI-leverantör, och lönens regler bekräftar du mot Skatteverkets källor före första lönekörningen. Kör du själv betalar du tjänster från andra, som bankkoppling, direkt till dem.</p>
+        <p class="lp-incl-note">Inga tilläggsmoduler att köpa, vare sig du kör själv eller låter oss sköta driften. NONOX Connect (Peppol, Skatteverket, bank) är ett tillägg som kostar extra: leverantörens pris + 10 %, från 2027-01-11. NONOX AI använder företagets egen nyckel hos en AI-leverantör, och lönens regler bekräftar du mot Skatteverkets källor före första lönekörningen. Kör du själv betalar du tjänster från andra, som bankkoppling, direkt till dem.</p>
         <a href="#funktioner">Se hur det ser ut →</a>
       </div>
     </aside>
@@ -340,7 +340,7 @@
       <h3 style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(24px,2.6vw,30px);letter-spacing:-0.025em">Vi sköter driften</h3>
       <p style="margin:0;font-size:14.5px;color:var(--muted)">Pris per företag och år, exkl. moms. Alla moduler ingår. NONOX Connect (Peppol, Skatteverket, bank) är ett tillägg som kostar extra: leverantörens pris + 10 %, från 2027-01-11.</p>
     </div>
-    <p style="margin:0 0 20px;max-width:760px;font-size:14.5px;line-height:1.6;color:var(--muted);text-wrap:pretty">Tillägg som kostar extra, från 2027-01-11 (kommer med version 1.0): <strong style="color:var(--ink)">NONOX Connect</strong>, ett separat tillägg för kopplingar som våra leverantörer tar betalt för, som Peppol, Skatteverkets tjänster och bank. Priset är leverantörens pris plus 10 %, och vi visar båda delarna var för sig. Modulerna ingår som förut, och NONOX API (API-nycklar, webhooks och MCP) är fortfarande en modul.</p>
+    <p style="margin:0 0 20px;max-width:760px;font-size:14.5px;line-height:1.6;color:var(--muted);text-wrap:pretty">Tillägg som kostar extra från 2027-01-11, när Peppol, Skatteverket och bank är påslagna: <strong style="color:var(--ink)">NONOX Connect</strong>, ett separat tillägg för kopplingar som våra leverantörer tar betalt för, som Peppol, Skatteverkets tjänster och bank. Priset är leverantörens pris plus 10 %, och vi visar båda delarna var för sig. Modulerna ingår som förut, och NONOX API (API-nycklar och webhooks) är fortfarande en modul. AI-assistenter via MCP kommer, men är inte tillgängliga ännu.</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:14px">
       @foreach($plans as $p)
         <article class="lp20" data-reveal="" style="position:relative;background:var(--card);border:{{ $p['border'] }};border-radius:22px;padding:26px 22px 22px;display:flex;flex-direction:column;gap:6px;transition:transform .25s ease,box-shadow .25s ease">

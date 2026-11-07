@@ -21,6 +21,13 @@ return [
      */
     'hq_admins' => $hqAdmins,
 
+    /*
+     | The MCP server for AI assistants (POST /api/mcp). Off by default and 404
+     | while off: it opens only when the privacy policy names AI providers as
+     | recipients (owner decision 18).
+     */
+    'mcp_enabled' => (bool) env('NONOX_MCP_ENABLED', false),
+
     'hq' => [
         // How long one passkey confirmation covers decisions in /hq.
         'step_up_seconds' => (int) env('HQ_STEP_UP_SECONDS', 300),

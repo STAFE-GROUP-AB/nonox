@@ -33,7 +33,7 @@ final class Features
         'bank_reconciliation' => ['name' => 'Bankavstämning', 'status' => self::LIVE, 'readme' => 'Bankavstämning, periodiseringar, anläggningsregister'],
         'accruals_assets' => ['name' => 'Periodiseringar och anläggningsregister', 'status' => self::LIVE, 'readme' => 'periodiseringar, anläggningsregister med avskrivningar'],
         'year_end' => ['name' => 'Bokslut, årsredovisning K2 och INK2', 'status' => self::LIVE, 'readme' => 'årsredovisning enligt K2 som PDF, och inkomstdeklaration 2 som SRU-filer'],
-        'ne_return' => ['name' => 'NE-bilaga för enskild firma', 'status' => self::LIVE, 'readme' => 'NE-bilagan för enskild firma'],
+        'ne_return' => ['name' => 'NE-bilaga för enskild firma som SRU-fil, när årets satser är kontrollerade', 'status' => self::SOON, 'readme' => 'NE-bilagan för enskild firma som SRU-fil, när årets satser har kontrollerats av en människa'],
         'ink4_return' => ['name' => 'Inkomstdeklaration 4 för handelsbolag', 'status' => self::LIVE, 'readme' => 'Inkomstdeklaration 4 för handelsbolag med INK4DU per delägare'],
         'invoices' => ['name' => 'Fakturor med OCR-nummer', 'status' => self::LIVE, 'readme' => 'Fakturor med OCR-nummer, PDF och utskick via e-post'],
         'quotes_orders' => ['name' => 'Offerter och order', 'status' => self::LIVE, 'readme' => 'Offerter och order som blir fakturor'],

@@ -24,12 +24,12 @@
     $free = $en ? [
         ['No add-on fee', 'The API is a module in NONOX like every other. There is no price per call, per app or per integration.'],
         ['Free when you run it yourself', 'NONOX is open source (AGPL-3.0). On your own server the API costs nothing, now or later.'],
-        ['Included when we run it', 'The hosted service includes every module, the API too. It is not a premium tier.'],
+        ['Included when we run it', 'The hosted service includes every module, the API too. It is not a premium tier. NONOX Connect (Peppol, Skatteverket, bank) is a separate add-on that costs extra: the provider\'s price + 10 %, from 2027-01-11. The API and webhooks are part of the NONOX API module.'],
         ['Your data, your way out', 'An open API is part of not being locked in, next to SIE4 and the archive package. Reading the code shows exactly what each call does.'],
     ] : [
         ['Ingen tilläggsavgift', 'API:t är en modul i NONOX som alla andra. Det kostar inget per anrop, per app eller per integration.'],
         ['Gratis när du driftar själv', 'NONOX har öppen källkod (AGPL-3.0). På din egen server kostar API:t ingenting, nu eller senare.'],
-        ['Ingår när vi driftar', 'Tjänsten där vi sköter driften har alla moduler med i priset, API:t också. Det är ingen dyrare nivå.'],
+        ['Ingår när vi driftar', 'Tjänsten där vi sköter driften har alla moduler med i priset, API:t också. Det är ingen dyrare nivå. NONOX Connect (Peppol, Skatteverket, bank) är ett separat tillägg som kostar extra: leverantörens pris + 10 %, från 2027-01-11. API:t och webhooks ingår i modulen NONOX API.'],
         ['Din data, din väg ut', 'Ett öppet API är en del av att aldrig vara inlåst, bredvid SIE4 och arkivpaketet. Koden visar exakt vad varje anrop gör.'],
     ];
     $security = $en ? [

@@ -88,7 +88,7 @@
             },
             {
                 "title": "Bokslut och årsredovisning utan tillval",
-                "text": "Bokslut med checklista, årsredovisning enligt K2 som PDF, och inkomstdeklarationen som SRU-filer – INK2 för aktiebolag, NE-bilagan för enskild firma och INK4 för handelsbolag – i varje företag.",
+                "text": "Bokslut med checklista, årsredovisning enligt K2 som PDF, och inkomstdeklarationen som SRU-filer – INK2 för aktiebolag och INK4 för handelsbolag; NE-bilagan för enskild firma öppnas när en människa har kontrollerat årets satser – i varje företag.",
                 "features": [
                     "year_end"
                 ]

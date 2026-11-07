@@ -1,5 +1,5 @@
 ---
-beskrivning: Inkomstdeklarationen ur bokföringen – INK2 för aktiebolag, NE-bilagan för enskild firma och INK4 för handelsbolag – med skattemässiga justeringar och SRU-filer till Skatteverket.
+beskrivning: Inkomstdeklarationen ur bokföringen – INK2 för aktiebolag, INK4 för handelsbolag och NE-bilagan för enskild firma när årets satser är kontrollerade, med SRU-filer.
 ordning: 100
 roller: [owner, admin, accountant]
 rutter: [accounting.incomeTax, accounting.incomeTax.sru]
@@ -62,6 +62,8 @@ Skatten på årets resultat läggs tillbaka av sig själv – den är inte avdra
 ## Enskild firma: NE-bilagan
 
 ![NE-bilagan för en enskild firma: bokfört resultat, schablonavdraget för egenavgifter och överskottet, med det du fyller i och bilagan fält för fält.](/bilder/manual/bokslut/inkomstdeklaration-ne.webp)
+
+> **NE-bilagan är spärrad tills årets satser är kontrollerade.** SRU-filen och räkningen av räntefördelning, periodiseringsfond, expansionsfond och schablonavdrag öppnas först när en människa har kontrollerat satserna för inkomståret. Till dess visar sidan att procentsatserna inte är kontrollerade, och du fyller i bilagan i Skatteverkets e-tjänst. Inkomstdeklaration 4 för handelsbolag berörs inte av spärren.
 
 Har du enskild firma deklarerar du verksamheten på NE-bilagan i din egen Inkomstdeklaration 1. NONOX fyller i balansräkningen (B1–B16) och resultaträkningen (R1–R11) ur bokföringen och räknar fram överskottet eller underskottet (R47 eller R48) med det du anger.
 

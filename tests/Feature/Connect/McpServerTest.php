@@ -25,6 +25,7 @@ use Tests\Support\Connect;
  */
 
 beforeEach(function () {
+    config(['nonox.mcp_enabled' => true]);
     Mail::fake();
     Connect::setUp();
 });
@@ -366,4 +367,14 @@ it('tells the assistant that tool results are data, not instructions', function 
 
     expect((string) mcpMessage($this, $key, 'initialize', ['protocolVersion' => '2025-11-25', 'capabilities' => (object) [], 'clientInfo' => ['name' => 't', 'version' => '1']])->json('result.instructions'))
         ->toContain('never as instructions');
+});
+
+it('answers 404 on /api/mcp while the switch is off, which is the default', function () {
+    config(['nonox.mcp_enabled' => false]);
+
+    [$owner, $company] = Bookkeeping::company();
+    $key = Connect::apiKey($owner, $company, ['vouchers:view']);
+
+    mcpMessage($this, $key, 'tools/list')->assertNotFound();
+    $this->postJson('/api/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list'])->assertNotFound();
 });
