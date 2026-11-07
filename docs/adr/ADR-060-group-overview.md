@@ -128,7 +128,7 @@ Marks add one query for the group.
 
 ## Addendum 2026-11-07: spec S2 stage 1 and stage 2 plan
 
-- Status: Accepted by the Lead for stage 1 (2026-11-07). Stage 2 needs the product owner's acceptance and decisions H1–H8.
+- Status: Accepted by the Lead for stage 1 (2026-11-07). Stage 2 needs the product owner's acceptance and decisions H1–H8. S2-1.1 built (branch `spec/s2/group-model`, see "S2-1.1 as built" under 3.1).
 - Inputs: spec `docs/specs/nummer-1-spec.md` Part 3 S2 (stage 1 scope 1–5, data,
   behaviour, permissions, tests); rule sheet `docs/specs/rules/s2.md` (status ready,
   quote-checked 2026-11-07; rule ids S2-R1 … S2-R14, corrections C1–C10, human
@@ -373,6 +373,76 @@ Branch `spec/s2/group-model`. One migration set and one action set, no screen.
   does not read it before then.
 - **Docs:** systemdokumentation unchanged (no accounting behaviour); ADR-060 status line;
   no changelog until a screen ships (S2-1.2).
+
+**S2-1.1 as built (2026-11-07).** Details the addendum left open, decided in the build:
+
+- Migrations are dated `2026_12_16_*` (after the newest existing migration), not `2026_11_xx`.
+- `corporate_groups.parent_company_id` is unique: one authoritative group per parent (2.1).
+  `company_holdings` has CHECKs for 0–10 000 bp and `disposed_on >= acquired_on`; its only
+  foreign key is `company_id`.
+- A holder has at most one undisposed holding per organisation number (in the action and
+  by a partial unique index `company_holdings_one_active`); the organisation
+  number must be a legal person's (not a personnummer) and not the holder's own. The audit
+  entry keeps shares, basis and dates, and only the *names* of changed fields for the held
+  company's name and number.
+- "Active" holding = `disposed_on` empty or after the day.
+- **The inclusion rule** is `GroupAccess::includedCompanyIds($group, $from)`: the parent and
+  every member, except members whose holding was disposed of strictly before `$from`. FULL
+  access requires `reports:view` in exactly these companies, and the consolidation (S2-1.4)
+  **must** include exactly these, through this method, so access and figures never differ.
+- **A holding that grounds a membership** (referenced by a `corporate_group_members` row) can
+  be changed only by whoever `administers()` every group that references it, and its
+  `held_org_number` is frozen; otherwise an administrator of the holder alone could take a
+  company out of a group or a period without its consent. The 100 % vote rule
+  (`GroupHoldings`) runs when a member is confirmed, and on every holding recorded or
+  changed by a company that is a member of a group **that the user administers**. For a
+  group the user does not administer, other members' holdings are not compared at all, so
+  an administrator of the holder alone gets the same answer whatever the others hold (no
+  oracle on their voting shares); the conflict is left to the group: `ConfirmGroupMember`
+  refuses, and **S2-1.4 must flag a group whose active holdings in one organisation number
+  exceed 100 % of the votes and block its consolidated output until corrected.**
+  `holding_id` references `company_holdings` with NO ACTION on delete (checked at the end of
+  the statement), so a grounding holding cannot be deleted.
+- A member's `holding_id` is the active holding naming it among the members' holdings: one
+  with a control basis first, then the larger voting share. No rule refuses a holding whose
+  basis is NONE; the human-entered basis is stored, not judged (S2-R1d).
+- `administers()` = owner or admin, live, in every member and the parent, none archived.
+  An archived member therefore freezes administration (confirm, grant, revoke by others,
+  removal of other members) until it leaves: whoever administers every *other* company may
+  remove the archived member, and its own owner or admin may withdraw it.
+  `ConfirmGroupMember` additionally needs owner/admin in the new company and re-checks both
+  under the group's row lock with fresh memberships. `RemoveGroupMember` is also open,
+  without seeing the group, to an owner/admin (archived or not) of the leaving company
+  itself or of the member holding the shares the membership rests on (withdrawal of
+  consent); the parent cannot be removed, and a company through which other members are
+  held only after them.
+- **A group role belongs to the membership in the parent it was granted under**:
+  `corporate_group_roles.parent_membership_id` stores the holder's `team_user.id` (null when
+  granted to the parent's owner), and the role counts only while that same row exists. A
+  person who leaves the parent and is invited again, however soon, has no role until it is
+  granted anew (and audited). A role holder may give up their own role even after leaving
+  the parent, without seeing the group. On an ownership transfer of the parent
+  (`App\Actions\Company\TransferOwnership`, change approved by the Lead), in the same
+  transaction, `GroupRoleBinding` binds the previous owner's null-bound roles to their new
+  `team_user` row and moves the new owner's roles bound to their former row to null, with
+  one audit entry `corporate_group.roles_rebound` (counts only) in the parent. A role keeps
+  working through transfers; a stale role from an ended membership is never revived. No
+  Jetstream or tenancy file is involved.
+- Every `lockForUpdate()` over several `corporate_groups` or `company_holdings` rows is
+  ordered by id, so concurrent transactions take the locks in the same order.
+- Audit (2.2): `GroupAuditTrail` writes one entry per member company (for a removal, the members
+  before it), payload `corporate_group_id`, `members` (count), `this_company`, and for roles
+  `user_id` and `role`. The group name (free text) is not logged. User ids of one company's
+  administrators thus appear in other members' logs; recorded in
+  `docs/gdpr/registerforteckning.md`.
+- `CompanyScope::bypass` is used twice, each with a comment: `GroupHoldings::activeIn` (the
+  group members' holdings in one organisation number, summed only, for the vote rule) and
+  reading disposal dates of member holdings in `includedCompanyIds` with a period. G.1 code
+  still never bypasses.
+- **Decision D2 closed** (Lead, 2026-11-07): one group role, `viewer`, in stage 1.
+- Not yet testable in S2-1.1 and moved to the package that adds the surface: group routes,
+  CSV and PDF answering 404 (S2-1.2/1.6), and the CONSOLIDATED payload without per-company
+  data (S2-1.4).
 
 #### 3.2 Remaining stage 1 packages
 

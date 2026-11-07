@@ -1,6 +1,6 @@
 # Registerförteckning (artikel 30)
 
-Stafe Development AB, del av Stafe Group AB, för tjänsten NONOX på nonox.app. Senast uppdaterad 2026-11-03.
+Stafe Development AB, del av Stafe Group AB, för tjänsten NONOX på nonox.app. Senast uppdaterad 2026-11-07.
 
 ## A. Som personuppgiftsansvarig (art. 30.1)
 
@@ -70,5 +70,7 @@ De registrerades rättigheter hos företagen stöds med registerutdrag per kund,
 Krypterad chatt (ADR-045): chatten är inte en behandling för företagens räkning utan en funktion för användarna, och står därför under A. TODO(legal-verify): om den är en nummeroberoende interpersonell kommunikationstjänst enligt lagen (2022:482) om elektronisk kommunikation, med tystnadsplikt och eventuell anmälan till PTS, och om en rad i förteckningen alls behövs när ingenting lagras.
 
 Driftbolaget (ADR-044): vilket av företagen i installationen som driver tjänsten väljs i HQ och står bara i databasen. Uppgifterna om de andra företagen och om köanmälningarna förs bara in i driftbolagets eget kundregister och CRM, genom dess egna åtgärder; inget annat företag får dem. Behandlingshistoriken får id:n och utfall, och poster som synken skriver märks `via: operator_sync`. TODO(legal-verify): om driftbolagets kontaktperson för en användare som raderar sitt konto ska raderas direkt.
+
+Koncerner (ADR-060, tillägg 2026-11-07): ett företags innehav i andra bolag sparas med det ägda bolagets organisationsnummer och namn, andelar och datum; ett personnummer tas inte emot. När ett företag läggs till i eller tas bort ur en koncern, eller när någon får eller lämnar rollen att läsa koncernrapporten, skrivs en rad i behandlingshistoriken hos varje företag i koncernen. Raden har koncernens id, antalet företag, rollen och användar-id för den som gjorde ändringen och för den som fick eller lämnade rollen. Ett företags behandlingshistorik kan därmed innehålla användar-id för en administratör eller läsare i ett annat företag i samma koncern, men aldrig namn, e-post, det andra företagets namn, organisationsnummer eller id. Grund: bokföringslagens behandlingshistorik och berättigat intresse (varje företag ska kunna se vem som ändrade vilka som ser dess siffror i en koncernrapport). TODO(legal-verify): att användar-id från ett annat företag i behandlingshistoriken är förenligt med uppgiftsminimering (artikel 5.1 c).
 
 TODO(legal-verify): granskas av jurist; om ett pseudonymiserat konto räcker för att behandlingshistoriken ska visa vem som gjort vad (BFNAR 2013:2), eller om företaget behöver kunna se personens namn även efter raderingen; om in- och utloggningar i behandlingshistoriken ska gallras tidigare än räkenskapsinformationen; om visning av avsändare och ämne för flera möjliga företag vid den gemensamma adressen är förenligt med uppgiftsminimering; kompletteras med kategorierna per kund om förteckningen ska lämnas till IMY.
