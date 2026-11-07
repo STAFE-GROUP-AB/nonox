@@ -167,9 +167,9 @@
                         <option value="{{ $yearId }}">{{ $yearLabel }}</option>
                     @endforeach
                 </select>
-                <x-input-error for="framework_from_year" class="mt-2" />
             </div>
         @endif
+        <x-input-error for="framework_from_year" class="mt-2" />
 
         @if($frameworkChanged && $canUpdate && $frameworkYears !== [])
             <div class="max-w-xl">

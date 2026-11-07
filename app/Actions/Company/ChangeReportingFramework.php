@@ -81,6 +81,8 @@ class ChangeReportingFramework
                 self::refuseLockedYears($company, $years, $fiscalYear);
 
                 $changed = 0;
+                $defaultChanges = $company->reporting_framework !== $framework;
+                $latestId = $years->last()?->id;
 
                 foreach ($years as $year) {
                     $before = $year->reporting_framework;
@@ -102,7 +104,8 @@ class ChangeReportingFramework
                         'from_fiscal_year_id' => $fiscalYear->id,
                         'before' => $before->value,
                         'after' => $framework->value,
-                        'company_default_changed' => $company->reporting_framework !== $framework,
+                        // The company column follows the latest year only.
+                        'company_default_changed' => $year->id === $latestId && $defaultChanges,
                         'framework_conditions_confirmed' => $confirmed,
                     ], $company, $user);
                 }
@@ -160,6 +163,24 @@ class ChangeReportingFramework
 
             return $eligible->values();
         });
+    }
+
+    /**
+     * Whether choosing the framework from the year changes anything: a year
+     * from it on with another framework, or a company default out of step.
+     * The year must be one of the eligible years.
+     *
+     * @param  Collection<int, FiscalYear>  $eligible
+     */
+    public static function wouldChange(Company $company, ReportingFramework $framework, FiscalYear $from, Collection $eligible): bool
+    {
+        if ($company->reporting_framework !== $framework) {
+            return true;
+        }
+
+        return $eligible
+            ->filter(fn (FiscalYear $year): bool => $year->start_date->greaterThanOrEqualTo($from->start_date))
+            ->contains(fn (FiscalYear $year): bool => $year->reporting_framework !== $framework);
     }
 
     /** @return list<int> */

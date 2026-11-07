@@ -10389,6 +10389,7 @@
     "Räkenskapsåret :label, som kommer efter :from, är stängt. Regelverket kan bara bytas från ett år där alla senare år är öppna.": "Fiscal year :label, which comes after :from, is closed. The framework can only be changed from a year where every later year is open.",
     "Årsredovisningen för :label, som kommer efter :from, är fastställd. Regelverket kan inte bytas från :from.": "The annual report for :label, which comes after :from, has been adopted. The framework cannot be changed from :from.",
     "Byt regelverk från och med räkenskapsår": "Change the framework from fiscal year",
+    "Uppgifterna för :company är sparade. Regelverket gäller från räkenskapsåret :year.": "The details for :company are saved. The framework applies from fiscal year :year.",
     "Valet gäller räkenskapsåret :year och de år som följer. Tidigare år behåller sitt regelverk.": "The choice applies to fiscal year :year and the years after it. Earlier years keep their framework.",
     "Varför byter företaget regelverk? (frivilligt)": "Why is the company changing framework? (optional)",
     "Sparas med räkenskapsåret, så att det går att se senare varför regelverket byttes.": "Saved with the fiscal year, so you can see later why the framework was changed."

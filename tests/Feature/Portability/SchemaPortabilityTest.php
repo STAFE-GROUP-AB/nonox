@@ -27,3 +27,13 @@ it('refuses definitions anywhere but the schema root, and has no assoc entry poi
     expect(fn () => new SchemaValidator(['properties' => ['a' => ['$defs' => ['x' => ['type' => 'string']]]]]))->toThrow(InvalidArgumentException::class)
         ->and((new ReflectionClass(SchemaValidator::class))->hasMethod('validate'))->toBeFalse();
 });
+
+it('accepts a 1.0.0 fiscal year without reporting_framework, and checks the value when it is there', function () {
+    $published = json_decode((string) file_get_contents(base_path('docs/portability/nonox-dump.schema.json')), true);
+    $validator = new SchemaValidator(['$defs' => $published['$defs'], 'type' => 'object', 'properties' => ['year' => ['$ref' => '#/$defs/fiscalYear']]]);
+    $year = ['id' => 1, 'start_date' => '2026-01-01', 'end_date' => '2026-12-31', 'status' => 'OPEN', 'closed_at' => null, 'closed_by' => null, 'ledger_head_hash' => null];
+
+    expect($validator->validateJson((string) json_encode(['year' => $year])))->toBe([])
+        ->and($validator->validateJson((string) json_encode(['year' => [...$year, 'reporting_framework' => 'K3']])))->toBe([])
+        ->and($validator->validateJson((string) json_encode(['year' => [...$year, 'reporting_framework' => 'K4']])))->not->toBe([]);
+});

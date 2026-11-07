@@ -21,6 +21,7 @@ use App\Support\Tenancy\CompanyScope;
 use Brick\Math\Exception\MathException;
 use Carbon\CarbonImmutable;
 use Closure;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -119,8 +120,8 @@ class UpdateCompanyDetails
     {
         $framework = ReportingFramework::from((string) $validated['reporting_framework']);
 
-        if ($framework !== $company->reporting_framework && $this->changeFrameworkOfYears($user, $company, $framework, $reason, $fromYear, $confirmed['framework_conditions_confirmed'])) {
-            // ChangeReportingFramework has set the company column as the latest year's framework.
+        if ($this->changeFrameworkOfYears($user, $company, $framework, $reason, $fromYear, $confirmed['framework_conditions_confirmed'])) {
+            // The company has fiscal years: ChangeReportingFramework keeps the company column as the latest year's framework.
             $company->refresh();
             unset($validated['reporting_framework']);
         }
@@ -156,8 +157,10 @@ class UpdateCompanyDetails
      * The framework belongs to the fiscal year (ADR-059, A.2.1). A change on
      * the settings page applies from the chosen year on: by default the
      * earliest open year without an adopted annual report, or a later one
-     * the person picks; earlier years keep theirs. A company without fiscal
-     * years only has the default, which is changed as before (false).
+     * the person picks; earlier years keep theirs. It runs whenever a year
+     * from the chosen one on has another framework, even when the company
+     * column already matches. Returns false for a company without fiscal
+     * years, whose default is changed as before.
      *
      * @throws ValidationException when no year can take the change, or the chosen one cannot
      */
@@ -171,19 +174,23 @@ class UpdateCompanyDetails
         }
 
         $eligible = ChangeReportingFramework::eligibleYears($company);
+        $year = self::fromYear($eligible, $fromYear);
 
-        if ($eligible->isEmpty()) {
+        if ($eligible->isEmpty() && $framework !== $company->reporting_framework) {
             throw ValidationException::withMessages([
                 'reporting_framework' => __('Det finns inget öppet räkenskapsår utan fastställd årsredovisning att byta regelverk för. Skapa nästa räkenskapsår under Räkenskapsår och byt sedan regelverk.'),
             ])->errorBag('updateCompanyDetails');
         }
 
-        $year = $fromYear === null ? $eligible->first() : $eligible->firstWhere('id', $fromYear);
-
-        if (! $year instanceof FiscalYear) {
+        if (($eligible->isNotEmpty() || $fromYear !== null) && ! $year instanceof FiscalYear) {
             throw ValidationException::withMessages([
                 'framework_from_year' => __('Välj ett av de öppna räkenskapsåren i listan.'),
             ])->errorBag('updateCompanyDetails');
+        }
+
+        if (! $year instanceof FiscalYear || ! self::frameworkWouldChange($company, $framework, $fromYear)) {
+            // Every year from the chosen one on already has the framework: nothing to change.
+            return true;
         }
 
         try {
@@ -193,6 +200,43 @@ class UpdateCompanyDetails
         }
 
         return true;
+    }
+
+    /**
+     * Whether saving the form with this framework (and chosen year) changes
+     * a fiscal year or the company default.
+     */
+    public static function frameworkWouldChange(Company $company, ?ReportingFramework $framework, mixed $fromYear): bool
+    {
+        if ($framework === null) {
+            return false;
+        }
+
+        if ($framework !== $company->reporting_framework) {
+            return true;
+        }
+
+        // The same framework as the company's changes earlier years only when a year was chosen.
+        if (! is_numeric($fromYear)) {
+            return false;
+        }
+
+        $eligible = ChangeReportingFramework::eligibleYears($company);
+        $year = self::fromYear($eligible, (int) $fromYear);
+
+        return $year instanceof FiscalYear && ChangeReportingFramework::wouldChange($company, $framework, $year, $eligible);
+    }
+
+    /**
+     * The chosen year among the eligible ones; the earliest when none is chosen.
+     *
+     * @param  Collection<int, FiscalYear>  $eligible
+     */
+    private static function fromYear(Collection $eligible, ?int $fromYear): ?FiscalYear
+    {
+        $year = $fromYear === null ? $eligible->first() : $eligible->firstWhere('id', $fromYear);
+
+        return $year instanceof FiscalYear ? $year : null;
     }
 
     /**
@@ -209,7 +253,7 @@ class UpdateCompanyDetails
         $month = is_numeric($input['fiscal_year_start_month'] ?? null) ? (int) $input['fiscal_year_start_month'] : null;
         $framework = is_string($input['reporting_framework'] ?? null) ? ReportingFramework::tryFrom($input['reporting_framework']) : null;
         $monthChanged = $month !== null && $month !== $company->fiscal_year_start_month;
-        $frameworkChanged = $framework !== null && $framework !== $company->reporting_framework;
+        $frameworkChanged = self::frameworkWouldChange($company, $framework, $input['framework_from_year'] ?? null);
 
         $rules = CompanySetupRules::rules([
             'legal_form' => $company->legal_form->value,

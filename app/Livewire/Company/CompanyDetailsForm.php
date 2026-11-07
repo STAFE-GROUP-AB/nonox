@@ -61,7 +61,7 @@ class CompanyDetailsForm extends Component
             'turnover_over_40_msek' => $company->turnover_over_40_msek,
             'framework_confirmed' => false,
             'framework_change_reason' => '',
-            'framework_from_year' => ChangeReportingFramework::eligibleYears($company)->first()?->id,
+            'framework_from_year' => self::defaultFrameworkYear($company, $company->reporting_framework),
             'calendar_year_exempt' => false,
             'oss_elected' => $company->oss_elected,
             'oss_elected_from' => (string) $company->oss_elected_from?->toDateString(),
@@ -75,11 +75,17 @@ class CompanyDetailsForm extends Component
     public function updatedStateReportingFramework(): void
     {
         $this->state['framework_confirmed'] = false;
+        $framework = ReportingFramework::tryFrom((string) ($this->state['reporting_framework'] ?? ''));
+        $this->state['framework_from_year'] = $framework === null ? null : self::defaultFrameworkYear($this->company(), $framework);
     }
 
     public function save(UpdateCompanyDetails $updateCompanyDetails): void
     {
         $this->resetErrorBag();
+        $this->keepFrameworkYearEligible($this->company());
+        $framework = ReportingFramework::tryFrom((string) ($this->state['reporting_framework'] ?? ''));
+        $frameworkChanges = UpdateCompanyDetails::frameworkWouldChange($this->company(), $framework, $this->state['framework_from_year'] ?? null);
+        $fromLabel = $this->frameworkYears($this->company())[(int) ($this->state['framework_from_year'] ?? 0)] ?? null;
 
         $updateCompanyDetails($this->user(), $this->company(), $this->state);
 
@@ -89,10 +95,12 @@ class CompanyDetailsForm extends Component
         $this->state['preliminary_tax_monthly'] = $company->preliminary_tax_monthly_ore === null ? '' : str_replace("\u{00A0}", ' ', Money::ofOre($company->preliminary_tax_monthly_ore)->format(false));
         $this->state['framework_confirmed'] = false;
         $this->state['framework_change_reason'] = '';
-        $this->state['framework_from_year'] = ChangeReportingFramework::eligibleYears($company)->first()?->id;
+        $this->state['framework_from_year'] = self::defaultFrameworkYear($company, $company->reporting_framework);
         $this->state['calendar_year_exempt'] = false;
 
-        $this->toast(__('Uppgifterna för :company är sparade.', ['company' => $company->name]));
+        $this->toast($frameworkChanges && $fromLabel !== null
+            ? __('Uppgifterna för :company är sparade. Regelverket gäller från räkenskapsåret :year.', ['company' => $company->name, 'year' => $fromLabel])
+            : __('Uppgifterna för :company är sparade.', ['company' => $company->name]));
     }
 
     /** Fetching only proposes values, but only someone who may change them is offered it. */
@@ -124,7 +132,8 @@ class CompanyDetailsForm extends Component
 
         $framework = ReportingFramework::tryFrom((string) ($this->state['reporting_framework'] ?? '')) ?? $company->reporting_framework;
         $month = (int) ($this->state['fiscal_year_start_month'] ?? $company->fiscal_year_start_month);
-        $frameworkChanged = $framework !== $company->reporting_framework;
+        $this->keepFrameworkYearEligible($company);
+        $frameworkChanged = UpdateCompanyDetails::frameworkWouldChange($company, $framework, $this->state['framework_from_year'] ?? null);
 
         return view('livewire.company.company-details-form', [
             'company' => $company,
@@ -132,7 +141,7 @@ class CompanyDetailsForm extends Component
             'frameworkRefusal' => $frameworkChanged ? ReportingFrameworkRules::refusal($company->legal_form, $framework) : null,
             'frameworkConditions' => $frameworkChanged ? ReportingFrameworkRules::conditions($company->legal_form, $framework) : null,
             'frameworkChanged' => $frameworkChanged,
-            'frameworkYears' => $years = ChangeReportingFramework::eligibleYears($company)->mapWithKeys(fn (FiscalYear $year): array => [$year->id => $year->label()])->all(),
+            'frameworkYears' => $years = $this->frameworkYears($company),
             'frameworkYear' => $years[(int) ($this->state['framework_from_year'] ?? 0)] ?? (reset($years) ?: null),
             'askPartners' => $month !== $company->fiscal_year_start_month
                 && $month !== 1
@@ -148,6 +157,46 @@ class CompanyDetailsForm extends Component
                 __('juli'), __('augusti'), __('september'), __('oktober'), __('november'), __('december'),
             ]),
         ]);
+    }
+
+    /**
+     * The fiscal years a framework change can start from, id => label
+     * (ADR-059, A.2.1).
+     *
+     * @return array<int, string>
+     */
+    private function frameworkYears(Company $company): array
+    {
+        return ChangeReportingFramework::eligibleYears($company)->mapWithKeys(fn (FiscalYear $year): array => [$year->id => $year->label()])->all();
+    }
+
+    /**
+     * The year preselected for a framework: the earliest year from which
+     * nothing would change (so saving other details changes no year), else
+     * the earliest eligible year.
+     */
+    private static function defaultFrameworkYear(Company $company, ReportingFramework $framework): ?int
+    {
+        $eligible = ChangeReportingFramework::eligibleYears($company);
+
+        foreach ($eligible as $year) {
+            if (! ChangeReportingFramework::wouldChange($company, $framework, $year, $eligible)) {
+                return $year->id;
+            }
+        }
+
+        return $eligible->first()?->id;
+    }
+
+    /** A chosen year that is no longer eligible (closed, adopted) falls back to the default. */
+    private function keepFrameworkYearEligible(Company $company): void
+    {
+        if (array_key_exists((int) ($this->state['framework_from_year'] ?? 0), $this->frameworkYears($company))) {
+            return;
+        }
+
+        $framework = ReportingFramework::tryFrom((string) ($this->state['reporting_framework'] ?? '')) ?? $company->reporting_framework;
+        $this->state['framework_from_year'] = self::defaultFrameworkYear($company, $framework);
     }
 
     private function user(): User

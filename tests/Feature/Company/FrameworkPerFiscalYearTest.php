@@ -124,7 +124,8 @@ it('changes the chosen year and every later year, and the company default, with 
         ->and($this->company->fresh()->reporting_framework)->toBe(ReportingFramework::K3)
         // One audit entry per year, ids and enums only.
         ->and($entries->pluck('payload.fiscal_year_id')->all())->toBe([$this->year2026->id, $next->id])
-        ->and($entries->first()->payload)->toMatchArray(['from_fiscal_year_id' => $this->year2026->id, 'before' => 'K2', 'after' => 'K3', 'company_default_changed' => true])
+        ->and($entries->first()->payload)->toMatchArray(['from_fiscal_year_id' => $this->year2026->id, 'before' => 'K2', 'after' => 'K3'])
+        ->and($entries->last()->payload)->toMatchArray(['company_default_changed' => true])
         ->and(json_encode($entries->pluck('payload')->all()))->not->toContain('växer')
         ->and(K2Reconfirmation::applies($this->company->fresh(), $this->year2026->fresh()))->toBeFalse();
 });
@@ -227,6 +228,75 @@ it('applies a change on the settings page from the earliest open year without an
         ->and($this->company->fresh()->reporting_framework)->toBe($next->fresh()->reporting_framework)
         ->and(K2Reconfirmation::applies($this->company->fresh(), $this->year2026->fresh()))->toBeFalse()
         ->and(AuditLog::forCompany($this->company)->where('action', 'fiscal_year.framework_changed')->count())->toBe(2);
+});
+
+it('changes an earlier year to the company\'s own framework when that year is chosen', function () {
+    $next = frameworkNextYear($this->owner, $this->company);
+    app(ChangeReportingFramework::class)($this->owner, $next, ReportingFramework::K3);
+    $this->company->forceFill(['k2_conditions_confirmed_at' => null, 'k2_conditions_confirmed_by' => null])->save();
+    $company = $this->company->fresh();
+
+    expect($company->reporting_framework)->toBe(ReportingFramework::K3)
+        ->and($this->year2026->fresh()->reporting_framework)->toBe(ReportingFramework::K2);
+
+    // Saving other details with the default year changes no year.
+    app(UpdateCompanyDetails::class)($this->owner, $company, frameworkSettingsInput($company, ['reporting_framework' => 'K3']));
+
+    expect($this->year2026->fresh()->reporting_framework)->toBe(ReportingFramework::K2);
+
+    // Choosing K3 from 2026 changes 2026 in one save, though the company column already says K3.
+    app(UpdateCompanyDetails::class)($this->owner, $company->fresh(), frameworkSettingsInput($company->fresh(), [
+        'reporting_framework' => 'K3',
+        'framework_from_year' => $this->year2026->id,
+    ]));
+
+    expect($this->year2026->fresh()->reporting_framework)->toBe(ReportingFramework::K3)
+        ->and($next->fresh()->reporting_framework)->toBe(ReportingFramework::K3)
+        ->and($this->company->fresh()->k2_conditions_confirmed_at)->toBeNull()
+        ->and(AuditLog::forCompany($this->company)->where('action', 'fiscal_year.framework_changed')->count())->toBe(2);
+});
+
+it('offers the year choice in the form when only an earlier year differs', function () {
+    $next = frameworkNextYear($this->owner, $this->company);
+    app(ChangeReportingFramework::class)($this->owner, $next, ReportingFramework::K3);
+
+    Livewire::test(CompanyDetailsForm::class, ['company' => $this->company->fresh()])
+        // Preselected so that saving changes nothing.
+        ->assertSet('state.framework_from_year', $next->id)
+        ->assertDontSee('Varför byter företaget regelverk?')
+        ->set('state.framework_from_year', $this->year2026->id)
+        ->assertSee('Varför byter företaget regelverk?')
+        ->assertSee('Byt regelverk från och med räkenskapsår')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($this->year2026->fresh()->reporting_framework)->toBe(ReportingFramework::K3);
+});
+
+it('falls back to an eligible year when the chosen one is closed meanwhile', function () {
+    $next = frameworkNextYear($this->owner, $this->company);
+
+    $form = Livewire::test(CompanyDetailsForm::class, ['company' => $this->company->fresh()])
+        ->set('state.reporting_framework', 'K3')
+        ->assertSet('state.framework_from_year', $this->year2026->id);
+
+    $this->year2026->forceFill(['status' => 'CLOSED'])->save();
+
+    $form->call('save')->assertHasNoErrors();
+
+    expect($this->year2026->fresh()->reporting_framework)->toBe(ReportingFramework::K2)
+        ->and($next->fresh()->reporting_framework)->toBe(ReportingFramework::K3);
+});
+
+it('marks only the latest year\'s audit entry as changing the company default', function () {
+    $next = frameworkNextYear($this->owner, $this->company);
+
+    app(ChangeReportingFramework::class)($this->owner, $this->year2026, ReportingFramework::K3);
+
+    $payloads = AuditLog::forCompany($this->company)->where('action', 'fiscal_year.framework_changed')->orderBy('id')->pluck('payload');
+
+    expect($payloads[0])->toMatchArray(['fiscal_year_id' => $this->year2026->id, 'company_default_changed' => false])
+        ->and($payloads[1])->toMatchArray(['fiscal_year_id' => $next->id, 'company_default_changed' => true]);
 });
 
 it('applies a change on the settings page from a later year the person picks', function () {

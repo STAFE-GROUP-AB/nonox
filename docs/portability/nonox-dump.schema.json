@@ -68,7 +68,7 @@
     "fiscalYear": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "start_date", "end_date", "status", "ledger_head_hash", "reporting_framework"],
+      "required": ["id", "start_date", "end_date", "status", "ledger_head_hash"],
       "properties": {
         "id": {"type": "integer"},
         "start_date": {"$ref": "#/$defs/date"},
