@@ -165,3 +165,35 @@ it('S1-R8.3 never adds an "Övriga förändringar" row to a K3 equity specificat
     expect($k2->keys()->all())->toBe(['opening', 'year_result', 'other', 'closing'])
         ->and(fn () => $method->invoke(null, $noChange, $sheet, 0, K3Schedule::class))->toThrow(DomainException::class);
 });
+
+it('S1-R4.6 puts other tax provisions (BAS 225x) on their own line right after the deferred tax liability (ÅRL bilaga 1 C.2)', function () {
+    $provisions = collect(K3Schedule::BALANCE)->where('section', 'provisions')->keyBy('key');
+
+    expect($provisions->keys()->all())->toBe(['pension_provisions', 'deferred_tax_liability', 'other_tax_provisions', 'other_provisions'])
+        ->and($provisions['other_tax_provisions']['ranges'])->toBe([[2250, 2259]])
+        ->and($provisions['other_tax_provisions']['label'])->toBe('Övriga avsättningar för skatter')
+        ->and($provisions['other_provisions']['ranges'])->toBe([[2200, 2209], [2220, 2229], [2260, 2299]]);
+});
+
+it('S1-R10 puts BAS 1081 on Balanserade utgifter för utvecklingsarbeten (rbas2026)', function () {
+    $lines = collect(K3Schedule::BALANCE)->keyBy('key');
+
+    expect($lines['development_expenditure']['ranges'])->toBe([[1010, 1019], [1081, 1081]])
+        ->and($lines['intangible_advances']['ranges'])->toBe([[1080, 1080], [1082, 1089]]);
+});
+
+it('S1-R8.2 heads the receivables "Fordringar" as ÅRL bilaga 1 C.II', function () {
+    expect(K3Schedule::SECTIONS['receivables'])->toBe('Fordringar');
+});
+
+it('S1-R8.2 says why a label differs from the text of ÅRL bilaga 2, and marks the koncernföretag disclosures', function () {
+    $lines = collect(K3Schedule::INCOME)->keyBy('key');
+
+    foreach (['group_shares', 'associated_shares', 'ownership_interests', 'other_financial_assets', 'interest_income', 'interest_expense'] as $key) {
+        expect($lines[$key]['source'])->toContain('label differs from bilaga 2 text (3:4 tredje stycket)');
+    }
+
+    foreach (['other_financial_assets', 'interest_income', 'interest_expense'] as $key) {
+        expect($lines[$key]['source'])->toContain('TODO(legal-verify)');
+    }
+});

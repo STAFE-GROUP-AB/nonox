@@ -330,7 +330,7 @@ final class AnnualAccounts
         $lines['year_result'] ??= ['key' => 'year_result', 'label' => __('Årets resultat'), 'amount' => 0, 'previous' => 0];
 
         $order = array_flip($this->equityOrder());
-        uksort($lines, fn (string $a, string $b): int => ($order[$a] ?? 9) <=> ($order[$b] ?? 9));
+        uksort($lines, fn (string $a, string $b): int => ($order[$a] ?? PHP_INT_MAX) <=> ($order[$b] ?? PHP_INT_MAX));
 
         return $lines;
     }

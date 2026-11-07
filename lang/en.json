@@ -10493,5 +10493,6 @@
     "Skulder till övriga företag som det finns ett ägarintresse i": "Liabilities to other companies in which there is an ownership interest",
     "Växelskulder": "Bills payable",
     "Materiella anläggningstillgångar": "Tangible fixed assets",
-    "Kortfristiga fordringar": "Current receivables"
+    "Fordringar": "Receivables",
+    "Övriga avsättningar för skatter": "Other provisions for taxes"
 }

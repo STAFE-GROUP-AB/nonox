@@ -37,11 +37,14 @@ use DomainException;
  *
  * K3 (ADR-059 A.3, S1-P6): the same rounding with K3Schedule's lines and
  * sections. The balance sheet difference goes to the same Övriga skulder
- * line (K3Schedule key other_liabilities; the same TODO). In the equity
+ * line (K3Schedule key other_liabilities; the same TODO), but only a
+ * difference rounding can explain: any other is refused with
+ * UnbalancedBalanceSheet (refuseUnbalanced). In the equity
  * specification the leftover goes to "Balanseras i ny räkning", else
  * "Utdelning", else another change row with an amount in the column; K3 6.3
  * has no residual row, so none is ever added (S1-R8.3), and a leftover with
- * no row to take it is an error.
+ * no row to take it is an error (a DomainException that S1-P7 must turn into
+ * a refusal with a reason).
  */
 final class PrintedFigures
 {
@@ -171,6 +174,10 @@ final class PrintedFigures
 
             foreach ($lines as $line) {
                 in_array($line['section'], $schedule::ASSET_SECTIONS, true) ? $assets += $line[$field] : $other += $line[$field];
+            }
+
+            if ($schedule::REFUSES_UNBALANCED_SHEET) {
+                self::refuseUnbalanced($sheet, $field, $assets - $other, count($lines) + count($results[$field]));
             }
 
             if ($assets !== $other) {
@@ -306,11 +313,37 @@ final class PrintedFigures
     }
 
     /**
+     * K3: the two sides of the rounded balance sheet may differ only by what
+     * rounding can explain, at most half a krona per printed figure involved
+     * (the balance sheet lines and the income statement figures behind the
+     * year's result). A larger difference, or any difference in the exact
+     * figures, is a real imbalance and is refused, never put on Övriga
+     * skulder (S1-P6 review). K2 keeps its behaviour; the Lead records the
+     * K2 follow-up in ADR-059.
+     *
+     * @param  array<string, mixed>  $sheet  the exact balance sheet
+     * @param  'amount'|'previous'  $field
+     */
+    private static function refuseUnbalanced(array $sheet, string $field, int $rounded, int $figures): void
+    {
+        $suffix = $field === 'amount' ? '' : '_previous';
+        $exact = (int) ($sheet["assets{$suffix}"] ?? 0) - (int) ($sheet["equity_liabilities{$suffix}"] ?? 0);
+
+        if ($exact !== 0 || abs($rounded) > 50 * $figures) {
+            throw new UnbalancedBalanceSheet($exact !== 0 ? $exact : $rounded, $field);
+        }
+    }
+
+    /**
      * The row that takes what rounding leaves over in an equity column: the
      * first of the schedule's EQUITY_ROUNDING_ROWS with an amount in the
      * column. K2 falls back to an "Övriga förändringar" row (created when
      * missing); K3 never adds that row (K3 6.3 has none, S1-R8.3) and uses
      * another change row with an amount in the column instead.
+     *
+     * The DomainException for a K3 leftover with no row to take it is a
+     * placeholder: S1-P7 (the K3 equity statement) must turn it into a refusal
+     * of the report with a reason the user can act on.
      *
      * @param  array<string, array{key: string, amounts: array<string, int>}>  $rows  the exact rows by key
      * @param  class-string<K2Schedule>|class-string<K3Schedule>  $schedule

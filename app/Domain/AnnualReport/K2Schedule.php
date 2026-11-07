@@ -134,4 +134,7 @@ final class K2Schedule
     public const array EQUITY_ROUNDING_ROWS = ['carried_forward', 'other', 'dividend'];
 
     public const bool EQUITY_ROUNDING_ADDS_ROW = true;
+
+    /** Whether PrintedFigures refuses a balance sheet that rounding cannot explain; K2 books any difference on Övriga skulder. */
+    public const bool REFUSES_UNBALANCED_SHEET = false;
 }

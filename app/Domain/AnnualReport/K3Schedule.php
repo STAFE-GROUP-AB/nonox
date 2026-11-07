@@ -44,6 +44,22 @@ namespace App\Domain\AnnualReport;
  * Råvaror och förnödenheter; BAS 4010 "Inköp material och varor" is both.
  * TODO(legal-verify): which split K3 practice expects; F-S1-a (4010 as
  * material) follows the K2 rule.
+ *
+ * Labels: where a line holds gains and losses (or exchange and value
+ * changes) and not only income or costs, the label says "Resultat från …" or
+ * "… liknande resultatposter" instead of the text of bilaga 2, as ÅRL 3 kap.
+ * 4 § third paragraph allows ("Kompletterande poster ska ges beteckningar som
+ * tydligt anger vad som ingår i posten"); each such line says so in its source.
+ *
+ * Bilaga 2 p. 14, 15 and 17 require a separate statement ("med särskild
+ * uppgift om") of the amounts from or to koncernföretag. rbas has no concept
+ * for it and the BAS accounts are not settled, so the schedule does not split
+ * them: S1-P9/P10 must provide the delpost or a note.
+ * TODO(legal-verify): the BAS accounts for those amounts (the accountant).
+ *
+ * Kapitalandelsfond (bilaga 1 A.IV.2) is left out on purpose: this schedule
+ * is for the juridisk person's own report, and BAS 2026 (rbas) ties no
+ * account to it.
  */
 final class K3Schedule
 {
@@ -82,13 +98,13 @@ final class K3Schedule
         ['key' => 'depreciation', 'label' => 'Avskrivningar och nedskrivningar av materiella och immateriella anläggningstillgångar', 'ranges' => [[7700, 7739], [7750, 7789], [7800, 7899]], 'source' => 'ÅRL bilaga 2 p. 8; rbas 771x–773x, 776x–778x, 78xx; residual 770x, 775x'],
         ['key' => 'current_asset_write_downs', 'label' => 'Nedskrivningar av omsättningstillgångar utöver normala nedskrivningar', 'ranges' => [[7740, 7749], [7790, 7799]], 'source' => 'ÅRL bilaga 2 p. 9; rbas 774x, 779x'],
         ['key' => 'other_operating_expenses', 'label' => 'Övriga rörelsekostnader', 'ranges' => [[7900, 7999]], 'source' => 'ÅRL bilaga 2 p. 10; rbas 79xx'],
-        ['key' => 'group_shares', 'label' => 'Resultat från andelar i koncernföretag', 'ranges' => [[8000, 8069], [8090, 8099]], 'source' => 'ÅRL bilaga 2 p. 11; rbas 801x–803x; residual 800x, 804x–806x, 809x'],
-        ['key' => 'associated_shares', 'label' => 'Resultat från andelar i intresseföretag och gemensamt styrda företag', 'ranges' => [[8100, 8112], [8114, 8117], [8119, 8122], [8124, 8132], [8134, 8169], [8190, 8199]], 'source' => 'ÅRL bilaga 2 p. 12; rbas 8111–8112, 8116–8117, 8121–8122, 8131–8132; residual other 81xx outside 817x–818x'],
-        ['key' => 'ownership_interests', 'label' => 'Resultat från övriga företag som det finns ett ägarintresse i', 'ranges' => [[8113, 8113], [8118, 8118], [8123, 8123], [8133, 8133]], 'source' => 'ÅRL bilaga 2 p. 13; rbas 8113, 8118, 8123, 8133'],
-        ['key' => 'other_financial_assets', 'label' => 'Resultat från övriga värdepapper och fordringar som är anläggningstillgångar', 'ranges' => [[8200, 8269], [8290, 8299]], 'source' => 'ÅRL bilaga 2 p. 14; rbas 821x–826x, 829x; residual 820x'],
-        ['key' => 'interest_income', 'label' => 'Övriga ränteintäkter och liknande resultatposter', 'ranges' => [[8300, 8369], [8390, 8399]], 'source' => 'ÅRL bilaga 2 p. 15; rbas 831x–836x, 839x; residual 830x'],
+        ['key' => 'group_shares', 'label' => 'Resultat från andelar i koncernföretag', 'ranges' => [[8000, 8069], [8090, 8099]], 'source' => 'ÅRL bilaga 2 p. 11 ("Intäkter från andelar i koncernföretag"; label differs from bilaga 2 text (3:4 tredje stycket): the line holds gains and losses); rbas 801x–803x; residual 800x, 804x–806x, 809x'],
+        ['key' => 'associated_shares', 'label' => 'Resultat från andelar i intresseföretag och gemensamt styrda företag', 'ranges' => [[8100, 8112], [8114, 8117], [8119, 8122], [8124, 8132], [8134, 8169], [8190, 8199]], 'source' => 'ÅRL bilaga 2 p. 12 ("Intäkter från andelar i intresseföretag …"; label differs from bilaga 2 text (3:4 tredje stycket): gains and losses); rbas 8111–8112, 8116–8117, 8121–8122, 8131–8132; residual other 81xx outside 817x–818x'],
+        ['key' => 'ownership_interests', 'label' => 'Resultat från övriga företag som det finns ett ägarintresse i', 'ranges' => [[8113, 8113], [8118, 8118], [8123, 8123], [8133, 8133]], 'source' => 'ÅRL bilaga 2 p. 13 ("Intäkter från övriga företag …"; label differs from bilaga 2 text (3:4 tredje stycket): gains and losses); rbas 8113, 8118, 8123, 8133'],
+        ['key' => 'other_financial_assets', 'label' => 'Resultat från övriga värdepapper och fordringar som är anläggningstillgångar', 'ranges' => [[8200, 8269], [8290, 8299]], 'source' => 'ÅRL bilaga 2 p. 14 ("Intäkter från övriga värdepapper …"; label differs from bilaga 2 text (3:4 tredje stycket): gains and losses); rbas 821x–826x, 829x; residual 820x; TODO(legal-verify): "med särskild uppgift om" koncernföretag; no rbas concept, BAS accounts to be named by the accountant; delpost or note in S1-P9/P10'],
+        ['key' => 'interest_income', 'label' => 'Övriga ränteintäkter och liknande resultatposter', 'ranges' => [[8300, 8369], [8390, 8399]], 'source' => 'ÅRL bilaga 2 p. 15 ("Övriga ränteintäkter och liknande intäkter"; label differs from bilaga 2 text (3:4 tredje stycket): includes exchange and value changes); rbas 831x–836x, 839x; residual 830x; TODO(legal-verify): "med särskild uppgift om" koncernföretag; no rbas concept, BAS accounts to be named by the accountant; delpost or note in S1-P9/P10'],
         ['key' => 'financial_write_downs', 'label' => 'Nedskrivningar av finansiella anläggningstillgångar och kortfristiga placeringar', 'ranges' => [[8070, 8089], [8170, 8189], [8270, 8289], [8370, 8389]], 'source' => 'ÅRL bilaga 2 p. 16; rbas 807x–808x, 817x–818x, 827x–828x, 837x–838x'],
-        ['key' => 'interest_expense', 'label' => 'Räntekostnader och liknande resultatposter', 'ranges' => [[8400, 8799]], 'source' => 'ÅRL bilaga 2 p. 17; rbas 84xx; residual 85xx–87xx'],
+        ['key' => 'interest_expense', 'label' => 'Räntekostnader och liknande resultatposter', 'ranges' => [[8400, 8799]], 'source' => 'ÅRL bilaga 2 p. 17 ("Räntekostnader och liknande kostnader"; label differs from bilaga 2 text (3:4 tredje stycket): includes exchange and value changes); rbas 84xx; residual 85xx–87xx; TODO(legal-verify): "med särskild uppgift om" koncernföretag; no rbas concept, BAS accounts to be named by the accountant; delpost or note in S1-P9/P10'],
         ['key' => 'appropriations', 'label' => 'Bokslutsdispositioner', 'ranges' => [[8800, 8899]], 'source' => 'ÅRL bilaga 2 p. 18; K3 29.37 (gross in juridisk person); rbas 88xx'],
         ['key' => 'tax', 'label' => 'Skatt på årets resultat', 'ranges' => [[8900, 8979]], 'source' => 'ÅRL bilaga 2 p. 19; K3 29.22 (deferred tax in the income statement); rbas 891x–894x; residual 890x, 895x–897x'],
         ['key' => 'other_taxes', 'label' => 'Övriga skatter', 'ranges' => [[8980, 8989]], 'source' => 'ÅRL bilaga 2 p. 20; rbas 898x'],
@@ -117,11 +133,11 @@ final class K3Schedule
     public const array BALANCE = [
         ['key' => 'subscribed_capital', 'label' => 'Tecknat men ej inbetalt kapital', 'section' => 'subscribed', 'ranges' => [[1690, 1699]], 'source' => 'ÅRL bilaga 1 Tillgångar A; rbas 169x'],
 
-        ['key' => 'development_expenditure', 'label' => 'Balanserade utgifter för utvecklingsarbeten och liknande arbeten', 'section' => 'intangible', 'ranges' => [[1010, 1019]], 'source' => 'ÅRL bilaga 1 B.I.1; rbas 101x'],
+        ['key' => 'development_expenditure', 'label' => 'Balanserade utgifter för utvecklingsarbeten och liknande arbeten', 'section' => 'intangible', 'ranges' => [[1010, 1019], [1081, 1081]], 'source' => 'ÅRL bilaga 1 B.I.1; rbas 101x, 1081'],
         ['key' => 'concessions', 'label' => 'Koncessioner, patent, licenser, varumärken samt liknande rättigheter', 'section' => 'intangible', 'ranges' => [[1000, 1009], [1020, 1059], [1090, 1099]], 'source' => 'ÅRL bilaga 1 B.I.2; rbas 102x–105x; residual 100x, 109x'],
         ['key' => 'leaseholds', 'label' => 'Hyresrätter och liknande rättigheter', 'section' => 'intangible', 'ranges' => [[1060, 1069]], 'source' => 'ÅRL bilaga 1 B.I.3; rbas 106x'],
         ['key' => 'goodwill', 'label' => 'Goodwill', 'section' => 'intangible', 'ranges' => [[1070, 1079]], 'source' => 'ÅRL bilaga 1 B.I.4; rbas 107x'],
-        ['key' => 'intangible_advances', 'label' => 'Förskott avseende immateriella anläggningstillgångar', 'section' => 'intangible', 'ranges' => [[1080, 1089]], 'source' => 'ÅRL bilaga 1 B.I.5; rbas 108x (also lists 1081 under B.I.1; 1081 is kept here)'],
+        ['key' => 'intangible_advances', 'label' => 'Förskott avseende immateriella anläggningstillgångar', 'section' => 'intangible', 'ranges' => [[1080, 1080], [1082, 1089]], 'source' => 'ÅRL bilaga 1 B.I.5; rbas 108x except 1081, which rbas also ties to B.I.1 (BalanseradeUtgifterUtvecklingsarbetenLiknandeArbeten), where it is kept'],
 
         ['key' => 'buildings', 'label' => 'Byggnader och mark', 'section' => 'tangible', 'ranges' => [[1100, 1119], [1130, 1179], [1190, 1199]], 'source' => 'ÅRL bilaga 1 B.II.1; rbas 111x, 113x–115x; residual 110x, 116x–117x, 119x'],
         ['key' => 'machinery', 'label' => 'Maskiner och andra tekniska anläggningar', 'section' => 'tangible', 'ranges' => [[1200, 1219], [1230, 1249], [1270, 1279]], 'source' => 'ÅRL bilaga 1 B.II.2; rbas 121x, 123x–124x; residual 120x, 127x'],
@@ -181,7 +197,8 @@ final class K3Schedule
 
         ['key' => 'pension_provisions', 'label' => 'Avsättningar för pensioner och liknande förpliktelser', 'section' => 'provisions', 'ranges' => [[2210, 2219], [2230, 2239]], 'source' => 'ÅRL bilaga 1 C.1; rbas 221x, 223x'],
         ['key' => 'deferred_tax_liability', 'label' => 'Uppskjuten skatteskuld', 'section' => 'provisions', 'ranges' => [[2240, 2249]], 'source' => 'ÅRL bilaga 1 C.2; K3 29.19 (own post), 29.31 (avsättning), 4.3 comment; rbas 224x (S1-R4.6)'],
-        ['key' => 'other_provisions', 'label' => 'Övriga avsättningar', 'section' => 'provisions', 'ranges' => [[2200, 2209], [2220, 2229], [2250, 2299]], 'source' => 'ÅRL bilaga 1 C.3; rbas 222x, 225x, 229x; residual 220x, 226x–228x'],
+        ['key' => 'other_tax_provisions', 'label' => 'Övriga avsättningar för skatter', 'section' => 'provisions', 'ranges' => [[2250, 2259]], 'source' => 'ÅRL bilaga 1 C.2 ("Avsättningar för skatter", the part that is not deferred tax); rbas 225x (AvsattningarOvrigSkatt)'],
+        ['key' => 'other_provisions', 'label' => 'Övriga avsättningar', 'section' => 'provisions', 'ranges' => [[2200, 2209], [2220, 2229], [2260, 2299]], 'source' => 'ÅRL bilaga 1 C.3; rbas 222x, 229x; residual 220x, 226x–228x'],
 
         ['key' => 'bonds', 'label' => 'Obligationslån', 'section' => 'long_term', 'ranges' => [[2310, 2329]], 'source' => 'ÅRL bilaga 1 D.1; K3 4.7; rbas 231x–232x'],
         ['key' => 'long_overdraft', 'label' => 'Checkräkningskredit', 'section' => 'long_term', 'ranges' => [[2330, 2339]], 'source' => 'ÅRL bilaga 1 D.2 (delpost); K3 4.7; rbas 233x'],
@@ -226,7 +243,7 @@ final class K3Schedule
         'tangible' => 'Materiella anläggningstillgångar',
         'financial' => 'Finansiella anläggningstillgångar',
         'inventory' => 'Varulager m.m.',
-        'receivables' => 'Kortfristiga fordringar',
+        'receivables' => 'Fordringar',
         'short_investments' => 'Kortfristiga placeringar',
         'cash' => 'Kassa och bank',
         'restricted' => 'Bundet eget kapital',
@@ -263,6 +280,9 @@ final class K3Schedule
     public const array EQUITY_ROUNDING_ROWS = ['carried_forward', 'dividend'];
 
     public const bool EQUITY_ROUNDING_ADDS_ROW = false;
+
+    /** PrintedFigures refuses a K3 balance sheet whose sides differ by more than rounding (UnbalancedBalanceSheet). */
+    public const bool REFUSES_UNBALANCED_SHEET = true;
 
     /**
      * The sums of the GROUPS from a balance sheet's sections (AnnualAccounts

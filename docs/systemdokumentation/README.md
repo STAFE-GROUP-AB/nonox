@@ -2142,7 +2142,9 @@ Enligt AI-utredning 2026-11-07, juristgranskning återstår (ADR-059, tillägg
 - Uppskjuten skattefordran (BAS 137x) är en egen rad bland de finansiella
   anläggningstillgångarna och uppskjuten skatteskuld (BAS 224x) en egen rad
   bland avsättningarna (K3 29.19, 29.31 och kommentaren till 4.3); aktuella
-  skattefordringar (BAS 164x) är en egen rad bland fordringarna. Obeskattade
+  skattefordringar (BAS 164x) är en egen rad bland fordringarna. Övriga
+  avsättningar för skatter (BAS 225x) är en egen rad direkt efter den
+  uppskjutna skatteskulden (bilaga 1 C.2). Obeskattade
   reserver visas brutto (K3 29.37), uppdelade på periodiseringsfonder,
   överavskrivningar, ersättningsfonder och andra obeskattade reserver. Fond för
   utvecklingsutgifter (BAS 2089) är en egen rad i bundet eget kapital
@@ -2158,7 +2160,11 @@ Enligt AI-utredning 2026-11-07, juristgranskning återstår (ADR-059, tillägg
   som K2.
 - Avrundningen till hela kronor (`PrintedFigures`) är densamma som för K2:
   varje rad avrundas och varje summa är summan av de avrundade raderna, och en
-  skillnad mellan balansräkningens sidor läggs på Övriga skulder. I
+  skillnad mellan balansräkningens sidor läggs på Övriga skulder. För K3
+  gäller det bara en skillnad som avrundningen kan förklara (högst 50 öre per
+  avrundat belopp); en större skillnad, eller en skillnad redan i de exakta
+  beloppen, till exempel ett saldo på ett konto som ingen rad tar med, gör att
+  balansräkningen inte tas fram. I
   specifikationen av eget kapital läggs en avrundningsrest för K3 aldrig på en
   ny rad "Övriga förändringar" (K3 6.3 har ingen sådan rad), utan på en befintlig
   rad med belopp i kolumnen.
