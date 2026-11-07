@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Actions\Company;
 
 use App\Actions\Accounting\CreateNextFiscalYear;
+use App\Domain\AnnualReport\K3Eligibility;
+use App\Domain\AnnualReport\K3EligibilityStatus;
 use App\Domain\Company\CompanySetupRules;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\ReportingFrameworkRules;
@@ -60,6 +62,15 @@ class ChangeReportingFramework
             CompanySetupRules::messages(),
             ['reason' => __('anledning')],
         )->validate();
+
+        if ($framework === ReportingFramework::K2) {
+            // S1-R1: K2 is closed when K3Eligibility finds the company must use K3 (Bokslut → Regelverk, ADR-059 S1-P11).
+            $eligibility = K3Eligibility::forYear($fiscalYear);
+
+            if ($eligibility->status === K3EligibilityStatus::K3Required) {
+                throw ValidationException::withMessages(['reporting_framework' => __('K2 kan inte väljas för räkenskapsåret :year. :reason', ['year' => $fiscalYear->label(), 'reason' => $eligibility->reasons[0] ?? ''])]);
+            }
+        }
 
         DB::transaction(function () use ($user, $company, $fiscalYear, $framework, $reason, $confirmed): void {
             // Serialises with the creation of a new year, so the later years cannot change under us.

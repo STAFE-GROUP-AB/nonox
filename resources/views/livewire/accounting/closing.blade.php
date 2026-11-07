@@ -15,6 +15,11 @@
         @endforeach
     </nav>
 
+    <p class="text-sm text-gray-700" data-framework-link>
+        {{ __('Regelverk för :year: :framework.', ['year' => $fiscalYear->label(), 'framework' => $fiscalYear->reporting_framework->label()]) }}
+        <a href="{{ route('accounting.closingFramework', ['ar' => $fiscalYear->id]) }}" class="font-medium text-accent-700 hover:underline">{{ __('Se om företaget får använda K2 eller ska använda K3') }}</a>
+    </p>
+
     @if($k2Conditions !== null)
         <section class="rounded-3xl bg-amber-50 px-5 py-4 ring-1 ring-amber-300" aria-labelledby="k2-conditions-title" data-k2-conditions>
             <h2 id="k2-conditions-title" class="font-semibold text-ink">{{ __('Bekräfta villkoren för K2 innan du fortsätter') }}</h2>
@@ -26,7 +31,7 @@
             </div>
             <div class="mt-4 flex flex-wrap items-center gap-3">
                 <x-button type="button" wire:click="confirmK2Conditions" wire:loading.attr="disabled">{{ __('Företaget uppfyller villkoren för K2') }}</x-button>
-                <a href="{{ route('teams.show', $company) }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Uppfyller inte företaget villkoren? Byt till K3 i inställningarna.') }}</a>
+                <a href="{{ route('accounting.closingFramework', ['ar' => $fiscalYear->id]) }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Uppfyller inte företaget villkoren? Se vad som gäller under Regelverk.') }}</a>
             </div>
         </section>
     @endif

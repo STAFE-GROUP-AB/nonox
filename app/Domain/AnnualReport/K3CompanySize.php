@@ -219,7 +219,7 @@ final class K3CompanySize
      * contradicts a year already recorded for the company (a fiscal year in
      * NONOX or entered figures that end before it), else null.
      */
-    private static function contradictedConfirmation(FiscalYear $fiscalYear, ?CarbonImmutable $confirmedFirstYearStart): ?string
+    public static function contradictedConfirmation(FiscalYear $fiscalYear, ?CarbonImmutable $confirmedFirstYearStart): ?string
     {
         if ($confirmedFirstYearStart === null) {
             return null;
