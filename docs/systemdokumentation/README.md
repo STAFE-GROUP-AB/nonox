@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.115
-- Datum: 2026-11-06
+- Version: 0.116
+- Datum: 2026-11-07
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -2026,6 +2026,45 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   `tests/Fixtures/annual-report/`, så att arbetet med K3 inte kan ändra dem
   av misstag.
 - Kräver behörigheten att hantera räkenskapsår.
+
+### 5a6.1 Redovisningsprinciper för K3 (förberedelse)
+
+Beskrivs i [ADR-059](../adr/ADR-059-k3-annual-report.md), tillägget
+2026-11-07, A.2.3. Enligt AI-utredning 2026-11-07, juristgranskning återstår.
+
+- Företagets val av redovisningsprinciper enligt K3 (BFNAR 2012:1) sparas som
+  data i tabellen `company_accounting_policies`: en rad per princip och
+  räkenskapsår som principen gäller från (`applies_from` = årets första dag).
+  För ett räkenskapsår gäller den rad som har det senaste `applies_from` på
+  eller före årets första dag; principen gäller alltså även följande år tills
+  en ny rad ersätter den.
+- Principerna är: finansiella instrument (K3 kapitel 11 eller 12), utgifter för
+  eget utvecklingsarbete (kostnadsföringsmodellen eller aktiveringsmodellen),
+  leasing (alla finansiella leasingavtal som operationella i juridisk person
+  enligt K3 20.29, ett val för hela företaget och aldrig per avtal, eller
+  klassificering), lånekostnader, uppdrag till fast pris, kassaflödesanalys
+  (ingen eller indirekt metod) och, för det första K3-året efter K2, om
+  jämförelsetalen räknas om, om K3 har tillämpats tidigare och varför
+  företaget lämnar K2. Principen för komponentavskrivning läggs till först
+  efter ett mänskligt beslut (H4).
+- Ett val som NONOX ännu inte kan redovisa (kapitel 12, aktiveringsmodellen,
+  finansiella leasingavtal i balansräkningen, aktiverade lånekostnader, och
+  ingen kassaflödesanalys för ett större företag) sparas, men listas som ett
+  skäl, med regelns id, till att K3-årsredovisningen inte kan tas fram. Ett
+  byte från kapitel 12 till kapitel 11 nekas (K3 12.3 och 10.2 c–d).
+  Kapitel 35 (övergången) erbjuds när K3 inte har tillämpats tidigare eller när
+  företaget lämnar K2 på grund av BFNAR 2025:2 (övergångsbestämmelse 2 i
+  BFNAR 2025:3).
+- En princip kan inte ändras från ett räkenskapsår om en årsredovisning för det
+  året eller ett senare år har en fastställelsedag; byte av redovisningsprincip
+  enligt K3 kapitel 10 stöds inte ännu.
+- Ägare, administratörer och redovisningskonsulter (behörigheten att hantera
+  räkenskapsår) sparar principerna; revisorn och den som får se rapporter kan
+  läsa dem. Varje ändring skrivs i behandlingshistoriken
+  (`accounting_policy.set`) med princip, värde före och efter och
+  räkenskapsårets id; motiveringen sparas bara på raden, aldrig i historiken.
+- Ingen skärm och ingen K3-årsredovisning använder principerna ännu, och
+  ingenting i bokföringen ändras.
 
 ## 5a7. Inkomstdeklaration 2 (SRU)
 
@@ -4297,3 +4336,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.113 | 2026-11-06 | Skärpt utlandsbetalning via betalfil (avsnitt 5a1c): automatisk bokföring bara inom 5 procent (500–5 000 kronor) av bankens dagskurs; betalningskod från 120 000 kronor; IBAN kontrolleras; SWIFT-tecken; en valuta per fil; land och adress ur leverantörsunderlaget. Ingen ny bokföringsregel. |
 | 0.114 | 2026-11-06 | Drivmedelsförmån rättad (avsnitt 5b, ADR-061): skatteavdraget räknas som förut på förmånsvärdet (marknadsvärdet × 1,2), men arbetsgivaravgiften nu på marknadsvärdet (socialavgiftslagen 2 kap. 10 a §); tidigare togs avgiften på hela förmånsvärdet. Den anställdas betalning för drivmedlet (löneart Egen betalning för drivmedel vid bilförmån, 7388) minskar den skattepliktiga förmånen och avgiftsunderlaget och redovisas i ruta 098, medan 018 har hela förmånsvärdet. Attesterade och bokförda löner ändras inte. Förmånsbilar: en period får inte omfatta en attesterad månad som bilen inte fanns i, och bara en bil per månad. |
 | 0.115 | 2026-11-06 | Bekräftelse och kontroller före inlämning (ägarbeslut 10 och 16): momsdeklarationen och arbetsgivardeklarationen till Skatteverket, betalfilen för leverantörsbetalningar och lönefilen kräver att användaren bekräftar "Jag har granskat siffrorna", och bekräftelsen sparas i behandlingshistoriken (`figures.reviewed`); ett K2-företag bekräftar de nya K2-villkoren (BFNAR 2025:2) en gång innan bokslutet för ett räkenskapsår som börjar efter 2025-12-31 kan fortsätta (`company.k2_conditions_confirmed`). SIE-importen stoppar en fil vars ingående balanser inte summerar till noll, och rapporten säger bara att varje konto stämmer när utgående balanser eller resultat har kontrollerats. Drivmedelsförmån kräver en förmånsbil i perioden. OCR-nummer på leverantörsfakturor kontrolleras med kontrollsiffran. Parametrarna för NE och INK4 2026 är inte längre markerade som kontrollerade, så beräkningen spärras tills en människa har kontrollerat dem. Rättelserna som driftsattes separat under versionsnumret 0.105 samma morgon (rutorna 20 och 23, årsredovisning bara enligt K2, belopp i hela kronor, övertid och mertid per art i Gröna Riks och Detaljhandeln, arbetsgivaravgift på drivmedelsförmån) ingår i 0.107, 0.109, 0.110 och 0.114 och i avsnitt 5h. |
+| 0.116 | 2026-11-07 | Redovisningsprinciper för K3 som data (avsnitt 5a6.1, ADR-059 tillägget 2026-11-07, A.2.3): företagets val per princip gäller från ett räkenskapsårs första dag tills en ny rad ersätter det; val som NONOX ännu inte kan redovisa listas med regelns id som skäl till att K3-årsredovisningen inte kan tas fram; en princip kan inte ändras från ett år vars årsredovisning (eller ett senare års) är fastställd; byte från kapitel 12 till kapitel 11 nekas. Ändringen skrivs i behandlingshistoriken utan motiveringen. Ingenting i bokföringen ändras och ingen skärm använder principerna ännu. |
