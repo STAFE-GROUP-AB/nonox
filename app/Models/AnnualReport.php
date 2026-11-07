@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property ?string $significant_events
  * @property Money $dividend_ore
  * @property int $average_employees
+ * @property ?string $average_employees_fte full-time equivalents with two decimals, for the size test (ADR-059 A.2.5)
  * @property ?string $signing_place
  * @property ?CarbonImmutable $signing_date
  * @property list<array{name: string, role: string}> $signatories
@@ -50,6 +51,7 @@ class AnnualReport extends Model
         'significant_events',
         'dividend_ore',
         'average_employees',
+        'average_employees_fte',
         'signing_place',
         'signing_date',
         'signatories',
@@ -74,6 +76,7 @@ class AnnualReport extends Model
         return [
             'dividend_ore' => MoneyCast::class,
             'average_employees' => 'integer',
+            'average_employees_fte' => 'decimal:2',
             'signing_date' => 'immutable_date',
             'signatories' => 'array',
             'adoption_date' => 'immutable_date',

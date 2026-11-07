@@ -42,6 +42,7 @@ use App\Models\NumberSeries;
 use App\Models\OpeningBalance;
 use App\Models\PaymentResponse;
 use App\Models\PaymentResponseImport;
+use App\Models\PriorYearSizeFigure;
 use App\Models\Project;
 use App\Models\RecentItem;
 use App\Models\RecurringInvoice;
@@ -244,6 +245,7 @@ const COMPANY_SCOPED_MODELS = [
     K10Owner::class => 'k10OwnerAttributes',
     CompanyAccountingPolicy::class => ['key' => 'leasing', 'value' => 'classify', 'applies_from' => '2026-01-01'],
     CompanyHolding::class => ['held_org_number' => '556036-0793', 'held_name' => 'Hemligt Dotterbolag AB', 'capital_bp' => 10000, 'voting_bp' => 10000, 'control_basis' => 'VOTES', 'acquired_on' => '2024-01-01'],
+    PriorYearSizeFigure::class => ['start_date' => '2024-01-01', 'end_date' => '2024-12-31', 'average_employees_fte' => '3.40', 'balance_sheet_total_ore' => 150_000_000, 'net_turnover_ore' => 300_000_000],
     ClosingCheck::class => 'closingCheckAttributes',
     YearEndEntry::class => 'yearEndEntryAttributes',
     BankReconciliation::class => 'bankReconciliationAttributes',
