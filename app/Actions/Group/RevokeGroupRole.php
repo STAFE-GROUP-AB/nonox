@@ -28,13 +28,17 @@ final class RevokeGroupRole
     public function __invoke(User $user, int $groupId, int $granteeId, string $role = 'viewer'): void
     {
         $access = GroupAccess::for($user);
-        $group = $access->corporateGroup($groupId);
+        $groupRole = GroupRole::tryFrom($role);
 
-        if ($granteeId !== $user->id && ! $access->administers($group)) {
+        // Giving up one's own role works without seeing the group, for instance after leaving the parent.
+        $ownRole = $granteeId === $user->id && $groupRole !== null
+            && CorporateGroupRole::query()->where('corporate_group_id', $groupId)->where('user_id', $user->id)->where('role', $groupRole->value)->exists();
+
+        $group = $ownRole ? CorporateGroup::query()->findOrFail($groupId) : $access->corporateGroup($groupId);
+
+        if (! $ownRole && ! $access->administers($group)) {
             throw new AuthorizationException(__('Bara den som är ägare eller administratör i alla företag i koncernen kan ta bort roller.'));
         }
-
-        $groupRole = GroupRole::tryFrom($role);
 
         if ($groupRole === null) {
             throw ValidationException::withMessages(['role' => __('Välj en roll.')]);

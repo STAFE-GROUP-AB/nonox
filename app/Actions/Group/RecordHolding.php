@@ -6,8 +6,12 @@ namespace App\Actions\Group;
 
 use App\Domain\Company\OrganisationNumber;
 use App\Domain\Group\ControlBasis;
+use App\Domain\Group\GroupAccess;
+use App\Domain\Group\GroupHoldings;
 use App\Models\Company;
 use App\Models\CompanyHolding;
+use App\Models\CorporateGroup;
+use App\Models\CorporateGroupMember;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
@@ -23,7 +27,9 @@ use Illuminate\Validation\ValidationException;
  * (ADR-060, addendum 2026-11-07, 2.1): the holder's own register, written
  * with company:update (owner, administrator). The held company is named by
  * organisation number and name only. The control basis is entered by a
- * person and never derived from the voting share (S2-R1d).
+ * person and never derived from the voting share (S2-R1d). A holding that
+ * makes another company a group member is guarded by the group (see
+ * guardGroundingHolding), and every change re-runs the group vote rule.
  */
 final class RecordHolding
 {
@@ -45,11 +51,10 @@ final class RecordHolding
             $holding = $holdingId === null ? null : CompanyHolding::query()->findOrFail($holdingId);
             $attributes = $this->validate($company, $input);
 
-            return DB::transaction(function () use ($user, $holding, $attributes): CompanyHolding {
-                $this->assertNoOtherActiveHolding($attributes, $holding);
-
+            return DB::transaction(function () use ($user, $company, $holding, $attributes): CompanyHolding {
                 $before = $holding === null ? [] : $this->auditable($holding);
-                $holding ??= new CompanyHolding;
+                $existing = $holding;
+                $holding ??= new CompanyHolding(['company_id' => $company->id]);
                 $holding->fill($attributes);
                 // Field names only for the name and number: the log never keeps them as values.
                 $changed = array_values(array_diff(array_keys($holding->getDirty()), ['company_id']));
@@ -58,6 +63,12 @@ final class RecordHolding
                     return $holding;
                 }
 
+                if ($before !== []) {
+                    $this->guardGroundingHolding($user, $holding);
+                }
+
+                $this->assertNoOtherActiveHolding($attributes, $existing);
+                $this->assertVotesWithinGroups($holding);
                 $holding->save();
 
                 Audit::record($before === [] ? 'company_holding.created' : 'company_holding.updated', $holding, [
@@ -149,6 +160,64 @@ final class RecordHolding
 
         if ($other) {
             throw ValidationException::withMessages(['held_org_number' => __('Företaget har redan ett innehav i det här bolaget. Ändra det i stället.')]);
+        }
+    }
+
+    /**
+     * A holding that makes another company a group member is that company's
+     * ground for being in the group: only whoever administers every company
+     * of each such group may change it, and its organisation number is
+     * frozen. Otherwise an administrator of the holder alone could take a
+     * company out of a group, or out of a period, without its consent.
+     */
+    private function guardGroundingHolding(User $user, CompanyHolding $holding): void
+    {
+        $groups = CorporateGroup::query()
+            ->whereIn('id', CorporateGroupMember::query()->select('corporate_group_id')->where('holding_id', $holding->id))
+            ->with('members')
+            ->lockForUpdate()
+            ->get();
+
+        if ($groups->isEmpty()) {
+            return;
+        }
+
+        $access = GroupAccess::for($user);
+
+        foreach ($groups as $group) {
+            if (! $access->administers($group)) {
+                throw new AuthorizationException(__('Innehavet ligger till grund för en koncern. Bara den som är ägare eller administratör i alla företag i koncernen kan ändra det.'));
+            }
+        }
+
+        if ($holding->isDirty('held_org_number')) {
+            throw ValidationException::withMessages(['held_org_number' => __('Organisationsnumret kan inte ändras när innehavet ligger till grund för en koncern. Registrera ett nytt innehav i stället.')]);
+        }
+    }
+
+    /**
+     * The same 100 % rule as when a member is confirmed, for every group the
+     * holder is a member of: the votes recorded by the group's members in one
+     * company may not exceed all of its votes. The refusal names no other
+     * holder.
+     */
+    private function assertVotesWithinGroups(CompanyHolding $holding): void
+    {
+        $groups = CorporateGroup::query()
+            ->whereIn('id', CorporateGroupMember::query()->select('corporate_group_id')->where('company_id', $holding->company_id))
+            ->with('members')
+            ->lockForUpdate()
+            ->get();
+
+        $counts = $holding->disposed_on === null || $holding->disposed_on->isAfter(CarbonImmutable::today());
+
+        foreach ($groups as $group) {
+            $holderIds = array_values(array_map(fn (CorporateGroupMember $member): int => $member->company_id, $group->members->all()));
+            $others = GroupHoldings::activeIn($holderIds, $holding->held_org_number)->reject(fn (CompanyHolding $other): bool => $other->id === $holding->id);
+
+            if ($others->sum('voting_bp') + ($counts ? $holding->voting_bp : 0) > GroupHoldings::ALL_VOTES_BP) {
+                throw ValidationException::withMessages(['voting' => __('Innehavet kan inte sparas: det ger mer än 100 procent av rösterna i bolaget inom en koncern som företaget ingår i.')]);
+            }
         }
     }
 

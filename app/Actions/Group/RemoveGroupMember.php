@@ -6,6 +6,7 @@ namespace App\Actions\Group;
 
 use App\Domain\Group\GroupAccess;
 use App\Domain\Group\GroupAuditTrail;
+use App\Models\Company;
 use App\Models\CompanyHolding;
 use App\Models\CorporateGroup;
 use App\Models\CorporateGroupMember;
@@ -19,8 +20,8 @@ use Illuminate\Validation\ValidationException;
 /**
  * Takes a company out of a shared group (ADR-060, addendum 2026-11-07, 2.1).
  * Allowed for whoever administers the group, and always for an owner or
- * administrator of the company itself: a company can withdraw its consent
- * without seeing the rest of the group. The parent cannot be removed, and a
+ * administrator of the company itself or of the member holding its shares:
+ * consent can be withdrawn without seeing the rest of the group. The parent cannot be removed, and a
  * company through which other members are held is removed only after them.
  */
 final class RemoveGroupMember
@@ -33,13 +34,16 @@ final class RemoveGroupMember
     {
         $access = GroupAccess::for($user);
         $group = CorporateGroup::query()->with('members')->find($groupId);
-        $ownCompany = $group instanceof CorporateGroup && $group->members->contains('company_id', $companyId) && $access->mayAdminister($companyId);
+        $withdrawal = $group instanceof CorporateGroup && $this->withdrawal($access, $group, $companyId);
 
-        if (! $group instanceof CorporateGroup || (! $ownCompany && ! $access->levelFor($group)->sees())) {
+        if (! $group instanceof CorporateGroup || (! $withdrawal && ! $access->levelFor($group)->sees())) {
             throw (new ModelNotFoundException)->setModel(CorporateGroup::class, [$groupId]);
         }
 
-        if (! $ownCompany && ! $access->administers($group)) {
+        // An archived member freezes administration; only that member itself can still be taken out.
+        $archived = Company::query()->whereKey($companyId)->whereNotNull('archived_at')->exists();
+
+        if (! $withdrawal && ! $access->administers($group, $archived ? [$companyId] : [])) {
             throw new AuthorizationException(__('Bara den som är ägare eller administratör i alla företag i koncernen kan ta bort företag.'));
         }
 
@@ -67,5 +71,36 @@ final class RemoveGroupMember
 
             GroupAuditTrail::record('corporate_group.member_removed', $group, $members->pluck('company_id')->all(), $user, ['members' => $members->count() - 1], $companyId);
         });
+    }
+
+    /**
+     * Consent can be taken back, without seeing the group, by an owner or
+     * administrator (archived or not) of the member itself, or of the member
+     * that holds the shares the membership rests on.
+     */
+    private function withdrawal(GroupAccess $access, CorporateGroup $group, int $companyId): bool
+    {
+        $member = $group->members->firstWhere('company_id', $companyId);
+
+        if (! $member instanceof CorporateGroupMember) {
+            return false;
+        }
+
+        if ($access->mayWithdraw($companyId)) {
+            return true;
+        }
+
+        if ($member->holding_id === null) {
+            return false;
+        }
+
+        foreach ($group->members as $holder) {
+            // Read inside the holder: only its own holding can match.
+            if ($access->mayWithdraw($holder->company_id) && CurrentCompany::run($holder->company_id, fn (): bool => CompanyHolding::query()->whereKey($member->holding_id)->exists())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

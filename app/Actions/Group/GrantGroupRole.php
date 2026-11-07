@@ -8,6 +8,7 @@ use App\Domain\Group\GroupAccess;
 use App\Domain\Group\GroupAuditTrail;
 use App\Domain\Group\GroupRole;
 use App\Models\Company;
+use App\Models\CompanyMembership;
 use App\Models\CorporateGroup;
 use App\Models\CorporateGroupRole;
 use App\Models\User;
@@ -51,19 +52,28 @@ final class GrantGroupRole
             throw ValidationException::withMessages(['user' => __('Personen måste vara medlem i moderföretaget.')]);
         }
 
-        return DB::transaction(function () use ($user, $group, $grantee, $groupRole): CorporateGroupRole {
+        // The role belongs to this membership in the parent (GroupAccess): null for the owner, who has no team_user row.
+        $membershipId = $grantee->ownsTeam($parent)
+            ? null
+            : (int) CompanyMembership::query()->where('team_id', $parent->id)->where('user_id', $grantee->id)->value('id');
+
+        return DB::transaction(function () use ($user, $group, $grantee, $groupRole, $membershipId): CorporateGroupRole {
             CorporateGroup::query()->whereKey($group->id)->lockForUpdate()->first();
 
             $existing = CorporateGroupRole::query()->where('corporate_group_id', $group->id)->where('user_id', $grantee->id)->where('role', $groupRole->value)->first();
 
-            if ($existing instanceof CorporateGroupRole) {
+            if ($existing instanceof CorporateGroupRole && $existing->parent_membership_id === $membershipId) {
                 return $existing;
             }
+
+            // A role left from an earlier membership is replaced, never revived.
+            $existing?->delete();
 
             $row = CorporateGroupRole::create([
                 'corporate_group_id' => $group->id,
                 'user_id' => $grantee->id,
                 'role' => $groupRole->value,
+                'parent_membership_id' => $membershipId,
                 'granted_by' => $user->id,
                 'granted_at' => now(),
             ]);

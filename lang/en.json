@@ -10377,5 +10377,8 @@
     "andel av kapitalet": "share of the capital",
     "andel av rösterna": "share of the votes",
     "avyttringsdag": "disposal date",
-    "förvärvsdag": "acquisition date"
+    "förvärvsdag": "acquisition date",
+    "Innehavet ligger till grund för en koncern. Bara den som är ägare eller administratör i alla företag i koncernen kan ändra det.": "The holding is the basis of a group. Only someone who is an owner or administrator in every company in the group can change it.",
+    "Organisationsnumret kan inte ändras när innehavet ligger till grund för en koncern. Registrera ett nytt innehav i stället.": "The organisation number cannot be changed while the holding is the basis of a group. Record a new holding instead.",
+    "Innehavet kan inte sparas: det ger mer än 100 procent av rösterna i bolaget inom en koncern som företaget ingår i.": "The holding cannot be saved: it gives more than 100 per cent of the votes in the company within a group this company belongs to."
 }

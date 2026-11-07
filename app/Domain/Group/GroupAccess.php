@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\CompanyGroup;
 use App\Models\CompanyGroupMember;
 use App\Models\CompanyHolding;
+use App\Models\CompanyMembership;
 use App\Models\CorporateGroup;
 use App\Models\CorporateGroupMember;
 use App\Models\CorporateGroupRole;
@@ -29,6 +30,9 @@ use Illuminate\Support\Collection as SupportCollection;
 final class GroupAccess
 {
     public const string PERMISSION = 'reports:view';
+
+    /** @var ?array<int, int> the user's team_user id per company, read once when a group role is checked */
+    private ?array $membershipIds = null;
 
     private function __construct(public readonly User $user, private readonly Memberships $memberships) {}
 
@@ -108,7 +112,7 @@ final class GroupAccess
      */
     public function levelFor(CorporateGroup $group, ?CarbonImmutable $from = null): GroupAccessLevel
     {
-        $required = $this->requiredMembers($group, $from);
+        $required = $this->includedCompanyIds($group, $from);
 
         if ($required !== [] && array_all($required, fn (int $companyId): bool => $this->mayView($companyId))) {
             return GroupAccessLevel::Full;
@@ -121,12 +125,26 @@ final class GroupAccess
         return GroupAccessLevel::None;
     }
 
-    /** Owner or administrator, live, in every member company and the parent; archived companies cannot be administered. */
-    public function administers(CorporateGroup $group): bool
+    /**
+     * Owner or administrator, live, in every member company and the parent.
+     * An archived company cannot be administered, so an archived member
+     * freezes the group's administration until it leaves; $except names the
+     * companies to leave out of the check (only the archived member being
+     * removed, RemoveGroupMember).
+     *
+     * @param  list<int>  $except
+     */
+    public function administers(CorporateGroup $group, array $except = []): bool
     {
-        $ids = array_unique([$group->parent_company_id, ...$this->memberIds($group)]);
+        $ids = array_diff(array_unique([$group->parent_company_id, ...$this->memberIds($group)]), $except);
 
         return array_all($ids, fn (int $companyId): bool => $this->mayAdminister($companyId));
+    }
+
+    /** Owner or administrator of the company, archived or not: enough to take the company's own consent back. */
+    public function mayWithdraw(int $companyId): bool
+    {
+        return $this->memberships->has($companyId) && in_array($this->memberships->role($companyId), self::ADMIN_ROLES, true);
     }
 
     /** A member of the company in any role. */
@@ -185,8 +203,17 @@ final class GroupAccess
         return array_values(array_map(fn (CorporateGroupMember $member): int => $member->company_id, $members->all()));
     }
 
-    /** @return list<int> the companies whose reports:view FULL needs */
-    private function requiredMembers(CorporateGroup $group, ?CarbonImmutable $from): array
+    /**
+     * THE inclusion rule (ADR-060, "S2-1.1 as built"): the companies of the
+     * group that a period starting on $from includes, the parent always.
+     * Members whose holding was disposed of strictly before $from are left
+     * out. FULL access needs reports:view in exactly these companies, and the
+     * consolidation (S2-1.4) must include exactly these, so access and figures
+     * never disagree.
+     *
+     * @return list<int>
+     */
+    public function includedCompanyIds(CorporateGroup $group, ?CarbonImmutable $from = null): array
     {
         $members = $group->relationLoaded('members') ? $group->members : $group->members()->get();
         $disposed = [];
@@ -210,12 +237,35 @@ final class GroupAccess
         return array_values(array_unique([$group->parent_company_id, ...$required]));
     }
 
+    /**
+     * A role counts only for the membership in the parent it was granted
+     * under: one that outlived its holder's membership does not revive when
+     * the person is invited again, however soon.
+     */
     private function hasRole(CorporateGroup $group, GroupRole $role): bool
     {
-        if ($group->relationLoaded('roles')) {
-            return $group->roles->where('user_id', $this->user->id)->where('role', $role)->isNotEmpty();
+        $rows = $group->relationLoaded('roles')
+            ? $group->roles->where('user_id', $this->user->id)->where('role', $role)
+            : $group->roles()->where('user_id', $this->user->id)->where('role', $role->value)->get();
+
+        return $rows->contains(fn (CorporateGroupRole $row): bool => $this->grantedUnderCurrentMembership($row, $group->parent_company_id));
+    }
+
+    private function grantedUnderCurrentMembership(CorporateGroupRole $row, int $parentId): bool
+    {
+        if (! $this->memberships->has($parentId)) {
+            return false;
         }
 
-        return $group->roles()->where('user_id', $this->user->id)->where('role', $role->value)->exists();
+        $isOwner = $this->memberships->role($parentId) === 'owner';
+
+        if ($row->parent_membership_id === null) {
+            return $isOwner;
+        }
+
+        $this->membershipIds ??= CompanyMembership::query()->where('user_id', $this->user->id)
+            ->pluck('id', 'team_id')->mapWithKeys(fn (mixed $id, mixed $teamId): array => [(int) $teamId => (int) $id])->all();
+
+        return ! $isOwner && ($this->membershipIds[$parentId] ?? null) === $row->parent_membership_id;
     }
 }

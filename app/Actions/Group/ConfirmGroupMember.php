@@ -7,13 +7,12 @@ namespace App\Actions\Group;
 use App\Domain\Company\OrganisationNumber;
 use App\Domain\Group\GroupAccess;
 use App\Domain\Group\GroupAuditTrail;
+use App\Domain\Group\GroupHoldings;
 use App\Models\Company;
 use App\Models\CompanyHolding;
 use App\Models\CorporateGroup;
 use App\Models\CorporateGroupMember;
 use App\Models\User;
-use App\Support\Tenancy\CompanyScope;
-use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -55,9 +54,18 @@ final class ConfirmGroupMember
         }
 
         return DB::transaction(function () use ($user, $group, $company): CorporateGroupMember {
-            // One confirmation at a time per group, so the vote check sees every holding.
+            // Serialises changes to this group's members and roles. Holding changes take the same lock
+            // on every group whose members' holdings they touch and re-run the vote check (RecordHolding).
             CorporateGroup::query()->whereKey($group->id)->lockForUpdate()->first();
             $members = $group->members()->get();
+            $group->setRelation('members', $members);
+
+            // Checked again under the lock, on fresh memberships: a member may have joined or a role changed meanwhile.
+            $locked = GroupAccess::for($user->fresh() ?? $user);
+
+            if (! $locked->administers($group) || ! $locked->mayAdminister($company->id)) {
+                throw new AuthorizationException(__('Bara den som är ägare eller administratör i alla företag i koncernen kan lägga till företag.'));
+            }
 
             if ($members->contains('company_id', $company->id)) {
                 throw ValidationException::withMessages(['company' => __('Företaget ingår redan i koncernen.')]);
@@ -108,18 +116,13 @@ final class ConfirmGroupMember
         }
 
         // The holdings of the group's own members only, every one of which the user administers (checked above).
-        $holdings = CompanyScope::bypass(fn () => CompanyHolding::query()
-            ->whereIn('company_id', $members->pluck('company_id')->all())
-            ->where('held_org_number', $orgNumber)
-            ->activeOn(CarbonImmutable::today())
-            ->lockForUpdate()
-            ->get());
+        $holdings = GroupHoldings::activeIn(array_values(array_map(fn (CorporateGroupMember $member): int => $member->company_id, $members->all())), $orgNumber);
 
         if ($holdings->isEmpty()) {
             throw ValidationException::withMessages(['company' => __('Inget företag i koncernen har ett registrerat innehav i :name. Registrera innehavet hos ägaren först.', ['name' => $company->name])]);
         }
 
-        if ($holdings->sum('voting_bp') > 10_000) {
+        if ($holdings->sum('voting_bp') > GroupHoldings::ALL_VOTES_BP) {
             throw ValidationException::withMessages(['company' => __('Innehaven i :name har tillsammans mer än 100 procent av rösterna. Rätta innehaven innan företaget läggs till.', ['name' => $company->name])]);
         }
 
