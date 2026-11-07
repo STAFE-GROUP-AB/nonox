@@ -163,6 +163,15 @@ therefore has to carry them decrypted or lose them.
 - The report after import compares counts, trial balance per year, voucher numbers per series
   and attachment hashes with the dump's `counts`. A mismatch rolls back and nothing is kept.
 
+## Follow-ups from other packages (2026-11-07)
+
+- Package 3 (annual reports) must add these to the dump, or list them as excluded with a reason:
+  `company_accounting_policies` (S1-P3), `prior_year_size_figures` and
+  `annual_reports.average_employees_fte` (S1-P2).
+- `fiscal_years.reporting_framework` and its three change columns are already in the dump
+  (S1-P1, schema 1.1.0). The field is optional in the schema, so a 1.0.0 dump stays valid. The
+  importer gives every year of a 1.0.0 dump the company's `reporting_framework`.
+
 ## Decision F10-1 (2026-11-07)
 
 The owner delegated the decision to the Lead, who accepted the design in section 2 and in the

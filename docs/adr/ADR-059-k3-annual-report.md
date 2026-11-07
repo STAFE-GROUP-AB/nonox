@@ -469,6 +469,8 @@ Enligt AI-utredning 2026-11-06, juristgranskning återstår.
     Företaget har valt K3, och en årsredovisning enligt K2 skulle inte stämma
     med det regelverket." (K1: "NONOX tar fram årsredovisningar enligt K2.
     Företaget har valt K1, som inte används för en årsredovisning.");
+    (S1-P1, 2026-11-07: "Företaget har valt K3/K1" now reads "Räkenskapsåret har
+    regelverket K3/K1", because the framework belongs to the year.)
   - "Bokföringen, bokslutet och inkomstdeklarationen fungerar som vanligt.
     Årsredovisningen upprättar du i ett program som stöder regelverket, eller
     med hjälp av en redovisningskonsult: ladda ner årets SIE-fil under
@@ -623,8 +625,10 @@ the audit log (`fiscal_year.framework_changed`, before/after, fiscal year id; th
 reason text stays in the column, not in the audit payload).
 `teams.reporting_framework` is **kept** and redefined as "the framework of the
 company's latest fiscal year" (and the default for the next one), because a dozen
-readers use it (chart seeding, setup rules, the API presenter, `Ne`, the settings
-form) and none of them needs a year.
+readers use it (chart seeding, setup rules, the API presenter, the settings
+form) and none of them needs a year. Correction after review (2026-11-07): `Ne`
+does need the year. It builds the NE-bilaga for one fiscal year, so it reads
+`fiscal_years.reporting_framework` (S1-P1).
 
 **Why.** (1) The law decides per year: K2 1.1B is assessed on the latest completed
 annual report, the K2/K3 wording depends on when the year begins (S1-R1.4), and the
@@ -828,6 +832,17 @@ not a hot spot but shared), `app/Actions/Company/UpdateCompanyDetails.php`,
 `app/Models/YearEndEntry.php`, and the Livewire closing, fixed-asset and
 annual-report pages.
 
+### A.3a Review notes (2026-11-07)
+
+- S1-P3 locks a policy once a covering year has `annual_reports.adoption_date` on or before
+  today. That date is an editable field in SaveAnnualReport, so the lock is only as strong as
+  the field. Follow-up for S1-P11: audit changes to `adoption_date`, and tie the lock to a
+  real state (a closed year or a locked period).
+- S1-P3 stores a change of principle (K3 10.2, 23.37) but lists it as a refusal, so the K3
+  document is blocked until chapter 10 (retroactive application, 10.4/10.5) is built.
+- S1-P3 does not check that the year is a K3 year. S1-P11 writes policies from the first K3
+  year only.
+
 ### A.4 Packages
 
 Each package: branch `spec/s1/<slug>`, own worktree and test database
@@ -1011,7 +1026,7 @@ forces companies off K2) and the package order above.
 | H5 | K3 29.19 refers to "29.21 och 29.22" and 29.25 to "29.28"; the content sits at 29.20/29.21 and 29.26. Confirm these are cross-reference slips that change nothing for a NONOX AB (S1-R4, R4.3) | (a) confirm as slips; (b) ask BFN | (a), noted in the systemdokumentation | sign-off of P5 (not its build) | before P5 merges |
 | H6 | Deferred tax **asset** (loss carry-forwards): may NONOX propose an amount, and on what basis after recent losses? (S1-R4.5) | (a) NONOX shows the gross asset and a person enters the recognised amount with a reason (default 0); (b) NONOX proposes the full amount; (c) assets not supported in S1 | (a) | the asset side of P5 | 2026-11-28 |
 | H7 | How is the K2-to-K3 transition difference booked, and against which equity account? (S1-R7.7; K3 35.11 is silent) | (a) a new voucher dated the first day of the first K3 year, source `K3_TRANSITION`, against 2091 Balanserad vinst eller förlust; (b) an adjustment of that year's opening balances (IB ≠ last K2 UB, confirmed with the existing ÅRL 2:4 "skillnaden är avsiktlig" check); (c) another account | (a): keeps IB = UB and the hash chain, leaves an audit trail, and shows in equity statement row (b) | S1-P12 entirely | 2026-12-05 |
-| H8 | ÅRL 1:3 p. 4 "mer än ett": must it be the **same** two criteria in both years? How is a company with fewer than two prior years classified? (S1-R9, R9.1) | (a) the same two (as BFN reads K2 1.1C); (b) any two each year; new company: mindre unless listed | (a), and "mindre unless listed"; until then `undetermined` blocks only the rare cases where the readings differ | resolving `undetermined` in P2 (P2 itself is not blocked) | 2026-12-19 |
+| H8 | ÅRL 1:3 p. 4 "mer än ett": must it be the **same** two criteria in both years? How is a company with fewer than two prior years classified? (S1-R9, R9.1) | (a) the same two (as BFN reads K2 1.1C); (b) any two each year; new company: mindre unless listed | (a), and "mindre unless listed"; until then `undetermined` blocks only the rare cases where the readings differ | **Answered 2026-11-07 by BFN's guidance** ("Vägledning Gränsvärden", updated 2026-09-14, https://www.bfn.se/wp-content/uploads/vl-2006-11-gransvarden-kons-2026.pdf): (a) the same two criteria in two consecutive years (Examples 1–2), and a newly started company is always mindre for its first two years (commentary to point 6). NONOX treats a company as newly started only when a person confirms it had no earlier fiscal year. Average employees are rounded to whole persons, as Example 3 does (9,4 → 9); half-up for x,5 is NONOX's own assumption and is marked `TODO(legal-verify)` | — |
 | H9 | Capitalisation model and the development fund: which BAS accounts identify capitalised development (10xx) and the fund (2089?) for the refusal check, and is the capitalisation model ever in scope? (S1-R10.1, R10.3) | (a) refuse by policy only; (b) also refuse when the ledger has balances on accounts a human names | (b), with the accounts confirmed against BAS 2026 by a human | the ledger-based refusal in P10 (the policy refusal works without it) | before P10 merges |
 | H10 | Name the human accountant (authorised or approved) who signs the accountant checklist (decision 3 above, spec "Human decisions") | — | — | the Beta gate of P10 | 2026-12-19 |
 

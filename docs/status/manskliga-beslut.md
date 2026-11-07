@@ -203,7 +203,11 @@ Underlag: [spec:en](../specs/nummer-1-spec.md), regelbladen [s1.md](../specs/rul
 - **S1-H5. Hänvisningarna i K3 29.19 och 29.25** pekar på fel punkter i BFN:s text (kontrollerat). *Rekommendation:* konsulten bekräftar att det inte ändrar något.
 - **S1-H6. Uppskjuten skattefordran på underskott.** *Rekommendation:* en person anger beloppet med motivering, 0 som utgångsläge.
 - **S1-H7. Bokföring av övergångsskillnaden K2 → K3.** *Rekommendation:* en ny verifikation första dagen i första K3-året, källa `K3_TRANSITION`, mot konto 2091.
-- **S1-H8. ÅRL 1 kap. 3 § "mer än ett".** Måste det vara samma två villkor båda åren, och hur klassas ett företag med färre än två år? *Rekommendation:* samma två; mindre om inte noterat.
+- **S1-H8. ÅRL 1 kap. 3 § "mer än ett".** **Besvarad 2026-11-07 av BFN:s vägledning om gränsvärden** (uppdaterad 2026-09-14):
+  - Samma två gränsvärden ska överskridas två år i rad.
+  - Ett nystartat företag är mindre de två första åren. NONOX kräver att en person bekräftar att företaget inte haft något tidigare räkenskapsår.
+  - Medelantalet anställda avrundas till hela personer, som i BFN:s exempel 3.
+  - Avrundning uppåt vid x,5 är NONOX:s eget antagande och ska verifieras.
 - **S1-H9. BAS-konton för aktiverade utvecklingsutgifter och fonden för utvecklingsutgifter.** Konsulten bekräftar.
 - **S1-H10. Namnge den auktoriserade redovisningskonsult** som granskar och skriver under checklistan. **2026-11-07:** ägaren har en konsult och lämnar namnet senare. Namnet skrivs inte in i det publika repot. *Blockerar fortfarande:* att K3 får lämna beta.
 
