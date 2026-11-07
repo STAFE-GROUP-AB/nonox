@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Company;
 
+use App\Actions\Company\ChangeReportingFramework;
 use App\Actions\Company\UpdateCompanyDetails;
 use App\Domain\Accounting\FiscalYearRules;
-use App\Domain\Accounting\FiscalYearStatus;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Company\CompanySetupRules;
 use App\Domain\Company\Industry;
@@ -20,7 +20,6 @@ use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
 use App\Support\Money\Money;
-use App\Support\Tenancy\CompanyScope;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
@@ -62,6 +61,7 @@ class CompanyDetailsForm extends Component
             'turnover_over_40_msek' => $company->turnover_over_40_msek,
             'framework_confirmed' => false,
             'framework_change_reason' => '',
+            'framework_from_year' => ChangeReportingFramework::eligibleYears($company)->first()?->id,
             'calendar_year_exempt' => false,
             'oss_elected' => $company->oss_elected,
             'oss_elected_from' => (string) $company->oss_elected_from?->toDateString(),
@@ -89,6 +89,7 @@ class CompanyDetailsForm extends Component
         $this->state['preliminary_tax_monthly'] = $company->preliminary_tax_monthly_ore === null ? '' : str_replace("\u{00A0}", ' ', Money::ofOre($company->preliminary_tax_monthly_ore)->format(false));
         $this->state['framework_confirmed'] = false;
         $this->state['framework_change_reason'] = '';
+        $this->state['framework_from_year'] = ChangeReportingFramework::eligibleYears($company)->first()?->id;
         $this->state['calendar_year_exempt'] = false;
 
         $this->toast(__('Uppgifterna för :company är sparade.', ['company' => $company->name]));
@@ -131,7 +132,8 @@ class CompanyDetailsForm extends Component
             'frameworkRefusal' => $frameworkChanged ? ReportingFrameworkRules::refusal($company->legal_form, $framework) : null,
             'frameworkConditions' => $frameworkChanged ? ReportingFrameworkRules::conditions($company->legal_form, $framework) : null,
             'frameworkChanged' => $frameworkChanged,
-            'frameworkYear' => $this->frameworkYear($company),
+            'frameworkYears' => $years = ChangeReportingFramework::eligibleYears($company)->mapWithKeys(fn (FiscalYear $year): array => [$year->id => $year->label()])->all(),
+            'frameworkYear' => $years[(int) ($this->state['framework_from_year'] ?? 0)] ?? (reset($years) ?: null),
             'askPartners' => $month !== $company->fiscal_year_start_month
                 && $month !== 1
                 && FiscalYearRules::requiresCalendarYearWithNaturalPartner($company->legal_form),
@@ -146,21 +148,6 @@ class CompanyDetailsForm extends Component
                 __('juli'), __('augusti'), __('september'), __('oktober'), __('november'), __('december'),
             ]),
         ]);
-    }
-
-    /**
-     * The year a framework change applies to (ADR-059, A.2.1): the latest
-     * open fiscal year; later years follow it, earlier ones keep theirs.
-     */
-    private function frameworkYear(Company $company): ?string
-    {
-        // Safe: limited to this company, which the user belongs to (company() below).
-        return CompanyScope::bypass(fn (): ?string => FiscalYear::query()
-            ->where('company_id', $company->id)
-            ->where('status', FiscalYearStatus::Open)
-            ->orderByDesc('start_date')
-            ->first()
-            ?->label());
     }
 
     private function user(): User

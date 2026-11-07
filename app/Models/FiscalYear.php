@@ -57,8 +57,9 @@ class FiscalYear extends Model
     }
 
     /**
-     * A new year follows the framework of the year before it, else the
-     * company's (ADR-059, A.2.1), so no creator has to pass it. A change
+     * A new year follows the framework of the year before it, else of the
+     * nearest later year, else the company's (ADR-059, A.2.1), so no creator
+     * has to pass it. A change
      * goes through ChangeReportingFramework.
      */
     protected static function booted(): void
@@ -85,6 +86,17 @@ class FiscalYear extends Model
 
         if ($previous instanceof ReportingFramework) {
             return $previous;
+        }
+
+        // An older year added after newer ones (an earlier year imported later) takes the nearest later year's.
+        $later = CompanyScope::bypass(fn (): mixed => self::query()
+            ->where('company_id', $companyId)
+            ->whereDate('start_date', '>', $fiscalYear->start_date->toDateString())
+            ->orderBy('start_date')
+            ->value('reporting_framework'));
+
+        if ($later instanceof ReportingFramework) {
+            return $later;
         }
 
         return Company::query()->findOrFail($companyId)->reporting_framework;

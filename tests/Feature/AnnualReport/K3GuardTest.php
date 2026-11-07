@@ -114,7 +114,7 @@ it('refuses a company on K1 with its own explanation', function () {
     $this->year->forceFill(['reporting_framework' => ReportingFramework::K1])->save();
 
     expect(AnnualReportDocument::supports($this->company))->toBeFalse()
-        ->and(AnnualReportDocument::refusal($this->company))->toContain('Företaget har valt K1');
+        ->and(AnnualReportDocument::refusal($this->company))->toContain('Räkenskapsåret har regelverket K1');
 
     Livewire::test(AnnualReportPage::class)
         ->assertSee('Inte för det här regelverket')

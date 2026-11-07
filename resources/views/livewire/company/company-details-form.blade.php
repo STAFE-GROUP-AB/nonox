@@ -159,7 +159,19 @@
             </div>
         </div>
 
-        @if($frameworkChanged && $canUpdate)
+        @if($frameworkChanged && $canUpdate && count($frameworkYears) > 1)
+            <div class="max-w-xs">
+                <x-label for="details_framework_from_year" value="{{ __('Byt regelverk från och med räkenskapsår') }}" />
+                <select id="details_framework_from_year" class="{{ $field }}" wire:model.live="state.framework_from_year">
+                    @foreach($frameworkYears as $yearId => $yearLabel)
+                        <option value="{{ $yearId }}">{{ $yearLabel }}</option>
+                    @endforeach
+                </select>
+                <x-input-error for="framework_from_year" class="mt-2" />
+            </div>
+        @endif
+
+        @if($frameworkChanged && $canUpdate && $frameworkYears !== [])
             <div class="max-w-xl">
                 <x-label for="details_framework_change_reason" value="{{ __('Varför byter företaget regelverk? (frivilligt)') }}" />
                 <textarea id="details_framework_change_reason" rows="2" maxlength="2000" class="{{ $field }}" wire:model="state.framework_change_reason"></textarea>

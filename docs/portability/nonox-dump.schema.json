@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://nonox.app/schema/nonox-dump-1.json",
   "title": "NONOX company dump",
-  "description": "Full-company export, accounting core (schema 1.0.0). Money is integer ore. Dates are YYYY-MM-DD. posted_at is YYYY-MM-DD HH:MM:SS in Europe/Stockholm. Ids are the source installation's ids and are remapped on import (ADR-065).",
+  "description": "Full-company export, accounting core (schema 1.1.0). Money is integer ore. Dates are YYYY-MM-DD. posted_at is YYYY-MM-DD HH:MM:SS in Europe/Stockholm. Ids are the source installation's ids and are remapped on import (ADR-065).",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "schema_version", "generated_at", "includes_personal_numbers", "company", "fiscal_years", "voucher_number_counters", "accounts", "cost_centers", "projects", "voucher_series", "vouchers", "customers", "suppliers", "counts"],
@@ -68,7 +68,7 @@
     "fiscalYear": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "start_date", "end_date", "status", "ledger_head_hash"],
+      "required": ["id", "start_date", "end_date", "status", "ledger_head_hash", "reporting_framework"],
       "properties": {
         "id": {"type": "integer"},
         "start_date": {"$ref": "#/$defs/date"},

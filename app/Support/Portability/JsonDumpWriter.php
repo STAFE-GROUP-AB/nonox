@@ -41,7 +41,7 @@ use RuntimeException;
  */
 final class JsonDumpWriter
 {
-    public const string SCHEMA_VERSION = '1.0.0';
+    public const string SCHEMA_VERSION = '1.1.0';
 
     /** Rows read per query round; tests lower it to cross chunk borders. */
     public static int $chunk = 500;

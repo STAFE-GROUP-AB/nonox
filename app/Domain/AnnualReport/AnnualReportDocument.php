@@ -71,8 +71,8 @@ final class AnnualReportDocument
 
         $refusal = match (true) {
             ! self::supportsLegalForm($company) => __('Årsredovisningen görs här för aktiebolag och ekonomiska föreningar.'),
-            $framework === ReportingFramework::K3 => __('NONOX tar ännu inte fram årsredovisningar enligt K3 (BFNAR 2012:1). Företaget har valt K3, och en årsredovisning enligt K2 skulle inte stämma med det regelverket.'),
-            $framework === ReportingFramework::K1 => __('NONOX tar fram årsredovisningar enligt K2. Företaget har valt K1, som inte används för en årsredovisning.'),
+            $framework === ReportingFramework::K3 => __('NONOX tar ännu inte fram årsredovisningar enligt K3 (BFNAR 2012:1). Räkenskapsåret har regelverket K3, och en årsredovisning enligt K2 skulle inte stämma med det regelverket.'),
+            $framework === ReportingFramework::K1 => __('NONOX tar fram årsredovisningar enligt K2. Räkenskapsåret har regelverket K1, som inte används för en årsredovisning.'),
             default => null,
         };
 

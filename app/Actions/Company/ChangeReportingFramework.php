@@ -14,21 +14,24 @@ use App\Models\FiscalYear;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CompanyScope;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Changes the K-regelverk of one fiscal year (ADR-059, addendum A.2.1).
+ * Changes the K-regelverk from one fiscal year on (ADR-059, addendum A.2.1).
  * The framework belongs to the year: BFNAR 2025:2 and 2025:3 apply by the
  * year's start (S1-R1.4) and a change of framework happens at a year
- * boundary. The company column follows the latest year, so a change of the
- * latest year also changes it; it is the default for the next year.
+ * boundary, so the chosen year and every later year get the new framework.
+ * The company column follows the latest year and is the default for the
+ * next one.
  *
- * Refused for a closed year and for a year whose annual report has been
- * adopted: the report of that year was made under the old framework.
- * The audit entry has ids and enums only; the reason stays in its column.
+ * Refused when the chosen year or a later one is closed or has an adopted
+ * annual report: that report was made under the old framework. One audit
+ * entry per changed year, with ids and enums only; the reason stays in the
+ * year's column.
  */
 class ChangeReportingFramework
 {
@@ -58,69 +61,143 @@ class ChangeReportingFramework
             ['reason' => __('anledning')],
         )->validate();
 
-        $year = DB::transaction(function () use ($user, $company, $fiscalYear, $framework, $reason, $confirmed): FiscalYear {
-            // Serialises with the creation of a new year, so "the latest year" cannot change under us.
+        DB::transaction(function () use ($user, $company, $fiscalYear, $framework, $reason, $confirmed): void {
+            // Serialises with the creation of a new year, so the later years cannot change under us.
             CreateNextFiscalYear::lock($company->id);
 
             // Safe: every query below is limited to the year's own company explicitly.
-            return CompanyScope::bypass(function () use ($user, $company, $fiscalYear, $framework, $reason, $confirmed): FiscalYear {
-                $year = FiscalYear::query()->where('company_id', $company->id)->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();
+            CompanyScope::bypass(function () use ($user, $company, $fiscalYear, $framework, $reason, $confirmed): void {
+                $years = FiscalYear::query()
+                    ->where('company_id', $company->id)
+                    ->whereDate('start_date', '>=', $fiscalYear->start_date->toDateString())
+                    ->orderBy('start_date')
+                    ->lockForUpdate()
+                    ->get();
 
-                if (! $year->isOpen()) {
-                    throw ValidationException::withMessages([
-                        'reporting_framework' => __('Räkenskapsåret :label är stängt. Regelverket för ett stängt år kan inte ändras.', ['label' => $year->label()]),
-                    ]);
+                if ($years->first()?->id !== $fiscalYear->id) {
+                    throw ValidationException::withMessages(['reporting_framework' => __('Räkenskapsåret finns inte.')]);
                 }
 
-                if (AnnualReport::query()->where('company_id', $company->id)->where('fiscal_year_id', $year->id)->whereNotNull('adoption_date')->exists()) {
-                    throw ValidationException::withMessages([
-                        'reporting_framework' => __('Årsredovisningen för :label är fastställd. Regelverket för året kan inte ändras.', ['label' => $year->label()]),
-                    ]);
-                }
+                self::refuseLockedYears($company, $years, $fiscalYear);
 
-                $before = $year->reporting_framework;
-                $latest = ! FiscalYear::query()->where('company_id', $company->id)->whereDate('start_date', '>', $year->start_date->toDateString())->exists();
+                $changed = 0;
 
-                if ($before === $framework) {
-                    if ($latest && $company->reporting_framework !== $framework) {
-                        // Only the default was out of step with the latest year; the year itself is unchanged.
-                        $company->forceFill(['reporting_framework' => $framework])->save();
+                foreach ($years as $year) {
+                    $before = $year->reporting_framework;
+
+                    if ($before === $framework) {
+                        continue;
                     }
 
-                    return $year;
+                    $year->forceFill([
+                        'reporting_framework' => $framework,
+                        'reporting_framework_changed_at' => now(),
+                        'reporting_framework_changed_by' => $user->id,
+                        'reporting_framework_change_reason' => $reason,
+                    ])->save();
+                    $changed++;
+
+                    Audit::record('fiscal_year.framework_changed', $year, [
+                        'fiscal_year_id' => $year->id,
+                        'from_fiscal_year_id' => $fiscalYear->id,
+                        'before' => $before->value,
+                        'after' => $framework->value,
+                        'company_default_changed' => $company->reporting_framework !== $framework,
+                        'framework_conditions_confirmed' => $confirmed,
+                    ], $company, $user);
                 }
 
-                $year->forceFill([
-                    'reporting_framework' => $framework,
-                    'reporting_framework_changed_at' => now(),
-                    'reporting_framework_changed_by' => $user->id,
-                    'reporting_framework_change_reason' => $reason,
-                ])->save();
+                $defaultBefore = $company->reporting_framework;
 
-                if ($latest) {
+                if ($defaultBefore !== $framework) {
+                    // The company column is the latest year's framework, and the latest year is in the chain.
                     $company->forceFill(['reporting_framework' => $framework])->save();
+
+                    if ($changed === 0) {
+                        // Only the default was out of step with the years; recorded too.
+                        Audit::record('company.framework_default_synced', $company, [
+                            'fiscal_year_id' => $years->last()?->id,
+                            'before' => $defaultBefore->value,
+                            'after' => $framework->value,
+                        ], $company, $user);
+                    }
                 }
 
                 if ($framework === ReportingFramework::K2 && $confirmed && $company->k2_conditions_confirmed_at === null) {
                     // The K2 conditions were shown and confirmed (owner decision 16): not asked again in the closing.
                     $company->forceFill(['k2_conditions_confirmed_at' => now(), 'k2_conditions_confirmed_by' => $user->id])->save();
                 }
-
-                Audit::record('fiscal_year.framework_changed', $year, [
-                    'fiscal_year_id' => $year->id,
-                    'before' => $before->value,
-                    'after' => $framework->value,
-                    'company_default_changed' => $latest,
-                    'framework_conditions_confirmed' => $confirmed,
-                ], $company, $user);
-
-                return $year;
             });
         });
 
         // The caller's model shows the saved framework too.
-        $fiscalYear->setRawAttributes($year->getAttributes(), true);
+        $fiscalYear->refresh();
 
         return $fiscalYear;
+    }
+
+    /**
+     * The years a change can start from: open years without an adopted
+     * annual report, where every later year is the same, oldest first.
+     *
+     * @return Collection<int, FiscalYear>
+     */
+    public static function eligibleYears(Company $company): Collection
+    {
+        // Safe: limited to this company explicitly; callers may run without a current company.
+        return CompanyScope::bypass(function () use ($company): Collection {
+            $years = FiscalYear::query()->where('company_id', $company->id)->orderByDesc('start_date')->get();
+            $adopted = self::adoptedYearIds($company);
+            $eligible = collect();
+
+            foreach ($years as $year) {
+                if (! $year->isOpen() || in_array($year->id, $adopted, true)) {
+                    break;
+                }
+
+                $eligible->prepend($year);
+            }
+
+            return $eligible->values();
+        });
+    }
+
+    /** @return list<int> */
+    private static function adoptedYearIds(Company $company): array
+    {
+        return array_values(AnnualReport::query()
+            ->where('company_id', $company->id)
+            ->whereNotNull('adoption_date')
+            ->pluck('fiscal_year_id')
+            ->map(fn (mixed $id): int => (int) $id)
+            ->all());
+    }
+
+    /**
+     * @param  Collection<int, FiscalYear>  $years  the chosen year and every later one
+     *
+     * @throws ValidationException
+     */
+    private static function refuseLockedYears(Company $company, Collection $years, FiscalYear $from): void
+    {
+        $adopted = self::adoptedYearIds($company);
+
+        foreach ($years as $year) {
+            $later = $year->id !== $from->id;
+
+            if (! $year->isOpen()) {
+                throw ValidationException::withMessages(['reporting_framework' => $later
+                    ? __('Räkenskapsåret :label, som kommer efter :from, är stängt. Regelverket kan bara bytas från ett år där alla senare år är öppna.', ['label' => $year->label(), 'from' => $from->label()])
+                    : __('Räkenskapsåret :label är stängt. Regelverket för ett stängt år kan inte ändras.', ['label' => $year->label()]),
+                ]);
+            }
+
+            if (in_array($year->id, $adopted, true)) {
+                throw ValidationException::withMessages(['reporting_framework' => $later
+                    ? __('Årsredovisningen för :label, som kommer efter :from, är fastställd. Regelverket kan inte bytas från :from.', ['label' => $year->label(), 'from' => $from->label()])
+                    : __('Årsredovisningen för :label är fastställd. Regelverket för året kan inte ändras.', ['label' => $year->label()]),
+                ]);
+            }
+        }
     }
 }
