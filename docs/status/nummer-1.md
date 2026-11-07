@@ -318,3 +318,28 @@ Public claim still not allowed: "Årsredovisning enligt K3".
 Open legal-verify items: inga nya. Fastställelsedagen är ett fält som går att ändra (uppföljning i S1-P11).
 Human decisions needed: H4 (komponentpolicyn är inte byggd).
 Next package: S1-P11.
+
+---
+
+Package: S1-P6, K3-uppställning och utskrivna belopp (ADR-059, A.4)
+Status: done (kod, inget som syns för användaren ännu)
+Evidence: `tests/Feature/AnnualReport/K3/{K3ScheduleFixtureTest,K3UnbalancedSheetTest}.php` och `tests/Unit/AnnualReport/K3/K3ScheduleTest.php`.
+- F-S1-a:s resultaträkning (2025, 2026) och balansräkning (tre datum) stämmer på öret och som utskrivna hela kronor.
+- K2-utskriften är byte för byte oförändrad.
+- Antalet frågor är 8 för både K2 och K3.
+- En oberoende granskning mot ÅRL bilaga 1–2 och K3 kap. 4, 5 och 29, och en omkontroll; alla fynd rättade:
+  - 225x ligger under Övriga avsättningar för skatter;
+  - 1081 ligger under utvecklingsutgifter;
+  - en verklig obalans spärrar K3-balansräkningen;
+  - rubriken heter "Fordringar".
+- Hela sviten 6 533 gröna.
+Rule ids covered: S1-R4.6, R8.2, R10.
+Public claim now allowed: inget nytt.
+Public claim still not allowed: "Årsredovisning enligt K3".
+Open legal-verify items:
+- särskild uppgift om koncernföretag (bilaga 2 p. 14, 15 och 17);
+- uppdelningen av inköp på handelsvaror och råvaror;
+- placeringen av restkonton mot BAS 2026 (A12);
+- var avrundningsdifferensen i balansräkningen ska ligga.
+Human decisions needed: H9 (konto 2089 för fonden för utvecklingsutgifter, kontroll mot BAS 2026), H10.
+Next package: S1-P7 förändringar i eget kapital.
