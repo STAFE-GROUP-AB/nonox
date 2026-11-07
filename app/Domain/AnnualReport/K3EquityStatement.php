@@ -397,11 +397,13 @@ final class K3EquityStatement
             ->selectRaw('voucher_rows.voucher_id, vouchers.source, vouchers.number AS voucher_number, vouchers.corrects_voucher_id, voucher_series.code AS series_code, accounts.number AS account_number, SUM(voucher_rows.credit_ore) - SUM(voucher_rows.debit_ore) AS net_credit, BOOL_OR(accounts.number BETWEEN ? AND ?) OVER (PARTITION BY voucher_rows.voucher_id) AS touches_equity', self::EQUITY_ACCOUNTS);
 
         // The voucher a correction corrects, looked up by its key for the few equity rows
-        // only (a lateral join, so the lookup is by primary key whatever the statistics).
+        // only (a lateral join, so the lookup is by primary key whatever the statistics),
+        // and never outside the company even if a corrects_voucher_id were corrupt.
         $original = DB::table('vouchers as originals')
             ->join('voucher_series as original_series', 'original_series.id', '=', 'originals.series_id')
             ->join('fiscal_years as original_years', 'original_years.id', '=', 'originals.fiscal_year_id')
             ->whereColumn('originals.id', 'year_rows.corrects_voucher_id')
+            ->where('originals.company_id', $this->accounts->fiscalYear->company_id)
             ->selectRaw('originals.fiscal_year_id AS original_year_id, originals.number AS original_number, original_series.code AS original_series_code, original_years.start_date AS original_start, original_years.end_date AS original_end');
 
         $result = DB::query()
