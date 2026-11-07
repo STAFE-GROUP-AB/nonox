@@ -182,6 +182,35 @@ it('S1-R10 puts BAS 1081 on Balanserade utgifter för utvecklingsarbeten (rbas20
         ->and($lines['intangible_advances']['ranges'])->toBe([[1080, 1080], [1082, 1089]]);
 });
 
+it('S1-R8.2 prints a K3 sheet whose fixed-asset lines carry worst-case rounding from their six note figures', function () {
+    // Each note figure rounds 49 öre the unfavourable way, so each book value is 294 öre below the exact one.
+    $note = fn (string $key): array => [
+        'key' => $key, 'label' => $key,
+        'acquisition' => ['opening' => 10_049, 'additions' => 49, 'disposals' => 51, 'closing' => 10_047],
+        'depreciation' => ['opening' => 51, 'disposals' => 49, 'charge' => 51, 'closing' => 53],
+        'book_value' => 9_994,
+    ];
+    $notes = array_map($note, K3Schedule::FIXED_ASSET_LINES);
+    $printedNotes = (new ReflectionMethod(PrintedFigures::class, 'fixedAssets'))->invoke(null, $notes);
+    $exact = 9_994 * count($notes);
+    $sections = [];
+
+    foreach (K3Schedule::FIXED_ASSET_LINES as $key) {
+        $section = collect(K3Schedule::BALANCE)->firstWhere('key', $key)['section'];
+        $sections[$section]['lines'][] = ['key' => $key, 'label' => $key, 'amount' => 9_994, 'previous' => 0];
+    }
+
+    $sheet = ['sections' => [
+        ...array_map(fn (string $key, array $section): array => ['key' => $key, 'label' => $key, 'lines' => $section['lines'], 'amount' => 0, 'previous' => 0], array_keys($sections), $sections),
+        ['key' => 'free', 'label' => 'Fritt eget kapital', 'lines' => [['key' => 'retained', 'label' => 'Balanserad vinst eller förlust', 'amount' => $exact, 'previous' => 0]], 'amount' => $exact, 'previous' => 0],
+    ], 'assets' => $exact, 'assets_previous' => 0, 'equity_liabilities' => $exact, 'equity_liabilities_previous' => 0];
+
+    $balance = (new ReflectionMethod(PrintedFigures::class, 'balance'))->invoke(null, $sheet, ['amount' => [], 'previous' => []], true, $printedNotes, K3Schedule::class);
+
+    expect(collect($balance['sections'])->firstWhere('key', 'tangible')['lines'][0]['amount'])->toBe(9_700)
+        ->and($balance['assets'])->toBe($balance['equity_liabilities']);
+});
+
 it('S1-R8.2 heads the receivables "Fordringar" as ÅRL bilaga 1 C.II', function () {
     expect(K3Schedule::SECTIONS['receivables'])->toBe('Fordringar');
 });

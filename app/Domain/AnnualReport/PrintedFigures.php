@@ -177,7 +177,15 @@ final class PrintedFigures
             }
 
             if ($schedule::REFUSES_UNBALANCED_SHEET) {
-                self::refuseUnbalanced($sheet, $field, $assets - $other, count($lines) + count($results[$field]));
+                // Each rounded figure summed counts once: a fixed-asset line's book value this year is
+                // built from its note's six rounded figures, every other line is one rounded figure.
+                $figures = count($results[$field]);
+
+                foreach ($lines as $line) {
+                    $figures += $field === 'amount' && isset($bookValues[$line['key']]) ? 6 : 1;
+                }
+
+                self::refuseUnbalanced($sheet, $field, $assets - $other, $figures);
             }
 
             if ($assets !== $other) {
@@ -314,8 +322,9 @@ final class PrintedFigures
 
     /**
      * K3: the two sides of the rounded balance sheet may differ only by what
-     * rounding can explain, at most half a krona per printed figure involved
-     * (the balance sheet lines and the income statement figures behind the
+     * rounding can explain, at most half a krona per rounded figure summed
+     * (one per balance sheet line, six per fixed-asset line whose book value
+     * comes from its note, and the income statement figures behind the
      * year's result). A larger difference, or any difference in the exact
      * figures, is a real imbalance and is refused, never put on Övriga
      * skulder (S1-P6 review). K2 keeps its behaviour; the Lead records the
