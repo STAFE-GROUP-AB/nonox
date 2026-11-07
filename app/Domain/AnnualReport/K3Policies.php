@@ -139,41 +139,62 @@ final class K3Policies
 
     /**
      * A policy that differs, in the year it takes effect, from the one in force
-     * for the preceding period is a change of principle. K3 10.2 allows it only
-     * under a)–d) and with retroactive application (10.4, 10.5), which NONOX does
-     * not support yet; from percentage of completion to completed contract K3
-     * 23.37 asks for särskilda skäl. The first row of a key is no change.
+     * for the preceding period is a change of principle (see changeRule()).
      *
      * @return ?array{rule: string, message: string}
      */
     private function changeOfPrinciple(K3PolicyKey $key): ?array
     {
         $row = $this->row($key);
-        $preceding = $this->preceding[$key->value] ?? null;
 
-        if ($key->transitionOnly() || $row === null || $preceding === null) {
+        if ($row === null || $row->applies_from->toDateString() !== $this->fiscalYear->start_date->toDateString()) {
             return null;
         }
 
-        if ($row->applies_from->toDateString() !== $this->fiscalYear->start_date->toDateString()) {
-            return null;
-        }
-
-        if ($row->value === $preceding->value) {
-            return null;
-        }
-
-        if ($preceding->policyValue() === K3FixedPriceContracts::PercentageOfCompletion && $row->policyValue() === K3FixedPriceContracts::CompletedContract) {
-            return [
+        return match (self::changeRule($key, $this->preceding[$key->value]->value ?? null, $row->value)) {
+            null => null,
+            'K3 23.37' => [
                 'rule' => 'K3 23.37',
                 'message' => (string) __('Ett byte från successiv vinstavräkning till färdigställandemetoden kräver särskilda skäl (K3 23.37). Det bytet stöds inte ännu i NONOX.'),
-            ];
+            ],
+            default => [
+                'rule' => 'K3 10.2',
+                'message' => (string) __('Principen ändras från föregående räkenskapsår. Ett byte av redovisningsprincip (K3 10.2) ska tillämpas retroaktivt, och det stöds inte ännu i NONOX.'),
+            ],
+        };
+    }
+
+    /**
+     * The rule a value breaks when it follows $preceding, or null when the move
+     * is no change of principle. K3 10.2 allows a change only under a)–d) and
+     * with retroactive application (10.4, 10.5), which NONOX does not support
+     * yet; from percentage of completion to completed contract K3 23.37 asks for
+     * särskilda skäl. No change: the first row of a key; a transition answer;
+     * the cash flow statement, which is presentation (required of a större
+     * företag by ÅRL 2 kap. 1 §), not a choice under 10.2; and a move from
+     * `none`, because the kommentar to K3 10.2 says "Följande är inte byte av
+     * redovisningsprincip: … Tillämpning av en ny redovisningsprincip på
+     * transaktioner, andra händelser eller förhållanden som inte inträffat
+     * tidigare eller som var oväsentliga." A move from an unsupported value to a
+     * supported one is a change like any other.
+     */
+    public static function changeRule(K3PolicyKey $key, ?string $preceding, string $value): ?string
+    {
+        if ($key->transitionOnly() || $key === K3PolicyKey::CashFlowStatement) {
+            return null;
         }
 
-        return [
-            'rule' => 'K3 10.2',
-            'message' => (string) __('Principen ändras från föregående räkenskapsår. Ett byte av redovisningsprincip (K3 10.2) ska tillämpas retroaktivt, och det stöds inte ännu i NONOX.'),
-        ];
+        if ($preceding === null || $preceding === $value || $preceding === K3FixedPriceContracts::None->value) {
+            return null;
+        }
+
+        if ($key === K3PolicyKey::FixedPriceContracts
+            && $preceding === K3FixedPriceContracts::PercentageOfCompletion->value
+            && $value === K3FixedPriceContracts::CompletedContract->value) {
+            return 'K3 23.37';
+        }
+
+        return 'K3 10.2';
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\AnnualReport;
 
 use App\Domain\AnnualReport\K3FinancialInstruments;
+use App\Domain\AnnualReport\K3Policies;
 use App\Domain\AnnualReport\K3PolicyKey;
 use App\Models\AnnualReport;
 use App\Models\Company;
@@ -15,6 +16,7 @@ use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -70,7 +72,7 @@ final class SetAccountingPolicy
                     return $policy;
                 }
 
-                $this->assertNotAdopted($key, $from);
+                $this->assertNotAdopted($key, $from, $policy, $value);
 
                 if ($key === K3PolicyKey::FinancialInstruments) {
                     $this->assertNoSwitchBackToChapter11($from, $value);
@@ -103,9 +105,10 @@ final class SetAccountingPolicy
      * adoption date that has come. The row reaches the years from its start up to
      * the next row of the same key; a transition answer reaches its own year only.
      * The adoption date is a field of the annual report that a user can change;
-     * the lock follows it.
+     * the lock follows it. Nor may the row change whether the year of the next
+     * row is a change of principle when that year is adopted.
      */
-    private function assertNotAdopted(K3PolicyKey $key, string $from): void
+    private function assertNotAdopted(K3PolicyKey $key, string $from, ?CompanyAccountingPolicy $existing, string $value): void
     {
         $reached = FiscalYear::query()->where('start_date', '>=', $from);
 
@@ -113,28 +116,53 @@ final class SetAccountingPolicy
             $reached->where('start_date', $from);
         }
 
-        $next = CompanyAccountingPolicy::query()
+        $next = $key->transitionOnly() ? null : CompanyAccountingPolicy::query()
             ->where('key', $key->value)
             ->where('applies_from', '>', $from)
-            ->min('applies_from');
+            ->orderBy('applies_from')
+            ->first();
 
         if ($next !== null) {
-            $reached->where('start_date', '<', $next);
+            $reached->where('start_date', '<', $next->applies_from->toDateString());
         }
 
-        $adopted = AnnualReport::query()
-            ->whereNotNull('adoption_date')
-            ->where('adoption_date', '<=', CarbonImmutable::today('Europe/Stockholm')->toDateString())
-            ->whereIn('fiscal_year_id', $reached->select('id'))
-            ->exists();
+        if ($this->hasAdoptedReport($reached)) {
+            throw ValidationException::withMessages([
+                'value' => __('Principen kan inte sparas från räkenskapsåret som börjar :date, eftersom den då skulle gälla ett räkenskapsår vars årsredovisning redan är fastställd.', ['date' => $from]),
+            ]);
+        }
 
-        if (! $adopted) {
+        if ($next === null) {
             return;
         }
 
-        throw ValidationException::withMessages([
-            'value' => __('Principen kan inte sparas från räkenskapsåret som börjar :date, eftersom den då skulle gälla ett räkenskapsår vars årsredovisning redan är fastställd.', ['date' => $from]),
-        ]);
+        $comparedBefore = $existing->value ?? CompanyAccountingPolicy::query()
+            ->where('key', $key->value)
+            ->where('applies_from', '<', $from)
+            ->orderByDesc('applies_from')
+            ->value('value');
+
+        if (K3Policies::changeRule($key, $comparedBefore, $next->value) === K3Policies::changeRule($key, $value, $next->value)) {
+            return;
+        }
+
+        $nextStart = $next->applies_from->toDateString();
+
+        if ($this->hasAdoptedReport(FiscalYear::query()->where('start_date', $nextStart))) {
+            throw ValidationException::withMessages([
+                'value' => __('Principen kan inte sparas från räkenskapsåret som börjar :date, eftersom den ändrar jämförelsen för räkenskapsåret som börjar :next, vars årsredovisning redan är fastställd.', ['date' => $from, 'next' => $nextStart]),
+            ]);
+        }
+    }
+
+    /** @param Builder<FiscalYear> $years */
+    private function hasAdoptedReport(Builder $years): bool
+    {
+        return AnnualReport::query()
+            ->whereNotNull('adoption_date')
+            ->where('adoption_date', '<=', CarbonImmutable::today('Europe/Stockholm')->toDateString())
+            ->whereIn('fiscal_year_id', $years->select('id'))
+            ->exists();
     }
 
     /**

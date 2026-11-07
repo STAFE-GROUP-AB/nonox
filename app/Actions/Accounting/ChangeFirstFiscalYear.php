@@ -7,6 +7,7 @@ namespace App\Actions\Accounting;
 use App\Domain\Accounting\FiscalYearRules;
 use App\Models\AuditLog;
 use App\Models\Company;
+use App\Models\CompanyAccountingPolicy;
 use App\Models\FiscalYear;
 use App\Models\OpeningBalance;
 use App\Models\User;
@@ -14,6 +15,7 @@ use App\Models\Voucher;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -76,6 +78,8 @@ class ChangeFirstFiscalYear
                 'end_date' => $end->toDateString(),
             ]), $fiscalYear->company_id, $user);
 
+            $this->moveAccountingPolicies($fiscalYear, $before['start_date'], $others, $company, $user);
+
             if ($others->isNotEmpty()) {
                 $this->createNextFiscalYear->dueFor($company, CarbonImmutable::today());
             }
@@ -134,6 +138,48 @@ class ChangeFirstFiscalYear
             throw ValidationException::withMessages([
                 'start_date' => __('Bara företagets första räkenskapsår kan ändras, och bara så länge det är öppet.'),
             ]);
+        }
+    }
+
+    /**
+     * K3 accounting policies apply from the start of a fiscal year (ADR-059,
+     * addendum 2026-11-07, A.2.3): those of a removed automatic year go, and
+     * those of the first year follow its new start.
+     *
+     * @param  Collection<int, FiscalYear>  $removed
+     */
+    private function moveAccountingPolicies(FiscalYear $first, string $oldStart, Collection $removed, Company $company, User $user): void
+    {
+        foreach ($removed as $other) {
+            $rows = CompanyAccountingPolicy::query()->where('applies_from', $other->start_date->toDateString())->get();
+
+            foreach ($rows as $row) {
+                Audit::record('accounting_policy.removed', $row, [
+                    'key' => $row->key->value,
+                    'fiscal_year_id' => $other->id,
+                    'applies_from' => $row->applies_from->toDateString(),
+                    'reason' => 'first_year_changed',
+                ], $company, $user);
+
+                $row->delete();
+            }
+        }
+
+        $newStart = $first->start_date->toDateString();
+
+        if ($newStart === $oldStart) {
+            return;
+        }
+
+        foreach (CompanyAccountingPolicy::query()->where('applies_from', $oldStart)->get() as $row) {
+            $row->update(['applies_from' => $newStart]);
+
+            Audit::record('accounting_policy.moved', $row, [
+                'key' => $row->key->value,
+                'fiscal_year_id' => $first->id,
+                'from' => $oldStart,
+                'to' => $newStart,
+            ], $company, $user);
         }
     }
 

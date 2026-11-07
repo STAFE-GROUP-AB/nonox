@@ -226,18 +226,58 @@ it('S1-R7.1 S1-R7.6 never carries a transition answer to a later year', function
 });
 
 it('K3 10.2 lists a change of principle for the year it takes effect, and stores it', function () {
-    setPolicy($this, $this->y2025, K3PolicyKey::CashFlowStatement, 'none');
-    $changed = setPolicy($this, $this->y2026, K3PolicyKey::CashFlowStatement, 'indirect');
+    setPolicy($this, $this->y2025, K3PolicyKey::BorrowingCosts, 'expense');
+    $changed = setPolicy($this, $this->y2026, K3PolicyKey::BorrowingCosts, 'capitalise');
 
-    expect($changed->value)->toBe('indirect')
+    expect($changed->value)->toBe('capitalise')
         ->and(refusalRules($this->y2025))->toBe([])
-        ->and(refusalRules($this->y2026))->toBe([['cash_flow_statement', 'K3 10.2']])
-        ->and(refusalRules($this->y2027))->toBe([]);
+        ->and(refusalRules($this->y2026))->toBe([['borrowing_costs', 'K3 25.3'], ['borrowing_costs', 'K3 10.2']])
+        ->and(refusalRules($this->y2027))->toBe([['borrowing_costs', 'K3 25.3']]);
 
     // The same value again is no change.
-    setPolicy($this, $this->y2027, K3PolicyKey::CashFlowStatement, 'indirect');
+    setPolicy($this, $this->y2027, K3PolicyKey::BorrowingCosts, 'capitalise');
+
+    expect(refusalRules($this->y2027))->toBe([['borrowing_costs', 'K3 25.3']]);
+});
+
+it('K3 10.2 also lists a move from an unsupported value to a supported one', function () {
+    setPolicy($this, $this->y2025, K3PolicyKey::Intangibles, 'capitalise');
+    setPolicy($this, $this->y2026, K3PolicyKey::Intangibles, 'expense');
+
+    expect(refusalRules($this->y2026))->toBe([['intangibles', 'K3 10.2']]);
+});
+
+it('K3 10.2 kommentar: starting a cash flow statement or fixed-price method after none is no change of principle', function () {
+    setPolicy($this, $this->y2025, K3PolicyKey::CashFlowStatement, 'none');
+    setPolicy($this, $this->y2026, K3PolicyKey::CashFlowStatement, 'indirect');
+    setPolicy($this, $this->y2025, K3PolicyKey::FixedPriceContracts, 'none');
+    setPolicy($this, $this->y2026, K3PolicyKey::FixedPriceContracts, 'completed_contract_23_31');
+
+    expect(refusalRules($this->y2026))->toBe([]);
+
+    // The cash flow statement is presentation (ÅRL 2 kap. 1 §), not a 10.2 choice, either way.
+    setPolicy($this, $this->y2027, K3PolicyKey::CashFlowStatement, 'none');
 
     expect(refusalRules($this->y2027))->toBe([]);
+});
+
+it('refuses a row that changes what an adopted later year is compared with', function () {
+    setPolicy($this, $this->y2025, K3PolicyKey::Leasing, 'operational_in_legal_entity');
+    setPolicy($this, $this->y2027, K3PolicyKey::Leasing, 'classify');
+    adopt($this, $this->y2027, '2028-05-01');
+    $this->travelTo(CarbonImmutable::parse('2028-06-01 09:00:00'));
+
+    $before = refusalRules($this->y2027);
+
+    // 2027 would no longer be a change of principle against 2026.
+    expect(fn () => setPolicy($this, $this->y2026, K3PolicyKey::Leasing, 'classify'))
+        ->toThrow(ValidationException::class, 'fastställd');
+
+    // The same value as 2025 leaves 2027's comparison as it is.
+    setPolicy($this, $this->y2026, K3PolicyKey::Leasing, 'operational_in_legal_entity');
+
+    expect(refusalRules($this->y2027))->toBe($before)
+        ->and($before)->toContain(['leasing', 'K3 10.2']);
 });
 
 it('K3 23.37 lists a move from percentage of completion to completed contract, K3 10.2 the other way', function () {

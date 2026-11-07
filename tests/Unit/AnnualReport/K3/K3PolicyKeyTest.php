@@ -105,5 +105,10 @@ it('has a Swedish label and question for every key', function () {
     foreach (K3PolicyKey::cases() as $key) {
         expect($key->label())->not->toBe('')
             ->and($key->question())->toContain('?');
+
+        // The fixed-price question ends with the scope of K3 23.31 after its question mark.
+        if ($key !== K3PolicyKey::FixedPriceContracts) {
+            expect($key->question())->toEndWith('?');
+        }
     }
 });
