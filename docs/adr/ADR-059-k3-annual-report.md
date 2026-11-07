@@ -1000,15 +1000,19 @@ Source: BFN's consolidated K3 (vl12-1-k3-kons20251215), chapter 7, pp. 57–63.
   are checked. `CashFlowPrintedFigures` rounds to whole kronor with sums of
   rounded lines; a rounding leftover goes to a working capital line or
   refuses. `forYear()` applies the policy, the size and the legal form.
-  Query count: 6 per year (equity statement, accounts, vouchers, rows,
-  supplier invoices, supplier payments), 17 with the previous year beside it.
+  Query count: 7 per year (equity statement, accounts, vouchers, rows,
+  supplier invoices, supplier payments, payment vouchers touching 19xx), 19
+  with the previous year beside it.
   Allowed counters in an investing or financing voucher: likvida medel and
   moms; for fixed assets also other fixed asset accounts (transfers) and
   aktiverat arbete 38xx; result rows only when cash pays the movement and the
   result rows exactly and in the same direction. An acquisition against 2440
   needs the payables-ledger link: the voucher is a supplier invoice's voucher
-  and SupplierPayment vouchers in the same year pay it in full. No amount
-  matching.
+  and SupplierPayment vouchers in the same year pay it in full; a payment
+  counts only when its voucher moves 19xx and is not corrected (a reversed
+  payment and an offset against a credit note do not count). No amount
+  matching. A correction is judged by its re-booked rows: netted with an
+  original in the year, or with an earlier year's original added back.
 - **Blocks** (Swedish reason with accounts, and vouchers where relevant; never
   an "övrigt" row): an account with a movement and no category (1660–1699,
   2000–2079, 2860–2879, 9xxx and others); a transaction without payment in

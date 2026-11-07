@@ -2289,10 +2289,18 @@ Enligt AI-utredning 2026-11-07, juristgranskning återstår (ADR-059, tillägg
   som både debiteras och krediteras i samma verifikation stoppar analysen.
   Ett förvärv mot leverantörsskuld (2440) räknas som en utbetalning bara när
   leverantörsreskontran kopplar verifikationen till en leverantörsfaktura som
-  har betalats helt med betalningar bokförda samma räkenskapsår. En manuellt
-  bokförd 2440-verifikation, en obetald eller delbetald faktura och en faktura
-  som betalas först nästa år stoppar analysen; NONOX gissar aldrig vilken
-  betalning som hör till förvärvet utifrån belopp och datum.
+  har betalats helt med betalningar bokförda samma räkenskapsår. En betalning
+  räknas bara när dess verifikation flyttar likvida medel (1900–1999) och inte
+  har rättats; en betalning som gått i retur och rättats, och en kvittning
+  mot en kreditnota, räknas inte. En manuellt bokförd 2440-verifikation, en
+  obetald eller delbetald faktura och en faktura som betalas först nästa år
+  stoppar analysen; NONOX gissar aldrig vilken betalning som hör till
+  förvärvet utifrån belopp och datum.
+- En rättelseverifikation bedöms efter det som till slut bokades: den räknas
+  ihop med den verifikation den rättar, och för en rättelse av ett tidigare
+  års verifikation läggs originalet tillbaka, så att bara de nya raderna
+  prövas. En rättelse som bokar om en amortering med räntan lagd på lånet
+  stoppas alltså på samma sätt som en vanlig verifikation.
 - Utbetald utdelning hör till finansieringsverksamheten (punkt 7.16): den
   beslutade utdelningen enligt specifikationen av förändringar i eget kapital
   (avsnitt 5a6.3) minskad med ökningen av ej utbetald utdelning på 2898.
@@ -2332,10 +2340,11 @@ Enligt AI-utredning 2026-11-07, juristgranskning återstår (ADR-059, tillägg
   kan ta, stoppar analysen.
 - Kontoindelningen är NONOX:s egen och inte K3:s text; den är markerad
   TODO(legal-verify) och listas i avsnitt 8.
-- Analysen läser utöver årsredovisningens egna frågor sex databasfrågor per
+- Analysen läser utöver årsredovisningens egna frågor sju databasfrågor per
   år: specifikationen av förändringar i eget kapital, kontonumren, årets
-  bokförda verifikationer, deras rader (valda med verifikationernas id),
-  årets leverantörsfakturor och deras betalningar. För jämförelseåret läses
+  bokförda verifikationer, deras rader (valda med verifikationernas id, även
+  originalen till årets rättelser), årets leverantörsfakturor, deras
+  betalningar och vilka betalningsverifikationer som flyttar likvida medel. För jämförelseåret läses
   även det årets saldon. Antalet beror inte på antalet verifikationer, och
   ingen fråga kopplar ihop rader och verifikationer, så att frågeplanen
   förblir linjär även när databasens statistik är inaktuell. Ingen skärm

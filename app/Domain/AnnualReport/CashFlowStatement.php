@@ -9,6 +9,7 @@ use App\Domain\Company\LegalForm;
 use App\Models\Company;
 use Illuminate\Support\Facades\DB;
 use LogicException;
+use stdClass;
 
 /**
  * The cash flow statement of a K3 annual report, indirect method (ADR-059
@@ -418,46 +419,32 @@ final class CashFlowStatement
      * The gross investing and financing lines (K3 7.11), read voucher by
      * voucher, and the blocks for transactions without payment (K3 chapter 7
      * kommentar) and for disposals of intangible and tangible fixed assets.
+     * The gross lines use what the year's vouchers move (a correction netted
+     * with an original in the year); the check for a payment uses what was
+     * booked in the end, the re-booked rows of a correction (see
+     * withCorrections()).
      *
      * @return array<string, int>
      */
     private function grossFromVouchers(): array
     {
         $lines = array_fill_keys(self::SUBTOTALS['kassaflode_fran_investeringsverksamheten'], 0) + ['upptagna_lan' => 0, 'amortering_av_lan' => 0];
-        [$vouchers, $yearVouchers] = $this->vouchers();
+        [$vouchers, $yearVouchers, $settled, $cashAccounts] = $this->vouchers();
         $groups = self::withCorrections($vouchers);
-        $paidInvoices = $this->supplierInvoicesPaidInTheYear($yearVouchers);
+        $paidInvoices = $this->supplierInvoicesPaidInTheYear($yearVouchers, $settled, $cashAccounts);
 
         foreach ($groups as $group) {
-            $families = [];
-            $byCategory = [];
-            $counters = [];
+            [$families, , $counters, $investing] = self::split($group['check_rows']);
+            [$rowFamilies, $byCategory] = self::split($group['rows']);
 
-            foreach ($group['rows'] as $number => $amount) {
-                if ($amount === 0) {
-                    continue;
-                }
-
-                $category = CashFlowAccounts::categoryOf($number);
-
-                if ($category !== null && in_array($category, CashFlowAccounts::INVESTING_FINANCING, true)) {
-                    $families[self::family($category)] = true;
-                    $byCategory[$category] = ($byCategory[$category] ?? 0) + $amount;
-
-                    continue;
-                }
-
-                $counters[$number] = $amount;
-            }
-
-            if ($families === []) {
+            if ($families === [] && $rowFamilies === []) {
                 continue;
             }
 
-            $nonCash = $this->nonCashAccounts($group, $families, $counters, array_sum($byCategory), $paidInvoices);
+            $nonCash = $families === [] ? null : $this->nonCashAccounts($group, $families, $counters, $investing, $paidInvoices);
 
             if ($nonCash !== null) {
-                $accounts = array_merge(array_keys(array_filter($group['rows'], fn (int $amount, int $number): bool => $amount !== 0 && in_array(CashFlowAccounts::categoryOf($number), CashFlowAccounts::INVESTING_FINANCING, true), ARRAY_FILTER_USE_BOTH)), $nonCash);
+                $accounts = array_merge(array_keys(array_filter($group['check_rows'], fn (int $amount, int $number): bool => $amount !== 0 && in_array(CashFlowAccounts::categoryOf($number), CashFlowAccounts::INVESTING_FINANCING, true), ARRAY_FILTER_USE_BOTH)), $nonCash);
                 $text = $nonCash !== [] && array_filter($nonCash, fn (int $number): bool => self::inRange($number, CashFlowAccounts::TRADE_PAYABLES)) !== []
                     ? 'verifikation :vouchers bokför ett förvärv på konto :accounts mot en leverantörsskuld som leverantörsreskontran inte visar som helt betald under året; ett förvärv mot en obetald eller manuellt bokförd skuld räknas inte som en utbetalning (K3 kapitel 7, kommentaren om transaktioner som inte medför betalningar)'
                     : 'verifikation :vouchers bokför konto :accounts utan betalning; en transaktion i investerings- eller finansieringsverksamheten som inte medför in- eller utbetalningar ska inte ingå i kassaflödet (K3 kapitel 7, kommentaren om transaktioner som inte medför betalningar), och NONOX kan ännu inte visa den på annan plats';
@@ -494,6 +481,40 @@ final class CashFlowStatement
     }
 
     /**
+     * Rows of a voucher split into the investing and financing families, the
+     * amount per such category, the counter accounts and the investing or
+     * financing total.
+     *
+     * @param  array<int, int>  $rows
+     * @return array{0: array<string, true>, 1: array<string, int>, 2: array<int, int>, 3: int}
+     */
+    private static function split(array $rows): array
+    {
+        $families = [];
+        $byCategory = [];
+        $counters = [];
+
+        foreach ($rows as $number => $amount) {
+            if ($amount === 0) {
+                continue;
+            }
+
+            $category = CashFlowAccounts::categoryOf($number);
+
+            if ($category !== null && in_array($category, CashFlowAccounts::INVESTING_FINANCING, true)) {
+                $families[self::family($category)] = true;
+                $byCategory[$category] = ($byCategory[$category] ?? 0) + $amount;
+
+                continue;
+            }
+
+            $counters[$number] = $amount;
+        }
+
+        return [$families, $byCategory, $counters, array_sum($byCategory)];
+    }
+
+    /**
      * The counter accounts that make a voucher a transaction without payment,
      * or null when it is paid in likvida medel. Allowed beside an investing or
      * financing account: likvida medel and moms; for intangible and tangible
@@ -505,10 +526,10 @@ final class CashFlowStatement
      * purchase of shares). A trade payable (2440–2449) is allowed for an
      * acquisition only when the voucher books a supplier invoice that the
      * payables ledger shows paid in full within the year. Two families in
-     * one voucher, or a loan account both debited and credited in it, are
-     * never a payment.
+     * one voucher, or a loan account both debited and credited in what it
+     * books (for a correction, in its re-booked rows), are never a payment.
      *
-     * @param  array{ids: list<string>, references: list<string>, two_sided: list<int>, rows: array<int, int>}  $group
+     * @param  array{ids: list<string>, references: list<string>, two_sided: list<int>, rows: array<int, int>, check_rows: array<int, int>}  $group
      * @param  array<string, true>  $families
      * @param  array<int, int>  $counters
      * @param  array<string, true>  $paidInvoices  voucher ids of supplier invoices paid in full in the year
@@ -573,26 +594,45 @@ final class CashFlowStatement
 
     /**
      * The vouchers of the year's supplier invoices that the payables ledger
-     * shows paid in full by payments booked in the same fiscal year: the
-     * invoice's voucher (supplier_invoices.voucher_id) and its payments'
-     * vouchers (supplier_payments.voucher_id) are among the year's posted
-     * vouchers, and the payments add up to the invoice total (in the invoice
-     * currency for a foreign invoice). Two single-table reads selected by the
-     * year's voucher ids, whatever the number of invoices.
+     * shows paid in full in the year. A payment counts only when its voucher
+     * is posted in the year, has not been corrected (a payment that went back
+     * is reversed by CorrectVoucher, which sets corrected_by_voucher_id) and
+     * moves likvida medel (BAS 1900–1999); an offset against a credit note
+     * (OffsetSupplierCredit) moves no money and does not count. The counted
+     * payments must add up to the invoice total (in the invoice currency for a
+     * foreign invoice). Three single-table reads, whatever the number of
+     * invoices: the invoices and the payments selected by the year's voucher
+     * ids, and which payment vouchers have a row on likvida medel.
      *
      * @param  list<string>  $yearVouchers
+     * @param  array<string, true>  $settled  ids of the year's vouchers that have not been corrected
+     * @param  list<int>  $cashAccounts  ids of the company's accounts in BAS 1900–1999
      * @return array<string, true>
      */
-    private function supplierInvoicesPaidInTheYear(array $yearVouchers): array
+    private function supplierInvoicesPaidInTheYear(array $yearVouchers, array $settled, array $cashAccounts): array
     {
         $companyId = $this->accounts->fiscalYear->company_id;
         $ids = '{'.implode(',', $yearVouchers).'}';
         $invoices = DB::select('SELECT id, voucher_id, total_ore, foreign_total_minor FROM supplier_invoices WHERE company_id = ? AND voucher_id = ANY(?::uuid[])', [$companyId, $ids]);
-        $payments = DB::select('SELECT supplier_invoice_id, amount_ore, foreign_amount_minor FROM supplier_payments WHERE company_id = ? AND voucher_id = ANY(?::uuid[])', [$companyId, $ids]);
+        $payments = array_values(array_filter(
+            DB::select('SELECT supplier_invoice_id, voucher_id, amount_ore, foreign_amount_minor FROM supplier_payments WHERE company_id = ? AND voucher_id = ANY(?::uuid[])', [$companyId, $ids]),
+            fn (stdClass $payment): bool => isset($settled[(string) $payment->voucher_id]),
+        ));
+        $paymentVouchers = array_values(array_unique(array_map(fn (stdClass $payment): string => (string) $payment->voucher_id, $payments)));
+        $moved = [];
+
+        foreach (DB::select('SELECT DISTINCT voucher_id FROM voucher_rows WHERE company_id = ? AND voucher_id = ANY(?::uuid[]) AND account_id = ANY(?::bigint[])', [$companyId, '{'.implode(',', $paymentVouchers).'}', '{'.implode(',', $cashAccounts).'}']) as $row) {
+            $moved[(string) $row->voucher_id] = true;
+        }
+
         $paidOre = [];
         $paidForeign = [];
 
         foreach ($payments as $payment) {
+            if (! isset($moved[(string) $payment->voucher_id])) {
+                continue;
+            }
+
             $invoice = (string) $payment->supplier_invoice_id;
             $paidOre[$invoice] = ($paidOre[$invoice] ?? 0) + (int) $payment->amount_ore;
             $paidForeign[$invoice] = ($paidForeign[$invoice] ?? 0) + (int) $payment->foreign_amount_minor;
@@ -616,20 +656,21 @@ final class CashFlowStatement
 
     /**
      * The year's posted vouchers that touch an investing or financing account,
-     * with their rows summed per account (credit positive, the cash sign) and
-     * the accounts both debited and credited in the voucher.
+     * with their rows summed per account (credit positive, the cash sign).
      *
-     * Three single-table reads, so no join can be planned badly: the
-     * company's account numbers, the year's posted vouchers (with their series
-     * code), and their rows grouped per voucher and account, selected by
-     * voucher id (`= ANY`, the index on voucher_rows.voucher_id) with a window
-     * over each voucher that keeps the vouchers touching an investing or
-     * financing account (no IN subquery). A join of rows and vouchers was
-     * planned as a nested loop with a join filter after ANALYZE on empty
-     * tables, growing with rows × vouchers (S1-P8 review); these reads stay
-     * linear in the number of rows whatever the statistics.
+     * Single-table reads, so no join can be planned badly: the company's
+     * account numbers, the year's posted vouchers (with their series code),
+     * and the rows grouped per voucher and account, selected by voucher id
+     * (`= ANY`) with a window over each voucher that keeps the vouchers
+     * touching an investing or financing account (no IN subquery). A join of
+     * rows and vouchers was planned as a nested loop with a join filter after
+     * ANALYZE on empty tables, growing with rows × vouchers (S1-P8 review);
+     * these reads stay linear in the number of rows whatever the statistics.
+     * The rows of the vouchers that the year's corrections correct are read
+     * too, also from an earlier year, so that a correction's re-booked rows
+     * can be told from its reversal.
      *
-     * @return array{0: list<array{id: string, references: list<string>, corrects: ?string, two_sided: list<int>, rows: array<int, int>}>, 1: list<string>} the vouchers read, and the ids of all the year's posted vouchers
+     * @return array{0: list<array{id: string, references: list<string>, corrects: ?string, outside_original: array<int, int>, two_sided: list<int>, rows: array<int, int>}>, 1: list<string>, 2: array<string, true>, 3: list<int>} the vouchers read, the ids of all the year's posted vouchers, those not corrected, and the ids of the likvida medel accounts
      */
     private function vouchers(): array
     {
@@ -643,6 +684,8 @@ final class CashFlowStatement
 
         $investing = array_keys(array_filter($numbers, fn (int $number): bool => CashFlowAccounts::inRanges($number, CashFlowAccounts::VOUCHER_LEVEL)));
         $headers = [];
+        $settled = [];
+        $originals = [];
 
         foreach (DB::table('vouchers')
             ->join('voucher_series', 'voucher_series.id', '=', 'vouchers.series_id')
@@ -652,8 +695,17 @@ final class CashFlowStatement
             ->orderBy('vouchers.voucher_date')
             ->orderBy('voucher_series.code')
             ->orderBy('vouchers.number')
-            ->get(['vouchers.id', 'vouchers.number', 'vouchers.corrects_voucher_id', 'voucher_series.code']) as $voucher) {
-            $headers[(string) $voucher->id] = $voucher;
+            ->get(['vouchers.id', 'vouchers.number', 'vouchers.corrects_voucher_id', 'vouchers.corrected_by_voucher_id', 'voucher_series.code']) as $voucher) {
+            $id = (string) $voucher->id;
+            $headers[$id] = $voucher;
+
+            if ($voucher->corrected_by_voucher_id === null) {
+                $settled[$id] = true;
+            }
+
+            if ($voucher->corrects_voucher_id !== null) {
+                $originals[] = (string) $voucher->corrects_voucher_id;
+            }
         }
 
         $rows = DB::select(<<<'SQL'
@@ -666,41 +718,59 @@ final class CashFlowStatement
                 GROUP BY voucher_id, account_id
             ) year_rows
             WHERE touches_investing
-            SQL, ['{'.implode(',', $investing).'}', $year->company_id, '{'.implode(',', array_keys($headers)).'}']);
+            SQL, ['{'.implode(',', $investing).'}', $year->company_id, '{'.implode(',', array_unique([...array_keys($headers), ...$originals])).'}']);
+
+        /** @var array<string, array<int, array{0: int, 1: int}>> $gross voucher id => account number => [debit, credit] */
+        $gross = [];
+
+        foreach ($rows as $row) {
+            $gross[(string) $row->voucher_id][$numbers[(int) $row->account_id]] = [(int) $row->debit, (int) $row->credit];
+        }
 
         $vouchers = [];
 
-        foreach ($rows as $row) {
-            $id = (string) $row->voucher_id;
-            $header = $headers[$id];
-            $number = $numbers[(int) $row->account_id];
-            $vouchers[$id] ??= [
+        foreach ($headers as $id => $header) {
+            if (! isset($gross[$id])) {
+                continue;
+            }
+
+            $corrects = $header->corrects_voucher_id === null ? null : (string) $header->corrects_voucher_id;
+            $rebooked = $gross[$id];
+
+            // A correction is the reversal of its original plus the re-booked rows; take the
+            // reversal away (the original's debit becomes a credit and the other way round).
+            foreach ($corrects === null ? [] : ($gross[$corrects] ?? []) as $number => [$debit, $credit]) {
+                [$rebookedDebit, $rebookedCredit] = $rebooked[$number] ?? [0, 0];
+                $rebooked[$number] = [$rebookedDebit - $credit, $rebookedCredit - $debit];
+            }
+
+            $vouchers[] = [
                 'id' => $id,
                 'references' => [$header->code.$header->number],
-                'corrects' => $header->corrects_voucher_id === null ? null : (string) $header->corrects_voucher_id,
-                'two_sided' => [],
-                'rows' => [],
+                'corrects' => $corrects,
+                'outside_original' => $corrects !== null && ! isset($headers[$corrects]) ? array_map(fn (array $amounts): int => $amounts[1] - $amounts[0], $gross[$corrects] ?? []) : [],
+                'two_sided' => array_keys(array_filter($rebooked, fn (array $amounts): bool => $amounts[0] > 0 && $amounts[1] > 0)),
+                'rows' => array_map(fn (array $amounts): int => $amounts[1] - $amounts[0], $gross[$id]),
             ];
-            $vouchers[$id]['rows'][$number] = (int) $row->credit - (int) $row->debit;
-
-            // A correcting voucher reverses and re-books in one voucher, so its two sides are expected.
-            if ((int) $row->debit > 0 && (int) $row->credit > 0 && $header->corrects_voucher_id === null) {
-                $vouchers[$id]['two_sided'][] = $number;
-            }
         }
 
-        // In the order of the vouchers (date, series, number), as the refusal lists them.
-        return [array_values(array_filter(array_map(fn (string $id): ?array => $vouchers[$id] ?? null, array_keys($headers)))), array_keys($headers)];
+        $cash = array_keys(array_filter($numbers, fn (int $number): bool => CashFlowAccounts::categoryOf($number) === CashFlowAccounts::CASH));
+
+        return [$vouchers, array_keys($headers), $settled, $cash];
     }
 
     /**
      * A correcting voucher (CorrectVoucher writes the reversal and any
      * re-booked rows in one voucher) is netted with the voucher it corrects
-     * when both are read, along the chain of corrections, so a corrected loan
-     * counts once and a reversed one not at all (as K3EquityStatement does).
+     * when both are in the year, along the chain of corrections, so a
+     * corrected loan counts once and a reversed one not at all (as
+     * K3EquityStatement does): `rows` is what the year's vouchers move. The
+     * check for a payment looks at what was booked in the end, `check_rows`:
+     * the same, plus, for a correction of an earlier year's voucher, that
+     * original added back, which leaves the re-booked rows.
      *
-     * @param  list<array{id: string, references: list<string>, corrects: ?string, two_sided: list<int>, rows: array<int, int>}>  $vouchers
-     * @return list<array{ids: list<string>, references: list<string>, two_sided: list<int>, rows: array<int, int>}>
+     * @param  list<array{id: string, references: list<string>, corrects: ?string, outside_original: array<int, int>, two_sided: list<int>, rows: array<int, int>}>  $vouchers
+     * @return list<array{ids: list<string>, references: list<string>, two_sided: list<int>, rows: array<int, int>, check_rows: array<int, int>}>
      */
     private static function withCorrections(array $vouchers): array
     {
@@ -717,13 +787,19 @@ final class CashFlowStatement
             }
 
             $key = $root['id'];
-            $groups[$key] ??= ['ids' => [], 'references' => [], 'two_sided' => [], 'rows' => []];
+            $groups[$key] ??= ['ids' => [], 'references' => [], 'two_sided' => [], 'rows' => [], 'check_rows' => []];
             $groups[$key]['ids'][] = $voucher['id'];
             $groups[$key]['references'][] = $voucher['references'][0];
-            $groups[$key]['two_sided'] = [...$groups[$key]['two_sided'], ...$voucher['two_sided']];
+            // The vouchers come in date order, so the last of a chain is what was booked in the end.
+            $groups[$key]['two_sided'] = $voucher['two_sided'];
 
             foreach ($voucher['rows'] as $number => $change) {
                 $groups[$key]['rows'][$number] = ($groups[$key]['rows'][$number] ?? 0) + $change;
+                $groups[$key]['check_rows'][$number] = ($groups[$key]['check_rows'][$number] ?? 0) + $change;
+            }
+
+            foreach ($voucher['outside_original'] as $number => $change) {
+                $groups[$key]['check_rows'][$number] = ($groups[$key]['check_rows'][$number] ?? 0) + $change;
             }
         }
 

@@ -9,6 +9,7 @@ use App\Actions\Accounting\SaveDraftVoucher;
 use App\Actions\AnnualReport\SavePriorYearSizeFigures;
 use App\Actions\AnnualReport\SetAccountingPolicy;
 use App\Actions\Payables\ApproveSupplierInvoice;
+use App\Actions\Payables\OffsetSupplierCredit;
 use App\Actions\Payables\PaySupplierInvoice;
 use App\Actions\Payables\RegisterSupplierInvoice;
 use App\Actions\Payables\SaveSupplier;
@@ -371,6 +372,70 @@ describe('F-S1-a', function () {
         expect(cashFlow($this->fixture->years[2026])->refusal())->toContain('1210');
     });
 
+    it('K3 7 kommentar: blocks a machine whose payment was reversed by a correction (review P1)', function () {
+        $invoice = machineOnSupplierInvoice($this->fixture, '2026-10-01');
+        $payment = app(PaySupplierInvoice::class)($this->fixture->owner, $invoice, CarbonImmutable::parse('2026-10-30'), Money::parse('125 000'));
+        app(CorrectVoucher::class)($this->fixture->owner, Voucher::query()->findOrFail($payment->voucher_id), 'Betalningen gick i retur', '2026-11-15');
+
+        expect(cashFlow($this->fixture->years[2026])->refusal())->toContain('1210')
+            ->and(cashFlow($this->fixture->years[2026])->refusal())->toContain('2440');
+    });
+
+    it('K3 7 kommentar: blocks a machine invoice settled by offsetting a credit note, which moves no money', function () {
+        $invoice = machineOnSupplierInvoice($this->fixture, '2026-10-01');
+        $draft = app(SaveSupplierInvoice::class)($this->fixture->owner, $this->fixture->company, [
+            'supplier_id' => $invoice->supplier_id,
+            'invoice_date' => '2026-10-15',
+            'total' => '125 000',
+            'vat' => '25 000',
+            'credit' => true,
+            'rows' => [['account' => '4010', 'amount' => '100 000', 'description' => 'Kredit']],
+        ]);
+        $credit = app(ApproveSupplierInvoice::class)($this->fixture->owner, app(RegisterSupplierInvoice::class)($this->fixture->owner, $draft))->fresh() ?? throw new LogicException('No credit note.');
+        app(OffsetSupplierCredit::class)($this->fixture->owner, $credit, $invoice->fresh() ?? $invoice, CarbonImmutable::parse('2026-10-20'));
+
+        expect(cashFlow($this->fixture->years[2026])->refusal())->toContain('1210');
+    });
+
+    it('K3 7 kommentar: blocks a correction that re-books an amortisation with interest added to the loan (review C1)', function () {
+        $original = postCashFlowVoucher($this->fixture, '2026-06-30', 'Amortering', [[2350, 10_000_000, 0], [1930, 0, 10_000_000]]);
+        app(CorrectVoucher::class)($this->fixture->owner, $original, 'Ränta saknades', '2026-07-01', [
+            ['account' => 2350, 'debit_ore' => 10_000_000, 'credit_ore' => 0],
+            ['account' => 2350, 'debit_ore' => 0, 'credit_ore' => 2_000_000],
+            ['account' => 8410, 'debit_ore' => 2_000_000, 'credit_ore' => 0],
+            ['account' => 1930, 'debit_ore' => 0, 'credit_ore' => 10_000_000],
+        ]);
+
+        expect(cashFlow($this->fixture->years[2026])->refusal())->toContain('2350');
+    });
+
+    it('K3 7.11: a correction that re-books an amortisation with another amount is shown once, with the new amount', function () {
+        $original = postCashFlowVoucher($this->fixture, '2026-06-30', 'Amortering', [[2350, 10_000_000, 0], [1930, 0, 10_000_000]]);
+        app(CorrectVoucher::class)($this->fixture->owner, $original, 'Fel belopp', '2026-07-01', [
+            ['account' => 2350, 'debit_ore' => 12_000_000, 'credit_ore' => 0],
+            ['account' => 1930, 'debit_ore' => 0, 'credit_ore' => 12_000_000],
+        ]);
+
+        $statement = cashFlow($this->fixture->years[2026]);
+
+        expect($statement->refusal())->toBeNull()
+            ->and($statement->amounts()['amortering_av_lan'])->toBe(-120_000_000 - 12_000_000)
+            ->and($statement->amounts()['upptagna_lan'])->toBe(0);
+    });
+
+    it('K3 7 kommentar: judges a correction of last year\'s voucher by its re-booked rows', function () {
+        $original = CurrentCompany::run($this->fixture->company, fn () => postCashFlowVoucher($this->fixture, '2025-06-30', 'Amortering', [[2350, 10_000_000, 0], [1930, 0, 10_000_000]]));
+        app(CorrectVoucher::class)($this->fixture->owner, $original, 'Ränta saknades', '2026-02-01', [
+            ['account' => 2350, 'debit_ore' => 10_000_000, 'credit_ore' => 0],
+            ['account' => 2350, 'debit_ore' => 0, 'credit_ore' => 2_000_000],
+            ['account' => 8410, 'debit_ore' => 2_000_000, 'credit_ore' => 0],
+            ['account' => 1930, 'debit_ore' => 0, 'credit_ore' => 10_000_000],
+        ]);
+
+        expect(cashFlow($this->fixture->years[2026])->refusal())->toContain('utan betalning')
+            ->and(cashFlow($this->fixture->years[2026])->refusedAccounts())->toContain(2350);
+    });
+
     it('K3 7.6: aktiverat arbete (38xx) and a transfer between fixed asset accounts are no cash flow block', function () {
         postCashFlowVoucher($this->fixture, '2026-06-30', 'Aktiverat arbete', [[1220, 3_000_000, 0], [3840, 0, 3_000_000]]);
         postCashFlowVoucher($this->fixture, '2026-03-01', 'Förskott maskin', [[1288, 1_000_000, 0], [1930, 0, 1_000_000]]);
@@ -576,11 +641,12 @@ describe('F-S1-a', function () {
             postCashFlowVoucher($this->fixture, sprintf('2026-%02d-21', $month), 'Inköp av maskin', [[1210, 100_000, 0], [1930, 0, 100_000]]);
         }
 
-        // Per year six queries: the equity statement; the account numbers, the posted vouchers
-        // and their rows; the year's supplier invoices and their payments (single-table reads).
-        // For the previous year beside it also AnnualAccounts (the year's lookup, accounts,
-        // opening balances, movements, goods-for-resale accounts).
-        expect($short)->toBe(17)
+        // Per year seven queries: the equity statement; the account numbers, the posted vouchers
+        // and their rows; the year's supplier invoices, their payments and which payment vouchers
+        // move likvida medel (single-table reads). For the previous year beside it also
+        // AnnualAccounts (the year's lookup, accounts, opening balances, movements,
+        // goods-for-resale accounts).
+        expect($short)->toBe(19)
             ->and($count())->toBe($short);
 
         // With fresh planner statistics the queries still finish at once (S1-P7 review:

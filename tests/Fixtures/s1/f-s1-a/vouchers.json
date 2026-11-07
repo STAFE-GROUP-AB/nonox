@@ -7470,7 +7470,7 @@
     {
       "fiscal_year": 2026,
       "series": "E",
-      "number": 17,
+      "number": 16,
       "date": "2026-08-15",
       "description": "Övriga externa kostnader, betalda via bank (summering)",
       "rows": [
@@ -7558,7 +7558,7 @@
     {
       "fiscal_year": 2026,
       "series": "E",
-      "number": 16,
+      "number": 15,
       "date": "2026-08-25",
       "description": "Leverantörsbetalningar, föregående månads fakturor",
       "rows": [
@@ -7844,7 +7844,7 @@
     {
       "fiscal_year": 2026,
       "series": "E",
-      "number": 19,
+      "number": 18,
       "date": "2026-09-15",
       "description": "Övriga externa kostnader, betalda via bank (summering)",
       "rows": [
@@ -7932,7 +7932,7 @@
     {
       "fiscal_year": 2026,
       "series": "E",
-      "number": 18,
+      "number": 17,
       "date": "2026-09-25",
       "description": "Leverantörsbetalningar, föregående månads fakturor",
       "rows": [
@@ -8256,7 +8256,7 @@
     {
       "fiscal_year": 2026,
       "series": "E",
-      "number": 21,
+      "number": 20,
       "date": "2026-10-15",
       "description": "Övriga externa kostnader, betalda via bank (summering)",
       "rows": [
@@ -8344,7 +8344,7 @@
     {
       "fiscal_year": 2026,
       "series": "E",
-      "number": 20,
+      "number": 19,
       "date": "2026-10-25",
       "description": "Leverantörsbetalningar, föregående månads fakturor",
       "rows": [
@@ -8630,7 +8630,7 @@
     {
       "fiscal_year": 2026,
       "series": "E",
-      "number": 23,
+      "number": 22,
       "date": "2026-11-15",
       "description": "Övriga externa kostnader, betalda via bank (summering)",
       "rows": [
@@ -8718,7 +8718,7 @@
     {
       "fiscal_year": 2026,
       "series": "E",
-      "number": 22,
+      "number": 21,
       "date": "2026-11-25",
       "description": "Leverantörsbetalningar, föregående månads fakturor",
       "rows": [
@@ -9004,7 +9004,7 @@
     {
       "fiscal_year": 2026,
       "series": "E",
-      "number": 25,
+      "number": 24,
       "date": "2026-12-15",
       "description": "Övriga externa kostnader, betalda via bank (summering)",
       "rows": [
@@ -9092,7 +9092,7 @@
     {
       "fiscal_year": 2026,
       "series": "E",
-      "number": 24,
+      "number": 23,
       "date": "2026-12-25",
       "description": "Leverantörsbetalningar, föregående månads fakturor",
       "rows": [

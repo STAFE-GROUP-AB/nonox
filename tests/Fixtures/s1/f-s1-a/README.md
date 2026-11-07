@@ -364,7 +364,7 @@ passed.**
   July (series E). The cash flow statement does not accept an acquisition against 2440
   unless the payables ledger links the invoice to its payment, and the fixture's manual
   vouchers carry no such link. The payment voucher was removed (2026 now has 151
-  vouchers). Amounts, VAT and the acquisition date are unchanged, and so is every figure
+  vouchers), and series E of 2026 is renumbered 1–24 without a gap. Amounts, VAT and the acquisition date are unchanged, and so is every figure
   in `expected.json` at the year end.
 - **2026-11-07, approved by the Lead.** `tillaggsupplysning_betald_ranta` is negative
   (−41 400 000 and −46 200 000 öre), as the file's own convention "inflow positive,
