@@ -474,3 +474,43 @@ it('shows no other company\'s fiscal year (404) and changes none of them', funct
 
     expect(CompanyScope::bypass(fn () => $otherYear->fresh()->reporting_framework))->toBe(ReportingFramework::K2);
 });
+
+it('records the K2 confirmation only when the save moves the company to K2', function () {
+    $this->company->forceFill(['k2_conditions_confirmed_at' => null, 'k2_conditions_confirmed_by' => null])->save();
+
+    // A tampered checkbox without a change writes no legal confirmation.
+    app(UpdateCompanyDetails::class)($this->owner, $this->company->fresh(), frameworkSettingsInput($this->company->fresh(), ['framework_confirmed' => true]));
+
+    expect($this->company->fresh()->k2_conditions_confirmed_at)->toBeNull();
+
+    app(ChangeReportingFramework::class)($this->owner, $this->year2026, ReportingFramework::K3);
+    app(UpdateCompanyDetails::class)($this->owner, $this->company->fresh(), frameworkSettingsInput($this->company->fresh(), ['reporting_framework' => 'K2', 'framework_confirmed' => true]));
+
+    expect($this->company->fresh()->k2_conditions_confirmed_at)->not->toBeNull()
+        ->and($this->year2026->fresh()->reporting_framework)->toBe(ReportingFramework::K2);
+});
+
+it('says the framework applies from a year only when a year changed, and records a pure default sync', function () {
+    // Every year is K3 already; only the company default says K2.
+    $this->year2026->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
+
+    Livewire::test(CompanyDetailsForm::class, ['company' => $this->company->fresh()])
+        ->set('state.reporting_framework', 'K3')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertDispatched('toast', message: 'Uppgifterna för '.$this->company->name.' är sparade.');
+
+    expect($this->company->fresh()->reporting_framework)->toBe(ReportingFramework::K3)
+        ->and(AuditLog::forCompany($this->company)->where('action', 'company.framework_default_synced')->count())->toBe(1);
+});
+
+it('records the default change when an earlier year changes but the latest one already had the framework', function () {
+    $next = frameworkNextYear($this->owner, $this->company);
+    $next->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
+
+    app(ChangeReportingFramework::class)($this->owner, $this->year2026, ReportingFramework::K3);
+
+    expect($this->company->fresh()->reporting_framework)->toBe(ReportingFramework::K3)
+        ->and(AuditLog::forCompany($this->company)->where('action', 'fiscal_year.framework_changed')->sole()->payload)->toMatchArray(['company_default_changed' => false])
+        ->and(AuditLog::forCompany($this->company)->where('action', 'company.framework_default_synced')->sole()->payload)->toMatchArray(['before' => 'K2', 'after' => 'K3']);
+});

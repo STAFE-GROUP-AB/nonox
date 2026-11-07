@@ -119,6 +119,8 @@ class UpdateCompanyDetails
     private function save(User $user, Company $company, array $validated, array $confirmed, ?string $reason, ?int $fromYear, array $before): void
     {
         $framework = ReportingFramework::from((string) $validated['reporting_framework']);
+        // A legal confirmation is recorded only when this save moves the company to K2, never from the checkbox alone.
+        $changesToK2 = $framework === ReportingFramework::K2 && self::frameworkWouldChange($company, $framework, $fromYear);
 
         if ($this->changeFrameworkOfYears($user, $company, $framework, $reason, $fromYear, $confirmed['framework_conditions_confirmed'])) {
             // The company has fiscal years: ChangeReportingFramework keeps the company column as the latest year's framework.
@@ -141,7 +143,7 @@ class UpdateCompanyDetails
             'eu_sales_quarterly_goods_from' => $this->quarterlyGoodsFrom($company, $validated),
         ])->save();
 
-        if ($company->reporting_framework === ReportingFramework::K2 && $confirmed['framework_conditions_confirmed'] && $company->k2_conditions_confirmed_at === null) {
+        if ($changesToK2 && $company->reporting_framework === ReportingFramework::K2 && $confirmed['framework_conditions_confirmed'] && $company->k2_conditions_confirmed_at === null) {
             // The K2 conditions were shown and confirmed in the form (owner decision 16): not asked again in the closing.
             $company->forceFill(['k2_conditions_confirmed_at' => now(), 'k2_conditions_confirmed_by' => $user->id])->save();
         }

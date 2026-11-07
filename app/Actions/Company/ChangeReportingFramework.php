@@ -81,6 +81,7 @@ class ChangeReportingFramework
                 self::refuseLockedYears($company, $years, $fiscalYear);
 
                 $changed = 0;
+                $latestChanged = false;
                 $defaultChanges = $company->reporting_framework !== $framework;
                 $latestId = $years->last()?->id;
 
@@ -98,6 +99,7 @@ class ChangeReportingFramework
                         'reporting_framework_change_reason' => $reason,
                     ])->save();
                     $changed++;
+                    $latestChanged = $latestChanged || $year->id === $latestId;
 
                     Audit::record('fiscal_year.framework_changed', $year, [
                         'fiscal_year_id' => $year->id,
@@ -116,8 +118,8 @@ class ChangeReportingFramework
                     // The company column is the latest year's framework, and the latest year is in the chain.
                     $company->forceFill(['reporting_framework' => $framework])->save();
 
-                    if ($changed === 0) {
-                        // Only the default was out of step with the years; recorded too.
+                    if (! $latestChanged) {
+                        // No year entry says the default changed (the latest year already had the framework); recorded here.
                         Audit::record('company.framework_default_synced', $company, [
                             'fiscal_year_id' => $years->last()?->id,
                             'before' => $defaultBefore->value,
@@ -178,9 +180,20 @@ class ChangeReportingFramework
             return true;
         }
 
+        return self::yearsToChange($framework, $from, $eligible)->isNotEmpty();
+    }
+
+    /**
+     * The eligible years from the chosen one on that do not have the framework yet.
+     *
+     * @param  Collection<int, FiscalYear>  $eligible
+     * @return Collection<int, FiscalYear>
+     */
+    public static function yearsToChange(ReportingFramework $framework, FiscalYear $from, Collection $eligible): Collection
+    {
         return $eligible
-            ->filter(fn (FiscalYear $year): bool => $year->start_date->greaterThanOrEqualTo($from->start_date))
-            ->contains(fn (FiscalYear $year): bool => $year->reporting_framework !== $framework);
+            ->filter(fn (FiscalYear $year): bool => $year->start_date->greaterThanOrEqualTo($from->start_date) && $year->reporting_framework !== $framework)
+            ->values();
     }
 
     /** @return list<int> */

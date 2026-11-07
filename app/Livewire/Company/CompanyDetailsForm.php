@@ -84,7 +84,8 @@ class CompanyDetailsForm extends Component
         $this->resetErrorBag();
         $this->keepFrameworkYearEligible($this->company());
         $framework = ReportingFramework::tryFrom((string) ($this->state['reporting_framework'] ?? ''));
-        $frameworkChanges = UpdateCompanyDetails::frameworkWouldChange($this->company(), $framework, $this->state['framework_from_year'] ?? null);
+        $frameworkChanges = $framework !== null && UpdateCompanyDetails::frameworkWouldChange($this->company(), $framework, $this->state['framework_from_year'] ?? null)
+            && $this->yearsChanging($this->company(), $framework);
         $fromLabel = $this->frameworkYears($this->company())[(int) ($this->state['framework_from_year'] ?? 0)] ?? null;
 
         $updateCompanyDetails($this->user(), $this->company(), $this->state);
@@ -186,6 +187,15 @@ class CompanyDetailsForm extends Component
         }
 
         return $eligible->first()?->id;
+    }
+
+    /** Whether saving moves at least one fiscal year to the framework, not only the company default. */
+    private function yearsChanging(Company $company, ReportingFramework $framework): bool
+    {
+        $eligible = ChangeReportingFramework::eligibleYears($company);
+        $from = $eligible->firstWhere('id', (int) ($this->state['framework_from_year'] ?? 0)) ?? $eligible->first();
+
+        return $from instanceof FiscalYear && ChangeReportingFramework::yearsToChange($framework, $from, $eligible)->isNotEmpty();
     }
 
     /** A chosen year that is no longer eligible (closed, adopted) falls back to the default. */
