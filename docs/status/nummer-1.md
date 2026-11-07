@@ -4,7 +4,25 @@ Målet beskrivs i uppdraget "nummer 1 för svenska småföretag med personal". V
 Inget räknas som klart utan ett test, en CI-körning, en fixtur eller ett körningsprotokoll från en testtjänst.
 Mänskliga beslut finns i [manskliga-beslut.md](manskliga-beslut.md).
 
-## Statuskontroll 2026-11-06
+## Statuskontroll 2026-11-07
+
+Kontrollerad mot koden av sanningsrevisorn, med underlag i [statuskontroll-2026-11-07.md](statuskontroll-2026-11-07.md). Arbetet styrs från och med i dag av [spec:en](../specs/nummer-1-spec.md), och filerna ägs enligt [ownership.md](../specs/ownership.md).
+
+| Område | Enligt koden 2026-11-07 |
+|---|---|
+| NE-bilaga, INK4 | ADR-053 är **Accepted**. NE-bilagan är **spärrad**: parametrarna för 2026 har `verified: false` tills en människa har kontrollerat dem (beslut 2026-11-06). INK4 är inte spärrad. |
+| Moms-API | Steg 1, testtjänst och pilotanvändare. Avslag från Skatteverket på driftsatt tjänst 2026-11-06, eftersom AI Reports Sweden AB saknar F-skatt och momsregistrering. Begäran om byte till GrantPilot AB är skickad 2026-11-07. |
+| AGI-API | **Byggt** bakom pilotspärren (paket B2). Bevis från testtjänsten saknas. |
+| Skattekonto, kundhändelser | **Byggda** bakom pilotspärren (paket B3, B4). Bevis från testtjänsten saknas. |
+| iXBRL | Nedladdning för aktiebolag i beta (E.2). Inlämning till Bolagsverket finns inte. |
+| K3-årsredovisning | **Inte byggd.** Bara spärren och K2-facit (F.1). Regelbladet `docs/specs/rules/s1.md` är klart. |
+| Koncern | Intern koncernöversikt **byggd** (G.1). Konsoliderad rapport och koncernredovisning enligt ÅRL är inte byggda. Regelbladet `docs/specs/rules/s2.md` är klart och citatkontrollerat. |
+| MCP-servern | ADR-063 är godkänd (beslut 18) med villkoret att den släpps först när juristens text finns i integritetspolicyn. Slutpunkten svarade utan spärr; rättas i paketet "publika påståenden 2026-11-07". |
+| Peppol, bankläsning | Byggda, ingen leverantör påslagen på nonox.app. |
+
+Byggt 2026-11-06 men inte listat nedan förrän nu: ADR-064 (NONOX API och NONOX Connect), villkor och integritetspolicy version 1.6, "Jag har granskat siffrorna", bekräftelse av K2-villkoren i bokslutet, konsultens granskningslistor i `docs/granskning/`, rättelsebatchen kl. 13.30 och spärren av NE för 2026. Allt driftsattes i 7ce7f858 och är grönt i CI.
+
+## Statuskontroll 2026-11-06 (ersatt av 2026-11-07)
 
 | Område | Enligt uppdraget | Enligt koden |
 |---|---|---|
