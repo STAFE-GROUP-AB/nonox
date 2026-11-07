@@ -2229,6 +2229,71 @@ Enligt AI-utredning 2026-11-07, juristgranskning återstår (ADR-059, tillägg
   oförändrad. Ingen skärm visar K3-specifikationen ännu, och ingenting i
   bokföringen ändras.
 
+### 5a6.4 Kassaflödesanalys enligt K3 (förberedelse)
+
+Enligt AI-utredning 2026-11-07, juristgranskning återstår (ADR-059, tillägg
+2026-11-07, paket S1-P8).
+
+- Ett större företag ska ha en kassaflödesanalys i årsredovisningen
+  (årsredovisningslagen 2 kap. 1 § andra stycket). För ett mindre företag är
+  den frivillig, och då gäller K3 kapitel 7 ändå fullt ut (K3 punkt 7.1).
+  Företagets princip `cash_flow_statement` (avsnitt 5a6.1) avgör: med
+  "ingen" får ett mindre företag ingen kassaflödesanalys, medan ett större
+  företag, eller ett företag vars storlek inte går att avgöra, stoppas med
+  en hänvisning till 2 kap. 1 §. Direkt metod (som K3 punkt 7.8 tillåter)
+  byggs inte; en sådan princip stoppas med en förklaring. Ett större
+  företags hela K3-årsredovisning stoppas fortfarande i ett senare steg
+  (beslut H1); kassaflödesanalysen räknas ändå fram och prövas mot testdata.
+- `CashFlowStatement` tar fram analysen med indirekt metod (K3 punkt 7.9)
+  ur varje kontos förändring under året, inte ur enskilda verifikationer.
+  Varje konto hör till precis en kategori i `CashFlowAccounts`: likvida
+  medel (BAS 1900–1999, standard som användaren har bekräftat), resultat,
+  avskrivningar, varulager, rörelsefordringar, rörelseskulder, avsättningar,
+  inkomstskatt, uppskjuten skatt, obeskattade reserver, anläggningstillgångar
+  (immateriella, materiella, finansiella), kortfristiga placeringar, eget
+  kapital och lån. Analysen börjar med resultat efter finansiella poster,
+  justerar för avskrivningar och avsättningar, visar betald inkomstskatt för
+  sig under den löpande verksamheten (punkt 7.17) och lägger till
+  förändringen av rörelsekapitalet. Betald och erhållen ränta ligger kvar i
+  den löpande verksamheten och visas som tilläggsupplysning. Utbetald
+  utdelning hör till finansieringsverksamheten (punkt 7.16): den beslutade
+  utdelningen enligt specifikationen av förändringar i eget kapital (avsnitt
+  5a6.3) minskad med ökningen av ej utbetald utdelning på 2898.
+  Aktieägartillskott, återbetalning av tillskott och nyemission hämtas på
+  samma sätt. En utnyttjad checkräkningskredit (2330, 2480) är lån och
+  därmed finansieringsverksamhet, aldrig likvida medel (punkt 7.4
+  kommentar); ett bankkonto i 19xx med negativt saldo stoppar analysen.
+- Eftersom varje bokförd verifikation balanserar går de tre delarna alltid
+  ihop med förändringen av likvida medel, på öret; analysen kontrollerar det
+  ändå och stoppas om det inte stämmer. Rättelseverifikationer behöver ingen
+  egen hantering: bara kontots nettoförändring läses.
+- Analysen stoppas, med en svensk förklaring som räknar upp kontona, när ett
+  konto med en förändring under året inte hör till någon kategori (till
+  exempel 2860–2879, 1690–1699, 2000–2079 och 9xxx), när ett resultat vid
+  avyttring av anläggningstillgångar, finansiella poster som inte är
+  kassaflöde eller hör till investeringsverksamheten, eller koncernbidrag
+  har bokförts (det kan ännu inte justeras), när årets avskrivningar inte
+  motsvarar förändringen av de ackumulerade avskrivningarna (en avyttring,
+  eller en avskrivning direkt mot anskaffningskontot), när uppskjuten skatt
+  eller bokslutsdispositioner inte går jämnt ut mot sina balansposter, när
+  likvida medel vid årets början skiljer sig från föregående års utgående
+  balans, och när specifikationen av förändringar i eget kapital inte kan
+  tas fram. Ingenting förs någonsin till en rad för övriga poster.
+- I årsredovisningen avrundas varje rad till hela kronor och varje summa är
+  summan av de avrundade raderna (`CashFlowPrintedFigures`). Likvida medel
+  avrundas som balansräkningens kassa och bank. En avrundningsrest läggs på
+  förändringen av rörelseskulder, annars rörelsefordringar, annars
+  varulager; en rest som avrundning inte kan förklara, eller som ingen rad
+  kan ta, stoppar analysen.
+- Kontoindelningen är NONOX:s egen och inte K3:s text; den är markerad
+  TODO(legal-verify) och listas i avsnitt 8 (bland annat kortfristiga
+  placeringar som investeringsverksamhet i stället för likvida medel, och att
+  lån och anläggningstillgångar visas netto per år).
+- Analysen läses utan egna databasfrågor utöver specifikationen av
+  förändringar i eget kapital (en fråga per år), oberoende av antalet
+  verifikationer. Ingen skärm visar kassaflödesanalysen ännu, och ingenting
+  i bokföringen ändras.
+
 ## 5a7. Inkomstdeklaration 2 (SRU)
 
 - Under Bokföring → Inkomstdeklaration tas INK2 med INK2R och INK2S fram ur
@@ -4313,6 +4378,17 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   leverantören av kontoinformation; Enable Banking som underbiträde; om
   transaktioner som hämtats från banken är räkenskapsinformation i sig och
   ska ingå i arkivpaketet (ADR-034).
+
+- Kassaflödesanalys enligt K3 (avsnitt 5a6.4): kontoindelningen i
+  `CashFlowAccounts`, som är NONOX:s egen och inte K3:s text, särskilt
+  kortfristiga placeringar (1800–1899) som investeringsverksamhet i stället
+  för likvida medel (K3 punkt 7.4 c), 1970 Särskilda bankkonton och 1990
+  Redovisningsmedel som likvida medel, 2893 Skulder till närstående personer
+  som lån, 1660–1689 som rörelsefordringar, och vilka skattekonton som är
+  inkomstskatt (1640–1649, 2250–2259, 2510–2512, 2517–2519, 8910–8939,
+  8980–8989); att lån och anläggningstillgångar visas netto per år och inte
+  brutto; att en kursdifferens på likvida medel inte visas som egen post;
+  radernas rubriker och vilken rad en avrundningsrest läggs på.
 
 ### Lön, löneåret 2027 (5b)
 

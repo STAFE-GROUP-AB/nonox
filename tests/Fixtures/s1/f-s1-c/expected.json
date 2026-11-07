@@ -1,0 +1,67 @@
+{
+  "fixture": "F-S1-c",
+  "status": "ready for checking (written 2026-11-07 by the S1-P8 builder; not yet checked independently)",
+  "conventions": {
+    "amounts": "integer öre",
+    "cash_flow_sign": "inflow positive, outflow negative",
+    "keys_starting_with_underscore": "specification lines, not printed as their own row"
+  },
+  "size_classification": {
+    "rule_ids": [
+      "S1-R9",
+      "S1-R9.1",
+      "S1-R2"
+    ],
+    "years": {
+      "2024": {
+        "medelantal_anstallda": 5,
+        "balansomslutning": 200000000,
+        "nettoomsattning": 700000000
+      },
+      "2025": {
+        "medelantal_anstallda": 6,
+        "balansomslutning": 217000000,
+        "nettoomsattning": 750000000
+      }
+    },
+    "result": {
+      "2026": "mindre_foretag (no threshold exceeded in 2024 or 2025)"
+    },
+    "cash_flow_statement_required": false
+  },
+  "year_result": {
+    "2026": 88604048
+  },
+  "balansomslutning": {
+    "2026": 286876000
+  },
+  "cash_flow_statement": {
+    "policy": "none",
+    "2026": null,
+    "_note": "A mindre företag need not present a cash flow statement (ÅRL 2 kap. 1 § andra stycket, K3 1.4 kommentar); with the policy none the report has none."
+  },
+  "voluntary_cash_flow_statement": {
+    "policy": "indirect",
+    "method_note": "If the company presents one anyway, K3 chapter 7 applies in full (K3 7.1). Same conventions as F-S1-a: indirect method from resultat efter finansiella poster, income tax paid separately under operating (7.17), dividends paid under financing (7.16), interest paid in operating, likvida medel = 1930.",
+    "2026": {
+      "resultat_efter_finansiella_poster": 111592000,
+      "justering_avskrivningar": 16000000,
+      "betald_inkomstskatt": -17000000,
+      "kassaflode_fore_forandring_av_rorelsekapital": 110592000,
+      "forandring_varulager": -5000000,
+      "forandring_rorelsefordringar": -10000000,
+      "forandring_rorelseskulder": 284000,
+      "kassaflode_fran_den_lopande_verksamheten": 95876000,
+      "forvarv_av_materiella_anlaggningstillgangar": -20000000,
+      "kassaflode_fran_investeringsverksamheten": -20000000,
+      "amortering_av_lan": -10000000,
+      "utbetald_utdelning": -15000000,
+      "kassaflode_fran_finansieringsverksamheten": -25000000,
+      "arets_kassaflode": 50876000,
+      "likvida_medel_vid_arets_borjan": 97000000,
+      "likvida_medel_vid_arets_slut": 147876000,
+      "tillaggsupplysning_betald_ranta": 2000000,
+      "tillaggsupplysning_erhallen_ranta": 0
+    }
+  }
+}
