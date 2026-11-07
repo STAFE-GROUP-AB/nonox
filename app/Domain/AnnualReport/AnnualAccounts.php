@@ -265,10 +265,19 @@ final class AnnualAccounts
      * end of the year, per column of equityColumns() and in total. The rows
      * add up: start + changes = end, per column (#90).
      *
+     * Under K3 the specification is K3EquityStatement's (K3 6.3, ADR-059
+     * S1-P7): it has no "Övriga förändringar" row and refuses instead.
+     *
      * @return list<array{key: string, label: string, amounts: array<string, int>, total: int}>
+     *
+     * @throws K3EquityStatementRefused under K3, when a change fits no row of K3 6.3
      */
     public function equityChanges(): array
     {
+        if ($this->schedule === K3Schedule::class) {
+            return K3EquityStatement::of($this)->rows();
+        }
+
         $lines = $this->equityLines();
         $keys = array_keys($lines);
         $row = function (string $key, string $label, array $amounts) use ($keys): array {
@@ -531,6 +540,46 @@ final class AnnualAccounts
     public function closingOf(int $from, int $to): int
     {
         return $this->closing($this->current, $from, $to);
+    }
+
+    /**
+     * The balance sheet amount per line key from this year's opening
+     * balances (not the previous year's closing balances), equity and
+     * liabilities positive.
+     *
+     * @return array<string, int>
+     */
+    public function openingColumns(): array
+    {
+        return $this->columns($this->current, opening: true);
+    }
+
+    /**
+     * Per account in the range: this year's opening balance minus the
+     * previous year's closing balance, debit positive, for every account in
+     * either year; empty when there is no previous year in the books.
+     *
+     * @return array<int, int>
+     */
+    public function openingDifferences(int $from, int $to): array
+    {
+        if ($this->previous === null) {
+            return [];
+        }
+
+        $differences = [];
+
+        foreach (array_unique([...array_keys($this->current), ...array_keys($this->previous)]) as $number) {
+            if ($number < $from || $number > $to) {
+                continue;
+            }
+
+            $differences[$number] = $this->sum($this->current, $number, $number, opening: true) - $this->closing($this->previous, $number, $number);
+        }
+
+        ksort($differences);
+
+        return $differences;
     }
 
     /** @param  array<int, array{opening: int, debit: int, credit: int}>  $ledger */

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\AnnualReport;
 
-use DomainException;
-
 /**
  * The annual report's figures as they are printed: every line rounded to
  * whole kronor, and every subtotal, section sum and total the sum of the
@@ -40,11 +38,11 @@ use DomainException;
  * line (K3Schedule key other_liabilities; the same TODO), but only a
  * difference rounding can explain: any other is refused with
  * UnbalancedBalanceSheet (refuseUnbalanced). In the equity
- * specification the leftover goes to "Balanseras i ny räkning", else
- * "Utdelning", else another change row with an amount in the column; K3 6.3
- * has no residual row, so none is ever added (S1-R8.3), and a leftover with
- * no row to take it is an error (a DomainException that S1-P7 must turn into
- * a refusal with a reason).
+ * specification (K3EquityStatement's rows, S1-P7) the leftover goes to
+ * "Omföring av föregående års resultat", else "Utdelning", else another
+ * change row with an amount in the column; K3 6.3 has no residual row, so
+ * none is ever added (S1-R8.3), and a leftover with no row to take it
+ * refuses the report with a reason (K3EquityStatementRefused).
  */
 final class PrintedFigures
 {
@@ -350,9 +348,9 @@ final class PrintedFigures
      * missing); K3 never adds that row (K3 6.3 has none, S1-R8.3) and uses
      * another change row with an amount in the column instead.
      *
-     * The DomainException for a K3 leftover with no row to take it is a
-     * placeholder: S1-P7 (the K3 equity statement) must turn it into a refusal
-     * of the report with a reason the user can act on.
+     * A K3 leftover with no row to take it refuses the report with a reason
+     * the user can act on (K3EquityStatementRefused, S1-P7); it cannot happen
+     * for K2, which adds the row.
      *
      * @param  array<string, array{key: string, amounts: array<string, int>}>  $rows  the exact rows by key
      * @param  class-string<K2Schedule>|class-string<K3Schedule>  $schedule
@@ -375,7 +373,7 @@ final class PrintedFigures
             }
         }
 
-        throw new DomainException("A rounding difference in the equity column {$column} has no change row to go to.");
+        throw new K3EquityStatementRefused(__('En avrundningsdifferens i posten :post i specifikationen av förändringar i eget kapital har ingen rad att läggas på, och K3 punkt 6.3 har ingen rad för övriga förändringar.', ['post' => K3EquityStatement::columnLabel($column)]), K3EquityStatement::columnAccounts($column));
     }
 
     /**
