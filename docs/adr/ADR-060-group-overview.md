@@ -428,6 +428,13 @@ Branch `spec/s2/group-model`. One migration set and one action set, no screen.
   one audit entry `corporate_group.roles_rebound` (counts only) in the parent. A role keeps
   working through transfers; a stale role from an ended membership is never revived. No
   Jetstream or tenancy file is involved.
+  Unlike `GroupAuditTrail`, `roles_rebound` is written to the parent's log only: nobody
+  gains or loses access to a member company, so the member logs are not told (Lead
+  decision 2026-11-07, independent review low finding).
+- **Acceptance criterion carried to S2-1.4:** a group whose active holdings in one org
+  number exceed 100 % of the votes is flagged and its consolidated output blocked until
+  corrected, because `RecordHolding` only compares other members' holdings for users who
+  administer the group (no vote oracle).
 - Every `lockForUpdate()` over several `corporate_groups` or `company_holdings` rows is
   ordered by id, so concurrent transactions take the locks in the same order.
 - Audit (2.2): `GroupAuditTrail` writes one entry per member company (for a removal, the members
