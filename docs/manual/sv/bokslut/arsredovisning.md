@@ -26,6 +26,18 @@ Bokföringen, bokslutet och [inkomstdeklarationen](/manual/bokslut/inkomstdeklar
 
 Har företaget valt K3 av misstag, och uppfyller det villkoren för K2, kan en ägare eller administratör ändra regelverket under **Inställningar för företaget**. Läs villkoren noga – sedan 2026 får vissa mindre företag inte längre använda K2. Se [Företagets uppgifter](/manual/installningar/foretagets-uppgifter).
 
+### Större eller mindre företag
+
+Vilka regler som gäller enligt K3 beror på om företaget är ett större eller ett mindre företag enligt årsredovisningslagen. Ett företag är större om det har överskridit mer än ett av tre gränsvärden under vart och ett av de två räkenskapsår som närmast föregår årsredovisningens år: medelantalet anställda mer än 50, balansomslutningen mer än 40 miljoner kronor och nettoomsättningen mer än 80 miljoner kronor. Året som årsredovisningen gäller räknas inte.
+
+NONOX förbereder den bedömningen inför årsredovisningen enligt K3 och hämtar siffrorna så här:
+
+- **Nettoomsättning och balansomslutning** läses ur bokföringen för de räkenskapsår som finns i NONOX. Är ett år kortare eller längre än tolv månader räknas nettoomsättningen om till tolv månader. Balansomslutningen räknas inte om.
+- **Medelantal anställda** hämtas från fältet **Medelantal anställda** i årets årsredovisning.
+- För räkenskapsår före företagets första år i NONOX behövs samma tre siffror från de tidigare årsredovisningarna. De läggs in för hand, och varje ändring loggas.
+
+Saknas siffror för något av de två åren, eller har företaget överskridit två gränsvärden båda åren men inte samma två, gissar NONOX inte. Då avgör en människa storleken.
+
 ## Innan du börjar
 
 Gör bokslutet först, så att årets skatt och resultat är bokförda. Läs [Checklistan för bokslutet](/manual/bokslut/checklistan). Siffrorna läses om ur bokföringen varje gång årsredovisningen visas, så den är alltid i takt med det som är bokfört.

@@ -1,0 +1,258 @@
+{
+    "note": "Regler som NONOX använder för K3-årsredovisningen (ADR-059, tillägg 2026-11-07, A.2.2): gränsvärdena för större företag (ÅRL 1 kap. 3 §, BFNAR 2006:11), undantaget i K2 punkt 1.1C och K3-versionen per räkenskapsår. Citaten kommer ur regelbladet docs/specs/rules/s1.md, där vart och ett är läst i primärkällan 2026-11-07. Enligt AI-utredning 2026-11-07, juristgranskning återstår: varje rad har status 'researched' tills en person med juridiskt ansvar har kontrollerat den. En rad gäller räkenskapsår som inleds från och med starts_from och före starts_before (null = ingen gräns). extended_first_year: raden gäller också ett företags första, förlängda räkenskapsår som inleds efter starts_after och avslutas ends_on_or_after eller senare (BFNAR 2025:2 och 2025:3 punkt 1). De uppskjutna skattekontona (2240, 1370, 8940) läggs till av paketet S1-P5 med sin källa.",
+    "rules": {
+        "larger_company.employees_gt": [
+            {
+                "value": 50,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R9",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "ÅRL 1 kap. 3 § första stycket 4 a",
+                "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arsredovisningslag-19951554_sfs-1995-1554/",
+                "source_quote": "4. större företag: – företag vars överlåtbara värdepapper är upptagna till handel på en reglerad marknad eller en motsvarande marknad utanför Europeiska ekonomiska samarbetsområdet, eller – företag som uppfyller mer än ett av följande villkor: a) medelantalet anställda i företaget har under vart och ett av de två senaste räkenskapsåren uppgått till mer än 50, b) företagets redovisade balansomslutning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 40 miljoner kronor, c) företagets redovisade nettoomsättning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 80 miljoner kronor, 5. mindre företag: företag som inte är större företag,",
+                "note": "ÅRL i lydelse t.o.m. SFS 2026:780. Äldre lydelser är inte lästa; TODO(legal-verify) innan ett räkenskapsår som inleddes före 2016 bedöms."
+            }
+        ],
+        "larger_company.balance_sheet_total_gt_ore": [
+            {
+                "value": 4000000000,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R9",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "ÅRL 1 kap. 3 § första stycket 4 b",
+                "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arsredovisningslag-19951554_sfs-1995-1554/",
+                "source_quote": "4. större företag: – företag vars överlåtbara värdepapper är upptagna till handel på en reglerad marknad eller en motsvarande marknad utanför Europeiska ekonomiska samarbetsområdet, eller – företag som uppfyller mer än ett av följande villkor: a) medelantalet anställda i företaget har under vart och ett av de två senaste räkenskapsåren uppgått till mer än 50, b) företagets redovisade balansomslutning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 40 miljoner kronor, c) företagets redovisade nettoomsättning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 80 miljoner kronor, 5. mindre företag: företag som inte är större företag,",
+                "note": "ÅRL i lydelse t.o.m. SFS 2026:780. Äldre lydelser är inte lästa; TODO(legal-verify) innan ett räkenskapsår som inleddes före 2016 bedöms."
+            }
+        ],
+        "larger_company.net_turnover_gt_ore": [
+            {
+                "value": 8000000000,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R9",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "ÅRL 1 kap. 3 § första stycket 4 c",
+                "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arsredovisningslag-19951554_sfs-1995-1554/",
+                "source_quote": "4. större företag: – företag vars överlåtbara värdepapper är upptagna till handel på en reglerad marknad eller en motsvarande marknad utanför Europeiska ekonomiska samarbetsområdet, eller – företag som uppfyller mer än ett av följande villkor: a) medelantalet anställda i företaget har under vart och ett av de två senaste räkenskapsåren uppgått till mer än 50, b) företagets redovisade balansomslutning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 40 miljoner kronor, c) företagets redovisade nettoomsättning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 80 miljoner kronor, 5. mindre företag: företag som inte är större företag,",
+                "note": "ÅRL i lydelse t.o.m. SFS 2026:780. Äldre lydelser är inte lästa; TODO(legal-verify) innan ett räkenskapsår som inleddes före 2016 bedöms."
+            }
+        ],
+        "larger_company.criteria_needed": [
+            {
+                "value": 2,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R9",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "ÅRL 1 kap. 3 § första stycket 4 (mer än ett av villkoren)",
+                "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arsredovisningslag-19951554_sfs-1995-1554/",
+                "source_quote": "4. större företag: – företag vars överlåtbara värdepapper är upptagna till handel på en reglerad marknad eller en motsvarande marknad utanför Europeiska ekonomiska samarbetsområdet, eller – företag som uppfyller mer än ett av följande villkor: a) medelantalet anställda i företaget har under vart och ett av de två senaste räkenskapsåren uppgått till mer än 50, b) företagets redovisade balansomslutning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 40 miljoner kronor, c) företagets redovisade nettoomsättning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 80 miljoner kronor, 5. mindre företag: företag som inte är större företag,",
+                "note": "ÅRL i lydelse t.o.m. SFS 2026:780. Äldre lydelser är inte lästa; TODO(legal-verify) innan ett räkenskapsår som inleddes före 2016 bedöms. Om det måste vara samma två villkor båda åren är öppet (S1-R9, beslut H8)."
+            }
+        ],
+        "larger_company.prior_years": [
+            {
+                "value": 2,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R9.1",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "BFNAR 2006:11 punkt 6",
+                "source_url": "https://www.bfn.se/wp-content/uploads/2020/06/bfnar06-11-kons3.pdf",
+                "source_quote": "Vid bedömning av om ett företag är större eller mindre avses med vart och ett av de senaste två räkenskapsåren de två räkenskapsår som närmast föregår det räkenskapsår som räkenskapshandlingarna avser."
+            }
+        ],
+        "net_turnover_prorated_to_months": [
+            {
+                "value": 12,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R9.2",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "BFNAR 2006:11 punkt 5 c",
+                "source_url": "https://www.bfn.se/wp-content/uploads/2020/06/bfnar06-11-kons3.pdf",
+                "source_quote": "Nettoomsättningen ska justeras om räkenskapsåret omfattar annan tid än tolv månader. (BFNAR 2016:6)",
+                "note": "Balansomslutningen justeras inte: punkt 5 säger inget om det (S1-R9.2)."
+            }
+        ],
+        "normal_annual_hours": [
+            {
+                "value": 1920,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R9.2",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "BFNAR 2006:11 punkt 9",
+                "source_url": "https://www.bfn.se/wp-content/uploads/2020/06/bfnar06-11-kons3.pdf",
+                "source_quote": "Normal årsarbetstid får av förenklingsskäl antas vara 1 920 timmar. Årsarbetstiden ska justeras om räkenskapsåret omfattar annan tid än tolv månader."
+            }
+        ],
+        "k2_1_1c.employees_gt": [
+            {
+                "value": 3,
+                "starts_from": "2026-01-01",
+                "starts_before": null,
+                "extended_first_year": {
+                    "starts_after": "2025-06-30",
+                    "ends_on_or_after": "2026-12-31"
+                },
+                "rule_id": "S1-R1.3",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "K2 punkt 1.1C a (BFNAR 2025:2)",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl16-10-k2ar-kons2025.pdf",
+                "source_quote": "Punkt 1.1B gäller inte om företaget uppfyller högst ett av följande villkor: a) Medelantalet anställda i företaget har under vart och ett av de två senaste räkenskapsåren uppgått till mer än 3. b) Företagets redovisade balansomslutning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 1,5 miljoner kronor. c) Företagets redovisade nettoomsättning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 3 miljoner kronor.",
+                "note": "BFN:s kommentar: Har företaget däremot överskridit samma två gränsvärden båda de två senaste räkenskapsåren omfattas det inte längre av undantaget. Med de två senaste räkenskapsåren avses de två räkenskapsår som närmast föregår det räkenskapsår för vilket årsredovisningen ska upprättas."
+            }
+        ],
+        "k2_1_1c.balance_sheet_total_gt_ore": [
+            {
+                "value": 150000000,
+                "starts_from": "2026-01-01",
+                "starts_before": null,
+                "extended_first_year": {
+                    "starts_after": "2025-06-30",
+                    "ends_on_or_after": "2026-12-31"
+                },
+                "rule_id": "S1-R1.3",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "K2 punkt 1.1C b (BFNAR 2025:2)",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl16-10-k2ar-kons2025.pdf",
+                "source_quote": "Punkt 1.1B gäller inte om företaget uppfyller högst ett av följande villkor: a) Medelantalet anställda i företaget har under vart och ett av de två senaste räkenskapsåren uppgått till mer än 3. b) Företagets redovisade balansomslutning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 1,5 miljoner kronor. c) Företagets redovisade nettoomsättning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 3 miljoner kronor.",
+                "note": "BFN:s kommentar: Har företaget däremot överskridit samma två gränsvärden båda de två senaste räkenskapsåren omfattas det inte längre av undantaget. Med de två senaste räkenskapsåren avses de två räkenskapsår som närmast föregår det räkenskapsår för vilket årsredovisningen ska upprättas."
+            }
+        ],
+        "k2_1_1c.net_turnover_gt_ore": [
+            {
+                "value": 300000000,
+                "starts_from": "2026-01-01",
+                "starts_before": null,
+                "extended_first_year": {
+                    "starts_after": "2025-06-30",
+                    "ends_on_or_after": "2026-12-31"
+                },
+                "rule_id": "S1-R1.3",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "K2 punkt 1.1C c (BFNAR 2025:2)",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl16-10-k2ar-kons2025.pdf",
+                "source_quote": "Punkt 1.1B gäller inte om företaget uppfyller högst ett av följande villkor: a) Medelantalet anställda i företaget har under vart och ett av de två senaste räkenskapsåren uppgått till mer än 3. b) Företagets redovisade balansomslutning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 1,5 miljoner kronor. c) Företagets redovisade nettoomsättning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 3 miljoner kronor.",
+                "note": "BFN:s kommentar: Har företaget däremot överskridit samma två gränsvärden båda de två senaste räkenskapsåren omfattas det inte längre av undantaget. Med de två senaste räkenskapsåren avses de två räkenskapsår som närmast föregår det räkenskapsår för vilket årsredovisningen ska upprättas."
+            }
+        ],
+        "k2_1_1c.max_criteria_met": [
+            {
+                "value": 1,
+                "starts_from": "2026-01-01",
+                "starts_before": null,
+                "extended_first_year": {
+                    "starts_after": "2025-06-30",
+                    "ends_on_or_after": "2026-12-31"
+                },
+                "rule_id": "S1-R1.3",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "K2 punkt 1.1C (högst ett av villkoren)",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl16-10-k2ar-kons2025.pdf",
+                "source_quote": "Punkt 1.1B gäller inte om företaget uppfyller högst ett av följande villkor: a) Medelantalet anställda i företaget har under vart och ett av de två senaste räkenskapsåren uppgått till mer än 3. b) Företagets redovisade balansomslutning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 1,5 miljoner kronor. c) Företagets redovisade nettoomsättning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 3 miljoner kronor.",
+                "note": "BFN:s kommentar: Har företaget däremot överskridit samma två gränsvärden båda de två senaste räkenskapsåren omfattas det inte längre av undantaget. Med de två senaste räkenskapsåren avses de två räkenskapsår som närmast föregår det räkenskapsår för vilket årsredovisningen ska upprättas."
+            }
+        ],
+        "k2_1_1b.building_turnover_share_min_bp": [
+            {
+                "value": 7500,
+                "starts_from": "2026-01-01",
+                "starts_before": null,
+                "extended_first_year": {
+                    "starts_after": "2025-06-30",
+                    "ends_on_or_after": "2026-12-31"
+                },
+                "rule_id": "S1-R1.2",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "K2 punkt 1.1B b (BFNAR 2025:2)",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl16-10-k2ar-kons2025.pdf",
+                "source_quote": "b) Företag som har en eller flera byggnader som genererar minst 75 procent av företagets nettoomsättning."
+            }
+        ],
+        "intangible_dev_default_life_months": [
+            {
+                "value": 60,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R10",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "ÅRL 4 kap. 4 § andra stycket",
+                "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arsredovisningslag-19951554_sfs-1995-1554/",
+                "source_quote": "Om nyttjandeperioden för immateriella anläggningstillgångar som utgörs av utgifter för företagets eget utvecklingsarbete inte kan fastställas med en rimlig grad av säkerhet, ska perioden anses uppgå till fem år."
+            }
+        ],
+        "intangible_residual_value_ore": [
+            {
+                "value": 0,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R10.2",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "K3 punkt 18.20",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl12-1-k3-kons20251215.pdf",
+                "source_quote": "Ett företag ska anta att restvärdet för en immateriell anläggningstillgång är noll."
+            }
+        ],
+        "small_asset_life_max_years": [
+            {
+                "value": 3,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R3.6",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "K3 punkt 17.24",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl12-1-k3-kons20251215.pdf",
+                "source_quote": "I juridisk person får utgifter för en materiell anläggningstillgång som är av mindre värde eller kan antas ha en ekonomisk livslängd på högst tre år redovisas som kostnad vid det första redovisningstillfället, om företaget gör motsvarande avdrag enligt inkomstskattelagen (1999:1229) och det kan antas att avdraget kommer att medges."
+            }
+        ],
+        "k3_version_by_fiscal_year": [
+            {
+                "value": "kons2024",
+                "starts_from": "2024-07-01",
+                "starts_before": "2026-01-01",
+                "rule_id": "S1-R1.4",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "BFN, K-regelverk (versionstabellen); BFNAR 2025:3 punkt 1",
+                "source_url": "https://www.bfn.se/redovisningsregler/vagledningar/k-regelverk/",
+                "source_quote": "Detta allmänna råd gäller från och med den 16 juni 2025 och ska tillämpas första gången för räkenskapsår som inleds efter den 31 december 2025. Ett företag som inleder sin verksamhet efter den 30 juni 2025 och har förlängt räkenskapsår ska dock tillämpa det allmänna rådet redan för räkenskapsår som inleds efter den 30 juni 2025, om räkenskapsåret ska avslutas den 31 december 2026 eller senare.",
+                "note": "BFN:s versionstabell: kons2024 för räkenskapsår som inleds 2024-07-01–2025-12-31. Ett förlängt första räkenskapsår enligt BFNAR 2025:3 punkt 1 använder i stället kons20251215."
+            },
+            {
+                "value": "kons20251215",
+                "starts_from": "2026-01-01",
+                "starts_before": null,
+                "extended_first_year": {
+                    "starts_after": "2025-06-30",
+                    "ends_on_or_after": "2026-12-31"
+                },
+                "rule_id": "S1-R1.4",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "BFNAR 2025:3 punkt 1 (övergångsbestämmelse)",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl12-1-k3-kons20251215.pdf",
+                "source_quote": "Detta allmänna råd gäller från och med den 16 juni 2025 och ska tillämpas första gången för räkenskapsår som inleds efter den 31 december 2025. Ett företag som inleder sin verksamhet efter den 30 juni 2025 och har förlängt räkenskapsår ska dock tillämpa det allmänna rådet redan för räkenskapsår som inleds efter den 30 juni 2025, om räkenskapsåret ska avslutas den 31 december 2026 eller senare."
+            }
+        ]
+    }
+}
