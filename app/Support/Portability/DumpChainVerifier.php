@@ -21,22 +21,81 @@ final class DumpChainVerifier
      */
     public static function verify(array $dump): array
     {
-        $companyId = (int) ($dump['company']['source_id'] ?? 0);
         $problems = [];
-        $posted = [];
+        $companyId = $dump['company']['source_id'] ?? null;
 
-        foreach ((array) ($dump['vouchers'] ?? []) as $voucher) {
-            if (($voucher['status'] ?? null) === 'POSTED') {
-                $posted[(int) $voucher['fiscal_year_id']][] = $voucher;
-            }
+        if (! is_int($companyId)) {
+            return ['The dump has no company source id.'];
         }
 
+        $years = [];
+
         foreach ((array) ($dump['fiscal_years'] ?? []) as $year) {
-            $problems = [...$problems, ...self::verifyYear($companyId, $year, $posted[(int) $year['id']] ?? [])];
+            if (! is_array($year) || ! is_int($year['id'] ?? null) || ! isset($year['start_date'], $year['end_date']) || ! array_key_exists('ledger_head_hash', $year)) {
+                $problems[] = 'A fiscal year in the dump is malformed.';
+
+                continue;
+            }
+
+            $years[$year['id']] = $year;
+        }
+
+        $posted = [];
+
+        foreach ((array) ($dump['vouchers'] ?? []) as $index => $voucher) {
+            $label = is_array($voucher) && is_string($voucher['id'] ?? null) ? $voucher['id'] : "#{$index}";
+            $missing = is_array($voucher) ? array_diff(self::VOUCHER_KEYS, array_keys($voucher)) : self::VOUCHER_KEYS;
+
+            if ($missing !== []) {
+                $problems[] = "Voucher {$label}: missing ".implode(', ', $missing).'.';
+
+                continue;
+            }
+
+            if (! in_array($voucher['status'], ['DRAFT', 'POSTED'], true)) {
+                $problems[] = "Voucher {$label}: unknown status ".json_encode($voucher['status']).'.';
+
+                continue;
+            }
+
+            if ($voucher['status'] !== 'POSTED') {
+                continue;
+            }
+
+            if (! is_string($voucher['hash']) || ! (is_string($voucher['previous_hash']) || $voucher['previous_hash'] === null)) {
+                $problems[] = "Voucher {$label}: its hash fields are malformed.";
+
+                continue;
+            }
+
+            if (! is_int($voucher['fiscal_year_id']) || ! isset($years[$voucher['fiscal_year_id']])) {
+                $problems[] = "Voucher {$label}: its fiscal year ".json_encode($voucher['fiscal_year_id']).' is not in the dump.';
+
+                continue;
+            }
+
+            if (! is_array($voucher['rows']) || array_filter($voucher['rows'], static fn (mixed $row): bool => ! is_array($row) || array_diff(self::ROW_KEYS, array_keys($row)) !== []) !== []) {
+                $problems[] = "Voucher {$label}: a row is malformed.";
+
+                continue;
+            }
+
+            $posted[$voucher['fiscal_year_id']][] = $voucher;
+        }
+
+        foreach ($years as $id => $year) {
+            $problems = [...$problems, ...self::verifyYear($companyId, $year, $posted[$id] ?? [])];
         }
 
         return $problems;
     }
+
+    private const array VOUCHER_KEYS = [
+        'id', 'fiscal_year_id', 'series', 'number', 'status', 'voucher_date', 'description', 'source',
+        'posted_at', 'hash', 'previous_hash', 'rows',
+    ];
+
+    private const array ROW_KEYS = ['account', 'credit_ore', 'debit_ore', 'description', 'cost_center_id', 'project_id', 'quantity'];
 
     /**
      * @param  array<string, mixed>  $voucher

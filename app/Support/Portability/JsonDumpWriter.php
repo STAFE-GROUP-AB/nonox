@@ -6,6 +6,7 @@ namespace App\Support\Portability;
 
 use App\Actions\Accounting\AttachToVoucher;
 use App\Domain\Accounting\VoucherStatus;
+use App\Domain\Company\LegalForm;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\CostCenter;
@@ -42,7 +43,8 @@ final class JsonDumpWriter
 {
     public const string SCHEMA_VERSION = '1.0.0';
 
-    private const int CHUNK = 500;
+    /** Rows read per query round; tests lower it to cross chunk borders. */
+    public static int $chunk = 500;
 
     private const array COMPANY = [
         'name', 'org_number', 'legal_form', 'legal_name', 'vat_number',
@@ -127,20 +129,48 @@ final class JsonDumpWriter
      */
     public function write(Company $company, string $directory, bool $includePersonalNumbers = false): array
     {
-        return CurrentCompany::run($company, function () use ($company, $directory, $includePersonalNumbers): array {
-            File::ensureDirectoryExists($directory);
+        if (! $company->exists) {
+            throw new RuntimeException('The dump needs a saved company.');
+        }
 
+        $directory = rtrim($directory, '/');
+
+        if (File::exists($directory) && (! File::isDirectory($directory) || File::files($directory) !== [] || File::directories($directory) !== [])) {
+            throw new RuntimeException('The package directory must not exist or must be empty.');
+        }
+
+        return CurrentCompany::run($company, function () use ($company, $directory, $includePersonalNumbers): array {
             $this->accountNumbers = [];
             $this->seriesCodes = [];
             $this->stored = [];
             $this->warnings = [];
-            $directory = rtrim($directory, '/');
-            $handle = fopen($directory.'/dump.json', 'wb') ?: throw new RuntimeException('The dump file could not be created.');
+            $this->rowCount = 0;
+            $this->attachmentCount = 0;
+
+            // The package holds a whole company's books: owner access only (ADR-065).
+            if (! is_dir($directory) && ! mkdir($directory, 0700, true) && ! is_dir($directory)) {
+                throw new RuntimeException('The package directory could not be created.');
+            }
+
+            chmod($directory, 0700);
+            $handle = null;
 
             try {
-                return $this->writeAll($handle, $company, $directory, $includePersonalNumbers);
-            } finally {
+                $handle = fopen($directory.'/dump.json', 'wb') ?: throw new RuntimeException('The dump file could not be created.');
+                chmod($directory.'/dump.json', 0600);
+
+                $result = $this->writeAll($handle, $company, $directory, $includePersonalNumbers);
                 fclose($handle);
+
+                return $result;
+            } catch (\Throwable $e) {
+                if (is_resource($handle)) {
+                    fclose($handle);
+                }
+
+                File::deleteDirectory($directory);
+
+                throw $e;
             }
         });
     }
@@ -151,6 +181,7 @@ final class JsonDumpWriter
      */
     private function writeAll($handle, Company $company, string $directory, bool $includePersonalNumbers): array
     {
+        $this->includePersonal = $includePersonalNumbers;
         $counts = [];
 
         $this->put($handle, '{"format":"nonox-dump","schema_version":'.$this->json(self::SCHEMA_VERSION)
@@ -158,15 +189,15 @@ final class JsonDumpWriter
             .',"includes_personal_numbers":'.$this->json($includePersonalNumbers)
             .',"company":'.$this->json($this->company($company)));
 
-        $counts['fiscal_years'] = $this->section($handle, 'fiscal_years', $this->plain(FiscalYear::query()->orderBy('id')->lazyById(self::CHUNK), 'fiscal_years'));
-        $counts['voucher_number_counters'] = $this->section($handle, 'voucher_number_counters', $this->plain(VoucherNumberCounter::query()->orderBy('id')->lazyById(self::CHUNK), 'voucher_number_counters'));
+        $counts['fiscal_years'] = $this->section($handle, 'fiscal_years', $this->plain(FiscalYear::query()->orderBy('id')->lazyById(self::$chunk), 'fiscal_years'));
+        $counts['voucher_number_counters'] = $this->section($handle, 'voucher_number_counters', $this->plain(VoucherNumberCounter::query()->orderBy('id')->lazyById(self::$chunk), 'voucher_number_counters'));
         $counts['accounts'] = $this->section($handle, 'accounts', $this->accounts());
-        $counts['cost_centers'] = $this->section($handle, 'cost_centers', $this->plain(CostCenter::query()->orderBy('id')->lazyById(self::CHUNK), 'cost_centers'));
-        $counts['projects'] = $this->section($handle, 'projects', $this->plain(Project::query()->orderBy('id')->lazyById(self::CHUNK), 'projects'));
+        $counts['cost_centers'] = $this->section($handle, 'cost_centers', $this->plain(CostCenter::query()->orderBy('id')->lazyById(self::$chunk), 'cost_centers'));
+        $counts['projects'] = $this->section($handle, 'projects', $this->plain(Project::query()->orderBy('id')->lazyById(self::$chunk), 'projects'));
         $counts['voucher_series'] = $this->section($handle, 'voucher_series', $this->series());
         $counts['vouchers'] = $this->section($handle, 'vouchers', $this->vouchers($directory));
         $counts['customers'] = $this->section($handle, 'customers', $this->customers($includePersonalNumbers));
-        $counts['suppliers'] = $this->section($handle, 'suppliers', $this->plain(Supplier::query()->orderBy('id')->lazyById(self::CHUNK), 'suppliers'));
+        $counts['suppliers'] = $this->section($handle, 'suppliers', $this->suppliers($includePersonalNumbers));
         $counts['voucher_rows'] = $this->rowCount;
         $counts['attachments'] = $this->attachmentCount;
 
@@ -175,6 +206,8 @@ final class JsonDumpWriter
         return ['path' => $directory.'/dump.json', 'counts' => $counts, 'warnings' => $this->warnings];
     }
 
+    private bool $includePersonal = false;
+
     private int $rowCount = 0;
 
     private int $attachmentCount = 0;
@@ -182,13 +215,19 @@ final class JsonDumpWriter
     /** @return array<string, mixed> */
     private function company(Company $company): array
     {
-        return ['source_id' => $company->id, ...$this->pick($company, self::COMPANY)];
+        $data = $this->pick($company, self::COMPANY);
+
+        if (! $this->includePersonal && ($company->legal_form === LegalForm::Ef || PersonalNumber::looksLike($data['org_number']))) {
+            $data['org_number'] = null;
+        }
+
+        return ['source_id' => $company->id, ...$data];
     }
 
     /** @return iterable<array<string, mixed>> */
     private function accounts(): iterable
     {
-        foreach (Account::query()->orderBy('id')->lazyById(self::CHUNK) as $account) {
+        foreach (Account::query()->orderBy('id')->lazyById(self::$chunk) as $account) {
             $this->accountNumbers[$account->id] = (int) $account->number;
 
             yield $this->pick($account, self::EXPORTED['accounts']);
@@ -198,7 +237,7 @@ final class JsonDumpWriter
     /** @return iterable<array<string, mixed>> */
     private function series(): iterable
     {
-        foreach (VoucherSeries::query()->orderBy('id')->lazyById(self::CHUNK) as $series) {
+        foreach (VoucherSeries::query()->orderBy('id')->lazyById(self::$chunk) as $series) {
             $this->seriesCodes[$series->id] = (string) $series->code;
 
             yield $this->pick($series, self::EXPORTED['voucher_series']);
@@ -211,7 +250,7 @@ final class JsonDumpWriter
         $this->rowCount = 0;
         $this->attachmentCount = 0;
 
-        $vouchers = Voucher::query()->with(['rows', 'attachments'])->orderBy('id')->lazyById(self::CHUNK);
+        $vouchers = Voucher::query()->with(['rows', 'attachments'])->orderBy('id')->lazyById(self::$chunk);
 
         foreach ($vouchers as $voucher) {
             $row = $this->pick($voucher, array_diff(self::EXPORTED['vouchers'], ['posted_at']));
@@ -243,6 +282,12 @@ final class JsonDumpWriter
     {
         $sha = (string) $attachment->sha256;
 
+        if (preg_match('/\A[0-9a-f]{64}\z/D', $sha) !== 1) {
+            $this->warnings[] = "Attachment {$attachment->id}: the recorded SHA-256 is not valid, the file was not exported.";
+
+            return false;
+        }
+
         if ($this->stored[$sha] ?? false) {
             return true;
         }
@@ -255,23 +300,31 @@ final class JsonDumpWriter
             return false;
         }
 
-        File::ensureDirectoryExists($directory.'/attachments');
+        if (! is_dir($directory.'/attachments') && ! mkdir($directory.'/attachments', 0700) && ! is_dir($directory.'/attachments')) {
+            throw new RuntimeException('The attachments directory could not be created.');
+        }
+
         $target = $directory.'/attachments/'.$sha;
         $partial = $target.'.part';
         $source = $disk->readStream($attachment->file_path);
-        $out = fopen($partial, 'wb');
+        $out = is_resource($source) ? fopen($partial, 'wb') : false;
 
         if (! is_resource($source) || $out === false) {
+            if (is_resource($source)) {
+                fclose($source);
+            }
+
             $this->warnings[] = "Attachment {$attachment->id} ({$attachment->original_name}): the file could not be read.";
 
             return false;
         }
 
-        stream_copy_to_stream($source, $out);
+        chmod($partial, 0600);
+        $copied = stream_copy_to_stream($source, $out);
         fclose($source);
         fclose($out);
 
-        if (hash_file('sha256', $partial) !== $sha) {
+        if ($copied === false || hash_file('sha256', $partial) !== $sha) {
             @unlink($partial);
             $this->warnings[] = "Attachment {$attachment->id} ({$attachment->original_name}): the file does not match its SHA-256.";
 
@@ -284,14 +337,32 @@ final class JsonDumpWriter
     }
 
     /** @return iterable<array<string, mixed>> */
+    private function suppliers(bool $includePersonalNumbers): iterable
+    {
+        foreach (Supplier::query()->orderBy('id')->lazyById(self::$chunk) as $supplier) {
+            $row = $this->pick($supplier, self::EXPORTED['suppliers']);
+            $row['org_number'] = $this->orgNumber($row['org_number'], $includePersonalNumbers);
+
+            yield $row;
+        }
+    }
+
+    /** A sole trader's or private person's organisation number is a personal number (ADR-065). */
+    private function orgNumber(?string $value, bool $includePersonalNumbers): ?string
+    {
+        return ! $includePersonalNumbers && PersonalNumber::looksLike($value) ? null : $value;
+    }
+
+    /** @return iterable<array<string, mixed>> */
     private function customers(bool $includePersonalNumbers): iterable
     {
         $columns = $includePersonalNumbers
             ? self::EXPORTED['customers']
             : array_diff(self::EXPORTED['customers'], ['personal_number']);
 
-        foreach (Customer::query()->orderBy('id')->lazyById(self::CHUNK) as $customer) {
+        foreach (Customer::query()->orderBy('id')->lazyById(self::$chunk) as $customer) {
             $row = $this->pick($customer, array_diff($columns, ['personal_number']));
+            $row['org_number'] = $this->orgNumber($row['org_number'], $includePersonalNumbers);
 
             if ($includePersonalNumbers) {
                 $row['personal_number'] = $customer->personal_number;

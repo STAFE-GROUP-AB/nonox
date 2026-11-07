@@ -47,7 +47,7 @@ it('writes a dump that validates against the published schema', function () {
     $result = app(JsonDumpWriter::class)->write($this->company, $this->dir);
     $dump = readDump($this->dir);
 
-    expect(SchemaValidator::forDump()->validate($dump))->toBe([])
+    expect(SchemaValidator::forDump()->validateFile($this->dir.'/dump.json'))->toBe([])
         ->and($dump['format'])->toBe('nonox-dump')
         ->and($dump['schema_version'])->toBe(JsonDumpWriter::SCHEMA_VERSION)
         ->and($dump['counts']['vouchers'])->toBe(1)
@@ -61,7 +61,7 @@ it('rejects a broken dump', function () {
         'vouchers' => [['id' => 'x', 'rows' => [['debit_ore' => -5]]]],
     ];
 
-    expect(SchemaValidator::forDump()->validate($dump))->not->toBe([]);
+    expect(SchemaValidator::forDump()->validateJson((string) json_encode($dump)))->not->toBe([]);
 });
 
 it('keeps number, hash and previous hash of posted vouchers and reproduces them from the dump alone', function () {
@@ -174,7 +174,7 @@ it('leaves personal numbers out unless asked, and then writes them decrypted', f
 
     expect($dump['includes_personal_numbers'])->toBeTrue()
         ->and($dump['customers'][0]['personal_number'])->toBe('19121212-1212')
-        ->and(SchemaValidator::forDump()->validate($dump))->toBe([]);
+        ->and(SchemaValidator::forDump()->validateFile($this->dir.'/dump.json'))->toBe([]);
 });
 
 it('writes number counters and fiscal years so a restore can continue numbering', function () {

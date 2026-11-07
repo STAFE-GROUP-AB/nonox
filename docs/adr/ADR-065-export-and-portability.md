@@ -61,8 +61,21 @@ copied byte for byte.
 - The dump carries **source ids as they were** (bigints as numbers, voucher uuids as strings),
   plus every field the hash covers, plus `hash` and `previous_hash` and the fiscal year's
   `ledger_head_hash`. `App\Support\Portability\DumpChainVerifier` recomputes the source hash from
-  the dump alone, with no database. So a reader can prove the dump is untampered, and the
-  importer proves it before it writes anything.
+  the dump alone, with no database.
+- **What verification proves, and what it does not.** It proves *internal consistency*: the
+  vouchers, rows and links in this file agree with the hashes in this file. It does **not** prove
+  *authenticity*. The hash is unkeyed SHA-256 and the head hash travels in the same file, so
+  anyone who can edit the dump can rebuild a consistent chain. Authenticity would need a
+  signature by the exporting installation, which is not part of this design. The ADR, the
+  manual and the importer's report must say "consistent", never "unaltered". What the importer
+  does record is what it verified (see section 5), and the reconciliation report compares the
+  result with the dump's own counts and trial balance. The verifier also reports posted vouchers
+  whose fiscal year is not in the dump, unknown statuses and missing keys as problems, so a
+  malformed dump is refused, not skipped.
+- **Raw user ids are exported** (`posted_by`, `created_by`, `closed_by`, `uploaded_by`) as numbers
+  without names. `posted_by` is covered by the hash, so it cannot be left out without breaking
+  verification; the others are kept for the same history. A bare number identifies nobody
+  outside the source installation.
 - Importing remaps ids: every entity gets a new local id, kept in an in-memory map
   `source id -> new id` per entity type. Voucher uuids are kept (they are not installation
   specific and other records point at them).
@@ -86,6 +99,13 @@ therefore has to carry them decrypted or lose them.
   `includePersonalNumbers` flag is **false by default**; only the export job, which always
   encrypts the whole package, sets it to true. A plain writer call (tests, tooling, a future CLI
   for an operator) cannot leak them by accident.
+- The flag also covers `org_number` where it is a personal number: the company's own when its
+  legal form is EF, and a customer's or supplier's when the number is a valid personnummer
+  (`PersonalNumber::looksLike`: ten digits, Luhn, a month in the third and fourth digits). A
+  sole trader's organisation number is the owner's personnummer.
+- **Free text is not filtered.** Voucher and row descriptions, attachment names and customer
+  names can contain personal data. The dump is a copy of the books, and the books contain them
+  (BFL retention applies); the protection is the encrypted package, not redaction.
 - The importer encrypts them again with the target's key through the model cast.
 - The same rule covers every later field in the registry maintained by F8
   (`app/Support/Privacy/**`): exported only with the flag on.
@@ -102,6 +122,11 @@ therefore has to carry them decrypted or lose them.
   passphrase-style string and is stored only as a verifier; it is not recoverable by the
   operator. Rejected: encrypting with `APP_KEY`; it would make the package unreadable elsewhere
   and tie the operator to every export.
+- The working package directory is created by the job under
+  `storage/app/private/exports/<company id>/<export uuid>/` with mode 0700 (files 0600), never
+  below `public/`, and is deleted as soon as the encrypted file exists, and on any failure (the
+  writer removes the whole directory, including a half-written `dump.json` or `.part` file, if it
+  throws). The writer refuses a directory that already has content.
 - The encrypted file lives on the private disk. Download needs a signed URL, a signed-in user
   with the permission, and the export being unexpired (default 7 days). A pruning command
   deletes expired files and keeps the row. Request, completion, every download and expiry write
@@ -117,15 +142,26 @@ therefore has to carry them decrypted or lose them.
 - Order: verify format and `schema_version`, validate against the schema, verify each year's
   source chain with `DumpChainVerifier`, verify attachment files against their SHA-256, then one
   database transaction per fiscal year: master data, drafts, then posted vouchers.
-- Posted vouchers are inserted as drafts with rows and then posted through a dedicated
-  `RestorePostedVoucher` path that sets number, `posted_at`, `posted_by` mapping and the re-sealed
-  hash directly while the immutability triggers are respected (insert of a `POSTED` row with its
-  rows in one statement sequence, the same approach as `ImportSie`). Update and delete remain
-  impossible afterwards, so immutability holds.
+- Order per voucher: insert the voucher as a **draft**, insert its **rows**, then **UPDATE it to
+  POSTED** with number, `posted_at`, `posted_by` and the re-sealed hash. The database trigger
+  `vouchers_check_balance_on_post` validates balance at that update, and `vouchers_protect_posted`
+  blocks every later change. It compares `to_jsonb` of the row, so **every new column that
+  records provenance (the imported flag, the source hash, the source user id) must be set before
+  the update to POSTED**; afterwards they are protected like the rest. Inserting a row that is
+  already POSTED is not used. Update and delete remain impossible afterwards.
+- Imported vouchers are marked: `source` keeps the original value (for example `INVOICE`), and a
+  separate `imported_at` / `imported_from_dump` flag says the voucher arrived by dump import, so
+  a reader can tell original postings from restored ones.
+- The import writes one append-only **audit entry** holding the SHA-256 of `dump.json`, the
+  importing user, the schema version, and for every fiscal year the **source head hash** and the
+  new head hash. That records what was verified and against what.
+- Users are not in the dump. `posted_by` and `created_by` have to point at a user in the target,
+  so they are set to the importing owner, **openly, not silently**: the source user id is kept in
+  `imported_source_user_id` (set before posting) and the voucher history shows "Bokförd av
+  (källsystemets användare 1234), importerad av <name> <date>". Product-owner decision **F10-1**
+  stays open; this is the recommendation.
 - The report after import compares counts, trial balance per year, voucher numbers per series
   and attachment hashes with the dump's `counts`. A mismatch rolls back and nothing is kept.
-- Users are not in the dump. `posted_by`/`created_by` are mapped to the importing owner, and the
-  source user id is kept as a number in `imported_source_user_id`.
 
 ## Options rejected
 
