@@ -1,0 +1,40 @@
+{
+  "corporate_tax_rate_bp": 2060,
+  "corporate_tax_rate_source": "IL 65 kap. 10 § (database/data/corporate-tax/rules.json, status researched)",
+  "statslaneranta_bp": {
+    "2024-11-30": 196,
+    "2025-11-30": 255
+  },
+  "statslaneranta_source": "1,96 %: Skatteverket example cited in ADR-010; 2,55 %: database/data/k10/2026.json (Skatteverket belopp och procent 2026). Both researched, not legally verified.",
+  "taxable_income_rounding": "down to whole tiotal kronor (IL 1 kap. 7 §)",
+  "building_B1": {
+    "tax_acquisition_value_ore": 2208000000,
+    "tax_depreciation_bp_per_year": 400,
+    "tax_values": {
+      "2024-12-31": 1324800000,
+      "2025-12-31": 1236480000,
+      "2026-12-31": 1148160000
+    }
+  },
+  "land_B1": {
+    "tax_value_ore": 400000000,
+    "note": "equal to book value; no temporary difference"
+  },
+  "machines": {
+    "method": "räkenskapsenlig avskrivning, tax value equals book value",
+    "temporary_difference": 0
+  },
+  "untaxed_reserves": {
+    "2124": "Periodiseringsfond 2024 (avsatt beskattningsår 2024)",
+    "2125": "Periodiseringsfond 2025",
+    "2126": "Periodiseringsfond 2026"
+  },
+  "non_deductible_costs_accounts": [
+    6072
+  ],
+  "preliminary_f_tax_per_month_ore": {
+    "2025": 3000000,
+    "2026": 6000000
+  },
+  "tax_liability_2024_paid_2025_05_12_ore": 40000000
+}

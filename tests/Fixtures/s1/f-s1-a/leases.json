@@ -1,0 +1,29 @@
+{
+  "leases": [
+    {
+      "contract_id": "L1",
+      "lessor": "Fiktiv Leasingfinans AB (fictional)",
+      "asset": "CNC-fleroperationsmaskin",
+      "start": "2025-01-01",
+      "end": "2029-12-31",
+      "term_months": 60,
+      "payment_ore": 2500000,
+      "payment_frequency": "monthly, in arrears",
+      "payment_vat_bp": 2500,
+      "expense_account": 5220,
+      "purchase_option_ore": 100000,
+      "purchase_option_at": "2029-12-31",
+      "fair_value_at_start_ore": 135000000,
+      "economic_life_months": 84,
+      "classification_indicators_k3_20_5": {
+        "ownership_transfers_or_bargain_option": true,
+        "term_major_part_of_economic_life": "60 of 84 months (71 %)",
+        "pv_of_minimum_payments_substantially_all_of_fair_value": true,
+        "specialised_asset": false
+      },
+      "classification": "finansiellt",
+      "accounting_policy": "follows the company policy leasing = operational_in_legal_entity in company.json (K3 20.29 covers all finance leases; it is not a per-contract choice)",
+      "recognised_as": "operationellt"
+    }
+  ]
+}

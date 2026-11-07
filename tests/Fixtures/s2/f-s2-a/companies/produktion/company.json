@@ -1,0 +1,160 @@
+{
+  "fixture": "F-S2-a",
+  "company_key": "produktion",
+  "synthetic": true,
+  "legal_name": "Fiktiva Koncernen Produktion AB",
+  "org_number": "559999-3408",
+  "org_number_note": "Fictional test number (559999-series, passes Luhn). Not a real company.",
+  "legal_form": "AB",
+  "reporting_framework": "K3",
+  "fiscal_year": {
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
+  },
+  "accounting_method": "FAKTURAMETODEN",
+  "vat_registered": true,
+  "average_employees": 15,
+  "chart_of_accounts": [
+    {
+      "number": 1210,
+      "name": "Maskiner och andra tekniska anläggningar"
+    },
+    {
+      "number": 1219,
+      "name": "Ackumulerade avskrivningar på maskiner och andra tekniska anläggningar"
+    },
+    {
+      "number": 1410,
+      "name": "Lager av råvaror"
+    },
+    {
+      "number": 1510,
+      "name": "Kundfordringar"
+    },
+    {
+      "number": 1560,
+      "name": "Kundfordringar hos koncernföretag"
+    },
+    {
+      "number": 1630,
+      "name": "Avräkning för skatter och avgifter (skattekonto)"
+    },
+    {
+      "number": 1930,
+      "name": "Företagskonto/checkkonto/affärskonto"
+    },
+    {
+      "number": 2081,
+      "name": "Aktiekapital"
+    },
+    {
+      "number": 2091,
+      "name": "Balanserad vinst eller förlust"
+    },
+    {
+      "number": 2099,
+      "name": "Årets resultat"
+    },
+    {
+      "number": 2125,
+      "name": "Periodiseringsfond 2025"
+    },
+    {
+      "number": 2360,
+      "name": "Långfristiga skulder till koncernföretag"
+    },
+    {
+      "number": 2440,
+      "name": "Leverantörsskulder"
+    },
+    {
+      "number": 2460,
+      "name": "Leverantörsskulder till koncernföretag"
+    },
+    {
+      "number": 2512,
+      "name": "Beräknad inkomstskatt"
+    },
+    {
+      "number": 2611,
+      "name": "Utgående moms på försäljning inom Sverige, 25 %"
+    },
+    {
+      "number": 2640,
+      "name": "Ingående moms"
+    },
+    {
+      "number": 2650,
+      "name": "Redovisningskonto för moms"
+    },
+    {
+      "number": 2710,
+      "name": "Personalskatt"
+    },
+    {
+      "number": 2731,
+      "name": "Avräkning lagstadgade sociala avgifter"
+    },
+    {
+      "number": 2860,
+      "name": "Kortfristiga skulder till koncernföretag"
+    },
+    {
+      "number": 3001,
+      "name": "Försäljning inom Sverige, 25 % moms"
+    },
+    {
+      "number": 3011,
+      "name": "Försäljning varor till koncernföretag, 25 % moms (custom subaccount)"
+    },
+    {
+      "number": 4010,
+      "name": "Inköp material och varor"
+    },
+    {
+      "number": 4910,
+      "name": "Förändring av lager av råvaror"
+    },
+    {
+      "number": 5010,
+      "name": "Lokalhyra"
+    },
+    {
+      "number": 5310,
+      "name": "El för drift"
+    },
+    {
+      "number": 6591,
+      "name": "Koncerngemensamma tjänster från moderföretaget (custom subaccount)"
+    },
+    {
+      "number": 7010,
+      "name": "Löner till kollektivanställda"
+    },
+    {
+      "number": 7510,
+      "name": "Arbetsgivaravgifter"
+    },
+    {
+      "number": 7831,
+      "name": "Avskrivningar på maskiner och andra tekniska anläggningar"
+    },
+    {
+      "number": 8410,
+      "name": "Räntekostnader för långfristiga skulder"
+    },
+    {
+      "number": 8910,
+      "name": "Skatt som belastar årets resultat"
+    }
+  ],
+  "series": {
+    "A": "Manuell",
+    "B": "Kundfakturor",
+    "C": "Kundinbetalningar",
+    "D": "Leverantörsfakturor",
+    "E": "Leverantörsbetalningar",
+    "L": "Lön",
+    "M": "Moms"
+  }
+}

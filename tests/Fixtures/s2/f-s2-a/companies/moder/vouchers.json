@@ -1,0 +1,436 @@
+{
+  "convention": "balanced vouchers, amounts in öre; rows with counterparty are intercompany rows (the counterparty is a company_key in group.json); intercompany names the kind",
+  "vouchers": [
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 1,
+      "date": "2026-01-02",
+      "description": "Lån till Fiktiva Koncernen Produktion AB, 5 000 000 kr, 5 % ränta, löptid 5 år",
+      "intercompany": "loan",
+      "rows": [
+        {
+          "account": 1320,
+          "debit_ore": 500000000,
+          "credit_ore": 0,
+          "counterparty": "produktion"
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 500000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 5,
+      "date": "2026-05-20",
+      "description": "Disposition enligt årsstämma: föregående års resultat balanseras i ny räkning",
+      "rows": [
+        {
+          "account": 2099,
+          "debit_ore": 130000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2091,
+          "debit_ore": 0,
+          "credit_ore": 130000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "L",
+      "number": 1,
+      "date": "2026-11-25",
+      "description": "Löner jan–nov 2026, verkställande direktör (summering)",
+      "rows": [
+        {
+          "account": 7220,
+          "debit_ore": 82500000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2710,
+          "debit_ore": 0,
+          "credit_ore": 24750000
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 57750000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "L",
+      "number": 2,
+      "date": "2026-11-25",
+      "description": "Arbetsgivaravgifter jan–nov 2026, verkställande direktör (31,42 %)",
+      "rows": [
+        {
+          "account": 7510,
+          "debit_ore": 25921500,
+          "credit_ore": 0
+        },
+        {
+          "account": 2731,
+          "debit_ore": 0,
+          "credit_ore": 25921500
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 2,
+      "date": "2026-11-30",
+      "description": "Skattekonto: personalskatt, arbetsgivaravgifter och moms jan–nov, preliminär F-skatt jan–dec",
+      "rows": [
+        {
+          "account": 1630,
+          "debit_ore": 134171500,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 134171500
+        },
+        {
+          "account": 2710,
+          "debit_ore": 24750000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2731,
+          "debit_ore": 25921500,
+          "credit_ore": 0
+        },
+        {
+          "account": 2650,
+          "debit_ore": 47500000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2512,
+          "debit_ore": 36000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1630,
+          "debit_ore": 0,
+          "credit_ore": 134171500
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "B",
+      "number": 1,
+      "date": "2026-11-30",
+      "description": "Koncernarvoden jan–nov 2026 (11 × 100 000 kr per dotterbolag), fakturor",
+      "intercompany": "management_fee",
+      "rows": [
+        {
+          "account": 1560,
+          "debit_ore": 137500000,
+          "credit_ore": 0,
+          "counterparty": "produktion"
+        },
+        {
+          "account": 1560,
+          "debit_ore": 137500000,
+          "credit_ore": 0,
+          "counterparty": "forsaljning"
+        },
+        {
+          "account": 3021,
+          "debit_ore": 0,
+          "credit_ore": 110000000,
+          "counterparty": "produktion"
+        },
+        {
+          "account": 3021,
+          "debit_ore": 0,
+          "credit_ore": 110000000,
+          "counterparty": "forsaljning"
+        },
+        {
+          "account": 2611,
+          "debit_ore": 0,
+          "credit_ore": 55000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "C",
+      "number": 1,
+      "date": "2026-11-30",
+      "description": "Inbetalda koncernarvoden jan–nov 2026",
+      "intercompany": "management_fee",
+      "rows": [
+        {
+          "account": 1930,
+          "debit_ore": 275000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1560,
+          "debit_ore": 0,
+          "credit_ore": 137500000,
+          "counterparty": "produktion"
+        },
+        {
+          "account": 1560,
+          "debit_ore": 0,
+          "credit_ore": 137500000,
+          "counterparty": "forsaljning"
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "E",
+      "number": 1,
+      "date": "2026-11-30",
+      "description": "Externa tjänster jan–nov 2026, betalda (summering)",
+      "rows": [
+        {
+          "account": 6530,
+          "debit_ore": 12000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 6550,
+          "debit_ore": 18000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2640,
+          "debit_ore": 7500000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 37500000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "M",
+      "number": 1,
+      "date": "2026-11-30",
+      "description": "Momsredovisning jan–nov 2026 (summering)",
+      "rows": [
+        {
+          "account": 2611,
+          "debit_ore": 55000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2640,
+          "debit_ore": 0,
+          "credit_ore": 7500000
+        },
+        {
+          "account": 2650,
+          "debit_ore": 0,
+          "credit_ore": 47500000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "L",
+      "number": 3,
+      "date": "2026-12-23",
+      "description": "Löner december 2026, verkställande direktör (summering)",
+      "rows": [
+        {
+          "account": 7220,
+          "debit_ore": 7500000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2710,
+          "debit_ore": 0,
+          "credit_ore": 2250000
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 5250000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "L",
+      "number": 4,
+      "date": "2026-12-23",
+      "description": "Arbetsgivaravgifter december 2026, verkställande direktör (31,42 %)",
+      "rows": [
+        {
+          "account": 7510,
+          "debit_ore": 2356500,
+          "credit_ore": 0
+        },
+        {
+          "account": 2731,
+          "debit_ore": 0,
+          "credit_ore": 2356500
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 3,
+      "date": "2026-12-31",
+      "description": "Ränta på koncernlån 2026 till Produktion AB (5 % × 5 000 000 kr), ej betald",
+      "intercompany": "interest",
+      "rows": [
+        {
+          "account": 1660,
+          "debit_ore": 25000000,
+          "credit_ore": 0,
+          "counterparty": "produktion"
+        },
+        {
+          "account": 8250,
+          "debit_ore": 0,
+          "credit_ore": 25000000,
+          "counterparty": "produktion"
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 4,
+      "date": "2026-12-31",
+      "description": "Mottaget koncernbidrag från Försäljning AB, ej betalt",
+      "intercompany": "group_contribution",
+      "rows": [
+        {
+          "account": 1660,
+          "debit_ore": 80000000,
+          "credit_ore": 0,
+          "counterparty": "forsaljning"
+        },
+        {
+          "account": 8820,
+          "debit_ore": 0,
+          "credit_ore": 80000000,
+          "counterparty": "forsaljning"
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 6,
+      "date": "2026-12-31",
+      "description": "Beräknad inkomstskatt 2026",
+      "rows": [
+        {
+          "account": 8910,
+          "debit_ore": 40524732,
+          "credit_ore": 0
+        },
+        {
+          "account": 2512,
+          "debit_ore": 0,
+          "credit_ore": 40524732
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "B",
+      "number": 2,
+      "date": "2026-12-31",
+      "description": "Koncernarvoden december 2026, fakturor",
+      "intercompany": "management_fee",
+      "rows": [
+        {
+          "account": 1560,
+          "debit_ore": 12500000,
+          "credit_ore": 0,
+          "counterparty": "produktion"
+        },
+        {
+          "account": 1560,
+          "debit_ore": 12500000,
+          "credit_ore": 0,
+          "counterparty": "forsaljning"
+        },
+        {
+          "account": 3021,
+          "debit_ore": 0,
+          "credit_ore": 10000000,
+          "counterparty": "produktion"
+        },
+        {
+          "account": 3021,
+          "debit_ore": 0,
+          "credit_ore": 10000000,
+          "counterparty": "forsaljning"
+        },
+        {
+          "account": 2611,
+          "debit_ore": 0,
+          "credit_ore": 5000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "C",
+      "number": 2,
+      "date": "2026-12-31",
+      "description": "Inbetalt koncernarvode december från Försäljning AB",
+      "intercompany": "management_fee",
+      "rows": [
+        {
+          "account": 1930,
+          "debit_ore": 12500000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1560,
+          "debit_ore": 0,
+          "credit_ore": 12500000,
+          "counterparty": "forsaljning"
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "M",
+      "number": 2,
+      "date": "2026-12-31",
+      "description": "Momsredovisning december 2026",
+      "rows": [
+        {
+          "account": 2611,
+          "debit_ore": 5000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2650,
+          "debit_ore": 0,
+          "credit_ore": 5000000
+        }
+      ]
+    }
+  ]
+}

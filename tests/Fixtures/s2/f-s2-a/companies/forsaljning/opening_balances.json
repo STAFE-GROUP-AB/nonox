@@ -1,0 +1,25 @@
+{
+  "convention": "balance_ore: debit positive, credit negative; sums to 0",
+  "2026-01-01": [
+    {
+      "account": 1930,
+      "name": "Företagskonto/checkkonto/affärskonto",
+      "balance_ore": 180000000
+    },
+    {
+      "account": 2081,
+      "name": "Aktiekapital",
+      "balance_ore": -50000000
+    },
+    {
+      "account": 2091,
+      "name": "Balanserad vinst eller förlust",
+      "balance_ore": -80000000
+    },
+    {
+      "account": 2099,
+      "name": "Årets resultat",
+      "balance_ore": -50000000
+    }
+  ]
+}

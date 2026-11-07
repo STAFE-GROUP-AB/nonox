@@ -1,0 +1,92 @@
+{
+  "buildings": [
+    {
+      "asset_id": "B1",
+      "name": "Fabriksbyggnad, fastigheten Fiktiva Verkstaden 1:1 (fictional)",
+      "acquired": "2015-01-01",
+      "tax_category": "industribyggnad",
+      "land": {
+        "component_id": "B1-mark",
+        "account": 1130,
+        "cost_ore": 400000000,
+        "depreciated": false
+      },
+      "components": [
+        {
+          "component_id": "B1-stomme",
+          "name": "Stomme",
+          "account": 1111,
+          "accumulated_depreciation_account": 1119,
+          "depreciation_account": 7820,
+          "cost_ore": 1440000000,
+          "useful_life_months": 960,
+          "method": "linear",
+          "residual_value_ore": 0,
+          "depreciation_start": "2015-01-01"
+        },
+        {
+          "component_id": "B1-tak",
+          "name": "Tak",
+          "account": 1111,
+          "accumulated_depreciation_account": 1119,
+          "depreciation_account": 7820,
+          "cost_ore": 216000000,
+          "useful_life_months": 360,
+          "method": "linear",
+          "residual_value_ore": 0,
+          "depreciation_start": "2015-01-01"
+        },
+        {
+          "component_id": "B1-fasad",
+          "name": "Fasad",
+          "account": 1111,
+          "accumulated_depreciation_account": 1119,
+          "depreciation_account": 7820,
+          "cost_ore": 192000000,
+          "useful_life_months": 480,
+          "method": "linear",
+          "residual_value_ore": 0,
+          "depreciation_start": "2015-01-01"
+        },
+        {
+          "component_id": "B1-installationer",
+          "name": "Installationer (stammar, el, ventilation)",
+          "account": 1111,
+          "accumulated_depreciation_account": 1119,
+          "depreciation_account": 7820,
+          "cost_ore": 360000000,
+          "useful_life_months": 300,
+          "method": "linear",
+          "residual_value_ore": 0,
+          "depreciation_start": "2015-01-01"
+        }
+      ]
+    }
+  ],
+  "machines": [
+    {
+      "asset_id": "M1",
+      "name": "Produktionslinje 1",
+      "account": 1210,
+      "accumulated_depreciation_account": 1219,
+      "depreciation_account": 7831,
+      "cost_ore": 960000000,
+      "useful_life_months": 120,
+      "method": "linear",
+      "residual_value_ore": 0,
+      "depreciation_start": "2021-01-01"
+    },
+    {
+      "asset_id": "M2",
+      "name": "Svarv- och fräscell 2",
+      "account": 1210,
+      "accumulated_depreciation_account": 1219,
+      "depreciation_account": 7831,
+      "cost_ore": 240000000,
+      "useful_life_months": 120,
+      "method": "linear",
+      "residual_value_ore": 0,
+      "depreciation_start": "2026-07-01"
+    }
+  ]
+}
