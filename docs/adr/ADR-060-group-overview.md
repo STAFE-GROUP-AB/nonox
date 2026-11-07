@@ -128,7 +128,7 @@ Marks add one query for the group.
 
 ## Addendum 2026-11-07: spec S2 stage 1 and stage 2 plan
 
-- Status: Proposed (needs the Lead's acceptance; stage 2 needs the human's)
+- Status: Accepted by the Lead for stage 1 (2026-11-07). Stage 2 needs the product owner's acceptance and decisions H1–H8.
 - Inputs: spec `docs/specs/nummer-1-spec.md` Part 3 S2 (stage 1 scope 1–5, data,
   behaviour, permissions, tests); rule sheet `docs/specs/rules/s2.md` (status ready,
   quote-checked 2026-11-07; rule ids S2-R1 … S2-R14, corrections C1–C10, human

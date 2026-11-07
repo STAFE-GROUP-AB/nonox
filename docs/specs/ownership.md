@@ -27,7 +27,9 @@ Last updated: 2026-11-07.
 | `tests/Fixtures/s2/**` | Fixture author (S2) | in progress |
 | `docs/adr/ADR-059-k3-annual-report.md` (addenda) | S1 Architect | waits for `rules/s1.md` |
 | `app/Domain/AnnualReport/K3*`, `app/Domain/Assets/Component*`, `app/Domain/Closing/DeferredTax*`, `app/Domain/AnnualReport/CashFlow*` | S1 Builders A–C | not started |
-| `docs/adr/ADR-060-group-overview.md` (addenda), `app/Domain/Group/**`, `app/Livewire/Group/**`, `tests/Feature/Group/**`, `tests/Tenancy/GroupTenancyTest.php` | S2 | stage 1 consolidation not started |
+| `docs/adr/ADR-060-group-overview.md` (addenda), `app/Domain/Group/**`, `app/Livewire/Group/**`, `tests/Feature/Group/**`, `tests/Tenancy/GroupTenancyTest.php` | S2 | stage 1 ADR addendum accepted by Lead 2026-11-07; S2-1.1 in progress |
+| `app/Actions/Group/**`, `app/Models/{CompanyHolding,CorporateGroup*,Intercompany*,GroupEntry*}.php`, `app/Http/Controllers/Group/**`, `resources/views/livewire/group/**`, migrations `*company_holdings*`, `*corporate_group*`, `*intercompany*`, `*group_entr*`, `tests/Tenancy/{CorporateGroup,Intercompany}TenancyTest.php` | S2 Builders A–C | S2-1.1 in progress |
+| `routes/web.php`, `lang/en.json`, `docs/andringslogg/andringslogg.json` | shared, append-only | — |
 | `docs/adr/ADR-065-export-and-portability.md`, `app/Support/Portability/**`, `app/Actions/Portability/**`, `tests/Feature/Portability/**` | F10 Builder | in progress |
 | `app/Support/Privacy/**`, `app/Actions/Privacy/**`, `app/Console/Commands/Prune*`, `docs/gdpr/**` | F8 | after F10's first package |
 | `docs/status/sanningsrevision.md`, `resources/views/start/**`, `app/Support/Landing/LandingPage.php`, `docs/migration/jamforelse.json` | Truth auditor (Track A) | in progress |
