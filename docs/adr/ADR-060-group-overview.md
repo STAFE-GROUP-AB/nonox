@@ -394,8 +394,13 @@ Branch `spec/s2/group-model`. One migration set and one action set, no screen.
   be changed only by whoever `administers()` every group that references it, and its
   `held_org_number` is frozen; otherwise an administrator of the holder alone could take a
   company out of a group or a period without its consent. The 100 % vote rule
-  (`GroupHoldings`) runs when a member is confirmed **and** on every holding recorded or
-  changed by a company that is a member of a group; the refusal names no other holder.
+  (`GroupHoldings`) runs when a member is confirmed, and on every holding recorded or
+  changed by a company that is a member of a group **that the user administers**. For a
+  group the user does not administer, other members' holdings are not compared at all, so
+  an administrator of the holder alone gets the same answer whatever the others hold (no
+  oracle on their voting shares); the conflict is left to the group: `ConfirmGroupMember`
+  refuses, and **S2-1.4 must flag a group whose active holdings in one organisation number
+  exceed 100 % of the votes and block its consolidated output until corrected.**
   `holding_id` references `company_holdings` with NO ACTION on delete (checked at the end of
   the statement), so a grounding holding cannot be deleted.
 - A member's `holding_id` is the active holding naming it among the members' holdings: one
@@ -416,7 +421,15 @@ Branch `spec/s2/group-model`. One migration set and one action set, no screen.
   granted to the parent's owner), and the role counts only while that same row exists. A
   person who leaves the parent and is invited again, however soon, has no role until it is
   granted anew (and audited). A role holder may give up their own role even after leaving
-  the parent, without seeing the group. No Jetstream or tenancy file is involved.
+  the parent, without seeing the group. On an ownership transfer of the parent
+  (`App\Actions\Company\TransferOwnership`, change approved by the Lead), in the same
+  transaction, `GroupRoleBinding` binds the previous owner's null-bound roles to their new
+  `team_user` row and moves the new owner's roles bound to their former row to null, with
+  one audit entry `corporate_group.roles_rebound` (counts only) in the parent. A role keeps
+  working through transfers; a stale role from an ended membership is never revived. No
+  Jetstream or tenancy file is involved.
+- Every `lockForUpdate()` over several `corporate_groups` or `company_holdings` rows is
+  ordered by id, so concurrent transactions take the locks in the same order.
 - Audit (2.2): `GroupAuditTrail` writes one entry per member company (for a removal, the members
   before it), payload `corporate_group_id`, `members` (count), `this_company`, and for roles
   `user_id` and `role`. The group name (free text) is not logged. User ids of one company's

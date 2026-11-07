@@ -68,7 +68,7 @@ final class RecordHolding
                 }
 
                 $this->assertNoOtherActiveHolding($attributes, $existing);
-                $this->assertVotesWithinGroups($holding);
+                $this->assertVotesWithinGroups($user, $holding);
                 $holding->save();
 
                 Audit::record($before === [] ? 'company_holding.created' : 'company_holding.updated', $holding, [
@@ -175,6 +175,7 @@ final class RecordHolding
         $groups = CorporateGroup::query()
             ->whereIn('id', CorporateGroupMember::query()->select('corporate_group_id')->where('holding_id', $holding->id))
             ->with('members')
+            ->orderBy('id')
             ->lockForUpdate()
             ->get();
 
@@ -197,21 +198,30 @@ final class RecordHolding
 
     /**
      * The same 100 % rule as when a member is confirmed, for every group the
-     * holder is a member of: the votes recorded by the group's members in one
-     * company may not exceed all of its votes. The refusal names no other
-     * holder.
+     * holder is a member of that the user administers: the votes recorded by
+     * the group's members in one company may not exceed all of its votes.
+     * For a group the user does not administer, the other members' holdings
+     * are not compared at all, so the answer never depends on what they hold
+     * (no oracle); the conflict is then the group's to resolve
+     * (ConfirmGroupMember refuses, and the consolidation flags it).
      */
-    private function assertVotesWithinGroups(CompanyHolding $holding): void
+    private function assertVotesWithinGroups(User $user, CompanyHolding $holding): void
     {
         $groups = CorporateGroup::query()
             ->whereIn('id', CorporateGroupMember::query()->select('corporate_group_id')->where('company_id', $holding->company_id))
             ->with('members')
+            ->orderBy('id')
             ->lockForUpdate()
             ->get();
 
+        $access = GroupAccess::for($user);
         $counts = $holding->disposed_on === null || $holding->disposed_on->isAfter(CarbonImmutable::today());
 
         foreach ($groups as $group) {
+            if (! $access->administers($group)) {
+                continue;
+            }
+
             $holderIds = array_values(array_map(fn (CorporateGroupMember $member): int => $member->company_id, $group->members->all()));
             $others = GroupHoldings::activeIn($holderIds, $holding->held_org_number)->reject(fn (CompanyHolding $other): bool => $other->id === $holding->id);
 
