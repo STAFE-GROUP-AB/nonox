@@ -55,14 +55,14 @@ final class SchemaValidator
     /** @return list<string> One message per violation, with the path of the value. */
     public function validateJson(string $json): array
     {
-        return $this->validate(json_decode($json, false, 512, JSON_THROW_ON_ERROR));
+        return $this->validateDecoded(json_decode($json, false, 512, JSON_THROW_ON_ERROR));
     }
 
     /**
      * @param  mixed  $value  Decoded without assoc.
      * @return list<string>
      */
-    public function validate(mixed $value): array
+    private function validateDecoded(mixed $value): array
     {
         $problems = [];
         $this->check($value, $this->schema, '$', $problems);

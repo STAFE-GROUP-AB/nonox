@@ -260,7 +260,7 @@ it('tells objects from lists and does not let a trailing newline pass a pattern'
         'properties' => [
             'list' => ['type' => 'array'],
             'map' => ['type' => 'object'],
-            'sha' => ['type' => 'string', 'pattern' => '^[0-9a-f]{4}\\z'],
+            'sha' => ['type' => 'string', 'pattern' => '^[0-9a-f]{4}$'],
         ],
     ]);
 
