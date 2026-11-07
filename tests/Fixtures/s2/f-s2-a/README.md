@@ -256,6 +256,9 @@ companies are recorded as K3.
   "Handelsvaror"; Produktion's 4010/4910 as "Råvaror och förnödenheter".
 - **B10 assumption**: schablonintäkt on Produktion's fund uses 2,55 % (statslåneränta
   30 Nov 2025, ADR-010 without the 72 % factor).
+- **B11 assumption** (added by the Lead from the accounting check, 2026-11-07):
+  Produktion's machines have tax value equal to book value, as in F-S1-a's A4.
+  The expected values imply it; no figure changes.
 
 ## Self-check results (2026-11-07)
 
