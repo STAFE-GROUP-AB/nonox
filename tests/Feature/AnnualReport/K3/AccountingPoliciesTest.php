@@ -43,12 +43,18 @@ function setPolicy(object $test, FiscalYear $year, K3PolicyKey $key, string $val
     return app(SetAccountingPolicy::class)(($user ?? $test->owner)->fresh(), $test->company, $year->id, $key, $value, $reason);
 }
 
-function adopt(object $test, FiscalYear $year): void
+function adopt(object $test, FiscalYear $year, string $on): void
 {
     CurrentCompany::run($test->company, fn () => AnnualReport::query()->create([
         'fiscal_year_id' => $year->id, 'signatories' => [],
-        'updated_by' => $test->owner->id, 'adoption_date' => $year->end_date->addMonths(5)->toDateString(),
+        'updated_by' => $test->owner->id, 'adoption_date' => $on,
     ]));
+}
+
+/** @return list<array{0: string, 1: string}> key and rule of each refusal */
+function refusalRules(FiscalYear $year, bool $largerCompany = false): array
+{
+    return array_map(fn (array $refusal) => [$refusal['key']->value, $refusal['rule']], K3Policies::forYear($year)->refusals($largerCompany));
 }
 
 it('S1-R6 uses the row with the latest applies_from on or before the year start', function () {
@@ -160,9 +166,9 @@ it('S1-R5 keeps leasing as one company-wide row per year, with no per-contract v
     ]))))->toThrow(QueryException::class);
 });
 
-it('refuses a write from a year whose annual report is adopted, and from any earlier start', function () {
+it('refuses a write that reaches a year whose annual report is adopted', function () {
     setPolicy($this, $this->y2025, K3PolicyKey::Leasing, 'operational_in_legal_entity');
-    adopt($this, $this->y2025);
+    adopt($this, $this->y2025, '2026-05-01');
 
     expect(fn () => setPolicy($this, $this->y2025, K3PolicyKey::Leasing, 'classify'))
         ->toThrow(ValidationException::class, 'fastställd');
@@ -170,11 +176,87 @@ it('refuses a write from a year whose annual report is adopted, and from any ear
     // A later year is still open for a decision.
     setPolicy($this, $this->y2026, K3PolicyKey::Leasing, 'classify');
 
-    adopt($this, $this->y2027);
+    expect(K3Policies::forYear($this->y2025)->value(K3PolicyKey::Leasing))->toBe(K3Leasing::OperationalInLegalEntity);
+});
 
-    expect(fn () => setPolicy($this, $this->y2026, K3PolicyKey::Intangibles, 'expense'))
-        ->toThrow(ValidationException::class, 'fastställd')
-        ->and(K3Policies::forYear($this->y2025)->value(K3PolicyKey::Leasing))->toBe(K3Leasing::OperationalInLegalEntity);
+it('treats a year as adopted only from its adoption date', function () {
+    adopt($this, $this->y2027, '2028-05-01');
+
+    // Today is 2026-11-07: the adoption date lies ahead.
+    setPolicy($this, $this->y2026, K3PolicyKey::BorrowingCosts, 'expense');
+
+    $this->travelTo(CarbonImmutable::parse('2028-05-01 09:00:00'));
+
+    expect(fn () => setPolicy($this, $this->y2026, K3PolicyKey::BorrowingCosts, 'capitalise'))
+        ->toThrow(ValidationException::class, 'fastställd');
+});
+
+it('checks adoption only for the years the row reaches, up to the next row of the same key', function () {
+    setPolicy($this, $this->y2027, K3PolicyKey::Intangibles, 'expense');
+    adopt($this, $this->y2027, '2028-05-01');
+    $this->travelTo(CarbonImmutable::parse('2028-06-01 09:00:00'));
+
+    // The 2026 row ends where the 2027 row begins, so the adopted 2027 report is not reached.
+    setPolicy($this, $this->y2026, K3PolicyKey::Intangibles, 'expense');
+
+    // Without a later row it reaches 2027.
+    expect(fn () => setPolicy($this, $this->y2026, K3PolicyKey::Leasing, 'operational_in_legal_entity'))
+        ->toThrow(ValidationException::class, 'fastställd');
+
+    // A transition answer reaches its own year only.
+    setPolicy($this, $this->y2026, K3PolicyKey::K3AppliedBefore, 'no');
+});
+
+it('S1-R7.1 S1-R7.6 never carries a transition answer to a later year', function () {
+    setPolicy($this, $this->y2025, K3PolicyKey::K3AppliedBefore, 'no');
+    setPolicy($this, $this->y2025, K3PolicyKey::LeftK2Reason, 'forced_2025_2');
+    setPolicy($this, $this->y2025, K3PolicyKey::ComparativesRestatedAtTransition, 'no');
+
+    $later = K3Policies::forYear($this->y2027);
+
+    expect(K3Policies::forYear($this->y2025)->chapter35Allowed())->toBeTrue()
+        ->and($later->value(K3PolicyKey::K3AppliedBefore))->toBeNull()
+        ->and($later->chapter35Allowed())->toBeNull()
+        ->and(array_map(fn (K3PolicyKey $key) => $key->value, $later->missing(transition: true)))->toContain(
+            'comparatives_restated_at_transition', 'k3_applied_before', 'left_k2_reason',
+        )
+        ->and(array_map(fn (K3PolicyKey $key) => $key->value, K3Policies::forYear($this->y2025)->missing(transition: true)))->not->toContain(
+            'comparatives_restated_at_transition', 'k3_applied_before', 'left_k2_reason',
+        );
+});
+
+it('K3 10.2 lists a change of principle for the year it takes effect, and stores it', function () {
+    setPolicy($this, $this->y2025, K3PolicyKey::CashFlowStatement, 'none');
+    $changed = setPolicy($this, $this->y2026, K3PolicyKey::CashFlowStatement, 'indirect');
+
+    expect($changed->value)->toBe('indirect')
+        ->and(refusalRules($this->y2025))->toBe([])
+        ->and(refusalRules($this->y2026))->toBe([['cash_flow_statement', 'K3 10.2']])
+        ->and(refusalRules($this->y2027))->toBe([]);
+
+    // The same value again is no change.
+    setPolicy($this, $this->y2027, K3PolicyKey::CashFlowStatement, 'indirect');
+
+    expect(refusalRules($this->y2027))->toBe([]);
+});
+
+it('K3 23.37 lists a move from percentage of completion to completed contract, K3 10.2 the other way', function () {
+    setPolicy($this, $this->y2025, K3PolicyKey::FixedPriceContracts, 'percentage_of_completion');
+    setPolicy($this, $this->y2026, K3PolicyKey::FixedPriceContracts, 'completed_contract_23_31');
+    setPolicy($this, $this->y2027, K3PolicyKey::FixedPriceContracts, 'percentage_of_completion');
+
+    expect(refusalRules($this->y2025))->toBe([])
+        ->and(refusalRules($this->y2026))->toBe([['fixed_price_contracts', 'K3 23.37']])
+        ->and(refusalRules($this->y2027))->toBe([['fixed_price_contracts', 'K3 10.2']]);
+});
+
+it('takes a transaction advisory lock per company and key before writing', function () {
+    setPolicy($this, $this->y2026, K3PolicyKey::Leasing, 'operational_in_legal_entity');
+
+    $locks = DB::select("SELECT classid, objid FROM pg_locks WHERE locktype = 'advisory' AND objsubid = 2 AND pid = pg_backend_pid()");
+
+    expect(collect($locks)->map(fn (object $lock): array => [(int) $lock->classid, (int) $lock->objid])->all())
+        ->toContain([$this->company->id, crc32('leasing') % 2147483648]);
 });
 
 it('S1-R6 refuses a switch from chapter 12 back to chapter 11', function () {

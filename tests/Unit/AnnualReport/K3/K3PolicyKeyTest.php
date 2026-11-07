@@ -87,9 +87,23 @@ it('turns a stored string into the key\'s value enum and rejects anything else',
         ->and(K3PolicyKey::CashFlowStatement->valueOf('direct'))->toBeNull();
 });
 
+it('uses the K3 chapter 25 word låneutgifter', function () {
+    expect(K3PolicyKey::BorrowingCosts->label())->toBe('Låneutgifter')
+        ->and(K3PolicyKey::BorrowingCosts->question())->toContain('låneutgifterna')
+        ->and(K3BorrowingCosts::Capitalise->refusal())->toContain('låneutgifter')->not->toContain('lånekostnad');
+});
+
+it('states the scope of K3 23.31 in the fixed-price question', function () {
+    expect(K3PolicyKey::FixedPriceContracts->question())
+        ->toContain('23.31')
+        ->toContain('17 kap. 23 §')
+        ->toContain('17 kap. 27 §')
+        ->toContain('juridisk person');
+});
+
 it('has a Swedish label and question for every key', function () {
     foreach (K3PolicyKey::cases() as $key) {
         expect($key->label())->not->toBe('')
-            ->and($key->question())->toEndWith('?');
+            ->and($key->question())->toContain('?');
     }
 });

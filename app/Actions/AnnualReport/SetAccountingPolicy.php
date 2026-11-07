@@ -13,6 +13,7 @@ use App\Models\FiscalYear;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -22,11 +23,10 @@ use Illuminate\Validation\ValidationException;
 /**
  * Records a K3 accounting policy from the start of a fiscal year (ADR-059,
  * addendum 2026-11-07, A.2.3). Prepared by whoever prepares the annual report
- * (fiscal-years:manage: owner, administrator, accountant). Refused from a year
- * whose annual report is adopted, or from an earlier start that would reach
- * it: a change of principle under K3 chapter 10 is a later stage. An
- * unsupported value is stored and listed by K3Policies::refusals(), so the
- * report can say why it is refused.
+ * (fiscal-years:manage: owner, administrator, accountant). Refused when the
+ * row would reach a year whose annual report is adopted. An unsupported value
+ * and a change of principle (K3 10.2) are stored and listed by
+ * K3Policies::refusals(), so the report can say why it is refused.
  */
 final class SetAccountingPolicy
 {
@@ -56,6 +56,10 @@ final class SetAccountingPolicy
             $from = $fiscalYear->start_date->toDateString();
 
             return DB::transaction(function () use ($user, $company, $fiscalYear, $key, $value, $reason, $from): CompanyAccountingPolicy {
+                // One writer per company and key until commit: a first write has no row to lock,
+                // and the adoption and chapter 12 checks read the neighbouring rows.
+                DB::statement('SELECT pg_advisory_xact_lock(?, ?)', [$company->id, crc32($key->value) % 2147483648]);
+
                 $policy = CompanyAccountingPolicy::query()
                     ->where('key', $key->value)
                     ->where('applies_from', $from)
@@ -66,7 +70,7 @@ final class SetAccountingPolicy
                     return $policy;
                 }
 
-                $this->assertNotAdopted($fiscalYear);
+                $this->assertNotAdopted($key, $from);
 
                 if ($key === K3PolicyKey::FinancialInstruments) {
                     $this->assertNoSwitchBackToChapter11($from, $value);
@@ -94,12 +98,34 @@ final class SetAccountingPolicy
         });
     }
 
-    /** No policy may change for a year whose annual report the meeting has adopted. */
-    private function assertNotAdopted(FiscalYear $fiscalYear): void
+    /**
+     * No policy may change for a year whose annual report is adopted: one with an
+     * adoption date that has come. The row reaches the years from its start up to
+     * the next row of the same key; a transition answer reaches its own year only.
+     * The adoption date is a field of the annual report that a user can change;
+     * the lock follows it.
+     */
+    private function assertNotAdopted(K3PolicyKey $key, string $from): void
     {
+        $reached = FiscalYear::query()->where('start_date', '>=', $from);
+
+        if ($key->transitionOnly()) {
+            $reached->where('start_date', $from);
+        }
+
+        $next = CompanyAccountingPolicy::query()
+            ->where('key', $key->value)
+            ->where('applies_from', '>', $from)
+            ->min('applies_from');
+
+        if ($next !== null) {
+            $reached->where('start_date', '<', $next);
+        }
+
         $adopted = AnnualReport::query()
             ->whereNotNull('adoption_date')
-            ->whereIn('fiscal_year_id', FiscalYear::query()->where('end_date', '>=', $fiscalYear->start_date->toDateString())->select('id'))
+            ->where('adoption_date', '<=', CarbonImmutable::today('Europe/Stockholm')->toDateString())
+            ->whereIn('fiscal_year_id', $reached->select('id'))
             ->exists();
 
         if (! $adopted) {
@@ -107,7 +133,7 @@ final class SetAccountingPolicy
         }
 
         throw ValidationException::withMessages([
-            'value' => __('Principen kan inte ändras från räkenskapsåret som börjar :date, eftersom en årsredovisning från och med det året redan är fastställd. Byte av redovisningsprincip (K3 kapitel 10) stöds inte ännu.', ['date' => $fiscalYear->start_date->toDateString()]),
+            'value' => __('Principen kan inte sparas från räkenskapsåret som börjar :date, eftersom den då skulle gälla ett räkenskapsår vars årsredovisning redan är fastställd.', ['date' => $from]),
         ]);
     }
 

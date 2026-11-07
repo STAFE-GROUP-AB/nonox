@@ -17,7 +17,7 @@ enum K3BorrowingCosts: string implements K3PolicyValue
     {
         return match ($this) {
             self::Expense => null,
-            self::Capitalise => (string) __('NONOX stöder bara att lånekostnader kostnadsförs. Lånekostnader som räknas in i en tillgångs anskaffningsvärde stöds inte.'),
+            self::Capitalise => (string) __('NONOX stöder bara att låneutgifter kostnadsförs. Låneutgifter som räknas in i en tillgångs anskaffningsvärde stöds inte.'),
         };
     }
 }
