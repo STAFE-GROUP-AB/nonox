@@ -273,11 +273,12 @@ final class K3Schedule
      * over in a column, in order. K3 6.3 lists the rows a specification shows
      * and gives no residual row (S1-R8.3), so PrintedFigures never adds an
      * "Övriga förändringar" row for K3: the leftover goes to an existing row
-     * with an amount in the column (ADR-059 A.3).
+     * with an amount in the column (ADR-059 A.3). The keys are
+     * K3EquityStatement's rows (S1-P7).
      *
      * @var list<string>
      */
-    public const array EQUITY_ROUNDING_ROWS = ['carried_forward', 'dividend'];
+    public const array EQUITY_ROUNDING_ROWS = ['prior_result_transfer', 'dividend'];
 
     public const bool EQUITY_ROUNDING_ADDS_ROW = false;
 

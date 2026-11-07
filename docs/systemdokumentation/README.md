@@ -2172,6 +2172,46 @@ Enligt AI-utredning 2026-11-07, juristgranskning återstår (ADR-059, tillägg
   verifikationer. K2-årsredovisningen är oförändrad tecken för tecken.
 - Ingen skärm visar K3-uppställningen ännu, och ingenting i bokföringen ändras.
 
+### 5a6.3 Förändringar i eget kapital enligt K3 (förberedelse)
+
+Enligt AI-utredning 2026-11-07, juristgranskning återstår (ADR-059, tillägg
+2026-11-07, paket S1-P7).
+
+- Även ett mindre aktiebolag ska specificera förändringar i eget kapital
+  jämfört med föregående års balansräkning (årsredovisningslagen 6 kap. 2 §
+  andra stycket). Med K3 tas specifikationen fram av `K3EquityStatement` och
+  visar enligt K3 punkt 6.3 förändringen i varje post i eget kapital
+  (kolumnerna är balansräkningens poster i bundet och fritt eget kapital,
+  med årets resultat efter balanserad vinst eller förlust) och raderna:
+  årets resultat (a), effekter av retroaktiv tillämpning och rättelse av fel
+  (b), utdelning, erhållna aktieägartillskott, återbetalning av
+  aktieägartillskott och nyemission (d, var för sig), omföring av
+  föregående års resultat, omföring till och från fond för
+  utvecklingsutgifter (BAS 2089) och andra omföringar mellan poster (e).
+- Raderna läses ur årets bokförda verifikationer som rör ett konto i BAS
+  2080–2099, tillsammans med verifikationens motkonton: årets resultat bokat
+  mot 8990–8999 hör till rad a; en debet på 2099 (resultatdispositionen,
+  oavsett om den är gjord i bokslutet eller som en vanlig verifikation) är en
+  omföring till balanserad vinst eller förlust; en minskning av fritt eget
+  kapital mot 2898 är utdelning; en ändring av bara 2093 är tillskott eller
+  återbetalning av tillskott; en ökning av bara aktiekapital och
+  överkursfond är nyemission; en verifikation med bara konton i eget kapital
+  är en omföring. En rättelseverifikation hamnar på samma rad som det den
+  rättar. Det som finns kvar av föregående års resultat på 2099 visas, som i
+  balansräkningen, under balanserad vinst eller förlust.
+- K3 punkt 6.3 har ingen rad för övriga förändringar. En förändring som inte
+  hör till någon rad, en ingående balans som skiljer sig från föregående års
+  utgående balans, eller en post vars rader inte går ihop gör att
+  specifikationen inte tas fram: anledningen anges på svenska med konton och
+  verifikationer. Detsamma gäller en avrundningsrest som ingen befintlig rad
+  med belopp i kolumnen kan ta. Rad b får ännu inga verifikationer: hur
+  övergången från K2 bokförs är ett öppet beslut (H7), så en övergång som
+  bokförs i dag stoppar specifikationen.
+- Specifikationen läses med en databasfråga, oberoende av antalet
+  verifikationer. K2-specifikationen med raden Övriga förändringar är
+  oförändrad. Ingen skärm visar K3-specifikationen ännu, och ingenting i
+  bokföringen ändras.
+
 ## 5a7. Inkomstdeklaration 2 (SRU)
 
 - Under Bokföring → Inkomstdeklaration tas INK2 med INK2R och INK2S fram ur
