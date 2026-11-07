@@ -8,8 +8,15 @@ use App\Domain\Firm\Memberships;
 use App\Models\Company;
 use App\Models\CompanyGroup;
 use App\Models\CompanyGroupMember;
+use App\Models\CompanyHolding;
+use App\Models\CorporateGroup;
+use App\Models\CorporateGroupMember;
+use App\Models\CorporateGroupRole;
 use App\Models\User;
+use App\Support\Tenancy\CompanyScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection as SupportCollection;
 
 /**
@@ -82,5 +89,133 @@ final class GroupAccess
             'members' => $visible->sortBy(fn (array $row): string => mb_strtolower($row['company']->name))->values(),
             'hidden' => $members->count() - $visible->count(),
         ];
+    }
+
+    /*
+     * Shared groups (ADR-060, addendum 2026-11-07, 2.2). All or nothing at
+     * group level: FULL with reports:view in every member company, otherwise
+     * CONSOLIDATED with an explicit group role while still a member of the
+     * parent, otherwise NONE. Decided from the memberships on every call;
+     * nothing is cached and no stored flag outlives a membership.
+     */
+
+    /** The roles that may administer a group: owner or administrator in every member company. */
+    public const array ADMIN_ROLES = ['owner', 'admin'];
+
+    /**
+     * What the user may see of the group. With $from, members whose holding
+     * was disposed of before that day are not required.
+     */
+    public function levelFor(CorporateGroup $group, ?CarbonImmutable $from = null): GroupAccessLevel
+    {
+        $required = $this->requiredMembers($group, $from);
+
+        if ($required !== [] && array_all($required, fn (int $companyId): bool => $this->mayView($companyId))) {
+            return GroupAccessLevel::Full;
+        }
+
+        if ($this->memberships->has($group->parent_company_id) && $this->hasRole($group, GroupRole::Viewer)) {
+            return GroupAccessLevel::Consolidated;
+        }
+
+        return GroupAccessLevel::None;
+    }
+
+    /** Owner or administrator, live, in every member company and the parent; archived companies cannot be administered. */
+    public function administers(CorporateGroup $group): bool
+    {
+        $ids = array_unique([$group->parent_company_id, ...$this->memberIds($group)]);
+
+        return array_all($ids, fn (int $companyId): bool => $this->mayAdminister($companyId));
+    }
+
+    /** A member of the company in any role. */
+    public function isMember(int $companyId): bool
+    {
+        return $this->memberships->has($companyId);
+    }
+
+    /** Owner or administrator of the company, which is not archived. */
+    public function mayAdminister(int $companyId): bool
+    {
+        if (! $this->memberships->has($companyId)) {
+            return false;
+        }
+
+        if ($this->memberships->companies->firstWhere('id', $companyId)?->isArchived()) {
+            return false;
+        }
+
+        return in_array($this->memberships->role($companyId), self::ADMIN_ROLES, true);
+    }
+
+    /** @return Collection<int, CorporateGroup> the shared groups the user sees at all, by name */
+    public function corporateGroups(): Collection
+    {
+        $companyIds = $this->memberships->ids();
+
+        return CorporateGroup::query()
+            ->where(fn ($query) => $query
+                ->whereIn('id', CorporateGroupMember::query()->select('corporate_group_id')->whereIn('company_id', $companyIds))
+                ->orWhereIn('id', CorporateGroupRole::query()->select('corporate_group_id')->where('user_id', $this->user->id)))
+            ->with(['members', 'roles' => fn ($query) => $query->where('user_id', $this->user->id)])
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (CorporateGroup $group): bool => $this->levelFor($group)->sees())
+            ->values();
+    }
+
+    /** A group the user does not see answers 404, exactly like one that does not exist. */
+    public function corporateGroup(int $id): CorporateGroup
+    {
+        $group = CorporateGroup::query()->with('members')->find($id);
+
+        if (! $group instanceof CorporateGroup || ! $this->levelFor($group)->sees()) {
+            throw (new ModelNotFoundException)->setModel(CorporateGroup::class, [$id]);
+        }
+
+        return $group;
+    }
+
+    /** @return list<int> */
+    private function memberIds(CorporateGroup $group): array
+    {
+        $members = $group->relationLoaded('members') ? $group->members : $group->members()->get();
+
+        return array_values(array_map(fn (CorporateGroupMember $member): int => $member->company_id, $members->all()));
+    }
+
+    /** @return list<int> the companies whose reports:view FULL needs */
+    private function requiredMembers(CorporateGroup $group, ?CarbonImmutable $from): array
+    {
+        $members = $group->relationLoaded('members') ? $group->members : $group->members()->get();
+        $disposed = [];
+
+        if ($from !== null) {
+            $holdingIds = $members->pluck('holding_id')->filter()->values()->all();
+
+            // Only the disposal date of the holdings that made these companies members is read, to
+            // decide which members the period needs; nothing of the holding is shown to the user.
+            $disposed = $holdingIds === [] ? [] : CompanyScope::bypass(fn (): array => CompanyHolding::query()
+                ->whereIn('id', $holdingIds)
+                ->where('disposed_on', '<', $from->toDateString())
+                ->pluck('id')->map(fn (mixed $id): int => (int) $id)->all());
+        }
+
+        $required = $members
+            ->reject(fn (CorporateGroupMember $member): bool => $member->holding_id !== null && in_array($member->holding_id, $disposed, true))
+            ->map(fn (CorporateGroupMember $member): int => $member->company_id)
+            ->all();
+
+        return array_values(array_unique([$group->parent_company_id, ...$required]));
+    }
+
+    private function hasRole(CorporateGroup $group, GroupRole $role): bool
+    {
+        if ($group->relationLoaded('roles')) {
+            return $group->roles->where('user_id', $this->user->id)->where('role', $role)->isNotEmpty();
+        }
+
+        return $group->roles()->where('user_id', $this->user->id)->where('role', $role->value)->exists();
     }
 }

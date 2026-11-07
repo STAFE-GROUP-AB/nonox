@@ -128,7 +128,7 @@ Marks add one query for the group.
 
 ## Addendum 2026-11-07: spec S2 stage 1 and stage 2 plan
 
-- Status: Accepted by the Lead for stage 1 (2026-11-07). Stage 2 needs the product owner's acceptance and decisions H1–H8.
+- Status: Accepted by the Lead for stage 1 (2026-11-07). Stage 2 needs the product owner's acceptance and decisions H1–H8. S2-1.1 built (branch `spec/s2/group-model`, see "S2-1.1 as built" under 3.1).
 - Inputs: spec `docs/specs/nummer-1-spec.md` Part 3 S2 (stage 1 scope 1–5, data,
   behaviour, permissions, tests); rule sheet `docs/specs/rules/s2.md` (status ready,
   quote-checked 2026-11-07; rule ids S2-R1 … S2-R14, corrections C1–C10, human
@@ -373,6 +373,36 @@ Branch `spec/s2/group-model`. One migration set and one action set, no screen.
   does not read it before then.
 - **Docs:** systemdokumentation unchanged (no accounting behaviour); ADR-060 status line;
   no changelog until a screen ships (S2-1.2).
+
+**S2-1.1 as built (2026-11-07).** Details the addendum left open, decided in the build:
+
+- Migrations are dated `2026_12_16_*` (after the newest existing migration), not `2026_11_xx`.
+- `corporate_groups.parent_company_id` is unique: one authoritative group per parent (2.1).
+  `company_holdings` has CHECKs for 0–10 000 bp and `disposed_on >= acquired_on`; its only
+  foreign key is `company_id`.
+- A holder has at most one undisposed holding per organisation number; the organisation
+  number must be a legal person's (not a personnummer) and not the holder's own. The audit
+  entry keeps shares, basis and dates, and only the *names* of changed fields for the held
+  company's name and number.
+- "Active" holding = `disposed_on` empty or after the day. `levelFor($group, $from)` ignores
+  members whose holding was disposed of before `$from` (strictly before).
+- A member's `holding_id` is the active holding naming it among the members' holdings: one
+  with a control basis first, then the larger voting share. No rule refuses a holding whose
+  basis is NONE; the human-entered basis is stored, not judged (S2-R1d).
+- `administers()` = owner or admin, live, in every member and the parent, none archived.
+  `ConfirmGroupMember` additionally needs owner/admin in the new company. `RemoveGroupMember`
+  is also open to an owner/admin of the leaving company itself (withdrawal of consent without
+  seeing the group); the parent cannot be removed, and a company through which other members
+  are held only after them. `RevokeGroupRole` is also open to the role holder for their own role.
+- Audit (2.2): `GroupAuditTrail` writes one entry per member company (for a removal, the members
+  before it), payload `corporate_group_id`, `members` (count), `this_company`, and for roles
+  `user_id` and `role`. The group name (free text) is not logged.
+- `CompanyScope::bypass` is used twice, each with a comment: reading the members' holdings by
+  organisation number in `ConfirmGroupMember` (the user administers every holder), and reading
+  disposal dates of member holdings in `levelFor` with a period. G.1 code still never bypasses.
+- Not yet testable in S2-1.1 and moved to the package that adds the surface: group routes,
+  CSV and PDF answering 404 (S2-1.2/1.6), and the CONSOLIDATED payload without per-company
+  data (S2-1.4).
 
 #### 3.2 Remaining stage 1 packages
 
