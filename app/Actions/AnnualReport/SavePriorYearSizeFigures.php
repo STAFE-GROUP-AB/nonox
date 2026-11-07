@@ -28,6 +28,9 @@ use InvalidArgumentException;
  * the size test (ÅRL 1 kap. 3 §, BFNAR 2006:11) needs them. A year kept in
  * NONOX is read from the ledger and cannot be entered. One row per start
  * date; saving the same year again updates it. Needs fiscal-years:manage.
+ * The unique index guards the same start date; overlapping periods with
+ * different start dates are guarded here in code, not by an exclusion
+ * constraint, so two simultaneous saves of overlapping years can both pass.
  */
 class SavePriorYearSizeFigures
 {
@@ -99,7 +102,7 @@ class SavePriorYearSizeFigures
             'balance_sheet_total' => ['required', 'string', 'max:30'],
             'net_turnover' => ['required', 'string', 'max:30'],
         ], [
-            'average_employees_fte.regex' => __('Ange medelantal anställda som ett tal med högst två decimaler, till exempel 3,4.'),
+            'average_employees_fte.regex' => __('Ange det exakta medelantalet anställda med högst två decimaler, till exempel 3,4. Avrunda inte – NONOX avrundar själv.'),
         ], [
             'start_date' => __('räkenskapsårets första dag'),
             'end_date' => __('räkenskapsårets sista dag'),

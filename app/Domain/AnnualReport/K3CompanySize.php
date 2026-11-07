@@ -60,21 +60,19 @@ final class K3CompanySize
             return new K3SizeClassification(K3SizeClass::Storre, __('Större företag: enligt bekräftelsen är företagets värdepapper upptagna till handel på en reglerad marknad (ÅRL 1 kap. 3 § första stycket 4).'), 'S1-R9');
         }
 
-        /** @var list<string> $additionForms */
-        $additionForms = K3Rules::rule('larger_company.turnover_additions_legal_forms', $reportingStart)['value'];
-
-        if ($legalForm !== null && in_array($legalForm->value, $additionForms, true)) {
-            return new K3SizeClassification(K3SizeClass::Undetermined, __('Är företaget ett större företag? Företagsformen är :form. För en ideell förening eller en stiftelse ska bidrag, gåvor, medlemsavgifter och andra liknande intäkter läggas till nettoomsättningen, och anställda som fått högst ett halvt prisbasbelopp räknas inte (ÅRL 1 kap. 3 § tredje stycket, BFNAR 2006:11 punkterna 11 och 11A). Det räknar NONOX inte ut, så storleken avgörs av en människa.', ['form' => mb_strtolower($legalForm->label())]), 'S1-R9');
-        }
-
+        // BFN's comment to point 6 covers every company, so a confirmed newly started company is mindre whatever its legal form.
         $needed = K3Rules::int('larger_company.prior_years', $reportingStart);
         $missing = self::firstMissingYearEnd($years, $reportingStart, $needed);
 
-        if ($missing !== null) {
-            if (self::newlyStarted($missing, $confirmedFirstYearStart) && K3Rules::rule('larger_company.newly_started_is_mindre', $reportingStart)['value'] === true) {
-                return new K3SizeClassification(K3SizeClass::Mindre, __('Mindre företag: företaget är nystartat – dess första räkenskapsår började :date enligt bekräftelsen – och ett nystartat företag är mindre de två första åren (BFN:s vägledning Gränsvärden, kommentaren till punkt 6).', ['date' => $confirmedFirstYearStart?->toDateString()]), 'S1-R9.1');
-            }
+        if ($missing !== null && self::newlyStarted($missing, $confirmedFirstYearStart) && K3Rules::rule('larger_company.newly_started_is_mindre', $reportingStart)['value'] === true) {
+            return new K3SizeClassification(K3SizeClass::Mindre, __('Mindre företag: företaget är nystartat – dess första räkenskapsår började :date enligt bekräftelsen – och ett nystartat företag är mindre de två första åren (BFN:s vägledning Gränsvärden, kommentaren till punkt 6).', ['date' => $confirmedFirstYearStart?->toDateString()]), 'S1-R9.1');
+        }
 
+        if (self::addsGiftsToTurnover($legalForm, $reportingStart)) {
+            return new K3SizeClassification(K3SizeClass::Undetermined, self::giftsReason($legalForm), 'S1-R9');
+        }
+
+        if ($missing !== null) {
             return new K3SizeClassification(K3SizeClass::Undetermined, __('Hur stort var företaget under räkenskapsåret som slutade :date? Storleken bedöms på de två räkenskapsår som närmast föregår årsredovisningens år, och för det året saknas uppgifter. Är företaget nystartat behöver NONOX en bekräftelse av när dess första räkenskapsår började.', ['date' => $missing->toDateString()]), 'S1-R9.1');
         }
 
@@ -131,7 +129,7 @@ final class K3CompanySize
      *
      * @param  list<K3SizeFigures>  $years  newest first
      */
-    public static function k2Exception(array $years, CarbonImmutable $start, CarbonImmutable $end, ?CarbonImmutable $confirmedFirstYearStart = null): K3K2Exception
+    public static function k2Exception(array $years, CarbonImmutable $start, CarbonImmutable $end, ?CarbonImmutable $confirmedFirstYearStart = null, ?LegalForm $legalForm = null): K3K2Exception
     {
         $firstYear = $confirmedFirstYearStart !== null && $confirmedFirstYearStart->isSameDay($start);
 
@@ -143,11 +141,16 @@ final class K3CompanySize
         $needed = K3Rules::int('larger_company.prior_years', $start);
         $missing = self::firstMissingYearEnd($years, $start, $needed);
 
-        if ($missing !== null) {
-            if (self::newlyStarted($missing, $confirmedFirstYearStart)) {
-                return new K3K2Exception(true, __('Undantaget i K2 punkt 1.1C gäller: företaget är nystartat – dess första räkenskapsår började :date enligt bekräftelsen – och får enligt BFN:s kommentar tillämpa K2 de två första räkenskapsåren om punkt 1.1A inte hindrar det.', ['date' => $confirmedFirstYearStart?->toDateString()]));
-            }
+        if ($missing !== null && self::newlyStarted($missing, $confirmedFirstYearStart)) {
+            return new K3K2Exception(true, __('Undantaget i K2 punkt 1.1C gäller: företaget är nystartat – dess första räkenskapsår började :date enligt bekräftelsen – och får enligt BFN:s kommentar tillämpa K2 de två första räkenskapsåren om punkt 1.1A inte hindrar det.', ['date' => $confirmedFirstYearStart?->toDateString()]));
+        }
 
+        // TODO(legal-verify): whether gifts, grants and membership fees count in the K2 1.1C net turnover of an ideell förening or a stiftelse; NONOX does not model them, so it does not judge.
+        if (self::addsGiftsToTurnover($legalForm, $start)) {
+            return new K3K2Exception(null, self::giftsReason($legalForm));
+        }
+
+        if ($missing !== null) {
             return new K3K2Exception(null, __('För räkenskapsåret som slutade :date saknas uppgifter, och undantaget i K2 punkt 1.1C bedöms på de två närmast föregående räkenskapsåren. Är företaget nystartat behöver NONOX en bekräftelse av när dess första räkenskapsår började.', ['date' => $missing->toDateString()]));
         }
 
@@ -189,6 +192,11 @@ final class K3CompanySize
     public static function forFiscalYear(FiscalYear $fiscalYear, bool $listed = false, ?CarbonImmutable $confirmedFirstYearStart = null): K3SizeClassification
     {
         $company = Company::query()->findOrFail($fiscalYear->company_id);
+        $contradiction = self::contradictedConfirmation($fiscalYear, $confirmedFirstYearStart);
+
+        if ($contradiction !== null) {
+            return new K3SizeClassification(K3SizeClass::Undetermined, $contradiction, 'S1-R9.1');
+        }
 
         return self::classify(self::priorYears($fiscalYear), $fiscalYear->start_date, $listed, $confirmedFirstYearStart, $company->legal_form);
     }
@@ -196,7 +204,50 @@ final class K3CompanySize
     /** The K2 1.1C exception for a fiscal year kept in NONOX. See k2Exception() for $confirmedFirstYearStart. */
     public static function k2ExceptionForFiscalYear(FiscalYear $fiscalYear, ?CarbonImmutable $confirmedFirstYearStart = null): K3K2Exception
     {
-        return self::k2Exception(self::priorYears($fiscalYear), $fiscalYear->start_date, $fiscalYear->end_date, $confirmedFirstYearStart);
+        $company = Company::query()->findOrFail($fiscalYear->company_id);
+        $contradiction = self::contradictedConfirmation($fiscalYear, $confirmedFirstYearStart);
+
+        if ($contradiction !== null) {
+            return new K3K2Exception(null, $contradiction);
+        }
+
+        return self::k2Exception(self::priorYears($fiscalYear), $fiscalYear->start_date, $fiscalYear->end_date, $confirmedFirstYearStart, $company->legal_form);
+    }
+
+    /**
+     * A Swedish question when the confirmed start of the first fiscal year
+     * contradicts a year already recorded for the company (a fiscal year in
+     * NONOX or entered figures that end before it), else null.
+     */
+    private static function contradictedConfirmation(FiscalYear $fiscalYear, ?CarbonImmutable $confirmedFirstYearStart): ?string
+    {
+        if ($confirmedFirstYearStart === null) {
+            return null;
+        }
+
+        $date = $confirmedFirstYearStart->toDateString();
+        $earlier = CurrentCompany::run($fiscalYear->company_id, fn (): bool => FiscalYear::query()->whereDate('end_date', '<', $date)->exists()
+            || PriorYearSizeFigure::query()->whereDate('end_date', '<', $date)->exists());
+
+        if (! $earlier) {
+            return null;
+        }
+
+        return __('Började företagets första räkenskapsår verkligen :date? Bekräftelsen stämmer inte med räkenskapsår som redan finns för företaget och slutar före det datumet. Rätta bekräftelsen eller uppgifterna innan storleken bedöms.', ['date' => $date]);
+    }
+
+    /** Whether the legal form adds gifts, grants and membership fees to its net turnover (ÅRL 1 kap. 3 § tredje stycket). */
+    private static function addsGiftsToTurnover(?LegalForm $legalForm, CarbonImmutable $start): bool
+    {
+        /** @var list<string> $forms */
+        $forms = K3Rules::rule('larger_company.turnover_additions_legal_forms', $start)['value'];
+
+        return $legalForm !== null && in_array($legalForm->value, $forms, true);
+    }
+
+    private static function giftsReason(?LegalForm $legalForm): string
+    {
+        return __('Är företaget ett större företag? Företagsformen är :form. För en ideell förening eller en stiftelse ska bidrag, gåvor, medlemsavgifter och andra liknande intäkter läggas till nettoomsättningen, och anställda som fått högst ett halvt prisbasbelopp räknas inte (ÅRL 1 kap. 3 § tredje stycket, BFNAR 2006:11 punkterna 11 och 11A). Det räknar NONOX inte ut, så storleken avgörs av en människa.', ['form' => mb_strtolower((string) $legalForm?->label())]);
     }
 
     /**

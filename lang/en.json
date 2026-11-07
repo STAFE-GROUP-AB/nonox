@@ -10391,7 +10391,7 @@
     "Storleken går inte att avgöra": "The size cannot be determined",
     "balansomslutning": "balance sheet total",
     "nettoomsättning": "net turnover",
-    "Ange medelantal anställda som ett tal med högst två decimaler, till exempel 3,4.": "Enter the average number of employees as a number with at most two decimals, for example 3.4.",
+    "Ange det exakta medelantalet anställda med högst två decimaler, till exempel 3,4. Avrunda inte – NONOX avrundar själv.": "Enter the exact average number of employees with at most two decimals, for example 3.4. Do not round – NONOX rounds it itself.",
     "räkenskapsårets första dag": "the first day of the fiscal year",
     "räkenskapsårets sista dag": "the last day of the fiscal year",
     "Beloppet går inte att läsa. Skriv till exempel 1 234 567,89.": "The amount cannot be read. Write for example 1 234 567.89.",
@@ -10410,5 +10410,6 @@
     "För räkenskapsåret som slutade :date saknas uppgifter, och undantaget i K2 punkt 1.1C bedöms på de två närmast föregående räkenskapsåren. Är företaget nystartat behöver NONOX en bekräftelse av när dess första räkenskapsår började.": "Figures are missing for the fiscal year that ended :date, and the exception in K2 point 1.1C is assessed on the two immediately preceding fiscal years. If the company is newly started, NONOX needs a confirmation of when its first fiscal year began.",
     "Undantaget i K2 punkt 1.1C gäller inte: samma gränsvärden – :criteria – har överskridits under vart och ett av räkenskapsåren :years.": "The exception in K2 point 1.1C does not apply: the same thresholds – :criteria – were exceeded in each of the fiscal years :years.",
     ":year: uppgift saknas": ":year: no figure",
-    ":year: :exact (avrundat :rounded)": ":year: :exact (rounded :rounded)"
+    ":year: :exact (avrundat :rounded)": ":year: :exact (rounded :rounded)",
+    "Började företagets första räkenskapsår verkligen :date? Bekräftelsen stämmer inte med räkenskapsår som redan finns för företaget och slutar före det datumet. Rätta bekräftelsen eller uppgifterna innan storleken bedöms.": "Did the company's first fiscal year really begin :date? The confirmation does not match fiscal years already recorded for the company that end before that date. Correct the confirmation or the figures before the size is assessed."
 }

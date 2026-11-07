@@ -56,7 +56,8 @@ final readonly class K3SizeFigures
             throw new LogicException("Unknown rounding of employees: {$rounding}.");
         }
 
-        // TODO(legal-verify): BFN Example 3 rounds 9,4 to 9; half-up for x,5 is NONOX's assumption.
+        // TODO(legal-verify): BFN's examples 3–4 round the medelantal (9,4 → 9, 11,1 → 11). Applying that rounding
+        // before the ÅRL 1 kap. 3 § and K2 1.1C threshold comparisons is NONOX's inference, and so is half-up for x,5.
         return $this->averageEmployees->toBigRational()->toScale(0, RoundingMode::HalfUp)->toInt();
     }
 

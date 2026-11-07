@@ -287,3 +287,16 @@ it('S1-R1.4 the extended first year follows the confirmation of the first fiscal
     expect(K3CompanySize::k2Exception([], $start, $end)->applies)->toBeNull()
         ->and(K3CompanySize::k2Exception([], $start, $end, $start)->applies)->toBeTrue();
 });
+
+it('S1-R9.1 a confirmed newly started stiftelse is mindre its first two years too', function () {
+    $result = K3CompanySize::classify([sizeYear(2025, '1', 0, 0)], CarbonImmutable::parse('2026-01-01'), confirmedFirstYearStart: CarbonImmutable::parse('2025-01-01'), legalForm: LegalForm::Stiftelse);
+
+    expect($result->class)->toBe(K3SizeClass::Mindre);
+});
+
+it('S1-R1.3 leaves K2 1.1C to a person for an ideell förening or a stiftelse, as the size test does', function (LegalForm $form) {
+    $result = K3CompanySize::k2Exception([sizeYear(2026, '1', 0, 0), sizeYear(2025, '1', 0, 0)], CarbonImmutable::parse('2027-01-01'), CarbonImmutable::parse('2027-12-31'), legalForm: $form);
+
+    expect($result->applies)->toBeNull()
+        ->and($result->reason)->toContain('gåvor');
+})->with([LegalForm::IdeellForening, LegalForm::Stiftelse]);

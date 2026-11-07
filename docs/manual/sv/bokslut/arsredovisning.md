@@ -33,10 +33,10 @@ Vilka regler som gäller enligt K3 beror på om företaget är ett större eller
 NONOX förbereder den bedömningen inför årsredovisningen enligt K3 och hämtar siffrorna för de två föregående åren så här:
 
 - **Nettoomsättning och balansomslutning** läses ur bokföringen för de räkenskapsår som finns i NONOX. Är ett år kortare eller längre än tolv månader räknas nettoomsättningen om till tolv månader. Balansomslutningen räknas inte om.
-- **Medelantal anställda** hämtas från årsredovisningarna för de två föregående åren. Antalet räknas i heltidstjänster och avrundas till ett helt tal innan det jämförs med gränsvärdet, som i Bokföringsnämndens exempel där 9,4 blir 9.
+- **Medelantal anställda** hämtas från årsredovisningarna för de två föregående åren. Antalet räknas i heltidstjänster. Ange det exakta medelantalet, avrunda inte – NONOX avrundar själv till ett helt tal innan det jämförs med gränsvärdet, som i Bokföringsnämndens exempel där 9,4 blir 9.
 - För räkenskapsår före företagets första år i NONOX behöver NONOX samma tre siffror från de tidigare årsredovisningarna och frågar efter dem.
 
-Ett nystartat företag är alltid mindre de två första åren. Det gäller i NONOX först när någon har bekräftat när företagets första räkenskapsår började – att siffror saknas räcker inte. Saknas siffror för något av åren, eller är företaget en ideell förening eller en stiftelse (som ska räkna med bidrag, gåvor och medlemsavgifter i nettoomsättningen), gissar NONOX inte. Då avgör en människa storleken.
+Ett nystartat företag är alltid mindre de två första åren, oavsett företagsform. Det gäller i NONOX först när någon har bekräftat när företagets första räkenskapsår började – att siffror saknas räcker inte, och en bekräftelse som inte stämmer med år som redan finns i NONOX godtas inte. Saknas siffror för något av åren, eller är företaget en ideell förening eller en stiftelse (som ska räkna med bidrag, gåvor och medlemsavgifter i nettoomsättningen), gissar NONOX inte. Då avgör en människa storleken.
 
 ## Innan du börjar
 

@@ -175,3 +175,23 @@ it('S1-R9 reads the legal form of the company: a stiftelse is left to a person',
 
     expect(K3CompanySize::forFiscalYear($this->year2026)->class)->toBe(K3SizeClass::Undetermined);
 });
+
+it('S1-R9.1 refuses a confirmed first fiscal year that is later than a year already kept in NONOX', function () {
+    // 2026 is kept in NONOX, so the company cannot have started in 2027.
+    $result = K3CompanySize::forFiscalYear($this->year2027, confirmedFirstYearStart: CarbonImmutable::parse('2027-01-01'));
+    $k2 = K3CompanySize::k2ExceptionForFiscalYear($this->year2027, CarbonImmutable::parse('2027-01-01'));
+
+    expect($result->class)->toBe(K3SizeClass::Undetermined)
+        ->and($result->reason)->toContain('2027-01-01')->toContain('stämmer inte')
+        ->and($k2->applies)->toBeNull()
+        ->and($k2->reason)->toContain('stämmer inte');
+});
+
+it('S1-R9.1 refuses a confirmed first fiscal year when entered figures exist for an earlier year', function () {
+    enterFigures();
+
+    $result = K3CompanySize::forFiscalYear($this->year2026, confirmedFirstYearStart: CarbonImmutable::parse('2026-01-01'));
+
+    expect($result->class)->toBe(K3SizeClass::Undetermined)
+        ->and($result->reason)->toContain('stämmer inte');
+});
