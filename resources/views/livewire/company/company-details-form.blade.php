@@ -152,9 +152,33 @@
                         <option value="{{ $framework->value }}">{{ $framework->label() }}</option>
                     @endforeach
                 </select>
+                @if($frameworkYear)
+                    <p class="mt-1 text-xs text-gray-500">{{ __('Valet gäller räkenskapsåret :year och de år som följer. Tidigare år behåller sitt regelverk.', ['year' => $frameworkYear]) }}</p>
+                @endif
                 <x-input-error for="reporting_framework" class="mt-2" />
             </div>
         </div>
+
+        @if($frameworkChanged && $canUpdate && count($frameworkYears) > 1)
+            <div class="max-w-xs">
+                <x-label for="details_framework_from_year" value="{{ __('Byt regelverk från och med räkenskapsår') }}" />
+                <select id="details_framework_from_year" class="{{ $field }}" wire:model.live="state.framework_from_year">
+                    @foreach($frameworkYears as $yearId => $yearLabel)
+                        <option value="{{ $yearId }}">{{ $yearLabel }}</option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
+        <x-input-error for="framework_from_year" class="mt-2" />
+
+        @if($frameworkChanged && $canUpdate && $frameworkYears !== [])
+            <div class="max-w-xl">
+                <x-label for="details_framework_change_reason" value="{{ __('Varför byter företaget regelverk? (frivilligt)') }}" />
+                <textarea id="details_framework_change_reason" rows="2" maxlength="2000" class="{{ $field }}" wire:model="state.framework_change_reason"></textarea>
+                <p class="mt-1 text-xs text-gray-500">{{ __('Sparas med räkenskapsåret, så att det går att se senare varför regelverket byttes.') }}</p>
+                <x-input-error for="framework_change_reason" class="mt-2" />
+            </div>
+        @endif
 
         @if($askPartners)
             <div class="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">

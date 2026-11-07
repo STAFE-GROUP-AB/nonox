@@ -78,7 +78,7 @@ class AnnualReportController
         $user = $request->user();
         $company = Company::query()->findOrFail($fiscalYear->company_id);
 
-        abort_unless($user->hasTeamPermission($company, 'fiscal-years:manage') && AnnualReportDocument::supports($company), 403);
+        abort_unless($user->hasTeamPermission($company, 'fiscal-years:manage') && AnnualReportDocument::supports($company, $fiscalYear), 403);
 
         $report = AnnualReport::query()->where('fiscal_year_id', $fiscalYear->id)->first()
             ?? new AnnualReport(['fiscal_year_id' => $fiscalYear->id, 'signatories' => [], 'average_employees' => 0, 'dividend_ore' => 0]);

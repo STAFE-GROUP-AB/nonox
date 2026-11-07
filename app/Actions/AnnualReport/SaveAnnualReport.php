@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\AnnualReport;
 
+use App\Actions\Accounting\CreateNextFiscalYear;
 use App\Domain\AnnualReport\AnnualAccounts;
 use App\Domain\AnnualReport\AnnualReportDocument;
 use App\Domain\AnnualReport\PledgedAssetKind;
@@ -16,6 +17,7 @@ use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
@@ -37,7 +39,7 @@ class SaveAnnualReport
             throw new AuthorizationException;
         }
 
-        $refusal = AnnualReportDocument::refusal($company);
+        $refusal = AnnualReportDocument::refusal($company, $fiscalYear);
 
         if ($refusal !== null) {
             throw ValidationException::withMessages(['report' => $refusal]);
@@ -106,33 +108,54 @@ class SaveAnnualReport
                 throw ValidationException::withMessages(['net_sales_comment' => __('Nettoomsättningen har förändrats med mer än 30 procent mellan :from och :to. Kommentera förändringen (BFNAR 2016:10 punkt 5.5).', ['from' => $variation['from'], 'to' => $variation['to']])]);
             }
 
-            $report = AnnualReport::query()->updateOrCreate(['fiscal_year_id' => $fiscalYear->id], [
-                'business_description' => blank($validated['business_description'] ?? null) ? null : $validated['business_description'],
-                'significant_events' => blank($validated['significant_events'] ?? null) ? null : $validated['significant_events'],
-                'dividend_ore' => $dividend,
-                'average_employees' => (int) $validated['average_employees'],
-                'signing_place' => blank($validated['signing_place'] ?? null) ? null : $validated['signing_place'],
-                'signing_date' => blank($validated['signing_date'] ?? null) ? null : $validated['signing_date'],
-                'signatories' => self::signatories((string) ($validated['signatories'] ?? '')),
-                'adoption_date' => blank($validated['adoption_date'] ?? null) ? null : $validated['adoption_date'],
-                'adoption_decision' => blank($validated['adoption_decision'] ?? null) ? null : trim((string) $validated['adoption_decision']),
-                'certifier_name' => blank($validated['certifier_name'] ?? null) ? null : trim((string) $validated['certifier_name']),
-                'certifier_role' => blank($validated['certifier_role'] ?? null) ? null : trim((string) $validated['certifier_role']),
-                'pledged_assets' => $pledged === [] ? null : $pledged,
-                'pledged_other_text' => blank($validated['pledged_other_text'] ?? null) ? null : trim((string) $validated['pledged_other_text']),
-                'contingent_liabilities_ore' => $contingent,
-                'contingent_liabilities_text' => blank($validated['contingent_liabilities_text'] ?? null) ? null : trim((string) $validated['contingent_liabilities_text']),
-                'group_commitments' => blank($validated['group_commitments'] ?? null) ? null : trim((string) $validated['group_commitments']),
-                'events_after' => blank($validated['events_after'] ?? null) ? null : trim((string) $validated['events_after']),
-                'events_effect_unknown' => (bool) ($validated['events_effect_unknown'] ?? false),
-                'net_sales_comment' => blank($validated['net_sales_comment'] ?? null) ? null : trim((string) $validated['net_sales_comment']),
-                'updated_by' => $user->id,
-            ]);
+            return DB::transaction(function () use ($user, $company, $fiscalYear, $validated, $dividend, $pledged, $contingent): AnnualReport {
+                // Same lock order as ChangeReportingFramework (advisory lock, then the year's row), so a
+                // framework change and an adoption date cannot pass each other (ADR-059, A.2.1).
+                CreateNextFiscalYear::lock($company->id);
+                $locked = FiscalYear::query()->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();
+                $refusal = AnnualReportDocument::refusal($company, $locked);
 
-            Audit::record('annual_report.saved', $report, ['fiscal_year' => $fiscalYear->label()], $company, $user);
+                if ($refusal !== null) {
+                    throw ValidationException::withMessages(['report' => $refusal]);
+                }
 
-            return $report;
+                return $this->write($user, $company, $fiscalYear, $validated, $dividend, $pledged, $contingent);
+            });
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @param  array<string, int>  $pledged
+     */
+    private function write(User $user, Company $company, FiscalYear $fiscalYear, array $validated, int $dividend, array $pledged, ?int $contingent): AnnualReport
+    {
+        $report = AnnualReport::query()->updateOrCreate(['fiscal_year_id' => $fiscalYear->id], [
+            'business_description' => blank($validated['business_description'] ?? null) ? null : $validated['business_description'],
+            'significant_events' => blank($validated['significant_events'] ?? null) ? null : $validated['significant_events'],
+            'dividend_ore' => $dividend,
+            'average_employees' => (int) $validated['average_employees'],
+            'signing_place' => blank($validated['signing_place'] ?? null) ? null : $validated['signing_place'],
+            'signing_date' => blank($validated['signing_date'] ?? null) ? null : $validated['signing_date'],
+            'signatories' => self::signatories((string) ($validated['signatories'] ?? '')),
+            'adoption_date' => blank($validated['adoption_date'] ?? null) ? null : $validated['adoption_date'],
+            'adoption_decision' => blank($validated['adoption_decision'] ?? null) ? null : trim((string) $validated['adoption_decision']),
+            'certifier_name' => blank($validated['certifier_name'] ?? null) ? null : trim((string) $validated['certifier_name']),
+            'certifier_role' => blank($validated['certifier_role'] ?? null) ? null : trim((string) $validated['certifier_role']),
+            'pledged_assets' => $pledged === [] ? null : $pledged,
+            'pledged_other_text' => blank($validated['pledged_other_text'] ?? null) ? null : trim((string) $validated['pledged_other_text']),
+            'contingent_liabilities_ore' => $contingent,
+            'contingent_liabilities_text' => blank($validated['contingent_liabilities_text'] ?? null) ? null : trim((string) $validated['contingent_liabilities_text']),
+            'group_commitments' => blank($validated['group_commitments'] ?? null) ? null : trim((string) $validated['group_commitments']),
+            'events_after' => blank($validated['events_after'] ?? null) ? null : trim((string) $validated['events_after']),
+            'events_effect_unknown' => (bool) ($validated['events_effect_unknown'] ?? false),
+            'net_sales_comment' => blank($validated['net_sales_comment'] ?? null) ? null : trim((string) $validated['net_sales_comment']),
+            'updated_by' => $user->id,
+        ]);
+
+        Audit::record('annual_report.saved', $report, ['fiscal_year' => $fiscalYear->label()], $company, $user);
+
+        return $report;
     }
 
     /** A non-negative amount in öre, or null when the field is empty. */

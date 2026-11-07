@@ -130,7 +130,7 @@ final class Ne
             }
         }
 
-        if ($this->company->reporting_framework !== ReportingFramework::K1) {
+        if ($this->fiscalYear->reporting_framework !== ReportingFramework::K1) {
             $fields[NeCodes::NOT_SIMPLIFIED] = 'X';
         }
 
@@ -183,7 +183,7 @@ final class Ne
         }
 
         // B11–B12 are not filled in under förenklat årsbokslut (the form); they stay in B16 then.
-        $simplified = $this->company->reporting_framework === ReportingFramework::K1;
+        $simplified = $this->fiscalYear->reporting_framework === ReportingFramework::K1;
 
         foreach (NeCodes::LIABILITIES as $code => $ranges) {
             $amount = Ink2::kronor(-$this->closing($ranges));

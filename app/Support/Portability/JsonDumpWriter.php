@@ -41,7 +41,7 @@ use RuntimeException;
  */
 final class JsonDumpWriter
 {
-    public const string SCHEMA_VERSION = '1.0.0';
+    public const string SCHEMA_VERSION = '1.1.0';
 
     /** Rows read per query round; tests lower it to cross chunk borders. */
     public static int $chunk = 500;
@@ -57,7 +57,11 @@ final class JsonDumpWriter
 
     /** Columns written for each table. Raw database values, so hashes can be reproduced. */
     private const array EXPORTED = [
-        'fiscal_years' => ['id', 'start_date', 'end_date', 'status', 'closed_at', 'closed_by', 'ledger_head_hash'],
+        'fiscal_years' => [
+            'id', 'start_date', 'end_date', 'status', 'closed_at', 'closed_by', 'ledger_head_hash',
+            // ADR-059, A.2.1: the K-regelverk is the year's.
+            'reporting_framework', 'reporting_framework_changed_at', 'reporting_framework_changed_by', 'reporting_framework_change_reason',
+        ],
         'voucher_number_counters' => ['fiscal_year_id', 'series_id', 'next_number'],
         'accounts' => ['id', 'number', 'name', 'type', 'sru_code', 'is_active', 'requires_cost_center', 'requires_project', 'vat_box'],
         'cost_centers' => ['id', 'code', 'name', 'is_active'],

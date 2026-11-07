@@ -142,6 +142,8 @@ class ImportSie
             return FiscalYear::query()->whereKey($plan->fiscalYearId)->lockForUpdate()->firstOrFail();
         }
 
+        // Serialises with CreateNextFiscalYear and ChangeReportingFramework, which read the company's years under the same lock.
+        CreateNextFiscalYear::lock($company->id);
         $fiscalYear = FiscalYear::create(['start_date' => $plan->start, 'end_date' => $plan->end]);
 
         Audit::record('fiscal_year.created', $fiscalYear, [

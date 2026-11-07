@@ -40,8 +40,8 @@ Bokslutet (skatt, resultat, stängning) granskas i docs/granskning/bokslut.md. D
   3. Läs texten på sidan.
   4. Byt (a) till K2 (kryssa i villkoren) och kontrollera att formuläret syns.
 - Förväntat resultat (app/Domain/AnnualReport/AnnualReportDocument.php, `supports`/`refusal`; ADR-059 steg F.1):
-  - (a) K3: sidan visar rubriken "Årsredovisning enligt K3 finns inte ännu" i stället för formuläret, med texten "NONOX tar ännu inte fram årsredovisningar enligt K3 (BFNAR 2012:1). Företaget har valt K3, och en årsredovisning enligt K2 skulle inte stämma med det regelverket." Förhandsvisning, PDF och iXBRL ger inget dokument (avvisning, inte en K2-årsredovisning under K3-rubrik).
-  - (b) K1: "NONOX tar fram årsredovisningar enligt K2. Företaget har valt K1, som inte används för en årsredovisning."
+  - (a) K3: sidan visar rubriken "Årsredovisning enligt K3 finns inte ännu" i stället för formuläret, med texten "NONOX tar ännu inte fram årsredovisningar enligt K3 (BFNAR 2012:1). Räkenskapsåret har regelverket K3, och en årsredovisning enligt K2 skulle inte stämma med det regelverket." Förhandsvisning, PDF och iXBRL ger inget dokument (avvisning, inte en K2-årsredovisning under K3-rubrik).
+  - (b) K1: "NONOX tar fram årsredovisningar enligt K2. Räkenskapsåret har regelverket K1, som inte används för en årsredovisning."
   - (c) och (d): "Årsredovisningen görs här för aktiebolag och ekonomiska föreningar." (enskild firma upprättar förenklat årsbokslut).
   - Ett K3-företag får inte få en not 1 som säger att årsredovisningen upprättats enligt BFNAR 2016:10. Kontrollera att ingen sådan text kan produceras.
   - Konsulten verifierar: att spärren mot K3 är rätt hantering tills K3 byggs (K3 kap. 1.4 och 1.6: ett allmänt råd ska tillämpas i sin helhet, annars får det inte anges), och att alternativet manualen anvisar (SIE-fil till annat program) är godtagbart.

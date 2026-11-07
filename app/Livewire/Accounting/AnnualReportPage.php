@@ -67,15 +67,15 @@ class AnnualReportPage extends Component
     public function render(): View
     {
         $fiscalYear = FiscalYear::query()->findOrFail($this->year);
-        $supported = AnnualReportDocument::supports($this->company());
+        $supported = AnnualReportDocument::supports($this->company(), $fiscalYear);
 
         return view('livewire.accounting.annual-report', [
             'years' => FiscalYear::query()->orderByDesc('start_date')->get(),
             'fiscalYear' => $fiscalYear,
             'supported' => $supported,
-            'refusal' => AnnualReportDocument::refusal($this->company()),
+            'refusal' => AnnualReportDocument::refusal($this->company(), $fiscalYear),
             'legalFormSupported' => AnnualReportDocument::supportsLegalForm($this->company()),
-            'k3' => $this->company()->reporting_framework === ReportingFramework::K3,
+            'k3' => $fiscalYear->reporting_framework === ReportingFramework::K3,
             'ixbrl' => $this->company()->legal_form === LegalForm::Ab,
             'freeEquity' => $supported ? DividendLimit::freeEquityOre($fiscalYear) : 0,
             'hasBankLoans' => $supported && self::hasBankLoans($fiscalYear),
