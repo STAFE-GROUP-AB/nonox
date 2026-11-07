@@ -6,6 +6,7 @@ use App\Actions\Accounting\CreateNextFiscalYear;
 use App\Actions\AnnualReport\SavePriorYearSizeFigures;
 use App\Domain\AnnualReport\K3CompanySize;
 use App\Domain\AnnualReport\K3SizeClass;
+use App\Domain\Company\LegalForm;
 use App\Models\AnnualReport;
 use App\Models\AuditLog;
 use App\Models\FiscalYear;
@@ -53,21 +54,21 @@ it('S1-R9 reads a NONOX year from the ledger and the annual report, and an earli
         ->and($years[0]->source)->toBe('ledger')
         ->and($years[0]->netTurnoverOre)->toBe(9_000_000_000)
         ->and($years[0]->balanceSheetTotalOre)->toBe(9_000_000_000)
-        ->and($years[0]->employeesFteHundredths)->toBe(3050)
+        ->and((string) $years[0]->averageEmployees)->toBe('30.50')
         ->and($years[1]->source)->toBe('entered')
         ->and($years[1]->balanceSheetTotalOre)->toBe(4_575_304_000)
-        ->and($years[1]->employeesFteHundredths)->toBe(3000)
+        ->and((string) $years[1]->averageEmployees)->toBe('30.00')
         ->and(K3CompanySize::forFiscalYear($this->year2027)->class)->toBe(K3SizeClass::Storre);
 });
 
 it('S1-R9.2 uses the whole-number employee figure of the annual report when no full-time equivalent is given', function () {
     AnnualReport::create(['fiscal_year_id' => $this->year2026->id, 'average_employees' => 4, 'dividend_ore' => 0, 'signatories' => [], 'updated_by' => $this->owner->id]);
 
-    expect(K3CompanySize::priorYears($this->year2027)[0]->employeesFteHundredths)->toBe(400);
+    expect((string) K3CompanySize::priorYears($this->year2027)[0]->averageEmployees)->toBe('4');
 });
 
 it('S1-R9.1 a NONOX year without an annual report has no employee figure', function () {
-    expect(K3CompanySize::priorYears($this->year2027)[0]->employeesFteHundredths)->toBeNull();
+    expect(K3CompanySize::priorYears($this->year2027)[0]->averageEmployees)->toBeNull();
 });
 
 it('S1-R9.1 is undetermined while the year before the first NONOX year is missing', function () {
@@ -98,7 +99,7 @@ it('S1-R9 saves prior-year figures, parses Swedish amounts and writes an audit e
 
     expect($figures->balance_sheet_total_ore->ore)->toBe(4_575_304_000)
         ->and($figures->net_turnover_ore->ore)->toBe(9_000_000_000)
-        ->and($figures->employeesFteHundredths())->toBe(340);
+        ->and($figures->average_employees_fte)->toBe('3.40');
 
     $audit = AuditLog::query()->where('action', 'prior_year_size_figures.saved')->latest('id')->firstOrFail();
 
@@ -138,6 +139,7 @@ it('S1-R9 refuses negative balance sheet totals and employee figures with more t
     'negative balance sheet total' => [['balance_sheet_total' => '-1']],
     'three decimals' => [['average_employees_fte' => '3,405']],
     'negative employees' => [['average_employees_fte' => '-1']],
+    'an amount too large to store' => [['net_turnover' => '999 999 999 999 999 999 999']],
 ])->throws(ValidationException::class);
 
 it('S1-R9 lets owner, admin and accountant enter prior-year figures, not a bookkeeper or an auditor', function (string $role, bool $allowed) {
@@ -158,3 +160,18 @@ it('S1-R9 lets owner, admin and accountant enter prior-year figures, not a bookk
     'approver' => ['approver', false],
     'auditor' => ['auditor', false],
 ]);
+
+it('S1-R9.1 classifies the first NONOX year of a confirmed newly started company as mindre', function () {
+    expect(K3CompanySize::forFiscalYear($this->year2026)->class)->toBe(K3SizeClass::Undetermined)
+        ->and(K3CompanySize::forFiscalYear($this->year2026, confirmedFirstYearStart: CarbonImmutable::parse('2026-01-01'))->class)->toBe(K3SizeClass::Mindre)
+        ->and(K3CompanySize::forFiscalYear($this->year2027, confirmedFirstYearStart: CarbonImmutable::parse('2026-01-01'))->class)->toBe(K3SizeClass::Mindre)
+        ->and(K3CompanySize::k2ExceptionForFiscalYear($this->year2027, CarbonImmutable::parse('2026-01-01'))->applies)->toBeTrue();
+});
+
+it('S1-R9 reads the legal form of the company: a stiftelse is left to a person', function () {
+    $this->company->forceFill(['legal_form' => LegalForm::Stiftelse])->save();
+    enterFigures(['start_date' => '2024-01-01', 'end_date' => '2024-12-31']);
+    enterFigures();
+
+    expect(K3CompanySize::forFiscalYear($this->year2026)->class)->toBe(K3SizeClass::Undetermined);
+});

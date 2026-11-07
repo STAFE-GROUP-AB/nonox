@@ -28,15 +28,15 @@ Har företaget valt K3 av misstag, och uppfyller det villkoren för K2, kan en �
 
 ### Större eller mindre företag
 
-Vilka regler som gäller enligt K3 beror på om företaget är ett större eller ett mindre företag enligt årsredovisningslagen. Ett företag är större om det har överskridit mer än ett av tre gränsvärden under vart och ett av de två räkenskapsår som närmast föregår årsredovisningens år: medelantalet anställda mer än 50, balansomslutningen mer än 40 miljoner kronor och nettoomsättningen mer än 80 miljoner kronor. Året som årsredovisningen gäller räknas inte.
+Vilka regler som gäller enligt K3 beror på om företaget är ett större eller ett mindre företag enligt årsredovisningslagen. Ett företag är större om **samma två** av tre gränsvärden har överskridits under vart och ett av de två räkenskapsår som närmast föregår årsredovisningens år: medelantalet anställda mer än 50, balansomslutningen mer än 40 miljoner kronor och nettoomsättningen mer än 80 miljoner kronor. Året som årsredovisningen gäller räknas inte. Har företaget till exempel överskridit gränsvärdena för anställda och nettoomsättning det ena året men för balansomslutning och nettoomsättning det andra, är det bara nettoomsättningen som är överskriden båda åren, och företaget är mindre.
 
-NONOX förbereder den bedömningen inför årsredovisningen enligt K3 och hämtar siffrorna så här:
+NONOX förbereder den bedömningen inför årsredovisningen enligt K3 och hämtar siffrorna för de två föregående åren så här:
 
 - **Nettoomsättning och balansomslutning** läses ur bokföringen för de räkenskapsår som finns i NONOX. Är ett år kortare eller längre än tolv månader räknas nettoomsättningen om till tolv månader. Balansomslutningen räknas inte om.
-- **Medelantal anställda** hämtas från fältet **Medelantal anställda** i årets årsredovisning.
-- För räkenskapsår före företagets första år i NONOX behövs samma tre siffror från de tidigare årsredovisningarna. De läggs in för hand, och varje ändring loggas.
+- **Medelantal anställda** hämtas från årsredovisningarna för de två föregående åren. Antalet räknas i heltidstjänster och avrundas till ett helt tal innan det jämförs med gränsvärdet, som i Bokföringsnämndens exempel där 9,4 blir 9.
+- För räkenskapsår före företagets första år i NONOX behöver NONOX samma tre siffror från de tidigare årsredovisningarna och frågar efter dem.
 
-Saknas siffror för något av de två åren, eller har företaget överskridit två gränsvärden båda åren men inte samma två, gissar NONOX inte. Då avgör en människa storleken.
+Ett nystartat företag är alltid mindre de två första åren. Det gäller i NONOX först när någon har bekräftat när företagets första räkenskapsår började – att siffror saknas räcker inte. Saknas siffror för något av åren, eller är företaget en ideell förening eller en stiftelse (som ska räkna med bidrag, gåvor och medlemsavgifter i nettoomsättningen), gissar NONOX inte. Då avgör en människa storleken.
 
 ## Innan du börjar
 

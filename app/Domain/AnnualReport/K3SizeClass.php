@@ -6,9 +6,10 @@ namespace App\Domain\AnnualReport;
 
 /**
  * The size of a company under ÅRL 1 kap. 3 § första stycket 4–5 (S1-R9).
- * Undetermined means NONOX does not know and will not guess: the two
- * readings of "mer än ett" disagree, prior years are missing, or an
- * employee figure that decides the test is missing.
+ * Undetermined means NONOX does not know and will not guess: prior years
+ * are missing without a confirmed first fiscal year, an employee figure
+ * that decides the test is missing, or the legal form adds gifts and
+ * grants to the turnover (ideell förening, stiftelse).
  */
 enum K3SizeClass: string
 {

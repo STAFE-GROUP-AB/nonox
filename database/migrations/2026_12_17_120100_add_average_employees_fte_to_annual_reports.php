@@ -8,9 +8,10 @@ use Illuminate\Support\Facades\Schema;
 
 /*
  * The average number of employees as full-time equivalents with two
- * decimals (ADR-059, addendum 2026-11-07, A.2.5). The size thresholds are
- * strict ("mer än 3", "mer än 50"), so 3,4 must count as more than 3; the
- * K2 note keeps printing the whole-number average_employees.
+ * decimals (ADR-059, addendum 2026-11-07, A.2.5). The size test keeps the
+ * exact figure and rounds it to a whole number itself (BFN's vägledning
+ * Gränsvärden, example 3), so 3,5 counts as 4; the K2 note keeps printing the
+ * whole-number average_employees.
  */
 return new class extends Migration
 {

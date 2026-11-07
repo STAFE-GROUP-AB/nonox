@@ -73,3 +73,23 @@ it('S1-R1.4 applies the new wording to an extended first year that begins after 
 it('S1-R9 refuses a rule that does not exist', function () {
     K3Rules::rule('no_such_rule', CarbonImmutable::parse('2026-01-01'));
 })->throws(LogicException::class);
+
+it('S1-R9 cites BFN\'s vägledning Gränsvärden of 2026-09-14 for the measurement rows and the answered questions', function () {
+    $guide = 'https://www.bfn.se/wp-content/uploads/vl-2006-11-gransvarden-kons-2026.pdf';
+
+    foreach (['larger_company.prior_years', 'net_turnover_prorated_to_months', 'normal_annual_hours', 'larger_company.same_criteria_both_years', 'larger_company.newly_started_is_mindre', 'average_employees_rounding'] as $key) {
+        expect(K3Rules::rule($key)['source_url'])->toBe($guide, $key)
+            ->and(K3Rules::rule($key)['source_ref'])->toContain('2026-09-14');
+    }
+
+    expect(K3Rules::rule('larger_company.same_criteria_both_years')['value'])->toBeTrue()
+        ->and(K3Rules::rule('larger_company.same_criteria_both_years')['source_quote'])->toContain('samma två gränsvärden överskrids två år i rad')
+        ->and(K3Rules::rule('larger_company.newly_started_is_mindre')['source_quote'])->toContain('nystartat')
+        ->and(K3Rules::rule('average_employees_rounding')['value'])->toBe('half_up_whole')
+        ->and(K3Rules::rule('average_employees_rounding')['source_quote'])->toContain('Avrundas till 9');
+});
+
+it('S1-R9 names the legal forms that add gifts, grants and membership fees to the net turnover', function () {
+    expect(K3Rules::rule('larger_company.turnover_additions_legal_forms')['value'])->toBe(['IDEELL_FORENING', 'STIFTELSE'])
+        ->and(K3Rules::rule('larger_company.turnover_additions_legal_forms')['source_quote'])->toContain('2 kap. 2 § första stycket och 3 § bokföringslagen');
+});

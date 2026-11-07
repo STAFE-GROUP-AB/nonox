@@ -1,5 +1,5 @@
 {
-    "note": "Regler som NONOX använder för K3-årsredovisningen (ADR-059, tillägg 2026-11-07, A.2.2): gränsvärdena för större företag (ÅRL 1 kap. 3 §, BFNAR 2006:11), undantaget i K2 punkt 1.1C och K3-versionen per räkenskapsår. Citaten kommer ur regelbladet docs/specs/rules/s1.md, där vart och ett är läst i primärkällan 2026-11-07. Enligt AI-utredning 2026-11-07, juristgranskning återstår: varje rad har status 'researched' tills en person med juridiskt ansvar har kontrollerat den. En rad gäller räkenskapsår som inleds från och med starts_from och före starts_before (null = ingen gräns). extended_first_year: raden gäller också ett företags första, förlängda räkenskapsår som inleds efter starts_after och avslutas ends_on_or_after eller senare (BFNAR 2025:2 och 2025:3 punkt 1). De uppskjutna skattekontona (2240, 1370, 8940) läggs till av paketet S1-P5 med sin källa.",
+    "note": "Regler som NONOX använder för K3-årsredovisningen (ADR-059, tillägg 2026-11-07, A.2.2): gränsvärdena för större företag (ÅRL 1 kap. 3 §, BFNAR 2006:11), undantaget i K2 punkt 1.1C och K3-versionen per räkenskapsår. Citaten kommer ur regelbladet docs/specs/rules/s1.md, där vart och ett är läst i primärkällan 2026-11-07, och ur BFN:s vägledning Gränsvärden (uppdaterad 2026-09-14), läst 2026-11-07. Enligt AI-utredning 2026-11-07, juristgranskning återstår: varje rad har status 'researched' tills en person med juridiskt ansvar har kontrollerat den. En rad gäller räkenskapsår som inleds från och med starts_from och före starts_before (null = ingen gräns). extended_first_year: raden gäller också ett företags första, förlängda räkenskapsår som inleds efter starts_after och avslutas ends_on_or_after eller senare (BFNAR 2025:2 och 2025:3 punkt 1). De uppskjutna skattekontona (2240, 1370, 8940) läggs till av paketet S1-P5 med sin källa.",
     "rules": {
         "larger_company.employees_gt": [
             {
@@ -54,7 +54,7 @@
                 "source_ref": "ÅRL 1 kap. 3 § första stycket 4 (mer än ett av villkoren)",
                 "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arsredovisningslag-19951554_sfs-1995-1554/",
                 "source_quote": "4. större företag: – företag vars överlåtbara värdepapper är upptagna till handel på en reglerad marknad eller en motsvarande marknad utanför Europeiska ekonomiska samarbetsområdet, eller – företag som uppfyller mer än ett av följande villkor: a) medelantalet anställda i företaget har under vart och ett av de två senaste räkenskapsåren uppgått till mer än 50, b) företagets redovisade balansomslutning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 40 miljoner kronor, c) företagets redovisade nettoomsättning har för vart och ett av de två senaste räkenskapsåren uppgått till mer än 80 miljoner kronor, 5. mindre företag: företag som inte är större företag,",
-                "note": "ÅRL i lydelse t.o.m. SFS 2026:780. Äldre lydelser är inte lästa; TODO(legal-verify) innan ett räkenskapsår som inleddes före 2016 bedöms. Om det måste vara samma två villkor båda åren är öppet (S1-R9, beslut H8)."
+                "note": "ÅRL i lydelse t.o.m. SFS 2026:780. Äldre lydelser är inte lästa; TODO(legal-verify) innan ett räkenskapsår som inleddes före 2016 bedöms. Samma två villkor ska vara uppfyllda båda åren: se larger_company.same_criteria_both_years."
             }
         ],
         "larger_company.prior_years": [
@@ -65,9 +65,10 @@
                 "rule_id": "S1-R9.1",
                 "status": "researched",
                 "read": "2026-11-07",
-                "source_ref": "BFNAR 2006:11 punkt 6",
-                "source_url": "https://www.bfn.se/wp-content/uploads/2020/06/bfnar06-11-kons3.pdf",
-                "source_quote": "Vid bedömning av om ett företag är större eller mindre avses med vart och ett av de senaste två räkenskapsåren de två räkenskapsår som närmast föregår det räkenskapsår som räkenskapshandlingarna avser."
+                "source_ref": "BFN:s vägledning Gränsvärden (uppdaterad 2026-09-14), punkt 6",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl-2006-11-gransvarden-kons-2026.pdf",
+                "source_quote": "Vid bedömning av om ett företag är större eller mindre avses med vart och ett av de senaste två räkenskapsåren de två räkenskapsår som närmast föregår det räkenskapsår som räkenskapshandlingarna avser.",
+                "note": "BFNAR 2006:11 konsoliderad; BFNAR 2026:2 (gäller från 2026-09-25) ändrar bara rubriker."
             }
         ],
         "net_turnover_prorated_to_months": [
@@ -78,10 +79,10 @@
                 "rule_id": "S1-R9.2",
                 "status": "researched",
                 "read": "2026-11-07",
-                "source_ref": "BFNAR 2006:11 punkt 5 c",
-                "source_url": "https://www.bfn.se/wp-content/uploads/2020/06/bfnar06-11-kons3.pdf",
+                "source_ref": "BFN:s vägledning Gränsvärden (uppdaterad 2026-09-14), punkt 5 c och kommentaren om räkenskapsår på annan tid än tolv månader",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl-2006-11-gransvarden-kons-2026.pdf",
                 "source_quote": "Nettoomsättningen ska justeras om räkenskapsåret omfattar annan tid än tolv månader. (BFNAR 2016:6)",
-                "note": "Balansomslutningen justeras inte: punkt 5 säger inget om det (S1-R9.2)."
+                "note": "Balansomslutningen justeras inte: punkt 5 säger inget om det (S1-R9.2). NONOX jämför nettoomsättning × 12 med gränsvärdet × antal månader, exakt i öre; det avrundade beloppet visas bara. BFNAR 2006:11 konsoliderad; BFNAR 2026:2 (gäller från 2026-09-25) ändrar bara rubriker."
             }
         ],
         "normal_annual_hours": [
@@ -92,9 +93,69 @@
                 "rule_id": "S1-R9.2",
                 "status": "researched",
                 "read": "2026-11-07",
-                "source_ref": "BFNAR 2006:11 punkt 9",
-                "source_url": "https://www.bfn.se/wp-content/uploads/2020/06/bfnar06-11-kons3.pdf",
-                "source_quote": "Normal årsarbetstid får av förenklingsskäl antas vara 1 920 timmar. Årsarbetstiden ska justeras om räkenskapsåret omfattar annan tid än tolv månader."
+                "source_ref": "BFN:s vägledning Gränsvärden (uppdaterad 2026-09-14), punkt 9",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl-2006-11-gransvarden-kons-2026.pdf",
+                "source_quote": "Normal årsarbetstid får av förenklingsskäl antas vara 1 920 timmar. Årsarbetstiden ska justeras om räkenskapsåret omfattar annan tid än tolv månader.",
+                "note": "BFNAR 2006:11 konsoliderad; BFNAR 2026:2 (gäller från 2026-09-25) ändrar bara rubriker."
+            }
+        ],
+        "larger_company.same_criteria_both_years": [
+            {
+                "value": true,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R9",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "BFN:s vägledning Gränsvärden (uppdaterad 2026-09-14), exempel 1 och 2; kommentaren till punkt 6",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl-2006-11-gransvarden-kons-2026.pdf",
+                "source_quote": "Ett företag är ett större företag år 3 om samma två gränsvärden överskrids två år i rad.",
+                "note": "Exempel 2: 60/45 anställda, 37/42 mkr balansomslutning, 90/92 mkr nettoomsättning ger ett mindre företag, eftersom bara nettoomsättningen överskrids båda åren. Besvarar fråga H8 (första delen). BFNAR 2006:11 konsoliderad; BFNAR 2026:2 (gäller från 2026-09-25) ändrar bara rubriker."
+            }
+        ],
+        "larger_company.newly_started_is_mindre": [
+            {
+                "value": true,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R9.1",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "BFN:s vägledning Gränsvärden (uppdaterad 2026-09-14), kommentaren till punkt 6",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl-2006-11-gransvarden-kons-2026.pdf",
+                "source_quote": "Eftersom respektive gränsvärde ska vara uppfyllt två år i följd blir ett nystartat företag alltid klassificerat som mindre de två första åren.",
+                "note": "NONOX tillämpar det bara när en person har bekräftat företagets första räkenskapsår; saknade uppgifter räcker inte. Besvarar fråga H8 (andra delen). BFNAR 2006:11 konsoliderad; BFNAR 2026:2 (gäller från 2026-09-25) ändrar bara rubriker."
+            }
+        ],
+        "average_employees_rounding": [
+            {
+                "value": "half_up_whole",
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R9.2",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "BFN:s vägledning Gränsvärden (uppdaterad 2026-09-14), exempel 3 (och exempel 4: 11,1 avrundas till 11)",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl-2006-11-gransvarden-kons-2026.pdf",
+                "source_quote": "Totalt 9,4 personer. Avrundas till 9 anställda",
+                "note": "NONOX räknar medelantalet exakt och avrundar till ett helt tal innan det jämförs med gränsvärdena. TODO(legal-verify): BFN:s exempel 3 avrundar 9,4 till 9; att x,5 avrundas uppåt är NONOX:s antagande. BFNAR 2006:11 konsoliderad; BFNAR 2026:2 (gäller från 2026-09-25) ändrar bara rubriker."
+            }
+        ],
+        "larger_company.turnover_additions_legal_forms": [
+            {
+                "value": [
+                    "IDEELL_FORENING",
+                    "STIFTELSE"
+                ],
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R9",
+                "status": "researched",
+                "read": "2026-11-07",
+                "source_ref": "ÅRL 1 kap. 3 § tredje stycket; BFNAR 2006:11 punkterna 11 och 11A",
+                "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arsredovisningslag-19951554_sfs-1995-1554/",
+                "source_quote": "Företag som avses i 2 kap. 2 § första stycket och 3 § bokföringslagen (1999:1078) ska vid tillämpningen av första stycket 4-7 och 5 kap. 47 § till nettoomsättningen lägga bidrag, gåvor, medlemsavgifter och andra liknande intäkter.",
+                "note": "Vilka företagsformer som avses följer kommentaren till punkt 11A i BFN:s vägledning Gränsvärden (uppdaterad 2026-09-14): ideella föreningar, registrerade trossamfund, samfällighetsföreningar, vilt- och fiskevårdsområdesföreningar och stiftelser. Av NONOX:s företagsformer är det ideell förening och stiftelse; ekonomisk förening finns inte i uppräkningen. NONOX räknar inte ut tilläggen eller punkt 11 (anställda med högst ett halvt prisbasbelopp), så storleken avgörs av en människa. TODO(legal-verify): BFL 2 kap. 2–3 §§ är inte lästa direkt."
             }
         ],
         "k2_1_1c.employees_gt": [

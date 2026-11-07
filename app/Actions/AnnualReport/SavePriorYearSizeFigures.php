@@ -12,8 +12,10 @@ use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Brick\Math\BigDecimal;
+use Brick\Math\Exception\MathException;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -60,7 +62,17 @@ class SavePriorYearSizeFigures
                 'entered_by' => $user->id,
             ];
 
-            $figures->fill($values)->save();
+            if (! $figures->exists) {
+                // Two people saving the same new year at once: the second insert is ignored and both update the one row.
+                PriorYearSizeFigure::query()->insertOrIgnore($values + ['company_id' => $company->id, 'created_at' => now(), 'updated_at' => now()]);
+                $figures = PriorYearSizeFigure::query()->whereDate('start_date', $values['start_date'])->lockForUpdate()->firstOrFail();
+            }
+
+            try {
+                DB::transaction(fn (): bool => $figures->fill($values)->save());
+            } catch (UniqueConstraintViolationException) {
+                throw ValidationException::withMessages(['start_date' => __('Perioden överlappar ett annat räkenskapsår som redan har uppgifter.')]);
+            }
 
             Audit::record('prior_year_size_figures.saved', $figures, [
                 'start_date' => $values['start_date'],
@@ -101,7 +113,7 @@ class SavePriorYearSizeFigures
         foreach (['balance_sheet_total', 'net_turnover'] as $field) {
             try {
                 $amounts[$field] = Money::parse((string) $validated[$field])->ore;
-            } catch (InvalidArgumentException) {
+            } catch (InvalidArgumentException|MathException) {
                 throw ValidationException::withMessages([$field => __('Beloppet går inte att läsa. Skriv till exempel 1 234 567,89.')]);
             }
         }

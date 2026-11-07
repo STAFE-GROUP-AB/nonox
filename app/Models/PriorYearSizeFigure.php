@@ -7,8 +7,6 @@ namespace App\Models;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
-use Brick\Math\BigDecimal;
-use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 
@@ -40,14 +38,6 @@ class PriorYearSizeFigure extends Model
         'net_turnover_ore',
         'entered_by',
     ];
-
-    /** The average number of employees in hundredths of a full-time equivalent, or null when not known. */
-    public function employeesFteHundredths(): ?int
-    {
-        return $this->average_employees_fte === null
-            ? null
-            : BigDecimal::of($this->average_employees_fte)->multipliedBy(100)->toScale(0, RoundingMode::Up)->toInt();
-    }
 
     /** @return array<string, string> */
     protected function casts(): array
