@@ -195,7 +195,7 @@ Underlag: [spec:en](../specs/nummer-1-spec.md), regelbladen [s1.md](../specs/rul
 
 ### K3 (S1, ADR-059)
 
-- **S1-A. Godkänna K3-tillägget i ADR-059.** Spec:en kräver ägarens godkännande. *Rekommendation:* godkänn. *Blockerar:* alla S1-paket. *Senast:* 2026-11-14.
+- **S1-A. Godkänna K3-tillägget i ADR-059.** **Beslutat 2026-11-07: godkänt.** Ägaren lämnade beslutet till Lead, som godkände tillägget sedan källorna kontrollerats. BFN:s sida "K-regelverk" (uppdaterad 2026-09-07) anger fortfarande `kons20251215` för räkenskapsår som inleds efter 2025-12-31 och visar ingen ändring av K3 under 2026. S1-P1–P3 är inte längre spärrade.
 - **S1-H1. Större aktiebolag.** Ska K3-rapporten kunna tas fram för större (onoterade) aktiebolag? *Rekommendation:* vägra nu, lägg till senare. *Blockerar:* paket S1-P13.
 - **S1-H2. "Väsentlig" uppskjuten skatteskuld (K2 1.1B a).** *Rekommendation:* visa beloppet som information, avgör inte åt kunden. *Blockerar:* S1-P2.
 - **S1-H3. Bekräftelsen om "normalt inte omfattas" (K2 1.1C).** *Rekommendation:* citera BFN:s kommentar ordagrant.
@@ -205,7 +205,7 @@ Underlag: [spec:en](../specs/nummer-1-spec.md), regelbladen [s1.md](../specs/rul
 - **S1-H7. Bokföring av övergångsskillnaden K2 → K3.** *Rekommendation:* en ny verifikation första dagen i första K3-året, källa `K3_TRANSITION`, mot konto 2091.
 - **S1-H8. ÅRL 1 kap. 3 § "mer än ett".** Måste det vara samma två villkor båda åren, och hur klassas ett företag med färre än två år? *Rekommendation:* samma två; mindre om inte noterat.
 - **S1-H9. BAS-konton för aktiverade utvecklingsutgifter och fonden för utvecklingsutgifter.** Konsulten bekräftar.
-- **S1-H10. Namnge den auktoriserade redovisningskonsult** som granskar och skriver under checklistan. *Blockerar:* att K3 får lämna beta.
+- **S1-H10. Namnge den auktoriserade redovisningskonsult** som granskar och skriver under checklistan. **2026-11-07:** ägaren har en konsult och lämnar namnet senare. Namnet skrivs inte in i det publika repot. *Blockerar fortfarande:* att K3 får lämna beta.
 
 ### Koncern (S2, ADR-060)
 
@@ -223,6 +223,6 @@ Underlag: [spec:en](../specs/nummer-1-spec.md), regelbladen [s1.md](../specs/rul
 
 ### Export (F10, ADR-065)
 
-- **F10-1. Kedjan av kontrollsummor vid import.** Importen kontrollerar den ursprungliga kedjan och bygger en ny över de nya id-numren, med den ursprungliga kontrollsumman sparad bredvid. Nummer, datum och rader ändras aldrig. *Rekommendation:* godkänn, efter den oberoende säkerhetsgranskningen.
+- **F10-1. Kedjan av kontrollsummor vid import.** Importen kontrollerar den ursprungliga kedjan och bygger en ny över de nya id-numren, med den ursprungliga kontrollsumman sparad bredvid. Nummer, datum och rader ändras aldrig. **Beslutat 2026-11-07: godkänt** av Lead på ägarens uppdrag. Villkor: importen slås inte ihop förrän den oberoende säkerhetsgranskningen är godkänd, och kvittot och manualen uppmanar användaren att spara dumpfilen under arkiveringstiden (BFL 7 kap. 6 §). Se ADR-065, "Decision F10-1".
 - **F10-2. Vem får exportera och hur länge länken gäller.** *Förslag:* ägare och administratör, 7 dagar.
 - **F10-3 (juridik).** Får en redovisningskonsult exportera en kunds lön och CRM-uppgifter i en fil? *Blockerar:* paket 3.

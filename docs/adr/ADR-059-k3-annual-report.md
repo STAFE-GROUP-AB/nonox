@@ -515,6 +515,14 @@ Enligt AI-utredning 2026-11-06, juristgranskning återstår.
 
 Enligt AI-utredning 2026-11-07, juristgranskning återstår.
 
+- **Decision S1-A (2026-11-07): accepted.** The owner delegated the decision to the Lead,
+  who approved this addendum after checking that the sources are still current: BFN's
+  K-regelverk page (updated 2026-09-07) still names `vl12-1-k3-kons20251215` as the K3
+  version for fiscal years begun after 2025-12-31 and lists no 2026 amendment to K3.
+  The approval covers the design and the package order (A.4). It does not settle the
+  human decisions in A.6 (H1–H10), and K3 stays in beta until the named accountant
+  (H10) has signed the checklist.
+
 - Author: S1 Architect (AI). Input: the S1 rule sheet `docs/specs/rules/s1.md`
   (branch `spec/s1/rules`, status ready, every quote re-read 2026-11-07), the
   spec `docs/specs/nummer-1-spec.md` Part 1, Part 2 and S1, `docs/specs/ownership.md`,

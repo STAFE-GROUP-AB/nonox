@@ -159,9 +159,33 @@ therefore has to carry them decrypted or lose them.
   so they are set to the importing owner, **openly, not silently**: the source user id is kept in
   `imported_source_user_id` (set before posting) and the voucher history shows "Bokförd av
   (källsystemets användare 1234), importerad av <name> <date>". Product-owner decision **F10-1**
-  stays open; this is the recommendation.
+  was taken on 2026-11-07 (see "Decision F10-1" below).
 - The report after import compares counts, trial balance per year, voucher numbers per series
   and attachment hashes with the dump's `counts`. A mismatch rolls back and nothing is kept.
+
+## Decision F10-1 (2026-11-07)
+
+The owner delegated the decision to the Lead, who accepted the design in section 2 and in the
+import section above: verify the source chain, re-seal it over the new ids, keep
+`imported_source_hash` and `imported_source_user_id`, and never change number, series, date,
+rows or `posted_at`. The ground is BFL 7 kap. 6 §, read on riksdagen.se 2026-11-07 (text up to
+SFS 2024:342). It lets the source be destroyed only if the transfer carries no risk "att
+räkenskapsinformationen förändras eller försvinner". The hash chain is NONOX's own integrity
+mechanism, not something the law requires, so re-sealing it is allowed. What the law does
+require is that the content does not change, and the reconciliation report shows that: counts,
+trial balance per year, voucher numbers per series and attachment hashes all match.
+
+The approval has three conditions:
+
+1. The import package is not merged until an independent security review passes, as the
+   recommendation said.
+2. The import receipt and the manual tell the user to keep the dump file, together with its
+   SHA-256 from the audit entry, for the retention period of BFL 7 kap. 2 §. Keeping it is
+   what lets the transfer be checked afterwards. NONOX does not delete the dump on the user's
+   behalf.
+3. The voucher history shows the source user id and the importing user, openly, as section 5
+   says. That gives the traceability BFL 5 kap. 5 § asks of a correction, even though an
+   import is not a correction.
 
 ## Options rejected
 
