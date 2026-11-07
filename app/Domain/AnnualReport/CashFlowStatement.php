@@ -7,7 +7,6 @@ namespace App\Domain\AnnualReport;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Company\LegalForm;
 use App\Models\Company;
-use App\Models\VoucherRow;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 
@@ -59,21 +58,24 @@ use LogicException;
  *   accounts' movements with the cash sign (inflow positive). Since every
  *   posted voucher balances, the activities add up to the change in likvida
  *   medel by construction; the statement checks it anyway.
- * - Voucher by voucher for investing and financing (one grouped query): each
- *   voucher that touches a fixed asset, an investment, a loan, an overdraft,
- *   equity or unpaid dividends is read with its counter accounts, a
- *   correcting voucher netted with the voucher it corrects (so a correction
- *   adds nothing gross). A voucher that moves such an account against a
- *   counter account that is no payment (a loan, a receivable, another
- *   equity post, unpaid dividends, an accrual) is a transaction without
- *   payment and blocks the statement with the voucher and its accounts: NONOX
- *   does not adjust it away. An acquisition on supplier credit (2440) counts
- *   as paid only when a payment of the same amount from 2440 to likvida medel
- *   follows in the year; otherwise it blocks. Each remaining voucher's net
- *   is an acquisition or a disposal, a borrowing or a repayment, so these are
- *   shown gross (7.11); a disposal of an intangible or tangible fixed asset
- *   blocks, as its proceeds cannot yet be split from the gain. A used
- *   overdraft is netted (7.12 b).
+ * - Voucher by voucher for investing and financing: each voucher that
+ *   touches a fixed asset, an investment, a loan, an overdraft, equity or
+ *   unpaid dividends is read with its counter accounts, a correcting voucher
+ *   netted with the voucher it corrects (so a correction adds nothing
+ *   gross). A voucher that moves such an account against a counter account
+ *   that is no payment is a transaction without payment and blocks the
+ *   statement with the voucher and its accounts; NONOX does not adjust it
+ *   away (see nonCashAccounts() for what is allowed: likvida medel, moms,
+ *   aktiverat arbete 38xx and transfers for fixed assets, result rows paid
+ *   together with the movement in cash). An acquisition against a trade
+ *   payable (2440) counts as paid only when the payables ledger links the
+ *   voucher to a supplier invoice paid in full by payments booked in the
+ *   same year; a manual 2440 voucher, an unpaid or part-paid invoice and an
+ *   invoice paid in a later year block. Each remaining voucher's net is an
+ *   acquisition, a borrowing or a repayment, so these are shown gross
+ *   (7.11); a disposal of an intangible or tangible fixed asset blocks, as
+ *   its proceeds cannot yet be split from the gain. A used overdraft is
+ *   netted (7.12 b).
  *
  * Three account pairs must net to zero because neither side is cash:
  * depreciation against accumulated depreciation, deferred tax against its
@@ -87,15 +89,19 @@ use LogicException;
  * TODO(legal-verify): the line labels are NONOX's own (K3 gives no
  * wording); interest and dividends are shown in a separate section beside
  * the statement (7.14) with the payments estimated from the result accounts
- * and their accruals; matching a supplier-credit acquisition with a payment
- * of the same amount is NONOX's rule; a loan voucher with a result account
- * counter (interest, a fee withheld) is accepted only when likvida medel
- * cover the loan movement; notes 7.18–7.20 (större företag) are S1-P13. See
- * CashFlowAccounts for the account mapping.
+ * and their accruals; a loan voucher with a result account counter is
+ * accepted only when likvida medel pay the loan movement and the result rows
+ * exactly and in the same direction (interest paid with an amortisation); a
+ * fee withheld from a new loan or interest added to a loan blocks; notes
+ * 7.18–7.20 (större företag) are S1-P13. See CashFlowAccounts for the
+ * account mapping.
  *
- * Queries per year: the equity statement and the voucher read; with the
- * previous year beside it, AnnualAccounts for that year and the same two.
- * The count does not depend on the number of vouchers.
+ * Queries per year: the equity statement, then single-table reads of the
+ * account numbers, the year's posted vouchers, their rows (selected by
+ * voucher id), the year's supplier invoices and their payments; with the
+ * previous year beside it, AnnualAccounts for that year and the same six.
+ * The count does not depend on the number of vouchers, and no read joins
+ * rows to vouchers, so a plan made with stale statistics stays linear.
  */
 final class CashFlowStatement
 {
@@ -418,18 +424,9 @@ final class CashFlowStatement
     private function grossFromVouchers(): array
     {
         $lines = array_fill_keys(self::SUBTOTALS['kassaflode_fran_investeringsverksamheten'], 0) + ['upptagna_lan' => 0, 'amortering_av_lan' => 0];
-
-        $groups = self::withCorrections($this->vouchers());
-        $payments = [];
-
-        foreach ($groups as $group) {
-            if ($group['payment']) {
-                $paid = array_filter($group['rows'], fn (int $number): bool => self::inRange($number, CashFlowAccounts::TRADE_PAYABLES), ARRAY_FILTER_USE_KEY);
-                $payments[] = ['date' => $group['date'], 'amount' => -array_sum($paid), 'used' => false];
-            }
-        }
-
-        $paymentsBySupplierCredit = [];
+        [$vouchers, $yearVouchers] = $this->vouchers();
+        $groups = self::withCorrections($vouchers);
+        $paidInvoices = $this->supplierInvoicesPaidInTheYear($yearVouchers);
 
         foreach ($groups as $group) {
             $families = [];
@@ -457,48 +454,17 @@ final class CashFlowStatement
                 continue;
             }
 
-            $family = (string) array_key_first($families);
-            $investing = array_sum($byCategory);
-            // Two families in one voucher (a loan against a fixed asset, a loan turned into
-            // equity) are an exchange without payment, whatever else the voucher holds.
-            $mixed = count($families) > 1;
-            $nonCash = [];
-            $supplierCredit = 0;
+            $nonCash = $this->nonCashAccounts($group, $families, $counters, array_sum($byCategory), $paidInvoices);
 
-            foreach ($counters as $number => $amount) {
-                $category = CashFlowAccounts::categoryOf($number);
-
-                if ($category === CashFlowAccounts::CASH || self::inRange($number, CashFlowAccounts::VAT)) {
-                    continue;
-                }
-
-                if ($family === 'fixed' && in_array($category, [CashFlowAccounts::RESULT, CashFlowAccounts::DEPRECIATION, CashFlowAccounts::ACCUMULATED], true)) {
-                    continue;
-                }
-
-                if (in_array($family, ['fixed', CashFlowAccounts::FINANCIAL_ASSETS, CashFlowAccounts::SHORT_INVESTMENTS], true) && self::inRange($number, CashFlowAccounts::TRADE_PAYABLES) && $amount > 0) {
-                    $supplierCredit += $amount;
-
-                    continue;
-                }
-
-                if ($category === CashFlowAccounts::RESULT && self::coveredByCash($counters, $investing)) {
-                    continue;
-                }
-
-                $nonCash[] = $number;
-            }
-
-            if ($mixed || $nonCash !== []) {
+            if ($nonCash !== null) {
                 $accounts = array_merge(array_keys(array_filter($group['rows'], fn (int $amount, int $number): bool => $amount !== 0 && in_array(CashFlowAccounts::categoryOf($number), CashFlowAccounts::INVESTING_FINANCING, true), ARRAY_FILTER_USE_BOTH)), $nonCash);
-                $this->reasons[] = (string) __('verifikation :vouchers bokför konto :accounts utan betalning; en transaktion i investerings- eller finansieringsverksamheten som inte medför in- eller utbetalningar ska inte ingå i kassaflödet (K3 kapitel 7, kommentaren om transaktioner som inte medför betalningar), och NONOX kan ännu inte visa den på annan plats', ['vouchers' => implode(', ', $group['references']), 'accounts' => self::list($accounts)]);
+                $text = $nonCash !== [] && array_filter($nonCash, fn (int $number): bool => self::inRange($number, CashFlowAccounts::TRADE_PAYABLES)) !== []
+                    ? 'verifikation :vouchers bokför ett förvärv på konto :accounts mot en leverantörsskuld som leverantörsreskontran inte visar som helt betald under året; ett förvärv mot en obetald eller manuellt bokförd skuld räknas inte som en utbetalning (K3 kapitel 7, kommentaren om transaktioner som inte medför betalningar)'
+                    : 'verifikation :vouchers bokför konto :accounts utan betalning; en transaktion i investerings- eller finansieringsverksamheten som inte medför in- eller utbetalningar ska inte ingå i kassaflödet (K3 kapitel 7, kommentaren om transaktioner som inte medför betalningar), och NONOX kan ännu inte visa den på annan plats';
+                $this->reasons[] = (string) __($text, ['vouchers' => implode(', ', $group['references']), 'accounts' => self::list($accounts)]);
                 $this->addAccounts($accounts);
 
                 continue;
-            }
-
-            if ($supplierCredit !== 0) {
-                $paymentsBySupplierCredit[] = ['group' => $group, 'amount' => $supplierCredit];
             }
 
             foreach ($byCategory as $category => $amount) {
@@ -524,86 +490,207 @@ final class CashFlowStatement
             }
         }
 
-        $this->matchSupplierCredits($paymentsBySupplierCredit, $payments);
-
         return $lines;
     }
 
     /**
-     * An acquisition booked against a trade payable is paid only when a
-     * payment of the same amount from 2440–2449 to likvida medel follows in
-     * the year; an acquisition still owed at the year end is no cash flow.
+     * The counter accounts that make a voucher a transaction without payment,
+     * or null when it is paid in likvida medel. Allowed beside an investing or
+     * financing account: likvida medel and moms; for intangible and tangible
+     * fixed assets also accumulated depreciation and other fixed asset
+     * accounts (a transfer) and aktiverat arbete (BAS 3800–3899); for any
+     * family result accounts only when likvida medel pay the investing or
+     * financing movement and the result rows together, exactly and in the
+     * same direction (interest paid with an amortisation, a fee paid with a
+     * purchase of shares). A trade payable (2440–2449) is allowed for an
+     * acquisition only when the voucher books a supplier invoice that the
+     * payables ledger shows paid in full within the year. Two families in
+     * one voucher, or a loan account both debited and credited in it, are
+     * never a payment.
      *
-     * @param  list<array{group: array{references: list<string>, date: string, rows: array<int, int>}, amount: int}>  $credits
-     * @param  list<array{date: string, amount: int, used: bool}>  $payments
+     * @param  array{ids: list<string>, references: list<string>, two_sided: list<int>, rows: array<int, int>}  $group
+     * @param  array<string, true>  $families
+     * @param  array<int, int>  $counters
+     * @param  array<string, true>  $paidInvoices  voucher ids of supplier invoices paid in full in the year
+     * @return ?list<int>
      */
-    private function matchSupplierCredits(array $credits, array $payments): void
+    private function nonCashAccounts(array $group, array $families, array $counters, int $investing, array $paidInvoices): ?array
     {
-        foreach ($credits as $credit) {
-            foreach ($payments as $index => $payment) {
-                if (! $payment['used'] && $payment['amount'] === $credit['amount'] && $payment['date'] >= $credit['group']['date']) {
-                    $payments[$index]['used'] = true;
+        $loans = array_values(array_filter($group['two_sided'], fn (int $number): bool => in_array(CashFlowAccounts::categoryOf($number), [CashFlowAccounts::LOANS, CashFlowAccounts::OVERDRAFT], true)));
 
-                    continue 2;
-                }
+        if (count($families) > 1 || $loans !== []) {
+            return $loans;
+        }
+
+        $family = (string) array_key_first($families);
+        $cash = 0;
+        $result = 0;
+        $resultAccounts = [];
+        $nonCash = [];
+
+        foreach ($counters as $number => $amount) {
+            $category = CashFlowAccounts::categoryOf($number);
+
+            if ($category === CashFlowAccounts::CASH) {
+                $cash += $amount;
+
+                continue;
             }
 
-            $accounts = array_keys(array_filter($credit['group']['rows'], fn (int $amount, int $number): bool => $amount !== 0 && (self::inRange($number, CashFlowAccounts::TRADE_PAYABLES) || in_array(CashFlowAccounts::categoryOf($number), CashFlowAccounts::INVESTING_FINANCING, true)), ARRAY_FILTER_USE_BOTH));
-            $this->reasons[] = (string) __('verifikation :vouchers bokför ett förvärv på konto :accounts mot en leverantörsskuld som inte betalas under året med samma belopp; ett förvärv mot en obetald skuld är ingen utbetalning (K3 kapitel 7, kommentaren om transaktioner som inte medför betalningar)', ['vouchers' => implode(', ', $credit['group']['references']), 'accounts' => self::list($accounts)]);
-            $this->addAccounts($accounts);
+            if (self::inRange($number, CashFlowAccounts::VAT)) {
+                continue;
+            }
+
+            if ($family === 'fixed' && ($category === CashFlowAccounts::ACCUMULATED || self::inRange($number, CashFlowAccounts::CAPITALISED_WORK))) {
+                continue;
+            }
+
+            if ($family !== 'fixed' && $category === CashFlowAccounts::RESULT) {
+                $result += $amount;
+                $resultAccounts[] = $number;
+
+                continue;
+            }
+
+            if (in_array($family, ['fixed', CashFlowAccounts::FINANCIAL_ASSETS, CashFlowAccounts::SHORT_INVESTMENTS], true)
+                && self::inRange($number, CashFlowAccounts::TRADE_PAYABLES)
+                && $amount > 0
+                && array_intersect_key($paidInvoices, array_flip($group['ids'])) !== []) {
+                continue;
+            }
+
+            $nonCash[] = $number;
         }
+
+        $paidTogether = $cash !== 0 && ($result > 0) === ($investing > 0) && $cash === -($investing + $result);
+
+        if ($resultAccounts !== [] && ! $paidTogether) {
+            array_push($nonCash, ...$resultAccounts);
+        }
+
+        return $nonCash === [] ? null : $nonCash;
+    }
+
+    /**
+     * The vouchers of the year's supplier invoices that the payables ledger
+     * shows paid in full by payments booked in the same fiscal year: the
+     * invoice's voucher (supplier_invoices.voucher_id) and its payments'
+     * vouchers (supplier_payments.voucher_id) are among the year's posted
+     * vouchers, and the payments add up to the invoice total (in the invoice
+     * currency for a foreign invoice). Two single-table reads selected by the
+     * year's voucher ids, whatever the number of invoices.
+     *
+     * @param  list<string>  $yearVouchers
+     * @return array<string, true>
+     */
+    private function supplierInvoicesPaidInTheYear(array $yearVouchers): array
+    {
+        $companyId = $this->accounts->fiscalYear->company_id;
+        $ids = '{'.implode(',', $yearVouchers).'}';
+        $invoices = DB::select('SELECT id, voucher_id, total_ore, foreign_total_minor FROM supplier_invoices WHERE company_id = ? AND voucher_id = ANY(?::uuid[])', [$companyId, $ids]);
+        $payments = DB::select('SELECT supplier_invoice_id, amount_ore, foreign_amount_minor FROM supplier_payments WHERE company_id = ? AND voucher_id = ANY(?::uuid[])', [$companyId, $ids]);
+        $paidOre = [];
+        $paidForeign = [];
+
+        foreach ($payments as $payment) {
+            $invoice = (string) $payment->supplier_invoice_id;
+            $paidOre[$invoice] = ($paidOre[$invoice] ?? 0) + (int) $payment->amount_ore;
+            $paidForeign[$invoice] = ($paidForeign[$invoice] ?? 0) + (int) $payment->foreign_amount_minor;
+        }
+
+        $paid = [];
+
+        foreach ($invoices as $invoice) {
+            $id = (string) $invoice->id;
+            $inFull = $invoice->foreign_total_minor === null
+                ? ($paidOre[$id] ?? 0) === (int) $invoice->total_ore
+                : ($paidForeign[$id] ?? 0) === (int) $invoice->foreign_total_minor;
+
+            if ($inFull) {
+                $paid[(string) $invoice->voucher_id] = true;
+            }
+        }
+
+        return $paid;
     }
 
     /**
      * The year's posted vouchers that touch an investing or financing account,
-     * or that only pay a trade payable from likvida medel, with their rows
-     * summed per account (credit positive, the cash sign). One query: the
-     * year's rows grouped by voucher and account, with windows over each
-     * voucher (no IN subquery, whose semi join was planned badly; S1-P7
-     * review).
+     * with their rows summed per account (credit positive, the cash sign) and
+     * the accounts both debited and credited in the voucher.
      *
-     * @return list<array{id: string, references: list<string>, date: string, corrects: ?string, payment: bool, rows: array<int, int>}>
+     * Three single-table reads, so no join can be planned badly: the
+     * company's account numbers, the year's posted vouchers (with their series
+     * code), and their rows grouped per voucher and account, selected by
+     * voucher id (`= ANY`, the index on voucher_rows.voucher_id) with a window
+     * over each voucher that keeps the vouchers touching an investing or
+     * financing account (no IN subquery). A join of rows and vouchers was
+     * planned as a nested loop with a join filter after ANALYZE on empty
+     * tables, growing with rows × vouchers (S1-P8 review); these reads stay
+     * linear in the number of rows whatever the statistics.
+     *
+     * @return array{0: list<array{id: string, references: list<string>, corrects: ?string, two_sided: list<int>, rows: array<int, int>}>, 1: list<string>} the vouchers read, and the ids of all the year's posted vouchers
      */
     private function vouchers(): array
     {
-        $touches = implode(' OR ', array_fill(0, count(CashFlowAccounts::VOUCHER_LEVEL), 'accounts.number BETWEEN ? AND ?'));
-        [$payableFrom, $payableTo] = CashFlowAccounts::TRADE_PAYABLES;
-        $bindings = [...array_merge(...CashFlowAccounts::VOUCHER_LEVEL), $payableFrom, $payableTo, 1900, 1999, $payableFrom, $payableTo];
+        $year = $this->accounts->fiscalYear;
+        /** @var array<int, int> $numbers account id => number */
+        $numbers = [];
 
-        $rows = VoucherRow::query()
-            ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
-            ->join('accounts', 'accounts.id', '=', 'voucher_rows.account_id')
+        foreach (DB::table('accounts')->where('company_id', $year->company_id)->get(['id', 'number']) as $account) {
+            $numbers[(int) $account->id] = (int) $account->number;
+        }
+
+        $investing = array_keys(array_filter($numbers, fn (int $number): bool => CashFlowAccounts::inRanges($number, CashFlowAccounts::VOUCHER_LEVEL)));
+        $headers = [];
+
+        foreach (DB::table('vouchers')
             ->join('voucher_series', 'voucher_series.id', '=', 'vouchers.series_id')
-            ->where('vouchers.fiscal_year_id', $this->accounts->fiscalYear->id)
+            ->where('vouchers.company_id', $year->company_id)
+            ->where('vouchers.fiscal_year_id', $year->id)
             ->where('vouchers.status', VoucherStatus::Posted->value)
-            ->groupBy('voucher_rows.voucher_id', 'vouchers.voucher_date', 'vouchers.number', 'vouchers.corrects_voucher_id', 'voucher_series.code', 'accounts.number')
-            ->selectRaw("voucher_rows.voucher_id, vouchers.voucher_date, vouchers.number AS voucher_number, vouchers.corrects_voucher_id, voucher_series.code AS series_code, accounts.number AS account_number, SUM(voucher_rows.credit_ore) - SUM(voucher_rows.debit_ore) AS net_credit, BOOL_OR({$touches}) OVER (PARTITION BY voucher_rows.voucher_id) AS touches_investing, BOOL_AND(accounts.number BETWEEN ? AND ? OR accounts.number BETWEEN ? AND ?) OVER (PARTITION BY voucher_rows.voucher_id) AS only_payable_and_cash, BOOL_OR(accounts.number BETWEEN ? AND ?) OVER (PARTITION BY voucher_rows.voucher_id) AS touches_payable", $bindings);
+            ->orderBy('vouchers.voucher_date')
+            ->orderBy('voucher_series.code')
+            ->orderBy('vouchers.number')
+            ->get(['vouchers.id', 'vouchers.number', 'vouchers.corrects_voucher_id', 'voucher_series.code']) as $voucher) {
+            $headers[(string) $voucher->id] = $voucher;
+        }
 
-        $result = DB::query()
-            ->fromSub($rows, 'year_rows')
-            ->where(fn ($query) => $query->where('year_rows.touches_investing', true)->orWhere(fn ($query) => $query->where('year_rows.only_payable_and_cash', true)->where('year_rows.touches_payable', true)))
-            ->orderBy('year_rows.voucher_date')
-            ->orderBy('year_rows.series_code')
-            ->orderBy('year_rows.voucher_number')
-            ->orderBy('year_rows.account_number')
-            ->get();
+        $rows = DB::select(<<<'SQL'
+            SELECT voucher_id, account_id, debit, credit
+            FROM (
+                SELECT voucher_id, account_id, SUM(debit_ore) AS debit, SUM(credit_ore) AS credit,
+                    BOOL_OR(account_id = ANY(?::bigint[])) OVER (PARTITION BY voucher_id) AS touches_investing
+                FROM voucher_rows
+                WHERE company_id = ? AND voucher_id = ANY(?::uuid[])
+                GROUP BY voucher_id, account_id
+            ) year_rows
+            WHERE touches_investing
+            SQL, ['{'.implode(',', $investing).'}', $year->company_id, '{'.implode(',', array_keys($headers)).'}']);
 
         $vouchers = [];
 
-        foreach ($result as $row) {
+        foreach ($rows as $row) {
             $id = (string) $row->voucher_id;
+            $header = $headers[$id];
+            $number = $numbers[(int) $row->account_id];
             $vouchers[$id] ??= [
                 'id' => $id,
-                'references' => [$row->series_code.$row->voucher_number],
-                'date' => substr((string) $row->voucher_date, 0, 10),
-                'corrects' => $row->corrects_voucher_id === null ? null : (string) $row->corrects_voucher_id,
-                'payment' => (bool) $row->only_payable_and_cash && ! (bool) $row->touches_investing,
+                'references' => [$header->code.$header->number],
+                'corrects' => $header->corrects_voucher_id === null ? null : (string) $header->corrects_voucher_id,
+                'two_sided' => [],
                 'rows' => [],
             ];
-            $vouchers[$id]['rows'][(int) $row->account_number] = (int) $row->net_credit;
+            $vouchers[$id]['rows'][$number] = (int) $row->credit - (int) $row->debit;
+
+            // A correcting voucher reverses and re-books in one voucher, so its two sides are expected.
+            if ((int) $row->debit > 0 && (int) $row->credit > 0 && $header->corrects_voucher_id === null) {
+                $vouchers[$id]['two_sided'][] = $number;
+            }
         }
 
-        return array_values($vouchers);
+        // In the order of the vouchers (date, series, number), as the refusal lists them.
+        return [array_values(array_filter(array_map(fn (string $id): ?array => $vouchers[$id] ?? null, array_keys($headers)))), array_keys($headers)];
     }
 
     /**
@@ -612,8 +699,8 @@ final class CashFlowStatement
      * when both are read, along the chain of corrections, so a corrected loan
      * counts once and a reversed one not at all (as K3EquityStatement does).
      *
-     * @param  list<array{id: string, references: list<string>, date: string, corrects: ?string, payment: bool, rows: array<int, int>}>  $vouchers
-     * @return list<array{references: list<string>, date: string, payment: bool, rows: array<int, int>}>
+     * @param  list<array{id: string, references: list<string>, corrects: ?string, two_sided: list<int>, rows: array<int, int>}>  $vouchers
+     * @return list<array{ids: list<string>, references: list<string>, two_sided: list<int>, rows: array<int, int>}>
      */
     private static function withCorrections(array $vouchers): array
     {
@@ -630,9 +717,10 @@ final class CashFlowStatement
             }
 
             $key = $root['id'];
-            $groups[$key] ??= ['references' => [], 'date' => $root['date'], 'payment' => $root['payment'], 'rows' => []];
+            $groups[$key] ??= ['ids' => [], 'references' => [], 'two_sided' => [], 'rows' => []];
+            $groups[$key]['ids'][] = $voucher['id'];
             $groups[$key]['references'][] = $voucher['references'][0];
-            $groups[$key]['payment'] = $groups[$key]['payment'] && $voucher['payment'];
+            $groups[$key]['two_sided'] = [...$groups[$key]['two_sided'], ...$voucher['two_sided']];
 
             foreach ($voucher['rows'] as $number => $change) {
                 $groups[$key]['rows'][$number] = ($groups[$key]['rows'][$number] ?? 0) + $change;
@@ -821,26 +909,6 @@ final class CashFlowStatement
     private static function family(string $category): string
     {
         return in_array($category, [CashFlowAccounts::INTANGIBLE, CashFlowAccounts::TANGIBLE], true) ? 'fixed' : $category;
-    }
-
-    /**
-     * Whether likvida medel in the voucher move at least the investing or
-     * financing amount the other way, so that a result account beside them
-     * (interest paid with an amortisation) is paid in the same voucher.
-     *
-     * @param  array<int, int>  $counters
-     */
-    private static function coveredByCash(array $counters, int $investing): bool
-    {
-        $cash = 0;
-
-        foreach ($counters as $number => $amount) {
-            if (CashFlowAccounts::categoryOf($number) === CashFlowAccounts::CASH) {
-                $cash += $amount;
-            }
-        }
-
-        return $cash !== 0 && ($cash > 0) !== ($investing > 0) && abs($cash) >= abs($investing);
     }
 
     /**

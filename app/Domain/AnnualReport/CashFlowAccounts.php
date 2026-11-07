@@ -47,7 +47,8 @@ namespace App\Domain\AnnualReport;
  * of which only 8010, 8210 and 8310 are in NONOX's BAS 2026 seed;
  * 8114–8119 blocked as unknown; the currency ranges (3960–3969, 7960–7969,
  * 8230–8239, 8330–8339, 8430–8439); overdrafts netted as quick-turnover
- * items (7.12 b).
+ * items (7.12 b); 38xx (aktiverat arbete) as the only result account allowed
+ * against a fixed asset.
  */
 final class CashFlowAccounts
 {
@@ -208,8 +209,11 @@ final class CashFlowAccounts
      */
     public const array ADVANCES = [[1080, 1089], [1180, 1189], [1280, 1289]];
 
-    /** Trade payables (BAS 2440–2449): an acquisition on supplier credit is paid through them. */
+    /** Trade payables (BAS 2440–2449): an acquisition against them is paid only when the payables ledger shows the invoice paid in the year. */
     public const array TRADE_PAYABLES = [2440, 2449];
+
+    /** Aktiverat arbete för egen räkning (BAS 3800–3899): the only result account allowed against a fixed asset. */
+    public const array CAPITALISED_WORK = [3800, 3899];
 
     /** VAT accounts (BAS 2600–2699): allowed beside a payment for an acquisition. */
     public const array VAT = [2600, 2699];

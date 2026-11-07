@@ -7029,7 +7029,7 @@
       "series": "D",
       "number": 8,
       "date": "2026-07-01",
-      "description": "Förvärv maskin M2 (svarv- och fräscell), leverantörsfaktura",
+      "description": "Förvärv maskin M2 (svarv- och fräscell), betald direkt från banken",
       "asset_id": "M2",
       "rows": [
         {
@@ -7043,7 +7043,7 @@
           "credit_ore": 0
         },
         {
-          "account": 2440,
+          "account": 1930,
           "debit_ore": 0,
           "credit_ore": 300000000
         }
@@ -7159,26 +7159,6 @@
           "account": 1930,
           "debit_ore": 0,
           "credit_ore": 56250000
-        }
-      ]
-    },
-    {
-      "fiscal_year": 2026,
-      "series": "E",
-      "number": 15,
-      "date": "2026-07-20",
-      "description": "Betalning maskin M2",
-      "asset_id": "M2",
-      "rows": [
-        {
-          "account": 2440,
-          "debit_ore": 300000000,
-          "credit_ore": 0
-        },
-        {
-          "account": 1930,
-          "debit_ore": 0,
-          "credit_ore": 300000000
         }
       ]
     },

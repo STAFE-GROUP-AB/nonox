@@ -3,10 +3,16 @@
 declare(strict_types=1);
 
 use App\Actions\Accounting\CorrectVoucher;
+use App\Actions\Accounting\CreateNextFiscalYear;
 use App\Actions\Accounting\PostVoucher;
 use App\Actions\Accounting\SaveDraftVoucher;
 use App\Actions\AnnualReport\SavePriorYearSizeFigures;
 use App\Actions\AnnualReport\SetAccountingPolicy;
+use App\Actions\Payables\ApproveSupplierInvoice;
+use App\Actions\Payables\PaySupplierInvoice;
+use App\Actions\Payables\RegisterSupplierInvoice;
+use App\Actions\Payables\SaveSupplier;
+use App\Actions\Payables\SaveSupplierInvoice;
 use App\Domain\Accounting\AccountType;
 use App\Domain\AnnualReport\AnnualAccounts;
 use App\Domain\AnnualReport\CashFlowPrintedFigures;
@@ -24,7 +30,9 @@ use App\Models\Account;
 use App\Models\CompanyAccountingPolicy;
 use App\Models\FiscalYear;
 use App\Models\OpeningBalance;
+use App\Models\SupplierInvoice;
 use App\Models\Voucher;
+use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -76,6 +84,26 @@ function expectedCashFlow(array $expected): array
     return array_filter($expected, fn (mixed $value, string $key): bool => is_int($value) && ! str_starts_with($key, '_'), ARRAY_FILTER_USE_BOTH);
 }
 
+/**
+ * A supplier invoice for a machine (1210 100 000 kr + 25 % moms), registered
+ * and approved through the payables ledger, so its voucher is linked to the
+ * invoice.
+ */
+function machineOnSupplierInvoice(S1Fixture $fixture, string $date): SupplierInvoice
+{
+    $fixture->company->forceFill(['separate_supplier_approval' => false])->save();
+    $supplier = app(SaveSupplier::class)($fixture->owner, $fixture->company, ['name' => 'Fiktiv Maskinleverantör AB', 'country' => 'SE', 'payment_terms_days' => 30]);
+    $draft = app(SaveSupplierInvoice::class)($fixture->owner, $fixture->company, [
+        'supplier_id' => $supplier->id,
+        'invoice_date' => $date,
+        'total' => '125 000',
+        'vat' => '25 000',
+        'rows' => [['account' => '1210', 'amount' => '100 000', 'description' => 'Maskin']],
+    ]);
+
+    return app(ApproveSupplierInvoice::class)($fixture->owner, app(RegisterSupplierInvoice::class)($fixture->owner, $draft))->fresh() ?? throw new LogicException('No invoice.');
+}
+
 function setCashFlowPolicy(S1Fixture $fixture, FiscalYear $year, string $value): void
 {
     app(SetAccountingPolicy::class)($fixture->owner->fresh(), $fixture->company, $year->id, K3PolicyKey::CashFlowStatement, $value, null);
@@ -97,11 +125,6 @@ describe('F-S1-a', function () {
             expect($statement->refusal())->toBeNull("{$year} refusal");
 
             foreach ($expected as $key => $amount) {
-                // F-S1-a states interest paid as a positive amount although its own convention is
-                // "inflow positive, outflow negative"; the statement keeps one sign convention
-                // (reported to the Fixture author, S1-P8 review P3).
-                $amount = $key === 'tillaggsupplysning_betald_ranta' ? -$amount : $amount;
-
                 expect($statement->amounts())->toHaveKey($key)
                     ->and($statement->amounts()[$key])->toBe($amount, "{$year} {$key}");
             }
@@ -297,15 +320,101 @@ describe('F-S1-a', function () {
             ->and($statement->refusal())->toContain('2440');
     });
 
-    it('K3 7.6: a machine bought on supplier credit and paid in the year is an investing outflow', function () {
-        postCashFlowVoucher($this->fixture, '2026-10-01', 'Maskin på kredit', [[1210, 10_000_000, 0], [2640, 2_500_000, 0], [2440, 0, 12_500_000]]);
-        postCashFlowVoucher($this->fixture, '2026-10-30', 'Betalning maskin', [[2440, 12_500_000, 0], [1930, 0, 12_500_000]]);
+    it('K3 7 kommentar: blocks a machine on a manual 2440 voucher even when a payment of the same amount follows (no ledger link)', function () {
+        postCashFlowVoucher($this->fixture, '2026-11-01', 'Maskin på kredit', [[1210, 10_000_000, 0], [2640, 2_500_000, 0], [2440, 0, 12_500_000]]);
+        postCashFlowVoucher($this->fixture, '2026-11-30', 'Betalning', [[2440, 12_500_000, 0], [1930, 0, 12_500_000]]);
+
+        expect(cashFlow($this->fixture->years[2026])->refusal())->toContain('1210')
+            ->and(cashFlow($this->fixture->years[2026])->refusal())->toContain('2440');
+    });
+
+    it('K3 7 kommentar: never matches an unrelated payment of the same amount to an unpaid machine (review N1)', function () {
+        postCashFlowVoucher($this->fixture, '2026-11-01', 'Maskin på kredit', [[1210, 10_000_000, 0], [2640, 2_500_000, 0], [2440, 0, 12_500_000]]);
+        postCashFlowVoucher($this->fixture, '2026-11-05', 'Material', [[4010, 10_000_000, 0], [2640, 2_500_000, 0], [2440, 0, 12_500_000]]);
+        postCashFlowVoucher($this->fixture, '2026-11-30', 'Betalning material', [[2440, 12_500_000, 0], [1930, 0, 12_500_000]]);
+
+        expect(cashFlow($this->fixture->years[2026])->refusal())->toContain('1210');
+    });
+
+    it('K3 7.6: a machine on a supplier invoice that the payables ledger shows paid in full in the year is an investing outflow', function () {
+        $invoice = machineOnSupplierInvoice($this->fixture, '2026-10-01');
+        app(PaySupplierInvoice::class)($this->fixture->owner, $invoice, CarbonImmutable::parse('2026-10-30'), Money::parse('125 000'));
 
         $statement = cashFlow($this->fixture->years[2026]);
 
         expect($statement->refusal())->toBeNull()
             ->and($statement->amounts()['forvarv_av_materiella_anlaggningstillgangar'])->toBe(-240_000_000 - 10_000_000)
             ->and($statement->amounts()['arets_kassaflode'])->toBe(29_240_482 - 12_500_000);
+    });
+
+    it('K3 7 kommentar: blocks a machine on a supplier invoice that is unpaid, part paid, or paid only next year', function (?string $paid) {
+        $invoice = machineOnSupplierInvoice($this->fixture, '2026-10-01');
+
+        if ($paid !== null) {
+            app(PaySupplierInvoice::class)($this->fixture->owner, $invoice, CarbonImmutable::parse('2026-10-30'), Money::parse($paid));
+        }
+
+        $statement = cashFlow($this->fixture->years[2026]);
+
+        expect($statement->refusal())->toContain('1210')
+            ->and($statement->refusal())->toContain('2440');
+    })->with([
+        'unpaid' => [null],
+        'part paid' => ['100 000'],
+    ]);
+
+    it('K3 7 kommentar: blocks a machine on a supplier invoice paid only in the next fiscal year', function () {
+        $invoice = machineOnSupplierInvoice($this->fixture, '2026-12-01');
+        CurrentCompany::run($this->fixture->company, fn () => app(CreateNextFiscalYear::class)($this->fixture->owner, $this->fixture->company));
+        app(PaySupplierInvoice::class)($this->fixture->owner, $invoice, CarbonImmutable::parse('2027-01-15'), Money::parse('125 000'));
+
+        expect(cashFlow($this->fixture->years[2026])->refusal())->toContain('1210');
+    });
+
+    it('K3 7.6: aktiverat arbete (38xx) and a transfer between fixed asset accounts are no cash flow block', function () {
+        postCashFlowVoucher($this->fixture, '2026-06-30', 'Aktiverat arbete', [[1220, 3_000_000, 0], [3840, 0, 3_000_000]]);
+        postCashFlowVoucher($this->fixture, '2026-03-01', 'Förskott maskin', [[1288, 1_000_000, 0], [1930, 0, 1_000_000]]);
+        postCashFlowVoucher($this->fixture, '2026-08-01', 'Förskottet förs till inventarier', [[1220, 1_000_000, 0], [1288, 0, 1_000_000]]);
+
+        $statement = cashFlow($this->fixture->years[2026]);
+
+        expect($statement->refusal())->toBeNull()
+            ->and($statement->amounts()['forvarv_av_materiella_anlaggningstillgangar'])->toBe(-240_000_000 - 3_000_000 - 1_000_000);
+    });
+
+    it('K3 7 kommentar: blocks a fixed asset against any other result account (review N4, N5)', function (int $counter) {
+        postCashFlowVoucher($this->fixture, '2026-06-30', 'Anläggning mot resultatkonto', [[1220, 3_000_000, 0], [$counter, 0, 3_000_000]]);
+
+        expect(cashFlow($this->fixture->years[2026])->refusal())->toContain((string) $counter);
+    })->with([
+        'gift received (3990)' => [3990],
+        'expensed purchase reclassified (5410)' => [5410],
+    ]);
+
+    it('K3 7.7: accepts interest paid with an amortisation when cash pays both exactly', function () {
+        postCashFlowVoucher($this->fixture, '2026-06-30', 'Amortering och ränta', [[2350, 10_000_000, 0], [8410, 2_000_000, 0], [1930, 0, 12_000_000]]);
+
+        $statement = cashFlow($this->fixture->years[2026]);
+
+        expect($statement->refusal())->toBeNull()
+            ->and($statement->amounts()['amortering_av_lan'])->toBe(-120_000_000 - 10_000_000)
+            ->and($statement->amounts()['tillaggsupplysning_betald_ranta'])->toBe(-41_400_000 - 2_000_000);
+    });
+
+    it('K3 7 kommentar: blocks a loan voucher whose result rows are not paid in cash (review N3, N7, N8)', function (array $rows) {
+        postCashFlowVoucher($this->fixture, '2026-06-30', 'Lån och resultatkonto', $rows);
+
+        expect(cashFlow($this->fixture->years[2026])->refusal())->toContain('utan betalning');
+    })->with([
+        'interest capitalised onto the loan amortised in the same voucher' => [[[2350, 10_000_000, 0], [2350, 0, 2_000_000], [8410, 2_000_000, 0], [1930, 0, 10_000_000]]],
+        'fee withheld from a new loan' => [[[1930, 99_000_000, 0], [6570, 1_000_000, 0], [2350, 0, 100_000_000]]],
+        'interest charged to the overdraft account' => [[[8410, 300_000, 0], [2330, 0, 300_000]]],
+    ]);
+
+    it('S1-R2.1 blocks 1680 Andra kortfristiga fordringar even when it is cleared in the year (review N6, accepted for now)', function () {
+        postCashFlowVoucher($this->fixture, '2026-06-30', 'Utlägg', [[1680, 100_000, 0], [1930, 0, 100_000]]);
+
+        expect(cashFlow($this->fixture->years[2026])->unclassifiedAccounts())->toBe([1680]);
     });
 
     it('K3 7 kommentar: blocks an owner loan converted to a shareholder contribution (konvertering av skuld till eget kapital)', function () {
@@ -467,10 +576,11 @@ describe('F-S1-a', function () {
             postCashFlowVoucher($this->fixture, sprintf('2026-%02d-21', $month), 'Inköp av maskin', [[1210, 100_000, 0], [1930, 0, 100_000]]);
         }
 
-        // Per year one query for the equity statement and one for the vouchers that touch
-        // investing and financing accounts; for the previous year beside it also AnnualAccounts
-        // (the year's lookup, accounts, opening balances, movements, goods-for-resale accounts).
-        expect($short)->toBe(9)
+        // Per year six queries: the equity statement; the account numbers, the posted vouchers
+        // and their rows; the year's supplier invoices and their payments (single-table reads).
+        // For the previous year beside it also AnnualAccounts (the year's lookup, accounts,
+        // opening balances, movements, goods-for-resale accounts).
+        expect($short)->toBe(17)
             ->and($count())->toBe($short);
 
         // With fresh planner statistics the queries still finish at once (S1-P7 review:

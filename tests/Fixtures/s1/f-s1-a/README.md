@@ -22,7 +22,7 @@ Luhn and do not belong to anyone.
 |---|---|
 | `company.json` | Company, fiscal years 2025 and 2026 (both K3), size data, accounting policies, chart of accounts used (with a flag for accounts missing from the repo's `database/data/bas/2026/k3.json` seed) |
 | `opening_balances.json` | Balances at 2025-01-01, and the derived balances at 2026-01-01 |
-| `vouchers.json` | 302 balanced vouchers: 150 for 2025, 152 for 2026 (monthly summaries, quarterly loan entries, annual events, year-end entries) |
+| `vouchers.json` | 301 balanced vouchers: 150 for 2025, 151 for 2026 (monthly summaries, quarterly loan entries, annual events, year-end entries) |
 | `assets.json` | Building B1 split into four components plus land; machines M1 and M2 |
 | `leases.json` | Lease L1 with the classification evidence |
 | `tax_values.json` | Tax rate, statslåneränta, tax values of the building, preliminary tax |
@@ -263,7 +263,8 @@ paid is shown separately under operating (7.17); likvida medel = 1930 only.
 | Likvida medel vid årets början | 3 982 040 | 3 000 000 | |
 | Likvida medel vid årets slut | 4 274 444,82 | 3 982 040 | = 1930 |
 
-Supplementary: betald ränta 414 000 (462 000), erhållen ränta 0.
+Interest (K3 7.14, inflow positive like the rest of the statement): betald ränta −414 000
+(−462 000), erhållen ränta 0.
 
 ### Size test (S1-R9, S1-R9.1, S1-R9.2, S1-R9.3, S1-R2)
 
@@ -343,7 +344,7 @@ Each is marked **assumption**; the figures follow from them and change if they c
 ## Self-check results (2026-11-07)
 
 A throwaway script in the session scratchpad (not committed) re-read only these JSON
-files and checked: every voucher balances (302); no row has both a debit and a credit;
+files and checked: every voucher balances (302 at the time; 301 after the change below); no row has both a debit and a credit;
 voucher dates lie in their fiscal year; opening balances sum to zero; IB 2026 equals UB
 2025 with the result moved to 2099; the result recomputed from the ledger equals
 `expected.json` both years; the balance sheet balances at 2024-12-31, 2025-12-31 and
@@ -354,3 +355,17 @@ sheet both years; deferred tax = 20,6 % × temporary difference at each date and
 book value equals 1111 + 1119 + 1130; the current tax equals 20,6 % of the taxable income;
 the periodiseringsfond is within the 25 % cap; the size test holds. **27 of 27 checks
 passed.**
+
+## Changes after freezing
+
+- **2026-11-07, approved by the Lead (S1-P8 review).** Machine M2 is booked as paid
+  directly from the bank on 1 July 2026 (1210 2 400 000 and 2640 600 000 against 1930
+  3 000 000) instead of a supplier invoice on 2440 followed by a payment voucher on 20
+  July (series E). The cash flow statement does not accept an acquisition against 2440
+  unless the payables ledger links the invoice to its payment, and the fixture's manual
+  vouchers carry no such link. The payment voucher was removed (2026 now has 151
+  vouchers). Amounts, VAT and the acquisition date are unchanged, and so is every figure
+  in `expected.json` at the year end.
+- **2026-11-07, approved by the Lead.** `tillaggsupplysning_betald_ranta` is negative
+  (−41 400 000 and −46 200 000 öre), as the file's own convention "inflow positive,
+  outflow negative" requires.

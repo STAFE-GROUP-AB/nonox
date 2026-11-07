@@ -2278,11 +2278,21 @@ Enligt AI-utredning 2026-11-07, juristgranskning återstår (ADR-059, tillägg
   en bil som köps med ett lån som betalas direkt till säljaren, ett lån som
   omvandlas till aktieägartillskott eller en utdelning som kvittas mot en
   fordran. NONOX justerar inte bort sådana poster. En anläggningstillgång får
-  bokas mot ett resultatkonto (aktiverat arbete), och en amortering får
-  bokas med räntan i samma verifikation när likvida medel täcker beloppet.
+  bokas mot aktiverat arbete (3800–3899) och mot andra konton för
+  anläggningstillgångar (en omföring, till exempel ett förskott på 1288 som
+  förs till 1220), men mot inget annat resultatkonto: en gåva (3990) eller
+  en omföring från en kostnad (5410) stoppar analysen. Ett lån, en placering
+  eller eget kapital får stå mot ett resultatkonto bara när likvida medel
+  betalar rörelsen och resultatraderna tillsammans, exakt och åt samma håll
+  (räntan betalas med amorteringen). En avgift som dras från ett nytt lån,
+  ränta som läggs på lånet eller på checkräkningskrediten, och ett lånekonto
+  som både debiteras och krediteras i samma verifikation stoppar analysen.
   Ett förvärv mot leverantörsskuld (2440) räknas som en utbetalning bara när
-  en betalning med samma belopp från 2440 till likvida medel följer under
-  året; annars stoppas analysen.
+  leverantörsreskontran kopplar verifikationen till en leverantörsfaktura som
+  har betalats helt med betalningar bokförda samma räkenskapsår. En manuellt
+  bokförd 2440-verifikation, en obetald eller delbetald faktura och en faktura
+  som betalas först nästa år stoppar analysen; NONOX gissar aldrig vilken
+  betalning som hör till förvärvet utifrån belopp och datum.
 - Utbetald utdelning hör till finansieringsverksamheten (punkt 7.16): den
   beslutade utdelningen enligt specifikationen av förändringar i eget kapital
   (avsnitt 5a6.3) minskad med ökningen av ej utbetald utdelning på 2898.
@@ -2297,7 +2307,8 @@ Enligt AI-utredning 2026-11-07, juristgranskning återstår (ADR-059, tillägg
   verksamheten (punkt 7.15).
 - Analysen stoppas, med en svensk förklaring som räknar upp kontona, när ett
   konto med en förändring under året inte hör till någon kategori (till
-  exempel 1660–1699, 2000–2079, 2860–2879 och 9xxx), när
+  exempel 1660–1699, 2000–2079, 2860–2879 och 9xxx; 1680 Andra kortfristiga
+  fordringar stoppar alltså analysen även när kontot nollas under året), när
   valutakursdifferenser har bokförts (3960–3969, 7960–7969, 8230–8239,
   8330–8339, 8430–8439; effekten av orealiserade kursförändringar i likvida
   medel ska visas för sig enligt punkt 7.13, vilket inte är byggt), när ett
@@ -2321,11 +2332,14 @@ Enligt AI-utredning 2026-11-07, juristgranskning återstår (ADR-059, tillägg
   kan ta, stoppar analysen.
 - Kontoindelningen är NONOX:s egen och inte K3:s text; den är markerad
   TODO(legal-verify) och listas i avsnitt 8.
-- Analysen läser utöver årsredovisningens egna frågor två databasfrågor per
-  år, specifikationen av förändringar i eget kapital och verifikationerna i
-  investerings- och finansieringsverksamheten, och för jämförelseåret även
-  det årets saldon; antalet beror inte på antalet verifikationer. Ingen
-  skärm visar kassaflödesanalysen ännu, och ingenting i bokföringen ändras.
+- Analysen läser utöver årsredovisningens egna frågor sex databasfrågor per
+  år: specifikationen av förändringar i eget kapital, kontonumren, årets
+  bokförda verifikationer, deras rader (valda med verifikationernas id),
+  årets leverantörsfakturor och deras betalningar. För jämförelseåret läses
+  även det årets saldon. Antalet beror inte på antalet verifikationer, och
+  ingen fråga kopplar ihop rader och verifikationer, så att frågeplanen
+  förblir linjär även när databasens statistik är inaktuell. Ingen skärm
+  visar kassaflödesanalysen ännu, och ingenting i bokföringen ändras.
 
 ## 5a7. Inkomstdeklaration 2 (SRU)
 
@@ -4422,11 +4436,11 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   2250–2259, 2510–2512, 2517–2519, 8910–8939, 8980–8989), och BAS-intervallen
   för erhållen utdelning och ränta och för valutakursdifferenser (bara 8010,
   8210 och 8310 finns i NONOX:s BAS-mall); att en checkräkningskredit får
-  visas netto enligt punkt 7.12 b; regeln att ett förvärv mot
-  leverantörsskuld är betalt när en betalning med samma belopp följer under
-  året; att en lånerörelse med ett resultatkonto i samma verifikation godtas
-  när likvida medel täcker beloppet; radernas rubriker och vilken rad en
-  avrundningsrest läggs på.
+  visas netto enligt punkt 7.12 b; att aktiverat arbete (3800–3899) är det
+  enda resultatkonto en anläggningstillgång får bokas mot; att en
+  lånerörelse med ett resultatkonto i samma verifikation godtas när likvida
+  medel betalar båda exakt och åt samma håll; radernas rubriker och vilken
+  rad en avrundningsrest läggs på.
 
 ### Lön, löneåret 2027 (5b)
 
