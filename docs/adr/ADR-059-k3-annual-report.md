@@ -754,6 +754,16 @@ balance_sheet_total_ore, net_turnover_ore, entered_by, timestamps`, unique
 pro-rated by months for a year that is not 12 months (GV 5 c); integer arithmetic,
 rounding half up to the öre.
 
+**Superseded by review (2026-11-07, S1-P2 as built):**
+- *Employees.* BFN's guidance on size thresholds (updated 2026-09-14), examples 3 and 4,
+  rounds the average number of employees to whole persons (9,4 → 9). NONOX keeps the exact
+  figure and rounds it half up to a whole person before comparing it with the thresholds.
+  Two things here are NONOX's own inference and are marked `TODO(legal-verify)`: applying
+  the rounding before the threshold test of ÅRL 1:3 and K2 1.1C, and rounding x,5 up. The
+  `average_employees_fte` column stays, so the figure is stored exactly.
+- *Net turnover.* Turnover is compared exactly (turnover × 12 > threshold × months). The
+  rounded annualised figure is only shown to the user.
+
 #### A.2.6 Deferred tax
 
 `deferred_tax_items` (company-scoped): `id, company_id, fiscal_year_id, kind
@@ -893,6 +903,13 @@ given; P2 and P3 do not depend on P1 and may run in parallel with it.
   years exist and the company is not listed (S1-R9.1 open). `undetermined` blocks
   the K3 document with a Swedish question and never guesses; H8 later turns it into
   an answer. A listed company is out of scope and always `större`.
+- **As built after review (2026-11-07):** only the "same two criteria in both years"
+  reading is used, which BFN's guidance settles (H8). A newly started company is `mindre`
+  in its first two years only when a person has confirmed the start of its first fiscal
+  year. That confirmation must not contradict any recorded earlier year. `undetermined`
+  remains for missing data, for a confirmation that contradicts the data, and for ideell
+  förening and stiftelse, whose turnover additions (ÅRL 1:3 third paragraph) are not
+  modelled.
 - Tests first: one unit test per threshold at the boundary (50 vs 50,01 FTE; 40 MSEK
   vs 40 MSEK + 1 öre; strict "mer än"); the two preceding years, not the reporting
   year (GV 6); pro-rating a 6- and an 18-month year's turnover, balance total not
@@ -1026,7 +1043,7 @@ forces companies off K2) and the package order above.
 | H5 | K3 29.19 refers to "29.21 och 29.22" and 29.25 to "29.28"; the content sits at 29.20/29.21 and 29.26. Confirm these are cross-reference slips that change nothing for a NONOX AB (S1-R4, R4.3) | (a) confirm as slips; (b) ask BFN | (a), noted in the systemdokumentation | sign-off of P5 (not its build) | before P5 merges |
 | H6 | Deferred tax **asset** (loss carry-forwards): may NONOX propose an amount, and on what basis after recent losses? (S1-R4.5) | (a) NONOX shows the gross asset and a person enters the recognised amount with a reason (default 0); (b) NONOX proposes the full amount; (c) assets not supported in S1 | (a) | the asset side of P5 | 2026-11-28 |
 | H7 | How is the K2-to-K3 transition difference booked, and against which equity account? (S1-R7.7; K3 35.11 is silent) | (a) a new voucher dated the first day of the first K3 year, source `K3_TRANSITION`, against 2091 Balanserad vinst eller förlust; (b) an adjustment of that year's opening balances (IB ≠ last K2 UB, confirmed with the existing ÅRL 2:4 "skillnaden är avsiktlig" check); (c) another account | (a): keeps IB = UB and the hash chain, leaves an audit trail, and shows in equity statement row (b) | S1-P12 entirely | 2026-12-05 |
-| H8 | ÅRL 1:3 p. 4 "mer än ett": must it be the **same** two criteria in both years? How is a company with fewer than two prior years classified? (S1-R9, R9.1) | (a) the same two (as BFN reads K2 1.1C); (b) any two each year; new company: mindre unless listed | (a), and "mindre unless listed"; until then `undetermined` blocks only the rare cases where the readings differ | **Answered 2026-11-07 by BFN's guidance** ("Vägledning Gränsvärden", updated 2026-09-14, https://www.bfn.se/wp-content/uploads/vl-2006-11-gransvarden-kons-2026.pdf): (a) the same two criteria in two consecutive years (Examples 1–2), and a newly started company is always mindre for its first two years (commentary to point 6). NONOX treats a company as newly started only when a person confirms it had no earlier fiscal year. Average employees are rounded to whole persons, as Example 3 does (9,4 → 9); half-up for x,5 is NONOX's own assumption and is marked `TODO(legal-verify)` | — |
+| H8 | ÅRL 1:3 p. 4 "mer än ett": must it be the **same** two criteria in both years? How is a company with fewer than two prior years classified? (S1-R9, R9.1) | (a) the same two (as BFN reads K2 1.1C); (b) any two each year; new company: mindre unless listed | (a), and "mindre unless listed" (superseded: built as "mindre only with a person's confirmation of the first year"); until then `undetermined` blocks only the rare cases where the readings differ | **Answered 2026-11-07 by BFN's guidance** ("Vägledning Gränsvärden", updated 2026-09-14, https://www.bfn.se/wp-content/uploads/vl-2006-11-gransvarden-kons-2026.pdf): (a) the same two criteria in two consecutive years (Examples 1–2), and a newly started company is always mindre for its first two years (commentary to point 6). NONOX treats a company as newly started only when a person confirms it had no earlier fiscal year. Average employees are rounded to whole persons, as Example 3 does (9,4 → 9); half-up for x,5 is NONOX's own assumption and is marked `TODO(legal-verify)` | — |
 | H9 | Capitalisation model and the development fund: which BAS accounts identify capitalised development (10xx) and the fund (2089?) for the refusal check, and is the capitalisation model ever in scope? (S1-R10.1, R10.3) | (a) refuse by policy only; (b) also refuse when the ledger has balances on accounts a human names | (b), with the accounts confirmed against BAS 2026 by a human | the ledger-based refusal in P10 (the policy refusal works without it) | before P10 merges |
 | H10 | Name the human accountant (authorised or approved) who signs the accountant checklist (decision 3 above, spec "Human decisions") | — | — | the Beta gate of P10 | 2026-12-19 |
 
