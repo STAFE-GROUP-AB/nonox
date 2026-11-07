@@ -1,0 +1,160 @@
+{
+  "fixture": "F-S1-c",
+  "status": "ready for checking (written 2026-11-07 by the S1-P8 builder; not yet checked independently)",
+  "synthetic": true,
+  "legal_name": "Fiktiva Småverkstaden AB",
+  "org_number": "559999-6013",
+  "org_number_note": "Fictional test number (559999-series, passes Luhn). Not a real company.",
+  "legal_form": "AB",
+  "country": "SE",
+  "fiscal_years": [
+    {
+      "start_date": "2026-01-01",
+      "end_date": "2026-12-31",
+      "framework": "K3"
+    }
+  ],
+  "reporting_framework": "K3",
+  "k3_since": "first fiscal year (no transition in this fixture)",
+  "accounting_method": "FAKTURAMETODEN",
+  "vat_registered": true,
+  "vat_period": "YEARLY",
+  "base_currency": "SEK",
+  "prior_year_size_figures": [
+    {
+      "start_date": "2025-01-01",
+      "end_date": "2025-12-31",
+      "average_employees_fte": "6",
+      "balance_sheet_total": "2 170 000",
+      "net_turnover": "7 500 000"
+    },
+    {
+      "start_date": "2024-01-01",
+      "end_date": "2024-12-31",
+      "average_employees_fte": "5",
+      "balance_sheet_total": "2 000 000",
+      "net_turnover": "7 000 000"
+    }
+  ],
+  "prior_year_size_figures_note": "The two years before the company's first NONOX year, entered by a person (ADR-059 A.2.5), in the input format of SavePriorYearSizeFigures (kronor as typed).",
+  "accounting_policies": {
+    "cash_flow_statement": "none",
+    "financial_instruments": "chapter_11",
+    "intangibles": "expense",
+    "leasing": "operational_in_legal_entity",
+    "borrowing_costs": "expense",
+    "fixed_price_contracts": "none"
+  },
+  "chart_of_accounts": [
+    {
+      "number": 1220,
+      "name": "Inventarier och verktyg"
+    },
+    {
+      "number": 1229,
+      "name": "Ackumulerade avskrivningar på inventarier och verktyg"
+    },
+    {
+      "number": 1410,
+      "name": "Lager av råvaror"
+    },
+    {
+      "number": 1510,
+      "name": "Kundfordringar"
+    },
+    {
+      "number": 1930,
+      "name": "Företagskonto/checkkonto/affärskonto"
+    },
+    {
+      "number": 2081,
+      "name": "Aktiekapital"
+    },
+    {
+      "number": 2091,
+      "name": "Balanserad vinst eller förlust"
+    },
+    {
+      "number": 2099,
+      "name": "Årets resultat"
+    },
+    {
+      "number": 2350,
+      "name": "Andra långfristiga skulder till kreditinstitut"
+    },
+    {
+      "number": 2440,
+      "name": "Leverantörsskulder"
+    },
+    {
+      "number": 2512,
+      "name": "Beräknad inkomstskatt"
+    },
+    {
+      "number": 2611,
+      "name": "Utgående moms på försäljning inom Sverige, 25 %"
+    },
+    {
+      "number": 2640,
+      "name": "Ingående moms"
+    },
+    {
+      "number": 2650,
+      "name": "Redovisningskonto för moms"
+    },
+    {
+      "number": 2710,
+      "name": "Personalskatt"
+    },
+    {
+      "number": 2731,
+      "name": "Avräkning lagstadgade sociala avgifter"
+    },
+    {
+      "number": 2898,
+      "name": "Outtagen vinstutdelning"
+    },
+    {
+      "number": 3001,
+      "name": "Försäljning inom Sverige, 25 % moms"
+    },
+    {
+      "number": 4010,
+      "name": "Inköp material och varor"
+    },
+    {
+      "number": 4910,
+      "name": "Förändring av lager av råvaror"
+    },
+    {
+      "number": 5010,
+      "name": "Lokalhyra"
+    },
+    {
+      "number": 7210,
+      "name": "Löner till tjänstemän"
+    },
+    {
+      "number": 7510,
+      "name": "Arbetsgivaravgifter"
+    },
+    {
+      "number": 7832,
+      "name": "Avskrivningar på inventarier och verktyg"
+    },
+    {
+      "number": 8410,
+      "name": "Räntekostnader för långfristiga skulder"
+    },
+    {
+      "number": 8910,
+      "name": "Skatt som belastar årets resultat"
+    }
+  ],
+  "series": [
+    {
+      "code": "A",
+      "name": "Manuell"
+    }
+  ]
+}

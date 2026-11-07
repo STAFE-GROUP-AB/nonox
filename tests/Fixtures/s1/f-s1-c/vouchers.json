@@ -1,0 +1,459 @@
+{
+  "convention": "amounts in öre; every voucher balances; posted in this order through PostVoucher",
+  "vouchers": [
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 1,
+      "date": "2026-01-12",
+      "description": "Skattekonto: moms, personalskatt och arbetsgivaravgifter för december 2025",
+      "rows": [
+        {
+          "account": 2650,
+          "debit_ore": 10000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2710,
+          "debit_ore": 3000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2731,
+          "debit_ore": 4000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 17000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 2,
+      "date": "2026-12-31",
+      "description": "Försäljning 2026 (sammandrag)",
+      "rows": [
+        {
+          "account": 1510,
+          "debit_ore": 1000000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 3001,
+          "debit_ore": 0,
+          "credit_ore": 800000000
+        },
+        {
+          "account": 2611,
+          "debit_ore": 0,
+          "credit_ore": 200000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 3,
+      "date": "2026-12-31",
+      "description": "Inbetalningar från kunder 2026 (sammandrag)",
+      "rows": [
+        {
+          "account": 1930,
+          "debit_ore": 990000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1510,
+          "debit_ore": 0,
+          "credit_ore": 990000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 4,
+      "date": "2026-12-31",
+      "description": "Inköp av material 2026 (sammandrag)",
+      "rows": [
+        {
+          "account": 4010,
+          "debit_ore": 300000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2640,
+          "debit_ore": 75000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2440,
+          "debit_ore": 0,
+          "credit_ore": 375000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 5,
+      "date": "2026-12-31",
+      "description": "Betalningar till leverantörer 2026 (sammandrag)",
+      "rows": [
+        {
+          "account": 2440,
+          "debit_ore": 370000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 370000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 6,
+      "date": "2026-12-31",
+      "description": "Lokalhyra 2026 (sammandrag)",
+      "rows": [
+        {
+          "account": 5010,
+          "debit_ore": 60000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2640,
+          "debit_ore": 15000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 75000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 7,
+      "date": "2026-12-31",
+      "description": "Löner 2026 (sammandrag)",
+      "rows": [
+        {
+          "account": 7210,
+          "debit_ore": 240000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 7510,
+          "debit_ore": 75408000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2710,
+          "debit_ore": 0,
+          "credit_ore": 72000000
+        },
+        {
+          "account": 2731,
+          "debit_ore": 0,
+          "credit_ore": 75408000
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 168000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 8,
+      "date": "2026-12-31",
+      "description": "Personalskatt och arbetsgivaravgifter betalda januari–november 2026",
+      "rows": [
+        {
+          "account": 2710,
+          "debit_ore": 66000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2731,
+          "debit_ore": 69124000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 135124000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 9,
+      "date": "2026-06-01",
+      "description": "Inköp av inventarier",
+      "rows": [
+        {
+          "account": 1220,
+          "debit_ore": 20000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2640,
+          "debit_ore": 5000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 25000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 10,
+      "date": "2026-12-31",
+      "description": "Momsavräkning 2026 (sammandrag)",
+      "rows": [
+        {
+          "account": 2611,
+          "debit_ore": 200000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2640,
+          "debit_ore": 0,
+          "credit_ore": 95000000
+        },
+        {
+          "account": 2650,
+          "debit_ore": 0,
+          "credit_ore": 105000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 11,
+      "date": "2026-12-31",
+      "description": "Moms betald 2026",
+      "rows": [
+        {
+          "account": 2650,
+          "debit_ore": 105000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 105000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 12,
+      "date": "2026-12-31",
+      "description": "Avskrivning inventarier 2026",
+      "rows": [
+        {
+          "account": 7832,
+          "debit_ore": 16000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1229,
+          "debit_ore": 0,
+          "credit_ore": 16000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 13,
+      "date": "2026-12-31",
+      "description": "Ränta på banklån 2026",
+      "rows": [
+        {
+          "account": 8410,
+          "debit_ore": 2000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 2000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 14,
+      "date": "2026-12-31",
+      "description": "Amortering av banklån 2026",
+      "rows": [
+        {
+          "account": 2350,
+          "debit_ore": 10000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 10000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 15,
+      "date": "2026-05-20",
+      "description": "Årsstämma: föregående års resultat balanseras",
+      "rows": [
+        {
+          "account": 2099,
+          "debit_ore": 40000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2091,
+          "debit_ore": 0,
+          "credit_ore": 40000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 16,
+      "date": "2026-05-20",
+      "description": "Årsstämma: utdelning",
+      "rows": [
+        {
+          "account": 2091,
+          "debit_ore": 15000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2898,
+          "debit_ore": 0,
+          "credit_ore": 15000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 17,
+      "date": "2026-05-29",
+      "description": "Utbetald utdelning",
+      "rows": [
+        {
+          "account": 2898,
+          "debit_ore": 15000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 15000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 18,
+      "date": "2026-05-12",
+      "description": "Restskatt 2025 betald",
+      "rows": [
+        {
+          "account": 2512,
+          "debit_ore": 5000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 5000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 19,
+      "date": "2026-12-31",
+      "description": "Preliminär F-skatt 2026",
+      "rows": [
+        {
+          "account": 2512,
+          "debit_ore": 12000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 12000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 20,
+      "date": "2026-12-31",
+      "description": "Lagerförändring",
+      "rows": [
+        {
+          "account": 1410,
+          "debit_ore": 5000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 4910,
+          "debit_ore": 0,
+          "credit_ore": 5000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 21,
+      "date": "2026-12-31",
+      "description": "Årets inkomstskatt",
+      "rows": [
+        {
+          "account": 8910,
+          "debit_ore": 22987952,
+          "credit_ore": 0
+        },
+        {
+          "account": 2512,
+          "debit_ore": 0,
+          "credit_ore": 22987952
+        }
+      ]
+    }
+  ]
+}

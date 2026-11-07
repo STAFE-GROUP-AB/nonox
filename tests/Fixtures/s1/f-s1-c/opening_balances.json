@@ -1,0 +1,75 @@
+{
+  "convention": "balance_ore: debit positive, credit negative; each date sums to 0",
+  "2026-01-01": [
+    {
+      "account": 1220,
+      "name": "Inventarier och verktyg",
+      "balance_ore": 60000000
+    },
+    {
+      "account": 1229,
+      "name": "Ackumulerade avskrivningar på inventarier och verktyg",
+      "balance_ore": -20000000
+    },
+    {
+      "account": 1410,
+      "name": "Lager av råvaror",
+      "balance_ore": 30000000
+    },
+    {
+      "account": 1510,
+      "name": "Kundfordringar",
+      "balance_ore": 50000000
+    },
+    {
+      "account": 1930,
+      "name": "Företagskonto/checkkonto/affärskonto",
+      "balance_ore": 97000000
+    },
+    {
+      "account": 2081,
+      "name": "Aktiekapital",
+      "balance_ore": -10000000
+    },
+    {
+      "account": 2091,
+      "name": "Balanserad vinst eller förlust",
+      "balance_ore": -80000000
+    },
+    {
+      "account": 2099,
+      "name": "Årets resultat",
+      "balance_ore": -40000000
+    },
+    {
+      "account": 2350,
+      "name": "Andra långfristiga skulder till kreditinstitut",
+      "balance_ore": -40000000
+    },
+    {
+      "account": 2440,
+      "name": "Leverantörsskulder",
+      "balance_ore": -25000000
+    },
+    {
+      "account": 2512,
+      "name": "Beräknad inkomstskatt",
+      "balance_ore": -5000000
+    },
+    {
+      "account": 2650,
+      "name": "Redovisningskonto för moms",
+      "balance_ore": -10000000
+    },
+    {
+      "account": 2710,
+      "name": "Personalskatt",
+      "balance_ore": -3000000
+    },
+    {
+      "account": 2731,
+      "name": "Avräkning lagstadgade sociala avgifter",
+      "balance_ore": -4000000
+    }
+  ]
+}

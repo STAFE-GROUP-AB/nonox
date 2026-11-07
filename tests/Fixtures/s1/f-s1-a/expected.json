@@ -218,7 +218,7 @@
       "arets_kassaflode": 98204000,
       "likvida_medel_vid_arets_borjan": 300000000,
       "likvida_medel_vid_arets_slut": 398204000,
-      "tillaggsupplysning_betald_ranta": 46200000,
+      "tillaggsupplysning_betald_ranta": -46200000,
       "tillaggsupplysning_erhallen_ranta": 0
     },
     "2026": {
@@ -238,7 +238,7 @@
       "arets_kassaflode": 29240482,
       "likvida_medel_vid_arets_borjan": 398204000,
       "likvida_medel_vid_arets_slut": 427444482,
-      "tillaggsupplysning_betald_ranta": 41400000,
+      "tillaggsupplysning_betald_ranta": -41400000,
       "tillaggsupplysning_erhallen_ranta": 0
     }
   },
