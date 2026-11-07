@@ -188,3 +188,41 @@ Senast uppdaterad: 2026-11-06.
 - **Ändrat beslut 2026-11-07 (Andreas):** **GrantPilot AB** (org.nr 559443-4697, Blomstergatan 6, 591 70 Motala) driver nonox.app från 2027-01-11 i stället för AI Reports Sweden AB. Stafe Development AB står kvar som utvecklare av NONOX. Kunderna får en rättelse till aviseringen av version 1.6, och serverinställningen ändras till GrantPilot AB den 11 januari.
 - **Följd:** ansökningarna till Skatteverket (testtjänst och driftsatt tjänst), Enable Banking och Qvalia gjordes i AI Reports Sweden AB:s namn. Skatteverkets avtal kan inte överlåtas (villkor 13.2), så GrantPilot AB ansöker på nytt hos Skatteverket, och kontona hos Enable Banking och Qvalia flyttas till GrantPilot AB eller skapas på nytt.
 - **Blockerar:** produktionsnycklarna hos Skatteverket och avtalen med bank och Peppol i drift.
+
+## 20. Spec nummer 1: beslut som ägaren behöver fatta (2026-11-07)
+
+Underlag: [spec:en](../specs/nummer-1-spec.md), regelbladen [s1.md](../specs/rules/s1.md) och [s2.md](../specs/rules/s2.md), ADR-059 och ADR-060 (tilläggen 2026-11-07) och ADR-065. Varje punkt anger rekommendation, vad den blockerar och senaste dag.
+
+### K3 (S1, ADR-059)
+
+- **S1-A. Godkänna K3-tillägget i ADR-059.** Spec:en kräver ägarens godkännande. *Rekommendation:* godkänn. *Blockerar:* alla S1-paket. *Senast:* 2026-11-14.
+- **S1-H1. Större aktiebolag.** Ska K3-rapporten kunna tas fram för större (onoterade) aktiebolag? *Rekommendation:* vägra nu, lägg till senare. *Blockerar:* paket S1-P13.
+- **S1-H2. "Väsentlig" uppskjuten skatteskuld (K2 1.1B a).** *Rekommendation:* visa beloppet som information, avgör inte åt kunden. *Blockerar:* S1-P2.
+- **S1-H3. Bekräftelsen om "normalt inte omfattas" (K2 1.1C).** *Rekommendation:* citera BFN:s kommentar ordagrant.
+- **S1-H4. Komponentpolicy.** K3 anger ingen gräns för en "betydande" komponent. *Rekommendation:* byggnader delas alltid i mark och komponenter, andra tillgångar bara om användaren väljer det. *Blockerar:* S1-P4.
+- **S1-H5. Hänvisningarna i K3 29.19 och 29.25** pekar på fel punkter i BFN:s text (kontrollerat). *Rekommendation:* konsulten bekräftar att det inte ändrar något.
+- **S1-H6. Uppskjuten skattefordran på underskott.** *Rekommendation:* en person anger beloppet med motivering, 0 som utgångsläge.
+- **S1-H7. Bokföring av övergångsskillnaden K2 → K3.** *Rekommendation:* en ny verifikation första dagen i första K3-året, källa `K3_TRANSITION`, mot konto 2091.
+- **S1-H8. ÅRL 1 kap. 3 § "mer än ett".** Måste det vara samma två villkor båda åren, och hur klassas ett företag med färre än två år? *Rekommendation:* samma två; mindre om inte noterat.
+- **S1-H9. BAS-konton för aktiverade utvecklingsutgifter och fonden för utvecklingsutgifter.** Konsulten bekräftar.
+- **S1-H10. Namnge den auktoriserade redovisningskonsult** som granskar och skriver under checklistan. *Blockerar:* att K3 får lämna beta.
+
+### Koncern (S2, ADR-060)
+
+- **S2-D1. De personliga koncernlistorna från G.1.** Tas bort efter en release, med besked och omvandling? *Senast:* innan översiktsskärmen (S2-1.2) slås ihop.
+- **S2-D2. En enda läsarroll i etapp 1.** Leadbeslut 2026-11-07: räcker. Ägaren kan ändra.
+- **S2-H1. Måste frivillig koncernredovisning lämnas till Bolagsverket?** ÅRL 8 kap. 16 § och Bolagsverkets vägledning säger olika. *Rekommendation:* fråga Bolagsverket skriftligt. *Blockerar:* etapp 2.7.
+- **S2-H2. Sammanslagningar under gemensam ägarkontroll** (typiskt när en ägare bildar ett holdingbolag). K3 reglerar det inte. *Rekommendation:* konsulten avgör; etapp 2 spärras för sådana koncerner till dess. *Senast:* 2026-12-15.
+- **S2-H3. Väsentlighet vid eliminering av internvinst.** Ingen sifferregel finns. *Rekommendation:* bedömning per period av en människa.
+- **S2-H4. Är moderbolagets första koncernredovisning en första tillämpning enligt K3 kap. 35?** Konsulten avgör. *Senast:* 2026-12-15.
+- **S2-H5. Juristen granskar märkningen "Intern koncernrapport, inte en koncernredovisning enligt ÅRL"** och de publika texterna. *Senast:* 2026-11-21.
+- **S2-H6. Konsulten bekräftar hur koncernbidrag och bokslutsdispositioner redovisas** i testföretaget F-S2-a. *Senast:* 2026-11-14.
+- **S2-H7. Revisionskravet för koncernen** är inte utrett.
+- **S2-H8. Dotterbolag med balansdag upp till tre månader efter moderbolagets.** *Rekommendation:* skär vid moderbolagets balansdag.
+- **Utländska dotterbolag:** behövs de? Spec:en lämnar det åt ägaren.
+
+### Export (F10, ADR-065)
+
+- **F10-1. Kedjan av kontrollsummor vid import.** Importen kontrollerar den ursprungliga kedjan och bygger en ny över de nya id-numren, med den ursprungliga kontrollsumman sparad bredvid. Nummer, datum och rader ändras aldrig. *Rekommendation:* godkänn, efter den oberoende säkerhetsgranskningen.
+- **F10-2. Vem får exportera och hur länge länken gäller.** *Förslag:* ägare och administratör, 7 dagar.
+- **F10-3 (juridik).** Får en redovisningskonsult exportera en kunds lön och CRM-uppgifter i en fil? *Blockerar:* paket 3.
