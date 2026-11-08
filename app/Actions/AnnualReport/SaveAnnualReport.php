@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -119,7 +120,7 @@ class SaveAnnualReport
                     throw ValidationException::withMessages(['report' => $refusal]);
                 }
 
-                return $this->write($user, $company, $fiscalYear, $validated, $dividend, $pledged, $contingent);
+                return $this->write($user, $company, $locked, $validated, $dividend, $pledged, $contingent);
             });
         });
     }
@@ -130,6 +131,12 @@ class SaveAnnualReport
      */
     private function write(User $user, Company $company, FiscalYear $fiscalYear, array $validated, int $dividend, array $pledged, ?int $contingent): AnnualReport
     {
+        $existing = AnnualReport::query()->where('fiscal_year_id', $fiscalYear->id)->lockForUpdate()->first();
+        $adoptionBefore = $existing?->adoption_date?->toDateString();
+        $adoptionAfter = blank($validated['adoption_date'] ?? null) ? null : (string) $validated['adoption_date'];
+
+        self::guardAdoptionDate($fiscalYear, $adoptionBefore, $adoptionAfter);
+
         $report = AnnualReport::query()->updateOrCreate(['fiscal_year_id' => $fiscalYear->id], [
             'business_description' => blank($validated['business_description'] ?? null) ? null : $validated['business_description'],
             'significant_events' => blank($validated['significant_events'] ?? null) ? null : $validated['significant_events'],
@@ -155,7 +162,35 @@ class SaveAnnualReport
 
         Audit::record('annual_report.saved', $report, ['fiscal_year' => $fiscalYear->label()], $company, $user);
 
+        if ($adoptionBefore !== $adoptionAfter) {
+            // The adoption date locks the year's K3 policies (SetAccountingPolicy), so every change is recorded (ADR-059 A.3a).
+            Audit::record('annual_report.adoption_date_changed', $report, [
+                'fiscal_year_id' => $fiscalYear->id,
+                'before' => $adoptionBefore,
+                'after' => $adoptionAfter,
+            ], $company, $user);
+        }
+
         return $report;
+    }
+
+    /**
+     * Once the year is closed and the meeting date has come, the adoption is a
+     * fact: the date may be corrected to another day that has come, but not
+     * removed or moved into the future, so the lock it puts on the year's
+     * accounting policies cannot be undone by editing a field (ADR-059 A.3a).
+     */
+    private static function guardAdoptionDate(FiscalYear $fiscalYear, ?string $before, ?string $after): void
+    {
+        $today = CarbonImmutable::today('Europe/Stockholm')->toDateString();
+
+        if ($before === null || $before > $today || $fiscalYear->isOpen() || $before === $after) {
+            return;
+        }
+
+        if ($after === null || $after > $today) {
+            throw ValidationException::withMessages(['adoption_date' => __('Räkenskapsåret :year är stängt och årsredovisningen fastställdes :date. Fastställelsedagen kan rättas till en annan dag som redan har varit, men inte tas bort eller flyttas fram.', ['year' => $fiscalYear->label(), 'date' => $before])]);
+        }
     }
 
     /** A non-negative amount in öre, or null when the field is empty. */

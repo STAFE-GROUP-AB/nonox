@@ -439,6 +439,35 @@ All tid i NONOX är svensk tid (Europe/Stockholm). Tidszonen är fast i koden, b
   anledningen). Var bara företagets förval i otakt med åren skrivs
   `company.framework_default_synced`. När kolumnen infördes fick varje
   befintligt år företagets dåvarande regelverk; ingen verifikation ändrades.
+- Bokslut → Regelverk (sedan 2026-11-07, ADR-059 tillägg, paket S1-P11) visar
+  för ett räkenskapsår om företaget får välja K2 eller ska tillämpa K3, enligt
+  K2 punkt 1.1–1.1C i lydelsen enligt BFNAR 2025:2 (`K3Eligibility`). Storleken
+  (ÅRL 1 kap. 3 §) och undantaget i 1.1C första stycket räknas ut från de två
+  föregående åren; att företaget inte är en fysisk person, att ett aktiebolag
+  inte är en bostadsrättsförening och att en ekonomisk förening inte är ett
+  publikt aktiebolag följer av företagsformen. Allt annat i 1.1A, 1.1B a och
+  1.1C andra stycket b är frågor som en person besvarar; NONOX svarar aldrig
+  åt företaget och föreslår inte om en uppskjuten skatteskuld är väsentlig
+  (mänskligt beslut H2). Frågan om "normalt" citerar BFN:s kommentar ordagrant
+  (H3). 1.1B b räknas bara ur personens egen klassificering av intäktskontona
+  för det senaste året med en färdigställd årsredovisning (NONOX räknar en
+  årsredovisning som färdigställd när undertecknandedagen är ifylld;
+  TODO(legal-verify)). Svaren sparas per räkenskapsår som rader i
+  `closing_checks` (nyckel = frågan och ja eller nej, eller ett kontonummer) och
+  skrivs i behandlingshistoriken som `k3_eligibility.answered` med de nycklar som
+  lades till och togs bort, aldrig fritext. Svaren kan bara ändras när året är
+  öppet, av den som får hantera räkenskapsår.
+- Ett byte till K2 vägras, både på Regelverk och i inställningarna, när
+  bedömningen för det valda året eller något senare år som bytet gäller säger
+  att K3 ska tillämpas; meddelandet anger vilket år. Ett senare år bedöms som
+  det blir efter bytet, med året före på K2. Kontrollen görs under samma lås
+  som bytet. Bekräftelsen av K2-villkoren i bokslutet vägras också
+  för ett år där bedömningen säger att K3 ska tillämpas, och bokslutet visar
+  bedömningen bredvid knappen. Ett år där uppgifter saknas spärrar ingenting.
+  Så länge det inte går att avgöra om undantaget i 1.1C första stycket gäller
+  leder ett ja till 1.1B aldrig till att K3 krävs; året räknas som oavgjort.
+  Svar på frågor som inte ställs för året sparas inte, och en fråga har
+  alltid högst ett svar.
 - NE-bilagan följer räkenskapsårets regelverk: för ett år med K1 (förenklat
   årsbokslut) lämnas B11 och B12 tomma och beloppen ingår i B16, även om
   företaget har bytt till K2 för ett senare år.
@@ -2173,7 +2202,12 @@ Beskrivs i [ADR-059](../adr/ADR-059-k3-annual-report.md), tillägget
   ett svar om övergången gäller bara sitt eget år. En rad kan inte heller
   sparas om den ändrar om året för nästa rad räknas som ett byte av princip,
   när det årets årsredovisning är fastställd. Fastställelsedagen är ett
-  fält i årsredovisningen som en användare kan ändra; låset följer den.
+  fält i årsredovisningen; låset följer den. Varje ändring av
+  fastställelsedagen skrivs i behandlingshistoriken
+  (`annual_report.adoption_date_changed`, med datumet före och efter). När
+  året är stängt och fastställelsedagen har inträffat kan dagen rättas till en
+  annan dag som redan har varit, men inte tas bort eller flyttas fram, så att
+  låset inte kan hävas genom att fältet ändras (sedan 2026-11-07, ADR-059 A.3a).
 - När datumen för företagets första räkenskapsår ändras flyttas årets
   principer till den nya första dagen (`accounting_policy.moved`), och
   principerna för ett automatiskt skapat följande år som tas bort tas bort
@@ -2185,8 +2219,11 @@ Beskrivs i [ADR-059](../adr/ADR-059-k3-annual-report.md), tillägget
   läsa dem. Varje ändring skrivs i behandlingshistoriken
   (`accounting_policy.set`) med princip, värde före och efter och
   räkenskapsårets id; motiveringen sparas bara på raden, aldrig i historiken.
-- Ingen skärm och ingen K3-årsredovisning använder principerna ännu, och
-  ingenting i bokföringen ändras.
+- Principerna sätts på Bokslut → Regelverk, och bara för det första
+  räkenskapsåret med K3 (året före är inte K3 eller finns inte i NONOX); ett
+  senare K3-år ärver dem och visar dem utan att de kan ändras där. Ingen
+  K3-årsredovisning använder principerna ännu, och ingenting i bokföringen
+  ändras.
 
 ### 5a6.2 Uppställning av resultat- och balansräkning enligt K3 (förberedelse)
 
@@ -2411,6 +2448,98 @@ Enligt AI-utredning 2026-11-07, juristgranskning återstår (ADR-059, tillägg
   ingen fråga kopplar ihop rader och verifikationer, så att frågeplanen
   förblir linjär även när databasens statistik är inaktuell. Ingen skärm
   visar kassaflödesanalysen ännu, och ingenting i bokföringen ändras.
+
+### 5a6.5 Uppskjuten skatt enligt K3
+
+Enligt AI-utredning 2026-11-08, juristgranskning återstår (ADR-059, tillägg
+2026-11-07, A.2.6, paket S1-P5). Källa: BFN:s konsoliderade K3
+(vl12-1-k3-kons20251215), kapitel 29.
+
+- Ett företag som följer K3 redovisar uppskjuten skatt på temporära
+  skillnader (K3 punkt 29.19); juridisk person har inget allmänt undantag.
+  Under **Bokföring → Bokslut → Uppskjuten skatt** (`/bokslut/uppskjuten-skatt`)
+  lägger en person upp posterna för ett räkenskapsår i tabellen
+  `deferred_tax_items`: en byggnad, en annan tillgång, en skuld eller ett
+  underskottsavdrag, med det skattemässiga värdet och var det kommer ifrån
+  (eget underlag eller inkomstdeklarationen). Det redovisade värdet läses ur
+  kontonas utgående balans för ett kontointervall, ur anläggningsregistret
+  (komponenterna i S1-P4, via gränssnittet `BuildingCarryingAmounts`; tills
+  dess finns inga sådana poster) eller skrivs in. Sidan och åtgärderna gäller
+  bara ett räkenskapsår med K3 i ett aktiebolag eller en ekonomisk förening.
+- Obeskattade reserver (BAS 2100–2199) kan aldrig vara en post: i juridisk
+  person redovisas de brutto (K3 punkt 29.37). Formuläret nekar ett
+  kontointervall som rör dem, och en kontroll i databasen gör detsamma.
+  Kontona för uppskjuten skatt själva (1370–1379, 2240–2249) och eget
+  kapital kan inte heller vara en post. Goodwill vid första redovisningen
+  (29.21) och andelar i dotterföretag (29.20) känns inte igen; personen
+  utelämnar sådana skillnader (TODO(legal-verify)).
+- `DeferredTaxProposal` räknar per post den temporära skillnaden (redovisat
+  minus skattemässigt värde, 29.14), dess slag enligt tabellen i
+  kommentaren till 29.14 (en tillgång med högre redovisat värde ger en
+  skattepliktig skillnad, en skuld med högre redovisat värde en avdragsgill;
+  ett underskottsavdrag är avdragsgillt) och den uppskjutna skatten:
+  skillnaden gånger skattesatsen, avrundad till närmaste öre (halva uppåt),
+  aldrig nuvärdeberäknad (29.25).
+- Skattesatsen är den som `database/data/corporate-tax/rules.json` anger
+  för det beskattningsår som börjar dagen efter balansdagen (29.25: de
+  skattesatser som är beslutade före balansdagen, för de år då skillnaderna
+  återförs). Finns en annan skattesats för något senare år stoppas
+  förslaget tills en person har bestämt hur återföringarna fördelas. Data
+  saknar datum för när en skattesats beslutades; förslaget antar att varje
+  skattesats i filen var beslutad före balansdagen (TODO(legal-verify)).
+- En uppskjuten skattefordran föreslås aldrig (mänskligt beslut H6). En
+  person skriver in den fordran som ska tas upp, med skälet (29.29); utan
+  belopp är fordran 0. Det upptagna beloppet kan aldrig bli större än den
+  beräknade fordran för posten, och förslaget använder det lägre av de två.
+- Skulden (2240) och fordran (1370) visas brutto. De kvittas bara när
+  personen bekräftar att företaget har legal rätt till kvittning (29.32);
+  bekräftelsen sparas som kontrollen `deferred_tax_set_off` i
+  `closing_checks`.
+- Förslaget visar skuld och fordran vid årets början (ingående balans på
+  2240–2249 och 1370–1379), vid balansdagen och förändringen. Verifikationen
+  bokför skillnaden mellan målet och det som redan står på kontona: 2240
+  och 1370 mot 8940 (29.22: förändringen redovisas i resultaträkningen).
+  Kontonumren läses ur `database/data/annual-report/k3-rules.json`
+  (`deferred_tax.*`, TODO(legal-verify) mot BAS 2026).
+- Ingenting bokförs förrän en person har granskat förslaget och bekräftat
+  det i en dialog som anger beloppet och att en bokförd verifikation bara
+  kan rättas (`YearEndClosing::confirmDeferredTax`). Personen bekräftar det
+  hon såg: skuld, fordran, beloppet att bokföra och varje post (ett
+  fingeravtryck); har bokföringen eller posterna ändrats sedan dess nekas
+  bekräftelsen. Har året inga poster medan 2240/1370 har ett saldo nekas
+  bekräftelsen, om inte personen uttryckligen kryssar i att skulden och
+  fordran (beloppen anges) ska återföras helt. Verifikationen dateras årets sista dag, i serie A med källa
+  `CLOSING`, och bokförs genom den vanliga vägen för bokslutsverifikationer
+  (`BookVoucher`, `PostVoucher`); en bekräftelse utan förändring sparas
+  utan verifikation. Bekräftelsen blir en rad av typen `DEFERRED_TAX` i
+  `year_end_entries`, som inte kan ändras eller tas bort. Den görs en gång
+  per år och före årets resultat. Efter bekräftelsen sparas skattesatsen
+  och personen på varje post, och posterna kan inte längre ändras eller tas
+  bort: modellen och en trigger i databasen nekar det. Blev något fel rättas
+  verifikationen med en rättelseverifikation.
+- Ett nytt år börjar utan poster. Knappen Hämta posterna från föregående år
+  kopierar föregående års poster som obekräftade, med länk till originalet
+  (`copied_from_id`). Det redovisade värdet räknas om; det skattemässiga
+  värdet är märkt för kontroll och stoppar bokföringen tills en person har
+  sparat posten. En upptagen skattefordran kopieras inte.
+- Förslaget till årets skatt (avsnitt 5a5) drar av beloppet i årets
+  bekräftade uppskjutna skatt (`DEFERRED_TAX`) från rörelsen på 8900–8989
+  innan det avgör om skatt redan är bokförd för hand. Allt annat där, även
+  en rättelse av den uppskjutna skattens verifikation, stoppar förslaget som
+  förut. Inkomstdeklarationens fält 4.3 a lägger som förut tillbaka allt på
+  8900–8989.
+- Hänvisningarna i K3 punkt 29.19 ("29.21 och 29.22") och 29.25 ("29.28")
+  läses som felhänvisningar som inte ändrar något för ett aktiebolag utan
+  dotterföretag (mänskligt beslut H5, inte avgjort; TODO(legal-verify)).
+- Behandlingshistoriken får `deferred_tax.item_created`,
+  `deferred_tax.item_updated`, `deferred_tax.item_removed`,
+  `deferred_tax.items_copied` och
+  `closing.deferred_tax_confirmed` med id, slag, konton och belopp, aldrig
+  beskrivningen eller skälet. Ändringar och bokföring kräver behörigheten
+  att hantera räkenskapsår; sidan kan läsas med behörigheten att se
+  rapporter, men länken finns bara i bokslutet.
+  Sidan läser ett fast antal databasfrågor, oberoende av antalet poster och
+  verifikationer.
 
 ## 5a7. Inkomstdeklaration 2 (SRU)
 
@@ -4588,6 +4717,22 @@ kontrollerat dem mot källan. Särskilt:
   övriga, och om samtycke eller åtgärder före avtal är rätt rättslig grund.
 - Att ett enskilt företags organisationsnummer är ägarens personnummer:
   fältet är frivilligt, men behövs det alls i kön?
+
+### Uppskjuten skatt enligt K3 (avsnitt 5a6.5)
+
+- Att varje skattesats i `corporate-tax/rules.json` var beslutad före
+  balansdagen för de år den gäller (K3 29.25); filen saknar beslutsdatum,
+  så en senare beslutad skattesats kan stoppa förslaget i onödan.
+- Att en person anger den upptagna skattefordran för alla avdragsgilla
+  skillnader, inte bara underskottsavdrag som beslut H6 gäller.
+- Att hänvisningarna i K3 29.19 och 29.25 är felhänvisningar som inte
+  ändrar något för ett aktiebolag utan dotterföretag (beslut H5).
+- BAS-kontona 2240, 1370 och 8940 (och 8940–8949 som uppskjuten skatt i
+  förslaget till årets skatt) mot BAS 2026-kontoplanen.
+- Att goodwill vid första redovisningen (29.21) och andelar i
+  dotterföretag (29.20) lämnas åt personen att utelämna.
+- Att svenska uppskjutna skattefordringar och -skulder i samma aktiebolag
+  normalt får kvittas (29.32); NONOX kvittar bara med personens bekräftelse.
 
 ## 9. Ändringshistorik
 

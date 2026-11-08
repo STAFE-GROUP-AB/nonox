@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Closing;
 
 use App\Models\FiscalYear;
+use Carbon\CarbonInterface;
 use LogicException;
 
 /**
@@ -34,18 +35,40 @@ final class CorporateTaxRules
     /** @return ?array{starts_from: string, starts_before: ?string, rate_bp: int, status: string, read: string, source_url: string, source_quote: string} */
     public static function rateEntryFor(FiscalYear $fiscalYear): ?array
     {
-        $start = $fiscalYear->start_date->toDateString();
+        return self::rateEntryForStart($fiscalYear->start_date);
+    }
 
-        /** @var list<array{starts_from: string, starts_before: ?string, rate_bp: int, status: string, read: string, source_url: string, source_quote: string}> $rates */
-        $rates = self::data()['rates'];
+    /**
+     * The rate entry for a beskattningsår that begins on $start, also for a
+     * year that does not exist in NONOX yet (deferred tax reads the rate of
+     * the year after the balance date, K3 29.25).
+     *
+     * @return ?array{starts_from: string, starts_before: ?string, rate_bp: int, status: string, read: string, source_url: string, source_quote: string}
+     */
+    public static function rateEntryForStart(CarbonInterface $start): ?array
+    {
+        $start = $start->toDateString();
 
-        foreach ($rates as $rate) {
+        foreach (self::rates() as $rate) {
             if ($start >= $rate['starts_from'] && ($rate['starts_before'] === null || $start < $rate['starts_before'])) {
                 return $rate;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Every rate in the data.
+     *
+     * @return list<array{starts_from: string, starts_before: ?string, rate_bp: int, status: string, read: string, source_url: string, source_quote: string}>
+     */
+    public static function rates(): array
+    {
+        /** @var list<array{starts_from: string, starts_before: ?string, rate_bp: int, status: string, read: string, source_url: string, source_quote: string}> $rates */
+        $rates = self::data()['rates'];
+
+        return $rates;
     }
 
     /** @return array{value: mixed, status: string, read: string, source_url: string, source_quote: string} */

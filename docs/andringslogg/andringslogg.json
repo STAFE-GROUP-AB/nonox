@@ -40,6 +40,38 @@
       "omrade": "Bokslut"
     },
     {
+      "id": "2026-11-08-uppskjuten-skatt-k3",
+      "datum": "2026-11-08T09:30:00+01:00",
+      "rubrik": "Uppskjuten skatt i bokslutet för räkenskapsår som följer K3 (beta)",
+      "beskrivning": "För räkenskapsår som följer K3 (beta) lägger du under Bokslut → Uppskjuten skatt upp skillnaderna mellan redovisat och skattemässigt värde, och NONOX räknar fram den uppskjutna skatten med skattesatsen för året efter balansdagen. En uppskjuten skattefordran föreslås aldrig, utan du skriver in den med skälet, och obeskattade reserver kan inte tas med. Ingenting bokförs förrän du har granskat och bekräftat förändringen på 8940.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
+      "id": "2026-11-08-likviditetsprognos-lon-moms-skatt",
+      "datum": "2026-11-08T08:00:00+01:00",
+      "rubrik": "Likviditetsprognosen räknar med lön, moms, skattekontot och avtal",
+      "beskrivning": "Prognosen på översikten räknar nu lön och arbetsgivarskatter från lönekörningarna, momsen på Skatteverkets datum, saldot på skattekontot, kommande fakturor från avtal med momsen på dem, och F-skatten när månadsbeloppet är ifyllt under företagets uppgifter. Snittresultatet räknar inte med det som redan räknas för sig, så att inget kommer med två gånger. Diagrammet och tabellen visar vad varje del betyder för varje månad.",
+      "typ": "Förbättrat",
+      "omrade": "Bokföring"
+    },
+    {
+      "id": "2026-11-08-offert-fran-affar",
+      "datum": "2026-11-08T08:00:00+01:00",
+      "rubrik": "Offert direkt från affären",
+      "beskrivning": "På en öppen affär finns nu Ny offert, som gör en offert med en rad från affärens namn och värde och kopplar den till affären. Blir offerten en order eller en faktura följer de med, så att de redan är valda när du markerar affären som vunnen.",
+      "typ": "Nytt",
+      "omrade": "CRM"
+    },
+    {
+      "id": "2026-11-07-bokslut-regelverk",
+      "datum": "2026-11-07T22:00:00+01:00",
+      "rubrik": "Bokslut → Regelverk visar om företaget får använda K2",
+      "beskrivning": "Den nya sidan går för ett räkenskapsår igenom villkoren i K2 punkt 1.1–1.1C: storleken och undantaget för de minsta företagen räknas ut, det som inte syns i bokföringen besvarar du själv, och när svaren visar att K3 krävs kan K2 varken väljas eller bekräftas i bokslutet. Innan du sparar visas vilka år som byter regelverk och vilka K3-principer som sparas från det första K3-året. Ändringar av fastställelsedagen i årsredovisningen sparas nu i behandlingshistoriken.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-07-regelverk-per-rakenskapsar",
       "datum": "2026-11-07T09:30:00+01:00",
       "rubrik": "Regelverket K1, K2 eller K3 gäller per räkenskapsår",

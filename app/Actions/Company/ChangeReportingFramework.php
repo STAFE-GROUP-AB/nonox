@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Actions\Company;
 
 use App\Actions\Accounting\CreateNextFiscalYear;
+use App\Domain\AnnualReport\K3Eligibility;
+use App\Domain\AnnualReport\K3EligibilityStatus;
 use App\Domain\Company\CompanySetupRules;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\ReportingFrameworkRules;
@@ -14,6 +16,7 @@ use App\Models\FiscalYear;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CompanyScope;
+use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -64,6 +67,10 @@ class ChangeReportingFramework
         DB::transaction(function () use ($user, $company, $fiscalYear, $framework, $reason, $confirmed): void {
             // Serialises with the creation of a new year, so the later years cannot change under us.
             CreateNextFiscalYear::lock($company->id);
+
+            if ($framework === ReportingFramework::K2) {
+                self::refuseK3RequiredYears($company, $fiscalYear);
+            }
 
             // Safe: every query below is limited to the year's own company explicitly.
             CompanyScope::bypass(function () use ($user, $company, $fiscalYear, $framework, $reason, $confirmed): void {
@@ -139,6 +146,34 @@ class ChangeReportingFramework
         $fiscalYear->refresh();
 
         return $fiscalYear;
+    }
+
+    /**
+     * S1-R1: K2 is closed for every year from the chosen one on that
+     * K3Eligibility finds must use K3 (Bokslut → Regelverk, ADR-059 S1-P11).
+     * Each later year is judged as it will be after the change: the year
+     * before it on K2. A "normalt" question that only then becomes asked and
+     * is unanswered leaves that year undetermined, which does not block.
+     * Run inside the lock and inside the company, never under the scope
+     * bypass: the eligibility queries rely on the company scope.
+     *
+     * @throws ValidationException
+     */
+    private static function refuseK3RequiredYears(Company $company, FiscalYear $from): void
+    {
+        $years = CurrentCompany::run($company, fn () => FiscalYear::query()
+            ->whereDate('start_date', '>=', $from->start_date->toDateString())
+            ->orderBy('start_date')
+            ->get());
+
+        foreach ($years as $year) {
+            // A later year is judged with the year before it already on K2, as it will be after the change (1.1C second paragraph a).
+            $eligibility = K3Eligibility::forYear($year, previousFramework: $year->id === $from->id ? null : ReportingFramework::K2);
+
+            if ($eligibility->status === K3EligibilityStatus::K3Required) {
+                throw ValidationException::withMessages(['reporting_framework' => __('K2 kan inte väljas för räkenskapsåret :year. :reason', ['year' => $year->label(), 'reason' => $eligibility->reasons[0] ?? ''])]);
+            }
+        }
     }
 
     /**

@@ -33,6 +33,7 @@ final class PagesProvider extends BaseSearchProvider
         'accounting.taxAccount' => ['skattekonto', '1630', 'skatteverket', 'avstämning'],
         'accounting.ledgers' => ['kundreskontra', 'leverantörsreskontra', 'kundfordringar', 'leverantörsskulder', '1510', '2440'],
         'accounting.closing' => ['årsbokslut', 'bokslutsverifikationer'],
+        'accounting.closingFramework' => ['k2', 'k3', 'bfnar 2016:10', 'bfnar 2012:1', 'redovisningsprinciper'],
         'accounting.annualReport' => ['k2', 'bolagsverket'],
         'accounting.incomeTax' => ['ink2', 'sru', 'deklaration', 'k10', 'gränsbelopp', 'utdelning', '3:12'],
         'accounting.sieImports.index' => ['sie', 'import', 'flytta'],

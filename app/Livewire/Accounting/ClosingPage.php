@@ -6,6 +6,7 @@ namespace App\Livewire\Accounting;
 
 use App\Actions\Closing\ConfirmK2Conditions;
 use App\Actions\Closing\YearEndClosing;
+use App\Domain\AnnualReport\K3Eligibility;
 use App\Domain\Closing\ClosingAccounts;
 use App\Domain\Closing\ClosingChecklist;
 use App\Domain\Closing\CurrencyRevaluation;
@@ -184,10 +185,13 @@ class ClosingPage extends Component
             'fiscalYear' => $fiscalYear,
             'items' => $items,
             'k2Conditions' => K2Reconfirmation::isPending($this->company(), $fiscalYear) ? K2Reconfirmation::conditions($this->company()) : null,
+            // Shown next to the K2 confirmation (ADR-059 S1-P11); computed only while the confirmation is pending.
+            'k2Eligibility' => K2Reconfirmation::isPending($this->company(), $fiscalYear) ? K3Eligibility::forYear($fiscalYear) : null,
             'company' => $this->company(),
             'complete' => ClosingChecklist::isComplete($items),
             'result' => YearResult::of($fiscalYear),
             'taxEntry' => $entries->firstWhere('type', YearEndEntry::TAX),
+            'deferredTaxEntry' => $entries->firstWhere('type', YearEndEntry::DEFERRED_TAX),
             'unpaidEntries' => $entries->whereIn('type', [YearEndEntry::UNPAID_RECEIVABLES, YearEndEntry::UNPAID_PAYABLES])->keyBy('type'),
             'unpaid' => $fiscalYear->isOpen() && $entries->whereIn('type', [YearEndEntry::UNPAID_RECEIVABLES, YearEndEntry::UNPAID_PAYABLES])->isEmpty()
                 && ClosingCheck::query()->where('fiscal_year_id', $fiscalYear->id)->where('key', 'unpaid')->doesntExist()

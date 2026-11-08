@@ -394,3 +394,50 @@ Open legal-verify items:
 Follow-ups: S1-P14 K3EquityStatement-frågans plan med inaktuell statistik; en korrekt ombokad betalningsverifikation får fakturan att se obetald ut (spärrar, fel belopp skrivs aldrig ut).
 Human decisions needed: H4, H7, H9, H10.
 Next package: S1-P9.
+
+---
+
+Package: Utanför specen — likviditetsprognos med löner, moms, skattekonto och avtalsfakturor (ADR-027, tillägg 2026-11-08)
+Status: done (syns på Översikten → statistik, "Likviditet och prognos")
+Evidence: `tests/Feature/Overview/LiquidityForecastFlowsTest.php` (21 tester), `tests/Unit/Overview/LiquidityForecastTest.php`, `tests/js/overview-charts.test.mjs`.
+- Prognosen räknar nu kundfakturor (återstående belopp), leverantörsfakturor, avtalsfakturor och utkast, nettolön och skatter från lönekörningarna, moms per förfallodag, F-skatt när månadsbeloppet är ifyllt och saldot på 1630.
+- Snittresultatet tar bort exakt det som räknas för sig: lönemodulens kostnader utom pension, särskild löneskatt och avtalsförsäkring; 8900–8998 och 7530–7539 när F-skatten räknas; intäkter från avtalsfakturor netto efter kreditfakturor.
+- Kontantmetoden: momsen dateras efter väntad betalning, och momsandelen av öppna kund- och leverantörsfakturor räknas.
+- Lön som inte är bokförd visas bara för roller med payroll:view. Fast antal frågor, tenancy-test.
+- Ett bygge, en kall granskning (3 bekräftade beloppsfel), två omkontroller; allt rättat. Hela sviten efter sammanslagning: 6 695 gröna, phpstan och pint rena.
+Kända begränsningar (ADR-027): OSS-moms dateras efter svensk momsdag; pensionsfiltret går på konto, inte lönearts typ; särskild löneskatt på pension utanför lönemodulen; horisonten är tre månader (ägarbeslut om 6/12 väntar).
+Next package: CRM-affär → offert (granskas om), S1-P4, S1-P5, S1-P11.
+
+---
+
+Package: S1-P5, förslag på uppskjuten skatt enligt K3 kapitel 29 (ADR-059)
+Status: done (beta, Bokslut → Uppskjuten skatt för K3-år i AB och ekonomisk förening)
+Evidence: `tests/Feature/Closing/DeferredTaxTest.php`, `tests/Unit/Closing/DeferredTaxProposalTest.php`, `tests/Tenancy/DeferredTaxTenancyTest.php`.
+- Skillnad per post, skattepliktig eller avdragsgill enligt teckentabellen i 29.14, skatt avrundad till öre; skattesatsen för året efter balansdagen ur CorporateTaxRules.
+- F-S1-a: 904 752,00 / 995 227,20 / 1 085 702,40 på 2240 och förändringen 90 475,20 på 8940, på öret.
+- Obeskattade reserver (2100–2199) kan inte bli en post, spärrat i kod och med en CHECK i databasen. Bokförda poster är låsta av en trigger.
+- H6: en skattefordran föreslås aldrig; en person anger beloppet med motivering, utgångsläge 0, aldrig över det beräknade. Gäller alla avdragsgilla skillnader (bredare än beslutet, flaggat för konsulten).
+- Bokförs bara efter bekräftelse, via BookVoucher (serie A, källa CLOSING, sista dagen), en gång per år, före resultatdispositionen; bekräftelsen jämför ett fingeravtryck av hela förslaget.
+- Nästa år: "Hämta posterna från föregående år" kopierar posterna okontrollerade; en tom lista som skulle återföra en befintlig skuld kräver ett uttryckligt kryss.
+- Skatteförslaget (TaxProposal) räknar bort bara det belopp som den uppskjutna skatten själv bokade; manuell bokning på 894x spärrar som förut, även för K2.
+- Kall granskning (2 P2, 5 P3) och två omkontroller, allt rättat. Hela sviten efter sammanslagning: 6 754 gröna, phpstan och pint rena.
+Rule ids covered: S1-R4, R4.1–R4.4, R4.6; R4.5 som en persons belopp.
+Public claim now allowed: inget nytt (ändringsloggen säger "för räkenskapsår som följer K3 (beta)").
+Public claim still not allowed: "Årsredovisning enligt K3", "Kassaflödesanalys".
+Open legal-verify items: H5 (hänvisningarna i 29.19 och 29.25); BAS 2240/1370/8940; kvittning enligt 29.32; 29.20 och 29.21 lämnas åt personen; beslutsdatum för skattesatser (`decided_on` saknas i rules.json, risk för felaktig spärr).
+Follow-ups: koppla P4:s komponentregister till `BuildingCarryingAmounts`; visa beloppet på Bokslut → Regelverk (P11) som information; ingen checklistpunkt gör uppskjuten skatt obligatorisk ännu.
+Human decisions needed: H5, H9, H10.
+Next package: S1-P4 (granskas), S1-P11 (omkontroll), därefter S1-P12.
+
+---
+
+Package: CRM-affär → offert (lucka 1, sammanhängande flöde)
+Status: done (CRM → Affärer, "Ny offert" på en öppen affär)
+Evidence: `tests/Feature/Crm/DealQuoteLinkTest.php` (25 tester).
+- "Ny offert" gör en offert med en rad från affärens namn och värde, eller från en offertmall, och kopplar den till affären. Order och faktura som följer offerten kopplas också, och förväljs när affären vinns ("Faktura (utkast)" visas).
+- Momsen på offertraden följer samma regel som fakturan (`DefaultVat`): 0 när företaget inte är momsregistrerat, vid omvänd skattskyldighet och vid momsfri försäljning utomlands. Ett test jämför offertens och fakturans moms för varje typ av utlandsförsäljning.
+- Bara öppna affärer ändras, och bara tomma kopplingar fylls. En andra "Ny offert" ersätter kopplingen och rensar den gamla offertens order och faktura; ett dubbelklick från ett inaktuellt kort gör högst en offert.
+- Fast antal frågor på affärskortet, tenancy-test (egen mall med en annan företags affär ger 404).
+- Kall granskning (1 hög, 3 medel, 3 låga) och en omkontroll; allt rättat, sista lilla felet (radfel i mallväljaren syntes inte) rättat av Lead. Hela sviten efter sammanslagning: 6 779 gröna, phpstan och pint rena.
+Kända begränsningar: offertrader från en mall behåller mallens moms även för kunder med omvänd skattskyldighet (samma som offerter i övrigt; följs upp i kärnans offerter, SaveSalesDocument); offerter kan inte ha OSS-satser; `DefaultVat` och SaveDraftInvoice har samma villkor på två ställen (skyddas av testet).
+Next package: S1-P11 (rättar NEW-1), S1-P4 (rättar granskningen), därefter S1-P12.

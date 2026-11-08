@@ -95,6 +95,30 @@ enum K3PolicyKey: string
         };
     }
 
+    /** The Swedish name of one of the policy's values, for a choice on Bokslut → Regelverk. */
+    public function valueLabel(string $value): string
+    {
+        return match ($this->valueOf($value)) {
+            K3FinancialInstruments::Chapter11 => __('Anskaffningsvärde (kapitel 11)'),
+            K3FinancialInstruments::Chapter12 => __('Verkligt värde (kapitel 12)'),
+            K3Intangibles::Expense, K3BorrowingCosts::Expense => __('Kostnadsförs'),
+            K3Intangibles::Capitalise => __('Tas upp som tillgång (aktiveringsmodellen)'),
+            K3BorrowingCosts::Capitalise => __('Räknas in i anskaffningsvärdet'),
+            K3Leasing::OperationalInLegalEntity => __('Alla som operationella leasingavtal (K3 20.29)'),
+            K3Leasing::Classify => __('Finansiella leasingavtal i balansräkningen'),
+            K3FixedPriceContracts::CompletedContract => __('När uppdraget är slutfört (K3 23.31)'),
+            K3FixedPriceContracts::PercentageOfCompletion => __('Successivt'),
+            K3FixedPriceContracts::None => __('Inga sådana uppdrag'),
+            K3CashFlowStatement::None => __('Ingen kassaflödesanalys'),
+            K3CashFlowStatement::Indirect => __('Kassaflödesanalys, indirekt metod'),
+            K3YesNo::Yes => __('Ja'),
+            K3YesNo::No => __('Nej'),
+            K3LeftK2Reason::Forced20252 => __('Får inte längre tillämpa K2 (BFNAR 2025:2)'),
+            K3LeftK2Reason::Voluntary => __('Eget val'),
+            default => $value,
+        };
+    }
+
     /** The question a person answers when the policy is missing for a year. */
     public function question(): string
     {

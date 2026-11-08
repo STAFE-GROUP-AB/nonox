@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Closing;
 
+use App\Domain\AnnualReport\K3Eligibility;
+use App\Domain\AnnualReport\K3EligibilityStatus;
 use App\Domain\Closing\K2Reconfirmation;
 use App\Models\Company;
 use App\Models\FiscalYear;
@@ -31,6 +33,11 @@ class ConfirmK2Conditions
 
         if (! K2Reconfirmation::applies($company, $fiscalYear)) {
             throw ValidationException::withMessages(['k2' => __('K2-villkoren behöver inte bekräftas för det här räkenskapsåret.')]);
+        }
+
+        // Bokslut → Regelverk (ADR-059 S1-P11): a year that must use K3 cannot confirm K2. Undetermined does not block.
+        if (K3Eligibility::forYear($fiscalYear)->status === K3EligibilityStatus::K3Required) {
+            throw ValidationException::withMessages(['k2' => __('Företaget ska tillämpa K3 för räkenskapsåret :year enligt svaren under Bokslut → Regelverk, så K2-villkoren kan inte bekräftas. Byt regelverk eller rätta svaren där.', ['year' => $fiscalYear->label()])]);
         }
 
         return DB::transaction(function () use ($user, $company, $fiscalYear): Company {
