@@ -109,18 +109,19 @@ final class BoardroomModule implements IsNew, Module, OfferedTo, ProvidesDeadlin
 
     public function archiveNavigation(Company $company): array
     {
-        $has = CurrentCompany::run($company, fn (): array => [ShareEvent::query()->exists(), Meeting::query()->exists()]);
-        $items = [];
+        // One query whatever the history: is there a register entry or a meeting at all?
+        $has = CurrentCompany::run($company, fn (): bool => ShareEvent::query()->select('id')->limit(1)
+            ->union(Meeting::query()->select('id')->limit(1))
+            ->exists());
 
-        if ($has[0]) {
-            $items[] = ['label' => __('Aktiebok (arkiv)'), 'route' => 'share-register.index', 'permission' => 'share-register:view', 'active' => ['share-register.index', 'share-register.events']];
+        if (! $has) {
+            return [];
         }
 
-        if ($has[1]) {
-            $items[] = ['label' => __('Styrelserum (arkiv)'), 'route' => 'boardroom.meetings', 'permission' => 'meetings:view', 'active' => ['boardroom.meetings', 'boardroom.meetings.show']];
-        }
-
-        return $items;
+        return [
+            ['label' => __('Aktiebok (arkiv)'), 'route' => 'share-register.index', 'permission' => 'share-register:view', 'active' => ['share-register.index', 'share-register.events']],
+            ['label' => __('Styrelserum (arkiv)'), 'route' => 'boardroom.meetings', 'permission' => 'meetings:view', 'active' => ['boardroom.meetings', 'boardroom.meetings.show']],
+        ];
     }
 
     public function navigation(): array

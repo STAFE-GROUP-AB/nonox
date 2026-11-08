@@ -59,6 +59,7 @@ final class StoredFiles
         'article_images' => 'path',
         'staff_ledger_people' => 'photo_path',
         'peppol_transmissions' => 'xml_path',
+        'boardroom_minutes' => 'pdf_path',
     ];
 
     /**

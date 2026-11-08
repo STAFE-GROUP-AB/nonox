@@ -12,6 +12,7 @@ use App\Modules\Boardroom\Livewire\MeetingPage;
 use App\Modules\Boardroom\Livewire\MeetingsPage;
 use App\Modules\Boardroom\Livewire\ShareholdersPage;
 use App\Modules\Boardroom\Models\Meeting;
+use App\Modules\Boardroom\Models\Minutes;
 use App\Modules\Boardroom\Models\ShareEvent;
 use App\Modules\Boardroom\Models\Shareholder;
 use App\Support\Tenancy\CurrentCompany;
@@ -230,11 +231,34 @@ it('gives a shareholder their register extract with their history, and logs it',
     $b = Boardroom::person($this->owner, $this->company, 'Bertil Berg', '19750505123');
     Boardroom::formation($this->owner, $this->company, $a);
     Boardroom::record($this->owner, $this->company, ['kind' => 'TRANSFER', 'effective_date' => '2027-01-15', 'share_from' => 501, 'share_to' => 1000, 'from_holder_id' => $a->id, 'to_holder_id' => $b->id]);
+    $meeting = app(SaveMeeting::class)($this->owner, $this->company, ['kind' => 'EXTRA_GM', 'title' => 'Extra stämma', 'meeting_date' => '2026-10-01', 'attendees' => [['name' => 'Anna Andersson', 'role' => 'shareholder', 'shareholder_id' => $a->id]]]);
+    $draft = app(MinutesWorkflow::class)->start($this->owner, $this->company, $meeting);
+    app(MinutesWorkflow::class)->check($this->owner, $this->company, $draft, 'Anna Andersson', 'Anna Andersson', []);
+    $approved = app(MinutesWorkflow::class)->approve($this->owner, $this->company, $draft->fresh());
 
     $json = $this->get('/registerutdrag/aktieagare/'.$a->id)->assertOk()->json();
+
+    expect($json['moten'][0]['roller'])->toBe(['shareholder'])
+        ->and($json['moten'][0]['godkanda_protokoll'][0]['sha256'])->toBe($approved->sha256)
+        ->and($this->get('/registerutdrag/aktieagare/'.$b->id)->json('moten'))->toBe([]);
 
     expect($json['aktieagare']['personnummer'])->toBe(Boardroom::personalNumber('19800101123'))
         ->and($json['utdrag']['rattslig_grund'])->toContain('artikel 6.1 c')
         ->and(array_column($json['handelser'], 'typ'))->toBe(['FORMATION', 'TRANSFER'])
         ->and($json['aktier_i_dag'][0]['till_nummer'])->toBe(500);
+});
+
+it('corrects approved minutes from the meeting page', function () {
+    $meeting = app(SaveMeeting::class)($this->owner, $this->company, ['kind' => 'BOARD', 'title' => 'Styrelsemöte', 'meeting_date' => '2026-09-01']);
+    $draft = app(MinutesWorkflow::class)->start($this->owner, $this->company, $meeting);
+    app(MinutesWorkflow::class)->check($this->owner, $this->company, $draft, 'Anna Andersson', 'Anna Andersson', []);
+    $approved = app(MinutesWorkflow::class)->approve($this->owner, $this->company, $draft->fresh());
+
+    Livewire::test(MeetingPage::class, ['meeting' => $meeting->id])
+        ->assertSee('Rätta protokollet')
+        ->call('startMinutes', $approved->id)
+        ->assertDispatched('toast', message: 'Ett nytt protokoll som rättar det godkända är skapat. Det godkända finns kvar.')
+        ->assertSee('Det här protokollet rättar ett godkänt protokoll.');
+
+    expect(Minutes::query()->where('corrects_minutes_id', $approved->id)->count())->toBe(1);
 });

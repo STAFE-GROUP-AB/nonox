@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\DB;
  * balance on 2081 Aktiekapital on the same date. Only registered capital
  * counts (rule sheet AB-R42, G.12); a new issue not yet registered is shown
  * apart, as the usual BAS account for it is 2082. NONOX posts nothing: a
- * difference becomes a todo naming both figures. Three queries.
+ * difference becomes a todo naming both figures. Four queries.
  * TODO(legal-verify): accounting-checker to confirm 2082 as the account for
  * unregistered share capital (BAS usage, not law).
  */

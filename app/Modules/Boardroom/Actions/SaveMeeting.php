@@ -63,7 +63,7 @@ final class SaveMeeting
                 'adjusters.*' => ['nullable', 'string', 'max:255'],
                 'attendees' => ['nullable', 'array', 'max:200'],
                 'attendees.*.name' => ['required', 'string', 'max:255'],
-                'attendees.*.role' => ['required', Rule::in(['shareholder', 'proxy', 'member', 'deputy', 'ceo', 'auditor', 'adviser', 'other'])],
+                'attendees.*.role' => ['required', Rule::in(Meeting::ROLES)],
                 'attendees.*.shareholder_id' => ['nullable', 'integer', Rule::exists('boardroom_shareholders', 'id')->where('company_id', $company->id)],
             ], [], [
                 'title' => __('Rubrik'),

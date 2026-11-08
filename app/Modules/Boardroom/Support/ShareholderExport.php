@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Modules\Boardroom\Support;
 
 use App\Modules\Boardroom\Domain\Holding;
+use App\Modules\Boardroom\Domain\MinutesStatus;
 use App\Modules\Boardroom\Domain\RegisterException;
+use App\Modules\Boardroom\Models\Meeting;
+use App\Modules\Boardroom\Models\Minutes;
 use App\Modules\Boardroom\Models\ShareEvent;
 use App\Modules\Boardroom\Models\Shareholder;
 
@@ -31,6 +34,11 @@ final class ShareholderExport
         } catch (RegisterException) {
             $holdings = [];
         }
+
+        // Meetings where the holder is recorded as attending, and the approved minutes that name them.
+        $meetings = Meeting::query()->with(['minutes' => fn ($query) => $query->where('status', MinutesStatus::Approved->value)])->orderBy('meeting_date')->get()
+            ->filter(fn (Meeting $meeting): bool => collect((array) $meeting->attendees)->contains(fn (array $attendee): bool => ($attendee['shareholder_id'] ?? null) === $holder->id))
+            ->values();
 
         return [
             'utdrag' => [
@@ -62,6 +70,13 @@ final class ShareholderExport
                 'aktier' => $event->rangeLabel(),
                 'roll' => $event->to_holder_id === $holder->id ? 'mottagare' : 'lämnar',
                 'uppgifter_vid_tillfallet' => $event->to_holder_id === $holder->id ? $event->holder_snapshot : null,
+            ])->all()),
+            'moten' => array_values($meetings->map(fn (Meeting $meeting): array => [
+                'datum' => $meeting->meeting_date->toDateString(),
+                'mote' => $meeting->title,
+                'typ' => $meeting->kind->value,
+                'roller' => array_values(collect((array) $meeting->attendees)->filter(fn (array $attendee): bool => ($attendee['shareholder_id'] ?? null) === $holder->id)->map(fn (array $attendee): string => $attendee['role'])->all()),
+                'godkanda_protokoll' => array_values($meeting->minutes->map(fn (Minutes $minutes): array => ['id' => $minutes->id, 'godkant' => $minutes->approved_at?->toIso8601String(), 'sha256' => $minutes->sha256])->all()),
             ])->all()),
         ];
     }
