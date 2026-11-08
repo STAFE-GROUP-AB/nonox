@@ -428,3 +428,16 @@ Open legal-verify items: H5 (hänvisningarna i 29.19 och 29.25); BAS 2240/1370/8
 Follow-ups: koppla P4:s komponentregister till `BuildingCarryingAmounts`; visa beloppet på Bokslut → Regelverk (P11) som information; ingen checklistpunkt gör uppskjuten skatt obligatorisk ännu.
 Human decisions needed: H5, H9, H10.
 Next package: S1-P4 (granskas), S1-P11 (omkontroll), därefter S1-P12.
+
+---
+
+Package: CRM-affär → offert (lucka 1, sammanhängande flöde)
+Status: done (CRM → Affärer, "Ny offert" på en öppen affär)
+Evidence: `tests/Feature/Crm/DealQuoteLinkTest.php` (25 tester).
+- "Ny offert" gör en offert med en rad från affärens namn och värde, eller från en offertmall, och kopplar den till affären. Order och faktura som följer offerten kopplas också, och förväljs när affären vinns ("Faktura (utkast)" visas).
+- Momsen på offertraden följer samma regel som fakturan (`DefaultVat`): 0 när företaget inte är momsregistrerat, vid omvänd skattskyldighet och vid momsfri försäljning utomlands. Ett test jämför offertens och fakturans moms för varje typ av utlandsförsäljning.
+- Bara öppna affärer ändras, och bara tomma kopplingar fylls. En andra "Ny offert" ersätter kopplingen och rensar den gamla offertens order och faktura; ett dubbelklick från ett inaktuellt kort gör högst en offert.
+- Fast antal frågor på affärskortet, tenancy-test (egen mall med en annan företags affär ger 404).
+- Kall granskning (1 hög, 3 medel, 3 låga) och en omkontroll; allt rättat, sista lilla felet (radfel i mallväljaren syntes inte) rättat av Lead. Hela sviten efter sammanslagning: 6 779 gröna, phpstan och pint rena.
+Kända begränsningar: offertrader från en mall behåller mallens moms även för kunder med omvänd skattskyldighet (samma som offerter i övrigt; följs upp i kärnans offerter, SaveSalesDocument); offerter kan inte ha OSS-satser; `DefaultVat` och SaveDraftInvoice har samma villkor på två ställen (skyddas av testet).
+Next package: S1-P11 (rättar NEW-1), S1-P4 (rättar granskningen), därefter S1-P12.
