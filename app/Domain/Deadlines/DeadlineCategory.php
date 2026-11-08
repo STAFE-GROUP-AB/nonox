@@ -30,7 +30,7 @@ enum DeadlineCategory: string
             DeadlineType::PreliminaryTax => self::PreliminaryTax,
             DeadlineType::Agi => self::Employer,
             DeadlineType::IncomeTaxReturn => self::IncomeTax,
-            DeadlineType::AnnualMeeting, DeadlineType::AnnualReport => self::Bolagsverket,
+            DeadlineType::AnnualMeeting, DeadlineType::AnnualReport, DeadlineType::CompanyRegistration => self::Bolagsverket,
             DeadlineType::Closing => self::Closing,
         };
     }
@@ -106,6 +106,7 @@ enum DeadlineCategory: string
             DeadlineType::AnnualMeeting => __('Inom sex månader efter räkenskapsårets slut.'),
             DeadlineType::AnnualReport => __('Normalt senast sju månader efter räkenskapsårets slut, för att slippa förseningsavgift.'),
             DeadlineType::Closing => __('Rekommendation från Företagsguiden.'),
+            DeadlineType::CompanyRegistration => __('Anmäl genast. Datumet är en yttre gräns att kontrollera med Bolagsverket.'),
         };
     }
 

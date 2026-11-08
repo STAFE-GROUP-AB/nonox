@@ -35,7 +35,7 @@ final readonly class Deadline
     /** The authority whose rule decides the date, to check it with. */
     public function checkWith(): string
     {
-        return in_array($this->type, [DeadlineType::AnnualReport, DeadlineType::AnnualMeeting], true) ? 'Bolagsverket' : 'Skatteverket';
+        return in_array($this->type, [DeadlineType::AnnualReport, DeadlineType::AnnualMeeting, DeadlineType::CompanyRegistration], true) ? 'Bolagsverket' : 'Skatteverket';
     }
 
     /** The kind and the title, for a calendar event or a reminder: "Moms: Deklarera och betala moms för kvartal 4 2026". */

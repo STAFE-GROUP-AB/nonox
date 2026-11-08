@@ -15,6 +15,8 @@ enum DeadlineType: string
     case AnnualMeeting = 'annual_meeting';
     case AnnualReport = 'annual_report';
     case Closing = 'closing';
+    /** A decision to report to Bolagsverket, from Aktiebok och styrelserum (ADR-070 §5). */
+    case CompanyRegistration = 'company_registration';
 
     public function label(): string
     {
@@ -27,6 +29,7 @@ enum DeadlineType: string
             self::AnnualMeeting => __('Årsstämma'),
             self::AnnualReport => __('Årsredovisning'),
             self::Closing => __('Bokslut'),
+            self::CompanyRegistration => __('Anmälan till Bolagsverket'),
         };
     }
 }
