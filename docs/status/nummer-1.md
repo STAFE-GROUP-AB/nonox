@@ -520,3 +520,17 @@ Evidence: `tests/Feature/Mileage/*`, `tests/Feature/Inbox/ReceiptUploadTest.php`
 - Kall granskning (1 P1, 6 P2, flera P3) och omkontroll; allt rättat, även omkontrollens tre P3. Rättat i regelbladet efter citatkontroll: KJ-R13 och momshänvisningen.
 Open legal-verify items: L4, L6, L8/L9 (konto för ägarens avdrag), L12–L16, prissättning efter resans år.
 Next package: Arbetsorder och ÄTA (prioritet 5) när signeringsflytten i kundportalens gren är granskad; aktieboken (prioritet 2) när granskningen är klar.
+
+---
+
+Package: Arbetsorder och ÄTA (prioritet 5, ADR-074)
+Status: done (modul Arbetsorder, `/arbetsorder`; på väg på startsidan tills en riktig skärmbild finns)
+Evidence: `tests/Feature/WorkOrders/*`, `tests/Feature/Invoicing/TaxReductionWorkDetailsTest.php`, `tests/Feature/Signing/*`, `tests/Tenancy/WorkOrdersTenancyTest.php`.
+- Arbetsorder med tid och material som aldrig ändras (motpost vid fel), lageruttag och vidarefakturering av en leverantörsfakturarad en gång; fakturaunderlag blir fakturautkast.
+- ROT och RUT bara på arbete, arbetade timmar och typ av arbete på fakturan, flera köpare inom var sitt tak; en kreditfaktura återför varje köpares eget avdrag. Varje faktura tar de timmar som inte redovisats på en tidigare faktura för samma arbetsorder. Personnummer skrivs bara ut på fakturor utfärdade från denna version.
+- ÄTA med pris innan arbetet, låst när det skickas, godkänns via länk eller på plats med kod till kundens egen e-post; muntligt godkännande och arbete utan svar (KtjL 8 §) sparar sin PDF. Utgångna ÄTA markeras av ett schemalagt jobb.
+- Signeringen flyttad från CRM till kärnan (`app/Domain/Signing`); offertlänkar fungerar utan CRM, och länkar som stängdes när CRM var av spärras vid driftsättning. Integritetspolicy och biträdesavtal version 1.7 (gäller 2027-01-18).
+- Bokslutssteget Pågående arbeten skapar bara verifikationsutkast.
+- Kall granskning (2 P1, 5 P2, 10 P3), omkontroll och signeringsgranskning; allt rättat.
+Open legal-verify items: L1–L16 i regelbladet, ROT-faktura utan nya timmar (HFL 9 § p. 4), personnummer på ROT-fakturan (L6).
+Next package: aktiebok (prioritet 2), kök (prioritet 4), kundportal (prioritet 6) när deras granskningar är klara.
