@@ -9,6 +9,7 @@ use Illuminate\Auth\SessionGuard;
 use Illuminate\Http\Request;
 use Illuminate\Session\SessionManager;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Facade;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -63,6 +64,9 @@ final class UsePortalSession
             config(['session.cookie' => $wanted['cookie'], 'session.path' => $wanted['path'], 'session.lifetime' => $wanted['lifetime']]);
             $this->sessions->forgetDrivers();
             app()->forgetInstance('session.store');
+            // The redirector keeps the store it was made with (RoutingServiceProvider::registerRedirector), for flashed errors and input.
+            app()->forgetInstance('redirect');
+            Facade::clearResolvedInstance('redirect');
             Auth::forgetGuards();
 
             foreach ($set as $name => $user) {
