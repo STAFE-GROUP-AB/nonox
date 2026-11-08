@@ -200,15 +200,26 @@ class InboxWorkspace extends Component
             return;
         }
 
+        if (! Account::query()->where('number', 2018)->where('is_active', true)->exists()) {
+            $this->toast(__('Konto 2018 Övriga egna insättningar finns inte i kontoplanen. Lägg till det under Kontoplan först.'), 'error');
+
+            return;
+        }
+
+        $changed = 0;
+
         foreach ($this->form['vouchers'][$voucher]['rows'] ?? [] as $index => $row) {
             $account = (int) ($row['account'] ?? 0);
 
             if ($account >= 1900 && $account <= 1999 && filled($row['credit'] ?? null)) {
                 $this->form['vouchers'][$voucher]['rows'][$index]['account'] = '2018';
+                $changed++;
             }
         }
 
-        $this->toast(__('Betalningen bokförs mot 2018 Övriga egna insättningar. Kontrollera raderna innan du godkänner.'));
+        $changed === 0
+            ? $this->toast(__('Ingen betalning från ett bank- eller kassakonto att flytta. Ändra raderna själv om det behövs.'), 'error')
+            : $this->toast(__('Betalningen bokförs mot 2018 Övriga egna insättningar. Kontrollera raderna innan du godkänner.'));
     }
 
     public function addRow(int $voucher = 0): void

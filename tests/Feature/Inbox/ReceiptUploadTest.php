@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Domain\Company\LegalForm;
+use App\Models\Account;
 use App\Models\Voucher;
+use App\Models\VoucherAttachment;
 use App\Modules\Inbox\Actions\AcceptUploadedReceipt;
 use App\Modules\Inbox\Agents\DailyReportAgent;
 use App\Modules\Inbox\Agents\InboxClassifierAgent;
@@ -94,6 +96,7 @@ it('keeps a file the virus scan flags in quarantine, unread', function () {
 
 it('offers Betalt privat in an enskild firma, moving the bank credit to 2018', function () {
     $this->company->forceFill(['legal_form' => LegalForm::Ef])->save();
+    Account::query()->firstOrCreate(['number' => 2018], ['name' => 'Övriga egna insättningar', 'type' => 'LIABILITY_EQUITY', 'is_active' => true]);
     $message = app(AcceptUploadedReceipt::class)($this->owner, $this->company, UploadedFile::fake()->image('k.jpg'));
 
     Livewire::withQueryParams(['id' => $message->id])->test(InboxWorkspace::class)
@@ -101,5 +104,30 @@ it('offers Betalt privat in an enskild firma, moving the bank credit to 2018', f
         ->set('form.vouchers.0.rows', [['account' => '5800', 'debit' => '120', 'credit' => '', 'description' => ''], ['account' => '1930', 'debit' => '', 'credit' => '120', 'description' => '']])
         ->call('paidPrivately')
         ->assertSet('form.vouchers.0.rows.1.account', '2018')
-        ->assertSet('form.vouchers.0.rows.0.account', '5800');
+        ->assertSet('form.vouchers.0.rows.0.account', '5800')
+        ->set('form.vouchers.0.rows', [['account' => '5800', 'debit' => '120', 'credit' => '', 'description' => ''], ['account' => '2440', 'debit' => '', 'credit' => '120', 'description' => '']])
+        ->call('paidPrivately')
+        ->assertDispatched('toast', message: 'Ingen betalning från ett bank- eller kassakonto att flytta. Ändra raderna själv om det behövs.', type: 'error');
+});
+
+it('books an approved photo with the photo itself as the only underlag, under its own name and type', function () {
+    $message = app(AcceptUploadedReceipt::class)($this->owner, $this->company, UploadedFile::fake()->image('parkering.jpg', 300, 500));
+
+    $component = Livewire::withQueryParams(['id' => $message->id])->test(InboxWorkspace::class)
+        ->set('form.kind', 'vouchers')
+        ->set('form.vouchers.0.date', '2026-10-30')
+        ->set('form.vouchers.0.description', 'Parkering')
+        ->set('form.vouchers.0.rows', [['account' => '4010', 'debit' => '120', 'credit' => '', 'description' => ''], ['account' => '1930', 'debit' => '', 'credit' => '120', 'description' => '']])
+        ->set('warningsConfirmed', true)
+        ->call('approve', 'post')
+        ->call('approve', 'post')
+        ->assertHasNoErrors();
+
+    $voucher = Voucher::query()->where('status', 'POSTED')->sole();
+    $attachments = VoucherAttachment::query()->where('voucher_id', $voucher->id)->get();
+
+    expect($attachments)->toHaveCount(1)
+        ->and($attachments->sole()->original_name)->toBe('parkering.jpg')
+        ->and($attachments->sole()->mime)->toBe('image/jpeg')
+        ->and($attachments->sole()->mime)->not->toBe('message/rfc822');
 });

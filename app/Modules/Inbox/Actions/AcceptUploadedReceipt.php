@@ -27,6 +27,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
+use Throwable;
 
 /**
  * Inkorg → Fota kvitto (ADR-072 §8): a company receipt photographed on the
@@ -46,6 +48,9 @@ use Illuminate\Validation\ValidationException;
 class AcceptUploadedReceipt
 {
     public const array TYPES = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic'];
+
+    /** Detected type => stored extension. */
+    private const array EXTENSIONS = ['application/pdf' => 'pdf', 'image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/heic' => 'heic', 'image/heif' => 'heic'];
 
     public function __construct(private readonly ModuleManager $modules, private readonly AttachmentScreen $screen) {}
 
@@ -84,45 +89,57 @@ class AcceptUploadedReceipt
 
             $blocked = $this->screen->reason($filename, $contents);
             $id = Str::uuid()->toString();
-            $path = "inkorg/{$company->id}/{$id}/1.".AttachmentType::storedExtension($filename);
-            Storage::disk(AcceptInboundMail::DISK)->put($path, $contents);
+            $mime = AttachmentType::detect($contents);
+            // The stored name comes from what the bytes are, never from the name the phone gave the file.
+            $path = "inkorg/{$company->id}/{$id}/1.".(self::EXTENSIONS[$mime] ?? 'bin');
             $reasons = $blocked === null ? [] : [['code' => 'BLOCKED_ATTACHMENT', 'message' => __(':name: :reason', ['name' => $filename, 'reason' => $blocked])]];
 
-            $message = DB::transaction(function () use ($id, $user, $filename, $contents, $sha256, $path, $reasons, $blocked): InboxMessage {
-                $message = new InboxMessage;
-                $message->id = $id;
-                $message->fill([
-                    'channel' => Channel::Upload,
-                    'recipient' => 'upload',
-                    'alias' => 'kvitto',
-                    'from_email' => mb_substr((string) $user->email, 0, 255),
-                    'from_name' => mb_substr((string) $user->name, 0, 255),
-                    'subject' => __('Kvitto fotat i NONOX'),
-                    'message_id' => null,
-                    'received_at' => now(),
-                    'eml_path' => $path,
-                    'eml_sha256' => $sha256,
-                    'eml_size' => strlen($contents),
-                    'body_text' => null,
-                    'auth' => ['channel' => 'upload', 'user_id' => $user->id, 'failed' => false, 'spam' => false],
-                    'status' => $reasons === [] ? MessageStatus::NeedsReview : MessageStatus::Quarantine,
-                    'quarantine_reasons' => $reasons,
-                    'warnings' => [],
-                ])->save();
+            try {
+                $message = DB::transaction(function () use ($id, $user, $filename, $contents, $sha256, $path, $reasons, $blocked, $mime): InboxMessage {
+                    $message = new InboxMessage;
+                    $message->id = $id;
+                    $message->fill([
+                        'channel' => Channel::Upload,
+                        'recipient' => 'upload',
+                        'alias' => 'kvitto',
+                        'from_email' => mb_substr((string) $user->email, 0, 255),
+                        'from_name' => mb_substr((string) $user->name, 0, 255),
+                        'subject' => __('Kvitto fotat i NONOX'),
+                        'message_id' => null,
+                        'received_at' => now(),
+                        'eml_path' => $path,
+                        'eml_sha256' => $sha256,
+                        'eml_size' => strlen($contents),
+                        'body_text' => null,
+                        'auth' => ['channel' => 'upload', 'user_id' => $user->id, 'failed' => false, 'spam' => false],
+                        'status' => $reasons === [] ? MessageStatus::NeedsReview : MessageStatus::Quarantine,
+                        'quarantine_reasons' => $reasons,
+                        'warnings' => [],
+                    ])->save();
 
-                InboxAttachment::create([
-                    'inbox_message_id' => $message->id,
-                    'position' => 1,
-                    'filename' => mb_substr($filename, 0, 255),
-                    'mime' => mb_substr(AttachmentType::detect($contents), 0, 255),
-                    'size' => strlen($contents),
-                    'sha256' => $sha256,
-                    'path' => $path,
-                    'blocked_reason' => $blocked,
-                ]);
+                    InboxAttachment::create([
+                        'inbox_message_id' => $message->id,
+                        'position' => 1,
+                        'filename' => mb_substr($filename, 0, 255),
+                        'mime' => mb_substr($mime, 0, 255),
+                        'size' => strlen($contents),
+                        'sha256' => $sha256,
+                        'path' => $path,
+                        'blocked_reason' => $blocked,
+                    ]);
 
-                return $message;
-            });
+                    // Written inside the transaction: a failed write rolls the rows back, and a failed commit removes the file.
+                    Storage::disk(AcceptInboundMail::DISK)->put($path, $contents)
+                        ?: throw new RuntimeException('The receipt could not be stored.');
+
+                    return $message;
+                });
+            } catch (Throwable $exception) {
+                // Nothing in the database points at the file any more: remove it.
+                Storage::disk(AcceptInboundMail::DISK)->delete($path);
+
+                throw $exception;
+            }
 
             Audit::record('inbox.received', $message, ['channel' => Channel::Upload->value, 'sha256' => $sha256, 'size' => strlen($contents), 'attachments' => 1, 'quarantine' => array_column($reasons, 'code')], $company, $user);
 
