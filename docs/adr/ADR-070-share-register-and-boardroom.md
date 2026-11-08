@@ -152,8 +152,10 @@ personal numbers. Who may print each version is logged under ADR-068 once that A
   as for spec nummer-1 phases: researcher rule sheet, fixtures, builder with tests first, a
   cold reviewer, then Lead merges.
 
-## Open questions for the owner
+## Owner decisions (2026-11-08)
 
-1. Is the module part of the base price, or a paid add-on?
-2. Should an accounting firm be able to keep the register on the client's behalf, with the
-   accountant role as above, or only the client's own owner and admin?
+1. The module is included in the base price. It is still a module that each company switches
+   on or off itself (ADR-017); switching it off hides it and keeps the data.
+2. An accounting firm may keep the register on the client's behalf. The accountant role gets
+   `share-register:manage` and `meetings:manage` as in §1, and every change is recorded with
+   the user who made it.
