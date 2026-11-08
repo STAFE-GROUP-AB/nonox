@@ -4,6 +4,24 @@ Målet beskrivs i uppdraget "nummer 1 för svenska småföretag med personal". V
 Inget räknas som klart utan ett test, en CI-körning, en fixtur eller ett körningsprotokoll från en testtjänst.
 Mänskliga beslut finns i [manskliga-beslut.md](manskliga-beslut.md).
 
+## Prioriterad ordning (ägaren 2026-11-08)
+
+Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanför är klart, om inte ägaren säger något annat. Nya önskemål läggs sist, inte före.
+
+1. **Spec nummer-1, S1** (pågår): S1-P4 slås ihop efter omkontrollen, sedan S1-P12, S1-P9, S1-P10, S1-P13 och S1-P14.
+2. **Aktiebok och styrelserum** (ADR-070, `aktiebok-och-styrelserum`).
+3. **Körjournal och kvitto i mobilen** (`korjournal-och-kvitto-i-mobilen`).
+4. **Recept och svinn** för restaurang (`recept-och-svinn`).
+5. **Arbetsorder och ÄTA** för hantverkare (`arbetsorder-och-ata`).
+6. **Kundportal** (`kundportal`).
+7. **Flytt från fler program** (`flytt-fran-fler-program`).
+8. **Prova utan att registrera** (`prova-utan-att-registrera`).
+9. **Statussida och säkerhet** (`statussida-och-sakerhet`).
+10. **Egna moduler** (`egna-moduler`), med en ADR om säkerheten först.
+11. **Tillverkning, inköpsordrar och kundorder** (ADR-071), i sina åtta steg.
+
+Önskemål som inte byggs nu: föreningar, bordsbokning. Byggs inte: webbshop, eget kassasystem.
+
 ## Statuskontroll 2026-11-07
 
 Kontrollerad mot koden av sanningsrevisorn, med underlag i [statuskontroll-2026-11-07.md](statuskontroll-2026-11-07.md). Arbetet styrs från och med i dag av [spec:en](../specs/nummer-1-spec.md), och filerna ägs enligt [ownership.md](../specs/ownership.md).
@@ -460,15 +478,15 @@ Next package: S1-P4 (sista regeln: inget byte till K2 efter komponentuppdelning)
 ---
 
 Package: ADR-071, tillverkning, inköpsordrar och kundorder (plan)
-Status: in progress (beslutat av ägaren 2026-11-08: byggs som moduler, inte bara önskemål)
+Status: queued, sist i den prioriterade ordningen nedan (ägaren 2026-11-08: byggs som moduler, men först när punkterna före är klara)
 Evidence: `docs/adr/ADR-071-manufacturing-purchase-orders-and-customer-ordering.md`, färdplanen (`stycklistor-och-tillverkning`, `inkopsorder`, `produktionsterminal`, `orderportal-for-kunder`).
 Byggordning, varje steg med regelunderlag där bokföring eller personuppgifter berörs, tester först, kall granskning och omkontroll före sammanslagning:
-1. Inköpsordrar i lagermodulen (utkast, förslag från beställningspunkt, PDF och mejl, inleverans mot order, avstämning mot leverantörsfaktura). Byggs nu på `feat/inventory-purchase-orders`.
-2. Modulen Tillverkning: stycklistor i flera nivåer med versioner, arbetssteg med timkostnad, orderns egen stycklista, intern kalkyl och marginal på offert och order. Byggs nu på `feat/manufacturing-bom-costing`.
+1. Inköpsordrar i lagermodulen (utkast, förslag från beställningspunkt, PDF och mejl, inleverans mot order, avstämning mot leverantörsfaktura).
+2. Modulen Tillverkning: stycklistor i flera nivåer med versioner, arbetssteg med timkostnad, orderns egen stycklista, intern kalkyl och marginal på offert och order.
 3. Materialkoll för hela antalet och inköpsförslag per leverantör från en order.
 4. Tillverkningsordrar, reservationer och lagerrörelserna "Uttag till tillverkning" och "Inleverans från tillverkning". Väntar på regelbladet `docs/specs/rules/tillverkning.md` (ÅRL 4:9, K2, K3, BAS) och redovisningskontrollen.
 5. Verkstadsterminalen och analys per produkt och arbetssteg.
 6. Kunder lägger order i kundportalen (status "Inkommen", granskning, bekräftelse).
 7. Preliminärt leveransdatum ur material, kö och historik.
 8. Analys per person, bara efter regelbladet `docs/specs/rules/produktionsuppfoljning.md` (GDPR, MBL) och juristens svar.
-Next package: S1-P4 slås ihop när omkontrollen är klar; steg 1 och 2 granskas och slås ihop när byggarna rapporterat.
+Next package: inget här förrän punkt 1–10 i den prioriterade ordningen är klara. Ett påbörjat utkast stoppades 2026-11-08; arbetet börjar om från ADR-071 när det är dags.
