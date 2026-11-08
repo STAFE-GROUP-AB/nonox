@@ -37,7 +37,7 @@ Avskrivningarna bokförs inte här, utan från registret under **Bokföring → 
 
 ## Bra att veta
 
-- Rutan visas bara för rader med ett belopp i debet på ett av företagets anskaffningskonton. Från början är det tillgångskontona för slagen i registret: 1210, 1220, 1240 och 1250.
+- Rutan visas bara för rader med ett belopp i debet på ett av företagets anskaffningskonton. Från början är det tillgångskontona för slagen i registret: 1210, 1220, 1240 och 1250. Byggnader (1110) och mark (1130) är inte med från början.
 - Har företaget angett en gräns för inventarier av mindre värde visas ingen knapp för belopp under gränsen, bara en förklaring. Gränsen ändrar du under **Anläggningar**. Vilken gräns som är rätt för ditt företag är en redovisningsfråga; fråga din redovisningskonsult.
 - Rutan syns bara för den som sköter anläggningsregistret: ägare, administratörer och redovisningskonsulter. En bokförare kan bokföra inköpet, och tillgången läggs sedan in under **Anläggningar**.
 - Samma ruta finns när du registrerar en leverantörsfaktura med en rad på ett anskaffningskonto. Då skapas tillgången när fakturan registreras.

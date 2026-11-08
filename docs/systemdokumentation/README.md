@@ -1673,6 +1673,48 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   - Behandlingshistoriken: `fixed_asset.proposed` när ett utkasts förslag
     ändras, `fixed_asset.created` med verifikation, rad och faktura, och
     `fixed_asset.settings_changed`.
+- **Byggnader och mark.** Registret har slagen Byggnader (1110, 1119, 7820)
+  och Mark (1130, inga konton för avskrivning). Mark skrivs aldrig av (K3
+  17.13 kommentaren): den har ingen nyttjandeperiod, ingen avskrivningsplan och
+  tas inte med i månadens avskrivning. Kontona för byggnader och mark föreslås
+  först när registret har en sådan tillgång, och är inte anskaffningskonton
+  från början. I K2-årsredovisningens principnot skrivs mark och uppdelade
+  tillgångar inte ut (ingen rad "Mark: 0 år").
+- **Komponenter (K3 17.4, 17.11, 17.13, 35.18; ADR-059 A.2.4).** Ett år som
+  följer K3 kan en tillgång delas upp i komponenter från den första dagen i en
+  månad, under Anläggningar → Dela upp i komponenter. Företagets princip
+  (beslut H4, principen `components`): en byggnad delas alltid upp i mark och
+  betydande komponenter, andra tillgångar när företaget väljer det. NONOX
+  sätter ingen beloppsgräns. Under K2 finns inga komponenter; byggnad och mark
+  är där två tillgångar (K2 10.22).
+  - Uppdelningen vägras om räkenskapsåret inte följer K3, om en avskrivning
+    redan är bokförd för den månad uppdelningen gäller från eller senare, och
+    om planen har obokförda månader före den. Det redovisade värdet vid
+    uppdelningen är alltså det planen säger.
+  - Personen fördelar anskaffningsvärdet; delarna ska tillsammans bli
+    tillgångens anskaffningsvärde på öret. Det som är avskrivet fördelas på
+    delarna som skrivs av i förhållande till anskaffningsvärdet, i hela ören med
+    största-rest-metoden (de överblivna örena till de största resterna, den
+    tidigare komponenten först vid lika rest), eller anges av personen för
+    varje sådan del och ska då gå jämnt upp. Mark får inget av det avskrivna.
+  - Varje komponent är en egen tillgång med `parent_id` (främmande nyckel som
+    även omfattar `company_id`, så en komponent kan inte höra till ett annat
+    företags tillgång) och `depreciation_basis` = `CARRYING_AMOUNT`: det
+    redovisade värdet vid uppdelningen (anskaffningsvärde minus avskrivet och
+    restvärde) skrivs av linjärt under den återstående nyttjandeperioden från
+    uppdelningen. Ingen månad före uppdelningen bokförs i efterhand (35.18 "får
+    inte räknas om retroaktivt"). Alla tillgångar från före komponenterna har
+    `COST` och fungerar som förut.
+  - Tillgången får status `SPLIT`, skrivs inte av och kan inte avyttras som
+    helhet. Dess bokförda avskrivningar och verifikationer ändras inte.
+  - Har en komponent ett annat tillgångskonto än tillgången (mark på 1130)
+    bokförs en omföring av dess anskaffningsvärde den dag uppdelningen gäller
+    från, i serie A genom samma bokföring som övriga verifikationer. Annars
+    bokförs ingen verifikation; vid övergången till K3 ger uppdelningen ingen
+    skillnad i eget kapital (S1-R7.2 a).
+  - En komponent avyttras med registrets vanliga avyttring.
+  - Behandlingshistoriken: `fixed_asset.split` med datum, komponenternas id,
+    anskaffningsvärde, avskrivet och omföringens verifikation (inga namn).
 
 ## 5a3. Periodiseringar
 
@@ -2075,8 +2117,10 @@ Beskrivs i [ADR-059](../adr/ADR-059-k3-annual-report.md), tillägget
   klassificering), låneutgifter (K3 kapitel 25), uppdrag till fast pris,
   kassaflödesanalys (ingen eller indirekt metod) och, för det första K3-året
   efter K2, om jämförelsetalen räknas om, om K3 har tillämpats tidigare och
-  varför företaget lämnar K2. Principen för komponentavskrivning läggs till
-  först efter ett mänskligt beslut (H4).
+  varför företaget lämnar K2, samt komponentavskrivning (`components`, beslut
+  H4: byggnader delas alltid upp i mark och komponenter, andra tillgångar när
+  företaget väljer det; personens bekräftelse att tillgångarna är prövade mot
+  principen, se avsnitt 5a2).
 - Uppdrag till fast pris får redovisas när uppdraget är slutfört (K3 23.31)
   bara i juridisk person, av företag i verksamheter som avses i 17 kap. 23 §
   inkomstskattelagen, och då för alla uppdrag enligt 17 kap. 27 § på samma
@@ -4450,6 +4494,15 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   lånerörelse med ett resultatkonto i samma verifikation godtas när likvida
   medel betalar båda exakt och åt samma håll; radernas rubriker och vilken
   rad en avrundningsrest läggs på.
+
+- Komponenter (avsnitt 5a2): kontona 1110, 1119, 1130 och 7820 mot BAS 2026;
+  att det avskrivna fördelas på komponenterna i förhållande till
+  anskaffningsvärdet när personen inte anger det (K3 35.18 anger ingen
+  fördelningsgrund); att vinst och förlust vid avyttring av en byggnad eller
+  en byggnadskomponent bokförs på 3973/7973 i stället för 3972/7972; att en
+  byggnad på mark som inte ägs (tomträtt) får delas upp utan markkomponent;
+  och att avskrivningen börjar den månad tillgången kan tas i bruk, hel månad
+  (K3 17.18).
 
 ### Lön, löneåret 2027 (5b)
 

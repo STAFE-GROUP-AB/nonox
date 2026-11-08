@@ -37,7 +37,7 @@ Ska raden inte bli en tillgång, klicka på **Skapa ingen tillgång**.
 
 ## Vilka konton räknas som anskaffningskonton?
 
-Utan eget val gäller registrets tillgångskonton: 1210, 1220, 1240 och 1250. Kontona för ackumulerade avskrivningar räknas inte, eftersom en debet där är en försäljning eller utrangering.
+Utan eget val gäller registrets tillgångskonton: 1210, 1220, 1240 och 1250. Byggnader (1110) och mark (1130) är inte med; lägg till dem i fältet om företaget vill. Kontona för ackumulerade avskrivningar räknas inte, eftersom en debet där är en försäljning eller utrangering.
 
 ### Så här väljer du egna konton
 

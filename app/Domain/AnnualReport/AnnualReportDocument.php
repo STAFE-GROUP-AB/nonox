@@ -212,15 +212,21 @@ final class AnnualReportDocument
     }
 
     /**
-     * The useful lives in the fixed asset register, per kind of asset.
+     * The useful lives in the fixed asset register, per kind of asset. Land is
+     * never depreciated and has no life, and an asset split into components is
+     * depreciated through its components (ADR-059 A.3, S1-P4): neither is a line.
      *
      * @return list<string>
      */
     private static function depreciationPrinciples(): array
     {
         $lives = [];
+        $assets = FixedAsset::query()
+            ->where('category', '!=', AssetCategory::Land->value)
+            ->where('status', '!=', FixedAsset::SPLIT)
+            ->get(['category', 'useful_life_months']);
 
-        foreach (FixedAsset::query()->get(['category', 'useful_life_months']) as $asset) {
+        foreach ($assets as $asset) {
             $lives[$asset->category->value][] = $asset->useful_life_months / 12;
         }
 

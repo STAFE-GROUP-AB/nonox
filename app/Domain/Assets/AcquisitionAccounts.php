@@ -11,8 +11,9 @@ use Illuminate\Validation\ValidationException;
  * The accounts a company books asset purchases on (anskaffningskonton). A
  * debit on one of them is offered as a new asset in the register. Without a
  * choice of its own, a company gets the asset account of every category the
- * register knows (AssetCategory); accumulated depreciation accounts are left
- * out, since a debit there is a disposal, not a purchase.
+ * register knows (AssetCategory) except buildings and land; accumulated
+ * depreciation accounts are left out, since a debit there is a disposal, not
+ * a purchase.
  */
 final readonly class AcquisitionAccounts
 {
@@ -23,7 +24,9 @@ final readonly class AcquisitionAccounts
 
     public static function defaults(): self
     {
-        return new self(array_map(fn (AssetCategory $category): array => [$category->accounts()['asset'], $category->accounts()['asset']], AssetCategory::cases()));
+        $categories = array_filter(AssetCategory::cases(), fn (AssetCategory $category): bool => $category->isPurchaseDefault());
+
+        return new self(array_values(array_map(fn (AssetCategory $category): array => [$category->accounts()['asset'], $category->accounts()['asset']], $categories)));
     }
 
     public static function for(Company $company): self

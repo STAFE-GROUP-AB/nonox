@@ -738,6 +738,43 @@ As §3.2.1, made precise:
   depreciation is already a proposal (`preview`) that a person books (`depreciate`),
   one voucher per month through `BookVoucher`. That satisfies spec Behaviour 2.
 
+**As built (S1-P4, 2026-11-08):**
+- Migration `2026_12_18_100000_add_components_to_fixed_assets`: `parent_id` with a
+  composite foreign key `(parent_id, company_id)` → `fixed_assets (id, company_id)`,
+  so a child of another company's asset is impossible in the database too;
+  `depreciation_basis` (`COST` default, check constraint); a status check
+  (`ACTIVE`, `DISPOSED`, `SPLIT`); `accumulated_account` and `expense_account`
+  nullable (land has neither). No existing row changes.
+- `AssetCategory::Buildings` (1110/1119/7820) and `Land` (1130). Land keeps a plan
+  object, but with no life it writes off nothing and `preview()` skips it. The
+  building and land accounts are proposed only once the register holds such an
+  asset, and they are not default acquisition accounts (purchase proposals are
+  unchanged for every existing company). Buildings accept lives up to 1 200 months.
+- `ComponentSplit` (pure): the person enters each component's cost, which must add
+  up to the asset's to the öre; the accumulated depreciation at the split goes to
+  the depreciable components in proportion to cost by the largest remainder method
+  (ties to the earlier component), land gets none, or the person enters every
+  depreciable component's own figure (F-S1-a) and it must add up.
+  `TODO(legal-verify)`: 35.18 gives no allocation key.
+- `FixedAssets::split()` (permission `fiscal-years:manage`: owner, admin,
+  accountant) refuses a year that is not K3, a date that is not the first of a
+  month, a booked month at or after the split, and an unbooked month before it (so
+  the carrying amount at the split is the plan's and no catch-up can ever be
+  needed). Components get the remaining life from the split, `CARRYING_AMOUNT`,
+  and start at the split. One reclassification voucher only when a component
+  (land) uses another asset account; otherwise none. Audit `fixed_asset.split`
+  with ids, dates and amounts.
+- `K3PolicyKey::Components` with the single value
+  `buildings_always_others_by_choice` (H4), rule `S1-R3.1`, never refused. It is the
+  person's confirmation; the report's "components were considered" sentence is
+  S1-P10's. The register shows a reminder for every unsplit building of a K3
+  company. A building may be split without a land component (tomträtt),
+  `TODO(legal-verify)`.
+- F-S1-a: building B1 is registered whole with 4 440 000 kr written off and split on
+  2025-01-01 with each component's own history; land is its own register asset on
+  1130 (the ledger has it there already). The register's 24 monthly vouchers equal
+  the fixture's component vouchers row by row.
+
 #### A.2.5 Size figures
 
 The size test (S1-R9) and K2 1.1C (S1-R1.3) need two prior years. For a year kept

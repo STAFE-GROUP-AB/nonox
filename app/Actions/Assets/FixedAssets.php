@@ -9,9 +9,14 @@ use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\VoucherSource;
 use App\Domain\Assets\AcquisitionAccounts;
 use App\Domain\Assets\AssetCategory;
+use App\Domain\Assets\ComponentSplit;
+use App\Domain\Assets\ComponentSplitRefused;
+use App\Domain\Assets\DepreciationBasis;
+use App\Domain\Company\ReportingFramework;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\CostCenter;
+use App\Models\FiscalYear;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetDepreciation;
 use App\Models\User;
@@ -43,6 +48,11 @@ class FixedAssets
 
     /** The first key of the transaction-level advisory lock that numbers a company's new assets. */
     public const int NUMBERING_LOCK = 4201;
+
+    /** The kinds of component in a split: a depreciable part, or land (never depreciated). */
+    public const string COMPONENT_PART = 'part';
+
+    public const string COMPONENT_LAND = 'land';
 
     public function __construct(private readonly BookVoucher $book) {}
 
@@ -119,11 +129,11 @@ class FixedAssets
             'acquisition' => ['required', 'string'],
             'residual' => ['nullable', 'string'],
             'opening_accumulated' => ['nullable', 'string'],
-            'life_months' => ['required', 'integer', 'min:1', 'max:600'],
+            'life_months' => ['nullable', 'integer', 'min:0', 'max:1200'],
             'depreciation_start' => ['required', 'date_format:Y-m-d'],
             'asset_account' => ['required', 'integer', 'between:1000,1999'],
-            'accumulated_account' => ['required', 'integer', 'between:1000,1999'],
-            'expense_account' => ['required', 'integer', 'between:7000,7999'],
+            'accumulated_account' => ['nullable', 'integer', 'between:1000,1999'],
+            'expense_account' => ['nullable', 'integer', 'between:7000,7999'],
             'cost_center' => ['nullable', 'string'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ], [], [
@@ -150,8 +160,27 @@ class FixedAssets
             throw ValidationException::withMessages(['opening_accumulated' => __('Gjorda avskrivningar kan inte vara större än det som ska skrivas av.')]);
         }
 
-        return CurrentCompany::run($company, fn (): FixedAsset => DB::transaction(function () use ($user, $company, $validated, $acquisition, $residual, $opening, $asset, $links): FixedAsset {
-            if ($asset !== null && $asset->depreciations()->exists()) {
+        $category = AssetCategory::from((string) $validated['category']);
+        $life = (int) ($validated['life_months'] ?? 0);
+
+        if ($category->depreciates()) {
+            if ($life < 1 || $life > $category->maxLifeMonths()) {
+                throw ValidationException::withMessages(['life_months' => __('Nyttjandeperioden ska vara mellan 1 och :max månader.', ['max' => $category->maxLifeMonths()])]);
+            }
+
+            foreach (['accumulated_account', 'expense_account'] as $field) {
+                if (blank($validated[$field] ?? null)) {
+                    throw ValidationException::withMessages([$field => __('Ange kontot.')]);
+                }
+            }
+        } elseif ($opening !== 0) {
+            // Land is never depreciated (K3 17.13 comment, S1-R3.2).
+            throw ValidationException::withMessages(['opening_accumulated' => __('Mark skrivs inte av och kan inte ha gjorda avskrivningar.')]);
+        }
+
+        return CurrentCompany::run($company, fn (): FixedAsset => DB::transaction(function () use ($user, $company, $validated, $acquisition, $residual, $opening, $category, $life, $asset, $links): FixedAsset {
+            // A split asset and its components carry the split's figures; the depreciated plan, too, is fixed.
+            if ($asset !== null && ($asset->isSplit() || $asset->isComponent() || $asset->depreciations()->exists())) {
                 // The plan behind booked months cannot change; only the description may.
                 $asset->forceFill(['name' => $validated['name'], 'notes' => $validated['notes'] ?? null])->save();
                 Audit::record('fixed_asset.updated', $asset, ['name' => $asset->name], $company, $user);
@@ -169,11 +198,11 @@ class FixedAssets
                 'acquisition_ore' => $acquisition,
                 'residual_ore' => $residual,
                 'opening_accumulated_ore' => $opening,
-                'useful_life_months' => (int) $validated['life_months'],
+                'useful_life_months' => $category->depreciates() ? $life : 0,
                 'depreciation_start' => CarbonImmutable::parse((string) $validated['depreciation_start'])->startOfMonth()->toDateString(),
                 'asset_account' => (int) $validated['asset_account'],
-                'accumulated_account' => (int) $validated['accumulated_account'],
-                'expense_account' => (int) $validated['expense_account'],
+                'accumulated_account' => $category->depreciates() ? (int) $validated['accumulated_account'] : null,
+                'expense_account' => $category->depreciates() ? (int) $validated['expense_account'] : null,
                 'cost_center_id' => $costCenter?->id,
                 'notes' => $validated['notes'] ?? null,
             ];
@@ -218,6 +247,7 @@ class FixedAssets
         return CurrentCompany::run($company, function () use ($month): array {
             $booked = FixedAssetDepreciation::query()->where('period', $month)->pluck('fixed_asset_id')->all();
             $assets = FixedAsset::query()->where('status', FixedAsset::ACTIVE)
+                ->where('category', '!=', AssetCategory::Land->value)
                 ->whereDate('depreciation_start', '<=', CarbonImmutable::parse("{$month}-01")->endOfMonth()->toDateString())
                 ->whereNotIn('id', $booked)
                 ->withSum('depreciations', 'amount_ore')
@@ -252,14 +282,14 @@ class FixedAssets
                 return null;
             }
 
-            $this->ensureAccounts(collect($rows)->flatMap(fn (array $row): array => [$row['asset']->expense_account, $row['asset']->accumulated_account])->unique()->all());
+            $this->ensureAccounts(collect($rows)->flatMap(fn (array $row): array => [(int) $row['asset']->expense_account, (int) $row['asset']->accumulated_account])->unique()->all());
             $costCenters = CostCenter::query()->whereIn('id', collect($rows)->pluck('asset.cost_center_id')->filter())->pluck('code', 'id');
             $lines = [];
 
             foreach ($rows as $row) {
                 $asset = $row['asset'];
-                $lines[] = ['account' => $asset->expense_account, 'amount' => $row['amount'], 'description' => "{$asset->number} {$asset->name}", 'cost_center' => $costCenters[$asset->cost_center_id] ?? null];
-                $lines[] = ['account' => $asset->accumulated_account, 'amount' => -$row['amount'], 'description' => "{$asset->number} {$asset->name}"];
+                $lines[] = ['account' => (int) $asset->expense_account, 'amount' => $row['amount'], 'description' => "{$asset->number} {$asset->name}", 'cost_center' => $costCenters[$asset->cost_center_id] ?? null];
+                $lines[] = ['account' => (int) $asset->accumulated_account, 'amount' => -$row['amount'], 'description' => "{$asset->number} {$asset->name}"];
             }
 
             $date = CarbonImmutable::parse("{$month}-01")->endOfMonth()->startOfDay();
@@ -273,6 +303,221 @@ class FixedAssets
 
             return $voucher;
         }));
+    }
+
+    /**
+     * Splits an asset into components from the first day of a month (K3 17.4,
+     * 17.11, 17.13; at the transition to K3, 35.18; ADR-059 A.2.4). Only in a
+     * K3 fiscal year: under K2 building and land are separate assets and no
+     * component exists (K2 10.22).
+     *
+     * The cost of each component is the person's allocation and must add up
+     * to the asset's; the depreciation written off by the split is divided by
+     * ComponentSplit. Each component writes off its carrying amount over its
+     * remaining life from the split (DepreciationBasis::CarryingAmount), so no
+     * month before the split is booked again; land is never depreciated. The
+     * asset gets the status SPLIT and is not depreciated again; its booked
+     * depreciation and vouchers are left as they are. When a component uses
+     * another asset account than the asset (land on 1130), one voucher moves
+     * its cost there on the split date; otherwise no voucher is booked.
+     *
+     * @param  array<int, mixed>  $components  each: name, kind (part|land), cost, accumulated (optional), life_months (remaining, from the split), residual, asset_account
+     */
+    public function split(User $user, Company $company, int $assetId, string $date, array $components): FixedAsset
+    {
+        $this->authorize($user, $company);
+
+        if (preg_match('/^\d{4}-\d{2}-01$/', $date) !== 1 || ! checkdate((int) substr($date, 5, 2), 1, (int) substr($date, 0, 4))) {
+            throw ValidationException::withMessages(['split_date' => __('Delningen gäller från den första dagen i en månad.')]);
+        }
+
+        /** @var list<array<string, mixed>> $validated */
+        $validated = array_values(Validator::make(['components' => $components], [
+            'components' => ['required', 'array', 'min:2', 'max:20'],
+            'components.*' => ['required', 'array'],
+            'components.*.name' => ['required', 'string', 'max:255'],
+            'components.*.kind' => ['required', Rule::in([self::COMPONENT_PART, self::COMPONENT_LAND])],
+            'components.*.cost' => ['required', 'string', 'max:40'],
+            'components.*.accumulated' => ['nullable', 'string', 'max:40'],
+            'components.*.residual' => ['nullable', 'string', 'max:40'],
+            'components.*.life_months' => ['nullable', 'integer', 'min:0', 'max:1200'],
+            'components.*.asset_account' => ['nullable', 'integer', 'between:1000,1999'],
+        ], [], [
+            'components' => __('komponenter'),
+            'components.*.name' => __('benämning'),
+            'components.*.cost' => __('anskaffningsvärde'),
+            'components.*.life_months' => __('återstående nyttjandeperiod'),
+            'components.*.asset_account' => __('tillgångskonto'),
+        ])->validate()['components']);
+
+        $splitOn = CarbonImmutable::parse($date);
+
+        return CurrentCompany::run($company, fn (): FixedAsset => DB::transaction(function () use ($user, $company, $assetId, $splitOn, $validated): FixedAsset {
+            DB::select('SELECT pg_advisory_xact_lock(?, ?)', [self::NUMBERING_LOCK, $company->id]);
+
+            // Inside the company: another company's asset answers 404.
+            /** @var FixedAsset $asset */
+            $asset = FixedAsset::query()->whereKey($assetId)->lockForUpdate()->firstOrFail();
+            $this->assertSplittable($asset, $splitOn);
+
+            $parts = [];
+
+            foreach ($validated as $index => $input) {
+                $land = $input['kind'] === self::COMPONENT_LAND;
+
+                if ($land && $asset->category !== AssetCategory::Buildings) {
+                    throw ValidationException::withMessages(["components.{$index}.kind" => __('Mark kan bara vara en komponent i en byggnad.')]);
+                }
+
+                $accumulated = trim((string) ($input['accumulated'] ?? '')) === '' ? null : $this->money((string) $input['accumulated'], "components.{$index}.accumulated");
+                $parts[] = ['cost_ore' => $this->money((string) $input['cost'], "components.{$index}.cost"), 'land' => $land, 'accumulated_ore' => $land && $accumulated === 0 ? null : $accumulated];
+            }
+
+            $accumulatedAtSplit = $asset->accumulatedOre();
+
+            try {
+                $allocation = ComponentSplit::allocate($asset->acquisition_ore->ore, $accumulatedAtSplit, $parts);
+            } catch (ComponentSplitRefused $refused) {
+                throw ValidationException::withMessages(['components' => $refused->getMessage()]);
+            }
+
+            $start = $splitOn->greaterThan($asset->depreciation_start) ? $splitOn : $asset->depreciation_start;
+            $number = (int) FixedAsset::query()->max('number');
+            $created = [];
+
+            foreach ($validated as $index => $input) {
+                $land = $input['kind'] === self::COMPONENT_LAND;
+                $category = $land ? AssetCategory::Land : $asset->category;
+                $cost = $allocation[$index]['cost_ore'];
+                $opening = $allocation[$index]['accumulated_ore'];
+                $residual = $land ? 0 : $this->money((string) ($input['residual'] ?? ''), "components.{$index}.residual");
+                $life = $land ? 0 : (int) ($input['life_months'] ?? 0);
+
+                if (! $land && ($life < 1 || $life > $category->maxLifeMonths())) {
+                    throw ValidationException::withMessages(["components.{$index}.life_months" => __('Den återstående nyttjandeperioden ska vara mellan 1 och :max månader.', ['max' => $category->maxLifeMonths()])]);
+                }
+
+                if ($residual < 0 || $residual >= $cost || $opening > $cost - $residual) {
+                    throw ValidationException::withMessages(["components.{$index}.residual" => __('Restvärdet och gjorda avskrivningar får tillsammans inte vara större än komponentens anskaffningsvärde.')]);
+                }
+
+                $created[] = FixedAsset::create([
+                    'number' => ++$number,
+                    'name' => (string) $input['name'],
+                    'category' => $category,
+                    'acquired_on' => $asset->acquired_on->toDateString(),
+                    'acquisition_ore' => $cost,
+                    'residual_ore' => $residual,
+                    'opening_accumulated_ore' => $opening,
+                    'useful_life_months' => $life,
+                    'depreciation_start' => $start->toDateString(),
+                    'asset_account' => blank($input['asset_account'] ?? null) ? ($land ? AssetCategory::Land->accounts()['asset'] : $asset->asset_account) : (int) $input['asset_account'],
+                    'accumulated_account' => $land ? null : $asset->accumulated_account,
+                    'expense_account' => $land ? null : $asset->expense_account,
+                    'cost_center_id' => $asset->cost_center_id,
+                    'status' => FixedAsset::ACTIVE,
+                    'parent_id' => $asset->id,
+                    'depreciation_basis' => $land ? DepreciationBasis::Cost : DepreciationBasis::CarryingAmount,
+                    'created_by' => $user->id,
+                ]);
+            }
+
+            $voucher = $this->reclassify($user, $company, $asset, $created, $splitOn);
+            $asset->forceFill(['status' => FixedAsset::SPLIT])->save();
+
+            // Ids, dates and amounts only; the names are free text and stay in their rows.
+            Audit::record('fixed_asset.split', $asset, [
+                'split_on' => $splitOn->toDateString(),
+                'component_ids' => array_map(fn (FixedAsset $component): int => $component->id, $created),
+                'acquisition_ore' => $asset->acquisition_ore->ore,
+                'accumulated_ore' => $accumulatedAtSplit,
+                'voucher_id' => $voucher?->id,
+            ], $company, $user);
+
+            return $asset->setRelation('components', collect($created));
+        }));
+    }
+
+    /**
+     * What a split would start from, for the form: the remaining life of the
+     * asset's plan at the split.
+     */
+    public static function remainingMonths(FixedAsset $asset, CarbonImmutable $splitOn): int
+    {
+        $elapsed = ($splitOn->year - $asset->depreciation_start->year) * 12 + ($splitOn->month - $asset->depreciation_start->month);
+
+        return max(1, $asset->useful_life_months - max(0, $elapsed));
+    }
+
+    private function assertSplittable(FixedAsset $asset, CarbonImmutable $splitOn): void
+    {
+        if ($asset->isSplit()) {
+            throw ValidationException::withMessages(['asset' => __('Tillgången är redan uppdelad i komponenter.')]);
+        }
+
+        if ($asset->status !== FixedAsset::ACTIVE) {
+            throw ValidationException::withMessages(['asset' => __('Tillgången är avyttrad och kan inte delas upp.')]);
+        }
+
+        if ($asset->isComponent()) {
+            throw ValidationException::withMessages(['asset' => __('En komponent kan inte delas upp i fler komponenter.')]);
+        }
+
+        if (! $asset->depreciates()) {
+            throw ValidationException::withMessages(['asset' => __('Mark skrivs inte av och delas inte upp i komponenter.')]);
+        }
+
+        $fiscalYear = FiscalYear::query()->whereDate('start_date', '<=', $splitOn->toDateString())->whereDate('end_date', '>=', $splitOn->toDateString())->first();
+
+        if ($fiscalYear === null) {
+            throw ValidationException::withMessages(['split_date' => __('Det finns inget räkenskapsår för :date.', ['date' => $splitOn->toDateString()])]);
+        }
+
+        if ($fiscalYear->reporting_framework !== ReportingFramework::K3) {
+            throw ValidationException::withMessages(['split_date' => __('Komponenter används bara de räkenskapsår som företaget följer K3. Räkenskapsåret :year följer :framework.', ['year' => $fiscalYear->label(), 'framework' => $fiscalYear->reporting_framework->value])]);
+        }
+
+        $booked = $asset->depreciations()->where('period', '>=', $splitOn->format('Y-m'))->orderBy('period')->value('period');
+
+        if ($booked !== null) {
+            throw ValidationException::withMessages(['split_date' => __('Avskrivningen för :month är redan bokförd. Dela upp tillgången från en senare månad.', ['month' => $booked])]);
+        }
+
+        // The carrying amount at the split is what the plan says: a month left unbooked would never be caught up.
+        $previous = $splitOn->subMonthNoOverflow()->format('Y-m');
+
+        if ($asset->plan()->amountFor($previous, $asset->accumulatedOre()) > 0) {
+            throw ValidationException::withMessages(['split_date' => __('Bokför avskrivningarna till och med :month innan tillgången delas upp.', ['month' => $previous])]);
+        }
+    }
+
+    /**
+     * Moves the cost of the components booked on another asset account than
+     * the asset's (land on 1130) on the split date, as one voucher. The
+     * accumulated depreciation stays where it is: depreciable components keep
+     * the asset's accumulated account and land has none. Null when every
+     * component uses the asset's own account.
+     *
+     * @param  list<FixedAsset>  $components
+     */
+    private function reclassify(User $user, Company $company, FixedAsset $asset, array $components, CarbonImmutable $splitOn): ?Voucher
+    {
+        $moved = array_values(array_filter($components, fn (FixedAsset $component): bool => $component->asset_account !== $asset->asset_account));
+
+        if ($moved === []) {
+            return null;
+        }
+
+        $this->ensureAccounts(array_values(array_unique([$asset->asset_account, ...array_map(fn (FixedAsset $component): int => $component->asset_account, $moved)])));
+        $lines = [];
+
+        foreach ($moved as $component) {
+            $lines[] = ['account' => $component->asset_account, 'amount' => $component->acquisition_ore->ore, 'description' => "{$component->number} {$component->name}"];
+        }
+
+        $lines[] = ['account' => $asset->asset_account, 'amount' => -array_sum(array_map(fn (FixedAsset $component): int => $component->acquisition_ore->ore, $moved)), 'description' => "{$asset->number} {$asset->name}"];
+
+        return $this->book->rows($user, $company, $splitOn, __('Omföring vid uppdelning i komponenter: :number :name', ['number' => $asset->number, 'name' => $asset->name]), self::SERIES, $lines, VoucherSource::Closing, $asset);
     }
 
     /**
@@ -303,6 +548,10 @@ class FixedAssets
             /** @var FixedAsset $asset */
             $asset = FixedAsset::query()->whereKey($asset->id)->lockForUpdate()->firstOrFail();
 
+            if ($asset->isSplit()) {
+                throw ValidationException::withMessages(['asset' => __('Tillgången är uppdelad i komponenter. Sälj eller utrangera komponenterna var för sig.')]);
+            }
+
             if ($asset->status !== FixedAsset::ACTIVE) {
                 throw ValidationException::withMessages(['asset' => __('Tillgången är redan avyttrad.')]);
             }
@@ -310,14 +559,16 @@ class FixedAssets
             $acquisition = $asset->acquisition_ore->ore;
             $accumulated = $asset->accumulatedOre();
             $result = $priceOre - ($acquisition - $accumulated);
-            $this->ensureAccounts([$asset->asset_account, $asset->accumulated_account, $counterAccount, $result >= 0 ? self::GAIN_ACCOUNT : self::LOSS_ACCOUNT]);
+            // TODO(legal-verify): for a building or a building component the gain or loss may belong
+            // on 3972/7972 (byggnader och mark) rather than 3973/7973 (ADR-059 A.2.4, S1-R3.5).
+            $this->ensureAccounts(array_values(array_filter([$asset->asset_account, $accumulated !== 0 ? $asset->accumulated_account : null, $counterAccount, $result >= 0 ? self::GAIN_ACCOUNT : self::LOSS_ACCOUNT], fn (?int $account): bool => $account !== null)));
 
-            $lines = [
+            $lines = array_values(array_filter([
                 ['account' => $asset->asset_account, 'amount' => -$acquisition, 'description' => "{$asset->number} {$asset->name}"],
-                ['account' => $asset->accumulated_account, 'amount' => $accumulated, 'description' => "{$asset->number} {$asset->name}"],
+                $accumulated !== 0 ? ['account' => (int) $asset->accumulated_account, 'amount' => $accumulated, 'description' => "{$asset->number} {$asset->name}"] : null,
                 ['account' => $counterAccount, 'amount' => $priceOre, 'description' => null],
                 ['account' => $result >= 0 ? self::GAIN_ACCOUNT : self::LOSS_ACCOUNT, 'amount' => -$result, 'description' => null],
-            ];
+            ]));
 
             $voucher = $this->book->rows($user, $company, CarbonImmutable::parse($date), ($priceOre > 0 ? __('Försäljning') : __('Utrangering')).": {$asset->number} {$asset->name}", self::SERIES, $lines, VoucherSource::Closing, $asset);
 
@@ -340,10 +591,20 @@ class FixedAssets
      */
     public static function missingAccounts(Company $company): array
     {
-        return CurrentCompany::run($company, fn (): array => array_values(array_diff(
-            array_keys(AssetCategory::ACCOUNT_NAMES),
-            Account::query()->whereIn('number', array_keys(AssetCategory::ACCOUNT_NAMES))->pluck('number')->map(fn (mixed $n): int => (int) $n)->all(),
-        )));
+        return CurrentCompany::run($company, function (): array {
+            $suggested = array_keys(AssetCategory::ACCOUNT_NAMES);
+            $properties = array_map(fn (AssetCategory $category): string => $category->value, array_filter(AssetCategory::cases(), fn (AssetCategory $category): bool => $category->isProperty()));
+
+            // Buildings and land are seldom in the register; their accounts are proposed once one is.
+            if (! FixedAsset::query()->whereIn('category', $properties)->exists()) {
+                $suggested = array_values(array_diff($suggested, AssetCategory::PROPERTY_ACCOUNTS));
+            }
+
+            return array_values(array_diff(
+                $suggested,
+                Account::query()->whereIn('number', $suggested)->pluck('number')->map(fn (mixed $n): int => (int) $n)->all(),
+            ));
+        });
     }
 
     /** @return list<int> the accounts added */
