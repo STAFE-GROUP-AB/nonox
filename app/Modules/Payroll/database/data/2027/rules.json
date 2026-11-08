@@ -200,6 +200,28 @@
             "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
             "source_quote": "IL 12 kap. 5 §: Utgifter för tjänsteresor med egen bil ska dras av med 2 kronor och 50 öre för varje kilometer.",
             "source_read_on": "2026-11-08"
+        },
+        {
+            "key": "mileage.company_car_fossil",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "ore": 1200
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 12 kap. 5 § andra stycket: utgifter för annat drivmedel med 1 krona och 20 öre för varje kilometer.",
+            "source_read_on": "2026-11-08"
+        },
+        {
+            "key": "mileage.company_car_electric",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "ore": 950
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 12 kap. 5 § andra stycket: utgifter för elektricitet till elbil dras av med 95 öre för varje kilometer.",
+            "source_read_on": "2026-11-08"
         }
     ],
     "pending": [
@@ -251,20 +273,6 @@
             "expected": "december 2026",
             "source_url": "https://www.skatteverket.se/privat/skatter/arbeteochinkomst/traktamente.4.dfe345a107ebcc9baf80006547.html",
             "note": "Normalbelopp per country are published yearly; not researched for 2026 either."
-        },
-        {
-            "key": "mileage.company_car_fossil",
-            "authority": "Skatteverket",
-            "expected": "december 2026",
-            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-            "note": "The amount is written in IL 12 kap. 5 § andra stycket (1 krona och 20 öre per km), but under the Lead decision on ADR-072 (Q3) the förmånsbil amounts wait for Skatteverket's Belopp och procent 2027; a 2027 run that pays company-car mileage is blocked until then."
-        },
-        {
-            "key": "mileage.company_car_electric",
-            "authority": "Skatteverket",
-            "expected": "december 2026",
-            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-            "note": "The amount is written in IL 12 kap. 5 § andra stycket (95 öre per km for electricity), but under the Lead decision on ADR-072 (Q3) the förmånsbil amounts wait for Skatteverket's Belopp och procent 2027; a 2027 run that pays company-car mileage is blocked until then."
         },
         {
             "key": "gift.tax_free_limits",

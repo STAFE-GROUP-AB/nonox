@@ -2,6 +2,8 @@
 @php
     $groups = (array) ($expense->trip_data['groups'] ?? []);
     $notes = (array) ($expense->trip_data['notes'] ?? []);
+    $cars = collect((array) ($expense->trip_data['lines'] ?? []))->mapWithKeys(fn ($line) => [(string) ($line['trip_id'] ?? '') => (string) ($line['car'] ?? '')]);
+    $carLabels = ['OWN_BENEFIT' => __('förmånsbil'), 'POOL' => __('poolbil'), 'OTHER_BENEFIT' => __('annans förmånsbil')];
 @endphp
 <div class="flex flex-wrap items-center gap-3">
     <span class="min-w-0 flex-1 basis-40">
@@ -12,6 +14,9 @@
     </span>
     <span class="text-sm font-semibold tabular-nums text-gray-900">{{ ($expense->trip_data['rate_pending'] ?? false) ? __('Beloppet väntar') : $expense->amount_ore->format() }}</span>
 </div>
+@if($expense->type === 'MILEAGE_COMPANY_CAR')
+    <p class="rounded-lg bg-accent-50 p-3 text-sm text-accent-900">{{ __('Kontrollera drivmedelskortet: har företaget betalat något drivmedel för bilen i månaden, kan resorna bara ersättas som lön.') }}</p>
+@endif
 @foreach($notes as $note)
     <p class="rounded-lg bg-gray-50 p-3 text-sm text-gray-700">{{ $note }}</p>
 @endforeach
@@ -31,7 +36,7 @@
             @foreach($claimTrips as $trip)
                 <tr wire:key="claim-trip-{{ $trip->id }}">
                     <td class="py-1.5 pr-3 tabular-nums">{{ $trip->trip_date->toDateString() }}</td>
-                    <td class="py-1.5 pr-3">{{ $trip->vehicle->displayName() }}</td>
+                    <td class="py-1.5 pr-3">{{ $trip->vehicle->displayName() }}@if(isset($carLabels[$cars[$trip->id] ?? ''])) <span class="text-gray-600">({{ $carLabels[$cars[$trip->id]] }})</span>@endif</td>
                     <td class="py-1.5 pr-3">{{ $trip->kind->label() }}</td>
                     <td class="py-1.5 pr-3">{{ $trip->route() }}</td>
                     <td class="py-1.5 pr-3">{{ $trip->purpose }}@if($trip->corrects_trip_id) <span class="text-accent-800">({{ __('rättelse') }}: {{ $trip->correction_reason }})</span>@endif</td>

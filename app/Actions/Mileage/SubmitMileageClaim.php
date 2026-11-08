@@ -131,26 +131,23 @@ class SubmitMileageClaim
         $lines = [];
         $groups = [];
 
-        if ($kind === VehicleKind::CompanyCar && ! $paidAllFuel) {
-            $notes[] = __('Skattefri milersättning för förmånsbil kräver att du betalat allt drivmedel själv. Resorna kan bara ersättas som lön.');
-        } elseif ($kind === VehicleKind::CompanyCar && $fuelBenefit) {
-            $notes[] = __('Skattefri milersättning för förmånsbil kräver att du betalat allt drivmedel själv. Företaget har betalat drivmedel för bilen i månaden, så resorna kan bara ersättas som lön.');
-        }
+        $originals = self::originalLines($trips);
 
         foreach ($trips as $trip) {
-            $fuel = $cars->fuel($trip->vehicle, $trip->trip_date);
-            $code = MileagePayCode::forTrip($kind, $fuel, $trip->kind);
-            $taxFreeAllowed = $kind === VehicleKind::PrivateCar || ($paidAllFuel && ! $fuelBenefit);
+            $original = $trip->corrects_trip_id === null ? null : ($originals[$trip->corrects_trip_id] ?? null);
 
-            if ($code !== MileagePayCode::TAXABLE && $trip->charged_at_workplace && ! MileagePayCode::workplaceChargingAllowed($fuel, $trip->trip_date)) {
-                $taxFreeAllowed = false;
-                $notes[] = __('Resan :date laddades på arbetsplatsen före den 1 juli 2026 och kan bara ersättas som lön.', ['date' => $trip->trip_date->toDateString()]);
+            if ($original !== null) {
+                // A correction is priced as the line it corrects: the same pay code, rule and year.
+                $code = (string) $original['pay_code'];
+                $rule = (string) $original['rule'];
+                $year = (int) $original['year'];
+                $benefitId = isset($original['benefit_id']) ? (int) $original['benefit_id'] : null;
+                $car = (string) ($original['car'] ?? '');
+            } else {
+                [$code, $rule, $benefitId, $car] = $this->price($trip, $kind, $employee, $cars, $paidAllFuel, $fuelBenefit, $notes);
+                $year = $trip->trip_date->year;
             }
 
-            // The rule the amount is measured against, also for a trip that can only be paid as pay.
-            $rule = MileagePayCode::RULES[MileagePayCode::forTrip($kind, $fuel, TripKind::Business)];
-            $code = $code !== MileagePayCode::TAXABLE && ! $taxFreeAllowed ? MileagePayCode::TAXABLE : $code;
-            $year = $trip->trip_date->year;
             $key = "{$code}|{$rule}|{$year}";
             $groups[$key] ??= ['pay_code' => $code, 'rule' => $rule, 'year' => $year, 'hm' => 0, 'trips' => 0];
             $groups[$key]['hm'] += $trip->distance_hm;
@@ -162,6 +159,10 @@ class SubmitMileageClaim
                 'vehicle_id' => $trip->vehicle_id,
                 'hm' => $trip->distance_hm,
                 'pay_code' => $code,
+                'rule' => $rule,
+                'year' => $year,
+                'benefit_id' => $benefitId,
+                'car' => $car,
                 'corrects_trip_id' => $trip->corrects_trip_id,
             ];
         }
@@ -170,13 +171,13 @@ class SubmitMileageClaim
         $pending = false;
 
         foreach ($groups as $key => $group) {
-            if ($group['hm'] <= 0) {
-                throw ValidationException::withMessages(['month' => __('Rättelserna är större än resorna i månaden. Kontakta den som sköter lönerna.')]);
-            }
+            // The schablon of the trip's year (IL 12 kap. 5 §: "utgifter för tjänsteresor"), carried into the run.
+            // TODO(legal-verify): whether the payment year's amount should apply instead when the two differ.
+            $rules = RuleSet::for(CarbonImmutable::create($group['year'], 12, 31) ?? CarbonImmutable::today());
 
             try {
-                $schablon = (int) ((array) RuleSet::for(CarbonImmutable::create($group['year'], 12, 31) ?? CarbonImmutable::today())->get($group['rule']))['ore'];
-                $version = RuleSet::for(CarbonImmutable::create($group['year'], 12, 31) ?? CarbonImmutable::today())->version($group['rule'])->id;
+                $schablon = (int) ((array) $rules->get($group['rule']))['ore'];
+                $version = $rules->version($group['rule'])->id;
             } catch (MissingPayrollRuleException) {
                 $schablon = null;
                 $version = null;
@@ -231,6 +232,77 @@ class SubmitMileageClaim
         Audit::record('mileage.claim_submitted', $expense, ['employee_id' => $employee->id, 'type' => $type, 'trips' => $trips->count(), 'distance_hm' => $hm, 'amount_ore' => $amount], $company, $user);
 
         return $expense;
+    }
+
+    /**
+     * The pay code, rule, car benefit and kind of car for a trip (KJ-R1 to KJ-R4, KJ-R6):
+     * tax-free MIL_FORMANSBIL(_EL) only in the driver's own förmånsbil on the trip date
+     * (IL 12 kap. 5 § andra stycket: "sin förmånsbil"), when the driver paid all the fuel,
+     * the company paid no fuel benefit in the month, and workplace charging is allowed.
+     * A pool car or another employee's förmånsbil can only be paid as pay.
+     *
+     * @param  array<int, mixed>  $notes  the claim's notes, added to
+     * @return array{0: string, 1: string, 2: ?int, 3: string} pay code, rule, benefit id, OWN_CAR|OWN_BENEFIT|POOL|OTHER_BENEFIT
+     */
+    private function price(VehicleTrip $trip, VehicleKind $kind, Employee $employee, CompanyCarBenefits $cars, bool $paidAllFuel, bool $fuelBenefit, array &$notes): array
+    {
+        $fuel = $cars->fuel($trip->vehicle, $trip->trip_date);
+        // The rule the amount is measured against, also for a trip that can only be paid as pay.
+        $rule = MileagePayCode::RULES[MileagePayCode::forTrip($kind, $fuel, TripKind::Business)];
+        $code = MileagePayCode::forTrip($kind, $fuel, $trip->kind);
+
+        if ($kind === VehicleKind::PrivateCar) {
+            return [$code, $rule, null, 'OWN_CAR'];
+        }
+
+        $benefit = $cars->on($trip->vehicle, $trip->trip_date);
+        $car = $benefit === null ? 'POOL' : ($benefit->employee_id === $employee->id ? 'OWN_BENEFIT' : 'OTHER_BENEFIT');
+        $reason = match (true) {
+            $code === MileagePayCode::TAXABLE => null,
+            $car !== 'OWN_BENEFIT' => __('Bilen är inte din förmånsbil, så skattefri milersättning för förmånsbil gäller inte. Resorna med den kan bara ersättas som lön.'),
+            ! $paidAllFuel => __('Skattefri milersättning för förmånsbil kräver att du betalat allt drivmedel själv. Resorna kan bara ersättas som lön.'),
+            $fuelBenefit => __('Skattefri milersättning för förmånsbil kräver att du betalat allt drivmedel själv. Företaget har betalat drivmedel för bilen i månaden, så resorna kan bara ersättas som lön.'),
+            $trip->charged_at_workplace && ! MileagePayCode::workplaceChargingAllowed($fuel, $trip->trip_date) => __('Resan :date laddades på arbetsplatsen före den 1 juli 2026 och kan bara ersättas som lön.', ['date' => $trip->trip_date->toDateString()]),
+            default => null,
+        };
+
+        if ($reason !== null) {
+            $notes[] = $reason;
+            $code = MileagePayCode::TAXABLE;
+        }
+
+        return [$code, $rule, $benefit?->id, $car];
+    }
+
+    /**
+     * The claim lines of the trips that corrections point at, by trip id, read from the
+     * original claims' trip_data in two queries.
+     *
+     * @param  Collection<int, VehicleTrip>  $trips
+     * @return array<string, array<string, mixed>>
+     */
+    private static function originalLines(Collection $trips): array
+    {
+        $ids = $trips->pluck('corrects_trip_id')->filter()->values();
+
+        if ($ids->isEmpty()) {
+            return [];
+        }
+
+        $expenseIds = VehicleTrip::query()->whereIn('id', $ids)->pluck('expense_id')->filter()->unique();
+        $lines = [];
+
+        foreach (Expense::query()->whereIn('id', $expenseIds)->get() as $expense) {
+            foreach ((array) ($expense->trip_data['lines'] ?? []) as $line) {
+                $line = (array) $line;
+
+                if ($ids->contains($line['trip_id'] ?? null) && isset($line['pay_code'], $line['rule'], $line['year'])) {
+                    $lines[(string) $line['trip_id']] = $line;
+                }
+            }
+        }
+
+        return $lines;
     }
 
     /**

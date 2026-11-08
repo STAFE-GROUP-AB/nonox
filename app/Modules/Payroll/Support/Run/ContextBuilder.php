@@ -13,8 +13,10 @@ use App\Modules\Payroll\Domain\Engine\PayInput;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollContext;
 use App\Modules\Payroll\Domain\Engine\Steps\Additions;
+use App\Modules\Payroll\Domain\Engine\Steps\Allowances;
 use App\Modules\Payroll\Domain\Engine\Steps\BaseSalary;
 use App\Modules\Payroll\Domain\Engine\Steps\NetPay;
+use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
@@ -93,7 +95,7 @@ final class ContextBuilder
             periodStart: $periodStart,
             periodEnd: $periodEnd,
             paymentDate: $run->payment_date,
-            inputs: [...$entered, ...$this->timeReports($timeReports ?? collect(), $payCodes), ...$this->lateTimeReports($lateTimeReports, $payCodes), ...$this->outlays($run, $employee, $payCodes, $rules), ...$this->retroactive($run, $employment, $payCodes), ...$this->carBenefits($run, $employee, $employment, $payCodes, $entered)],
+            inputs: [...$entered, ...$this->timeReports($timeReports ?? collect(), $payCodes), ...$this->lateTimeReports($lateTimeReports, $payCodes), ...$this->outlays($run, $employee, $payCodes), ...$this->retroactive($run, $employment, $payCodes), ...$this->carBenefits($run, $employee, $employment, $payCodes, $entered)],
             accumulators: Accumulator::query()
                 ->where('employee_id', $employee->id)
                 ->where('scope', 'CALENDAR_YEAR')
@@ -380,7 +382,7 @@ final class ContextBuilder
      * @param  Collection<int, PayCode>  $payCodes  by id
      * @return list<PayInput>
      */
-    private function outlays(PayrollRun $run, Employee $employee, Collection $payCodes, RuleSet $rules): array
+    private function outlays(PayrollRun $run, Employee $employee, Collection $payCodes): array
     {
         $expenses = Expense::query()
             ->where('employee_id', $employee->id)
@@ -397,7 +399,7 @@ final class ContextBuilder
             }
 
             if ($expense->isMileage()) {
-                array_push($inputs, ...$this->mileage($expense, $payCodes, $rules));
+                array_push($inputs, ...$this->mileage($expense, $payCodes));
 
                 continue;
             }
@@ -421,7 +423,7 @@ final class ContextBuilder
      * @param  Collection<int, PayCode>  $payCodes  by id
      * @return list<PayInput>
      */
-    private function mileage(Expense $expense, Collection $payCodes, RuleSet $rules): array
+    private function mileage(Expense $expense, Collection $payCodes): array
     {
         $inputs = [];
 
@@ -430,10 +432,16 @@ final class ContextBuilder
                 ?? throw new PayrollBlockedException(__('Lönearten :code finns inte. Slå av och på lönemodulen för att lägga till systemets lönearter.', ['code' => $group['pay_code']]));
             $quantity = Distance::mil((int) $group['hm']);
             $rate = isset($group['rate_ore']) ? (int) $group['rate_ore'] : null;
-            $explanation = ['source' => 'mileage_claim', 'expense_id' => $expense->id, 'month' => $expense->trip_data['month'] ?? null, 'trips' => $group['trips'] ?? null];
+            // The trips are priced at the rule of the trip's year, not the payment date's (ADR-072, Lead decision; TODO(legal-verify)).
+            // A rule that was not published when the claim was sent is read again now; still missing, it blocks the run.
+            [$limit, $versionId] = isset($group['schablon_ore'])
+                ? [(int) $group['schablon_ore'], isset($group['rule_version_id']) ? (int) $group['rule_version_id'] : null]
+                : $this->mileageRule((string) $group['rule'], (int) $group['year']);
+            $explanation = ['source' => 'mileage_claim', 'expense_id' => $expense->id, 'month' => $expense->trip_data['month'] ?? null, 'trips' => $group['trips'] ?? null,
+                'trip_year' => (int) $group['year'], Allowances::MILEAGE_LIMIT => $limit, Allowances::MILEAGE_RULE_VERSION => $versionId];
 
             if ($code->code === MileagePayCode::TAXABLE) {
-                $rate ??= (int) ((array) $rules->get((string) $group['rule']))['ore'];
+                $rate ??= $limit;
             }
 
             $inputs[] = new PayInput($code->code, (string) $expense->description, $code->category, $code->is_taxable, $code->tax_method, $code->is_contribution_basis, $code->is_vacation_basis,
@@ -441,6 +449,26 @@ final class ContextBuilder
         }
 
         return $inputs;
+    }
+
+    /** @var array<string, array{0: int, 1: int}> a mileage rule per key and trip year, read once per run */
+    private array $mileageRules = [];
+
+    /**
+     * The amount per mil and its version for a trip year.
+     *
+     * @return array{0: int, 1: int}
+     *
+     * @throws MissingPayrollRuleException
+     */
+    private function mileageRule(string $rule, int $year): array
+    {
+        if (! isset($this->mileageRules["{$rule}|{$year}"])) {
+            $rules = RuleSet::for(CarbonImmutable::create($year, 12, 31) ?? CarbonImmutable::today());
+            $this->mileageRules["{$rule}|{$year}"] = [(int) ((array) $rules->get($rule))['ore'], $rules->version($rule)->id];
+        }
+
+        return $this->mileageRules["{$rule}|{$year}"];
     }
 
     /** @var array{run: int, cars: Collection<int|string, Collection<int, Benefit>>, carriers: array<int, int>, rules: RuleSet}|null the run's cars, loaded once by prepareCars() */

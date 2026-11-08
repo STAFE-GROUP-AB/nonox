@@ -54,6 +54,11 @@ final class Allowances implements Step
 
     public const string OWN_PAYMENT = 'FORMAN_EGENBETALNING';
 
+    /** Set by ContextBuilder on a körjournal claim input: the amount per mil of the trip's year and its rule version (ADR-072). */
+    public const string MILEAGE_LIMIT = 'mileage_limit_ore';
+
+    public const string MILEAGE_RULE_VERSION = 'mileage_rule_version_id';
+
     /** @return list<string> the pay codes this step prices, which Additions leaves alone */
     public static function codes(): array
     {
@@ -113,14 +118,18 @@ final class Allowances implements Step
     private function allowance(PayrollContext $context, PayslipDraft $draft, PayInput $input): void
     {
         [$rule, $taxableCode] = self::TAX_FREE[$input->code];
-        $limit = (int) ((array) $context->rules->get($rule))['ore'];
+        // A körjournal claim carries the amount of the trip's year; every other input uses the payment date's rules.
+        $claim = isset($input->explanation[self::MILEAGE_LIMIT]);
+        $limit = $claim ? (int) $input->explanation[self::MILEAGE_LIMIT] : (int) ((array) $context->rules->get($rule))['ore'];
+        $versionId = $claim ? (isset($input->explanation[self::MILEAGE_RULE_VERSION]) ? (int) $input->explanation[self::MILEAGE_RULE_VERSION] : null) : $context->rules->version($rule)->id;
 
-        if ($input->quantity === null || BigDecimal::of($input->quantity)->isLessThanOrEqualTo(0)) {
+        // A claim of corrections only may take back mileage paid before: a negative number of mil.
+        if ($input->quantity === null || BigDecimal::of($input->quantity)->isZero() || (! $claim && BigDecimal::of($input->quantity)->isNegative())) {
             throw new PayrollBlockedException(__(':item behöver antal mil eller dagar. Det skattefria beloppet räknas per mil eller dag; skriv antalet och vid behov hela ersättningen.', ['item' => $input->description]));
         }
 
         if ($input->amountOre !== null) {
-            $this->allowanceAmount($context, $draft, $input, $rule, $taxableCode, $limit);
+            $this->allowanceAmount($context, $draft, $input, $rule, $taxableCode, $limit, $versionId);
 
             return;
         }
@@ -129,7 +138,7 @@ final class Allowances implements Step
         $taxFreeRate = min($rate, $limit);
 
         $draft->add(new PayslipLineResult($input->code, $input->description, $this->times($input, $taxFreeRate), PayslipLineResult::NET, false, false, $input->quantity, $taxFreeRate,
-            ruleVersionId: $context->rules->version($rule)->id,
+            ruleVersionId: $versionId,
             explanation: ['source' => 'input', 'category' => 'ALLOWANCE_TAX_FREE', 'tax_free' => true, 'limit_ore' => $limit]));
 
         if ($rate > $limit) {
@@ -142,7 +151,7 @@ final class Allowances implements Step
      * The whole agreed allowance as an amount with its number of mil or
      * days: tax-free up to the rule times the number, the rest taxable pay.
      */
-    private function allowanceAmount(PayrollContext $context, PayslipDraft $draft, PayInput $input, string $rule, string $taxableCode, int $limit): void
+    private function allowanceAmount(PayrollContext $context, PayslipDraft $draft, PayInput $input, string $rule, string $taxableCode, int $limit, ?int $versionId): void
     {
         $paid = (int) $input->amountOre;
 
@@ -153,7 +162,7 @@ final class Allowances implements Step
         $taxFree = min($paid, $this->times($input, $limit));
 
         $draft->add(new PayslipLineResult($input->code, $input->description, $taxFree, PayslipLineResult::NET, false, false, $input->quantity, null,
-            ruleVersionId: $context->rules->version($rule)->id,
+            ruleVersionId: $versionId,
             explanation: ['source' => 'input', 'category' => 'ALLOWANCE_TAX_FREE', 'tax_free' => true, 'limit_ore' => $limit, 'paid_ore' => $paid]));
 
         if ($paid > $taxFree) {

@@ -117,19 +117,15 @@ it('splits a company-car rate above the schablon into a taxable part', function 
         ->and(mileageLines()['MIL_SKATTEPLIKTIG'])->toBe(8_000);
 });
 
-it('names IL 12 kap. 5 § as the source of the own-car amount in 2027 and keeps the förmånsbil amounts pending', function () {
+it('carries all three mileage amounts into 2027 from IL 12 kap. 5 §, where the law writes them', function () {
     $file = ImportPayrollRules::file(2027);
-    $ownCar = collect($file['rules'])->firstWhere('key', 'mileage.own_car_tax_free_per_mil');
+    $rules = collect($file['rules'])->keyBy('key');
     $pending = array_column($file['pending'], 'key');
 
-    expect($ownCar)->not->toBeNull()
-        ->and($ownCar['value'])->toBe(['ore' => 2500])
-        ->and($ownCar['valid_from'])->toBe('2027-01-01')
-        ->and($ownCar['source_url'])->toContain('sfs-1999-1229')
-        ->and($pending)->toContain('mileage.company_car_fossil', 'mileage.company_car_electric')
-        ->and($pending)->not->toContain('mileage.own_car_tax_free_per_mil');
-
-    foreach ($file['pending'] as $item) {
-        expect((string) ($item['note'] ?? ''))->not->toContain('was not found in the law text');
+    foreach (['mileage.own_car_tax_free_per_mil' => 2500, 'mileage.company_car_fossil' => 1200, 'mileage.company_car_electric' => 950] as $key => $ore) {
+        expect($rules[$key]['value'])->toBe(['ore' => $ore])
+            ->and($rules[$key]['valid_from'])->toBe('2027-01-01')
+            ->and($rules[$key]['source_url'])->toContain('sfs-1999-1229')
+            ->and($pending)->not->toContain($key);
     }
 });
