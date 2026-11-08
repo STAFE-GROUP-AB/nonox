@@ -23,7 +23,9 @@ use Illuminate\Support\Facades\DB;
  * read from the posted ledger: revenue and costs per month this year and
  * last, the result per month and accumulated, the bank balance month by
  * month with a forecast (LiquidityForecast), the largest customers and cost
- * accounts, and VAT per month. Seven queries, whatever the size of the books.
+ * accounts, and VAT per month. A fixed number of queries, whatever the size
+ * of the books: seven, one for the agreements' revenue, and the forecast's
+ * explicit flows (ForecastFlows).
  *
  * Amounts are whole öre. Revenue is accounts 3000–3999 (credit minus
  * debit), costs 4000–8998 (debit minus credit; 8999 Årets resultat is the
@@ -35,6 +37,8 @@ final class Statistics
     public const int TOP = 5;
 
     public const int LIQUIDITY_MONTHS = 12;
+
+    public function __construct(private readonly ForecastFlows $flows) {}
 
     /**
      * @return array<string, mixed>|null null when there is no fiscal year yet
@@ -92,7 +96,7 @@ final class Statistics
                 'output' => $series('vat_out', 0),
                 'input' => $series('vat_in', 0),
             ],
-            'liquidity' => $this->liquidity($current, $from, $monthly, $today),
+            'liquidity' => $this->liquidity($user, $company, $current, $from, $monthly, $today),
             'top_customers' => $user->hasTeamPermission($company, 'invoices:view') ? $this->topCustomers($current, $today) : null,
             'top_accounts' => $this->topAccounts($current, $today),
         ];
@@ -101,11 +105,12 @@ final class Statistics
     /**
      * Revenue, costs, bank and cash, and VAT per month in one query.
      *
-     * @return array<string, array{revenue: int, costs: int, cash: int, vat_out: int, vat_in: int}>
+     * @return array<string, array{revenue: int, costs: int, cash: int, vat_out: int, vat_in: int, payroll_costs: int, tax_costs: int}>
      */
     private function monthly(CarbonImmutable $from, CarbonImmutable $to, CarbonImmutable $today): array
     {
         $vat = VoucherSource::Vat->value;
+        $payroll = VoucherSource::Payroll->value;
 
         return VoucherRow::query()
             ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
@@ -119,6 +124,9 @@ final class Statistics
             ->selectRaw('COALESCE(SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) FILTER (WHERE accounts.number BETWEEN 1900 AND 1999 AND vouchers.voucher_date <= ?), 0) AS cash', [$today->toDateString()])
             ->selectRaw('COALESCE(SUM(voucher_rows.credit_ore - voucher_rows.debit_ore) FILTER (WHERE accounts.number BETWEEN 2610 AND 2639 AND vouchers.source <> ?), 0) AS vat_out', [$vat])
             ->selectRaw('COALESCE(SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) FILTER (WHERE accounts.number BETWEEN 2640 AND 2649 AND vouchers.source <> ?), 0) AS vat_in', [$vat])
+            // What the forecast counts on its own instead of through the average result (ForecastFlows).
+            ->selectRaw('COALESCE(SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) FILTER (WHERE accounts.number BETWEEN 4000 AND 8998 AND vouchers.source = ?), 0) AS payroll_costs', [$payroll])
+            ->selectRaw('COALESCE(SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) FILTER (WHERE accounts.number BETWEEN 8900 AND 8998), 0) AS tax_costs')
             ->groupByRaw('1')
             ->get()
             ->mapWithKeys(fn (object $row): array => [(string) $row->month => [
@@ -127,6 +135,8 @@ final class Statistics
                 'cash' => (int) $row->cash,
                 'vat_out' => (int) $row->vat_out,
                 'vat_in' => (int) $row->vat_in,
+                'payroll_costs' => (int) $row->payroll_costs,
+                'tax_costs' => (int) $row->tax_costs,
             ]])
             ->all();
     }
@@ -136,10 +146,16 @@ final class Statistics
      * forecast for the end of this month and the next two. Earlier month
      * ends are counted back from today's balance with the months' movements.
      *
-     * @param  array<string, array{revenue: int, costs: int, cash: int, vat_out: int, vat_in: int}>  $monthly
-     * @return array{actual: list<array{label: string, date: string, balance: int}>, forecast: list<array{label: string, month: string, inflow: int, outflow: int, trend: int, balance: int}>, today: int, average_result: int}
+     * The average result leaves out what the forecast counts on its own, so
+     * nothing is counted twice (ADR-027, addendum 2026-11-08): the costs of
+     * the payroll vouchers when payroll is counted from the runs, the tax
+     * costs (8900–8998) when the preliminary tax is, and the revenue of the
+     * invoices made from agreements, which are expected on their own dates.
+     *
+     * @param  array<string, array{revenue: int, costs: int, cash: int, vat_out: int, vat_in: int, payroll_costs: int, tax_costs: int}>  $monthly
+     * @return array{actual: list<array{label: string, date: string, balance: int}>, forecast: list<array{label: string, month: string, inflow: int, outflow: int, recurring: int, payroll: int, vat: int, tax_account: int, trend: int, balance: int}>, today: int, average_result: int, included: array{recurring: bool, payroll: bool, vat: bool, preliminary_tax: bool}}
      */
-    private function liquidity(FiscalYear $current, CarbonImmutable $from, array $monthly, CarbonImmutable $today): array
+    private function liquidity(User $user, Company $company, FiscalYear $current, CarbonImmutable $from, array $monthly, CarbonImmutable $today): array
     {
         $opening = (int) OpeningBalance::query()
             ->join('accounts', 'accounts.id', '=', 'opening_balances.account_id')
@@ -167,24 +183,55 @@ final class Statistics
             array_unshift($actual, ['label' => $month->translatedFormat('M Y'), 'date' => $month->endOfMonth()->toDateString(), 'balance' => $running]);
         }
 
+        $explicit = $this->flows->for($user, $company, $today);
+        $included = $explicit['included'];
+        $agreementRevenue = $this->agreementRevenue($today->startOfMonth()->subMonthsNoOverflow(3), $today->startOfMonth()->subDay());
+
         $results = [];
         for ($i = 1; $i <= 3; $i++) {
             $key = $today->startOfMonth()->subMonthsNoOverflow($i)->format('Y-m');
 
             if ($today->startOfMonth()->subMonthsNoOverflow($i)->greaterThanOrEqualTo($earliest)) {
-                $results[] = ($monthly[$key]['revenue'] ?? 0) - ($monthly[$key]['costs'] ?? 0);
+                $results[] = ($monthly[$key]['revenue'] ?? 0) - ($monthly[$key]['costs'] ?? 0)
+                    + ($included['payroll'] ? ($monthly[$key]['payroll_costs'] ?? 0) : 0)
+                    + ($included['preliminary_tax'] ? ($monthly[$key]['tax_costs'] ?? 0) : 0)
+                    - ($agreementRevenue[$key] ?? 0);
             }
         }
 
         $average = LiquidityForecast::averageResult($results);
-        $forecast = LiquidityForecast::project($balance, $today, $this->openByDueDate(Invoice::class), $this->openByDueDate(SupplierInvoice::class), $average);
+        $forecast = LiquidityForecast::project($balance, $today, $this->openByDueDate(Invoice::class), $this->openByDueDate(SupplierInvoice::class), $average, LiquidityForecast::MONTHS, $explicit['flows']);
 
         return [
             'actual' => $actual,
             'forecast' => array_map(fn (array $point): array => ['label' => CarbonImmutable::parse("{$point['month']}-01")->translatedFormat('M Y'), ...$point], $forecast),
             'today' => $balance,
             'average_result' => $average,
+            'included' => $included,
         ];
+    }
+
+    /**
+     * The revenue (excluding VAT) of the invoices made from agreements, per
+     * month of the invoice date: the forecast expects those invoices on
+     * their own dates, so the average result leaves them out. A credit note
+     * is not tied to the agreement and stays in the average.
+     *
+     * @return array<string, int>
+     */
+    private function agreementRevenue(CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        return Invoice::query()
+            ->where('status', '<>', InvoiceStatus::Draft->value)
+            ->where('kind', Invoice::INVOICE)
+            ->whereNotNull('recurring_invoice_id')
+            ->whereBetween('invoice_date', [$from->toDateString(), $to->toDateString()])
+            ->toBase()
+            ->selectRaw("to_char(invoice_date, 'YYYY-MM') AS month, SUM(net_ore) AS amount")
+            ->groupByRaw('1')
+            ->pluck('amount', 'month')
+            ->map(fn (mixed $amount): int => (int) $amount)
+            ->all();
     }
 
     /**

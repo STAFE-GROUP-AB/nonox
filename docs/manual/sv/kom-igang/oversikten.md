@@ -64,7 +64,19 @@ Varje diagram kan visas som en tabell, och varje diagram har en mening som samma
 
 ### Så räknas prognosen
 
-Prognosen är en enkel räkning, ingen AI och ingen garanti. Den börjar med dagens saldo på bank och kassa (konto 1900–1999). Till det läggs obetalda kundfakturor och dras obetalda leverantörsfakturor den månad de förfaller (förfallna räknas i den här månaden), och sedan det genomsnittliga resultatet för de tre senaste hela månaderna. Lön, skatt och moms som inte finns som leverantörsfakturor kommer bara med genom resultatet.
+Prognosen är en enkel räkning, ingen AI och ingen garanti. Den visar slutet av den här månaden och de två nästa. Den börjar med dagens saldo på bank och kassa (konto 1900–1999) och lägger sedan till eller drar ifrån varje del den månad pengarna väntas komma eller gå. Belopp som redan har förfallit räknas i den här månaden.
+
+- **Kundfakturor**: det som är kvar att betala på obetalda kundfakturor, på förfallodagen. En delbetald faktura räknas med det som är kvar, och en krediterad faktura räknas inte.
+- **Leverantörsfakturor**: det som är kvar att betala på obetalda leverantörsfakturor, på förfallodagen.
+- **Avtalsfakturor**: de kommande fakturorna från aktiva avtal och utkast som ett avtal har skapat, med moms, på förfallodagen enligt kundens betalningsvillkor. Ett pausat avtal räknas inte.
+- **Lön och arbetsgivarskatter**: när lönemodulen är på och har en lönekörning de senaste tre månaderna. Nettolönen räknas på utbetalningsdagen för lönekörningar som är beräknade, attesterade eller utbetalda men inte bokförda. Skatt och arbetsgivaravgifter räknas den dag de ska betalas till Skatteverket. En månad utan lönekörning räknas som den senaste lönekörningen. Lönekörningar som inte är bokförda syns bara för den som får se lönerna; andra ser i stället uppskattningen.
+- **Moms**: momsen för varje momsperiod vars sista dag att deklarera och betala infaller i prognosen, med det som är bokfört hittills. Moms som är redovisad men inte betald (konto 2650) räknas också.
+- **Skattekontot**: F-skatten, om du har fyllt i **Debiterad preliminärskatt per månad** under företagets uppgifter, och saldot på skattekontot (konto 1630). Pengar på skattekontot och moms att få tillbaka betalar skatterna först; det som blir över räknas inte som pengar på banken.
+- **Snittresultat**: det genomsnittliga resultatet för de tre senaste hela månaderna; för den här månaden bara de dagar som är kvar.
+
+Snittresultatet räknar inte med det som prognosen redan räknar för sig, så att inget kommer med två gånger. När lönen räknas från lönekörningarna tas lönekostnaderna från lönekörningarna bort ur snittet. När F-skatten räknas tas skattekostnaden (konto 8900–8998) bort. Intäkterna från avtalsfakturor tas alltid bort ur snittet, eftersom de kommande fakturorna räknas för sig.
+
+Håller du muspekaren över en prognosmånad i diagrammet visar rutan delarna som flyttar linjen. I tabellen under **Visa som tabell** står varje del i en egen kolumn.
 
 ## Bra att veta
 

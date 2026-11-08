@@ -836,7 +836,12 @@ class PayrollRuns
      */
     private function defaultPaymentDate(Company $company, CarbonImmutable $month): CarbonImmutable
     {
-        $day = (int) ($this->modules->settings(PayrollModule::KEY, $company)['default_payment_day'] ?? 25);
+        return self::paymentDateIn($month, (int) ($this->modules->settings(PayrollModule::KEY, $company)['default_payment_day'] ?? 25));
+    }
+
+    /** The payment day in the month, moved back to Friday when it falls on a weekend; the forecast on Översikt uses it too. */
+    public static function paymentDateIn(CarbonImmutable $month, int $day): CarbonImmutable
+    {
         $date = $month->setDay(min($day, $month->daysInMonth));
 
         while ($date->isWeekend()) {
