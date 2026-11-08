@@ -14,6 +14,8 @@ use App\Modules\Payroll\Actions\AgiSubmissions;
 use App\Modules\Payroll\Actions\ExpenseClaims;
 use App\Modules\Payroll\Actions\ImportPayrollRules;
 use App\Modules\Payroll\Actions\PayrollRuns;
+use App\Modules\Payroll\Livewire\AbsenceRequestList;
+use App\Modules\Payroll\Livewire\MyMileage;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollRuleVersion;
 use App\Modules\Payroll\Models\Payslip;
@@ -27,6 +29,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Tests\Feature\Mileage\MileageSupport;
 use Tests\Feature\Payroll\LegalAudit\LonSupport;
 use Tests\Support\Bookkeeping;
@@ -417,6 +420,54 @@ it('lets a claim wait while a year\'s förmånsbil amount is not checked, blocks
     [$priced] = ($this->claims)($this->worker, $this->company, '2027-01', paidAllFuel: true);
 
     expect($priced->amount_ore->ore)->toBe(12_000);
+});
+
+it('settles a waiting claim\'s amount when the pay is posted, so nobody sees it wait any more', function () {
+    $this->travelTo(CarbonImmutable::parse('2027-01-20 10:00:00'));
+    app(TaxTableImporter::class)->import(2027, 'syntetisk.txt', (string) file_get_contents(base_path('tests/Fixtures/payroll/skattetabell-2027-syntetisk-tabell-33.txt')));
+    app(ImportPayrollRules::class)(2027);
+    $ownCar = PayrollRuleVersion::query()->where('key', 'mileage.own_car_tax_free_per_mil')->whereDate('valid_from', '2027-01-01')->sole();
+    PayrollRuleVersion::query()->whereNull('verified_at')->whereKeyNot($ownCar->id)->get()->each(fn (PayrollRuleVersion $version) => $version->forceFill(['verified_by' => 'Granskning', 'verified_at' => now()])->save());
+    $car = MileageSupport::ownCar($this->worker, $this->company);
+    MileageSupport::trip($this->worker, $this->company, $car, '2027-01-05', '100');
+    [$claim] = ($this->claims)($this->worker, $this->company, '2027-01');
+    app(ExpenseClaims::class)->approveMileage($this->owner, $claim);
+    $run = $this->runs->create($this->owner, $this->company, '2027-01');
+
+    expect($claim->trip_data['rate_pending'])->toBeTrue()
+        ->and(fn () => $this->runs->calculate($this->owner, $run->fresh()))->toThrow(ValidationException::class, 'regler är inte kontrollerade');
+
+    $ownCar->forceFill(['verified_by' => 'Granskning', 'verified_at' => now()])->save();
+    $run = LonSupport::postRun($this->owner, $this->admin, $run->fresh());
+
+    expect(claimLines($run->id)['MILERSATTNING'])->toBe(25_000)
+        ->and($claim->fresh()->amount_ore->ore)->toBe(25_000)
+        ->and($claim->fresh()->trip_data['rate_pending'])->toBeFalse();
+
+    Livewire::actingAs($this->worker)->test(MyMileage::class)->set('month', '2027-01')->assertDontSee('Beloppet räknas när')->assertSee('250,00');
+    Livewire::actingAs($this->owner)->test(AbsenceRequestList::class)->assertDontSee('Beloppet väntar');
+});
+
+it('takes a correction back at the rate it was paid with, after the company\'s rate has changed', function () {
+    app(ModuleManager::class)->updateSettings(PayrollModule::KEY, $this->company, $this->owner, ['mileage_own_car_rate' => '30']);
+    $car = MileageSupport::ownCar($this->worker, $this->company);
+    $trip = MileageSupport::trip($this->worker, $this->company, $car, '2026-04-02', '100');
+    [$claim] = ($this->claims)($this->worker, $this->company, '2026-04');
+    app(ExpenseClaims::class)->approveMileage($this->owner, $claim);
+    LonSupport::postRun($this->owner, $this->admin, $this->runs->create($this->owner, $this->company, '2026-04'));
+
+    app(ModuleManager::class)->updateSettings(PayrollModule::KEY, $this->company, $this->owner, ['mileage_own_car_rate' => '']);
+    $this->travelTo(CarbonImmutable::parse('2026-05-10 10:00:00'));
+    app(LogTrip::class)->correct($this->worker, $this->company, $trip->fresh(), 'Resan blev inställd');
+    [$may] = ($this->claims)($this->worker, $this->company, '2026-05');
+    app(ExpenseClaims::class)->approveMileage($this->owner, $may);
+    $run = $this->runs->create($this->owner, $this->company, '2026-05');
+    $this->runs->calculate($this->owner, $run->fresh());
+
+    // Paid 10 mil × 30 kr: 25 kr tax-free and 5 kr taxable per mil; both are taken back.
+    expect($may->amount_ore->ore)->toBe(-30_000)
+        ->and(claimLines($run->id)['MILERSATTNING'])->toBe(-25_000)
+        ->and(claimLines($run->id)['MIL_SKATTEPLIKTIG'])->toBe(-5_000);
 });
 
 it('pays December trips at the rule of the trip\'s year when the pay is paid in January', function () {

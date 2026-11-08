@@ -7,6 +7,7 @@ namespace App\Modules\Payroll\Actions;
 use App\Actions\Accounting\BookVoucher;
 use App\Domain\Accounting\Reports\LedgerQuery;
 use App\Domain\Accounting\VoucherSource;
+use App\Domain\Mileage\Distance;
 use App\Domain\Mileage\TripStatus;
 use App\Models\Account;
 use App\Models\Company;
@@ -689,9 +690,45 @@ class PayrollRuns
         $trips = VehicleTrip::query()->with('vehicle')->whereIn('expense_id', $claims->pluck('id'))->orderBy('trip_date')->get()->groupBy('expense_id');
 
         foreach ($claims as $claim) {
+            $this->settlePendingAmount($claim);
             $name = $claim->employee === null ? '' : "{$claim->employee->first_name} {$claim->employee->last_name}";
             TripListPdf::attach($user, $voucher, $company, __('Körjournal: :what', ['what' => (string) $claim->description]), $name, $trips->get($claim->id, collect()));
         }
+    }
+
+    /**
+     * A mileage claim sent while a year's amount was not published waited with
+     * the amount 0. The run has priced it at the rule of the trip's year; once
+     * the pay is posted, the claim shows what was paid, so Min sida and the
+     * approval list no longer say the amount waits (ADR-072).
+     */
+    private function settlePendingAmount(Expense $claim): void
+    {
+        $data = (array) $claim->trip_data;
+
+        if (! ($data['rate_pending'] ?? false)) {
+            return;
+        }
+
+        $groups = [];
+
+        foreach ((array) ($data['groups'] ?? []) as $group) {
+            $group = (array) $group;
+
+            if (! isset($group['schablon_ore'])) {
+                $rules = RuleSet::for(CarbonImmutable::create((int) $group['year'], 12, 31) ?? CarbonImmutable::today());
+                $group['schablon_ore'] = (int) ((array) $rules->get((string) $group['rule']))['ore'];
+                $group['rule_version_id'] = $rules->version((string) $group['rule'])->id;
+            }
+
+            $group['amount_ore'] = Distance::amountOre((int) $group['hm'], (int) ($group['rate_ore'] ?? $group['schablon_ore']));
+            $groups[] = $group;
+        }
+
+        $claim->forceFill([
+            'amount_ore' => array_sum(array_column($groups, 'amount_ore')),
+            'trip_data' => [...$data, 'groups' => $groups, 'rate_pending' => false],
+        ])->save();
     }
 
     /**

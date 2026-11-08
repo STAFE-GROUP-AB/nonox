@@ -132,24 +132,28 @@ class SubmitMileageClaim
         $groups = [];
 
         $originals = self::originalLines($trips);
+        $companyRate = self::rate($settings[$kind === VehicleKind::PrivateCar ? 'mileage_own_car_rate' : 'mileage_company_car_rate'] ?? null);
 
         foreach ($trips as $trip) {
             $original = $trip->corrects_trip_id === null ? null : ($originals[$trip->corrects_trip_id] ?? null);
 
             if ($original !== null) {
-                // A correction is priced as the line it corrects: the same pay code, rule and year.
+                // A correction is priced as the line it corrects: the same pay code, rule, year and company rate,
+                // so it takes back exactly what was paid, also after the company's rate has changed.
                 $code = (string) $original['pay_code'];
                 $rule = (string) $original['rule'];
                 $year = (int) $original['year'];
                 $benefitId = isset($original['benefit_id']) ? (int) $original['benefit_id'] : null;
                 $car = (string) ($original['car'] ?? '');
+                $rate = isset($original['rate_ore']) ? (int) $original['rate_ore'] : null;
             } else {
                 [$code, $rule, $benefitId, $car] = $this->price($trip, $kind, $employee, $cars, $paidAllFuel, $fuelBenefit, $notes);
                 $year = $trip->trip_date->year;
+                $rate = $companyRate;
             }
 
-            $key = "{$code}|{$rule}|{$year}";
-            $groups[$key] ??= ['pay_code' => $code, 'rule' => $rule, 'year' => $year, 'hm' => 0, 'trips' => 0];
+            $key = "{$code}|{$rule}|{$year}|".($rate ?? 'schablon');
+            $groups[$key] ??= ['pay_code' => $code, 'rule' => $rule, 'year' => $year, 'rate_ore' => $rate, 'hm' => 0, 'trips' => 0];
             $groups[$key]['hm'] += $trip->distance_hm;
             $groups[$key]['trips']++;
             $lines[] = [
@@ -163,11 +167,11 @@ class SubmitMileageClaim
                 'year' => $year,
                 'benefit_id' => $benefitId,
                 'car' => $car,
+                'rate_ore' => $rate,
                 'corrects_trip_id' => $trip->corrects_trip_id,
             ];
         }
 
-        $companyRate = self::rate($settings[$kind === VehicleKind::PrivateCar ? 'mileage_own_car_rate' : 'mileage_company_car_rate'] ?? null);
         $pending = false;
 
         foreach ($groups as $key => $group) {
@@ -184,10 +188,9 @@ class SubmitMileageClaim
                 $pending = true;
             }
 
-            $rate = $companyRate ?? $schablon;
+            $rate = $group['rate_ore'] ?? $schablon;
             $groups[$key] = [
                 ...$group,
-                'rate_ore' => $companyRate,
                 'schablon_ore' => $schablon,
                 'rule_version_id' => $version,
                 'amount_ore' => $rate === null ? null : Distance::amountOre($group['hm'], $rate),
