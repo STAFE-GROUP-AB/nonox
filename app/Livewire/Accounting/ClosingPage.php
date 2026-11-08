@@ -7,6 +7,7 @@ namespace App\Livewire\Accounting;
 use App\Actions\Closing\ConfirmK2Conditions;
 use App\Actions\Closing\YearEndClosing;
 use App\Domain\AnnualReport\K3Eligibility;
+use App\Domain\AnnualReport\K3TransitionProposal;
 use App\Domain\Closing\ClosingAccounts;
 use App\Domain\Closing\ClosingChecklist;
 use App\Domain\Closing\CurrencyRevaluation;
@@ -15,11 +16,13 @@ use App\Domain\Closing\K2Reconfirmation;
 use App\Domain\Closing\TaxProposal;
 use App\Domain\Closing\UnpaidInvoices;
 use App\Domain\Closing\YearResult;
+use App\Domain\Company\ReportingFramework;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\ClosingCheck;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\IncomeTaxReturn;
+use App\Models\K3Transition;
 use App\Models\User;
 use App\Models\YearEndEntry;
 use App\Support\Money\Money;
@@ -175,6 +178,8 @@ class ClosingPage extends Component
         $entries = YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->orderBy('id')->get();
         $items = ClosingChecklist::for($this->company(), $fiscalYear);
         $next = FiscalYear::query()->whereDate('start_date', $fiscalYear->end_date->addDay()->toDateString())->first();
+        // The first K3 year after K2 offers Övergång till K3 (S1-P12); read only for a K3 year.
+        $k3TransitionOffered = $fiscalYear->reporting_framework === ReportingFramework::K3 && K3TransitionProposal::refusals($this->company(), $fiscalYear) === [];
 
         if ($this->dispositionDate === '' && $next !== null) {
             $this->dispositionDate = $next->start_date->addMonthsNoOverflow(5)->endOfMonth()->min($next->end_date)->toDateString();
@@ -192,6 +197,8 @@ class ClosingPage extends Component
             'result' => YearResult::of($fiscalYear),
             'taxEntry' => $entries->firstWhere('type', YearEndEntry::TAX),
             'deferredTaxEntry' => $entries->firstWhere('type', YearEndEntry::DEFERRED_TAX),
+            'k3TransitionOffered' => $k3TransitionOffered,
+            'k3Transition' => $k3TransitionOffered ? K3Transition::query()->where('fiscal_year_id', $fiscalYear->id)->first() : null,
             'unpaidEntries' => $entries->whereIn('type', [YearEndEntry::UNPAID_RECEIVABLES, YearEndEntry::UNPAID_PAYABLES])->keyBy('type'),
             'unpaid' => $fiscalYear->isOpen() && $entries->whereIn('type', [YearEndEntry::UNPAID_RECEIVABLES, YearEndEntry::UNPAID_PAYABLES])->isEmpty()
                 && ClosingCheck::query()->where('fiscal_year_id', $fiscalYear->id)->where('key', 'unpaid')->doesntExist()

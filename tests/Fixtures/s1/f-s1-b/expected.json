@@ -1,0 +1,131 @@
+{
+  "fixture": "F-S1-b",
+  "status": "ready for checking (written 2026-11-08 by the S1-P12 builder; not yet checked independently)",
+  "conventions": {
+    "amounts": "integer öre",
+    "voucher_rows": "debit_ore / credit_ore as in vouchers.json",
+    "equity_effect": "the change in equity (credit positive): a decrease is negative",
+    "balance_sheet": "every line positive as presented"
+  },
+  "comparatives_restated": false,
+  "comparatives_restated_note": "S1-R7.1 branch tested: comparatives are NOT restated. K3 35.7: the transition date of a mindre företag that does not restate is the first day of the first K3 year. The 2025 figures stay K2 figures, and the notes say that comparability is lacking (ÅRL 3 kap. 5 § fjärde stycket).",
+  "last_k2_year": {
+    "rule_ids": ["S1-R7.7"],
+    "fiscal_year": "2025",
+    "framework": "K2",
+    "nettoomsattning": 500000000,
+    "resultat_fore_skatt": 108296000,
+    "skatt": 19836976,
+    "arets_resultat": 88459024,
+    "eget_kapital_2025_12_31": 454459024,
+    "balansomslutning_2025_12_31": 794296000,
+    "_note": "Untouched by the transition: the 2025 vouchers, opening balances and K2 annual accounts are the same before and after the transition is booked."
+  },
+  "transition": {
+    "rule_ids": ["S1-R7", "S1-R7.1", "S1-R7.2", "S1-R7.3", "S1-R7.5", "S1-R7.6", "S1-R7.7"],
+    "first_k3_year": "2026",
+    "transition_date": "2026-01-01",
+    "chapter_35_allowed": true,
+    "chapter_35_allowed_note": "k3_applied_before = no (K3 35.1 not used before); left_k2_reason = forced_2025_2 would also lift the 35.1 limit (BFNAR 2025:3 transitional provision 2).",
+    "rate_bp": 2060,
+    "rate_note": "IL 65 kap. 10 §, the rate for a beskattningsår beginning 2026-01-01 (K3 29.25: decided before the balance date, the years the differences reverse).",
+    "items": [
+      {
+        "id": "T1",
+        "kind": "DEFERRED_TAX",
+        "description": "Verkstadsbyggnad",
+        "carrying_ore": 480000000,
+        "tax_value_ore": 360000000,
+        "difference_ore": 120000000,
+        "nature": "TAXABLE",
+        "deferred_tax_ore": 24720000,
+        "account": 2240,
+        "equity_effect_ore": -24720000
+      },
+      {
+        "id": "T2",
+        "kind": "PROVISION",
+        "description": "Garantiåtaganden utöver avtal (informell förpliktelse)",
+        "account": 2220,
+        "amount_ore": 15000000,
+        "equity_effect_ore": -15000000
+      },
+      {
+        "id": "T3",
+        "kind": "DEFERRED_TAX",
+        "description": "Avsättning för garantiåtaganden",
+        "carrying_ore": 15000000,
+        "tax_value_ore": 0,
+        "difference_ore": 15000000,
+        "nature": "DEDUCTIBLE",
+        "gross_ore": 3090000,
+        "deferred_tax_ore": 3090000,
+        "account": 1370,
+        "equity_effect_ore": 3090000
+      },
+      {
+        "id": "T4",
+        "kind": "DEFERRED_TAX",
+        "description": "Inventarier anskaffade 2023",
+        "carrying_ore": 16000000,
+        "relief_35_27": true,
+        "deferred_tax_ore": 0,
+        "equity_effect_ore": 0
+      }
+    ],
+    "equity_effect_ore": -36630000,
+    "equity_account": 2091,
+    "voucher": {
+      "date": "2026-01-01",
+      "source": "K3_TRANSITION",
+      "rows": [
+        {"account": 2091, "debit_ore": 24720000, "credit_ore": 0},
+        {"account": 2240, "debit_ore": 0, "credit_ore": 24720000},
+        {"account": 2091, "debit_ore": 15000000, "credit_ore": 0},
+        {"account": 2220, "debit_ore": 0, "credit_ore": 15000000},
+        {"account": 1370, "debit_ore": 3090000, "credit_ore": 0},
+        {"account": 2091, "debit_ore": 0, "credit_ore": 3090000}
+      ],
+      "total_debit_ore": 42810000
+    },
+    "reconciliation": {
+      "lines": [
+        {"key": "deferred_tax_asset", "label": "Uppskjuten skattefordran", "k2_ore": 0, "adjustment_ore": 3090000, "k3_ore": 3090000},
+        {"key": "retained", "label": "Balanserad vinst eller förlust", "k2_ore": 356000000, "adjustment_ore": -36630000, "k3_ore": 319370000},
+        {"key": "deferred_tax_liability", "label": "Uppskjuten skatteskuld", "k2_ore": 0, "adjustment_ore": 24720000, "k3_ore": 24720000},
+        {"key": "other_provisions", "label": "Övriga avsättningar", "k2_ore": 0, "adjustment_ore": 15000000, "k3_ore": 15000000}
+      ],
+      "equity_k2_ore": 454459024,
+      "equity_k3_ore": 417829024,
+      "balance_sheet_total_k2_ore": 794296000,
+      "balance_sheet_total_k3_ore": 797386000
+    },
+    "ib_equals_previous_ub": true,
+    "components": {
+      "rule_ids": ["S1-R7.2", "S1-R3"],
+      "asset": "B1 Verkstadsbyggnad",
+      "split_on": "2026-01-01",
+      "carrying_before_ore": 480000000,
+      "components": [
+        {"name": "Stomme", "cost_ore": 360000000, "accumulated_ore": 72000000, "carrying_ore": 288000000, "remaining_life_months": 720, "total_life_months": 840, "monthly_ore": 400000},
+        {"name": "Tak", "cost_ore": 120000000, "accumulated_ore": 24000000, "carrying_ore": 96000000, "remaining_life_months": 240, "total_life_months": 360, "monthly_ore": 400000},
+        {"name": "Installationer", "cost_ore": 120000000, "accumulated_ore": 24000000, "carrying_ore": 96000000, "remaining_life_months": 192, "total_life_months": 312, "monthly_ore": 500000}
+      ],
+      "carrying_after_ore": 480000000,
+      "equity_difference_ore": 0,
+      "reclassification_voucher": false,
+      "depreciation_2026_ore": 15600000,
+      "_note": "K3 35.18: the carrying amount at the transition date is split, nothing is restated, so the split creates no equity difference and, with every component on 1110/1119, no voucher. Depreciation from 2026 is prospective (13 000 kr a month instead of the K2 10 000)."
+    },
+    "disclosures": {
+      "rule_ids": ["S1-R7.1", "S1-R7.5"],
+      "first_time_k3": true,
+      "comparatives_not_restated": true,
+      "reliefs_used": ["K3 35.27"],
+      "relief_items": ["Inventarier anskaffade 2023"],
+      "items_not_restated_35_30": [],
+      "changed_principles": ["deferred_tax", "provisions", "components"],
+      "equity_effect_ore": -36630000
+    }
+  }
+}

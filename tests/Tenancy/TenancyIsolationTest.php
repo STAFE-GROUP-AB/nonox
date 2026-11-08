@@ -38,6 +38,8 @@ use App\Models\InvoiceReminder;
 use App\Models\InvoiceRow;
 use App\Models\K10Owner;
 use App\Models\K10Year;
+use App\Models\K3Transition;
+use App\Models\K3TransitionItem;
 use App\Models\MonthCloseCheck;
 use App\Models\NumberSeries;
 use App\Models\OpeningBalance;
@@ -250,6 +252,8 @@ const COMPANY_SCOPED_MODELS = [
     ClosingCheck::class => 'closingCheckAttributes',
     YearEndEntry::class => 'yearEndEntryAttributes',
     DeferredTaxItem::class => 'deferredTaxItemAttributes',
+    K3TransitionItem::class => 'k3TransitionItemAttributes',
+    K3Transition::class => 'k3TransitionAttributes',
     BankReconciliation::class => 'bankReconciliationAttributes',
     VatNumberCheck::class => 'vatNumberCheckAttributes',
     FortnoxConnection::class => 'fortnoxConnectionAttributes',
@@ -795,6 +799,29 @@ function deferredTaxItemAttributes(): array
         'tax_value_ore' => 6_000_000,
         'tax_value_source' => 'ENTERED',
         'created_by' => User::factory()->create()->id,
+    ];
+}
+
+function k3TransitionItemAttributes(): array
+{
+    return [
+        'fiscal_year_id' => FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31'])->id,
+        'kind' => 'PROVISION',
+        'description' => 'Hemlig avsättning',
+        'account' => 2220,
+        'amount_ore' => -15_000_000,
+        'k3_reference' => 'K3 21.4',
+        'created_by' => User::factory()->create()->id,
+    ];
+}
+
+function k3TransitionAttributes(): array
+{
+    return [
+        'fiscal_year_id' => FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31'])->id,
+        'transition_date' => '2026-01-01',
+        'equity_effect_ore' => -36_630_000,
+        'confirmed_by' => User::factory()->create()->id,
     ];
 }
 
@@ -1545,7 +1572,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class];
+const APPEND_ONLY = [VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, K3Transition::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

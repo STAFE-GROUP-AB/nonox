@@ -287,6 +287,17 @@
                 </div>
             @endif
 
+            @if($k3TransitionOffered)
+                <div data-k3-transition-step>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <p class="font-semibold text-ink">{{ __('Övergång till K3') }}</p>
+                        <x-ui.badge tone="accent">{{ __('Beta') }}</x-ui.badge>
+                    </div>
+                    <p class="mt-1 text-sm text-gray-700">{{ $k3Transition !== null ? __('Övergången är bokförd per :date.', ['date' => $k3Transition->transition_date->toDateString()]) : __('Det här är företagets första år med K3. Skillnaderna mot K2 i ingångsbalansräkningen bokförs direkt mot eget kapital per årets första dag, en gång.') }}</p>
+                    <a href="{{ route('accounting.closing.k3Transition', ['ar' => $fiscalYear->id]) }}" wire:navigate class="mt-2 inline-block text-sm font-medium text-accent-700 hover:underline">{{ __('Gå till övergången till K3') }}</a>
+                </div>
+            @endif
+
             @if($fiscalYear->reporting_framework === \App\Domain\Company\ReportingFramework::K3 && ! $ownerTaxed)
                 <div data-deferred-tax-step>
                     <div class="flex flex-wrap items-center gap-2">

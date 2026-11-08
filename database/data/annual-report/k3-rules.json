@@ -328,6 +328,20 @@
                 "note": "Kontonumret följer BAS 2026-referenslänkbasen i K3-taxonomin (se-gen-base-rbas2026-2021-10-31-ref-bas.xml, ADR-059 'The taxonomy'): SkattAretsResultat knyts till 891x–894x; 8940 är BAS-kontot Uppskjuten skatt. TODO(legal-verify): kontrollera mot BAS 2026-kontoplanen (fixturens antagande A12)."
             }
         ],
+        "transition.equity_account": [
+            {
+                "value": 2091,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R7.7",
+                "status": "researched",
+                "read": "2026-11-08",
+                "source_ref": "K3 punkt 35.11; mänskligt beslut H7 (a), ADR-059 A.6; BAS 2091",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl12-1-k3-kons20251215.pdf",
+                "source_quote": "Finns det skillnader mellan de redovisningsprinciper som ett företag tidigare har tillämpat och principerna enligt detta allmänna råd, ska de skillnadsbelopp som uppkommer redovisas direkt mot eget kapital i ingångsbalansräkningen.",
+                "note": "K3 anger inte kontot. Beslut H7 (a), fattat av Lead 2026-11-08 under ägarens mandat och öppet för konsultens granskning: en verifikation daterad första dagen i det första K3-året, källa K3_TRANSITION, mot 2091 Balanserad vinst eller förlust. TODO(legal-verify): kontot mot BAS 2026-kontoplanen."
+            }
+        ],
         "k3_version_by_fiscal_year": [
             {
                 "value": "kons2024",

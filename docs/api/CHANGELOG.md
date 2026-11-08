@@ -13,6 +13,24 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-08: v1.10.0
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-08: v1.10.0
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Tillagt
+
+- **Verifikationer**: `source` kan vara `K3_TRANSITION`, verifikationen som bokför övergången från K2 till K3 mot eget kapital den första dagen i det första året med K3.
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+
+- **Vouchers**: `source` can be `K3_TRANSITION`, the voucher that books the transition from K2 to K3 against equity on the first day of the first K3 year.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-06: MCP-server (beta)
 <!-- /lang -->
 <!-- lang:en -->

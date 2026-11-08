@@ -1,0 +1,232 @@
+{
+  "fixture": "F-S1-b",
+  "status": "ready for checking (written 2026-11-08 by the S1-P12 builder, not by the independent Fixture author; the Checker should re-derive every figure by hand)",
+  "synthetic": true,
+  "legal_name": "Fiktiva Övergångsbolaget AB",
+  "org_number": "559999-6062",
+  "org_number_note": "Fictional test number (559999-series, passes Luhn), already in the repository's synthetic registry test data. Not a real company.",
+  "legal_form": "AB",
+  "country": "SE",
+  "fiscal_years": [
+    {
+      "start_date": "2025-01-01",
+      "end_date": "2025-12-31",
+      "framework": "K2"
+    },
+    {
+      "start_date": "2026-01-01",
+      "end_date": "2026-12-31",
+      "framework": "K3"
+    }
+  ],
+  "reporting_framework": "K3",
+  "k3_since": "2026: the first K3 fiscal year; 2025 is the last K2 year (BFNAR 2016:10)",
+  "size_class": "mindre företag (far below every ÅRL 1 kap. 3 § threshold: 5 MSEK net turnover, 8 MSEK total assets, 3 employees)",
+  "accounting_method": "FAKTURAMETODEN",
+  "vat_registered": true,
+  "vat_period": "YEARLY",
+  "base_currency": "SEK",
+  "accounting_policies_2026": {
+    "comparatives_restated_at_transition": "no",
+    "k3_applied_before": "no",
+    "left_k2_reason": "forced_2025_2",
+    "financial_instruments": "chapter_11",
+    "intangibles": "expense",
+    "leasing": "operational_in_legal_entity",
+    "borrowing_costs": "expense",
+    "fixed_price_contracts": "none",
+    "cash_flow_statement": "none",
+    "components": "buildings_always_others_by_choice"
+  },
+  "accounting_policies_note": "Rows of company_accounting_policies with applies_from 2026-01-01 (ADR-059 A.2.3). comparatives_restated_at_transition = no is the S1-R7.1 branch this fixture tests: the transition date is the first day of the first K3 year (K3 35.7).",
+  "fixed_asset_register": [
+    {
+      "id": "B1",
+      "name": "Verkstadsbyggnad",
+      "category": "BUILDINGS",
+      "acquired_on": "2016-01-01",
+      "depreciation_start": "2016-01-01",
+      "acquisition_ore": 600000000,
+      "opening_accumulated_ore": 120000000,
+      "opening_accumulated_note": "written off before the register: 120 months x 10 000 kr (2016-01 to 2025-12), as booked on 1119",
+      "life_months": 600,
+      "asset_account": 1110,
+      "accumulated_account": 1119,
+      "expense_account": 7820,
+      "split_on": "2026-01-01",
+      "components": [
+        {
+          "name": "Stomme",
+          "kind": "part",
+          "cost_ore": 360000000,
+          "remaining_life_months": 720
+        },
+        {
+          "name": "Tak",
+          "kind": "part",
+          "cost_ore": 120000000,
+          "remaining_life_months": 240
+        },
+        {
+          "name": "Installationer",
+          "kind": "part",
+          "cost_ore": 120000000,
+          "remaining_life_months": 192
+        }
+      ]
+    }
+  ],
+  "fixed_asset_register_note": "Only the building is put in the register (S1-R3.1, H4: buildings are always split). Land (1130) and the equipment (1220/1229) stay in the ledger only. The accumulated depreciation at the split is left to NONOX's allocation in proportion to cost.",
+  "transition_items": [
+    {
+      "id": "T1",
+      "kind": "DEFERRED_TAX",
+      "deferred_tax_kind": "OTHER_ASSET",
+      "description": "Verkstadsbyggnad",
+      "account_from": 1110,
+      "account_to": 1119,
+      "tax_value_ore": 360000000
+    },
+    {
+      "id": "T2",
+      "kind": "PROVISION",
+      "description": "Garantiåtaganden utöver avtal (informell förpliktelse)",
+      "account": 2220,
+      "amount_ore": 15000000,
+      "k3_reference": "K3 21.4"
+    },
+    {
+      "id": "T3",
+      "kind": "DEFERRED_TAX",
+      "deferred_tax_kind": "OTHER_LIABILITY",
+      "description": "Avsättning för garantiåtaganden",
+      "carrying_ore": 15000000,
+      "tax_value_ore": 0,
+      "recognised_ore": 3090000,
+      "recognition_reason": "Garantiutgifterna betalas under 2026 och dras av mot det skattepliktiga överskottet det året."
+    },
+    {
+      "id": "T4",
+      "kind": "DEFERRED_TAX",
+      "deferred_tax_kind": "OTHER_ASSET",
+      "description": "Inventarier anskaffade 2023",
+      "account_from": 1220,
+      "account_to": 1229,
+      "relief_35_27": true,
+      "relief_reason": "Det skattemässiga värdet för inventarierna kan inte tas fram utan oskälig kostnad: underlaget för avskrivningarna i deklarationerna finns inte kvar."
+    }
+  ],
+  "transition_items_note": "What a person enters on Bokslut → Övergång till K3. T3's carrying amount is entered because the provision is not in the ledger before the transition; its tax value 0 is the person's assessment (the provision is deducted when paid).",
+  "chart_of_accounts": [
+    {
+      "number": 1110,
+      "name": "Byggnader"
+    },
+    {
+      "number": 1119,
+      "name": "Ackumulerade avskrivningar på byggnader"
+    },
+    {
+      "number": 1130,
+      "name": "Mark"
+    },
+    {
+      "number": 1220,
+      "name": "Inventarier och verktyg"
+    },
+    {
+      "number": 1229,
+      "name": "Ackumulerade avskrivningar på inventarier och verktyg"
+    },
+    {
+      "number": 1370,
+      "name": "Uppskjuten skattefordran"
+    },
+    {
+      "number": 1930,
+      "name": "Företagskonto/checkkonto/affärskonto"
+    },
+    {
+      "number": 2081,
+      "name": "Aktiekapital"
+    },
+    {
+      "number": 2091,
+      "name": "Balanserad vinst eller förlust"
+    },
+    {
+      "number": 2099,
+      "name": "Årets resultat"
+    },
+    {
+      "number": 2220,
+      "name": "Avsättningar för garantier"
+    },
+    {
+      "number": 2240,
+      "name": "Avsättningar för uppskjutna skatter"
+    },
+    {
+      "number": 2350,
+      "name": "Andra långfristiga skulder till kreditinstitut"
+    },
+    {
+      "number": 2440,
+      "name": "Leverantörsskulder"
+    },
+    {
+      "number": 2512,
+      "name": "Beräknad inkomstskatt"
+    },
+    {
+      "number": 2611,
+      "name": "Utgående moms på försäljning inom Sverige, 25 %"
+    },
+    {
+      "number": 2640,
+      "name": "Ingående moms"
+    },
+    {
+      "number": 3001,
+      "name": "Försäljning inom Sverige, 25 % moms"
+    },
+    {
+      "number": 4010,
+      "name": "Inköp material och varor"
+    },
+    {
+      "number": 7210,
+      "name": "Löner till tjänstemän"
+    },
+    {
+      "number": 7510,
+      "name": "Arbetsgivaravgifter"
+    },
+    {
+      "number": 7820,
+      "name": "Avskrivningar på byggnader"
+    },
+    {
+      "number": 7832,
+      "name": "Avskrivningar på inventarier och verktyg"
+    },
+    {
+      "number": 8410,
+      "name": "Räntekostnader för långfristiga skulder"
+    },
+    {
+      "number": 8910,
+      "name": "Skatt som belastar årets resultat"
+    },
+    {
+      "number": 8999,
+      "name": "Årets resultat"
+    }
+  ],
+  "series": [
+    {
+      "code": "A",
+      "name": "Manuell"
+    }
+  ]
+}

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Domain\Closing;
 
 use App\Domain\Accounting\LedgerBalances;
+use App\Domain\Accounting\VoucherSource;
+use App\Domain\Accounting\VoucherStatus;
 use App\Domain\AnnualReport\K3Rules;
 use App\Domain\Closing\DeferredTax\BuildingCarryingAmounts;
 use App\Domain\Company\ReportingFramework;
@@ -12,7 +14,9 @@ use App\Models\Account;
 use App\Models\Company;
 use App\Models\DeferredTaxItem;
 use App\Models\FiscalYear;
+use App\Models\VoucherRow;
 use App\Support\Money\Money;
+use Carbon\CarbonImmutable;
 
 /**
  * The proposed deferred tax of a K3 company at the balance date (ADR-059,
@@ -42,8 +46,8 @@ use App\Support\Money\Money;
  * Untaxed reserves are never an item (29.37); the item form refuses BAS
  * 2100–2199 and the database backs that up. A proposal only: nothing is
  * booked until a person confirms it (YearEndClosing::confirmDeferredTax).
- * Fixed query count: items, accounts, opening balances, movements, and one
- * call to the register.
+ * Fixed query count: items, accounts, opening balances, the transition
+ * voucher, movements, and one call to the register.
  *
  * TODO(legal-verify): rules.json has no date on which a rate was decided; the
  * proposal assumes every rate in it was decided before the balance date of a
@@ -128,11 +132,15 @@ final class DeferredTaxProposal
         /** @var array<int, int> $closingByNumber */
         $closingByNumber = [];
 
-        foreach ($opening as $accountId => $ore) {
-            $number = $numbers[$accountId] ?? null;
+        // The K2-to-K3 transition voucher on the first day belongs to the opening balance sheet (K3 35.11, S1-P12):
+        // the change since the last balance date is measured from the K3 opening, not from the K2 closing.
+        foreach ([$opening, self::transitionMovements($fiscalYear)] as $balances) {
+            foreach ($balances as $accountId => $ore) {
+                $number = $numbers[$accountId] ?? null;
 
-            if ($number !== null) {
-                $openingByNumber[$number] = ($openingByNumber[$number] ?? 0) + $ore;
+                if ($number !== null) {
+                    $openingByNumber[$number] = ($openingByNumber[$number] ?? 0) + $ore;
+                }
             }
         }
 
@@ -192,6 +200,26 @@ final class DeferredTaxProposal
     }
 
     /**
+     * Debit minus credit per account of the year's posted K2-to-K3
+     * transition voucher (VoucherSource::K3Transition), one grouped query.
+     *
+     * @return array<int, int>
+     */
+    private static function transitionMovements(FiscalYear $fiscalYear): array
+    {
+        return VoucherRow::query()
+            ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
+            ->where('vouchers.fiscal_year_id', $fiscalYear->id)
+            ->where('vouchers.status', VoucherStatus::Posted->value)
+            ->where('vouchers.source', VoucherSource::K3Transition->value)
+            ->groupBy('voucher_rows.account_id')
+            ->selectRaw('voucher_rows.account_id, SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) AS movement')
+            ->pluck('movement', 'account_id')
+            ->map(fn (mixed $movement): int => (int) $movement)
+            ->all();
+    }
+
+    /**
      * Why there can be no proposal for the year at all, in Swedish.
      *
      * @return list<string>
@@ -219,7 +247,16 @@ final class DeferredTaxProposal
      */
     public static function rateFor(FiscalYear $fiscalYear): int|string
     {
-        $next = $fiscalYear->end_date->addDay();
+        return self::rateForStart($fiscalYear->end_date->addDay());
+    }
+
+    /**
+     * The rate in basis points for the beskattningsår that begins on $next,
+     * or the Swedish reason there is none; also used at the K2-to-K3
+     * transition date (K3TransitionProposal).
+     */
+    public static function rateForStart(CarbonImmutable $next): int|string
+    {
         $entry = CorporateTaxRules::rateEntryForStart($next);
 
         if ($entry === null) {

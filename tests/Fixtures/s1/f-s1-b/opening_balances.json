@@ -1,0 +1,122 @@
+{
+  "convention": "balance_ore: debit positive, credit negative; each date sums to 0. 2026-01-01 equals the closing balance of 2025 account by account (the 2025 result voucher A11 has moved the year's result to 2099), i.e. the K2 balance before the transition.",
+  "2025-01-01": [
+    {
+      "account": 1110,
+      "name": "Byggnader",
+      "balance_ore": 600000000
+    },
+    {
+      "account": 1119,
+      "name": "Ackumulerade avskrivningar på byggnader",
+      "balance_ore": -108000000
+    },
+    {
+      "account": 1130,
+      "name": "Mark",
+      "balance_ore": 100000000
+    },
+    {
+      "account": 1220,
+      "name": "Inventarier och verktyg",
+      "balance_ore": 40000000
+    },
+    {
+      "account": 1229,
+      "name": "Ackumulerade avskrivningar på inventarier och verktyg",
+      "balance_ore": -16000000
+    },
+    {
+      "account": 1930,
+      "name": "Företagskonto/checkkonto/affärskonto",
+      "balance_ore": 120000000
+    },
+    {
+      "account": 2081,
+      "name": "Aktiekapital",
+      "balance_ore": -10000000
+    },
+    {
+      "account": 2091,
+      "name": "Balanserad vinst eller förlust",
+      "balance_ore": -326000000
+    },
+    {
+      "account": 2099,
+      "name": "Årets resultat",
+      "balance_ore": -30000000
+    },
+    {
+      "account": 2350,
+      "name": "Andra långfristiga skulder till kreditinstitut",
+      "balance_ore": -350000000
+    },
+    {
+      "account": 2440,
+      "name": "Leverantörsskulder",
+      "balance_ore": -20000000
+    }
+  ],
+  "2026-01-01": [
+    {
+      "account": 1110,
+      "name": "Byggnader",
+      "balance_ore": 600000000
+    },
+    {
+      "account": 1119,
+      "name": "Ackumulerade avskrivningar på byggnader",
+      "balance_ore": -120000000
+    },
+    {
+      "account": 1130,
+      "name": "Mark",
+      "balance_ore": 100000000
+    },
+    {
+      "account": 1220,
+      "name": "Inventarier och verktyg",
+      "balance_ore": 40000000
+    },
+    {
+      "account": 1229,
+      "name": "Ackumulerade avskrivningar på inventarier och verktyg",
+      "balance_ore": -24000000
+    },
+    {
+      "account": 1930,
+      "name": "Företagskonto/checkkonto/affärskonto",
+      "balance_ore": 198296000
+    },
+    {
+      "account": 2081,
+      "name": "Aktiekapital",
+      "balance_ore": -10000000
+    },
+    {
+      "account": 2091,
+      "name": "Balanserad vinst eller förlust",
+      "balance_ore": -356000000
+    },
+    {
+      "account": 2099,
+      "name": "Årets resultat",
+      "balance_ore": -88459024
+    },
+    {
+      "account": 2350,
+      "name": "Andra långfristiga skulder till kreditinstitut",
+      "balance_ore": -300000000
+    },
+    {
+      "account": 2440,
+      "name": "Leverantörsskulder",
+      "balance_ore": -20000000
+    },
+    {
+      "account": 2512,
+      "name": "Beräknad inkomstskatt",
+      "balance_ore": -19836976
+    }
+  ]
+}

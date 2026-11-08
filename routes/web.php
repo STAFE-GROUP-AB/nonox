@@ -272,6 +272,7 @@ Route::middleware([
         Route::view('/skattekontot', 'accounting.tax-account')->name('accounting.taxAccount');
         Route::view('/bokslut', 'accounting.closing')->name('accounting.closing');
         Route::view('/bokslut/uppskjuten-skatt', 'accounting.deferred-tax')->name('accounting.closing.deferredTax');
+        Route::view('/bokslut/overgang-till-k3', 'accounting.k3-transition')->name('accounting.closing.k3Transition');
         Route::view('/bokslut/regelverk', 'accounting.closing-framework')->name('accounting.closingFramework');
         Route::view('/arsredovisning', 'accounting.annual-report')->name('accounting.annualReport');
         Route::get('/arsredovisning/{fiscalYear}', [AnnualReportController::class, 'show'])->whereNumber('fiscalYear')->name('accounting.annualReport.show');

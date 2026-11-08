@@ -4,7 +4,7 @@
 openapi: 3.1.0
 info:
   title: 'NONOX API'
-  version: 1.9.0
+  version: 1.10.0
   description: |-
     The public API of NONOX Ekonomisystem, an open-source Swedish bookkeeping system.
 
@@ -10878,6 +10878,7 @@ components:
             - IMPORT_FORTNOX
             - CLOSING
             - CORRECTION
+            - K3_TRANSITION
         corrects_voucher_id:
           type:
             - string
