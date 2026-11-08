@@ -12,6 +12,8 @@ use App\Modules\Inventory\Structures\StructureBook;
 use App\Modules\Inventory\Structures\StructureWriter;
 use App\Modules\Inventory\Structures\UnitCosts;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\Kitchen;
 
@@ -131,8 +133,8 @@ it('refuses a loop, a loss of 100 %, a zero yield and a unit without conversion 
     $writer = app(StructureWriter::class);
     $base = ['name' => 'X', 'yield' => '1', 'yield_unit' => BillOfMaterials::UNIT];
 
-    // Vitlökssmör through Pasta med svamp back to itself.
-    expect(fn () => $writer->save($this->company, $this->owner, StructureKind::Recipe, $a['vitloksmor'], [...$base, 'rows' => [['article_id' => $a['dish']->id, 'quantity' => '1']]]))
+    // Smör made from Vitlökssmör, which is made from smör.
+    expect(fn () => $writer->save($this->company, $this->owner, StructureKind::Recipe, $a['smor'], [...$base, 'rows' => [['article_id' => $a['vitloksmor']->id, 'quantity' => '1']]]))
         ->toThrow(ValidationException::class, 'ring');
 
     expect(fn () => $writer->save($this->company, $this->owner, StructureKind::Recipe, $a['dish'], [...$base, 'rows' => [['article_id' => $a['dish']->id, 'quantity' => '1']]]))
@@ -185,4 +187,65 @@ it('ignores an operation row when costing and exploding', function () {
     $cost = StructureBook::for($this->company)->cost(StructureBook::for($this->company)->validOn($this->fx['articles']['vitloksmor']->id, $this->on), UnitCosts::at($this->company, $this->on), $this->on);
 
     expect($cost->batchCostOre)->toBe(10_840)->and($cost->rows)->toHaveCount(2);
+});
+
+it('refuses a portion recipe as an ingredient, and portions for a sub-recipe already used (review P2.1)', function () {
+    $a = $this->fx['articles'];
+    $writer = app(StructureWriter::class);
+
+    // Pasta med svamp yields portions: it cannot go into another recipe.
+    $plate = Kitchen::dish($this->company, $this->owner, 'M-4', 'Tallrik', '200,00');
+    expect(fn () => $writer->save($this->company, $this->owner, StructureKind::Recipe, $plate, [
+        'name' => 'Tallrik', 'yield' => '1', 'yield_unit' => BillOfMaterials::PORTIONS, 'rows' => [['article_id' => $a['dish']->id, 'quantity' => '1']],
+    ]))->toThrow(ValidationException::class, 'utbyte i portioner');
+
+    // Vitlökssmör is used in the pasta: a new version may not switch it to portions.
+    expect(fn () => $writer->save($this->company, $this->owner, StructureKind::Recipe, $a['vitloksmor'], [
+        'name' => 'Vitlökssmör', 'yield' => '10', 'yield_unit' => BillOfMaterials::PORTIONS, 'rows' => [['article_id' => $a['smor']->id, 'quantity' => '1']],
+    ]))->toThrow(ValidationException::class, 'artikelns enhet');
+});
+
+it('refuses to switch a recipe back on when that closes a loop (review P2.2)', function () {
+    $a = $this->fx['articles'];
+    $writer = app(StructureWriter::class);
+
+    // With Vitlökssmör off, smör is made from the stocked pasta, and the pasta from Vitlökssmör.
+    $writer->setActive($this->company, $a['vitloksmor'], false);
+    $writer->save($this->company, $this->owner, StructureKind::Recipe, $a['pasta'], [
+        'name' => 'Färsk pasta', 'yield' => '1', 'yield_unit' => BillOfMaterials::UNIT, 'rows' => [['article_id' => $a['vitloksmor']->id, 'quantity' => '0,1']],
+    ]);
+    $writer->save($this->company, $this->owner, StructureKind::Recipe, $a['smor'], [
+        'name' => 'Smör av pasta', 'yield' => '1', 'yield_unit' => BillOfMaterials::UNIT, 'rows' => [['article_id' => $a['pasta']->id, 'quantity' => '1']],
+    ]);
+
+    // Switching Vitlökssmör (made from smör) back on would close smör → pasta → Vitlökssmör → smör.
+    expect(fn () => $writer->setActive($this->company, $a['vitloksmor'], true))->toThrow(ValidationException::class, 'ring')
+        ->and(BillOfMaterials::query()->where('output_article_id', $a['vitloksmor']->id)->where('is_active', true)->exists())->toBeFalse();
+});
+
+it('explodes a given version or row set, and stops at a stocked component when asked (review P2.8)', function () {
+    $a = $this->fx['articles'];
+    $book = StructureBook::for($this->company);
+
+    $whole = $book->explodeStructure($this->fx['pasta'], 10_000, $this->on);
+    expect($whole)->toHaveKey($a['smor']->id)->not->toHaveKey($a['vitloksmor']->id);
+
+    $stopped = $book->explodeStructure($this->fx['pasta'], 10_000, $this->on, stopAt: fn (int $articleId): bool => $articleId === $a['vitloksmor']->id);
+    expect(StructureMath::round($stopped[$a['vitloksmor']->id]))->toBe(100)->and($stopped)->not->toHaveKey($a['smor']->id);
+
+    $rows = $book->explodeStructure([$this->fx['pasta']->rows[1]], 2_000, $this->on, yieldMilli: 10_000);
+    expect(array_map(StructureMath::round(...), $rows))->toBe([$a['champinjoner']->id => 267]);
+});
+
+it('lets the database change a saved version only by switching it, from Eloquent, the query builder and raw SQL (review P2.8)', function () {
+    $id = $this->fx['pasta']->id;
+    $rowId = $this->fx['pasta']->rows[0]->id;
+
+    expect(fn () => $this->fx['pasta']->update(['name' => 'X']))->toThrow(LogicException::class);
+    expect(fn () => DB::transaction(fn () => DB::table('bills_of_materials')->where('id', $id)->update(['yield_milli' => 1])))->toThrow(QueryException::class);
+    expect(fn () => DB::transaction(fn () => DB::statement('UPDATE bom_rows SET quantity_milli = 1 WHERE id = ?', [$rowId])))->toThrow(QueryException::class);
+    expect(fn () => DB::transaction(fn () => DB::statement('UPDATE bills_of_materials SET valid_from = ? WHERE id = ?', ['2020-01-01', $id])))->toThrow(QueryException::class);
+
+    DB::table('bills_of_materials')->where('id', $id)->update(['is_active' => false, 'updated_at' => now()]);
+    expect(BillOfMaterials::query()->find($id)->is_active)->toBeFalse();
 });

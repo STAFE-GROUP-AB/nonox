@@ -75,6 +75,35 @@ final class StructureBook
             ->first(fn (BillOfMaterials $version): bool => $version->is_active && $version->valid_from->lessThanOrEqualTo($date));
     }
 
+    /**
+     * The output articles whose active versions use $articleId as a
+     * component.
+     *
+     * @return list<int>
+     */
+    public function usedIn(int $articleId): array
+    {
+        $users = [];
+
+        foreach ($this->byOutput as $outputId => $versions) {
+            foreach ($versions as $version) {
+                if ($version->is_active && $version->rows->contains('component_article_id', $articleId)) {
+                    $users[] = $outputId;
+
+                    continue 2;
+                }
+            }
+        }
+
+        return $users;
+    }
+
+    /** Whether an active version of the article yields portions (a dish), which cannot be a component. */
+    public function yieldsPortions(int $articleId): bool
+    {
+        return $this->versions($articleId)->contains(fn (BillOfMaterials $version): bool => $version->is_active && $version->isPortions());
+    }
+
     /** Whether the article is made from any active version, on any date. */
     public function isMade(int $articleId): bool
     {
@@ -118,12 +147,17 @@ final class StructureBook
      * Explodes quantities of output articles (thousandths of the yield unit:
      * portions for a dish) into the components that are not made from a
      * structure on that date. An output without a valid structure is
-     * returned in 'missing' and not guessed.
+     * returned in 'missing' and not guessed. $stopAt decides, per component
+     * and date, to take a component as it is (from stock) instead of
+     * exploding its own structure, such as a stocked semi-finished article
+     * in manufacturing (ADR-071); without it every sub-structure is
+     * exploded, which is what Kök does.
      *
      * @param  array<int, int|BigRational>  $outputs  output article => quantity in thousandths
+     * @param  (callable(int, CarbonImmutable): bool)|null  $stopAt
      * @return array{components: array<int, BigRational>, missing: array<int, BigRational>}
      */
-    public function explode(array $outputs, CarbonImmutable $date): array
+    public function explode(array $outputs, CarbonImmutable $date, ?callable $stopAt = null): array
     {
         $components = [];
         $missing = [];
@@ -138,10 +172,35 @@ final class StructureBook
                 continue;
             }
 
-            $this->explodeInto($structure, $quantity, $date, $components, 0);
+            $this->explodeInto(array_values($structure->rows->all()), $structure->yield_milli, $quantity, $date, $components, 0, $stopAt);
         }
 
         return ['components' => $components, 'missing' => $missing];
+    }
+
+    /**
+     * Explodes one given structure version, or a given set of rows with
+     * their yield, whatever version is valid (for a production order that
+     * keeps the version it was made from, ADR-071). Sub-structures are
+     * taken at the version valid on the date unless $stopAt says to stop.
+     *
+     * @param  BillOfMaterials|list<BomRow>  $structure
+     * @param  (callable(int, CarbonImmutable): bool)|null  $stopAt
+     * @return array<int, BigRational> component => quantity in thousandths, exact
+     */
+    public function explodeStructure(BillOfMaterials|array $structure, int|BigRational $quantity, CarbonImmutable $date, ?int $yieldMilli = null, ?callable $stopAt = null): array
+    {
+        $rows = $structure instanceof BillOfMaterials ? array_values($structure->rows->all()) : $structure;
+        $yield = $structure instanceof BillOfMaterials ? $structure->yield_milli : ($yieldMilli ?? throw new LogicException('A row set needs its yield.'));
+
+        if ($yield <= 0) {
+            throw new LogicException('The yield must be above zero.');
+        }
+
+        $components = [];
+        $this->explodeInto($rows, $yield, $quantity instanceof BigRational ? $quantity : BigRational::of($quantity), $date, $components, 0, $stopAt);
+
+        return $components;
     }
 
     /**
@@ -183,19 +242,26 @@ final class StructureBook
         return $this->unitCostAt($articleId, $costs, $date, 0);
     }
 
-    /** @param  array<int, BigRational>  $components */
-    private function explodeInto(BillOfMaterials $structure, BigRational $quantity, CarbonImmutable $date, array &$components, int $depth): void
+    /**
+     * @param  list<BomRow>  $rows
+     * @param  array<int, BigRational>  $components
+     * @param  (callable(int, CarbonImmutable): bool)|null  $stopAt
+     */
+    private function explodeInto(array $rows, int $yieldMilli, BigRational $quantity, CarbonImmutable $date, array &$components, int $depth, ?callable $stopAt): void
     {
         $this->guardDepth($depth);
 
-        foreach ($structure->rows as $row) {
-            /** @var BomRow $row */
+        foreach ($rows as $row) {
+            if ($row->component_article_id === null) {
+                continue;
+            }
+
             $componentId = (int) $row->component_article_id;
-            $needed = BigRational::ofFraction($row->grossMilli(), 1)->multipliedBy($quantity)->dividedBy($structure->yield_milli);
-            $sub = $this->validOn($componentId, $date);
+            $needed = BigRational::ofFraction($row->grossMilli(), 1)->multipliedBy($quantity)->dividedBy($yieldMilli);
+            $sub = $stopAt !== null && $stopAt($componentId, $date) ? null : $this->validOn($componentId, $date);
 
             if ($sub !== null) {
-                $this->explodeInto($sub, $needed, $date, $components, $depth + 1);
+                $this->explodeInto(array_values($sub->rows->all()), $sub->yield_milli, $needed, $date, $components, $depth + 1, $stopAt);
 
                 continue;
             }

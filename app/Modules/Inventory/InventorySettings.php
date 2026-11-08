@@ -6,9 +6,12 @@ namespace App\Modules\Inventory;
 
 use App\Domain\Company\ReportingFramework;
 use App\Models\Company;
+use App\Models\FiscalYear;
 use App\Modules\Inventory\Domain\StockClass;
 use App\Modules\Inventory\Domain\ValuationMethod;
 use App\Modules\ModuleManager;
+use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 
 /**
  * Lager's settings per company (ADR-039), kept in company_modules.settings.
@@ -98,10 +101,22 @@ final class InventorySettings
         ];
     }
 
-    /** Whether the 97 % rule applies: chosen, and the company reports under K2. */
-    public static function usesRule97(Company $company): bool
+    /**
+     * Whether the 97 % rule applies to a fiscal year: chosen, and the year
+     * follows K2 (the framework belongs to the year, ADR-059 A.2.1).
+     */
+    public static function usesRule97(Company $company, FiscalYear $fiscalYear): bool
     {
-        return $company->reporting_framework === ReportingFramework::K2 && (bool) self::for($company)['rule_97'];
+        return $fiscalYear->reporting_framework === ReportingFramework::K2 && (bool) self::for($company)['rule_97'];
+    }
+
+    /** Whether the rule may be offered: the open or latest fiscal year follows K2. */
+    public static function offersRule97(Company $company): bool
+    {
+        $year = CurrentCompany::run($company, fn (): ?FiscalYear => FiscalYear::query()->whereDate('start_date', '<=', CarbonImmutable::today()->toDateString())->orderByDesc('start_date')->first()
+            ?? FiscalYear::query()->orderByDesc('start_date')->first());
+
+        return $year?->reporting_framework === ReportingFramework::K2;
     }
 
     public static function allowsNegative(Company $company): bool

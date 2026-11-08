@@ -9,6 +9,7 @@ use App\Modules\Kitchen\Actions\ConsumeSales;
 use App\Modules\Kitchen\KitchenModule;
 use App\Modules\ModuleManager;
 use Illuminate\Console\Command;
+use Throwable;
 
 /**
  * Draws the till's sales of dishes from stock through their recipes, for
@@ -34,7 +35,17 @@ class ConsumeSalesCommand extends Command
             }
 
             $this->info("Drawing sales for company `{$companyId}`...");
-            $result = $consume($company);
+
+            // One company's broken data (a recipe, a location) never stops the others.
+            try {
+                $result = $consume($company);
+            } catch (Throwable $exception) {
+                report($exception);
+                $this->warn("  failed: {$exception->getMessage()}");
+
+                continue;
+            }
+
             $this->line("  {$result['rows']} till rows, {$result['movements']} movements, {$result['waiting']} waiting for stock.");
             $rows += $result['rows'];
         }

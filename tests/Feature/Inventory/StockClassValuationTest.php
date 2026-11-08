@@ -31,6 +31,7 @@ beforeEach(function () {
     $this->actingAs($this->owner);
     Inventory::enable($this->company, $this->owner);
     $this->year = FiscalYear::query()->whereDate('start_date', '2026-01-01')->firstOrFail();
+    $this->year->forceFill(['reporting_framework' => ReportingFramework::K2])->save();
     $this->places = Inventory::locations($this->company, $this->owner);
 
     // 10 st at 100 kr of goods for resale; 4 kg at 50 kr of raw material.
@@ -96,7 +97,33 @@ it('refuses the 97 % rule when an article is written down, and ignores it outsid
 
     expect(fn () => app(BookStockValuation::class)($this->owner, $this->company, $this->year))->toThrow(ValidationException::class, '97-procentsregeln');
 
-    $this->company->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
-    $valuation = app(BookStockValuation::class)($this->owner, $this->company->fresh(), $this->year);
+    // The framework belongs to the fiscal year (ADR-059 A.2.1): a K3 year ignores the rule even if the company says K2.
+    $this->year->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
+    $valuation = app(BookStockValuation::class)($this->owner, $this->company->fresh(), $this->year->fresh());
     expect($valuation->rule_97)->toBeFalse()->and($valuation->value_ore)->toBe(104_000);
+});
+
+it('books a class no longer in use down when the default class changes after a booked balance (P1)', function () {
+    // 500 kr already on 1460 from an earlier year-end, then the company calls everything raw material.
+    Bookkeeping::post($this->owner, $this->company, 50_000, 1460, 1930, '2026-01-02');
+    app(ModuleManager::class)->updateSettings(InventoryModule::KEY, $this->company, $this->owner, ['default_stock_class' => 'RAW_MATERIAL']);
+
+    $valuation = app(BookStockValuation::class)($this->owner, $this->company, $this->year);
+
+    CurrentCompany::set($this->company);
+    expect(voucherRows($valuation->voucher_id))->toBe([4910 => -120_000, 1460 => -50_000, 4960 => 50_000, 1410 => 120_000])
+        ->and($valuation->value_ore)->toBe(120_000)
+        ->and($valuation->book_value_ore)->toBe(50_000);
+});
+
+it('books 1460 down when the last explicit goods-for-resale article changes class (P1)', function () {
+    app(ModuleManager::class)->updateSettings(InventoryModule::KEY, $this->company, $this->owner, ['default_stock_class' => 'RAW_MATERIAL']);
+    $this->goods->forceFill(['stock_class' => 'GOODS_FOR_RESALE'])->save();
+    Bookkeeping::post($this->owner, $this->company, 100_000, 1460, 1930, '2026-01-02');
+    $this->goods->forceFill(['stock_class' => null])->save();
+
+    $valuation = app(BookStockValuation::class)($this->owner, $this->company, $this->year);
+
+    CurrentCompany::set($this->company);
+    expect(voucherRows($valuation->voucher_id))->toBe([4910 => -120_000, 1460 => -100_000, 4960 => 100_000, 1410 => 120_000]);
 });

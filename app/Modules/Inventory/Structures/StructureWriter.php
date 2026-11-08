@@ -39,6 +39,9 @@ final class StructureWriter
 {
     public const int MAX_ROWS = 200;
 
+    /** First key of the PostgreSQL advisory lock for structure writes; the second is the company. */
+    private const int LOCK_KEY = 73_001;
+
     public function __construct(private readonly ModuleManager $modules) {}
 
     /**
@@ -57,6 +60,8 @@ final class StructureWriter
         $this->modules->ensureEnabled(InventoryModule::KEY, $company);
 
         return CurrentCompany::run($company, fn (): BillOfMaterials => DB::transaction(function () use ($company, $by, $kind, $output, $input): BillOfMaterials {
+            // One structure save per company at a time, so two saves cannot close a loop between them.
+            self::lock($company);
             Article::query()->whereKey($output->id)->lockForUpdate()->firstOrFail();
 
             $name = trim((string) ($input['name'] ?? ''));
@@ -107,6 +112,10 @@ final class StructureWriter
                     throw ValidationException::withMessages(["rows.{$index}.article_id" => __('Ett recept kan inte innehålla sig självt.')]);
                 }
 
+                if ($book->yieldsPortions($article->id)) {
+                    throw ValidationException::withMessages(["rows.{$index}.article_id" => __(':name är en rätt med utbyte i portioner och kan inte vara en ingrediens. Ge grundreceptet utbyte i artikelns enhet.', ['name' => $article->name])]);
+                }
+
                 if ($book->reaches($article->id, $output->id)) {
                     throw ValidationException::withMessages(["rows.{$index}.article_id" => __(':name innehåller redan :output, så receptet skulle gå i en ring.', ['name' => $article->name, 'output' => $output->name])]);
                 }
@@ -149,6 +158,12 @@ final class StructureWriter
                 $allergens = array_values(array_filter(array_map(fn (string $tag): string => mb_substr(trim($tag), 0, 40), explode(',', $allergens)), fn (string $tag): bool => $tag !== ''));
             }
 
+            $usedIn = $book->usedIn($output->id);
+
+            if ($yieldUnit === BillOfMaterials::PORTIONS && $usedIn !== []) {
+                throw ValidationException::withMessages(['yield_unit' => __(':name används som ingrediens i :count andra recept och måste ge en mängd i artikelns enhet, inte portioner.', ['name' => $output->name, 'count' => count($usedIn)])]);
+            }
+
             $structure = BillOfMaterials::create([
                 'kind' => $kind,
                 'output_article_id' => $output->id,
@@ -171,12 +186,42 @@ final class StructureWriter
         }));
     }
 
-    /** Switches every version of the output article off or on. */
+    /**
+     * Switches every version of the output article off or on. Switching on
+     * is refused when it would close a loop or put a portion recipe in
+     * another recipe.
+     */
     public function setActive(Company $company, Article $output, bool $active): int
     {
-        return CurrentCompany::run($company, fn (): int => BillOfMaterials::query()->where('output_article_id', $output->id)->get()
-            ->each(fn (BillOfMaterials $version) => $version->forceFill(['is_active' => $active])->save())
-            ->count());
+        return CurrentCompany::run($company, fn (): int => DB::transaction(function () use ($company, $output, $active): int {
+            self::lock($company);
+            $versions = BillOfMaterials::query()->where('output_article_id', $output->id)->with('rows')->get();
+            $versions->each(fn (BillOfMaterials $version) => $version->forceFill(['is_active' => $active])->save());
+
+            if ($active) {
+                $book = StructureBook::for($company);
+
+                foreach ($versions as $version) {
+                    foreach ($version->rows as $row) {
+                        if ($row->component_article_id !== null && $book->reaches((int) $row->component_article_id, $output->id)) {
+                            throw ValidationException::withMessages(['active' => __('Receptet kan inte användas igen: det skulle gå i en ring med ett annat recept.')]);
+                        }
+                    }
+
+                    if ($version->isPortions() && $book->usedIn($output->id) !== []) {
+                        throw ValidationException::withMessages(['active' => __(':name används som ingrediens i andra recept och kan inte ge portioner.', ['name' => $output->name])]);
+                    }
+                }
+            }
+
+            return $versions->count();
+        }));
+    }
+
+    /** A per-company transaction lock for structure writes (released at commit). */
+    private static function lock(Company $company): void
+    {
+        DB::select('SELECT pg_advisory_xact_lock(?, ?)', [self::LOCK_KEY, $company->id]);
     }
 
     private static function quantity(string $text, string $field): int

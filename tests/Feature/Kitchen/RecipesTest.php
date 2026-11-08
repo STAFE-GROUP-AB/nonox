@@ -3,15 +3,18 @@
 declare(strict_types=1);
 
 use App\Models\AuditLog;
+use App\Modules\Inventory\Actions\StockCounts;
 use App\Modules\Inventory\Domain\StructureKind;
 use App\Modules\Inventory\Models\BillOfMaterials;
 use App\Modules\Inventory\Structures\StructureWriter;
+use App\Modules\Kitchen\Actions\SaveRecipe;
 use App\Modules\Kitchen\Livewire\MenuPage;
 use App\Modules\Kitchen\Livewire\RecipePage;
 use App\Modules\Kitchen\Livewire\RecipesPage;
 use App\Modules\Kitchen\Support\MenuReport;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Kitchen;
 
@@ -136,4 +139,25 @@ it('runs the same number of queries for 5 and for 50 dishes', function () {
     $fifty = $count(45);
 
     expect($fifty)->toBe($five);
+});
+
+it('needs an explicit confirmation to date a recipe back, and audits it (review P2.7)', function () {
+    $dish = $this->fx['articles']['dish'];
+    $input = ['name' => 'Pasta med svamp', 'valid_from' => '2026-11-05', 'yield' => '10', 'yield_unit' => 'PORTIONS', 'rows' => [['article_id' => $this->fx['articles']['pasta']->id, 'quantity' => '1']]];
+
+    expect(fn () => app(SaveRecipe::class)($this->owner, $this->company, $dish, $input))->toThrow(ValidationException::class, 'bakåt i tiden');
+
+    $recipe = app(SaveRecipe::class)($this->owner, $this->company, $dish, [...$input, 'confirm_backdate' => true]);
+    expect($recipe->valid_from->toDateString())->toBe('2026-11-05')
+        ->and(AuditLog::query()->where('action', 'kitchen.recipe_backdated')->latest('id')->first()?->payload)->toMatchArray(['valid_from' => '2026-11-05']);
+});
+
+it('needs the confirmation for a date before the latest completed stock count (review P2.7)', function () {
+    $counts = app(StockCounts::class);
+    $count = $counts->start($this->owner, $this->company, null, CarbonImmutable::parse('2026-11-12'));
+    $counts->complete($this->owner, $this->company, $count);
+    $input = ['name' => 'Pasta med svamp', 'valid_from' => '2026-11-11', 'yield' => '10', 'yield_unit' => 'PORTIONS', 'rows' => [['article_id' => $this->fx['articles']['pasta']->id, 'quantity' => '1']]];
+
+    $this->travelTo(CarbonImmutable::parse('2026-11-11 08:00:00'));
+    expect(fn () => app(SaveRecipe::class)($this->owner, $this->company, $this->fx['articles']['dish'], $input))->toThrow(ValidationException::class, 'inventeringen 2026-11-12');
 });

@@ -71,7 +71,7 @@ class BookStockValuation
         }
 
         $settings = InventorySettings::for($company);
-        $rule97 = InventorySettings::usesRule97($company);
+        $rule97 = InventorySettings::usesRule97($company, $fiscalYear);
 
         return CurrentCompany::run($company, fn (): StockValuation => DB::transaction(function () use ($user, $company, $fiscalYear, $settings, $rule97): StockValuation {
             FiscalYear::query()->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();
@@ -154,7 +154,7 @@ class BookStockValuation
      */
     public static function plan(Company $company, FiscalYear $fiscalYear): array
     {
-        $rule97 = InventorySettings::usesRule97($company);
+        $rule97 = InventorySettings::usesRule97($company, $fiscalYear);
         $pairs = InventorySettings::pairs($company);
 
         return CurrentCompany::run($company, function () use ($company, $fiscalYear, $rule97, $pairs): array {
@@ -164,15 +164,20 @@ class BookStockValuation
                 throw ValidationException::withMessages(['valuation' => __('97-procentsregeln kan inte användas när någon vara är nedskriven till nettoförsäljningsvärde (K2 punkt 12.5). Stäng av regeln eller ta bort nedskrivningen.')]);
             }
 
-            $groups = self::groups($company, $report, $pairs, $rule97);
-            $accounts = Account::query()->whereIn('number', array_keys($groups))->pluck('id', 'number');
+            $accounts = Account::query()->whereIn('number', array_unique(array_merge(...array_values($pairs))))->pluck('id', 'number');
             $opening = LedgerBalances::opening($fiscalYear);
             $movements = LedgerBalances::movements($fiscalYear);
+            $balance = function (int $number) use ($accounts, $opening, $movements): int {
+                $id = $accounts->get($number);
+
+                return $id === null ? 0 : (int) ($opening[$id] ?? 0) + (int) ($movements[$id] ?? 0);
+            };
+
+            $groups = self::groups($company, $report, $pairs, $rule97, $balance);
             $planned = [];
 
             foreach ($groups as $stockNumber => $group) {
-                $id = $accounts->get($stockNumber);
-                $book = $id === null ? 0 : (int) ($opening[$id] ?? 0) + (int) ($movements[$id] ?? 0);
+                $book = $balance((int) $stockNumber);
                 $planned[] = [
                     'classes' => $group['classes'],
                     'stock_account' => (int) $stockNumber,
@@ -195,14 +200,18 @@ class BookStockValuation
      * The value per stock account (ADR-073 §9): the report's lines summed per
      * stock class and the classes that share a stock account put together.
      * A class is included when it has stock, when it is the company's
-     * default, or when an article is given it, so a company that never
-     * chose a class books one pair as before. With the 97 % rule each
-     * class is taken up at 97 % of its cost, rounded half up.
+     * default, when an article is given it, or when its stock account
+     * carries a balance in the books for the year (then valued at what is
+     * on hand, nothing if nothing is), so a class that is no longer used is
+     * booked down instead of left standing beside the new one. A company
+     * that never chose a class books one pair as before. With the 97 %
+     * rule each class is taken up at 97 % of its cost, rounded half up.
      *
      * @param  array<string, array{0: int, 1: int}>  $pairs
+     * @param  callable(int): int  $balance  the book balance of a stock account for the year
      * @return array<int, array{change_account: int, classes: list<string>, cost_value_ore: int, value_ore: int}>
      */
-    private static function groups(Company $company, StockValuationReport $report, array $pairs, bool $rule97): array
+    private static function groups(Company $company, StockValuationReport $report, array $pairs, bool $rule97, callable $balance): array
     {
         $inUse = array_values(array_unique([
             InventorySettings::defaultClass($company)->value,
@@ -212,7 +221,9 @@ class BookStockValuation
         $groups = [];
 
         foreach (StockClass::cases() as $class) {
-            if (! in_array($class->value, $inUse, true)) {
+            [$stock, $change] = $pairs[$class->value];
+
+            if (! in_array($class->value, $inUse, true) && $balance($stock) === 0) {
                 continue;
             }
 
@@ -221,7 +232,6 @@ class BookStockValuation
             $value = $rule97
                 ? BigDecimal::of($cost)->multipliedBy(97)->dividedBy(100, 0, RoundingMode::HalfUp)->toInt()
                 : array_sum(array_column($lines, 'value_ore'));
-            [$stock, $change] = $pairs[$class->value];
 
             if (isset($groups[$stock]) && $groups[$stock]['change_account'] !== $change) {
                 throw ValidationException::withMessages(['valuation' => __('Lagerkonto :account används för två lagerslag med olika konton för lagerförändring. Rätta kontona under Lager → Inställningar.', ['account' => $stock])]);

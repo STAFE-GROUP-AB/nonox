@@ -29,8 +29,14 @@
                     </select>
                 </x-ui.field>
                 <x-ui.field for="recipe-valid-from" :label="__('Gäller från')" error="form.valid_from" class="sm:col-span-2">
-                    <input id="recipe-valid-from" type="date" wire:model="form.valid_from" class="{{ $input }}" required>
+                    <input id="recipe-valid-from" type="date" wire:model.live="form.valid_from" class="{{ $input }}" required>
                 </x-ui.field>
+                @if(($form['valid_from'] ?? '') !== '' && ($form['valid_from'] ?? '') < now()->toDateString() || $errors->has('form.valid_from'))
+                    <label class="flex items-start gap-3 sm:col-span-6">
+                        <input type="checkbox" wire:model="form.confirm_backdate" class="mt-1 rounded-sm border-stone-300 text-ink focus:ring-accent-500">
+                        <span class="text-sm text-gray-700">{{ __('Receptet ska gälla bakåt i tiden. Teoretisk förbrukning och avvikelser för redan räknade perioder ändras.') }}</span>
+                    </label>
+                @endif
 
                 <fieldset class="sm:col-span-6">
                     <legend class="text-sm font-semibold text-ink">{{ __('Ingredienser') }}</legend>

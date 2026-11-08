@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Livewire;
 
-use App\Domain\Company\ReportingFramework;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
@@ -79,7 +78,7 @@ class InventorySettingsForm extends Component
             'raw_material_stock_account' => (int) $validated['settings']['raw_material_stock_account'],
             'raw_material_change_account' => (int) $validated['settings']['raw_material_change_account'],
             // Offered to K2 companies only (Lead decision O3); never on for another framework.
-            'rule_97' => $company->reporting_framework === ReportingFramework::K2 && (bool) ($validated['settings']['rule_97'] ?? false),
+            'rule_97' => InventorySettings::offersRule97($company) && (bool) ($validated['settings']['rule_97'] ?? false),
         ]);
 
         $this->toast(__('Inställningarna för lagret är sparade.'));
@@ -90,7 +89,7 @@ class InventorySettingsForm extends Component
         return view('inventory::livewire.settings-form', [
             'methods' => ValuationMethod::cases(),
             'classes' => StockClass::cases(),
-            'k2' => Company::query()->find($this->companyId)?->reporting_framework === ReportingFramework::K2,
+            'k2' => InventorySettings::offersRule97(Company::query()->findOrFail($this->companyId)),
         ]);
     }
 
