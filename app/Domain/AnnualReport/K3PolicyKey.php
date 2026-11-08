@@ -6,8 +6,9 @@ namespace App\Domain\AnnualReport;
 
 /**
  * The K3 accounting policies a company records as data (ADR-059, addendum
- * 2026-11-07, A.2.3). The `components` policy is added after human decision
- * H4 (S1-R3.1) and is deliberately not a key yet.
+ * 2026-11-07, A.2.3). The `components` policy follows human decision H4
+ * (S1-R3.1, decided 2026-11-08): buildings are always split into land and
+ * components, other assets only when the company chooses (S1-P4).
  */
 enum K3PolicyKey: string
 {
@@ -20,6 +21,7 @@ enum K3PolicyKey: string
     case ComparativesRestatedAtTransition = 'comparatives_restated_at_transition';
     case K3AppliedBefore = 'k3_applied_before';
     case LeftK2Reason = 'left_k2_reason';
+    case Components = 'components';
 
     /** @return class-string<K3PolicyValue> */
     public function valueEnum(): string
@@ -33,6 +35,7 @@ enum K3PolicyKey: string
             self::CashFlowStatement => K3CashFlowStatement::class,
             self::ComparativesRestatedAtTransition, self::K3AppliedBefore => K3YesNo::class,
             self::LeftK2Reason => K3LeftK2Reason::class,
+            self::Components => K3Components::class,
         };
     }
 
@@ -63,6 +66,7 @@ enum K3PolicyKey: string
             self::CashFlowStatement => 'S1-R2',
             self::ComparativesRestatedAtTransition => 'S1-R7.1',
             self::K3AppliedBefore, self::LeftK2Reason => 'S1-R7.6',
+            self::Components => 'S1-R3.1',
         };
     }
 
@@ -87,6 +91,7 @@ enum K3PolicyKey: string
             self::ComparativesRestatedAtTransition => __('Omräknade jämförelsetal vid övergången'),
             self::K3AppliedBefore => __('K3 tillämpat tidigare'),
             self::LeftK2Reason => __('Skäl till att lämna K2'),
+            self::Components => __('Komponentavskrivning'),
         };
     }
 
@@ -127,6 +132,7 @@ enum K3PolicyKey: string
             self::ComparativesRestatedAtTransition => __('Räknas jämförelsetalen för föregående år om enligt K3 vid övergången?'),
             self::K3AppliedBefore => __('Har företaget tillämpat K3 för något tidigare räkenskapsår?'),
             self::LeftK2Reason => __('Lämnar företaget K2 för att det inte längre får tillämpa K2 i lydelsen enligt BFNAR 2025:2, eller av eget val?'),
+            self::Components => __('Byggnader delas alltid upp i mark och betydande komponenter (K3 17.4), och andra tillgångar delas upp när företaget bedömer att skillnaden i förbrukning mellan betydande delar är väsentlig. Har företaget prövat sina tillgångar mot den principen?'),
         };
     }
 }

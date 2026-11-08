@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domain\AnnualReport\K3BorrowingCosts;
 use App\Domain\AnnualReport\K3CashFlowStatement;
+use App\Domain\AnnualReport\K3Components;
 use App\Domain\AnnualReport\K3FinancialInstruments;
 use App\Domain\AnnualReport\K3FixedPriceContracts;
 use App\Domain\AnnualReport\K3Intangibles;
@@ -14,11 +15,10 @@ use App\Domain\AnnualReport\K3YesNo;
 
 /*
  * ADR-059, addendum 2026-11-07, A.2.3: the K3 accounting policies are data, one
- * backed enum per key. The `components` key waits for human decision H4 and is
- * not a key yet.
+ * backed enum per key. The `components` key follows human decision H4 (S1-P4).
  */
 
-it('S1-R5 S1-R6 S1-R10 S1-R2 S1-R7.1 S1-R7.6 has exactly the keys and values of A.2.3', function () {
+it('S1-R5 S1-R6 S1-R10 S1-R2 S1-R7.1 S1-R7.6 S1-R3.1 has exactly the keys and values of A.2.3', function () {
     $values = [];
 
     foreach (K3PolicyKey::cases() as $key) {
@@ -35,8 +35,16 @@ it('S1-R5 S1-R6 S1-R10 S1-R2 S1-R7.1 S1-R7.6 has exactly the keys and values of 
         'comparatives_restated_at_transition' => ['yes', 'no'],
         'k3_applied_before' => ['yes', 'no'],
         'left_k2_reason' => ['forced_2025_2', 'voluntary'],
-    ])
-        ->and(K3PolicyKey::tryFrom('components'))->toBeNull();
+        'components' => ['buildings_always_others_by_choice'],
+    ]);
+});
+
+it('S1-R3.1 records the H4 component policy as a supported confirmation, carried forward like any policy', function () {
+    expect(K3Components::BuildingsAlwaysOthersByChoice->refusal())->toBeNull()
+        ->and(K3PolicyKey::Components->rule())->toBe('S1-R3.1')
+        ->and(K3PolicyKey::Components->transitionOnly())->toBeFalse()
+        ->and(K3PolicyKey::Components->label())->toBe('Komponentavskrivning')
+        ->and(K3PolicyKey::Components->question())->toContain('17.4')->toContain('mark');
 });
 
 it('S1-R6 offers chapter 11 only and refuses chapter 12 with the rule id', function () {

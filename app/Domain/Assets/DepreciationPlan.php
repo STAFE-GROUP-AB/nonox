@@ -14,6 +14,12 @@ use Carbon\CarbonImmutable;
  * to what has been written off keeps the rounding exact and lets a missed
  * month be caught up.
  *
+ * On the carrying-amount basis (a component created by a split, ADR-059
+ * A.2.4) the plan starts from what was already written off ($openingOre) and
+ * spreads only the rest over the remaining life from the split, so nothing
+ * before the split is ever caught up (K3 35.18). A plan without a life (land,
+ * S1-R3.2) writes off nothing.
+ *
  * TODO(legal-verify): the tax depreciation of inventarier
  * (räkenskapsenlig avskrivning, 30- and 20-regeln) and any overavskrivning
  * on 2150/8850 are not handled; the register follows the plan only.
@@ -25,10 +31,17 @@ final readonly class DepreciationPlan
         public int $residualOre,
         public int $lifeMonths,
         public CarbonImmutable $start,
+        public int $openingOre = 0,
+        public DepreciationBasis $basis = DepreciationBasis::Cost,
     ) {}
 
+    /** All the plan writes off over the asset's life; nothing for land. */
     public function depreciableOre(): int
     {
+        if ($this->lifeMonths <= 0) {
+            return 0;
+        }
+
         return max(0, $this->acquisitionOre - $this->residualOre);
     }
 
@@ -36,6 +49,10 @@ final readonly class DepreciationPlan
     public function accumulatedBy(string $month): int
     {
         $index = $this->monthIndex($month);
+
+        if ($this->basis === DepreciationBasis::CarryingAmount) {
+            return $this->carryingAccumulatedBy($index);
+        }
 
         if ($index < 0 || $this->lifeMonths <= 0) {
             return 0;
@@ -66,7 +83,7 @@ final readonly class DepreciationPlan
     public function schedule(): array
     {
         $rows = [];
-        $before = 0;
+        $before = $this->basis === DepreciationBasis::CarryingAmount ? $this->carryingAccumulatedBy(-1) : 0;
 
         for ($i = 0; $i < $this->lifeMonths; $i++) {
             $month = $this->start->startOfMonth()->addMonthsNoOverflow($i)->format('Y-m');
@@ -76,6 +93,24 @@ final readonly class DepreciationPlan
         }
 
         return $rows;
+    }
+
+    /**
+     * The carrying-amount basis: what was written off at the split plus the
+     * rest (cost less residual less that) spread over the remaining months.
+     */
+    private function carryingAccumulatedBy(int $index): int
+    {
+        $opening = min($this->openingOre, $this->depreciableOre());
+
+        if ($index < 0 || $this->lifeMonths <= 0) {
+            return $opening;
+        }
+
+        $rest = $this->depreciableOre() - $opening;
+        $months = min($index + 1, $this->lifeMonths);
+
+        return $opening + intdiv($rest * $months + intdiv($this->lifeMonths, 2), $this->lifeMonths);
     }
 
     private function monthIndex(string $month): int

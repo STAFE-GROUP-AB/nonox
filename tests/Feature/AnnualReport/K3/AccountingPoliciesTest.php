@@ -91,7 +91,7 @@ it('lists the missing policies with a question, and the transition answers only 
     $missing = K3Policies::forYear($this->y2026)->missing();
 
     expect(array_map(fn (K3PolicyKey $key) => $key->value, $missing))->toBe([
-        'financial_instruments', 'intangibles', 'borrowing_costs', 'fixed_price_contracts', 'cash_flow_statement',
+        'financial_instruments', 'intangibles', 'borrowing_costs', 'fixed_price_contracts', 'cash_flow_statement', 'components',
     ])
         ->and(array_map(fn (K3PolicyKey $key) => $key->value, K3Policies::forYear($this->y2026)->missing(transition: true)))->toContain(
             'comparatives_restated_at_transition', 'k3_applied_before', 'left_k2_reason',

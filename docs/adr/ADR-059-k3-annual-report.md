@@ -738,6 +738,88 @@ As §3.2.1, made precise:
   depreciation is already a proposal (`preview`) that a person books (`depreciate`),
   one voucher per month through `BookVoucher`. That satisfies spec Behaviour 2.
 
+**As built (S1-P4, 2026-11-08):**
+- Migration `2026_12_18_100000_add_components_to_fixed_assets`: `parent_id` with a
+  composite foreign key `(parent_id, company_id)` → `fixed_assets (id, company_id)`,
+  so a child of another company's asset is impossible in the database too;
+  `depreciation_basis` (`COST` default, check constraint); a status check
+  (`ACTIVE`, `DISPOSED`, `SPLIT`); `accumulated_account` and `expense_account`
+  nullable (land has neither). No existing row changes.
+- `AssetCategory::Buildings` (1110/1119/7820) and `Land` (1130). Land keeps a plan
+  object, but with no life it writes off nothing and `preview()` skips it. The
+  building and land accounts are proposed only once the register holds such an
+  asset, and they are not default acquisition accounts (purchase proposals are
+  unchanged for every existing company). Buildings accept lives up to 1 200 months.
+- `ComponentSplit` (pure): the person enters each component's cost, which must add
+  up to the asset's to the öre; the accumulated depreciation at the split goes to
+  the depreciable components in proportion to cost by the largest remainder method
+  (ties to the earlier component), land gets none, or the person enters every
+  depreciable component's own figure (F-S1-a) and it must add up.
+  `TODO(legal-verify)`: 35.18 gives no allocation key.
+- `FixedAssets::split()` (permission `fiscal-years:manage`: owner, admin,
+  accountant) refuses a year that is not K3, a date that is not the first of a
+  month, a booked month at or after the split, and an unbooked month before it (so
+  the carrying amount at the split is the plan's and no catch-up can ever be
+  needed). Components get the remaining life from the split, `CARRYING_AMOUNT`,
+  and start at the split. One reclassification voucher only when a component
+  (land) uses another asset account; otherwise none. Audit `fixed_asset.split`
+  with ids, dates and amounts.
+- `K3PolicyKey::Components` with the single value
+  `buildings_always_others_by_choice` (H4), rule `S1-R3.1`, never refused. It is the
+  person's confirmation; the report's "components were considered" sentence is
+  S1-P10's. The register shows a reminder for every unsplit building of a K3
+  company. A building may be split without a land component (tomträtt),
+  `TODO(legal-verify)`.
+- F-S1-a: building B1 is registered whole with 4 440 000 kr written off and split on
+  2025-01-01 with each component's own history; land is its own register asset on
+  1130 (the ledger has it there already). The register's 24 monthly vouchers equal
+  the fixture's component vouchers row by row.
+- The reclassification voucher of a split has `VoucherSource::Closing` in series A,
+  as the register's depreciation and disposal vouchers have: it is a register
+  entry within the closing work that touches only the asset accounts, and a
+  separate voucher source would need a migration of the `vouchers.source` check
+  for no gain in traceability (the voucher's morph subject is the split asset).
+
+**Review of S1-P4 (2026-11-08).** Decided by Lead 2026-11-08 under the owner's
+mandate, open for the consultant's review:
+- *Split only from the first K3 fiscal year.* When comparatives are restated at
+  the transition (K3 35.7, 35.18), the comparative year's depreciation per
+  component is a presentation restatement that belongs to S1-P12 (transition),
+  not a register split in a K2 year. No change to the split gate;
+  `FixedAssets::split()` carries a `TODO(S1-P12)`.
+- *Total life per component.* `fixed_assets.total_useful_life_months` (additive,
+  null for non-components) holds the total useful life, entered in the split form
+  or computed as the remaining life plus the months since the asset's first
+  depreciation month. `useful_life_months` stays the remaining life the schedule
+  uses. `depreciationPrinciples()` prints the total (K3 17.23 "tillämpad
+  nyttjandeperiod"): F-S1-a prints "Byggnader: 25–80 år", not 15–70.
+- *Plan mismatch without register depreciation.* When the asset has no booked
+  register months and its plan is behind the month before the split, the refusal
+  says to adjust the plan (first depreciation month, useful life, already written
+  off) to what is booked, not to book depreciation.
+- *Purchase proposals* follow `store()`: land has no life and no accumulated or
+  expense account; the life of other categories is 1 to `maxLifeMonths()`.
+- *Further gates:* no split dated on or before `companies.locked_until_date` or in
+  a closed fiscal year; a component's asset account lies in 1100–1299 and never
+  ends in 9 (components only; `store()` is unchanged); the asset's residual value
+  is pre-filled over the parts by the largest remainder and shown in the review;
+  focus moves to the confirmation button when the review opens.
+- *Framework change back to K2 after a split* (P2-1, built after S1-P11 was
+  merged): `ChangeReportingFramework` refuses changing a year to K2 or K1 when an
+  active component of a split asset has its depreciation start on or before the
+  end of the last year the change reaches (the chosen year and every later one).
+  The check runs inside `CreateNextFiscalYear::lock` after the years are locked
+  for update, next to `refuseK3RequiredYears`; `FixedAssets::split()` reads its
+  year and every later year with a shared lock, so a split and a change of any of
+  those years cannot pass each other. Land components do not block: land alone
+  is lawful under K2 (10.22). After the re-check: the plan-mismatch wording is
+  shown only when something was written off before the register; otherwise the
+  person is told to book the months in the register, or to adjust the plan only
+  if they are booked elsewhere. Focus in the review goes to "Tillbaka", not to the
+  irreversible button. The
+  Swedish message names the year, the asset and the split date and says K2 does
+  not allow components; it suggests no way to undo a split, because there is none.
+
 #### A.2.5 Size figures
 
 The size test (S1-R9) and K2 1.1C (S1-R1.3) need two prior years. For a year kept

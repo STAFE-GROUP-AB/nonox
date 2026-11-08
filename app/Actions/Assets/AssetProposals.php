@@ -60,7 +60,7 @@ class AssetProposals
                 'name' => ['required', 'string', 'max:255'],
                 'category' => ['required', Rule::enum(AssetCategory::class)],
                 'acquisition' => ['nullable', 'string', 'max:30'],
-                'life_months' => ['required', 'integer', 'min:1', 'max:600'],
+                'life_months' => ['nullable', 'integer', 'min:0', 'max:1200'],
                 'acquired_on' => ['nullable', 'date_format:Y-m-d'],
                 'depreciation_start' => ['nullable', 'date_format:Y-m'],
             ]);
@@ -68,6 +68,16 @@ class AssetProposals
 
             if ($validator->fails()) {
                 $errors["rows.{$line}.asset"] = "{$label} ".$validator->errors()->first();
+
+                continue;
+            }
+
+            // As the register itself: land has no life (it is never depreciated), the rest 1 to the category's longest.
+            $category = AssetCategory::from((string) $proposal['category']);
+            $life = blank($proposal['life_months'] ?? null) ? 0 : (int) $proposal['life_months'];
+
+            if ($category->depreciates() && ($life < 1 || $life > $category->maxLifeMonths())) {
+                $errors["rows.{$line}.asset"] = "{$label} ".__('Nyttjandeperioden ska vara mellan 1 och :max månader.', ['max' => $category->maxLifeMonths()]);
 
                 continue;
             }
@@ -90,7 +100,7 @@ class AssetProposals
                 'name' => trim((string) $proposal['name']),
                 'category' => (string) $proposal['category'],
                 'acquisition' => $acquisition,
-                'life_months' => (int) $proposal['life_months'],
+                'life_months' => $category->depreciates() ? $life : 0,
                 'acquired_on' => blank($proposal['acquired_on'] ?? null) ? null : (string) $proposal['acquired_on'],
                 'depreciation_start' => blank($proposal['depreciation_start'] ?? null) ? null : (string) $proposal['depreciation_start'],
             ];

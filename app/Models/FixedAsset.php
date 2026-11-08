@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\Assets\AssetCategory;
+use App\Domain\Assets\DepreciationBasis;
 use App\Domain\Assets\DepreciationPlan;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
@@ -19,6 +20,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Its acquisition was booked when it was bought; the register books the
  * depreciation and, at the end, its disposal.
  *
+ * Components (ADR-059 A.2.4): a split asset has the status SPLIT and is never
+ * depreciated again; its components are assets with parent_id set, each with
+ * its own plan on the carrying-amount basis. Land is never depreciated.
+ *
  * @property int $id
  * @property int $company_id
  * @property int $number
@@ -31,8 +36,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $useful_life_months
  * @property CarbonImmutable $depreciation_start
  * @property int $asset_account
- * @property int $accumulated_account
- * @property int $expense_account
+ * @property ?int $accumulated_account
+ * @property ?int $expense_account
+ * @property ?int $parent_id
+ * @property ?int $total_useful_life_months the total life of a component (useful_life_months is what remains from the split)
+ * @property DepreciationBasis $depreciation_basis
  * @property ?int $cost_center_id
  * @property string $status
  * @property ?CarbonImmutable $disposed_on
@@ -51,6 +59,12 @@ class FixedAsset extends Model
     public const string ACTIVE = 'ACTIVE';
 
     public const string DISPOSED = 'DISPOSED';
+
+    /** Split into components: kept for its history, never depreciated or disposed of itself. */
+    public const string SPLIT = 'SPLIT';
+
+    /** @var array<string, string> the database default, also before the row is read back */
+    protected $attributes = ['depreciation_basis' => 'COST'];
 
     /** @var list<string> */
     protected $fillable = [
@@ -74,6 +88,9 @@ class FixedAsset extends Model
         'acquisition_voucher_row_id',
         'supplier_invoice_id',
         'created_by',
+        'parent_id',
+        'depreciation_basis',
+        'total_useful_life_months',
     ];
 
     /** @return array<string, string> */
@@ -81,6 +98,7 @@ class FixedAsset extends Model
     {
         return [
             'category' => AssetCategory::class,
+            'depreciation_basis' => DepreciationBasis::class,
             'acquired_on' => 'immutable_date',
             'depreciation_start' => 'immutable_date',
             'disposed_on' => 'immutable_date',
@@ -92,12 +110,43 @@ class FixedAsset extends Model
             'asset_account' => 'integer',
             'accumulated_account' => 'integer',
             'expense_account' => 'integer',
+            'parent_id' => 'integer',
+            'total_useful_life_months' => 'integer',
         ];
     }
 
+    /** The plan; land's has no life and writes off nothing (S1-R3.2). */
     public function plan(): DepreciationPlan
     {
-        return new DepreciationPlan($this->acquisition_ore->ore, $this->residual_ore->ore, $this->useful_life_months, $this->depreciation_start);
+        return new DepreciationPlan(
+            $this->acquisition_ore->ore,
+            $this->residual_ore->ore,
+            $this->category->depreciates() ? $this->useful_life_months : 0,
+            $this->depreciation_start,
+            $this->opening_accumulated_ore->ore,
+            $this->depreciation_basis,
+        );
+    }
+
+    /** The useful life applied (K3 17.23): a component's total life, else the plan's life. */
+    public function appliedLifeMonths(): int
+    {
+        return $this->total_useful_life_months ?? $this->useful_life_months;
+    }
+
+    public function depreciates(): bool
+    {
+        return $this->category->depreciates();
+    }
+
+    public function isComponent(): bool
+    {
+        return $this->parent_id !== null;
+    }
+
+    public function isSplit(): bool
+    {
+        return $this->status === self::SPLIT;
     }
 
     /**
@@ -124,6 +173,18 @@ class FixedAsset extends Model
     public function isFullyDepreciated(): bool
     {
         return $this->accumulatedOre() >= $this->plan()->depreciableOre();
+    }
+
+    /** @return BelongsTo<FixedAsset, $this> */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(FixedAsset::class, 'parent_id');
+    }
+
+    /** @return HasMany<FixedAsset, $this> */
+    public function components(): HasMany
+    {
+        return $this->hasMany(FixedAsset::class, 'parent_id');
     }
 
     /** @return HasMany<FixedAssetDepreciation, $this> */

@@ -59,6 +59,12 @@
         </form>
     </details>
 
+    @if($unsplitBuildings->isNotEmpty())
+        <div class="rounded-2xl bg-amber-50 px-5 py-4 text-sm text-amber-900 ring-1 ring-amber-200">
+            <p>{{ trans_choice('{1} Byggnaden :names är inte uppdelad i komponenter. Enligt företagets princip delas en byggnad alltid upp i mark och betydande komponenter (K3 17.4). Välj Dela upp i komponenter på raden.|[2,*] Byggnaderna :names är inte uppdelade i komponenter. Enligt företagets princip delas en byggnad alltid upp i mark och betydande komponenter (K3 17.4). Välj Dela upp i komponenter på raderna.', $unsplitBuildings->count(), ['names' => $unsplitBuildings->map(fn ($building) => $building->number.' '.$building->name)->implode(', ')]) }}</p>
+        </div>
+    @endif
+
     <x-ui.card :title="__('Register')">
         <x-slot:cta>
             @unless($creating)
@@ -117,12 +123,16 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-stone-200">
-                        @foreach($assets as $asset)
-                            <tr wire:key="asset-{{ $asset->id }}" @class(['text-gray-400' => $asset->status === 'DISPOSED'])>
+                        @foreach($assets as $parent)
+                            @foreach([$parent, ...($children[$parent->id] ?? collect())->all()] as $asset)
+                            <tr wire:key="asset-{{ $asset->id }}" @class(['text-gray-400' => $asset->status === 'DISPOSED', 'bg-paper/60' => $asset->isComponent()])>
                                 <td class="px-3 py-3 tabular-nums">{{ $asset->number }}</td>
-                                <td class="px-3 py-3">
+                                <td @class(['px-3 py-3', 'ps-8' => $asset->isComponent()])>
                                     <button type="button" class="font-semibold text-ink hover:underline" wire:click="$set('showing', {{ $showing === $asset->id ? 'null' : $asset->id }})">{{ $asset->name }}</button>
-                                    <span class="block text-xs text-gray-500">{{ $asset->category->label() }} · {{ __(':count mån', ['count' => $asset->useful_life_months]) }}@if($asset->status === 'DISPOSED') · {{ __('Avyttrad :date', ['date' => $asset->disposed_on?->toDateString()]) }}@elseif($asset->isFullyDepreciated()) · {{ __('Fullt avskriven') }}@endif</span>
+                                    <span class="block text-xs text-gray-500">@if($asset->isComponent()){{ __('Komponent i :number', ['number' => $parent->number]) }} · @endif{{ $asset->category->label() }}@if($asset->depreciates()) · {{ __(':count mån', ['count' => $asset->useful_life_months]) }}@else · {{ __('Skrivs inte av') }}@endif
+                                        @if($asset->status === 'DISPOSED') · {{ __('Avyttrad :date', ['date' => $asset->disposed_on?->toDateString()]) }}@elseif($asset->isSplit()) · {{ __('Uppdelad i komponenter') }}@elseif($asset->depreciates() && $asset->isFullyDepreciated()) · {{ __('Fullt avskriven') }}@endif
+                                        @if($asset->isComponent() && $asset->depreciates()) · {{ __('Skrivs av från :date', ['date' => $asset->depreciation_start->toDateString()]) }}@endif
+                                    </span>
                                     @if($asset->acquisitionVoucher)
                                         <span class="block text-xs text-gray-500">{{ __('Anskaffad med verifikation') }} <a href="{{ route('accounting.vouchers.show', $asset->acquisitionVoucher) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $asset->acquisitionVoucher->reference() }}</a></span>
                                     @elseif($asset->supplierInvoice)
@@ -132,14 +142,24 @@
                                 <td class="px-3 py-3 tabular-nums">{{ $asset->acquired_on->toDateString() }}</td>
                                 <td class="px-3 py-3 text-right tabular-nums">{{ $asset->acquisition_ore->format() }}</td>
                                 <td class="px-3 py-3 text-right tabular-nums">{{ $kr($asset->accumulatedOre()) }}</td>
-                                <td class="px-3 py-3 text-right font-semibold tabular-nums text-ink">{{ $asset->status === 'DISPOSED' ? '–' : $kr($asset->bookValueOre()) }}</td>
+                                <td class="px-3 py-3 text-right font-semibold tabular-nums text-ink">{{ $asset->status === 'ACTIVE' ? $kr($asset->bookValueOre()) : '–' }}</td>
                                 <td class="whitespace-nowrap px-3 py-3 text-right">
                                     @if($asset->status === 'ACTIVE')
                                         <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="edit({{ $asset->id }})">{{ __('Ändra') }}</button>
+                                        @if($k3 && ! $asset->isComponent() && $asset->depreciates())
+                                            <button type="button" class="ms-3 text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="startSplit({{ $asset->id }})">{{ __('Dela upp i komponenter') }}</button>
+                                        @endif
                                         <button type="button" class="ms-3 text-sm text-gray-600 underline" wire:click="startDisposal({{ $asset->id }})">{{ __('Sälj eller utrangera') }}</button>
                                     @endif
                                 </td>
                             </tr>
+                            @if($split?->id === $asset->id)
+                                <tr wire:key="split-{{ $asset->id }}">
+                                    <td colspan="7" class="bg-paper px-3 py-4">
+                                        @include('livewire.accounting.partials.fixed-asset-components', ['asset' => $asset])
+                                    </td>
+                                </tr>
+                            @endif
                             @if($disposing === $asset->id)
                                 <tr wire:key="dispose-{{ $asset->id }}">
                                     <td colspan="7" class="bg-paper px-3 py-4">
@@ -154,7 +174,7 @@
                                     </td>
                                 </tr>
                             @endif
-                            @if($shown?->id === $asset->id)
+                            @if($shown?->id === $asset->id && $asset->depreciates())
                                 <tr wire:key="plan-{{ $asset->id }}">
                                     <td colspan="7" class="bg-paper px-3 py-4">
                                         <p class="mb-2 text-sm font-semibold text-ink">{{ __('Avskrivningsplan') }}</p>
@@ -166,6 +186,7 @@
                                     </td>
                                 </tr>
                             @endif
+                            @endforeach
                         @endforeach
                     </tbody>
                 </table>
