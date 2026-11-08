@@ -36,6 +36,7 @@ use App\Models\Invoice;
 use App\Models\InvoicePayment;
 use App\Models\InvoiceReminder;
 use App\Models\InvoiceRow;
+use App\Models\InvoiceTaxReductionBuyer;
 use App\Models\K10Owner;
 use App\Models\K10Year;
 use App\Models\MileageRoute;
@@ -52,6 +53,8 @@ use App\Models\RecurringInvoiceRow;
 use App\Models\SalesDocument;
 use App\Models\SalesDocumentRow;
 use App\Models\SieImport;
+use App\Models\SigningEvent as CrmSigningEvent;
+use App\Models\SigningRequest as CrmSigningRequest;
 use App\Models\SkatteverketEvent;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
@@ -121,8 +124,6 @@ use App\Modules\Crm\Models\QuoteTemplate as CrmQuoteTemplate;
 use App\Modules\Crm\Models\QuoteTemplateRow as CrmQuoteTemplateRow;
 use App\Modules\Crm\Models\RegistryNotice as CrmRegistryNotice;
 use App\Modules\Crm\Models\Segment as CrmSegment;
-use App\Modules\Crm\Models\SigningEvent as CrmSigningEvent;
-use App\Modules\Crm\Models\SigningRequest as CrmSigningRequest;
 use App\Modules\Crm\Models\Suppression as CrmSuppression;
 use App\Modules\Inbox\Models\AllowedSender;
 use App\Modules\Inbox\Models\InboxAttachment;
@@ -201,6 +202,18 @@ use App\Modules\StaffLedger\Models\Entry as StaffLedgerEntry;
 use App\Modules\StaffLedger\Models\Location as StaffLedgerLocation;
 use App\Modules\StaffLedger\Models\Person as StaffLedgerPerson;
 use App\Modules\StaffLedger\Models\TimeProposal as StaffLedgerTimeProposal;
+use App\Modules\WorkOrders\Models\ChangeOrder as WorkOrderChangeOrder;
+use App\Modules\WorkOrders\Models\ContactAttempt as WorkOrderContactAttempt;
+use App\Modules\WorkOrders\Models\LabourKind as WorkOrderLabourKind;
+use App\Modules\WorkOrders\Models\MaterialEntry as WorkOrderMaterialEntry;
+use App\Modules\WorkOrders\Models\OnSiteCode as WorkOrderOnSiteCode;
+use App\Modules\WorkOrders\Models\PaymentInstalment as WorkOrderPaymentInstalment;
+use App\Modules\WorkOrders\Models\TimeEntry as WorkOrderTimeEntry;
+use App\Modules\WorkOrders\Models\WorkOrder;
+use App\Modules\WorkOrders\Models\WorkOrderAssignment;
+use App\Modules\WorkOrders\Models\WorkOrderBuyer;
+use App\Modules\WorkOrders\Models\WorkOrderInvoice;
+use App\Modules\WorkOrders\Models\WorkOrderPhoto;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\Tenancy\MissingCompanyContext;
@@ -351,6 +364,19 @@ const COMPANY_SCOPED_MODELS = [
     StockReceiptLine::class => 'inventoryReceiptLineAttributes',
     PickList::class => 'inventoryPickListAttributes',
     PickListLine::class => 'inventoryPickListLineAttributes',
+    InvoiceTaxReductionBuyer::class => 'invoiceTaxReductionBuyerAttributes',
+    WorkOrder::class => 'workOrderAttributes',
+    WorkOrderLabourKind::class => 'workOrderLabourKindAttributes',
+    WorkOrderAssignment::class => 'workOrderAssignmentAttributes',
+    WorkOrderBuyer::class => 'workOrderBuyerAttributes',
+    WorkOrderTimeEntry::class => 'workOrderTimeEntryAttributes',
+    WorkOrderMaterialEntry::class => 'workOrderMaterialEntryAttributes',
+    WorkOrderChangeOrder::class => 'workOrderChangeOrderAttributes',
+    WorkOrderContactAttempt::class => 'workOrderContactAttemptAttributes',
+    WorkOrderPaymentInstalment::class => 'workOrderInstalmentAttributes',
+    WorkOrderInvoice::class => 'workOrderInvoiceAttributes',
+    WorkOrderPhoto::class => 'workOrderPhotoAttributes',
+    WorkOrderOnSiteCode::class => 'workOrderOnSiteCodeAttributes',
     StockCount::class => 'inventoryCountAttributes',
     StockCountLine::class => 'inventoryCountLineAttributes',
     StockValuation::class => ['valuation_date' => '2026-12-31', 'method' => 'FIFO', 'cost_value_ore' => 100, 'value_ore' => 100, 'stock_account' => 1460, 'change_account' => 4960, 'lines' => []],
@@ -1438,6 +1464,92 @@ function crmSigningRequestAttributes(): array
     return ['document_type' => 'AGREEMENT', 'agreement_id' => CrmAgreement::create(crmAgreementAttributes())->id, 'token_hash' => hash('sha256', (string) random_int(0, PHP_INT_MAX)), 'email' => 'hemlig@exempel.se', 'expires_at' => now()->addDays(30), 'document_path' => 'crm-signing/hemlig.pdf', 'document_name' => 'Hemlig.pdf', 'document_sha256' => str_repeat('0', 64)];
 }
 
+function workOrderCustomerId(): int
+{
+    return Customer::query()->firstOrCreate(['number' => 1], ['name' => 'Hemlig kund AB', 'payment_terms_days' => 30])->id;
+}
+
+function invoiceTaxReductionBuyerAttributes(): array
+{
+    return ['invoice_id' => Invoice::create(invoiceAttributes())->id, 'customer_id' => workOrderCustomerId(), 'share_bp' => 5000, 'deduction_ore' => 100];
+}
+
+function workOrderAttributes(): array
+{
+    return ['number' => random_int(1, 1_000_000), 'customer_id' => workOrderCustomerId(), 'title' => 'Hemligt jobb', 'price_form' => 'TIME_AND_MATERIAL', 'access_notes' => 'Hemlig portkod'];
+}
+
+function workOrderId(): int
+{
+    $workOrder = new WorkOrder(workOrderAttributes());
+    $workOrder->forceFill(['number' => random_int(1, 1_000_000)])->save();
+
+    return $workOrder->id;
+}
+
+function workOrderLabourKindAttributes(): array
+{
+    return ['code' => 'K'.random_int(1, 1_000_000), 'name' => 'Hemligt arbete', 'type' => 'LABOUR', 'unit' => 'HOUR', 'default_rate_ore' => 0];
+}
+
+function workOrderAssignmentAttributes(): array
+{
+    return ['work_order_id' => workOrderId(), 'user_id' => User::factory()->create()->id];
+}
+
+function workOrderBuyerAttributes(): array
+{
+    return ['work_order_id' => workOrderId(), 'customer_id' => workOrderCustomerId(), 'share_bp' => 5000];
+}
+
+function workOrderTimeEntryAttributes(): array
+{
+    return ['work_order_id' => workOrderId(), 'user_id' => User::factory()->create()->id, 'labour_kind_id' => WorkOrderLabourKind::create(workOrderLabourKindAttributes())->id, 'work_date' => '2026-03-02', 'minutes' => 60, 'rate_ore' => 60_000, 'note' => 'Hemlig anteckning', 'source' => 'WEB', 'entered_at' => now()];
+}
+
+function workOrderMaterialEntryAttributes(): array
+{
+    return ['work_order_id' => workOrderId(), 'user_id' => User::factory()->create()->id, 'description' => 'Hemligt material', 'quantity_milli' => 1000, 'source' => 'FREE', 'work_date' => '2026-03-02', 'entered_at' => now()];
+}
+
+function workOrderChangeOrderAttributes(): array
+{
+    return ['work_order_id' => workOrderId(), 'number' => random_int(1, 1_000_000), 'title' => 'Hemligt ÄTA', 'description' => 'Hemligt', 'basis' => 'CHANGE_ORDERED', 'price_form' => 'FIXED'];
+}
+
+function workOrderChangeOrderId(): int
+{
+    $changeOrder = new WorkOrderChangeOrder(workOrderChangeOrderAttributes());
+    $changeOrder->forceFill(['number' => 1])->save();
+
+    return $changeOrder->id;
+}
+
+function workOrderContactAttemptAttributes(): array
+{
+    return ['change_order_id' => workOrderChangeOrderId(), 'attempted_at' => now(), 'channel' => 'PHONE', 'note' => 'Hemligt samtal'];
+}
+
+function workOrderInstalmentAttributes(): array
+{
+    return ['work_order_id' => workOrderId(), 'position' => 0, 'label' => 'Hemlig delbetalning', 'amount_ore' => 100];
+}
+
+function workOrderInvoiceAttributes(): array
+{
+    return ['work_order_id' => workOrderId(), 'invoice_id' => Invoice::create(invoiceAttributes())->id, 'kind' => 'BASIS'];
+}
+
+function workOrderPhotoAttributes(): array
+{
+    return ['work_order_id' => workOrderId(), 'path' => 'arbetsorder/hemlig.jpg', 'caption' => 'Hemlig bild'];
+}
+
+function workOrderOnSiteCodeAttributes(): array
+{
+    return ['change_order_id' => workOrderChangeOrderId(), 'signing_request_id' => CrmSigningRequest::create(crmSigningRequestAttributes())->id, 'code_hash' => str_repeat('0', 64), 'expires_at' => now()->addMinutes(15), 'presented_by' => User::factory()->create()->id];
+}
+
 function crmSigningEventAttributes(): array
 {
     return ['signing_request_id' => CrmSigningRequest::create(crmSigningRequestAttributes())->id, 'event' => 'SENT'];
@@ -1565,10 +1677,10 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class];
+const NEVER_UPDATED = [WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class];
+const APPEND_ONLY = [WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

@@ -15,6 +15,7 @@ use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceRow;
+use App\Models\InvoiceTaxReductionBuyer;
 use App\Models\User;
 use App\Support\Currency\ExchangeRate;
 use App\Support\Currency\RiksbankRates;
@@ -93,6 +94,14 @@ class SaveDraftInvoice
             'foreign_sale' => ['nullable', Rule::enum(ForeignSale::class)],
             'tax_reduction' => ['nullable', Rule::in([TaxReduction::ROT, TaxReduction::RUT])],
             'property_designation' => ['nullable', 'string', 'max:255'],
+            'labour_hours' => ['nullable', 'string', 'max:20'],
+            'labour_hours_milli' => ['nullable', 'integer', 'min:0'],
+            'labour_hours_reported_on' => ['nullable', 'array'],
+            'labour_hours_reported_on.*' => ['uuid'],
+            'work_description' => ['nullable', 'string', 'max:255'],
+            'tax_reduction_buyers' => ['nullable', 'array'],
+            'tax_reduction_buyers.*.customer_id' => ['required', 'integer'],
+            'tax_reduction_buyers.*.share_bp' => ['required', 'integer', 'min:1', 'max:10000'],
             'currency' => ['nullable', 'string', 'regex:/^[A-Za-z]{3}$/'],
             'exchange_rate' => ['nullable', 'string', 'max:20'],
             'rows' => ['required', 'array', 'min:1'],
@@ -214,11 +223,16 @@ class SaveDraftInvoice
 
             $totals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => $row['net_ore'], 'vat_rate' => $row['vat_rate']], $rows), roundToKronor: $bookingRate === null);
 
-            $deduction = match (true) {
-                $taxReduction === null => 0,
-                $original instanceof Invoice => $this->creditedDeduction($rows, $original, $draft),
-                default => $this->deduction($taxReduction, $rows, $customer, $dueDate, $reverseCharge, $draft),
+            $buyers = $taxReduction === null ? [] : $this->buyers($validated, $input, $customer, $draft, $original);
+
+            [$deduction, $buyerDeductions] = match (true) {
+                $taxReduction === null => [0, []],
+                $original instanceof Invoice => $this->creditedSplit($this->creditedDeduction($rows, $original, $draft), $buyers, $original, $draft),
+                $buyers !== [] => $this->splitDeduction($taxReduction, $rows, $buyers, $dueDate, $reverseCharge, $draft),
+                default => [$this->deduction($taxReduction, $rows, $customer, $dueDate, $reverseCharge, $draft), []],
             };
+
+            [$labourHours, $workDescription] = $this->workDetails($validated, $input, $taxReduction, $draft, $original);
 
             $invoice = $draft ?? new Invoice(['created_by' => $user->id]);
             $invoice->fill([
@@ -235,6 +249,9 @@ class SaveDraftInvoice
                 'property_designation' => $taxReduction === TaxReduction::ROT ? ($validated['property_designation'] ?? null) : null,
             ]);
             $invoice->forceFill([
+                'labour_hours_milli' => $labourHours,
+                'labour_hours_reported_on' => $this->reportedOn($input, $validated, $labourHours, $taxReduction, $draft, $original),
+                'work_description' => $workDescription,
                 'net_ore' => $totals['net'],
                 'vat_ore' => $totals['vat'],
                 'rounding_ore' => $totals['rounding'],
@@ -257,7 +274,13 @@ class SaveDraftInvoice
                 InvoiceRow::create(['invoice_id' => $invoice->id, 'position' => $position, ...$row]);
             }
 
-            return $invoice->load('rows');
+            InvoiceTaxReductionBuyer::query()->where('invoice_id', $invoice->id)->delete();
+
+            foreach ($buyerDeductions as $buyer) {
+                InvoiceTaxReductionBuyer::create(['invoice_id' => $invoice->id, ...$buyer]);
+            }
+
+            return $invoice->load('rows', 'taxReductionBuyers');
         }));
     }
 
@@ -306,6 +329,232 @@ class SaveDraftInvoice
         $delivery = (string) ($input['delivery_date'] ?? '');
 
         return preg_match('/^\d{4}-\d{2}-\d{2}$/', $delivery) === 1 ? $delivery : (string) $input['invoice_date'];
+    }
+
+    /**
+     * The hours worked and the kind of work on a ROT or RUT invoice
+     * (lag (2009:194) 9 § p. 4, ADR-074 §5): given in milli-hours by a work
+     * order, or typed as hours ("4" or "1,5") in the invoice form. Kept
+     * from the draft when the input does not name them; none without a tax
+     * reduction. A credit invoice records none: the hours belong to the
+     * work, which the credit does not undo.
+     *
+     * @param  array<string, mixed>  $validated
+     * @param  array<string, mixed>  $input
+     * @return array{0: ?int, 1: ?string}
+     */
+    private function workDetails(array $validated, array $input, ?string $taxReduction, ?Invoice $draft, ?Invoice $original): array
+    {
+        if ($taxReduction === null || $original instanceof Invoice) {
+            return [null, null];
+        }
+
+        $kept = $draft !== null && $draft->exists;
+        $hours = $kept ? $draft->labour_hours_milli : null;
+
+        if (array_key_exists('labour_hours_milli', $input)) {
+            $hours = isset($validated['labour_hours_milli']) ? (int) $validated['labour_hours_milli'] : null;
+        } elseif (array_key_exists('labour_hours', $input)) {
+            $typed = str_replace([' ', "\u{a0}", ','], ['', '', '.'], trim((string) ($validated['labour_hours'] ?? '')));
+
+            if ($typed !== '' && preg_match('/^\d{1,6}(\.\d{1,3})?$/', $typed) !== 1) {
+                throw ValidationException::withMessages(['labour_hours' => __('Skriv antalet arbetade timmar, till exempel 4 eller 1,5.')]);
+            }
+
+            $hours = $typed === '' ? null : (int) round(((float) $typed) * 1000);
+        }
+
+        $description = array_key_exists('work_description', $input)
+            ? (trim((string) ($validated['work_description'] ?? '')) ?: null)
+            : ($kept ? $draft->work_description : null);
+
+        return [$hours, $description];
+    }
+
+    /**
+     * The earlier invoices that already report the hours of a ROT or RUT
+     * invoice without new hours of its own (re-check of ADR-074): printed as
+     * "Arbetade timmar: redovisade på faktura N" instead of 0. Only invoices
+     * of the company; none once the invoice records hours itself.
+     *
+     * TODO(legal-verify): whether a ROT/RUT invoice without new hours is
+     * accepted in the claim (lag (2009:194) 9 § p. 4).
+     *
+     * @param  array<string, mixed>  $input
+     * @param  array<string, mixed>  $validated
+     * @return ?list<string>
+     */
+    private function reportedOn(array $input, array $validated, ?int $labourHours, ?string $taxReduction, ?Invoice $draft, ?Invoice $original): ?array
+    {
+        if ($taxReduction === null || $original instanceof Invoice || ($labourHours ?? 0) > 0) {
+            return null;
+        }
+
+        $ids = array_key_exists('labour_hours_reported_on', $input)
+            ? array_values(array_map('strval', (array) ($validated['labour_hours_reported_on'] ?? [])))
+            : ($draft !== null && $draft->exists ? ($draft->labour_hours_reported_on ?? []) : []);
+
+        if ($ids === []) {
+            return null;
+        }
+
+        /** @var list<string> $known */
+        $known = Invoice::query()->whereKey($ids)->pluck('id')->map(fn (mixed $id): string => (string) $id)->values()->all();
+
+        return $known === [] ? null : $known;
+    }
+
+    /**
+     * The buyers who share the ROT or RUT deduction (ADR-074 O6): given in
+     * the input, otherwise kept from the draft, or the credited invoice's.
+     * Empty for the usual single buyer, the invoice's customer.
+     *
+     * @param  array<string, mixed>  $validated
+     * @param  array<string, mixed>  $input
+     * @return list<array{customer: Customer, share_bp: int}>
+     */
+    private function buyers(array $validated, array $input, Customer $customer, ?Invoice $draft, ?Invoice $original): array
+    {
+        /** @var list<array{customer_id: int|string, share_bp: int|string}> $source */
+        $source = match (true) {
+            $original instanceof Invoice => $original->taxReductionBuyers()->get(['customer_id', 'share_bp'])->map(fn (InvoiceTaxReductionBuyer $buyer): array => ['customer_id' => $buyer->customer_id, 'share_bp' => $buyer->share_bp])->all(),
+            array_key_exists('tax_reduction_buyers', $input) => array_values((array) ($validated['tax_reduction_buyers'] ?? [])),
+            $draft !== null && $draft->exists => $draft->taxReductionBuyers()->get(['customer_id', 'share_bp'])->map(fn (InvoiceTaxReductionBuyer $buyer): array => ['customer_id' => $buyer->customer_id, 'share_bp' => $buyer->share_bp])->all(),
+            default => [],
+        };
+
+        if ($source === []) {
+            return [];
+        }
+
+        $customers = Customer::query()->whereKey(array_map(fn (array $buyer): int => (int) $buyer['customer_id'], $source))->get()->keyBy('id');
+        $buyers = [];
+
+        foreach ($source as $index => $buyer) {
+            $each = $customers->get((int) $buyer['customer_id'])
+                ?? throw ValidationException::withMessages(["tax_reduction_buyers.{$index}.customer_id" => __('Köparen finns inte i kundregistret.')]);
+
+            if (blank($each->personal_number)) {
+                throw ValidationException::withMessages(["tax_reduction_buyers.{$index}.customer_id" => __('ROT och RUT gäller privatpersoner. Fyll i personnummer för :name.', ['name' => $each->name])]);
+            }
+
+            $buyers[] = ['customer' => $each, 'share_bp' => (int) $buyer['share_bp']];
+        }
+
+        if (array_sum(array_column($buyers, 'share_bp')) !== 10_000) {
+            throw ValidationException::withMessages(['tax_reduction_buyers' => __('Köparnas andelar ska tillsammans vara 100 procent.')]);
+        }
+
+        $ids = array_map(fn (array $buyer): int => $buyer['customer']->id, $buyers);
+
+        if (count(array_unique($ids)) !== count($ids)) {
+            throw ValidationException::withMessages(['tax_reduction_buyers' => __('Samma köpare kan bara finnas med en gång.')]);
+        }
+
+        if (! in_array($customer->id, $ids, true)) {
+            throw ValidationException::withMessages(['tax_reduction_buyers' => __('Fakturans kund ska vara en av köparna.')]);
+        }
+
+        return $buyers;
+    }
+
+    /**
+     * The deduction split between several buyers (ADR-074 O6): each buyer's
+     * share of the labour cost including VAT, with the rate on that, within
+     * the buyer's own ceilings (Inkomstskattelag (1999:1229) 67 kap. 19 §:
+     * the ceilings are per person). The last buyer takes the öre left of
+     * the labour, so the shares add up.
+     *
+     * TODO(legal-verify): whether the shares must follow what each buyer
+     * paid, and how one invoice with several buyers is claimed in
+     * Skatteverket's e-service (ADR-074 O6).
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @param  list<array{customer: Customer, share_bp: int}>  $buyers
+     * @return array{0: int, 1: list<array{customer_id: int, share_bp: int, deduction_ore: int}>}
+     */
+    private function splitDeduction(string $type, array $rows, array $buyers, CarbonImmutable $date, bool $reverseCharge, ?Invoice $draft): array
+    {
+        if ($reverseCharge) {
+            throw ValidationException::withMessages(['tax_reduction' => __('En faktura med omvänd betalningsskyldighet kan inte ha ROT- eller RUT-avdrag.')]);
+        }
+
+        $labour = array_values(array_filter($rows, fn (array $row): bool => (bool) $row['is_labour']));
+
+        if ($labour === []) {
+            throw ValidationException::withMessages(['tax_reduction' => __('Markera vilka rader som är arbetskostnad.')]);
+        }
+
+        $labourTotals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => (int) $row['net_ore'], 'vat_rate' => (int) $row['vat_rate']], $labour));
+        $gross = $labourTotals['net'] + $labourTotals['vat'];
+        $left = $gross;
+        $last = array_key_last($buyers);
+        $split = [];
+
+        foreach ($buyers as $index => $buyer) {
+            $share = $index === $last ? $left : intdiv($gross * $buyer['share_bp'], 10_000);
+            $left -= $share;
+            $allowed = TaxReduction::allowed($type, $share, $buyer['customer'], $date, $draft?->exists === true ? $draft->id : null)
+                ?? throw ValidationException::withMessages(['tax_reduction' => __('Det finns ingen regel för :type på förfallodagen.', ['type' => TaxReduction::label($type)])]);
+            $split[] = ['customer_id' => $buyer['customer']->id, 'share_bp' => $buyer['share_bp'], 'deduction_ore' => $allowed];
+        }
+
+        return [array_sum(array_column($split, 'deduction_ore')), $split];
+    }
+
+    /**
+     * A credit invoice's deduction split between the buyers of the invoice
+     * it credits: each buyer's own deduction on the original, net of that
+     * buyer's earlier credits, reversed in proportion to the credit in whole
+     * kronor; the last buyer with something left takes the remainder. A
+     * buyer who got no deduction gets none back.
+     *
+     * @param  list<array{customer: Customer, share_bp: int}>  $buyers
+     * @return array{0: int, 1: list<array{customer_id: int, share_bp: int, deduction_ore: int}>}
+     */
+    private function creditedSplit(int $deduction, array $buyers, Invoice $original, ?Invoice $draft): array
+    {
+        if ($buyers === []) {
+            return [$deduction, []];
+        }
+
+        // What each buyer still has of the original deduction: the original's own row, net of earlier issued credits.
+        $original->loadMissing(['taxReductionBuyers', 'creditInvoices.taxReductionBuyers']);
+        $remaining = [];
+
+        foreach ($buyers as $buyer) {
+            $id = $buyer['customer']->id;
+            $remaining[$id] = $original->taxReductionBuyers->firstWhere('customer_id', $id)?->deduction_ore->ore ?? 0;
+
+            foreach ($original->creditInvoices as $earlier) {
+                if ($earlier->isDraft() || ($draft !== null && $earlier->id === $draft->id)) {
+                    continue;
+                }
+
+                $remaining[$id] += $earlier->taxReductionBuyers->firstWhere('customer_id', $id)?->deduction_ore->ore ?? 0;
+            }
+
+            $remaining[$id] = max(0, $remaining[$id]);
+        }
+
+        $total = array_sum($remaining);
+        $credited = -$deduction;
+        $lastWithRoom = array_key_last(array_filter($remaining, fn (int $left): bool => $left > 0));
+        $left = $credited;
+        $split = [];
+
+        foreach ($buyers as $buyer) {
+            $id = $buyer['customer']->id;
+            $share = match (true) {
+                $total <= 0 || $remaining[$id] <= 0 => 0,
+                $id === $lastWithRoom => min($left, $remaining[$id]),
+                default => min(intdiv(intdiv($credited * $remaining[$id], $total), 100) * 100, $remaining[$id]),
+            };
+            $left -= $share;
+            $split[] = ['customer_id' => $id, 'share_bp' => $buyer['share_bp'], 'deduction_ore' => -$share];
+        }
+
+        return [$deduction, $split];
     }
 
     /**

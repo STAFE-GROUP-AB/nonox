@@ -66,6 +66,12 @@ class InvoiceEditor extends Component
 
     public string $propertyDesignation = '';
 
+    /** The hours worked on a ROT or RUT invoice, as typed: "4" or "1,5" (ADR-074 §5). */
+    public string $labourHours = '';
+
+    /** The kind of work on a ROT or RUT invoice (ADR-074 §5). */
+    public string $workDescription = '';
+
     /** The currencies offered in the form; Riksbanken publishes rates for all of them. Another code can be typed. */
     public const array CURRENCIES = ['SEK', 'EUR', 'USD', 'GBP', 'NOK', 'DKK', 'CHF'];
 
@@ -98,6 +104,8 @@ class InvoiceEditor extends Component
             $this->foreignSale = (string) $invoice->foreign_sale?->value;
             $this->taxReduction = (string) $invoice->tax_reduction;
             $this->propertyDesignation = (string) $invoice->property_designation;
+            $this->labourHours = (string) $invoice->labourHoursLabel();
+            $this->workDescription = (string) $invoice->work_description;
             $this->currency = $invoice->invoice_currency;
             $this->exchangeRate = (string) $invoice->bookingRate()?->format();
             $this->rateDate = $invoice->exchange_rate_source === 'riksbank' ? (string) $invoice->exchange_rate_date?->toDateString() : '';
@@ -250,6 +258,8 @@ class InvoiceEditor extends Component
             'foreign_sale' => $this->foreignSale === '' ? null : $this->foreignSale,
             'tax_reduction' => $this->taxReduction === '' ? null : $this->taxReduction,
             'property_designation' => $this->propertyDesignation,
+            'labour_hours' => $this->labourHours,
+            'work_description' => $this->workDescription,
             'currency' => $this->currency,
             'exchange_rate' => $this->currency === 'SEK' ? null : $this->exchangeRate,
             'rows' => $this->rowInput(),

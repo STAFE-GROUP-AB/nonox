@@ -6,11 +6,11 @@ namespace App\Modules\Connect\Webhooks;
 
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
+use App\Models\SigningRequest;
 use App\Models\SupplierInvoice;
 use App\Models\Voucher;
 use App\Models\VoucherRow;
 use App\Modules\Connect\Models\ConnectSftpUpload;
-use App\Modules\Crm\Models\SigningRequest;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Events\StockChanged;
 use App\Modules\Inventory\Models\StockLevel;

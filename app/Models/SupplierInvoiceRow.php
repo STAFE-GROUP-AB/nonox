@@ -50,6 +50,12 @@ class SupplierInvoiceRow extends Model
         ];
     }
 
+    /** @return BelongsTo<SupplierInvoice, $this> */
+    public function supplierInvoice(): BelongsTo
+    {
+        return $this->belongsTo(SupplierInvoice::class);
+    }
+
     /** @return BelongsTo<Account, $this> */
     public function account(): BelongsTo
     {

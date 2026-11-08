@@ -32,6 +32,9 @@ enum MovementType: string
     /** Kassation: broken, expired or lost goods written off. */
     case Scrap = 'SCRAP';
 
+    /** Arbetsorder: material taken from stock for a work order (out), or back after a reversal (in) (ADR-074 §3). */
+    case WorkOrderIssue = 'WORK_ORDER_ISSUE';
+
     public function label(): string
     {
         return match ($this) {
@@ -42,6 +45,7 @@ enum MovementType: string
             self::PosSale => __('Kassa'),
             self::Return => __('Retur'),
             self::Scrap => __('Kassation'),
+            self::WorkOrderIssue => __('Arbetsorder'),
         };
     }
 

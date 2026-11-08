@@ -16,11 +16,13 @@ use App\Modules\Peppol\PeppolServiceProvider;
 use App\Modules\Planning\PlanningServiceProvider;
 use App\Modules\Pos\PosServiceProvider;
 use App\Modules\StaffLedger\StaffLedgerServiceProvider;
+use App\Modules\WorkOrders\WorkOrdersServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
 use App\Providers\JetstreamServiceProvider;
 use App\Providers\OverviewServiceProvider;
 use App\Providers\SearchServiceProvider;
+use App\Providers\SigningServiceProvider;
 
 return [
     ModuleServiceProvider::class,
@@ -31,12 +33,14 @@ return [
     StaffLedgerServiceProvider::class,
     PlanningServiceProvider::class,
     InventoryServiceProvider::class,
+    SigningServiceProvider::class,
     CrmServiceProvider::class,
     PosServiceProvider::class,
     InboxServiceProvider::class,
     PeppolServiceProvider::class,
     ConnectServiceProvider::class,
     BankingServiceProvider::class,
+    WorkOrdersServiceProvider::class,
     FortnoxServiceProvider::class,
     AppServiceProvider::class,
     FortifyServiceProvider::class,

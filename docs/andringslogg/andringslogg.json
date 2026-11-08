@@ -32,12 +32,28 @@
   ],
   "poster": [
     {
+      "id": "2026-11-08-arbetsorder-och-ata",
+      "datum": "2026-11-08T20:00:00+01:00",
+      "rubrik": "Arbetsorder och ÄTA för hantverkare",
+      "beskrivning": "Den nya modulen Arbetsorder samlar tid och material på plats i mobilen och gör ett fakturautkast med ROT, RUT och omvänd byggmoms rätt från början, med arbetade timmar på fakturan. ÄTA godkänns av kunden med namnteckning innan arbetet görs, via länk eller på plats efter en kod till kundens egen e-post. Bokslutssteget Pågående arbeten föreslår verifikationer men bokför aldrig själv.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-08-korjournal-och-kvitto-i-mobilen",
       "datum": "2026-11-08T19:30:00+01:00",
       "rubrik": "Körjournal med milersättning via lönen, och Fota kvitto i inkorgen",
       "beskrivning": "Med Körjournal påslaget under företagets uppgifter skriver anställda in sina resor på Min sida och skickar in en månad som milersättning, som godkänns under Lön → Ansökningar och betalas med lönen; milersättning för förmånsbil kryssar nu också ruta 050 i arbetsgivardeklarationen. Ägaren till en enskild firma bokför resor i egen bil som ett verifikationsutkast under Bokföring → Körjournal, och under Förmånsbilar visas körningen i tjänsten och privat som underlag. Under Inkorg kan du fota ett kvitto som företaget betalat; inget läses in med GPS och inget bokförs förrän någon har godkänt det.",
       "typ": "Nytt",
       "omrade": "Lön"
+    },
+    {
+      "id": "2026-11-08-signering-utan-crm",
+      "datum": "2026-11-08T19:00:00+01:00",
+      "rubrik": "Offerter kan signeras med namnteckning även utan CRM",
+      "beskrivning": "Skicka för signering finns nu på varje offert, också när CRM-modulen är avstängd. När kunden har signerat blir offerten en order som förut, och med CRM på vinns affären och en anteckning läggs på kunden. Avtal i CRM signeras som tidigare.",
+      "typ": "Förbättrat",
+      "omrade": "Fakturering"
     },
     {
       "id": "2026-11-08-byggnader-mark-komponenter",

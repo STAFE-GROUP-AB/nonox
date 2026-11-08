@@ -26,6 +26,7 @@ use App\Models\YearEndEntry;
 use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\Models\StockValuation;
 use App\Modules\ModuleManager;
+use App\Modules\WorkOrders\WorkOrdersModule;
 use App\Support\Money\Money;
 use App\Support\Skatteverket\Skatteverket;
 use App\Support\Tenancy\CurrentCompany;
@@ -114,6 +115,11 @@ final class ClosingChecklist
             $entries = YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->pluck('type')->all();
             $items[] = self::unpaid($company, $fiscalYear, $entries, $checks);
             $items[] = self::currency($company, $fiscalYear, $entries, $checks);
+
+            // Arbetsorder (ADR-074 §7): ongoing work is proposed, never booked, so the point only reminds.
+            if (app(ModuleManager::class)->isEnabled(WorkOrdersModule::KEY, $company)) {
+                $items[] = self::item('ongoing_work', __('Pågående arbeten är granskade'), __('Arbetsorder som pågår på balansdagen kan ge upparbetad men ej fakturerad intäkt eller förskott från kunder. Granska förslaget under Arbetsorder → Pågående arbeten och bokför det som stämmer. Ingenting bokförs automatiskt.'), self::WARN, 'workOrders.ongoing');
+            }
 
             foreach (self::MANUAL as $key => [$label, $detail]) {
                 if ($key === 'inventory' && ($stock = self::stock($company, $fiscalYear, $checks)) !== null) {

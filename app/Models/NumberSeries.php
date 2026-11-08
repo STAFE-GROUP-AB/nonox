@@ -37,6 +37,8 @@ class NumberSeries extends Model
 
     public const string EMPLOYEES = 'employees';
 
+    public const string WORK_ORDERS = 'work_orders';
+
     protected $table = 'number_series';
 
     /** @var list<string> */

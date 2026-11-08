@@ -4,20 +4,18 @@ declare(strict_types=1);
 
 namespace App\Modules\Crm\Actions;
 
+use App\Actions\Signing\PruneSigningLinks;
 use App\Models\Company;
 use App\Modules\Crm\CrmSettings;
 use App\Modules\Crm\Domain\ActivityType;
-use App\Modules\Crm\Domain\SigningStatus;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Agreement;
-use App\Modules\Crm\Models\SigningRequest;
 use App\Modules\Crm\Support\CompanyMembers;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * The agreement register's daily run (ADR-046), per company:
@@ -40,7 +38,7 @@ use Illuminate\Support\Facades\Storage;
  */
 final class RunAgreementReminders
 {
-    public const int PRUNE_UNSIGNED_AFTER_MONTHS = 12;
+    public const int PRUNE_UNSIGNED_AFTER_MONTHS = PruneSigningLinks::AFTER_MONTHS;
 
     /** @return array{int, int, int} */
     public function __invoke(Company $company, ?CarbonImmutable $today = null): array
@@ -52,7 +50,7 @@ final class RunAgreementReminders
         return CurrentCompany::run($company, fn (): array => [
             $this->renew($company, $today),
             $this->remind($company, $today, $days, $members),
-            $this->prune($today),
+            app(PruneSigningLinks::class)($today),
         ]);
     }
 
@@ -149,24 +147,6 @@ final class RunAgreementReminders
         }
 
         return $made;
-    }
-
-    private function prune(CarbonImmutable $today): int
-    {
-        $cutoff = $today->subMonthsNoOverflow(self::PRUNE_UNSIGNED_AFTER_MONTHS);
-        $requests = SigningRequest::query()
-            ->where(fn ($query) => $query
-                ->where(fn ($q) => $q->where('status', SigningStatus::Pending->value)->where('expires_at', '<', $cutoff))
-                ->orWhere(fn ($q) => $q->where('status', SigningStatus::Declined->value)->where('declined_at', '<', $cutoff))
-                ->orWhere(fn ($q) => $q->where('status', SigningStatus::Revoked->value)->where('revoked_at', '<', $cutoff)))
-            ->get(['id', 'document_path']);
-
-        foreach ($requests as $request) {
-            Storage::disk(SigningRequest::DISK)->delete($request->document_path);
-            $request->delete();
-        }
-
-        return $requests->count();
     }
 
     /**

@@ -176,6 +176,13 @@
         <x-ui.card :title="__(':type hos Skatteverket', ['type' => App\Domain\Invoicing\TaxReduction::label($invoice->tax_reduction)])">
             <p class="text-sm text-gray-700">{{ __('Begärt :claimed, mottaget :paid.', ['claimed' => $invoice->tax_reduction_ore->format(), 'paid' => $invoice->tax_reduction_paid_ore->format()]) }}</p>
             <p class="mt-1 text-xs text-gray-500">{{ __('Begär utbetalningen i Skatteverkets e-tjänst Rot och rut när kunden har betalat sin del. Registrera Skatteverkets betalning här när den kommer.') }}</p>
+            @if($invoice->labourHoursText() !== null || $invoice->work_description)
+                <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    <dt class="text-gray-500">{{ __('Arbetade timmar') }}</dt><dd class="tabular-nums">{{ $invoice->labourHoursText() ?? '–' }}</dd>
+                    <dt class="text-gray-500">{{ __('Typ av arbete') }}</dt><dd>{{ $invoice->work_description ?? '–' }}</dd>
+                </dl>
+                <p class="mt-1 text-xs text-gray-500">{{ __('Skatteverket frågar efter antalet arbetade timmar och vilket arbete som gjorts när du begär utbetalningen.') }}</p>
+            @endif
             @if($taxRecheck !== null)
                 <p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" role="alert">{{ __('Kunden betalade :year. Med det årets procentsats och tak blir avdraget :allowed, inte :invoiced som på fakturan. Begär högst :allowed hos Skatteverket; mellanskillnaden betalar kunden.', ['year' => $taxRecheck['year'], 'allowed' => App\Support\Money\Money::ofOre($taxRecheck['allowed'])->format(), 'invoiced' => App\Support\Money\Money::ofOre($taxRecheck['invoiced'])->format()]) }}</p>
             @endif

@@ -52,6 +52,10 @@
                         @if($taxReduction === 'ROT')
                             <x-ui.field for="invoice_property" :label="__('Fastighetsbeteckning eller BRF')" error="property_designation"><input id="invoice_property" type="text" class="{{ $input }} mt-1" wire:model="propertyDesignation" placeholder="{{ __('Till exempel Uppsala Kåbo 1:23') }}"></x-ui.field>
                         @endif
+                        @if($taxReduction !== '' && ! $credit)
+                            <x-ui.field for="invoice_labour_hours" :label="__('Arbetade timmar')" error="labour_hours"><input id="invoice_labour_hours" type="text" inputmode="decimal" class="{{ $input }} mt-1 tabular-nums" wire:model="labourHours" placeholder="{{ __('Till exempel 4 eller 1,5') }}"></x-ui.field>
+                            <x-ui.field for="invoice_work_description" :label="__('Typ av arbete')" error="work_description"><input id="invoice_work_description" type="text" maxlength="255" class="{{ $input }} mt-1" wire:model="workDescription" placeholder="{{ __('Till exempel byte av golvbrunn') }}"></x-ui.field>
+                        @endif
                     </div>
                     @if($foreignSale === 'EU_CONSUMER_OSS' && $ossThreshold !== null && $ossThreshold['swedish_vat'])
                         @php($ossLimit = App\Support\Money\Money::ofOre(App\Domain\Vat\OssThreshold::AMOUNT_ORE)->format())

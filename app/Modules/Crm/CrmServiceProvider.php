@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Crm;
 
+use App\Domain\Signing\SignableTypes;
+use App\Domain\Signing\SigningHooks;
 use App\Events\CustomerAnonymised;
 use App\Events\UserAccountDeleting;
 use App\Http\Middleware\EnsureUserHasCompany;
@@ -20,13 +22,10 @@ use App\Modules\Crm\Console\RefreshStatusesCommand;
 use App\Modules\Crm\Console\RegistryWatchCommand;
 use App\Modules\Crm\Console\SendMailingsCommand;
 use App\Modules\Crm\Console\WinBackCommand;
-use App\Modules\Crm\Domain\SigningToken;
 use App\Modules\Crm\Http\CrmPersonExportController;
 use App\Modules\Crm\Http\MailgunEventsController;
 use App\Modules\Crm\Http\MailingLinkController;
 use App\Modules\Crm\Http\PublicFormController;
-use App\Modules\Crm\Http\SigningPageController;
-use App\Modules\Crm\Http\WithoutAuditRequest;
 use App\Modules\Crm\Livewire\AccountCard;
 use App\Modules\Crm\Livewire\AccountsPage;
 use App\Modules\Crm\Livewire\ActivitiesPage;
@@ -52,7 +51,6 @@ use App\Modules\Crm\Livewire\ProspectingPage;
 use App\Modules\Crm\Livewire\QuoteFromTemplate;
 use App\Modules\Crm\Livewire\QuoteTemplatesPage;
 use App\Modules\Crm\Livewire\SegmentsPage;
-use App\Modules\Crm\Livewire\SigningPanel;
 use App\Modules\Crm\Livewire\TemplatesPage;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\AccountPerson;
@@ -73,6 +71,7 @@ use App\Modules\Crm\Models\Segment;
 use App\Modules\Crm\Policies\CrmMailPolicy;
 use App\Modules\Crm\Policies\CrmPolicy;
 use App\Modules\Crm\Support\CrmMailer;
+use App\Modules\Crm\Support\CrmSigningHook;
 use App\Modules\Crm\Support\CustomerAccounts;
 use App\Modules\Crm\Support\SigningFiles;
 use App\Modules\ModuleRegistry;
@@ -131,6 +130,13 @@ class CrmServiceProvider extends ServiceProvider
         }
 
         Customer::observe(CustomerAccounts::class);
+        // Signing is core (ADR-075 §7): CRM adds the agreement as a signable document, and its deal and account steps to the follow-up.
+        $this->app->make(SignableTypes::class)->register(Agreement::SIGNING_TYPE, 'agreement_id', function (string $key, bool $lock): ?Agreement {
+            $query = Agreement::query()->whereKey((int) $key);
+
+            return ($lock ? $query->lockForUpdate() : $query)->first();
+        });
+        $this->app->make(SigningHooks::class)->add($this->app->make(CrmSigningHook::class));
         // An account erased under GDPR takes its agreements and their signing links with it (foreign keys); their PDFs go too (ADR-046).
         Account::deleting(fn (Account $account) => SigningFiles::forAccount($account));
         Event::listen(CustomerAnonymised::class, [EraseCrmData::class, 'customerAnonymised']);
@@ -163,7 +169,6 @@ class CrmServiceProvider extends ServiceProvider
         Livewire::component('crm.agreement-card', AgreementCard::class);
         Livewire::component('crm.quote-templates', QuoteTemplatesPage::class);
         Livewire::component(QuoteFromTemplate::NAME, QuoteFromTemplate::class);
-        Livewire::component(SigningPanel::NAME, SigningPanel::class);
         Livewire::component('crm.emails', EmailsPage::class);
         Livewire::component('crm.templates', TemplatesPage::class);
         Livewire::component('crm.segments', SegmentsPage::class);
@@ -192,27 +197,7 @@ class CrmServiceProvider extends ServiceProvider
             ->whereNumber('person')
             ->name('privacy.export.crmPerson');
 
-        $this->signingRoutes();
         $this->publicRoutes();
-    }
-
-    /**
-     * The public signing page (ADR-046): no login, the token is the only
-     * key. Not behind module:crm (there is no signed-in company); the page
-     * itself refuses a link whose company has CRM off. Rate-limited per IP
-     * address, and harder for the form posts.
-     */
-    private function signingRoutes(): void
-    {
-        RateLimiter::for('crm-signing', fn (Request $request): Limit => Limit::perMinute(60)->by('crm-signing:'.$request->ip()));
-        RateLimiter::for('crm-signing-submit', fn (Request $request): Limit => Limit::perMinute(10)->by('crm-signing-submit:'.$request->ip()));
-
-        Route::middleware(['web', 'throttle:crm-signing', WithoutAuditRequest::class])->group(function (): void {
-            Route::get('/signera/{token}', [SigningPageController::class, 'show'])->where('token', '[^/]{1,100}')->name('crm.signing.show');
-            Route::get('/signera/{token}/dokument', [SigningPageController::class, 'document'])->where('token', SigningToken::PATTERN)->name('crm.signing.document');
-            Route::post('/signera/{token}', [SigningPageController::class, 'sign'])->where('token', SigningToken::PATTERN)->middleware('throttle:crm-signing-submit')->name('crm.signing.sign');
-            Route::post('/signera/{token}/avboj', [SigningPageController::class, 'decline'])->where('token', SigningToken::PATTERN)->middleware('throttle:crm-signing-submit')->name('crm.signing.decline');
-        });
     }
 
     /**

@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.117
+- Version: 0.118
 - Datum: 2026-11-08
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -1229,6 +1229,21 @@ balances").
   arbetskostnaden inklusive moms, avrundat nedåt till hela kronor och inom
   det som återstår av köparens tak för året på företagets egna fakturor.
   Andelar och tak finns i `TaxReduction` och gäller från ett datum.
+- Fakturan får arbetade timmar (`labour_hours_milli`) och typ av arbete
+  (`work_description`), som Skatteverket frågar efter i begäran (lag
+  (2009:194) 9 § p. 4). Båda hör till den utfärdade fakturans oföränderliga
+  innehåll (utlösaren `invoices_protect_issued` jämför alla kolumner som inte
+  uttryckligen får ändras). Delar flera köpare på avdraget (ADR-074 O6) sparas
+  varje köpares andel och avdrag i `invoice_tax_reduction_buyers`, inom
+  köparens eget tak; raderna kan inte ändras när fakturan är utfärdad. En
+  kreditfaktura återför varje köpares eget avdrag på originalet, minskat med
+  köparens tidigare krediteringar, i proportion till det som krediteras (hela
+  kronor; den sista köparen med något kvar tar resten). En köpare som inte fick
+  något avdrag får inget återfört. Fakturans PDF skriver ut köparens
+  personnummer, eftersom Skatteverket räknar upp det bland fakturans uppgifter
+  (TODO(legal-verify): L6), men bara på fakturor som utfärdas från och med den
+  här versionen (`invoices.prints_buyer_personal_number`, satt när fakturan
+  utfärdas); en tidigare utfärdad faktura skrivs ut som den såg ut.
 - Kunden betalar fakturan minus avdraget. Vid utfärdandet bokförs kundens
   del på 1510 och avdraget på 1513 Kundfordringar – delad faktura (läggs
   till vid behov); intäkter och moms bokförs på hela beloppet. För ROT krävs
@@ -4379,6 +4394,86 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   standardtiden för gallring av prospekt och kontaktpersoner, och vilka
   kopplingar till bokföringen som ska hindra gallring av en kontaktperson.
 
+## 5m. Arbetsorder (modul)
+
+Beskrivs i [ADR-074](../adr/ADR-074-work-orders-and-change-orders.md) och
+regelbladet `docs/specs/rules/arbetsorder-och-ata.md`. Modulen `work_orders`
+är avstängd tills ägaren slår på den.
+
+- **Ingen bokföring.** En arbetsorder, dess tid och material, ÄTA och
+  betalningsplaner skapar aldrig någon verifikation. Det enda som når
+  bokföringen är fakturautkast som går genom fakturans vanliga flöde (avsnitt
+  5) och, vid bokslutet, verifikationsutkast som en person bokför själv.
+- **Tid och material är oföränderliga.** En post ändras aldrig och tas aldrig
+  bort; den rättas med en motpost med skäl. En databasutlösare
+  (`work_order_entries_append_only`) tillåter bara två ändringar: att
+  motposten kopplas en gång (`reversed_by_id`) och vilket fakturautkast som
+  reserverar posten (`invoice_id`), och den senare bara så länge fakturan är
+  ett utkast; en post kan bara reserveras av ett utkast och inte kopplas till
+  en motpost medan den finns på en utfärdad faktura. En post på en utfärdad
+  faktura kan inte backas, bara krediteras.
+- **Lager.** Material från lagret tas ut som lagerrörelsen
+  `WORK_ORDER_ISSUE` till artikelns inköpspris, och kommer tillbaka med samma
+  kostnad när posten backas (avsnitt 5j).
+- **Vidarefakturering.** En rad på en attesterad leverantörsfaktura kan bli
+  material på en arbetsorder en gång (unikt index på levande poster).
+  Leverantörsfakturans bokföring ändras inte.
+- **Fakturaunderlag** (`work_orders.invoice_basis_created`): ett fakturautkast
+  byggs med `SaveDraftInvoice`. Bara typer av arbete av slaget Arbete blir
+  ROT- eller RUT-arbete; resor, maskiner och material aldrig. Fakturan får
+  arbetade timmar och typ av arbete (avsnitt 5.2), omvänd betalningsskyldighet
+  följer arbetsordern och ROT/RUT och omvänd betalningsskyldighet kan inte
+  kombineras (kontrollvillkor i databasen). Tid på ÄTA som inte är godkända
+  hålls tillbaka. Varje faktura från en arbetsorder tar de arbetade timmar som
+  är registrerade och inte redan tagits upp på en tidigare faktura från samma
+  arbetsorder (`work_order_invoices.labour_minutes`); ett ROT- eller
+  RUT-underlag vägras bara när arbetsordern inte har några registrerade
+  arbetstimmar alls. TODO(legal-verify): om en ROT-faktura utan nya timmar
+  godtas (lag (2009:194) 9 § p. 4). En sådan faktura skriver "Arbetade timmar:
+  redovisade på faktura N" med de tidigare fakturornas nummer
+  (`invoices.labour_hours_reported_on`), inte 0.
+- **A conto** (avsnitt ADR-074 §6): fast pris med delbetalningar som var och en
+  blir ett vanligt fakturautkast med eget avdrag på sin andel av arbetet. En
+  a conto-faktura reserverar inga tidposter. Slutfakturan tar resten som egna
+  rader, aldrig en negativ a conto-rad. Bara med fakturametoden.
+- **ÄTA** är oföränderliga när de är beslutade (godkända, godkända muntligt,
+  utförda utan kundens besked, avböjda, utgångna, återkallade), och innehållet
+  ligger fast när de är skickade (utlösaren `change_orders_protect_decided`;
+  ett skickat ÄTA kan bara gå vidare till ett beslut). När ett ÄTA har skickats
+  eller beslutats kan arbetsorderns kund, prisform, moms, ROT eller RUT och
+  fastighet inte längre ändras. Ett ÄTA som godkänns muntligt eller utförs
+  utan kundens besked behåller PDF:en som den såg ut vid beslutet, med
+  kontrollsumma; ROT-andelen räknas på dagen det skickades eller beslutades.
+  Ett skickat ÄTA vars signeringslänkar har gått ut blir **Har gått ut** när
+  det schemalagda kommandot `work-orders:expire-change-orders` körs (var femtonde
+  minut, per företag); sidorna visar etiketten utan att skriva.
+  Kontaktförsök är endast tilläggbara. Signering sker i den gemensamma
+  signeringsdomänen (ADR-046, ADR-075 §7) med dokumentets SHA-256; på plats
+  öppnas signeringssidan först efter en kod till kundens egen e-post, och bara
+  en HMAC av koden sparas, och länken glöms när koden har gått ut eller efter
+  det femte felaktiga försöket. Beslutade ÄTA kan läsas med `work-orders:view` även när
+  modulen är avstängd, och är räkenskapsinformation (BFL 1 kap. 2 § p. 9 b
+  eller 5 kap. 7 §; sju år i båda fallen).
+- **Pågående arbeten vid bokslutet** (`work_orders.ongoing_work_proposed`):
+  förslag per öppen arbetsorder på balansdagen. Löpande räkning: registrerat
+  men ej fakturerat till avtalat pris debet 1620 mot intäktskontot, och det som
+  fakturerats utöver det registrerade från intäkten till 2420; bara
+  huvudarbetet och ÄTA som får faktureras räknas, ett ÄTA till fast pris med
+  sitt belopp. Fast pris med
+  ÄTA inräknade: huvudregeln (K2) eller successiv vinstavräkning (K3) ger
+  upparbetad intäkt efter färdigställandegraden från kostnaderna på
+  arbetsorderns projekt mot en beräknad total kostnad, och skillnaden mot det
+  fakturerade på 1620 eller 2450; alternativregeln (K2) och
+  färdigställandemetoden (K3) flyttar det fakturerade till 2450 och visar
+  kostnaderna för 1470 utan verifikation. K1 och företag utan vald metod får
+  bara siffrorna. "Skapa verifikationsutkast" skapar två **utkast**,
+  justeringen på balansdagen och återföringen dagen efter; ingenting bokförs
+  förrän en person bokför dem. Punkten "Pågående arbeten är granskade" i
+  bokslutets checklista är en påminnelse och stoppar inte bokslutet. NONOX
+  varnar, utan att föreslå någon verifikation, när den beräknade totala
+  kostnaden är högre än priset (befarad förlust, K2 6.19) och när metoden byts
+  efter ett stängt räkenskapsår (K2 6.15). TODO(legal-verify): L12 och L13.
+
 ## 6. Belopp
 
 - Belopp lagras som hela ören i heltal, aldrig som flyttal. Avrundning sker till
@@ -4792,6 +4887,24 @@ kontrollerat dem mot källan. Särskilt:
 - Skanna (ADR-040) ändrar inga regler: den använder lagrets åtgärder och
   har inga egna juridiska värden.
 
+### Arbetsorder (5m)
+
+Frågorna L1–L16 i `docs/specs/rules/arbetsorder-och-ata.md`. Det som
+påverkar bokföringen och fakturan:
+
+- L6: om ROT-fakturan ska visa köparens personnummer (i dag: ja).
+- L8: ROT-arbete och arbete utan ROT (försäkring) på samma faktura (i dag:
+  tillåtet per rad).
+- L9: omvänd betalningsskyldighet och tjänster som inte är byggtjänster på
+  samma faktura (i dag: inte möjligt från en arbetsorder).
+- L10: a conto för byggtjänster under kontantmetoden (i dag: ej tillgängligt).
+- L12: kontona 1470, 1620, 2420, 2450 och motkontot för förändringen av
+  pågående arbete.
+- L13: vilka förslag som är rätt för K2, K3 och K1 (K1 får bara siffror).
+- L14: slutfakturans form efter a conto (i dag: bara resterande rader).
+- Flera ROT-köpare på en faktura (ADR-074 O6): om andelarna måste följa vad
+  var och en betalade, och hur begäran görs i Skatteverkets e-tjänst.
+
 ### Kön till den öppna betan (1f)
 
 - Lagringstiderna: 30 dagar för nekade anmälningar och 12 månader för
@@ -4936,3 +5049,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.115 | 2026-11-06 | Bekräftelse och kontroller före inlämning (ägarbeslut 10 och 16): momsdeklarationen och arbetsgivardeklarationen till Skatteverket, betalfilen för leverantörsbetalningar och lönefilen kräver att användaren bekräftar "Jag har granskat siffrorna", och bekräftelsen sparas i behandlingshistoriken (`figures.reviewed`); ett K2-företag bekräftar de nya K2-villkoren (BFNAR 2025:2) en gång innan bokslutet för ett räkenskapsår som börjar efter 2025-12-31 kan fortsätta (`company.k2_conditions_confirmed`). SIE-importen stoppar en fil vars ingående balanser inte summerar till noll, och rapporten säger bara att varje konto stämmer när utgående balanser eller resultat har kontrollerats. Drivmedelsförmån kräver en förmånsbil i perioden. OCR-nummer på leverantörsfakturor kontrolleras med kontrollsiffran. Parametrarna för NE och INK4 2026 är inte längre markerade som kontrollerade, så beräkningen spärras tills en människa har kontrollerat dem. Rättelserna som driftsattes separat under versionsnumret 0.105 samma morgon (rutorna 20 och 23, årsredovisning bara enligt K2, belopp i hela kronor, övertid och mertid per art i Gröna Riks och Detaljhandeln, arbetsgivaravgift på drivmedelsförmån) ingår i 0.107, 0.109, 0.110 och 0.114 och i avsnitt 5h. |
 | 0.116 | 2026-11-07 | Regelverket (K1/K2/K3) hör till räkenskapsåret (avsnitt 3, ADR-059 tillägg A.2.1): varje år har sitt eget, ett nytt år ärver det föregående (annars närmaste senare) årets, och ett byte gäller ett valt år och alla senare år, i inställningarna som standard från det tidigaste öppna året utan fastställd årsredovisning. Stängda år och år med fastställd årsredovisning kan inte byta, och ett byte som inget år kan ta emot vägras. Bytet sparas på varje år och i behandlingshistoriken (`fiscal_year.framework_changed`, en post per år). Årsredovisningen, K2-bekräftelsen i bokslutet och NE-bilagan följer årets regelverk, så ett tidigare K2-år behåller sin årsredovisning när företaget byter till K3. Befintliga år fick företagets regelverk; ingen verifikation ändrades. Redovisningsprinciper för K3 som data (avsnitt 5a6.1, ADR-059 tillägget 2026-11-07, A.2.3): företagets val per princip gäller från ett räkenskapsårs första dag tills en ny rad ersätter det, utom svaren om övergången som bara gäller sitt eget år; val som NONOX ännu inte kan redovisa och byten av princip (K3 10.2, 23.37; inte att börja efter "inga", enligt kommentaren till 10.2, och inte kassaflödesanalysen) listas med regelns id som skäl till att K3-årsredovisningen inte kan tas fram; när det första räkenskapsårets datum ändras följer dess principer med; en rad kan inte sparas om den skulle gälla ett år vars årsredovisning har en fastställelsedag som har inträffat; byte från kapitel 12 till kapitel 11 nekas. Ändringen skrivs i behandlingshistoriken utan motiveringen. Ingenting i bokföringen ändras och ingen skärm använder principerna ännu. |
 | 0.117 | 2026-11-08 | Körjournal och milersättning (avsnitt 5b, ADR-072): lönearterna Milersättning, förmånsbil och Milersättning, förmånsbil (el) (7331, ruta 050; tidigare kryssades 050 bara för egen bil); körjournalen med bilar, resor och mätarställningar; månadens milersättning från Min sida godkänns utan verifikation och bokförs med lönen, med körjournalen som underlag; betalda och bokförda resor kan inte ändras (databasutlösare), fel rättas med en negativ resa; enskild firma bokför resor i egen bil som utkast i serie A mot 2018; Fota kvitto i inkorgen (avsnitt 5e). Efter granskningen: skattefri förmånsbil bara i den anställdas egen förmånsbil; belopp efter resans år; förmånsbilens belopp för 2027 från lagtexten; rättelser prissätts som raden de rättar och kan ge en negativ milersättning; årssammanställningen räknar bara förmånshavarens resor; stängt år låser resorna. |
+| 0.118 | 2026-11-08 | Arbetsorder (avsnitt 5m, ADR-074): tid och material som aldrig ändras utan backas med motpost (databasutlösare), lageruttag som `WORK_ORDER_ISSUE`, vidarefakturering av en leverantörsfakturarad en gång, fakturaunderlag som fakturautkast med ROT/RUT bara på arbete och omvänd betalningsskyldighet från arbetsordern, a conto-planer, ÄTA som är oföränderliga när de är beslutade och signeras i den gemensamma signeringsdomänen, och bokslutssteget Pågående arbeten som bara skapar verifikationsutkast (1620, 2420, 2450). Kundfakturor (avsnitt 5.2): arbetade timmar och typ av arbete på ROT- och RUT-fakturor, flera köpare som delar avdraget inom var sitt tak, och köparens personnummer på PDF:en (L6 öppen). |

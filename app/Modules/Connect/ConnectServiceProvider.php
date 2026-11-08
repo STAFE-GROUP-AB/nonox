@@ -6,6 +6,7 @@ namespace App\Modules\Connect;
 
 use App\Events\InvoicePaid;
 use App\Events\InvoiceSent;
+use App\Events\QuoteSigned;
 use App\Events\SupplierInvoiceApproved;
 use App\Events\VoucherPosted;
 use App\Http\Middleware\EnsureUserHasCompany;
@@ -46,7 +47,6 @@ use App\Modules\Connect\Sftp\SieFileUploaded;
 use App\Modules\Connect\Support\ConnectAccess;
 use App\Modules\Connect\Support\ConnectScopes;
 use App\Modules\Connect\Webhooks\WebhookDispatcher;
-use App\Modules\Crm\Events\QuoteSigned;
 use App\Modules\Inventory\Events\StockChanged;
 use App\Modules\ModuleRegistry;
 use App\Modules\Peppol\Events\PeppolTransmissionChanged;

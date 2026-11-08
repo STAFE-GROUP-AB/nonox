@@ -24,11 +24,14 @@ När du utför ROT- eller RUT-arbete åt en privatperson betalar kunden bara en 
 1. Skapa en ny faktura till kunden under **Försäljning → Fakturor** med **Ny faktura**.
 2. Välj **ROT-avdrag** eller **RUT-avdrag** i fältet **ROT- eller RUT-avdrag**.
 3. För ROT: skriv **Fastighetsbeteckning eller BRF**, till exempel *Uppsala Kåbo 1:23*. Bor kunden i en bostadsrätt skriver du föreningens organisationsnummer och lägenhetsnumret.
-4. Fyll i raderna. En kolumn **Arbete** har kommit till. Bocka i den på de rader som är arbetskostnad. Material, resor och annat lämnar du utan bock.
-5. Tryck på **Spara som utkast**. NONOX räknar avdraget på arbetsraderna inklusive moms, avrundat nedåt till hela kronor, och drar av det från det kunden ska betala.
-6. Kontrollera beloppen och tryck på **Skapa fakturan** och **Ja, skapa**.
+4. Skriv **Arbetade timmar** och **Typ av arbete**, till exempel *4* och *byte av golvbrunn*. Skatteverket frågar efter båda när du begär utbetalningen, även vid fast pris.
+5. Fyll i raderna. En kolumn **Arbete** har kommit till. Bocka i den på de rader som är arbetskostnad. Material, resor och annat lämnar du utan bock.
+6. Tryck på **Spara som utkast**. NONOX räknar avdraget på arbetsraderna inklusive moms, avrundat nedåt till hela kronor, och drar av det från det kunden ska betala.
+7. Kontrollera beloppen och tryck på **Skapa fakturan** och **Ja, skapa**.
 
-På fakturan står **Avgår ROT-avdrag** (eller RUT-avdrag) med beloppet, arbetskostnaden inklusive moms, fastigheten och texten att avdraget förutsätter att Skatteverket godkänner det – annars betalar köparen resten.
+På fakturan står **Avgår ROT-avdrag** (eller RUT-avdrag) med beloppet, arbetskostnaden inklusive moms, fastigheten, arbetade timmar, typen av arbete, köparens namn och personnummer och texten att avdraget förutsätter att Skatteverket godkänner det – annars betalar köparen resten. Personnumret skrivs ut eftersom Skatteverket räknar upp det bland det fakturan ska visa.
+
+Delar flera köpare på avdraget, till exempel makar, gör du det på en arbetsorder (se [Arbetsorder](/manual/fakturering/arbetsorder)). Fakturan visar då varje köpare med sitt avdrag, och varje köpare har sitt eget tak.
 
 ## Taket per kund och år
 
