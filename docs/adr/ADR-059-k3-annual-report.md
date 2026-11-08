@@ -810,7 +810,13 @@ mandate, open for the consultant's review:
   end of the last year the change reaches (the chosen year and every later one).
   The check runs inside `CreateNextFiscalYear::lock` after the years are locked
   for update, next to `refuseK3RequiredYears`; `FixedAssets::split()` reads its
-  year with a shared lock, so a split and a change cannot pass each other. The
+  year and every later year with a shared lock, so a split and a change of any of
+  those years cannot pass each other. Land components do not block: land alone
+  is lawful under K2 (10.22). After the re-check: the plan-mismatch wording is
+  shown only when something was written off before the register; otherwise the
+  person is told to book the months in the register, or to adjust the plan only
+  if they are booked elsewhere. Focus in the review goes to "Tillbaka", not to the
+  irreversible button. The
   Swedish message names the year, the asset and the split date and says K2 does
   not allow components; it suggests no way to undo a split, because there is none.
 

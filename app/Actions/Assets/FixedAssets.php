@@ -413,6 +413,10 @@ class FixedAssets
                     throw ValidationException::withMessages(["components.{$index}.total_life_months" => __('Den totala nyttjandeperioden kan inte vara kortare än den återstående.')]);
                 }
 
+                if (blank($input['asset_account'] ?? null) && ! $land && ! self::isComponentAccount($account)) {
+                    throw ValidationException::withMessages(["components.{$index}.asset_account" => __('Tillgångens konto :account kan inte användas för en komponent. Välj ett tillgångskonto mellan 1100 och 1299 för komponenten.', ['account' => $account])]);
+                }
+
                 if (! self::isComponentAccount($account)) {
                     throw ValidationException::withMessages(["components.{$index}.asset_account" => __('Tillgångskontot för en komponent ska vara ett konto för materiella anläggningstillgångar (1100–1299), inte ett konto för ackumulerade avskrivningar.')]);
                 }
@@ -504,8 +508,10 @@ class FixedAssets
             throw ValidationException::withMessages(['asset' => __('Mark skrivs inte av och delas inte upp i komponenter.')]);
         }
 
-        // Shared lock: a change of framework (ChangeReportingFramework) locks the years for update, so the two never pass each other.
-        $fiscalYear = FiscalYear::query()->whereDate('start_date', '<=', $splitOn->toDateString())->whereDate('end_date', '>=', $splitOn->toDateString())->sharedLock()->first();
+        // Shared lock on the split year and every later one: a change of framework (ChangeReportingFramework) locks
+        // the years from its year on for update, so a split and a change of any of those years never pass each other.
+        $years = FiscalYear::query()->whereDate('end_date', '>=', $splitOn->toDateString())->orderBy('start_date')->sharedLock()->get();
+        $fiscalYear = $years->first(fn (FiscalYear $year): bool => $year->contains($splitOn));
 
         if ($fiscalYear === null) {
             throw ValidationException::withMessages(['split_date' => __('Det finns inget räkenskapsår för :date.', ['date' => $splitOn->toDateString()])]);
@@ -536,9 +542,13 @@ class FixedAssets
             return;
         }
 
-        // Nothing booked in the register: the plan itself does not match what the books already hold.
-        if (! $asset->depreciations()->exists()) {
+        // Nothing booked in the register but something written off before it: the plan does not match the books.
+        if ($asset->opening_accumulated_ore->ore > 0 && ! $asset->depreciations()->exists()) {
             throw ValidationException::withMessages(['split_date' => __('Registrets plan för :name stämmer inte med det som redan är avskrivet: enligt planen skulle mer vara avskrivet till och med :month. Ändra första avskrivningsmånad, nyttjandeperiod eller Redan avskrivet så att planen stämmer med bokföringen, och dela sedan upp tillgången.', ['name' => $asset->name, 'month' => $previous])]);
+        }
+
+        if (! $asset->depreciations()->exists()) {
+            throw ValidationException::withMessages(['split_date' => __('Bokför avskrivningarna till och med :month i registret, eller – om de redan är bokförda utanför registret – ändra planen så att den stämmer.', ['month' => $previous])]);
         }
 
         throw ValidationException::withMessages(['split_date' => __('Bokför avskrivningarna till och med :month innan tillgången delas upp.', ['month' => $previous])]);

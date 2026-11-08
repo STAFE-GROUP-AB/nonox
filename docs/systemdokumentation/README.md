@@ -1719,10 +1719,12 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   - Uppdelningen vägras om räkenskapsåret inte följer K3 eller är stängt, om
     dagen ligger i en låst period, om en avskrivning redan är bokförd för den
     månad uppdelningen gäller från eller senare, och om planen har obokförda
-    månader före den. Har registret inga bokförda månader för tillgången säger
-    meddelandet att planen (första avskrivningsmånad, nyttjandeperiod, redan
-    avskrivet) ska ändras så att den stämmer med bokföringen. Det redovisade
-    värdet vid uppdelningen är alltså det planen säger.
+    månader före den. Har registret inga bokförda månader för tillgången och
+    är något avskrivet före registret, säger meddelandet att planen (första
+    avskrivningsmånad, nyttjandeperiod, redan avskrivet) ska ändras så att den
+    stämmer med bokföringen; är inget avskrivet före registret ska månaderna
+    bokföras i registret, eller planen ändras om de redan är bokförda utanför
+    det. Det redovisade värdet vid uppdelningen är alltså det planen säger.
   - Uppdelningen görs från det första K3-året. Räknas jämförelsetalen om vid
     övergången (K3 35.7, 35.18) är jämförelseårets avskrivning per komponent en
     omräkning i uppställningen, inte en uppdelning i ett K2-år; den hör till
@@ -1760,9 +1762,10 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
     skillnad i eget kapital (S1-R7.2 a). Omföringen har källan `CLOSING` i
     serie A, som registrets avskrivningar och avyttringar.
   - En komponent avyttras med registrets vanliga avyttring.
-  - Ett år kan inte bytas till K2 eller K1 så länge en aktiv komponent skrivs
-    av i det eller i ett senare år som bytet omfattar. Kontrollen görs under
-    samma lås som bytet, och uppdelningen läser sitt år med ett delat lås.
+  - Ett år kan inte bytas till K2 eller K1 så länge en aktiv komponent som
+    skrivs av (inte mark) finns i det eller i ett senare år som bytet omfattar.
+    Kontrollen görs under samma lås som bytet, och uppdelningen läser sitt år
+    och alla senare år med ett delat lås.
   - Behandlingshistoriken: `fixed_asset.split` med datum, komponenternas id,
     anskaffningsvärde, avskrivet och omföringens verifikation (inga namn).
 

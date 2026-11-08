@@ -69,7 +69,7 @@ Ett företag som följer K3 ska dela upp en tillgång i komponenter när delarna
 
 Följer företaget K3 visar registret en påminnelse om varje byggnad som inte är uppdelad, och raden har knappen **Dela upp i komponenter**. Under K2 finns inga komponenter: där läggs byggnad och mark in som två tillgångar.
 
-1. Bokför avskrivningarna till och med månaden före uppdelningen. Har registret inga bokförda månader för tillgången måste planen – **Första avskrivningsmånad**, **Nyttjandeperiod, månader** och **Redan avskrivet, kr** – stämma med det som redan är avskrivet i bokföringen. Annars säger registret att planen ska ändras först.
+1. Bokför avskrivningarna till och med månaden före uppdelningen i registret. Är de redan bokförda utanför registret, ändra i stället planen – **Första avskrivningsmånad**, **Nyttjandeperiod, månader** och **Redan avskrivet, kr** – så att den stämmer med det som redan är avskrivet i bokföringen. Flytta inte första avskrivningsmånaden för att slippa bokföra månader som inte är bokförda någonstans: de skulle då aldrig skrivas av.
 2. Klicka på **Dela upp i komponenter** på tillgångens rad. Rutan **Komponenter** öppnas. För en byggnad är **Mark**, **Stomme**, **Tak**, **Fasad** och **Stammar och installationer** ifyllda som förslag.
 3. Kontrollera **Gäller från** – den första dagen i en månad. Förvalt är månaden efter den senast bokförda avskrivningen.
 4. Fyll i **Anskaffningsvärde, kr** för varje komponent. Tillsammans ska de bli tillgångens anskaffningsvärde; **Kvar att fördela** visar skillnaden.

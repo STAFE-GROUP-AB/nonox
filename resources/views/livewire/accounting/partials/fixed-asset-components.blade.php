@@ -123,7 +123,7 @@
 
     @if($confirmingSplit)
         <div role="alertdialog" aria-labelledby="split-confirm-title" aria-describedby="split-confirm-text" class="rounded-2xl bg-white p-5 ring-1 ring-amber-300"
-             x-data x-init="$nextTick(() => $refs.confirmSplit.focus())" x-on:keydown.escape.prevent="$wire.set('confirmingSplit', false)">
+             x-data x-init="$nextTick(() => $refs.splitBack.focus())" x-on:keydown.escape.prevent="$wire.set('confirmingSplit', false)">
             <h4 id="split-confirm-title" class="font-semibold text-ink">{{ __('Dela upp :name i :count komponenter?', ['name' => $asset->name, 'count' => count($components)]) }}</h4>
             <div id="split-confirm-text" class="mt-2 space-y-2 text-sm text-gray-700">
                 <p>{{ __('Uppdelningen går inte att ångra. Från :date skrivs :name inte av som en helhet längre, utan varje komponent skrivs av för sig. Mark skrivs aldrig av.', ['date' => $splitDate, 'name' => $asset->name]) }}</p>
@@ -153,8 +153,8 @@
                 </table>
             </div>
             <div class="mt-4 flex flex-wrap items-center gap-4">
-                <x-button type="button" x-ref="confirmSplit" wire:click="split" wire:loading.attr="disabled">{{ __('Dela upp tillgången') }}</x-button>
-                <button type="button" class="text-sm text-gray-600 underline" wire:click="$set('confirmingSplit', false)">{{ __('Tillbaka') }}</button>
+                <x-button type="button" wire:click="split" wire:loading.attr="disabled">{{ __('Dela upp tillgången') }}</x-button>
+                <button type="button" x-ref="splitBack" class="text-sm text-gray-600 underline" wire:click="$set('confirmingSplit', false)">{{ __('Tillbaka') }}</button>
             </div>
         </div>
     @endif

@@ -35,7 +35,7 @@
       "id": "2026-11-08-byggnader-mark-komponenter",
       "datum": "2026-11-08T09:45:00+01:00",
       "rubrik": "Byggnader, mark och komponenter i anläggningsregistret",
-      "beskrivning": "Anläggningsregistret har nu slagen Byggnader och Mark, och mark skrivs aldrig av. Ett företag som följer K3 kan dela upp en tillgång i komponenter, till exempel mark, stomme, tak och fasad, som skrivs av var för sig på sitt redovisade värde från uppdelningen. Bokförda avskrivningar ändras inte.",
+      "beskrivning": "Anläggningsregistret har nu slagen Byggnader och Mark, och mark skrivs aldrig av. För räkenskapsår som följer K3 (beta) kan en tillgång delas upp i komponenter, till exempel mark, stomme, tak och fasad, som skrivs av var för sig på sitt redovisade värde från uppdelningen. Bokförda avskrivningar ändras inte.",
       "typ": "Nytt",
       "omrade": "Bokslut"
     },

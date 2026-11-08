@@ -17,6 +17,7 @@ use App\Models\FixedAsset;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
@@ -154,8 +155,8 @@ it('pre-fills the asset\'s residual value across the parts by the largest remain
         ->call('reviewSplit')
         ->assertSee('Restvärde')
         ->assertSee(Money::ofOre(5_000_001)->format())
-        ->assertSeeHtml('x-init="$nextTick(() => $refs.confirmSplit.focus())"')
-        ->assertSeeHtml('x-ref="confirmSplit"');
+        ->assertSeeHtml('x-init="$nextTick(() => $refs.splitBack.focus())"')
+        ->assertSeeHtml('x-ref="splitBack"');
 });
 
 it('proposes land from a purchase without a life, and a building with a life longer than 50 years', function () {
@@ -231,6 +232,50 @@ it('lets a year without active components go to K2', function () {
     app(ChangeReportingFramework::class)($this->owner, $this->year->fresh(), ReportingFramework::K2, null, ['framework_confirmed' => true]);
 
     expect($this->year->fresh()->reporting_framework)->toBe(ReportingFramework::K2);
+});
+
+it('lets a year whose only remaining component is land go to K2, since land alone is lawful there', function () {
+    $building = reviewBuilding();
+    $this->assets->split($this->owner, $this->company, $building->id, '2026-04-01', [
+        ['name' => 'Mark', 'kind' => 'land', 'cost' => '200 000'],
+        ['name' => 'Byggnad', 'kind' => 'part', 'cost' => '800 000', 'life_months' => '600'],
+    ]);
+    $this->assets->dispose($this->owner, FixedAsset::query()->where('name', 'Byggnad')->sole(), '2026-04-01', '0');
+
+    app(ChangeReportingFramework::class)($this->owner, $this->year->fresh(), ReportingFramework::K2, null, ['framework_confirmed' => true]);
+
+    expect($this->year->fresh()->reporting_framework)->toBe(ReportingFramework::K2);
+});
+
+it('asks to book the months in the register, or to adjust the plan if they are booked elsewhere, when nothing was written off before', function () {
+    // Depreciation from January 2026, nothing written off before the register and January–March not booked yet.
+    $building = reviewBuilding(['acquired_on' => '2026-01-01', 'depreciation_start' => '2026-01-01']);
+
+    expect(fn () => $this->assets->split($this->owner, $this->company, $building->id, '2026-04-01', reviewParts()))
+        ->toThrow(ValidationException::class, 'Bokför avskrivningarna till och med 2026-03 i registret, eller – om de redan är bokförda utanför registret – ändra planen så att den stämmer.');
+});
+
+it('tells the person to choose the component accounts when the asset\'s own account cannot carry a component', function () {
+    $building = reviewBuilding(['asset_account' => '1310']);
+
+    expect(fn () => $this->assets->split($this->owner, $this->company, $building->id, '2026-04-01', reviewParts()))
+        ->toThrow(ValidationException::class, 'Tillgångens konto 1310 kan inte användas för en komponent. Välj ett tillgångskonto mellan 1100 och 1299 för komponenten.');
+});
+
+it('reads every fiscal year from the split on with a shared lock, so a later framework change cannot pass the split', function () {
+    $building = reviewBuilding();
+    FiscalYear::create(['start_date' => '2027-01-01', 'end_date' => '2027-12-31']);
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+
+    $this->assets->split($this->owner, $this->company, $building->id, '2026-04-01', reviewParts());
+
+    $locks = collect(DB::getQueryLog())->pluck('query')->filter(fn (string $sql): bool => str_contains($sql, '"fiscal_years"') && str_contains($sql, 'for share'));
+    DB::disableQueryLog();
+
+    expect($locks)->not->toBeEmpty()
+        // No upper bound on the start date: the later years are locked too.
+        ->and($locks->contains(fn (string $sql): bool => preg_match('/"start_date"[^,]{0,20}<=/', $sql) !== 1))->toBeTrue();
 });
 
 it('stops pre-filling the residual values once the person has typed one, also when costs change afterwards', function () {

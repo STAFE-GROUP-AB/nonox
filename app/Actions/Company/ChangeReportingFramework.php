@@ -7,6 +7,7 @@ namespace App\Actions\Company;
 use App\Actions\Accounting\CreateNextFiscalYear;
 use App\Domain\AnnualReport\K3Eligibility;
 use App\Domain\AnnualReport\K3EligibilityStatus;
+use App\Domain\Assets\AssetCategory;
 use App\Domain\Company\CompanySetupRules;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\ReportingFrameworkRules;
@@ -204,6 +205,8 @@ class ChangeReportingFramework
         $component = FixedAsset::query()
             ->where('company_id', $company->id)
             ->whereNotNull('parent_id')
+            // Land alone is lawful under K2 (10.22): only a depreciated component needs K3.
+            ->where('category', '!=', AssetCategory::Land->value)
             ->where('status', FixedAsset::ACTIVE)
             ->whereDate('depreciation_start', '<=', $last->end_date->toDateString())
             ->with('parent:id,number,name')
