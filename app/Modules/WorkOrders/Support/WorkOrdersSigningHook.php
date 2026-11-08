@@ -54,7 +54,12 @@ final class WorkOrdersSigningHook implements SigningHook
     /** A field worker never gets the signed copy with its prices (ADR-074 §8, review P2-1). */
     public function mayReceiveCopy(Company $company, User $user, SigningRequest $request): bool
     {
-        return ! WorkOrderPolicy::onlyAssigned($user, $company);
+        if (WorkOrderPolicy::onlyAssigned($user, $company)) {
+            return false;
+        }
+
+        // An ÄTA's files and copy only for those who may see work orders (signed-file route, ADR-074 review).
+        return $request->document_type !== ChangeOrder::SIGNING_TYPE || $user->hasTeamPermission($company, WorkOrdersModule::VIEW);
     }
 
     public function recipients(Company $company, SigningRequest $request): array

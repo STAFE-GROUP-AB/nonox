@@ -86,6 +86,24 @@ it('F1: sends the ÄTA for signing, locks its content, and approves it when the 
     expect($invoice->tax_reduction_ore->ore)->toBe(90_000)->and($invoice->labour_hours_milli)->toBe(4000);
 });
 
+it('lets the office download the signed ÄTA and its certificate, but answers 404 to a field worker and to a role without work orders', function () {
+    $sent = app(SignChangeOrder::class)->send($this->owner, $this->company, $this->changeOrder);
+    $this->post('/signera/'.tokenOf($sent['url']), ataSignInput($sent['request']))->assertOk();
+    $worker = Bookkeeping::member($this->company, 'field_worker');
+    WorkOrderAssignment::create(['work_order_id' => $this->workOrder->id, 'user_id' => $worker->id]);
+    $approver = Bookkeeping::member($this->company, 'approver');
+
+    $this->actingAs($this->owner);
+    $this->get(route('signing.file', ['signing' => $sent['request']->id, 'file' => 'signeringsbevis']))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+    $this->get(route('signing.file', ['signing' => $sent['request']->id, 'file' => 'dokument']))->assertOk();
+
+    $this->actingAs($worker);
+    $this->get(route('signing.file', ['signing' => $sent['request']->id, 'file' => 'signeringsbevis']))->assertNotFound();
+
+    $this->actingAs($approver);
+    $this->get(route('signing.file', ['signing' => $sent['request']->id, 'file' => 'dokument']))->assertNotFound();
+});
+
 it('refuses to send an ÄTA without a price', function () {
     $empty = app(SaveChangeOrder::class)($this->owner, $this->company, $this->workOrder, ['title' => 'Utan pris', 'description' => 'Ännu inte prissatt.']);
 
