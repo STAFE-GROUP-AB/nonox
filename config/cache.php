@@ -24,6 +24,14 @@ return [
 
     // Merged with the framework's stores (array, file, database, redis, ...).
     'stores' => [
+        // Try without registering (ADR-077): a guest's cache, build state and rate limits live in the demo database.
+        'demo' => [
+            'driver' => 'database',
+            'connection' => 'demo',
+            'table' => 'cache',
+            'lock_connection' => 'demo',
+            'lock_table' => 'cache_locks',
+        ],
         'chat' => match ($chatDriver) {
             'redis' => [
                 'driver' => 'redis',

@@ -7,6 +7,7 @@ namespace App\Support\Hq;
 use App\Jobs\SyncToOperator;
 use App\Models\Company;
 use App\Models\WaitlistEntry;
+use App\Support\Demo\DemoMode;
 use App\Support\Instance\InstanceSettings;
 
 /**
@@ -23,6 +24,11 @@ final class OperatorSync
 
     public static function companySaved(Company $company, bool $created): void
     {
+        // A demo company (ADR-077) lives in the demo database and is nobody's customer.
+        if (DemoMode::onDemoDatabase()) {
+            return;
+        }
+
         $target = InstanceSettings::current()->operatorCompanyId();
 
         if ($target === null || (! $created && ! $company->wasChanged(self::WATCHED))) {

@@ -19,7 +19,7 @@ class NotForDemoGuests
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (DemoMode::guest()) {
+        if (DemoMode::active()) {
             Toast::flash(DemoMode::message(), 'error');
 
             return redirect()->route('dashboard');

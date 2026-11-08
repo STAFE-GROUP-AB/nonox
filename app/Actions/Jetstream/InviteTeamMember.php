@@ -31,7 +31,7 @@ class InviteTeamMember implements InvitesTeamMembers
     {
         Gate::forUser($user)->authorize('addTeamMember', $team);
 
-        DemoMode::refuse('email', $team, $user);
+        DemoMode::refuse('email');
 
         $email = User::normaliseEmail($email);
 

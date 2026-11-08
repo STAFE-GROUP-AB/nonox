@@ -29,7 +29,6 @@ use Laravel\Sanctum\HasApiTokens;
  * @property ?list<string> $hidden_panels
  * @property ?CarbonImmutable $sessions_valid_from
  * @property ?CarbonImmutable $anonymised_at
- * @property ?CarbonImmutable $demo_expires_at
  */
 class User extends Authenticatable implements PasskeyUser
 {
@@ -85,7 +84,6 @@ class User extends Authenticatable implements PasskeyUser
             'email_verified_at' => 'datetime',
             'sessions_valid_from' => 'immutable_datetime',
             'anonymised_at' => 'immutable_datetime',
-            'demo_expires_at' => 'immutable_datetime',
             'hidden_panels' => 'array',
         ];
     }
@@ -99,12 +97,6 @@ class User extends Authenticatable implements PasskeyUser
     protected function email(): Attribute
     {
         return Attribute::make(set: fn (string $value): string => self::normaliseEmail($value));
-    }
-
-    /** A visitor trying NONOX without an account (ADR-077): temporary, no real address, removed when the demo ends. */
-    public function isDemoGuest(): bool
-    {
-        return $this->demo_expires_at !== null;
     }
 
     public static function normaliseEmail(string $email): string

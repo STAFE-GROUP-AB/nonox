@@ -28,8 +28,10 @@ use InvalidArgumentException;
  * All of it happens in one transaction, so a build that fails leaves
  * nothing behind. The company gets its own organisation number from a
  * range the developer demos do not use, is flagged as a test company (so
- * every rule for test companies applies) and, last, both rows get the time
- * the demo ends. Nothing is blocked while it is built (DemoMode::seeding).
+ * every rule for test companies applies) and, last, demo_sessions records
+ * the time the demo ends. It all happens in the demo database, which is the
+ * default connection while it runs. Nothing is blocked while it is built
+ * (DemoMode::building).
  *
  * @phpstan-import-type Demo from DemoIndustries
  */
@@ -53,7 +55,7 @@ final class CreateDemo
         Model::reguard();
 
         try {
-            return DemoMode::seeding(fn (): User => DB::transaction(fn (): User => $this->create($slug, $demos[$slug], $expiresAt)));
+            return DemoMode::building(fn (): User => DB::transaction(fn (): User => $this->create($slug, $demos[$slug], $expiresAt)));
         } finally {
             if ($unguarded) {
                 Model::unguard();
@@ -81,8 +83,14 @@ final class CreateDemo
             CurrentCompany::run($company, fn () => $extra->afterAll($context));
         }
 
-        $company->forceFill(['is_test_company' => true, 'demo_expires_at' => $expiresAt])->save();
-        $guest->forceFill(['demo_expires_at' => $expiresAt, 'current_team_id' => $company->id])->save();
+        $company->forceFill(['is_test_company' => true])->save();
+        $guest->forceFill(['current_team_id' => $company->id])->save();
+
+        DB::table('demo_sessions')->insert([
+            'user_id' => $guest->id,
+            'company_id' => $company->id,
+            'expires_at' => $expiresAt,
+        ]);
 
         return $guest;
     }

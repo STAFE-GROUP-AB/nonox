@@ -51,7 +51,7 @@ final class ModuleManager
         }
 
         // A demo company (ADR-077) reaches nothing outside NONOX: these modules are off while a visitor is in it.
-        return ! DemoMode::moduleBlocked($key, $companyId);
+        return ! DemoMode::moduleBlocked($key);
     }
 
     /**

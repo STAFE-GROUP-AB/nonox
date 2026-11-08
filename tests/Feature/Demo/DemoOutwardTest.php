@@ -17,79 +17,84 @@ use App\Modules\ModuleManager;
 use App\Support\Demo\DemoMode;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\PersonalAccessToken;
 use Tests\Support\Bookkeeping;
+use Tests\Support\Demo;
 
 /*
- * Nothing leaves the building from a demo (ADR-077): e-mail, Peppol, bank,
- * Skatteverket, payment files, API tokens, invitations and AI are shut for a
- * demo company and its guest, while a real company is untouched.
+ * Nothing leaves the building from the demo database (ADR-077): e-mail,
+ * Peppol, bank, Skatteverket, payment files, API tokens, invitations and AI
+ * are shut for work on the demo connection, while the main database is
+ * untouched.
  */
 
+beforeEach(fn () => config(['app.landing.hosted' => true]));
+
 /**
- * A demo company with a guest as its owner, flagged the way CreateDemo does.
+ * A demo company with a guest as its owner and some modules on, made while the demo is being built.
  *
  * @return array{0: User, 1: Company}
  */
 function openDemo(): array
 {
-    [$owner, $company] = Bookkeeping::company();
+    [$guest, $company] = Demo::company();
 
-    $modules = app(ModuleManager::class);
-    $modules->enable(AiModule::KEY, $company, $owner);
-    $modules->enable(InboxModule::KEY, $company, $owner);
-    $modules->enable(CrmModule::KEY, $company, $owner);
+    DemoMode::building(function () use ($company, $guest) {
+        $modules = app(ModuleManager::class);
+        $modules->enable(AiModule::KEY, $company, $guest);
+        $modules->enable(InboxModule::KEY, $company, $guest);
+        $modules->enable(CrmModule::KEY, $company, $guest);
+    });
 
-    $at = CarbonImmutable::now()->addHours(2);
-    $company->forceFill(['is_test_company' => true, 'demo_expires_at' => $at])->save();
-    $owner->forceFill(['demo_expires_at' => $at])->save();
-
-    return [$owner->fresh(), $company->fresh()];
+    return [$guest, $company];
 }
 
-it('turns off the modules that talk to the outside world, and only for a demo', function () {
-    [$guest, $demo] = openDemo();
+it('turns off the modules that talk to the outside world in the demo database, and only there', function () {
+    [, $demo] = openDemo();
     [$ownerOfReal, $real] = Bookkeeping::company();
     $modules = app(ModuleManager::class);
     $modules->enable(AiModule::KEY, $real, $ownerOfReal);
     $modules->enable(InboxModule::KEY, $real, $ownerOfReal);
 
-    expect($modules->isEnabled(AiModule::KEY, $demo))->toBeFalse()
-        ->and($modules->isEnabled(InboxModule::KEY, $demo))->toBeFalse()
-        ->and($modules->isEnabled(CrmModule::KEY, $demo))->toBeTrue()
-        ->and($modules->isEnabled(AiModule::KEY, $real))->toBeTrue()
-        ->and($modules->isEnabled(InboxModule::KEY, $real))->toBeTrue()
-        ->and(DemoMode::seeding(fn (): bool => $modules->isEnabled(AiModule::KEY, $demo)))->toBeTrue();
+    DemoMode::onDemoConnection(function () use ($modules, $demo) {
+        expect($modules->isEnabled(AiModule::KEY, $demo))->toBeFalse()
+            ->and($modules->isEnabled(InboxModule::KEY, $demo))->toBeFalse()
+            ->and($modules->isEnabled(CrmModule::KEY, $demo))->toBeTrue();
 
-    foreach (['peppol', 'banking', 'connect', 'pos'] as $key) {
-        expect(DemoMode::moduleBlocked($key, $demo->id))->toBeTrue()
-            ->and(DemoMode::moduleBlocked($key, $real->id))->toBeFalse();
-    }
+        foreach (['peppol', 'banking', 'connect', 'pos'] as $key) {
+            expect(DemoMode::moduleBlocked($key))->toBeTrue();
+        }
+
+        // While the demo is built they are on.
+        expect(DemoMode::building(fn (): bool => $modules->isEnabled(AiModule::KEY, $demo)))->toBeTrue();
+    });
+
+    expect($modules->isEnabled(AiModule::KEY, $real))->toBeTrue()
+        ->and($modules->isEnabled(InboxModule::KEY, $real))->toBeTrue()
+        ->and(DemoMode::moduleBlocked('ai'))->toBeFalse();
 });
 
-it('refuses every HTTP request while a demo company is the current company', function () {
-    [$guest] = openDemo();
-    [$member] = Bookkeeping::company();
+it('refuses every HTTP request on the demo connection', function () {
     Http::fake();
 
-    $this->actingAs($member);
     expect(Http::get('https://example.test/real')->status())->toBe(200);
 
-    $this->actingAs($guest);
-    expect(fn () => Http::get('https://example.test/demo'))->toThrow(ConnectionException::class);
-    Http::assertNotSent(fn ($request): bool => str_contains($request->url(), '/demo'));
+    DemoMode::onDemoConnection(function () {
+        expect(fn () => Http::get('https://example.test/demo'))->toThrow(ConnectionException::class);
 
-    // The build itself is not blocked.
-    expect(DemoMode::seeding(fn (): int => Http::get('https://example.test/building')->status()))->toBe(200);
+        // The build itself is not blocked.
+        expect(DemoMode::building(fn (): int => Http::get('https://example.test/building')->status()))->toBe(200);
+    });
+
+    Http::assertNotSent(fn ($request): bool => str_contains($request->url(), '/demo'));
 });
 
-it('sends no mail while a demo is open, and none to a guest address', function () {
-    [$guest] = openDemo();
-    $transport = fn () => app('mailer')->getSymfonyTransport();
-    $count = fn (): int => count($transport()->messages());
+it('sends no mail on the demo connection, and none to a guest address', function () {
+    $count = fn (): int => count(app('mailer')->getSymfonyTransport()->messages());
     $before = $count();
 
     Mail::raw('Hej', fn ($message) => $message->to('kund@example.test')->subject('Före'));
@@ -98,44 +103,54 @@ it('sends no mail while a demo is open, and none to a guest address', function (
     Mail::raw('Hej', fn ($message) => $message->to('gast-abc@demo.invalid')->subject('Till gäst'));
     expect($count())->toBe($before + 1);
 
-    $this->actingAs($guest);
-    Mail::raw('Hej', fn ($message) => $message->to('kund@example.test')->subject('Under demon'));
-    expect($count())->toBe($before + 1);
+    DemoMode::onDemoConnection(function () use ($count, $before) {
+        Mail::raw('Hej', fn ($message) => $message->to('kund@example.test')->subject('Under demon'));
+        expect($count())->toBe($before + 1);
+    });
 });
 
 it('does not invite anyone from a demo', function () {
     [$guest, $demo] = openDemo();
     Mail::fake();
 
-    expect(fn () => app(InviteTeamMember::class)->invite($guest, $demo, 'ny@example.test', 'admin'))->toThrow(ValidationException::class);
+    DemoMode::onDemoConnection(function () use ($guest, $demo) {
+        expect(fn () => app(InviteTeamMember::class)->invite($guest, $demo, 'ny@example.test', 'admin'))->toThrow(ValidationException::class);
 
-    expect(TeamInvitation::query()->where('team_id', $demo->id)->count())->toBe(0);
+        expect(TeamInvitation::query()->where('team_id', $demo->id)->count())->toBe(0);
+    });
+
     Mail::assertNothingSent();
 });
 
 it('makes no payment file in a demo', function () {
     [$guest, $demo] = openDemo();
 
-    try {
-        app(CreatePaymentBatch::class)($guest, $demo, [], CarbonImmutable::today()->addDay(), true);
-        $thrown = null;
-    } catch (ValidationException $exception) {
-        $thrown = $exception;
-    }
+    $thrown = DemoMode::onDemoConnection(function () use ($guest, $demo) {
+        try {
+            app(CreatePaymentBatch::class)($guest, $demo, [], CarbonImmutable::today()->addDay(), true);
+        } catch (ValidationException $exception) {
+            return $exception;
+        }
+
+        return null;
+    });
 
     expect($thrown?->errors())->toHaveKey('batch')
         ->and($thrown->errors()['batch'][0])->toBe(DemoMode::message());
 });
 
-it('gives a guest no API token', function () {
+it('gives no API token in the demo database', function () {
     [$guest] = openDemo();
-    $before = PersonalAccessToken::query()->count();
 
-    $guest->createToken('försök');
+    DemoMode::onDemoConnection(function () use ($guest) {
+        $before = PersonalAccessToken::query()->count();
+        $guest->createToken('försök');
 
-    expect(PersonalAccessToken::query()->count())->toBe($before);
+        expect(PersonalAccessToken::query()->count())->toBe($before);
+    });
 
     $real = User::factory()->create();
+    $before = PersonalAccessToken::query()->count();
     $real->createToken('riktig');
 
     expect(PersonalAccessToken::query()->count())->toBe($before + 1);
@@ -143,11 +158,14 @@ it('gives a guest no API token', function () {
 
 it('keeps a guest out of the profile and from making more companies', function () {
     [$guest] = openDemo();
+    $token = Demo::token($guest);
+    $this->get(route('demo.open', $token))->assertRedirect(route('dashboard'));
+    $this->withCookie(DemoMode::COOKIE, Demo::sessionId());
 
-    $this->actingAs($guest)->get(route('profile.show'))->assertRedirect(route('dashboard'));
-    $this->actingAs($guest)->get(route('teams.create'))->assertRedirect(route('dashboard'));
+    $this->get(route('profile.show'))->assertRedirect(route('dashboard'));
+    $this->get(route('teams.create'))->assertRedirect(route('dashboard'));
 
-    expect(fn () => app(CreateCompany::class)->create($guest, [
+    DemoMode::onDemoConnection(fn () => expect(fn () => app(CreateCompany::class)->create($guest, [
         'name' => 'Ett till AB',
         'org_number' => '556036-0793',
         'legal_form' => 'AB',
@@ -159,9 +177,10 @@ it('keeps a guest out of the profile and from making more companies', function (
         'framework_confirmed' => true,
         'f_skatt' => true,
         'employer_registered' => false,
-    ]))->toThrow(ValidationException::class);
+    ]))->toThrow(ValidationException::class));
 
-    // A signed-in real user still reaches both.
+    // A signed-in real user, on the main database, still reaches the profile.
+    $this->defaultCookies = [];
     [$member] = Bookkeeping::company();
     $this->actingAs($member)->get(route('profile.show'))->assertOk();
 });
@@ -177,23 +196,27 @@ it('sends no sign-in code to a guest\'s placeholder address', function () {
 
 it('shows the demo banner with the time left on every page of a demo, and not on a real company', function () {
     [$guest] = openDemo();
-    [$member] = Bookkeeping::company();
+    $this->get(route('demo.open', Demo::token($guest)))->assertRedirect(route('dashboard'));
 
-    $this->actingAs($guest)->get(route('dashboard'))
+    $this->withCookie(DemoMode::COOKIE, Demo::sessionId())->get(route('dashboard'))
         ->assertOk()
         ->assertSee('data-demo-banner', false)
         ->assertSee('Allt du gör försvinner')
         ->assertSee('demons uppgifter följer inte med');
+
+    $this->defaultCookies = [];
+    [$member] = Bookkeeping::company();
 
     $this->actingAs($member)->get(route('dashboard'))->assertDontSee('data-demo-banner', false);
 });
 
 it('ends a guest\'s session when the time is up', function () {
     [$guest] = openDemo();
-    $guest->forceFill(['demo_expires_at' => CarbonImmutable::now()->subMinute()])->save();
+    $this->get(route('demo.open', Demo::token($guest)))->assertRedirect(route('dashboard'));
+    $session = Demo::sessionId();
 
-    config(['nonox.demo.hours' => 2, 'app.landing.hosted' => true]);
+    DB::connection('demo')->table('demo_sessions')->where('user_id', $guest->id)->update(['expires_at' => CarbonImmutable::now()->subMinute()]);
+    config(['app.landing.hosted' => true]);
 
-    $this->actingAs($guest)->get(route('dashboard'))->assertRedirect(route('demo.show'));
-    $this->assertGuest();
+    $this->withCookie(DemoMode::COOKIE, $session)->get(route('dashboard'))->assertRedirect(route('demo.show'));
 });

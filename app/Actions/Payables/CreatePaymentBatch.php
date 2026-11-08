@@ -48,7 +48,7 @@ class CreatePaymentBatch
         Gate::forUser($user)->authorize('create', [SupplierPaymentBatch::class, $company]);
 
         // A payment file is meant for a bank; a demo has none (ADR-077).
-        DemoMode::refuse('batch', $company, $user);
+        DemoMode::refuse('batch');
 
         ReviewConfirmation::demand($figuresReviewed, 'figures_reviewed');
 

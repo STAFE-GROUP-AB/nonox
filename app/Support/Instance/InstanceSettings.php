@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Instance;
 
 use App\Models\InstanceSetting;
+use App\Support\Demo\DemoMode;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -66,14 +67,17 @@ final class InstanceSettings
 
         $values = self::DEFAULTS;
 
-        // Model events on companies ask before this table exists, while older migrations run.
-        self::$tableExists = self::$tableExists || Schema::hasTable('instance_settings');
+        // The installation's settings are the main database's, also when a guest's request has the demo database as default (ADR-077).
+        DemoMode::onMainConnection(function () use (&$values): void {
+            // Model events on companies ask before this table exists, while older migrations run.
+            self::$tableExists = self::$tableExists || Schema::hasTable('instance_settings');
 
-        if (self::$tableExists) {
-            foreach (InstanceSetting::query()->whereIn('key', array_keys(self::DEFAULTS))->get() as $setting) {
-                $values[$setting->key] = $setting->value;
+            if (self::$tableExists) {
+                foreach (InstanceSetting::query()->whereIn('key', array_keys(self::DEFAULTS))->get() as $setting) {
+                    $values[$setting->key] = $setting->value;
+                }
             }
-        }
+        });
 
         return $this->values = $values;
     }

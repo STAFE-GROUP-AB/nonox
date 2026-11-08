@@ -70,7 +70,9 @@ Route::get('/flytta-hit', MigrationGuideController::class)->name('migrationGuide
 // Try without registering (ADR-077): a demo company of one's own for two hours. 404 while the instance setting is off.
 Route::get('/prova', [DemoController::class, 'show'])->name('demo.show');
 Route::post('/prova', [DemoController::class, 'start'])->name('demo.start');
-Route::get('/prova/bygger', [DemoController::class, 'building'])->name('demo.building');
+Route::get('/prova/bygger/{token}', [DemoController::class, 'building'])->where('token', '[A-Za-z0-9]{40}')->name('demo.building');
+// A guest request (UseDemoDatabase): the session of the demo starts here, in the demo database.
+Route::get('/prova/oppna/{token}', [DemoController::class, 'open'])->where('token', '[A-Za-z0-9]{40}')->name('demo.open');
 // The waiting list of the open beta (ADR-038): the way in for new users of the hosted service.
 Route::get('/ko', WaitlistController::class)->name('waitlist');
 Route::get('/integritetspolicy', LegalPageController::class)->defaults('document', 'privacy')->name('legal.privacy');

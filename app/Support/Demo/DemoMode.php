@@ -4,33 +4,64 @@ declare(strict_types=1);
 
 namespace App\Support\Demo;
 
-use App\Models\Company;
 use App\Models\User;
 use App\Support\Instance\InstanceSettings;
-use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
+use Illuminate\Cache\RateLimiter;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * "Try without registering" (ADR-077). A demo company is an ordinary tenant
- * flagged with demo_expires_at (and is_test_company); its owner is a guest
- * user flagged the same way. This class answers the one question the
- * safeguards ask: is the work going on right now in a demo?
+ * "Try without registering" (ADR-077, addendum 2026-11-08): demos live in a
+ * database of their own, the connection "demo". Everything a guest does runs
+ * with that connection as the default, so "is this a demo?" is one question:
+ * is the default connection the demo connection?
  *
- * While a demo is being built (seeding) nothing is blocked, since the build
- * uses the same Actions as the app, some of which touch what a visitor may
- * not touch.
+ * Laravel facts this relies on (read in vendor/laravel/framework 2026-11-08):
+ * the default connection is config('database.default'), read at every call
+ * (DatabaseManager::setDefaultConnection, Model::resolveConnection(null));
+ * the session's database handler takes config('session.connection') when the
+ * driver is created, and drivers are cached (Manager::forgetDrivers); the
+ * cache store and the rate limiter singleton are built from config('cache.*')
+ * once; the queue default is config('queue.default') at dispatch.
  */
 final class DemoMode
 {
-    /** Modules that reach outside NONOX; off for a demo company while a visitor is in it. */
-    public const array BLOCKED_MODULES = ['ai', 'banking', 'peppol', 'connect', 'pos', 'inbox'];
+    public const string CONNECTION = 'demo';
+
+    /** A guest's session cookie. A different name from the main session's, so one can never be read as the other. */
+    public const string COOKIE = 'nonox_demo_session';
 
     /** The reserved top-level domain (RFC 6761) of a guest's placeholder address. */
     public const string GUEST_DOMAIN = 'demo.invalid';
 
+    /** Modules that reach outside NONOX; off for the demo database. */
+    public const array BLOCKED_MODULES = ['ai', 'banking', 'peppol', 'connect', 'pos', 'inbox'];
+
+    /** Settings that a guest request changes and the end of the request puts back. */
+    private const array SWITCHED = [
+        'database.default',
+        'session.driver',
+        'session.connection',
+        'session.cookie',
+        'session.table',
+        'cache.default',
+        'cache.limiter',
+        'queue.default',
+    ];
+
     private static int $seeding = 0;
+
+    /** The main connection's name, remembered at boot: setDefaultConnection() overwrites config('database.default'). */
+    private static ?string $main = null;
+
+    /** @var ?array<string, mixed> the values before a guest request switched them */
+    private static ?array $saved = null;
+
+    /** @var array<int, ?CarbonImmutable> */
+    private static array $expiries = [];
 
     /** Whether /prova is open on this installation (the HQ switch, else hosted installations). */
     public static function enabled(): bool
@@ -38,23 +69,27 @@ final class DemoMode
         return InstanceSettings::current()->demoEnabled();
     }
 
-    /**
-     * Runs $callback as the demo builder: nothing is blocked inside it.
-     *
-     * @template T
-     *
-     * @param  callable(): T  $callback
-     * @return T
-     */
-    public static function seeding(callable $callback): mixed
+    /** The name of the main connection, as it was before any demo switch. */
+    public static function mainConnection(): string
     {
-        self::$seeding++;
+        return self::$main ??= (string) config('database.default');
+    }
 
-        try {
-            return $callback();
-        } finally {
-            self::$seeding--;
-        }
+    /** Called when the application boots, before anything can switch the default connection. */
+    public static function rememberMainConnection(): void
+    {
+        self::$main = (string) config('database.default');
+    }
+
+    public static function onDemoDatabase(): bool
+    {
+        return DB::getDefaultConnection() === self::CONNECTION;
+    }
+
+    /** Whether work is going on in the demo database right now, outside the build. */
+    public static function active(): bool
+    {
+        return self::onDemoDatabase() && ! self::isSeeding();
     }
 
     public static function isSeeding(): bool
@@ -62,53 +97,153 @@ final class DemoMode
         return self::$seeding > 0;
     }
 
-    /** Whether work is going on in a demo company right now, outside the build. */
-    public static function active(): bool
+    /**
+     * Runs $callback on the demo connection as the default, as the demo
+     * builder: nothing is blocked inside it.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function building(callable $callback): mixed
     {
-        if (self::isSeeding()) {
-            return false;
+        self::$seeding++;
+
+        try {
+            return self::onDemoConnection($callback);
+        } finally {
+            self::$seeding--;
         }
-
-        $id = CurrentCompany::id();
-
-        return $id !== null && self::isDemoCompany($id);
-    }
-
-    /** Whether the user (the signed-in one by default) is a guest, outside the build. */
-    public static function guest(?User $user = null): bool
-    {
-        $user ??= Auth::user() instanceof User ? Auth::user() : null;
-
-        return ! self::isSeeding() && $user?->isDemoGuest() === true;
-    }
-
-    public static function isDemoCompany(Company|int $company): bool
-    {
-        if ($company instanceof Company) {
-            return $company->demo_expires_at !== null;
-        }
-
-        return CompanyScope::bypass(
-            fn (): bool => Company::query()->whereKey($company)->whereNotNull('demo_expires_at')->exists(),
-        );
-    }
-
-    public static function moduleBlocked(string $key, ?int $companyId): bool
-    {
-        return ! self::isSeeding()
-            && $companyId !== null
-            && in_array($key, self::BLOCKED_MODULES, true)
-            && self::isDemoCompany($companyId);
     }
 
     /**
-     * @throws ValidationException when the work is in a demo company or by a guest
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
      */
-    public static function refuse(string $field = 'demo', ?Company $company = null, ?User $user = null): void
+    public static function onDemoConnection(callable $callback): mixed
     {
-        $inDemo = $company instanceof Company ? self::isDemoCompany($company) && ! self::isSeeding() : self::active();
+        $previous = DB::getDefaultConnection();
+        DB::setDefaultConnection(self::CONNECTION);
 
-        if ($inDemo || self::guest($user)) {
+        try {
+            return $callback();
+        } finally {
+            DB::setDefaultConnection($previous);
+        }
+    }
+
+    /**
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function onMainConnection(callable $callback): mixed
+    {
+        $previous = DB::getDefaultConnection();
+        DB::setDefaultConnection(self::mainConnection());
+
+        try {
+            return $callback();
+        } finally {
+            DB::setDefaultConnection($previous);
+        }
+    }
+
+    public static function moduleBlocked(string $key): bool
+    {
+        return self::active() && in_array($key, self::BLOCKED_MODULES, true);
+    }
+
+    /**
+     * Makes this request a guest's: the demo database, a session in it under
+     * its own cookie, its own cache store and queue. Called before the
+     * session starts and before the user is resolved, so nothing is read
+     * from the main database first.
+     */
+    public static function activateRequest(): void
+    {
+        if (self::$saved !== null) {
+            return;
+        }
+
+        self::$saved = [];
+
+        foreach (self::SWITCHED as $key) {
+            self::$saved[$key] = config($key);
+        }
+
+        config([
+            'database.default' => self::CONNECTION,
+            'session.driver' => 'database',
+            'session.connection' => self::CONNECTION,
+            'session.cookie' => self::COOKIE,
+            'session.table' => 'sessions',
+            'cache.default' => self::CONNECTION,
+            'cache.limiter' => self::CONNECTION,
+            'queue.default' => self::CONNECTION,
+        ]);
+
+        self::refreshServices();
+    }
+
+    /** Puts the main settings back; a request ends here, and so does each request in a test. */
+    public static function deactivateRequest(): void
+    {
+        if (self::$saved === null) {
+            return;
+        }
+
+        config(self::$saved);
+        self::$saved = null;
+        self::$expiries = [];
+
+        self::refreshServices();
+    }
+
+    public static function requestIsActive(): bool
+    {
+        return self::$saved !== null;
+    }
+
+    /** The services that hold on to a connection or store once they are built. */
+    private static function refreshServices(): void
+    {
+        app('session')->forgetDrivers();
+        app()->forgetInstance('session.store');
+        app()->forgetInstance(RateLimiter::class);
+        Auth::forgetGuards();
+        CurrentCompany::forget();
+    }
+
+    /** When the demo of this guest ends, from the demo database. */
+    public static function expiresAt(?User $user = null): ?CarbonImmutable
+    {
+        $user ??= Auth::user() instanceof User ? Auth::user() : null;
+
+        if (! $user instanceof User || ! self::onDemoDatabase()) {
+            return null;
+        }
+
+        return self::$expiries[$user->id] ??= self::lookupExpiry($user->id);
+    }
+
+    private static function lookupExpiry(int $userId): ?CarbonImmutable
+    {
+        $at = DB::table('demo_sessions')->where('user_id', $userId)->value('expires_at');
+
+        return $at === null ? null : CarbonImmutable::parse((string) $at);
+    }
+
+    /**
+     * @throws ValidationException when the work is in the demo database
+     */
+    public static function refuse(string $field = 'demo'): void
+    {
+        if (self::active()) {
             throw ValidationException::withMessages([$field => self::message()]);
         }
     }

@@ -30,7 +30,6 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  *
  * @property LegalForm $legal_form
  * @property ?string $logo_path
- * @property ?CarbonImmutable $demo_expires_at
  * @property bool $require_passkeys
  * @property ?string $brand_color
  * @property ?string $brand_accent_color
@@ -135,7 +134,6 @@ class Company extends JetstreamTeam
     {
         return [
             'personal_team' => 'boolean',
-            'demo_expires_at' => 'immutable_datetime',
             'legal_form' => LegalForm::class,
             'accounting_method' => AccountingMethod::class,
             'vat_period' => VatPeriod::class,
@@ -223,12 +221,6 @@ class Company extends JetstreamTeam
     public function isTestCompany(): bool
     {
         return (bool) $this->is_test_company;
-    }
-
-    /** A demo company made for a visitor who tries NONOX without an account (ADR-077); removed when it expires. */
-    public function isDemo(): bool
-    {
-        return $this->demo_expires_at !== null;
     }
 
     /**

@@ -10839,5 +10839,6 @@
     ":min min": ":min min",
     "(ett konto börjar från början, demons uppgifter följer inte med)": "(an account starts from scratch, the demo's data does not come along)",
     "Prova utan att registrera är öppen": "Try without registering is open",
-    "Öppen: vem som helst kan på /prova få ett påhittat demoföretag i två timmar, utan konto. Det rensas bort av sig självt. Stängd: sidan finns inte och inget demoföretag skapas.": "Open: anyone can get an invented demo company for two hours on /prova, without an account. It is removed by itself. Closed: the page does not exist and no demo company is created."
+    "Öppen: vem som helst kan på /prova få ett påhittat demoföretag i två timmar, utan konto. Det rensas bort av sig självt. Stängd: sidan finns inte och inget demoföretag skapas.": "Open: anyone can get an invented demo company for two hours on /prova, without an account. It is removed by itself. Closed: the page does not exist and no demo company is created.",
+    "Demon städas just nu och är öppen igen om en stund. Försök igen senare.": "The demo is being cleaned up right now and opens again in a little while. Try again later."
 }

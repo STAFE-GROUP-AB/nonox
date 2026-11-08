@@ -31,7 +31,7 @@ Inget i demon lämnar NONOX. Därför gäller det här:
 
 ## Det här händer med demon
 
-Demon varar i två timmar. Sedan loggas du ut och demoföretaget tas bort med allt du lagt in. Det går inte att få tillbaka det, och det går inte att flytta över till ett konto.
+Demon varar i två timmar. Sedan loggas du ut och demoföretaget går inte längre att öppna. Det ligger i en egen databas som är skild från den riktiga, och som töms helt när inga demor är igång. Du kan inte få tillbaka det, och det går inte att flytta över till ett konto.
 
 > [!IMPORTANT]
 > Skapar du ett konto efteråt börjar det från början. Demons uppgifter följer inte med, och det är avsiktligt: påhittade och riktiga uppgifter ska inte blandas i samma bokföring. Flyttar du från ett annat program läser du in din bokföring med en SIE-fil, se [Flytta till NONOX](/manual/flytta).

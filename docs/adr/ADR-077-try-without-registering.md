@@ -46,9 +46,9 @@ A visitor presses "Starta demon" on `/prova`, chooses an industry (the six singl
   (NONOX has none), `email_verified_at` set so the usual middleware lets it through;
 - a **demo company** owned by the guest: a fresh copy of the industry demo built by the same code as
   the developer seeders, with its own unique organisation number, flagged `is_test_company` (so every
-  rule for test companies applies) and `demo_expires_at`.
+  rule for test companies applies), in the demo database (addendum).
 
-The two rows are made in **one database transaction**. A build that fails leaves nothing behind. The
+The two rows are made in **one database transaction** in the demo database. A build that fails leaves nothing behind. The
 build runs as a queued job (`BuildDemoCompany`) because it takes seconds; the visitor waits on a page
 that refreshes itself, and the browser is signed in as the guest only when the job has finished and
 only from the session that asked for it. On an installation with the `sync` queue the job runs inside
@@ -67,42 +67,27 @@ Companies are separate tenants (ADR-005); nothing in the demo can read or write 
   once. Beyond that the page says the demo is full and to try again in a few minutes.
 - CSRF protection applies as on every form. No script from another origin is loaded.
 
-### 3. Sessions expire, and a scheduled command removes the rest
+### 3. Sessions expire, and the demo database is built again
+
+Superseded in part by the addendum below: demos live in a database of their own, and the first version's
+exception in the immutability triggers was dropped before it shipped.
 
 - A demo lasts **2 hours** (`NONOX_DEMO_HOURS`). `EndExpiredSessions` signs a guest out and sends them
-  to `/prova` when the time is up, with a message.
-- `demo:prune` runs every ten minutes. It selects companies where `demo_expires_at` has passed,
-  `is_test_company` is true and **every member is a guest user**, and removes each one, its files and its
-  guest user. It never truncates, wipes or drops anything.
-- **It is the only deletion NONOX makes.** To make it possible without weakening the immutability
-  rules, migration `2026_12_19_100000` adds:
-  - `nonox_demo_purge(row)`, true only when the transaction has named the row's company in the setting
-    `nonox.demo_purge` and that company is an expired demo (or is already being deleted in the same
-    cascade);
-  - one line at the top of each trigger function that guards DELETE, letting such a row through.
-    UPDATE, INSERT and TRUNCATE keep their rules;
-  - a trigger on `teams` that refuses to delete any company that is not an expired demo, and any
-    company other than the one the transaction has named.
-  A real company has no `demo_expires_at`, so the function answers false for every one of its rows and
-  the team trigger refuses it. The purge refuses a flagged company that has a member who is not a guest.
-- A trigger function redefined by a later migration would lose its line. `CreateDemoTest` builds a whole
-  demo company and purges it, so a new append-only table or a rewritten function that blocks the purge
-  fails that test at once. The rule for authors: when you create or replace a trigger that rejects
-  DELETE, start its body with the same line (see the migration).
-- Stored files that belong to the company (`StoredFiles::REFERENCES`) are deleted after the rows, only
-  when no other row refers to them.
+  to `/prova` when the time is up, with a message. The end time is in `demo_sessions` in the demo database.
+- `demo:prune` runs every ten minutes and clears out expired demos by building the demo database again
+  (addendum, section D).
 
 ### 4. Nothing leaves the building
 
-A demo company can reach nothing outside NONOX:
+The demo database can reach nothing outside NONOX:
 
 | Outward path | How it is shut |
 |---|---|
 | Documents (invoices, quotes, reminders, CRM mail) | The test-company rules (ADR-032) already mark them as sent without e-mailing; the CRM follows the same rule |
 | Invitations | `InviteTeamMember` refuses in a demo |
 | Any other e-mail | A `MessageSending` listener cancels every message to a `@demo.invalid` address, in any process |
-| Peppol, bank, AI, NONOX API, till systems, inbox | The modules `peppol`, `banking`, `ai`, `connect`, `pos`, `inbox` report "off" for a demo company (ModuleManager) |
-| Skatteverket, VIES, Riksbanken, any other HTTP | A global HTTP-client middleware refuses every request made while a demo company is the current company |
+| Peppol, bank, AI, NONOX API, till systems, inbox | The modules `peppol`, `banking`, `ai`, `connect`, `pos`, `inbox` report "off" in the demo database (ModuleManager) |
+| Skatteverket, VIES, Riksbanken, any other HTTP | A global HTTP-client middleware refuses every request made while the demo connection is the default |
 | Payment files | Creating or downloading a bank payment file (pain.001) is refused in a demo |
 | API tokens | Creating a personal access token for a guest is refused |
 | New companies, profile, deleting the account | The guest cannot create a company or open the profile page |
@@ -117,7 +102,7 @@ its own. Seeded data contains only invented names, `example`/`test` addresses an
 A banner on every page of a demo: "Demo. Det här är ett påhittat företag. Allt du gör försvinner när
 tiden är ute (om 1 tim 40 min). Inget skickas till någon." with a link "Skapa konto" that leads to the
 queue or sign-in (`SignupPath`). **Nothing is carried over**: an account is a fresh start; the demo's
-data is deleted, and the page says so. A person who wants their own data in NONOX imports it
+data is unreachable when the time is up and is cleared out later, and the page says so. A person who wants their own data in NONOX imports it
 (SIE4, ADR-008).
 
 ### 6. Switch
@@ -147,6 +132,123 @@ data in a demo is invented. Nothing is added to the register of processing beyon
 
 - Every installation with public pages gets a try-it page at the price of a bounded number of
   short-lived rows. At the ceiling of 40, with 2 hours each, the work is at most 40 builds per two hours.
-- The immutability triggers have a second, narrow exit. It is tested from three sides: a real company
-  cannot be purged, a demo cannot be purged before it expires, and a full demo can be purged.
-- `docs/systemdokumentation` records the exception under the integrity checks.
+- The immutability triggers have no exception (see the addendum); the demo database is cleared by being built
+  again.
+- `docs/systemdokumentation` records the demo database in section 7c.
+
+## Owner decision 2026-11-08: separate demo database
+
+The first version of this ADR made demos rows in the main database and removed them through an
+exception in the immutability triggers. The owner decided against any exception in the production
+triggers: **demos run in a separate database**. The migration with the exception was removed before it
+was released; the main database's trigger functions are byte for byte what they are without this
+feature (a test compares their definitions with the demo database's, which is built from the same
+migrations, and asserts that none contains `demo_purge`).
+
+### A. The connection
+
+- `config/database.php` has a second connection `demo`: the same server settings as the main one,
+  `DB_DEMO_DATABASE` as the database name (default `<DB_DATABASE>_demo`), `DB_DEMO_USERNAME` and
+  `DB_DEMO_PASSWORD` optional. It has the **full schema**: `php artisan migrate --database=demo`, run at
+  deploy after the ordinary `migrate`. A demo therefore has the real tables with the real triggers, and
+  shows the real behaviour: a posted voucher cannot be changed there either.
+- One migration (`create_demo_database_tables`) adds what only the demo database has: `demo_sessions`
+  (the guest, the company and the time the demo ends), `cache` and `cache_locks`, and `jobs`. It returns
+  at once on any other connection, so the main database gets nothing.
+- Models, `DB::`, `Schema::` and the migrator all use the default connection, so switching the default is
+  enough for everything that does not name a connection.
+
+### B. How a request becomes a guest's
+
+What was read in the installed Laravel (`vendor/laravel/framework`, 2026-11-08) and relied on:
+
+- `DatabaseManager::setDefaultConnection()` only writes `config('database.default')`; models resolve
+  their connection with `Model::resolveConnection(null)` at each query. Switching the default switches
+  Eloquent, the query builder, `Schema` and the migrator (`Migrator::usingConnection` does the same).
+- `SessionManager::createDatabaseDriver()` takes `config('session.connection')` when the driver is built, and
+  drivers are cached by `Manager::driver()` (`forgetDrivers()` clears them). `StartSession` builds the driver
+  when it handles the request, and `addCookieToResponse` reads the cookie name from config. The
+  `session.store` singleton and the `AuthManager`'s guards also hold the store (`forgetGuards()`).
+- The cache store is picked by name from `config('cache.default')` and the `RateLimiter` singleton is built once
+  from `config('cache.limiter')`. The queue connection is `config('queue.default')` at dispatch.
+- `Illuminate\Foundation\Bootstrap\LoadConfiguration` merges `connections` and `stores` of a published
+  `config/queue.php` and `config/cache.php` with the framework's own, so adding `demo` loses nothing.
+
+The first middleware of the web group, `UseDemoDatabase`, runs **before the session starts and before the
+user is resolved**. A request is a guest's when it carries the guest session cookie `nonox_demo_session`, or is
+the opening request `/prova/oppna/{token}`. For such a request `DemoMode::activateRequest()` sets
+`database.default`, `session.connection`, `session.cookie`, `session.driver=database`, `cache.default`,
+`cache.limiter` and `queue.default` to the demo's, clears the cached session drivers, the `session.store`
+singleton, the guards, the rate limiter and the current company, and `terminate()` puts every value back
+(it matters in a long-lived process and in tests, where one application serves many requests).
+
+- **The pages of the entry** (`/prova`, `/prova/bygger/{token}`) are never a guest's, even with the cookie: they
+  run on the main database like any public page, with a session that holds nothing about a demo. The state of a
+  build, and the entry's rate limits, are in the demo database's cache and are reached by naming the store.
+- **The switch** (`InstanceSettings`) is read from the main connection by name, also when the default is the
+  demo's (`DemoMode::onMainConnection`). The main connection's name is remembered at boot because
+  `setDefaultConnection()` overwrites the config value.
+- **A guest cookie can never resolve a main user.** Its name differs from the main session cookie's, so
+  a request that has it is looked up in the demo database's `sessions` only, and one that does not is looked up in the
+  main one only. A main session id sent under the guest name is not in the demo database; a guest id sent under
+  the main name is not in the main one. Both directions are tested (`DemoIsolationTest`), as is the
+  restoring of every setting after the request.
+
+### C. Queued jobs
+
+- Jobs dispatched during a guest request go to the queue connection `demo` (the default was switched), whose
+  `jobs` table is in the demo database (`NONOX_DEMO_QUEUE` overrides the driver; on an installation whose queue is
+  `sync` it is `sync`). A worker for them is `php artisan queue:work demo` and must run on production for demos
+  to build.
+- When a worker takes a job from the connection `demo`, a listener on `JobProcessing` makes the demo
+  database its default and `JobProcessed`/`JobFailed`/`JobExceptionOccurred` put it back. The job's models
+  are restored on the default connection (`SerializesModels` records no connection when the model's is the
+  default), which is then the demo's. The build job also switches explicitly, so it works under `sync` too.
+- A failed job of the demo queue is written to the main installation's `failed_jobs` (the queue's failure
+  provider). The build job catches everything and never fails; other jobs a guest dispatches carry no personal
+  data. Known edge.
+
+### D. Tenancy, and what is shared
+
+- `CurrentCompany` and `BelongsToCompany` are unchanged: they filter on `company_id` and resolve the company
+  from the user, on whichever connection is the default, so a demo is an ordinary tenant in its own database.
+  The context is cleared when the request is switched.
+- Shared: the code, `config/*` (apart from the values switched above), translations, views, files on the
+  `local` disk (stored under random names; a demo's files are deleted when the demo database is built
+  again, if no row of the main database refers to them), and the mail, HTTP and module walls, which stay
+  **blocked**: all of them now key on one question, `DemoMode::active()` (is the default connection the demo's, outside
+  the build). The operator's customer register ignores demo companies, and `RequirePasskey` does not ask a
+  guest for a passkey (the data is invented and a guest has none).
+- Not shared: users, companies, sessions, cache, queue, audit log and every other table.
+
+### E. Clearing out: build the demo database again
+
+Chosen over deleting rows because the demo database has all the triggers, so a posted voucher cannot be
+deleted there either, and the alternatives (disabling triggers per table with `ALTER TABLE`, or
+`session_replication_role`) need locks or superuser rights and weaken the very schema the demo shows.
+Dropping the schema of a database that holds nothing but demos is the simpler safe option:
+
+- `demo:prune` (every ten minutes) rebuilds the demo database when **no demo is live, none is being built, and
+  some have expired**: `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` on the `demo` connection, then
+  `migrate --database=demo`. Files the demo database refers to are deleted first (unless the main
+  database refers to them).
+- On a busy day it never gets quiet, so once every `NONOX_DEMO_REBUILD_AFTER_HOURS` (24) it **drains**: a flag
+  in `storage/framework` makes `/prova` refuse new demos until the live ones (at most two hours) have ended
+  and the rebuild has run.
+- **It can touch no other database.** Before anything it calls `DemoDatabase::assertSafe()`, which refuses
+  unless the configured name ends in `_demo` and differs from the main database's, and again with what
+  the server reports (`current_database()`) and the main connection's real name, all before a statement
+  that changes anything. Both refusals are tested. It only uses the `demo` connection.
+- **Owner rule:** emptying or rebuilding a database is allowed only for this dedicated demo database.
+  Nothing else in NONOX may do it, and no test rebuilds any other.
+- **Production is not switched on by this change.** `demo.enabled` defaults to off for an installation that is
+  not hosted, and the hosted installation needs the demo database created and migrated, a worker for the
+  `demo` queue, and the owner's explicit confirmation at deploy.
+
+### F. Consequences
+
+- No exception in the immutability triggers; the main database never holds a demo, a guest, a guest session or
+  a demo's cache entry.
+- Costs: a second database to create and migrate at deploy, a second queue worker, and a short interval of
+  an hour or so each day when new demos wait (draining) on a busy installation.
+- A new migration must be run with `--database=demo` as well; the CI workflow does both.

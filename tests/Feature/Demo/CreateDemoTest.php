@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Actions\Demo\CreateDemo;
-use App\Actions\Demo\PurgeExpiredDemos;
 use App\Jobs\BuildDemoCompany;
 use App\Models\Company;
 use App\Models\Customer;
@@ -11,28 +10,32 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Support\Demo\DemoMode;
 use App\Support\Demo\DemoSessions;
-use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 use Tests\Support\Bookkeeping;
+use Tests\Support\Demo;
 
 /*
  * One whole demo built the way a visitor gets it (ADR-077): a guest and a
- * company of their own, made by the real builder. It takes seconds, so the
- * checks that need a full demo share one build; the cheap ones are in the
- * other files.
+ * company of their own, made by the real builder in the demo database. It
+ * takes seconds, so the checks that need a full demo share one build.
  */
 
-it('builds a visitor\'s own demo, keeps it apart from other companies, and purges it whole', function () {
+beforeEach(fn () => config(['app.landing.hosted' => true]));
+
+it('builds a visitor\'s own demo in the demo database only, with the real triggers', function () {
     [$owner, $other] = Bookkeeping::company();
     Bookkeeping::post($owner, $other);
-    $otherCustomer = CompanyScope::bypass(fn () => Customer::query()->create(['company_id' => $other->id, 'number' => '9001', 'name' => 'Annan kund AB']));
+
+    $main = DB::connection(DemoMode::mainConnection());
+    $before = [$main->table('users')->count(), $main->table('teams')->count(), $main->table('vouchers')->count(), $main->table('audit_logs')->count()];
 
     Queue::fake();
     $token = DemoSessions::begin('bokforing-for-cafeer');
-    Queue::assertPushed(BuildDemoCompany::class, fn (BuildDemoCompany $job): bool => $job->token === $token);
+    Queue::assertPushed(BuildDemoCompany::class, fn (BuildDemoCompany $job): bool => $job->token === $token && $job->connection === 'demo');
     expect(DemoSessions::state($token)['status'])->toBe(DemoSessions::BUILDING);
 
     // The job does what the queue worker would.
@@ -41,75 +44,65 @@ it('builds a visitor\'s own demo, keeps it apart from other companies, and purge
     $state = DemoSessions::state($token);
     expect($state['status'])->toBe(DemoSessions::READY);
 
-    $guest = User::query()->findOrFail($state['user_id']);
-    $demo = Company::query()->findOrFail($guest->current_team_id);
+    // Not one row of it in the main database.
+    expect([$main->table('users')->count(), $main->table('teams')->count(), $main->table('vouchers')->count(), $main->table('audit_logs')->count()])->toBe($before)
+        ->and($main->table('users')->where('email', 'like', '%@'.DemoMode::GUEST_DOMAIN)->exists())->toBeFalse();
 
-    // The guest: a placeholder address that is not an inbox, flagged, with the company as its own.
-    expect($guest->isDemoGuest())->toBeTrue()
-        ->and($guest->email)->toEndWith('@demo.invalid')
-        ->and($guest->name)->toBe('Gäst')
-        ->and($guest->demo_expires_at->isFuture())->toBeTrue()
-        ->and($guest->demo_expires_at->lessThanOrEqualTo(now()->addHours((int) config('nonox.demo.hours'))->addMinute()))->toBeTrue()
-        ->and($demo->user_id)->toBe($guest->id)
-        ->and($demo->isDemo())->toBeTrue()
-        ->and($demo->isTestCompany())->toBeTrue()
-        ->and($demo->org_number)->toMatch('/^55999[2-5]-\d{4}$/');
+    DemoMode::onDemoConnection(function () use ($state, $token, $other) {
+        $guest = User::query()->findOrFail($state['user_id']);
+        $demo = Company::query()->findOrFail($guest->current_team_id);
 
-    // A year of bookkeeping: vouchers, invoices, people.
-    CurrentCompany::run($demo, function () use ($demo) {
-        expect(Voucher::query()->count())->toBeGreaterThan(100)
-            ->and(Customer::query()->count())->toBeGreaterThan(0)
-            ->and(DB::table('invoices')->where('company_id', $demo->id)->count())->toBeGreaterThanOrEqual(0)
-            ->and(DB::table('employees')->where('company_id', $demo->id)->count())->toBeGreaterThan(0);
+        // The guest: a placeholder address that is not an inbox, no password, the company as its own.
+        expect($guest->email)->toEndWith('@demo.invalid')
+            ->and($guest->name)->toBe('Gäst')
+            ->and($demo->user_id)->toBe($guest->id)
+            ->and($demo->isTestCompany())->toBeTrue()
+            ->and($demo->org_number)->toMatch('/^55999[2-5]-\d{4}$/')
+            ->and(DemoMode::expiresAt($guest)?->isFuture())->toBeTrue()
+            ->and(DemoMode::expiresAt($guest)?->lessThanOrEqualTo(now()->addHours((int) config('nonox.demo.hours'))->addMinute()))->toBeTrue();
+
+        // A year of bookkeeping: vouchers, customers, people.
+        CurrentCompany::run($demo, function () use ($demo) {
+            expect(Voucher::query()->count())->toBeGreaterThan(100)
+                ->and(Customer::query()->count())->toBeGreaterThan(0)
+                ->and(DB::table('employees')->where('company_id', $demo->id)->count())->toBeGreaterThan(0);
+        });
+
+        // The demo shows the real rules: a posted voucher cannot be changed, not even there.
+        $changed = true;
+
+        try {
+            DB::transaction(fn () => DB::table('vouchers')->where('company_id', $demo->id)->update(['description' => 'Ändrad']));
+        } catch (Throwable) {
+            $changed = false;
+        }
+
+        expect($changed)->toBeFalse();
+
+        // The other company's data is not in the demo database.
+        expect(Company::query()->where('org_number', $other->org_number)->exists())->toBeFalse();
+
+        // The claim opens the demo once.
+        expect(DemoSessions::claim($token)?->id)->toBe($guest->id)
+            ->and(DemoSessions::claim($token))->toBeNull();
     });
 
-    // The claim opens the demo once.
-    expect(DemoSessions::claim($token)?->id)->toBe($guest->id)
-        ->and(DemoSessions::claim($token))->toBeNull();
+    // And the guest gets in through the real route and sees the banner and the company's pages.
+    $guestId = $state['user_id'];
+    $again = Str::random(40);
+    DemoMode::onDemoConnection(fn () => DemoSessions::markReady($again, User::query()->findOrFail($guestId)));
 
-    // Isolation: the guest sees nothing of the other company, and the other company nothing of the demo.
-    $this->actingAs($guest);
-    CurrentCompany::forget();
-    expect(Customer::query()->whereKey($otherCustomer->id)->exists())->toBeFalse()
-        ->and(Voucher::query()->where('company_id', $other->id)->count())->toBe(0);
-
-    $this->actingAs($owner->fresh());
-    CurrentCompany::forget();
-    expect(Voucher::query()->where('company_id', $demo->id)->count())->toBe(0)
-        ->and(Customer::query()->whereKey($otherCustomer->id)->exists())->toBeTrue();
-
-    // The demo's company is closed to the outside while the guest is in it.
-    expect(DemoMode::isDemoCompany($demo->id))->toBeTrue()
-        ->and(DemoMode::isDemoCompany($other->id))->toBeFalse();
-
-    // Time runs out and the purge removes all of it, but not the other company.
-    $demo->forceFill(['demo_expires_at' => CarbonImmutable::now()->subMinute()])->save();
-    $guest->forceFill(['demo_expires_at' => CarbonImmutable::now()->subMinute()])->save();
-
-    $tablesWithRows = fn (int $companyId): array => collect(DB::select(
-        "select table_name from information_schema.columns where table_schema = 'public' and column_name = 'company_id'",
-    ))->pluck('table_name')->filter(fn (string $table): bool => $table !== 'teams' && DB::table($table)->where('company_id', $companyId)->exists())->values()->all();
-
-    expect($tablesWithRows($demo->id))->not->toBe([]);
-
-    $result = app(PurgeExpiredDemos::class)();
-
-    expect($result['companies'])->toBe(1)
-        ->and($result['skipped'])->toBe(0)
-        ->and(Company::query()->whereKey($demo->id)->exists())->toBeFalse()
-        ->and(User::query()->whereKey($guest->id)->exists())->toBeFalse()
-        ->and($tablesWithRows($demo->id))->toBe([])
-        ->and(Company::query()->whereKey($other->id)->exists())->toBeTrue()
-        ->and(DB::table('vouchers')->where('company_id', $other->id)->count())->toBe(1)
-        ->and(DB::table('customers')->where('id', $otherCustomer->id)->exists())->toBeTrue();
+    $this->get(route('demo.open', $again))->assertRedirect(route('dashboard'));
+    $this->withCookie(DemoMode::COOKIE, Demo::sessionId())->get(route('accounting.vouchers.index'))->assertOk()->assertSee('data-demo-banner', false);
 });
 
 it('leaves nothing behind when the build fails', function () {
-    $before = [User::query()->count(), Company::query()->count()];
+    $count = fn (): array => [DB::connection('demo')->table('users')->count(), DB::connection('demo')->table('teams')->count()];
+    $before = $count();
 
     expect(fn () => app(CreateDemo::class)('finns-inte', CarbonImmutable::now()->addHour()))->toThrow(InvalidArgumentException::class);
 
-    expect([User::query()->count(), Company::query()->count()])->toBe($before);
+    expect($count())->toBe($before);
 });
 
 it('marks a failed build as failed and frees its place', function () {
@@ -121,6 +114,7 @@ it('marks a failed build as failed and frees its place', function () {
     (new BuildDemoCompany($token, 'finns-inte'))->handle(app(CreateDemo::class));
 
     expect(DemoSessions::state($token)['status'])->toBe(DemoSessions::FAILED)
-        ->and(DemoSessions::building())->toBe($building - 1)
-        ->and(DemoSessions::claim($token))->toBeNull();
+        ->and(DemoSessions::building())->toBe($building - 1);
+
+    DemoMode::onDemoConnection(fn () => expect(DemoSessions::claim($token))->toBeNull());
 });

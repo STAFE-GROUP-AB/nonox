@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 use App\Actions\Hq\UpdateInstanceSettings;
 use App\Jobs\BuildDemoCompany;
-use App\Models\Company;
 use App\Models\InstanceSetting;
 use App\Models\User;
 use App\Support\Demo\DemoCatalog;
+use App\Support\Demo\DemoDatabase;
 use App\Support\Demo\DemoMode;
 use App\Support\Demo\DemoSessions;
 use App\Support\Instance\InstanceSettings;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Testing\TestResponse;
 use Tests\Support\Bookkeeping;
+use Tests\Support\Demo;
 
 /*
  * The visitor's way in (ADR-077): /prova, the checks that keep it from being
@@ -46,8 +47,12 @@ function startDemo(object $test, array $overrides = []): TestResponse
     ]);
 }
 
+function tokenOf(TestResponse $response): string
+{
+    return basename((string) $response->headers->get('Location'));
+}
+
 beforeEach(function () {
-    Cache::flush();
     config(['app.landing.enabled' => true, 'app.landing.hosted' => true]);
     demoSetting(true);
 });
@@ -88,12 +93,23 @@ it('is on by default for a hosted installation and off for the rest, and /hq can
         ->and(DemoMode::enabled())->toBeTrue();
 });
 
+it('reads the switch from the main database also while the demo database is the default', function () {
+    demoSetting(false);
+
+    DemoMode::onDemoConnection(fn () => expect(DemoMode::enabled())->toBeFalse());
+
+    demoSetting(true);
+
+    DemoMode::onDemoConnection(fn () => expect(DemoMode::enabled())->toBeTrue());
+});
+
 it('answers 404 and shows no link while the feature is switched off', function () {
     demoSetting(false);
 
     $this->get(route('demo.show'))->assertNotFound();
     startDemo($this)->assertNotFound();
-    $this->get(route('demo.building'))->assertNotFound();
+    $this->get(route('demo.building', str_repeat('a', 40)))->assertNotFound();
+    $this->get(route('demo.open', str_repeat('a', 40)))->assertNotFound();
     $this->get('/')->assertOk()->assertDontSee('data-try-link', false);
 });
 
@@ -110,51 +126,48 @@ it('links to the page from the landing page for visitors, with Swedish text and 
     $this->actingAs($member)->get('/')->assertDontSee('data-try-link', false);
 });
 
-it('starts a build, asks the browser to wait, and signs the guest in when it is ready', function () {
+it('starts a build in the demo queue, asks the browser to wait, and lets the guest in when it is ready', function () {
     Queue::fake();
 
     $response = startDemo($this);
-    $response->assertRedirect(route('demo.building'));
-    Queue::assertPushed(BuildDemoCompany::class, fn (BuildDemoCompany $job): bool => $job->industry === 'bokforing-for-cafeer');
+    $token = tokenOf($response);
+    $response->assertRedirect(route('demo.building', $token));
 
-    $this->get(route('demo.building'))->assertOk()->assertSee('Vi bygger ditt demoföretag.')->assertSee('http-equiv="refresh"', false);
+    Queue::assertPushed(BuildDemoCompany::class, fn (BuildDemoCompany $job): bool => $job->industry === 'bokforing-for-cafeer' && $job->connection === 'demo');
+
+    $this->get(route('demo.building', $token))->assertOk()->assertSee('Vi bygger ditt demoföretag.')->assertSee('http-equiv="refresh"', false);
     $this->assertGuest();
 
-    // The worker finishes: a guest with a company.
-    [$owner, $company] = Bookkeeping::company();
-    $expires = CarbonImmutable::now()->addHours(2);
-    $company->forceFill(['is_test_company' => true, 'demo_expires_at' => $expires])->save();
-    $owner->forceFill(['demo_expires_at' => $expires])->save();
-    $token = session('demo.token');
-    DemoSessions::markReady($token, $owner);
+    // The worker finishes: a guest with a company, in the demo database.
+    [$guest] = Demo::company();
+    DemoSessions::markReady($token, $guest);
 
-    $this->get(route('demo.building'))->assertRedirect(route('dashboard'));
-    $this->assertAuthenticatedAs($owner);
+    $this->get(route('demo.building', $token))->assertRedirect(route('demo.open', $token));
+
+    $opened = $this->get(route('demo.open', $token));
+    $opened->assertRedirect(route('dashboard'))->assertCookie(DemoMode::COOKIE);
 
     // The token worked once.
     expect(DemoSessions::state($token))->toBeNull();
+    $this->get(route('demo.open', $token))->assertRedirect(route('demo.show'));
 });
 
 it('sends the visitor back with a message when the build failed', function () {
     Queue::fake();
-    startDemo($this);
-    DemoSessions::markFailed(session('demo.token'));
+    $token = tokenOf(startDemo($this));
+    DemoSessions::markFailed($token);
 
-    $this->get(route('demo.building'))->assertRedirect(route('demo.show'));
+    $this->get(route('demo.building', $token))->assertRedirect(route('demo.show'));
     $this->get(route('demo.show'))->assertSee('Det gick inte att bygga demon');
 });
 
-it('does not let one browser claim another one\'s demo', function () {
-    Queue::fake();
-    startDemo($this);
-    $token = session('demo.token');
-    [$owner] = Bookkeeping::company();
-    $owner->forceFill(['demo_expires_at' => now()->addHour()])->save();
-    DemoSessions::markReady($token, $owner);
+it('does not open a demo that has ended, or one nobody asked for', function () {
+    [$guest] = Demo::company(CarbonImmutable::now()->subMinute());
+    $token = Demo::token($guest);
 
-    $this->flushSession();
-    $this->get(route('demo.building'))->assertRedirect(route('demo.show'));
-    $this->assertGuest();
+    $this->get(route('demo.open', $token))->assertRedirect(route('demo.show'));
+    $this->get(route('demo.open', str_repeat('b', 40)))->assertRedirect(route('demo.show'));
+    $this->get(route('demo.building', str_repeat('b', 40)))->assertRedirect(route('demo.show'));
 });
 
 it('refuses a form with the honeypot filled in', function () {
@@ -167,14 +180,13 @@ it('refuses a form with the honeypot filled in', function () {
 
 it('refuses a form sent faster than a person, or never opened, or too old', function () {
     Queue::fake();
-    $min = (int) config('nonox.demo.min_seconds');
 
     startDemo($this, ['started' => Crypt::encryptString((string) time())])->assertSessionHasErrors('industry');
     startDemo($this, ['started' => 'inte-krypterat'])->assertSessionHasErrors('industry');
     startDemo($this, ['started' => Crypt::encryptString((string) (time() - 7200))])->assertSessionHasErrors('industry');
     startDemo($this, ['started' => null])->assertSessionHasErrors('industry');
 
-    expect($min)->toBeGreaterThan(0);
+    expect((int) config('nonox.demo.min_seconds'))->toBeGreaterThan(0);
     Queue::assertNothingPushed();
 });
 
@@ -192,7 +204,7 @@ it('limits the starts per IP address and hour, and the refused attempts too', fu
     $max = (int) config('nonox.demo.max_per_ip_per_hour');
 
     for ($i = 0; $i < $max; $i++) {
-        startDemo($this)->assertRedirect(route('demo.building'));
+        startDemo($this)->assertRedirect();
     }
 
     startDemo($this)->assertSessionHasErrors('industry');
@@ -200,10 +212,9 @@ it('limits the starts per IP address and hour, and the refused attempts too', fu
 
     // Another address is counted on its own.
     $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.9']);
-    startDemo($this)->assertRedirect(route('demo.building'));
+    startDemo($this)->assertRedirect();
 
     // Too many refused attempts end in 429.
-    Cache::flush();
     $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.10']);
 
     for ($i = 0; $i < 10; $i++) {
@@ -213,42 +224,62 @@ it('limits the starts per IP address and hour, and the refused attempts too', fu
     startDemo($this)->assertStatus(429);
 });
 
-it('keeps the visitor\'s address out of the database and the cache keys', function () {
+it('keeps the visitor\'s address out of the main database, and out of the cache keys in clear', function () {
     Queue::fake();
     $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.77']);
 
-    startDemo($this)->assertRedirect(route('demo.building'));
+    startDemo($this)->assertRedirect();
 
     $hashed = hash_hmac('sha256', '203.0.113.77', (string) config('app.key'));
 
-    expect(RateLimiter::attempts('demo-start:'.$hashed))->toBe(1)
-        ->and(RateLimiter::attempts('demo-start:203.0.113.77'))->toBe(0)
-        ->and(DB::table('audit_logs')->where('payload', 'like', '%203.0.113.77%')->exists())->toBeFalse();
+    expect(DemoSessions::limiter()->attempts('demo-start:'.$hashed))->toBe(1)
+        ->and(DemoSessions::limiter()->attempts('demo-start:203.0.113.77'))->toBe(0)
+        ->and(DB::connection('demo')->table('cache')->where('key', 'like', '%203.0.113.77%')->exists())->toBeFalse()
+        ->and(Schema::connection(DemoMode::mainConnection())->hasTable('cache'))->toBeFalse();
+});
+
+it('keeps every trace of a start out of the main database', function () {
+    Queue::fake();
+    $mainSessions = DB::table('sessions')->count();
+
+    startDemo($this)->assertRedirect();
+
+    expect(DB::table('audit_logs')->where('action', 'like', 'demo%')->exists())->toBeFalse()
+        ->and(DB::table('users')->where('email', 'like', '%@'.DemoMode::GUEST_DOMAIN)->exists())->toBeFalse()
+        ->and(DB::table('sessions')->count())->toBe($mainSessions)
+        ->and(DB::connection('demo')->table('cache')->count())->toBeGreaterThan(0);
 });
 
 it('says the demo is full when the ceiling is reached', function () {
     Queue::fake();
     config(['nonox.demo.max_live' => DemoSessions::live() + 1]);
 
-    startDemo($this)->assertRedirect(route('demo.building'));
+    startDemo($this)->assertRedirect();
     startDemo($this)->assertSessionHasErrors('industry');
 
     Queue::assertPushed(BuildDemoCompany::class, 1);
 });
 
-it('counts demo companies that are alive towards the ceiling, and not expired ones', function () {
-    $alive = Company::factory()->create(['demo_expires_at' => now()->addHour()]);
-    $expired = Company::factory()->create(['demo_expires_at' => now()->subHour()]);
-    $real = Company::factory()->create();
+it('counts demos that are live towards the ceiling, and not ended ones', function () {
+    Demo::company();
+    Demo::company(CarbonImmutable::now()->subHour());
 
     $live = DemoSessions::live();
 
-    expect($live)->toBeGreaterThanOrEqual(1);
+    expect($live)->toBe(1);
 
-    $alive->forceFill(['demo_expires_at' => now()->subHour()])->save();
+    DB::connection('demo')->table('demo_sessions')->update(['expires_at' => CarbonImmutable::now()->subHour()]);
 
-    expect(DemoSessions::live())->toBe($live - 1)
-        ->and([$expired->id, $real->id])->not->toBeEmpty();
+    expect(DemoSessions::live())->toBe(0);
+});
+
+it('starts nothing while the demo database waits to be built again', function () {
+    Queue::fake();
+    DemoDatabase::startDraining();
+
+    startDemo($this)->assertSessionHasErrors('industry');
+
+    Queue::assertNothingPushed();
 });
 
 it('sends a signed-in visitor to the dashboard instead of the form', function () {

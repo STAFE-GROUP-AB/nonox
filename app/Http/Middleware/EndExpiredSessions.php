@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Support\Demo\DemoMode;
 use App\Support\Toast;
 use Closure;
 use Illuminate\Http\Request;
@@ -39,7 +40,7 @@ class EndExpiredSessions
         }
 
         // A guest's demo ends at its own time (ADR-077); the data is removed by demo:prune.
-        if ($user->isDemoGuest() && $user->demo_expires_at?->isPast()) {
+        if (DemoMode::active() && DemoMode::expiresAt($user)?->isPast() !== false) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

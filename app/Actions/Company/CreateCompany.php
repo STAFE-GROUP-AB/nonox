@@ -47,7 +47,7 @@ class CreateCompany implements CreatesTeams
         Gate::forUser($user)->authorize('create', Company::class);
 
         // A visitor trying NONOX gets the one demo company and no more (ADR-077).
-        DemoMode::refuse('name', null, $user);
+        DemoMode::refuse('name');
 
         $validated = $this->validate($input, $user);
 
