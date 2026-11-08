@@ -14,7 +14,7 @@
         "@zxing/library": "0.23.0",
         "alpinejs": "^3.17.5",
         "axios": "^1.7.2",
-        "chart.js": "4.5.1",
+        "chart.js": "4.6.1",
         "jsqr": "^1.4.0",
         "laravel-vite-plugin": "^3.2.0",
         "tailwindcss": "^4.3.3",
