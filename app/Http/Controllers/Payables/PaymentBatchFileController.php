@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Payables;
 
 use App\Actions\Accounting\AttachToVoucher;
 use App\Models\SupplierPaymentBatch;
+use App\Support\Demo\DemoMode;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -22,6 +23,13 @@ class PaymentBatchFileController
     public function __invoke(SupplierPaymentBatch $batch): StreamedResponse|RedirectResponse
     {
         Gate::authorize('view', $batch);
+
+        // No payment file leaves a demo (ADR-077).
+        if (DemoMode::active()) {
+            Toast::flash(DemoMode::message(), 'error');
+
+            return redirect()->route('payables.batches.index');
+        }
 
         if (! $batch->canBeDownloaded()) {
             Toast::flash(__(':title är inte godkänd och kan inte laddas ned. Någon med rätt att godkänna betalningar behöver godkänna den först.', ['title' => $batch->title()]), 'error');

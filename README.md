@@ -27,6 +27,8 @@ Du äger din data, kan granska varje rad kod och alltid ta med dig allt ut.
 
 > **Öppen beta.** Den driftade tjänsten på [nonox.app](https://nonox.app) är i öppen beta fram till den skarpa lanseringen av version 1.0 den **1 februari 2027**. Nya användare [ställer sig i kö](https://nonox.app/ko) och släpps in när de är godkända, eller kommer in via en inbjudan från ett företag. Programmet är öppen källkod och kan laddas ner och köras själv utan kö.
 
+> **Prova utan att registrera.** På [nonox.app/prova](https://nonox.app/prova) får du ett eget påhittat demoföretag med ett års bokföring i två timmar, utan konto. Inget skickas utanför NONOX och allt tas bort när tiden är ute. På en egen installation är det avstängt från början och slås på i /hq under Inställningar.
+
 ## Varför NONOX
 
 - **Öppet.** All affärslogik är öppen källkod under AGPL-3.0. Vem som helst kan granska exakt hur siffrorna hanteras.

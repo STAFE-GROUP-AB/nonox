@@ -9,6 +9,7 @@ use App\Models\CompanyModule;
 use App\Models\User;
 use App\Modules\Contracts\Module;
 use App\Support\Audit\Audit;
+use App\Support\Demo\DemoMode;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -45,7 +46,12 @@ final class ModuleManager
             return false;
         }
 
-        return in_array($key, $this->enabledKeys($companyId), true);
+        if (! in_array($key, $this->enabledKeys($companyId), true)) {
+            return false;
+        }
+
+        // A demo company (ADR-077) reaches nothing outside NONOX: these modules are off while a visitor is in it.
+        return ! DemoMode::moduleBlocked($key, $companyId);
     }
 
     /**

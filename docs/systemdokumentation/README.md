@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.116
-- Datum: 2026-11-07
+- Version: 0.117
+- Datum: 2026-11-08
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -4250,7 +4250,8 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   in- och utloggningar, skrivs till tabellen `audit_logs` med användare, tidpunkt, åtgärd
   och värden före och efter.
 - Tabellen går bara att lägga till i. Databasen själv vägrar ändringar och
-  borttagningar.
+  borttagningar. Enda undantaget är raderna för ett demoföretag vars tid har gått
+  ut (avsnitt 7c), som tas bort tillsammans med företaget.
 - När en ny programversion tas i bruk skrivs en post `system.version_deployed`
   med version, byggnummer, commit (SHA), byggtid, systemdokumentationens
   version och föregående version. Den skrivs en gång per ny version eller
@@ -4325,6 +4326,37 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   Förbättrat i ändringsloggen.
 - Sidorna påverkar inte bokföringen och är ingen behandlingshistorik enligt
   BFNAR 2013:2; den beskrivs i avsnitt 7, och systemets versioner i avsnitt 9.
+
+## 7c. Demoföretag: Prova utan att registrera (ADR-077)
+
+- På `/prova` kan en besökare få ett påhittat demoföretag utan konto. Företaget
+  byggs av samma Actions som den vanliga demon, med ett års bokföring, fakturor
+  och lön, och ägs av en gästanvändare med en slumpad platshållaradress på
+  `demo.invalid`, utan lösenord. Företaget är ett testföretag
+  (`teams.is_test_company`) och har `teams.demo_expires_at`; gästen har
+  `users.demo_expires_at`. En demo varar två timmar.
+- Ett demoföretag är aldrig riktig bokföring. Det mejlar inget, skickar inget via
+  Peppol, bank, Skatteverket eller NONOX AI, gör ingen betalfil, ingen API-nyckel
+  och ingen inbjudan, och de modulerna är avstängda för det (avsnitt 5f, 5g, 5e,
+  5c, 5k). Ett demoföretag har ingen del i driftbolagets kundregister, statistiken
+  eller faktureringen.
+- Demoföretag och gäster tas bort av `demo:prune` (var tionde minut) när tiden
+  har gått ut. Det är den enda borttagning NONOX gör, och den når bara ett
+  företag som är flaggat som demo och som testföretag, vars tid har gått ut och
+  vars alla medlemmar är gäster. Ingenting töms, trunkeras eller släpps.
+- **Undantaget i spärrarna mot borttagning (avsnitt 4):** triggrarna som vägrar
+  DELETE av bokförda verifikationer och övriga skyddade rader har en rad som
+  släpper igenom en rad bara när transaktionen har namngett radens företag i
+  databasinställningen `nonox.demo_purge` och företaget är ett demoföretag vars
+  tid har gått ut (eller redan håller på att tas bort i samma transaktion). Ett
+  företag utan `demo_expires_at`, och ett demoföretag vars tid inte har gått ut,
+  får alla rader skyddade som förut, och en trigger på `teams` vägrar att ta bort
+  ett företag som inte är ett utgånget demoföretag. UPDATE och INSERT är
+  oförändrade. En bokförd verifikation i ett riktigt företag kan alltså inte
+  tas bort, ändras eller flyttas av detta.
+- Testet `DemoPurgeTest` bevisar spärrarna från tre håll och `CreateDemoTest`
+  bygger ett helt demoföretag och tar bort det, så att en ny skyddad tabell eller
+  en omdefinierad triggerfunktion som saknar undantaget fallerar direkt.
 
 ## 8. Öppna frågor (TODO legal-verify)
 
@@ -4782,3 +4814,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.114 | 2026-11-06 | Drivmedelsförmån rättad (avsnitt 5b, ADR-061): skatteavdraget räknas som förut på förmånsvärdet (marknadsvärdet × 1,2), men arbetsgivaravgiften nu på marknadsvärdet (socialavgiftslagen 2 kap. 10 a §); tidigare togs avgiften på hela förmånsvärdet. Den anställdas betalning för drivmedlet (löneart Egen betalning för drivmedel vid bilförmån, 7388) minskar den skattepliktiga förmånen och avgiftsunderlaget och redovisas i ruta 098, medan 018 har hela förmånsvärdet. Attesterade och bokförda löner ändras inte. Förmånsbilar: en period får inte omfatta en attesterad månad som bilen inte fanns i, och bara en bil per månad. |
 | 0.115 | 2026-11-06 | Bekräftelse och kontroller före inlämning (ägarbeslut 10 och 16): momsdeklarationen och arbetsgivardeklarationen till Skatteverket, betalfilen för leverantörsbetalningar och lönefilen kräver att användaren bekräftar "Jag har granskat siffrorna", och bekräftelsen sparas i behandlingshistoriken (`figures.reviewed`); ett K2-företag bekräftar de nya K2-villkoren (BFNAR 2025:2) en gång innan bokslutet för ett räkenskapsår som börjar efter 2025-12-31 kan fortsätta (`company.k2_conditions_confirmed`). SIE-importen stoppar en fil vars ingående balanser inte summerar till noll, och rapporten säger bara att varje konto stämmer när utgående balanser eller resultat har kontrollerats. Drivmedelsförmån kräver en förmånsbil i perioden. OCR-nummer på leverantörsfakturor kontrolleras med kontrollsiffran. Parametrarna för NE och INK4 2026 är inte längre markerade som kontrollerade, så beräkningen spärras tills en människa har kontrollerat dem. Rättelserna som driftsattes separat under versionsnumret 0.105 samma morgon (rutorna 20 och 23, årsredovisning bara enligt K2, belopp i hela kronor, övertid och mertid per art i Gröna Riks och Detaljhandeln, arbetsgivaravgift på drivmedelsförmån) ingår i 0.107, 0.109, 0.110 och 0.114 och i avsnitt 5h. |
 | 0.116 | 2026-11-07 | Regelverket (K1/K2/K3) hör till räkenskapsåret (avsnitt 3, ADR-059 tillägg A.2.1): varje år har sitt eget, ett nytt år ärver det föregående (annars närmaste senare) årets, och ett byte gäller ett valt år och alla senare år, i inställningarna som standard från det tidigaste öppna året utan fastställd årsredovisning. Stängda år och år med fastställd årsredovisning kan inte byta, och ett byte som inget år kan ta emot vägras. Bytet sparas på varje år och i behandlingshistoriken (`fiscal_year.framework_changed`, en post per år). Årsredovisningen, K2-bekräftelsen i bokslutet och NE-bilagan följer årets regelverk, så ett tidigare K2-år behåller sin årsredovisning när företaget byter till K3. Befintliga år fick företagets regelverk; ingen verifikation ändrades. Redovisningsprinciper för K3 som data (avsnitt 5a6.1, ADR-059 tillägget 2026-11-07, A.2.3): företagets val per princip gäller från ett räkenskapsårs första dag tills en ny rad ersätter det, utom svaren om övergången som bara gäller sitt eget år; val som NONOX ännu inte kan redovisa och byten av princip (K3 10.2, 23.37; inte att börja efter "inga", enligt kommentaren till 10.2, och inte kassaflödesanalysen) listas med regelns id som skäl till att K3-årsredovisningen inte kan tas fram; när det första räkenskapsårets datum ändras följer dess principer med; en rad kan inte sparas om den skulle gälla ett år vars årsredovisning har en fastställelsedag som har inträffat; byte från kapitel 12 till kapitel 11 nekas. Ändringen skrivs i behandlingshistoriken utan motiveringen. Ingenting i bokföringen ändras och ingen skärm använder principerna ännu. |
+| 0.117 | 2026-11-08 | Demoföretag för besökare som provar utan konto (avsnitt 7c, ADR-077): ett påhittat företag med gäst, som inte skickar något utanför NONOX och tas bort efter två timmar. Triggrarna som vägrar borttagning av bokförda rader har ett smalt undantag för ett utgånget demoföretag, namngett i transaktionen; riktiga företag och oförfallna demon är oförändrat skyddade. Ingen ny bokföringsregel. |

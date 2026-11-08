@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Schema;
  * - waitlist.open: whether /ko takes new applications (default open).
  * - registration.open: whether an unknown address may create an account
  *   on the sign-in form (default closed, ADR-038).
+ * - demo.enabled: whether /prova lets a visitor try NONOX on a demo company
+ *   (ADR-077). Not set = on for a hosted installation, off for the rest.
  */
 final class InstanceSettings
 {
@@ -29,11 +31,14 @@ final class InstanceSettings
 
     public const string REGISTRATION_OPEN = 'registration.open';
 
+    public const string DEMO_ENABLED = 'demo.enabled';
+
     /** @var array<string, mixed> the defaults, which are also the only keys */
     public const array DEFAULTS = [
         self::OPERATOR => null,
         self::WAITLIST_OPEN => true,
         self::REGISTRATION_OPEN => false,
+        self::DEMO_ENABLED => null,
     ];
 
     /** @var ?array<string, mixed> */
@@ -95,5 +100,13 @@ final class InstanceSettings
     public function selfRegistrationOpen(): bool
     {
         return (bool) $this->get(self::REGISTRATION_OPEN);
+    }
+
+    /** Whether strangers may try NONOX on a demo company (ADR-077). */
+    public function demoEnabled(): bool
+    {
+        $value = $this->get(self::DEMO_ENABLED);
+
+        return $value === null ? (bool) config('app.landing.hosted') : (bool) $value;
     }
 }

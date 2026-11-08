@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Validator;
 final class UpdateInstanceSettings
 {
     /**
-     * @param  array<string, mixed>  $input  operator_company_id, waitlist_open, registration_open
+     * @param  array<string, mixed>  $input  operator_company_id, waitlist_open, registration_open, demo_enabled
      * @return list<string>
      */
     public function __invoke(User $admin, array $input): array
@@ -44,6 +44,7 @@ final class UpdateInstanceSettings
             'operator_company_id' => ['nullable', 'integer', $company],
             'waitlist_open' => ['required', 'boolean'],
             'registration_open' => ['required', 'boolean'],
+            'demo_enabled' => ['sometimes', 'boolean'],
         ], [], [
             'operator_company_id' => __('driftbolag'),
         ])->validate();
@@ -51,14 +52,18 @@ final class UpdateInstanceSettings
         $id = fn (mixed $value): ?int => $value === null || $value === '' ? null : (int) $value;
         $operator = $id($validated['operator_company_id'] ?? null);
 
+        $settings = InstanceSettings::current();
+        // Not set means the installation's default, so saving that same default changes nothing.
+        $demoBefore = $settings->demoEnabled();
+        $before = [...$settings->all(), InstanceSettings::DEMO_ENABLED => $demoBefore];
+
         $new = [
             InstanceSettings::OPERATOR => $operator,
             InstanceSettings::WAITLIST_OPEN => (bool) $validated['waitlist_open'],
             InstanceSettings::REGISTRATION_OPEN => (bool) $validated['registration_open'],
+            InstanceSettings::DEMO_ENABLED => (bool) ($validated['demo_enabled'] ?? $demoBefore),
         ];
 
-        $settings = InstanceSettings::current();
-        $before = $settings->all();
         $changed = array_keys(array_filter($new, fn (mixed $value, string $key): bool => $before[$key] !== $value, ARRAY_FILTER_USE_BOTH));
 
         if ($changed === []) {

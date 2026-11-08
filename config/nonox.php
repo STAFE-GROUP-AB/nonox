@@ -33,6 +33,21 @@ return [
         'step_up_seconds' => (int) env('HQ_STEP_UP_SECONDS', 300),
     ],
 
+    /*
+     | Try without registering (ADR-077). Whether it is open is an instance
+     | setting (demo.enabled, edited in /hq); these are its limits.
+     */
+    'demo' => [
+        // How long a visitor's demo company lasts.
+        'hours' => (int) env('NONOX_DEMO_HOURS', 2),
+        // Demo companies alive or being built at once, for the whole installation.
+        'max_live' => (int) env('NONOX_DEMO_MAX_LIVE', 40),
+        // Starts per IP address and hour.
+        'max_per_ip_per_hour' => 3,
+        // A form sent faster than this is not a person.
+        'min_seconds' => 3,
+    ],
+
     'waitlist' => [
         // TODO(legal-verify): retention of entries that are rejected or never approved (12 months proposed, ADR-038).
         'retention_months' => (int) env('WAITLIST_RETENTION_MONTHS', 12),

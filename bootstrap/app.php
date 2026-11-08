@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\EndExpiredSessions;
+use App\Http\Middleware\NotForDemoGuests;
 use App\Http\Middleware\RemembersRecentItems;
 use App\Http\Middleware\RequirePasskey;
 use App\Http\Middleware\SecurityHeaders;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'module' => EnsureModuleEnabled::class,
+            'not-demo-guest' => NotForDemoGuests::class,
         ]);
 
         // Trusted proxies are opt-in through TRUSTED_PROXIES, read on every request

@@ -10825,5 +10825,19 @@
     "Företaget ska tillämpa K3 för räkenskapsåret :year enligt svaren under Bokslut → Regelverk, så K2-villkoren kan inte bekräftas. Byt regelverk eller rätta svaren där.": "According to the answers under Year-end closing → Framework the company must apply K3 for the fiscal year :year, so the K2 conditions cannot be confirmed. Change the framework or correct the answers there.",
     "Enligt era svar omfattas företaget av K2 punkt 1.1B, men om undantaget i punkt 1.1C första stycket gäller kan inte avgöras förrän uppgifterna ovan finns.": "According to your answers the company is covered by K2 point 1.1B, but whether the exception in the first paragraph of point 1.1C applies cannot be decided until the figures above are in place.",
     "Regelverket bedöms per räkenskapsår. Skapa företagets första räkenskapsår under Bokföring → Räkenskapsår, så visas villkoren här.": "The framework is assessed per fiscal year. Create the company's first fiscal year under Bookkeeping → Fiscal years, and the conditions are shown here.",
-    "Regelverk: :status.": "Framework: :status."
+    "Regelverk: :status.": "Framework: :status.",
+    "Välj en bransch i listan.": "Choose an industry from the list.",
+    "Demon är full just nu. Försök igen om en stund.": "The demo is full right now. Try again in a little while.",
+    "Det här går inte i demon. Inget skickas utanför NONOX och inget sparas åt dig. Skapa ett konto för att använda det på riktigt.": "This is not possible in the demo. Nothing is sent outside NONOX and nothing is saved for you. Create an account to use it for real.",
+    "Demon har tagit slut och är borttagen. Starta en ny om du vill fortsätta prova.": "The demo has ended and been removed. Start a new one if you want to keep trying.",
+    "Det gick inte att starta demon. Ladda om sidan och försök igen.": "The demo could not be started. Reload the page and try again.",
+    "Du har startat flera demor den senaste timmen. Vänta en stund, eller fortsätt i en som redan är igång.": "You have started several demos in the last hour. Wait a while, or continue in one that is already running.",
+    "Det gick inte att bygga demon. Försök igen om en stund.": "The demo could not be built. Try again in a little while.",
+    "Demo.": "Demo.",
+    "Det här är ett påhittat företag som du får prova fritt. Allt du gör försvinner när tiden är ute, om :tid. Inget skickas till någon.": "This is an invented company you are free to try. Everything you do disappears when the time is up, in :tid. Nothing is sent to anyone.",
+    ":tim tim :min min": ":tim h :min min",
+    ":min min": ":min min",
+    "(ett konto börjar från början, demons uppgifter följer inte med)": "(an account starts from scratch, the demo's data does not come along)",
+    "Prova utan att registrera är öppen": "Try without registering is open",
+    "Öppen: vem som helst kan på /prova få ett påhittat demoföretag i två timmar, utan konto. Det rensas bort av sig självt. Stängd: sidan finns inte och inget demoföretag skapas.": "Open: anyone can get an invented demo company for two hours on /prova, without an account. It is removed by itself. Closed: the page does not exist and no demo company is created."
 }

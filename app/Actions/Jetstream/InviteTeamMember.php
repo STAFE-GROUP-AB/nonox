@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\TeamInvitation as TeamInvitationModel;
 use App\Models\User;
 use App\Modules\Rules\AvailableRole;
+use App\Support\Demo\DemoMode;
 use App\Support\MailQuota;
 use Closure;
 use Illuminate\Database\Query\Builder;
@@ -29,6 +30,8 @@ class InviteTeamMember implements InvitesTeamMembers
     public function invite(User $user, Company $team, string $email, ?string $role = null): void
     {
         Gate::forUser($user)->authorize('addTeamMember', $team);
+
+        DemoMode::refuse('email', $team, $user);
 
         $email = User::normaliseEmail($email);
 

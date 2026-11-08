@@ -9,6 +9,7 @@ use App\Models\LoginCode;
 use App\Models\User;
 use App\Support\Auth\ClientAddressBucket;
 use App\Support\Branding\PresentedBrand;
+use App\Support\Demo\DemoMode;
 use App\Support\LoginCodeAutofill;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -55,6 +56,11 @@ class SendLoginCode
     public function __invoke(string $email, ?string $ipAddress = null, ?PresentedBrand $brand = null): void
     {
         $email = self::normalise($email);
+
+        // A demo guest's placeholder address (ADR-077) is not an inbox; nothing is sent to it.
+        if (str_ends_with($email, '@'.DemoMode::GUEST_DOMAIN)) {
+            return;
+        }
 
         Cache::lock('login-code:send:'.sha1($email), 10)->block(5, function () use ($email, $ipAddress, $brand): void {
             if ($this->recentlySent($email)) {

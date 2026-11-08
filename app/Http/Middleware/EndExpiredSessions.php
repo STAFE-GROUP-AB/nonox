@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Support\Toast;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -35,6 +36,16 @@ class EndExpiredSessions
 
         if (! is_int($started)) {
             $request->session()->put(self::STARTED, $started = time());
+        }
+
+        // A guest's demo ends at its own time (ADR-077); the data is removed by demo:prune.
+        if ($user->isDemoGuest() && $user->demo_expires_at?->isPast()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            Toast::flash(__('Demon har tagit slut och är borttagen. Starta en ny om du vill fortsätta prova.'));
+
+            return redirect()->route('demo.show');
         }
 
         $revoked = $user->sessions_valid_from !== null && $started < $user->sessions_valid_from->getTimestamp();

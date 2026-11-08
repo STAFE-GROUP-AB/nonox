@@ -45,6 +45,8 @@ class Settings extends Component implements SpansCompanies
 
     public bool $registrationOpen = false;
 
+    public bool $demoEnabled = false;
+
     public function mount(): void
     {
         $this->fill(self::stored());
@@ -61,6 +63,7 @@ class Settings extends Component implements SpansCompanies
             'operator_company_id' => $this->operatorCompanyId === '' ? null : $this->operatorCompanyId,
             'waitlist_open' => $this->waitlistOpen,
             'registration_open' => $this->registrationOpen,
+            'demo_enabled' => $this->demoEnabled,
         ]);
 
         $this->fill(self::stored());
@@ -205,6 +208,7 @@ class Settings extends Component implements SpansCompanies
             'operatorCompanyId' => $operator === null ? '' : (string) $operator,
             'waitlistOpen' => $settings->waitlistOpen(),
             'registrationOpen' => $settings->selfRegistrationOpen(),
+            'demoEnabled' => $settings->demoEnabled(),
         ];
     }
 }

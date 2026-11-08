@@ -26,6 +26,7 @@ use App\Support\Luhn;
  * @phpstan-type Employee array{first_name: string, last_name: string, birth: string, position_title: string, salary_form: string, salary: string, employment_type: string, employment_rate: int}
  * @phpstan-type Demo array{
  *     org_serial: string,
+ *     org_number?: string,
  *     name: string,
  *     city: string,
  *     postal_code: string,

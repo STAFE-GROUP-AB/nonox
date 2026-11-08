@@ -12,6 +12,8 @@ Schedule::command('ledger:verify --all')->dailyAt('03:15')->withoutOverlapping()
 // The next fiscal year, thirty days before the latest one ends (ADR-010), before agreements invoice into it.
 Schedule::command('fiscal-years:create-next')->dailyAt('05:35')->withoutOverlapping();
 Schedule::command('invoices:run-agreements')->dailyAt('06:00')->withoutOverlapping();
+// Try without registering (ADR-077): demo companies and guests whose time has run out; the only deletion NONOX makes.
+Schedule::command('demo:prune')->everyTenMinutes()->withoutOverlapping();
 // Personal data without a remaining purpose (GDPR art. 5.1 e), see docs/gdpr/lagringstider.md.
 Schedule::command('privacy:prune')->dailyAt('04:10')->withoutOverlapping();
 Schedule::command('connect:prune')->dailyAt('04:25')->withoutOverlapping();
