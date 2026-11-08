@@ -161,5 +161,6 @@
     "Passerat för :count dag sedan|Passerat för :count dagar sedan": "Passerat för :count dag sedan|Passerat för :count dagar sedan",
     "{1} En ny anmälan det senaste dygnet:|[2,*] :count nya anmälningar det senaste dygnet:": "{1} En ny anmälan det senaste dygnet:|[2,*] :count nya anmälningar det senaste dygnet:",
     "{1} Ett företag i koncernen visas inte, eftersom du inte har tillgång till dess rapporter.|[2,*] :count företag i koncernen visas inte, eftersom du inte har tillgång till deras rapporter.": "{1} Ett företag i koncernen visas inte, eftersom du inte har tillgång till dess rapporter.|[2,*] :count företag i koncernen visas inte, eftersom du inte har tillgång till deras rapporter.",
-    "{1} ett företag|[2,*] :count företag": "{1} ett företag|[2,*] :count företag"
+    "{1} ett företag|[2,*] :count företag": "{1} ett företag|[2,*] :count företag",
+    ":count resa, :distance, skickas in som milersättning för :month.|:count resor, :distance, skickas in som milersättning för :month.": ":count resa, :distance, skickas in som milersättning för :month.|:count resor, :distance, skickas in som milersättning för :month."
 }

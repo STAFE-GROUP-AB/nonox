@@ -278,6 +278,7 @@ agi_submissions                        — B.13
 
 ### B.5 System pay codes (seeded on enable, editable mapping)
 Monthly salary, hourly salary, overtime (simple/qualified), OB, bonus, commission, retroactive pay, vacation pay, vacation supplement, vacation compensation (payout), unpaid vacation, sick pay, karensavdrag, sick deduction, VAB deduction, parental leave deduction, unpaid leave, car benefit, fuel benefit, meal benefit, housing benefit, benefit co-payment (net), per diem tax-free / taxable, mileage tax-free / taxable, outlay repayment, advance, garnishment, salary exchange (gross deduction), pension premium, correction ±.
+As built for the körjournal (ADR-072): `MIL_FORMANSBIL` and `MIL_FORMANSBIL_EL` (mileage in a company car where the employee paid all fuel, tax-free at `mileage.company_car_fossil` / `mileage.company_car_electric`, 7331, AGI ruta 050), seeded for companies with payroll by a migration.
 As built for NONOX Avtal: `AVTALSTILLAGG` (supplement under an agreement, 7010), `PROVISION` (commission, 7010, vacation basis) and `AVTALSFORSAKRING` (agreement insurances, the employer's cost, 7570/2740).
 
 ### B.6 Versioned rules (`payroll_rule_versions`)
@@ -349,7 +350,7 @@ Pipeline — one class per step, each unit-tested:
 4. **Vacation** — sammalöneregeln (salary continues + supplement per day) or procentregeln; variable pay addition; unpaid vacation; saved days; payout at termination (one-off tax).
 5. **Additions** — overtime, OB, bonus, commission, retro (one-off tax).
 6. **Benefits** — add value to tax and contribution basis; co-payment as net deduction reduces the benefit value.
-7. **TaxFreeAllowances** — per diem and mileage within limits tax-free; excess automatically moved to taxable pay code.
+7. **TaxFreeAllowances** — per diem and mileage within limits tax-free; excess automatically moved to taxable pay code. Mileage from an approved körjournal claim (ADR-072, `expenses` types `MILEAGE_OWN_CAR`/`MILEAGE_COMPANY_CAR`) enters through `ContextBuilder` as one input per pay code with the distance in mil and the company's rate or none (the rule on the payment date); taxable-only trips go straight to `MIL_SKATTEPLIKTIG`. A missing rule (2027 förmånsbil) blocks the run.
 8. **GrossDeductions** — salary exchange etc., reduces taxable and contribution basis.
 9. **WithholdingTax** — B.7.
 10. **NetItems** — outlay repayment, advances, benefit co-payment, garnishment (Kronofogden decision, protected amount — `TODO(legal-verify)`).

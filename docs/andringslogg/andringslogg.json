@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-08-korjournal-och-kvitto-i-mobilen",
+      "datum": "2026-11-08T19:30:00+01:00",
+      "rubrik": "Körjournal med milersättning via lönen, och Fota kvitto i inkorgen",
+      "beskrivning": "Med Körjournal påslaget under företagets uppgifter skriver anställda in sina resor på Min sida och skickar in en månad som milersättning, som godkänns under Lön → Ansökningar och betalas med lönen; milersättning för förmånsbil kryssar nu också ruta 050 i arbetsgivardeklarationen. Ägaren till en enskild firma bokför resor i egen bil som ett verifikationsutkast under Bokföring → Körjournal, och under Förmånsbilar visas körningen i tjänsten och privat som underlag. Under Inkorg kan du fota ett kvitto som företaget betalat; inget läses in med GPS och inget bokförs förrän någon har godkänt det.",
+      "typ": "Nytt",
+      "omrade": "Lön"
+    },
+    {
       "id": "2026-11-08-uppskjuten-skatt-k3",
       "datum": "2026-11-08T09:30:00+01:00",
       "rubrik": "Uppskjuten skatt i bokslutet för räkenskapsår som följer K3 (beta)",

@@ -19,6 +19,7 @@ Allt i avsnittet finns i menyn under **Bokföring**.
 - [Konteringsmallar](/manual/bokforing/konteringsmallar) – skriv ett belopp, så fylls raderna och momsen i.
 - [Utkast](/manual/bokforing/utkast) – spara en verifikation som inte är klar och fortsätt senare.
 - [Underlag](/manual/bokforing/underlag) – kvitton och fakturor som PDF eller foto, och NONOX AI.
+- [Körjournal](/manual/bokforing/korjournal) – företagets bilar, mätarställningar och resor i egen bil för en enskild firma.
 - [Hitta och läsa verifikationer](/manual/bokforing/verifikationer) – listan, sökningen och en verifikation i detalj.
 - [Rätta en verifikation](/manual/bokforing/ratta-en-verifikation) – rättelseverifikationen och varför en bokförd verifikation aldrig ändras.
 - [Skapa en anläggningstillgång från ett inköp](/manual/bokforing/anlaggningstillgang-fran-inkop) – datorn eller maskinen hamnar i anläggningsregistret när du bokför inköpet.

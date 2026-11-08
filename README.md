@@ -93,10 +93,11 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Anställda, Skatteverkets skattetabeller, månads- och timlön, frånvaro, sjuklön med karensavdrag per sjukperiod (rest förs vidare till nästa månad och vid återinsjuknande) och arbetsgivaravgifter med sänkningen för unga. Timlön räknas från godkända tidrapporter, även från personalliggaren. Godkända timmar från tidigare månader som ingen lönekörning betalat blir en fråga i nästa lönekörning: ta med dem nu eller inte än.
 - Lönekörning med attest, lönebesked som PDF, lönefil till banken och bokföring i serie L.
 - Löneunderlag från schemasystem som PAXml eller CSV: timmar, OB och tillägg blir förslag i lönekörningen, koderna kopplas till lönearter en gång per system, och en person godkänner raderna innan de kommer med i lönen.
-- Semester enligt semesterlagen, förmåner, traktamente och milersättning, tjänstepension, utlägg med kvitto, lönerevision och slutlön.
+- Semester enligt semesterlagen, förmåner, traktamente och milersättning med körjournal, tjänstepension, utlägg med kvitto, lönerevision och slutlön.
 - Arbetsgivardeklaration (AGI) som XML enligt Skatteverkets schema, och ett lönearkiv som finns kvar när modulen stängs av.
 - Inför ett nytt löneår: årets satser med källa läses in varje natt som okontrollerade, och Lön → Regler visar för nästa utbetalningsår vilka regler som är kontrollerade, väntar på kontroll eller inte är publicerade ännu, och om skattetabellerna är inlästa (från Skatteverkets fil eller öppna data). Lön för december som betalas i januari räknas med det nya årets värden.
-- Min sida för anställda: lönebesked, sjukanmälan, vård av barn, semesteransökan och utlägg.
+- Min sida för anställda: lönebesked, sjukanmälan, vård av barn, semesteransökan, utlägg och körjournal.
+- Körjournal (av från början): resor skrivs in för hand, utan GPS, och en månad skickas in som milersättning som godkänns och betalas med lönen, för egen bil och för förmånsbil (ruta 050). Under Förmånsbilar visas körningen i tjänsten och privat som underlag, och ägaren till en enskild firma bokför resor i egen bil som ett verifikationsutkast mot 2018.
 
 ### Avtal (modul)
 - Kollektivavtal i lönen: avtalets värden som versionerad data med källa till parternas egna texter, aldrig som avtalstext. Data för Gröna Riks (medlem och hängavtal), Besöksnäringens tjänstemannaavtal, Detaljhandeln, Handelns tjänstemannaavtal, Lager och E-handel, bageriavtalet och Frisöravtalet.
@@ -160,6 +161,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Bara post från godkända avsändare tolkas; annat väntar i karantän tills någon godkänner avsändaren.
 - Peppol-fakturor, SIE-filer och dagsrapporter läses utan AI, med mallar som en person godkänt.
 - Gallring: avvisad post tas bort efter 7 dagar, och karantän som ingen hanterat efter 90 dagar.
+- Fota kvitto: ett kvitto som företaget betalat fotas med mobilen direkt i inkorgen och kontrolleras och tolkas som en bilaga; inget bokförs förrän någon har godkänt det.
 
 ### NONOX API – öppet API (modul)
 - Ett API för andra program: kontoplan, momskoder, räkenskapsår och låsta perioder, verifikationer (utkast, bokföring, rättelse och underlag), kunder, artiklar, kostnadsställen och projekt, kundfakturor (utkast, skapa, mejla, kreditera, betalningar och PDF), leverantörsfakturor (registrering, attest av någon annan och betalning), in- och utbetalningar, rapporter, momsdeklaration per period och SIE-export. Beskrivet i OpenAPI med exempel och dokumenterat för utvecklare på [nonox.app/utvecklare](https://nonox.app/utvecklare) (guider, referens och kodexempel i curl, PHP, JavaScript och Python, på svenska och engelska) och i [docs/api](docs/api/README.md). Gratis, utan tilläggsavgift.

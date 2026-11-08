@@ -65,6 +65,15 @@ En anställd kan ha en förmånsbil per månad. Byter den anställda bil låter 
 > [!IMPORTANT]
 > NONOX räknar inte bilar som blev skattepliktiga före 1 juli 2021, eller miljöbilar som blev skattepliktiga före 1 juli 2022, eftersom äldre regler gäller för dem. Lönekörningen stoppas då med en förklaring. Räkna värdet med Skatteverkets bilförmånsberäkning och lägg in det med lönearten **Bilförmån** i stället, och ta bort bilen från **Förmånsbilar**. Samma sak gäller om den anställda byter bil mitt i en månad.
 
+## Körjournalen som underlag
+
+Är körjournalen påslagen visar sidan under **Körjournal för företagets bilar** för varje bil och år hur mycket den körts i tjänsten och privat. Det är ett stöd för dig, inget beslut: NONOX ändrar aldrig förmånsvärdet själv.
+
+- **3 000 mil i tjänsten uppnått** visas när bilen körts minst 3 000 mil i tjänsten under kalenderåret. Då ska förmånsvärdet vara 75 procent (inkomstskattelagen 61 kap. 9 §). Du markerar det själv på bilen.
+- Privat körning visas mot Skatteverkets gräns för bilförmån i ringa omfattning: högst 100 mil **och** högst 10 tillfällen under året. Båda måste stämma.
+- En privat resa i en bil utan bilförmån ger en varning, eftersom den kan vara en skattepliktig förmån.
+- Under **Förslag till drivmedelsförmån för en månad** fyller du i drivmedlet som företaget betalat. NONOX föreslår marknadsvärdet för den privata körningen som kostnaden gånger privat sträcka delat med hela sträckan, och förmånen som marknadsvärdet gånger 1,2. Vill du använda förslaget lägger du in beloppet med lönearten **Drivmedelsförmån** i månadens lönekörning.
+
 ## Vanliga frågor
 
 **Varför kan bilförmånen för nästa år inte räknas ännu?**
