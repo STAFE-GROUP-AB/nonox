@@ -14,7 +14,7 @@ Law texts were downloaded as consolidated text from Regeringskansliet/Lagrummet
 | Id | Source | Version read | How |
 |---|---|---|---|
 | KtjL | Konsumenttjänstlag (1985:716) — https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/konsumenttjanstlag-1985716_sfs-1985-716/ | "Ändrad: t.o.m. SFS 2010:1006" | Full text, 1–8 §§, 36–45 §§ |
-| ML | Mervärdesskattelag (2023:200) — https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/mervardesskattelag-2023200_sfs-2023-200/ | t.o.m. SFS 2026:1025 | 7 kap. 7, 8, 14, 16, 24 §§; 13 kap. 37 §; 16 kap. 13 §; 17 kap. 11, 14, 16, 24 §§ |
+| ML | Mervärdesskattelag (2023:200) — https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/mervardesskattelag-2023200_sfs-2023-200/ | t.o.m. SFS 2026:1025 | 7 kap. 7, 8, 14, 16, 24 §§; 16 kap. 13 §; 17 kap. 11, 14, 16, 24 §§ |
 | IL | Inkomstskattelag (1999:1229) — https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/ | t.o.m. SFS 2026:1393 | 67 kap. 11–19 §§ |
 | HFL | Lag (2009:194) om förfarandet vid skattereduktion för hushållsarbete — https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2009194-om-forfarandet-vid-skattereduktion_sfs-2009-194/ | t.o.m. SFS 2025:324 | 5–9 a §§ |
 | SFL | Skatteförfarandelag (2011:1244) — https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/skatteforfarandelag-20111244_sfs-2011-1244/ | t.o.m. SFS 2026:1305 | 7 kap. 2 a §; 39 kap. 2 § (definitions), 11 a–12 §§ |
@@ -45,6 +45,8 @@ Law texts were downloaded as consolidated text from Regeringskansliet/Lagrummet
 - BAS 2026 account texts. The account numbers below are taken from NONOX's own INK2/INK4
   mapping (`app/Domain/IncomeTax/Ink2Codes.php`) and existing code, not from BAS. NONOX's
   BAS templates (`database/data/bas/2026/*.json`) contain none of 1470, 1620, 2420, 2450.
+  An independent quote check (2026-11-08) found that BAS 2026 itself does contain 1470, 1620,
+  2420 and 2450, which partly answers L12; their exact texts and the change account remain open.
 
 ## Classification used
 
@@ -225,6 +227,9 @@ buyer paid for RUT and three sevenths of it for ROT.
 contain what the work was and "antalet arbetade timmar".
 - HFL 9 § p. 3–4 (Lag 2020:1069): charged amounts for household work, material and other
   separately, paid amount and day, "vad hushållsarbetet avsett och antalet arbetade timmar".
+  HFL 9 § p. 4 has an exception: the hours are not required for the RUT services in IL 67
+  kap. 13 § p. 12–13. ROT is unaffected. NONOX requires the hours for every ROT and RUT
+  work order (the stricter rule) until the exception is mapped to RUT kinds of work.
 - SKV-ROT: "Du måste dokumentera hur många timmar du har arbetat och vilken typ av arbete du
   har gjort." Applies also at a fixed price.
 - Class: HARD. A ROT/RUT work order cannot produce an invoice basis without recorded hours
@@ -330,7 +335,7 @@ services is reported for the period in which the invoice was issued; a prepaymen
 received without an invoice is reported for the period it was received; at the latest for
 the period covering the second calendar month after the month of performance. Does not apply
 when VAT is reported under the cash method (7 kap. 16 §).
-- ML 7 kap. 24 §. Buyer side: ML 13 kap. 37 §.
+- ML 7 kap. 24 §; ML 7 kap. 14 § p. 2. Buyer side (who is liable): ML 16 kap. 13 §; the buyer's deduction period is `TODO(legal-verify)` (an earlier draft cited "13 kap. 37 §", which does not exist: chapter 13 ends at 36 §, corrected 2026-11-08 after an independent quote check).
 - ML 17 kap. 14 §: an invoice must be issued for a prepayment or a conto payment.
 - Class: HARD for NONOX's flow: an a conto amount is always invoiced (an a conto invoice),
   never only registered as a payment. Under fakturametoden this already reports VAT on the
@@ -594,7 +599,7 @@ timmar även vid fast pris."
 | L9 | Mixed reverse-charge and non-construction rows on one invoice | AO-R20 | not allowed: separate invoices |
 | L10 | Construction a conto under kontantmetoden (ML 7 kap. 16 § vs 24 §) | AO-R23 | a conto plan unavailable under kontantmetoden (ROT already requires fakturametoden) |
 | L11 | Approved ÄTA: räkenskapsinformation under BFL 1:2 p. 9 b or a supporting document? | AO-R25 | kept 7 years either way |
-| L12 | BAS 2026 accounts for upparbetad ej fakturerad intäkt, förskott från kunder, fakturerad ej upparbetad intäkt, pågående arbeten, and the change account | AO-R30, AO-R31 | 1620, 2420, 2450, 1470 from the INK2 map, marked unverified |
+| L12 | BAS 2026 accounts for upparbetad ej fakturerad intäkt, förskott från kunder, fakturerad ej upparbetad intäkt, pågående arbeten, and the change account | AO-R30, AO-R31 | 1620, 2420, 2450, 1470 (present in BAS 2026 per the quote check; texts and the change account unverified) |
 | L13 | K2/K3/K1: which of the year-end proposals are right per framework; K1 rules | AO-R31, AO-R33, AO-R34 | proposals for K2 and K3 only; K1 shows figures without a proposal |
 | L14 | Form of the final invoice after a conto invoices with VAT and ROT | AO-R36 | remainder rows only |
 | L15 | Naming AB 04/ABT 06/ABS 18/HF17 in a pick list; using NONOX's ÄTA PDF in their place | AO-R37 | names only, no clause text |
