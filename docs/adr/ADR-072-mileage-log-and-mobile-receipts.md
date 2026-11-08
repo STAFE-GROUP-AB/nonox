@@ -286,3 +286,20 @@ Steps 1 and 2 can run in parallel; 3 needs both; 5–7 need 3; 8 runs alongside 
 - **Q6** Is a GPS option wanted at all? If yes, it gets its own ADR and DPIA.
 
 Lawyer and accountant questions are L0–L16 in the rule sheet.
+
+## Addendum 2026-11-08: Lead decisions on the owner questions
+
+Decided by Lead 2026-11-08 under the owner's mandate, open for the consultant's review.
+
+- **Q1:** off by default, as the ADR proposes. Each company switches it on.
+- **Q2:** projects only. A customer is reached through the project.
+- **Q3:** the own-car amount (2,50 kr/km) is written in IL 12 kap. 5 § and is carried
+  forward into 2027. The förmånsbil amounts are set by Skatteverket each year, so they stay
+  pending until Skatteverket publishes them, and a 2027 payroll run with such a trip is
+  blocked until then.
+- **Q4:** offline entry comes later, not in the first version.
+- **Q5:** one claim per month, with one line per trip.
+- **Q6:** no GPS option. A later wish would need its own ADR and data-protection assessment.
+
+The bugs found in today's code (AGI ruta 050 for förmånsbil, and the note on the legal basis
+in the 2027 rules.json) are fixed in build step 1.
