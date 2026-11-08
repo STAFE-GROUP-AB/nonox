@@ -188,6 +188,7 @@ class ClosingPage extends Component
             'complete' => ClosingChecklist::isComplete($items),
             'result' => YearResult::of($fiscalYear),
             'taxEntry' => $entries->firstWhere('type', YearEndEntry::TAX),
+            'deferredTaxEntry' => $entries->firstWhere('type', YearEndEntry::DEFERRED_TAX),
             'unpaidEntries' => $entries->whereIn('type', [YearEndEntry::UNPAID_RECEIVABLES, YearEndEntry::UNPAID_PAYABLES])->keyBy('type'),
             'unpaid' => $fiscalYear->isOpen() && $entries->whereIn('type', [YearEndEntry::UNPAID_RECEIVABLES, YearEndEntry::UNPAID_PAYABLES])->isEmpty()
                 && ClosingCheck::query()->where('fiscal_year_id', $fiscalYear->id)->where('key', 'unpaid')->doesntExist()

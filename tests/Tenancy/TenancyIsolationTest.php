@@ -24,6 +24,7 @@ use App\Models\CostCenter;
 use App\Models\Customer;
 use App\Models\DeadlineCalendarFeed;
 use App\Models\DeadlineReminder;
+use App\Models\DeferredTaxItem;
 use App\Models\FiscalYear;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetDepreciation;
@@ -248,6 +249,7 @@ const COMPANY_SCOPED_MODELS = [
     PriorYearSizeFigure::class => ['start_date' => '2024-01-01', 'end_date' => '2024-12-31', 'average_employees_fte' => '3.40', 'balance_sheet_total_ore' => 150_000_000, 'net_turnover_ore' => 300_000_000],
     ClosingCheck::class => 'closingCheckAttributes',
     YearEndEntry::class => 'yearEndEntryAttributes',
+    DeferredTaxItem::class => 'deferredTaxItemAttributes',
     BankReconciliation::class => 'bankReconciliationAttributes',
     VatNumberCheck::class => 'vatNumberCheckAttributes',
     FortnoxConnection::class => 'fortnoxConnectionAttributes',
@@ -780,6 +782,19 @@ function closingCheckAttributes(): array
         'fiscal_year_id' => FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31'])->id,
         'key' => 'cash_count_'.random_int(1, 1_000_000),
         'checked_by' => User::factory()->create()->id,
+    ];
+}
+
+function deferredTaxItemAttributes(): array
+{
+    return [
+        'fiscal_year_id' => FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31'])->id,
+        'kind' => 'OTHER_ASSET',
+        'description' => 'Hemlig byggnad',
+        'carrying_ore' => 10_000_000,
+        'tax_value_ore' => 6_000_000,
+        'tax_value_source' => 'ENTERED',
+        'created_by' => User::factory()->create()->id,
     ];
 }
 

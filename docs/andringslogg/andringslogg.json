@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-08-uppskjuten-skatt-k3",
+      "datum": "2026-11-08T09:30:00+01:00",
+      "rubrik": "Uppskjuten skatt i bokslutet för räkenskapsår som följer K3 (beta)",
+      "beskrivning": "För räkenskapsår som följer K3 (beta) lägger du under Bokslut → Uppskjuten skatt upp skillnaderna mellan redovisat och skattemässigt värde, och NONOX räknar fram den uppskjutna skatten med skattesatsen för året efter balansdagen. En uppskjuten skattefordran föreslås aldrig, utan du skriver in den med skälet, och obeskattade reserver kan inte tas med. Ingenting bokförs förrän du har granskat och bekräftat förändringen på 8940.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-08-likviditetsprognos-lon-moms-skatt",
       "datum": "2026-11-08T08:00:00+01:00",
       "rubrik": "Likviditetsprognosen räknar med lön, moms, skattekontot och avtal",

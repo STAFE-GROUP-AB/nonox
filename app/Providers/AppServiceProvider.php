@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Actions\Company\ReconcileFirmLinks;
+use App\Domain\Closing\DeferredTax\BuildingCarryingAmounts;
+use App\Domain\Closing\DeferredTax\NoBuildingCarryingAmounts;
 use App\Domain\Deadlines\CompanyDeadlines;
 use App\Domain\Overview\TodoProviders;
 use App\Events\UserAccountDeleting;
@@ -62,6 +64,9 @@ class AppServiceProvider extends ServiceProvider
         config(['livewire.temporary_file_upload.disk' => 'uploads']);
 
         $this->app->scoped(CompanyContext::class);
+
+        // Deferred tax reads a building's carrying amount from the component register (ADR-059, A.2.6); S1-P4 binds its own.
+        $this->app->bindIf(BuildingCarryingAmounts::class, NoBuildingCarryingAmounts::class);
 
         // The installation's own settings from /hq (ADR-044): read once per request or job.
         $this->app->scoped(InstanceSettings::class);

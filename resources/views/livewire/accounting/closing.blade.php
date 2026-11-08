@@ -279,6 +279,17 @@
                 </div>
             @endif
 
+            @if($fiscalYear->reporting_framework === \App\Domain\Company\ReportingFramework::K3 && ! $ownerTaxed)
+                <div data-deferred-tax-step>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <p class="font-semibold text-ink">{{ __('Uppskjuten skatt') }}</p>
+                        <x-ui.badge tone="accent">{{ __('Beta') }}</x-ui.badge>
+                    </div>
+                    <p class="mt-1 text-sm text-gray-700">{{ $deferredTaxEntry !== null ? __(':amount bokfört på 8940.', ['amount' => $deferredTaxEntry->amount_ore->format()]) : __('Företaget följer K3 och redovisar uppskjuten skatt på skillnader mellan redovisade och skattemässiga värden. Bokför den före årets resultat.') }}</p>
+                    <a href="{{ route('accounting.closing.deferredTax', ['ar' => $fiscalYear->id]) }}" wire:navigate class="mt-2 inline-block text-sm font-medium text-accent-700 hover:underline">{{ __('Gå till uppskjuten skatt') }}</a>
+                </div>
+            @endif
+
             <div>
                 <p class="font-semibold text-ink">{{ __('Årets resultat') }}</p>
                 @if(! $result->hasActivity())

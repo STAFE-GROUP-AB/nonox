@@ -286,6 +286,48 @@
                 "source_quote": "I juridisk person får utgifter för en materiell anläggningstillgång som är av mindre värde eller kan antas ha en ekonomisk livslängd på högst tre år redovisas som kostnad vid det första redovisningstillfället, om företaget gör motsvarande avdrag enligt inkomstskattelagen (1999:1229) och det kan antas att avdraget kommer att medges."
             }
         ],
+        "deferred_tax.liability_account": [
+            {
+                "value": 2240,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R4.6",
+                "status": "researched",
+                "read": "2026-11-08",
+                "source_ref": "K3 punkt 29.31; BAS 224x",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl12-1-k3-kons20251215.pdf",
+                "source_quote": "En uppskjuten skattefordran eller uppskjuten skatteskuld ska klassificeras som finansiell anläggningstillgång respektive avsättning",
+                "note": "Kontonumret följer BAS 2026-referenslänkbasen i K3-taxonomin (se-gen-base-rbas2026-2021-10-31-ref-bas.xml, ADR-059 'The taxonomy'): UppskjutenSkatteskuld knyts till 224x. TODO(legal-verify): kontrollera mot BAS 2026-kontoplanen (fixturens antagande A12)."
+            }
+        ],
+        "deferred_tax.asset_account": [
+            {
+                "value": 1370,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R4.6",
+                "status": "researched",
+                "read": "2026-11-08",
+                "source_ref": "K3 punkt 29.31; BAS 137x",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl12-1-k3-kons20251215.pdf",
+                "source_quote": "En uppskjuten skattefordran eller uppskjuten skatteskuld ska klassificeras som finansiell anläggningstillgång respektive avsättning",
+                "note": "Kontonumret följer BAS 2026-referenslänkbasen i K3-taxonomin (se-gen-base-rbas2026-2021-10-31-ref-bas.xml, ADR-059 'The taxonomy'): UppskjutenSkattefordran knyts till 137x. TODO(legal-verify): kontrollera mot BAS 2026-kontoplanen (fixturens antagande A12)."
+            }
+        ],
+        "deferred_tax.expense_account": [
+            {
+                "value": 8940,
+                "starts_from": null,
+                "starts_before": null,
+                "rule_id": "S1-R4.6",
+                "status": "researched",
+                "read": "2026-11-08",
+                "source_ref": "K3 punkt 29.22; BAS 894x",
+                "source_url": "https://www.bfn.se/wp-content/uploads/vl12-1-k3-kons20251215.pdf",
+                "source_quote": "Förändringar i uppskjuten skatteskuld eller uppskjuten skattefordran ska redovisas i resultaträkningen om inte förändringen är hänförlig till en post som redovisas i eget kapital.",
+                "note": "Kontonumret följer BAS 2026-referenslänkbasen i K3-taxonomin (se-gen-base-rbas2026-2021-10-31-ref-bas.xml, ADR-059 'The taxonomy'): SkattAretsResultat knyts till 891x–894x; 8940 är BAS-kontot Uppskjuten skatt. TODO(legal-verify): kontrollera mot BAS 2026-kontoplanen (fixturens antagande A12)."
+            }
+        ],
         "k3_version_by_fiscal_year": [
             {
                 "value": "kons2024",
