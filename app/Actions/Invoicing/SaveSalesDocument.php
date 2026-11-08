@@ -6,13 +6,13 @@ namespace App\Actions\Invoicing;
 
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Invoicing\SalesRowInput;
+use App\Domain\Signing\SignedDocuments;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\NumberSeries;
 use App\Models\SalesDocument;
 use App\Models\SalesDocumentRow;
 use App\Models\User;
-use App\Modules\Crm\Support\SignedDocuments;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;

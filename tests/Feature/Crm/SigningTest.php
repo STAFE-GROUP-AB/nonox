@@ -3,27 +3,27 @@
 declare(strict_types=1);
 
 use App\Actions\Invoicing\SaveSalesDocument;
+use App\Actions\Signing\SendForSigning;
 use App\Domain\Invoicing\SalesDocumentStatus;
+use App\Domain\Signing\SigningFollowUp;
+use App\Domain\Signing\SigningPdfs;
+use App\Domain\Signing\SigningStatus;
+use App\Domain\Signing\SigningToken;
+use App\Events\QuoteSigned;
+use App\Jobs\FollowUpSigning;
+use App\Mail\SignedDocumentMail;
+use App\Mail\SigningRequestMail;
 use App\Models\AuditLog;
 use App\Models\Invoice;
 use App\Models\SalesDocument;
-use App\Modules\Crm\Actions\SendForSigning;
+use App\Models\SigningEvent;
+use App\Models\SigningRequest;
 use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\Domain\DealStatus;
-use App\Modules\Crm\Domain\SigningStatus;
-use App\Modules\Crm\Domain\SigningToken;
-use App\Modules\Crm\Events\QuoteSigned;
-use App\Modules\Crm\Jobs\FollowUpSigning;
-use App\Modules\Crm\Mail\SignedDocumentMail;
-use App\Modules\Crm\Mail\SigningRequestMail;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
-use App\Modules\Crm\Models\SigningEvent;
-use App\Modules\Crm\Models\SigningRequest;
-use App\Modules\Crm\Notifications\SigningNotice;
-use App\Modules\Crm\Support\SigningFollowUp;
-use App\Modules\Crm\Support\SigningPdfs;
 use App\Modules\ModuleManager;
+use App\Notifications\SigningNotice;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -319,13 +319,18 @@ it('refuses a deal of another account, an expiry beyond 90 days, and a closed qu
     expect(fn () => sendQuote($this))->toThrow(AuthorizationException::class);
 });
 
-it('closes every link while CRM is off', function () {
+it('keeps a quote link working while CRM is off, without the CRM steps (signing is core, ADR-075 §7)', function () {
     [$request, $token] = sendQuote($this);
     app(ModuleManager::class)->disable(CrmModule::KEY, $this->company, $this->owner, confirmed: true);
 
-    $this->get("/signera/{$token}")->assertNotFound()->assertSee('Länken gäller inte');
-    $this->post("/signera/{$token}", signInput($request))->assertStatus(410);
-    expect($request->refresh()->status)->toBe(SigningStatus::Pending);
+    $this->get("/signera/{$token}")->assertOk();
+    $this->post("/signera/{$token}", signInput($request))->assertOk();
+    CurrentCompany::set($this->company);
+
+    expect($request->refresh()->status)->toBe(SigningStatus::Signed)
+        ->and($request->order_id)->not->toBeNull()
+        ->and($this->deal->refresh()->status)->toBe(DealStatus::Open)
+        ->and(Activity::query()->where('account_id', $this->account->id)->where('subject', 'like', '%signerades')->exists())->toBeFalse();
 });
 
 it('keeps the exact confirmation the signer ticked, and quotes it in the certificate', function () {

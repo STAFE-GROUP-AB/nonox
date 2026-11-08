@@ -417,3 +417,33 @@ owner may change any of them.
 The first build covers the ADR's build steps 1–6. The legal questions L1–L12 stay open, and
 the code keeps them as `TODO(legal-verify)`. The legitimate-interest assessment template
 (L1) and the privacy information (L2) ship as drafts marked for the lawyer's review.
+
+## Addendum 2026-11-08: signing moved to core (as built, build step 5a)
+
+Built first, on Lead's request, so that the work-order module (ADR-074) can build on the same
+signing domain.
+
+- `app/Domain/Signing` holds the shared evidence: `Signable` (the interface any document
+  implements: type, key, company, title, PDF, fingerprint, still open, acceptance text,
+  required module, last valid day, notice destination, who may send, what happens on signing),
+  `SignableTypes` (a registry: type → the signing request column that holds the key and how to
+  find, and lock, the document), `SigningToken`, `QuoteFingerprint`, `SignatureImage`,
+  `SigningStatus`, `SigningEventType`, `SigningUnavailable`, `SigningPdfs` (certificate and
+  acceptance MAC), `SignedDocuments`, `SigningFollowUp` with `SigningHook`/`SigningHooks`.
+- Actions `App\Actions\Signing\SendForSigning`, `SignAtLink`, `PruneSigningLinks`; models
+  `App\Models\SigningRequest`, `SigningEvent` (tables keep their `crm_` names); the public page
+  `/signera/{token}` (route names `signing.*`), the company's file route
+  `/kunder/signeringar/{id}/{fil}` and the Livewire panel `signing.panel` are registered by
+  `App\Providers\SigningServiceProvider`, not by CRM.
+- The quote (`SalesDocument`) is registered by the core and needs no module: a quote is sent
+  and signed whether or not CRM is on, and becomes an order as before. The agreement is
+  registered by CRM and needs CRM (`signingModule()`), so its links close while CRM is off, as
+  before. CRM adds its steps (win the chosen deal, a done note on the account, notices to the
+  deal's and agreement's owners) through `CrmSigningHook`, only while CRM is on. Choosing a deal
+  is refused while CRM is off.
+- A later type (the work order) registers itself with `SignableTypes::GENERIC_COLUMN`: its key is
+  kept in the new `signable_id` column, which the evidence trigger protects like the others.
+- Unsigned links are pruned a year after they closed by the new `signing:prune` (every company,
+  04:15), as well as by `crm:agreements`.
+- Behaviour change, deliberate: ADR-046 closed every link while CRM was off. Quote links now stay
+  usable; the CRM test that asserted the old rule now asserts the new one.

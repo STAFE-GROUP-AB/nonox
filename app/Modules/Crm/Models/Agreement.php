@@ -4,15 +4,26 @@ declare(strict_types=1);
 
 namespace App\Modules\Crm\Models;
 
+use App\Domain\Signing\Signable;
+use App\Domain\Signing\SigningPdfs;
+use App\Models\Company;
 use App\Models\RecurringInvoice;
+use App\Models\SigningRequest;
 use App\Models\User;
+use App\Modules\Crm\CrmModule;
+use App\Modules\Crm\Domain\AccountKind;
 use App\Modules\Crm\Domain\AgreementKind;
 use App\Modules\Crm\Domain\ValuePeriod;
+use App\Support\Branding\Brand;
+use App\Support\Money\Money;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 /**
  * An agreement in the agreement register (ADR-046): with whom (an account),
@@ -48,7 +59,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
  */
-class Agreement extends Model
+class Agreement extends Model implements Signable
 {
     use BelongsToCompany;
 
@@ -59,6 +70,8 @@ class Agreement extends Model
     public const string TERMINATED = 'TERMINATED';
 
     public const string ENDED = 'ENDED';
+
+    public const string SIGNING_TYPE = 'AGREEMENT';
 
     public const int MAX_VALUE_ORE = 10_000_000_000_000;
 
@@ -161,5 +174,112 @@ class Agreement extends Model
     public function signingRequests(): HasMany
     {
         return $this->hasMany(SigningRequest::class)->latest('id');
+    }
+
+    public function signingType(): string
+    {
+        return self::SIGNING_TYPE;
+    }
+
+    public function signingKey(): string
+    {
+        return (string) $this->id;
+    }
+
+    public function signingCompanyId(): int
+    {
+        return $this->company_id;
+    }
+
+    public function signingTitle(): string
+    {
+        return $this->title;
+    }
+
+    /** The uploaded PDF, or one generated from the agreement's parties, term, notice, renewal, value and text. */
+    public function signingDocument(): array
+    {
+        $name = "Avtal-{$this->id}.pdf";
+
+        if ($this->document_path === null) {
+            $this->loadMissing(['account']);
+            $company = Company::query()->findOrFail($this->company_id);
+
+            return ['bytes' => SigningPdfs::render(view('crm::pdf.agreement', [
+                'agreement' => $this,
+                'company' => $company,
+                'brand' => Brand::for($company),
+                'value' => Money::ofOre($this->value_ore),
+            ])->render()), 'name' => $name];
+        }
+
+        $bytes = Storage::disk(SigningRequest::DISK)->get($this->document_path);
+
+        if (! is_string($bytes) || $bytes === '') {
+            throw new RuntimeException('The agreement\'s document is missing.');
+        }
+
+        return ['bytes' => $bytes, 'name' => $name];
+    }
+
+    /** Its terms and its uploaded PDF's hash. */
+    public function signingFingerprint(): string
+    {
+        $content = [
+            'id' => $this->id,
+            'account_id' => $this->account_id,
+            'title' => $this->title,
+            'kind' => $this->kind->value,
+            'start_date' => $this->start_date->toDateString(),
+            'end_date' => $this->end_date?->toDateString(),
+            'notice_months' => $this->notice_months,
+            'auto_renew' => $this->auto_renew,
+            'renewal_months' => $this->renewal_months,
+            'value_ore' => $this->value_ore,
+            'value_period' => $this->value_period->value,
+            'body_text' => $this->body_text,
+            'document_sha256' => $this->document_path === null ? null : $this->document_sha256,
+        ];
+
+        return hash('sha256', json_encode($content, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
+    }
+
+    public function signingIsOpen(): bool
+    {
+        return $this->signed_at === null;
+    }
+
+    public function signingAcceptance(): string
+    {
+        $account = Account::query()->find($this->account_id);
+
+        return $account instanceof Account && $account->kind === AccountKind::Company
+            ? __('Jag har läst och godkänner avtalet och har rätt att ingå det för :account.', ['account' => $account->name])
+            : __('Jag har läst och godkänner avtalet.');
+    }
+
+    public function signingModule(): ?string
+    {
+        return CrmModule::KEY;
+    }
+
+    public function signingValidUntil(): ?CarbonImmutable
+    {
+        return null;
+    }
+
+    public function signingDestination(): string
+    {
+        return 'crm-agreements';
+    }
+
+    public function authorizeSigning(User $user, bool $revoke = false): void
+    {
+        Gate::forUser($user)->authorize('update', $this);
+    }
+
+    public function markSigned(CarbonImmutable $signedAt, string $documentSha256): void
+    {
+        self::query()->whereKey($this->id)->update(['signed_at' => $signedAt, 'document_sha256' => $documentSha256]);
     }
 }

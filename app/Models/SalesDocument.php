@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Invoicing\SalesDocumentPdf;
 use App\Domain\Invoicing\SalesDocumentStatus;
+use App\Domain\Signing\QuoteFingerprint;
+use App\Domain\Signing\Signable;
+use App\Modules\Crm\Domain\AccountKind;
+use App\Modules\Crm\Models\Account;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
@@ -13,10 +18,13 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Gate;
+use LogicException;
 
 /**
  * An offert (quote) or order. Can be changed while it is open; a quote
- * becomes an order, and a quote or an order becomes a draft invoice.
+ * becomes an order, and a quote or an order becomes a draft invoice. A
+ * quote can be signed at a link (Signable, ADR-046), whether or not CRM is on.
  *
  * @property string $id
  * @property int $company_id
@@ -39,7 +47,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?string $sent_to
  * @property ?int $created_by
  */
-class SalesDocument extends Model
+class SalesDocument extends Model implements Signable
 {
     use BelongsToCompany;
     use HasUuids;
@@ -130,4 +138,91 @@ class SalesDocument extends Model
     {
         return $this->hasMany(SalesDocument::class, 'from_quote_id');
     }
+
+    public function signingType(): string
+    {
+        if (! $this->isQuote()) {
+            throw new LogicException('Only a quote can be sent for signing.');
+        }
+
+        return self::QUOTE;
+    }
+
+    public function signingKey(): string
+    {
+        return $this->id;
+    }
+
+    public function signingCompanyId(): int
+    {
+        return $this->company_id;
+    }
+
+    public function signingTitle(): string
+    {
+        return $this->title();
+    }
+
+    public function signingDocument(): array
+    {
+        return ['bytes' => SalesDocumentPdf::render($this), 'name' => SalesDocumentPdf::filename($this)];
+    }
+
+    public function signingFingerprint(): string
+    {
+        return QuoteFingerprint::for($this);
+    }
+
+    public function signingIsOpen(): bool
+    {
+        return $this->isOpen();
+    }
+
+    /**
+     * For a company, also that they may accept on its behalf; a private
+     * person keeps the short form. The CRM account's kind when there is
+     * one, else the customer register's: a legal person has an
+     * organisation number and no personal number.
+     */
+    public function signingAcceptance(): string
+    {
+        $customer = $this->customer;
+        $account = $customer === null ? null : Account::query()->where('customer_id', $customer->id)->first();
+        $legalPerson = $account instanceof Account
+            ? $account->kind === AccountKind::Company
+            : $customer !== null && $customer->org_number !== null && $customer->personal_number === null;
+
+        return $legalPerson
+            ? __('Jag har läst och godkänner offerten och har rätt att godkänna den för :customer.', ['customer' => $account->name ?? $customer?->name])
+            : __('Jag har läst och godkänner offerten.');
+    }
+
+    public function signingModule(): ?string
+    {
+        return null;
+    }
+
+    public function signingValidUntil(): ?CarbonImmutable
+    {
+        return $this->until_date;
+    }
+
+    public function signingDestination(): string
+    {
+        return 'quotes';
+    }
+
+    public function authorizeSigning(User $user, bool $revoke = false): void
+    {
+        // Revoking a link is allowed after the quote has closed too; sending needs an open quote.
+        if (! $revoke) {
+            Gate::forUser($user)->authorize('update', $this);
+        }
+
+        Gate::forUser($user)->authorize('send', $this);
+        abort_unless($user->hasTeamPermission(Company::query()->findOrFail($this->company_id), 'invoices:create'), 403);
+    }
+
+    /** A signed quote becomes an order in the follow-up (SigningFollowUp), not here. */
+    public function markSigned(CarbonImmutable $signedAt, string $documentSha256): void {}
 }

@@ -3,7 +3,7 @@ beskrivning: Skicka en offert eller ett avtal för signering med namnteckning. K
 ordning: 27
 roller: [owner, admin, accountant, bookkeeper, sales]
 modul: crm
-rutter: [crm.signing.file]
+rutter: [signing.file]
 sokord: [signera, signering, e-signatur, underskrift, namnteckning, digital signatur, elektronisk underskrift, godkänna offert, signeringsbevis, avtal]
 ---
 
@@ -13,14 +13,14 @@ Skicka en offert eller ett avtal till kunden för signering. Kunden får ett mej
 
 ![Sidan där kunden läser offerten och skriver under med sin namnteckning.](/bilder/manual/crm/signera-offert.webp)
 
-Signeringen kräver modulen CRM. Det är en **enkel elektronisk underskrift**, inte BankID: den visar att den som hade tillgång till mejlet godkände just det dokumentet vid en viss tid, men inte vem personen är. Behöver du säker identifiering, signera med BankID någon annanstans och ladda upp avtalet som PDF.
+Offerter kan signeras med eller utan modulen CRM. Avtal finns i CRM och kräver den. Med CRM på kan du också koppla en affär som vinns när kunden har signerat. Signeringen är en **enkel elektronisk underskrift**, inte BankID: den visar att den som hade tillgång till mejlet godkände just det dokumentet vid en viss tid, men inte vem personen är. Behöver du säker identifiering, signera med BankID någon annanstans och ladda upp avtalet som PDF.
 
 ## Så här skickar du en offert för signering
 
 1. Öppna offerten under **Fakturering → Offerter**. Den ska vara öppen.
 2. Under **Signering**, skriv **E-post till den som ska signera**.
 3. Välj gärna **Sista dag att signera (frivilligt)**. Annars gäller länken till offertens giltighetsdag, eller i 30 dagar. Den gäller aldrig längre än 90 dagar.
-4. Välj **Affär som vinns vid signering** om offerten hör till en affär. Har kunden bara en öppen affär är den redan vald.
+4. Med CRM på: välj **Affär som vinns vid signering** om offerten hör till en affär. Har kunden bara en öppen affär är den redan vald.
 5. Bocka i **Gör också ett fakturautkast när offerten är signerad** om du vill fakturera direkt.
 6. Tryck på **Skicka för signering**.
 

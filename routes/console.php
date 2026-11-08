@@ -14,6 +14,8 @@ Schedule::command('fiscal-years:create-next')->dailyAt('05:35')->withoutOverlapp
 Schedule::command('invoices:run-agreements')->dailyAt('06:00')->withoutOverlapping();
 // Personal data without a remaining purpose (GDPR art. 5.1 e), see docs/gdpr/lagringstider.md.
 Schedule::command('privacy:prune')->dailyAt('04:10')->withoutOverlapping();
+// Unsigned signing links a year after they closed, in every company (ADR-046, ADR-075 §7).
+Schedule::command('signing:prune')->dailyAt('04:15')->withoutOverlapping();
 Schedule::command('connect:prune')->dailyAt('04:25')->withoutOverlapping();
 // The encrypted chat (ADR-045): expired chats in a file store, which does not expire them by itself.
 Schedule::command('chat:prune')->everyFiveMinutes()->withoutOverlapping();

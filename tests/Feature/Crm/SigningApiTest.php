@@ -3,13 +3,13 @@
 declare(strict_types=1);
 
 use App\Actions\Invoicing\SaveSalesDocument;
+use App\Actions\Signing\SendForSigning;
+use App\Domain\Signing\SigningPdfs;
+use App\Mail\SigningRequestMail;
 use App\Models\SalesDocument;
+use App\Models\SigningRequest;
 use App\Modules\Connect\Models\ConnectWebhookDelivery;
-use App\Modules\Crm\Actions\SendForSigning;
-use App\Modules\Crm\Mail\SigningRequestMail;
 use App\Modules\Crm\Models\Agreement;
-use App\Modules\Crm\Models\SigningRequest;
-use App\Modules\Crm\Support\SigningPdfs;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;

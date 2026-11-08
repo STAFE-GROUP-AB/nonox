@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Actions\Signing\SendForSigning;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Domain\Signing\SigningStatus;
 use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\SalesDocument;
+use App\Models\SigningRequest;
 use App\Models\SupplierInvoice;
 use App\Models\User;
 use App\Models\Voucher;
-use App\Modules\Crm\Actions\SendForSigning;
-use App\Modules\Crm\Domain\SigningStatus;
-use App\Modules\Crm\Models\SigningRequest;
 use App\Support\Tenancy\CurrentCompany;
 use Database\Seeders\Demo\DemoIndustries;
 use Database\Seeders\TaxFormsDemoSeeder;
