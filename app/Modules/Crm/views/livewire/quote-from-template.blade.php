@@ -12,7 +12,7 @@
                 </select>
                 <x-input-error for="templateId" class="mt-1" />
             </div>
-            @if($fixedCustomerId === null)
+            @if($fixedCustomerId === null && $dealId === null)
                 <div class="min-w-[12rem] flex-1">
                     <label for="qft-customer-{{ $this->getId() }}" class="block text-sm font-medium text-gray-700">{{ __('Kund') }}</label>
                     <select id="qft-customer-{{ $this->getId() }}" class="{{ $input }} mt-1" wire:model="customerId">
@@ -26,6 +26,9 @@
             @endif
             <x-button wire:loading.attr="disabled">{{ __('Skapa offert') }}</x-button>
             <x-input-error for="template" class="basis-full" />
+            <x-input-error for="deal" class="basis-full" />
+            <x-input-error for="customer_id" class="basis-full" />
+            <x-input-error for="rows" class="basis-full" />
         </form>
     @endif
 </div>

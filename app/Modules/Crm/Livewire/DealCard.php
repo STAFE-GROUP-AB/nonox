@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\SalesDocument;
 use App\Modules\Crm\Actions\CompleteActivity;
+use App\Modules\Crm\Actions\CreateQuoteForDeal;
 use App\Modules\Crm\Actions\LogActivity;
 use App\Modules\Crm\Actions\LoseDeal;
 use App\Modules\Crm\Actions\MoveDeal;
@@ -29,6 +30,7 @@ use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Models\PipelineStage;
 use App\Modules\Crm\Support\CompanyMembers;
 use App\Support\Money\Money;
+use App\Support\Toast;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -52,6 +54,10 @@ class DealCard extends Component
 
     #[Locked]
     public int $dealId;
+
+    /** The quote the deal had when the card was opened; a second click with an old card is refused. */
+    #[Locked]
+    public ?string $quoteSeen = null;
 
     /** The open panel: edit, step, complete, win, lose or winback; '' for none. */
     public string $panel = '';
@@ -85,6 +91,7 @@ class DealCard extends Component
         abort_unless($this->user()->can('view', $deal), 403);
 
         $this->dealId = $deal->id;
+        $this->quoteSeen = $deal->quote_id;
     }
 
     public function moveTo(int $stageId, MoveDeal $move): void
@@ -179,6 +186,23 @@ class DealCard extends Component
 
         $this->closePanel();
         $this->toast($this->nextRequired ? __('Klart, och nästa steg är planerat.') : __('Klart.'));
+    }
+
+    /** Ny offert: one row from the deal, linked to it, opened in the quote editor. */
+    public function newQuote(CreateQuoteForDeal $create): void
+    {
+        $deal = $this->authorizedDeal();
+
+        try {
+            $quote = $create($this->user(), $this->company(), $deal, null, $this->quoteSeen);
+        } catch (ValidationException $exception) {
+            $this->toast($this->firstError($exception), 'error');
+
+            return;
+        }
+
+        Toast::flash(__(':title är skapad från affären. Kontrollera raderna och skicka den.', ['title' => $quote->title()]));
+        $this->redirectRoute('invoicing.quotes.show', ['document' => $quote->id]);
     }
 
     public function startWin(): void
@@ -276,16 +300,17 @@ class DealCard extends Component
             // As on the account card: a private person's quotes, orders and invoices are for those who may see the invoices.
             'limitedLedger' => ! $canSeeInvoices && $deal->account?->kind === AccountKind::Person,
             'canMakeCustomer' => $customerId === null && $user->can('create', [Customer::class, $company]),
-            // "Ny offert från mall" (ADR-046) for an open deal's customer, for those who make quotes.
-            'templateCustomerId' => $deal->isOpen() && $customerId !== null && $user->hasTeamPermission($company, 'invoices:create') ? $customerId : null,
+            // "Ny offert" and "Ny offert från mall" (ADR-046) for an open deal, for those who make quotes; a prospect is made a customer by it, if the user may add customers.
+            'canMakeQuote' => $deal->isOpen() && $user->hasTeamPermission($company, 'invoices:create') && ($customerId !== null || $user->can('create', [Customer::class, $company])),
             'members' => in_array($this->panel, ['edit', 'step', 'complete'], true) ? CompanyMembers::all($company) : collect(),
             'people' => $this->panel === 'edit' ? Person::query()->whereHas('accounts', fn (Builder $query) => $query->whereKey($deal->account_id))->orderBy('name')->get(['id', 'name']) : collect(),
             'reasons' => $this->panel === 'lose' ? LossReason::query()->active()->orderBy('sort')->orderBy('id')->get(['id', 'name']) : collect(),
             // Only a customer has quotes, orders and invoices; a seller without invoices:view picks none.
-            'quotes' => $this->panel === 'win' && $customerId !== null && $canSeeInvoices ? $this->documents($customerId, SalesDocument::QUOTE) : collect(),
-            'orders' => $this->panel === 'win' && $customerId !== null && $canSeeInvoices ? $this->documents($customerId, SalesDocument::ORDER) : collect(),
+            'quotes' => $this->panel === 'win' && $customerId !== null && $canSeeInvoices ? $this->documents($customerId, SalesDocument::QUOTE, $deal->quote_id) : collect(),
+            'orders' => $this->panel === 'win' && $customerId !== null && $canSeeInvoices ? $this->documents($customerId, SalesDocument::ORDER, $deal->order_id) : collect(),
             'invoices' => $this->panel === 'win' && $customerId !== null && $canSeeInvoices
-                ? Invoice::query()->where('customer_id', $customerId)->where('kind', Invoice::INVOICE)->whereNotNull('issued_at')->orderByDesc('invoice_date')->limit(20)->get(['id', 'number', 'invoice_date', 'net_ore'])
+                // The deal's own linked invoice is listed even as a draft, so what is preselected can be seen.
+                ? Invoice::query()->where('customer_id', $customerId)->where('kind', Invoice::INVOICE)->where(fn (Builder $query) => $query->whereNotNull('issued_at')->orWhere('id', $deal->invoice_id))->orderByDesc('invoice_date')->limit(20)->get(['id', 'number', 'invoice_date', 'net_ore', 'issued_at'])
                 : collect(),
             'types' => array_filter(ActivityType::cases(), fn (ActivityType $type): bool => $type->canBePlanned()),
             'outcomes' => CallOutcome::cases(),
@@ -336,9 +361,18 @@ class DealCard extends Component
     }
 
     /** @return Collection<int, SalesDocument> */
-    private function documents(int $customerId, string $kind): Collection
+    private function documents(int $customerId, string $kind, ?string $linkedId): Collection
     {
-        return SalesDocument::query()->where('customer_id', $customerId)->where('kind', $kind)->orderByDesc('number')->limit(20)->get(['id', 'kind', 'number', 'document_date', 'net_ore']);
+        $latest = SalesDocument::query()->where('customer_id', $customerId)->where('kind', $kind)->orderByDesc('number')->limit(20)->get(['id', 'kind', 'number', 'document_date', 'net_ore']);
+
+        // The linked one is always among the options, however old.
+        if ($linkedId === null || $latest->contains('id', $linkedId)) {
+            return $latest;
+        }
+
+        $linked = SalesDocument::query()->where('customer_id', $customerId)->where('kind', $kind)->whereKey($linkedId)->get(['id', 'kind', 'number', 'document_date', 'net_ore']);
+
+        return $latest->concat($linked);
     }
 
     /** @return array<string, string> */

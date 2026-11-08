@@ -10677,5 +10677,10 @@
     "Hämta posterna från föregående år": "Take the items from the previous year",
     "Hämtad från föregående år – kontrollera det skattemässiga värdet": "Taken from the previous year – check the tax value",
     "Företaget har inga temporära skillnader kvar. Uppskjuten skatteskuld :liability och uppskjuten skattefordran :asset ska återföras helt.": "The company has no temporary differences left. The deferred tax liability :liability and the deferred tax asset :asset are to be reversed in full.",
-    "Posten är hämtad till nästa räkenskapsår. Ta bort den där först.": "The item has been taken into the next fiscal year. Remove it there first."
+    "Posten är hämtad till nästa räkenskapsår. Ta bort den där först.": "The item has been taken into the next fiscal year. Remove it there first.",
+    "Prospekten är inte kund än, och du får inte lägga till kunder. Be någon med behörighet göra den till kund först.": "The prospect is not a customer yet, and you may not add customers. Ask someone with permission to make it a customer first.",
+    ":title är skapad från affären. Kontrollera raderna och skicka den.": ":title was created from the deal. Check the rows and send it.",
+    "Offerten får en rad från affären och kopplas till den. Raderna går att ändra innan du skickar den.": "The quote gets one row from the deal and is linked to it. You can change the rows before you send it.",
+    "Affären har redan fått en offert. Ladda om sidan och försök igen.": "The deal has already got a quote. Reload the page and try again.",
+    "Faktura (utkast)": "Invoice (draft)"
 }
