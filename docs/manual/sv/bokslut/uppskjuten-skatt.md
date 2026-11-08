@@ -38,7 +38,7 @@ Varje post visas i tabellen med **Redovisat värde**, **Skattemässigt värde**,
 
 ## Nästa år: hämta posterna från föregående år
 
-Ett nytt räkenskapsår börjar utan poster. Har föregående år poster visas knappen **Hämta posterna från föregående år**. Den kopierar posterna med samma konton och skattemässiga värden. Det redovisade värdet räknas om från kontona för det nya året, men det skattemässiga värdet måste du kontrollera själv: varje kopierad post är märkt **Hämtad från föregående år – kontrollera det skattemässiga värdet**, och inget kan bokföras förrän du har ändrat och sparat posten. En uppskjuten skattefordran kopieras inte, utan bedöms på nytt varje år.
+Ett nytt räkenskapsår börjar utan poster. Har föregående år poster visas knappen **Hämta posterna från föregående år**. Den kopierar posterna med samma konton och skattemässiga värden. Det redovisade värdet räknas om från kontona för det nya året, men det skattemässiga värdet måste du kontrollera själv: varje kopierad post är märkt **Hämtad från föregående år – kontrollera det skattemässiga värdet**, och inget kan bokföras förrän du har kontrollerat och sparat posten. En uppskjuten skattefordran kopieras inte, utan bedöms på nytt varje år.
 
 Har året inga poster men står det uppskjuten skatt på 2240 eller 1370, skulle bokföringen återföra allt. Det går bara om du kryssar i att företaget inte har några temporära skillnader kvar och att skulden och fordran ska återföras helt.
 

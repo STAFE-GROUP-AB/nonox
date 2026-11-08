@@ -10676,5 +10676,6 @@
     ":count poster är hämtade från föregående år. Kontrollera det skattemässiga värdet för var och en och spara den.": ":count items were taken from the previous year. Check the tax value of each one and save it.",
     "Hämta posterna från föregående år": "Take the items from the previous year",
     "Hämtad från föregående år – kontrollera det skattemässiga värdet": "Taken from the previous year – check the tax value",
-    "Företaget har inga temporära skillnader kvar. Uppskjuten skatteskuld :liability och uppskjuten skattefordran :asset ska återföras helt.": "The company has no temporary differences left. The deferred tax liability :liability and the deferred tax asset :asset are to be reversed in full."
+    "Företaget har inga temporära skillnader kvar. Uppskjuten skatteskuld :liability och uppskjuten skattefordran :asset ska återföras helt.": "The company has no temporary differences left. The deferred tax liability :liability and the deferred tax asset :asset are to be reversed in full.",
+    "Posten är hämtad till nästa räkenskapsår. Ta bort den där först.": "The item has been taken into the next fiscal year. Remove it there first."
 }

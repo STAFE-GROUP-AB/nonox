@@ -219,6 +219,12 @@ class DeferredTaxItems
         CurrentCompany::run($company, fn () => DB::transaction(function () use ($user, $company, $fiscalYear, $itemId): void {
             $this->lockAndEnsureNotBooked($fiscalYear);
             $item = DeferredTaxItem::query()->where('fiscal_year_id', $fiscalYear->id)->whereKey($itemId)->firstOrFail();
+
+            // A copy in the next year points at this item (copied_from_id); keep the link intact.
+            if (DeferredTaxItem::query()->where('copied_from_id', $item->id)->exists()) {
+                throw ValidationException::withMessages(['item' => __('Posten är hämtad till nästa räkenskapsår. Ta bort den där först.')]);
+            }
+
             $item->delete();
             Audit::record('deferred_tax.item_removed', $item, ['fiscal_year_id' => $fiscalYear->id, 'kind' => $item->kind], $company, $user);
         }));

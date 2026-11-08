@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Accounting\CorrectVoucher;
+use App\Actions\Accounting\CreateNextFiscalYear;
 use App\Actions\Closing\DeferredTaxItems;
 use App\Actions\Closing\YearEndClosing;
 use App\Domain\Accounting\AccountType;
@@ -308,6 +309,23 @@ describe('a K3 company', function () {
         expect($entry->voucher_id)->toBeNull()
             ->and($entry->amount_ore->ore)->toBe(0)
             ->and(Voucher::query()->count())->toBe($vouchers);
+    });
+
+    it('refuses to remove an item that has been copied into the next fiscal year', function () {
+        $next = app(CreateNextFiscalYear::class)($this->owner, $this->company);
+        $next->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
+        $source = $this->items->save($this->owner, $this->year, deferredItem(['tax_value' => '700 000']));
+        $this->travelTo(CarbonImmutable::parse('2028-02-10 10:00:00'));
+        $this->items->copyFromPreviousYear($this->owner, $next->refresh());
+
+        expect(fn () => $this->items->remove($this->owner, $this->year, $source->id))
+            ->toThrow(ValidationException::class, 'Posten är hämtad till nästa räkenskapsår. Ta bort den där först.');
+        expect(DeferredTaxItem::query()->whereKey($source->id)->exists())->toBeTrue();
+
+        $this->items->remove($this->owner, $next, DeferredTaxItem::query()->where('fiscal_year_id', $next->id)->sole()->id);
+        $this->items->remove($this->owner, $this->year, $source->id);
+
+        expect(DeferredTaxItem::query()->count())->toBe(0);
     });
 
     it('still blocks the current tax proposal for tax booked by hand on 8940, also in a K2 year', function () {
