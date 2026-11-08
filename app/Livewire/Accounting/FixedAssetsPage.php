@@ -58,6 +58,9 @@ class FixedAssetsPage extends Component
     /** @var list<array<string, string>> each: name, kind, cost, accumulated, life_months, residual, asset_account */
     public array $components = [];
 
+    /** The person has typed a residual value: the pre-fill stops, so it never overwrites one. */
+    public bool $residualsTouched = false;
+
     /** The split is shown with its consequences before it is made. */
     public bool $confirmingSplit = false;
 
@@ -203,6 +206,7 @@ class FixedAssetsPage extends Component
         $this->splitting = $asset->id;
         $this->splitDate = $from->toDateString();
         $this->confirmingSplit = false;
+        $this->residualsTouched = false;
         $this->reset('creating', 'editing', 'disposing');
         $this->resetErrorBag();
     }
@@ -217,9 +221,18 @@ class FixedAssetsPage extends Component
         $this->components[] = ['name' => '', 'kind' => FixedAssets::COMPONENT_PART, 'cost' => '', 'accumulated' => '', 'life_months' => '', 'total_life_months' => '', 'residual' => '', 'asset_account' => (string) $asset->asset_account];
     }
 
-    /** A changed cost or kind spreads the asset's residual value over the parts again. */
+    /**
+     * A changed cost or kind spreads the asset's residual value over the parts
+     * again, until the person types a residual value of their own.
+     */
     public function updatedComponents(mixed $value, ?string $key = null): void
     {
+        if ($key !== null && str_ends_with($key, '.residual')) {
+            $this->residualsTouched = true;
+
+            return;
+        }
+
         if ($key === null || str_ends_with($key, '.cost') || str_ends_with($key, '.kind')) {
             $this->prefillResiduals();
         }
@@ -233,7 +246,7 @@ class FixedAssetsPage extends Component
      */
     private function prefillResiduals(): void
     {
-        if ($this->splitting === null) {
+        if ($this->splitting === null || $this->residualsTouched) {
             return;
         }
 
@@ -282,7 +295,7 @@ class FixedAssetsPage extends Component
 
     public function cancelSplit(): void
     {
-        $this->reset('splitting', 'splitDate', 'components', 'confirmingSplit');
+        $this->reset('splitting', 'splitDate', 'components', 'confirmingSplit', 'residualsTouched');
         $this->resetErrorBag();
     }
 

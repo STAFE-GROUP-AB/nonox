@@ -198,3 +198,24 @@ it('refuses a proposal without a life for an asset that is depreciated, and abov
         ->and(fn () => $propose('EQUIPMENT', '900', 1220))->toThrow(ValidationException::class, '600')
         ->and(fn () => $propose('BUILDINGS', '1300', 1110))->toThrow(ValidationException::class, '1200');
 });
+
+it('stops pre-filling the residual values once the person has typed one, also when costs change afterwards', function () {
+    $building = reviewBuilding(['residual' => '100 000']);
+
+    Livewire::test(FixedAssetsPage::class)
+        ->call('startSplit', $building->id)
+        ->call('removeComponent', 4)->call('removeComponent', 3)
+        ->set('components.0.cost', '100 000')
+        ->set('components.1.cost', '450 000')
+        ->set('components.2.cost', '450 000')
+        ->assertSet('residualsTouched', false)
+        ->set('components.1.residual', '70 000')
+        ->assertSet('residualsTouched', true)
+        ->set('components.2.cost', '400 000')
+        ->set('components.0.cost', '150 000')
+        ->assertSet('components.1.residual', '70 000')
+        ->assertSet('components.2.residual', Money::ofOre(5_000_000)->format(withCurrency: false))
+        // A new split starts untouched again.
+        ->call('startSplit', $building->id)
+        ->assertSet('residualsTouched', false);
+});

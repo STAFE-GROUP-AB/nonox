@@ -1720,7 +1720,8 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   - En komponents tillgångskonto ska ligga mellan 1100 och 1299 och får inte
     sluta på 9 (konton för ackumulerade avskrivningar). Tillgångens restvärde
     föreslås fördelat på delarna i förhållande till anskaffningsvärdet med
-    största-rest-metoden.
+    största-rest-metoden, tills personen själv skriver ett restvärde; därefter
+    skrivs inget restvärde över.
   - Tillgången får status `SPLIT`, skrivs inte av och kan inte avyttras som
     helhet. Dess bokförda avskrivningar och verifikationer ändras inte.
   - Har en komponent ett annat tillgångskonto än tillgången (mark på 1130)
