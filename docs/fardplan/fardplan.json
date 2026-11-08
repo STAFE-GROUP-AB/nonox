@@ -158,6 +158,39 @@
       "status": "Önskemål",
       "omrade": "Lager",
       "uppdaterad": "2026-11-03"
+    },
+    {
+      "id": "fraga-siffrorna",
+      "rubrik": "Fråga siffrorna: varför ändrades resultatet?",
+      "beskrivning": "Du frågar till exempel varför marginalen sjönk i oktober och får svaret i klartext: vilka konton, kunder och kostnadsställen som förklarar skillnaden mot jämförelseperioden, med länk ner till verifikationerna. Siffrorna räknas fram ur bokföringen. AI formulerar bara texten och hittar aldrig på ett belopp. Med AI avstängt visar NONOX samma uppdelning utan text.",
+      "status": "Planerat",
+      "omrade": "Bokslut",
+      "uppdaterad": "2026-11-08"
+    },
+    {
+      "id": "en-lista-att-godkanna",
+      "rubrik": "En lista med allt som väntar på ditt godkännande",
+      "beskrivning": "Förslag på kontering från inkorgen, matchningar mot banken, periodiseringar och förslag på lönegrupp samlas i en lista. Du ser varför förslaget ser ut som det gör, rättar eller godkänner. Ingenting bokförs utan att en människa har godkänt det.",
+      "status": "Planerat",
+      "omrade": "Övrigt",
+      "uppdaterad": "2026-11-08"
+    },
+    {
+      "id": "logg-over-vem-som-sett-personuppgifter",
+      "rubrik": "Logg över vem som har sett personuppgifter",
+      "beskrivning": "I dag loggar NONOX varje ändring. Nu ska även läsningar av känsliga personuppgifter loggas, till exempel lönebesked, personnummer och personer i CRM, så att du kan se vem som har öppnat vad och när.",
+      "status": "Planerat",
+      "omrade": "Övrigt",
+      "uppdaterad": "2026-11-08"
+    },
+    {
+      "id": "hallbarhetsdata-till-kunder",
+      "rubrik": "Hållbarhetsdata till stora kunder",
+      "beskrivning": "Större företag ställer frågor om hållbarhet till sina leverantörer. Vi utreder vilka uppgifter NONOX kan ta fram ur det som redan finns i bokföringen och lönen, och hur de kan lämnas som en rapport. Det som är en uppskattning ska tydligt stå som en uppskattning.",
+      "status": "Önskemål",
+      "omrade": "Övrigt",
+      "uppdaterad": "2026-11-08",
+      "kommentar": "Vi utreder vad som går att stödja på ett trovärdigt sätt."
     }
   ]
 }
