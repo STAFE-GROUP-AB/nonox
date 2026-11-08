@@ -35,7 +35,7 @@
       "id": "2026-11-08-likviditetsprognos-lon-moms-skatt",
       "datum": "2026-11-08T08:00:00+01:00",
       "rubrik": "Likviditetsprognosen räknar med lön, moms, skattekontot och avtal",
-      "beskrivning": "Prognosen på översikten räknar nu lön och arbetsgivarskatter från lönekörningarna, momsen på Skatteverkets datum, F-skatt och saldot på skattekontot, och kommande fakturor från avtal. Snittresultatet räknar inte med det som redan räknas för sig, så att inget kommer med två gånger. Diagrammet och tabellen visar vad varje del betyder för varje månad.",
+      "beskrivning": "Prognosen på översikten räknar nu lön och arbetsgivarskatter från lönekörningarna, momsen på Skatteverkets datum, saldot på skattekontot, kommande fakturor från avtal med momsen på dem, och F-skatten när månadsbeloppet är ifyllt under företagets uppgifter. Snittresultatet räknar inte med det som redan räknas för sig, så att inget kommer med två gånger. Diagrammet och tabellen visar vad varje del betyder för varje månad.",
       "typ": "Förbättrat",
       "omrade": "Bokföring"
     },

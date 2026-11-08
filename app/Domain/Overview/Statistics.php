@@ -38,6 +38,18 @@ final class Statistics
 
     public const int LIQUIDITY_MONTHS = 12;
 
+    /**
+     * The cost accounts of the payroll voucher's EMPLOYER lines, which are
+     * paid to an insurer or through the preliminary tax and not by the
+     * payroll run (PayCodeCatalog: TJANSTEPENSION 7410, SARSKILD_LONESKATT
+     * 7530, AVTALSFORSAKRING 7570, credited to 2740 and 2514): BAS 74
+     * Pensionskostnader, 753 Särskild löneskatt and 757 Premier för
+     * arbetsmarknadsförsäkringar. They stay in the average result.
+     *
+     * @var list<array{0: int, 1: int}>
+     */
+    public const array NOT_PAID_BY_RUNS = [[7400, 7499], [7530, 7539], [7570, 7579]];
+
     public function __construct(private readonly ForecastFlows $flows) {}
 
     /**
@@ -110,7 +122,6 @@ final class Statistics
     private function monthly(CarbonImmutable $from, CarbonImmutable $to, CarbonImmutable $today): array
     {
         $vat = VoucherSource::Vat->value;
-        $payroll = VoucherSource::Payroll->value;
 
         return VoucherRow::query()
             ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
@@ -124,8 +135,9 @@ final class Statistics
             ->selectRaw('COALESCE(SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) FILTER (WHERE accounts.number BETWEEN 1900 AND 1999 AND vouchers.voucher_date <= ?), 0) AS cash', [$today->toDateString()])
             ->selectRaw('COALESCE(SUM(voucher_rows.credit_ore - voucher_rows.debit_ore) FILTER (WHERE accounts.number BETWEEN 2610 AND 2639 AND vouchers.source <> ?), 0) AS vat_out', [$vat])
             ->selectRaw('COALESCE(SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) FILTER (WHERE accounts.number BETWEEN 2640 AND 2649 AND vouchers.source <> ?), 0) AS vat_in', [$vat])
-            // What the forecast counts on its own instead of through the average result (ForecastFlows).
-            ->selectRaw('COALESCE(SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) FILTER (WHERE accounts.number BETWEEN 4000 AND 8998 AND vouchers.source = ?), 0) AS payroll_costs', [$payroll])
+            // What the forecast counts on its own instead of through the average result (ForecastFlows): the
+            // payroll vouchers' costs the runs pay, without the accounts in NOT_PAID_BY_RUNS.
+            ->selectRaw('COALESCE(SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) FILTER (WHERE accounts.number BETWEEN 4000 AND 8998 AND vouchers.source = ? AND NOT (accounts.number BETWEEN ? AND ? OR accounts.number BETWEEN ? AND ? OR accounts.number BETWEEN ? AND ?)), 0) AS payroll_costs', [VoucherSource::Payroll->value, ...array_merge(...self::NOT_PAID_BY_RUNS)])
             ->selectRaw('COALESCE(SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) FILTER (WHERE accounts.number BETWEEN 8900 AND 8998), 0) AS tax_costs')
             ->groupByRaw('1')
             ->get()
@@ -135,8 +147,8 @@ final class Statistics
                 'cash' => (int) $row->cash,
                 'vat_out' => (int) $row->vat_out,
                 'vat_in' => (int) $row->vat_in,
-                'payroll_costs' => (int) $row->payroll_costs,
                 'tax_costs' => (int) $row->tax_costs,
+                'payroll_costs' => (int) $row->payroll_costs,
             ]])
             ->all();
     }
@@ -147,10 +159,13 @@ final class Statistics
      * ends are counted back from today's balance with the months' movements.
      *
      * The average result leaves out what the forecast counts on its own, so
-     * nothing is counted twice (ADR-027, addendum 2026-11-08): the costs of
-     * the payroll vouchers when payroll is counted from the runs, the tax
-     * costs (8900–8998) when the preliminary tax is, and the revenue of the
-     * invoices made from agreements, which are expected on their own dates.
+     * nothing is counted twice (ADR-027, addendum 2026-11-08): what the booked
+     * payroll runs paid (net pay, tax, employer contributions) when payroll is
+     * counted from the runs, while pension, särskild löneskatt and other costs
+     * of the payroll vouchers the runs do not pay stay in the average; the tax
+     * costs (8900–8998) when the preliminary tax is counted; and the revenue
+     * of the invoices made from agreements, less their credit notes, which
+     * are expected on their own dates.
      *
      * @param  array<string, array{revenue: int, costs: int, cash: int, vat_out: int, vat_in: int, payroll_costs: int, tax_costs: int}>  $monthly
      * @return array{actual: list<array{label: string, date: string, balance: int}>, forecast: list<array{label: string, month: string, inflow: int, outflow: int, recurring: int, payroll: int, vat: int, tax_account: int, trend: int, balance: int}>, today: int, average_result: int, included: array{recurring: bool, payroll: bool, vat: bool, preliminary_tax: bool}}
@@ -213,21 +228,24 @@ final class Statistics
 
     /**
      * The revenue (excluding VAT) of the invoices made from agreements, per
-     * month of the invoice date: the forecast expects those invoices on
-     * their own dates, so the average result leaves them out. A credit note
-     * is not tied to the agreement and stays in the average.
+     * month of the invoice date, less the credit notes of those invoices
+     * (negative, in the month of the credit note, as the ledger has them): the
+     * forecast expects the agreements' invoices on their own dates, so the
+     * average result leaves them out, and a credited one nets to nothing.
      *
      * @return array<string, int>
      */
     private function agreementRevenue(CarbonImmutable $from, CarbonImmutable $to): array
     {
         return Invoice::query()
-            ->where('status', '<>', InvoiceStatus::Draft->value)
-            ->where('kind', Invoice::INVOICE)
-            ->whereNotNull('recurring_invoice_id')
-            ->whereBetween('invoice_date', [$from->toDateString(), $to->toDateString()])
+            ->where('invoices.status', '<>', InvoiceStatus::Draft->value)
+            ->leftJoin('invoices AS originals', 'originals.id', '=', 'invoices.credits_invoice_id')
+            ->where(fn ($query) => $query
+                ->where(fn ($invoice) => $invoice->where('invoices.kind', Invoice::INVOICE)->whereNotNull('invoices.recurring_invoice_id'))
+                ->orWhere(fn ($credit) => $credit->where('invoices.kind', Invoice::CREDIT)->whereNotNull('originals.recurring_invoice_id')))
+            ->whereBetween('invoices.invoice_date', [$from->toDateString(), $to->toDateString()])
             ->toBase()
-            ->selectRaw("to_char(invoice_date, 'YYYY-MM') AS month, SUM(net_ore) AS amount")
+            ->selectRaw("to_char(invoices.invoice_date, 'YYYY-MM') AS month, SUM(invoices.net_ore) AS amount")
             ->groupByRaw('1')
             ->pluck('amount', 'month')
             ->map(fn (mixed $amount): int => (int) $amount)

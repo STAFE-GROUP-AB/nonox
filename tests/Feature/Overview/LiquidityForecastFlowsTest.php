@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Accounting\BookVoucher;
 use App\Actions\Invoicing\CreditInvoice;
 use App\Actions\Invoicing\IssueInvoice;
 use App\Actions\Invoicing\RegisterPayment;
@@ -9,6 +10,7 @@ use App\Actions\Invoicing\RunRecurringInvoice;
 use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Invoicing\SaveDraftInvoice;
 use App\Actions\Invoicing\SaveRecurringInvoice;
+use App\Domain\Accounting\VoucherSource;
 use App\Domain\Invoicing\AgreementStatus;
 use App\Domain\Overview\Statistics;
 use App\Livewire\Overview\StatisticsPanel;
@@ -310,4 +312,60 @@ it('reads the forecast with the same number of queries for a short and a long hi
     }
 
     expect($count())->toBe($short);
+});
+
+it('keeps pension and other payroll costs the run does not pay in the average', function () {
+    forecastPayroll($this);
+    Bookkeeping::post($this->owner, $this->company, 3_000_000, 1930, 3001, '2026-03-02');
+    $this->travelTo(CarbonImmutable::parse('2026-03-20 10:00:00'));
+    $march = forecastRun($this, '2026-03', 'post');
+    $this->travelTo(CarbonImmutable::parse('2026-04-10 10:00:00'));
+
+    $before = forecastStats($this->owner, $this->company, $this->today)['liquidity'];
+
+    // An EMPLOYER line of the payroll voucher (SalaryVoucher): pension 7410 against 2740, paid to the insurer, not by the run.
+    CurrentCompany::run($this->company, fn () => app(BookVoucher::class)->rows($this->owner, $this->company, CarbonImmutable::parse('2026-03-25'), 'Pension', 'L', [
+        ['account' => 7410, 'amount' => 900_000], ['account' => 2740, 'amount' => -900_000],
+    ], VoucherSource::Payroll, $march));
+
+    $after = forecastStats($this->owner, $this->company, $this->today)['liquidity'];
+
+    // 9 000 kr over three months lowers the average by 3 000 kr a month, as it did before payroll was counted on its own.
+    expect($after['average_result'])->toBe($before['average_result'] - 300_000)
+        ->and($after['forecast'][2]['balance'])->toBeLessThan($before['forecast'][2]['balance']);
+});
+
+it('nets a credited agreement invoice against its credit note in the average', function () {
+    $agreement = forecastAgreement($this->owner, $this->company, '2026-03-05');
+    $issued = app(IssueInvoice::class)($this->owner, app(RunRecurringInvoice::class)($this->owner, $agreement, CarbonImmutable::parse('2026-03-05')));
+    $this->travelTo(CarbonImmutable::parse('2026-03-10 10:00:00'));
+    app(IssueInvoice::class)($this->owner, app(CreditInvoice::class)($this->owner, $issued));
+    $this->travelTo(CarbonImmutable::parse('2026-04-10 10:00:00'));
+    app(RunRecurringInvoice::class)->setStatus($this->owner, $agreement->fresh(), AgreementStatus::Paused);
+
+    // The credit note is dated 10 March: the ledger's March revenue is 1 000 − 1 000 kr = 0.
+    expect($issued->fresh()->status->value)->toBe('CREDITED');
+    expect(forecastStats($this->owner, $this->company, $this->today)['liquidity']['average_result'])->toBe(0);
+});
+
+it('counts the VAT on coming agreement invoices when it falls due in the forecast', function () {
+    $this->company->forceFill(['vat_period' => 'MONTHLY'])->save();
+    forecastAgreement($this->owner, $this->company->fresh(), '2026-04-20', '100000', 30);
+
+    $forecast = forecastStats($this->owner, $this->company->fresh(), $this->today)['liquidity']['forecast'];
+
+    // 20 April: 125 000 kr in on 20 May, its 25 000 kr VAT out on 12 June (the April period). The May invoice's VAT is due in July.
+    expect(array_column($forecast, 'recurring'))->toBe([0, 12_500_000, 12_500_000])
+        ->and(array_column($forecast, 'vat'))->toBe([0, 0, -2_500_000]);
+});
+
+it('counts a missed agreement date once and leaves out old agreement drafts', function () {
+    $old = forecastAgreement($this->owner, $this->company, '2026-01-20');
+    // A draft made in January and never issued: due 19 February, more than 30 days ago.
+    app(RunRecurringInvoice::class)($this->owner, $old, CarbonImmutable::parse('2026-01-20'));
+
+    $forecast = forecastStats($this->owner, $this->company, $this->today)['liquidity']['forecast'];
+
+    // The next date, 20 February, has passed: counted once from today (due 10 May), then 20 May (due 19 June).
+    expect(array_column($forecast, 'recurring'))->toBe([0, 125_000, 125_000]);
 });

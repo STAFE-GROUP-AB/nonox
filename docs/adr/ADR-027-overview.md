@@ -141,9 +141,9 @@ columns in "Visa som tabell" (`LiquidityForecast`, gathered by
 |---|---|---|
 | Kundfakturor | open customer invoices (ISSUED, kind INVOICE), total − paid | due date |
 | Leverantörsfakturor | open supplier invoices (REGISTERED, APPROVED) | due date |
-| Avtalsfakturor | each coming invoice date of an ACTIVE agreement up to the horizon, and drafts an agreement has made, total with VAT | invoice date + the customer's payment terms; the draft's due date |
+| Avtalsfakturor | each coming invoice date of an ACTIVE agreement up to the horizon (a passed next date counts once, from today), and drafts an agreement has made (not when overdue by more than 30 days), total with VAT | invoice date + the customer's payment terms; the draft's due date |
 | Lön och arbetsgivarskatter | net pay of runs CALCULATED, APPROVED or PAID but not booked; their tax and contributions; tax and contributions booked on 2710/2730/2731; a month without a run estimated as the latest run | payment date; `AgiDates::payment` of the payment month |
-| Moms | each VAT period whose date falls in the horizon, as `VatReturn` computes it (a running period: booked so far; a reported period is left out); 2650 reported but not paid | `VatDeadlines` through the deadline engine; 2650 on the reported period's date, or at once |
+| Moms | each VAT period whose date falls in the horizon, as `VatReturn` computes it (a running period: booked so far; a reported period is left out); 2650 reported but not paid; the VAT (total − net) of coming agreement invoices and agreement drafts | `VatDeadlines` through the deadline engine (the agreement VAT on the date of the period its invoice date falls in, when that date is in the horizon); 2650 on the reported period's date, or at once |
 | Skattekontot | debited preliminary tax, only the monthly amount the company has entered (`preliminary_tax_monthly_ore`); the balance of 1630 | `PreliminaryTaxProvider` dates after today |
 | Snittresultat | the average result of the last three whole months, without the parts above | as before |
 
@@ -163,9 +163,8 @@ balances (`MoneyNotYours::for`) the forecast reuses.
 computed or read from Skatteverket: NONOX stores nothing from the tax account
 API (ADR-054, stage 3), so only the amount the company has entered counts.
 `TODO(legal-verify)`: the day Skatteverket debits it (as Momsbufferten).
-VAT on invoices not yet booked, overdue VAT periods that were never reported
-in NONOX, and särskild löneskatt on pension (stays on 2514, ADR-012) are not
-counted. Pension premiums and other personnel costs paid through supplier
+VAT on other invoices not yet booked and overdue VAT periods that were never
+reported in NONOX are not counted. Pension premiums and other personnel costs paid through supplier
 invoices count as supplier invoices when they exist.
 
 ### Double counting: the decision
@@ -178,7 +177,13 @@ explicit flow replaces, and only when that flow is counted:
 
 - **Payroll**: when payroll is counted from the runs (the module is on and a
   REGULAR run of the last three months exists), the result rows of vouchers
-  with source PAYROLL (accounts 4000–8998) are added back. The explicit
+  with source PAYROLL (accounts 4000–8998) are added back, except the
+  EMPLOYER lines the run does not pay: pension, särskild löneskatt and
+  agreement insurance (PayCodeCatalog: 7410, 7530, 7570, credited to 2740
+  and 2514; taken out as BAS 7400–7499, 7530–7539, 7570–7579,
+  `Statistics::NOT_PAID_BY_RUNS`). Those are paid to an insurer or through
+  the preliminary tax and stay in the average as before (revised after
+  review 2026-11-08: they had disappeared from the forecast). The explicit
   payroll part then stands for every month of the horizon, a month without a
   run being estimated as the latest run, so the salary is neither missing nor
   counted twice. Without a run, payroll stays in the average and the explicit
@@ -191,16 +196,21 @@ explicit flow replaces, and only when that flow is counted:
 - **Preliminary tax**: when the monthly amount is entered, 8900–8998 is added
   back.
 - **Agreements**: the revenue (net, excluding VAT) of invoices made from an
-  agreement, by invoice month, is always taken out of the average: their
+  agreement, by invoice month, less the credit notes of those invoices in
+  the credit note's month (as the ledger has them, so a fully credited
+  invoice nets to nothing), is always taken out of the average: their
   future invoices are counted on their own dates, and an ended agreement
   brings no more revenue. Kontantmetoden books revenue on payment, so for
   such a company the month can differ; accepted.
-- **VAT** is not part of the result, so nothing is taken out.
+- **VAT** is not part of the result, so nothing is taken out. The agreement
+  invoices' inflow includes VAT, so their VAT is also an outflow (above).
 
 `LiquidityForecastFlowsTest` proves it: a posted March salary leaves the
 average unchanged (30 000 kr revenue over three months is 10 000 kr a
 month), while April's payroll part holds the approved run's net pay and
-March's booked taxes.
+March's booked taxes; a 9 000 kr pension row on a payroll voucher lowers the
+average by 3 000 kr a month; an agreement invoice credited in the same
+window leaves the average at 0.
 
 ### Access, queries, tenancy
 

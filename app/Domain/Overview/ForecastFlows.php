@@ -32,8 +32,10 @@ use Illuminate\Support\Facades\DB;
  * (ADR-027, addendum 2026-11-08), each dated by rules already in NONOX:
  *
  * - Agreements (avtalsfakturering): every coming invoice date of an active
- *   agreement plus the customer's payment terms, and the drafts an agreement
- *   has made but nobody has issued yet, on their due dates.
+ *   agreement plus the customer's payment terms (a passed date once, from
+ *   today), and the drafts an agreement has made but nobody has issued yet,
+ *   on their due dates (not when overdue by more than 30 days); and the VAT
+ *   on them on the date of the VAT period of their invoice date.
  * - VAT: each period whose date (VatDeadlines, through the deadline engine)
  *   falls in the forecast, as the VAT report computes it (MoneyNotYours::
  *   vatByDeadline: a running period counts what is booked so far, a reported
@@ -64,6 +66,9 @@ final class ForecastFlows
     /** How far back a run counts as the company's payroll today. */
     public const int PAYROLL_MONTHS = 3;
 
+    /** An agreement draft overdue by more than this many days is not counted as money to come. */
+    public const int DRAFT_OVERDUE_DAYS = 30;
+
     public function __construct(
         private readonly CompanyDeadlines $deadlines,
         private readonly MoneyNotYours $money,
@@ -86,20 +91,20 @@ final class ForecastFlows
 
         $vat = $this->vat($company, $deadlines, $figures, $today);
         $preliminary = $this->preliminaryTax($company, $deadlines, $today);
-        $recurring = $this->recurring($until);
+        $recurring = $this->recurring($deadlines, $today, $until);
         $payroll = $this->payroll($user, $company, $figures, $today, $months);
 
         return [
             'flows' => [
-                'recurring' => $recurring,
+                'recurring' => $recurring['in'],
                 'payroll_net' => $payroll['net'] ?? [],
                 'payroll_tax' => $payroll['tax'] ?? [],
-                'vat' => $vat,
+                'vat' => [...$vat, ...$recurring['vat']],
                 'preliminary_tax' => $preliminary ?? [],
                 'tax_account' => (int) ($figures?->taxAccount['amount'] ?? 0),
             ],
             'included' => [
-                'recurring' => $recurring !== [],
+                'recurring' => $recurring['in'] !== [],
                 'payroll' => $payroll !== null,
                 'vat' => $company->isVatRegistered() || $vat !== [],
                 'preliminary_tax' => $preliminary !== null,
@@ -180,24 +185,49 @@ final class ForecastFlows
 
     /**
      * The coming invoices of active agreements and the drafts agreements
-     * have made, with VAT, on their due dates up to the end of the forecast.
+     * have made, with VAT, on their due dates up to the end of the forecast,
+     * and the VAT on them (total − net) on the date of the VAT period the
+     * invoice date falls in, when that date is in the forecast. The VAT of
+     * an issued invoice is booked and already in the period's VAT.
      *
-     * @return list<Flow>
+     * An agreement whose next date has passed is counted once, from today
+     * (it is invoiced when someone runs it), never once per missed date. A
+     * draft overdue by more than DRAFT_OVERDUE_DAYS is left out.
+     *
+     * @param  list<Deadline>  $deadlines  the company's dates from today to the end of the forecast
+     * @return array{in: list<Flow>, vat: list<Flow>}
      */
-    private function recurring(CarbonImmutable $until): array
+    private function recurring(array $deadlines, CarbonImmutable $today, CarbonImmutable $until): array
     {
-        $flows = [];
+        $in = [];
+        $vat = [];
+        $vatDue = function (CarbonImmutable $invoiceDate, int $amount) use ($deadlines, &$vat): void {
+            if ($amount === 0) {
+                return;
+            }
+
+            foreach ($deadlines as $deadline) {
+                // The key is vat:<last day of the period> (VatDeadlineProvider).
+                if ($deadline->type === DeadlineType::Vat && $deadline->periodStart !== null
+                    && $invoiceDate->betweenIncluded($deadline->periodStart, CarbonImmutable::parse(substr($deadline->key, 4)))) {
+                    $vat[] = ['due' => $deadline->date->toDateString(), 'amount' => $amount];
+
+                    return;
+                }
+            }
+        };
 
         $agreements = RecurringInvoice::query()
             ->join('customers', 'customers.id', '=', 'recurring_invoices.customer_id')
             ->where('recurring_invoices.status', AgreementStatus::Active->value)
             ->whereDate('recurring_invoices.next_invoice_date', '<=', $until->toDateString())
-            ->get(['recurring_invoices.id', 'recurring_invoices.next_invoice_date', 'recurring_invoices.end_date', 'recurring_invoices.interval_months', 'recurring_invoices.invoice_day', 'recurring_invoices.total_ore', 'customers.payment_terms_days']);
+            ->get(['recurring_invoices.id', 'recurring_invoices.next_invoice_date', 'recurring_invoices.end_date', 'recurring_invoices.interval_months', 'recurring_invoices.invoice_day', 'recurring_invoices.net_ore', 'recurring_invoices.total_ore', 'customers.payment_terms_days']);
 
         foreach ($agreements as $agreement) {
             $terms = (int) $agreement->getAttribute('payment_terms_days');
+            $start = $agreement->next_invoice_date->lessThan($today) ? $today : $agreement->next_invoice_date;
 
-            for ($date = $agreement->next_invoice_date; ! $date->greaterThan($until); $date = $agreement->dateAfter($date)) {
+            for ($date = $start; ! $date->greaterThan($until); $date = $agreement->dateAfter($date)) {
                 if ($agreement->end_date !== null && $date->greaterThan($agreement->end_date)) {
                     break;
                 }
@@ -205,8 +235,10 @@ final class ForecastFlows
                 $due = $date->addDays($terms);
 
                 if (! $due->greaterThan($until)) {
-                    $flows[] = ['due' => $due->toDateString(), 'amount' => $agreement->total_ore->ore];
+                    $in[] = ['due' => $due->toDateString(), 'amount' => $agreement->total_ore->ore];
                 }
+
+                $vatDue($date, $agreement->total_ore->ore - $agreement->net_ore->ore);
             }
         }
 
@@ -215,17 +247,19 @@ final class ForecastFlows
             ->where('kind', Invoice::INVOICE)
             ->whereNotNull('recurring_invoice_id')
             ->whereNotNull('due_date')
+            ->whereDate('due_date', '>=', $today->subDays(self::DRAFT_OVERDUE_DAYS)->toDateString())
             ->whereDate('due_date', '<=', $until->toDateString())
             ->toBase()
-            ->groupBy('due_date')
-            ->select('due_date', DB::raw('SUM(total_ore) AS amount'))
+            ->groupBy('invoice_date', 'due_date')
+            ->select('invoice_date', 'due_date', DB::raw('SUM(total_ore) AS amount, SUM(total_ore - net_ore) AS vat'))
             ->get();
 
         foreach ($drafts as $row) {
-            $flows[] = ['due' => substr((string) $row->due_date, 0, 10), 'amount' => (int) $row->amount];
+            $in[] = ['due' => substr((string) $row->due_date, 0, 10), 'amount' => (int) $row->amount];
+            $vatDue(CarbonImmutable::parse(substr((string) $row->invoice_date, 0, 10)), (int) $row->vat);
         }
 
-        return $flows;
+        return ['in' => $in, 'vat' => $vat];
     }
 
     /**

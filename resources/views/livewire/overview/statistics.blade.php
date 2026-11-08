@@ -39,15 +39,20 @@
             ];
             $liquidity = $stats['liquidity'];
             $included = $liquidity['included'] ?? ['recurring' => false, 'payroll' => false, 'vat' => false, 'preliminary_tax' => false];
-            $forecastNote = __('Så räknas prognosen: dagens saldo på bank och kassa (konto 1900–1999), plus obetalda kundfakturor och minus obetalda leverantörsfakturor den månad de förfaller, plus kommande fakturor från avtal på sina förfallodagar. Lön räknas från lönekörningarna: nettolönen på utbetalningsdagen, skatt och arbetsgivaravgifter den dag de ska betalas till Skatteverket, och en månad utan lönekörning som den senaste. Momsen räknas per period på den dag den ska deklareras och betalas, med det som är bokfört hittills. Skattekontot är F-skatten med månadsbeloppet ni har fyllt i och saldot på konto 1630; pengar på skattekontot betalar skatterna först. Sist läggs det genomsnittliga resultatet för de tre senaste hela månaderna till (:average per månad; för den här månaden bara de dagar som är kvar), utan det som redan räknas för sig. Förfallna belopp räknas i den här månaden. Det är en enkel räkning, ingen AI och ingen garanti.', ['average' => $kr($liquidity['average_result'])]);
-
-            if (! $included['payroll']) {
-                $forecastNote .= ' '.__('Lön ingår bara genom resultatet, eftersom lönemodulen inte är på eller inte har någon lönekörning de senaste tre månaderna.');
-            }
-
-            if (! $included['preliminary_tax']) {
-                $forecastNote .= ' '.__('F-skatt ingår bara genom resultatet tills ni fyller i Debiterad preliminärskatt per månad under företagets uppgifter.');
-            }
+            // One sentence per part, chosen from what the forecast counts, so the note never says both.
+            $forecastNote = implode(' ', array_filter([
+                __('Så räknas prognosen: dagens saldo på bank och kassa (konto 1900–1999), plus obetalda kundfakturor och minus obetalda leverantörsfakturor den månad de förfaller.'),
+                $included['recurring'] ? __('Kommande fakturor från avtal räknas på sina förfallodagar, och momsen på dem den dag den ska betalas.') : null,
+                $included['payroll']
+                    ? __('Lön räknas från lönekörningarna: nettolönen på utbetalningsdagen, skatt och arbetsgivaravgifter den dag de ska betalas till Skatteverket, och en månad utan lönekörning som den senaste.')
+                    : __('Lön ingår bara genom resultatet, eftersom lönemodulen inte är på eller inte har någon lönekörning de senaste tre månaderna.'),
+                $included['vat'] ? __('Momsen räknas per period på den dag den ska deklareras och betalas, med det som är bokfört hittills.') : null,
+                $included['preliminary_tax']
+                    ? __('F-skatten räknas med månadsbeloppet du har fyllt i.')
+                    : __('F-skatt ingår bara genom resultatet tills du fyller i Debiterad preliminärskatt per månad (frivilligt) under företagets uppgifter.'),
+                __('Saldot på skattekontot (konto 1630) räknas också, och pengar där betalar skatterna först.'),
+                __('Sist läggs det genomsnittliga resultatet för de tre senaste hela månaderna till (:average per månad; för den här månaden bara de dagar som är kvar), utan det som redan räknas för sig. Förfallna belopp räknas i den här månaden. Det är en enkel räkning, ingen AI och ingen garanti.', ['average' => $kr($liquidity['average_result'])]),
+            ]));
             $lastForecast = $liquidity['forecast'] === [] ? null : end($liquidity['forecast']);
         @endphp
 
