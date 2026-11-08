@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Inventory\Actions\SaveLocation;
 use App\Modules\Inventory\Actions\StockCounts;
 use App\Modules\Inventory\Models\StockCount;
 use App\Modules\Inventory\Models\StockCountLine;
@@ -17,6 +18,7 @@ use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Inventory;
 use Tests\Support\Kitchen;
+use Tests\Support\Pos;
 
 /*
  * Theoretical consumption and the variance report (ADR-073 §5, §8, rule
@@ -108,8 +110,10 @@ it('shows waste dated in the period but registered after the count (F-RS-5)', fu
 
     $report = VarianceReport::between($this->company, $this->opening, $this->closing);
 
-    expect($report->lateWaste)->toHaveCount(1)
-        ->and($report->lateWaste[0])->toMatchArray(['article' => 'Gul lök', 'registered_on' => '2026-11-07', 'quantity_milli' => 500]);
+    expect($report->late)->toHaveCount(1)
+        ->and($report->late[0])->toMatchArray(['article' => 'Gul lök', 'date' => '2026-11-07', 'quantity_milli' => -500, 'excluded' => true]);
+
+    Livewire::withQueryParams(['fran' => $this->opening->id, 'till' => $this->closing->id])->test(VariancePage::class)->assertSee('Bokförd i efterhand');
 });
 
 it('shows the report on the page with the source of the sales', function () {
@@ -143,4 +147,27 @@ it('runs a fixed number of queries whatever the number of sales rows and ingredi
     }
 
     expect($measure())->toBe($before);
+});
+
+it('counts only the tills of the counted place, and tills without a place (review P2.6)', function () {
+    $elsewhere = app(SaveLocation::class)($this->owner, $this->company, ['type' => 'WAREHOUSE', 'code' => 'BL', 'name' => 'Baren']);
+    $other = Pos::connection($this->company, $this->owner, locationId: $elsewhere->id);
+    Kitchen::sale($other, '2026-11-06', [[$this->a['dish'], 50_000]]);
+
+    $report = VarianceReport::between($this->company, $this->opening, $this->closing);
+    expect(collect($report->lines)->firstWhere('article_id', $this->a['champinjoner']->id)['theoretical_milli'])->toBe(18_395)
+        ->and($report->unlocatedRows)->toBe(0);
+
+    Kitchen::sale(Pos::connection($this->company, $this->owner), '2026-11-06', [[$this->a['dish'], 10_000]]);
+    $report = VarianceReport::between($this->company, $this->opening, $this->closing);
+    expect(collect($report->lines)->firstWhere('article_id', $this->a['champinjoner']->id)['theoretical_milli'])->toBe(18_395 + 1_333)
+        ->and($report->unlocatedRows)->toBe(1);
+});
+
+it('decides by the time of the count on the count days (review P3.10)', function () {
+    // A sale on the closing day after the count was done belongs to the next period.
+    $sale = Kitchen::sale($this->till, '2026-11-08', [[$this->a['dish'], 10_000]]);
+    $sale->forceFill(['sold_at' => '2026-11-08 23:30:00'])->save();
+
+    expect(collect(VarianceReport::between($this->company, $this->opening, $this->closing)->lines)->firstWhere('article_id', $this->a['champinjoner']->id)['theoretical_milli'])->toBe(18_395);
 });

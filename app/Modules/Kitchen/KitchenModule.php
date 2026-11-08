@@ -141,7 +141,13 @@ final class KitchenModule implements IsNew, Module
 
     public function onEnable(Company $company, User $by): void
     {
-        app(ModuleManager::class)->seedSettings(self::KEY, $company, KitchenSettings::DEFAULTS);
+        $modules = app(ModuleManager::class);
+        $modules->seedSettings(self::KEY, $company, KitchenSettings::DEFAULTS);
+
+        // Turned on again with drawing on sale: only sales from today are drawn, never the backlog (review P3.5).
+        if (KitchenSettings::drawsOnSale($company)) {
+            $modules->updateSettings(self::KEY, $company, $by, ['draw_on_sale_from' => CarbonImmutable::today()->toDateString()]);
+        }
     }
 
     public function onDisable(Company $company, User $by): void {}

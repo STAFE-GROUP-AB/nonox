@@ -4023,7 +4023,10 @@ bokslutet (ADR-039). Modulen ändrar bokföringen bara i bokslutssteget nedan.
   per lagerslag, före årets resultat. Ett lagerslag tas med när det har
   varor, när det är företagets standard eller när någon artikel har det;
   ett företag som aldrig valt lagerslag bokför därför ett par precis som
-  förut. Två lagerslag på samma lagerkonto läggs ihop. Ett K2-företag som
+  förut. Ett lagerslag vars lagerkonto har ett saldo under året tas
+  alltid med, värderat till det som finns kvar (noll om inget finns), så
+  att ett byte av lagerslag bokar ned det gamla kontot. Två lagerslag på
+  samma lagerkonto läggs ihop. Ett räkenskapsår som följer K2 i ett företag som
   valt 97-procentsregeln (K2 punkt 12.5, avstängd från början) tar upp
   varje lagerslag till 97 procent av anskaffningsvärdet, avrundat till
   helt öre; bokningen stoppas om någon artikel är nedskriven till
@@ -4191,7 +4194,9 @@ använder Kassakopplingar och Lön när de är på.
 - **Försäljning via recept** (valfritt, avstängt från början): varje natt
   dras gårdagens kassarader genom recepten, varje kassarad en gång
   (`kitchen_sale_consumptions`), och aldrig försäljning före dagen
-  inställningen slogs på.
+  inställningen eller modulen slogs på. Returer lägger aldrig tillbaka
+  något i lagret; de minskar senare uttag. Ett sparat recept kan inte
+  ändras i databasen, bara slås av och på.
 
 ## 5l. CRM (modul)
 

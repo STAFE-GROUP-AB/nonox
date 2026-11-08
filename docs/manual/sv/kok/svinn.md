@@ -23,7 +23,7 @@ Registrera bara det som har slängts eller ska slängas nu. Varor som väntar p�
 Orsakerna är **Utgånget datum**, **Fördärvat (kylfel, mögel, skadat)**, **Beredningssvinn utöver receptet**, **Lagat men inte sålt**, **Fellagat eller felbeställt**, **Skänkt** och **Övrigt**. Vid **Skänkt** skriver du den mottagande organisationen. Vid **Övrigt** skriver du vad som hände.
 
 > [!NOTE]
-> Skatteverket anser att skänkt mat nära bäst före-datum normalt inte har något beskattningsunderlag. NONOX bokar ingen moms för skänkt mat.
+> Skatteverket anser att skänkt mat nära bäst före-datum normalt inte har något beskattningsunderlag. NONOX bokar ingen moms för skänkt mat. Den som får se kostnader ser kostnadsvärdet för det som skänks.
 
 ## Med mobilen
 

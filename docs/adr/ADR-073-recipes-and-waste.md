@@ -271,7 +271,9 @@ sees costs through `reports:view`; approver none. A module role **Kökspersonal*
 (`kitchen_staff`) gets `kitchen:view` and `kitchen:register`, and no prices anywhere (as
 Lagerpersonal in ADR-039 and the scanner in ADR-040). Naming an employee on a staff meal needs
 `kitchen:register`; the per-person monthly list and "Skicka kostförmåner till lönen" need
-`payroll:manage` as well. Changing stock settings (`draw_on_sale`) needs `inventory:settings`.
+`payroll:manage` as well. Kökspersonal does see the month's totals on the staff-meal page
+(meals, free meals and "Betalt av personalen" per kind of meal), with no names and no costs;
+raw-material costs need `kitchen:manage` or `reports:view` (review P3.9). Changing stock settings (`draw_on_sale`) needs `inventory:settings`.
 
 Allergens are free-text tags for the kitchen's own use; NONOX makes no claim about allergen
 information to guests, and the page says so (food information law is out of scope).
@@ -452,3 +454,39 @@ from the decision above, it says so.
   manual screenshots (need a `nonox_demo_*` run). BAS 2026 templates got 1410 and 4910; 4310
   was not added because the rule sheet does not quote its BAS name, and 4010 keeps its
   present name.
+
+### Review fixes (2026-11-08, cold review of b0fed9a7)
+
+- **P1:** a stock class whose stock account carries a balance in the year is always valued
+  (at 0 when nothing of it is on hand), so changing the default class or the last article's
+  class books the old account down instead of leaving both standing.
+- **P2.1:** a recipe yielding portions cannot be an ingredient; a sub-recipe used elsewhere
+  cannot get a version yielding portions, and switching one on is checked the same way.
+- **P2.2:** switching a recipe on runs the loop check over the versions switched on;
+  `kitchen:consume` logs a failing company and goes on with the next.
+- **P2.3:** meals added or corrected after the benefits were approved are proposed again and
+  marked "Ändrad efter godkännande". While the run is open the approved inputs are taken out
+  of it and the whole month is proposed (status REPLACED), so a correction's own payment is
+  taken back; once the run is closed only additions are proposed and a reduction is shown for
+  the administrator to correct in the next run (payroll cannot take a negative own payment).
+- **P2.4:** the 97 % rule follows the fiscal year's framework (`fiscal_years.reporting_framework`).
+- **P2.5 [Lead]:** returns never put stock back; a net return leaves a credit
+  (`kitchen_consumption_credits`) netted against later sales of the ingredient at that place.
+- **P2.6:** the variance report takes till rows only from tills drawing from the counted place,
+  plus tills without a place, which the page names.
+- **P2.7 [Lead]:** a recipe dated before today or before the latest completed stock count
+  needs an explicit confirmation (`confirm_backdate`) and is audited (`kitchen.recipe_backdated`).
+- **P2.8:** `StructureBook::explodeStructure()` explodes a given version or row set, and every
+  explosion takes an optional stop-at predicate (a stocked semi-finished article taken from
+  stock, for ADR-071); Kök keeps exploding everything. A database trigger lets a saved version
+  change only `is_active` (and its timestamp) and refuses any change to its rows, also from the
+  query builder and raw SQL.
+- **P3:** structure saves and switching take a per-company advisory lock; Kökspersonal's
+  scanner data holds only the kitchen location's subtree (every location while none is chosen)
+  and receipts, pick lists and counts are not queried at all for those who do not handle goods;
+  a donation shows its cost value and Skatteverket's position; unit conversions are managed on
+  the article (Avancerad); drawing on sale restarts from today when the module or the setting
+  is switched on; corrections put goods back at the valuation cost of the day before they left;
+  movements dated in a counted or valued period but posted later are listed as "bokförd i
+  efterhand" (left out of the sums when posted after the closing count); an employee's month
+  is approved as a unit; and the count days are judged by the time each count was completed.

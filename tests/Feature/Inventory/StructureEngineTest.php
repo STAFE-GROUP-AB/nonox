@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Livewire\Invoicing\Articles;
 use App\Modules\Inventory\Domain\StructureKind;
 use App\Modules\Inventory\Domain\StructureMath;
 use App\Modules\Inventory\Domain\StructureUnits;
+use App\Modules\Inventory\Livewire\UnitConversionsPanel;
 use App\Modules\Inventory\Models\ArticleUnitConversion;
 use App\Modules\Inventory\Models\BillOfMaterials;
 use App\Modules\Inventory\Models\BomRow;
@@ -187,6 +189,25 @@ it('ignores an operation row when costing and exploding', function () {
     $cost = StructureBook::for($this->company)->cost(StructureBook::for($this->company)->validOn($this->fx['articles']['vitloksmor']->id, $this->on), UnitCosts::at($this->company, $this->on), $this->on);
 
     expect($cost->batchCostOre)->toBe(10_840)->and($cost->rows)->toHaveCount(2);
+});
+
+it('manages an article\'s unit conversions from the article form (review P3.4)', function () {
+    $vodka = Kitchen::ingredient($this->company, $this->owner, 'D-2', 'Gin 70 cl', 'fl', '250,00');
+
+    Livewire\Livewire::test(UnitConversionsPanel::class, ['articleId' => $vodka->id])
+        ->set('form.factor', '70')
+        ->set('form.unit', 'cl')
+        ->call('add')
+        ->assertDispatched('toast', message: 'Omräkningen är sparad.')
+        ->assertSee('1 fl = 70 cl')
+        ->set('form.factor', '1000')
+        ->set('form.unit', 'fl')
+        ->call('add')
+        ->assertHasErrors('form.unit');
+
+    expect(ArticleUnitConversion::query()->where('article_id', $vodka->id)->sole()->factor_milli)->toBe(70_000);
+
+    Livewire\Livewire::test(Articles::class)->call('edit', $vodka->id)->set('tab', 'avancerad')->assertSee('Omräkningar för recept');
 });
 
 it('refuses a portion recipe as an ingredient, and portions for a sub-recipe already used (review P2.1)', function () {

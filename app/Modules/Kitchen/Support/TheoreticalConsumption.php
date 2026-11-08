@@ -36,21 +36,33 @@ final class TheoreticalConsumption
         public readonly array $sold,
         public readonly array $withoutRecipe,
         public readonly array $dishNames,
+        public readonly int $unlocatedRows = 0,
     ) {}
 
-    /** Sales on business days from $from to $to, both included. */
-    public static function between(Company $company, CarbonImmutable $from, CarbonImmutable $to, ?StructureBook $book = null): self
+    /**
+     * Sales on business days from $from to $to, both included; with
+     * $locationIds only tills drawing from those places (and tills without
+     * a place); with $after/$until only sales made after and up to those
+     * moments (the count days, review P3.10).
+     *
+     * @param  ?list<int>  $locationIds
+     */
+    public static function between(Company $company, CarbonImmutable $from, CarbonImmutable $to, ?StructureBook $book = null, ?array $locationIds = null, ?CarbonImmutable $after = null, ?CarbonImmutable $until = null): self
     {
-        return CurrentCompany::run($company, function () use ($company, $from, $to, $book): self {
+        return CurrentCompany::run($company, function () use ($company, $from, $to, $book, $locationIds, $after, $until): self {
             $book ??= StructureBook::for($company);
 
             $rows = PosSaleRow::query()
                 ->join('pos_sales', 'pos_sales.id', '=', 'pos_sale_rows.pos_sale_id')
+                ->join('pos_connections', 'pos_connections.id', '=', 'pos_sales.pos_connection_id')
                 ->join('articles', 'articles.id', '=', 'pos_sale_rows.article_id')
                 ->where('articles.is_stock_item', false)
                 ->whereBetween('pos_sales.business_date', [$from->toDateString(), $to->toDateString()])
+                ->when($locationIds !== null, fn ($query) => $query->where(fn ($inner) => $inner->whereIn('pos_connections.location_id', $locationIds ?? [])->orWhereNull('pos_connections.location_id')))
+                ->when($after !== null, fn ($query) => $query->where('pos_sales.sold_at', '>', $after))
+                ->when($until !== null, fn ($query) => $query->where('pos_sales.sold_at', '<=', $until))
                 ->groupBy('pos_sale_rows.article_id', 'pos_sales.business_date', 'articles.name')
-                ->selectRaw('pos_sale_rows.article_id, pos_sales.business_date, articles.name, SUM(pos_sale_rows.quantity_milli) AS milli')
+                ->selectRaw('pos_sale_rows.article_id, pos_sales.business_date, articles.name, SUM(pos_sale_rows.quantity_milli) AS milli, SUM(CASE WHEN pos_connections.location_id IS NULL THEN 1 ELSE 0 END) AS unlocated')
                 ->toBase()
                 ->get();
 
@@ -58,11 +70,13 @@ final class TheoreticalConsumption
             $sold = [];
             $missing = [];
             $names = [];
+            $unlocated = 0;
 
             foreach ($rows as $row) {
                 $dish = (int) $row->article_id;
                 $milli = (int) $row->milli;
                 $names[$dish] = (string) $row->name;
+                $unlocated += (int) $row->unlocated;
                 $sold[$dish] = ($sold[$dish] ?? 0) + $milli;
 
                 if ($milli === 0) {
@@ -80,7 +94,7 @@ final class TheoreticalConsumption
                 }
             }
 
-            return new self(array_map(StructureMath::round(...), $ingredients), $sold, $missing, $names);
+            return new self(array_map(StructureMath::round(...), $ingredients), $sold, $missing, $names, $unlocated);
         });
     }
 }

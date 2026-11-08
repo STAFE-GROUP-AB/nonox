@@ -158,3 +158,23 @@ it('rejects a scanner waste operation with the reason, without throwing the queu
 
     expect($result['status'])->toBe('REJECTED')->and($result['message'])->toBe('Välj varför det slängs.');
 });
+
+it('puts corrected goods back at the cost they left at, not a newer purchase price (review P3.6)', function () {
+    $entry = app(RegisterWaste::class)($this->owner, $this->company, [
+        'kind' => WasteEntry::INGREDIENT, 'article_id' => $this->fx['articles']['lok']->id, 'quantity' => '2', 'location_id' => $this->bin->id, 'reason' => 'FEL',
+    ]);
+    Inventory::receive($this->company, $this->owner, $this->fx['articles']['lok'], $this->bin, '10', '30', '2026-11-10');
+
+    $correction = app(RegisterWaste::class)->correct($this->owner, $this->company, $entry);
+
+    expect(StockMovement::query()->where('source_id', (string) $correction->id)->where('source_type', $correction->getMorphClass())->sole()->unit_cost_ore)->toBe(1_500);
+});
+
+it('shows the cost value and the Tax Agency note for a donation (review P3.3)', function () {
+    Livewire::test(WastePage::class)
+        ->set('form.article_id', (string) $this->fx['articles']['lok']->id)
+        ->set('form.quantity', '2')
+        ->set('form.reason', 'SKANKT')
+        ->assertSee('Skatteverket anser att skänkt mat')
+        ->assertSee('Kostnadsvärde: 30,00');
+});

@@ -88,14 +88,17 @@
                     <p class="mt-1 text-xs text-gray-500">{{ __('Rätterna hade inget recept den dagen de såldes. Deras råvaror ingår inte i det sålda, och NONOX gissar dem inte.') }}</p>
                 @endif
 
-                @if($report->lateWaste !== [])
-                    <h3 class="mb-2 mt-6 text-sm font-semibold text-ink">{{ __('Registrerad efter inventeringen') }}</h3>
+                @if($report->late !== [])
+                    <h3 class="mb-2 mt-6 text-sm font-semibold text-ink">{{ __('Bokförd i efterhand') }}</h3>
                     <ul class="divide-y divide-stone-200 text-sm">
-                        @foreach($report->lateWaste as $late)
-                            <li class="flex justify-between py-2" wire:key="late-{{ $late['id'] }}"><span>{{ $late['registered_on'] }} {{ $late['article'] }} · {{ $late['reason'] }}</span><span class="tabular-nums">{{ $qty($late['quantity_milli']) }}</span></li>
+                        @foreach($report->late as $late)
+                            <li class="flex justify-between py-2" wire:key="late-{{ $late['id'] }}"><span>{{ $late['date'] }} {{ $late['article'] }} · {{ $late['type'] }} · {{ $late['excluded'] ? __('registrerad efter inventeringen, inte med i summorna') : __('registrerad efter lagervärderingen') }}</span><span class="tabular-nums">{{ $qty($late['quantity_milli']) }}</span></li>
                         @endforeach
                     </ul>
-                    <p class="mt-1 text-xs text-gray-500">{{ __('Svinnet är daterat i perioden men registrerades efter att inventeringen slutfördes, så inventeringen räknade redan bort varorna.') }}</p>
+                    <p class="mt-1 text-xs text-gray-500">{{ __('Rörelserna är daterade i perioden men registrerades efter att inventeringen slutfördes eller lagret värderades.') }}</p>
+                @endif
+                @if($report->unlocatedRows > 0)
+                    <p class="mt-4 text-sm text-gray-600">{{ __('Försäljning från kassor utan lagerställe räknas med i det sålda, eftersom NONOX inte vet var de drar sina varor.') }}</p>
                 @endif
             @endif
         @endif

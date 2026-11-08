@@ -10,6 +10,7 @@ use App\Modules\Kitchen\Actions\ConsumeSales;
 use App\Modules\Kitchen\KitchenModule;
 use App\Modules\Kitchen\Livewire\KitchenSettingsForm;
 use App\Modules\Kitchen\Livewire\VariancePage;
+use App\Modules\Kitchen\Models\ConsumptionCredit;
 use App\Modules\Kitchen\Models\ConsumptionWait;
 use App\Modules\Kitchen\Models\SaleConsumption;
 use App\Modules\ModuleManager;
@@ -127,4 +128,32 @@ it('switches drawing on only for those who may change the stock settings, from t
         ->call('save')
         ->assertForbidden();
     expect(app(ModuleManager::class)->isEnabled(InventoryModule::KEY, $this->company))->toBeTrue();
+});
+
+it('never draws the backlog when the module is turned on again (review P3.5)', function () {
+    drawOnSale('2026-11-01');
+    app(ModuleManager::class)->disable(KitchenModule::KEY, $this->company, $this->owner, confirmed: true);
+    Kitchen::sale($this->till, '2026-11-05', [[$this->a['dish'], 10_000]]);
+
+    $this->travelTo(CarbonImmutable::parse('2026-11-08 03:00:00'));
+    app(ModuleManager::class)->enable(KitchenModule::KEY, $this->company, $this->owner);
+
+    expect(app(ModuleManager::class)->settings(KitchenModule::KEY, $this->company)['draw_on_sale_from'])->toBe('2026-11-08')
+        ->and(app(ConsumeSales::class)($this->company)['rows'])->toBe(0);
+});
+
+it('never puts stock back from returns, and nets them against later sales (review P2.5)', function () {
+    drawOnSale();
+    Kitchen::sale($this->till, '2026-11-02', [[$this->a['dish'], -2_000]]);
+
+    app(ConsumeSales::class)($this->company);
+    expect(StockMovement::query()->where('type', MovementType::RecipeSale->value)->count())->toBe(0)
+        ->and(ConsumptionCredit::query()->where('article_id', $this->a['champinjoner']->id)->value('quantity_milli'))->toBe(267)
+        ->and(Inventory::level($this->a['champinjoner'], $this->bin))->toBe(10_000);
+
+    Kitchen::sale($this->till, '2026-11-03', [[$this->a['dish'], 10_000]]);
+    app(ConsumeSales::class)($this->company);
+
+    expect(StockMovement::query()->where('type', MovementType::RecipeSale->value)->where('article_id', $this->a['champinjoner']->id)->sole()->quantity_milli)->toBe(-(1_333 - 267))
+        ->and(ConsumptionCredit::query()->where('article_id', $this->a['champinjoner']->id)->value('quantity_milli'))->toBe(0);
 });

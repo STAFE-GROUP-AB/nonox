@@ -200,6 +200,54 @@ describe('with payroll', function () {
         expect(json_encode($audit?->payload))->not->toContain('Berit')->not->toContain('Exempel');
     });
 
+    it('proposes again after a correction while the run is open, taking the own payment back (review P2.3)', function () {
+        lunches($this->cid, 5, '130');
+        $run = app(PayrollRuns::class)->create($this->owner, $this->company, '2026-11');
+        app(MealPayroll::class)->propose($this->owner, $this->company, '2026-11');
+        app(MealPayroll::class)->approve($this->owner, $this->company, $run, [MealPayrollProposal::query()->value('id')]);
+        expect(PayrollInput::query()->count())->toBe(2);
+
+        app(RegisterStaffMeal::class)->correct($this->owner, $this->company, StaffMeal::query()->where('employee_id', $this->cid->id)->orderBy('id')->firstOrFail());
+
+        expect(app(MealPayroll::class)->propose($this->owner, $this->company, '2026-11'))->toBe(2)
+            ->and(PayrollInput::query()->count())->toBe(0)
+            ->and(MealPayrollProposal::query()->where('status', MealPayrollProposal::REPLACED)->count())->toBe(2);
+
+        $lines = MealPayrollProposal::query()->where('status', MealPayrollProposal::PROPOSED)->orderBy('id')->get();
+        expect($lines->map(fn ($line) => [$line->pay_code, $line->quantity === null ? null : (int) $line->quantity, $line->amount_ore])->all())
+            ->toBe([['FORMAN_EGENBETALNING', null, 49_600], ['KOSTFORMAN_LUNCH', 4, null]])
+            ->and($lines[0]->details['changed_after_approval'])->toBeTrue();
+
+        Livewire::withQueryParams(['manad' => '2026-11'])->test(StaffMealsPage::class)->assertSee('Ändrad efter godkännande');
+    });
+
+    it('proposes only the addition once the run is closed, and shows a reduction it cannot send (review P2.3)', function () {
+        lunches($this->cid, 2, '');
+        $run = app(PayrollRuns::class)->create($this->owner, $this->company, '2026-11');
+        app(MealPayroll::class)->propose($this->owner, $this->company, '2026-11');
+        app(MealPayroll::class)->approve($this->owner, $this->company, $run, MealPayrollProposal::query()->pluck('id')->all());
+        PayrollRun::query()->whereKey($run->id)->update(['status' => 'APPROVED']);
+
+        lunches($this->cid, 1, '');
+        app(MealPayroll::class)->propose($this->owner, $this->company, '2026-11');
+        $line = MealPayrollProposal::query()->where('status', MealPayrollProposal::PROPOSED)->sole();
+        expect([$line->pay_code, (int) $line->quantity])->toBe(['KOSTFORMAN_LUNCH', 1]);
+
+        // Three registered, two approved; taking two back leaves one, a reduction of one that is not sent.
+        StaffMeal::query()->where('employee_id', $this->cid->id)->orderBy('id')->limit(2)->get()->each(fn ($meal) => app(RegisterStaffMeal::class)->correct($this->owner, $this->company, $meal));
+        app(MealPayroll::class)->propose($this->owner, $this->company, '2026-11');
+        $warning = MealPayrollProposal::query()->where('status', MealPayrollProposal::PROPOSED)->sole();
+        expect($warning->details['not_sent'])->toBe([['pay_code' => 'KOSTFORMAN_LUNCH', 'quantity' => -1, 'amount_ore' => null]]);
+    });
+
+    it('approves an employee\'s month as a whole, never a subset (review P3.8)', function () {
+        lunches($this->bob, 2, '60');
+        $run = app(PayrollRuns::class)->create($this->owner, $this->company, '2026-11');
+        app(MealPayroll::class)->propose($this->owner, $this->company, '2026-11');
+
+        expect(app(MealPayroll::class)->approve($this->owner, $this->company, $run, [MealPayrollProposal::query()->value('id')]))->toBe(2);
+    });
+
     it('hides who ate from those who do not manage payroll', function () {
         lunches($this->bob, 1, '');
         $staff = Bookkeeping::member($this->company, KitchenModule::ROLE);

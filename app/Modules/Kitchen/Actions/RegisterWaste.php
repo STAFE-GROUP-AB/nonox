@@ -152,7 +152,8 @@ class RegisterWaste
             }
 
             $movements = StockMovement::query()->where('source_type', $entry->getMorphClass())->where('source_id', (string) $entry->id)->where('type', MovementType::Scrap->value)->get();
-            $costs = UnitCosts::at($company);
+            // Back at the cost per unit they left at: the valuation on the day before they left (review P3.6).
+            $costs = UnitCosts::at($company, CarbonImmutable::parse($entry->registered_on->toDateString())->subDay());
             $today = CarbonImmutable::today();
 
             $correction = WasteEntry::create([

@@ -11,7 +11,7 @@
                     </select>
                 </x-ui.field>
                 <x-ui.field for="waste-article" :label="($form['kind'] ?? '') === 'DISH' ? __('Rätt') : __('Råvara')" error="form.article_id" class="sm:col-span-4" :hint="($form['kind'] ?? '') === 'DISH' ? __('Ingredienserna dras från lagret enligt receptet.') : null">
-                    <select id="waste-article" wire:model="form.article_id" class="{{ $input }}" required>
+                    <select id="waste-article" wire:model.live="form.article_id" class="{{ $input }}" required>
                         <option value="">{{ __('Välj') }}</option>
                         @foreach(($form['kind'] ?? '') === 'DISH' ? $dishes : $ingredients as $option)
                             <option value="{{ $option->id }}">{{ $option->name }} ({{ ($form['kind'] ?? '') === 'DISH' ? __('portioner eller enhet') : $option->unit }})</option>
@@ -19,7 +19,7 @@
                     </select>
                 </x-ui.field>
                 <x-ui.field for="waste-quantity" :label="__('Mängd')" error="form.quantity" class="sm:col-span-2">
-                    <input id="waste-quantity" wire:model="form.quantity" inputmode="decimal" class="{{ $input }} text-right tabular-nums" required>
+                    <input id="waste-quantity" wire:model.live.debounce.500ms="form.quantity" inputmode="decimal" class="{{ $input }} text-right tabular-nums" required>
                 </x-ui.field>
                 <x-ui.field for="waste-reason" :label="__('Orsak')" error="form.reason" class="sm:col-span-2">
                     <select id="waste-reason" wire:model.live="form.reason" class="{{ $input }}" required>
@@ -44,6 +44,9 @@
                     <x-ui.field for="waste-recipient" :label="__('Mottagande organisation')" error="form.recipient" class="sm:col-span-3" :hint="__('Skatteverket anser att skänkt mat nära bäst före-datum normalt inte har något beskattningsunderlag. NONOX bokar ingen moms för skänkt mat.')">
                         <input id="waste-recipient" wire:model="form.recipient" maxlength="120" class="{{ $input }}">
                     </x-ui.field>
+                    @if($donationValue !== null)
+                        <p class="text-sm text-gray-700 sm:col-span-6">{{ __('Kostnadsvärde: :value. Det är vad ett beskattningsunderlag för uttaget skulle utgå från; NONOX föreslår ingen moms.', ['value' => App\Support\Money\Money::ofOre($donationValue)->format()]) }}</p>
+                    @endif
                 @endif
                 <x-ui.field for="waste-note" :label="__('Anteckning')" error="form.note" class="sm:col-span-6">
                     <input id="waste-note" wire:model="form.note" maxlength="255" class="{{ $input }}" placeholder="{{ __('Valfritt, krävs när orsaken är Övrigt') }}">

@@ -15,6 +15,7 @@ use App\Modules\Inventory\Support\StockLedger;
 use App\Modules\Kitchen\Actions\Concerns\GuardsKitchen;
 use App\Modules\Kitchen\KitchenModule;
 use App\Modules\Kitchen\KitchenSettings;
+use App\Modules\Kitchen\Models\ConsumptionCredit;
 use App\Modules\Kitchen\Models\ConsumptionRun;
 use App\Modules\Kitchen\Models\ConsumptionWait;
 use App\Modules\Kitchen\Models\SaleConsumption;
@@ -37,6 +38,10 @@ use Illuminate\Validation\ValidationException;
  * A sale that arrives late is drawn in the next run; a dish without a
  * recipe is left for "Sålt utan recept". Sales before the setting was
  * switched on are never drawn.
+ *
+ * Returns reduce only what is drawn: a day whose returns of an
+ * ingredient exceed its sales draws nothing and leaves a credit that is
+ * netted against later sales; stock is never put back from returns.
  *
  * With negative stock off, an ingredient that would go below zero waits
  * under "Väntar på lager" and is tried again each night, until a person
@@ -148,12 +153,26 @@ class ConsumeSales
             $lines = [];
             $waiting = 0;
 
+            $credits = ConsumptionCredit::query()->where('location_id', $locationId)->whereIn('article_id', $stocked)->lockForUpdate()->get()->keyBy('article_id');
+
             foreach ($components as $articleId => $milli) {
                 if ($milli === 0 || ! in_array($articleId, $stocked, true)) {
                     continue;
                 }
 
-                if (! $negative && $milli > 0 && (int) ($levels[$articleId] ?? 0) < $milli) {
+                // Returns never put stock back: a net return is kept as a credit against later sales (review P2.5).
+                $credit = $credits->get($articleId) ?? new ConsumptionCredit(['location_id' => $locationId, 'article_id' => $articleId, 'quantity_milli' => 0]);
+                $available = $credit->quantity_milli;
+                $net = $milli - $available;
+                $credit->quantity_milli = max(0, -$net);
+                $credit->save();
+                $milli = $net;
+
+                if ($milli <= 0) {
+                    continue;
+                }
+
+                if (! $negative && (int) ($levels[$articleId] ?? 0) < $milli) {
                     ConsumptionWait::create(['business_date' => $day->toDateString(), 'location_id' => $locationId, 'article_id' => $articleId, 'quantity_milli' => $milli, 'kitchen_consumption_run_id' => $run->id, 'status' => ConsumptionWait::WAITING]);
                     $waiting++;
 

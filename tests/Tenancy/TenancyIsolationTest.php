@@ -141,6 +141,7 @@ use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Models\StockReceiptLine;
 use App\Modules\Inventory\Models\StockValuation;
+use App\Modules\Kitchen\Models\ConsumptionCredit;
 use App\Modules\Kitchen\Models\ConsumptionRun;
 use App\Modules\Kitchen\Models\ConsumptionWait;
 use App\Modules\Kitchen\Models\MealPayrollProposal;
@@ -367,6 +368,7 @@ const COMPANY_SCOPED_MODELS = [
     ConsumptionRun::class => 'kitchenRunAttributes',
     SaleConsumption::class => 'kitchenSaleConsumptionAttributes',
     ConsumptionWait::class => 'kitchenWaitAttributes',
+    ConsumptionCredit::class => 'kitchenCreditAttributes',
     LabelTemplate::class => ['name' => 'Hemlig etikettmall', 'kind' => 'ARTICLE', 'media' => 'ROLL', 'width_mm' => 50, 'height_mm' => 25, 'layout' => 'AUTO', 'elements' => ['name'], 'is_default' => false],
     CrmAccount::class => ['name' => 'Hemligt prospekt AB'],
     CrmPerson::class => ['name' => 'Hemlig kontakt', 'legal_basis' => 'LEGITIMATE_INTEREST'],
@@ -1554,6 +1556,11 @@ function kitchenRunAttributes(): array
 function kitchenSaleConsumptionAttributes(): array
 {
     return ['pos_sale_row_id' => PosSaleRow::create(posSaleRowAttributes())->id, 'kitchen_consumption_run_id' => ConsumptionRun::create(kitchenRunAttributes())->id];
+}
+
+function kitchenCreditAttributes(): array
+{
+    return ['location_id' => StockLocation::create(inventoryLocationAttributes())->id, 'article_id' => Article::create(articleAttributes())->id, 'quantity_milli' => 100];
 }
 
 function kitchenWaitAttributes(): array

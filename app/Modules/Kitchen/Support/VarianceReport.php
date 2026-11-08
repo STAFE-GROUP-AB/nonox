@@ -14,11 +14,13 @@ use App\Modules\Inventory\Models\StockCount;
 use App\Modules\Inventory\Models\StockCountLine;
 use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Inventory\Models\StockMovement;
+use App\Modules\Inventory\Models\StockValuation;
 use App\Modules\Inventory\Structures\UnitCosts;
 use App\Modules\Inventory\Support\LocationTree;
 use App\Modules\Kitchen\Models\StaffMeal;
 use App\Modules\Kitchen\Models\WasteEntry;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -48,7 +50,7 @@ final class VarianceReport
      * @param  list<array{article_id: int, number: string, name: string, unit: string, stock_class: string, opening_milli: int, receipts_milli: int, theoretical_milli: int, drawn_milli: int, waste_milli: int, waste_by_reason: array<string, int>, staff_milli: int, other_milli: int, closing_milli: int, actual_milli: int, explained_milli: int, variance_milli: int, unit_cost_ore: ?int, variance_ore: ?int, waste_ore: ?int, share_bp: ?int, count_difference_milli: int}>  $lines
      * @param  array<int, int>  $withoutRecipe  dish article => portions sold without a recipe
      * @param  array<int, string>  $dishNames
-     * @param  list<array{id: int, article: string, registered_on: string, quantity_milli: int, reason: string}>  $lateWaste
+     * @param  list<array{id: int, article: string, date: string, quantity_milli: int, type: string, excluded: bool}>  $late  movements "bokförd i efterhand": dated in the period but posted after the closing count (left out of the sums) or after a stock valuation of their date (counted, marked)
      */
     public function __construct(
         public readonly StockCount $opening,
@@ -56,7 +58,8 @@ final class VarianceReport
         public readonly array $lines,
         public readonly array $withoutRecipe,
         public readonly array $dishNames,
-        public readonly array $lateWaste,
+        public readonly array $late,
+        public readonly int $unlocatedRows = 0,
     ) {}
 
     public static function between(Company $company, StockCount $opening, StockCount $closing): self
@@ -74,8 +77,11 @@ final class VarianceReport
                 throw ValidationException::withMessages(['counts' => __('Välj två inventeringar av samma lagerställe, så att de räknar samma varor.')]);
             }
 
-            $from = $opening->counted_on->addDay();
+            $from = $opening->counted_on;
             $to = $closing->counted_on;
+            // On the count days themselves the time of the count decides (review P3.10).
+            $openedAt = CarbonImmutable::parse($opening->completed_at ?? $opening->counted_on->endOfDay());
+            $closedAt = CarbonImmutable::parse($closing->completed_at ?? $closing->counted_on->endOfDay());
             $scope = $closing->location_id === null ? null : LocationTree::subtreeIds(StockLocation::query()->findOrFail($closing->location_id));
 
             $counted = StockCountLine::query()->whereIn('stock_count_id', [$opening->id, $closing->id])->get(['stock_count_id', 'article_id', 'system_milli', 'counted_milli']);
@@ -100,18 +106,43 @@ final class VarianceReport
                 ->when($scope !== null, fn ($query) => $query->whereIn('location_id', $scope))
                 ->whereDate('occurred_on', '>=', $from->toDateString())
                 ->whereDate('occurred_on', '<=', $to->toDateString())
-                ->get(['article_id', 'quantity_milli', 'type', 'reason', 'source_type', 'source_id']);
+                ->with('article:id,name')
+                ->orderBy('occurred_on')->orderBy('id')
+                ->get(['id', 'article_id', 'quantity_milli', 'type', 'reason', 'source_type', 'source_id', 'occurred_on', 'created_at']);
+            $valuedUntil = StockValuation::query()->whereDate('valuation_date', '>=', $from->toDateString())->get(['valuation_date', 'created_at']);
 
             $wasteType = (new WasteEntry)->getMorphClass();
             $mealType = (new StaffMeal)->getMorphClass();
             $countType = (new StockCount)->getMorphClass();
             $sums = [];
 
+            $late = [];
+
             foreach ($movements as $movement) {
+                if ($movement->type !== MovementType::Count) {
+                    // Before the opening count was done, it is in the opening count.
+                    if ($movement->created_at->lessThanOrEqualTo($openedAt) && $movement->occurred_on->equalTo($from)) {
+                        continue;
+                    }
+
+                    // Posted after the closing count was done but dated in the period: the count could not see it (P3.7).
+                    if ($movement->created_at->greaterThan($closedAt)) {
+                        $late[] = self::late($movement, true);
+
+                        continue;
+                    }
+
+                    if ($valuedUntil->contains(fn (StockValuation $valuation): bool => $valuation->valuation_date->greaterThanOrEqualTo($movement->occurred_on) && $valuation->created_at->lessThan($movement->created_at))) {
+                        $late[] = self::late($movement, false);
+                    }
+                } elseif ($movement->source_type !== $countType || $movement->source_id !== (string) $closing->id) {
+                    continue;
+                }
+
                 $sums[$movement->article_id] = self::add($sums[$movement->article_id] ?? self::EMPTY, $movement, $closing, $wasteType, $mealType, $countType);
             }
 
-            $theory = TheoreticalConsumption::between($company, $from, $to);
+            $theory = TheoreticalConsumption::between($company, $from, $to, locationIds: $scope, after: $openedAt, until: $closedAt);
             $costs = UnitCosts::at($company, $to);
             $defaultClass = InventorySettings::defaultClass($company);
             $lines = [];
@@ -158,22 +189,21 @@ final class VarianceReport
 
             usort($lines, fn (array $a, array $b): int => [abs($b['variance_ore'] ?? 0), $a['number']] <=> [abs($a['variance_ore'] ?? 0), $b['number']]);
 
-            $late = WasteEntry::query()
-                ->with('article:id,name')
-                ->whereDate('registered_on', '>=', $from->toDateString())
-                ->whereDate('registered_on', '<=', $to->toDateString())
-                ->where('created_at', '>', $closing->completed_at ?? now())
-                ->orderBy('registered_on')->orderBy('id')
-                ->get();
-
-            return new self($opening, $closing, $lines, $theory->withoutRecipe, $theory->dishNames, array_values($late->map(fn (WasteEntry $entry): array => [
-                'id' => $entry->id,
-                'article' => (string) $entry->article?->name,
-                'registered_on' => $entry->registered_on->toDateString(),
-                'quantity_milli' => $entry->quantity_milli,
-                'reason' => $entry->reason->label(),
-            ])->all()));
+            return new self($opening, $closing, $lines, $theory->withoutRecipe, $theory->dishNames, $late, $theory->unlocatedRows);
         });
+    }
+
+    /** @return array{id: int, article: string, date: string, quantity_milli: int, type: string, excluded: bool} */
+    private static function late(StockMovement $movement, bool $excluded): array
+    {
+        return [
+            'id' => $movement->id,
+            'article' => (string) $movement->article?->name,
+            'date' => $movement->occurred_on->toDateString(),
+            'quantity_milli' => $movement->quantity_milli,
+            'type' => $movement->type->label(),
+            'excluded' => $excluded,
+        ];
     }
 
     /**

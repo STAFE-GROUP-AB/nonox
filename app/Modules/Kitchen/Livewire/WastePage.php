@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Modules\Kitchen\Livewire;
 
 use App\Models\Article;
+use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Inventory\Structures\StructureBook;
+use App\Modules\Inventory\Structures\UnitCosts;
 use App\Modules\Kitchen\Actions\RegisterWaste;
 use App\Modules\Kitchen\Domain\WasteReason;
 use App\Modules\Kitchen\KitchenSettings;
@@ -15,6 +17,7 @@ use App\Modules\Kitchen\Models\WasteEntry;
 use App\Modules\Kitchen\Models\WasteMeasurement;
 use Carbon\CarbonImmutable;
 use Illuminate\View\View;
+use InvalidArgumentException;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -74,6 +77,7 @@ class WastePage extends Component
         $dishIds = array_values(array_filter($book->outputs(), fn (int $id): bool => $book->validOn($id, $today) !== null));
 
         return view('kitchen::livewire.waste', [
+            'donationValue' => $this->donationValue($book, $today),
             'canRegister' => $this->can('register'),
             'reasons' => WasteReason::cases(),
             'ingredients' => Article::query()->where('is_stock_item', true)->where('is_active', true)->orderBy('name')->get(['id', 'number', 'name', 'unit']),
@@ -82,6 +86,27 @@ class WastePage extends Component
             'entries' => WasteEntry::query()->with(['article:id,name,unit', 'location:id,full_code', 'creator:id,name', 'correction:id,corrects_entry_id'])->orderByDesc('registered_on')->orderByDesc('id')->paginate(25),
             'measurements' => WasteMeasurement::query()->orderByDesc('measured_on')->orderByDesc('id')->limit(10)->get(),
         ]);
+    }
+
+    /**
+     * The cost value of a donation, the possible tax base (RS-R11), for
+     * those who may see costs; null otherwise or while incomplete.
+     */
+    private function donationValue(StructureBook $book, CarbonImmutable $today): ?int
+    {
+        if (($this->form['reason'] ?? '') !== WasteReason::Donated->value || ! $this->can('seeCosts') || ($this->form['article_id'] ?? '') === '') {
+            return null;
+        }
+
+        try {
+            $quantity = Quantity::parse((string) ($this->form['quantity'] ?? ''));
+        } catch (InvalidArgumentException) {
+            return null;
+        }
+
+        $unit = $book->unitCost((int) $this->form['article_id'], UnitCosts::at($this->company(), $today), $today)['ore'];
+
+        return $unit === null ? null : Quantity::value($quantity, $unit);
     }
 
     private function resetForm(): void

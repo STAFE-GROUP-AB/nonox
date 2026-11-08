@@ -109,6 +109,19 @@ it('shows Kökspersonal recipes, the menu and the waste page without any price o
     $this->get(route('inventory.overview'))->assertForbidden();
 });
 
+it('gives Kökspersonal only the kitchen\'s places in the scanner, and no receipts, pick lists or counts (review P3.2)', function () {
+    app(ModuleManager::class)->updateSettings(KitchenModule::KEY, $this->company, $this->owner, ['location_id' => $this->places['bin1']->id]);
+    $staff = Bookkeeping::member($this->company, KitchenModule::ROLE);
+    $this->company->unsetRelation('users');
+    $this->actingAs($staff);
+
+    $data = $this->getJson(route('inventory.scanner.data'))->assertOk()->json();
+
+    expect(array_column($data['locations'], 'id'))->toBe([$this->places['bin1']->id])
+        ->and(array_unique(array_column($data['levels'], 1)))->toBe([$this->places['bin1']->id])
+        ->and($data['receipts'])->toBe([])->and($data['pick_lists'])->toBe([])->and($data['counts'])->toBe([]);
+});
+
 it('shows costs and margins to those who manage the kitchen', function () {
     $this->get(route('kitchen.recipes.show', $this->fx['articles']['dish']->id))->assertOk()
         ->assertSee('Kalkyl – inte lagervärdering')

@@ -25,6 +25,14 @@ interface ScannerExtension
     public function allows(User $user, Company $company): bool;
 
     /**
+     * The stock locations a user who reaches Skanna only through this
+     * extension may see, or null for every location.
+     *
+     * @return ?list<int>
+     */
+    public function locationIds(User $user, Company $company): ?array;
+
+    /**
      * Reference data for the phone, without prices or costs.
      *
      * @return array<string, mixed>

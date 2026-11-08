@@ -106,10 +106,17 @@
                     <tbody class="divide-y divide-stone-100">
                         @foreach($proposals as $proposal)
                             <tr wire:key="proposal-{{ $proposal->id }}">
-                                <td class="py-2 pr-4">{{ $proposal->employee?->first_name }} {{ $proposal->employee?->last_name }}</td>
+                                <td class="py-2 pr-4">{{ $proposal->employee?->first_name }} {{ $proposal->employee?->last_name }}
+                                    @if($proposal->details['changed_after_approval'] ?? false)
+                                        <span class="block text-xs font-semibold text-accent-700">{{ __('Ändrad efter godkännande') }}</span>
+                                        @foreach($proposal->details['not_sent'] ?? [] as $reduction)
+                                            <span class="block text-xs text-accent-700">{{ __('Minskning som inte kan skickas, rätta i nästa lönekörning: :code :value', ['code' => $reduction['pay_code'], 'value' => $reduction['amount_ore'] !== null ? $money((int) $reduction['amount_ore'])->format() : (string) $reduction['quantity']]) }}</span>
+                                        @endforeach
+                                    @endif
+                                </td>
                                 <td class="py-2 pr-4">{{ $proposal->pay_code }}@if($proposal->pay_code === 'FORMAN_EGENBETALNING' && ($proposal->details['excess_ore'] ?? 0) > 0)<span class="block text-xs text-gray-500">{{ __('Betalt över förmånsvärdet, skickas inte: :amount', ['amount' => $money((int) $proposal->details['excess_ore'])->format()]) }}</span>@endif</td>
                                 <td class="py-2 pr-4 text-right tabular-nums">@if($proposal->amount_ore !== null)<x-ui.amount :money="$money($proposal->amount_ore)" />@else{{ str_replace('.', ',', rtrim(rtrim((string) $proposal->quantity, '0'), '.')) }}@endif</td>
-                                <td class="py-2 pr-4">{{ ['PROPOSED' => __('Föreslagen'), 'APPROVED' => __('Godkänd'), 'REJECTED' => __('Avvisad')][$proposal->status] ?? $proposal->status }}</td>
+                                <td class="py-2 pr-4">{{ ['PROPOSED' => __('Föreslagen'), 'APPROVED' => __('Godkänd'), 'REJECTED' => __('Avvisad'), 'REPLACED' => __('Ersatt')][$proposal->status] ?? $proposal->status }}</td>
                             </tr>
                         @endforeach
                     </tbody>

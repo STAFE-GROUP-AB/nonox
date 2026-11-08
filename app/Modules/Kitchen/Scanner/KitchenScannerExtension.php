@@ -9,14 +9,17 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Models\BillOfMaterials;
+use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Inventory\Scanner\ScannerExtension;
 use App\Modules\Inventory\Structures\StructureBook;
+use App\Modules\Inventory\Support\LocationTree;
 use App\Modules\Kitchen\Actions\RegisterWaste;
 use App\Modules\Kitchen\Domain\WasteReason;
 use App\Modules\Kitchen\KitchenModule;
 use App\Modules\Kitchen\KitchenSettings;
 use App\Modules\Kitchen\Models\WasteEntry;
 use App\Modules\ModuleManager;
+use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Gate;
 
@@ -45,6 +48,15 @@ final class KitchenScannerExtension implements ScannerExtension
     {
         return app(ModuleManager::class)->isEnabled(KitchenModule::KEY, $company)
             && Gate::forUser($user)->allows('register', [WasteEntry::class, $company]);
+    }
+
+    /** The kitchen's location and everything under it; every location while none is chosen. */
+    public function locationIds(User $user, Company $company): ?array
+    {
+        $id = KitchenSettings::locationId($company);
+        $location = $id === null ? null : CurrentCompany::run($company, fn (): ?StockLocation => StockLocation::query()->find($id));
+
+        return $location === null ? null : array_map(intval(...), LocationTree::subtreeIds($location));
     }
 
     public function data(User $user, Company $company): array

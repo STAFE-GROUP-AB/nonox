@@ -14,6 +14,7 @@ use App\Modules\Kitchen\Livewire\RecipesPage;
 use App\Modules\Kitchen\Livewire\StaffMealsPage;
 use App\Modules\Kitchen\Livewire\VariancePage;
 use App\Modules\Kitchen\Livewire\WastePage;
+use App\Modules\Kitchen\Models\ConsumptionCredit;
 use App\Modules\Kitchen\Models\ConsumptionRun;
 use App\Modules\Kitchen\Models\ConsumptionWait;
 use App\Modules\Kitchen\Models\MealPayrollProposal;
@@ -47,7 +48,7 @@ class KitchenServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/views', 'kitchen');
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
-        foreach ([WasteEntry::class, WasteMeasurement::class, StaffMeal::class, MealPayrollProposal::class, ConsumptionRun::class, SaleConsumption::class, ConsumptionWait::class] as $model) {
+        foreach ([WasteEntry::class, WasteMeasurement::class, StaffMeal::class, MealPayrollProposal::class, ConsumptionRun::class, SaleConsumption::class, ConsumptionWait::class, ConsumptionCredit::class] as $model) {
             Gate::policy($model, KitchenPolicy::class);
         }
 

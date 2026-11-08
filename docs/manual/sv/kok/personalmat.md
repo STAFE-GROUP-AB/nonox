@@ -33,6 +33,10 @@ Med Lön påslaget, och om du får hantera lönen:
 
 Raderna läggs till i lönen först när de godkänns. Det den anställda betalar räknas mot varje måltids förmånsvärde och aldrig över det, så att en annan förmån, till exempel en bilförmån, inte minskar. Det som betalats över förmånsvärdet skickas inte och visas bredvid raden. Representation skickas aldrig till lönen.
 
+## Ändrat efter godkännande
+
+Registreras eller rättas måltider efter att raderna godkänts, föreslår **Skicka kostförmåner till lönen** dem igen med texten **Ändrad efter godkännande**. Är lönekörningen fortfarande öppen tas de godkända raderna ur den och hela månaden föreslås på nytt, så att även den egna betalningen rättas. Är lönen redan attesterad föreslås bara det som ska läggas till, och en minskning visas så att du rättar den i nästa lönekörning. En anställds månad godkänns alltid som en helhet.
+
 ## Rätta en rad
 
 Välj **Rätta**: råvarorna läggs tillbaka i lagret och en rättelserad läggs till. Är månaden redan godkänd i lönen rättar du lönen där.

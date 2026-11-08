@@ -17,6 +17,7 @@ use App\Modules\Inventory\Livewire\OverviewPage;
 use App\Modules\Inventory\Livewire\PickListsPage;
 use App\Modules\Inventory\Livewire\ReceiptsPage;
 use App\Modules\Inventory\Livewire\ReportsPage;
+use App\Modules\Inventory\Livewire\UnitConversionsPanel;
 use App\Modules\Inventory\Models\ArticleImage;
 use App\Modules\Inventory\Models\ArticleUnitConversion;
 use App\Modules\Inventory\Models\BillOfMaterials;
@@ -72,6 +73,7 @@ class InventoryServiceProvider extends ServiceProvider
         Livewire::component('inventory.reports', ReportsPage::class);
         Livewire::component(LabelStudioPage::NAME, LabelStudioPage::class);
         Livewire::component(LabelPrintPanel::NAME, LabelPrintPanel::class);
+        Livewire::component(UnitConversionsPanel::NAME, UnitConversionsPanel::class);
 
         if ($this->app->runningInConsole()) {
             $this->commands([VerifyStockCommand::class]);

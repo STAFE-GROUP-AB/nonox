@@ -39,6 +39,9 @@ class MealPayrollProposal extends Model
 
     public const string REJECTED = 'REJECTED';
 
+    /** Approved, then taken back out of a still open run because the meals changed. */
+    public const string REPLACED = 'REPLACED';
+
     protected $table = 'kitchen_payroll_proposals';
 
     /** @var list<string> */

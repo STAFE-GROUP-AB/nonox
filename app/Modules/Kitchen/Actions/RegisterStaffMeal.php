@@ -181,7 +181,8 @@ class RegisterStaffMeal
                 'created_by' => $user->id,
             ]);
 
-            $costs = UnitCosts::at($company);
+            // Back at the cost per unit they left at: the valuation on the day before they left (review P3.6).
+            $costs = UnitCosts::at($company, CarbonImmutable::parse($meal->served_on->toDateString())->subDay());
             $movements = StockMovement::query()->where('source_type', $meal->getMorphClass())->where('source_id', (string) $meal->id)->where('type', MovementType::InternalUse->value)->get();
 
             if ($movements->isNotEmpty()) {

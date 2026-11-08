@@ -112,6 +112,11 @@
             <x-ui.field for="article_nrv_note" :label="__('Varför')" error="net_realisable_value_note" class="sm:col-span-4">
                 <input id="article_nrv_note" type="text" class="{{ $input }} mt-1" wire:model="form.net_realisable_value_note" maxlength="255" placeholder="{{ __('Till exempel: förra årets modell, säljs på rea') }}">
             </x-ui.field>
+            @if($editingId && auth()->user()->hasTeamPermission(auth()->user()->currentCompany(), 'inventory:manage'))
+                <div class="sm:col-span-6">
+                    <livewire:inventory.unit-conversions :article-id="$editingId" :key="'conversions-'.$editingId" />
+                </div>
+            @endif
         @endif
     </fieldset>
 @endif

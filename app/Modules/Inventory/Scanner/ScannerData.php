@@ -38,31 +38,34 @@ final class ScannerData
             ->orderBy('number')
             ->get(['id', 'number', 'name', 'unit', 'gtin', 'scanner_code', 'sku', 'default_location_id']);
 
-        $locations = StockLocation::query()->where('is_active', true)->orderBy('sort_key')->get(['id', 'full_code', 'name', 'sort_key']);
-
-        $levels = StockLevel::query()->where('quantity_milli', '<>', 0)->get(['article_id', 'location_id', 'quantity_milli']);
-
-        $receipts = StockReceipt::query()->whereIn('status', [StockReceipt::OPEN, StockReceipt::PARTIAL])
-            ->with(['supplier:id,name', 'lines' => fn ($query) => $query->orderBy('position')->orderBy('id')])
-            ->orderBy('number')->get();
-
-        $pickLists = PickList::query()->where('status', PickList::OPEN)
-            ->with(['lines' => fn ($query) => $query->orderBy('position')->orderBy('id')])
-            ->orderBy('number')->get();
-
-        $counts = StockCount::query()->where('status', StockCount::OPEN)
-            ->with(['location:id,full_code', 'lines' => fn ($query) => $query->orderBy('id')])
-            ->orderBy('number')->get();
-
         $can = Gate::forUser($user);
         $canCount = $can->allows('count', [StockMovement::class, $company]);
         $extensions = app(ScannerExtensions::class)->allowed($user, $company);
 
-        if (! $canCount) {
-            $receipts = $receipts->take(0);
-            $pickLists = $pickLists->take(0);
-            $counts = $counts->take(0);
+        // A user who reaches Skanna only through another module (Kökspersonal) sees only that module's places.
+        $places = null;
+
+        if (! $can->allows('viewAny', [StockMovement::class, $company])) {
+            $limits = array_map(fn (ScannerExtension $extension): ?array => $extension->locationIds($user, $company), array_values($extensions));
+            $places = in_array(null, $limits, true) ? null : array_values(array_unique(array_merge(...$limits)));
         }
+
+        $locations = StockLocation::query()->where('is_active', true)->when($places !== null, fn ($query) => $query->whereKey($places ?? []))->orderBy('sort_key')->get(['id', 'full_code', 'name', 'sort_key']);
+
+        $levels = StockLevel::query()->where('quantity_milli', '<>', 0)->when($places !== null, fn ($query) => $query->whereIn('location_id', $places ?? []))->get(['article_id', 'location_id', 'quantity_milli']);
+
+        // Receipts, pick lists and counts only for those who handle goods; not even queried otherwise.
+        $receipts = $canCount ? StockReceipt::query()->whereIn('status', [StockReceipt::OPEN, StockReceipt::PARTIAL])
+            ->with(['supplier:id,name', 'lines' => fn ($query) => $query->orderBy('position')->orderBy('id')])
+            ->orderBy('number')->get() : collect();
+
+        $pickLists = $canCount ? PickList::query()->where('status', PickList::OPEN)
+            ->with(['lines' => fn ($query) => $query->orderBy('position')->orderBy('id')])
+            ->orderBy('number')->get() : collect();
+
+        $counts = $canCount ? StockCount::query()->where('status', StockCount::OPEN)
+            ->with(['location:id,full_code', 'lines' => fn ($query) => $query->orderBy('id')])
+            ->orderBy('number')->get() : collect();
 
         return [
             'context' => [
