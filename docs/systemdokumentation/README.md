@@ -439,6 +439,35 @@ All tid i NONOX är svensk tid (Europe/Stockholm). Tidszonen är fast i koden, b
   anledningen). Var bara företagets förval i otakt med åren skrivs
   `company.framework_default_synced`. När kolumnen infördes fick varje
   befintligt år företagets dåvarande regelverk; ingen verifikation ändrades.
+- Bokslut → Regelverk (sedan 2026-11-07, ADR-059 tillägg, paket S1-P11) visar
+  för ett räkenskapsår om företaget får välja K2 eller ska tillämpa K3, enligt
+  K2 punkt 1.1–1.1C i lydelsen enligt BFNAR 2025:2 (`K3Eligibility`). Storleken
+  (ÅRL 1 kap. 3 §) och undantaget i 1.1C första stycket räknas ut från de två
+  föregående åren; att företaget inte är en fysisk person, att ett aktiebolag
+  inte är en bostadsrättsförening och att en ekonomisk förening inte är ett
+  publikt aktiebolag följer av företagsformen. Allt annat i 1.1A, 1.1B a och
+  1.1C andra stycket b är frågor som en person besvarar; NONOX svarar aldrig
+  åt företaget och föreslår inte om en uppskjuten skatteskuld är väsentlig
+  (mänskligt beslut H2). Frågan om "normalt" citerar BFN:s kommentar ordagrant
+  (H3). 1.1B b räknas bara ur personens egen klassificering av intäktskontona
+  för det senaste året med en färdigställd årsredovisning (NONOX räknar en
+  årsredovisning som färdigställd när undertecknandedagen är ifylld;
+  TODO(legal-verify)). Svaren sparas per räkenskapsår som rader i
+  `closing_checks` (nyckel = frågan och ja eller nej, eller ett kontonummer) och
+  skrivs i behandlingshistoriken som `k3_eligibility.answered` med de nycklar som
+  lades till och togs bort, aldrig fritext. Svaren kan bara ändras när året är
+  öppet, av den som får hantera räkenskapsår.
+- Ett byte till K2 vägras, både på Regelverk och i inställningarna, när
+  bedömningen för det valda året eller något senare år som bytet gäller säger
+  att K3 ska tillämpas; meddelandet anger vilket år. Ett senare år bedöms som
+  det blir efter bytet, med året före på K2. Kontrollen görs under samma lås
+  som bytet. Bekräftelsen av K2-villkoren i bokslutet vägras också
+  för ett år där bedömningen säger att K3 ska tillämpas, och bokslutet visar
+  bedömningen bredvid knappen. Ett år där uppgifter saknas spärrar ingenting.
+  Så länge det inte går att avgöra om undantaget i 1.1C första stycket gäller
+  leder ett ja till 1.1B aldrig till att K3 krävs; året räknas som oavgjort.
+  Svar på frågor som inte ställs för året sparas inte, och en fråga har
+  alltid högst ett svar.
 - NE-bilagan följer räkenskapsårets regelverk: för ett år med K1 (förenklat
   årsbokslut) lämnas B11 och B12 tomma och beloppen ingår i B16, även om
   företaget har bytt till K2 för ett senare år.
@@ -2111,7 +2140,12 @@ Beskrivs i [ADR-059](../adr/ADR-059-k3-annual-report.md), tillägget
   ett svar om övergången gäller bara sitt eget år. En rad kan inte heller
   sparas om den ändrar om året för nästa rad räknas som ett byte av princip,
   när det årets årsredovisning är fastställd. Fastställelsedagen är ett
-  fält i årsredovisningen som en användare kan ändra; låset följer den.
+  fält i årsredovisningen; låset följer den. Varje ändring av
+  fastställelsedagen skrivs i behandlingshistoriken
+  (`annual_report.adoption_date_changed`, med datumet före och efter). När
+  året är stängt och fastställelsedagen har inträffat kan dagen rättas till en
+  annan dag som redan har varit, men inte tas bort eller flyttas fram, så att
+  låset inte kan hävas genom att fältet ändras (sedan 2026-11-07, ADR-059 A.3a).
 - När datumen för företagets första räkenskapsår ändras flyttas årets
   principer till den nya första dagen (`accounting_policy.moved`), och
   principerna för ett automatiskt skapat följande år som tas bort tas bort
@@ -2123,8 +2157,11 @@ Beskrivs i [ADR-059](../adr/ADR-059-k3-annual-report.md), tillägget
   läsa dem. Varje ändring skrivs i behandlingshistoriken
   (`accounting_policy.set`) med princip, värde före och efter och
   räkenskapsårets id; motiveringen sparas bara på raden, aldrig i historiken.
-- Ingen skärm och ingen K3-årsredovisning använder principerna ännu, och
-  ingenting i bokföringen ändras.
+- Principerna sätts på Bokslut → Regelverk, och bara för det första
+  räkenskapsåret med K3 (året före är inte K3 eller finns inte i NONOX); ett
+  senare K3-år ärver dem och visar dem utan att de kan ändras där. Ingen
+  K3-årsredovisning använder principerna ännu, och ingenting i bokföringen
+  ändras.
 
 ### 5a6.2 Uppställning av resultat- och balansräkning enligt K3 (förberedelse)
 

@@ -20,10 +20,11 @@ Avsnittet är för ägaren, administratören och redovisningskonsulten – de ro
 
 ## Bokslutet, steg för steg
 
-1. [Checklistan för bokslutet](/manual/bokslut/checklistan) – vad som ska vara klart.
-2. [Skatt och årets resultat](/manual/bokslut/bokslutsverifikationer) – bokslutsverifikationerna. Med kontantmetoden först [obetalda fakturor vid årets slut](/manual/bokslut/kontantmetoden-vid-arets-slut). Med K3 också [uppskjuten skatt](/manual/bokslut/uppskjuten-skatt) (beta).
-3. [Stäng räkenskapsåret](/manual/bokslut/stang-aret)
-4. [Resultatdisposition](/manual/bokslut/resultatdisposition) – efter årsstämman.
+1. [Regelverk: K2 eller K3](/manual/bokslut/regelverk) – om företaget får använda K2 för året.
+2. [Checklistan för bokslutet](/manual/bokslut/checklistan) – vad som ska vara klart.
+3. [Skatt och årets resultat](/manual/bokslut/bokslutsverifikationer) – bokslutsverifikationerna. Med kontantmetoden först [obetalda fakturor vid årets slut](/manual/bokslut/kontantmetoden-vid-arets-slut). Med K3 också [uppskjuten skatt](/manual/bokslut/uppskjuten-skatt) (beta).
+4. [Stäng räkenskapsåret](/manual/bokslut/stang-aret)
+5. [Resultatdisposition](/manual/bokslut/resultatdisposition) – efter årsstämman.
 
 ## Efter bokslutet
 

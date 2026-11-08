@@ -155,6 +155,7 @@
                 @if($frameworkYear)
                     <p class="mt-1 text-xs text-gray-500">{{ __('Valet gäller räkenskapsåret :year och de år som följer. Tidigare år behåller sitt regelverk.', ['year' => $frameworkYear]) }}</p>
                 @endif
+                <p class="mt-1 text-xs text-gray-500"><a href="{{ route('accounting.closingFramework') }}" class="font-medium text-accent-700 hover:underline">{{ __('Se under Bokslut → Regelverk om företaget får använda K2, vad som saknas och vad ett byte ändrar') }}</a></p>
                 <x-input-error for="reporting_framework" class="mt-2" />
             </div>
         </div>

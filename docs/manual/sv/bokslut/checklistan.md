@@ -37,7 +37,7 @@ De här punkterna bockas av av sig själva när bokföringen visar att de är kl
 
 Uppfyller företaget villkoren klickar du på **Företaget uppfyller villkoren för K2**. Därefter kan du fortsätta med bokslutet. Tills du har bekräftat går det inte att bocka av punkter, boka bokslutsverifikationer eller stänga året. Du bekräftar en gång för företaget och får inte frågan igen, inte heller för senare år. Har du redan bekräftat villkoren när du valde K2 eller ändrade företagets uppgifter efter ändringen visas rutan inte.
 
-Uppfyller företaget inte villkoren ska det byta till K3. Länken **Byt till K3 i inställningarna** tar dig till företagets inställningar. NONOX sparar vem som bekräftade och när.
+Bredvid knappen står vad [Regelverk: K2 eller K3](/manual/bokslut/regelverk) säger om året. Visar svaren där att företaget ska tillämpa K3 går knappen inte att använda. Uppfyller företaget inte villkoren ska det byta till K3. Länken **Uppfyller inte företaget villkoren? Se vad som gäller under Regelverk.** tar dig till [Regelverk: K2 eller K3](/manual/bokslut/regelverk), som visar vilket villkor som inte är uppfyllt och vad ett byte ändrar. NONOX sparar vem som bekräftade och när.
 
 ## Punkterna du bekräftar
 

@@ -852,6 +852,14 @@ annual-report pages.
   document is blocked until chapter 10 (retroactive application, 10.4/10.5) is built.
 - S1-P3 does not check that the year is a K3 year. S1-P11 writes policies from the first K3
   year only.
+- **Resolved by S1-P11 (2026-11-07):** every change of `annual_reports.adoption_date` is
+  audited (`annual_report.adoption_date_changed`, before and after). Once the fiscal year is
+  closed and the adoption date has come, SaveAnnualReport refuses to clear the date or move it
+  into the future (it may be corrected to another day that has come), so the policy lock in
+  SetAccountingPolicy rests on a closed year, not only on an editable field. The lock rule in
+  SetAccountingPolicy itself is unchanged. SaveFrameworkChoice writes policies only for the
+  first K3 year (the year before is not K3 or not kept in NONOX); SetAccountingPolicy still
+  does not check the framework, so other callers must.
 
 - S1-P6 review: K2's `PrintedFigures` puts any difference between the two sides of the
   balance sheet on Övriga skulder, with no limit. A real imbalance is therefore hidden, for
@@ -1133,6 +1141,43 @@ sheet S1-R4, R4.1–R4.6; human decision H6 (decided 2026-11-08).
   deferred tax in the tax proposal, netting of Swedish deferred tax in one
   AB (29.32), 29.20/29.21 left to the person.
 
+#### As built (S1-P11, 2026-11-07)
+
+- `K3Eligibility` (with `K3EligibilityQuestion`, `K3EligibilityAnswers`, `K3EligibilityResult`,
+  `K3EligibilityStatus`), `SaveFrameworkChoice` and Bokslut → Regelverk at `/bokslut/regelverk`
+  (route `accounting.closingFramework`). The screen computes the result from the unsaved form
+  and lists what saving changes (spec Behaviour 1); saving calls SaveFrameworkChoice, which
+  stores the answers and calls ChangeReportingFramework and SetAccountingPolicy in one
+  transaction.
+- **Deviation from A.4 "1.1A a–f from data":** NONOX has data only for d (legal form), e for an
+  aktiebolag and a for an ekonomisk förening. b, c (no group-size or group-accounts data; the
+  ADR-060 register only gives a hint) and f (no branch data) are asked, like g–i. The listing
+  question for the size test and the confirmation of a newly started company are asked too.
+  All answers are `closing_checks` rows: `<question>.yes|no`, `k2_1_1b_b.classified` and
+  `k2_1_1b_b.account.<number>`.
+- 1.1B b reads the revenue accounts 3000–3799 of the latest year before the reporting year
+  whose annual report has a signing date (`TODO(legal-verify)`: "färdigställd"); the share is
+  the person's classified accounts over net sales, compared exactly with
+  `k2_1_1b.building_turnover_share_min_bp`. Without such a year in NONOX the person answers.
+- **After review (2026-11-08):** while the 1.1C first-paragraph exception is unknown, a yes to
+  1.1B goes to the missing list, never to the K3 reasons. ChangeReportingFramework checks every
+  year from the chosen one on, inside the lock and outside the scope bypass, and names the year
+  it refuses. ConfirmK2Conditions refuses a year K3Eligibility marks K3Required (Undetermined
+  does not block), and the closing page shows the status next to the button. The screen blocks
+  only a change to K2; answers are always saved. SaveFrameworkChoice locks the year row before
+  reading the answers, removes both answers of a changed question, ignores `answers` when the
+  input has none, and stores only answers to questions that are asked. When the previous year
+  is not in NONOX, the answer "K2 the year before" decides whether the transition policies are
+  asked. A company without fiscal years gets an empty state.
+- **Re-check (2026-11-08), decided by Lead: option (a).** ChangeReportingFramework judges each
+  later year with the year before it already on K2 (`K3Eligibility::forYear(..., previousFramework:)`).
+  A "normalt" question that only then becomes asked and is unanswered leaves the year
+  Undetermined, which does not block the change.
+- One way to change the framework: the settings form keeps its select (P1) and links to the
+  screen; the K2 refusal when K3 is required lives in ChangeReportingFramework, which both
+  call. Only AB and ekonomisk förening are assessed; years beginning before 2026-01-01 (outside
+  the extended first year) are "not assessed" (older wording not read).
+
 ### A.5 Test plan and performance
 
 **Unit tests per rule id** (Pest, `tests/Unit/AnnualReport/K3/…`), named with the
@@ -1208,8 +1253,8 @@ forces companies off K2) and the package order above.
 | # | Question | Options | Recommendation | Blocks | Deadline |
 |---|---|---|---|---|---|
 | H1 | Does S1 support the fileable K3 report for a **större** (unlisted) AB, as F-S1-a assumes? (§2 refused it; S1-R9.3) | (a) keep refusing; F-S1-a proves figures only; (b) support it in S1 with the ÅRL 5:25–48 notes after a full read; (c) a later item | (a) now, (b) as S1-P13 once the 5:25–48 list is read and the accountant checklist covers it | S1-P13; F-S1-a document-level acceptance | 2026-11-21 (before P10 starts) |
-| H2 | K2 1.1B a: what is a "väsentlig" deferred tax liability, and may NONOX **suggest** (never decide) that a K2 company is caught? (S1-R1.2 a, R4.8) | (a) show the computed deferred tax as information only; (b) also warn above a threshold a human sets; (c) show nothing | (a): information with the K2 1.1B text, no threshold | the deferred-tax line on Bokslut → Regelverk (P11) | 2026-12-05 |
-| H3 | K2 1.1C second paragraph: wording of the confirmation "normalt inte omfattas av punkt 1.1B" (S1-R1.3) | (a) quote BFN's commentary ("mer än något eller några enstaka år") in a yes/no confirmation; (b) leave it to the consultant, no question | (a) | one confirmation on P11 | 2026-12-05 |
+| H2 | K2 1.1B a: what is a "väsentlig" deferred tax liability, and may NONOX **suggest** (never decide) that a K2 company is caught? (S1-R1.2 a, R4.8) | (a) show the computed deferred tax as information only; (b) also warn above a threshold a human sets; (c) show nothing | (a): information with the K2 1.1B text, no threshold | the deferred-tax line on Bokslut → Regelverk (P11) | **Decided by Lead 2026-11-07 under the owner's mandate, open for the consultant's review: (a).** Built in P11: the K2 1.1B a text and BFN's comment on untaxed reserves are quoted, no threshold, the customer answers yes or no; until P5 computes the amount the line says it is not computed yet |
+| H3 | K2 1.1C second paragraph: wording of the confirmation "normalt inte omfattas av punkt 1.1B" (S1-R1.3) | (a) quote BFN's commentary ("mer än något eller några enstaka år") in a yes/no confirmation; (b) leave it to the consultant, no question | (a) | one confirmation on P11 | **Decided by Lead 2026-11-07 under the owner's mandate, open for the consultant's review: (a).** The question quotes "Med normalt avses mer än något eller några enstaka år." verbatim (K2 kons. 2025, comment to 1.1C, p. 19, re-read 2026-11-07) |
 | H4 | Component policy: when is a component "betydande" and the difference "väsentlig"? (S1-R3.1) | (a) buildings are always split into land and named components, other assets only on user choice; (b) every asset on user choice; (c) a value threshold | (a), with the 17.4 building example as the template | the `components` policy row and the report confirmation (P4, P10) | **Decided by Lead 2026-11-08 under the owner's mandate, open for the consultant's review: the recommendation.** Buildings are always split into land and components; other assets only when the user chooses. NONOX sets no amount threshold for "betydande"; the report states that components were considered |
 | H5 | K3 29.19 refers to "29.21 och 29.22" and 29.25 to "29.28"; the content sits at 29.20/29.21 and 29.26. Confirm these are cross-reference slips that change nothing for a NONOX AB (S1-R4, R4.3) | (a) confirm as slips; (b) ask BFN | (a), noted in the systemdokumentation | sign-off of P5 (not its build) | before P5 merges |
 | H6 | Deferred tax **asset** (loss carry-forwards): may NONOX propose an amount, and on what basis after recent losses? (S1-R4.5) | (a) NONOX shows the gross asset and a person enters the recognised amount with a reason (default 0); (b) NONOX proposes the full amount; (c) assets not supported in S1 | (a) | the asset side of P5 | **Decided by Lead 2026-11-08 under the owner's mandate, open for the consultant's review: the recommendation.** NONOX never proposes a deferred tax asset on loss carry-forwards; a person enters the amount with a reason, default 0, and the recognised asset never exceeds it |
