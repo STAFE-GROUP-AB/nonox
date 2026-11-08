@@ -161,3 +161,37 @@ personal numbers. Who may print each version is logged under ADR-068 once that A
 2. An accounting firm may keep the register on the client's behalf. The accountant role gets
    `share-register:manage` and `meetings:manage` as in §1, and every change is recorded with
    the user who made it.
+
+## Addendum 2026-11-08: rule sheet
+
+The researcher's rule sheet is `docs/specs/rules/aktiebok.md` (AB-R1 … AB-R46, read from the
+current texts of ABL, ABF, ÅRL 8:3 and DSL 3:10 on riksdagen.se; Bolagsverket's pages could
+not be fetched). Lead spot-checked ABL 5 kap. 3, 5 and 10 §§ against riksdagen.se. Where this
+ADR and the sheet disagree, the sheet wins, and its section G corrections are accepted:
+
+- The paragraph references in the "Legal frame" table are corrected by the sheet: content
+  5:5, retention 5:3, public access 5:10, minutes 7:48–49, board changes 8:43–44 (effect on
+  receipt, 8:13), auditor 9:47–48, articles 3:5.
+- Retention follows 5:3: the whole register while the company exists and ten years after
+  dissolution; removed data ten years. It is modelled apart from the BFL seven years.
+- The data model and event kinds are extended as listed in section G (certificate flag,
+  rights holders, entry date, `registered_on`, bonus issue, conversion, lapsed new issue,
+  address change, pre-emption notes, the company as holder). Articles are stored as
+  versioned, structured data.
+
+Decided by Lead 2026-11-08 under the owner's mandate, open for the consultant's review:
+
+- **Public access (§6):** the full register is what the company shows for inspection under
+  5:10. The PDF without personal numbers is a voluntary courtesy copy, labelled as such, and
+  is never offered as the legal fulfilment. L1 decides whether that changes.
+- **Minutes (§4):** NONOX marks minutes "Godkänt i NONOX" with who and when, not "Signerat",
+  until L2 is answered. An advanced electronic signature (ABL 1:13) is a later step.
+- **Notice periods and deadlines** come from the sheet's section H as `verified: false`
+  values and are shown as advice until L4–L6 are answered.
+- **Accounting firms (owner decision 2 above):** a firm user may enter transfers only when
+  the company has recorded that the board has authorised the firm (5:9). L9 confirms the form.
+- **Existing companies:** an opening event records today's register, and the page tells the
+  user to keep the old book for ten years (5:3, L10).
+
+Open lawyer questions L1–L10 are listed at the end of the sheet. SOU 2026:26 (sole-owner
+reporting proposed from 2028-07-31) goes on the regulatory watch list.
