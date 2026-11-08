@@ -10,6 +10,9 @@ use App\Actions\Invoicing\RunRecurringInvoice;
 use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Invoicing\SaveDraftInvoice;
 use App\Actions\Invoicing\SaveRecurringInvoice;
+use App\Actions\Payables\RegisterSupplierInvoice;
+use App\Actions\Payables\SaveSupplier;
+use App\Actions\Payables\SaveSupplierInvoice;
 use App\Domain\Accounting\VoucherSource;
 use App\Domain\Invoicing\AgreementStatus;
 use App\Domain\Overview\Statistics;
@@ -368,4 +371,60 @@ it('counts a missed agreement date once and leaves out old agreement drafts', fu
 
     // The next date, 20 February, has passed: counted once from today (due 10 May), then 20 May (due 19 June).
     expect(array_column($forecast, 'recurring'))->toBe([0, 125_000, 125_000]);
+});
+
+it('nets a partial credit note of an agreement invoice in its month', function () {
+    $agreement = forecastAgreement($this->owner, $this->company, '2026-03-05');
+    $this->travelTo(CarbonImmutable::parse('2026-03-20 10:00:00'));
+    $issued = app(IssueInvoice::class)($this->owner, app(RunRecurringInvoice::class)($this->owner, $agreement, CarbonImmutable::parse('2026-03-05')));
+    $credit = app(CreditInvoice::class)($this->owner, $issued);
+    $credit = app(SaveDraftInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $credit->customer_id, 'invoice_date' => '2026-03-20', 'due_date' => '2026-03-20',
+        'rows' => [['description' => 'Kreditering', 'quantity' => '-1', 'price' => '400', 'vat_rate' => 2500]],
+    ], $credit);
+    app(IssueInvoice::class)($this->owner, $credit);
+    $this->travelTo(CarbonImmutable::parse('2026-04-10 10:00:00'));
+    app(RunRecurringInvoice::class)->setStatus($this->owner, $agreement->fresh(), AgreementStatus::Paused);
+
+    expect(forecastStats($this->owner, $this->company, $this->today)['liquidity']['average_result'])->toBe(0);
+});
+
+it('under kontantmetoden dates the VAT by the expected payment, so issuing a draft changes nothing', function () {
+    $this->company->forceFill(['vat_period' => 'MONTHLY', 'accounting_method' => 'KONTANTMETODEN'])->save();
+    $agreement = forecastAgreement($this->owner, $this->company->fresh(), '2026-04-10', '100000', 30);
+    $draft = app(RunRecurringInvoice::class)($this->owner, $agreement, CarbonImmutable::parse('2026-04-10'));
+    $before = forecastStats($this->owner, $this->company->fresh(), $this->today)['liquidity']['forecast'];
+
+    app(IssueInvoice::class)($this->owner, $draft->fresh());
+    $after = forecastStats($this->owner, $this->company->fresh(), $this->today)['liquidity']['forecast'];
+
+    // Paid 10 May, so the VAT belongs to May and is due in July, after the forecast.
+    expect(array_column($after, 'vat'))->toBe(array_column($before, 'vat'))
+        ->and(array_column($after, 'balance'))->toBe(array_column($before, 'balance'))
+        ->and(array_column($after, 'vat'))->toBe([0, 0, 0]);
+});
+
+it('under kontantmetoden counts the VAT of open invoices in the period they are expected to be paid', function () {
+    $this->company->forceFill(['vat_period' => 'MONTHLY', 'accounting_method' => 'KONTANTMETODEN'])->save();
+    $company = $this->company->fresh();
+    // 2 000 kr + 500 kr VAT, due 19 April: paid in April, VAT due 12 June.
+    forecastInvoice($this->owner, $company, '2026-03-20', '2000');
+    // A supplier invoice of 1 250 kr with 250 kr VAT, due 4 April (overdue): paid now, input VAT also in the April return.
+    $supplier = app(SaveSupplier::class)($this->owner, $company, ['name' => 'Lokalvärden AB', 'bankgiro' => '5050-1055', 'payment_terms_days' => 30, 'default_account' => 5010]);
+    app(RegisterSupplierInvoice::class)($this->owner, app(SaveSupplierInvoice::class)($this->owner, $company, [
+        'supplier_id' => $supplier->id, 'invoice_date' => '2026-03-05', 'total' => '1250', 'vat' => '250', 'vat_treatment' => 'DOMESTIC',
+        'rows' => [['amount' => '1000', 'vat_rate' => '2500', 'description' => 'Hyra mars']],
+    ]));
+
+    $forecast = forecastStats($this->owner, $company, $this->today)['liquidity']['forecast'];
+
+    expect(array_column($forecast, 'vat'))->toBe([0, 0, -25_000]);
+});
+
+it('takes särskild löneskatt out of the average when the preliminary tax pays it', function () {
+    forecastPayroll($this);
+    $this->company->forceFill(['preliminary_tax_monthly_ore' => 400_000])->save();
+    Bookkeeping::postRows($this->owner, $this->company, '2026-03-31', [7530 => 300_000, 2514 => -300_000]);
+
+    expect(forecastStats($this->owner, $this->company->fresh(), $this->today)['liquidity']['average_result'])->toBe(0);
 });

@@ -164,7 +164,18 @@ computed or read from Skatteverket: NONOX stores nothing from the tax account
 API (ADR-054, stage 3), so only the amount the company has entered counts.
 `TODO(legal-verify)`: the day Skatteverket debits it (as Momsbufferten).
 VAT on other invoices not yet booked and overdue VAT periods that were never
-reported in NONOX are not counted. Pension premiums and other personnel costs paid through supplier
+reported in NONOX are not counted.
+
+**Kontantmetoden.** VAT is booked when an invoice is paid (InvoiceBooking,
+SupplierInvoiceBooking), so for a company on kontantmetoden the agreement
+invoices' and drafts' VAT is dated by the VAT period of the expected payment
+(the due date, or today when it has passed) instead of the invoice date. The
+VAT share of what is left to pay on open customer invoices (positive) and
+open supplier invoices (negative, input VAT), `remaining × VAT / total`
+rounded half up per invoice, is added on the VAT date of the period of the
+expected payment. Issuing a draft therefore changes nothing in the forecast.
+Not handled: open items booked at year end under kontantmetoden (their VAT
+is then also in the period's VAT; TODO(legal-verify) in InvoiceBooking). Pension premiums and other personnel costs paid through supplier
 invoices count as supplier invoices when they exist.
 
 ### Double counting: the decision
@@ -193,8 +204,14 @@ explicit flow replaces, and only when that flow is counted:
   payroll cost is counted once; manual salary vouchers stay in the average.
   The limit: a company that switched to the payroll module within the last
   three months has manual salaries in the average for those months.
+  Known limitation, for later hardening: the filter is by account. A
+  pension or insurance pay code booked outside 7400–7499, 7530–7539 and
+  7570–7579 is added back although the run does not pay it; the exact
+  source is `payslip_lines.tax_effect = EMPLOYER`, which the ledger rows do
+  not carry.
 - **Preliminary tax**: when the monthly amount is entered, 8900–8998 is added
-  back.
+  back, and also 7530–7539 (särskild löneskatt is paid through the
+  preliminary tax, so it is not counted twice).
 - **Agreements**: the revenue (net, excluding VAT) of invoices made from an
   agreement, by invoice month, less the credit notes of those invoices in
   the credit note's month (as the ledger has them, so a fully credited

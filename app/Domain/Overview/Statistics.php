@@ -50,6 +50,15 @@ final class Statistics
      */
     public const array NOT_PAID_BY_RUNS = [[7400, 7499], [7530, 7539], [7570, 7579]];
 
+    /**
+     * BAS 753 Särskild löneskatt: paid through the preliminary tax, so it
+     * leaves the average with the tax costs when the preliminary tax is
+     * counted on its own.
+     *
+     * @var array{0: int, 1: int}
+     */
+    public const array SPECIAL_PAYROLL_TAX = [7530, 7539];
+
     public function __construct(private readonly ForecastFlows $flows) {}
 
     /**
@@ -138,7 +147,8 @@ final class Statistics
             // What the forecast counts on its own instead of through the average result (ForecastFlows): the
             // payroll vouchers' costs the runs pay, without the accounts in NOT_PAID_BY_RUNS.
             ->selectRaw('COALESCE(SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) FILTER (WHERE accounts.number BETWEEN 4000 AND 8998 AND vouchers.source = ? AND NOT (accounts.number BETWEEN ? AND ? OR accounts.number BETWEEN ? AND ? OR accounts.number BETWEEN ? AND ?)), 0) AS payroll_costs', [VoucherSource::Payroll->value, ...array_merge(...self::NOT_PAID_BY_RUNS)])
-            ->selectRaw('COALESCE(SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) FILTER (WHERE accounts.number BETWEEN 8900 AND 8998), 0) AS tax_costs')
+            // The tax costs and särskild löneskatt, which the preliminary tax pays when the company has entered it.
+            ->selectRaw('COALESCE(SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) FILTER (WHERE accounts.number BETWEEN 8900 AND 8998 OR accounts.number BETWEEN ? AND ?), 0) AS tax_costs', self::SPECIAL_PAYROLL_TAX)
             ->groupByRaw('1')
             ->get()
             ->mapWithKeys(fn (object $row): array => [(string) $row->month => [

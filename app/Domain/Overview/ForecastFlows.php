@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Overview;
 
 use App\Domain\Accounting\VoucherStatus;
+use App\Domain\Company\AccountingMethod;
 use App\Domain\Deadlines\AgiDates;
 use App\Domain\Deadlines\CompanyDeadlines;
 use App\Domain\Deadlines\Deadline;
@@ -14,9 +15,11 @@ use App\Domain\Guide\MoneyNotYours;
 use App\Domain\Guide\MoneyNotYoursFigures;
 use App\Domain\Invoicing\AgreementStatus;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\RecurringInvoice;
+use App\Models\SupplierInvoice;
 use App\Models\User;
 use App\Models\VoucherRow;
 use App\Modules\ModuleManager;
@@ -89,9 +92,11 @@ final class ForecastFlows
         ));
         $figures = $this->money->for($company, $today, $deadlines);
 
+        $cashMethod = $company->accounting_method === AccountingMethod::Kontantmetoden;
         $vat = $this->vat($company, $deadlines, $figures, $today);
         $preliminary = $this->preliminaryTax($company, $deadlines, $today);
-        $recurring = $this->recurring($deadlines, $today, $until);
+        $recurring = $this->recurring($deadlines, $today, $until, $cashMethod);
+        $openVat = $cashMethod ? $this->openInvoiceVat($deadlines, $today, $until) : [];
         $payroll = $this->payroll($user, $company, $figures, $today, $months);
 
         return [
@@ -99,7 +104,7 @@ final class ForecastFlows
                 'recurring' => $recurring['in'],
                 'payroll_net' => $payroll['net'] ?? [],
                 'payroll_tax' => $payroll['tax'] ?? [],
-                'vat' => [...$vat, ...$recurring['vat']],
+                'vat' => [...$vat, ...$recurring['vat'], ...$openVat],
                 'preliminary_tax' => $preliminary ?? [],
                 'tax_account' => (int) ($figures?->taxAccount['amount'] ?? 0),
             ],
@@ -186,9 +191,12 @@ final class ForecastFlows
     /**
      * The coming invoices of active agreements and the drafts agreements
      * have made, with VAT, on their due dates up to the end of the forecast,
-     * and the VAT on them (total − net) on the date of the VAT period the
-     * invoice date falls in, when that date is in the forecast. The VAT of
-     * an issued invoice is booked and already in the period's VAT.
+     * and the VAT on them (total − net) on the date of its VAT period, when
+     * that date is in the forecast: under fakturametoden the period of the
+     * invoice date, under kontantmetoden that of the expected payment (the
+     * due date, or today when it has passed), when the VAT is booked. The
+     * VAT of an issued invoice is either booked (fakturametoden) or counted
+     * by openInvoiceVat (kontantmetoden), so issuing a draft changes nothing.
      *
      * An agreement whose next date has passed is counted once, from today
      * (it is invoiced when someone runs it), never once per missed date. A
@@ -197,23 +205,15 @@ final class ForecastFlows
      * @param  list<Deadline>  $deadlines  the company's dates from today to the end of the forecast
      * @return array{in: list<Flow>, vat: list<Flow>}
      */
-    private function recurring(array $deadlines, CarbonImmutable $today, CarbonImmutable $until): array
+    private function recurring(array $deadlines, CarbonImmutable $today, CarbonImmutable $until, bool $cashMethod): array
     {
         $in = [];
         $vat = [];
-        $vatDue = function (CarbonImmutable $invoiceDate, int $amount) use ($deadlines, &$vat): void {
-            if ($amount === 0) {
-                return;
-            }
+        $vatDue = function (CarbonImmutable $invoiceDate, CarbonImmutable $due, int $amount) use ($deadlines, $today, $cashMethod, &$vat): void {
+            $flow = self::vatOn($deadlines, $cashMethod ? ($due->lessThan($today) ? $today : $due) : $invoiceDate, $amount);
 
-            foreach ($deadlines as $deadline) {
-                // The key is vat:<last day of the period> (VatDeadlineProvider).
-                if ($deadline->type === DeadlineType::Vat && $deadline->periodStart !== null
-                    && $invoiceDate->betweenIncluded($deadline->periodStart, CarbonImmutable::parse(substr($deadline->key, 4)))) {
-                    $vat[] = ['due' => $deadline->date->toDateString(), 'amount' => $amount];
-
-                    return;
-                }
+            if ($flow !== null) {
+                $vat[] = $flow;
             }
         };
 
@@ -238,7 +238,7 @@ final class ForecastFlows
                     $in[] = ['due' => $due->toDateString(), 'amount' => $agreement->total_ore->ore];
                 }
 
-                $vatDue($date, $agreement->total_ore->ore - $agreement->net_ore->ore);
+                $vatDue($date, $due, $agreement->total_ore->ore - $agreement->net_ore->ore);
             }
         }
 
@@ -255,11 +255,82 @@ final class ForecastFlows
             ->get();
 
         foreach ($drafts as $row) {
-            $in[] = ['due' => substr((string) $row->due_date, 0, 10), 'amount' => (int) $row->amount];
-            $vatDue(CarbonImmutable::parse(substr((string) $row->invoice_date, 0, 10)), (int) $row->vat);
+            $due = CarbonImmutable::parse(substr((string) $row->due_date, 0, 10));
+            $in[] = ['due' => $due->toDateString(), 'amount' => (int) $row->amount];
+            $vatDue(CarbonImmutable::parse(substr((string) $row->invoice_date, 0, 10)), $due, (int) $row->vat);
         }
 
         return ['in' => $in, 'vat' => $vat];
+    }
+
+    /**
+     * Kontantmetoden: the VAT of open customer invoices (positive) and
+     * supplier invoices (negative) is booked when they are paid, so it is
+     * not in the period's VAT yet. Each one's share of VAT in what is left
+     * to pay, rounded half up per invoice, on the VAT date of the period of
+     * the expected payment (the due date, or today when it has passed).
+     *
+     * @param  list<Deadline>  $deadlines
+     * @return list<Flow>
+     */
+    private function openInvoiceVat(array $deadlines, CarbonImmutable $today, CarbonImmutable $until): array
+    {
+        $customers = Invoice::query()
+            ->where('status', InvoiceStatus::Issued->value)
+            ->where('kind', Invoice::INVOICE)
+            ->where('total_ore', '<>', 0)
+            ->whereNotNull('due_date')
+            ->whereDate('due_date', '<=', $until->toDateString())
+            ->toBase()
+            ->groupBy('due_date')
+            ->selectRaw('due_date, SUM(ROUND((total_ore - paid_ore)::numeric * (total_ore - net_ore) / total_ore)) AS vat')
+            ->get();
+        $suppliers = SupplierInvoice::query()
+            ->whereIn('status', [SupplierInvoiceStatus::Registered->value, SupplierInvoiceStatus::Approved->value])
+            ->where('total_ore', '<>', 0)
+            ->whereNotNull('due_date')
+            ->whereDate('due_date', '<=', $until->toDateString())
+            ->toBase()
+            ->groupBy('due_date')
+            ->selectRaw('due_date, -SUM(ROUND((total_ore - paid_ore)::numeric * vat_ore / total_ore)) AS vat')
+            ->get();
+
+        $flows = [];
+
+        foreach ([...$customers, ...$suppliers] as $row) {
+            $due = CarbonImmutable::parse(substr((string) $row->due_date, 0, 10));
+            $flow = self::vatOn($deadlines, $due->lessThan($today) ? $today : $due, (int) $row->vat);
+
+            if ($flow !== null) {
+                $flows[] = $flow;
+            }
+        }
+
+        return $flows;
+    }
+
+    /**
+     * The VAT on the date of the VAT period that $date falls in, or null
+     * when that date is not in the forecast or there is nothing.
+     *
+     * @param  list<Deadline>  $deadlines
+     * @return Flow|null
+     */
+    private static function vatOn(array $deadlines, CarbonImmutable $date, int $amount): ?array
+    {
+        if ($amount === 0) {
+            return null;
+        }
+
+        foreach ($deadlines as $deadline) {
+            // The key is vat:<last day of the period> (VatDeadlineProvider).
+            if ($deadline->type === DeadlineType::Vat && $deadline->periodStart !== null
+                && $date->betweenIncluded($deadline->periodStart, CarbonImmutable::parse(substr($deadline->key, 4)))) {
+                return ['due' => $deadline->date->toDateString(), 'amount' => $amount];
+            }
+        }
+
+        return null;
     }
 
     /**
