@@ -61,7 +61,7 @@ Efter inläsningen jämförs varje kontos utgående balans och resultat med file
 | Verifikationsserier | Saknade serier skapas. Verifikationerna behåller sina nummer om serien är tom här och filens nummer börjar på 1 utan luckor; annars får de nästa nummer här och filens nummer sparas. |
 | Ändrade rader | Rader som har lagts till eller tagits bort i efterhand i det gamla programmet sparas som historik med verifikationen. |
 
-Underlag följer inte med i en SIE-fil. Spara dem i ditt arkiv. Kunder, leverantörer och artiklar lägger du in i NONOX; se [Kunder, leverantörer och obetalda fakturor](/manual/flytta/kunder-leverantorer-och-obetalda-fakturor).
+Underlag följer inte med i en SIE-fil. Spara dem i ditt arkiv, eller läs in dem som ZIP-fil under **Bokföring → Läs in register**. Kunder, leverantörer och artiklar läser du in därifrån, eller lägger in i NONOX för hand; se [Läs in register](/manual/flytta/las-in-register) och [Kunder, leverantörer och obetalda fakturor](/manual/flytta/kunder-leverantorer-och-obetalda-fakturor).
 
 ## Vanliga frågor
 

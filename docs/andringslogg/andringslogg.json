@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-08-las-in-register",
+      "datum": "2026-11-08T19:00:00+01:00",
+      "rubrik": "Läs in kunder, leverantörer, artiklar, obetalda fakturor och underlag från annat program",
+      "beskrivning": "Under Bokföring → Läs in register laddar du upp en CSV- eller Excelfil, kopplar kolumnerna själv eller med ett förval för program vars egen dokumentation beskriver filerna, och får en rapport innan något sparas. Obetalda kund- och leverantörsfakturor läses in utan verifikation och bara när summan stämmer med saldot på 1510 respektive 2440, och underlag kan läggas in som ZIP-fil. Flyttguiderna per program är byggda men avstängda tills den juridiska granskningen är gjord.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-08-uppskjuten-skatt-k3",
       "datum": "2026-11-08T09:30:00+01:00",
       "rubrik": "Uppskjuten skatt i bokslutet för räkenskapsår som följer K3 (beta)",

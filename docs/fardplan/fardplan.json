@@ -240,7 +240,7 @@
       "id": "flytt-fran-fler-program",
       "rubrik": "Flytt från fler bokföringsprogram",
       "beskrivning": "Bokföringen går redan att flytta från alla program som kan ta fram en SIE-fil. Nu kommer inläsning av kund- och leverantörsregistret och en flyttguide per program.",
-      "status": "Planerat",
+      "status": "Pågår",
       "omrade": "Bokföring",
       "uppdaterad": "2026-11-08"
     },

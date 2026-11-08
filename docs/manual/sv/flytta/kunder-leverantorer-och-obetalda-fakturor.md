@@ -13,7 +13,7 @@ SIE-filen innehåller bokföringen men inte registren, och inte fakturorna som f
 
 **Från Fortnox** hämtar NONOX kunder, leverantörer och artiklar åt dig; se [Från Fortnox](/manual/flytta/fran-fortnox).
 
-**Från andra program** lägger du in dem i NONOX:
+**Från andra program** läser du in dem med en fil under **Bokföring → Läs in register**; se [Läs in register](/manual/flytta/las-in-register). Du kan också lägga in dem för hand:
 
 - Börja med de kunder du fakturerar oftast och de leverantörer du betalar oftast. Resten lägger du in när de behövs.
 - Under **Register → Kunder**, **Register → Leverantörer** och **Register → Artiklar**. Se [Kunder](/manual/fakturering/kunder).
@@ -25,14 +25,16 @@ Har ni en utvecklare kan registren också läggas in med NONOX öppna API; se [N
 
 En kundfaktura som är obetald på flyttdagen finns redan med i bokföringen: den ligger som saldo på kontot **1510 Kundfordringar** genom SIE-filen. Du behöver inte skapa om den i NONOX.
 
-När kunden betalar bokför du betalningen som en verifikation mot 1510:
+Vill du kunna skicka påminnelser och registrera betalningar mot fakturan kan du läsa in listan över obetalda kundfakturor under **Bokföring → Läs in register**. Fakturorna skapas utan verifikation, för saldot finns redan, och summan måste stämma med saldot på 1510; se [Läs in register](/manual/flytta/las-in-register#obetalda-fakturor).
+
+Annars bokför du betalningen när kunden betalar som en verifikation mot 1510:
 
 | Konto | Debet | Kredit |
 |---|---|---|
 | 1930 Företagskonto/checkkonto/affärskonto | belopp | |
 | 1510 Kundfordringar | | belopp |
 
-Se [Bokför en verifikation](/manual/bokforing/bokfor-en-verifikation). Fakturan finns inte som faktura i NONOX, så betalningen kan inte matchas mot den automatiskt; bokför den för hand.
+Se [Bokför en verifikation](/manual/bokforing/bokfor-en-verifikation). Har du inte läst in fakturan finns den inte som faktura i NONOX, så betalningen kan inte matchas mot den automatiskt; bokför den för hand.
 
 Alla nya fakturor skapar du i NONOX, med nytt OCR-nummer och nytt fakturanummer. Se [Skapa en faktura](/manual/fakturering/skapa-en-faktura).
 
@@ -55,10 +57,11 @@ Nya leverantörsfakturor registrerar du i NONOX. Se [Registrera en leverantörsf
 
 ## Varför inte skapa om de gamla fakturorna?
 
-En faktura som skapas i NONOX bokförs. Skapar du om en faktura som redan finns i den inlästa bokföringen blir den bokförd två gånger. Att låta de gamla fakturorna betalas klart mot saldot är enklare och säkrare, och bokföringen blir exakt densamma.
+En faktura som skapas i NONOX bokförs. Skapar du om en faktura som redan finns i den inlästa bokföringen blir den bokförd två gånger. Använd i stället **Läs in register**, som skapar fakturan utan verifikation, eller låt de gamla fakturorna betalas klart mot saldot. Bokföringen blir exakt densamma.
 
 ## Läs också
 
+- [Läs in register](/manual/flytta/las-in-register)
 - [Stäm av](/manual/flytta/stam-av)
 - [Kunder](/manual/fakturering/kunder)
 - [Inbetalningar](/manual/fakturering/inbetalningar)

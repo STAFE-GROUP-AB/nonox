@@ -411,3 +411,73 @@ Decided by Lead 2026-11-08 under the owner's mandate, open for the consultant's 
    program".
 9. **Legal review:** the per-program guide pages are built behind an instance setting and are
    published only after the legal review that ADR-020 pages get.
+
+## Addendum 2026-11-08: as built
+
+Status: implemented on branch `feat/migration-register-import` (S1 to S8). What differs from the
+text above, and what was decided on the way:
+
+- **Library.** `openspout/openspout` 5.x (MIT) reads XLSX as a stream; the in-house
+  `XlsxReader` (ADR-023) holds a sheet in memory and stops at 5 000 rows, which is too little for
+  100 000. Nothing else was added.
+- **Permission and places.** `import:registers` for owner, admin and accountant (policy
+  `RegisterImportPolicy`). Code in `app/Migration/Import` (no program is named in code),
+  models `RegisterImport` and `RegisterImportPreset` in `App\Models`, page at
+  `/bokforing/las-in-uppgifter` (not `.../las-in-register` as first written: `SwedishUrlsTest` keeps
+  the English word "register" out of paths), template CSV per kind at
+  `/bokforing/las-in-uppgifter/mall/{kind}`.
+  Entry in the menu (Bokföring, Löpande) and in the search.
+- **Numbers.** A customer or supplier gets the next number in the company's own series; the
+  previous program's number is kept in `external_ref` and shown as "Nummer i tidigare program" on
+  the customer, supplier and article lists. The source number is therefore never used as the NONOX
+  number (the Save actions do not take one, and a source number can collide with the series). An
+  article keeps its article number, since that field is required and unique. An imported open
+  invoice likewise takes the next number of the invoice series (supplier invoices: of the supplier
+  invoice series) and keeps the old invoice number in `external_ref`.
+- **Existing records and rows.** Skipped, never overwritten; "fyll i tomma fält" is offered for
+  customers and suppliers only (articles are never filled). A row can be excluded by a checkbox in
+  the preview; editing a row in the preview is not built: the user corrects the file and uploads
+  it again, which is safe because matching is by key. The blocker "different company's organisation
+  number in a row marked Mitt företag" is not built, because no field is marked that way.
+- **Coded values.** Payment terms, "privatperson" and "aktiv" that cannot be read are listed in the
+  report under "Koder som behöver förklaras" and the user fills in their meaning once; the answer is
+  stored with the import. Shipped presets carry only the value maps the vendor documents.
+- **Presets.** `docs/migration/format-presets.json` holds Spiris (customers, suppliers; articles
+  undocumented) and Bokio (customers partial: the page documents field names, not exact header
+  text; articles undocumented), each with source URL and read date, per the Lead addendum. The
+  mapping is matched on header names regardless of case, spaces, dots, hyphens and underscores.
+  Spiris payment-terms code 40 maps to 30 days and 90 to 0 days, the only two the vendor page
+  states in days.
+- **Open reskontra.** Customer invoices are created as issued invoices
+  (`import_source = IMPORT_OPEN`) and supplier invoices as approved ones, with the unpaid amount
+  as what remains (`paid_ore` = total minus unpaid). No voucher; a test proves that vouchers,
+  voucher rows and the hash chain are unchanged. Reconciliation is against the closing balance of a
+  chosen fiscal year (default the latest) and is repeated inside the transaction. Only SEK invoices
+  are read; other currencies are error rows. Payment of an imported invoice books against 1510 and
+  2440 (tested through the ordinary `RegisterPayment` and `PaySupplierInvoice`), which holds for
+  the invoice method only; the cash method stays refused. Owner question 1 remains open.
+- **Attachments.** Extensions `pdf`, `jpg`, `jpeg`, `png`, `webp` (what `AttachToVoucher`
+  accepts; gif, tif and heic are rejected with the reason), at most 10 MB per file, 5 000
+  entries, 500 MB unpacked, a packing ratio of at most 200, 100 MB for the ZIP itself (the 20 MB
+  limit of the register files would be too small for receipts; this is a decision to confirm).
+  Files are read from the archive one at a time and written only through `AttachToVoucher`. Links
+  resolve through `imported_vouchers`; a file linked to a voucher that is missing or ambiguous is
+  reported, never guessed. Invoice PDFs are not attached to imported invoices in this version.
+- **Retention.** `register-import:prune` (04:40 daily) removes the stored file 30 days after a
+  finished import and 7 days after an unconfirmed preview, only below `register-import/`, and
+  keeps the row with counts and hash. Entered in `docs/gdpr/registerforteckning.md`,
+  `lagringstider.md` and the system documentation (version 0.117).
+- **Guides.** `docs/migration/flyttguider.json`, pages `/flytta-fran` and `/flytta-fran/{program}`,
+  switched by the instance setting `migration.guides_public` (default off, toggled in HQ, audited);
+  while off they answer 404. Only steps whose evidence is `vendor` and that carry an https source and
+  a read date are rendered; everything else says "Dokumenteras inte offentligt av leverantören".
+  Spiris and Bokio have steps; the other programs of section 6 are listed with none. A test fails on
+  logos or images in the pages and on the strings in `forbidden_strings`, and a test keeps program
+  names out of code.
+- **Portability.** `external_ref` is listed as excluded in the JSON dump (ADR-065); carrying it needs a
+  dump schema change and is left to that ADR.
+- **Not done / open.** Owner question 1 (cash method); legal review of the guide pages before
+  `migration.guides_public` is turned on; preset header texts for Bokio and the program list beyond
+  the two documented ones wait for synthetic sample files (Lead decision 4); whether imported
+  invoices should consume numbers of the NONOX invoice series (done here, to keep the series free of
+  collisions); the 100 MB ZIP limit.
