@@ -82,6 +82,14 @@ use App\Modules\Banking\Models\BankConnection;
 use App\Modules\Banking\Models\BankFeedAccount;
 use App\Modules\Banking\Models\BankFeedBalance;
 use App\Modules\Banking\Models\BankFeedTransaction;
+use App\Modules\Boardroom\Models\AgendaItem as BoardroomAgendaItem;
+use App\Modules\Boardroom\Models\ArticlesVersion as BoardroomArticlesVersion;
+use App\Modules\Boardroom\Models\Meeting as BoardroomMeeting;
+use App\Modules\Boardroom\Models\Minutes as BoardroomMinutes;
+use App\Modules\Boardroom\Models\Register as BoardroomRegister;
+use App\Modules\Boardroom\Models\ShareClass as BoardroomShareClass;
+use App\Modules\Boardroom\Models\ShareEvent as BoardroomShareEvent;
+use App\Modules\Boardroom\Models\Shareholder as BoardroomShareholder;
 use App\Modules\Connect\Models\ConnectApiKey;
 use App\Modules\Connect\Models\ConnectGrant;
 use App\Modules\Connect\Models\ConnectSftpAccount;
@@ -324,6 +332,14 @@ const COMPANY_SCOPED_MODELS = [
     StaffLedgerDevice::class => 'staffLedgerDeviceAttributes',
     StaffLedgerEntry::class => 'staffLedgerEntryAttributes',
     StaffLedgerTimeProposal::class => 'staffLedgerTimeProposalAttributes',
+    BoardroomRegister::class => [],
+    BoardroomShareClass::class => 'boardroomShareClassAttributes',
+    BoardroomShareholder::class => ['kind' => 'PERSON', 'name' => 'Hemlig Ägare', 'personal_number' => '198001011239', 'address_line1' => 'Gatan 1', 'postal_code' => '111 22', 'city' => 'Staden'],
+    BoardroomShareEvent::class => 'boardroomShareEventAttributes',
+    BoardroomArticlesVersion::class => 'boardroomArticlesAttributes',
+    BoardroomMeeting::class => ['kind' => 'BOARD', 'title' => 'Hemligt styrelsemöte', 'meeting_date' => '2026-09-01'],
+    BoardroomAgendaItem::class => 'boardroomAgendaItemAttributes',
+    BoardroomMinutes::class => 'boardroomMinutesAttributes',
     PlanningArea::class => ['name' => 'Hemligt kök', 'colour' => '#e4572e'],
     PlanningSkill::class => ['name' => 'Hemlig kompetens'],
     PlanningEmployeeSkill::class => 'planningEmployeeSkillAttributes',
@@ -487,6 +503,31 @@ function staffLedgerEntryAttributes(): array
         'flags' => [],
         'hash' => str_repeat('a', 64),
     ];
+}
+
+function boardroomShareClassAttributes(): array
+{
+    return ['code' => 'H'.random_int(1, 1_000_000), 'name' => 'Hemliga aktier', 'votes_tenths' => 10];
+}
+
+function boardroomShareEventAttributes(): array
+{
+    return ['uuid' => (string) Str::uuid(), 'sequence' => random_int(1, 1_000_000), 'kind' => 'FORMATION', 'effective_date' => '2026-03-02', 'recorded_at' => '2026-03-02 10:00:00', 'share_from' => 1, 'share_to' => 10, 'hash' => str_repeat('a', 64)];
+}
+
+function boardroomArticlesAttributes(): array
+{
+    return ['version' => random_int(1, 1_000_000), 'adopted_on' => '2026-01-01', 'notice_method' => 'Hemlig kallelse'];
+}
+
+function boardroomAgendaItemAttributes(): array
+{
+    return ['meeting_id' => BoardroomMeeting::create(['kind' => 'BOARD', 'title' => 'Hemligt möte', 'meeting_date' => '2026-09-01'])->id, 'position' => 1, 'kind' => 'OTHER', 'title' => 'Hemligt ärende'];
+}
+
+function boardroomMinutesAttributes(): array
+{
+    return ['meeting_id' => BoardroomMeeting::create(['kind' => 'BOARD', 'title' => 'Hemligt möte', 'meeting_date' => '2026-09-01'])->id, 'status' => 'DRAFT', 'body' => ['items' => [], 'notes' => 'Hemligt']];
 }
 
 function planningEmployeeSkillAttributes(): array
@@ -1545,7 +1586,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class];
+const APPEND_ONLY = [VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, BoardroomShareEvent::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

@@ -1,0 +1,19 @@
+{
+    "_comment": "Rule values for Aktiebok och styrelserum (ADR-070), from docs/specs/rules/aktiebok.md section H. Every value is verified: false until a lawyer has answered L1-L8; while unverified NONOX shows the dates as advice with the words 'kontrollera mot aktiebolagslagen', never as a rule.",
+    "read_from": "Aktiebolagslag (2005:551) t.o.m. SFS 2026:783, Aktiebolagsförordning (2005:559) t.o.m. SFS 2026:1833, Årsredovisningslag (1995:1554) t.o.m. SFS 2026:780, read 2026-11-08",
+    "agm_deadline_months_after_fy_end": {"value": 6, "source": "ABL 7:10", "verified": false, "legal_verify": "L5: counting when the year ends on a month end"},
+    "notice_agm": {"earliest_weeks": 6, "latest_weeks": 4, "articles_may_shorten_latest_to_weeks": 2, "source": "ABL 7:18", "verified": false, "legal_verify": "L4: day counting and weekends"},
+    "notice_extra_articles": {"earliest_weeks": 6, "latest_weeks": 4, "articles_may_shorten_latest_to_weeks": 2, "source": "ABL 7:19", "verified": false, "legal_verify": "L4"},
+    "notice_extra_other": {"earliest_weeks": 6, "latest_weeks": 2, "source": "ABL 7:20", "verified": false, "legal_verify": "L4"},
+    "item_request_weeks_before_earliest_notice": {"value": 1, "source": "ABL 7:16", "verified": false, "legal_verify": "L4"},
+    "extra_meeting_on_demand_notice_within_weeks": {"value": 2, "share_fraction": "1/10", "source": "ABL 7:13", "verified": false, "legal_verify": "L4"},
+    "agm_documents_available_weeks_before": {"value": 2, "source": "ABL 7:25", "verified": false, "legal_verify": "L4"},
+    "continued_agm_weeks": {"min": 4, "max": 8, "registration_within_weeks": 4, "source": "ABL 7:14", "verified": false, "legal_verify": "L4"},
+    "minutes_available_weeks_after": {"value": 2, "source": "ABL 7:49", "verified": false, "legal_verify": "L4"},
+    "annual_report_filing_months_after_adoption": {"value": 1, "source": "ÅRL 8:3", "verified": false, "legal_verify": "L4"},
+    "new_issue_registration_months": {"value": 6, "source": "ABL 13:27", "verified": false, "legal_verify": "L4"},
+    "report_outer_limit_working_days": {"value": 15, "source": "ABL 8:44, 9:48, 3:5 ('genast'); SOU 2026:26 on the EU directive's 15 working days", "verified": false, "legal_verify": "L6: whether 15 working days is a safe outer limit for 'genast'"},
+    "register_retention_years_after_dissolution": {"value": 10, "source": "ABL 5:3", "verified": false, "legal_verify": "L10"},
+    "removed_data_retention_years": {"value": 10, "source": "ABL 5:3", "verified": false, "legal_verify": "L10"},
+    "fees_sek": {"officer_or_auditor_change": {"paper": 1200, "e_service": 1000}, "other_registration": {"paper": 1200, "e_service": 1000}, "name_change": {"paper": 2400, "e_service": 2200}, "source": "ABF 3:1 (SFS 2025:343)", "verified": false, "legal_verify": "L8: one fee or several when several changes go in one filing"}
+}
