@@ -20,6 +20,10 @@ Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanf�
 10. **Egna moduler** (`egna-moduler`), med en ADR om säkerheten först.
 11. **Tillverkning, inköpsordrar och kundorder** (ADR-071), i sina åtta steg.
 
+Ägarens beslut 2026-11-08:
+- "Prova utan att registrera" (ADR-077) körs i en egen demodatabas. Spärrarna i produktionsdatabasen får inga undantag. Bara den särskilda demodatabasen får tömmas eller byggas om, och påslag i produktion kräver ägarens bekräftelse vid driftsättningen.
+- Separata databasanvändare (ADR-079 steg 2): en ägare som bara kör migreringar, en appanvändare utan rätt att ändra tabeller, spärrar eller funktioner, och en läsanvändare. Omställningen av nonox.app görs i ett underhållsfönster enligt en runbook.
+
 Önskemål som inte byggs nu: föreningar, bordsbokning. Byggs inte: webbshop, eget kassasystem.
 
 ## Statuskontroll 2026-11-07
