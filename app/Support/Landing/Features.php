@@ -120,6 +120,8 @@ final class Features
         'peppol' => ['name' => 'E-faktura via Peppol genom Qvalia, i version 1.0', 'status' => self::SOON, 'readme' => 'E-faktura via Peppol genom Qvalia, i version 1.0', 'module' => 'Peppol e-faktura'],
         // Stage 1 built (ADR-054) and dormant until the operator's agreement with Skatteverket is signed.
         'skatteverket_api' => ['name' => 'Momsdeklaration, arbetsgivardeklaration, skattekonto och Skatteverkets meddelanden utan filer, i version 1.0 – du skriver under hos Skatteverket', 'status' => self::SOON, 'readme' => 'Momsdeklaration, arbetsgivardeklaration, skattekonto och Skatteverkets meddelanden utan filer, i version 1.0'],
+        // ADR-070: built as a beta, tried with the pilot companies; notice dates are advice until a lawyer has checked them.
+        'share_register' => ['name' => 'Aktiebok och styrelserum för aktiebolag', 'status' => self::SOON, 'readme' => 'Aktiebok och styrelserum för aktiebolag', 'module' => 'Aktiebok och styrelserum'],
     ];
 
     /**
