@@ -14,7 +14,13 @@ use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Inventory\Structures\StructureWriter;
 use App\Modules\Kitchen\KitchenModule;
 use App\Modules\ModuleManager;
+use App\Modules\Pos\Models\PosConnection;
+use App\Modules\Pos\Models\PosSale;
+use App\Modules\Pos\Models\PosSaleRow;
+use App\Modules\Pos\PosModule;
 use App\Support\Tenancy\CurrentCompany;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 /**
  * Kök in tests (ADR-073): the rule sheet's synthetic restaurant
@@ -40,6 +46,60 @@ final class Kitchen
         CurrentCompany::set($company);
 
         return ['owner' => $owner, 'company' => $company, 'places' => $places];
+    }
+
+    /** A till connection drawing from the location (Kassakopplingar on). */
+    public static function till(Company $company, User $owner, StockLocation $location): PosConnection
+    {
+        // Articles saved while the till module is on are pushed to the till: never a real call in tests.
+        Http::fake();
+        app(ModuleManager::class)->enable(PosModule::KEY, $company, $owner);
+        CurrentCompany::set($company);
+
+        return Pos::connection($company, $owner, locationId: $location->id);
+    }
+
+    /**
+     * A till sale of dishes on a business day, recorded as the till module
+     * records a dish (an article that is not stocked: status SKIPPED).
+     *
+     * @param  list<array{0: Article, 1: int, 2?: int}>  $rows  article, signed thousandths, net amount in öre
+     */
+    public static function sale(PosConnection $connection, string $date, array $rows, ?string $id = null): PosSale
+    {
+        return CurrentCompany::run($connection->company_id, function () use ($connection, $date, $rows, $id): PosSale {
+            $sale = PosSale::create([
+                'pos_connection_id' => $connection->id,
+                'provider' => $connection->provider,
+                'external_id' => $id ?? (string) Str::uuid(),
+                'source' => 'API',
+                'is_refund' => false,
+                'sold_at' => "{$date} 12:00:00",
+                'business_date' => $date,
+                'currency' => 'SEK',
+                'total_ore' => 0,
+                'vat_ore' => 0,
+                'vat_totals' => [],
+                'payments' => [],
+                'payload' => [],
+                'payload_hash' => hash('sha256', (string) Str::uuid()),
+            ]);
+
+            foreach ($rows as $index => $row) {
+                PosSaleRow::create([
+                    'pos_sale_id' => $sale->id,
+                    'line_no' => $index + 1,
+                    'name' => $row[0]->name,
+                    'quantity_milli' => $row[1],
+                    'amount_ore' => $row[2] ?? 0,
+                    'vat_rate' => $row[0]->vat_rate,
+                    'status' => PosSaleRow::SKIPPED,
+                    'article_id' => $row[0]->id,
+                ]);
+            }
+
+            return $sale;
+        });
     }
 
     /** A stocked ingredient. */

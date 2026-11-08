@@ -337,6 +337,7 @@ function handleScan(raw) {
         move: moveScan,
         count: countScan,
         'count-start': countStartScan,
+        waste: wasteScan,
     }[state.screen];
 
     if (!handler) {
@@ -1201,6 +1202,88 @@ function countScreen() {
             el('button', { type: 'button', class: 's-button s-primary', onclick: finishCount }, t('done'))));
 }
 
+// ---------- Svinn (Kök, ADR-073 §6) ----------
+
+const wasteData = () => state.data?.extensions?.waste ?? null;
+const newWaste = () => ({ kind: 'INGREDIENT', article: null, quantity: STEP, reason: '', recipient: '', note: '' });
+
+function wasteItem(work) {
+    if (work.article === null) {
+        return null;
+    }
+
+    if (work.kind === 'DISH') {
+        return (wasteData()?.dishes ?? []).find((dish) => dish.id === work.article) ?? null;
+    }
+
+    return article(work.article) ?? null;
+}
+
+function wasteScan(found) {
+    const work = state.work;
+
+    if (found.type !== 'article') {
+        return feedback(false, t('waste_choose_article'));
+    }
+
+    Object.assign(work, { kind: 'INGREDIENT', article: found.article.id });
+    saveWork();
+    feedback(true, found.article.name);
+}
+
+async function finishWaste() {
+    const work = state.work;
+    const item = wasteItem(work);
+    const location = wasteData()?.location_id ?? (work.kind === 'INGREDIENT' ? item?.default_location_id : null) ?? null;
+
+    await enqueue('waste', {
+        kind: work.kind, article_id: work.article, quantity: decimal(work.quantity), location_id: location,
+        reason: work.reason, recipient: work.recipient || null, note: work.note || null,
+    }, t('waste_done', { quantity: qty(work.quantity, item?.unit), name: item?.name ?? '' }));
+    await setWork('waste', newWaste());
+}
+
+function wasteScreen() {
+    const work = state.work ?? newWaste();
+    const data = wasteData();
+    const item = wasteItem(work);
+    const ready = item !== null && work.quantity > 0 && work.reason !== ''
+        && (work.reason !== 'SKANKT' || work.recipient.trim() !== '') && (work.reason !== 'OVRIGT' || work.note.trim() !== '');
+    const kindButton = (kind, label) => el('button', {
+        type: 'button', class: work.kind === kind ? 's-button s-primary' : 's-button s-quiet', 'aria-pressed': work.kind === kind ? 'true' : 'false',
+        onclick: () => { Object.assign(work, { kind, article: null }); saveWork(); render(); },
+    }, label);
+    const choices = work.kind === 'DISH'
+        ? (data?.dishes ?? []).map((dish) => [dish.id, dish.name])
+        : (state.data?.articles ?? []).map((candidate) => [candidate.id, candidate.name]);
+
+    return el('main', { class: 's-main' },
+        el('h1', { class: 's-title' }, t('mode_waste')),
+        el('p', { class: 's-lead' }, t('waste_lead')),
+        el('div', { class: 's-row' }, kindButton('INGREDIENT', t('waste_ingredient')), kindButton('DISH', t('waste_dish'))),
+        el('label', { class: 's-field' },
+            el('span', {}, work.kind === 'DISH' ? t('waste_choose_dish') : t('waste_choose_article')),
+            el('select', { class: 's-select', onchange: (event) => { work.article = event.target.value ? Number(event.target.value) : null; saveWork(); render(); } },
+                el('option', { value: '' }, '–'),
+                choices.map(([id, name]) => el('option', { value: id, selected: id === work.article }, name)))),
+        item ? el('section', { class: 's-panel' },
+            stepper(work.quantity, (value) => { work.quantity = value; saveWork(); render(); }, { min: STEP / 1000, unit: item.unit })) : null,
+        el('label', { class: 's-field' },
+            el('span', {}, t('waste_reason')),
+            el('select', { class: 's-select', onchange: (event) => { work.reason = event.target.value; saveWork(); render(); } },
+                el('option', { value: '' }, t('waste_choose_reason')),
+                Object.entries(data?.reasons ?? {}).map(([code, label]) => el('option', { value: code, selected: code === work.reason }, label)))),
+        work.reason === 'SKANKT' ? el('label', { class: 's-field' },
+            el('span', {}, t('waste_recipient')),
+            el('input', { class: 's-select', value: work.recipient, maxlength: 120, onchange: (event) => { work.recipient = event.target.value; saveWork(); render(); } })) : null,
+        work.reason === 'OVRIGT' ? el('label', { class: 's-field' },
+            el('span', {}, t('waste_note')),
+            el('input', { class: 's-select', value: work.note, maxlength: 255, onchange: (event) => { work.note = event.target.value; saveWork(); render(); } })) : null,
+        el('div', { class: 's-row' },
+            el('button', { type: 'button', class: 's-button s-quiet', onclick: () => setWork('waste', newWaste()) }, t('start_over')),
+            el('button', { type: 'button', class: 's-button s-primary', disabled: !ready, onclick: finishWaste }, t('waste_button'))));
+}
+
 // ---------- queue and conflicts ----------
 
 function describe(operation) {
@@ -1215,6 +1298,11 @@ function describe(operation) {
             return t('op_move', { name: article(payload.article_id)?.name ?? '?', quantity: formatQuantity(parseQuantity(payload.quantity) ?? 0), from: placeCode(payload.from_location_id), to: placeCode(payload.to_location_id) });
         case 'count':
             return payload.complete ? t('op_count_done') : t('op_count');
+        case 'waste':
+            return t('op_waste', {
+                quantity: formatQuantity(parseQuantity(payload.quantity) ?? 0),
+                name: (payload.kind === 'DISH' ? wasteData()?.dishes?.find((dish) => dish.id === payload.article_id)?.name : article(payload.article_id)?.name) ?? '?',
+            });
         default:
             return operation.kind;
     }
@@ -1264,6 +1352,7 @@ function homeScreen() {
         canCount ? ['pick-choose', t('mode_pick'), t('mode_pick_hint'), 'out'] : null,
         canCount ? ['move', t('mode_move'), t('mode_move_hint'), 'move'] : null,
         canCount ? ['count-choose', t('mode_count'), t('mode_count_hint'), 'count'] : null,
+        state.data?.can?.waste ? ['waste', t('mode_waste'), t('mode_waste_hint'), 'waste'] : null,
         ['lookup', t('mode_lookup'), t('mode_lookup_hint'), 'lookup'],
     ].filter(Boolean);
 
@@ -1272,7 +1361,7 @@ function homeScreen() {
         el('ul', { class: 's-tiles' }, tiles.map(([screen, title, hint, kind]) => el('li', {},
             el('button', {
                 type: 'button', class: `s-tile s-tile-${kind}`,
-                onclick: () => setWork(screen, screen === 'move' ? { stage: 'from', from: null, article: null, quantity: STEP, to: null } : null),
+                onclick: () => setWork(screen, screen === 'move' ? { stage: 'from', from: null, article: null, quantity: STEP, to: null } : screen === 'waste' ? newWaste() : null),
             }, el('span', { class: 's-tile-title' }, title), el('span', { class: 's-tile-hint' }, hint))))),
         el('p', { class: 's-muted s-center' }, t('home_hint')));
 }
@@ -1356,11 +1445,12 @@ function render() {
             'count-choose': countChooseScreen,
             'count-start': countStartScreen,
             count: countScreen,
+            waste: wasteScreen,
             queue: queueScreen,
         }[state.screen] ?? homeScreen)();
     }
 
-    const scans = ['home', 'lookup', 'receive', 'pick', 'move', 'count', 'count-start'].includes(state.screen) && state.data;
+    const scans = ['home', 'lookup', 'receive', 'pick', 'move', 'count', 'count-start', 'waste'].includes(state.screen) && state.data;
 
     app.replaceChildren(header(), pendingBar() ?? '', sessionNotice() ?? '', scans ? scanBar() : '', messageLine(), screen, confirmPanel() ?? '');
 

@@ -23,8 +23,10 @@ use Illuminate\Support\Facades\Gate;
  * What the scanning app keeps on the phone for offline work (ADR-040): the
  * stocked articles (codes, name, unit, default location; never a price or
  * a cost, whoever asks), the active locations, the stock per location, and
- * the open receipts, pick lists and stocktakes with their lines. The same
- * number of queries whatever the size of the stock.
+ * the open receipts, pick lists and stocktakes with their lines (for those
+ * who handle goods), and the data of other modules' scanner extensions the
+ * user may use (Kök's Svinn). The same number of queries whatever the size
+ * of the stock.
  */
 final class ScannerData
 {
@@ -53,6 +55,14 @@ final class ScannerData
             ->orderBy('number')->get();
 
         $can = Gate::forUser($user);
+        $canCount = $can->allows('count', [StockMovement::class, $company]);
+        $extensions = app(ScannerExtensions::class)->allowed($user, $company);
+
+        if (! $canCount) {
+            $receipts = $receipts->take(0);
+            $pickLists = $pickLists->take(0);
+            $counts = $counts->take(0);
+        }
 
         return [
             'context' => [
@@ -62,8 +72,10 @@ final class ScannerData
                 'user' => $user->name,
             ],
             'can' => [
-                'count' => $can->allows('count', [StockMovement::class, $company]),
+                'count' => $canCount,
+                ...array_map(fn (): bool => true, $extensions),
             ],
+            'extensions' => array_map(fn (ScannerExtension $extension): array => $extension->data($user, $company), $extensions),
             'articles' => $articles->map(fn (Article $article): array => self::article($article))->values()->all(),
             'locations' => $locations->map(fn (StockLocation $location): array => [
                 'id' => $location->id,

@@ -13,6 +13,7 @@ use App\Modules\Inventory\Models\StockLevel;
 use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Inventory\Scanner\ScanCode;
 use App\Modules\Inventory\Scanner\ScannerData;
+use App\Modules\Inventory\Scanner\ScannerExtensions;
 use App\Modules\Inventory\Scanner\ScannerStrings;
 use App\Modules\StaffLedger\Support\QrSvg;
 use App\Support\Files\StoredFiles;
@@ -42,7 +43,7 @@ class ScannerController
     public function shell(Request $request): Response
     {
         [$user, $company] = self::context($request);
-        Gate::forUser($user)->authorize('viewAny', [StockMovement::class, $company]);
+        self::authorizeUse($user, $company);
 
         $url = route('inventory.scanner');
 
@@ -69,7 +70,7 @@ class ScannerController
     public function data(Request $request): JsonResponse
     {
         [$user, $company] = self::context($request);
-        Gate::forUser($user)->authorize('viewAny', [StockMovement::class, $company]);
+        self::authorizeUse($user, $company);
 
         return response()->json(ScannerData::for($user, $company), 200, ['Cache-Control' => 'no-store']);
     }
@@ -82,7 +83,7 @@ class ScannerController
     public function operations(Request $request, RunScanOperation $run): JsonResponse
     {
         [$user, $company] = self::context($request);
-        Gate::forUser($user)->authorize('count', [StockMovement::class, $company]);
+        abort_unless(Gate::forUser($user)->allows('count', [StockMovement::class, $company]) || app(ScannerExtensions::class)->allowed($user, $company) !== [], 403);
 
         $operations = $request->input('operations');
 
@@ -114,7 +115,7 @@ class ScannerController
     public function lookup(Request $request): JsonResponse
     {
         [$user, $company] = self::context($request);
-        Gate::forUser($user)->authorize('viewAny', [StockMovement::class, $company]);
+        self::authorizeUse($user, $company);
 
         $found = ScanCode::resolve((string) $request->query('kod', ''));
 
@@ -163,7 +164,7 @@ class ScannerController
     public function image(Request $request, int $image): StreamedResponse
     {
         [$user, $company] = self::context($request);
-        Gate::forUser($user)->authorize('viewAny', [StockMovement::class, $company]);
+        self::authorizeUse($user, $company);
         $image = ArticleImage::query()->findOrFail($image);
         abort_unless(Storage::disk(StoredFiles::DISK)->exists($image->path), 404);
 
@@ -188,6 +189,15 @@ class ScannerController
             'Service-Worker-Allowed' => self::SCOPE,
             'Cache-Control' => 'no-cache',
         ]);
+    }
+
+    /**
+     * Lager's own users, and users of another module's scanner work (Kök's
+     * Kökspersonal registering waste) who may not see Lager itself.
+     */
+    private static function authorizeUse(User $user, Company $company): void
+    {
+        abort_unless(Gate::forUser($user)->allows('viewAny', [StockMovement::class, $company]) || app(ScannerExtensions::class)->allowed($user, $company) !== [], 403);
     }
 
     /** @return array{0: User, 1: Company} */

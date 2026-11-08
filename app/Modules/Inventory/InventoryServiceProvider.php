@@ -31,6 +31,7 @@ use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Models\StockValuation;
 use App\Modules\Inventory\Policies\InventoryPolicy;
+use App\Modules\Inventory\Scanner\ScannerExtensions;
 use App\Modules\ModuleRegistry;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -49,6 +50,7 @@ class InventoryServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->make(ModuleRegistry::class)->register(new InventoryModule);
+        $this->app->singleton(ScannerExtensions::class);
     }
 
     public function boot(): void
