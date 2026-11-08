@@ -17,6 +17,7 @@ use App\Actions\Invoicing\RegisterPayment;
 use App\Actions\Invoicing\SaveDraftInvoice;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Closing\ClosingChecklist;
+use App\Domain\Invoicing\InvoicePdf;
 use App\Models\FiscalYear;
 use App\Models\Project;
 use App\Modules\ModuleManager;
@@ -95,7 +96,9 @@ it('claims the hours recorded before an a conto invoice on it, and still makes t
 
     expect($aconto->labour_hours_milli)->toBe(8000)
         ->and(TimeEntry::query()->where('work_order_id', $workOrder->id)->value('invoice_id'))->toBe($final->id)
-        ->and($final->labour_hours_milli)->toBe(0)
+        ->and($final->labour_hours_milli)->toBeNull()
+        ->and($final->labour_hours_reported_on)->toBe([$aconto->id])
+        ->and(InvoicePdf::html($final))->toContain("Arbetade timmar: redovisade på faktura {$aconto->number}")
         ->and($final->tax_reduction_ore->ore)->toBe(750_000);
 });
 

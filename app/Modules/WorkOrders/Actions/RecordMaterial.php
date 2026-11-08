@@ -160,11 +160,21 @@ class RecordMaterial
 
                 return $entry;
             }));
-        } catch (UniqueConstraintViolationException) {
+        } catch (UniqueConstraintViolationException $exception) {
             // Two people billing the same supplier invoice row at once: the index lets one through (review P3-5).
-            throw ValidationException::withMessages(['supplier_invoice_row_id' => __('Raden är redan vidarefakturerad på en arbetsorder.')]);
+            if (str_contains($exception->getMessage(), self::SUPPLIER_ROW_INDEX)) {
+                throw ValidationException::withMessages(['supplier_invoice_row_id' => __('Raden är redan vidarefakturerad på en arbetsorder.')]);
+            }
+
+            // The same report sent twice from the device at once: the id made on the device is stored once (idempotent).
+            $existing = isset($validated['id']) ? CurrentCompany::run($company, fn (): ?MaterialEntry => MaterialEntry::query()->whereKey((string) $validated['id'])->first()) : null;
+
+            return $existing ?? throw $exception;
         }
     }
+
+    /** The partial unique index that lets a supplier invoice row be billed on once. */
+    public const string SUPPLIER_ROW_INDEX = 'work_order_material_entries_supplier_row_once';
 
     /**
      * @param  array<string, mixed>  $validated

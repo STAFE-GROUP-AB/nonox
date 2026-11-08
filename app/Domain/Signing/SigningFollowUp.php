@@ -237,7 +237,8 @@ class SigningFollowUp
     /**
      * Without a company address, the copy (with prices) goes to the sender,
      * else to a member a module names (an ÄTA: the work order's creator),
-     * never to a field worker who presented an ÄTA on site (ADR-074 O4).
+     * never to a member a module refuses (SigningHook::mayReceiveCopy, such
+     * as a field worker who presented an ÄTA on site, ADR-074 O4).
      */
     private function copyRecipient(Company $company, SigningRequest $request): ?User
     {
@@ -251,7 +252,7 @@ class SigningFollowUp
         foreach ([$request->sent_by, ...$candidates] as $id) {
             $user = $id === null || ! in_array((int) $id, $members, true) ? null : User::query()->find((int) $id);
 
-            if ($user instanceof User && $user->teamRole($company)?->key !== 'field_worker') {
+            if ($user instanceof User && collect($this->hooks->all())->every(fn (SigningHook $hook): bool => $hook->mayReceiveCopy($company, $user, $request))) {
                 return $user;
             }
         }

@@ -96,6 +96,8 @@ class SaveDraftInvoice
             'property_designation' => ['nullable', 'string', 'max:255'],
             'labour_hours' => ['nullable', 'string', 'max:20'],
             'labour_hours_milli' => ['nullable', 'integer', 'min:0'],
+            'labour_hours_reported_on' => ['nullable', 'array'],
+            'labour_hours_reported_on.*' => ['uuid'],
             'work_description' => ['nullable', 'string', 'max:255'],
             'tax_reduction_buyers' => ['nullable', 'array'],
             'tax_reduction_buyers.*.customer_id' => ['required', 'integer'],
@@ -248,6 +250,7 @@ class SaveDraftInvoice
             ]);
             $invoice->forceFill([
                 'labour_hours_milli' => $labourHours,
+                'labour_hours_reported_on' => $this->reportedOn($input, $validated, $labourHours, $taxReduction, $draft, $original),
                 'work_description' => $workDescription,
                 'net_ore' => $totals['net'],
                 'vat_ore' => $totals['vat'],
@@ -366,6 +369,39 @@ class SaveDraftInvoice
             : ($kept ? $draft->work_description : null);
 
         return [$hours, $description];
+    }
+
+    /**
+     * The earlier invoices that already report the hours of a ROT or RUT
+     * invoice without new hours of its own (re-check of ADR-074): printed as
+     * "Arbetade timmar: redovisade på faktura N" instead of 0. Only invoices
+     * of the company; none once the invoice records hours itself.
+     *
+     * TODO(legal-verify): whether a ROT/RUT invoice without new hours is
+     * accepted in the claim (lag (2009:194) 9 § p. 4).
+     *
+     * @param  array<string, mixed>  $input
+     * @param  array<string, mixed>  $validated
+     * @return ?list<string>
+     */
+    private function reportedOn(array $input, array $validated, ?int $labourHours, ?string $taxReduction, ?Invoice $draft, ?Invoice $original): ?array
+    {
+        if ($taxReduction === null || $original instanceof Invoice || ($labourHours ?? 0) > 0) {
+            return null;
+        }
+
+        $ids = array_key_exists('labour_hours_reported_on', $input)
+            ? array_values(array_map('strval', (array) ($validated['labour_hours_reported_on'] ?? [])))
+            : ($draft !== null && $draft->exists ? ($draft->labour_hours_reported_on ?? []) : []);
+
+        if ($ids === []) {
+            return null;
+        }
+
+        /** @var list<string> $known */
+        $known = Invoice::query()->whereKey($ids)->pluck('id')->map(fn (mixed $id): string => (string) $id)->values()->all();
+
+        return $known === [] ? null : $known;
     }
 
     /**

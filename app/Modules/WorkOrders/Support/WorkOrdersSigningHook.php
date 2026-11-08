@@ -12,6 +12,7 @@ use App\Modules\ModuleManager;
 use App\Modules\WorkOrders\Domain\ChangeOrderStatus;
 use App\Modules\WorkOrders\Models\ChangeOrder;
 use App\Modules\WorkOrders\Models\WorkOrder;
+use App\Modules\WorkOrders\Policies\WorkOrderPolicy;
 use App\Modules\WorkOrders\WorkOrdersModule;
 use App\Support\Audit\Audit;
 use Carbon\CarbonImmutable;
@@ -48,6 +49,12 @@ final class WorkOrdersSigningHook implements SigningHook
         ])->save();
 
         Audit::record('work_orders.change_order_decided', $changeOrder, ['work_order_id' => $changeOrder->work_order_id, 'status' => ChangeOrderStatus::Declined->value, 'method' => 'LINK', 'signing_request_id' => $request->id], $company);
+    }
+
+    /** A field worker never gets the signed copy with its prices (ADR-074 §8, review P2-1). */
+    public function mayReceiveCopy(Company $company, User $user, SigningRequest $request): bool
+    {
+        return ! WorkOrderPolicy::onlyAssigned($user, $company);
     }
 
     public function recipients(Company $company, SigningRequest $request): array

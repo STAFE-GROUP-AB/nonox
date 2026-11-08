@@ -17,6 +17,7 @@ use App\Models\SigningRequest;
 use App\Modules\ModuleManager;
 use App\Modules\WorkOrders\Actions\CreateInvoiceBasis;
 use App\Modules\WorkOrders\Actions\DecideChangeOrder;
+use App\Modules\WorkOrders\Actions\RecordMaterial;
 use App\Modules\WorkOrders\Actions\SaveChangeOrder;
 use App\Modules\WorkOrders\Actions\SaveWorkOrder;
 use App\Modules\WorkOrders\Actions\SignChangeOrder;
@@ -27,8 +28,11 @@ use App\Modules\WorkOrders\Livewire\WorkOrderPage;
 use App\Modules\WorkOrders\Models\ChangeOrder;
 use App\Modules\WorkOrders\Models\WorkOrderAssignment;
 use App\Modules\WorkOrders\Support\ChangeOrderPdf;
+use App\Modules\WorkOrders\Support\WorkOrdersSigningHook;
 use App\Modules\WorkOrders\WorkOrdersModule;
+use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -201,13 +205,57 @@ it('P3-7: warns when the year-end method changes after a closed year, and when t
     expect($line['note'])->toContain('K2 6.19');
 });
 
-it('P3-9: makes a sent ÄTA expired when its link has run out, when the work order is read', function () {
+it('P3-9: shows a lapsed ÄTA as expired without writing, and the scheduled command marks it expired per company', function () {
     $changeOrder = reviewChange();
     app(SignChangeOrder::class)->send($this->owner, $this->company, $changeOrder);
+    [$otherOwner, $otherCompany] = Bookkeeping::company();
+    $this->actingAs($this->owner);
     $this->travel(31)->days();
 
     Livewire::test(WorkOrderPage::class, ['workOrderId' => $this->workOrder->id])->assertSee('Har gått ut');
+    expect($changeOrder->fresh()->status)->toBe(ChangeOrderStatus::Sent);
 
+    $this->artisan('work-orders:expire-change-orders')->assertSuccessful();
+
+    CurrentCompany::set($this->company);
     expect($changeOrder->fresh()->status)->toBe(ChangeOrderStatus::Expired)
-        ->and(SigningRequest::query()->count())->toBe(1);
+        ->and(SigningRequest::query()->count())->toBe(1)
+        ->and($otherCompany->id)->not->toBe($this->company->id);
+});
+
+it('schedules the expiry every fifteen minutes', function () {
+    $event = collect(app(Schedule::class)->events())->first(fn ($event): bool => str_contains((string) $event->command, 'work-orders:expire-change-orders'));
+
+    expect($event)->not->toBeNull()->and($event->expression)->toBe('*/15 * * * *');
+});
+
+it('names the supplier-row index the material action recognises (re-check a)', function () {
+    $indexes = DB::table('pg_indexes')->where('tablename', 'work_order_material_entries')->pluck('indexname')->all();
+
+    expect($indexes)->toContain(RecordMaterial::SUPPLIER_ROW_INDEX)
+        ->and($indexes)->toContain('work_order_material_entries_pkey');
+});
+
+it('removes the decision PDF again when the decision rolls back (re-check d)', function () {
+    $changeOrder = reviewChange();
+    ChangeOrder::saving(function (ChangeOrder $saving): void {
+        if ($saving->decided_document_path !== null) {
+            throw new RuntimeException('Simulated failure after the PDF was written.');
+        }
+    });
+
+    expect(fn () => app(DecideChangeOrder::class)->approveOrally($this->owner, $this->company, $changeOrder, ['name' => 'Eva', 'channel' => 'PHONE']))->toThrow(RuntimeException::class);
+
+    expect(Storage::disk('local')->allFiles())->toBe([])
+        ->and($changeOrder->fresh()->status)->toBe(ChangeOrderStatus::Draft);
+});
+
+it('lets a module refuse the signed copy through the hook, not the core (re-check b)', function () {
+    $worker = Bookkeeping::member($this->company, 'field_worker');
+    $hook = app(WorkOrdersSigningHook::class);
+    $request = new SigningRequest(['document_type' => ChangeOrder::SIGNING_TYPE]);
+
+    expect($hook->mayReceiveCopy($this->company, $worker, $request))->toBeFalse()
+        ->and($hook->mayReceiveCopy($this->company, $this->owner, $request))->toBeTrue()
+        ->and((string) file_get_contents(app_path('Domain/Signing/SigningFollowUp.php')))->not->toContain('field_worker');
 });

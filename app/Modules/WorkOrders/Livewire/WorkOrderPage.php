@@ -264,7 +264,6 @@ class WorkOrderPage extends Component
     public function render(): View
     {
         $workOrder = $this->workOrder();
-        ExpireChangeOrders::forWorkOrder($workOrder->id);
         $workOrder->load(['customer', 'project', 'assignments.user', 'buyers.customer']);
         $customer = $workOrder->customer;
         $today = CarbonImmutable::today();
@@ -289,6 +288,7 @@ class WorkOrderPage extends Component
             'timeEntries' => $timeEntries,
             'materialEntries' => $materialEntries,
             'changeOrders' => $changeOrders,
+            'lapsed' => ExpireChangeOrders::lapsedIn($changeOrders),
             'links' => $links,
             'instalments' => $instalments,
             'supplierRows' => $supplierRows,

@@ -116,13 +116,13 @@
                 <ul class="divide-y divide-stone-100">
                     @foreach($changeOrders as $changeOrder)
                         <li class="flex flex-wrap items-center justify-between gap-2 py-2" wire:key="field-ata-{{ $changeOrder->id }}">
-                            <span>{{ $changeOrder->label() }}: {{ $changeOrder->title }} · {{ $changeOrder->status->label() }}</span>
-                            @if($changeOrder->status === App\Modules\WorkOrders\Domain\ChangeOrderStatus::Sent)
+                            <span>{{ $changeOrder->label() }}: {{ $changeOrder->title }} · {{ in_array($changeOrder->id, $lapsed, true) ? App\Modules\WorkOrders\Domain\ChangeOrderStatus::Expired->label() : $changeOrder->status->label() }}</span>
+                            @if($changeOrder->status === App\Modules\WorkOrders\Domain\ChangeOrderStatus::Sent && ! in_array($changeOrder->id, $lapsed, true))
                                 <button type="button" wire:click="startOnSite({{ $changeOrder->id }})" class="{{ $big }} border border-accent-600 bg-white text-accent-700">{{ __('Låt kunden signera här') }}</button>
                                 <p class="w-full text-xs text-gray-500">{{ __('Kunden får en kod till sin egen e-post och signerar själv i din telefon.') }}</p>
                             @elseif($changeOrder->status === App\Modules\WorkOrders\Domain\ChangeOrderStatus::Draft)
                                 <p class="w-full text-xs text-gray-500">{{ __('Kontoret sätter priset och skickar ÄTA:t. Därefter kan kunden signera här.') }}</p>
-                            @elseif($changeOrder->status === App\Modules\WorkOrders\Domain\ChangeOrderStatus::Expired)
+                            @elseif($changeOrder->status === App\Modules\WorkOrders\Domain\ChangeOrderStatus::Expired || in_array($changeOrder->id, $lapsed, true))
                                 <p class="w-full text-xs text-amber-800">{{ __('Signeringslänken har gått ut utan svar. Be kontoret göra ett nytt ÄTA om arbetet ska göras.') }}</p>
                             @endif
                         </li>

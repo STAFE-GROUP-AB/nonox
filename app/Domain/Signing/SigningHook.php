@@ -33,4 +33,11 @@ interface SigningHook
      * @return list<int>
      */
     public function recipients(Company $company, SigningRequest $request): array;
+
+    /**
+     * Whether a member may get the company's copy of the signed document
+     * (with its prices) when the company has no address of its own. A module
+     * says no for its own roles, such as a work order's field worker.
+     */
+    public function mayReceiveCopy(Company $company, User $user, SigningRequest $request): bool;
 }

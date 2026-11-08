@@ -44,6 +44,9 @@ final class InvoiceDraft
 
     private int $labourMinutes = 0;
 
+    /** @var array<int, string> the earlier invoices that report the hours when this one has none of its own */
+    private array $hoursReportedOn = [];
+
     public function __construct(private readonly WorkOrder $workOrder) {}
 
     /**
@@ -202,6 +205,9 @@ final class InvoiceDraft
         $recorded = self::recordedLabourMinutes($this->workOrder, $upTo);
         $claimed = (int) WorkOrderInvoice::query()->where('work_order_id', $this->workOrder->id)->sum('labour_minutes');
         $this->labourMinutes = max(0, $recorded - $claimed);
+        $this->hoursReportedOn = $this->labourMinutes === 0 && $recorded > 0
+            ? WorkOrderInvoice::query()->where('work_order_id', $this->workOrder->id)->where('labour_minutes', '>', 0)->orderBy('id')->pluck('invoice_id')->map(fn (mixed $id): string => (string) $id)->values()->all()
+            : [];
 
         return [$recorded, $this->labourMinutes];
     }
@@ -259,7 +265,9 @@ final class InvoiceDraft
             'reverse_charge' => $workOrder->reverse_charge,
             'tax_reduction' => $taxReduction,
             'property_designation' => $taxReduction === TaxReduction::ROT ? $property : null,
-            'labour_hours_milli' => $taxReduction === null ? null : (int) round($this->labourMinutes * 1000 / 60),
+            // Hours all reported on earlier invoices: "redovisade på faktura N" instead of 0. TODO(legal-verify): HFL 9 § p. 4.
+            'labour_hours_milli' => $taxReduction === null || ($this->labourMinutes === 0 && $this->hoursReportedOn !== []) ? null : (int) round($this->labourMinutes * 1000 / 60),
+            'labour_hours_reported_on' => $taxReduction === null || $this->labourMinutes > 0 ? null : ($this->hoursReportedOn === [] ? null : $this->hoursReportedOn),
             'work_description' => $taxReduction === null ? null : mb_substr($workDescription, 0, 255),
             ...($buyers === [] ? [] : ['tax_reduction_buyers' => $buyers]),
             'rows' => $this->rows,

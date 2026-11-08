@@ -4286,7 +4286,9 @@ regelbladet `docs/specs/rules/arbetsorder-och-ata.md`. Modulen `work_orders`
   arbetsorder (`work_order_invoices.labour_minutes`); ett ROT- eller
   RUT-underlag vägras bara när arbetsordern inte har några registrerade
   arbetstimmar alls. TODO(legal-verify): om en ROT-faktura utan nya timmar
-  godtas (lag (2009:194) 9 § p. 4).
+  godtas (lag (2009:194) 9 § p. 4). En sådan faktura skriver "Arbetade timmar:
+  redovisade på faktura N" med de tidigare fakturornas nummer
+  (`invoices.labour_hours_reported_on`), inte 0.
 - **A conto** (avsnitt ADR-074 §6): fast pris med delbetalningar som var och en
   blir ett vanligt fakturautkast med eget avdrag på sin andel av arbetet. En
   a conto-faktura reserverar inga tidposter. Slutfakturan tar resten som egna
@@ -4300,7 +4302,8 @@ regelbladet `docs/specs/rules/arbetsorder-och-ata.md`. Modulen `work_orders`
   utan kundens besked behåller PDF:en som den såg ut vid beslutet, med
   kontrollsumma; ROT-andelen räknas på dagen det skickades eller beslutades.
   Ett skickat ÄTA vars signeringslänkar har gått ut blir **Har gått ut** när
-  arbetsordern läses.
+  det schemalagda kommandot `work-orders:expire-change-orders` körs (var femtonde
+  minut, per företag); sidorna visar etiketten utan att skriva.
   Kontaktförsök är endast tilläggbara. Signering sker i den gemensamma
   signeringsdomänen (ADR-046, ADR-075 §7) med dokumentets SHA-256; på plats
   öppnas signeringssidan först efter en kod till kundens egen e-post, och bara

@@ -11,6 +11,7 @@ use App\Support\Currency\ExchangeRate;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
+use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -34,6 +35,7 @@ use LogicException;
  * @property ?string $property_designation
  * @property ?int $labour_hours_milli the hours worked on a ROT or RUT invoice, in thousandths (ADR-074 §5)
  * @property ?string $work_description the kind of work on a ROT or RUT invoice (ADR-074 §5)
+ * @property ?list<string> $labour_hours_reported_on the earlier invoices that report this invoice's hours (ADR-074 re-check)
  * @property bool $prints_buyer_personal_number the PDF prints the ROT/RUT buyer's personnummer (issued from ADR-074 on)
  * @property string $id
  * @property int $company_id
@@ -143,6 +145,7 @@ class Invoice extends Model
             'tax_reduction_ore' => MoneyCast::class,
             'labour_hours_milli' => 'integer',
             'prints_buyer_personal_number' => 'boolean',
+            'labour_hours_reported_on' => 'array',
             'tax_reduction_paid_ore' => MoneyCast::class,
             'tax_reduction_repayable_ore' => MoneyCast::class,
             'tax_reduction_repaid_ore' => MoneyCast::class,
@@ -333,6 +336,27 @@ class Invoice extends Model
     public function taxReductionBuyers(): HasMany
     {
         return $this->hasMany(InvoiceTaxReductionBuyer::class)->orderBy('id');
+    }
+
+    /**
+     * What the invoice says about the hours: "4", or, when all hours were
+     * reported on earlier invoices of the job, "redovisade på faktura 12, 13"
+     * (ADR-074 re-check); null when it says nothing.
+     */
+    public function labourHoursText(): ?string
+    {
+        $reportedOn = $this->labour_hours_reported_on ?? [];
+
+        if (($this->labour_hours_milli ?? 0) > 0 || $reportedOn === []) {
+            return $this->labourHoursLabel();
+        }
+
+        $numbers = CurrentCompany::run($this->company_id, fn (): array => self::query()->whereKey($reportedOn)->orderBy('number')->pluck('number')->all());
+        $named = array_values(array_filter($numbers, fn (mixed $number): bool => $number !== null));
+
+        return $named === []
+            ? __('redovisade på en tidigare faktura')
+            : __('redovisade på faktura :numbers', ['numbers' => implode(', ', $named)]);
     }
 
     /** The hours worked on a ROT or RUT invoice, "4" or "1,5" (ADR-074 §5), or null. */

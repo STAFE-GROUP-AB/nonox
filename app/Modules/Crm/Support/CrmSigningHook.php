@@ -72,6 +72,12 @@ final class CrmSigningHook implements SigningHook
         );
     }
 
+    /** CRM has no role that may not see the signed copy. */
+    public function mayReceiveCopy(Company $company, User $user, SigningRequest $request): bool
+    {
+        return true;
+    }
+
     public function recipients(Company $company, SigningRequest $request): array
     {
         return array_values(array_map('intval', array_filter([

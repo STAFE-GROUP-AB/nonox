@@ -8,6 +8,7 @@ use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SigningHooks;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Modules\ModuleRegistry;
+use App\Modules\WorkOrders\Console\ExpireChangeOrdersCommand;
 use App\Modules\WorkOrders\Livewire\FieldWorkOrderPage;
 use App\Modules\WorkOrders\Livewire\MyWorkOrdersPage;
 use App\Modules\WorkOrders\Livewire\OngoingWorkPage;
@@ -19,6 +20,7 @@ use App\Modules\WorkOrders\Models\ChangeOrder;
 use App\Modules\WorkOrders\Models\WorkOrder;
 use App\Modules\WorkOrders\Policies\WorkOrderPolicy;
 use App\Modules\WorkOrders\Support\WorkOrdersSigningHook;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -39,6 +41,14 @@ class WorkOrdersServiceProvider extends ServiceProvider
     {
         $this->loadViewsFrom(__DIR__.'/views', 'work-orders');
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([ExpireChangeOrdersCommand::class]);
+        }
+
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command('work-orders:expire-change-orders')->everyFifteenMinutes()->withoutOverlapping();
+        });
 
         Gate::policy(WorkOrder::class, WorkOrderPolicy::class);
 

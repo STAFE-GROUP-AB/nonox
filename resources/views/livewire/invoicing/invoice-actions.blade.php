@@ -176,9 +176,9 @@
         <x-ui.card :title="__(':type hos Skatteverket', ['type' => App\Domain\Invoicing\TaxReduction::label($invoice->tax_reduction)])">
             <p class="text-sm text-gray-700">{{ __('Begärt :claimed, mottaget :paid.', ['claimed' => $invoice->tax_reduction_ore->format(), 'paid' => $invoice->tax_reduction_paid_ore->format()]) }}</p>
             <p class="mt-1 text-xs text-gray-500">{{ __('Begär utbetalningen i Skatteverkets e-tjänst Rot och rut när kunden har betalat sin del. Registrera Skatteverkets betalning här när den kommer.') }}</p>
-            @if($invoice->labour_hours_milli !== null || $invoice->work_description)
+            @if($invoice->labourHoursText() !== null || $invoice->work_description)
                 <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                    <dt class="text-gray-500">{{ __('Arbetade timmar') }}</dt><dd class="tabular-nums">{{ $invoice->labourHoursLabel() ?? '–' }}</dd>
+                    <dt class="text-gray-500">{{ __('Arbetade timmar') }}</dt><dd class="tabular-nums">{{ $invoice->labourHoursText() ?? '–' }}</dd>
                     <dt class="text-gray-500">{{ __('Typ av arbete') }}</dt><dd>{{ $invoice->work_description ?? '–' }}</dd>
                 </dl>
                 <p class="mt-1 text-xs text-gray-500">{{ __('Skatteverket frågar efter antalet arbetade timmar och vilket arbete som gjorts när du begär utbetalningen.') }}</p>

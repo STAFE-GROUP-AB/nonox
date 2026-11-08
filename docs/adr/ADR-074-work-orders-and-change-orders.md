@@ -450,3 +450,19 @@ carry a device-made UUID so a repeat is stored once), step 9 (payroll proposals)
   on and a unique violation becomes a validation error (P3-5); hours show three decimals
   (P3-6); the buyer's personnummer prints only on invoices issued from this release on
   (`invoices.prints_buyer_personal_number`, set at issue) (P3-8).
+
+### Re-check fixes (2026-11-08)
+
+- `RecordMaterial` tells the unique violations apart by name: the supplier-row index
+  (`RecordMaterial::SUPPLIER_ROW_INDEX`) gives "Raden är redan vidarefakturerad"; a repeated
+  device id on the primary key returns the stored entry (idempotent).
+- The signing core no longer knows module roles: `SigningHook::mayReceiveCopy()` lets a module
+  refuse the company copy for a member; the work-order hook refuses field workers, CRM allows
+  everyone.
+- A ROT/RUT invoice without new hours prints "Arbetade timmar: redovisade på faktura N"
+  (`invoices.labour_hours_reported_on`, the earlier invoices of the order that claimed the
+  hours) instead of 0. `TODO(legal-verify)` kept.
+- The decision PDF of an oral or performed-without-answer ÄTA is written inside the
+  transaction (its path is part of the immutable row) and deleted if the transaction fails.
+- EXPIRED is written by `work-orders:expire-change-orders` every fifteen minutes, per company
+  with the module on, in that company; the pages only show the label for a lapsed link.

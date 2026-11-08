@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * The customer's answer to an ÄTA, recorded by the company (ADR-074 §4):
@@ -148,46 +149,60 @@ class DecideChangeOrder
      */
     private function decide(User $user, Company $company, ChangeOrder $changeOrder, ChangeOrderStatus $to, array $attributes, array $from, bool $sendCopy = false): ChangeOrder
     {
-        $changeOrder = DB::transaction(fn (): ChangeOrder => CurrentCompany::run($company, function () use ($user, $company, $changeOrder, $to, $attributes, $from): ChangeOrder {
-            $changeOrder = ChangeOrder::query()->whereKey($changeOrder->id)->lockForUpdate()->firstOrFail();
+        // The decision PDF is written inside the transaction (its path is part of the immutable row); it is removed again if the transaction rolls back.
+        $written = null;
 
-            if (! in_array($changeOrder->status, $from, true)) {
-                throw ValidationException::withMessages(['change_order' => __('ÄTA:t är :status.', ['status' => mb_strtolower($changeOrder->status->label())])]);
+        try {
+            $changeOrder = DB::transaction(function () use ($user, $company, $changeOrder, $to, $attributes, $from, &$written): ChangeOrder {
+                return CurrentCompany::run($company, function () use ($user, $company, $changeOrder, $to, $attributes, $from, &$written): ChangeOrder {
+                    $changeOrder = ChangeOrder::query()->whereKey($changeOrder->id)->lockForUpdate()->firstOrFail();
+
+                    if (! in_array($changeOrder->status, $from, true)) {
+                        throw ValidationException::withMessages(['change_order' => __('ÄTA:t är :status.', ['status' => mb_strtolower($changeOrder->status->label())])]);
+                    }
+
+                    // An approval without a price approves nothing (review P3-2): a fixed price needs amounts; löpande räkning uses the work order's rates.
+                    if (in_array($to, [ChangeOrderStatus::ApprovedOrally, ChangeOrderStatus::PerformedWithoutAnswer], true)
+                        && $changeOrder->price_form === PriceForm::Fixed && $changeOrder->netOre() <= 0) {
+                        throw ValidationException::withMessages(['change_order' => __('Sätt ett pris på ÄTA:t, eller välj löpande räkning, innan det registreras.')]);
+                    }
+
+                    if ($changeOrder->status === ChangeOrderStatus::Draft) {
+                        // The document the decision is about, fixed by its hash before the status changes.
+                        $changeOrder->forceFill(['document_sha256' => hash('sha256', ChangeOrderPdf::html($changeOrder))])->save();
+                    }
+
+                    $changeOrder->forceFill([...$attributes, 'status' => $to, 'decided_by' => $user->id]);
+
+                    // The PDF as it was decided is kept for an oral or performed-without-answer decision (review P2-2); a signed one keeps the signing request's.
+                    if (in_array($to, [ChangeOrderStatus::ApprovedOrally, ChangeOrderStatus::PerformedWithoutAnswer], true)) {
+                        $bytes = ChangeOrderPdf::render($changeOrder);
+                        $path = "arbetsorder/{$company->id}/{$changeOrder->work_order_id}/ata-{$changeOrder->number}-".bin2hex(random_bytes(6)).'.pdf';
+                        Storage::disk(WorkOrderPhoto::DISK)->put($path, $bytes);
+                        $written = $path;
+                        $changeOrder->forceFill(['decided_document_path' => $path, 'decided_document_sha256' => hash('sha256', $bytes)]);
+                    }
+
+                    $changeOrder->save();
+
+                    Audit::record('work_orders.change_order_decided', $changeOrder, [
+                        'work_order_id' => $changeOrder->work_order_id,
+                        'status' => $to->value,
+                        'method' => $changeOrder->approval_method,
+                        'reason' => $changeOrder->performed_reason?->value,
+                        'document_sha256' => $changeOrder->document_sha256,
+                    ], $company, $user);
+
+                    return $changeOrder;
+                });
+            });
+        } catch (Throwable $exception) {
+            if ($written !== null) {
+                Storage::disk(WorkOrderPhoto::DISK)->delete($written);
             }
 
-            // An approval without a price approves nothing (review P3-2): a fixed price needs amounts; löpande räkning uses the work order's rates.
-            if (in_array($to, [ChangeOrderStatus::ApprovedOrally, ChangeOrderStatus::PerformedWithoutAnswer], true)
-                && $changeOrder->price_form === PriceForm::Fixed && $changeOrder->netOre() <= 0) {
-                throw ValidationException::withMessages(['change_order' => __('Sätt ett pris på ÄTA:t, eller välj löpande räkning, innan det registreras.')]);
-            }
-
-            if ($changeOrder->status === ChangeOrderStatus::Draft) {
-                // The document the decision is about, fixed by its hash before the status changes.
-                $changeOrder->forceFill(['document_sha256' => hash('sha256', ChangeOrderPdf::html($changeOrder))])->save();
-            }
-
-            $changeOrder->forceFill([...$attributes, 'status' => $to, 'decided_by' => $user->id]);
-
-            // The PDF as it was decided is kept for an oral or performed-without-answer decision (review P2-2); a signed one keeps the signing request's.
-            if (in_array($to, [ChangeOrderStatus::ApprovedOrally, ChangeOrderStatus::PerformedWithoutAnswer], true)) {
-                $bytes = ChangeOrderPdf::render($changeOrder);
-                $path = "arbetsorder/{$company->id}/{$changeOrder->work_order_id}/ata-{$changeOrder->number}-".bin2hex(random_bytes(6)).'.pdf';
-                Storage::disk(WorkOrderPhoto::DISK)->put($path, $bytes);
-                $changeOrder->forceFill(['decided_document_path' => $path, 'decided_document_sha256' => hash('sha256', $bytes)]);
-            }
-
-            $changeOrder->save();
-
-            Audit::record('work_orders.change_order_decided', $changeOrder, [
-                'work_order_id' => $changeOrder->work_order_id,
-                'status' => $to->value,
-                'method' => $changeOrder->approval_method,
-                'reason' => $changeOrder->performed_reason?->value,
-                'document_sha256' => $changeOrder->document_sha256,
-            ], $company, $user);
-
-            return $changeOrder;
-        }));
+            throw $exception;
+        }
 
         if ($sendCopy) {
             $this->sendCopy($company, $changeOrder);

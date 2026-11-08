@@ -11258,5 +11258,7 @@
     "Kunden får en kod till sin egen e-post och signerar själv i din telefon.": "The customer gets a code at their own email address and signs on your phone themselves.",
     "Kontoret sätter priset och skickar ÄTA:t. Därefter kan kunden signera här.": "The office sets the price and sends the ÄTA. After that, the customer can sign here.",
     "Signeringslänken har gått ut utan svar. Be kontoret göra ett nytt ÄTA om arbetet ska göras.": "The signing link expired without an answer. Ask the office to make a new ÄTA if the work is to be done.",
-    "Den beräknade totala kostnaden är :loss högre än priset med ÄTA. En befarad förlust ska kostnadsföras direkt (K2 6.19); förslaget tar inte med den, så bedöm den med din redovisningskonsult.": "The estimated total cost is :loss higher than the price including ÄTA. An expected loss is expensed at once (K2 6.19); the proposal leaves it out, so assess it with your accountant."
+    "Den beräknade totala kostnaden är :loss högre än priset med ÄTA. En befarad förlust ska kostnadsföras direkt (K2 6.19); förslaget tar inte med den, så bedöm den med din redovisningskonsult.": "The estimated total cost is :loss higher than the price including ÄTA. An expected loss is expensed at once (K2 6.19); the proposal leaves it out, so assess it with your accountant.",
+    "redovisade på en tidigare faktura": "reported on an earlier invoice",
+    "redovisade på faktura :numbers": "reported on invoice :numbers"
 }

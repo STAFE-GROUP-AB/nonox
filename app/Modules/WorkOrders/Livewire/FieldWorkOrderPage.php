@@ -191,7 +191,6 @@ class FieldWorkOrderPage extends Component
     public function render(): View
     {
         $workOrder = $this->workOrder();
-        ExpireChangeOrders::forWorkOrder($workOrder->id);
         $workOrder->load('customer:id,name');
         $today = CarbonImmutable::today()->toDateString();
         $term = trim($this->articleSearch);
@@ -203,6 +202,7 @@ class FieldWorkOrderPage extends Component
             'workOrder' => $workOrder,
             'kinds' => LabourKind::query()->where('is_active', true)->orderBy('position')->get(),
             'changeOrders' => $changeOrders,
+            'lapsed' => ExpireChangeOrders::lapsedIn($changeOrders),
             'heldBack' => $chosen instanceof ChangeOrder && ! $chosen->status->allowsInvoicing() ? $chosen : null,
             'articles' => mb_strlen($term) < 2 ? collect() : Article::query()->where('is_active', true)
                 ->where(fn ($query) => $query->where('name', 'ilike', "%{$term}%")->orWhere('number', $term)->orWhere('gtin', $term)->orWhere('scanner_code', $term))
