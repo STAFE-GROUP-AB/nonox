@@ -174,8 +174,14 @@ VAT share of what is left to pay on open customer invoices (positive) and
 open supplier invoices (negative, input VAT), `remaining × VAT / total`
 rounded half up per invoice, is added on the VAT date of the period of the
 expected payment. Issuing a draft therefore changes nothing in the forecast.
-Not handled: open items booked at year end under kontantmetoden (their VAT
-is then also in the period's VAT; TODO(legal-verify) in InvoiceBooking). Pension premiums and other personnel costs paid through supplier
+Open items booked at year end under kontantmetoden are reversed on the first
+day of the new year, so the reversal and the open-invoice VAT share net to
+the same total (checked in the review 2026-11-08; the booking rule itself is
+still TODO(legal-verify) in InvoiceBooking).
+TODO: sales under EU_CONSUMER_OSS carry foreign VAT paid through the OSS
+return (due at the end of the month after the quarter), but the agreement VAT
+and the open-invoice VAT share date them by the Swedish VAT deadline. The
+amount is about right, the date is not; skip them or give them the OSS date. Pension premiums and other personnel costs paid through supplier
 invoices count as supplier invoices when they exist.
 
 ### Double counting: the decision
