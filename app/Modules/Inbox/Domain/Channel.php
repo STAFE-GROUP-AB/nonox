@@ -16,4 +16,6 @@ enum Channel: string
     case Mailgun = 'MAILGUN';
     case Imap = 'IMAP';
     case Peppol = 'PEPPOL';
+    // A receipt photographed in NONOX by a signed-in person (Inkorg → Fota kvitto, ADR-072): the original is the photo itself.
+    case Upload = 'UPLOAD';
 }

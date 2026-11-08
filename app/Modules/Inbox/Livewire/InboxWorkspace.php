@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Modules\Inbox\Livewire;
 
 use App\Actions\Payables\SaveSupplier;
+use App\Domain\Company\LegalForm;
 use App\Domain\Payables\SupplierMatcher;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Modules\Inbox\Actions\AcceptUploadedReceipt;
 use App\Modules\Inbox\Actions\ApproveInboxMessage;
 use App\Modules\Inbox\Actions\ClaimUnassignedMessage;
 use App\Modules\Inbox\Actions\InboxReview;
@@ -32,6 +34,8 @@ use Illuminate\View\View;
 use InvalidArgumentException;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 /**
@@ -43,7 +47,11 @@ use Livewire\WithPagination;
 class InboxWorkspace extends Component
 {
     use ShowsToasts;
+    use WithFileUploads;
     use WithPagination;
+
+    /** Inkorg → Fota kvitto (ADR-072 §8). */
+    public ?TemporaryUploadedFile $receiptPhoto = null;
 
     #[Url(as: 'flik', except: 'att-granska')]
     public string $tab = 'att-granska';
@@ -69,6 +77,26 @@ class InboxWorkspace extends Component
 
     /** Whether the selected message holds a report that can be started as a daily report by hand. */
     public bool $readableReport = false;
+
+    public function uploadReceipt(AcceptUploadedReceipt $accept): void
+    {
+        if (! $this->receiptPhoto instanceof TemporaryUploadedFile) {
+            $this->addError('receiptPhoto', __('Ta en bild av kvittot eller välj en PDF.'));
+
+            return;
+        }
+
+        try {
+            $accept($this->user(), $this->company(), $this->receiptPhoto);
+        } catch (ValidationException $exception) {
+            $this->addError('receiptPhoto', (string) collect($exception->errors())->flatten()->first());
+
+            return;
+        }
+
+        $this->receiptPhoto = null;
+        $this->toast(__('Kvittot ligger i inkorgen. Det läses och kommer under Att granska; inget bokförs förrän någon har godkänt det.'));
+    }
 
     public function mount(): void
     {
@@ -158,6 +186,29 @@ class InboxWorkspace extends Component
                 'rows' => [['account' => '', 'debit' => '', 'credit' => '', 'description' => ''], ['account' => '', 'debit' => '', 'credit' => '', 'description' => '']],
             ]]],
         };
+    }
+
+    /**
+     * "Betalt privat" for the owner of an enskild firma (ADR-072 §8): the
+     * credit rows on a bank or cash account (19xx) move to 2018 Övriga egna
+     * insättningar, since the owner paid with their own money. The person
+     * still checks and approves the voucher.
+     */
+    public function paidPrivately(int $voucher = 0): void
+    {
+        if (($this->form['kind'] ?? null) !== 'vouchers' || $this->company()->legal_form !== LegalForm::Ef) {
+            return;
+        }
+
+        foreach ($this->form['vouchers'][$voucher]['rows'] ?? [] as $index => $row) {
+            $account = (int) ($row['account'] ?? 0);
+
+            if ($account >= 1900 && $account <= 1999 && filled($row['credit'] ?? null)) {
+                $this->form['vouchers'][$voucher]['rows'][$index]['account'] = '2018';
+            }
+        }
+
+        $this->toast(__('Betalningen bokförs mot 2018 Övriga egna insättningar. Kontrollera raderna innan du godkänner.'));
     }
 
     public function addRow(int $voucher = 0): void

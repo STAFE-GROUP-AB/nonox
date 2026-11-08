@@ -28,7 +28,12 @@ class InboxFileController
         Gate::authorize('view', $found);
 
         // A Peppol e-invoice's original is the UBL file itself (ADR-050).
-        $name = $found->channel === Channel::Peppol ? 'e-faktura.xml' : 'meddelande.eml';
+        $name = match ($found->channel) {
+            Channel::Peppol => 'e-faktura.xml',
+            // A photographed receipt's original is the file itself (ADR-072).
+            Channel::Upload => 'kvitto.'.pathinfo($found->eml_path, PATHINFO_EXTENSION),
+            default => 'meddelande.eml',
+        };
 
         return Storage::disk(AcceptInboundMail::DISK)->download($found->eml_path, $name, [
             'Content-Type' => 'application/octet-stream',
