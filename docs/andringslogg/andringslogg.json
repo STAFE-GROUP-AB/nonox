@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-08-statussida-och-sakerhetspolicy",
+      "datum": "2026-11-08T19:00:00+01:00",
+      "rubrik": "Driftstatus, säkerhetspolicy och security.txt",
+      "beskrivning": "På Driftstatus ser du om tjänsten är i drift, om bakgrundsjobben, den nattliga kontrollen av bokföringen och kopplingarna till Peppol, bank och Skatteverket fungerar, och vilka störningar som har varit de senaste 90 dagarna. Säkerhetspolicyn säger hur du rapporterar en sårbarhet och vad du kan vänta dig, och adressen finns också i security.txt enligt RFC 9116. Sidan visar aldrig något om enskilda företag eller personer.",
+      "typ": "Säkerhet",
+      "omrade": "Webbplats"
+    },
+    {
       "id": "2026-11-08-uppskjuten-skatt-k3",
       "datum": "2026-11-08T09:30:00+01:00",
       "rubrik": "Uppskjuten skatt i bokslutet för räkenskapsår som följer K3 (beta)",

@@ -44,6 +44,7 @@ use App\Http\Controllers\SecurityPageController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\Skatteverket\SkatteverketAuthController;
 use App\Http\Controllers\StartController;
+use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\Vat\VatFileController;
 use App\Http\Controllers\WaitlistController;
@@ -75,6 +76,11 @@ Route::get('/underbitraden', LegalPageController::class)->defaults('document', '
 Route::get('/egen-drift', LegalPageController::class)->defaults('document', 'selfHosting')->name('legal.selfHosting');
 Route::get('/tillganglighet', LegalPageController::class)->defaults('document', 'accessibility')->name('legal.accessibility');
 Route::get('/sakerhet', SecurityPageController::class)->name('security');
+// Responsible disclosure (ADR-078) and the status page; the security.txt of RFC 9116 sits where the RFC says.
+Route::get('/sakerhetspolicy', LegalPageController::class)->defaults('document', 'securityPolicy')->name('security.policy');
+Route::get('/status', [StatusPageController::class, 'status'])->name('status');
+Route::get('/.well-known/security.txt', [StatusPageController::class, 'securityTxt'])->name('security.txt');
+Route::get('/security.txt', [StatusPageController::class, 'legacySecurityTxt']);
 Route::get('/cookies', fn () => view('start.cookies', LandingPage::data()))->name('cookies');
 // What has shipped and what is coming, for people who never open the code repository. The feed keeps the .xml ending feed readers expect.
 Route::get('/andringslogg', [ChangelogController::class, 'index'])->name('changelog');
@@ -145,6 +151,8 @@ Route::prefix('hq')->name('hq.')->middleware(EnsureHqAdmin::class)->group(functi
     Route::view('/foretagsregistret', 'hq.registry')->name('registry');
     // The bank feed and Peppol across the installation, with the kill switches (ADR-034, ADR-050).
     Route::view('/integrationer', 'hq.integrations')->name('integrations');
+    // Incidents and planned maintenance on the public status page (ADR-078).
+    Route::view('/status', 'hq.status')->name('status');
 });
 // The passkey step for a signed-in session that has to pass it (RequirePasskey, ADR-029).
 Route::view('/logga-in/passkey', 'auth.passkey')->middleware('auth')->name('passkeys.challenge');

@@ -256,7 +256,7 @@
       "id": "statussida-och-sakerhet",
       "rubrik": "Statussida och säkerhetspolicy",
       "beskrivning": "En sida som visar om tjänsten är i drift och vilka störningar som har varit, en publicerad säkerhetspolicy med en adress för att rapportera sårbarheter, och resultatet från ett oberoende penetrationstest.",
-      "status": "Planerat",
+      "status": "Pågår",
       "omrade": "Kvalitet",
       "uppdaterad": "2026-11-08"
     },

@@ -68,6 +68,7 @@ final class Navigation
             ['label' => __('Inställningar'), 'route' => 'hq.settings'],
             ['label' => __('Företagsregistret'), 'route' => 'hq.registry'],
             ['label' => __('Integrationer'), 'route' => 'hq.integrations'],
+            ['label' => __('Driftstatus'), 'route' => 'hq.status'],
         ], $currentRoute) : [];
 
         return new NavSection(__('HQ'), 'hq.waitlist', $patterns, $active, $children);

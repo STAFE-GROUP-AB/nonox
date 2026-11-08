@@ -61,6 +61,17 @@
             </div>
         </x-ui.card>
 
+        <x-ui.card :title="__('Säkerhetskontakt')">
+            <div class="space-y-3">
+                <p class="text-sm text-gray-600">{{ __('Dit säkerhetsrapporter ska skickas. Adressen visas på säkerhetspolicyn och i /.well-known/security.txt (RFC 9116). Tomt betyder att installationens miljövariabel NONOX_SECURITY_EMAIL, annars NONOX_PRIVACY_EMAIL, används; saknas båda finns ingen security.txt.') }}</p>
+                <div>
+                    <label for="hq-security-contact" class="block text-sm font-medium text-gray-700">{{ __('E-postadress eller https-adress') }}</label>
+                    <input id="hq-security-contact" type="text" wire:model="securityContact" maxlength="200" autocomplete="off" class="mt-1 {{ $input }}" @error('security_contact') aria-invalid="true" aria-describedby="hq-security-contact-error" @enderror>
+                    @error('security_contact') <p id="hq-security-contact-error" class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                </div>
+            </div>
+        </x-ui.card>
+
         <div class="lg:col-span-2 flex flex-wrap items-center gap-3">
             <button type="submit" class="rounded-xl bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-60" x-bind:disabled="busy">{{ __('Spara inställningarna') }}</button>
             <p class="text-sm text-gray-600">{{ __('Ändringarna bekräftas med din passkey och skrivs i behandlingshistoriken.') }}</p>
