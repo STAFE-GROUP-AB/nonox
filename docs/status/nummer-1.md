@@ -407,3 +407,24 @@ Evidence: `tests/Feature/Overview/LiquidityForecastFlowsTest.php` (21 tester), `
 - Ett bygge, en kall granskning (3 bekräftade beloppsfel), två omkontroller; allt rättat. Hela sviten efter sammanslagning: 6 695 gröna, phpstan och pint rena.
 Kända begränsningar (ADR-027): OSS-moms dateras efter svensk momsdag; pensionsfiltret går på konto, inte lönearts typ; särskild löneskatt på pension utanför lönemodulen; horisonten är tre månader (ägarbeslut om 6/12 väntar).
 Next package: CRM-affär → offert (granskas om), S1-P4, S1-P5, S1-P11.
+
+---
+
+Package: S1-P5, förslag på uppskjuten skatt enligt K3 kapitel 29 (ADR-059)
+Status: done (beta, Bokslut → Uppskjuten skatt för K3-år i AB och ekonomisk förening)
+Evidence: `tests/Feature/Closing/DeferredTaxTest.php`, `tests/Unit/Closing/DeferredTaxProposalTest.php`, `tests/Tenancy/DeferredTaxTenancyTest.php`.
+- Skillnad per post, skattepliktig eller avdragsgill enligt teckentabellen i 29.14, skatt avrundad till öre; skattesatsen för året efter balansdagen ur CorporateTaxRules.
+- F-S1-a: 904 752,00 / 995 227,20 / 1 085 702,40 på 2240 och förändringen 90 475,20 på 8940, på öret.
+- Obeskattade reserver (2100–2199) kan inte bli en post, spärrat i kod och med en CHECK i databasen. Bokförda poster är låsta av en trigger.
+- H6: en skattefordran föreslås aldrig; en person anger beloppet med motivering, utgångsläge 0, aldrig över det beräknade. Gäller alla avdragsgilla skillnader (bredare än beslutet, flaggat för konsulten).
+- Bokförs bara efter bekräftelse, via BookVoucher (serie A, källa CLOSING, sista dagen), en gång per år, före resultatdispositionen; bekräftelsen jämför ett fingeravtryck av hela förslaget.
+- Nästa år: "Hämta posterna från föregående år" kopierar posterna okontrollerade; en tom lista som skulle återföra en befintlig skuld kräver ett uttryckligt kryss.
+- Skatteförslaget (TaxProposal) räknar bort bara det belopp som den uppskjutna skatten själv bokade; manuell bokning på 894x spärrar som förut, även för K2.
+- Kall granskning (2 P2, 5 P3) och två omkontroller, allt rättat. Hela sviten efter sammanslagning: 6 754 gröna, phpstan och pint rena.
+Rule ids covered: S1-R4, R4.1–R4.4, R4.6; R4.5 som en persons belopp.
+Public claim now allowed: inget nytt (ändringsloggen säger "för räkenskapsår som följer K3 (beta)").
+Public claim still not allowed: "Årsredovisning enligt K3", "Kassaflödesanalys".
+Open legal-verify items: H5 (hänvisningarna i 29.19 och 29.25); BAS 2240/1370/8940; kvittning enligt 29.32; 29.20 och 29.21 lämnas åt personen; beslutsdatum för skattesatser (`decided_on` saknas i rules.json, risk för felaktig spärr).
+Follow-ups: koppla P4:s komponentregister till `BuildingCarryingAmounts`; visa beloppet på Bokslut → Regelverk (P11) som information; ingen checklistpunkt gör uppskjuten skatt obligatorisk ännu.
+Human decisions needed: H5, H9, H10.
+Next package: S1-P4 (granskas), S1-P11 (omkontroll), därefter S1-P12.
