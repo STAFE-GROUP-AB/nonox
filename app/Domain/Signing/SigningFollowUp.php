@@ -204,7 +204,7 @@ class SigningFollowUp
     private function notify(Company $company, SigningRequest $request, string $sentence): void
     {
         $members = self::memberIds($company);
-        $candidates = [$request->sent_by];
+        $candidates = [$request->sent_by ?? $company->user_id];
 
         foreach ($this->hooks->all() as $hook) {
             $candidates = [...$candidates, ...$hook->recipients($company, $request)];

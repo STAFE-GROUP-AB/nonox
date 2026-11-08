@@ -66,4 +66,12 @@ return [
     // Where the per-year income tax parameters live (IncomeTaxParameters). Tests point it at a copy.
     'income_tax_data_path' => database_path('data/income-tax'),
 
+    /*
+     * Store each invoice's PDF as it was issued (ADR-075, decision O6). Always on in
+     * a real installation; the test suite turns it off (phpunit.xml) so that the
+     * thousands of invoices it issues are not rendered twice, and the tests of the
+     * stored PDF turn it on.
+     */
+    'store_issued_invoice_pdfs' => (bool) env('NONOX_STORE_ISSUED_INVOICE_PDFS', true),
+
 ];

@@ -16,6 +16,7 @@ use App\Domain\Invoicing\Ocr;
 use App\Domain\Invoicing\TaxReduction;
 use App\Domain\Vat\OssRates;
 use App\Domain\Vat\OssThreshold;
+use App\Jobs\StoreIssuedInvoicePdf;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\Customer;
@@ -35,7 +36,7 @@ use Illuminate\Validation\ValidationException;
  * Makes a draft a real invoice: the next invoice number (gapless, shared by
  * invoices and credit invoices), an OCR reference, the customer as it is
  * now, and under fakturametoden a voucher in series B. After this the
- * invoice never changes.
+ * invoice never changes, and its PDF is stored as issued (IssuedInvoicePdf).
  *
  * A credit invoice settles the invoice it credits by its own amount
  * (Mervärdesskattelag (2023:200) 17 kap. 22-23 §§: a credit note changes
@@ -167,6 +168,11 @@ class IssueInvoice
                 'exchange_rate_date' => $invoice->exchange_rate_date?->toDateString(),
                 'exchange_rate_source' => $invoice->exchange_rate_source,
             ] : []), $company, $user);
+
+            // The PDF exactly as issued is stored once the issue has committed (ADR-075, decision O6).
+            if (config('nonox.store_issued_invoice_pdfs')) {
+                StoreIssuedInvoicePdf::dispatch($invoice->company_id, $invoice->id)->afterCommit();
+            }
 
             return $invoice;
         }));

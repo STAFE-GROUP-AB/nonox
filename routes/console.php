@@ -16,6 +16,8 @@ Schedule::command('invoices:run-agreements')->dailyAt('06:00')->withoutOverlappi
 Schedule::command('privacy:prune')->dailyAt('04:10')->withoutOverlapping();
 // Unsigned signing links a year after they closed, in every company (ADR-046, ADR-075 §7).
 Schedule::command('signing:prune')->dailyAt('04:15')->withoutOverlapping();
+// The customer portal's invitations, inactive and disabled contacts, events and closed questions (ADR-075).
+Schedule::command('portal:prune')->dailyAt('04:20')->withoutOverlapping();
 Schedule::command('connect:prune')->dailyAt('04:25')->withoutOverlapping();
 // The encrypted chat (ADR-045): expired chats in a file store, which does not expire them by itself.
 Schedule::command('chat:prune')->everyFiveMinutes()->withoutOverlapping();

@@ -353,6 +353,13 @@
         <x-crm::quick-action icon="MEETING" :label="__('Planera')" :disabled="$readOnly" wire:click="startActivity('MEETING')" />
     </x-crm::action-bar>
 
+    @if($account->customer_id)
+        {{-- Kundportal (ADR-075): who has access to the customer's portal, while the module is on. --}}
+        @if(App\Modules\Portal\Support\PortalPanels::showFor(auth()->user()))
+            <livewire:portal.customer-panel :customer-id="$account->customer_id" :key="'portal-customer-'.$account->customer_id" />
+        @endif
+    @endif
+
     {{-- The ledger fields, through the customer register's own form. --}}
     @if($canEditCustomer)
         <livewire:crm.customer-fields :customer-id="$account->customer_id" :key="'customer-fields-'.$account->customer_id" />

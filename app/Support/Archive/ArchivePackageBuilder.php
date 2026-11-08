@@ -11,6 +11,7 @@ use App\Domain\Accounting\Reports\ReportTable;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Invoicing\InvoicePdf;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Domain\Invoicing\IssuedInvoicePdf;
 use App\Domain\Vat\EskdFile;
 use App\Domain\Vat\VatReturn;
 use App\Models\AuditLog;
@@ -219,7 +220,7 @@ final class ArchivePackageBuilder
             ->whereDate('invoice_date', '<=', $fiscalYear->end_date->toDateString())
             ->orderBy('number')
             ->each(function (Invoice $invoice) use (&$count): void {
-                $this->put('kundfakturor/'.self::safe(InvoicePdf::filename($invoice)), InvoicePdf::render($invoice));
+                $this->put('kundfakturor/'.self::safe(InvoicePdf::filename($invoice)), IssuedInvoicePdf::bytes($invoice));
                 $count++;
             });
 

@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use App\Modules\Portal\Models\PortalIdentity;
 
 /*
  * Only the one-time code settings live here; everything else comes from the
@@ -8,6 +9,26 @@ declare(strict_types=1);
  */
 
 return [
+    /*
+     * The customer portal's own guard (ADR-075 §2): portal contacts sign in as
+     * PortalIdentity, never as users. Merged with the framework's 'web' guard
+     * and 'users' provider: Laravel 13 merges the guards and providers keys of
+     * config/auth.php with its own defaults (LoadConfiguration::mergeableOptions).
+     */
+    'guards' => [
+        'portal' => [
+            'driver' => 'session',
+            'provider' => 'portal_identities',
+        ],
+    ],
+
+    'providers' => [
+        'portal_identities' => [
+            'driver' => 'eloquent',
+            'model' => PortalIdentity::class,
+        ],
+    ],
+
     'login_codes' => [
         // Eight digits: guessing stays hopeless without locking anyone out (security review 2026-11-01).
         'length' => 8,

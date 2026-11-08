@@ -10,6 +10,8 @@ use App\Models\User;
 use App\Support\Auth\ClientAddressBucket;
 use App\Support\Branding\PresentedBrand;
 use App\Support\LoginCodeAutofill;
+use Closure;
+use Illuminate\Contracts\Mail\Mailable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -36,6 +38,11 @@ use Illuminate\Support\Facades\RateLimiter;
  * behind long jobs. It was sent after the response (defer) for a while, but
  * on production PHP-FPM the worker died after the response and no mail went
  * out (2026-11-04), so it is synchronous again until that is understood.
+ *
+ * A customer portal code (audience PORTAL, ADR-075) is counted apart from
+ * the web sign-in's, is only sent to an address with portal access (the
+ * caller decides), and is sent from a queued job (SendPortalLoginCode) so the
+ * portal's response time never tells whether an address has access.
  */
 class SendLoginCode
 {
@@ -52,45 +59,54 @@ class SendLoginCode
 
     public const string GLOBAL_KEY = 'login-code:global';
 
-    public function __invoke(string $email, ?string $ipAddress = null, ?PresentedBrand $brand = null): void
+    /**
+     * @param  ?Closure(string): Mailable  $mail  the mail for a portal code (the code in, the mail out); the web sign-in's otherwise
+     */
+    public function __invoke(string $email, ?string $ipAddress = null, ?PresentedBrand $brand = null, string $audience = LoginCode::WEB, ?Closure $mail = null): void
     {
         $email = self::normalise($email);
+        // The portal's caps and lock are counted on their own keys, so neither sign-in can use up the other's.
+        $key = $audience === LoginCode::WEB ? $email : strtolower($audience).':'.$email;
 
-        Cache::lock('login-code:send:'.sha1($email), 10)->block(5, function () use ($email, $ipAddress, $brand): void {
-            if ($this->recentlySent($email)) {
+        Cache::lock('login-code:send:'.sha1($key), 10)->block(5, function () use ($email, $key, $ipAddress, $brand, $audience, $mail): void {
+            if ($this->recentlySent($email, $audience)) {
                 return;
             }
 
-            $hasAccount = User::query()->byEmail($email)->whereNull('anonymised_at')->exists();
+            // A portal code only goes to an address the caller found a portal contact for.
+            $hasAccount = $audience !== LoginCode::WEB || User::query()->byEmail($email)->whereNull('anonymised_at')->exists();
 
-            if ($this->capReached($email, $ipAddress, $hasAccount)) {
+            if ($this->capReached($key, $ipAddress, $hasAccount)) {
                 return;
             }
 
             $code = $this->generate();
 
-            DB::transaction(function () use ($email, $code, $ipAddress): void {
-                LoginCode::usableFor($email)->update(['consumed_at' => now()]);
+            DB::transaction(function () use ($email, $code, $ipAddress, $audience): void {
+                LoginCode::usableFor($email, $audience)->update(['consumed_at' => now()]);
 
                 LoginCode::create([
                     'email' => $email,
+                    'audience' => $audience,
                     'code_hash' => LoginCode::hash($code),
                     'expires_at' => now()->addMinutes((int) config('auth.login_codes.ttl_minutes')),
                     'ip_address' => $ipAddress,
                 ]);
             });
 
-            RateLimiter::hit(self::tenMinuteKey($email), 600);
-            RateLimiter::hit(self::dayKey($email, $ipAddress), 86400);
-            RateLimiter::hit(self::dayTotalKey($email), 86400);
+            RateLimiter::hit(self::tenMinuteKey($key), 600);
+            RateLimiter::hit(self::dayKey($key, $ipAddress), 86400);
+            RateLimiter::hit(self::dayTotalKey($key), 86400);
 
             if (! $hasAccount) {
                 RateLimiter::hit(self::GLOBAL_KEY, 3600);
             }
 
-            LoginCodeAutofill::remember($email, $code);
+            if ($audience === LoginCode::WEB) {
+                LoginCodeAutofill::remember($email, $code);
+            }
 
-            Mail::to($email)->send(new LoginCodeMail($code, $brand));
+            Mail::to($email)->send($mail === null ? new LoginCodeMail($code, $brand) : $mail($code));
         });
     }
 
@@ -130,9 +146,9 @@ class SendLoginCode
             || RateLimiter::tooManyAttempts(self::dayTotalKey($email), self::MAX_SENDS_PER_DAY_TOTAL);
     }
 
-    private function recentlySent(string $email): bool
+    private function recentlySent(string $email, string $audience): bool
     {
-        return LoginCode::usableFor($email)
+        return LoginCode::usableFor($email, $audience)
             ->where('created_at', '>', now()->subSeconds((int) config('auth.login_codes.cooldown_seconds')))
             ->exists();
     }

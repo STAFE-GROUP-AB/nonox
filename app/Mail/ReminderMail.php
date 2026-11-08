@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use App\Domain\Invoicing\InvoicePdf;
+use App\Domain\Invoicing\IssuedInvoicePdf;
 use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoiceReminder;
@@ -42,7 +43,7 @@ class ReminderMail extends Mailable
     public function attachments(): array
     {
         return [
-            Attachment::fromData(fn (): string => InvoicePdf::render($this->invoice), InvoicePdf::filename($this->invoice))->withMime('application/pdf'),
+            Attachment::fromData(fn (): string => IssuedInvoicePdf::bytes($this->invoice), InvoicePdf::filename($this->invoice))->withMime('application/pdf'),
         ];
     }
 }

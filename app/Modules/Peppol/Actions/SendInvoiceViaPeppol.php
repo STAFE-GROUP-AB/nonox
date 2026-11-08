@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Peppol\Actions;
 
-use App\Domain\Invoicing\InvoicePdf;
+use App\Domain\Invoicing\IssuedInvoicePdf;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -72,7 +72,7 @@ class SendInvoiceViaPeppol
 
             /** @var PeppolParticipant $participant */
             /** @var PeppolIdentifier $receiver */
-            $pdf = InvoicePdf::render($invoice);
+            $pdf = IssuedInvoicePdf::bytes($invoice);
 
             $transmission = DB::transaction(function () use ($user, $invoice, $company, $participant, $receiver, $pdf): PeppolTransmission {
                 // One sending at a time per invoice: a double click or a parallel API call waits here and then sees the first.

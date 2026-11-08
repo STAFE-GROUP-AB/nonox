@@ -42,7 +42,7 @@
     <table class="meta">
         <tr><td class="muted" style="width: 38%">{{ __('Dokument') }}</td><td>{{ $title }} ({{ $request->document_name }})</td></tr>
         <tr><td class="muted">{{ __('Kontrollsumma (SHA-256)') }}</td><td class="mono">{{ $request->document_sha256 }}</td></tr>
-        <tr><td class="muted">{{ __('Skickades till') }}</td><td>{{ $request->email }}</td></tr>
+        <tr><td class="muted">{{ $request->channel === 'PORTAL' ? __('Inloggad som') : __('Skickades till') }}</td><td>{{ $request->email }}</td></tr>
         <tr><td class="muted">{{ __('Avsändare') }}</td><td>{{ $company->legal_name ?: $company->name }}@if($company->org_number) ({{ $company->org_number }})@endif</td></tr>
     </table>
 
@@ -74,7 +74,7 @@
     </table>
 
     <div class="box">
-        <span class="muted">{{ __('En enkel elektronisk underskrift. Den signerade PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Signeringen gjordes i NONOX via en personlig länk som skickades till e-postadressen ovan.') }}</span>
+        <span class="muted">{{ $request->channel === 'PORTAL' ? __('En enkel elektronisk underskrift. Den godkända PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Godkännandet gjordes i företagets kundportal i NONOX av en kontakt som hade loggat in med en engångskod till e-postadressen ovan.') : __('En enkel elektronisk underskrift. Den signerade PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Signeringen gjordes i NONOX via en personlig länk som skickades till e-postadressen ovan.') }}</span>
     </div>
 </body>
 </html>

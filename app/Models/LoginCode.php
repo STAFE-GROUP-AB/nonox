@@ -9,9 +9,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * A one-time sign-in code. Only an HMAC of the code is stored.
+ * A one-time sign-in code. Only an HMAC of the code is stored. Its audience
+ * says where it works: WEB (NONOX's own sign-in) or PORTAL (a customer
+ * portal, ADR-075); a code never works for the other.
  *
  * @property string $email
+ * @property string $audience WEB or PORTAL
  * @property string $code_hash
  * @property int $attempts
  * @property CarbonImmutable $expires_at
@@ -22,9 +25,14 @@ class LoginCode extends Model
 {
     public const null UPDATED_AT = null;
 
+    public const string WEB = 'WEB';
+
+    public const string PORTAL = 'PORTAL';
+
     /** @var list<string> */
     protected $fillable = [
         'email',
+        'audience',
         'code_hash',
         'expires_at',
         'ip_address',
@@ -50,10 +58,11 @@ class LoginCode extends Model
      * @param  Builder<self>  $query
      * @return Builder<self>
      */
-    public function scopeUsableFor(Builder $query, string $email): Builder
+    public function scopeUsableFor(Builder $query, string $email, string $audience = self::WEB): Builder
     {
         return $query
             ->where('email', $email)
+            ->where('audience', $audience)
             ->whereNull('consumed_at')
             ->where('expires_at', '>', now());
     }

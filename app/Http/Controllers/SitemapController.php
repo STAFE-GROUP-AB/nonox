@@ -36,7 +36,7 @@ class SitemapController
     public function robots(): Response
     {
         $body = config('app.landing.enabled')
-            ? "User-agent: *\nDisallow: /livewire/\nDisallow: /api/\nDisallow: /signera/\nAllow: /\n\nSitemap: ".url('/sitemap.xml')."\n"
+            ? "User-agent: *\nDisallow: /livewire/\nDisallow: /api/\nDisallow: /signera/\nDisallow: /kundportal\nAllow: /\n\nSitemap: ".url('/sitemap.xml')."\n"
             : "User-agent: *\nDisallow: /\n";
 
         return response($body, 200, ['Content-Type' => 'text/plain; charset=UTF-8']);

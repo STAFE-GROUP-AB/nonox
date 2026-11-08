@@ -66,6 +66,11 @@
         </x-ui.card>
     @endif
 
+    {{-- Kundportal (ADR-075): opened in the portal, "Jag har betalat", disputes. --}}
+    @if(! $invoice->isDraft() && App\Modules\Portal\Support\PortalPanels::showFor(auth()->user()))
+        <livewire:portal.invoice-panel :invoice-id="$invoice->id" :key="'portal-invoice-'.$invoice->id" />
+    @endif
+
     @if($peppolOn)
         <livewire:peppol.invoice-panel :invoice="$invoice" :key="'peppol-'.$invoice->id" />
     @endif
