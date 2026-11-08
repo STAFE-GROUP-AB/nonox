@@ -55,7 +55,7 @@ class VoucherList extends Component
         $company = $this->company();
 
         // A full hash-chain check is heavy: only for those who see the vouchers, a few times a minute.
-        abort_unless((bool) Auth::user()?->hasTeamPermission($company, 'vouchers:view'), 403);
+        abort_unless((bool) Auth::guard('web')->user()?->hasTeamPermission($company, 'vouchers:view'), 403);
 
         if (RateLimiter::tooManyAttempts("ledger-check:{$company->id}", 3)) {
             $this->toast(__('Kontrollen kördes nyss. Vänta en minut och försök igen.'), 'error');

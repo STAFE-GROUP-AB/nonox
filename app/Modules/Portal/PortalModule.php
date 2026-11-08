@@ -116,9 +116,17 @@ final class PortalModule implements IsNew, Module
         return null;
     }
 
+    /**
+     * TODO(legal-verify): L1, L2, L4, L5 must be answered by a lawyer before the
+     * portal is on for any company (ADR-075, build step 1). Until then it can
+     * only be turned on where the installation has opened it
+     * (NONOX_CUSTOMER_PORTAL=true), such as a test installation.
+     */
     public function canEnable(Company $company): ModuleCheck
     {
-        return ModuleCheck::allow();
+        return config('nonox.customer_portal')
+            ? ModuleCheck::allow()
+            : new ModuleCheck(blockers: [__('Kundportalen är byggd och väntar på en juristgranskning av hur kundernas kontaktpersoners uppgifter får behandlas. Den kan slås på när granskningen är klar.')]);
     }
 
     public function canDisable(Company $company): ModuleCheck

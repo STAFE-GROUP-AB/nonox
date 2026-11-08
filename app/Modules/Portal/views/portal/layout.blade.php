@@ -4,6 +4,9 @@
      * (logo, colour made readable at 4.5:1), never the accounting firm's; the
      * neutral NONOX look before the visitor's company is known. No inline
      * script: portal.js only.
+     *
+     * TODO(legal-verify): L11 — whether lag (2023:254) on accessibility applies
+     * to a portal where consumers view invoices; built to WCAG 2.2 AA anyway.
      */
     $context = app(App\Modules\Portal\Support\PortalContext::class);
     $settings ??= $context->has() ? $context->settings() : null;

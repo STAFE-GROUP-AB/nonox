@@ -28,7 +28,7 @@ class ArchivePackageController
 
         // A package with payslips (salaries, sick pay) only for those who may read the payroll archive.
         $company = $fiscalYear->company;
-        abort_if(($archivePackage->contents['lon'] ?? 0) > 0 && ! ($company !== null && $request->user()?->hasTeamPermission($company, 'payroll:archive-view')), 404);
+        abort_if(($archivePackage->contents['lon'] ?? 0) > 0 && ! ($company !== null && $request->user('web')?->hasTeamPermission($company, 'payroll:archive-view')), 404);
 
         Audit::record('archive.package_downloaded', $archivePackage, ['sha256' => $archivePackage->sha256]);
 

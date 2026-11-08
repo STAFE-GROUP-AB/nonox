@@ -132,3 +132,11 @@ it('shows the panel on the customer card and the invoice only while the module i
     $this->get('/kunder/portal')->assertNotFound();
     expect(DB::table('customer_portal_settings')->count())->toBe(1);
 });
+
+it('cannot be turned on until the installation opens it after the legal review', function () {
+    [$owner, $company] = Bookkeeping::company();
+    config(['nonox.customer_portal' => false]);
+
+    expect(app(ModuleManager::class)->enableCheck(PortalModule::KEY, $company)->blockers)->toHaveCount(1)
+        ->and(fn () => app(ModuleManager::class)->enable(PortalModule::KEY, $company, $owner))->toThrow(ValidationException::class, 'juristgranskning');
+});

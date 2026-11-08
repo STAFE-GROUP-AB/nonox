@@ -33,6 +33,7 @@ use App\Models\ImportedVoucher;
 use App\Models\IncomeTaxPartner;
 use App\Models\IncomeTaxReturn;
 use App\Models\Invoice;
+use App\Models\InvoiceDocument;
 use App\Models\InvoicePayment;
 use App\Models\InvoiceReminder;
 use App\Models\InvoiceRow;
@@ -184,6 +185,15 @@ use App\Modules\Planning\Models\ShiftRequest as PlanningShiftRequest;
 use App\Modules\Planning\Models\Skill as PlanningSkill;
 use App\Modules\Planning\Models\Template as PlanningTemplate;
 use App\Modules\Planning\Models\TemplateShift as PlanningTemplateShift;
+use App\Modules\Portal\Models\PortalAttachment;
+use App\Modules\Portal\Models\PortalContact;
+use App\Modules\Portal\Models\PortalEvent;
+use App\Modules\Portal\Models\PortalIdentity;
+use App\Modules\Portal\Models\PortalInvitation;
+use App\Modules\Portal\Models\PortalMessage;
+use App\Modules\Portal\Models\PortalPaymentNote;
+use App\Modules\Portal\Models\PortalSettings;
+use App\Modules\Portal\Models\PortalThread;
 use App\Modules\Pos\Models\PosConnection;
 use App\Modules\Pos\Models\PosFee;
 use App\Modules\Pos\Models\PosLogEntry;
@@ -370,6 +380,16 @@ const COMPANY_SCOPED_MODELS = [
     CrmQuoteTemplateRow::class => 'crmQuoteTemplateRowAttributes',
     CrmSigningRequest::class => 'crmSigningRequestAttributes',
     CrmSigningEvent::class => 'crmSigningEventAttributes',
+    // The stored issued invoice PDF and the customer portal (ADR-075).
+    InvoiceDocument::class => 'invoiceDocumentAttributes',
+    PortalContact::class => 'portalContactAttributes',
+    PortalInvitation::class => 'portalInvitationAttributes',
+    PortalSettings::class => 'portalSettingsAttributes',
+    PortalThread::class => 'portalThreadAttributes',
+    PortalMessage::class => 'portalMessageAttributes',
+    PortalAttachment::class => 'portalAttachmentAttributes',
+    PortalEvent::class => 'portalEventAttributes',
+    PortalPaymentNote::class => 'portalPaymentNoteAttributes',
     CrmEmail::class => 'crmEmailAttributes',
     CrmEmailTemplate::class => ['name' => 'Hemlig mall', 'subject' => 'Hemligt ämne', 'body' => 'Hemlig text'],
     CrmSegment::class => ['name' => 'Hemligt segment', 'filters' => []],
@@ -1420,6 +1440,58 @@ function crmSigningEventAttributes(): array
     return ['signing_request_id' => CrmSigningRequest::create(crmSigningRequestAttributes())->id, 'event' => 'SENT'];
 }
 
+function invoiceDocumentAttributes(): array
+{
+    return ['invoice_id' => Invoice::create(invoiceAttributes())->id, 'path' => 'invoices/hemlig.pdf', 'sha256' => str_repeat('0', 64), 'size' => 10];
+}
+
+function portalCustomerId(): int
+{
+    return Customer::query()->firstOrCreate(['number' => 1], ['name' => 'Hemlig kund AB'])->id;
+}
+
+function portalContactAttributes(): array
+{
+    $identity = PortalIdentity::query()->create(['email' => 'hemlig-'.random_int(1, PHP_INT_MAX).'@exempel.se', 'name' => 'Hemlig kontakt']);
+
+    return ['customer_id' => portalCustomerId(), 'portal_identity_id' => $identity->id];
+}
+
+function portalInvitationAttributes(): array
+{
+    return ['contact_id' => PortalContact::create(portalContactAttributes())->id, 'token_sha256' => hash('sha256', (string) random_int(0, PHP_INT_MAX)), 'expires_at' => now()->addDays(14)];
+}
+
+function portalSettingsAttributes(): array
+{
+    return ['portal_key' => PortalSettings::newKey()];
+}
+
+function portalThreadAttributes(): array
+{
+    return ['customer_id' => portalCustomerId(), 'subject' => 'Hemlig fråga', 'last_message_at' => now()];
+}
+
+function portalMessageAttributes(): array
+{
+    return ['thread_id' => PortalThread::create(portalThreadAttributes())->id, 'author_kind' => 'CONTACT', 'body' => 'Hemligt meddelande'];
+}
+
+function portalAttachmentAttributes(): array
+{
+    return ['message_id' => PortalMessage::create(portalMessageAttributes())->id, 'path' => 'portal/hemlig.pdf', 'original_name' => 'hemlig.pdf', 'mime' => 'application/pdf', 'size' => 10, 'sha256' => str_repeat('0', 64)];
+}
+
+function portalEventAttributes(): array
+{
+    return ['customer_id' => portalCustomerId(), 'event' => 'VIEWED_STATEMENT'];
+}
+
+function portalPaymentNoteAttributes(): array
+{
+    return ['invoice_id' => Invoice::create(invoiceAttributes())->id, 'paid_on' => '2026-03-15'];
+}
+
 function crmGoalAttributes(): array
 {
     return ['user_id' => User::factory()->create()->id, 'month' => '2026-06-01', 'metric' => 'MEETINGS', 'target' => 8];
@@ -1542,7 +1614,7 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class];
+const NEVER_UPDATED = [VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, InvoiceDocument::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
 const APPEND_ONLY = [VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class];

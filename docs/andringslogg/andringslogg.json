@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-08-kundportal-byggd",
+      "datum": "2026-11-08T19:10:00+01:00",
+      "rubrik": "Kundportalen är byggd och väntar på juristgranskning",
+      "beskrivning": "Kundportalen låter dina kunders kontaktpersoner logga in med en kod i mejlet och se fakturor, kontoutdrag och offerter, godkänna offerter och ställa frågor, med företagets egen logotyp. Fakturans PDF sparas nu när fakturan skapas, så den som skickas, visas och arkiveras är exakt densamma. Modulen kan slås på när en jurist har granskat hur kontaktpersonernas uppgifter får behandlas.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-08-signering-utan-crm",
       "datum": "2026-11-08T19:00:00+01:00",
       "rubrik": "Offerter kan signeras med namnteckning även utan CRM",

@@ -231,8 +231,8 @@
     {
       "id": "kundportal",
       "rubrik": "Kundportal",
-      "beskrivning": "Dina kunder loggar in och ser sina fakturor, betalar dem, laddar ner underlag och skickar frågor till dig.",
-      "status": "Planerat",
+      "beskrivning": "Dina kunder loggar in med en kod i mejlet och ser sina fakturor, kontoutdrag och offerter, ser hur de betalar med rätt OCR-nummer, godkänner offerter och skickar frågor till dig. Byggd och väntar på juristgranskning innan den kan slås på.",
+      "status": "Pågår",
       "omrade": "Fakturering",
       "uppdaterad": "2026-11-08"
     },

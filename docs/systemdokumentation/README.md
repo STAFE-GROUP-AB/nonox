@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.116
-- Datum: 2026-11-07
+- Version: 0.117
+- Datum: 2026-11-08
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -4275,7 +4275,9 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   - `verifikationer/<verifikation>/`: underlagen till varje bokförd
     verifikation under sitt ursprungliga namn.
   - `kundfakturor/`: utfärdade kund- och kreditfakturor med fakturadatum under
-    året, som PDF i fakturans egen layout.
+    året, som PDF i fakturans egen layout. Från version 0.117 är det den PDF som
+    sparades när fakturan utfärdades (se nedan); en faktura som utfärdades
+    tidigare får en PDF som tas fram från fakturans uppgifter när paketet byggs.
   - `leverantorsfakturor/`: leverantörsfakturorna med fakturadatum under året,
     som de laddades upp.
   - `moms/`: rutor och belopp för varje redovisad momsperiod och filen till
@@ -4295,6 +4297,18 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
     `shasum -a 256 -c` eller `sha256sum -c`.
 - Paketets egen SHA-256 sparas och skrivs i behandlingshistoriken när paketet
   skapas, och varje nedladdning loggas. Filerna går att läsa utan NONOX.
+- Fakturans PDF som den utfärdades (ADR-075 beslut O6): när en kund- eller
+  kreditfaktura har utfärdats (transaktionen har gått igenom) tas dess PDF fram
+  en gång i bakgrunden och sparas krypterad i den privata lagringen med sin
+  SHA-256 (`invoice_documents`). Raden kan aldrig ändras (PostgreSQL-trigger och
+  modellen). Samma bytes används sedan överallt: e-postutskicket, påminnelsens
+  bilaga, nedladdningen, API:t, Peppol-filens bifogade PDF, arkivpaketet och
+  kundportalen. En senare ändring av företagets adress, bankgiro eller logotyp
+  ändrar därför inte en faktura som redan har utfärdats. En faktura som
+  utfärdades innan detta infördes, eller vars PDF ännu inte har hunnit sparas,
+  tas fram från fakturans uppgifter som tidigare; kundportalen märker den som
+  en återskapad kopia. Stämmer den sparade filens SHA-256 inte används den inte.
+  TODO(legal-verify): L6, om lagen kräver att den exakta utfärdade PDF:en sparas.
 - Varje ny text av systemdokumentationen sparas oföränderligt
   (`system_documentation_versions`, med version, datum, SHA-256, programversion
   och tidpunkten den togs i bruk) efter varje `php artisan migrate`, vid
@@ -4782,3 +4796,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.114 | 2026-11-06 | Drivmedelsförmån rättad (avsnitt 5b, ADR-061): skatteavdraget räknas som förut på förmånsvärdet (marknadsvärdet × 1,2), men arbetsgivaravgiften nu på marknadsvärdet (socialavgiftslagen 2 kap. 10 a §); tidigare togs avgiften på hela förmånsvärdet. Den anställdas betalning för drivmedlet (löneart Egen betalning för drivmedel vid bilförmån, 7388) minskar den skattepliktiga förmånen och avgiftsunderlaget och redovisas i ruta 098, medan 018 har hela förmånsvärdet. Attesterade och bokförda löner ändras inte. Förmånsbilar: en period får inte omfatta en attesterad månad som bilen inte fanns i, och bara en bil per månad. |
 | 0.115 | 2026-11-06 | Bekräftelse och kontroller före inlämning (ägarbeslut 10 och 16): momsdeklarationen och arbetsgivardeklarationen till Skatteverket, betalfilen för leverantörsbetalningar och lönefilen kräver att användaren bekräftar "Jag har granskat siffrorna", och bekräftelsen sparas i behandlingshistoriken (`figures.reviewed`); ett K2-företag bekräftar de nya K2-villkoren (BFNAR 2025:2) en gång innan bokslutet för ett räkenskapsår som börjar efter 2025-12-31 kan fortsätta (`company.k2_conditions_confirmed`). SIE-importen stoppar en fil vars ingående balanser inte summerar till noll, och rapporten säger bara att varje konto stämmer när utgående balanser eller resultat har kontrollerats. Drivmedelsförmån kräver en förmånsbil i perioden. OCR-nummer på leverantörsfakturor kontrolleras med kontrollsiffran. Parametrarna för NE och INK4 2026 är inte längre markerade som kontrollerade, så beräkningen spärras tills en människa har kontrollerat dem. Rättelserna som driftsattes separat under versionsnumret 0.105 samma morgon (rutorna 20 och 23, årsredovisning bara enligt K2, belopp i hela kronor, övertid och mertid per art i Gröna Riks och Detaljhandeln, arbetsgivaravgift på drivmedelsförmån) ingår i 0.107, 0.109, 0.110 och 0.114 och i avsnitt 5h. |
 | 0.116 | 2026-11-07 | Regelverket (K1/K2/K3) hör till räkenskapsåret (avsnitt 3, ADR-059 tillägg A.2.1): varje år har sitt eget, ett nytt år ärver det föregående (annars närmaste senare) årets, och ett byte gäller ett valt år och alla senare år, i inställningarna som standard från det tidigaste öppna året utan fastställd årsredovisning. Stängda år och år med fastställd årsredovisning kan inte byta, och ett byte som inget år kan ta emot vägras. Bytet sparas på varje år och i behandlingshistoriken (`fiscal_year.framework_changed`, en post per år). Årsredovisningen, K2-bekräftelsen i bokslutet och NE-bilagan följer årets regelverk, så ett tidigare K2-år behåller sin årsredovisning när företaget byter till K3. Befintliga år fick företagets regelverk; ingen verifikation ändrades. Redovisningsprinciper för K3 som data (avsnitt 5a6.1, ADR-059 tillägget 2026-11-07, A.2.3): företagets val per princip gäller från ett räkenskapsårs första dag tills en ny rad ersätter det, utom svaren om övergången som bara gäller sitt eget år; val som NONOX ännu inte kan redovisa och byten av princip (K3 10.2, 23.37; inte att börja efter "inga", enligt kommentaren till 10.2, och inte kassaflödesanalysen) listas med regelns id som skäl till att K3-årsredovisningen inte kan tas fram; när det första räkenskapsårets datum ändras följer dess principer med; en rad kan inte sparas om den skulle gälla ett år vars årsredovisning har en fastställelsedag som har inträffat; byte från kapitel 12 till kapitel 11 nekas. Ändringen skrivs i behandlingshistoriken utan motiveringen. Ingenting i bokföringen ändras och ingen skärm använder principerna ännu. |
+| 0.117 | 2026-11-08 | Fakturans PDF sparas när fakturan utfärdas (avsnitt 7a, ADR-075 beslut O6) och används oförändrad i e-post, påminnelser, nedladdning, API, Peppol, arkivpaket och kundportal; äldre fakturor tas fram som förut. Signering av offerter med länk är en del av kärnan och fungerar även när CRM är avstängt (ADR-075 §7); avtal kräver CRM som förut. Kundportalen (modul, ADR-075) visar kunden fakturor, kontoutdrag och offerter och låter kunden godkänna en offert med samma bevis som en signeringslänk; den bokför ingenting, och "Jag har betalat" är kundens egen notering utan bokföring. |

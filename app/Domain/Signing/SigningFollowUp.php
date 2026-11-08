@@ -210,7 +210,7 @@ class SigningFollowUp
             $candidates = [...$candidates, ...$hook->recipients($company, $request)];
         }
 
-        $recipients = array_unique(array_filter($candidates, fn (mixed $id): bool => $id !== null && in_array((int) $id, $members, true)));
+        $recipients = array_unique(array_filter($candidates, fn (int $id): bool => in_array($id, $members, true)));
         $destination = $request->document()?->signingDestination() ?? ($request->isQuote() ? 'quotes' : 'crm-agreements');
 
         foreach (User::query()->whereKey($recipients)->get() as $user) {

@@ -32,6 +32,7 @@ final class Portal
 {
     public static function enable(Company $company, User $owner): void
     {
+        config(['nonox.customer_portal' => true]);
         app(ModuleManager::class)->enable(PortalModule::KEY, $company, $owner);
         CurrentCompany::set($company);
     }

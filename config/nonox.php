@@ -74,4 +74,7 @@ return [
      */
     'store_issued_invoice_pdfs' => (bool) env('NONOX_STORE_ISSUED_INVOICE_PDFS', true),
 
+    // The customer portal (ADR-075) can be turned on only where this is true, until a lawyer has answered L1, L2, L4 and L5.
+    'customer_portal' => (bool) env('NONOX_CUSTOMER_PORTAL', false),
+
 ];

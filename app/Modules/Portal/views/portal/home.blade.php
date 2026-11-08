@@ -26,7 +26,7 @@
     </dl>
 
     @if($unread > 0)
-        <p class="mt-6 rounded-2xl bg-white p-4 ring-1 ring-stone-200">{{ trans_choice('{1} Du har ett svar att läsa.|[2,*] Du har :count svar att läsa.', $unread, ['count' => $unread]) }} <a href="{{ route('portal.questions', ['portalKey' => $key]) }}" class="font-semibold underline underline-offset-2">{{ __('Till Frågor') }}</a></p>
+        <p class="mt-6 rounded-2xl bg-white p-4 ring-1 ring-stone-200">{{ __('Nya svar att läsa: :count.', ['count' => $unread]) }} <a href="{{ route('portal.questions', ['portalKey' => $key]) }}" class="font-semibold underline underline-offset-2">{{ __('Till Frågor') }}</a></p>
     @endif
 
     <div class="mt-8 flex flex-wrap gap-3">

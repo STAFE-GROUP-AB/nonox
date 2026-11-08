@@ -196,6 +196,9 @@ it('knows every column in the schema that holds a stored file path', function ()
             'crm_agreements.document_path',
             'crm_signing_requests.document_path',
             'crm_signing_requests.signed_document_path',
+            // The issued invoice PDF and portal attachments (ADR-075): each written for one row only and never linked as underlag.
+            'invoice_documents.path',
+            'customer_portal_attachments.path',
         ], true))
         ->sort()->values()->all();
 
