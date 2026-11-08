@@ -504,7 +504,8 @@ class FixedAssets
             throw ValidationException::withMessages(['asset' => __('Mark skrivs inte av och delas inte upp i komponenter.')]);
         }
 
-        $fiscalYear = FiscalYear::query()->whereDate('start_date', '<=', $splitOn->toDateString())->whereDate('end_date', '>=', $splitOn->toDateString())->first();
+        // Shared lock: a change of framework (ChangeReportingFramework) locks the years for update, so the two never pass each other.
+        $fiscalYear = FiscalYear::query()->whereDate('start_date', '<=', $splitOn->toDateString())->whereDate('end_date', '>=', $splitOn->toDateString())->sharedLock()->first();
 
         if ($fiscalYear === null) {
             throw ValidationException::withMessages(['split_date' => __('Det finns inget räkenskapsår för :date.', ['date' => $splitOn->toDateString()])]);

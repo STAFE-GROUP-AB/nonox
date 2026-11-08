@@ -13,6 +13,7 @@ use App\Domain\Company\ReportingFrameworkRules;
 use App\Models\AnnualReport;
 use App\Models\Company;
 use App\Models\FiscalYear;
+use App\Models\FixedAsset;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CompanyScope;
@@ -86,6 +87,10 @@ class ChangeReportingFramework
                 }
 
                 self::refuseLockedYears($company, $years, $fiscalYear);
+
+                if ($framework !== ReportingFramework::K3) {
+                    self::refuseComponents($company, $years, $fiscalYear, $framework);
+                }
 
                 $changed = 0;
                 $latestChanged = false;
@@ -174,6 +179,47 @@ class ChangeReportingFramework
                 throw ValidationException::withMessages(['reporting_framework' => __('K2 kan inte väljas för räkenskapsåret :year. :reason', ['year' => $year->label(), 'reason' => $eligibility->reasons[0] ?? ''])]);
             }
         }
+    }
+
+    /**
+     * Components exist only under K3 (ADR-059 A.2.4; K2 10.21–10.22): a year
+     * cannot leave K3 while an active component of a split asset is
+     * depreciated in it or in a later year of the change. Run after the years
+     * are locked: a split reads its year with a shared lock, so a split and a
+     * change never pass each other. Every query names the company explicitly
+     * (the caller runs under the scope bypass).
+     *
+     * @param  Collection<int, FiscalYear>  $years  the chosen year and every later one
+     *
+     * @throws ValidationException
+     */
+    private static function refuseComponents(Company $company, Collection $years, FiscalYear $from, ReportingFramework $framework): void
+    {
+        $last = $years->last();
+
+        if ($last === null) {
+            return;
+        }
+
+        $component = FixedAsset::query()
+            ->where('company_id', $company->id)
+            ->whereNotNull('parent_id')
+            ->where('status', FixedAsset::ACTIVE)
+            ->whereDate('depreciation_start', '<=', $last->end_date->toDateString())
+            ->with('parent:id,number,name')
+            ->orderBy('depreciation_start')
+            ->first();
+
+        if ($component === null || $component->parent === null) {
+            return;
+        }
+
+        throw ValidationException::withMessages(['reporting_framework' => __('Räkenskapsåret :year kan inte bytas till :framework, eftersom tillgången :asset är uppdelad i komponenter från :date och :framework inte tillåter komponenter.', [
+            'year' => $from->label(),
+            'framework' => $framework->value,
+            'asset' => "{$component->parent->number} {$component->parent->name}",
+            'date' => $component->depreciation_start->toDateString(),
+        ])]);
     }
 
     /**

@@ -804,8 +804,15 @@ mandate, open for the consultant's review:
   ends in 9 (components only; `store()` is unchanged); the asset's residual value
   is pre-filled over the parts by the largest remainder and shown in the review;
   focus moves to the confirmation button when the review opens.
-- *Framework change back to K2* after a split (P2-1) is refused once S1-P11 is
-  merged; see the note added then.
+- *Framework change back to K2 after a split* (P2-1, built after S1-P11 was
+  merged): `ChangeReportingFramework` refuses changing a year to K2 or K1 when an
+  active component of a split asset has its depreciation start on or before the
+  end of the last year the change reaches (the chosen year and every later one).
+  The check runs inside `CreateNextFiscalYear::lock` after the years are locked
+  for update, next to `refuseK3RequiredYears`; `FixedAssets::split()` reads its
+  year with a shared lock, so a split and a change cannot pass each other. The
+  Swedish message names the year, the asset and the split date and says K2 does
+  not allow components; it suggests no way to undo a split, because there is none.
 
 #### A.2.5 Size figures
 

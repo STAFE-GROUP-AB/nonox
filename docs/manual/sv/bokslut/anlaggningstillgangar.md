@@ -83,7 +83,7 @@ Uppdelningen kan inte göras i en låst period eller ett stängt räkenskapsår.
 Använd **Lägg till komponent** och **Ta bort** för att ändra antalet komponenter. En tillgång har minst två komponenter och högst en markkomponent.
 
 > [!WARNING]
-> Uppdelningen går inte att ångra. Avskrivningar som redan är bokförda ändras inte.
+> Uppdelningen går inte att ångra. Avskrivningar som redan är bokförda ändras inte. Så länge komponenterna skrivs av kan räkenskapsåret inte bytas tillbaka till K2.
 
 ### Det här händer vid uppdelningen
 

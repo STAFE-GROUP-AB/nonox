@@ -5,9 +5,11 @@ declare(strict_types=1);
 use App\Actions\Accounting\PostVoucher;
 use App\Actions\Accounting\SaveDraftVoucher;
 use App\Actions\Assets\FixedAssets;
+use App\Actions\Company\ChangeReportingFramework;
 use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\FiscalYearStatus;
 use App\Domain\AnnualReport\AnnualReportDocument;
+use App\Domain\Company\ReportingFramework;
 use App\Livewire\Accounting\FixedAssetsPage;
 use App\Models\Account;
 use App\Models\FiscalYear;
@@ -197,6 +199,38 @@ it('refuses a proposal without a life for an asset that is depreciated, and abov
     expect(fn () => $propose('EQUIPMENT', '', 1220))->toThrow(ValidationException::class)
         ->and(fn () => $propose('EQUIPMENT', '900', 1220))->toThrow(ValidationException::class, '600')
         ->and(fn () => $propose('BUILDINGS', '1300', 1110))->toThrow(ValidationException::class, '1200');
+});
+
+it('refuses to change a year with components back to K2, and the year keeps K3', function () {
+    $building = reviewBuilding();
+    $this->assets->split($this->owner, $this->company, $building->id, '2026-04-01', reviewParts());
+    $change = fn (FiscalYear $year) => app(ChangeReportingFramework::class)($this->owner, $year->fresh(), ReportingFramework::K2, null, ['framework_confirmed' => true]);
+
+    expect(fn () => $change($this->year))->toThrow(
+        ValidationException::class,
+        "Räkenskapsåret 2026 kan inte bytas till K2, eftersom tillgången {$building->number} Verkstadshus är uppdelad i komponenter från 2026-04-01 och K2 inte tillåter komponenter.",
+    )
+        ->and($this->year->fresh()->reporting_framework)->toBe(ReportingFramework::K3)
+        ->and($this->company->fresh()->reporting_framework)->toBe(ReportingFramework::K3);
+
+    // The components go on in the next year too: that year cannot go to K2 either.
+    $next = FiscalYear::create(['start_date' => '2027-01-01', 'end_date' => '2027-12-31']);
+
+    expect(fn () => $change($next))->toThrow(ValidationException::class, 'Räkenskapsåret 2027 kan inte bytas till K2')
+        ->and($next->fresh()->reporting_framework)->toBe(ReportingFramework::K3);
+});
+
+it('lets a year without active components go to K2', function () {
+    $building = reviewBuilding();
+    $this->assets->split($this->owner, $this->company, $building->id, '2026-04-01', reviewParts());
+
+    foreach (FixedAsset::query()->where('parent_id', $building->id)->get() as $component) {
+        $this->assets->dispose($this->owner, $component, '2026-04-01', '0');
+    }
+
+    app(ChangeReportingFramework::class)($this->owner, $this->year->fresh(), ReportingFramework::K2, null, ['framework_confirmed' => true]);
+
+    expect($this->year->fresh()->reporting_framework)->toBe(ReportingFramework::K2);
 });
 
 it('stops pre-filling the residual values once the person has typed one, also when costs change afterwards', function () {

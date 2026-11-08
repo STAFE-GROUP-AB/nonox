@@ -1760,6 +1760,9 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
     skillnad i eget kapital (S1-R7.2 a). Omföringen har källan `CLOSING` i
     serie A, som registrets avskrivningar och avyttringar.
   - En komponent avyttras med registrets vanliga avyttring.
+  - Ett år kan inte bytas till K2 eller K1 så länge en aktiv komponent skrivs
+    av i det eller i ett senare år som bytet omfattar. Kontrollen görs under
+    samma lås som bytet, och uppdelningen läser sitt år med ett delat lås.
   - Behandlingshistoriken: `fixed_asset.split` med datum, komponenternas id,
     anskaffningsvärde, avskrivet och omföringens verifikation (inga namn).
 
