@@ -391,3 +391,64 @@ The rule sheet gets an independent quote check before the module is merged. The 
 corrects the K2 chapter reference in `ValuationMethod` (chapter 12, not 11) and adds the
 missing BAS 2026 accounts (1410, 4910, 4310) to the templates, if the sheet's sources
 support them.
+
+## Addendum: as built (2026-11-08)
+
+Built on branch `feat/kitchen-recipes-waste`, for Lead's review. Where the build differs
+from the decision above, it says so.
+
+- **Engine (step 1)** in `app/Modules/Inventory/Structures` (`StructureBook`,
+  `StructureWriter`, `UnitCosts`, `StructureCost`) and `Domain/StructureMath`,
+  `StructureUnits`, `StructureKind`; tables `bills_of_materials`, `bom_rows`,
+  `article_unit_conversions` as decided, plus `entered_quantity`/`entered_unit` on a row
+  (what the person typed). A version is never changed, only switched off; every save is a
+  new version, and on equal `valid_from` the higher version wins. Explosion is recursive to
+  the components that are not themselves made from a structure on the date (a stocked
+  sub-recipe is exploded to its ingredients, not drawn as the sub-recipe article). Loops are
+  checked against every active version on save, with a depth limit as a second guard.
+  Fixtures F-RS-1 and F-RS-2 pass to the öre. Unit cost order: valuation cost, else the latest
+  receipt cost, else the article's purchase price, else "saknar pris" (incomplete).
+- **Stock classes (step 8)**: `articles.stock_class` (null = the company's
+  `default_stock_class`, which defaults to GOODS_FOR_RESALE). The original
+  `stock_account`/`change_account` settings are the GOODS_FOR_RESALE pair; new settings
+  `raw_material_stock_account` (1410) and `raw_material_change_account` (4910).
+  `BookStockValuation::plan()` groups the valuation per stock account; a class is included
+  when it has stock, is the default, or an article carries it, so an existing company books
+  exactly as before (tested). The split is saved in `stock_valuations.classes`.
+- **97 % rule (Lead O3)**: setting `rule_97`, shown and applied only for K2 companies, off by
+  default, with the K2 12.18 condition text; 97 % of each class's cost rounded half up;
+  refused when any article is written down to net realisable value.
+- **Module (step 2)** `app/Modules/Kitchen`, key `kitchen`, depends on `inventory`. Besides
+  the decided roles, the payroll administrator (`payroll_admin`) gets `kitchen:view` so that
+  the staff-meal hand-over (`kitchen:view` + `payroll:manage`) is reachable for that role.
+  Extra route `/kok/installningar` for the module settings; `/kok` redirects to
+  `/kok/recept`. New recipe at `/kok/recept/nytt`; a recipe's URL uses the output article id.
+- **Scanner (step 4)**: Lager got a small extension point (`Scanner\ScannerExtension`,
+  `ScannerExtensions`) so Kök adds the Svinn tile and the operation kind `waste` without
+  Lager depending on Kök. Kökspersonal may open Skanna through the extension's permission
+  without `inventory:view`; receipts, pick lists and counts are sent to the phone only to
+  those who handle goods. Staff meals are registered on the page only, not in the scanner.
+- **Waste**: correction reverses a whole entry (RETURN at today's cost per unit) and is
+  itself recorded as an entry with the opposite quantity; one correction per entry.
+- **Draw on sale (step 6)**: off by default; `draw_on_sale_from` is set to the day it is
+  switched on, and older sales are never drawn. A waiting ingredient (`kitchen_consumption_waits`)
+  is per ingredient and day; the till rows are recorded as drawn in the same run (unique per
+  row), and the waiting quantity is retried nightly or resolved by a person (post now or
+  leave to the count). Command `kitchen:consume` at 04:10.
+- **Variance (step 5)**: the two counts must be of the same location; movements are those
+  of that location subtree; theoretical consumption is from all the company's till rows
+  (dish articles, not stocked); COUNT movements are left out. F-RS-3 passes to the milli and
+  öre; F-RS-5 cases are tested. With draw on sale, the closing count's difference is shown
+  beside the variance.
+- **Staff meals (step 7)**: proposals live in `kitchen_payroll_proposals`; approval calls
+  `PayrollRuns::addInput` (source MANUAL, note "Personalmat … (Kök)"), so payroll's own
+  checks apply. Full day = at least one breakfast and two lunches or dinners on the same day
+  (TODO(legal-verify)). The own payment is capped per meal (per full day at the day value);
+  the excess is shown, not sent. A test runs a payroll calculation and shows an unrelated
+  benefit is not reduced (F-RS-4, employee C). The staff price entered is the amount deducted
+  from pay; meals paid at the till are sales and are not entered.
+- **Not built**: the owner's (EF) draft uttag voucher (§7, RS-R16, L9); "Ta emot från faktura"
+  (§10 step 2, later by decision); the landing feature card with a screenshot and the
+  manual screenshots (need a `nonox_demo_*` run). BAS 2026 templates got 1410 and 4910; 4310
+  was not added because the rule sheet does not quote its BAS name, and 4010 keeps its
+  present name.

@@ -15,6 +15,7 @@
 | Inbjudningar som inte accepterats | 14 dagar | Inbjudan går ut efter 14 dagar och saknar ändamål därefter | `privacy:prune` |
 | Nycklar till Fortnox vid avbruten flytt | 30 dagar utan aktivitet | Saknar ändamål | `privacy:prune` tömmer nycklarna; vid avslutad flytt direkt |
 | Avslagna ansökningar om frånvaro och avslagna utlägg med kvitto | 1 år efter beslutet | Underlag om beslutet ifrågasätts; aldrig räkenskapsinformation | `privacy:prune` |
+| Kök: personalmat per anställd (anställd, datum, måltid, betalt per måltid) | Som lönens underlag, 7 år efter utgången av det kalenderår då räkenskapsåret avslutades | Underlag för kostförmånen i lönen (IL 61 kap., BFL 7 kap. 2 §). TODO(legal-verify): lagringstiden (regelbladet L11) | Kan inte ändras eller raderas i systemet; rättas med en ny rad. Utan Lön påslaget sparas ingen anställd |
 | Säkerhetskopior av databas och filer | 7 dagar | Återställning vid fel; en raderad uppgift försvinner ur kopiorna inom 7 dagar | Krypterade, lagras bara i Sverige; äldre kopior raderas automatiskt varje natt |
 | Inkorgen: meddelanden som lett till bokföring (`.eml` och bilagor) | Som räkenskapsinformationen | Underlag till verifikationerna (BFL 7 kap.) | Kopplas till verifikationen; tas inte bort av gallringen |
 | E-faktura via Peppol: skickade e-fakturor (XML med PDF) | Som räkenskapsinformationen | Kopia av den utfärdade fakturan som den lämnade företaget (BFL 5 kap. 6 §, 7 kap. 1 § tredje stycket och 2 §; ML 17 kap. 30–31 §§) | Tas inte bort automatiskt |

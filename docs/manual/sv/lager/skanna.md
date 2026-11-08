@@ -45,6 +45,8 @@ Startsidan har fem stora knappar:
 - [Inventera](/manual/lager/skanna-inventera) – räkna hylla för hylla.
 - [Slå upp](/manual/lager/skanna-flytta-och-sla-upp#sla-upp) – vad är det här, och var finns det?
 
+Med modulen Kök påslagen finns också [Svinn](/manual/kok/svinn) – registrera det som slängs eller skänks.
+
 Överst finns skannfältet. Det har alltid fokus, så en handskanner skriver direkt i det. Du kan också trycka på kameran eller skriva koden själv.
 
 ## Vad Skanna förstår
@@ -69,7 +71,7 @@ Stäng av ljudet med högtalarknappen uppe till höger.
 
 ## Vem får använda Skanna
 
-Alla som får se lagret kan öppna Skanna och slå upp varor. För att ta emot, plocka, flytta och inventera behövs rätten att hantera varor. [Lagerpersonal](/manual/lager/roller-och-behorigheter) har den, men ser aldrig priser eller lagervärden. Skanna visar inga priser för någon.
+Alla som får se lagret kan öppna Skanna och slå upp varor. För att ta emot, plocka, flytta och inventera behövs rätten att hantera varor. [Lagerpersonal](/manual/lager/roller-och-behorigheter) har den, men ser aldrig priser eller lagervärden. Skanna visar inga priser för någon. Kökspersonal öppnar Skanna för att registrera svinn, utan att se lagrets övriga sidor.
 
 ## Läs också
 

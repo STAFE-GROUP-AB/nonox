@@ -9,7 +9,7 @@
 
 ### Ditt företag. Din data. Ditt system.
 
-Ett ekonomisystem med öppen källkod för svenska företag: bokföring, fakturor, moms, bokslut, lön, schema, personalliggare och lager i ett system.<br>
+Ett ekonomisystem med öppen källkod för svenska företag: bokföring, fakturor, moms, bokslut, lön, schema, personalliggare, lager och kök i ett system.<br>
 Du äger din data, kan granska varje rad kod och alltid ta med dig allt ut.
 
 [![CI](https://github.com/STAFE-GROUP-AB/nonox/actions/workflows/ci.yml/badge.svg)](https://github.com/STAFE-GROUP-AB/nonox/actions/workflows/ci.yml)
@@ -129,11 +129,18 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Lagerställen i lager, zoner, hyllor och fack med en kod per plats (HL-A-03-2), och saldo per artikel och plats.
 - Inleveranser från leverantörer, hela eller i delar, med eller utan koppling till leverantörsfakturan. Plocklistor från order, faktura eller för hand, sorterade efter plats, i mobilen eller som PDF.
 - Inventering per hylla eller hela lagret, där skillnaderna förs in med en orsak. Varje lagerrörelse sparas och kan aldrig ändras.
-- Lagervärde vid bokslut enligt FIFO eller vägt genomsnittspris med lägsta värdets princip, och lagerförändringen bokförd mot 1460 med ett klick. Rollen Lagerpersonal ser saldon men inga priser.
+- Lagervärde vid bokslut enligt FIFO eller vägt genomsnittspris med lägsta värdets princip, och lagerförändringen bokförd med ett klick per lagerslag: råvaror mot 1410/4910 och handelsvaror mot 1460/4960. Ett K2-företag kan välja 97-procentsregeln. Rollen Lagerpersonal ser saldon men inga priser.
 - Bilder på artiklarna, tagna direkt med mobilens kamera, med huvudbild i listorna, på plocklistan och i API:t. Med NONOX AI föreslås benämning, beskrivning, varumärke, egenskaper och EAN-kod från bilderna, och du bockar i vad som ska användas. Snabbregistrera en ny vara med kameran.
 - Etiketter med pris, EAN-streckkod eller QR-kod för artiklar och platskod för hyllor och fack, på A4-etikettark eller i etikettskrivare. Etikettstudion visar etiketten i skala medan du ändrar mallen och varnar för det som inte får plats. Utskrift från artikellistan, en inleverans eller ett helt hyllträd, och filtret Ej utskrivna.
 - Skanna med mobilen: ta emot, plocka, flytta, inventera och slå upp varor med telefonens kamera, en Bluetooth-skanner eller en handskanner. Fel vara vid plock ger rött blink, ljud och vibration. Fungerar utan nät: allt sparas i telefonen och skickas en gång när det finns nät.
 - Kassakopplingar (modul, ADR-042) för Zettle och Onslip 360: varje köp sparas en gång och dras från lagret, rader utan artikel väntar på att kopplas, lagerändringar skickas till Zettle som ändringar, artiklarna läggs upp i kassan och varje dag blir ett verifikationsutkast i serie K. Kräver att den som driftar registrerar en egen app hos kassaleverantören (se `.env.example`); öppnas på webbplatsen när det är gjort.
+
+### Kök (modul) – ny
+- Recept med portionskostnad och marginal per rätt: ingredienser med nettomängd, svinn och utbyte, grundrecept som sås och fond i flera nivåer, och versioner från ett datum så att tidigare försäljning räknas med det recept som gällde då. Kostnaden räknas från lagrets värde enligt företagets värderingsmetod.
+- Menyn med portionskostnad, pris, täckningsbidrag och råvarukostnad i procent, och från kassan sålda portioner, snittpris och intjänat bidrag. Rätter över företagets mål markeras; NONOX ändrar aldrig ett pris.
+- Svinn med orsak, på sidan eller med mobilens Svinn-ruta: en råvara eller en hel rätt som dras från lagret enligt receptet. Tallrikssvinn vägs i kg. Loggen kan inte ändras, bara rättas med en ny rad.
+- Personalmat som dras från lagret som eget bruk, och med Lön påslaget föreslås kostförmånerna till lönen, där löneadministratören godkänner dem. Ingen verifikation och ingen moms bokas för svinn eller personalmat.
+- Avvikelser mellan två inventeringar: vad kassans försäljning borde ha använt, svinn och personalmat, jämfört med vad som räknades. Kan också dra råvarorna från lagret varje natt när kassan säljer (avstängt från början). Rollen Kökspersonal registrerar utan att se några priser.
 
 ### CRM (modul) – ny
 - Kunder och prospekt med kontaktpersoner: när modulen är på blir Kunder ett CRM, och varje kund i kundregistret får ett kort. Ett prospekt får kundnummer först när det blir kund. En person kan höra till flera företag med en roll hos varje (beslutsfattare, ambassadör, påverkare, användare, fakturamottagare), och varje person har en rättslig grund enligt GDPR.

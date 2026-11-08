@@ -214,11 +214,11 @@
     {
       "id": "recept-och-svinn",
       "rubrik": "Recept och svinn för restauranger",
-      "beskrivning": "Räkna fram vad en rätt kostar med råvarupriserna från leverantörsfakturorna, se marginalen per rätt och för en logg över svinn. Kassans dagsrapporter visar vad som har sålts.",
-      "status": "Planerat",
+      "beskrivning": "Räkna fram vad en rätt kostar med råvarupriserna från inleveranserna, se marginalen per rätt och för en logg över svinn. Kassans försäljningsrader visar vad som har sålts.",
+      "status": "Pågår",
       "omrade": "Lager",
       "uppdaterad": "2026-11-08",
-      "kommentar": "Vi provar det med pilotföretagen innan det byggs färdigt."
+      "kommentar": "Modulen Kök är byggd: recept, meny, svinn, personalmat och avvikelser. Den provas med ett pilotföretag, och jurist och redovisningskonsult granskar reglerna innan den räknas som klar."
     },
     {
       "id": "arbetsorder-och-ata",
