@@ -10657,5 +10657,16 @@
     "För företag som följer K3: skillnaderna mellan redovisat och skattemässigt värde, den uppskjutna skatten på dem och bokföringen av förändringen i bokslutet.": "For companies that follow K3: the differences between carrying amount and tax value, the deferred tax on them and the booking of the change in the year-end closing.",
     ":amount bokfört på 8940.": ":amount booked on 8940.",
     "Företaget följer K3 och redovisar uppskjuten skatt på skillnader mellan redovisade och skattemässiga värden. Bokför den före årets resultat.": "The company follows K3 and recognises deferred tax on differences between carrying amounts and tax values. Book it before the year's result.",
-    "Gå till uppskjuten skatt": "Go to deferred tax"
+    "Gå till uppskjuten skatt": "Go to deferred tax",
+    "Avtalsfakturor": "Agreement invoices",
+    "Lön och arbetsgivarskatter": "Payroll and employer taxes",
+    "Så räknas prognosen: dagens saldo på bank och kassa (konto 1900–1999), plus obetalda kundfakturor och minus obetalda leverantörsfakturor den månad de förfaller.": "How the forecast is calculated: today's bank and cash balance (accounts 1900–1999), plus unpaid customer invoices and minus unpaid supplier invoices in the month they fall due.",
+    "Kommande fakturor från avtal räknas på sina förfallodagar, och momsen på dem den dag den ska betalas.": "Coming invoices from agreements count on their due dates, and the VAT on them on the day it is to be paid.",
+    "Lön räknas från lönekörningarna: nettolönen på utbetalningsdagen, skatt och arbetsgivaravgifter den dag de ska betalas till Skatteverket, och en månad utan lönekörning som den senaste.": "Payroll is taken from the payroll runs: net pay on the payment day, tax and employer contributions on the day they are to be paid to Skatteverket, and a month without a payroll run like the latest one.",
+    "Lön ingår bara genom resultatet, eftersom lönemodulen inte är på eller inte har någon lönekörning de senaste tre månaderna.": "Payroll is included only through the result, because the payroll module is off or has no payroll run in the last three months.",
+    "Momsen räknas per period på den dag den ska deklareras och betalas, med det som är bokfört hittills.": "VAT is counted per period on the day it is to be declared and paid, with what is booked so far.",
+    "F-skatten räknas med månadsbeloppet du har fyllt i.": "The F-tax is counted with the monthly amount you have entered.",
+    "F-skatt ingår bara genom resultatet tills du fyller i Debiterad preliminärskatt per månad (frivilligt) under företagets uppgifter.": "F-tax is included only through the result until you fill in Debited preliminary tax per month (optional) in the company details.",
+    "Saldot på skattekontot (konto 1630) räknas också, och pengar där betalar skatterna först.": "The balance of the tax account (account 1630) counts too, and money there pays the taxes first.",
+    "Sist läggs det genomsnittliga resultatet för de tre senaste hela månaderna till (:average per månad; för den här månaden bara de dagar som är kvar), utan det som redan räknas för sig. Förfallna belopp räknas i den här månaden. Det är en enkel räkning, ingen AI och ingen garanti.": "Last, the average result of the last three whole months is added (:average per month; for this month only the days left), without what is already counted on its own. Overdue amounts count in this month. It is a simple calculation, no AI and no guarantee."
 }

@@ -83,6 +83,35 @@ function options(horizontal = false) {
 }
 
 /**
+ * The parts of one forecast month, each as it changes the balance:
+ * "Kundfakturor: +12 500 kr". Parts that are zero are left out; nothing
+ * for a point that is not a forecast.
+ *
+ * @param {object|undefined} point a point of data.liquidity.forecast
+ * @param {object} labels the part names, translated on the server
+ * @returns {string[]}
+ */
+export function forecastParts(point, labels) {
+    if (!point) {
+        return [];
+    }
+
+    const parts = [
+        [labels.customerInvoices, point.inflow],
+        [labels.supplierInvoices, -point.outflow],
+        [labels.recurring, point.recurring ?? 0],
+        [labels.payroll, point.payroll ?? 0],
+        [labels.vatFlow, point.vat ?? 0],
+        [labels.taxAccount, point.tax_account ?? 0],
+        [labels.trend, point.trend],
+    ];
+
+    return parts
+        .filter(([, ore]) => kronor(ore) !== 0)
+        .map(([label, ore]) => `${label}: ${ore > 0 ? '+' : ''}${formatKronor(kronor(ore))}`);
+}
+
+/**
  * The Chart.js configuration of one chart.
  *
  * @param {string} kind revenue | result | liquidity | customers | accounts | vat | staffing | staffing-percent
@@ -114,11 +143,15 @@ export function chartConfig(kind, data, labels) {
             // The forecast starts at today's balance, so the two lines meet.
             const forecastValues = [...actual.map((point, index) => (index === actual.length - 1 ? point.balance : null)), ...forecast.map((point) => point.balance)];
 
-            return {
+            const config = {
                 type: 'line',
                 data: { labels: names, datasets: [line(labels.balance, actualValues, COLORS.second), line(labels.forecast, forecastValues, COLORS.second, true)] },
                 options: options(),
             };
+            // A forecast month's tooltip shows what moves the line, so the owner can see why.
+            config.options.plugins.tooltip.callbacks.afterBody = (items) => forecastParts(forecast[(items[0]?.dataIndex ?? -1) - actual.length], labels);
+
+            return config;
         }
         case 'customers':
             return {
