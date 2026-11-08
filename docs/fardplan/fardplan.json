@@ -153,11 +153,12 @@
     },
     {
       "id": "stycklistor-och-tillverkning",
-      "rubrik": "Stycklistor och tillverkning i lagret",
-      "beskrivning": "En artikel som byggs av andra artiklar, till exempel en byrå av 45 delar i flera steg. En tillverkningsorder drar delarna ur lagret och lägger in den färdiga varan, värderad efter vad delarna kostade. Satsartiklar, där delarna dras direkt när paketet säljs, hör till samma önskemål.",
-      "status": "Önskemål",
+      "rubrik": "Stycklistor och tillverkningsorder",
+      "beskrivning": "En artikel som byggs av andra artiklar och arbetssteg, till exempel ett bord av skiva, ben, beslag, lack och fyra timmars snickeri. På offerten och ordern ser du direkt vad materialet och arbetet kostar och vilken marginal du har. Stycklistan kan ändras för just den ordern utan att en ny struktur skapas, och NONOX räknar ut om delarna räcker till hela antalet.",
+      "status": "Planerat",
       "omrade": "Lager",
-      "uppdaterad": "2026-11-03"
+      "uppdaterad": "2026-11-08",
+      "kommentar": "Vi provar det med ett snickeri innan det byggs färdigt."
     },
     {
       "id": "fraga-siffrorna",
@@ -285,6 +286,31 @@
       "omrade": "Connect/API",
       "uppdaterad": "2026-11-08",
       "kommentar": "Vi har inte bestämt om det blir en egen modul eller en koppling till befintliga bokningssystem."
+    },
+    {
+      "id": "inkopsorder",
+      "rubrik": "Inköpsordrar till leverantörer",
+      "beskrivning": "Det som saknas till en order eller ligger under beställningspunkten blir förslag på inköpsordrar, en per leverantör. Du granskar dem och skriver ut eller mejlar dem till leverantören. Inleveransen bockas av mot ordern och leverantörsfakturan stäms av mot den.",
+      "status": "Planerat",
+      "omrade": "Lager",
+      "uppdaterad": "2026-11-08"
+    },
+    {
+      "id": "produktionsterminal",
+      "rubrik": "Produktionsterminal på läsplattan",
+      "beskrivning": "I verkstaden trycker man på sin bild, slår sin kod, väljer en öppen tillverkningsorder och anger hur länge man arbetat med den. Tiden ger orderns verkliga arbetskostnad och visar var arbetet tar längre tid än beräknat.",
+      "status": "Planerat",
+      "omrade": "Lager",
+      "uppdaterad": "2026-11-08",
+      "kommentar": "Uppföljning per person kräver information till personalen och ibland förhandling, och är därför avstängd tills företaget slår på den."
+    },
+    {
+      "id": "orderportal-for-kunder",
+      "rubrik": "Kunder lägger order själva",
+      "beskrivning": "Företagskunder loggar in och beställer ur sitt sortiment med sina priser, eller skickar en specifikation som NONOX tolkar till ett orderutkast. Någon hos dig granskar och sparar ordern, och kunden får en bekräftelse med ett preliminärt leveransdatum räknat ur hur lång tid produkterna brukat ta.",
+      "status": "Planerat",
+      "omrade": "Fakturering",
+      "uppdaterad": "2026-11-08"
     }
   ]
 }
