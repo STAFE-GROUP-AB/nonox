@@ -36,6 +36,7 @@ final class ArchivedCompany
         'payroll:view', 'payroll:view-sensitive', 'payroll:archive-view', 'self:payslips',
         'staff-ledger:view', 'staff-ledger:view-sensitive',
         'inbox:view',
+        'mileage:view',
     ];
 
     public static function isArchived(Company|int|null $company): bool

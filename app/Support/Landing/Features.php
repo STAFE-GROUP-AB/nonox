@@ -55,7 +55,7 @@ final class Features
         'agreements' => ['name' => 'Kollektivavtal i lönen', 'status' => self::LIVE, 'readme' => 'Kollektivavtal i lönen: avtalets värden som versionerad data med källa', 'module' => 'Avtal'],
         'young_employer_contributions' => ['name' => 'Arbetsgivaravgifter med sänkningen för unga', 'status' => self::LIVE, 'readme' => 'arbetsgivaravgifter med sänkningen för unga', 'module' => 'Lön'],
         'vacation_sick_pay' => ['name' => 'Semester och sjuklön', 'status' => self::LIVE, 'readme' => 'Semester enligt semesterlagen', 'module' => 'Lön'],
-        'travel_expenses' => ['name' => 'Traktamente, milersättning och utlägg', 'status' => self::LIVE, 'readme' => 'traktamente och milersättning, tjänstepension, utlägg med kvitto', 'module' => 'Lön'],
+        'travel_expenses' => ['name' => 'Traktamente, milersättning, körjournal och utlägg', 'status' => self::LIVE, 'readme' => 'traktamente och milersättning med körjournal, tjänstepension, utlägg med kvitto', 'module' => 'Lön'],
         'agi' => ['name' => 'Arbetsgivardeklaration (AGI)', 'status' => self::LIVE, 'readme' => 'Arbetsgivardeklaration (AGI) som XML', 'module' => 'Lön'],
         'employee_portal' => ['name' => 'Min sida för anställda', 'status' => self::LIVE, 'readme' => 'Min sida för anställda: lönebesked, sjukanmälan', 'module' => 'Lön'],
         'staff_ledger' => ['name' => 'Personalliggare med kiosk', 'status' => self::LIVE, 'readme' => 'in- och utcheckning i en kiosk på en surfplatta, som fungerar även utan internet', 'module' => 'Personalliggare'],

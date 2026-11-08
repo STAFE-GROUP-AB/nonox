@@ -12,9 +12,11 @@ use App\Models\FiscalYear;
 use App\Models\IncomeTaxPartner;
 use App\Models\Invoice;
 use App\Models\K10Owner;
+use App\Models\MileageRoute;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\User;
+use App\Models\VehicleTrip;
 use App\Modules\Crm\Support\CrmExport;
 use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMessage;
@@ -187,6 +189,11 @@ final class DataSubjectExport
                 ->map(fn (Absence $absence): array => ['typ' => $absence->type, 'fran' => $absence->date_from->toDateString(), 'till' => $absence->date_to->toDateString(), 'status' => $absence->status, 'anteckning' => $absence->note])->all(),
             'utlagg' => Expense::query()->where('employee_id', $employee->id)->orderBy('date')->get()
                 ->map(fn (Expense $expense): array => ['datum' => $expense->date->toDateString(), 'beskrivning' => $expense->description, 'belopp_ore' => $expense->amount_ore->ore, 'status' => $expense->status])->all(),
+            'sparade_vagar' => $employee->user_id === null ? [] : MileageRoute::query()->where('user_id', $employee->user_id)->orderBy('id')->get()
+                ->map(fn (MileageRoute $route): array => ['vag' => $route->label, 'stracka_hm' => $route->distance_hm])->all(),
+            // The körjournal (ADR-072 §9): every trip the person logged, with what it holds.
+            'korjournal' => VehicleTrip::query()->where('employee_id', $employee->id)->orderBy('trip_date')->get()
+                ->map(fn (VehicleTrip $trip): array => ['datum' => $trip->trip_date->toDateString(), 'typ' => $trip->kind->value, 'stracka_hm' => $trip->distance_hm, 'fran' => $trip->from_place, 'till' => $trip->to_place, 'arende' => $trip->purpose, 'matare_start_km' => $trip->odometer_start_km, 'matare_slut_km' => $trip->odometer_end_km, 'status' => $trip->status->value])->all(),
         ];
     }
 

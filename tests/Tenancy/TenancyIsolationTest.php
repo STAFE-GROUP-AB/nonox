@@ -38,6 +38,7 @@ use App\Models\InvoiceReminder;
 use App\Models\InvoiceRow;
 use App\Models\K10Owner;
 use App\Models\K10Year;
+use App\Models\MileageRoute;
 use App\Models\MonthCloseCheck;
 use App\Models\NumberSeries;
 use App\Models\OpeningBalance;
@@ -67,6 +68,9 @@ use App\Models\User;
 use App\Models\VatNumberCheck;
 use App\Models\VatReport;
 use App\Models\VatSubmission;
+use App\Models\Vehicle;
+use App\Models\VehicleTrip;
+use App\Models\VehicleYearReading;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
 use App\Models\VoucherNumberCounter;
@@ -222,6 +226,10 @@ const COMPANY_SCOPED_MODELS = [
     VoucherSeries::class => ['code' => 'A', 'name' => 'Manuell'],
     CostCenter::class => ['code' => '10', 'name' => 'Restaurang Malmö'],
     Project::class => ['code' => 'P1', 'name' => 'Ombyggnad kök'],
+    Vehicle::class => ['kind' => 'COMPANY_CAR', 'label' => 'Hemlig bil', 'registration_number' => 'HEM123', 'fuel' => 'PETROL'],
+    VehicleYearReading::class => 'vehicleYearReadingAttributes',
+    VehicleTrip::class => 'vehicleTripAttributes',
+    MileageRoute::class => 'mileageRouteAttributes',
     // Records that need other records of the same company get a closure.
     Voucher::class => 'voucherAttributes',
     VoucherRow::class => 'voucherRowAttributes',
@@ -703,6 +711,21 @@ function voucherRowHistoryAttributes(): array
         'account_number' => 1930,
         'amount_ore' => 100,
     ];
+}
+
+function vehicleYearReadingAttributes(): array
+{
+    return ['vehicle_id' => Vehicle::create(['kind' => 'COMPANY_CAR', 'label' => 'Hemlig bil', 'fuel' => 'PETROL'])->id, 'year' => 2026, 'start_odometer_km' => 10_000];
+}
+
+function vehicleTripAttributes(): array
+{
+    return ['vehicle_id' => Vehicle::create(['kind' => 'COMPANY_CAR', 'label' => 'Hemlig bil', 'fuel' => 'PETROL'])->id, 'trip_date' => '2026-03-02', 'kind' => 'BUSINESS', 'distance_hm' => 420, 'purpose' => 'Hemligt ärende'];
+}
+
+function mileageRouteAttributes(): array
+{
+    return ['user_id' => User::factory()->create()->id, 'label' => 'Hemlig väg', 'distance_hm' => 142];
 }
 
 function fixedAssetAttributes(): array

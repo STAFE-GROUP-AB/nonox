@@ -28,6 +28,16 @@
         <button type="button" class="text-sm font-medium text-accent-700 hover:underline" x-on:click="help = true">{{ __('Kortkommandon (?)') }}</button>
     </div>
 
+    @if(auth()->user()->hasTeamPermission(auth()->user()->currentCompany(), 'inbox:manage'))
+        {{-- Fota kvitto (ADR-072 §8): a company receipt from the phone, checked like a mail attachment before anything reads it. --}}
+        <form wire:submit="uploadReceipt" class="flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-white px-5 py-4 text-sm" aria-label="{{ __('Fota kvitto') }}">
+            <x-ui.field for="receipt_photo" :label="__('Fota kvitto')" error="receiptPhoto" class="min-w-64 flex-1" :hint="__('Ett kvitto som företaget har betalat. Det kontrolleras och läses som om det kom med e-post, och inget bokförs förrän någon har godkänt det.')">
+                <input id="receipt_photo" type="file" accept="image/*,application/pdf" capture="environment" class="mt-1 block w-full text-sm" wire:model="receiptPhoto">
+            </x-ui.field>
+            <x-button wire:loading.attr="disabled" wire:target="uploadReceipt,receiptPhoto">{{ __('Skicka till inkorgen') }}</x-button>
+        </form>
+    @endif
+
     @if($unassigned->isNotEmpty() && $canManage)
         <x-ui.card :title="__('Väntar på att ett företag hämtar dem')">
             <p class="text-sm text-gray-600">{{ __('E-post till den gemensamma adressen från någon som är med i flera av dina företag. Hämta det som gäller det här företaget.') }}</p>
@@ -187,6 +197,9 @@
                         @include('inbox::livewire.partials.daily-report')
                     @elseif($kind === 'vouchers')
                         @include('inbox::livewire.partials.vouchers')
+                        @if(auth()->user()->currentCompany()?->legal_form === App\Domain\Company\LegalForm::Ef)
+                            <button type="button" class="mt-3 text-sm font-medium text-accent-700 hover:underline" wire:click="paidPrivately">{{ __('Betalt privat (2018 Övriga egna insättningar)') }}</button>
+                        @endif
                     @elseif($kind === 'supplier_invoice')
                         @include('inbox::livewire.partials.supplier-invoice')
                     @endif

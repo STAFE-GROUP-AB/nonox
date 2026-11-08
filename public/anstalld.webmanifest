@@ -1,7 +1,7 @@
 {
     "name": "NONOX Min sida",
     "short_name": "Min sida",
-    "description": "Lönebesked, frånvaro och utlägg hos din arbetsgivare.",
+    "description": "Lönebesked, frånvaro, utlägg och körjournal hos din arbetsgivare.",
     "lang": "sv",
     "dir": "ltr",
     "id": "/anstalld",
@@ -15,6 +15,34 @@
         "business",
         "finance",
         "productivity"
+    ],
+    "shortcuts": [
+        {
+            "name": "Fota kvitto",
+            "short_name": "Fota kvitto",
+            "description": "Lägg in ett utlägg med en bild av kvittot.",
+            "url": "/anstalld/kvitto",
+            "icons": [
+                {
+                    "src": "/brand/icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Ny resa",
+            "short_name": "Ny resa",
+            "description": "Lägg in en resa i körjournalen.",
+            "url": "/anstalld/korjournal/ny",
+            "icons": [
+                {
+                    "src": "/brand/icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        }
     ],
     "icons": [
         {

@@ -35,7 +35,8 @@ final class AgiDeclaration
 
     private const array FUEL_BENEFIT = ['DRIVMEDELSFORMAN'];
 
-    private const array MILEAGE = ['MILERSATTNING'];
+    /** Ruta 050: own car, and a förmånsbil where the employee paid the fuel (Skatteverket, fältkod 050; ADR-072 KJ-R10). */
+    public const array MILEAGE = ['MILERSATTNING', 'MIL_FORMANSBIL', 'MIL_FORMANSBIL_EL'];
 
     private const array PER_DIEM = ['TRAKTAMENTE_HEL', 'TRAKTAMENTE_HALV', 'TRAKTAMENTE_NATT'];
 

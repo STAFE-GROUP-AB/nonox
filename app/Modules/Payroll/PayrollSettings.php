@@ -32,6 +32,12 @@ final class PayrollSettings
         'agi_deadline_group' => ['TURNOVER_UP_TO_40_MSEK', 'TURNOVER_OVER_40_MSEK'],
         'holiday_calendar' => ['SE'],
         'regional_support' => null,
+        // Körjournal (ADR-072 §6): the company's rates in kronor per mil (blank = Skatteverket's schablon for the payment year),
+        // whether trips to and from work are paid (always taxable), and the day of the month to send trips by (a reminder only).
+        'mileage_own_car_rate' => null,
+        'mileage_company_car_rate' => null,
+        'mileage_pay_commute' => null,
+        'mileage_claim_last_day' => null,
     ];
 
     /** Settings that are shown but decided elsewhere, so the form does not save them. */
@@ -64,5 +70,9 @@ final class PayrollSettings
         'holiday_calendar' => 'SE',
         // Lag (2001:1170) om regionalt stöd: the company confirms a fast driftställe in the stödområde and the conditions in 2–4 §§ (#78).
         'regional_support' => false,
+        'mileage_own_car_rate' => '',
+        'mileage_company_car_rate' => '',
+        'mileage_pay_commute' => false,
+        'mileage_claim_last_day' => '',
     ];
 }

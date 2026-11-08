@@ -14,6 +14,7 @@ use App\Models\Account;
 use App\Models\Company;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Modules\Inbox\Domain\Channel;
 use App\Modules\Inbox\Domain\MessageStatus;
 use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMessage;
@@ -271,6 +272,11 @@ class ApproveInboxMessage
             }
 
             $this->attach->linkStoredFile($user, $voucher, $attachment->path, $attachment->filename, $attachment->mime, $attachment->size, $attachment->sha256);
+        }
+
+        // A photographed receipt (ADR-072) has no mail: its original is the photo, already linked above under its own name and type.
+        if ($message->channel === Channel::Upload) {
+            return;
         }
 
         $this->attach->linkStoredFile($user, $voucher, $message->eml_path, mb_substr(FileName::clean(($message->subject ?: __('E-post')).'.eml'), 0, 255), 'message/rfc822', $message->eml_size, $message->eml_sha256);

@@ -22,8 +22,9 @@ Din arbetsgivare bestämmer vad ni använder. Ser du inte något som står här,
 3. [Mitt schema](/manual/personal/mitt-schema)
 4. [Dina lönebesked](/manual/personal/lonebesked)
 5. [Lägg in ett utlägg](/manual/personal/utlagg)
-6. [Sjukanmälan och vård av barn](/manual/personal/sjukanmalan)
-7. [Ansök om semester](/manual/personal/semester)
+6. [Körjournal](/manual/personal/korjournal)
+7. [Sjukanmälan och vård av barn](/manual/personal/sjukanmalan)
+8. [Ansök om semester](/manual/personal/semester)
 
 ## Checka in och ut
 

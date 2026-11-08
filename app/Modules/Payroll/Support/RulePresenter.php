@@ -30,6 +30,7 @@ final class RulePresenter
         'benefit.meal.lunch_or_dinner' => 'Kostförmån, lunch eller middag',
         'benefit.car.formula' => 'Bilförmån, beräkning',
         'benefit.car.scope' => 'Bilförmån, vilka bilar som räknas',
+        'benefit.car.minor_extent' => 'Bilförmån i ringa omfattning (körjournal)',
         'benefit.fuel.factor' => 'Drivmedelsförmån, uppräkning',
         'per_diem.domestic.full' => 'Traktamente i Sverige, hel dag',
         'per_diem.domestic.half' => 'Traktamente i Sverige, halv dag',

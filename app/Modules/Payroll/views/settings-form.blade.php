@@ -20,6 +20,10 @@
         'agi_deadline_group' => __('Deklarationsdag för arbetsgivardeklarationen'),
         'holiday_calendar' => __('Helgdagskalender'),
         'regional_support' => __('Regionalt stöd (nedsatta arbetsgivaravgifter i stödområdet)'),
+        'mileage_own_car_rate' => __('Körjournal: milersättning för egen bil, kronor per mil'),
+        'mileage_company_car_rate' => __('Körjournal: milersättning för förmånsbil, kronor per mil'),
+        'mileage_pay_commute' => __('Körjournal: ersätt resor till och från arbetet'),
+        'mileage_claim_last_day' => __('Körjournal: sista dag i månaden att skicka in resor'),
     ];
     $values = [
         'MONTHLY_CURRENT' => __('Innevarande månad'), 'MONTHLY_ARREARS' => __('Efterskott'),
@@ -56,10 +60,19 @@
             @elseif($key === 'vacation_day_value_percent')
                 <input id="payroll_{{ $key }}" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="settings.{{ $key }}">
                 <p class="mt-1 text-xs text-gray-500">{{ __('För sammalöneregeln. Semesterlagen anger inget dagsvärde; 4,6 % är vanligt i kollektivavtal. Semestertillägget räknas till.') }}</p>
+            @elseif(in_array($key, ['mileage_own_car_rate', 'mileage_company_car_rate'], true))
+                <input id="payroll_{{ $key }}" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="settings.{{ $key }}" placeholder="{{ __('Skatteverkets belopp') }}">
+                <p class="mt-1 text-xs text-gray-500">{{ __('Lämna tomt för Skatteverkets skattefria belopp. Ett högre belopp delas: det skattefria beloppet utan skatt, resten som lön med skatt och arbetsgivaravgifter.') }}</p>
+            @elseif($key === 'mileage_claim_last_day')
+                <input id="payroll_{{ $key }}" type="number" min="1" max="31" class="{{ $input }} mt-1" wire:model="settings.{{ $key }}">
+                <p class="mt-1 text-xs text-gray-500">{{ __('En påminnelse på Min sida, inget stopp. Lämna tomt för ingen påminnelse.') }}</p>
             @elseif(in_array($key, ['default_payment_day', 'vacation_year_start_month'], true))
                 <input id="payroll_{{ $key }}" type="number" class="{{ $input }} mt-1" wire:model="settings.{{ $key }}">
             @else
                 <label class="mt-2 flex items-center gap-2 text-sm"><input id="payroll_{{ $key }}" type="checkbox" class="rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="settings.{{ $key }}"> {{ __('Ja') }}</label>
+                @if($key === 'mileage_pay_commute')
+                    <p class="mt-1 text-xs text-gray-500">{{ __('Resor mellan bostaden och arbetsplatsen är privata. Betalar företaget för dem blir ersättningen alltid lön med skatt och arbetsgivaravgifter.') }}</p>
+                @endif
                 @if($key === 'regional_support')
                     <p class="mt-1 text-xs text-gray-500">{{ __('Kryssa bara i om de anställda arbetar vid ett fast driftställe i stödområdet och företaget uppfyller villkoren i lagen om regionalt stöd (till exempel inte finans, försäkring, transport eller stål). Avdraget är 10 procent av avgiftsunderlaget, högst 7 100 kronor per månad, inte för den som fyllt 67 vid årets början.') }}</p>
                 @endif

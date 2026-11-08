@@ -34,6 +34,14 @@ class MyExpenses extends Component
 
     public ?TemporaryUploadedFile $receipt = null;
 
+    /** The staff app's shortcut "Fota kvitto" opens the form at once (ADR-072 §8). */
+    public function mount(): void
+    {
+        if (request()->boolean('utlagg')) {
+            $this->start();
+        }
+    }
+
     public function start(): void
     {
         $this->open = true;
@@ -70,7 +78,7 @@ class MyExpenses extends Component
     {
         $employee = Employee::query()->where('user_id', $this->user()->id)->first();
 
-        $expenses = $employee === null ? collect() : Expense::query()->where('employee_id', $employee->id)->whereNotNull('requested_by')->latest('date')->latest('id')->limit(10)->get();
+        $expenses = $employee === null ? collect() : Expense::query()->where('employee_id', $employee->id)->where('type', 'OUTLAY')->whereNotNull('requested_by')->latest('date')->latest('id')->limit(10)->get();
 
         return view('payroll::livewire.my-expenses', [
             'employee' => $employee,

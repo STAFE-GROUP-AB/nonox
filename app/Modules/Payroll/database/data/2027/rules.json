@@ -189,6 +189,39 @@
             "source_url": "https://www.skatteverket.se/foretag/etjansterochblanketter/allaetjanster/schemalagerxml.4.dfe345a107ebcc9baf80006452.html",
             "source_quote": "Schemalagret listar den 2 november 2026 endast Arbetsgivardeklaration – XML-schema version 1.1; ingen ny version är aviserad för 2027.",
             "source_read_on": "2026-11-02"
+        },
+        {
+            "key": "mileage.own_car_tax_free_per_mil",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "ore": 2500
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 12 kap. 5 §: Utgifter för tjänsteresor med egen bil ska dras av med 2 kronor och 50 öre för varje kilometer.",
+            "source_read_on": "2026-11-08"
+        },
+        {
+            "key": "mileage.company_car_fossil",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "ore": 1200
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 12 kap. 5 § andra stycket: utgifter för annat drivmedel med 1 krona och 20 öre för varje kilometer.",
+            "source_read_on": "2026-11-08"
+        },
+        {
+            "key": "mileage.company_car_electric",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "ore": 950
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 12 kap. 5 § andra stycket: utgifter för elektricitet till elbil dras av med 95 öre för varje kilometer.",
+            "source_read_on": "2026-11-08"
         }
     ],
     "pending": [
@@ -240,27 +273,6 @@
             "expected": "december 2026",
             "source_url": "https://www.skatteverket.se/privat/skatter/arbeteochinkomst/traktamente.4.dfe345a107ebcc9baf80006547.html",
             "note": "Normalbelopp per country are published yearly; not researched for 2026 either."
-        },
-        {
-            "key": "mileage.own_car_tax_free_per_mil",
-            "authority": "Skatteverket",
-            "expected": "december 2026",
-            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-            "note": "The legal basis for the amount was not found in the law text; wait for Belopp och procent 2027."
-        },
-        {
-            "key": "mileage.company_car_fossil",
-            "authority": "Skatteverket",
-            "expected": "december 2026",
-            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-            "note": "Wait for Belopp och procent 2027."
-        },
-        {
-            "key": "mileage.company_car_electric",
-            "authority": "Skatteverket",
-            "expected": "december 2026",
-            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-            "note": "Wait for Belopp och procent 2027."
         },
         {
             "key": "gift.tax_free_limits",
@@ -378,6 +390,13 @@
             ],
             "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
             "note": "Inkomstskattelagen 61 kap. 7 och 10 §§ and the transitional provisions of SFS 2021:479 and 2022:479, ändrad t.o.m. SFS 2026:1393, and socialavgiftslagen 2 kap. 10 a §, ändrad t.o.m. SFS 2026:493 (read 2026-11-06). TODO(legal-verify): amendments in force from 2027-01-01 after the budget bill."
+        },
+        {
+            "keys": [
+                "benefit.car.minor_extent"
+            ],
+            "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/lonochersattning/formaner/bilforman/korjournal.4.3016b5d91791bf546791a00.html",
+            "note": "Skatteverket's guidance on bilförmån i ringa omfattning (100 mil and 10 occasions), read 2026-11-08; advice only in the körjournal (ADR-072). TODO(legal-verify): check again in January 2027."
         }
     ]
 }

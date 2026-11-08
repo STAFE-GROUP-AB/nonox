@@ -206,10 +206,10 @@
       "id": "korjournal-och-kvitto-i-mobilen",
       "rubrik": "Körjournal och kvitton i mobilen",
       "beskrivning": "Traktamente, milersättning och utlägg finns redan i lönen. Nu kommer en körjournal och ett snabbare sätt att fota ett kvitto i mobilen och få ett förslag på kontering, som du sedan godkänner.",
-      "status": "Planerat",
+      "status": "Pågår",
       "omrade": "Lön",
       "uppdaterad": "2026-11-08",
-      "kommentar": "Vi provar det med pilotföretagen innan det byggs färdigt."
+      "kommentar": "Körjournalen, milersättningen via lönen, bokföringen för enskild firma och Fota kvitto i inkorgen är byggda och granskas nu innan de släpps till pilotföretagen."
     },
     {
       "id": "recept-och-svinn",

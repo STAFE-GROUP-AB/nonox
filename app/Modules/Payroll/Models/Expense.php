@@ -35,6 +35,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?string $ai_status
  * @property ?string $ai_notes
  * @property ?int $ai_account_number
+ * @property ?array<string, mixed> $trip_data
  */
 class Expense extends Model
 {
@@ -80,6 +81,14 @@ class Expense extends Model
             'decided_at' => 'immutable_datetime',
             'ai_account_number' => 'integer',
         ];
+    }
+
+    /** @var list<string> the mileage claims from the körjournal (ADR-072) */
+    public const array MILEAGE_TYPES = ['MILEAGE_OWN_CAR', 'MILEAGE_COMPANY_CAR'];
+
+    public function isMileage(): bool
+    {
+        return in_array($this->type, self::MILEAGE_TYPES, true);
     }
 
     /** @return BelongsTo<Employee, $this> */

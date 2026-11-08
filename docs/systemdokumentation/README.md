@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.116
-- Datum: 2026-11-07
+- Version: 0.117
+- Datum: 2026-11-08
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -2934,6 +2934,72 @@ lönebeskeden låsta i databasen.
   antal vägras när raden läggs in, och stoppar lönebeskedet om det kommer
   på annat sätt, i stället för att betalas som 0 kr. Kryssen 050/051 sätts
   bara när en skattefri ersättning faktiskt betalats.
+- Körjournal och milersättning ([ADR-072](../adr/ADR-072-mileage-log-and-mobile-receipts.md),
+  regelbladet `docs/specs/rules/korjournal.md`):
+  - Lönearterna `MIL_FORMANSBIL` och `MIL_FORMANSBIL_EL` (konto 7331,
+    skattefria, antal mil) betalar milersättning för förmånsbil när den
+    anställda har betalat allt drivmedel, till reglerna
+    `mileage.company_car_fossil` (12 kr/mil) och `mileage.company_car_electric`
+    (9,50 kr/mil), IL 12 kap. 5 § andra stycket. Ett högre belopp delas som
+    för egen bil till `MIL_SKATTEPLIKTIG`. Ruta 050 kryssas nu även för dem
+    (tidigare bara för `MILERSATTNING`). En migrering lägger till koderna
+    för företag som redan har lön påslagen.
+  - Körjournalen (företagsinställningen **Använd körjournal**, av från
+    början) har tabellerna `vehicles`, `vehicle_year_readings`,
+    `vehicle_trips` och `mileage_routes`. Sträckor lagras i hektometer.
+    Platser och ärenden krypteras; en privat resa sparar bara datum och
+    sträcka. Ingen position läses.
+  - En anställd skickar in en månads resor som milersättning: en
+    `expenses`-rad per biltyp (`MILEAGE_OWN_CAR`, `MILEAGE_COMPANY_CAR`) med
+    en rad per resa i `trip_data`. Godkännandet under Lön → Ansökningar
+    bokför ingenting; nästa lönekörning tar milersättningen som lönearter
+    (antal mil, företagets belopp per mil eller regelns), och lönens
+    verifikation i serie L bokför den på 7331/7332 med körjournalen som PDF
+    bifogad. När körningen markeras utbetald blir resorna `PAID`.
+  - Skattefri förmånsbil gäller bara den anställdas egen förmånsbil på
+    resans dag (IL 12 kap. 5 § andra stycket, "sin förmånsbil"; bilförmånen
+    under Lön → Förmånsbilar med samma registreringsnummer). Den kräver
+    dessutom den anställdas intygande om allt drivmedel och ingen
+    drivmedelsförmån i månadens lönekörning; laddning på arbetsplatsen i en
+    laddhybrid godtas för resor från 2026-07-01. En poolbil, någon annans
+    förmånsbil, och resor till och från arbetet när företaget ersätter dem,
+    blir `MIL_SKATTEPLIKTIG`. Varje rad i milersättningen sparar vilken sorts
+    bil det var och bilförmånens id.
+  - Beloppen tas från lönereglerna för resans år, också när lönen betalas
+    ett senare år: milersättningen sparar belopp och regelversion per grupp,
+    och lönekörningen använder dem (`TODO(legal-verify)`). Saknades regeln när
+    milersättningen skickades läses den igen i körningen, och saknas den
+    fortfarande stoppas körningen. 2027: alla tre beloppen följer IL 12 kap.
+    5 § (25, 12 och 9,50 kr/mil) och förs vidare från lagtexten.
+  - En rättelse prissätts som raden den rättar (samma löneart, regel och
+    år). En månad med bara rättelser ger en negativ milersättning som tas
+    tillbaka i lönen med samma löneart. En resa kan bara rättas en gång
+    (unikt index).
+  - En resa som ligger bakom en utbetald milersättning (`PAID`) eller en
+    bokförd verifikation (`BOOKED`) kan inte ändras eller tas bort: modellen
+    och en databasutlösare (`vehicle_trips_protect_settled`) vägrar. Fel
+    rättas med en ny resa med negativ sträcka och skäl, som följer med nästa
+    milersättning eller bokföring.
+  - Enskild firma: ägaren bokför en månads resor i egen bil som ett
+    verifikationsutkast i serie A på månadens sista dag, debet valt
+    kostnadskonto (förslag 5800), kredit 2018 Övriga egna insättningar,
+    utan moms, med körjournalen som PDF; beloppet är regeln för egen bil
+    (IL 16 kap. 27 §). Ingen bil som är en tillgång i firman. Ägaren bokför
+    utkastet själv; resorna blir `BOOKED` när det bokförs. Kontovalet är
+    `TODO(legal-verify)` (L8/L9).
+  - Under Lön → Förmånsbilar visas körning i tjänsten mot 3 000 mil, privat
+    körning mot 100 mil och 10 tillfällen (regeln `benefit.car.minor_extent`)
+    och ett förslag till drivmedelsförmån. 3 000 mil och ringa omfattning
+    räknas bara på förmånshavarens resor under förmånsperioden; andra förares
+    resor visas för sig. Det är råd; inget förmånsvärde ändras av systemet.
+  - En enskild firmas utkast dateras månadens sista dag eller i dag, det
+    som kommer först, och tar bara ett kostnadskonto 4000–7999. Skiljer den
+    bokförda verifikationens belopp på 2018 från resornas avdrag bokförs
+    resorna ändå, och skillnaden skrivs i behandlingshistoriken
+    (`mileage.owner_voucher_amount_differs`) och visas på sidan. En månad med
+    bara rättelser bokförs omvänt (debet 2018, kredit kostnadskontot).
+  - Ett år som är stängt i körjournalen för en bil tar inte emot nya,
+    ändrade eller borttagna resor.
 - Bonus som semesterlönegrundande lön (enligt granskning 2026-11-02,
   juristgranskning återstår, AUD-LON-10, #77): systemlönearten `BONUS`
   har `is_vacation_basis` = true (semesterlagen 16 b §: tolv procent av
@@ -3481,6 +3547,15 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 
 Inkorgen tar emot underlag med e-post och gör förslag som en person
 godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
+
+- **Fota kvitto** (ADR-072): en inloggad person med `inbox:manage` kan
+  ladda upp ett kvitto från mobilen. Det blir ett meddelande med kanalen
+  `UPLOAD` och personen som avsändare, sparas oförändrat med SHA-256,
+  kontrolleras som en bilaga (farliga filtyper, viruskontroll) och tolkas
+  sedan som ett kvitto. Fotot är originalet och kopplas till verifikationen
+  en gång, med sitt namn och sin filtyp. Inget bokförs förrän en person godkänner. I en
+  enskild firma kan betalningen i förslaget flyttas till 2018 (**Betalt
+  privat**).
 
 - **Adresser.** Varje företag har en egen adress, `{namn-slumpdel}@in.nonox.app`,
   med tilläggen `+kvitto`, `+faktura` och `+kassa` som ledtråd om vad som
@@ -4860,3 +4935,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.114 | 2026-11-06 | Drivmedelsförmån rättad (avsnitt 5b, ADR-061): skatteavdraget räknas som förut på förmånsvärdet (marknadsvärdet × 1,2), men arbetsgivaravgiften nu på marknadsvärdet (socialavgiftslagen 2 kap. 10 a §); tidigare togs avgiften på hela förmånsvärdet. Den anställdas betalning för drivmedlet (löneart Egen betalning för drivmedel vid bilförmån, 7388) minskar den skattepliktiga förmånen och avgiftsunderlaget och redovisas i ruta 098, medan 018 har hela förmånsvärdet. Attesterade och bokförda löner ändras inte. Förmånsbilar: en period får inte omfatta en attesterad månad som bilen inte fanns i, och bara en bil per månad. |
 | 0.115 | 2026-11-06 | Bekräftelse och kontroller före inlämning (ägarbeslut 10 och 16): momsdeklarationen och arbetsgivardeklarationen till Skatteverket, betalfilen för leverantörsbetalningar och lönefilen kräver att användaren bekräftar "Jag har granskat siffrorna", och bekräftelsen sparas i behandlingshistoriken (`figures.reviewed`); ett K2-företag bekräftar de nya K2-villkoren (BFNAR 2025:2) en gång innan bokslutet för ett räkenskapsår som börjar efter 2025-12-31 kan fortsätta (`company.k2_conditions_confirmed`). SIE-importen stoppar en fil vars ingående balanser inte summerar till noll, och rapporten säger bara att varje konto stämmer när utgående balanser eller resultat har kontrollerats. Drivmedelsförmån kräver en förmånsbil i perioden. OCR-nummer på leverantörsfakturor kontrolleras med kontrollsiffran. Parametrarna för NE och INK4 2026 är inte längre markerade som kontrollerade, så beräkningen spärras tills en människa har kontrollerat dem. Rättelserna som driftsattes separat under versionsnumret 0.105 samma morgon (rutorna 20 och 23, årsredovisning bara enligt K2, belopp i hela kronor, övertid och mertid per art i Gröna Riks och Detaljhandeln, arbetsgivaravgift på drivmedelsförmån) ingår i 0.107, 0.109, 0.110 och 0.114 och i avsnitt 5h. |
 | 0.116 | 2026-11-07 | Regelverket (K1/K2/K3) hör till räkenskapsåret (avsnitt 3, ADR-059 tillägg A.2.1): varje år har sitt eget, ett nytt år ärver det föregående (annars närmaste senare) årets, och ett byte gäller ett valt år och alla senare år, i inställningarna som standard från det tidigaste öppna året utan fastställd årsredovisning. Stängda år och år med fastställd årsredovisning kan inte byta, och ett byte som inget år kan ta emot vägras. Bytet sparas på varje år och i behandlingshistoriken (`fiscal_year.framework_changed`, en post per år). Årsredovisningen, K2-bekräftelsen i bokslutet och NE-bilagan följer årets regelverk, så ett tidigare K2-år behåller sin årsredovisning när företaget byter till K3. Befintliga år fick företagets regelverk; ingen verifikation ändrades. Redovisningsprinciper för K3 som data (avsnitt 5a6.1, ADR-059 tillägget 2026-11-07, A.2.3): företagets val per princip gäller från ett räkenskapsårs första dag tills en ny rad ersätter det, utom svaren om övergången som bara gäller sitt eget år; val som NONOX ännu inte kan redovisa och byten av princip (K3 10.2, 23.37; inte att börja efter "inga", enligt kommentaren till 10.2, och inte kassaflödesanalysen) listas med regelns id som skäl till att K3-årsredovisningen inte kan tas fram; när det första räkenskapsårets datum ändras följer dess principer med; en rad kan inte sparas om den skulle gälla ett år vars årsredovisning har en fastställelsedag som har inträffat; byte från kapitel 12 till kapitel 11 nekas. Ändringen skrivs i behandlingshistoriken utan motiveringen. Ingenting i bokföringen ändras och ingen skärm använder principerna ännu. |
+| 0.117 | 2026-11-08 | Körjournal och milersättning (avsnitt 5b, ADR-072): lönearterna Milersättning, förmånsbil och Milersättning, förmånsbil (el) (7331, ruta 050; tidigare kryssades 050 bara för egen bil); körjournalen med bilar, resor och mätarställningar; månadens milersättning från Min sida godkänns utan verifikation och bokförs med lönen, med körjournalen som underlag; betalda och bokförda resor kan inte ändras (databasutlösare), fel rättas med en negativ resa; enskild firma bokför resor i egen bil som utkast i serie A mot 2018; Fota kvitto i inkorgen (avsnitt 5e). Efter granskningen: skattefri förmånsbil bara i den anställdas egen förmånsbil; belopp efter resans år; förmånsbilens belopp för 2027 från lagtexten; rättelser prissätts som raden de rättar och kan ge en negativ milersättning; årssammanställningen räknar bara förmånshavarens resor; stängt år låser resorna. |

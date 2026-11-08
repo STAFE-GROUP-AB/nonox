@@ -61,6 +61,7 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * @property ?Industry $industry what the company does, for Företagsguiden (ADR-051)
  * @property ?CarbonImmutable $started_on the day the company started; not asked for until stage 2 of Företagsguiden (ADR-051)
  * @property bool $guide_enabled whether Företagsguiden is shown in the app
+ * @property bool $mileage_log_enabled whether the mileage log (körjournal, ADR-072) is shown; off by default
  */
 class Company extends JetstreamTeam
 {
@@ -106,11 +107,13 @@ class Company extends JetstreamTeam
         'brand_accent_color',
         'industry',
         'guide_enabled',
+        'mileage_log_enabled',
     ];
 
     /** @var array<string, mixed> */
     protected $attributes = [
         'guide_enabled' => true,
+        'mileage_log_enabled' => false,
     ];
 
     /** @var array<string, class-string> */
@@ -165,6 +168,7 @@ class Company extends JetstreamTeam
             'industry' => Industry::class,
             'started_on' => 'immutable_date',
             'guide_enabled' => 'boolean',
+            'mileage_log_enabled' => 'boolean',
         ];
     }
 

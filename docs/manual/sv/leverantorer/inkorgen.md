@@ -26,6 +26,12 @@ Inkorgen är en modul som en ägare eller administratör slår på under **Före
 
 Antalet som väntar visas vid **Inkorg** i menyn. Sök på avsändare eller ämne i fältet **Sök**.
 
+## Fota kvitto
+
+Har du betalat något med företagets kort kan du fota kvittot direkt i inkorgen. Under **Fota kvitto** tar du en bild med mobilen eller väljer en PDF och väljer **Skicka till inkorgen**. Kvittot kontrolleras och tolkas som om det kom med e-post, med dig som avsändare, och hamnar under **Att granska**. Inget bokförs förrän någon har godkänt det. Du behöver behörighet att hantera inkorgen.
+
+I en enskild firma finns knappen **Betalt privat (2018 Övriga egna insättningar)** i förslaget: har du betalat med egna pengar flyttas betalningen från bankkontot till 2018. Kontrollera raderna innan du godkänner.
+
 ## Så här granskar och bokför du ett underlag
 
 1. Gå till **Inkorg** och klicka på ett underlag i **Utkast klara** eller **Att granska**.

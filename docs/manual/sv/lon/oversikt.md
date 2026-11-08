@@ -38,6 +38,7 @@ Avsnittet är för dig som sköter lönerna i ett företag: ägaren, en löneadm
 
 - [Förmåner, traktamente och milersättning](/manual/lon/formaner-traktamente-och-milersattning)
 - [Utlägg med kvitto](/manual/lon/utlagg)
+- [Körjournal och milersättning](/manual/lon/korjournal)
 - [Arbetsgivaravgifter och tjänstepension](/manual/lon/arbetsgivaravgifter-och-pension)
 
 ## Semester och årets slut

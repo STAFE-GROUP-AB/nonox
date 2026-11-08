@@ -77,6 +77,12 @@ class DeleteAccount
             // Passkeys (ADR-029) and the recently opened records in search (ADR-026) are the user's alone.
             DB::table('passkeys')->where('user_id', $user->id)->delete();
             DB::table('recent_items')->where('user_id', $user->id)->delete();
+            // The körjournal (ADR-072): saved routes are the user's alone, and so is an own car without trips.
+            // An own car with trips stays with them as underlag; the account is then pseudonymised.
+            DB::table('mileage_routes')->where('user_id', $user->id)->delete();
+            DB::table('vehicles')->where('user_id', $user->id)->where('kind', 'PRIVATE_CAR')
+                ->whereNotExists(fn ($query) => $query->select(DB::raw(1))->from('vehicle_trips')->whereColumn('vehicle_trips.vehicle_id', 'vehicles.id'))
+                ->delete();
             $user->notifications()->delete();
             // Modules remove what is the user's alone (CRM calendar links and connections, ADR-049).
             event(new UserAccountDeleting($user->id));
