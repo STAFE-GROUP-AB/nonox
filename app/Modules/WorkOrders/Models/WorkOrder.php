@@ -72,6 +72,7 @@ class WorkOrder extends Model
     /** @var list<string> */
     protected $fillable = [
         'company_id',
+        'number',
         'customer_id',
         'title',
         'description',

@@ -75,7 +75,7 @@ class ChangeOrder extends Model implements Signable
 
     /** @var list<string> */
     protected $fillable = [
-        'company_id', 'work_order_id', 'title', 'description', 'basis', 'price_form', 'labour_ore', 'material_ore', 'other_ore',
+        'company_id', 'work_order_id', 'number', 'title', 'description', 'basis', 'price_form', 'labour_ore', 'material_ore', 'other_ore',
         'limit_ore', 'time_effect', 'payment_terms', 'tax_reduction_applies', 'expires_on', 'created_by',
     ];
 

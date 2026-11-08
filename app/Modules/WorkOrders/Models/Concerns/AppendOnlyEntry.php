@@ -27,7 +27,8 @@ trait AppendOnlyEntry
     protected static function bootAppendOnlyEntry(): void
     {
         static::updating(function (Model $entry): void {
-            if (array_diff(array_keys($entry->getDirty()), self::MUTABLE) !== []) {
+            // A changed company is BelongsToCompany's to refuse (MissingCompanyContext); the trigger refuses it too.
+            if (array_diff(array_keys($entry->getDirty()), [...self::MUTABLE, 'company_id']) !== []) {
                 throw new LogicException('A work order entry cannot be changed; reverse it instead.');
             }
         });
