@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
 use App\Models\InvoiceRow;
+use App\Models\InvoiceTaxReductionBuyer;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -126,11 +127,14 @@ final class TaxReduction
      */
     public static function used(Customer $customer, int $year, ?string $exceptInvoiceId = null): array
     {
+        // The buyer's own invoices, and invoices where the buyer shares the deduction with others (ADR-074 O6).
         $invoices = Invoice::query()
-            ->where('customer_id', $customer->id)
+            ->where(fn ($query) => $query
+                ->where('customer_id', $customer->id)
+                ->orWhereIn('id', InvoiceTaxReductionBuyer::query()->select('invoice_id')->where('customer_id', $customer->id)))
             ->whereNotNull('tax_reduction')
             ->where('status', '<>', InvoiceStatus::Draft->value)
-            ->with('payments')
+            ->with(['payments', 'taxReductionBuyers'])
             ->get();
         $years = $invoices->mapWithKeys(fn (Invoice $invoice): array => [$invoice->id => self::paymentDay($invoice)->year]);
         $used = [];
@@ -142,7 +146,11 @@ final class TaxReduction
                 continue;
             }
 
-            $used[(string) $invoice->tax_reduction] = ($used[(string) $invoice->tax_reduction] ?? 0) + $invoice->tax_reduction_ore->ore;
+            $amount = $invoice->taxReductionBuyers->isEmpty()
+                ? $invoice->tax_reduction_ore->ore
+                : ($invoice->taxReductionBuyers->firstWhere('customer_id', $customer->id)?->deduction_ore->ore ?? 0);
+
+            $used[(string) $invoice->tax_reduction] = ($used[(string) $invoice->tax_reduction] ?? 0) + $amount;
         }
 
         return $used;
@@ -190,6 +198,29 @@ final class TaxReduction
     {
         if ($invoice->tax_reduction === null || $invoice->isCredit() || $invoice->tax_reduction_ore->isZero()) {
             return null;
+        }
+
+        $buyers = $invoice->taxReductionBuyers()->with('customer')->get();
+
+        if ($buyers->isNotEmpty()) {
+            // Several buyers (ADR-074 O6): each share against that buyer's own ceiling, as when the draft was saved.
+            $labour = self::labour($invoice->rows);
+            $left = $labour;
+            $allowed = 0;
+
+            foreach ($buyers->values() as $index => $buyer) {
+                $share = $index === $buyers->count() - 1 ? $left : intdiv($labour * $buyer->share_bp, 10_000);
+                $left -= $share;
+                $each = $buyer->customer instanceof Customer ? self::allowed($invoice->tax_reduction, $share, $buyer->customer, $paidOn, $invoice->id) : null;
+
+                if ($each === null) {
+                    return null;
+                }
+
+                $allowed += $each;
+            }
+
+            return $allowed === $invoice->tax_reduction_ore->ore ? null : ['year' => $paidOn->year, 'allowed' => $allowed, 'invoiced' => $invoice->tax_reduction_ore->ore];
         }
 
         $customer = $invoice->customer()->first();

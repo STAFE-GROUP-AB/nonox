@@ -143,7 +143,14 @@
         @php($labour = $invoice->rows->where('is_labour', true))
         <p style="margin-top: 8mm"><strong>{{ App\Domain\Invoicing\TaxReduction::label($invoice->tax_reduction) }}.</strong>
             {{ __('Arbetskostnad inklusive moms :labour. Avdraget förutsätter att Skatteverket godkänner det; annars betalar köparen resten.', ['labour' => $kr((int) round($labour->sum(fn ($row) => $row->net_ore->ore * (10000 + $row->vat_rate) / 10000)))]) }}
-            @if($invoice->property_designation)<br><span class="muted">{{ __('Fastighet eller bostadsrätt: :property', ['property' => $invoice->property_designation]) }}</span>@endif</p>
+            @if($invoice->property_designation)<br><span class="muted">{{ __('Fastighet eller bostadsrätt: :property', ['property' => $invoice->property_designation]) }}</span>@endif
+            @if($invoice->work_description)<br><span class="muted">{{ __('Utfört arbete: :work', ['work' => $invoice->work_description]) }}</span>@endif
+            @if($invoice->labour_hours_milli !== null)<br><span class="muted">{{ __('Arbetade timmar: :hours', ['hours' => $invoice->labourHoursLabel()]) }}</span>@endif
+            {{-- TODO(legal-verify): L6 (ADR-074 O5) — Skatteverket's page lists the buyer's personnummer on a ROT/RUT invoice, so it is printed until the lawyer says the claim is enough. --}}
+            @foreach(App\Domain\Invoicing\TaxReductionBuyers::forPdf($invoice) as $buyer)
+                <br><span class="muted">{{ __('Köpare: :name, :number', ['name' => $buyer['name'], 'number' => $buyer['personal_number']]) }}@if($buyer['deduction'] !== null) · {{ __('avdrag :amount', ['amount' => $kr($buyer['deduction'])]) }}@endif</span>
+            @endforeach
+        </p>
     @endif
 
     @if($invoice->reverse_charge)
