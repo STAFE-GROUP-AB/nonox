@@ -386,3 +386,28 @@ Pint, legal-verify items listed in the PR.
 
 TODO(legal-verify): treatment of imported open invoices under kontantmetoden; marketing-law
 review of the per-program pages (ADR-020); retention of uploaded source files (30 days).
+
+## Addendum 2026-11-08: Lead decisions on the open questions
+
+Decided by Lead 2026-11-08 under the owner's mandate, open for the consultant's review.
+
+1. **Kontantmetoden:** as proposed. Open reskontra import is offered only to companies on
+   fakturametoden until an accountant has answered how an imported unpaid invoice is treated
+   under kontantmetoden. The question is kept as `TODO(legal-verify)`.
+2. **XLSX library:** `openspout/openspout` (MIT, streaming reader, keeps memory flat on large
+   files). It is the only new package and is justified in the build PR.
+3. **Limits:** accepted: 20 MB, 100 000 rows, and source files kept 30 days, then deleted.
+4. **Programs without public documentation:** no preset ships for a program until its columns
+   are documented publicly or a synthetic sample file from a real export is available. The
+   generic mapping works for every program meanwhile.
+5. **Order:** Visma eEkonomi/Spiris and Bokio first, the best documented, then the others as
+   documentation allows. Hogia and Briljant go on the research list.
+6. **URL:** `/flytta-fran/{program}` is accepted.
+7. **Third-party sources:** public guide pages show only steps documented by the vendor
+   itself, because ADR-020 requires verifiable statements. Where the vendor documents
+   nothing, the page says so and suggests asking the vendor's support. Third-party findings
+   stay in `export-formats.md` as research only.
+8. **Source number:** shown on the customer, supplier and article cards as "Nummer i tidigare
+   program".
+9. **Legal review:** the per-program guide pages are built behind an instance setting and are
+   published only after the legal review that ADR-020 pages get.
