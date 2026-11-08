@@ -170,10 +170,16 @@ final class TaxProposal
         return $this->ink2->resultKronor() + $this->ink2->taxKronor();
     }
 
-    /** Tax booked on 8900–8989 without the closing step: the proposal is then not offered. */
+    /**
+     * Current tax booked on 8900–8989 without the closing step: the proposal
+     * is then not offered. Deferred tax (BAS 8940–8949, a K3 company's
+     * YearEndClosing::confirmDeferredTax, ADR-059 A.2.6) is not current tax
+     * and does not count; INK2S 4.3 a still adds it back with the rest.
+     * TODO(legal-verify): BAS 894x as the deferred tax accounts (fixture A12).
+     */
     public function taxBookedByHand(): bool
     {
-        return $this->accounts->movementOf(8900, 8989) !== 0;
+        return $this->accounts->movementOf(8900, 8939) !== 0 || $this->accounts->movementOf(8950, 8989) !== 0;
     }
 
     /** A periodiseringsfond change already booked in the year: the fund part of the proposal is then left out. */

@@ -271,6 +271,7 @@ Route::middleware([
         Route::view('/bankavstamning', 'accounting.bank-reconciliation')->name('accounting.bankReconciliation');
         Route::view('/skattekontot', 'accounting.tax-account')->name('accounting.taxAccount');
         Route::view('/bokslut', 'accounting.closing')->name('accounting.closing');
+        Route::view('/bokslut/uppskjuten-skatt', 'accounting.deferred-tax')->name('accounting.closing.deferredTax');
         Route::view('/arsredovisning', 'accounting.annual-report')->name('accounting.annualReport');
         Route::get('/arsredovisning/{fiscalYear}', [AnnualReportController::class, 'show'])->whereNumber('fiscalYear')->name('accounting.annualReport.show');
         Route::get('/arsredovisning/{fiscalYear}/pdf', [AnnualReportController::class, 'pdf'])->whereNumber('fiscalYear')->name('accounting.annualReport.pdf');

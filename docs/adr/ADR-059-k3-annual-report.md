@@ -1046,6 +1046,74 @@ Source: BFN's consolidated K3 (vl12-1-k3-kons20251215), chapter 7, pp. 57–63.
   its convention says; every year-end figure is unchanged. F-S1-c was
   written by the P8 builder and waits for an independent check.
 
+#### As built (S1-P5, 2026-11-08)
+
+Source: BFN's consolidated K3 (vl12-1-k3-kons20251215), chapter 29; rule
+sheet S1-R4, R4.1–R4.6; human decision H6 (decided 2026-11-08).
+
+- **Data.** `deferred_tax_items` as A.2.6, with `description` (shown, never
+  audited), `recognised_ore` not null default 0 (H6: no recognised asset
+  until a person enters one) and `created_by`. A check constraint refuses an
+  account range touching 2100–2199 (29.37), unknown kinds and sources,
+  negative values and half-empty ranges; a trigger refuses any update or
+  delete of an item once `confirmed_by` is set. `BelongsToCompany`, listed in
+  the tenancy registry plus `tests/Tenancy/DeferredTaxTenancyTest.php`.
+  `k3-rules.json` gains `deferred_tax.liability_account` 2240,
+  `.asset_account` 1370, `.expense_account` 8940 (quotes K3 29.31/29.22,
+  account numbers from the rbas2026 linkbase, `TODO(legal-verify)` against
+  BAS 2026).
+- **Carrying amount** from a balance sheet account range (closing balance,
+  a liability credit positive), from the register, or entered. The register
+  is the interface `App\Domain\Closing\DeferredTax\BuildingCarryingAmounts`
+  (`forYear(FiscalYear): array<fixedAssetId, {label, carrying_ore}>`), bound
+  with `bindIf` to `NoBuildingCarryingAmounts` (empty). **S1-P4 binds its
+  component register there**; until then an item with `fixed_asset_id` is
+  refused and F-S1-a's building is entered with accounts 1110–1119, which
+  gives the fixture's figures to the öre.
+- **Rate.** `CorporateTaxRules::rateEntryForStart()` (new, `rateEntryFor()`
+  delegates to it) for the day after the balance date; the proposal refuses
+  when any other rate applies to a later year, or when the chosen rate ends
+  (`starts_before`). `CorporateTaxRules::rates()` added. No rate is hard-coded.
+- **Proposal** (`DeferredTaxProposal`): per item difference, nature by the
+  29.14 table, gross tax half up to the öre; liability = Σ taxable; asset =
+  Σ min(gross, recognised) over deductible items (H6); targets gross, or
+  netted when the person ticks the 29.32 set-off (kept as closing check
+  `deferred_tax_set_off`). The voucher books target − current balance on
+  2240–2249 / 1370–1379 (on 2240 and 1370) against 8940, so a re-run after
+  booking proposes 0. Query count: items, accounts, opening balances,
+  movements (+ one register call when an item uses it), fixed.
+- **Booking.** `YearEndClosing::confirmDeferredTax(user, year, confirmedExpenseOre, setOff)`:
+  `fiscal-years:manage`, open year, K3 year, AB or ekonomisk förening, once
+  per year, before RESULT, refused when the amount differs from what the
+  person saw; one voucher through `BookVoucher` (series A, source CLOSING,
+  last day), or no voucher when nothing changes; `YearEndEntry::DEFERRED_TAX`
+  (append-only like the others); every item gets `rate_bp` and
+  `confirmed_by` and is frozen. `PostVoucher` and the voucher triggers are
+  untouched.
+- **Items** through `App\Actions\Closing\DeferredTaxItems` (save/remove):
+  same permission and refusals; recognised > 0 needs a reason and is
+  refused above the computed asset; audit `deferred_tax.item_*` with ids,
+  enums and amounts only.
+- **Screen.** Bokslut → Uppskjuten skatt, `/bokslut/uppskjuten-skatt`
+  (`accounting.closing.deferredTax`), linked from step 2 of the closing page
+  for K3 years. View: `reports:view` (auditor reads); writes:
+  `fiscal-years:manage`. Confirmation dialog states the amount, account,
+  date and that a posted voucher can only be corrected.
+- **Change outside the package files:** `TaxProposal::taxBookedByHand()` no
+  longer counts 8940–8949, so a K3 company can book deferred tax before the
+  current tax proposal; INK2S 4.3 a still adds back all of 8900–8989.
+- **Not built / follow-ups:** S1-P11's information line on Bokslut →
+  Regelverk does not exist on `nattjobb/nummer-1` yet, so it is not wired;
+  P11 can read `DeferredTaxProposal::for($company, $year)->targetLiabilityOre()`
+  (information only, H2). No closing-checklist point requires the deferred
+  tax for a K3 year (closing is not blocked by it). No manual screenshot.
+  29.20 (subsidiaries) and 29.21 (goodwill on initial recognition) are not
+  detected.
+- **TODO(legal-verify):** enactment dates of the rates (29.25), H5 (29.19,
+  29.25 cross-references), the BAS accounts 2240/1370/8940 and 894x as
+  deferred tax in the tax proposal, netting of Swedish deferred tax in one
+  AB (29.32), 29.20/29.21 left to the person.
+
 ### A.5 Test plan and performance
 
 **Unit tests per rule id** (Pest, `tests/Unit/AnnualReport/K3/…`), named with the

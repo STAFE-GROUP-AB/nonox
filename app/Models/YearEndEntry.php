@@ -18,7 +18,8 @@ use LogicException;
  * valued at the closing rate, ADR-025) or UNPAID_RECEIVABLES and
  * UNPAID_PAYABLES (under kontantmetoden, the invoices unpaid on the last day,
  * booked then and reversed on the first day of the next year) or
- * STOCK_VALUATION (the stock change from Lager's year-end valuation). Append-only: the model refuses changes and a database trigger
+ * STOCK_VALUATION (the stock change from Lager's year-end valuation) or
+ * DEFERRED_TAX (a K3 company's change of deferred tax). Append-only: the model refuses changes and a database trigger
  * backs it up.
  *
  * @property int $id
@@ -51,6 +52,9 @@ class YearEndEntry extends Model
 
     /** Lager (ADR-039): the stock valued at the year end; amount_ore is the change booked on the stock account. */
     public const string STOCK_VALUATION = 'STOCK_VALUATION';
+
+    /** K3 (ADR-059, A.2.6): the change of deferred tax booked on 8940; amount_ore is the cost (an income negative). */
+    public const string DEFERRED_TAX = 'DEFERRED_TAX';
 
     /** @var list<string> */
     protected $fillable = [

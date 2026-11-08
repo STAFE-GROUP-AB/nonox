@@ -13,10 +13,12 @@ use App\Domain\Accounting\LedgerBalances;
 use App\Domain\Accounting\StaleOpeningBalances;
 use App\Domain\Accounting\VoucherSource;
 use App\Domain\Accounting\VoucherStatus;
+use App\Domain\AnnualReport\K3Rules;
 use App\Domain\Closing\ClosingAccounts;
 use App\Domain\Closing\ClosingChecklist;
 use App\Domain\Closing\CorporateTaxRules;
 use App\Domain\Closing\CurrencyRevaluation;
+use App\Domain\Closing\DeferredTaxProposal;
 use App\Domain\Closing\DividendLimit;
 use App\Domain\Closing\K2Reconfirmation;
 use App\Domain\Closing\TaxProposal;
@@ -295,6 +297,86 @@ class YearEndClosing
                 'reversal_kronor' => $reversalKronor,
                 'allocation_kronor' => $allocationKronor,
                 'fund_account' => $fundAccount,
+                'voucher' => $voucher?->reference(),
+            ], $company, $user);
+
+            return $entry;
+        }));
+    }
+
+    /**
+     * Books the change of a K3 company's deferred tax (DeferredTaxProposal,
+     * ADR-059 A.2.6) once a person has reviewed the items: one voucher on
+     * the last day, 8940 against 2240 and 1370, source CLOSING, series as
+     * the tax. Nothing to change records the confirmation without a voucher.
+     * Never called by the system itself.
+     *
+     * The person confirms the amount they saw: when the books or the items
+     * changed in between, it is refused and must be looked at again. Netting
+     * the liability and the asset needs the person's confirmation of a legal
+     * right of set-off (K3 29.32), kept as a closing check. Booked once,
+     * before the year's result; the items are frozen from then on, and a
+     * wrong voucher is corrected with a correcting voucher.
+     */
+    public function confirmDeferredTax(User $user, FiscalYear $fiscalYear, int $confirmedExpenseOre, bool $setOff = false): YearEndEntry
+    {
+        $company = $this->companyOf($fiscalYear);
+        $this->authorize($user, $company);
+        $this->ensureOpen($fiscalYear);
+
+        if (($refusal = DeferredTaxProposal::refusals($company, $fiscalYear)[0] ?? null) !== null) {
+            throw ValidationException::withMessages(['deferred_tax' => $refusal]);
+        }
+
+        return CurrentCompany::run($company, fn (): YearEndEntry => DB::transaction(function () use ($user, $company, $fiscalYear, $confirmedExpenseOre, $setOff): YearEndEntry {
+            FiscalYear::query()->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();
+            $types = YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->pluck('type')->all();
+
+            if (in_array(YearEndEntry::DEFERRED_TAX, $types, true)) {
+                throw ValidationException::withMessages(['deferred_tax' => __('Årets uppskjutna skatt är redan bokförd. Rätta verifikationen om den blev fel.')]);
+            }
+
+            if (in_array(YearEndEntry::RESULT, $types, true)) {
+                throw ValidationException::withMessages(['deferred_tax' => __('Årets resultat är redan bokat. Bokför den uppskjutna skatten före resultatet.')]);
+            }
+
+            $proposal = DeferredTaxProposal::for($company, $fiscalYear, $setOff);
+
+            if (($blocker = $proposal->blockers[0] ?? null) !== null) {
+                throw ValidationException::withMessages(['deferred_tax' => $blocker]);
+            }
+
+            if ($proposal->expenseOre() !== $confirmedExpenseOre) {
+                throw ValidationException::withMessages(['deferred_tax' => __('Beräkningen har ändrats sedan den visades. Granska den igen innan du bekräftar.')]);
+            }
+
+            $rows = $proposal->voucherRows();
+            $voucher = null;
+
+            if ($rows !== []) {
+                foreach ($rows as $row) {
+                    $this->ensureDeferredTaxAccount($row['account'], $user, $company);
+                }
+
+                $voucher = $this->book->rows($user, $company, $fiscalYear->end_date, __('Uppskjuten skatt :year', ['year' => $fiscalYear->label()]), self::SERIES, $rows, VoucherSource::Closing, $fiscalYear);
+            }
+
+            if ($setOff) {
+                ClosingCheck::query()->firstOrCreate(['fiscal_year_id' => $fiscalYear->id, 'key' => DeferredTaxProposal::SET_OFF_CHECK], ['checked_by' => $user->id]);
+            }
+
+            foreach ($proposal->lines as $line) {
+                $line['item']->forceFill(['rate_bp' => $proposal->rateBp, 'confirmed_by' => $user->id])->save();
+            }
+
+            $entry = YearEndEntry::create(['fiscal_year_id' => $fiscalYear->id, 'type' => YearEndEntry::DEFERRED_TAX, 'amount_ore' => $proposal->expenseOre(), 'voucher_id' => $voucher?->id, 'created_by' => $user->id]);
+            Audit::record('closing.deferred_tax_confirmed', $fiscalYear, [
+                'expense_ore' => $proposal->expenseOre(),
+                'liability_ore' => $proposal->targetLiabilityOre(),
+                'asset_ore' => $proposal->targetAssetOre(),
+                'rate_bp' => $proposal->rateBp,
+                'set_off' => $setOff,
+                'items' => array_map(fn (array $line): int => $line['item']->id, $proposal->lines),
                 'voucher' => $voucher?->reference(),
             ], $company, $user);
 
@@ -667,6 +749,23 @@ class YearEndClosing
 
         $account = Account::create(['number' => $number, 'name' => $name, 'type' => AccountType::forNumber($number)]);
         Audit::record('account.created', $account, ['number' => $number, 'reason' => 'tax_allocation_reserve'], $company, $user);
+    }
+
+    /** Adds 2240, 1370 or 8940 from BAS when the chart lacks them (K3Rules deferred_tax.*). */
+    private function ensureDeferredTaxAccount(int $number, User $user, Company $company): void
+    {
+        if (Account::query()->where('number', $number)->exists()) {
+            return;
+        }
+
+        $name = match ($number) {
+            K3Rules::int('deferred_tax.liability_account') => __('Avsättningar för uppskjutna skatter'),
+            K3Rules::int('deferred_tax.asset_account') => __('Uppskjuten skattefordran'),
+            default => __('Uppskjuten skatt'),
+        };
+
+        $account = Account::create(['number' => $number, 'name' => $name, 'type' => AccountType::forNumber($number)]);
+        Audit::record('account.created', $account, ['number' => $number, 'reason' => 'deferred_tax'], $company, $user);
     }
 
     /** Whole kronor, at least 0; empty is 0. */

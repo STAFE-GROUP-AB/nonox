@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-08-uppskjuten-skatt-k3",
+      "datum": "2026-11-08T00:05:00+01:00",
+      "rubrik": "Uppskjuten skatt i bokslutet för företag som följer K3 (beta)",
+      "beskrivning": "Under Bokslut → Uppskjuten skatt lägger du upp skillnaderna mellan redovisat och skattemässigt värde, och NONOX räknar fram den uppskjutna skatten med skattesatsen för året efter balansdagen. En uppskjuten skattefordran föreslås aldrig, utan du skriver in den med skälet, och obeskattade reserver kan inte tas med. Ingenting bokförs förrän du har granskat och bekräftat förändringen på 8940.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-07-regelverk-per-rakenskapsar",
       "datum": "2026-11-07T09:30:00+01:00",
       "rubrik": "Regelverket K1, K2 eller K3 gäller per räkenskapsår",
