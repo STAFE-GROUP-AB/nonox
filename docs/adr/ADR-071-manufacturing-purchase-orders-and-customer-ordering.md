@@ -204,7 +204,7 @@ contain. These questions go to the lawyer before the setting can be built.
 
 `TODO(legal-verify)` for the accounting check:
 
-- whether K2 (BFNAR 2016:10 ch. 11) and K3 (ch. 13) allow, require or forbid direct labour
+- whether K2 (BFNAR 2016:10 ch. 12, not 11) and K3 (ch. 13) allow, require or forbid direct labour
   and indirect costs in the cost of own-manufactured goods;
 - the BAS accounts for finished goods and work in progress (1450/1440) and their change
   accounts (4970/4940) beside 1460/4960;
@@ -270,3 +270,13 @@ one. The customer is never shown an estimate the company has not confirmed.
   follows the swarm process: rule sheet and accounting check where accounting is touched,
   fixtures, builder with tests first, cold reviewer, Lead merges.
 - The first pilot is a joinery. Its name and data never go into the repository.
+
+## Addendum 2026-11-08: shared structure engine and a first answer
+
+- ADR-073 (recipes and waste) builds the structure engine first, in the inventory module,
+  using this ADR's table names (`bills_of_materials`, `bom_rows`) with versions dated by
+  `valid_from`. §3 here is built on that engine and does not create its own.
+  The scrap percentage uses ADR-073's loss formula.
+- K2 is BFNAR 2016:10 chapter 12, not 11. Point 12.10 says direct labour and employer
+  contributions must be included in the cost of own-manufactured goods, which partly
+  answers the first `TODO(legal-verify)` in §8. The rest of that question stays open.
