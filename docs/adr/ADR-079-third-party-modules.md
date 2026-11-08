@@ -719,3 +719,64 @@ Both protect the books whether or not third-party extensions ever launch, and ne
 changes the hosted service's database. Step 2 (database roles) waits for owner question 7,
 because the hosted service needs a maintenance window and a check of the production
 role. Steps 4–10 wait for owner questions 1–4 and 10.
+
+## Addendum: steps 1 and 3 as built
+
+Branch `feat/module-registry-hardening`. Neither step changes roles, grants or triggers.
+
+### Step 1: the threat model, proven
+
+`tests/Feature/Security/TriggerBypassGapTest.php`, Pest group `known-gap`. Each test runs
+inside the test transaction (`DatabaseTransactions`); PostgreSQL DDL is transactional, so
+every `ALTER TABLE`, `DROP TRIGGER` and `CREATE OR REPLACE FUNCTION` is rolled back with
+it. Run against a local test database as the developer's role, which owns the tables and
+is a superuser, like a default self-hosted install.
+
+| Scenario (running as today's role) | Result |
+|---|---|
+| The role owns `vouchers` (or is a superuser): the precondition | confirmed |
+| `ALTER TABLE vouchers DISABLE TRIGGER vouchers_protect_posted` (and the rows' trigger), then change a posted voucher's amounts and description | gap confirmed |
+| `DROP TRIGGER` on both tables, then change one posted voucher and delete another | gap confirmed |
+| `CREATE OR REPLACE FUNCTION vouchers_protect_posted()` (and the rows' function) with an empty body; the triggers stay enabled but no longer refuse | gap confirmed |
+| Change a posted voucher, recompute `previous_hash`/`hash` along the chain and `fiscal_years.ledger_head_hash`; `LedgerVerifier` and `ledger:verify` report a clean ledger | gap confirmed |
+| `SET session_replication_role = replica` | not run: superuser only; skipped with the reason. It rests on the PostgreSQL documentation |
+
+`tests/Feature/Security/LedgerTriggersIntactTest.php` (not in `known-gap`) asserts that the
+five ledger triggers exist and are enabled and that both protect functions still raise,
+so a test that failed to roll back would turn the suite red. Step 2 flips the `known-gap`
+tests: each attempt must fail as `nonox_app`.
+
+### Step 3: registry hardening
+
+`ModuleRegistry::register()` throws `App\Modules\InvalidModule` when:
+
+- the key is already registered (it used to replace the module silently);
+- the key is not in `ModuleRegistry::FIRST_PARTY` and is not `vendor.name` (lowercase
+  letters, digits and hyphens, one dot, `_` allowed in the name, at most 50 characters,
+  the length of `company_modules.module_key`);
+- a permission is a core permission (`CompanyRole::PERMISSIONS`) or another module's;
+- a role key is a core role (`owner` and the member roles of AGENTS.md §4) or another
+  module's;
+- `rolePermissions()` or `archivePermissions()` list a permission the module does not add
+  itself (so also `*`, which Jetstream treats as every permission);
+- for a module that is not first-party: a permission or role key does not start with
+  `<key>:` (`acme.tidrapport:view`, role `acme.tidrapport:admin`), or `rolePermissions()`
+  names a role that is neither a core role nor its own.
+
+Our own modules follow every rule except the last two, which are for third-party modules
+only: the agreements, planning and staff ledger modules give their permissions to other
+modules' roles (`payroll_admin`, `employee`, `scheduler`), and our permission names (`self:payslips`,
+`employees:manage`) predate the prefix rule.
+
+Modules register while the service providers register, before translations exist, and
+`roles()` returns translated labels. So `register()` checks the key at once and the rest
+from a `booted` callback in `ModuleServiceProvider` (`ModuleRegistry::verify()`), each
+module against the ones registered before it; a module registered after boot is checked
+in full at once. A refused module is removed and the error stops the boot: a mistake is
+found on the first request, never silently in production.
+
+Tests: `tests/Feature/Modules/ModuleRegistryHardeningTest.php`;
+`tests/Support/Modules/ThirdPartyDummyModule.php` is the third-party twin of the dummy
+module, and `TestRegistry` builds a registry that treats the test keys (`dummy`, `extra`)
+as first-party. Not built yet from §2.1–2.2: the "Tillägg" navigation section and the
+hosted-service refusal of modules that are not first-party; both belong with step 8.

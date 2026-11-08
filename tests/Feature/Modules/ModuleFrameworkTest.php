@@ -16,14 +16,14 @@ use Laravel\Jetstream\Jetstream;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Modules\DummyModule;
+use Tests\Support\Modules\TestRegistry;
 
 beforeEach(function () {
     DummyModule::$blockers = [];
     DummyModule::$warnings = [];
     DummyModule::$enabledCount = 0;
 
-    app(ModuleRegistry::class)->register(new DummyModule);
-    app(ModuleRegistry::class)->register(new DummyModule('extra', ['dummy']));
+    TestRegistry::install(['dummy', 'extra'], new DummyModule, new DummyModule('extra', ['dummy']));
     (new JetstreamServiceProvider(app()))->configurePermissions();
 
     Route::middleware(['web', 'auth', 'module:dummy'])->get('/dummy-test', fn () => 'Modulsidan')->name('dummy.index');
