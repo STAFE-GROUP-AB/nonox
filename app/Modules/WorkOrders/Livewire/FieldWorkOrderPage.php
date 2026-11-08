@@ -22,6 +22,7 @@ use App\Modules\WorkOrders\Models\OnSiteCode;
 use App\Modules\WorkOrders\Models\TimeEntry;
 use App\Modules\WorkOrders\Models\WorkOrder;
 use App\Modules\WorkOrders\Models\WorkOrderPhoto;
+use App\Modules\WorkOrders\Support\ExpireChangeOrders;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
@@ -190,6 +191,7 @@ class FieldWorkOrderPage extends Component
     public function render(): View
     {
         $workOrder = $this->workOrder();
+        ExpireChangeOrders::forWorkOrder($workOrder->id);
         $workOrder->load('customer:id,name');
         $today = CarbonImmutable::today()->toDateString();
         $term = trim($this->articleSearch);

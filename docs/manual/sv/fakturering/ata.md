@@ -26,6 +26,9 @@ Ett ÄTA är en ändring eller ett tillägg till arbetsordern. Kunden ska godkä
 - **Godkänt muntligt** – skriv vem som svarade, hur och när. Ett muntligt godkännande är ett svagare bevis och visas så.
 - **Kunden avböjde** – ÄTA:t blir **Avböjt**.
 - **Återkalla** – ni drar tillbaka ÄTA:t.
+- **Har gått ut** – signeringslänken gick ut utan svar. Gör ett nytt ÄTA om arbetet ska göras.
+
+Ett ÄTA till fast pris behöver ett pris innan det kan godkännas muntligt eller registreras som utfört. När ett ÄTA har skickats eller beslutats kan arbetsorderns kund, prisform, moms, ROT eller RUT och fastighet inte längre ändras. Ett muntligt godkänt ÄTA sparas som PDF precis som det såg ut vid beslutet.
 
 Kunden får alltid en kopia av ett godkänt ÄTA som PDF i e-post.
 

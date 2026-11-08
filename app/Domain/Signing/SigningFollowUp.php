@@ -225,12 +225,37 @@ class SigningFollowUp
             return;
         }
 
-        $address = $company->email ?: User::query()->whereKey($request->sent_by)->value('email');
+        $address = $company->email ?: $this->copyRecipient($company, $request)?->email;
 
         if (! is_string($address) || $address === '' || mb_strtolower($address) === $request->email) {
             return;
         }
 
         Mail::to(mb_strtolower($address))->queue((new SignedDocumentMail($request->id, $company->id, false))->afterCommit());
+    }
+
+    /**
+     * Without a company address, the copy (with prices) goes to the sender,
+     * else to a member a module names (an ÄTA: the work order's creator),
+     * never to a field worker who presented an ÄTA on site (ADR-074 O4).
+     */
+    private function copyRecipient(Company $company, SigningRequest $request): ?User
+    {
+        $members = self::memberIds($company);
+        $candidates = [];
+
+        foreach ($this->hooks->all() as $hook) {
+            $candidates = [...$candidates, ...$hook->recipients($company, $request)];
+        }
+
+        foreach ([$request->sent_by, ...$candidates] as $id) {
+            $user = $id === null || ! in_array((int) $id, $members, true) ? null : User::query()->find((int) $id);
+
+            if ($user instanceof User && $user->teamRole($company)?->key !== 'field_worker') {
+                return $user;
+            }
+        }
+
+        return null;
     }
 }

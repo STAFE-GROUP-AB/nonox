@@ -71,7 +71,8 @@ class WorkOrderDocumentsController
     {
         abort_unless($this->user()->hasTeamPermission($this->company(), WorkOrdersModule::VIEW), 404);
         $found = WorkOrder::query()->findOrFail($workOrder);
-        abort_unless(Gate::allows('view', $found), 404);
+        // The ÄTA PDF carries prices: never for a field worker (ADR-074 §8, review P2-1).
+        abort_unless(Gate::allows('view', $found) && ! WorkOrderPolicy::onlyAssigned($this->user(), $this->company()), 404);
         $order = ChangeOrder::query()->where('work_order_id', $found->id)->findOrFail($changeOrder);
 
         return response(ChangeOrderPdf::render($order), 200, [

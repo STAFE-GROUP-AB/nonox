@@ -10,9 +10,12 @@ use App\Models\Company;
 use App\Models\Customer;
 use App\Modules\WorkOrders\Models\ChangeOrder;
 use App\Modules\WorkOrders\Models\WorkOrder;
+use App\Modules\WorkOrders\Models\WorkOrderPhoto;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * The ÄTA as a document (rule sheet §D): what, why, price, VAT, the
@@ -25,6 +28,11 @@ final class ChangeOrderPdf
 {
     public static function render(ChangeOrder $changeOrder): string
     {
+        // An ÄTA decided orally or performed without answer keeps the PDF rendered at the decision (review P2-2).
+        if ($changeOrder->decided_document_path !== null && Storage::disk(WorkOrderPhoto::DISK)->exists($changeOrder->decided_document_path)) {
+            return (string) Storage::disk(WorkOrderPhoto::DISK)->get($changeOrder->decided_document_path);
+        }
+
         $options = new Options;
         $options->setIsRemoteEnabled(false);
         $options->setDefaultFont('DejaVu Sans');
@@ -72,7 +80,8 @@ final class ChangeOrderPdf
 
         if ($workOrder->tax_reduction !== null && $changeOrder->tax_reduction_applies && $changeOrder->labour_ore->ore > 0) {
             $labour = InvoiceCalculator::totals([['net' => $changeOrder->labour_ore->ore, 'vat_rate' => $rate]], roundToKronor: false);
-            $share = TaxReduction::rate($workOrder->tax_reduction, now()->toImmutable()) ?? 0;
+            // The rate on the day the ÄTA was sent or decided, so its document never changes afterwards (review P2-2).
+            $share = TaxReduction::rate($workOrder->tax_reduction, $changeOrder->sent_at ?? $changeOrder->decided_at ?? CarbonImmutable::now()) ?? 0;
             $deduction = TaxReduction::amount($labour['net'] + $labour['vat'], $share, PHP_INT_MAX);
         }
 

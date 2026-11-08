@@ -225,7 +225,7 @@ class SaveDraftInvoice
 
             [$deduction, $buyerDeductions] = match (true) {
                 $taxReduction === null => [0, []],
-                $original instanceof Invoice => $this->creditedSplit($this->creditedDeduction($rows, $original, $draft), $buyers),
+                $original instanceof Invoice => $this->creditedSplit($this->creditedDeduction($rows, $original, $draft), $buyers, $original, $draft),
                 $buyers !== [] => $this->splitDeduction($taxReduction, $rows, $buyers, $dueDate, $reverseCharge, $draft),
                 default => [$this->deduction($taxReduction, $rows, $customer, $dueDate, $reverseCharge, $draft), []],
             };
@@ -468,26 +468,54 @@ class SaveDraftInvoice
 
     /**
      * A credit invoice's deduction split between the buyers of the invoice
-     * it credits, by their shares in whole kronor; the last buyer takes
-     * what is left.
+     * it credits: each buyer's own deduction on the original, net of that
+     * buyer's earlier credits, reversed in proportion to the credit in whole
+     * kronor; the last buyer with something left takes the remainder. A
+     * buyer who got no deduction gets none back.
      *
      * @param  list<array{customer: Customer, share_bp: int}>  $buyers
      * @return array{0: int, 1: list<array{customer_id: int, share_bp: int, deduction_ore: int}>}
      */
-    private function creditedSplit(int $deduction, array $buyers): array
+    private function creditedSplit(int $deduction, array $buyers, Invoice $original, ?Invoice $draft): array
     {
         if ($buyers === []) {
             return [$deduction, []];
         }
 
-        $left = $deduction;
-        $last = array_key_last($buyers);
+        // What each buyer still has of the original deduction: the original's own row, net of earlier issued credits.
+        $original->loadMissing(['taxReductionBuyers', 'creditInvoices.taxReductionBuyers']);
+        $remaining = [];
+
+        foreach ($buyers as $buyer) {
+            $id = $buyer['customer']->id;
+            $remaining[$id] = $original->taxReductionBuyers->firstWhere('customer_id', $id)?->deduction_ore->ore ?? 0;
+
+            foreach ($original->creditInvoices as $earlier) {
+                if ($earlier->isDraft() || ($draft !== null && $earlier->id === $draft->id)) {
+                    continue;
+                }
+
+                $remaining[$id] += $earlier->taxReductionBuyers->firstWhere('customer_id', $id)?->deduction_ore->ore ?? 0;
+            }
+
+            $remaining[$id] = max(0, $remaining[$id]);
+        }
+
+        $total = array_sum($remaining);
+        $credited = -$deduction;
+        $lastWithRoom = array_key_last(array_filter($remaining, fn (int $left): bool => $left > 0));
+        $left = $credited;
         $split = [];
 
-        foreach ($buyers as $index => $buyer) {
-            $share = $index === $last ? $left : intdiv(intdiv($deduction * $buyer['share_bp'], 10_000), 100) * 100;
+        foreach ($buyers as $buyer) {
+            $id = $buyer['customer']->id;
+            $share = match (true) {
+                $total <= 0 || $remaining[$id] <= 0 => 0,
+                $id === $lastWithRoom => min($left, $remaining[$id]),
+                default => min(intdiv(intdiv($credited * $remaining[$id], $total), 100) * 100, $remaining[$id]),
+            };
             $left -= $share;
-            $split[] = ['customer_id' => $buyer['customer']->id, 'share_bp' => $buyer['share_bp'], 'deduction_ore' => $share];
+            $split[] = ['customer_id' => $id, 'share_bp' => $buyer['share_bp'], 'deduction_ore' => -$share];
         }
 
         return [$deduction, $split];

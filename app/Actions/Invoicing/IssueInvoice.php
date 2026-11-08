@@ -119,6 +119,8 @@ class IssueInvoice
                 'status' => $invoice->isCredit() ? InvoiceStatus::Paid : InvoiceStatus::Issued,
                 'ocr' => Ocr::forInvoiceNumber($number),
                 'customer_snapshot' => $customer->snapshot(),
+                // ADR-074 O5: the ROT/RUT buyer's personnummer is printed on invoices issued from this release on (TODO(legal-verify) L6).
+                'prints_buyer_personal_number' => $invoice->tax_reduction !== null,
                 'issued_at' => CarbonImmutable::now(),
                 'issued_by' => $user->id,
                 'paid_ore' => 0,

@@ -110,7 +110,7 @@ class SignChangeOrder
             $onSite = OnSiteCode::create([
                 'change_order_id' => $changeOrder->id,
                 'signing_request_id' => $result['request']->id,
-                'code_hash' => hash('sha256', "{$result['request']->id}|{$code}"),
+                'code_hash' => self::codeHash($result['request']->id, $code),
                 'url' => $result['url'],
                 'expires_at' => CarbonImmutable::now()->addMinutes(OnSiteCode::MINUTES),
                 'presented_by' => $user->id,
@@ -136,11 +136,15 @@ class SignChangeOrder
             }
 
             if ($locked->verified_at !== null || $locked->url === null || $locked->expires_at->isPast() || $locked->attempts >= OnSiteCode::MAX_ATTEMPTS) {
+                // A link that can no longer be opened is not kept (review P3-1).
+                $locked->forceFill(['url' => null])->save();
+
                 return 'expired';
             }
 
-            if (! hash_equals($locked->code_hash, hash('sha256', $locked->signing_request_id.'|'.trim($code)))) {
-                $locked->forceFill(['attempts' => $locked->attempts + 1])->save();
+            if (! hash_equals($locked->code_hash, self::codeHash($locked->signing_request_id, trim($code)))) {
+                $attempts = $locked->attempts + 1;
+                $locked->forceFill(['attempts' => $attempts, 'url' => $attempts >= OnSiteCode::MAX_ATTEMPTS ? null : $locked->url])->save();
 
                 return 'wrong';
             }
@@ -157,5 +161,11 @@ class SignChangeOrder
             'wrong' => throw ValidationException::withMessages(['code' => __('Fel kod. Be kunden kontrollera koden i sin e-post.')]),
             default => $result,
         };
+    }
+
+    /** An HMAC keyed with the application key (review P3-1): a stolen table alone cannot be tried against all codes. */
+    public static function codeHash(int $signingRequestId, string $code): string
+    {
+        return hash_hmac('sha256', "{$signingRequestId}|{$code}", (string) config('app.key'));
     }
 }

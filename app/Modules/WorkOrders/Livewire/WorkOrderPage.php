@@ -31,6 +31,7 @@ use App\Modules\WorkOrders\Models\PaymentInstalment;
 use App\Modules\WorkOrders\Models\TimeEntry;
 use App\Modules\WorkOrders\Models\WorkOrder;
 use App\Modules\WorkOrders\Models\WorkOrderInvoice;
+use App\Modules\WorkOrders\Support\ExpireChangeOrders;
 use App\Modules\WorkOrders\WorkOrdersModule;
 use App\Support\Toast;
 use Carbon\CarbonImmutable;
@@ -263,6 +264,7 @@ class WorkOrderPage extends Component
     public function render(): View
     {
         $workOrder = $this->workOrder();
+        ExpireChangeOrders::forWorkOrder($workOrder->id);
         $workOrder->load(['customer', 'project', 'assignments.user', 'buyers.customer']);
         $customer = $workOrder->customer;
         $today = CarbonImmutable::today();

@@ -34,6 +34,7 @@ use LogicException;
  * @property ?string $property_designation
  * @property ?int $labour_hours_milli the hours worked on a ROT or RUT invoice, in thousandths (ADR-074 §5)
  * @property ?string $work_description the kind of work on a ROT or RUT invoice (ADR-074 §5)
+ * @property bool $prints_buyer_personal_number the PDF prints the ROT/RUT buyer's personnummer (issued from ADR-074 on)
  * @property string $id
  * @property int $company_id
  * @property int $customer_id
@@ -141,6 +142,7 @@ class Invoice extends Model
             'recovered_ore' => MoneyCast::class,
             'tax_reduction_ore' => MoneyCast::class,
             'labour_hours_milli' => 'integer',
+            'prints_buyer_personal_number' => 'boolean',
             'tax_reduction_paid_ore' => MoneyCast::class,
             'tax_reduction_repayable_ore' => MoneyCast::class,
             'tax_reduction_repaid_ore' => MoneyCast::class,
@@ -340,7 +342,7 @@ class Invoice extends Model
             return null;
         }
 
-        return rtrim(rtrim(number_format($this->labour_hours_milli / 1000, 2, ',', ' '), '0'), ',');
+        return rtrim(rtrim(number_format($this->labour_hours_milli / 1000, 3, ',', ' '), '0'), ',');
     }
 
     /** @return HasMany<InvoicePayment, $this> */

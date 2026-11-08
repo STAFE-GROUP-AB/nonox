@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\WorkOrders\Livewire;
 
+use App\Domain\Accounting\FiscalYearStatus;
 use App\Models\Company;
+use App\Models\FiscalYear;
 use App\Modules\ModuleManager;
 use App\Modules\WorkOrders\Actions\SaveLabourKind;
 use App\Modules\WorkOrders\Domain\FixedPriceMethod;
@@ -63,8 +65,11 @@ class SettingsForm extends Component
         $company = Company::query()->findOrFail($this->companyId);
         abort_unless($this->user()->hasTeamPermission($company, WorkOrdersModule::MANAGE), 403);
 
-        $this->attempt(function () use ($modules, $company): void {
+        $before = WorkOrdersSettings::fixedPriceMethod($company);
+
+        $saved = $this->attempt(function () use ($modules, $company): void {
             $markup = Input::percentBp($this->markup, 'markup') ?? 0;
+
             if (FixedPriceMethod::tryFrom($this->fixedPriceMethod) === null) {
                 throw ValidationException::withMessages(['method' => __('Välj en metod.')]);
             }
@@ -75,6 +80,18 @@ class SettingsForm extends Component
                 'fixed_price_method' => $this->fixedPriceMethod,
             ]);
         }, __('Inställningarna för arbetsorder är sparade.'), '');
+
+        // K2 6.15 (review P3-7): one method for all fixed-price jobs, and a change needs special reasons. Advice only.
+        if ($saved && $this->methodChangedAfterClosedYear($before)) {
+            $this->toast(__('Metoden för fastprisuppdrag har ändrats efter ett stängt räkenskapsår. Ett byte kräver särskilda skäl och ska förklaras i årsredovisningen (K2 6.15). Stäm av med din redovisningskonsult.'), 'error');
+        }
+    }
+
+    private function methodChangedAfterClosedYear(FixedPriceMethod $before): bool
+    {
+        return $before !== FixedPriceMethod::NotSet
+            && $before->value !== $this->fixedPriceMethod
+            && FiscalYear::query()->where('status', FiscalYearStatus::Closed->value)->exists();
     }
 
     public function createKind(): void

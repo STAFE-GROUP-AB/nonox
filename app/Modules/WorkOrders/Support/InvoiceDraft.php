@@ -7,7 +7,10 @@ namespace App\Modules\WorkOrders\Support;
 use App\Domain\Invoicing\TaxReduction;
 use App\Models\Article;
 use App\Models\Invoice;
+use App\Modules\WorkOrders\Domain\ChangeOrderStatus;
+use App\Modules\WorkOrders\Domain\LabourKindType;
 use App\Modules\WorkOrders\Models\ChangeOrder;
+use App\Modules\WorkOrders\Models\LabourKind;
 use App\Modules\WorkOrders\Models\MaterialEntry;
 use App\Modules\WorkOrders\Models\TimeEntry;
 use App\Modules\WorkOrders\Models\WorkOrder;
@@ -148,7 +151,6 @@ final class InvoiceDraft
 
     /**
      * Entries the invoice covers: billed above, or part of a fixed price.
-     * Their hours of labour go on the invoice for ROT and RUT (AO-R14).
      *
      * @param  Collection<int, TimeEntry>  $time
      * @param  Collection<int, MaterialEntry>  $material
@@ -157,15 +159,51 @@ final class InvoiceDraft
     {
         foreach ($time as $entry) {
             $this->timeIds[] = $entry->id;
-
-            if ($eligible && $entry->minutes !== null && $entry->labourKind?->isLabour()) {
-                $this->labourMinutes += $entry->minutes;
-            }
         }
 
         foreach ($material as $entry) {
             $this->materialIds[] = $entry->id;
         }
+    }
+
+    /**
+     * The ROT/RUT labour minutes recorded on the work order up to a date:
+     * live entries of a labour kind on the main work and on decided ÄTA
+     * that keep the tax reduction (AO-R13, AO-R17).
+     */
+    public static function recordedLabourMinutes(WorkOrder $workOrder, CarbonImmutable $upTo): int
+    {
+        $optedOut = ChangeOrder::query()->where('work_order_id', $workOrder->id)
+            ->where(fn ($query) => $query->where('tax_reduction_applies', false)
+                ->orWhereIn('status', array_map(fn (ChangeOrderStatus $status): string => $status->value, array_filter(ChangeOrderStatus::cases(), fn (ChangeOrderStatus $status): bool => ! $status->allowsInvoicing()))))
+            ->pluck('id')->all();
+
+        return (int) Uninvoiced::live(TimeEntry::query()->where('work_order_id', $workOrder->id))
+            ->whereNotNull('minutes')
+            ->whereDate('work_date', '<=', $upTo->toDateString())
+            ->whereIn('labour_kind_id', LabourKind::query()->select('id')->where('type', LabourKindType::Labour->value))
+            ->where(fn ($query) => $query->whereNull('change_order_id')->orWhereNotIn('change_order_id', $optedOut === [] ? [0] : $optedOut))
+            ->sum('minutes');
+    }
+
+    /**
+     * Lead's rule (review P1-2): an invoice claims the labour minutes
+     * recorded and not yet claimed by an earlier invoice of the same work
+     * order. Returns [recorded, unclaimed].
+     *
+     * TODO(legal-verify): whether a ROT/RUT invoice with no new hours (all
+     * hours claimed on earlier invoices of the order) is acceptable in the
+     * claim (lag (2009:194) 9 § p. 4).
+     *
+     * @return array{0: int, 1: int}
+     */
+    public function claimLabourMinutes(CarbonImmutable $upTo): array
+    {
+        $recorded = self::recordedLabourMinutes($this->workOrder, $upTo);
+        $claimed = (int) WorkOrderInvoice::query()->where('work_order_id', $this->workOrder->id)->sum('labour_minutes');
+        $this->labourMinutes = max(0, $recorded - $claimed);
+
+        return [$recorded, $this->labourMinutes];
     }
 
     public function hasRows(): bool

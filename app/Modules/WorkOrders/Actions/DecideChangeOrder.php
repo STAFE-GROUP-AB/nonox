@@ -11,16 +11,19 @@ use App\Modules\WorkOrders\Actions\Concerns\GuardsWorkOrders;
 use App\Modules\WorkOrders\Domain\ChangeOrderStatus;
 use App\Modules\WorkOrders\Domain\ContactChannel;
 use App\Modules\WorkOrders\Domain\PerformedReason;
+use App\Modules\WorkOrders\Domain\PriceForm;
 use App\Modules\WorkOrders\Mail\ChangeOrderMail;
 use App\Modules\WorkOrders\Models\ChangeOrder;
 use App\Modules\WorkOrders\Models\ContactAttempt;
 use App\Modules\WorkOrders\Models\WorkOrder;
+use App\Modules\WorkOrders\Models\WorkOrderPhoto;
 use App\Modules\WorkOrders\Support\ChangeOrderPdf;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -152,12 +155,28 @@ class DecideChangeOrder
                 throw ValidationException::withMessages(['change_order' => __('ÄTA:t är :status.', ['status' => mb_strtolower($changeOrder->status->label())])]);
             }
 
+            // An approval without a price approves nothing (review P3-2): a fixed price needs amounts; löpande räkning uses the work order's rates.
+            if (in_array($to, [ChangeOrderStatus::ApprovedOrally, ChangeOrderStatus::PerformedWithoutAnswer], true)
+                && $changeOrder->price_form === PriceForm::Fixed && $changeOrder->netOre() <= 0) {
+                throw ValidationException::withMessages(['change_order' => __('Sätt ett pris på ÄTA:t, eller välj löpande räkning, innan det registreras.')]);
+            }
+
             if ($changeOrder->status === ChangeOrderStatus::Draft) {
                 // The document the decision is about, fixed by its hash before the status changes.
                 $changeOrder->forceFill(['document_sha256' => hash('sha256', ChangeOrderPdf::html($changeOrder))])->save();
             }
 
-            $changeOrder->forceFill([...$attributes, 'status' => $to, 'decided_by' => $user->id])->save();
+            $changeOrder->forceFill([...$attributes, 'status' => $to, 'decided_by' => $user->id]);
+
+            // The PDF as it was decided is kept for an oral or performed-without-answer decision (review P2-2); a signed one keeps the signing request's.
+            if (in_array($to, [ChangeOrderStatus::ApprovedOrally, ChangeOrderStatus::PerformedWithoutAnswer], true)) {
+                $bytes = ChangeOrderPdf::render($changeOrder);
+                $path = "arbetsorder/{$company->id}/{$changeOrder->work_order_id}/ata-{$changeOrder->number}-".bin2hex(random_bytes(6)).'.pdf';
+                Storage::disk(WorkOrderPhoto::DISK)->put($path, $bytes);
+                $changeOrder->forceFill(['decided_document_path' => $path, 'decided_document_sha256' => hash('sha256', $bytes)]);
+            }
+
+            $changeOrder->save();
 
             Audit::record('work_orders.change_order_decided', $changeOrder, [
                 'work_order_id' => $changeOrder->work_order_id,

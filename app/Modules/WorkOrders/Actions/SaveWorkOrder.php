@@ -13,7 +13,9 @@ use App\Models\Project;
 use App\Models\SalesDocument;
 use App\Models\User;
 use App\Modules\WorkOrders\Actions\Concerns\GuardsWorkOrders;
+use App\Modules\WorkOrders\Domain\ChangeOrderStatus;
 use App\Modules\WorkOrders\Domain\PriceForm;
+use App\Modules\WorkOrders\Models\ChangeOrder;
 use App\Modules\WorkOrders\Models\LabourKind;
 use App\Modules\WorkOrders\Models\WorkOrder;
 use App\Modules\WorkOrders\Models\WorkOrderAssignment;
@@ -137,10 +139,21 @@ class SaveWorkOrder
                 WorkOrder::query()->whereKey($workOrder->id)->lockForUpdate()->first();
             }
 
-            $invoiced = $workOrder !== null && WorkOrderInvoice::query()->where('work_order_id', $workOrder->id)->exists();
+            // Once an invoice exists, or an ÄTA has been sent or decided, what the customer saw and approved stays as it was (review P2-2).
+            $locked = $workOrder !== null && (WorkOrderInvoice::query()->where('work_order_id', $workOrder->id)->exists()
+                || ChangeOrder::query()->where('work_order_id', $workOrder->id)->where('status', '<>', ChangeOrderStatus::Draft->value)->exists());
+            $changed = $workOrder !== null && (
+                $workOrder->customer_id !== $customer->id
+                || $workOrder->tax_reduction !== $taxReduction
+                || $workOrder->price_form !== $priceForm
+                || $workOrder->vat_rate !== (int) ($validated['vat_rate'] ?? $workOrder->vat_rate)
+                || (string) $workOrder->property_designation !== ($taxReduction === TaxReduction::RUT ? '' : (string) ($validated['property_designation'] ?? ''))
+                || (string) $workOrder->housing_association_org_number !== (string) ($validated['housing_association_org_number'] ?? '')
+                || (string) $workOrder->apartment_number !== (string) ($validated['apartment_number'] ?? '')
+            );
 
-            if ($invoiced && ($workOrder->customer_id !== $customer->id || $workOrder->tax_reduction !== $taxReduction || $workOrder->price_form !== $priceForm || $workOrder->vat_rate !== (int) ($validated['vat_rate'] ?? $workOrder->vat_rate))) {
-                throw ValidationException::withMessages(['work_order' => __('Det finns fakturor från arbetsordern. Kund, pris­form, moms och ROT eller RUT kan inte längre ändras.')]);
+            if ($locked && $changed) {
+                throw ValidationException::withMessages(['work_order' => __('Det finns fakturor eller skickade ÄTA på arbetsordern. Kund, prisform, moms, omvänd betalningsskyldighet, ROT eller RUT och fastigheten kan inte längre ändras.')]);
             }
 
             // Copied from the customer when the work order is created, then locked (AO-R20).

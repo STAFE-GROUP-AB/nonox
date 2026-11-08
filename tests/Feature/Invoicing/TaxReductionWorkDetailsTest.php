@@ -168,3 +168,53 @@ it('splits a credit invoice\'s deduction between the buyers of the invoice it cr
         ->and($credit->taxReductionBuyers()->get()->map(fn (InvoiceTaxReductionBuyer $buyer): int => $buyer->deduction_ore->ore)->all())->toBe([-750_000, -750_000])
         ->and($credit->labour_hours_milli)->toBeNull();
 });
+
+it('reverses each buyer\'s own deduction on a credit, not the shares: a buyer who got nothing gets nothing back (review P1-1)', function () {
+    // Bo has used his whole 50 000 kr: the split invoice stores [7 500, 0].
+    app(IssueInvoice::class)($this->owner, app(SaveDraftInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $this->bo->id, 'invoice_date' => '2026-03-02', 'tax_reduction' => 'ROT', 'property_designation' => 'Exempelstad Ekbacken 3:14',
+        'rows' => [['description' => 'Arbete', 'quantity' => '1', 'price' => '133 334', 'vat_rate' => 2500, 'labour' => true]],
+    ]));
+    $issued = app(IssueInvoice::class)($this->owner, rotWorkDraft(['tax_reduction_buyers' => [
+        ['customer_id' => $this->anna->id, 'share_bp' => 5000],
+        ['customer_id' => $this->bo->id, 'share_bp' => 5000],
+    ]], '40 000'));
+    $deductions = fn (Invoice $invoice): array => $invoice->taxReductionBuyers()->get()->map(fn (InvoiceTaxReductionBuyer $buyer): int => $buyer->deduction_ore->ore)->all();
+
+    expect($deductions($issued))->toBe([750_000, 0]);
+
+    // Half the labour credited first, then the rest.
+    $half = app(CreditInvoice::class)($this->owner, $issued);
+    $half = app(SaveDraftInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $this->anna->id, 'invoice_date' => '2026-03-02', 'property_designation' => 'Exempelstad Ekbacken 3:14',
+        'rows' => [['description' => 'Arbete', 'quantity' => '1', 'price' => '20 000', 'vat_rate' => 2500, 'labour' => true]],
+    ], $half);
+    app(IssueInvoice::class)($this->owner, $half);
+
+    expect($half->fresh()->tax_reduction_ore->ore)->toBe(-375_000)
+        ->and($deductions($half->fresh()))->toBe([-375_000, 0]);
+
+    $rest = app(CreditInvoice::class)($this->owner, $issued->fresh());
+    $rest = app(SaveDraftInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $this->anna->id, 'invoice_date' => '2026-03-02', 'property_designation' => 'Exempelstad Ekbacken 3:14',
+        'rows' => [['description' => 'Arbete', 'quantity' => '1', 'price' => '20 000', 'vat_rate' => 2500, 'labour' => true]],
+    ], $rest);
+
+    expect($rest->tax_reduction_ore->ore)->toBe(-375_000)
+        ->and($deductions($rest))->toBe([-375_000, 0]);
+});
+
+it('never adds the personnummer when an invoice issued before this release is rendered again (review P3-8)', function () {
+    $invoice = app(IssueInvoice::class)($this->owner, rotWorkDraft(['labour_hours' => '4']));
+
+    expect($invoice->prints_buyer_personal_number)->toBeTrue()
+        ->and(InvoicePdf::html($invoice))->toContain('19121212-1212');
+
+    // An invoice issued earlier keeps the flag off, as the migration leaves every existing row; it cannot be changed afterwards.
+    DB::statement('ALTER TABLE invoices DISABLE TRIGGER invoices_protect_issued');
+    DB::table('invoices')->where('id', $invoice->id)->update(['prints_buyer_personal_number' => false]);
+    DB::statement('ALTER TABLE invoices ENABLE TRIGGER invoices_protect_issued');
+
+    expect(InvoicePdf::html($invoice->fresh()))->not->toContain('19121212-1212')
+        ->and(fn () => DB::transaction(fn () => DB::table('invoices')->where('id', $invoice->id)->update(['prints_buyer_personal_number' => true])))->toThrow(QueryException::class);
+});

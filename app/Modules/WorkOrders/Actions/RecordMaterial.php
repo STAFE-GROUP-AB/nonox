@@ -26,6 +26,7 @@ use App\Modules\WorkOrders\WorkOrdersModule;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -88,76 +89,81 @@ class RecordMaterial
             throw ValidationException::withMessages(['source' => __('Bara den som hanterar arbetsordrar kan vidarefakturera leverantörsfakturor.')]);
         }
 
-        return DB::transaction(fn (): MaterialEntry => CurrentCompany::run($company, function () use ($validated, $user, $company, $workOrder, $source, $manager): MaterialEntry {
-            if (isset($validated['id']) && ($existing = MaterialEntry::query()->find($validated['id'])) instanceof MaterialEntry) {
-                return $existing;
-            }
+        try {
+            return DB::transaction(fn (): MaterialEntry => CurrentCompany::run($company, function () use ($validated, $user, $company, $workOrder, $source, $manager): MaterialEntry {
+                if (isset($validated['id']) && ($existing = MaterialEntry::query()->find($validated['id'])) instanceof MaterialEntry) {
+                    return $existing;
+                }
 
-            $workOrder = WorkOrder::query()->whereKey($workOrder->id)->lockForUpdate()->firstOrFail();
+                $workOrder = WorkOrder::query()->whereKey($workOrder->id)->lockForUpdate()->firstOrFail();
 
-            if (! $workOrder->status->acceptsReports()) {
-                throw ValidationException::withMessages(['work_order' => __('Arbetsordern är :status. Material kan bara registreras när den är planerad eller pågår.', ['status' => mb_strtolower($workOrder->status->label())])]);
-            }
+                if (! $workOrder->status->acceptsReports()) {
+                    throw ValidationException::withMessages(['work_order' => __('Arbetsordern är :status. Material kan bara registreras när den är planerad eller pågår.', ['status' => mb_strtolower($workOrder->status->label())])]);
+                }
 
-            $changeOrder = null;
+                $changeOrder = null;
 
-            if (filled($validated['change_order_id'] ?? null)) {
-                $changeOrder = ChangeOrder::query()->where('work_order_id', $workOrder->id)->find((int) $validated['change_order_id'])
-                    ?? throw ValidationException::withMessages(['change_order_id' => __('ÄTA:t finns inte på arbetsordern.')]);
-            }
+                if (filled($validated['change_order_id'] ?? null)) {
+                    $changeOrder = ChangeOrder::query()->where('work_order_id', $workOrder->id)->find((int) $validated['change_order_id'])
+                        ?? throw ValidationException::withMessages(['change_order_id' => __('ÄTA:t finns inte på arbetsordern.')]);
+                }
 
-            $attributes = match ($source) {
-                MaterialSource::SupplierInvoiceRow => $this->fromSupplierRow($workOrder, (int) ($validated['supplier_invoice_row_id'] ?? 0)),
-                default => $this->fromArticleOrText($workOrder, $validated, $source),
-            };
+                $attributes = match ($source) {
+                    MaterialSource::SupplierInvoiceRow => $this->fromSupplierRow($workOrder, (int) ($validated['supplier_invoice_row_id'] ?? 0)),
+                    default => $this->fromArticleOrText($workOrder, $validated, $source),
+                };
 
-            if ($manager && filled($validated['unit_cost'] ?? null)) {
-                $attributes['unit_cost_ore'] = (int) Input::money($validated['unit_cost'], 'unit_cost');
-            }
+                if ($manager && filled($validated['unit_cost'] ?? null)) {
+                    $attributes['unit_cost_ore'] = (int) Input::money($validated['unit_cost'], 'unit_cost');
+                }
 
-            if ($manager && filled($validated['unit_price'] ?? null)) {
-                $attributes['unit_price_ore'] = (int) Input::money($validated['unit_price'], 'unit_price');
-            } elseif (! isset($attributes['unit_price_ore'])) {
-                $attributes['unit_price_ore'] = (int) round($attributes['unit_cost_ore'] * (10_000 + $workOrder->material_markup_bp) / 10_000);
-            }
+                if ($manager && filled($validated['unit_price'] ?? null)) {
+                    $attributes['unit_price_ore'] = (int) Input::money($validated['unit_price'], 'unit_price');
+                } elseif (! isset($attributes['unit_price_ore'])) {
+                    $attributes['unit_price_ore'] = (int) round($attributes['unit_cost_ore'] * (10_000 + $workOrder->material_markup_bp) / 10_000);
+                }
 
-            $entry = MaterialEntry::create([
-                ...$attributes,
-                'id' => $validated['id'] ?? null,
-                'work_order_id' => $workOrder->id,
-                'change_order_id' => $changeOrder?->id,
-                'user_id' => $user->id,
-                'source' => $source->value,
-                'billable' => $manager ? (bool) ($validated['billable'] ?? true) : true,
-                'work_date' => $validated['work_date'],
-                'note' => $validated['note'] ?? null,
-                'entered_at' => CarbonImmutable::now(),
-                'created_by' => $user->id,
-            ]);
+                $entry = MaterialEntry::create([
+                    ...$attributes,
+                    'id' => $validated['id'] ?? null,
+                    'work_order_id' => $workOrder->id,
+                    'change_order_id' => $changeOrder?->id,
+                    'user_id' => $user->id,
+                    'source' => $source->value,
+                    'billable' => $manager ? (bool) ($validated['billable'] ?? true) : true,
+                    'work_date' => $validated['work_date'],
+                    'note' => $validated['note'] ?? null,
+                    'entered_at' => CarbonImmutable::now(),
+                    'created_by' => $user->id,
+                ]);
 
-            if ($source === MaterialSource::Stock) {
-                $this->ledger->post($company, $user, MovementType::WorkOrderIssue, [[
-                    'article_id' => (int) $entry->article_id,
-                    'location_id' => (int) $entry->stock_location_id,
-                    'quantity_milli' => -$entry->quantity_milli,
-                ]], CarbonImmutable::parse((string) $validated['work_date']), $entry, __('Arbetsorder :number', ['number' => $workOrder->number]));
-            }
+                if ($source === MaterialSource::Stock) {
+                    $this->ledger->post($company, $user, MovementType::WorkOrderIssue, [[
+                        'article_id' => (int) $entry->article_id,
+                        'location_id' => (int) $entry->stock_location_id,
+                        'quantity_milli' => -$entry->quantity_milli,
+                    ]], CarbonImmutable::parse((string) $validated['work_date']), $entry, __('Arbetsorder :number', ['number' => $workOrder->number]));
+                }
 
-            if ($workOrder->status === WorkOrderStatus::Planned) {
-                $workOrder->forceFill(['status' => WorkOrderStatus::InProgress])->save();
-            }
+                if ($workOrder->status === WorkOrderStatus::Planned) {
+                    $workOrder->forceFill(['status' => WorkOrderStatus::InProgress])->save();
+                }
 
-            Audit::record('work_orders.material_recorded', $entry, [
-                'work_order_id' => $workOrder->id,
-                'change_order_id' => $changeOrder?->id,
-                'source' => $source->value,
-                'article_id' => $entry->article_id,
-                'supplier_invoice_row_id' => $entry->supplier_invoice_row_id,
-                'quantity_milli' => $entry->quantity_milli,
-            ], $company, $user);
+                Audit::record('work_orders.material_recorded', $entry, [
+                    'work_order_id' => $workOrder->id,
+                    'change_order_id' => $changeOrder?->id,
+                    'source' => $source->value,
+                    'article_id' => $entry->article_id,
+                    'supplier_invoice_row_id' => $entry->supplier_invoice_row_id,
+                    'quantity_milli' => $entry->quantity_milli,
+                ], $company, $user);
 
-            return $entry;
-        }));
+                return $entry;
+            }));
+        } catch (UniqueConstraintViolationException) {
+            // Two people billing the same supplier invoice row at once: the index lets one through (review P3-5).
+            throw ValidationException::withMessages(['supplier_invoice_row_id' => __('Raden är redan vidarefakturerad på en arbetsorder.')]);
+        }
     }
 
     /**
@@ -209,7 +215,7 @@ class RecordMaterial
     /** @return array<string, mixed> */
     private function fromSupplierRow(WorkOrder $workOrder, int $rowId): array
     {
-        $row = SupplierInvoiceRow::query()->find($rowId)
+        $row = SupplierInvoiceRow::query()->lockForUpdate()->find($rowId)
             ?? throw ValidationException::withMessages(['supplier_invoice_row_id' => __('Raden finns inte.')]);
         $invoice = SupplierInvoice::query()->find($row->supplier_invoice_id);
 

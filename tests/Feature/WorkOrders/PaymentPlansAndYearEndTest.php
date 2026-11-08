@@ -29,6 +29,7 @@ use App\Modules\WorkOrders\Actions\SaveChangeOrder;
 use App\Modules\WorkOrders\Domain\Advice;
 use App\Modules\WorkOrders\Domain\OngoingWork;
 use App\Modules\WorkOrders\Models\PaymentInstalment;
+use App\Modules\WorkOrders\Models\TimeEntry;
 use App\Modules\WorkOrders\Models\WorkOrder;
 use App\Modules\WorkOrders\Models\WorkOrderInvoice;
 use App\Modules\WorkOrders\WorkOrdersModule;
@@ -82,6 +83,33 @@ it('gives each a conto invoice its own ROT on its labour share and the final inv
         ->and($final->rows->every(fn ($row) => $row->net_ore->ore > 0))->toBeTrue()
         ->and($final->tax_reduction_ore->ore)->toBe(750_000)
         ->and(WorkOrderInvoice::query()->where('invoice_id', $final->id)->value('kind'))->toBe(WorkOrderInvoice::FINAL);
+});
+
+it('claims the hours recorded before an a conto invoice on it, and still makes the final invoice (review P1-2, hours first)', function () {
+    $workOrder = fixedRot();
+    WorkOrders::hours($this->company, $this->owner, $workOrder, '8');
+    app(PaymentPlans::class)->save($this->owner, $this->company, $workOrder, [['label' => 'Vid start', 'amount' => '32 000']], agreedWithCustomer: true);
+
+    $aconto = app(IssueInvoice::class)($this->owner, app(PaymentPlans::class)->invoice($this->owner, $this->company, PaymentInstalment::query()->where('work_order_id', $workOrder->id)->firstOrFail()));
+    $final = app(CreateInvoiceBasis::class)($this->owner, $this->company, $workOrder);
+
+    expect($aconto->labour_hours_milli)->toBe(8000)
+        ->and(TimeEntry::query()->where('work_order_id', $workOrder->id)->value('invoice_id'))->toBe($final->id)
+        ->and($final->labour_hours_milli)->toBe(0)
+        ->and($final->tax_reduction_ore->ore)->toBe(750_000);
+});
+
+it('claims on the final invoice the hours recorded after an a conto invoice without hours (review P1-2, hours after)', function () {
+    $workOrder = fixedRot();
+    app(PaymentPlans::class)->save($this->owner, $this->company, $workOrder, [['label' => 'Förskott', 'amount' => '32 000']], agreedWithCustomer: true);
+    $aconto = app(IssueInvoice::class)($this->owner, app(PaymentPlans::class)->invoice($this->owner, $this->company, PaymentInstalment::query()->where('work_order_id', $workOrder->id)->firstOrFail()));
+
+    expect($aconto->labour_hours_milli)->toBe(0);
+    expect(fn () => app(CreateInvoiceBasis::class)($this->owner, $this->company, $workOrder))->toThrow(ValidationException::class, 'Registrera arbetade timmar');
+
+    WorkOrders::hours($this->company, $this->owner, $workOrder, '6');
+
+    expect(app(CreateInvoiceBasis::class)($this->owner, $this->company, $workOrder)->labour_hours_milli)->toBe(6000);
 });
 
 it('asks a consumer plan to be agreed, needs a fixed price, and keeps the plan below the contract sum', function () {

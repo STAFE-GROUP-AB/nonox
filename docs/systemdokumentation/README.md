@@ -1235,10 +1235,15 @@ balances").
   innehåll (utlösaren `invoices_protect_issued` jämför alla kolumner som inte
   uttryckligen får ändras). Delar flera köpare på avdraget (ADR-074 O6) sparas
   varje köpares andel och avdrag i `invoice_tax_reduction_buyers`, inom
-  köparens eget tak; raderna kan inte ändras när fakturan är utfärdad, och en
-  kreditfaktura delar sitt avdrag efter samma andelar. Fakturans PDF skriver
-  ut köparens personnummer, eftersom Skatteverket räknar upp det bland
-  fakturans uppgifter (TODO(legal-verify): L6).
+  köparens eget tak; raderna kan inte ändras när fakturan är utfärdad. En
+  kreditfaktura återför varje köpares eget avdrag på originalet, minskat med
+  köparens tidigare krediteringar, i proportion till det som krediteras (hela
+  kronor; den sista köparen med något kvar tar resten). En köpare som inte fick
+  något avdrag får inget återfört. Fakturans PDF skriver ut köparens
+  personnummer, eftersom Skatteverket räknar upp det bland fakturans uppgifter
+  (TODO(legal-verify): L6), men bara på fakturor som utfärdas från och med den
+  här versionen (`invoices.prints_buyer_personal_number`, satt när fakturan
+  utfärdas); en tidigare utfärdad faktura skrivs ut som den såg ut.
 - Kunden betalar fakturan minus avdraget. Vid utfärdandet bokförs kundens
   del på 1510 och avdraget på 1513 Kundfordringar – delad faktura (läggs
   till vid behov); intäkter och moms bokförs på hela beloppet. För ROT krävs
@@ -4261,7 +4266,9 @@ regelbladet `docs/specs/rules/arbetsorder-och-ata.md`. Modulen `work_orders`
   (`work_order_entries_append_only`) tillåter bara två ändringar: att
   motposten kopplas en gång (`reversed_by_id`) och vilket fakturautkast som
   reserverar posten (`invoice_id`), och den senare bara så länge fakturan är
-  ett utkast. En post på en utfärdad faktura kan inte backas, bara krediteras.
+  ett utkast; en post kan bara reserveras av ett utkast och inte kopplas till
+  en motpost medan den finns på en utfärdad faktura. En post på en utfärdad
+  faktura kan inte backas, bara krediteras.
 - **Lager.** Material från lagret tas ut som lagerrörelsen
   `WORK_ORDER_ISSUE` till artikelns inköpspris, och kommer tillbaka med samma
   kostnad när posten backas (avsnitt 5j).
@@ -4274,24 +4281,39 @@ regelbladet `docs/specs/rules/arbetsorder-och-ata.md`. Modulen `work_orders`
   arbetade timmar och typ av arbete (avsnitt 5.2), omvänd betalningsskyldighet
   följer arbetsordern och ROT/RUT och omvänd betalningsskyldighet kan inte
   kombineras (kontrollvillkor i databasen). Tid på ÄTA som inte är godkända
-  hålls tillbaka. Ett ROT- eller RUT-underlag utan registrerade timmar vägras.
+  hålls tillbaka. Varje faktura från en arbetsorder tar de arbetade timmar som
+  är registrerade och inte redan tagits upp på en tidigare faktura från samma
+  arbetsorder (`work_order_invoices.labour_minutes`); ett ROT- eller
+  RUT-underlag vägras bara när arbetsordern inte har några registrerade
+  arbetstimmar alls. TODO(legal-verify): om en ROT-faktura utan nya timmar
+  godtas (lag (2009:194) 9 § p. 4).
 - **A conto** (avsnitt ADR-074 §6): fast pris med delbetalningar som var och en
-  blir ett vanligt fakturautkast med eget avdrag på sin andel av arbetet;
-  slutfakturan tar resten som egna rader, aldrig en negativ a conto-rad. Bara
-  med fakturametoden.
+  blir ett vanligt fakturautkast med eget avdrag på sin andel av arbetet. En
+  a conto-faktura reserverar inga tidposter. Slutfakturan tar resten som egna
+  rader, aldrig en negativ a conto-rad. Bara med fakturametoden.
 - **ÄTA** är oföränderliga när de är beslutade (godkända, godkända muntligt,
   utförda utan kundens besked, avböjda, utgångna, återkallade), och innehållet
-  ligger fast när de är skickade (utlösaren `change_orders_protect_decided`).
+  ligger fast när de är skickade (utlösaren `change_orders_protect_decided`;
+  ett skickat ÄTA kan bara gå vidare till ett beslut). När ett ÄTA har skickats
+  eller beslutats kan arbetsorderns kund, prisform, moms, ROT eller RUT och
+  fastighet inte längre ändras. Ett ÄTA som godkänns muntligt eller utförs
+  utan kundens besked behåller PDF:en som den såg ut vid beslutet, med
+  kontrollsumma; ROT-andelen räknas på dagen det skickades eller beslutades.
+  Ett skickat ÄTA vars signeringslänkar har gått ut blir **Har gått ut** när
+  arbetsordern läses.
   Kontaktförsök är endast tilläggbara. Signering sker i den gemensamma
   signeringsdomänen (ADR-046, ADR-075 §7) med dokumentets SHA-256; på plats
   öppnas signeringssidan först efter en kod till kundens egen e-post, och bara
-  kodens hash sparas. Beslutade ÄTA kan läsas med `work-orders:view` även när
+  en HMAC av koden sparas, och länken glöms när koden har gått ut eller efter
+  det femte felaktiga försöket. Beslutade ÄTA kan läsas med `work-orders:view` även när
   modulen är avstängd, och är räkenskapsinformation (BFL 1 kap. 2 § p. 9 b
   eller 5 kap. 7 §; sju år i båda fallen).
 - **Pågående arbeten vid bokslutet** (`work_orders.ongoing_work_proposed`):
   förslag per öppen arbetsorder på balansdagen. Löpande räkning: registrerat
   men ej fakturerat till avtalat pris debet 1620 mot intäktskontot, och det som
-  fakturerats utöver det registrerade från intäkten till 2420. Fast pris med
+  fakturerats utöver det registrerade från intäkten till 2420; bara
+  huvudarbetet och ÄTA som får faktureras räknas, ett ÄTA till fast pris med
+  sitt belopp. Fast pris med
   ÄTA inräknade: huvudregeln (K2) eller successiv vinstavräkning (K3) ger
   upparbetad intäkt efter färdigställandegraden från kostnaderna på
   arbetsorderns projekt mot en beräknad total kostnad, och skillnaden mot det
@@ -4301,8 +4323,10 @@ regelbladet `docs/specs/rules/arbetsorder-och-ata.md`. Modulen `work_orders`
   bara siffrorna. "Skapa verifikationsutkast" skapar två **utkast**,
   justeringen på balansdagen och återföringen dagen efter; ingenting bokförs
   förrän en person bokför dem. Punkten "Pågående arbeten är granskade" i
-  bokslutets checklista är en påminnelse och stoppar inte bokslutet.
-  TODO(legal-verify): L12 och L13.
+  bokslutets checklista är en påminnelse och stoppar inte bokslutet. NONOX
+  varnar, utan att föreslå någon verifikation, när den beräknade totala
+  kostnaden är högre än priset (befarad förlust, K2 6.19) och när metoden byts
+  efter ett stängt räkenskapsår (K2 6.15). TODO(legal-verify): L12 och L13.
 
 ## 6. Belopp
 

@@ -64,6 +64,11 @@ class SaveChangeOrder
             throw ValidationException::withMessages(['change_order' => __('ÄTA:t är :status och kan inte ändras.', ['status' => mb_strtolower($changeOrder->status->label())])]);
         }
 
+        // Once the office has priced it, only the office changes what it says (review P3-3).
+        if ($changeOrder !== null && ! $manager && ($changeOrder->netOre() > 0 || $changeOrder->price_form !== PriceForm::Fixed)) {
+            throw ValidationException::withMessages(['change_order' => __('ÄTA:t är prissatt. Be kontoret ändra det.')]);
+        }
+
         $priced = $manager ? [
             'price_form' => $validated['price_form'] ?? PriceForm::Fixed->value,
             'labour_ore' => Input::money($validated['labour'] ?? null, 'labour') ?? 0,

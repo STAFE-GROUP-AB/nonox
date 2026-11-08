@@ -24,7 +24,8 @@ final class TaxReductionBuyers
     /** @return list<array{name: string, personal_number: string, deduction: ?int}> */
     public static function forPdf(Invoice $invoice): array
     {
-        if ($invoice->tax_reduction === null) {
+        // Only invoices issued from this release on (and drafts) print it: an earlier invoice is re-rendered as it was.
+        if ($invoice->tax_reduction === null || (! $invoice->isDraft() && ! $invoice->prints_buyer_personal_number)) {
             return [];
         }
 

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 use App\Domain\Signing\SigningPdfs;
 use App\Domain\Signing\SigningStatus;
+use App\Mail\SignedDocumentMail;
 use App\Models\SigningRequest;
 use App\Modules\ModuleManager;
 use App\Modules\WorkOrders\Actions\CreateInvoiceBasis;
@@ -136,6 +137,30 @@ it('O4: opens the signing page on the field worker\'s phone only after the code 
     $request = SigningRequest::query()->whereKey($onSite->signing_request_id)->firstOrFail();
     $sent = SigningRequest::query()->where('status', SigningStatus::Pending->value)->sole();
     expect($sent->id)->toBe($request->id);
+});
+
+it('never gives a field worker the ÄTA PDF with prices, nor the signed copy (review P2-1)', function () {
+    $this->company->forceFill(['email' => null])->save();
+    $worker = Bookkeeping::member($this->company, 'field_worker');
+    WorkOrderAssignment::create(['work_order_id' => $this->workOrder->id, 'user_id' => $worker->id]);
+    app(SignChangeOrder::class)->send($this->owner, $this->company, $this->changeOrder);
+
+    $this->actingAs($worker);
+    $this->get(route('workOrders.changeOrderPdf', [$this->workOrder->id, $this->changeOrder->id]))->assertNotFound();
+
+    $onSite = app(SignChangeOrder::class)->onSite($worker, $this->company, ChangeOrder::query()->findOrFail($this->changeOrder->id));
+    $url = null;
+    Mail::assertSent(OnSiteCodeMail::class, function (OnSiteCodeMail $mail) use ($worker, $onSite, &$url): bool {
+        $url = app(SignChangeOrder::class)->verifyOnSite($worker, $this->company, $onSite, $mail->code);
+
+        return true;
+    });
+    $request = SigningRequest::query()->findOrFail($onSite->signing_request_id);
+    $this->post('/signera/'.tokenOf((string) $url), ataSignInput($request))->assertOk();
+
+    Mail::assertQueued(SignedDocumentMail::class, fn ($mail): bool => $mail->hasTo($this->owner->email) && ! $mail->hasTo($worker->email));
+    CurrentCompany::set($this->company);
+    expect($this->changeOrder->fresh()->approval_method)->toBe('ON_SITE');
 });
 
 it('stops the code after five wrong tries and never lets the worker sign an unsent ÄTA', function () {

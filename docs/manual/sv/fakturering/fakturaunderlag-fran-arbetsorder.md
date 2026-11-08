@@ -25,11 +25,11 @@ Du hamnar i ett fakturautkast. Granska det och skapa fakturan som vanligt. Ingen
 
 ## ROT och RUT
 
-Bara typer av arbete som är **Arbete** blir arbetskostnad. Resor, maskiner och material ger aldrig avdrag. Fakturan får **Arbetade timmar** och **Typ av arbete**, som Skatteverket frågar efter när du begär utbetalningen. Finns inga registrerade timmar säger NONOX nej: Skatteverket kräver antalet timmar även vid fast pris.
+Bara typer av arbete som är **Arbete** blir arbetskostnad. Resor, maskiner och material ger aldrig avdrag. Fakturan får **Arbetade timmar** och **Typ av arbete**, som Skatteverket frågar efter när du begär utbetalningen. Varje faktura från arbetsordern tar de timmar som är registrerade och inte redan står på en tidigare faktura från den, också en a conto-faktura. Har arbetsordern inga registrerade timmar alls säger NONOX nej: Skatteverket kräver antalet timmar även vid fast pris.
 
 ## A conto och betalningsplan
 
-Vid fast pris kan du klicka på **Lägg till betalningsplan** och skriva delbetalningar med **Belopp exklusive moms** och ett datum eller delmoment. Med en konsument som kund bocka du i att planen är avtalad. **Fakturera** gör ett fakturautkast för delbetalningen med eget ROT- eller RUT-avdrag på sin andel av arbetet. Slutfakturan tar sedan resten av det fasta priset. A conto-planer finns bara med fakturametoden.
+Vid fast pris kan du klicka på **Lägg till betalningsplan** och skriva delbetalningar med **Belopp exklusive moms** och ett datum eller delmoment. Med en konsument som kund bockar du i att planen är avtalad. **Fakturera** gör ett fakturautkast för delbetalningen med eget ROT- eller RUT-avdrag på sin andel av arbetet. Slutfakturan tar sedan resten av det fasta priset. A conto-planer finns bara med fakturametoden.
 
 Betalas en a conto-faktura med avdrag ett år, och arbetet inte är klart den 31 januari året efter, varnar arbetsordern.
 

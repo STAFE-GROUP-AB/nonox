@@ -1,6 +1,6 @@
 # ADR-074: Work orders and change orders (arbetsorder och ÄTA)
 
-Status: Accepted (built 2026-11-08, see "Addendum: as built")
+Status: Proposed
 Date: 2026-11-08
 Rule sheet: `docs/specs/rules/arbetsorder-och-ata.md` (rules AO-R1 … AO-R39, fixtures F1–F10,
 L-questions L1–L16)
@@ -416,7 +416,37 @@ carry a device-made UUID so a repeat is stored once), step 9 (payroll proposals)
   first day of the deadline month (F6); personalliggare hint above four prisbasbelopp for a
   business customer (F8; 2027 amount `TODO(legal-verify)`); ROT a conto paid one year without
   finished work by 31 January (F9, shown on the work order only, not yet on the invoice page).
-- **Open**: the landing page feature card (needs a real screenshot from `manual:screenshots`),
-  the privacy policy text and its version bump (left to the next legal deploy to avoid a
-  version collision), EXPIRED is never set automatically (a sent ÄTA whose link expired stays
-  SENT until withdrawn or resent), a credited final invoice does not reopen the contract sum.
+- **Open**: the landing page feature card (needs a real screenshot from `manual:screenshots`;
+  until then `work_orders` and `work_orders_ata` are SOON in `Features.php` and the
+  comparison row waits), the legal version bump (folded into the Lead's 1.7 bump; the privacy
+  policy and DPA texts are updated), and a credited final invoice does not reopen the
+  contract sum.
+
+### Review fixes (2026-11-08)
+
+- **Credits with several buyers** reverse each buyer's own deduction on the original, net of
+  that buyer's earlier credits, in proportion to the credit; a buyer with no deduction gets
+  none back (P1-1).
+- **Hours** (Lead): every invoice from a work order claims the labour minutes recorded and not
+  claimed by an earlier invoice of the order (`work_order_invoices.labour_minutes`); a conto
+  invoices reserve no time entries; a ROT/RUT basis is refused only when the order has no
+  recorded labour at all. `TODO(legal-verify)`: an invoice with ROT and no new hours (P1-2).
+- **Field workers** get 404 on the ÄTA PDF; the signed copy goes to the sender, else a member
+  a module names (the work order's creator), never to a field worker (P2-1).
+- **Locks**: once an ÄTA is sent or decided, the work order's customer, VAT, ROT/RUT, price
+  form and property are fixed; the ÄTA's ROT rate is taken on the day it was sent or decided;
+  the PDF of an oral or performed-without-answer decision is stored with its SHA-256 (P2-2).
+- **Triggers**: the buyer trigger checks old and new invoice (P2-3); a SENT ÄTA can only move
+  to SENT or a decided status (P2-4); an entry on an issued invoice cannot get a reversal link,
+  and an entry can only be reserved by a draft (P3-4).
+- **Year-end**: on löpande räkning only main work and invoiceable ÄTA count, a fixed-price ÄTA
+  at its amount (P2-5); advice when the estimate exceeds the price (K2 6.19) and when the
+  method changes after a closed year (K2 6.15) (P3-7).
+- **On-site code**: HMAC keyed with the app key; the link is forgotten on expiry and after the
+  fifth wrong try (P3-1). EXPIRED is set when the work order is read and every link has run
+  out (P3-9).
+- **Smaller**: oral approval and performed-without-answer need a price or löpande räkning
+  (P3-2); a field worker cannot edit a priced ÄTA (P3-3); the supplier row is locked when billed
+  on and a unique violation becomes a validation error (P3-5); hours show three decimals
+  (P3-6); the buyer's personnummer prints only on invoices issued from this release on
+  (`invoices.prints_buyer_personal_number`, set at issue) (P3-8).

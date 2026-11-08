@@ -131,7 +131,10 @@ class CreateInvoiceBasis
                 throw ValidationException::withMessages(['work_order' => __('Det finns inget att fakturera fram till :date. ÄTA som inte är godkända hålls tillbaka.', ['date' => $upTo->toDateString()])]);
             }
 
-            if ($workOrder->tax_reduction !== null && $draft->hasLabour() && $draft->labourMinutes() <= 0) {
+            // Lead's rule (review P1-2): the invoice claims the labour hours not claimed before; refused only when the order has none at all.
+            [$recorded] = $draft->claimLabourMinutes($upTo);
+
+            if ($workOrder->tax_reduction !== null && $draft->hasLabour() && $recorded <= 0) {
                 throw ValidationException::withMessages(['work_order' => __('Registrera arbetade timmar. Skatteverket kräver antalet timmar även vid fast pris.')]);
             }
 
@@ -143,6 +146,7 @@ class CreateInvoiceBasis
                 'kind' => $includesContract ? WorkOrderInvoice::FINAL : WorkOrderInvoice::BASIS,
                 'contract_net_ore' => $draft->contractNet,
                 'change_order_ids' => $draft->changeOrderIds,
+                'labour_minutes' => $invoice->tax_reduction === null ? 0 : $draft->labourMinutes(),
             ]);
 
             $draft->reserve($invoice);

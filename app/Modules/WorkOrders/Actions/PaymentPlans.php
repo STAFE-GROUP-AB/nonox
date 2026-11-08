@@ -14,12 +14,10 @@ use App\Modules\WorkOrders\Actions\Concerns\GuardsWorkOrders;
 use App\Modules\WorkOrders\Domain\Advice;
 use App\Modules\WorkOrders\Domain\PriceForm;
 use App\Modules\WorkOrders\Models\PaymentInstalment;
-use App\Modules\WorkOrders\Models\TimeEntry;
 use App\Modules\WorkOrders\Models\WorkOrder;
 use App\Modules\WorkOrders\Models\WorkOrderInvoice;
 use App\Modules\WorkOrders\Support\Input;
 use App\Modules\WorkOrders\Support\InvoiceDraft;
-use App\Modules\WorkOrders\Support\Uninvoiced;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -140,7 +138,8 @@ class PaymentPlans
             $draft = new InvoiceDraft($workOrder);
             $draft->fixedRows('', $net, $labour, true, __('A conto: :label', ['label' => $instalment->label]));
             $draft->contractNet = $net;
-            $draft->consume(Uninvoiced::free(TimeEntry::query()->where('work_order_id', $workOrder->id)->whereNull('change_order_id'))->with('labourKind')->get(), collect(), true);
+            // An a conto invoice reserves no time entries; it claims the labour hours recorded and not yet claimed (review P1-2).
+            $draft->claimLabourMinutes($invoiceDate ?? CarbonImmutable::today());
 
             $invoice = ($this->save)($user, $company, $draft->input($invoiceDate ?? CarbonImmutable::today(), $workOrder->title));
 
@@ -150,9 +149,8 @@ class PaymentPlans
                 'kind' => WorkOrderInvoice::INSTALMENT,
                 'instalment_id' => $instalment->id,
                 'contract_net_ore' => $net,
+                'labour_minutes' => $invoice->tax_reduction === null ? 0 : $draft->labourMinutes(),
             ]);
-
-            $draft->reserve($invoice);
 
             Audit::record('work_orders.instalment_invoiced', $workOrder, ['invoice_id' => $invoice->id, 'instalment_id' => $instalment->id, 'net_ore' => $net], $company, $user);
 

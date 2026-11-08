@@ -11250,5 +11250,13 @@
     "Utfört arbete: :work": "Work performed: :work",
     "Arbetade timmar: :hours": "Hours worked: :hours",
     "Köpare: :name, :number": "Buyer: :name, :number",
-    "avdrag :amount": "deduction :amount"
+    "avdrag :amount": "deduction :amount",
+    "Metoden för fastprisuppdrag har ändrats efter ett stängt räkenskapsår. Ett byte kräver särskilda skäl och ska förklaras i årsredovisningen (K2 6.15). Stäm av med din redovisningskonsult.": "The method for fixed-price jobs has changed after a closed financial year. A change needs special reasons and must be explained in the annual report (K2 6.15). Check with your accountant.",
+    "Sätt ett pris på ÄTA:t, eller välj löpande räkning, innan det registreras.": "Set a price on the ÄTA, or choose time and materials, before it is recorded.",
+    "ÄTA:t är prissatt. Be kontoret ändra det.": "The ÄTA has a price. Ask the office to change it.",
+    "Det finns fakturor eller skickade ÄTA på arbetsordern. Kund, prisform, moms, omvänd betalningsskyldighet, ROT eller RUT och fastigheten kan inte längre ändras.": "The work order has invoices or sent ÄTA. Customer, price form, VAT, reverse charge, ROT or RUT and the property can no longer be changed.",
+    "Kunden får en kod till sin egen e-post och signerar själv i din telefon.": "The customer gets a code at their own email address and signs on your phone themselves.",
+    "Kontoret sätter priset och skickar ÄTA:t. Därefter kan kunden signera här.": "The office sets the price and sends the ÄTA. After that, the customer can sign here.",
+    "Signeringslänken har gått ut utan svar. Be kontoret göra ett nytt ÄTA om arbetet ska göras.": "The signing link expired without an answer. Ask the office to make a new ÄTA if the work is to be done.",
+    "Den beräknade totala kostnaden är :loss högre än priset med ÄTA. En befarad förlust ska kostnadsföras direkt (K2 6.19); förslaget tar inte med den, så bedöm den med din redovisningskonsult.": "The estimated total cost is :loss higher than the price including ÄTA. An expected loss is expensed at once (K2 6.19); the proposal leaves it out, so assess it with your accountant."
 }

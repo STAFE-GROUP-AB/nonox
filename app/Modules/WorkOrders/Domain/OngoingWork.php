@@ -19,6 +19,7 @@ use App\Modules\WorkOrders\Models\WorkOrder;
 use App\Modules\WorkOrders\Models\WorkOrderInvoice;
 use App\Modules\WorkOrders\Support\Uninvoiced;
 use App\Modules\WorkOrders\WorkOrdersSettings;
+use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
@@ -95,7 +96,7 @@ final class OngoingWork
 
                 $result[] = $workOrder->price_form === PriceForm::Fixed
                     ? self::fixed($workOrder, $entries, $changeOrders->get($workOrder->id) ?? collect(), $invoiced, (int) ($projectCosts[$workOrder->project_id ?? 0] ?? 0), $estimatedCosts[$workOrder->id] ?? null, $method, $k1, $revenue)
-                    : self::timeAndMaterial($workOrder, $entries, $issued, $invoiced, $k1, $revenue);
+                    : self::timeAndMaterial($workOrder, $entries, $changeOrders->get($workOrder->id) ?? collect(), $links->get($workOrder->id) ?? collect(), $issued, $invoiced, $k1, $revenue);
             }
 
             return array_values(array_filter($result, fn (array $line): bool => array_filter($line['figures'], fn (?int $value): bool => (int) $value !== 0) !== []));
@@ -103,14 +104,28 @@ final class OngoingWork
     }
 
     /**
+     * Main work and the ÄTA that may be invoiced (review P2-5): entries on
+     * the main work and on decided ÄTA on löpande räkning at their value;
+     * a decided fixed-price ÄTA at its amount, not its entries. ÄTA that are
+     * not approved are not revenue yet.
+     *
      * @param  Collection<int, TimeEntry|MaterialEntry>  $entries
+     * @param  Collection<int, ChangeOrder>  $changeOrders
+     * @param  Collection<int, WorkOrderInvoice>  $links
      * @param  Collection<string, Invoice>  $issued
      * @return array{work_order: WorkOrder, kind: string, figures: array<string, int|null>, rows: list<array{account: int, debit_ore: int, credit_ore: int}>, note: ?string}
      */
-    private static function timeAndMaterial(WorkOrder $workOrder, Collection $entries, Collection $issued, int $invoiced, bool $k1, int $revenue): array
+    private static function timeAndMaterial(WorkOrder $workOrder, Collection $entries, Collection $changeOrders, Collection $links, Collection $issued, int $invoiced, bool $k1, int $revenue): array
     {
-        $performed = (int) $entries->sum(fn (TimeEntry|MaterialEntry $entry): int => $entry->netOre());
-        $billed = (int) $entries->filter(fn (TimeEntry|MaterialEntry $entry): bool => $entry->invoice_id !== null && $issued->has($entry->invoice_id))->sum(fn (TimeEntry|MaterialEntry $entry): int => $entry->netOre());
+        $decided = $changeOrders->filter(fn (ChangeOrder $changeOrder): bool => $changeOrder->status->allowsInvoicing())->keyBy('id');
+        $byEntries = $entries->filter(fn (TimeEntry|MaterialEntry $entry): bool => $entry->change_order_id === null
+            || ($decided->has($entry->change_order_id) && $decided->get($entry->change_order_id)?->price_form !== PriceForm::Fixed));
+        $fixed = $decided->filter(fn (ChangeOrder $changeOrder): bool => $changeOrder->price_form === PriceForm::Fixed);
+        $fixedBilled = $fixed->filter(fn (ChangeOrder $changeOrder): bool => $links->contains(fn (WorkOrderInvoice $link): bool => $issued->has($link->invoice_id) && in_array($changeOrder->id, (array) $link->change_order_ids, true)));
+
+        $performed = (int) $byEntries->sum(fn (TimeEntry|MaterialEntry $entry): int => $entry->netOre()) + (int) $fixed->sum(fn (ChangeOrder $changeOrder): int => $changeOrder->netOre());
+        $billed = (int) $byEntries->filter(fn (TimeEntry|MaterialEntry $entry): bool => $entry->invoice_id !== null && $issued->has($entry->invoice_id))->sum(fn (TimeEntry|MaterialEntry $entry): int => $entry->netOre())
+            + (int) $fixedBilled->sum(fn (ChangeOrder $changeOrder): int => $changeOrder->netOre());
         $unbilled = $performed - $billed;
         $ahead = max(0, $invoiced - $billed);
         $rows = [];
@@ -170,6 +185,12 @@ final class OngoingWork
             }
 
             $note = (string) __('Kostnader som får tas upp som pågående arbete (1470) visas som siffra. Motkontot för förändringen är inte bekräftat än, så det blir ingen verifikation för den.');
+        }
+
+        // A probable loss is expensed at once (K2 6.19, review P3-7): advice only, never a proposal. TODO(legal-verify): L13.
+        if ($estimated !== null && $estimated > $contract) {
+            $loss = (string) __('Den beräknade totala kostnaden är :loss högre än priset med ÄTA. En befarad förlust ska kostnadsföras direkt (K2 6.19); förslaget tar inte med den, så bedöm den med din redovisningskonsult.', ['loss' => Money::ofOre($estimated - $contract)->format()]);
+            $note = $note === null ? $loss : "{$note} {$loss}";
         }
 
         return [

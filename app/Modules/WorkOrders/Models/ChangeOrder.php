@@ -59,6 +59,8 @@ use LogicException;
  * @property ?PerformedReason $performed_reason
  * @property ?string $justification
  * @property ?string $document_sha256
+ * @property ?string $decided_document_path the PDF rendered at an oral or performed-without-answer decision
+ * @property ?string $decided_document_sha256
  * @property ?int $decided_by
  * @property ?int $created_by
  * @property ?CarbonImmutable $created_at
@@ -71,7 +73,7 @@ class ChangeOrder extends Model implements Signable
     public const string SIGNING_TYPE = 'ATA';
 
     /** Content that cannot change once the ÄTA is sent. */
-    private const array MUTABLE_WHEN_SENT = ['status', 'decided_at', 'approval_method', 'approved_by_name', 'approved_by_title', 'decided_by', 'updated_at'];
+    private const array MUTABLE_WHEN_SENT = ['status', 'decided_at', 'approval_method', 'approved_by_name', 'approved_by_title', 'oral_channel', 'performed_reason', 'justification', 'decided_by', 'decided_document_path', 'decided_document_sha256', 'updated_at'];
 
     /** @var list<string> */
     protected $fillable = [
