@@ -74,8 +74,9 @@ class QuoteFromTemplate extends Component
                 throw $exception;
             }
 
+            // Row errors (rows.0.account and the like) are shown under one field the page renders.
             foreach ($exception->errors() as $field => $messages) {
-                $this->addError($field, (string) $messages[0]);
+                $this->addError(str_starts_with($field, 'rows.') ? 'rows' : $field, (string) $messages[0]);
             }
 
             return;

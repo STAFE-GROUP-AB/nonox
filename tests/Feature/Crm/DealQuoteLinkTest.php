@@ -167,6 +167,33 @@ it('takes the VAT of the invoice code: none for reverse charge or a company outs
     expect(app(CreateQuoteForDeal::class)($this->owner, $this->company->refresh(), $other)->vat_ore->ore)->toBe(0);
 });
 
+it('gives the quote the same VAT as the invoice for every kind of foreign sale', function (string $kind, string $country) {
+    $customer = Crm::customer($this->company, $this->owner, "Kund {$kind}", ['foreign_sale' => $kind, 'country' => $country]);
+    $quote = app(CreateQuoteForDeal::class)($this->owner, $this->company, Crm::deal($this->company, $this->owner, Crm::accountFor($customer), $kind, 1_000_000));
+    $invoice = app(ProgressSalesDocument::class)->toInvoice($this->owner, $quote);
+
+    expect($quote->vat_ore->ore)->toBe($invoice->vat_ore->ore)
+        ->and($quote->total_ore->ore)->toBe($invoice->total_ore->ore);
+})->with([
+    'EU goods' => ['EU_GOODS', 'DE'],
+    'EU services' => ['EU_SERVICES', 'DE'],
+    'export goods' => ['EXPORT_GOODS', 'US'],
+    'export services' => ['EXPORT_SERVICES', 'US'],
+    'EU triangular' => ['EU_TRIANGULAR', 'DE'],
+    'EU consumer under the OSS threshold' => ['EU_CONSUMER_OSS', 'DE'],
+]);
+
+it('shows a row error from the template picker on a deal', function () {
+    $template = dealTemplate($this);
+    DB::table('accounts')->where('company_id', $this->company->id)->where('number', 3001)->update(['number' => 3999]);
+
+    Livewire::test(QuoteFromTemplate::class, ['dealId' => $this->deal->id])
+        ->set('templateId', (string) $template->id)
+        ->call('create')
+        ->assertHasErrors('rows')
+        ->assertSee('intäktskontot finns inte');
+});
+
 it('only moves open deals, and only fills empty links', function () {
     $quote = app(CreateQuoteForDeal::class)($this->owner, $this->company, $this->deal);
     $lost = Crm::deal($this->company, $this->owner, Crm::accountFor($this->customer), 'Förlorad');
