@@ -14,7 +14,7 @@ I kundportalen loggar dina kunders kontaktpersoner in och ser sina fakturor och 
 Kundportalen bär ditt företags logotyp och färg. Längst ned står *Kundportalen drivs med NONOX*, och den raden kan du stänga av.
 
 > [!NOTE]
-> Kundportal är en modul. Den är byggd men väntar på en juristgranskning av hur kundernas kontaktpersoners uppgifter får behandlas. Till dess står det i modullistan under **Inställningar för företaget → Moduler** att den inte kan slås på.
+> Kundportal är en modul. Den är byggd men väntar på en juristgranskning av hur kundernas kontaktpersoners uppgifter får behandlas. Till dess står det i modullistan under **Inställningar för företaget → Moduler** att den inte kan slås på. Den kräver också att installationen kör sin kö i bakgrunden, så att inloggningskoderna skickas utan att svaret avslöjar vem som har en kundportal.
 
 ## Så fungerar inloggningen
 
@@ -33,7 +33,10 @@ Samma person kan vara kontakt för flera kunder, och för kunder hos flera före
 2. Tryck på **Bjud in** i rutan **Kundportal**.
 3. Har du CRM påslaget kan du välja under **Kontaktperson i CRM**. Fakturamottagarna står först. Den som är markerad *Kontakta inte* går inte att välja.
 4. Skriv **Namn** och **E-post**.
-5. Tryck på **Skicka inbjudan**.
+5. Bocka i **Får godkänna offerter** om personen får binda kunden. Ett godkännande i kundportalen gör offerten till en order. För en kund som är privatperson är rutan ifylld från början, för en kontaktperson hos ett företag är den tom.
+6. Tryck på **Skicka inbjudan**.
+
+På kontaktens rad kan du sedan ändra rätten med **Får godkänna offerter** eller **Får inte godkänna offerter**, och byta adress med **Ändra e-post**. Byter du adress loggas personen ut, och loggar sedan in med den nya adressen.
 
 Är kunden en privatperson kan du bara bjuda in kundens egen e-postadress, och bara en inloggning, eftersom fakturorna kan visa personuppgifter som ett personnummer för ROT- eller RUT-avdrag.
 
@@ -57,7 +60,7 @@ Personnummer visas aldrig på kundportalens sidor.
 
 ### Fakturans PDF
 
-Fakturans PDF sparas när fakturan skapas, och det är den som skickas med e-post, visas i kundportalen och kommer med i arkivpaketet. Ändrar du senare företagets adress, bankgiro eller logotyp ändras inte fakturor som redan har skickats. Fakturor som skapades innan PDF:en började sparas visas som *Kopia av fakturan, återskapad från fakturans uppgifter*.
+Fakturans PDF sparas när fakturan skapas, och det är den som skickas med e-post, visas i kundportalen och kommer med i arkivpaketet. Ändrar du senare företagets adress, bankgiro eller logotyp ändras inte fakturor som redan har skickats. Fakturor som skapades innan PDF:en började sparas visas som *Kopia av fakturan, återskapad från fakturans uppgifter*; de andra som *Fakturan som den utfärdades*.
 
 ### Kontoutdraget
 
@@ -67,7 +70,7 @@ Kontoutdraget räknas fram från fakturorna och betalningarna som har kommit in.
 
 Kunden betalar som förut, med bankgiro, plusgiro eller IBAN och OCR-numret. Betalningen syns i kundportalen när du har registrerat den, eller när den har lästs in från banken.
 
-Kunden kan trycka på **Jag har betalat** och ange ett datum. Det bokför ingenting. På fakturan ser du under **Kundportal** att kunden har meddelat att den är betald, och kunden ser att det är hens egen notering tills betalningen har kommit in.
+Kunden kan trycka på **Jag har betalat** och ange ett datum. Det bokför ingenting. Du får en notis, och på fakturan ser du under **Kundportal** att kunden har meddelat att den är betald. Fakturorna som kunder har meddelat som betalda, men som ännu inte är betalda i bokföringen, står också överst på **Frågor från kunder**. Kunden ser att det är hens egen notering tills betalningen har kommit in.
 
 Det går inte att betala med kort eller Swish i kundportalen.
 
@@ -77,18 +80,19 @@ Kunden kan skriva till dig om en faktura, en offert eller något annat, med upp 
 
 1. Du får en notis när en kund skriver.
 2. Öppna **Kundportal → Frågor från kunder**.
-3. Välj frågan, skriv i **Svar** och tryck på **Skicka svar**.
+3. Välj frågan. Kundens bifogade filer öppnar du genom att trycka på dem.
+4. Skriv i **Svar**, bifoga gärna filer, och tryck på **Skicka svar**.
 
 Kunden får ett mejl om att du har svarat, med en länk. Själva svaret står bara i kundportalen, så ingenting om fakturan hamnar i ett mejl.
 
 Med **Avsluta** stänger du frågan. Kunden kan öppna den igen genom att skriva. Avslutade frågor tas bort 24 månader efter att de avslutades, utom bestridanden och frågor där du har tryckt på **Spara längre**.
 
 > [!WARNING]
-> En bestriden faktura får en varning i rutan **Kundportal** på fakturan: *Kunden bestrider fakturan. Läs kundens meddelande och svara innan du skickar en påminnelse.* NONOX stoppar inte påminnelsen. Om en bestriden faktura får påminnas utreds av en jurist.
+> En bestriden faktura får en varning i rutan **Kundportal** och i rutan **Påminnelser** på fakturan. NONOX stoppar inte påminnelsen. Om en bestriden faktura får påminnas utreds av en jurist.
 
 ## Offerter
 
-Kunden kan godkänna en offert som du har skickat genom att skriva sitt namn och bocka i att hen har läst och godkänner den. Det är samma enkla elektroniska underskrift som när du skickar offerten för signering med en länk, med signeringsbevis. Offerten blir en order, och kunden får en kopia med e-post.
+En kontakt som **Får godkänna offerter** kan godkänna en offert som du har skickat genom att skriva sitt namn och bocka i att hen har läst och godkänner den. Det är samma enkla elektroniska underskrift som när du skickar offerten för signering med en länk, med signeringsbevis. Offerten blir en order, och kunden får en kopia med e-post.
 
 Har du skickat en länk för signering för samma offert slutar länken att gälla när kunden godkänner i kundportalen, och tvärtom. Läs mer i [Signera offerter och avtal](/manual/crm/signering).
 
@@ -109,7 +113,7 @@ Ditt företag är personuppgiftsansvarigt för kontaktpersonernas uppgifter i ku
 - En avstängd kontakt tas bort efter 30 dagar.
 - Händelser sparas i 24 månader.
 
-Kontakten kan själv ladda ner sina uppgifter och ta bort sin inloggning under **Mina uppgifter**. Meddelanden finns då kvar hos dig med avsändaren *Borttagen kontakt*.
+Kontakten kan själv ladda ner sina uppgifter och ta bort sin inloggning under **Mina uppgifter**. Meddelanden finns då kvar hos dig med avsändaren *Borttagen kontakt*, och IP-adressen och webbläsaren på kontaktens inloggningar töms.
 
 ## Se också
 

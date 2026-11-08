@@ -7,8 +7,8 @@ namespace App\Modules\Portal\Notifications;
 use Illuminate\Notifications\Notification;
 
 /**
- * An in-app notice that a customer wrote in the portal (ADR-075 §6), to the
- * users with customer-portal:reply. Stored in the database only, like the
+ * An in-app notice that a customer wrote in the portal or said an invoice
+ * is paid (ADR-075 §5, §6), to the users with customer-portal:reply. Stored in the database only, like the
  * task notices (ADR-028), with the company's id so that opening it goes
  * through the company switch. Names neither the customer nor the text.
  */
@@ -19,7 +19,7 @@ class PortalQuestionNotice extends Notification
     public function __construct(
         public readonly int $companyId,
         public readonly string $companyName,
-        public readonly bool $dispute,
+        public readonly string $sentence,
     ) {}
 
     /** @return list<string> */
@@ -35,7 +35,7 @@ class PortalQuestionNotice extends Notification
             'kind' => self::KIND,
             'company_id' => $this->companyId,
             'company_name' => $this->companyName,
-            'title' => $this->dispute ? __('En kund bestrider en faktura i kundportalen.') : __('En kund har skrivit i kundportalen.'),
+            'title' => $this->sentence,
             'destination' => 'customer-portal-questions',
             'destination_label' => __('Öppna Frågor från kunder'),
         ];

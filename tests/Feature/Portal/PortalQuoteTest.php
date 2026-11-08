@@ -36,6 +36,8 @@ beforeEach(function () {
     $this->customer = Portal::customer($this->company, $this->owner);
     $this->key = Portal::key($this->company);
     $this->contact = Portal::contact($this->company, $this->owner, $this->customer);
+    // A contact at a legal person may not accept quotes until the company allows it (review P2-3).
+    $this->contact->forceFill(['can_accept_quotes' => true])->save();
     $this->quote = CurrentCompany::run($this->company, fn (): SalesDocument => app(SaveSalesDocument::class)($this->owner, $this->company, SalesDocument::QUOTE, [
         'customer_id' => $this->customer->id, 'document_date' => '2026-06-15', 'until_date' => '2026-07-15',
         'rows' => [['description' => 'Konsulttimme', 'quantity' => '10', 'price' => '1000', 'vat_rate' => 2500]],

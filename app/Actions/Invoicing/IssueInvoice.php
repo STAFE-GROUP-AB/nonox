@@ -125,6 +125,8 @@ class IssueInvoice
                 'paid_ore' => 0,
                 'foreign_paid_minor' => 0,
                 'vat_exemption_text' => self::exemptionText($company, $invoice),
+                // Its PDF is stored as issued (ADR-075, O6): by the job below, or by whatever needs it first.
+                'stores_issued_pdf' => (bool) config('nonox.store_issued_invoice_pdfs'),
             ]);
 
             if (InvoiceBooking::bookedAtIssue($invoice, $company->accounting_method)) {

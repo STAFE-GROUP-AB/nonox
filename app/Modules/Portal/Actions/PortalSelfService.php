@@ -14,7 +14,9 @@ use App\Modules\Portal\Models\PortalIdentity;
 use App\Modules\Portal\Models\PortalMessage;
 use App\Modules\Portal\Models\PortalPaymentNote;
 use App\Modules\Portal\Models\PortalThread;
+use App\Modules\Portal\Notifications\PortalQuestionNotice;
 use App\Modules\Portal\Support\PortalContext;
+use App\Modules\Portal\Support\PortalRecipients;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
@@ -43,6 +45,13 @@ final class PortalSelfService
 
         $note = PortalPaymentNote::query()->create(['invoice_id' => $invoice->id, 'contact_id' => $context->contact()->id, 'paid_on' => $validated['paid_on']]);
         ($this->events)(EventType::MarkedPaid, PortalThread::INVOICE, $invoice->id);
+
+        // The company is told, as the portal says it is (ADR-075 §5); the note shows on the invoice and in Frågor från kunder.
+        $company = $context->company();
+
+        foreach (PortalRecipients::withPermission($company, 'customer-portal:reply') as $user) {
+            $user->notify(new PortalQuestionNotice($company->id, (string) ($company->legal_name ?: $company->name), __('En kund har meddelat i kundportalen att :title är betald.', ['title' => $invoice->title()])));
+        }
 
         return $note;
     }
@@ -91,6 +100,10 @@ final class PortalSelfService
      * Messages stay with the author shown as "Borttagen kontakt" until their
      * own retention ends.
      *
+     * The IP address and browser on the contact's sign-in events are
+     * cleared first (decision [Lead]); when the person keeps a portal
+     * elsewhere, every other session of theirs ends (sessions_valid_from).
+     *
      * TODO(legal-verify): L4 — keeping the messages under art. 17.3 e.
      */
     public function removeLogin(PortalIdentity $identity, ?int $onlyContactId): void
@@ -103,9 +116,14 @@ final class PortalSelfService
 
         foreach ($contacts as $contact) {
             CurrentCompany::run($contact->company_id, fn () => DB::transaction(function () use ($contact): void {
+                // A query, not the model: the events are append-only, and only these two columns may be cleared (trigger).
+                PortalEvent::query()->where('contact_id', $contact->id)->update(['ip' => null, 'user_agent' => null]);
                 ManagePortalContacts::delete($contact);
                 Audit::record('customer_portal.login_removed_by_contact', null, ['contact_id' => $contact->id, 'customer_id' => $contact->customer_id], $contact->company_id);
             }));
         }
+
+        // Still a portal elsewhere: the person's other sessions end; the caller starts the current one again.
+        PortalIdentity::query()->whereKey($identity->id)->update(['sessions_valid_from' => now()]);
     }
 }

@@ -527,3 +527,36 @@ Built on `feat/customer-portal` after the signing move above. Module `app/Module
 
 The `TODO(legal-verify)` items L1–L8 and L12 are in the code where they apply; L9–L11 concern later
 steps. The drafts for the lawyer are in `docs/juridik/kundportal-utkast.md`.
+
+## Addendum 2026-11-08: review fixes (cold review of 2772c563)
+
+- **Merging needs `npm run build`.** `resources/js/portal.js` is a new Vite entry; without a build the
+  portal pages fail on the missing manifest entry. The README's server section says so too.
+- **P2-1 The stored PDF is the sent PDF.** `IssueInvoice` sets `invoices.stores_issued_pdf`; for such
+  an invoice `IssuedInvoicePdf::get()` stores the PDF itself when the queued job has not run yet
+  (under the unique key, in a savepoint), so an e-mail sent straight after issuing, a recurring
+  invoice issued and sent in one go, and an API issue-then-send all send the stored bytes. The job
+  only warms the store. Tested with `Queue::fake()` on `SendInvoice` and `RunRecurringInvoice`.
+- **P2-2** The company opens a customer's files at `/kunder/portal/fragor/{trad}/bilagor/{bilaga}`
+  (module on, `customer-portal:view`, company-scoped, download with nosniff), and its replies can
+  carry files, screened like the customer's.
+- **P2-3 [Lead]** "Får godkänna offerter" is chosen at invitation and can be changed on the contact
+  row (`customer-portal:manage`, audited `customer_portal.contact_quote_right_changed`). The default
+  is yes for a private customer and no for a contact at a legal person. Existing contacts keep their
+  value (the module is still gated).
+- **P2-4 [Lead]** `PortalModule::canEnable()` refuses when the default queue connection uses the sync
+  driver, since the sign-in's queued code mail is what keeps the response from telling who has a
+  portal. No `defer()` and no `dispatchAfterResponse()`. In the README's server section.
+- **P3** The document's row is locked before its pending links in `SignInSession`; "Jag har betalat"
+  notifies `customer-portal:reply` holders and is listed on Frågor från kunder; the reminders card
+  warns about an open dispute for anyone with `invoices:view`; attachments are all checked before any
+  is written, written inside the transaction and deleted if it fails; nested or failed uploads are
+  refused with a message; downloads use `HeaderUtils::makeDisposition` with an ASCII fallback; the
+  invoice page's "as issued" label checks the stored file's hash; a stored PDF can be deleted only
+  with its company (trigger); removing one login or the company changing a contact's address sets
+  `sessions_valid_from` (the person's other sessions end; the company's change moves the contact to
+  the new address's identity); removing a login clears IP address and browser on that contact's
+  sign-in events [Lead] (the events trigger allows only that); notices go to permission holders in
+  one query (`PortalRecipients`); the privacy page and a branded entry answer 404 while the portal is
+  closed. The CRM account lookup in a quote's acceptance text moved out of `SalesDocument` into
+  `CrmSigningHook` (`ResolvesSigningParty`, asked through `SigningHooks::party()`).

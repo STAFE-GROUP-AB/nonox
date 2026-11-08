@@ -45,6 +45,13 @@ class CustomerPortalPanel extends Component
 
     public bool $showForm = false;
 
+    public bool $canAcceptQuotes = false;
+
+    /** The contact whose address is being changed, and the new address. */
+    public ?int $changingEmailFor = null;
+
+    public string $newEmail = '';
+
     public function mount(int $customerId): void
     {
         abort_unless(app(ModuleManager::class)->isEnabled('portal', $this->company()), 404);
@@ -59,6 +66,7 @@ class CustomerPortalPanel extends Component
         $this->personId = '';
         $this->name = $customer->personal_number !== null ? $customer->name : '';
         $this->email = (string) $customer->email;
+        $this->canAcceptQuotes = ManagePortalContacts::acceptsQuotesByDefault($customer);
     }
 
     public function updatedPersonId(string $value): void
@@ -78,10 +86,37 @@ class CustomerPortalPanel extends Component
             'name' => $this->name,
             'email' => $this->email,
             'crm_person_id' => $this->personId === '' ? null : (int) $this->personId,
+            'can_accept_quotes' => $this->canAcceptQuotes,
         ]);
 
         $this->toast(__('Inbjudan till kundportalen är skickad till :email.', ['email' => $this->email]));
-        $this->reset('showForm', 'name', 'email', 'personId');
+        $this->reset('showForm', 'name', 'email', 'personId', 'canAcceptQuotes');
+    }
+
+    public function toggleQuotes(int $contactId, ManagePortalContacts $manage): void
+    {
+        $contact = $this->contact($contactId);
+        $manage->setCanAcceptQuotes($this->user(), $this->company(), $contact, ! $contact->can_accept_quotes);
+
+        $this->toast($contact->can_accept_quotes
+            ? __(':name kan inte längre godkänna offerter.', ['name' => $contact->identity?->name])
+            : __(':name får godkänna offerter.', ['name' => $contact->identity?->name]));
+    }
+
+    public function startEmailChange(int $contactId): void
+    {
+        $contact = $this->contact($contactId);
+        $this->changingEmailFor = $contact->id;
+        $this->newEmail = (string) $contact->identity?->email;
+    }
+
+    public function changeEmail(ManagePortalContacts $manage): void
+    {
+        $this->resetErrorBag();
+        $manage->changeEmail($this->user(), $this->company(), $this->contact((int) $this->changingEmailFor), $this->newEmail);
+
+        $this->toast(__('E-postadressen är ändrad. Den gamla adressen kan inte längre logga in.'));
+        $this->reset('changingEmailFor', 'newEmail');
     }
 
     public function disable(int $contactId, ManagePortalContacts $manage): void
@@ -149,7 +184,7 @@ class CustomerPortalPanel extends Component
 
     private function contact(int $id): PortalContact
     {
-        return PortalContact::query()->where('customer_id', $this->customerId)->findOrFail($id);
+        return PortalContact::query()->with('identity')->where('customer_id', $this->customerId)->findOrFail($id);
     }
 
     private function user(): User

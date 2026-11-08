@@ -235,7 +235,7 @@ final class SignInController
     {
         $key = $request->session()->get(PortalSession::BRAND_KEY);
 
-        return is_string($key) ? $this->access->settingsFor($key) : null;
+        return is_string($key) ? $this->access->openSettingsFor($key) : null;
     }
 
     private function validateCode(Request $request): void

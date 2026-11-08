@@ -10,6 +10,7 @@ use App\Modules\Portal\Models\PortalContact;
 use App\Modules\Portal\Models\PortalIdentity;
 use App\Modules\Portal\Models\PortalSettings;
 use App\Modules\Portal\Support\PortalAccess;
+use App\Modules\Portal\Support\PortalDownloads;
 use App\Modules\Portal\Support\PortalSession;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Toast;
@@ -70,7 +71,7 @@ final class AccountController
     public function export(PortalSelfService $self): JsonResponse
     {
         return response()->json($self->export($this->identity()), 200, [
-            'Content-Disposition' => 'attachment; filename="mina-uppgifter-kundportal.json"',
+            'Content-Disposition' => PortalDownloads::disposition('mina-uppgifter-kundportal.json'),
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 
@@ -90,6 +91,8 @@ final class AccountController
             return redirect()->route('portal.login')->with('status', __('Din inloggning är borttagen.'));
         }
 
+        // Every other session of the person has ended; this one continues with a new start.
+        PortalSession::start($request, $identity->fresh() ?? $identity);
         Toast::flash(__('Din inloggning till kundportalen är borttagen.'));
 
         return redirect()->route('portal.mine');
@@ -98,7 +101,7 @@ final class AccountController
     /** The company's privacy notice for its portal; reachable without signing in. */
     public function privacy(string $portalKey): View
     {
-        $settings = $this->access->settingsFor($portalKey);
+        $settings = $this->access->openSettingsFor($portalKey);
         abort_unless($settings instanceof PortalSettings, 404);
         $company = Company::query()->findOrFail($settings->company_id);
 

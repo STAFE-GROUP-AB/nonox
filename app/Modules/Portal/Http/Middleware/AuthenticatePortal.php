@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Portal\Http\Middleware;
 
 use App\Modules\Portal\Models\PortalIdentity;
+use App\Modules\Portal\Support\PortalAccess;
 use App\Modules\Portal\Support\PortalSession;
 use Closure;
 use Illuminate\Http\Request;
@@ -33,7 +34,9 @@ final class AuthenticatePortal
             PortalSession::end($request);
         }
 
+        // A portal address of a company whose portal is closed (module off, archived, unknown) answers as unknown.
         if (is_string($key)) {
+            abort_unless(app(PortalAccess::class)->openSettingsFor($key) !== null, 404);
             $request->session()->put(PortalSession::BRAND_KEY, $key);
         }
 

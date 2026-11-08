@@ -121,12 +121,32 @@ final class PortalModule implements IsNew, Module
      * portal is on for any company (ADR-075, build step 1). Until then it can
      * only be turned on where the installation has opened it
      * (NONOX_CUSTOMER_PORTAL=true), such as a test installation.
+     *
+     * The portal also needs a real queue: its sign-in answers every address
+     * at once and sends the code from a queued job, so the response time
+     * never tells whether an address has a portal (§8). With the sync driver
+     * the code would be sent during the request.
      */
     public function canEnable(Company $company): ModuleCheck
     {
-        return config('nonox.customer_portal')
-            ? ModuleCheck::allow()
-            : new ModuleCheck(blockers: [__('Kundportalen är byggd och väntar på en juristgranskning av hur kundernas kontaktpersoners uppgifter får behandlas. Den kan slås på när granskningen är klar.')]);
+        $blockers = [];
+
+        if (! config('nonox.customer_portal')) {
+            $blockers[] = (string) __('Kundportalen är byggd och väntar på en juristgranskning av hur kundernas kontaktpersoners uppgifter får behandlas. Den kan slås på när granskningen är klar.');
+        }
+
+        if (self::queueIsSync()) {
+            $blockers[] = (string) __('Kundportalen behöver en kö som körs i bakgrunden (till exempel Redis eller databasen med en kö-arbetare), så att inloggningskoderna skickas utan att svaret avslöjar vem som har en kundportal. Installationen kör köjobben direkt (QUEUE_CONNECTION=sync).');
+        }
+
+        return $blockers === [] ? ModuleCheck::allow() : new ModuleCheck(blockers: $blockers);
+    }
+
+    public static function queueIsSync(): bool
+    {
+        $connection = (string) config('queue.default');
+
+        return config("queue.connections.{$connection}.driver") === 'sync';
     }
 
     public function canDisable(Company $company): ModuleCheck

@@ -35,7 +35,10 @@ use Illuminate\Validation\ValidationException;
  *   "Kontakta inte"); a customer who is a private person can only have
  *   their own address, as one contact. The link carries a 256-bit token,
  *   only its SHA-256 is stored, valid 14 days and once; inviting again
- *   revokes the earlier link. The mail goes in the company's brand within
+ *   revokes the earlier link. Whether the contact may accept quotes is
+ *   chosen at invitation: by default yes for a private customer (it is
+ *   their own contract), no for a contact at a legal person. The mail goes
+ *   in the company's brand within
  *   the invitations quota, never for a test company.
  * - disable: the contact's sessions end on their next request and open
  *   links are revoked.
@@ -50,7 +53,7 @@ final class ManagePortalContacts
     public function __construct(private readonly ModuleManager $modules) {}
 
     /**
-     * @param  array<string, mixed>  $input  name, email, crm_person_id (optional)
+     * @param  array<string, mixed>  $input  name, email, crm_person_id (optional), can_accept_quotes (optional; see above)
      * @return array{contact: PortalContact, url: string}
      */
     public function invite(User $by, Company $company, Customer $customer, array $input): array
@@ -61,6 +64,7 @@ final class ManagePortalContacts
             'name' => ['required', 'string', 'max:120', 'regex:/^[^\p{C}]+$/u'],
             'email' => ['required', 'email', 'max:255'],
             'crm_person_id' => ['nullable', 'integer'],
+            'can_accept_quotes' => ['nullable', 'boolean'],
         ], [], ['name' => __('namn'), 'email' => __('e-post')])->validate();
 
         $email = PortalIdentity::normalise((string) $validated['email']);
@@ -100,7 +104,11 @@ final class ManagePortalContacts
             MailQuota::take($company, 'invitations');
             $token = SigningToken::generate();
 
-            $contact = DB::transaction(function () use ($by, $customer, $validated, $email, $personId, $token): PortalContact {
+            $canAccept = array_key_exists('can_accept_quotes', $validated) && $validated['can_accept_quotes'] !== null
+                ? (bool) $validated['can_accept_quotes']
+                : self::acceptsQuotesByDefault($customer);
+
+            $contact = DB::transaction(function () use ($by, $customer, $validated, $email, $personId, $token, $canAccept): PortalContact {
                 // Identities are global, like users: found by the address alone.
                 $identity = CompanyScope::bypass(fn (): PortalIdentity => PortalIdentity::query()->firstOrCreate(['email' => $email], ['name' => trim((string) $validated['name'])]));
 
@@ -114,6 +122,7 @@ final class ManagePortalContacts
                 $contact->forceFill([
                     'crm_person_id' => $personId ?? $contact->crm_person_id,
                     'status' => ContactStatus::Invited,
+                    'can_accept_quotes' => $canAccept,
                     'invited_by' => $by->id,
                     'invited_at' => now(),
                     'disabled_at' => null,
@@ -128,7 +137,7 @@ final class ManagePortalContacts
                     'expires_at' => now()->addDays(PortalInvitation::VALID_DAYS),
                 ]);
 
-                Audit::record('customer_portal.contact_invited', $contact, ['contact_id' => $contact->id, 'customer_id' => $customer->id, 'crm_person_id' => $personId], null, $by);
+                Audit::record('customer_portal.contact_invited', $contact, ['contact_id' => $contact->id, 'customer_id' => $customer->id, 'crm_person_id' => $personId, 'can_accept_quotes' => $canAccept], null, $by);
 
                 return $contact;
             });
@@ -148,6 +157,69 @@ final class ManagePortalContacts
 
             return ['contact' => $contact, 'url' => $url];
         });
+    }
+
+    /** By default a private customer accepts their own quotes; a contact at a legal person does not until the company says so. */
+    public static function acceptsQuotesByDefault(Customer $customer): bool
+    {
+        return $customer->personal_number !== null;
+    }
+
+    /** "Får godkänna offerter" on a contact. */
+    public function setCanAcceptQuotes(User $by, Company $company, PortalContact $contact, bool $allowed): void
+    {
+        $this->authorize($by, $company);
+
+        CurrentCompany::run($company, fn () => DB::transaction(function () use ($by, $contact, $allowed): void {
+            $locked = PortalContact::query()->whereKey($contact->id)->lockForUpdate()->firstOrFail();
+            $locked->forceFill(['can_accept_quotes' => $allowed])->save();
+
+            Audit::record('customer_portal.contact_quote_right_changed', $locked, ['contact_id' => $locked->id, 'customer_id' => $locked->customer_id, 'can_accept_quotes' => $allowed], null, $by);
+        }));
+    }
+
+    /**
+     * The company changes a contact's e-mail address, which is the sign-in
+     * (ADR-075 §12, rectification). The contact moves to the identity of the
+     * new address (made if there is none); the old identity's sessions end,
+     * and it is deleted when it has no contacts left. Identities are shared
+     * between companies, so one company never edits another's sign-in.
+     */
+    public function changeEmail(User $by, Company $company, PortalContact $contact, string $email): PortalContact
+    {
+        $this->authorize($by, $company);
+        $validated = Validator::make(['email' => $email], ['email' => ['required', 'email', 'max:255']], [], ['email' => __('e-post')])->validate();
+        $email = PortalIdentity::normalise((string) $validated['email']);
+
+        return CurrentCompany::run($company, fn (): PortalContact => DB::transaction(function () use ($by, $contact, $email): PortalContact {
+            $locked = PortalContact::query()->whereKey($contact->id)->lockForUpdate()->firstOrFail();
+            $old = PortalIdentity::query()->findOrFail($locked->portal_identity_id);
+
+            if ($old->email === $email) {
+                return $locked;
+            }
+
+            // Identities are global, like users: found by the address alone.
+            $new = CompanyScope::bypass(fn (): PortalIdentity => PortalIdentity::query()->firstOrCreate(['email' => $email], ['name' => $old->name]));
+
+            if (PortalContact::query()->where('customer_id', $locked->customer_id)->where('portal_identity_id', $new->id)->exists()) {
+                throw ValidationException::withMessages(['email' => __(':email har redan tillgång till kundportalen för den här kunden.', ['email' => $email])]);
+            }
+
+            $locked->forceFill(['portal_identity_id' => $new->id])->save();
+            $this->revokeLinks($locked);
+            $old->forceFill(['sessions_valid_from' => now()])->save();
+
+            $left = CompanyScope::bypass(fn (): bool => PortalContact::query()->where('portal_identity_id', $old->id)->exists());
+
+            if (! $left) {
+                $old->delete();
+            }
+
+            Audit::record('customer_portal.contact_email_changed', $locked, ['contact_id' => $locked->id, 'customer_id' => $locked->customer_id], null, $by);
+
+            return $locked;
+        }));
     }
 
     public function disable(User $by, Company $company, PortalContact $contact): void

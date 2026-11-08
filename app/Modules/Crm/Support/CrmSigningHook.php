@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace App\Modules\Crm\Support;
 
+use App\Domain\Signing\ResolvesSigningParty;
 use App\Domain\Signing\SigningHook;
 use App\Domain\Signing\SigningPdfs;
 use App\Models\Company;
+use App\Models\Customer;
 use App\Models\SalesDocument;
 use App\Models\SigningRequest;
 use App\Models\User;
 use App\Modules\Crm\Actions\WinDeal;
 use App\Modules\Crm\CrmModule;
+use App\Modules\Crm\Domain\AccountKind;
 use App\Modules\Crm\Domain\ActivityType;
 use App\Modules\Crm\Domain\DealStatus;
 use App\Modules\Crm\Models\Account;
@@ -30,7 +33,7 @@ use Illuminate\Validation\ValidationException;
  * signerades" (or "avböjdes") is logged on the account, and the deal's and
  * the agreement's owners are told too.
  */
-final class CrmSigningHook implements SigningHook
+final class CrmSigningHook implements ResolvesSigningParty, SigningHook
 {
     public function __construct(
         private readonly WinDeal $win,
@@ -52,6 +55,18 @@ final class CrmSigningHook implements SigningHook
         }
 
         return $skipped;
+    }
+
+    /**
+     * The customer's CRM account, when it has one: its kind and name decide
+     * the acceptance text. The table exists whether or not CRM is on, so a
+     * quote reads the same as before CRM was turned off.
+     */
+    public function signingParty(Customer $customer): ?array
+    {
+        $account = Account::query()->where('customer_id', $customer->id)->first();
+
+        return $account instanceof Account ? ['name' => $account->name, 'legal_person' => $account->kind === AccountKind::Company] : null;
     }
 
     public function declined(Company $company, SigningRequest $request): void

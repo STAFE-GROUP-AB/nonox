@@ -11,12 +11,13 @@ use App\Modules\Portal\Models\PortalAttachment;
 use App\Modules\Portal\Models\PortalThread;
 use App\Modules\Portal\Support\PortalContext;
 use App\Modules\Portal\Support\PortalDocuments;
+use App\Modules\Portal\Support\PortalDownloads;
 use App\Support\Toast;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -78,14 +79,8 @@ final class QuestionsController
     {
         $model = $this->threads()->whereKey($thread)->firstOrFail();
         $file = PortalAttachment::query()->whereKey($attachment)->whereIn('message_id', $model->messages()->select('id'))->firstOrFail();
-        $bytes = Storage::disk(PortalAttachment::DISK)->get($file->path);
-        abort_unless(is_string($bytes), 404);
 
-        return response($bytes, 200, [
-            'Content-Type' => $file->mime,
-            'Content-Disposition' => 'attachment; filename="'.str_replace('"', '', $file->original_name).'"',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return PortalDownloads::file($file);
     }
 
     /** @return Builder<PortalThread> */
@@ -109,10 +104,19 @@ final class QuestionsController
         $files = $request->allFiles()['files'] ?? [];
         $valid = [];
 
+        /** @var mixed $file */
         foreach (is_array($files) ? $files : [$files] as $file) {
-            if ($file->isValid()) {
-                $valid[] = $file;
+            // Nested arrays and anything else that is not one uploaded file are refused, never skipped.
+            if (! $file instanceof UploadedFile) {
+                throw ValidationException::withMessages(['files' => __('Filerna kunde inte läsas. Välj dem igen.')]);
             }
+
+            // An upload that failed, for example one larger than the server takes, is refused with its name.
+            if (! $file->isValid()) {
+                throw ValidationException::withMessages(['files' => __(':name kunde inte laddas upp. Den kan vara större än 10 MB.', ['name' => mb_substr(basename($file->getClientOriginalName()), 0, 200)])]);
+            }
+
+            $valid[] = $file;
         }
 
         return $valid;

@@ -38,8 +38,8 @@ use Throwable;
  * certificate; the same follow-up (a quote becomes an order, CRM's steps).
  * It is kept as a signing request with channel PORTAL.
  *
- * Under the same row locks as SignAtLink: an open link for the document is
- * revoked when it is accepted here, and a document signed at a link can no
+ * The document's row is locked first and then its open links, which are
+ * revoked when it is accepted here; a document signed at a link can no
  * longer be accepted here.
  *
  * TODO(legal-verify): L7 — the evidential value of acceptance in a signed-in
@@ -127,21 +127,13 @@ final class SignInSession
     }
 
     /** Revokes any open link for the document, then locks it and checks it is still open and unchanged. */
+    /**
+     * Locks the document first, then its pending links (the order every
+     * signing path takes), checks that it is still open and unchanged, and
+     * revokes the open links.
+     */
     private function lockOpen(Signable $document, string $fingerprintShown): Signable
     {
-        $open = SigningRequest::query()
-            ->where('document_type', $document->signingType())
-            ->where($this->types->column($document->signingType()), $document->signingKey())
-            ->where('status', SigningStatus::Pending->value)
-            ->lockForUpdate()
-            ->get();
-
-        foreach ($open as $link) {
-            $link->forceFill(['status' => SigningStatus::Revoked, 'revoked_at' => now()])->save();
-            SigningEvent::create(['signing_request_id' => $link->id, 'event' => SigningEventType::Revoked]);
-            Audit::record('crm.signing_revoked', $link, ['signing_request_id' => $link->id, 'reason' => 'ACCEPTED_IN_PORTAL'], $link->company_id);
-        }
-
         $locked = $this->types->documentFor(new SigningRequest($this->types->attributesFor($document)), lock: true);
 
         if (! $locked instanceof Signable || ! $locked->signingIsOpen() || ($locked instanceof SalesDocument && SignedDocuments::isQuoteSigned($locked->id))) {
@@ -150,6 +142,19 @@ final class SignInSession
 
         if (! hash_equals($locked->signingFingerprint(), $fingerprintShown)) {
             throw ValidationException::withMessages(['document' => __('Dokumentet har ändrats sedan sidan öppnades. Ladda om sidan och läs det igen.')]);
+        }
+
+        $open = SigningRequest::query()
+            ->where('document_type', $locked->signingType())
+            ->where($this->types->column($locked->signingType()), $locked->signingKey())
+            ->where('status', SigningStatus::Pending->value)
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($open as $link) {
+            $link->forceFill(['status' => SigningStatus::Revoked, 'revoked_at' => now()])->save();
+            SigningEvent::create(['signing_request_id' => $link->id, 'event' => SigningEventType::Revoked]);
+            Audit::record('crm.signing_revoked', $link, ['signing_request_id' => $link->id, 'reason' => 'ACCEPTED_IN_PORTAL'], $link->company_id);
         }
 
         return $locked;

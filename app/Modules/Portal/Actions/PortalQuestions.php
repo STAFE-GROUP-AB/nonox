@@ -21,8 +21,11 @@ use App\Modules\Portal\Models\PortalThread;
 use App\Modules\Portal\Notifications\PortalQuestionNotice;
 use App\Modules\Portal\PortalModule;
 use App\Modules\Portal\Support\PortalContext;
+use App\Modules\Portal\Support\PortalRecipients;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
+use Closure;
+use finfo;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +34,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * Questions between a customer's contact and the company (ADR-075 §6):
@@ -47,6 +51,9 @@ use Illuminate\Validation\ValidationException;
  */
 final class PortalQuestions
 {
+    /** @var list<string> files written in the current transaction */
+    private array $written = [];
+
     public function __construct(
         private readonly AttachmentScreen $screen,
         private readonly ModuleManager $modules,
@@ -75,7 +82,7 @@ final class PortalQuestions
         $stored = $this->screen($files);
         $contact = $context->contact();
 
-        $thread = DB::transaction(function () use ($contact, $validated, $kind, $invoice, $quoteId, $stored): PortalThread {
+        $thread = $this->writing(function () use ($contact, $validated, $kind, $invoice, $quoteId, $stored): PortalThread {
             $thread = PortalThread::query()->create([
                 'customer_id' => $contact->customer_id,
                 'contact_id' => $contact->id,
@@ -109,7 +116,7 @@ final class PortalQuestions
         $stored = $this->screen($files);
         $contact = $context->contact();
 
-        $message = DB::transaction(function () use ($thread, $contact, $body, $stored): PortalMessage {
+        $message = $this->writing(function () use ($thread, $contact, $body, $stored): PortalMessage {
             $locked = PortalThread::query()->whereKey($thread->id)->where('customer_id', $contact->customer_id)->lockForUpdate()->firstOrFail();
             $message = $this->message($locked, $contact, null, $body, $stored);
             // A new message opens a closed thread again.
@@ -135,7 +142,7 @@ final class PortalQuestions
         $stored = $this->screen($files);
 
         return CurrentCompany::run($company, function () use ($user, $company, $thread, $body, $stored): PortalMessage {
-            $message = DB::transaction(function () use ($user, $thread, $body, $stored): PortalMessage {
+            $message = $this->writing(function () use ($user, $thread, $body, $stored): PortalMessage {
                 $locked = PortalThread::query()->whereKey($thread->id)->lockForUpdate()->firstOrFail();
                 $message = $this->message($locked, null, $user, $body, $stored);
                 $locked->forceFill(['answered' => true, 'last_message_at' => now()])->save();
@@ -178,9 +185,9 @@ final class PortalQuestions
     }
 
     /**
-     * @param  list<array{path: string, name: string, mime: string, size: int, sha256: string}>  $stored
+     * @param  list<array{name: string, mime: string, contents: string}>  $files  already checked by screen()
      */
-    private function message(PortalThread $thread, ?PortalContact $contact, ?User $user, string $body, array $stored): PortalMessage
+    private function message(PortalThread $thread, ?PortalContact $contact, ?User $user, string $body, array $files): PortalMessage
     {
         $message = PortalMessage::query()->create([
             'thread_id' => $thread->id,
@@ -190,11 +197,39 @@ final class PortalQuestions
             'body' => trim(str_replace("\r\n", "\n", $body)),
         ]);
 
-        foreach ($stored as $file) {
-            PortalAttachment::query()->create(['message_id' => $message->id, 'path' => $file['path'], 'original_name' => $file['name'], 'mime' => $file['mime'], 'size' => $file['size'], 'sha256' => $file['sha256']]);
+        foreach ($files as $file) {
+            $path = 'portal/'.$thread->company_id.'/'.Str::uuid()->toString().'.'.PortalAttachment::MIMES[$file['mime']];
+            Storage::disk(PortalAttachment::DISK)->put($path, $file['contents']);
+            $this->written[] = $path;
+
+            PortalAttachment::query()->create(['message_id' => $message->id, 'path' => $path, 'original_name' => $file['name'], 'mime' => $file['mime'], 'size' => strlen($file['contents']), 'sha256' => hash('sha256', $file['contents'])]);
         }
 
         return $message;
+    }
+
+    /**
+     * Runs the writes in one transaction; the files written inside it are
+     * deleted again if it fails, so no file is left without its row.
+     *
+     * @template T
+     *
+     * @param  Closure(): T  $callback
+     * @return T
+     */
+    private function writing(Closure $callback): mixed
+    {
+        $this->written = [];
+
+        try {
+            return DB::transaction($callback);
+        } catch (Throwable $exception) {
+            Storage::disk(PortalAttachment::DISK)->delete($this->written);
+
+            throw $exception;
+        } finally {
+            $this->written = [];
+        }
     }
 
     private function validateBody(string $body): void
@@ -203,10 +238,12 @@ final class PortalQuestions
     }
 
     /**
-     * Checks and stores the files before anything is written.
+     * Checks every file before anything is written: at most five, each a
+     * PDF, JPEG or PNG by its content, at most 10 MB, and through the
+     * inbox's screen.
      *
      * @param  list<UploadedFile>  $files
-     * @return list<array{path: string, name: string, mime: string, size: int, sha256: string}>
+     * @return list<array{name: string, mime: string, contents: string}>
      */
     private function screen(array $files): array
     {
@@ -214,12 +251,18 @@ final class PortalQuestions
             throw ValidationException::withMessages(['files' => __('Högst :count filer per meddelande.', ['count' => PortalAttachment::MAX_PER_MESSAGE])]);
         }
 
-        $stored = [];
+        $checked = [];
 
         foreach ($files as $file) {
-            $contents = (string) file_get_contents($file->getRealPath());
             $name = mb_substr(basename($file->getClientOriginalName()), 0, 200);
-            $mime = (new \finfo(FILEINFO_MIME_TYPE))->buffer($contents) ?: '';
+            $size = $file->getSize();
+
+            if ($size === false || $size > PortalAttachment::MAX_BYTES || $size === 0) {
+                throw ValidationException::withMessages(['files' => __(':name är större än 10 MB eller tom.', ['name' => $name])]);
+            }
+
+            $contents = (string) file_get_contents($file->getRealPath());
+            $mime = (new finfo(FILEINFO_MIME_TYPE))->buffer($contents) ?: '';
 
             if (strlen($contents) > PortalAttachment::MAX_BYTES || $contents === '') {
                 throw ValidationException::withMessages(['files' => __(':name är större än 10 MB eller tom.', ['name' => $name])]);
@@ -235,23 +278,16 @@ final class PortalQuestions
                 throw ValidationException::withMessages(['files' => $reason]);
             }
 
-            $path = 'portal/'.CurrentCompany::id().'/'.Str::uuid()->toString().'.'.PortalAttachment::MIMES[$mime];
-            Storage::disk(PortalAttachment::DISK)->put($path, $contents);
-            $stored[] = ['path' => $path, 'name' => $name, 'mime' => $mime, 'size' => strlen($contents), 'sha256' => hash('sha256', $contents)];
+            $checked[] = ['name' => $name, 'mime' => $mime, 'contents' => $contents];
         }
 
-        return $stored;
+        return $checked;
     }
 
     private function notifyCompany(Company $company, PortalThread $thread): void
     {
-        $users = User::query()
-            ->where(fn ($query) => $query->whereKey($company->user_id)->orWhereIn('id', fn ($members) => $members->select('user_id')->from('team_user')->where('team_id', $company->id)))
-            ->get()
-            ->filter(fn (User $user): bool => $user->hasTeamPermission($company, 'customer-portal:reply'));
-
-        foreach ($users as $user) {
-            $user->notify(new PortalQuestionNotice($company->id, (string) ($company->legal_name ?: $company->name), $thread->kind === ThreadKind::Dispute));
+        foreach (PortalRecipients::withPermission($company, 'customer-portal:reply') as $user) {
+            $user->notify(new PortalQuestionNotice($company->id, (string) ($company->legal_name ?: $company->name), $thread->kind === ThreadKind::Dispute ? __('En kund bestrider en faktura i kundportalen.') : __('En kund har skrivit i kundportalen.')));
         }
     }
 

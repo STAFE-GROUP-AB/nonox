@@ -8,22 +8,28 @@ use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Portal\Actions\PortalQuestions;
+use App\Modules\Portal\Models\PortalPaymentNote;
 use App\Modules\Portal\Models\PortalThread;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 /**
  * /kunder/portal/fragor (ADR-075 §6): the customers' questions and
  * disputes, newest first, filtered on open or closed (in the address), one
  * thread open with its messages, Svara, Avsluta and Spara (kept past the 24
- * months). Message text is shown as plain text.
+ * months). Message text is shown as plain text; files open through the
+ * company's own download route, and a reply can carry files too.
  */
 class PortalQuestionsPage extends Component
 {
     use ShowsToasts;
+    use WithFileUploads;
     use WithPagination;
 
     public const string NAME = 'portal.questions';
@@ -35,6 +41,9 @@ class PortalQuestionsPage extends Component
     public ?int $threadId = null;
 
     public string $reply = '';
+
+    /** @var array<int, mixed> files for the reply, checked like the customer's (PortalQuestions::screen) */
+    public array $replyFiles = [];
 
     public function mount(): void
     {
@@ -49,8 +58,18 @@ class PortalQuestionsPage extends Component
 
     public function send(PortalQuestions $questions): void
     {
-        $questions->reply($this->user(), $this->company(), $this->thread(), $this->reply);
-        $this->reset('reply');
+        $files = [];
+
+        foreach ($this->replyFiles as $file) {
+            if (! $file instanceof UploadedFile) {
+                throw ValidationException::withMessages(['files' => __('Filerna kunde inte läsas. Välj dem igen.')]);
+            }
+
+            $files[] = $file;
+        }
+
+        $questions->reply($this->user(), $this->company(), $this->thread(), $this->reply, $files);
+        $this->reset('reply', 'replyFiles');
         $this->toast(__('Svaret är skickat. Kunden får ett mejl med en länk, inte själva texten.'));
     }
 
@@ -82,6 +101,11 @@ class PortalQuestionsPage extends Component
             'threads' => $threads,
             'thread' => $this->threadId === null ? null : PortalThread::query()->with(['customer:id,name', 'messages.attachments', 'messages.user:id,name', 'messages.contact.identity'])->find($this->threadId),
             'canReply' => $this->user()->hasTeamPermission($this->company(), 'customer-portal:reply'),
+            // "Jag har betalat" on invoices still unpaid (ADR-075 §5).
+            'paidNotes' => PortalPaymentNote::query()
+                ->with(['invoice:id,number,kind,customer_id,status', 'invoice.customer:id,name', 'contact.identity'])
+                ->whereHas('invoice', fn ($query) => $query->where('status', 'ISSUED'))
+                ->latest('id')->limit(20)->get(),
         ]);
     }
 

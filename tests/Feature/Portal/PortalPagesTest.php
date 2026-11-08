@@ -137,7 +137,7 @@ it('hands out the stored PDF exactly as issued, streamed as a private download',
     $this->company->forceFill(['bankgiro' => '9999-9999'])->save();
     Portal::signIn($this, $this->contact);
 
-    $this->get(portalUrl($this, 'portal.invoices.show', ['number' => $invoice->number]))->assertSee('Fakturan som den skickades.');
+    $this->get(portalUrl($this, 'portal.invoices.show', ['number' => $invoice->number]))->assertSee('Fakturan som den utfärdades.');
     $response = $this->get(portalUrl($this, 'portal.invoices.pdf', ['number' => $invoice->number]))->assertOk();
 
     expect(hash('sha256', (string) $response->getContent()))->toBe($stored->sha256)

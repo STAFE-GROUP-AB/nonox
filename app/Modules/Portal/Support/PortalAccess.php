@@ -64,6 +64,18 @@ final class PortalAccess
         return $identity instanceof PortalIdentity && $this->contactsFor($identity)->isNotEmpty();
     }
 
+    /**
+     * The company behind a portal key while its portal is open: the module
+     * on and the company not archived. Otherwise null, as for an unknown key.
+     */
+    public function openSettingsFor(string $key): ?PortalSettings
+    {
+        $settings = $this->settingsFor($key);
+        $company = $settings === null ? null : Company::query()->find($settings->company_id);
+
+        return $company instanceof Company && ! $company->isArchived() && $this->modules->isEnabled(PortalModule::KEY, $company) ? $settings : null;
+    }
+
     /** The company behind a portal key, or null. */
     public function settingsFor(string $key): ?PortalSettings
     {

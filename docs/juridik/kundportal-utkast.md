@@ -48,6 +48,19 @@ länkar dit. Den innehåller i dag:
 Saknas enligt utkastet: kontaktuppgifter till ett dataskyddsombud (om företaget har ett), mottagare
 (underbiträden enligt `docs/juridik/underbitraden.md`), och om uppgifter förs till tredje land.
 
-## C. Övriga öppna frågor
+## C. Beslut att granska
+
+- **IP-adress när kontakten tar bort sin inloggning** (beslut av Lead 2026-11-08): när en kontakt
+  tar bort sin inloggning töms IP-adressen och webbläsaren på kontaktens inloggningshändelser
+  direkt, medan händelserna i övrigt (vilka fakturor som öppnades och när) finns kvar i 24 månader
+  utan koppling till kontakten. Fråga till jurist: räcker det, eller ska händelserna tas bort helt,
+  eller får IP-adressen sparas kvar som underlag om en kund senare säger att den aldrig fick en
+  faktura (artikel 17.3 e)?
+- **Rätten att godkänna offerter** (beslut av Lead 2026-11-08): en kontaktperson hos en juridisk
+  person får inte godkänna offerter förrän företaget har gett rätten; en kund som är privatperson
+  får det från början. Fråga till jurist: behöver företaget dokumentera att personen har behörighet
+  att binda kunden, utöver bekräftelsetexten?
+
+## D. Övriga öppna frågor
 
 L3–L12 står i `docs/specs/rules/kundportal.md` och som `TODO(legal-verify)` i koden.

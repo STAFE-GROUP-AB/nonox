@@ -32,8 +32,14 @@ final class Portal
 {
     public static function enable(Company $company, User $owner): void
     {
-        config(['nonox.customer_portal' => true]);
-        app(ModuleManager::class)->enable(PortalModule::KEY, $company, $owner);
+        // The module refuses a sync queue (PortalModule::canEnable); the tests run jobs at once, so the check sees another connection.
+        config(['nonox.customer_portal' => true, 'queue.default' => 'database']);
+
+        try {
+            app(ModuleManager::class)->enable(PortalModule::KEY, $company, $owner);
+        } finally {
+            config(['queue.default' => 'sync']);
+        }
         CurrentCompany::set($company);
     }
 

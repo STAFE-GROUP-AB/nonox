@@ -12,7 +12,6 @@ use App\Domain\Invoicing\SalesDocumentPdf;
 use App\Domain\Signing\SigningPdfs;
 use App\Domain\Signing\SigningStatus;
 use App\Models\Invoice;
-use App\Models\InvoiceDocument;
 use App\Models\SigningRequest;
 use App\Modules\Portal\Actions\PortalSelfService;
 use App\Modules\Portal\Actions\RecordPortalEvent;
@@ -22,6 +21,7 @@ use App\Modules\Portal\Models\PortalPaymentNote;
 use App\Modules\Portal\Models\PortalThread;
 use App\Modules\Portal\Support\PortalContext;
 use App\Modules\Portal\Support\PortalDocuments;
+use App\Modules\Portal\Support\PortalDownloads;
 use App\Modules\Portal\Support\PortalStatement;
 use App\Support\Branding\Brand;
 use App\Support\Toast;
@@ -89,7 +89,8 @@ final class DocumentsController
                 'iban' => $invoice->isForeign() ? $company->iban : null,
                 'bic' => $invoice->isForeign() ? $company->bic : null,
             ],
-            'stored' => InvoiceDocument::query()->where('invoice_id', $invoice->id)->exists(),
+            // Stored and its bytes match their hash; an invoice issued with stored PDFs is stored now if it was not yet.
+            'stored' => IssuedInvoicePdf::get($invoice)['stored'],
         ]);
     }
 
@@ -205,11 +206,7 @@ final class DocumentsController
 
     private function download(string $bytes, string $name): Response
     {
-        return response($bytes, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="'.$name.'"',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return PortalDownloads::bytes($bytes, $name, 'application/pdf');
     }
 
     private function companyName(): string

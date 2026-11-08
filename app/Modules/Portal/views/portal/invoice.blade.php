@@ -16,7 +16,7 @@
         </div>
         <div class="text-right">
             <a href="{{ route('portal.invoices.pdf', ['portalKey' => $key, 'number' => $invoice->number]) }}" class="inline-block rounded-lg bg-gray-900 px-4 py-3 font-semibold text-white">{{ __('Ladda ner PDF') }}</a>
-            <p class="mt-1 text-xs text-gray-600">{{ $stored ? __('Fakturan som den skickades.') : __('Kopia av fakturan, återskapad från fakturans uppgifter.') }}</p>
+            <p class="mt-1 text-xs text-gray-600">{{ $stored ? __('Fakturan som den utfärdades.') : __('Kopia av fakturan, återskapad från fakturans uppgifter.') }}</p>
         </div>
     </div>
 

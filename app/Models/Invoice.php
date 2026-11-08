@@ -75,6 +75,7 @@ use LogicException;
  * @property ?string $write_off_voucher_id
  * @property ?string $write_off_reason
  * @property Money $recovered_ore paid by the customer after the write-off (#57)
+ * @property bool $stores_issued_pdf issued with stored PDFs on: the PDF is stored the first time it is needed (ADR-075)
  */
 class Invoice extends Model
 {
@@ -134,6 +135,7 @@ class Invoice extends Model
             'foreign_sale' => ForeignSale::class,
             'swedish_vat_under_threshold' => 'boolean',
             'unregistered_vat_confirmed' => 'boolean',
+            'stores_issued_pdf' => 'boolean',
             'written_off_ore' => MoneyCast::class,
             'written_off_on' => 'immutable_date',
             'recovered_ore' => MoneyCast::class,

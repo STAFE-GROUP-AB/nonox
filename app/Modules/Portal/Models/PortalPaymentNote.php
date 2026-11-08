@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Portal\Models;
 
+use App\Models\Invoice;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
@@ -37,6 +38,12 @@ class PortalPaymentNote extends Model
     protected function casts(): array
     {
         return ['paid_on' => 'immutable_date', 'created_at' => 'immutable_datetime'];
+    }
+
+    /** @return BelongsTo<Invoice, $this> */
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class);
     }
 
     /** @return BelongsTo<PortalContact, $this> */
