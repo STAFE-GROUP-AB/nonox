@@ -11,7 +11,7 @@ questions at the end go to a human lawyer or accountant before any rule marked
 | IL | Inkomstskattelag (1999:1229) — https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/ | Consolidated "Ändrad: t.o.m. SFS 2026:1393" | Full text from `https://data.riksdagen.se/dokument/sfs-1999-1229.text`, read locally: 11 kap. 1 §, 12 kap. 2, 5, 7, 8, 24, 26–29 §§, 16 kap. 27 §, 61 kap. 5–11 §§, transitional note to SFS 2026:464 |
 | SFL | Skatteförfarandelag (2011:1244) — `https://data.riksdagen.se/dokument/sfs-2011-1244.text` | current consolidated | 10 kap. 3 §, 39 kap. 3 § |
 | SAL | Socialavgiftslag (2000:980) — `https://data.riksdagen.se/dokument/sfs-2000-980.text` | current consolidated | 2 kap. 10, 10 a, 11, 12, 21 §§ |
-| ML | Mervärdesskattelag (2023:200) — `https://data.riksdagen.se/dokument/sfs-2023-200.text` | "Ändrad: t.o.m. SFS 2026:1025" | 5 kap. 31 §, 8 kap. 7 § (beskattningsunderlag uttag), 13 kap. 20–23 §§, the 25 § on deferred reporting of uttag |
+| ML | Mervärdesskattelag (2023:200) — `https://data.riksdagen.se/dokument/sfs-2023-200.text` | "Ändrad: t.o.m. SFS 2026:1025" | 5 kap. 31 §, 8 kap. 7 § (beskattningsunderlag uttag), 13 kap. 20–23 §§, 7 kap. 25 § (deferred reporting of output VAT on private use of a business car; 13 kap. 25 § is the representation exception, not this) |
 | BFL | Bokföringslag (1999:1078) — `https://data.riksdagen.se/dokument/sfs-1999-1078.text` | "Ändrad: t.o.m. SFS 2024:342" | 1 kap. 2 § p. 9, 5 kap. 6–8 §§, 7 kap. 2 § |
 | SKV-BP | Skatteverket, *Belopp och procent 2026* — https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html | page read 2026-11-08 | WebFetch |
 | SKV-TB | Skatteverket, *Traktamente och bilersättning* (arbetsgivare) — https://www.skatteverket.se/foretag/arbetsgivare/lonochersattning/traktamenteochbilersattning | read 2026-11-08 | WebFetch |
@@ -210,8 +210,9 @@ lower.
 
 **KJ-R13 Car benefit of minor extent (ringa omfattning) → value 0.**
 - IL 61 kap. 11 § andra stycket: "Om den skattskyldige haft bilförmån bara i ringa omfattning ska förmånen värderas till noll."
-- SKV-KJ: a careful körjournal shows that the employee has not driven privately more than 100
-  mil **or** on more than 10 occasions in a year; "Båda villkoren ska vara uppfyllda."
+- SKV-KJ: a careful körjournal shows that the employee has driven privately at most 100 mil
+  **and** on at most 10 occasions in a year; both must hold: "Båda förutsättningarna ska vara
+  uppfyllda." (Corrected 2026-11-08 after an independent quote check.)
 - Class: ADVICE. The log shows, per car and calendar year, private km and private occasions
   against 100 mil / 10. It never sets a benefit to zero by itself. The numbers 100 and 10 are
   Skatteverket's guidance, not law text: they become a payroll rule key
