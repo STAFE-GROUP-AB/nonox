@@ -119,7 +119,8 @@ it('gives the kiosk its roster without PINs, and refuses unknown or revoked devi
     expect($roster['location']['name'])->toBe('Restaurang Testgatan')
         ->and(collect($roster['people'])->pluck('name')->all())->toContain('Testa Person123', 'Testa Person456')
         ->and($roster['people'][0])->toHaveKeys(['pin_salt', 'pin_verifier', 'qr_hash'])->not->toHaveKey('pin')
-        ->and(json_encode($roster))->not->toContain('2580')
+        // The PIN never appears as a value of its own; four digits alone can occur by chance in the salts and ciphertext.
+        ->and(collect($roster['people'])->flatMap(fn (array $person) => array_filter($person, 'is_scalar'))->containsStrict('2580'))->toBeFalse()
         ->and($roster)->not->toHaveKey('sensitive')
         // The whole number, in both its forms: four digits alone can occur by chance in the sealed ciphertext.
         ->and(json_encode($roster))->not->toContain(StaffLedger::personalNumber('19900101123'))
