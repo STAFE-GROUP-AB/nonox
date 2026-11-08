@@ -441,3 +441,18 @@ Evidence: `tests/Feature/Crm/DealQuoteLinkTest.php` (25 tester).
 - Kall granskning (1 hög, 3 medel, 3 låga) och en omkontroll; allt rättat, sista lilla felet (radfel i mallväljaren syntes inte) rättat av Lead. Hela sviten efter sammanslagning: 6 779 gröna, phpstan och pint rena.
 Kända begränsningar: offertrader från en mall behåller mallens moms även för kunder med omvänd skattskyldighet (samma som offerter i övrigt; följs upp i kärnans offerter, SaveSalesDocument); offerter kan inte ha OSS-satser; `DefaultVat` och SaveDraftInvoice har samma villkor på två ställen (skyddas av testet).
 Next package: S1-P11 (rättar NEW-1), S1-P4 (rättar granskningen), därefter S1-P12.
+
+---
+
+Package: S1-P11, Bokslut → Regelverk (K2 eller K3 per räkenskapsår, ADR-059)
+Status: done (beta, `/bokslut/regelverk`)
+Evidence: `tests/Feature/AnnualReport/K3/ClosingFrameworkReviewTest.php`, `tests/Feature/AnnualReport/K3/FrameworkChangeChainTest.php` (granskarens fem kedjetester), övriga K3-tester.
+- Sidan går igenom K2 1.1–1.1C för ett räkenskapsår och visar resultatet innan något sparas: får använda K2, måste använda K3, eller uppgifter saknas (blockerar aldrig).
+- Byte till K2 prövas för valt år och alla senare år inom låset; ett senare år bedöms som om året före redan är K2, så ett år som bara kräver K3 för att året före är K3 hindrar inte bytet.
+- Okänt undantag i 1.1C ger "uppgifter saknas", aldrig "måste använda K3". Bekräftelsen av K2-villkoren i bokslutet spärras bara när året måste använda K3.
+- Svaren sparas alltid (även av redovisningskonsulten); bara byte till K2 kan spärras.
+- Kall granskning (1 P1, flera P2/P3), två omkontroller; allt rättat. Instabila `JsonDumpWriterTest` (letade efter "1212" som id:n också kan innehålla) rättad på samma gren. Hela sviten efter sammanslagning: 6 830 gröna, phpstan och pint rena.
+Public claim now allowed: inget nytt. Public claim still not allowed: "Årsredovisning enligt K3", "Kassaflödesanalys".
+Open legal-verify items: 1.1B b "färdigställd" årsredovisning; 1.1A b, c och f frågas i stället för att läsas ur data.
+Follow-ups: visa uppskjuten skatt (S1-P5) som information på Regelverk.
+Next package: S1-P4 (sista regeln: inget byte till K2 efter komponentuppdelning), därefter S1-P12.
