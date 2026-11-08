@@ -39,6 +39,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?int $accumulated_account
  * @property ?int $expense_account
  * @property ?int $parent_id
+ * @property ?int $total_useful_life_months the total life of a component (useful_life_months is what remains from the split)
  * @property DepreciationBasis $depreciation_basis
  * @property ?int $cost_center_id
  * @property string $status
@@ -89,6 +90,7 @@ class FixedAsset extends Model
         'created_by',
         'parent_id',
         'depreciation_basis',
+        'total_useful_life_months',
     ];
 
     /** @return array<string, string> */
@@ -109,6 +111,7 @@ class FixedAsset extends Model
             'accumulated_account' => 'integer',
             'expense_account' => 'integer',
             'parent_id' => 'integer',
+            'total_useful_life_months' => 'integer',
         ];
     }
 
@@ -123,6 +126,12 @@ class FixedAsset extends Model
             $this->opening_accumulated_ore->ore,
             $this->depreciation_basis,
         );
+    }
+
+    /** The useful life applied (K3 17.23): a component's total life, else the plan's life. */
+    public function appliedLifeMonths(): int
+    {
+        return $this->total_useful_life_months ?? $this->useful_life_months;
     }
 
     public function depreciates(): bool

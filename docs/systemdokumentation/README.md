@@ -1687,10 +1687,17 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   betydande komponenter, andra tillgångar när företaget väljer det. NONOX
   sätter ingen beloppsgräns. Under K2 finns inga komponenter; byggnad och mark
   är där två tillgångar (K2 10.22).
-  - Uppdelningen vägras om räkenskapsåret inte följer K3, om en avskrivning
-    redan är bokförd för den månad uppdelningen gäller från eller senare, och
-    om planen har obokförda månader före den. Det redovisade värdet vid
-    uppdelningen är alltså det planen säger.
+  - Uppdelningen vägras om räkenskapsåret inte följer K3 eller är stängt, om
+    dagen ligger i en låst period, om en avskrivning redan är bokförd för den
+    månad uppdelningen gäller från eller senare, och om planen har obokförda
+    månader före den. Har registret inga bokförda månader för tillgången säger
+    meddelandet att planen (första avskrivningsmånad, nyttjandeperiod, redan
+    avskrivet) ska ändras så att den stämmer med bokföringen. Det redovisade
+    värdet vid uppdelningen är alltså det planen säger.
+  - Uppdelningen görs från det första K3-året. Räknas jämförelsetalen om vid
+    övergången (K3 35.7, 35.18) är jämförelseårets avskrivning per komponent en
+    omräkning i uppställningen, inte en uppdelning i ett K2-år; den hör till
+    övergången (S1-P12).
   - Personen fördelar anskaffningsvärdet; delarna ska tillsammans bli
     tillgångens anskaffningsvärde på öret. Det som är avskrivet fördelas på
     delarna som skrivs av i förhållande till anskaffningsvärdet, i hela ören med
@@ -1705,13 +1712,23 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
     uppdelningen. Ingen månad före uppdelningen bokförs i efterhand (35.18 "får
     inte räknas om retroaktivt"). Alla tillgångar från före komponenterna har
     `COST` och fungerar som förut.
+  - `useful_life_months` är komponentens återstående nyttjandeperiod, som
+    planen löper över. `total_useful_life_months` är den totala, som anges
+    eller räknas ut som den återstående plus månaderna sedan tillgångens
+    första avskrivningsmånad. Principnoten anger den totala (K3 17.23
+    "tillämpad nyttjandeperiod").
+  - En komponents tillgångskonto ska ligga mellan 1100 och 1299 och får inte
+    sluta på 9 (konton för ackumulerade avskrivningar). Tillgångens restvärde
+    föreslås fördelat på delarna i förhållande till anskaffningsvärdet med
+    största-rest-metoden.
   - Tillgången får status `SPLIT`, skrivs inte av och kan inte avyttras som
     helhet. Dess bokförda avskrivningar och verifikationer ändras inte.
   - Har en komponent ett annat tillgångskonto än tillgången (mark på 1130)
     bokförs en omföring av dess anskaffningsvärde den dag uppdelningen gäller
     från, i serie A genom samma bokföring som övriga verifikationer. Annars
     bokförs ingen verifikation; vid övergången till K3 ger uppdelningen ingen
-    skillnad i eget kapital (S1-R7.2 a).
+    skillnad i eget kapital (S1-R7.2 a). Omföringen har källan `CLOSING` i
+    serie A, som registrets avskrivningar och avyttringar.
   - En komponent avyttras med registrets vanliga avyttring.
   - Behandlingshistoriken: `fixed_asset.split` med datum, komponenternas id,
     anskaffningsvärde, avskrivet och omföringens verifikation (inga namn).
@@ -4495,7 +4512,8 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   medel betalar båda exakt och åt samma håll; radernas rubriker och vilken
   rad en avrundningsrest läggs på.
 
-- Komponenter (avsnitt 5a2): kontona 1110, 1119, 1130 och 7820 mot BAS 2026;
+- Komponenter (avsnitt 5a2): kontona 1110, 1119, 1130 och 7820 mot BAS 2026,
+  och intervallet 1100–1299 för komponenternas tillgångskonton;
   att det avskrivna fördelas på komponenterna i förhållande till
   anskaffningsvärdet när personen inte anger det (K3 35.18 anger ingen
   fördelningsgrund); att vinst och förlust vid avyttring av en byggnad eller

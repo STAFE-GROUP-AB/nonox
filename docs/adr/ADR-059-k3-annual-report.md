@@ -774,6 +774,38 @@ As §3.2.1, made precise:
   2025-01-01 with each component's own history; land is its own register asset on
   1130 (the ledger has it there already). The register's 24 monthly vouchers equal
   the fixture's component vouchers row by row.
+- The reclassification voucher of a split has `VoucherSource::Closing` in series A,
+  as the register's depreciation and disposal vouchers have: it is a register
+  entry within the closing work that touches only the asset accounts, and a
+  separate voucher source would need a migration of the `vouchers.source` check
+  for no gain in traceability (the voucher's morph subject is the split asset).
+
+**Review of S1-P4 (2026-11-08).** Decided by Lead 2026-11-08 under the owner's
+mandate, open for the consultant's review:
+- *Split only from the first K3 fiscal year.* When comparatives are restated at
+  the transition (K3 35.7, 35.18), the comparative year's depreciation per
+  component is a presentation restatement that belongs to S1-P12 (transition),
+  not a register split in a K2 year. No change to the split gate;
+  `FixedAssets::split()` carries a `TODO(S1-P12)`.
+- *Total life per component.* `fixed_assets.total_useful_life_months` (additive,
+  null for non-components) holds the total useful life, entered in the split form
+  or computed as the remaining life plus the months since the asset's first
+  depreciation month. `useful_life_months` stays the remaining life the schedule
+  uses. `depreciationPrinciples()` prints the total (K3 17.23 "tillämpad
+  nyttjandeperiod"): F-S1-a prints "Byggnader: 25–80 år", not 15–70.
+- *Plan mismatch without register depreciation.* When the asset has no booked
+  register months and its plan is behind the month before the split, the refusal
+  says to adjust the plan (first depreciation month, useful life, already written
+  off) to what is booked, not to book depreciation.
+- *Purchase proposals* follow `store()`: land has no life and no accumulated or
+  expense account; the life of other categories is 1 to `maxLifeMonths()`.
+- *Further gates:* no split dated on or before `companies.locked_until_date` or in
+  a closed fiscal year; a component's asset account lies in 1100–1299 and never
+  ends in 9 (components only; `store()` is unchanged); the asset's residual value
+  is pre-filled over the parts by the largest remainder and shown in the review;
+  focus moves to the confirmation button when the review opens.
+- *Framework change back to K2* after a split (P2-1) is refused once S1-P11 is
+  merged; see the note added then.
 
 #### A.2.5 Size figures
 

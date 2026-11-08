@@ -69,14 +69,16 @@ Ett företag som följer K3 ska dela upp en tillgång i komponenter när delarna
 
 Följer företaget K3 visar registret en påminnelse om varje byggnad som inte är uppdelad, och raden har knappen **Dela upp i komponenter**. Under K2 finns inga komponenter: där läggs byggnad och mark in som två tillgångar.
 
-1. Bokför avskrivningarna till och med månaden före uppdelningen.
+1. Bokför avskrivningarna till och med månaden före uppdelningen. Har registret inga bokförda månader för tillgången måste planen – **Första avskrivningsmånad**, **Nyttjandeperiod, månader** och **Redan avskrivet, kr** – stämma med det som redan är avskrivet i bokföringen. Annars säger registret att planen ska ändras först.
 2. Klicka på **Dela upp i komponenter** på tillgångens rad. Rutan **Komponenter** öppnas. För en byggnad är **Mark**, **Stomme**, **Tak**, **Fasad** och **Stammar och installationer** ifyllda som förslag.
 3. Kontrollera **Gäller från** – den första dagen i en månad. Förvalt är månaden efter den senast bokförda avskrivningen.
 4. Fyll i **Anskaffningsvärde, kr** för varje komponent. Tillsammans ska de bli tillgångens anskaffningsvärde; **Kvar att fördela** visar skillnaden.
-5. Fyll i **Återstående nyttjandeperiod, månader** för varje del som skrivs av, och **Restvärde, kr** om det finns ett.
+5. Fyll i **Återstående nyttjandeperiod, månader** för varje del som skrivs av. **Total nyttjandeperiod, månader** är den period som står i årsredovisningens principnot; lämnar du den tom räknas den ut som den återstående perioden plus månaderna sedan tillgångens första avskrivningsmånad. Har tillgången ett restvärde fördelas det på delarna i förhållande till anskaffningsvärdet så snart alla delar har ett anskaffningsvärde; du kan ändra **Restvärde, kr** efteråt.
 6. Lämna **Redan avskrivet, kr** tomt, så fördelas det som är avskrivet på delarna som skrivs av i förhållande till deras anskaffningsvärde. Vet du varje dels egen historik kan du fylla i den för alla delar i stället.
-7. Kontrollera **Tillgångskonto**. Mark föreslås på 1130.
-8. Klicka på **Granska uppdelningen**, läs vad som händer och klicka på **Dela upp tillgången**.
+7. Kontrollera **Tillgångskonto**. Mark föreslås på 1130. Kontot ska vara ett konto för materiella anläggningstillgångar mellan 1100 och 1299, aldrig ett konto för ackumulerade avskrivningar.
+8. Klicka på **Granska uppdelningen**. Rutan visar varje komponents anskaffningsvärde, restvärde och återstående nyttjandeperiod och vad som händer. Klicka på **Dela upp tillgången**.
+
+Uppdelningen kan inte göras i en låst period eller ett stängt räkenskapsår.
 
 Använd **Lägg till komponent** och **Ta bort** för att ändra antalet komponenter. En tillgång har minst två komponenter och högst en markkomponent.
 

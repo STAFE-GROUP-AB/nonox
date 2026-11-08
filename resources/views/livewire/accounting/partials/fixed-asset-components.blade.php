@@ -31,6 +31,7 @@
                         <th scope="col" class="px-2 py-2 text-right">{{ __('Anskaffningsvärde, kr') }}</th>
                         <th scope="col" class="px-2 py-2 text-right">{{ __('Redan avskrivet, kr') }}</th>
                         <th scope="col" class="px-2 py-2 text-right">{{ __('Återstående nyttjandeperiod, månader') }}</th>
+                        <th scope="col" class="px-2 py-2 text-right">{{ __('Total nyttjandeperiod, månader') }}</th>
                         <th scope="col" class="px-2 py-2 text-right">{{ __('Restvärde, kr') }}</th>
                         <th scope="col" class="px-2 py-2">{{ __('Tillgångskonto') }}</th>
                         <th scope="col" class="px-2 py-2"><span class="sr-only">{{ __('Åtgärder') }}</span></th>
@@ -78,6 +79,13 @@
                             </td>
                             <td class="px-2 py-1">
                                 @unless($land)
+                                    <label for="component_total_life_{{ $index }}" class="sr-only">{{ __('Total nyttjandeperiod, månader') }}</label>
+                                    <input id="component_total_life_{{ $index }}" type="number" min="1" class="{{ $input }} w-28 text-right tabular-nums" wire:model="components.{{ $index }}.total_life_months" placeholder="{{ __('Beräknas') }}">
+                                    <x-input-error for="components.{{ $index }}.total_life_months" class="mt-1" />
+                                @endunless
+                            </td>
+                            <td class="px-2 py-1">
+                                @unless($land)
                                     <label for="component_residual_{{ $index }}" class="sr-only">{{ __('Restvärde, kr') }}</label>
                                     <input id="component_residual_{{ $index }}" type="text" inputmode="decimal" class="{{ $input }} w-32 text-right tabular-nums" wire:model="components.{{ $index }}.residual">
                                     <x-input-error for="components.{{ $index }}.residual" class="mt-1" />
@@ -100,6 +108,7 @@
         </div>
 
         <p class="text-sm text-gray-600">{{ __('Anskaffningsvärdena ska tillsammans bli tillgångens anskaffningsvärde. Lämnar du Redan avskrivet tomt fördelas det som är avskrivet på delarna som skrivs av, i förhållande till deras anskaffningsvärde. Varje del skrivs sedan av på sitt redovisade värde under den återstående nyttjandeperioden.') }}</p>
+        <p class="text-sm text-gray-600">{{ __('Den totala nyttjandeperioden står i årsredovisningens principnot. Lämnar du den tom blir den den återstående perioden plus månaderna sedan tillgångens första avskrivningsmånad. Har tillgången ett restvärde fördelas det på delarna i förhållande till anskaffningsvärdet när alla delar har ett anskaffningsvärde.') }}</p>
 
         @unless($confirmingSplit)
             <div class="flex flex-wrap items-center gap-4">
@@ -113,15 +122,38 @@
     </form>
 
     @if($confirmingSplit)
-        <div role="alertdialog" aria-labelledby="split-confirm-title" aria-describedby="split-confirm-text" class="rounded-2xl bg-white p-5 ring-1 ring-amber-300">
+        <div role="alertdialog" aria-labelledby="split-confirm-title" aria-describedby="split-confirm-text" class="rounded-2xl bg-white p-5 ring-1 ring-amber-300"
+             x-data x-init="$nextTick(() => $refs.confirmSplit.focus())" x-on:keydown.escape.prevent="$wire.set('confirmingSplit', false)">
             <h4 id="split-confirm-title" class="font-semibold text-ink">{{ __('Dela upp :name i :count komponenter?', ['name' => $asset->name, 'count' => count($components)]) }}</h4>
             <div id="split-confirm-text" class="mt-2 space-y-2 text-sm text-gray-700">
                 <p>{{ __('Uppdelningen går inte att ångra. Från :date skrivs :name inte av som en helhet längre, utan varje komponent skrivs av för sig. Mark skrivs aldrig av.', ['date' => $splitDate, 'name' => $asset->name]) }}</p>
                 <p>{{ __('Avskrivningar som redan är bokförda ändras inte, och inga månader före :date bokförs i efterhand.', ['date' => $splitDate]) }}</p>
                 <p>{{ __('Har en komponent ett annat tillgångskonto än tillgången, till exempel mark på 1130, bokförs en omföring av dess anskaffningsvärde den :date.', ['date' => $splitDate]) }}</p>
             </div>
+            <div class="mt-3 overflow-x-auto">
+                <table class="min-w-full text-left text-sm">
+                    <thead>
+                        <tr class="text-xs font-medium uppercase tracking-[0.12em] text-gray-500">
+                            <th scope="col" class="px-2 py-1">{{ __('Komponent') }}</th>
+                            <th scope="col" class="px-2 py-1 text-right">{{ __('Anskaffningsvärde') }}</th>
+                            <th scope="col" class="px-2 py-1 text-right">{{ __('Restvärde') }}</th>
+                            <th scope="col" class="px-2 py-1 text-right">{{ __('Återstående nyttjandeperiod, månader') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($reviewRows as $row)
+                            <tr>
+                                <td class="px-2 py-1">{{ $row['name'] }}</td>
+                                <td class="px-2 py-1 text-right tabular-nums">{{ $row['cost'] }}</td>
+                                <td class="px-2 py-1 text-right tabular-nums">{{ $row['residual'] }}</td>
+                                <td class="px-2 py-1 text-right tabular-nums">{{ $row['life'] }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
             <div class="mt-4 flex flex-wrap items-center gap-4">
-                <x-button type="button" wire:click="split" wire:loading.attr="disabled">{{ __('Dela upp tillgången') }}</x-button>
+                <x-button type="button" x-ref="confirmSplit" wire:click="split" wire:loading.attr="disabled">{{ __('Dela upp tillgången') }}</x-button>
                 <button type="button" class="text-sm text-gray-600 underline" wire:click="$set('confirmingSplit', false)">{{ __('Tillbaka') }}</button>
             </div>
         </div>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Assets\FixedAssets;
 use App\Domain\AnnualReport\AnnualAccounts;
+use App\Domain\AnnualReport\AnnualReportDocument;
 use App\Domain\AnnualReport\K3Schedule;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetDepreciation;
@@ -126,4 +127,14 @@ it('S1-R3 gives 7820 for the year and Byggnader och mark at all three dates as F
         ->and($buildings($second->balanceSheet(), 'previous'))->toBe($sheet['2025-12-31']['tillgangar']['byggnader_och_mark'])
         ->and($buildings($second->balanceSheet(), 'amount'))->toBe($sheet['2026-12-31']['tillgangar']['byggnader_och_mark'])
         ->and($sheet['2026-12-31']['tillgangar']['byggnader_och_mark'])->toBe(2_075_200_000);
+});
+
+it('K3 17.23 S1-R3.7 states each component\'s total useful life in the principles: 25–80 years, not the remaining 15–70', function () {
+    $components = FixedAsset::query()->where('parent_id', $this->building->id)->get()->keyBy('name');
+
+    expect($components->map(fn (FixedAsset $c) => $c->total_useful_life_months / 12)->sortKeys()->all())->toBe([
+        'Fasad' => 40, 'Installationer (stammar, el, ventilation)' => 25, 'Stomme' => 80, 'Tak' => 30,
+    ])
+        ->and($components['Stomme']->useful_life_months)->toBe(840)
+        ->and((new ReflectionMethod(AnnualReportDocument::class, 'depreciationPrinciples'))->invoke(null))->toBe(['Byggnader: 25–80 år']);
 });

@@ -7,6 +7,7 @@ namespace App\Livewire\Accounting;
 use App\Actions\Assets\FixedAssets;
 use App\Domain\Assets\AcquisitionAccounts;
 use App\Domain\Assets\AssetCategory;
+use App\Domain\Assets\ComponentSplit;
 use App\Domain\Company\ReportingFramework;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
@@ -188,11 +189,11 @@ class FixedAssetsPage extends Component
             ? CarbonImmutable::parse("{$lastBooked}-01")->addMonthNoOverflow()
             : CarbonImmutable::today()->startOfMonth();
         $remaining = (string) FixedAssets::remainingMonths($asset, $from);
-        $part = fn (string $name): array => ['name' => $name, 'kind' => FixedAssets::COMPONENT_PART, 'cost' => '', 'accumulated' => '', 'life_months' => $remaining, 'residual' => '', 'asset_account' => (string) $asset->asset_account];
+        $part = fn (string $name): array => ['name' => $name, 'kind' => FixedAssets::COMPONENT_PART, 'cost' => '', 'accumulated' => '', 'life_months' => $remaining, 'total_life_months' => '', 'residual' => '', 'asset_account' => (string) $asset->asset_account];
 
         $this->components = $asset->category === AssetCategory::Buildings
             ? [
-                ['name' => __('Mark'), 'kind' => FixedAssets::COMPONENT_LAND, 'cost' => '', 'accumulated' => '', 'life_months' => '', 'residual' => '', 'asset_account' => (string) AssetCategory::Land->accounts()['asset']],
+                ['name' => __('Mark'), 'kind' => FixedAssets::COMPONENT_LAND, 'cost' => '', 'accumulated' => '', 'life_months' => '', 'total_life_months' => '', 'residual' => '', 'asset_account' => (string) AssetCategory::Land->accounts()['asset']],
                 $part(__('Stomme')),
                 $part(__('Tak')),
                 $part(__('Fasad')),
@@ -213,7 +214,58 @@ class FixedAssetsPage extends Component
         }
 
         $asset = FixedAsset::query()->findOrFail($this->splitting);
-        $this->components[] = ['name' => '', 'kind' => FixedAssets::COMPONENT_PART, 'cost' => '', 'accumulated' => '', 'life_months' => '', 'residual' => '', 'asset_account' => (string) $asset->asset_account];
+        $this->components[] = ['name' => '', 'kind' => FixedAssets::COMPONENT_PART, 'cost' => '', 'accumulated' => '', 'life_months' => '', 'total_life_months' => '', 'residual' => '', 'asset_account' => (string) $asset->asset_account];
+    }
+
+    /** A changed cost or kind spreads the asset's residual value over the parts again. */
+    public function updatedComponents(mixed $value, ?string $key = null): void
+    {
+        if ($key === null || str_ends_with($key, '.cost') || str_ends_with($key, '.kind')) {
+            $this->prefillResiduals();
+        }
+    }
+
+    /**
+     * The asset's residual value divided over the depreciable parts in
+     * proportion to their cost, by the largest remainder (ComponentSplit), so
+     * the parts add up to the asset's. Land gets none. Only once every part
+     * has a cost that can be read; the person may change the result.
+     */
+    private function prefillResiduals(): void
+    {
+        if ($this->splitting === null) {
+            return;
+        }
+
+        $residual = FixedAsset::query()->whereKey($this->splitting)->toBase()->value('residual_ore');
+
+        if (! is_numeric($residual) || (int) $residual <= 0) {
+            return;
+        }
+
+        $weights = [];
+
+        foreach ($this->components as $index => $component) {
+            if (($component['kind'] ?? '') === FixedAssets::COMPONENT_LAND) {
+                $this->components[$index]['residual'] = '';
+
+                continue;
+            }
+
+            try {
+                $weights[$index] = Money::parse((string) ($component['cost'] ?? ''))->ore;
+            } catch (InvalidArgumentException) {
+                return;
+            }
+
+            if ($weights[$index] <= 0) {
+                return;
+            }
+        }
+
+        foreach (ComponentSplit::largestRemainder((int) $residual, $weights) as $index => $share) {
+            $this->components[$index]['residual'] = Money::ofOre($share)->format(withCurrency: false);
+        }
     }
 
     public function removeComponent(int $index): void
@@ -275,6 +327,7 @@ class FixedAssetsPage extends Component
             'children' => $children,
             'split' => $split,
             'splitTotal' => $this->splitTotal(),
+            'reviewRows' => $this->confirmingSplit ? $this->reviewRows() : [],
             'k3' => $k3 = $this->company()->reporting_framework === ReportingFramework::K3,
             'unsplitBuildings' => $k3
                 ? $list->filter(fn (FixedAsset $asset): bool => $asset->category === AssetCategory::Buildings && $asset->status === FixedAsset::ACTIVE && ! $asset->isComponent())->values()
@@ -291,6 +344,30 @@ class FixedAssetsPage extends Component
             ],
             'today' => CarbonImmutable::today(),
         ]);
+    }
+
+    /**
+     * The split as it will be made, for the review: each component's cost,
+     * residual value and remaining life as entered.
+     *
+     * @return list<array{name: string, cost: string, residual: string, life: string}>
+     */
+    private function reviewRows(): array
+    {
+        $amount = function (string $value): string {
+            try {
+                return trim($value) === '' ? Money::ofOre(0)->format() : Money::parse($value)->format();
+            } catch (InvalidArgumentException) {
+                return $value;
+            }
+        };
+
+        return array_map(fn (array $component): array => [
+            'name' => (string) ($component['name'] ?? ''),
+            'cost' => $amount((string) ($component['cost'] ?? '')),
+            'residual' => ($component['kind'] ?? '') === FixedAssets::COMPONENT_LAND ? '–' : $amount((string) ($component['residual'] ?? '')),
+            'life' => ($component['kind'] ?? '') === FixedAssets::COMPONENT_LAND ? __('Skrivs inte av') : (string) ($component['life_months'] ?? ''),
+        ], $this->components);
     }
 
     /** The sum of the component costs entered so far, or null while one cannot be read. */

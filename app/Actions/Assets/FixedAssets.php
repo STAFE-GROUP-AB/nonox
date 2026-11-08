@@ -321,7 +321,13 @@ class FixedAssets
      * another asset account than the asset (land on 1130), one voucher moves
      * its cost there on the split date; otherwise no voucher is booked.
      *
-     * @param  array<int, mixed>  $components  each: name, kind (part|land), cost, accumulated (optional), life_months (remaining, from the split), residual, asset_account
+     * A split is made from the first K3 fiscal year on. When comparatives are
+     * restated at the transition (K3 35.7, 35.18), the comparative year's
+     * depreciation per component is a presentation restatement, not a split in
+     * a K2 year (ADR-059 A.2.4, decision of 2026-11-08).
+     * TODO(S1-P12): restate the comparative year's depreciation per component in the transition.
+     *
+     * @param  array<int, mixed>  $components  each: name, kind (part|land), cost, accumulated (optional), life_months (remaining, from the split), total_life_months (optional: the remaining life plus the months since the asset's first depreciation month), residual, asset_account
      */
     public function split(User $user, Company $company, int $assetId, string $date, array $components): FixedAsset
     {
@@ -341,12 +347,14 @@ class FixedAssets
             'components.*.accumulated' => ['nullable', 'string', 'max:40'],
             'components.*.residual' => ['nullable', 'string', 'max:40'],
             'components.*.life_months' => ['nullable', 'integer', 'min:0', 'max:1200'],
-            'components.*.asset_account' => ['nullable', 'integer', 'between:1000,1999'],
+            'components.*.total_life_months' => ['nullable', 'integer', 'min:1', 'max:1200'],
+            'components.*.asset_account' => ['nullable', 'integer'],
         ], [], [
             'components' => __('komponenter'),
             'components.*.name' => __('benämning'),
             'components.*.cost' => __('anskaffningsvärde'),
             'components.*.life_months' => __('återstående nyttjandeperiod'),
+            'components.*.total_life_months' => __('total nyttjandeperiod'),
             'components.*.asset_account' => __('tillgångskonto'),
         ])->validate()['components']);
 
@@ -358,7 +366,7 @@ class FixedAssets
             // Inside the company: another company's asset answers 404.
             /** @var FixedAsset $asset */
             $asset = FixedAsset::query()->whereKey($assetId)->lockForUpdate()->firstOrFail();
-            $this->assertSplittable($asset, $splitOn);
+            $this->assertSplittable($company, $asset, $splitOn);
 
             $parts = [];
 
@@ -392,9 +400,21 @@ class FixedAssets
                 $opening = $allocation[$index]['accumulated_ore'];
                 $residual = $land ? 0 : $this->money((string) ($input['residual'] ?? ''), "components.{$index}.residual");
                 $life = $land ? 0 : (int) ($input['life_months'] ?? 0);
+                $account = blank($input['asset_account'] ?? null) ? ($land ? AssetCategory::Land->accounts()['asset'] : $asset->asset_account) : (int) $input['asset_account'];
 
                 if (! $land && ($life < 1 || $life > $category->maxLifeMonths())) {
                     throw ValidationException::withMessages(["components.{$index}.life_months" => __('Den återstående nyttjandeperioden ska vara mellan 1 och :max månader.', ['max' => $category->maxLifeMonths()])]);
+                }
+
+                // The total life (K3 17.23): entered, else the remaining life plus the months already gone.
+                $total = $land ? null : (blank($input['total_life_months'] ?? null) ? $life + $this->monthsBetween($asset->depreciation_start, $start) : (int) $input['total_life_months']);
+
+                if ($total !== null && $total < $life) {
+                    throw ValidationException::withMessages(["components.{$index}.total_life_months" => __('Den totala nyttjandeperioden kan inte vara kortare än den återstående.')]);
+                }
+
+                if (! self::isComponentAccount($account)) {
+                    throw ValidationException::withMessages(["components.{$index}.asset_account" => __('Tillgångskontot för en komponent ska vara ett konto för materiella anläggningstillgångar (1100–1299), inte ett konto för ackumulerade avskrivningar.')]);
                 }
 
                 if ($residual < 0 || $residual >= $cost || $opening > $cost - $residual) {
@@ -410,8 +430,9 @@ class FixedAssets
                     'residual_ore' => $residual,
                     'opening_accumulated_ore' => $opening,
                     'useful_life_months' => $life,
+                    'total_useful_life_months' => $total,
                     'depreciation_start' => $start->toDateString(),
-                    'asset_account' => blank($input['asset_account'] ?? null) ? ($land ? AssetCategory::Land->accounts()['asset'] : $asset->asset_account) : (int) $input['asset_account'],
+                    'asset_account' => $account,
                     'accumulated_account' => $land ? null : $asset->accumulated_account,
                     'expense_account' => $land ? null : $asset->expense_account,
                     'cost_center_id' => $asset->cost_center_id,
@@ -444,12 +465,28 @@ class FixedAssets
      */
     public static function remainingMonths(FixedAsset $asset, CarbonImmutable $splitOn): int
     {
-        $elapsed = ($splitOn->year - $asset->depreciation_start->year) * 12 + ($splitOn->month - $asset->depreciation_start->month);
-
-        return max(1, $asset->useful_life_months - max(0, $elapsed));
+        return max(1, $asset->useful_life_months - self::monthsBetween($asset->depreciation_start, $splitOn));
     }
 
-    private function assertSplittable(FixedAsset $asset, CarbonImmutable $splitOn): void
+    /**
+     * A component's asset account: a tangible fixed asset account (BAS
+     * 1100–1299), never one for accumulated depreciation (ending in 9).
+     *
+     * TODO(legal-verify): the range against the BAS 2026 chart (1100–1199
+     * byggnader och mark, 1200–1299 maskiner och inventarier).
+     */
+    public static function isComponentAccount(int $account): bool
+    {
+        return $account >= 1100 && $account <= 1299 && $account % 10 !== 9;
+    }
+
+    /** Whole months from the first month to the second, never negative. */
+    private static function monthsBetween(CarbonImmutable $from, CarbonImmutable $to): int
+    {
+        return max(0, ($to->year - $from->year) * 12 + ($to->month - $from->month));
+    }
+
+    private function assertSplittable(Company $company, FixedAsset $asset, CarbonImmutable $splitOn): void
     {
         if ($asset->isSplit()) {
             throw ValidationException::withMessages(['asset' => __('Tillgången är redan uppdelad i komponenter.')]);
@@ -473,6 +510,14 @@ class FixedAssets
             throw ValidationException::withMessages(['split_date' => __('Det finns inget räkenskapsår för :date.', ['date' => $splitOn->toDateString()])]);
         }
 
+        if (! $fiscalYear->isOpen()) {
+            throw ValidationException::withMessages(['split_date' => __('Räkenskapsåret :year är stängt. Dela upp tillgången från ett öppet räkenskapsår.', ['year' => $fiscalYear->label()])]);
+        }
+
+        if ($company->locked_until_date !== null && $splitOn->lessThanOrEqualTo($company->locked_until_date)) {
+            throw ValidationException::withMessages(['split_date' => __('Perioden till och med :date är låst. Dela upp tillgången från en månad efter det.', ['date' => $company->locked_until_date->toDateString()])]);
+        }
+
         if ($fiscalYear->reporting_framework !== ReportingFramework::K3) {
             throw ValidationException::withMessages(['split_date' => __('Komponenter används bara de räkenskapsår som företaget följer K3. Räkenskapsåret :year följer :framework.', ['year' => $fiscalYear->label(), 'framework' => $fiscalYear->reporting_framework->value])]);
         }
@@ -486,9 +531,16 @@ class FixedAssets
         // The carrying amount at the split is what the plan says: a month left unbooked would never be caught up.
         $previous = $splitOn->subMonthNoOverflow()->format('Y-m');
 
-        if ($asset->plan()->amountFor($previous, $asset->accumulatedOre()) > 0) {
-            throw ValidationException::withMessages(['split_date' => __('Bokför avskrivningarna till och med :month innan tillgången delas upp.', ['month' => $previous])]);
+        if ($asset->plan()->amountFor($previous, $asset->accumulatedOre()) <= 0) {
+            return;
         }
+
+        // Nothing booked in the register: the plan itself does not match what the books already hold.
+        if (! $asset->depreciations()->exists()) {
+            throw ValidationException::withMessages(['split_date' => __('Registrets plan för :name stämmer inte med det som redan är avskrivet: enligt planen skulle mer vara avskrivet till och med :month. Ändra första avskrivningsmånad, nyttjandeperiod eller Redan avskrivet så att planen stämmer med bokföringen, och dela sedan upp tillgången.', ['name' => $asset->name, 'month' => $previous])]);
+        }
+
+        throw ValidationException::withMessages(['split_date' => __('Bokför avskrivningarna till och med :month innan tillgången delas upp.', ['month' => $previous])]);
     }
 
     /**
