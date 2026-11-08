@@ -394,3 +394,16 @@ Open legal-verify items:
 Follow-ups: S1-P14 K3EquityStatement-frågans plan med inaktuell statistik; en korrekt ombokad betalningsverifikation får fakturan att se obetald ut (spärrar, fel belopp skrivs aldrig ut).
 Human decisions needed: H4, H7, H9, H10.
 Next package: S1-P9.
+
+---
+
+Package: Utanför specen — likviditetsprognos med löner, moms, skattekonto och avtalsfakturor (ADR-027, tillägg 2026-11-08)
+Status: done (syns på Översikten → statistik, "Likviditet och prognos")
+Evidence: `tests/Feature/Overview/LiquidityForecastFlowsTest.php` (21 tester), `tests/Unit/Overview/LiquidityForecastTest.php`, `tests/js/overview-charts.test.mjs`.
+- Prognosen räknar nu kundfakturor (återstående belopp), leverantörsfakturor, avtalsfakturor och utkast, nettolön och skatter från lönekörningarna, moms per förfallodag, F-skatt när månadsbeloppet är ifyllt och saldot på 1630.
+- Snittresultatet tar bort exakt det som räknas för sig: lönemodulens kostnader utom pension, särskild löneskatt och avtalsförsäkring; 8900–8998 och 7530–7539 när F-skatten räknas; intäkter från avtalsfakturor netto efter kreditfakturor.
+- Kontantmetoden: momsen dateras efter väntad betalning, och momsandelen av öppna kund- och leverantörsfakturor räknas.
+- Lön som inte är bokförd visas bara för roller med payroll:view. Fast antal frågor, tenancy-test.
+- Ett bygge, en kall granskning (3 bekräftade beloppsfel), två omkontroller; allt rättat. Hela sviten efter sammanslagning: 6 695 gröna, phpstan och pint rena.
+Kända begränsningar (ADR-027): OSS-moms dateras efter svensk momsdag; pensionsfiltret går på konto, inte lönearts typ; särskild löneskatt på pension utanför lönemodulen; horisonten är tre månader (ägarbeslut om 6/12 väntar).
+Next package: CRM-affär → offert (granskas om), S1-P4, S1-P5, S1-P11.
