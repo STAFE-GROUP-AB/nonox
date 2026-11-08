@@ -17,7 +17,7 @@
             @if($canManage)
                 <x-ui.field for="change-price-form" :label="__('Prisform')" error="change.price_form" class="sm:col-span-2">
                     <select id="change-price-form" wire:model.live="change.price_form" class="{{ $input }}">
-                        @foreach($priceForms as $form)<option value="{{ $form->value }}">{{ $form->label() }}</option>@endforeach
+                        @foreach($priceForms as $priceForm)<option value="{{ $priceForm->value }}">{{ $priceForm->label() }}</option>@endforeach
                     </select>
                 </x-ui.field>
                 <x-ui.field for="change-labour" :label="__('Arbete exklusive moms')" error="change.labour" class="sm:col-span-2"><input id="change-labour" wire:model="change.labour" inputmode="decimal" class="{{ $input }} text-right"></x-ui.field>

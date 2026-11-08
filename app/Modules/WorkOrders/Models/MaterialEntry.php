@@ -55,7 +55,7 @@ class MaterialEntry extends Model
 
     /** @var list<string> */
     protected $fillable = [
-        'company_id', 'work_order_id', 'change_order_id', 'user_id', 'article_id', 'description', 'quantity_milli', 'unit',
+        'id', 'company_id', 'work_order_id', 'change_order_id', 'user_id', 'article_id', 'description', 'quantity_milli', 'unit',
         'unit_cost_ore', 'unit_price_ore', 'vat_rate', 'billable', 'source', 'stock_location_id', 'supplier_invoice_row_id',
         'work_date', 'note', 'entered_at', 'reverses_id', 'reversal_reason', 'created_by',
     ];

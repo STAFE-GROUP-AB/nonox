@@ -52,7 +52,7 @@
         <div class="grid gap-5 sm:grid-cols-6">
             <x-ui.field for="wo-price-form" :label="__('Prisform')" error="form.price_form" class="sm:col-span-3">
                 <select id="wo-price-form" wire:model.live="form.price_form" class="{{ $input }}">
-                    @foreach($priceForms as $form)<option value="{{ $form->value }}">{{ $form->label() }}</option>@endforeach
+                    @foreach($priceForms as $priceForm)<option value="{{ $priceForm->value }}">{{ $priceForm->label() }}</option>@endforeach
                 </select>
             </x-ui.field>
             <x-ui.field for="wo-vat" :label="__('Moms')" error="form.vat_rate" class="sm:col-span-1">

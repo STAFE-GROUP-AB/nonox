@@ -79,7 +79,7 @@ class ChangeOrder extends Model
     protected static function booted(): void
     {
         static::updating(function (self $order): void {
-            $was = ChangeOrderStatus::from((string) $order->getOriginal('status'));
+            $was = ChangeOrderStatus::from((string) $order->getRawOriginal('status'));
 
             if ($was->isDecided()) {
                 throw new LogicException('A decided change order cannot be changed.');
@@ -91,7 +91,7 @@ class ChangeOrder extends Model
         });
 
         static::deleting(function (self $order): void {
-            if (ChangeOrderStatus::from((string) $order->getOriginal('status')) !== ChangeOrderStatus::Draft) {
+            if (ChangeOrderStatus::from((string) $order->getRawOriginal('status')) !== ChangeOrderStatus::Draft) {
                 throw new LogicException('Only a draft change order can be removed.');
             }
         });

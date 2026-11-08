@@ -80,8 +80,8 @@ it('refuses hours it cannot read and records none without a tax reduction', func
 it('keeps the hours and the kind of work unchanged once the invoice is issued', function () {
     $invoice = app(IssueInvoice::class)($this->owner, rotWorkDraft(['labour_hours' => '4', 'work_description' => 'Byte av golvbrunn']));
 
-    expect(fn () => DB::table('invoices')->where('id', $invoice->id)->update(['labour_hours_milli' => 9000]))->toThrow(QueryException::class);
-    expect(fn () => DB::table('invoices')->where('id', $invoice->id)->update(['work_description' => 'Annat']))->toThrow(QueryException::class);
+    expect(fn () => DB::transaction(fn () => DB::table('invoices')->where('id', $invoice->id)->update(['labour_hours_milli' => 9000])))->toThrow(QueryException::class);
+    expect(fn () => DB::transaction(fn () => DB::table('invoices')->where('id', $invoice->id)->update(['work_description' => 'Annat'])))->toThrow(QueryException::class);
 });
 
 it('prints the hours, the kind of work and the buyer\'s personnummer on the PDF (L6, until answered)', function () {

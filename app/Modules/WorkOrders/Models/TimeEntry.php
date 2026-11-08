@@ -49,7 +49,7 @@ class TimeEntry extends Model
 
     /** @var list<string> */
     protected $fillable = [
-        'company_id', 'work_order_id', 'change_order_id', 'user_id', 'labour_kind_id', 'work_date', 'minutes',
+        'id', 'company_id', 'work_order_id', 'change_order_id', 'user_id', 'labour_kind_id', 'work_date', 'minutes',
         'quantity_milli', 'billable', 'rate_ore', 'note', 'source', 'entered_at', 'reverses_id', 'reversal_reason', 'created_by',
     ];
 
