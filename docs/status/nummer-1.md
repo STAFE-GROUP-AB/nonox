@@ -490,3 +490,16 @@ Byggordning, varje steg med regelunderlag där bokföring eller personuppgifter 
 7. Preliminärt leveransdatum ur material, kö och historik.
 8. Analys per person, bara efter regelbladet `docs/specs/rules/produktionsuppfoljning.md` (GDPR, MBL) och juristens svar.
 Next package: inget här förrän punkt 1–10 i den prioriterade ordningen är klara. Ett påbörjat utkast stoppades 2026-11-08; arbetet börjar om från ADR-071 när det är dags.
+
+---
+
+Package: S1-P4, komponentavskrivning för K3 (ADR-059)
+Status: done (beta, Anläggningsregister → Dela upp i komponenter)
+Evidence: `tests/Feature/Assets/ComponentsTest.php`, `tests/Feature/Assets/ComponentsReviewTest.php`, `tests/Unit/Assets/ComponentSplitTest.php`, `tests/Feature/AnnualReport/K3/ComponentScheduleFixtureTest.php`, `tests/Tenancy/FixedAssetComponentTenancyTest.php`.
+- En tillgång i ett K3-år kan delas upp i komponenter (mark, stomme, tak, installationer m.m.) med egna nyttjandeperioder. Restvärde och total nyttjandeperiod föreslås, och kontot för en komponent ska ligga i 1100–1299.
+- Uppdelningen kräver att registrets avskrivningar är bokförda fram till uppdelningsdagen; låst period och stängt år vägras. Har inget bokförts i registret ges rätt råd beroende på om historiken finns utanför registret.
+- Byte till K2 eller K1 vägras för år där en aktiv komponent (utom mark) skrivs av. Uppdelning och byte av regelverk låser alla berörda år mot varandra.
+- Kall granskning (flera P2), två omkontroller; allt rättat. Hela sviten efter sammanslagning: 6 901 gröna, phpstan och pint rena.
+Public claim now allowed: inget nytt. Public claim still not allowed: "Årsredovisning enligt K3", "Kassaflödesanalys".
+Follow-ups: koppla registret till uppskjuten skatt på byggnader (S1-P5, `BuildingCarryingAmounts`); omräknade jämförelsetal för komponenter i S1-P12.
+Next package: S1-P12 (övergång K2 → K3).
