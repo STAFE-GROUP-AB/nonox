@@ -37,13 +37,16 @@
         @endif
     </x-ui.card>
 
-    <x-ui.card :title="__('Utlägg att godkänna')" :description="$aiReads ? __('NONOX AI har läst kvittona och föreslår konto. Kontrollera mot kvittot, rätta det som behövs och godkänn. Utlägget bokförs med kvittot som underlag och betalas tillbaka med nästa lön.') : __('Välj kostnadskonto. Utlägget bokförs med kvittot som underlag och betalas tillbaka med nästa lön.')">
+    <x-ui.card :title="__('Utlägg och milersättning att godkänna')" :description="$aiReads ? __('NONOX AI har läst kvittona och föreslår konto. Kontrollera mot kvittot, rätta det som behövs och godkänn. Utlägget bokförs med kvittot som underlag och betalas tillbaka med nästa lön.') : __('Välj kostnadskonto. Utlägget bokförs med kvittot som underlag och betalas tillbaka med nästa lön.')">
         @if($expenses->isEmpty())
-            <p class="text-sm text-gray-600">{{ __('Inga utlägg väntar.') }}</p>
+            <p class="text-sm text-gray-600">{{ __('Inga utlägg eller milersättningar väntar.') }}</p>
         @else
             <ul class="divide-y divide-gray-100" @if($expenses->contains('ai_status', 'PENDING')) wire:poll.5s @endif>
                 @foreach($expenses as $expense)
                     <li class="space-y-3 py-4" wire:key="expense-{{ $expense->id }}">
+                        @if($expense->isMileage())
+                            @include('payroll::livewire.partials.mileage-claim', ['expense' => $expense, 'claimTrips' => $trips->get($expense->id, collect())])
+                        @else
                         <div class="flex flex-wrap items-center gap-3">
                             <span class="min-w-0 flex-1 basis-40">
                                 <span class="block font-medium text-gray-900">{{ $expense->employee?->first_name }} {{ $expense->employee?->last_name }} · {{ $expense->description ?? $expense->receipt_name }}</span>
@@ -86,6 +89,7 @@
                                 <x-button type="button" wire:click="approveExpense({{ $expense->id }})" wire:loading.attr="disabled">{{ __('Godkänn') }}</x-button>
                                 <button type="button" class="text-sm text-gray-600 underline" wire:click="$set('rejectingExpense', {{ $expense->id }})">{{ __('Avslå') }}</button>
                             </div>
+                        @endif
                         @endif
                         @if($rejectingExpense === $expense->id)
                             <form wire:submit="rejectExpense" class="flex flex-wrap items-end gap-3 rounded-lg bg-gray-50 p-3">

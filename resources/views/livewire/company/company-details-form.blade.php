@@ -280,6 +280,13 @@
                 <span class="block text-xs text-gray-500">{{ __('Startplanen under Att göra och tipsen längst ner på sidorna. Guiden på webbplatsen finns kvar.') }}</span>
             </span>
         </label>
+
+        <label class="flex items-start gap-3">
+            <x-checkbox wire:model="state.mileage_log_enabled" :disabled="! $canUpdate" class="mt-0.5" />
+            <span class="text-sm text-gray-700">{{ __('Använd körjournal') }}
+                <span class="block text-xs text-gray-500">{{ __('Bilar, resor och mätarställningar för milersättning, förmånsbilar och enskild firma. Stängs den av finns uppgifterna kvar.') }}</span>
+            </span>
+        </label>
     </section>
 
     @if($canUpdate)

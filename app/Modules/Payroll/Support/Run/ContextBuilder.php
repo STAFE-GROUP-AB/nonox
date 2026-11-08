@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Support\Run;
 
+use App\Domain\Mileage\Distance;
+use App\Domain\Mileage\MileagePayCode;
 use App\Modules\Payroll\Actions\ExpenseClaims;
 use App\Modules\Payroll\Actions\SaveEmployee;
 use App\Modules\Payroll\Domain\Engine\AbsenceInput;
@@ -91,7 +93,7 @@ final class ContextBuilder
             periodStart: $periodStart,
             periodEnd: $periodEnd,
             paymentDate: $run->payment_date,
-            inputs: [...$entered, ...$this->timeReports($timeReports ?? collect(), $payCodes), ...$this->lateTimeReports($lateTimeReports, $payCodes), ...$this->outlays($run, $employee), ...$this->retroactive($run, $employment, $payCodes), ...$this->carBenefits($run, $employee, $employment, $payCodes, $entered)],
+            inputs: [...$entered, ...$this->timeReports($timeReports ?? collect(), $payCodes), ...$this->lateTimeReports($lateTimeReports, $payCodes), ...$this->outlays($run, $employee, $payCodes, $rules), ...$this->retroactive($run, $employment, $payCodes), ...$this->carBenefits($run, $employee, $employment, $payCodes, $entered)],
             accumulators: Accumulator::query()
                 ->where('employee_id', $employee->id)
                 ->where('scope', 'CALENDAR_YEAR')
@@ -373,10 +375,12 @@ final class ContextBuilder
     /**
      * Approved outlays not yet repaid: they are claimed by this run, so the
      * same outlay is never repaid twice, and repaid as net additions.
+     * Approved mileage claims are claimed the same way and paid as pay.
      *
+     * @param  Collection<int, PayCode>  $payCodes  by id
      * @return list<PayInput>
      */
-    private function outlays(PayrollRun $run, Employee $employee): array
+    private function outlays(PayrollRun $run, Employee $employee, Collection $payCodes, RuleSet $rules): array
     {
         $expenses = Expense::query()
             ->where('employee_id', $employee->id)
@@ -385,13 +389,58 @@ final class ContextBuilder
             ->orderBy('date')
             ->get();
 
-        return array_values($expenses->map(function (Expense $expense) use ($run): PayInput {
+        $inputs = [];
+
+        foreach ($expenses as $expense) {
             if ($expense->payroll_run_id === null) {
                 $expense->forceFill(['payroll_run_id' => $run->id])->save();
             }
 
-            return new PayInput('UTLAGG', ExpenseClaims::label($expense), 'EXPENSE', false, 'NONE', false, false, amountOre: $expense->amount_ore->ore);
-        })->all());
+            if ($expense->isMileage()) {
+                array_push($inputs, ...$this->mileage($expense, $payCodes, $rules));
+
+                continue;
+            }
+
+            $inputs[] = new PayInput('UTLAGG', ExpenseClaims::label($expense), 'EXPENSE', false, 'NONE', false, false, amountOre: $expense->amount_ore->ore);
+        }
+
+        return $inputs;
+    }
+
+    /**
+     * An approved mileage claim from the körjournal (ADR-072 §4): one input
+     * per pay code, with the distance in mil. A tax-free code goes through
+     * Allowances, which prices it at the payroll rule for the payment date
+     * and splits a higher company rate into MIL_SKATTEPLIKTIG; a missing
+     * rule (2027 förmånsbil before Skatteverket publishes) blocks the run.
+     * Trips that can only be paid as pay (commuting, a company car whose
+     * fuel the employee did not pay all of) go straight to MIL_SKATTEPLIKTIG
+     * at the company's rate or the schablon.
+     *
+     * @param  Collection<int, PayCode>  $payCodes  by id
+     * @return list<PayInput>
+     */
+    private function mileage(Expense $expense, Collection $payCodes, RuleSet $rules): array
+    {
+        $inputs = [];
+
+        foreach ((array) ($expense->trip_data['groups'] ?? []) as $group) {
+            $code = $payCodes->first(fn (PayCode $payCode): bool => $payCode->code === $group['pay_code'])
+                ?? throw new PayrollBlockedException(__('Lönearten :code finns inte. Slå av och på lönemodulen för att lägga till systemets lönearter.', ['code' => $group['pay_code']]));
+            $quantity = Distance::mil((int) $group['hm']);
+            $rate = isset($group['rate_ore']) ? (int) $group['rate_ore'] : null;
+            $explanation = ['source' => 'mileage_claim', 'expense_id' => $expense->id, 'month' => $expense->trip_data['month'] ?? null, 'trips' => $group['trips'] ?? null];
+
+            if ($code->code === MileagePayCode::TAXABLE) {
+                $rate ??= (int) ((array) $rules->get((string) $group['rule']))['ore'];
+            }
+
+            $inputs[] = new PayInput($code->code, (string) $expense->description, $code->category, $code->is_taxable, $code->tax_method, $code->is_contribution_basis, $code->is_vacation_basis,
+                quantity: $quantity, rateOre: $rate, explanation: $explanation);
+        }
+
+        return $inputs;
     }
 
     /** @var array{run: int, cars: Collection<int|string, Collection<int, Benefit>>, carriers: array<int, int>, rules: RuleSet}|null the run's cars, loaded once by prepareCars() */

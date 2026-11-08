@@ -59,6 +59,8 @@ class PayrollSettingsForm extends Component
                 $key === 'default_payment_day' => ['required', 'integer', 'between:1,28'],
                 $key === 'vacation_year_start_month' => ['required', 'integer', 'between:1,12'],
                 $key === 'vacation_day_value_percent' => ['required', 'regex:/^\d{1,2}([.,]\d{1,2})?$/'],
+                in_array($key, ['mileage_own_car_rate', 'mileage_company_car_rate'], true) => ['nullable', 'regex:/^\d{1,4}([.,]\d{1,2})?$/'],
+                $key === 'mileage_claim_last_day' => ['nullable', 'integer', 'between:1,31'],
                 default => ['boolean'],
             };
         }

@@ -268,6 +268,7 @@ Route::middleware([
         Route::view('/projekt', 'accounting.dimensions', ['dimension' => 'projekt'])->name('accounting.projects');
         Route::view('/anlaggningar', 'accounting.fixed-assets')->name('accounting.fixedAssets');
         Route::view('/periodiseringar', 'accounting.accruals')->name('accounting.accruals');
+        Route::view('/korjournal', 'mileage.index')->name('mileage.index');
         Route::view('/bankavstamning', 'accounting.bank-reconciliation')->name('accounting.bankReconciliation');
         Route::view('/skattekontot', 'accounting.tax-account')->name('accounting.taxAccount');
         Route::view('/bokslut', 'accounting.closing')->name('accounting.closing');

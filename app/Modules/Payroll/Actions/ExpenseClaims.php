@@ -7,9 +7,11 @@ namespace App\Modules\Payroll\Actions;
 use App\Actions\Accounting\AttachToVoucher;
 use App\Actions\Accounting\BookVoucher;
 use App\Domain\Accounting\VoucherSource;
+use App\Domain\Mileage\TripStatus;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\User;
+use App\Models\VehicleTrip;
 use App\Modules\Ai\Actions\AnalyzeDocument;
 use App\Modules\Ai\Support\AiAnalysisException;
 use App\Modules\ModuleManager;
@@ -326,6 +328,10 @@ class ExpenseClaims
             /** @var Expense $expense */
             $expense = Expense::query()->whereKey($expense->id)->lockForUpdate()->firstOrFail();
 
+            if ($expense->isMileage()) {
+                throw ValidationException::withMessages(['expense' => __('En milersättning godkänns utan konto: den bokförs med lönen.')]);
+            }
+
             if ($expense->status !== 'SUBMITTED') {
                 throw ValidationException::withMessages(['expense' => __('Utlägget är redan besvarat.')]);
             }
@@ -410,6 +416,39 @@ class ExpenseClaims
         return array_keys(array_diff_assoc($after, $before));
     }
 
+    /**
+     * Approves a mileage claim (ADR-072 §4). Nothing is booked now: mileage
+     * is pay, booked by the salary voucher on the pay codes' accounts when
+     * the next run pays it. The same segregation of duties as for outlays.
+     */
+    public function approveMileage(User $user, Expense $expense): Expense
+    {
+        $company = $this->staff($user, $expense);
+
+        return CurrentCompany::run($company, fn (): Expense => DB::transaction(function () use ($user, $company, $expense): Expense {
+            /** @var Expense $expense */
+            $expense = Expense::query()->whereKey($expense->id)->lockForUpdate()->firstOrFail();
+
+            if (! $expense->isMileage()) {
+                throw ValidationException::withMessages(['expense' => __('Det här är inte en milersättning.')]);
+            }
+
+            if ($expense->status !== 'SUBMITTED') {
+                throw ValidationException::withMessages(['expense' => __('Milersättningen är redan besvarad.')]);
+            }
+
+            if ($expense->requested_by === $user->id && ($this->modules->settings(PayrollModule::KEY, $company)['segregation_of_duties'] ?? true)) {
+                throw ValidationException::withMessages(['expense' => __('Du kan inte godkänna din egen milersättning. Någon annan med ansvar för lönerna behöver göra det.')]);
+            }
+
+            $expense->forceFill(['status' => 'APPROVED', 'decided_by' => $user->id, 'decided_at' => now()])->save();
+            VehicleTrip::query()->where('expense_id', $expense->id)->update(['status' => TripStatus::Approved->value, 'updated_at' => now()]);
+            Audit::record('payroll.mileage_approved', $expense, ['amount_ore' => $expense->amount_ore->ore], $company, $user);
+
+            return $expense;
+        }));
+    }
+
     public function reject(User $user, Expense $expense, string $reason): Expense
     {
         $company = $this->staff($user, $expense);
@@ -424,6 +463,12 @@ class ExpenseClaims
             }
 
             $expense->forceFill(['status' => 'REJECTED', 'rejection_reason' => trim($reason), 'decided_by' => $user->id, 'decided_at' => now()])->save();
+
+            if ($expense->isMileage()) {
+                // The trips go back to the employee, who can correct them and send them again.
+                VehicleTrip::query()->where('expense_id', $expense->id)->update(['status' => TripStatus::Rejected->value, 'updated_at' => now()]);
+            }
+
             Audit::record('payroll.expense_rejected', $expense, [], $company, $user);
 
             return $expense;

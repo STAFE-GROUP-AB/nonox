@@ -8,6 +8,7 @@ use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\User;
+use App\Models\VehicleTrip;
 use App\Modules\Ai\Actions\AnalyzeDocument;
 use App\Modules\Payroll\Actions\AbsenceRequests;
 use App\Modules\Payroll\Actions\ExpenseClaims;
@@ -95,6 +96,19 @@ class AbsenceRequestList extends Component
         $this->toast(__('Ansökan är avslagen. Den anställde ser beslutet och skälet på Min sida.'));
     }
 
+    public function approveMileage(int $expenseId, ExpenseClaims $claims): void
+    {
+        try {
+            $claims->approveMileage($this->user(), Expense::query()->findOrFail($expenseId));
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        $this->toast(__('Milersättningen är godkänd. Den betalas och bokförs med nästa lön.'));
+    }
+
     public function approveExpense(int $expenseId, ExpenseClaims $claims): void
     {
         try {
@@ -132,17 +146,26 @@ class AbsenceRequestList extends Component
             return;
         }
 
-        $claims->reject($this->user(), Expense::query()->findOrFail($this->rejectingExpense), $this->reason);
+        $expense = $claims->reject($this->user(), Expense::query()->findOrFail($this->rejectingExpense), $this->reason);
         $this->reset('rejectingExpense', 'reason');
-        $this->toast(__('Utlägget är avslaget. Den anställde ser beslutet och skälet på Min sida.'));
+        $this->toast($expense->isMileage()
+            ? __('Milersättningen är avslagen. Den anställde ser skälet på Min sida och kan rätta resorna och skicka dem igen.')
+            : __('Utlägget är avslaget. Den anställde ser beslutet och skälet på Min sida.'));
     }
 
     public function render(AbsenceRequests $requests): View
     {
         $expenses = Expense::query()->with('employee:id,first_name,last_name')->where('status', 'SUBMITTED')->orderBy('date')->get();
 
+        // The trips behind the mileage claims, one line per trip, in one query (ADR-072 §4).
+        $trips = VehicleTrip::query()->with('vehicle:id,label,registration_number,kind')
+            ->whereIn('expense_id', $expenses->filter(fn (Expense $expense): bool => $expense->isMileage())->pluck('id'))
+            ->orderBy('trip_date')
+            ->get()
+            ->groupBy('expense_id');
+
         foreach ($expenses as $expense) {
-            if ($expense->ai_status === ExpenseClaims::AI_PENDING) {
+            if ($expense->ai_status === ExpenseClaims::AI_PENDING || $expense->isMileage()) {
                 continue;
             }
 
@@ -161,6 +184,7 @@ class AbsenceRequestList extends Component
 
         return view('payroll::livewire.absence-requests', [
             'expenses' => $expenses,
+            'trips' => $trips,
             'aiReads' => AnalyzeDocument::readsReceiptsFor($this->company()),
             'accounts' => Account::query()->where('is_active', true)->whereBetween('number', [4000, 7999])->orderBy('number')->get(['number', 'name']),
             'pending' => $pending,

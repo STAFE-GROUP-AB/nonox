@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support\Navigation;
 
+use App\Domain\Mileage\MileageLog;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Crm\CrmModule;
@@ -153,8 +154,8 @@ final class Navigation
             [
                 'label' => __('Bokföring'),
                 'route' => 'accounting.vouchers.index',
-                'patterns' => ['accounting.*', 'vat.*'],
-                'children' => fn (User $user, Company $company): array => $this->bookkeeping($can, $user),
+                'patterns' => ['accounting.*', 'vat.*', 'mileage.*'],
+                'children' => fn (User $user, Company $company): array => $this->bookkeeping($can, $user, $company),
             ],
         ];
 
@@ -191,7 +192,7 @@ final class Navigation
      * @param  Closure(string): bool  $can
      * @return list<ChildLink>
      */
-    private function bookkeeping(Closure $can, User $user): array
+    private function bookkeeping(Closure $can, User $user, Company $company): array
     {
         $ongoing = __('Löpande');
         $reports = __('Rapporter och moms');
@@ -204,6 +205,7 @@ final class Navigation
             $can('reports:view') && Skatteverket::isAvailableTo($user) ? ['label' => __('Skattekontot'), 'route' => 'accounting.taxAccount', 'group' => $ongoing] : null,
             $can('fiscal-years:manage') ? ['label' => __('Periodiseringar'), 'route' => 'accounting.accruals', 'group' => $ongoing] : null,
             $can('fiscal-years:manage') ? ['label' => __('Anläggningar'), 'route' => 'accounting.fixedAssets', 'group' => $ongoing] : null,
+            MileageLog::canView($user, $company) ? ['label' => __('Körjournal'), 'route' => 'mileage.index', 'group' => $ongoing] : null,
             $can('import:sie') ? ['label' => __('Läs in SIE-fil'), 'route' => 'accounting.sieImports.index', 'group' => $ongoing] : null,
             $can('reports:view') ? ['label' => __('Rapporter'), 'route' => 'accounting.reports', 'group' => $reports] : null,
             $can('reports:view') ? ['label' => __('Reskontra'), 'route' => 'accounting.ledgers', 'group' => $reports] : null,

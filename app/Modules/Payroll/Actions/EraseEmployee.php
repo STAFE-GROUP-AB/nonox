@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Actions;
 
+use App\Domain\Mileage\TripStatus;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
+use App\Models\VehicleTrip;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\ImportedPayslip;
@@ -37,7 +39,7 @@ class EraseEmployee
     /** Tables that only hold data about the employee, deleted children first. */
     private const array OWN_TABLES = [
         'salary_changes', 'payroll_inputs', 'recurring_inputs', 'accumulators', 'absences', 'benefits',
-        'time_reports', 'vacation_opening_balances', 'expenses', 'employments',
+        'time_reports', 'vacation_opening_balances', 'vehicle_trips', 'expenses', 'employments',
     ];
 
     /** @return array{mode: 'deleted'|'contact_removed'|'anonymised', kept_until: ?CarbonImmutable} */
@@ -61,6 +63,10 @@ class EraseEmployee
             if ($inOpenRun) {
                 throw ValidationException::withMessages(['erase' => __('Den anställda finns i en lönekörning som inte är klar. Ta bort den anställda från körningen eller slutför den först.')]);
             }
+
+            // Körjournal trips never sent, or sent back, are no underlag to anything (ADR-072 §9): they go now.
+            // Trips under a claim are kept with it, and paid ones for the BFL 7 kap. 2 § period.
+            VehicleTrip::query()->where('employee_id', $employee->id)->whereIn('status', [TripStatus::Draft->value, TripStatus::Rejected->value])->whereNull('voucher_id')->delete();
 
             $lastPaid = $this->lastPaid($employee);
 

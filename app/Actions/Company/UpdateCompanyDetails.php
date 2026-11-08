@@ -78,6 +78,7 @@ class UpdateCompanyDetails
             'eu_sales_quarterly_goods_from' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'industry' => ['sometimes', 'nullable', Rule::enum(Industry::class)],
             'guide_enabled' => ['sometimes', 'boolean'],
+            'mileage_log_enabled' => ['sometimes', 'boolean'],
             'framework_change_reason' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'framework_from_year' => ['sometimes', 'nullable', 'integer'],
         ], CompanySetupRules::messages(), [
@@ -298,7 +299,7 @@ class UpdateCompanyDetails
             'fiscal_year_start_month', 'accounting_method', 'reporting_framework',
             'f_skatt', 'preliminary_tax_monthly_ore', 'employer_registered', 'turnover_over_40_msek', 'oss_elected', 'oss_elected_from',
             'eu_sales_quarterly_goods', 'eu_sales_quarterly_goods_from',
-            'industry', 'guide_enabled',
+            'industry', 'guide_enabled', 'mileage_log_enabled',
         ]))->map(fn (mixed $value) => match (true) {
             $value instanceof \BackedEnum => $value->value,
             $value instanceof \DateTimeInterface => $value->format('Y-m-d'),

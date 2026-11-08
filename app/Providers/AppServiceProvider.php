@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Actions\Company\ReconcileFirmLinks;
+use App\Actions\Mileage\BookOwnerMileage;
 use App\Domain\Closing\DeferredTax\BuildingCarryingAmounts;
 use App\Domain\Closing\DeferredTax\NoBuildingCarryingAmounts;
 use App\Domain\Deadlines\CompanyDeadlines;
 use App\Domain\Overview\TodoProviders;
 use App\Events\UserAccountDeleting;
+use App\Events\VoucherPosted;
 use App\Http\Middleware\SecurityHeaders;
 use App\Livewire\Company\MemberManager;
 use App\Livewire\Profile\ProfileInformationForm;
@@ -108,6 +110,8 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('chat', fn (Request $request): Limit => Limit::perMinute(240)->by('chat:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
         Event::subscribe(AuditSubscriber::class);
         Event::listen(TeamMemberRemoved::class, [ForgetUserDeadlines::class, 'memberRemoved']);
+        // The körjournal: an enskild firma owner's trips are booked once the draft voucher is posted (ADR-072 §7).
+        Event::listen(VoucherPosted::class, fn (VoucherPosted $event) => BookOwnerMileage::markBooked($event->companyId, $event->voucherId));
         Event::listen(UserAccountDeleting::class, [ForgetUserDeadlines::class, 'accountDeleting']);
         // Mina datum's calendar link (ADR-051, stage 2): per address and link, like the CRM's; unknown links have a stricter limit of their own.
         // Signing in with Skatteverket (ADR-054): a person starts it by hand.

@@ -7,10 +7,13 @@ namespace App\Modules\Payroll\Actions;
 use App\Actions\Accounting\BookVoucher;
 use App\Domain\Accounting\Reports\LedgerQuery;
 use App\Domain\Accounting\VoucherSource;
+use App\Domain\Mileage\TripStatus;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
+use App\Models\VehicleTrip;
+use App\Models\Voucher;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Domain\Benefits\FuelBenefit;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
@@ -48,6 +51,7 @@ use App\Modules\Payroll\Support\Tax\MissingTaxTableException;
 use App\Modules\Payroll\Support\Tax\TaxTableLookup;
 use App\Modules\Payroll\Support\Vacation\VacationLedger;
 use App\Support\Audit\Audit;
+use App\Support\Mileage\TripListPdf;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -609,7 +613,10 @@ class PayrollRuns
 
         return CurrentCompany::run($company, function () use ($user, $company, $run): PayrollRun {
             $run->forceFill(['status' => PayrollRun::PAID])->save();
-            Expense::query()->where('payroll_run_id', $run->id)->where('status', 'APPROVED')->update(['status' => 'PAID']);
+            $paid = Expense::query()->where('payroll_run_id', $run->id)->where('status', 'APPROVED')->pluck('id');
+            Expense::query()->whereIn('id', $paid)->update(['status' => 'PAID']);
+            // The körjournal's trips behind a paid mileage claim are underlag from now on and frozen (ADR-072).
+            VehicleTrip::query()->whereIn('expense_id', $paid)->where('status', TripStatus::Approved->value)->update(['status' => TripStatus::Paid->value, 'updated_at' => now()]);
             Audit::record('payroll.run_paid', $run, ['period' => $run->period], $company, $user);
 
             return $run;
@@ -655,11 +662,34 @@ class PayrollRuns
                 VacationLiabilitySnapshot::create($liability['snapshot']);
             }
 
+            $this->attachTripLists($user, $company, $run, $voucher);
+
             $run->forceFill(['status' => PayrollRun::POSTED, 'posted_voucher_id' => $voucher->id])->save();
             Audit::record('payroll.run_posted', $run, ['period' => $run->period, 'voucher' => $voucher->reference()], $company, $user);
 
             return $run;
         }));
+    }
+
+    /**
+     * The körjournal's trip list behind each mileage claim the run paid,
+     * attached to the salary voucher as underlag for the mileage lines
+     * (BFL 5 kap. 6–7 §§, ADR-072 §4). Two queries whatever the number of trips.
+     */
+    private function attachTripLists(User $user, Company $company, PayrollRun $run, Voucher $voucher): void
+    {
+        $claims = Expense::query()->with('employee:id,first_name,last_name')->where('payroll_run_id', $run->id)->whereIn('type', Expense::MILEAGE_TYPES)->get();
+
+        if ($claims->isEmpty()) {
+            return;
+        }
+
+        $trips = VehicleTrip::query()->with('vehicle')->whereIn('expense_id', $claims->pluck('id'))->orderBy('trip_date')->get()->groupBy('expense_id');
+
+        foreach ($claims as $claim) {
+            $name = $claim->employee === null ? '' : "{$claim->employee->first_name} {$claim->employee->last_name}";
+            TripListPdf::attach($user, $voucher, $company, __('Körjournal: :what', ['what' => (string) $claim->description]), $name, $trips->get($claim->id, collect()));
+        }
     }
 
     /**

@@ -382,6 +382,13 @@
             ],
             "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
             "note": "Inkomstskattelagen 61 kap. 7 och 10 §§ and the transitional provisions of SFS 2021:479 and 2022:479, ändrad t.o.m. SFS 2026:1393, and socialavgiftslagen 2 kap. 10 a §, ändrad t.o.m. SFS 2026:493 (read 2026-11-06). TODO(legal-verify): amendments in force from 2027-01-01 after the budget bill."
+        },
+        {
+            "keys": [
+                "benefit.car.minor_extent"
+            ],
+            "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/lonochersattning/formaner/bilforman/korjournal.4.3016b5d91791bf546791a00.html",
+            "note": "Skatteverket's guidance on bilförmån i ringa omfattning (100 mil and 10 occasions), read 2026-11-08; advice only in the körjournal (ADR-072). TODO(legal-verify): check again in January 2027."
         }
     ]
 }

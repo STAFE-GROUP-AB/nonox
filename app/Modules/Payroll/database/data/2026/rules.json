@@ -660,6 +660,20 @@
             "status": "researched"
         },
         {
+            "key": "benefit.car.minor_extent",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "max_private_mil": 100,
+                "max_private_occasions": 10
+            },
+            "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/lonochersattning/formaner/bilforman/korjournal.4.3016b5d91791bf546791a00.html",
+            "source_quote": "Skatteverket, Körjournal: privat körning högst 100 mil och högst 10 tillfällen; Båda förutsättningarna ska vara uppfyllda.",
+            "source_read_on": "2026-11-08",
+            "status": "researched",
+            "note": "Skatteverket's reading of IL 61 kap. 11 § andra stycket (ringa omfattning), not law text. Used only as advice in the körjournal (ADR-072, KJ-R13); NONOX never sets a benefit to zero. TODO(legal-verify)."
+        },
+        {
             "key": "benefit.fuel.factor",
             "valid_from": "2026-01-01",
             "valid_to": null,
