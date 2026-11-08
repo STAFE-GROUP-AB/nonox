@@ -26,6 +26,9 @@
             @endif
             <x-button wire:loading.attr="disabled">{{ __('Skapa offert') }}</x-button>
             <x-input-error for="template" class="basis-full" />
+            <x-input-error for="deal" class="basis-full" />
+            <x-input-error for="customer_id" class="basis-full" />
+            <x-input-error for="rows" class="basis-full" />
         </form>
     @endif
 </div>

@@ -6,10 +6,12 @@ use App\Actions\Invoicing\ProgressSalesDocument;
 use App\Actions\Invoicing\SaveSalesDocument;
 use App\Models\SalesDocument;
 use App\Modules\Crm\Actions\CreateQuoteForDeal;
+use App\Modules\Crm\Actions\LoseDeal;
 use App\Modules\Crm\Actions\SaveQuoteTemplate;
 use App\Modules\Crm\Actions\WinDeal;
 use App\Modules\Crm\Livewire\DealCard;
 use App\Modules\Crm\Livewire\QuoteFromTemplate;
+use App\Modules\Crm\Models\LossReason;
 use App\Modules\Crm\Models\QuoteTemplate;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -135,35 +137,110 @@ it('links the deal from the template picker on the deal card', function () {
     expect($this->deal->refresh()->quote_id)->not->toBeNull();
 });
 
-it('keeps the deal card at a fixed number of queries', function () {
-    $count = function (): int {
-        Livewire::test(DealCard::class, ['dealId' => $this->deal->id]);
+it('never uses a deal of another company, even with one\'s own template', function () {
+    [$otherOwner, $otherCompany] = Bookkeeping::company();
+    $this->actingAs($otherOwner);
+    Crm::enable($otherCompany, $otherOwner);
+    $foreign = Crm::deal($otherCompany, $otherOwner, Crm::accountFor(Crm::customer($otherCompany, $otherOwner, 'Främmande AB')), 'Främmande');
+
+    CurrentCompany::set($this->company);
+    $this->actingAs($this->owner);
+    $template = dealTemplate($this);
+
+    Livewire::test(DealCard::class, ['dealId' => $foreign->id])->assertNotFound();
+    Livewire::test(QuoteFromTemplate::class, ['dealId' => $foreign->id])->set('templateId', (string) $template->id)->call('create')->assertNotFound();
+    expect(SalesDocument::query()->count())->toBe(0);
+});
+
+it('takes the VAT of the invoice code: none for reverse charge or a company outside VAT', function () {
+    $reverse = Crm::customer($this->company, $this->owner, 'Bygg AB', ['reverse_charge_construction' => true]);
+    $quote = app(CreateQuoteForDeal::class)($this->owner, $this->company, Crm::deal($this->company, $this->owner, Crm::accountFor($reverse), 'Bygg', 1_000_000));
+    $invoice = app(ProgressSalesDocument::class)->toInvoice($this->owner, $quote);
+
+    expect($quote->vat_ore->ore)->toBe(0)->and($quote->total_ore->ore)->toBe($invoice->total_ore->ore);
+
+    $normal = app(CreateQuoteForDeal::class)($this->owner, $this->company, $this->deal);
+    expect($normal->vat_ore->ore)->toBe(312_500);
+
+    $this->company->forceFill(['vat_registered' => false])->save();
+    $other = Crm::deal($this->company, $this->owner, Crm::accountFor($this->customer), 'Ej moms', 1_000_000);
+    expect(app(CreateQuoteForDeal::class)($this->owner, $this->company->refresh(), $other)->vat_ore->ore)->toBe(0);
+});
+
+it('only moves open deals, and only fills empty links', function () {
+    $quote = app(CreateQuoteForDeal::class)($this->owner, $this->company, $this->deal);
+    $lost = Crm::deal($this->company, $this->owner, Crm::accountFor($this->customer), 'Förlorad');
+    $lost->forceFill(['quote_id' => $quote->id])->save();
+    app(LoseDeal::class)($this->owner, $this->company, $lost->refresh(), ['loss_reason_id' => LossReason::query()->value('id')]);
+
+    $order = app(ProgressSalesDocument::class)->toOrder($this->owner, $quote);
+
+    expect($lost->refresh()->order_id)->toBeNull()->and($this->deal->refresh()->order_id)->toBe($order->id);
+
+    $manual = Crm::invoice($this->owner, $this->company, $this->customer, '2026-06-15', [['description' => 'X', 'quantity' => '1', 'price' => '100', 'vat_rate' => 2500]]);
+    $this->deal->forceFill(['invoice_id' => $manual->id])->save();
+    app(ProgressSalesDocument::class)->toInvoice($this->owner, $order->refresh());
+
+    expect($this->deal->refresh()->invoice_id)->toBe($manual->id);
+});
+
+it('replaces the link on a second Ny offert and clears the order and invoice of the old quote', function () {
+    $first = app(CreateQuoteForDeal::class)($this->owner, $this->company, $this->deal);
+    $order = app(ProgressSalesDocument::class)->toOrder($this->owner, $first);
+    expect($this->deal->refresh()->order_id)->toBe($order->id);
+
+    $second = app(CreateQuoteForDeal::class)($this->owner, $this->company, $this->deal);
+
+    expect($this->deal->refresh()->quote_id)->toBe($second->id)->and($this->deal->order_id)->toBeNull()->and($this->deal->invoice_id)->toBeNull();
+});
+
+it('refuses a second click made from a stale card, and shows the linked quote on an open deal', function () {
+    $component = Livewire::test(DealCard::class, ['dealId' => $this->deal->id])->call('newQuote');
+    $component->call('newQuote');
+
+    expect(SalesDocument::query()->count())->toBe(1);
+
+    Livewire::test(DealCard::class, ['dealId' => $this->deal->id])->assertSee('Kopplad till')->assertSee('Offert');
+});
+
+it('lists the linked draft invoice among the win options, labelled utkast', function () {
+    $quote = app(CreateQuoteForDeal::class)($this->owner, $this->company, $this->deal);
+    $invoice = app(ProgressSalesDocument::class)->toInvoice($this->owner, $quote);
+
+    Livewire::test(DealCard::class, ['dealId' => $this->deal->id])->call('startWin')
+        ->assertSet('win.invoice_id', $invoice->id)
+        ->assertSeeHtml('value="'.$invoice->id.'"')
+        ->assertSee('(utkast)');
+});
+
+it('shows why the template picker on a deal fails', function () {
+    $component = Livewire::test(QuoteFromTemplate::class, ['dealId' => $this->deal->id]);
+    app(WinDeal::class)($this->owner, $this->company, $this->deal);
+
+    $component->set('templateId', (string) dealTemplate($this)->id)->call('create')->assertHasErrors('deal')->assertSee('avslutad');
+});
+
+it('renders the deal card with the same number of queries whatever is linked or beside it', function () {
+    $count = function (bool $win): int {
+        $run = fn () => $win ? Livewire::test(DealCard::class, ['dealId' => $this->deal->id])->call('startWin') : Livewire::test(DealCard::class, ['dealId' => $this->deal->id]);
+        $run();
         DB::flushQueryLog();
         DB::enableQueryLog();
-        Livewire::test(DealCard::class, ['dealId' => $this->deal->id]);
+        $run();
         $n = count(DB::getQueryLog());
         DB::disableQueryLog();
 
         return $n;
     };
-    $before = $count();
-    app(CreateQuoteForDeal::class)($this->owner, $this->company, $this->deal);
-    Crm::deal($this->company, $this->owner, Crm::accountFor($this->customer), 'Annan');
+    $quote = app(CreateQuoteForDeal::class)($this->owner, $this->company, $this->deal);
+    $order = app(ProgressSalesDocument::class)->toOrder($this->owner, $quote);
+    app(ProgressSalesDocument::class)->toInvoice($this->owner, $order->refresh());
+    $before = [$count(false), $count(true)];
 
-    expect($count())->toBeLessThanOrEqual($before + 2);
-});
+    foreach (['A', 'B', 'C'] as $title) {
+        $other = Crm::deal($this->company, $this->owner, Crm::accountFor($this->customer), $title);
+        app(ProgressSalesDocument::class)->toOrder($this->owner, app(CreateQuoteForDeal::class)($this->owner, $this->company, $other));
+    }
 
-it('never uses a deal of another company', function () {
-    [$otherOwner, $otherCompany] = Bookkeeping::company();
-    $this->actingAs($otherOwner);
-    Crm::enable($otherCompany, $otherOwner);
-    $foreign = Crm::deal($otherCompany, $otherOwner, Crm::accountFor(Crm::customer($otherCompany, $otherOwner, 'Främmande AB')), 'Främmande');
-    $template = dealTemplate((object) ['owner' => $otherOwner, 'company' => $otherCompany]);
-
-    CurrentCompany::set($this->company);
-    $this->actingAs($this->owner);
-
-    Livewire::test(DealCard::class, ['dealId' => $foreign->id])->assertNotFound();
-    Livewire::test(QuoteFromTemplate::class, ['dealId' => $foreign->id])->set('templateId', (string) $template->id)->call('create')->assertNotFound();
-    expect(SalesDocument::query()->count())->toBe(0);
+    expect([$count(false), $count(true)])->toBe($before);
 });

@@ -10567,5 +10567,7 @@
     "verifikation :vouchers bokför ett förvärv på konto :accounts mot en leverantörsskuld som leverantörsreskontran inte visar som helt betald under året; ett förvärv mot en obetald eller manuellt bokförd skuld räknas inte som en utbetalning (K3 kapitel 7, kommentaren om transaktioner som inte medför betalningar)": "voucher :vouchers books an acquisition on account :accounts against a trade payable that the payables ledger does not show as paid in full during the year; an acquisition against an unpaid or manually booked liability does not count as a payment (K3 chapter 7, the comment on transactions without payments)",
     "Prospekten är inte kund än, och du får inte lägga till kunder. Be någon med behörighet göra den till kund först.": "The prospect is not a customer yet, and you may not add customers. Ask someone with permission to make it a customer first.",
     ":title är skapad från affären. Kontrollera raderna och skicka den.": ":title was created from the deal. Check the rows and send it.",
-    "Offerten får en rad från affären och kopplas till den. Raderna går att ändra innan du skickar den.": "The quote gets one row from the deal and is linked to it. You can change the rows before you send it."
+    "Offerten får en rad från affären och kopplas till den. Raderna går att ändra innan du skickar den.": "The quote gets one row from the deal and is linked to it. You can change the rows before you send it.",
+    "Affären har redan fått en offert. Ladda om sidan och försök igen.": "The deal has already got a quote. Reload the page and try again.",
+    "Faktura (utkast)": "Invoice (draft)"
 }

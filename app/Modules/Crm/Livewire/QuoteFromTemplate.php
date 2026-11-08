@@ -15,6 +15,7 @@ use App\Modules\Crm\Models\QuoteTemplate;
 use App\Modules\ModuleManager;
 use App\Support\Toast;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -36,6 +37,10 @@ class QuoteFromTemplate extends Component
     #[Locked]
     public ?int $dealId = null;
 
+    /** The deal's quote when the card was drawn; see CreateQuoteForDeal. */
+    #[Locked]
+    public ?string $quoteSeen = null;
+
     #[Locked]
     public bool $boxed = false;
 
@@ -43,8 +48,9 @@ class QuoteFromTemplate extends Component
 
     public string $customerId = '';
 
-    public function mount(?int $customerId = null, bool $boxed = false, ?int $dealId = null): void
+    public function mount(?int $customerId = null, bool $boxed = false, ?int $dealId = null, ?string $quoteSeen = null): void
     {
+        $this->quoteSeen = $quoteSeen;
         $this->dealId = $dealId;
         $this->fixedCustomerId = $customerId;
         $this->boxed = $boxed;
@@ -59,9 +65,21 @@ class QuoteFromTemplate extends Component
         ]);
 
         $template = QuoteTemplate::query()->whereNull('archived_at')->findOrFail((int) $this->templateId);
-        $quote = $this->dealId === null
-            ? $create($this->user(), $this->company(), $template, $this->fixedCustomerId ?? (int) $this->customerId)
-            : $createForDeal($this->user(), $this->company(), Deal::query()->findOrFail($this->dealId), $template);
+        try {
+            $quote = $this->dealId === null
+                ? $create($this->user(), $this->company(), $template, $this->fixedCustomerId ?? (int) $this->customerId)
+                : $createForDeal($this->user(), $this->company(), Deal::query()->findOrFail($this->dealId), $template, $this->quoteSeen);
+        } catch (ValidationException $exception) {
+            if ($this->dealId === null) {
+                throw $exception;
+            }
+
+            foreach ($exception->errors() as $field => $messages) {
+                $this->addError($field, (string) $messages[0]);
+            }
+
+            return;
+        }
 
         Toast::flash(__(':title är skapad från mallen :name. Kontrollera den och skicka den.', ['title' => $quote->title(), 'name' => $template->name]));
         $this->redirectRoute('invoicing.quotes.show', ['document' => $quote->id]);

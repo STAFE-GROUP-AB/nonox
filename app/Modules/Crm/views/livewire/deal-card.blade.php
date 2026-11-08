@@ -76,7 +76,7 @@
             </div>
         @endif
 
-        @if($deal->status === App\Modules\Crm\Domain\DealStatus::Won && ! $limitedLedger && ($deal->quote || $deal->order || $deal->invoice))
+        @if(in_array($deal->status, [App\Modules\Crm\Domain\DealStatus::Won, App\Modules\Crm\Domain\DealStatus::Open], true) && ! $limitedLedger && ($deal->quote || $deal->order || $deal->invoice))
             <p class="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                 <span class="text-gray-500">{{ __('Kopplad till') }}:</span>
                 @foreach([['doc' => $deal->quote, 'route' => 'invoicing.quotes.show', 'label' => __('Offert :number')], ['doc' => $deal->order, 'route' => 'invoicing.orders.show', 'label' => __('Order :number')], ['doc' => $deal->invoice, 'route' => 'invoicing.invoices.show', 'label' => __('Faktura :number')]] as $link)
@@ -94,11 +94,11 @@
 
     @if($canMakeQuote)
         <div class="rounded-3xl bg-white p-6 shadow-xs ring-1 ring-stone-200" data-testid="crm-deal-new-quote">
-            <x-button type="button" wire:click="newQuote" wire:loading.attr="disabled">{{ __('Ny offert') }}</x-button>
+            <x-button type="button" wire:click="newQuote" wire:loading.attr="disabled" wire:target="newQuote">{{ __('Ny offert') }}</x-button>
             <p class="mt-2 text-sm text-gray-600">{{ __('Offerten får en rad från affären och kopplas till den. Raderna går att ändra innan du skickar den.') }}</p>
             <x-input-error for="deal" class="mt-1" />
         </div>
-        <livewire:crm.quote-from-template :deal-id="$deal->id" :boxed="true" :key="'qft-deal-'.$deal->id" />
+        <livewire:crm.quote-from-template :deal-id="$deal->id" :quote-seen="$deal->quote_id" :boxed="true" :key="'qft-deal-'.$deal->id" />
     @endif
 
     {{-- The stages: one tap moves the deal. --}}
@@ -238,7 +238,7 @@
                         <select id="win_invoice" class="{{ $input }} mt-1" wire:model="win.invoice_id">
                             <option value="">{{ __('Ingen') }}</option>
                             @foreach($invoices as $invoice)
-                                <option value="{{ $invoice->id }}">{{ __('Faktura :number', ['number' => $invoice->number]) }} · {{ $invoice->invoice_date->translatedFormat('j M Y') }} · {{ $invoice->net_ore->format() }}</option>
+                                <option value="{{ $invoice->id }}">{{ $invoice->issued_at ? __('Faktura :number', ['number' => $invoice->number]) : __('Faktura (utkast)') }} · {{ $invoice->invoice_date->translatedFormat('j M Y') }} · {{ $invoice->net_ore->format() }}</option>
                             @endforeach
                         </select>
                     </x-ui.field>
