@@ -70,6 +70,8 @@ final class CompanyOverview
         // CRM signing notices (ADR-046).
         'quotes' => 'invoicing.quotes',
         'crm-agreements' => 'crm.agreements',
+        // ÄTA signed at a link (ADR-074 §4).
+        'work-orders' => 'workOrders.index',
         // Web form submissions held for review (ADR-048).
         'crm-forms' => 'crm.forms',
         // Reminders of a company's dates (ADR-051, stage 2).

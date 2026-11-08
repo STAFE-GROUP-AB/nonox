@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace App\Modules\WorkOrders\Models;
 
+use App\Domain\Signing\Signable;
+use App\Domain\Signing\SigningStatus;
+use App\Models\Company;
+use App\Models\Customer;
+use App\Models\SigningRequest;
+use App\Models\User;
 use App\Modules\WorkOrders\Domain\ChangeOrderBasis;
 use App\Modules\WorkOrders\Domain\ChangeOrderStatus;
 use App\Modules\WorkOrders\Domain\ContactChannel;
 use App\Modules\WorkOrders\Domain\PerformedReason;
 use App\Modules\WorkOrders\Domain\PriceForm;
+use App\Modules\WorkOrders\Support\ChangeOrderPdf;
+use App\Modules\WorkOrders\WorkOrdersModule;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
@@ -16,6 +24,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Gate;
 use LogicException;
 
 /**
@@ -54,9 +63,12 @@ use LogicException;
  * @property ?int $created_by
  * @property ?CarbonImmutable $created_at
  */
-class ChangeOrder extends Model
+class ChangeOrder extends Model implements Signable
 {
     use BelongsToCompany;
+
+    /** The type on signing requests (at most ten characters, SignableTypes). */
+    public const string SIGNING_TYPE = 'ATA';
 
     /** Content that cannot change once the ÄTA is sent. */
     private const array MUTABLE_WHEN_SENT = ['status', 'decided_at', 'approval_method', 'approved_by_name', 'approved_by_title', 'decided_by', 'updated_at'];
@@ -127,6 +139,111 @@ class ChangeOrder extends Model
     public function netOre(): int
     {
         return $this->labour_ore->ore + $this->material_ore->ore + $this->other_ore->ore;
+    }
+
+    /*
+     * Signing at a link through the shared signing domain (ADR-046,
+     * ADR-075 §7, ADR-074 §4). The document is the ÄTA's PDF; its content
+     * is fixed while it is sent (trigger), and once signed the ÄTA is
+     * APPROVED and never changes again.
+     */
+
+    public function signingType(): string
+    {
+        return self::SIGNING_TYPE;
+    }
+
+    public function signingKey(): string
+    {
+        return (string) $this->id;
+    }
+
+    public function signingCompanyId(): int
+    {
+        return $this->company_id;
+    }
+
+    public function signingTitle(): string
+    {
+        return "{$this->label()}: {$this->title}";
+    }
+
+    public function signingDocument(): array
+    {
+        return ['bytes' => ChangeOrderPdf::render($this), 'name' => ChangeOrderPdf::filename($this)];
+    }
+
+    /** The document part of the ÄTA (without the decision), as the change order trigger keeps it while it is sent. */
+    public function signingFingerprint(): string
+    {
+        return hash('sha256', ChangeOrderPdf::html($this));
+    }
+
+    public function signingIsOpen(): bool
+    {
+        return $this->status === ChangeOrderStatus::Sent;
+    }
+
+    /** For a business customer, also that the signer may approve on its behalf; a private person keeps the short form. */
+    public function signingAcceptance(): string
+    {
+        $customer = Customer::query()->find((int) WorkOrder::query()->whereKey($this->work_order_id)->value('customer_id'));
+
+        return $customer instanceof Customer && filled($customer->org_number) && blank($customer->personal_number)
+            ? __('Jag har läst och godkänner ändrings- eller tilläggsarbetet och priset och har rätt att godkänna det för :customer.', ['customer' => $customer->name])
+            : __('Jag har läst och godkänner ändrings- eller tilläggsarbetet och priset.');
+    }
+
+    public function signingModule(): ?string
+    {
+        return WorkOrdersModule::KEY;
+    }
+
+    public function signingValidUntil(): ?CarbonImmutable
+    {
+        return $this->expires_on;
+    }
+
+    public function signingDestination(): string
+    {
+        return 'work-orders';
+    }
+
+    /**
+     * Sending needs change-orders:send. A field worker assigned to the work
+     * order may present an ÄTA the office has already sent on site
+     * (ADR-074 O4); the customer then confirms with a code to their own
+     * e-mail before the page opens.
+     */
+    public function authorizeSigning(User $user, bool $revoke = false): void
+    {
+        $company = Company::query()->findOrFail($this->company_id);
+
+        if ($user->hasTeamPermission($company, WorkOrdersModule::SEND)) {
+            return;
+        }
+
+        $workOrder = WorkOrder::query()->findOrFail($this->work_order_id);
+        abort_unless(! $revoke && $this->status === ChangeOrderStatus::Sent && Gate::forUser($user)->allows('report', $workOrder), 403);
+    }
+
+    /**
+     * Signed at the link: APPROVED, with who signed (the signing request)
+     * and whether the page was presented on site after a code (O4).
+     */
+    public function markSigned(CarbonImmutable $signedAt, string $documentSha256): void
+    {
+        $request = SigningRequest::query()->where('document_type', self::SIGNING_TYPE)->where('signable_id', (string) $this->id)
+            ->where('status', SigningStatus::Signed->value)->latest('signed_at')->first();
+        $onSite = $request instanceof SigningRequest && OnSiteCode::query()->where('signing_request_id', $request->id)->whereNotNull('verified_at')->exists();
+
+        $this->forceFill([
+            'status' => ChangeOrderStatus::Approved,
+            'decided_at' => $signedAt,
+            'approval_method' => $onSite ? 'ON_SITE' : 'LINK',
+            'approved_by_name' => $request?->signer_name,
+            'approved_by_title' => $request?->signer_title,
+        ])->save();
     }
 
     /** @return BelongsTo<WorkOrder, $this> */

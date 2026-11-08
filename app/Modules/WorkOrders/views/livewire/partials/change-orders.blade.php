@@ -58,6 +58,7 @@
                                 <button type="button" wire:click="editChange({{ $changeOrder->id }})" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Ändra') }}</button>
                             @endif
                             @if(! $changeOrder->status->isDecided() && $canSend)
+                                <button type="button" wire:click="sendForSigning({{ $changeOrder->id }})" wire:confirm="{{ $changeOrder->status === App\Modules\WorkOrders\Domain\ChangeOrderStatus::Draft ? __('Skicka ÄTA:t till kunden för signering? Innehållet och priset låses när det skickas.') : __('Skicka en ny signeringslänk? Den gamla slutar gälla.') }}" class="text-sm font-medium text-accent-700 hover:underline">{{ $changeOrder->status === App\Modules\WorkOrders\Domain\ChangeOrderStatus::Draft ? __('Skicka för signering') : __('Skicka länken igen') }}</button>
                                 <button type="button" wire:click="openDecision({{ $changeOrder->id }}, 'oral')" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Godkänt muntligt') }}</button>
                                 <button type="button" wire:click="openDecision({{ $changeOrder->id }}, 'attempt')" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Försök att nå kunden') }}</button>
                                 <button type="button" wire:click="openDecision({{ $changeOrder->id }}, 'performed')" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Utfört utan besked') }}</button>

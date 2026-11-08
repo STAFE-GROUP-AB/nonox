@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\WorkOrders;
 
+use App\Domain\Signing\SignableTypes;
+use App\Domain\Signing\SigningHooks;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Modules\ModuleRegistry;
 use App\Modules\WorkOrders\Livewire\FieldWorkOrderPage;
@@ -13,8 +15,10 @@ use App\Modules\WorkOrders\Livewire\SettingsForm;
 use App\Modules\WorkOrders\Livewire\WorkOrderEditor;
 use App\Modules\WorkOrders\Livewire\WorkOrderPage;
 use App\Modules\WorkOrders\Livewire\WorkOrdersPage;
+use App\Modules\WorkOrders\Models\ChangeOrder;
 use App\Modules\WorkOrders\Models\WorkOrder;
 use App\Modules\WorkOrders\Policies\WorkOrderPolicy;
+use App\Modules\WorkOrders\Support\WorkOrdersSigningHook;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -37,6 +41,14 @@ class WorkOrdersServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
         Gate::policy(WorkOrder::class, WorkOrderPolicy::class);
+
+        // ÄTA are signed at a link through the shared signing domain (ADR-074 §4, ADR-075 §7).
+        $this->app->make(SignableTypes::class)->register(ChangeOrder::SIGNING_TYPE, SignableTypes::GENERIC_COLUMN, function (string $key, bool $lock): ?ChangeOrder {
+            $query = ChangeOrder::query()->whereKey((int) $key);
+
+            return ($lock ? $query->lockForUpdate() : $query)->first();
+        });
+        $this->app->make(SigningHooks::class)->add($this->app->make(WorkOrdersSigningHook::class));
 
         Livewire::component(SettingsForm::NAME, SettingsForm::class);
         Livewire::component('work-orders.index', WorkOrdersPage::class);

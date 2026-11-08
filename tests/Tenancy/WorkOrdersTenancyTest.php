@@ -8,6 +8,7 @@ use App\Modules\WorkOrders\Actions\DecideChangeOrder;
 use App\Modules\WorkOrders\Actions\PaymentPlans;
 use App\Modules\WorkOrders\Actions\RecordMaterial;
 use App\Modules\WorkOrders\Actions\SaveChangeOrder;
+use App\Modules\WorkOrders\Actions\SignChangeOrder;
 use App\Modules\WorkOrders\Livewire\FieldWorkOrderPage;
 use App\Modules\WorkOrders\Livewire\WorkOrderPage;
 use App\Modules\WorkOrders\Livewire\WorkOrdersPage;
@@ -15,6 +16,7 @@ use App\Modules\WorkOrders\Models\ChangeOrder;
 use App\Modules\WorkOrders\Models\ContactAttempt;
 use App\Modules\WorkOrders\Models\LabourKind;
 use App\Modules\WorkOrders\Models\MaterialEntry;
+use App\Modules\WorkOrders\Models\OnSiteCode;
 use App\Modules\WorkOrders\Models\PaymentInstalment;
 use App\Modules\WorkOrders\Models\TimeEntry;
 use App\Modules\WorkOrders\Models\WorkOrder;
@@ -25,6 +27,7 @@ use App\Modules\WorkOrders\Models\WorkOrderPhoto;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 use Tests\Support\WorkOrders;
@@ -37,6 +40,7 @@ use Tests\Support\WorkOrders;
 
 beforeEach(function () {
     Mail::fake();
+    Storage::fake('local');
     $this->travelTo(CarbonImmutable::parse('2026-03-02 10:00:00'));
 
     foreach (['a' => 'Alfa', 'b' => 'Beta'] as $side => $name) {
@@ -54,6 +58,9 @@ beforeEach(function () {
         $entry = WorkOrders::hours($company, $owner, $workOrder, '2');
         app(RecordMaterial::class)($owner, $company, $workOrder, ['source' => 'FREE', 'description' => "{$name}material", 'quantity' => '1', 'unit_cost' => '10', 'work_date' => '2026-03-02']);
         $changeOrder = app(SaveChangeOrder::class)($owner, $company, $workOrder, ['title' => "{$name}-ÄTA", 'description' => 'Extra.']);
+        $signed = app(SaveChangeOrder::class)($owner, $company, $workOrder, ['title' => "{$name}-ÄTA 2", 'description' => 'Signeras.', 'labour' => '1 000']);
+        app(SignChangeOrder::class)->send($owner, $company, $signed);
+        app(SignChangeOrder::class)->onSite($owner, $company, $signed->fresh());
         app(DecideChangeOrder::class)->recordAttempt($owner, $company, $changeOrder, ['channel' => 'PHONE']);
         app(PaymentPlans::class)->save($owner, $company, $workOrder, [['label' => 'Start', 'amount' => '1 000']], agreedWithCustomer: true);
         $invoice = app(CreateInvoiceBasis::class)($owner, $company, $workOrder);
@@ -70,7 +77,7 @@ it('scopes every Arbetsorder model to the current company', function (string $mo
         ->and($model::query()->pluck('company_id')->unique()->all())->toBe([$this->a['company']->id]);
 })->with([
     WorkOrder::class, LabourKind::class, WorkOrderAssignment::class, WorkOrderBuyer::class, TimeEntry::class, MaterialEntry::class,
-    ChangeOrder::class, ContactAttempt::class, PaymentInstalment::class, WorkOrderInvoice::class, WorkOrderPhoto::class, InvoiceTaxReductionBuyer::class,
+    ChangeOrder::class, ContactAttempt::class, PaymentInstalment::class, WorkOrderInvoice::class, WorkOrderPhoto::class, InvoiceTaxReductionBuyer::class, OnSiteCode::class,
 ]);
 
 it('answers 404 for the other company\'s work orders, ÄTA, documents and photos', function () {

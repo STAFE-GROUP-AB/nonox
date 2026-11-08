@@ -13,10 +13,12 @@ use App\Modules\WorkOrders\Actions\RecordMaterial;
 use App\Modules\WorkOrders\Actions\RecordTime;
 use App\Modules\WorkOrders\Actions\ReverseEntry;
 use App\Modules\WorkOrders\Actions\SaveChangeOrder;
+use App\Modules\WorkOrders\Actions\SignChangeOrder;
 use App\Modules\WorkOrders\Livewire\Concerns\WorkOrdersPage;
 use App\Modules\WorkOrders\Models\ChangeOrder;
 use App\Modules\WorkOrders\Models\LabourKind;
 use App\Modules\WorkOrders\Models\MaterialEntry;
+use App\Modules\WorkOrders\Models\OnSiteCode;
 use App\Modules\WorkOrders\Models\TimeEntry;
 use App\Modules\WorkOrders\Models\WorkOrder;
 use App\Modules\WorkOrders\Models\WorkOrderPhoto;
@@ -66,6 +68,11 @@ class FieldWorkOrderPage extends Component
     public ?string $reversing = null;
 
     public string $reason = '';
+
+    /** The on-site signing waiting for the customer's code. */
+    public ?int $onSiteId = null;
+
+    public string $code = '';
 
     public function mount(int $workOrderId): void
     {
@@ -133,6 +140,32 @@ class FieldWorkOrderPage extends Component
 
         if ($this->attempt(fn () => $add($this->user(), $this->company(), $this->workOrder(), $photo, $this->photoCaption), __('Bilden är sparad.'), '')) {
             $this->reset('photo', 'photoCaption');
+        }
+    }
+
+    /** "Låt kunden signera här" (ADR-074 O4): a code goes to the customer's own e-mail. */
+    public function startOnSite(int $id, SignChangeOrder $sign): void
+    {
+        $changeOrder = ChangeOrder::query()->where('work_order_id', $this->workOrderId)->findOrFail($id);
+        $onSite = null;
+
+        if ($this->attempt(function () use ($sign, $changeOrder, &$onSite): void {
+            $onSite = $sign->onSite($this->user(), $this->company(), $changeOrder, request()->userAgent());
+        }, __('En kod är skickad till kundens e-post. Låt kunden skriva in den här.'), '') && $onSite instanceof OnSiteCode) {
+            $this->onSiteId = $onSite->id;
+            $this->code = '';
+        }
+    }
+
+    public function verifyCode(SignChangeOrder $sign): void
+    {
+        $onSite = OnSiteCode::query()->where('presented_by', $this->user()->id)->findOrFail((int) $this->onSiteId);
+        $url = null;
+
+        if ($this->attempt(function () use ($sign, $onSite, &$url): void {
+            $url = $sign->verifyOnSite($this->user(), $this->company(), $onSite, $this->code);
+        }, '', '') && is_string($url)) {
+            $this->redirect($url);
         }
     }
 

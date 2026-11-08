@@ -109,12 +109,30 @@
             <label class="block"><span class="text-sm font-medium text-gray-700">{{ __('Vad ska göras') }}</span><textarea wire:model="change.description" rows="4" class="{{ $input }}"></textarea></label>
             @error('change.description')<p class="text-sm text-red-700" role="alert">{{ $message }}</p>@enderror
             <button type="submit" wire:loading.attr="disabled" class="{{ $big }} w-full bg-accent-600 text-white">{{ __('Skapa ÄTA') }}</button>
-            @if($changeOrders->isNotEmpty())
-                <ul class="space-y-1 text-sm">
-                    @foreach($changeOrders as $changeOrder)<li>{{ $changeOrder->label() }}: {{ $changeOrder->title }} · {{ $changeOrder->status->label() }}</li>@endforeach
-                </ul>
-            @endif
         </form>
+        @if($changeOrders->isNotEmpty())
+            <section class="space-y-3 rounded-xl bg-white p-4 shadow-xs" aria-labelledby="ata-heading">
+                <h2 id="ata-heading" class="text-base font-semibold text-gray-900">{{ __('ÄTA på jobbet') }}</h2>
+                <ul class="divide-y divide-stone-100">
+                    @foreach($changeOrders as $changeOrder)
+                        <li class="flex flex-wrap items-center justify-between gap-2 py-2" wire:key="field-ata-{{ $changeOrder->id }}">
+                            <span>{{ $changeOrder->label() }}: {{ $changeOrder->title }} · {{ $changeOrder->status->label() }}</span>
+                            @if($changeOrder->status === App\Modules\WorkOrders\Domain\ChangeOrderStatus::Sent)
+                                <button type="button" wire:click="startOnSite({{ $changeOrder->id }})" class="{{ $big }} border border-accent-600 bg-white text-accent-700">{{ __('Låt kunden signera här') }}</button>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+                @if($onSiteId !== null)
+                    <form wire:submit="verifyCode" class="space-y-3">
+                        <p class="text-sm text-gray-700">{{ __('Kunden har fått en kod till sin egen e-post. Låt kunden skriva in den; sedan öppnas sidan där kunden läser och signerar. Du godkänner aldrig åt kunden.') }}</p>
+                        <label class="block"><span class="text-sm font-medium text-gray-700">{{ __('Kod från kundens e-post') }}</span><input wire:model="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="{{ $input }} text-center text-2xl tracking-widest"></label>
+                        @error('code')<p class="text-sm text-red-700" role="alert">{{ $message }}</p>@enderror
+                        <button type="submit" wire:loading.attr="disabled" class="{{ $big }} w-full bg-accent-600 text-white">{{ __('Öppna signeringen') }}</button>
+                    </form>
+                @endif
+            </section>
+        @endif
     @endif
 
     <section class="rounded-xl bg-white p-4 shadow-xs" aria-labelledby="today-heading">

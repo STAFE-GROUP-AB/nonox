@@ -16,6 +16,7 @@ use App\Modules\WorkOrders\Actions\RecordMaterial;
 use App\Modules\WorkOrders\Actions\RecordTime;
 use App\Modules\WorkOrders\Actions\ReverseEntry;
 use App\Modules\WorkOrders\Actions\SaveChangeOrder;
+use App\Modules\WorkOrders\Actions\SignChangeOrder;
 use App\Modules\WorkOrders\Domain\Advice;
 use App\Modules\WorkOrders\Domain\ChangeOrderBasis;
 use App\Modules\WorkOrders\Domain\ContactChannel;
@@ -83,6 +84,9 @@ class WorkOrderPage extends Component
     public bool $planAgreed = false;
 
     public bool $editingPlan = false;
+
+    /** The e-mail the signing link goes to; empty: the customer's. */
+    public string $signEmail = '';
 
     public function mount(int $workOrderId): void
     {
@@ -204,6 +208,13 @@ class WorkOrderPage extends Component
         if ($ok) {
             $this->reset('decidingChange', 'decision', 'decide');
         }
+    }
+
+    /** "Skicka för signering": the customer gets a link and signs the ÄTA before the work is done (ADR-074 §4). */
+    public function sendForSigning(int $id, SignChangeOrder $sign): void
+    {
+        $changeOrder = ChangeOrder::query()->where('work_order_id', $this->workOrderId)->findOrFail($id);
+        $this->attempt(fn () => $sign->send($this->user(), $this->company(), $changeOrder, ['email' => $this->signEmail]), __(':ata är skickat till kunden för signering.', ['ata' => $changeOrder->label()]), 'sign.');
     }
 
     public function withdrawChange(int $id, DecideChangeOrder $decide): void
