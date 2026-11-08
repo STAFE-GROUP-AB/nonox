@@ -92,8 +92,13 @@
         @endif
     </x-ui.card>
 
-    @if($templateCustomerId)
-        <livewire:crm.quote-from-template :customer-id="$templateCustomerId" :boxed="true" :key="'qft-deal-'.$deal->id" />
+    @if($canMakeQuote)
+        <div class="rounded-3xl bg-white p-6 shadow-xs ring-1 ring-stone-200" data-testid="crm-deal-new-quote">
+            <x-button type="button" wire:click="newQuote" wire:loading.attr="disabled">{{ __('Ny offert') }}</x-button>
+            <p class="mt-2 text-sm text-gray-600">{{ __('Offerten får en rad från affären och kopplas till den. Raderna går att ändra innan du skickar den.') }}</p>
+            <x-input-error for="deal" class="mt-1" />
+        </div>
+        <livewire:crm.quote-from-template :deal-id="$deal->id" :boxed="true" :key="'qft-deal-'.$deal->id" />
     @endif
 
     {{-- The stages: one tap moves the deal. --}}

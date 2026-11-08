@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-08-offert-fran-affar",
+      "datum": "2026-11-08T08:00:00+01:00",
+      "rubrik": "Offert direkt från affären",
+      "beskrivning": "På en öppen affär finns nu Ny offert, som gör en offert med en rad från affärens namn och värde och kopplar den till affären. Blir offerten en order eller en faktura följer de med, så att de redan är valda när du markerar affären som vunnen.",
+      "typ": "Nytt",
+      "omrade": "CRM"
+    },
+    {
       "id": "2026-11-07-regelverk-per-rakenskapsar",
       "datum": "2026-11-07T09:30:00+01:00",
       "rubrik": "Regelverket K1, K2 eller K3 gäller per räkenskapsår",

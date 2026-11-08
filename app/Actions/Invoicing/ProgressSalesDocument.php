@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\SalesDocument;
 use App\Models\SalesDocumentRow;
 use App\Models\User;
+use App\Modules\Crm\Models\Deal;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -46,6 +47,7 @@ class ProgressSalesDocument
 
             $order->forceFill(['from_quote_id' => $quote->id])->save();
             $quote->forceFill(['status' => SalesDocumentStatus::Accepted])->save();
+            Deal::query()->where('quote_id', $quote->id)->update(['order_id' => $order->id]);
 
             Audit::record('quote.accepted', $quote, ['number' => $quote->number, 'order' => $order->number], $company, $user);
 
@@ -68,6 +70,8 @@ class ProgressSalesDocument
             ]);
 
             $document->forceFill(['status' => SalesDocumentStatus::Invoiced, 'invoice_id' => $invoice->id])->save();
+            // A deal made from this quote or order follows along, so winning it needs no manual pick.
+            Deal::query()->where(fn ($query) => $query->where('quote_id', $document->id)->orWhere('order_id', $document->id))->update(['invoice_id' => $invoice->id]);
 
             Audit::record($document->isQuote() ? 'quote.invoiced' : 'order.invoiced', $document, ['number' => $document->number], $company, $user);
 

@@ -7,8 +7,10 @@ namespace App\Modules\Crm\Livewire;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\User;
+use App\Modules\Crm\Actions\CreateQuoteForDeal;
 use App\Modules\Crm\Actions\CreateQuoteFromTemplate;
 use App\Modules\Crm\CrmModule;
+use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\QuoteTemplate;
 use App\Modules\ModuleManager;
 use App\Support\Toast;
@@ -30,6 +32,10 @@ class QuoteFromTemplate extends Component
     #[Locked]
     public ?int $fixedCustomerId = null;
 
+    /** On a deal's card: the quote is made for the deal and linked to it. */
+    #[Locked]
+    public ?int $dealId = null;
+
     #[Locked]
     public bool $boxed = false;
 
@@ -37,22 +43,25 @@ class QuoteFromTemplate extends Component
 
     public string $customerId = '';
 
-    public function mount(?int $customerId = null, bool $boxed = false): void
+    public function mount(?int $customerId = null, bool $boxed = false, ?int $dealId = null): void
     {
+        $this->dealId = $dealId;
         $this->fixedCustomerId = $customerId;
         $this->boxed = $boxed;
     }
 
-    public function create(CreateQuoteFromTemplate $create): void
+    public function create(CreateQuoteFromTemplate $create, CreateQuoteForDeal $createForDeal): void
     {
         $this->resetErrorBag();
-        $this->validate(['templateId' => ['required', 'integer'], 'customerId' => $this->fixedCustomerId === null ? ['required', 'integer'] : ['nullable']], [
+        $this->validate(['templateId' => ['required', 'integer'], 'customerId' => $this->fixedCustomerId === null && $this->dealId === null ? ['required', 'integer'] : ['nullable']], [
             'templateId.required' => __('Välj en mall.'),
             'customerId.required' => __('Välj en kund.'),
         ]);
 
         $template = QuoteTemplate::query()->whereNull('archived_at')->findOrFail((int) $this->templateId);
-        $quote = $create($this->user(), $this->company(), $template, $this->fixedCustomerId ?? (int) $this->customerId);
+        $quote = $this->dealId === null
+            ? $create($this->user(), $this->company(), $template, $this->fixedCustomerId ?? (int) $this->customerId)
+            : $createForDeal($this->user(), $this->company(), Deal::query()->findOrFail($this->dealId), $template);
 
         Toast::flash(__(':title är skapad från mallen :name. Kontrollera den och skicka den.', ['title' => $quote->title(), 'name' => $template->name]));
         $this->redirectRoute('invoicing.quotes.show', ['document' => $quote->id]);
@@ -65,7 +74,7 @@ class QuoteFromTemplate extends Component
 
         return view('crm::livewire.quote-from-template', [
             'templates' => $visible ? QuoteTemplate::query()->whereNull('archived_at')->orderBy('name')->get(['id', 'name']) : collect(),
-            'customers' => $visible && $this->fixedCustomerId === null ? Customer::query()->where('is_active', true)->whereNull('processing_restricted_at')->orderBy('name')->limit(2000)->get(['id', 'number', 'name']) : collect(),
+            'customers' => $visible && $this->fixedCustomerId === null && $this->dealId === null ? Customer::query()->where('is_active', true)->whereNull('processing_restricted_at')->orderBy('name')->limit(2000)->get(['id', 'number', 'name']) : collect(),
         ]);
     }
 

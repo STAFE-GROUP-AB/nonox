@@ -46,11 +46,19 @@ Det gäller i affärens kort, på kundens kort och under **Mina aktiviteter**.
 
 ![Affärens kort med värde, viktat värde, steg, nästa steg och historik.](/bilder/manual/crm/affarens-kort.webp)
 
+## Offert från affären
+
+1. Öppna en öppen affär och tryck på **Ny offert**. Är kunden ett prospekt görs det till kund först, om du får skapa kunder.
+2. Offerten öppnas med en rad: affärens namn som benämning och affärens värde som pris, med 25 % moms. Ändra raderna och skicka offerten som vanligt.
+3. Vill du utgå från en offertmall väljer du **Ny offert från mall** och trycker på **Skapa offert**.
+
+Offerten kopplas till affären. Blir den en order eller en faktura följer de med affären, så att **Offert**, **Order** och **Faktura** redan är valda när du trycker på **Vunnen**. Det kräver samma behörighet som att skapa offerter.
+
 ## Vunnen affär
 
 1. Öppna affären och tryck på **Vunnen**.
 2. Justera värdet om ni kom överens om något annat.
-3. Koppla gärna **Offert**, **Order** eller **Faktura** från bokföringen. Då räknas fakturan in i säljarens mål, och kortet länkar dit.
+3. Koppla gärna **Offert**, **Order** eller **Faktura** från bokföringen. Har du gjort offerten från affären är de redan valda. Då räknas fakturan in i säljarens mål, och kortet länkar dit.
 4. Är det ett prospekt kan du bocka i att göra det till kund, om du får skapa kunder.
 5. Tryck på **Markera som vunnen**.
 

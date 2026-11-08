@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\SalesDocument;
 use App\Modules\Crm\Actions\CompleteActivity;
+use App\Modules\Crm\Actions\CreateQuoteForDeal;
 use App\Modules\Crm\Actions\LogActivity;
 use App\Modules\Crm\Actions\LoseDeal;
 use App\Modules\Crm\Actions\MoveDeal;
@@ -29,6 +30,7 @@ use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Models\PipelineStage;
 use App\Modules\Crm\Support\CompanyMembers;
 use App\Support\Money\Money;
+use App\Support\Toast;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -181,6 +183,23 @@ class DealCard extends Component
         $this->toast($this->nextRequired ? __('Klart, och nästa steg är planerat.') : __('Klart.'));
     }
 
+    /** Ny offert: one row from the deal, linked to it, opened in the quote editor. */
+    public function newQuote(CreateQuoteForDeal $create): void
+    {
+        $deal = $this->authorizedDeal();
+
+        try {
+            $quote = $create($this->user(), $this->company(), $deal);
+        } catch (ValidationException $exception) {
+            $this->toast($this->firstError($exception), 'error');
+
+            return;
+        }
+
+        Toast::flash(__(':title är skapad från affären. Kontrollera raderna och skicka den.', ['title' => $quote->title()]));
+        $this->redirectRoute('invoicing.quotes.show', ['document' => $quote->id]);
+    }
+
     public function startWin(): void
     {
         $deal = $this->authorizedDeal();
@@ -276,8 +295,8 @@ class DealCard extends Component
             // As on the account card: a private person's quotes, orders and invoices are for those who may see the invoices.
             'limitedLedger' => ! $canSeeInvoices && $deal->account?->kind === AccountKind::Person,
             'canMakeCustomer' => $customerId === null && $user->can('create', [Customer::class, $company]),
-            // "Ny offert från mall" (ADR-046) for an open deal's customer, for those who make quotes.
-            'templateCustomerId' => $deal->isOpen() && $customerId !== null && $user->hasTeamPermission($company, 'invoices:create') ? $customerId : null,
+            // "Ny offert" and "Ny offert från mall" (ADR-046) for an open deal, for those who make quotes; a prospect is made a customer by it, if the user may add customers.
+            'canMakeQuote' => $deal->isOpen() && $user->hasTeamPermission($company, 'invoices:create') && ($customerId !== null || $user->can('create', [Customer::class, $company])),
             'members' => in_array($this->panel, ['edit', 'step', 'complete'], true) ? CompanyMembers::all($company) : collect(),
             'people' => $this->panel === 'edit' ? Person::query()->whereHas('accounts', fn (Builder $query) => $query->whereKey($deal->account_id))->orderBy('name')->get(['id', 'name']) : collect(),
             'reasons' => $this->panel === 'lose' ? LossReason::query()->active()->orderBy('sort')->orderBy('id')->get(['id', 'name']) : collect(),
