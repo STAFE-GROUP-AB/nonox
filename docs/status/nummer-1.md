@@ -456,3 +456,19 @@ Public claim now allowed: inget nytt. Public claim still not allowed: "Årsredov
 Open legal-verify items: 1.1B b "färdigställd" årsredovisning; 1.1A b, c och f frågas i stället för att läsas ur data.
 Follow-ups: visa uppskjuten skatt (S1-P5) som information på Regelverk.
 Next package: S1-P4 (sista regeln: inget byte till K2 efter komponentuppdelning), därefter S1-P12.
+
+---
+
+Package: ADR-071, tillverkning, inköpsordrar och kundorder (plan)
+Status: in progress (beslutat av ägaren 2026-11-08: byggs som moduler, inte bara önskemål)
+Evidence: `docs/adr/ADR-071-manufacturing-purchase-orders-and-customer-ordering.md`, färdplanen (`stycklistor-och-tillverkning`, `inkopsorder`, `produktionsterminal`, `orderportal-for-kunder`).
+Byggordning, varje steg med regelunderlag där bokföring eller personuppgifter berörs, tester först, kall granskning och omkontroll före sammanslagning:
+1. Inköpsordrar i lagermodulen (utkast, förslag från beställningspunkt, PDF och mejl, inleverans mot order, avstämning mot leverantörsfaktura). Byggs nu på `feat/inventory-purchase-orders`.
+2. Modulen Tillverkning: stycklistor i flera nivåer med versioner, arbetssteg med timkostnad, orderns egen stycklista, intern kalkyl och marginal på offert och order. Byggs nu på `feat/manufacturing-bom-costing`.
+3. Materialkoll för hela antalet och inköpsförslag per leverantör från en order.
+4. Tillverkningsordrar, reservationer och lagerrörelserna "Uttag till tillverkning" och "Inleverans från tillverkning". Väntar på regelbladet `docs/specs/rules/tillverkning.md` (ÅRL 4:9, K2, K3, BAS) och redovisningskontrollen.
+5. Verkstadsterminalen och analys per produkt och arbetssteg.
+6. Kunder lägger order i kundportalen (status "Inkommen", granskning, bekräftelse).
+7. Preliminärt leveransdatum ur material, kö och historik.
+8. Analys per person, bara efter regelbladet `docs/specs/rules/produktionsuppfoljning.md` (GDPR, MBL) och juristens svar.
+Next package: S1-P4 slås ihop när omkontrollen är klar; steg 1 och 2 granskas och slås ihop när byggarna rapporterat.
