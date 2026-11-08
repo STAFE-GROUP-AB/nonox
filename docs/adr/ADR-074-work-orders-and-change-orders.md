@@ -338,3 +338,26 @@ cold reviewer, Lead merges.
 | O8 | Module name in the UI: "Arbetsorder" alone, or "Arbetsorder och ÄTA"? | "Arbetsorder" |
 
 The first pilot is a craftsman company. Its name and data never go into the repository.
+
+## Addendum 2026-11-08: Lead decisions on the owner questions
+
+Decided by Lead 2026-11-08 under the owner's mandate, open for the consultant's review.
+
+- **O1 Signing:** moves to core (`app/Domain/Signing`). The customer portal (ADR-075) does the
+  same move, so it is done once, by the portal build. This module builds on that shared
+  signing domain and does not move it again.
+- **O2 Projects:** a project is created automatically for each work order. The company can
+  switch this off.
+- **O3 Field workers:** NONOX users with the role `field_worker` ("Utförare"), signing in with
+  the e-mail code like everyone. They see only their own work orders.
+- **O4 Signing on site:** allowed on the worker's phone, but only with a code sent to the
+  customer's own e-mail or phone. The worker never approves on the customer's behalf.
+- **O5 Personnummer on the ROT invoice:** printed, because Skatteverket's page lists it, until
+  L6 says otherwise. It is kept as `TODO(legal-verify)`.
+- **O6 Several ROT buyers:** supported, each with their own share, for example two spouses.
+- **O7 Defaults:** the kinds of work are Arbete, Resa and Material. Travel is billed as a
+  fixed amount or per km and never counts toward ROT.
+- **O8 Name in the UI:** "Arbetsorder".
+
+The roadmap text is corrected: the staff ledger for construction is not built yet (ADR-022
+v2), so this module does not claim it.
