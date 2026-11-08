@@ -45,6 +45,25 @@ test('starts the forecast where the actual balance ends', () => {
     assert.equal(config.data.datasets[1].label, 'Prognos');
 });
 
+test('shows in the tooltip what moves a forecast month, and nothing for the months behind', () => {
+    const parts = { ...labels, customerInvoices: 'Kundfakturor', supplierInvoices: 'Leverantörsfakturor', recurring: 'Avtalsfakturor', payroll: 'Lön och arbetsgivarskatter', vatFlow: 'Moms', taxAccount: 'Skattekontot', trend: 'Snittresultat' };
+    const withParts = {
+        ...stats,
+        liquidity: {
+            ...stats.liquidity,
+            forecast: [
+                { label: 'mar 2026', balance: 400000, inflow: 1250000, outflow: 0, recurring: 0, payroll: -4200000, vat: -250000, tax_account: 30, trend: 700000 },
+                { label: 'apr 2026', balance: 450000, inflow: 0, outflow: 0, recurring: 0, payroll: 0, vat: 0, tax_account: 0, trend: 0 },
+            ],
+        },
+    };
+    const afterBody = chartConfig('liquidity', withParts, parts).options.plugins.tooltip.callbacks.afterBody;
+
+    assert.deepEqual(afterBody([{ dataIndex: 2 }]), ['Kundfakturor: +12 500 kr', 'Lön och arbetsgivarskatter: −42 000 kr', 'Moms: −2 500 kr', 'Snittresultat: +7 000 kr']);
+    assert.deepEqual(afterBody([{ dataIndex: 3 }]), []);
+    assert.deepEqual(afterBody([{ dataIndex: 1 }]), []);
+});
+
 test('lays the largest customers and costs on their side, and VAT as output, input and net', () => {
     assert.equal(chartConfig('customers', stats, labels).options.indexAxis, 'y');
     assert.deepEqual(chartConfig('accounts', stats, labels).data.labels, ['5010 Lokalhyra']);

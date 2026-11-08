@@ -29,8 +29,30 @@
                 'output' => __('Utgående moms'),
                 'input' => __('Ingående moms'),
                 'net' => __('Att betala (netto)'),
+                'customerInvoices' => __('Kundfakturor'),
+                'supplierInvoices' => __('Leverantörsfakturor'),
+                'recurring' => __('Avtalsfakturor'),
+                'payroll' => __('Lön och arbetsgivarskatter'),
+                'vatFlow' => __('Moms'),
+                'taxAccount' => __('Skattekontot'),
+                'trend' => __('Snittresultat'),
             ];
             $liquidity = $stats['liquidity'];
+            $included = $liquidity['included'] ?? ['recurring' => false, 'payroll' => false, 'vat' => false, 'preliminary_tax' => false];
+            // One sentence per part, chosen from what the forecast counts, so the note never says both.
+            $forecastNote = implode(' ', array_filter([
+                __('Så räknas prognosen: dagens saldo på bank och kassa (konto 1900–1999), plus obetalda kundfakturor och minus obetalda leverantörsfakturor den månad de förfaller.'),
+                $included['recurring'] ? __('Kommande fakturor från avtal räknas på sina förfallodagar, och momsen på dem den dag den ska betalas.') : null,
+                $included['payroll']
+                    ? __('Lön räknas från lönekörningarna: nettolönen på utbetalningsdagen, skatt och arbetsgivaravgifter den dag de ska betalas till Skatteverket, och en månad utan lönekörning som den senaste.')
+                    : __('Lön ingår bara genom resultatet, eftersom lönemodulen inte är på eller inte har någon lönekörning de senaste tre månaderna.'),
+                $included['vat'] ? __('Momsen räknas per period på den dag den ska deklareras och betalas, med det som är bokfört hittills.') : null,
+                $included['preliminary_tax']
+                    ? __('F-skatten räknas med månadsbeloppet du har fyllt i.')
+                    : __('F-skatt ingår bara genom resultatet tills du fyller i Debiterad preliminärskatt per månad (frivilligt) under företagets uppgifter.'),
+                __('Saldot på skattekontot (konto 1630) räknas också, och pengar där betalar skatterna först.'),
+                __('Sist läggs det genomsnittliga resultatet för de tre senaste hela månaderna till (:average per månad; för den här månaden bara de dagar som är kvar), utan det som redan räknas för sig. Förfallna belopp räknas i den här månaden. Det är en enkel räkning, ingen AI och ingen garanti.', ['average' => $kr($liquidity['average_result'])]),
+            ]));
             $lastForecast = $liquidity['forecast'] === [] ? null : end($liquidity['forecast']);
         @endphp
 
@@ -91,29 +113,42 @@
                 :summary="$lastForecast === null
                     ? __('Saldo på bank och kassa i dag :balance.', ['balance' => $kr($liquidity['today'])])
                     : __('Saldo på bank och kassa i dag :balance. Prognos för slutet av :month: :forecast (streckat).', ['balance' => $kr($liquidity['today']), 'month' => $lastForecast['label'], 'forecast' => $kr($lastForecast['balance'])])"
-                :note="__('Så räknas prognosen: dagens saldo på bank och kassa (konto 1900–1999), plus obetalda kundfakturor och minus obetalda leverantörsfakturor den månad de förfaller (förfallna räknas i den här månaden), plus det genomsnittliga resultatet för de tre senaste hela månaderna (:average per månad; för den här månaden bara de dagar som är kvar). Det är en enkel räkning, ingen AI och ingen garanti. Lön, skatt och moms som inte finns som leverantörsfakturor ingår bara genom resultatet.', ['average' => $kr($liquidity['average_result'])])">
+                :note="$forecastNote">
+                @php
+                    $parts = [
+                        'customerInvoices' => fn (array $point): int => $point['inflow'],
+                        'supplierInvoices' => fn (array $point): int => -$point['outflow'],
+                        'recurring' => fn (array $point): int => $point['recurring'] ?? 0,
+                        'payroll' => fn (array $point): int => $point['payroll'] ?? 0,
+                        'vatFlow' => fn (array $point): int => $point['vat'] ?? 0,
+                        'taxAccount' => fn (array $point): int => $point['tax_account'] ?? 0,
+                        'trend' => fn (array $point): int => $point['trend'],
+                    ];
+                @endphp
                 <table class="min-w-full text-sm">
                     <thead><tr>
                         <th scope="col" class="{{ $th }}">{{ __('Tidpunkt') }}</th>
-                        <th scope="col" class="{{ $thNum }}">{{ __('In (kundfakturor)') }}</th>
-                        <th scope="col" class="{{ $thNum }}">{{ __('Ut (leverantörsfakturor)') }}</th>
-                        <th scope="col" class="{{ $thNum }}">{{ __('Snittresultat') }}</th>
+                        @foreach($parts as $key => $value)
+                            <th scope="col" class="{{ $thNum }}">{{ $labels[$key] }}</th>
+                        @endforeach
                         <th scope="col" class="{{ $thNum }}">{{ __('Saldo') }}</th>
                     </tr></thead>
                     <tbody class="divide-y divide-gray-100">
                         @foreach($liquidity['actual'] as $point)
                             <tr>
                                 <th scope="row" class="{{ $td }} text-left font-medium">{{ $point['label'] }}</th>
-                                <td class="{{ $tdNum }}">–</td><td class="{{ $tdNum }}">–</td><td class="{{ $tdNum }}">–</td>
+                                @foreach($parts as $key => $value)
+                                    <td class="{{ $tdNum }}">–</td>
+                                @endforeach
                                 <td class="{{ $tdNum }}">{{ $kr($point['balance']) }}</td>
                             </tr>
                         @endforeach
                         @foreach($liquidity['forecast'] as $point)
                             <tr class="bg-paper/60">
                                 <th scope="row" class="{{ $td }} text-left font-medium">{{ __('Prognos :month', ['month' => $point['label']]) }}</th>
-                                <td class="{{ $tdNum }}">{{ $kr($point['inflow']) }}</td>
-                                <td class="{{ $tdNum }}">{{ $kr(-$point['outflow']) }}</td>
-                                <td class="{{ $tdNum }}">{{ $kr($point['trend']) }}</td>
+                                @foreach($parts as $key => $value)
+                                    <td class="{{ $tdNum }}">{{ $kr($value($point)) }}</td>
+                                @endforeach
                                 <td class="{{ $tdNum }}">{{ $kr($point['balance']) }}</td>
                             </tr>
                         @endforeach
