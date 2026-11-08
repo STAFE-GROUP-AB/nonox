@@ -10,7 +10,7 @@
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.11",
         "@tailwindcss/typography": "^0.5.20",
-        "@tailwindcss/vite": "^4.3.3",
+        "@tailwindcss/vite": "^4.3.4",
         "@zxing/library": "0.23.0",
         "alpinejs": "^3.17.5",
         "axios": "^1.7.2",
