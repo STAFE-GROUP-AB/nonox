@@ -38,6 +38,8 @@ use LogicException;
  * @property ?int $rate_bp
  * @property ?int $confirmed_by
  * @property int $created_by
+ * @property ?int $copied_from_id the item of the previous year this one was copied from
+ * @property bool $tax_value_needs_review a copied item whose tax value a person has not checked yet
  */
 class DeferredTaxItem extends Model
 {
@@ -81,6 +83,8 @@ class DeferredTaxItem extends Model
         'rate_bp',
         'confirmed_by',
         'created_by',
+        'copied_from_id',
+        'tax_value_needs_review',
     ];
 
     /** @return array<string, string> */
@@ -93,6 +97,7 @@ class DeferredTaxItem extends Model
             'account_from' => 'integer',
             'account_to' => 'integer',
             'rate_bp' => 'integer',
+            'tax_value_needs_review' => 'boolean',
         ];
     }
 

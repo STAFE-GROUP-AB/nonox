@@ -153,6 +153,10 @@ final class DeferredTaxProposal
                 $blockers[] = __('Anläggningsregistret ger inget redovisat värde för posten ”:item”. Ange byggnadens konton i stället.', ['item' => $item->description]);
             }
 
+            if ($item->tax_value_needs_review) {
+                $blockers[] = __('Posten ”:item” är hämtad från föregående år. Kontrollera det skattemässiga värdet vid balansdagen och spara posten.', ['item' => $item->description]);
+            }
+
             $taxValue = $item->tax_value_ore->ore;
             $difference = ($carrying ?? 0) - $taxValue;
             $nature = self::nature($item->kind, $carrying ?? 0, $taxValue);
@@ -317,6 +321,32 @@ final class DeferredTaxProposal
     public function isBlocked(): bool
     {
         return $this->blockers !== [];
+    }
+
+    /**
+     * No items, but the ledger holds deferred tax: booking would reverse all
+     * of it as income or expense. Only with the person's explicit
+     * confirmation (YearEndClosing::confirmDeferredTax, $reverseAll).
+     */
+    public function reversesEverything(): bool
+    {
+        return $this->lines === [] && ($this->bookedLiabilityOre !== 0 || $this->bookedAssetOre !== 0);
+    }
+
+    /**
+     * What the person saw: the targets, the amount to book and every item as
+     * it was then. Confirmation is refused when it differs (S1-P5 review).
+     */
+    public function fingerprint(): string
+    {
+        return hash('sha256', (string) json_encode([
+            $this->targetLiabilityOre(),
+            $this->targetAssetOre(),
+            $this->expenseOre(),
+            $this->bookedLiabilityOre,
+            $this->bookedAssetOre,
+            array_map(fn (array $line): array => [$line['item']->id, $line['item']->updated_at?->toIso8601String(), $line['carrying_ore'], $line['tax_value_ore'], $line['recognised_ore']], $this->lines),
+        ], JSON_THROW_ON_ERROR));
     }
 
     /**

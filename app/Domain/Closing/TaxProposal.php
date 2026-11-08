@@ -14,6 +14,7 @@ use App\Models\ClosingCheck;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\IncomeTaxReturn;
+use App\Models\YearEndEntry;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 
@@ -64,6 +65,9 @@ final class TaxProposal
     private ?array $funds = null;
 
     private ?string $status = null;
+
+    /** The deferred tax booked through the closing this year (YearEndEntry::DEFERRED_TAX), read once. */
+    private ?int $deferredTaxOre = null;
 
     private function __construct(
         public readonly Company $company,
@@ -171,15 +175,18 @@ final class TaxProposal
     }
 
     /**
-     * Current tax booked on 8900–8989 without the closing step: the proposal
-     * is then not offered. Deferred tax (BAS 8940–8949, a K3 company's
-     * YearEndClosing::confirmDeferredTax, ADR-059 A.2.6) is not current tax
-     * and does not count; INK2S 4.3 a still adds it back with the rest.
-     * TODO(legal-verify): BAS 894x as the deferred tax accounts (fixture A12).
+     * Tax booked on 8900–8989 without the closing step: the proposal is then
+     * not offered. The one exception is the deferred tax a K3 company booked
+     * through YearEndClosing::confirmDeferredTax this year (ADR-059 A.2.6):
+     * its amount is taken off, so everything else on 8900–8989, a correction
+     * of that voucher included, still blocks. INK2S 4.3 a still adds back all
+     * of 8900–8989.
      */
     public function taxBookedByHand(): bool
     {
-        return $this->accounts->movementOf(8900, 8939) !== 0 || $this->accounts->movementOf(8950, 8989) !== 0;
+        $this->deferredTaxOre ??= YearEndEntry::query()->where('fiscal_year_id', $this->fiscalYear->id)->where('type', YearEndEntry::DEFERRED_TAX)->first()?->amount_ore->ore ?? 0;
+
+        return $this->accounts->movementOf(8900, 8989) - $this->deferredTaxOre !== 0;
     }
 
     /** A periodiseringsfond change already booked in the year: the fund part of the proposal is then left out. */

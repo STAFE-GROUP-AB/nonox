@@ -67,5 +67,5 @@ it('answers 404 for B\'s item in the actions and the page', function () {
 it('refuses A\'s user on B\'s fiscal year', function () {
     expect(fn () => app(DeferredTaxItems::class)->save($this->a['owner'], $this->b['year'], ['kind' => DeferredTaxItem::OTHER_ASSET, 'description' => 'x', 'carrying' => '1', 'tax_value' => '1']))
         ->toThrow(AuthorizationException::class)
-        ->and(fn () => app(YearEndClosing::class)->confirmDeferredTax($this->a['owner'], $this->b['year'], 0))->toThrow(AuthorizationException::class);
+        ->and(fn () => app(YearEndClosing::class)->confirmDeferredTax($this->a['owner'], $this->b['year'], 'x'))->toThrow(AuthorizationException::class);
 });

@@ -2404,9 +2404,12 @@ Enligt AI-utredning 2026-11-08, juristgranskning återstår (ADR-059, tillägg
   (`deferred_tax.*`, TODO(legal-verify) mot BAS 2026).
 - Ingenting bokförs förrän en person har granskat förslaget och bekräftat
   det i en dialog som anger beloppet och att en bokförd verifikation bara
-  kan rättas (`YearEndClosing::confirmDeferredTax`). Personen bekräftar
-  beloppet hon såg; har bokföringen eller posterna ändrats sedan dess nekas
-  bekräftelsen. Verifikationen dateras årets sista dag, i serie A med källa
+  kan rättas (`YearEndClosing::confirmDeferredTax`). Personen bekräftar det
+  hon såg: skuld, fordran, beloppet att bokföra och varje post (ett
+  fingeravtryck); har bokföringen eller posterna ändrats sedan dess nekas
+  bekräftelsen. Har året inga poster medan 2240/1370 har ett saldo nekas
+  bekräftelsen, om inte personen uttryckligen kryssar i att skulden och
+  fordran (beloppen anges) ska återföras helt. Verifikationen dateras årets sista dag, i serie A med källa
   `CLOSING`, och bokförs genom den vanliga vägen för bokslutsverifikationer
   (`BookVoucher`, `PostVoucher`); en bekräftelse utan förändring sparas
   utan verifikation. Bekräftelsen blir en rad av typen `DEFERRED_TAX` i
@@ -2415,18 +2418,27 @@ Enligt AI-utredning 2026-11-08, juristgranskning återstår (ADR-059, tillägg
   och personen på varje post, och posterna kan inte längre ändras eller tas
   bort: modellen och en trigger i databasen nekar det. Blev något fel rättas
   verifikationen med en rättelseverifikation.
-- Förslaget till årets skatt (avsnitt 5a5) räknar inte längre en bokning på
-  BAS 8940–8949 som skatt som redan bokförts för hand; uppskjuten skatt är
-  inte aktuell skatt. Inkomstdeklarationens fält 4.3 a lägger som förut
-  tillbaka allt på 8900–8989.
+- Ett nytt år börjar utan poster. Knappen Hämta posterna från föregående år
+  kopierar föregående års poster som obekräftade, med länk till originalet
+  (`copied_from_id`). Det redovisade värdet räknas om; det skattemässiga
+  värdet är märkt för kontroll och stoppar bokföringen tills en person har
+  sparat posten. En upptagen skattefordran kopieras inte.
+- Förslaget till årets skatt (avsnitt 5a5) drar av beloppet i årets
+  bekräftade uppskjutna skatt (`DEFERRED_TAX`) från rörelsen på 8900–8989
+  innan det avgör om skatt redan är bokförd för hand. Allt annat där, även
+  en rättelse av den uppskjutna skattens verifikation, stoppar förslaget som
+  förut. Inkomstdeklarationens fält 4.3 a lägger som förut tillbaka allt på
+  8900–8989.
 - Hänvisningarna i K3 punkt 29.19 ("29.21 och 29.22") och 29.25 ("29.28")
   läses som felhänvisningar som inte ändrar något för ett aktiebolag utan
   dotterföretag (mänskligt beslut H5, inte avgjort; TODO(legal-verify)).
 - Behandlingshistoriken får `deferred_tax.item_created`,
-  `deferred_tax.item_updated`, `deferred_tax.item_removed` och
+  `deferred_tax.item_updated`, `deferred_tax.item_removed`,
+  `deferred_tax.items_copied` och
   `closing.deferred_tax_confirmed` med id, slag, konton och belopp, aldrig
   beskrivningen eller skälet. Ändringar och bokföring kräver behörigheten
-  att hantera räkenskapsår; den som får se rapporter kan läsa sidan.
+  att hantera räkenskapsår; sidan kan läsas med behörigheten att se
+  rapporter, men länken finns bara i bokslutet.
   Sidan läser ett fast antal databasfrågor, oberoende av antalet poster och
   verifikationer.
 
@@ -4600,7 +4612,10 @@ kontrollerat dem mot källan. Särskilt:
 ### Uppskjuten skatt enligt K3 (avsnitt 5a6.5)
 
 - Att varje skattesats i `corporate-tax/rules.json` var beslutad före
-  balansdagen för de år den gäller (K3 29.25); filen saknar beslutsdatum.
+  balansdagen för de år den gäller (K3 29.25); filen saknar beslutsdatum,
+  så en senare beslutad skattesats kan stoppa förslaget i onödan.
+- Att en person anger den upptagna skattefordran för alla avdragsgilla
+  skillnader, inte bara underskottsavdrag som beslut H6 gäller.
 - Att hänvisningarna i K3 29.19 och 29.25 är felhänvisningar som inte
   ändrar något för ett aktiebolag utan dotterföretag (beslut H5).
 - BAS-kontona 2240, 1370 och 8940 (och 8940–8949 som uppskjuten skatt i

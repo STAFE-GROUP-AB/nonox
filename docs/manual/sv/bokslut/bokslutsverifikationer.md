@@ -93,7 +93,7 @@ Knappen visas inte, och en röd ruta säger varför, när
 
 - frågan om privatbostadsföretag eller investmentföretag inte är besvarad,
 - NONOX saknar skattesats för året,
-- det redan finns skatt bokförd på 8900–8989 i året (uppskjuten skatt på 8940–8949, som ett K3-företag bokför under [Uppskjuten skatt](/manual/bokslut/uppskjuten-skatt), räknas inte),
+- det redan finns skatt bokförd på 8900–8989 i året (utom den uppskjutna skatt som ett K3-företag har bekräftat under [Uppskjuten skatt](/manual/bokslut/uppskjuten-skatt); rättas den verifikationen räknas rättelsen),
 - företaget har periodiseringsfonder vid årets början men schablonintäkten (fält 7654) saknas, eftersom statslåneräntan för året inte finns i NONOX – fyll då i den under Inkomstdeklaration (inkomstskattelagen 30 kap. 6 a §),
 - återföringen är lägre än det som ska återföras i år (30 kap. 7 §). Har du redan återfört en del för hand räknas den av; resten bokför du för hand.
 

@@ -311,14 +311,18 @@ class YearEndClosing
      * the tax. Nothing to change records the confirmation without a voucher.
      * Never called by the system itself.
      *
-     * The person confirms the amount they saw: when the books or the items
-     * changed in between, it is refused and must be looked at again. Netting
+     * The person confirms what they saw (DeferredTaxProposal::fingerprint():
+     * the liability, the asset, the amount and every item): when the books or
+     * the items changed in between, it is refused and must be looked at
+     * again. With no items while 2240/1370 hold a balance, booking reverses
+     * all of it, so that needs $reverseAll, the person's explicit
+     * confirmation of exactly that. Netting
      * the liability and the asset needs the person's confirmation of a legal
      * right of set-off (K3 29.32), kept as a closing check. Booked once,
      * before the year's result; the items are frozen from then on, and a
      * wrong voucher is corrected with a correcting voucher.
      */
-    public function confirmDeferredTax(User $user, FiscalYear $fiscalYear, int $confirmedExpenseOre, bool $setOff = false): YearEndEntry
+    public function confirmDeferredTax(User $user, FiscalYear $fiscalYear, string $confirmedFingerprint, bool $setOff = false, bool $reverseAll = false): YearEndEntry
     {
         $company = $this->companyOf($fiscalYear);
         $this->authorize($user, $company);
@@ -328,7 +332,7 @@ class YearEndClosing
             throw ValidationException::withMessages(['deferred_tax' => $refusal]);
         }
 
-        return CurrentCompany::run($company, fn (): YearEndEntry => DB::transaction(function () use ($user, $company, $fiscalYear, $confirmedExpenseOre, $setOff): YearEndEntry {
+        return CurrentCompany::run($company, fn (): YearEndEntry => DB::transaction(function () use ($user, $company, $fiscalYear, $confirmedFingerprint, $setOff, $reverseAll): YearEndEntry {
             FiscalYear::query()->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();
             $types = YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->pluck('type')->all();
 
@@ -346,8 +350,12 @@ class YearEndClosing
                 throw ValidationException::withMessages(['deferred_tax' => $blocker]);
             }
 
-            if ($proposal->expenseOre() !== $confirmedExpenseOre) {
+            if (! hash_equals($proposal->fingerprint(), $confirmedFingerprint)) {
                 throw ValidationException::withMessages(['deferred_tax' => __('Beräkningen har ändrats sedan den visades. Granska den igen innan du bekräftar.')]);
+            }
+
+            if ($proposal->reversesEverything() && ! $reverseAll) {
+                throw ValidationException::withMessages(['deferred_tax' => __('Året har inga poster, men bokföringen har uppskjuten skatt. Hämta posterna från föregående år, eller bekräfta uttryckligen att allt ska återföras.')]);
             }
 
             $rows = $proposal->voucherRows();
@@ -376,6 +384,7 @@ class YearEndClosing
                 'asset_ore' => $proposal->targetAssetOre(),
                 'rate_bp' => $proposal->rateBp,
                 'set_off' => $setOff,
+                'reverse_all' => $reverseAll && $proposal->reversesEverything(),
                 'items' => array_map(fn (array $line): int => $line['item']->id, $proposal->lines),
                 'voucher' => $voucher?->reference(),
             ], $company, $user);

@@ -105,6 +105,8 @@ class DeferredTaxItems
             'tax_value_source' => $source,
             'recognised_ore' => $recognised,
             'recognition_reason' => $recognised > 0 ? $reason : null,
+            // Saving is the person's check of the tax value, also of an item copied from last year.
+            'tax_value_needs_review' => false,
         ];
 
         return CurrentCompany::run($company, fn (): DeferredTaxItem => DB::transaction(function () use ($user, $company, $fiscalYear, $input, $attributes, $recognised): DeferredTaxItem {
@@ -148,6 +150,66 @@ class DeferredTaxItems
 
             return $item;
         }));
+    }
+
+    /**
+     * Copies the previous fiscal year's items into a year that has none
+     * (S1-P5 review): the same kind, description, accounts or register asset
+     * and tax value, unconfirmed and marked for review, since the tax value
+     * at the new balance date must be checked by a person. Carrying amounts
+     * read from accounts or the register are recomputed by the proposal; an
+     * entered one is copied and checked with the tax value. A recognised
+     * deferred tax asset is not copied: it is judged anew at every balance
+     * date (K3 29.29, H6).
+     *
+     * @return int the number of items copied
+     */
+    public function copyFromPreviousYear(User $user, FiscalYear $fiscalYear): int
+    {
+        $company = $this->prepare($user, $fiscalYear);
+
+        return CurrentCompany::run($company, fn (): int => DB::transaction(function () use ($user, $company, $fiscalYear): int {
+            $this->lockAndEnsureNotBooked($fiscalYear);
+
+            if (DeferredTaxItem::query()->where('fiscal_year_id', $fiscalYear->id)->exists()) {
+                throw ValidationException::withMessages(['item' => __('Året har redan poster. Posterna från föregående år kan bara hämtas till ett år utan poster.')]);
+            }
+
+            $previous = self::previousYear($fiscalYear);
+            $items = $previous === null ? null : DeferredTaxItem::query()->where('fiscal_year_id', $previous->id)->orderBy('id')->get();
+
+            if ($items === null || $items->isEmpty()) {
+                throw ValidationException::withMessages(['item' => __('Föregående räkenskapsår har inga poster att hämta.')]);
+            }
+
+            foreach ($items as $item) {
+                DeferredTaxItem::create([
+                    'fiscal_year_id' => $fiscalYear->id,
+                    'kind' => $item->kind,
+                    'description' => $item->description,
+                    'fixed_asset_id' => $item->fixed_asset_id,
+                    'account_from' => $item->account_from,
+                    'account_to' => $item->account_to,
+                    'carrying_ore' => $item->carrying_ore?->ore,
+                    'tax_value_ore' => $item->tax_value_ore->ore,
+                    'tax_value_source' => $item->tax_value_source,
+                    'recognised_ore' => 0,
+                    'copied_from_id' => $item->id,
+                    'tax_value_needs_review' => true,
+                    'created_by' => $user->id,
+                ]);
+            }
+
+            Audit::record('deferred_tax.items_copied', $fiscalYear, ['from_fiscal_year_id' => $previous->id, 'items' => $items->modelKeys()], $company, $user);
+
+            return $items->count();
+        }));
+    }
+
+    /** The fiscal year that ends the day before this one begins, or null. */
+    public static function previousYear(FiscalYear $fiscalYear): ?FiscalYear
+    {
+        return FiscalYear::query()->whereDate('end_date', $fiscalYear->start_date->subDay()->toDateString())->first();
     }
 
     public function remove(User $user, FiscalYear $fiscalYear, int $itemId): void

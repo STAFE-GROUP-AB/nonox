@@ -55,6 +55,9 @@ class DeferredTaxPage extends Component
     /** The person confirms a legal right of set-off (K3 29.32); only then are liability and asset netted. */
     public bool $setOff = false;
 
+    /** No items but deferred tax in the ledger: the person confirms that all of it is reversed. */
+    public bool $reverseAll = false;
+
     public function mount(): void
     {
         abort_unless($this->user()->hasTeamPermission($this->company(), 'reports:view'), 403);
@@ -118,11 +121,20 @@ class DeferredTaxPage extends Component
         });
     }
 
-    /** Books the reviewed proposal; the amount shown is the amount confirmed. */
-    public function confirm(YearEndClosing $closing, int $expenseOre): void
+    /** Copies last year's items into an empty year, each marked for a check of its tax value. */
+    public function copyPrevious(DeferredTaxItems $items): void
     {
-        $this->attempt(function () use ($closing, $expenseOre): void {
-            $entry = $closing->confirmDeferredTax($this->user(), $this->fiscalYear(), $expenseOre, $this->setOff);
+        $this->attempt(function () use ($items): void {
+            $count = $items->copyFromPreviousYear($this->user(), $this->fiscalYear());
+            $this->toast(__(':count poster är hämtade från föregående år. Kontrollera det skattemässiga värdet för var och en och spara den.', ['count' => $count]));
+        });
+    }
+
+    /** Books the reviewed proposal; the fingerprint is what the person saw. */
+    public function confirm(YearEndClosing $closing, string $fingerprint): void
+    {
+        $this->attempt(function () use ($closing, $fingerprint): void {
+            $entry = $closing->confirmDeferredTax($this->user(), $this->fiscalYear(), $fingerprint, $this->setOff, $this->reverseAll);
             $this->toast($entry->amount_ore->isZero()
                 ? __('Den uppskjutna skatten är bekräftad. Inget behövde bokföras.')
                 : __('Förändringen av uppskjuten skatt, :amount, är bokförd.', ['amount' => $entry->amount_ore->format()]));
@@ -140,6 +152,8 @@ class DeferredTaxPage extends Component
             'fiscalYear' => $fiscalYear,
             'refusals' => $refusals,
             'proposal' => $refusals === [] ? DeferredTaxProposal::for($company, $fiscalYear, $this->setOff) : null,
+            'previousHasItems' => $refusals === [] && ($previous = DeferredTaxItems::previousYear($fiscalYear)) !== null
+                && DeferredTaxItem::query()->where('fiscal_year_id', $previous->id)->exists(),
             'entry' => YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->where('type', YearEndEntry::DEFERRED_TAX)->first(),
             'canManage' => $this->user()->hasTeamPermission($company, 'fiscal-years:manage'),
         ]);

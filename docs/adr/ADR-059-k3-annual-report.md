@@ -1074,6 +1074,10 @@ sheet S1-R4, R4.1–R4.6; human decision H6 (decided 2026-11-08).
   delegates to it) for the day after the balance date; the proposal refuses
   when any other rate applies to a later year, or when the chosen rate ends
   (`starts_before`). `CorporateTaxRules::rates()` added. No rate is hard-coded.
+  Review note: because `rules.json` has no `decided_on`, a rate enacted
+  after the balance date but already in the data refuses the proposal (a
+  false refusal); `TODO(legal-verify)`: add `decided_on` to each rate and
+  only consider rates decided before the balance date.
 - **Proposal** (`DeferredTaxProposal`): per item difference, nature by the
   29.14 table, gross tax half up to the öre; liability = Σ taxable; asset =
   Σ min(gross, recognised) over deductible items (H6); targets gross, or
@@ -1082,10 +1086,23 @@ sheet S1-R4, R4.1–R4.6; human decision H6 (decided 2026-11-08).
   2240–2249 / 1370–1379 (on 2240 and 1370) against 8940, so a re-run after
   booking proposes 0. Query count: items, accounts, opening balances,
   movements (+ one register call when an item uses it), fixed.
-- **Booking.** `YearEndClosing::confirmDeferredTax(user, year, confirmedExpenseOre, setOff)`:
+- **H6 scope (flag for the consultant).** The "person recognises, default
+  0, never above the computed asset" treatment is applied to **every**
+  deductible difference (29.29 covers all deferred tax assets), not only to
+  loss carry-forwards as H6 decided. That is wider than the decision.
+- **Next year.** A year without items offers **Hämta posterna från
+  föregående år** (`DeferredTaxItems::copyFromPreviousYear`): copies are
+  unconfirmed, keep `copied_from_id`, get `tax_value_needs_review` (a
+  blocker until a person saves the item) and no recognised asset; carrying
+  amounts from accounts or the register are recomputed. With no items while
+  2240/1370 hold a balance, confirmation needs `reverseAll`, ticked against
+  a text naming the amounts to be reversed (review P2-2).
+- **Booking.** `YearEndClosing::confirmDeferredTax(user, year, fingerprint, setOff, reverseAll)`:
   `fiscal-years:manage`, open year, K3 year, AB or ekonomisk förening, once
   per year, before RESULT, refused when the amount differs from what the
-  person saw; one voucher through `BookVoucher` (series A, source CLOSING,
+  person saw (`DeferredTaxProposal::fingerprint()`: target liability,
+  target asset, expense, booked balances and every item's id, updated_at
+  and values; review P3-1); one voucher through `BookVoucher` (series A, source CLOSING,
   last day), or no voucher when nothing changes; `YearEndEntry::DEFERRED_TAX`
   (append-only like the others); every item gets `rate_bp` and
   `confirmed_by` and is frozen. `PostVoucher` and the voucher triggers are
@@ -1096,12 +1113,14 @@ sheet S1-R4, R4.1–R4.6; human decision H6 (decided 2026-11-08).
   enums and amounts only.
 - **Screen.** Bokslut → Uppskjuten skatt, `/bokslut/uppskjuten-skatt`
   (`accounting.closing.deferredTax`), linked from step 2 of the closing page
-  for K3 years. View: `reports:view` (auditor reads); writes:
+  for K3 years. View: `reports:view` (an auditor can open the URL but has no link: the closing page needs `fiscal-years:manage`); writes:
   `fiscal-years:manage`. Confirmation dialog states the amount, account,
   date and that a posted voucher can only be corrected.
-- **Change outside the package files:** `TaxProposal::taxBookedByHand()` no
-  longer counts 8940–8949, so a K3 company can book deferred tax before the
-  current tax proposal; INK2S 4.3 a still adds back all of 8900–8989.
+- **Change outside the package files:** `TaxProposal::taxBookedByHand()`
+  takes this year's `YearEndEntry::DEFERRED_TAX` amount off the movement on
+  8900–8989 (review P2-1); anything else there, a manual 8940 in a K2 year
+  or a correction of the deferred tax voucher included, still blocks. INK2S
+  4.3 a still adds back all of 8900–8989.
 - **Not built / follow-ups:** S1-P11's information line on Bokslut →
   Regelverk does not exist on `nattjobb/nummer-1` yet, so it is not wired;
   P11 can read `DeferredTaxProposal::for($company, $year)->targetLiabilityOre()`

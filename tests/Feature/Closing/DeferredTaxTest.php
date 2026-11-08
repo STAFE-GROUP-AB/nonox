@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Accounting\CorrectVoucher;
 use App\Actions\Closing\DeferredTaxItems;
 use App\Actions\Closing\YearEndClosing;
 use App\Domain\Accounting\AccountType;
@@ -17,6 +18,7 @@ use App\Livewire\Accounting\DeferredTaxPage;
 use App\Models\Account;
 use App\Models\AuditLog;
 use App\Models\ClosingCheck;
+use App\Models\Company;
 use App\Models\DeferredTaxItem;
 use App\Models\FiscalYear;
 use App\Models\FixedAsset;
@@ -54,6 +56,12 @@ function deferredItem(array $overrides = []): array
         'tax_value_source' => DeferredTaxItem::SOURCE_ENTERED,
         ...$overrides,
     ];
+}
+
+/** The fingerprint of what the person sees for the year (DeferredTaxProposal::fingerprint()). */
+function seen(FiscalYear $year, bool $setOff = false): string
+{
+    return DeferredTaxProposal::for(Company::query()->findOrFail($year->company_id), $year, $setOff)->fingerprint();
 }
 
 function k3Company(): array
@@ -115,12 +123,50 @@ describe('F-S1-a', function () {
             ->and($this->fixture->expected['deferred_tax']['items']['2026-12-31']['uppskjuten_skatteskuld'])->toBe(108_570_240);
     });
 
+    it('starts 2026 from 2025\'s items, refusing to reverse 995 227,20 as income meanwhile', function () {
+        $this->items->save($this->fixture->owner, $this->fixture->years[2025], deferredItem(['tax_value' => '12 364 800']));
+        app(YearEndClosing::class)->confirmDeferredTax($this->fixture->owner, $this->fixture->years[2025], seen($this->fixture->years[2025]));
+        $year = $this->fixture->years[2026];
+        $empty = DeferredTaxProposal::for($this->fixture->company, $year);
+
+        // An empty 2026 would reverse the whole opening liability as income.
+        expect($empty->reversesEverything())->toBeTrue()
+            ->and($empty->expenseOre())->toBe(-99_522_720)
+            ->and(fn () => app(YearEndClosing::class)->confirmDeferredTax($this->fixture->owner, $year, $empty->fingerprint()))
+            ->toThrow(ValidationException::class, 'Hämta posterna från föregående år');
+
+        Livewire::test(DeferredTaxPage::class, ['year' => $year->id])
+            ->assertSee('Hämta posterna från föregående år')
+            ->call('copyPrevious')
+            ->assertDispatched('toast', message: '1 poster är hämtade från föregående år. Kontrollera det skattemässiga värdet för var och en och spara den.')
+            ->assertSee('Hämtad från föregående år – kontrollera det skattemässiga värdet');
+
+        $copy = DeferredTaxItem::query()->where('fiscal_year_id', $year->id)->sole();
+        $copied = DeferredTaxProposal::for($this->fixture->company, $year);
+
+        // The carrying amount is recomputed for 2026; the tax value is last year's until checked.
+        expect($copy->confirmed_by)->toBeNull()
+            ->and($copy->tax_value_needs_review)->toBeTrue()
+            ->and($copy->recognised_ore->ore)->toBe(0)
+            ->and($copied->lines[0]['carrying_ore'])->toBe(1_675_200_000)
+            ->and($copied->lines[0]['tax_value_ore'])->toBe(1_236_480_000)
+            ->and($copied->blockers[0])->toContain('Kontrollera det skattemässiga värdet')
+            ->and(fn () => app(YearEndClosing::class)->confirmDeferredTax($this->fixture->owner, $year, $copied->fingerprint()))
+            ->toThrow(ValidationException::class, 'Kontrollera det skattemässiga värdet');
+
+        $this->items->save($this->fixture->owner, $year, deferredItem(['id' => $copy->id, 'tax_value' => '11 481 600']));
+        $entry = app(YearEndClosing::class)->confirmDeferredTax($this->fixture->owner, $year, seen($year));
+
+        expect($entry->amount_ore->ore)->toBe(9_047_520)
+            ->and(fn () => $this->items->copyFromPreviousYear($this->fixture->owner, $year))->toThrow(ValidationException::class, 'redan bokförd');
+    });
+
     it('S1-R4.6 books the confirmed change once, on 8940 against 2240, through the voucher path, and freezes the items', function () {
         $year = $this->fixture->years[2026];
         $item = $this->items->save($this->fixture->owner, $year, deferredItem(['tax_value' => '11 481 600']));
         $vouchers = Voucher::query()->count();
 
-        $entry = app(YearEndClosing::class)->confirmDeferredTax($this->fixture->owner, $year, 9_047_520);
+        $entry = app(YearEndClosing::class)->confirmDeferredTax($this->fixture->owner, $year, seen($year));
 
         $voucher = Voucher::query()->findOrFail($entry->voucher_id);
         $rows = $voucher->rows()->with('account')->get()->mapWithKeys(fn ($row): array => [$row->account->number => $row->debit_ore->ore - $row->credit_ore->ore])->all();
@@ -137,7 +183,7 @@ describe('F-S1-a', function () {
             // Booked: the proposal now has nothing left to book.
             ->and(DeferredTaxProposal::for($this->fixture->company, $year)->expenseOre())->toBe(0);
 
-        expect(fn () => app(YearEndClosing::class)->confirmDeferredTax($this->fixture->owner, $year, 0))
+        expect(fn () => app(YearEndClosing::class)->confirmDeferredTax($this->fixture->owner, $year, seen($year)))
             ->toThrow(ValidationException::class, 'Årets uppskjutna skatt är redan bokförd');
         expect(fn () => $this->items->save($this->fixture->owner, $year, deferredItem(['tax_value' => '1'])))
             ->toThrow(ValidationException::class, 'redan bokförd');
@@ -232,7 +278,7 @@ describe('a K3 company', function () {
             ->and([$net->targetLiabilityOre(), $net->targetAssetOre()])->toBe([2_060_000, 0])
             ->and($gross->expenseOre())->toBe($net->expenseOre());
 
-        $this->closing->confirmDeferredTax($this->owner, $this->year, 2_060_000, setOff: true);
+        $this->closing->confirmDeferredTax($this->owner, $this->year, seen($this->year, setOff: true), setOff: true);
 
         expect(ClosingCheck::query()->where('fiscal_year_id', $this->year->id)->where('key', DeferredTaxProposal::SET_OFF_CHECK)->exists())->toBeTrue();
     });
@@ -247,25 +293,80 @@ describe('a K3 company', function () {
             ->and(YearEndEntry::query()->count())->toBe(0);
 
         // The books change after the proposal was shown: refused.
+        $shown = seen($this->year);
         Bookkeeping::post($this->owner, $this->company, 1_000_000, 7820, 1119, '2026-12-31');
 
-        expect(fn () => $this->closing->confirmDeferredTax($this->owner, $this->year, 4_120_000))
+        expect(fn () => $this->closing->confirmDeferredTax($this->owner, $this->year, $shown))
             ->toThrow(ValidationException::class, 'Beräkningen har ändrats sedan den visades');
         expect(YearEndEntry::query()->count())->toBe(0);
     });
 
     it('records a confirmation without a voucher when nothing changes', function () {
         $vouchers = Voucher::query()->count();
-        $entry = $this->closing->confirmDeferredTax($this->owner, $this->year, 0);
+        $entry = $this->closing->confirmDeferredTax($this->owner, $this->year, seen($this->year));
 
         expect($entry->voucher_id)->toBeNull()
             ->and($entry->amount_ore->ore)->toBe(0)
             ->and(Voucher::query()->count())->toBe($vouchers);
     });
 
+    it('still blocks the current tax proposal for tax booked by hand on 8940, also in a K2 year', function () {
+        $this->year->forceFill(['reporting_framework' => ReportingFramework::K2])->save();
+        Account::query()->firstOrCreate(['number' => 8940], ['name' => 'Uppskjuten skatt', 'type' => AccountType::forNumber(8940)]);
+        ClosingAccounts::ensure(2512);
+        Bookkeeping::post($this->owner, $this->company, 2_000_000, 8940, 2512, '2026-12-31');
+
+        expect(TaxProposal::for($this->company, $this->year->refresh(), null)->taxBookedByHand())->toBeTrue();
+    });
+
+    it('blocks the current tax proposal again when the deferred tax voucher is corrected', function () {
+        $this->items->save($this->owner, $this->year, deferredItem(['tax_value' => '700 000']));
+        $entry = $this->closing->confirmDeferredTax($this->owner, $this->year, seen($this->year));
+
+        expect(TaxProposal::for($this->company, $this->year, null)->taxBookedByHand())->toBeFalse();
+
+        app(CorrectVoucher::class)($this->owner, Voucher::query()->findOrFail($entry->voucher_id), 'Fel skattemässigt värde', '2026-12-31');
+
+        expect(TaxProposal::for($this->company, $this->year, null)->taxBookedByHand())->toBeTrue()
+            ->and(fn () => $this->closing->confirmDeferredTax($this->owner, $this->year, seen($this->year)))->toThrow(ValidationException::class, 'redan bokförd');
+    });
+
+    it('refuses to reverse all deferred tax for a year without items unless the person confirms exactly that', function () {
+        Account::query()->firstOrCreate(['number' => 8940], ['name' => 'Uppskjuten skatt', 'type' => AccountType::forNumber(8940)]);
+        Account::query()->firstOrCreate(['number' => 2240], ['name' => 'Avsättningar för uppskjutna skatter', 'type' => AccountType::forNumber(2240)]);
+        Bookkeeping::post($this->owner, $this->company, 1_000_000, 8940, 2240, '2026-06-30');
+        $proposal = DeferredTaxProposal::for($this->company, $this->year);
+
+        expect($proposal->reversesEverything())->toBeTrue()
+            ->and($proposal->expenseOre())->toBe(-1_000_000)
+            ->and(fn () => $this->closing->confirmDeferredTax($this->owner, $this->year, $proposal->fingerprint()))
+            ->toThrow(ValidationException::class, 'bekräfta uttryckligen att allt ska återföras');
+
+        Livewire::test(DeferredTaxPage::class)->assertSee('Uppskjuten skatteskuld '.Money::ofOre(1_000_000)->format().' och uppskjuten skattefordran');
+
+        $entry = $this->closing->confirmDeferredTax($this->owner, $this->year, $proposal->fingerprint(), reverseAll: true);
+
+        expect($entry->amount_ore->ore)->toBe(-1_000_000);
+    });
+
+    it('refuses an amount check that only matches: the liability, the asset and the items must be what the person saw', function () {
+        $this->items->save($this->owner, $this->year, deferredItem(['tax_value' => '800 000']));
+        $shown = DeferredTaxProposal::for($this->company, $this->year);
+        // Between showing and confirming, a liability item and a recognised asset of the same size are added.
+        $this->items->save($this->owner, $this->year, deferredItem(['kind' => DeferredTaxItem::OTHER_ASSET, 'description' => 'Maskin', 'account_from' => '', 'account_to' => '', 'carrying' => '100 000', 'tax_value' => '0']));
+        $this->items->save($this->owner, $this->year, deferredItem(['kind' => DeferredTaxItem::LOSS_CARRY_FORWARD, 'description' => 'Underskott', 'account_from' => '', 'account_to' => '', 'tax_value' => '100 000', 'recognised' => '20 600', 'recognition_reason' => 'Budget']));
+        $now = DeferredTaxProposal::for($this->company, $this->year);
+
+        expect($now->expenseOre())->toBe($shown->expenseOre())
+            ->and($now->targetLiabilityOre())->not->toBe($shown->targetLiabilityOre())
+            ->and(fn () => $this->closing->confirmDeferredTax($this->owner, $this->year, $shown->fingerprint()))
+            ->toThrow(ValidationException::class, 'Beräkningen har ändrats sedan den visades');
+        expect(YearEndEntry::query()->count())->toBe(0);
+    });
+
     it('leaves the current tax proposal open after the deferred tax is booked on 8940', function () {
         $this->items->save($this->owner, $this->year, deferredItem(['tax_value' => '700 000']));
-        $this->closing->confirmDeferredTax($this->owner, $this->year, 4_120_000);
+        $this->closing->confirmDeferredTax($this->owner, $this->year, seen($this->year));
         $this->closing->answerTaxStatus($this->owner, $this->year, TaxProposal::STATUS_ORDINARY);
         $proposal = TaxProposal::for($this->company, $this->year, null);
 
@@ -283,13 +384,13 @@ describe('a K3 company', function () {
     it('is booked before the result', function () {
         YearEndEntry::create(['fiscal_year_id' => $this->year->id, 'type' => YearEndEntry::RESULT, 'amount_ore' => 0, 'created_by' => $this->owner->id]);
 
-        expect(fn () => $this->closing->confirmDeferredTax($this->owner, $this->year, 0))
+        expect(fn () => $this->closing->confirmDeferredTax($this->owner, $this->year, seen($this->year)))
             ->toThrow(ValidationException::class, 'Bokför den uppskjutna skatten före resultatet');
     });
 
     it('keeps the booked entry and the confirmed items append-only, also in the database', function () {
         $item = $this->items->save($this->owner, $this->year, deferredItem(['tax_value' => '700 000']));
-        $entry = $this->closing->confirmDeferredTax($this->owner, $this->year, 4_120_000);
+        $entry = $this->closing->confirmDeferredTax($this->owner, $this->year, seen($this->year));
         $item->refresh();
 
         expect(fn () => $entry->update(['amount_ore' => 1]))->toThrow(LogicException::class)
@@ -315,7 +416,7 @@ describe('a K3 company', function () {
 
             expect($proposal->rateBp)->toBeNull()
                 ->and($proposal->blockers[0])->toContain('Beräkna den uppskjutna skatten för hand');
-            expect(fn () => $this->closing->confirmDeferredTax($this->owner, $this->year, 0))->toThrow(ValidationException::class, 'för hand');
+            expect(fn () => $this->closing->confirmDeferredTax($this->owner, $this->year, seen($this->year)))->toThrow(ValidationException::class, 'för hand');
         } finally {
             $property->setValue(null, null);
         }
@@ -353,7 +454,7 @@ describe('a K3 company', function () {
     it('writes ids, enums and amounts to the audit log, never the description or the reason', function () {
         $this->items->save($this->owner, $this->year, deferredItem(['tax_value' => '700 000', 'description' => 'Hemlig byggnad']));
         $this->items->save($this->owner, $this->year, deferredItem(['kind' => DeferredTaxItem::LOSS_CARRY_FORWARD, 'description' => 'Underskott', 'account_from' => '', 'account_to' => '', 'tax_value' => '100 000', 'recognised' => '1 000', 'recognition_reason' => 'Hemligt skäl']));
-        $this->closing->confirmDeferredTax($this->owner, $this->year, 4_020_000);
+        $this->closing->confirmDeferredTax($this->owner, $this->year, seen($this->year));
 
         $logs = AuditLog::query()->whereIn('action', ['deferred_tax.item_created', 'closing.deferred_tax_confirmed'])->get();
         $json = $logs->map(fn (AuditLog $log): string => json_encode($log->payload, JSON_THROW_ON_ERROR))->implode("\n");
@@ -366,11 +467,11 @@ describe('a K3 company', function () {
     it('needs fiscal-years:manage to change or book, per role', function (string $role, bool $allowed) {
         $member = Bookkeeping::member($this->company, $role);
         $attempt = fn () => $this->items->save($member, $this->year, deferredItem(['tax_value' => '700 000']));
-        $confirm = fn () => $this->closing->confirmDeferredTax($member, $this->year, 0);
+        $confirm = fn () => $this->closing->confirmDeferredTax($member, $this->year, seen($this->year));
 
         if ($allowed) {
             expect($attempt()->id)->toBeInt()
-                ->and($this->closing->confirmDeferredTax($member, $this->year, 4_120_000)->type)->toBe(YearEndEntry::DEFERRED_TAX);
+                ->and($this->closing->confirmDeferredTax($member, $this->year, seen($this->year))->type)->toBe(YearEndEntry::DEFERRED_TAX);
 
             return;
         }
@@ -414,7 +515,7 @@ describe('a K3 company', function () {
             ->assertSee('Fabriksbyggnaden')
             ->assertSee('Bokföra förändringen av uppskjuten skatt, 41')
             ->assertSee('En bokförd verifikation kan inte ändras, bara rättas med en ny.')
-            ->call('confirm', 4_120_000)
+            ->call('confirm', seen($this->year))
             ->assertDispatched('toast', message: 'Förändringen av uppskjuten skatt, '.Money::ofOre(4_120_000)->format().', är bokförd.');
 
         expect(YearEndEntry::query()->where('type', YearEndEntry::DEFERRED_TAX)->first()?->amount_ore->ore)->toBe(4_120_000);
@@ -434,7 +535,7 @@ describe('a K3 company', function () {
         Livewire::test(DeferredTaxPage::class)->set('editing', $otherItem->id)->set('description', 'x')->set('accountFrom', '1110')->set('accountTo', '1119')->set('taxValue', '1')->call('save')->assertNotFound();
         $this->get(route('accounting.closing.deferredTax', ['ar' => $otherYear->id]))->assertOk()->assertDontSee('Fabriksbyggnaden ');
 
-        Livewire::test(DeferredTaxPage::class)->call('confirm', 1)
+        Livewire::test(DeferredTaxPage::class)->call('confirm', 'stale')
             ->assertDispatched('toast', type: 'error', message: 'Beräkningen har ändrats sedan den visades. Granska den igen innan du bekräftar.');
 
         CurrentCompany::set($otherCompany);
@@ -470,12 +571,12 @@ describe('a K3 company', function () {
         $this->year->forceFill(['reporting_framework' => ReportingFramework::K2])->save();
 
         expect(fn () => $this->items->save($this->owner, $this->year->refresh(), deferredItem(['tax_value' => '1'])))->toThrow(ValidationException::class, 'bara av företag som tillämpar K3');
-        expect(fn () => $this->closing->confirmDeferredTax($this->owner, $this->year, 0))->toThrow(ValidationException::class, 'K3');
+        expect(fn () => $this->closing->confirmDeferredTax($this->owner, $this->year, seen($this->year)))->toThrow(ValidationException::class, 'K3');
 
         $this->year->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
         $this->company->forceFill(['legal_form' => LegalForm::Hb])->save();
 
-        expect(fn () => $this->closing->confirmDeferredTax($this->owner, $this->year->refresh(), 0))->toThrow(ValidationException::class, 'ägarna beskattas');
+        expect(fn () => $this->closing->confirmDeferredTax($this->owner, $this->year->refresh(), seen($this->year->refresh())))->toThrow(ValidationException::class, 'ägarna beskattas');
         Livewire::test(DeferredTaxPage::class)->assertSee('ägarna beskattas');
     });
 });

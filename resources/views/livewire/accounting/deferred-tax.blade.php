@@ -52,6 +52,11 @@
             @if($proposal->lines === [])
                 <x-ui.empty-state class="mt-4" :title="__('Inga poster ännu')">
                     {{ __('Utan poster blir den uppskjutna skatten noll. Lägg till en post nedan, eller bekräfta att företaget inte har några temporära skillnader.') }}
+                    @if($open && $previousHasItems)
+                        <x-slot:action>
+                            <x-button type="button" wire:click="copyPrevious" wire:loading.attr="disabled" data-deferred-tax-copy>{{ __('Hämta posterna från föregående år') }}</x-button>
+                        </x-slot:action>
+                    @endif
                 </x-ui.empty-state>
             @else
                 <div class="mt-4 overflow-x-auto">
@@ -73,6 +78,7 @@
                                     <td class="py-2 pr-4">
                                         <p class="font-medium text-ink">{{ $line['item']->description }}</p>
                                         <p class="text-xs text-gray-500">{{ $kinds[$line['item']->kind] }}@if($line['item']->account_from !== null) · {{ __('konto :from–:to', ['from' => $line['item']->account_from, 'to' => $line['item']->account_to]) }}@endif</p>
+                                        @if($line['item']->tax_value_needs_review)<p class="text-xs font-medium text-amber-800">{{ __('Hämtad från föregående år – kontrollera det skattemässiga värdet') }}</p>@endif
                                     </td>
                                     <td class="py-2 pr-4 text-right">
                                         @if($line['carrying_ore'] === null)
@@ -187,13 +193,19 @@
             @if($entry !== null)
                 <p class="mt-4 text-sm text-gray-700" data-deferred-tax-booked>{{ $entry->amount_ore->isZero() ? __('Den uppskjutna skatten är bekräftad. Inget behövde bokföras.') : __(':amount är bokfört på 8940. Posterna är låsta; rätta verifikationen om något blev fel.', ['amount' => $entry->amount_ore->format()]) }}</p>
             @elseif($open && $proposal->blockers === [])
+                @if($proposal->reversesEverything())
+                    <label class="mt-4 flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-300" data-deferred-tax-reverse-all>
+                        <input type="checkbox" class="mt-0.5 rounded border-stone-300" wire:model.live="reverseAll">
+                        <span>{{ __('Företaget har inga temporära skillnader kvar. Uppskjuten skatteskuld :liability och uppskjuten skattefordran :asset ska återföras helt.', ['liability' => Money::ofOre($proposal->bookedLiabilityOre)->format(), 'asset' => Money::ofOre($proposal->bookedAssetOre)->format()]) }}</span>
+                    </label>
+                @endif
                 @if($proposal->liabilityOre() > 0 && $proposal->assetOre() > 0)
                     <label class="mt-4 flex items-start gap-2 text-sm text-gray-700">
                         <input type="checkbox" class="mt-0.5 rounded border-stone-300" wire:model.live="setOff">
                         <span>{{ __('Företaget har legal rätt att kvitta skulden mot fordran, så de redovisas netto (K3 punkt 29.32).') }}</span>
                     </label>
                 @endif
-                <x-button type="button" class="mt-4" wire:click="confirm({{ $proposal->expenseOre() }})" wire:loading.attr="disabled" wire:target="setOff,confirm" wire:confirm="{{ $proposal->confirmationText() }}">{{ __('Bekräfta och bokför uppskjuten skatt') }}</x-button>
+                <x-button type="button" class="mt-4" wire:click="confirm('{{ $proposal->fingerprint() }}')" wire:loading.attr="disabled" wire:target="setOff,reverseAll,confirm" wire:confirm="{{ $proposal->confirmationText() }}">{{ __('Bekräfta och bokför uppskjuten skatt') }}</x-button>
             @endif
         </x-ui.card>
     @endif
