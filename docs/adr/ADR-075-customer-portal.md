@@ -391,3 +391,29 @@ lawyer pass for GDPR), Lead merges.
   another period?
 - **O10** An English portal when a customer language field exists?
 - **O11** Bulk invitation of every customer's invoice recipient from CRM in v1, or later?
+
+## Addendum 2026-11-08: Lead decisions on the owner questions
+
+Decided by Lead 2026-11-08 under the owner's mandate, open for the consultant's review. The
+owner may change any of them.
+
+- **O1 Name:** "Kundportal".
+- **O2 Price:** included in every plan, following the owner's principle for ADR-070: open
+  source, part of the hosted annual price, and switched on per company as a module.
+- **O3 Passkeys:** not in the first version. Portal contacts use the e-mail code only.
+- **O4 "Jag har betalat":** kept. It books nothing, and the invoice page says it is the
+  customer's own note.
+- **O5 Written-off invoices:** hidden until the owner decides.
+- **O6 Issued PDF:** stored at issue. The portal and later copies show exactly the PDF that
+  was sent. This also answers L6 in the safe direction. Earlier invoices keep today's
+  behaviour and are labelled as re-rendered.
+- **O7 QR codes:** a later step, not the first version.
+- **O8 "Drivs med NONOX":** a small footer line, on by default, that the company can switch
+  off.
+- **O9 Inactivity:** accepted: removed after 12 months without login, with 30 days' notice.
+- **O10 Language:** Swedish first. English follows through the normal translation files.
+- **O11 Bulk invitation:** a later step, after the first version.
+
+The first build covers the ADR's build steps 1–6. The legal questions L1–L12 stay open, and
+the code keeps them as `TODO(legal-verify)`. The legitimate-interest assessment template
+(L1) and the privacy information (L2) ship as drafts marked for the lawyer's review.
