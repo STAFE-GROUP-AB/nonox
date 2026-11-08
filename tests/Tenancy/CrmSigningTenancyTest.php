@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 use App\Actions\Invoicing\SaveArticle;
 use App\Actions\Invoicing\SaveSalesDocument;
+use App\Actions\Signing\SendForSigning;
+use App\Livewire\Signing\SigningPanel;
 use App\Models\SalesDocument;
+use App\Models\SigningEvent;
+use App\Models\SigningRequest;
 use App\Modules\Crm\Actions\RunAgreementReminders;
 use App\Modules\Crm\Actions\SaveAgreement;
 use App\Modules\Crm\Actions\SaveQuoteTemplate;
-use App\Modules\Crm\Actions\SendForSigning;
 use App\Modules\Crm\Livewire\AgreementCard;
 use App\Modules\Crm\Livewire\QuoteFromTemplate;
 use App\Modules\Crm\Livewire\QuoteTemplatesPage;
-use App\Modules\Crm\Livewire\SigningPanel;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\QuoteTemplate;
-use App\Modules\Crm\Models\SigningEvent;
-use App\Modules\Crm\Models\SigningRequest;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Mail;
@@ -70,8 +70,8 @@ it('answers 404 for B\'s records on the pages and in the components', function (
     $this->get(route('crm.agreements'))->assertOk()->assertSee('Alfaavtalet')->assertDontSee('Betaavtalet');
     $this->get(route('crm.agreements.show', $this->a['agreement']))->assertOk();
     $this->get(route('crm.agreements.show', $this->b['agreement']))->assertNotFound();
-    $this->get(route('crm.signing.file', ['signing' => $this->b['signing']->id, 'file' => 'dokument']))->assertNotFound();
-    $this->get(route('crm.signing.file', ['signing' => $this->a['signing']->id, 'file' => 'dokument']))->assertOk();
+    $this->get(route('signing.file', ['signing' => $this->b['signing']->id, 'file' => 'dokument']))->assertNotFound();
+    $this->get(route('signing.file', ['signing' => $this->a['signing']->id, 'file' => 'dokument']))->assertOk();
     $this->get(route('crm.quoteTemplates'))->assertOk()->assertSee('Alfamallen')->assertDontSee('Betamallen');
 
     Livewire::test(QuoteTemplatesPage::class)->call('edit', $this->b['template']->id)->assertNotFound();

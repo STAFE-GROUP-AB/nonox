@@ -148,6 +148,6 @@
             @endif
         </x-ui.card>
 
-        <livewire:crm.signing-panel :agreement-id="$agreement->id" :key="'signing-agreement-'.$agreement->id" />
+        <livewire:signing.panel :agreement-id="$agreement->id" :key="'signing-agreement-'.$agreement->id" />
     @endif
 </div>

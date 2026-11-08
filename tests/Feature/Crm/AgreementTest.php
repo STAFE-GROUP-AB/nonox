@@ -3,20 +3,20 @@
 declare(strict_types=1);
 
 use App\Actions\Privacy\EraseRegisterEntry;
+use App\Actions\Signing\SendForSigning;
+use App\Domain\Signing\SigningPdfs;
 use App\Models\AuditLog;
+use App\Models\SigningRequest;
 use App\Modules\Crm\Actions\EraseCrmData;
 use App\Modules\Crm\Actions\RunAgreementReminders;
 use App\Modules\Crm\Actions\SaveAgreement;
-use App\Modules\Crm\Actions\SendForSigning;
 use App\Modules\Crm\Livewire\AccountCard;
 use App\Modules\Crm\Livewire\AgreementCard;
 use App\Modules\Crm\Livewire\AgreementsPage;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Agreement;
-use App\Modules\Crm\Models\SigningRequest;
 use App\Modules\Crm\Support\CrmTodos;
 use App\Modules\Crm\Support\PruneCandidates;
-use App\Modules\Crm\Support\SigningPdfs;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;

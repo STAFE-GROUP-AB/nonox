@@ -41,6 +41,7 @@ use App\Http\Controllers\Search\RecentItemController;
 use App\Http\Controllers\Search\SearchController;
 use App\Http\Controllers\SecureChatController;
 use App\Http\Controllers\SecurityPageController;
+use App\Http\Controllers\Signing\SigningFileController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\Skatteverket\SkatteverketAuthController;
 use App\Http\Controllers\StartController;
@@ -246,6 +247,8 @@ Route::middleware([
         Route::view('/avtal/nytt', 'invoicing.agreements.show', ['agreement' => null])->name('invoicing.agreements.create');
         Route::get('/avtal/{agreement}', AgreementController::class)->whereUuid('agreement')->name('invoicing.agreements.show');
         Route::view('/kunder', 'invoicing.customers')->name('invoicing.customers');
+        // The PDF sent for signing, or its certificate (ADR-046); core since ADR-075 §7, so it works with CRM off.
+        Route::get('/kunder/signeringar/{signing}/{file}', SigningFileController::class)->whereNumber('signing')->whereIn('file', ['dokument', 'signeringsbevis'])->name('signing.file');
         Route::view('/leverantorer', 'payables.suppliers')->name('payables.suppliers');
         Route::view('/leverantorsfakturor', 'payables.invoices.index')->name('payables.invoices.index');
         Route::view('/leverantorsfakturor/ny', 'payables.invoices.edit', ['invoice' => null])->name('payables.invoices.create');

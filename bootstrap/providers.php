@@ -22,6 +22,7 @@ use App\Providers\FortifyServiceProvider;
 use App\Providers\JetstreamServiceProvider;
 use App\Providers\OverviewServiceProvider;
 use App\Providers\SearchServiceProvider;
+use App\Providers\SigningServiceProvider;
 
 return [
     ModuleServiceProvider::class,
@@ -32,6 +33,7 @@ return [
     StaffLedgerServiceProvider::class,
     PlanningServiceProvider::class,
     InventoryServiceProvider::class,
+    SigningServiceProvider::class,
     CrmServiceProvider::class,
     PosServiceProvider::class,
     InboxServiceProvider::class,

@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-08-signering-utan-crm",
+      "datum": "2026-11-08T19:00:00+01:00",
+      "rubrik": "Offerter kan signeras med namnteckning även utan CRM",
+      "beskrivning": "Skicka för signering finns nu på varje offert, också när CRM-modulen är avstängd. När kunden har signerat blir offerten en order som förut, och med CRM på vinns affären och en anteckning läggs på kunden. Avtal i CRM signeras som tidigare.",
+      "typ": "Förbättrat",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-08-uppskjuten-skatt-k3",
       "datum": "2026-11-08T09:30:00+01:00",
       "rubrik": "Uppskjuten skatt i bokslutet för räkenskapsår som följer K3 (beta)",
