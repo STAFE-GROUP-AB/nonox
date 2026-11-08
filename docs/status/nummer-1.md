@@ -507,3 +507,16 @@ Evidence: `tests/Feature/Assets/ComponentsTest.php`, `tests/Feature/Assets/Compo
 Public claim now allowed: inget nytt. Public claim still not allowed: "Årsredovisning enligt K3", "Kassaflödesanalys".
 Follow-ups: koppla registret till uppskjuten skatt på byggnader (S1-P5, `BuildingCarryingAmounts`); omräknade jämförelsetal för komponenter i S1-P12.
 Next package: S1-P12 (övergång K2 → K3).
+
+---
+
+Package: Körjournal och kvitto i mobilen (prioritet 3, ADR-072)
+Status: done (Min sida → Körjournal, Bokföring → Körjournal, Inkorg → Fota kvitto; avstängt tills företaget slår på det)
+Evidence: `tests/Feature/Mileage/*`, `tests/Feature/Inbox/ReceiptUploadTest.php`, `tests/Tenancy/MileageTenancyTest.php`.
+- Anställda skriver in resor på Min sida och skickar en månad som milersättning; den godkänns under Lön → Ansökningar och betalas med lönen. Skattefri milersättning för förmånsbil bara i förarens egen förmånsbil; poolbil och annans förmånsbil blir skattepliktig lön.
+- Varje resa prissätts efter reglerna för det år den kördes. 2027 års belopp (2,50 kr/km egen bil, 0,95/1,20 kr/km förmånsbil) följer IL 12 kap. 5 §. Ruta 050 kryssas även för förmånsbil.
+- Rättelser prissätts som raden de rättar; en betald eller bokförd resa kan inte ändras (databasspärr). Ägaren till en enskild firma får ett verifikationsutkast (debet valt kostnadskonto, kredit 2018).
+- Fota kvitto: kvittot går till inkorgen och kopplas en gång till verifikationen; inget bokförs före godkännande. Ingen GPS.
+- Kall granskning (1 P1, 6 P2, flera P3) och omkontroll; allt rättat, även omkontrollens tre P3. Rättat i regelbladet efter citatkontroll: KJ-R13 och momshänvisningen.
+Open legal-verify items: L4, L6, L8/L9 (konto för ägarens avdrag), L12–L16, prissättning efter resans år.
+Next package: Arbetsorder och ÄTA (prioritet 5) när signeringsflytten i kundportalens gren är granskad; aktieboken (prioritet 2) när granskningen är klar.
