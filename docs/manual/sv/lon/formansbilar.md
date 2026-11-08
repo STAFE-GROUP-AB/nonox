@@ -70,6 +70,7 @@ En anställd kan ha en förmånsbil per månad. Byter den anställda bil låter 
 Är körjournalen påslagen visar sidan under **Körjournal för företagets bilar** för varje bil och år hur mycket den körts i tjänsten och privat. Det är ett stöd för dig, inget beslut: NONOX ändrar aldrig förmånsvärdet själv.
 
 - **3 000 mil i tjänsten uppnått** visas när bilen körts minst 3 000 mil i tjänsten under kalenderåret. Då ska förmånsvärdet vara 75 procent (inkomstskattelagen 61 kap. 9 §). Du markerar det själv på bilen.
+- Siffrorna räknas bara på resor som förmånshavaren själv har kört under förmånsperioden. Andra förares resor med bilen visas för sig under **Andra förare**.
 - Privat körning visas mot Skatteverkets gräns för bilförmån i ringa omfattning: högst 100 mil **och** högst 10 tillfällen under året. Båda måste stämma.
 - En privat resa i en bil utan bilförmån ger en varning, eftersom den kan vara en skattepliktig förmån.
 - Under **Förslag till drivmedelsförmån för en månad** fyller du i drivmedlet som företaget betalat. NONOX föreslår marknadsvärdet för den privata körningen som kostnaden gånger privat sträcka delat med hela sträckan, och förmånen som marknadsvärdet gånger 1,2. Vill du använda förslaget lägger du in beloppet med lönearten **Drivmedelsförmån** i månadens lönekörning.

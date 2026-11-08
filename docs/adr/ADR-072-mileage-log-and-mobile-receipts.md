@@ -294,9 +294,11 @@ Decided by Lead 2026-11-08 under the owner's mandate, open for the consultant's 
 - **Q1:** off by default, as the ADR proposes. Each company switches it on.
 - **Q2:** projects only. A customer is reached through the project.
 - **Q3:** the own-car amount (2,50 kr/km) is written in IL 12 kap. 5 § and is carried
-  forward into 2027. The förmånsbil amounts are set by Skatteverket each year, so they stay
-  pending until Skatteverket publishes them, and a 2027 payroll run with such a trip is
-  blocked until then.
+  forward into 2027. *Corrected after the cold review:* the förmånsbil amounts (0,95 kr/km
+  el, 1,20 kr/km other fuel) are written in IL 12 kap. 5 § andra stycket too, with no end
+  date; they follow the law text and are carried forward into 2027 the same way, not set by
+  Skatteverket each year. A year's rule that is missing or not checked still blocks a run that
+  needs it.
 - **Q4:** offline entry comes later, not in the first version.
 - **Q5:** one claim per month, with one line per trip.
 - **Q6:** no GPS option. A later wish would need its own ADR and data-protection assessment.
@@ -312,9 +314,9 @@ above, this addendum says so.
 **Step 1.** `MIL_FORMANSBIL` and `MIL_FORMANSBIL_EL` (7331, tax-free, QUANTITY) are in
 `PayCodeCatalog`, `Allowances::TAX_FREE` and `AgiDeclaration::MILEAGE`, and a migration adds
 them to every company that already has payroll. The 2027 `rules.json` now carries the own-car
-amount (2 500 öre/mil) as a 2027 version sourced to IL 12 kap. 5 § (Q3); the förmånsbil keys
-stay pending with a note that they are in the law but wait for Skatteverket, and the wrong
-"legal basis not found" note is gone. A new open-ended rule `benefit.car.minor_extent`
+amount (2 500 öre/mil) as a 2027 version sourced to IL 12 kap. 5 § (Q3), and, after the cold
+review, the förmånsbil amounts too (1 200 and 950 öre/mil, IL 12 kap. 5 § andra stycket); none
+of them is pending, and the wrong "legal basis not found" note is gone. A new open-ended rule `benefit.car.minor_extent`
 (100 mil and 10 occasions, Skatteverket's reading, `TODO(legal-verify)`) feeds the advice in
 §5; 2027 lists it under `continued`.
 
@@ -336,11 +338,32 @@ and the groups per pay code. Approval is `ExpenseClaims::approveMileage` (no vou
 marked paid (the same moment outlays become PAID), not at the run's approval. The salary
 voucher gets the trip list PDF per claim when the run is posted.
 
-**Rates.** The claim shows the amount at the rules for the trip's year; the run prices the
-tax-free codes through `Allowances` with the rules for the payment date, as for any other
-input (identical for own car in 2026–2027). A 2027 förmånsbil claim is accepted with the
-amount pending; the run is blocked by the missing rule (Q3). Hydrogen counts as "annat
-drivmedel", 12 kr/mil (`TODO(legal-verify)` L16).
+**Rates (corrected after the cold review, Lead decision).** Every trip is priced at the
+rules of the trip's year (IL 12 kap. 5 § speaks of "utgifter för tjänsteresor";
+`TODO(legal-verify)`). The claim stores per group the schablon and its rule version
+(`schablon_ore`, `rule_version_id`); `ContextBuilder` carries them on the input
+(`Allowances::MILEAGE_LIMIT`, `MILEAGE_RULE_VERSION`) and `Allowances` uses them instead of the
+payment date's rules, so December trips paid in January keep December's amount. A group
+whose rule was missing when the claim was sent is read again in the run; still missing or
+unchecked, the run is blocked. Hydrogen counts as "annat drivmedel", 12 kr/mil
+(`TODO(legal-verify)` L16).
+
+**Own förmånsbil only (P1 of the cold review).** Tax-free `MIL_FORMANSBIL(_EL)` is paid only
+when the car has a car benefit for the driver on the trip date (IL 12 kap. 5 § andra stycket:
+"sin förmånsbil"). A pool car or another employee's förmånsbil gives `MIL_SKATTEPLIKTIG` with
+the note "Bilen är inte din förmånsbil …". Each claim line stores `car`
+(`OWN_CAR`, `OWN_BENEFIT`, `POOL`, `OTHER_BENEFIT`) and `benefit_id`, shown to the approver,
+who also sees "Kontrollera drivmedelskortet" on every company-car claim.
+
+**Corrections (cold review).** A correcting trip is priced as the line it corrects, from that
+claim's `trip_data` (pay code, rule, year). A group may net to a negative distance and a month
+may hold corrections only: the claim is negative and the run takes the mileage back with a
+negative line of the same pay code. The EF owner's month of corrections only is booked the
+other way round (debit 2018, credit the cost). A trip can be corrected once (unique index on
+`corrects_trip_id`, the original locked).
+
+**Year summary (cold review).** Under Förmånsbilar, 3 000 mil and ringa omfattning count only
+the benefit holder's trips within the benefit period; other drivers' trips are shown apart.
 
 **KJ-R3 / F5.** A company-car trip is not refused at the claim: without the driver's
 confirmation of all fuel, or with a `DRIVMEDELSFORMAN` input for the employee in a run of the
@@ -355,7 +378,10 @@ booking.
 
 **EF owner.** `BookOwnerMileage` drafts the series A voucher (D chosen account, default 5800;
 K 2018) with the trip list PDF; `VoucherPosted` marks the trips BOOKED; deleting the draft frees
-them. The amount comes from the payroll rule; an owner without payroll checks the year's version
+them. If the posted voucher's amount on 2018 differs from what the trips give, the trips are
+still booked (the posting is the owner's), the difference is written to the audit log
+(`mileage.owner_voucher_amount_differs`) and the page shows a warning. The draft is dated the
+month's last day or today, whichever is earlier, and only a cost account 4000–7999 is taken. The amount comes from the payroll rule; an owner without payroll checks the year's version
 on the page (a `PayrollRuleVerification` for the company). Account choice stays
 `TODO(legal-verify)` (L8/L9).
 
@@ -366,11 +392,16 @@ company. The staff PWA has the shortcuts **Fota kvitto** (`/anstalld/kvitto`) an
 (`/anstalld/korjournal/ny`).
 
 **Personal data.** No GPS. Erasing an employee deletes trips never sent; trips under a claim are
-kept. The data-subject export has `korjournal`. Register and retention list updated.
+kept. Deleting an account deletes the person's saved routes and an own car without trips; an own
+car with trips is kept with them and the account is pseudonymised. The data-subject export has
+`korjournal` and `sparade_vagar`. Register and retention list updated.
 
-**Not done, for the Lead.** The legal documents' version was not bumped: 1.6 is a coordinated
-notice still to take effect, and the policy and DPA already cover employee data entered by the
-company; decide whether the körjournal needs its own sentence and a bump. No row was added to
-`jamforelse.json` (the körjournal is not a module and no vendor source was read); the existing
-landing feature "Traktamente, milersättning, körjournal och utlägg" and the README were updated
-instead of a new card with a screenshot.
+**Other fixes after the cold review.** A trip cannot be added, changed or removed in a year
+that is closed for the car. Trips are frozen at the latest when the pay is posted. A
+photographed receipt's original is linked to the voucher once, under its own name and type, not
+as an `.eml`; its stored extension comes from the detected type, and the file is removed if the
+database write fails. "Betalt privat" checks that 2018 exists and says so when nothing moved.
+
+**Lead decisions on docs.** No legal version bump (the policy covers employee data the company
+enters), no `jamforelse.json` row (not a module); the existing landing feature
+"Traktamente, milersättning, körjournal och utlägg" and the README are enough.

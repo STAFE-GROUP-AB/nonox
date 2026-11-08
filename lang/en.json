@@ -11059,5 +11059,19 @@
     "Varför ska resan rättas?": "Why should the trip be corrected?",
     "Rätta resan? En rättelse med lika lång sträcka dras av nästa gång. Den betalda resan ändras inte.": "Correct the trip? A correction with the same distance is deducted next time. The paid trip is not changed.",
     "Rätta resan": "Correct the trip",
-    ":count resa, :distance, skickas in som milersättning för :month.|:count resor, :distance, skickas in som milersättning för :month.": ":count trip, :distance, is sent as a mileage allowance for :month.|:count trips, :distance, are sent as a mileage allowance for :month."
+    ":count resa, :distance, skickas in som milersättning för :month.|:count resor, :distance, skickas in som milersättning för :month.": ":count trip, :distance, is sent as a mileage allowance for :month.|:count trips, :distance, are sent as a mileage allowance for :month.",
+    "Välj ett kostnadskonto mellan 4000 och 7999.": "Choose a cost account between 4000 and 7999.",
+    "Resorna och rättelserna tar ut varandra; det finns inget att bokföra.": "The trips and the corrections cancel each other out; there is nothing to post.",
+    "Rättelse av bilresor i egen bil": "Correction of trips in own car",
+    "Året :year är stängt i körjournalen för bilen. Resor det året kan inte läggas till, ändras eller tas bort.": "The year :year is closed in the mileage log for the car. Trips in that year cannot be added, changed or removed.",
+    "Bilen är inte din förmånsbil, så skattefri milersättning för förmånsbil gäller inte. Resorna med den kan bara ersättas som lön.": "The car is not your company car, so tax-free company car mileage does not apply. Trips in it can only be paid as salary.",
+    "Konto 2018 Övriga egna insättningar finns inte i kontoplanen. Lägg till det under Kontoplan först.": "Account 2018 Other owner deposits is not in the chart of accounts. Add it under Chart of accounts first.",
+    "Ingen betalning från ett bank- eller kassakonto att flytta. Ändra raderna själv om det behövs.": "No payment from a bank or cash account to move. Change the rows yourself if needed.",
+    "Räknat på förmånshavarens egna resor under förmånsperioden.": "Counted on the benefit holder's own trips during the benefit period.",
+    "Andra förare: :business i tjänsten, :private privat. Räknas inte in ovan.": "Other drivers: :business on business, :private private. Not counted above.",
+    "förmånsbil": "company car",
+    "poolbil": "pool car",
+    "annans förmånsbil": "someone else's company car",
+    "Kontrollera drivmedelskortet: har företaget betalat något drivmedel för bilen i månaden, kan resorna bara ersättas som lön.": "Check the fuel card: if the company paid for any fuel for the car in the month, the trips can only be paid as salary.",
+    "Den bokförda verifikationen för resorna har ett annat belopp än körjournalen ger. Kontrollera den och rätta vid behov.": "The posted voucher for the trips has a different amount than the mileage log gives. Check it and correct it if needed."
 }

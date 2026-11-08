@@ -44,17 +44,17 @@ Du väljer inget konto: milersättningen bokförs med lönen. Den som har skicka
 | Tjänsteresa i förmånsbil när den anställda har betalat allt drivmedel | Milersättning, förmånsbil, eller Milersättning, förmånsbil (el) (konto 7331) | Kryss i ruta 050 |
 | Belopp över Skatteverkets belopp, resor till och från arbetet, och förmånsbil när företaget har betalat drivmedel | Milersättning, skattepliktig del (konto 7332) | Lön i ruta 011 |
 
-Den anställda kryssar i att hen har betalat allt drivmedel när resorna med företagets bil skickas in. Har hen inte gjort det, eller finns en drivmedelsförmån för månaden i lönen, kan resorna bara betalas som lön. En laddhybrid som laddats på arbetsplatsen ger skattefri milersättning för resor från den 1 juli 2026.
+Skattefri milersättning för förmånsbil gäller bara den anställdas egen förmånsbil, alltså en bil som finns under **Lön → Förmånsbilar** för just den personen på resans dag. Resor i en poolbil eller i någon annans förmånsbil kan bara betalas som lön, och vid varje resa står vilken sorts bil det var. Den anställda kryssar i att hen har betalat allt drivmedel när resorna med företagets bil skickas in. Har hen inte gjort det, eller finns en drivmedelsförmån för månaden i lönen, kan resorna bara betalas som lön. En laddhybrid som laddats på arbetsplatsen ger skattefri milersättning för resor från den 1 juli 2026.
 
 När lönekörningen bokförs bifogas körjournalen för varje milersättning som en PDF till lönens verifikation.
 
 ## År 2027
 
-Skatteverkets belopp för egen bil, 25 kronor per mil, står i inkomstskattelagen och gäller även 2027. Beloppen för förmånsbil publicerar Skatteverket för varje år. Tills de finns kan en anställd skicka in resor från 2027, men lönekörningen med dem stoppas tills regeln är publicerad och kontrollerad under **Lön → Regler**.
+Beloppen står i inkomstskattelagen (12 kap. 5 §): 25 kronor per mil för egen bil, 12 kronor för förmånsbil och 9,50 kronor för en förmånsbil som bara går på el. De gäller även 2027. Varje resa räknas med beloppet för det år resan gjordes, också när lönen betalas året efter. Är årets regel inte kontrollerad under **Lön → Regler** stoppas lönekörningen med resorna tills den är det.
 
 ## En betald resa som var fel
 
-En betald resa kan inte ändras. Den anställda väljer **Rätta** på resan och skriver varför. Då dras lika lång sträcka av nästa gång resorna skickas in, och den rätta resan läggs in som en ny resa.
+En betald resa kan inte ändras. Den anställda väljer **Rätta** på resan och skriver varför. Då dras lika lång sträcka av nästa gång resorna skickas in, med samma belopp per mil som resan betalades med, och den rätta resan läggs in som en ny resa. Finns bara rättelsen i månaden kan den skickas in ändå; då dras beloppet av från lönen.
 
 ## Läs också
 
