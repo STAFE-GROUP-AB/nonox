@@ -44,6 +44,9 @@ final class Allowances implements Step
     /** Tax-free allowance pay code => [rule, pay code for the taxable excess]. */
     public const array TAX_FREE = [
         'MILERSATTNING' => ['mileage.own_car_tax_free_per_mil', 'MIL_SKATTEPLIKTIG'],
+        // A company car where the employee paid all the fuel (IL 12 kap. 5 § andra stycket, ADR-072).
+        'MIL_FORMANSBIL' => ['mileage.company_car_fossil', 'MIL_SKATTEPLIKTIG'],
+        'MIL_FORMANSBIL_EL' => ['mileage.company_car_electric', 'MIL_SKATTEPLIKTIG'],
         'TRAKTAMENTE_HEL' => ['per_diem.domestic.full', 'TRAKT_SKATTEPLIKTIG'],
         'TRAKTAMENTE_HALV' => ['per_diem.domestic.half', 'TRAKT_SKATTEPLIKTIG'],
         'TRAKTAMENTE_NATT' => ['per_diem.domestic.night', 'TRAKT_SKATTEPLIKTIG'],
