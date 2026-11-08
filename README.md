@@ -355,6 +355,8 @@ grep -A30 "Subject: Din inloggningskod" storage/logs/laravel.log | grep -oE "\b[
 - För att prospektera i CRM (frivilligt): läs in företagsregistret ur SCB:s och Bolagsverkets öppna data med `php artisan registry:import scb-bulk` och sedan `php artisan registry:import bolagsverket-bulk` (gratis, ingen nyckel, några minuter, cirka 1,2 miljoner juridiska personer), och sätt `COMPANY_REGISTER_IMPORT=true` för att uppdatera varje vecka. Med en egen API-nyckel från SCB (gratis, sök på registreraafr.scb.se, `SCB_AFR_API_KEY`) kommer storleksklass, län, kommun och spärrar med (`registry:import scb-api`). Se [ADR-047](docs/adr/ADR-047-crm-prospecting.md).
 - För att kontrollera iXBRL-årsredovisningen mot Bolagsverkets taxonomi (frivilligt): kör `scripts/fetch-xbrl-taxonomy.sh`. Den hämtar det fastlåsta taxonomipaketet, kontrollerar SHA-256 och skriver ut mappen, som du sätter som `BOLAGSVERKET_TAXONOMY_DIR`. Se [ADR-058](docs/adr/ADR-058-digital-annual-report.md).
 
+- **Separata databasroller (rekommenderas):** låt programmet logga in som en roll som inte äger tabellerna, så att ingen kod som körs i NONOX kan stänga av skydden för bokförda verifikationer. Skapa rollerna med `database/roles/roles.sql`, sätt `DB_USERNAME=nonox_app` och `DB_MIGRATION_USERNAME=nonox_owner` (med lösenord) och kör migreringarna med `php artisan migrate --force --database=pgsql_owner`. Steg för steg, även för en befintlig databas: [docs/drift/databasroller.md](docs/drift/databasroller.md). `php artisan nonox:doctor` kontrollerar resultatet. Utan `DB_MIGRATION_USERNAME` används en enda användare som förut.
+
 Kör `php artisan config:cache` efter varje ändring i `.env` på servern.
 
 ### Uppdatera till senaste versionen
@@ -362,7 +364,7 @@ Kör `php artisan config:cache` efter varje ändring i `.env` på servern.
 ```bash
 git pull
 composer install
-php artisan migrate
+php artisan migrate        # med separata databasroller: php artisan migrate --database=pgsql_owner
 npm install && npm run build
 ```
 

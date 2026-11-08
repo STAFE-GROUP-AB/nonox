@@ -24,6 +24,8 @@ NONOX finns på två sätt, och ansvaret skiljer sig åt.
 
 ## Säkerhet
 
+**Kör inte programmet som databasens ägare.** Bokförda verifikationer skyddas av triggers i databasen, men en databasanvändare som äger tabellerna kan stänga av dem. Ge därför programmet en egen roll som inte äger något och låt bara migreringarna köras som ägaren. Skript och steg finns i [databasroller](https://github.com/STAFE-GROUP-AB/nonox/blob/main/docs/drift/databasroller.md); `php artisan nonox:doctor` visar om din installation kör som ägaren eller som superanvändare. Utan bytet fungerar allt som förut med en enda användare, men då skyddar triggerna bara mot misstag i programmet, inte mot kod som körs med programmets databasanvändare.
+
 Vår [säkerhetsgranskning]({sakerhet}) gäller programmets källkod och, för området Drift och säkerhetskopior, den driftade tjänsten. Hur säker din egen installation är beror på hur du driftar den. Hittar du en säkerhetsbrist i programmet, rapportera den enligt [SECURITY.md](https://github.com/STAFE-GROUP-AB/nonox/blob/main/SECURITY.md). Säkerhetsrättelser publiceras som nya versioner under [Releaser](https://github.com/STAFE-GROUP-AB/nonox/releases); uppdatera när en ny version kommer. Varje release har en förteckning över programvarukomponenterna (SBOM) som bilaga, så att du kan se vilka paket som ingår och bevaka sårbarheter i dem.
 
 ## Hjälp

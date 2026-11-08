@@ -780,3 +780,129 @@ Tests: `tests/Feature/Modules/ModuleRegistryHardeningTest.php`;
 module, and `TestRegistry` builds a registry that treats the test keys (`dummy`, `extra`)
 as first-party. Not built yet from §2.1–2.2: the "Tillägg" navigation section and the
 hosted-service refusal of modules that are not first-party; both belong with step 8.
+
+## Addendum 2026-11-08: step 2 as built (database roles)
+
+Owner decision 2026-11-08 (owner question 7): separate users, so that no migrations and no
+SQL that changes the schema can be run by the code that runs. Branch `feat/database-roles`,
+on top of steps 1 and 3.
+
+### What was built
+
+- **Roles** (`database/roles/roles.sql`, idempotent, roles and privileges only, never data,
+  never LOGIN or a password): `nonox_owner`, `nonox_app`, `nonox_readonly`, each
+  `NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`. Only the owner has `CREATE`
+  on the schema (also revoked from `PUBLIC`); `TRUNCATE`, `REFERENCES` and `TRIGGER` are
+  revoked from the other two; sequences `USAGE, SELECT` for the app, `SELECT` for the reader;
+  default privileges for objects the owner creates later (sequences and reader `SELECT`, never
+  app table privileges). The script refuses to run while the app or the reader is a member
+  of the owner.
+- **Ownership** (`database/roles/transfer-ownership.sql`): moves every table, view, sequence,
+  function and type in the schema that is not an extension member to `nonox_owner`. The
+  runbook uses `REASSIGN OWNED` when the old user is dedicated to NONOX, this script otherwise.
+- **Grant decisions** (`App\Support\Database\DatabaseGrants::TABLES`, enum `GrantDecision`):
+  one decision per table, `ReadWrite`, `NoDelete`, `AppendOnly`, `AppendOnlyLockable`,
+  `AppendAndPrune` or `ReadOnly`. Every table whose trigger function can only raise (no
+  `RETURN`) on UPDATE and DELETE is append-only, so the refusal holds by grant as well as by
+  trigger (22 tables, plus `vat_number_checks`, whose one allowed update comes from its
+  foreign key's `ON DELETE SET NULL`, which PostgreSQL runs as the table owner); `audit_logs`
+  and `system_documentation_versions` likewise. `vat_reports` is `AppendOnlyLockable`:
+  `SettleVat` locks the period's reports with `SELECT … FOR UPDATE`, which PostgreSQL allows
+  only with an UPDATE privilege, so the app gets `UPDATE (id)` alone (an UPDATE of any other
+  column is refused by the grant, of `id` by the trigger). `staff_ledger_entries` and
+  `crm_signing_events` are `AppendAndPrune` (insert and delete, never update);
+  `migrations` is `ReadOnly`. `NoDelete` (12 tables, e.g. `tax_account_postings`,
+  `payroll_rule_versions`, `supplier_payment_batches`) where the full test suite deleted no
+  row (PostgreSQL's `n_tup_del` after a full run) and no code path deletes (grep of the
+  models, `DB::table` and raw SQL). Every other table is `ReadWrite`: tables whose trigger
+  guards posted or issued rows (vouchers, invoices, supplier invoices, payroll) keep the
+  privileges drafts need, and the trigger stays the guard. Column-level grants were not
+  used beyond `vat_reports`: Eloquent writes `updated_at` and every dirty column, and a
+  column list per table would break on the next migration that adds a column.
+- **Grants follow new tables.** `DatabaseGrants::sql()` is one DO block that revokes and
+  re-grants every decided table and gives an undecided table nothing for the app (fail
+  closed, with a warning). It runs as the owner after every migrate (`MigrationsEnded` and
+  `NoPendingMigrations` listeners in `AppServiceProvider`, on the `pgsql_owner` connection),
+  from `php artisan nonox:db-grants`, or with psql from `database/roles/grants.sql`, which is
+  generated from the class (`--write`) and tested to be identical.
+- **Connections.** `config/database.php` has `pgsql_owner` (`DB_MIGRATION_USERNAME`,
+  `DB_MIGRATION_PASSWORD`, `DB_MIGRATION_URL`). The ADR text above said `pgsql_migrate`; the
+  build uses `pgsql_owner`, the name in the owner's brief. The roles are **on** exactly when
+  `DB_MIGRATION_USERNAME` is set; without it `pgsql_owner` is the same user as `pgsql` and
+  nothing changes (development, CI, existing self-hosted installs).
+- **How migrations get the owner** (from the installed Laravel 13.39 source, not the docs):
+  `MigrateCommand::runMigrations()` calls `Migrator::usingConnection($this->option('database'))`,
+  which sets both the migration repository's source (the `migrations` table is read and
+  written on that connection) and the resolver's **default** connection for the duration, so
+  `Schema::` and `DB::` inside every migration run as the owner without changes to the
+  migrations; `runMigration()` does the same per migration (`setDefaultConnection`), and
+  `MigrationsEnded` fires inside the callback. No migration in the repository sets its own
+  `$connection`.
+- **Guard.** With the roles on, `migrate`, `migrate:fresh|install|refresh|reset|rollback` and
+  `db:wipe` stop with a Swedish message unless `--database=pgsql_owner` is given (a
+  `CommandStarting` listener; Laravel reroutes Symfony's console events to it outside unit
+  tests, and tests opt in with `WithConsoleEvents`). The local "Uppdatera databasen nu"
+  button and the setup page pass/show the option.
+- **`php artisan nonox:doctor`** (read-only, catalogue queries only): warns when the roles are
+  off, when the runtime role is a superuser, owns tables or trigger functions (directly or by
+  membership), has `TRIGGER` or `TRUNCATE` on a table, has `CREATE` on the schema, when a
+  table has no decision, or when a table's privileges differ from its decision. Exit 1 on any
+  warning.
+
+### Tests
+
+- `tests/Feature/Security/DatabaseRolesTest.php` (group `database-roles`): the step 1 attacks
+  as `nonox_app`, each refused: `ALTER TABLE … DISABLE TRIGGER` (one and `ALL`), `DROP
+  TRIGGER`, `CREATE OR REPLACE FUNCTION` of both protect functions, direct UPDATE/DELETE of a
+  posted voucher and its rows, rewriting the hash chain (`ledger:verify` stays clean and
+  unchanged), `TRUNCATE`, `ADD COLUMN`, `OWNER TO`, `DROP TABLE`, `CREATE TABLE`, `CREATE
+  TRIGGER`, `SET session_replication_role` (now testable: the role is not a superuser), and
+  UPDATE/DELETE of `audit_logs` refused by grant. Posting, the audit log and the hash chain
+  work as `nonox_app`. The reader can read and not write.
+- `tests/Feature/Security/DatabaseGrantsTest.php`: every table has a decision and no decision
+  names a missing table; trigger-refused tables are append-only; `grants.sql` is current; the
+  scripts change no data; the roles script is idempotent and the roles have no attributes;
+  every table's actual privileges equal its decision; an undecided table fails closed; the
+  listener re-applies the grants after `MigrationsEnded` and `NoPendingMigrations` and does
+  nothing with the roles off; the guard refuses `migrate` without the owner connection; the
+  config turns the roles on only with `DB_MIGRATION_USERNAME`.
+- `tests/Feature/Security/DoctorCommandTest.php`: single-user warnings, a clean report as
+  `nonox_app`, the warnings for extra privileges and for membership of the owner, read-only.
+- How they run: with a superuser test user (developers, CI) the harness
+  (`tests/Support/DatabaseRolesHarness.php`) runs the real scripts **inside the test
+  transaction** (role creation, ownership and grants are transactional in PostgreSQL) and
+  continues with `SET LOCAL ROLE nonox_app`; everything is rolled back. Against a database
+  switched over to the roles, the suite can also log in as `nonox_app` and the same tests run
+  unchanged. `TriggerBypassGapTest` stays in group `known-gap` for the single-user mode and is
+  skipped when the test user cannot alter the ledger.
+
+### Run against a database switched over to the roles
+
+`nonox_test_roles` was switched over with the real scripts (`roles.sql`,
+`transfer-ownership.sql`, `migrate --database=pgsql_owner`, which applied the grants), and
+the whole suite was run logged in as `nonox_app`. `migrate` without the owner connection
+stopped with the guard's message (exit 1); with it, "Nothing to migrate" and the grants;
+`nonox:doctor` reported OK as `nonox_app` and four warnings as the developer's superuser.
+That run found the one real gap the per-table analysis had missed: `SELECT … FOR UPDATE` on
+`vat_reports` (fixed with `AppendOnlyLockable`, above). Nine tests asserted the trigger's
+message where the grant now refuses first; they accept either refusal now. What still fails
+as `nonox_app`, by design, is test code that changes the schema: the tenancy harness creates
+its fixture table (`TenantNote`, every `TenancyIsolationTest` case), `LedgerVerifyTest`
+disables the triggers to simulate tampering, the staff-ledger chain tests alter
+`staff_ledger_entries`, and `FrameworkPerFiscalYearTest` drops a check constraint. The suite
+is therefore run as a superuser in development and CI, where the roles tests create the
+roles inside the test transaction.
+
+### Not done, and open
+
+- The hosted service has not been switched. `docs/drift/databasroller.md` is the runbook
+  (expected window 30 minutes, database changes under a minute, rollback with `REASSIGN
+  OWNED BY nonox_owner TO <old user>` and the saved `.env`). Before it: a read-only check of
+  how the production role was created (step 1 of the runbook).
+- `.env.example` still says `DB_USERNAME=postgres` (§6.5 wanted that changed): CI copies the
+  file and the README's install steps set the user, so it is left with a commented roles
+  block instead. The script lives in `database/roles/`, not `deploy/postgres/`.
+- `NoDelete` rests on what the suite and a grep found. A delete path that neither covers
+  would fail with `permission denied` after the switch; the runbook says to watch the log
+  for it and how to add the privilege or roll back.
+- Anchoring the hash chain outside the database (§6.4) is not part of this step.

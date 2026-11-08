@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.116
-- Datum: 2026-11-07
+- Version: 0.117
+- Datum: 2026-11-08
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -627,7 +627,42 @@ year").
 
 - En bokförd verifikation och dess rader kan aldrig ändras eller tas bort. Det
   hindras av behörighetsregler, av programmet och av databasen själv, även vid
-  direkta databasändringar.
+  direkta databasändringar av en användare som inte äger tabellerna (avsnitt
+  4.3a).
+
+### 4.3a Databasroller (ADR-079 §6)
+
+- Skyddet i databasen (triggerna som nekar ändring och borttagning av bokförda
+  verifikationer, behandlingshistoriken och de andra tabellerna som bara får
+  växa) gäller mot all kod som körs med en databasanvändare som inte äger
+  tabellerna. En användare som äger dem, eller är superanvändare, kan stänga
+  av triggerna. Därför kan NONOX köras med tre roller:
+  - `nonox_owner` äger alla tabeller, triggers och funktioner och används bara
+    när databasen uppdateras (`php artisan migrate --database=pgsql_owner`);
+  - `nonox_app` är den roll programmet körs som. Den äger ingenting, är inte
+    superanvändare, kan inte skapa, ändra eller ta bort tabeller, triggers
+    eller funktioner, kan inte tömma en tabell (TRUNCATE) och kan inte stänga
+    av triggerna med `session_replication_role`. Per tabell får den bara det
+    som står i en lista i koden (`App\Support\Database\DatabaseGrants`):
+    tabeller vars trigger nekar all ändring och borttagning får den bara läsa
+    och lägga till rader i, så att skyddet där inte längre hänger på triggern
+    ensam (behandlingshistoriken, systemdokumentationens versioner, bokförda
+    periodiseringar, avskrivningar och bokslutsposter, momsrapporter,
+    betalningar, lager- och skattetabeller med flera);
+  - `nonox_readonly` får bara läsa, för rapporter och säkerhetskopior.
+- Behörigheterna läggs på igen efter varje uppdatering av databasen, så en ny
+  tabell får sina direkt. En tabell som saknas i listan får ingen åtkomst för
+  programmet, och ett test stoppar en ändring som lägger till en tabell utan
+  beslut.
+- Rollerna slås på med `DB_MIGRATION_USERNAME`. Utan den körs allt som förut
+  med en enda användare; den driftade tjänsten byter enligt
+  `docs/drift/databasroller.md`. `php artisan nonox:doctor` visar om
+  programmet kör som ägare eller superanvändare.
+- Testerna `TriggerBypassGapTest` (en enda användare: angreppen lyckas) och
+  `DatabaseRolesTest` (som `nonox_app`: varje angrepp nekas) visar skillnaden.
+  Kontrollsummekedjan (avsnitt 4.7) går inte heller att räkna om som
+  `nonox_app`, eftersom de bokförda verifikationernas kontrollsummor inte kan
+  skrivas om.
 
 ### 4.4 Rättelse
 
@@ -4782,3 +4817,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.114 | 2026-11-06 | Drivmedelsförmån rättad (avsnitt 5b, ADR-061): skatteavdraget räknas som förut på förmånsvärdet (marknadsvärdet × 1,2), men arbetsgivaravgiften nu på marknadsvärdet (socialavgiftslagen 2 kap. 10 a §); tidigare togs avgiften på hela förmånsvärdet. Den anställdas betalning för drivmedlet (löneart Egen betalning för drivmedel vid bilförmån, 7388) minskar den skattepliktiga förmånen och avgiftsunderlaget och redovisas i ruta 098, medan 018 har hela förmånsvärdet. Attesterade och bokförda löner ändras inte. Förmånsbilar: en period får inte omfatta en attesterad månad som bilen inte fanns i, och bara en bil per månad. |
 | 0.115 | 2026-11-06 | Bekräftelse och kontroller före inlämning (ägarbeslut 10 och 16): momsdeklarationen och arbetsgivardeklarationen till Skatteverket, betalfilen för leverantörsbetalningar och lönefilen kräver att användaren bekräftar "Jag har granskat siffrorna", och bekräftelsen sparas i behandlingshistoriken (`figures.reviewed`); ett K2-företag bekräftar de nya K2-villkoren (BFNAR 2025:2) en gång innan bokslutet för ett räkenskapsår som börjar efter 2025-12-31 kan fortsätta (`company.k2_conditions_confirmed`). SIE-importen stoppar en fil vars ingående balanser inte summerar till noll, och rapporten säger bara att varje konto stämmer när utgående balanser eller resultat har kontrollerats. Drivmedelsförmån kräver en förmånsbil i perioden. OCR-nummer på leverantörsfakturor kontrolleras med kontrollsiffran. Parametrarna för NE och INK4 2026 är inte längre markerade som kontrollerade, så beräkningen spärras tills en människa har kontrollerat dem. Rättelserna som driftsattes separat under versionsnumret 0.105 samma morgon (rutorna 20 och 23, årsredovisning bara enligt K2, belopp i hela kronor, övertid och mertid per art i Gröna Riks och Detaljhandeln, arbetsgivaravgift på drivmedelsförmån) ingår i 0.107, 0.109, 0.110 och 0.114 och i avsnitt 5h. |
 | 0.116 | 2026-11-07 | Regelverket (K1/K2/K3) hör till räkenskapsåret (avsnitt 3, ADR-059 tillägg A.2.1): varje år har sitt eget, ett nytt år ärver det föregående (annars närmaste senare) årets, och ett byte gäller ett valt år och alla senare år, i inställningarna som standard från det tidigaste öppna året utan fastställd årsredovisning. Stängda år och år med fastställd årsredovisning kan inte byta, och ett byte som inget år kan ta emot vägras. Bytet sparas på varje år och i behandlingshistoriken (`fiscal_year.framework_changed`, en post per år). Årsredovisningen, K2-bekräftelsen i bokslutet och NE-bilagan följer årets regelverk, så ett tidigare K2-år behåller sin årsredovisning när företaget byter till K3. Befintliga år fick företagets regelverk; ingen verifikation ändrades. Redovisningsprinciper för K3 som data (avsnitt 5a6.1, ADR-059 tillägget 2026-11-07, A.2.3): företagets val per princip gäller från ett räkenskapsårs första dag tills en ny rad ersätter det, utom svaren om övergången som bara gäller sitt eget år; val som NONOX ännu inte kan redovisa och byten av princip (K3 10.2, 23.37; inte att börja efter "inga", enligt kommentaren till 10.2, och inte kassaflödesanalysen) listas med regelns id som skäl till att K3-årsredovisningen inte kan tas fram; när det första räkenskapsårets datum ändras följer dess principer med; en rad kan inte sparas om den skulle gälla ett år vars årsredovisning har en fastställelsedag som har inträffat; byte från kapitel 12 till kapitel 11 nekas. Ändringen skrivs i behandlingshistoriken utan motiveringen. Ingenting i bokföringen ändras och ingen skärm använder principerna ännu. |
+| 0.117 | 2026-11-08 | Databasroller (avsnitt 4.3a, ADR-079 etapp 2): NONOX kan köras som en roll (`nonox_app`) som inte äger tabellerna och inte kan stänga av, ta bort eller ersätta triggerna, tömma tabeller eller ändra schemat; migreringarna körs som ägaren (`nonox_owner`). Tabeller vars trigger nekar all ändring och borttagning blir append-only även genom behörigheterna. Behörigheterna läggs på efter varje migrering; en tabell utan beslut får ingen åtkomst. Påslaget med `DB_MIGRATION_USERNAME`, annars som förut med en användare. Ingen bokföringsregel och inga data ändras. |
