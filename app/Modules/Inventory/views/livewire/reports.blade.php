@@ -103,20 +103,25 @@
                         </select>
                     </label>
                 </div>
+                @if($planError)
+                    <p class="mb-4 rounded-2xl bg-accent-50 p-4 text-sm text-accent-800" role="alert">{{ $planError }}</p>
+                @endif
                 <dl class="mb-6 grid gap-3 sm:grid-cols-3">
                     <div class="rounded-2xl bg-stone-50 p-4">
                         <dt class="text-sm text-gray-500">{{ __('Lagervärde :date', ['date' => $fiscalYear->end_date->toDateString()]) }}</dt>
-                        <dd class="mt-1 text-xl font-bold"><x-ui.amount :money="$money($closing->valueOre)" /></dd>
-                        <dd class="text-xs text-gray-500">{{ $closing->method->label() }}</dd>
+                        <dd class="mt-1 text-xl font-bold"><x-ui.amount :money="$money($plan['value_ore'] ?? $closing->valueOre)" /></dd>
+                        <dd class="text-xs text-gray-500">{{ $closing->method->label() }}@if($plan['rule_97'] ?? false), {{ __('97-procentsregeln') }}@endif</dd>
                     </div>
                     <div class="rounded-2xl bg-stone-50 p-4">
-                        <dt class="text-sm text-gray-500">{{ __('Bokfört på :account', ['account' => $settings['stock_account']]) }}</dt>
+                        <dt class="text-sm text-gray-500">{{ __('Bokfört på :account', ['account' => implode(', ', array_column($plan['groups'] ?? [], 'stock_account')) ?: $settings['stock_account']]) }}</dt>
                         <dd class="mt-1 text-xl font-bold"><x-ui.amount :money="$money($bookValue)" /></dd>
                     </div>
                     <div class="rounded-2xl bg-stone-50 p-4">
                         <dt class="text-sm text-gray-500">{{ __('Lagerförändring att bokföra') }}</dt>
-                        <dd class="mt-1 text-xl font-bold"><x-ui.amount :money="$money($closing->valueOre - $bookValue)" /></dd>
-                        <dd class="text-xs text-gray-500">{{ __(':stock mot :change', ['stock' => $settings['stock_account'], 'change' => $settings['change_account']]) }}</dd>
+                        <dd class="mt-1 text-xl font-bold"><x-ui.amount :money="$money($plan['change_ore'] ?? 0)" /></dd>
+                        @foreach($plan['groups'] ?? [] as $group)
+                            <dd class="text-xs text-gray-500">{{ __(':stock mot :change', ['stock' => $group['stock_account'], 'change' => $group['change_account']]) }}: {{ $money($group['change_ore'])->format() }}</dd>
+                        @endforeach
                     </div>
                 </dl>
 
@@ -124,7 +129,7 @@
                     <div class="mb-6 flex flex-wrap items-center gap-4">
                         @if($resultBooked)
                             <p class="text-sm text-gray-700">{{ __('Årets resultat är redan bokat. Lagerförändringen bokförs före resultatet.') }}</p>
-                        @else
+                        @elseif($planError === null)
                             <x-button type="button" wire:click="book" wire:confirm="{{ __('Bokför lagerförändringen på årets sista dag? Verifikationen kan bara rättas med en rättelseverifikation.') }}" wire:loading.attr="disabled">{{ __('Spara lagervärdet och bokför förändringen') }}</x-button>
                         @endif
                     </div>

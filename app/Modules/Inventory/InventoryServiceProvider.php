@@ -18,6 +18,9 @@ use App\Modules\Inventory\Livewire\PickListsPage;
 use App\Modules\Inventory\Livewire\ReceiptsPage;
 use App\Modules\Inventory\Livewire\ReportsPage;
 use App\Modules\Inventory\Models\ArticleImage;
+use App\Modules\Inventory\Models\ArticleUnitConversion;
+use App\Modules\Inventory\Models\BillOfMaterials;
+use App\Modules\Inventory\Models\BomRow;
 use App\Modules\Inventory\Models\LabelTemplate;
 use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\ScanOperation;
@@ -53,7 +56,7 @@ class InventoryServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/views', 'inventory');
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
-        foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockReceipt::class, PickList::class, StockCount::class, StockValuation::class, ArticleImage::class, LabelTemplate::class, ScanOperation::class] as $model) {
+        foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockReceipt::class, PickList::class, StockCount::class, StockValuation::class, ArticleImage::class, LabelTemplate::class, ScanOperation::class, BillOfMaterials::class, BomRow::class, ArticleUnitConversion::class] as $model) {
             Gate::policy($model, InventoryPolicy::class);
         }
 

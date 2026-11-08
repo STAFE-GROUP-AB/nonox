@@ -25,7 +25,7 @@ use Carbon\CarbonImmutable;
 final class StockValuationReport
 {
     /**
-     * @param  list<array{article_id: int, number: string, name: string, unit: string, quantity_milli: int, unit_cost_ore: ?int, cost_value_ore: int, net_realisable_unit_ore: ?int, value_ore: int, written_down: bool, locations: list<array{location_id: int, code: string, quantity_milli: int, value_ore: int}>}>  $lines
+     * @param  list<array{article_id: int, number: string, name: string, unit: string, stock_class: string, quantity_milli: int, unit_cost_ore: ?int, cost_value_ore: int, net_realisable_unit_ore: ?int, value_ore: int, written_down: bool, locations: list<array{location_id: int, code: string, quantity_milli: int, value_ore: int}>}>  $lines
      */
     public function __construct(
         public readonly CarbonImmutable $date,
@@ -38,8 +38,9 @@ final class StockValuationReport
     public static function at(Company $company, CarbonImmutable $date, ?ValuationMethod $method = null): self
     {
         $method ??= InventorySettings::method($company);
+        $defaultClass = InventorySettings::defaultClass($company);
 
-        return CurrentCompany::run($company, function () use ($date, $method): self {
+        return CurrentCompany::run($company, function () use ($date, $method, $defaultClass): self {
             $movements = StockMovement::query()
                 ->whereDate('occurred_on', '<=', $date->toDateString())
                 ->orderBy('article_id')->orderBy('occurred_on')->orderBy('id')
@@ -47,7 +48,7 @@ final class StockValuationReport
                 ->groupBy('article_id');
 
             $articles = Article::query()->whereKey($movements->keys()->all())->orderBy('number')
-                ->get(['id', 'number', 'name', 'unit', 'purchase_price_ore', 'net_realisable_value_ore']);
+                ->get(['id', 'number', 'name', 'unit', 'purchase_price_ore', 'net_realisable_value_ore', 'stock_class']);
             $codes = StockLocation::query()->pluck('full_code', 'id');
             $lines = [];
             $cost = 0;
@@ -79,6 +80,7 @@ final class StockValuationReport
                     'number' => $article->number,
                     'name' => $article->name,
                     'unit' => $article->unit,
+                    'stock_class' => ($article->stock_class ?? $defaultClass)->value,
                     'quantity_milli' => $valuation->quantityMilli,
                     'unit_cost_ore' => $valuation->unitCostOre(),
                     'cost_value_ore' => $valuation->costValueOre,

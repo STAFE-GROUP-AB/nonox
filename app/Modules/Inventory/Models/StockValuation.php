@@ -29,6 +29,8 @@ use LogicException;
  * @property int $stock_account
  * @property int $change_account
  * @property list<array<string, mixed>> $lines
+ * @property ?list<array<string, mixed>> $classes
+ * @property bool $rule_97
  * @property ?string $voucher_id
  * @property ?int $created_by
  * @property CarbonImmutable $created_at
@@ -52,6 +54,8 @@ class StockValuation extends Model
         'stock_account',
         'change_account',
         'lines',
+        'classes',
+        'rule_97',
         'voucher_id',
         'created_by',
     ];
@@ -68,6 +72,8 @@ class StockValuation extends Model
             'stock_account' => 'integer',
             'change_account' => 'integer',
             'lines' => 'array',
+            'classes' => 'array',
+            'rule_97' => 'boolean',
             'created_at' => 'immutable_datetime',
         ];
     }

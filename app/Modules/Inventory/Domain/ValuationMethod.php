@@ -10,8 +10,13 @@ namespace App\Modules\Inventory\Domain;
  * a similar method, and not last in, first out.
  * Source: riksdagen.se, SFS 1995:1554, read 2026-11-02.
  *
- * TODO(legal-verify): whether BFNAR 2016:10 (K2) kap. 11 narrows the choice
- * for K2 companies (for instance to FIFO only); the K2 text was not read.
+ * K2's inventory chapter is BFNAR 2016:10 kapitel 12 Varulager (not
+ * kapitel 11, which is Finansiella anläggningstillgångar; rule sheet
+ * recept-och-svinn.md, read 2026-11-08).
+ *
+ * TODO(legal-verify): whether K2 kapitel 12 narrows the choice for K2
+ * companies (for instance to FIFO only); the rule sheet quotes ÅRL 4 kap.
+ * 11 § and K2 12.7 but no K2 point on the choice of method.
  */
 enum ValuationMethod: string
 {

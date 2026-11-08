@@ -40,6 +40,10 @@
       "name": "Andra långfristiga fordringar"
     },
     {
+      "number": 1410,
+      "name": "Lager av råvaror"
+    },
+    {
       "number": 1460,
       "name": "Lager av handelsvaror"
     },
@@ -242,6 +246,10 @@
     {
       "number": 4010,
       "name": "Inköp material och varor"
+    },
+    {
+      "number": 4910,
+      "name": "Förändring av lager av råvaror"
     },
     {
       "number": 5010,
