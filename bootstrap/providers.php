@@ -16,6 +16,7 @@ use App\Modules\Peppol\PeppolServiceProvider;
 use App\Modules\Planning\PlanningServiceProvider;
 use App\Modules\Pos\PosServiceProvider;
 use App\Modules\StaffLedger\StaffLedgerServiceProvider;
+use App\Modules\WorkOrders\WorkOrdersServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
 use App\Providers\JetstreamServiceProvider;
@@ -37,6 +38,7 @@ return [
     PeppolServiceProvider::class,
     ConnectServiceProvider::class,
     BankingServiceProvider::class,
+    WorkOrdersServiceProvider::class,
     FortnoxServiceProvider::class,
     AppServiceProvider::class,
     FortifyServiceProvider::class,
