@@ -1082,6 +1082,10 @@ Source: BFN's consolidated K3 (vl12-1-k3-kons20251215), chapter 7, pp. 57–63.
   input has none, and stores only answers to questions that are asked. When the previous year
   is not in NONOX, the answer "K2 the year before" decides whether the transition policies are
   asked. A company without fiscal years gets an empty state.
+- **Re-check (2026-11-08), decided by Lead: option (a).** ChangeReportingFramework judges each
+  later year with the year before it already on K2 (`K3Eligibility::forYear(..., previousFramework:)`).
+  A "normalt" question that only then becomes asked and is unanswered leaves the year
+  Undetermined, which does not block the change.
 - One way to change the framework: the settings form keeps its select (P1) and links to the
   screen; the K2 refusal when K3 is required lives in ChangeReportingFramework, which both
   call. Only AB and ekonomisk förening are assessed; years beginning before 2026-01-01 (outside

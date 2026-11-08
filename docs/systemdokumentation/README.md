@@ -459,8 +459,9 @@ All tid i NONOX är svensk tid (Europe/Stockholm). Tidszonen är fast i koden, b
   öppet, av den som får hantera räkenskapsår.
 - Ett byte till K2 vägras, både på Regelverk och i inställningarna, när
   bedömningen för det valda året eller något senare år som bytet gäller säger
-  att K3 ska tillämpas; meddelandet anger vilket år. Kontrollen görs under
-  samma lås som bytet. Bekräftelsen av K2-villkoren i bokslutet vägras också
+  att K3 ska tillämpas; meddelandet anger vilket år. Ett senare år bedöms som
+  det blir efter bytet, med året före på K2. Kontrollen görs under samma lås
+  som bytet. Bekräftelsen av K2-villkoren i bokslutet vägras också
   för ett år där bedömningen säger att K3 ska tillämpas, och bokslutet visar
   bedömningen bredvid knappen. Ett år där uppgifter saknas spärrar ingenting.
   Så länge det inte går att avgöra om undantaget i 1.1C första stycket gäller

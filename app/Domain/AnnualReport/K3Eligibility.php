@@ -58,18 +58,22 @@ final class K3Eligibility
         private readonly Company $company,
         private readonly FiscalYear $fiscalYear,
         private readonly K3EligibilityAnswers $answers,
+        private readonly ?ReportingFramework $previousFramework = null,
     ) {}
 
     /**
      * $answers: the person's answers, saved ones when null; the screen passes
      * the form so the result shows what changes before anything is saved.
+     * $previousFramework: the framework the preceding year will have, when a
+     * change of framework is being judged before it is saved (1.1C second
+     * paragraph a); null reads the preceding year as it is.
      */
-    public static function forYear(FiscalYear $fiscalYear, ?K3EligibilityAnswers $answers = null): K3EligibilityResult
+    public static function forYear(FiscalYear $fiscalYear, ?K3EligibilityAnswers $answers = null, ?ReportingFramework $previousFramework = null): K3EligibilityResult
     {
-        return CurrentCompany::run($fiscalYear->company_id, function () use ($fiscalYear, $answers): K3EligibilityResult {
+        return CurrentCompany::run($fiscalYear->company_id, function () use ($fiscalYear, $answers, $previousFramework): K3EligibilityResult {
             $company = Company::query()->findOrFail($fiscalYear->company_id);
 
-            return (new self($company, $fiscalYear, $answers ?? K3EligibilityAnswers::forYear($fiscalYear)))->evaluate();
+            return (new self($company, $fiscalYear, $answers ?? K3EligibilityAnswers::forYear($fiscalYear), $previousFramework))->evaluate();
         });
     }
 
@@ -231,10 +235,11 @@ final class K3Eligibility
         $previous = FiscalYear::query()->whereDate('end_date', $this->fiscalYear->start_date->subDay()->toDateString())->first();
 
         if ($previous instanceof FiscalYear) {
-            $previousK2 = $previous->reporting_framework === ReportingFramework::K2;
+            $previousFramework = $this->previousFramework ?? $previous->reporting_framework;
+            $previousK2 = $previousFramework === ReportingFramework::K2;
             $this->fact('k2_1_1c_prev', K3EligibilityQuestion::PreviousYearK2->rule(), K3EligibilityQuestion::PreviousYearK2->label(), $previousK2
                 ? __('Räkenskapsåret :year har K2 i NONOX.', ['year' => $previous->label()])
-                : __('Räkenskapsåret :year har :framework i NONOX, inte K2. Undantaget i punkt 1.1C andra stycket gäller bara ett företag som tillämpade K2 föregående år.', ['year' => $previous->label(), 'framework' => $previous->reporting_framework->value]), $previousK2 ? 'applies' : 'not');
+                : __('Räkenskapsåret :year har :framework i NONOX, inte K2. Undantaget i punkt 1.1C andra stycket gäller bara ett företag som tillämpade K2 föregående år.', ['year' => $previous->label(), 'framework' => $previousFramework->value]), $previousK2 ? 'applies' : 'not');
         } else {
             $previousK2 = $this->ask(K3EligibilityQuestion::PreviousYearK2, required: false);
         }

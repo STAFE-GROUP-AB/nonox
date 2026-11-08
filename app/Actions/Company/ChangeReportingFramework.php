@@ -151,6 +151,9 @@ class ChangeReportingFramework
     /**
      * S1-R1: K2 is closed for every year from the chosen one on that
      * K3Eligibility finds must use K3 (Bokslut → Regelverk, ADR-059 S1-P11).
+     * Each later year is judged as it will be after the change: the year
+     * before it on K2. A "normalt" question that only then becomes asked and
+     * is unanswered leaves that year undetermined, which does not block.
      * Run inside the lock and inside the company, never under the scope
      * bypass: the eligibility queries rely on the company scope.
      *
@@ -164,7 +167,8 @@ class ChangeReportingFramework
             ->get());
 
         foreach ($years as $year) {
-            $eligibility = K3Eligibility::forYear($year);
+            // A later year is judged with the year before it already on K2, as it will be after the change (1.1C second paragraph a).
+            $eligibility = K3Eligibility::forYear($year, previousFramework: $year->id === $from->id ? null : ReportingFramework::K2);
 
             if ($eligibility->status === K3EligibilityStatus::K3Required) {
                 throw ValidationException::withMessages(['reporting_framework' => __('K2 kan inte väljas för räkenskapsåret :year. :reason', ['year' => $year->label(), 'reason' => $eligibility->reasons[0] ?? ''])]);

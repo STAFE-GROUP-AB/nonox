@@ -165,7 +165,11 @@ it('leaves personal numbers out unless asked, and then writes them decrypted', f
 
     app(JsonDumpWriter::class)->write($this->company, $this->dir);
     $plain = (string) file_get_contents($this->dir.'/dump.json');
-    expect($plain)->not->toContain('1212')
+    // The full number in every form it could take; a bare "1212" can be part of an id or a timestamp.
+    expect($plain)->not->toContain('19121212-1212')
+        ->not->toContain('121212-1212')
+        ->not->toContain('1212121212')
+        ->and(readDump($this->dir)['customers'][0]['personal_number'] ?? null)->toBeNull()
         ->and(readDump($this->dir)['includes_personal_numbers'])->toBeFalse();
 
     File::deleteDirectory($this->dir);

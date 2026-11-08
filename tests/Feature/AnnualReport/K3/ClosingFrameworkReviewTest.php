@@ -13,6 +13,7 @@ use App\Domain\AnnualReport\K3Eligibility;
 use App\Domain\AnnualReport\K3EligibilityStatus;
 use App\Domain\Company\ReportingFramework;
 use App\Livewire\Accounting\ClosingFrameworkPage;
+use App\Models\AnnualReport;
 use App\Models\ClosingCheck;
 use App\Models\FiscalYear;
 use App\Models\User;
@@ -202,4 +203,26 @@ it('item 10: answers to questions that are not asked are not stored', function (
         ->not->toContain('k2_1_1c_normally.no')
         ->not->toContain('k2_1_1b_b.classified')
         ->and(K3Eligibility::forYear($this->year2027)->status)->toBe(K3EligibilityStatus::K2Allowed);
+});
+
+it('re-check NEW-1: a later year is judged with the preceding year already on the new framework', function () {
+    app(SavePriorYearSizeFigures::class)($this->owner, $this->company, ['start_date' => '2025-01-01', 'end_date' => '2025-12-31', 'average_employees_fte' => '2', 'balance_sheet_total' => '2 000 000', 'net_turnover' => '4 000 000']);
+    Bookkeeping::postRows($this->owner, $this->company, '2026-03-01', [1930 => 400_000_000, 3001 => -400_000_000]);
+    AnnualReport::create(['fiscal_year_id' => $this->year2026->id, 'average_employees' => 2, 'dividend_ore' => 0, 'signatories' => [], 'signing_date' => '2027-01-20', 'updated_by' => $this->owner->id]);
+
+    foreach ([$this->year2026, $this->year2027] as $year) {
+        $year->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
+    }
+    $this->company->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
+    app(SaveFrameworkChoice::class)($this->owner, $this->company, $this->year2027->id, ['answers' => reviewNo(['k2_1_1b_a' => 'yes'])]);
+
+    // Today 2027 must use K3 only because 2026 is on K3 (no second exception of 1.1C).
+    expect(K3Eligibility::forYear($this->year2027->fresh())->status)->toBe(K3EligibilityStatus::K3Required)
+        // With 2026 on K2, "normalt inte omfattas" becomes asked; unanswered it is missing, not a reason.
+        ->and(K3Eligibility::forYear($this->year2027->fresh(), previousFramework: ReportingFramework::K2)->status)->toBe(K3EligibilityStatus::Undetermined);
+
+    app(ChangeReportingFramework::class)($this->owner, $this->year2026->fresh(), ReportingFramework::K2, null, ['framework_confirmed' => true]);
+
+    expect($this->year2026->fresh()->reporting_framework)->toBe(ReportingFramework::K2)
+        ->and($this->year2027->fresh()->reporting_framework)->toBe(ReportingFramework::K2);
 });
