@@ -368,3 +368,26 @@ ledger stays append-only and `inventory:verify` still holds.
   ADR-071's scrap percentage too.
 - **LQ2** Accept moving the structure engine from `manufacturing` to `inventory` (amending
   ADR-071 §1 and §3), or keep recipes in their own tables and reconcile later.
+
+## Addendum 2026-11-08: Lead decisions
+
+Decided by Lead 2026-11-08 under the owner's mandate, open for the consultant's review.
+
+- **LQ1:** accepted. One loss formula for recipes and for ADR-071's scrap percentage:
+  gross = net × 10 000 / (10 000 − loss_bp).
+- **LQ2:** accepted. The structure engine is built now in inventory, with ADR-071's table
+  names and versions dated by `valid_from`. ADR-071 is amended to reuse it.
+- **O1:** the module and menu are called "Kök", with paths under `/kok`.
+- **O2:** deducting ingredients on sale is off by default.
+- **O3:** the 97 % rule is offered only to K2 companies, off by default. The page states the
+  K2 12.18 condition: discarded goods must be removed physically, not left at zero value.
+- **O4:** valuation cost first, the same figure as the books. The latest purchase cost is
+  shown beside it for comparison.
+- **O5:** staff-meal benefits go to payroll as proposed lines that the payroll
+  administrator approves in the run. They are never added without that approval.
+- **O6:** the pilot restaurant is the owner's choice.
+
+The rule sheet gets an independent quote check before the module is merged. The builder
+corrects the K2 chapter reference in `ValuationMethod` (chapter 12, not 11) and adds the
+missing BAS 2026 accounts (1410, 4910, 4310) to the templates, if the sheet's sources
+support them.
