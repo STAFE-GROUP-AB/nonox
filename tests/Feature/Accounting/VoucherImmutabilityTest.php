@@ -34,7 +34,9 @@ function refusedByDatabase(callable $statement): bool
         DB::transaction($statement);
     } catch (QueryException $exception) {
         return str_contains($exception->getMessage(), 'posted voucher')
-            || str_contains($exception->getMessage(), 'cannot be truncated');
+            || str_contains($exception->getMessage(), 'cannot be truncated')
+            // With the database roles (ADR-079 §6) the grant refuses TRUNCATE before the trigger runs.
+            || str_contains($exception->getMessage(), 'permission denied for table');
     }
 
     return false;

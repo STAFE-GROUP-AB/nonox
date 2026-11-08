@@ -210,7 +210,8 @@ it('never changes or removes a movement, through Eloquent, the query builder or 
         DB::beginTransaction();
 
         try {
-            expect($attempt)->toThrow(QueryException::class, 'append-only');
+            // The trigger refuses; with the database roles (ADR-079 §6) the grant refuses first.
+            expect($attempt)->toThrow(fn (QueryException $exception) => expect($exception->getMessage())->toMatch('/append-only|permission denied for table stock_movements/'));
         } finally {
             DB::rollBack();
         }

@@ -6,6 +6,7 @@ use App\Domain\Accounting\LedgerHash;
 use App\Domain\Accounting\LedgerVerifier;
 use App\Models\FiscalYear;
 use App\Models\Voucher;
+use App\Support\Database\DatabaseRoles;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\Bookkeeping;
@@ -17,9 +18,13 @@ use Tests\Support\Bookkeeping;
  * rewrite a posted voucher, and can then recompute the unkeyed hash chain so
  * that ledger:verify reports a clean ledger.
  *
- * These tests DOCUMENT A KNOWN GAP (group `known-gap`). They assert that the
- * attack succeeds today; build step 2 (database roles, ADR-079 §6) flips each
- * one to assert that it fails for the runtime role `nonox_app`.
+ * These tests DOCUMENT A KNOWN GAP (group `known-gap`) of the single-user mode:
+ * one database user for the app and the migrations, which is still the default
+ * (development, CI, self-hosted installs that have not switched). They assert
+ * that the attack succeeds for such a user. Build step 2 (database roles,
+ * ADR-079 §6) is the fix: DatabaseRolesTest runs every attack below as the
+ * runtime role `nonox_app` and asserts that each one fails. When the suite
+ * itself logs in as a role that cannot alter the ledger, these are skipped.
  *
  * Every statement runs inside the test transaction (DatabaseTransactions):
  * PostgreSQL DDL is transactional, so ALTER TABLE, DROP TRIGGER and CREATE OR
@@ -30,6 +35,10 @@ use Tests\Support\Bookkeeping;
 pest()->group('known-gap');
 
 beforeEach(function () {
+    if (! DatabaseRoles::canAlterLedger(DB::connection())) {
+        $this->markTestSkipped('The database roles are in use: this role cannot alter the ledger (DatabaseRolesTest).');
+    }
+
     [$this->owner, $this->company] = Bookkeeping::company();
     CurrentCompany::set($this->company);
 

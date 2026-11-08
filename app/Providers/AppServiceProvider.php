@@ -18,6 +18,8 @@ use App\Models\User;
 use App\Support\Audit\AuditSubscriber;
 use App\Support\Build\VersionRecorder;
 use App\Support\Chat\SecureChat;
+use App\Support\Database\DatabaseGrants;
+use App\Support\Database\DatabaseRoles;
 use App\Support\Files\EncryptedAdapter;
 use App\Support\Guide\ForgetUserDeadlines;
 use App\Support\Instance\InstanceSettings;
@@ -28,6 +30,7 @@ use App\Support\Tenancy\LivewireCompanyGuard;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Events\MigrationsEnded;
 use Illuminate\Database\Events\NoPendingMigrations;
@@ -35,6 +38,7 @@ use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\Request;
 use Illuminate\Mail\Markdown;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +51,7 @@ use League\Flysystem\Local\LocalFilesystemAdapter;
 use League\Flysystem\UnixVisibility\PortableVisibilityConverter;
 use League\Flysystem\Visibility;
 use Livewire\Livewire;
+use RuntimeException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -118,6 +123,21 @@ class AppServiceProvider extends ServiceProvider
         Event::listen([MigrationsEnded::class, NoPendingMigrations::class], function (MigrationsEnded|NoPendingMigrations $event): void {
             if ($event->method === 'up') {
                 VersionRecorder::recordQuietly();
+            }
+        });
+        // ADR-079 §6: with separate database roles, re-apply the grant decisions as the owner after every migrate,
+        // so a new table gets its grants at once, and refuse schema commands that do not run as the owner.
+        Event::listen([MigrationsEnded::class, NoPendingMigrations::class], function (): void {
+            if (DatabaseRoles::enabled()) {
+                DatabaseGrants::apply(DB::connection(DatabaseRoles::migrationConnection()));
+            }
+        });
+        Event::listen(CommandStarting::class, function (CommandStarting $event): void {
+            $connection = $event->input->hasOption('database') ? $event->input->getOption('database') : null;
+            $refusal = DatabaseRoles::refusal((string) $event->command, is_string($connection) ? $connection : null);
+
+            if ($refusal !== null) {
+                throw new RuntimeException($refusal);
             }
         });
         // Someone who leaves or is removed may have been what linked a client to its firm (ADR-030).

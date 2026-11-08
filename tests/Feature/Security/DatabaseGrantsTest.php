@@ -1,0 +1,255 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Support\Database\DatabaseGrants;
+use App\Support\Database\DatabaseRoles;
+use App\Support\Database\GrantDecision;
+use Illuminate\Database\Events\MigrationsEnded;
+use Illuminate\Database\Events\NoPendingMigrations;
+use Illuminate\Foundation\Testing\WithConsoleEvents;
+use Illuminate\Support\Facades\DB;
+use Tests\Support\DatabaseRolesHarness;
+
+/*
+ * ADR-079 build step 2: every table has an explicit grant decision, the
+ * decisions follow the triggers, the scripts under database/roles/ are what
+ * the code generates, and a migrate re-applies the grants as the owner.
+ */
+
+uses(WithConsoleEvents::class);
+
+pest()->group('database-roles');
+
+/** @return list<string> */
+function schemaTables(): array
+{
+    return array_map(fn (object $row): string => (string) $row->tablename, DB::select(
+        'select tablename from pg_tables where schemaname = current_schema() order by tablename'
+    ));
+}
+
+/** @return list<string> */
+function privilegesOf(string $role, string $table): array
+{
+    return array_values(array_filter(
+        ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER'],
+        fn (string $privilege): bool => (bool) DB::scalar('select has_table_privilege(?, ?, ?)', [$role, $table, $privilege]),
+    ));
+}
+
+function requireSuperuser(): void
+{
+    if (! DatabaseRolesHarness::superuser()) {
+        test()->markTestSkipped('Creating the roles inside the test needs a superuser.');
+    }
+}
+
+it('has a grant decision for every table in the schema, and none for a table that does not exist', function () {
+    $tables = schemaTables();
+
+    expect(array_values(array_diff($tables, array_keys(DatabaseGrants::TABLES))))->toBe([])
+        ->and(array_values(array_diff(array_keys(DatabaseGrants::TABLES), $tables)))->toBe([]);
+});
+
+it('makes every table whose trigger refuses all changes and deletions append-only for the app', function () {
+    // A trigger function without RETURN can only raise: the table's rows can never be changed or deleted.
+    $refusing = collect(DB::select(<<<'SQL'
+        select distinct c.relname from pg_trigger t
+        join pg_class c on c.oid = t.tgrelid
+        join pg_proc p on p.oid = t.tgfoid
+        where not t.tgisinternal
+          and (t.tgtype & 8) <> 0 and (t.tgtype & 16) <> 0
+          and p.prosrc !~* 'return'
+        order by c.relname
+        SQL))->pluck('relname')->all();
+
+    expect($refusing)->not->toBeEmpty();
+
+    foreach ($refusing as $table) {
+        expect(DatabaseGrants::TABLES[$table] ?? null)->toBeIn([GrantDecision::AppendOnly, GrantDecision::AppendOnlyLockable], "{$table} refuses every UPDATE and DELETE in its trigger");
+    }
+});
+
+it('never gives the app UPDATE or DELETE on the audit log or the staff ledger', function () {
+    expect(DatabaseGrants::TABLES['audit_logs'])->toBe(GrantDecision::AppendOnly)
+        ->and(DatabaseGrants::TABLES['system_documentation_versions'])->toBe(GrantDecision::AppendOnly)
+        ->and(DatabaseGrants::TABLES['staff_ledger_entries']->privileges())->not->toContain('UPDATE')
+        ->and(DatabaseGrants::TABLES['migrations'])->toBe(GrantDecision::ReadOnly);
+});
+
+it('ships grants.sql exactly as the code generates it', function () {
+    expect((string) file_get_contents(base_path(DatabaseGrants::FILE)))
+        ->toBe(DatabaseGrants::sql(), 'Run `php artisan nonox:db-grants --write`.');
+});
+
+it('changes no data in the role scripts', function () {
+    foreach (['roles.sql', 'transfer-ownership.sql', 'grants.sql'] as $file) {
+        $sql = (string) preg_replace('/--.*$/m', '', (string) file_get_contents(base_path("database/roles/{$file}")));
+
+        expect($sql)->not->toMatch('/\b(INSERT\s+INTO|DELETE\s+FROM|UPDATE\s+\w+\s+SET|TRUNCATE\s+(TABLE\s+)?\w|DROP\s+(TABLE|DATABASE|SCHEMA|TRIGGER|FUNCTION))\b/i');
+    }
+});
+
+it('creates the roles idempotently, none of them able to do more than its job', function () {
+    requireSuperuser();
+
+    DatabaseRolesHarness::install();
+    DatabaseRolesHarness::install();
+
+    foreach ([DatabaseRoles::OWNER, DatabaseRoles::APP, DatabaseRoles::READONLY] as $role) {
+        $attributes = DB::selectOne('select rolsuper, rolcreatedb, rolcreaterole, rolreplication, rolbypassrls from pg_roles where rolname = ?', [$role]);
+
+        expect((array) $attributes)->toBe(['rolsuper' => false, 'rolcreatedb' => false, 'rolcreaterole' => false, 'rolreplication' => false, 'rolbypassrls' => false]);
+    }
+
+    expect(DB::scalar("select count(*) from pg_class where relnamespace = current_schema()::regnamespace and relkind in ('r', 'p', 'S', 'v', 'm') and relowner <> 'nonox_owner'::regrole"))->toBe(0)
+        ->and(DB::scalar("select count(*) from pg_proc where pronamespace = current_schema()::regnamespace and proowner <> 'nonox_owner'::regrole and not exists (select 1 from pg_depend d where d.classid = 'pg_proc'::regclass and d.objid = pg_proc.oid and d.deptype = 'e')"))->toBe(0)
+        ->and((bool) DB::scalar("select has_schema_privilege('nonox_app', current_schema(), 'CREATE')"))->toBeFalse()
+        ->and((bool) DB::scalar("select has_schema_privilege('nonox_readonly', current_schema(), 'CREATE')"))->toBeFalse()
+        ->and((bool) DB::scalar("select pg_has_role('nonox_app', 'nonox_owner', 'USAGE')"))->toBeFalse();
+});
+
+it('gives the app exactly the privileges of each table decision, and the reader SELECT only', function () {
+    requireSuperuser();
+
+    DatabaseRolesHarness::install();
+
+    foreach (DatabaseGrants::TABLES as $table => $decision) {
+        expect(privilegesOf(DatabaseRoles::APP, $table))->toBe($decision->privileges(), $table)
+            ->and(privilegesOf(DatabaseRoles::READONLY, $table))->toBe(['SELECT'], $table);
+    }
+
+    // A lockable append-only table: UPDATE on the id column only, for SELECT … FOR UPDATE.
+    expect((bool) DB::scalar("select has_column_privilege('nonox_app', 'vat_reports', 'id', 'UPDATE')"))->toBeTrue()
+        ->and((bool) DB::scalar("select has_column_privilege('nonox_app', 'vat_reports', 'company_id', 'UPDATE')"))->toBeFalse()
+        ->and((bool) DB::scalar("select has_column_privilege('nonox_app', 'audit_logs', 'id', 'UPDATE')"))->toBeFalse();
+
+    $sequences = DB::select("select oid::regclass::text as name from pg_class where relnamespace = current_schema()::regnamespace and relkind = 'S'");
+
+    foreach ($sequences as $sequence) {
+        expect((bool) DB::scalar("select has_sequence_privilege('nonox_app', ?, 'USAGE')", [$sequence->name]))->toBeTrue($sequence->name)
+            ->and((bool) DB::scalar("select has_sequence_privilege('nonox_app', ?, 'UPDATE')", [$sequence->name]))->toBeFalse($sequence->name);
+    }
+});
+
+it('gives a table without a decision nothing for the app, so a forgotten table fails closed', function () {
+    requireSuperuser();
+
+    DatabaseRolesHarness::install();
+    DB::statement('CREATE TABLE roles_probe_undecided (id bigint)');
+    DB::statement('GRANT ALL ON roles_probe_undecided TO nonox_app');
+
+    DatabaseGrants::apply(DB::connection());
+
+    expect(privilegesOf(DatabaseRoles::APP, 'roles_probe_undecided'))->toBe([])
+        ->and(privilegesOf(DatabaseRoles::READONLY, 'roles_probe_undecided'))->toBe(['SELECT'])
+        ->and(DatabaseGrants::undecided(DB::connection()))->toBe(['roles_probe_undecided']);
+});
+
+it('re-applies the grants as the owner after every migrate when the roles are on', function (object $event) {
+    requireSuperuser();
+
+    DatabaseRolesHarness::install();
+    DB::statement('GRANT UPDATE, DELETE, TRUNCATE ON audit_logs TO nonox_app');
+    config(['database.roles.enabled' => true, 'database.roles.migration_connection' => 'pgsql']);
+
+    event($event);
+
+    expect(privilegesOf(DatabaseRoles::APP, 'audit_logs'))->toBe(['SELECT', 'INSERT']);
+})->with([
+    'migrations ran' => fn () => new MigrationsEnded('up'),
+    'nothing pending' => fn () => new NoPendingMigrations('up'),
+]);
+
+it('leaves the grants alone after a migrate when the roles are off', function () {
+    config(['database.roles.enabled' => false]);
+    $queries = [];
+    DB::listen(function ($query) use (&$queries): void {
+        $queries[] = $query->sql;
+    });
+
+    event(new NoPendingMigrations('up'));
+
+    expect(collect($queries)->filter(fn (string $sql): bool => str_contains($sql, 'GRANT'))->all())->toBe([]);
+});
+
+it('refuses schema commands that do not run as the owner when the roles are on', function () {
+    config(['database.roles.enabled' => true, 'database.roles.migration_connection' => 'pgsql_owner']);
+
+    expect(DatabaseRoles::refusal('migrate', null))->toContain('php artisan migrate --database=pgsql_owner')
+        ->and(DatabaseRoles::refusal('migrate', 'pgsql'))->not->toBeNull()
+        ->and(DatabaseRoles::refusal('migrate:rollback', null))->not->toBeNull()
+        ->and(DatabaseRoles::refusal('migrate:fresh', null))->not->toBeNull()
+        ->and(DatabaseRoles::refusal('db:wipe', null))->not->toBeNull()
+        ->and(DatabaseRoles::refusal('migrate', 'pgsql_owner'))->toBeNull()
+        ->and(DatabaseRoles::refusal('migrate:status', null))->toBeNull()
+        ->and(DatabaseRoles::refusal('ledger:verify', null))->toBeNull()
+        ->and(DatabaseRoles::migrateOptions())->toBe(['--database' => 'pgsql_owner'])
+        ->and(DatabaseRoles::migrateCommand())->toBe('php artisan migrate --database=pgsql_owner');
+
+    // The real command is stopped before it does anything (--pretend: even a failed guard would change nothing).
+    expect(fn () => $this->artisan('migrate', ['--pretend' => true])->run())
+        ->toThrow(RuntimeException::class, 'migrate --database=pgsql_owner');
+});
+
+it('changes nothing about migrating when the roles are off', function () {
+    config(['database.roles.enabled' => false]);
+
+    expect(DatabaseRoles::refusal('migrate', null))->toBeNull()
+        ->and(DatabaseRoles::migrateOptions())->toBe([])
+        ->and(DatabaseRoles::migrateCommand())->toBe('php artisan migrate');
+});
+
+it('turns the roles on only with DB_MIGRATION_USERNAME, and keeps one user otherwise', function () {
+    $set = function (string $key, mixed $value): void {
+        if ($value === null) {
+            putenv($key);
+            unset($_ENV[$key], $_SERVER[$key]);
+
+            return;
+        }
+
+        putenv("{$key}={$value}");
+        $_ENV[$key] = $value;
+        $_SERVER[$key] = $value;
+    };
+
+    $config = function (array $env) use ($set): array {
+        $saved = [];
+
+        foreach ($env as $key => $value) {
+            $saved[$key] = [getenv($key) === false ? null : getenv($key), $_ENV[$key] ?? null, $_SERVER[$key] ?? null];
+            $set($key, $value);
+        }
+
+        try {
+            return require base_path('config/database.php');
+        } finally {
+            foreach ($saved as $key => [$process, $env, $server]) {
+                $process === null ? putenv($key) : putenv("{$key}={$process}");
+                unset($_ENV[$key], $_SERVER[$key]);
+
+                if ($env !== null) {
+                    $_ENV[$key] = $env;
+                }
+
+                if ($server !== null) {
+                    $_SERVER[$key] = $server;
+                }
+            }
+        }
+    };
+
+    $single = $config(['DB_MIGRATION_USERNAME' => null, 'DB_USERNAME' => 'nonox', 'DB_PASSWORD' => 'secret']);
+    $roles = $config(['DB_MIGRATION_USERNAME' => 'nonox_owner', 'DB_MIGRATION_PASSWORD' => 'owner-secret', 'DB_USERNAME' => 'nonox_app', 'DB_PASSWORD' => 'app-secret']);
+
+    expect($single['roles']['enabled'])->toBeFalse()
+        ->and($single['connections']['pgsql_owner']['username'])->toBe('nonox')
+        ->and($single['connections']['pgsql_owner']['password'])->toBe('secret')
+        ->and($roles['roles']['enabled'])->toBeTrue()
+        ->and($roles['connections']['pgsql']['username'])->toBe('nonox_app')
+        ->and($roles['connections']['pgsql_owner']['username'])->toBe('nonox_owner')
+        ->and($roles['connections']['pgsql_owner']['password'])->toBe('owner-secret')
+        ->and($roles['connections']['pgsql_owner']['timezone'])->toBe('Europe/Stockholm');
+});

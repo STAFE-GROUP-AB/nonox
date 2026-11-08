@@ -287,7 +287,9 @@ it('protects the evidence: a signed request cannot be changed, and events are ap
 
     // Each attempt in its own savepoint, so the first refusal does not abort the test's transaction.
     expect(fn () => DB::transaction(fn () => DB::table('crm_signing_requests')->where('id', $request->id)->update(['signer_name' => 'Någon annan'])))->toThrow(QueryException::class, 'cannot be changed')
-        ->and(fn () => DB::transaction(fn () => DB::table('crm_signing_events')->where('signing_request_id', $request->id)->update(['event' => 'REVOKED'])))->toThrow(QueryException::class, 'append-only');
+        ->and(fn () => DB::transaction(fn () => DB::table('crm_signing_events')->where('signing_request_id', $request->id)->update(['event' => 'REVOKED'])))
+        // The trigger refuses; with the database roles (ADR-079 §6) the grant refuses first.
+        ->toThrow(fn (QueryException $exception) => expect($exception->getMessage())->toMatch('/append-only|permission denied for table crm_signing_events/'));
 });
 
 it('lets only those who make and send quotes send them for signing, and revokes the earlier link', function () {

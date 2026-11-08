@@ -114,7 +114,9 @@ it('never changes a booked VAT period', function () {
     try {
         DB::transaction(fn () => DB::delete('delete from vat_reports where id = ?', [$report->id]));
     } catch (QueryException $exception) {
-        $refused = str_contains($exception->getMessage(), 'cannot be changed or removed');
+        // The trigger refuses; with the database roles (ADR-079 §6) the grant refuses first.
+        $refused = str_contains($exception->getMessage(), 'cannot be changed or removed')
+            || str_contains($exception->getMessage(), 'permission denied for table vat_reports');
     }
 
     expect($refused)->toBeTrue();
