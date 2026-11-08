@@ -282,6 +282,13 @@ final class K3Eligibility
             return $building;
         }
 
+        if ($exception->applies === null) {
+            // 1.1B applies by the answers, but whether the first exception of 1.1C lifts it is not known: never K3 on a guess.
+            $this->missing[] = (string) __('Enligt era svar omfattas företaget av K2 punkt 1.1B, men om undantaget i punkt 1.1C första stycket gäller kan inte avgöras förrän uppgifterna ovan finns.');
+
+            return $building;
+        }
+
         $this->reasons[] = $deferredTax === true
             ? __('Företaget har enligt ert svar en väsentlig uppskjuten skatteskuld (K2 punkt 1.1B a), och inget av undantagen i punkt 1.1C gäller.')
             : __('Byggnader genererar minst 75 procent av nettoomsättningen enligt er bedömning (K2 punkt 1.1B b), och inget av undantagen i punkt 1.1C gäller.');

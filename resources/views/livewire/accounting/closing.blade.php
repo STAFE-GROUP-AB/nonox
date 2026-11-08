@@ -29,8 +29,11 @@
                     <p>{{ $paragraph }}</p>
                 @endforeach
             </div>
+            @if($k2Eligibility)
+                <p class="mt-3 text-sm font-medium text-ink" data-k2-eligibility="{{ $k2Eligibility->status->value }}">{{ __('Regelverk: :status.', ['status' => $k2Eligibility->status->label()]) }} {{ $k2Eligibility->reasons[0] ?? $k2Eligibility->summary }}</p>
+            @endif
             <div class="mt-4 flex flex-wrap items-center gap-3">
-                <x-button type="button" wire:click="confirmK2Conditions" wire:loading.attr="disabled">{{ __('Företaget uppfyller villkoren för K2') }}</x-button>
+                <x-button type="button" wire:click="confirmK2Conditions" wire:loading.attr="disabled" :disabled="$k2Eligibility?->status === \App\Domain\AnnualReport\K3EligibilityStatus::K3Required">{{ __('Företaget uppfyller villkoren för K2') }}</x-button>
                 <a href="{{ route('accounting.closingFramework', ['ar' => $fiscalYear->id]) }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Uppfyller inte företaget villkoren? Se vad som gäller under Regelverk.') }}</a>
             </div>
         </section>

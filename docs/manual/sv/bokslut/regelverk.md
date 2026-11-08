@@ -24,7 +24,7 @@ Sidan **Regelverk** under **Bokföring → Bokslut** visar för ett räkenskaps�
 
 I **Regelverk från och med** väljer du K2 eller K3. Valet gäller det valda räkenskapsåret och alla år efter det; tidigare år och årsredovisningar som redan är gjorda behåller sitt regelverk. Ett år som är stängt eller har en fastställd årsredovisning kan inte bytas. Bara ägare och administratörer kan byta regelverk; redovisningskonsulten kan svara på frågorna och fylla i principerna.
 
-Väljer du K2 när företaget ska tillämpa K3 visas **K2 kan inte väljas: företaget ska tillämpa K3 för det här året.** och du kan inte spara bytet. Samma kontroll görs när regelverket byts i företagets inställningar.
+Väljer du K2 när företaget ska tillämpa K3 visas **K2 kan inte väljas: företaget ska tillämpa K3 för det här året.** och du kan inte spara bytet. Samma kontroll görs när regelverket byts i företagets inställningar, och för varje senare år som bytet gäller. Svaren kan du alltid spara, även när de visar att K3 krävs. För ett K2-år som enligt svaren ska tillämpa K3 kan K2-villkoren inte heller bekräftas i bokslutet.
 
 Väljer du K3 står det att K3-årsredovisningen är under uppbyggnad i NONOX. Bokföring, bokslut och inkomstdeklaration fungerar som vanligt.
 

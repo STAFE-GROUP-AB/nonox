@@ -10703,5 +10703,9 @@
     "Inget ändras ännu.": "Nothing changes yet.",
     "Se under Bokslut → Regelverk om företaget får använda K2, vad som saknas och vad ett byte ändrar": "See under Year-end closing → Framework whether the company may use K2, what is missing and what a change does",
     "En ändring av svaren sparas för :year.": "One change to the answers is saved for :year.",
-    ":count ändringar av svaren sparas för :year.": ":count changes to the answers are saved for :year."
+    ":count ändringar av svaren sparas för :year.": ":count changes to the answers are saved for :year.",
+    "Företaget ska tillämpa K3 för räkenskapsåret :year enligt svaren under Bokslut → Regelverk, så K2-villkoren kan inte bekräftas. Byt regelverk eller rätta svaren där.": "According to the answers under Year-end closing → Framework the company must apply K3 for the fiscal year :year, so the K2 conditions cannot be confirmed. Change the framework or correct the answers there.",
+    "Enligt era svar omfattas företaget av K2 punkt 1.1B, men om undantaget i punkt 1.1C första stycket gäller kan inte avgöras förrän uppgifterna ovan finns.": "According to your answers the company is covered by K2 point 1.1B, but whether the exception in the first paragraph of point 1.1C applies cannot be decided until the figures above are in place.",
+    "Regelverket bedöms per räkenskapsår. Skapa företagets första räkenskapsår under Bokföring → Räkenskapsår, så visas villkoren här.": "The framework is assessed per fiscal year. Create the company's first fiscal year under Bookkeeping → Fiscal years, and the conditions are shown here.",
+    "Regelverk: :status.": "Framework: :status."
 }

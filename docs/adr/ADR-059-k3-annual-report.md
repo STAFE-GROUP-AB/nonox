@@ -1072,6 +1072,16 @@ Source: BFN's consolidated K3 (vl12-1-k3-kons20251215), chapter 7, pp. 57–63.
   whose annual report has a signing date (`TODO(legal-verify)`: "färdigställd"); the share is
   the person's classified accounts over net sales, compared exactly with
   `k2_1_1b.building_turnover_share_min_bp`. Without such a year in NONOX the person answers.
+- **After review (2026-11-08):** while the 1.1C first-paragraph exception is unknown, a yes to
+  1.1B goes to the missing list, never to the K3 reasons. ChangeReportingFramework checks every
+  year from the chosen one on, inside the lock and outside the scope bypass, and names the year
+  it refuses. ConfirmK2Conditions refuses a year K3Eligibility marks K3Required (Undetermined
+  does not block), and the closing page shows the status next to the button. The screen blocks
+  only a change to K2; answers are always saved. SaveFrameworkChoice locks the year row before
+  reading the answers, removes both answers of a changed question, ignores `answers` when the
+  input has none, and stores only answers to questions that are asked. When the previous year
+  is not in NONOX, the answer "K2 the year before" decides whether the transition policies are
+  asked. A company without fiscal years gets an empty state.
 - One way to change the framework: the settings form keeps its select (P1) and links to the
   screen; the K2 refusal when K3 is required lives in ChangeReportingFramework, which both
   call. Only AB and ekonomisk förening are assessed; years beginning before 2026-01-01 (outside

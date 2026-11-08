@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\AnnualReport;
 
 use App\Actions\Company\ChangeReportingFramework;
+use App\Domain\AnnualReport\K3Eligibility;
 use App\Domain\AnnualReport\K3EligibilityAnswers;
 use App\Domain\AnnualReport\K3EligibilityQuestion;
 use App\Domain\AnnualReport\K3Policies;
@@ -52,7 +53,9 @@ final class SaveFrameworkChoice
             // Inside the company: another company's fiscal year answers 404.
             $year = FiscalYear::query()->findOrFail($fiscalYearId);
 
-            $this->saveAnswers($user, $company, $year, self::answers($input));
+            if (array_key_exists('answers', $input) || array_key_exists('building_classified', $input)) {
+                $this->saveAnswers($user, $company, $year, self::answers($input));
+            }
 
             $framework = ReportingFramework::tryFrom((string) ($input['framework'] ?? ''));
 
@@ -113,8 +116,11 @@ final class SaveFrameworkChoice
 
     private function saveAnswers(User $user, Company $company, FiscalYear $year, K3EligibilityAnswers $answers): void
     {
+        // One writer per year: two saves cannot both read the same "before" and insert both a yes and a no.
+        FiscalYear::query()->whereKey($year->id)->lockForUpdate()->firstOrFail();
+
         $before = K3EligibilityAnswers::forYear($year)->keys();
-        $after = $answers->keys();
+        $after = self::askedOnly($year, $answers)->keys();
 
         if ($before === $after) {
             return;
@@ -131,7 +137,19 @@ final class SaveFrameworkChoice
         $removed = array_values(array_diff($before, $after));
         $added = array_values(array_diff($after, $before));
 
-        K3EligibilityAnswers::query($year)->whereIn('key', $removed)->delete();
+        // A question has one answer: remove both "<question>.yes" and "<question>.no" before the new one is inserted.
+        $replaced = [];
+
+        foreach ($added as $key) {
+            $parsed = K3EligibilityQuestion::parse($key);
+
+            if ($parsed !== null) {
+                $replaced[] = $parsed[0]->key(true);
+                $replaced[] = $parsed[0]->key(false);
+            }
+        }
+
+        K3EligibilityAnswers::query($year)->whereIn('key', array_values(array_unique([...$removed, ...$replaced])))->delete();
 
         foreach ($added as $key) {
             ClosingCheck::query()->create(['fiscal_year_id' => $year->id, 'key' => $key, 'checked_by' => $user->id]);
@@ -143,6 +161,21 @@ final class SaveFrameworkChoice
             'added' => $added,
             'removed' => $removed,
         ], $company, $user);
+    }
+
+    /**
+     * The answers to questions the screen actually asks for the year, given
+     * those answers; an answer to a question that is not asked (for example
+     * 1.1B when the 1.1C exception applies) is not stored.
+     */
+    private static function askedOnly(FiscalYear $year, K3EligibilityAnswers $answers): K3EligibilityAnswers
+    {
+        $result = K3Eligibility::forYear($year, $answers);
+        $asked = array_map(fn (K3EligibilityQuestion $question): string => $question->value, $result->questions());
+        $kept = array_intersect_key($answers->answers, array_flip($asked));
+        $building = $result->building !== null && $answers->buildingClassified;
+
+        return new K3EligibilityAnswers($kept, $building ? $answers->buildingAccounts : [], $building);
     }
 
     /** @param array<string, ?string> $policies */

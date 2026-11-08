@@ -35,7 +35,7 @@
       "id": "2026-11-07-bokslut-regelverk",
       "datum": "2026-11-07T22:00:00+01:00",
       "rubrik": "Bokslut → Regelverk visar om företaget får använda K2",
-      "beskrivning": "Den nya sidan går för ett räkenskapsår igenom villkoren i K2 punkt 1.1–1.1C: storleken och undantaget för de minsta företagen räknas ut, det som inte syns i bokföringen besvarar du själv, och K2 kan inte väljas när K3 krävs. Innan du sparar visas vilka år som byter regelverk och vilka K3-principer som sparas från det första K3-året. Ändringar av fastställelsedagen i årsredovisningen sparas nu i behandlingshistoriken.",
+      "beskrivning": "Den nya sidan går för ett räkenskapsår igenom villkoren i K2 punkt 1.1–1.1C: storleken och undantaget för de minsta företagen räknas ut, det som inte syns i bokföringen besvarar du själv, och när svaren visar att K3 krävs kan K2 varken väljas eller bekräftas i bokslutet. Innan du sparar visas vilka år som byter regelverk och vilka K3-principer som sparas från det första K3-året. Ändringar av fastställelsedagen i årsredovisningen sparas nu i behandlingshistoriken.",
       "typ": "Nytt",
       "omrade": "Bokslut"
     },

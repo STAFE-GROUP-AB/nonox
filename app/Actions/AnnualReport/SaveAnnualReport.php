@@ -120,7 +120,7 @@ class SaveAnnualReport
                     throw ValidationException::withMessages(['report' => $refusal]);
                 }
 
-                return $this->write($user, $company, $fiscalYear, $validated, $dividend, $pledged, $contingent);
+                return $this->write($user, $company, $locked, $validated, $dividend, $pledged, $contingent);
             });
         });
     }

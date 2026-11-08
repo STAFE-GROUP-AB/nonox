@@ -9,6 +9,7 @@ use App\Actions\AnnualReport\SavePriorYearSizeFigures;
 use App\Actions\Company\ChangeReportingFramework;
 use App\Domain\AnnualReport\K3Eligibility;
 use App\Domain\AnnualReport\K3EligibilityAnswers;
+use App\Domain\AnnualReport\K3EligibilityQuestion;
 use App\Domain\AnnualReport\K3EligibilityStatus;
 use App\Domain\AnnualReport\K3Policies;
 use App\Domain\AnnualReport\K3PolicyKey;
@@ -72,6 +73,11 @@ class ClosingFrameworkPage extends Component
             $this->year = $first instanceof FiscalYear ? $first->id : (int) FiscalYear::query()->orderByDesc('start_date')->value('id');
         }
 
+        if ($this->year === 0) {
+            // No fiscal year yet: the page shows an empty state.
+            return;
+        }
+
         $this->loadSaved();
     }
 
@@ -133,6 +139,10 @@ class ClosingFrameworkPage extends Component
 
     public function render(): View
     {
+        if ($this->year === 0) {
+            return view('livewire.accounting.closing-framework-empty');
+        }
+
         $company = $this->company();
         $fiscalYear = $this->fiscalYear();
         $chosen = ReportingFramework::tryFrom($this->framework) ?? $fiscalYear->reporting_framework;
@@ -145,11 +155,15 @@ class ClosingFrameworkPage extends Component
         $yearsToChange = $frameworkChanges && $canChangeYear ? ChangeReportingFramework::yearsToChange($chosen, $fiscalYear, $eligible) : collect();
         $firstK3 = SaveFrameworkChoice::isFirstK3Year($fiscalYear, $previous, $chosen);
         $policies = K3Policies::forYear($fiscalYear);
-        $transition = $previous instanceof FiscalYear && $previous->reporting_framework !== ReportingFramework::K3;
+        // The previous year's framework from NONOX, or the person's answer when that year is not kept here.
+        $transition = $previous instanceof FiscalYear
+            ? $previous->reporting_framework !== ReportingFramework::K3
+            : ($this->answers[K3EligibilityQuestion::PreviousYearK2->value] ?? '') === 'yes';
         $policyKeys = array_values(array_filter(K3PolicyKey::cases(), fn (K3PolicyKey $key): bool => $transition || ! $key->transitionOnly()));
         $canAnswer = $this->user()->hasTeamPermission($company, 'fiscal-years:manage') && $fiscalYear->isOpen();
         $canChangeFramework = $this->user()->can('update', $company) && $canChangeYear;
-        $k2Blocked = $chosen === ReportingFramework::K2 && $eligibility->status === K3EligibilityStatus::K3Required;
+        // Only a change to K2 is blocked; answers can always be saved, and the banner shows that K3 is required.
+        $k2Blocked = $frameworkChanges && $chosen === ReportingFramework::K2 && $eligibility->status === K3EligibilityStatus::K3Required;
 
         return view('livewire.accounting.closing-framework', [
             'company' => $company,

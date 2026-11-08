@@ -232,12 +232,22 @@ it('renders with a fixed number of queries, whatever the size of the history', f
     $short = $count();
     $this->assertStringContainsString('Vilka intäktskonton för 2026', Livewire::test(ClosingFrameworkPage::class, ['year' => $this->year2027->id])->html());
 
+    // A longer history: more vouchers on more revenue accounts, another fiscal year, and saved answers and classifications.
     foreach (range(1, 40) as $i) {
-        Bookkeeping::postRows($this->owner, $this->company, '2026-03-01', [1930 => 400_000_00 + $i, 3004 => -300_000_00, 3001 => -(100_000_00 + $i)]);
+        Bookkeeping::postRows($this->owner, $this->company, '2026-03-01', [1930 => 400_000_00 + $i, 3004 => -100_000_00, 3002 => -100_000_00, 3003 => -100_000_00, 3001 => -(100_000_00 + $i)]);
     }
+
+    app(CreateNextFiscalYear::class)($this->owner, $this->company);
+    app(SaveFrameworkChoice::class)($this->owner, $this->company, $this->year2027->id, [
+        'answers' => frameworkNoAnswers(['k2_1_1b_a' => 'no', 'k2_1_1c_normally' => 'no']),
+        'building_classified' => true,
+        'building_accounts' => [3002, 3004],
+    ]);
+
+    expect(ClosingCheck::query()->where('fiscal_year_id', $this->year2027->id)->count())->toBeGreaterThan(10);
 
     $long = $count();
 
-    // Mount plus one re-render after choosing K3: 55 queries on 2026-11-07, the same with 1 or 41 vouchers.
+    // Mount plus one re-render after choosing K3: the same count with 1 or 41 vouchers, 2 or 3 years, 2 or 4 revenue accounts, 0 or 13 answers.
     expect($long)->toBe($short)->and($short)->toBeLessThanOrEqual(55);
 });
