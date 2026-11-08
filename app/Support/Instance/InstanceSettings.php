@@ -18,6 +18,9 @@ use Illuminate\Support\Facades\Schema;
  *   since another legal entity would be a disclosure without a basis.
  *   Empty = the feature is off, the default for a self-hosted installation.
  * - waitlist.open: whether /ko takes new applications (default open).
+ * - migration.guides_public: whether the per-program moving guides at
+ *   /flytta-fran/{program} are published (default off until the legal
+ *   review ADR-020 asks for, ADR-076).
  * - registration.open: whether an unknown address may create an account
  *   on the sign-in form (default closed, ADR-038).
  */
@@ -29,11 +32,14 @@ final class InstanceSettings
 
     public const string REGISTRATION_OPEN = 'registration.open';
 
+    public const string MIGRATION_GUIDES_PUBLIC = 'migration.guides_public';
+
     /** @var array<string, mixed> the defaults, which are also the only keys */
     public const array DEFAULTS = [
         self::OPERATOR => null,
         self::WAITLIST_OPEN => true,
         self::REGISTRATION_OPEN => false,
+        self::MIGRATION_GUIDES_PUBLIC => false,
     ];
 
     /** @var ?array<string, mixed> */
@@ -90,6 +96,11 @@ final class InstanceSettings
     public function waitlistOpen(): bool
     {
         return (bool) $this->get(self::WAITLIST_OPEN);
+    }
+
+    public function migrationGuidesPublic(): bool
+    {
+        return (bool) $this->get(self::MIGRATION_GUIDES_PUBLIC);
     }
 
     public function selfRegistrationOpen(): bool

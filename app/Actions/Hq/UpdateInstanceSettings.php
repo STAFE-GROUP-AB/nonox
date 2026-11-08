@@ -44,6 +44,7 @@ final class UpdateInstanceSettings
             'operator_company_id' => ['nullable', 'integer', $company],
             'waitlist_open' => ['required', 'boolean'],
             'registration_open' => ['required', 'boolean'],
+            'migration_guides_public' => ['sometimes', 'boolean'],
         ], [], [
             'operator_company_id' => __('driftbolag'),
         ])->validate();
@@ -55,6 +56,7 @@ final class UpdateInstanceSettings
             InstanceSettings::OPERATOR => $operator,
             InstanceSettings::WAITLIST_OPEN => (bool) $validated['waitlist_open'],
             InstanceSettings::REGISTRATION_OPEN => (bool) $validated['registration_open'],
+            InstanceSettings::MIGRATION_GUIDES_PUBLIC => array_key_exists('migration_guides_public', $validated) ? (bool) $validated['migration_guides_public'] : (bool) InstanceSettings::current()->get(InstanceSettings::MIGRATION_GUIDES_PUBLIC),
         ];
 
         $settings = InstanceSettings::current();

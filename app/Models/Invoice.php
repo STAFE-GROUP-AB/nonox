@@ -33,6 +33,8 @@ use LogicException;
  * @property Money $tax_reduction_repaid_ore on a credit invoice: how much of that debt has been paid back
  * @property ?string $property_designation
  * @property string $id
+ * @property ?string $external_ref the invoice number in the previous program (ADR-076)
+ * @property ?string $import_source IMPORT_OPEN for an open invoice read in without a voucher
  * @property int $company_id
  * @property int $customer_id
  * @property ?int $number

@@ -98,8 +98,9 @@ final class JsonDumpWriter
         'vouchers' => ['company_id', 'created_at', 'updated_at'],
         'voucher_rows' => ['voucher_id', 'company_id', 'created_at', 'updated_at'],
         'voucher_attachments' => ['voucher_id', 'company_id', 'created_at', 'updated_at'],
-        'customers' => ['company_id', 'created_at', 'updated_at'],
-        'suppliers' => ['company_id', 'created_at', 'updated_at'],
+        // external_ref (ADR-076) is the number in the previous program; the dump format (ADR-065) does not carry it yet.
+        'customers' => ['company_id', 'created_at', 'updated_at', 'external_ref'],
+        'suppliers' => ['company_id', 'created_at', 'updated_at', 'external_ref'],
     ];
 
     /** @var array<int, int> account id => number */

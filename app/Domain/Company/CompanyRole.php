@@ -23,7 +23,7 @@ enum CompanyRole: string
         'invoices:create', 'invoices:send', 'invoices:credit', 'invoices:view',
         'supplier-invoices:create', 'supplier-invoices:approve', 'payments:create', 'payments:approve',
         'vat:prepare', 'vat:submit',
-        'reports:view', 'export:sie', 'export:archive', 'import:sie', 'import:fortnox',
+        'reports:view', 'export:sie', 'export:archive', 'import:sie', 'import:fortnox', 'import:registers',
         'api-tokens:manage', 'settings:manage', 'audit-log:view', 'modules:manage',
         'tasks:manage', 'tasks:view',
     ];
@@ -61,7 +61,7 @@ enum CompanyRole: string
                 'invoices:create', 'invoices:send', 'invoices:credit', 'invoices:view',
                 'supplier-invoices:create', 'payments:create',
                 'vat:prepare', 'vat:submit',
-                'reports:view', 'export:sie', 'export:archive', 'import:sie', 'import:fortnox',
+                'reports:view', 'export:sie', 'export:archive', 'import:sie', 'import:fortnox', 'import:registers',
                 'audit-log:view',
                 'tasks:manage', 'tasks:view',
             ],

@@ -52,7 +52,7 @@ it('shows the pages of the open section only, grouped in Bokföring', function (
         ->and(collect($sections)->reject(fn (NavSection $section): bool => $section->active)->contains(fn (NavSection $section): bool => $section->hasChildren()))->toBeFalse()
         ->and(array_map(fn (array $group): ?string => $group['label'], $open->first()->groups()))->toBe(['Löpande', 'Rapporter och moms', 'Bokslut', 'Inställningar'])
         ->and(pageLabels($open->first()))->toBe([
-            'Verifikationer', 'Bankavstämning', 'Periodiseringar', 'Anläggningar', 'Läs in SIE-fil',
+            'Verifikationer', 'Bankavstämning', 'Periodiseringar', 'Anläggningar', 'Läs in SIE-fil', 'Läs in register',
             'Rapporter', 'Reskontra', 'Moms', 'EU-rapporter',
             'Räkenskapsår', 'Bokslut', 'Årsredovisning', 'Inkomstdeklaration',
             'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt',
@@ -69,7 +69,7 @@ it('filters the pages of Bokföring by permission, as the page links did', funct
     'approver' => ['approver', ['Verifikationer', 'Räkenskapsår', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt']],
     'auditor' => ['auditor', ['Verifikationer', 'Rapporter', 'Reskontra', 'Räkenskapsår', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt']],
     'accountant' => ['accountant', [
-        'Verifikationer', 'Bankavstämning', 'Periodiseringar', 'Anläggningar', 'Läs in SIE-fil',
+        'Verifikationer', 'Bankavstämning', 'Periodiseringar', 'Anläggningar', 'Läs in SIE-fil', 'Läs in register',
         'Rapporter', 'Reskontra', 'Moms', 'EU-rapporter',
         'Räkenskapsår', 'Bokslut', 'Årsredovisning', 'Inkomstdeklaration',
         'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt',
@@ -90,7 +90,7 @@ it('lists the pages of Försäljning, Inköp and Register', function (string $ro
     'payment files' => ['payables.batches.index', 'Inköp', ['Leverantörsfakturor', 'Betalfiler'], 'Betalfiler'],
     'suppliers' => ['payables.suppliers', 'Register', ['Kunder', 'Artiklar', 'Leverantörer'], 'Leverantörer'],
     'EU reports' => ['vat.euReports', 'Bokföring', [
-        'Verifikationer', 'Bankavstämning', 'Periodiseringar', 'Anläggningar', 'Läs in SIE-fil',
+        'Verifikationer', 'Bankavstämning', 'Periodiseringar', 'Anläggningar', 'Läs in SIE-fil', 'Läs in register',
         'Rapporter', 'Reskontra', 'Moms', 'EU-rapporter',
         'Räkenskapsår', 'Bokslut', 'Årsredovisning', 'Inkomstdeklaration',
         'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt',

@@ -36,6 +36,8 @@ class SaveCustomer
 
         $validated = Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
+            // The number the customer had in the previous program (ADR-076); only importers write it.
+            'external_ref' => ['nullable', 'string', 'max:100'],
             'org_number' => ['nullable', 'string', function (string $attribute, mixed $value, \Closure $fail): void {
                 if (OrganisationNumber::tryFrom((string) $value) === null) {
                     $fail(__('Organisationsnumret stämmer inte. Kontrollera siffrorna.'));

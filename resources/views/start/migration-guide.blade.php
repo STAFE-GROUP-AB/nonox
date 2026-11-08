@@ -244,6 +244,9 @@
         {!! $source['html'] !!}
       </div>
     @endforeach
+    @if(App\Migration\Import\Guides\FlyttGuider::enabled())
+      <p class="fg-lead" style="margin-top:28px">Vill du se vad programmets egen leverantör beskriver om exporten, med källa och datum? <a href="{{ route('migrationFrom.index') }}">Flytta från ett annat program</a>.</p>
+    @endif
   </div>
 </section>
 

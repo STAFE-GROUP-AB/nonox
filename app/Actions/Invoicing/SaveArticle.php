@@ -41,6 +41,8 @@ class SaveArticle
         $validated = Validator::make($input, [
             'number' => ['required', 'string', 'max:30', Rule::unique('articles', 'number')->where('company_id', $company->id)->ignore($article?->id)],
             'name' => ['required', 'string', 'max:255'],
+            // The number the article had in the previous program (ADR-076); only importers write it.
+            'external_ref' => ['nullable', 'string', 'max:100'],
             'unit' => ['required', 'string', 'max:10'],
             'price' => ['required', 'string'],
             'vat_rate' => ['required', 'integer', Rule::in(InvoiceCalculator::VAT_RATES)],
@@ -76,6 +78,7 @@ class SaveArticle
                 'vat_rate' => $rate,
                 'account_id' => $account->id,
                 'is_active' => (bool) ($validated['is_active'] ?? $article->is_active ?? true),
+                ...(array_key_exists('external_ref', $validated) ? ['external_ref' => $validated['external_ref']] : []),
                 ...ArticleDetails::attributes($input, $company, $article),
             ];
 

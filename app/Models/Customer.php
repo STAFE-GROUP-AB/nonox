@@ -19,6 +19,7 @@ use Illuminate\Validation\ValidationException;
  * @property int $company_id
  * @property int $number
  * @property string $name
+ * @property ?string $external_ref the number in the previous program (ADR-076)
  * @property ?string $org_number
  * @property ?string $personal_number
  * @property ?string $vat_number
@@ -44,6 +45,7 @@ class Customer extends Model
     protected $fillable = [
         'company_id',
         'number',
+        'external_ref',
         'name',
         'org_number',
         'personal_number',
