@@ -16,6 +16,8 @@ use App\Models\Vehicle;
 use App\Models\VehicleTrip;
 use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
+use App\Modules\Payroll\Models\Benefit;
+use App\Modules\Payroll\Models\Employee;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
@@ -88,17 +90,33 @@ class CarMileageSummary extends Component
         $trips = $cars->isEmpty() ? collect() : VehicleTrip::query()
             ->whereIn('vehicle_id', $cars->pluck('id'))
             ->whereBetween('trip_date', [$start->toDateString(), $start->endOfYear()->toDateString()])
-            ->get(['id', 'vehicle_id', 'trip_date', 'kind', 'distance_hm'])
+            ->get(['id', 'vehicle_id', 'driver_user_id', 'trip_date', 'kind', 'distance_hm'])
             ->groupBy('vehicle_id');
         $rules = RuleSet::for($start->endOfYear());
         $benefits = CompanyCarBenefits::for($company);
+        $carBenefits = $cars->mapWithKeys(fn (Vehicle $car): array => [$car->id => $benefits->forYear($car, $this->year)]);
+        // The login of each benefit holder, in one query, to tell the holder's trips from other drivers'.
+        $holders = Employee::query()->whereIn('id', $carBenefits->flatten()->pluck('employee_id')->unique())->pluck('user_id', 'id');
 
-        $summaries = $cars->map(fn (Vehicle $car): array => [
-            'car' => $car,
-            'year' => CompanyCarYear::of($this->year, $trips->get($car->id, collect()), $rules),
-            'pool' => $benefits->forYear($car, $this->year)->isEmpty(),
-            'poolPrivate' => $trips->get($car->id, collect())->contains(fn (VehicleTrip $trip): bool => $trip->kind === TripKind::Private),
-        ]);
+        $summaries = $cars->map(function (Vehicle $car) use ($trips, $carBenefits, $holders, $rules): array {
+            $carTrips = $trips->get($car->id, collect());
+            $held = $carBenefits->get($car->id, collect());
+            // 61 kap. 9 och 11 §§ concern the benefit holder's driving in the benefit period; others are shown apart (P2-7).
+            [$own, $others] = $held->isEmpty()
+                ? [$carTrips, collect()]
+                : $carTrips->partition(fn (VehicleTrip $trip): bool => $held->contains(fn (Benefit $benefit): bool => $trip->driver_user_id !== null
+                    && $holders->get($benefit->employee_id) === $trip->driver_user_id
+                    && ! $benefit->valid_from->greaterThan($trip->trip_date)
+                    && ($benefit->valid_to === null || ! $benefit->valid_to->lessThan($trip->trip_date))));
+
+            return [
+                'car' => $car,
+                'year' => CompanyCarYear::of($this->year, $own->values(), $rules),
+                'others' => $others->isEmpty() ? null : CompanyCarYear::of($this->year, $others->values(), $rules),
+                'pool' => $held->isEmpty(),
+                'poolPrivate' => $carTrips->contains(fn (VehicleTrip $trip): bool => $trip->kind === TripKind::Private),
+            ];
+        });
 
         return view('payroll::livewire.car-mileage', [
             'enabled' => $enabled,

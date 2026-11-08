@@ -14,6 +14,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleTrip;
+use App\Models\VehicleYearReading;
 use App\Modules\Payroll\Domain\Benefits\CarBenefitCar;
 use App\Modules\Payroll\Models\Employee;
 use App\Support\Audit\Audit;
@@ -94,6 +95,7 @@ class LogTrip
 
             $kind = TripKind::from((string) $validated['kind']);
             $date = CarbonImmutable::parse((string) $validated['trip_date']);
+            self::ensureYearOpen($vehicle->id, $date->year);
             [$hm, $start, $end] = $this->distance($validated);
 
             if ($kind === TripKind::Private && ! $vehicle->isCompanyCar()) {
@@ -195,7 +197,11 @@ class LogTrip
             throw ValidationException::withMessages(['reason' => __('Skriv varför resan rättas.')]);
         }
 
-        return CurrentCompany::run($company, function () use ($user, $company, $trip, $reason): VehicleTrip {
+        return CurrentCompany::run($company, fn (): VehicleTrip => DB::transaction(function () use ($user, $company, $trip, $reason): VehicleTrip {
+            // The original locked, and a unique index on corrects_trip_id: two corrections at once cannot both pass.
+            VehicleTrip::query()->whereKey($trip->id)->lockForUpdate()->firstOrFail();
+            self::ensureYearOpen($trip->vehicle_id, CarbonImmutable::today()->year);
+
             if (VehicleTrip::query()->where('corrects_trip_id', $trip->id)->exists()) {
                 throw ValidationException::withMessages(['trip' => __('Resan är redan rättad.')]);
             }
@@ -217,7 +223,15 @@ class LogTrip
             Audit::record('mileage.trip_corrected', $correction, ['corrects_trip_id' => $trip->id, 'distance_hm' => $correction->distance_hm], $company, $user);
 
             return $correction;
-        });
+        }));
+    }
+
+    /** A year closed in the log for the vehicle takes no new, changed or removed trips (KJ-R9). */
+    private static function ensureYearOpen(int $vehicleId, int $year): void
+    {
+        if (VehicleYearReading::query()->where('vehicle_id', $vehicleId)->where('year', $year)->whereNotNull('closed_at')->exists()) {
+            throw ValidationException::withMessages(['trip_date' => __('Året :year är stängt i körjournalen för bilen. Resor det året kan inte läggas till, ändras eller tas bort.', ['year' => $year])]);
+        }
     }
 
     private function ensureChangeable(User $user, VehicleTrip $trip, bool $manager): void
@@ -231,6 +245,8 @@ class LogTrip
                 ? __('Resan är utbetald eller bokförd och kan inte ändras. Rätta den i stället, så kommer rättelsen med nästa gång.')
                 : __('Resan är inskickad och kan inte ändras förrän den är besvarad.')]);
         }
+
+        self::ensureYearOpen($trip->vehicle_id, $trip->trip_date->year);
     }
 
     /**

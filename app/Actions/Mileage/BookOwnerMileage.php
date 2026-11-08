@@ -15,6 +15,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Models\VehicleTrip;
 use App\Models\Voucher;
+use App\Models\VoucherRow;
 use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\PayrollRuleVerification;
@@ -24,6 +25,7 @@ use App\Support\Mileage\TripListPdf;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -88,6 +90,10 @@ class BookOwnerMileage
                 throw ValidationException::withMessages(['month' => __('En bil som är en tillgång i firman ger inget avdrag med 25 kronor per mil (inkomstskattelagen 16 kap. 27 §). Bilens kostnader bokförs i stället som firmans kostnader.')]);
             }
 
+            if ($costAccount < 4000 || $costAccount > 7999) {
+                throw ValidationException::withMessages(['account' => __('Välj ett kostnadskonto mellan 4000 och 7999.')]);
+            }
+
             $account = Account::query()->where('number', $costAccount)->where('is_active', true)->first()
                 ?? throw ValidationException::withMessages(['account' => __('Konto :number finns inte i kontoplanen.', ['number' => $costAccount])]);
 
@@ -95,26 +101,30 @@ class BookOwnerMileage
                 throw ValidationException::withMessages(['account' => __('Konto :number finns inte i kontoplanen. Lägg till det under Kontoplan först.', ['number' => self::OWNER_DEPOSITS])]);
             }
 
-            $amount = 0;
+            $amount = self::amountFor($trips);
 
-            foreach ($trips->groupBy(fn (VehicleTrip $trip): int => $trip->trip_date->year) as $year => $yearTrips) {
-                $amount += Distance::amountOre((int) $yearTrips->sum('distance_hm'), self::rateFor((int) $year));
-            }
-
-            if ($amount <= 0) {
-                throw ValidationException::withMessages(['month' => __('Rättelserna är större än resorna i månaden.')]);
+            if ($amount === 0) {
+                throw ValidationException::withMessages(['month' => __('Resorna och rättelserna tar ut varandra; det finns inget att bokföra.')]);
             }
 
             $hm = (int) $trips->sum('distance_hm');
             $description = __('Bilresor i egen bil :month, :distance', ['month' => SubmitMileageClaim::monthName($monthStart), 'distance' => Distance::formatMil($hm)]);
-            $voucher = ($this->draft)($user, $company, [
-                'voucher_date' => $monthStart->endOfMonth()->toDateString(),
-                'description' => $description,
-                'series' => 'A',
-                'rows' => [
+            // A month of corrections only gives a negative amount: the deduction is taken back, debit 2018 and credit the cost.
+            $rows = $amount > 0
+                ? [
                     ['account' => $account->number, 'debit_ore' => $amount, 'credit_ore' => 0, 'description' => $description],
                     ['account' => self::OWNER_DEPOSITS, 'debit_ore' => 0, 'credit_ore' => $amount, 'description' => __('Egen bil, betald privat')],
-                ],
+                ]
+                : [
+                    ['account' => self::OWNER_DEPOSITS, 'debit_ore' => -$amount, 'credit_ore' => 0, 'description' => __('Rättelse av bilresor i egen bil')],
+                    ['account' => $account->number, 'debit_ore' => 0, 'credit_ore' => -$amount, 'description' => $description],
+                ];
+            $voucher = ($this->draft)($user, $company, [
+                // Never a date after today (P3): the month's last day, or today while the month is running.
+                'voucher_date' => $monthStart->endOfMonth()->startOfDay()->min(CarbonImmutable::today())->toDateString(),
+                'description' => $description,
+                'series' => 'A',
+                'rows' => $rows,
             ]);
 
             VehicleTrip::query()->whereIn('id', $trips->pluck('id'))->update(['voucher_id' => $voucher->id, 'status' => TripStatus::Draft->value, 'updated_at' => now()]);
@@ -183,7 +193,70 @@ class BookOwnerMileage
     /** After the owner posts the draft, its trips are booked and frozen. */
     public static function markBooked(int $companyId, string $voucherId): void
     {
-        CurrentCompany::run($companyId, fn () => VehicleTrip::query()->where('voucher_id', $voucherId)->where('status', TripStatus::Draft->value)->update(['status' => TripStatus::Booked->value, 'updated_at' => now()]));
+        CurrentCompany::run($companyId, function () use ($companyId, $voucherId): void {
+            $trips = VehicleTrip::query()->where('voucher_id', $voucherId)->where('status', TripStatus::Draft->value)->get();
+
+            if ($trips->isEmpty()) {
+                return;
+            }
+
+            VehicleTrip::query()->whereKey($trips->pluck('id'))->update(['status' => TripStatus::Booked->value, 'updated_at' => now()]);
+
+            // The person may have changed the amount in the draft before posting. The posting stands (it is the person's),
+            // but the difference is written down and shown on the page (P3: warn, not refuse).
+            $posted = self::postedAmount($voucherId);
+            $expected = rescue(fn (): int => self::amountFor($trips), null, false);
+
+            if ($expected !== null && $posted !== $expected) {
+                Audit::record('mileage.owner_voucher_amount_differs', Voucher::query()->find($voucherId), ['expected_ore' => $expected, 'posted_ore' => $posted], $companyId);
+            }
+        });
+    }
+
+    /**
+     * The deduction for the trips at each trip year's amount per mil, rounded once per year.
+     *
+     * @param  Collection<int, VehicleTrip>  $trips
+     */
+    public static function amountFor(Collection $trips): int
+    {
+        $amount = 0;
+
+        foreach ($trips->groupBy(fn (VehicleTrip $trip): int => $trip->trip_date->year) as $year => $yearTrips) {
+            $amount += Distance::amountOre((int) $yearTrips->sum('distance_hm'), self::rateFor((int) $year));
+        }
+
+        return $amount;
+    }
+
+    /** What a posted voucher puts on 2018, as credit minus debit: the deduction booked. */
+    public static function postedAmount(string $voucherId): int
+    {
+        return (int) VoucherRow::query()->where('voucher_id', $voucherId)
+            ->join('accounts', 'accounts.id', '=', 'voucher_rows.account_id')
+            ->where('accounts.number', self::OWNER_DEPOSITS)
+            ->sum(DB::raw('voucher_rows.credit_ore - voucher_rows.debit_ore'));
+    }
+
+    /**
+     * The booked vouchers among the trips whose 2018 amount differs from the trips' deduction, for a warning on the page.
+     *
+     * @param  Collection<int, VehicleTrip>  $trips
+     * @return list<string> voucher ids
+     */
+    public static function differing(Collection $trips): array
+    {
+        $differing = [];
+
+        foreach ($trips->filter(fn (VehicleTrip $trip): bool => $trip->status === TripStatus::Booked && $trip->voucher_id !== null)->groupBy('voucher_id') as $voucherId => $booked) {
+            $expected = rescue(fn (): int => self::amountFor($booked->values()), null, false);
+
+            if ($expected !== null && self::postedAmount((string) $voucherId) !== $expected) {
+                $differing[] = (string) $voucherId;
+            }
+        }
+
+        return $differing;
     }
 
     private function authorize(User $user, Company $company): void

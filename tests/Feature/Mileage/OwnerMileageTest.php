@@ -5,14 +5,17 @@ declare(strict_types=1);
 use App\Actions\Accounting\DeleteDraftVoucher;
 use App\Actions\Accounting\PostVoucher;
 use App\Actions\Mileage\BookOwnerMileage;
+use App\Actions\Mileage\LogTrip;
 use App\Actions\Mileage\SaveVehicle;
 use App\Domain\Company\LegalForm;
 use App\Domain\Mileage\TripStatus;
 use App\Livewire\Mileage\MileageLogPage;
 use App\Models\Account;
+use App\Models\AuditLog;
 use App\Models\VehicleTrip;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
+use App\Models\VoucherRow;
 use App\Modules\Payroll\Actions\ImportPayrollRules;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -105,6 +108,47 @@ it('refuses a car that is an asset of the business (F7b)', function () {
     ownerMayTrips();
 
     expect(fn () => app(BookOwnerMileage::class)($this->owner, $this->company, '2026-05'))->toThrow(ValidationException::class, '16 kap. 27 §');
+});
+
+it('takes only a cost account, and never dates the draft after today', function () {
+    app(BookOwnerMileage::class)->verifyRate($this->owner, $this->company, BookOwnerMileage::uncheckedRate(2026));
+    MileageSupport::trip($this->owner, $this->company, $this->car, '2026-06-02', '100');
+
+    expect(fn () => app(BookOwnerMileage::class)($this->owner, $this->company, '2026-06', 1930))->toThrow(ValidationException::class, 'mellan 4000 och 7999');
+
+    $voucher = app(BookOwnerMileage::class)($this->owner, $this->company, '2026-06');
+
+    expect($voucher->voucher_date->toDateString())->toBe('2026-06-10');
+});
+
+it('books a month of corrections only the other way round', function () {
+    app(BookOwnerMileage::class)->verifyRate($this->owner, $this->company, BookOwnerMileage::uncheckedRate(2026));
+    ownerMayTrips();
+    $may = app(BookOwnerMileage::class)($this->owner, $this->company, '2026-05');
+    app(PostVoucher::class)($this->owner, $may->fresh());
+    app(LogTrip::class)->correct($this->owner, $this->company, VehicleTrip::query()->where('voucher_id', $may->id)->orderBy('trip_date')->firstOrFail(), 'Resan blev inte av');
+
+    $june = app(BookOwnerMileage::class)($this->owner, $this->company, '2026-06');
+    $rows = $june->load('rows.account')->rows->mapWithKeys(fn ($row) => [$row->account->number => $row->debit_ore->ore - $row->credit_ore->ore])->all();
+
+    // 600 km = 60 mil × 25 kr taken back.
+    expect($rows)->toBe([2018 => 150_000, 5800 => -150_000]);
+});
+
+it('warns when the posted voucher has another amount than the trips give', function () {
+    app(BookOwnerMileage::class)->verifyRate($this->owner, $this->company, BookOwnerMileage::uncheckedRate(2026));
+    ownerMayTrips();
+    $voucher = app(BookOwnerMileage::class)($this->owner, $this->company, '2026-05');
+    $voucher->load('rows');
+    VoucherRow::query()->where('voucher_id', $voucher->id)->where('debit_ore', '>', 0)->update(['debit_ore' => 300_000]);
+    VoucherRow::query()->where('voucher_id', $voucher->id)->where('credit_ore', '>', 0)->update(['credit_ore' => 300_000]);
+
+    app(PostVoucher::class)($this->owner, $voucher->fresh());
+
+    expect(AuditLog::query()->where('action', 'mileage.owner_voucher_amount_differs')->exists())->toBeTrue()
+        ->and(VehicleTrip::query()->where('status', TripStatus::Booked->value)->count())->toBe(3);
+
+    Livewire::test(MileageLogPage::class)->set('month', '2026-05')->assertSee('har ett annat belopp än körjournalen ger');
 });
 
 it('is only for the owner of an enskild firma', function () {

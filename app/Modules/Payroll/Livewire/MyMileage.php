@@ -50,7 +50,7 @@ class MyMileage extends Component
     {
         abort_unless(MileageLog::canLogAsEmployee($this->tripUser(), $this->tripCompany()), 404);
 
-        if (preg_match('/^\d{4}-\d{2}$/', $this->month) !== 1) {
+        if (preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $this->month) !== 1) {
             $this->month = CarbonImmutable::today()->format('Y-m');
         }
 

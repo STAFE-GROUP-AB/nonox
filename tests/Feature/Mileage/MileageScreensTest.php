@@ -158,6 +158,18 @@ it('sums a company car\'s year against 3 000 mil and ringa omfattning, as advice
         ->and(Vehicle::query()->whereKey($car->id)->value('is_business_asset'))->toBeFalse();
 });
 
+it('counts only the benefit holder\'s trips in the benefit period for 3 000 mil and ringa omfattning, others apart', function () {
+    $car = MileageSupport::companyCar($this->owner, $this->company);
+    MileageSupport::benefit($this->owner, $this->company, $this->anna);
+    MileageSupport::trip($this->worker, $this->company, $car, '2026-03-02', '100');
+    MileageSupport::trip($this->owner, $this->company, $car, '2026-03-03', '50', ['kind' => 'PRIVATE']);
+
+    Livewire::actingAs($this->owner)->test(CarMileageSummary::class)
+        ->assertSee('I tjänsten: 10,00 mil')
+        ->assertSee('Privat: 0,00 mil vid 0 tillfällen')
+        ->assertSee('Andra förare: 0,00 mil i tjänsten, 5,00 mil privat.');
+});
+
 it('proposes a private fuel value from the log, with the arithmetic (F9)', function () {
     $car = MileageSupport::companyCar($this->owner, $this->company);
     MileageSupport::trip($this->owner, $this->company, $car, '2026-03-02', '1700');
@@ -188,6 +200,8 @@ it('will not close a company car\'s year without both odometer readings (F14)', 
         ->call('closeYear', $pool->id)
         ->assertDispatched('toast')
         ->assertSee('Året är stängt');
+
+    expect(fn () => MileageSupport::trip($this->owner, $this->company, $pool, '2026-04-02', '10'))->toThrow(ValidationException::class, 'stängt i körjournalen');
 });
 
 it('gives each role the mileage permissions from the ADR', function (string $role, bool $view, bool $manage) {

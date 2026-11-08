@@ -684,6 +684,8 @@ class PayrollRuns
             return;
         }
 
+        // Frozen at the latest when the pay is booked, whatever happened at payment (ADR-072).
+        VehicleTrip::query()->whereIn('expense_id', $claims->pluck('id'))->where('status', TripStatus::Approved->value)->update(['status' => TripStatus::Paid->value, 'updated_at' => now()]);
         $trips = VehicleTrip::query()->with('vehicle')->whereIn('expense_id', $claims->pluck('id'))->orderBy('trip_date')->get()->groupBy('expense_id');
 
         foreach ($claims as $claim) {

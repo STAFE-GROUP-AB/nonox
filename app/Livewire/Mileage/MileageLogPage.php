@@ -63,7 +63,7 @@ class MileageLogPage extends Component
         abort_unless(MileageLog::enabled($company), 404);
         abort_unless(MileageLog::canView($this->tripUser(), $company), 403);
 
-        if (preg_match('/^\d{4}-\d{2}$/', $this->month) !== 1) {
+        if (preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $this->month) !== 1) {
             $this->month = CarbonImmutable::today()->format('Y-m');
         }
 
@@ -165,6 +165,7 @@ class MileageLogPage extends Component
             'fuels' => CarBenefitCar::FUELS,
             'accounts' => $owner ? Account::query()->where('is_active', true)->whereBetween('number', [4000, 7999])->orderBy('number')->get(['number', 'name']) : collect(),
             'unchecked' => $owner ? BookOwnerMileage::uncheckedRate($monthStart->year) : null,
+            'differing' => $owner ? BookOwnerMileage::differing($ownTrips) : [],
             'monthName' => SubmitMileageClaim::monthName($monthStart),
             'canLog' => $owner || $manager,
         ]);

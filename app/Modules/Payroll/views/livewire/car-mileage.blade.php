@@ -27,6 +27,12 @@
                                 @endif
                             </p>
                             <p class="text-gray-700">{{ __('Privat: :distance vid :times tillfällen', ['distance' => Distance::formatMil($year->privateHm), 'times' => $year->privateOccasions]) }} · {{ $year->minorExtentText() }}</p>
+                            @if(! $summary['pool'])
+                                <p class="text-xs text-gray-500">{{ __('Räknat på förmånshavarens egna resor under förmånsperioden.') }}</p>
+                            @endif
+                            @if($summary['others'])
+                                <p class="text-gray-600" data-other-drivers>{{ __('Andra förare: :business i tjänsten, :private privat. Räknas inte in ovan.', ['business' => Distance::formatMil($summary['others']->businessHm), 'private' => Distance::formatMil($summary['others']->privateHm)]) }}</p>
+                            @endif
                             @if($summary['pool'] && $summary['poolPrivate'])
                                 <p class="rounded-lg bg-accent-50 p-2 text-accent-900">{{ __('Privat körning i en bil utan bilförmån kan vara en skattepliktig förmån.') }}</p>
                             @endif

@@ -23,10 +23,10 @@
                         </div>
                         @if($manager || $car->user_id === auth()->id())
                             <div class="flex flex-wrap items-end gap-3">
-                                <label class="text-gray-600">{{ __('Mätarställning vid årets början :year, km', ['year' => $year]) }}
+                                <label class="text-gray-600"><span class="sr-only">{{ $car->displayName() }}: </span>{{ __('Mätarställning vid årets början :year, km', ['year' => $year]) }}
                                     <input type="number" min="0" class="{{ $input }} mt-1 w-36" wire:model="readings.{{ $car->id }}.start" @disabled($reading?->closed_at)>
                                 </label>
-                                <label class="text-gray-600">{{ __('vid årets slut, km') }}
+                                <label class="text-gray-600"><span class="sr-only">{{ $car->displayName() }}: </span>{{ __('vid årets slut, km') }}
                                     <input type="number" min="0" class="{{ $input }} mt-1 w-36" wire:model="readings.{{ $car->id }}.end" @disabled($reading?->closed_at)>
                                 </label>
                                 @if($reading?->closed_at)
@@ -127,6 +127,9 @@
 
     @if($owner)
         <x-ui.card :title="__('Bokför bilresor i egen bil')" :description="__('För resor i firman med din egen bil får du dra av 25 kronor per mil (inkomstskattelagen 16 kap. 27 §). Inte för en bil som är en tillgång i firman.')">
+            @foreach($differing as $voucherId)
+                <p class="mb-3 rounded-lg bg-accent-50 p-3 text-sm text-accent-900" data-amount-differs>{{ __('Den bokförda verifikationen för resorna har ett annat belopp än körjournalen ger. Kontrollera den och rätta vid behov.') }} <a href="{{ route('accounting.vouchers.show', $voucherId) }}" class="font-medium underline">{{ __('Öppna verifikationen') }}</a></p>
+            @endforeach
             @if($unchecked)
                 <div class="mb-4 rounded-lg bg-accent-50 p-3 text-sm text-accent-900">
                     <p>{{ __('Beloppet per mil för :year är :amount enligt :source. Jämför med källan innan du bokför.', ['year' => $unchecked->valid_from->year, 'amount' => App\Support\Money\Money::ofOre((int) ($unchecked->value['ore'] ?? 0))->format(), 'source' => $unchecked->source_url]) }}</p>
