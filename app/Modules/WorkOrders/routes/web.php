@@ -14,5 +14,5 @@ Route::view('/arbetsorder/installningar', 'work-orders::settings')->name('workOr
 Route::get('/arbetsorder/{workOrder}', [WorkOrderDocumentsController::class, 'show'])->whereNumber('workOrder')->name('workOrders.show');
 Route::get('/arbetsorder/{workOrder}/andra', [WorkOrderDocumentsController::class, 'edit'])->whereNumber('workOrder')->name('workOrders.edit');
 Route::get('/arbetsorder/{workOrder}/pa-plats', [WorkOrderDocumentsController::class, 'field'])->whereNumber('workOrder')->name('workOrders.field');
-Route::get('/arbetsorder/{workOrder}/underlag.pdf', [WorkOrderDocumentsController::class, 'specification'])->whereNumber('workOrder')->name('workOrders.specification');
+Route::get('/arbetsorder/{workOrder}/underlag', [WorkOrderDocumentsController::class, 'specification'])->whereNumber('workOrder')->name('workOrders.specification');
 Route::get('/arbetsorder/{workOrder}/foton/{photo}', [WorkOrderDocumentsController::class, 'photo'])->whereNumber(['workOrder', 'photo'])->name('workOrders.photo');

@@ -50,7 +50,7 @@
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <p class="font-medium">{{ $changeOrder->label() }}: {{ $changeOrder->title }}</p>
-                            <p class="text-sm text-gray-500">{{ $changeOrder->status->label() }} · {{ $kr($changeOrder->netOre()) }} {{ __('exkl. moms') }}@if($changeOrder->status === App\Modules\WorkOrders\Domain\ChangeOrderStatus::ApprovedOrally) · {{ __('muntligt, svagare bevis') }}@endif @if($changeOrder->contact_attempts_count) · {{ trans_choice(':count försök att nå kunden|:count försök att nå kunden', $changeOrder->contact_attempts_count) }}@endif</p>
+                            <p class="text-sm text-gray-500">{{ $changeOrder->status->label() }} · {{ $kr($changeOrder->netOre()) }} {{ __('exkl. moms') }}@if($changeOrder->status === App\Modules\WorkOrders\Domain\ChangeOrderStatus::ApprovedOrally) · {{ __('muntligt, svagare bevis') }}@endif @if($changeOrder->contact_attempts_count) · {{ __('försök att nå kunden: :count', ['count' => $changeOrder->contact_attempts_count]) }}@endif</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <a href="{{ route('workOrders.changeOrderPdf', [$workOrder->id, $changeOrder->id]) }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('PDF') }}</a>

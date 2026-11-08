@@ -223,8 +223,8 @@
     {
       "id": "arbetsorder-och-ata",
       "rubrik": "Arbetsorder och ÄTA för hantverkare",
-      "beskrivning": "Arbetsorder med tid och material som blir fakturaunderlag, och ändrings- och tilläggsarbeten (ÄTA) som kunden godkänner. ROT- och RUT-avdrag och personalliggaren finns redan och används i samma flöde.",
-      "status": "Planerat",
+      "beskrivning": "Arbetsorder med tid och material som blir fakturaunderlag, och ändrings- och tilläggsarbeten (ÄTA) som kunden godkänner med pris innan arbetet görs. ROT- och RUT-avdrag används i samma flöde. Personalliggaren för byggarbetsplatser finns inte än och kommer i ett senare steg.",
+      "status": "Pågår",
       "omrade": "Fakturering",
       "uppdaterad": "2026-11-08"
     },

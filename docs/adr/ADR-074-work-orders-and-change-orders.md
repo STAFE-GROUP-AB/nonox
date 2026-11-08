@@ -1,6 +1,6 @@
 # ADR-074: Work orders and change orders (arbetsorder och ÄTA)
 
-Status: Proposed
+Status: Accepted (built 2026-11-08, see "Addendum: as built")
 Date: 2026-11-08
 Rule sheet: `docs/specs/rules/arbetsorder-och-ata.md` (rules AO-R1 … AO-R39, fixtures F1–F10,
 L-questions L1–L16)
@@ -361,3 +361,62 @@ Decided by Lead 2026-11-08 under the owner's mandate, open for the consultant's 
 
 The roadmap text is corrected: the staff ledger for construction is not built yet (ADR-022
 v2), so this module does not claim it.
+
+## Addendum: as built (2026-11-08, branch feat/work-orders-ata)
+
+Built: steps 2–7 and 10 of the build steps, on the shared signing domain from the customer
+portal build (commit c6f3bd93, merged). Not built: step 8 (offline queue; reports already
+carry a device-made UUID so a repeat is stored once), step 9 (payroll proposals) and step 11
+(staff ledger link).
+
+- **Module** `app/Modules/WorkOrders`, key `work_orders`, permissions as in §1, role
+  `field_worker` ("Utförare") with `work-orders:view` and `work-orders:report`. A field worker
+  is recognised by the role: they see only assigned work orders, get the field screen instead
+  of the office page, and never see prices. `work-orders:view` is the archive permission, so
+  decided ÄTA PDFs stay readable while the module is off (route outside `module:`).
+- **Tables**: `work_orders`, `work_order_labour_kinds` (type LABOUR/TRAVEL/MACHINE, unit
+  HOUR/TRIP/KM; Arbete and Resa seeded), `work_order_users`, `work_order_buyers`,
+  `work_order_time_entries` and `work_order_material_entries` (uuid ids, append-only trigger
+  `work_order_entries_append_only`: only `reversed_by_id` once and `invoice_id` while the
+  invoice is a draft may change), `change_orders` (trigger `change_orders_protect_decided`),
+  `change_order_contact_attempts` (append-only), `work_order_payment_instalments`,
+  `work_order_invoices` (BASIS, INSTALMENT, FINAL; the contract share and the fixed-price ÄTA
+  each invoice takes), `work_order_photos` (private disk), `change_order_on_site_codes`.
+  Check constraints: price form, status, ROT/RUT xor reverse charge.
+- **Core changes**: `invoices.labour_hours_milli` and `invoices.work_description` (protected
+  by the existing `invoices_protect_issued` trigger, which compares every column not listed as
+  mutable, so no trigger change was needed; a test proves it); `invoice_tax_reduction_buyers`
+  for several buyers (O6) with `TaxReduction::used()` counting each buyer's share and
+  `recheck()` per buyer; the invoice form gained "Arbetade timmar" and "Typ av arbete"; the
+  ROT/RUT PDF prints hours, kind of work and the buyer's personnummer (O5, `TODO(legal-verify)`
+  L6); `MovementType::WorkOrderIssue`; `SupplierInvoiceRow::supplierInvoice()`;
+  `NumberSeries::WORK_ORDERS`; a non-blocking "Pågående arbeten är granskade" point (WARN) in
+  the year-end checklist while the module is on; destination `work-orders` in
+  `CompanyOverview` for signing notices.
+- **Signing**: `ChangeOrder` implements `Signable` with the type **`ATA`** (SignableTypes
+  allows at most ten characters, so not `CHANGEORDER`), key in `signable_id`. Sending makes the
+  ÄTA SENT (content then fixed); `markSigned` makes it APPROVED with the signer's name and
+  `approval_method` LINK or ON_SITE; `WorkOrdersSigningHook::declined` makes it DECLINED.
+  On site (O4): a new link is made for the same ÄTA and a six-digit code goes to the customer's
+  own e-mail; the field worker's phone opens the signing page only after the code (hash only,
+  15 minutes, five tries, the counter committed apart from the error). A field worker may
+  present only an ÄTA the office has already sent. SMS is not built: e-mail only.
+- **Invoice basis** as §5; hours in thousandths rounded from minutes. ROT/RUT basis without
+  labour hours is refused (F10, AO-R14, also at fixed price). An a conto instalment does not
+  require hours (the work may not have started); the final invoice does.
+- **A conto** for FIXED only. ESTIMATE plans wait for L14 (how the final invoice deducts a
+  conto on löpande räkning without negative rows). Kontantmetoden: refused (L10).
+- **Year-end** `OngoingWork` with methods NOT_SET, K2_MAIN, K2_ALTERNATIVE, K3_MAIN,
+  K3_COMPLETION in the module settings; costs from posted voucher rows on accounts 4000–7999 on
+  the work order's project; estimated total cost typed on the page (not stored). Proposals
+  become two draft vouchers (adjustment, reversal next day), never posted. Accounts 1620, 2420,
+  2450 created with their names when missing; 1470 shown as a figure only (change account L12).
+- **Advice** (`Advice`): KtjL consumer = no organisation or VAT number (L1); 15 % or the
+  agreed limit on main work incl. VAT, ÄTA apart (F3); ML 17:16 deadline per month from the
+  first day of the deadline month (F6); personalliggare hint above four prisbasbelopp for a
+  business customer (F8; 2027 amount `TODO(legal-verify)`); ROT a conto paid one year without
+  finished work by 31 January (F9, shown on the work order only, not yet on the invoice page).
+- **Open**: the landing page feature card (needs a real screenshot from `manual:screenshots`),
+  the privacy policy text and its version bump (left to the next legal deploy to avoid a
+  version collision), EXPIRED is never set automatically (a sent ÄTA whose link expired stays
+  SENT until withdrawn or resent), a credited final invoice does not reopen the contract sum.
