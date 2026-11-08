@@ -710,3 +710,12 @@ third-party extensions are never launched.
 9. **Semantic versioning from 1.0**, so local modules and app vendors can state
    compatibility.
 10. **Names**: "Appar" and "Lokala moduler" in the UI, `/appar` as the directory URL.
+
+## Addendum 2026-11-08: what starts before the owner decides
+
+Decided by Lead 2026-11-08 under the owner's mandate, open for the consultant's review:
+build steps 1 (prove the threat model with tests) and 3 (registry hardening) start now.
+Both protect the books whether or not third-party extensions ever launch, and neither
+changes the hosted service's database. Step 2 (database roles) waits for owner question 7,
+because the hosted service needs a maintenance window and a check of the production
+role. Steps 4–10 wait for owner questions 1–4 and 10.
