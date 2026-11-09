@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Jetstream\Jetstream;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Modules\DummyModule;
+use Tests\Support\Modules\JsonTranslationsServiceProvider;
 use Tests\Support\Modules\RefusedModuleServiceProvider;
 use Tests\Support\Modules\TestRegistry;
 use Tests\Support\Modules\ThirdPartyDummyModule;
@@ -93,30 +94,38 @@ it('refuses role permissions and archive permissions the module does not add its
 });
 
 it('requires a vendor.name key for a module that is not first-party', function (string $key) {
-    expect(fn () => app(ModuleRegistry::class)->register(new ThirdPartyDummyModule($key)))->toThrow(InvalidModule::class)
-        ->and(app(ModuleRegistry::class)->has($key))->toBeFalse();
+    $registry = TestRegistry::make();
+
+    expect(fn () => $registry->register(new ThirdPartyDummyModule($key)))->toThrow(InvalidModule::class)
+        ->and($registry->has($key))->toBeFalse();
 })->with(['dummy', 'Acme.Dummy', 'acme.', '.dummy', 'acme.dummy.extra', 'acme dummy', "acme.dummy\n", 'acme.'.str_repeat('x', 50)]);
 
 it('keeps a third-party module\'s permissions inside its own key', function (string $permission) {
-    expect(fn () => app(ModuleRegistry::class)->register(new ThirdPartyDummyModule(permissions: ['acme.dummy:view', $permission], roles: [], rolePermissions: [], archivePermissions: [])))
+    $registry = TestRegistry::make();
+
+    expect(fn () => $registry->register(new ThirdPartyDummyModule(permissions: ['acme.dummy:view', $permission], roles: [], rolePermissions: [], archivePermissions: [])))
         ->toThrow(InvalidModule::class)
-        ->and(app(ModuleRegistry::class)->has('acme.dummy'))->toBeFalse();
+        ->and($registry->has('acme.dummy'))->toBeFalse();
 })->with(['view', 'crm:view', 'acme.other:view', 'acme.dummyx:view', 'acme.dummy', 'self:acme']);
 
 it('refuses a third-party role named owner or outside its own key', function (string $role) {
-    expect(fn () => app(ModuleRegistry::class)->register(new ThirdPartyDummyModule(roles: [$role => 'Ägare'], rolePermissions: [])))
+    $registry = TestRegistry::make();
+
+    expect(fn () => $registry->register(new ThirdPartyDummyModule(roles: [$role => 'Ägare'], rolePermissions: [])))
         ->toThrow(InvalidModule::class)
-        ->and(app(ModuleRegistry::class)->has('acme.dummy'))->toBeFalse()
-        ->and(app(ModuleRegistry::class)->moduleForRole($role))->toBeNull();
+        ->and($registry->has('acme.dummy'))->toBeFalse()
+        ->and($registry->moduleForRole($role))->toBeNull();
 })->with(['owner', 'admin', 'acme_dummy_admin', 'acme.other:admin']);
 
 it('lets a third-party module give its permissions only to core roles and its own roles', function () {
-    expect(fn () => app(ModuleRegistry::class)->register(new ThirdPartyDummyModule(rolePermissions: ['payroll_admin' => ['acme.dummy:view']])))
+    $registry = TestRegistry::make();
+
+    expect(fn () => $registry->register(new ThirdPartyDummyModule(rolePermissions: ['payroll_admin' => ['acme.dummy:view']])))
         ->toThrow(InvalidModule::class, 'Module acme.dummy gives permissions to role payroll_admin, which is neither a core role nor its own.');
 
-    app(ModuleRegistry::class)->register(new ThirdPartyDummyModule);
+    $registry->register(new ThirdPartyDummyModule);
 
-    expect(app(ModuleRegistry::class)->get('acme.dummy'))->toBeInstanceOf(ThirdPartyDummyModule::class);
+    expect($registry->get('acme.dummy'))->toBeInstanceOf(ThirdPartyDummyModule::class);
 });
 
 it('still lets a first-party module give its permissions to another module\'s role', function () {
@@ -233,8 +242,7 @@ it('serves the lists a module had when it was checked, not what it returns later
         }
     };
 
-    $registry = app(ModuleRegistry::class);
-    $registry->register($module);
+    $registry = TestRegistry::install([], $module);
     $module::$changed = true;
     (new JetstreamServiceProvider(app()))->configurePermissions();
 
@@ -248,9 +256,27 @@ it('serves the lists a module had when it was checked, not what it returns later
         ->and(Jetstream::findRole('auditor')?->permissions)->not->toContain('vouchers:post');
 });
 
+it('refuses a module registered after the providers have registered', function () {
+    expect(fn () => app(ModuleRegistry::class)->register(new ThirdPartyDummyModule))
+        ->toThrow(InvalidModule::class, "Module acme.dummy registers too late: register modules in a service provider's register() method.")
+        ->and(app(ModuleRegistry::class)->has('acme.dummy'))->toBeFalse();
+});
+
+it('leaves no translations cached by the module check, so a provider booting later adds its own', function () {
+    app()->setLocale('sv');
+
+    // The check reads roles(), whose labels are translated: that loads and caches the JSON strings.
+    __('Bokförare');
+    (new ModuleServiceProvider(app()))->checkModules();
+    app()->register(JsonTranslationsServiceProvider::class);
+
+    expect(__('Third party hello'))->toBe('Hej från tillägget')
+        ->and(__('Bokförare'))->toBe('Bokförare');
+});
+
 describe('a third-party module that follows the rules', function () {
     beforeEach(function () {
-        app(ModuleRegistry::class)->register(new ThirdPartyDummyModule);
+        TestRegistry::install([], new ThirdPartyDummyModule);
         (new JetstreamServiceProvider(app()))->configurePermissions();
 
         [$this->owner, $this->company] = Bookkeeping::company();

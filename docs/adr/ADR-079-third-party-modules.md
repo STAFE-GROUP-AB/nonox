@@ -777,24 +777,34 @@ First-party means both: a key in `ModuleRegistry::FIRST_PARTY` and a class in
 `App\Modules\`. A module with a first-party key whose class lives elsewhere is treated as
 third-party, so its key is refused.
 
-Modules register while the service providers register, before translations exist, and
-`roles()` returns translated labels. So `register()` checks the key at once, and
-`ModuleRegistry::verify()` checks the rest, each module against the ones registered before
-it. `verify()` runs in a `booting` callback of `ModuleServiceProvider`, which fires after
-every provider has registered and before any provider boots, so a refused module stops the
-boot before its own routes and listeners exist. `JetstreamServiceProvider::configurePermissions()`
-also calls it first, so a refused module never reaches the core roles, and a `booted`
-callback checks modules registered in a `boot()` method. Any read of the lists checks
-unchecked modules first. A module registered after boot is checked in full at once. A
-refused module is removed and the error stops the boot: a mistake is found on the first
-request, never silently in production.
+**Rule: a module registers in its service provider's `register()` method**, as all twelve
+first-party modules do. `register()` checks the key at once; the rest needs `roles()`,
+whose labels are translated, and translations are not available while providers register.
+So `ModuleServiceProvider::checkModules()` runs in a `booting` callback, which fires after
+every provider has registered and before any provider boots. It closes the registry, so a
+module registered later (in a `boot()` method or at runtime) is refused with "registers too
+late", and then `ModuleRegistry::verify()` checks every module against the ones registered
+before it. A refused module therefore stops the boot before its own routes, listeners or
+role grants exist. `JetstreamServiceProvider::configurePermissions()` also calls `verify()`
+first, and any read of the lists checks unchecked modules first. A refused module is
+removed and the error stops the boot: a mistake is found on the first request, never
+silently in production.
+
+The check translates the role labels, which loads and caches the JSON translations before
+any provider has booted. A package that adds its own JSON strings in `boot()`
+(`loadJsonTranslationsFrom()`) would then never see them, so `checkModules()` empties the
+translator's cache afterwards (`setLoaded([])`), and a test proves a provider booting later
+gets its strings. Changing the `Module` contract so role keys can be read without labels
+would avoid the translation entirely; it was left for step 8 because it touches every module.
 
 The lists a module had when it was checked (permissions, role keys, role permissions,
 archive permissions) are kept by the registry and served from it
 (`permissionsOf()`, `roleKeysOf()`, `rolePermissionsOf()`, `archivePermissionsOf()`;
 `User::hasTeamPermission`, the Jetstream roles, firm memberships and the company overview
-use them), so a module cannot return something else after the check. Role labels stay live,
-because they are translated per request.
+use them), so a module cannot return something else after the check. Role labels are not
+part of the check: `JetstreamServiceProvider` reads them once at boot and registers the
+roles with them, so they are fixed in the locale the application boots in, not translated
+per request.
 
 Tests: `tests/Feature/Modules/ModuleRegistryHardeningTest.php`;
 `tests/Support/Modules/ThirdPartyDummyModule.php` is the third-party twin of the dummy
