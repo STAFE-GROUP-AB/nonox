@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Support\Database\DatabaseRoles;
+use App\Support\Demo\DemoDatabase;
 use App\Support\Demo\DemoMode;
 use App\Support\Demo\DemoSessionHandler;
 use App\Support\Demo\DemoSessions;
@@ -37,6 +39,19 @@ final class DemoServiceProvider extends ServiceProvider
     public function boot(): void
     {
         DemoMode::rememberMainConnection();
+
+        // With separate database roles (ADR-079 §6) schema commands run only as the owner, except on the demo
+        // database: it may be migrated on its own connection, and only when DemoDatabase::assertSafe() holds
+        // (it throws with the reason otherwise). The grants are never applied there.
+        DatabaseRoles::approveConnectionsUsing('demo', function (string $connection): bool {
+            if ($connection !== DemoMode::CONNECTION) {
+                return false;
+            }
+
+            DemoDatabase::assertSafe();
+
+            return true;
+        });
 
         // Any request through Laravel's HTTP client while the default connection is the demo's: refused before it is sent.
         Http::globalRequestMiddleware(function (RequestInterface $request): RequestInterface {

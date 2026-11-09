@@ -198,7 +198,12 @@ it('deletes a structure row only together with its version (re-check P3)', funct
     expect(fn () => DB::transaction(fn () => DB::table('bom_rows')->where('id', $row->id)->delete()))->toThrow(QueryException::class);
     expect(fn () => DB::transaction(fn () => DB::statement('DELETE FROM bom_rows WHERE id = ?', [$row->id])))->toThrow(QueryException::class);
 
-    // The cascade from its version goes through.
+    // The cascade from its version goes through. NONOX never deletes a version; with the database roles
+    // (ADR-079 §6) the app role cannot, so only a role that may delete one can show the cascade.
+    if (! DB::scalar("select has_table_privilege(current_user, 'bills_of_materials', 'DELETE')")) {
+        return;
+    }
+
     DB::table('bills_of_materials')->where('id', $this->fx['pasta']->id)->delete();
     expect(DB::table('bom_rows')->where('bill_of_materials_id', $this->fx['pasta']->id)->count())->toBe(0);
 });

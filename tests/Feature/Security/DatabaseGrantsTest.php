@@ -24,8 +24,6 @@ use Tests\Support\DatabaseRolesHarness;
 
 uses(WithConsoleEvents::class);
 
-afterEach(fn () => DatabaseRoles::forgetConnectionApprovers());
-
 pest()->group('database-roles');
 
 /** @return list<string> */
@@ -260,11 +258,26 @@ it('applies the grants after a migrate that failed, as the owner', function () {
 
 it('lets a registered approver allow schema commands on its own connection only', function () {
     config(['database.roles.enabled' => true, 'database.roles.migration_connection' => 'pgsql_owner']);
-    DatabaseRoles::approveConnectionsUsing(fn (string $connection): bool => $connection === 'demo');
+    DatabaseRoles::approveConnectionsUsing('test-sandbox', fn (string $connection): bool => $connection === 'sandbox');
 
-    expect(DatabaseRoles::refusal('migrate', 'demo'))->toBeNull()
-        ->and(DatabaseRoles::refusal('migrate', 'pgsql'))->not->toBeNull()
-        ->and(DatabaseRoles::refusal('migrate', null))->not->toBeNull();
+    try {
+        expect(DatabaseRoles::refusal('migrate', 'sandbox'))->toBeNull()
+            ->and(DatabaseRoles::refusal('migrate', 'pgsql'))->not->toBeNull()
+            ->and(DatabaseRoles::refusal('migrate', null))->not->toBeNull();
+    } finally {
+        DatabaseRoles::approveConnectionsUsing('test-sandbox', fn (string $connection): bool => false);
+    }
+});
+
+it('lets the demo connection pass the guard only when the demo database is safe', function () {
+    config(['database.roles.enabled' => true, 'database.roles.migration_connection' => 'pgsql_owner']);
+
+    // A demo connection pointing at the main database is refused by DemoDatabase::assertSafe(), with its reason.
+    config(['database.connections.demo.database' => config('database.connections.pgsql.database')]);
+    expect(fn () => DatabaseRoles::refusal('migrate', 'demo'))->toThrow(RuntimeException::class);
+
+    // Another connection is never approved by the demo.
+    expect(DatabaseRoles::refusal('migrate', 'reports'))->not->toBeNull();
 });
 
 it('takes temporary tables and large objects away from the app and the reader', function () {

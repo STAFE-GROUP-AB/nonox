@@ -41,7 +41,7 @@ final class DatabaseRoles
         'db:wipe',
     ];
 
-    /** @var list<Closure(string): bool> */
+    /** @var array<string, Closure(string): bool> */
     private static array $connectionApprovers = [];
 
     /**
@@ -50,16 +50,13 @@ final class DatabaseRoles
      * The callback receives the connection name and returns true only when that connection is safe
      * to migrate. The grants are still applied only on the main database's owner connection.
      *
+     * Registered under a name, so registering again (every boot) replaces it.
+     *
      * @param  Closure(string): bool  $approver
      */
-    public static function approveConnectionsUsing(Closure $approver): void
+    public static function approveConnectionsUsing(string $name, Closure $approver): void
     {
-        self::$connectionApprovers[] = $approver;
-    }
-
-    public static function forgetConnectionApprovers(): void
-    {
-        self::$connectionApprovers = [];
+        self::$connectionApprovers[$name] = $approver;
     }
 
     public static function enabled(): bool
