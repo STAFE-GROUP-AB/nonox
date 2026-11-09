@@ -49,6 +49,7 @@ class Settings extends Component implements SpansCompanies
     public bool $registrationOpen = false;
 
     public string $securityContact = '';
+
     public bool $demoEnabled = false;
 
     public function mount(): void

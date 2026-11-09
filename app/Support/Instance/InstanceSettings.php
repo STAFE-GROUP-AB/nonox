@@ -36,6 +36,7 @@ final class InstanceSettings
 
     /** Where vulnerability reports go: an e-mail address or an https address (ADR-078, RFC 9116 Contact). */
     public const string SECURITY_CONTACT = 'security.contact';
+
     public const string DEMO_ENABLED = 'demo.enabled';
 
     /** @var array<string, mixed> the defaults, which are also the only keys */
