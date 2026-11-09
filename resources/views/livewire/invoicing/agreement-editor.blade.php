@@ -67,6 +67,11 @@
             <x-ui.field for="agreement_end" :label="__('Sista dag (frivilligt)')" error="end_date" :hint="__('Tomt: tills vidare.')">
                 <input id="agreement_end" type="date" class="{{ $input }} mt-1" wire:model="endDate" @disabled(! $editable)>
             </x-ui.field>
+            @if($tracksRecurringRevenue && $editable)
+                <x-ui.field for="agreement_effective_from" :label="__('Gäller från')" error="effective_from" :hint="__('För Återkommande intäkter: från vilket datum en ändring, paus eller avslutning gäller. Tomt: i dag.')">
+                    <input id="agreement_effective_from" type="date" class="{{ $input }} mt-1" wire:model="effectiveFrom">
+                </x-ui.field>
+            @endif
             <x-ui.field for="agreement_your_reference" :label="__('Er referens')" error="your_reference">
                 <input id="agreement_your_reference" type="text" class="{{ $input }} mt-1" wire:model="yourReference" @disabled(! $editable)>
             </x-ui.field>

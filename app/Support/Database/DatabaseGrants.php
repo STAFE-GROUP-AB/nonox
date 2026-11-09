@@ -247,6 +247,13 @@ final class DatabaseGrants
         'recurring_invoices' => GrantDecision::ReadWrite,
         'register_import_presets' => GrantDecision::NoDelete,
         'register_imports' => GrantDecision::NoDelete,
+        // NONOX SaaS (ADR-080): versions and corrections are append-only (trigger); a closed month and its
+        // customer rows are frozen by triggers; open months are recomputed, estimates replaced.
+        'saas_contract_versions' => GrantDecision::AppendOnly,
+        'saas_corrections' => GrantDecision::AppendOnly,
+        'saas_customer_months' => GrantDecision::ReadWrite,
+        'saas_estimates' => GrantDecision::ReadWrite,
+        'saas_months' => GrantDecision::NoDelete,
         'salary_changes' => GrantDecision::ReadWrite,
         'sales_document_rows' => GrantDecision::ReadWrite,
         'sales_documents' => GrantDecision::ReadWrite,

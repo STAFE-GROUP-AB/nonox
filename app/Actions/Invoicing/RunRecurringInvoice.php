@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Invoicing;
 
 use App\Domain\Invoicing\AgreementStatus;
+use App\Events\RecurringInvoiceStatusChanged;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -18,7 +19,9 @@ use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -68,6 +71,10 @@ class RunRecurringInvoice
                 'status' => $ended ? AgreementStatus::Ended : $agreement->status,
             ])->save();
 
+            if ($ended) {
+                Event::dispatch(new RecurringInvoiceStatusChanged($company->id, $agreement->id, $user->id, AgreementStatus::Ended->value));
+            }
+
             if ($agreement->send_automatically) {
                 $invoice = ($this->issue)($user, $invoice);
             }
@@ -101,16 +108,23 @@ class RunRecurringInvoice
         return $invoice;
     }
 
-    public function setStatus(User $user, RecurringInvoice $agreement, AgreementStatus $status): RecurringInvoice
+    /**
+     * @param  ?string  $effectiveFrom  "Gäller från" (Y-m-d) for NONOX SaaS (ADR-080); passed on in the event only
+     */
+    public function setStatus(User $user, RecurringInvoice $agreement, AgreementStatus $status, ?string $effectiveFrom = null): RecurringInvoice
     {
         Gate::forUser($user)->authorize('update', $agreement);
 
-        return CurrentCompany::run($agreement->company_id, function () use ($user, $agreement, $status): RecurringInvoice {
+        Validator::make(['effective_from' => $effectiveFrom], ['effective_from' => ['nullable', 'date_format:Y-m-d']], [], ['effective_from' => __('gäller från')])->validate();
+
+        return CurrentCompany::run($agreement->company_id, fn (): RecurringInvoice => DB::transaction(function () use ($user, $agreement, $status, $effectiveFrom): RecurringInvoice {
             $agreement->forceFill(['status' => $status])->save();
 
             Audit::record('agreement.status_changed', $agreement, ['number' => $agreement->number, 'status' => $status->value], $agreement->company_id, $user);
 
+            Event::dispatch(new RecurringInvoiceStatusChanged($agreement->company_id, $agreement->id, $user->id, $status->value, $effectiveFrom));
+
             return $agreement;
-        });
+        }));
     }
 }

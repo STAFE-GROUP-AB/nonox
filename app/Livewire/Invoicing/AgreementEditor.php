@@ -13,6 +13,8 @@ use App\Models\Company;
 use App\Models\Customer;
 use App\Models\RecurringInvoice;
 use App\Models\User;
+use App\Modules\ModuleManager;
+use App\Modules\Saas\SaasModule;
 use App\Support\Toast;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -48,6 +50,9 @@ class AgreementEditor extends Component
     public string $ourReference = '';
 
     public string $notes = '';
+
+    /** "Gäller från" for a price change, a pause or an end, shown only with NONOX SaaS on (ADR-080 §3.1). Empty: today. */
+    public string $effectiveFrom = '';
 
     public function mount(?RecurringInvoice $agreement = null): void
     {
@@ -91,7 +96,10 @@ class AgreementEditor extends Component
             'our_reference' => $this->ourReference,
             'notes' => $this->notes,
             'rows' => $this->rowInput(),
+            'effective_from' => $this->effectiveFromInput(),
         ], $this->agreementId === null ? null : $this->agreement());
+
+        $this->effectiveFrom = '';
 
         if ($this->agreementId === null) {
             Toast::flash(__(':title är sparat. Första fakturan skapas :date.', ['title' => $agreement->title(), 'date' => $agreement->next_invoice_date->toDateString()]));
@@ -120,7 +128,8 @@ class AgreementEditor extends Component
 
     public function setStatus(string $status, RunRecurringInvoice $run): void
     {
-        $agreement = $run->setStatus($this->user(), $this->agreement(), AgreementStatus::from($status));
+        $agreement = $run->setStatus($this->user(), $this->agreement(), AgreementStatus::from($status), $this->effectiveFromInput());
+        $this->effectiveFrom = '';
 
         $this->toast(match ($agreement->status) {
             AgreementStatus::Active => __(':title är aktivt igen.', ['title' => $agreement->title()]),
@@ -141,7 +150,18 @@ class AgreementEditor extends Component
             'customers' => Customer::query()->where('is_active', true)->whereNull('processing_restricted_at')->orderBy('name')->get(['id', 'number', 'name', 'email']),
             'articles' => $this->rowArticles(),
             'vatRules' => $this->salesVatRules(),
+            'tracksRecurringRevenue' => $this->tracksRecurringRevenue(),
         ]);
+    }
+
+    private function tracksRecurringRevenue(): bool
+    {
+        return app(ModuleManager::class)->isEnabled(SaasModule::KEY, $this->company());
+    }
+
+    private function effectiveFromInput(): ?string
+    {
+        return $this->effectiveFrom !== '' && $this->tracksRecurringRevenue() ? $this->effectiveFrom : null;
     }
 
     private function agreement(): RecurringInvoice

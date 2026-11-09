@@ -19,6 +19,7 @@ use App\Modules\Peppol\PeppolServiceProvider;
 use App\Modules\Planning\PlanningServiceProvider;
 use App\Modules\Portal\PortalServiceProvider;
 use App\Modules\Pos\PosServiceProvider;
+use App\Modules\Saas\SaasServiceProvider;
 use App\Modules\StaffLedger\StaffLedgerServiceProvider;
 use App\Modules\WorkOrders\WorkOrdersServiceProvider;
 use App\Providers\AppServiceProvider;
@@ -49,6 +50,7 @@ return [
     ConnectServiceProvider::class,
     BankingServiceProvider::class,
     WorkOrdersServiceProvider::class,
+    SaasServiceProvider::class,
     FortnoxServiceProvider::class,
     ImportServiceProvider::class,
     AppServiceProvider::class,

@@ -7,6 +7,7 @@ namespace App\Actions\Invoicing;
 use App\Domain\Invoicing\AgreementStatus;
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Invoicing\SalesRowInput;
+use App\Events\RecurringInvoiceChanged;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\NumberSeries;
@@ -19,6 +20,7 @@ use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -32,7 +34,8 @@ use Illuminate\Validation\ValidationException;
 class SaveRecurringInvoice
 {
     /**
-     * @param  array<string, mixed>  $input  customer_id, name, interval_months, next_invoice_date, end_date, send_automatically, your_reference, our_reference, notes, rows
+     * @param  array<string, mixed>  $input  customer_id, name, interval_months, next_invoice_date, end_date, send_automatically, your_reference, our_reference, notes, rows,
+     *                                       effective_from (optional "Gäller från" for NONOX SaaS, ADR-080; passed on in the event only)
      */
     public function __invoke(User $user, Company $company, array $input, ?RecurringInvoice $agreement = null): RecurringInvoice
     {
@@ -50,6 +53,7 @@ class SaveRecurringInvoice
             'your_reference' => ['nullable', 'string', 'max:255'],
             'our_reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'effective_from' => ['nullable', 'date_format:Y-m-d'],
             'rows' => ['required', 'array', 'min:1'],
             'rows.*.description' => ['required', 'string', 'max:255'],
             'rows.*.vat_rate' => ['required', 'integer', Rule::in(InvoiceCalculator::VAT_RATES)],
@@ -63,6 +67,7 @@ class SaveRecurringInvoice
         ], [
             'next_invoice_date' => __('nästa fakturadatum'),
             'interval_months' => __('intervall'),
+            'effective_from' => __('gäller från'),
         ])->validate();
 
         return DB::transaction(fn (): RecurringInvoice => CurrentCompany::run($company, function () use ($validated, $input, $user, $company, $agreement): RecurringInvoice {
@@ -125,6 +130,8 @@ class SaveRecurringInvoice
                 'next_invoice_date' => $next->toDateString(),
                 'total_ore' => $totals['total'],
             ], $company, $user);
+
+            Event::dispatch(new RecurringInvoiceChanged($company->id, $agreement->id, $user->id, $isNew, $validated['effective_from'] ?? null));
 
             return $agreement->load('rows');
         }));
