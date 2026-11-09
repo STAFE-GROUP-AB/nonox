@@ -18,6 +18,7 @@ final readonly class RevenueLine
 
     public function __construct(
         public string $key,
+        /** Only for display in tests and imports; never stored (ADR-080 addendum, review 7). */
         public string $description,
         public string $currency,
         public int $amountMinor,
@@ -69,7 +70,7 @@ final readonly class RevenueLine
     {
         return array_filter([
             'key' => $this->key,
-            'description' => $this->description,
+            // No free text in the ledger (GDPR, review 7): the description is read from the source when shown.
             'currency' => $this->currency,
             'amount_minor' => $this->amountMinor,
             'interval_unit' => $this->intervalUnit,

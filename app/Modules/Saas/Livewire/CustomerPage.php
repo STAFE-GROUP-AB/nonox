@@ -13,6 +13,7 @@ use App\Modules\Saas\Models\SaasContractVersion;
 use App\Modules\Saas\Models\SaasCorrection;
 use App\Modules\Saas\Models\SaasCustomerMonth;
 use App\Modules\Saas\Models\SaasEstimate;
+use App\Modules\Saas\Support\SourceLabels;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -62,6 +63,7 @@ class CustomerPage extends Component
                 ->limit(self::INVOICES)
                 ->get(),
             'canSeeInvoices' => $canSeeInvoices,
+            'labels' => SourceLabels::for($versions->map(fn (SaasContractVersion $version): array => [$version->source_type->value, $version->source_id])->all()),
         ]);
     }
 }

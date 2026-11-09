@@ -57,7 +57,7 @@ Raderna summerar till öret. Tryck på en rad så ser du kunderna bakom beloppet
 
 En uppsägning är inte churn. Kunden betalar perioden ut, så intäkten räknas som churn först den månad då avtalet har upphört. Fram till dess står avtalet under **Uppsagda** med beloppet och månaden det upphör.
 
-I avtalsfaktureringen räknas ett avtal med **Sista dag (frivilligt)** fram till nästa fakturadatum efter den dagen, det vill säga till slutet av den sista betalda perioden. Ett avtal som du avslutar räknas fram till det datum du anger i **Gäller från**.
+I avtalsfaktureringen räknas ett avtal med **Sista dag (frivilligt)** fram till nästa fakturadatum efter den dagen, det vill säga till slutet av den sista betalda perioden. Ett avtal som du avslutar räknas fram till det datum du anger i **Gäller från**. Avslutar du ett pausat avtal räknas det pausade beloppet som churn den månad avtalet upphör.
 
 ## Gäller från
 
@@ -77,7 +77,9 @@ När NONOX SaaS är påslaget har avtalet i avtalsfaktureringen fältet **Gälle
 
 ## Bra att veta
 
-- Ett avtal i avtalsregistret som faktureras med en avtalsfakturering räknas bara en gång, i avtalsfaktureringen.
+- Ett avtal i avtalsregistret som är kopplat till en avtalsfakturering räknas bara en gång, i avtalsfaktureringen. Har en kund både ett avtal i registret och en avtalsfakturering som inte är kopplade visas de under **Källor** som **Möjlig dubbelräkning**, så att du kan koppla dem.
+- Ett nytt avtal i avtalsfaktureringen räknas från sitt första fakturadatum, om du inte anger något annat i **Gäller från**.
+- Saknar Riksbanken en kurs vid månadens slut används den senaste kända kursen, och månaden kan inte stängas förrän kursen finns.
 - Ett avtal i avtalsregistret med ett totalvärde räknas om det har både start- och slutdatum. Värdet delas då med antalet månader.
 - Ett ramavtal har inget bestämt belopp och räknas inte.
 - Bokföraren och revisorn kan läsa sidorna. Ägaren, administratören och redovisningskonsulten kan också stänga månader.

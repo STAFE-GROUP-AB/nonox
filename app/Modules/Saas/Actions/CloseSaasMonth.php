@@ -57,6 +57,14 @@ final class CloseSaasMonth
                     : __('Stäng :month först. Månaderna stängs i tur och ordning.', ['month' => Months::label($closable->key())])]);
             }
 
+            // A month that uses a carried rate is not final yet (review 9).
+            if ((array) $closable->missing_rates !== []) {
+                throw ValidationException::withMessages(['month' => __('Riksbanken har ingen kurs för :currencies vid slutet av :month. Månaden kan stängas när kursen finns.', [
+                    'currencies' => implode(', ', (array) $closable->missing_rates),
+                    'month' => Months::label($closable->key()),
+                ])]);
+            }
+
             $closed = $this->ledger->close($company, $month, $user->id, $today);
 
             Audit::record('saas.month_closed', $closed, [

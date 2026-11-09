@@ -72,7 +72,7 @@ it('reconciles a month of new, expanded, paused and churned customers to the ör
     $c = Saas::agreement($this->owner, $this->company, Saas::customer($this->owner, $this->company, 'Gamma AB'), '500');
 
     Saas::at('2026-02-10');
-    Saas::agreement($this->owner, $this->company, Saas::customer($this->owner, $this->company, 'Delta AB'), '1200', 1, '2026-03-01');
+    Saas::agreement($this->owner, $this->company, Saas::customer($this->owner, $this->company, 'Delta AB'), '1200', 1, '2026-02-15');
     Saas::reprice($this->owner, $this->company, $a, '599', '2026-02-01');
     Saas::status($this->owner, $b, AgreementStatus::Paused, '2026-02-05');
     Saas::status($this->owner, $c, AgreementStatus::Ended, '2026-02-20');

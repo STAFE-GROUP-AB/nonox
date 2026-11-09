@@ -98,7 +98,7 @@
                     <tbody class="divide-y divide-stone-100 align-top">
                         @foreach($versions as $version)
                             <tr>
-                                <td class="py-2 pr-4">{{ $version->source_type->label() }} {{ $version->source_ref['number'] ?? ($version->source_ref['title'] ?? '') }}</td>
+                                <td class="py-2 pr-4">{{ $version->source_type->label() }} · {{ $labels->contract($version->source_type, $version->source_id) }}</td>
                                 <td class="py-2 pr-4">{{ $version->cause->label() }}@if($version->status->value === 'PAUSED') · {{ $version->status->label() }}@endif @if($version->excluded !== null)<span class="block text-xs text-gray-600">{{ $version->excluded->label() }}</span>@endif</td>
                                 <td class="py-2 pr-4 whitespace-nowrap tabular-nums">{{ $version->effective_from->toDateString() }}</td>
                                 <td class="py-2 pr-4 whitespace-nowrap tabular-nums">{{ $version->recorded_at->timezone('Europe/Stockholm')->format('Y-m-d H:i') }}</td>
@@ -106,7 +106,7 @@
                                 <td class="py-2">
                                     @foreach($version->lines as $data)
                                         @php($line = RevenueLine::fromArray($data))
-                                        <span class="block">{{ $line->description }}: {{ Money::ofOre($line->amountMinor)->format(false) }} {{ $line->currency }} / {{ trans_choice('{1} månad|[2,*] :count månader', $line->intervalCount * ($line->intervalUnit === 'year' ? 12 : 1), ['count' => $line->intervalCount * ($line->intervalUnit === 'year' ? 12 : 1)]) }}</span>
+                                        <span class="block">{{ $labels->line($version->source_type, $version->source_id, $line->key) }}: {{ Money::ofOre($line->amountMinor)->format(false) }} {{ $line->currency }} / {{ trans_choice('{1} månad|[2,*] :count månader', $line->intervalCount * ($line->intervalUnit === 'year' ? 12 : 1), ['count' => $line->intervalCount * ($line->intervalUnit === 'year' ? 12 : 1)]) }}</span>
                                     @endforeach
                                 </td>
                             </tr>

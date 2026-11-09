@@ -19,6 +19,8 @@ enum ExclusionReason: string
     case NoValue = 'NO_VALUE';
     /** A CRM account that is not linked to a customer in the customer register. */
     case NoCustomer = 'NO_CUSTOMER';
+    /** The CRM module is switched off, so its agreement register is not kept up to date (review 4). */
+    case CrmOff = 'CRM_OFF';
 
     public function label(): string
     {
@@ -28,12 +30,13 @@ enum ExclusionReason: string
             self::Framework => __('Ramavtal utan bestämt belopp'),
             self::NoValue => __('Inget värde'),
             self::NoCustomer => __('Kontot är inte kopplat till en kund'),
+            self::CrmOff => __('CRM är avstängt, så avtalsregistret räknas inte'),
         };
     }
 
     /** True when it is only a note, not something to fix. */
     public function isExpected(): bool
     {
-        return $this === self::LinkedRecurringInvoice || $this === self::Framework;
+        return $this === self::LinkedRecurringInvoice || $this === self::Framework || $this === self::CrmOff;
     }
 }

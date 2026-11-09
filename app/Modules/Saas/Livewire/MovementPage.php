@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Modules\Saas\Livewire;
 
 use App\Modules\Saas\Livewire\Concerns\InSaas;
+use App\Modules\Saas\Models\SaasCustomerMonth;
 use App\Modules\Saas\Models\SaasMonth;
 use App\Modules\Saas\Support\SaasReport;
+use App\Modules\Saas\Support\SourceLabels;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
@@ -48,6 +50,7 @@ class MovementPage extends Component
         return view('saas::livewire.movement', [
             'monthRow' => $month,
             'rows' => $rows,
+            'labels' => SourceLabels::forLines($rows->flatMap(fn (SaasCustomerMonth $row): array => $row->lineMonths())),
             'total' => $rows->sum(fn ($row): int => SaasReport::amount($row, $this->category)),
             'expected' => match ($this->category) {
                 'ingaende' => $month->opening_mrr_ore,

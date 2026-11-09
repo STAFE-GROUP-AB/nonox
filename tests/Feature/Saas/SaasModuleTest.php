@@ -16,6 +16,7 @@ use App\Modules\Saas\Models\SaasContractVersion;
 use App\Modules\Saas\SaasModule;
 use App\Modules\Saas\SaasSettings;
 use App\Modules\Saas\Support\SaasDeadlines;
+use App\Modules\Saas\Support\SaasReport;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Livewire\Livewire;
@@ -151,7 +152,9 @@ it('counts a CRM agreement unless an avtalsfakturering bills it, and lists what 
     expect($crm->pluck('excluded')->all())->toBe([null, ExclusionReason::LinkedRecurringInvoice, ExclusionReason::TotalWithoutDates, ExclusionReason::NoCustomer])
         // 500 kr a month from the avtalsfakturering plus 12 000 kr a year from the register; the billed one not twice.
         ->and(Saas::month('2026-01-01')->mrr_ore)->toBe(150_000)
-        ->and(Saas::month('2026-01-01')->source_issues)->toBe(2);
+        // Two that cannot be counted, and the unlinked register agreement next to the avtalsfakturering (review 6).
+        ->and(Saas::month('2026-01-01')->source_issues)->toBe(3)
+        ->and(array_keys(SaasReport::possibleDoubles(CarbonImmutable::today())))->toBe([$customer->id]);
 });
 
 it('reminds in Mina datum on the 10th to close the month before, until it is closed', function () {

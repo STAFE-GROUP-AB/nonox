@@ -14,7 +14,8 @@ final readonly class MonthResult
     /**
      * @param  array<int, CustomerMonth>  $customers  by customer id
      * @param  array<string, int>  $rates  currency => öre per unit in millionths, the month-end rates used
-     * @param  list<string>  $missingRates  currencies without a rate for the month (their lines are left out)
+     * @param  list<string>  $missingRates  currencies without the month's own rate: carried from an earlier month, or left out when none is known
+     * @param  list<int>  $negativeCustomers  customers whose lines add up to less than zero; they count as 0
      */
     public function __construct(
         public string $month,
@@ -24,6 +25,7 @@ final readonly class MonthResult
         public ?int $nrrBaseOre,
         public ?int $nrrOre,
         public ?int $grrOre,
+        public array $negativeCustomers = [],
     ) {}
 
     public function mrrOre(): int

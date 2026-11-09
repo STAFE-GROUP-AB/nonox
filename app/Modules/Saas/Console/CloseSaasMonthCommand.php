@@ -6,6 +6,7 @@ namespace App\Modules\Saas\Console;
 
 use App\Models\User;
 use App\Modules\Saas\Actions\CloseSaasMonth;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Console\Command;
 use Illuminate\Validation\ValidationException;
 
@@ -35,6 +36,10 @@ class CloseSaasMonthCommand extends Command
             $month = $close($user, $company, (string) $this->argument('month'));
         } catch (ValidationException $exception) {
             $this->error((string) collect($exception->errors())->flatten()->first());
+
+            return self::FAILURE;
+        } catch (AuthorizationException) {
+            $this->error('Personen har inte behörighet att stänga månader i Återkommande intäkter.');
 
             return self::FAILURE;
         }

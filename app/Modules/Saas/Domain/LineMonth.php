@@ -34,7 +34,7 @@ final readonly class LineMonth
         return Arithmetic::toOre($this->monthlyMinor, $this->currency, $micros);
     }
 
-    /** @return array{source_type: string, source_id: string, version_id: int, line_key: string, description: string, currency: string, monthly_minor: int, sek_ore: int, cancel_effective_on: ?string} */
+    /** @return array{source_type: string, source_id: string, version_id: int, line_key: string, currency: string, monthly_minor: int, sek_ore: int, cancel_effective_on: ?string} */
     public function toArray(): array
     {
         return [
@@ -42,7 +42,6 @@ final readonly class LineMonth
             'source_id' => $this->sourceId,
             'version_id' => $this->versionId,
             'line_key' => $this->lineKey,
-            'description' => $this->description,
             'currency' => $this->currency,
             'monthly_minor' => $this->monthlyMinor,
             'sek_ore' => $this->sekOre,
@@ -58,7 +57,7 @@ final readonly class LineMonth
             (string) $data['source_id'],
             (int) $data['version_id'],
             (string) $data['line_key'],
-            (string) $data['description'],
+            '',
             (string) $data['currency'],
             (int) $data['monthly_minor'],
             (int) $data['sek_ore'],

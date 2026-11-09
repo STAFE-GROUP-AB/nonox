@@ -21,6 +21,8 @@ use App\Modules\Saas\Domain\SourceType;
 use App\Modules\Saas\Domain\VersionCause;
 use App\Modules\Saas\Models\SaasContractVersion;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Writes contract versions (ADR-080 §3.1) from NONOX's own agreements: an
@@ -43,34 +45,43 @@ use Carbon\CarbonImmutable;
  */
 final class ContractVersions
 {
+    /** The fields of a version that describe the contract. */
+    private const array FIELDS = ['customer_id', 'status', 'starts_on', 'cancel_effective_on', 'excluded', 'lines'];
+
     /**
      * @param  ?string  $effectiveFrom  "Gäller från", or for a backfill the date the agreement started
      */
     public function recordRecurringInvoice(RecurringInvoice $agreement, ?VersionCause $cause, ?string $effectiveFrom, ?int $userId, ?CarbonImmutable $today = null): ?SaasContractVersion
     {
         $today ??= CarbonImmutable::today();
+        self::lock($agreement->company_id);
         $agreement->loadMissing('rows');
+        $previous = self::latest(SourceType::RecurringInvoice, $agreement->id);
         $ended = $agreement->status === AgreementStatus::Ended;
+        // Ending a paused agreement: nothing is paid ahead, so it stops on its "Gäller från" date and stays paused until then.
+        $endedWhilePaused = $ended && $previous?->status === ContractStatus::Paused;
         $cancel = match (true) {
+            $endedWhilePaused => $effectiveFrom ?? $today->toDateString(),
             $ended => $effectiveFrom ?? $agreement->next_invoice_date->max($today)->toDateString(),
             $agreement->end_date !== null => self::firstInvoiceDateAfter($agreement, $agreement->end_date)->toDateString(),
             default => null,
         };
 
-        $previous = self::latest(SourceType::RecurringInvoice, $agreement->id);
         $cause ??= $previous === null ? VersionCause::Created : (($cancel !== null && $previous->cancel_effective_on === null) ? VersionCause::CancelScheduled : VersionCause::Changed);
         $from = match (true) {
             // Known from today that it ends on the cancel date ("Gäller från"); a back-dated end applies from that date.
             $cause === VersionCause::Ended => min($today->toDateString(), (string) $cancel),
             $effectiveFrom !== null => $effectiveFrom,
             $cause === VersionCause::Backfill => ($agreement->created_at ?? $today)->toDateString(),
-            $cause === VersionCause::Created => $agreement->next_invoice_date->min($today)->toDateString(),
+            // A new agreement counts from the start of its first billed period (review decision 12).
+            $cause === VersionCause::Created => $agreement->next_invoice_date->toDateString(),
             default => $today->toDateString(),
         };
 
+        // Ids, amounts and enums only: the row's text is read from the agreement when a page shows it (GDPR, review 7).
         $lines = $agreement->rows->map(fn (RecurringInvoiceRow $row): array => (new RevenueLine(
             "r{$row->position}",
-            $row->description,
+            '',
             'SEK',
             $row->net_ore->ore,
             'month',
@@ -84,7 +95,7 @@ final class ContractVersions
             'effective_from' => $from,
             'recorded_by' => $userId,
             'cause' => $cause,
-            'status' => $agreement->status === AgreementStatus::Paused ? ContractStatus::Paused : ContractStatus::Active,
+            'status' => $agreement->status === AgreementStatus::Paused || $endedWhilePaused ? ContractStatus::Paused : ContractStatus::Active,
             'starts_on' => null,
             'cancel_effective_on' => $cancel,
             'excluded' => null,
@@ -102,6 +113,7 @@ final class ContractVersions
     public function recordCrmAgreement(Agreement $agreement, ?VersionCause $cause, ?int $userId, ?CarbonImmutable $today = null): ?SaasContractVersion
     {
         $today ??= CarbonImmutable::today();
+        self::lock($agreement->company_id);
         $agreement->loadMissing('account:id,customer_id');
         $customerId = $agreement->account?->customer_id;
         $previous = self::latest(SourceType::CrmAgreement, (string) $agreement->id);
@@ -112,6 +124,10 @@ final class ContractVersions
             : $today->toDateString();
 
         [$line, $excluded] = self::crmLine($agreement);
+
+        if (! app(ModuleManager::class)->isEnabled(CrmModule::KEY, $agreement->company_id)) {
+            $excluded = ExclusionReason::CrmOff;
+        }
 
         return $this->append([
             'source_type' => SourceType::CrmAgreement,
@@ -126,7 +142,6 @@ final class ContractVersions
             'excluded' => $excluded ?? ($customerId === null ? ExclusionReason::NoCustomer : null),
             'lines' => $line === null ? [] : [$line->toArray()],
             'source_ref' => [
-                'title' => $agreement->title,
                 'kind' => $agreement->kind->value,
                 'value_period' => $agreement->value_period->value,
                 'recurring_invoice_id' => $agreement->recurring_invoice_id,
@@ -180,6 +195,50 @@ final class ContractVersions
             $has = in_array((string) $agreement->id, $knownCrm, true);
             $version = $this->recordCrmAgreement($agreement, $has ? VersionCause::Changed : VersionCause::Backfill, $userId, $today);
             $written += $version === null ? 0 : 1;
+        }
+
+        return $written;
+    }
+
+    /**
+     * Keeps the agreement register's versions in step with the CRM module
+     * (review 4): while CRM is off its agreements are not maintained, so each
+     * gets a version from today that leaves it out (CRM_OFF, listed under
+     * Källor); when CRM is on again each is recorded as it stands. Versions,
+     * not a filter, so a closed month still reproduces.
+     */
+    public function syncCrm(Company $company, ?CarbonImmutable $today = null): int
+    {
+        $today ??= CarbonImmutable::today();
+        $crmOn = app(ModuleManager::class)->isEnabled(CrmModule::KEY, $company);
+        $latest = SaasContractVersion::query()
+            ->where('source_type', SourceType::CrmAgreement->value)
+            ->whereIn('id', SaasContractVersion::query()->selectRaw('max(id)')->where('source_type', SourceType::CrmAgreement->value)->groupBy('source_id'))
+            ->get();
+        $written = 0;
+
+        foreach ($latest as $version) {
+            $off = $version->excluded === ExclusionReason::CrmOff;
+
+            if ($crmOn && $off) {
+                $agreement = Agreement::query()->find((int) $version->source_id);
+                $written += $agreement instanceof Agreement && $this->recordCrmAgreement($agreement, VersionCause::Changed, null, $today) !== null ? 1 : 0;
+            }
+
+            if (! $crmOn && ! $off) {
+                self::lock($company->id);
+                $this->write([
+                    ...self::state($version),
+                    'source_type' => SourceType::CrmAgreement,
+                    'source_id' => $version->source_id,
+                    'effective_from' => $today->toDateString(),
+                    'recorded_by' => null,
+                    'cause' => VersionCause::Changed,
+                    'excluded' => ExclusionReason::CrmOff,
+                    'source_ref' => $version->source_ref,
+                ]);
+                $written++;
+            }
         }
 
         return $written;
@@ -252,7 +311,7 @@ final class ContractVersions
             return [null, ExclusionReason::TotalWithoutDates];
         }
 
-        return [new RevenueLine('value', $agreement->title, 'SEK', $agreement->value_ore, 'month', $months), null];
+        return [new RevenueLine('value', '', 'SEK', $agreement->value_ore, 'month', $months), null];
     }
 
     private static function latest(SourceType $type, string $id): ?SaasContractVersion
@@ -269,17 +328,120 @@ final class ContractVersions
      */
     private function append(array $attributes, ?SaasContractVersion $previous): ?SaasContractVersion
     {
-        if ($previous !== null && self::content($attributes) === self::content([
-            'customer_id' => $previous->customer_id,
-            'status' => $previous->status,
-            'starts_on' => $previous->starts_on?->toDateString(),
-            'cancel_effective_on' => $previous->cancel_effective_on?->toDateString(),
-            'excluded' => $previous->excluded,
-            'lines' => $previous->lines,
-        ])) {
+        if ($previous !== null && self::content($attributes) === self::content(self::state($previous))) {
             return null;
         }
 
+        $from = (string) $attributes['effective_from'];
+        $versions = $previous === null ? collect() : SaasContractVersion::query()
+            ->where('source_type', $attributes['source_type'] instanceof SourceType ? $attributes['source_type']->value : $attributes['source_type'])
+            ->where('source_id', $attributes['source_id'])
+            ->orderBy('id')
+            ->get();
+        $pending = self::pending($versions, $from);
+
+        if ($previous === null || $pending === []) {
+            return $this->write($attributes);
+        }
+
+        /*
+         * A change dated before a change that is still to come (review 3): the
+         * agreement holds the later state, so the fields the person did not
+         * touch are taken from the version in force on this date, and every
+         * pending change is written again after this one with the person's
+         * change applied, so it still takes effect on its own date.
+         */
+        $latest = self::state($previous);
+        $changed = array_values(array_filter(self::FIELDS, fn (string $field): bool => self::field($attributes, $field) !== self::field($latest, $field)));
+        $base = $versions->filter(fn (SaasContractVersion $version): bool => $version->effective_from->toDateString() <= $from)->last();
+        $written = null;
+
+        if ($base !== null) {
+            $now = $attributes;
+
+            foreach (array_diff(self::FIELDS, $changed) as $field) {
+                $now[$field] = self::state($base)[$field];
+            }
+
+            $written = $this->write($now);
+        }
+
+        foreach ($pending as $version) {
+            $again = [...$attributes, ...self::state($version), 'effective_from' => $version->effective_from->toDateString(), 'cause' => $version->cause];
+
+            foreach ($changed as $field) {
+                $again[$field] = $attributes[$field];
+            }
+
+            $written = $this->write($again);
+        }
+
+        return $written;
+    }
+
+    /**
+     * The versions dated after $from that still take effect on their own date:
+     * no version recorded after them is dated on or before it.
+     *
+     * @param  Collection<int, SaasContractVersion>  $versions  sorted by id
+     * @return list<SaasContractVersion> by effective date
+     */
+    private static function pending(Collection $versions, string $from): array
+    {
+        $pending = [];
+        $list = $versions->values()->all();
+
+        foreach ($list as $index => $version) {
+            $date = $version->effective_from->toDateString();
+
+            if ($date <= $from) {
+                continue;
+            }
+
+            $overridden = false;
+
+            foreach (array_slice($list, $index + 1) as $later) {
+                $overridden = $overridden || $later->effective_from->toDateString() <= $date;
+            }
+
+            if (! $overridden) {
+                $pending[] = $version;
+            }
+        }
+
+        usort($pending, fn (SaasContractVersion $a, SaasContractVersion $b): int => [$a->effective_from->toDateString(), $a->id] <=> [$b->effective_from->toDateString(), $b->id]);
+
+        return $pending;
+    }
+
+    /** @return array{customer_id: ?int, status: ContractStatus, starts_on: ?string, cancel_effective_on: ?string, excluded: ?ExclusionReason, lines: list<array<string, mixed>>} */
+    private static function state(SaasContractVersion $version): array
+    {
+        return [
+            'customer_id' => $version->customer_id,
+            'status' => $version->status,
+            'starts_on' => $version->starts_on?->toDateString(),
+            'cancel_effective_on' => $version->cancel_effective_on?->toDateString(),
+            'excluded' => $version->excluded,
+            'lines' => $version->lines,
+        ];
+    }
+
+    /** @param  array<string, mixed>  $attributes */
+    private static function field(array $attributes, string $field): string
+    {
+        $value = $attributes[$field] ?? null;
+
+        if ($field === 'lines') {
+            $value = array_map(fn (array $line): array => RevenueLine::fromArray($line)->toArray(), (array) $value);
+        }
+
+        return self::canonical(['v' => $value]);
+    }
+
+    /** @param  array<string, mixed>  $attributes */
+    private function write(array $attributes): SaasContractVersion
+    {
         $attributes['recorded_at'] = now();
         $attributes['sha256'] = hash('sha256', self::canonical([
             ...$attributes,
@@ -287,6 +449,18 @@ final class ContractVersions
         ]));
 
         return SaasContractVersion::create($attributes);
+    }
+
+    /**
+     * One writer per company at a time, and never while a month is being
+     * closed: the same transaction lock as the recompute (review 11). It is
+     * held until the saving transaction commits, so a close never reads past
+     * a version that is not committed yet, and a version written after a
+     * close gets a higher id than the close used.
+     */
+    public static function lock(int $companyId): void
+    {
+        DB::select('select pg_advisory_xact_lock(80080, ?)', [$companyId]);
     }
 
     /** @param  array<string, mixed>  $attributes */

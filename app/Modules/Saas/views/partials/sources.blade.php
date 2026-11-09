@@ -17,7 +17,7 @@
             @else
                 {{ $line->sourceType->label() }}
             @endif
-            <span class="text-gray-600">· {{ $line->description }} · {{ \App\Support\Money\Money::ofOre($contract['ore'])->format() }}{{ $line->currency !== 'SEK' ? ' ('.$line->currency.')' : '' }}</span>
+            <span class="text-gray-600">· {{ $labels->contract($line->sourceType, $line->sourceId) }} · {{ \App\Support\Money\Money::ofOre($contract['ore'])->format() }}{{ $line->currency !== 'SEK' ? ' ('.$line->currency.')' : '' }}</span>
         </li>
     @endforeach
 </ul>

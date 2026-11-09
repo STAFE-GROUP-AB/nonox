@@ -15,7 +15,7 @@
 
     @if($issues > 0)
         <div class="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-200" role="status">
-            {{ trans_choice('{1} Ett avtal kan inte räknas med. |[2,*] :count avtal kan inte räknas med.', $issues, ['count' => $issues]) }}
+            {{ trans_choice('{1} En sak i underlaget behöver granskas.|[2,*] :count saker i underlaget behöver granskas.', $issues, ['count' => $issues]) }}
             <a href="{{ route('saas.sources') }}" class="font-semibold underline">{{ __('Se Källor') }}</a>
         </div>
     @endif

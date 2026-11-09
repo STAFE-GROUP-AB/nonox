@@ -53,7 +53,8 @@ class SaveRecurringInvoice
             'your_reference' => ['nullable', 'string', 'max:255'],
             'our_reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
-            'effective_from' => ['nullable', 'date_format:Y-m-d'],
+            // "Gäller från" within a sane horizon (ADR-080 review 3): at most ten years back and two years ahead.
+            'effective_from' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:'.CarbonImmutable::today()->subYears(10)->toDateString(), 'before_or_equal:'.CarbonImmutable::today()->addYears(2)->toDateString()],
             'rows' => ['required', 'array', 'min:1'],
             'rows.*.description' => ['required', 'string', 'max:255'],
             'rows.*.vat_rate' => ['required', 'integer', Rule::in(InvoiceCalculator::VAT_RATES)],
@@ -64,6 +65,8 @@ class SaveRecurringInvoice
             'rows.min' => __('Lägg till minst en rad.'),
             'rows.*.description.required' => __('Varje rad behöver en benämning.'),
             'end_date.after_or_equal' => __('Slutdatumet kan inte vara före nästa fakturadatum.'),
+            'effective_from.after_or_equal' => __('Gäller från kan vara högst tio år tillbaka.'),
+            'effective_from.before_or_equal' => __('Gäller från kan vara högst två år framåt.'),
         ], [
             'next_invoice_date' => __('nästa fakturadatum'),
             'interval_months' => __('intervall'),

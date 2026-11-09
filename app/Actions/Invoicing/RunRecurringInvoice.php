@@ -115,7 +115,12 @@ class RunRecurringInvoice
     {
         Gate::forUser($user)->authorize('update', $agreement);
 
-        Validator::make(['effective_from' => $effectiveFrom], ['effective_from' => ['nullable', 'date_format:Y-m-d']], [], ['effective_from' => __('gäller från')])->validate();
+        Validator::make(['effective_from' => $effectiveFrom], [
+            'effective_from' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:'.CarbonImmutable::today()->subYears(10)->toDateString(), 'before_or_equal:'.CarbonImmutable::today()->addYears(2)->toDateString()],
+        ], [
+            'effective_from.after_or_equal' => __('Gäller från kan vara högst tio år tillbaka.'),
+            'effective_from.before_or_equal' => __('Gäller från kan vara högst två år framåt.'),
+        ], ['effective_from' => __('gäller från')])->validate();
 
         return CurrentCompany::run($agreement->company_id, fn (): RecurringInvoice => DB::transaction(function () use ($user, $agreement, $status, $effectiveFrom): RecurringInvoice {
             $agreement->forceFill(['status' => $status])->save();

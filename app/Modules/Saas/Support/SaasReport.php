@@ -8,11 +8,13 @@ use App\Models\Customer;
 use App\Modules\Saas\Domain\ExclusionReason;
 use App\Modules\Saas\Domain\Months;
 use App\Modules\Saas\Domain\Movement;
+use App\Modules\Saas\Domain\SourceType;
 use App\Modules\Saas\Models\SaasContractVersion;
 use App\Modules\Saas\Models\SaasCorrection;
 use App\Modules\Saas\Models\SaasCustomerMonth;
 use App\Modules\Saas\Models\SaasEstimate;
 use App\Modules\Saas\Models\SaasMonth;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
@@ -164,6 +166,7 @@ final class SaasReport
             ->where('month', $month)
             ->where('scheduled_churn_ore', '<>', 0)
             ->get();
+        $labels = SourceLabels::forLines($rows->flatMap(fn (SaasCustomerMonth $row): array => $row->lineMonths()));
         $list = [];
 
         foreach ($rows as $row) {
@@ -180,7 +183,7 @@ final class SaasReport
                     'customer_id' => $row->customer_id,
                     'source_type' => $line->sourceType->value,
                     'source_id' => $line->sourceId,
-                    'description' => $line->description,
+                    'description' => $labels->contract($line->sourceType, $line->sourceId),
                     'mrr_ore' => 0,
                     'ends' => $line->cancelEffectiveOn,
                     'churn_month' => Months::of($line->cancelEffectiveOn),
@@ -223,5 +226,51 @@ final class SaasReport
     public static function needsAction(SaasContractVersion $version): bool
     {
         return $version->excluded === null || ! $version->excluded->isExpected() || $version->excluded === ExclusionReason::NoCustomer;
+    }
+
+    /**
+     * Possible double counting (review 6): a customer with both a counted
+     * agreement in the agreement register and a counted avtalsfakturering,
+     * not linked to each other. NONOX does not guess that they are the same
+     * agreement; the person links them in the register if they are. One query.
+     *
+     * @return array<int, array{crm: list<string>, recurring: list<string>}> customer id => source ids
+     */
+    public static function possibleDoubles(CarbonImmutable $today): array
+    {
+        $latest = SaasContractVersion::query()
+            ->whereIn('id', SaasContractVersion::query()->selectRaw('max(id)')->groupBy('source_type', 'source_id'))
+            ->whereNull('excluded')
+            ->whereNotNull('customer_id')
+            ->where(fn ($query) => $query->whereNull('cancel_effective_on')->orWhere('cancel_effective_on', '>', $today->toDateString()))
+            ->orderBy('id')
+            ->get(['id', 'source_type', 'source_id', 'customer_id']);
+        $byCustomer = [];
+
+        foreach ($latest as $version) {
+            $byCustomer[(int) $version->customer_id][$version->source_type === SourceType::CrmAgreement ? 'crm' : 'recurring'][] = $version->source_id;
+        }
+
+        return array_filter(
+            array_map(fn (array $sources): array => ['crm' => $sources['crm'] ?? [], 'recurring' => $sources['recurring'] ?? []], $byCustomer),
+            fn (array $sources): bool => $sources['crm'] !== [] && $sources['recurring'] !== [],
+        );
+    }
+
+    /**
+     * Customers whose lines add up to less than zero in the month; they count
+     * as 0 (review 10). One query.
+     *
+     * @return Collection<int, SaasCustomerMonth>
+     */
+    public static function negative(string $month): Collection
+    {
+        return SaasCustomerMonth::query()
+            ->with('customer:id,number,name')
+            ->where('month', $month)
+            ->where('mrr_ore', 0)
+            ->get()
+            ->filter(fn (SaasCustomerMonth $row): bool => array_sum(array_map(fn ($line): int => $line->sekOre, $row->lineMonths())) < 0)
+            ->values();
     }
 }

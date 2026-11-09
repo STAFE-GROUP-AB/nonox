@@ -11,17 +11,20 @@ use App\Modules\Saas\Support\SaasLedger;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\Tenancy\RunsForCompany;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 
 /**
  * Recomputes the open months of one company after a new contract version
- * (ADR-080 §4), with the company given explicitly (AGENTS.md §6.0). One
- * waiting job per company is enough: it reads every version when it runs.
+ * (ADR-080 §4), with the company given explicitly (AGENTS.md §6.0). At most
+ * one job per company waits in the queue: the lock is released when the job
+ * starts, so a version written while it runs queues a new one, which reads
+ * every version committed by then. The lock expires after uniqueFor seconds
+ * in case a worker dies with it held.
  */
-class RecomputeSaas implements ShouldBeUnique, ShouldQueue
+class RecomputeSaas implements ShouldBeUniqueUntilProcessing, ShouldQueue
 {
     use Dispatchable;
     use InteractsWithQueue;
@@ -29,6 +32,9 @@ class RecomputeSaas implements ShouldBeUnique, ShouldQueue
     use RunsForCompany;
 
     public int $tries = 3;
+
+    /** Seconds the uniqueness lock is held at most. */
+    public int $uniqueFor = 600;
 
     public function __construct(public int $companyId) {}
 

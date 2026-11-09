@@ -12,6 +12,7 @@ use App\Modules\Saas\Models\SaasCustomerMonth;
 use App\Modules\Saas\Models\SaasMonth;
 use App\Modules\Saas\SaasModule;
 use App\Modules\Saas\Support\SaasReport;
+use App\Modules\Saas\Support\SourceLabels;
 use App\Support\Csv;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -123,8 +124,11 @@ class SaasCsvController
     {
         $rows = [[__('Kundnummer'), __('Kund'), __('Ingående MRR'), __('Rättelse'), __('Valutaeffekt'), __('Rörelse'), __('Belopp'), __('MRR'), __('Kohort'), __('Status'), __('Källor')]];
 
-        foreach (SaasReport::customers($month) as $row) {
-            $rows[] = $this->customerRow($row, [
+        $list = SaasReport::customers($month);
+        $labels = SourceLabels::forLines($list->flatMap(fn (SaasCustomerMonth $row): array => $row->lineMonths()));
+
+        foreach ($list as $row) {
+            $rows[] = $this->customerRow($row, $labels, [
                 self::kronor($row->opening_ore),
                 self::kronor($row->correction_ore),
                 self::kronor($row->fx_ore),
@@ -144,8 +148,11 @@ class SaasCsvController
     {
         $rows = [[__('Månad'), __('Kategori'), __('Kundnummer'), __('Kund'), __('Belopp'), __('MRR'), __('Källor')]];
 
-        foreach (SaasReport::drill($month, $category) as $row) {
-            $rows[] = [substr($month, 0, 7), SaasReport::label($category), ...$this->customerRow($row, [self::kronor(SaasReport::amount($row, $category)), self::kronor($row->mrr_ore)])];
+        $list = SaasReport::drill($month, $category);
+        $labels = SourceLabels::forLines($list->flatMap(fn (SaasCustomerMonth $row): array => $row->lineMonths()));
+
+        foreach ($list as $row) {
+            $rows[] = [substr($month, 0, 7), SaasReport::label($category), ...$this->customerRow($row, $labels, [self::kronor(SaasReport::amount($row, $category)), self::kronor($row->mrr_ore)])];
         }
 
         return $rows;
@@ -155,10 +162,10 @@ class SaasCsvController
      * @param  list<string>  $middle
      * @return list<string|int>
      */
-    private function customerRow(SaasCustomerMonth $row, array $middle): array
+    private function customerRow(SaasCustomerMonth $row, SourceLabels $labels, array $middle): array
     {
         $sources = implode(' | ', array_map(
-            fn (LineMonth $line): string => $line->sourceType->label().' '.$line->sourceId.': '.$line->description.' '.self::kronor($line->sekOre),
+            fn (LineMonth $line): string => $line->sourceType->label().': '.$labels->contract($line->sourceType, $line->sourceId).' '.self::kronor($line->sekOre),
             $row->lineMonths(),
         ));
 

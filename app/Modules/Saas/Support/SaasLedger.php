@@ -65,14 +65,17 @@ final class SaasLedger
         $today ??= CarbonImmutable::today();
 
         return CurrentCompany::run($company, fn (): ?int => DB::transaction(function () use ($company, $today): ?int {
-            // One recompute per company at a time; the version read below is then the one closed with.
-            DB::select('select pg_advisory_xact_lock(80080, ?)', [$company->id]);
+            // One recompute per company at a time, and no version writer meanwhile (ContractVersions::lock):
+            // the versions read below are all committed, so the highest id is the one a close stores.
+            ContractVersions::lock($company->id);
 
             $from = SaasSettings::historyFrom($company);
 
             if ($from === null) {
                 return null;
             }
+
+            app(ContractVersions::class)->syncCrm($company, $today);
 
             $current = Months::of($today->toDateString());
             [$versions, $knownUntil] = self::versions();
@@ -88,7 +91,7 @@ final class SaasLedger
             $history = $this->history($versions, $current, $closed, $today);
             $reported = $this->reported($closed);
             $corrections = $lastClosed === null ? [] : $this->correct($history, $closed, $reported, $firstOpen, $knownUntil);
-            $issues = self::sourceIssues($versions);
+            $issues = self::sourceIssues($versions) + count(SaasReport::possibleDoubles($today));
 
             foreach (Months::range($firstOpen, $current) as $month) {
                 $isBooked = $lastClosed !== null && $month === $firstOpen;
@@ -436,7 +439,7 @@ final class SaasLedger
             'nrr_ore' => $result?->nrrOre,
             'grr_ore' => $result?->grrOre,
             'scheduled_churn_ore' => $result?->scheduledChurnOre() ?? 0,
-            'source_issues' => $issues + count($result->missingRates ?? []),
+            'source_issues' => $issues + count($result->missingRates ?? []) + count($result->negativeCustomers ?? []),
             'missing_rates' => $result->missingRates ?? [],
             'cohorts' => $cohorts,
             'rates' => [$month => $result->rates ?? [], Months::add($month, -1) => $previousRates],

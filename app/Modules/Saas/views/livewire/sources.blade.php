@@ -18,8 +18,38 @@
 
     @if($missingRates !== [])
         <div class="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-200" role="status">
-            {{ __('Det finns ingen kurs från Riksbanken för :currencies. Rader i de valutorna räknas inte med förrän kursen finns.', ['currencies' => implode(', ', $missingRates)]) }}
+            {{ __('Riksbanken har ingen kurs för :currencies vid månadens slut. Den senaste kända kursen används tills den finns, och månaden kan inte stängas förrän dess.', ['currencies' => implode(', ', $missingRates)]) }}
         </div>
+    @endif
+
+    @if($doubles !== [])
+        <x-ui.card :title="__('Möjlig dubbelräkning')" :description="__('Kunden har både ett avtal i avtalsregistret och en avtalsfakturering som inte är kopplade till varandra. Gäller de samma sak räknas intäkten två gånger. Koppla avtalet i registret till avtalsfaktureringen, så räknas den bara där. NONOX gissar inte.')">
+            <ul class="divide-y divide-stone-100 text-sm">
+                @foreach($doubles as $customerId => $pair)
+                    <li class="py-2">
+                        <span class="font-medium text-ink">{{ $customers->get($customerId)?->name ?? __('Kund :id', ['id' => $customerId]) }}</span>:
+                        @foreach($pair['crm'] as $id)
+                            @if(Route::has('crm.agreements.show'))
+                                <a href="{{ route('crm.agreements.show', ['agreement' => (int) $id]) }}" class="text-accent-700 hover:underline">{{ __('Koppla :agreement', ['agreement' => $labels->contract(SourceType::CrmAgreement, $id)]) }}</a>
+                            @else
+                                {{ $labels->contract(SourceType::CrmAgreement, $id) }}
+                            @endif
+                        @endforeach
+                        · {{ collect($pair['recurring'])->map(fn ($id) => $labels->contract(SourceType::RecurringInvoice, $id))->implode(', ') }}
+                    </li>
+                @endforeach
+            </ul>
+        </x-ui.card>
+    @endif
+
+    @if($negative->isNotEmpty())
+        <x-ui.card :title="__('Kunder med negativ återkommande intäkt')" :description="__('Kundens avtalsrader blir tillsammans mindre än noll, till exempel en rabattrad som är större än priset. Kunden räknas som 0 kr tills avtalet är rättat.')">
+            <ul class="divide-y divide-stone-100 text-sm">
+                @foreach($negative as $row)
+                    <li class="py-2"><a href="{{ route('saas.customers.show', ['customer' => $row->customer_id]) }}" class="text-accent-700 hover:underline">{{ $row->customer?->name ?? __('Kund :id', ['id' => $row->customer_id]) }}</a></li>
+                @endforeach
+            </ul>
+        </x-ui.card>
     @endif
 
     <x-ui.card :title="__('Avtal som inte räknas med')">
@@ -42,7 +72,7 @@
                             <tr>
                                 <td class="py-2 pr-4">
                                     @if($version->source_type === SourceType::CrmAgreement && Route::has('crm.agreements.show'))
-                                        <a href="{{ route('crm.agreements.show', ['agreement' => (int) $version->source_id]) }}" class="text-accent-700 hover:underline">{{ $version->source_type->label() }}: {{ $version->source_ref['title'] ?? '' }}</a>
+                                        <a href="{{ route('crm.agreements.show', ['agreement' => (int) $version->source_id]) }}" class="text-accent-700 hover:underline">{{ $version->source_type->label() }}: {{ $labels->contract($version->source_type, $version->source_id) }}</a>
                                     @elseif($version->source_type === SourceType::RecurringInvoice)
                                         <a href="{{ route('invoicing.agreements.show', ['agreement' => $version->source_id]) }}" class="text-accent-700 hover:underline">{{ $version->source_type->label() }} {{ $version->source_ref['number'] ?? '' }}</a>
                                     @else

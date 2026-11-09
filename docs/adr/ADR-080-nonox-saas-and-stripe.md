@@ -133,7 +133,9 @@ Writers:
   optional **"Gäller från"** date for a price change, a pause and an end (default today), shown
   only when the module is on; nothing else in avtalsfakturering changes.
 - A CRM agreement linked to a recurring invoice is **not** counted (the recurring invoice
-  wins), so nothing is counted twice. A CRM agreement with `value_period = TOTAL` counts only
+  wins), so a linked pair is not counted twice. This holds only when they are linked: an unlinked
+  CRM agreement next to an avtalsfakturering of the same customer is listed under Källor as
+  "möjlig dubbelräkning" (review 2026-11-09, finding 6). A CRM agreement with `value_period = TOTAL` counts only
   when it has both start and end date (total ÷ months); otherwise it is listed under Källor.
 - **Turning the module on** writes one `BACKFILL` version per active or paused agreement,
   effective from the agreement's creation date, from its current state. History before that is
@@ -617,3 +619,42 @@ Build step 1 (the ledger and the metrics from NONOX's own data) is on branch
 - **Not in step 1:** Stripe (step 2–3), periodisation and Intäkter i perioden (step 4), API
   endpoints (step 5), a settings page (gross margin and CAC are out of v1, O7), usage-based lines
   from NONOX data (NONOX agreements have none).
+
+### Review fixes 2026-11-09 (cold review of step 1)
+
+- **Ending a paused agreement** (finding 1): the end version stays PAUSED, with its cancel date
+  the "Gäller från" date (default today), since nothing is paid ahead. A customer whose paused
+  contracts stop being in force churns in that month: the paused amount moves from Paus to Churn
+  as in the 13-month rule, and the bridge holds.
+- **Paus only when every ending line was paused** (finding 2, SA-R14): a customer whose MRR goes
+  to 0 is Paus only if every contract that had MRR the month before is paused now; otherwise
+  Churn for the whole amount. A paused contract next to one that ends is therefore churn.
+- **A change dated before a pending one** (finding 3): the agreement row already holds the later
+  state, so the writer keeps every pending later change. The new version takes, for the fields the
+  person did not change, the values in force on its own date; then every pending later version is
+  written again (recorded after it) with the person's change applied, so it still takes effect on
+  its date. The rule "the latest-recorded version among those effective on or before the instant"
+  is unchanged. "Gäller från" is limited to ten years back and two years ahead.
+- **CRM off** (finding 4): while the CRM module is off, every CRM agreement gets a version from
+  that day marked CRM_OFF (not counted, listed under Källor); when CRM is on again each is
+  recorded as it stands. Versions, not a read-time filter, so closed months still reproduce. The
+  sync runs at the start of every recompute and close.
+- **Prospect becomes customer** (finding 5): ConvertToCustomer dispatches `CrmAgreementChanged`
+  for each of the account's agreements; the version (with the customer) is effective that day.
+- **No free text in the ledger** (finding 7): versions and customer months keep ids, amounts and
+  enums only. Row descriptions and agreement titles are read from the agreement when a page or
+  file shows them (`SourceLabels`, three queries); a removed row or agreement shows "Rad n" or
+  "Avtal #id".
+- **Recompute job** (finding 8): `ShouldBeUniqueUntilProcessing` with `uniqueFor` 600 s.
+- **Missing month-end rate** (finding 9): the last known rate is carried, the month lists the
+  currency in `missing_rates` (shown under Källor), NRR and cohorts use the same rates, and
+  "Stäng månad" refuses the month until the rate exists.
+- **Negative customer** (finding 10): avtalsfakturering accepts negative quantities, so an
+  agreement can add up to less than zero. Such a customer counts as 0 (MRR and the bridge use the
+  clamped value) and is listed under Källor.
+- **Commit order** (finding 11): every version writer takes the same per-company transaction
+  advisory lock as recompute and close (`pg_advisory_xact_lock(80080, company)`), held until the
+  writer's transaction commits. A close therefore never runs while a version is uncommitted, and
+  any later version gets a higher id than `versions_known_until`.
+- **New avtalsfakturering** (finding 12): counts from its first billed period, the agreement's
+  next invoice date, not from today (unless "Gäller från" says otherwise).
