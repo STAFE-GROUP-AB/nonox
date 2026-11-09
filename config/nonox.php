@@ -42,6 +42,8 @@ return [
         'hours' => (int) env('NONOX_DEMO_HOURS', 2),
         // Demo companies alive or being built at once, for the whole installation.
         'max_live' => (int) env('NONOX_DEMO_MAX_LIVE', 40),
+        // Builds running at once (each is some 20 000 queries), apart from the number of live demos.
+        'max_building' => (int) env('NONOX_DEMO_MAX_BUILDING', 3),
         // Starts per IP address and hour.
         'max_per_ip_per_hour' => 3,
         // The demo database is built again (demo:prune) when no demo is live and some have expired; after this many hours

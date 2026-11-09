@@ -17,7 +17,7 @@
       <li>Demon är <strong>din egen</strong>. Ingen annan ser vad du gör, och du ser ingen annans.</li>
       <li>Den varar i <strong>{{ $hours }} {{ $hours === 1 ? 'timme' : 'timmar' }}</strong>. Sedan tas den bort med allt du lagt in.</li>
       <li>Inget skickas till någon: inga mejl, inga e-fakturor, inga bankfiler och inget till Skatteverket.</li>
-      <li>Vi sparar inget om dig. Ingen IP-adress läggs i databasen, den används bara för att begränsa hur ofta en dator kan starta en demo.</li>
+      <li>Vi sparar inget om dig. Din IP-adress sparas inte, varken i demon eller i den riktiga databasen: den används bara, som ett kodat värde i en timme, för att begränsa hur ofta en dator kan starta en demo. <strong>Det du själv skriver in i demon</strong>, till exempel namn på en kund eller en anställd, sparas i demons egen databas och raderas när den töms, senast efter ett dygn. Skriv därför inga riktiga uppgifter.</li>
       <li>När du vill börja på riktigt skapar du ett konto. Det börjar från början: <strong>demons uppgifter följer inte med</strong>. Flyttar du från ett annat program läser du in bokföringen med en SIE-fil, se <a href="{{ route('migrationGuide') }}">flyttguiden</a>.</li>
     </ul>
   </section>
@@ -44,7 +44,7 @@
         @error('industry')<p class="tr-error">{{ $message }}</p>@enderror
       </div>
       <button type="submit" class="tr-button" data-demo-submit>Starta demon</button>
-      <p class="tr-small" style="margin-top:14px">Det tar några sekunder att bygga ett helt års bokföring. Genom att starta demon godkänner du inte något avtal och lämnar inga uppgifter. Demon använder en sessionscookie som behövs för att hålla dig inloggad, se <a href="{{ route('cookies') }}">cookies</a>.</p>
+      <p class="tr-small" style="margin-top:14px">Det tar upp till en minut att bygga ett helt års bokföring. Genom att starta demon godkänner du inte något avtal och lämnar inga uppgifter. Demon använder en sessionscookie som behövs för att hålla dig inloggad, se <a href="{{ route('cookies') }}">cookies</a>.</p>
     </form>
     <script>
       document.querySelector('[data-demo-form]')?.addEventListener('submit', function (event) {

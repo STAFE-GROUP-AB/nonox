@@ -9,6 +9,7 @@ use App\Support\Demo\DemoMode;
 use App\Support\Demo\DemoSessions;
 use App\Support\Landing\LandingPage;
 use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -68,19 +69,23 @@ class DemoController
             throw ValidationException::withMessages(['industry' => __('Du har startat flera demor den senaste timmen. Vänta en stund, eller fortsätt i en som redan är igång.')]);
         }
 
-        $token = DemoSessions::begin((string) $request->input('industry'));
+        $token = DemoSessions::begin((string) $request->input('industry'), $request->session()->getId());
 
         $limiter->hit($startKey, 3600);
 
         return redirect()->route('demo.building', $token);
     }
 
-    /** The wait. Runs on the main database like every public page; the state is in the demo database's cache. */
-    public function building(string $token): View|RedirectResponse
+    /**
+     * The wait. Runs on the main database like every public page; the state is in the demo database's cache and
+     * belongs to the session that started the build. A page with a script polls status(); this answer is also what the
+     * "Kontrollera igen" button gives without one.
+     */
+    public function building(Request $request, string $token): View|RedirectResponse
     {
         abort_unless(DemoMode::enabled(), 404);
 
-        $state = DemoSessions::state($token);
+        $state = DemoSessions::stateFor($token, $request->session()->getId());
 
         if ($state === null) {
             return redirect()->route('demo.show');
@@ -91,14 +96,38 @@ class DemoController
         }
 
         if ($state['status'] === DemoSessions::READY) {
-            return redirect()->route('demo.open', $token);
+            $grant = DemoSessions::grant($token, $request->session()->getId());
+
+            return $grant === null ? redirect()->route('demo.show') : redirect()->route('demo.open', $grant);
         }
 
         return view('start.try-building', [
             ...LandingPage::data(),
+            'token' => $token,
             'pageTitle' => 'Vi bygger ditt demoföretag – NONOX',
             'pageDescription' => 'Ett påhittat företag med ett års bokföring byggs åt dig.',
         ]);
+    }
+
+    /** What the waiting page's script asks every two seconds: still building, or where to go. */
+    public function status(Request $request, string $token): JsonResponse
+    {
+        abort_unless(DemoMode::enabled(), 404);
+
+        $state = DemoSessions::stateFor($token, $request->session()->getId());
+        $headers = ['Cache-Control' => 'no-store'];
+
+        if ($state === null || $state['status'] === DemoSessions::FAILED) {
+            return response()->json(['status' => 'failed', 'url' => route('demo.show')], 200, $headers);
+        }
+
+        if ($state['status'] === DemoSessions::READY) {
+            $grant = DemoSessions::grant($token, $request->session()->getId());
+
+            return response()->json(['status' => $grant === null ? 'failed' : 'ready', 'url' => $grant === null ? route('demo.show') : route('demo.open', $grant)], 200, $headers);
+        }
+
+        return response()->json(['status' => 'building'], 200, $headers);
     }
 
     /**

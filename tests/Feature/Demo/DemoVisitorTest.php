@@ -127,37 +127,90 @@ it('links to the page from the landing page for visitors, with Swedish text and 
     $this->actingAs($member)->get('/')->assertDontSee('data-try-link', false);
 });
 
+/** Keeps the main session cookie of a response for the next requests: the same browser. */
+function sameBrowser(object $test, TestResponse $response): void
+{
+    $cookie = collect($response->headers->getCookies())->first(fn ($c) => $c->getName() === config('session.cookie'));
+
+    expect($cookie)->not->toBeNull();
+    $test->withUnencryptedCookie(config('session.cookie'), $cookie->getValue());
+}
+
+/** A different browser: no cookies at all. */
+function otherBrowser(object $test): void
+{
+    (fn () => $this->unencryptedCookies = $this->defaultCookies = [])->call($test);
+}
+
 it('starts a build in the demo queue, asks the browser to wait, and lets the guest in when it is ready', function () {
     Queue::fake();
 
     $response = startDemo($this);
     $token = tokenOf($response);
     $response->assertRedirect(route('demo.building', $token));
+    sameBrowser($this, $response);
 
     Queue::assertPushed(BuildDemoCompany::class, fn (BuildDemoCompany $job): bool => $job->industry === 'bokforing-for-cafeer' && $job->connection === 'demo');
 
-    $this->get(route('demo.building', $token))->assertOk()->assertSee('Vi bygger ditt demoföretag.')->assertSee('http-equiv="refresh"', false);
+    // A page with a small poll and a live region, a button that works without script, and no 2 second refresh.
+    $this->get(route('demo.building', $token))->assertOk()
+        ->assertSee('Vi bygger ditt demoföretag.')
+        ->assertSee('aria-live="polite"', false)
+        ->assertSee('Kontrollera igen')
+        ->assertSee('upp till en minut')
+        ->assertSee(route('demo.status', $token), false)
+        ->assertDontSee('http-equiv="refresh"', false);
+    $this->get(route('demo.status', $token))->assertOk()->assertExactJson(['status' => 'building']);
     $this->assertGuest();
 
     // The worker finishes: a guest with a company, in the demo database.
     [$guest] = Demo::company();
     DemoSessions::markReady($token, $guest);
 
-    $this->get(route('demo.building', $token))->assertRedirect(route('demo.open', $token));
+    $status = $this->get(route('demo.status', $token))->assertOk()->json();
+    expect($status['status'])->toBe('ready')->and($status['url'])->toStartWith(url('/prova/oppna/'));
 
-    $opened = $this->get(route('demo.open', $token));
+    // The poll gave the session its one grant; the build token itself is spent and opens nothing.
+    $this->get(route('demo.building', $token))->assertRedirect(route('demo.show'));
+
+    otherBrowser($this);
+    $opened = $this->get($status['url']);
     $opened->assertRedirect(route('dashboard'))->assertCookie(DemoMode::COOKIE);
 
-    // The token worked once.
-    expect(DemoSessions::state($token))->toBeNull();
-    $this->get(route('demo.open', $token))->assertRedirect(route('demo.show'));
+    // The grant worked once.
+    $this->get($status['url'])->assertRedirect(route('demo.show'));
+});
+
+it('does not let a link alone claim a demo: the token belongs to the browser that started the build', function () {
+    Queue::fake();
+    $response = startDemo($this);
+    $token = tokenOf($response);
+    sameBrowser($this, $response);
+    [$guest] = Demo::company();
+    DemoSessions::markReady($token, $guest);
+
+    // Someone else with the link: another browser, or one with another session.
+    otherBrowser($this);
+    $this->get(route('demo.building', $token))->assertRedirect(route('demo.show'));
+    $this->get(route('demo.status', $token))->assertOk()->assertJson(['status' => 'failed']);
+    $this->get(route('demo.open', $token))->assertRedirect(route('demo.show'))->assertCookieMissing(DemoMode::COOKIE);
+
+    // The build token is not a grant, so it opens nothing even for the right browser.
+    sameBrowser($this, $response);
+    $this->get(route('demo.open', $token))->assertRedirect(route('demo.show'))->assertCookieMissing(DemoMode::COOKIE);
+
+    // And the right browser still gets in.
+    $this->get(route('demo.building', $token))->assertRedirect();
 });
 
 it('sends the visitor back with a message when the build failed', function () {
     Queue::fake();
-    $token = tokenOf(startDemo($this));
+    $response = startDemo($this);
+    $token = tokenOf($response);
+    sameBrowser($this, $response);
     DemoSessions::markFailed($token);
 
+    $this->get(route('demo.status', $token))->assertJson(['status' => 'failed']);
     $this->get(route('demo.building', $token))->assertRedirect(route('demo.show'));
     $this->get(route('demo.show'))->assertSee('Det gick inte att bygga demon');
 });
@@ -169,6 +222,16 @@ it('does not open a demo that has ended, or one nobody asked for', function () {
     $this->get(route('demo.open', $token))->assertRedirect(route('demo.show'));
     $this->get(route('demo.open', str_repeat('b', 40)))->assertRedirect(route('demo.show'));
     $this->get(route('demo.building', str_repeat('b', 40)))->assertRedirect(route('demo.show'));
+});
+
+it('caps the builds that run at once apart from the number of live demos', function () {
+    Queue::fake();
+    config(['nonox.demo.max_building' => 1, 'nonox.demo.max_live' => 100]);
+
+    startDemo($this)->assertRedirect();
+    startDemo($this)->assertSessionHasErrors('industry');
+
+    Queue::assertPushed(BuildDemoCompany::class, 1);
 });
 
 it('refuses a form with the honeypot filled in', function () {

@@ -12,7 +12,7 @@ Vill du se hur NONOX fungerar innan du ställer dig i kö kan du starta en demo.
 
 1. Öppna startsidan och välj **Prova utan att registrera**.
 2. Välj vilken sorts företag du vill prova, till exempel ett café eller en hantverkare.
-3. Tryck på **Starta demon** och vänta några sekunder medan året läggs in.
+3. Tryck på **Starta demon** och vänta medan året läggs in. Det tar upp till en minut, och sidan öppnas av sig själv.
 4. Du hamnar på översikten i ditt demoföretag. Överst på varje sida står hur lång tid som finns kvar.
 
 ## Det här kan du göra
@@ -38,7 +38,7 @@ Demon varar i två timmar. Sedan loggas du ut och demoföretaget går inte läng
 
 ## Vanliga frågor
 
-**Sparar NONOX något om mig?** Nej. Du anger varken namn eller e-postadress. Din IP-adress används bara för att begränsa hur många demor en dator kan starta per timme, och sparas inte i databasen.
+**Sparar NONOX något om mig?** Inget om dig: du anger varken namn eller e-postadress, och din IP-adress sparas inte i demon. Det du själv skriver in, till exempel ett kundnamn eller en anställd, ligger i demons egen databas tills den töms, senast efter ett dygn, och sedan är det borta. Skriv därför inga riktiga uppgifter. Din IP-adress används bara för att begränsa hur många demor en dator kan starta per timme, som ett kodat värde i en timme, och sparas aldrig i klartext.
 
 **Varför kan jag inte starta fler?** Du kan starta några demor per timme, och antalet demor på samma gång är begränsat så att tjänsten räcker till alla. Försök igen om en stund.
 

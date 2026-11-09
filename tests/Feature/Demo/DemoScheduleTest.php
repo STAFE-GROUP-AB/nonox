@@ -6,10 +6,13 @@ use App\Actions\Demo\PurgeExpiredDemos;
 use App\Support\Demo\DemoDatabase;
 use App\Support\Demo\DemoMode;
 use App\Support\Demo\DemoSessions;
+use App\Support\Guide\Guide;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 use Tests\Support\Demo;
 
 /*
@@ -144,4 +147,44 @@ it('lets a start win over a rebuild: the rebuild waits while a start holds the l
     } finally {
         $other->selectOne('select pg_advisory_unlock_shared(?)', [DemoDatabase::LOCK_KEY]);
     }
+});
+
+it('refuses a start at once, without waiting, while a rebuild holds the lock', function () {
+    config(['database.connections.demo_lock' => config('database.connections.demo')]);
+    $other = DB::connection('demo_lock');
+    $other->selectOne('select pg_advisory_lock(?)', [DemoDatabase::LOCK_KEY]);
+
+    try {
+        $started = microtime(true);
+
+        expect(fn () => DemoSessions::begin('bokforing-for-cafeer', 'a-session'))
+            ->toThrow(ValidationException::class, 'Demon städas just nu')
+            ->and(microtime(true) - $started)->toBeLessThan(2.0);
+    } finally {
+        $other->selectOne('select pg_advisory_unlock(?)', [DemoDatabase::LOCK_KEY]);
+    }
+});
+
+it('looks again once the rebuild holds the lock, and does nothing if a demo has come to life', function () {
+    Demo::company(CarbonImmutable::now()->subHour());
+
+    expect(DemoDatabase::rebuild(fn (): bool => false))->toBeFalse()
+        ->and(DB::connection('demo')->table('users')->count())->toBeGreaterThan(0)
+        ->and(DB::connection('demo')->getSchemaBuilder()->hasTable('users'))->toBeTrue();
+});
+
+it('keeps raw IP addresses out of the cache keys of the calendar links', function () {
+    config(['app.landing.enabled' => true]);
+    $ip = '203.0.113.88';
+    $token = str_repeat('a', 48);
+
+    $this->withServerVariables(['REMOTE_ADDR' => $ip])->get('/foretagsguiden/'.Guide::CALENDAR_SLUG.'/'.$token.'.ics')->assertNotFound();
+    $this->withServerVariables(['REMOTE_ADDR' => $ip])->get(route('crm.calendar.feed', $token))->assertNotFound();
+
+    $hashed = hash_hmac('sha256', $ip, (string) config('app.key'));
+
+    expect(RateLimiter::attempts('guide-calendar-miss:'.$hashed))->toBe(1)
+        ->and(RateLimiter::attempts('guide-calendar-miss:'.$ip))->toBe(0)
+        ->and(RateLimiter::attempts('crm-calendar-miss:'.$hashed))->toBe(1)
+        ->and(RateLimiter::attempts('crm-calendar-miss:'.$ip))->toBe(0);
 });

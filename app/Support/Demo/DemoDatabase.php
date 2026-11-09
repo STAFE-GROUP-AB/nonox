@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 /**
@@ -49,13 +50,19 @@ final class DemoDatabase
         }
 
         // ...then what the servers say they are connected to.
-        $demo = DB::connection(DemoMode::CONNECTION)->selectOne('select current_database() as name, inet_server_port() as port');
-        $main = DB::connection(DemoMode::mainConnection())->selectOne('select current_database() as name, inet_server_port() as port');
+        $query = 'select current_database() as name, inet_server_port() as port, inet_server_addr()::text as addr';
+        $demo = DB::connection(DemoMode::CONNECTION)->selectOne($query);
+        $main = DB::connection(DemoMode::mainConnection())->selectOne($query);
 
         self::assertName((string) $demo->name, (string) $main->name);
 
         if ($demo->port !== $main->port) {
             throw new RuntimeException('Refusing: the demo database is on another port than the main one.');
+        }
+
+        // The server's address; NULL (a unix socket) matches only NULL, so a socket and a network connection never match.
+        if ($demo->addr !== $main->addr) {
+            throw new RuntimeException('Refusing: the demo database is on another server address than the main one.');
         }
     }
 
@@ -72,7 +79,8 @@ final class DemoDatabase
 
     /**
      * Runs $callback while no rebuild can run, and a rebuild cannot start
-     * until it is done: a shared advisory lock on the demo database.
+     * until it is done: a shared advisory lock on the demo database, taken
+     * without waiting.
      *
      * @template T
      *
@@ -82,7 +90,11 @@ final class DemoDatabase
     public static function whileStarting(callable $callback): mixed
     {
         $demo = DB::connection(DemoMode::CONNECTION);
-        $demo->selectOne('select pg_advisory_lock_shared(?)', [self::LOCK_KEY]);
+
+        // Never block a web worker: while a rebuild runs, a start is refused.
+        if (! $demo->selectOne('select pg_try_advisory_lock_shared(?) as got', [self::LOCK_KEY])->got) {
+            throw ValidationException::withMessages(['industry' => __('Demon städas just nu och är öppen igen om en stund. Försök igen senare.')]);
+        }
 
         try {
             return $callback();
@@ -124,9 +136,12 @@ final class DemoDatabase
     /**
      * Drops the demo database's schema, builds it again and empties the demo's
      * own file directories (nothing else). Only call it when no demo is live.
-     * Returns false, doing nothing, when a start holds the lock.
+     * Returns false, doing nothing, when a start holds the lock or when $stillDue,
+     * asked again once the lock is held, says a demo has come to life meanwhile.
+     *
+     * @param  (callable(): bool)|null  $stillDue
      */
-    public static function rebuild(): bool
+    public static function rebuild(?callable $stillDue = null): bool
     {
         self::assertSafe();
 
@@ -137,6 +152,11 @@ final class DemoDatabase
         }
 
         try {
+            // A start may have finished between the caller's check and the lock: look again.
+            if ($stillDue !== null && ! $stillDue()) {
+                return false;
+            }
+
             $demo->unprepared('DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;');
 
             $code = Artisan::call('migrate', ['--database' => DemoMode::CONNECTION, '--force' => true]);

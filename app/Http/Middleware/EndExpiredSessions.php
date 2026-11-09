@@ -28,6 +28,11 @@ class EndExpiredSessions
 
     public function handle(Request $request, Closure $next): Response
     {
+        // The browser's demo has ended and UseDemoDatabase has forgotten its cookie (ADR-077).
+        if (DemoMode::pullEnded()) {
+            Toast::flash(__('Demon har tagit slut och är borttagen. Starta en ny om du vill fortsätta prova.'));
+        }
+
         $user = $request->user();
 
         if (! $user instanceof User) {

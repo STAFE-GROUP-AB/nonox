@@ -52,15 +52,11 @@ final class Demo
     }
 
     /**
-     * Makes a token for the guest that opens the demo, the way a finished build does.
+     * A one-time grant that opens the demo for the guest, the way the session that started a finished build is given one.
      */
     public static function token(User $guest): string
     {
-        $token = Str::random(40);
-
-        DemoSessions::markReady($token, $guest);
-
-        return $token;
+        return DemoSessions::issueOpen($guest->id);
     }
 
     /** The session id the demo database holds for the browser that opened the demo. */

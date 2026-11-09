@@ -357,6 +357,8 @@ grep -A30 "Subject: Din inloggningskod" storage/logs/laravel.log | grep -oE "\b[
 - För att prospektera i CRM (frivilligt): läs in företagsregistret ur SCB:s och Bolagsverkets öppna data med `php artisan registry:import scb-bulk` och sedan `php artisan registry:import bolagsverket-bulk` (gratis, ingen nyckel, några minuter, cirka 1,2 miljoner juridiska personer), och sätt `COMPANY_REGISTER_IMPORT=true` för att uppdatera varje vecka. Med en egen API-nyckel från SCB (gratis, sök på registreraafr.scb.se, `SCB_AFR_API_KEY`) kommer storleksklass, län, kommun och spärrar med (`registry:import scb-api`). Se [ADR-047](docs/adr/ADR-047-crm-prospecting.md).
 - För att kontrollera iXBRL-årsredovisningen mot Bolagsverkets taxonomi (frivilligt): kör `scripts/fetch-xbrl-taxonomy.sh`. Den hämtar det fastlåsta taxonomipaketet, kontrollerar SHA-256 och skriver ut mappen, som du sätter som `BOLAGSVERKET_TAXONOMY_DIR`. Se [ADR-058](docs/adr/ADR-058-digital-annual-report.md).
 
+- För Prova utan att registrera (frivilligt, avstängt från början): demon ligger i en egen databas. Skapa databasen `<huvuddatabasen>_demo` (exakt det namnet, på samma server) och kör `php artisan migrate --force --database=demo` vid **varje** uppdatering, efter den vanliga `migrate`. Kör en arbetare för demokön, `php artisan queue:work demo`, om köerna inte är `sync`. Sätt `TRUSTED_PROXIES` rätt (se ovan) innan du slår på funktionen, annars räknas alla besökare som en enda dator i begränsningen. Slå på den i /hq under Inställningar först när du har bekräftat att demodatabasen får tömmas: `demo:prune` bygger den på nytt när inga demor är igång. Se [ADR-077](docs/adr/ADR-077-try-without-registering.md) och [docs/drift/demodatabasen.md](docs/drift/demodatabasen.md).
+
 Kör `php artisan config:cache` efter varje ändring i `.env` på servern.
 
 ### Uppdatera till senaste versionen
@@ -365,6 +367,7 @@ Kör `php artisan config:cache` efter varje ändring i `.env` på servern.
 git pull
 composer install
 php artisan migrate
+php artisan migrate --database=demo   # bara om du kör Prova utan att registrera
 npm install && npm run build
 ```
 

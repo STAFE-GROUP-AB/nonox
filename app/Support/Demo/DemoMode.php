@@ -56,6 +56,9 @@ final class DemoMode
 
     private static int $seeding = 0;
 
+    /** Set by UseDemoDatabase when it forgets the cookie of a demo that has ended; shown once, after the session has started. */
+    private static bool $ended = false;
+
     /** The main connection's name, remembered at boot: setDefaultConnection() overwrites config('database.default'). */
     private static ?string $main = null;
 
@@ -95,6 +98,20 @@ final class DemoMode
     public static function active(): bool
     {
         return self::onDemoDatabase() && ! self::isSeeding();
+    }
+
+    public static function markEnded(): void
+    {
+        self::$ended = true;
+    }
+
+    /** True once after markEnded(). */
+    public static function pullEnded(): bool
+    {
+        $ended = self::$ended;
+        self::$ended = false;
+
+        return $ended;
     }
 
     public static function isSeeding(): bool
@@ -182,6 +199,8 @@ final class DemoMode
     /** Puts the main settings back; a request ends here, and so does each request in a test. */
     public static function deactivateRequest(): void
     {
+        self::$ended = false;
+
         if (! self::$requestEntered) {
             return;
         }

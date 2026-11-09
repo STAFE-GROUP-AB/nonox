@@ -71,6 +71,7 @@ Route::get('/flytta-hit', MigrationGuideController::class)->name('migrationGuide
 Route::get('/prova', [DemoController::class, 'show'])->name('demo.show');
 Route::post('/prova', [DemoController::class, 'start'])->name('demo.start');
 Route::get('/prova/bygger/{token}', [DemoController::class, 'building'])->where('token', '[A-Za-z0-9]{40}')->name('demo.building');
+Route::get('/prova/bygger/{token}/status', [DemoController::class, 'status'])->where('token', '[A-Za-z0-9]{40}')->name('demo.status');
 // A guest request (UseDemoDatabase): the session of the demo starts here, in the demo database.
 Route::get('/prova/oppna/{token}', [DemoController::class, 'open'])->where('token', '[A-Za-z0-9]{40}')->name('demo.open');
 // The waiting list of the open beta (ADR-038): the way in for new users of the hosted service.

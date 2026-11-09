@@ -133,3 +133,18 @@ it('does not forget the cookie on the entry pages, so a guest can look at them a
     $this->actingAs($member)->get('/_probe')->assertJson(['connection' => config('database.default')]);
     expect(User::query()->whereKey($member->id)->exists())->toBeTrue();
 });
+
+it('tells the visitor, once, that the demo has ended when it forgets the cookie of an ended demo', function () {
+    [$guest, $session] = liveGuestSession($this);
+    DB::connection('demo')->table('demo_sessions')->where('user_id', $guest->id)->update(['expires_at' => CarbonImmutable::now()->subMinute()]);
+
+    $this->withCookie(DemoMode::COOKIE, $session)->get('/_probe')->assertCookieExpired(DemoMode::COOKIE);
+
+    expect(collect(session('toasts', []))->pluck('message')->implode(' '))->toContain('Demon har tagit slut');
+
+    // An unknown session is not an ended demo: no toast.
+    $this->flushSession();
+    $this->withCookie(DemoMode::COOKIE, Str::random(40))->get('/_probe')->assertCookieExpired(DemoMode::COOKIE);
+
+    expect(collect(session('toasts', []))->pluck('message')->implode(' '))->not->toContain('Demon har tagit slut');
+});

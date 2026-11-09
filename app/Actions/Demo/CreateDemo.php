@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Demo;
 
+use App\Domain\Company\OrganisationNumber;
 use App\Models\Company;
 use App\Models\User;
 use App\Support\Demo\DemoCatalog;
@@ -37,9 +38,6 @@ use InvalidArgumentException;
  */
 final class CreateDemo
 {
-    /** Six-digit starts of organisation numbers the demos draw from; 559999 belongs to the developer seeders. */
-    private const array ORG_PREFIXES = ['559992', '559993', '559994', '559995'];
-
     public function __construct(private readonly DemoCompanyBuilder $builder) {}
 
     public function __invoke(string $slug, CarbonImmutable $expiresAt): User
@@ -83,7 +81,6 @@ final class CreateDemo
             CurrentCompany::run($company, fn () => $extra->afterAll($context));
         }
 
-        $company->forceFill(['is_test_company' => true])->save();
         $guest->forceFill(['current_team_id' => $company->id])->save();
 
         DB::table('demo_sessions')->insert([
@@ -95,13 +92,17 @@ final class CreateDemo
         return $guest;
     }
 
-    /** A Luhn-valid organisation number nobody has, in the demos' own range. */
+    /**
+     * "00" and seven random digits with a Luhn check digit: a group number no real
+     * Swedish organisation has (the same range as the API's test companies,
+     * ADR-032), so a demo can never take a real company's number, unused in the demo database.
+     */
     private function orgNumber(): string
     {
         do {
-            $nine = self::ORG_PREFIXES[array_rand(self::ORG_PREFIXES)].str_pad((string) random_int(0, 999), 3, '0', STR_PAD_LEFT);
-            $number = substr($nine, 0, 6).'-'.substr($nine, 6).Luhn::checkDigit($nine);
-        } while (CompanyScope::bypass(fn (): bool => Company::query()->where('org_number', $number)->exists()));
+            $digits = '00'.str_pad((string) random_int(0, 9_999_999), 7, '0', STR_PAD_LEFT);
+            $number = OrganisationNumber::tryFrom($digits.Luhn::checkDigit($digits))?->formatted();
+        } while ($number === null || CompanyScope::bypass(fn (): bool => Company::query()->where('org_number', $number)->exists()));
 
         return $number;
     }

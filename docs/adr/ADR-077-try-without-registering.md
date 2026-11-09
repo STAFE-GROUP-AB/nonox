@@ -272,6 +272,30 @@ Dropping the schema of a database that holds nothing but demos is the simpler sa
   installation needs the demo database created and migrated, a worker for the `demo` queue, and the owner's
   explicit confirmation at deploy.
 
+### E2. Deploy, proxies and what remains
+
+- **Every deploy** runs `php artisan migrate --force --database=demo` after the ordinary `migrate`, and a worker for the
+  demo queue (`php artisan queue:work demo`) must run unless the queue is `sync` (README, "Köra NONOX på en server", and
+  `docs/drift/demodatabasen.md`).
+- **`TRUSTED_PROXIES` must match the proxy (Cloudflare's ranges) before the feature is switched on.** The per-IP limit
+  counts `$request->ip()`; behind an untrusted proxy every visitor is one address.
+- **The "started" field can be replayed within the hour.** It is an encrypted timestamp that proves a form was open for
+  a few seconds, not a one-time token; replaying it does not get past the per-IP limits or the ceilings, which are what
+  bound abuse.
+- **The build token is bound to the main-database session that started it.** The page that waits (`/prova/bygger/{token}`,
+  and the JSON it polls) answers only to that session, and only it is given a one-time grant (`/prova/oppna/{grant}`) when
+  the build is ready; the token itself opens nothing, so a copied link claims nothing.
+- **Organisation numbers** of demo companies are `00` and seven digits with a valid Luhn digit, the group number no real
+  organisation has (as the API's test companies, ADR-032), so a demo can never carry a real company's number and no
+  "DEMO" mark next to it is needed. Every company made in the demo database is a test company from its creation.
+- **Builds** (some 20 000 queries each) are capped separately from the number of live demos (`NONOX_DEMO_MAX_BUILDING`, 3);
+  the page says a demo takes up to a minute, waits with a small script that polls and announces progress in an
+  `aria-live` region, and offers "Kontrollera igen" where there is no script.
+- **Failed demo jobs** land in the main installation's `failed_jobs` table (the queue's failure provider is shared); the
+  build job catches everything and never fails.
+- **What a visitor types** into the demo (a customer's or an employee's name, say) is stored in the demo database and
+  erased when it is rebuilt, at the latest after a day; the page and the manual tell the visitor not to enter real data.
+
 ### F. Consequences
 
 - No exception in the immutability triggers; the main database never holds a demo, a guest, a guest session or

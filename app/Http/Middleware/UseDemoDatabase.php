@@ -6,6 +6,7 @@ namespace App\Http\Middleware;
 
 use App\Support\Demo\DemoMode;
 use App\Support\Demo\DemoSessions;
+use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Cookie\CookieValuePrefix;
 use Illuminate\Http\Request;
@@ -83,9 +84,9 @@ class UseDemoDatabase
         return $request->is('logga-in', 'logga-in/*', 'ko', 'ko/*', 'registrera');
     }
 
-    private function tokenIsReady(string $token): bool
+    private function tokenIsReady(string $grant): bool
     {
-        return (DemoSessions::state($token)['status'] ?? null) === DemoSessions::READY;
+        return DemoSessions::openExists($grant);
     }
 
     /** The session exists in the demo database and its guest has a demo that has not ended. */
@@ -102,7 +103,17 @@ class UseDemoDatabase
         $demo = DB::connection(DemoMode::CONNECTION);
         $userId = $demo->table('sessions')->where('id', $id)->value('user_id');
 
-        return $userId !== null
-            && $demo->table('demo_sessions')->where('user_id', $userId)->where('expires_at', '>', now())->exists();
+        if ($userId === null) {
+            return false;
+        }
+
+        $row = $demo->table('demo_sessions')->where('user_id', $userId)->first(['expires_at']);
+
+        if ($row !== null && CarbonImmutable::parse((string) $row->expires_at)->isPast()) {
+            // The demo this browser had has ended: tell the visitor, once, when the main session is there to flash it.
+            DemoMode::markEnded();
+        }
+
+        return $row !== null && CarbonImmutable::parse((string) $row->expires_at)->isFuture();
     }
 }

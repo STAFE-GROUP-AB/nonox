@@ -70,7 +70,10 @@ final class PurgeExpiredDemos
         }
 
         // A start that holds the lock, or began after the check above, wins: the rebuild waits for the next run.
-        if (! DemoDatabase::rebuild()) {
+        $quiet = fn (): bool => DB::connection(DemoMode::CONNECTION)->table('demo_sessions')->where('expires_at', '>', now())->doesntExist()
+            && DemoSessions::building() === 0;
+
+        if (! DemoDatabase::rebuild($quiet)) {
             return ['enabled' => true, 'live' => 0, 'expired' => $expired, 'draining' => DemoDatabase::draining(), 'rebuilt' => false];
         }
 

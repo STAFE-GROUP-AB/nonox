@@ -4358,6 +4358,8 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   databasens namn inte slutar på `_demo` eller är huvuddatabasens. Det är den enda
   databas NONOX får tömma. Kommandot gör ingenting medan inställningen i /hq är avstängd (standard
   överallt), och namnet måste vara exakt `<huvuddatabasen>_demo` på samma server och port.
+- Köade jobb från en demo som misslyckas skrivs till huvudinstallationens tabell `failed_jobs` (köns felhantering är
+  gemensam); bygget av en demo fångar alla fel själv. Driftanvisningar: `docs/drift/demodatabasen.md`.
 - Testerna `DemoIsolationTest` (huvuddatabasens triggerfunktioner är identiska med demodatabasens och
   saknar `demo_purge`; sessionerna kan inte korsa databaserna i någon riktning),
   `DemoScheduleTest` (båda vägrarna) och `DemoRebuildTest` (en riktig ombyggnad) bevisar detta.

@@ -14,7 +14,6 @@ use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Str;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Demo;
 
@@ -57,7 +56,7 @@ it('builds a visitor\'s own demo in the demo database only, with the real trigge
             ->and($guest->name)->toBe('Gäst')
             ->and($demo->user_id)->toBe($guest->id)
             ->and($demo->isTestCompany())->toBeTrue()
-            ->and($demo->org_number)->toMatch('/^55999[2-5]-\d{4}$/')
+            ->and($demo->org_number)->toMatch('/^00\d{4}-\d{4}$/')
             ->and(DemoMode::expiresAt($guest)?->isFuture())->toBeTrue()
             ->and(DemoMode::expiresAt($guest)?->lessThanOrEqualTo(now()->addHours((int) config('nonox.demo.hours'))->addMinute()))->toBeTrue();
 
@@ -83,14 +82,16 @@ it('builds a visitor\'s own demo in the demo database only, with the real trigge
         expect(Company::query()->where('org_number', $other->org_number)->exists())->toBeFalse();
 
         // The claim opens the demo once.
-        expect(DemoSessions::claim($token)?->id)->toBe($guest->id)
+        $grant = DemoSessions::issueOpen($guest->id);
+
+        expect(DemoSessions::claim($grant)?->id)->toBe($guest->id)
+            ->and(DemoSessions::claim($grant))->toBeNull()
             ->and(DemoSessions::claim($token))->toBeNull();
     });
 
     // And the guest gets in through the real route and sees the banner and the company's pages.
     $guestId = $state['user_id'];
-    $again = Str::random(40);
-    DemoMode::onDemoConnection(fn () => DemoSessions::markReady($again, User::query()->findOrFail($guestId)));
+    $again = DemoSessions::issueOpen($guestId);
 
     $this->get(route('demo.open', $again))->assertRedirect(route('dashboard'));
     $this->withCookie(DemoMode::COOKIE, Demo::sessionId())->get(route('accounting.vouchers.index'))->assertOk()->assertSee('data-demo-banner', false);
@@ -117,4 +118,17 @@ it('marks a failed build as failed and frees its place', function () {
         ->and(DemoSessions::building())->toBe($building - 1);
 
     DemoMode::onDemoConnection(fn () => expect(DemoSessions::claim($token))->toBeNull());
+});
+
+it('builds a restaurant demo on a Sunday evening, when this Sunday\'s shifts have started', function () {
+    // A Sunday after the shifts' start: the self-service extras must not claim a shift that has begun.
+    $this->travelTo(CarbonImmutable::parse('2026-11-08 21:30:00', 'Europe/Stockholm'));
+    expect(now()->isSunday())->toBeTrue();
+
+    Queue::fake();
+    $token = DemoSessions::begin('bokforing-for-restauranger');
+
+    (new BuildDemoCompany($token, 'bokforing-for-restauranger'))->handle(app(CreateDemo::class));
+
+    expect(DemoSessions::state($token)['status'])->toBe(DemoSessions::READY);
 });

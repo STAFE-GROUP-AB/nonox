@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Company;
 use App\Modules\Ai\AiModule;
 use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
@@ -195,4 +196,16 @@ it('stores no IP address and no browser name for a guest', function () {
 
 it('has no sync override of the queue left in the demo builder', function () {
     expect(file_get_contents(base_path('database/seeders/Demo/Extras/WrapUpExtras.php')))->not->toContain('queue.default');
+});
+
+it('makes every company created in the demo database a test company from its creation', function () {
+    $made = DemoMode::onDemoConnection(function () {
+        $company = Company::factory()->create();
+
+        return [$company->is_test_company, DB::table('teams')->where('id', $company->id)->value('is_test_company')];
+    });
+    $real = Company::factory()->create();
+
+    expect($made)->toBe([true, true])
+        ->and((bool) $real->fresh()->is_test_company)->toBeFalse();
 });
