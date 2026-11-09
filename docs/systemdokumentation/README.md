@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.117
-- Datum: 2026-11-08
+- Version: 0.118
+- Datum: 2026-11-09
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -2667,13 +2667,17 @@ och underlag från en fil. Koden ligger i `app/Migration/Import`.
   eller personnummer, sedan på numret i det tidigare programmet, sedan på namn och
   postnummer) hoppas över och skrivs aldrig över. Numret från det tidigare
   programmet sparas i `external_ref`; posten får nästa nummer i NONOX serie.
+- **Identitet och dokument.** En inläst obetald faktura har inget nummer i NONOX och tar inget ur nummerserien: det gamla numret (`external_ref`) är dess identitet och står i titeln, listorna och sökningen som "Faktura :nummer (tidigare program)". Den har inget NONOX-underlag: den kan inte skickas, inte göras till PDF och tas inte med i arkivpaketets fakturor. En påminnelse går att skicka och nämner det gamla numret, OCR-numret och beloppet, utan bilaga. Inbetalningar matchas på det gamla OCR-numret (eller det gamla fakturanumret i meddelandet); ett OCR-nummer som finns på mer än en obetald faktura matchar ingen. Verifikationstexten vid betalning och avskrivning slutar med "Ingående balans (inläst)", på kund- och leverantörssidan. En avskrivning tar momsen ur den inlästa momsen med den momssats beloppen ger (`TODO(legal-verify)`), och en kreditering får en rad med nettot och den satsen. En inläst leverantörsfaktura är attesterad vid inläsningen utan att någon i NONOX attesterat (`approved_by` saknas, `import_source` anger varför).
 - **Obetalda fakturor skapas utan verifikation.** En obetald kundfaktura blir en
   utfärdad faktura (`import_source = IMPORT_OPEN`) och en obetald leverantörsfaktura en
   attesterad faktura, med det obetalda beloppet som återstår. Ingen verifikation
   bokförs och huvudboken ändras inte: saldot på 1510 respektive 2440 finns redan
   i bokföringen från SIE-filen, och fakturorna förklarar det. Därför spärras
-  inläsningen om inte summan av obetalda belopp är exakt lika med saldot på
-  kontot vid det valda räkenskapsårets slut, och jämförelsen görs om i samma
+  inläsningen om inte summan av obetalda belopp i filen, plus det som är öppet på
+  fakturor gjorda i NONOX (kreditfakturor med minus), är exakt lika med saldot på
+  kontot, plus de underkonton användaren anger, vid slutet av det valda
+  räkenskapsåret (som standard det senaste med bokförda verifikationer). Jämförelsen
+  görs på totalsumman, inte per kund eller leverantör, och görs om i samma
   transaktion som fakturorna skapas. Fakturorna kan inte ändras eller tas bort
   (spärrarna för utfärdade fakturor gäller), bara betalas, krediteras eller
   skrivas av. En betalning bokförs som vid fakturametoden mot 1510 respektive
@@ -4827,3 +4831,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.115 | 2026-11-06 | Bekräftelse och kontroller före inlämning (ägarbeslut 10 och 16): momsdeklarationen och arbetsgivardeklarationen till Skatteverket, betalfilen för leverantörsbetalningar och lönefilen kräver att användaren bekräftar "Jag har granskat siffrorna", och bekräftelsen sparas i behandlingshistoriken (`figures.reviewed`); ett K2-företag bekräftar de nya K2-villkoren (BFNAR 2025:2) en gång innan bokslutet för ett räkenskapsår som börjar efter 2025-12-31 kan fortsätta (`company.k2_conditions_confirmed`). SIE-importen stoppar en fil vars ingående balanser inte summerar till noll, och rapporten säger bara att varje konto stämmer när utgående balanser eller resultat har kontrollerats. Drivmedelsförmån kräver en förmånsbil i perioden. OCR-nummer på leverantörsfakturor kontrolleras med kontrollsiffran. Parametrarna för NE och INK4 2026 är inte längre markerade som kontrollerade, så beräkningen spärras tills en människa har kontrollerat dem. Rättelserna som driftsattes separat under versionsnumret 0.105 samma morgon (rutorna 20 och 23, årsredovisning bara enligt K2, belopp i hela kronor, övertid och mertid per art i Gröna Riks och Detaljhandeln, arbetsgivaravgift på drivmedelsförmån) ingår i 0.107, 0.109, 0.110 och 0.114 och i avsnitt 5h. |
 | 0.116 | 2026-11-07 | Regelverket (K1/K2/K3) hör till räkenskapsåret (avsnitt 3, ADR-059 tillägg A.2.1): varje år har sitt eget, ett nytt år ärver det föregående (annars närmaste senare) årets, och ett byte gäller ett valt år och alla senare år, i inställningarna som standard från det tidigaste öppna året utan fastställd årsredovisning. Stängda år och år med fastställd årsredovisning kan inte byta, och ett byte som inget år kan ta emot vägras. Bytet sparas på varje år och i behandlingshistoriken (`fiscal_year.framework_changed`, en post per år). Årsredovisningen, K2-bekräftelsen i bokslutet och NE-bilagan följer årets regelverk, så ett tidigare K2-år behåller sin årsredovisning när företaget byter till K3. Befintliga år fick företagets regelverk; ingen verifikation ändrades. Redovisningsprinciper för K3 som data (avsnitt 5a6.1, ADR-059 tillägget 2026-11-07, A.2.3): företagets val per princip gäller från ett räkenskapsårs första dag tills en ny rad ersätter det, utom svaren om övergången som bara gäller sitt eget år; val som NONOX ännu inte kan redovisa och byten av princip (K3 10.2, 23.37; inte att börja efter "inga", enligt kommentaren till 10.2, och inte kassaflödesanalysen) listas med regelns id som skäl till att K3-årsredovisningen inte kan tas fram; när det första räkenskapsårets datum ändras följer dess principer med; en rad kan inte sparas om den skulle gälla ett år vars årsredovisning har en fastställelsedag som har inträffat; byte från kapitel 12 till kapitel 11 nekas. Ändringen skrivs i behandlingshistoriken utan motiveringen. Ingenting i bokföringen ändras och ingen skärm använder principerna ännu. |
 | 0.117 | 2026-11-08 | Inläsning av register, obetalda fakturor och underlag från andra program (avsnitt 5a8a, ADR-076): obetalda kund- och leverantörsfakturor kan skapas utan verifikation när summan är lika med saldot på 1510 respektive 2440 och företaget redovisar enligt fakturametoden; betalningen bokförs mot 1510 respektive 2440. Huvudboken och kedjan av kontrollsummor ändras inte av inläsningen. |
+| 0.118 | 2026-11-09 | Inlästa obetalda fakturor (avsnitt 5a8a, ADR-076) behåller sitt gamla nummer som identitet och får inget nummer ur nummerserien; de kan inte skickas eller göras till PDF; betalning och avskrivning får verifikationstexten "Ingående balans (inläst)"; avstämningen mot 1510/2440 tar med öppna NONOX-fakturor och valda underkonton och tillåter kreditfakturor. |

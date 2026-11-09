@@ -15,7 +15,6 @@ use App\Migration\Import\Actions\AnalyseRegisterImport;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
-use App\Models\NumberSeries;
 use App\Models\RegisterImport;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
@@ -101,6 +100,8 @@ final class RegisterImportRunner
         $result = $this->emptyResult();
         $path = PrivateFile::temporaryCopy(ImportSie::DISK, (string) $import->file_path);
 
+        $zip = AttachmentZip::archive($path);
+
         try {
             foreach (AttachmentZip::plan($path) as $entry) {
                 $result['read']++;
@@ -112,13 +113,14 @@ final class RegisterImportRunner
                 }
 
                 try {
-                    AttachmentZip::attach($path, $entry['index'], (string) $entry['voucher'], $user, $this->attachToVoucher);
+                    AttachmentZip::attach($zip, $entry['index'], (string) $entry['voucher'], $user, $this->attachToVoucher);
                     $result['created']++;
                 } catch (ValidationException $error) {
                     $this->fail($result, $entry['index'], (string) collect($error->errors())->flatten()->first());
                 }
             }
         } finally {
+            $zip->close();
             @unlink($path);
         }
 
@@ -230,7 +232,7 @@ final class RegisterImportRunner
                 $fileOre += $plan->countsAsOpenItem() ? (int) $plan->values['remaining'] : 0;
             }
 
-            $comparison = OpenItemReconciliation::compare($kind, $fileOre, isset($import->options['fiscal_year_id']) ? (int) $import->options['fiscal_year_id'] : null);
+            $comparison = OpenItemReconciliation::compare($kind, $fileOre, isset($import->options['fiscal_year_id']) ? (int) $import->options['fiscal_year_id'] : null, array_map(intval(...), (array) ($import->options['extra_accounts'] ?? [])));
 
             if (! $comparison['equal']) {
                 throw new RuntimeException(__('Summan av obetalda fakturor stämmer inte längre med saldot på :account. Granska filen igen.', ['account' => $kind->controlAccount()]), 422);
@@ -269,8 +271,9 @@ final class RegisterImportRunner
         $invoice->forceFill([
             'company_id' => $company->id,
             'customer_id' => $customer->id,
-            'number' => NumberSeries::take(NumberSeries::INVOICES),
-            'kind' => Invoice::INVOICE,
+            // The old number is the invoice's identity (external_ref); it takes no number from the NONOX series (ADR-076).
+            'number' => null,
+            'kind' => $values['total'] < 0 ? Invoice::CREDIT : Invoice::INVOICE,
             'status' => InvoiceStatus::Issued,
             'invoice_date' => $values['invoice_date'],
             'due_date' => $values['due_date'],
@@ -298,9 +301,9 @@ final class RegisterImportRunner
         $invoice->forceFill([
             'company_id' => $company->id,
             'supplier_id' => $supplier->id,
-            'number' => NumberSeries::take(NumberSeries::SUPPLIER_INVOICES),
+            'number' => null,
             'status' => SupplierInvoiceStatus::Approved,
-            'kind' => SupplierInvoice::INVOICE,
+            'kind' => $values['total'] < 0 ? SupplierInvoice::CREDIT : SupplierInvoice::INVOICE,
             'invoice_number' => mb_substr((string) $values['invoice_number'], 0, 50),
             'ocr' => $values['ocr'] ?? null,
             'invoice_date' => $values['invoice_date'],
@@ -311,8 +314,9 @@ final class RegisterImportRunner
             'supplier_snapshot' => $supplier instanceof Supplier ? $supplier->snapshot() : null,
             'registered_at' => $now,
             'registered_by' => $user->id,
+            // Approved when it was read in; no one in NONOX approved it, which import_source says.
             'approved_at' => $now,
-            'approved_by' => $user->id,
+            'approved_by' => null,
             'created_by' => $user->id,
             'external_ref' => mb_substr((string) $values['invoice_number'], 0, 100),
             'import_source' => 'IMPORT_OPEN',

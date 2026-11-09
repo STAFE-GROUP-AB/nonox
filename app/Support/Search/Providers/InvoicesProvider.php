@@ -69,6 +69,8 @@ final class InvoicesProvider extends DatabaseSearchProvider
 
         if ($query->number !== null && $query->series === null) {
             $identifiers[] = ['invoices.number = ?', [$query->number]];
+            // An imported invoice is found by the number it had in the previous program (ADR-076).
+            $identifiers[] = ['invoices.external_ref = ?', [(string) $query->number]];
         }
 
         if ($digits !== null && strlen($digits) >= 2) {

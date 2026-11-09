@@ -215,6 +215,8 @@ final class ArchivePackageBuilder
 
         Invoice::query()
             ->where('status', '!=', InvoiceStatus::Draft->value)
+            // An imported open invoice has no PDF of ours (ADR-076).
+            ->whereNull('import_source')
             ->whereDate('invoice_date', '>=', $fiscalYear->start_date->toDateString())
             ->whereDate('invoice_date', '<=', $fiscalYear->end_date->toDateString())
             ->orderBy('number')

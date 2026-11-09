@@ -152,6 +152,8 @@ final class InvoiceController
     {
         Gate::forUser($this->user())->authorize('view', $invoice);
 
+        abort_if($invoice->isImported(), 404);
+
         if (! WorkQuota::attempt($this->company(), 'pdf')) {
             return Problem::make(429, 'rate_limited', WorkQuota::message(), [], ['Retry-After' => '60']);
         }

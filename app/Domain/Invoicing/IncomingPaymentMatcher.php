@@ -6,7 +6,6 @@ namespace App\Domain\Invoicing;
 
 use App\Models\Invoice;
 use App\Support\Camt054\BankCredit;
-use Illuminate\Support\Collection;
 
 /**
  * Suggests which unpaid invoice an incoming payment is for: the invoice whose
@@ -21,19 +20,34 @@ use Illuminate\Support\Collection;
  */
 final class IncomingPaymentMatcher
 {
-    /** @var Collection<string, Invoice> unpaid invoices by OCR number */
-    private Collection $byOcr;
+    /** @var array<string, list<Invoice>> unpaid invoices by OCR number */
+    private array $byOcr = [];
+
+    /** @var array<string, list<Invoice>> imported invoices by the number they had in the previous program */
+    private array $byOldNumber = [];
 
     public function __construct()
     {
-        $this->byOcr = Invoice::query()
+        $invoices = Invoice::query()
             ->where('status', InvoiceStatus::Issued->value)
             ->where('kind', Invoice::INVOICE)
-            ->whereNotNull('ocr')
-            ->get(['id', 'number', 'ocr', 'total_ore', 'paid_ore', 'customer_snapshot', 'status', 'kind', 'due_date', 'invoice_currency', 'foreign_total_minor', 'foreign_paid_minor', 'exchange_rate_micros'])
-            ->keyBy('ocr');
+            ->get(['id', 'number', 'ocr', 'external_ref', 'import_source', 'total_ore', 'paid_ore', 'customer_snapshot', 'status', 'kind', 'due_date', 'invoice_currency', 'foreign_total_minor', 'foreign_paid_minor', 'exchange_rate_micros']);
+
+        foreach ($invoices as $invoice) {
+            if ($invoice->ocr !== null) {
+                $this->byOcr[(string) $invoice->ocr][] = $invoice;
+            }
+
+            if ($invoice->isImported() && $invoice->external_ref !== null) {
+                $this->byOldNumber[(string) $invoice->external_ref][] = $invoice;
+            }
+        }
     }
 
+    /**
+     * An OCR number that is on more than one unpaid invoice matches none of
+     * them: guessing would book a customer's money on another's invoice.
+     */
     public function match(BankCredit $credit): ?Invoice
     {
         $candidates = $credit->ocr !== null ? [$credit->ocr] : [];
@@ -43,11 +57,13 @@ final class IncomingPaymentMatcher
             $candidates = [...$candidates, ...$numbers[0]];
         }
 
-        foreach ($candidates as $ocr) {
-            $invoice = $this->byOcr->get($ocr);
+        foreach ($candidates as $candidate) {
+            foreach ([$this->byOcr, $this->byOldNumber] as $index) {
+                $found = $index[$candidate] ?? [];
 
-            if ($invoice instanceof Invoice && self::fits($invoice, $credit->amountOre, $credit->foreignCurrency, $credit->foreignAmountMinor)) {
-                return $invoice;
+                if (count($found) === 1 && self::fits($found[0], $credit->amountOre, $credit->foreignCurrency, $credit->foreignAmountMinor)) {
+                    return $found[0];
+                }
             }
         }
 

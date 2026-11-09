@@ -10,6 +10,7 @@ use OpenSpout\Reader\XLSX\Options;
 use OpenSpout\Reader\XLSX\Reader as XlsxReader;
 use RuntimeException;
 use Throwable;
+use ZipArchive;
 
 /**
  * Opens a CSV, TSV, text or XLSX register file (ADR-076, "Generic register
@@ -26,6 +27,10 @@ final class RegisterFileReader
     public const int MAX_BYTES = 20 * 1024 * 1024;
 
     public const int MAX_ROWS = 100_000;
+
+    public const int MAX_UNPACKED_BYTES = 200 * 1024 * 1024;
+
+    private const int MAX_RATIO = 200;
 
     private const array DELIMITERS = [';', ',', "\t", '|'];
 
@@ -106,6 +111,8 @@ final class RegisterFileReader
 
     private static function xlsx(string $path, ?string $wanted): RegisterTable
     {
+        self::checkUnpackedSize($path);
+
         $names = [];
 
         try {
@@ -156,6 +163,43 @@ final class RegisterFileReader
         };
 
         return self::withHeader('xlsx', null, null, $names, $sheetName, $rows);
+    }
+
+    /**
+     * A workbook is a ZIP: refuse one that unpacks to much more than the limit, or
+     * to absurdly more than it weighs, before a reader opens it.
+     */
+    private static function checkUnpackedSize(string $path): void
+    {
+        $zip = new ZipArchive;
+
+        if ($zip->open($path, ZipArchive::RDONLY) !== true) {
+            throw new RuntimeException(__('Excel-filen går inte att läsa. Spara den som .xlsx eller CSV och försök igen.'));
+        }
+
+        $unpacked = 0;
+
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $stat = $zip->statIndex($i);
+
+            if ($stat === false) {
+                continue;
+            }
+
+            $unpacked += (int) $stat['size'];
+
+            if ($stat['comp_size'] > 0 && intdiv((int) $stat['size'], (int) $stat['comp_size']) > self::MAX_RATIO && $stat['size'] > 1_000_000) {
+                $zip->close();
+
+                throw new RuntimeException(__('Excel-filen packas upp till orimligt mycket mer än den väger packad och avvisas.'));
+            }
+        }
+
+        $zip->close();
+
+        if ($unpacked > self::MAX_UNPACKED_BYTES) {
+            throw new RuntimeException(__('Excel-filen blir större än 200 MB när den packas upp. Spara den som CSV eller dela upp den.'));
+        }
     }
 
     /**

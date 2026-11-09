@@ -45,9 +45,24 @@
                         }
                     ]
                 },
-                {"key": "articles", "evidence": "none", "steps": [], "note": "Spiris beskriver artikelexporten på en egen sida som vi inte har kunnat läsa kolumnerna på. Fråga Spiris support, eller koppla kolumnerna själv i NONOX."},
-                {"key": "open_invoices", "evidence": "none", "steps": [], "note": "Spiris beskriver inte offentligt någon export av obetalda fakturor som vi har hittat. Fråga Spiris support."},
-                {"key": "attachments", "evidence": "none", "steps": [], "note": "Spiris beskriver inte offentligt någon export av underlag som vi har hittat. Fråga Spiris support."}
+                {
+                    "key": "articles",
+                    "evidence": "none",
+                    "steps": [],
+                    "note": "Spiris beskriver artikelexporten på en egen sida som vi inte har kunnat läsa kolumnerna på. Fråga Spiris support, eller koppla kolumnerna själv i NONOX."
+                },
+                {
+                    "key": "open_invoices",
+                    "evidence": "none",
+                    "steps": [],
+                    "note": "Spiris beskriver inte offentligt någon export av obetalda fakturor som vi har hittat. Fråga Spiris support."
+                },
+                {
+                    "key": "attachments",
+                    "evidence": "none",
+                    "steps": [],
+                    "note": "Spiris beskriver inte offentligt någon export av underlag som vi har hittat. Fråga Spiris support."
+                }
             ]
         },
         {
@@ -100,21 +115,31 @@
                         }
                     ]
                 },
-                {"key": "suppliers", "evidence": "none", "steps": [], "note": "Bokio beskriver inte offentligt någon export av leverantörsregistret som vi har hittat. Fråga Bokios support."},
-                {"key": "open_invoices", "evidence": "none", "steps": [], "note": "Bokio beskriver inte offentligt någon export av obetalda fakturor som vi har hittat. Fråga Bokios support."}
+                {
+                    "key": "suppliers",
+                    "evidence": "none",
+                    "steps": [],
+                    "note": "Bokio beskriver inte offentligt någon export av leverantörsregistret som vi har hittat. Fråga Bokios support."
+                },
+                {
+                    "key": "open_invoices",
+                    "evidence": "none",
+                    "steps": [],
+                    "note": "Bokio beskriver inte offentligt någon export av obetalda fakturor som vi har hittat. Fråga Bokios support."
+                }
             ]
         },
         {
             "slug": "visma-installerade-program",
             "name": "Installerade Visma-program",
-            "intro": "För Visma-program som installeras på datorn har vi inte hittat någon sida hos leverantören som beskriver exporten. Därför visar vi inga steg här.",
+            "intro": "Vi har inte hittat någon sida hos leverantören som beskriver exporten ur de installerade Visma-programmen. Därför visar vi inga steg här.",
             "last_checked": "2026-11-08",
             "capabilities": []
         },
         {
             "slug": "bjorn-lunden",
             "name": "Björn Lundén",
-            "intro": "Björn Lundén beskriver offentligt hur man flyttar in till deras program, men vi har inte hittat någon sida om att flytta härifrån. Därför visar vi inga steg här.",
+            "intro": "Vi har inte hittat någon sida hos Björn Lundén som beskriver exporten. Därför visar vi inga steg här.",
             "last_checked": "2026-11-08",
             "capabilities": []
         },
@@ -142,14 +167,14 @@
         {
             "slug": "zervant",
             "name": "Zervant",
-            "intro": "Zervant är ett faktureringsprogram och har ingen bokföring att ta med. Vi har inte läst någon sida hos Zervant som vi kan återge här, så vi visar inga steg.",
+            "intro": "Vi har inte hittat någon sida hos Zervant som vi kan återge här. Därför visar vi inga steg.",
             "last_checked": "2026-11-08",
             "capabilities": []
         },
         {
             "slug": "billecta",
             "name": "Billecta",
-            "intro": "Billecta är en faktureringstjänst och har ingen bokföring att ta med. Vi har inte läst någon sida hos Billecta som vi kan återge här, så vi visar inga steg.",
+            "intro": "Vi har inte hittat någon sida hos Billecta som vi kan återge här. Därför visar vi inga steg.",
             "last_checked": "2026-11-08",
             "capabilities": []
         }

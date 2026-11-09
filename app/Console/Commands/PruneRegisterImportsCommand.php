@@ -26,6 +26,8 @@ class PruneRegisterImportsCommand extends Command
 
     public const int ABANDONED_DAYS = 7;
 
+    public const int STUCK_HOURS = 2;
+
     protected $signature = 'register-import:prune';
 
     protected $description = 'Raderar inlästa källfiler från flytt av register efter 30 dagar, ogranskade efter 7.';
@@ -34,6 +36,12 @@ class PruneRegisterImportsCommand extends Command
     {
         $now = CarbonImmutable::now();
         $deleted = 0;
+
+        // A run that has said RUNNING for more than two hours has died: end it in FAILED so the user can start again.
+        $stuck = CompanyScope::bypass(fn (): int => RegisterImport::query()
+            ->where('status', RegisterImport::RUNNING)
+            ->where('started_at', '<', $now->subHours(self::STUCK_HOURS))
+            ->update(['status' => RegisterImport::FAILED, 'finished_at' => $now, 'error' => __('Importen avbröts. Det som redan lästs in finns kvar. Läs in filen igen: poster som redan finns hoppas över.')]));
 
         // Housekeeping across all companies, in a command with no signed-in user: the scope would hide every row.
         CompanyScope::bypass(function () use ($now, &$deleted): void {
@@ -56,7 +64,7 @@ class PruneRegisterImportsCommand extends Command
                 });
         });
 
-        $this->comment("Raderade {$deleted} inlästa källfiler.");
+        $this->comment("Raderade {$deleted} inlästa källfiler och avslutade {$stuck} fastnade importer.");
 
         return self::SUCCESS;
     }

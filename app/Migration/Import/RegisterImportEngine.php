@@ -6,6 +6,7 @@ namespace App\Migration\Import;
 
 use App\Actions\Accounting\ImportSie;
 use App\Domain\Company\OrganisationNumber;
+use App\Domain\Invoicing\InvoiceStatus;
 use App\Models\Article;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -52,6 +53,12 @@ final class RegisterImportEngine
 
     private bool $prepared = false;
 
+    /** @var array<string, true> OCR numbers that are on an open invoice already */
+    private array $openOcr = [];
+
+    /** @var array<string, true> OCR numbers of the rows planned so far */
+    private array $seenOcr = [];
+
     private ?string $path = null;
 
     public function __construct(private readonly RegisterImport $import) {}
@@ -64,7 +71,7 @@ final class RegisterImportEngine
         $kind = $this->import->registerKind();
         $options = $this->import->options;
         $table = RegisterFileReader::open($this->path(), (array) ($options['reader'] ?? []));
-        $processor = new RegisterRowProcessor($kind, $table->headers, (array) ($options['mapping'] ?? []), (array) ($options['value_maps'] ?? []));
+        $processor = new RegisterRowProcessor($kind, $table->headers, (array) ($options['mapping'] ?? []), (array) ($options['value_maps'] ?? []), array_values(array_map(strval(...), (array) ($options['strict_maps'] ?? []))));
         $excluded = array_flip(array_map(intval(...), (array) ($options['excluded'] ?? [])));
         $this->prepare($kind);
 
@@ -161,6 +168,16 @@ final class RegisterImportEngine
 
         $key = $party.'|'.mb_strtolower((string) $values['invoice_number']);
 
+        if ($kind === RegisterKind::OpenCustomerInvoices && isset($values['ocr']) && ! isset($this->existingInvoices[$key])) {
+            $ocr = (string) $values['ocr'];
+
+            if (isset($this->openOcr[$ocr]) || isset($this->seenOcr[$ocr])) {
+                return new RowPlan($line, RowPlan::ERROR, $values, [__('OCR-numret :ocr finns redan på en annan obetald faktura. Två fakturor med samma OCR-nummer går inte att matcha mot betalningar.', ['ocr' => $ocr])], $warnings, null, $party);
+            }
+
+            $this->seenOcr[$ocr] = true;
+        }
+
         if (isset($this->seen[$key])) {
             return new RowPlan($line, RowPlan::DUPLICATE, $values, [], [...$warnings, __('Fakturan finns tidigare i filen. Raden hoppas över.')], null, $party);
         }
@@ -178,8 +195,8 @@ final class RegisterImportEngine
 
         return ($digits !== null ? ($this->index['digits'][$digits] ?? null) : null)
             ?? $this->index['ref'][mb_strtolower($ref)]
-            ?? $this->index['number'][$ref]
-            ?? null;
+            // The NONOX number only when the user said the file uses it: it could be another customer's old number.
+            ?? ((bool) ($this->import->options['match_nonox_number'] ?? false) ? ($this->index['number'][$ref] ?? null) : null);
     }
 
     /**
@@ -206,7 +223,9 @@ final class RegisterImportEngine
             $keys[] = 'r:'.mb_strtolower((string) $values['external_ref']);
         }
 
-        $keys[] = 'p:'.$this->nameKey((string) $values['name'], (string) ($values['postal_code'] ?? ''));
+        if (trim((string) ($values['postal_code'] ?? '')) !== '') {
+            $keys[] = 'p:'.$this->nameKey((string) $values['name'], (string) $values['postal_code']);
+        }
 
         return $keys;
     }
@@ -230,7 +249,11 @@ final class RegisterImportEngine
             return $this->index['ref'][mb_strtolower((string) $values['external_ref'])];
         }
 
-        return $this->index['name'][$this->nameKey((string) $values['name'], (string) ($values['postal_code'] ?? ''))] ?? null;
+        if (trim((string) ($values['postal_code'] ?? '')) === '') {
+            return null;
+        }
+
+        return $this->index['name'][$this->nameKey((string) $values['name'], (string) $values['postal_code'])] ?? null;
     }
 
     /**
@@ -291,7 +314,10 @@ final class RegisterImportEngine
                 $this->index['ref'][mb_strtolower($record->external_ref)] ??= $record->id;
             }
 
-            $this->index['name'][$this->nameKey($record->name, (string) $record->postal_code)] ??= $record->id;
+            // Name alone is not a key: two firms can share a name. The postal code has to be there too.
+            if (trim((string) $record->postal_code) !== '') {
+                $this->index['name'][$this->nameKey($record->name, (string) $record->postal_code)] ??= $record->id;
+            }
             $this->index['number'][(string) $record->number] ??= $record->id;
         }
     }
@@ -307,6 +333,10 @@ final class RegisterImportEngine
 
         foreach ($invoices as [$id, $partyId, $ref]) {
             $this->existingInvoices[$partyId.'|'.mb_strtolower((string) $ref)] = $id;
+        }
+
+        foreach (Invoice::query()->where('status', InvoiceStatus::Issued->value)->whereNotNull('ocr')->pluck('ocr') as $ocr) {
+            $this->openOcr[(string) $ocr] = true;
         }
     }
 

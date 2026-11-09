@@ -15,6 +15,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Emails an issued invoice as a PDF to the customer, or to another address.
@@ -24,6 +25,10 @@ class SendInvoice
     public function __invoke(User $user, Invoice $invoice, string $email): void
     {
         Gate::forUser($user)->authorize('send', $invoice);
+
+        if ($invoice->isImported()) {
+            throw ValidationException::withMessages(['invoice' => __('En inläst faktura från ett annat program har inget NONOX-underlag och kan inte skickas härifrån. Skicka en påminnelse om den är förfallen.')]);
+        }
 
         Validator::make(['email' => $email], ['email' => ['required', 'email', 'max:255']], [], ['email' => __('e-post')])->validate();
 

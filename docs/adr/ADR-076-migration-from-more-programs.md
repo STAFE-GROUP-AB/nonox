@@ -432,8 +432,7 @@ text above, and what was decided on the way:
   the customer, supplier and article lists. The source number is therefore never used as the NONOX
   number (the Save actions do not take one, and a source number can collide with the series). An
   article keeps its article number, since that field is required and unique. An imported open
-  invoice likewise takes the next number of the invoice series (supplier invoices: of the supplier
-  invoice series) and keeps the old invoice number in `external_ref`.
+  invoice keeps its old number as its identity (superseded by the review addendum below).
 - **Existing records and rows.** Skipped, never overwritten; "fyll i tomma fält" is offered for
   customers and suppliers only (articles are never filled). A row can be excluded by a checkbox in
   the preview; editing a row in the preview is not built: the user corrects the file and uploads
@@ -479,5 +478,44 @@ text above, and what was decided on the way:
 - **Not done / open.** Owner question 1 (cash method); legal review of the guide pages before
   `migration.guides_public` is turned on; preset header texts for Bokio and the program list beyond
   the two documented ones wait for synthetic sample files (Lead decision 4); whether imported
-  invoices should consume numbers of the NONOX invoice series (done here, to keep the series free of
-  collisions); the 100 MB ZIP limit.
+  invoices should consume numbers of the NONOX invoice series (superseded, see the review addendum); the
+  100 MB ZIP limit.
+
+## Addendum 2026-11-09: review round
+
+Cold review of the build found one P1 and seven P2s; all are fixed. Decisions marked [Lead].
+
+- **[Lead] An imported open invoice keeps its old number as its identity.** It takes no number from
+  the invoice series (`number` is null; the checks that demand a number accept `import_source`,
+  migration `2026_12_19_110000`). Title, lists, show page and search read "Faktura :ref (tidigare
+  program)"; a credit note "Kreditfaktura :ref (tidigare program)". Send, PDF, Peppol and the archive
+  package skip it. A reminder is allowed with a mail that quotes the old number, the OCR and the
+  remaining amount and attaches no PDF. A credit note refers to `external_ref` and gets one row of
+  the net amount at the rate the VAT implies; a write-off takes the VAT from the imported `vat_ore`
+  at that rate (`TODO(legal-verify)`); voucher texts end in "Ingående balans (inläst)", on the
+  customer and the supplier side. An imported supplier invoice has no approver.
+- **OCR.** The OCR column is strongly recommended and the report warns when it is not mapped. The
+  matcher also tries `external_ref` of imported invoices (a number in the payment message). An OCR
+  that is already on an open invoice, repeated in the file, or longer than 30 characters is a row
+  error; an OCR on more than one unpaid invoice matches none.
+- **[Lead] Reconciliation.** The file sum plus what is open on invoices made in NONOX (credit notes
+  with a minus) must equal 1510 (2440) plus the sub-accounts the user names. Credit notes and
+  negative remainders are read. Foreign currency stays a row error and the report says so. The check
+  is on the total only, not per customer, and the report and manual say so. [Lead] The fiscal year
+  defaults to the latest one with postings, and an older choice shows a warning.
+- **Party matching** uses the NONOX customer or supplier number only when the user ticks it; the
+  default is the old number and the organisation or personal number. A name alone is no match: the
+  postal code has to match too.
+- **Confirm** is one conditional update (ANALYSED to RUNNING); only the request that changed a row
+  dispatches. The job is `ShouldBeUnique` per import, returns unless the import is RUNNING and
+  unfinished, and `failed()` ends it in FAILED. `register-import:prune` also ends imports that have
+  said RUNNING for more than two hours. A finished import that is analysed again gives a Swedish
+  validation error.
+- **Presets.** When a preset declares a value map for a coded field, a code outside it is asked
+  about under "Koder som behöver förklaras". A cell that is not valid in the chosen encoding is a
+  row error.
+- **ZIP and XLSX.** The hashes already on the vouchers are read once and the archive is opened once
+  per run. `lank.csv` is read with a length limit and the ratio check; a workbook is checked for
+  unpacked size and ratio before openspout opens it. The year in `ÅÅÅÅ/SERIE-NUMMER` and in
+  `lank.csv` is the year the fiscal year ends in (a broken year 2025-07-01 to 2026-06-30 is 2026).
+- **ADR-020.** The guide intros for programs without a vendor source say only that nothing was found.

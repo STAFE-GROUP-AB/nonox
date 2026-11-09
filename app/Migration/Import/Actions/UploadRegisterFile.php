@@ -91,6 +91,7 @@ class UploadRegisterFile
                         'reader' => ['sheet' => $detected['sheet'] ?? null],
                         'mapping' => $suggestion['mapping'],
                         'value_maps' => $suggestion['value_maps'],
+                        'strict_maps' => array_keys($suggestion['value_maps']),
                         'fill_empty' => false,
                         'excluded' => [],
                     ],

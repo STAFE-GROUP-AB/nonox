@@ -8,6 +8,7 @@ use App\Migration\Import\Actions\AnalyseRegisterImport;
 use App\Migration\Import\Actions\ConfirmRegisterImport;
 use App\Migration\Import\Actions\UploadRegisterFile;
 use App\Migration\Import\Guides\FlyttGuider;
+use App\Migration\Import\OpenItemReconciliation;
 use App\Migration\Import\PresetRepository;
 use App\Migration\Import\RegisterKind;
 use App\Models\Company;
@@ -81,6 +82,7 @@ class RegisterImportController
             'headers' => (array) ($registerImport->options['detected']['headers'] ?? []),
             'detected' => (array) ($registerImport->options['detected'] ?? []),
             'fiscalYears' => $kind->isOpenItems() ? FiscalYear::query()->orderByDesc('start_date')->get() : collect(),
+            'defaultYearId' => $kind->isOpenItems() ? OpenItemReconciliation::defaultYear()?->id : null,
         ]);
     }
 
@@ -97,10 +99,12 @@ class RegisterImportController
             'excluded' => $request->input('excluded', []),
             'fiscal_year_id' => $request->input('fiscal_year_id'),
             'preset_name' => $request->input('preset_name'),
+            'extra_accounts' => $request->input('extra_accounts'),
         ], fn (mixed $value): bool => $value !== null);
 
         if ($request->has('mapping') || $request->has('reader')) {
             $input['fill_empty'] = $request->boolean('fill_empty');
+            $input['match_nonox_number'] = $request->boolean('match_nonox_number');
         }
 
         $import = $analyse($user, $registerImport, $input);

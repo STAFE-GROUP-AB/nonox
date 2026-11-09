@@ -249,6 +249,10 @@ final class InvoiceBooking
      */
     public static function writeOff(Invoice $invoice, Collection $rows, Collection $credits, int $amount): array
     {
+        if ($invoice->isImported()) {
+            return self::writeOffImported($invoice, $amount);
+        }
+
         $lines = self::revenue($invoice, $rows);
         $base = $invoice->total_ore->ore;
 
@@ -271,6 +275,30 @@ final class InvoiceBooking
         }
 
         return array_filter([self::RECEIVABLES => -$amount, self::CUSTOMER_LOSS => $amount - array_sum($vat)] + $vat);
+    }
+
+    /**
+     * Write-off of an imported open invoice, which has no rows: the output VAT
+     * is the open part's share of the imported vat_ore, on the account of the
+     * rate those amounts imply; the rest is the loss.
+     * TODO(legal-verify): see ImportedInvoiceVat.
+     *
+     * @return array<int, int>
+     */
+    private static function writeOffImported(Invoice $invoice, int $amount): array
+    {
+        $total = $invoice->total_ore->ore;
+        $vatShare = $total === 0 ? 0 : BigDecimal::of($invoice->vat_ore->ore)->multipliedBy($amount)->dividedBy($total, 0, RoundingMode::HalfUp)->toInt();
+        $rate = ImportedInvoiceVat::rate($invoice);
+        $lines = [self::RECEIVABLES => -$amount, self::CUSTOMER_LOSS => $amount - $vatShare];
+
+        if ($vatShare !== 0 && isset(self::OUTPUT_VAT[$rate])) {
+            $lines[self::OUTPUT_VAT[$rate]] = $vatShare;
+        } elseif ($vatShare !== 0) {
+            $lines[self::CUSTOMER_LOSS] += $vatShare;
+        }
+
+        return array_filter($lines);
     }
 
     /**

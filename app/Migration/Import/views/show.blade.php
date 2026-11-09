@@ -56,7 +56,7 @@
                     </ul>
                 @endif
                 @if($kind->isOpenItems() && $import->status === RegisterImport::COMPLETED)
-                    <p class="mt-4 text-sm text-gray-600">{{ __('Fakturorna är skapade utan verifikation. Saldot på :account kommer från SIE-filen. En betalning bokförs mot :account.', ['account' => $kind->controlAccount()]) }}</p>
+                    <p class="mt-4 text-sm text-gray-600">{{ __('Fakturorna är skapade utan verifikation och har inget nummer i NONOX: de heter som i det tidigare programmet. Saldot på :account kommer från SIE-filen. En betalning bokförs mot :account.', ['account' => $kind->controlAccount()]) }}</p>
                 @endif
             </x-ui.card>
         @endif
@@ -129,10 +129,19 @@
                                 <x-ui.field for="fiscal_year_id" :label="__('Räkenskapsår att stämma av mot')" :hint="__('Summan av obetalda fakturor måste vara lika med saldot på :account vid årets slut.', ['account' => $kind->controlAccount()])">
                                     <select id="fiscal_year_id" name="fiscal_year_id" class="mt-1 block w-full rounded-xl border-gray-300 text-sm sm:w-72">
                                         @foreach($fiscalYears as $year)
-                                            <option value="{{ $year->id }}" @selected(($options['fiscal_year_id'] ?? $fiscalYears->first()?->id) === $year->id)>{{ $year->start_date->format('Y-m-d') }} – {{ $year->end_date->format('Y-m-d') }}</option>
+                                            <option value="{{ $year->id }}" @selected(($options['fiscal_year_id'] ?? $defaultYearId) === $year->id)>{{ $year->start_date->format('Y-m-d') }} – {{ $year->end_date->format('Y-m-d') }}</option>
                                         @endforeach
                                     </select>
                                 </x-ui.field>
+                            @endif
+                            @if($kind->isOpenItems())
+                                <x-ui.field for="extra_accounts" :label="__('Fler konton som hör till samma fordran eller skuld')" :hint="__('Konton som ska räknas med i saldot, till exempel 1511. Skriv kontonumren med komma emellan.')">
+                                    <input id="extra_accounts" name="extra_accounts" type="text" value="{{ implode(', ', (array) ($options['extra_accounts'] ?? [])) }}" class="mt-1 block w-full rounded-xl border-gray-300 text-sm sm:w-72">
+                                </x-ui.field>
+                                <label class="flex items-start gap-3 text-sm text-gray-800">
+                                    <input type="checkbox" name="match_nonox_number" value="1" class="mt-1 h-5 w-5 rounded border-gray-300 text-accent-600" @checked($options['match_nonox_number'] ?? false)>
+                                    <span>{{ __('Numret i filen är kundens eller leverantörens nummer i NONOX. Annars hittas de på numret i det tidigare programmet eller på organisationsnumret.') }}</span>
+                                </label>
                             @endif
                             <x-ui.field for="preset_name" :label="__('Spara kopplingen som Mitt format')" :hint="__('Skriv ett namn om du vill kunna välja samma koppling nästa gång. Bara rubrikerna sparas, inga uppgifter.')">
                                 <input id="preset_name" name="preset_name" type="text" maxlength="80" class="mt-1 block w-full rounded-xl border-gray-300 text-sm sm:w-72">
@@ -169,6 +178,16 @@
                             </div>
                         @endif
 
+                        @if(! empty($report['notes']))
+                            <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                <ul class="list-disc space-y-1 ps-5">
+                                    @foreach($report['notes'] as $note)
+                                        <li>{{ $note }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
                         @if(! empty($report['counts']))
                             <dl class="mt-4 grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
                                 @foreach($report['counts'] as $key => $count)
@@ -184,7 +203,7 @@
                             @php($rec = $report['reconciliation'])
                             <div class="mt-4 rounded-xl px-4 py-3 text-sm {{ $rec['equal'] ? 'bg-green-50 text-green-900' : 'bg-red-50 text-red-900' }}">
                                 <p class="font-semibold">{{ __('Avstämning mot :account', ['account' => $kind->controlAccount()]) }}</p>
-                                <p>{{ __('Obetalt enligt filen') }}: {{ $kronor($rec['file_ore']) }} · {{ __('Saldo i bokföringen') }}: {{ $rec['ledger_ore'] === null ? '–' : $kronor($rec['ledger_ore']) }} · {{ __('Skillnad') }}: {{ $rec['difference_ore'] === null ? '–' : $kronor($rec['difference_ore']) }}</p>
+                                <p>{{ __('Obetalt enligt filen') }}: {{ $kronor($rec['file_ore']) }} · {{ __('Öppna fakturor gjorda i NONOX') }}: {{ $kronor($rec['nonox_ore'] ?? 0) }} · {{ __('Saldo i bokföringen') }}: {{ $rec['ledger_ore'] === null ? '–' : $kronor($rec['ledger_ore']) }} · {{ __('Skillnad') }}: {{ $rec['difference_ore'] === null ? '–' : $kronor($rec['difference_ore']) }}</p>
                             </div>
                         @endif
 

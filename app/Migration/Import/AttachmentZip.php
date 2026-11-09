@@ -76,6 +76,7 @@ final class AttachmentZip
             $links = self::mappingFile($zip);
             $vouchers = self::voucherIndex();
             $hashesByVoucher = [];
+            $onVouchers = self::hashesOnVouchers();
 
             for ($i = 0; $i < $zip->numFiles; $i++) {
                 $stat = $zip->statIndex($i);
@@ -125,7 +126,7 @@ final class AttachmentZip
                 }
 
                 $hashesByVoucher[$voucherId][$hash] = true;
-                $already = VoucherAttachment::query()->where('voucher_id', $voucherId)->where('sha256', $hash)->exists();
+                $already = isset($onVouchers[$voucherId.'|'.$hash]);
 
                 yield [
                     'index' => $i,
@@ -146,17 +147,11 @@ final class AttachmentZip
      *
      * @throws ValidationException when the file is not an acceptable underlag
      */
-    public static function attach(string $path, int $index, string $voucherId, User $user, AttachToVoucher $attach): void
+    public static function attach(ZipArchive $zip, int $index, string $voucherId, User $user, AttachToVoucher $attach): void
     {
-        $zip = self::open($path);
-
-        try {
-            $stat = $zip->statIndex($index);
-            $name = $stat === false ? 'underlag' : basename((string) $stat['name']);
-            $contents = self::read($zip, $index);
-        } finally {
-            $zip->close();
-        }
+        $stat = $zip->statIndex($index);
+        $name = $stat === false ? 'underlag' : basename((string) $stat['name']);
+        $contents = self::read($zip, $index);
 
         $temporary = tempnam(sys_get_temp_dir(), 'nonox-underlag') ?: throw new RuntimeException('No temporary file.');
 
@@ -166,6 +161,32 @@ final class AttachmentZip
         } finally {
             @unlink($temporary);
         }
+    }
+
+    /**
+     * What is on the imported vouchers already, read once: "voucher id|sha256" => true.
+     *
+     * @return array<string, true>
+     */
+    private static function hashesOnVouchers(): array
+    {
+        $set = [];
+
+        foreach (VoucherAttachment::query()->whereIn('voucher_id', ImportedVoucher::query()->select('voucher_id'))->get(['voucher_id', 'sha256']) as $attachment) {
+            $set[$attachment->voucher_id.'|'.$attachment->sha256] = true;
+        }
+
+        return $set;
+    }
+
+    /**
+     * Opens the archive once, checked; the caller closes it.
+     *
+     * @throws RuntimeException
+     */
+    public static function archive(string $path): ZipArchive
+    {
+        return self::open($path);
     }
 
     /** @throws RuntimeException */
@@ -234,9 +255,15 @@ final class AttachmentZip
     /** @return array<string, array{0: string, 1: string, 2: ?int}> lower case file name => series, number, year */
     private static function mappingFile(ZipArchive $zip): array
     {
-        $contents = $zip->getFromName(self::MAPPING_FILE);
+        $stat = $zip->statName(self::MAPPING_FILE);
 
-        if ($contents === false || strlen($contents) > 5_000_000) {
+        if ($stat === false || $stat['size'] > 5_000_000 || ($stat['comp_size'] > 0 && intdiv($stat['size'], $stat['comp_size']) > self::MAX_RATIO)) {
+            return [];
+        }
+
+        $contents = $zip->getFromName(self::MAPPING_FILE, 5_000_001);
+
+        if ($contents === false) {
             return [];
         }
 
@@ -276,7 +303,8 @@ final class AttachmentZip
      */
     private static function voucherIndex(): array
     {
-        $years = FiscalYear::query()->get(['id', 'start_date'])->mapWithKeys(fn (FiscalYear $year): array => [$year->id => (int) $year->start_date->format('Y')]);
+        // The year in ÅÅÅÅ/SERIE-NUMMER and in lank.csv is the year the fiscal year ends in; a broken year (2025-07-01 to 2026-06-30) is 2026.
+        $years = FiscalYear::query()->get(['id', 'end_date'])->mapWithKeys(fn (FiscalYear $year): array => [$year->id => (int) $year->end_date->format('Y')]);
         $index = [];
 
         foreach (ImportedVoucher::query()->get(['voucher_id', 'fiscal_year_id', 'original_series', 'original_number']) as $imported) {

@@ -3,7 +3,7 @@
 <html lang="sv">
 <body style="font-family: -apple-system, 'Segoe UI', sans-serif; color: #1f2933; line-height: 1.5;">
     <p>{{ __('Hej!') }}</p>
-    <p>{{ __('Vi har inte fått betalt för faktura :number, som förföll :due. Det är kanske bara förbisett.', ['number' => $invoice->number, 'due' => $invoice->due_date->toDateString()]) }}</p>
+    <p>{{ __('Vi har inte fått betalt för faktura :number, som förföll :due. Det är kanske bara förbisett.', ['number' => $invoice->isImported() ? $invoice->external_ref : $invoice->number, 'due' => $invoice->due_date->toDateString()]) }}</p>
     <table style="border-collapse: collapse; margin: 1em 0;">
         <tr><td style="padding: 2px 16px 2px 0; color: #616e7c;">{{ __('Att betala') }}</td><td><strong>{{ $reminder->foreign_remaining_minor !== null ? $invoice->formatForeign($reminder->foreign_remaining_minor) : $reminder->remaining_ore->format() }}</strong></td></tr>
         <tr><td style="padding: 2px 16px 2px 0; color: #616e7c;">{{ __('OCR-nummer') }}</td><td>{{ $invoice->ocr }}</td></tr>
@@ -11,7 +11,11 @@
         @if($invoice->isForeign() && $company->iban)<tr><td style="padding: 2px 16px 2px 0; color: #616e7c;">{{ __('IBAN') }}</td><td>{{ $company->iban }}@if($company->bic) · {{ __('BIC') }} {{ $company->bic }}@endif</td></tr>@endif
         <tr><td style="padding: 2px 16px 2px 0; color: #616e7c;">{{ __('Betala senast') }}</td><td>{{ $reminder->pay_by->toDateString() }}</td></tr>
     </table>
-    <p>{{ __('Fakturan finns som PDF i det här mejlet. Har du redan betalat kan du bortse från påminnelsen. Har du frågor, svara på det här mejlet.') }}</p>
+    @if($invoice->isImported())
+        <p>{{ __('Fakturan skickades från vårt tidigare system, så den finns inte som bilaga. Ange fakturanumret och OCR-numret ovan när du betalar. Har du redan betalat kan du bortse från påminnelsen. Har du frågor, svara på det här mejlet.') }}</p>
+    @else
+        <p>{{ __('Fakturan finns som PDF i det här mejlet. Har du redan betalat kan du bortse från påminnelsen. Har du frågor, svara på det här mejlet.') }}</p>
+    @endif
     <p>{{ __('Med vänliga hälsningar') }}<br>{{ $company_name }}</p>
 </body>
 </html>

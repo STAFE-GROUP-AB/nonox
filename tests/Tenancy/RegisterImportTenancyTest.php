@@ -11,6 +11,7 @@ use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Tests\Support\Bookkeeping;
 use Tests\Support\RegisterImports;
 
@@ -45,7 +46,7 @@ it('answers 404 for another company\'s import, on every page', function () {
 });
 
 it('refuses analysing a finished import again, and refuses a user outside the company', function () {
-    expect(fn () => app(AnalyseRegisterImport::class)($this->ownerB, $this->importB, []))->toThrow(RuntimeException::class, 'cannot be analysed again');
+    expect(fn () => app(AnalyseRegisterImport::class)($this->ownerB, $this->importB, []))->toThrow(ValidationException::class);
 
     // A finished import cannot be analysed again, and A's owner, who is no member of B, is refused before anything is read.
     expect(fn () => app(AnalyseRegisterImport::class)($this->ownerA, $this->importB, []))->toThrow(AuthorizationException::class);

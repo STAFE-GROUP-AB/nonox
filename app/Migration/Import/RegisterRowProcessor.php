@@ -38,12 +38,14 @@ final class RegisterRowProcessor
      * @param  list<string>  $headers  the file's header row
      * @param  array<string, string>  $mapping  NONOX field => the file's header
      * @param  array<string, array<string, string>>  $valueMaps  NONOX field => lower case source value => NONOX value
+     * @param  list<string>  $strictMaps  fields whose map came from a preset that lists every code: a code outside it is asked about
      */
     public function __construct(
         private readonly RegisterKind $kind,
         private readonly array $headers,
         private readonly array $mapping,
         private readonly array $valueMaps = [],
+        private readonly array $strictMaps = [],
     ) {}
 
     /**
@@ -56,7 +58,25 @@ final class RegisterRowProcessor
         $messages = new RowMessages;
         $values = [];
 
+        foreach ($cells as $cell) {
+            if (! mb_check_encoding($cell, 'UTF-8')) {
+                $messages->error(__('Tecknen på raden går inte att läsa. Välj en annan teckenkodning och granska igen.'));
+
+                return ['values' => [], 'errors' => $messages->errors, 'warnings' => [], 'unmapped' => []];
+            }
+        }
+
         foreach ($this->kind->fields() as $field => $meta) {
+            $source = $this->source($cells, $field);
+
+            // A preset that maps a coded field says what every code means: a code it does not list is asked about (ADR-076).
+            if ($source !== '' && in_array($field, self::CODED, true) && in_array($field, $this->strictMaps, true) && ($this->valueMaps[$field] ?? []) !== [] && ! isset($this->valueMaps[$field][mb_strtolower($source)])) {
+                $messages->error(__(':field ":value" finns inte i förklaringen av koderna.', ['field' => $meta['label'], 'value' => mb_substr($source, 0, 30)]));
+                $unmapped[$field] = mb_substr($source, 0, 60);
+
+                continue;
+            }
+
             $raw = $this->raw($cells, $field);
 
             if ($raw === '') {
@@ -89,8 +109,12 @@ final class RegisterRowProcessor
         return ['values' => $values, 'errors' => $messages->errors, 'warnings' => $messages->warnings, 'unmapped' => $unmapped];
     }
 
-    /** @param  list<string>  $cells */
-    private function raw(array $cells, string $field): string
+    /**
+     * The cell as the file has it.
+     *
+     * @param  list<string>  $cells
+     */
+    private function source(array $cells, string $field): string
     {
         $header = $this->mapping[$field] ?? null;
 
@@ -99,7 +123,14 @@ final class RegisterRowProcessor
         }
 
         $index = array_search($header, $this->headers, true);
-        $raw = $index === false ? '' : trim($cells[$index] ?? '');
+
+        return $index === false ? '' : trim($cells[$index] ?? '');
+    }
+
+    /** @param  list<string>  $cells */
+    private function raw(array $cells, string $field): string
+    {
+        $raw = $this->source($cells, $field);
         $mapped = $this->valueMaps[$field][mb_strtolower($raw)] ?? null;
 
         return $mapped ?? $raw;
@@ -330,16 +361,21 @@ final class RegisterRowProcessor
         $total = $values['total'] ?? null;
         $remaining = $values['remaining'] ?? null;
 
-        if ($total !== null && $total <= 0) {
-            $messages->error(__('Fakturabeloppet ska vara större än noll. Kreditfakturor läses inte in här.'));
+        // A credit note has a negative amount and a negative remainder.
+        if ($total !== null && $total === 0) {
+            $messages->error(__('Fakturabeloppet ska inte vara noll.'));
         }
 
-        if ($total !== null && $remaining !== null && ($remaining <= 0 || $remaining > $total)) {
-            $messages->error(__('Obetalt belopp ska vara större än noll och högst fakturabeloppet.'));
+        if ($total !== null && $remaining !== null && $total !== 0 && ($remaining === 0 || ($remaining <=> 0) !== ($total <=> 0) || abs($remaining) > abs($total))) {
+            $messages->error(__('Obetalt belopp ska ha samma tecken som fakturabeloppet, vara skilt från noll och högst fakturabeloppet.'));
         }
 
-        if (isset($values['vat']) && $total !== null && ($values['vat'] < 0 || $values['vat'] > $total)) {
-            $messages->error(__('Momsen ska vara mellan noll och fakturabeloppet.'));
+        if (isset($values['vat']) && $total !== null && $total !== 0 && (abs($values['vat']) > abs($total) || ($values['vat'] !== 0 && ($values['vat'] <=> 0) !== ($total <=> 0)))) {
+            $messages->error(__('Momsen ska ha samma tecken som fakturabeloppet och inte vara större än det.'));
+        }
+
+        if (isset($values['ocr']) && mb_strlen((string) $values['ocr']) > 30) {
+            $messages->error(__('OCR-numret är längre än 30 tecken.'));
         }
 
         if (isset($values['invoice_date'], $values['due_date']) && $values['due_date'] < $values['invoice_date']) {

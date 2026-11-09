@@ -136,6 +136,18 @@ class SupplierInvoice extends Model
         });
     }
 
+    /** What a voucher text adds for an imported invoice: the booking is against the opening balance. */
+    public function bookingNote(): string
+    {
+        return $this->isImported() ? ' – '.__('Ingående balans (inläst)') : '';
+    }
+
+    /** An open invoice read in from another program (ADR-076): no NONOX number, no approver, no booking. */
+    public function isImported(): bool
+    {
+        return $this->import_source !== null;
+    }
+
     public function isDraft(): bool
     {
         return $this->status === SupplierInvoiceStatus::Draft;
@@ -188,6 +200,10 @@ class SupplierInvoice extends Model
      */
     public function title(): string
     {
+        if ($this->isImported()) {
+            return __('Leverantörsfaktura :ref (tidigare program)', ['ref' => (string) ($this->invoice_number ?? $this->external_ref)]);
+        }
+
         if ($this->number === null) {
             return $this->isCredit() ? __('Utkast till kreditnota') : __('Utkast till leverantörsfaktura');
         }

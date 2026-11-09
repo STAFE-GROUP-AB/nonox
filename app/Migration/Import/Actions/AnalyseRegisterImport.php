@@ -20,6 +20,7 @@ use App\Support\Files\PrivateFile;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 /**
@@ -47,7 +48,7 @@ class AnalyseRegisterImport
             $kind = $import->registerKind();
 
             if ($import->file_path === null || $import->status === RegisterImport::RUNNING || $import->status === RegisterImport::COMPLETED) {
-                throw new RuntimeException('The import cannot be analysed again.');
+                throw ValidationException::withMessages(['import' => __('Den här importen går inte att granska igen. Ladda upp filen på nytt om något ska läsas in.')]);
             }
 
             if ($kind === RegisterKind::Attachments) {
@@ -82,13 +83,14 @@ class AnalyseRegisterImport
             }
 
             if ($blockers === [] && $kind->isOpenItems()) {
-                $report['reconciliation'] = OpenItemReconciliation::compare($kind, $report['open_item_ore'], isset($options['fiscal_year_id']) ? (int) $options['fiscal_year_id'] : null);
+                $report['reconciliation'] = OpenItemReconciliation::compare($kind, $report['open_item_ore'], isset($options['fiscal_year_id']) ? (int) $options['fiscal_year_id'] : null, array_map(intval(...), (array) ($options['extra_accounts'] ?? [])));
+                $report['notes'] = $this->openItemNotes($kind, $options);
 
                 if (! $report['reconciliation']['equal']) {
                     $report['blockers'][] = $report['reconciliation']['ledger_ore'] === null
                         ? __('Kontot :account finns inte i kontoplanen eller räkenskapsåret saknas.', ['account' => $kind->controlAccount()])
-                        : __('Summan av obetalda fakturor i filen (:file) är inte lika med saldot på :account i bokföringen (:ledger). Skillnaden är :difference. Rätta filen eller kontrollera att SIE-filen gäller samma datum.', [
-                            'file' => self::kronor($report['reconciliation']['file_ore']),
+                        : __('Obetalt enligt filen och i NONOX (:file) är inte lika med saldot på :account i bokföringen (:ledger). Skillnaden är :difference. Rätta filen, ange fler konton som hör till samma fordran eller skuld, eller kontrollera att SIE-filen gäller samma datum.', [
+                            'file' => self::kronor($report['reconciliation']['expected_ore']),
                             'account' => $kind->controlAccount(),
                             'ledger' => self::kronor((int) $report['reconciliation']['ledger_ore']),
                             'difference' => self::kronor((int) $report['reconciliation']['difference_ore']),
@@ -134,6 +136,32 @@ class AnalyseRegisterImport
         }
 
         return $this->save($user, $company, $import, $report, $import->options);
+    }
+
+    /**
+     * What the user should know before confirming open invoices.
+     *
+     * @param  array<string, mixed>  $options
+     * @return list<string>
+     */
+    private function openItemNotes(RegisterKind $kind, array $options): array
+    {
+        $notes = [
+            __('Avstämningen görs på totalsumman av obetalda fakturor, inte per kund eller leverantör. Två fel som tar ut varandra syns alltså inte.'),
+            __('Fakturor i annan valuta än kronor läses inte in. De är felrader och ingår inte i summan.'),
+        ];
+
+        if ($kind === RegisterKind::OpenCustomerInvoices && ! isset($options['mapping']['ocr'])) {
+            $notes[] = __('Kolumnen med OCR-nummer är inte kopplad. Utan det gamla OCR-numret kan inte kundens betalning matchas mot fakturan automatiskt. Koppla den om filen har den.');
+        }
+
+        $default = OpenItemReconciliation::defaultYear();
+
+        if (isset($options['fiscal_year_id']) && $default !== null && (int) $options['fiscal_year_id'] !== $default->id) {
+            $notes[] = __('Du har valt ett annat räkenskapsår än det senaste som har bokförda verifikationer. Kontrollera att saldot på :account gäller samma datum som listan.', ['account' => $kind->controlAccount()]);
+        }
+
+        return $notes;
     }
 
     public static function kronor(int $ore): string
@@ -188,6 +216,18 @@ class AnalyseRegisterImport
         }
 
         $options['preset_name'] = trim((string) ($input['preset_name'] ?? ''));
+
+        if (array_key_exists('extra_accounts', $input)) {
+            $control = (int) $kind->controlAccount();
+            $options['extra_accounts'] = array_values(array_unique(array_filter(
+                array_map(intval(...), preg_split('/[\s,;]+/', (string) $input['extra_accounts']) ?: []),
+                fn (int $number): bool => $number >= 1000 && $number <= 8999 && $number !== $control,
+            )));
+        }
+
+        if (array_key_exists('match_nonox_number', $input)) {
+            $options['match_nonox_number'] = (bool) $input['match_nonox_number'];
+        }
 
         if (isset($input['fiscal_year_id'])) {
             $options['fiscal_year_id'] = (int) $input['fiscal_year_id'] ?: null;
