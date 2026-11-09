@@ -516,3 +516,28 @@ L0 re-read quotes; **L1** VAT on Stripe's fees (exempt payment service or revers
 ADR-042's 1580); **L7** daily summary verifikationer for online card payments; **L8** archive
 location under BFL 7 kap. 3 a §. Every rule depending on them is marked `TODO(legal-verify)` in
 the rule sheet.
+
+## Addendum 2026-11-09: Lead decisions on the owner questions
+
+Decided by Lead 2026-11-09 under the owner's mandate ("Kör allt du behöver"), open for the
+owner's and the consultant's review.
+
+- **O1:** Stripe under NONOX Connect at provider price + 10 % = 0 kr, shown as such.
+- **O2:** the module is called "NONOX SaaS" in the module list. Its pages live under
+  `/aterkommande-intakter` with the title "Återkommande intäkter".
+- **O3:** metered revenue stays outside MRR, on its own line.
+- **O4:** a pause counts as MRR 0 with the movement "Paus". A pause longer than 12 months
+  becomes churn at the 12-month mark.
+- **O5:** the Stripe App comes later, not in v1.
+- **O6:** months are closed by a person. On the 10th of the next month a reminder appears in
+  Mina datum. Nothing closes automatically.
+- **O7:** LTV and CAC are left out of v1. ARPA and the cohorts are in.
+- **O8:** Stripe bookkeeping waits for L1, L2, L6 and L7 (build step 3b). Payouts and fees
+  (3a) are booked per payout.
+- **O9:** history starts when the module is switched on. Earlier months can be estimated from
+  issued recurring invoices, and they are labelled "uppskattad" and kept apart from closed
+  months.
+- **O10:** the module is offered to every company and is off by default.
+
+Build order: step 1 (the ledger and metrics from NONOX's own data) starts now. Step 2 (the
+Stripe read-only import for metrics) follows. Step 3 waits for the L-questions listed above.
