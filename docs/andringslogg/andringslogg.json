@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-09-triggerskydd-temporara-tabeller",
+      "datum": "2026-11-09T01:00:00+01:00",
+      "rubrik": "Skydden för bokförda verifikationer går inte att lura med tillfälliga tabeller",
+      "beskrivning": "Databasens skydd mot ändring av bokförda verifikationer och mot obalanserade verifikationer läser nu alltid de riktiga tabellerna, även om någon skapar en tillfällig tabell med samma namn. Det gäller alla tabeller som skyddas av en trigger i databasen. Ingen bokföring har ändrats.",
+      "typ": "Säkerhet",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-08-arbetsorder-och-ata",
       "datum": "2026-11-08T20:00:00+01:00",
       "rubrik": "Arbetsorder och ÄTA för hantverkare",
