@@ -228,6 +228,11 @@ use App\Modules\Pos\Models\PosSale;
 use App\Modules\Pos\Models\PosSaleRow;
 use App\Modules\Pos\Models\PosStockPush;
 use App\Modules\Pos\Models\PosWebhookMessage;
+use App\Modules\Saas\Models\SaasContractVersion;
+use App\Modules\Saas\Models\SaasCorrection;
+use App\Modules\Saas\Models\SaasCustomerMonth;
+use App\Modules\Saas\Models\SaasEstimate;
+use App\Modules\Saas\Models\SaasMonth;
 use App\Modules\StaffLedger\Models\Device as StaffLedgerDevice;
 use App\Modules\StaffLedger\Models\Entry as StaffLedgerEntry;
 use App\Modules\StaffLedger\Models\Location as StaffLedgerLocation;
@@ -386,6 +391,11 @@ const COMPANY_SCOPED_MODELS = [
     BoardroomMeeting::class => ['kind' => 'BOARD', 'title' => 'Hemligt styrelsemöte', 'meeting_date' => '2026-09-01'],
     BoardroomAgendaItem::class => 'boardroomAgendaItemAttributes',
     BoardroomMinutes::class => 'boardroomMinutesAttributes',
+    SaasContractVersion::class => 'saasContractVersionAttributes',
+    SaasMonth::class => ['month' => '2026-10-01'],
+    SaasCustomerMonth::class => ['month' => '2026-10-01', 'customer_id' => 1, 'mrr_ore' => 99_900, 'state' => 'ACTIVE', 'lines' => []],
+    SaasCorrection::class => ['booked_month' => '2026-11-01', 'affects_month' => '2026-10-01', 'customer_id' => 1, 'amount_ore' => -10_000],
+    SaasEstimate::class => ['month' => '2026-09-01', 'customer_id' => 1, 'mrr_ore' => 50_000, 'invoice_ids' => []],
     PlanningArea::class => ['name' => 'Hemligt kök', 'colour' => '#e4572e'],
     PlanningSkill::class => ['name' => 'Hemlig kompetens'],
     PlanningEmployeeSkill::class => 'planningEmployeeSkillAttributes',
@@ -582,6 +592,14 @@ function staffLedgerEntryAttributes(): array
         'received_at' => '2026-11-02 08:00:01',
         'flags' => [],
         'hash' => str_repeat('a', 64),
+    ];
+}
+
+function saasContractVersionAttributes(): array
+{
+    return [
+        'source_type' => 'RECURRING_INVOICE', 'source_id' => (string) Str::uuid(), 'effective_from' => '2026-10-01', 'recorded_at' => '2026-10-01 10:00:00',
+        'cause' => 'CREATED', 'status' => 'ACTIVE', 'lines' => [['key' => 'r0', 'description' => 'Hemlig licens', 'currency' => 'SEK', 'amount_minor' => 99_900]], 'sha256' => str_repeat('b', 64),
     ];
 }
 
@@ -1874,10 +1892,10 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class];
+const NEVER_UPDATED = [WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class];
+const APPEND_ONLY = [WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, SaasContractVersion::class, SaasCorrection::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

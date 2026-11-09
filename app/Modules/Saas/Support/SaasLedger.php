@@ -162,7 +162,7 @@ final class SaasLedger
             }
 
             $records = SaasContractVersion::query()->orderBy('id')->get();
-            $all = $records->map(fn (SaasContractVersion $version): ContractVersion => $version->toDomain())->all();
+            $all = array_values($records->map(fn (SaasContractVersion $version): ContractVersion => $version->toDomain())->all());
             $stored = SaasCustomerMonth::query()->whereIn('month', $closed->keys()->all())->get()->groupBy(fn (SaasCustomerMonth $row): string => $row->month->toDateString());
             $booked = SaasCorrection::query()->whereIn('booked_month', $closed->keys()->all())->get()->groupBy(fn (SaasCorrection $row): string => $row->booked_month->toDateString());
             $first = (string) $closed->keys()->last();
@@ -180,7 +180,7 @@ final class SaasLedger
                 $result = $history->month($key);
                 $rows = ($stored[$key] ?? collect())->keyBy('customer_id');
                 $issues = [];
-                $expected = $result?->customers ?? [];
+                $expected = $result->customers ?? [];
                 $corrections = ($booked[$key] ?? collect())->groupBy('customer_id')->map(fn (Collection $rows): int => (int) $rows->sum('amount_ore'));
 
                 foreach (array_unique([...array_keys($expected), ...$rows->keys()->all()]) as $customer) {
@@ -188,15 +188,15 @@ final class SaasLedger
                     $row = $rows->get($customer);
                     $want = $expected[$customer] ?? null;
 
-                    if (($row?->mrr_ore ?? 0) !== ($want?->mrrOre ?? 0)) {
+                    if (($row->mrr_ore ?? 0) !== ($want->mrrOre ?? 0)) {
                         $issues[] = "customer {$customer}: MRR";
                     }
 
-                    if (($row?->movement ?? null) !== ($want?->movement ?? null) || ($row?->movement_ore ?? 0) !== ($want?->movementOre ?? 0)) {
+                    if (($row->movement ?? null) !== ($want->movement ?? null) || ($row->movement_ore ?? 0) !== ($want->movementOre ?? 0)) {
                         $issues[] = "customer {$customer}: movement";
                     }
 
-                    if (($row?->fx_ore ?? 0) !== ($want?->fxOre ?? 0)) {
+                    if (($row->fx_ore ?? 0) !== ($want->fxOre ?? 0)) {
                         $issues[] = "customer {$customer}: currency effect";
                     }
 
@@ -246,7 +246,7 @@ final class SaasLedger
         $records = SaasContractVersion::query()->orderBy('id')->get();
 
         return [
-            $records->map(fn (SaasContractVersion $version): ContractVersion => $version->toDomain())->all(),
+            array_values($records->map(fn (SaasContractVersion $version): ContractVersion => $version->toDomain())->all()),
             (int) ($records->max('id') ?? 0),
         ];
     }

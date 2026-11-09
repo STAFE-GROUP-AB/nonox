@@ -70,7 +70,7 @@ class OverviewPage extends Component
             'withCorrections' => $withCorrections,
             'adjusted' => $adjusted,
             'historyFrom' => SaasSettings::historyFrom($this->company()),
-            'issues' => $latest?->source_issues ?? 0,
+            'issues' => $latest === null ? 0 : $latest->source_issues,
             'rates' => $selected === null ? [] : self::rates($selected),
         ]);
     }

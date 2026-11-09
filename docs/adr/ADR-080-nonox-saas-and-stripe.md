@@ -541,3 +541,79 @@ owner's and the consultant's review.
 
 Build order: step 1 (the ledger and metrics from NONOX's own data) starts now. Step 2 (the
 Stripe read-only import for metrics) follows. Step 3 waits for the L-questions listed above.
+
+## Addendum 2026-11-09: step 1 as built
+
+Build step 1 (the ledger and the metrics from NONOX's own data) is on branch
+`feat/nonox-saas-metrics`. What was built, and the choices the ADR left open:
+
+- **Module.** Key `saas`, name "NONOX SaaS", offered to every company and off by default (O10),
+  in `ModuleRegistry::FIRST_PARTY`. `saas:view` for owner, admin, accountant, bookkeeper and
+  auditor; `saas:manage` (close a month) for owner, admin and accountant. Pages under
+  `/aterkommande-intakter` (Översikt, Rörelser with drill-down, Kunder and one customer,
+  Kohorter, Uppsagda, Rättelser, Månader, Källor) answer 404 while the module is off; every
+  list downloads as CSV (`/aterkommande-intakter/export/{lista}`). Screen 8 (Intäkter i
+  perioden) belongs to step 4.
+- **Events.** `RecurringInvoiceChanged` and `RecurringInvoiceStatusChanged` (core, `App\Events`)
+  and `CrmAgreementChanged` (CRM module) are dispatched inside the saving transaction, ids only;
+  the listener writes a version in the same transaction while the module is on, and only when
+  what counts changed (customer, status, dates, lines). The open months are recomputed by a
+  queued job after the commit and nightly (`saas:recompute`).
+- **"Gäller från".** An optional field in the avtalsfakturering editor, shown only with the module
+  on, for a price change, a pause, a resumption or an end. Empty means today. The invoices are
+  not affected.
+- **Which version applies.** At an instant, among the versions effective on or before it, the one
+  recorded last (highest id). An agreement is overwritten in NONOX, so a later version describes
+  the contract from its date onward and replaces what was known about later dates.
+- **End of a contract** (SA-R15). Avtalsfakturering bills in advance (§3.5 default): an agreement
+  with an end date counts until the first scheduled invoice date after it; ending an agreement
+  counts until its "Gäller från" date, by default the next invoice date that will no longer come.
+  An end is known from the day it is registered, so the version is effective from
+  min(today, end) and the contract shows under Uppsagda until it ends. A CRM agreement that is
+  terminated ends with its current period (end date + 1 day), or after the notice period when it
+  runs until further notice; one that renews itself has no end.
+- **CRM agreements** count only with the CRM module on, from their start date, and are recorded
+  but not counted (listed under Källor) when an avtalsfakturering bills them, when they are a
+  ramavtal, have no value, have a total without both dates, or belong to an account without a
+  customer. A total is divided by the whole months from start to end.
+- **Backfill on enable.** One BACKFILL version per active or paused agreement, effective from the
+  earliest of its creation date and its first invoice (an agreement entered after its first
+  invoices started with them). `history_from` (the first ledger month) is set once. Switching the
+  module off and on again writes a version from that day only for agreements that changed
+  meanwhile.
+- **Estimated history (O9).** Months up to 24 before `history_from`, from issued recurring
+  invoices spread over the agreement's interval in advance (credit invoices left out), in
+  `saas_estimates`, labelled "Uppskattad", never closed, corrected or verified.
+- **Pure calculation.** `App\Modules\Saas\Domain\RecurringRevenue`, no I/O and no clock, tested
+  with F1–F5, F7 and property tests (bridge identity, MRR = sum of lines, order of input
+  irrelevant). Each customer row satisfies mrr = opening + correction + fx + movement.
+  A pause reaching its 13th month-end becomes Churn with the paused amount moved from Paus to
+  Churn (the bridge is unchanged); that churn is outside the churn rates, since the customer had
+  no MRR the month before. Logo and revenue churn count only customers that had MRR at m−1.
+- **Closing (O6).** "Stäng månad" by a person with `saas:manage`, months in order and only after
+  they have ended; the month is recomputed first, then frozen with `versions_known_until` (the
+  highest version id used) and its rates (the month's and the month before's).
+  `saas:close-month` does the same for a named person. A reminder appears in Mina datum on the
+  10th of the following month as a recommendation (deadline type Closing); nothing closes by
+  itself.
+- **Corrections (SA-R22).** For each customer and closed month M up to the last closed month B,
+  gap(M) = MRR known now − (MRR reported for M + corrections written later that affect M or an
+  earlier month). A correction for M is gap(M) − gap(M−1), booked in the first open month. They
+  sum to the difference at B, so the first open month's bridge starts from B as reported; a
+  second recompute writes nothing new. "Med rättelser" shows each closed month as reported plus
+  the later corrections that affect it, from stored rows only.
+- **Verification.** `saas:verify` recomputes every closed month from the versions known when it
+  was closed and its frozen rates, compares every customer's MRR, movement, currency effect,
+  corrections and opening, and the bridges, and records `saas.verified` (ok, number of months,
+  the months that differ) in the audit log, shown on Månader; nightly.
+- **Immutability.** Triggers (search path pinned) refuse UPDATE, DELETE and TRUNCATE on
+  `saas_contract_versions` and `saas_corrections`, any change to a CLOSED row of `saas_months`,
+  and any insert, update or delete of `saas_customer_months` in a closed month; rows go only with
+  their company. The models refuse the same. Grants: versions and corrections append-only,
+  months no-delete, customer months and estimates read-write.
+- **Pages** read only the stored rows with a fixed number of queries, proven with 5 and 50
+  customers on every page. Cohorts are stored per month (constant currency at that month's
+  rates).
+- **Not in step 1:** Stripe (step 2–3), periodisation and Intäkter i perioden (step 4), API
+  endpoints (step 5), a settings page (gross margin and CAC are out of v1, O7), usage-based lines
+  from NONOX data (NONOX agreements have none).

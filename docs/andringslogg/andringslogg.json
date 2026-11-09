@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-09-aterkommande-intakter",
+      "datum": "2026-11-09T13:40:00+01:00",
+      "rubrik": "Ny modul NONOX SaaS: återkommande intäkter med MRR, ARR och churn",
+      "beskrivning": "Modulen räknar fram MRR, ARR, rörelser per månad, churn, kvarhållen intäkt och kohorter ur avtalsfakturering och avtalsregistret, med varje belopp spårbart till kunden och avtalet. En stängd månad ändras aldrig, och det som blir känt senare visas som rättelse i nästa öppna månad.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-09-arbetsorder-pa-startsidan",
       "datum": "2026-11-09T10:20:00+01:00",
       "rubrik": "Arbetsorder och ÄTA visas på startsidan och i jämförelsen",

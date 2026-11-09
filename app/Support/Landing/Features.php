@@ -71,6 +71,7 @@ final class Features
         'inventory_labels' => ['name' => 'Etiketter med streckkod och etikettstudio', 'status' => self::LIVE, 'readme' => 'Etiketter med pris, EAN-streckkod eller QR-kod', 'module' => 'Lager'],
         'work_orders' => ['name' => 'Arbetsorder med tid och material som blir fakturaunderlag', 'status' => self::LIVE, 'readme' => 'Arbetsorder för hantverkare: tid och material på plats', 'module' => 'Arbetsorder'],
         'work_orders_ata' => ['name' => 'ÄTA som kunden godkänner med pris innan arbetet görs', 'status' => self::LIVE, 'readme' => 'ÄTA som kunden signerar med namnteckning', 'module' => 'Arbetsorder'],
+        'saas_metrics' => ['name' => 'Återkommande intäkter: MRR, ARR och churn ur avtalen', 'status' => self::LIVE, 'readme' => 'Återkommande intäkter ur avtalsfakturering och avtalsregistret', 'module' => 'NONOX SaaS'],
         'kitchen_recipes' => ['name' => 'Recept med portionskostnad och marginal per rätt', 'status' => self::LIVE, 'readme' => 'Recept med portionskostnad och marginal per rätt', 'module' => 'Kök'],
         'kitchen_waste' => ['name' => 'Svinn och personalmat, även från mobilen', 'status' => self::LIVE, 'readme' => 'Svinn med orsak, på sidan eller med mobilens Svinn-ruta', 'module' => 'Kök'],
         'kitchen_variance' => ['name' => 'Avvikelser mellan sålt och inventerat', 'status' => self::LIVE, 'readme' => 'Avvikelser mellan två inventeringar', 'module' => 'Kök'],

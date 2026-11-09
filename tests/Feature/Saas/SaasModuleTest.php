@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Invoicing\RunRecurringInvoice;
 use App\Actions\Invoicing\SaveRecurringInvoice;
 use App\Domain\Company\LegalForm;
 use App\Domain\Invoicing\AgreementStatus;
@@ -169,4 +170,33 @@ it('reminds in Mina datum on the 10th to close the month before, until it is clo
 
     expect(array_map(fn ($deadline) => $deadline->key, $provider->deadlines($this->company, CarbonImmutable::parse('2026-01-01'), CarbonImmutable::parse('2026-03-31'))))
         ->toBe(['saas-close:2026-02-01']);
+});
+
+it('shows an agreement ended on a later date as cancelled MRR from today, and churns it on that date', function () {
+    Saas::enable($this->company, $this->owner);
+    $agreement = Saas::agreement($this->owner, $this->company, Saas::customer($this->owner, $this->company, 'Årsplan AB'), '12000', 12);
+
+    Saas::at('2026-03-10');
+    Saas::status($this->owner, $agreement, AgreementStatus::Ended, '2027-01-01');
+
+    expect(Saas::month('2026-03-01')->scheduled_churn_ore)->toBe(100_000)
+        ->and(Saas::month('2026-03-01')->churn_ore)->toBe(0);
+
+    Saas::at('2027-01-05');
+    Saas::recompute($this->company);
+
+    expect(Saas::month('2026-12-01')->mrr_ore)->toBe(100_000)
+        ->and(Saas::month('2027-01-01')->churn_ore)->toBe(-100_000);
+});
+
+it('backfills an agreement entered after its first invoices from the earliest of them', function () {
+    $agreement = Saas::agreement($this->owner, $this->company, Saas::customer($this->owner, $this->company, 'Efterhand AB'), '500', 1, '2026-01-02');
+    Saas::at('2026-01-20');
+    $invoice = app(RunRecurringInvoice::class)($this->owner, $agreement->fresh());
+
+    Saas::enable($this->company, $this->owner);
+
+    expect($invoice->invoice_date->toDateString())->toBe('2026-01-02')
+        ->and($agreement->created_at->toDateString())->toBe('2026-01-15')
+        ->and(SaasContractVersion::query()->sole()->effective_from->toDateString())->toBe('2026-01-02');
 });

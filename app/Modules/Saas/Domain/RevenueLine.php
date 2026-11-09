@@ -60,6 +60,7 @@ final readonly class RevenueLine
             'year' => Arithmetic::divideHalfUp($amount, 12 * $this->intervalCount),
             'week' => Arithmetic::divideHalfUp($amount * 52, 12 * $this->intervalCount),
             'day' => Arithmetic::divideHalfUp($amount * 365, 12 * $this->intervalCount),
+            default => throw new InvalidArgumentException("Unknown interval {$this->intervalUnit}."),
         };
     }
 

@@ -48,12 +48,12 @@ final class Months
     /** "oktober 2026" */
     public static function label(string $month): string
     {
-        return CarbonImmutable::parse($month)->locale('sv')->isoFormat('MMMM YYYY');
+        return CarbonImmutable::parse($month)->settings(['locale' => 'sv'])->isoFormat('MMMM YYYY');
     }
 
     /** "okt. 2026", for table heads */
     public static function short(string $month): string
     {
-        return CarbonImmutable::parse($month)->locale('sv')->isoFormat('MMM YYYY');
+        return CarbonImmutable::parse($month)->settings(['locale' => 'sv'])->isoFormat('MMM YYYY');
     }
 }

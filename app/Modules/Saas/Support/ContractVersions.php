@@ -6,6 +6,7 @@ namespace App\Modules\Saas\Support;
 
 use App\Domain\Invoicing\AgreementStatus;
 use App\Models\Company;
+use App\Models\Invoice;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceRow;
 use App\Modules\Crm\CrmModule;
@@ -42,6 +43,9 @@ use Carbon\CarbonImmutable;
  */
 final class ContractVersions
 {
+    /**
+     * @param  ?string  $effectiveFrom  "Gäller från", or for a backfill the date the agreement started
+     */
     public function recordRecurringInvoice(RecurringInvoice $agreement, ?VersionCause $cause, ?string $effectiveFrom, ?int $userId, ?CarbonImmutable $today = null): ?SaasContractVersion
     {
         $today ??= CarbonImmutable::today();
@@ -56,10 +60,11 @@ final class ContractVersions
         $previous = self::latest(SourceType::RecurringInvoice, $agreement->id);
         $cause ??= $previous === null ? VersionCause::Created : (($cancel !== null && $previous->cancel_effective_on === null) ? VersionCause::CancelScheduled : VersionCause::Changed);
         $from = match (true) {
+            // Known from today that it ends on the cancel date ("Gäller från"); a back-dated end applies from that date.
+            $cause === VersionCause::Ended => min($today->toDateString(), (string) $cancel),
             $effectiveFrom !== null => $effectiveFrom,
             $cause === VersionCause::Backfill => ($agreement->created_at ?? $today)->toDateString(),
             $cause === VersionCause::Created => $agreement->next_invoice_date->min($today)->toDateString(),
-            $cause === VersionCause::Ended => $cancel ?? $today->toDateString(),
             default => $today->toDateString(),
         };
 
@@ -148,10 +153,18 @@ final class ContractVersions
             ->orderBy('number')
             ->get();
         $known = SaasContractVersion::query()->where('source_type', SourceType::RecurringInvoice->value)->distinct()->pluck('source_id')->all();
+        // An agreement may be entered after its first invoices (catching up): it started with the earliest of them.
+        $firstInvoice = Invoice::query()
+            ->whereIn('recurring_invoice_id', $agreements->pluck('id')->all())
+            ->where('kind', Invoice::INVOICE)
+            ->groupBy('recurring_invoice_id')
+            ->selectRaw('recurring_invoice_id, min(invoice_date) as first_date')
+            ->pluck('first_date', 'recurring_invoice_id');
 
         foreach ($agreements as $agreement) {
             $has = in_array($agreement->id, $known, true);
-            $version = $this->recordRecurringInvoice($agreement, VersionCause::Backfill, $has ? $today->toDateString() : null, $userId, $today);
+            $started = min(($agreement->created_at ?? $today)->toDateString(), substr((string) ($firstInvoice[$agreement->id] ?? '9999-12-31'), 0, 10));
+            $version = $this->recordRecurringInvoice($agreement, VersionCause::Backfill, $has ? $today->toDateString() : $started, $userId, $today);
             $written += $version === null ? 0 : 1;
         }
 

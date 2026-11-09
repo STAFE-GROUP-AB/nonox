@@ -82,7 +82,7 @@ class SaasCsvController
 
     /**
      * @param  Collection<string, SaasMonth>  $months
-     * @return list<list<string|int>>
+     * @return list<list<mixed>>
      */
     private function movements(Collection $months): array
     {
@@ -105,7 +105,7 @@ class SaasCsvController
 
     /**
      * @param  Collection<string, SaasMonth>  $months
-     * @return list<list<string|int>>
+     * @return list<list<mixed>>
      */
     private function months(Collection $months): array
     {
@@ -118,7 +118,7 @@ class SaasCsvController
         return $rows;
     }
 
-    /** @return list<list<string|int>> */
+    /** @return list<list<mixed>> */
     private function customers(string $month): array
     {
         $rows = [[__('Kundnummer'), __('Kund'), __('Ingående MRR'), __('Rättelse'), __('Valutaeffekt'), __('Rörelse'), __('Belopp'), __('MRR'), __('Kohort'), __('Status'), __('Källor')]];
@@ -139,7 +139,7 @@ class SaasCsvController
         return $rows;
     }
 
-    /** @return list<list<string|int>> */
+    /** @return list<list<mixed>> */
     private function drill(string $month, string $category): array
     {
         $rows = [[__('Månad'), __('Kategori'), __('Kundnummer'), __('Kund'), __('Belopp'), __('MRR'), __('Källor')]];
@@ -167,7 +167,7 @@ class SaasCsvController
 
     /**
      * @param  array<string, list<array{customers: int, mrr_ore: int}>>  $cohorts
-     * @return list<list<string|int>>
+     * @return list<list<mixed>>
      */
     private function cohorts(array $cohorts): array
     {
@@ -182,7 +182,7 @@ class SaasCsvController
         return $rows;
     }
 
-    /** @return list<list<string|int>> */
+    /** @return list<list<mixed>> */
     private function scheduled(string $month): array
     {
         $rows = [[__('Kundnummer'), __('Kund'), __('Avtal'), __('Rad'), __('MRR som upphör'), __('Första dag utan avtal'), __('Churn i')]];
@@ -194,7 +194,7 @@ class SaasCsvController
         return $rows;
     }
 
-    /** @return list<list<string|int>> */
+    /** @return list<list<mixed>> */
     private function corrections(): array
     {
         $rows = [[__('Bokad i'), __('Gäller månad'), __('Kundnummer'), __('Kund'), __('Belopp'), __('Registrerad')]];

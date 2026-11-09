@@ -41,7 +41,11 @@ final class SaasReport
         return SaasMonth::query()->orderBy('month')->get()->keyBy(fn (SaasMonth $month): string => $month->key());
     }
 
-    /** The month asked for ("2026-10"), or the latest. */
+    /**
+     * The month asked for ("2026-10"), or the latest.
+     *
+     * @param  Collection<string, SaasMonth>  $months
+     */
     public static function pick(Collection $months, ?string $asked): ?SaasMonth
     {
         if (is_string($asked) && preg_match('/^\d{4}-\d{2}$/', $asked) === 1 && $months->has("{$asked}-01")) {
