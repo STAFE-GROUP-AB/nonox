@@ -447,3 +447,131 @@ signing domain.
   04:15), as well as by `crm:agreements`.
 - Behaviour change, deliberate: ADR-046 closed every link while CRM was off. Quote links now stay
   usable; the CRM test that asserted the old rule now asserts the new one.
+
+## Addendum 2026-11-08: as built (build steps 1–6)
+
+Built on `feat/customer-portal` after the signing move above. Module `app/Modules/Portal`.
+
+### What the guard and the session rely on (read in the installed Laravel 13.39 source)
+
+- **Guard.** `config/auth.php` adds `guards.portal` (session driver, provider `portal_identities`,
+  model `PortalIdentity`) without repeating `web`: `Illuminate\Foundation\Bootstrap\LoadConfiguration::mergeableOptions()`
+  merges the `guards`, `providers` and `passwords` keys of the app's `auth.php` with the framework's
+  defaults. Checked by running `config('auth.guards')`, which lists `web`, `portal` and `sanctum`.
+  `SessionGuard` keeps its user under `login_{name}_{sha1(class)}`, so the two guards never share a
+  login even in one store. `PortalIdentity` has no remember token (`getRememberTokenName()` is empty,
+  so `SessionGuard::logout()` cycles nothing) and no password.
+- **The default guard stays `web`.** The database session handler writes `user_id` from the default
+  guard at save time (`DatabaseSessionHandler::userId()`), and `CurrentCompany` resolves from
+  `Auth::user()`. The portal never calls `Auth::shouldUse('portal')`; it always names its guard.
+  Portal sessions therefore never appear among a NONOX user's browser sessions.
+- **Own cookie.** `StartSession::getSession()` takes the store from `SessionManager::driver()` and
+  reads the id from the cookie named by the store's `getName()`; `addCookieToResponse()` writes that
+  name with `session.path`. `SessionManager::buildSession()` names the store from `session.cookie`, and
+  the database handler takes `session.lifetime` when built. The built driver is cached
+  (`Manager::$drivers`), as are the container's `session.store`, the guards (`AuthManager::$guards`)
+  and the redirector (`RoutingServiceProvider::registerRedirector()` injects the store). So
+  `UsePortalSession`, a global middleware prepended ahead of the web group, sets `session.cookie`
+  `nonox_kundportal`, `session.path` `/kundportal` and `session.lifetime` 30 for `/kundportal*`, and
+  forgets the drivers, `session.store`, the guards and the redirector when it switches. A request
+  starts fresh in production; the switch back matters only where one process serves both (tests).
+  The XSRF cookie follows `session.path`, so the portal's has path `/kundportal`.
+- **No Livewire in the portal.** Livewire posts to `/livewire/update`, which would carry the NONOX
+  cookie, and the portal's CSP allows no inline script. The portal pages are controllers and Blade
+  forms with `resources/js/portal.js` (copy buttons, one submit per form, confirmations).
+
+### Design choices made while building
+
+- **Portal identity and contacts**: identities are global (e-mail and name); a contact links an
+  identity to one customer of one company. A person with several contacts chooses a portal at
+  `/kundportal/valj`; the session keeps the chosen contact, and `ResolvePortal` sets `PortalContext`
+  and `CurrentCompany` from it, never from the request. A contact of two customers in one company
+  sees each only in its own portal. A disabled contact, an inactive or restricted customer, an
+  archived company or the module off answers 404; the session ends when the person has no portal left.
+- **Login codes**: `login_codes.audience` (WEB, PORTAL). `SendLoginCode` and `VerifyLoginCode` take
+  the audience; the portal's caps and lock use their own keys. The sign-in form always dispatches
+  `SendPortalLoginCode` (queued) and answers the same; only the job decides, and a code goes only to an
+  address with an ACTIVE contact (or, for an invitation, to the invited address). The code mail
+  carries a company's brand only when the person has a portal in that company.
+- **Invitation**: a 256-bit token stored as SHA-256 (`SigningToken`), 14 days, once; the link page
+  shows the address masked and sends a code there; only the code accepts. Inviting again revokes
+  earlier links. An invited contact who never accepts is removed 14 days after the link ran out.
+- **Private customers**: a customer with a personal number can only have its own address, as one
+  login. Personal numbers are never shown on portal pages.
+- **The stored issued PDF** (O6): `invoice_documents` with SHA-256, written once by the queued job
+  `StoreIssuedInvoicePdf` after `IssueInvoice` commits, never updated (trigger). E-mail, reminders,
+  download, API, Peppol, archive and portal all use `IssuedInvoicePdf::get()`. The test suite turns
+  the storing off (`NONOX_STORE_ISSUED_INVOICE_PDFS=false` in `phpunit.xml`) so its thousands of
+  issued invoices are not rendered twice; the tests of the feature turn it on.
+- **Quote acceptance** goes through the core `App\Actions\Signing\SignInSession`, which records a
+  `SigningRequest` with `channel` PORTAL and `portal_contact_id`: the exact PDF and its SHA-256, the
+  fingerprint the page showed (must still match), typed name, confirmation text, time, IP and browser,
+  a certificate that says it was accepted in the portal, and the same follow-up (`FollowUpSigning`:
+  order, CRM hook, notices, copies). Open links for the quote are revoked first under the same row
+  locks; a quote signed at a link cannot be accepted in the portal, and a link for a quote accepted in
+  the portal answers 410. Declining keeps no IP address.
+- **Questions**: threads and messages, attachments PDF/JPEG/PNG ≤ 10 MB, five per message, checked by
+  content (finfo) and through the inbox's `AttachmentScreen`. A notice goes to users with
+  `customer-portal:reply`; the reply mail has a link, never the text. A dispute flags the invoice
+  (warning on the invoice's portal panel; reminders are not stopped, L8).
+- **Events**: `customer_portal_events`, append-only (trigger allows only the contact id to be cleared
+  when a contact is removed); IP and browser on SIGNED_IN only, recorded at the first entry into a
+  portal in a session.
+- **Retention**: `portal:prune` daily at 04:20, per company, touching only the portal's tables.
+- **Gate until the lawyer has answered**: `PortalModule::canEnable()` refuses unless
+  `NONOX_CUSTOMER_PORTAL=true` (build step 1: L1, L2, L4, L5 before it is on for any company). The
+  roadmap item `kundportal` is "Pågår" and `Features` lists it as coming.
+- **Not built in this step**: card or Swish payments, QR codes (O7), bulk invitation (O11), ordering
+  (§11), passkeys for contacts (O3), an English portal (O10), a landing feature card and a comparison
+  row (the module is not on for customers yet), and the read access log (ADR-068 is not built).
+
+The `TODO(legal-verify)` items L1–L8 and L12 are in the code where they apply; L9–L11 concern later
+steps. The drafts for the lawyer are in `docs/juridik/kundportal-utkast.md`.
+
+## Addendum 2026-11-08: review fixes (cold review of 2772c563)
+
+- **Merging needs `npm run build`.** `resources/js/portal.js` is a new Vite entry; without a build the
+  portal pages fail on the missing manifest entry. The README's server section says so too.
+- **P2-1 The stored PDF is the sent PDF.** `IssueInvoice` sets `invoices.stores_issued_pdf`; for such
+  an invoice `IssuedInvoicePdf::get()` stores the PDF itself when the queued job has not run yet
+  (under the unique key, in a savepoint), so an e-mail sent straight after issuing, a recurring
+  invoice issued and sent in one go, and an API issue-then-send all send the stored bytes. The job
+  only warms the store. Tested with `Queue::fake()` on `SendInvoice` and `RunRecurringInvoice`.
+- **P2-2** The company opens a customer's files at `/kunder/portal/fragor/{trad}/bilagor/{bilaga}`
+  (module on, `customer-portal:view`, company-scoped, download with nosniff), and its replies can
+  carry files, screened like the customer's.
+- **P2-3 [Lead]** "Får godkänna offerter" is chosen at invitation and can be changed on the contact
+  row (`customer-portal:manage`, audited `customer_portal.contact_quote_right_changed`). The default
+  is yes for a private customer and no for a contact at a legal person. Existing contacts keep their
+  value (the module is still gated).
+- **P2-4 [Lead]** `PortalModule::canEnable()` refuses when the default queue connection uses the sync
+  driver, since the sign-in's queued code mail is what keeps the response from telling who has a
+  portal. No `defer()` and no `dispatchAfterResponse()`. In the README's server section.
+- **P3** The document's row is locked before its pending links in `SignInSession`; "Jag har betalat"
+  notifies `customer-portal:reply` holders and is listed on Frågor från kunder; the reminders card
+  warns about an open dispute for anyone with `invoices:view`; attachments are all checked before any
+  is written, written inside the transaction and deleted if it fails; nested or failed uploads are
+  refused with a message; downloads use `HeaderUtils::makeDisposition` with an ASCII fallback; the
+  invoice page's "as issued" label checks the stored file's hash; a stored PDF can be deleted only
+  with its company (trigger); removing one login or the company changing a contact's address sets
+  `sessions_valid_from` (the person's other sessions end; the company's change moves the contact to
+  the new address's identity); removing a login clears IP address and browser on that contact's
+  sign-in events [Lead] (the events trigger allows only that); notices go to permission holders in
+  one query (`PortalRecipients`); the privacy page and a branded entry answer 404 while the portal is
+  closed. The CRM account lookup in a quote's acceptance text moved out of `SalesDocument` into
+  `CrmSigningHook` (`ResolvesSigningParty`, asked through `SigningHooks::party()`).
+
+## Addendum 2026-11-09: re-check of 0a3a2d0a
+
+- **Changing a contact's address [Lead]** no longer moves the contact: the new address gets a new
+  contact (same customer, status and quote right; an INVITED one is invited again at the new
+  address), and the old contact is removed as "Ta bort min inloggning" removes it (IP address and
+  browser cleared on its events, messages shown as "Borttagen kontakt"). Only the old contact's
+  portal closes for the previous person; their identity's other portals and sessions are untouched.
+  Tested: the successor's extract holds nothing of the predecessor's. The customer's threads stay the
+  customer's and are seen by its contacts, as before.
+- **Lock order**: `SignAtLink::sign()`/`decline()` now lock the document before the signing request,
+  like `SignInSession` and `SendForSigning`, and all their transactions retry a deadlock
+  (`DB::transaction($callback, 3)`).
+- **The invoice page's label** uses `IssuedInvoicePdf::isStored()`: no rendering and no storing on a
+  view; the stored file's hash is checked once and remembered (the row never changes).

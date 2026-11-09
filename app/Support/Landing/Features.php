@@ -127,6 +127,8 @@ final class Features
         'skatteverket_api' => ['name' => 'Momsdeklaration, arbetsgivardeklaration, skattekonto och Skatteverkets meddelanden utan filer, i version 1.0 – du skriver under hos Skatteverket', 'status' => self::SOON, 'readme' => 'Momsdeklaration, arbetsgivardeklaration, skattekonto och Skatteverkets meddelanden utan filer, i version 1.0'],
         // ADR-070: built as a beta, tried with the pilot companies; notice dates are advice until a lawyer has checked them.
         'share_register' => ['name' => 'Aktiebok och styrelserum för aktiebolag', 'status' => self::SOON, 'readme' => 'Aktiebok och styrelserum för aktiebolag', 'module' => 'Aktiebok och styrelserum'],
+        // Built (ADR-075) and blocked until a lawyer has answered how contact persons' data may be processed.
+        'customer_portal' => ['name' => 'Kundportal där kunderna ser sina fakturor, kontoutdrag och offerter', 'status' => self::SOON, 'readme' => 'Kundportal där dina kunder loggar in med en kod i mejlet', 'module' => 'Kundportal'],
     ];
 
     /**

@@ -11,6 +11,7 @@ use App\Actions\Invoicing\SaveDraftInvoice;
 use App\Actions\Invoicing\SendInvoice;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoicePdf;
+use App\Domain\Invoicing\IssuedInvoicePdf;
 use App\Models\Article;
 use App\Models\Invoice;
 use App\Modules\Connect\Http\Controllers\Api\V1\Concerns\ActsAsCredential;
@@ -156,7 +157,7 @@ final class InvoiceController
             return Problem::make(429, 'rate_limited', WorkQuota::message(), [], ['Retry-After' => '60']);
         }
 
-        return new Response(InvoicePdf::render($invoice), 200, [
+        return new Response(IssuedInvoicePdf::bytes($invoice), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.InvoicePdf::filename($invoice).'"',
         ]);

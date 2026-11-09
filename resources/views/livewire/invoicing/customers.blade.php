@@ -3,6 +3,12 @@
 <div class="space-y-6">
     @if($showForm)
         @include('livewire.invoicing.partials.customer-form')
+        @if($editingId)
+        {{-- Kundportal (ADR-075): who has access to the customer's portal, while the module is on. --}}
+        @if(App\Modules\Portal\Support\PortalPanels::showFor(auth()->user()))
+            <livewire:portal.customer-panel :customer-id="$editingId" :key="'portal-customer-'.$editingId" />
+        @endif
+        @endif
     @endif
 
     <x-ui.card>

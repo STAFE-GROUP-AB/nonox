@@ -10,16 +10,17 @@ use Illuminate\Support\Facades\DB;
 /**
  * Checks a one-time code. A code works once, expires, and stops working after
  * too many wrong attempts, even if the right code is entered afterwards.
+ * Only a code issued for the same audience counts (ADR-075).
  */
 class VerifyLoginCode
 {
-    public function __invoke(string $email, string $code): bool
+    public function __invoke(string $email, string $code, string $audience = LoginCode::WEB): bool
     {
         $email = SendLoginCode::normalise($email);
         $code = preg_replace('/\D/', '', $code) ?? '';
 
-        return DB::transaction(function () use ($email, $code): bool {
-            $loginCode = LoginCode::usableFor($email)->latest('id')->lockForUpdate()->first();
+        return DB::transaction(function () use ($email, $code, $audience): bool {
+            $loginCode = LoginCode::usableFor($email, $audience)->latest('id')->lockForUpdate()->first();
 
             if ($loginCode === null) {
                 return false;

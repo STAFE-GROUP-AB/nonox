@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Invoicing;
 
 use App\Domain\Invoicing\InvoicePdf;
+use App\Domain\Invoicing\IssuedInvoicePdf;
 use App\Models\Company;
 use App\Models\Invoice;
 use App\Support\Toast;
@@ -52,7 +53,7 @@ class InvoiceController
             return back();
         }
 
-        return response(InvoicePdf::render($invoice), 200, [
+        return response(IssuedInvoicePdf::bytes($invoice), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="'.InvoicePdf::filename($invoice).'"',
             'X-Content-Type-Options' => 'nosniff',

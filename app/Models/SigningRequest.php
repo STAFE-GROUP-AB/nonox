@@ -59,6 +59,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?string $invoice_id
  * @property ?CarbonImmutable $followed_up_at
  * @property ?int $sent_by
+ * @property string $channel LINK (signed at /signera) or PORTAL (accepted by a signed-in customer portal contact)
+ * @property ?int $portal_contact_id
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
  */
@@ -96,11 +98,14 @@ class SigningRequest extends Model
         'content_hash',
         'create_invoice',
         'sent_by',
+        'channel',
+        'portal_contact_id',
     ];
 
     /** @var array<string, mixed> */
     protected $attributes = [
         'status' => 'PENDING',
+        'channel' => 'LINK',
     ];
 
     /** @var list<string> */

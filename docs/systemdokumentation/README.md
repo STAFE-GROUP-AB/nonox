@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.121
+- Version: 0.122
 - Datum: 2026-11-09
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -4630,7 +4630,9 @@ räkenskapsinformation, men de bevaras och kontrolleras på samma sätt som bokf
   - `verifikationer/<verifikation>/`: underlagen till varje bokförd
     verifikation under sitt ursprungliga namn.
   - `kundfakturor/`: utfärdade kund- och kreditfakturor med fakturadatum under
-    året, som PDF i fakturans egen layout.
+    året, som PDF i fakturans egen layout. Från version 0.117 är det den PDF som
+    sparades när fakturan utfärdades (se nedan); en faktura som utfärdades
+    tidigare får en PDF som tas fram från fakturans uppgifter när paketet byggs.
   - `leverantorsfakturor/`: leverantörsfakturorna med fakturadatum under året,
     som de laddades upp.
   - `moms/`: rutor och belopp för varje redovisad momsperiod och filen till
@@ -4657,6 +4659,21 @@ räkenskapsinformation, men de bevaras och kontrolleras på samma sätt som bokf
     `shasum -a 256 -c` eller `sha256sum -c`.
 - Paketets egen SHA-256 sparas och skrivs i behandlingshistoriken när paketet
   skapas, och varje nedladdning loggas. Filerna går att läsa utan NONOX.
+- Fakturans PDF som den utfärdades (ADR-075 beslut O6): en kund- eller
+  kreditfaktura som utfärdas markeras (`invoices.stores_issued_pdf`), och dess PDF
+  tas fram en gång och sparas krypterad i den privata lagringen med sin SHA-256
+  (`invoice_documents`): i bakgrunden när utfärdandet har gått igenom, eller
+  första gången något behöver PDF:en om det sker innan dess (till exempel
+  e-postutskicket direkt efter utfärdandet, eller avtalsfakturering som
+  utfärdar och skickar i ett svep). Raden kan aldrig ändras och tas bara bort
+  tillsammans med företaget (PostgreSQL-triggrar och modellen). Samma bytes används sedan överallt: e-postutskicket, påminnelsens
+  bilaga, nedladdningen, API:t, Peppol-filens bifogade PDF, arkivpaketet och
+  kundportalen. En senare ändring av företagets adress, bankgiro eller logotyp
+  ändrar därför inte en faktura som redan har utfärdats. En faktura som
+  utfärdades innan detta infördes, eller vars PDF ännu inte har hunnit sparas,
+  tas fram från fakturans uppgifter som tidigare; kundportalen märker den som
+  en återskapad kopia. Stämmer den sparade filens SHA-256 inte används den inte.
+  TODO(legal-verify): L6, om lagen kräver att den exakta utfärdade PDF:en sparas.
 - Varje ny text av systemdokumentationen sparas oföränderligt
   (`system_documentation_versions`, med version, datum, SHA-256, programversion
   och tidpunkten den togs i bruk) efter varje `php artisan migrate`, vid
@@ -5195,3 +5212,4 @@ påverkar bokföringen och fakturan:
 | 0.119 | 2026-11-09 | Skärpta databasspärrar (avsnitt 4.3, ADR-079): varje utlösarfunktion körs med sökvägen `public, pg_temp`, så att en temporär tabell med samma namn inte längre kan ersätta den riktiga inne i spärren (en bokförd verifikations rader kunde annars ändras och en obalanserad verifikation bokföras med direkt SQL); ett test fäller varje ny utlösarfunktion utan inställningen. En utfärdad kundfaktura eller registrerad leverantörsfaktura kan inte längre sättas tillbaka till utkast med direkt SQL och därefter ändras eller raderas; övriga statusbyten är oförändrade. Ingen bokföring ändras. |
 | 0.120 | 2026-11-09 | Aktiebok och styrelserum (avsnitt 5n, ADR-070): aktieboken som en händelselogg som bara kan skrivas till, med hashkedja (person- och id-nummer bara som HMAC med en egen nyckel) och nattlig kontroll (`share-register:verify`), prövad vid varje datum då aktieboken ändras, prövning av varje händelse mot hela historiken och rättelser som nya händelser. Bevaras enligt aktiebolagslagen 5 kap. 3 §, skilt från bokföringslagens sju år. Jämförelse med konto 2081 utan bokföring. Protokoll godkänns i NONOX och låses som PDF med SHA-256. Arkivpaketet får `aktiebok/` och `protokoll/` (avsnitt 7a). |
 | 0.121 | 2026-11-09 | Lagerslag och modulen Kök (avsnitt 5j och 5k1, ADR-073): lagervärdet vid bokslutet bokförs per lagerslag, råvaror mot 1410/4910 och handelsvaror mot företagets tidigare par, i en verifikation; ett företag som aldrig valt lagerslag bokför som förut. K2-företag kan välja 97-procentsregeln (K2 punkt 12.5), avstängd från början. Kök lägger till lagerrörelserna svinn med orsak, eget bruk och försäljning via recept, utan egna verifikationer och utan moms. BAS 2026-mallarna får 1410 och 4910. |
+| 0.122 | 2026-11-09 | Fakturans PDF sparas när fakturan utfärdas, eller första gången den behövs om det sker före det (avsnitt 7a, ADR-075 beslut O6), och används oförändrad i e-post, påminnelser, nedladdning, API, Peppol, arkivpaket och kundportal; äldre fakturor tas fram som förut. Signering av offerter med länk är en del av kärnan och fungerar även när CRM är avstängt (ADR-075 §7); avtal kräver CRM som förut. Kundportalen (modul, ADR-075) visar kunden fakturor, kontoutdrag och offerter och låter kunden godkänna en offert med samma bevis som en signeringslänk; den bokför ingenting, och "Jag har betalat" är kundens egen notering utan bokföring. |

@@ -135,7 +135,7 @@ final class ClosingChecklist
                         'receivables' => route('accounting.ledgers', ['typ' => LedgerReconciliation::CUSTOMERS, 'datum' => $fiscalYear->end_date->toDateString()]),
                         'payables' => route('accounting.ledgers', ['typ' => LedgerReconciliation::SUPPLIERS, 'datum' => $fiscalYear->end_date->toDateString()]),
                         // The tax account from Skatteverket, only for a person the integration is offered to (ADR-054 stage 3).
-                        'tax_account' => Skatteverket::isAvailableTo(Auth::user()) ? route('accounting.taxAccount', ['datum' => $fiscalYear->end_date->toDateString()]) : null,
+                        'tax_account' => Skatteverket::isAvailableTo(Auth::guard('web')->user()) ? route('accounting.taxAccount', ['datum' => $fiscalYear->end_date->toDateString()]) : null,
                         default => null,
                     },
                 ];

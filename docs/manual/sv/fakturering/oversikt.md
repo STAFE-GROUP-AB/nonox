@@ -28,6 +28,7 @@ Avsnittet är för dig som säljer och fakturerar, och för dig som sköter bokf
 - [Fakturametoden och kontantmetoden](/manual/fakturering/fakturametoden-och-kontantmetoden) – när och hur en faktura bokförs.
 - [Kreditera en faktura](/manual/fakturering/kreditfaktura) – när något blev fel.
 - [Påminnelser](/manual/fakturering/paminnelser) – när kunden inte har betalat i tid.
+- [Kundportal](/manual/fakturering/kundportal) – kunderna loggar in och ser fakturor, kontoutdrag och offerter.
 
 ## Innan fakturan
 

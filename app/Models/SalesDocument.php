@@ -8,8 +8,7 @@ use App\Domain\Invoicing\SalesDocumentPdf;
 use App\Domain\Invoicing\SalesDocumentStatus;
 use App\Domain\Signing\QuoteFingerprint;
 use App\Domain\Signing\Signable;
-use App\Modules\Crm\Domain\AccountKind;
-use App\Modules\Crm\Models\Account;
+use App\Domain\Signing\SigningHooks;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
@@ -180,20 +179,21 @@ class SalesDocument extends Model implements Signable
 
     /**
      * For a company, also that they may accept on its behalf; a private
-     * person keeps the short form. The CRM account's kind when there is
-     * one, else the customer register's: a legal person has an
-     * organisation number and no personal number.
+     * person keeps the short form. A signing hook that knows the customer
+     * (CRM: the account's kind and name) answers first; else the customer
+     * register: a legal person has an organisation number and no personal
+     * number.
      */
     public function signingAcceptance(): string
     {
         $customer = $this->customer;
-        $account = $customer === null ? null : Account::query()->where('customer_id', $customer->id)->first();
-        $legalPerson = $account instanceof Account
-            ? $account->kind === AccountKind::Company
+        $party = $customer === null ? null : app(SigningHooks::class)->party($customer);
+        $legalPerson = $party !== null
+            ? $party['legal_person']
             : $customer !== null && $customer->org_number !== null && $customer->personal_number === null;
 
         return $legalPerson
-            ? __('Jag har läst och godkänner offerten och har rätt att godkänna den för :customer.', ['customer' => $account->name ?? $customer?->name])
+            ? __('Jag har läst och godkänner offerten och har rätt att godkänna den för :customer.', ['customer' => $party['name'] ?? $customer?->name])
             : __('Jag har läst och godkänner offerten.');
     }
 

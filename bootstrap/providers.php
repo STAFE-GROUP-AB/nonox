@@ -16,6 +16,7 @@ use App\Modules\ModuleServiceProvider;
 use App\Modules\Payroll\PayrollServiceProvider;
 use App\Modules\Peppol\PeppolServiceProvider;
 use App\Modules\Planning\PlanningServiceProvider;
+use App\Modules\Portal\PortalServiceProvider;
 use App\Modules\Pos\PosServiceProvider;
 use App\Modules\StaffLedger\StaffLedgerServiceProvider;
 use App\Modules\WorkOrders\WorkOrdersServiceProvider;
@@ -42,6 +43,7 @@ return [
     KitchenServiceProvider::class,
     InboxServiceProvider::class,
     PeppolServiceProvider::class,
+    PortalServiceProvider::class,
     ConnectServiceProvider::class,
     BankingServiceProvider::class,
     WorkOrdersServiceProvider::class,

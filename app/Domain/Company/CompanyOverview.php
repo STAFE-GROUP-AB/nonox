@@ -74,6 +74,8 @@ final class CompanyOverview
         'work-orders' => 'workOrders.index',
         // Web form submissions held for review (ADR-048).
         'crm-forms' => 'crm.forms',
+        // Questions and disputes from the customer portal (ADR-075).
+        'customer-portal-questions' => 'portal.admin.questions',
         // Reminders of a company's dates (ADR-051, stage 2).
         'mina-datum' => 'guide.dates',
     ];

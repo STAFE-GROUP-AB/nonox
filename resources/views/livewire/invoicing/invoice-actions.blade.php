@@ -66,12 +66,21 @@
         </x-ui.card>
     @endif
 
+    {{-- Kundportal (ADR-075): opened in the portal, "Jag har betalat", disputes. --}}
+    @if(! $invoice->isDraft() && App\Modules\Portal\Support\PortalPanels::showFor(auth()->user()))
+        <livewire:portal.invoice-panel :invoice-id="$invoice->id" :key="'portal-invoice-'.$invoice->id" />
+    @endif
+
     @if($peppolOn)
         <livewire:peppol.invoice-panel :invoice="$invoice" :key="'peppol-'.$invoice->id" />
     @endif
 
     @if($canRemind || $invoice->reminders->isNotEmpty())
         <x-ui.card :title="__('Påminnelser')">
+            {{-- A customer's open dispute in the portal (ADR-075 §6), for everyone who sees the invoice. TODO(legal-verify): L8 --}}
+            @if(App\Modules\Portal\Support\PortalPanels::disputed($invoice, auth()->user()))
+                <p class="mb-3 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-200" role="alert" data-testid="reminder-dispute-warning">{{ __('Kunden bestrider fakturan i kundportalen. Läs kundens meddelande och svara innan du skickar en påminnelse.') }}</p>
+            @endif
             @if($invoice->reminders->isNotEmpty())
                 <ul class="divide-y divide-gray-100 text-sm">
                     @foreach($invoice->reminders as $reminder)
