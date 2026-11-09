@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-09-triggerskydd-temporara-tabeller",
+      "datum": "2026-11-09T01:00:00+01:00",
+      "rubrik": "Skydden för bokförda verifikationer går inte att lura med tillfälliga tabeller",
+      "beskrivning": "Databasens skydd mot ändring av bokförda verifikationer och mot obalanserade verifikationer läser nu alltid de riktiga tabellerna, även om någon skapar en tillfällig tabell med samma namn. Det gäller alla tabeller som skyddas av en trigger i databasen. Ingen bokföring har ändrats.",
+      "typ": "Säkerhet",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-08-uppskjuten-skatt-k3",
       "datum": "2026-11-08T09:30:00+01:00",
       "rubrik": "Uppskjuten skatt i bokslutet för räkenskapsår som följer K3 (beta)",
