@@ -1437,6 +1437,122 @@ owner's mandate, open for the consultant's review). Fixture F-S1-b.
 - *Dismantling (P3-d).* The 35.29 text is shown next to the PROVISION kind,
   not only with the checkbox.
 
+#### As built (S1-P9, 2026-11-09)
+
+Enligt AI-utredning 2026-11-09, juristgranskning återstår. Sources: the rule
+sheet S1-R8, R8.1 rows 1–27, R8.4, R3.7, R4.7, R7.5 and K3 8.6B (BFNAR
+2006:11), with the quotes the sheet holds; nothing else was read for this
+package. Nothing is visible to a user yet: the K3 document (S1-P10) prints it.
+
+- **Notes library** (`App\Domain\AnnualReport\K3Notes`, `K3Note`).
+  `K3Notes::for(company, year, report, size, ?accounts, ?policies)` returns
+  the notes of a mindre aktiebolag, each with a key, the S1-R8.1 row, its
+  section, heading, rule references, structured data, generated Swedish
+  paragraphs, number, open questions (`missing`) and, where the K3 document
+  must refuse, a `blocking` reason. The size is the caller's, as for
+  `CashFlowStatement::forYear()`; a större or undetermined company, a K2 year
+  and any legal form but AB get `refusal()` (S1-H1). Order (K3 8.2, ÅRL 5:3):
+  every principle shares note 1 (rows 1, 2, 19, 20, 21, 22, 23, 26, 27, plus
+  R3.7 depreciation and components (H4) and R4.7 the tax principle with
+  deferred tax and 29.37); notes to items in income statement then balance
+  sheet order (14 exceptional items; 4 per K3 fixed asset line with goodwill
+  (5) after its line; 6 chapter 12; 25 bound and free equity; 7 revaluation
+  reserve; 8 liabilities after five years; 24 merged items); other notes
+  (15 employees, 9 pledged, 10 contingent, 11, 12, 13, 18, 16, 17). Numbers
+  run 2, 3, … after note 1.
+- **Triggers and data.** Ledger: 2 (movement on the exchange difference
+  ranges P8 uses), 4 (`AnnualAccounts::fixedAssetNotes()` with method
+  `linear` and the register's lives per category, a component's total life,
+  land flagged and never given a life; a line with depreciable amounts and
+  nothing in the register asks for the life), 5 (goodwill line), 7 (2085
+  movement), 19 (3000–3799 movement), 21 (posted corrections in the year of
+  an earlier year's voucher), 27 (1010–1019, 1081 or 2089 touched, or
+  `capitalise`). Policies: 1 (lists `PRINCIPLE_POLICIES`: not the cash flow
+  choice nor the transition answers), 6 (`chapter_12`, blocking), 20 (the
+  10.2/23.37 refusals of `K3Policies`, blocking). Transition (S1-P12): 22
+  and 23 from `K3TransitionProposal::disclosures()` and
+  `comparabilityNote()` (its second paragraph is row 23), only in a first K3
+  year after K2 (or with the transition answers when the year before is not
+  in NONOX); 23 only when the comparatives are not restated. Equity: 25 for
+  an AB from `K3EquityStatement::columns()` and its closing row (the
+  follow-up recorded at S1-P7), bound by the K3Schedule section, the year's
+  result free; a refused statement blocks. Eligibility answers: 18 when K2
+  1.1A a was answered yes (public AB). Report: 9, 10, 11, 17 from the
+  existing columns, 15 from `average_employees_fte` rounded half up to whole
+  persons (as the size test) or the integer, and the new columns below. 24 is
+  never true: NONOX merges no item (`K3Notes::MERGED_ITEMS = []`).
+- **Never generated** for a mindre company: `K3Notes::LARGER_COMPANY_ONLY`
+  (8.4/8.5, 7.18–7.20, 20.12/20.14, 21.16/21.17, 23.30, ÅRL 5:36, 35.33A,
+  5:35, 5:39–41, 5:48). The deferred tax note stays S1-P13's.
+- **Overrides** (`annual_report_note_overrides`, `AnnualReportNoteOverride`,
+  `App\Actions\AnnualReport\K3NoteOverrides::set/remove`): unique per report
+  and note key, a composite foreign key `(annual_report_id, company_id)` to
+  `annual_reports (id, company_id)` (new unique index there), checks on the
+  key and non-empty text and reason. The note keeps its data, number and
+  trigger; `text()` returns the person's paragraphs and `overridden()`,
+  `overrideReason` mark it; an override of an absent note is never printed.
+  `generated_hash` is the hash of the generated text replaced; a later
+  difference sets `stale`. A note written in the person's own words has no
+  open questions (that is how a person answers, for example, the stage of
+  completion or why a contingent liability cannot be estimated).
+- **Management report** (`K3ManagementReport`, S1-R8.4): sections business,
+  significant events, external factors, special circumstances, owners over
+  10 % (3.7 e), ownership changes (3.7 g), the four-year overview with each
+  year's framework and a sentence that K2 years are not restated, and the
+  disposition of free equity (3.14). Questions: business description, and
+  the owners until answered (`[]` is "no owner above ten per cent"). The
+  parts of ÅRL 6:1 that do not apply to a mindre företag are listed in
+  `LARGER_COMPANY_ONLY` and never built. The equity statement stays
+  S1-P7's, placed by S1-P10.
+- **Inputs** (`SaveK3ReportInputs`): nullable `annual_reports` columns
+  `k3_external_factors`, `k3_special_circumstances`, `k3_ownership_changes`,
+  `k3_major_owners` (jsonb: name, organisation number or birth year, votes
+  and capital in basis points; a personal identity number is refused, an
+  owner at 10 % or less on both is refused), and beyond A.2.7, because the
+  rows need data the ledger lacks: `k3_long_term_liabilities_ore` (row 8),
+  `k3_off_balance_arrangements` (12), `k3_loans_to_executives` (13),
+  `k3_exceptional_items` (14, jsonb), `k3_parent_company` (16),
+  `k3_related_party_transactions` (18), `k3_departures` (26),
+  `k3_goodwill_note` (5). Only the fields in the input change.
+- **Writes** share `K3ReportWrite`: `fiscal-years:manage` (owner, admin,
+  accountant), the lock order of SaveAnnualReport, a K3 year only, refused
+  once the year is closed and the adoption date has come; the report row is
+  created when missing. Audit: `annual_report.note_override_set|removed`
+  (fiscal year, report, note key) and `annual_report.k3_inputs_saved` (the
+  names of the changed fields); never text, reasons or names.
+- **Queries:** fixed (AnnualAccounts when not given, policies when not given,
+  overrides, register, eligibility answers, corrections with their series,
+  equity statement, and the transition proposal in a first K3 year);
+  `K3NotesTest` proves the same count for a short and a long ledger and
+  register.
+- **GDPR:** a register line (processor section) and a retention row for the
+  owners and the other texts, as räkenskapsinformation. The privacy policy
+  and the DPA were not changed; the jurist should confirm that the processor
+  description suffices.
+- **Tests:** `tests/Feature/AnnualReport/K3/K3NotesTest.php` (one test per row
+  1–27, present and absent), `K3NoteOverridesTest.php`,
+  `K3ManagementReportTest.php`, `K3NotesFixtureTest.php` (F-S1-b: rows 1, 4,
+  15, 22, 23, 25 with the fixture's data, booked as S1-P12 books it; F-S1-a
+  refused as större), `tests/Tenancy/K3NoteOverrideTenancyTest.php` and the
+  registry. No K2 golden file changed.
+- **Follow-ups for S1-P10:** print the notes and sections, with an override
+  marker and the stale state; treat `blocking` and `questions()` as refusals
+  or confirmations; let `SaveAnnualReport` (behind the hot spot `refusal()`)
+  save the common columns for a K3 year and put the K3 inputs and overrides
+  on the Årsredovisning page; cross-reference note numbers from the
+  statement lines; the "components considered" sentence (H4) is in the
+  principles note already. F-S1-b's equipment is only in the ledger, so its
+  fixed asset note asks for a life: the fixture or the document must answer
+  it. Bilaga 2 items 14, 15 and 17 ("med särskild uppgift om …
+  koncernföretag", A.3a) still need the accountant's BAS accounts (H10) and
+  are not built. The share register (ADR-070) could suggest the owners over
+  10 %; not wired.
+- **TODO(legal-verify):** every generated wording (NONOX's own, H10); K3
+  23.29, 10.14, 8.3A and chapter 30 not read in full; ÅRL 5:9 and 5:23 from
+  the sheet's rows only; rounding the printed average to whole persons; the
+  letters a–d of 3.7; rows 1–27 as a minimum (chapters 9, 13–16, 19, 21–28,
+  30–34 unread).
+
 ### A.5 Test plan and performance
 
 **Unit tests per rule id** (Pest, `tests/Unit/AnnualReport/K3/…`), named with the

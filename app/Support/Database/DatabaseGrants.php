@@ -41,6 +41,8 @@ final class DatabaseGrants
         'agreement_proposals' => GrantDecision::ReadWrite,
         'agreement_rule_verifications' => GrantDecision::AppendOnly,
         'agreement_rule_versions' => GrantDecision::NoDelete,
+        // A person's own wording of a K3 note (ADR-059 A.2.7): replaced and removed while the report is not adopted.
+        'annual_report_note_overrides' => GrantDecision::ReadWrite,
         'annual_reports' => GrantDecision::ReadWrite,
         'archive_packages' => GrantDecision::ReadWrite,
         'article_images' => GrantDecision::ReadWrite,
