@@ -196,7 +196,7 @@ final class K3Schedule
         ['key' => 'other_untaxed_reserves', 'label' => 'Andra obeskattade reserver', 'section' => 'untaxed', 'ranges' => [[2100, 2109], [2140, 2149], [2170, 2199]], 'source' => 'ÅRL bilaga 1 B (delpost); K3 29.37; rbas 219x; residual 210x, 214x, 217x–218x'],
 
         ['key' => 'pension_provisions', 'label' => 'Avsättningar för pensioner och liknande förpliktelser', 'section' => 'provisions', 'ranges' => [[2210, 2219], [2230, 2239]], 'source' => 'ÅRL bilaga 1 C.1; rbas 221x, 223x'],
-        ['key' => 'deferred_tax_liability', 'label' => 'Uppskjuten skatteskuld', 'section' => 'provisions', 'ranges' => [[2240, 2249]], 'source' => 'ÅRL bilaga 1 C.2; K3 29.19 (own post), 29.31 (avsättning), 4.3 comment; rbas 224x (S1-R4.6)'],
+        ['key' => 'deferred_tax_liability', 'label' => 'Avsättningar för skatter', 'section' => 'provisions', 'ranges' => [[2240, 2249]], 'source' => 'ÅRL bilaga 1 C.2 (the item is "Avsättningar för skatter"); K3 29.19, 29.31 (avsättning), 4.3 comment; rbas 224x (S1-R4.6)'],
         ['key' => 'other_tax_provisions', 'label' => 'Övriga avsättningar för skatter', 'section' => 'provisions', 'ranges' => [[2250, 2259]], 'source' => 'ÅRL bilaga 1 C.2 ("Avsättningar för skatter", the part that is not deferred tax); rbas 225x (AvsattningarOvrigSkatt)'],
         ['key' => 'other_provisions', 'label' => 'Övriga avsättningar', 'section' => 'provisions', 'ranges' => [[2200, 2209], [2220, 2229], [2260, 2299]], 'source' => 'ÅRL bilaga 1 C.3; rbas 222x, 229x; residual 220x, 226x–228x'],
 

@@ -31,6 +31,8 @@ use LogicException;
  * @property bool $comparatives_restated
  * @property bool $chapter_35_repeated
  * @property int $confirmed_by
+ * @property ?array<string, int> $opening_balances account number => öre at the transition date, before the transition
+ * @property bool $deferred_tax_set_off the right of set-off (K3 29.32) confirmed when booked
  * @property ?CarbonImmutable $created_at
  */
 class K3Transition extends Model
@@ -48,6 +50,8 @@ class K3Transition extends Model
         'comparatives_restated',
         'chapter_35_repeated',
         'confirmed_by',
+        'opening_balances',
+        'deferred_tax_set_off',
     ];
 
     /** @return array<string, string> */
@@ -59,6 +63,8 @@ class K3Transition extends Model
             'rate_bp' => 'integer',
             'comparatives_restated' => 'boolean',
             'chapter_35_repeated' => 'boolean',
+            'opening_balances' => 'array',
+            'deferred_tax_set_off' => 'boolean',
         ];
     }
 

@@ -14,6 +14,7 @@ use App\Models\Account;
 use App\Models\Company;
 use App\Models\DeferredTaxItem;
 use App\Models\FiscalYear;
+use App\Models\Voucher;
 use App\Models\VoucherRow;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
@@ -201,7 +202,8 @@ final class DeferredTaxProposal
 
     /**
      * Debit minus credit per account of the year's posted K2-to-K3
-     * transition voucher (VoucherSource::K3Transition), one grouped query.
+     * transition voucher (VoucherSource::K3Transition), netted with any posted
+     * correction of it, one grouped query.
      *
      * @return array<int, int>
      */
@@ -211,7 +213,10 @@ final class DeferredTaxProposal
             ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
             ->where('vouchers.fiscal_year_id', $fiscalYear->id)
             ->where('vouchers.status', VoucherStatus::Posted->value)
-            ->where('vouchers.source', VoucherSource::K3Transition->value)
+            // The transition voucher, and any posted correction of it netted with it.
+            ->where(fn ($query) => $query
+                ->where('vouchers.source', VoucherSource::K3Transition->value)
+                ->orWhereIn('vouchers.corrects_voucher_id', Voucher::query()->select('id')->where('fiscal_year_id', $fiscalYear->id)->where('source', VoucherSource::K3Transition->value)))
             ->groupBy('voucher_rows.account_id')
             ->selectRaw('voucher_rows.account_id, SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) AS movement')
             ->pluck('movement', 'account_id')

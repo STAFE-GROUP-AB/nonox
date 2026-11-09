@@ -8,6 +8,7 @@ use App\Domain\AnnualReport\K3ForbiddenRestatement;
 use App\Domain\AnnualReport\K3TransitionProposal;
 use App\Domain\Closing\DeferredTaxProposal;
 use App\Models\Account;
+use App\Models\ClosingCheck;
 use App\Models\Company;
 use App\Models\DeferredTaxItem;
 use App\Models\FiscalYear;
@@ -126,6 +127,34 @@ class K3TransitionItems
         }));
     }
 
+    /**
+     * Records whether the company has a legal right to set off its deferred
+     * tax asset against its deferred tax liability (K3 29.32; ÅRL 2 kap. 4 §
+     * första stycket 6 forbids offsetting otherwise). It changes only the
+     * presentation in K3TransitionProposal, never the voucher. Kept as the
+     * closing check K3TransitionProposal::SET_OFF_CHECK on the first K3 year,
+     * for the K3 document (S1-P10); frozen once the transition is booked.
+     */
+    public function setOff(User $user, FiscalYear $fiscalYear, bool $confirmed): void
+    {
+        $company = $this->prepare($user, $fiscalYear);
+
+        CurrentCompany::run($company, fn () => DB::transaction(function () use ($user, $company, $fiscalYear, $confirmed): void {
+            $this->lockAndEnsureNotBooked($fiscalYear);
+            $existing = ClosingCheck::query()->where('fiscal_year_id', $fiscalYear->id)->where('key', K3TransitionProposal::SET_OFF_CHECK);
+
+            if ($confirmed === $existing->exists()) {
+                return;
+            }
+
+            $confirmed
+                ? ClosingCheck::query()->create(['fiscal_year_id' => $fiscalYear->id, 'key' => K3TransitionProposal::SET_OFF_CHECK, 'checked_by' => $user->id])
+                : $existing->delete();
+
+            Audit::record('k3_transition.set_off_changed', $fiscalYear, ['fiscal_year_id' => $fiscalYear->id, 'set_off' => $confirmed], $company, $user);
+        }));
+    }
+
     public function remove(User $user, FiscalYear $fiscalYear, int $itemId): void
     {
         $company = $this->prepare($user, $fiscalYear);
@@ -146,8 +175,8 @@ class K3TransitionItems
     {
         $deferredKind = (string) ($input['deferred_tax_kind'] ?? '');
 
-        if (! in_array($deferredKind, [DeferredTaxItem::OTHER_ASSET, DeferredTaxItem::OTHER_LIABILITY, DeferredTaxItem::LOSS_CARRY_FORWARD], true)) {
-            throw ValidationException::withMessages(['deferred_tax_kind' => __('Välj om skillnaden gäller en tillgång, en skuld eller ett underskottsavdrag.')]);
+        if (! in_array($deferredKind, [DeferredTaxItem::BUILDING_COMPONENTS, DeferredTaxItem::OTHER_ASSET, DeferredTaxItem::OTHER_LIABILITY, DeferredTaxItem::LOSS_CARRY_FORWARD], true)) {
+            throw ValidationException::withMessages(['deferred_tax_kind' => __('Välj om skillnaden gäller en byggnad, en annan tillgång, en skuld eller ett underskottsavdrag.')]);
         }
 
         $loss = $deferredKind === DeferredTaxItem::LOSS_CARRY_FORWARD;
@@ -222,6 +251,12 @@ class K3TransitionItems
      */
     private function provision(array $input): array
     {
+        // K3 35.29 (dismantling and restoration measured at the transition date) needs a paired row
+        // on the asset (11xx–12xx), which the transition does not support yet (ADR-059 P12, option b).
+        if ((bool) ($input['dismantling'] ?? false)) {
+            throw ValidationException::withMessages(['dismantling' => __('En skyldighet att montera ned eller återställa kan inte hanteras här ännu. Den ska också räknas in i tillgångens anskaffningsvärde (K3 punkt 17.10 och 35.29). Ta upp den med din redovisningskonsult.')]);
+        }
+
         $account = $this->accountNumber($input['account'] ?? '');
 
         if ($account < 2200 || $account > 2299 || ($account >= 2240 && $account <= 2249)) {

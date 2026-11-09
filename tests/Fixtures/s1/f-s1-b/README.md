@@ -2,6 +2,11 @@
 
 Status: ready for checking (written 2026-11-08 by the S1-P12 builder, **not** by the
 independent Fixture author; the Checker should re-derive every figure by hand).
+Revised 2026-11-09 after the independent accounting check
+(`docs/specs/rules/f-s1-b-accounting-check.md`): T4's facts now support the 35.27 relief,
+T1 has the kind `BUILDING_COMPONENTS`, the netted presentation (29.32) is added, the line
+label follows ÅRL ("Avsättningar för skatter"), and the reason for leaving K2 is stated.
+No amount changed.
 
 Fixture for spec item **S1 K3 annual report** (`docs/specs/nummer-1-spec.md`, Part 3,
 "F-S1-b: K2-to-K3 transition with prior-year comparatives") and ADR-059 A.4/A.5
@@ -37,6 +42,20 @@ positive. Equity effect: a decrease is negative.
 An aktiebolag that owns its workshop building. It has applied K2 and moves to K3 from
 2026 (`left_k2_reason` = `forced_2025_2`, `k3_applied_before` = `no`). Size: 5 MSEK
 net turnover, 8 MSEK total assets, 3 employees: a mindre företag by a wide margin.
+
+**Why it must leave K2.** K2 1.1B a (BFNAR 2025:2): the company has a deferred tax
+liability that is judged väsentlig, 247 200 on the building (T1 below), assessed on the
+2025 annual report. The 1.1C exception does not save it: its first paragraph needs at most
+one of the three criteria to be exceeded, and in 2025 two are (balance sheet total
+7 942 960 > 1,5 MSEK and net turnover 5 000 000 > 3 MSEK; 3 employees is not "mer än 3").
+So `left_k2_reason` = `forced_2025_2`. Whether 247 200 is "väsentlig" is the person's
+judgement (human decision H2: NONOX only shows the figure). Chapter 35 is allowed anyway,
+because K3 was not applied before (35.1).
+
+The equipment (1220/1229) was taken over on 2023-01-01 in an underprisöverlåtelse from a
+company that has since been liquidated. The company's own return deducts the booked
+depreciation (80 000 a year), but the tax value it took over at the transfer is shown only
+in the transferor's tax records, which no longer exist (see T4).
 
 ### Opening balances 2025-01-01 (kronor)
 
@@ -75,7 +94,10 @@ Result before tax: 5 000 000 − 2 000 000 − 1 200 000 − 377 040 − 120 000
 140 000 = **1 082 960**.
 
 Taxable income: the building is depreciated by 4 % a year for tax (240 000) but by 2 % in
-the books (120 000); the equipment follows the books. 1 082 960 + 120 000 − 240 000 =
+the books (120 000) (`TODO(legal-verify)`: the 4 % tax rate for a workshop building is this
+fixture's premise; Skatteverket's percentage list was not read). For the equipment the
+return deducts the booked 80 000, so no adjustment is made for it in 2025 (its tax value
+taken over in 2023 is unknown, see T4). 1 082 960 + 120 000 − 240 000 =
 **962 960**. Tax 20,6 % × 962 960 = **198 369,76** (962 960 × 206 = 198 369 760 thousandths
 of a krona). Year's result 1 082 960 − 198 369,76 = **884 590,24**.
 
@@ -116,11 +138,12 @@ forced off K2 (BFNAR 2025:3 transitional provision 2, S1-R7.6).
 | T1 | Building, accounts 1110–1119: 6 000 000 − 1 200 000 | 4 800 000 | 3 600 000 | 1 200 000 taxable | 20,6 % × 1 200 000 = **247 200,00** liability (2240) | −247 200,00 |
 | T2 | Provision for warranty work beyond the contracts, an informal obligation (K3 21.4); not recognised under K2 | | | | | −150 000,00 (2220) |
 | T3 | Deferred tax on T2: a liability of 150 000 with tax value 0 | 150 000 | 0 | 150 000 deductible | 20,6 % × 150 000 = 30 900,00, recognised **30 900,00** (with a reason) asset (1370) | +30 900,00 |
-| T4 | Equipment, accounts 1220–1229: 400 000 − 240 000 | 160 000 | not obtainable | — | **35.27 relief used, with a reason**: nothing recognised, disclosed (35.31) | 0 |
+| T4 | Equipment taken over in a 2023 underprisöverlåtelse, accounts 1220–1229: 400 000 − 240 000 | 160 000 | not obtainable: the tax value taken over is only in the liquidated transferor's records, which are gone | — | **35.27 relief used, with that reason**: nothing recognised, disclosed (35.31) | 0 |
 | | **Total** | | | | | **−366 300,00** |
 
-Tax value of the building: 6 000 000 − 10 years × 240 000 = 3 600 000. Its land (1130) has
-the same carrying amount and tax value (1 000 000), so no item.
+Tax value of the building: 6 000 000 − 10 years × 240 000 = 3 600 000 (the 4 % premise
+above). Its land (1130) has the same carrying amount and tax value (1 000 000), so no item.
+T1 has the kind `BUILDING_COMPONENTS` (ADR-059 A.2.6), read from accounts 1110–1119.
 
 ### The transition voucher (source `K3_TRANSITION`, dated 2026-01-01, against 2091)
 
@@ -142,10 +165,29 @@ Net on 2091: −247 200 − 150 000 + 30 900 = **−366 300,00**.
 |---|---:|---:|---:|
 | Uppskjuten skattefordran | 0 | 30 900,00 | 30 900,00 |
 | Balanserad vinst eller förlust | 3 560 000,00 | −366 300,00 | 3 193 700,00 |
-| Uppskjuten skatteskuld | 0 | 247 200,00 | 247 200,00 |
+| Avsättningar för skatter | 0 | 247 200,00 | 247 200,00 |
 | Övriga avsättningar | 0 | 150 000,00 | 150 000,00 |
 | **Eget kapital** | **4 544 590,24** | **−366 300,00** | **4 178 290,24** |
 | **Balansomslutning** | **7 942 960,00** | **30 900,00** | **7 973 860,00** |
+
+The sheet is **gross**: kvittningsrätt ej bekräftad. ÅRL 2 kap. 4 § p. 6 forbids
+offsetting, and K3 29.32 allows netting a deferred tax asset against a deferred tax
+liability only when the company has a legal right of set-off. The person has not confirmed
+it here. (The deferred tax liability is shown under the ÅRL item "Avsättningar för
+skatter".)
+
+If the person confirms the right of set-off ("Kvittningsrätt för uppskjuten skatt finns"),
+only the presentation changes, never the voucher:
+
+| Line | K2, 2025-12-31 | Transition | K3, 2026-01-01 |
+|---|---:|---:|---:|
+| Balanserad vinst eller förlust | 3 560 000,00 | −366 300,00 | 3 193 700,00 |
+| Avsättningar för skatter | 0 | 247 200 − 30 900 = 216 300,00 | 216 300,00 |
+| Övriga avsättningar | 0 | 150 000,00 | 150 000,00 |
+| **Eget kapital** | **4 544 590,24** | **−366 300,00** | **4 178 290,24** |
+| **Balansomslutning** | **7 942 960,00** | **0** | **7 942 960,00** |
+
+No deferred tax asset line is shown, and the balance sheet total stays the K2 total.
 
 Check of the K3 side: assets 7 942 960 + 30 900 = 7 973 860; equity and liabilities
 4 178 290,24 + 247 200 + 150 000 + 3 000 000 + 200 000 + 198 369,76 = 7 973 860.
@@ -154,7 +196,9 @@ Check of the K3 side: assets 7 942 960 + 30 900 = 7 973 860; equity and liabilit
 
 The building is registered whole (cost 6 000 000, 600 months from 2016-01, written off
 before the register 1 200 000 = 120 months × 10 000) and split on 2026-01-01. NONOX
-allocates the accumulated depreciation in proportion to cost:
+allocates the accumulated depreciation in proportion to cost (`TODO(legal-verify)`: 35.18
+gives no allocation key; the cost-proportional key is NONOX's own, and it treats every
+component as 20 % written off whatever its life):
 
 | Component | Cost | Accumulated | Carrying | Remaining life | Total life | A month |
 |---|---:|---:|---:|---:|---:|---:|
@@ -174,7 +218,9 @@ item. T1 reads 1110–1119 and is the same whether or not the building is split.
 - K3 is applied for the first time (35.31).
 - Comparatives are not restated; comparability with 2025 is lacking (35.7, ÅRL 3 kap. 5 §
   fjärde stycket).
-- Relief used: 35.27, for "Inventarier anskaffade 2023", with the person's reason (35.31).
+- Relief used: 35.27, for "Inventarier övertagna vid underprisöverlåtelse 2023", with the
+  person's reason (35.31).
+- Deferred tax shown gross; the right of set-off (29.32) is not confirmed.
 - Items not restated under 35.30: none.
 - Changed principles (35.33): deferred tax (K3 chapter 29), provisions for informal
   obligations (K3 chapter 21), component depreciation of buildings (K3 17.4).

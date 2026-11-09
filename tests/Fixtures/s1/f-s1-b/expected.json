@@ -66,7 +66,7 @@
       {
         "id": "T4",
         "kind": "DEFERRED_TAX",
-        "description": "Inventarier anskaffade 2023",
+        "description": "Inventarier övertagna vid underprisöverlåtelse 2023",
         "carrying_ore": 16000000,
         "relief_35_27": true,
         "deferred_tax_ore": 0,
@@ -92,13 +92,27 @@
       "lines": [
         {"key": "deferred_tax_asset", "label": "Uppskjuten skattefordran", "k2_ore": 0, "adjustment_ore": 3090000, "k3_ore": 3090000},
         {"key": "retained", "label": "Balanserad vinst eller förlust", "k2_ore": 356000000, "adjustment_ore": -36630000, "k3_ore": 319370000},
-        {"key": "deferred_tax_liability", "label": "Uppskjuten skatteskuld", "k2_ore": 0, "adjustment_ore": 24720000, "k3_ore": 24720000},
+        {"key": "deferred_tax_liability", "label": "Avsättningar för skatter", "k2_ore": 0, "adjustment_ore": 24720000, "k3_ore": 24720000},
         {"key": "other_provisions", "label": "Övriga avsättningar", "k2_ore": 0, "adjustment_ore": 15000000, "k3_ore": 15000000}
       ],
       "equity_k2_ore": 454459024,
       "equity_k3_ore": 417829024,
       "balance_sheet_total_k2_ore": 794296000,
-      "balance_sheet_total_k3_ore": 797386000
+      "balance_sheet_total_k3_ore": 797386000,
+      "_note": "Gross presentation: the legal right of set-off (K3 29.32) is not confirmed (kvittningsrätt ej bekräftad)."
+    },
+    "reconciliation_set_off": {
+      "rule_ids": ["S1-R4.6"],
+      "lines": [
+        {"key": "retained", "label": "Balanserad vinst eller förlust", "k2_ore": 356000000, "adjustment_ore": -36630000, "k3_ore": 319370000},
+        {"key": "deferred_tax_liability", "label": "Avsättningar för skatter", "k2_ore": 0, "adjustment_ore": 21630000, "k3_ore": 21630000},
+        {"key": "other_provisions", "label": "Övriga avsättningar", "k2_ore": 0, "adjustment_ore": 15000000, "k3_ore": 15000000}
+      ],
+      "equity_k2_ore": 454459024,
+      "equity_k3_ore": 417829024,
+      "balance_sheet_total_k2_ore": 794296000,
+      "balance_sheet_total_k3_ore": 794296000,
+      "_note": "If a person confirms the legal right of set-off (K3 29.32): 247 200 − 30 900 = 216 300 liability and no deferred tax asset line; the voucher is the same (presentation only)."
     },
     "ib_equals_previous_ub": true,
     "components": {
@@ -122,7 +136,7 @@
       "first_time_k3": true,
       "comparatives_not_restated": true,
       "reliefs_used": ["K3 35.27"],
-      "relief_items": ["Inventarier anskaffade 2023"],
+      "relief_items": ["Inventarier övertagna vid underprisöverlåtelse 2023"],
       "items_not_restated_35_30": [],
       "changed_principles": ["deferred_tax", "provisions", "components"],
       "equity_effect_ore": -36630000

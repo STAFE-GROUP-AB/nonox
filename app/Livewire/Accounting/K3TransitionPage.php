@@ -67,6 +67,9 @@ class K3TransitionPage extends Component
 
     public string $k3Reference = '';
 
+    /** A provision for dismantling or restoration (K3 35.29), which the transition cannot handle yet. */
+    public bool $dismantling = false;
+
     public function mount(): void
     {
         abort_unless($this->user()->hasTeamPermission($this->company(), 'reports:view'), 403);
@@ -97,6 +100,7 @@ class K3TransitionPage extends Component
                 'amount' => $this->amount,
                 'direction' => $this->direction,
                 'k3_reference' => $this->k3Reference,
+                'dismantling' => $this->dismantling,
             ]);
             $this->toast($this->editing === null ? __('Posten är tillagd.') : __('Posten är ändrad.'));
             $this->resetForm();
@@ -124,6 +128,17 @@ class K3TransitionPage extends Component
         $this->amount = $amount === 0 ? '' : Money::ofOre(abs($amount))->format(false);
         $this->direction = $amount < 0 ? K3TransitionItems::CREDIT : K3TransitionItems::DEBIT;
         $this->k3Reference = (string) $item->k3_reference;
+    }
+
+    /** Records whether the right of set-off (K3 29.32) is confirmed; it changes only the presentation. */
+    public function setOff(K3TransitionItems $items, bool $confirmed): void
+    {
+        $this->attempt(function () use ($items, $confirmed): void {
+            $items->setOff($this->user(), $this->fiscalYear(), $confirmed);
+            $this->toast($confirmed
+                ? __('Kvittningsrätten är bekräftad. Uppskjuten skatt visas netto i ingångsbalansräkningen.')
+                : __('Kvittningsrätten är inte bekräftad. Uppskjuten skatt visas brutto.'));
+        });
     }
 
     public function cancel(): void
@@ -171,7 +186,7 @@ class K3TransitionPage extends Component
 
     private function resetForm(): void
     {
-        $this->reset('editing', 'kind', 'description', 'deferredTaxKind', 'accountFrom', 'accountTo', 'carrying', 'taxValue', 'recognised', 'recognitionReason', 'relief', 'reliefReason', 'account', 'amount', 'direction', 'k3Reference');
+        $this->reset('editing', 'kind', 'description', 'deferredTaxKind', 'accountFrom', 'accountTo', 'carrying', 'taxValue', 'recognised', 'recognitionReason', 'relief', 'reliefReason', 'account', 'amount', 'direction', 'k3Reference', 'dismantling');
     }
 
     private function attempt(callable $action): void

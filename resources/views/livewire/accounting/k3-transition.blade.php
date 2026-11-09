@@ -14,7 +14,8 @@
         K3TransitionItem::OTHER => __('Annan justering'),
     ];
     $deferredKinds = [
-        DeferredTaxItem::OTHER_ASSET => __('Tillgång'),
+        DeferredTaxItem::BUILDING_COMPONENTS => __('Byggnad'),
+        DeferredTaxItem::OTHER_ASSET => __('Annan tillgång'),
         DeferredTaxItem::OTHER_LIABILITY => __('Skuld'),
         DeferredTaxItem::LOSS_CARRY_FORWARD => __('Underskottsavdrag'),
     ];
@@ -168,6 +169,15 @@
                         <x-ui.field for="transition_account" :label="__('Konto')" :error="'account'" :hint="$kind === K3TransitionItem::PROVISION ? __('Ett avsättningskonto, 2200–2299.') : __('Ett balanskonto, 1300–2999. Anläggningstillgångar räknas inte om vid övergången.')">
                             <input id="transition_account" type="text" inputmode="numeric" maxlength="4" class="{{ $input }} mt-1" wire:model="account">
                         </x-ui.field>
+                        @if($kind === K3TransitionItem::PROVISION)
+                            <label class="flex items-start gap-2 text-sm text-gray-700 sm:col-span-2">
+                                <input type="checkbox" class="mt-0.5 rounded border-stone-300" wire:model.live="dismantling">
+                                <span>{{ __('Avsättningen gäller en skyldighet att montera ned en tillgång eller återställa en plats.') }}</span>
+                            </label>
+                            @if($dismantling)
+                                <p class="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-300 sm:col-span-2" data-k3-transition-dismantling>{{ __('En skyldighet att montera ned eller återställa kan inte hanteras här ännu. Den ska också räknas in i tillgångens anskaffningsvärde (K3 punkt 17.10 och 35.29). Ta upp den med din redovisningskonsult.') }}</p>
+                            @endif
+                        @endif
                         <x-ui.field for="transition_amount" :label="__('Belopp, kr')" :error="'amount'">
                             <input id="transition_amount" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="amount">
                         </x-ui.field>
@@ -227,6 +237,13 @@
         </x-ui.card>
 
         @php($sheet = $proposal->reconciliation())
+        @if($proposal->warnings !== [])
+            <ul class="space-y-1 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-300" data-k3-transition-warnings>
+                @foreach($proposal->warnings as $warning)
+                    <li>{{ $warning }}</li>
+                @endforeach
+            </ul>
+        @endif
         <x-ui.card :title="__('Avstämning av eget kapital')" :description="__('K2-värdena per :previous, övergångens justeringar och ingångsbalansräkningen enligt K3 per :date. De ingående balanserna ändras inte: justeringarna bokförs som en verifikation på övergångsdagen.', ['previous' => $proposal->transitionDate->subDay()->toDateString(), 'date' => $proposal->transitionDate->toDateString()])">
             <div class="mt-4 overflow-x-auto">
                 <table class="min-w-full text-sm" data-k3-transition-reconciliation>
@@ -262,6 +279,13 @@
                     </tbody>
                 </table>
             </div>
+            <p class="mt-3 text-sm text-gray-700">{{ $proposal->setOff ? __('Uppskjuten skattefordran och skatteskuld visas netto, eftersom kvittningsrätten är bekräftad (K3 punkt 29.32). Verifikationen bokförs ändå brutto.') : __('Uppskjuten skattefordran och skatteskuld visas brutto. De får bara visas netto om företaget har legal rätt att kvitta dem (K3 punkt 29.32).') }}</p>
+            @if($open)
+                <label class="mt-3 flex items-start gap-2 text-sm text-gray-700">
+                    <input type="checkbox" class="mt-0.5 rounded border-stone-300" @checked($proposal->setOff) wire:change="setOff($event.target.checked)" data-k3-transition-set-off>
+                    <span>{{ __('Kvittningsrätt för uppskjuten skatt finns: företaget har legal rätt att kvitta uppskjutna skattefordringar mot uppskjutna skatteskulder (K3 punkt 29.32).') }}</span>
+                </label>
+            @endif
         </x-ui.card>
 
         <x-ui.card :title="__('Upplysningar i årsredovisningen')" :description="__('Texten om övergången och den bristande jämförbarheten som K3-årsredovisningen ska innehålla (K3 punkterna 35.7, 35.31 och 35.33).')">

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\AnnualReport;
 
 use App\Actions\Accounting\BookVoucher;
+use App\Actions\Accounting\CreateNextFiscalYear;
 use App\Actions\Closing\YearEndClosing;
 use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\VoucherSource;
@@ -53,6 +54,9 @@ final class BookK3Transition
         }
 
         return CurrentCompany::run($company, fn (): K3Transition => DB::transaction(function () use ($user, $company, $fiscalYear, $confirmedFingerprint): K3Transition {
+            // One transition at a time per company: the 35.1 check reads the company's other transitions,
+            // and the framework change and the creation of years take the same lock.
+            CreateNextFiscalYear::lock($company->id);
             $year = FiscalYear::query()->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();
 
             if (($refusal = K3TransitionProposal::refusals($company, $year)[0] ?? null) !== null) {
@@ -99,6 +103,8 @@ final class BookK3Transition
                 'comparatives_restated' => false,
                 'chapter_35_repeated' => $proposal->chapter35Repeated,
                 'confirmed_by' => $user->id,
+                'opening_balances' => $proposal->openingByNumber,
+                'deferred_tax_set_off' => $proposal->setOff,
             ]);
 
             foreach ($proposal->lines as $line) {
@@ -115,6 +121,7 @@ final class BookK3Transition
                 'relief_35_27_items' => array_values(array_map(fn (array $line): int => $line['item']->id, array_filter($proposal->lines, fn (array $line): bool => $line['item']->relief_35_27))),
                 'buildings' => array_map(fn (array $building): int => $building['asset']->id, $proposal->buildings),
                 'chapter_35_repeated' => $proposal->chapter35Repeated,
+                'deferred_tax_set_off' => $proposal->setOff,
                 'voucher' => $voucher?->reference(),
             ], $company, $user);
 

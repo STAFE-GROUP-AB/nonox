@@ -1354,7 +1354,43 @@ owner's mandate, open for the consultant's review). Fixture F-S1-b.
   2091, not an IB adjustment; 2091 against BAS 2026); the 35.27 relief per
   item rather than for all deferred tax; the K3 6.3 row (b) for the
   transition; the comparability note's wording; requiring the last K2 year
-  to be closed before the transition (a product choice that keeps IB = UB).
+  to be closed before the transition (a product choice that keeps IB = UB);
+  F-S1-b's 4 % tax depreciation on the building (Skatteverket's list not
+  read); the cost-proportional allocation of accumulated depreciation to
+  components (35.18 gives no key).
+
+**Revisions after the accounting check and the code review (2026-11-09).**
+- Accounting check (`docs/specs/rules/f-s1-b-accounting-check.md`): T4's
+  facts now support the 35.27 relief (equipment taken over in a 2023
+  underprisöverlåtelse; the inherited tax value is only in the liquidated
+  transferor's records), and the 2025 tax computation no longer says the
+  equipment follows the books (taxable income unchanged). T1 is
+  `BUILDING_COMPONENTS` (new migration widens the item check). The K3
+  schedule's 2240 line is labelled with the ÅRL item "Avsättningar för
+  skatter" (`K3Schedule`, so also in the K3 balance sheet). The README
+  states why the company leaves K2 (1.1B a; 1.1C not met: two criteria).
+- Netting (29.32): a person may confirm "Kvittningsrätt för uppskjuten skatt
+  finns" (closing check `k3_transition_deferred_tax_set_off`, kept on
+  `k3_transitions.deferred_tax_set_off` at booking for S1-P10).
+  `presentedDeferredTax()` and the reconciliation net the two lines
+  (F-S1-b: 216 300 liability, no asset line, total 7 942 960); the voucher
+  is always gross.
+- P2-1: `ChangeReportingFramework` refuses leaving K3 for a year with a
+  booked transition whose voucher is not corrected.
+- P2-2, option (a) built: a PROVISION marked as an obligation to dismantle
+  or restore is refused with "En skyldighet att montera ned eller återställa
+  kan inte hanteras här ännu"; the manual says so. **Follow-up, option (b),
+  for the accounting check:** a `DISMANTLING` kind that books the provision
+  (22xx) with a paired row on the asset (11xx–12xx), measured at the
+  transition date under 35.29, and its depreciation from then on.
+- P3: a booked transition keeps the opening balances it was computed on
+  (`k3_transitions.opening_balances`), so lines, sheet and texts never move;
+  missing opening balances block also without a previous year; the
+  fingerprint covers each item's fields; booking takes
+  `CreateNextFiscalYear::lock` before the 35.1 check;
+  `DeferredTaxProposal` nets posted corrections of the transition voucher;
+  a database trigger refuses new items for a year with a booked transition;
+  a warning when 1110–1119 has a balance and the register has no building.
 
 ### A.5 Test plan and performance
 

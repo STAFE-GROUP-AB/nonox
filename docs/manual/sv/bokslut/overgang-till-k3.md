@@ -27,8 +27,8 @@ Sidan finns under **Bokföring → Bokslut**: klicka på **Gå till övergången
 1. Välj räkenskapsåret överst på sidan.
 2. Under **Lägg till en justering** väljer du **Sort**: **Uppskjuten skatt**, **Avsättning** eller **Annan justering**.
 3. Skriv en **Beskrivning**, till exempel ”Verkstadsbyggnad”.
-4. För **Uppskjuten skatt** väljer du vad **Skillnaden gäller**: **Tillgång**, **Skuld** eller **Underskottsavdrag**. Fyll i **Konton, från och till**, till exempel 1110 och 1119 för en byggnad. Det redovisade värdet läses då från kontonas ingående balans på övergångsdagen. Gäller skillnaden något som inte finns i bokföringen än, till exempel en avsättning som läggs upp vid övergången, skriver du **Redovisat värde enligt K3, kr** i stället. Skriv sedan **Skattemässigt värde, kr**.
-5. För en **Avsättning** skriver du **Konto**, ett avsättningskonto mellan 2200 och 2299, och **Belopp, kr**. **Punkt i K3** är frivilligt.
+4. För **Uppskjuten skatt** väljer du vad **Skillnaden gäller**: **Byggnad**, **Annan tillgång**, **Skuld** eller **Underskottsavdrag**. Fyll i **Konton, från och till**, till exempel 1110 och 1119 för en byggnad. Det redovisade värdet läses då från kontonas ingående balans på övergångsdagen. Gäller skillnaden något som inte finns i bokföringen än, till exempel en avsättning som läggs upp vid övergången, skriver du **Redovisat värde enligt K3, kr** i stället. Skriv sedan **Skattemässigt värde, kr**.
+5. För en **Avsättning** skriver du **Konto**, ett avsättningskonto mellan 2200 och 2299, och **Belopp, kr**. **Punkt i K3** är frivilligt. Gäller avsättningen en skyldighet att montera ned en tillgång eller återställa en plats kryssar du i det: sidan visar då att det inte kan hanteras här ännu (se nedan).
 6. För en **Annan justering** skriver du **Konto**, **Belopp, kr**, väljer om **Kontot ska** **debiteras** eller **krediteras** och anger **Punkt i K3**, till exempel K3 punkt 21.4.
 7. Klicka på **Lägg till justeringen**.
 
@@ -43,9 +43,14 @@ Den uppskjutna skatten räknas som i bokslutet: den temporära skillnaden gånge
 
 Kan det skattemässiga värdet inte tas fram utan oskälig kostnad får posten lämnas utan uppskjuten skatt (K3 punkt 35.27). Kryssa då i rutan om att uppgifterna inte kan tas fram och skriv **Skäl till att lättnadsregeln används**. Utan skäl tar NONOX inte emot posten. Att lättnadsregeln används står alltid i texten till årsredovisningen.
 
+> [!NOTE]
+> En skyldighet att montera ned eller återställa kan inte hanteras här ännu. En sådan avsättning ska också räknas in i tillgångens anskaffningsvärde, och K3 punkt 35.29 har en egen lättnadsregel för den vid övergången. NONOX tar inte emot den som en justering; ta upp den med din redovisningskonsult.
+
 ## Avstämning och upplysningar
 
-- **Avstämning av eget kapital** visar för varje post i balansräkningen som ändras beloppet enligt K2, justeringen och beloppet enligt K3, och sedan **Summa eget kapital** och **Balansomslutning**.
+- **Avstämning av eget kapital** visar för varje post i balansräkningen som ändras beloppet enligt K2, justeringen och beloppet enligt K3, och sedan **Summa eget kapital** och **Balansomslutning**. Uppskjuten skatteskuld visas under posten **Avsättningar för skatter**.
+- Uppskjuten skattefordran och skatteskuld visas brutto. Har företaget legal rätt att kvitta dem (K3 punkt 29.32) kryssar du i **Kvittningsrätt för uppskjuten skatt finns**; då visas de netto i avstämningen. Verifikationen bokförs alltid brutto. Valet låses när övergången bokförs.
+- Har konto 1110–1119 ett saldo men anläggningsregistret ingen byggnad visar sidan en varning: byggnader ska delas upp i komponenter per övergångsdagen.
 - **Komponenter** visar varje byggnad i registret med det redovisade värdet före uppdelningen och summan av komponenterna. Skillnaden i eget kapital är noll.
 - **Upplysningar i årsredovisningen** är texten som K3-årsredovisningen ska innehålla: att K3 tillämpas för första gången, att jämförelsetalen inte är omräknade och att jämförbarheten därför är begränsad, vilka redovisningsprinciper som har ändrats, vilka lättnadsregler som har använts och hur mycket eget kapital ändrades.
 
@@ -71,6 +76,7 @@ Efter bokföringen är justeringarna låsta. Blev något fel rättar du verifika
 ## Bra att veta
 
 - Bara en ägare, administratör eller redovisningskonsult lägger upp justeringar och bokför övergången. En revisor kan läsa sidan.
+- Ett år där övergången är bokförd kan inte bytas tillbaka till K2. Rätta först övergångens verifikation.
 - När årets uppskjutna skatt bokförs i bokslutet räknas förändringen från ingångsbalansräkningen enligt K3, alltså med övergångens belopp.
 
 ## Läs också

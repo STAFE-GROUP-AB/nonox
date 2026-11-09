@@ -81,7 +81,7 @@
     {
       "id": "T1",
       "kind": "DEFERRED_TAX",
-      "deferred_tax_kind": "OTHER_ASSET",
+      "deferred_tax_kind": "BUILDING_COMPONENTS",
       "description": "Verkstadsbyggnad",
       "account_from": 1110,
       "account_to": 1119,
@@ -109,13 +109,15 @@
       "id": "T4",
       "kind": "DEFERRED_TAX",
       "deferred_tax_kind": "OTHER_ASSET",
-      "description": "Inventarier anskaffade 2023",
+      "description": "Inventarier övertagna vid underprisöverlåtelse 2023",
       "account_from": 1220,
       "account_to": 1229,
       "relief_35_27": true,
-      "relief_reason": "Det skattemässiga värdet för inventarierna kan inte tas fram utan oskälig kostnad: underlaget för avskrivningarna i deklarationerna finns inte kvar."
+      "relief_reason": "Inventarierna togs över 2023 vid en underprisöverlåtelse från ett bolag som sedan har likviderats. Det skattemässiga värdet som följde med vid överlåtelsen framgår bara av överlåtarens deklarationsunderlag, som inte finns kvar, och kan inte tas fram utan oskälig kostnad."
     }
   ],
+  "deferred_tax_set_off": "not confirmed: the person has not confirmed a legal right of set-off (K3 29.32), so 1370 and 2240 are presented gross; expected.json also gives the netted presentation for when it is confirmed",
+  "left_k2_reason_note": "forced_2025_2 through K2 1.1B a (a deferred tax liability judged väsentlig: 247 200 on the building, assessed on the 2025 annual report); the 1.1C first-paragraph exception is not met, because two criteria are exceeded in 2025 (balance sheet total 7 942 960 > 1,5 MSEK and net turnover 5 000 000 > 3 MSEK; 3 employees is not more than 3)",
   "transition_items_note": "What a person enters on Bokslut → Övergång till K3. T3's carrying amount is entered because the provision is not in the ledger before the transition; its tax value 0 is the person's assessment (the provision is deducted when paid).",
   "chart_of_accounts": [
     {
