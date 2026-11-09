@@ -534,3 +534,46 @@ Evidence: `tests/Feature/WorkOrders/*`, `tests/Feature/Invoicing/TaxReductionWor
 - Kall granskning (2 P1, 5 P2, 10 P3), omkontroll och signeringsgranskning; allt rättat.
 Open legal-verify items: L1–L16 i regelbladet, ROT-faktura utan nya timmar (HFL 9 § p. 4), personnummer på ROT-fakturan (L6).
 Next package: aktiebok (prioritet 2), kök (prioritet 4), kundportal (prioritet 6) när deras granskningar är klara.
+
+---
+
+Package: Aktiebok och styrelserum (prioritet 2, ADR-070)
+Status: done (modul för aktiebolag, beta; kan bara slås på när `NONOX_REGISTER_HASH_KEY` finns på servern)
+Evidence: `tests/Feature/Boardroom/*`, `tests/Tenancy/TenancyIsolationTest.php`.
+- Aktieboken som en händelselogg som bara kan skrivas till (databasspärr), med löpnummer och hashkedja där person- och id-nummer bara ingår som HMAC med en egen nyckel; `share-register:verify` varje natt. Varje händelse prövas mot hela historiken och vid varje datum då aktieboken ändras.
+- Fullständig aktiebok som granskningsexemplar (5:10) och en frivillig kopia utan personnummer; förbehåll ur bolagsordningen skrivs ut. Jämförelse mot 2081 utan bokföring.
+- Stämmor och styrelsemöten med dagordning (låst numrering efter kallelse), kallelsedatum som råd, protokoll "Godkänt i NONOX" låsta som PDF med SHA-256, justerare enligt 7:48 och 8:24, röstlängd i stämmoprotokollet. Byrå får föra boken först med registrerat bemyndigande (5:9).
+- Kall granskning (5 P2, 9 P3), omkontroll; allt rättat.
+Open legal-verify items: L1–L10 i regelbladet, 2082 för oregistrerat aktiekapital, omvänd split med rest.
+Follow-ups: samma HMAC-skydd för personalliggarens hashkedja (i drift; kräver versionerad övergång).
+
+---
+
+Package: Recept och svinn, modulen Kök (prioritet 4, ADR-073)
+Status: done (modul Kök, `/kok`)
+Evidence: `tests/Feature/Kitchen/*`, `tests/Feature/Inventory/*`, `tests/Tenancy/KitchenTenancyTest.php`.
+- Gemensam strukturmotor i lagret (versioner per datum, underrecept, loopspärr, spill), som tillverkningen (ADR-071) återanvänder; sparade versioner kan inte ändras (databasspärr).
+- Lagerslag med eget kontopar; råvaror bokförs på 1410/4910 vid bokslut, och ett kontopar med saldo tas alltid med. 97 %-regeln bara för K2-år, avstängd från början.
+- Recept, meny, svinn (även i skannern), avvikelser per lagerplats, personalmat som förslag till lönen med tak per måltid; sena måltider in i nästa öppna lönekörning samma år. Ingen verifikation per svinn eller måltid, ingen moms på personalmat.
+- Kall granskning (1 P1, 8 P2, 10 P3), två omkontroller; allt rättat.
+Open legal-verify items: L1–L11 i regelbladet, sen förmån i en senare månads AGI.
+
+---
+
+Package: Kundportal (prioritet 6, ADR-075)
+Status: done men spärrad (`NONOX_CUSTOMER_PORTAL`) tills juristen svarat på L1, L2, L4 och L5
+Evidence: `tests/Feature/Portal/*`, `tests/Feature/Invoicing/IssuedInvoicePdfTest.php`, `tests/Feature/Signing/*`, `tests/Tenancy/PortalTenancyTest.php`.
+- Egen inloggning för kundens kontakter (egen guard och cookie, kod per målgrupp, inbjudan med länk och kod), allt avgränsat till företag och kund.
+- Fakturor, krediteringar, påminnelser, kontoutdrag, betalningsuppgifter, "Jag har betalat", frågor och bestridanden med bilagor, offerter som godkänns med samma bevis som signering.
+- Fakturans PDF sparas när den utfärdas eller först behövs och används överallt. Signeringen ligger i kärnan.
+- Kall granskning (4 P2, 12 P3), två omkontroller; allt rättat. Portalen kan inte slås på med synkron kö.
+
+---
+
+Package: Statussida och säkerhet (prioritet 9, ADR-078)
+Status: done (`/status`, `/.well-known/security.txt`; säkerhetspolicyn dold tills `NONOX_SECURITY_POLICY_PUBLISHED` slås på efter juristens granskning)
+Evidence: `tests/Feature/Status/*`, `tests/Feature/Hq/HqStatusIncidentsTest.php`.
+- Publik status för appen, databasen, kön, schemalagda jobb och integritetskontrollen (bara "har körts"), bank och Peppol efter globala signaler; driftstörningar under /hq.
+- security.txt enligt RFC 9116 med utgångsdatum 364 dagar efter bekräftelse.
+- Kall granskning (2 P1, 7 P2, 6 P3), två omkontroller; allt rättat.
+Follow-ups: koppla `ledger:verify`-larmet till mejl eller Nightwatch på nonox.app; backupens heartbeat.
