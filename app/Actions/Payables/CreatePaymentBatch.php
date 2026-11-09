@@ -84,8 +84,8 @@ class CreatePaymentBatch
             $transfers = [];
             $errors = [];
 
-            foreach ($invoices as $invoice) {
-                $transfer = $this->transfer($invoice, in_array($invoice->id, $inOpenBatch, true), $number, $company->payment_bank);
+            foreach ($invoices->values() as $position => $invoice) {
+                $transfer = $this->transfer($invoice, in_array($invoice->id, $inOpenBatch, true), $number, $company->payment_bank, $position + 1);
 
                 is_string($transfer)
                     ? $errors[] = $transfer
@@ -174,7 +174,7 @@ class CreatePaymentBatch
     /**
      * The payment for one invoice, or why it cannot be paid.
      */
-    private function transfer(SupplierInvoice $invoice, bool $inOpenBatch, int $batchNumber, PaymentBank $bank): CreditTransfer|string
+    private function transfer(SupplierInvoice $invoice, bool $inOpenBatch, int $batchNumber, PaymentBank $bank, int $position): CreditTransfer|string
     {
         $title = $invoice->title();
         $supplier = $invoice->supplier_snapshot ?? [];
@@ -197,7 +197,7 @@ class CreatePaymentBatch
                 return __(':title: leverantören finns inte längre. Betala den i internetbanken.', ['title' => $title]);
             }
 
-            return ForeignPayment::transfer($invoice, $bank, self::endToEndId($invoice, $batchNumber), $invoice->supplier);
+            return ForeignPayment::transfer($invoice, $bank, self::endToEndId($invoice, $batchNumber, $position), $invoice->supplier);
         }
 
         $bankgiro = preg_replace('/\D/', '', (string) ($supplier['bankgiro'] ?? ''));
@@ -209,7 +209,7 @@ class CreatePaymentBatch
 
         return new CreditTransfer(
             // Unique per payment ("LF<invoice>-<file>"), so the bank's answer finds it even when an invoice is paid in a second file (ApplyPaymentResponses).
-            endToEndId: self::endToEndId($invoice, $batchNumber),
+            endToEndId: self::endToEndId($invoice, $batchNumber, $position),
             amountOre: $invoice->remaining()->ore,
             creditorName: (string) ($supplier['name'] ?? ''),
             scheme: $bankgiro !== '' ? CreditTransfer::BANKGIRO : CreditTransfer::PLUSGIRO,
@@ -222,15 +222,12 @@ class CreatePaymentBatch
 
     /**
      * "LF<invoice>-<file>", at most 35 characters. An imported invoice has no
-     * NONOX number (ADR-076), so it is named by the start of its id instead:
-     * "LFI<20 characters>-<file>", still unique per payment.
+     * NONOX number (ADR-076), and the start of a UUIDv7 is the same for every
+     * id made in one millisecond, so it is named by the file and its place in
+     * it: "LFI<file>-<position>", unique by construction.
      */
-    public static function endToEndId(SupplierInvoice $invoice, int|string $batchNumber): string
+    public static function endToEndId(SupplierInvoice $invoice, int|string $batchNumber, int $position): string
     {
-        if ($invoice->isImported()) {
-            return 'LFI'.substr(str_replace('-', '', (string) $invoice->id), 0, 20)."-{$batchNumber}";
-        }
-
-        return "LF{$invoice->number}-{$batchNumber}";
+        return $invoice->isImported() ? "LFI{$batchNumber}-{$position}" : "LF{$invoice->number}-{$batchNumber}";
     }
 }

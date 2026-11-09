@@ -28,7 +28,9 @@ use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
+use Symfony\Component\Uid\Uuid;
 use Tests\Support\Bookkeeping;
 use Tests\Support\RegisterImports;
 
@@ -111,6 +113,30 @@ it('gives two imported supplier invoices in one payment file their own end-to-en
 
     $paid = CurrentCompany::run($this->company, fn () => SupplierInvoice::query()->where('status', 'PAID')->get());
     expect($paid)->toHaveCount(1)->and($paid[0]->invoice_number)->toBe('L-1');
+});
+
+it('gives imported invoices different end-to-end ids even when their ids share a millisecond prefix', function () {
+    $counter = 0;
+    Str::createUuidsUsing(function () use (&$counter) {
+        return Uuid::fromString(sprintf('01234567-89ab-7cde-8f01-%012x', ++$counter));
+    });
+
+    try {
+        elsewhereSuppliers($this);
+        $this->company->forceFill(['separate_supplier_approval' => false])->save();
+        app(SavePaymentBankSettings::class)($this->owner, $this->company, ['payment_bank' => 'HANDELSBANKEN', 'iban' => 'SE45 5000 0000 0583 9825 7466', 'bank_agreement_id' => '5566778899']);
+        $invoices = CurrentCompany::run($this->company, fn () => SupplierInvoice::query()->orderBy('invoice_number')->get());
+        $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, $invoices->pluck('id')->all(), CarbonImmutable::parse('2026-11-12'), true);
+    } finally {
+        Str::createUuidsNormally();
+    }
+
+    $prefixes = $invoices->map(fn (SupplierInvoice $invoice): string => substr(str_replace('-', '', (string) $invoice->id), 0, 20))->unique();
+    $ids = SupplierPaymentBatchItem::query()->where('batch_id', $batch->id)->pluck('end_to_end_id');
+
+    expect($prefixes)->toHaveCount(1)
+        ->and($ids->unique())->toHaveCount(2)
+        ->and($ids->sort()->values()->all())->toBe(["LFI{$batch->number}-1", "LFI{$batch->number}-2"]);
 });
 
 it('shows an imported invoice by its old number on the incoming payments page', function () {

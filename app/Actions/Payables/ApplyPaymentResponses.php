@@ -240,6 +240,7 @@ class ApplyPaymentResponses
             Audit::record('payment_batch.payment_rejected', $match->batch, [
                 'number' => $match->batch?->number,
                 'invoice' => $item->invoice?->number,
+                'external_ref' => $item->invoice?->external_ref,
                 'end_to_end_id' => $item->end_to_end_id,
                 'amount_ore' => $item->amount_ore->ore,
                 'reason_code' => $response->reason_code,
