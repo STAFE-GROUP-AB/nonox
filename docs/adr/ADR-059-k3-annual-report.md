@@ -786,7 +786,8 @@ mandate, open for the consultant's review:
   the transition (K3 35.7, 35.18), the comparative year's depreciation per
   component is a presentation restatement that belongs to S1-P12 (transition),
   not a register split in a K2 year. No change to the split gate;
-  `FixedAssets::split()` carries a `TODO(S1-P12)`.
+  `FixedAssets::split()` carried a `TODO(S1-P12)`, resolved by S1-P12 (see
+  "As built (S1-P12)": restated comparatives are refused).
 - *Total life per component.* `fixed_assets.total_useful_life_months` (additive,
   null for non-components) holds the total useful life, entered in the split form
   or computed as the remaining life plus the months since the asset's first
@@ -1259,6 +1260,182 @@ sheet S1-R4, R4.1–R4.6; human decision H6 (decided 2026-11-08).
   screen; the K2 refusal when K3 is required lives in ChangeReportingFramework, which both
   call. Only AB and ekonomisk förening are assessed; years beginning before 2026-01-01 (outside
   the extended first year) are "not assessed" (older wording not read).
+
+#### As built (S1-P12, 2026-11-08)
+
+Source: BFN's consolidated K3 (vl12-1-k3-kons20251215), chapter 35 and the
+transitional provision BFNAR 2025:3 point 2; rule sheet S1-R7, R7.1–R7.7;
+human decisions H7 (a) and H4 (both decided 2026-11-08 by the Lead under the
+owner's mandate, open for the consultant's review). Fixture F-S1-b.
+
+- **Branch of S1-R7.1.** Only comparatives *not* restated (35.7, ÅRL 3:5 st.
+  4): the transition date is the first day of the first K3 year. The policy
+  `comparatives_restated_at_transition` = `yes` is a blocker, so no
+  comparative year is ever restated, components included. This resolves the
+  P2-2 review note: the `TODO(S1-P12)` in `FixedAssets::split()` is replaced
+  by a comment pointing here, and the split gate stays as built in P4.
+- **Data.** `k3_transition_items` (company-scoped, `BelongsToCompany`, in the
+  tenancy registry plus `tests/Tenancy/K3TransitionTenancyTest.php`): kind
+  `DEFERRED_TAX` (deferred kind as `deferred_tax_items`, carrying amount from
+  the opening balances of an account range at the transition date or
+  entered, tax value, recognised asset with reason per H6, the 35.27 relief
+  with a required reason), `PROVISION` (22xx except 224x, stored debit
+  positive, so negative) or `OTHER` (a balance sheet account 1300–2999 outside
+  137x, 2080–2199 and 224x, signed amount, K3 reference required). A check
+  constraint backs every rule; a trigger freezes an item once
+  `k3_transition_id` is set. `k3_transitions` (one per company and year,
+  unique) is written at booking and is append-only (model and trigger).
+  `k3-rules.json` gains `transition.equity_account` 2091 (S1-R7.7, H7).
+- **Forbidden restatements (S1-R7.2).** `K3ForbiddenRestatement` (35.15,
+  35.16, 35.18, 35.20): entering one of these kinds is refused with the rule,
+  and `PROVISION`/`OTHER` on 1000–1099 (35.16) or 1100–1299 (35.18; also
+  35.20 and 35.29, which NONOX does not offer) is refused. The database check
+  refuses 1000–1299 for `OTHER` too.
+- **Proposal** (`App\Domain\AnnualReport\K3TransitionProposal`): refusals (not
+  a K3 year; not the first K3 year after K2; not an AB or ekonomisk förening)
+  and blockers (transition answers missing; comparatives restated;
+  `K3Policies::chapter35Allowed()` false; a booked transition in another year
+  without `forced_2025_2` (35.1, R7.6); the year closed; the first day locked;
+  the last K2 year in NONOX not closed; no opening balances; opening balances
+  that differ from its closing balances (`StaleOpeningBalances`); a register
+  building not split on the transition date (35.18, H4); no rate). The rate
+  is `DeferredTaxProposal::rateForStart(transition date)` (new, `rateFor()`
+  delegates to it). Lines per item (difference, 29.14 nature, deferred tax
+  half up, equity effect, voucher rows each against 2091), the
+  reconciliation per K3 balance sheet line with equity and the balance
+  sheet total, the buildings (carrying before and after the split; the
+  difference is 0), the disclosures and the comparability note (35.7,
+  35.31, 35.33; wording NONOX's own), a fingerprint and the confirmation
+  text. Fixed queries: policies, transitions, items, accounts, opening
+  balances, the buildings with components and their depreciation sums, and
+  StaleOpeningBalances' four; a query-count test with 4 and 14 items.
+- **Booking** (`App\Actions\AnnualReport\BookK3Transition`, H7 (a)):
+  `fiscal-years:manage`; refused while there is a refusal or a blocker, when
+  already booked, or when the fingerprint differs. One voucher through
+  `BookVoucher`/`PostVoucher`, series A, **source `K3_TRANSITION`**, dated the
+  transition date, morph subject the fiscal year; no voucher when nothing
+  changes the books. The migration only replaces the `vouchers.source` check
+  with the list plus `K3_TRANSITION`; no trigger and no `PostVoucher` change
+  (hot spot A.3). 2240/1370 are created from BAS when missing, any other
+  account must exist. Opening balances are not touched (IB stays the K2 UB);
+  the K2 year's vouchers and annual accounts are unchanged (tested). Audit
+  `k3_transition.item_created|updated|removed` and `k3_transition.booked`
+  with ids, enums, accounts and amounts only.
+- **Changes outside the package files.** `K3EquityStatement` puts a
+  `K3_TRANSITION` voucher (with an in-year correction of it netted) in row b
+  (A.1 point 5); error corrections of earlier years still block.
+  `DeferredTaxProposal` counts the year's `K3_TRANSITION` voucher into the
+  opening liability and asset, so "the change since the last balance date"
+  starts from the K3 opening balance sheet (one more fixed query); the amount
+  booked on 8940 was already target minus booked. `ClosingPage` shows the
+  step "Övergång till K3" (Beta) for a first K3 year. `docs/api/openapi.yaml`
+  1.10.0 lists the new source value.
+- **Screen.** Bokslut → Övergång till K3, `/bokslut/overgang-till-k3`
+  (`accounting.closing.k3Transition`), Beta: items, components,
+  reconciliation, disclosures, voucher preview, blockers; the confirmation
+  dialog states the date, the equity change, the account, that it is booked
+  once and that the K2 year is not changed. View `reports:view`; writes
+  `fiscal-years:manage`.
+- **F-S1-b** (`tests/Fixtures/s1/f-s1-b/`, written by the builder, to be
+  checked independently): K2 2025 → K3 2026, building 6 000 000 / 1 200 000
+  written off, tax value 3 600 000 → deferred tax liability 247 200,00; an
+  informal warranty provision 150 000,00 with a recognised deferred tax
+  asset 30 900,00; equipment with räkenskapsenlig avskrivning and no
+  difference (revised, see below); equity −366 300,00 on
+  2091; the building split into three components with no equity difference.
+  `tests/Feature/AnnualReport/K3/K3TransitionTest.php` proves it to the öre.
+- **Not built / follow-ups.** The cash flow statement of the first K3 year
+  does not yet treat the `K3_TRANSITION` voucher as part of the opening
+  balance sheet: it refuses with the voucher named (tested), never prints a
+  wrong figure (S1-P10/P8). The K3 document (S1-P10) should print
+  `comparabilityNote()` and require a booked transition for a first K3 year.
+  Restated comparatives (`yes`) and reliefs 35.23, 35.28–35.30 are not
+  offered. No manual screenshot.
+- **TODO(legal-verify):** H7 (a) itself (a voucher on the first day against
+  2091, not an IB adjustment; 2091 against BAS 2026); the 35.27 relief per
+  item rather than for all deferred tax; the K3 6.3 row (b) for the
+  transition; the comparability note's wording; requiring the last K2 year
+  to be closed before the transition (a product choice that keeps IB = UB);
+  F-S1-b's 4 % tax depreciation on the building (Skatteverket's list not
+  read); the cost-proportional allocation of accumulated depreciation to
+  components (35.18 gives no key).
+
+**Revisions after the accounting check and the code review (2026-11-09).**
+- Accounting check (`docs/specs/rules/f-s1-b-accounting-check.md`) and its
+  re-check: T4 is plain equipment with räkenskapsenlig avskrivning (IL 18
+  kap. 13–14 §§): tax acquisition value 400 000, tax value 160 000 at
+  2025-12-31 equal to the book value, difference 0, no relief and no 35.27
+  disclosure. The 35.27 mechanism (reason required, disclosed, no equity
+  effect) is proved by a separate, non-fixture test,
+  `tests/Feature/AnnualReport/K3/K3TransitionReliefTest.php`. The README
+  states the 1.1C figures for 2024 and 2025 (2024 net turnover 4 800 000
+  added to the fixture) and why the second-paragraph exception fails. T1 is
+  `BUILDING_COMPONENTS` (new migration widens the item check). The K3
+  schedule's 2240 line is labelled with the ÅRL item "Avsättningar för
+  skatter" (`K3Schedule`, so also in the K3 balance sheet). The README
+  states why the company leaves K2 (1.1B a; 1.1C not met: two criteria).
+- Netting (29.32): a person may confirm "Kvittningsrätt för uppskjuten skatt
+  finns" (closing check, kept on
+  `k3_transitions.deferred_tax_set_off` at booking for S1-P10).
+  `presentedDeferredTax()` and the reconciliation net the two lines
+  (F-S1-b: 216 300 liability, no asset line, total 7 942 960); the voucher
+  is always gross.
+- P2-1: `ChangeReportingFramework` refuses leaving K3 for a year with a
+  booked transition whose voucher is not corrected.
+- P2-2, option (a) built: a PROVISION marked as an obligation to dismantle
+  or restore is refused with "En skyldighet att montera ned eller återställa
+  kan inte hanteras här ännu"; the manual says so. **Follow-up, option (b),
+  for the accounting check:** a `DISMANTLING` kind that books the provision
+  (22xx) with a paired row on the asset (11xx–12xx), measured at the
+  transition date under 35.29, and its depreciation from then on.
+- P3: a booked transition keeps the opening balances it was computed on
+  (`k3_transitions.opening_balances`), so lines, sheet and texts never move;
+  missing opening balances block also without a previous year; the
+  fingerprint covers each item's fields; booking takes
+  `CreateNextFiscalYear::lock` before the 35.1 check;
+  `DeferredTaxProposal` nets posted corrections of the transition voucher;
+  a database trigger refuses new items for a year with a booked transition;
+  a warning when 1110–1119 has a balance and the register has no building.
+
+**Second re-check (2026-11-09), Lead decisions.**
+- *Void transition (P2).* A transition is void when its voucher is fully
+  reversed by correction with nothing re-booked: net zero per account
+  across the original and its correction chain. `VoidK3Transition`, called
+  by `CorrectVoucher` inside its transaction, then sets
+  `k3_transitions.voided_by_voucher_id` once; the append-only trigger and
+  the model allow that column only, set once (as
+  `vouchers.corrected_by_voucher_id`). The unique index is partial (`WHERE
+  voided_by_voucher_id IS NULL`). A void transition is ignored as `$booked`
+  and `$earlier`, a new booking is allowed (its frozen items stay as
+  history), and leaving K3 is allowed. A correction that re-books leaves it
+  standing and leaving K3 refused. `TODO(legal-verify)`: does a reversed
+  transition with no K3 annual report issued count as use under 35.1?
+  Until answered it does not.
+- *Void, quick re-check of 5f06b8bd.* Only a correction in the transition's
+  own fiscal year, while that year is open, voids it; a reversal dated in a
+  later year or after closing leaves it standing. `CorrectVoucher` refuses
+  (`VoidK3Transition::refuseCorrection`) to correct the voiding voucher or
+  any voucher whose chain root is a void transition's voucher, so a C2 on C1
+  can never bring the rows back. `DeferredTaxProposal` nets the whole
+  correction chain of the transition voucher in the year (C1, C2, …, a
+  recursive query), so a standing transition re-booked by C1 and corrected
+  again by C2 opens at the chain's net.
+- *One C.2 line (P3-a).* `K3Schedule` shows "Avsättningar för skatter" as one
+  line, `tax_provisions`, over BAS 2240–2259 (ÅRL bilaga 1 C.2); the deferred
+  tax part (224x) is `K3Schedule::DEFERRED_TAX_SPECIFICATION`, shown as a
+  specification row ("varav uppskjuten skatt") under the line or in the note.
+  **S1-P10 follows the same choice.** S1-P6's schedule tests were updated.
+- *One set-off confirmation per year (P3-b).* The transition and
+  `DeferredTaxProposal` use the same closing check, `deferred_tax_set_off`.
+  The transition freezes the value at booking and warns when the year's
+  current value later differs. The deferred tax page starts from the check,
+  and confirming the year's deferred tax keeps the check in line with the
+  person's choice.
+- *Register check (P3-c).* The opening balance of 1110–1119 (net of 1119) is
+  compared with the sum of the register buildings' carrying amounts at the
+  transition date; any difference is a warning.
+- *Dismantling (P3-d).* The 35.29 text is shown next to the PROVISION kind,
+  not only with the checkbox.
 
 ### A.5 Test plan and performance
 

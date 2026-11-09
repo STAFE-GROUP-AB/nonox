@@ -1,0 +1,275 @@
+{
+  "convention": "amounts in öre; every voucher balances; posted in this order through PostVoucher. proposal_kind k3_transition marks the voucher NONOX proposes and books itself (source K3_TRANSITION); a test drops it and compares the proposal with it.",
+  "vouchers": [
+    {
+      "fiscal_year": 2025,
+      "series": "A",
+      "number": 1,
+      "date": "2025-05-20",
+      "description": "Årsstämma: 2024 års resultat balanseras",
+      "rows": [
+        {
+          "account": 2099,
+          "debit_ore": 30000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2091,
+          "debit_ore": 0,
+          "credit_ore": 30000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2025,
+      "series": "A",
+      "number": 2,
+      "date": "2025-12-31",
+      "description": "Försäljning 2025 (sammandrag, betald)",
+      "rows": [
+        {
+          "account": 1930,
+          "debit_ore": 625000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 3001,
+          "debit_ore": 0,
+          "credit_ore": 500000000
+        },
+        {
+          "account": 2611,
+          "debit_ore": 0,
+          "credit_ore": 125000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2025,
+      "series": "A",
+      "number": 3,
+      "date": "2025-12-31",
+      "description": "Inköp av material 2025 (sammandrag, betalda)",
+      "rows": [
+        {
+          "account": 4010,
+          "debit_ore": 200000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2640,
+          "debit_ore": 50000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 250000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2025,
+      "series": "A",
+      "number": 4,
+      "date": "2025-12-31",
+      "description": "Löner och arbetsgivaravgifter 2025 (sammandrag, betalda)",
+      "rows": [
+        {
+          "account": 7210,
+          "debit_ore": 120000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 7510,
+          "debit_ore": 37704000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 157704000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2025,
+      "series": "A",
+      "number": 5,
+      "date": "2025-12-31",
+      "description": "Moms 2025 redovisad och betald",
+      "rows": [
+        {
+          "account": 2611,
+          "debit_ore": 125000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2640,
+          "debit_ore": 0,
+          "credit_ore": 50000000
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 75000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2025,
+      "series": "A",
+      "number": 6,
+      "date": "2025-12-31",
+      "description": "Räntor 2025",
+      "rows": [
+        {
+          "account": 8410,
+          "debit_ore": 14000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 14000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2025,
+      "series": "A",
+      "number": 7,
+      "date": "2025-12-31",
+      "description": "Amortering 2025",
+      "rows": [
+        {
+          "account": 2350,
+          "debit_ore": 50000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1930,
+          "debit_ore": 0,
+          "credit_ore": 50000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2025,
+      "series": "A",
+      "number": 8,
+      "date": "2025-12-31",
+      "description": "Avskrivning byggnad 2025 (K2, 2 % av 6 000 000)",
+      "rows": [
+        {
+          "account": 7820,
+          "debit_ore": 12000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1119,
+          "debit_ore": 0,
+          "credit_ore": 12000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2025,
+      "series": "A",
+      "number": 9,
+      "date": "2025-12-31",
+      "description": "Avskrivning inventarier 2025 (20 % av 400 000)",
+      "rows": [
+        {
+          "account": 7832,
+          "debit_ore": 8000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 1229,
+          "debit_ore": 0,
+          "credit_ore": 8000000
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2025,
+      "series": "A",
+      "number": 10,
+      "date": "2025-12-31",
+      "description": "Årets skatt 2025",
+      "rows": [
+        {
+          "account": 8910,
+          "debit_ore": 19836976,
+          "credit_ore": 0
+        },
+        {
+          "account": 2512,
+          "debit_ore": 0,
+          "credit_ore": 19836976
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2025,
+      "series": "A",
+      "number": 11,
+      "date": "2025-12-31",
+      "description": "Årets resultat 2025",
+      "rows": [
+        {
+          "account": 8999,
+          "debit_ore": 88459024,
+          "credit_ore": 0
+        },
+        {
+          "account": 2099,
+          "debit_ore": 0,
+          "credit_ore": 88459024
+        }
+      ]
+    },
+    {
+      "fiscal_year": 2026,
+      "series": "A",
+      "number": 1,
+      "date": "2026-01-01",
+      "description": "Övergång till K3 den 2026-01-01 (K3 kapitel 35)",
+      "rows": [
+        {
+          "account": 2091,
+          "debit_ore": 24720000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2240,
+          "debit_ore": 0,
+          "credit_ore": 24720000
+        },
+        {
+          "account": 2091,
+          "debit_ore": 15000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2220,
+          "debit_ore": 0,
+          "credit_ore": 15000000
+        },
+        {
+          "account": 1370,
+          "debit_ore": 3090000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2091,
+          "debit_ore": 0,
+          "credit_ore": 3090000
+        }
+      ],
+      "proposal_kind": "k3_transition",
+      "source": "K3_TRANSITION"
+    }
+  ]
+}

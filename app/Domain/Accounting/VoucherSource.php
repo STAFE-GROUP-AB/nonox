@@ -19,4 +19,7 @@ enum VoucherSource: string
     case ImportFortnox = 'IMPORT_FORTNOX';
     case Closing = 'CLOSING';
     case Correction = 'CORRECTION';
+
+    /** The K2-to-K3 transition differences against equity (K3 35.11; ADR-059 H7 (a), S1-P12). */
+    case K3Transition = 'K3_TRANSITION';
 }

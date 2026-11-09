@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\AnnualReport;
 
+use App\Domain\Accounting\VoucherSource;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Closing\ClosingAccounts;
 use App\Models\VoucherRow;
@@ -66,10 +67,11 @@ use stdClass;
  *   whose original in the year did not touch equity is classified by what it
  *   books.
  * Row b (retroactive application, where NONOX puts the K2-to-K3 transition,
- * A.1 point 5) is reserved: the transition voucher's source is human
- * decision H7 (S1-P12), so no voucher reaches the row yet and a transition
- * booked today blocks as below. Row c has no source in NONOX yet (no
- * revaluation, fair value or translation reserve is booked by NONOX).
+ * A.1 point 5) holds the voucher with source K3_TRANSITION (human decision
+ * H7 (a), S1-P12: dated the first day of the first K3 year, against 2091),
+ * with any in-year correction of it netted; error corrections of earlier
+ * years still block. Row c has no source in NONOX yet (no revaluation, fair
+ * value or translation reserve is booked by NONOX).
  *
  * K3 6.3 has no row for other changes, and the rule sheet treats a residual
  * as a blocking error (ADR-059 A.1 point 5): a change that fits none of the
@@ -87,8 +89,8 @@ use stdClass;
  * a previous result left on 2099 printed as "Omföring av föregående års
  * resultat" without a decision of the annual meeting behind it; tax effects
  * recognised in equity (K3 29, 6.3 comment) have no source and block; a
- * correction of an earlier year's error (K3 10, 6.3 b) is refused until row b
- * is built in S1-P12 (H7).
+ * correction of an earlier year's error (K3 10, 6.3 b) is refused: row b
+ * takes only the K2-to-K3 transition (S1-P12), not yet error corrections.
  *
  * TODO(S1-P12/P10): the columns of the K3 document must come from columns()
  * here: a post that is zero at both ends but moved during the year is in the
@@ -462,7 +464,7 @@ final class K3EquityStatement
      * in the year but outside equity is classified alone.
      *
      * @param  list<array{id: string, references: list<string>, source: string, corrects: ?string, earlier: ?string, rows: array<int, int>}>  $vouchers
-     * @return list<array{references: list<string>, earlier: ?string, rows: array<int, int>}>
+     * @return list<array{references: list<string>, earlier: ?string, source: string, rows: array<int, int>}>
      */
     private static function withCorrections(array $vouchers): array
     {
@@ -482,6 +484,7 @@ final class K3EquityStatement
             $groups[$key] ??= [
                 'references' => [],
                 'earlier' => $root['earlier'] === null ? null : (string) __('rättelseverifikation :correction rättar verifikation :original', ['correction' => $root['references'][0], 'original' => $root['earlier']]),
+                'source' => $root['source'],
                 'rows' => [],
             ];
             $groups[$key]['references'] = [...$groups[$key]['references'], ...$voucher['references']];
@@ -499,7 +502,7 @@ final class K3EquityStatement
      * of K3 6.3, or records it as unclassified. Nothing is added unless the
      * whole voucher is classified.
      *
-     * @param  array{references: list<string>, earlier: ?string, rows: array<int, int>}  $voucher
+     * @param  array{references: list<string>, earlier: ?string, source: string, rows: array<int, int>}  $voucher
      * @return list<string> the equity columns the voucher touches
      */
     private function classify(array $voucher): array
@@ -529,6 +532,20 @@ final class K3EquityStatement
         }
 
         if ($equityAccounts === [] || $this->booksTheYearsResult($counter)) {
+            return $touched;
+        }
+
+        // The K2-to-K3 transition (K3 35.11, S1-P12): retroactive application, row b.
+        if ($voucher['source'] === VoucherSource::K3Transition->value) {
+            $retroactive = [];
+
+            foreach ($equityAccounts as $number => $change) {
+                $column = (string) self::columnOf($number);
+                $retroactive[$column] = ($retroactive[$column] ?? 0) + $change;
+            }
+
+            $this->add('retroactive', array_filter($retroactive));
+
             return $touched;
         }
 

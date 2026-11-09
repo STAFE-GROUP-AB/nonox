@@ -324,8 +324,12 @@ class FixedAssets
      * A split is made from the first K3 fiscal year on. When comparatives are
      * restated at the transition (K3 35.7, 35.18), the comparative year's
      * depreciation per component is a presentation restatement, not a split in
-     * a K2 year (ADR-059 A.2.4, decision of 2026-11-08).
-     * TODO(S1-P12): restate the comparative year's depreciation per component in the transition.
+     * a K2 year (ADR-059 A.2.4, decision of 2026-11-08). S1-P12 supports only
+     * the transition without restated comparatives: K3TransitionProposal
+     * blocks `comparatives_restated_at_transition` = `yes`, so no comparative
+     * year is ever restated per component, and it blocks the transition until
+     * every building of the register is split on the transition date, the
+     * first day of the first K3 year (35.18; ADR-059 P12 addendum).
      *
      * @param  array<int, mixed>  $components  each: name, kind (part|land), cost, accumulated (optional), life_months (remaining, from the split), total_life_months (optional: the remaining life plus the months since the asset's first depreciation month), residual, asset_account
      */

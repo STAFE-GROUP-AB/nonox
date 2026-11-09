@@ -145,6 +145,8 @@ BEGIN
         ('invoice_reminders', 'SELECT, INSERT'),
         ('invoice_rows', 'SELECT, INSERT, UPDATE, DELETE'),
         ('invoice_tax_reduction_buyers', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('k3_transitions', 'SELECT, INSERT, UPDATE'),
+        ('k3_transition_items', 'SELECT, INSERT, UPDATE, DELETE'),
         ('invoices', 'SELECT, INSERT, UPDATE, DELETE'),
         ('k10_owners', 'SELECT, INSERT, UPDATE, DELETE'),
         ('k10_years', 'SELECT, INSERT, UPDATE, DELETE'),

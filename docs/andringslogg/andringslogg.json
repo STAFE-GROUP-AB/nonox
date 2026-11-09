@@ -80,6 +80,14 @@
       "omrade": "Bokföring"
     },
     {
+      "id": "2026-11-08-overgang-till-k3",
+      "datum": "2026-11-08T22:00:00+01:00",
+      "rubrik": "Övergång från K2 till K3 (beta)",
+      "beskrivning": "Under Bokslut → Övergång till K3 lägger du för det första året med K3 (beta) upp skillnaderna mot K2, till exempel uppskjuten skatt och avsättningar, och får avstämningen av eget kapital och texten om jämförbarheten till årsredovisningen. Efter din bekräftelse bokförs skillnaderna en gång, som en verifikation på årets första dag mot balanserad vinst, och K2-året och dess årsredovisning ändras inte. Omräkningar som K3 förbjuder vid övergången tas inte emot, och lättnadsregeln för uppskjuten skatt kräver ett skäl och redovisas alltid.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-08-arbetsorder-och-ata",
       "datum": "2026-11-08T20:00:00+01:00",
       "rubrik": "Arbetsorder och ÄTA för hantverkare",

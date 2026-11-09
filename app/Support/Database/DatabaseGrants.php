@@ -170,6 +170,10 @@ final class DatabaseGrants
         'invoice_reminders' => GrantDecision::AppendOnly,
         'invoice_rows' => GrantDecision::ReadWrite,
         'invoice_tax_reduction_buyers' => GrantDecision::ReadWrite,
+        // S1-P12: the transition row is append-only except voided_by_voucher_id, set once by the trigger-guarded void.
+        'k3_transitions' => GrantDecision::NoDelete,
+        // Items are edited and removed until the transition is booked; the trigger freezes them after.
+        'k3_transition_items' => GrantDecision::ReadWrite,
         'invoices' => GrantDecision::ReadWrite,
         'k10_owners' => GrantDecision::ReadWrite,
         'k10_years' => GrantDecision::ReadWrite,

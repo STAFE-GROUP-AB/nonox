@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.126
+- Version: 0.127
 - Datum: 2026-11-09
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -2386,9 +2386,10 @@ Enligt AI-utredning 2026-11-07, juristgranskning återstår (ADR-059, tillägg
   utgående balans, eller en post vars rader inte går ihop gör att
   specifikationen inte tas fram: anledningen anges på svenska med konton och
   verifikationer. Detsamma gäller en avrundningsrest som ingen befintlig rad
-  med belopp i kolumnen kan ta. Rad b får ännu inga verifikationer: hur
-  övergången från K2 bokförs är ett öppet beslut (H7), så en övergång som
-  bokförs i dag stoppar specifikationen. Detsamma gäller skatteeffekter som
+  med belopp i kolumnen kan ta. Rad b får verifikationen med källan
+  `K3_TRANSITION` (övergången från K2, avsnitt 5a6.6), tillsammans med en
+  rättelse av den inom året; rättelse av fel från tidigare år stoppar
+  fortfarande specifikationen. Detsamma gäller skatteeffekter som
   redovisas direkt mot eget kapital (K3 kapitel 29), egna aktier (2094), en
   återbetalning av aktiekapital och en utdelning med andra motkonton än 2898.
 - Specifikationen läses med en databasfråga, oberoende av antalet
@@ -2608,6 +2609,128 @@ Enligt AI-utredning 2026-11-08, juristgranskning återstår (ADR-059, tillägg
   rapporter, men länken finns bara i bokslutet.
   Sidan läser ett fast antal databasfrågor, oberoende av antalet poster och
   verifikationer.
+- Året då företaget går över från K2 räknas förändringen sedan förra
+  balansdagen från ingångsbalansräkningen enligt K3: övergångens verifikation
+  (källa `K3_TRANSITION`, avsnitt 5a6.6) räknas till skuld och fordran vid
+  årets början. Det som bokförs på 8940 vid årets slut är fortfarande
+  skillnaden mot det som står på kontona.
+
+### 5a6.6 Övergång från K2 till K3
+
+Enligt AI-utredning 2026-11-08, juristgranskning återstår (ADR-059, tillägg
+2026-11-07, A.2.8, paket S1-P12, mänskligt beslut H7 (a)). Källa: BFN:s
+konsoliderade K3 (vl12-1-k3-kons20251215), kapitel 35, och
+övergångsbestämmelsen BFNAR 2025:3 punkt 2.
+
+- Det första räkenskapsåret med K3, när året innan följde K2 (eller inte
+  finns i NONOX), har sidan **Bokföring → Bokslut → Övergång till K3**
+  (`/bokslut/overgang-till-k3`), märkt Beta. Den gäller aktiebolag och
+  ekonomiska föreningar. Övergångsdagen är årets första dag: NONOX stöder
+  bara övergången utan omräknade jämförelsetal (K3 punkt 35.7 för ett mindre
+  företag, årsredovisningslagen 3 kap. 5 § fjärde stycket); principen
+  `comparatives_restated_at_transition` = `yes` stoppar övergången.
+- En person lägger upp justeringarna av ingångsbalansräkningen i tabellen
+  `k3_transition_items`: uppskjuten skatt på en temporär skillnad
+  (redovisat värde ur kontonas ingående balans på övergångsdagen eller
+  inskrivet, skattemässigt värde, och för en skattefordran det belopp
+  personen tar upp med skäl, H6), en avsättning som K3 kräver (konto
+  2200–2299 utom 2240–2249), eller en annan justering på ett balanskonto med
+  hänvisning till K3. Skattesatsen är den för beskattningsår som börjar på
+  övergångsdagen (K3 punkt 29.25). Lättnadsregeln i K3 punkt 35.27 (ingen
+  uppskjuten skatt när uppgifterna inte kan tas fram utan oskälig kostnad)
+  kan väljas per post och kräver ett skäl; den anges alltid i texten till
+  årsredovisningen (35.31).
+- Omräkningar som K3 kapitel 35 förbjuder tas inte emot: ändrade
+  uppskattningar (35.15), aktivering av utgifter för eget utvecklingsarbete
+  (35.16), omräkning av komponenter bakåt i tiden (35.18) och aktivering av
+  låneutgifter (35.20). Konton för immateriella och materiella
+  anläggningstillgångar (1000–1299), obeskattade reserver (2100–2199), eget
+  kapital och kontona för uppskjuten skatt kan inte justeras direkt; en
+  kontroll i databasen gör detsamma.
+- En byggnad i anläggningsregistret ska vara uppdelad i komponenter per
+  övergångsdagen (35.18, beslut H4) innan övergången kan bokföras.
+  Uppdelningen fördelar det redovisade värdet och ger ingen skillnad i eget
+  kapital; sidan visar värdet före och summan av komponenterna.
+- `K3TransitionProposal` visar justeringarna, avstämningen per post i
+  balansräkningen (K2-belopp, justering, K3-belopp, eget kapital och
+  balansomslutning) och upplysningarna: att K3 tillämpas för första gången,
+  att jämförelsetalen inte är omräknade, vilka principer som ändrats, vilka
+  lättnadsregler som använts och övergångens effekt på eget kapital (35.31,
+  35.33). Ett fast antal databasfrågor, oberoende av antalet poster.
+- Kapitel 35 tillämpas en gång (35.1): övergången stoppas när företaget har
+  tillämpat K3 tidigare och lämnar K2 av eget val, eller när en övergång
+  redan är bokförd för ett annat år, utom för ett företag som inte längre
+  får tillämpa K2 enligt BFNAR 2025:2 (S1-R7.6). Övergången stoppas också
+  när det sista K2-året inte är stängt, när de ingående balanserna inte
+  stämmer med dess utgående balanser, när årets första dag ligger i en låst
+  period eller när svaren om övergången saknas.
+- Ingenting bokförs förrän en person har granskat förslaget och bekräftat
+  det i en dialog som anger datumet, beloppet, kontot och att övergången
+  bara kan bokföras en gång (`BookK3Transition`). Personen bekräftar det hon
+  såg (ett fingeravtryck); har posterna eller registret ändrats nekas
+  bekräftelsen. Verifikationen har den nya källan `K3_TRANSITION`, dateras
+  övergångsdagen, ligger i serie A och bokförs genom `BookVoucher` och
+  `PostVoucher` som andra verifikationer; varje skillnad bokförs mot 2091
+  Balanserad vinst eller förlust (`transition.equity_account` i
+  `database/data/annual-report/k3-rules.json`). Ändrar övergången ingenting
+  sparas bekräftelsen utan verifikation.
+- De ingående balanserna ändras inte och stämmer med det sista K2-årets
+  utgående balanser; K2-året, dess verifikationer och dess årsredovisning
+  ändras inte. Bekräftelsen blir en rad i `k3_transitions` som inte kan
+  ändras eller tas bort, och varje justering får övergångens id och
+  skattesatsen och kan inte längre ändras eller tas bort (modellen och
+  triggrar i databasen). Blev något fel rättas verifikationen med en
+  rättelseverifikation.
+- I förändringarna i eget kapital (avsnitt 5a6.3) visas verifikationen på
+  rad b, effekter av retroaktiv tillämpning.
+- En byggnad läggs upp som uppskjuten skatt av slaget `BUILDING_COMPONENTS`.
+  BAS 2240–2259 visas som en post, Avsättningar för skatter (årsredovisningslagen
+  bilaga 1 C.2), med den uppskjutna skatten (2240–2249) som specifikation. Skuld
+  och fordran visas brutto; när en person bekräftar att företaget har legal
+  rätt till kvittning (K3 punkt 29.32) visas de netto i avstämningen.
+  Bekräftelsen är en per år, kontrollen `deferred_tax_set_off` i
+  `closing_checks`, gemensam med uppskjuten skatt i bokslutet. Övergången
+  sparar värdet när den bokförs och varnar om årets värde senare ändras.
+  Verifikationen bokförs alltid brutto.
+- En avsättning för en skyldighet att montera ned eller återställa (K3 punkt
+  35.29) tas inte emot ännu.
+- En bokförd övergång sparar de ingående balanser den räknades på och valet
+  om kvittning, så avstämningen och texterna ändras inte efteråt. Ingen
+  justering kan läggas till ett år vars övergång är bokförd (trigger i
+  databasen). Ett år med en bokförd övergång kan inte byta tillbaka till K2
+  eller K1 förrän övergångens verifikation är rättad. Saknar året ingående
+  balanser stoppas övergången även när inget tidigare år finns i NONOX.
+  Bokföringen tar samma lås per företag som byte av regelverk och nya år.
+- Uppskjuten skatt (avsnitt 5a6.5) räknar även en rättelse av övergångens
+  verifikation till ingångsbalansen.
+- Skiljer sig den ingående balansen på 1110–1119 (netto efter 1119) från
+  byggnadernas redovisade värde i registret visas en varning.
+- En övergång blir ogiltig när dess verifikation har vänts helt genom
+  rättelse utan ny kontering (netto noll per konto över originalet och
+  rättelserna). Rättelsen sätter då `voided_by_voucher_id` en gång; databasens
+  trigger tillåter bara det. En ogiltig övergång räknas inte: året kan bokas
+  om, det kan byta tillbaka till K2, och den räknas inte som tillämpning av
+  kapitel 35 (TODO(legal-verify): K3 punkt 35.1). En rättelse som konterar om
+  något lämnar övergången stående. Bara en rättelse i övergångens eget
+  räkenskapsår, medan det är öppet, gör övergången ogiltig; en rättelse
+  daterad ett senare år eller efter att året stängts gör det inte. Den
+  verifikation som gjorde övergången ogiltig, och varje verifikation i en
+  kedja som börjar med en ogiltig övergångs verifikation, kan inte rättas
+  ("Övergången till K3 är ogiltigförklarad. Bokför övergången på nytt under
+  Bokslut → Övergång till K3."), så de vända raderna kan aldrig komma tillbaka.
+- Behandlingshistoriken får `k3_transition.item_created`,
+  `k3_transition.item_updated`, `k3_transition.item_removed` och
+  `k3_transition.booked` med id, slag, konton och belopp, aldrig
+  beskrivningen eller skälen. Ändringar och bokföring kräver behörigheten
+  att hantera räkenskapsår; sidan kan läsas med behörigheten att se
+  rapporter.
+- TODO(legal-verify): verifikation på första dagen mot 2091 i stället för en
+  justering av ingående balans (H7, BAS 2026); lättnadsregeln 35.27 per post;
+  lättnadsreglerna 35.23, 35.28–35.30 erbjuds inte; rad b i stället för rad c
+  i förändringarna i eget kapital; texten till årsredovisningen är NONOX
+  egen. Kassaflödesanalysen för det första K3-året behandlar ännu inte
+  övergångens verifikation som en del av ingångsbalansen: den stoppas med
+  verifikationen angiven (uppföljning i S1-P10).
 
 ## 5a7. Inkomstdeklaration 2 (SRU)
 
@@ -5350,3 +5473,4 @@ påverkar bokföringen och fakturan:
 | 0.124 | 2026-11-09 | Inläsning av register, obetalda fakturor och underlag från andra program (avsnitt 5a8a, ADR-076): obetalda kund- och leverantörsfakturor kan skapas utan verifikation när summan är lika med saldot på 1510 respektive 2440 och företaget redovisar enligt fakturametoden; betalningen bokförs mot 1510 respektive 2440. Huvudboken och kedjan av kontrollsummor ändras inte av inläsningen. |
 | 0.125 | 2026-11-09 | Inlästa obetalda fakturor (avsnitt 5a8a, ADR-076) behåller sitt gamla nummer som identitet och får inget nummer ur nummerserien; de kan inte skickas eller göras till PDF; betalning och avskrivning får verifikationstexten "Ingående balans (inläst)"; avstämningen mot 1510/2440 tar med öppna NONOX-fakturor och valda underkonton och tillåter kreditfakturor. |
 | 0.126 | 2026-11-09 | Databasroller (avsnitt 4.3a, ADR-079 etapp 2): NONOX kan köras som en roll (`nonox_app`) som inte äger tabellerna och inte kan stänga av, ta bort eller ersätta triggerna, tömma tabeller eller ändra schemat; migreringarna körs som ägaren (`nonox_owner`). Tabeller vars trigger nekar all ändring och borttagning blir append-only även genom behörigheterna. Behörigheterna läggs på efter varje migrering; en tabell utan beslut får ingen åtkomst. Påslaget med `DB_MIGRATION_USERNAME`, annars som förut med en användare; ägarens lösenord finns aldrig i programmets konfiguration. Triggerfunktionernas sökväg (version 0.119) läggs på igen efter varje migrering; personalliggarens gallring kontrolleras mot lagringstiden i databasen; signeringshändelser tas bara bort med sin begäran. Ingen bokföringsregel och inga data ändras. |
+| 0.127 | 2026-11-09 | Övergång från K2 till K3 (avsnitt 5a6.6, ADR-059 tillägg A.2.8, paket S1-P12, beslut H7 (a)): det första året med K3 lägger en person upp justeringarna av ingångsbalansräkningen (uppskjuten skatt, avsättningar, andra poster med hänvisning till K3; lättnadsregeln 35.27 per post med skäl), och förbjudna omräkningar (35.15, 35.16, 35.18, 35.20) nekas. Efter bekräftelse bokförs övergången en gång som en verifikation med den nya källan `K3_TRANSITION`, daterad årets första dag, mot 2091; migrationen lägger bara till källan i kontrollen av `vouchers.source`, utan ändring av triggrar eller `PostVoucher`. De ingående balanserna och K2-året ändras inte. Kapitel 35 tillämpas en gång, utom för ett företag som tvingas lämna K2 enligt BFNAR 2025:2. Omräknade jämförelsetal stöds inte ännu. Förändringar i eget kapital visar övergången på rad b, och uppskjuten skatt räknar årets förändring från ingångsbalansräkningen enligt K3. Nya tabeller `k3_transitions` (kan inte ändras) och `k3_transition_items` (låsta efter bokföringen). Byggnader som slaget `BUILDING_COMPONENTS`, kvittning av uppskjuten skatt endast i presentationen (29.32) med en bekräftelse per år, posten Avsättningar för skatter som en rad över 2240–2259, ogiltig övergång efter fullständig rättelse, ingen avsättning för nedmontering (35.29), ögonblicksbild av ingående balanser vid bokföringen och inget byte tillbaka till K2 för ett år med bokförd övergång. Ingen befintlig verifikation ändrades. |

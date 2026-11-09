@@ -30,13 +30,14 @@ function k3Coverage(array $lines, int $from, int $to): array
     return $count;
 }
 
-it('S1-R4.6 puts BAS 1370 among the financial fixed assets and 2240 among the provisions, each on its own line', function () {
+it('S1-R4.6 puts BAS 1370 among the financial fixed assets and 2240 among the provisions, on the C.2 line with its specification', function () {
     $lines = collect(K3Schedule::BALANCE)->keyBy('key');
 
     expect($lines['deferred_tax_asset']['section'])->toBe('financial')
         ->and($lines['deferred_tax_asset']['ranges'])->toBe([[1370, 1379]])
-        ->and($lines['deferred_tax_liability']['section'])->toBe('provisions')
-        ->and($lines['deferred_tax_liability']['ranges'])->toBe([[2240, 2249]])
+        ->and($lines['tax_provisions']['section'])->toBe('provisions')
+        ->and($lines['tax_provisions']['ranges'])->toBe([[2240, 2259]])
+        ->and(K3Schedule::DEFERRED_TAX_SPECIFICATION['ranges'])->toBe([[2240, 2249]])
         ->and($lines['current_tax_assets']['ranges'])->toBe([[1640, 1649]]);
 });
 
@@ -166,12 +167,12 @@ it('S1-R8.3 never adds an "Övriga förändringar" row to a K3 equity specificat
         ->and(fn () => $method->invoke(null, $noChange, $sheet, 0, K3Schedule::class))->toThrow(DomainException::class);
 });
 
-it('S1-R4.6 puts other tax provisions (BAS 225x) on their own line right after the deferred tax liability (ÅRL bilaga 1 C.2)', function () {
+it('S1-R4.6 shows ÅRL bilaga 1 C.2 as one line, Avsättningar för skatter, over BAS 2240–2259 (S1-P12 re-check)', function () {
     $provisions = collect(K3Schedule::BALANCE)->where('section', 'provisions')->keyBy('key');
 
-    expect($provisions->keys()->all())->toBe(['pension_provisions', 'deferred_tax_liability', 'other_tax_provisions', 'other_provisions'])
-        ->and($provisions['other_tax_provisions']['ranges'])->toBe([[2250, 2259]])
-        ->and($provisions['other_tax_provisions']['label'])->toBe('Övriga avsättningar för skatter')
+    expect($provisions->keys()->all())->toBe(['pension_provisions', 'tax_provisions', 'other_provisions'])
+        ->and($provisions['tax_provisions']['ranges'])->toBe([[2240, 2259]])
+        ->and($provisions['tax_provisions']['label'])->toBe('Avsättningar för skatter')
         ->and($provisions['other_provisions']['ranges'])->toBe([[2200, 2209], [2220, 2229], [2260, 2299]]);
 });
 

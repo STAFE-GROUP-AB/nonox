@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Accounting;
 
+use App\Actions\AnnualReport\VoidK3Transition;
 use App\Domain\Accounting\VoucherSource;
 use App\Models\Company;
 use App\Models\User;
@@ -49,6 +50,9 @@ class CorrectVoucher
                 throw ValidationException::withMessages(['voucher' => __('Verifikationen är redan rättad.')]);
             }
 
+            // A void K2-to-K3 transition stays void: its reversal cannot be undone (S1-P12).
+            VoidK3Transition::refuseCorrection($original);
+
             $reversal = $original->rows->map(fn (VoucherRow $row): array => [
                 'account' => $row->account?->number,
                 'debit_ore' => $row->credit_ore->ore,
@@ -84,6 +88,9 @@ class CorrectVoucher
                 'corrected_by' => $correction->reference(),
                 'reason' => trim($reason),
             ], $original->company_id, $user);
+
+            // A K2-to-K3 transition whose voucher is now fully reversed becomes void (S1-P12).
+            app(VoidK3Transition::class)->afterCorrection($user, $correction);
 
             return $correction;
         }));

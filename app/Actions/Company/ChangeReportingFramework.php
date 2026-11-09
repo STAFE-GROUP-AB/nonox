@@ -15,6 +15,7 @@ use App\Models\AnnualReport;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\FixedAsset;
+use App\Models\K3Transition;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CompanyScope;
@@ -90,6 +91,7 @@ class ChangeReportingFramework
                 self::refuseLockedYears($company, $years, $fiscalYear);
 
                 if ($framework !== ReportingFramework::K3) {
+                    self::refuseBookedK3Transition($company, $years);
                     self::refuseComponents($company, $years, $fiscalYear, $framework);
                 }
 
@@ -180,6 +182,36 @@ class ChangeReportingFramework
                 throw ValidationException::withMessages(['reporting_framework' => __('K2 kan inte väljas för räkenskapsåret :year. :reason', ['year' => $year->label(), 'reason' => $eligibility->reasons[0] ?? ''])]);
             }
         }
+    }
+
+    /**
+     * A year whose K2-to-K3 transition is booked (S1-P12, K3Transition) cannot
+     * leave K3: the transition voucher would stand in a year that is not K3.
+     * Its voucher must be fully reversed by correction first, which makes the
+     * transition void (VoidK3Transition). A transition booked without a
+     * voucher changed nothing in the books and does not block.
+     *
+     * @param  Collection<int, FiscalYear>  $years  the chosen year and every later one, locked
+     */
+    private static function refuseBookedK3Transition(Company $company, Collection $years): void
+    {
+        // A void transition (its voucher fully reversed by correction) no longer stands in the books;
+        // a correction that re-books leaves it standing.
+        $booked = K3Transition::query()
+            ->standing()
+            ->where('company_id', $company->id)
+            ->whereIn('fiscal_year_id', $years->pluck('id')->all())
+            ->whereNotNull('voucher_id')
+            ->orderBy('transition_date')
+            ->first();
+
+        if ($booked === null) {
+            return;
+        }
+
+        $year = $years->firstWhere('id', $booked->fiscal_year_id);
+
+        throw ValidationException::withMessages(['reporting_framework' => __('Räkenskapsåret :year kan inte lämna K3, eftersom övergången till K3 är bokförd för det året. Rätta övergångens verifikation först.', ['year' => $year?->label() ?? $booked->transition_date->toDateString()])]);
     }
 
     /**

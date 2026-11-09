@@ -54,7 +54,8 @@ const F_S1_A_BALANCE = [
     'summa_eget_kapital' => ['total', 'equity'],
     'periodiseringsfonder' => ['line', 'tax_allocation_reserves'],
     'summa_obeskattade_reserver' => ['section', 'untaxed'],
-    'uppskjuten_skatteskuld' => ['line', 'deferred_tax_liability'],
+    // F-S1-a has nothing on 225x, so the C.2 line equals its deferred tax liability.
+    'uppskjuten_skatteskuld' => ['line', 'tax_provisions'],
     'summa_avsattningar' => ['section', 'provisions'],
     'langfristiga_skulder_till_kreditinstitut' => ['line', 'long_credit_institutions'],
     'summa_langfristiga_skulder' => ['section', 'long_term'],
@@ -168,9 +169,9 @@ it('S1-R4.6 gives F-S1-a\'s K3 balance sheet at all three dates to the öre, and
         }
     }
 
-    // The deferred tax liability is its own line under Avsättningar (K3 29.19, 29.31).
+    // The deferred tax liability is on the C.2 line Avsättningar för skatter (K3 29.19, 29.31).
     $provisions = collect($second->balanceSheet()['sections'])->firstWhere('key', 'provisions');
-    expect(array_column($provisions['lines'], 'key'))->toBe(['deferred_tax_liability']);
+    expect(array_column($provisions['lines'], 'key'))->toBe(['tax_provisions']);
 
     foreach ([$first, $second] as $accounts) {
         $sheet = k3Printed($accounts)['balance'];
