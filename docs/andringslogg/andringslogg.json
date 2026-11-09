@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-09-fakturor-kan-inte-bli-utkast-igen",
+      "datum": "2026-11-09T01:10:00+01:00",
+      "rubrik": "En utfärdad faktura kan inte göras om till utkast i databasen",
+      "beskrivning": "Databasen nekar nu att en utfärdad kundfaktura eller en registrerad leverantörsfaktura sätts tillbaka till utkast, eftersom ett utkast går att ändra och ta bort. Det gällde redan attesterade lönekörningar. Betalning, kreditering och avskrivning fungerar som förut.",
+      "typ": "Säkerhet",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-09-triggerskydd-temporara-tabeller",
       "datum": "2026-11-09T01:00:00+01:00",
       "rubrik": "Skydden för bokförda verifikationer går inte att lura med tillfälliga tabeller",

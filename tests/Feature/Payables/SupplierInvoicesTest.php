@@ -121,6 +121,8 @@ it('never changes a registered invoice', function () {
     expect(fn () => $invoice->forceFill(['total_ore' => 1])->save())->toThrow(LogicException::class)
         ->and(fn () => DB::transaction(fn () => DB::table('supplier_invoices')->where('id', $invoice->id)->update(['total_ore' => 1])))->toThrow(QueryException::class, 'cannot be changed')
         ->and(fn () => DB::transaction(fn () => DB::table('supplier_invoice_rows')->where('supplier_invoice_id', $invoice->id)->delete()))->toThrow(QueryException::class)
+        // Setting it back to a draft would make it editable and deletable again.
+        ->and(fn () => DB::transaction(fn () => DB::table('supplier_invoices')->where('id', $invoice->id)->update(['status' => 'DRAFT'])))->toThrow(QueryException::class, 'cannot be reopened')
         ->and(fn () => app(SaveSupplierInvoice::class)($this->owner, $this->company, ['supplier_id' => $this->supplier->id, 'invoice_date' => '2026-03-05', 'total' => '1', 'rows' => [['account' => '4010', 'amount' => '1']]], $invoice))
         ->toThrow(AuthorizationException::class);
 });
