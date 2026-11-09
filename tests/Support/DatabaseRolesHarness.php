@@ -33,6 +33,8 @@ final class DatabaseRolesHarness
     /** Creates the roles, transfers ownership and applies the grants inside the test transaction. Needs a superuser. */
     public static function install(): void
     {
+        // Role changes touch the cluster-wide catalogue; one test process at a time, until its transaction ends.
+        DB::statement('select pg_advisory_xact_lock(790079)');
         DB::unprepared((string) file_get_contents(base_path('database/roles/roles.sql')));
         DB::unprepared((string) file_get_contents(base_path('database/roles/transfer-ownership.sql')));
         DatabaseGrants::apply(DB::connection());

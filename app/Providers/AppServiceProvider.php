@@ -18,7 +18,7 @@ use App\Models\User;
 use App\Support\Audit\AuditSubscriber;
 use App\Support\Build\VersionRecorder;
 use App\Support\Chat\SecureChat;
-use App\Support\Database\DatabaseGrants;
+use App\Support\Database\AfterMigrate;
 use App\Support\Database\DatabaseRoles;
 use App\Support\Files\EncryptedAdapter;
 use App\Support\Guide\ForgetUserDeadlines;
@@ -30,6 +30,7 @@ use App\Support\Tenancy\LivewireCompanyGuard;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Events\MigrationsEnded;
@@ -38,7 +39,6 @@ use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\Request;
 use Illuminate\Mail\Markdown;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
@@ -125,11 +125,14 @@ class AppServiceProvider extends ServiceProvider
                 VersionRecorder::recordQuietly();
             }
         });
-        // ADR-079 §6: with separate database roles, re-apply the grant decisions as the owner after every migrate,
-        // so a new table gets its grants at once, and refuse schema commands that do not run as the owner.
-        Event::listen([MigrationsEnded::class, NoPendingMigrations::class], function (): void {
-            if (DatabaseRoles::enabled()) {
-                DatabaseGrants::apply(DB::connection(DatabaseRoles::migrationConnection()));
+        // ADR-079 §6: after every migrate of the main database, pin the trigger functions' search path and, with
+        // separate database roles, re-apply the grant decisions as the owner (also after a migrate that failed),
+        // so a new table or trigger function is covered at once; refuse schema commands that do not run as the owner.
+        Event::listen([MigrationsEnded::class, NoPendingMigrations::class], fn () => AfterMigrate::run());
+        Event::listen(CommandFinished::class, function (CommandFinished $event): void {
+            if ($event->exitCode !== 0 && in_array($event->command, DatabaseRoles::SCHEMA_COMMANDS, true)) {
+                $connection = $event->input->hasOption('database') ? $event->input->getOption('database') : null;
+                AfterMigrate::afterFailedMigrate(is_string($connection) ? $connection : null);
             }
         });
         Event::listen(CommandStarting::class, function (CommandStarting $event): void {

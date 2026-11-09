@@ -138,6 +138,8 @@ it('refuses TRUNCATE, schema changes and session_replication_role', function (st
     'create a table' => ['CREATE TABLE backdoor (id int)', 'permission denied for schema'],
     'create a trigger' => ['CREATE TRIGGER backdoor BEFORE UPDATE ON vouchers FOR EACH ROW EXECUTE FUNCTION ledger_append_only()', 'permission denied for table vouchers'],
     'skip the triggers' => ['SET session_replication_role = replica', 'permission denied to set parameter'],
+    'shadow a table with a temporary one' => ['CREATE TEMPORARY TABLE vouchers (id uuid, status text)', 'permission denied to create temporary tables'],
+    'store a large object' => ['SELECT lo_create(0)', 'permission denied for function lo_create'],
 ]);
 
 it('refuses to change or delete the audit log, by grant and not only by trigger', function () {

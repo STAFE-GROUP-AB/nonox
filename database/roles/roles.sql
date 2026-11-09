@@ -29,7 +29,11 @@ BEGIN
 
         -- Whatever the role was before: never a superuser, never able to create roles or
         -- databases, replicate or bypass row-level security. LOGIN and passwords are left alone.
-        EXECUTE format('ALTER ROLE %I NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS', role_name);
+        -- Only altered when something differs, so a second run changes nothing.
+        IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = role_name
+                   AND (rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls)) THEN
+            EXECUTE format('ALTER ROLE %I NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS', role_name);
+        END IF;
     END LOOP;
 
     -- The runtime and reader roles must not inherit the owner's rights through membership.
@@ -42,6 +46,24 @@ BEGIN
     END IF;
 
     EXECUTE format('GRANT CONNECT ON DATABASE %I TO nonox_owner, nonox_app, nonox_readonly', current_database());
+
+    -- No temporary tables: a temporary table can shadow a real one for code that looks tables up by
+    -- name. The trigger functions are pinned against that (search_path = public, pg_temp); this
+    -- takes the tool away as well. NONOX itself never creates temporary tables.
+    EXECUTE format('REVOKE TEMPORARY ON DATABASE %I FROM PUBLIC', current_database());
+    EXECUTE format('REVOKE TEMPORARY ON DATABASE %I FROM nonox_app, nonox_readonly', current_database());
+
+    -- No large objects: NONOX stores files outside the database, and large objects are a way to
+    -- store data no grant decision covers. The functions are per database, so this is too.
+    REVOKE EXECUTE ON FUNCTION lo_create(oid), lo_creat(integer), lo_from_bytea(oid, bytea), lo_import(text), lo_import(text, oid) FROM PUBLIC;
+
+    -- The predefined roles that reach the server's files or every table are never for these roles.
+    IF pg_has_role('nonox_app', 'pg_execute_server_program', 'MEMBER')
+       OR pg_has_role('nonox_app', 'pg_write_server_files', 'MEMBER')
+       OR pg_has_role('nonox_app', 'pg_read_server_files', 'MEMBER')
+       OR pg_has_role('nonox_app', 'pg_write_all_data', 'MEMBER') THEN
+        RAISE EXCEPTION 'nonox_app is a member of a predefined role that reaches server files or all data; revoke that first';
+    END IF;
 
     -- Only the owner may create objects in the schema; nobody else, PUBLIC included.
     EXECUTE format('REVOKE CREATE ON SCHEMA %I FROM PUBLIC', current_schema());

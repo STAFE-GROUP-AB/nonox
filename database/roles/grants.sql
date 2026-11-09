@@ -1,7 +1,7 @@
 -- NONOX database grants (ADR-079 §6). Generated from App\Support\Database\DatabaseGrants;
 -- do not edit by hand: change the list in the class and run `php artisan nonox:db-grants --write`.
 -- Run as the owner (nonox_owner) or a superuser, after database/roles/roles.sql. Idempotent.
--- It changes privileges only, never data.
+-- It changes privileges and the trigger functions' search path only, never data.
 
 DO $grants$
 DECLARE
@@ -265,3 +265,20 @@ BEGIN
     EXECUTE format('GRANT SELECT ON ALL SEQUENCES IN SCHEMA %I TO nonox_readonly', current_schema());
 END
 $grants$;
+
+-- Every trigger function reads its tables with search_path = <schema>, pg_temp (TriggerFunctions).
+DO $pin$
+DECLARE
+    fn regprocedure;
+BEGIN
+    FOR fn IN
+        SELECT p.oid::regprocedure FROM pg_proc p
+        WHERE p.pronamespace = current_schema()::regnamespace
+          AND p.prorettype = 'trigger'::regtype
+          AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_proc'::regclass AND d.objid = p.oid AND d.deptype = 'e')
+          AND p.proconfig IS DISTINCT FROM ARRAY[format('search_path=%s, pg_temp', current_schema())]
+    LOOP
+        EXECUTE format('ALTER FUNCTION %s SET search_path = %I, pg_temp', fn, current_schema());
+    END LOOP;
+END
+$pin$;

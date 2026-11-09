@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Support\Database;
 
+use Closure;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Separate database roles (ADR-079 §6, build step 2).
@@ -38,6 +40,27 @@ final class DatabaseRoles
         'migrate:rollback',
         'db:wipe',
     ];
+
+    /** @var list<Closure(string): bool> */
+    private static array $connectionApprovers = [];
+
+    /**
+     * Lets another part of NONOX approve a further connection for schema commands, for a database
+     * of its own (for example a demo database with its own user and no access to the main one).
+     * The callback receives the connection name and returns true only when that connection is safe
+     * to migrate. The grants are still applied only on the main database's owner connection.
+     *
+     * @param  Closure(string): bool  $approver
+     */
+    public static function approveConnectionsUsing(Closure $approver): void
+    {
+        self::$connectionApprovers[] = $approver;
+    }
+
+    public static function forgetConnectionApprovers(): void
+    {
+        self::$connectionApprovers = [];
+    }
 
     public static function enabled(): bool
     {
@@ -85,10 +108,29 @@ final class DatabaseRoles
             return null;
         }
 
+        foreach (self::$connectionApprovers as $approver) {
+            if ($connection !== null && $approver($connection)) {
+                return null;
+            }
+        }
+
         $owner = self::migrationConnection();
 
         return "Databasrollerna är påslagna (DB_MIGRATION_USERNAME är satt), så `{$command}` får bara köras som ägarrollen. "
             ."Kör `php artisan {$command} --database={$owner}`. Appens roll kan inte ändra tabeller eller triggers (ADR-079).";
+    }
+
+    /**
+     * Whether the migration that just ran was on the main database's owner connection: the
+     * grants and the pinning apply there only. In single-user mode every migrate qualifies.
+     */
+    public static function migratedMainDatabase(): bool
+    {
+        if (! self::enabled()) {
+            return true;
+        }
+
+        return DB::getDefaultConnection() === self::migrationConnection();
     }
 
     /** Whether the role of this connection can switch off or replace the ledger triggers (owner, member of the owner, or superuser). */
@@ -96,7 +138,7 @@ final class DatabaseRoles
     {
         return (bool) $connection->scalar(<<<'SQL'
             select (select rolsuper from pg_roles where rolname = current_user)
-                or pg_has_role(current_user, (select relowner from pg_class where oid = 'vouchers'::regclass), 'USAGE')
+                or pg_has_role(current_user, (select relowner from pg_class where oid = 'vouchers'::regclass), 'MEMBER')
             SQL);
     }
 }

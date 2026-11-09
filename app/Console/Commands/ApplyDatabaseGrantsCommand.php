@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use App\Support\Database\DatabaseGrants;
 use App\Support\Database\DatabaseRoles;
+use App\Support\Database\TriggerFunctions;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -38,6 +39,7 @@ class ApplyDatabaseGrantsCommand extends Command
         $connection = DB::connection(DatabaseRoles::migrationConnection());
         $this->info('Ger behörigheter som '.$connection->scalar('select current_user').' …');
 
+        TriggerFunctions::pin($connection);
         DatabaseGrants::apply($connection);
 
         $undecided = DatabaseGrants::undecided($connection);

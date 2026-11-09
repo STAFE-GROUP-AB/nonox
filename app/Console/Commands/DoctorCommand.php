@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Support\Database\DatabaseDoctor;
+use App\Support\Database\DatabaseRoles;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -21,7 +22,8 @@ class DoctorCommand extends Command
 
     public function handle(): int
     {
-        $doctor = new DatabaseDoctor(DB::connection());
+        $owner = config('database.connections.'.DatabaseRoles::migrationConnection());
+        $doctor = new DatabaseDoctor(DB::connection(), is_array($owner) ? $owner : []);
 
         $this->info("NONOX körs som databasrollen {$doctor->role()}.");
 
