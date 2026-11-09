@@ -11,6 +11,7 @@ use App\Modules\Connect\ConnectServiceProvider;
 use App\Modules\Crm\CrmServiceProvider;
 use App\Modules\Inbox\InboxServiceProvider;
 use App\Modules\Inventory\InventoryServiceProvider;
+use App\Modules\Kitchen\KitchenServiceProvider;
 use App\Modules\ModuleServiceProvider;
 use App\Modules\Payroll\PayrollServiceProvider;
 use App\Modules\Peppol\PeppolServiceProvider;
@@ -38,6 +39,7 @@ return [
     SigningServiceProvider::class,
     CrmServiceProvider::class,
     PosServiceProvider::class,
+    KitchenServiceProvider::class,
     InboxServiceProvider::class,
     PeppolServiceProvider::class,
     ConnectServiceProvider::class,

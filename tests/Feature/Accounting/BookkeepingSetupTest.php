@@ -38,7 +38,7 @@ it('gives a new limited company the K2 chart of accounts', function () {
     CurrentCompany::set($company);
     $numbers = Account::query()->pluck('number')->all();
 
-    expect($numbers)->toHaveCount(108)
+    expect($numbers)->toHaveCount(110)
         ->toContain(1930, 2081, 2099, 2611, 2641, 2650, 3001, 6570, 8010, 8999)
         ->not->toContain(2010);
 
@@ -93,7 +93,7 @@ it('records the setup in the audit log', function () {
     $company = createCompanyWith();
 
     expect(AuditLog::forCompany($company)->where('action', 'company.bookkeeping_initialised')->sole()->payload)
-        ->toMatchArray(['accounts' => 108, 'voucher_series' => 8, 'bas_version' => 'BAS 2026']);
+        ->toMatchArray(['accounts' => 110, 'voucher_series' => 8, 'bas_version' => 'BAS 2026']);
 });
 
 it('only adds what is missing when run again', function () {
@@ -103,7 +103,7 @@ it('only adds what is missing when run again', function () {
 
     CurrentCompany::set($company);
 
-    expect(Account::query()->count())->toBe(108)
+    expect(Account::query()->count())->toBe(110)
         ->and(VoucherSeries::query()->count())->toBe(8)
         ->and(FiscalYear::query()->count())->toBe(1)
         ->and(AuditLog::forCompany($company)->where('action', 'company.bookkeeping_initialised')->count())->toBe(1);
@@ -116,6 +116,6 @@ it('sets up companies that existed before the chart of accounts', function () {
 
     CurrentCompany::set($company);
 
-    expect(Account::query()->count())->toBe(108)
+    expect(Account::query()->count())->toBe(110)
         ->and(FiscalYear::query()->count())->toBe(1);
 });

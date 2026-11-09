@@ -280,3 +280,11 @@ one. The customer is never shown an estimate the company has not confirmed.
 - K2 is BFNAR 2016:10 chapter 12, not 11. Point 12.10 says direct labour and employer
   contributions must be included in the cost of own-manufactured goods, which partly
   answers the first `TODO(legal-verify)` in §8. The rest of that question stays open.
+
+## Note 2026-11-09: backdating guard for BOM saves (from ADR-073 review)
+
+The structure engine (`StructureWriter`, ADR-073 §2) does not guard against a `valid_from` in
+the past. Kök guards it in its own action (`SaveRecipe`: a date before today or before the
+latest completed stock count needs an explicit confirmation and is audited). Manufacturing's
+action that saves a bill of materials needs its own guard of the same kind, against the
+production orders and counts it would change, before it is built.

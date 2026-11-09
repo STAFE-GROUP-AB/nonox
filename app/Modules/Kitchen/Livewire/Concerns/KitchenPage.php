@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Kitchen\Livewire\Concerns;
+
+use App\Livewire\Concerns\ShowsToasts;
+use App\Modules\Kitchen\Models\WasteEntry;
+use App\Modules\StaffLedger\Livewire\Concerns\InCurrentCompany;
+use Closure;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
+use Livewire\Component;
+
+/**
+ * What every Kök page shares: the current user and company, the permission
+ * checks (KitchenPolicy), and running an action with its errors shown on
+ * the form and in a Swedish toast.
+ *
+ * @mixin Component
+ */
+trait KitchenPage
+{
+    use InCurrentCompany;
+    use ShowsToasts;
+
+    protected function can(string $ability): bool
+    {
+        return Gate::forUser($this->user())->allows($ability, [WasteEntry::class, $this->company()]);
+    }
+
+    /**
+     * @param  Closure(): mixed  $action
+     */
+    protected function attempt(Closure $action, string $success, string $prefix = 'form.'): bool
+    {
+        try {
+            $action();
+        } catch (ValidationException $exception) {
+            $this->setErrorBag(collect($exception->errors())->mapWithKeys(fn (array $messages, string $key): array => ["{$prefix}{$key}" => $messages])->all());
+            $this->toast($this->firstError($exception), 'error');
+
+            return false;
+        }
+
+        $this->resetErrorBag();
+
+        if ($success !== '') {
+            $this->toast($success);
+        }
+
+        return true;
+    }
+}

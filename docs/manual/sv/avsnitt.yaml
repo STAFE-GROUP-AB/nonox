@@ -74,6 +74,12 @@ lager:
   for: foretag
   modul: inventory
   ikon: box
+kok:
+  titel: Kök
+  beskrivning: Recept med portionskostnad och marginal, menyn, svinn från mobilen, personalmat och avvikelsen mellan sålt och inventerat.
+  for: foretag
+  modul: kitchen
+  ikon: receipt
 crm:
   titel: CRM
   beskrivning: Kunder och prospekt med kontaktpersoner, aktiviteter med nästa steg, affärer i en säljtratt med prognos och mål, kundstatus, nyckeltal ur bokföringen och GDPR.

@@ -80,6 +80,14 @@
       "omrade": "Fakturering"
     },
     {
+      "id": "2026-11-08-kok-recept-och-svinn",
+      "datum": "2026-11-08T19:00:00+01:00",
+      "rubrik": "Kök: recept, marginal per rätt, svinn och personalmat",
+      "beskrivning": "Den nya modulen Kök räknar vad en rätt kostar från lagrets värde på råvarorna och visar marginalen mot menypriset, med vad kassan har sålt. Svinn registreras med orsak på sidan eller med mobilen, personalmat dras från lagret och kan föreslås som kostförmån till lönen, och avvikelserapporten jämför sålt med inventerat. Lagervärdet vid bokslutet bokförs nu per lagerslag, råvaror på 1410/4910 och handelsvaror på 1460/4960.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-08-byggnader-mark-komponenter",
       "datum": "2026-11-08T09:45:00+01:00",
       "rubrik": "Byggnader, mark och komponenter i anläggningsregistret",

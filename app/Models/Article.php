@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Modules\Inventory\Domain\StockClass;
 use App\Modules\Inventory\Models\ArticleImage;
 use App\Modules\Inventory\Models\StockLevel;
 use App\Modules\Inventory\Models\StockLocation;
@@ -51,6 +52,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property ?int $default_location_id
  * @property ?int $net_realisable_value_ore
  * @property ?string $net_realisable_value_note
+ * @property ?StockClass $stock_class
  * @property ?CarbonInterface $labels_printed_at
  * @property int $labels_printed_count
  */
@@ -92,6 +94,7 @@ class Article extends Model
         'default_location_id',
         'net_realisable_value_ore',
         'net_realisable_value_note',
+        'stock_class',
     ];
 
     /** Normal VAT at the article's rate. */
@@ -119,6 +122,7 @@ class Article extends Model
             'reorder_point_milli' => 'integer',
             'reorder_quantity_milli' => 'integer',
             'net_realisable_value_ore' => 'integer',
+            'stock_class' => StockClass::class,
             'labels_printed_at' => 'datetime',
             'labels_printed_count' => 'integer',
         ];

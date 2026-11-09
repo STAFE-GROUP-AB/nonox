@@ -139,6 +139,9 @@ use App\Modules\Inbox\Models\InboxMailbox;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Models\InboxTemplate;
 use App\Modules\Inventory\Models\ArticleImage;
+use App\Modules\Inventory\Models\ArticleUnitConversion;
+use App\Modules\Inventory\Models\BillOfMaterials;
+use App\Modules\Inventory\Models\BomRow;
 use App\Modules\Inventory\Models\LabelTemplate;
 use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\PickListLine;
@@ -151,6 +154,14 @@ use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Models\StockReceiptLine;
 use App\Modules\Inventory\Models\StockValuation;
+use App\Modules\Kitchen\Models\ConsumptionCredit;
+use App\Modules\Kitchen\Models\ConsumptionRun;
+use App\Modules\Kitchen\Models\ConsumptionWait;
+use App\Modules\Kitchen\Models\MealPayrollProposal;
+use App\Modules\Kitchen\Models\SaleConsumption;
+use App\Modules\Kitchen\Models\StaffMeal;
+use App\Modules\Kitchen\Models\WasteEntry;
+use App\Modules\Kitchen\Models\WasteMeasurement;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\AgiSubmission;
@@ -397,6 +408,17 @@ const COMPANY_SCOPED_MODELS = [
     StockCountLine::class => 'inventoryCountLineAttributes',
     StockValuation::class => ['valuation_date' => '2026-12-31', 'method' => 'FIFO', 'cost_value_ore' => 100, 'value_ore' => 100, 'stock_account' => 1460, 'change_account' => 4960, 'lines' => []],
     ArticleImage::class => 'inventoryImageAttributes',
+    BillOfMaterials::class => 'structureAttributes',
+    BomRow::class => 'structureRowAttributes',
+    ArticleUnitConversion::class => 'unitConversionAttributes',
+    WasteEntry::class => 'kitchenWasteAttributes',
+    WasteMeasurement::class => ['measured_on' => '2026-03-01', 'kg_milli' => 1500],
+    StaffMeal::class => ['served_on' => '2026-03-01', 'meal' => 'LUNCH', 'quantity_milli' => 1000, 'reason' => 'REPRESENTATION'],
+    MealPayrollProposal::class => 'kitchenProposalAttributes',
+    ConsumptionRun::class => 'kitchenRunAttributes',
+    SaleConsumption::class => 'kitchenSaleConsumptionAttributes',
+    ConsumptionWait::class => 'kitchenWaitAttributes',
+    ConsumptionCredit::class => 'kitchenCreditAttributes',
     LabelTemplate::class => ['name' => 'Hemlig etikettmall', 'kind' => 'ARTICLE', 'media' => 'ROLL', 'width_mm' => 50, 'height_mm' => 25, 'layout' => 'AUTO', 'elements' => ['name'], 'is_default' => false],
     CrmAccount::class => ['name' => 'Hemligt prospekt AB'],
     CrmPerson::class => ['name' => 'Hemlig kontakt', 'legal_basis' => 'LEGITIMATE_INTEREST'],
@@ -1677,6 +1699,51 @@ function inventoryScanOperationAttributes(): array
     return ['user_id' => User::factory()->create()->id, 'uuid' => (string) Str::uuid(), 'kind' => 'move', 'status' => 'OK', 'result' => ['status' => 'OK']];
 }
 
+function structureAttributes(): array
+{
+    return ['kind' => 'RECIPE', 'output_article_id' => Article::create(articleAttributes())->id, 'name' => 'Hemligt recept', 'version' => 1, 'valid_from' => '2026-01-01', 'yield_milli' => 1000, 'yield_unit' => 'PORTIONS'];
+}
+
+function structureRowAttributes(): array
+{
+    return ['bill_of_materials_id' => BillOfMaterials::create(structureAttributes())->id, 'component_article_id' => Article::create(articleAttributes())->id, 'quantity_milli' => 100];
+}
+
+function unitConversionAttributes(): array
+{
+    return ['article_id' => Article::create(articleAttributes())->id, 'unit' => 'cl', 'factor_milli' => 70_000];
+}
+
+function kitchenWasteAttributes(): array
+{
+    return ['registered_on' => '2026-03-01', 'kind' => 'INGREDIENT', 'article_id' => Article::create(articleAttributes())->id, 'quantity_milli' => 1000, 'location_id' => StockLocation::create(inventoryLocationAttributes())->id, 'reason' => 'UTGANGET'];
+}
+
+function kitchenProposalAttributes(): array
+{
+    return ['period' => '2026-03', 'employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'pay_code' => 'KOSTFORMAN_LUNCH', 'quantity' => '1', 'details' => [], 'status' => 'PROPOSED'];
+}
+
+function kitchenRunAttributes(): array
+{
+    return ['business_date' => '2026-03-01', 'location_id' => StockLocation::create(inventoryLocationAttributes())->id];
+}
+
+function kitchenSaleConsumptionAttributes(): array
+{
+    return ['pos_sale_row_id' => PosSaleRow::create(posSaleRowAttributes())->id, 'kitchen_consumption_run_id' => ConsumptionRun::create(kitchenRunAttributes())->id];
+}
+
+function kitchenCreditAttributes(): array
+{
+    return ['location_id' => StockLocation::create(inventoryLocationAttributes())->id, 'article_id' => Article::create(articleAttributes())->id, 'quantity_milli' => 100];
+}
+
+function kitchenWaitAttributes(): array
+{
+    return ['business_date' => '2026-03-01', 'location_id' => StockLocation::create(inventoryLocationAttributes())->id, 'article_id' => Article::create(articleAttributes())->id, 'quantity_milli' => 1000, 'kitchen_consumption_run_id' => ConsumptionRun::create(kitchenRunAttributes())->id, 'status' => 'WAITING'];
+}
+
 function inventoryMovementAttributes(): array
 {
     return ['article_id' => Article::create(articleAttributes())->id, 'location_id' => StockLocation::create(inventoryLocationAttributes())->id, 'quantity_milli' => 1000, 'unit_cost_ore' => 100, 'type' => 'RECEIPT', 'occurred_on' => '2026-03-01'];
@@ -1718,10 +1785,10 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class];
+const NEVER_UPDATED = [WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, BoardroomShareEvent::class];
+const APPEND_ONLY = [WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

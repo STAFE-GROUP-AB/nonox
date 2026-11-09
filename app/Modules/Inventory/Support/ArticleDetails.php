@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\Supplier;
 use App\Modules\Inventory\Domain\Gtin;
 use App\Modules\Inventory\Domain\Quantity;
+use App\Modules\Inventory\Domain\StockClass;
 use App\Modules\Inventory\Models\StockLevel;
 use App\Modules\Inventory\Models\StockLocation;
 use App\Support\Money\Money;
@@ -30,7 +31,7 @@ final class ArticleDetails
         'sku', 'gtin', 'scanner_code', 'brand', 'model', 'description', 'properties', 'colours', 'materials',
         'weight_grams', 'length_mm', 'width_mm', 'height_mm', 'purchase_price', 'vat_treatment',
         'default_supplier_id', 'supplier_article_number', 'is_stock_item', 'reorder_point', 'reorder_quantity',
-        'default_location_id', 'net_realisable_value', 'net_realisable_value_note',
+        'default_location_id', 'net_realisable_value', 'net_realisable_value_note', 'stock_class',
     ];
 
     /**
@@ -90,6 +91,7 @@ final class ArticleDetails
             'default_location_id' => ['nullable', 'integer'],
             'net_realisable_value' => ['nullable', 'string'],
             'net_realisable_value_note' => ['nullable', 'string', 'max:255'],
+            'stock_class' => ['nullable', Rule::enum(StockClass::class)],
         ], [
             'gtin.regex' => __('EAN/GTIN ska vara 8, 12, 13 eller 14 siffror.'),
             'gtin.unique' => __('EAN-koden används redan av en annan artikel.'),
@@ -139,6 +141,10 @@ final class ArticleDetails
             if (array_key_exists($key, $validated)) {
                 $attributes[$column] = self::quantity($validated[$key], $key);
             }
+        }
+
+        if (array_key_exists('stock_class', $validated)) {
+            $attributes['stock_class'] = $validated['stock_class'] ?? null;
         }
 
         if (array_key_exists('vat_treatment', $validated)) {

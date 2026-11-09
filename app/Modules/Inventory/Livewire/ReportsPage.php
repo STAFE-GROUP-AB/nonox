@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Livewire;
 
-use App\Domain\Accounting\LedgerBalances;
-use App\Models\Account;
 use App\Models\FiscalYear;
 use App\Models\YearEndEntry;
 use App\Modules\Inventory\Actions\BookStockValuation;
@@ -17,6 +15,7 @@ use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Inventory\Models\StockValuation;
 use App\Modules\Inventory\Support\StockValuationReport;
 use Carbon\CarbonImmutable;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -119,11 +118,18 @@ class ReportsPage extends Component
             $data['fiscalYear'] = $fiscalYear;
 
             if ($fiscalYear instanceof FiscalYear) {
-                $settings = InventorySettings::for($this->company());
-                $account = Account::query()->where('number', (int) $settings['stock_account'])->first();
-                $data['closing'] = StockValuationReport::at($this->company(), $fiscalYear->end_date);
-                $data['bookValue'] = $account === null ? 0 : (int) (LedgerBalances::opening($fiscalYear)[$account->id] ?? 0) + (int) (LedgerBalances::movements($fiscalYear)[$account->id] ?? 0);
-                $data['settings'] = $settings;
+                try {
+                    $plan = BookStockValuation::plan($this->company(), $fiscalYear);
+                    $data['planError'] = null;
+                } catch (ValidationException $exception) {
+                    $plan = null;
+                    $data['planError'] = $this->firstError($exception);
+                }
+
+                $data['plan'] = $plan;
+                $data['closing'] = $plan['report'] ?? StockValuationReport::at($this->company(), $fiscalYear->end_date);
+                $data['bookValue'] = $plan['book_value_ore'] ?? 0;
+                $data['settings'] = InventorySettings::for($this->company());
                 $data['saved'] = StockValuation::query()->where('fiscal_year_id', $fiscalYear->id)->with('voucher.series')->latest('id')->get();
                 $data['resultBooked'] = YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->where('type', YearEndEntry::RESULT)->exists();
                 $data['canBook'] = $this->can('manage') && $this->user()->hasTeamPermission($this->company(), 'fiscal-years:manage') && $fiscalYear->isOpen();

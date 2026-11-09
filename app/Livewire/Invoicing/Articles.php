@@ -86,7 +86,7 @@ class Articles extends Component
     private const array ADVANCED = ['sku', 'gtin', 'scanner_code', 'brand', 'model', 'description', 'colours', 'materials', 'weight_grams', 'length_mm', 'width_mm', 'height_mm', 'purchase_price', 'vat_treatment', 'default_supplier_id', 'supplier_article_number'];
 
     /** The stock fields, edited only while Lager is on. */
-    private const array STOCK = ['is_stock_item', 'reorder_point', 'reorder_quantity', 'default_location_id', 'net_realisable_value', 'net_realisable_value_note'];
+    private const array STOCK = ['is_stock_item', 'stock_class', 'reorder_point', 'reorder_quantity', 'default_location_id', 'net_realisable_value', 'net_realisable_value_note'];
 
     public function mount(): void
     {
@@ -153,6 +153,7 @@ class Articles extends Component
             'default_location_id' => (string) $article->default_location_id,
             'net_realisable_value' => $article->net_realisable_value_ore === null ? '' : Money::ofOre($article->net_realisable_value_ore)->format(withCurrency: false),
             'net_realisable_value_note' => (string) $article->net_realisable_value_note,
+            'stock_class' => (string) $article->stock_class?->value,
         ];
         $this->reset('upload', 'pending', 'aiSuggestion', 'aiChosen', 'camera');
         $this->alts = ArticleImage::query()->where('article_id', $article->id)->pluck('alt', 'id')->map(fn (?string $alt): string => (string) $alt)->all();

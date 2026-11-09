@@ -21,6 +21,7 @@
 #KONTO 1310 "Andelar i koncernf”retag"
 #KONTO 1350 "Andelar och v„rdepapper i andra f”retag"
 #KONTO 1380 "Andra l†ngfristiga fordringar"
+#KONTO 1410 "Lager av r†varor"
 #KONTO 1460 "Lager av handelsvaror"
 #KONTO 1510 "Kundfordringar"
 #KONTO 1610 "Kortfristiga fordringar hos anst„llda"
@@ -73,6 +74,7 @@
 #KONTO 3960 "Valutakursvinster p† fordringar och skulder av r”relsekarakt„r"
 #KONTO 3990 "™vriga ers„ttningar och int„kter"
 #KONTO 4010 "Ink”p material och varor"
+#KONTO 4910 "F”r„ndring av lager av r†varor"
 #KONTO 5010 "Lokalhyra"
 #KONTO 5060 "St„dning och renh†llning"
 #KONTO 5410 "F”rbrukningsinventarier"
@@ -129,6 +131,7 @@
 #KTYP 1310 T
 #KTYP 1350 T
 #KTYP 1380 T
+#KTYP 1410 T
 #KTYP 1460 T
 #KTYP 1510 T
 #KTYP 1610 T
@@ -181,6 +184,7 @@
 #KTYP 3960 I
 #KTYP 3990 I
 #KTYP 4010 K
+#KTYP 4910 K
 #KTYP 5010 K
 #KTYP 5060 K
 #KTYP 5410 K
@@ -257,4 +261,4 @@
    #TRANS 1930 {} 200.00
    #TRANS 3001 {} -200.00
 }
-#KSUMMA 1785016976
+#KSUMMA 2830053070

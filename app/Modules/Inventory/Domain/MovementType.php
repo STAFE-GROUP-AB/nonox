@@ -7,7 +7,9 @@ namespace App\Modules\Inventory\Domain;
 /**
  * What moved stock (ADR-039). Receipts, returns and counted surpluses bring
  * goods in at a cost; picks, POS sales and scrapping take them out; a
- * transfer is two rows (out and in) with the same transfer group.
+ * transfer is two rows (out and in) with the same transfer group. Kök
+ * (ADR-073) adds drawing sold dishes' ingredients and the business's own
+ * use.
  */
 enum MovementType: string
 {
@@ -29,11 +31,16 @@ enum MovementType: string
     /** Retur: goods back from a customer (in) or to a supplier (out). */
     case Return = 'RETURN';
 
-    /** Kassation: broken, expired or lost goods written off. */
+    /** Kassation: broken, expired or lost goods written off; Kök's waste log with its reason (ADR-073 §6). */
     case Scrap = 'SCRAP';
 
     /** Arbetsorder: material taken from stock for a work order (out), or back after a reversal (in) (ADR-074 §3). */
     case WorkOrderIssue = 'WORK_ORDER_ISSUE';
+    /** Såld via recept: the ingredients of a day's till sales of dishes, drawn through the recipes (ADR-073 §5). */
+    case RecipeSale = 'RECIPE_SALE';
+
+    /** Eget bruk: food used by the business itself, such as staff meals and representation (ADR-073 §7). */
+    case InternalUse = 'INTERNAL_USE';
 
     public function label(): string
     {
@@ -46,6 +53,8 @@ enum MovementType: string
             self::Return => __('Retur'),
             self::Scrap => __('Kassation'),
             self::WorkOrderIssue => __('Arbetsorder'),
+            self::RecipeSale => __('Såld via recept'),
+            self::InternalUse => __('Eget bruk'),
         };
     }
 

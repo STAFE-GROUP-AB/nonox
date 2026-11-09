@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\Inventory\Actions\Concerns\GuardsInventory;
 use App\Modules\Inventory\Domain\Quantity;
+use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\PickListLine;
 use App\Modules\Inventory\Models\ScanOperation;
@@ -16,8 +17,11 @@ use App\Modules\Inventory\Models\StockCountLine;
 use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Models\StockReceiptLine;
 use App\Modules\Inventory\Scanner\ScannerData;
+use App\Modules\Inventory\Scanner\ScannerExtensions;
+use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -38,6 +42,9 @@ use InvalidArgumentException;
  * - move: article_id, from_location_id, to_location_id, quantity
  * - count: stock_count_id, lines [{article_id, location_id, counted, reason}], complete
  * - count_start: location_id (null = everything)
+ *
+ * Kinds registered by another module (ScannerExtension, such as Kök's
+ * waste) run through that module's own action, under its permission.
  */
 class RunScanOperation
 {
@@ -59,15 +66,25 @@ class RunScanOperation
      */
     public function __invoke(User $user, Company $company, string $uuid, string $kind, array $payload): array
     {
-        $this->guard($user, $company, 'count');
+        $extension = app(ScannerExtensions::class)->forKind($kind);
 
-        if (! Str::isUuid($uuid) || ! in_array($kind, self::KINDS, true)) {
+        if ($extension === null) {
+            $this->guard($user, $company, 'count');
+        } else {
+            app(ModuleManager::class)->ensureEnabled(InventoryModule::KEY, $company);
+
+            if (! $extension->allows($user, $company)) {
+                throw new AuthorizationException;
+            }
+        }
+
+        if (! Str::isUuid($uuid) || ($extension === null && ! in_array($kind, self::KINDS, true))) {
             return self::answer($uuid, ScanOperation::REJECTED, __('Operationen går inte att läsa.'));
         }
 
         $uuid = strtolower($uuid);
 
-        return CurrentCompany::run($company, fn (): array => DB::transaction(function () use ($user, $company, $uuid, $kind, $payload): array {
+        return CurrentCompany::run($company, fn (): array => DB::transaction(function () use ($user, $company, $uuid, $kind, $payload, $extension): array {
             // A second request with the same UUID waits here until the first has committed, then sees its row.
             $inserted = ScanOperation::query()->insertOrIgnore([
                 'company_id' => $company->id,
@@ -91,7 +108,7 @@ class RunScanOperation
             }
 
             try {
-                $data = DB::transaction(fn (): array => $this->run($user, $company, $kind, $payload));
+                $data = DB::transaction(fn (): array => $extension === null ? $this->run($user, $company, $kind, $payload) : $extension->run($user, $company, $kind, $payload));
                 $answer = self::answer($uuid, ScanOperation::OK, null, $data);
             } catch (ValidationException $exception) {
                 $answer = self::answer($uuid, ScanOperation::REJECTED, (string) collect($exception->errors())->flatten()->first());

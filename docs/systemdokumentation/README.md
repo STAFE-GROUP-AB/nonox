@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.120
+- Version: 0.121
 - Datum: 2026-11-09
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -4167,11 +4167,29 @@ bokslutet (ADR-039). Modulen ändrar bokföringen bara i bokslutssteget nedan.
   genomsnittspris (företagets inställning, ÅRL 4 kap. 11 §) och lägsta
   värdets princip per artikel där ett nettoförsäljningsvärde har angetts
   (ÅRL 4 kap. 9 §). Ingen schablon för inkurans.
+- **Lagerslag** (ADR-073 §9): varje artikel har ett lagerslag, råvaror
+  och förnödenheter (`RAW_MATERIAL`) eller handelsvaror
+  (`GOODS_FOR_RESALE`); en artikel utan eget lagerslag har företagets
+  standard (från början handelsvaror). Varje lagerslag har ett kontopar i
+  Lagers inställningar: råvaror 1410 Lager av råvaror mot 4910 Förändring
+  av lager av råvaror, handelsvaror företagets tidigare par (1460 mot 4960
+  om inget annat valts).
 - **Bokslutssteget** (valfritt): värderingen på årets sista dag sparas
-  (`stock_valuations`, kan bara läggas till) och skillnaden mot saldot på
-  lagerkontot bokförs på årets sista dag i serie A, lagerkontot (1460 eller
-  1410) mot kontot för lagerförändring (4960 eller 4910), före årets
-  resultat. Det registreras som bokslutspost (`STOCK_VALUATION`). Punkten
+  (`stock_valuations`, kan bara läggas till, med fördelningen per
+  lagerslag i `classes`) och skillnaden mot saldot på varje lagerkonto
+  bokförs på årets sista dag i serie A, i en verifikation med ett kontopar
+  per lagerslag, före årets resultat. Ett lagerslag tas med när det har
+  varor, när det är företagets standard eller när någon artikel har det;
+  ett företag som aldrig valt lagerslag bokför därför ett par precis som
+  förut. Ett lagerslag vars lagerkonto har ett saldo under året tas
+  alltid med, värderat till det som finns kvar (noll om inget finns), så
+  att ett byte av lagerslag bokar ned det gamla kontot. Två lagerslag på
+  samma lagerkonto läggs ihop. Ett räkenskapsår som följer K2 i ett företag som
+  valt 97-procentsregeln (K2 punkt 12.5, avstängd från början) tar upp
+  varje lagerslag till 97 procent av anskaffningsvärdet, avrundat till
+  helt öre; bokningen stoppas om någon artikel är nedskriven till
+  nettoförsäljningsvärde. Inställningen visas bara för K2-företag, med
+  villkoret i K2 punkt 12.18 (kasserade varor ska vara fysiskt avskilda). Det registreras som bokslutspost (`STOCK_VALUATION`). Punkten
   "Varulagret är inventerat och värderat" i checklistan blir klar när
   värderingen är sparad, eller när en person bekräftar den för hand. När
   Lager är avstängd är punkten manuell som förut.
@@ -4304,6 +4322,39 @@ Den föreslår verifikationer men bokför aldrig själv.
 - `TODO(legal-verify)`: om kassans Z-rapport måste vara underlaget, kontona
   för kortfordran, presentkort och dricks, och momsen på kortavgifter
   (se ADR-042).
+
+## 5k1. Kök (modul)
+
+Recept och svinn för restauranger, ADR-073. Modulen kräver Lager och
+använder Kassakopplingar och Lön när de är på.
+
+- **Ingen bokföring:** svinn, personalmat och försäljning via recept är
+  lagerrörelser (`SCRAP`, `INTERNAL_USE`, `RECIPE_SALE`) genom lagrets
+  reskontra som bara kan läggas till. Ingen verifikation skapas per
+  svinnrad, måltid eller dag; de är inga affärshändelser med omvärlden
+  (BFL 1 kap. 2 § p. 7, regelbladet RS-R10). Bokföringen möter lagret vid
+  årets lagervärdering (avsnitt 5j). Ingen moms bokas på personalmat eller
+  skänkt mat (RS-R11, RS-R13).
+- **Recept** lagras i lagrets strukturmotor (`bills_of_materials`,
+  `bom_rows`): versioner med giltighetsdatum som aldrig ändras, svinn per
+  rad som andel av bruttomängden (brutto = netto × 10 000 / (10 000 −
+  svinn i baspunkter)), avrundning halvt uppåt. Kostnaden är en kalkyl från
+  lagrets värde, inte lagervärderingen.
+- **Svinnloggen** (`kitchen_waste_entries`) och mätningar av
+  tallrikssvinn kan bara läggas till (databastrigger); en felaktig rad
+  rättas med en ny rad som lägger tillbaka varorna (`RETURN`). Loggen
+  sparas lika länge som lagerrörelserna och kan vara
+  räkenskapsinformation (regelbladet L5).
+- **Personalmat** (`kitchen_staff_meals`) kan bara läggas till. Med Lön
+  påslaget föreslås kostförmånerna som rader som löneadministratören
+  godkänner in i lönekörningen; den anställdas egen betalning räknas mot
+  varje måltids förmånsvärde och aldrig över det.
+- **Försäljning via recept** (valfritt, avstängt från början): varje natt
+  dras gårdagens kassarader genom recepten, varje kassarad en gång
+  (`kitchen_sale_consumptions`), och aldrig försäljning före dagen
+  inställningen eller modulen slogs på. Returer lägger aldrig tillbaka
+  något i lagret; de minskar senare uttag. Ett sparat recept kan inte
+  ändras i databasen, bara slås av och på.
 
 ## 5l. CRM (modul)
 
@@ -4946,12 +4997,18 @@ kontrollerat dem mot källan. Särskilt:
 
 ### Lager (5j)
 
-- Om BFNAR 2016:10 (K2) kap. 11 begränsar valet av värderingsmetod (FIFO
-  eller vägt genomsnittspris enligt ÅRL 4 kap. 11 §) för K2-företag.
-- Om K2 tillåter en schablon för inkurans i redovisningen (Skatteverkets
-  97-procentsregel gäller beskattningen); i dag finns ingen schablon.
+- Om BFNAR 2016:10 (K2) kapitel 12 Varulager (inte kapitel 11) begränsar
+  valet av värderingsmetod (FIFO eller vägt genomsnittspris enligt ÅRL 4
+  kap. 11 §) för K2-företag.
+- K2 punkt 12.5 tillåter 97-procentsregeln (regelbladet
+  recept-och-svinn.md, RS-R5); NONOX erbjuder den bara K2-företag, avstängd
+  från början. Regelbladets citat ska kontrolleras av en oberoende
+  granskare.
+- Om vin, öl och sprit som serveras vid bordet är råvaror eller
+  handelsvaror (regelbladet L1); NONOX låter företaget välja lagerslag per
+  artikel.
 - Kontoparen för lagerförändringen (1460/4960 och 1410/4910) mot gällande
-  BAS-kontoplan.
+  BAS-kontoplan; 1410 och 4910 finns nu i mallarna för BAS 2026.
 - Vinstmarginalbeskattning: artiklar kan markeras, men fakturor räknar ännu
   inte fram marginalen eller ruta 07.
 - Jämförpris på etiketter (Prisinformationslagen 2004:347 och
@@ -5137,3 +5194,4 @@ påverkar bokföringen och fakturan:
 | 0.118 | 2026-11-08 | Arbetsorder (avsnitt 5m, ADR-074): tid och material som aldrig ändras utan backas med motpost (databasutlösare), lageruttag som `WORK_ORDER_ISSUE`, vidarefakturering av en leverantörsfakturarad en gång, fakturaunderlag som fakturautkast med ROT/RUT bara på arbete och omvänd betalningsskyldighet från arbetsordern, a conto-planer, ÄTA som är oföränderliga när de är beslutade och signeras i den gemensamma signeringsdomänen, och bokslutssteget Pågående arbeten som bara skapar verifikationsutkast (1620, 2420, 2450). Kundfakturor (avsnitt 5.2): arbetade timmar och typ av arbete på ROT- och RUT-fakturor, flera köpare som delar avdraget inom var sitt tak, och köparens personnummer på PDF:en (L6 öppen). |
 | 0.119 | 2026-11-09 | Skärpta databasspärrar (avsnitt 4.3, ADR-079): varje utlösarfunktion körs med sökvägen `public, pg_temp`, så att en temporär tabell med samma namn inte längre kan ersätta den riktiga inne i spärren (en bokförd verifikations rader kunde annars ändras och en obalanserad verifikation bokföras med direkt SQL); ett test fäller varje ny utlösarfunktion utan inställningen. En utfärdad kundfaktura eller registrerad leverantörsfaktura kan inte längre sättas tillbaka till utkast med direkt SQL och därefter ändras eller raderas; övriga statusbyten är oförändrade. Ingen bokföring ändras. |
 | 0.120 | 2026-11-09 | Aktiebok och styrelserum (avsnitt 5n, ADR-070): aktieboken som en händelselogg som bara kan skrivas till, med hashkedja (person- och id-nummer bara som HMAC med en egen nyckel) och nattlig kontroll (`share-register:verify`), prövad vid varje datum då aktieboken ändras, prövning av varje händelse mot hela historiken och rättelser som nya händelser. Bevaras enligt aktiebolagslagen 5 kap. 3 §, skilt från bokföringslagens sju år. Jämförelse med konto 2081 utan bokföring. Protokoll godkänns i NONOX och låses som PDF med SHA-256. Arkivpaketet får `aktiebok/` och `protokoll/` (avsnitt 7a). |
+| 0.121 | 2026-11-09 | Lagerslag och modulen Kök (avsnitt 5j och 5k1, ADR-073): lagervärdet vid bokslutet bokförs per lagerslag, råvaror mot 1410/4910 och handelsvaror mot företagets tidigare par, i en verifikation; ett företag som aldrig valt lagerslag bokför som förut. K2-företag kan välja 97-procentsregeln (K2 punkt 12.5), avstängd från början. Kök lägger till lagerrörelserna svinn med orsak, eget bruk och försäljning via recept, utan egna verifikationer och utan moms. BAS 2026-mallarna får 1410 och 4910. |

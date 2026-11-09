@@ -17,7 +17,11 @@ use App\Modules\Inventory\Livewire\OverviewPage;
 use App\Modules\Inventory\Livewire\PickListsPage;
 use App\Modules\Inventory\Livewire\ReceiptsPage;
 use App\Modules\Inventory\Livewire\ReportsPage;
+use App\Modules\Inventory\Livewire\UnitConversionsPanel;
 use App\Modules\Inventory\Models\ArticleImage;
+use App\Modules\Inventory\Models\ArticleUnitConversion;
+use App\Modules\Inventory\Models\BillOfMaterials;
+use App\Modules\Inventory\Models\BomRow;
 use App\Modules\Inventory\Models\LabelTemplate;
 use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\ScanOperation;
@@ -28,6 +32,7 @@ use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Models\StockValuation;
 use App\Modules\Inventory\Policies\InventoryPolicy;
+use App\Modules\Inventory\Scanner\ScannerExtensions;
 use App\Modules\ModuleRegistry;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -46,6 +51,7 @@ class InventoryServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->make(ModuleRegistry::class)->register(new InventoryModule);
+        $this->app->singleton(ScannerExtensions::class);
     }
 
     public function boot(): void
@@ -53,7 +59,7 @@ class InventoryServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/views', 'inventory');
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
-        foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockReceipt::class, PickList::class, StockCount::class, StockValuation::class, ArticleImage::class, LabelTemplate::class, ScanOperation::class] as $model) {
+        foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockReceipt::class, PickList::class, StockCount::class, StockValuation::class, ArticleImage::class, LabelTemplate::class, ScanOperation::class, BillOfMaterials::class, BomRow::class, ArticleUnitConversion::class] as $model) {
             Gate::policy($model, InventoryPolicy::class);
         }
 
@@ -67,6 +73,7 @@ class InventoryServiceProvider extends ServiceProvider
         Livewire::component('inventory.reports', ReportsPage::class);
         Livewire::component(LabelStudioPage::NAME, LabelStudioPage::class);
         Livewire::component(LabelPrintPanel::NAME, LabelPrintPanel::class);
+        Livewire::component(UnitConversionsPanel::NAME, UnitConversionsPanel::class);
 
         if ($this->app->runningInConsole()) {
             $this->commands([VerifyStockCommand::class]);

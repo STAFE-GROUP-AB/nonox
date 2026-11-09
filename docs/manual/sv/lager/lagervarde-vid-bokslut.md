@@ -4,7 +4,7 @@ ordning: 80
 roller: [owner, admin, accountant, bookkeeper, auditor]
 modul: inventory
 rutter: [inventory.reports]
-sokord: [lagervärde, varulager bokslut, lagerförändring, FIFO, vägt genomsnitt, lägsta värdets princip, nettoförsäljningsvärde, inkurans, 1460, 4960]
+sokord: [lagervärde, varulager bokslut, lagerförändring, FIFO, vägt genomsnitt, lägsta värdets princip, nettoförsäljningsvärde, inkurans, 1460, 4960, 1410, 4910, 97-procentsregeln, lagerslag]
 ---
 
 # Lagervärde vid bokslut
@@ -40,7 +40,16 @@ Gå till **Lager → Rapporter → Lagervärde**. Välj dag och metod. Du ser an
 3. Jämför **Lagervärde** med **Bokfört på** lagerkontot. Skillnaden står under **Lagerförändring att bokföra**.
 4. Klicka på **Spara lagervärdet och bokför förändringen**.
 
-NONOX sparar värderingen med alla rader som underlag och bokför skillnaden på årets sista dag: lagerkontot (1460 Lager av handelsvaror) mot kontot för lagerförändring (4960). Ökar lagret debiteras 1460; minskar det krediteras 1460. Kontona väljer du under **Lager → Inställningar**; för råvaror används 1410 och 4910.
+NONOX sparar värderingen med alla rader som underlag och bokför skillnaden på årets sista dag, en verifikation med ett kontopar per lagerslag:
+
+- **Handelsvaror**, varor du köper in och säljer vidare: 1460 Lager av handelsvaror mot 4960 Förändring av lager av handelsvaror.
+- **Råvaror och förnödenheter**, det du lagar mat av eller tillverkar av: 1410 Lager av råvaror mot 4910 Förändring av lager av råvaror.
+
+Ökar lagret debiteras lagerkontot; minskar det krediteras det. Lagerslaget väljs per artikel under **Lagerslag**, och **Lagerslag för artiklar utan eget** under **Lager → Inställningar**, där du också väljer kontona. Har du aldrig valt lagerslag bokförs allt som förut på handelsvarornas konton.
+
+## 97-procentsregeln
+
+Ett företag som följer K2 kan under **Lager → Inställningar** välja **Ta upp lagret till 97 procent av anskaffningsvärdet (K2 punkt 12.5)**. Den är avstängd från början. Regeln gäller bara när ingen vara är nedskriven till nettoförsäljningsvärde; annars stoppar NONOX bokningen. Varor som ska kasseras måste ha flyttats bort från lagret för att slängas. Ligger de kvar, värderade till noll, får regeln inte användas för något i lagret (K2 punkt 12.18).
 
 Det går bara efter årets sista dag och innan årets resultat är bokat. Ändras lagret eller bokföringen efteråt kan du bokföra igen; då bokförs bara den nya skillnaden.
 
@@ -49,7 +58,7 @@ Det går bara efter årets sista dag och innan årets resultat är bokat. Ändra
 När Lager är påslaget heter punkten **Varulagret är inventerat och värderat**. Den blir klar när värderingen är sparad. Har du räknat och bokfört lagret på annat sätt kan du bocka för den för hand som förut.
 
 > [!IMPORTANT]
-> Vilka värderingsmetoder ett K2-företag får använda och om en schablon för inkurans är tillåten är inte slutligt kontrollerat. Fråga din redovisningskonsult om du är osäker.
+> Vilka värderingsmetoder ett K2-företag får använda är inte slutligt kontrollerat. Fråga din redovisningskonsult om du är osäker.
 
 ## Läs också
 

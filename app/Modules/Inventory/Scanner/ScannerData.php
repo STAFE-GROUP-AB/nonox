@@ -23,8 +23,10 @@ use Illuminate\Support\Facades\Gate;
  * What the scanning app keeps on the phone for offline work (ADR-040): the
  * stocked articles (codes, name, unit, default location; never a price or
  * a cost, whoever asks), the active locations, the stock per location, and
- * the open receipts, pick lists and stocktakes with their lines. The same
- * number of queries whatever the size of the stock.
+ * the open receipts, pick lists and stocktakes with their lines (for those
+ * who handle goods), and the data of other modules' scanner extensions the
+ * user may use (Kök's Svinn). The same number of queries whatever the size
+ * of the stock.
  */
 final class ScannerData
 {
@@ -36,23 +38,28 @@ final class ScannerData
             ->orderBy('number')
             ->get(['id', 'number', 'name', 'unit', 'gtin', 'scanner_code', 'sku', 'default_location_id']);
 
-        $locations = StockLocation::query()->where('is_active', true)->orderBy('sort_key')->get(['id', 'full_code', 'name', 'sort_key']);
-
-        $levels = StockLevel::query()->where('quantity_milli', '<>', 0)->get(['article_id', 'location_id', 'quantity_milli']);
-
-        $receipts = StockReceipt::query()->whereIn('status', [StockReceipt::OPEN, StockReceipt::PARTIAL])
-            ->with(['supplier:id,name', 'lines' => fn ($query) => $query->orderBy('position')->orderBy('id')])
-            ->orderBy('number')->get();
-
-        $pickLists = PickList::query()->where('status', PickList::OPEN)
-            ->with(['lines' => fn ($query) => $query->orderBy('position')->orderBy('id')])
-            ->orderBy('number')->get();
-
-        $counts = StockCount::query()->where('status', StockCount::OPEN)
-            ->with(['location:id,full_code', 'lines' => fn ($query) => $query->orderBy('id')])
-            ->orderBy('number')->get();
-
         $can = Gate::forUser($user);
+        $canCount = $can->allows('count', [StockMovement::class, $company]);
+        $extensions = app(ScannerExtensions::class)->allowed($user, $company);
+
+        $places = self::places($user, $company);
+
+        $locations = StockLocation::query()->where('is_active', true)->when($places !== null, fn ($query) => $query->whereKey($places ?? []))->orderBy('sort_key')->get(['id', 'full_code', 'name', 'sort_key']);
+
+        $levels = StockLevel::query()->where('quantity_milli', '<>', 0)->when($places !== null, fn ($query) => $query->whereIn('location_id', $places ?? []))->get(['article_id', 'location_id', 'quantity_milli']);
+
+        // Receipts, pick lists and counts only for those who handle goods; not even queried otherwise.
+        $receipts = $canCount ? StockReceipt::query()->whereIn('status', [StockReceipt::OPEN, StockReceipt::PARTIAL])
+            ->with(['supplier:id,name', 'lines' => fn ($query) => $query->orderBy('position')->orderBy('id')])
+            ->orderBy('number')->get() : collect();
+
+        $pickLists = $canCount ? PickList::query()->where('status', PickList::OPEN)
+            ->with(['lines' => fn ($query) => $query->orderBy('position')->orderBy('id')])
+            ->orderBy('number')->get() : collect();
+
+        $counts = $canCount ? StockCount::query()->where('status', StockCount::OPEN)
+            ->with(['location:id,full_code', 'lines' => fn ($query) => $query->orderBy('id')])
+            ->orderBy('number')->get() : collect();
 
         return [
             'context' => [
@@ -62,8 +69,10 @@ final class ScannerData
                 'user' => $user->name,
             ],
             'can' => [
-                'count' => $can->allows('count', [StockMovement::class, $company]),
+                'count' => $canCount,
+                ...array_map(fn (): bool => true, $extensions),
             ],
+            'extensions' => array_map(fn (ScannerExtension $extension): array => $extension->data($user, $company), $extensions),
             'articles' => $articles->map(fn (Article $article): array => self::article($article))->values()->all(),
             'locations' => $locations->map(fn (StockLocation $location): array => [
                 'id' => $location->id,
@@ -100,6 +109,25 @@ final class ScannerData
             'counts' => $counts->map(fn (StockCount $count): array => self::count($count))->values()->all(),
             'generated_at' => now()->toIso8601String(),
         ];
+    }
+
+    /**
+     * The locations a user may see in Skanna, or null for all: a user who
+     * reaches Skanna only through another module (Kökspersonal) sees only
+     * that module's places. The data, the lookup and the stock per article
+     * all use it.
+     *
+     * @return ?list<int>
+     */
+    public static function places(User $user, Company $company): ?array
+    {
+        if (Gate::forUser($user)->allows('viewAny', [StockMovement::class, $company])) {
+            return null;
+        }
+
+        $limits = array_map(fn (ScannerExtension $extension): ?array => $extension->locationIds($user, $company), array_values(app(ScannerExtensions::class)->allowed($user, $company)));
+
+        return in_array(null, $limits, true) ? null : array_values(array_unique(array_merge(...$limits)));
     }
 
     /** @return array<string, mixed> */

@@ -7,6 +7,7 @@ namespace App\Modules\Inventory\Livewire;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Inventory\Domain\StockClass;
 use App\Modules\Inventory\Domain\ValuationMethod;
 use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\InventorySettings;
@@ -20,8 +21,9 @@ use Livewire\Component;
 
 /**
  * Lager's settings, on Lager → Inställningar and under Moduler: the
- * valuation method, whether stock may go below zero, and the accounts the
- * year-end stock change is booked on.
+ * valuation method, whether stock may go below zero, the default stock
+ * class and the account pair per class the year-end stock change is booked
+ * on (ADR-073 §9), and for K2 companies the 97 % rule.
  */
 class InventorySettingsForm extends Component
 {
@@ -56,9 +58,15 @@ class InventorySettingsForm extends Component
             'settings.allow_negative_stock' => ['boolean'],
             'settings.stock_account' => ['required', 'integer', "between:{$stockFrom},{$stockTo}"],
             'settings.change_account' => ['required', 'integer', "between:{$changeFrom},{$changeTo}"],
+            'settings.default_stock_class' => ['required', Rule::enum(StockClass::class)],
+            'settings.raw_material_stock_account' => ['required', 'integer', "between:{$stockFrom},{$stockTo}"],
+            'settings.raw_material_change_account' => ['required', 'integer', "between:{$changeFrom},{$changeTo}"],
+            'settings.rule_97' => ['boolean'],
         ], [
             'settings.stock_account.between' => __('Välj ett lagerkonto mellan :from och :to.', ['from' => $stockFrom, 'to' => $stockTo]),
             'settings.change_account.between' => __('Välj ett konto för lagerförändring mellan :from och :to.', ['from' => $changeFrom, 'to' => $changeTo]),
+            'settings.raw_material_stock_account.between' => __('Välj ett lagerkonto mellan :from och :to.', ['from' => $stockFrom, 'to' => $stockTo]),
+            'settings.raw_material_change_account.between' => __('Välj ett konto för lagerförändring mellan :from och :to.', ['from' => $changeFrom, 'to' => $changeTo]),
         ])->validate();
 
         $modules->updateSettings(InventoryModule::KEY, $company, $this->user(), [
@@ -66,6 +74,11 @@ class InventorySettingsForm extends Component
             'allow_negative_stock' => (bool) ($validated['settings']['allow_negative_stock'] ?? false),
             'stock_account' => (int) $validated['settings']['stock_account'],
             'change_account' => (int) $validated['settings']['change_account'],
+            'default_stock_class' => (string) $validated['settings']['default_stock_class'],
+            'raw_material_stock_account' => (int) $validated['settings']['raw_material_stock_account'],
+            'raw_material_change_account' => (int) $validated['settings']['raw_material_change_account'],
+            // Offered to K2 companies only (Lead decision O3); never on for another framework.
+            'rule_97' => InventorySettings::offersRule97($company) && (bool) ($validated['settings']['rule_97'] ?? false),
         ]);
 
         $this->toast(__('Inställningarna för lagret är sparade.'));
@@ -73,7 +86,11 @@ class InventorySettingsForm extends Component
 
     public function render(): View
     {
-        return view('inventory::livewire.settings-form', ['methods' => ValuationMethod::cases()]);
+        return view('inventory::livewire.settings-form', [
+            'methods' => ValuationMethod::cases(),
+            'classes' => StockClass::cases(),
+            'k2' => InventorySettings::offersRule97(Company::query()->findOrFail($this->companyId)),
+        ]);
     }
 
     private function user(): User

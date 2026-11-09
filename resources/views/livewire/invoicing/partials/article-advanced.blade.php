@@ -98,12 +98,25 @@
             <x-ui.field for="article_reorder_quantity" :label="__('Beställ antal')" error="reorder_quantity" class="sm:col-span-2">
                 <input id="article_reorder_quantity" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="form.reorder_quantity">
             </x-ui.field>
+            <x-ui.field for="article_stock_class" :label="__('Lagerslag')" error="stock_class" class="sm:col-span-2" :hint="__('Styr kontona för lagervärdet vid bokslutet: råvaror (1410) eller handelsvaror (1460). Tomt = företagets standard.')">
+                <select id="article_stock_class" class="{{ $input }} mt-1" wire:model="form.stock_class">
+                    <option value="">{{ __('Företagets standard') }}</option>
+                    @foreach(\App\Modules\Inventory\Domain\StockClass::cases() as $class)
+                        <option value="{{ $class->value }}">{{ $class->label() }}</option>
+                    @endforeach
+                </select>
+            </x-ui.field>
             <x-ui.field for="article_nrv" :label="__('Nettoförsäljningsvärde per st')" error="net_realisable_value" class="sm:col-span-2" :hint="__('Valfritt. Vad varan kan säljas för minus försäljningskostnader. Är det lägre än inköpspriset värderas lagret till det vid bokslutet.')">
                 <input id="article_nrv" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="form.net_realisable_value">
             </x-ui.field>
             <x-ui.field for="article_nrv_note" :label="__('Varför')" error="net_realisable_value_note" class="sm:col-span-4">
                 <input id="article_nrv_note" type="text" class="{{ $input }} mt-1" wire:model="form.net_realisable_value_note" maxlength="255" placeholder="{{ __('Till exempel: förra årets modell, säljs på rea') }}">
             </x-ui.field>
+            @if($editingId && auth()->user()->hasTeamPermission(auth()->user()->currentCompany(), 'inventory:manage'))
+                <div class="sm:col-span-6">
+                    <livewire:inventory.unit-conversions :article-id="$editingId" :key="'conversions-'.$editingId" />
+                </div>
+            @endif
         @endif
     </fieldset>
 @endif
