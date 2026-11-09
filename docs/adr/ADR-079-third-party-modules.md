@@ -777,7 +777,7 @@ First-party means both: a key in `ModuleRegistry::FIRST_PARTY` and a class in
 `App\Modules\`. A module with a first-party key whose class lives elsewhere is treated as
 third-party, so its key is refused.
 
-**Rule: a module registers in its service provider's `register()` method**, as all twelve
+**Rule: a module registers in its service provider's `register()` method**, as all sixteen
 first-party modules do. `register()` checks the key at once; the rest needs `roles()`,
 whose labels are translated, and translations are not available while providers register.
 So `ModuleServiceProvider::checkModules()` runs in a `booting` callback, which fires after
