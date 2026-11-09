@@ -587,3 +587,25 @@ Evidence: `tests/Feature/Demo/*`, `tests/Feature/DemoRebuild/*`.
 - En besökare får ett eget demoföretag i två timmar; allt utåt (mejl, HTTP, Peppol, bank, betalfiler, API-nycklar, AI) är spärrat, demofiler har egna mappar, ingen IP-adress sparas. Demodatabasen byggs om i stället för att rader raderas, bara när ingen demo pågår.
 - Kall granskning i två omgångar (5 P1 i första designen, 5 P1 i den nya), omkontroller; allt rättat.
 Driftsättning: `docs/drift/demodatabasen.md` (migrering med `--database=demo` vid varje deploy, `queue:work demo`, TRUSTED_PROXIES).
+
+---
+
+Package: Flytt från fler program (prioritet 7, ADR-076)
+Status: done (`/bokforing/las-in-uppgifter`; flyttguiderna per program dolda tills juristen granskat dem)
+Evidence: `tests/Feature/Import/*`, `tests/Tenancy/RegisterImportTenancyTest.php`.
+- Kunder, leverantörer och artiklar från CSV eller Excel med egen kolumnkoppling och mallar (Spiris, Bokio delvis); kontroller av org-/personnummer, bankgiro och plusgiro; dubbletter hoppas över och samma fil kan köras igen.
+- Obetalda fakturor läses in utan verifikation, behåller sitt gamla nummer ("Faktura X (tidigare program)"), kan inte skickas eller få NONOX-PDF och stäms av mot 1510/2440 inklusive NONOX egna öppna fakturor. Betalning matchas på gammalt OCR eller nummer; betalfiler får unika id per fil och plats.
+- Underlag i ZIP med kontroller mot farliga sökvägar och filer. Nytt paket: openspout/openspout (MIT).
+- Kall granskning (1 P1, 7 P2), tre omkontroller; allt rättat.
+Open legal-verify items: obetalda fakturor för företag med kontantmetoden (spärrat), moms vid bortskrivning.
+
+---
+
+Package: Egna moduler, steg 1–3 (prioritet 10, ADR-079)
+Status: done (koden); omställningen av nonox.app till separata databasanvändare väntar på ägarens beslut om separat webbanvändare och ett underhållsfönster
+Evidence: `tests/Feature/Security/*`, `tests/Feature/Modules/ModuleRegistryHardeningTest.php`.
+- Modulregistret: en modul kan inte skriva över en annan eller ta kärnans behörigheter och roller; kontrollen görs innan något startar; tredjepartsmoduler heter `leverantör.namn`.
+- Databasroller (av tills `DB_MIGRATION_USERNAME` sätts): ägare för migreringar, appanvändare utan rätt att ändra tabeller eller spärrar, läsanvändare. Rättighetsbeslut för alla 280 tabeller. Spärrfunktionerna låses till `public, pg_temp` efter varje migrering. Signerade offerter, personalliggarens poster inom lagringstiden och signeringsbevis kan inte raderas i databasen.
+- Runbook `docs/drift/databasroller.md`: kräver att PHP-FPM, kö och schemaläggare körs som en egen användare utan skrivrätt till koden.
+- Kall granskning i fyra omgångar; allt rättat. Säkerhetshålen med tillfälliga tabeller och utfärdade fakturor som blev utkast stängdes och driftsattes separat (0.119).
+Follow-ups: steg 4–10 (appar, SDK) väntar på ägarens frågor 1–4 och 10; spärrar på `fiscal_years`, låsta perioder och nummerräknare.
