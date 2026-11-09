@@ -144,9 +144,9 @@
     },
     {
       "id": "egen-server-guide",
-      "rubrik": "Guide för egen server med säkerhetskopior",
-      "beskrivning": "Steg för steg för att köra NONOX på en egen liten server: installation, certifikat, schemalagda jobb och kö, uppdateringar, nattlig krypterad säkerhetskopia till moln inom EU, lagring i sju år och åtkomst utifrån via VPN.",
-      "status": "Planerat",
+      "rubrik": "Installationsanvisningar för egen server, med skript",
+      "beskrivning": "Steg för steg och färdiga skript för att köra NONOX på en egen liten server: installation, certifikat, schemalagda jobb och kö, uppdateringar, nattlig krypterad säkerhetskopia till moln inom EU, lagring i sju år och åtkomst utifrån via VPN.",
+      "status": "Önskemål",
       "omrade": "Övrigt",
       "uppdaterad": "2026-11-09"
     },
