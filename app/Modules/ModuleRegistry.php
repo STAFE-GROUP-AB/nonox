@@ -22,14 +22,15 @@ use InvalidArgumentException;
  *
  * The lists a module had when it was checked (permissions, role keys, role
  * permissions, archive permissions) are kept and served from here, so a
- * module cannot hand out something else later. Role labels stay live: they
- * are translated per request.
+ * module cannot hand out something else later. Role labels are not kept
+ * here: JetstreamServiceProvider reads them once at boot, in the boot locale.
  *
- * Modules register while the providers register, before translations exist,
- * and roles() returns translated labels. So the key is checked at once and
- * the rest when the application starts to boot, before any provider boots
- * (ModuleServiceProvider); a module registered after that is checked at once
- * in full.
+ * Modules register in their provider's register(), before translations
+ * exist, and roles() returns translated labels. So the key is checked at
+ * once and the rest when the application starts to boot, before any provider
+ * boots; then the registry is closed (ModuleServiceProvider::checkModules).
+ * A registry that is not closed (tests) checks a module registered after
+ * boot at once in full.
  */
 final class ModuleRegistry
 {
@@ -47,6 +48,9 @@ final class ModuleRegistry
 
     /** @var array<string, Module> */
     private array $modules = [];
+
+    /** Closed once the providers have registered: modules register in a provider's register(). */
+    private bool $closed = false;
 
     /** @var array<string, array{permissions: list<string>, roles: list<string>, rolePermissions: array<string, list<string>>, archivePermissions: list<string>}> the checked lists per key */
     private array $checked = [];
@@ -66,6 +70,10 @@ final class ModuleRegistry
     public function register(Module $module): void
     {
         $key = $module->key();
+
+        if ($this->closed) {
+            throw InvalidModule::because($key, "registers too late: register modules in a service provider's register() method.");
+        }
 
         if (isset($this->modules[$key])) {
             throw InvalidModule::because($key, 'is already registered.');
@@ -109,6 +117,12 @@ final class ModuleRegistry
 
             $before[$key] = $this->checked[$key];
         }
+    }
+
+    /** Refuses further modules (ModuleServiceProvider::checkModules). */
+    public function close(): void
+    {
+        $this->closed = true;
     }
 
     public function has(string $key): bool
