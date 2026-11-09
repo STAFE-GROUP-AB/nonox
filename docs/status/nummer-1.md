@@ -8,7 +8,7 @@ Mänskliga beslut finns i [manskliga-beslut.md](manskliga-beslut.md).
 
 Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanför är klart, om inte ägaren säger något annat. Nya önskemål läggs sist, inte före.
 
-1. **Spec nummer-1, S1** (pågår): S1-P4 slås ihop efter omkontrollen, sedan S1-P12, S1-P9, S1-P10, S1-P13 och S1-P14.
+1. **Spec nummer-1, S1** (pågår): S1-P4 och S1-P12 klara; kvar S1-P9, S1-P10, S1-P13 och S1-P14.
 2. **Aktiebok och styrelserum** (ADR-070, `aktiebok-och-styrelserum`).
 3. **Körjournal och kvitto i mobilen** (`korjournal-och-kvitto-i-mobilen`).
 4. **Recept och svinn** för restaurang (`recept-och-svinn`).
@@ -612,3 +612,15 @@ Evidence: `tests/Feature/Security/*`, `tests/Feature/Modules/ModuleRegistryHarde
 - Runbook `docs/drift/databasroller.md`: kräver att PHP-FPM, kö och schemaläggare körs som en egen användare utan skrivrätt till koden.
 - Kall granskning i fyra omgångar; allt rättat. Säkerhetshålen med tillfälliga tabeller och utfärdade fakturor som blev utkast stängdes och driftsattes separat (0.119).
 Follow-ups: steg 4–10 (appar, SDK) väntar på ägarens frågor 1–4 och 10; spärrar på `fiscal_years`, låsta perioder och nummerräknare.
+
+---
+
+Package: S1-P12, övergång från K2 till K3 (ADR-059)
+Status: done (beta, Bokslut → Övergång till K3)
+Evidence: `tests/Feature/AnnualReport/K3/K3TransitionTest.php`, `tests/Feature/AnnualReport/K3/K3TransitionReliefTest.php`, `tests/Tenancy/K3TransitionTenancyTest.php`, fixture `tests/Fixtures/s1/f-s1-b/`.
+- För det första K3-året läggs skillnaderna mot K2 upp (uppskjuten skatt, avsättningar m.m.); avstämningen av eget kapital och texten om jämförbarheten går till årsredovisningen. Efter bekräftelse bokförs de en gång på årets första dag mot balanserad vinst (källa `K3_TRANSITION`); K2-året ändras inte.
+- Omräkningar som K3 förbjuder vid övergången vägras; lättnadsregeln för uppskjuten skatt kräver ett skäl och redovisas alltid. En helt återförd övergång kan ogiltigförklaras, bara i sitt eget öppna år.
+- Övergångsraden kan inte raderas och förslagets rader låses när övergången bokförs (databasspärr + rättighetsbeslut).
+- Redovisningskontroll, kall granskning och omkontroller; allt rättat. Hela sviten efter sammanslagning: 8 183 gröna (det enda röda var en omigrerad demodatabas i testmiljön, 80/80 gröna efter migrering), phpstan och pint rena.
+Public claim now allowed: inget nytt. Public claim still not allowed: "Årsredovisning enligt K3", "Kassaflödesanalys".
+Next package: S1-P9, S1-P10, S1-P13, S1-P14.
