@@ -127,6 +127,30 @@
       "uppdaterad": "2026-11-02"
     },
     {
+      "id": "tra-och-mobelavtalet",
+      "rubrik": "Trä- och möbelavtalet i lönen",
+      "beskrivning": "Avtalet för arbetare i trä- och möbelindustrin läggs in som data i lönen, med lönetillägg, övertid, OB och semesterregler, så att lönen räknas enligt avtalet.",
+      "status": "Planerat",
+      "omrade": "Avtal",
+      "uppdaterad": "2026-11-09"
+    },
+    {
+      "id": "storskarm-verkstad",
+      "rubrik": "Storskärm i verkstaden",
+      "beskrivning": "En vy för en tv-skärm på väggen som visar dagens tillverkning, vad som är försenat och vad som ska levereras, utan att någon behöver vara inloggad vid skärmen.",
+      "status": "Planerat",
+      "omrade": "Lager",
+      "uppdaterad": "2026-11-09"
+    },
+    {
+      "id": "egen-server-guide",
+      "rubrik": "Guide för egen server med säkerhetskopior",
+      "beskrivning": "Steg för steg för att köra NONOX på en egen liten server: installation, certifikat, schemalagda jobb och kö, uppdateringar, nattlig krypterad säkerhetskopia till moln inom EU, lagring i sju år och åtkomst utifrån via VPN.",
+      "status": "Planerat",
+      "omrade": "Övrigt",
+      "uppdaterad": "2026-11-09"
+    },
+    {
       "id": "datorprogram",
       "rubrik": "Program för Windows, Mac och Linux",
       "beskrivning": "Kör NONOX lokalt på datorn som ett vanligt program.",

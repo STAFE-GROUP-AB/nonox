@@ -8,7 +8,7 @@ Mänskliga beslut finns i [manskliga-beslut.md](manskliga-beslut.md).
 
 Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanför är klart, om inte ägaren säger något annat. Nya önskemål läggs sist, inte före.
 
-1. **Spec nummer-1, S1** (pågår): S1-P4 och S1-P12 klara; kvar S1-P9, S1-P10, S1-P13 och S1-P14.
+1. **Spec nummer-1, S1** (pågår): S1-P4 och S1-P12 klara; kvar S1-P9, sedan S1-P10 och S1-P14. S1-P13 (större aktiebolag) läggs utanför S1 enligt beslut S1-H1.
 2. **Aktiebok och styrelserum** (ADR-070, `aktiebok-och-styrelserum`).
 3. **Körjournal och kvitto i mobilen** (`korjournal-och-kvitto-i-mobilen`).
 4. **Recept och svinn** för restaurang (`recept-och-svinn`).
@@ -18,7 +18,7 @@ Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanf�
 8. **Prova utan att registrera** (`prova-utan-att-registrera`).
 9. **Statussida och säkerhet** (`statussida-och-sakerhet`).
 10. **Egna moduler** (`egna-moduler`), med en ADR om säkerheten först.
-11. **Tillverkning, inköpsordrar och kundorder** (ADR-071), i sina åtta steg.
+11. **Tillverkning, inköpsordrar och kundorder** (ADR-071), direkt efter S1 enligt ägaren 2026-11-09, i den här ordningen: D1 guide för egen server med säkerhetskopior (`egen-server-guide`); L1 Trä- och möbelavtalet (`tra-och-mobelavtalet`), lönereglerna för 2027 och en inläsningsmall för lönedata från andra program; M1 enheter på artiklar (§12); M2 stycklistor med arbetssteg och kalkyl på offert och order (§3–§4, §6); M3 inköpsorder och inköpsförslag (§2, §5); M4 tillverkningsorder med färdigvarulager (§8); M5 verkstadsterminal, avvikelser och efterkalkyl (§7); M6 planeringskalender (§13); M7 storskärm i verkstaden (`storskarm-verkstad`); därefter branschsidan "Tillverkande företag" och kopplingen till webbutik (`kassa-och-ehandel`). M1–M4 ska vara klara i mitten av januari 2027, M5–M7 i februari.
 12. **NONOX SaaS: återkommande intäkter och nyckeltal** (ADR-080): MRR, ARR, MRR-förändring (ny, utökning, minskning, förlorad), churn per kund och per intäkt, net revenue retention, kohorter, ARPA och livstidsvärde, byggt på avtalsfakturering, avtalsregistret och bokföringen. Plus stöd för Stripe i NONOX Connect (import av prenumerationer, fakturor och utbetalningar).
 
 Ägarens ordning 2026-11-09 för det som pågår: (a) skärmbilder till de nya manualartiklarna, (b) databasanvändarna och demodatabasen på nonox.app, (c) status på önskelistan i färdplanen, (d) NONOX SaaS med Stripe.
