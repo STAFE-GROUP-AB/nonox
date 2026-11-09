@@ -32,6 +32,7 @@ use App\Models\K3Transition;
 use App\Models\K3TransitionItem;
 use App\Models\OpeningBalance;
 use App\Models\Voucher;
+use App\Models\VoucherRow;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -760,4 +761,34 @@ describe('voiding, quick re-check of 5f06b8bd', function () {
         expect($this->transition->refresh()->voided_by_voucher_id)->toBeNull()
             ->and(K3Transition::query()->standing()->count())->toBe(1);
     });
+});
+
+it('S1-R4 nets the whole correction chain of a standing transition (C1 re-books, C2 corrects C1) into the opening deferred tax', function () {
+    loadTransitionFixture($this, register: false);
+    enterTransitionItems($this);
+    $transition = app(BookK3Transition::class)($this->owner, $this->year, K3TransitionProposal::for($this->company, $this->year)->fingerprint());
+    $c1 = app(CorrectVoucher::class)($this->owner, Voucher::query()->findOrFail($transition->voucher_id), 'Uppskjuten skatt ska vara 260 000', '2026-03-31', [
+        ['account' => 2091, 'debit_ore' => 26_000_000, 'credit_ore' => 0],
+        ['account' => 2240, 'debit_ore' => 0, 'credit_ore' => 26_000_000],
+    ]);
+    $c2 = app(CorrectVoucher::class)($this->owner, $c1->refresh(), 'Uppskjuten skatt ska vara 250 000', '2026-04-01', [
+        ['account' => 2091, 'debit_ore' => 25_000_000, 'credit_ore' => 0],
+        ['account' => 2240, 'debit_ore' => 0, 'credit_ore' => 25_000_000],
+    ]);
+
+    // The transition still stands (re-booked), so C2 on C1 is allowed.
+    expect($transition->refresh()->voided_by_voucher_id)->toBeNull();
+
+    $net = fn (int $from, int $to): int => (int) VoucherRow::query()
+        ->join('accounts', 'accounts.id', '=', 'voucher_rows.account_id')
+        ->whereIn('voucher_rows.voucher_id', [$transition->voucher_id, $c1->id, $c2->id])
+        ->whereBetween('accounts.number', [$from, $to])
+        ->sum(DB::raw('voucher_rows.debit_ore - voucher_rows.credit_ore'));
+    $proposal = DeferredTaxProposal::for($this->company, $this->year->refresh());
+
+    // Original −247 200, C1 +247 200 −260 000, C2 −247 200 +260 000 −250 000: −497 200 on 2240; 1370 +30 900 −30 900 +30 900.
+    expect($proposal->openingLiabilityOre)->toBe(-$net(2240, 2249))
+        ->and($proposal->openingLiabilityOre)->toBe(49_720_000)
+        ->and($proposal->openingAssetOre)->toBe($net(1370, 1379))
+        ->and($proposal->openingAssetOre)->toBe(3_090_000);
 });

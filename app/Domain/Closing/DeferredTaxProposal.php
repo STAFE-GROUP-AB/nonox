@@ -14,10 +14,11 @@ use App\Models\Account;
 use App\Models\Company;
 use App\Models\DeferredTaxItem;
 use App\Models\FiscalYear;
-use App\Models\Voucher;
 use App\Models\VoucherRow;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
+use stdClass;
 
 /**
  * The proposed deferred tax of a K3 company at the balance date (ADR-059,
@@ -48,7 +49,7 @@ use Carbon\CarbonImmutable;
  * 2100–2199 and the database backs that up. A proposal only: nothing is
  * booked until a person confirms it (YearEndClosing::confirmDeferredTax).
  * Fixed query count: items, accounts, opening balances, the transition
- * voucher, movements, and one call to the register.
+ * voucher's correction chain (two), movements, and one call to the register.
  *
  * TODO(legal-verify): rules.json has no date on which a rate was decided; the
  * proposal assumes every rate in it was decided before the balance date of a
@@ -202,23 +203,40 @@ final class DeferredTaxProposal
 
     /**
      * Debit minus credit per account of the year's posted K2-to-K3
-     * transition voucher (VoucherSource::K3Transition), netted with any posted
-     * correction of it, one grouped query.
+     * transition voucher (VoucherSource::K3Transition), netted with every
+     * posted voucher in its correction chain in the year (C1 correcting it,
+     * C2 correcting C1, …). Two queries: the chain, then the rows grouped.
      *
      * @return array<int, int>
      */
     private static function transitionMovements(FiscalYear $fiscalYear): array
     {
+        // The whole correction chain of the transition voucher, not only its direct corrections: a
+        // standing transition corrected with re-booking by C1 may have C1 corrected by C2, and the
+        // K3 opening balance is the net of all of them. (A void transition's chain cannot grow:
+        // VoidK3Transition::refuseCorrection.) Raw SQL for the recursive query; limited to the
+        // year's own company explicitly.
+        $chain = array_map(fn (stdClass $row): string => (string) $row->id, DB::select(<<<'SQL'
+            WITH RECURSIVE chain AS (
+                SELECT id FROM vouchers
+                WHERE company_id = ? AND fiscal_year_id = ? AND source = ?
+                UNION
+                SELECT vouchers.id FROM vouchers
+                JOIN chain ON vouchers.corrects_voucher_id = chain.id
+                WHERE vouchers.company_id = ?
+            )
+            SELECT id FROM chain
+            SQL, [$fiscalYear->company_id, $fiscalYear->id, VoucherSource::K3Transition->value, $fiscalYear->company_id]));
+
+        if ($chain === []) {
+            return [];
+        }
+
         return VoucherRow::query()
             ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
             ->where('vouchers.fiscal_year_id', $fiscalYear->id)
             ->where('vouchers.status', VoucherStatus::Posted->value)
-            // The transition voucher, and any posted correction of it netted with it. Direct corrections
-            // are enough: a correction of a correction is refused once the transition is void
-            // (VoidK3Transition::refuseCorrection), and a voucher can be corrected only once.
-            ->where(fn ($query) => $query
-                ->where('vouchers.source', VoucherSource::K3Transition->value)
-                ->orWhereIn('vouchers.corrects_voucher_id', Voucher::query()->select('id')->where('fiscal_year_id', $fiscalYear->id)->where('source', VoucherSource::K3Transition->value)))
+            ->whereIn('vouchers.id', $chain)
             ->groupBy('voucher_rows.account_id')
             ->selectRaw('voucher_rows.account_id, SUM(voucher_rows.debit_ore - voucher_rows.credit_ore) AS movement')
             ->pluck('movement', 'account_id')

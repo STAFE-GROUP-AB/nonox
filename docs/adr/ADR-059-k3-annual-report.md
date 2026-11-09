@@ -1416,8 +1416,10 @@ owner's mandate, open for the consultant's review). Fixture F-S1-b.
   later year or after closing leaves it standing. `CorrectVoucher` refuses
   (`VoidK3Transition::refuseCorrection`) to correct the voiding voucher or
   any voucher whose chain root is a void transition's voucher, so a C2 on C1
-  can never bring the rows back; `DeferredTaxProposal` therefore nets direct
-  corrections only.
+  can never bring the rows back. `DeferredTaxProposal` nets the whole
+  correction chain of the transition voucher in the year (C1, C2, …, a
+  recursive query), so a standing transition re-booked by C1 and corrected
+  again by C2 opens at the chain's net.
 - *One C.2 line (P3-a).* `K3Schedule` shows "Avsättningar för skatter" as one
   line, `tax_provisions`, over BAS 2240–2259 (ÅRL bilaga 1 C.2); the deferred
   tax part (224x) is `K3Schedule::DEFERRED_TAX_SPECIFICATION`, shown as a
