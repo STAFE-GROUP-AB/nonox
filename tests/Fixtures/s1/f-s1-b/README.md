@@ -3,10 +3,11 @@
 Status: ready for checking (written 2026-11-08 by the S1-P12 builder, **not** by the
 independent Fixture author; the Checker should re-derive every figure by hand).
 Revised 2026-11-09 after the independent accounting check
-(`docs/specs/rules/f-s1-b-accounting-check.md`): T4's facts now support the 35.27 relief,
-T1 has the kind `BUILDING_COMPONENTS`, the netted presentation (29.32) is added, the line
-label follows ÅRL ("Avsättningar för skatter"), and the reason for leaving K2 is stated.
-No amount changed.
+(`docs/specs/rules/f-s1-b-accounting-check.md`) and its re-check: T4 is plain equipment
+with räkenskapsenlig avskrivning and no relief (the 35.27 relief is tested in a separate,
+non-fixture test), T1 has the kind `BUILDING_COMPONENTS`, the netted presentation (29.32)
+is added, the line label follows ÅRL ("Avsättningar för skatter"), and the reason for
+leaving K2 is stated with the 2024 and 2025 figures. No amount changed.
 
 Fixture for spec item **S1 K3 annual report** (`docs/specs/nummer-1-spec.md`, Part 3,
 "F-S1-b: K2-to-K3 transition with prior-year comparatives") and ADR-059 A.4/A.5
@@ -45,17 +46,29 @@ net turnover, 8 MSEK total assets, 3 employees: a mindre företag by a wide marg
 
 **Why it must leave K2.** K2 1.1B a (BFNAR 2025:2): the company has a deferred tax
 liability that is judged väsentlig, 247 200 on the building (T1 below), assessed on the
-2025 annual report. The 1.1C exception does not save it: its first paragraph needs at most
-one of the three criteria to be exceeded, and in 2025 two are (balance sheet total
-7 942 960 > 1,5 MSEK and net turnover 5 000 000 > 3 MSEK; 3 employees is not "mer än 3").
+2025 annual report. The 1.1C exception does not save it. Its first paragraph looks at the
+two latest years and allows at most one of the three criteria to be exceeded, and two are
+exceeded in both:
+
+| | 2024 | 2025 | Threshold |
+|---|---:|---:|---:|
+| Balance sheet total | 7 360 000 | 7 942 960 | > 1 500 000 |
+| Net turnover | 4 800 000 | 5 000 000 | > 3 000 000 |
+| Average employees | 3 | 3 | > 3 (not exceeded) |
+
+(2024: the balance sheet total is the sum of assets at 2025-01-01 below; net turnover and
+employees are in `company.json` → `prior_year_figures_2024`.) Its second paragraph does
+not apply either: that exception is for a company that is caught by 1.1B only for a single
+or a few years, while this liability arises because the building's tax depreciation (4 %)
+exceeds its book depreciation (2 %) every year, so the company is normally caught.
 So `left_k2_reason` = `forced_2025_2`. Whether 247 200 is "väsentlig" is the person's
 judgement (human decision H2: NONOX only shows the figure). Chapter 35 is allowed anyway,
 because K3 was not applied before (35.1).
 
-The equipment (1220/1229) was taken over on 2023-01-01 in an underprisöverlåtelse from a
-company that has since been liquidated. The company's own return deducts the booked
-depreciation (80 000 a year), but the tax value it took over at the transfer is shown only
-in the transferor's tax records, which no longer exist (see T4).
+The equipment (1220/1229) was bought on 2023-01-01 for 400 000 and is depreciated by
+räkenskapsenlig avskrivning (IL 18 kap. 13–14 §§, the 20 % rule), 80 000 a year in both
+the books and the return, with no överavskrivningar (no 2150). Its tax value is therefore
+its book value: 160 000 at 2025-12-31.
 
 ### Opening balances 2025-01-01 (kronor)
 
@@ -95,9 +108,8 @@ Result before tax: 5 000 000 − 2 000 000 − 1 200 000 − 377 040 − 120 000
 
 Taxable income: the building is depreciated by 4 % a year for tax (240 000) but by 2 % in
 the books (120 000) (`TODO(legal-verify)`: the 4 % tax rate for a workshop building is this
-fixture's premise; Skatteverket's percentage list was not read). For the equipment the
-return deducts the booked 80 000, so no adjustment is made for it in 2025 (its tax value
-taken over in 2023 is unknown, see T4). 1 082 960 + 120 000 − 240 000 =
+fixture's premise; Skatteverket's percentage list was not read). The equipment follows
+the books (20 % of the tax acquisition value 400 000 = 80 000), so no adjustment. 1 082 960 + 120 000 − 240 000 =
 **962 960**. Tax 20,6 % × 962 960 = **198 369,76** (962 960 × 206 = 198 369 760 thousandths
 of a krona). Year's result 1 082 960 − 198 369,76 = **884 590,24**.
 
@@ -138,7 +150,7 @@ forced off K2 (BFNAR 2025:3 transitional provision 2, S1-R7.6).
 | T1 | Building, accounts 1110–1119: 6 000 000 − 1 200 000 | 4 800 000 | 3 600 000 | 1 200 000 taxable | 20,6 % × 1 200 000 = **247 200,00** liability (2240) | −247 200,00 |
 | T2 | Provision for warranty work beyond the contracts, an informal obligation (K3 21.4); not recognised under K2 | | | | | −150 000,00 (2220) |
 | T3 | Deferred tax on T2: a liability of 150 000 with tax value 0 | 150 000 | 0 | 150 000 deductible | 20,6 % × 150 000 = 30 900,00, recognised **30 900,00** (with a reason) asset (1370) | +30 900,00 |
-| T4 | Equipment taken over in a 2023 underprisöverlåtelse, accounts 1220–1229: 400 000 − 240 000 | 160 000 | not obtainable: the tax value taken over is only in the liquidated transferor's records, which are gone | — | **35.27 relief used, with that reason**: nothing recognised, disclosed (35.31) | 0 |
+| T4 | Equipment, accounts 1220–1229: 400 000 − 240 000 | 160 000 | 400 000 − 3 × 80 000 = 160 000 (räkenskapsenlig avskrivning) | 0 | none | 0 |
 | | **Total** | | | | | **−366 300,00** |
 
 Tax value of the building: 6 000 000 − 10 years × 240 000 = 3 600 000 (the 4 % premise
@@ -218,8 +230,8 @@ item. T1 reads 1110–1119 and is the same whether or not the building is split.
 - K3 is applied for the first time (35.31).
 - Comparatives are not restated; comparability with 2025 is lacking (35.7, ÅRL 3 kap. 5 §
   fjärde stycket).
-- Relief used: 35.27, for "Inventarier övertagna vid underprisöverlåtelse 2023", with the
-  person's reason (35.31).
+- No relief in 35.21–35.30 is used. (The 35.27 mechanism is proved by a separate test,
+  not by this company.)
 - Deferred tax shown gross; the right of set-off (29.32) is not confirmed.
 - Items not restated under 35.30: none.
 - Changed principles (35.33): deferred tax (K3 chapter 29), provisions for informal

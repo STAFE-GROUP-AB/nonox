@@ -271,8 +271,8 @@ describe('F-S1-b', function () {
 
         expect($note)->toContain('första gången enligt Bokföringsnämndens allmänna råd BFNAR 2012:1')
             ->toContain('Jämförelsetalen för räkenskapsåret 2025 har inte räknats om')
-            ->toContain('35.27')
-            ->toContain('Inventarier övertagna vid underprisöverlåtelse 2023')
+            ->toContain('Inga lättnadsregler i K3 punkterna 35.21–35.30 har tillämpats.')
+            ->not->toContain('Lättnadsregeln i K3 punkt 35.27')
             ->toContain(Money::ofOre(36_630_000)->format());
     });
 
@@ -366,7 +366,7 @@ describe('F-S1-b', function () {
             ->assertSee('Avstämning av eget kapital')
             ->assertSee(Money::ofOre(24_720_000)->format())
             ->assertSee('Bokföra övergången till K3 som en verifikation den 2026-01-01', false)
-            ->assertSee('Inventarier övertagna vid underprisöverlåtelse 2023');
+            ->assertSee('Inventarier anskaffade 2023');
 
         $page->call('confirm', K3TransitionProposal::for($this->company, $this->year)->fingerprint())->assertHasNoErrors();
 
@@ -419,21 +419,6 @@ describe('chapter 35 rules', function () {
         loadTransitionFixture($this, ['comparatives_restated_at_transition' => 'yes']);
 
         expect(implode(' ', K3TransitionProposal::for($this->company, $this->year)->blockers))->toContain('Omräknade jämförelsetal vid övergången stöds inte');
-    });
-
-    it('S1-R7.3 35.27: the relief needs a reason, and is disclosed', function () {
-        loadTransitionFixture($this);
-        $items = app(K3TransitionItems::class);
-        $input = ['kind' => 'DEFERRED_TAX', 'deferred_tax_kind' => 'OTHER_ASSET', 'description' => 'Inventarier', 'account_from' => '1220', 'account_to' => '1229', 'relief' => true];
-
-        expect(fn () => $items->save($this->owner, $this->year, $input))->toThrow(ValidationException::class, 'oskälig kostnad');
-
-        $items->save($this->owner, $this->year, [...$input, 'relief_reason' => 'Underlaget finns inte kvar.']);
-        $proposal = K3TransitionProposal::for($this->company, $this->year);
-
-        expect($proposal->equityEffectOre())->toBe(0)
-            ->and($proposal->disclosures()['reliefs'])->toBe(['K3 35.27'])
-            ->and(implode(' ', $proposal->comparabilityNote()))->toContain('Lättnadsregeln i K3 punkt 35.27 har tillämpats');
     });
 
     it('S1-R7.2 refuses the retroactive restatements chapter 35 forbids', function (string $kind, string $rule) {

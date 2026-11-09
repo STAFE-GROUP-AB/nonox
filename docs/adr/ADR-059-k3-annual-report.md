@@ -1340,7 +1340,8 @@ owner's mandate, open for the consultant's review). Fixture F-S1-b.
   checked independently): K2 2025 → K3 2026, building 6 000 000 / 1 200 000
   written off, tax value 3 600 000 → deferred tax liability 247 200,00; an
   informal warranty provision 150 000,00 with a recognised deferred tax
-  asset 30 900,00; equipment under the 35.27 relief; equity −366 300,00 on
+  asset 30 900,00; equipment with räkenskapsenlig avskrivning and no
+  difference (revised, see below); equity −366 300,00 on
   2091; the building split into three components with no equity difference.
   `tests/Feature/AnnualReport/K3/K3TransitionTest.php` proves it to the öre.
 - **Not built / follow-ups.** The cash flow statement of the first K3 year
@@ -1360,11 +1361,15 @@ owner's mandate, open for the consultant's review). Fixture F-S1-b.
   components (35.18 gives no key).
 
 **Revisions after the accounting check and the code review (2026-11-09).**
-- Accounting check (`docs/specs/rules/f-s1-b-accounting-check.md`): T4's
-  facts now support the 35.27 relief (equipment taken over in a 2023
-  underprisöverlåtelse; the inherited tax value is only in the liquidated
-  transferor's records), and the 2025 tax computation no longer says the
-  equipment follows the books (taxable income unchanged). T1 is
+- Accounting check (`docs/specs/rules/f-s1-b-accounting-check.md`) and its
+  re-check: T4 is plain equipment with räkenskapsenlig avskrivning (IL 18
+  kap. 13–14 §§): tax acquisition value 400 000, tax value 160 000 at
+  2025-12-31 equal to the book value, difference 0, no relief and no 35.27
+  disclosure. The 35.27 mechanism (reason required, disclosed, no equity
+  effect) is proved by a separate, non-fixture test,
+  `tests/Feature/AnnualReport/K3/K3TransitionReliefTest.php`. The README
+  states the 1.1C figures for 2024 and 2025 (2024 net turnover 4 800 000
+  added to the fixture) and why the second-paragraph exception fails. T1 is
   `BUILDING_COMPONENTS` (new migration widens the item check). The K3
   schedule's 2240 line is labelled with the ÅRL item "Avsättningar för
   skatter" (`K3Schedule`, so also in the K3 balance sheet). The README

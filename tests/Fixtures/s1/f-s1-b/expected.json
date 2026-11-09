@@ -10,7 +10,9 @@
   "comparatives_restated": false,
   "comparatives_restated_note": "S1-R7.1 branch tested: comparatives are NOT restated. K3 35.7: the transition date of a mindre företag that does not restate is the first day of the first K3 year. The 2025 figures stay K2 figures, and the notes say that comparability is lacking (ÅRL 3 kap. 5 § fjärde stycket).",
   "last_k2_year": {
-    "rule_ids": ["S1-R7.7"],
+    "rule_ids": [
+      "S1-R7.7"
+    ],
     "fiscal_year": "2025",
     "framework": "K2",
     "nettoomsattning": 500000000,
@@ -22,7 +24,15 @@
     "_note": "Untouched by the transition: the 2025 vouchers, opening balances and K2 annual accounts are the same before and after the transition is booked."
   },
   "transition": {
-    "rule_ids": ["S1-R7", "S1-R7.1", "S1-R7.2", "S1-R7.3", "S1-R7.5", "S1-R7.6", "S1-R7.7"],
+    "rule_ids": [
+      "S1-R7",
+      "S1-R7.1",
+      "S1-R7.2",
+      "S1-R7.3",
+      "S1-R7.5",
+      "S1-R7.6",
+      "S1-R7.7"
+    ],
     "first_k3_year": "2026",
     "transition_date": "2026-01-01",
     "chapter_35_allowed": true,
@@ -66,9 +76,11 @@
       {
         "id": "T4",
         "kind": "DEFERRED_TAX",
-        "description": "Inventarier övertagna vid underprisöverlåtelse 2023",
+        "description": "Inventarier anskaffade 2023",
         "carrying_ore": 16000000,
-        "relief_35_27": true,
+        "tax_value_ore": 16000000,
+        "difference_ore": 0,
+        "nature": "NONE",
         "deferred_tax_ore": 0,
         "equity_effect_ore": 0
       }
@@ -79,21 +91,69 @@
       "date": "2026-01-01",
       "source": "K3_TRANSITION",
       "rows": [
-        {"account": 2091, "debit_ore": 24720000, "credit_ore": 0},
-        {"account": 2240, "debit_ore": 0, "credit_ore": 24720000},
-        {"account": 2091, "debit_ore": 15000000, "credit_ore": 0},
-        {"account": 2220, "debit_ore": 0, "credit_ore": 15000000},
-        {"account": 1370, "debit_ore": 3090000, "credit_ore": 0},
-        {"account": 2091, "debit_ore": 0, "credit_ore": 3090000}
+        {
+          "account": 2091,
+          "debit_ore": 24720000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2240,
+          "debit_ore": 0,
+          "credit_ore": 24720000
+        },
+        {
+          "account": 2091,
+          "debit_ore": 15000000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2220,
+          "debit_ore": 0,
+          "credit_ore": 15000000
+        },
+        {
+          "account": 1370,
+          "debit_ore": 3090000,
+          "credit_ore": 0
+        },
+        {
+          "account": 2091,
+          "debit_ore": 0,
+          "credit_ore": 3090000
+        }
       ],
       "total_debit_ore": 42810000
     },
     "reconciliation": {
       "lines": [
-        {"key": "deferred_tax_asset", "label": "Uppskjuten skattefordran", "k2_ore": 0, "adjustment_ore": 3090000, "k3_ore": 3090000},
-        {"key": "retained", "label": "Balanserad vinst eller förlust", "k2_ore": 356000000, "adjustment_ore": -36630000, "k3_ore": 319370000},
-        {"key": "deferred_tax_liability", "label": "Avsättningar för skatter", "k2_ore": 0, "adjustment_ore": 24720000, "k3_ore": 24720000},
-        {"key": "other_provisions", "label": "Övriga avsättningar", "k2_ore": 0, "adjustment_ore": 15000000, "k3_ore": 15000000}
+        {
+          "key": "deferred_tax_asset",
+          "label": "Uppskjuten skattefordran",
+          "k2_ore": 0,
+          "adjustment_ore": 3090000,
+          "k3_ore": 3090000
+        },
+        {
+          "key": "retained",
+          "label": "Balanserad vinst eller förlust",
+          "k2_ore": 356000000,
+          "adjustment_ore": -36630000,
+          "k3_ore": 319370000
+        },
+        {
+          "key": "deferred_tax_liability",
+          "label": "Avsättningar för skatter",
+          "k2_ore": 0,
+          "adjustment_ore": 24720000,
+          "k3_ore": 24720000
+        },
+        {
+          "key": "other_provisions",
+          "label": "Övriga avsättningar",
+          "k2_ore": 0,
+          "adjustment_ore": 15000000,
+          "k3_ore": 15000000
+        }
       ],
       "equity_k2_ore": 454459024,
       "equity_k3_ore": 417829024,
@@ -102,11 +162,31 @@
       "_note": "Gross presentation: the legal right of set-off (K3 29.32) is not confirmed (kvittningsrätt ej bekräftad)."
     },
     "reconciliation_set_off": {
-      "rule_ids": ["S1-R4.6"],
+      "rule_ids": [
+        "S1-R4.6"
+      ],
       "lines": [
-        {"key": "retained", "label": "Balanserad vinst eller förlust", "k2_ore": 356000000, "adjustment_ore": -36630000, "k3_ore": 319370000},
-        {"key": "deferred_tax_liability", "label": "Avsättningar för skatter", "k2_ore": 0, "adjustment_ore": 21630000, "k3_ore": 21630000},
-        {"key": "other_provisions", "label": "Övriga avsättningar", "k2_ore": 0, "adjustment_ore": 15000000, "k3_ore": 15000000}
+        {
+          "key": "retained",
+          "label": "Balanserad vinst eller förlust",
+          "k2_ore": 356000000,
+          "adjustment_ore": -36630000,
+          "k3_ore": 319370000
+        },
+        {
+          "key": "deferred_tax_liability",
+          "label": "Avsättningar för skatter",
+          "k2_ore": 0,
+          "adjustment_ore": 21630000,
+          "k3_ore": 21630000
+        },
+        {
+          "key": "other_provisions",
+          "label": "Övriga avsättningar",
+          "k2_ore": 0,
+          "adjustment_ore": 15000000,
+          "k3_ore": 15000000
+        }
       ],
       "equity_k2_ore": 454459024,
       "equity_k3_ore": 417829024,
@@ -116,14 +196,41 @@
     },
     "ib_equals_previous_ub": true,
     "components": {
-      "rule_ids": ["S1-R7.2", "S1-R3"],
+      "rule_ids": [
+        "S1-R7.2",
+        "S1-R3"
+      ],
       "asset": "B1 Verkstadsbyggnad",
       "split_on": "2026-01-01",
       "carrying_before_ore": 480000000,
       "components": [
-        {"name": "Stomme", "cost_ore": 360000000, "accumulated_ore": 72000000, "carrying_ore": 288000000, "remaining_life_months": 720, "total_life_months": 840, "monthly_ore": 400000},
-        {"name": "Tak", "cost_ore": 120000000, "accumulated_ore": 24000000, "carrying_ore": 96000000, "remaining_life_months": 240, "total_life_months": 360, "monthly_ore": 400000},
-        {"name": "Installationer", "cost_ore": 120000000, "accumulated_ore": 24000000, "carrying_ore": 96000000, "remaining_life_months": 192, "total_life_months": 312, "monthly_ore": 500000}
+        {
+          "name": "Stomme",
+          "cost_ore": 360000000,
+          "accumulated_ore": 72000000,
+          "carrying_ore": 288000000,
+          "remaining_life_months": 720,
+          "total_life_months": 840,
+          "monthly_ore": 400000
+        },
+        {
+          "name": "Tak",
+          "cost_ore": 120000000,
+          "accumulated_ore": 24000000,
+          "carrying_ore": 96000000,
+          "remaining_life_months": 240,
+          "total_life_months": 360,
+          "monthly_ore": 400000
+        },
+        {
+          "name": "Installationer",
+          "cost_ore": 120000000,
+          "accumulated_ore": 24000000,
+          "carrying_ore": 96000000,
+          "remaining_life_months": 192,
+          "total_life_months": 312,
+          "monthly_ore": 500000
+        }
       ],
       "carrying_after_ore": 480000000,
       "equity_difference_ore": 0,
@@ -132,13 +239,20 @@
       "_note": "K3 35.18: the carrying amount at the transition date is split, nothing is restated, so the split creates no equity difference and, with every component on 1110/1119, no voucher. Depreciation from 2026 is prospective (13 000 kr a month instead of the K2 10 000)."
     },
     "disclosures": {
-      "rule_ids": ["S1-R7.1", "S1-R7.5"],
+      "rule_ids": [
+        "S1-R7.1",
+        "S1-R7.5"
+      ],
       "first_time_k3": true,
       "comparatives_not_restated": true,
-      "reliefs_used": ["K3 35.27"],
-      "relief_items": ["Inventarier övertagna vid underprisöverlåtelse 2023"],
+      "reliefs_used": [],
+      "relief_items": [],
       "items_not_restated_35_30": [],
-      "changed_principles": ["deferred_tax", "provisions", "components"],
+      "changed_principles": [
+        "deferred_tax",
+        "provisions",
+        "components"
+      ],
       "equity_effect_ore": -36630000
     }
   }
