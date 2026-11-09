@@ -495,7 +495,9 @@ from the decision above, it says so.
 
 - **P2-a [Lead]:** a line added after its month's run is approved or paid is approved into a
   later open regular run; the payroll input says "Personalmat (Kök), avser :period" and the meal
-  line keeps its own period.
+  line keeps its own period. [Lead] Never into a run of a later calendar year: the user enters
+  it by hand in that year's payroll. TODO(legal-verify): whether a benefit received in one month
+  may be reported in a later month's AGI instead of correcting the original month's AGI.
 - **P2-b [Lead]:** proposing never touches a run. Approving a changed month removes the
   previously approved inputs from their run first (refused if that run has since been approved),
   and the confirmation dialog says that a calculated run goes back to draft.

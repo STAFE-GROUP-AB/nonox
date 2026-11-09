@@ -229,6 +229,23 @@ describe('with payroll', function () {
             ->and(PayrollInput::query()->get()->map(fn ($input) => $input->amount_ore?->ore ?? (int) $input->quantity)->sort()->values()->all())->toBe([4, 49_600]);
     });
 
+    it('refuses a late December line in a January run of the next year (re-check 2)', function () {
+        $this->travelTo(CarbonImmutable::parse('2026-12-28 10:00:00'));
+        $meal = fn () => app(RegisterStaffMeal::class)($this->owner, $this->company, ['date' => '2026-12-01', 'meal' => 'LUNCH', 'reason' => 'PERSONALMAT', 'employee_id' => $this->cid->id]);
+        $meal();
+        $december = app(PayrollRuns::class)->create($this->owner, $this->company, '2026-12');
+        app(MealPayroll::class)->propose($this->owner, $this->company, '2026-12');
+        app(MealPayroll::class)->approve($this->owner, $this->company, $december, MealPayrollProposal::query()->pluck('id')->all());
+        PayrollRun::query()->whereKey($december->id)->update(['status' => 'PAID']);
+
+        $meal();
+        app(MealPayroll::class)->propose($this->owner, $this->company, '2026-12');
+        $january = app(PayrollRuns::class)->create($this->owner, $this->company, '2027-01');
+
+        expect(fn () => app(MealPayroll::class)->approve($this->owner, $this->company, $january, [MealPayrollProposal::query()->where('status', MealPayrollProposal::PROPOSED)->value('id')]))
+            ->toThrow(ValidationException::class, 'Lägg in förmånen för hand i lönen för 2026');
+    });
+
     it('approves a lunch added after the month was paid into the next open run, marked with its month (re-check P2-a)', function () {
         lunches($this->cid, 2, '');
         $november = app(PayrollRuns::class)->create($this->owner, $this->company, '2026-11');

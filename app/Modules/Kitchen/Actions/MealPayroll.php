@@ -235,6 +235,12 @@ class MealPayroll
                     throw ValidationException::withMessages(['run' => __('Raden gäller :period. Välj lönekörningen för den månaden, eller en senare om den månadens lön redan är attesterad.', ['period' => $line->period])]);
                 }
 
+                // TODO(legal-verify): whether a benefit received in one month may be reported in a later month's AGI
+                // instead of correcting the original month's AGI (SFL 26 kap.); until confirmed, never across a year.
+                if ($late && substr($run->period, 0, 4) !== substr($line->period, 0, 4)) {
+                    throw ValidationException::withMessages(['run' => __('Raden gäller :period, och lönekörningen är för ett annat år. Lägg in förmånen för hand i lönen för :year.', ['period' => $line->period, 'year' => substr($line->period, 0, 4)])]);
+                }
+
                 if ($line->quantity === null && (int) $line->amount_ore === 0) {
                     $line->forceFill(['status' => MealPayrollProposal::APPROVED, 'payroll_run_id' => $run->id, 'decided_by' => $user->id, 'decided_at' => now()])->save();
 

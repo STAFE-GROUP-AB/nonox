@@ -35,7 +35,12 @@ Raderna läggs till i lönen först när de godkänns. Det den anställda betala
 
 ## Ändrat efter godkännande
 
-Registreras eller rättas måltider efter att raderna godkänts, föreslår **Skicka kostförmåner till lönen** dem igen med texten **Ändrad efter godkännande**. Att föreslå ändrar aldrig någon lönekörning. Är lönekörningen fortfarande öppen föreslås hela månaden på nytt, och när du godkänner tas de gamla raderna först ur lönekörningen, så att även den egna betalningen rättas. Är lönen redan attesterad eller betald föreslås bara det som ska läggas till, och du godkänner det i nästa öppna lönekörning, där raden får texten "avser" och månaden. En minskning visas så att du rättar den för hand. En anställds månad godkänns alltid som en helhet.
+Registreras eller rättas måltider efter att raderna godkänts, föreslår **Skicka kostförmåner till lönen** dem igen med texten **Ändrad efter godkännande**. Att föreslå ändrar aldrig någon lönekörning. Är lönekörningen fortfarande öppen föreslås hela månaden på nytt, och när du godkänner tas de gamla raderna först ur lönekörningen, så att även den egna betalningen rättas. Är lönen redan attesterad eller betald föreslås bara det som ska läggas till, och du godkänner det i nästa öppna lönekörning, där raden får texten "avser" och månaden. Det går inte till en lönekörning ett senare år; då lägger du in förmånen för hand i lönen för rätt år.
+
+> [!WARNING]
+> Det är ännu inte bekräftat att en förmån för en månad får redovisas i en senare månads arbetsgivardeklaration i stället för att den ursprungliga månadens deklaration rättas. Fråga din redovisningskonsult innan du godkänner en sådan rad.
+
+ En minskning visas så att du rättar den för hand. En anställds månad godkänns alltid som en helhet.
 
 ## Rätta en rad
 
