@@ -288,3 +288,405 @@ the past. Kök guards it in its own action (`SaveRecipe`: a date before today or
 latest completed stock count needs an explicit confirmation and is audited). Manufacturing's
 action that saves a bill of materials needs its own guard of the same kind, against the
 production orders and counts it would change, before it is built.
+
+## Addendum 2026-11-09: units of measure (§12)
+
+The owner, for the joinery: "Enheten på alla artiklar måste kunna anges i styck, kvadrat,
+kubik och så vidare eftersom trä och saker till t.ex. ett bord anges i flera olika enheter."
+Sawn timber is bought by the cubic metre, stocked by the running metre and used by the piece;
+board is bought by the sheet and used by the square metre; screws are bought by the pack and
+used by the piece.
+
+What exists: `articles.unit` is free text (max 10 characters) used by invoicing, the API and
+Peppol. Quantities are integer thousandths of that unit (`*_milli`, ADR-039). The structure
+engine (ADR-073) stores a row in the component's own unit and keeps what was typed
+(`bom_rows.entered_quantity`, `entered_unit`); `article_unit_conversions.factor_milli` holds
+"thousandths of the extra unit in one article unit", and `StructureUnits::FIXED` knows g for
+kg and dl/cl/ml for l. `UblInvoiceWriter::UNITS` maps unit text to UN/ECE Recommendation 20
+codes, with C62 as the fallback.
+
+### 12.1 A unit catalogue per company
+
+`units`: `company_id`, `code` (string 10, as printed: `m²`), `name`, `dimension`
+(enum COUNT, LENGTH, AREA, VOLUME, VOLUME_LIQUID, MASS, TIME, OTHER), `base_numerator` and
+`base_denominator` (bigint: one of this unit is numerator/denominator of the dimension's base
+unit), `rec20_code` (char 3, null), `aliases` (jsonb, lower-case spellings matched on import
+and migration), `is_default`, `archived_at`. Unique `(company_id, code)`. `BelongsToCompany`.
+
+Seeded on company creation and by the migration for existing companies (codes taken from
+`UblInvoiceWriter::UNITS`, never invented):
+
+| Code | Name | Dimension | Base factor | Rec 20 |
+|---|---|---|---|---|
+| st | styck | COUNT | 1 st | H87 |
+| m | meter | LENGTH | 1 m | MTR |
+| lpm | löpmeter | LENGTH | 1 m | MTR (not in today's map; `TODO(legal-verify)`) |
+| m² | kvadratmeter | AREA | 1 m² | MTK |
+| m³ | kubikmeter | VOLUME | 1 m³ | MTQ |
+| kg | kilogram | MASS | 1 kg | KGM |
+| g | gram | MASS | 1/1000 kg | GRM |
+| l | liter | VOLUME_LIQUID | 1/1000 m³ | LTR |
+| h | timme | TIME | 1 h | HUR |
+| förp | förpackning | COUNT, no fixed factor | — | XPK |
+| par | par | COUNT, no fixed factor | — | PR |
+| set | set | COUNT, no fixed factor | — | SET |
+
+Helper units for entry only (not offered as stock units by default): mm (MMT), cm (CMT),
+dm² (no code in today's map), dl, cl, ml (none in today's map), min (MIN). A unit without a
+code goes out as C62 on Peppol, as today.
+
+- **Same-dimension conversions are built in**, from the base factors: m ↔ mm/cm/lpm,
+  m² ↔ dm², m³ ↔ l (1 m³ = 1 000 l; VOLUME and VOLUME_LIQUID share the base m³), kg ↔ g,
+  l ↔ dl/cl/ml, h ↔ min. This replaces `StructureUnits::FIXED`.
+- **förp, par and set** have no fixed size: how many pieces a pack holds is per article.
+- **Users may add units** (`rulle`, `bunt`, `pall`) with a dimension (OTHER when none fits)
+  and, optionally, a Rec 20 code chosen from a list. A unit in use cannot be deleted, only
+  archived.
+
+### 12.2 Stock, purchase and sales unit per article
+
+- `articles.stock_unit_id` (the unit stock is counted, valued and moved in; every `*_milli`
+  stock column is in it), `purchase_unit_id` and `sales_unit_id` (null = the stock unit).
+- `articles.unit` stays and is written from the sales unit's code, so invoicing, the API and
+  Peppol keep working unchanged. It is not dropped in this step.
+- Every unit other than the stock unit needs a conversion: built in (same dimension), from
+  the article's dimensions (§12.3), or entered on the article.
+- `article_unit_conversions` gains `numerator` and `denominator` (bigint, both > 0: one stock
+  unit is numerator/denominator of this unit, stored reduced) and `source` (MANUAL,
+  DIMENSIONS). Existing rows are backfilled with numerator = `factor_milli`,
+  denominator = 1 000; `factor_milli` stays until every reader uses the fraction.
+- Bill of materials rows, purchase order rows, production orders and pick list lines may use
+  any unit the article converts to. They store the quantity in the stock unit (milli) and
+  keep the entered quantity and unit, as `bom_rows` does today. Changing a conversion never
+  changes a saved row (as today); it only affects the next entry.
+
+Migration path for existing rows: the free text is lower-cased and trimmed and matched
+against the catalogue codes and aliases (the keys of `UblInvoiceWriter::UNITS`: `styck`,
+`stk`, `pcs` → st; `kvm`, `m2` → m²; `tim`, `timme` → h; and so on). A text that matches
+nothing becomes a company unit with that code, dimension OTHER and no Rec 20 code. Stock,
+purchase and sales unit are all set to the result, so nothing an existing company sees
+changes. The migration has only `up()` and writes no stock movement.
+
+### 12.3 Conversions from the material's dimensions
+
+Sawn timber and board carry their nominal size: `articles.material_length_um`,
+`material_width_um`, `material_thickness_um` (bigint micrometres, entered in mm with up to
+three decimals, so 0,6 mm veneer is 600). They are separate from the existing `length_mm`,
+`width_mm`, `height_mm`, which describe the package for shipping.
+
+From them NONOX derives conversions with `source = DIMENSIONS` (W, T, L in metres):
+
+| Stock unit | Derived unit | Per stock unit |
+|---|---|---|
+| lpm or m | m² (face) | W |
+| lpm or m | m³ | W × T |
+| lpm or m | st (when L is set) | 1/L |
+| m² | m³ | T |
+| m² | st (when L and W are set) | 1/(L × W) |
+| st | lpm, m², m³ | L; L × W; L × W × T |
+
+Example: a 45 × 95 stud, stock unit lpm: 1 lpm = 0,045 × 0,095 = 0,004275 m³, stored as
+171/40 000. Derived conversions are recomputed when the dimensions change; a manual
+conversion for the same unit wins over a derived one.
+
+### 12.4 Precision and rounding
+
+Decision: **quantities stay integer milli-units of the stock unit.** No column moves to
+micro-units.
+
+Why: a move to micro-units would touch every `*_milli` column (stock levels, the append-only
+stock ledger with its trigger, receipts, counts, pick lists, Kök's recipes, POS imports, BOM
+rows), `Quantity`, the valuation and the API, for a precision problem that only appears when
+the stock unit is chosen badly. A thousandth of a running metre is 1 mm, of a square metre
+10 cm², of a piece a thousandth of a piece. A thousandth of a cubic metre is one litre, too
+coarse for veneer (1 m² of 0,6 mm veneer is 0,0006 m³, 0,6 milli). So:
+
+- The stock unit is the unit the goods are counted and picked in: lpm or st for timber, m² or
+  st for board and veneer. m³ is a purchase and display unit. The article form warns when a
+  dimension is set and m³ is chosen as the stock unit.
+- Conversion to the stock unit happens once, at entry:
+  `stock_milli = round_half_up(entered_milli × denominator / numerator)`, with Brick\Math,
+  never floats.
+- An entry that rounds to zero milli of the stock unit is refused ("Mängden blir noll i
+  lagerenheten"). An entry whose round trip differs by more than 0,5 % from what was typed
+  shows a warning with both figures; the row can still be saved.
+- What the user typed is stored beside the stock quantity, so a row is always shown exactly
+  as entered.
+
+**Cost follows the stock unit.** `purchase_price_ore`, the valuation (FIFO or weighted
+average) and the cost per unit on movements are per stock unit. A purchase order row has its
+price per the row's unit. A price per m³ converted to a price per lpm rarely lands on whole
+öre, so a receipt keeps the line's exact value: `stock_movements.value_ore` (nullable, on
+movements in) is the row's quantity × price in the row's own unit, rounded half up once; the
+valuation uses it when set and quantity × unit cost otherwise. That is a change to the stock
+ledger of ADR-039 and goes through the accounting check before it is built.
+
+### 12.5 Display
+
+- Internal screens (bill of materials, purchase order, production order, pick list, stock,
+  costing) show each row in its own unit and, when it differs, the stock-unit equivalent:
+  "2,5 m³ (≈ 584,795 lpm)". The pick list leads with the stock unit (what is taken from the
+  shelf) and shows the order's unit beside it.
+- Customer-facing documents (quote and invoice PDF, order confirmation, the customer portal)
+  show only the row's unit. Peppol carries the row's quantity and its unit's Rec 20 code
+  (C62 when none). Supplier-facing documents (purchase order PDF, Peppol Order later) show
+  the purchase unit and the supplier's article number.
+
+`TODO(legal-verify)`: ML 17 kap. 24 § requires the quantity and kind of goods on an invoice;
+confirm that the sales unit's code (`lpm`, `förp`) is enough as the unit text. Confirm that
+MTR is acceptable for running metres, that X-prefixed Rec 21 codes (XPK) pass the Peppol BIS
+Billing 3.0 validation as unit codes, and which codes to use for dm², dl, cl and ml.
+
+### 12.6 Fixtures (copied into `tests/Fixtures` when built)
+
+| # | Case | Input | Expected |
+|---|---|---|---|
+| F-U1 | Stud 45 × 95, L 4 800 mm, stock lpm | buy 2,5 m³ | 584 795 milli-lpm (584,7953… half up); conversion m³ = 171/40 000 |
+| F-U1b | same | BOM row 4 st | 19 200 milli-lpm, shown "4 st (19,2 lpm)"; 1 st = 0,02052 m³ |
+| F-U1c | same, 6 500 kr/m³ | receipt of 2,5 m³ | `value_ore` 1 625 000; unit cost 2 779 öre/lpm (2 778,75 half up); 584,795 × 2 779 would give 1 625 145, which is why the line value is kept |
+| F-U2 | Oak board 27 mm, 2 440 × 1 220 mm, stock m² | 1 st | 2 977 milli-m² (2,9768 half up); 1 m² = 0,027 m³ |
+| F-U2b | same, 1 450 kr/m² | BOM row 1,62 m² (top 1 800 × 900) | material 234 900 öre |
+| F-U3 | Oak veneer 0,6 mm, stock m² | 0,001 m³ | 1 667 milli-m² (1,6667 half up); round trip 0,02 %, no warning |
+| F-U3b | same veneer with stock unit m³ | 0,3 m² | 0,18 milli-m³ rounds to 0 → refused; the form warned when m³ was chosen |
+| F-U4 | Board, stock m² | 250 dm² | 2 500 milli-m² (built in) |
+| F-U4b | Lacquer, stock l | 0,012 m³ | 12 000 milli-l (built in) |
+| F-U5 | Screw, stock st, 1 förp = 200 st | buy 3 förp at 189 kr/förp | 600 000 milli-st; `value_ore` 56 700; unit cost 95 öre (94,5 half up) |
+| F-U6 | Stud as F-U1 | 0,000001 m³ | 0,000234 lpm → 0 milli → refused |
+| F-U6b | Stud as F-U1 | 0,0001 m³ | 23 milli-lpm (23,39 half up); round trip 0,0000983 m³ = 1,7 % off → warning, savable |
+| F-U7 | Migration | unit texts `Styck`, `kvm`, `tim`, `M3`, `rulle` | st, m², h, m³, and a new company unit `rulle` (OTHER, no code → C62 on Peppol) |
+| F-U8 | Invoice row 12 lpm | sales unit lpm | PDF "12 lpm"; Peppol quantity 12 with the lpm code; no stock equivalent on the PDF |
+
+### 12.7 Decisions (units)
+
+1. One unit catalogue per company with the defaults above; users may add units.
+2. Each article has a stock, a purchase and a sales unit; `articles.unit` stays as the sales
+   unit's code.
+3. Conversions are stored as exact fractions; same-dimension conversions come from the
+   catalogue, cross-dimension ones from the article (manual or from its dimensions).
+4. Quantities stay milli-units of the stock unit; the stock unit must be the counting unit;
+   results of zero are refused and round-trip changes above 0,5 % warn; half up, once, at
+   entry.
+5. Cost is per stock unit; receipts keep their exact line value.
+6. Rows display in their own unit with the stock equivalent on internal screens; customer
+   documents show only the row's unit.
+
+Open questions: the Peppol unit codes above (`TODO(legal-verify)`); whether the 0,5 % warning
+threshold should be a company setting; whether a sawmill-type customer needs m³ as a stock
+unit (then this decision is revisited, with micro-units only for the affected columns);
+`value_ore` in the valuation (accounting check).
+
+## Addendum 2026-11-09: production planning calendar (§13)
+
+The owner: "en slags planeringskalender där jag kan se alla orders, produkter som tillverkas
+och liksom live se vart de troligtvis kommer levereras och vara klara och om saker händer att
+jag kan se avvikelser och se hur det påverkar leveranser, t.ex. om en person är sjuk."
+
+This addendum replaces the first bullet of §11 (detailed scheduling per person and
+workstation, and a Gantt view, are now in scope) and extends §10: when a plan exists, the
+delivery estimate for an order is the plan's forecast, and the history-based range stays as
+the fallback. The Swedish specification with mock-ups is kept outside the repository
+(`NONOX-Planeringskalender-specifikation.pdf`, 2026-11-09); this section is the binding
+summary.
+
+### 13.1 Scope and screens
+
+Part of `manufacturing`, under `/tillverkning/planering` (the staff schedule of ADR-037 keeps
+`/planering`):
+
+- `/tillverkning/planering`: timeline (Gantt), one row per order or production order, its
+  operations as bars, the promised date as a marker, the forecast at the bar's end.
+- `/tillverkning/planering/resurser`: one row per person and per workstation with working
+  hours, absence (shown only as "Frånvarande"), booked operations and load per day.
+- `/tillverkning/planering/kalender`: month and week calendar of forecast finish and delivery
+  dates.
+- `/tillverkning/planering/ordrar`: the orders with customer, promised date, forecast date,
+  difference in working days, traffic light and what they wait for (material, capacity,
+  nothing).
+- `/tillverkning/planering/avvikelser`: open deviations with their impact and suggestions.
+
+### 13.2 Resources
+
+- **Workstations** (`production_workstations`): name, code, the operations they serve, and a
+  working calendar (the company's working hours by default). Downtime is recorded in
+  `production_downtimes` (start, expected end, reason enum, source).
+- **People** are employees. Working hours come from published shifts in Planering (ADR-037)
+  when that module is on, otherwise from a weekly pattern per person in manufacturing
+  (`production_work_patterns`). Public holidays come from `App\Domain\Calendar\SwedishHolidays`.
+- **Skills**: an operation may require a skill (`operations.required_skill_id`) and a
+  workstation. Skills are Planering's `planning_skills` and `planning_employee_skills` when
+  Planering is on, otherwise a list kept in manufacturing with the same shape.
+- **Absence** is read through one narrow query that returns employee id, dates and part-day
+  hours of approved payroll absences, never the type or the note (§13.7).
+
+### 13.3 Forecasting algorithm
+
+Deterministic forward finite-capacity scheduling (list scheduling), recomputed as a whole:
+
+1. Snapshot, in a fixed number of queries: open production orders (RELEASED, STARTED, and
+   DRAFT ones tied to an open sales order), their operations in sequence with remaining
+   minutes (standard × quantity − reported, never below zero, or the latest "remaining"
+   estimate reported from the terminal), the locked assignments, material requirements,
+   stock, open purchase order rows with expected dates, resources, calendars and absences,
+   for the horizon (default 26 weeks, maximum 52).
+2. Material ready date per production order: free stock and incoming purchase order rows are
+   allocated in the order of step 3 (as reservations in §5). A component still short with no
+   purchase order gets today + the supplier's median lead time (or the article's lead time),
+   and the forecast is flagged "antaget materialdatum".
+3. Order of planning: locked assignments first, as they are; then production orders sorted by
+   manual priority, promised date (none last), release time and production order number. The
+   sort is total, so the same input always gives the same plan.
+4. For each production order, each operation in sequence: earliest start = the latest of now,
+   the previous operation's end plus its wait time (drying, curing), and the material ready
+   date for the first operation. Candidates are the people with the skill (and the
+   workstation when one is required). The operation fills the candidate's free working time
+   from the earliest start, across breaks and days, and in gaps left by earlier operations.
+   The candidate with the earliest end wins; ties go to the fewest booked minutes in the
+   horizon, then the lowest id. An operation is not split between people unless a planner
+   splits it.
+5. Finish = the last operation's end plus its wait time. Forecast delivery date = the first
+   working day whose start is at or after the finish, plus a delivery buffer in working days
+   (company setting, default 0).
+6. Traffic light: green when the forecast is at least one working day before the promised
+   date; yellow when it is on the promised date or rests on an assumed material date; red when
+   it is after. Grey without a promised date.
+
+Limits, stated in the UI: the plan is greedy, not optimised (it does not minimise total
+lateness); no sequence-dependent setup times; one person and at most one workstation per
+operation; standard minutes are only as good as the history (§6, learning); nothing is
+forecast past the horizon ("efter horisonten").
+
+### 13.4 Running it
+
+- A queued job `RecomputeProductionPlan(company_id, trigger)` calls `CurrentCompany::run()`,
+  is unique per company (`ShouldBeUnique`) and delayed a few seconds to absorb bursts. It is
+  dispatched by an absence approved or changed, a shift published, a downtime, a purchase
+  order's expected date, a receipt, a terminal report, a production order status change, a
+  sales order quantity or date change, a lock, and nightly.
+- The result is stored as a run (`production_plan_runs`) with slots and order forecasts. The
+  new run is compared with the previous one; changed forecasts become deviation impacts. The
+  latest 30 runs are kept and older ones pruned, except runs referenced by a deviation or a
+  lock.
+- Performance: the snapshot loads in a fixed number of queries (no N+1, proved with a
+  query-count test at 10 and 100 orders); the scheduler works in memory. Target: under two
+  seconds for 300 production orders × 8 operations × 20 resources.
+- **Live updates by Livewire polling**, not broadcasting: the screens poll a cheap "latest run
+  id" every 15 seconds while visible (`wire:poll.15s.visible`) and reload when it changes.
+  NONOX has no websocket server today, self-hosters would need one, and 15 seconds is fast
+  enough for a workshop. Broadcasting can be added later behind the same "run changed" event.
+
+### 13.5 Deviations
+
+`production_deviations`: type (ABSENCE, PURCHASE_DELAY, SCRAP, OVERRUN, WORKSTATION_DOWN,
+QUANTITY_CHANGE, MATERIAL_SHORTAGE, LOCK_BROKEN), source (morph to the record that caused it;
+for ABSENCE only the employee id and dates, never the absence record), status (OPEN, HANDLED,
+DISMISSED), and the runs before and after. `production_deviation_impacts`: per affected
+production order and sales order, the customer id, promised date, forecast before and after,
+and the change in working days.
+
+How they enter: absence from payroll or Planering; a supplier delay by changing the expected
+date on a purchase order row (by hand, or from a supplier message in the inbox confirmed by a
+user); scrap, overrun (with a new remaining estimate) and a stopped workstation from the
+workshop terminal (`production:report`); a quantity or date change on the sales order.
+
+Suggestions are computed by simulation (§13.6) and shown with their result before they are
+applied: move to another qualified person, overtime for a qualified person (with ADR-037's
+working-time warnings and the estimated labour cost in öre), split an operation between two
+people, reprioritise (showing which other orders move), and a new date to the customer. A
+suggestion that does not help is shown as such. Nothing is applied without a user with
+`production:plan`, and no customer message is sent until a user with
+`production:confirm-dates` has seen the text and the recipient and confirmed (as §2 for
+purchase orders).
+
+### 13.6 Simulation, locking, audit
+
+- "Tänk om" creates a scenario (`production_scenarios`: the changes as ids, enums, dates and
+  minutes) and computes it in memory without touching the live plan. Applying it writes the
+  changes and triggers a normal run. Scenarios expire after seven days.
+- A planner can lock an assignment (person, workstation, start) and set a frozen window
+  (default 0 working days). The scheduler never moves locked work; when locked work becomes
+  impossible (the person is absent), a LOCK_BROKEN deviation is raised instead of a silent
+  move.
+- Audit log (`Audit::record`; ids, enums, dates and minutes only, no names or free text):
+  `manufacturing.plan_locked`, `.plan_unlocked`, `.operation_moved`, `.operation_split`,
+  `.priority_changed`, `.scenario_applied`, `.deviation_handled`, `.deviation_dismissed`,
+  `.customer_date_confirmed`, `.customer_date_message_sent`.
+
+### 13.7 Permissions and personal data
+
+- `manufacturing:view` sees the calendar. New: `production:plan` (move, lock, split,
+  reprioritise, apply scenarios, handle deviations) and `production:confirm-dates` (confirm a
+  delivery date to the customer and send the message). The names follow the existing
+  `production:report` and `production:analyse`. Owner and admin get both; Planering's
+  scheduler role gets `manufacturing:view` and `production:plan`; accountant, bookkeeper and
+  auditor get view only.
+- **Sick leave is health data (GDPR art. 9).** The calendar shows every kind of absence the
+  same way, "Frånvarande", and never the reason: not in the plan, the deviation, the impact
+  panel, the audit log, the customer message or the API. The planning engine cannot read the
+  reason, because its absence query selects no type column. The reason stays in payroll,
+  visible only to those who see it there today. A deviation of type ABSENCE is raised for
+  every kind of absence, so the type does not reveal sickness by elimination.
+- Retention: plan runs as in §13.4; deviations and impacts 24 months, after which the
+  employee id is removed and the rest kept for delivery accuracy statistics.
+
+`TODO(legal-verify)`: whether showing "Frånvarande" for a named person to everyone with
+`manufacturing:view` needs a narrower audience under art. 5.1 c; whether absence shown next
+to a deviation can still reveal health by inference; the 24-month retention; and whether the
+workshop terminal may show who is absent today (proposed: it does not).
+
+### 13.8 Data model
+
+`production_workstations`, `production_workstation_operations`, `production_downtimes`,
+`production_work_patterns`, `production_order_operations` (sequence, operation, workstation,
+standard minutes, remaining minutes override, wait minutes after), `production_plan_runs`,
+`production_plan_slots` (run, order operation, employee, workstation, start, end, minutes,
+locked), `production_plan_forecasts` (run, production order, sales document, material ready
+on, finish at, forecast delivery on, promised on, status, flags), `production_plan_locks`,
+`production_scenarios`, `production_deviations`, `production_deviation_impacts`,
+`production_customer_date_changes` (sales document, old and new date, decided by, message sent
+at). `sales_documents` gains `confirmed_delivery_on` (§10's confirmed date) unless it exists.
+Every table has `company_id` and uses `BelongsToCompany`; another company's id gives 404. Money
+(overtime cost estimates) is in öre; quantities (scrap, quantity changes) are milli-units of
+the stock unit (§12).
+
+### 13.9 Fixtures (the scheduling algorithm on synthetic data)
+
+Workshop: five people working 07:00–16:00 with lunch 12–13, Monday to Friday. Skills: Maja
+(Montering), Omar (Kapning, Hyvling, Montering), Tove (Slipning, Lackering), Jonas (Kapning,
+Hyvling), Lina (Slipning). Lackering needs the workstation Lackbox and is followed by 12
+hours' drying. Plan computed Monday 2026-11-16 07:00. Minutes per unit are Kapning / Hyvling /
+Montering / Slipning / Lackering.
+
+| Order | Product | Qty | Material ready | Promised |
+|---|---|---|---|---|
+| TO-1042 | Byrå 80 (40/30/120/60/45) | 6 | now | 2026-11-24 |
+| TO-1041 | Ekbord 180 (30/25/90/45/30) | 10 | now | 2026-11-25 |
+| TO-1043 | Pall (10/0/25/15/10) | 20 | 2026-11-24 (purchase order) | 2026-12-01 |
+
+| # | Event | TO-1042 | TO-1041 | TO-1043 |
+|---|---|---|---|---|
+| F-P0 | Base plan | 11-20 green | 11-23 green | 11-27 green |
+| F-P1 | Tove absent 11-17 – 11-23 | 11-25 red (+3) | 11-26 red (+3) | 11-27 green |
+| F-P1a | F-P1 + overtime for Tove 11-24 16–19 | 11-25 red | 11-25 yellow | 11-27 green |
+| F-P1b | F-P1 + TO-1041 prioritised first | 11-26 red | 11-25 yellow | 11-27 green |
+| F-P2 | Purchase order for TO-1043 delayed to 11-30 | 11-20 green | 11-23 green | 12-03 red (+4) |
+| F-P3 | Lackbox down 11-18 07:00 – 11-19 16:00 | 11-23 green (+1) | 11-24 green (+1) | 11-27 green |
+| F-P4 | Montering on TO-1042 takes 240 min longer | 11-23 green (+1) | 11-23 green | 11-27 green |
+| F-P5 | One top scrapped on TO-1041 (+45 min Slipning, +30 min Lackering) | 11-20 green | 11-24 green (+1) | 11-27 green |
+| F-P6 | TO-1041 quantity 10 → 14 | 11-20 green | 11-25 yellow (+2) | 11-27 green |
+
+Changes are counted in working days between the old and the new forecast. The expected slot
+lists (who does what, when) for F-P0 and F-P1 are in the specification's appendix.
+
+### 13.10 Decisions (planning calendar)
+
+1. The calendar is part of `manufacturing` at `/tillverkning/planering`, with timeline,
+   resource, calendar, order list and deviation views.
+2. Deterministic forward finite-capacity list scheduling, recomputed as a whole in a queued
+   job per company; no optimiser.
+3. Live updates by polling the latest run id, not broadcasting.
+4. Deviations are found by comparing runs; suggestions are simulated and applied only by a
+   human; customer messages go only after confirmation by `production:confirm-dates`.
+5. Absence is "Frånvarande" only; the engine cannot read the reason.
+6. Build order: resources and calendars → the scheduler with fixtures F-P0 to F-P6 → timeline
+   and order list → deviations and impact → simulation and locks → customer date messages →
+   terminal deviation reports → mobile view.
