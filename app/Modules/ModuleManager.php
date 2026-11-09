@@ -9,6 +9,7 @@ use App\Models\CompanyModule;
 use App\Models\User;
 use App\Modules\Contracts\Module;
 use App\Support\Audit\Audit;
+use App\Support\Demo\DemoMode;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -23,7 +24,7 @@ use Illuminate\Validation\ValidationException;
  */
 final class ModuleManager
 {
-    /** @var array<int, list<string>> enabled module keys per company id, this request */
+    /** @var array<string, array<int, list<string>>> enabled module keys per database connection and company id, this request */
     private array $enabled = [];
 
     public function __construct(private readonly ModuleRegistry $registry) {}
@@ -45,7 +46,12 @@ final class ModuleManager
             return false;
         }
 
-        return in_array($key, $this->enabledKeys($companyId), true);
+        if (! in_array($key, $this->enabledKeys($companyId), true)) {
+            return false;
+        }
+
+        // A demo company (ADR-077) reaches nothing outside NONOX: these modules are off while a visitor is in it.
+        return ! DemoMode::moduleBlocked($key);
     }
 
     /**
@@ -234,7 +240,8 @@ final class ModuleManager
     /** @return list<string> */
     private function enabledKeys(int $companyId): array
     {
-        return $this->enabled[$companyId] ??= Cache::rememberForever(
+        // Per connection too: the demo database has companies with the same ids as the main one (ADR-077).
+        return $this->enabled[DB::getDefaultConnection()][$companyId] ??= Cache::rememberForever(
             self::cacheKey($companyId),
             // Read for a given company, whichever company is current.
             fn (): array => CompanyScope::bypass(fn (): array => array_values(CompanyModule::query()
@@ -247,7 +254,7 @@ final class ModuleManager
 
     private function forget(Company $company): void
     {
-        unset($this->enabled[$company->id]);
+        unset($this->enabled[DB::getDefaultConnection()][$company->id]);
         Cache::forget(self::cacheKey($company->id));
     }
 

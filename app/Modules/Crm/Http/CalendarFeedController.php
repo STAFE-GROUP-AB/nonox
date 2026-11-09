@@ -45,7 +45,7 @@ final class CalendarFeedController
         if (! $valid) {
             // Guessing links costs: a stricter limit per address for those that lead nowhere. A valid link is never
             // held back by misses from the same address (calendar services fetch from shared addresses).
-            $misses = 'crm-calendar-miss:'.$request->ip();
+            $misses = 'crm-calendar-miss:'.hash_hmac('sha256', (string) $request->ip(), (string) config('app.key'));
             abort_if(RateLimiter::tooManyAttempts($misses, self::MISSES_PER_MINUTE), 429);
             RateLimiter::hit($misses, 60);
             abort(404);

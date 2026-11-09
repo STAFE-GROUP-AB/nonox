@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\Validator;
 final class UpdateInstanceSettings
 {
     /**
-     * @param  array<string, mixed>  $input  operator_company_id, waitlist_open, registration_open, security_contact (optional: left as it is when absent)
+     * @param  array<string, mixed>  $input  operator_company_id, waitlist_open, registration_open, demo_enabled, security_contact (optional: left as it is when absent)
      * @return list<string>
      */
     public function __invoke(User $admin, array $input): array
@@ -50,6 +50,7 @@ final class UpdateInstanceSettings
                     $fail(__('Ange en e-postadress eller en webbadress som börjar med https://.'));
                 }
             }],
+            'demo_enabled' => ['sometimes', 'boolean'],
         ], [], [
             'operator_company_id' => __('driftbolag'),
             'security_contact' => __('säkerhetskontakt'),
@@ -59,7 +60,9 @@ final class UpdateInstanceSettings
         $operator = $id($validated['operator_company_id'] ?? null);
 
         $settings = InstanceSettings::current();
-        $before = $settings->all();
+        // Not set means the installation's default, so saving that same default changes nothing.
+        $demoBefore = $settings->demoEnabled();
+        $before = [...$settings->all(), InstanceSettings::DEMO_ENABLED => $demoBefore];
         $contact = array_key_exists('security_contact', $validated)
             ? trim((string) $validated['security_contact'])
             : $before[InstanceSettings::SECURITY_CONTACT];
@@ -69,6 +72,7 @@ final class UpdateInstanceSettings
             InstanceSettings::WAITLIST_OPEN => (bool) $validated['waitlist_open'],
             InstanceSettings::REGISTRATION_OPEN => (bool) $validated['registration_open'],
             InstanceSettings::SECURITY_CONTACT => $contact === '' ? null : $contact,
+            InstanceSettings::DEMO_ENABLED => (bool) ($validated['demo_enabled'] ?? $demoBefore),
         ];
 
         $changed = array_keys(array_filter($new, fn (mixed $value, string $key): bool => $before[$key] !== $value, ARRAY_FILTER_USE_BOTH));

@@ -58,6 +58,13 @@
                         <p id="hq-registration-open-hint" class="text-sm text-gray-600">{{ __('Öppen: vem som helst kan skapa ett konto på inloggningssidan med en kod till sin e-post och sedan lägga upp ett företag. Stängd: bara godkända i kön och inbjudna får ett konto.') }}</p>
                     </div>
                 </div>
+                <div class="flex items-start gap-3">
+                    <input id="hq-demo-enabled" type="checkbox" wire:model="demoEnabled" class="mt-1 h-5 w-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" aria-describedby="hq-demo-enabled-hint">
+                    <div>
+                        <label for="hq-demo-enabled" class="text-sm font-medium text-gray-800">{{ __('Prova utan att registrera är öppen') }}</label>
+                        <p id="hq-demo-enabled-hint" class="text-sm text-gray-600">{{ __('Öppen: vem som helst kan på /prova få ett påhittat demoföretag i två timmar, utan konto. Det rensas bort av sig självt. Stängd: sidan finns inte och inget demoföretag skapas.') }}</p>
+                    </div>
+                </div>
             </div>
         </x-ui.card>
 

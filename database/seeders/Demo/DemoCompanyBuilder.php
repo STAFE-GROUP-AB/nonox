@@ -108,7 +108,7 @@ final class DemoCompanyBuilder
 
         $this->company = $this->createCompany->create($user, [
             'name' => $demo['name'],
-            'org_number' => DemoIndustries::orgNumber($demo['org_serial'], '559', '9998'),
+            'org_number' => $demo['org_number'] ?? DemoIndustries::orgNumber($demo['org_serial'], '559', '9998'),
             'legal_form' => 'AB',
             'address_line1' => 'Exempelgatan '.(int) $demo['org_serial'],
             'postal_code' => $demo['postal_code'],

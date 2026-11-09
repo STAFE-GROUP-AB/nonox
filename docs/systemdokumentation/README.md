@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.122
+- Version: 0.123
 - Datum: 2026-11-09
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -4605,7 +4605,7 @@ räkenskapsinformation, men de bevaras och kontrolleras på samma sätt som bokf
   in- och utloggningar, skrivs till tabellen `audit_logs` med användare, tidpunkt, åtgärd
   och värden före och efter.
 - Tabellen går bara att lägga till i. Databasen själv vägrar ändringar och
-  borttagningar.
+  borttagningar. Inget undantag: demon (avsnitt 7c) ligger i en egen databas.
 - När en ny programversion tas i bruk skrivs en post `system.version_deployed`
   med version, byggnummer, commit (SHA), byggtid, systemdokumentationens
   version och föregående version. Den skrivs en gång per ny version eller
@@ -4704,6 +4704,44 @@ räkenskapsinformation, men de bevaras och kontrolleras på samma sätt som bokf
   Förbättrat i ändringsloggen.
 - Sidorna påverkar inte bokföringen och är ingen behandlingshistorik enligt
   BFNAR 2013:2; den beskrivs i avsnitt 7, och systemets versioner i avsnitt 9.
+
+## 7c. Demoföretag: Prova utan att registrera (ADR-077)
+
+- På `/prova` kan en besökare få ett påhittat demoföretag utan konto. Demon ligger i
+  en **egen databas**, anslutningen `demo` (`DB_DEMO_DATABASE`, namnet slutar på `_demo`),
+  och aldrig i den riktiga: ingen gäst, inget demoföretag, ingen session och ingen cache
+  för en demo skrivs i huvuddatabasen. Demodatabasen har hela schemat med alla
+  triggrar (`migrate --database=demo`), så en bokförd verifikation kan inte ändras där
+  heller. Företaget byggs av samma Actions som den vanliga demon, med ett års bokföring,
+  fakturor och lön, och ägs av en gästanvändare med en slumpad platshållaradress på
+  `demo.invalid`, utan lösenord. Företaget är ett testföretag (`teams.is_test_company`);
+  tiden demon slutar finns i `demo_sessions`. En demo varar två timmar.
+- En gästs hela förfrågan körs på demodatabasen: första mellanvaran i webbgruppen
+  byter standardanslutning, sessionsdrivrutin, sessionskaka (`nonox_demo_session`),
+  cache och kö innan sessionen startar och innan användaren hämtas, och sätter tillbaka allt
+  när förfrågan är slut. Kakan har ett eget namn, och en förfrågan går bara till demodatabasen när funktionen är på, sessionen finns där och
+  demon är igång; annars serveras huvuddatabasen och kakan glöms. Ett id från huvudsessionen hittar därför aldrig
+  en användare i demodatabasen och tvärtom. Demons filer, cache och kö är skilda från de riktigas. Köade jobb från en gäst går till
+  kön `demo` (tabellen `jobs` i demodatabasen) och körs på demodatabasen.
+- Ett demoföretag är aldrig riktig bokföring. Det mejlar inget, skickar inget via
+  Peppol, bank, Skatteverket eller NONOX AI, gör ingen betalfil, ingen API-nyckel
+  och ingen inbjudan, och de modulerna är avstängda i demodatabasen (avsnitt 5f, 5g, 5e,
+  5c, 5k). Ett demoföretag har ingen del i driftbolagets kundregister, statistiken
+  eller faktureringen.
+- **Ingen borttagning av bokförda rader.** Triggrarna som vägrar DELETE har inget undantag, varken
+  i huvuddatabasen eller i demodatabasen. `demo:prune` (var tionde minut) bygger i stället
+  demodatabasen på nytt (`DROP SCHEMA public CASCADE`, sedan `migrate --database=demo`)
+  när inga demor är igång, inget bygge pågår och några har gått ut, och
+  senast efter ett dygn (`NONOX_DEMO_REBUILD_AFTER_HOURS`) stoppas nya demor tills de igångvarande
+  har tagit slut. Kommandot arbetar bara mot anslutningen `demo` och vägrar om
+  databasens namn inte slutar på `_demo` eller är huvuddatabasens. Det är den enda
+  databas NONOX får tömma. Kommandot gör ingenting medan inställningen i /hq är avstängd (standard
+  överallt), och namnet måste vara exakt `<huvuddatabasen>_demo` på samma server och port.
+- Köade jobb från en demo som misslyckas skrivs till huvudinstallationens tabell `failed_jobs` (köns felhantering är
+  gemensam); bygget av en demo fångar alla fel själv. Driftanvisningar: `docs/drift/demodatabasen.md`.
+- Testerna `DemoIsolationTest` (huvuddatabasens triggerfunktioner är identiska med demodatabasens och
+  saknar `demo_purge`; sessionerna kan inte korsa databaserna i någon riktning),
+  `DemoScheduleTest` (båda vägrarna) och `DemoRebuildTest` (en riktig ombyggnad) bevisar detta.
 
 ## 8. Öppna frågor (TODO legal-verify)
 
@@ -5213,3 +5251,4 @@ påverkar bokföringen och fakturan:
 | 0.120 | 2026-11-09 | Aktiebok och styrelserum (avsnitt 5n, ADR-070): aktieboken som en händelselogg som bara kan skrivas till, med hashkedja (person- och id-nummer bara som HMAC med en egen nyckel) och nattlig kontroll (`share-register:verify`), prövad vid varje datum då aktieboken ändras, prövning av varje händelse mot hela historiken och rättelser som nya händelser. Bevaras enligt aktiebolagslagen 5 kap. 3 §, skilt från bokföringslagens sju år. Jämförelse med konto 2081 utan bokföring. Protokoll godkänns i NONOX och låses som PDF med SHA-256. Arkivpaketet får `aktiebok/` och `protokoll/` (avsnitt 7a). |
 | 0.121 | 2026-11-09 | Lagerslag och modulen Kök (avsnitt 5j och 5k1, ADR-073): lagervärdet vid bokslutet bokförs per lagerslag, råvaror mot 1410/4910 och handelsvaror mot företagets tidigare par, i en verifikation; ett företag som aldrig valt lagerslag bokför som förut. K2-företag kan välja 97-procentsregeln (K2 punkt 12.5), avstängd från början. Kök lägger till lagerrörelserna svinn med orsak, eget bruk och försäljning via recept, utan egna verifikationer och utan moms. BAS 2026-mallarna får 1410 och 4910. |
 | 0.122 | 2026-11-09 | Fakturans PDF sparas när fakturan utfärdas, eller första gången den behövs om det sker före det (avsnitt 7a, ADR-075 beslut O6), och används oförändrad i e-post, påminnelser, nedladdning, API, Peppol, arkivpaket och kundportal; äldre fakturor tas fram som förut. Signering av offerter med länk är en del av kärnan och fungerar även när CRM är avstängt (ADR-075 §7); avtal kräver CRM som förut. Kundportalen (modul, ADR-075) visar kunden fakturor, kontoutdrag och offerter och låter kunden godkänna en offert med samma bevis som en signeringslänk; den bokför ingenting, och "Jag har betalat" är kundens egen notering utan bokföring. |
+| 0.123 | 2026-11-09 | Demoföretag för besökare som provar utan konto (avsnitt 7c, ADR-077): ett påhittat företag med gäst i en egen databas (`demo`) med hela schemat, som inte skickar något utanför NONOX; databasen byggs om när inga demor är igång. Triggrarna som vägrar borttagning av bokförda rader har inget undantag. Ingen ny bokföringsregel. |

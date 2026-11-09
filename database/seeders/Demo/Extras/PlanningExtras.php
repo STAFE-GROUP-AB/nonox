@@ -407,7 +407,10 @@ final class PlanningExtras extends DemoExtra
         $approved = $requests($maja, $company, ['kind' => ShiftRequest::CLAIM, 'shift_id' => $thursday->id, 'note' => 'Tar gärna julbordspremiären.']);
         app(DecideRequest::class)($context->user, $company, $approved, true, 'Toppen, tack Maja!');
 
-        $requests($lina, $company, ['kind' => ShiftRequest::CLAIM, 'shift_id' => $sunday->id, 'note' => 'Jag kan ta lunchen på söndag.']);
+        // This Sunday's shift may already have started (the demo is built on a Sunday evening too): a claim of it is refused.
+        if ($sunday->starts_at->isFuture()) {
+            $requests($lina, $company, ['kind' => ShiftRequest::CLAIM, 'shift_id' => $sunday->id, 'note' => 'Jag kan ta lunchen på söndag.']);
+        }
 
         $linaId = (int) $this->employee($context, PortalExtras::EMPLOYEE)->id;
         $majaId = (int) $this->employee($context, self::SECOND_EMPLOYEE)->id;

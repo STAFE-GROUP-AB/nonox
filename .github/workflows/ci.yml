@@ -86,6 +86,10 @@ jobs:
       - name: Migrate test database
         run: php artisan migrate --force
 
+      # ADR-077: demos live in a database of their own (nonox_test_demo here), with the full schema.
+      - name: Migrate demo database
+        run: php artisan migrate --database=demo --force
+
       # ADR-058 stage E.3: the pinned Bolagsverket XBRL taxonomy (SHA-256 verified by the script,
       # fail closed) is cached by the script's hash, so a changed pin refetches and nothing else does.
       - name: Cache XBRL taxonomy (Bolagsverket, pinned)

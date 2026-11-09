@@ -17,6 +17,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Rules\SwedishOrganisationNumber;
 use App\Support\Audit\Audit;
+use App\Support\Demo\DemoMode;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -44,6 +45,9 @@ class CreateCompany implements CreatesTeams
     public function create(User $user, array $input): Company
     {
         Gate::forUser($user)->authorize('create', Company::class);
+
+        // A visitor trying NONOX gets the one demo company and no more (ADR-077).
+        DemoMode::refuse('name');
 
         $validated = $this->validate($input, $user);
 

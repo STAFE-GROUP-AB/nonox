@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Instance;
 
 use App\Models\InstanceSetting;
+use App\Support\Demo\DemoMode;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -20,6 +21,10 @@ use Illuminate\Support\Facades\Schema;
  * - waitlist.open: whether /ko takes new applications (default open).
  * - registration.open: whether an unknown address may create an account
  *   on the sign-in form (default closed, ADR-038).
+ * - demo.enabled: whether /prova lets a visitor try NONOX on a demo company
+ *   (ADR-077). Off by default everywhere, also on a hosted installation: the
+ *   owner switches it on in /hq after confirming that the demo database may be
+ *   emptied (demo:prune does nothing while it is off).
  */
 final class InstanceSettings
 {
@@ -31,6 +36,7 @@ final class InstanceSettings
 
     /** Where vulnerability reports go: an e-mail address or an https address (ADR-078, RFC 9116 Contact). */
     public const string SECURITY_CONTACT = 'security.contact';
+    public const string DEMO_ENABLED = 'demo.enabled';
 
     /** @var array<string, mixed> the defaults, which are also the only keys */
     public const array DEFAULTS = [
@@ -38,6 +44,7 @@ final class InstanceSettings
         self::WAITLIST_OPEN => true,
         self::REGISTRATION_OPEN => false,
         self::SECURITY_CONTACT => null,
+        self::DEMO_ENABLED => null,
     ];
 
     /** @var ?array<string, mixed> */
@@ -65,14 +72,17 @@ final class InstanceSettings
 
         $values = self::DEFAULTS;
 
-        // Model events on companies ask before this table exists, while older migrations run.
-        self::$tableExists = self::$tableExists || Schema::hasTable('instance_settings');
+        // The installation's settings are the main database's, also when a guest's request has the demo database as default (ADR-077).
+        DemoMode::onMainConnection(function () use (&$values): void {
+            // Model events on companies ask before this table exists, while older migrations run.
+            self::$tableExists = self::$tableExists || Schema::hasTable('instance_settings');
 
-        if (self::$tableExists) {
-            foreach (InstanceSetting::query()->whereIn('key', array_keys(self::DEFAULTS))->get() as $setting) {
-                $values[$setting->key] = $setting->value;
+            if (self::$tableExists) {
+                foreach (InstanceSetting::query()->whereIn('key', array_keys(self::DEFAULTS))->get() as $setting) {
+                    $values[$setting->key] = $setting->value;
+                }
             }
-        }
+        });
 
         return $this->values = $values;
     }
@@ -106,5 +116,11 @@ final class InstanceSettings
     public function selfRegistrationOpen(): bool
     {
         return (bool) $this->get(self::REGISTRATION_OPEN);
+    }
+
+    /** Whether strangers may try NONOX on a demo company (ADR-077). */
+    public function demoEnabled(): bool
+    {
+        return (bool) $this->get(self::DEMO_ENABLED);
     }
 }

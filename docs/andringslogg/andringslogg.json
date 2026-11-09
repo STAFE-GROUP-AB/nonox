@@ -80,6 +80,14 @@
       "omrade": "Fakturering"
     },
     {
+      "id": "2026-11-08-prova-utan-att-registrera",
+      "datum": "2026-11-08T19:00:00+01:00",
+      "rubrik": "Prova NONOX utan att registrera dig",
+      "beskrivning": "På Prova utan att registrera får du ett eget påhittat demoföretag med ett års bokföring, fakturor och lön, utan konto och utan e-postadress. Det varar i två timmar och tas sedan bort med allt du lagt in, inget skickas till någon, och ett riktigt konto börjar från början.",
+      "typ": "Nytt",
+      "omrade": "Webbplats"
+    },
+    {
       "id": "2026-11-08-statussida-och-sakerhetspolicy",
       "datum": "2026-11-08T19:00:00+01:00",
       "rubrik": "Driftstatus och security.txt",

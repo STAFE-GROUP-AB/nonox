@@ -21,6 +21,7 @@ use App\Modules\Pos\PosServiceProvider;
 use App\Modules\StaffLedger\StaffLedgerServiceProvider;
 use App\Modules\WorkOrders\WorkOrdersServiceProvider;
 use App\Providers\AppServiceProvider;
+use App\Providers\DemoServiceProvider;
 use App\Providers\FortifyServiceProvider;
 use App\Providers\JetstreamServiceProvider;
 use App\Providers\OverviewServiceProvider;
@@ -49,6 +50,7 @@ return [
     WorkOrdersServiceProvider::class,
     FortnoxServiceProvider::class,
     AppServiceProvider::class,
+    DemoServiceProvider::class,
     FortifyServiceProvider::class,
     JetstreamServiceProvider::class,
     OverviewServiceProvider::class,

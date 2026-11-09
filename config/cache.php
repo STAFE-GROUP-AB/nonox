@@ -24,6 +24,16 @@ return [
 
     // Merged with the framework's stores (array, file, database, redis, ...).
     'stores' => [
+        // Try without registering (ADR-077): a guest's cache, build state and rate limits live in the demo database.
+        'demo' => [
+            'driver' => 'database',
+            'connection' => 'demo',
+            // A second line of defence: nothing keyed by company id here can be read as the main installation's.
+            'prefix' => 'nonox_demo_',
+            'table' => 'cache',
+            'lock_connection' => 'demo',
+            'lock_table' => 'cache_locks',
+        ],
         'chat' => match ($chatDriver) {
             'redis' => [
                 'driver' => 'redis',

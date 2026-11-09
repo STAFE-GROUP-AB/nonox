@@ -49,6 +49,7 @@ class Settings extends Component implements SpansCompanies
     public bool $registrationOpen = false;
 
     public string $securityContact = '';
+    public bool $demoEnabled = false;
 
     public function mount(): void
     {
@@ -67,6 +68,7 @@ class Settings extends Component implements SpansCompanies
             'waitlist_open' => $this->waitlistOpen,
             'registration_open' => $this->registrationOpen,
             'security_contact' => $this->securityContact,
+            'demo_enabled' => $this->demoEnabled,
         ]);
 
         $this->fill(self::stored());
@@ -241,6 +243,7 @@ class Settings extends Component implements SpansCompanies
             'waitlistOpen' => $settings->waitlistOpen(),
             'registrationOpen' => $settings->selfRegistrationOpen(),
             'securityContact' => $settings->securityContact() ?? '',
+            'demoEnabled' => $settings->demoEnabled(),
         ];
     }
 }

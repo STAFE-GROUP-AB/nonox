@@ -27,6 +27,8 @@ Du äger din data, kan granska varje rad kod och alltid ta med dig allt ut.
 
 > **Öppen beta.** Den driftade tjänsten på [nonox.app](https://nonox.app) är i öppen beta fram till den skarpa lanseringen av version 1.0 den **1 februari 2027**. Nya användare [ställer sig i kö](https://nonox.app/ko) och släpps in när de är godkända, eller kommer in via en inbjudan från ett företag. Programmet är öppen källkod och kan laddas ner och köras själv utan kö.
 
+> **Prova utan att registrera.** På [nonox.app/prova](https://nonox.app/prova) får du ett eget påhittat demoföretag med ett års bokföring i två timmar, utan konto. Inget skickas utanför NONOX och allt tas bort när tiden är ute. Funktionen är avstängd från början överallt och slås på i /hq under Inställningar, efter att demodatabasen (en egen databas, `migrate --database=demo`) är skapad.
+
 ## Varför NONOX
 
 - **Öppet.** All affärslogik är öppen källkod under AGPL-3.0. Vem som helst kan granska exakt hur siffrorna hanteras.
@@ -374,6 +376,8 @@ grep -A30 "Subject: Din inloggningskod" storage/logs/laravel.log | grep -oE "\b[
 - För att kontrollera iXBRL-årsredovisningen mot Bolagsverkets taxonomi (frivilligt): kör `scripts/fetch-xbrl-taxonomy.sh`. Den hämtar det fastlåsta taxonomipaketet, kontrollerar SHA-256 och skriver ut mappen, som du sätter som `BOLAGSVERKET_TAXONOMY_DIR`. Se [ADR-058](docs/adr/ADR-058-digital-annual-report.md).
 - För kundportalen (modulen Kundportal, ADR-075): en kö som körs i bakgrunden, till exempel `QUEUE_CONNECTION=redis` eller `database` med `php artisan queue:work` (eller Horizon) igång. Med `QUEUE_CONNECTION=sync` går modulen inte att slå på, eftersom inloggningskoden då skickas medan sidan svarar och svarstiden skulle avslöja vilka adresser som har en kundportal. Modulen slås dessutom på först med `NONOX_CUSTOMER_PORTAL=true`, när juristgranskningen är klar (se [docs/juridik/kundportal-utkast.md](docs/juridik/kundportal-utkast.md)). Efter en uppdatering med kundportalen: kör `npm run build`, eftersom `resources/js/portal.js` är en egen ingång i Vite.
 
+- För Prova utan att registrera (frivilligt, avstängt från början): demon ligger i en egen databas. Skapa databasen `<huvuddatabasen>_demo` (exakt det namnet, på samma server) och kör `php artisan migrate --force --database=demo` vid **varje** uppdatering, efter den vanliga `migrate`. Kör en arbetare för demokön, `php artisan queue:work demo`, om köerna inte är `sync`. Sätt `TRUSTED_PROXIES` rätt (se ovan) innan du slår på funktionen, annars räknas alla besökare som en enda dator i begränsningen. Slå på den i /hq under Inställningar först när du har bekräftat att demodatabasen får tömmas: `demo:prune` bygger den på nytt när inga demor är igång. Se [ADR-077](docs/adr/ADR-077-try-without-registering.md) och [docs/drift/demodatabasen.md](docs/drift/demodatabasen.md).
+
 Kör `php artisan config:cache` efter varje ändring i `.env` på servern.
 
 ### Uppdatera till senaste versionen
@@ -382,6 +386,7 @@ Kör `php artisan config:cache` efter varje ändring i `.env` på servern.
 git pull
 composer install
 php artisan migrate
+php artisan migrate --database=demo   # bara om du kör Prova utan att registrera
 npm install && npm run build
 ```
 

@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\CompanyModule;
 use App\Models\User;
 use App\Modules\ModuleRegistry;
+use App\Support\Demo\DemoMode;
 use App\Support\Hq\HqAccess;
 use App\Support\Tenancy\CompanyScope;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -88,6 +89,11 @@ final class PasskeyRequirement
      */
     public static function mustVerify(User $user): bool
     {
+        // The demo's data is invented and a guest has no passkey to give (ADR-077).
+        if (DemoMode::active()) {
+            return false;
+        }
+
         return $user->hasPasskeysEnabled() || self::appliesTo($user);
     }
 

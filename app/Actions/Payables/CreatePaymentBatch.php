@@ -16,6 +16,7 @@ use App\Models\SupplierPaymentBatch;
 use App\Models\SupplierPaymentBatchItem;
 use App\Models\User;
 use App\Support\Audit\Audit;
+use App\Support\Demo\DemoMode;
 use App\Support\Pain001\CreditTransfer;
 use App\Support\Pain001\CreditTransferFile;
 use App\Support\Review\ReviewConfirmation;
@@ -45,6 +46,9 @@ class CreatePaymentBatch
     public function __invoke(User $user, Company $company, array $invoiceIds, CarbonImmutable $executionDate, bool $figuresReviewed = false): SupplierPaymentBatch
     {
         Gate::forUser($user)->authorize('create', [SupplierPaymentBatch::class, $company]);
+
+        // A payment file is meant for a bank; a demo has none (ADR-077).
+        DemoMode::refuse('batch');
 
         ReviewConfirmation::demand($figuresReviewed, 'figures_reviewed');
 

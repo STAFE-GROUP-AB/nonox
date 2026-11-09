@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\EndExpiredSessions;
+use App\Http\Middleware\NotForDemoGuests;
 use App\Http\Middleware\RemembersRecentItems;
 use App\Http\Middleware\RequirePasskey;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\UseDemoDatabase;
 use App\Modules\Connect\Support\Problem;
 use App\Modules\Http\Middleware\EnsureModuleEnabled;
 use App\Support\Chat\SecureChat;
@@ -25,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'module' => EnsureModuleEnabled::class,
+            'not-demo-guest' => NotForDemoGuests::class,
         ]);
 
         // Trusted proxies are opt-in through TRUSTED_PROXIES, read on every request
@@ -34,7 +37,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // The start page's migrate button works before the sessions table exists; it is guarded by a signed URL instead.
         $middleware->validateCsrfTokens(except: ['start/uppdatera-databasen']);
 
-        $middleware->web(append: [
+        $middleware->web(prepend: [
+            // First: a guest's request switches to the demo database before the session starts (ADR-077).
+            UseDemoDatabase::class,
+        ], append: [
             SecurityHeaders::class,
             EndExpiredSessions::class,
             // After EndExpiredSessions: a session that has ended needs no passkey step (ADR-029).

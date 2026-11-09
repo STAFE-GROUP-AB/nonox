@@ -12,6 +12,7 @@ use App\Domain\Company\VatExemption;
 use App\Domain\Company\VatPeriod;
 use App\Domain\Payables\PaymentBank;
 use App\Support\Branding\FirmBranding;
+use App\Support\Demo\DemoMode;
 use App\Support\Hq\OperatorSync;
 use App\Support\Tenancy\ArchivedCompany;
 use Carbon\CarbonImmutable;
@@ -20,6 +21,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 use Laravel\Jetstream\Events\TeamCreated;
 use Laravel\Jetstream\Events\TeamDeleted;
 use Laravel\Jetstream\Events\TeamUpdated;
@@ -261,6 +263,13 @@ class Company extends JetstreamTeam
 
     protected static function booted(): void
     {
+        // Every company made in the demo database is a test company from the start (ADR-077), not flagged afterwards.
+        static::creating(function (self $company): void {
+            if (($company->getConnectionName() ?? DB::getDefaultConnection()) === DemoMode::CONNECTION) {
+                $company->is_test_company = true;
+            }
+        });
+
         static::saved(function (self $company): void {
             ArchivedCompany::forget($company->id);
             FirmBranding::forgetIfChanged($company);

@@ -39,7 +39,7 @@ final class DeadlineFeedController
             && ! $company->isArchived() && $company->guide_enabled && $user->belongsToTeam($company);
 
         if (! $valid) {
-            $misses = 'guide-calendar-miss:'.$request->ip();
+            $misses = 'guide-calendar-miss:'.hash_hmac('sha256', (string) $request->ip(), (string) config('app.key'));
             abort_if(RateLimiter::tooManyAttempts($misses, self::MISSES_PER_MINUTE), 429);
             RateLimiter::hit($misses, 60);
             abort(404);

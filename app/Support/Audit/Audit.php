@@ -7,6 +7,7 @@ namespace App\Support\Audit;
 use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\User;
+use App\Support\Demo\DemoMode;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -96,8 +97,8 @@ final class Audit
             'subject_type' => $subject?->getMorphClass(),
             'subject_id' => $subject === null ? null : (string) $subject->getKey(),
             'payload' => [...$payload, ...self::$context],
-            'ip_address' => $request?->ip(),
-            'user_agent' => $request === null ? null : mb_substr((string) $request->userAgent(), 0, 1000),
+            'ip_address' => DemoMode::onDemoDatabase() ? null : $request?->ip(),
+            'user_agent' => $request === null || DemoMode::onDemoDatabase() ? null : mb_substr((string) $request->userAgent(), 0, 1000),
         ]);
     }
 
@@ -119,8 +120,8 @@ final class Audit
             'subject_type' => $subject?->getMorphClass(),
             'subject_id' => $subject === null ? null : (string) $subject->getKey(),
             'payload' => $payload,
-            'ip_address' => $request?->ip(),
-            'user_agent' => $request === null ? null : mb_substr((string) $request->userAgent(), 0, 1000),
+            'ip_address' => DemoMode::onDemoDatabase() ? null : $request?->ip(),
+            'user_agent' => $request === null || DemoMode::onDemoDatabase() ? null : mb_substr((string) $request->userAgent(), 0, 1000),
         ]);
     }
 

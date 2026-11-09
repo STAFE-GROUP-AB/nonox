@@ -6,6 +6,8 @@ namespace Database\Seeders\Demo\Extras;
 
 use App\Actions\Accounting\CreateArchivePackage;
 use App\Actions\Accounting\LockPeriod;
+use App\Jobs\BuildArchivePackage;
+use App\Models\ArchivePackage;
 use Carbon\CarbonImmutable;
 use Database\Seeders\Demo\DemoContext;
 use Database\Seeders\Demo\DemoExtra;
@@ -27,12 +29,15 @@ final class WrapUpExtras extends DemoExtra
 
     public function afterAll(DemoContext $c): void
     {
-        // The package is built by a job; on any other queue it would be run by a worker against another database.
-        config(['queue.default' => 'sync']);
-
         try {
             app(LockPeriod::class)($c->user, $c->company, CarbonImmutable::parse('2026-09-30'));
-            app(CreateArchivePackage::class)($c->user, $c->fiscalYear);
+            $package = app(CreateArchivePackage::class)($c->user, $c->fiscalYear);
+
+            // The package is built by a job. If the queue has not run it already, build it here and now, in this process
+            // and on this database; the queued job finds it started and does nothing. The queue setting is never touched.
+            if ($package->status === ArchivePackage::QUEUED) {
+                BuildArchivePackage::dispatchSync($c->company->id, $package->id);
+            }
         } catch (ValidationException $exception) {
             $c->warn(collect($exception->errors())->flatten()->implode(' '));
         }

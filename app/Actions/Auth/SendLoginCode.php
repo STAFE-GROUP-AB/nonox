@@ -9,6 +9,7 @@ use App\Models\LoginCode;
 use App\Models\User;
 use App\Support\Auth\ClientAddressBucket;
 use App\Support\Branding\PresentedBrand;
+use App\Support\Demo\DemoMode;
 use App\Support\LoginCodeAutofill;
 use Closure;
 use Illuminate\Contracts\Mail\Mailable;
@@ -67,6 +68,11 @@ class SendLoginCode
         $email = self::normalise($email);
         // The portal's caps and lock are counted on their own keys, so neither sign-in can use up the other's.
         $key = $audience === LoginCode::WEB ? $email : strtolower($audience).':'.$email;
+
+        // A demo guest's placeholder address (ADR-077) is not an inbox; nothing is sent to it.
+        if (str_ends_with($email, '@'.DemoMode::GUEST_DOMAIN)) {
+            return;
+        }
 
         Cache::lock('login-code:send:'.sha1($key), 10)->block(5, function () use ($email, $key, $ipAddress, $brand, $audience, $mail): void {
             if ($this->recentlySent($email, $audience)) {

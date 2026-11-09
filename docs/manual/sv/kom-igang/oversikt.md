@@ -14,6 +14,7 @@ Sedan går det mesta fort: du loggar in med en kod som du får i mejlet, skapar 
 
 ## Konto och första företaget
 
+- [Prova utan att registrera](/manual/kom-igang/prova-utan-att-registrera) – ett påhittat demoföretag i två timmar, utan konto.
 - [Tillgång under betan](/manual/kom-igang/tillgang-under-betan) – ställ dig i kö, eller kom in via en inbjudan.
 - [Logga in](/manual/kom-igang/logga-in) – inloggning med engångskod i stället för lösenord, och passkey som andra steg.
 - [Skapa ett företag](/manual/kom-igang/skapa-ett-foretag) – organisationsnummer, moms, bokföringsmetod och räkenskapsår.

@@ -19,6 +19,7 @@ use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\CompanyLogoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataSubjectExportController;
+use App\Http\Controllers\DemoController;
 use App\Http\Controllers\DeveloperPortalController;
 use App\Http\Controllers\FirmLogoController;
 use App\Http\Controllers\GettingStartedController;
@@ -68,6 +69,13 @@ Route::get('/', StartController::class)->name('start');
 // Runs pending migrations from the start page, only locally and from the same computer (RunMigrationsController).
 Route::post('/start/uppdatera-databasen', RunMigrationsController::class)->name('setup.migrate');
 Route::get('/flytta-hit', MigrationGuideController::class)->name('migrationGuide');
+// Try without registering (ADR-077): a demo company of one's own for two hours. 404 while the instance setting is off.
+Route::get('/prova', [DemoController::class, 'show'])->name('demo.show');
+Route::post('/prova', [DemoController::class, 'start'])->name('demo.start');
+Route::get('/prova/bygger/{token}', [DemoController::class, 'building'])->where('token', '[A-Za-z0-9]{40}')->name('demo.building');
+Route::get('/prova/bygger/{token}/status', [DemoController::class, 'status'])->where('token', '[A-Za-z0-9]{40}')->name('demo.status');
+// A guest request (UseDemoDatabase): the session of the demo starts here, in the demo database.
+Route::get('/prova/oppna/{token}', [DemoController::class, 'open'])->where('token', '[A-Za-z0-9]{40}')->name('demo.open');
 // The waiting list of the open beta (ADR-038): the way in for new users of the hosted service.
 Route::get('/ko', WaitlistController::class)->name('waitlist');
 Route::get('/integritetspolicy', LegalPageController::class)->defaults('document', 'privacy')->name('legal.privacy');
@@ -164,9 +172,9 @@ Route::middleware([
     'verified',
 ])->group(function () {
     Route::get('/kom-igang', [OnboardingController::class, 'show'])->name('onboarding');
-    Route::get('/profil', [UserProfileController::class, 'show'])->name('profile.show');
+    Route::get('/profil', [UserProfileController::class, 'show'])->middleware('not-demo-guest')->name('profile.show');
 
-    Route::get('/foretag/nytt', [CompanyController::class, 'create'])->name('teams.create');
+    Route::get('/foretag/nytt', [CompanyController::class, 'create'])->middleware('not-demo-guest')->name('teams.create');
     Route::get('/foretag/{company}', [CompanyController::class, 'show'])->whereNumber('company')->name('teams.show');
     Route::get('/foretag/{company}/logotyp', CompanyLogoController::class)->whereNumber('company')->name('teams.logo');
     // The logo of the accounting firm the company shows its people (ADR-030).

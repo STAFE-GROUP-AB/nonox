@@ -42,6 +42,26 @@ return [
         'step_up_seconds' => (int) env('HQ_STEP_UP_SECONDS', 300),
     ],
 
+    /*
+     | Try without registering (ADR-077). Whether it is open is an instance
+     | setting (demo.enabled, edited in /hq); these are its limits.
+     */
+    'demo' => [
+        // How long a visitor's demo company lasts.
+        'hours' => (int) env('NONOX_DEMO_HOURS', 2),
+        // Demo companies alive or being built at once, for the whole installation.
+        'max_live' => (int) env('NONOX_DEMO_MAX_LIVE', 40),
+        // Builds running at once (each is some 20 000 queries), apart from the number of live demos.
+        'max_building' => (int) env('NONOX_DEMO_MAX_BUILDING', 3),
+        // Starts per IP address and hour.
+        'max_per_ip_per_hour' => 3,
+        // The demo database is built again (demo:prune) when no demo is live and some have expired; after this many hours
+        // since the last time, new demos wait until the live ones have ended so that it can happen on a busy day too.
+        'rebuild_after_hours' => (int) env('NONOX_DEMO_REBUILD_AFTER_HOURS', 24),
+        // A form sent faster than this is not a person.
+        'min_seconds' => 3,
+    ],
+
     'waitlist' => [
         // TODO(legal-verify): retention of entries that are rejected or never approved (12 months proposed, ADR-038).
         'retention_months' => (int) env('WAITLIST_RETENTION_MONTHS', 12),
