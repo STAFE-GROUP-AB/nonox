@@ -289,7 +289,21 @@ it('protects the evidence: a signed request cannot be changed, and events are ap
     expect(fn () => DB::transaction(fn () => DB::table('crm_signing_requests')->where('id', $request->id)->update(['signer_name' => 'Någon annan'])))->toThrow(QueryException::class, 'cannot be changed')
         ->and(fn () => DB::transaction(fn () => DB::table('crm_signing_events')->where('signing_request_id', $request->id)->update(['event' => 'REVOKED'])))
         // The trigger refuses; with the database roles (ADR-079 §6) the grant refuses first.
-        ->toThrow(fn (QueryException $exception) => expect($exception->getMessage())->toMatch('/append-only|permission denied for table crm_signing_events/'));
+        ->toThrow(fn (QueryException $exception) => expect($exception->getMessage())->toMatch('/append-only|permission denied for table crm_signing_events/'))
+        // An event goes only with its signing request, never on its own.
+        ->and(fn () => DB::transaction(fn () => DB::table('crm_signing_events')->where('signing_request_id', $request->id)->delete()))
+        ->toThrow(fn (QueryException $exception) => expect($exception->getMessage())->toMatch('/only with their signing request|permission denied for table crm_signing_events/'));
+
+    expect(DB::table('crm_signing_events')->where('signing_request_id', $request->id)->count())->toBeGreaterThan(0);
+});
+
+it('removes the events together with their signing request', function () {
+    [$request] = sendQuote($this);
+    expect(DB::table('crm_signing_events')->where('signing_request_id', $request->id)->count())->toBeGreaterThan(0);
+
+    DB::table('crm_signing_requests')->where('id', $request->id)->delete();
+
+    expect(DB::table('crm_signing_events')->where('signing_request_id', $request->id)->count())->toBe(0);
 });
 
 it('lets only those who make and send quotes send them for signing, and revokes the earlier link', function () {

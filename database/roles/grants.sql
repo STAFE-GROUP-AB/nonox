@@ -89,7 +89,7 @@ BEGIN
         ('crm_quote_templates', 'SELECT, INSERT, UPDATE, DELETE'),
         ('crm_registry_notices', 'SELECT, INSERT, UPDATE, DELETE'),
         ('crm_segments', 'SELECT, INSERT, UPDATE, DELETE'),
-        ('crm_signing_events', 'SELECT, INSERT, DELETE'),
+        ('crm_signing_events', 'SELECT, INSERT'),
         ('crm_signing_requests', 'SELECT, INSERT, UPDATE, DELETE'),
         ('crm_suppressions', 'SELECT, INSERT, UPDATE, DELETE'),
         ('customers', 'SELECT, INSERT, UPDATE, DELETE'),

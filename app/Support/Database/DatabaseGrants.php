@@ -109,8 +109,8 @@ final class DatabaseGrants
         'crm_quote_templates' => GrantDecision::ReadWrite,
         'crm_registry_notices' => GrantDecision::ReadWrite,
         'crm_segments' => GrantDecision::ReadWrite,
-        // The trigger refuses UPDATE; rows go only with their signing request.
-        'crm_signing_events' => GrantDecision::AppendAndPrune,
+        // Evidence: the triggers refuse UPDATE, and DELETE except the cascade from the signing request.
+        'crm_signing_events' => GrantDecision::AppendOnly,
         'crm_signing_requests' => GrantDecision::ReadWrite,
         'crm_suppressions' => GrantDecision::ReadWrite,
         'customers' => GrantDecision::ReadWrite,
