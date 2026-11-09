@@ -79,6 +79,13 @@ final class EventHash
         return 'hmac:'.hash_hmac('sha256', $value, self::key());
     }
 
+    public static function hasKey(): bool
+    {
+        $key = config('nonox.register_hash_key');
+
+        return is_string($key) && $key !== '';
+    }
+
     private static function key(): string
     {
         $key = config('nonox.register_hash_key');

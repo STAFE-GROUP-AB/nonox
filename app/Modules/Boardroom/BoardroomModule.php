@@ -9,6 +9,7 @@ use App\Domain\Deadlines\Contracts\DeadlineProvider;
 use App\Domain\Overview\Contracts\TodoProvider;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Boardroom\Domain\EventHash;
 use App\Modules\Boardroom\Models\Meeting;
 use App\Modules\Boardroom\Models\ShareEvent;
 use App\Modules\Boardroom\Support\BoardroomDeadlines;
@@ -144,11 +145,17 @@ final class BoardroomModule implements IsNew, Module, OfferedTo, ProvidesDeadlin
 
     public function canEnable(Company $company): ModuleCheck
     {
+        $check = ModuleCheck::allow();
+
         if (! $this->isOfferedTo($company)) {
-            return ModuleCheck::allow()->withBlocker(__('Aktiebok och styrelserum finns bara för aktiebolag.'));
+            $check = $check->withBlocker(__('Aktiebok och styrelserum finns bara för aktiebolag.'));
         }
 
-        return ModuleCheck::allow();
+        if (! EventHash::hasKey()) {
+            $check = $check->withBlocker(__('Nyckeln till aktiebokens hashkedja saknas på servern. Den som driftar NONOX kör php artisan share-register:hash-key --write en gång.'));
+        }
+
+        return $check;
     }
 
     public function canDisable(Company $company): ModuleCheck

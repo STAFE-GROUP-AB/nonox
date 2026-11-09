@@ -8,15 +8,18 @@ use App\Models\FiscalYear;
 use App\Modules\Boardroom\Actions\MinutesWorkflow;
 use App\Modules\Boardroom\Actions\SaveArticles;
 use App\Modules\Boardroom\Actions\SaveMeeting;
+use App\Modules\Boardroom\BoardroomModule;
 use App\Modules\Boardroom\Domain\EventHash;
 use App\Modules\Boardroom\Models\AgendaItem;
 use App\Modules\Boardroom\Models\ShareClass;
 use App\Modules\Boardroom\Support\BoardroomArchive;
 use App\Modules\Boardroom\Support\BoardroomPdf;
 use App\Modules\Boardroom\Support\ShareRegister;
+use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\Boardroom;
@@ -178,4 +181,27 @@ it('keeps reminding about a new issue whose registration entry was voided (P3-9)
 
 it('creates the register hash key once and never replaces it', function () {
     $this->artisan('share-register:hash-key')->expectsOutputToContain('NONOX_REGISTER_HASH_KEY=')->assertSuccessful();
+});
+
+it('cannot be turned on while the register hash key is missing', function () {
+    config(['nonox.register_hash_key' => '']);
+    [, $company] = Bookkeeping::company();
+
+    expect(app(ModuleManager::class)->enableCheck(BoardroomModule::KEY, $company)->blockers)
+        ->toContain('Nyckeln till aktiebokens hashkedja saknas på servern. Den som driftar NONOX kör php artisan share-register:hash-key --write en gång.');
+});
+
+it('skips the nightly check with a notice when no register is used and the key is missing', function () {
+    config(['nonox.register_hash_key' => '']);
+    app(ModuleManager::class)->disable(BoardroomModule::KEY, $this->company, $this->owner, confirmed: true);
+    Log::spy();
+
+    $this->artisan('share-register:verify')->expectsOutputToContain('Ingen aktiebok används')->assertSuccessful();
+    Log::shouldHaveReceived('notice')->once();
+});
+
+it('fails the nightly check when a register is used and the key is missing', function () {
+    config(['nonox.register_hash_key' => '']);
+
+    $this->artisan('share-register:verify')->expectsOutputToContain('NONOX_REGISTER_HASH_KEY')->assertFailed();
 });

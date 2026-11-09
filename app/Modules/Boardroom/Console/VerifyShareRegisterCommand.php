@@ -6,11 +6,15 @@ namespace App\Modules\Boardroom\Console;
 
 use App\Domain\Company\OrganisationNumber;
 use App\Models\Company;
+use App\Modules\Boardroom\BoardroomModule;
 use App\Modules\Boardroom\Domain\ChainVerifier;
+use App\Modules\Boardroom\Domain\EventHash;
 use App\Modules\Boardroom\Models\ShareEvent;
+use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CompanyScope;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Recomputes the share register's hash chain (ADR-070 §2, the pattern of
@@ -26,6 +30,20 @@ class VerifyShareRegisterCommand extends Command
 
     public function handle(ChainVerifier $verifier): int
     {
+        if (! EventHash::hasKey()) {
+            // Nothing can be verified without the key. Only a register in use makes that an error.
+            if (app(ModuleManager::class)->companiesWith(BoardroomModule::KEY) === [] && ! CompanyScope::bypass(fn (): bool => ShareEvent::query()->exists())) {
+                Log::notice('share-register:verify skipped: NONOX_REGISTER_HASH_KEY is not set and no company uses the share register.');
+                $this->comment('Ingen aktiebok används och nyckeln till hashkedjan saknas. Inget att kontrollera.');
+
+                return self::SUCCESS;
+            }
+
+            $this->error('Nyckeln till aktiebokens hashkedja saknas (NONOX_REGISTER_HASH_KEY). Kör php artisan share-register:hash-key --write.');
+
+            return self::FAILURE;
+        }
+
         $companies = $this->companies();
 
         if ($companies === null) {
