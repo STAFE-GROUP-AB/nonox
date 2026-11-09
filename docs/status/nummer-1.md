@@ -577,3 +577,13 @@ Evidence: `tests/Feature/Status/*`, `tests/Feature/Hq/HqStatusIncidentsTest.php`
 - security.txt enligt RFC 9116 med utgångsdatum 364 dagar efter bekräftelse.
 - Kall granskning (2 P1, 7 P2, 6 P3), två omkontroller; allt rättat.
 Follow-ups: koppla `ledger:verify`-larmet till mejl eller Nightwatch på nonox.app; backupens heartbeat.
+
+---
+
+Package: Prova utan att registrera (prioritet 8, ADR-077)
+Status: done men avstängd (`demo.enabled` av överallt); påslag i produktion kräver demodatabas, köarbetare och ägarens ja
+Evidence: `tests/Feature/Demo/*`, `tests/Feature/DemoRebuild/*`.
+- Ägarens beslut: demon körs i en egen databas (`<huvuddatabas>_demo`, samma server). Produktionsdatabasens spärrar har inga undantag.
+- En besökare får ett eget demoföretag i två timmar; allt utåt (mejl, HTTP, Peppol, bank, betalfiler, API-nycklar, AI) är spärrat, demofiler har egna mappar, ingen IP-adress sparas. Demodatabasen byggs om i stället för att rader raderas, bara när ingen demo pågår.
+- Kall granskning i två omgångar (5 P1 i första designen, 5 P1 i den nya), omkontroller; allt rättat.
+Driftsättning: `docs/drift/demodatabasen.md` (migrering med `--database=demo` vid varje deploy, `queue:work demo`, TRUSTED_PROXIES).
