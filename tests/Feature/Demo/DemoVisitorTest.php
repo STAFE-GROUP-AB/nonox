@@ -47,7 +47,7 @@ function startDemo(object $test, array $overrides = []): TestResponse
     ]);
 }
 
-function tokenOf(TestResponse $response): string
+function demoTokenOf(TestResponse $response): string
 {
     return basename((string) $response->headers->get('Location'));
 }
@@ -146,7 +146,7 @@ it('starts a build in the demo queue, asks the browser to wait, and lets the gue
     Queue::fake();
 
     $response = startDemo($this);
-    $token = tokenOf($response);
+    $token = demoTokenOf($response);
     $response->assertRedirect(route('demo.building', $token));
     sameBrowser($this, $response);
 
@@ -184,7 +184,7 @@ it('starts a build in the demo queue, asks the browser to wait, and lets the gue
 it('does not let a link alone claim a demo: the token belongs to the browser that started the build', function () {
     Queue::fake();
     $response = startDemo($this);
-    $token = tokenOf($response);
+    $token = demoTokenOf($response);
     sameBrowser($this, $response);
     [$guest] = Demo::company();
     DemoSessions::markReady($token, $guest);
@@ -206,7 +206,7 @@ it('does not let a link alone claim a demo: the token belongs to the browser tha
 it('sends the visitor back with a message when the build failed', function () {
     Queue::fake();
     $response = startDemo($this);
-    $token = tokenOf($response);
+    $token = demoTokenOf($response);
     sameBrowser($this, $response);
     DemoSessions::markFailed($token);
 
