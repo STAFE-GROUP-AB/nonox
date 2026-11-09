@@ -13048,5 +13048,6 @@
     "Markera som separata avtal": "Mark as separate agreements",
     "Markerade som separata avtal": "Marked as separate agreements",
     "MRR vid månadens slut = ingående MRR + rättelse + valutaeffekt ± källa av eller på + nya + återaktiverade + återupptagna + utökningar − minskningar − pauser − churn. Varje belopp öppnar kunderna bakom det.": "MRR at the end of the month = opening MRR + correction + currency effect ± source off or on + new + reactivated + resumed + expansions − contractions − pauses − churn. Every amount opens the customers behind it.",
-    "Begränsat till 0": "Limited to 0"
+    "Begränsat till 0": "Limited to 0",
+    "Avtal vars källa är avstängd, som avtalsregistret när CRM är avstängt, räknas inte med i någon av månaderna.": "Agreements whose source is switched off, such as the agreement register while CRM is off, are left out of every month."
 }

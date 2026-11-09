@@ -45,13 +45,21 @@ final readonly class RevenueHistory
                 break;
             }
 
+            // A source switched off then or now is left out on both sides, as for NRR/GRR (re-check 2 E).
+            $off = $target->sourceOff + $result->sourceOff;
+
             foreach ($result->customers as $row) {
                 if ($row->cohortMonth === null || $row->mrrOre <= 0) {
                     continue;
                 }
 
                 $age = Months::between($row->cohortMonth, $month);
-                $constant = array_sum(array_map(fn (LineMonth $line): int => $line->at($rates[$line->currency] ?? null), $row->lines));
+                $kept = array_filter($row->lines, fn (LineMonth $line): bool => ! isset($off[$line->sourceType->value.':'.$line->sourceId]));
+                $constant = array_sum(array_map(fn (LineMonth $line): int => $line->at($rates[$line->currency] ?? null), $kept));
+
+                if ($constant <= 0) {
+                    continue;
+                }
                 $table[$row->cohortMonth] ??= [];
                 $table[$row->cohortMonth][$age] ??= ['customers' => 0, 'mrr_ore' => 0];
                 $table[$row->cohortMonth][$age]['customers']++;

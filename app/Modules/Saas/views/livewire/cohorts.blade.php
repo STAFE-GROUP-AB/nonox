@@ -65,6 +65,7 @@
                     </tbody>
                 </table>
             </div>
+            <p class="mt-3 text-xs text-gray-500">{{ __('Avtal vars källa är avstängd, som avtalsregistret när CRM är avstängt, räknas inte med i någon av månaderna.') }}</p>
         </x-ui.card>
     @endif
 </div>

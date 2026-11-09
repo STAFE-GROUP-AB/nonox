@@ -180,3 +180,37 @@ it('counts a clamped customer coming back above zero as an expansion, not a reac
         ->and($history->month('2026-03-01')->movementOre(Movement::Reactivation))->toBe(0)
         ->and($history->month('2026-03-01')->bridgeHolds())->toBeTrue();
 });
+
+it('churns a register-only customer silently when its agreement ends while CRM is off, so a return is a reactivation (re-check 2 D, scenario 7)', function () {
+    $line = [new RevenueLine('value', '', 'SEK', 5_000)];
+    $history = (new RecurringRevenue)->history([
+        new ContractVersion(1, SourceType::CrmAgreement, '7', 1, '2026-01-01', ContractStatus::Active, $line, '2026-01-01', '2026-06-01'),
+        new ContractVersion(2, SourceType::CrmAgreement, '7', 1, '2026-03-10', ContractStatus::Active, $line, '2026-01-01', '2026-06-01', ExclusionReason::CrmOff),
+        reviewVersion(3, 'ri', 1, '2026-09-01', [[3_000]]),
+    ], '2026-09-01');
+
+    $september = $history->month('2026-09-01');
+
+    expect($history->month('2026-03-01')->sourceOre())->toBe(-5_000)
+        ->and($history->month('2026-06-01')->movementOre(Movement::Churn))->toBe(0)
+        ->and($history->month('2026-06-01')->churnedCustomers())->toBe(0)
+        ->and($september->customers[1]->movement)->toBe(Movement::Reactivation)
+        ->and($september->movementOre(Movement::Expansion))->toBe(0)
+        ->and($september->bridgeHolds())->toBeTrue();
+});
+
+it('leaves lines of a switched-off source out of the cohort table on both sides (re-check 2 E, scenario 8)', function () {
+    $line = [new RevenueLine('value', '', 'SEK', 5_000)];
+    $history = (new RecurringRevenue)->history([
+        new ContractVersion(1, SourceType::CrmAgreement, '7', 1, '2026-01-01', ContractStatus::Active, $line, '2026-01-01'),
+        new ContractVersion(2, SourceType::CrmAgreement, '7', 1, '2026-03-10', ContractStatus::Active, $line, '2026-01-01', null, ExclusionReason::CrmOff),
+        reviewVersion(3, 'ri', 1, '2026-01-01', [[3_000]]),
+        reviewVersion(4, 'ri', 1, '2026-03-05', [[2_000]]),
+    ], '2026-04-01');
+
+    $cohort = $history->cohorts('2026-04-01')['2026-01-01'];
+
+    // Only the avtalsfakturering counts: 3 000 then 2 000 öre, not 8 000 then 2 000.
+    expect($cohort[0])->toBe(['customers' => 1, 'mrr_ore' => 3_000])
+        ->and($cohort[3])->toBe(['customers' => 1, 'mrr_ore' => 2_000]);
+});

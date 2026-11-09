@@ -683,3 +683,16 @@ Build step 1 (the ledger and the metrics from NONOX's own data) is on branch
   it takes the ledger lock, so a slow answer never blocks agreement changes. Step 2 (Stripe) must
   keep every outbound call outside the lock the same way.
 
+### Second re-check fixes 2026-11-09
+
+- **A change moved later** (C): a re-save with the same content and an explicit later "Gäller
+  från" writes two versions: from the old date the state of the version before that change (or,
+  for a new agreement, a start on the new date), then the change again from the new date. A
+  backfill's date is not a person's "Gäller från" and never triggers this.
+- **A switched-off source that ends** (D): a customer kept active only by a switched-off source (or
+  by lines clamped to 0) becomes Churned at the month-end when none of its contracts is in force
+  any more, without a churn movement (the amount already left through the source row), and so
+  outside the churn rates; a later return is Återaktivering.
+- **Cohorts** (E): lines of a contract whose source is switched off at the as-of month or the
+  counted month are left out on both sides, as for NRR/GRR; the table says so in a footnote.
+

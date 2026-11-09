@@ -119,7 +119,7 @@ final class ContractVersions
                 'end_date' => $agreement->end_date?->toDateString(),
                 'agreement_status' => $agreement->status->value,
             ],
-        ], $previous, $effectiveFrom !== null);
+        ], $previous, $effectiveFrom !== null && $cause !== VersionCause::Backfill);
     }
 
     public function recordCrmAgreement(Agreement $agreement, ?VersionCause $cause, ?int $userId, ?CarbonImmutable $today = null): ?SaasContractVersion
@@ -375,6 +375,24 @@ final class ContractVersions
             ->get();
         $pending = self::pending($versions, $from);
         $inForce = $versions->filter(fn (SaasContractVersion $version): bool => $version->effective_from->toDateString() <= $from)->last();
+
+        if ($sameAsLatest && $explicit && $from > $previous->effective_from->toDateString()) {
+            /*
+             * The latest change moved to a later date (re-check 2 C): from its old date the
+             * contract is again as it was before that change (or not yet started), and the
+             * change applies from the new date.
+             */
+            $old = $previous->effective_from->toDateString();
+            $before = $versions
+                ->filter(fn (SaasContractVersion $version): bool => $version->id < $previous->id && $version->effective_from->toDateString() < $old)
+                ->last();
+
+            $this->write($before === null
+                ? [...$attributes, 'effective_from' => $old, 'starts_on' => $from]
+                : [...$attributes, ...self::state($before), 'effective_from' => $old]);
+
+            return $this->write($attributes);
+        }
 
         if ($sameAsLatest) {
             $unchanged = $inForce !== null && self::content(self::state($inForce)) === self::content($attributes) && $pending === [];

@@ -321,6 +321,22 @@ final class RecurringRevenue
             );
         }
 
+        // A customer kept "active" only by a switched-off source, or by lines clamped to 0, whose
+        // contracts have all ended has left: churned silently, since the amount already went
+        // through the source row or as a contraction; a return is then a reactivation (re-check 2 D).
+        $offCustomers = array_flip(array_values($sourceOff));
+
+        foreach ($memory as $id => $remembered) {
+            if ($remembered['state'] === CustomerState::Active && ! isset($lines[$id]) && ! isset($paused[$id]) && ! isset($offCustomers[$id])) {
+                $memory[$id]['state'] = CustomerState::Churned;
+
+                if (isset($rows[$id]) && $rows[$id]->mrrOre === 0) {
+                    $row = $rows[$id];
+                    $rows[$id] = new CustomerMonth($row->customerId, $row->month, $row->mrrOre, $row->openingOre, $row->fxOre, $row->movement, $row->movementOre, $row->reclassOre, CustomerState::Churned, $row->cohortMonth, $row->lines, $row->scheduledChurnOre, $row->scheduledChurnMonth, $row->sourceOre);
+                }
+            }
+        }
+
         [$base, $nrr, $grr] = $this->retention($month, $rows, $rates, $done, $sourceOff);
         ksort($used);
         $missing = array_keys($missing);

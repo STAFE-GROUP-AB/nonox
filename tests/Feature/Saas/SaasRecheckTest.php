@@ -10,6 +10,7 @@ use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\Models\Agreement;
 use App\Modules\ModuleManager;
 use App\Modules\Saas\Actions\MarkSeparateAgreements;
+use App\Modules\Saas\Domain\RecurringRevenue;
 use App\Modules\Saas\Livewire\SourcesPage;
 use App\Modules\Saas\Models\SaasContractVersion;
 use App\Modules\Saas\Models\SaasSeparatePair;
@@ -171,4 +172,37 @@ it('marks a register agreement and an avtalsfakturering as separate, audited and
     expect(SaasSeparatePair::query()->count())->toBe(0)
         ->and(SaasReport::possibleDoubles(CarbonImmutable::today()))->toHaveCount(1)
         ->and(AuditLog::query()->where('action', 'saas.agreements_unmarked_separate')->exists())->toBeTrue();
+});
+
+it('moves a pending change later when it is saved again with a later Gäller från (re-check 2 C)', function () {
+    Saas::at('2026-11-05');
+    $agreement = Saas::agreement($this->owner, $this->company, Saas::customer($this->owner, $this->company, 'Senare ändring AB'), '100', 1, '2026-11-01');
+    Saas::reprice($this->owner, $this->company, $agreement->fresh(), '200', '2027-01-01');
+    Saas::reprice($this->owner, $this->company, $agreement->fresh(), '200', '2027-03-01');
+
+    Saas::at('2027-04-05');
+    Saas::recompute($this->company);
+
+    expect(Saas::month('2027-01-01')->mrr_ore)->toBe(10_000)
+        ->and(Saas::month('2027-02-01')->mrr_ore)->toBe(10_000)
+        ->and(Saas::month('2027-03-01')->mrr_ore)->toBe(20_000);
+});
+
+it('moves the start of a new agreement later when its Gäller från is corrected (re-check 2 C, 11-01 to 11-15)', function () {
+    Saas::at('2026-10-20');
+    $customer = Saas::customer($this->owner, $this->company, 'Rättat datum AB');
+    $agreement = Saas::agreement($this->owner, $this->company, $customer, '300', 1, '2026-12-01', ['effective_from' => '2026-11-01']);
+    Saas::reprice($this->owner, $this->company, $agreement->fresh(), '300', '2026-11-15');
+
+    Saas::at('2026-12-05');
+    Saas::recompute($this->company);
+
+    $inForce = fn (string $date) => RecurringRevenue::applicable(
+        SaasContractVersion::query()->orderBy('id')->get()->map(fn ($version) => $version->toDomain())->all(),
+        $date,
+    );
+
+    expect($inForce('2026-11-10') === null || ! $inForce('2026-11-10')->inForceAt('2026-11-10'))->toBeTrue()
+        ->and($inForce('2026-11-30')?->inForceAt('2026-11-30'))->toBeTrue()
+        ->and(Saas::month('2026-11-01')->new_ore)->toBe(30_000);
 });
