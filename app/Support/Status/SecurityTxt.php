@@ -19,8 +19,8 @@ use Throwable;
  *   Without a contact there is no file: a security.txt without Contact is
  *   not valid, so the route answers 404 instead.
  * - Expires (required, once): RFC 3339. It is the day the contact was last
- *   confirmed in /hq (the setting's updated_at) plus 365 days, or, when the
- *   contact comes from the environment, the day the build was made plus 365
+ *   confirmed in /hq (the setting's updated_at) plus 364 days, or, when the
+ *   contact comes from the environment, the day the build was made plus 364
  *   days. It is not renewed by being read: a stale file says so, and /hq
  *   warns before that happens.
  * - Policy: only when the policy page is published (SecurityPolicy).
@@ -32,7 +32,7 @@ use Throwable;
  */
 final class SecurityTxt
 {
-    public const int VALID_DAYS = 365;
+    public const int VALID_DAYS = 364;
 
     public const int WARN_DAYS = 30;
 

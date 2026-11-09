@@ -139,14 +139,13 @@ Built against RFC 9116 (rfc-editor.org/rfc/rfc9116), read 2026-11-08:
 - **Headers and location.** `Content-Type: text/plain; charset=utf-8`, LF line endings (section
   2.2), served at `/.well-known/security.txt` (section 3). `/security.txt` redirects there with
   301, which section 3 allows for legacy compatibility.
-- **Expires is the date of the last confirmation plus 365 days (Lead decision 2026-11-09).** It
-  is the `security.contact` setting's `updated_at` plus 365 days, or, when the contact comes from
-  the environment, the build date plus 365 days. It is not renewed by being read, so a file nobody
+- **Expires is the date of the last confirmation plus 364 days (Lead decision 2026-11-09).** It
+  is the `security.contact` setting's `updated_at` plus 364 days, or, when the contact comes from
+  the environment, the build date plus 364 days. It is not renewed by being read, so a file nobody
   looks after goes stale and says so. /hq → Inställningar shows the date, warns 30 days before it
   (and after), and has a passkey-confirmed button "Bekräfta säkerhetskontakten" that renews it.
   The first version computed "today + 180 days" on every request; the review rejected that as a
-  field that always claims freshness. 365 days is the RFC's upper limit ("less than a year" holds
-  from the first second after the confirmation).
+  field that always claims freshness. 364 days (Lead decision) leaves no edge case against the RFC ("less than a year").
 - **URLs come from `APP_URL`**, never from the request's Host header, so a forged Host cannot
   change `Canonical` or `Policy`.
 - **Not included:** `Encryption` and a cleartext signature (section 2.3 recommends but does not

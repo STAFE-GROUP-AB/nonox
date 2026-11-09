@@ -77,7 +77,7 @@ it('builds Canonical and Policy from APP_URL and not from the Host header', func
         ->and($body)->not->toContain('evil.example');
 });
 
-it('sets Expires to the day the contact was confirmed plus 365 days, and does not renew it by being read', function () {
+it('sets Expires to the day the contact was confirmed plus 364 days, and does not renew it by being read', function () {
     config(['app.landing.privacy_email' => null]);
     contactSetting('sakerhet@example.test');
 
@@ -90,9 +90,9 @@ it('sets Expires to the day the contact was confirmed plus 365 days, and does no
 
     $first = $read();
 
-    expect($first->equalTo(now()->utc()->addDays(365)))->toBeTrue()
+    expect($first->equalTo(now()->utc()->addDays(364)))->toBeTrue()
         ->and($first->greaterThan(now()))->toBeTrue()
-        ->and($first->lessThanOrEqualTo(now()->addDays(365)))->toBeTrue();
+        ->and($first->lessThan(now()->addYear()))->toBeTrue();
 
     $this->travel(100)->days();
 
