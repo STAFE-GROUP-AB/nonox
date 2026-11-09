@@ -55,17 +55,15 @@ done
 
 writable_test=(\( -user "$web_user" -o -perm -o+w "${group_tests[@]}" \))
 
-# Every directory from the release up to and including the site directory.
+# Every directory from the release up to the root: none may be writable by the web user.
 dir="$release"
-while :; do
+while [[ "$dir" != "/" ]]; do
     dir="$(dirname -- "$dir")"
 
     if [[ -n "$(find "$dir" -maxdepth 0 "${writable_test[@]}" -print 2>/dev/null)" ]]; then
         echo "nonox-migrate: $web_user can write $dir; refusing to migrate as the owner" >&2
         exit 3
     fi
-
-    [[ "$dir" == "$site_real" || "$dir" == "/" ]] && break
 done
 
 # Nothing in the release outside storage/ (which holds no code that runs here: views are
@@ -76,6 +74,17 @@ writable=$(find -L "$release" -path "$release/storage" -prune -o "${writable_tes
 if [[ -n "$writable" ]]; then
     echo "nonox-migrate: $web_user can write $writable; refusing to migrate as the owner" >&2
     exit 3
+fi
+
+# No POSIX ACLs outside storage/: an ACL could give the web user write access that the
+# permission bits above do not show.
+if command -v getfacl >/dev/null 2>&1; then
+    acl=$(getfacl -R -s -p -L "$release" 2>/dev/null | awk -v skip="$release/storage" '/^# file: / { path = substr($0, 9); if (index(path, skip) != 1) { print path; exit } }')
+
+    if [[ -n "$acl" ]]; then
+        echo "nonox-migrate: $acl has a POSIX ACL; refusing to migrate as the owner" >&2
+        exit 3
+    fi
 fi
 
 cache="$(mktemp -d)" || exit 2
@@ -90,8 +99,10 @@ export APP_EVENTS_CACHE="$cache/events.php"
 export APP_ROUTES_CACHE="$cache/routes.php"
 export VIEW_COMPILED_PATH="$cache/views"
 
-# Logs to stderr, so the run never creates a log file the web user cannot write.
+# Logs to stderr and an in-memory cache, so the run never creates a log or cache file the web
+# user cannot write, and never reads one the web user wrote.
 export LOG_CHANNEL=stderr
+export CACHE_STORE=array
 
 cd "$release" || exit 2
 

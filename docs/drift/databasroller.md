@@ -60,7 +60,8 @@ Därför:
 - Inga POSIX-ACL:er används på sajtens kataloger; rättigheterna är de vanliga
   ägare/grupp/övriga.
 - I Forge betyder det en egen PHP-FPM-pool för sajten med `user = nonox-web`, köns
-  bakgrundsprocess och det schemalagda jobbet med användaren `nonox-web`, och filrätter
+  bakgrundsprocess och sajtens schemalagda jobb i Forge (`schedule:run`) med användaren
+  `nonox-web`, och filrätter
   `go-w` på koden. Forges inbyggda användarisolering låter i stället samma användare både
   köra och driftsätta och räcker därför inte. **Ägaren beslutar vid bytet hur det
   ordnas**; körboken förutsätter att det är gjort.
@@ -75,8 +76,13 @@ sudo -u nonox-web test -w /home/forge/nonox.app/.env && echo FEL || echo ok
 sudo -u nonox-web test -w /home/forge/nonox.app/current/bootstrap/cache && echo FEL || echo ok
 sudo -u nonox-web test -w /home/forge/nonox.app/releases && echo FEL || echo ok
 sudo -l -U nonox-web                                  # förväntat: inga regler
-command -v getfacl >/dev/null && getfacl -R -s -p /home/forge/nonox.app 2>/dev/null | grep -v '/storage' | head   # förväntat: tomt (inga ACL:er)
+command -v getfacl >/dev/null && getfacl -R -s -p /home/forge/nonox.app 2>/dev/null \
+  | awk '/^# file: / { path = substr($0, 9); if (path !~ /\/storage(\/|$)/) print path }'   # förväntat: tomt (inga ACL:er utanför storage)
+sudo crontab -l -u forge | grep -E 'artisan|/nonox.app'                          # förväntat: tomt
+grep -r nonox.app /etc/cron.d /etc/supervisor/conf.d 2>/dev/null | grep -v nonox-web   # förväntat: tomt
 ```
+
+Inget schemalagt jobb eller någon bakgrundsprocess för sajten får köra som `forge`.
 
 Skriptet i steg 2 kontrollerar samma sak vid varje driftsättning och vägrar köra om
 `nonox-web` kan skriva något i releasen utanför `storage/`, eller någon katalog mellan
@@ -125,10 +131,11 @@ Unix-användaren `nonox-migrate` och släpper bara in den som `nonox_owner`. Då
 kod som körs av PHP-FPM (som `nonox-web`) kan inte logga in som ägaren.
 
 ```bash
-# Användaren, utan inloggning och utan hemkatalog; i gruppen forge för att kunna läsa koden.
+# Användaren, utan inloggning, hemkatalog eller grupptillhörighet hos forge.
 sudo adduser --system --group --no-create-home --shell /usr/sbin/nologin nonox-migrate
-sudo usermod -aG forge nonox-migrate
-ls -ld /home/forge /home/forge/nonox.app      # gruppen forge behöver r-x på vägen dit
+# Koden läses som "övriga": o+r på filer, o+rx på kataloger, aldrig skrivbar för någon annan än forge.
+sudo chmod o+x /home/forge /home/forge/nonox.app
+sudo chmod -R o+rX,go-w /home/forge/nonox.app/releases
 
 # Skriptet som kör migreringarna och sedan behörigheterna, också om migreringen misslyckas.
 sudo install -o root -g root -m 0755 /home/forge/nonox.app/current/database/roles/nonox-migrate.sh /usr/local/bin/nonox-migrate
@@ -174,13 +181,33 @@ sudo -u nonox-migrate /usr/local/bin/nonox-migrate "$FORGE_RELEASE_DIRECTORY"
 ```
 
 och se till att den står **före** `php artisan config:cache` och före aktiveringen av
-releasen. Skriptet läser aldrig `bootstrap/cache/` eller `storage/`: Laravels cachade
+releasen. Hela driftsättningsskriptet ser i de delar som rör PHP ut så här:
+
+```bash
+cd $FORGE_RELEASE_DIRECTORY
+export LOG_CHANNEL=stderr CACHE_STORE=array      # forge skriver aldrig en logg- eller cachefil i den delade lagringen
+$FORGE_COMPOSER install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+chmod -R o+rX,go-w .                              # koden läsbar men inte skrivbar för nonox-web och nonox-migrate
+sudo -u nonox-migrate /usr/local/bin/nonox-migrate "$FORGE_RELEASE_DIRECTORY"
+$FORGE_PHP artisan config:cache
+$FORGE_PHP artisan route:cache
+$FORGE_PHP artisan event:cache
+# ... aktivering av releasen (Forges makro) ...
+sudo -u nonox-web $FORGE_PHP $FORGE_SITE_PATH/current/artisan queue:restart
+```
+
+`queue:restart` körs efter aktiveringen och därför som `nonox-web`, liksom allt annat i
+den aktiverade releasen. Det kräver en sudo-regel för `forge` att köra just det kommandot
+som `nonox-web` (`forge ALL=(nonox-web) NOPASSWD: /usr/bin/php8.4 /home/forge/nonox.app/current/artisan queue\:restart`);
+`nonox-web` själv får ingen regel. Skriv aldrig ett Forge-makronamn i en kommentar i
+skriptet (Forge expanderar det även där). Skriptet läser aldrig `bootstrap/cache/` eller `storage/`: Laravels cachade
 konfiguration, tjänster, paket, händelser, rutter och kompilerade vyer läggs i en ny
 tillfällig katalog som bara `nonox-migrate` äger (`APP_CONFIG_CACHE` med flera och
 `VIEW_COMPILED_PATH`), så ingenting som webbanvändaren kan skriva laddas när ägaren kör,
 och en gammal cachad konfiguration spelar ingen roll. Skriptet löser upp sökvägen en gång
 (`realpath`) och använder bara den upplösta, vägrar köra om `nonox-web` kan skriva i
-releasen (utanför `storage/`) eller i någon katalog upp till sajtkatalogen, kör `migrate --force --database=pgsql_owner` och därefter `nonox:db-grants`,
+releasen (utanför `storage/`) eller i någon katalog upp till roten, eller om något utanför
+`storage/` har en POSIX-ACL, loggar till stderr med en cache i minnet, kör `migrate --force --database=pgsql_owner` och därefter `nonox:db-grants`,
 också när migreringen misslyckas, och returnerar migreringens status. Heter
 webbanvändaren något annat än `nonox-web`, eller ligger sajten någon annanstans,
 ändra standardvärdena för `NONOX_WEB_USER` och `NONOX_SITE_DIR`

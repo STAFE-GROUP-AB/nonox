@@ -1048,3 +1048,10 @@ code read-only for the PHP-FPM user where possible.
   `node_modules` and `bootstrap/cache` exemptions are gone (only `storage/` is exempt, and
   nothing from it is loaded); the site is given as a plain path (`NONOX_SITE_DIR`), not a
   pattern. Step 0 states that no POSIX ACLs are used and checks with `getfacl` where it exists.
+- **Third re-check (P3s):** the deploy's artisan steps run with `LOG_CHANNEL=stderr` and
+  `CACHE_STORE=array` (also in `nonox-migrate.sh`), so `forge` and `nonox-migrate` never write
+  or read a log or cache file in the shared storage; `queue:restart` runs as `nonox-web` after
+  activation through a sudo rule for that one command; step 0 checks `forge`'s crontab, cron.d
+  and supervisor for anything of the site's not running as `nonox-web`; the script's ancestor
+  check runs up to `/` and refuses a POSIX ACL outside `storage/` (`getfacl`); `nonox-migrate`
+  is no longer in the group `forge`, and the code is `o+rX,go-w` instead.
