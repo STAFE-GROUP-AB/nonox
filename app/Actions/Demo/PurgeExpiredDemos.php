@@ -29,12 +29,18 @@ use Illuminate\Support\Facades\DB;
 final class PurgeExpiredDemos
 {
     /**
-     * @return array{live: int, expired: int, draining: bool, rebuilt: bool}
+     * @return array{enabled: bool, live: int, expired: int, draining: bool, rebuilt: bool}
      *
      * @throws \RuntimeException when the demo connection is not a database that may be emptied
      */
     public function __invoke(): array
     {
+        // Owner rule: nothing is emptied until the owner has confirmed that the demo database may be and has switched
+        // "Prova utan att registrera" on in /hq. Until then this does nothing at all, not even look at the database.
+        if (! DemoMode::enabled()) {
+            return ['enabled' => false, 'live' => 0, 'expired' => 0, 'draining' => false, 'rebuilt' => false];
+        }
+
         DemoDatabase::assertSafe();
 
         $sessions = fn () => DB::connection(DemoMode::CONNECTION)->table('demo_sessions');
@@ -56,16 +62,20 @@ final class PurgeExpiredDemos
                 DemoDatabase::startDraining();
             }
 
-            return ['live' => $live, 'expired' => $expired, 'draining' => DemoDatabase::draining(), 'rebuilt' => false];
+            return ['enabled' => true, 'live' => $live, 'expired' => $expired, 'draining' => DemoDatabase::draining(), 'rebuilt' => false];
         }
 
         if (($expired === 0 && ! DemoDatabase::draining()) || DemoSessions::building() > 0) {
-            return ['live' => 0, 'expired' => $expired, 'draining' => DemoDatabase::draining(), 'rebuilt' => false];
+            return ['enabled' => true, 'live' => 0, 'expired' => $expired, 'draining' => DemoDatabase::draining(), 'rebuilt' => false];
         }
 
-        DemoDatabase::rebuild();
+        // A start that holds the lock, or began after the check above, wins: the rebuild waits for the next run.
+        if (! DemoDatabase::rebuild()) {
+            return ['enabled' => true, 'live' => 0, 'expired' => $expired, 'draining' => DemoDatabase::draining(), 'rebuilt' => false];
+        }
+
         DemoDatabase::stopDraining();
 
-        return ['live' => 0, 'expired' => $expired, 'draining' => false, 'rebuilt' => true];
+        return ['enabled' => true, 'live' => 0, 'expired' => $expired, 'draining' => false, 'rebuilt' => true];
     }
 }

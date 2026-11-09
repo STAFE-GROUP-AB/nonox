@@ -10,6 +10,7 @@ use App\Support\Toast;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -44,6 +45,7 @@ class EndExpiredSessions
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+            Cookie::queue(Cookie::forget(DemoMode::COOKIE));
             Toast::flash(__('Demon har tagit slut och är borttagen. Starta en ny om du vill fortsätta prova.'));
 
             return redirect()->route('demo.show');

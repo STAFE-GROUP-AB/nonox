@@ -42,7 +42,7 @@ Demon varar i två timmar. Sedan loggas du ut och demoföretaget går inte läng
 
 **Varför kan jag inte starta fler?** Du kan starta några demor per timme, och antalet demor på samma gång är begränsat så att tjänsten räcker till alla. Försök igen om en stund.
 
-**Jag ser ingen knapp för att prova.** Den som driver NONOX kan ha stängt av demon. På en installation som du kör själv är den avstängd från början.
+**Jag ser ingen knapp för att prova.** Demon är avstängd tills den som driver NONOX har slagit på den. På en installation som du kör själv är den avstängd från början.
 
 ## Läs också
 

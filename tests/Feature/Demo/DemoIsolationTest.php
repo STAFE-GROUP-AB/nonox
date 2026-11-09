@@ -22,7 +22,7 @@ use Tests\Support\Demo;
  */
 
 beforeEach(function () {
-    config(['app.landing.hosted' => true]);
+    Demo::enable();
 
     Route::middleware('web')->get('/_probe', fn () => response()->json([
         'connection' => DB::getDefaultConnection(),
@@ -74,7 +74,7 @@ it('switches a guest\'s whole request to the demo database, and puts the setting
 
     expect($probe)->toMatchArray([
         'connection' => 'demo',
-        'session_driver' => 'database',
+        'session_driver' => 'demo-database',
         'session_cookie' => DemoMode::COOKIE,
         'cache' => 'demo',
         'queue' => 'demo',
@@ -119,10 +119,11 @@ it('never resolves a main-database user from a guest cookie', function () {
     config(['session.driver' => 'array']);
     app('session')->forgetDrivers();
 
-    // The main session's id sent under the guest cookie's name is looked up in the demo database's sessions only.
-    $probe = $this->withCookie(DemoMode::COOKIE, $mainSessionId)->get('/_probe')->assertOk()->json();
+    // The main session's id sent under the guest cookie's name is looked up in the demo database's sessions only,
+    // finds nothing there, and the request is served by the main database without a user.
+    $probe = $this->withCookie(DemoMode::COOKIE, $mainSessionId)->get('/_probe')->assertOk()->assertCookieExpired(DemoMode::COOKIE)->json();
 
-    expect($probe['connection'])->toBe('demo')->and($probe['user'])->toBeNull();
+    expect($probe['connection'])->toBe(config('database.default'))->and($probe['user'])->toBeNull();
 
     $this->withCookie(DemoMode::COOKIE, $mainSessionId)->get(route('dashboard'))->assertRedirect(route('login'));
     $this->defaultCookies = [];
@@ -180,15 +181,16 @@ it('carries the demo connection to a job the guest dispatches and to its worker'
     $seen = [];
 
     $queued = fn () => Mockery::mock(Job::class)->shouldReceive('payload')->andReturn([])->getMock();
+    $demoJob = $queued();
+    $mainJob = $queued();
     $before = DB::getDefaultConnection();
-    event(new JobProcessing('demo', $queued()));
+    event(new JobProcessing('demo', $demoJob));
     $seen[] = DB::getDefaultConnection();
-    event(new JobProcessed('demo', $queued()));
+    event(new JobProcessed('demo', $demoJob));
     $seen[] = DB::getDefaultConnection();
-    event(new JobProcessing('sync', $queued()));
+    event(new JobProcessing('sync', $mainJob));
     $seen[] = DB::getDefaultConnection();
-    event(new JobProcessed('sync', $queued()));
-
+    event(new JobProcessed('sync', $mainJob));
     expect($seen)->toBe(['demo', $before, $before]);
     $this->defaultCookies = [];
 });

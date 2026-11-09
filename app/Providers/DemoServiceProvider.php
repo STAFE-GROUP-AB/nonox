@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Support\Demo\DemoMode;
+use App\Support\Demo\DemoSessionHandler;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Sanctum\PersonalAccessToken;
 use Psr\Http\Message\RequestInterface;
@@ -28,8 +29,8 @@ use Psr\Http\Message\RequestInterface;
  */
 final class DemoServiceProvider extends ServiceProvider
 {
-    /** The default connection before a demo job, to put back (one job at a time per worker). */
-    private static ?string $before = null;
+    /** @var array<int, true> the demo jobs that have entered the demo switch, by job object */
+    private static array $entered = [];
 
     public function boot(): void
     {
@@ -46,7 +47,8 @@ final class DemoServiceProvider extends ServiceProvider
 
         // Any mail made in the demo database, and any mail to a guest's placeholder address, in any process.
         Event::listen(MessageSending::class, function (MessageSending $event): bool {
-            if (DemoMode::active()) {
+            // Also while the demo is built: nothing a demo makes is mailed.
+            if (DemoMode::onDemoDatabase()) {
                 return false;
             }
 
@@ -64,19 +66,30 @@ final class DemoServiceProvider extends ServiceProvider
         // No API token in the demo database (ADR-077); the token page of a demo company is not a way out.
         PersonalAccessToken::creating(fn (PersonalAccessToken $token): bool => ! DemoMode::active());
 
-        // A job of the demo queue runs on the demo database, and the worker goes back to the main one after it.
+        // A job of the demo queue runs with exactly the switch of a guest's request, and the worker goes back after it.
+        // Only jobs of the demo connection, and each one leaves what it entered, also when jobs nest (a sync job in a job).
         Event::listen(JobProcessing::class, function (JobProcessing $event): void {
-            if ($event->connectionName === DemoMode::CONNECTION && self::$before === null) {
-                self::$before = DB::getDefaultConnection();
-                DB::setDefaultConnection(DemoMode::CONNECTION);
+            if ($event->connectionName === DemoMode::CONNECTION) {
+                self::$entered[spl_object_id($event->job)] = true;
+                DemoMode::enter();
             }
         });
 
-        Event::listen([JobProcessed::class, JobFailed::class, JobExceptionOccurred::class], function (): void {
-            if (self::$before !== null) {
-                DB::setDefaultConnection(self::$before);
-                self::$before = null;
+        Event::listen([JobProcessed::class, JobFailed::class, JobExceptionOccurred::class], function (JobProcessed|JobFailed|JobExceptionOccurred $event): void {
+            $id = spl_object_id($event->job);
+
+            if ($event->connectionName === DemoMode::CONNECTION && isset(self::$entered[$id])) {
+                unset(self::$entered[$id]);
+                DemoMode::leave();
             }
         });
+
+        // A guest's session handler stores no IP address and no browser name.
+        Session::extend('demo-database', fn ($app): DemoSessionHandler => new DemoSessionHandler(
+            $app['db']->connection(config('session.connection')),
+            (string) config('session.table'),
+            (int) config('session.lifetime'),
+            $app,
+        ));
     }
 }

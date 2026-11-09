@@ -50,6 +50,8 @@ final class DemoMode
         'cache.default',
         'cache.limiter',
         'queue.default',
+        'filesystems.disks.local.root',
+        'filesystems.disks.uploads.root',
     ];
 
     private static int $seeding = 0;
@@ -57,8 +59,11 @@ final class DemoMode
     /** The main connection's name, remembered at boot: setDefaultConnection() overwrites config('database.default'). */
     private static ?string $main = null;
 
-    /** @var ?array<string, mixed> the values before a guest request switched them */
-    private static ?array $saved = null;
+    /** @var list<array<string, mixed>> the values before each switch, innermost last */
+    private static array $stack = [];
+
+    /** Whether the switch of this request (UseDemoDatabase) is on the stack. */
+    private static bool $requestEntered = false;
 
     /** @var array<int, ?CarbonImmutable> */
     private static array $expiries = [];
@@ -98,8 +103,9 @@ final class DemoMode
     }
 
     /**
-     * Runs $callback on the demo connection as the default, as the demo
-     * builder: nothing is blocked inside it.
+     * Runs $callback as the demo builder: everything is switched to the demo
+     * exactly as for a guest's request (see enter()), and nothing is blocked
+     * inside it.
      *
      * @template T
      *
@@ -125,13 +131,12 @@ final class DemoMode
      */
     public static function onDemoConnection(callable $callback): mixed
     {
-        $previous = DB::getDefaultConnection();
-        DB::setDefaultConnection(self::CONNECTION);
+        self::enter();
 
         try {
             return $callback();
         } finally {
-            DB::setDefaultConnection($previous);
+            self::leave();
         }
     }
 
@@ -160,53 +165,85 @@ final class DemoMode
 
     /**
      * Makes this request a guest's: the demo database, a session in it under
-     * its own cookie, its own cache store and queue. Called before the
-     * session starts and before the user is resolved, so nothing is read
-     * from the main database first.
+     * its own cookie, its own cache store and queue, and its own file
+     * directories. Called before the session starts and before the user is
+     * resolved, so nothing is read from the main database first.
      */
     public static function activateRequest(): void
     {
-        if (self::$saved !== null) {
+        if (self::$requestEntered) {
             return;
         }
 
-        self::$saved = [];
+        self::enter();
+        self::$requestEntered = true;
+    }
+
+    /** Puts the main settings back; a request ends here, and so does each request in a test. */
+    public static function deactivateRequest(): void
+    {
+        if (! self::$requestEntered) {
+            return;
+        }
+
+        self::$requestEntered = false;
+        self::leave();
+    }
+
+    /**
+     * The one switch to the demo: a guest's request, the build and a worker's
+     * demo job all use it, so that nothing keyed by company id (the cache, the
+     * queue, files) can reach the main installation's company with the same id.
+     * It nests; every enter() has a leave().
+     */
+    public static function enter(): void
+    {
+        $saved = [];
 
         foreach (self::SWITCHED as $key) {
-            self::$saved[$key] = config($key);
+            $saved[$key] = config($key);
         }
+
+        self::$stack[] = $saved;
 
         config([
             'database.default' => self::CONNECTION,
-            'session.driver' => 'database',
+            'session.driver' => 'demo-database',
             'session.connection' => self::CONNECTION,
             'session.cookie' => self::COOKIE,
             'session.table' => 'sessions',
             'cache.default' => self::CONNECTION,
             'cache.limiter' => self::CONNECTION,
             'queue.default' => self::CONNECTION,
+            'filesystems.disks.local.root' => storage_path('app/demo-private'),
+            'filesystems.disks.uploads.root' => storage_path('app/demo-uploads'),
         ]);
 
         self::refreshServices();
     }
 
-    /** Puts the main settings back; a request ends here, and so does each request in a test. */
-    public static function deactivateRequest(): void
+    public static function leave(): void
     {
-        if (self::$saved === null) {
+        $saved = array_pop(self::$stack);
+
+        if ($saved === null) {
             return;
         }
 
-        config(self::$saved);
-        self::$saved = null;
+        config($saved);
         self::$expiries = [];
 
         self::refreshServices();
     }
 
-    public static function requestIsActive(): bool
+    /**
+     * The directories of the demo's files; nothing else is under them.
+     *
+     * @return list<string>
+     */
+    public static function fileRoots(): array
     {
-        return self::$saved !== null;
+        return [storage_path('app/demo-private'), storage_path('app/demo-uploads')];
     }
 
     /** The services that hold on to a connection or store once they are built. */
@@ -215,6 +252,7 @@ final class DemoMode
         app('session')->forgetDrivers();
         app()->forgetInstance('session.store');
         app()->forgetInstance(RateLimiter::class);
+        app('filesystem')->forgetDisk(['local', 'uploads']);
         Auth::forgetGuards();
         CurrentCompany::forget();
     }

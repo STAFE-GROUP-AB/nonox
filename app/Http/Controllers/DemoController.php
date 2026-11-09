@@ -109,7 +109,10 @@ class DemoController
     public function open(Request $request, string $token): RedirectResponse
     {
         abort_unless(DemoMode::enabled(), 404);
-        abort_unless(DemoMode::active(), 404);
+        // Not a guest's request (UseDemoDatabase found no ready token): nothing to open.
+        if (! DemoMode::active()) {
+            return redirect()->route('demo.show');
+        }
 
         $guest = DemoSessions::claim($token);
 

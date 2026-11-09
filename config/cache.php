@@ -28,6 +28,8 @@ return [
         'demo' => [
             'driver' => 'database',
             'connection' => 'demo',
+            // A second line of defence: nothing keyed by company id here can be read as the main installation's.
+            'prefix' => 'nonox_demo_',
             'table' => 'cache',
             'lock_connection' => 'demo',
             'lock_table' => 'cache_locks',

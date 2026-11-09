@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace App\Support\Demo;
 
-use App\Support\Files\StoredFiles;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
 /**
@@ -25,31 +23,71 @@ final class DemoDatabase
 {
     public const string SUFFIX = '_demo';
 
+    /** The advisory lock key (any constant): a start holds it shared, a rebuild exclusive. */
+    public const int LOCK_KEY = 770077;
+
     /**
+     * The demo database must be exactly "<main database>_demo" on the same host
+     * and port: a database that merely ends in _demo, such as another site's on
+     * a shared server, never qualifies.
+     *
      * @throws RuntimeException when the demo connection is not a database that may be emptied
      */
     public static function assertSafe(): void
     {
-        $mainName = (string) config('database.connections.'.DemoMode::mainConnection().'.database');
+        $mainConfig = (array) config('database.connections.'.DemoMode::mainConnection());
+        $demoConfig = (array) config('database.connections.'.DemoMode::CONNECTION);
+        $mainName = (string) ($mainConfig['database'] ?? '');
 
         // First what is configured, before any connection is made to a database that may be the wrong one...
-        self::assertName((string) config('database.connections.'.DemoMode::CONNECTION.'.database'), $mainName);
+        self::assertName((string) ($demoConfig['database'] ?? ''), $mainName);
 
-        // ...then what the server says it is connected to, and what the main connection really is.
-        $actual = (string) DB::connection(DemoMode::CONNECTION)->selectOne('select current_database() as name')->name;
+        foreach (['host', 'port'] as $key) {
+            if ((string) ($demoConfig[$key] ?? '') !== (string) ($mainConfig[$key] ?? '')) {
+                throw new RuntimeException("Refusing: the demo connection's {$key} is not the main connection's.");
+            }
+        }
 
-        self::assertName($actual, $mainName);
-        self::assertName($actual, (string) DB::connection(DemoMode::mainConnection())->getDatabaseName());
+        // ...then what the servers say they are connected to.
+        $demo = DB::connection(DemoMode::CONNECTION)->selectOne('select current_database() as name, inet_server_port() as port');
+        $main = DB::connection(DemoMode::mainConnection())->selectOne('select current_database() as name, inet_server_port() as port');
+
+        self::assertName((string) $demo->name, (string) $main->name);
+
+        if ($demo->port !== $main->port) {
+            throw new RuntimeException('Refusing: the demo database is on another port than the main one.');
+        }
     }
 
     private static function assertName(string $name, string $mainName): void
     {
-        if (! str_ends_with($name, self::SUFFIX)) {
-            throw new RuntimeException("Refusing: the demo database \"{$name}\" does not end in ".self::SUFFIX.'.');
-        }
-
         if ($name === $mainName) {
             throw new RuntimeException("Refusing: the demo database \"{$name}\" is the main database.");
+        }
+
+        if ($name !== $mainName.self::SUFFIX) {
+            throw new RuntimeException("Refusing: the demo database must be named exactly \"{$mainName}".self::SUFFIX."\", it is \"{$name}\" (does not end in ".self::SUFFIX.' after the main database\'s name).');
+        }
+    }
+
+    /**
+     * Runs $callback while no rebuild can run, and a rebuild cannot start
+     * until it is done: a shared advisory lock on the demo database.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function whileStarting(callable $callback): mixed
+    {
+        $demo = DB::connection(DemoMode::CONNECTION);
+        $demo->selectOne('select pg_advisory_lock_shared(?)', [self::LOCK_KEY]);
+
+        try {
+            return $callback();
+        } finally {
+            $demo->selectOne('select pg_advisory_unlock_shared(?)', [self::LOCK_KEY]);
         }
     }
 
@@ -84,50 +122,40 @@ final class DemoDatabase
     }
 
     /**
-     * Deletes the files the demo database refers to, drops its schema and
-     * builds it again. Only call it when no demo is live.
+     * Drops the demo database's schema, builds it again and empties the demo's
+     * own file directories (nothing else). Only call it when no demo is live.
+     * Returns false, doing nothing, when a start holds the lock.
      */
-    public static function rebuild(): void
+    public static function rebuild(): bool
     {
         self::assertSafe();
 
-        $paths = self::filePaths();
-
         $demo = DB::connection(DemoMode::CONNECTION);
-        $demo->unprepared('DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;');
-        $demo->disconnect();
 
-        $code = Artisan::call('migrate', ['--database' => DemoMode::CONNECTION, '--force' => true]);
-
-        if ($code !== 0) {
-            throw new RuntimeException('The demo database could not be built again: '.trim(Artisan::output()));
+        if (! $demo->selectOne('select pg_try_advisory_lock(?) as got', [self::LOCK_KEY])->got) {
+            return false;
         }
 
-        // Only files no row of the main database refers to.
-        $keep = StoredFiles::referenced($paths);
-        Storage::disk(StoredFiles::DISK)->delete(array_values(array_diff($paths, $keep)));
+        try {
+            $demo->unprepared('DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;');
 
-        self::markBuilt();
-    }
+            $code = Artisan::call('migrate', ['--database' => DemoMode::CONNECTION, '--force' => true]);
 
-    /** @return list<string> every stored file a row in the demo database refers to, read before the schema is dropped */
-    private static function filePaths(): array
-    {
-        $paths = [];
-        $demo = DB::connection(DemoMode::CONNECTION);
-        $schema = $demo->getSchemaBuilder();
-
-        foreach (StoredFiles::REFERENCES as $table => $column) {
-            if (! $schema->hasTable($table) || ! $schema->hasColumn($table, $column)) {
-                continue;
+            if ($code !== 0) {
+                throw new RuntimeException('The demo database could not be built again: '.trim(Artisan::output()));
             }
 
-            foreach ($demo->table($table)->whereNotNull($column)->pluck($column) as $path) {
-                $paths[] = (string) $path;
+            // The demo's files live under their own roots (DemoMode::enter), so deleting them cannot reach a main file.
+            foreach (DemoMode::fileRoots() as $root) {
+                File::deleteDirectory($root);
             }
+
+            self::markBuilt();
+        } finally {
+            $demo->selectOne('select pg_advisory_unlock(?)', [self::LOCK_KEY]);
         }
 
-        return array_values(array_unique($paths));
+        return true;
     }
 
     private static function drainFile(): string

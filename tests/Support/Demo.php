@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use App\Models\Company;
+use App\Models\InstanceSetting;
 use App\Models\User;
 use App\Support\Demo\DemoMode;
 use App\Support\Demo\DemoSessions;
+use App\Support\Instance\InstanceSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -18,6 +20,13 @@ use Illuminate\Support\Str;
  */
 final class Demo
 {
+    /** Switches "Prova utan att registrera" on in the instance settings, as the owner does in /hq. */
+    public static function enable(bool $on = true): void
+    {
+        InstanceSetting::query()->updateOrCreate(['key' => InstanceSettings::DEMO_ENABLED], ['value' => $on]);
+        InstanceSettings::current()->forget();
+    }
+
     /**
      * A guest with a company in the demo database, flagged as a test company,
      * with a demo_sessions row. Not built by the demo builder, so it is cheap.

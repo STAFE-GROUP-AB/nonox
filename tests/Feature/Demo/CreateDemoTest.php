@@ -24,7 +24,7 @@ use Tests\Support\Demo;
  * takes seconds, so the checks that need a full demo share one build.
  */
 
-beforeEach(fn () => config(['app.landing.hosted' => true]));
+beforeEach(fn () => Demo::enable());
 
 it('builds a visitor\'s own demo in the demo database only, with the real triggers', function () {
     [$owner, $other] = Bookkeeping::company();

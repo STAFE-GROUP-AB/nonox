@@ -18,6 +18,8 @@ use Tests\Support\Demo;
  * whose name ends in _demo. The rebuild itself is tested in Feature/DemoRebuild.
  */
 
+beforeEach(fn () => Demo::enable());
+
 afterEach(function () {
     File::delete(storage_path('framework/demo-built-at'));
     DemoDatabase::stopDraining();
@@ -46,18 +48,18 @@ it('refuses to run when the demo connection points at the main database', functi
     expect(fn () => app(PurgeExpiredDemos::class)())->toThrow(RuntimeException::class);
 
     // Also a name that does not end in _demo, however it is spelled.
-    config(['database.connections.pgsql.database' => 'main_database', 'database.connections.demo.database' => 'main_database']);
-    expect(fn () => DemoDatabase::assertSafe())->toThrow(RuntimeException::class, 'does not end in _demo');
+    config(['database.connections.pgsql.database' => 'main_database', 'database.connections.demo.database' => 'other_name']);
+    expect(fn () => DemoDatabase::assertSafe())->toThrow(RuntimeException::class, 'must be named exactly');
 });
 
 it('refuses to run when the demo database\'s name does not end in _demo', function () {
     config(['database.connections.demo.database' => 'postgres']);
     DB::purge('demo');
 
-    $this->artisan('demo:prune')->expectsOutputToContain('does not end in _demo')->assertFailed();
+    $this->artisan('demo:prune')->expectsOutputToContain('must be named exactly')->assertFailed();
 
     config(['database.connections.demo.database' => 'nonox_test_demo_x']);
-    expect(fn () => DemoDatabase::assertSafe())->toThrow(RuntimeException::class, 'does not end in _demo');
+    expect(fn () => DemoDatabase::assertSafe())->toThrow(RuntimeException::class, 'must be named exactly');
 });
 
 it('only checks and does nothing when no demo has expired', function () {
@@ -90,4 +92,56 @@ it('does not rebuild while a build is running', function () {
 
     expect(app(PurgeExpiredDemos::class)()['rebuilt'])->toBeFalse()
         ->and(DB::connection('demo')->table('users')->count())->toBeGreaterThan(0);
+});
+
+it('refuses a foreign database that merely ends in _demo on the same server', function () {
+    config(['database.connections.demo.database' => 'someone_elses_site_demo']);
+    DB::purge('demo');
+
+    expect(fn () => DemoDatabase::assertSafe())->toThrow(RuntimeException::class, 'must be named exactly');
+    $this->artisan('demo:prune')->expectsOutputToContain('must be named exactly')->assertFailed();
+});
+
+it('refuses a demo connection on another host or port than the main one', function () {
+    config(['database.connections.demo.host' => '127.0.0.2']);
+    DB::purge('demo');
+    expect(fn () => DemoDatabase::assertSafe())->toThrow(RuntimeException::class, "host is not the main connection's");
+
+    config(['database.connections.demo.host' => config('database.connections.pgsql.host'), 'database.connections.demo.port' => '6543']);
+    DB::purge('demo');
+    expect(fn () => DemoDatabase::assertSafe())->toThrow(RuntimeException::class, "port is not the main connection's");
+});
+
+it('accepts exactly the main database\'s name with _demo, on the same host and port', function () {
+    expect(fn () => DemoDatabase::assertSafe())->not->toThrow(RuntimeException::class)
+        ->and(config('database.connections.demo.database'))->toBe(config('database.connections.pgsql.database').'_demo');
+});
+
+it('does nothing at all while the owner has not switched the demo on', function () {
+    Demo::enable(false);
+    Demo::company(CarbonImmutable::now()->subHour());
+    $users = DB::connection('demo')->table('users')->count();
+
+    // Not even a look at the database: a connection that would be refused is not asked.
+    config(['database.connections.demo.database' => 'postgres']);
+
+    $result = app(PurgeExpiredDemos::class)();
+
+    expect($result['enabled'])->toBeFalse()->and($result['rebuilt'])->toBeFalse();
+    $this->artisan('demo:prune')->expectsOutputToContain('avstängd')->assertSuccessful();
+
+    expect(DB::connection('demo')->table('users')->count())->toBe($users);
+});
+
+it('lets a start win over a rebuild: the rebuild waits while a start holds the lock', function () {
+    config(['database.connections.demo_lock' => config('database.connections.demo')]);
+    $other = DB::connection('demo_lock');
+    $other->selectOne('select pg_advisory_lock_shared(?)', [DemoDatabase::LOCK_KEY]);
+
+    try {
+        expect(DemoDatabase::rebuild())->toBeFalse()
+            ->and(DB::connection('demo')->getSchemaBuilder()->hasTable('users'))->toBeTrue();
+    } finally {
+        $other->selectOne('select pg_advisory_unlock_shared(?)', [DemoDatabase::LOCK_KEY]);
+    }
 });

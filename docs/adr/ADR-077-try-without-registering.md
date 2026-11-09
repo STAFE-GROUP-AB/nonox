@@ -107,10 +107,10 @@ data is unreachable when the time is up and is cleared out later, and the page s
 
 ### 6. Switch
 
-`InstanceSettings::DEMO_ENABLED` (`demo.enabled`), edited in /hq under Inställningar. The default is
-on for an installation with public pages (`app.landing.hosted`) and off otherwise: a self-hosting
-company does not want strangers creating companies in its database. When off, `/prova` answers 404,
-the landing page shows no link, and `demo:prune` still removes what is left.
+`InstanceSettings::DEMO_ENABLED` (`demo.enabled`), edited in /hq under Inställningar. **The default is off
+everywhere, a hosted installation included** (owner rule 2026-11-08). When off, `/prova` answers 404, the landing
+page shows no link, and `demo:prune` returns at once without looking at any database. The owner switches it on
+in /hq after confirming that the demo database may be emptied.
 
 ### 7. GDPR
 
@@ -182,6 +182,17 @@ the opening request `/prova/oppna/{token}`. For such a request `DemoMode::activa
 singleton, the guards, the rate limiter and the current company, and `terminate()` puts every value back
 (it matters in a long-lived process and in tests, where one application serves many requests).
 
+- **Routing is decided by what exists, not by the cookie alone.** A request goes to the demo database only when
+  all three hold: the feature is on, the cookie's session id exists in the demo database's `sessions`, and that session's
+  user has a live row in `demo_sessions`. The cookie is decrypted with the application key and its name-bound prefix is
+  checked, as `EncryptCookies` does. The one other guest request is `/prova/oppna/{token}`, and only for a token whose
+  build is READY. In every other case the request is served by the main database and the demo cookie it carries is
+  forgotten (queued expiry cookie), so a leftover cookie can never strand a real user on the demo database and a bare
+  `/prova/oppna/…` link plants no cookie. With the feature off, or the demo database missing or not migrated, a request
+  that carries the cookie never errors: it gets the main database and a forgotten cookie. The cookie is also expired on
+  logout, on demo expiry, and on every way to sign up (`/logga-in`, `/ko`, `/registrera`, which run on the main database,
+  and so does the banner's "Skapa konto").
+
 - **The pages of the entry** (`/prova`, `/prova/bygger/{token}`) are never a guest's, even with the cookie: they
   run on the main database like any public page, with a session that holds nothing about a demo. The state of a
   build, and the entry's rate limits, are in the demo database's cache and are reached by naming the store.
@@ -193,6 +204,19 @@ singleton, the guards, the rate limiter and the current company, and `terminate(
   main one only. A main session id sent under the guest name is not in the demo database; a guest id sent under
   the main name is not in the main one. Both directions are tested (`DemoIsolationTest`), as is the
   restoring of every setting after the request.
+
+### B2. One switch for the request, the build and the worker
+
+`DemoMode::enter()`/`leave()` is the only switch (a stack, so it nests). It sets the default connection, the session
+driver (`demo-database`, a handler that stores no IP address and no browser name), connection, cookie and table, the
+cache store and limiter, the queue connection, and the roots of the `local` and `uploads` file disks
+(`storage/app/demo-private`, `demo-uploads`), and clears what holds on to the old ones. A guest's request, the demo
+build (`DemoMode::building`) and a worker's demo job all call it, so that nothing keyed by company id (the cache, the
+queue, files, the per-request module cache, which is also keyed by connection) can reach the main installation's
+company with the same id. The demo cache store has the key prefix `nonox_demo_` as a second line of defence. A job leaves
+only the switch it entered (matched by job object and connection name), so a nested sync job cannot restore the main
+database in the middle of a build. The archive-package step of the builder no longer changes `queue.default`; it
+builds the package directly if the queue has not. All mail is blocked while the demo is built, not only after.
 
 ### C. Queued jobs
 
@@ -228,22 +252,25 @@ deleted there either, and the alternatives (disabling triggers per table with `A
 `session_replication_role`) need locks or superuser rights and weaken the very schema the demo shows.
 Dropping the schema of a database that holds nothing but demos is the simpler safe option:
 
-- `demo:prune` (every ten minutes) rebuilds the demo database when **no demo is live, none is being built, and
-  some have expired**: `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` on the `demo` connection, then
-  `migrate --database=demo`. Files the demo database refers to are deleted first (unless the main
-  database refers to them).
+- `demo:prune` (every ten minutes) **returns immediately while `demo.enabled` is off.** Once on, it rebuilds the
+  demo database when **no demo is live, none is being built, and some have expired**:
+  `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` on the `demo` connection, then `migrate --database=demo`, then
+  the demo's own file directories are deleted (nothing outside `demo-private`/`demo-uploads` is touched).
+- A start (`DemoSessions::begin`) holds a shared advisory lock on the demo database and a rebuild takes it
+  exclusively (and gives up for this run if it cannot), so the two never overlap.
 - On a busy day it never gets quiet, so once every `NONOX_DEMO_REBUILD_AFTER_HOURS` (24) it **drains**: a flag
   in `storage/framework` makes `/prova` refuse new demos until the live ones (at most two hours) have ended
   and the rebuild has run.
-- **It can touch no other database.** Before anything it calls `DemoDatabase::assertSafe()`, which refuses
-  unless the configured name ends in `_demo` and differs from the main database's, and again with what
-  the server reports (`current_database()`) and the main connection's real name, all before a statement
-  that changes anything. Both refusals are tested. It only uses the `demo` connection.
+- **It can touch no other database.** Before anything it calls `DemoDatabase::assertSafe()`: the demo
+  connection's database must be named **exactly `<main database>_demo`** (a foreign `*_demo` database on a shared server
+  never qualifies), on the same host and port as the main connection, and the servers' `current_database()`
+  and port must agree. All of it is checked before a statement that changes anything; each refusal is tested. It only
+  uses the `demo` connection.
 - **Owner rule:** emptying or rebuilding a database is allowed only for this dedicated demo database.
   Nothing else in NONOX may do it, and no test rebuilds any other.
-- **Production is not switched on by this change.** `demo.enabled` defaults to off for an installation that is
-  not hosted, and the hosted installation needs the demo database created and migrated, a worker for the
-  `demo` queue, and the owner's explicit confirmation at deploy.
+- **Production is not switched on by this change.** The feature is off by default everywhere, and the
+  installation needs the demo database created and migrated, a worker for the `demo` queue, and the owner's
+  explicit confirmation at deploy.
 
 ### F. Consequences
 

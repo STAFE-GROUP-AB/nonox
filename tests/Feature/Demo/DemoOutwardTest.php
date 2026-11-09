@@ -32,7 +32,7 @@ use Tests\Support\Demo;
  * untouched.
  */
 
-beforeEach(fn () => config(['app.landing.hosted' => true]));
+beforeEach(fn () => Demo::enable());
 
 /**
  * A demo company with a guest as its owner and some modules on, made while the demo is being built.
@@ -216,7 +216,5 @@ it('ends a guest\'s session when the time is up', function () {
     $session = Demo::sessionId();
 
     DB::connection('demo')->table('demo_sessions')->where('user_id', $guest->id)->update(['expires_at' => CarbonImmutable::now()->subMinute()]);
-    config(['app.landing.hosted' => true]);
-
-    $this->withCookie(DemoMode::COOKIE, $session)->get(route('dashboard'))->assertRedirect(route('demo.show'));
+    $this->withCookie(DemoMode::COOKIE, $session)->get(route('dashboard'))->assertRedirect(route('login'));
 });

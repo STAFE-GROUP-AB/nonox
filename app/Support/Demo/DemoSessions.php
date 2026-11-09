@@ -55,23 +55,26 @@ final class DemoSessions
             throw ValidationException::withMessages(['industry' => __('Välj en bransch i listan.')]);
         }
 
-        if (DemoDatabase::draining()) {
-            throw ValidationException::withMessages(['industry' => __('Demon städas just nu och är öppen igen om en stund. Försök igen senare.')]);
-        }
+        // A start and a rebuild of the demo database never overlap (advisory lock); the rebuild waits for the start.
+        return DemoDatabase::whileStarting(function () use ($industry): string {
+            if (DemoDatabase::draining()) {
+                throw ValidationException::withMessages(['industry' => __('Demon städas just nu och är öppen igen om en stund. Försök igen senare.')]);
+            }
 
-        if (self::live() + self::building() >= (int) config('nonox.demo.max_live')) {
-            throw ValidationException::withMessages(['industry' => __('Demon är full just nu. Försök igen om en stund.')]);
-        }
+            if (self::live() + self::building() >= (int) config('nonox.demo.max_live')) {
+                throw ValidationException::withMessages(['industry' => __('Demon är full just nu. Försök igen om en stund.')]);
+            }
 
-        $token = Str::random(40);
+            $token = Str::random(40);
 
-        self::store()->put(self::key($token), ['status' => self::BUILDING, 'industry' => $industry], self::KEEP_SECONDS);
-        self::store()->add(self::BUILDING_COUNT, 0, self::KEEP_SECONDS);
-        self::store()->increment(self::BUILDING_COUNT);
+            self::store()->put(self::key($token), ['status' => self::BUILDING, 'industry' => $industry], self::KEEP_SECONDS);
+            self::store()->add(self::BUILDING_COUNT, 0, self::KEEP_SECONDS);
+            self::store()->increment(self::BUILDING_COUNT);
 
-        BuildDemoCompany::dispatch($token, $industry)->onConnection(DemoMode::CONNECTION);
+            BuildDemoCompany::dispatch($token, $industry)->onConnection(DemoMode::CONNECTION);
 
-        return $token;
+            return $token;
+        });
     }
 
     /** @return ?array{status: string, industry: string, user_id?: int} */

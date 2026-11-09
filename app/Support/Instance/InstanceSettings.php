@@ -22,7 +22,9 @@ use Illuminate\Support\Facades\Schema;
  * - registration.open: whether an unknown address may create an account
  *   on the sign-in form (default closed, ADR-038).
  * - demo.enabled: whether /prova lets a visitor try NONOX on a demo company
- *   (ADR-077). Not set = on for a hosted installation, off for the rest.
+ *   (ADR-077). Off by default everywhere, also on a hosted installation: the
+ *   owner switches it on in /hq after confirming that the demo database may be
+ *   emptied (demo:prune does nothing while it is off).
  */
 final class InstanceSettings
 {
@@ -109,8 +111,6 @@ final class InstanceSettings
     /** Whether strangers may try NONOX on a demo company (ADR-077). */
     public function demoEnabled(): bool
     {
-        $value = $this->get(self::DEMO_ENABLED);
-
-        return $value === null ? (bool) config('app.landing.hosted') : (bool) $value;
+        return (bool) $this->get(self::DEMO_ENABLED);
     }
 }

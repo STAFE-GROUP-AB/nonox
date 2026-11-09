@@ -24,6 +24,10 @@ pest()->extend(TestCase::class)
 pest()->beforeEach(function () {
     DB::connection('demo')->beginTransaction();
 })->afterEach(function () {
+    // A test that leaves the demo connection as the default would have its main transaction rolled back on the wrong connection.
+    $left = DB::getDefaultConnection();
+    DB::setDefaultConnection(DemoMode::mainConnection());
+    expect($left)->toBe(DemoMode::mainConnection(), 'the test left the demo connection as the default');
     DemoMode::deactivateRequest();
 
     while (DB::connection('demo')->transactionLevel() > 0) {

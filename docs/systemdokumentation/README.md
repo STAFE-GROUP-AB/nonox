@@ -4340,8 +4340,9 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
 - En gästs hela förfrågan körs på demodatabasen: första mellanvaran i webbgruppen
   byter standardanslutning, sessionsdrivrutin, sessionskaka (`nonox_demo_session`),
   cache och kö innan sessionen startar och innan användaren hämtas, och sätter tillbaka allt
-  när förfrågan är slut. Kakan har ett eget namn, så ett id från huvudsessionen aldrig
-  hittar en användare i demodatabasen och tvärtom. Köade jobb från en gäst går till
+  när förfrågan är slut. Kakan har ett eget namn, och en förfrågan går bara till demodatabasen när funktionen är på, sessionen finns där och
+  demon är igång; annars serveras huvuddatabasen och kakan glöms. Ett id från huvudsessionen hittar därför aldrig
+  en användare i demodatabasen och tvärtom. Demons filer, cache och kö är skilda från de riktigas. Köade jobb från en gäst går till
   kön `demo` (tabellen `jobs` i demodatabasen) och körs på demodatabasen.
 - Ett demoföretag är aldrig riktig bokföring. Det mejlar inget, skickar inget via
   Peppol, bank, Skatteverket eller NONOX AI, gör ingen betalfil, ingen API-nyckel
@@ -4355,7 +4356,8 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   senast efter ett dygn (`NONOX_DEMO_REBUILD_AFTER_HOURS`) stoppas nya demor tills de igångvarande
   har tagit slut. Kommandot arbetar bara mot anslutningen `demo` och vägrar om
   databasens namn inte slutar på `_demo` eller är huvuddatabasens. Det är den enda
-  databas NONOX får tömma.
+  databas NONOX får tömma. Kommandot gör ingenting medan inställningen i /hq är avstängd (standard
+  överallt), och namnet måste vara exakt `<huvuddatabasen>_demo` på samma server och port.
 - Testerna `DemoIsolationTest` (huvuddatabasens triggerfunktioner är identiska med demodatabasens och
   saknar `demo_purge`; sessionerna kan inte korsa databaserna i någon riktning),
   `DemoScheduleTest` (båda vägrarna) och `DemoRebuildTest` (en riktig ombyggnad) bevisar detta.

@@ -75,16 +75,17 @@ it('offers only the single-company industries', function () {
         ->and(DemoCatalog::industries())->not->toBe([]);
 });
 
-it('is on by default for a hosted installation and off for the rest, and /hq can change it', function () {
+it('is off by default everywhere, a hosted installation included, and /hq can switch it on', function () {
     demoSetting(null);
 
-    config(['app.landing.hosted' => true]);
-    InstanceSettings::current()->forget();
-    expect(DemoMode::enabled())->toBeTrue();
+    foreach ([true, false] as $hosted) {
+        config(['app.landing.hosted' => $hosted]);
+        InstanceSettings::current()->forget();
 
-    config(['app.landing.hosted' => false]);
-    InstanceSettings::current()->forget();
-    expect(DemoMode::enabled())->toBeFalse();
+        expect(DemoMode::enabled())->toBeFalse();
+    }
+
+    $this->get(route('demo.show'))->assertNotFound();
 
     config(['nonox.hq_admins' => ['hq@example.test']]);
     $admin = User::factory()->create(['email' => 'hq@example.test']);

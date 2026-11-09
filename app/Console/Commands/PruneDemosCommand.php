@@ -31,6 +31,12 @@ class PruneDemosCommand extends Command
             return self::FAILURE;
         }
 
+        if (! $result['enabled']) {
+            $this->comment('Prova utan att registrera är avstängd i /hq. Inget gjordes.');
+
+            return self::SUCCESS;
+        }
+
         if ($result['rebuilt']) {
             $this->comment("Demodatabasen är byggd på nytt ({$result['expired']} utgångna demor borta).");
 
