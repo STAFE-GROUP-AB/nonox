@@ -741,9 +741,14 @@ is a superuser, like a default self-hosted install.
 | Change a posted voucher, recompute `previous_hash`/`hash` along the chain and `fiscal_years.ledger_head_hash`; `LedgerVerifier` and `ledger:verify` report a clean ledger | gap confirmed |
 | `SET session_replication_role = replica` | not run: superuser only; skipped with the reason. It rests on the PostgreSQL documentation |
 
-`tests/Feature/Security/LedgerTriggersIntactTest.php` (not in `known-gap`) asserts that the
-five ledger triggers exist and are enabled and that both protect functions still raise,
-so a test that failed to roll back would turn the suite red. Step 2 flips the `known-gap`
+After each test, `TriggerBypassGapTest` reads the catalog on a second connection, which
+sees only committed state, and compares it with `Tests\Support\LedgerTriggers`: each of the
+five ledger triggers by `pg_get_triggerdef()` (function, events, timing, row or statement
+level) and enabled, and the md5 of the four trigger functions' bodies (both protect
+functions, the balance check and the truncate guard). `LedgerTriggersIntactTest` (not in
+`known-gap`) checks the same once more, on both connections. The DDL takes ACCESS
+EXCLUSIVE locks on `vouchers` and `voucher_rows` until the test's rollback, so the file is
+skipped under parallel testing; the suite runs sequentially. Step 2 flips the `known-gap`
 tests: each attempt must fail as `nonox_app`.
 
 ### Step 3: registry hardening
@@ -751,9 +756,9 @@ tests: each attempt must fail as `nonox_app`.
 `ModuleRegistry::register()` throws `App\Modules\InvalidModule` when:
 
 - the key is already registered (it used to replace the module silently);
-- the key is not in `ModuleRegistry::FIRST_PARTY` and is not `vendor.name` (lowercase
-  letters, digits and hyphens, one dot, `_` allowed in the name, at most 50 characters,
-  the length of `company_modules.module_key`);
+- the module is not first-party and its key is not `vendor.name` (lowercase letters,
+  digits and hyphens, one dot, `_` allowed in the name, no trailing newline, at most 50
+  characters, the length of `company_modules.module_key`);
 - a permission is a core permission (`CompanyRole::PERMISSIONS`) or another module's;
 - a role key is a core role (`owner` and the member roles of AGENTS.md §4) or another
   module's;
@@ -768,12 +773,28 @@ only: the agreements, planning and staff ledger modules give their permissions t
 modules' roles (`payroll_admin`, `employee`, `scheduler`), and our permission names (`self:payslips`,
 `employees:manage`) predate the prefix rule.
 
+First-party means both: a key in `ModuleRegistry::FIRST_PARTY` and a class in
+`App\Modules\`. A module with a first-party key whose class lives elsewhere is treated as
+third-party, so its key is refused.
+
 Modules register while the service providers register, before translations exist, and
-`roles()` returns translated labels. So `register()` checks the key at once and the rest
-from a `booted` callback in `ModuleServiceProvider` (`ModuleRegistry::verify()`), each
-module against the ones registered before it; a module registered after boot is checked
-in full at once. A refused module is removed and the error stops the boot: a mistake is
-found on the first request, never silently in production.
+`roles()` returns translated labels. So `register()` checks the key at once, and
+`ModuleRegistry::verify()` checks the rest, each module against the ones registered before
+it. `verify()` runs in a `booting` callback of `ModuleServiceProvider`, which fires after
+every provider has registered and before any provider boots, so a refused module stops the
+boot before its own routes and listeners exist. `JetstreamServiceProvider::configurePermissions()`
+also calls it first, so a refused module never reaches the core roles, and a `booted`
+callback checks modules registered in a `boot()` method. Any read of the lists checks
+unchecked modules first. A module registered after boot is checked in full at once. A
+refused module is removed and the error stops the boot: a mistake is found on the first
+request, never silently in production.
+
+The lists a module had when it was checked (permissions, role keys, role permissions,
+archive permissions) are kept by the registry and served from it
+(`permissionsOf()`, `roleKeysOf()`, `rolePermissionsOf()`, `archivePermissionsOf()`;
+`User::hasTeamPermission`, the Jetstream roles, firm memberships and the company overview
+use them), so a module cannot return something else after the check. Role labels stay live,
+because they are translated per request.
 
 Tests: `tests/Feature/Modules/ModuleRegistryHardeningTest.php`;
 `tests/Support/Modules/ThirdPartyDummyModule.php` is the third-party twin of the dummy

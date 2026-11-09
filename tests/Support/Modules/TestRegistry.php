@@ -10,7 +10,7 @@ use App\Modules\ModuleRegistry;
 
 /**
  * A module registry for tests: the installed modules, with the test modules'
- * unprefixed keys (`dummy`) treated as first-party (ADR-079 §2.2).
+ * unprefixed keys (`dummy`) and classes treated as first-party (ADR-079 §2.2).
  */
 final class TestRegistry
 {
@@ -21,7 +21,7 @@ final class TestRegistry
      */
     public static function make(array $firstParty = []): ModuleRegistry
     {
-        $registry = new ModuleRegistry([...ModuleRegistry::FIRST_PARTY, ...$firstParty]);
+        $registry = new ModuleRegistry([...ModuleRegistry::FIRST_PARTY, ...$firstParty], [ModuleRegistry::FIRST_PARTY_NAMESPACE, 'Tests\\Support\\Modules\\']);
 
         foreach (app(ModuleRegistry::class)->all() as $module) {
             $registry->register($module);

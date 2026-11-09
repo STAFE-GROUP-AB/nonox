@@ -171,7 +171,8 @@ class User extends Authenticatable implements PasskeyUser
             return false;
         }
 
-        $module = app(ModuleRegistry::class)->moduleForPermission($permission);
+        $registry = app(ModuleRegistry::class);
+        $module = $registry->moduleForPermission($permission);
 
         if ($module === null || ! $team instanceof Company) {
             return $this->jetstreamHasTeamPermission($team, $permission);
@@ -179,12 +180,12 @@ class User extends Authenticatable implements PasskeyUser
 
         $enabled = app(ModuleManager::class)->isEnabled($module->key(), $team);
 
-        if (! $enabled && ! in_array($permission, $module->archivePermissions(), true)) {
+        if (! $enabled && ! in_array($permission, $registry->archivePermissionsOf($module), true)) {
             return false;
         }
 
         if ($this->ownsTeam($team)) {
-            return in_array($permission, $module->rolePermissions()['owner'] ?? [], true);
+            return in_array($permission, $registry->rolePermissionsOf($module)['owner'] ?? [], true);
         }
 
         return $this->jetstreamHasTeamPermission($team, $permission);
