@@ -50,6 +50,9 @@ class CorrectVoucher
                 throw ValidationException::withMessages(['voucher' => __('Verifikationen är redan rättad.')]);
             }
 
+            // A void K2-to-K3 transition stays void: its reversal cannot be undone (S1-P12).
+            VoidK3Transition::refuseCorrection($original);
+
             $reversal = $original->rows->map(fn (VoucherRow $row): array => [
                 'account' => $row->account?->number,
                 'debit_ore' => $row->credit_ore->ore,

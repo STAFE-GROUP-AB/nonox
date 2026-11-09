@@ -727,3 +727,37 @@ describe('re-check of 732be4c3 and 25abaa80', function () {
             ->assertSee('En skyldighet att montera ned eller återställa kan inte hanteras här ännu');
     });
 });
+
+describe('voiding, quick re-check of 5f06b8bd', function () {
+    beforeEach(function () {
+        loadTransitionFixture($this, register: false);
+        enterTransitionItems($this);
+        $this->transition = app(BookK3Transition::class)($this->owner, $this->year, K3TransitionProposal::for($this->company, $this->year)->fingerprint());
+    });
+
+    it('refuses to correct the voucher that voided a transition (C2 on C1), so the reversed rows never come back', function () {
+        $c1 = app(CorrectVoucher::class)($this->owner, Voucher::query()->findOrFail($this->transition->voucher_id), 'Fel övergång', '2026-03-31');
+
+        expect($this->transition->refresh()->voided_by_voucher_id)->toBe($c1->id);
+        expect(fn () => app(CorrectVoucher::class)($this->owner, $c1->refresh(), 'Ångra rättelsen', '2026-04-01'))
+            ->toThrow(ValidationException::class, 'Övergången till K3 är ogiltigförklarad. Bokför övergången på nytt under Bokslut → Övergång till K3.');
+        expect(Voucher::query()->where('corrects_voucher_id', $c1->id)->exists())->toBeFalse();
+    });
+
+    it('leaves the transition standing when the reversal is dated in the next year', function () {
+        FiscalYear::create(['start_date' => '2027-01-01', 'end_date' => '2027-12-31']);
+        app(CorrectVoucher::class)($this->owner, Voucher::query()->findOrFail($this->transition->voucher_id), 'Rättelse nästa år', '2027-01-15');
+
+        expect($this->transition->refresh()->voided_by_voucher_id)->toBeNull()
+            ->and(K3TransitionProposal::for($this->company, $this->year)->isBooked())->toBeTrue();
+    });
+
+    it('leaves the transition standing when the reversal is made after the year is closed', function () {
+        FiscalYear::create(['start_date' => '2027-01-01', 'end_date' => '2027-12-31']);
+        $this->year->forceFill(['status' => FiscalYearStatus::Closed, 'closed_at' => now()])->save();
+        app(CorrectVoucher::class)($this->owner, Voucher::query()->findOrFail($this->transition->voucher_id), 'Rättelse efter stängningen', '2027-02-01');
+
+        expect($this->transition->refresh()->voided_by_voucher_id)->toBeNull()
+            ->and(K3Transition::query()->standing()->count())->toBe(1);
+    });
+});

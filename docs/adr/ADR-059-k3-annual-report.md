@@ -1411,6 +1411,13 @@ owner's mandate, open for the consultant's review). Fixture F-S1-b.
   standing and leaving K3 refused. `TODO(legal-verify)`: does a reversed
   transition with no K3 annual report issued count as use under 35.1?
   Until answered it does not.
+- *Void, quick re-check of 5f06b8bd.* Only a correction in the transition's
+  own fiscal year, while that year is open, voids it; a reversal dated in a
+  later year or after closing leaves it standing. `CorrectVoucher` refuses
+  (`VoidK3Transition::refuseCorrection`) to correct the voiding voucher or
+  any voucher whose chain root is a void transition's voucher, so a C2 on C1
+  can never bring the rows back; `DeferredTaxProposal` therefore nets direct
+  corrections only.
 - *One C.2 line (P3-a).* `K3Schedule` shows "Avsättningar för skatter" as one
   line, `tax_provisions`, over BAS 2240–2259 (ÅRL bilaga 1 C.2); the deferred
   tax part (224x) is `K3Schedule::DEFERRED_TAX_SPECIFICATION`, shown as a

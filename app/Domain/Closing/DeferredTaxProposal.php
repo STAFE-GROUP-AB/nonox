@@ -213,7 +213,9 @@ final class DeferredTaxProposal
             ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
             ->where('vouchers.fiscal_year_id', $fiscalYear->id)
             ->where('vouchers.status', VoucherStatus::Posted->value)
-            // The transition voucher, and any posted correction of it netted with it.
+            // The transition voucher, and any posted correction of it netted with it. Direct corrections
+            // are enough: a correction of a correction is refused once the transition is void
+            // (VoidK3Transition::refuseCorrection), and a voucher can be corrected only once.
             ->where(fn ($query) => $query
                 ->where('vouchers.source', VoucherSource::K3Transition->value)
                 ->orWhereIn('vouchers.corrects_voucher_id', Voucher::query()->select('id')->where('fiscal_year_id', $fiscalYear->id)->where('source', VoucherSource::K3Transition->value)))

@@ -2649,7 +2649,13 @@ konsoliderade K3 (vl12-1-k3-kons20251215), kapitel 35, och
   trigger tillåter bara det. En ogiltig övergång räknas inte: året kan bokas
   om, det kan byta tillbaka till K2, och den räknas inte som tillämpning av
   kapitel 35 (TODO(legal-verify): K3 punkt 35.1). En rättelse som konterar om
-  något lämnar övergången stående.
+  något lämnar övergången stående. Bara en rättelse i övergångens eget
+  räkenskapsår, medan det är öppet, gör övergången ogiltig; en rättelse
+  daterad ett senare år eller efter att året stängts gör det inte. Den
+  verifikation som gjorde övergången ogiltig, och varje verifikation i en
+  kedja som börjar med en ogiltig övergångs verifikation, kan inte rättas
+  ("Övergången till K3 är ogiltigförklarad. Bokför övergången på nytt under
+  Bokslut → Övergång till K3."), så de vända raderna kan aldrig komma tillbaka.
 - Behandlingshistoriken får `k3_transition.item_created`,
   `k3_transition.item_updated`, `k3_transition.item_removed` och
   `k3_transition.booked` med id, slag, konton och belopp, aldrig

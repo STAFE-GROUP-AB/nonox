@@ -11032,5 +11032,6 @@
     "Övergången bokfördes med kvittningsrätt för uppskjuten skatt, men för året är kvittningsrätten inte längre bekräftad. Avstämningen visar det som gällde när övergången bokfördes.": "The transition was booked with a right of set-off for deferred tax, but for the year the right of set-off is no longer confirmed. The reconciliation shows what applied when the transition was booked.",
     "Övergången bokfördes utan kvittningsrätt för uppskjuten skatt, men för året är kvittningsrätten nu bekräftad. Avstämningen visar det som gällde när övergången bokfördes.": "The transition was booked without a right of set-off for deferred tax, but for the year the right of set-off is now confirmed. The reconciliation shows what applied when the transition was booked.",
     "Konto 1110–1119 har ett ingående saldo på :ledger, men byggnaderna i anläggningsregistret har ett redovisat värde på :register per övergångsdagen. Kontrollera registret och kontona innan övergången bokförs.": "Accounts 1110–1119 have an opening balance of :ledger, but the buildings in the fixed asset register have a carrying amount of :register at the transition date. Check the register and the accounts before the transition is booked.",
-    "varav uppskjuten skatt": "of which deferred tax"
+    "varav uppskjuten skatt": "of which deferred tax",
+    "Övergången till K3 är ogiltigförklarad. Bokför övergången på nytt under Bokslut → Övergång till K3.": "The transition to K3 has been declared void. Book the transition again under Year-end → Transition to K3."
 }
