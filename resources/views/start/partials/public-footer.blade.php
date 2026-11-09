@@ -24,6 +24,8 @@
         <a class="lp33" href="{{ route('guide.home') }}" style="text-decoration:none;color:#D9D7D1">Företagsguiden</a>
         <a class="lp34" href="{{ $ph['api'] }}" style="text-decoration:none;color:#D9D7D1">API för utvecklare</a>
         <a class="lp28" href="{{ route('security') }}" style="text-decoration:none;color:#D9D7D1">Säkerhet och regelverk</a>
+        @if(App\Support\Status\SecurityPolicy::published())<a href="{{ route('security.policy') }}" style="text-decoration:none;color:#D9D7D1">Säkerhetspolicy</a>@endif
+        <a href="{{ route('status') }}" style="text-decoration:none;color:#D9D7D1">Driftstatus</a>
         <a class="lp29" href="{{ route('changelog') }}" style="text-decoration:none;color:#D9D7D1">Ändringslogg</a>
         <a class="lp30" href="{{ route('roadmap') }}" style="text-decoration:none;color:#D9D7D1">Färdplan</a>
       </nav>

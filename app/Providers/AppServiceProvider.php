@@ -24,12 +24,15 @@ use App\Support\Files\EncryptedAdapter;
 use App\Support\Guide\ForgetUserDeadlines;
 use App\Support\Instance\InstanceSettings;
 use App\Support\Overview\TaskTodoProvider;
+use App\Support\Status\Heartbeats;
 use App\Support\Tenancy\CompanyContext;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\Tenancy\LivewireCompanyGuard;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Events\ScheduledTaskFailed;
+use Illuminate\Console\Events\ScheduledTaskFinished;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Events\MigrationsEnded;
 use Illuminate\Database\Events\NoPendingMigrations;
@@ -100,6 +103,10 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Event::listen([Login::class, Logout::class], fn () => CurrentCompany::forget());
+
+        // When the scheduled jobs last ran, for the public status page (ADR-078).
+        Event::listen(ScheduledTaskFinished::class, Heartbeats::finished(...));
+        Event::listen(ScheduledTaskFailed::class, Heartbeats::failed(...));
         // Signing out ends the user's encrypted chats, and everything in them is deleted (ADR-045).
         Event::listen(Logout::class, function (Logout $event): void {
             if ($event->user instanceof User) {

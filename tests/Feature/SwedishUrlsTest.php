@@ -17,7 +17,8 @@ use Illuminate\Support\Facades\Route;
 // hooks/ is called only by the installation's own SFTP server (SFTPGo), never by a person (ADR-032, "SFTP").
 // andringslogg/rss.xml is the changelog's feed; feed readers subscribe to it and expect the .xml ending.
 // foretagsguiden/kalender/ is Mina datum's calendar feed (ADR-051); calendar apps need the .ics ending.
-const TECHNICAL_PREFIXES = ['up', 'sitemap.xml', 'robots.txt', 'livewire', 'api/', 'sanctum/', 'storage/', '_', 'herd-studio', 'oauth/', '.well-known/', 'utvecklare/openapi.', 'manual/sokindex.json', 'planering/kalender/', 'kunder/kalender/{token}', 'hooks/', 'andringslogg/rss.xml', 'foretagsguiden/kalender/'];
+// security.txt is the legacy address of RFC 9116 section 3, redirecting to /.well-known/security.txt (ADR-078).
+const TECHNICAL_PREFIXES = ['up', 'security.txt', 'sitemap.xml', 'robots.txt', 'livewire', 'api/', 'sanctum/', 'storage/', '_', 'herd-studio', 'oauth/', '.well-known/', 'utvecklare/openapi.', 'manual/sokindex.json', 'planering/kalender/', 'kunder/kalender/{token}', 'hooks/', 'andringslogg/rss.xml', 'foretagsguiden/kalender/'];
 
 const ENGLISH_WORDS = [
     'login', 'logout', 'register', 'user', 'profile', 'team', 'teams', 'dashboard', 'password',

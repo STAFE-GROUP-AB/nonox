@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 use App\Actions\Accounting\CorrectVoucher;
+use App\Console\Commands\VerifyLedgerCommand;
 use App\Domain\Accounting\LedgerVerifier;
 use App\Models\AuditLog;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Tests\Support\Bookkeeping;
 
 beforeEach(function () {
@@ -75,6 +77,8 @@ it('detects a gap in the numbering', function () {
 });
 
 it('reports through the command and records the result', function () {
+    Log::spy();
+
     $this->artisan('ledger:verify', ['company' => $this->company->org_number])
         ->expectsOutputToContain('OK: 4 bokförda verifikationer, inga avvikelser.')
         ->assertSuccessful();
@@ -83,7 +87,9 @@ it('reports through the command and records the result', function () {
 
     $this->artisan('ledger:verify', ['--all' => true])
         ->expectsOutputToContain('verifikation A2 har ändrats efter bokföringen')
-        ->assertFailed();
+        ->assertExitCode(VerifyLedgerCommand::EXIT_DEVIATIONS);
+
+    Log::shouldHaveReceived('error')->once()->withArgs(fn (string $message, array $context): bool => str_contains($message, 'avvikelser') && $context === ['companies' => [$this->company->id]]);
 
     expect(AuditLog::forCompany($this->company)->where('action', 'ledger.verified')->orderBy('id')->pluck('payload')->map(fn ($p) => $p['ok'])->all())
         ->toBe([true, false]);

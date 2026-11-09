@@ -92,6 +92,11 @@ php "$APP/artisan" backup:verify-restore \
     --host="$SOCK" --port="$PORT" --database=nonox_restore --username="$USER_NAME" \
     --files="$WORK/files/private" || status=$?
 
+# Tells the public status page (ADR-078) that the test ran, when this runs on the live installation.
+if [[ "${NONOX_STATUS_HEARTBEAT:-}" == "1" ]]; then
+    php "$APP/artisan" status:heartbeat restore-test $([[ $status -eq 0 ]] || echo --failed) || true
+fi
+
 result=$([[ $status -eq 0 ]] && echo GODKÄND || echo UNDERKÄND)
 line="$(date '+%F %T') $result $(basename "$DB_BACKUP") $(basename "$FILES_BACKUP") $(($(date +%s) - started)) s"
 echo "$line"

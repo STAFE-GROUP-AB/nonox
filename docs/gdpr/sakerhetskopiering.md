@@ -24,6 +24,10 @@ Krav: förmågan att återställa tillgängligheten och tillgången till personu
 - Utan applikationsnyckeln går krypterade fält och filer inte att läsa, inte heller efter en återställning. Nyckeln måste därför förvaras lika säkert som kopiorna, och på en annan plats än dem.
 - Kunden kan själv när som helst ladda ner SIE4 och ett arkivpaket per räkenskapsår. Vi rekommenderar att kunden gör det efter varje bokslut.
 
+## Statussidan
+
+Den offentliga statussidan (`/status`, ADR-078) visar säkerhetskopiering och återställningstest bara om serverns egna skript har rapporterat dem. Skripten gör det med `php artisan status:heartbeat backup` efter varje lyckad kopia (och med `--failed` om den misslyckades). `scripts/restore-test.sh` rapporterar själv `restore-test` när miljövariabeln `NONOX_STATUS_HEARTBEAT=1` är satt, så att ett test på en annan dator inte skriver till någon databas. TODO: lägg in anropet i den driftade tjänstens nattliga kopieringsjobb och i det veckovisa testet.
+
 ## Återställningstest
 
 Ett återställningstest visar att kopian går att läsa tillbaka, inte bara att den finns. Skriptet `scripts/restore-test.sh` gör det så här:

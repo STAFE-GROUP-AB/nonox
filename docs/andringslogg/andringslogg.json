@@ -80,6 +80,14 @@
       "omrade": "Fakturering"
     },
     {
+      "id": "2026-11-08-statussida-och-sakerhetspolicy",
+      "datum": "2026-11-08T19:00:00+01:00",
+      "rubrik": "Driftstatus och security.txt",
+      "beskrivning": "På Driftstatus ser du om tjänsten är i drift, om bakgrundsjobben, den nattliga kontrollen av bokföringen och kopplingarna till Peppol, bank och Skatteverket fungerar, och vilka störningar som har varit de senaste 90 dagarna. Adressen för att rapportera en sårbarhet finns i security.txt enligt RFC 9116. Sidan visar aldrig något om enskilda företag eller personer.",
+      "typ": "Säkerhet",
+      "omrade": "Webbplats"
+    },
+    {
       "id": "2026-11-08-signering-utan-crm",
       "datum": "2026-11-08T19:00:00+01:00",
       "rubrik": "Offerter kan signeras med namnteckning även utan CRM",

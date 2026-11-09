@@ -419,6 +419,7 @@ Kör du NONOX på din egen dator (`APP_ENV=local`) och öppnar sidan på samma d
 - Bokförda verifikationer och behandlingshistoriken kan inte ändras, och en kedja av kontrollsummor kontrolleras varje natt.
 - Filer och personnummer krypteras, och en strikt innehållspolicy stoppar skript från andra adresser.
 - Säkerhetskopiorna återställs och kontrolleras varje vecka. Kör du själv gör `scripts/restore-test.sh` samma sak för dina kopior, se [säkerhetskopiering](docs/gdpr/sakerhetskopiering.md#återställningstest).
+- Driftläget visas på en offentlig [statussida](https://nonox.app/status), och hur du rapporterar en sårbarhet står i [SECURITY.md](SECURITY.md) och i `/.well-known/security.txt` (RFC 9116). Kör du själv anger du säkerhetskontakten under HQ → Inställningar, se [ADR-078](docs/adr/ADR-078-status-page-and-security-policy.md).
 - Varje [release](https://github.com/STAFE-GROUP-AB/nonox/releases) har en förteckning över programvarukomponenterna (SBOM, CycloneDX) som bilaga.
 
 Den senaste granskningen, med betyg per område och det som återstår, finns på [nonox.app/sakerhet](https://nonox.app/sakerhet). Hittar du en säkerhetsbrist? Följ [SECURITY.md](SECURITY.md) och rapportera den där, inte i ett öppet ärende. Dataskydd och juridik: [docs/gdpr](docs/gdpr/README.md) och [docs/juridik](docs/juridik/regelverk.md).

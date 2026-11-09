@@ -27,6 +27,7 @@
 | Inkorgen: e-post till den gemensamma adressen som inget företag hämtat | 90 dagar | Kan inte knytas till något företag | `inbox:prune` |
 | Inkorgen: meddelanden i karantän som ingen hanterat | 90 dagar efter mottagandet | Väntar på beslut | `inbox:prune` |
 | Inkorgen: skräppost från avsändare som inte är godkända | Sparas inte alls | Behövs inte | Tas bort vid mottagandet; bara en rad i behandlingshistoriken utan innehåll |
+| Säkerhetsrapporter (rapporten och rapportörens kontaktuppgifter, ADR-078) | Två år efter att ärendet avslutades | Rätta felet, svara rapportören och visa vad som gjorts; berättigat intresse (säkerhet, art. 32). TODO(legal-verify): lagringstiden | Raderas för hand när tiden gått; ligger i driftbolagets e-post och ärendehantering, inte i NONOX databas |
 | Sessioner | 12 timmar, kortare vid inaktivitet | Säkerhet | Mellanprogram |
 | Passkeys (publik nyckel, namn, senast använd) | Tills användaren tar bort den, den återställs eller kontot raderas | Säkerhet vid inloggning | Profil → Passkeys; återställning av ägare eller administratör; "Radera mitt konto" tar bort alla |
 | Senast öppnade i sökningen (titel, adress, tid) | Högst 50 rader per användare och företag | Visa det användaren nyss öppnat | Äldre rader trängs undan; tas bort med företaget och när användaren raderar sitt konto |

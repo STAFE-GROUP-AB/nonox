@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Support\Landing\LandingPage;
+use App\Support\Status\SecurityPolicy;
+use App\Support\Status\SecurityTxt;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -29,10 +31,13 @@ class LegalPageController
         'subprocessors' => ['file' => 'underbitraden', 'title' => 'Underbiträden'],
         'selfHosting' => ['file' => 'egen-drift', 'title' => 'NONOX i egen drift'],
         'accessibility' => ['file' => 'tillganglighet', 'title' => 'Tillgänglighetsredogörelse'],
+        'securityPolicy' => ['file' => 'sakerhetspolicy', 'title' => 'Säkerhetspolicy'],
     ];
 
     public function __invoke(string $document): View
     {
+        abort_if($document === 'securityPolicy' && ! SecurityPolicy::published(), 404);
+
         $meta = self::DOCUMENTS[$document];
 
         return view('start.legal', [
@@ -46,9 +51,18 @@ class LegalPageController
     public static function html(string $document): string
     {
         $markdown = (string) file_get_contents(base_path('docs/juridik/'.self::DOCUMENTS[$document]['file'].'.md'));
+        $markdown = $document === 'securityPolicy' ? SecurityPolicy::filter($markdown) : $markdown;
         $markdown = (string) preg_replace('/<!--.*?-->/s', '', $markdown);
 
         return Str::markdown(strtr($markdown, self::placeholders()), ['html_input' => 'escape', 'allow_unsafe_links' => false]);
+    }
+
+    /** The contact shown in the security policy: the one in security.txt, without mailto:. */
+    private static function securityContact(): string
+    {
+        $contact = SecurityTxt::contact();
+
+        return $contact === null ? 'kontaktuppgifterna på sidan Säkerhet och regelverk' : (string) preg_replace('/^mailto:/', '', $contact);
     }
 
     /** @return array<string, string> */
@@ -75,6 +89,9 @@ class LegalPageController
             '{villkor}' => route('legal.terms'),
             '{egendrift}' => route('legal.selfHosting'),
             '{sakerhet}' => route('security'),
+            '{sakerhetskontakt}' => self::securityContact(),
+            '{sakerhetstxt}' => SecurityTxt::baseUrl().'/.well-known/security.txt',
+            '{status}' => SecurityTxt::baseUrl().route('status', [], false),
             '{tillganglighet}' => route('legal.accessibility'),
         ];
     }

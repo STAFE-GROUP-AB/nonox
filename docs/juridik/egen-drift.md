@@ -26,6 +26,10 @@ NONOX finns på två sätt, och ansvaret skiljer sig åt.
 
 Vår [säkerhetsgranskning]({sakerhet}) gäller programmets källkod och, för området Drift och säkerhetskopior, den driftade tjänsten. Hur säker din egen installation är beror på hur du driftar den. Hittar du en säkerhetsbrist i programmet, rapportera den enligt [SECURITY.md](https://github.com/STAFE-GROUP-AB/nonox/blob/main/SECURITY.md). Säkerhetsrättelser publiceras som nya versioner under [Releaser](https://github.com/STAFE-GROUP-AB/nonox/releases); uppdatera när en ny version kommer. Varje release har en förteckning över programvarukomponenterna (SBOM) som bilaga, så att du kan se vilka paket som ingår och bevaka sårbarheter i dem.
 
+## Säkerhetskontakt och driftstatus
+
+Din installation har en egen `/.well-known/security.txt` och en egen statussida på `/status`. En säkerhetspolicy på `/sakerhetspolicy` visas bara om du sätter `NONOX_SECURITY_POLICY_PUBLISHED=true` och har angett företagsnamn; den innehåller då inget löfte om skydd för den som testar. Ange vart sårbarhetsrapporter ska skickas under HQ → Inställningar → Säkerhetskontakt, eller med miljövariabeln `NONOX_SECURITY_EMAIL`. Saknas en kontakt publiceras ingen security.txt. Statussidan visar bara det som din installation kan veta om sig själv; säkerhetskopior visas först när dina egna skript har rapporterat dem, se [säkerhetskopiering](https://github.com/STAFE-GROUP-AB/nonox/blob/main/docs/gdpr/sakerhetskopiering.md#statussidan).
+
 ## Hjälp
 
 Frågor om egen drift ställs i [diskussionerna på GitHub](https://github.com/STAFE-GROUP-AB/nonox/discussions). Vill du att vi tar över driften finns den [driftade tjänsten]({webbplats}#priser).

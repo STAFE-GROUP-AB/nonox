@@ -11,6 +11,7 @@ use App\Livewire\Concerns\ShowsToasts;
 use App\Livewire\Hq\Concerns\DecidesWithPasskey;
 use App\Models\Company;
 use App\Models\Customer;
+use App\Models\InstanceSetting;
 use App\Models\OperatorLink;
 use App\Models\WaitlistEntry;
 use App\Modules\Crm\CrmModule;
@@ -21,10 +22,12 @@ use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
 use App\Support\Hq\HqAccess;
 use App\Support\Instance\InstanceSettings;
+use App\Support\Status\SecurityTxt;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\Tenancy\SpansCompanies;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Component;
 
@@ -45,6 +48,8 @@ class Settings extends Component implements SpansCompanies
 
     public bool $registrationOpen = false;
 
+    public string $securityContact = '';
+
     public function mount(): void
     {
         $this->fill(self::stored());
@@ -61,10 +66,38 @@ class Settings extends Component implements SpansCompanies
             'operator_company_id' => $this->operatorCompanyId === '' ? null : $this->operatorCompanyId,
             'waitlist_open' => $this->waitlistOpen,
             'registration_open' => $this->registrationOpen,
+            'security_contact' => $this->securityContact,
         ]);
 
         $this->fill(self::stored());
         $this->toast($changed === [] ? __('Inget ändrades.') : __('Inställningarna är sparade.'));
+    }
+
+    /**
+     * Confirms that the security contact is still right, which renews the
+     * Expires date of security.txt (ADR-078). Writes the contact in use,
+     * from the setting or the environment, as the setting.
+     *
+     * @param  ?array<array-key, mixed>  $credential
+     */
+    public function confirmSecurityContact(?array $credential): void
+    {
+        $this->confirmDecision($credential);
+
+        $contact = SecurityTxt::rawContact();
+
+        if ($contact === null || SecurityTxt::contactUri($contact) === null) {
+            throw ValidationException::withMessages(['security_contact' => __('Det finns ingen giltig säkerhetskontakt att bekräfta. Ange en först.')]);
+        }
+
+        $admin = $this->admin();
+        $setting = InstanceSetting::query()->firstOrNew(['key' => InstanceSettings::SECURITY_CONTACT]);
+        $setting->forceFill(['value' => $contact, 'updated_by' => $admin->id, 'updated_at' => now()])->save();
+        InstanceSettings::current()->forget();
+
+        Audit::instance('hq.security_contact_confirmed', null, [], $admin);
+
+        $this->toast(__('Säkerhetskontakten är bekräftad och security.txt gäller i ett år till.'));
     }
 
     /**
@@ -135,6 +168,8 @@ class Settings extends Component implements SpansCompanies
             'failures' => $this->links()->whereNotNull('failed_at')->latest('failed_at')->limit(50)->get(['id', 'source_company_id', 'waitlist_entry_id', 'error', 'failed_at']),
             'failureCount' => $this->links()->whereNotNull('failed_at')->count(),
             'reviews' => $operator === null ? collect() : $this->reviews($operator),
+            'securityTxtExpires' => SecurityTxt::contact() === null ? null : SecurityTxt::expiresAt(),
+            'securityTxtExpiresSoon' => SecurityTxt::contact() !== null && SecurityTxt::expiresSoon(),
             'fresh' => HqAccess::isFresh($admin),
             'hasPasskey' => $admin->hasPasskeysEnabled(),
             'pausedMailings' => Company::query()->whereIn('id', MailingPause::hqOnlyCompanyIds())->orderBy('name')->get(['id', 'name']),
@@ -194,7 +229,7 @@ class Settings extends Component implements SpansCompanies
         });
     }
 
-    /** @return array{operatorCompanyId: string, waitlistOpen: bool, registrationOpen: bool} */
+    /** @return array{operatorCompanyId: string, waitlistOpen: bool, registrationOpen: bool, securityContact: string} */
     private static function stored(): array
     {
         $settings = InstanceSettings::current();
@@ -205,6 +240,7 @@ class Settings extends Component implements SpansCompanies
             'operatorCompanyId' => $operator === null ? '' : (string) $operator,
             'waitlistOpen' => $settings->waitlistOpen(),
             'registrationOpen' => $settings->selfRegistrationOpen(),
+            'securityContact' => $settings->securityContact() ?? '',
         ];
     }
 }

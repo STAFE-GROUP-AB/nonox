@@ -29,11 +29,15 @@ final class InstanceSettings
 
     public const string REGISTRATION_OPEN = 'registration.open';
 
+    /** Where vulnerability reports go: an e-mail address or an https address (ADR-078, RFC 9116 Contact). */
+    public const string SECURITY_CONTACT = 'security.contact';
+
     /** @var array<string, mixed> the defaults, which are also the only keys */
     public const array DEFAULTS = [
         self::OPERATOR => null,
         self::WAITLIST_OPEN => true,
         self::REGISTRATION_OPEN => false,
+        self::SECURITY_CONTACT => null,
     ];
 
     /** @var ?array<string, mixed> */
@@ -90,6 +94,13 @@ final class InstanceSettings
     public function waitlistOpen(): bool
     {
         return (bool) $this->get(self::WAITLIST_OPEN);
+    }
+
+    public function securityContact(): ?string
+    {
+        $value = $this->get(self::SECURITY_CONTACT);
+
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
     }
 
     public function selfRegistrationOpen(): bool

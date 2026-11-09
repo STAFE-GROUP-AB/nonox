@@ -9,6 +9,7 @@ use App\Domain\Company\OrganisationNumber;
 use App\Models\Company;
 use App\Support\Audit\Audit;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Recomputes the hash chain, balances and numbering of the ledger
@@ -16,6 +17,9 @@ use Illuminate\Console\Command;
  */
 class VerifyLedgerCommand extends Command
 {
+    /** The check ran and found deviations. Any other non-zero code means it crashed (ADR-078). */
+    public const int EXIT_DEVIATIONS = 3;
+
     protected $signature = 'ledger:verify {company? : Företagets id eller organisationsnummer} {--all : Kontrollera alla företag}';
 
     protected $description = 'Kontrollerar att bokföringen inte har ändrats: hashkedjan, balansen och numreringen';
@@ -31,6 +35,7 @@ class VerifyLedgerCommand extends Command
         }
 
         $failed = 0;
+        $failedCompanies = [];
 
         foreach ($companies as $company) {
             $this->line("Kontrollerar {$company->name} ({$company->org_number})...");
@@ -50,6 +55,7 @@ class VerifyLedgerCommand extends Command
             }
 
             $failed++;
+            $failedCompanies[] = $company->id;
 
             foreach ($result['problems'] as $problem) {
                 $this->error("  {$problem}");
@@ -60,7 +66,12 @@ class VerifyLedgerCommand extends Command
             ? 'Bokföringen är intakt.'
             : "Avvikelser hittades i {$failed} företag.");
 
-        return $failed === 0 ? self::SUCCESS : self::FAILURE;
+        if ($failed > 0) {
+            // The operator's alert: the log channel, company ids only. The public status page shows just that the check ran (ADR-078).
+            Log::error('ledger:verify hittade avvikelser i bokföringen', ['companies' => $failedCompanies]);
+        }
+
+        return $failed === 0 ? self::SUCCESS : self::EXIT_DEVIATIONS;
     }
 
     /** @return list<Company> */

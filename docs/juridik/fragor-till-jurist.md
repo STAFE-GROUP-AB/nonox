@@ -18,6 +18,12 @@ Svaren förs in i respektive dokument eller ADR, och frågan stryks här. Öppna
 *Fråga:* Vem ska stå som incidentansvarig, och vilken kanal ska användas till kunderna inom PUB-avtalets 36 timmar?
 *Varför:* Fristen på 72 timmar till IMY (artikel 33.1) förutsätter att någon äger frågan.
 
+**35. Säkerhetspolicyns skydd för den som rapporterar (ADR-078).**
+*Bakgrund:* Policyn på `/sakerhetspolicy` lovar att vi inte inleder rättsliga åtgärder och inte polisanmäler den som i god tro följer policyn, med fyra villkor, och säger att det bara binder oss och inte är ett tillstånd att göra något olagligt. Sidan är avstängd (`NONOX_SECURITY_POLICY_PUBLISHED=false`) tills frågan är besvarad, och en egen installation får aldrig avsnittet.
+*Fråga:* Får driftbolaget lova detta, med den formuleringen? Kan löftet om att inte polisanmäla stå kvar när brott mot dataintrång kan åtalas av staten? Räcker texten för att inte skapa ett förväntat tillstånd, och ska något läggas till (till exempel om personuppgifter som den som rapporterar råkar se)?
+*Varför:* En för vid formulering kan uppfattas som ett tillstånd att testa produktion; en för snäv gör att färre rapporterar.
+*Var:* `docs/juridik/sakerhetspolicy.md`, avsnittet "Skydd för dig som rapporterar".
+
 ### Roller och underbiträden
 
 **3. Rollkedjan för AI-leverantören när kundens egen nyckel används.**
