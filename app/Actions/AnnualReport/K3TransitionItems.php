@@ -88,7 +88,8 @@ class K3TransitionItems
             $id = $input['id'] ?? null;
 
             if ($id !== null && $id !== '') {
-                $item = K3TransitionItem::query()->where('fiscal_year_id', $fiscalYear->id)->whereKey((int) $id)->firstOrFail();
+                // Items of a void transition stay as history and cannot be edited.
+                $item = K3TransitionItem::query()->where('fiscal_year_id', $fiscalYear->id)->whereNull('k3_transition_id')->whereKey((int) $id)->firstOrFail();
                 $item->fill($attributes)->save();
                 $action = 'k3_transition.item_updated';
             } else {
@@ -161,7 +162,7 @@ class K3TransitionItems
 
         CurrentCompany::run($company, fn () => DB::transaction(function () use ($user, $company, $fiscalYear, $itemId): void {
             $this->lockAndEnsureNotBooked($fiscalYear);
-            $item = K3TransitionItem::query()->where('fiscal_year_id', $fiscalYear->id)->whereKey($itemId)->firstOrFail();
+            $item = K3TransitionItem::query()->where('fiscal_year_id', $fiscalYear->id)->whereNull('k3_transition_id')->whereKey($itemId)->firstOrFail();
             $item->delete();
             Audit::record('k3_transition.item_removed', $item, ['fiscal_year_id' => $fiscalYear->id, 'kind' => $item->kind], $company, $user);
         }));
@@ -468,7 +469,7 @@ class K3TransitionItems
     {
         FiscalYear::query()->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();
 
-        if (K3Transition::query()->where('fiscal_year_id', $fiscalYear->id)->exists()) {
+        if (K3Transition::query()->standing()->where('fiscal_year_id', $fiscalYear->id)->exists()) {
             throw ValidationException::withMessages(['item' => __('Övergången till K3 är redan bokförd. Rätta verifikationen om något blev fel.')]);
         }
     }

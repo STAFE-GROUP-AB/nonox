@@ -187,19 +187,21 @@ class ChangeReportingFramework
     /**
      * A year whose K2-to-K3 transition is booked (S1-P12, K3Transition) cannot
      * leave K3: the transition voucher would stand in a year that is not K3.
-     * Its voucher must be corrected first; the transition row itself stays
-     * (chapter 35 counts as used, K3 35.1). A transition booked without a
+     * Its voucher must be fully reversed by correction first, which makes the
+     * transition void (VoidK3Transition). A transition booked without a
      * voucher changed nothing in the books and does not block.
      *
      * @param  Collection<int, FiscalYear>  $years  the chosen year and every later one, locked
      */
     private static function refuseBookedK3Transition(Company $company, Collection $years): void
     {
-        // A transition whose voucher has been corrected no longer stands in the books.
+        // A void transition (its voucher fully reversed by correction) no longer stands in the books;
+        // a correction that re-books leaves it standing.
         $booked = K3Transition::query()
+            ->standing()
             ->where('company_id', $company->id)
             ->whereIn('fiscal_year_id', $years->pluck('id')->all())
-            ->whereHas('voucher', fn ($voucher) => $voucher->whereNull('corrected_by_voucher_id'))
+            ->whereNotNull('voucher_id')
             ->orderBy('transition_date')
             ->first();
 

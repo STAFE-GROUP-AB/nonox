@@ -63,7 +63,7 @@ final class BookK3Transition
                 throw ValidationException::withMessages(['transition' => $refusal]);
             }
 
-            if (K3Transition::query()->where('fiscal_year_id', $year->id)->exists()) {
+            if (K3Transition::query()->standing()->where('fiscal_year_id', $year->id)->exists()) {
                 throw ValidationException::withMessages(['transition' => __('Övergången till K3 är redan bokförd. Rätta verifikationen om något blev fel.')]);
             }
 

@@ -8,6 +8,7 @@ use App\Actions\Closing\DeferredTaxItems;
 use App\Actions\Closing\YearEndClosing;
 use App\Domain\Closing\DeferredTaxProposal;
 use App\Livewire\Concerns\ShowsToasts;
+use App\Models\ClosingCheck;
 use App\Models\Company;
 use App\Models\DeferredTaxItem;
 use App\Models\FiscalYear;
@@ -66,6 +67,19 @@ class DeferredTaxPage extends Component
             $this->year = (int) (FiscalYear::query()->where('status', 'OPEN')->whereDate('end_date', '<', now()->toDateString())->orderBy('start_date')->value('id')
                 ?? FiscalYear::query()->orderByDesc('start_date')->value('id'));
         }
+
+        $this->setOff = $this->confirmedSetOff();
+    }
+
+    /** One confirmation of the right of set-off per year, shared with Övergång till K3 (K3 29.32). */
+    public function updatedYear(): void
+    {
+        $this->setOff = $this->confirmedSetOff();
+    }
+
+    private function confirmedSetOff(): bool
+    {
+        return ClosingCheck::query()->where('fiscal_year_id', $this->year)->where('key', DeferredTaxProposal::SET_OFF_CHECK)->exists();
     }
 
     public function save(DeferredTaxItems $items): void

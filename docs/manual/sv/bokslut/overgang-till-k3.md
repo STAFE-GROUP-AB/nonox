@@ -48,9 +48,9 @@ Kan det skattemässiga värdet inte tas fram utan oskälig kostnad får posten l
 
 ## Avstämning och upplysningar
 
-- **Avstämning av eget kapital** visar för varje post i balansräkningen som ändras beloppet enligt K2, justeringen och beloppet enligt K3, och sedan **Summa eget kapital** och **Balansomslutning**. Uppskjuten skatteskuld visas under posten **Avsättningar för skatter**.
-- Uppskjuten skattefordran och skatteskuld visas brutto. Har företaget legal rätt att kvitta dem (K3 punkt 29.32) kryssar du i **Kvittningsrätt för uppskjuten skatt finns**; då visas de netto i avstämningen. Verifikationen bokförs alltid brutto. Valet låses när övergången bokförs.
-- Har konto 1110–1119 ett saldo men anläggningsregistret ingen byggnad visar sidan en varning: byggnader ska delas upp i komponenter per övergångsdagen.
+- **Avstämning av eget kapital** visar för varje post i balansräkningen som ändras beloppet enligt K2, justeringen och beloppet enligt K3, och sedan **Summa eget kapital** och **Balansomslutning**. Uppskjuten skatteskuld ingår i posten **Avsättningar för skatter**, med raden **varav uppskjuten skatt** under.
+- Uppskjuten skattefordran och skatteskuld visas brutto. Har företaget legal rätt att kvitta dem (K3 punkt 29.32) kryssar du i **Kvittningsrätt för uppskjuten skatt finns**; då visas de netto i avstämningen. Verifikationen bokförs alltid brutto. Valet gäller hela året och är detsamma som under [Uppskjuten skatt (K3)](/manual/bokslut/uppskjuten-skatt). Övergången sparar valet när den bokförs, och ändras det senare visar sidan en varning.
+- Stämmer saldot på konto 1110–1119 inte med byggnaderna i anläggningsregistret visar sidan en varning: byggnader ska finnas i registret och delas upp i komponenter per övergångsdagen.
 - **Komponenter** visar varje byggnad i registret med det redovisade värdet före uppdelningen och summan av komponenterna. Skillnaden i eget kapital är noll.
 - **Upplysningar i årsredovisningen** är texten som K3-årsredovisningen ska innehålla: att K3 tillämpas för första gången, att jämförelsetalen inte är omräknade och att jämförbarheten därför är begränsad, vilka redovisningsprinciper som har ändrats, vilka lättnadsregler som har använts och hur mycket eget kapital ändrades.
 
@@ -76,7 +76,7 @@ Efter bokföringen är justeringarna låsta. Blev något fel rättar du verifika
 ## Bra att veta
 
 - Bara en ägare, administratör eller redovisningskonsult lägger upp justeringar och bokför övergången. En revisor kan läsa sidan.
-- Ett år där övergången är bokförd kan inte bytas tillbaka till K2. Rätta först övergångens verifikation.
+- Ett år där övergången är bokförd kan inte bytas tillbaka till K2. Vänd först övergångens verifikation helt med en rättelseverifikation utan ny kontering: då räknas övergången som ogiltig, och året kan bytas tillbaka eller få en ny övergång. En rättelse som bokför om något låter övergången stå kvar.
 - När årets uppskjutna skatt bokförs i bokslutet räknas förändringen från ingångsbalansräkningen enligt K3, alltså med övergångens belopp.
 
 ## Läs också

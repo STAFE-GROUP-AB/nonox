@@ -1375,7 +1375,7 @@ owner's mandate, open for the consultant's review). Fixture F-S1-b.
   skatter" (`K3Schedule`, so also in the K3 balance sheet). The README
   states why the company leaves K2 (1.1B a; 1.1C not met: two criteria).
 - Netting (29.32): a person may confirm "Kvittningsrätt för uppskjuten skatt
-  finns" (closing check `k3_transition_deferred_tax_set_off`, kept on
+  finns" (closing check, kept on
   `k3_transitions.deferred_tax_set_off` at booking for S1-P10).
   `presentedDeferredTax()` and the reconciliation net the two lines
   (F-S1-b: 216 300 liability, no asset line, total 7 942 960); the voucher
@@ -1396,6 +1396,37 @@ owner's mandate, open for the consultant's review). Fixture F-S1-b.
   `DeferredTaxProposal` nets posted corrections of the transition voucher;
   a database trigger refuses new items for a year with a booked transition;
   a warning when 1110–1119 has a balance and the register has no building.
+
+**Second re-check (2026-11-09), Lead decisions.**
+- *Void transition (P2).* A transition is void when its voucher is fully
+  reversed by correction with nothing re-booked: net zero per account
+  across the original and its correction chain. `VoidK3Transition`, called
+  by `CorrectVoucher` inside its transaction, then sets
+  `k3_transitions.voided_by_voucher_id` once; the append-only trigger and
+  the model allow that column only, set once (as
+  `vouchers.corrected_by_voucher_id`). The unique index is partial (`WHERE
+  voided_by_voucher_id IS NULL`). A void transition is ignored as `$booked`
+  and `$earlier`, a new booking is allowed (its frozen items stay as
+  history), and leaving K3 is allowed. A correction that re-books leaves it
+  standing and leaving K3 refused. `TODO(legal-verify)`: does a reversed
+  transition with no K3 annual report issued count as use under 35.1?
+  Until answered it does not.
+- *One C.2 line (P3-a).* `K3Schedule` shows "Avsättningar för skatter" as one
+  line, `tax_provisions`, over BAS 2240–2259 (ÅRL bilaga 1 C.2); the deferred
+  tax part (224x) is `K3Schedule::DEFERRED_TAX_SPECIFICATION`, shown as a
+  specification row ("varav uppskjuten skatt") under the line or in the note.
+  **S1-P10 follows the same choice.** S1-P6's schedule tests were updated.
+- *One set-off confirmation per year (P3-b).* The transition and
+  `DeferredTaxProposal` use the same closing check, `deferred_tax_set_off`.
+  The transition freezes the value at booking and warns when the year's
+  current value later differs. The deferred tax page starts from the check,
+  and confirming the year's deferred tax keeps the check in line with the
+  person's choice.
+- *Register check (P3-c).* The opening balance of 1110–1119 (net of 1119) is
+  compared with the sum of the register buildings' carrying amounts at the
+  transition date; any difference is a warning.
+- *Dismantling (P3-d).* The 35.29 text is shown next to the PROVISION kind,
+  not only with the checkbox.
 
 ### A.5 Test plan and performance
 

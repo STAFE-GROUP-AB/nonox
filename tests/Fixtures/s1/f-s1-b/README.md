@@ -178,6 +178,7 @@ Net on 2091: −247 200 − 150 000 + 30 900 = **−366 300,00**.
 | Uppskjuten skattefordran | 0 | 30 900,00 | 30 900,00 |
 | Balanserad vinst eller förlust | 3 560 000,00 | −366 300,00 | 3 193 700,00 |
 | Avsättningar för skatter | 0 | 247 200,00 | 247 200,00 |
+| – varav uppskjuten skatt | 0 | 247 200,00 | 247 200,00 |
 | Övriga avsättningar | 0 | 150 000,00 | 150 000,00 |
 | **Eget kapital** | **4 544 590,24** | **−366 300,00** | **4 178 290,24** |
 | **Balansomslutning** | **7 942 960,00** | **30 900,00** | **7 973 860,00** |
@@ -185,8 +186,8 @@ Net on 2091: −247 200 − 150 000 + 30 900 = **−366 300,00**.
 The sheet is **gross**: kvittningsrätt ej bekräftad. ÅRL 2 kap. 4 § p. 6 forbids
 offsetting, and K3 29.32 allows netting a deferred tax asset against a deferred tax
 liability only when the company has a legal right of set-off. The person has not confirmed
-it here. (The deferred tax liability is shown under the ÅRL item "Avsättningar för
-skatter".)
+it here. ÅRL bilaga 1 C.2 is one item, so BAS 2240–2259 is one line, "Avsättningar för
+skatter", with the deferred tax (2240–2249) as its specification ("varav uppskjuten skatt").
 
 If the person confirms the right of set-off ("Kvittningsrätt för uppskjuten skatt finns"),
 only the presentation changes, never the voucher:
@@ -195,6 +196,7 @@ only the presentation changes, never the voucher:
 |---|---:|---:|---:|
 | Balanserad vinst eller förlust | 3 560 000,00 | −366 300,00 | 3 193 700,00 |
 | Avsättningar för skatter | 0 | 247 200 − 30 900 = 216 300,00 | 216 300,00 |
+| – varav uppskjuten skatt | 0 | 216 300,00 | 216 300,00 |
 | Övriga avsättningar | 0 | 150 000,00 | 150 000,00 |
 | **Eget kapital** | **4 544 590,24** | **−366 300,00** | **4 178 290,24** |
 | **Balansomslutning** | **7 942 960,00** | **0** | **7 942 960,00** |

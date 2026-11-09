@@ -109,7 +109,7 @@ class K3TransitionPage extends Component
 
     public function edit(int $id): void
     {
-        $item = K3TransitionItem::query()->where('fiscal_year_id', $this->fiscalYear()->id)->whereKey($id)->firstOrFail();
+        $item = K3TransitionItem::query()->where('fiscal_year_id', $this->fiscalYear()->id)->whereNull('k3_transition_id')->whereKey($id)->firstOrFail();
 
         $this->editing = $item->id;
         $this->kind = $item->kind;

@@ -198,7 +198,7 @@ class ClosingPage extends Component
             'taxEntry' => $entries->firstWhere('type', YearEndEntry::TAX),
             'deferredTaxEntry' => $entries->firstWhere('type', YearEndEntry::DEFERRED_TAX),
             'k3TransitionOffered' => $k3TransitionOffered,
-            'k3Transition' => $k3TransitionOffered ? K3Transition::query()->where('fiscal_year_id', $fiscalYear->id)->first() : null,
+            'k3Transition' => $k3TransitionOffered ? K3Transition::query()->standing()->where('fiscal_year_id', $fiscalYear->id)->first() : null,
             'unpaidEntries' => $entries->whereIn('type', [YearEndEntry::UNPAID_RECEIVABLES, YearEndEntry::UNPAID_PAYABLES])->keyBy('type'),
             'unpaid' => $fiscalYear->isOpen() && $entries->whereIn('type', [YearEndEntry::UNPAID_RECEIVABLES, YearEndEntry::UNPAID_PAYABLES])->isEmpty()
                 && ClosingCheck::query()->where('fiscal_year_id', $fiscalYear->id)->where('key', 'unpaid')->doesntExist()

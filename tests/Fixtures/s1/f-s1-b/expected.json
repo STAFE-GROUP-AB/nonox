@@ -141,11 +141,20 @@
           "k3_ore": 319370000
         },
         {
-          "key": "deferred_tax_liability",
+          "key": "tax_provisions",
           "label": "Avsättningar för skatter",
           "k2_ore": 0,
           "adjustment_ore": 24720000,
-          "k3_ore": 24720000
+          "k3_ore": 24720000,
+          "specification": [
+            {
+              "key": "deferred_tax_liability",
+              "label": "varav uppskjuten skatt",
+              "k2_ore": 0,
+              "adjustment_ore": 24720000,
+              "k3_ore": 24720000
+            }
+          ]
         },
         {
           "key": "other_provisions",
@@ -159,7 +168,8 @@
       "equity_k3_ore": 417829024,
       "balance_sheet_total_k2_ore": 794296000,
       "balance_sheet_total_k3_ore": 797386000,
-      "_note": "Gross presentation: the legal right of set-off (K3 29.32) is not confirmed (kvittningsrätt ej bekräftad)."
+      "_note": "Gross presentation: the legal right of set-off (K3 29.32) is not confirmed (kvittningsrätt ej bekräftad).",
+      "_note_line": "ÅRL bilaga 1 C.2 is one item: 2240–2259 on the line Avsättningar för skatter, the deferred tax part (2240–2249) as its specification."
     },
     "reconciliation_set_off": {
       "rule_ids": [
@@ -174,11 +184,20 @@
           "k3_ore": 319370000
         },
         {
-          "key": "deferred_tax_liability",
+          "key": "tax_provisions",
           "label": "Avsättningar för skatter",
           "k2_ore": 0,
           "adjustment_ore": 21630000,
-          "k3_ore": 21630000
+          "k3_ore": 21630000,
+          "specification": [
+            {
+              "key": "deferred_tax_liability",
+              "label": "varav uppskjuten skatt",
+              "k2_ore": 0,
+              "adjustment_ore": 21630000,
+              "k3_ore": 21630000
+            }
+          ]
         },
         {
           "key": "other_provisions",

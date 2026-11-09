@@ -369,8 +369,11 @@ class YearEndClosing
                 $voucher = $this->book->rows($user, $company, $fiscalYear->end_date, __('Uppskjuten skatt :year', ['year' => $fiscalYear->label()]), self::SERIES, $rows, VoucherSource::Closing, $fiscalYear);
             }
 
+            // One confirmation per year, shared with Övergång till K3: the booking records what was used.
             if ($setOff) {
                 ClosingCheck::query()->firstOrCreate(['fiscal_year_id' => $fiscalYear->id, 'key' => DeferredTaxProposal::SET_OFF_CHECK], ['checked_by' => $user->id]);
+            } else {
+                ClosingCheck::query()->where('fiscal_year_id', $fiscalYear->id)->where('key', DeferredTaxProposal::SET_OFF_CHECK)->delete();
             }
 
             foreach ($proposal->lines as $line) {

@@ -96,12 +96,13 @@ final class K3TransitionProposal
     public const string RELIEF = 'RELIEF';
 
     /**
-     * The closing check on the first K3 year that records a person's
-     * confirmation of a legal right of set-off (K3 29.32); presentation only.
+     * The closing check that records a person's confirmation of a legal right
+     * of set-off (K3 29.32): one per year, shared with DeferredTaxProposal
+     * (Lead decision 2026-11-09). The transition freezes its value at booking.
      */
-    public const string SET_OFF_CHECK = 'k3_transition_deferred_tax_set_off';
+    public const string SET_OFF_CHECK = DeferredTaxProposal::SET_OFF_CHECK;
 
-    /** BAS 1110–1119 Byggnader: a balance there without a building in the register is warned about. */
+    /** BAS 1110–1119 Byggnader: compared with the buildings of the register at the transition date. */
     public const array BUILDING_ACCOUNTS = [1110, 1119];
 
     /**
@@ -133,7 +134,8 @@ final class K3TransitionProposal
         $transitionDate = $fiscalYear->start_date;
         $blockers = [];
         $policies = K3Policies::forYear($fiscalYear);
-        $transitions = K3Transition::query()->orderBy('id')->get();
+        // A void transition (its voucher fully reversed, VoidK3Transition) is ignored, also for 35.1.
+        $transitions = K3Transition::query()->standing()->orderBy('id')->get();
         $booked = $transitions->firstWhere('fiscal_year_id', $fiscalYear->id);
         $earlier = $transitions->first(fn (K3Transition $transition): bool => $transition->fiscal_year_id !== $fiscalYear->id);
         $forced = $policies->value(K3PolicyKey::LeftK2Reason) === K3LeftK2Reason::Forced20252;
@@ -143,7 +145,8 @@ final class K3TransitionProposal
             $blockers = [...$blockers, ...self::ledgerBlockers($company, $fiscalYear, $previous)];
         }
 
-        $items = K3TransitionItem::query()->where('fiscal_year_id', $fiscalYear->id)->orderBy('id')->get();
+        // The booked transition's items, or the unbooked ones; items of a void transition stay as history only.
+        $items = K3TransitionItem::query()->where('fiscal_year_id', $fiscalYear->id)->where('k3_transition_id', $booked?->id)->orderBy('id')->get();
         $needsRate = $items->contains(fn (K3TransitionItem $item): bool => $item->kind === K3TransitionItem::DEFERRED_TAX && ! $item->relief_35_27);
         $rate = $booked?->rate_bp;
 
@@ -161,9 +164,8 @@ final class K3TransitionProposal
             ? array_map(fn (mixed $ore): int => (int) $ore, array_combine(array_map('intval', array_keys($booked->opening_balances)), $booked->opening_balances))
             : self::openingBalances($fiscalYear);
         ksort($openingByNumber);
-        $setOff = $booked !== null
-            ? $booked->deferred_tax_set_off
-            : ClosingCheck::query()->where('fiscal_year_id', $fiscalYear->id)->where('key', self::SET_OFF_CHECK)->exists();
+        $currentSetOff = ClosingCheck::query()->where('fiscal_year_id', $fiscalYear->id)->where('key', self::SET_OFF_CHECK)->exists();
+        $setOff = $booked !== null ? $booked->deferred_tax_set_off : $currentSetOff;
 
         $equityAccount = self::equityAccount($transitionDate);
         $lines = [];
@@ -175,6 +177,12 @@ final class K3TransitionProposal
         $buildings = self::buildings($transitionDate);
         $warnings = [];
 
+        if ($booked !== null && $booked->deferred_tax_set_off !== $currentSetOff) {
+            $warnings[] = $booked->deferred_tax_set_off
+                ? __('Övergången bokfördes med kvittningsrätt för uppskjuten skatt, men för året är kvittningsrätten inte längre bekräftad. Avstämningen visar det som gällde när övergången bokfördes.')
+                : __('Övergången bokfördes utan kvittningsrätt för uppskjuten skatt, men för året är kvittningsrätten nu bekräftad. Avstämningen visar det som gällde när övergången bokfördes.');
+        }
+
         if ($booked === null) {
             foreach ($buildings as $building) {
                 $blocker = self::buildingBlocker($building, $transitionDate);
@@ -184,10 +192,14 @@ final class K3TransitionProposal
                 }
             }
 
+            // 1110–1119 net of its accumulated depreciation (1119) against the register's buildings.
             $onBuildings = self::sumRange($openingByNumber, self::BUILDING_ACCOUNTS);
+            $inRegister = array_sum(array_column($buildings, 'carrying_before_ore'));
 
-            if ($buildings === [] && $onBuildings !== 0) {
-                $warnings[] = __('Konto 1110–1119 har ett ingående saldo på :amount, men anläggningsregistret har ingen byggnad. Byggnader ska delas upp i komponenter per övergångsdagen (K3 punkt 35.18). Lägg upp byggnaden i registret och dela upp den, eller kontrollera kontona.', ['amount' => Money::ofOre($onBuildings)->format()]);
+            if ($onBuildings !== $inRegister) {
+                $warnings[] = $buildings === []
+                    ? __('Konto 1110–1119 har ett ingående saldo på :amount, men anläggningsregistret har ingen byggnad. Byggnader ska delas upp i komponenter per övergångsdagen (K3 punkt 35.18). Lägg upp byggnaden i registret och dela upp den, eller kontrollera kontona.', ['amount' => Money::ofOre($onBuildings)->format()])
+                    : __('Konto 1110–1119 har ett ingående saldo på :ledger, men byggnaderna i anläggningsregistret har ett redovisat värde på :register per övergångsdagen. Kontrollera registret och kontona innan övergången bokförs.', ['ledger' => Money::ofOre($onBuildings)->format(), 'register' => Money::ofOre($inRegister)->format()]);
             }
         }
 
@@ -240,6 +252,22 @@ final class K3TransitionProposal
      */
     public function presentedDeferredTax(): array
     {
+        $gross = $this->grossDeferredTax();
+
+        if (! $this->setOff) {
+            return $gross;
+        }
+
+        return ['liability_ore' => max($gross['liability_ore'] - $gross['asset_ore'], 0), 'asset_ore' => max($gross['asset_ore'] - $gross['liability_ore'], 0)];
+    }
+
+    /**
+     * The deferred tax in the K3 opening balance sheet before any set-off.
+     *
+     * @return array{liability_ore: int, asset_ore: int}
+     */
+    private function grossDeferredTax(): array
+    {
         $liability = -self::sumRange($this->openingByNumber, DeferredTaxProposal::LIABILITY_RANGE);
         $asset = self::sumRange($this->openingByNumber, DeferredTaxProposal::ASSET_RANGE);
 
@@ -253,11 +281,7 @@ final class K3TransitionProposal
             }
         }
 
-        if (! $this->setOff) {
-            return ['liability_ore' => $liability, 'asset_ore' => $asset];
-        }
-
-        return ['liability_ore' => max($liability - $asset, 0), 'asset_ore' => max($asset - $liability, 0)];
+        return ['liability_ore' => $liability, 'asset_ore' => $asset];
     }
 
     /**
@@ -334,8 +358,10 @@ final class K3TransitionProposal
      * changes, the K2 amount at the transition date, the adjustment and the K3
      * opening amount, each as presented (assets debit positive, equity and
      * liabilities credit positive); then equity and the balance sheet total.
+     * The deferred tax liability is part of the one line "Avsättningar för
+     * skatter" (ÅRL bilaga 1 C.2) and is shown as its specification.
      *
-     * @return array{lines: list<array{key: string, label: string, k2_ore: int, adjustment_ore: int, k3_ore: int}>, equity_k2_ore: int, equity_k3_ore: int, total_k2_ore: int, total_k3_ore: int}
+     * @return array{lines: list<array{key: string, label: string, k2_ore: int, adjustment_ore: int, k3_ore: int, specification: list<array{key: string, label: string, k2_ore: int, adjustment_ore: int, k3_ore: int}>}>, equity_k2_ore: int, equity_k3_ore: int, total_k2_ore: int, total_k3_ore: int}
      */
     public function reconciliation(): array
     {
@@ -375,6 +401,9 @@ final class K3TransitionProposal
         }
 
         $presented = $this->presentedDeferredTax();
+        $gross = $this->grossDeferredTax();
+        // K3 29.32: with a confirmed right of set-off the asset is netted against the liability.
+        $offset = $gross['liability_ore'] - $presented['liability_ore'];
 
         foreach (K3Schedule::BALANCE as $line) {
             $asset = in_array($line['section'], $assetSections, true);
@@ -393,13 +422,8 @@ final class K3TransitionProposal
                 }
             }
 
-            // K3 29.32: with a confirmed right of set-off the two deferred tax lines are shown netted.
-            if ($this->setOff && $line['key'] === 'deferred_tax_liability') {
-                $adjustment = $presented['liability_ore'] - $k2;
-            }
-
-            if ($this->setOff && $line['key'] === 'deferred_tax_asset') {
-                $adjustment = $presented['asset_ore'] - $k2;
+            if (in_array($line['key'], ['tax_provisions', 'deferred_tax_asset'], true)) {
+                $adjustment -= $offset;
             }
 
             if ($adjustment === 0) {
@@ -414,7 +438,15 @@ final class K3TransitionProposal
                 $totalAdjustment += $adjustment;
             }
 
-            $lines[] = ['key' => $line['key'], 'label' => __($line['label']), 'k2_ore' => $k2, 'adjustment_ore' => $adjustment, 'k3_ore' => $k2 + $adjustment];
+            $specification = [];
+
+            if ($line['key'] === 'tax_provisions') {
+                $spec = K3Schedule::DEFERRED_TAX_SPECIFICATION;
+                $specK2 = -self::sumRange($this->openingByNumber, $spec['ranges'][0]);
+                $specification[] = ['key' => $spec['key'], 'label' => __($spec['label']), 'k2_ore' => $specK2, 'adjustment_ore' => $presented['liability_ore'] - $specK2, 'k3_ore' => $presented['liability_ore']];
+            }
+
+            $lines[] = ['key' => $line['key'], 'label' => __($line['label']), 'k2_ore' => $k2, 'adjustment_ore' => $adjustment, 'k3_ore' => $k2 + $adjustment, 'specification' => $specification];
         }
 
         return [

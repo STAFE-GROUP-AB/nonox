@@ -22,8 +22,10 @@ use App\Domain\AnnualReport\K3TransitionProposal;
 use App\Domain\Closing\DeferredTaxProposal;
 use App\Domain\Company\LegalForm;
 use App\Domain\Company\ReportingFramework;
+use App\Livewire\Accounting\DeferredTaxPage;
 use App\Livewire\Accounting\K3TransitionPage;
 use App\Models\Account;
+use App\Models\ClosingCheck;
 use App\Models\FiscalYear;
 use App\Models\FixedAsset;
 use App\Models\K3Transition;
@@ -613,4 +615,115 @@ it('P3-6 warns when 1110–1119 has a balance but the register has no building',
     expect(implode(' ', $proposal->warnings))->toContain('Konto 1110–1119 har ett ingående saldo')
         ->and($proposal->blockers)->toBe([]);
     Livewire::test(K3TransitionPage::class, ['year' => $this->year->id])->assertSee('anläggningsregistret har ingen byggnad');
+});
+
+describe('re-check of 732be4c3 and 25abaa80', function () {
+    it('P2 a fully reversed transition is void: the year can be booked again and can leave K3', function () {
+        loadTransitionFixture($this, register: false);
+        enterTransitionItems($this);
+        $first = app(BookK3Transition::class)($this->owner, $this->year, K3TransitionProposal::for($this->company, $this->year)->fingerprint());
+        $correction = app(CorrectVoucher::class)($this->owner, Voucher::query()->findOrFail($first->voucher_id), 'Övergången bokades fel', '2026-03-31');
+
+        expect($first->refresh()->voided_by_voucher_id)->toBe($correction->id)
+            ->and($first->isVoid())->toBeTrue();
+
+        $proposal = K3TransitionProposal::for($this->company, $this->year);
+
+        // The void transition and its frozen items are history; the year is open for a new transition.
+        expect($proposal->isBooked())->toBeFalse()
+            ->and($proposal->lines)->toBe([])
+            ->and($proposal->chapter35Repeated)->toBeFalse()
+            ->and(implode(' ', $proposal->blockers))->not->toContain('35.1');
+
+        enterTransitionItems($this);
+        $second = app(BookK3Transition::class)($this->owner, $this->year, K3TransitionProposal::for($this->company, $this->year)->fingerprint());
+        expect($second->id)->not->toBe($first->id)
+            ->and(K3Transition::query()->standing()->count())->toBe(1);
+
+        app(CorrectVoucher::class)($this->owner, Voucher::query()->findOrFail($second->voucher_id), 'Företaget stannar på K2', '2026-04-01');
+        app(ChangeReportingFramework::class)($this->owner, $this->year->refresh(), ReportingFramework::K2, null, ['framework_confirmed' => true]);
+
+        expect($this->year->refresh()->reporting_framework)->toBe(ReportingFramework::K2);
+    });
+
+    it('P2 a correction that re-books leaves the transition standing, and leaving K3 stays refused', function () {
+        loadTransitionFixture($this, register: false);
+        enterTransitionItems($this);
+        $transition = app(BookK3Transition::class)($this->owner, $this->year, K3TransitionProposal::for($this->company, $this->year)->fingerprint());
+        app(CorrectVoucher::class)($this->owner, Voucher::query()->findOrFail($transition->voucher_id), 'Avsättningen ska vara större', '2026-03-31', [
+            ['account' => 2091, 'debit_ore' => 16_000_000, 'credit_ore' => 0],
+            ['account' => 2220, 'debit_ore' => 0, 'credit_ore' => 16_000_000],
+        ]);
+
+        expect($transition->refresh()->voided_by_voucher_id)->toBeNull()
+            ->and(K3TransitionProposal::for($this->company, $this->year)->isBooked())->toBeTrue();
+        expect(fn () => app(ChangeReportingFramework::class)($this->owner, $this->year->refresh(), ReportingFramework::K2, null, ['framework_confirmed' => true]))
+            ->toThrow(ValidationException::class, 'övergången till K3 är bokförd för det året');
+    });
+
+    it('P2 a void transition of an earlier year does not count as a use under 35.1 (TODO legal-verify)', function () {
+        loadTransitionFixture($this, ['k3_applied_before' => 'no', 'left_k2_reason' => 'voluntary']);
+        $old = FiscalYear::create(['start_date' => '2020-01-01', 'end_date' => '2020-12-31']);
+        $transition = K3Transition::create(['fiscal_year_id' => $old->id, 'transition_date' => '2020-01-01', 'equity_effect_ore' => 0, 'confirmed_by' => $this->owner->id]);
+
+        expect(implode(' ', K3TransitionProposal::for($this->company, $this->year)->blockers))->toContain('35.1');
+
+        $transition->forceFill(['voided_by_voucher_id' => Voucher::query()->where('fiscal_year_id', $this->k2->id)->value('id')])->save();
+
+        expect(K3TransitionProposal::for($this->company, $this->year)->blockers)->toBe([])
+            ->and(fn () => $transition->refresh()->forceFill(['voided_by_voucher_id' => null])->save())->toThrow(LogicException::class);
+        expect(fn () => DB::transaction(fn () => DB::table('k3_transitions')->where('id', $transition->id)->update(['equity_effect_ore' => 5])))->toThrow(Exception::class, 'cannot be changed or removed');
+    });
+
+    it('P3-a shows one C.2 line Avsättningar för skatter with the deferred tax as its specification', function () {
+        loadTransitionFixture($this);
+        enterTransitionItems($this);
+        $line = collect(K3TransitionProposal::for($this->company, $this->year)->reconciliation()['lines'])->firstWhere('key', 'tax_provisions');
+        $want = collect($this->fixture->expected['transition']['reconciliation']['lines'])->firstWhere('key', 'tax_provisions');
+
+        expect($line['label'])->toBe('Avsättningar för skatter')
+            ->and($line['specification'])->toBe($want['specification']);
+    });
+
+    it('P3-b one set-off confirmation per year, shared with the deferred tax page and frozen by the transition', function () {
+        loadTransitionFixture($this);
+        enterTransitionItems($this);
+        app(K3TransitionItems::class)->setOff($this->owner, $this->year, true);
+
+        Livewire::test(DeferredTaxPage::class, ['year' => $this->year->id])->assertSet('setOff', true);
+
+        app(BookK3Transition::class)($this->owner, $this->year, K3TransitionProposal::for($this->company, $this->year)->fingerprint());
+
+        expect(K3TransitionProposal::for($this->company, $this->year)->warnings)->toBe([]);
+
+        ClosingCheck::query()->where('fiscal_year_id', $this->year->id)->where('key', DeferredTaxProposal::SET_OFF_CHECK)->delete();
+        $proposal = K3TransitionProposal::for($this->company, $this->year);
+
+        expect($proposal->setOff)->toBeTrue()
+            ->and(implode(' ', $proposal->warnings))->toContain('kvittningsrätten inte längre bekräftad');
+    });
+
+    it('P3-c warns when the 1110–1119 balance differs from the register buildings', function () {
+        loadTransitionFixture($this);
+        enterTransitionItems($this);
+
+        expect(K3TransitionProposal::for($this->company, $this->year)->warnings)->toBe([]);
+
+        app(FixedAssets::class)->save($this->owner, $this->company, [
+            'name' => 'Förråd', 'category' => 'BUILDINGS', 'acquired_on' => '2020-01-01', 'acquisition' => '100 000',
+            'life_months' => '600', 'depreciation_start' => '2020-01-01', 'opening_accumulated' => '12 000',
+            'asset_account' => '1110', 'accumulated_account' => '1119', 'expense_account' => '7820',
+        ]);
+
+        expect(implode(' ', K3TransitionProposal::for($this->company, $this->year)->warnings))->toContain('byggnaderna i anläggningsregistret har ett redovisat värde på');
+    });
+
+    it('P3-d shows the dismantling text next to the provision kind', function () {
+        loadTransitionFixture($this);
+
+        Livewire::test(K3TransitionPage::class, ['year' => $this->year->id])
+            ->set('kind', 'PROVISION')
+            ->assertSeeHtml('data-k3-transition-provision-note')
+            ->assertSee('En skyldighet att montera ned eller återställa kan inte hanteras här ännu');
+    });
 });

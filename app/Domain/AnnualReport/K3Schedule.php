@@ -124,6 +124,15 @@ final class K3Schedule
     ];
 
     /**
+     * The deferred tax part of "Avsättningar för skatter" (BAS 224x), shown as
+     * a specification under that line or in the note, never as a line of its
+     * own (ÅRL bilaga 1 C.2 is one item; Lead decision 2026-11-09, S1-P12).
+     *
+     * @var array{key: string, label: string, ranges: list<array{0: int, 1: int}>}
+     */
+    public const array DEFERRED_TAX_SPECIFICATION = ['key' => 'deferred_tax_liability', 'label' => 'varav uppskjuten skatt', 'ranges' => [[2240, 2249]]];
+
+    /**
      * The balance sheet lines in the order of ÅRL bilaga 1 (S1-R8.2), the
      * equity of an aktiebolag split into bound and free as ÅRL 3 kap. 10 a §
      * allows (K3 chapter 4 comment on the juridisk person).
@@ -196,8 +205,7 @@ final class K3Schedule
         ['key' => 'other_untaxed_reserves', 'label' => 'Andra obeskattade reserver', 'section' => 'untaxed', 'ranges' => [[2100, 2109], [2140, 2149], [2170, 2199]], 'source' => 'ÅRL bilaga 1 B (delpost); K3 29.37; rbas 219x; residual 210x, 214x, 217x–218x'],
 
         ['key' => 'pension_provisions', 'label' => 'Avsättningar för pensioner och liknande förpliktelser', 'section' => 'provisions', 'ranges' => [[2210, 2219], [2230, 2239]], 'source' => 'ÅRL bilaga 1 C.1; rbas 221x, 223x'],
-        ['key' => 'deferred_tax_liability', 'label' => 'Avsättningar för skatter', 'section' => 'provisions', 'ranges' => [[2240, 2249]], 'source' => 'ÅRL bilaga 1 C.2 (the item is "Avsättningar för skatter"); K3 29.19, 29.31 (avsättning), 4.3 comment; rbas 224x (S1-R4.6)'],
-        ['key' => 'other_tax_provisions', 'label' => 'Övriga avsättningar för skatter', 'section' => 'provisions', 'ranges' => [[2250, 2259]], 'source' => 'ÅRL bilaga 1 C.2 ("Avsättningar för skatter", the part that is not deferred tax); rbas 225x (AvsattningarOvrigSkatt)'],
+        ['key' => 'tax_provisions', 'label' => 'Avsättningar för skatter', 'section' => 'provisions', 'ranges' => [[2240, 2259]], 'source' => 'ÅRL bilaga 1 C.2 (one item, "Avsättningar för skatter"); K3 29.19, 29.31 (avsättning); rbas 224x (deferred tax, S1-R4.6, shown as the specification DEFERRED_TAX_SPECIFICATION) and 225x (AvsattningarOvrigSkatt). One line by Lead decision 2026-11-09 (S1-P12 re-check); P10 follows it'],
         ['key' => 'other_provisions', 'label' => 'Övriga avsättningar', 'section' => 'provisions', 'ranges' => [[2200, 2209], [2220, 2229], [2260, 2299]], 'source' => 'ÅRL bilaga 1 C.3; rbas 222x, 229x; residual 220x, 226x–228x'],
 
         ['key' => 'bonds', 'label' => 'Obligationslån', 'section' => 'long_term', 'ranges' => [[2310, 2329]], 'source' => 'ÅRL bilaga 1 D.1; K3 4.7; rbas 231x–232x'],

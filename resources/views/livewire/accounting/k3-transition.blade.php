@@ -122,6 +122,9 @@
                                 <option value="{{ $value }}">{{ $label }}</option>
                             @endforeach
                         </select>
+                        @if($kind === K3TransitionItem::PROVISION)
+                            <p class="mt-2 text-sm text-amber-900" data-k3-transition-provision-note>{{ __('En skyldighet att montera ned eller återställa kan inte hanteras här ännu. Den ska också räknas in i tillgångens anskaffningsvärde (K3 punkt 17.10 och 35.29). Ta upp den med din redovisningskonsult.') }}</p>
+                        @endif
                     </x-ui.field>
                     <x-ui.field for="transition_description" :label="__('Beskrivning')" :error="'description'">
                         <input id="transition_description" type="text" maxlength="120" class="{{ $input }} mt-1" wire:model="description">
