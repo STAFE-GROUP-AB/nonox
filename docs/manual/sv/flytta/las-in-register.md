@@ -10,6 +10,8 @@ sokord: [läs in register, importera kunder, importera leverantörer, importera 
 
 Under **Bokföring → Läs in register** läser du in kunder, leverantörer, artiklar, obetalda fakturor och underlag från ett annat program. Det fungerar med en fil från vilket program som helst, för du kopplar själv filens kolumner till fälten i NONOX. Du får alltid en rapport innan något sparas, och det går att köra samma fil igen utan att något hamnar dubbelt.
 
+![En uppladdad kundfil där kolumnerna kopplas till fälten i NONOX.](/bilder/manual/flytta/las-in-register.webp)
+
 Läs först in bokföringen som SIE-fil; se [Från ett annat program](/manual/flytta/fran-andra-program). Registren och fakturorna hör ihop med den.
 
 ## Så här gör du
@@ -34,6 +36,8 @@ Vill du använda kopplingen igen skriver du ett namn under **Spara kopplingen so
 Vissa fält är koder i det gamla programmet, till exempel betalningsvillkor. Förstår NONOX inte en kod listas den under **Koder som behöver förklaras**. Skriv vad koden betyder, betalningsvillkor som antal dagar, och granska igen.
 
 ## Det här kontrollerar NONOX
+
+![Rapporten innan filen läses in: rader som läggs till, en som redan finns och en med fel.](/bilder/manual/flytta/las-in-register-rapport.webp)
 
 - Organisationsnummer och personnummer, med kontrollsiffran. Ett personnummer visas bara med de sista fyra siffrorna i rapporten.
 - Momsregistreringsnummer, e-postadress, landskod och valuta.

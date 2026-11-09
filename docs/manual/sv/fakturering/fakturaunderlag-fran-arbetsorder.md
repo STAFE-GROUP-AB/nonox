@@ -9,6 +9,8 @@ sokord: [fakturaunderlag, fakturera arbetsorder, a conto, delbetalning, betalnin
 
 # Fakturaunderlag från arbetsorder
 
+![En färdig arbetsorder med omvänd byggmoms vars fakturaunderlag är ett fakturautkast.](/bilder/manual/fakturering/fakturaunderlag-fran-arbetsorder.webp)
+
 ## Skapa fakturaunderlag
 
 1. Öppna arbetsordern.
@@ -30,6 +32,8 @@ Bara typer av arbete som är **Arbete** blir arbetskostnad. Resor, maskiner och 
 ## A conto och betalningsplan
 
 Vid fast pris kan du klicka på **Lägg till betalningsplan** och skriva delbetalningar med **Belopp exklusive moms** och ett datum eller delmoment. Med en konsument som kund bockar du i att planen är avtalad. **Fakturera** gör ett fakturautkast för delbetalningen med eget ROT- eller RUT-avdrag på sin andel av arbetet. Slutfakturan tar sedan resten av det fasta priset. A conto-planer finns bara med fakturametoden.
+
+![Betalningsplanen för en altan till fast pris, med den första delen fakturerad.](/bilder/manual/fakturering/betalningsplan.webp)
 
 Betalas en a conto-faktura med avdrag ett år, och arbetet inte är klart den 31 januari året efter, varnar arbetsordern.
 

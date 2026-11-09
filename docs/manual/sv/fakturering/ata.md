@@ -11,6 +11,8 @@ sokord: [ÄTA, ändringsarbete, tilläggsarbete, konsumenttjänstlagen, signera,
 
 Ett ÄTA är en ändring eller ett tillägg till arbetsordern. Kunden ska godkänna priset innan arbetet görs. ÄTA numreras per arbetsorder: ÄTA 1, ÄTA 2 och så vidare.
 
+![Två ÄTA på en arbetsorder: ett som kunden har godkänt och ett som är skickat.](/bilder/manual/fakturering/ata.webp)
+
 ## Skapa och prissätt
 
 1. Öppna arbetsordern och klicka på **Nytt ÄTA** under **ÄTA**.

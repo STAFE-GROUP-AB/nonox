@@ -219,7 +219,6 @@ Modulen är byggd (ADR-034) men erbjuds inte i den driftade tjänsten på nonox.
 - E-faktura via Peppol genom Qvalia, i version 1.0: skicka kundfakturor och ta emot leverantörsfakturor i inkorgen enligt Peppol BIS Billing 3.0. Byggt, och slås på när den första kunden vill skicka e-faktura (ADR-050).
 - Kundportal där dina kunder loggar in med en kod i mejlet och ser sina fakturor, kreditfakturor, påminnelser och kontoutdrag, betalningsuppgifterna med OCR-nummer och sina offerter, som de kan godkänna, och ställer frågor till dig (ADR-075). Byggd, och slås på när en jurist har granskat hur kundernas kontaktpersoners uppgifter får behandlas.
 - Färdiga kopplingar från kassasystem och e-handel, direkt eller via de integrationsplattformar som programmen redan använder. API:t och webhooks finns; kopplingarna byggs mot dem.
-- Arbetsorder och ÄTA på webbplatsen: modulen Arbetsorder är byggd (se ovan) och visas på startsidan och i jämförelsen när den har en riktig skärmbild.
 - Aktiebok och styrelserum för aktiebolag: aktieboken som en historik där varje ändring är en egen händelse som inte kan ändras i efterhand, stämmor och styrelsemöten med dagordning, kallelse och protokoll som godkänns i NONOX, och påminnelser om det som ska anmälas till Bolagsverket. Byggd som beta och provas med pilotföretagen; datum för kallelser visas som råd tills en jurist har gått igenom reglerna.
 
 Det som pågår, är planerat eller önskat står på färdplanen på webbplatsen (`/fardplan`), och allt som har levererats, och de utredningar och granskningar som ligger bakom, står med datum och klockslag i ändringsloggen (`/andringslogg`, med RSS-flöde), grupperat efter projektets faser. Båda skrivs på vanlig svenska för den som inte läser koden; posterna finns i `docs/andringslogg` och `docs/fardplan` och hålls aktuella enligt [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -471,6 +470,8 @@ cd public && DB_DATABASE=nonox_demo CACHE_STORE=array OTP_AUTOFILL=false PASSKEY
 DB_DATABASE=nonox_demo php artisan manual:screenshots              # alla
 DB_DATABASE=nonox_demo php artisan manual:screenshots --only=lon/  # bara ett avsnitt
 ```
+
+Bilderna av aktieboken och kundportalen kräver att seedern och appen körs med `NONOX_REGISTER_HASH_KEY` (en egen nyckel för demodatabasen, `php artisan share-register:hash-key`) och `NONOX_CUSTOMER_PORTAL=true`; utan dem hoppar seedern över de delarna. Bilden av Prova utan att registrera kräver att demon är påslagen i /hq i demodatabasen.
 
 Använd `php -S` och inte `php artisan serve`, som inte för vidare `DB_DATABASE` till webbservern. En bild sparas bara om demoföretagets namn står på sidan och din `ADMIN_EMAIL` inte gör det. Bilderna hamnar i `public/bilder/manual` som WebP. Kommandot behöver Google Chrome (eller `CHROME_PATH`) och Node.
 

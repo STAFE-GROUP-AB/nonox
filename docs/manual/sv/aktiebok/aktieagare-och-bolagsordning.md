@@ -11,6 +11,8 @@ sokord: [aktieägare, personnummer, bolagsordning, aktieslag, A-aktier, B-aktier
 
 Innan du för in några aktier lägger du till ägarna. Aktieboken ska ha varje ägares namn, personnummer eller organisationsnummer och postadress. Personnummer sparas krypterat.
 
+![Aktieägarna med namn, födelsedatum och postadress.](/bilder/manual/aktiebok/aktieagare.webp)
+
 ## Så här lägger du till en aktieägare
 
 1. Öppna **Aktiebok → Aktieägare** och välj **Lägg till aktieägare**.
@@ -30,6 +32,8 @@ Styrelsen kan bemyndiga någon, till exempel en redovisningsbyrå, att föra akt
 ## Bolagsordningen
 
 Under **Aktiebok → Bolagsordning** för du in de delar av bolagsordningen som NONOX använder: **Så kallas aktieägarna**, om bolagsordningen tillåter kallelse senast två veckor före stämman, gränserna för aktiekapital, aktier och styrelse, om bolaget ska ha revisor, och förköps-, samtyckes-, hembuds- och omvandlingsförbehåll. Förbehållen i den bolagsordning som gäller skrivs ut i aktieboken för alla aktier.
+
+![Bolagsordningen med kallelsesätt, gränser för aktiekapitalet och förbehåll.](/bilder/manual/aktiebok/bolagsordning.webp)
 
 En version ändras aldrig. Ändras bolagsordningen väljer du **Ny version av bolagsordningen**. Den nya versionen gäller först från den dag den registreras hos Bolagsverket: fyll i **Registrerad hos Bolagsverket** och välj **Spara registreringsdagen** när du vet datumet. Till dess använder NONOX den tidigare versionen, till exempel för hur aktieägarna kallas.
 

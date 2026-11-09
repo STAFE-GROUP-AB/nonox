@@ -11,6 +11,8 @@ sokord: [protokoll, justera protokoll, justerare, styrelseprotokoll, stämmoprot
 
 Protokollet skrivs på mötets sida i **Styrelserum**, under **Protokoll**. Det går igenom tre steg: utkast, justerat och godkänt i NONOX.
 
+![Ett styrelsemöte vars protokoll är godkänt i NONOX och låst.](/bilder/manual/aktiebok/protokoll.webp)
+
 ## Så här skriver du protokollet
 
 1. Välj **Skriv protokoll**. Utkastet får mötets ärenden med samma numrering som dagordningen.

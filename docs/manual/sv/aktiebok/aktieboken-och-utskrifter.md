@@ -11,6 +11,8 @@ sokord: [aktiebok utskrift, aktiebok pdf, aktiekapital, kvotvärde, 2081, gransk
 
 **Aktiebok** visar aktieboken i nummerordning: aktienummer, antal, ägare, födelsedatum eller organisationsnummer, postadress, aktiebrev och anteckningar. Välj ett annat datum under **Visa per datum** för att se aktieboken som den såg ut då.
 
+![Aktieboken per dagens datum med knapparna för de två utskrifterna.](/bilder/manual/aktiebok/oversikt.webp)
+
 ## Aktiekapitalet mot bokföringen
 
 Under **Aktiekapitalet mot bokföringen** jämförs antalet registrerade aktier gånger kvotvärdet med saldot på konto 2081 Aktiekapital samma dag. Skiljer de sig åt visas en uppgift på **Översikt** med båda beloppen. NONOX bokför ingenting: en nyemission eller en minskning bokför du själv som en verifikation, eller så rättar du aktieboken.

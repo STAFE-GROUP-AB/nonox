@@ -11,6 +11,8 @@ sokord: [årsstämma, bolagsstämma, extra stämma, styrelsemöte, kallelse, dag
 
 **Styrelserum** visar bolagets möten, kommande och hållna. Där planerar du årsstämman, en extra bolagsstämma eller ett styrelsemöte.
 
+![Stämmor och styrelsemöten, med nästa årsstämma planerad.](/bilder/manual/aktiebok/stammor-och-moten.webp)
+
 ## Så här planerar du årsstämman
 
 1. Öppna **Styrelserum** och välj **Planera årsstämma**.
@@ -24,6 +26,8 @@ Lägg till fler ärenden med **Lägg till ärende**. Val av styrelse, val av rev
 ## Kallelsen
 
 Under **Kallelse** visar NONOX när kallelsen tidigast och senast ska skickas, räknat från mötesdagen och bolagsordningen. Datumen är råd från NONOX: kontrollera dem mot aktiebolagslagen och bolagsordningen.
+
+![Årsstämman med råd om när kallelsen ska skickas.](/bilder/manual/aktiebok/arsstamma.webp)
 
 Välj **Skriv ut kallelsen** för en kallelse med tid, plats och numrerad dagordning. NONOX skickar inte kallelsen; skicka den på det sätt bolagsordningen anger. Fyll sedan i **Kallelsen skickades** under **Ändra**, så visar NONOX om datumet ligger utanför råden. När kallelsen är skickad står ärendenas nummer fast: ett ärende kan inte tas bort, och ett nytt hamnar sist.
 

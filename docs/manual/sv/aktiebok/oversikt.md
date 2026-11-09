@@ -10,6 +10,8 @@ sokord: [aktiebok, aktieägare, aktieägarförteckning, styrelseprotokoll, stäm
 
 Varje aktiebolag ska ha en aktiebok som visar vem som äger varje aktie, hålla årsstämma och föra protokoll från stämmor och styrelsemöten. Med modulen **Aktiebok och styrelserum** gör du det i NONOX, bredvid bokföringen.
 
+![Aktieboken för ett konsultbolag med två aktieägare, aktiekapitalet och kvotvärdet.](/bilder/manual/aktiebok/oversikt.webp)
+
 Aktieboken förs som en historik: varje ändring är en egen händelse med datum som inte kan ändras i efterhand. Ett fel rättas med en ny händelse, och den gamla finns kvar. Du kan se och skriva ut aktieboken som den såg ut vilken dag som helst.
 
 Modulen finns bara för aktiebolag och slås på under **Inställningar för företaget → Moduler**. Den ingår i NONOX utan extra kostnad.

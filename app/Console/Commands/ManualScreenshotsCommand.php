@@ -15,6 +15,9 @@ use App\Models\SigningRequest;
 use App\Models\SupplierInvoice;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Modules\Portal\Models\PortalContact;
+use App\Modules\Portal\Models\PortalSettings;
+use App\Modules\Portal\Support\PortalSession;
 use App\Support\Tenancy\CurrentCompany;
 use Database\Seeders\Demo\DemoIndustries;
 use Database\Seeders\TaxFormsDemoSeeder;
@@ -105,9 +108,10 @@ class ManualScreenshotsCommand extends Command
             foreach ($groups as $key => $group) {
                 [$short, $login] = explode('|', (string) $key);
                 $company = $companies[$short] ?? throw new RuntimeException(in_array($short, ['enskildfirma', 'handelsbolag'], true) ? "Demoföretaget {$short} finns inte. Kör först: php artisan db:seed --class=TaxFormsDemoSeeder" : "Okänt demoföretag: {$short}.");
-                $user = match ($login) {
-                    '', 'agare' => $owner,
-                    'gast' => null,
+                $portal = str_starts_with($login, 'portal:') ? substr($login, 7) : null;
+                $user = match (true) {
+                    $portal !== null, $login === 'gast' => null,
+                    $login === '', $login === 'agare' => $owner,
                     default => $this->demoUser($login),
                 };
 
@@ -117,11 +121,17 @@ class ManualScreenshotsCommand extends Command
                     $cookies[$user->id] ??= $this->signIn($user, $encrypter);
                 }
 
+                $cookie = match (true) {
+                    $user !== null => [['name' => (string) config('session.cookie'), 'value' => $cookies[$user->id], 'url' => $base]],
+                    $portal !== null => [$this->signInPortal($portal, $company, $encrypter, $base)],
+                    default => [],
+                };
+
                 $this->info("{$company->name}".($login === '' ? '' : " ({$login})").": {$group->count()} bilder");
 
                 $plan = [
                     'chrome' => config('services.chrome.path'),
-                    'cookies' => $user === null ? [] : [['name' => (string) config('session.cookie'), 'value' => $cookies[$user->id], 'url' => $base]],
+                    'cookies' => $cookie,
                     'shots' => $group->map(fn (array $shot, string $name): array => [
                         'url' => $base.$this->path($shot, $company),
                         'file' => public_path("bilder/manual/{$name}.webp"),
@@ -198,6 +208,51 @@ class ManualScreenshotsCommand extends Command
         return $encrypter->encrypt(CookieValuePrefix::create($name, $encrypter->getKey()).$session->getId(), false);
     }
 
+    /**
+     * A customer portal contact's session (ADR-075), as the portal's own
+     * cookie: the session store is built under the portal's cookie name, as
+     * UsePortalSession does for /kundportal, and holds what a sign-in with
+     * the code puts there. Only a made-up contact (…@….test) of the demo
+     * company.
+     *
+     * @return array{name: string, value: string, url: string, path: string}
+     */
+    private function signInPortal(string $email, Company $company, Encrypter $encrypter, string $base): array
+    {
+        if (! str_ends_with($email, '.test')) {
+            throw new RuntimeException("Skärmbilder från kundportalen tas bara som påhittade kontakter (….test), inte som {$email}.");
+        }
+
+        $contact = CurrentCompany::run($company, fn (): ?PortalContact => PortalContact::query()->whereHas('identity', fn ($query) => $query->where('email', $email))->first())
+            ?? throw new RuntimeException("Kontakten {$email} finns inte i kundportalen för {$company->name}.");
+        $portal = (array) config('session.portal');
+        $web = ['session.cookie' => config('session.cookie'), 'session.path' => config('session.path'), 'session.lifetime' => config('session.lifetime')];
+        $sessions = app('session');
+
+        config(['session.cookie' => $portal['cookie'], 'session.path' => $portal['path'], 'session.lifetime' => $portal['lifetime']]);
+        $sessions->forgetDrivers();
+
+        try {
+            $session = $sessions->driver();
+            $session->setId(Str::random(40));
+            $session->start();
+            $session->put([
+                Auth::guard('portal')->getName() => $contact->portal_identity_id,
+                PortalSession::STARTED => now()->getTimestamp(),
+                PortalSession::LAST_ACTIVITY => now()->getTimestamp(),
+                PortalSession::CONTACT => $contact->id,
+            ]);
+            $session->save();
+        } finally {
+            config($web);
+            $sessions->forgetDrivers();
+        }
+
+        $name = (string) $portal['cookie'];
+
+        return ['name' => $name, 'value' => $encrypter->encrypt(CookieValuePrefix::create($name, $encrypter->getKey()).$session->getId(), false), 'url' => $base, 'path' => (string) $portal['path']];
+    }
+
     /** @param  Shot  $shot */
     private function path(array $shot, Company $company): string
     {
@@ -230,6 +285,8 @@ class ManualScreenshotsCommand extends Command
             // CRM signing (ADR-046): a quote that was signed, and a fresh link to the public page of the newest open quote out for signing.
             'signed_quote' => SigningRequest::query()->whereNotNull('sales_document_id')->where('status', SigningStatus::Signed->value)->latest('id')->value('sales_document_id'),
             'signing_link' => $this->signingLink($company),
+            // The customer portal's address of the company (ADR-075).
+            'portal_key' => PortalSettings::current()->portal_key,
             default => null,
         } ?? throw new RuntimeException("Hittade ingen {$kind} i {$company->name}."));
     }

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Throwable;
+
 /**
  * More demo content for some of the demo companies, so every page the
  * manual shows has something on it. Each class in Demo/Extras that extends
@@ -24,6 +28,24 @@ abstract class DemoExtra
     public function schedule(DemoContext $context): void {}
 
     public function afterAll(DemoContext $context): void {}
+
+    /**
+     * Runs $step in one transaction: when the app refuses it, nothing of it
+     * is left and the refusal is a warning, so the other demo content is
+     * still made.
+     *
+     * @param  callable(): mixed  $step
+     */
+    protected function atomically(DemoContext $context, string $label, callable $step): void
+    {
+        try {
+            DB::transaction(fn () => $step());
+        } catch (ValidationException $exception) {
+            $context->warn("{$label}: ".collect($exception->errors())->flatten()->implode(' '));
+        } catch (Throwable $exception) {
+            $context->warn("{$label}: {$exception->getMessage()}");
+        }
+    }
 
     /** @return list<self> every extra in Demo/Extras, in file name order */
     public static function all(): array

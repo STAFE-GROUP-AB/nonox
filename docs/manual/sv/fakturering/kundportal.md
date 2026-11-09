@@ -11,6 +11,8 @@ sokord: [kundportal, kundinloggning, kundsida, mina fakturor, kontoutdrag, bestr
 
 I kundportalen loggar dina kunders kontaktpersoner in och ser sina fakturor och kreditfakturor, påminnelser och kontoutdrag, betalningsuppgifterna med OCR-nummer och sina offerter. De kan godkänna en offert, meddela att de har betalat, ställa frågor och bestrida en faktura. Du ser när en faktura har öppnats.
 
+![Kundportalens kontakter och inställningar.](/bilder/manual/fakturering/kundportal.webp)
+
 Kundportalen bär ditt företags logotyp och färg. Längst ned står *Kundportalen drivs med NONOX*, och den raden kan du stänga av.
 
 > [!NOTE]
@@ -43,6 +45,8 @@ På kontaktens rad kan du sedan ändra rätten med **Får godkänna offerter** e
 Bjuder du in samma person igen slutar den tidigare länken att gälla.
 
 ## Det här ser kunden
+
+![Översikten som kundens kontaktperson ser i kundportalen.](/bilder/manual/fakturering/kundportal-kunden.webp)
 
 | Sida | Innehåll |
 |---|---|
@@ -77,6 +81,8 @@ Det går inte att betala med kort eller Swish i kundportalen.
 ## Frågor och bestridanden
 
 Kunden kan skriva till dig om en faktura, en offert eller något annat, med upp till fem bifogade filer (PDF, JPEG eller PNG, högst 10 MB). Väljer kunden **Jag bestrider fakturan** markeras fakturan som bestridd.
+
+![Frågor från kunder med företagets svar.](/bilder/manual/fakturering/kundportal-fragor.webp)
 
 1. Du får en notis när en kund skriver.
 2. Öppna **Kundportal → Frågor från kunder**.

@@ -11,6 +11,8 @@ sokord: [körjournal, milersättning, bilersättning, resor i tjänsten, förmå
 
 Med körjournalen skriver de anställda själva in sina resor i tjänsten på Min sida och skickar in en månad i taget som milersättning. Du godkänner den under **Lön → Ansökningar**, och nästa lönekörning betalar den med rätt lönearter. NONOX läser aldrig någons position: resorna skrivs in för hand.
 
+![En milersättning som väntar på att godkännas, med resorna i körjournalen.](/bilder/manual/lon/korjournal.webp)
+
 ## Slå på körjournalen
 
 Körjournalen är avstängd från början. Öppna **Inställningar för företaget**, kryssa i **Använd körjournal** och spara. Stänger du av den finns allt kvar, men sidorna syns inte.

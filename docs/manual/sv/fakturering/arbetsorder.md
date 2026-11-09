@@ -11,6 +11,8 @@ sokord: [arbetsorder, hantverkare, jobb, tid och material, löpande räkning, fa
 
 En arbetsorder är ett jobb hos en kund: badrummet hos familjen, elen i trapphuset eller väggen åt huvudentreprenören. Utförarna registrerar tid och material på arbetsordern i mobilen, och när det är dags att fakturera blir arbetsordern ett fakturautkast. En arbetsorder bokför ingenting själv.
 
+![Alla arbetsorder i ett snickeri med kund och status.](/bilder/manual/fakturering/arbetsorder.webp)
+
 Arbetsorder är en modul. Ägaren slår på den under **Inställningar → Moduler**. Då läggs typerna av arbete **Arbete** och **Resa** upp, och rollen **Utförare** går att ge till dem som jobbar ute hos kunderna.
 
 ## Skapa en arbetsorder
@@ -37,6 +39,8 @@ Läs mer om avdragen i [ROT- och RUT-avdrag](/manual/fakturering/rot-och-rut) oc
 ## Status
 
 En arbetsorder går från **Utkast** till **Planerad**, **Pågår**, **Klar** och **Avslutad**. Tid och material registreras när den är planerad eller pågår. En arbetsorder kan bara avslutas när allt som går att debitera är fakturerat. En arbetsorder utan tid och material kan **Makuleras**.
+
+![En arbetsorder för en badrumsrenovering med ROT, tid och material.](/bilder/manual/fakturering/arbetsorder-kortet.webp)
 
 ## Varningar på arbetsordern
 

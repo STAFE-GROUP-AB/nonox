@@ -11,6 +11,8 @@ sokord: [avvikelse, svinn, förbrukning, inventering, sålt mot inventerat, teor
 
 Avvikelserapporten svarar på frågan: vi sålde så här mycket, så hur mycket borde vi ha använt, och vart tog resten vägen?
 
+![Avvikelserna mellan två inventeringar, med det som inte förklaras av försäljning, svinn och personalmat.](/bilder/manual/kok/avvikelser.webp)
+
 ## Så används den
 
 1. Inventera kökets lagerställe, till exempel varje måndag. Se [Inventering](/manual/lager/inventering).

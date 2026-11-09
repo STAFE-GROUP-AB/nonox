@@ -11,7 +11,11 @@ sokord: [mobil, på plats, utförare, tid, timmar, material, foto, bild, backa, 
 
 Som **Utförare** ser du bara de arbetsorder du är tilldelad, och aldrig några priser eller kundens personnummer. Öppna **Arbetsorder → Mina arbetsorder** i mobilen och tryck på jobbet.
 
+![Mina arbetsorder i mobilen för den som utför arbetet.](/bilder/manual/fakturering/arbetsorder-mina.webp)
+
 ## Registrera tid
+
+![Arbetsordern på plats i mobilen, där tiden registreras.](/bilder/manual/fakturering/arbetsorder-pa-plats.webp)
 
 1. Tryck på **Tid**.
 2. Välj **Typ av arbete**.

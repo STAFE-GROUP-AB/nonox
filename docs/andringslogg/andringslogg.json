@@ -32,6 +32,22 @@
   ],
   "poster": [
     {
+      "id": "2026-11-09-arbetsorder-pa-startsidan",
+      "datum": "2026-11-09T10:20:00+01:00",
+      "rubrik": "Arbetsorder och ÄTA visas på startsidan och i jämförelsen",
+      "beskrivning": "Modulen Arbetsorder har fått ett eget kort på startsidan med en riktig skärmbild från ett påhittat snickeri, och en rad i jämförelsen med andra program.",
+      "typ": "Nytt",
+      "omrade": "Webbplats"
+    },
+    {
+      "id": "2026-11-09-skarmbilder-i-manualen-for-nya-moduler",
+      "datum": "2026-11-09T10:15:00+01:00",
+      "rubrik": "Skärmbilder i manualen för aktiebok, kök, arbetsorder, körjournal och kundportal",
+      "beskrivning": "Manualens artiklar om aktiebok och styrelserum, kök, arbetsorder och ÄTA, körjournal, kundportal, inläsning av register och demon har fått skärmbilder från påhittade demoföretag. Bilderna visar både datorn och mobilen där artikeln beskriver mobilen.",
+      "typ": "Förbättrat",
+      "omrade": "Manual"
+    },
+    {
       "id": "2026-11-09-signerade-offerter-kan-inte-tas-bort",
       "datum": "2026-11-09T01:54:00+01:00",
       "rubrik": "Signerade offerter och deras bevis kan inte tas bort i databasen",

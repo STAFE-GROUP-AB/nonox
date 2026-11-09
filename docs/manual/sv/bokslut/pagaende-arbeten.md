@@ -11,6 +11,8 @@ sokord: [pågående arbeten, upparbetad intäkt, förskott från kunder, fastpri
 
 Har du arbetsorder som pågår när räkenskapsåret slutar ska bokföringen visa det som är gjort men inte fakturerat, och det som är fakturerat men inte gjort. Under **Arbetsorder → Pågående arbeten** räknar NONOX fram förslaget. Ingenting bokförs automatiskt.
 
+![Pågående arbeten med det som är utfört men inte fakturerat, per arbetsorder.](/bilder/manual/bokslut/pagaende-arbeten.webp)
+
 ## Så gör du
 
 1. Välj **Balansdag**.
