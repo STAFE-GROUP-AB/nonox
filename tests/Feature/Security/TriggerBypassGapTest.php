@@ -9,7 +9,9 @@ use App\Models\Voucher;
 use App\Support\Database\DatabaseRoles;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\ParallelTesting;
 use Tests\Support\Bookkeeping;
+use Tests\Support\LedgerTriggers;
 
 /*
  * ADR-079 build step 1: proves the threat model's claim 4 against our own
@@ -28,8 +30,16 @@ use Tests\Support\Bookkeeping;
  *
  * Every statement runs inside the test transaction (DatabaseTransactions):
  * PostgreSQL DDL is transactional, so ALTER TABLE, DROP TRIGGER and CREATE OR
- * REPLACE FUNCTION are all rolled back with the test. LedgerTriggersIntactTest
- * checks that the triggers and functions are intact afterwards.
+ * REPLACE FUNCTION are all rolled back with the test. After each test, a
+ * second connection, which sees only committed catalog state, checks that the
+ * triggers and functions are exactly as the migrations define them
+ * (LedgerTriggers); LedgerTriggersIntactTest checks it once more.
+ *
+ * Locks: ALTER TABLE, DROP TRIGGER and CREATE TRIGGER take ACCESS EXCLUSIVE
+ * locks on vouchers and voucher_rows, held until the test's rollback. Any
+ * other session that touches those tables meanwhile waits. The suite runs
+ * sequentially, so nothing waits; under parallel testing another worker on
+ * the same database could block or deadlock, so the file is skipped there.
  */
 
 pest()->group('known-gap');
@@ -39,12 +49,20 @@ beforeEach(function () {
         $this->markTestSkipped('The database roles are in use: this role cannot alter the ledger (DatabaseRolesTest).');
     }
 
+    if (ParallelTesting::token() !== false) {
+        $this->markTestSkipped('Takes ACCESS EXCLUSIVE locks on the ledger tables; run sequentially.');
+    }
+
     [$this->owner, $this->company] = Bookkeeping::company();
     CurrentCompany::set($this->company);
 
     $this->first = Bookkeeping::post($this->owner, $this->company, 10000);
     $this->voucher = Bookkeeping::post($this->owner, $this->company, 25000);
     $this->last = Bookkeeping::post($this->owner, $this->company, 40000, series: 'B');
+});
+
+afterEach(function () {
+    expect(LedgerTriggers::committedState())->toBe(LedgerTriggers::expected());
 });
 
 /** Doubles both rows of the voucher, so it still balances, straight in the database. */
@@ -86,7 +104,10 @@ it('lets the runtime role drop the triggers and change a posted voucher', functi
     DB::delete('delete from vouchers where id = ?', [$this->last->id]);
 
     expect(storedTotal($this->voucher))->toBe(50000)
-        ->and(DB::scalar('select count(*) from vouchers where id = ?', [$this->last->id]))->toBe(0);
+        ->and(DB::scalar('select count(*) from vouchers where id = ?', [$this->last->id]))->toBe(0)
+        // Inside the transaction the triggers are gone; the second connection still sees them, uncommitted.
+        ->and(LedgerTriggers::state()['triggers'])->not->toHaveKey('vouchers_protect_posted')
+        ->and(LedgerTriggers::committedState()['triggers'])->toHaveKey('vouchers_protect_posted');
 });
 
 it('lets the runtime role replace the protect functions with empty ones and change a posted voucher', function () {

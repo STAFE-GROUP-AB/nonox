@@ -20,10 +20,16 @@ use InvalidArgumentException;
  * checks catch mistakes early; they do not contain malicious code, which runs
  * in the same process (ADR-079, threat model).
  *
+ * The lists a module had when it was checked (permissions, role keys, role
+ * permissions, archive permissions) are kept and served from here, so a
+ * module cannot hand out something else later. Role labels stay live: they
+ * are translated per request.
+ *
  * Modules register while the providers register, before translations exist,
  * and roles() returns translated labels. So the key is checked at once and
- * the rest when the application has booted (ModuleServiceProvider); a module
- * registered after boot is checked at once in full.
+ * the rest when the application starts to boot, before any provider boots
+ * (ModuleServiceProvider); a module registered after that is checked at once
+ * in full.
  */
 final class ModuleRegistry
 {
@@ -33,19 +39,26 @@ final class ModuleRegistry
         'inventory', 'payroll', 'peppol', 'planning', 'pos', 'staff_ledger',
     ];
 
-    /** `vendor.name` in lowercase; at most 50 characters (company_modules.module_key). */
-    private const string THIRD_PARTY_KEY = '/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*\.[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$/';
+    /** The namespace a first-party module's class lives in. */
+    public const string FIRST_PARTY_NAMESPACE = 'App\\Modules\\';
+
+    /** `vendor.name` in lowercase; at most 50 characters (company_modules.module_key). `D`: no trailing newline. */
+    private const string THIRD_PARTY_KEY = '/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*\.[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$/D';
 
     /** @var array<string, Module> */
     private array $modules = [];
 
-    /** @var array<string, true> modules registered before boot, not yet checked beyond their key */
-    private array $unchecked = [];
+    /** @var array<string, array{permissions: list<string>, roles: list<string>, rolePermissions: array<string, list<string>>, archivePermissions: list<string>}> the checked lists per key */
+    private array $checked = [];
 
     /**
-     * @param  list<string>  $firstParty  keys treated as first-party; tests add their own
+     * @param  list<string>  $firstParty  keys treated as first-party
+     * @param  list<string>  $firstPartyNamespaces  where a first-party module's class must live; tests add their own
      */
-    public function __construct(private readonly array $firstParty = self::FIRST_PARTY) {}
+    public function __construct(
+        private readonly array $firstParty = self::FIRST_PARTY,
+        private readonly array $firstPartyNamespaces = [self::FIRST_PARTY_NAMESPACE],
+    ) {}
 
     /**
      * @throws InvalidModule
@@ -58,24 +71,24 @@ final class ModuleRegistry
             throw InvalidModule::because($key, 'is already registered.');
         }
 
-        if ($this->isThirdParty($key) && (strlen($key) > 50 || preg_match(self::THIRD_PARTY_KEY, $key) !== 1)) {
+        if ($this->isThirdParty($module) && (strlen($key) > 50 || preg_match(self::THIRD_PARTY_KEY, $key) !== 1)) {
             throw InvalidModule::because($key, 'is not first-party, so its key must have the form vendor.name.');
         }
 
         if (! app()->isBooted()) {
             $this->modules[$key] = $module;
-            $this->unchecked[$key] = true;
 
             return;
         }
 
-        $this->check($module, $this->modules);
+        $this->checked[$key] = $this->check($module, $this->lists());
         $this->modules[$key] = $module;
     }
 
     /**
-     * Checks the modules registered before boot, each against those
-     * registered before it. A refused module is removed before the error.
+     * Checks the modules not yet checked, each against those registered
+     * before it. A refused module is removed before the error; the modules
+     * after it stay unchecked until the next call.
      *
      * @throws InvalidModule
      */
@@ -84,19 +97,17 @@ final class ModuleRegistry
         $before = [];
 
         foreach ($this->modules as $key => $module) {
-            if (isset($this->unchecked[$key])) {
+            if (! isset($this->checked[$key])) {
                 try {
-                    $this->check($module, $before);
+                    $this->checked[$key] = $this->check($module, $before);
                 } catch (InvalidModule $exception) {
-                    unset($this->modules[$key], $this->unchecked[$key]);
+                    unset($this->modules[$key]);
 
                     throw $exception;
                 }
-
-                unset($this->unchecked[$key]);
             }
 
-            $before[$key] = $module;
+            $before[$key] = $this->checked[$key];
         }
     }
 
@@ -119,9 +130,9 @@ final class ModuleRegistry
     /** The module that adds the permission, or null for a core permission. */
     public function moduleForPermission(string $permission): ?Module
     {
-        foreach ($this->modules as $module) {
-            if (in_array($permission, $module->permissions(), true)) {
-                return $module;
+        foreach ($this->lists() as $key => $lists) {
+            if (in_array($permission, $lists['permissions'], true)) {
+                return $this->modules[$key];
             }
         }
 
@@ -131,13 +142,37 @@ final class ModuleRegistry
     /** The module that adds the role, or null for a core role. */
     public function moduleForRole(string $role): ?Module
     {
-        foreach ($this->modules as $module) {
-            if (array_key_exists($role, $module->roles())) {
-                return $module;
+        foreach ($this->lists() as $key => $lists) {
+            if (in_array($role, $lists['roles'], true)) {
+                return $this->modules[$key];
             }
         }
 
         return null;
+    }
+
+    /** @return list<string> */
+    public function permissionsOf(Module $module): array
+    {
+        return $this->listsOf($module)['permissions'];
+    }
+
+    /** @return list<string> */
+    public function roleKeysOf(Module $module): array
+    {
+        return $this->listsOf($module)['roles'];
+    }
+
+    /** @return array<string, list<string>> */
+    public function rolePermissionsOf(Module $module): array
+    {
+        return $this->listsOf($module)['rolePermissions'];
+    }
+
+    /** @return list<string> */
+    public function archivePermissionsOf(Module $module): array
+    {
+        return $this->listsOf($module)['archivePermissions'];
     }
 
     /** @return list<string> the company owner and the member roles of AGENTS.md §4 */
@@ -147,33 +182,66 @@ final class ModuleRegistry
     }
 
     /**
-     * @param  array<string, Module>  $others  the modules registered before it
+     * @return array<string, array{permissions: list<string>, roles: list<string>, rolePermissions: array<string, list<string>>, archivePermissions: list<string>}>
      */
-    private function check(Module $module, array $others): void
+    private function lists(): array
     {
-        $thirdParty = $this->isThirdParty($module->key());
+        if (count($this->checked) !== count($this->modules)) {
+            $this->verify();
+        }
 
-        $this->checkPermissions($module, $others, $thirdParty);
-        $this->checkRoles($module, $others, $thirdParty);
-        $this->checkGrants($module, $thirdParty);
+        return $this->checked;
     }
 
     /**
-     * @param  array<string, Module>  $others
+     * @return array{permissions: list<string>, roles: list<string>, rolePermissions: array<string, list<string>>, archivePermissions: list<string>}
      */
-    private function checkPermissions(Module $module, array $others, bool $thirdParty): void
+    private function listsOf(Module $module): array
     {
-        $key = $module->key();
+        return $this->lists()[$module->key()] ?? throw new InvalidArgumentException("Module {$module->key()} is not installed.");
+    }
 
-        foreach ($module->permissions() as $permission) {
+    /**
+     * Checks the module and returns the lists it was checked with.
+     *
+     * @param  array<string, array{permissions: list<string>, roles: list<string>, rolePermissions: array<string, list<string>>, archivePermissions: list<string>}>  $others  the modules registered before it
+     * @return array{permissions: list<string>, roles: list<string>, rolePermissions: array<string, list<string>>, archivePermissions: list<string>}
+     */
+    private function check(Module $module, array $others): array
+    {
+        // PHP arrays are values: these are copies, whatever the module returns later.
+        $lists = [
+            'permissions' => $module->permissions(),
+            'roles' => array_map('strval', array_keys($module->roles())),
+            'rolePermissions' => $module->rolePermissions(),
+            'archivePermissions' => $module->archivePermissions(),
+        ];
+
+        $key = $module->key();
+        $thirdParty = $this->isThirdParty($module);
+
+        $this->checkPermissions($key, $lists, $others, $thirdParty);
+        $this->checkRoles($key, $lists, $others, $thirdParty);
+        $this->checkGrants($key, $lists, $thirdParty);
+
+        return $lists;
+    }
+
+    /**
+     * @param  array{permissions: list<string>, roles: list<string>, rolePermissions: array<string, list<string>>, archivePermissions: list<string>}  $lists
+     * @param  array<string, array{permissions: list<string>, roles: list<string>, rolePermissions: array<string, list<string>>, archivePermissions: list<string>}>  $others
+     */
+    private function checkPermissions(string $key, array $lists, array $others, bool $thirdParty): void
+    {
+        foreach ($lists['permissions'] as $permission) {
             if (in_array($permission, CompanyRole::PERMISSIONS, true)) {
                 throw InvalidModule::because($key, "claims the core permission {$permission}.");
             }
 
-            $owner = self::find($others, fn (Module $other): bool => in_array($permission, $other->permissions(), true));
-
-            if ($owner !== null) {
-                throw InvalidModule::because($key, "claims {$permission}, which belongs to module {$owner->key()}.");
+            foreach ($others as $other => $theirs) {
+                if (in_array($permission, $theirs['permissions'], true)) {
+                    throw InvalidModule::because($key, "claims {$permission}, which belongs to module {$other}.");
+                }
             }
 
             if ($thirdParty && ! self::isOwn($key, $permission)) {
@@ -183,21 +251,20 @@ final class ModuleRegistry
     }
 
     /**
-     * @param  array<string, Module>  $others
+     * @param  array{permissions: list<string>, roles: list<string>, rolePermissions: array<string, list<string>>, archivePermissions: list<string>}  $lists
+     * @param  array<string, array{permissions: list<string>, roles: list<string>, rolePermissions: array<string, list<string>>, archivePermissions: list<string>}>  $others
      */
-    private function checkRoles(Module $module, array $others, bool $thirdParty): void
+    private function checkRoles(string $key, array $lists, array $others, bool $thirdParty): void
     {
-        $key = $module->key();
-
-        foreach (array_keys($module->roles()) as $role) {
+        foreach ($lists['roles'] as $role) {
             if (in_array($role, self::coreRoles(), true)) {
                 throw InvalidModule::because($key, "adds the role {$role}, which is a core role.");
             }
 
-            $owner = self::find($others, fn (Module $other): bool => array_key_exists($role, $other->roles()));
-
-            if ($owner !== null) {
-                throw InvalidModule::because($key, "adds the role {$role}, which belongs to module {$owner->key()}.");
+            foreach ($others as $other => $theirs) {
+                if (in_array($role, $theirs['roles'], true)) {
+                    throw InvalidModule::because($key, "adds the role {$role}, which belongs to module {$other}.");
+                }
             }
 
             if ($thirdParty && ! self::isOwn($key, $role)) {
@@ -210,49 +277,44 @@ final class ModuleRegistry
      * A module hands out only its own permissions. Our own modules may give
      * them to another module's role (NONOX Avtal to the payroll
      * administrator); a third-party module only to core roles and its own.
+     *
+     * @param  array{permissions: list<string>, roles: list<string>, rolePermissions: array<string, list<string>>, archivePermissions: list<string>}  $lists
      */
-    private function checkGrants(Module $module, bool $thirdParty): void
+    private function checkGrants(string $key, array $lists, bool $thirdParty): void
     {
-        $key = $module->key();
-        $own = $module->permissions();
-
-        foreach ($module->rolePermissions() as $role => $permissions) {
-            if ($thirdParty && ! in_array($role, self::coreRoles(), true) && ! array_key_exists($role, $module->roles())) {
+        foreach ($lists['rolePermissions'] as $role => $permissions) {
+            if ($thirdParty && ! in_array($role, self::coreRoles(), true) && ! in_array($role, $lists['roles'], true)) {
                 throw InvalidModule::because($key, "gives permissions to role {$role}, which is neither a core role nor its own.");
             }
 
             foreach ($permissions as $permission) {
-                if (! in_array($permission, $own, true)) {
+                if (! in_array($permission, $lists['permissions'], true)) {
                     throw InvalidModule::because($key, "gives {$permission} to role {$role}, but does not add that permission.");
                 }
             }
         }
 
-        foreach ($module->archivePermissions() as $permission) {
-            if (! in_array($permission, $own, true)) {
+        foreach ($lists['archivePermissions'] as $permission) {
+            if (! in_array($permission, $lists['permissions'], true)) {
                 throw InvalidModule::because($key, "lists {$permission} as an archive permission, but does not add that permission.");
             }
         }
     }
 
-    private function isThirdParty(string $key): bool
+    /** First-party means a first-party key and a class in a first-party namespace. */
+    private function isThirdParty(Module $module): bool
     {
-        return ! in_array($key, $this->firstParty, true);
-    }
+        if (! in_array($module->key(), $this->firstParty, true)) {
+            return true;
+        }
 
-    /**
-     * @param  array<string, Module>  $modules
-     * @param  callable(Module): bool  $matches
-     */
-    private static function find(array $modules, callable $matches): ?Module
-    {
-        foreach ($modules as $module) {
-            if ($matches($module)) {
-                return $module;
+        foreach ($this->firstPartyNamespaces as $namespace) {
+            if (str_starts_with($module::class, $namespace)) {
+                return false;
             }
         }
 
-        return null;
+        return true;
     }
 
     private static function isOwn(string $key, string $name): bool

@@ -19,7 +19,10 @@ class ModuleServiceProvider extends ServiceProvider
         $this->app->singleton(ModuleRegistry::class);
         $this->app->scoped(ModuleManager::class);
 
-        // Every provider has registered and booted its modules by now, and translations exist (ADR-079 §2.2).
+        // Every provider has registered its modules and translations exist, but no provider has
+        // booted: a refused module stops the boot before its routes, listeners or role grants exist
+        // (ADR-079 §2.2). Modules registered later, in a boot() method, are checked once booted.
+        $this->app->booting(fn () => $this->app->make(ModuleRegistry::class)->verify());
         $this->app->booted(fn () => $this->app->make(ModuleRegistry::class)->verify());
     }
 

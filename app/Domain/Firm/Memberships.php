@@ -91,7 +91,7 @@ final class Memberships
         $role = $this->roles[$companyId];
 
         if ($role === null) {
-            return $module === null || in_array($permission, $module->rolePermissions()['owner'] ?? [], true);
+            return $module === null || in_array($permission, app(ModuleRegistry::class)->rolePermissionsOf($module)['owner'] ?? [], true);
         }
 
         $permissions = isset(Jetstream::$roles[$role]) ? Jetstream::$roles[$role]->permissions : [];

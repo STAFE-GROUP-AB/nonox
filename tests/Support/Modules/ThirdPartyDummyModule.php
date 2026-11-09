@@ -12,9 +12,10 @@ use App\Modules\ModuleCheck;
 /**
  * The third-party twin of DummyModule (ADR-079 §2.2): a `vendor.name` key,
  * and permissions and roles that all start with that key. The registry tests
- * replace parts of it to try what a third-party module must not do.
+ * replace parts of it, or extend it, to try what a third-party module must
+ * not do.
  */
-final class ThirdPartyDummyModule implements Module
+class ThirdPartyDummyModule implements Module
 {
     public function __construct(
         private readonly string $key = 'acme.dummy',

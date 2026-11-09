@@ -2,29 +2,19 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Facades\DB;
+use Tests\Support\LedgerTriggers;
 
 /*
- * The immutability triggers on the ledger and their functions are in place
- * and enabled. TriggerBypassGapTest disables, drops and replaces them inside
- * its rolled-back test transactions; this proves nothing of that survives.
+ * The immutability triggers on the ledger and their functions are in place,
+ * enabled and unchanged. TriggerBypassGapTest disables, drops and replaces
+ * them inside rolled-back transactions and checks the committed state after
+ * each of its tests; this file checks it once more on its own.
  */
 
 it('keeps the immutability triggers enabled and their functions intact', function () {
-    $triggers = collect(DB::select(<<<'SQL'
-        select tgname, tgenabled from pg_trigger
-        where not tgisinternal and tgrelid in ('vouchers'::regclass, 'voucher_rows'::regclass)
-        SQL))->mapWithKeys(fn (object $row): array => [$row->tgname => $row->tgenabled])->sortKeys()->all();
+    expect(LedgerTriggers::state())->toBe(LedgerTriggers::expected());
+});
 
-    expect($triggers)->toBe([
-        'voucher_rows_no_truncate' => 'O',
-        'voucher_rows_protect_posted' => 'O',
-        'vouchers_check_balance_on_post' => 'O',
-        'vouchers_no_truncate' => 'O',
-        'vouchers_protect_posted' => 'O',
-    ]);
-
-    foreach (['vouchers_protect_posted', 'voucher_rows_protect_posted'] as $function) {
-        expect((string) DB::scalar('select prosrc from pg_proc where proname = ?', [$function]))->toContain('RAISE EXCEPTION');
-    }
+it('reads the same committed state on a second connection', function () {
+    expect(LedgerTriggers::committedState())->toBe(LedgerTriggers::expected());
 });
