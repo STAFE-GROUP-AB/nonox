@@ -58,6 +58,30 @@
     <p class="text-sm text-red-700" role="alert" x-show="error" x-text="error" x-cloak></p>
     @error('passkey') <p class="text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
 
+    <x-ui.card :title="__('Automatiska kontroller')" data-heartbeats>
+        <p class="text-sm text-gray-600">{{ __('Det här är underlaget bakom statussidan. Den publika sidan visar bara att kontrollen har körts; vad den hittade står här och i loggen.') }}</p>
+        <dl class="mt-3 divide-y divide-stone-200 text-sm">
+            @forelse($heartbeats as $beat)
+                <div class="py-2" data-heartbeat="{{ $beat->key }}">
+                    <dt class="font-medium text-ink">{{ $beat->key }}</dt>
+                    <dd class="tabular-nums text-gray-700">
+                        {{ __('Senast körd :tid', ['tid' => $beat->last_run_at->setTimezone(config('app.timezone'))->format('Y-m-d H:i')]) }}
+                        @if($beat->last_success_at) · {{ __('lyckades :tid', ['tid' => $beat->last_success_at->setTimezone(config('app.timezone'))->format('Y-m-d H:i')]) }}@endif
+                        @if($beat->last_failure_at) · {{ __('misslyckades :tid', ['tid' => $beat->last_failure_at->setTimezone(config('app.timezone'))->format('Y-m-d H:i')]) }}@endif
+                        @if($beat->last_exit_code !== null) · {{ __('avslutskod :kod', ['kod' => $beat->last_exit_code]) }}@endif
+                        @if($beat->key === 'integrity' && $beat->last_exit_code === \App\Console\Commands\VerifyLedgerCommand::EXIT_DEVIATIONS)
+                            <strong class="text-accent-700">{{ __('Kontrollen hittade avvikelser i bokföringen. Se loggen och kör ledger:verify --all.') }}</strong>
+                        @elseif($beat->key === 'integrity' && $beat->last_exit_code !== null && $beat->last_exit_code !== 0)
+                            <strong class="text-accent-700">{{ __('Kontrollen kraschade och kunde inte slutföras.') }}</strong>
+                        @endif
+                    </dd>
+                </div>
+            @empty
+                <p class="py-2 text-gray-600">{{ __('Inga körningar är registrerade ännu.') }}</p>
+            @endforelse
+        </dl>
+    </x-ui.card>
+
     <x-ui.card :title="__('Händelser')">
         @forelse($incidents as $incident)
             <article wire:key="incident-{{ $incident->id }}" class="border-b border-stone-200 py-4 last:border-b-0" data-incident="{{ $incident->id }}">
@@ -97,8 +121,9 @@
                         <div>
                             <label for="note-body-{{ $incident->id }}" class="block text-sm font-medium text-gray-700">{{ __('Anteckning') }}</label>
                             <textarea id="note-body-{{ $incident->id }}" wire:model="noteBody" rows="2" maxlength="2000" class="mt-1 {{ $input }}"></textarea>
-                            @error('body') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
-                            @error('status') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                            @error('noteBody') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                            @error('noteStatus') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                            @error('noteSeverity') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
                         </div>
                         <div class="flex gap-2">
                             <button type="submit" class="rounded-xl bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-60" x-bind:disabled="busy">{{ __('Publicera anteckningen') }}</button>

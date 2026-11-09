@@ -5,10 +5,12 @@ declare(strict_types=1);
 use App\Actions\Hq\Status\DeleteStatusIncident;
 use App\Actions\Hq\Status\OpenStatusIncident;
 use App\Actions\Hq\Status\PostStatusIncidentUpdate;
+use App\Console\Commands\VerifyLedgerCommand;
 use App\Livewire\Hq\StatusIncidents;
 use App\Models\AuditLog;
 use App\Models\StatusIncident;
 use App\Models\User;
+use App\Support\Status\Heartbeats;
 use App\Support\Status\StatusSnapshot;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -199,4 +201,34 @@ it('lists the incidents in HQ with a fixed number of queries', function () {
     }
 
     expect($count())->toBe($few);
+});
+
+it('shows errors of the note form under its own keys, not under the form for a new incident', function () {
+    $this->actingAs($this->admin);
+    stepUp($this->admin);
+    $incident = app(OpenStatusIncident::class)($this->admin, ['title' => 'x', 'severity' => 'INFO', 'body' => 'y']);
+
+    Livewire::test(StatusIncidents::class)
+        ->call('startNote', $incident->id)
+        ->set('noteBody', '')
+        ->call('postNote', null)
+        ->assertHasErrors('noteBody')
+        ->assertHasNoErrors(['body', 'title']);
+
+    Livewire::test(StatusIncidents::class)
+        ->call('startNote', $incident->id)
+        ->set('noteBody', 'z')
+        ->set('noteStatus', 'DONE')
+        ->call('postNote', null)
+        ->assertHasErrors('noteStatus');
+});
+
+it('shows what the integrity check found in HQ and nowhere on the public page', function () {
+    Heartbeats::record(Heartbeats::INTEGRITY, false, null, VerifyLedgerCommand::EXIT_DEVIATIONS, true);
+
+    $this->actingAs($this->admin)->get(route('hq.status'))->assertOk()
+        ->assertSee('data-heartbeat="integrity"', false)
+        ->assertSee('Kontrollen hittade avvikelser i bokföringen');
+
+    expect(strtolower($this->get('/status')->assertOk()->getContent()))->not->toContain('avvikelse');
 });

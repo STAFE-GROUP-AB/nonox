@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property CarbonImmutable $last_run_at
  * @property ?CarbonImmutable $last_success_at
  * @property ?CarbonImmutable $last_failure_at
+ * @property ?CarbonImmutable $last_completed_at
+ * @property ?int $last_exit_code
  */
 class StatusHeartbeat extends Model
 {
@@ -27,7 +29,7 @@ class StatusHeartbeat extends Model
     public $timestamps = false;
 
     /** @var list<string> */
-    protected $fillable = ['key', 'last_run_at', 'last_success_at', 'last_failure_at'];
+    protected $fillable = ['key', 'last_run_at', 'last_success_at', 'last_failure_at', 'last_completed_at', 'last_exit_code'];
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -36,6 +38,8 @@ class StatusHeartbeat extends Model
             'last_run_at' => 'immutable_datetime',
             'last_success_at' => 'immutable_datetime',
             'last_failure_at' => 'immutable_datetime',
+            'last_completed_at' => 'immutable_datetime',
+            'last_exit_code' => 'integer',
         ];
     }
 }

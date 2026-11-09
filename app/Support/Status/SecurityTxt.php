@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Support\Status;
 
+use App\Models\InstanceSetting;
+use App\Support\Build\BuildInfo;
 use App\Support\Instance\InstanceSettings;
 use Carbon\CarbonImmutable;
+use Throwable;
 
 /**
  * The /.well-known/security.txt of this installation (RFC 9116, ADR-078).
@@ -15,27 +18,48 @@ use Carbon\CarbonImmutable;
  *   becomes a mailto: URI; a web address must be https (RFC 9116 2.5.3).
  *   Without a contact there is no file: a security.txt without Contact is
  *   not valid, so the route answers 404 instead.
- * - Expires (required, once): RFC 3339, less than a year ahead as the RFC
- *   recommends. It is computed on every request as EXPIRES_DAYS from now,
- *   so the file never goes stale while the installation runs and the
- *   operator cannot forget to renew it. That is a deliberate trade-off:
- *   the field then says "this was checked within the last request", not
- *   "a person reviewed this on date X".
- * - Policy, Canonical, Preferred-Languages: the policy page, this file's
- *   own address, and sv, en.
+ * - Expires (required, once): RFC 3339. It is the day the contact was last
+ *   confirmed in /hq (the setting's updated_at) plus 365 days, or, when the
+ *   contact comes from the environment, the day the build was made plus 365
+ *   days. It is not renewed by being read: a stale file says so, and /hq
+ *   warns before that happens.
+ * - Policy: only when the policy page is published (SecurityPolicy).
+ * - Canonical, Policy: built from APP_URL, never from the request's Host
+ *   header, so a forged Host cannot change what the file claims.
  *
  * Not included: Encryption and a cleartext signature (section 2.3 only
  * recommends them), Hiring, Acknowledgments.
  */
 final class SecurityTxt
 {
-    public const int EXPIRES_DAYS = 180;
+    public const int VALID_DAYS = 365;
+
+    public const int WARN_DAYS = 30;
+
+    /** The installation's own address, always https, from APP_URL. */
+    public static function baseUrl(): string
+    {
+        $url = rtrim((string) config('app.url'), '/');
+
+        return (string) preg_replace('#^http://#i', 'https://', $url);
+    }
+
+    public static function host(): string
+    {
+        return (string) parse_url(self::baseUrl(), PHP_URL_HOST);
+    }
+
+    /** The contact as written in the setting or the environment, before it is made a URI. */
+    public static function rawContact(): ?string
+    {
+        return InstanceSettings::current()->securityContact()
+            ?? self::config('security_email')
+            ?? self::config('privacy_email');
+    }
 
     public static function contact(): ?string
     {
-        $raw = InstanceSettings::current()->securityContact()
-            ?? self::config('security_email')
-            ?? self::config('privacy_email');
+        $raw = self::rawContact();
 
         return $raw === null ? null : self::contactUri($raw);
     }
@@ -60,12 +84,45 @@ final class SecurityTxt
         return null;
     }
 
-    public static function expires(?CarbonImmutable $now = null): string
+    /** When the contact was last confirmed: the setting's update, else the build. */
+    public static function confirmedAt(): CarbonImmutable
     {
-        return ($now ?? CarbonImmutable::now())->utc()->addDays(self::EXPIRES_DAYS)->startOfDay()->format('Y-m-d\TH:i:s\Z');
+        $setting = InstanceSetting::query()->find(InstanceSettings::SECURITY_CONTACT);
+
+        if ($setting instanceof InstanceSetting && $setting->value !== null) {
+            return $setting->updated_at;
+        }
+
+        try {
+            $built = BuildInfo::builtAt();
+
+            if (is_string($built) && $built !== '') {
+                return CarbonImmutable::parse($built);
+            }
+        } catch (Throwable) {
+            // No build date: the file then expires a year after the current moment, which a deploy never moves.
+        }
+
+        return CarbonImmutable::now();
     }
 
-    public static function render(?CarbonImmutable $now = null): ?string
+    public static function expiresAt(): CarbonImmutable
+    {
+        return self::confirmedAt()->utc()->addDays(self::VALID_DAYS);
+    }
+
+    public static function expires(): string
+    {
+        return self::expiresAt()->format('Y-m-d\TH:i:s\Z');
+    }
+
+    /** Whether the file has expired or will within WARN_DAYS, so /hq can ask for a new confirmation. */
+    public static function expiresSoon(?CarbonImmutable $now = null): bool
+    {
+        return self::expiresAt()->lessThan(($now ?? CarbonImmutable::now())->addDays(self::WARN_DAYS));
+    }
+
+    public static function render(): ?string
     {
         $contact = self::contact();
 
@@ -74,13 +131,17 @@ final class SecurityTxt
         }
 
         $lines = [
-            '# Säkerhetskontakt för '.parse_url(url('/'), PHP_URL_HOST).' (RFC 9116).',
+            '# Säkerhetskontakt för '.self::host().' (RFC 9116).',
             "Contact: {$contact}",
-            'Expires: '.self::expires($now),
+            'Expires: '.self::expires(),
             'Preferred-Languages: sv, en',
-            'Policy: '.secure_url(route('security.policy', [], false)),
-            'Canonical: '.secure_url('/.well-known/security.txt'),
         ];
+
+        if (SecurityPolicy::published()) {
+            $lines[] = 'Policy: '.self::baseUrl().route('security.policy', [], false);
+        }
+
+        $lines[] = 'Canonical: '.self::baseUrl().'/.well-known/security.txt';
 
         return implode("\n", $lines)."\n";
     }

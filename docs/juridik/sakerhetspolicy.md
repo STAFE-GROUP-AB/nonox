@@ -4,11 +4,14 @@ Version {version}. Gäller tjänsten NONOX på {webbplats}, driven av {foretag} 
 
 NONOX innehåller personnummer, bankuppgifter, löner och sjukfrånvaro. Därför vill vi veta om det finns en sårbarhet, och vi vill få veta det först av dig. Den här sidan beskriver hur du rapporterar, vad du kan vänta dig av oss och vad som ligger utanför.
 
-<!-- TODO(legal-verify): en jurist ska läsa avsnittet "Skydd för dig som rapporterar" innan sidan publiceras på den driftade tjänsten. -->
+<!-- TODO(legal-verify): avsnittet "Skydd för dig som rapporterar" (hosted:start...hosted:end nedan) får inte publiceras på den driftade tjänsten innan en jurist har läst det. Sidan är avstängd tills NONOX_SECURITY_POLICY_PUBLISHED=true, och en egen installation får aldrig avsnittet. Se fragor-till-jurist.md fråga 35. -->
 
 ## Så rapporterar du
 
-Skicka din rapport till **{sakerhetskontakt}**, med "NONOX säkerhet" i ämnesraden. Du kan också rapportera privat via GitHub: välj "Report a vulnerability" under fliken Security i källkodsförvaret.
+Skicka din rapport till **{sakerhetskontakt}**, med "NONOX säkerhet" i ämnesraden.
+<!-- hosted:start -->
+Du kan också rapportera privat via GitHub: välj "Report a vulnerability" under fliken Security i källkodsförvaret.
+<!-- hosted:end -->
 
 Öppna **inte** ett offentligt ärende, en pull request eller en diskussion för en säkerhetsbrist.
 
@@ -21,6 +24,8 @@ Skriv gärna med:
 - hur du vill bli omnämnd, om alls.
 
 Ta inte med riktiga personuppgifter i rapporten. Har du ändå sett sådana, berätta vilken sorts uppgifter det var, inte uppgifterna själva.
+
+Dina kontaktuppgifter och rapporten behandlar vi för att kunna rätta felet och svara dig, och vi sparar dem i högst två år efter att ärendet avslutades. Mer om hur vi behandlar personuppgifter finns i [integritetspolicyn]({integritet}).
 
 Adressen finns också i maskinläsbar form i [security.txt]({sakerhetstxt}), enligt RFC 9116.
 
@@ -38,20 +43,29 @@ Det här är mål för ett litet team, inte garantier. Kan vi inte hålla ett av
 Visar rapporten att personuppgifter kan ha blivit tillgängliga för obehöriga hanterar vi det enligt vår rutin för personuppgiftsincidenter. Det innebär att vi informerar berörda kunder och, när det krävs, Integritetsskyddsmyndigheten (IMY).
 
 Du kan se hur tjänsten mår just nu på [statussidan]({status}).
+<!-- hosted:start -->
 
 ## Skydd för dig som rapporterar
 
 Vi inleder inga rättsliga åtgärder mot dig och gör ingen polisanmälan för det du gör i god tro och enligt den här policyn. Det förutsätter att du:
 
 - rapporterar till oss och ger oss rimlig tid att rätta innan du berättar för andra,
-- bara testar mot konton och företag som du själv har skapat, eller mot din egen installation,
-- inte tar del av, ändrar, raderar eller sparar andras uppgifter mer än det minsta som behövs för att visa problemet, och slutar och berättar för oss så fort du ser sådana uppgifter,
+- bara testar mot konton och företag som du själv har skapat,
 - inte försämrar tjänsten för andra,
 - inte kräver betalning.
+
+Ser du andras uppgifter: sluta direkt, spara, kopiera eller ändra inget och berätta för oss.
 
 Det här gäller bara vad vi själva gör. Vi kan inte avstå från andras rättigheter eller hindra att en myndighet agerar, och policyn är inget tillstånd att göra något som är olagligt. Är du osäker på om något är tillåtet, fråga oss först.
 
 Vi har inget betalt program för sårbarhetsrapporter.
+<!-- hosted:end -->
+<!-- selfhost:start -->
+
+## Om testning
+
+Den här installationen drivs av {foretag}. Policyn lovar ingenting om hur tester bedöms rättsligt; fråga oss innan du testar något som kan påverka andra. Ser du andras uppgifter: sluta direkt, spara, kopiera eller ändra inget och berätta för oss.
+<!-- selfhost:end -->
 
 ## Vad som omfattas
 

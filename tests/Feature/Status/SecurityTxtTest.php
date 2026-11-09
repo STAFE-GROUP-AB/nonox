@@ -50,26 +50,57 @@ it('serves a valid security.txt as UTF-8 plain text at the well-known address', 
         ->and($body)->not->toContain("\r")
         ->and($lines)->toContain('Contact: mailto:sakerhet@example.test')
         ->and($lines)->toContain('Preferred-Languages: sv, en')
-        ->and($lines)->toContain('Canonical: '.secure_url('/.well-known/security.txt'))
-        ->and(collect($lines)->filter(fn (string $line): bool => str_starts_with($line, 'Policy: https://'))->count())->toBe(1)
-        ->and(collect($lines)->filter(fn (string $line): bool => str_starts_with($line, 'Policy: '))->first())->toEndWith('/sakerhetspolicy')
-        ->and(collect($lines)->filter(fn (string $line): bool => str_starts_with($line, 'Expires: '))->count())->toBe(1);
+        ->and($lines)->toContain('Canonical: '.SecurityTxt::baseUrl().'/.well-known/security.txt')
+        ->and(collect($lines)->filter(fn (string $line): bool => str_starts_with($line, 'Expires: '))->count())->toBe(1)
+        ->and(collect($lines)->filter(fn (string $line): bool => str_starts_with($line, 'Policy: '))->count())->toBe(0);
 });
 
-it('sets Expires once, in RFC 3339, in the future and less than a year ahead', function () {
-    config(['app.landing.privacy_email' => 'integritet@example.test']);
+it('adds the Policy line only when the policy page is published, and always as https', function () {
+    config(['app.landing.security_email' => 'sakerhet@example.test', 'app.landing.hosted' => true, 'app.landing.security_policy_published' => true]);
 
-    preg_match('/^Expires: (.+)$/m', (string) $this->get('/.well-known/security.txt')->getContent(), $match);
-    $expires = CarbonImmutable::parse($match[1]);
+    $policy = collect(explode("\n", (string) $this->get('/.well-known/security.txt')->getContent()))->first(fn (string $line): bool => str_starts_with($line, 'Policy: '));
 
-    expect($match[1])->toMatch('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/')
-        ->and($expires->greaterThan(now()))->toBeTrue()
-        ->and($expires->lessThan(now()->addYear()))->toBeTrue();
+    expect($policy)->toStartWith('Policy: https://')->and($policy)->toEndWith('/sakerhetspolicy');
+
+    config(['app.landing.security_policy_published' => false]);
+
+    $this->get('/.well-known/security.txt')->assertOk()->assertDontSee('Policy:', false)->assertSee('Contact: mailto:sakerhet@example.test', false);
+});
+
+it('builds Canonical and Policy from APP_URL and not from the Host header', function () {
+    config(['app.url' => 'http://min-bokforing.example', 'app.landing.security_email' => 'sakerhet@example.test', 'app.landing.hosted' => true, 'app.landing.security_policy_published' => true]);
+
+    $body = (string) $this->withServerVariables(['HTTP_HOST' => 'evil.example'])->get('/.well-known/security.txt')->assertOk()->getContent();
+
+    expect($body)->toContain('Canonical: https://min-bokforing.example/.well-known/security.txt')
+        ->and($body)->toContain('Policy: https://min-bokforing.example/sakerhetspolicy')
+        ->and($body)->not->toContain('evil.example');
+});
+
+it('sets Expires to the day the contact was confirmed plus 365 days, and does not renew it by being read', function () {
+    config(['app.landing.privacy_email' => null]);
+    contactSetting('sakerhet@example.test');
+
+    $read = function (): CarbonImmutable {
+        preg_match('/^Expires: (.+)$/m', (string) test()->get('/.well-known/security.txt')->getContent(), $match);
+        expect($match[1])->toMatch('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/');
+
+        return CarbonImmutable::parse($match[1]);
+    };
+
+    $first = $read();
+
+    expect($first->equalTo(now()->utc()->addDays(365)))->toBeTrue()
+        ->and($first->greaterThan(now()))->toBeTrue()
+        ->and($first->lessThanOrEqualTo(now()->addDays(365)))->toBeTrue();
 
     $this->travel(100)->days();
-    preg_match('/^Expires: (.+)$/m', (string) $this->get('/.well-known/security.txt')->getContent(), $later);
 
-    expect(CarbonImmutable::parse($later[1])->greaterThan(now()))->toBeTrue();
+    expect($read()->equalTo($first))->toBeTrue();
+
+    $this->travel(300)->days();
+
+    expect($read()->lessThan(now()))->toBeTrue();
 });
 
 it('takes the contact from the instance setting before the environment', function () {
@@ -143,8 +174,15 @@ it('leaves the contact alone when the action is called without it', function () 
         ->toThrow(ValidationException::class);
 });
 
-it('renders the Swedish security policy with the contact filled in', function () {
-    config(['app.landing.security_email' => 'sakerhet@example.test']);
+it('has no policy page until it is published', function () {
+    config(['app.landing.security_email' => 'sakerhet@example.test', 'app.landing.hosted' => true]);
+
+    $this->get('/sakerhetspolicy')->assertNotFound();
+    $this->get('/')->assertOk()->assertDontSee('/sakerhetspolicy', false);
+});
+
+it('renders the Swedish security policy of the hosted service with the waiver and the contact', function () {
+    config(['app.landing.security_email' => 'sakerhet@example.test', 'app.landing.hosted' => true, 'app.landing.security_policy_published' => true]);
 
     expect(route('security.policy', [], false))->toBe('/sakerhetspolicy');
 
@@ -153,13 +191,82 @@ it('renders the Swedish security policy with the contact filled in', function ()
         ->assertSee('sakerhet@example.test')
         ->assertSee('Så rapporterar du')
         ->assertSee('Skydd för dig som rapporterar')
+        ->assertSee('Ser du andras uppgifter: sluta direkt, spara, kopiera eller ändra inget och berätta för oss.')
+        ->assertSee('Report a vulnerability')
         ->assertSee('Vad som omfattas')
         ->assertSee('Omfattas inte')
-        ->assertSee(route('status'), false)
+        ->assertSee('href="'.route('legal.privacy').'"', false)
+        ->assertSee(SecurityTxt::baseUrl().'/status', false)
         ->assertSee('/.well-known/security.txt', false)
+        ->assertDontSee('det minsta som behövs')
         ->getContent();
 
-    expect($html)->not->toMatch('/\{(foretag|orgnr|sakerhetskontakt|sakerhetstxt|status|egendrift|sakerhet|version)\}/');
+    expect($html)->not->toMatch('/\{(foretag|orgnr|sakerhetskontakt|sakerhetstxt|status|egendrift|sakerhet|version|integritet)\}/')
+        ->and($html)->not->toContain('hosted:start');
+});
+
+it('gives a self-hosted installation a neutral policy without the waiver, and only with a company name', function () {
+    config(['app.landing.security_email' => 'sakerhet@example.test', 'app.landing.hosted' => false, 'app.landing.security_policy_published' => true, 'app.landing.company_name' => null]);
+
+    $this->get('/sakerhetspolicy')->assertNotFound();
+
+    config(['app.landing.company_name' => 'Min Firma AB']);
+
+    $this->get('/sakerhetspolicy')->assertOk()
+        ->assertSee('Om testning')
+        ->assertSee('Min Firma AB')
+        ->assertDontSee('Skydd för dig som rapporterar')
+        ->assertDontSee('inleder inga rättsliga åtgärder')
+        ->assertDontSee('Report a vulnerability')
+        ->assertDontSee('polisanmälan');
+
+    config(['app.landing.security_policy_published' => false]);
+
+    $this->get('/sakerhetspolicy')->assertNotFound();
+});
+
+it('tells a reporter how the report is kept and links the privacy policy', function () {
+    $markdown = (string) file_get_contents(base_path('docs/juridik/sakerhetspolicy.md'));
+
+    expect($markdown)->toContain('i högst två år efter att ärendet avslutades')
+        ->and($markdown)->toContain('[integritetspolicyn]({integritet})')
+        ->and((string) file_get_contents(base_path('docs/gdpr/registerforteckning.md')))->toContain('Säkerhetsrapporter')
+        ->and((string) file_get_contents(base_path('docs/gdpr/lagringstider.md')))->toContain('Säkerhetsrapporter');
+});
+
+it('lets an HQ admin confirm the security contact, which renews Expires, and warns before it runs out', function () {
+    config(['app.landing.security_email' => 'miljo@example.test']);
+    $admin = User::factory()->withCompany()->create(['email' => 'hq@example.test']);
+    $this->actingAs($admin);
+    session()->put('hq.step_up', ['user_id' => $admin->id, 'at' => now()->getTimestamp()]);
+
+    Livewire::test(Settings::class)->assertSee('security.txt gäller till');
+
+    contactSetting('gammal@example.test');
+    InstanceSetting::query()->whereKey(InstanceSettings::SECURITY_CONTACT)->update(['updated_at' => now()->subDays(350)]);
+
+    Livewire::test(Settings::class)->assertSee('går ut')->assertSee('Bekräfta säkerhetskontakten');
+
+    Livewire::test(Settings::class)->call('confirmSecurityContact', null)->assertHasNoErrors()->assertSee('security.txt gäller till');
+
+    $row = InstanceSetting::query()->findOrFail(InstanceSettings::SECURITY_CONTACT);
+    $audit = AuditLog::query()->where('action', 'hq.security_contact_confirmed')->sole();
+
+    expect($row->updated_at->greaterThan(now()->subMinute()))->toBeTrue()
+        ->and($row->value)->toBe('gammal@example.test')
+        ->and($audit->payload)->toBe([])
+        ->and(SecurityTxt::expiresSoon())->toBeFalse();
+});
+
+it('refuses to confirm a contact that does not exist, and needs the passkey step', function () {
+    $admin = User::factory()->withCompany()->create(['email' => 'hq@example.test']);
+    $this->actingAs($admin);
+
+    Livewire::test(Settings::class)->call('confirmSecurityContact', null)->assertHasErrors('passkey');
+
+    session()->put('hq.step_up', ['user_id' => $admin->id, 'at' => now()->getTimestamp()]);
+
+    Livewire::test(Settings::class)->call('confirmSecurityContact', null)->assertHasErrors('security_contact');
 });
 
 it('keeps the safe harbour to what the operator can promise itself', function () {

@@ -38,6 +38,8 @@ return [
         'org_number' => env('NONOX_COMPANY_ORG_NUMBER'),
         'privacy_email' => env('NONOX_PRIVACY_EMAIL'),
         'security_email' => env('NONOX_SECURITY_EMAIL'),
+        // The public security policy page, off until the hosted service's lawyer has read its safe-harbour text (ADR-078).
+        'security_policy_published' => (bool) env('NONOX_SECURITY_POLICY_PUBLISHED', false),
         'company_address' => env('NONOX_COMPANY_ADDRESS'),
     ],
 

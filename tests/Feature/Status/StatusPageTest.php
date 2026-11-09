@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Console\Commands\StatusHeartbeatCommand;
+use App\Console\Commands\VerifyLedgerCommand;
 use App\Domain\Status\IncidentSeverity;
 use App\Domain\Status\IncidentStatus;
 use App\Models\StatusHeartbeat;
@@ -17,6 +18,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 use Tests\Support\Bookkeeping;
 
@@ -91,11 +93,12 @@ it('marks jobs that did not run as planned, and a failed last run', function () 
 
     expect($byKey['scheduler']['state'])->toBe('DEGRADED')
         ->and($byKey['integrity']['state'])->toBe('DEGRADED')
-        ->and($byKey['integrity']['note'])->toContain('avvikelser')
+        ->and($byKey['integrity']['note'])->toContain('kunde inte genomföras')
         ->and($snapshot['overall'])->toBe('DEGRADED');
 
     $this->get('/status')->assertOk()->assertSee('Vi har en störning');
 
+    $this->travel(5)->seconds();
     Heartbeats::record(Heartbeats::SCHEDULER, true);
     Heartbeats::record(Heartbeats::INTEGRITY, true);
 
@@ -127,6 +130,8 @@ it('records heartbeats from the scheduler for the tracked commands only', functi
 
 it('knows which scheduled commands it tracks', function () {
     expect(Heartbeats::keyFor("'php' 'artisan' ledger:verify --all"))->toBe('integrity')
+        ->and(Heartbeats::keyFor("'php' 'artisan' ledger:verify"))->toBeNull()
+        ->and(Heartbeats::keyFor("'php' 'artisan' ledger:verify 556016-0680"))->toBeNull()
         ->and(Heartbeats::keyFor("'/usr/bin/php' 'artisan' peppol:sync"))->toBe('peppol')
         ->and(Heartbeats::keyFor("'php' 'artisan' bank:fetch"))->toBe('bank')
         ->and(Heartbeats::keyFor("'php' 'artisan' bank:remind-consent"))->toBeNull()
@@ -265,12 +270,140 @@ it('is cached for a minute and reads the same few rows whatever the number of in
     expect(Cache::has(StatusSnapshot::CACHE_KEY))->toBeFalse();
 });
 
-it('is linked from the public pages and the sitemap', function () {
+it('is linked from the public pages and the sitemap, and the policy only once it is published', function () {
     $this->get('/sakerhet')->assertOk()
         ->assertSee('href="'.route('status').'"', false)
-        ->assertSee('href="'.route('security.policy').'"', false);
+        ->assertDontSee('href="'.route('security.policy').'"', false);
 
-    $this->get('/sitemap.xml')->assertOk()
-        ->assertSee(route('status'), false)
-        ->assertSee(route('security.policy'), false);
+    $this->get('/sitemap.xml')->assertOk()->assertSee(route('status'), false)->assertDontSee(route('security.policy'), false);
+
+    config(['app.landing.hosted' => true, 'app.landing.security_policy_published' => true]);
+
+    $this->get('/sakerhet')->assertOk()->assertSee('href="'.route('security.policy').'"', false);
+    $this->get('/sitemap.xml')->assertOk()->assertSee(route('security.policy'), false);
+});
+
+it('records a run that the overlap mutex skipped as nothing at all', function () {
+    $event = app(Schedule::class)->command('connect:webhooks')->withoutOverlapping();
+    $event->mutex->create($event);
+
+    $event->run(app());
+
+    expect($event->skippedBecauseOverlapping)->toBeTrue()->and($event->exitCode)->toBeNull();
+
+    event(new ScheduledTaskFinished($event, 0.0));
+    event(new ScheduledTaskFailed($event, new RuntimeException('x'), 0.0));
+
+    expect(StatusHeartbeat::query()->count())->toBe(0);
+
+    $event->mutex->forget($event);
+});
+
+it('shows the integrity check as ran or not ran, and keeps what it found for HQ', function () {
+    $event = app(Schedule::class)->command('ledger:verify --all');
+    $event->exitCode = VerifyLedgerCommand::EXIT_DEVIATIONS;
+
+    event(new ScheduledTaskFinished($event, 0.1));
+    event(new ScheduledTaskFailed($event, new RuntimeException('exit 3'), 0.1));
+
+    $row = StatusHeartbeat::query()->findOrFail('integrity');
+    $integrity = collect(StatusSnapshot::get()['services'])->firstWhere('key', 'integrity');
+
+    expect($row->last_exit_code)->toBe(3)->and($row->last_completed_at)->not->toBeNull()->and($row->last_failure_at)->not->toBeNull()
+        ->and($integrity['state'])->toBe('OK')
+        ->and($integrity['note'])->toBe('Kontrollen har körts.')
+        ->and($integrity['last'])->toBe('2026-11-08 10:00');
+
+    expect(strtolower($this->get('/status')->assertOk()->getContent()))->not->toContain('avvikelse');
+
+    $this->travel(40)->hours();
+    StatusSnapshot::forget();
+
+    expect(collect(StatusSnapshot::get()['services'])->firstWhere('key', 'integrity')['state'])->toBe('DEGRADED');
+
+    $crash = app(Schedule::class)->command('ledger:verify --all');
+    $crash->exitCode = 1;
+    event(new ScheduledTaskFinished($crash, 0.1));
+    StatusSnapshot::forget();
+
+    expect(collect(StatusSnapshot::get()['services'])->firstWhere('key', 'integrity')['note'])->toBe('Senaste körningen kunde inte genomföras.');
+});
+
+it('reads the age of the oldest pending job from the queue driver for every driver that has one', function () {
+    config(['queue.default' => 'redis']);
+    $queue = Mockery::mock(Illuminate\Contracts\Queue\Queue::class);
+    $queue->shouldReceive('creationTimeOfOldestPendingJob')->andReturn(now()->subMinutes(15)->getTimestamp() + 0.5);
+    Queue::shouldReceive('connection')->with('redis')->andReturn($queue);
+
+    expect(collect(StatusSnapshot::get()['services'])->firstWhere('key', 'queue')['state'])->toBe('DEGRADED');
+});
+
+it('only calls a connection disrupted for everyone when a quarter of at least three fail', function () {
+    $share = new ReflectionMethod(StatusSnapshot::class, 'widespreadShare');
+
+    expect($share->invoke(null, 2, 2))->toBeFalse()
+        ->and($share->invoke(null, 3, 0))->toBeFalse()
+        ->and($share->invoke(null, 8, 1))->toBeFalse()
+        ->and($share->invoke(null, 8, 2))->toBeTrue()
+        ->and($share->invoke(null, 3, 3))->toBeTrue();
+});
+
+it('does not read the audit log for the public page', function () {
+    DB::enableQueryLog();
+    StatusSnapshot::get();
+    $sql = implode("\n", array_column(DB::getQueryLog(), 'query'));
+    DB::disableQueryLog();
+
+    expect($sql)->not->toContain('audit_logs');
+});
+
+it('clears the cache only when a heartbeat changes between healthy and failed', function () {
+    Heartbeats::record(Heartbeats::SCHEDULER, true);
+    StatusSnapshot::get();
+
+    Heartbeats::record(Heartbeats::SCHEDULER, true);
+    expect(Cache::has(StatusSnapshot::CACHE_KEY))->toBeTrue();
+
+    $this->travel(5)->seconds();
+    Heartbeats::record(Heartbeats::SCHEDULER, false);
+    expect(Cache::has(StatusSnapshot::CACHE_KEY))->toBeFalse();
+});
+
+it('builds the page without the cache when the cache fails, and never caches the fallback', function () {
+    Cache::shouldReceive('get')->with(StatusSnapshot::CACHE_KEY)->andThrow(new RuntimeException('cache down'));
+
+    $snapshot = StatusSnapshot::get();
+
+    expect($snapshot['overall'])->toBe('OK')->and(collect($snapshot['services'])->pluck('key')->all())->toContain('database');
+
+    $fallback = StatusSnapshot::fallback();
+
+    expect($fallback['overall'])->toBe('OUTAGE')->and($fallback['services'][1]['state'])->toBe('OUTAGE');
+});
+
+it('colours the states with variables that keep 4.5:1 against the page in both themes', function () {
+    $luminance = function (string $hex): float {
+        $channels = array_map(fn (string $part): float => hexdec($part) / 255, str_split(ltrim($hex, '#'), 2));
+        [$r, $g, $b] = array_map(fn (float $c): float => $c <= 0.03928 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4, $channels);
+
+        return 0.2126 * $r + 0.7152 * $g + 0.0722 * $b;
+    };
+    $contrast = function (string $foreground, string $background) use ($luminance): float {
+        [$light, $dark] = [max($luminance($foreground), $luminance($background)), min($luminance($foreground), $luminance($background))];
+
+        return ($light + 0.05) / ($dark + 0.05);
+    };
+
+    $html = $this->get('/status')->assertOk()->getContent();
+
+    expect($html)->toContain('--st-ok:#4ADE80')->and($html)->toContain('prefers-color-scheme:dark')
+        ->and($html)->not->toContain('style="color:#1B7F4B"');
+
+    foreach (['#4ADE80', '#FBBF24', '#FB923C', '#F87171'] as $color) {
+        expect($html)->toContain($color)->and($contrast($color, '#15171C'))->toBeGreaterThanOrEqual(4.5);
+    }
+
+    foreach (['#1B7F4B', '#8A5A00', '#B45309', '#B42318'] as $color) {
+        expect($html)->toContain($color)->and($contrast($color, '#F7F5F0'))->toBeGreaterThanOrEqual(4.5);
+    }
 });

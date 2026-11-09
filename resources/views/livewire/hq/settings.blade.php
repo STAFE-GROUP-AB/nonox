@@ -69,6 +69,12 @@
                     <input id="hq-security-contact" type="text" wire:model="securityContact" maxlength="200" autocomplete="off" class="mt-1 {{ $input }}" @error('security_contact') aria-invalid="true" aria-describedby="hq-security-contact-error" @enderror>
                     @error('security_contact') <p id="hq-security-contact-error" class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
                 </div>
+                @if($securityTxtExpires)
+                    <p class="text-sm {{ $securityTxtExpiresSoon ? 'text-accent-700 font-medium' : 'text-gray-600' }}" @if($securityTxtExpiresSoon) role="status" @endif>
+                        {{ $securityTxtExpiresSoon ? __('security.txt går ut :datum (eller har gått ut). Bekräfta kontakten för att förnya den i ett år.', ['datum' => $securityTxtExpires->setTimezone(config('app.timezone'))->format('Y-m-d')]) : __('security.txt gäller till :datum.', ['datum' => $securityTxtExpires->setTimezone(config('app.timezone'))->format('Y-m-d')]) }}
+                    </p>
+                    <button type="button" class="rounded-xl bg-white px-3 py-1.5 text-sm font-semibold text-gray-800 ring-1 ring-stone-300 hover:ring-stone-400 disabled:opacity-60" x-bind:disabled="busy" x-on:click="withPasskey((credential) => $wire.confirmSecurityContact(credential))">{{ __('Bekräfta säkerhetskontakten') }}</button>
+                @endif
             </div>
         </x-ui.card>
 

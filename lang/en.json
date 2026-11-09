@@ -10864,5 +10864,19 @@
     "Orsak funnen": "Cause identified",
     "Övervakas": "Monitoring",
     "Åtgärdad": "Resolved",
-    "Ny anteckning": "New note"
+    "Ny anteckning": "New note",
+    "Det finns ingen giltig säkerhetskontakt att bekräfta. Ange en först.": "There is no valid security contact to confirm. Enter one first.",
+    "Säkerhetskontakten är bekräftad och security.txt gäller i ett år till.": "The security contact is confirmed and security.txt is valid for another year.",
+    "security.txt går ut :datum (eller har gått ut). Bekräfta kontakten för att förnya den i ett år.": "security.txt expires on :datum (or has expired). Confirm the contact to renew it for a year.",
+    "security.txt gäller till :datum.": "security.txt is valid until :datum.",
+    "Bekräfta säkerhetskontakten": "Confirm the security contact",
+    "Automatiska kontroller": "Automatic checks",
+    "Det här är underlaget bakom statussidan. Den publika sidan visar bara att kontrollen har körts; vad den hittade står här och i loggen.": "This is the basis for the status page. The public page only shows that the check has run; what it found is shown here and in the log.",
+    "Senast körd :tid": "Last run :tid",
+    "lyckades :tid": "succeeded :tid",
+    "misslyckades :tid": "failed :tid",
+    "avslutskod :kod": "exit code :kod",
+    "Kontrollen hittade avvikelser i bokföringen. Se loggen och kör ledger:verify --all.": "The check found deviations in the books. See the log and run ledger:verify --all.",
+    "Kontrollen kraschade och kunde inte slutföras.": "The check crashed and could not finish.",
+    "Inga körningar är registrerade ännu.": "No runs are recorded yet."
 }

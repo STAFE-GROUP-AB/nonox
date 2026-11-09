@@ -11,9 +11,11 @@ use App\Domain\Status\IncidentSeverity;
 use App\Domain\Status\IncidentStatus;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Livewire\Hq\Concerns\DecidesWithPasskey;
+use App\Models\StatusHeartbeat;
 use App\Models\StatusIncident;
 use App\Support\Hq\HqAccess;
 use App\Support\Tenancy\SpansCompanies;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Component;
 
@@ -79,7 +81,15 @@ class StatusIncidents extends Component implements SpansCompanies
         $this->confirmDecision($credential);
 
         $incident = StatusIncident::query()->findOrFail((int) $this->noteFor);
-        $post($this->admin(), $incident, ['status' => $this->noteStatus, 'severity' => $this->noteSeverity, 'body' => $this->noteBody]);
+
+        try {
+            $post($this->admin(), $incident, ['status' => $this->noteStatus, 'severity' => $this->noteSeverity, 'body' => $this->noteBody]);
+        } catch (ValidationException $exception) {
+            // The note form has its own error keys, so a mistake in it is not shown under the form for a new incident.
+            $keys = ['body' => 'noteBody', 'status' => 'noteStatus', 'severity' => 'noteSeverity'];
+
+            throw ValidationException::withMessages(collect($exception->errors())->mapWithKeys(fn (array $messages, string $key): array => [$keys[$key] ?? $key => $messages])->all());
+        }
 
         $this->reset('noteFor', 'noteBody', 'noteSeverity');
         $this->toast(__('Anteckningen är publicerad.'));
@@ -103,6 +113,7 @@ class StatusIncidents extends Component implements SpansCompanies
 
         return view('livewire.hq.status-incidents', [
             'incidents' => StatusIncident::query()->with('updates')->orderByRaw('resolved_at is not null')->orderByDesc('started_at')->limit(50)->get(),
+            'heartbeats' => StatusHeartbeat::query()->orderBy('key')->get(),
             'severities' => IncidentSeverity::cases(),
             'statuses' => IncidentStatus::cases(),
             'fresh' => HqAccess::isFresh($admin),

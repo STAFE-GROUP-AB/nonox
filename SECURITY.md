@@ -74,7 +74,7 @@ If you run NONOX yourself, install updates promptly. They may contain security f
 
 ## Status page and security.txt
 
-The hosted service shows its current state and recent incidents at [nonox.app/status](https://nonox.app/status). The reporting address is also published as [`/.well-known/security.txt`](https://nonox.app/.well-known/security.txt) (RFC 9116), and the Swedish version of this policy is at [nonox.app/sakerhetspolicy](https://nonox.app/sakerhetspolicy). If you run NONOX yourself, set your own contact in HQ → Inställningar (or `NONOX_SECURITY_EMAIL`); see ADR-078.
+The hosted service shows its current state and recent incidents at [nonox.app/status](https://nonox.app/status). The reporting address is also published as [`/.well-known/security.txt`](https://nonox.app/.well-known/security.txt) (RFC 9116). A Swedish public version of this policy (`/sakerhetspolicy`) is switched off until it has been legally reviewed (`NONOX_SECURITY_POLICY_PUBLISHED`, ADR-078). If you run NONOX yourself, set your own contact in HQ → Inställningar (or `NONOX_SECURITY_EMAIL`); see ADR-078.
 
 ## Software bill of materials
 

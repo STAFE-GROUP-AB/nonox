@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Support\Landing\LandingPage;
+use App\Support\Status\SecurityPolicy;
 use App\Support\Status\SecurityTxt;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -35,6 +36,8 @@ class LegalPageController
 
     public function __invoke(string $document): View
     {
+        abort_if($document === 'securityPolicy' && ! SecurityPolicy::published(), 404);
+
         $meta = self::DOCUMENTS[$document];
 
         return view('start.legal', [
@@ -48,6 +51,7 @@ class LegalPageController
     public static function html(string $document): string
     {
         $markdown = (string) file_get_contents(base_path('docs/juridik/'.self::DOCUMENTS[$document]['file'].'.md'));
+        $markdown = $document === 'securityPolicy' ? SecurityPolicy::filter($markdown) : $markdown;
         $markdown = (string) preg_replace('/<!--.*?-->/s', '', $markdown);
 
         return Str::markdown(strtr($markdown, self::placeholders()), ['html_input' => 'escape', 'allow_unsafe_links' => false]);
@@ -86,8 +90,8 @@ class LegalPageController
             '{egendrift}' => route('legal.selfHosting'),
             '{sakerhet}' => route('security'),
             '{sakerhetskontakt}' => self::securityContact(),
-            '{sakerhetstxt}' => secure_url('/.well-known/security.txt'),
-            '{status}' => route('status'),
+            '{sakerhetstxt}' => SecurityTxt::baseUrl().'/.well-known/security.txt',
+            '{status}' => SecurityTxt::baseUrl().route('status', [], false),
             '{tillganglighet}' => route('legal.accessibility'),
         ];
     }

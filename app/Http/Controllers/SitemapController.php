@@ -9,6 +9,7 @@ use App\Support\Guide\Guide;
 use App\Support\Landing\Comparison;
 use App\Support\Landing\Industries;
 use App\Support\Manual\Manual;
+use App\Support\Status\SecurityPolicy;
 use Illuminate\Http\Response;
 
 /**
@@ -21,7 +22,7 @@ class SitemapController
     public function sitemap(): Response
     {
         $urls = config('app.landing.enabled')
-            ? [url('/'), route('waitlist'), route('migrationGuide'), route('security'), route('security.policy'), route('status'), route('changelog'), route('roadmap'), route('legal.selfHosting'), route('legal.accessibility'), route('industries'), ...array_map(fn (string $slug): string => route('industry', $slug), Industries::slugs()), ...array_map(fn (string $slug): string => route('alternative', $slug), Comparison::others()), ...DeveloperPortal::pages(), ...array_map(fn (string $page): string => DeveloperPortal::localized($page, 'en'), DeveloperPortal::pages()), ...Manual::pages(), ...Guide::pages()]
+            ? [url('/'), route('waitlist'), route('migrationGuide'), route('security'), ...(SecurityPolicy::published() ? [route('security.policy')] : []), route('status'), route('changelog'), route('roadmap'), route('legal.selfHosting'), route('legal.accessibility'), route('industries'), ...array_map(fn (string $slug): string => route('industry', $slug), Industries::slugs()), ...array_map(fn (string $slug): string => route('alternative', $slug), Comparison::others()), ...DeveloperPortal::pages(), ...array_map(fn (string $page): string => DeveloperPortal::localized($page, 'en'), DeveloperPortal::pages()), ...Manual::pages(), ...Guide::pages()]
             : [];
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n".'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";

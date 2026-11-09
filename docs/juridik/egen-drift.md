@@ -28,7 +28,7 @@ Vår [säkerhetsgranskning]({sakerhet}) gäller programmets källkod och, för o
 
 ## Säkerhetskontakt och driftstatus
 
-Din installation har en egen säkerhetspolicy på `/sakerhetspolicy`, en egen `/.well-known/security.txt` och en egen statussida på `/status`. Ange vart sårbarhetsrapporter ska skickas under HQ → Inställningar → Säkerhetskontakt, eller med miljövariabeln `NONOX_SECURITY_EMAIL`. Saknas en kontakt publiceras ingen security.txt. Statussidan visar bara det som din installation kan veta om sig själv; säkerhetskopior visas först när dina egna skript har rapporterat dem, se [säkerhetskopiering](https://github.com/STAFE-GROUP-AB/nonox/blob/main/docs/gdpr/sakerhetskopiering.md#statussidan).
+Din installation har en egen `/.well-known/security.txt` och en egen statussida på `/status`. En säkerhetspolicy på `/sakerhetspolicy` visas bara om du sätter `NONOX_SECURITY_POLICY_PUBLISHED=true` och har angett företagsnamn; den innehåller då inget löfte om skydd för den som testar. Ange vart sårbarhetsrapporter ska skickas under HQ → Inställningar → Säkerhetskontakt, eller med miljövariabeln `NONOX_SECURITY_EMAIL`. Saknas en kontakt publiceras ingen security.txt. Statussidan visar bara det som din installation kan veta om sig själv; säkerhetskopior visas först när dina egna skript har rapporterat dem, se [säkerhetskopiering](https://github.com/STAFE-GROUP-AB/nonox/blob/main/docs/gdpr/sakerhetskopiering.md#statussidan).
 
 ## Hjälp
 
