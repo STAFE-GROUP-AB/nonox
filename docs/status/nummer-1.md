@@ -624,3 +624,16 @@ Evidence: `tests/Feature/AnnualReport/K3/K3TransitionTest.php`, `tests/Feature/A
 - Redovisningskontroll, kall granskning och omkontroller; allt rättat. Hela sviten efter sammanslagning: 8 183 gröna (det enda röda var en omigrerad demodatabas i testmiljön, 80/80 gröna efter migrering), phpstan och pint rena.
 Public claim now allowed: inget nytt. Public claim still not allowed: "Årsredovisning enligt K3", "Kassaflödesanalys".
 Next package: S1-P9, S1-P10, S1-P13, S1-P14.
+
+---
+
+Package: NONOX SaaS, steg 1 (prioritet 12, ADR-080)
+Status: done (modul NONOX SaaS, `/aterkommande-intakter`; avstängd tills företaget slår på den; Stripe är steg 2)
+Evidence: `tests/Unit/Saas/*`, `tests/Feature/Saas/*`, `tests/Tenancy/SaasTenancyTest.php`.
+- MRR, ARR, månadens brygga (ny, utökning, minskning, paus, churn, återaktivering, valuta, källa av eller på), NRR/GRR, kohorter och ARPA ur avtalsfakturering och CRM-avtal. Bryggan går jämnt upp på öret per kund och månad.
+- Versioner, rättelser och stängda månader är append-only i databasen; en stängd månad rättas bara i första öppna månad. `saas:verify` räknar om stängda månader varje natt. Ingen fritext i raderna som inte kan raderas; texterna hämtas från källan när sidan visas.
+- "Gäller från" på avtalsfakturering; framtida ändringar, flyttade datum och avslut av pausade avtal versionsförs rätt. Möjlig dubbelräkning (CRM-avtal + avtalsfakturering utan koppling) visas under Källor och kan markeras som separata avtal.
+- Kall granskning (1 P1, 6 P2, 6 P3) och fyra omkontroller med nya fynd varje gång; allt rättat. Hela sviten efter sammanslagning: 8 298 gröna; de 21 röda var den kända låsningen i databasrollernas testharness, 39/39 gröna när filerna körs ensamma. phpstan och pint rena.
+Open legal-verify items: GDPR-avvägning för modulen, lagringstid för raderna, om biträdesavtalets ändamålslista ska nämna återkommande intäkter.
+Follow-ups: CRM `RenewAgreements` skriver ingen version vid förnyelse av icke-automatiska avtal; egen deadline-typ i Mina datum i stället för Bokslut; steg 2 (Stripe-import) måste göra alla externa anrop utanför ledger-låset.
+Next package: steg 2, Stripe i NONOX Connect (läsnyckel), därefter steg 3a (utbetalningar och avgifter).
