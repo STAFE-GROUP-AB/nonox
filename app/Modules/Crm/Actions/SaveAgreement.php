@@ -9,6 +9,7 @@ use App\Models\RecurringInvoice;
 use App\Models\User;
 use App\Modules\Crm\Domain\AgreementKind;
 use App\Modules\Crm\Domain\ValuePeriod;
+use App\Modules\Crm\Events\CrmAgreementChanged;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Support\CompanyMembers;
@@ -17,6 +18,7 @@ use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -149,6 +151,8 @@ final class SaveAgreement
 
             Account::query()->whereKey($agreement->account_id)->update(['last_activity_at' => now()]);
 
+            Event::dispatch(new CrmAgreementChanged($company->id, $agreement->id, $user->id, $created));
+
             return $agreement;
         }));
     }
@@ -160,12 +164,14 @@ final class SaveAgreement
 
         Validator::make(['on' => $on], ['on' => ['nullable', 'date_format:Y-m-d']], [], ['on' => __('datum')])->validate();
 
-        return CurrentCompany::run($company, function () use ($user, $company, $agreement, $on): Agreement {
+        return CurrentCompany::run($company, fn (): Agreement => DB::transaction(function () use ($user, $company, $agreement, $on): Agreement {
             $agreement->forceFill(['terminated_on' => $on])->save();
             Audit::record($on === null ? 'crm.agreement_termination_withdrawn' : 'crm.agreement_terminated', $agreement, ['agreement_id' => $agreement->id], $company, $user);
 
+            Event::dispatch(new CrmAgreementChanged($company->id, $agreement->id, $user->id, false));
+
             return $agreement;
-        });
+        }));
     }
 
     /** Attaches the agreement's own PDF (at most 10 MB), kept on the private disk with its SHA-256. */

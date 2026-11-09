@@ -49,6 +49,10 @@ Fakturan skapas i namnet på den som lade upp avtalet och med den personens beh�
 - **Pausa** – inga fakturor skapas förrän du trycker på **Aktivera**.
 - **Avsluta avtalet** och sedan **Ja, avsluta** – inga fler fakturor skapas. Ett avtal med en sista dag avslutas av sig självt när nästa fakturadatum hamnar efter den dagen.
 
+## Gäller från, med NONOX SaaS
+
+Är modulen NONOX SaaS påslagen har avtalet också fältet **Gäller från**. Där anger du från vilket datum en prisändring, en paus eller en avslutning gäller, så att [Återkommande intäkter](/manual/fakturering/aterkommande-intakter) räknar rätt. Tomt betyder i dag. Fakturorna påverkas inte av fältet.
+
 ## Listan över avtal
 
 Listan visar varje avtal med kund, hur ofta, nästa faktura, belopp och status (*Aktivt*, *Pausat* eller *Avslutat*). Överst står vad de aktiva avtalen motsvarar per månad, utan moms. På avtalets sida finns de senaste fakturorna som avtalet har skapat.

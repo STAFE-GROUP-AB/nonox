@@ -258,6 +258,9 @@ fakturering/arbetsorder-mina: { foretag: hantverkare, anvandare: theo.bjork@exam
 fakturering/arbetsorder-pa-plats: { foretag: hantverkare, anvandare: theo.bjork@example.test, enhet: mobil, rutt: workOrders.field, modell: { tabell: work_orders, dar: { title: Badrumsrenovering } } }
 fakturering/ata: { foretag: hantverkare, rutt: workOrders.show, modell: { tabell: work_orders, dar: { title: Badrumsrenovering } }, visa: 'text=ÄTA' }
 fakturering/fakturaunderlag-fran-arbetsorder: { foretag: hantverkare, rutt: workOrders.show, modell: { tabell: work_orders, dar: { title: 'Stomkomplettering, kvarteret Exemplet' } }, visa: 'text=Fakturor från arbetsordern' }
+fakturering/aterkommande-intakter: { foretag: konsult, rutt: saas.overview }
+fakturering/aterkommande-intakter-rorelser: { foretag: konsult, rutt: saas.movements }
+fakturering/stang-en-manad-i-aterkommande-intakter: { foretag: konsult, rutt: saas.months }
 fakturering/betalningsplan: { foretag: hantverkare, rutt: workOrders.show, modell: { tabell: work_orders, dar: { title: 'Altan med trappa' } }, visa: 'text=Betalningsplan' }
 bokslut/pagaende-arbeten: { foretag: hantverkare, rutt: workOrders.ongoing }
 

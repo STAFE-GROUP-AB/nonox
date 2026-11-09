@@ -8,11 +8,14 @@ use App\Actions\Invoicing\SaveCustomer;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\User;
+use App\Modules\Crm\Events\CrmAgreementChanged;
 use App\Modules\Crm\Models\Account;
+use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Support\CustomerAccounts;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
@@ -51,6 +54,11 @@ final class ConvertToCustomer
             $account->forceFill(['customer_id' => $customer->id, 'last_activity_at' => now()])->save();
 
             Audit::record('crm.converted_to_customer', $account, ['customer_id' => $customer->id, 'number' => $customer->number], $company, $user);
+
+            // The account's agreements now belong to a customer (ADR-080): tell whoever records them, ids only.
+            foreach (Agreement::query()->where('account_id', $account->id)->pluck('id') as $agreementId) {
+                Event::dispatch(new CrmAgreementChanged($company->id, (int) $agreementId, $user->id, false));
+            }
 
             return $customer;
         }));

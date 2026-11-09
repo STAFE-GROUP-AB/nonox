@@ -38,7 +38,7 @@ final class ModuleRegistry
     public const array FIRST_PARTY = [
         'agreements', 'ai', 'banking', 'boardroom', 'connect', 'crm', 'inbox',
         'inventory', 'kitchen', 'payroll', 'peppol', 'planning', 'portal', 'pos',
-        'staff_ledger', 'work_orders',
+        'saas', 'staff_ledger', 'work_orders',
     ];
 
     /** The namespace a first-party module's class lives in. */

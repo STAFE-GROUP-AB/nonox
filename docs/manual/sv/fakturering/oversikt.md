@@ -34,6 +34,8 @@ Avsnittet är för dig som säljer och fakturerar, och för dig som sköter bokf
 
 - [Offerter och order](/manual/fakturering/offerter-och-order) – från prisförslag till beställning till faktura.
 - [Avtalsfakturering](/manual/fakturering/avtalsfakturering) – samma faktura varje månad, kvartal, halvår eller år.
+- [Återkommande intäkter](/manual/fakturering/aterkommande-intakter) – MRR, ARR, churn och kohorter ur avtalen, med modulen NONOX SaaS.
+- [Stäng en månad i Återkommande intäkter](/manual/fakturering/stang-en-manad-i-aterkommande-intakter) – så att månadens siffror står fast.
 
 ## Särskilda fakturor
 
