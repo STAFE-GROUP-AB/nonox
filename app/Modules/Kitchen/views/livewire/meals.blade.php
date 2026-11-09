@@ -132,7 +132,8 @@
                                 @endforeach
                             </select>
                         </x-ui.field>
-                        <x-button type="button" wire:click="approve" wire:confirm="{{ __('Godkänn raderna och lägg till dem i lönekörningen? Lönekörningen behöver räknas om.') }}">{{ __('Godkänn i lönekörningen') }}</x-button>
+                        @php($replaces = $proposals->where('status', 'PROPOSED')->contains(fn ($proposal) => ($proposal->details['replaces'] ?? []) !== []))
+                        <x-button type="button" wire:click="approve" wire:confirm="{{ $replaces ? __('Godkänn raderna? De rader som redan godkänts för månaden tas först bort ur sin lönekörning, och en beräknad lönekörning går tillbaka till utkast och måste räknas om. Sedan läggs de nya raderna till.') : __('Godkänn raderna och lägg till dem i lönekörningen? Lönekörningen behöver räknas om.') }}">{{ __('Godkänn i lönekörningen') }}</x-button>
                         <button type="button" wire:click="reject" wire:confirm="{{ __('Avvisa de föreslagna raderna? De skickas inte till lönen.') }}" class="text-sm font-semibold text-gray-700 underline">{{ __('Avvisa') }}</button>
                     </div>
                     @if($runs->isEmpty())

@@ -209,16 +209,49 @@ describe('with payroll', function () {
 
         app(RegisterStaffMeal::class)->correct($this->owner, $this->company, StaffMeal::query()->where('employee_id', $this->cid->id)->orderBy('id')->firstOrFail());
 
+        // Proposing never touches the run (re-check P2-b).
         expect(app(MealPayroll::class)->propose($this->owner, $this->company, '2026-11'))->toBe(2)
-            ->and(PayrollInput::query()->count())->toBe(0)
-            ->and(MealPayrollProposal::query()->where('status', MealPayrollProposal::REPLACED)->count())->toBe(2);
+            ->and(PayrollInput::query()->count())->toBe(2)
+            ->and(MealPayrollProposal::query()->where('status', MealPayrollProposal::REPLACED)->count())->toBe(0);
 
         $lines = MealPayrollProposal::query()->where('status', MealPayrollProposal::PROPOSED)->orderBy('id')->get();
         expect($lines->map(fn ($line) => [$line->pay_code, $line->quantity === null ? null : (int) $line->quantity, $line->amount_ore])->all())
             ->toBe([['FORMAN_EGENBETALNING', null, 49_600], ['KOSTFORMAN_LUNCH', 4, null]])
             ->and($lines[0]->details['changed_after_approval'])->toBeTrue();
 
-        Livewire::withQueryParams(['manad' => '2026-11'])->test(StaffMealsPage::class)->assertSee('Ändrad efter godkännande');
+        Livewire::withQueryParams(['manad' => '2026-11'])->test(StaffMealsPage::class)
+            ->assertSee('Ändrad efter godkännande')
+            ->assertSee('tas först bort ur sin lönekörning');
+
+        // Approving takes the old inputs out of the run and adds the new ones.
+        app(MealPayroll::class)->approve($this->owner, $this->company, $run, [$lines[0]->id]);
+        expect(MealPayrollProposal::query()->where('status', MealPayrollProposal::REPLACED)->count())->toBe(2)
+            ->and(PayrollInput::query()->get()->map(fn ($input) => $input->amount_ore?->ore ?? (int) $input->quantity)->sort()->values()->all())->toBe([4, 49_600]);
+    });
+
+    it('approves a lunch added after the month was paid into the next open run, marked with its month (re-check P2-a)', function () {
+        lunches($this->cid, 2, '');
+        $november = app(PayrollRuns::class)->create($this->owner, $this->company, '2026-11');
+        app(MealPayroll::class)->propose($this->owner, $this->company, '2026-11');
+        app(MealPayroll::class)->approve($this->owner, $this->company, $november, MealPayrollProposal::query()->pluck('id')->all());
+        PayrollRun::query()->whereKey($november->id)->update(['status' => 'PAID']);
+
+        lunches($this->cid, 1, '');
+        app(MealPayroll::class)->propose($this->owner, $this->company, '2026-11');
+        $line = MealPayrollProposal::query()->where('status', MealPayrollProposal::PROPOSED)->sole();
+        expect($line->period)->toBe('2026-11');
+
+        $december = app(PayrollRuns::class)->create($this->owner, $this->company, '2026-12');
+        app(MealPayroll::class)->approve($this->owner, $this->company, $december, [$line->id]);
+
+        $input = PayrollInput::query()->where('payroll_run_id', $december->id)->sole();
+        expect($input->note)->toBe('Personalmat (Kök), avser 2026-11')->and((int) $input->quantity)->toBe(1)
+            ->and($line->fresh()->period)->toBe('2026-11');
+
+        app(PayrollRuns::class)->calculate($this->owner, $december->fresh());
+        $lunch = Payslip::query()->where('payroll_run_id', $december->id)->where('employee_id', $this->cid->id)->with('lines')->sole()->lines
+            ->first(fn ($payslipLine) => PayCode::query()->find($payslipLine->pay_code_id)?->code === 'KOSTFORMAN_LUNCH');
+        expect($lunch?->amount_ore->ore)->toBe(12_400);
     });
 
     it('proposes only the addition once the run is closed, and shows a reduction it cannot send (review P2.3)', function () {

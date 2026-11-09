@@ -42,13 +42,7 @@ final class ScannerData
         $canCount = $can->allows('count', [StockMovement::class, $company]);
         $extensions = app(ScannerExtensions::class)->allowed($user, $company);
 
-        // A user who reaches Skanna only through another module (Kökspersonal) sees only that module's places.
-        $places = null;
-
-        if (! $can->allows('viewAny', [StockMovement::class, $company])) {
-            $limits = array_map(fn (ScannerExtension $extension): ?array => $extension->locationIds($user, $company), array_values($extensions));
-            $places = in_array(null, $limits, true) ? null : array_values(array_unique(array_merge(...$limits)));
-        }
+        $places = self::places($user, $company);
 
         $locations = StockLocation::query()->where('is_active', true)->when($places !== null, fn ($query) => $query->whereKey($places ?? []))->orderBy('sort_key')->get(['id', 'full_code', 'name', 'sort_key']);
 
@@ -115,6 +109,25 @@ final class ScannerData
             'counts' => $counts->map(fn (StockCount $count): array => self::count($count))->values()->all(),
             'generated_at' => now()->toIso8601String(),
         ];
+    }
+
+    /**
+     * The locations a user may see in Skanna, or null for all: a user who
+     * reaches Skanna only through another module (Kökspersonal) sees only
+     * that module's places. The data, the lookup and the stock per article
+     * all use it.
+     *
+     * @return ?list<int>
+     */
+    public static function places(User $user, Company $company): ?array
+    {
+        if (Gate::forUser($user)->allows('viewAny', [StockMovement::class, $company])) {
+            return null;
+        }
+
+        $limits = array_map(fn (ScannerExtension $extension): ?array => $extension->locationIds($user, $company), array_values(app(ScannerExtensions::class)->allowed($user, $company)));
+
+        return in_array(null, $limits, true) ? null : array_values(array_unique(array_merge(...$limits)));
     }
 
     /** @return array<string, mixed> */

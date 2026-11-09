@@ -118,10 +118,12 @@ class ScannerController
         self::authorizeUse($user, $company);
 
         $found = ScanCode::resolve((string) $request->query('kod', ''));
+        $places = ScannerData::places($user, $company);
 
         if ($found['type'] === 'article') {
             $article = $found['article']->load(['images' => fn ($query) => $query->orderBy('position')->orderBy('id')]);
             $levels = StockLevel::query()->where('article_id', $article->id)->where('quantity_milli', '<>', 0)
+                ->when($places !== null, fn ($query) => $query->whereIn('location_id', $places ?? []))
                 ->with('location:id,full_code,name,sort_key')->get()
                 ->sortBy(fn (StockLevel $level): string => $level->location->sort_key ?? '');
 
@@ -137,7 +139,7 @@ class ScannerController
             ]);
         }
 
-        if ($found['type'] === 'location') {
+        if ($found['type'] === 'location' && ($places === null || in_array($found['location']->id, $places, true))) {
             $location = $found['location'];
             $levels = StockLevel::query()->where('location_id', $location->id)->where('quantity_milli', '<>', 0)
                 ->with('article:id,number,name,unit')->get()

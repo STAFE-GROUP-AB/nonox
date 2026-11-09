@@ -122,6 +122,20 @@ it('gives Kökspersonal only the kitchen\'s places in the scanner, and no receip
         ->and($data['receipts'])->toBe([])->and($data['pick_lists'])->toBe([])->and($data['counts'])->toBe([]);
 });
 
+it('limits the scanner lookup to the kitchen\'s places for Kökspersonal (re-check P3)', function () {
+    Inventory::receive($this->company, $this->owner, $this->fx['articles']['lok'], $this->places['bin2'], '3', '15');
+    app(ModuleManager::class)->updateSettings(KitchenModule::KEY, $this->company, $this->owner, ['location_id' => $this->places['bin1']->id]);
+    $staff = Bookkeeping::member($this->company, KitchenModule::ROLE);
+    $this->company->unsetRelation('users');
+    $this->actingAs($staff);
+
+    $article = $this->getJson(route('inventory.scanner.lookup', ['kod' => $this->fx['articles']['lok']->number]))->assertOk()->json();
+    expect(array_column($article['stock'], 'location_id'))->toBe([$this->places['bin1']->id]);
+
+    $this->getJson(route('inventory.scanner.lookup', ['kod' => 'HL-A-02']))->assertNotFound();
+    $this->getJson(route('inventory.scanner.lookup', ['kod' => 'HL-A-01']))->assertOk();
+});
+
 it('shows costs and margins to those who manage the kitchen', function () {
     $this->get(route('kitchen.recipes.show', $this->fx['articles']['dish']->id))->assertOk()
         ->assertSee('Kalkyl – inte lagervärdering')

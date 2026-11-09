@@ -11149,5 +11149,10 @@
     "Ändrad efter godkännande": "Changed after approval",
     "Minskning som inte kan skickas, rätta i nästa lönekörning: :code :value": "Reduction that cannot be sent, correct it in the next payroll run: :code :value",
     "Ersatt": "Replaced",
-    "Receptet ska gälla bakåt i tiden. Teoretisk förbrukning och avvikelser för redan räknade perioder ändras.": "The recipe should apply retroactively. Theoretical consumption and variances for periods already counted change."
+    "Receptet ska gälla bakåt i tiden. Teoretisk förbrukning och avvikelser för redan räknade perioder ändras.": "The recipe should apply retroactively. Theoretical consumption and variances for periods already counted change.",
+    "Lönekörningen är redan attesterad. Välj en öppen lönekörning.": "The payroll run is already approved. Choose an open payroll run.",
+    "Lönekörningen för :period har attesterats sedan förslaget gjordes. Skicka kostförmånerna till lönen på nytt.": "The payroll run for :period has been approved since the proposal was made. Send the meal benefits to payroll again.",
+    "Raden gäller :period. Välj lönekörningen för den månaden, eller en senare om den månadens lön redan är attesterad.": "The line is for :period. Choose that month's payroll run, or a later one if that month's pay is already approved.",
+    "Personalmat (Kök), avser :period": "Staff meals (Kitchen), for :period",
+    "Godkänn raderna? De rader som redan godkänts för månaden tas först bort ur sin lönekörning, och en beräknad lönekörning går tillbaka till utkast och måste räknas om. Sedan läggs de nya raderna till.": "Approve the lines? The lines already approved for the month are first removed from their payroll run, and a calculated payroll run goes back to draft and must be calculated again. Then the new lines are added."
 }

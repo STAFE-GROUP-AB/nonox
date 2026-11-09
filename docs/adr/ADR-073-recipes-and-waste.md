@@ -490,3 +490,17 @@ from the decision above, it says so.
   movements dated in a counted or valued period but posted later are listed as "bokförd i
   efterhand" (left out of the sums when posted after the closing count); an employee's month
   is approved as a unit; and the count days are judged by the time each count was completed.
+
+### Re-check fixes (2026-11-09)
+
+- **P2-a [Lead]:** a line added after its month's run is approved or paid is approved into a
+  later open regular run; the payroll input says "Personalmat (Kök), avser :period" and the meal
+  line keeps its own period.
+- **P2-b [Lead]:** proposing never touches a run. Approving a changed month removes the
+  previously approved inputs from their run first (refused if that run has since been approved),
+  and the confirmation dialog says that a calculated run goes back to draft.
+- **P3:** the scanner's lookup uses the same location limit as its data for Kökspersonal; a
+  structure row cannot be deleted except by the cascade from its version or company (model guard
+  and a BEFORE DELETE trigger allowing only `pg_trigger_depth() > 1`); ADR-071 notes that
+  BOM saves need their own backdating guard; the donation value reads the cost once per article
+  and render.

@@ -34,6 +34,9 @@ class WastePage extends Component
     /** @var array<string, mixed> */
     public array $form = [];
 
+    /** @var array<int, ?int> cost per unit by article, for this render only */
+    protected array $unitCosts = [];
+
     /** @var array<string, string> */
     public array $plate = ['kg' => '', 'date' => '', 'note' => ''];
 
@@ -104,7 +107,13 @@ class WastePage extends Component
             return null;
         }
 
-        $unit = $book->unitCost((int) $this->form['article_id'], UnitCosts::at($this->company(), $today), $today)['ore'];
+        $articleId = (int) $this->form['article_id'];
+        // Once per article and render: the stock valuation behind it reads every movement.
+        if (! array_key_exists($articleId, $this->unitCosts)) {
+            $this->unitCosts[$articleId] = $book->unitCost($articleId, UnitCosts::at($this->company(), $today), $today)['ore'];
+        }
+
+        $unit = $this->unitCosts[$articleId];
 
         return $unit === null ? null : Quantity::value($quantity, $unit);
     }

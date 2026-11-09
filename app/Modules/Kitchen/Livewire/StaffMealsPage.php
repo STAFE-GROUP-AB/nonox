@@ -137,7 +137,8 @@ class StaffMealsPage extends Component
             'summary' => $summary,
             'entries' => StaffMeal::query()->with(['article:id,name', 'employee:id,first_name,last_name', 'creator:id,name', 'correction:id,corrects_meal_id'])->orderByDesc('served_on')->orderByDesc('id')->paginate(25),
             'proposals' => $canPayroll ? MealPayrollProposal::query()->with('employee:id,first_name,last_name')->where('period', $this->period)->orderBy('employee_id')->orderBy('id')->get() : collect(),
-            'runs' => $canPayroll ? PayrollRun::query()->where('period', $this->period)->orderByDesc('id')->get(['id', 'period', 'status', 'payment_date']) : collect(),
+            // The month's own run, and later open runs for additions after the month's pay was approved.
+            'runs' => $canPayroll ? PayrollRun::query()->where(fn ($query) => $query->where('period', $this->period)->orWhere(fn ($later) => $later->where('period', '>', $this->period)->where('type', 'REGULAR')->whereIn('status', [PayrollRun::DRAFT, PayrollRun::CALCULATED])))->orderBy('period')->orderByDesc('id')->get(['id', 'period', 'status', 'payment_date']) : collect(),
         ]);
     }
 

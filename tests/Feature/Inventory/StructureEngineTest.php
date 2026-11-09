@@ -191,6 +191,18 @@ it('ignores an operation row when costing and exploding', function () {
     expect($cost->batchCostOre)->toBe(10_840)->and($cost->rows)->toHaveCount(2);
 });
 
+it('deletes a structure row only together with its version (re-check P3)', function () {
+    $row = $this->fx['pasta']->rows[0];
+
+    expect(fn () => $row->delete())->toThrow(LogicException::class);
+    expect(fn () => DB::transaction(fn () => DB::table('bom_rows')->where('id', $row->id)->delete()))->toThrow(QueryException::class);
+    expect(fn () => DB::transaction(fn () => DB::statement('DELETE FROM bom_rows WHERE id = ?', [$row->id])))->toThrow(QueryException::class);
+
+    // The cascade from its version goes through.
+    DB::table('bills_of_materials')->where('id', $this->fx['pasta']->id)->delete();
+    expect(DB::table('bom_rows')->where('bill_of_materials_id', $this->fx['pasta']->id)->count())->toBe(0);
+});
+
 it('manages an article\'s unit conversions from the article form (review P3.4)', function () {
     $vodka = Kitchen::ingredient($this->company, $this->owner, 'D-2', 'Gin 70 cl', 'fl', '250,00');
 

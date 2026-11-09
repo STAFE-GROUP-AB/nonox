@@ -71,8 +71,9 @@ class MealPayroll
                     }
 
                     $changed[] = $employeeId;
-                    $lines = $this->afterApproval($user, $done, $target, $sent);
+                    [$lines, $replaces] = self::afterApproval($done, $target, $sent);
                     $details['changed_after_approval'] = true;
+                    $details['replaces'] = $replaces;
                     $details['not_sent'] = array_values(array_filter($lines, fn (array $line): bool => ($line['quantity'] ?? 0) < 0 || ($line['amount_ore'] ?? 0) < 0));
                     $lines = array_values(array_filter($lines, fn (array $line): bool => ($line['quantity'] ?? 0) >= 0 && ($line['amount_ore'] ?? 0) >= 0 && ($line['quantity'] ?? 0) + ($line['amount_ore'] ?? 0) > 0));
 
@@ -104,37 +105,27 @@ class MealPayroll
     }
 
     /**
-     * An employee whose meals changed after the lines were approved. While
-     * the run is still open (draft or calculated) the approved inputs are
-     * taken out of it and the whole month is proposed again, so a
-     * correction's own payment is taken back too. Once the run is closed,
-     * only what is still to be added is proposed; a reduction is returned
-     * with a negative figure and shown, for the administrator to correct in
-     * the next run.
+     * An employee whose meals changed after the lines were approved.
+     * Proposing never touches a run (Lead, re-check P2-b). While the run
+     * that holds the approved lines is still open (draft or calculated) the
+     * whole month is proposed again, and approving it takes the old inputs
+     * out of that run first, so a correction's own payment is taken back
+     * too. Once that run is approved or paid, only the difference is
+     * proposed: an addition goes into the next open run (re-check P2-a), a
+     * reduction is returned with a negative figure and shown, for the
+     * administrator to correct by hand.
      *
      * @param  Collection<int, MealPayrollProposal>  $done
      * @param  array<string, array{quantity: int, amount_ore: int}>  $target
      * @param  array<string, array{quantity: int, amount_ore: int}>  $sent
-     * @return list<array{pay_code: string, quantity: ?int, amount_ore: ?int}>
+     * @return array{0: list<array{pay_code: string, quantity: ?int, amount_ore: ?int}>, 1: list<int>} the lines, and the approved lines they replace
      */
-    private function afterApproval(User $user, Collection $done, array $target, array $sent): array
+    private static function afterApproval(Collection $done, array $target, array $sent): array
     {
-        $runs = PayrollRun::query()->whereKey($done->pluck('payroll_run_id')->filter()->unique()->all())->lockForUpdate()->get()->keyBy('id');
-        $open = $runs->isNotEmpty() && $runs->every(fn (PayrollRun $run): bool => in_array($run->status, [PayrollRun::DRAFT, PayrollRun::CALCULATED], true));
+        $runs = PayrollRun::query()->whereKey($done->pluck('payroll_run_id')->filter()->unique()->all())->get();
 
-        if ($open) {
-            foreach ($done as $line) {
-                $input = $line->payroll_input_id === null ? null : PayrollInput::query()->find($line->payroll_input_id);
-                $run = $runs->get((int) $line->payroll_run_id);
-
-                if ($input instanceof PayrollInput && $run instanceof PayrollRun) {
-                    $this->runs->removeInput($user, $run, $input);
-                }
-
-                $line->forceFill(['status' => MealPayrollProposal::REPLACED, 'payroll_input_id' => null])->save();
-            }
-
-            return self::lines($target);
+        if ($runs->isNotEmpty() && $runs->every(fn (PayrollRun $run): bool => self::isOpen($run))) {
+            return [self::lines($target), array_values(array_map(intval(...), $done->pluck('id')->all()))];
         }
 
         $difference = [];
@@ -146,7 +137,12 @@ class MealPayroll
             ];
         }
 
-        return self::lines($difference);
+        return [self::lines($difference), []];
+    }
+
+    private static function isOpen(PayrollRun $run): bool
+    {
+        return in_array($run->status, [PayrollRun::DRAFT, PayrollRun::CALCULATED], true);
     }
 
     /**
@@ -207,9 +203,36 @@ class MealPayroll
             $lines = MealPayrollProposal::query()->whereIn('employee_id', $picked->pluck('employee_id')->unique()->all())->whereIn('period', $picked->pluck('period')->unique()->all())->where('status', MealPayrollProposal::PROPOSED)->lockForUpdate()->orderBy('id')->get();
             $codes = PayCode::query()->where('is_active', true)->pluck('id', 'code');
 
+            if (! self::isOpen($run)) {
+                throw ValidationException::withMessages(['run' => __('Lönekörningen är redan attesterad. Välj en öppen lönekörning.')]);
+            }
+
+            // Approving replaces what was approved before for a changed month: the old inputs leave their (still open) run first.
+            $replaced = MealPayrollProposal::query()->whereKey($lines->flatMap(fn (MealPayrollProposal $line): array => (array) ($line->details['replaces'] ?? []))->unique()->values()->all())
+                ->where('status', MealPayrollProposal::APPROVED)->lockForUpdate()->get();
+
+            foreach ($replaced as $old) {
+                $oldRun = PayrollRun::query()->lockForUpdate()->find($old->payroll_run_id);
+
+                if (! $oldRun instanceof PayrollRun || ! self::isOpen($oldRun)) {
+                    throw ValidationException::withMessages(['run' => __('Lönekörningen för :period har attesterats sedan förslaget gjordes. Skicka kostförmånerna till lönen på nytt.', ['period' => $old->period])]);
+                }
+
+                $input = $old->payroll_input_id === null ? null : PayrollInput::query()->find($old->payroll_input_id);
+
+                if ($input instanceof PayrollInput) {
+                    $this->runs->removeInput($user, $oldRun, $input);
+                }
+
+                $old->forceFill(['status' => MealPayrollProposal::REPLACED, 'payroll_input_id' => null])->save();
+            }
+
             foreach ($lines as $line) {
-                if ($line->period !== $run->period) {
-                    throw ValidationException::withMessages(['run' => __('Raden gäller :period. Välj lönekörningen för den månaden.', ['period' => $line->period])]);
+                $late = $line->period !== $run->period;
+
+                // A line added after its own month's run was approved or paid goes into a later open regular run (Lead, re-check P2-a).
+                if ($late && ! ($run->type === 'REGULAR' && $run->period > $line->period && self::periodClosed($line->period))) {
+                    throw ValidationException::withMessages(['run' => __('Raden gäller :period. Välj lönekörningen för den månaden, eller en senare om den månadens lön redan är attesterad.', ['period' => $line->period])]);
                 }
 
                 if ($line->quantity === null && (int) $line->amount_ore === 0) {
@@ -224,16 +247,22 @@ class MealPayroll
                     'pay_code_id' => $code,
                     'quantity' => $line->quantity === null ? null : rtrim(rtrim($line->quantity, '0'), '.'),
                     'amount' => $line->amount_ore === null ? null : sprintf('%d.%02d', intdiv($line->amount_ore, 100), $line->amount_ore % 100),
-                    'note' => __('Personalmat :period (Kök)', ['period' => $line->period]),
+                    'note' => $late ? __('Personalmat (Kök), avser :period', ['period' => $line->period]) : __('Personalmat :period (Kök)', ['period' => $line->period]),
                 ]);
 
                 $line->forceFill(['status' => MealPayrollProposal::APPROVED, 'payroll_run_id' => $run->id, 'payroll_input_id' => $input->id, 'decided_by' => $user->id, 'decided_at' => now()])->save();
             }
 
-            Audit::record('kitchen.meal_benefits_approved', $run, ['proposal_ids' => $lines->pluck('id')->all()], $company, $user);
+            Audit::record('kitchen.meal_benefits_approved', $run, ['proposal_ids' => $lines->pluck('id')->all(), 'replaced_ids' => $replaced->pluck('id')->all()], $company, $user);
 
             return $lines->count();
         }));
+    }
+
+    /** Whether the month's regular run is approved, paid or posted: later additions go into a later run. */
+    private static function periodClosed(string $period): bool
+    {
+        return PayrollRun::query()->where('period', $period)->where('type', 'REGULAR')->whereIn('status', [PayrollRun::APPROVED, PayrollRun::PAID, PayrollRun::POSTED])->exists();
     }
 
     /** @param  list<int>  $ids */

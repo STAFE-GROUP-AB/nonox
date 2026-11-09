@@ -65,6 +65,10 @@ class BomRow extends Model
         static::updating(function (): never {
             throw new LogicException('A structure row cannot be changed; save a new version.');
         });
+
+        static::deleting(function (): never {
+            throw new LogicException('A structure row cannot be deleted; it goes only with its version.');
+        });
     }
 
     /** @return BelongsTo<Article, $this> */
