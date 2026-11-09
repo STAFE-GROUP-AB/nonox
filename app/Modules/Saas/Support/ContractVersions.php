@@ -461,7 +461,7 @@ final class ContractVersions
 
         return $previous->cause === VersionCause::Created
             && $previous->source_type === SourceType::RecurringInvoice
-            && ! Invoice::query()->where('recurring_invoice_id', $previous->source_id)->where('status', '!=', 'DRAFT')->exists();
+            && ! Invoice::query()->where('recurring_invoice_id', $previous->source_id)->exists();
     }
 
     /**
