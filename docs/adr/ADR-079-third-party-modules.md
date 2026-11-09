@@ -927,7 +927,7 @@ roles inside the test transaction.
 ### Not done, and open
 
 - The hosted service has not been switched. `docs/drift/databasroller.md` is the runbook
-  (expected window 30 minutes, database changes under a minute, rollback with `REASSIGN
+  (expected window 45 minutes, database changes under a minute, rollback with `REASSIGN
   OWNED BY nonox_owner TO <old user>` and the saved `.env`). Before it: a read-only check of
   how the production role was created (step 1 of the runbook).
 - `.env.example` still says `DB_USERNAME=postgres` (§6.5 wanted that changed): CI copies the
@@ -937,3 +937,67 @@ roles inside the test transaction.
   would fail with `permission denied` after the switch; the runbook says to watch the log
   for it and how to add the privilege or roll back.
 - Anchoring the hash chain outside the database (§6.4) is not part of this step.
+
+### Review of step 2 (2026-11-09) and what changed
+
+A cold review found two P1, five P2 and eight P3 problems; all are fixed on the branch.
+
+- **The owner password was readable by the running code (P1).** The first runbook put
+  `DB_MIGRATION_PASSWORD` in `.env`, and `config:cache` copied it into the cached config,
+  so any code in PHP-FPM could open `pgsql_owner`. Now, with the roles on, `pgsql_owner`
+  never falls back to `DB_PASSWORD`, honours `DB_MIGRATION_URL`/`DB_MIGRATION_HOST`/`_PORT`,
+  and the hosted service's owner has no password at all: it logs in by peer authentication
+  as the Unix user `nonox-migrate` (a `pg_ident` map to `nonox_owner`), and the deploy
+  script runs `sudo -u nonox-migrate /usr/local/bin/nonox-migrate` (in
+  `database/roles/nonox-migrate.sh`) before `config:cache`, under a sudoers rule for that
+  script only. Self-hosters without peer authentication keep the password in a file the
+  PHP-FPM user cannot read and pass it to the migrate command's environment only.
+  `nonox:doctor` warns when the running config holds an owner password (field or URL).
+- **Temporary tables could fool the triggers (P1, also in single-user mode).** The trigger
+  functions are `SECURITY INVOKER` with unqualified table names and `pg_temp` was searched
+  first, so a temporary `vouchers` or `voucher_rows` shadowed the real table: the rows of
+  a posted voucher could be doubled and an unbalanced one-row voucher posted. Fixed
+  independently of the roles (shippable first): every trigger function is pinned to
+  `search_path = public, pg_temp` by migration `2026_12_31_100000`, re-pinned after every
+  migrate of the main database (`AfterMigrate`, and in `grants.sql`), and
+  `TriggerSearchPathTest` fails for any trigger function without it and reproduces both
+  attacks. `roles.sql` also revokes `TEMPORARY` on the database from `PUBLIC` and the app
+  and reader roles.
+- **Issued invoices could be set back to a draft (P2, also in single-user mode).** The
+  protect triggers on `invoices` and `supplier_invoices` excluded `status` from the
+  comparison, so `status = 'DRAFT'` reopened them for editing and deletion. Migration
+  `2026_12_31_100100` refuses every move back to `DRAFT`; forward transitions are
+  unchanged. `payroll_runs` already refused reopening (its test now names both `DRAFT`
+  and `CALCULATED`).
+- **The staff-ledger prune flag was settable by anyone (P2).** The trigger now also requires
+  both the entry time and the received time to be past retention by the database clock,
+  from the fiscal year containing the date (18 months assumed without one).
+- **`crm_signing_events` had DELETE it did not need (P2).** Now `AppendOnly`; a BEFORE
+  DELETE trigger lets only the cascade from the signing request (or the company) through.
+- **Runbook (P2):** the old user gets `NOLOGIN` after verification, the `.env` copy is kept
+  as root outside the web user's reach and shredded after the rollback window, backups use
+  `nonox_readonly` from their own credentials file, the rollback gives the old user
+  `CREATE` on the schema back, and step 1 checks `DB_URL`.
+- **Demo database (P2).** `DatabaseRoles::approveConnectionsUsing()` lets a later demo
+  branch approve its own connection for schema commands; grants and pinning apply only
+  after a migrate of the main owner connection. The demo database has its own user with no
+  `CONNECT` on the main database.
+- **P3:** the test harness takes an advisory lock before creating roles and `roles.sql`
+  alters a role only when an attribute differs; `nonox:doctor` uses `MEMBER`, checks TEMP,
+  `lo_create` (revoked from `PUBLIC` in `roles.sql`), membership of
+  `pg_execute_server_program`, `pg_write_server_files`, `pg_read_server_files` and
+  `pg_write_all_data`, and column-level grants; the grants are re-applied after a migrate
+  that failed (`CommandFinished` listener, and the `nonox-migrate` script).
+
+**Still code-level only, proposed as a follow-up (not built here):** the app role can write
+`fiscal_years`, `teams.locked_until_date` and `voucher_number_counters`. Period locks,
+closed fiscal years and gapless numbering are therefore enforced by the code (and partly by
+the posting trigger's checks of the voucher itself), not by the database against a role
+that writes those rows directly. Proposal: triggers that refuse moving
+`locked_until_date` backwards, reopening a `CLOSED` fiscal year without a recorded
+reason, and decreasing `voucher_number_counters.next_number`, plus a check in the posting
+trigger that the voucher's date is after the lock and its number is the counter's.
+
+**What the roles do not cover:** code that can write NONOX's own files can change a
+migration and have it run as the owner at the next deploy. The runbook says to keep the
+code read-only for the PHP-FPM user where possible.
