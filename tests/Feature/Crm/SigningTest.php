@@ -297,6 +297,17 @@ it('protects the evidence: a signed request cannot be changed, and events are ap
     expect(DB::table('crm_signing_events')->where('signing_request_id', $request->id)->count())->toBeGreaterThan(0);
 });
 
+it('never deletes a signed request, so its evidence cannot go by cascade either', function () {
+    [$request, $token] = sendQuote($this);
+    $this->post("/signera/{$token}", signInput($request))->assertOk();
+
+    expect(fn () => DB::transaction(fn () => DB::table('crm_signing_requests')->where('id', $request->id)->delete()))
+        ->toThrow(QueryException::class, 'cannot be deleted');
+
+    expect(DB::table('crm_signing_requests')->where('id', $request->id)->exists())->toBeTrue()
+        ->and(DB::table('crm_signing_events')->where('signing_request_id', $request->id)->count())->toBeGreaterThan(0);
+});
+
 it('removes the events together with their signing request', function () {
     [$request] = sendQuote($this);
     expect(DB::table('crm_signing_events')->where('signing_request_id', $request->id)->count())->toBeGreaterThan(0);

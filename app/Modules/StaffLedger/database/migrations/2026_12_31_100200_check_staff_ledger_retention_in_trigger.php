@@ -15,7 +15,11 @@ use Illuminate\Support\Facades\DB;
  * skatteförfarandeförordningen), checked for both the time of the entry and the
  * time it was received. Without a fiscal year covering the date the check
  * assumes the longest one the law allows, 18 months from the date (BFL 3 kap.
- * 3 §), so it never lets an entry go earlier than PruneStaffLedger would.
+ * 3 §). That fallback is looser than PruneStaffLedger, which keeps an entry
+ * whose fiscal year it cannot establish: the trigger is a floor against
+ * deleting young entries, not a copy of the prune's rule. The fiscal years
+ * themselves are writable by the app role, so a forged fiscal year could
+ * shorten the floor by up to about a year (ADR-079, known limit).
  * TODO(legal-verify): same reading as PruneStaffLedger (AI-utredning 2026-11-02).
  */
 return new class extends Migration

@@ -1001,3 +1001,31 @@ trigger that the voucher's date is after the lock and its number is the counter'
 **What the roles do not cover:** code that can write NONOX's own files can change a
 migration and have it run as the owner at the next deploy. The runbook says to keep the
 code read-only for the PHP-FPM user where possible.
+
+### Re-check of the review fixes (2026-11-09)
+
+- **The owner protection needs the web user and the deploy user apart (P1).** While PHP-FPM
+  ran as `forge`, compromised code could write a migration or a `bootstrap/cache` file and
+  call `sudo -u nonox-migrate` itself. The runbook now has a prerequisite step 0 [Lead]:
+  PHP-FPM, the queue and the scheduler run as `nonox-web`, which cannot write the code or
+  `.env` and has no sudo rule; `forge` only deploys and holds the sudo rule. Forge's own
+  user isolation (one user that both runs and deploys) is not enough; the owner decides how
+  it is arranged at switch time. `nonox-migrate.sh` refuses a release that `nonox-web` can
+  write outside `storage/` and `bootstrap/cache/`, escapes the dot in its path pattern, and
+  points `APP_CONFIG_CACHE`, `APP_SERVICES_CACHE`, `APP_PACKAGES_CACHE`, `APP_EVENTS_CACHE`
+  and `APP_ROUTES_CACHE` at a fresh `mktemp -d` owned by `nonox-migrate`, so nothing the web
+  user can write is loaded as the owner (which also makes an old cached config harmless).
+- **A signed request could be deleted with its evidence (P2).** A BEFORE DELETE trigger on
+  `crm_signing_requests` refuses `SIGNED` always and `DECLINED` until twelve months after
+  `declined_at` by the database clock, which is what `PruneSigningLinks` (nattjobb) and the
+  CRM reminders prune; pending, expired and revoked requests are deleted as before. The
+  cascade from deleting the company passes.
+- **Known limit: `fiscal_years` is writable by the app role (P3).** The staff-ledger trigger
+  counts retention from the fiscal year containing an entry, so a role that writes a forged
+  fiscal year could shorten the floor by up to about a year; without a fiscal year the
+  trigger assumes 18 months, which is looser than `PruneStaffLedger` (it keeps such
+  entries). Both belong with the proposed follow-up triggers on `fiscal_years`.
+- **Harness (P3):** the advisory lock is per database; the harness now skips the ownership
+  transfer when `nonox_owner` already owns everything, so it locks no tables on a database
+  that is switched over. Processes on different databases of one cluster can still wait on
+  each other's role creation, which is a wait, not a deadlock.

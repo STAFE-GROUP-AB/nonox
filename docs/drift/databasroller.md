@@ -2,8 +2,7 @@
 
 Körbok för att flytta en NONOX-databas från en enda databasanvändare till tre roller
 ([ADR-079](../adr/ADR-079-third-party-modules.md) §6, etapp 2). Skriven för den driftade
-tjänsten (Forge, PHP-FPM kör som `forge`), men samma steg gäller en egen installation,
-se sist.
+tjänsten (Forge), men samma steg gäller en egen installation, se sist.
 
 **Varför.** Den användare som NONOX kör som äger i dag tabellerna. Den kan då stänga av,
 ta bort eller ersätta triggerna som gör en bokförd verifikation oföränderlig, ändra den
@@ -24,16 +23,50 @@ läsa den: ägaren loggar in utan lösenord, som en egen Unix-användare.
 **Underhållsfönster.** Räkna med **45 minuter**. Själva ändringarna i databasen tar under
 en minut (ägarbytet låser varje tabell ett ögonblick), resten är förberedelser på
 servern, säkerhetskopia, kontroller och en testinloggning. Sajten är i underhållsläge
-under steg 4–8 och kön och schemaläggaren står stilla. Välj en tid utanför kontorstid
+under steg 4–8 och kön och schemaläggaren står stilla. Steg 0 (egen webbanvändare) görs före, som en egen ändring med eget fönster. Välj en tid utanför kontorstid
 och inte natten då säkerhetskopian och `ledger:verify` körs (03.15–03.30).
 
 **Förutsättningar.** NONOX-versionen som innehåller `database/roles/` och kommandot
-`nonox:doctor` är driftsatt. Du har sudo på servern och kan köra `sudo -u postgres psql`.
+`nonox:doctor` är driftsatt. Programmet körs som en annan Unix-användare än den som
+driftsätter (steg 0). Du har sudo på servern och kan köra `sudo -u postgres psql`.
 Inget lösenord skrivs i en fil i repot eller i den här körboken.
 
 Exemplen förutsätter att databasen heter `nonox`, att den nuvarande användaren heter
 `nonox`, PostgreSQL 16 med konfigurationen i `/etc/postgresql/16/main/` och sajten i
 `/home/forge/nonox.app`. Byt där det behövs.
+
+## 0. Krav: programmet körs inte som den som driftsätter
+
+**Utan det här steget skyddar ägarrollen ingenting.** Kan koden som körs (PHP-FPM, kön,
+schemaläggaren) skriva i programmets filer eller i `.env`, kan den skriva en migrering
+eller en cachefil och vänta på nästa driftsättning, som kör den som ägaren. Och kör den
+som samma användare som har sudo-regeln i steg 2 kan den köra migreringen själv.
+
+Därför:
+
+- PHP-FPM-poolen, köarbetaren och schemaläggaren för sajten körs som en egen användare,
+  här `nonox-web`. Den äger bara `storage/` (den delade lagringen) och
+  `bootstrap/cache/`, och kan läsa men inte skriva koden och `.env`.
+- `forge` (eller den som driftsätter) äger koden och `.env` och har sudo-regeln i steg 2.
+  `nonox-web` har ingen sudo-regel alls.
+- I Forge betyder det en egen PHP-FPM-pool för sajten med `user = nonox-web`, köns
+  bakgrundsprocess och det schemalagda jobbet med användaren `nonox-web`, och filrätter
+  `go-w` på koden. Forges inbyggda användarisolering låter i stället samma användare både
+  köra och driftsätta och räcker därför inte. **Ägaren beslutar vid bytet hur det
+  ordnas**; körboken förutsätter att det är gjort.
+
+Kontrollera innan du går vidare:
+
+```bash
+ps -o user= -C php-fpm8.4 | sort -u                 # förväntat: root (huvudprocessen) och nonox-web, inte forge
+ps -o user=,args= -C php | grep -E 'queue:work|schedule' | sort -u   # förväntat: nonox-web
+sudo -u nonox-web test -w /home/forge/nonox.app/current/artisan && echo FEL || echo ok
+sudo -u nonox-web test -w /home/forge/nonox.app/.env && echo FEL || echo ok
+sudo -l -U nonox-web                                  # förväntat: inga regler
+```
+
+Skriptet i steg 2 kontrollerar samma sak vid varje driftsättning och vägrar köra om
+`nonox-web` kan skriva något i releasen utanför `storage/` och `bootstrap/cache/`.
 
 ## 1. Kontrollera nuläget (läser bara)
 
@@ -75,7 +108,7 @@ socketkatalogen i steg 6.
 Ägaren loggar in med *peer*-autentisering: PostgreSQL litar på att processen körs som
 Unix-användaren `nonox-migrate` och släpper bara in den som `nonox_owner`. Då finns inget
 ägarlösenord, varken i `.env`, i den cachade konfigurationen eller någon annanstans, och
-kod som körs av PHP-FPM (som `forge`) kan inte logga in som ägaren.
+kod som körs av PHP-FPM (som `nonox-web`) kan inte logga in som ägaren.
 
 ```bash
 # Användaren, utan inloggning och utan hemkatalog; i gruppen forge för att kunna läsa koden.
@@ -86,7 +119,8 @@ ls -ld /home/forge /home/forge/nonox.app      # gruppen forge behöver r-x på v
 # Skriptet som kör migreringarna och sedan behörigheterna, också om migreringen misslyckas.
 sudo install -o root -g root -m 0755 /home/forge/nonox.app/current/database/roles/nonox-migrate.sh /usr/local/bin/nonox-migrate
 
-# forge får köra just det skriptet som nonox-migrate, inget annat.
+# Den som driftsätter (forge) får köra just det skriptet som nonox-migrate, inget annat.
+# Regeln får aldrig ges till nonox-web (steg 0).
 echo 'forge ALL=(nonox-migrate) NOPASSWD: /usr/local/bin/nonox-migrate' | sudo tee /etc/sudoers.d/nonox-migrate
 sudo chmod 0440 /etc/sudoers.d/nonox-migrate
 sudo visudo -cf /etc/sudoers.d/nonox-migrate
@@ -125,10 +159,16 @@ mot
 sudo -u nonox-migrate /usr/local/bin/nonox-migrate "$FORGE_RELEASE_DIRECTORY"
 ```
 
-och se till att den står **före** `php artisan config:cache`. Migreringen läser då `.env`
-direkt, och `config:cache` körs efteråt som `forge`, utan någon ägaruppgift. Skriptet kör
-`migrate --force --database=pgsql_owner` och därefter `nonox:db-grants`, också när
-migreringen misslyckas, och returnerar migreringens status.
+och se till att den står **före** `php artisan config:cache`. Skriptet läser aldrig
+`bootstrap/cache/`: Laravels cachade konfiguration, tjänster, paket, händelser och rutter
+läggs i en ny tillfällig katalog som bara `nonox-migrate` äger (`APP_CONFIG_CACHE` med
+flera), så ingenting som webbanvändaren kan skriva laddas när ägaren kör, och en gammal
+cachad konfiguration spelar ingen roll. Skriptet vägrar köra om `nonox-web` kan skriva i
+releasen, kör `migrate --force --database=pgsql_owner` och därefter `nonox:db-grants`,
+också när migreringen misslyckas, och returnerar migreringens status. Heter
+webbanvändaren något annat än `nonox-web`, eller ligger sajten någon annanstans,
+ändra standardvärdena för `NONOX_WEB_USER` och `NONOX_RELEASES_BASE` (med punkter skrivna `\.`)
+överst i den installerade kopian `/usr/local/bin/nonox-migrate` (sudo släpper inte igenom miljön).
 
 Byt raden i steg 6, samtidigt som `.env` ändras: skriptet förutsätter att rollerna är
 påslagna och att `nonox-migrate` kan läsa `.env`.
@@ -228,13 +268,16 @@ programmet vet att rollerna är påslagna (vakten mot `migrate` utan ägaren och
 `DB_MIGRATION_HOST` är socketkatalogen, som peer-autentiseringen kräver. Använder sajten
 `DB_URL`: låt den stå för appen och lägg till `DB_MIGRATION_HOST` som ovan.
 
-`nonox-migrate` behöver läsa `.env`: `sudo chgrp forge /home/forge/nonox.app/.env && sudo chmod 640 /home/forge/nonox.app/.env`
+`nonox-migrate` och `nonox-web` behöver läsa `.env`, men inte skriva den: ägare `forge`,
+läsbar för en grupp som båda är med i och som `forge` inte ger skrivrätt till, till exempel
+`sudo groupadd -f nonox-read && sudo usermod -aG nonox-read nonox-migrate && sudo usermod -aG nonox-read nonox-web && sudo chgrp nonox-read /home/forge/nonox.app/.env && sudo chmod 640 /home/forge/nonox.app/.env`
 (Forge länkar filen in i varje release).
 
 Byt raden i driftsättningsskriptet enligt steg 3 och kör sedan:
 
 ```bash
 cd /home/forge/nonox.app/current
+php artisan config:clear      # den gamla cachade konfigurationen har nonox som användare
 sudo -u nonox-migrate /usr/local/bin/nonox-migrate /home/forge/nonox.app/current   # "Nothing to migrate", behörigheterna läggs på
 php artisan config:cache
 ```
@@ -341,8 +384,10 @@ Utan `DB_MIGRATION_USERNAME` fungerar allt som förut med en användare, och
 
 ## Vad rollerna inte skyddar
 
-Rollerna skyddar historiken i databasen mot kod som körs med appens roll. De skyddar
-inte mot kod som kan skriva i programmets egna filer: den som kan ändra en migrering i
-releasekatalogen får den körd som ägaren vid nästa driftsättning. Låt därför PHP-FPM
-sakna skrivrätt till koden där det går (bara `storage/` och `bootstrap/cache/` behöver
-vara skrivbara).
+Rollerna skyddar historiken i databasen mot kod som körs med appens roll, **men bara om
+programmet körs som en annan Unix-användare än den som driftsätter och inte kan skriva i
+programmets filer eller `.env` (steg 0)**. Utan den åtskillnaden är ägarskyddet verkningslöst:
+kod som kan skriva en migrering eller en fil som laddas vid driftsättningen får den körd
+som ägaren, och kod som kör som användaren med sudo-regeln kan köra migreringen själv.
+Rollerna skyddar inte heller konfidentialiteten: appens roll läser alla företags data
+(ADR-079 §6).

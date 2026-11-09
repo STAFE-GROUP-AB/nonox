@@ -33,11 +33,33 @@ final class DatabaseRolesHarness
     /** Creates the roles, transfers ownership and applies the grants inside the test transaction. Needs a superuser. */
     public static function install(): void
     {
-        // Role changes touch the cluster-wide catalogue; one test process at a time, until its transaction ends.
+        // Role changes touch the cluster-wide catalogue. The advisory lock is per database, so it orders
+        // the test processes on one test database; processes on different databases of the same cluster
+        // can still meet on the roles themselves (role creation then waits on the other transaction).
         DB::statement('select pg_advisory_xact_lock(790079)');
         DB::unprepared((string) file_get_contents(base_path('database/roles/roles.sql')));
-        DB::unprepared((string) file_get_contents(base_path('database/roles/transfer-ownership.sql')));
+
+        // A database already switched over needs no ownership transfer, and skipping it avoids locking every table.
+        if (! self::ownerOwnsEverything()) {
+            DB::unprepared((string) file_get_contents(base_path('database/roles/transfer-ownership.sql')));
+        }
+
         DatabaseGrants::apply(DB::connection());
+    }
+
+    private static function ownerOwnsEverything(): bool
+    {
+        return (int) DB::scalar(<<<'SQL'
+            select count(*) from pg_class c
+            where c.relnamespace = current_schema()::regnamespace and c.relkind in ('r', 'p', 'v', 'm', 'S')
+              and c.relowner <> 'nonox_owner'::regrole
+              and not exists (select 1 from pg_depend d where d.classid = 'pg_class'::regclass and d.objid = c.oid and d.deptype = 'e')
+            SQL) === 0
+            && (int) DB::scalar(<<<'SQL'
+                select count(*) from pg_proc p
+                where p.pronamespace = current_schema()::regnamespace and p.proowner <> 'nonox_owner'::regrole
+                  and not exists (select 1 from pg_depend d where d.classid = 'pg_proc'::regclass and d.objid = p.oid and d.deptype = 'e')
+                SQL) === 0;
     }
 
     /** Continue the test as nonox_app (or skip when that is impossible). */
