@@ -196,6 +196,10 @@ The approval has three conditions:
    says. That gives the traceability BFL 5 kap. 5 § asks of a correction, even though an
    import is not a correction.
 
+## Known gap (2026-11-09): external_ref
+
+Customers and suppliers carry `external_ref`, the number they had in the previous program (ADR-076). The dump lists it as excluded (`JsonDumpWriter::EXCLUDED`) because the published schema does not have the field; adding it needs a schema change and a `SCHEMA_VERSION` bump here.
+
 ## Options rejected
 
 - **SIE4 as the only portable format.** Lossless for the ledger only.

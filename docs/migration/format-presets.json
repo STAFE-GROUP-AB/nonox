@@ -1,0 +1,102 @@
+{
+    "version": 1,
+    "note": "Header names only, as a fact about a file format, for the sole purpose of reading that file (ADR-076, ADR-020). A column is listed only where the vendor documents it publicly; the source URL and the date it was read are on every entry. A preset only pre-fills the mapping and never blocks an import.",
+    "presets": [
+        {
+            "program": "spiris",
+            "name": "Visma eEkonomi / Spiris",
+            "kind": "customers",
+            "status": "documented",
+            "source_url": "https://support.spiris.se/bokforing-fakturering/en-se/content/online-help/settings-import-export-records-customer.htm",
+            "read_date": "2026-11-08",
+            "delimiter_hint": null,
+            "encoding_hint": null,
+            "headers": [
+                {"header": "CustomerNumber", "field": "external_ref"},
+                {"header": "Name", "field": "name", "required": true},
+                {"header": "IsPrivatePerson", "field": "is_private", "value_map": {"true": "1", "false": "0"}},
+                {"header": "Corp.ID no.", "field": "org_number"},
+                {"header": "InvoiceAddress1", "field": "address_line1"},
+                {"header": "InvoiceAddress2", "field": "address_line2"},
+                {"header": "InvoicePostalCode", "field": "postal_code"},
+                {"header": "InvoiceCity", "field": "city"},
+                {"header": "InvoiceCountryCode", "field": "country"},
+                {"header": "VatNumber", "field": "vat_number"},
+                {"header": "Telephone", "field": "phone"},
+                {"header": "EmailAddress", "field": "email"},
+                {"header": "TermsofPaymentCode", "field": "payment_terms_days", "value_map": {"40": "30", "90": "0"}},
+                {"header": "CurrencyCode", "field": "currency"},
+                {"header": "IsActive", "field": "is_active", "value_map": {"true": "1", "false": "0"}}
+            ]
+        },
+        {
+            "program": "spiris",
+            "name": "Visma eEkonomi / Spiris",
+            "kind": "suppliers",
+            "status": "documented",
+            "source_url": "https://support.spiris.se/bokforing/en-se/content/online-help/settings-import-export-records-supplier.htm",
+            "read_date": "2026-11-08",
+            "delimiter_hint": null,
+            "encoding_hint": null,
+            "headers": [
+                {"header": "SupplierNumber", "field": "external_ref"},
+                {"header": "Name", "field": "name", "required": true},
+                {"header": "Corp.ID no.", "field": "org_number"},
+                {"header": "Address 1", "field": "address_line1"},
+                {"header": "PostalCode", "field": "postal_code"},
+                {"header": "Delivery city", "field": "city"},
+                {"header": "CountryCode", "field": "country"},
+                {"header": "Telephone", "field": "phone"},
+                {"header": "EmailAddress", "field": "email"},
+                {"header": "TermsOfPaymentCode", "field": "payment_terms_days", "value_map": {"40": "30", "90": "0"}},
+                {"header": "BankgiroNumber", "field": "bankgiro"},
+                {"header": "PlusgiroNumber", "field": "plusgiro"},
+                {"header": "BankIban", "field": "iban"},
+                {"header": "BankBic", "field": "bic"},
+                {"header": "IsActive", "field": "is_active", "value_map": {"true": "1", "false": "0"}}
+            ]
+        },
+        {
+            "program": "spiris",
+            "name": "Visma eEkonomi / Spiris",
+            "kind": "articles",
+            "status": "undocumented",
+            "source_url": null,
+            "read_date": "2026-11-08",
+            "headers": []
+        },
+        {
+            "program": "bokio",
+            "name": "Bokio",
+            "kind": "customers",
+            "status": "partial",
+            "source_url": "https://www.bokio.se/hjalp/fakturera-kunder/kunder-artiklar/importera-och-exportera-kunder/",
+            "read_date": "2026-11-08",
+            "delimiter_hint": null,
+            "encoding_hint": null,
+            "headers": [
+                {"header": "Customer number", "field": "external_ref"},
+                {"header": "Name", "field": "name", "required": true},
+                {"header": "Customer type", "field": "is_private", "value_map": {"private": "1", "company": "0"}},
+                {"header": "Organisation number", "field": "org_number"},
+                {"header": "VAT number", "field": "vat_number"},
+                {"header": "Postal address 1", "field": "address_line1"},
+                {"header": "Postal address 2", "field": "address_line2"},
+                {"header": "Postal code", "field": "postal_code"},
+                {"header": "City", "field": "city"},
+                {"header": "E-mail", "field": "email"},
+                {"header": "Phone", "field": "phone"},
+                {"header": "Payment terms", "field": "payment_terms_days"}
+            ]
+        },
+        {
+            "program": "bokio",
+            "name": "Bokio",
+            "kind": "articles",
+            "status": "undocumented",
+            "source_url": "https://www.bokio.se/hjalp/fakturera-kunder/kunder-artiklar/importera-och-exportera-artiklar/",
+            "read_date": "2026-11-08",
+            "headers": []
+        }
+    ]
+}

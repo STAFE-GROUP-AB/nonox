@@ -194,7 +194,7 @@ final class Timeline
             ->select([
                 DB::raw("'payment' AS kind"),
                 DB::raw('invoice_payments.invoice_id::text AS ref'),
-                DB::raw('invoices.number::text AS number'),
+                DB::raw('COALESCE(invoices.number::text, invoices.external_ref) AS number'),
                 DB::raw('invoice_payments.amount_ore AS amount_ore'),
                 DB::raw('NULL::text AS status'),
                 ...$this->empty(),
@@ -211,7 +211,7 @@ final class Timeline
             ->select([
                 DB::raw("'reminder' AS kind"),
                 DB::raw('invoice_reminders.invoice_id::text AS ref'),
-                DB::raw('invoices.number::text AS number'),
+                DB::raw('COALESCE(invoices.number::text, invoices.external_ref) AS number'),
                 DB::raw('invoice_reminders.remaining_ore AS amount_ore'),
                 DB::raw('invoice_reminders.sequence::text AS status'),
                 ...$this->empty(),

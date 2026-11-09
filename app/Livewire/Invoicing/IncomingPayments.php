@@ -93,7 +93,7 @@ class IncomingPayments extends Component
     {
         $feed = $this->importId === self::FEED;
         $import = $this->importId === '' || $feed ? null : BankFileImport::query()->find($this->importId);
-        $with = ['invoice:id,number,ocr,total_ore,paid_ore,customer_snapshot,status,kind,due_date,invoice_currency,foreign_total_minor,foreign_paid_minor,exchange_rate_micros', 'payment.voucher.series'];
+        $with = ['invoice:id,number,external_ref,import_source,ocr,total_ore,paid_ore,customer_snapshot,status,kind,due_date,invoice_currency,foreign_total_minor,foreign_paid_minor,exchange_rate_micros', 'payment.voucher.series'];
 
         return view('livewire.invoicing.incoming-payments', [
             'import' => $import,
@@ -103,7 +103,7 @@ class IncomingPayments extends Component
                 ? BankTransaction::query()->whereNull('bank_file_import_id')->with($with)->orderByDesc('booking_date')->orderByDesc('id')->limit(200)->get()
                 : ($import?->transactions()->with($with)->get() ?? collect()),
             'imports' => BankFileImport::query()->with('creator:id,name')->latest('created_at')->limit(10)->get(),
-            'openInvoices' => Invoice::query()->where('status', InvoiceStatus::Issued->value)->where('kind', Invoice::INVOICE)->orderBy('number')->get(['id', 'number', 'total_ore', 'paid_ore', 'customer_snapshot', 'invoice_currency', 'foreign_total_minor', 'foreign_paid_minor', 'exchange_rate_micros']),
+            'openInvoices' => Invoice::query()->where('status', InvoiceStatus::Issued->value)->where('kind', Invoice::INVOICE)->orderBy('number')->get(['id', 'number', 'external_ref', 'import_source', 'total_ore', 'paid_ore', 'customer_snapshot', 'invoice_currency', 'foreign_total_minor', 'foreign_paid_minor', 'exchange_rate_micros']),
             'canBook' => $this->user()->can('create', [BankFileImport::class, $this->company()]),
         ]);
     }

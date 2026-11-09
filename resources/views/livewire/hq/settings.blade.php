@@ -65,6 +65,13 @@
                         <p id="hq-demo-enabled-hint" class="text-sm text-gray-600">{{ __('Öppen: vem som helst kan på /prova få ett påhittat demoföretag i två timmar, utan konto. Det rensas bort av sig självt. Stängd: sidan finns inte och inget demoföretag skapas.') }}</p>
                     </div>
                 </div>
+                <div class="flex items-start gap-3">
+                    <input id="hq-migration-guides-public" type="checkbox" wire:model="migrationGuidesPublic" class="mt-1 h-5 w-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" aria-describedby="hq-migration-guides-public-hint">
+                    <div>
+                        <label for="hq-migration-guides-public" class="text-sm font-medium text-gray-800">{{ __('Flyttguiderna per program är publicerade') }}</label>
+                        <p id="hq-migration-guides-public-hint" class="text-sm text-gray-600">{{ __('Av: sidorna under /flytta-fran svarar inte. Sätt på dem först när den juridiska granskningen av sidorna som nämner andra program är gjord.') }}</p>
+                    </div>
+                </div>
             </div>
         </x-ui.card>
 

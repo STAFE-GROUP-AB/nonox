@@ -19,7 +19,7 @@ För de flesta småföretag tar en flytt en eftermiddag. Det mesta av tiden går
    - [Från Fortnox](/manual/flytta/fran-fortnox) – direkt från Fortnox-kontot, eller med SIE-filer.
    - [Från ett annat program](/manual/flytta/fran-andra-program) – Visma, Spiris, Bokio, Björn Lundén och alla andra som exporterar SIE4.
 3. [Flera år och ingående balanser](/manual/flytta/flera-ar-och-ingaende-balanser) – i vilken ordning åren läses in, och hur saldona följer med.
-4. [Kunder, leverantörer och obetalda fakturor](/manual/flytta/kunder-leverantorer-och-obetalda-fakturor) – registren och de fakturor som är obetalda på flyttdagen.
+4. [Kunder, leverantörer och obetalda fakturor](/manual/flytta/kunder-leverantorer-och-obetalda-fakturor) – registren och de fakturor som är obetalda på flyttdagen, och [Läs in register](/manual/flytta/las-in-register) för att läsa in dem från en fil.
 5. [Flytta lönen](/manual/flytta/flytta-lonen) – om ni har anställda.
 6. [Stäm av](/manual/flytta/stam-av) – kontrollera att allt kom med.
 7. [Efter flytten](/manual/flytta/efter-flytten) – vad du ska spara från det gamla programmet, och hur länge.

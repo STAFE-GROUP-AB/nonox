@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Schema;
  *   since another legal entity would be a disclosure without a basis.
  *   Empty = the feature is off, the default for a self-hosted installation.
  * - waitlist.open: whether /ko takes new applications (default open).
+ * - migration.guides_public: whether the per-program moving guides at
+ *   /flytta-fran/{program} are published (default off until the legal
+ *   review ADR-020 asks for, ADR-076).
  * - registration.open: whether an unknown address may create an account
  *   on the sign-in form (default closed, ADR-038).
  * - demo.enabled: whether /prova lets a visitor try NONOX on a demo company
@@ -39,6 +42,8 @@ final class InstanceSettings
 
     public const string DEMO_ENABLED = 'demo.enabled';
 
+    public const string MIGRATION_GUIDES_PUBLIC = 'migration.guides_public';
+
     /** @var array<string, mixed> the defaults, which are also the only keys */
     public const array DEFAULTS = [
         self::OPERATOR => null,
@@ -46,6 +51,7 @@ final class InstanceSettings
         self::REGISTRATION_OPEN => false,
         self::SECURITY_CONTACT => null,
         self::DEMO_ENABLED => null,
+        self::MIGRATION_GUIDES_PUBLIC => false,
     ];
 
     /** @var ?array<string, mixed> */
@@ -112,6 +118,11 @@ final class InstanceSettings
         $value = $this->get(self::SECURITY_CONTACT);
 
         return is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
+
+    public function migrationGuidesPublic(): bool
+    {
+        return (bool) $this->get(self::MIGRATION_GUIDES_PUBLIC);
     }
 
     public function selfRegistrationOpen(): bool

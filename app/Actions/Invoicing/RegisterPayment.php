@@ -100,7 +100,7 @@ class RegisterPayment
                 $user,
                 $company,
                 $paidOn,
-                __('Inbetalning :invoice, :customer', ['invoice' => $invoice->title(), 'customer' => $invoice->customer_snapshot['name'] ?? '']),
+                __('Inbetalning :invoice, :customer', ['invoice' => $invoice->title(), 'customer' => $invoice->customer_snapshot['name'] ?? '']).$invoice->bookingNote(),
                 'C',
                 InvoiceBooking::payment($invoice, $invoice->rows, $settled, $bankAccount, ! InvoiceBooking::bookedAtIssue($invoice, $company->accounting_method), $amount->ore),
                 VoucherSource::Payment,
@@ -132,6 +132,7 @@ class RegisterPayment
 
             Audit::record('invoice.payment_registered', $invoice, array_filter([
                 'number' => $invoice->number,
+                'external_ref' => $invoice->external_ref,
                 'amount_ore' => $amount->ore,
                 'paid_on' => $paidOn->toDateString(),
                 'voucher' => $voucher->reference(),
@@ -209,7 +210,7 @@ class RegisterPayment
             $user,
             $company,
             $paidOn,
-            __('Inbetalning efter kundförlust :invoice, :customer', ['invoice' => $invoice->title(), 'customer' => $invoice->customer_snapshot['name'] ?? '']),
+            __('Inbetalning efter kundförlust :invoice, :customer', ['invoice' => $invoice->title(), 'customer' => $invoice->customer_snapshot['name'] ?? '']).$invoice->bookingNote(),
             'C',
             [$bankAccount => $amount->ore] + array_filter($lines),
             VoucherSource::Payment,

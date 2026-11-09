@@ -1,0 +1,4 @@
+IsActive,SupplierNumber,Name,"Corp.ID no.","Address 1",PostalCode,"Delivery city",CountryCode,Telephone,EmailAddress,TermsOfPaymentCode,BankgiroNumber,PlusgiroNumber,BankIban,BankBic
+True,2001,"Leverantören Ett AB",556000-1116,"Lagervägen 1","555 66",Lagerstad,SE,,ett@example.test,40,505-0109,,,
+True,2002,"Plusgirot Handel AB",559900-1129,"Girogatan 2","666 77",Girostad,SE,,,40,,12345-5,,
+True,2003,"Fel Bankgiro AB",556677-8899,"Felvägen 3","777 88",Felstad,SE,,,40,505-0100,,,

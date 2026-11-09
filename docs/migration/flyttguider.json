@@ -1,0 +1,182 @@
+{
+    "version": 1,
+    "note": "Source of the per-program moving guides at /flytta-fran/{program} (ADR-076, ADR-020). Swedish, in our own words. A step is published only when the vendor itself documents it (evidence 'vendor'); every step carries its source URL and the date it was read. Where the vendor documents nothing the capability says so and nothing is guessed. Third-party findings stay in export-formats.md. The pages are off until the instance setting migration.guides_public is turned on after the legal review.",
+    "forbidden_strings": [
+        "Arkiv, Export, Överför uppgifter",
+        "Arkiv, Export, Export SIE"
+    ],
+    "programs": [
+        {
+            "slug": "spiris",
+            "name": "Visma eEkonomi / Spiris",
+            "intro": "Spiris, tidigare Visma eEkonomi, kan ta ut bokföringen som SIE4 och registren som CSV. Det som står här är hämtat från Spiris egna hjälpsidor på de datum som anges. Menyerna kan ha flyttat sig sedan dess.",
+            "last_checked": "2026-11-08",
+            "capabilities": [
+                {
+                    "key": "sie4",
+                    "evidence": "vendor",
+                    "steps": [
+                        {
+                            "text": "Öppna inställningarna, välj import och export och därefter exporten av bokföringsdata (SIE). Skapa en ny export, välj räkenskapsår och exportera. Du får en SIE 4-fil med filändelsen .se för ett år. Upprepa för varje år du vill ta med.",
+                            "source_url": "https://support.spiris.se/bokforing/en-se/content/online-help/settings-import-export-accounting-data-export.htm",
+                            "read_date": "2026-11-08"
+                        }
+                    ]
+                },
+                {
+                    "key": "customers",
+                    "evidence": "vendor",
+                    "steps": [
+                        {
+                            "text": "Under inställningar och import och export väljer du registertypen kunder, skapar en ny export och väljer om inaktiva kunder ska med. Du får en CSV-fil. Ett tomt register går inte att exportera. Läs in filen i NONOX under Bokföring, Läs in register och välj förvalet Visma eEkonomi / Spiris.",
+                            "source_url": "https://support.spiris.se/bokforing-fakturering/en-se/content/online-help/settings-import-export-records-customer.htm",
+                            "read_date": "2026-11-08"
+                        }
+                    ]
+                },
+                {
+                    "key": "suppliers",
+                    "evidence": "vendor",
+                    "steps": [
+                        {
+                            "text": "Samma väg som för kunder, men med registertypen leverantörer. Filen kan läsas in i NONOX med förvalet Visma eEkonomi / Spiris.",
+                            "source_url": "https://support.spiris.se/bokforing/en-se/content/online-help/settings-import-export-records-supplier.htm",
+                            "read_date": "2026-11-08"
+                        }
+                    ]
+                },
+                {
+                    "key": "articles",
+                    "evidence": "none",
+                    "steps": [],
+                    "note": "Spiris beskriver artikelexporten på en egen sida som vi inte har kunnat läsa kolumnerna på. Fråga Spiris support, eller koppla kolumnerna själv i NONOX."
+                },
+                {
+                    "key": "open_invoices",
+                    "evidence": "none",
+                    "steps": [],
+                    "note": "Spiris beskriver inte offentligt någon export av obetalda fakturor som vi har hittat. Fråga Spiris support."
+                },
+                {
+                    "key": "attachments",
+                    "evidence": "none",
+                    "steps": [],
+                    "note": "Spiris beskriver inte offentligt någon export av underlag som vi har hittat. Fråga Spiris support."
+                }
+            ]
+        },
+        {
+            "slug": "bokio",
+            "name": "Bokio",
+            "intro": "Bokio kan ta ut bokföringen som SIE4 och flera listor som filer. Det som står här är hämtat från Bokios egna hjälpsidor på de datum som anges. Menyerna kan ha flyttat sig sedan dess.",
+            "last_checked": "2026-11-08",
+            "capabilities": [
+                {
+                    "key": "sie4",
+                    "evidence": "vendor",
+                    "steps": [
+                        {
+                            "text": "Öppna inställningarna och välj att exportera data. Varje räkenskapsår har en egen rad, och från radens meny hämtar du en SIE 4-fil med filändelsen .se. Exporten kräver en aktiv plan.",
+                            "source_url": "https://www.bokio.se/hjalp/bokforing/exportera-bokforing/hur-exporterar-jag-bokforing-fran-bokio/",
+                            "read_date": "2026-11-08"
+                        }
+                    ]
+                },
+                {
+                    "key": "customers",
+                    "evidence": "vendor",
+                    "steps": [
+                        {
+                            "text": "Under Fakturering och Kunder öppnar du menyn med tre punkter och väljer att exportera alla. Du får en CSV-fil med kunderna. Läs in den i NONOX under Bokföring, Läs in register och välj förvalet Bokio, eller koppla kolumnerna själv.",
+                            "source_url": "https://www.bokio.se/hjalp/fakturera-kunder/kunder-artiklar/importera-och-exportera-kunder/",
+                            "read_date": "2026-11-08"
+                        }
+                    ]
+                },
+                {
+                    "key": "articles",
+                    "evidence": "vendor",
+                    "steps": [
+                        {
+                            "text": "Artiklarna exporteras som CSV från samma meny under Artiklar. Bokio anger inte kolumnnamnen, så i NONOX kopplar du kolumnerna själv.",
+                            "source_url": "https://www.bokio.se/hjalp/fakturera-kunder/kunder-artiklar/importera-och-exportera-artiklar/",
+                            "read_date": "2026-11-08"
+                        }
+                    ]
+                },
+                {
+                    "key": "attachments",
+                    "evidence": "vendor",
+                    "steps": [
+                        {
+                            "text": "På samma exportsida går det att hämta de bilder och PDF-filer som är kopplade till verifikationerna, och kvitton som ännu inte är bokförda. Hur filerna namnges beskrivs inte, så lägg en mappningsfil lank.csv i ZIP-filen när du läser in underlagen i NONOX.",
+                            "source_url": "https://www.bokio.se/hjalp/bokforing/exportera-bokforing/hur-exporterar-jag-bokforing-fran-bokio/",
+                            "read_date": "2026-11-08"
+                        }
+                    ]
+                },
+                {
+                    "key": "suppliers",
+                    "evidence": "none",
+                    "steps": [],
+                    "note": "Bokio beskriver inte offentligt någon export av leverantörsregistret som vi har hittat. Fråga Bokios support."
+                },
+                {
+                    "key": "open_invoices",
+                    "evidence": "none",
+                    "steps": [],
+                    "note": "Bokio beskriver inte offentligt någon export av obetalda fakturor som vi har hittat. Fråga Bokios support."
+                }
+            ]
+        },
+        {
+            "slug": "visma-installerade-program",
+            "name": "Installerade Visma-program",
+            "intro": "Vi har inte hittat någon sida hos leverantören som beskriver exporten ur de installerade Visma-programmen. Därför visar vi inga steg här.",
+            "last_checked": "2026-11-08",
+            "capabilities": []
+        },
+        {
+            "slug": "bjorn-lunden",
+            "name": "Björn Lundén",
+            "intro": "Vi har inte hittat någon sida hos Björn Lundén som beskriver exporten. Därför visar vi inga steg här.",
+            "last_checked": "2026-11-08",
+            "capabilities": []
+        },
+        {
+            "slug": "speedledger",
+            "name": "Speedledger",
+            "intro": "Vi har inte hittat någon sida hos Speedledger som beskriver exporten. Därför visar vi inga steg här.",
+            "last_checked": "2026-11-08",
+            "capabilities": []
+        },
+        {
+            "slug": "kleer",
+            "name": "Kleer (tidigare PE Accounting)",
+            "intro": "Vi har inte hittat någon sida hos Kleer som beskriver exporten. Därför visar vi inga steg här.",
+            "last_checked": "2026-11-08",
+            "capabilities": []
+        },
+        {
+            "slug": "wint",
+            "name": "Wint",
+            "intro": "Vi har inte hittat någon sida hos Wint som beskriver exporten av register eller fakturor. Därför visar vi inga steg här.",
+            "last_checked": "2026-11-08",
+            "capabilities": []
+        },
+        {
+            "slug": "zervant",
+            "name": "Zervant",
+            "intro": "Vi har inte hittat någon sida hos Zervant som vi kan återge här. Därför visar vi inga steg.",
+            "last_checked": "2026-11-08",
+            "capabilities": []
+        },
+        {
+            "slug": "billecta",
+            "name": "Billecta",
+            "intro": "Vi har inte hittat någon sida hos Billecta som vi kan återge här. Därför visar vi inga steg.",
+            "last_checked": "2026-11-08",
+            "capabilities": []
+        }
+    ]
+}

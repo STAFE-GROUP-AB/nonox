@@ -52,6 +52,8 @@ class Settings extends Component implements SpansCompanies
 
     public bool $demoEnabled = false;
 
+    public bool $migrationGuidesPublic = false;
+
     public function mount(): void
     {
         $this->fill(self::stored());
@@ -70,6 +72,7 @@ class Settings extends Component implements SpansCompanies
             'registration_open' => $this->registrationOpen,
             'security_contact' => $this->securityContact,
             'demo_enabled' => $this->demoEnabled,
+            'migration_guides_public' => $this->migrationGuidesPublic,
         ]);
 
         $this->fill(self::stored());
@@ -232,7 +235,7 @@ class Settings extends Component implements SpansCompanies
         });
     }
 
-    /** @return array{operatorCompanyId: string, waitlistOpen: bool, registrationOpen: bool, securityContact: string} */
+    /** @return array{operatorCompanyId: string, waitlistOpen: bool, registrationOpen: bool, securityContact: string, demoEnabled: bool, migrationGuidesPublic: bool} */
     private static function stored(): array
     {
         $settings = InstanceSettings::current();
@@ -245,6 +248,7 @@ class Settings extends Component implements SpansCompanies
             'registrationOpen' => $settings->selfRegistrationOpen(),
             'securityContact' => $settings->securityContact() ?? '',
             'demoEnabled' => $settings->demoEnabled(),
+            'migrationGuidesPublic' => $settings->migrationGuidesPublic(),
         ];
     }
 }

@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Support\Branding\Brand;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use LogicException;
 
 /**
  * The invoice as a PDF, in our own layout (ADR-002: dompdf, pure PHP, no
@@ -28,6 +29,11 @@ final class InvoicePdf
 {
     public static function render(Invoice $invoice): string
     {
+        // ADR-076: we do not own the original of an invoice read in from another program, and make no look-alike.
+        if ($invoice->isImported()) {
+            throw new LogicException('An imported invoice has no NONOX PDF.');
+        }
+
         $options = new Options;
         $options->setIsRemoteEnabled(false);
         $options->setDefaultFont('DejaVu Sans');

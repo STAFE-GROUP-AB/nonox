@@ -81,6 +81,7 @@ class SearchServiceProvider extends ServiceProvider
             new SearchAction('supplier', 'Lägg till leverantör', 'payables.suppliers', 'supplier-invoices:create', query: ['ny' => 1], keywords: ['ny leverantör'], priority: 5),
             new SearchAction('article', 'Ny artikel', 'invoicing.articles', 'invoices:create', query: ['ny' => 1], keywords: ['lägg till artikel', 'produkt', 'tjänst']),
             new SearchAction('sie-import', 'Läs in SIE-fil', 'accounting.sieImports.index', 'import:sie', keywords: ['importera', 'sie4', 'flytta bokföring'], icon: 'upload'),
+            new SearchAction('register-import', 'Läs in register', 'import.registers.index', 'import:registers', keywords: ['importera', 'kunder', 'leverantörer', 'artiklar', 'obetalda fakturor', 'underlag', 'flytta register'], icon: 'upload'),
             new SearchAction('company', 'Lägg till ett företag', 'teams.create', keywords: ['nytt företag', 'skapa företag'], icon: 'building'),
             new SearchAction('member', 'Bjud in en användare', 'teams.show', 'members:manage', parameters: ['company' => '{company}'], keywords: ['användare', 'redovisningskonsult', 'revisor', 'behörighet'], icon: 'person'),
         ];

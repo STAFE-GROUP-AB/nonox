@@ -239,7 +239,7 @@ class BankingPage extends Component
     private function transactions(BankFeedAccount $account): LengthAwarePaginator
     {
         return BankFeedTransaction::query()->where('bank_feed_account_id', $account->id)
-            ->with(['voucherRow.voucher.series', 'incomingPayment.invoice:id,number,ocr,customer_snapshot,total_ore,paid_ore,status,kind,due_date'])
+            ->with(['voucherRow.voucher.series', 'incomingPayment.invoice:id,number,external_ref,import_source,ocr,customer_snapshot,total_ore,paid_ore,status,kind,due_date'])
             ->orderByDesc('booking_date')->orderByDesc('id')
             ->paginate(self::PER_PAGE);
     }

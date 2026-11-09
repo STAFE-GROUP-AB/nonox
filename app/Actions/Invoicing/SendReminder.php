@@ -65,6 +65,7 @@ class SendReminder
 
             Audit::record('invoice.reminder_sent', $invoice, [
                 'number' => $invoice->number,
+                'external_ref' => $invoice->external_ref,
                 'sequence' => $reminder->sequence,
                 'to' => $email,
                 'remaining_ore' => $reminder->remaining_ore->ore,

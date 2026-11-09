@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.123
+- Version: 0.125
 - Datum: 2026-11-09
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -2733,6 +2733,54 @@ direkt från Fortnox. Koden ligger i `app/Migration/Fortnox`.
 - **Avstämning:** obetalda kund- och leverantörsfakturor i Fortnox jämförs
   med saldot på 1510 och 2440 i det senaste året.
 
+## 5a8a. Inläsning av register, obetalda fakturor och underlag (ADR-076)
+
+Under Bokföring → Läs in register (`/bokforing/las-in-uppgifter`) kan den som har
+behörigheten `import:registers` (ägare, administratör och redovisningskonsult)
+läsa in kunder, leverantörer, artiklar, obetalda kund- och leverantörsfakturor
+och underlag från en fil. Koden ligger i `app/Migration/Import`.
+
+- **Två steg.** Filen laddas upp och lagras krypterad. Därefter kopplas filens
+  kolumner till NONOX fält och en rapport skapas utan att något ändras. Först
+  när användaren bekräftar skriver ett köat jobb (som får företagets id) posterna.
+- **Register.** Kunder, leverantörer och artiklar skrivs genom samma åtgärder
+  som när de läggs in för hand, så valideringen och behandlingshistoriken är de
+  vanliga. Organisations- och personnummer, bankgiro och plusgiro kontrolleras
+  med kontrollsiffran före skrivning. Poster som redan finns (på organisations-
+  eller personnummer, sedan på numret i det tidigare programmet, sedan på namn och
+  postnummer) hoppas över och skrivs aldrig över. Numret från det tidigare
+  programmet sparas i `external_ref`; posten får nästa nummer i NONOX serie.
+- **Identitet och dokument.** En inläst obetald faktura har inget nummer i NONOX och tar inget ur nummerserien: det gamla numret (`external_ref`) är dess identitet och står i titeln, listorna och sökningen som "Faktura :nummer (tidigare program)". Den har inget NONOX-underlag: den kan inte skickas, inte göras till PDF och tas inte med i arkivpaketets fakturor. En påminnelse går att skicka och nämner det gamla numret, OCR-numret och beloppet, utan bilaga. Inbetalningar matchas på det gamla OCR-numret (eller det gamla fakturanumret i meddelandet); ett OCR-nummer som finns på mer än en obetald faktura matchar ingen. Verifikationstexten vid betalning och avskrivning slutar med "Ingående balans (inläst)", på kund- och leverantörssidan. En avskrivning tar momsen ur den inlästa momsen med den momssats beloppen ger (`TODO(legal-verify)`), och en kreditering får en rad med nettot och den satsen. En inläst leverantörsfaktura är attesterad vid inläsningen utan att någon i NONOX attesterat (`approved_by` saknas, `import_source` anger varför).
+- **Obetalda fakturor skapas utan verifikation.** En obetald kundfaktura blir en
+  utfärdad faktura (`import_source = IMPORT_OPEN`) och en obetald leverantörsfaktura en
+  attesterad faktura, med det obetalda beloppet som återstår. Ingen verifikation
+  bokförs och huvudboken ändras inte: saldot på 1510 respektive 2440 finns redan
+  i bokföringen från SIE-filen, och fakturorna förklarar det. Därför spärras
+  inläsningen om inte summan av obetalda belopp i filen, plus det som är öppet på
+  fakturor gjorda i NONOX (kreditfakturor med minus), är exakt lika med saldot på
+  kontot, plus de underkonton användaren anger, vid slutet av det valda
+  räkenskapsåret (som standard det senaste med bokförda verifikationer). Jämförelsen
+  görs på totalsumman, inte per kund eller leverantör, och görs om i samma
+  transaktion som fakturorna skapas. Fakturorna kan inte ändras eller tas bort
+  (spärrarna för utfärdade fakturor gäller), bara betalas, krediteras eller
+  skrivas av. En betalning bokförs som vid fakturametoden mot 1510 respektive
+  2440 (avsnitt 5 och 5a). Inläsningen erbjuds bara företag som redovisar enligt
+  fakturametoden; hur en inläst obetald faktura ska behandlas vid kontantmetoden
+  är ännu inte bedömt av en redovisningskonsult.
+  TODO(legal-verify): behandlingen av en inläst obetald faktura vid kontantmetoden
+  (BFNAR 2013:2 och momsdeklarationen).
+- **Underlag.** Filer i en ZIP-fil kopplas till verifikationer som skapats av en
+  SIE-inläsning, via en mappningsfil `lank.csv` eller mappar `ÅÅÅÅ/SERIE-NUMMER`,
+  med den vanliga åtgärden för underlag (4.5). Underlag på bokförda verifikationer
+  kan läggas till men inte tas bort.
+- **Behandlingshistorik.** `register.uploaded`, `register.analysed`,
+  `register.imported` och `register.failed` skrivs med id, filens kontrollsumma,
+  typ och antal, aldrig namn eller nummer.
+- **Källfiler.** Den uppladdade filen raderas 30 dagar efter en avslutad inläsning
+  och 7 dagar efter en förhandsgranskning som inte bekräftats
+  (`register-import:prune`, bara filer under `register-import/`). Importposten med
+  antal och kontrollsumma finns kvar.
+
 ## 5a9. Dataskydd och säkerhet
 
 Se `docs/gdpr/` (registerförteckning, konsekvensbedömningar för lön,
@@ -5252,3 +5300,5 @@ påverkar bokföringen och fakturan:
 | 0.121 | 2026-11-09 | Lagerslag och modulen Kök (avsnitt 5j och 5k1, ADR-073): lagervärdet vid bokslutet bokförs per lagerslag, råvaror mot 1410/4910 och handelsvaror mot företagets tidigare par, i en verifikation; ett företag som aldrig valt lagerslag bokför som förut. K2-företag kan välja 97-procentsregeln (K2 punkt 12.5), avstängd från början. Kök lägger till lagerrörelserna svinn med orsak, eget bruk och försäljning via recept, utan egna verifikationer och utan moms. BAS 2026-mallarna får 1410 och 4910. |
 | 0.122 | 2026-11-09 | Fakturans PDF sparas när fakturan utfärdas, eller första gången den behövs om det sker före det (avsnitt 7a, ADR-075 beslut O6), och används oförändrad i e-post, påminnelser, nedladdning, API, Peppol, arkivpaket och kundportal; äldre fakturor tas fram som förut. Signering av offerter med länk är en del av kärnan och fungerar även när CRM är avstängt (ADR-075 §7); avtal kräver CRM som förut. Kundportalen (modul, ADR-075) visar kunden fakturor, kontoutdrag och offerter och låter kunden godkänna en offert med samma bevis som en signeringslänk; den bokför ingenting, och "Jag har betalat" är kundens egen notering utan bokföring. |
 | 0.123 | 2026-11-09 | Demoföretag för besökare som provar utan konto (avsnitt 7c, ADR-077): ett påhittat företag med gäst i en egen databas (`demo`) med hela schemat, som inte skickar något utanför NONOX; databasen byggs om när inga demor är igång. Triggrarna som vägrar borttagning av bokförda rader har inget undantag. Ingen ny bokföringsregel. |
+| 0.124 | 2026-11-09 | Inläsning av register, obetalda fakturor och underlag från andra program (avsnitt 5a8a, ADR-076): obetalda kund- och leverantörsfakturor kan skapas utan verifikation när summan är lika med saldot på 1510 respektive 2440 och företaget redovisar enligt fakturametoden; betalningen bokförs mot 1510 respektive 2440. Huvudboken och kedjan av kontrollsummor ändras inte av inläsningen. |
+| 0.125 | 2026-11-09 | Inlästa obetalda fakturor (avsnitt 5a8a, ADR-076) behåller sitt gamla nummer som identitet och får inget nummer ur nummerserien; de kan inte skickas eller göras till PDF; betalning och avskrivning får verifikationstexten "Ingående balans (inläst)"; avstämningen mot 1510/2440 tar med öppna NONOX-fakturor och valda underkonton och tillåter kreditfakturor. |

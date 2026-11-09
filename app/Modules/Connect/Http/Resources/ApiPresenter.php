@@ -285,6 +285,7 @@ final class ApiPresenter
         return [
             'id' => $invoice->id,
             'number' => $invoice->number,
+            'external_ref' => $invoice->external_ref,
             'kind' => $invoice->kind,
             'status' => $invoice->status->value,
             'credits_invoice_id' => $invoice->credits_invoice_id,
@@ -392,6 +393,7 @@ final class ApiPresenter
         return [
             'id' => $invoice->id,
             'number' => $invoice->number,
+            'external_ref' => $invoice->external_ref,
             'kind' => $invoice->kind,
             'status' => $invoice->status->value,
             'supplier_id' => $invoice->supplier_id,

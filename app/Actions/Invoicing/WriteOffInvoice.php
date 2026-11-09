@@ -81,7 +81,7 @@ class WriteOffInvoice
                     $user,
                     $company,
                     $date,
-                    __('Kundförlust :title, :customer', ['title' => $invoice->title(), 'customer' => $invoice->customer_snapshot['name'] ?? '']),
+                    __('Kundförlust :title, :customer', ['title' => $invoice->title(), 'customer' => $invoice->customer_snapshot['name'] ?? '']).$invoice->bookingNote(),
                     'B',
                     InvoiceBooking::writeOff($invoice, $invoice->rows, $invoice->creditInvoices, $amount),
                     VoucherSource::Invoice,
@@ -99,6 +99,7 @@ class WriteOffInvoice
 
             Audit::record('invoice.written_off', $invoice, array_filter([
                 'number' => $invoice->number,
+                'external_ref' => $invoice->external_ref,
                 'amount_ore' => $amount,
                 'date' => $date->toDateString(),
                 'reason' => trim($reason),

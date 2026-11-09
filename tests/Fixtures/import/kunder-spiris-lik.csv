@@ -1,0 +1,5 @@
+IsActive,CustomerNumber,Name,IsPrivatePerson,"Corp.ID no.",InvoiceAddress1,InvoiceAddress2,InvoicePostalCode,InvoiceCity,InvoiceCountryCode,VatNumber,Telephone,EmailAddress,TermsofPaymentCode,CurrencyCode
+True,1001,"Exempelbolaget Norr AB",False,556677-8899,"Testgatan 1",,"111 22",Teststad,SE,SE556677889901,"08-123 45 67",norr@example.test,40,SEK
+True,1002,"Kalle Exempelsson",True,811218-9876,"Provvägen 5",,"222 33",Provköping,SE,,,kalle@example.test,90,SEK
+False,1003,"Syntetiska Syd HB",False,559900-1129,"Syntgränd 3","Box 9","333 44",Syntby,SE,,,,40,SEK
+True,1004,"Felaktig Org AB",False,556677-8890,"Rad 4",,"444 55",Fel,SE,,,inte-en-epost,40,SEK

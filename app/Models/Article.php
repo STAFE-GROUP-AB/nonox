@@ -64,6 +64,7 @@ class Article extends Model
     protected $fillable = [
         'company_id',
         'number',
+        'external_ref',
         'name',
         'unit',
         'price_ore',

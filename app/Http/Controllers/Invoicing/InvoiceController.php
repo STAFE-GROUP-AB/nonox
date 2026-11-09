@@ -47,6 +47,8 @@ class InvoiceController
     {
         Gate::authorize('view', $invoice);
 
+        abort_if($invoice->isImported(), 404);
+
         if (! WorkQuota::attempt(Company::query()->findOrFail($invoice->company_id), 'pdf')) {
             Toast::flash(WorkQuota::message(), 'error');
 

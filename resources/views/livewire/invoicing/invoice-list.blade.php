@@ -41,7 +41,7 @@
                             <tr wire:key="invoice-{{ $invoice->id }}" class="grid grid-cols-2 items-baseline gap-x-3 gap-y-1 py-3 sm:table-row sm:py-0">
                                 <td class="sm:py-2 sm:pr-4">
                                     <a href="{{ $invoice->isDraft() ? route('invoicing.invoices.edit', $invoice) : route('invoicing.invoices.show', $invoice) }}" class="font-semibold text-accent-600 hover:text-accent-700">
-                                        {{ $invoice->number ?? __('Utkast') }}@if($invoice->isCredit()) <span class="font-normal text-gray-500">({{ __('kredit') }})</span>@endif
+                                        {{ $invoice->isImported() ? $invoice->external_ref.' ('.__('tidigare program').')' : ($invoice->number ?? __('Utkast')) }}@if($invoice->isCredit()) <span class="font-normal text-gray-500">({{ __('kredit') }})</span>@endif
                                     </a>
                                 </td>
                                 <td class="order-2 col-span-2 sm:py-2 sm:pr-4">{{ $invoice->customer?->name }}</td>

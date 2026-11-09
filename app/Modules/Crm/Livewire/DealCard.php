@@ -310,7 +310,7 @@ class DealCard extends Component
             'orders' => $this->panel === 'win' && $customerId !== null && $canSeeInvoices ? $this->documents($customerId, SalesDocument::ORDER, $deal->order_id) : collect(),
             'invoices' => $this->panel === 'win' && $customerId !== null && $canSeeInvoices
                 // The deal's own linked invoice is listed even as a draft, so what is preselected can be seen.
-                ? Invoice::query()->where('customer_id', $customerId)->where('kind', Invoice::INVOICE)->where(fn (Builder $query) => $query->whereNotNull('issued_at')->orWhere('id', $deal->invoice_id))->orderByDesc('invoice_date')->limit(20)->get(['id', 'number', 'invoice_date', 'net_ore', 'issued_at'])
+                ? Invoice::query()->where('customer_id', $customerId)->where('kind', Invoice::INVOICE)->where(fn (Builder $query) => $query->whereNotNull('issued_at')->orWhere('id', $deal->invoice_id))->orderByDesc('invoice_date')->limit(20)->get(['id', 'number', 'external_ref', 'import_source', 'invoice_date', 'net_ore', 'issued_at'])
                 : collect(),
             'types' => array_filter(ActivityType::cases(), fn (ActivityType $type): bool => $type->canBePlanned()),
             'outcomes' => CallOutcome::cases(),

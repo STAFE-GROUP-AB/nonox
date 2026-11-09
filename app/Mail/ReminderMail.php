@@ -42,6 +42,11 @@ class ReminderMail extends Mailable
     /** @return list<Attachment> */
     public function attachments(): array
     {
+        // An imported invoice has no NONOX document to attach (ADR-076); the mail quotes the old number, the OCR and the amount.
+        if ($this->invoice->isImported()) {
+            return [];
+        }
+
         return [
             Attachment::fromData(fn (): string => IssuedInvoicePdf::bytes($this->invoice), InvoicePdf::filename($this->invoice))->withMime('application/pdf'),
         ];

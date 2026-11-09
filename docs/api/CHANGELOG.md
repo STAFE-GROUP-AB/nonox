@@ -13,6 +13,22 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-09: external_ref på fakturor
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-09: external_ref on invoices
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Tillagt
+- Kund- och leverantörsfakturor har det nya fältet `external_ref`: fakturanumret i det tidigare programmet. Det är satt bara på obetalda fakturor som lästs in från ett annat program. Sådana fakturor har inget NONOX-nummer, så `number` är `null` på dem, precis som på ett utkast. Webhookarna `invoice.*` och `supplier_invoice.*` har samma fält.
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+- Customer and supplier invoices have a new field `external_ref`: the invoice number in the previous program. It is set only on unpaid invoices read in from another program. Such invoices have no NONOX number, so `number` is `null` on them, as on a draft. The `invoice.*` and `supplier_invoice.*` webhooks carry the same field.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-06: MCP-server (beta)
 <!-- /lang -->
 <!-- lang:en -->

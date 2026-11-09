@@ -1,0 +1,5 @@
+﻿Name;Nummer
+"=HYPERLINK(""http://example.test"",""klicka"")";1
++kommando;2
+-minus;3
+@sum;4

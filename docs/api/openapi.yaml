@@ -11726,7 +11726,12 @@ components:
           type:
             - integer
             - 'null'
-          description: 'Gapless invoice number, null while a draft.'
+          description: 'Gapless invoice number, null while a draft and null for an open invoice read in from another program (see external_ref).'
+        external_ref:
+          type:
+            - string
+            - 'null'
+          description: 'The number the invoice had in the previous program. Set only on open invoices read in from another program, which have no NONOX number.'
         kind:
           type: string
           enum:
@@ -12248,6 +12253,12 @@ components:
           type:
             - integer
             - 'null'
+          description: 'Our running number, null while a draft and null for an open invoice read in from another program (see external_ref).'
+        external_ref:
+          type:
+            - string
+            - 'null'
+          description: 'The invoice number in the previous program. Set only on open invoices read in from another program.'
         kind:
           type: string
           enum:

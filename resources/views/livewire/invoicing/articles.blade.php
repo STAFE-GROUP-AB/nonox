@@ -100,7 +100,7 @@
                                         @elseif($inventory)
                                             <span class="size-10 shrink-0 rounded-md bg-stone-100" aria-hidden="true"></span>
                                         @endif
-                                        <span>{{ $article->name }} <span class="text-gray-500">/ {{ $article->unit }}</span></span>
+                                        <span>{{ $article->name }} <span class="text-gray-500">/ {{ $article->unit }}</span>@if($article->external_ref)<span class="block text-xs text-gray-500">{{ __('Nummer i tidigare program') }}: {{ $article->external_ref }}</span>@endif</span>
                                     </span>
                                 </td>
                                 <td class="py-2 pr-4 text-right"><x-ui.amount :money="$article->price_ore" /></td>

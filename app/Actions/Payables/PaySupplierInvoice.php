@@ -99,8 +99,8 @@ class PaySupplierInvoice
                 $company,
                 $paidOn,
                 $invoice->isCredit()
-                    ? __('Återbetalning :title, :supplier', ['title' => $invoice->title(), 'supplier' => $invoice->supplierName()])
-                    : __('Betalning :title, :supplier', ['title' => $invoice->title(), 'supplier' => $invoice->supplierName()]),
+                    ? __('Återbetalning :title, :supplier', ['title' => $invoice->title(), 'supplier' => $invoice->supplierName()]).$invoice->bookingNote()
+                    : __('Betalning :title, :supplier', ['title' => $invoice->title(), 'supplier' => $invoice->supplierName()]).$invoice->bookingNote(),
                 'E',
                 SupplierInvoiceBooking::payment($invoice, $invoice->rows, $settled, $bankAccount, $cashMethod, $amount->ore),
                 VoucherSource::Payment,

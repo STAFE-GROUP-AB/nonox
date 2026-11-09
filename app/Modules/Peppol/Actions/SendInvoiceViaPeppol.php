@@ -59,6 +59,7 @@ class SendInvoiceViaPeppol
             $receiver = PeppolIdentifier::tryFrom($customer->peppol_id);
 
             $reason = match (true) {
+                $invoice->isImported() => __('En inläst faktura från ett annat program har inget NONOX-underlag och kan inte skickas via Peppol.'),
                 AccessPoints::isPaused() => AccessPoints::pausedMessage(),
                 $company->isTestCompany() => __('Ett testföretag skickar inga fakturor via Peppol.'),
                 ! $participant instanceof PeppolParticipant || ! $participant->canSend() => __('Företaget är inte kopplat till Peppol ännu. Se Företagsinställningar → Moduler → Peppol e-faktura.'),

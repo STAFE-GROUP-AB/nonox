@@ -46,7 +46,7 @@ class InvoicePolicy
 
     public function send(User $user, Invoice $invoice): bool
     {
-        return ! $invoice->isDraft() && $this->can($user, $invoice, 'invoices:send');
+        return ! $invoice->isDraft() && ! $invoice->isImported() && $this->can($user, $invoice, 'invoices:send');
     }
 
     /**

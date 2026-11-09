@@ -51,6 +51,7 @@ final class StoredFiles
         'collective_agreements' => 'local_agreement_path',
         'payroll_file_imports' => 'file_path',
         'sie_imports' => 'file_path',
+        'register_imports' => 'file_path',
         'bank_file_imports' => 'file_path',
         'payment_response_imports' => 'file_path',
         'supplier_payment_batches' => 'file_path',

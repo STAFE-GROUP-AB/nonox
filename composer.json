@@ -24,6 +24,7 @@
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
         "livewire/livewire": "^4.0",
+        "openspout/openspout": "^5.13",
         "picqer/php-barcode-generator": "^3.3",
         "smalot/pdfparser": "^2.13",
         "symfony/yaml": "^8.1",

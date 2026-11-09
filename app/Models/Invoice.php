@@ -38,6 +38,8 @@ use LogicException;
  * @property ?list<string> $labour_hours_reported_on the earlier invoices that report this invoice's hours (ADR-074 re-check)
  * @property bool $prints_buyer_personal_number the PDF prints the ROT/RUT buyer's personnummer (issued from ADR-074 on)
  * @property string $id
+ * @property ?string $external_ref the invoice number in the previous program (ADR-076)
+ * @property ?string $import_source IMPORT_OPEN for an open invoice read in without a voucher
  * @property int $company_id
  * @property int $customer_id
  * @property ?int $number
@@ -193,6 +195,18 @@ class Invoice extends Model
         });
     }
 
+    /** What a voucher text adds for an imported invoice: the booking is against the opening balance. */
+    public function bookingNote(): string
+    {
+        return $this->isImported() ? ' – '.__('Ingående balans (inläst)') : '';
+    }
+
+    /** An open invoice read in from another program (ADR-076): it keeps the old number and has no NONOX number, PDF or booking. */
+    public function isImported(): bool
+    {
+        return $this->import_source !== null;
+    }
+
     public function isDraft(): bool
     {
         return $this->status === InvoiceStatus::Draft;
@@ -313,6 +327,12 @@ class Invoice extends Model
      */
     public function title(): string
     {
+        if ($this->isImported()) {
+            return $this->isCredit()
+                ? __('Kreditfaktura :ref (tidigare program)', ['ref' => (string) $this->external_ref])
+                : __('Faktura :ref (tidigare program)', ['ref' => (string) $this->external_ref]);
+        }
+
         if ($this->number === null) {
             return $this->isCredit() ? __('Utkast till kreditfaktura') : __('Utkast till faktura');
         }

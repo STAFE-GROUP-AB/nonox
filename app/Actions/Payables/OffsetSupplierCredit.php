@@ -102,6 +102,7 @@ class OffsetSupplierCredit
             Audit::record('supplier_invoice.offset', $invoice, [
                 'credit' => $credit->number,
                 'invoice' => $invoice->number,
+                'external_ref' => $invoice->external_ref,
                 'amount_ore' => $amount,
                 'voucher' => $voucher->reference(),
             ], $company, $user);

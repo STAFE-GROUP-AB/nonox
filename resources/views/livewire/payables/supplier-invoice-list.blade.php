@@ -43,7 +43,7 @@
                         @foreach($invoices as $invoice)
                             <tr wire:key="supplier-invoice-{{ $invoice->id }}" class="grid grid-cols-2 items-baseline gap-x-3 gap-y-1 py-3 sm:table-row sm:py-0">
                                 <td class="sm:py-2 sm:pr-4">
-                                    <a href="{{ $invoice->isDraft() ? route('payables.invoices.edit', $invoice) : route('payables.invoices.show', $invoice) }}" class="font-semibold text-accent-600 hover:text-accent-700">{{ $invoice->number ?? __('Utkast') }}</a>
+                                    <a href="{{ $invoice->isDraft() ? route('payables.invoices.edit', $invoice) : route('payables.invoices.show', $invoice) }}" class="font-semibold text-accent-600 hover:text-accent-700">{{ $invoice->isImported() ? ($invoice->invoice_number ?? $invoice->external_ref).' ('.__('tidigare program').')' : ($invoice->number ?? __('Utkast')) }}</a>
                                 </td>
                                 <td class="order-2 col-span-2 sm:py-2 sm:pr-4">{{ $invoice->supplier?->name }}</td>
                                 <td class="order-3 text-gray-600 sm:py-2 sm:pr-4 sm:text-inherit">{{ $invoice->invoice_number }}</td>

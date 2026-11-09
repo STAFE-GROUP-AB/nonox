@@ -51,6 +51,8 @@ use App\Models\Project;
 use App\Models\RecentItem;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceRow;
+use App\Models\RegisterImport;
+use App\Models\RegisterImportPreset;
 use App\Models\SalesDocument;
 use App\Models\SalesDocumentRow;
 use App\Models\SieImport;
@@ -279,6 +281,8 @@ const COMPANY_SCOPED_MODELS = [
     VoucherAttachment::class => 'attachmentAttributes',
     OpeningBalance::class => 'openingBalanceAttributes',
     SieImport::class => 'sieImportAttributes',
+    RegisterImport::class => 'registerImportAttributes',
+    RegisterImportPreset::class => ['kind' => 'customers', 'name' => 'Hemligt format', 'mapping' => ['name' => 'Namn']],
     ImportedVoucher::class => 'importedVoucherAttributes',
     VoucherRowHistory::class => 'voucherRowHistoryAttributes',
     VatReport::class => 'vatReportAttributes',
@@ -783,6 +787,19 @@ function openingBalanceAttributes(): array
         'fiscal_year_id' => FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31'])->id,
         'account_id' => Account::query()->firstOrCreate(['number' => 1930], ['name' => 'Bank', 'type' => 'ASSET'])->id,
         'amount_ore' => 100,
+    ];
+}
+
+function registerImportAttributes(): array
+{
+    return [
+        'user_id' => User::factory()->create()->id,
+        'kind' => 'customers',
+        'original_name' => 'kunder.csv',
+        'file_path' => 'register-import/test.csv',
+        'size' => 100,
+        'sha256' => str_repeat('0', 64),
+        'options' => [],
     ];
 }
 

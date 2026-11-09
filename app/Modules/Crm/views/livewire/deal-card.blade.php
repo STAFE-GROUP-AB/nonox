@@ -238,7 +238,7 @@
                         <select id="win_invoice" class="{{ $input }} mt-1" wire:model="win.invoice_id">
                             <option value="">{{ __('Ingen') }}</option>
                             @foreach($invoices as $invoice)
-                                <option value="{{ $invoice->id }}">{{ $invoice->issued_at ? __('Faktura :number', ['number' => $invoice->number]) : __('Faktura (utkast)') }} · {{ $invoice->invoice_date->translatedFormat('j M Y') }} · {{ $invoice->net_ore->format() }}</option>
+                                <option value="{{ $invoice->id }}">{{ $invoice->isImported() ? $invoice->title() : ($invoice->issued_at ? __('Faktura :number', ['number' => $invoice->number]) : __('Faktura (utkast)')) }} · {{ $invoice->invoice_date->translatedFormat('j M Y') }} · {{ $invoice->net_ore->format() }}</option>
                             @endforeach
                         </select>
                     </x-ui.field>
