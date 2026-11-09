@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Domain\AnnualReport;
 
 use App\Actions\AnnualReport\SaveFrameworkChoice;
-use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Assets\AssetCategory;
 use App\Domain\Company\LegalForm;
 use App\Domain\Company\ReportingFramework;
@@ -17,6 +16,7 @@ use App\Models\FixedAsset;
 use App\Models\Voucher;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
+use Illuminate\Support\Facades\App;
 use LogicException;
 
 /**
@@ -86,6 +86,16 @@ final class K3Notes
         'auditor_fees', // ÅRL 5 kap. 48 §
     ];
 
+    /**
+     * Fixed asset lines whose note never asks for a useful life: goodwill has
+     * its own note (row 5), and construction in progress and advances are not
+     * depreciated until the asset is in use.
+     */
+    public const array LINES_WITHOUT_LIFE = ['goodwill', 'construction_in_progress', 'intangible_advances'];
+
+    /** BAS 23xx: the long-term liabilities of K3Schedule's `long_term` section (K3 4.7). */
+    public const array LONG_TERM_DEBT = [2300, 2399];
+
     /** BAS ranges of exchange differences, as CashFlowStatement reads them (K3 8.3A). */
     public const array CURRENCY_RANGES = [[3960, 3969], [7960, 7969], [8230, 8239], [8330, 8339], [8430, 8439]];
 
@@ -109,7 +119,7 @@ final class K3Notes
         'off_balance_arrangements', 'loans_to_executives', 'related_parties', 'parent_company', 'events_after',
     ];
 
-    /** @var list<array{key: string, row: int, section: string, heading: string, rules: list<string>, data: array<string, mixed>, text: list<string>, missing: list<string>, blocking: ?string}> */
+    /** @var list<array{key: string, row: int, section: string, heading: string, rules: list<string>, data: array<string, mixed>, text: list<string>, missing: list<string>, blocking: ?string, facts: list<string>}> */
     private array $drafts = [];
 
     /** @var list<array{key: string, row: int, message: string}> */
@@ -117,6 +127,8 @@ final class K3Notes
 
     /** @var list<K3Note> */
     private array $notes = [];
+
+    private ?K3EquityStatement $equityStatement = null;
 
     /**
      * @param  list<string>  $mergedItems  the statement lines merged under ÅRL 3 kap. 4 § (MERGED_ITEMS)
@@ -153,7 +165,15 @@ final class K3Notes
             }
 
             $notes = new self($company, $fiscalYear, $report, $size, $accounts, $policies ?? K3Policies::forYear($fiscalYear), $mergedItems);
-            $notes->build();
+            // The annual report is a Swedish document, and an override's hash is of the Swedish text.
+            $locale = App::getLocale();
+            App::setLocale('sv');
+
+            try {
+                $notes->build();
+            } finally {
+                App::setLocale($locale);
+            }
 
             return $notes;
         });
@@ -264,7 +284,7 @@ final class K3Notes
             'k3_version' => K3Rules::entry('k3_version_by_fiscal_year', $this->fiscalYear->start_date, $this->fiscalYear->end_date)['value'] ?? null,
             'policies' => $policies,
             'missing_policies' => $missing,
-        ], $text, array_map(fn (array $policy): string => $policy['question'], $missing));
+        ], $text, facts: array_map(fn (array $policy): string => $policy['question'], $missing));
 
         $this->departures();
         $this->fixedAssetsPrinciples();
@@ -349,13 +369,9 @@ final class K3Notes
             $missing[] = __('Beskriv hur färdigställandegraden bestäms (K3 punkt 23.29). Skriv noten med egna ord när metoden är beskriven.');
         }
 
-        if ($policy === null) {
-            $missing[] = K3PolicyKey::FixedPriceContracts->question();
-        }
-
         $this->add('revenue_principles', 19, self::PRINCIPLES, __('Intäktsredovisning'), ['K3 23.29'], [
             'fixed_price_contracts' => $policy?->value,
-        ], array_values(array_filter($text)), $missing);
+        ], array_values(array_filter($text)), $missing, facts: $policy === null ? [K3PolicyKey::FixedPriceContracts->question()] : []);
     }
 
     /** Row 27: the model for internally generated intangibles, when the books have any (K3 18.28 comment). */
@@ -377,7 +393,7 @@ final class K3Notes
 
         $this->add('intangibles_principles', 27, self::PRINCIPLES, __('Internt upparbetade immateriella anläggningstillgångar'), ['K3 18.7', 'K3 18.28'], [
             'model' => $policy?->value,
-        ], $text, $policy === null ? [K3PolicyKey::Intangibles->question()] : [], $policy?->refusal());
+        ], $text, [], $policy?->refusal(), $policy === null ? [K3PolicyKey::Intangibles->question()] : []);
     }
 
     /** Row 2: translation of foreign currency, when the year has exchange differences (K3 8.3A). */
@@ -420,30 +436,31 @@ final class K3Notes
     }
 
     /**
-     * Row 21: an error of an earlier year corrected in this year without
-     * restating the comparatives (K3 10.14). TODO(legal-verify): 10.14 was not
-     * read beyond the rule sheet's row; the wording is NONOX's own.
+     * Row 21: an error of an earlier year corrected without restating the
+     * comparatives (K3 10.14). Triggered (Lead decision after the S1-P9
+     * review) only by a correction booked against opening equity, which the
+     * equity statement puts on K3 6.3 row b (K3EquityStatement::
+     * earlierCorrections()), or by a person's answer that a material error was
+     * corrected retroactively. A plain correcting voucher through this year's
+     * result is not a correction of an error under chapter 10 and never
+     * triggers it.
+     * TODO(legal-verify): K3 10.14 and chapter 10 were not read in full; the
+     * wording is NONOX's own.
      */
     private function errorCorrection(): void
     {
-        $corrections = Voucher::query()
-            ->where('fiscal_year_id', $this->fiscalYear->id)
-            ->where('status', VoucherStatus::Posted->value)
-            ->whereIn('corrects_voucher_id', Voucher::query()->select('id')->where('fiscal_year_id', '!=', $this->fiscalYear->id))
-            ->with('series:id,code')
-            ->orderBy('number')
-            ->get(['id', 'series_id', 'number', 'voucher_date']);
+        $corrections = $this->equityStatement()->earlierCorrections();
+        $answered = ($this->report->k3_answers['material_error_corrected'] ?? null) === true;
 
-        if ($corrections->isEmpty()) {
+        if ($corrections === [] && ! $answered) {
             return;
         }
 
-        $references = $corrections->map(fn (Voucher $voucher): string => $voucher->reference())->values()->all();
-
-        $this->add('error_correction', 21, self::PRINCIPLES, __('Rättelse av fel'), ['K3 10.14'], [
-            'vouchers' => $corrections->map(fn (Voucher $voucher): array => ['id' => $voucher->id, 'reference' => $voucher->reference()])->values()->all(),
+        $this->add('error_correction', 21, self::PRINCIPLES, __('Rättelse av fel'), ['K3 10.14', 'K3 6.3 b'], [
+            'corrections' => array_map(fn (array $correction): array => ['description' => $correction['voucher'], 'accounts' => $correction['accounts']], $corrections),
+            'answered' => $answered,
         ], [
-            __('Under räkenskapsåret har fel från tidigare räkenskapsår rättats (verifikation :list). Jämförelsetalen har inte räknats om, och jämförbarheten med föregående räkenskapsår är därför begränsad (K3 punkt 10.14).', ['list' => implode(', ', $references)]),
+            __('Ett väsentligt fel från ett tidigare räkenskapsår har rättats mot eget kapital vid årets ingång. Jämförelsetalen har inte räknats om, och jämförbarheten med föregående räkenskapsår är därför begränsad (K3 punkt 10.14).'),
         ]);
     }
 
@@ -481,7 +498,7 @@ final class K3Notes
             'relief_items' => $disclosures['relief_items'],
             'equity_effect_ore' => $disclosures['equity_effect_ore'],
             'booked' => $proposal->isBooked(),
-        ], array_values($paragraphs), $proposal->isBooked() ? [] : [__('Övergången till K3 är inte bokförd. Bokför den under Bokslut → Övergång till K3.')]);
+        ], array_values($paragraphs), facts: $proposal->isBooked() ? [] : [__('Övergången till K3 är inte bokförd. Bokför den under Bokslut → Övergång till K3.')]);
 
         if ($restated === K3YesNo::No && $comparability !== null) {
             $this->add('comparability', 23, self::PRINCIPLES, __('Jämförbarhet'), ['ÅRL 3 kap. 5 §', 'K3 35.7'], [
@@ -539,12 +556,15 @@ final class K3Notes
      * reads them (ÅRL 5 kap. 25 § makes them required only of större företag;
      * printing them is allowed).
      *
-     * @return list<array{key: string, row: int, section: string, heading: string, rules: list<string>, data: array<string, mixed>, text: list<string>, missing: list<string>, blocking: ?string}>
+     * @return list<array{key: string, row: int, section: string, heading: string, rules: list<string>, data: array<string, mixed>, text: list<string>, missing: list<string>, blocking: ?string, facts: list<string>}>
      */
     private function fixedAssetNotes(): array
     {
         $assets = FixedAsset::query()
             ->where('status', '!=', FixedAsset::SPLIT)
+            // Held during the year: acquired by the balance date, not disposed of before the year began.
+            ->whereDate('acquired_on', '<=', $this->fiscalYear->end_date->toDateString())
+            ->where(fn ($query) => $query->whereNull('disposed_on')->orWhereDate('disposed_on', '>=', $this->fiscalYear->start_date->toDateString()))
             ->get(['id', 'category', 'asset_account', 'useful_life_months', 'total_useful_life_months', 'status']);
         $drafts = [];
 
@@ -579,7 +599,7 @@ final class K3Notes
                 $text[] = __('Mark skrivs inte av.');
             }
 
-            $missing = $lives === [] && $depreciable && $note['key'] !== 'goodwill'
+            $missing = $lives === [] && $depreciable && ! in_array($note['key'], self::LINES_WITHOUT_LIFE, true)
                 ? [__('Ange avskrivningsmetod och nyttjandeperiod för :label (K3 punkt 17.23): lägg upp tillgångarna i anläggningsregistret, eller skriv noten med egna ord.', ['label' => mb_strtolower($note['label'])])]
                 : [];
 
@@ -601,6 +621,7 @@ final class K3Notes
                 'text' => $text,
                 'missing' => $missing,
                 'blocking' => null,
+                'facts' => [],
             ];
         }
 
@@ -646,7 +667,7 @@ final class K3Notes
             return;
         }
 
-        $statement = K3EquityStatement::of($this->accounts);
+        $statement = $this->equityStatement();
         $refusal = $statement->refusal();
         $closing = [];
 
@@ -718,15 +739,7 @@ final class K3Notes
     private function longTermLiabilities(): void
     {
         $entered = $this->report->k3_long_term_liabilities_ore;
-        $longTerm = 0;
-
-        foreach (K3Schedule::BALANCE as $line) {
-            if ($line['section'] === 'long_term') {
-                foreach ($line['ranges'] as [$from, $to]) {
-                    $longTerm -= $this->accounts->closingOf($from, $to);
-                }
-            }
-        }
+        $longTerm = self::longTermDebt($this->accounts);
 
         if ($entered === null && $longTerm !== 0) {
             $this->extraQuestions[] = ['key' => 'long_term_liabilities', 'row' => 8, 'message' => __('Hur stor del av de långfristiga skulderna förfaller till betalning senare än fem år efter balansdagen (årsredovisningslagen 5 kap. 13 §)? Ange 0 om ingen del gör det.')];
@@ -736,12 +749,24 @@ final class K3Notes
             return;
         }
 
+        $facts = match (true) {
+            $longTerm <= 0 => [__('Bokföringen har inga långfristiga skulder (konto 2300–2399) vid balansdagen, men :amount anges förfalla senare än fem år efter balansdagen. Rätta beloppet eller bokföringen.', ['amount' => Money::ofOre($entered)->format()])],
+            $entered > $longTerm => [__('Beloppet som förfaller senare än fem år efter balansdagen, :amount, är större än de långfristiga skulderna i bokföringen, :books. Rätta beloppet eller bokföringen.', ['amount' => Money::ofOre($entered)->format(), 'books' => Money::ofOre($longTerm)->format()])],
+            default => [],
+        };
+
         $this->add('long_term_liabilities', 8, self::ITEMS, __('Långfristiga skulder'), ['ÅRL 5 kap. 13 §'], [
             'due_after_five_years_ore' => $entered,
             'long_term_ore' => $longTerm,
         ], [
             __('Skulder som förfaller till betalning senare än fem år efter balansdagen uppgår till :amount.', ['amount' => Money::ofOre($entered)->format()]),
-        ]);
+        ], facts: $facts);
+    }
+
+    /** The long-term debt in the books at the balance date (BAS 2300–2399, the K3 `long_term` section), credit positive. */
+    public static function longTermDebt(AnnualAccounts $accounts): int
+    {
+        return -$accounts->closingOf(...self::LONG_TERM_DEBT);
     }
 
     /** Row 24: comparatives in the notes of merged items (K3 3.5 comment); NONOX merges none. */
@@ -763,12 +788,12 @@ final class K3Notes
         $this->averageEmployees();
         $this->pledgedAssets();
         $this->contingentLiabilities();
-        $this->textNote('group_commitments', 11, __('Åtaganden till förmån för koncern- och intresseföretag'), ['ÅRL 5 kap. 16 §'], $this->report->group_commitments);
+        $this->textNote('group_commitments', 11, __('Åtaganden till förmån för koncern- och intresseföretag'), ['ÅRL 5 kap. 16 §'], $this->report->group_commitments, __('Har företaget ekonomiska åtaganden till förmån för koncernföretag eller intresseföretag (årsredovisningslagen 5 kap. 16 §)? Svara nej, eller beskriv dem.'));
         // ÅRL 5 kap. 17 §: "Första stycket 2 gäller inte mindre företag", so no economic effect is asked.
-        $this->textNote('off_balance_arrangements', 12, __('Arrangemang som inte tas upp i balansräkningen'), ['ÅRL 5 kap. 17 §'], $this->report->k3_off_balance_arrangements);
-        $this->textNote('loans_to_executives', 13, __('Lån till ledande befattningshavare'), ['ÅRL 5 kap. 18 §'], $this->report->k3_loans_to_executives);
+        $this->textNote('off_balance_arrangements', 12, __('Arrangemang som inte tas upp i balansräkningen'), ['ÅRL 5 kap. 17 §'], $this->report->k3_off_balance_arrangements, __('Har företaget arrangemang som inte tas upp i balansräkningen men som medför väsentliga risker eller fördelar (årsredovisningslagen 5 kap. 17 §)? Svara nej, eller beskriv dem.'));
+        $this->textNote('loans_to_executives', 13, __('Lån till ledande befattningshavare'), ['ÅRL 5 kap. 18 §'], $this->report->k3_loans_to_executives, __('Har företaget lämnat lån, ställt säkerheter eller ingått ansvarsförbindelser för styrelseledamöter eller verkställande direktör (årsredovisningslagen 5 kap. 18 §)? Svara nej, eller beskriv dem.'));
         $this->relatedParties();
-        $this->textNote('parent_company', 16, __('Moderföretag'), ['ÅRL 5 kap. 21 §'], $this->report->k3_parent_company);
+        $this->textNote('parent_company', 16, __('Moderföretag'), ['ÅRL 5 kap. 21 §'], $this->report->k3_parent_company, __('Är företaget dotterföretag i en koncern som upprättar koncernredovisning (årsredovisningslagen 5 kap. 21 §)? Svara nej, eller ange moderföretaget.'));
         $this->eventsAfter();
     }
 
@@ -781,11 +806,15 @@ final class K3Notes
     private function averageEmployees(): void
     {
         $fte = $this->report->average_employees_fte;
-        $average = $fte !== null ? (int) round((float) $fte, 0, PHP_ROUND_HALF_UP) : (int) ($this->report->average_employees ?? 0);
+        $whole = (int) ($this->report->average_employees ?? 0);
+        // Nothing entered: no full-time equivalent and the column's default 0. Never print a 0 nobody gave.
+        $average = $fte !== null ? (int) round((float) $fte, 0, PHP_ROUND_HALF_UP) : ($whole > 0 ? $whole : null);
 
         $this->add('average_employees', 15, self::OTHER, __('Medelantalet anställda'), ['ÅRL 5 kap. 20 §', 'K3 8.6B'], [
             'average_employees' => $average,
-        ], [__('Medelantalet anställda under räkenskapsåret har varit :count.', ['count' => $average])]);
+        ], $average === null ? [] : [__('Medelantalet anställda under räkenskapsåret har varit :count.', ['count' => $average])], facts: $average === null
+            ? [__('Ange medelantalet anställda under räkenskapsåret, beräknat enligt BFNAR 2006:11 (K3 punkt 8.6B). Ange 0 om företaget inte har haft några anställda.')]
+            : []);
     }
 
     /** Row 9: security pledged (ÅRL 5 kap. 14 §, K3 8.6A). */
@@ -862,13 +891,23 @@ final class K3Notes
     }
 
     /**
-     * A note made only of a person's text: present when the text is.
+     * A note made only of a person's text: present when the text is. Whether
+     * it applies is asked as yes or no (SaveK3ReportInputs::ANSWERS), so a
+     * required note is never left out silently: the question stays open until
+     * the answer is no or the text is written.
+     *
+     * TODO(legal-verify): the wording of the questions (ÅRL 5 kap. 16–18, 21 §§
+     * as summarised in the rule sheet's rows 11–13 and 16).
      *
      * @param  list<string>  $rules
      */
-    private function textNote(string $key, int $row, string $heading, array $rules, ?string $text): void
+    private function textNote(string $key, int $row, string $heading, array $rules, ?string $text, string $question): void
     {
         if (blank($text)) {
+            if (($this->report->k3_answers[$key] ?? null) !== false) {
+                $this->extraQuestions[] = ['key' => $key, 'row' => $row, 'message' => $question];
+            }
+
             return;
         }
 
@@ -881,11 +920,17 @@ final class K3Notes
      * @param  list<string>  $rules
      * @param  array<string, mixed>  $data
      * @param  list<string>  $text
-     * @param  list<string>  $missing
+     * @param  list<string>  $missing  wording questions, closed by an override
+     * @param  list<string>  $facts  questions about the books or facts, never closed by an override
      */
-    private function add(string $key, int $row, string $section, string $heading, array $rules, array $data, array $text, array $missing = [], ?string $blocking = null): void
+    private function add(string $key, int $row, string $section, string $heading, array $rules, array $data, array $text, array $missing = [], ?string $blocking = null, array $facts = []): void
     {
-        $this->drafts[] = compact('key', 'row', 'section', 'heading', 'rules', 'data', 'text', 'missing', 'blocking');
+        $this->drafts[] = compact('key', 'row', 'section', 'heading', 'rules', 'data', 'text', 'missing', 'blocking', 'facts');
+    }
+
+    private function equityStatement(): K3EquityStatement
+    {
+        return $this->equityStatement ??= K3EquityStatement::of($this->accounts);
     }
 
     private function drafted(string $key): bool
@@ -927,6 +972,7 @@ final class K3Notes
                 stale: $override !== null && $override->generated_hash !== K3Note::hash($draft['text']),
                 missing: $draft['missing'],
                 blocking: $draft['blocking'],
+                facts: $draft['facts'],
             );
         }
     }

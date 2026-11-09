@@ -13,7 +13,7 @@ use App\Models\AnnualReportNoteOverride;
 use App\Models\FiscalYear;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
-use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\Bookkeeping;
@@ -52,10 +52,10 @@ it('never shows B\'s overrides through Eloquent or the notes library', function 
     expect($notes->note('average_employees')->text())->toBe(['Text A']);
 });
 
-it('refuses A\'s user on B\'s fiscal year in both actions', function () {
-    expect(fn () => app(K3NoteOverrides::class)->set($this->a['owner'], $this->b['year'], 'average_employees', 'x', 'y'))->toThrow(AuthorizationException::class)
-        ->and(fn () => app(K3NoteOverrides::class)->remove($this->a['owner'], $this->b['year'], 'average_employees'))->toThrow(AuthorizationException::class)
-        ->and(fn () => app(SaveK3ReportInputs::class)($this->a['owner'], $this->b['year'], ['k3_external_factors' => 'x']))->toThrow(AuthorizationException::class);
+it('answers 404 for B\'s fiscal year in both actions, not 403', function () {
+    expect(fn () => app(K3NoteOverrides::class)->set($this->a['owner'], $this->b['year'], 'average_employees', 'x', 'y'))->toThrow(ModelNotFoundException::class)
+        ->and(fn () => app(K3NoteOverrides::class)->remove($this->a['owner'], $this->b['year'], 'average_employees'))->toThrow(ModelNotFoundException::class)
+        ->and(fn () => app(SaveK3ReportInputs::class)($this->a['owner'], $this->b['year'], ['k3_external_factors' => 'x']))->toThrow(ModelNotFoundException::class);
 
     CurrentCompany::run($this->b['company'], fn () => expect(AnnualReport::query()->value('k3_external_factors'))->toBe('Hemlig text B'));
 });

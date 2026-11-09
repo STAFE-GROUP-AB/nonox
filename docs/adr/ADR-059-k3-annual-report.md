@@ -1553,6 +1553,43 @@ package. Nothing is visible to a user yet: the K3 document (S1-P10) prints it.
   letters a–d of 3.7; rows 1–27 as a minimum (chapters 9, 13–16, 19, 21–28,
   30–34 unread).
 
+**Review fixes (2026-11-09), Lead decisions.**
+- *Two kinds of questions (P2-1).* `K3Note::missing` holds wording questions
+  (stage of completion, why an effect cannot be estimated, an asset life,
+  goodwill period), which an override closes; `K3Note::facts` holds questions
+  about the books or facts (transition not booked, a policy missing, an
+  amount that disagrees with the ledger, no average number of employees),
+  which an override never closes. `blocking` is unchanged.
+- *Row 21 (P2-2).* Triggered only by a correction of an earlier year's voucher
+  that changes equity, read from `K3EquityStatement::earlierCorrections()`
+  (the 6.3 row b source; new getter), or by the answer
+  `k3_answers.material_error_corrected`. A plain correcting voucher through
+  the year's result never triggers it. `TODO(legal-verify)`: K3 10.14.
+- *Owners (P2-3).* Name plus an optional identifier for a legal person: a
+  validated Swedish organisation number, or a foreign registration number
+  with a country code (not SE). A natural person is a name only; no birth
+  year is stored, and anything shaped like a personal identity or
+  coordination number is refused. The document prints the name and the
+  shares only. GDPR register and retention rows updated.
+- *P3.* The register is read for assets held during the year (acquired by
+  the balance date, not disposed of before the start); construction in
+  progress and intangible advances never ask for a life
+  (`LINES_WITHOUT_LIFE`); the notes are always built in Swedish (the locale
+  is forced and restored), so an override's hash is of the Swedish text;
+  rows 11, 12, 13 and 16 ask yes/no (`k3_answers`) until the answer is no
+  or the text is written; no average number of employees asks instead of
+  printing 0; the amount due after five years is refused above the books'
+  2300–2399 and asked when it disagrees with them; a dividend above free
+  equity is a management-report question (ABL 17:3, prudence rule
+  `TODO(legal-verify)`) and never makes the amount carried forward negative;
+  a "Viktiga förändringar i verksamheten" section (`k3_business_changes`,
+  `TODO(legal-verify)`); restated comparatives in a first K3 year are a
+  question, because NONOX cannot restate them (no restated figure is ever
+  printed); the `LARGER_COMPANY_ONLY` labels of ÅRL 6:1 are marked
+  `TODO(legal-verify)`; another company's fiscal year answers 404 in both
+  actions. New migration `2026_12_31_320000_add_k3_answers_to_annual_reports`
+  (`k3_answers` jsonb, `k3_business_changes`).
+
 ### A.5 Test plan and performance
 
 **Unit tests per rule id** (Pest, `tests/Unit/AnnualReport/K3/…`), named with the

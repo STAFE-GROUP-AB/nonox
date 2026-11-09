@@ -12,6 +12,7 @@ use App\Models\FiscalYear;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -24,10 +25,20 @@ use Illuminate\Validation\ValidationException;
  */
 final class K3ReportWrite
 {
-    /** @throws AuthorizationException */
+    /**
+     * The year's company. Another company's fiscal year answers 404, never
+     * 403, so its existence is not revealed (AGENTS.md §13.2).
+     *
+     * @throws ModelNotFoundException<FiscalYear>
+     * @throws AuthorizationException
+     */
     public static function company(User $user, FiscalYear $fiscalYear): Company
     {
-        $company = Company::query()->findOrFail($fiscalYear->company_id);
+        $company = Company::query()->find($fiscalYear->company_id);
+
+        if ($company === null || ! $user->belongsToTeam($company)) {
+            throw (new ModelNotFoundException)->setModel(FiscalYear::class, [$fiscalYear->id]);
+        }
 
         if (! $user->hasTeamPermission($company, 'fiscal-years:manage')) {
             throw new AuthorizationException;

@@ -10,8 +10,13 @@ namespace App\Domain\AnnualReport;
  * K3 8.2, the structured data the books gave, the generated Swedish text and,
  * when a person wrote their own wording, that text with the reason. The data
  * is never overridden; an override replaces the text only (spec S1
- * Behaviour 6). `missing` lists what the generated text lacks (Swedish
- * questions); `blocking` is set when the note describes something the K3
+ * Behaviour 6). Open questions come in two kinds (Lead decision after the
+ * S1-P9 review): `missing` are wording questions (how the stage of
+ * completion is determined, why an effect cannot be estimated, an asset's
+ * life), which a person's own text answers; `facts` are questions about the
+ * books or the company's facts (a transition not booked, a policy not
+ * chosen, an amount that does not agree with the ledger), which no override
+ * ever closes. `blocking` is set when the note describes something the K3
  * document refuses (S1-P10).
  */
 final readonly class K3Note
@@ -20,7 +25,8 @@ final readonly class K3Note
      * @param  list<string>  $rules  the provisions the note answers, e.g. "ÅRL 5 kap. 20 §"
      * @param  array<string, mixed>  $data
      * @param  list<string>  $generatedText  one paragraph per entry
-     * @param  list<string>  $missing
+     * @param  list<string>  $missing  wording questions, closed by an override
+     * @param  list<string>  $facts  questions about the books or facts, never closed by an override
      */
     public function __construct(
         public string $key,
@@ -36,6 +42,7 @@ final readonly class K3Note
         public bool $stale = false,
         public array $missing = [],
         public ?string $blocking = null,
+        public array $facts = [],
     ) {}
 
     public function overridden(): bool
@@ -61,14 +68,15 @@ final readonly class K3Note
     }
 
     /**
-     * The questions still open: none once a person has written the note in
-     * their own words, because the override is then the person's complete text.
+     * The questions still open: the questions about the books and facts
+     * always, the wording questions only until a person has written the note
+     * in their own words.
      *
      * @return list<string>
      */
     public function openQuestions(): array
     {
-        return $this->overridden() ? [] : $this->missing;
+        return $this->overridden() ? $this->facts : [...$this->facts, ...$this->missing];
     }
 
     /**

@@ -16,6 +16,7 @@ use App\Models\AnnualReport;
 use App\Models\ClosingCheck;
 use App\Models\CompanyAccountingPolicy;
 use App\Models\FiscalYear;
+use App\Models\FixedAsset;
 use App\Models\OpeningBalance;
 use App\Models\Voucher;
 use App\Support\Tenancy\CurrentCompany;
@@ -133,7 +134,8 @@ it('S1-R8.1 row 1 does not list a policy that is not in force for the year', fun
 
     expect(array_column($note->data['policies'], 'key'))->not->toContain('leasing')
         ->and(array_column($note->data['missing_policies'], 'key'))->toBe(['leasing'])
-        ->and($note->missing)->not->toBe([]);
+        ->and($note->facts)->not->toBe([])
+        ->and($note->missing)->toBe([]);
 });
 
 it('S1-R8.1 row 2 explains the translation of foreign currency only when the year has currency differences (K3 8.3A)', function () {
@@ -208,6 +210,29 @@ it('S1-R8.1 row 4 asks for the useful life when the register has no asset for a 
         ->and($note->missing)->toHaveCount(1);
 });
 
+it('S1-R8.1 row 4 reads only the register assets held during the year', function () {
+    k3NotesPost($this, [1220 => 6_000_000, 1930 => -6_000_000], '2026-01-10');
+    $save = fn (string $name, string $acquired, string $life) => app(FixedAssets::class)->save($this->owner, $this->company, [
+        'name' => $name, 'category' => 'EQUIPMENT', 'acquired_on' => $acquired,
+        'acquisition' => '1000,00', 'opening_accumulated' => '', 'life_months' => $life, 'depreciation_start' => substr($acquired, 0, 8).'01',
+        'asset_account' => '1220', 'accumulated_account' => '1229', 'expense_account' => '7832',
+    ]);
+    $save('Svarv', '2026-01-10', '60');
+    $save('Köpt efter året', '2027-01-15', '120');
+    $old = $save('Såld före året', '2024-01-10', '36');
+    $old->forceFill(['status' => FixedAsset::DISPOSED, 'disposed_on' => '2025-06-30'])->save();
+
+    expect(k3NotesFor($this)->note('fixed_assets.equipment')->data['lives'])->toBe([['category' => 'EQUIPMENT', 'label' => 'Inventarier och verktyg', 'years' => '5']]);
+});
+
+it('S1-R8.1 row 4 never asks for the useful life of construction in progress or advances', function () {
+    k3NotesPost($this, [1180 => 6_000_000, 1088 => 1_000_000, 1930 => -7_000_000]);
+    $notes = k3NotesFor($this);
+
+    expect($notes->note('fixed_assets.construction_in_progress')->missing)->toBe([])
+        ->and($notes->note('fixed_assets.intangible_advances')->missing)->toBe([]);
+});
+
 it('S1-R8.1 row 5 gives a note on goodwill only when there is goodwill, and asks for the period and reasons (ÅRL 5:9)', function () {
     expect(k3NotesFor($this)->note('goodwill'))->toBeNull();
 
@@ -266,6 +291,20 @@ it('S1-R8.1 row 8 states liabilities due after five years, and asks while long-t
         ->and(array_column($notes->questions(), 'key'))->not->toContain('long_term_liabilities');
 });
 
+it('S1-R8.1 row 8 asks when the amount due after five years exceeds the long-term debt in the books, or the books show none', function () {
+    $this->report->forceFill(['k3_long_term_liabilities_ore' => 30_000_000])->save();
+
+    expect(k3NotesFor($this)->note('long_term_liabilities')->facts)->toHaveCount(1);
+
+    k3NotesPost($this, [1930 => 20_000_000, 2350 => -20_000_000]);
+
+    expect(k3NotesFor($this)->note('long_term_liabilities')->facts)->toHaveCount(1);
+
+    k3NotesPost($this, [1930 => 10_000_000, 2350 => -10_000_000]);
+
+    expect(k3NotesFor($this)->note('long_term_liabilities')->facts)->toBe([]);
+});
+
 it('S1-R8.1 row 9 lists the security pledged (ÅRL 5:14, K3 8.6A)', function () {
     expect(k3NotesFor($this)->note('pledged_assets'))->toBeNull();
 
@@ -319,6 +358,29 @@ it('S1-R8.1 row 13 states loans to the board and the managing director (ÅRL 5:1
     expect(k3NotesFor($this)->note('loans_to_executives')->row)->toBe(13);
 });
 
+it('S1-R8.1 rows 11, 12, 13 and 16 ask whether the note applies, and an answered no closes the question', function (string $key, string $column) {
+    expect(array_column(k3NotesFor($this)->questions(), 'key'))->toContain($key);
+
+    $this->report->forceFill(['k3_answers' => [$key => true]])->save();
+
+    expect(array_column(k3NotesFor($this)->questions(), 'key'))->toContain($key)
+        ->and(k3NotesFor($this)->note($key))->toBeNull();
+
+    $this->report->forceFill(['k3_answers' => [$key => false]])->save();
+
+    expect(array_column(k3NotesFor($this)->questions(), 'key'))->not->toContain($key);
+
+    $this->report->forceFill(['k3_answers' => [], $column => 'Text.'])->save();
+
+    expect(array_column(k3NotesFor($this)->questions(), 'key'))->not->toContain($key)
+        ->and(k3NotesFor($this)->note($key))->not->toBeNull();
+})->with([
+    ['group_commitments', 'group_commitments'],
+    ['off_balance_arrangements', 'k3_off_balance_arrangements'],
+    ['loans_to_executives', 'k3_loans_to_executives'],
+    ['parent_company', 'k3_parent_company'],
+]);
+
 it('S1-R8.1 row 14 states the nature and amount of each exceptional item (ÅRL 5:19)', function () {
     expect(k3NotesFor($this)->note('exceptional_items'))->toBeNull();
 
@@ -339,6 +401,21 @@ it('S1-R8.1 row 15 always gives the average number of employees, as full-time eq
     $this->report->forceFill(['average_employees_fte' => '3.40'])->save();
 
     expect(k3NotesFor($this)->note('average_employees')->data['average_employees'])->toBe(3);
+});
+
+it('S1-R8.1 row 15 asks for the average number of employees instead of printing 0 when nothing is entered', function () {
+    $this->report->forceFill(['average_employees' => 0, 'average_employees_fte' => null])->save();
+    $note = k3NotesFor($this)->note('average_employees');
+
+    expect($note->data['average_employees'])->toBeNull()
+        ->and($note->generatedText)->toBe([])
+        ->and($note->facts)->toHaveCount(1);
+
+    $this->report->forceFill(['average_employees_fte' => '0.00'])->save();
+    $note = k3NotesFor($this)->note('average_employees');
+
+    expect($note->data['average_employees'])->toBe(0)
+        ->and($note->facts)->toBe([]);
 });
 
 it('S1-R8.1 row 16 names the parent company of the smallest group that prepares group accounts (ÅRL 5:21)', function () {
@@ -397,17 +474,31 @@ it('S1-R8.1 row 20 describes a change of principle in the year (K3 10.6, 10.7)',
         ->and($note->blocking)->not->toBeNull();
 });
 
-it('S1-R8.1 row 21 states the lack of comparability after correcting an earlier year\'s error (K3 10.14)', function () {
-    expect(k3NotesFor($this)->note('error_correction'))->toBeNull();
-
-    $previous = k3NotesPreviousYear($this, ReportingFramework::K3);
+it('S1-R8.1 row 21 is not triggered by a plain correcting voucher through this year\'s result (K3 10.14)', function () {
+    k3NotesPreviousYear($this, ReportingFramework::K3);
     $wrong = k3NotesPost($this, [5010 => 500_000, 1930 => -500_000], '2025-06-01');
     app(CorrectVoucher::class)($this->owner, $wrong, 'Fel konto', '2026-02-01');
+
+    expect(k3NotesFor($this)->note('error_correction'))->toBeNull();
+});
+
+it('S1-R8.1 row 21 states the lack of comparability after an error corrected against opening equity (K3 6.3 b, 10.14)', function () {
+    k3NotesPreviousYear($this, ReportingFramework::K3);
+    $wrong = k3NotesPost($this, [2091 => 500_000, 1930 => -500_000], '2025-06-01');
+    app(CorrectVoucher::class)($this->owner, $wrong, 'Fel i tidigare år', '2026-02-01');
     $note = k3NotesFor($this)->note('error_correction');
 
     expect($note->row)->toBe(21)
-        ->and($note->data['vouchers'])->toHaveCount(1)
-        ->and($previous->id)->not->toBe($this->year->id);
+        ->and($note->data['corrections'])->toHaveCount(1)
+        ->and($note->data['answered'])->toBeFalse();
+});
+
+it('S1-R8.1 row 21 is triggered by the answer that a material error was corrected retroactively', function () {
+    $this->report->forceFill(['k3_answers' => ['material_error_corrected' => true]])->save();
+    $note = k3NotesFor($this)->note('error_correction');
+
+    expect($note->row)->toBe(21)
+        ->and($note->data['answered'])->toBeTrue();
 });
 
 it('S1-R8.1 rows 22 and 23 disclose the first application of K3 and the lacking comparability (K3 35.7, 35.31, 35.33; ÅRL 3:5)', function () {

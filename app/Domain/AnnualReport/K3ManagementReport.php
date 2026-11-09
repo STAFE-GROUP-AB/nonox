@@ -8,6 +8,7 @@ use App\Domain\Company\LegalForm;
 use App\Models\AnnualReport;
 use App\Models\Company;
 use App\Models\FiscalYear;
+use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use LogicException;
 
@@ -38,7 +39,13 @@ use LogicException;
  */
 final class K3ManagementReport
 {
-    /** Parts of ÅRL 6 kap. 1 § that apply to större företag only (S1-R8.4). */
+    /**
+     * Parts of ÅRL 6 kap. 1 § that apply to större företag only (S1-R8.4:
+     * "Andra stycket 3-5, tredje stycket och fjärde stycket gäller inte mindre
+     * företag"). The keys name what NONOX understands each part to cover.
+     * TODO(legal-verify): the labels per point were not re-read against the
+     * SFS text (riksdagen.se, SFS 2026:780) for this package.
+     */
     public const array LARGER_COMPANY_ONLY = [
         'non_financial_kpis', // 6 kap. 1 § andra stycket 3
         'research_and_development', // 6 kap. 1 § andra stycket 4 (also K3 3.9)
@@ -52,6 +59,8 @@ final class K3ManagementReport
 
     /** @var list<array{key: string, message: string}> */
     private array $questions = [];
+
+    private ?K3Policies $policies = null;
 
     private function __construct(
         public readonly Company $company,
@@ -110,6 +119,8 @@ final class K3ManagementReport
 
         $this->text('business', __('Allmänt om verksamheten'), 'ÅRL 6 kap. 1 §, K3 3.7', $business);
         $this->text('significant_events', __('Väsentliga händelser under räkenskapsåret'), 'ÅRL 6 kap. 1 §, K3 3.7', $this->report->significant_events);
+        // TODO(legal-verify): "viktiga förändringar i verksamheten" as a part of K3 3.7 is taken from ADR-059 §1.4, not re-read.
+        $this->text('business_changes', __('Viktiga förändringar i verksamheten'), 'K3 3.7', $this->report->k3_business_changes);
         $this->text('external_factors', __('Viktiga externa faktorer'), 'K3 3.7', $this->report->k3_external_factors);
         $this->text('special_circumstances', __('Speciella omständigheter'), 'K3 3.7', $this->report->k3_special_circumstances);
         $this->majorOwners();
@@ -142,15 +153,17 @@ final class K3ManagementReport
         $owners = array_map(fn (array $owner): array => [
             'name' => (string) $owner['name'],
             'org_number' => isset($owner['org_number']) ? (string) $owner['org_number'] : null,
-            'birth_year' => isset($owner['birth_year']) ? (int) $owner['birth_year'] : null,
+            'foreign_registration' => isset($owner['foreign_registration']) ? (string) $owner['foreign_registration'] : null,
+            'country' => isset($owner['country']) ? (string) $owner['country'] : null,
             'votes_bp' => (int) $owner['votes_bp'],
             'capital_bp' => (int) $owner['capital_bp'],
         ], $stored);
 
+        // The document prints the name and the share only (Lead decision after the S1-P9 review).
         $paragraphs = $owners === []
             ? [__('Ingen ägare har mer än tio procent av andelarna eller rösterna.')]
             : array_map(fn (array $owner): string => __(':owner: :votes av rösterna och :capital av kapitalet.', [
-                'owner' => $owner['org_number'] !== null ? "{$owner['name']} ({$owner['org_number']})" : __(':name (född :year)', ['name' => $owner['name'], 'year' => $owner['birth_year']]),
+                'owner' => $owner['name'],
                 'votes' => self::percent($owner['votes_bp']),
                 'capital' => self::percent($owner['capital_bp']),
             ]), $owners);
@@ -174,6 +187,11 @@ final class K3ManagementReport
             ? []
             : [__('Beloppen för räkenskapsår som upprättades enligt :frameworks har inte räknats om enligt K3.', ['frameworks' => implode(__(' och '), $earlier)])];
 
+        // NONOX does not restate comparatives at the transition yet (S1-P12 refuses it), so it never prints a K2 figure as a restated one (K3 35.3A).
+        if ($this->policies()->value(K3PolicyKey::ComparativesRestatedAtTransition) === K3YesNo::Yes) {
+            $this->questions[] = ['key' => 'multi_year', 'message' => __('Jämförelsetalen ska räknas om enligt K3 vid övergången, men NONOX räknar inte om dem ännu. Flerårsöversikten kan därför inte visa omräknade belopp för föregående år (K3 punkt 35.3A).')];
+        }
+
         $this->sections[] = ['key' => 'multi_year', 'heading' => __('Flerårsöversikt'), 'rule' => 'ÅRL 6 kap. 1 §, K3 3.7', 'paragraphs' => $paragraphs, 'data' => ['rows' => $rows]];
     }
 
@@ -182,12 +200,25 @@ final class K3ManagementReport
     {
         $free = $this->accounts->freeEquity();
         $dividend = $this->report->dividend_ore->ore;
+        $available = max($free, 0);
+
+        // ABL 17 kap. 3 §: no more than the free equity may be distributed.
+        // TODO(legal-verify): the prudence rule of ABL 17 kap. 3 § andra stycket is a judgement NONOX does not make.
+        if ($dividend > $available) {
+            $this->questions[] = ['key' => 'disposition', 'message' => __('Den föreslagna utdelningen, :dividend, är större än det fria egna kapitalet, :free. Ett aktiebolag får inte dela ut mer än så (aktiebolagslagen 17 kap. 3 §). Ändra förslaget.', ['dividend' => Money::ofOre($dividend)->format(), 'free' => Money::ofOre($available)->format()])];
+        }
 
         $this->sections[] = ['key' => 'disposition', 'heading' => __('Resultatdisposition'), 'rule' => 'ÅRL 6 kap. 2 §, K3 3.14', 'paragraphs' => [], 'data' => [
             'free_ore' => $free,
             'dividend_ore' => $dividend,
-            'carried_ore' => $free - $dividend,
+            // A dividend never makes the amount carried forward negative; a loss carried forward stays as it is.
+            'carried_ore' => $free - min($dividend, $available),
         ]];
+    }
+
+    private function policies(): K3Policies
+    {
+        return $this->policies ??= K3Policies::forYear($this->fiscalYear);
     }
 
     private static function percent(int $basisPoints): string

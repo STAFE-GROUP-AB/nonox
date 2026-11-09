@@ -11,6 +11,7 @@ use App\Domain\Company\LegalForm;
 use App\Domain\Company\ReportingFramework;
 use App\Models\AnnualReport;
 use App\Models\AuditLog;
+use App\Models\CompanyAccountingPolicy;
 use App\Models\FiscalYear;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -49,38 +50,61 @@ it('S1-R8.4 stores the K3 3.7 texts and prints them in the management report', f
     ($this->save)([
         'k3_external_factors' => 'Räntorna har stigit.',
         'k3_special_circumstances' => 'Ingen.',
+        'k3_business_changes' => 'Bolaget har börjat hyra ut lager.',
         'k3_ownership_changes' => 'Grundaren sålde 30 % till en ny delägare.',
         'k3_major_owners' => [
-            ['name' => 'Fiktiva Ägarbolaget AB', 'org_number' => '556036-0793', 'votes_bp' => 6000, 'capital_bp' => 6000],
-            ['name' => 'Anna Exempel', 'birth_year' => 1975, 'votes_bp' => 3000, 'capital_bp' => 3000],
+            ['name' => 'Fiktiva Ägarbolaget AB', 'org_number' => '556036-0793', 'votes_bp' => 5000, 'capital_bp' => 5000],
+            ['name' => 'Example Holding GmbH', 'foreign_registration' => 'HRB 12345', 'country' => 'DE', 'votes_bp' => 2000, 'capital_bp' => 2000],
+            ['name' => 'Anna Exempel', 'votes_bp' => 3000, 'capital_bp' => 3000],
         ],
     ]);
 
     $sections = collect(($this->report)()->sections())->keyBy('key');
 
     expect($sections['external_factors']['paragraphs'])->toBe(['Räntorna har stigit.'])
+        ->and($sections['business_changes']['paragraphs'])->toBe(['Bolaget har börjat hyra ut lager.'])
         ->and($sections['ownership_changes']['paragraphs'])->toBe(['Grundaren sålde 30 % till en ny delägare.'])
         ->and($sections['major_owners']['data']['owners'])->toBe([
-            ['name' => 'Fiktiva Ägarbolaget AB', 'org_number' => '556036-0793', 'birth_year' => null, 'votes_bp' => 6000, 'capital_bp' => 6000],
-            ['name' => 'Anna Exempel', 'org_number' => null, 'birth_year' => 1975, 'votes_bp' => 3000, 'capital_bp' => 3000],
+            ['name' => 'Fiktiva Ägarbolaget AB', 'org_number' => '556036-0793', 'foreign_registration' => null, 'country' => null, 'votes_bp' => 5000, 'capital_bp' => 5000],
+            ['name' => 'Example Holding GmbH', 'org_number' => null, 'foreign_registration' => 'HRB 12345', 'country' => 'DE', 'votes_bp' => 2000, 'capital_bp' => 2000],
+            ['name' => 'Anna Exempel', 'org_number' => null, 'foreign_registration' => null, 'country' => null, 'votes_bp' => 3000, 'capital_bp' => 3000],
         ])
         ->and($sections['major_owners']['rule'])->toBe('K3 3.7 e')
-        ->and(implode(' ', $sections['major_owners']['paragraphs']))->toContain('Anna Exempel (född 1975): 30 % av rösterna och 30 % av kapitalet');
+        ->and($sections['major_owners']['paragraphs'])->toBe([
+            'Fiktiva Ägarbolaget AB: 50 % av rösterna och 50 % av kapitalet.',
+            'Example Holding GmbH: 20 % av rösterna och 20 % av kapitalet.',
+            'Anna Exempel: 30 % av rösterna och 30 % av kapitalet.',
+        ]);
 });
 
-it('S1-R8.4 never stores a personal identity number for an owner (GDPR, ADR-059 A.2.7)', function () {
+it('S1-R8.4 never stores a personal identity number or a birth year for an owner (GDPR, ADR-059 A.2.7)', function () {
     expect(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Anna Exempel', 'org_number' => '19750101-1234', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
         ->toThrow(ValidationException::class)
         ->and(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Anna Exempel', 'org_number' => '750101-1239', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
         ->toThrow(ValidationException::class)
+        ->and(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Anna Exempel', 'foreign_registration' => '19900101-2389', 'country' => 'NO', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
+        ->toThrow(ValidationException::class)
         ->and(AnnualReport::query()->count())->toBe(0);
+
+    ($this->save)(['k3_major_owners' => [['name' => 'Anna Exempel', 'birth_year' => 1975, 'votes_bp' => 5000, 'capital_bp' => 5000]]]);
+
+    expect(json_encode(AnnualReport::query()->value('k3_major_owners')))->not->toContain('1975');
+});
+
+it('S1-R8.4 asks a foreign registration number for a country, and only one identifier per owner', function () {
+    expect(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Example GmbH', 'foreign_registration' => 'HRB 1', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
+        ->toThrow(ValidationException::class)
+        ->and(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Example GmbH', 'foreign_registration' => 'HRB 1', 'country' => 'SE', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
+        ->toThrow(ValidationException::class)
+        ->and(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Example AB', 'org_number' => '556036-0793', 'foreign_registration' => 'HRB 1', 'country' => 'DE', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
+        ->toThrow(ValidationException::class);
 });
 
 it('S1-R8.4 takes only owners with more than ten per cent of the shares or the votes (K3 3.7 e)', function () {
-    expect(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Liten ägare', 'birth_year' => 1980, 'votes_bp' => 1000, 'capital_bp' => 1000]]]))
+    expect(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Liten ägare', 'votes_bp' => 1000, 'capital_bp' => 1000]]]))
         ->toThrow(ValidationException::class);
 
-    ($this->save)(['k3_major_owners' => [['name' => 'Röstägare', 'birth_year' => 1980, 'votes_bp' => 1001, 'capital_bp' => 500]]]);
+    ($this->save)(['k3_major_owners' => [['name' => 'Röstägare', 'votes_bp' => 1001, 'capital_bp' => 500]]]);
 
     expect(AnnualReport::query()->value('k3_major_owners'))->toHaveCount(1);
 });
@@ -134,6 +158,27 @@ it('S1-R8.4 shows the multi-year overview with the framework of each year and th
         ->and($sections['disposition']['data'])->toBe(['free_ore' => 10_000_000, 'dividend_ore' => 2_000_000, 'carried_ore' => 8_000_000]);
 });
 
+it('S1-R8.4 refuses a proposed dividend above the free equity and never carries a negative amount because of it (ABL 17 kap. 3 §)', function () {
+    Bookkeeping::postRows($this->owner, $this->company, '2026-03-01', [1930 => 10_000_000, 3001 => -10_000_000]);
+    ($this->save)([]);
+    AnnualReport::query()->update(['dividend_ore' => 12_000_000]);
+
+    $report = ($this->report)();
+    $disposition = collect($report->sections())->firstWhere('key', 'disposition')['data'];
+
+    expect(array_column($report->questions(), 'key'))->toContain('disposition')
+        ->and($disposition['carried_ore'])->toBeGreaterThanOrEqual(0);
+});
+
+it('S1-R8.4 does not print restated comparatives in a first K3 year, which NONOX does not support yet (K3 35.3A)', function () {
+    $previous = FiscalYear::create(['start_date' => '2025-01-01', 'end_date' => '2025-12-31']);
+    $previous->forceFill(['reporting_framework' => ReportingFramework::K2])->save();
+    CompanyAccountingPolicy::create(['key' => 'comparatives_restated_at_transition', 'value' => 'yes', 'applies_from' => '2026-01-01', 'set_by' => $this->owner->id]);
+    ($this->save)([]);
+
+    expect(array_column(($this->report)()->questions(), 'key'))->toContain('multi_year');
+});
+
 it('refuses to save the K3 texts for a year that does not follow K3', function () {
     $this->year->forceFill(['reporting_framework' => ReportingFramework::K2])->save();
 
@@ -141,6 +186,7 @@ it('refuses to save the K3 texts for a year that does not follow K3', function (
 });
 
 it('validates the note inputs: amounts as kronor, exceptional items with a description and an amount', function () {
+    Bookkeeping::postRows($this->owner, $this->company, '2026-03-01', [1930 => 200_000_000, 2350 => -200_000_000]);
     ($this->save)([
         'k3_long_term_liabilities' => '1 250 000,50',
         'k3_exceptional_items' => [['description' => 'Försäkringsersättning', 'amount' => '120 000']],
@@ -158,6 +204,22 @@ it('validates the note inputs: amounts as kronor, exceptional items with a descr
 
     expect(fn () => ($this->save)(['k3_exceptional_items' => [['description' => '', 'amount' => '1']]]))->toThrow(ValidationException::class)
         ->and(fn () => ($this->save)(['k3_long_term_liabilities' => '-5']))->toThrow(ValidationException::class);
+});
+
+it('refuses liabilities due after five years above the long-term debt in the books (ÅRL 5 kap. 13 §)', function () {
+    expect(fn () => ($this->save)(['k3_long_term_liabilities' => '1 000']))->toThrow(ValidationException::class);
+
+    Bookkeeping::postRows($this->owner, $this->company, '2026-03-01', [1930 => 50_000_000, 2350 => -50_000_000]);
+
+    expect(fn () => ($this->save)(['k3_long_term_liabilities' => '500 000,01']))->toThrow(ValidationException::class)
+        ->and(($this->save)(['k3_long_term_liabilities' => '500 000'])->k3_long_term_liabilities_ore)->toBe(50_000_000);
+});
+
+it('stores the yes and no answers about notes, and nothing else', function () {
+    ($this->save)(['k3_answers' => ['group_commitments' => false, 'material_error_corrected' => true]]);
+
+    expect(AnnualReport::query()->firstOrFail()->k3_answers)->toEqual(['group_commitments' => false, 'material_error_corrected' => true])
+        ->and(fn () => ($this->save)(['k3_answers' => ['unknown_question' => true]]))->toThrow(ValidationException::class);
 });
 
 it('keeps the K3 inputs that the call does not mention', function () {
@@ -183,7 +245,7 @@ it('lets the owner, an administrator and an accountant save, not a bookkeeper or
 ]);
 
 it('audits which fields changed, never their content', function () {
-    ($this->save)(['k3_external_factors' => 'Hemlig faktor', 'k3_major_owners' => [['name' => 'Hemlig Ägare', 'birth_year' => 1970, 'votes_bp' => 5000, 'capital_bp' => 5000]]]);
+    ($this->save)(['k3_external_factors' => 'Hemlig faktor', 'k3_major_owners' => [['name' => 'Hemlig Ägare', 'votes_bp' => 5000, 'capital_bp' => 5000]]]);
 
     $log = AuditLog::query()->where('action', 'annual_report.k3_inputs_saved')->firstOrFail();
 

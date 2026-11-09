@@ -13,6 +13,7 @@ use App\Domain\Company\ReportingFramework;
 use App\Models\AnnualReport;
 use App\Models\AnnualReportNoteOverride;
 use App\Models\AuditLog;
+use App\Models\CompanyAccountingPolicy;
 use App\Models\FiscalYear;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -95,6 +96,39 @@ it('resolves the questions of a note once a person has written it in their own w
     $this->overrides->set($this->owner, $this->year, 'contingent_liabilities', 'Borgen för leverantörens lån. Den finansiella effekten kan inte uppskattas.', 'Effekten går inte att beräkna');
 
     expect(array_column(($this->notes)()->questions(), 'key'))->not->toContain('contingent_liabilities');
+});
+
+it('P2-1 never closes a book question by an override: the transition is not booked', function () {
+    $previous = FiscalYear::create(['start_date' => '2025-01-01', 'end_date' => '2025-12-31']);
+    $previous->forceFill(['reporting_framework' => ReportingFramework::K2])->save();
+
+    foreach (['comparatives_restated_at_transition' => 'no', 'k3_applied_before' => 'no', 'left_k2_reason' => 'forced_2025_2'] as $key => $value) {
+        app(SetAccountingPolicy::class)($this->owner, $this->company, $this->year->id, K3PolicyKey::from($key), $value);
+    }
+
+    expect(array_column(($this->notes)()->questions(), 'key'))->toContain('first_time_application');
+
+    $this->overrides->set($this->owner, $this->year, 'first_time_application', 'Egen text om övergången.', 'Egen formulering');
+
+    expect(array_column(($this->notes)()->questions(), 'key'))->toContain('first_time_application');
+});
+
+it('P2-1 never closes a missing policy by an override of note 1', function () {
+    CompanyAccountingPolicy::query()->where('key', 'leasing')->delete();
+    $this->overrides->set($this->owner, $this->year, 'accounting_principles', 'Egna principer.', 'Egen formulering');
+
+    expect(array_column(($this->notes)()->questions(), 'key'))->toContain('accounting_principles');
+});
+
+it('P3 computes the stale hash from the Swedish text, whatever the locale', function () {
+    AnnualReport::create(['fiscal_year_id' => $this->year->id, 'average_employees' => 2, 'signatories' => [], 'updated_by' => $this->owner->id]);
+    app()->setLocale('en');
+    $this->overrides->set($this->owner, $this->year, 'average_employees', 'Två anställda.', 'Egen formulering');
+    $note = ($this->notes)()->note('average_employees');
+
+    expect($note->stale)->toBeFalse()
+        ->and(implode(' ', $note->generatedText))->toContain('Medelantalet anställda')
+        ->and(app()->getLocale())->toBe('en');
 });
 
 it('replaces an earlier override and removes it on request', function () {
