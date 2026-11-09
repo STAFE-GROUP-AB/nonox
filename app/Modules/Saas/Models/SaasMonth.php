@@ -38,6 +38,7 @@ use LogicException;
  * @property int $pause_ore
  * @property int $churn_ore
  * @property int $fx_ore
+ * @property int $source_ore
  * @property int $correction_ore
  * @property int $new_customers
  * @property int $churned_customers
@@ -62,7 +63,7 @@ class SaasMonth extends Model
     /** The totals that recompute writes. */
     public const array TOTALS = [
         'opening_mrr_ore', 'opening_customers', 'mrr_ore', 'customers', 'new_ore', 'reactivation_ore', 'resumed_ore',
-        'expansion_ore', 'contraction_ore', 'pause_ore', 'churn_ore', 'fx_ore', 'correction_ore', 'new_customers',
+        'expansion_ore', 'contraction_ore', 'pause_ore', 'churn_ore', 'fx_ore', 'source_ore', 'correction_ore', 'new_customers',
         'churned_customers', 'churn_from_active_ore', 'nrr_base_ore', 'nrr_ore', 'grr_ore', 'scheduled_churn_ore',
         'source_issues', 'missing_rates', 'cohorts', 'rates', 'computed_at',
     ];
@@ -101,6 +102,7 @@ class SaasMonth extends Model
             'pause_ore' => 'integer',
             'churn_ore' => 'integer',
             'fx_ore' => 'integer',
+            'source_ore' => 'integer',
             'correction_ore' => 'integer',
             'new_customers' => 'integer',
             'churned_customers' => 'integer',

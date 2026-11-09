@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * A customer's MRR at one month-end, the lines behind it and how it moved
- * (ADR-080 §3.3): mrr = opening + correction + fx + movement, to the öre.
+ * (ADR-080 §3.3): mrr = opening + correction + fx + source + movement, to the öre.
  * Frozen with its month: a trigger refuses every change once the month is
  * closed.
  *
@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $opening_ore
  * @property int $correction_ore
  * @property int $fx_ore
+ * @property int $source_ore
  * @property ?Movement $movement
  * @property int $movement_ore
  * @property int $reclass_ore
@@ -52,6 +53,7 @@ class SaasCustomerMonth extends Model
         'opening_ore',
         'correction_ore',
         'fx_ore',
+        'source_ore',
         'movement',
         'movement_ore',
         'reclass_ore',
@@ -72,6 +74,7 @@ class SaasCustomerMonth extends Model
             'opening_ore' => 'integer',
             'correction_ore' => 'integer',
             'fx_ore' => 'integer',
+            'source_ore' => 'integer',
             'movement' => Movement::class,
             'movement_ore' => 'integer',
             'reclass_ore' => 'integer',

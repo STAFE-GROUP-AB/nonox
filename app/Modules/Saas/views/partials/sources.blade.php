@@ -20,4 +20,9 @@
             <span class="text-gray-600">· {{ $labels->contract($line->sourceType, $line->sourceId) }} · {{ \App\Support\Money\Money::ofOre($contract['ore'])->format() }}{{ $line->currency !== 'SEK' ? ' ('.$line->currency.')' : '' }}</span>
         </li>
     @endforeach
+    @php($lineSum = array_sum(array_column($byContract, 'ore')))
+    @if(isset($mrr) && $mrr !== $lineSum)
+        {{-- Lines adding up to less than zero count as 0 (re-check P3): the row shows the difference so it still adds up. --}}
+        <li class="text-gray-600">{{ __('Begränsat till 0') }} · {{ \App\Support\Money\Money::ofOre($mrr - $lineSum)->format() }}</li>
+    @endif
 </ul>

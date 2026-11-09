@@ -26,7 +26,15 @@ final readonly class MonthResult
         public ?int $nrrOre,
         public ?int $grrOre,
         public array $negativeCustomers = [],
+        /** @var array<string, int> contract key => customer, for contracts in force whose source is switched off */
+        public array $sourceOff = [],
     ) {}
+
+    /** Sources switched off or on again this month (review B): its own row in the bridge, outside churn. */
+    public function sourceOre(): int
+    {
+        return array_sum(array_map(fn (CustomerMonth $row): int => $row->sourceOre, $this->customers));
+    }
 
     public function mrrOre(): int
     {
@@ -108,6 +116,6 @@ final readonly class MonthResult
     {
         $movements = array_sum(array_map(fn (Movement $movement): int => $this->movementOre($movement), Movement::cases()));
 
-        return $this->mrrOre() === $this->openingOre() + $this->fxOre() + $movements;
+        return $this->mrrOre() === $this->openingOre() + $this->fxOre() + $this->sourceOre() + $movements;
     }
 }

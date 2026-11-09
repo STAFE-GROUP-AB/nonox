@@ -64,6 +64,14 @@ final class SaasLedger
     {
         $today ??= CarbonImmutable::today();
 
+        // Riksbanken's rates are fetched (and cached for good) before the ledger lock is taken,
+        // so a slow answer never holds up the company's agreement changes (re-check, step-2 note).
+        CurrentCompany::run($company, function () use ($today): void {
+            [$versions] = self::versions();
+            $closed = SaasMonth::query()->where('status', SaasMonth::CLOSED)->orderBy('month')->get()->keyBy(fn (SaasMonth $month): string => $month->key());
+            $this->history($versions, Months::of($today->toDateString()), $closed, $today, ratesOnly: true);
+        });
+
         return CurrentCompany::run($company, fn (): ?int => DB::transaction(function () use ($company, $today): ?int {
             // One recompute per company at a time, and no version writer meanwhile (ContractVersions::lock):
             // the versions read below are all committed, so the highest id is the one a close stores.
@@ -199,11 +207,15 @@ final class SaasLedger
                         $issues[] = "customer {$customer}: movement";
                     }
 
+                    if (($row->source_ore ?? 0) !== ($want->sourceOre ?? 0)) {
+                        $issues[] = "customer {$customer}: source";
+                    }
+
                     if (($row->fx_ore ?? 0) !== ($want->fxOre ?? 0)) {
                         $issues[] = "customer {$customer}: currency effect";
                     }
 
-                    if ($row !== null && $row->mrr_ore !== $row->opening_ore + $row->correction_ore + $row->fx_ore + $row->movement_ore) {
+                    if ($row !== null && $row->mrr_ore !== $row->opening_ore + $row->correction_ore + $row->fx_ore + $row->source_ore + $row->movement_ore) {
                         $issues[] = "customer {$customer}: bridge";
                     }
 
@@ -226,7 +238,7 @@ final class SaasLedger
                     $issues[] = 'total MRR';
                 }
 
-                if ($month->mrr_ore !== $month->opening_mrr_ore + $month->correction_ore + $month->fx_ore + array_sum(array_map(fn (Movement $movement): int => $month->movement($movement), Movement::cases()))) {
+                if ($month->mrr_ore !== $month->opening_mrr_ore + $month->correction_ore + $month->fx_ore + $month->source_ore + array_sum(array_map(fn (Movement $movement): int => $month->movement($movement), Movement::cases()))) {
                     $issues[] = 'bridge';
                 }
 
@@ -258,7 +270,7 @@ final class SaasLedger
      * @param  list<ContractVersion>  $versions
      * @param  Collection<string, SaasMonth>  $closed
      */
-    private function history(array $versions, string $current, Collection $closed, CarbonImmutable $today): RevenueHistory
+    private function history(array $versions, string $current, Collection $closed, CarbonImmutable $today, bool $ratesOnly = false): RevenueHistory
     {
         $first = $current;
 
@@ -267,6 +279,10 @@ final class SaasLedger
         }
 
         $rates = $this->rates->for($versions, Months::range($first, $current), self::frozenRates($closed), $today);
+
+        if ($ratesOnly) {
+            return new RevenueHistory([]);
+        }
 
         return $this->revenue->history($versions, $current, $rates);
     }
@@ -408,6 +424,7 @@ final class SaasLedger
                 'opening_ore' => $opening,
                 'correction_ore' => $correction,
                 'fx_ore' => $row->fxOre ?? 0,
+                'source_ore' => $row->sourceOre ?? 0,
                 'movement' => $row?->movement?->value,
                 'movement_ore' => $row->movementOre ?? 0,
                 'reclass_ore' => $row->reclassOre ?? 0,
@@ -431,6 +448,7 @@ final class SaasLedger
             'mrr_ore' => $result?->mrrOre() ?? 0,
             'customers' => $result?->activeCustomers() ?? 0,
             'fx_ore' => $result?->fxOre() ?? 0,
+            'source_ore' => $result?->sourceOre() ?? 0,
             'correction_ore' => $totals['correction'],
             'new_customers' => $result?->customersWith(Movement::New) ?? 0,
             'churned_customers' => $result?->churnedCustomers() ?? 0,

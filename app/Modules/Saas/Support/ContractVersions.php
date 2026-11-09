@@ -78,6 +78,18 @@ final class ContractVersions
             default => $today->toDateString(),
         };
 
+        // Before its first invoice, moving the next invoice date moves the start (re-check A, case a).
+        $startsOn = $previous?->starts_on?->toDateString();
+        $oldNext = is_array($previous?->source_ref) ? ($previous->source_ref['next_invoice_date'] ?? null) : null;
+        $newNext = $agreement->next_invoice_date->toDateString();
+
+        if ($previous !== null && is_string($oldNext) && $oldNext !== $newNext && $effectiveFrom === null
+            && ($previous->starts_on !== null || $previous->effective_from->toDateString() === $oldNext)
+            && ! Invoice::query()->where('recurring_invoice_id', $agreement->id)->exists()) {
+            $startsOn = $newNext;
+            $from = min($from, $oldNext, $newNext);
+        }
+
         // Ids, amounts and enums only: the row's text is read from the agreement when a page shows it (GDPR, review 7).
         $lines = $agreement->rows->map(fn (RecurringInvoiceRow $row): array => (new RevenueLine(
             "r{$row->position}",
@@ -96,7 +108,7 @@ final class ContractVersions
             'recorded_by' => $userId,
             'cause' => $cause,
             'status' => $agreement->status === AgreementStatus::Paused || $endedWhilePaused ? ContractStatus::Paused : ContractStatus::Active,
-            'starts_on' => null,
+            'starts_on' => $startsOn,
             'cancel_effective_on' => $cancel,
             'excluded' => null,
             'lines' => $lines,
@@ -107,7 +119,7 @@ final class ContractVersions
                 'end_date' => $agreement->end_date?->toDateString(),
                 'agreement_status' => $agreement->status->value,
             ],
-        ], $previous);
+        ], $previous, $effectiveFrom !== null);
     }
 
     public function recordCrmAgreement(Agreement $agreement, ?VersionCause $cause, ?int $userId, ?CarbonImmutable $today = null): ?SaasContractVersion
@@ -326,21 +338,53 @@ final class ContractVersions
     /**
      * @param  array<string, mixed>  $attributes
      */
-    private function append(array $attributes, ?SaasContractVersion $previous): ?SaasContractVersion
+    /**
+     * Writes the version when it changes what is known about the contract's
+     * timeline (re-check A): never an exact duplicate of the latest version,
+     * never a silent loss of a change of date.
+     *
+     * - Same content as the latest version: written only when the person gave
+     *   an explicit "Gäller från" and the contract on that date (or a pending
+     *   later change) differs, so bringing a change forward or backdating it
+     *   is kept; without an explicit date nothing changed.
+     * - A moved start (before the first invoice): written in full from the
+     *   earlier of the two dates.
+     * - Otherwise a pending later change is kept (see below).
+     *
+     * @param  array<string, mixed>  $attributes
+     * @param  bool  $explicit  the person gave the effective date ("Gäller från")
+     */
+    private function append(array $attributes, ?SaasContractVersion $previous, bool $explicit = false): ?SaasContractVersion
     {
-        if ($previous !== null && self::content($attributes) === self::content(self::state($previous))) {
+        $from = (string) $attributes['effective_from'];
+
+        if ($previous === null) {
+            return $this->write($attributes);
+        }
+
+        $sameAsLatest = self::content($attributes) === self::content(self::state($previous));
+
+        if ($sameAsLatest && $from === $previous->effective_from->toDateString()) {
             return null;
         }
 
-        $from = (string) $attributes['effective_from'];
-        $versions = $previous === null ? collect() : SaasContractVersion::query()
+        $versions = SaasContractVersion::query()
             ->where('source_type', $attributes['source_type'] instanceof SourceType ? $attributes['source_type']->value : $attributes['source_type'])
             ->where('source_id', $attributes['source_id'])
             ->orderBy('id')
             ->get();
         $pending = self::pending($versions, $from);
+        $inForce = $versions->filter(fn (SaasContractVersion $version): bool => $version->effective_from->toDateString() <= $from)->last();
 
-        if ($previous === null || $pending === []) {
+        if ($sameAsLatest) {
+            $unchanged = $inForce !== null && self::content(self::state($inForce)) === self::content($attributes) && $pending === [];
+
+            return ! $explicit || $unchanged ? null : $this->write($attributes);
+        }
+
+        $movedStart = self::field($attributes, 'starts_on') !== self::field(self::state($previous), 'starts_on');
+
+        if ($pending === [] || $movedStart) {
             return $this->write($attributes);
         }
 
@@ -353,7 +397,7 @@ final class ContractVersions
          */
         $latest = self::state($previous);
         $changed = array_values(array_filter(self::FIELDS, fn (string $field): bool => self::field($attributes, $field) !== self::field($latest, $field)));
-        $base = $versions->filter(fn (SaasContractVersion $version): bool => $version->effective_from->toDateString() <= $from)->last();
+        $base = $inForce;
         $written = null;
 
         if ($base !== null) {

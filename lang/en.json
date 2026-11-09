@@ -12963,7 +12963,6 @@
     "Ändrad av rättelser": "Changed by corrections",
     "Stängd, med rättelser": "Closed, with corrections",
     "Rörelser per månad": "Movements per month",
-    "MRR vid månadens slut = ingående MRR + rättelse + valutaeffekt + nya + återaktiverade + återupptagna + utökningar − minskningar − pauser − churn. Varje belopp öppnar kunderna bakom det.": "MRR at the end of the month = opening MRR + correction + currency effect + new + reactivated + resumed + expansions − contractions − pauses − churn. Every amount opens the customers behind it.",
     "Inga månader än": "No months yet",
     "Månaderna räknas fram när det finns ett avtal eller en avtalsfakturering.": "The months are computed once there is an agreement or a recurring invoice.",
     "Belopp i kronor.": "Amounts in kronor.",
@@ -13037,10 +13036,17 @@
     "Riksbanken har ingen kurs för :currencies vid slutet av :month. Månaden kan stängas när kursen finns.": "Riksbanken has no rate for :currencies at the end of :month. The month can be closed once the rate exists.",
     "Riksbanken har ingen kurs för :currencies vid månadens slut. Den senaste kända kursen används tills den finns, och månaden kan inte stängas förrän dess.": "Riksbanken has no rate for :currencies at the end of the month. The latest known rate is used until it exists, and the month cannot be closed before then.",
     "Möjlig dubbelräkning": "Possible double counting",
-    "Kunden har både ett avtal i avtalsregistret och en avtalsfakturering som inte är kopplade till varandra. Gäller de samma sak räknas intäkten två gånger. Koppla avtalet i registret till avtalsfaktureringen, så räknas den bara där. NONOX gissar inte.": "The customer has both an agreement in the agreement register and a recurring invoice that are not linked to each other. If they are the same thing, the revenue is counted twice. Link the agreement in the register to the recurring invoice, and it is counted only there. NONOX does not guess.",
     "Koppla :agreement": "Link :agreement",
     "Kunder med negativ återkommande intäkt": "Customers with negative recurring revenue",
     "Kundens avtalsrader blir tillsammans mindre än noll, till exempel en rabattrad som är större än priset. Kunden räknas som 0 kr tills avtalet är rättat.": "The customer's agreement rows add up to less than zero, for example a discount row larger than the price. The customer counts as 0 kr until the agreement is corrected.",
     "CRM är avstängt, så avtalsregistret räknas inte": "CRM is off, so the agreement register is not counted",
-    "{1} En sak i underlaget behöver granskas.|[2,*] :count saker i underlaget behöver granskas.": "{1} One thing in the source data needs a review.|[2,*] :count things in the source data need a review."
+    "{1} En sak i underlaget behöver granskas.|[2,*] :count saker i underlaget behöver granskas.": "{1} One thing in the source data needs a review.|[2,*] :count things in the source data need a review.",
+    "Avtalen är markerade som separata och visas inte längre som möjlig dubbelräkning.": "The agreements are marked as separate and are no longer shown as possible double counting.",
+    "Källa av eller på": "Source off or on",
+    "Du har inte behörighet att ändra underlaget för återkommande intäkter.": "You are not allowed to change the source data for recurring revenue.",
+    "Kunden har både ett avtal i avtalsregistret och en avtalsfakturering som inte är kopplade till varandra. Gäller de samma sak räknas intäkten två gånger. Koppla avtalet i registret till avtalsfaktureringen, så räknas den bara där. Är det olika avtal markerar du dem som separata. NONOX gissar inte.": "The customer has both an agreement in the agreement register and a recurring invoice that are not linked to each other. If they are the same thing, the revenue is counted twice. Link the agreement in the register to the recurring invoice, and it is counted only there. If they are different agreements, mark them as separate. NONOX does not guess.",
+    "Markera som separata avtal": "Mark as separate agreements",
+    "Markerade som separata avtal": "Marked as separate agreements",
+    "MRR vid månadens slut = ingående MRR + rättelse + valutaeffekt ± källa av eller på + nya + återaktiverade + återupptagna + utökningar − minskningar − pauser − churn. Varje belopp öppnar kunderna bakom det.": "MRR at the end of the month = opening MRR + correction + currency effect ± source off or on + new + reactivated + resumed + expansions − contractions − pauses − churn. Every amount opens the customers behind it.",
+    "Begränsat till 0": "Limited to 0"
 }

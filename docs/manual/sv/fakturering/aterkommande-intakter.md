@@ -49,6 +49,7 @@ Kortet **Från förra månadens MRR till denna** visar hur förra månadens MRR 
 | **Paus** | Alla kundens avtal är pausade. En paus är ingen churn, men en paus som varar längre än tolv månader räknas som churn i den trettonde månaden. |
 | **Churn** | En kund som inte har någon MRR kvar. |
 | **Valutaeffekt** | Avtal i andra valutor, omräknade med Riksbankens kurs vid månadens slut. Kursändringen syns här och aldrig som minskning eller utökning. |
+| **Källa av eller på** | Avtalen i avtalsregistret när CRM stängs av eller slås på igen. Det är ingen kund som slutar eller kommer tillbaka, så det räknas aldrig som churn eller återaktivering. |
 | **Rättelse** | Det som blev känt efter att förra månaden stängdes. Läs [Stäng en månad i Återkommande intäkter](/manual/fakturering/stang-en-manad-i-aterkommande-intakter). |
 
 Raderna summerar till öret. Tryck på en rad så ser du kunderna bakom beloppet och avtalen bakom varje kund, och **Ladda ner CSV** ger samma lista som en fil.
@@ -77,7 +78,8 @@ När NONOX SaaS är påslaget har avtalet i avtalsfaktureringen fältet **Gälle
 
 ## Bra att veta
 
-- Ett avtal i avtalsregistret som är kopplat till en avtalsfakturering räknas bara en gång, i avtalsfaktureringen. Har en kund både ett avtal i registret och en avtalsfakturering som inte är kopplade visas de under **Källor** som **Möjlig dubbelräkning**, så att du kan koppla dem.
+- Ett avtal i avtalsregistret som är kopplat till en avtalsfakturering räknas bara en gång, i avtalsfaktureringen. Har en kund både ett avtal i registret och en avtalsfakturering som inte är kopplade visas de under **Källor** som **Möjlig dubbelräkning**, så att du kan koppla dem. Är det olika avtal trycker du på **Markera som separata avtal**; markeringen går att ångra.
+- En kund vars avtalsrader blir mindre än noll räknas som 0 kr och visas under **Källor**. Raden **Begränsat till 0** visar skillnaden.
 - Ett nytt avtal i avtalsfaktureringen räknas från sitt första fakturadatum, om du inte anger något annat i **Gäller från**.
 - Saknar Riksbanken en kurs vid månadens slut används den senaste kända kursen, och månaden kan inte stängas förrän kursen finns.
 - Ett avtal i avtalsregistret med ett totalvärde räknas om det har både start- och slutdatum. Värdet delas då med antalet månader.

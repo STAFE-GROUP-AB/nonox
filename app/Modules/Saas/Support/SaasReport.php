@@ -14,6 +14,7 @@ use App\Modules\Saas\Models\SaasCorrection;
 use App\Modules\Saas\Models\SaasCustomerMonth;
 use App\Modules\Saas\Models\SaasEstimate;
 use App\Modules\Saas\Models\SaasMonth;
+use App\Modules\Saas\Models\SaasSeparatePair;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -28,6 +29,7 @@ final class SaasReport
     public const array CATEGORIES = [
         'rattelse' => 'correction_ore',
         'valutaeffekt' => 'fx_ore',
+        'kalla' => 'source_ore',
         'ny' => 'new_ore',
         'ateraktivering' => 'reactivation_ore',
         'aterupptagen' => 'resumed_ore',
@@ -62,6 +64,7 @@ final class SaasReport
         return match ($category) {
             'rattelse' => __('Rättelse'),
             'valutaeffekt' => __('Valutaeffekt'),
+            'kalla' => __('Källa av eller på'),
             'ingaende' => __('Ingående MRR'),
             'utgaende' => __('MRR'),
             default => Movement::fromSlug($category)?->label() ?? $category,
@@ -119,6 +122,7 @@ final class SaasReport
         return match ($category) {
             'rattelse' => $row->correction_ore,
             'valutaeffekt' => $row->fx_ore,
+            'kalla' => $row->source_ore,
             'ingaende' => $row->opening_ore,
             'utgaende' => $row->mrr_ore,
             default => ($movement = Movement::fromSlug($category)) === null ? 0 : $row->amountIn($movement),
@@ -234,7 +238,7 @@ final class SaasReport
      * not linked to each other. NONOX does not guess that they are the same
      * agreement; the person links them in the register if they are. One query.
      *
-     * @return array<int, array{crm: list<string>, recurring: list<string>}> customer id => source ids
+     * @return array<int, list<array{crm: string, recurring: string}>> customer id => the unlinked pairs
      */
     public static function possibleDoubles(CarbonImmutable $today): array
     {
@@ -251,10 +255,32 @@ final class SaasReport
             $byCustomer[(int) $version->customer_id][$version->source_type === SourceType::CrmAgreement ? 'crm' : 'recurring'][] = $version->source_id;
         }
 
-        return array_filter(
-            array_map(fn (array $sources): array => ['crm' => $sources['crm'] ?? [], 'recurring' => $sources['recurring'] ?? []], $byCustomer),
-            fn (array $sources): bool => $sources['crm'] !== [] && $sources['recurring'] !== [],
-        );
+        // Pairs a person has marked as separate agreements are not listed (re-check P3).
+        $separate = [];
+
+        foreach (SaasSeparatePair::query()->get(['crm_agreement_id', 'recurring_invoice_id']) as $pair) {
+            $separate["{$pair->crm_agreement_id}:{$pair->recurring_invoice_id}"] = true;
+        }
+
+        $doubles = [];
+
+        foreach ($byCustomer as $customer => $sources) {
+            foreach ($sources['crm'] ?? [] as $crm) {
+                foreach ($sources['recurring'] ?? [] as $recurring) {
+                    if (! isset($separate["{$crm}:{$recurring}"])) {
+                        $doubles[$customer][] = ['crm' => (string) $crm, 'recurring' => (string) $recurring];
+                    }
+                }
+            }
+        }
+
+        return $doubles;
+    }
+
+    /** @return Collection<int, SaasSeparatePair> the pairs marked as separate agreements, for undoing */
+    public static function separatePairs(): Collection
+    {
+        return SaasSeparatePair::query()->orderByDesc('id')->get();
     }
 
     /**

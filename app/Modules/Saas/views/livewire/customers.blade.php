@@ -34,7 +34,7 @@
                     </thead>
                     <tbody class="divide-y divide-stone-100">
                         @foreach($rows as $row)
-                            @php($change = $row->correction_ore + $row->fx_ore + $row->movement_ore)
+                            @php($change = $row->correction_ore + $row->fx_ore + $row->source_ore + $row->movement_ore)
                             <tr>
                                 <td class="py-2 pr-4"><a href="{{ route('saas.customers.show', ['customer' => $row->customer_id]) }}" class="font-medium text-ink hover:text-accent-700 hover:underline">{{ $row->customer?->name ?? __('Kund :id', ['id' => $row->customer_id]) }}</a></td>
                                 <td class="py-2 pr-4 text-right"><x-ui.amount :money="Money::ofOre($row->mrr_ore)" /></td>

@@ -233,6 +233,7 @@ use App\Modules\Saas\Models\SaasCorrection;
 use App\Modules\Saas\Models\SaasCustomerMonth;
 use App\Modules\Saas\Models\SaasEstimate;
 use App\Modules\Saas\Models\SaasMonth;
+use App\Modules\Saas\Models\SaasSeparatePair;
 use App\Modules\StaffLedger\Models\Device as StaffLedgerDevice;
 use App\Modules\StaffLedger\Models\Entry as StaffLedgerEntry;
 use App\Modules\StaffLedger\Models\Location as StaffLedgerLocation;
@@ -396,6 +397,7 @@ const COMPANY_SCOPED_MODELS = [
     SaasCustomerMonth::class => ['month' => '2026-10-01', 'customer_id' => 1, 'mrr_ore' => 99_900, 'state' => 'ACTIVE', 'lines' => []],
     SaasCorrection::class => ['booked_month' => '2026-11-01', 'affects_month' => '2026-10-01', 'customer_id' => 1, 'amount_ore' => -10_000],
     SaasEstimate::class => ['month' => '2026-09-01', 'customer_id' => 1, 'mrr_ore' => 50_000, 'invoice_ids' => []],
+    SaasSeparatePair::class => ['crm_agreement_id' => 1, 'recurring_invoice_id' => 'hemligt-avtal'],
     PlanningArea::class => ['name' => 'Hemligt kök', 'colour' => '#e4572e'],
     PlanningSkill::class => ['name' => 'Hemlig kompetens'],
     PlanningEmployeeSkill::class => 'planningEmployeeSkillAttributes',

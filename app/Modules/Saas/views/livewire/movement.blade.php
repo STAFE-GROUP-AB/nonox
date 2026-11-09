@@ -51,7 +51,7 @@
                                 </td>
                                 <td class="py-2 pr-4 text-right"><x-ui.amount :money="Money::ofOre(SaasReport::amount($row, $category))" /></td>
                                 <td class="py-2 pr-4 text-right"><x-ui.amount :money="Money::ofOre($row->mrr_ore)" /></td>
-                                <td class="py-2">@include('saas::partials.sources', ['lines' => $row->lineMonths(), 'labels' => $labels])</td>
+                                <td class="py-2">@include('saas::partials.sources', ['lines' => $row->lineMonths(), 'labels' => $labels, 'mrr' => $row->mrr_ore])</td>
                             </tr>
                         @endforeach
                     </tbody>

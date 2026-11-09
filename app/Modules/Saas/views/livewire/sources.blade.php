@@ -23,19 +23,39 @@
     @endif
 
     @if($doubles !== [])
-        <x-ui.card :title="__('Möjlig dubbelräkning')" :description="__('Kunden har både ett avtal i avtalsregistret och en avtalsfakturering som inte är kopplade till varandra. Gäller de samma sak räknas intäkten två gånger. Koppla avtalet i registret till avtalsfaktureringen, så räknas den bara där. NONOX gissar inte.')">
+        <x-ui.card :title="__('Möjlig dubbelräkning')" :description="__('Kunden har både ett avtal i avtalsregistret och en avtalsfakturering som inte är kopplade till varandra. Gäller de samma sak räknas intäkten två gånger. Koppla avtalet i registret till avtalsfaktureringen, så räknas den bara där. Är det olika avtal markerar du dem som separata. NONOX gissar inte.')">
             <ul class="divide-y divide-stone-100 text-sm">
-                @foreach($doubles as $customerId => $pair)
-                    <li class="py-2">
-                        <span class="font-medium text-ink">{{ $customers->get($customerId)?->name ?? __('Kund :id', ['id' => $customerId]) }}</span>:
-                        @foreach($pair['crm'] as $id)
-                            @if(Route::has('crm.agreements.show'))
-                                <a href="{{ route('crm.agreements.show', ['agreement' => (int) $id]) }}" class="text-accent-700 hover:underline">{{ __('Koppla :agreement', ['agreement' => $labels->contract(SourceType::CrmAgreement, $id)]) }}</a>
-                            @else
-                                {{ $labels->contract(SourceType::CrmAgreement, $id) }}
+                @foreach($doubles as $customerId => $pairs)
+                    @foreach($pairs as $pair)
+                        <li class="flex flex-wrap items-center justify-between gap-2 py-2">
+                            <span>
+                                <span class="font-medium text-ink">{{ $customers->get($customerId)?->name ?? __('Kund :id', ['id' => $customerId]) }}</span>:
+                                @if(Route::has('crm.agreements.show'))
+                                    <a href="{{ route('crm.agreements.show', ['agreement' => (int) $pair['crm']]) }}" class="text-accent-700 hover:underline">{{ __('Koppla :agreement', ['agreement' => $labels->contract(SourceType::CrmAgreement, $pair['crm'])]) }}</a>
+                                @else
+                                    {{ $labels->contract(SourceType::CrmAgreement, $pair['crm']) }}
+                                @endif
+                                · {{ $labels->contract(SourceType::RecurringInvoice, $pair['recurring']) }}
+                            </span>
+                            @if($canManage)
+                                <button type="button" wire:click="markSeparate({{ (int) $pair['crm'] }}, '{{ $pair['recurring'] }}')" wire:loading.attr="disabled" class="text-sm font-medium text-gray-700 underline">{{ __('Markera som separata avtal') }}</button>
                             @endif
-                        @endforeach
-                        · {{ collect($pair['recurring'])->map(fn ($id) => $labels->contract(SourceType::RecurringInvoice, $id))->implode(', ') }}
+                        </li>
+                    @endforeach
+                @endforeach
+            </ul>
+        </x-ui.card>
+    @endif
+
+    @if($separate->isNotEmpty())
+        <x-ui.card :title="__('Markerade som separata avtal')">
+            <ul class="divide-y divide-stone-100 text-sm">
+                @foreach($separate as $pair)
+                    <li class="flex flex-wrap items-center justify-between gap-2 py-2">
+                        <span>{{ $labels->contract(SourceType::CrmAgreement, (string) $pair->crm_agreement_id) }} · {{ $labels->contract(SourceType::RecurringInvoice, $pair->recurring_invoice_id) }}</span>
+                        @if($canManage)
+                            <button type="button" wire:click="undoSeparate({{ $pair->id }})" class="text-sm font-medium text-gray-700 underline">{{ __('Ångra') }}</button>
+                        @endif
                     </li>
                 @endforeach
             </ul>

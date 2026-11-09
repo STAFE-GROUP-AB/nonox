@@ -6,7 +6,7 @@ namespace App\Modules\Saas\Domain;
 
 /**
  * A customer's MRR at a month-end and how it moved from the month before
- * (SA-R14): mrr = opening + fx + movement, to the öre. A pause that has
+ * (SA-R14): mrr = opening + fx + source + movement, to the öre. A pause that has
  * lasted 13 month-ends is re-classified as churn (O4): movement Churn with
  * reclassOre, which moves that amount from Paus to Churn and leaves the MRR
  * bridge unchanged.
@@ -34,6 +34,8 @@ final readonly class CustomerMonth
         /** MRR in force now that ends on a cancel date later (Uppsagd MRR, SA-R15). */
         public int $scheduledChurnOre,
         public ?string $scheduledChurnMonth,
+        /** A source switched off (negative) or on again (positive), not a customer moving (review B). */
+        public int $sourceOre = 0,
     ) {}
 
     /** Counted in kundchurn and intäktschurn: churned from MRR above zero this month (SA-R17). */

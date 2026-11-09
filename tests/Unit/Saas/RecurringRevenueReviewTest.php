@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Modules\Saas\Domain\ContractStatus;
 use App\Modules\Saas\Domain\ContractVersion;
 use App\Modules\Saas\Domain\CustomerState;
+use App\Modules\Saas\Domain\ExclusionReason;
 use App\Modules\Saas\Domain\Movement;
 use App\Modules\Saas\Domain\RecurringRevenue;
 use App\Modules\Saas\Domain\RevenueLine;
@@ -48,7 +49,9 @@ it('counts a customer whose lines add up to less than zero as 0 and flags it, ke
 
     expect($history->month('2026-02-01')->mrrOre())->toBe(0)
         ->and($history->month('2026-02-01')->negativeCustomers)->toBe([1])
-        ->and($history->month('2026-02-01')->customers[1]->movement)->toBe(Movement::Churn)
+        // Clamped to 0 is a contraction, not a lost customer (re-check P3).
+        ->and($history->month('2026-02-01')->customers[1]->movement)->toBe(Movement::Contraction)
+        ->and($history->month('2026-02-01')->churnedCustomers())->toBe(0)
         ->and($history->month('2026-02-01')->bridgeHolds())->toBeTrue()
         ->and($history->month('2026-03-01')->bridgeHolds())->toBeTrue();
 });
@@ -111,4 +114,69 @@ it('keeps a paused contract ended on a later date paused until then, without a f
         ->and($history->month('2026-06-01')->movementOre(Movement::Churn))->toBe(-100_000)
         ->and($history->month('2026-06-01')->movementOre(Movement::Resumed))->toBe(0)
         ->and($history->month('2026-06-01')->bridgeHolds())->toBeTrue();
+});
+
+it('puts a source switched off and on again in its own category, outside churn and reactivation (re-check B)', function () {
+    $line = [new RevenueLine('value', '', 'SEK', 500_000)];
+    $history = (new RecurringRevenue)->history([
+        new ContractVersion(1, SourceType::CrmAgreement, '7', 1, '2026-01-01', ContractStatus::Active, $line, '2026-01-01'),
+        new ContractVersion(2, SourceType::CrmAgreement, '7', 1, '2026-03-10', ContractStatus::Active, $line, '2026-01-01', null, ExclusionReason::CrmOff),
+        new ContractVersion(3, SourceType::CrmAgreement, '7', 1, '2026-05-02', ContractStatus::Active, $line, '2026-01-01'),
+        reviewVersion(4, 'b', 2, '2026-01-01', [[100_000]]),
+    ], '2027-05-01');
+
+    $march = $history->month('2026-03-01');
+    $may = $history->month('2026-05-01');
+
+    expect($march->sourceOre())->toBe(-500_000)
+        ->and($march->movementOre(Movement::Churn))->toBe(0)
+        ->and($march->churnedCustomers())->toBe(0)
+        ->and($march->customers[1]->movement)->toBeNull()
+        ->and($march->bridgeHolds())->toBeTrue()
+        ->and($history->month('2026-04-01')->mrrOre())->toBe(100_000)
+        ->and($may->sourceOre())->toBe(500_000)
+        ->and($may->movementOre(Movement::Reactivation))->toBe(0)
+        ->and($may->customers[1]->movement)->toBeNull()
+        ->and($may->bridgeHolds())->toBeTrue()
+        // A year after the switch-off, the switched-off months do not lower retention.
+        ->and($history->month('2027-03-01')->nrrOre)->toBe($history->month('2027-03-01')->nrrBaseOre);
+
+    foreach ($history->months as $month) {
+        expect($month->bridgeHolds())->toBeTrue($month->month);
+    }
+});
+
+it('churns one paused contract that ends and keeps the other paused (re-check P3)', function () {
+    $history = (new RecurringRevenue)->history([
+        reviewVersion(1, 'a', 1, '2026-01-01', [[100_000]]), reviewVersion(2, 'b', 1, '2026-01-01', [[200_000]]),
+        reviewVersion(3, 'a', 1, '2026-02-10', [[100_000]], ['status' => ContractStatus::Paused]),
+        reviewVersion(4, 'b', 1, '2026-02-10', [[200_000]], ['status' => ContractStatus::Paused]),
+        reviewVersion(5, 'a', 1, '2026-04-10', [[100_000]], ['status' => ContractStatus::Paused, 'cancel' => '2026-04-10']),
+    ], '2027-02-01');
+
+    $april = $history->month('2026-04-01');
+
+    expect($history->month('2026-02-01')->movementOre(Movement::Pause))->toBe(-300_000)
+        ->and($april->movementOre(Movement::Churn))->toBe(-100_000)
+        ->and($april->movementOre(Movement::Pause))->toBe(100_000)
+        ->and($april->customers[1]->state)->toBe(CustomerState::Paused)
+        ->and($april->churnedCustomers())->toBe(0)
+        // The 13th month-end churns only what is still paused.
+        ->and($history->month('2027-02-01')->movementOre(Movement::Churn))->toBe(-200_000);
+
+    foreach ($history->months as $month) {
+        expect($month->bridgeHolds())->toBeTrue($month->month);
+    }
+});
+
+it('counts a clamped customer coming back above zero as an expansion, not a reactivation (re-check P3)', function () {
+    $history = (new RecurringRevenue)->history([
+        reviewVersion(1, 'a', 1, '2026-01-01', [[100_000]]),
+        reviewVersion(2, 'a', 1, '2026-02-01', [[-50_000]]),
+        reviewVersion(3, 'a', 1, '2026-03-01', [[80_000]]),
+    ], '2026-03-01');
+
+    expect($history->month('2026-03-01')->customers[1]->movement)->toBe(Movement::Expansion)
+        ->and($history->month('2026-03-01')->movementOre(Movement::Reactivation))->toBe(0)
+        ->and($history->month('2026-03-01')->bridgeHolds())->toBeTrue();
 });

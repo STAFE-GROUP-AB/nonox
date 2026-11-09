@@ -5,7 +5,7 @@
 @endphp
 
 <div class="space-y-6">
-    <x-ui.page-heading :title="__('Rörelser per månad')" :lead="__('MRR vid månadens slut = ingående MRR + rättelse + valutaeffekt + nya + återaktiverade + återupptagna + utökningar − minskningar − pauser − churn. Varje belopp öppnar kunderna bakom det.')" />
+    <x-ui.page-heading :title="__('Rörelser per månad')" :lead="__('MRR vid månadens slut = ingående MRR + rättelse + valutaeffekt ± källa av eller på + nya + återaktiverade + återupptagna + utökningar − minskningar − pauser − churn. Varje belopp öppnar kunderna bakom det.')" />
 
     @include('saas::partials.note')
 

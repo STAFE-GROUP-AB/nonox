@@ -96,7 +96,7 @@
                         </tr>
                         @foreach(SaasReport::CATEGORIES as $category => $column)
                             @php($value = (int) $selected->getAttribute($column))
-                            @continue($value === 0 && in_array($category, ['rattelse', 'valutaeffekt', 'aterupptagen', 'paus'], true))
+                            @continue($value === 0 && in_array($category, ['rattelse', 'valutaeffekt', 'kalla', 'aterupptagen', 'paus'], true))
                             <tr>
                                 <th scope="row" class="py-2 pr-4 text-left font-normal text-gray-700">
                                     <a href="{{ route('saas.movements.show', ['month' => substr($selected->key(), 0, 7), 'kategori' => $category]) }}" class="hover:text-accent-700 hover:underline">{{ SaasReport::label($category) }}</a>

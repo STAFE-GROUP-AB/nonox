@@ -658,3 +658,28 @@ Build step 1 (the ledger and the metrics from NONOX's own data) is on branch
   any later version gets a higher id than `versions_known_until`.
 - **New avtalsfakturering** (finding 12): counts from its first billed period, the agreement's
   next invoice date, not from today (unless "Gäller från" says otherwise).
+
+### Re-check fixes 2026-11-09
+
+- **No lost change of date** (re-check A): the writer compares the new content with the version in
+  force on the new date. A save with the same content as the latest version is written only with
+  an explicit "Gäller från" that changes the timeline (bringing a pending change forward,
+  backdating a change saved for today); never an exact duplicate (same content and date as the
+  latest). Before the first invoice, moving the next invoice date moves the start: the version gets
+  `starts_on` = the new date, effective from the earlier of the two dates.
+- **Källa av eller på** (re-check B): a contract whose source is switched off (CRM_OFF) or on again
+  moves its MRR in its own bridge category (`source_ore`), never Churn, Återaktivering or Ny, and is
+  left out of logo and revenue churn and of NRR/GRR (on both sides of the 12 months).
+- **Partial pause end:** when one of several paused contracts ends, that contract's paused amount
+  moves from Paus to Churn that month and the rest stays paused (the customer is not counted in the
+  churn rates). The 13-month rule churns what is still paused.
+- **Clamped customer:** a move to 0 because the lines add up to less than zero is Minskning, not
+  Churn, and a return above zero is Utökning; the drill-down shows "Begränsat till 0" so the lines
+  add up to the row.
+- **Markera som separata avtal:** under Källor, with `saas:manage`, stored per register agreement
+  and avtalsfakturering as ids only (`saas_separate_pairs`), audit-logged
+  (`saas.agreements_marked_separate`, `saas.agreements_unmarked_separate`) and undoable.
+- **Rates before the lock:** recompute fetches Riksbanken's month-end rates (cached for good) before
+  it takes the ledger lock, so a slow answer never blocks agreement changes. Step 2 (Stripe) must
+  keep every outbound call outside the lock the same way.
+

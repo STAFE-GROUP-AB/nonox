@@ -61,7 +61,7 @@ final class RecurringRevenue
         unset($list);
 
         $months = [];
-        /** @var array<int, array{ever: bool, cohort: ?string, state: ?CustomerState, pauseMonths: int, pausedFrom: int}> $memory */
+        /** @var array<int, array{ever: bool, cohort: ?string, state: ?CustomerState, pauseMonths: int, pausedParts: array<string, int>}> $memory */
         $memory = [];
         $previous = null;
         $carried = [];
@@ -83,7 +83,7 @@ final class RecurringRevenue
      * @param  array<string, list<ContractVersion>>  $byContract
      * @param  array<string, int>  $rates  the month's rates, a missing one carried from an earlier month
      * @param  list<string>  $carried  currencies whose rate is carried, not the month's own
-     * @param  array<int, array{ever: bool, cohort: ?string, state: ?CustomerState, pauseMonths: int, pausedFrom: int}>  $memory
+     * @param  array<int, array{ever: bool, cohort: ?string, state: ?CustomerState, pauseMonths: int, pausedParts: array<string, int>}>  $memory
      * @param  array<string, MonthResult>  $done
      */
     private function month(string $month, array $byContract, array $rates, array $carried, ?MonthResult $previous, array &$memory, array $done): MonthResult
@@ -93,6 +93,8 @@ final class RecurringRevenue
         $lines = [];
         /** @var array<int, array<string, true>> $paused contract keys in force and paused, per customer */
         $paused = [];
+        /** @var array<string, int> $sourceOff contract key => customer: in force, but its source is switched off (CRM_OFF) */
+        $sourceOff = [];
         $scheduled = [];
         $missing = [];
         $used = [];
@@ -100,11 +102,21 @@ final class RecurringRevenue
         foreach ($byContract as $key => $versions) {
             $version = self::applicable($versions, $instant);
 
-            if ($version === null || ! $version->counts() || ! $version->inForceAt($instant)) {
+            if ($version === null || ! $version->inForceAt($instant) || $version->customerId === null) {
                 continue;
             }
 
-            $customer = (int) $version->customerId;
+            if ($version->excluded === ExclusionReason::CrmOff) {
+                $sourceOff[$key] = $version->customerId;
+
+                continue;
+            }
+
+            if (! $version->counts()) {
+                continue;
+            }
+
+            $customer = $version->customerId;
 
             if ($version->status === ContractStatus::Paused) {
                 $paused[$customer][$key] = true;
@@ -148,6 +160,7 @@ final class RecurringRevenue
             }
         }
 
+        $wasOff = $previous->sourceOff ?? [];
         $customerIds = array_keys($lines + $paused);
 
         foreach ($previous->customers ?? [] as $id => $row) {
@@ -171,32 +184,62 @@ final class RecurringRevenue
                 $negative[] = $id;
             }
 
+            $byKey = [];
+
+            foreach ($before->lines ?? [] as $line) {
+                $key = $line->sourceType->value.':'.$line->sourceId;
+                $byKey[$key] = ($byKey[$key] ?? 0) + $line->at($rates[$line->currency] ?? null);
+            }
+
+            // A source switched off or on again is not a customer moving (review B): its own category.
+            $sourceOut = array_sum(array_intersect_key($byKey, $sourceOff));
+            $sourceIn = 0;
+
+            foreach ($own as $line) {
+                if (isset($wasOff[$line->sourceType->value.':'.$line->sourceId])) {
+                    $sourceIn += $line->sekOre;
+                }
+            }
+
             $mrr = max(0, $sum);
             $opening = $before === null ? 0 : $before->mrrOre;
-            $revalued = $before === null ? 0 : max(0, array_sum(array_map(fn (LineMonth $line): int => $line->at($rates[$line->currency] ?? null), $before->lines)));
+            $revalued = $before === null ? 0 : max(0, array_sum($byKey));
             $fx = $revalued - $opening;
-            $change = $mrr - $revalued;
-            $remembered = $memory[$id] ?? ['ever' => false, 'cohort' => null, 'state' => null, 'pauseMonths' => 0, 'pausedFrom' => 0];
+            $compared = max(0, array_sum($byKey) - $sourceOut + $sourceIn);
+            $source = $compared - $revalued;
+            $change = $mrr - $compared;
+            $remembered = $memory[$id] ?? ['ever' => false, 'cohort' => null, 'state' => null, 'pauseMonths' => 0, 'pausedParts' => []];
             $pausedNow = $paused[$id] ?? [];
             $isPaused = $mrr === 0 && $pausedNow !== [];
             $movement = null;
             $reclass = 0;
 
-            if ($revalued === 0 && $mrr > 0) {
+            if ($compared === 0 && $mrr > 0) {
                 $movement = match (true) {
+                    // Back from 0 without ever leaving: clamped (review P3) or only a source switched off.
+                    $remembered['state'] === CustomerState::Active => Movement::Expansion,
                     ! $remembered['ever'] => Movement::New,
                     $remembered['state'] === CustomerState::Paused => Movement::Resumed,
                     default => Movement::Reactivation,
                 };
-            } elseif ($revalued > 0 && $mrr > $revalued) {
+            } elseif ($compared > 0 && $mrr > $compared) {
                 $movement = Movement::Expansion;
-            } elseif ($revalued > 0 && $mrr > 0 && $mrr < $revalued) {
+            } elseif ($compared > 0 && $mrr > 0 && $mrr < $compared) {
                 $movement = Movement::Contraction;
-            } elseif ($revalued > 0 && $mrr === 0) {
+            } elseif ($compared > 0 && $mrr === 0) {
                 // SA-R14: Paus only when every line that ended was paused; a line that simply ended makes it Churn.
-                $ending = array_unique(array_map(fn (LineMonth $line): string => $line->sourceType->value.':'.$line->sourceId, $before->lines));
+                $ending = array_values(array_diff(array_keys($byKey), array_keys($sourceOff)));
                 $allPaused = $ending !== [] && array_diff($ending, array_keys($pausedNow)) === [];
-                $movement = $allPaused ? Movement::Pause : Movement::Churn;
+                $movement = match (true) {
+                    // Lines adding up to less than zero are clamped to 0: a contraction, not a lost customer.
+                    $sum < 0 => Movement::Contraction,
+                    $allPaused => Movement::Pause,
+                    default => Movement::Churn,
+                };
+
+                if ($movement === Movement::Pause) {
+                    $remembered['pausedParts'] = array_intersect_key($byKey, array_flip($ending));
+                }
             }
 
             if ($mrr > 0) {
@@ -204,17 +247,30 @@ final class RecurringRevenue
                 $remembered['ever'] = true;
                 $remembered['cohort'] ??= $month;
                 $remembered['pauseMonths'] = 0;
+                $remembered['pausedParts'] = [];
             } elseif ($movement === Movement::Churn) {
                 $state = CustomerState::Churned;
                 $remembered['pauseMonths'] = 0;
+                $remembered['pausedParts'] = [];
+            } elseif ($movement === Movement::Contraction || ($compared === 0 && $revalued > 0)) {
+                // Clamped to 0, or only switched-off sources: the customer has not left.
+                $state = $remembered['state'] ?? CustomerState::Active;
             } elseif ($isPaused) {
                 $state = CustomerState::Paused;
 
                 if ($movement === Movement::Pause) {
                     $remembered['pauseMonths'] = 1;
-                    $remembered['pausedFrom'] = $revalued;
                 } elseif ($remembered['state'] === CustomerState::Paused) {
                     $remembered['pauseMonths']++;
+
+                    // One of several paused contracts ends: its amount is churned now, the rest stays paused (review P3).
+                    $ended = array_diff_key($remembered['pausedParts'], $pausedNow);
+
+                    if ($ended !== [] && $remembered['ever']) {
+                        $movement = Movement::Churn;
+                        $reclass = array_sum($ended);
+                        $remembered['pausedParts'] = array_intersect_key($remembered['pausedParts'], $pausedNow);
+                    }
                 } else {
                     // Paused from the start, or after a churn: nothing to lose, so not a pause in the bridge.
                     $state = $remembered['ever'] ? CustomerState::Churned : CustomerState::Paused;
@@ -224,15 +280,17 @@ final class RecurringRevenue
                 if ($state === CustomerState::Paused && $remembered['pauseMonths'] >= self::PAUSE_MONTHS_TO_CHURN && $remembered['ever']) {
                     $state = CustomerState::Churned;
                     $movement = Movement::Churn;
-                    $reclass = $remembered['pausedFrom'];
+                    $reclass += array_sum($remembered['pausedParts']);
                     $remembered['pauseMonths'] = 0;
+                    $remembered['pausedParts'] = [];
                 }
             } elseif ($remembered['state'] === CustomerState::Paused && $remembered['ever']) {
-                // A paused contract that ends while paused: the paused amount is churned now (moves from Paus to Churn).
+                // The paused contracts end while paused: what was paused is churned now (moves from Paus to Churn).
                 $state = CustomerState::Churned;
                 $movement = Movement::Churn;
-                $reclass = $remembered['pausedFrom'];
+                $reclass = array_sum($remembered['pausedParts']);
                 $remembered['pauseMonths'] = 0;
+                $remembered['pausedParts'] = [];
             } else {
                 $state = $remembered['ever'] ? CustomerState::Churned : CustomerState::None;
             }
@@ -241,7 +299,7 @@ final class RecurringRevenue
             $memory[$id] = $remembered;
 
             // A customer without MRR now or before, and without a pause, is not shown.
-            if ($mrr === 0 && $opening === 0 && $movement === null && ! $isPaused && $own === []) {
+            if ($mrr === 0 && $opening === 0 && $movement === null && ! $isPaused && $own === [] && $source === 0) {
                 continue;
             }
 
@@ -259,27 +317,31 @@ final class RecurringRevenue
                 $own,
                 $scheduled[$id]['ore'] ?? 0,
                 $scheduled[$id]['month'] ?? null,
+                $source,
             );
         }
 
-        [$base, $nrr, $grr] = $this->retention($month, $rows, $rates, $done);
+        [$base, $nrr, $grr] = $this->retention($month, $rows, $rates, $done, $sourceOff);
         ksort($used);
         $missing = array_keys($missing);
         sort($missing);
 
-        return new MonthResult($month, $rows, $used, $missing, $base, $nrr, $grr, $negative);
+        return new MonthResult($month, $rows, $used, $missing, $base, $nrr, $grr, $negative, $sourceOff);
     }
 
     /**
      * NRR and GRR over 12 months (SA-R18): the customers with MRR at the end
-     * of m−12, their MRR then and now, both at month m's rates.
+     * of m−12, their MRR then and now, both at month m's rates. A contract
+     * whose source was switched off then or now is left out of both sides,
+     * since that is not retention (review B).
      *
      * @param  array<int, CustomerMonth>  $rows
      * @param  array<string, int>  $rates
      * @param  array<string, MonthResult>  $done
+     * @param  array<string, int>  $sourceOff
      * @return array{0: ?int, 1: ?int, 2: ?int}
      */
-    private function retention(string $month, array $rows, array $rates, array $done): array
+    private function retention(string $month, array $rows, array $rates, array $done, array $sourceOff): array
     {
         $then = $done[Months::add($month, -12)] ?? null;
 
@@ -287,6 +349,8 @@ final class RecurringRevenue
             return [null, null, null];
         }
 
+        $off = $sourceOff + $then->sourceOff;
+        $kept = fn (LineMonth $line): bool => ! isset($off[$line->sourceType->value.':'.$line->sourceId]);
         $base = 0;
         $net = 0;
         $gross = 0;
@@ -296,8 +360,8 @@ final class RecurringRevenue
                 continue;
             }
 
-            $before = max(0, array_sum(array_map(fn (LineMonth $line): int => $line->at($rates[$line->currency] ?? null), $row->lines)));
-            $now = $rows[$id]->mrrOre ?? 0;
+            $before = max(0, array_sum(array_map(fn (LineMonth $line): int => $line->at($rates[$line->currency] ?? null), array_filter($row->lines, $kept))));
+            $now = isset($rows[$id]) ? max(0, array_sum(array_map(fn (LineMonth $line): int => $line->sekOre, array_filter($rows[$id]->lines, $kept)))) : 0;
             $base += $before;
             $net += $now;
             $gross += min($now, $before);

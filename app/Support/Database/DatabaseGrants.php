@@ -254,6 +254,8 @@ final class DatabaseGrants
         'saas_customer_months' => GrantDecision::ReadWrite,
         'saas_estimates' => GrantDecision::ReadWrite,
         'saas_months' => GrantDecision::NoDelete,
+        // Pairs marked as separate agreements under Källor; undoing deletes the row.
+        'saas_separate_pairs' => GrantDecision::ReadWrite,
         'salary_changes' => GrantDecision::ReadWrite,
         'sales_document_rows' => GrantDecision::ReadWrite,
         'sales_documents' => GrantDecision::ReadWrite,

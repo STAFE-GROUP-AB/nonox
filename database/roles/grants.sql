@@ -224,6 +224,7 @@ BEGIN
         ('saas_customer_months', 'SELECT, INSERT, UPDATE, DELETE'),
         ('saas_estimates', 'SELECT, INSERT, UPDATE, DELETE'),
         ('saas_months', 'SELECT, INSERT, UPDATE'),
+        ('saas_separate_pairs', 'SELECT, INSERT, UPDATE, DELETE'),
         ('salary_changes', 'SELECT, INSERT, UPDATE, DELETE'),
         ('sales_document_rows', 'SELECT, INSERT, UPDATE, DELETE'),
         ('sales_documents', 'SELECT, INSERT, UPDATE, DELETE'),
