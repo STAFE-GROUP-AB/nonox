@@ -45,10 +45,20 @@ som samma användare som har sudo-regeln i steg 2 kan den köra migreringen sjä
 Därför:
 
 - PHP-FPM-poolen, köarbetaren och schemaläggaren för sajten körs som en egen användare,
-  här `nonox-web`. Den äger bara `storage/` (den delade lagringen) och
-  `bootstrap/cache/`, och kan läsa men inte skriva koden och `.env`.
-- `forge` (eller den som driftsätter) äger koden och `.env` och har sudo-regeln i steg 2.
-  `nonox-web` har ingen sudo-regel alls.
+  här `nonox-web`. Den äger bara `storage/` (den delade lagringen) och kan läsa men inte
+  skriva koden, `bootstrap/cache/` och `.env`.
+- `forge` (eller den som driftsätter) äger koden, `bootstrap/cache/` och `.env` och har
+  sudo-regeln i steg 2. `nonox-web` har ingen sudo-regel alls.
+- **`forge` kör aldrig `artisan` (eller annan PHP från sajten) i en aktiverad release.**
+  En aktiverad release laddar kompilerade vyer ur `storage/`, som `nonox-web` kan skriva,
+  så PHP som `forge` kör där kan köra kod som webbanvändaren har lagt dit. Det enda
+  undantaget är driftsättningens steg i en ny release som ännu inte är aktiverad: där
+  bygger `forge` alla cacher (`config:cache`, `route:cache`, `event:cache`) innan
+  releasen aktiveras. Alla kommandon en operatör kör i den aktiverade releasen körs som
+  `nonox-web`: `sudo -u nonox-web php artisan …`. Det gäller också schemalagda eller
+  manuella jobb som renderar vyer, till exempel `og:images` och `mail:send`.
+- Inga POSIX-ACL:er används på sajtens kataloger; rättigheterna är de vanliga
+  ägare/grupp/övriga.
 - I Forge betyder det en egen PHP-FPM-pool för sajten med `user = nonox-web`, köns
   bakgrundsprocess och det schemalagda jobbet med användaren `nonox-web`, och filrätter
   `go-w` på koden. Forges inbyggda användarisolering låter i stället samma användare både
@@ -62,11 +72,15 @@ ps -o user= -C php-fpm8.4 | sort -u                 # förväntat: root (huvudpr
 ps -o user=,args= -C php | grep -E 'queue:work|schedule' | sort -u   # förväntat: nonox-web
 sudo -u nonox-web test -w /home/forge/nonox.app/current/artisan && echo FEL || echo ok
 sudo -u nonox-web test -w /home/forge/nonox.app/.env && echo FEL || echo ok
+sudo -u nonox-web test -w /home/forge/nonox.app/current/bootstrap/cache && echo FEL || echo ok
+sudo -u nonox-web test -w /home/forge/nonox.app/releases && echo FEL || echo ok
 sudo -l -U nonox-web                                  # förväntat: inga regler
+command -v getfacl >/dev/null && getfacl -R -s -p /home/forge/nonox.app 2>/dev/null | grep -v '/storage' | head   # förväntat: tomt (inga ACL:er)
 ```
 
 Skriptet i steg 2 kontrollerar samma sak vid varje driftsättning och vägrar köra om
-`nonox-web` kan skriva något i releasen utanför `storage/` och `bootstrap/cache/`.
+`nonox-web` kan skriva något i releasen utanför `storage/`, eller någon katalog mellan
+releasen och sajtkatalogen.
 
 ## 1. Kontrollera nuläget (läser bara)
 
@@ -74,7 +88,7 @@ Ingenting ändras i det här steget.
 
 ```bash
 cd /home/forge/nonox.app/current
-php artisan nonox:doctor               # förväntat nu: varningar om ägare och triggerfunktioner
+sudo -u nonox-web php artisan nonox:doctor   # förväntat nu: varningar om ägare och triggerfunktioner
 grep -E '^DB_(URL|HOST|PORT|DATABASE|USERNAME)=' .env   # använder sajten DB_URL? (se steg 6)
 ```
 
@@ -159,15 +173,17 @@ mot
 sudo -u nonox-migrate /usr/local/bin/nonox-migrate "$FORGE_RELEASE_DIRECTORY"
 ```
 
-och se till att den står **före** `php artisan config:cache`. Skriptet läser aldrig
-`bootstrap/cache/`: Laravels cachade konfiguration, tjänster, paket, händelser och rutter
-läggs i en ny tillfällig katalog som bara `nonox-migrate` äger (`APP_CONFIG_CACHE` med
-flera), så ingenting som webbanvändaren kan skriva laddas när ägaren kör, och en gammal
-cachad konfiguration spelar ingen roll. Skriptet vägrar köra om `nonox-web` kan skriva i
-releasen, kör `migrate --force --database=pgsql_owner` och därefter `nonox:db-grants`,
+och se till att den står **före** `php artisan config:cache` och före aktiveringen av
+releasen. Skriptet läser aldrig `bootstrap/cache/` eller `storage/`: Laravels cachade
+konfiguration, tjänster, paket, händelser, rutter och kompilerade vyer läggs i en ny
+tillfällig katalog som bara `nonox-migrate` äger (`APP_CONFIG_CACHE` med flera och
+`VIEW_COMPILED_PATH`), så ingenting som webbanvändaren kan skriva laddas när ägaren kör,
+och en gammal cachad konfiguration spelar ingen roll. Skriptet löser upp sökvägen en gång
+(`realpath`) och använder bara den upplösta, vägrar köra om `nonox-web` kan skriva i
+releasen (utanför `storage/`) eller i någon katalog upp till sajtkatalogen, kör `migrate --force --database=pgsql_owner` och därefter `nonox:db-grants`,
 också när migreringen misslyckas, och returnerar migreringens status. Heter
 webbanvändaren något annat än `nonox-web`, eller ligger sajten någon annanstans,
-ändra standardvärdena för `NONOX_WEB_USER` och `NONOX_RELEASES_BASE` (med punkter skrivna `\.`)
+ändra standardvärdena för `NONOX_WEB_USER` och `NONOX_SITE_DIR`
 överst i den installerade kopian `/usr/local/bin/nonox-migrate` (sudo släpper inte igenom miljön).
 
 Byt raden i steg 6, samtidigt som `.env` ändras: skriptet förutsätter att rollerna är
@@ -180,7 +196,7 @@ köra migreringar som fel användare.
 ## 4. Säkerhetskopia och underhållsläge
 
 ```bash
-php artisan down
+sudo -u nonox-web php artisan down
 # Stoppa kön (Forge: Background processes → NONOX queue → Stop) och pausa schemaläggaren.
 /home/forge/nonox-backup.sh            # eller pg_dump -Fc nonox > /home/forge/nonox-backup/före-rollbyte.dump
 ```
@@ -275,12 +291,12 @@ läsbar för en grupp som båda är med i och som `forge` inte ger skrivrätt ti
 
 Byt raden i driftsättningsskriptet enligt steg 3 och kör sedan:
 
-```bash
-cd /home/forge/nonox.app/current
-php artisan config:clear      # den gamla cachade konfigurationen har nonox som användare
-sudo -u nonox-migrate /usr/local/bin/nonox-migrate /home/forge/nonox.app/current   # "Nothing to migrate", behörigheterna läggs på
-php artisan config:cache
-```
+Driftsätt sedan (Forge: *Deploy Now*). Driftsättningen bygger en ny release, kör
+migreringssteget som `nonox-migrate` ("Nothing to migrate", behörigheterna läggs på) och
+bygger cacherna som `forge` med de nya uppgifterna innan releasen aktiveras. Den gamla
+cachade konfigurationen, som har `nonox` som användare, följer inte med. Kör inte
+`config:clear` eller `config:cache` för hand i den aktiverade releasen (steg 0); behövs det,
+driftsätt i stället.
 
 **Säkerhetskopian** ska dumpa som `nonox_readonly`, som får läsa allt och inget annat.
 Låt `nonox-backup.sh` läsa sina uppgifter ur en egen fil, inte ur `.env`, till exempel
@@ -291,9 +307,10 @@ via `PGPASSFILE`. Återställningstestet (`scripts/restore-test.sh`) återställ
 ## 7. Verifiera
 
 ```bash
-php artisan nonox:doctor        # förväntat: "OK: rollen äger inga tabeller, är inte superanvändare och kan inte ändra triggerna."
-php artisan ledger:verify       # förväntat: OK för varje företag
-php artisan up
+cd /home/forge/nonox.app/current
+sudo -u nonox-web php artisan nonox:doctor     # förväntat: "OK: rollen äger inga tabeller, är inte superanvändare och kan inte ändra triggerna."
+sudo -u nonox-web php artisan ledger:verify    # förväntat: OK för varje företag
+sudo -u nonox-web php artisan up
 # Starta kön och schemaläggaren igen.
 ```
 
@@ -322,7 +339,7 @@ ett nytt lösenord i stället.
 
 Allt går att backa utan att röra data.
 
-1. `php artisan down`, stoppa kön.
+1. `sudo -u nonox-web php artisan down`, stoppa kön.
 2. Lämna tillbaka ägarskapet och rätten att skapa i schemat:
 
    ```sql
@@ -336,11 +353,11 @@ Allt går att backa utan att röra data.
 
    Tillfälliga tabeller och stora objekt förblir avstängda; NONOX använder inget av dem.
 
-3. Återställ `.env` (`sudo cp /root/nonox-env-före-rollbyte /home/forge/nonox.app/.env && sudo chown forge:forge /home/forge/nonox.app/.env`)
-   och kör `php artisan config:cache`.
-4. Byt tillbaka raden i driftsättningsskriptet till `php artisan migrate --force`.
-5. `php artisan nonox:doctor` visar åter varningarna för en enda användare, och appen kör
-   som förut. `php artisan up`, starta kön.
+3. Återställ `.env` (`sudo cp /root/nonox-env-före-rollbyte /home/forge/nonox.app/.env && sudo chown forge:nonox-read /home/forge/nonox.app/.env && sudo chmod 640 /home/forge/nonox.app/.env`).
+4. Byt tillbaka raden i driftsättningsskriptet till `php artisan migrate --force` och
+   driftsätt (*Deploy Now*), så att cacherna byggs om med de gamla uppgifterna.
+5. `sudo -u nonox-web php artisan nonox:doctor` visar åter varningarna för en enda
+   användare, och appen kör som förut. `sudo -u nonox-web php artisan up`, starta kön.
 
 Rollerna kan stå kvar utan inloggning (`ALTER ROLE nonox_app NOLOGIN;` och samma för
 `nonox_owner`) tills nästa försök. Säkerhetskopian från steg 4 är den sista utvägen och
@@ -363,21 +380,26 @@ samma server) är det bäst, som ovan. Annars:
 - Ge `nonox_owner` ett lösenord och lägg det i en fil som PHP-FPM-användaren **inte** kan
   läsa, till exempel `/etc/nonox/migrate.env` (ägare din driftsättningsanvändare eller
   root, `chmod 600`), med raden `DB_MIGRATION_PASSWORD=…`. Det får aldrig stå i `.env`.
-- Kör migreringen med den filen i miljön och utan cachad konfiguration, och cacha
-  konfigurationen efteråt i ett skal utan den:
+- Samma åtskillnad som i steg 0 gäller: webbanvändaren kan inte skriva koden,
+  `bootstrap/cache/` eller `.env`, och driftanvändaren kör aldrig `artisan` i en
+  installation som webbanvändaren kan ha ändrat. Använd `nonox-migrate.sh` med ägarens
+  lösenord i miljön (eller dess tillfälliga cachekatalog som förebild), och bygg
+  cacherna som driftanvändaren i den nya koden innan den tas i bruk, i ett skal utan
+  lösenordet:
 
   ```bash
-  php artisan config:clear
-  sudo -u <driftanvändare> sh -c 'set -a; . /etc/nonox/migrate.env; set +a; php artisan migrate --force --database=pgsql_owner; php artisan nonox:db-grants'
-  php artisan config:cache
+  sudo -u <driftanvändare> sh -c 'set -a; . /etc/nonox/migrate.env; set +a; nonox-migrate /sökväg/till/nya/releasen'
+  sudo -u <driftanvändare> sh -c 'cd /sökväg/till/nya/releasen && php artisan config:cache && php artisan route:cache && php artisan event:cache'
+  # ta den nya releasen i bruk först därefter
   ```
 
-- `php artisan nonox:doctor` varnar om ägarens lösenord finns i programmets konfiguration.
+- `sudo -u <webbanvändare> php artisan nonox:doctor` varnar om ägarens lösenord finns i
+  programmets konfiguration.
 
 Är databasen ny: skapa databasen, kör `roles.sql`, ge `nonox_owner` och `nonox_app`
 inloggning, sätt `.env` enligt steg 6 och migrera som ovan. Tabellerna skapas då av
-`nonox_owner` och får sina behörigheter direkt. Kör `php artisan nonox:doctor` efter varje
-uppgradering.
+`nonox_owner` och får sina behörigheter direkt. Kör `nonox:doctor` som webbanvändaren
+efter varje uppgradering.
 
 Utan `DB_MIGRATION_USERNAME` fungerar allt som förut med en användare, och
 `nonox:doctor` varnar för det.

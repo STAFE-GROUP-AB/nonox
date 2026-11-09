@@ -1027,5 +1027,24 @@ code read-only for the PHP-FPM user where possible.
   entries). Both belong with the proposed follow-up triggers on `fiscal_years`.
 - **Harness (P3):** the advisory lock is per database; the harness now skips the ownership
   transfer when `nonox_owner` already owns everything, so it locks no tables on a database
-  that is switched over. Processes on different databases of one cluster can still wait on
-  each other's role creation, which is a wait, not a deadlock.
+  that is switched over. Processes on different databases of one cluster can deadlock on
+  each other's role creation (the lock does not span databases); it is test-only, so the
+  remedy is to rerun.
+
+### Second re-check (2026-11-09): nothing writable by the web user runs as forge or the owner
+
+- **P1:** `forge` held the sudo rule yet ran PHP that `nonox-web` could write
+  (`bootstrap/cache`, compiled views in `storage/`, `artisan` in `current`). [Lead]:
+  `bootstrap/cache/` is owned by `forge` and read-only for `nonox-web`; the deploy builds every
+  cache as `forge` in the new release before activation; **`forge` never runs `artisan` in an
+  activated release** (the only exception is the deploy steps in a fresh, not yet activated
+  release); every operator command in the runbook runs as `nonox-web`, including jobs that
+  render views (`og:images`, `mail:send`); step 0 checks that `nonox-web` cannot write
+  `current/bootstrap/cache` or `releases/`. Step 6 and the rollback now redeploy instead of
+  running `config:cache` by hand. `nonox-migrate.sh` also exports `VIEW_COMPILED_PATH` into its
+  private cache directory.
+- **P3:** the script resolves the path once with `realpath`, checks every directory from the
+  release up to the site directory, and uses only the resolved path for `find` and `cd`; the
+  `node_modules` and `bootstrap/cache` exemptions are gone (only `storage/` is exempt, and
+  nothing from it is loaded); the site is given as a plain path (`NONOX_SITE_DIR`), not a
+  pattern. Step 0 states that no POSIX ACLs are used and checks with `getfacl` where it exists.

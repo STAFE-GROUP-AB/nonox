@@ -34,8 +34,8 @@ final class DatabaseRolesHarness
     public static function install(): void
     {
         // Role changes touch the cluster-wide catalogue. The advisory lock is per database, so it orders
-        // the test processes on one test database; processes on different databases of the same cluster
-        // can still meet on the roles themselves (role creation then waits on the other transaction).
+        // the test processes on one test database only; processes on different databases of the same
+        // cluster can deadlock on the roles themselves. Test-only: rerun.
         DB::statement('select pg_advisory_xact_lock(790079)');
         DB::unprepared((string) file_get_contents(base_path('database/roles/roles.sql')));
 
