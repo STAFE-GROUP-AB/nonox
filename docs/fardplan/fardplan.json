@@ -311,6 +311,14 @@
       "status": "Planerat",
       "omrade": "Fakturering",
       "uppdaterad": "2026-11-08"
+    },
+    {
+      "id": "nonox-saas",
+      "rubrik": "NONOX SaaS: MRR, ARR och churn",
+      "beskrivning": "En modul för företag med återkommande intäkter, som SaaS, abonnemang och serviceavtal. Den visar månads- och årsintäkt från avtal och avtalsfakturering, hur intäkten ändras genom nya kunder, utökningar, minskningar och förlorade kunder, churn, kvarvarande intäkt och kohorter. Siffrorna räknas ur NONOX egna avtal och fakturor, och med Stripe kopplat via NONOX Connect även ur Stripes prenumerationer.",
+      "status": "Planerat",
+      "omrade": "Fakturering",
+      "uppdaterad": "2026-11-09"
     }
   ]
 }

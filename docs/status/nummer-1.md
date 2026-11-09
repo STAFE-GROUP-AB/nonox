@@ -19,6 +19,9 @@ Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanf�
 9. **Statussida och säkerhet** (`statussida-och-sakerhet`).
 10. **Egna moduler** (`egna-moduler`), med en ADR om säkerheten först.
 11. **Tillverkning, inköpsordrar och kundorder** (ADR-071), i sina åtta steg.
+12. **NONOX SaaS: återkommande intäkter och nyckeltal** (ADR-080): MRR, ARR, MRR-förändring (ny, utökning, minskning, förlorad), churn per kund och per intäkt, net revenue retention, kohorter, ARPA och livstidsvärde, byggt på avtalsfakturering, avtalsregistret och bokföringen. Plus stöd för Stripe i NONOX Connect (import av prenumerationer, fakturor och utbetalningar).
+
+Ägarens ordning 2026-11-09 för det som pågår: (a) skärmbilder till de nya manualartiklarna, (b) databasanvändarna och demodatabasen på nonox.app, (c) status på önskelistan i färdplanen, (d) NONOX SaaS med Stripe.
 
 Ägarens beslut 2026-11-08:
 - "Prova utan att registrera" (ADR-077) körs i en egen demodatabas. Spärrarna i produktionsdatabasen får inga undantag. Bara den särskilda demodatabasen får tömmas eller byggas om, och påslag i produktion kräver ägarens bekräftelse vid driftsättningen.
