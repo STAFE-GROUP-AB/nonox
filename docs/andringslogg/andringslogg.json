@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-09-signerade-offerter-kan-inte-tas-bort",
+      "datum": "2026-11-09T01:54:00+01:00",
+      "rubrik": "Signerade offerter och deras bevis kan inte tas bort i databasen",
+      "beskrivning": "En signerad offert och dess signeringsbevis kan inte längre tas bort, inte heller direkt i databasen. En nekad signering sparas i tolv månader innan den kan gallras.",
+      "typ": "Säkerhet",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-09-personalliggare-gallring-kontrolleras-i-databasen",
       "datum": "2026-11-09T01:20:00+01:00",
       "rubrik": "Personalliggarens poster kan bara gallras när lagringstiden är slut",
