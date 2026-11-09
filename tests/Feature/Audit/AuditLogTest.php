@@ -31,7 +31,9 @@ function rejectedByDatabase(callable $statement): bool
     try {
         DB::transaction($statement);
     } catch (QueryException $exception) {
-        return str_contains($exception->getMessage(), 'audit_logs is append-only');
+        // The trigger refuses; with the database roles (ADR-079 §6) the grant refuses first.
+        return str_contains($exception->getMessage(), 'audit_logs is append-only')
+            || str_contains($exception->getMessage(), 'permission denied for table audit_logs');
     }
 
     return false;

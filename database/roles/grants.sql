@@ -1,0 +1,284 @@
+-- NONOX database grants (ADR-079 §6). Generated from App\Support\Database\DatabaseGrants;
+-- do not edit by hand: change the list in the class and run `php artisan nonox:db-grants --write`.
+-- Run as the owner (nonox_owner) or a superuser, after database/roles/roles.sql. Idempotent.
+-- It changes privileges and the trigger functions' search path only, never data.
+
+DO $grants$
+DECLARE
+    decision record;
+    undecided record;
+    decided text[] := '{}';
+BEGIN
+    FOR decision IN SELECT * FROM (VALUES
+        ('absences', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('accounts', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('accrual_postings', 'SELECT, INSERT'),
+        ('accruals', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('accumulators', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('agi_submissions', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('agi_uploads', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('agreement_documents', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('agreement_proposals', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('agreement_rule_verifications', 'SELECT, INSERT'),
+        ('agreement_rule_versions', 'SELECT, INSERT, UPDATE'),
+        ('annual_reports', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('archive_packages', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('article_images', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('articles', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('audit_logs', 'SELECT, INSERT'),
+        ('bank_connections', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('bank_feed_accounts', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('bank_feed_balances', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('bank_feed_transactions', 'SELECT, INSERT, UPDATE'),
+        ('bank_file_imports', 'SELECT, INSERT'),
+        ('bank_reconciliations', 'SELECT, INSERT'),
+        ('bank_transactions', 'SELECT, INSERT, UPDATE'),
+        ('benefits', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('client_profiles', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('closing_checks', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('collective_agreements', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('comp_time_entries', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('company_accounting_policies', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('company_group_marks', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('company_group_members', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('company_groups', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('company_guide_steps', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('company_holdings', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('company_modules', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('company_registry', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('company_registry_changes', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('company_registry_codes', 'SELECT, INSERT, UPDATE'),
+        ('company_registry_exclusions', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('company_registry_imports', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('connect_api_keys', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('connect_grants', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('connect_idempotency_keys', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('connect_sftp_accounts', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('connect_sftp_keys', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('connect_sftp_uploads', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('connect_webhook_deliveries', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('connect_webhooks', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('corporate_group_members', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('corporate_group_roles', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('corporate_groups', 'SELECT, INSERT, UPDATE'),
+        ('cost_centers', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_account_person', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_accounts', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_activities', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_agreements', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_calendar_connections', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_calendar_events', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_calendar_feeds', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_call_list_items', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_call_lists', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_deal_stage_changes', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_deals', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_email_templates', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_emails', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_form_submissions', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_forms', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_goals', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_loss_reasons', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_mailing_links', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_mailing_recipients', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_mailings', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_people', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_pipeline_stages', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_pipelines', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_quote_template_rows', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_quote_templates', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_registry_notices', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_segments', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_signing_events', 'SELECT, INSERT'),
+        ('crm_signing_requests', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('crm_suppressions', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('customers', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('deadline_calendar_feeds', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('deadline_reminders', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('deferred_tax_items', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('employees', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('employments', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('expenses', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('failed_jobs', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('fiscal_years', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('fixed_asset_depreciations', 'SELECT, INSERT'),
+        ('fixed_asset_proposals', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('fixed_assets', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('fortnox_connections', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('fortnox_imported_files', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('imported_payslips', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('imported_vouchers', 'SELECT, INSERT'),
+        ('inbox_allowed_senders', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('inbox_attachments', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('inbox_mailboxes', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('inbox_messages', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('inbox_templates', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('inbox_unassigned_messages', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('income_tax_partners', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('income_tax_returns', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('instance_settings', 'SELECT, INSERT, UPDATE'),
+        ('inventory_scan_operations', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('invoice_payments', 'SELECT, INSERT'),
+        ('invoice_reminders', 'SELECT, INSERT'),
+        ('invoice_rows', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('invoices', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('k10_owners', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('k10_years', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('label_templates', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('login_codes', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('migrations', 'SELECT'),
+        ('month_close_checks', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('notifications', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('number_series', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('oauth_access_tokens', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('oauth_auth_codes', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('oauth_clients', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('oauth_refresh_tokens', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('opening_balances', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('operator_links', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('passkeys', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('pay_codes', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('payment_response_imports', 'SELECT, INSERT'),
+        ('payment_responses', 'SELECT, INSERT, UPDATE'),
+        ('payroll_file_import_lines', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('payroll_file_imports', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('payroll_import_mappings', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('payroll_import_sources', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('payroll_inputs', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('payroll_migrations', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('payroll_rule_verifications', 'SELECT, INSERT'),
+        ('payroll_rule_versions', 'SELECT, INSERT, UPDATE'),
+        ('payroll_runs', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('payroll_year_closings', 'SELECT, INSERT'),
+        ('payslip_lines', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('payslips', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('pension_plans', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('peppol_participants', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('peppol_transmissions', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('personal_access_tokens', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('pick_list_lines', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('pick_lists', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_areas', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_attestations', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_availability', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_employee_skills', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_ical_tokens', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_publications', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_requests', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_shifts', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_skills', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_template_shifts', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_templates', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('pos_connections', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('pos_fees', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('pos_log_entries', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('pos_product_links', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('pos_sale_rows', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('pos_sales', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('pos_stock_pushes', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('pos_webhook_messages', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('prior_year_size_figures', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('projects', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('recent_items', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('recurring_inputs', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('recurring_invoice_rows', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('recurring_invoices', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('salary_changes', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('sales_document_rows', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('sales_documents', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('saved_views', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('sessions', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('sick_pay_periods', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('sie_imports', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('skatteverket_events', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('skatteverket_tokens', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('staff_ledger_devices', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('staff_ledger_entries', 'SELECT, INSERT, DELETE'),
+        ('staff_ledger_locations', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('staff_ledger_people', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('staff_ledger_time_proposals', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('stock_count_lines', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('stock_counts', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('stock_levels', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('stock_locations', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('stock_movements', 'SELECT, INSERT'),
+        ('stock_receipt_lines', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('stock_receipts', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('stock_valuations', 'SELECT, INSERT'),
+        ('supplier_invoice_rows', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('supplier_invoices', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('supplier_payment_batch_items', 'SELECT, INSERT, UPDATE'),
+        ('supplier_payment_batches', 'SELECT, INSERT, UPDATE'),
+        ('supplier_payments', 'SELECT, INSERT'),
+        ('suppliers', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('system_documentation_versions', 'SELECT, INSERT'),
+        ('task_checklist_items', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('task_comments', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('task_recurrences', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('tasks', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('tax_account_postings', 'SELECT, INSERT, UPDATE'),
+        ('tax_table_imports', 'SELECT, INSERT'),
+        ('tax_tables', 'SELECT, INSERT'),
+        ('team_invitations', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('team_user', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('teams', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('time_reports', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('users', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('vacation_liability_snapshots', 'SELECT, INSERT'),
+        ('vacation_opening_balances', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('vacation_year_closings', 'SELECT, INSERT, UPDATE'),
+        ('vat_number_checks', 'SELECT, INSERT'),
+        ('vat_reports', 'SELECT, INSERT, UPDATE (id)'),
+        ('vat_submissions', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('voucher_attachments', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('voucher_number_counters', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('voucher_row_history', 'SELECT, INSERT'),
+        ('voucher_rows', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('voucher_series', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('vouchers', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('waitlist_entries', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('work_schedules', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('year_end_entries', 'SELECT, INSERT')
+    ) AS decisions(table_name, privileges)
+    LOOP
+        decided := decided || decision.table_name::text;
+
+        IF to_regclass(format('%I.%I', current_schema(), decision.table_name)) IS NOT NULL THEN
+            EXECUTE format('REVOKE ALL ON TABLE %I FROM nonox_app', decision.table_name);
+            EXECUTE format('GRANT %s ON TABLE %I TO nonox_app', decision.privileges, decision.table_name);
+            EXECUTE format('GRANT SELECT ON TABLE %I TO nonox_readonly', decision.table_name);
+        END IF;
+    END LOOP;
+
+    FOR undecided IN
+        SELECT tablename FROM pg_tables
+        WHERE schemaname = current_schema()
+          AND tablename <> ALL (decided)
+    LOOP
+        EXECUTE format('REVOKE ALL ON TABLE %I FROM nonox_app', undecided.tablename);
+        EXECUTE format('GRANT SELECT ON TABLE %I TO nonox_readonly', undecided.tablename);
+        RAISE WARNING 'NONOX: table % has no grant decision; the app role gets no privileges on it', undecided.tablename;
+    END LOOP;
+
+    EXECUTE format('GRANT USAGE ON SCHEMA %I TO nonox_app, nonox_readonly', current_schema());
+    EXECUTE format('GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA %I TO nonox_app', current_schema());
+    EXECUTE format('GRANT SELECT ON ALL SEQUENCES IN SCHEMA %I TO nonox_readonly', current_schema());
+END
+$grants$;
+
+-- Every trigger function reads its tables with search_path = <schema>, pg_temp (TriggerFunctions).
+DO $pin$
+DECLARE
+    fn regprocedure;
+BEGIN
+    FOR fn IN
+        SELECT p.oid::regprocedure FROM pg_proc p
+        WHERE p.pronamespace = current_schema()::regnamespace
+          AND p.prorettype = 'trigger'::regtype
+          AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_proc'::regclass AND d.objid = p.oid AND d.deptype = 'e')
+          AND p.proconfig IS DISTINCT FROM ARRAY[format('search_path=%s, pg_temp', current_schema())]
+    LOOP
+        EXECUTE format('ALTER FUNCTION %s SET search_path = %I, pg_temp', fn, current_schema());
+    END LOOP;
+END
+$pin$;

@@ -377,7 +377,9 @@ it('keeps the import record and row history unchangeable', function () {
         try {
             DB::transaction(fn () => DB::statement($sql, $bindings));
         } catch (QueryException $exception) {
-            $refused = str_contains($exception->getMessage(), 'cannot be changed or removed');
+            // The trigger refuses; with the database roles (ADR-079 §6) the grant refuses first.
+            $refused = str_contains($exception->getMessage(), 'cannot be changed or removed')
+                || str_contains($exception->getMessage(), 'permission denied for table');
         }
 
         expect($refused)->toBeTrue();

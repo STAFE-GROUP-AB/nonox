@@ -27,6 +27,12 @@ final class DummyModule implements Module
         private readonly string $key = 'dummy',
         /** @var list<string> */
         private readonly array $dependencies = [],
+        /** @var list<string>|null replaces the permissions below, for registry tests */
+        private readonly ?array $permissions = null,
+        /** @var array<string, string>|null */
+        private readonly ?array $roles = null,
+        /** @var array<string, list<string>>|null */
+        private readonly ?array $rolePermissions = null,
     ) {}
 
     public function key(): string
@@ -56,17 +62,17 @@ final class DummyModule implements Module
 
     public function permissions(): array
     {
-        return ["{$this->key}:view", "{$this->key}:manage", "{$this->key}:archive-view"];
+        return $this->permissions ?? ["{$this->key}:view", "{$this->key}:manage", "{$this->key}:archive-view"];
     }
 
     public function roles(): array
     {
-        return ["{$this->key}_admin" => 'Testadministratör'];
+        return $this->roles ?? ["{$this->key}_admin" => 'Testadministratör'];
     }
 
     public function rolePermissions(): array
     {
-        return [
+        return $this->rolePermissions ?? [
             'owner' => ["{$this->key}:view", "{$this->key}:archive-view"],
             'admin' => ["{$this->key}:view"],
             'auditor' => ["{$this->key}:archive-view"],
@@ -76,7 +82,7 @@ final class DummyModule implements Module
 
     public function archivePermissions(): array
     {
-        return ["{$this->key}:archive-view"];
+        return array_values(array_intersect(["{$this->key}:archive-view"], $this->permissions()));
     }
 
     public function archiveNavigation(Company $company): array

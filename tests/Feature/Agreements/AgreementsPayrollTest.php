@@ -224,7 +224,9 @@ describe('versions', function () {
         $version->forceFill(['verified_by' => 'Granskare', 'verified_at' => now()])->save();
 
         expect(fn () => DB::transaction(fn () => DB::table('agreement_rule_versions')->where('id', $version->id)->update(['rules' => '{}'])))->toThrow(QueryException::class, 'cannot be changed')
-            ->and(fn () => DB::transaction(fn () => DB::table('agreement_rule_versions')->where('id', $version->id)->delete()))->toThrow(QueryException::class, 'cannot be deleted');
+            // The trigger refuses; with the database roles (ADR-079 §6) the app has no DELETE on the table at all.
+            ->and(fn () => DB::transaction(fn () => DB::table('agreement_rule_versions')->where('id', $version->id)->delete()))
+            ->toThrow(fn (QueryException $exception) => expect($exception->getMessage())->toMatch('/cannot be deleted|permission denied for table agreement_rule_versions/'));
 
         DB::table('agreement_rule_versions')->where('id', $version->id)->update(['valid_to' => '2028-03-31']);
 

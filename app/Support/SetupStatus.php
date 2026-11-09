@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Support\Database\DatabaseRoles;
 use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Support\Facades\DB;
 use PDOException;
@@ -115,7 +116,7 @@ class SetupStatus
         return [
             'title' => 'Databasen behöver göras i ordning',
             'explanation' => 'Databasen finns, men tabellerna där allt ska sparas saknas eller behöver uppdateras. Kör raden nedan i Terminalen, i mappen där systemet ligger, och ladda sedan om sidan.',
-            'command' => 'php artisan migrate',
+            'command' => DatabaseRoles::migrateCommand(),
             'details' => "{$pending} migreringar har inte körts.",
             'action' => 'migrate',
         ];

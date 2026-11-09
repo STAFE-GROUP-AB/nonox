@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Support\Database\DatabaseRoles;
 use App\Support\SetupStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -25,7 +26,8 @@ class RunMigrationsController
         abort_unless(self::allowed($request), 404);
         abort_unless($request->hasValidSignature(), 404);
 
-        $exitCode = Artisan::call('migrate', ['--force' => true]);
+        // With separate database roles (ADR-079 §6) the migrations run as the owner.
+        $exitCode = Artisan::call('migrate', ['--force' => true, ...DatabaseRoles::migrateOptions()]);
         $output = trim(Artisan::output());
 
         return view('start.migrated', [

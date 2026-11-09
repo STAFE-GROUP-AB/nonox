@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.125
+- Version: 0.126
 - Datum: 2026-11-09
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -627,7 +627,54 @@ year").
 
 - En bokförd verifikation och dess rader kan aldrig ändras eller tas bort. Det
   hindras av behörighetsregler, av programmet och av databasen själv, även vid
-  direkta databasändringar.
+  direkta databasändringar av en användare som inte äger tabellerna (avsnitt
+  4.3a).
+
+### 4.3a Databasroller (ADR-079 §6)
+
+- Skyddet i databasen (triggerna som nekar ändring och borttagning av bokförda
+  verifikationer, behandlingshistoriken och de andra tabellerna som bara får
+  växa) gäller mot all kod som körs med en databasanvändare som inte äger
+  tabellerna. En användare som äger dem, eller är superanvändare, kan stänga
+  av triggerna. Därför kan NONOX köras med tre roller:
+  - `nonox_owner` äger alla tabeller, triggers och funktioner och används bara
+    när databasen uppdateras (`php artisan migrate --database=pgsql_owner`);
+  - `nonox_app` är den roll programmet körs som. Den äger ingenting, är inte
+    superanvändare, kan inte skapa, ändra eller ta bort tabeller, triggers
+    eller funktioner, kan inte tömma en tabell (TRUNCATE) och kan inte stänga
+    av triggerna med `session_replication_role`. Per tabell får den bara det
+    som står i en lista i koden (`App\Support\Database\DatabaseGrants`):
+    tabeller vars trigger nekar all ändring och borttagning får den bara läsa
+    och lägga till rader i, så att skyddet där inte längre hänger på triggern
+    ensam (behandlingshistoriken, systemdokumentationens versioner, bokförda
+    periodiseringar, avskrivningar och bokslutsposter, momsrapporter,
+    betalningar, lager- och skattetabeller med flera);
+  - `nonox_readonly` får bara läsa, för rapporter och säkerhetskopior.
+- Behörigheterna läggs på igen efter varje uppdatering av databasen, så en ny
+  tabell får sina direkt. En tabell som saknas i listan får ingen åtkomst för
+  programmet, och ett test stoppar en ändring som lägger till en tabell utan
+  beslut.
+- Ägarrollens inloggning finns aldrig i programmets konfiguration: ägaren loggar
+  in med peer-autentisering som en egen Unix-användare vid driftsättningen, och
+  `nonox:doctor` varnar om ett ägarlösenord finns i konfigurationen. Appens roll
+  kan inte skapa tillfälliga tabeller eller stora objekt.
+- Varje triggerfunktion läser sina tabeller med sökvägen `public, pg_temp`, så att
+  en tillfällig tabell med samma namn aldrig kan ersätta den riktiga. Sökvägen
+  läggs på igen efter varje uppdatering av databasen, och ett test stoppar en
+  triggerfunktion utan den. En utfärdad kundfaktura eller registrerad
+  leverantörsfaktura kan inte sättas tillbaka till utkast i databasen.
+  Personalliggarens poster kan bara gallras när databasens egen klocka visar att
+  lagringstiden är slut. Signeringshändelser i CRM tas bara bort tillsammans med
+  sin signeringsbegäran.
+- Rollerna slås på med `DB_MIGRATION_USERNAME`. Utan den körs allt som förut
+  med en enda användare; den driftade tjänsten byter enligt
+  `docs/drift/databasroller.md`. `php artisan nonox:doctor` visar om
+  programmet kör som ägare eller superanvändare.
+- Testerna `TriggerBypassGapTest` (en enda användare: angreppen lyckas) och
+  `DatabaseRolesTest` (som `nonox_app`: varje angrepp nekas) visar skillnaden.
+  Kontrollsummekedjan (avsnitt 4.7) går inte heller att räkna om som
+  `nonox_app`, eftersom de bokförda verifikationernas kontrollsummor inte kan
+  skrivas om.
 
 ### 4.4 Rättelse
 
@@ -5302,3 +5349,4 @@ påverkar bokföringen och fakturan:
 | 0.123 | 2026-11-09 | Demoföretag för besökare som provar utan konto (avsnitt 7c, ADR-077): ett påhittat företag med gäst i en egen databas (`demo`) med hela schemat, som inte skickar något utanför NONOX; databasen byggs om när inga demor är igång. Triggrarna som vägrar borttagning av bokförda rader har inget undantag. Ingen ny bokföringsregel. |
 | 0.124 | 2026-11-09 | Inläsning av register, obetalda fakturor och underlag från andra program (avsnitt 5a8a, ADR-076): obetalda kund- och leverantörsfakturor kan skapas utan verifikation när summan är lika med saldot på 1510 respektive 2440 och företaget redovisar enligt fakturametoden; betalningen bokförs mot 1510 respektive 2440. Huvudboken och kedjan av kontrollsummor ändras inte av inläsningen. |
 | 0.125 | 2026-11-09 | Inlästa obetalda fakturor (avsnitt 5a8a, ADR-076) behåller sitt gamla nummer som identitet och får inget nummer ur nummerserien; de kan inte skickas eller göras till PDF; betalning och avskrivning får verifikationstexten "Ingående balans (inläst)"; avstämningen mot 1510/2440 tar med öppna NONOX-fakturor och valda underkonton och tillåter kreditfakturor. |
+| 0.126 | 2026-11-09 | Databasroller (avsnitt 4.3a, ADR-079 etapp 2): NONOX kan köras som en roll (`nonox_app`) som inte äger tabellerna och inte kan stänga av, ta bort eller ersätta triggerna, tömma tabeller eller ändra schemat; migreringarna körs som ägaren (`nonox_owner`). Tabeller vars trigger nekar all ändring och borttagning blir append-only även genom behörigheterna. Behörigheterna läggs på efter varje migrering; en tabell utan beslut får ingen åtkomst. Påslaget med `DB_MIGRATION_USERNAME`, annars som förut med en användare; ägarens lösenord finns aldrig i programmets konfiguration. Triggerfunktionernas sökväg (version 0.119) läggs på igen efter varje migrering; personalliggarens gallring kontrolleras mot lagringstiden i databasen; signeringshändelser tas bara bort med sin begäran. Ingen bokföringsregel och inga data ändras. |

@@ -20,6 +20,8 @@ use App\Models\User;
 use App\Support\Audit\AuditSubscriber;
 use App\Support\Build\VersionRecorder;
 use App\Support\Chat\SecureChat;
+use App\Support\Database\AfterMigrate;
+use App\Support\Database\DatabaseRoles;
 use App\Support\Files\EncryptedAdapter;
 use App\Support\Guide\ForgetUserDeadlines;
 use App\Support\Instance\InstanceSettings;
@@ -31,6 +33,8 @@ use App\Support\Tenancy\LivewireCompanyGuard;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Events\CommandFinished;
+use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Console\Events\ScheduledTaskFailed;
 use Illuminate\Console\Events\ScheduledTaskFinished;
 use Illuminate\Database\Eloquent\Model;
@@ -52,6 +56,7 @@ use League\Flysystem\Local\LocalFilesystemAdapter;
 use League\Flysystem\UnixVisibility\PortableVisibilityConverter;
 use League\Flysystem\Visibility;
 use Livewire\Livewire;
+use RuntimeException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -129,6 +134,24 @@ class AppServiceProvider extends ServiceProvider
         Event::listen([MigrationsEnded::class, NoPendingMigrations::class], function (MigrationsEnded|NoPendingMigrations $event): void {
             if ($event->method === 'up') {
                 VersionRecorder::recordQuietly();
+            }
+        });
+        // ADR-079 §6: after every migrate of the main database, pin the trigger functions' search path and, with
+        // separate database roles, re-apply the grant decisions as the owner (also after a migrate that failed),
+        // so a new table or trigger function is covered at once; refuse schema commands that do not run as the owner.
+        Event::listen([MigrationsEnded::class, NoPendingMigrations::class], fn () => AfterMigrate::run());
+        Event::listen(CommandFinished::class, function (CommandFinished $event): void {
+            if ($event->exitCode !== 0 && in_array($event->command, DatabaseRoles::SCHEMA_COMMANDS, true)) {
+                $connection = $event->input->hasOption('database') ? $event->input->getOption('database') : null;
+                AfterMigrate::afterFailedMigrate(is_string($connection) ? $connection : null);
+            }
+        });
+        Event::listen(CommandStarting::class, function (CommandStarting $event): void {
+            $connection = $event->input->hasOption('database') ? $event->input->getOption('database') : null;
+            $refusal = DatabaseRoles::refusal((string) $event->command, is_string($connection) ? $connection : null);
+
+            if ($refusal !== null) {
+                throw new RuntimeException($refusal);
             }
         });
         // Someone who leaves or is removed may have been what linked a client to its firm (ADR-030).

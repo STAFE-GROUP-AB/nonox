@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\AuditLog;
+use App\Models\FiscalYear;
 use App\Modules\StaffLedger\Actions\AppendEntry;
 use App\Modules\StaffLedger\Actions\CorrectEntry;
 use App\Modules\StaffLedger\Actions\PruneStaffLedger;
@@ -124,19 +125,29 @@ it('reports through the command, records the result and runs every night', funct
 });
 
 it('prunes from the old end after the retention period and still verifies', function () {
-    $this->travelTo(CarbonImmutable::parse('2031-01-10 09:00'));
-    $later = app(RecordManualEntry::class)($this->owner, $this->company, $this->person, $this->location, Direction::In, CarbonImmutable::now()->subMinute(), 'Glömde checka in');
+    // The trigger checks retention by the database's own clock, so the pruned entries are from years back.
+    FiscalYear::query()->create(['company_id' => $this->company->id, 'start_date' => '2019-01-01', 'end_date' => '2019-12-31']);
+    $old = StaffLedger::location($this->owner, $this->company, ['name' => 'Gamla lokalen']);
+    $at = fn (string $time) => CarbonImmutable::parse($time);
+
+    $this->travelTo($at('2019-10-30 08:00'));
+    app(AppendEntry::class)($old, $this->person, ['type' => EntryType::CheckIn, 'method' => CheckInMethod::KioskPin, 'occurred_at' => $at('2019-10-30 08:00')]);
+    $this->travelTo($at('2019-10-30 16:30'));
+    $out = app(AppendEntry::class)($old, $this->person, ['type' => EntryType::CheckOut, 'method' => CheckInMethod::KioskPin, 'occurred_at' => $at('2019-10-30 16:30')]);
+    $this->travelBack();
+    $later = app(RecordManualEntry::class)($this->owner, $this->company, $this->person, $old, Direction::In, CarbonImmutable::now()->subMinute(), 'Glömde checka in');
 
     $result = app(PruneStaffLedger::class)();
 
-    expect($result['entries'])->toBe(3)
-        ->and(Entry::query()->pluck('id')->all())->toBe([$later->id])
-        ->and($this->location->fresh()->chain_start_hash)->toBe($this->correction->hash)
-        ->and(app(ChainVerifier::class)->verify($this->company))->toBe(['ok' => true, 'entries' => 1, 'problems' => []]);
+    expect($result['entries'])->toBe(2)
+        ->and(Entry::query()->where('location_id', $old->id)->pluck('id')->all())->toBe([$later->id])
+        ->and($old->fresh()->chain_start_hash)->toBe($out->hash)
+        ->and(Entry::query()->where('location_id', $this->location->id)->count())->toBe(3)
+        ->and(app(ChainVerifier::class)->verify($this->company))->toBe(['ok' => true, 'entries' => 4, 'problems' => []]);
 
     // Moving the anchor without a recorded prune is caught.
-    $this->location->fresh()->forceFill(['chain_start_hash' => $later->hash])->save();
-    expect(app(ChainVerifier::class)->verify($this->company)['problems'])->toContain('Lokal Restaurang Testgatan: kedjans början stämmer inte med den senaste gallringen.');
+    $old->fresh()->forceFill(['chain_start_hash' => $later->hash])->save();
+    expect(app(ChainVerifier::class)->verify($this->company)['problems'])->toContain('Lokal Gamla lokalen: kedjans början stämmer inte med den senaste gallringen.');
 });
 
 it('keeps entries inside the retention period', function () {
