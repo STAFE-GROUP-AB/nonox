@@ -155,6 +155,11 @@ it('never changes an issued invoice', function () {
 
         expect($refused)->toBeTrue();
     }
+
+    // Setting it back to a draft would make it editable and deletable again.
+    expect(fn () => DB::transaction(fn () => DB::update("update invoices set status = 'DRAFT' where id = ?", [$invoice->id])))
+        ->toThrow(QueryException::class, 'cannot be reopened')
+        ->and($invoice->fresh()->status->value)->not->toBe('DRAFT');
 });
 
 it('registers part and full payments in series C', function () {

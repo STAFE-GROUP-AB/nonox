@@ -72,7 +72,8 @@ it('never changes an approved run', function () {
     expect(fn () => $this->runs->addInput($this->owner, $run->fresh(), ['employee_id' => $this->anna->id, 'pay_code_id' => PayCode::query()->where('code', 'OVERTID')->value('id'), 'quantity' => '2']))
         ->toThrow(AuthorizationException::class)
         ->and(fn () => DB::transaction(fn () => DB::table('payslips')->where('id', $payslip->id)->update(['net_ore' => 1])))->toThrow(QueryException::class, 'approved payroll run')
-        ->and(fn () => DB::transaction(fn () => DB::table('payroll_runs')->where('id', $run->id)->update(['status' => 'DRAFT'])))->toThrow(QueryException::class)
+        ->and(fn () => DB::transaction(fn () => DB::table('payroll_runs')->where('id', $run->id)->update(['status' => 'DRAFT'])))->toThrow(QueryException::class, 'cannot be reopened')
+        ->and(fn () => DB::transaction(fn () => DB::table('payroll_runs')->where('id', $run->id)->update(['status' => 'CALCULATED'])))->toThrow(QueryException::class, 'cannot be reopened')
         ->and(fn () => DB::transaction(fn () => DB::table('payroll_runs')->where('id', $run->id)->delete()))->toThrow(QueryException::class);
 });
 
