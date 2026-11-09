@@ -263,7 +263,7 @@ final class RegisterImportRunner
 
     private function customerInvoice(RowPlan $plan, Customer|Supplier $customer, Company $company, User $user): void
     {
-        $values = $plan->values;
+        $values = self::asCredit($plan->values);
         $vat = (int) ($values['vat'] ?? 0);
         $now = CarbonImmutable::now();
 
@@ -294,7 +294,7 @@ final class RegisterImportRunner
 
     private function supplierInvoice(RowPlan $plan, Customer|Supplier $supplier, Company $company, User $user): void
     {
-        $values = $plan->values;
+        $values = self::asCredit($plan->values);
         $now = CarbonImmutable::now();
 
         $invoice = new SupplierInvoice;
@@ -321,6 +321,23 @@ final class RegisterImportRunner
             'external_ref' => mb_substr((string) $values['invoice_number'], 0, 100),
             'import_source' => 'IMPORT_OPEN',
         ])->save();
+    }
+
+    /**
+     * An overpaid invoice (a negative remainder on a positive amount) becomes a
+     * credit for what was overpaid: the amount is the remainder, nothing is paid.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private static function asCredit(array $values): array
+    {
+        if ((int) $values['total'] > 0 && (int) $values['remaining'] < 0) {
+            $values['total'] = $values['remaining'];
+            $values['vat'] = 0;
+        }
+
+        return $values;
     }
 
     /** @return array<string, mixed> */

@@ -207,12 +207,12 @@ final class CompanyTasks implements TodoProvider
             ->orderBy('invoices.due_date')
             ->orderBy('invoices.number')
             ->limit(self::SINGLE_INVOICES)
-            ->get(['invoices.id', 'invoices.number', 'invoices.kind', 'invoices.due_date', 'invoices.total_ore', 'invoices.paid_ore', 'customers.name as customer_name']);
+            ->get(['invoices.id', 'invoices.number', 'invoices.external_ref', 'invoices.import_source', 'invoices.kind', 'invoices.due_date', 'invoices.total_ore', 'invoices.paid_ore', 'customers.name as customer_name']);
 
         return array_values($invoices->map(fn (Invoice $invoice): TodoItem => new TodoItem(
             "invoice:{$invoice->id}",
             'invoice',
-            __('Faktura :number är förfallen', ['number' => $invoice->number]),
+            $invoice->isImported() ? __(':title är förfallen', ['title' => $invoice->title()]) : __('Faktura :number är förfallen', ['number' => $invoice->number]),
             __(':customer, :amount', ['customer' => (string) $invoice->getAttribute('customer_name'), 'amount' => $invoice->total_ore->minus($invoice->paid_ore)->format()]),
             route('invoicing.invoices.show', $invoice->id),
             TodoItem::PRIORITY_OVERDUE_INVOICE,

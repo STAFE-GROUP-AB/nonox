@@ -98,7 +98,8 @@ final class OpenItemReconciliation
             return (int) Invoice::query()
                 ->whereNull('import_source')
                 ->where('status', InvoiceStatus::Issued->value)
-                ->sum(DB::raw('total_ore - paid_ore'));
+                // The ROT or RUT deduction still to be paid by Skatteverket sits on 1513, not on 1510.
+                ->sum(DB::raw('total_ore - paid_ore - GREATEST(0, COALESCE(tax_reduction_ore, 0) - COALESCE(tax_reduction_paid_ore, 0))'));
         }
 
         return (int) SupplierInvoice::query()

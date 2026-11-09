@@ -26,6 +26,9 @@ final class IncomingPaymentMatcher
     /** @var array<string, list<Invoice>> imported invoices by the number they had in the previous program */
     private array $byOldNumber = [];
 
+    /** @var array<int|string, true> numbers of invoices made in NONOX that are unpaid */
+    private array $nonoxNumbers = [];
+
     public function __construct()
     {
         $invoices = Invoice::query()
@@ -34,6 +37,10 @@ final class IncomingPaymentMatcher
             ->get(['id', 'number', 'ocr', 'external_ref', 'import_source', 'total_ore', 'paid_ore', 'customer_snapshot', 'status', 'kind', 'due_date', 'invoice_currency', 'foreign_total_minor', 'foreign_paid_minor', 'exchange_rate_micros']);
 
         foreach ($invoices as $invoice) {
+            if ($invoice->number !== null) {
+                $this->nonoxNumbers[(string) $invoice->number] = true;
+            }
+
             if ($invoice->ocr !== null) {
                 $this->byOcr[(string) $invoice->ocr][] = $invoice;
             }
@@ -58,7 +65,12 @@ final class IncomingPaymentMatcher
         }
 
         foreach ($candidates as $candidate) {
-            foreach ([$this->byOcr, $this->byOldNumber] as $index) {
+            foreach (['ocr' => $this->byOcr, 'old' => $this->byOldNumber] as $source => $index) {
+                // A number in the message that is also the number of an open NONOX invoice is not read as an old number.
+                if ($source === 'old' && isset($this->nonoxNumbers[$candidate])) {
+                    continue;
+                }
+
                 $found = $index[$candidate] ?? [];
 
                 if (count($found) === 1 && self::fits($found[0], $credit->amountOre, $credit->foreignCurrency, $credit->foreignAmountMinor)) {

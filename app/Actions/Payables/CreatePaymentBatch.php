@@ -197,7 +197,7 @@ class CreatePaymentBatch
                 return __(':title: leverantören finns inte längre. Betala den i internetbanken.', ['title' => $title]);
             }
 
-            return ForeignPayment::transfer($invoice, $bank, "LF{$invoice->number}-{$batchNumber}", $invoice->supplier);
+            return ForeignPayment::transfer($invoice, $bank, self::endToEndId($invoice, $batchNumber), $invoice->supplier);
         }
 
         $bankgiro = preg_replace('/\D/', '', (string) ($supplier['bankgiro'] ?? ''));
@@ -209,7 +209,7 @@ class CreatePaymentBatch
 
         return new CreditTransfer(
             // Unique per payment ("LF<invoice>-<file>"), so the bank's answer finds it even when an invoice is paid in a second file (ApplyPaymentResponses).
-            endToEndId: "LF{$invoice->number}-{$batchNumber}",
+            endToEndId: self::endToEndId($invoice, $batchNumber),
             amountOre: $invoice->remaining()->ore,
             creditorName: (string) ($supplier['name'] ?? ''),
             scheme: $bankgiro !== '' ? CreditTransfer::BANKGIRO : CreditTransfer::PLUSGIRO,
@@ -218,5 +218,19 @@ class CreatePaymentBatch
             // The message goes to the supplier's bank statement, so it stays Swedish whatever the user's language.
             message: $invoice->ocr === null ? 'Faktura '.($invoice->invoice_number ?? $invoice->number) : null,
         );
+    }
+
+    /**
+     * "LF<invoice>-<file>", at most 35 characters. An imported invoice has no
+     * NONOX number (ADR-076), so it is named by the start of its id instead:
+     * "LFI<20 characters>-<file>", still unique per payment.
+     */
+    public static function endToEndId(SupplierInvoice $invoice, int|string $batchNumber): string
+    {
+        if ($invoice->isImported()) {
+            return 'LFI'.substr(str_replace('-', '', (string) $invoice->id), 0, 20)."-{$batchNumber}";
+        }
+
+        return "LF{$invoice->number}-{$batchNumber}";
     }
 }

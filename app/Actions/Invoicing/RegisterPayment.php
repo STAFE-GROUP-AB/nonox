@@ -132,6 +132,7 @@ class RegisterPayment
 
             Audit::record('invoice.payment_registered', $invoice, array_filter([
                 'number' => $invoice->number,
+                'external_ref' => $invoice->external_ref,
                 'amount_ore' => $amount->ore,
                 'paid_on' => $paidOn->toDateString(),
                 'voucher' => $voucher->reference(),

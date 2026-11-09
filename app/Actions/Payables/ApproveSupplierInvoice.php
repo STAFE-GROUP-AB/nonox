@@ -44,7 +44,7 @@ class ApproveSupplierInvoice
                 'approved_by' => $user->id,
             ])->save();
 
-            Audit::record('supplier_invoice.approved', $invoice, ['number' => $invoice->number], $invoice->company_id, $user);
+            Audit::record('supplier_invoice.approved', $invoice, ['number' => $invoice->number, 'external_ref' => $invoice->external_ref], $invoice->company_id, $user);
 
             event(new SupplierInvoiceApproved($invoice->company_id, $invoice->id));
 

@@ -99,6 +99,7 @@ class WriteOffInvoice
 
             Audit::record('invoice.written_off', $invoice, array_filter([
                 'number' => $invoice->number,
+                'external_ref' => $invoice->external_ref,
                 'amount_ore' => $amount,
                 'date' => $date->toDateString(),
                 'reason' => trim($reason),

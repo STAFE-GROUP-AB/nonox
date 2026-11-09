@@ -218,10 +218,11 @@ class AnalyseRegisterImport
         $options['preset_name'] = trim((string) ($input['preset_name'] ?? ''));
 
         if (array_key_exists('extra_accounts', $input)) {
+            // 1510-1519 for customers, 2440-2449 for suppliers: the family of the control account, never an unrelated account.
             $control = (int) $kind->controlAccount();
             $options['extra_accounts'] = array_values(array_unique(array_filter(
                 array_map(intval(...), preg_split('/[\s,;]+/', (string) $input['extra_accounts']) ?: []),
-                fn (int $number): bool => $number >= 1000 && $number <= 8999 && $number !== $control,
+                fn (int $number): bool => $number > $control && $number <= $control + 9,
             )));
         }
 

@@ -366,8 +366,9 @@ final class RegisterRowProcessor
             $messages->error(__('Fakturabeloppet ska inte vara noll.'));
         }
 
-        if ($total !== null && $remaining !== null && $total !== 0 && ($remaining === 0 || ($remaining <=> 0) !== ($total <=> 0) || abs($remaining) > abs($total))) {
-            $messages->error(__('Obetalt belopp ska ha samma tecken som fakturabeloppet, vara skilt från noll och högst fakturabeloppet.'));
+        // A negative remainder on a positive invoice is an overpayment: read as a credit (the runner does).
+        if ($total !== null && $remaining !== null && $total !== 0 && ($remaining === 0 || (($remaining <=> 0) === ($total <=> 0) && abs($remaining) > abs($total)))) {
+            $messages->error(__('Obetalt belopp ska vara skilt från noll och inte större än fakturabeloppet. Ett negativt obetalt belopp på en positiv faktura läses som en överbetalning, en kredit.'));
         }
 
         if (isset($values['vat']) && $total !== null && $total !== 0 && (abs($values['vat']) > abs($total) || ($values['vat'] !== 0 && ($values['vat'] <=> 0) !== ($total <=> 0)))) {

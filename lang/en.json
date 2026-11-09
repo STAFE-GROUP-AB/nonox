@@ -11020,5 +11020,7 @@
     "Numret i filen är kundens eller leverantörens nummer i NONOX. Annars hittas de på numret i det tidigare programmet eller på organisationsnumret.": "The number in the file is the customer's or supplier's number in NONOX. Otherwise they are found on the number in the previous program or on the organisation number.",
     "Öppna fakturor gjorda i NONOX": "Open invoices made in NONOX",
     "Fakturan skickades från vårt tidigare system, så den finns inte som bilaga. Ange fakturanumret och OCR-numret ovan när du betalar. Har du redan betalat kan du bortse från påminnelsen. Har du frågor, svara på det här mejlet.": "The invoice was sent from our previous system, so it is not attached. Quote the invoice number and the OCR number above when you pay. If you have already paid you can disregard the reminder. If you have questions, reply to this e-mail.",
-    "tidigare program": "previous program"
+    "tidigare program": "previous program",
+    ":title är förfallen": ":title is overdue",
+    "Obetalt belopp ska vara skilt från noll och inte större än fakturabeloppet. Ett negativt obetalt belopp på en positiv faktura läses som en överbetalning, en kredit.": "The unpaid amount must differ from zero and not exceed the invoice amount. A negative unpaid amount on a positive invoice is read as an overpayment, a credit."
 }

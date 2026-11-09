@@ -118,6 +118,7 @@ final class WebhookEvents
         return [
             'invoice_id' => $invoice->id,
             'invoice_number' => $invoice->number,
+            'external_ref' => $invoice->external_ref,
             'kind' => $invoice->kind,
             'customer_id' => $invoice->customer_id,
             'total_ore' => $invoice->total_ore->ore,
@@ -174,6 +175,7 @@ final class WebhookEvents
         return [
             'invoice_id' => $invoice->id,
             'invoice_number' => $invoice->number,
+            'external_ref' => $invoice->external_ref,
             'customer_id' => $invoice->customer_id,
             'total_ore' => $invoice->total_ore->ore,
             'paid_ore' => $invoice->paid_ore->ore,
@@ -201,6 +203,7 @@ final class WebhookEvents
         return [
             'supplier_invoice_id' => $invoice->id,
             'number' => $invoice->number,
+            'external_ref' => $invoice->external_ref,
             'supplier_id' => $invoice->supplier_id,
             'kind' => $invoice->kind,
             'total_ore' => $invoice->total_ore->ore,
