@@ -61,6 +61,7 @@ final class StoredFiles
         'peppol_transmissions' => 'xml_path',
         'work_order_photos' => 'path',
         'change_orders' => 'decided_document_path',
+        'boardroom_minutes' => 'pdf_path',
     ];
 
     /**

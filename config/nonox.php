@@ -28,6 +28,15 @@ return [
      */
     'mcp_enabled' => (bool) env('NONOX_MCP_ENABLED', false),
 
+    /*
+     | The share register's hash chain (ADR-070) hashes personal and foreign
+     | id numbers as HMAC-SHA256 with this key, never in clear text. It is
+     | separate from APP_KEY and must never change: a new key breaks the
+     | chain of every register. Created once at install
+     | (`php artisan share-register:hash-key --write`, part of `composer setup`).
+     */
+    'register_hash_key' => env('NONOX_REGISTER_HASH_KEY'),
+
     'hq' => [
         // How long one passkey confirmation covers decisions in /hq.
         'step_up_seconds' => (int) env('HQ_STEP_UP_SECONDS', 300),

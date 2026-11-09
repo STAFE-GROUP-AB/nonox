@@ -211,6 +211,7 @@ Modulen är byggd (ADR-034) men erbjuds inte i den driftade tjänsten på nonox.
 - E-faktura via Peppol genom Qvalia, i version 1.0: skicka kundfakturor och ta emot leverantörsfakturor i inkorgen enligt Peppol BIS Billing 3.0. Byggt, och slås på när den första kunden vill skicka e-faktura (ADR-050).
 - Färdiga kopplingar från kassasystem och e-handel, direkt eller via de integrationsplattformar som programmen redan använder. API:t och webhooks finns; kopplingarna byggs mot dem.
 - Arbetsorder och ÄTA på webbplatsen: modulen Arbetsorder är byggd (se ovan) och visas på startsidan och i jämförelsen när den har en riktig skärmbild.
+- Aktiebok och styrelserum för aktiebolag: aktieboken som en historik där varje ändring är en egen händelse som inte kan ändras i efterhand, stämmor och styrelsemöten med dagordning, kallelse och protokoll som godkänns i NONOX, och påminnelser om det som ska anmälas till Bolagsverket. Byggd som beta och provas med pilotföretagen; datum för kallelser visas som råd tills en jurist har gått igenom reglerna.
 
 Det som pågår, är planerat eller önskat står på färdplanen på webbplatsen (`/fardplan`), och allt som har levererats, och de utredningar och granskningar som ligger bakom, står med datum och klockslag i ändringsloggen (`/andringslogg`, med RSS-flöde), grupperat efter projektets faser. Båda skrivs på vanlig svenska för den som inte läser koden; posterna finns i `docs/andringslogg` och `docs/fardplan` och hålls aktuella enligt [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -319,7 +320,7 @@ Kör sedan installationen. Ett kommando gör resten:
 composer setup
 ```
 
-Det skapar applikationsnyckeln, bygger alla tabeller och bygger webbsidans utseende. Det tar någon minut första gången. Allt har gått rätt om det sista som skrivs ut är `✓ built in …`.
+Det skapar applikationsnyckeln och nyckeln till aktiebokens hashkedja (`NONOX_REGISTER_HASH_KEY`, som aldrig får bytas), bygger alla tabeller och bygger webbsidans utseende. Det tar någon minut första gången. Allt har gått rätt om det sista som skrivs ut är `✓ built in …`.
 
 ### 5. Öppna appen
 

@@ -6,6 +6,7 @@ use App\Migration\Fortnox\FortnoxServiceProvider;
 use App\Modules\Agreements\AgreementsServiceProvider;
 use App\Modules\Ai\AiServiceProvider;
 use App\Modules\Banking\BankingServiceProvider;
+use App\Modules\Boardroom\BoardroomServiceProvider;
 use App\Modules\Connect\ConnectServiceProvider;
 use App\Modules\Crm\CrmServiceProvider;
 use App\Modules\Inbox\InboxServiceProvider;
@@ -31,6 +32,7 @@ return [
     AgreementsServiceProvider::class,
     AiServiceProvider::class,
     StaffLedgerServiceProvider::class,
+    BoardroomServiceProvider::class,
     PlanningServiceProvider::class,
     InventoryServiceProvider::class,
     SigningServiceProvider::class,

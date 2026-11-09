@@ -22,6 +22,7 @@ use App\Models\User;
 use App\Models\VatReport;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
+use App\Modules\Boardroom\Support\BoardroomArchive;
 use App\Modules\Payroll\Models\AgiSubmission;
 use App\Modules\Payroll\Models\ImportedPayslip;
 use App\Modules\Payroll\Models\PayrollRun;
@@ -85,6 +86,7 @@ final class ArchivePackageBuilder
                     'leverantorsfakturor' => $this->supplierInvoices($fiscalYear),
                     'moms' => $this->vatReturns($company, $fiscalYear),
                     'lon' => $user->hasTeamPermission($company, 'payroll:archive-view') ? $this->payroll($fiscalYear) : 0,
+                    'aktiebok' => $this->boardroom($user, $company, $fiscalYear),
                     'behandlingshistorik' => $this->auditLog($company, $fiscalYear),
                     'systemdokumentation' => $this->systemDocumentation($fiscalYear),
                 ];
@@ -320,6 +322,29 @@ final class ArchivePackageBuilder
                 $count++;
             }
         });
+
+        return $count;
+    }
+
+    /**
+     * The share register at the year end, its whole history and the approved
+     * minutes of the year (ADR-070), when the company keeps them in NONOX.
+     */
+    private function boardroom(User $user, Company $company, FiscalYear $fiscalYear): int
+    {
+        $files = BoardroomArchive::files($user, $company, $fiscalYear);
+        $count = 0;
+
+        foreach ($files['generated'] as $path => $contents) {
+            $this->put($path, $contents);
+            $count++;
+        }
+
+        foreach ($files['stored'] as $path => $stored) {
+            if ($this->copy($stored, $path)) {
+                $count++;
+            }
+        }
 
         return $count;
     }

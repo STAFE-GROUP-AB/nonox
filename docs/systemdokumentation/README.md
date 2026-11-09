@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.119
+- Version: 0.120
 - Datum: 2026-11-09
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -4474,6 +4474,72 @@ regelbladet `docs/specs/rules/arbetsorder-och-ata.md`. Modulen `work_orders`
   kostnaden är högre än priset (befarad förlust, K2 6.19) och när metoden byts
   efter ett stängt räkenskapsår (K2 6.15). TODO(legal-verify): L12 och L13.
 
+## 5n. Aktiebok och styrelserum (modul)
+
+Beskrivs i [ADR-070](../adr/ADR-070-share-register-and-boardroom.md) med tillägget "as built"
+och regelbladet `docs/specs/rules/aktiebok.md`. Aktieboken och protokollen är inte
+räkenskapsinformation, men de bevaras och kontrolleras på samma sätt som bokföringen.
+
+- Modulen `boardroom` erbjuds bara aktiebolag. Ägare, administratör och
+  redovisningskonsult får `share-register:view`, `share-register:manage`,
+  `meetings:view` och `meetings:manage`; revisorn de två läsande. En
+  redovisningskonsult som inte äger företaget kan föra in händelser först när
+  ägaren eller en administratör har registrerat styrelsens bemyndigande för
+  byrån (aktiebolagslagen 5 kap. 9 §, `share_register.firm_authorised`).
+  Stängs modulen av kan aktieboken och protokollen fortfarande läsas och
+  skrivas ut, men inget kan föras in.
+- **Händelselogg.** Aktieboken ändras aldrig på plats. Varje ändring är en rad i
+  `boardroom_share_events` (bildande, aktieboken som den såg ut vid flytten,
+  nyemission, registrering, förfallen nyemission, fondemission, överlåtelse,
+  arv/gåva, split, sammanläggning, indragning, omvandling, aktiebrev,
+  anteckningar om rättighetshavare och förköp, avslutad anteckning, ändrade
+  ägaruppgifter och rättelse). Raden har ett löpnummer utan luckor per företag,
+  datum då ändringen gäller, datum då den fördes in (5 kap. 9 §), vem som förde
+  in den och en krypterad kopia av mottagarens uppgifter. Tabellen kan bara
+  skrivas till: modellen och en PostgreSQL-trigger vägrar UPDATE, DELETE och
+  TRUNCATE.
+- **Kontroll vid införandet.** Varje ny händelse prövas mot hela historiken,
+  per varje datum då aktieboken ändras (`RegisterFold::validate`): ingen aktie kan ägas av två samtidigt, ingen aktie kan
+  finnas utanför de utgivna, en överlåtelse måste komma från den som äger
+  aktierna, och en tillbakadaterad händelse eller rättelse som gör en senare
+  händelse omöjlig vägras. En felaktig händelse rättas med en rättelse som
+  pekar på den; originalet finns kvar och visas överstruket.
+- **Hashkedja.** Varje händelse har `hash = sha256(föregående hash ||
+  kanonisk JSON av händelsen)`, och kedjans sista länk sparas på
+  `boardroom_registers`. Namn och adress ingår som de är; person- och
+  id-nummer ingår bara som HMAC-SHA256 med en egen nyckel
+  (`NONOX_REGISTER_HASH_KEY`, skild från `APP_KEY`, skapas vid installationen
+  och byts aldrig). Personalliggarens kedja (avsnitt 5d) hashar i dag
+  personnumret i klartext; det rättas separat med en ny hashversion. `php artisan share-register:verify`
+  räknar om kedjan, löpnumren och den sista länken och prövar aktieboken, varje
+  natt kl. 03.45. Resultatet skrivs i behandlingshistoriken
+  (`share_register.verified`) och visas på sidan Aktiebok.
+- **Mot bokföringen.** Registrerade aktier gånger kvotvärdet jämförs med saldot
+  på konto 2081 på samma dag; en skillnad visas som en uppgift på Översikt med
+  båda beloppen. Modulen bokför ingenting. En nyemission som inte är
+  registrerad räknas inte in.
+- **Bevarande.** Aktieboken bevaras så länge bolaget finns och minst tio år
+  efter att det har upplösts, och uppgifter som tagits bort ur aktieboken minst
+  tio år (aktiebolagslagen 5 kap. 3 §). Det räknas inte från räkenskapsåret och
+  är skilt från bokföringslagens sju år. Ingen händelse tas bort, och en
+  aktieägare som finns i historiken kan inte raderas. Gallring efter
+  upplösning är inte byggd.
+- **Utskrifter.** Den fullständiga aktieboken per valfritt datum, i nummerordning,
+  är den som visas för granskning hos bolaget (5 kap. 10 §). En frivillig kopia
+  utan personnummer är märkt på varje sida. Varje utskrift loggas med version
+  (`share_register.printed`).
+- **Protokoll.** Ett protokoll går från utkast till justerat (kontroll av
+  justerare enligt 7 kap. 48 § och 8 kap. 24 §) till "Godkänt i NONOX" med vem
+  och när. Godkännandet sparar en PDF och dess SHA-256 och låser raden i
+  modellen och med en trigger; det är inte en underskrift. Styrelseprotokoll
+  numreras i ordning när de godkänns. Ett fel rättas med ett nytt protokoll som
+  pekar på det godkända. Nedladdningen kontrollerar filens SHA-256 mot den
+  sparade.
+- **Påminnelser.** Beslut som ska anmälas till Bolagsverket och nyemissioner som
+  inte är registrerade visas i Mina datum under Bolagsverket. Datum för
+  kallelser kommer från `database/data/boardroom/rules.json` och visas som råd så
+  länge värdena inte är kontrollerade. NONOX skickar ingenting till Bolagsverket.
+
 ## 6. Belopp
 
 - Belopp lagras som hela ören i heltal, aldrig som flyttal. Avrundning sker till
@@ -4524,6 +4590,13 @@ regelbladet `docs/specs/rules/arbetsorder-och-ata.md`. Modulen `work_orders`
   - `behandlingshistorik/`: alla poster för företaget från årets första dag
     till dess paketet skapas, som CSV och JSON, med användarens namn och
     e-post.
+  - `aktiebok/` och `protokoll/` (modulen Aktiebok och styrelserum, avsnitt
+    5n): den fullständiga aktieboken per räkenskapsårets sista dag som PDF,
+    aktiebokens hela historik som CSV med varje händelses hash, texten som
+    varje händelse hashades från (`aktiebok/hashkedja.json`, med person- och
+    id-nummer bara som HMAC) så att kedjan kan räknas om utan NONOX, och de
+    godkända protokollen från årets möten och årsstämman för året, som de
+    sparades vid godkännandet.
   - `systemdokumentation/`: den här dokumentationen i den version som gällde
     när paketet skapades, varje version som var i bruk under räkenskapsåret
     (`versioner/<version>-<kontrollsumma>.md`) och `versioner.txt` som anger
@@ -4912,6 +4985,18 @@ påverkar bokföringen och fakturan:
 - Att ett enskilt företags organisationsnummer är ägarens personnummer:
   fältet är frivilligt, men behövs det alls i kön?
 
+### Aktiebok och styrelserum (5n)
+
+- Regelbladets frågor L1–L10 (`docs/specs/rules/aktiebok.md`): om kopian utan
+  personnummer räcker vid granskning, om ett protokoll kan justeras med en
+  enkel elektronisk underskrift, hur veckor räknas för kallelser, vad "genast"
+  betyder som yttersta datum, när ett revisorsbyte får verkan, Bolagsverkets
+  e-tjänst och avgifter, formen för styrelsens bemyndigande av en byrå och om
+  ett öppningsläge räcker för ett befintligt bolag.
+- Konto 2082 för inbetalt men inte registrerat aktiekapital ska kontrolleras
+  mot BAS.
+- En sammanläggning där överskjutande aktier inte blir hela nya aktier vägras.
+
 ### Uppskjuten skatt enligt K3 (avsnitt 5a6.5)
 
 - Att varje skattesats i `corporate-tax/rules.json` var beslutad före
@@ -5051,3 +5136,4 @@ påverkar bokföringen och fakturan:
 | 0.117 | 2026-11-08 | Körjournal och milersättning (avsnitt 5b, ADR-072): lönearterna Milersättning, förmånsbil och Milersättning, förmånsbil (el) (7331, ruta 050; tidigare kryssades 050 bara för egen bil); körjournalen med bilar, resor och mätarställningar; månadens milersättning från Min sida godkänns utan verifikation och bokförs med lönen, med körjournalen som underlag; betalda och bokförda resor kan inte ändras (databasutlösare), fel rättas med en negativ resa; enskild firma bokför resor i egen bil som utkast i serie A mot 2018; Fota kvitto i inkorgen (avsnitt 5e). Efter granskningen: skattefri förmånsbil bara i den anställdas egen förmånsbil; belopp efter resans år; förmånsbilens belopp för 2027 från lagtexten; rättelser prissätts som raden de rättar och kan ge en negativ milersättning; årssammanställningen räknar bara förmånshavarens resor; stängt år låser resorna. |
 | 0.118 | 2026-11-08 | Arbetsorder (avsnitt 5m, ADR-074): tid och material som aldrig ändras utan backas med motpost (databasutlösare), lageruttag som `WORK_ORDER_ISSUE`, vidarefakturering av en leverantörsfakturarad en gång, fakturaunderlag som fakturautkast med ROT/RUT bara på arbete och omvänd betalningsskyldighet från arbetsordern, a conto-planer, ÄTA som är oföränderliga när de är beslutade och signeras i den gemensamma signeringsdomänen, och bokslutssteget Pågående arbeten som bara skapar verifikationsutkast (1620, 2420, 2450). Kundfakturor (avsnitt 5.2): arbetade timmar och typ av arbete på ROT- och RUT-fakturor, flera köpare som delar avdraget inom var sitt tak, och köparens personnummer på PDF:en (L6 öppen). |
 | 0.119 | 2026-11-09 | Skärpta databasspärrar (avsnitt 4.3, ADR-079): varje utlösarfunktion körs med sökvägen `public, pg_temp`, så att en temporär tabell med samma namn inte längre kan ersätta den riktiga inne i spärren (en bokförd verifikations rader kunde annars ändras och en obalanserad verifikation bokföras med direkt SQL); ett test fäller varje ny utlösarfunktion utan inställningen. En utfärdad kundfaktura eller registrerad leverantörsfaktura kan inte längre sättas tillbaka till utkast med direkt SQL och därefter ändras eller raderas; övriga statusbyten är oförändrade. Ingen bokföring ändras. |
+| 0.120 | 2026-11-09 | Aktiebok och styrelserum (avsnitt 5n, ADR-070): aktieboken som en händelselogg som bara kan skrivas till, med hashkedja (person- och id-nummer bara som HMAC med en egen nyckel) och nattlig kontroll (`share-register:verify`), prövad vid varje datum då aktieboken ändras, prövning av varje händelse mot hela historiken och rättelser som nya händelser. Bevaras enligt aktiebolagslagen 5 kap. 3 §, skilt från bokföringslagens sju år. Jämförelse med konto 2081 utan bokföring. Protokoll godkänns i NONOX och låses som PDF med SHA-256. Arkivpaketet får `aktiebok/` och `protokoll/` (avsnitt 7a). |

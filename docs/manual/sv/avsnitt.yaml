@@ -80,6 +80,12 @@ crm:
   for: foretag
   modul: crm
   ikon: users
+aktiebok:
+  titel: Aktiebok och styrelserum
+  beskrivning: Aktieboken med historik, aktieägare och bolagsordning, årsstämma och styrelsemöten med kallelse och protokoll, och det som ska anmälas till Bolagsverket.
+  for: foretag
+  modul: boardroom
+  ikon: scale
 byra:
   titel: För redovisningsbyråer
   beskrivning: Mina företag, månadsstängning, uppgifter mellan byrå och kund och byråns varumärke.

@@ -7,6 +7,7 @@ namespace App\Modules\Livewire;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Contracts\OfferedTo;
 use App\Modules\ModuleManager;
 use App\Modules\ModuleRegistry;
 use Illuminate\Support\Facades\Auth;
@@ -96,6 +97,12 @@ class CompanyModulesTab extends Component
 
         foreach ($registry->all() as $key => $module) {
             $enabled = $modules->isEnabled($key, $company);
+
+            // A module for some companies only (aktiebolag) is not offered to others, unless it is already on.
+            if (! $enabled && $module instanceof OfferedTo && ! $module->isOfferedTo($company)) {
+                continue;
+            }
+
             $cards[] = [
                 'module' => $module,
                 'enabled' => $enabled,

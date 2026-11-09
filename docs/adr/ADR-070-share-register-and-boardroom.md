@@ -195,3 +195,137 @@ Decided by Lead 2026-11-08 under the owner's mandate, open for the consultant's 
 
 Open lawyer questions L1–L10 are listed at the end of the sheet. SOU 2026:26 (sole-owner
 reporting proposed from 2028-07-31) goes on the regulatory watch list.
+
+## Addendum 2026-11-08: as built
+
+Built on branch `feat/boardroom-share-register` as the module `boardroom` (`app/Modules/Boardroom`).
+The rule sheet's section G corrections are in the code; every `TODO(legal-verify)` from the sheet
+is kept as a code comment where the rule is used.
+
+**Offered to aktiebolag only.** A new module contract `OfferedTo` (`app/Modules/Contracts`) leaves
+the module out of Moduler for other company forms, and `canEnable` blocks it. A company whose form
+changes after the module is on keeps it, so its register is not hidden.
+
+**Permissions.** As §1 and owner decision 2: owner, admin and accountant get all four, the auditor
+the two view permissions. The view permissions are archive permissions: with the module off the
+register, the meetings and their PDFs stay readable (5:3), but nothing can be entered. A user with
+the Redovisningskonsult role (who does not own the company) records register entries only after
+the owner or an administrator has recorded the board's authorisation (decision date and where it is
+written) on `boardroom_registers`; the firm cannot authorise itself (5:9, L9). The rule covers every
+register entry, not only transfers, because 5:9 is about entering owners at all.
+
+**Tables.** `boardroom_` prefix, as `staff_ledger_` (the table `articles` is taken by the article
+register): `boardroom_registers` (one row per company: chain head, last sequence, last board minutes
+number, firm authorisation; locked while numbering), `boardroom_share_classes` (votes in tenths),
+`boardroom_shareholders` (kind PERSON, ENTITY or COMPANY_ITSELF; personal number and foreign id
+encrypted), `boardroom_share_events`, `boardroom_articles` (versioned; only `registered_on` may be set
+once afterwards), `boardroom_meetings`, `boardroom_agenda_items`, `boardroom_minutes`.
+
+**Event log.** `boardroom_share_events` is append-only (model events and a PostgreSQL trigger on
+UPDATE, DELETE and TRUNCATE). Each entry has a gapless `sequence`, `effective_date`, `recorded_at`
+(the 5:9 entry date), `decided_on`, `registered_on`, a share range, class, from- and to-holder, an
+encrypted copy of the recipient's details (`holder_snapshot`), consideration and capital change in
+öre, certificate flag, ratio, `refers_to_event_id`, note, document reference, reason and user.
+`hash = sha256(previous_hash || canonical_json(entry))` with the holder's details in clear text, as
+the staff ledger; `php artisan share-register:verify` (nightly 03:45) recomputes the chain, the
+sequence and the head, and folds the register.
+
+Kinds: OPENING, FORMATION, NEW_ISSUE, REGISTRATION, NEW_ISSUE_LAPSED, BONUS_ISSUE, TRANSFER,
+INHERITANCE_GIFT, SPLIT, REVERSE_SPLIT, REDEMPTION, CONVERSION, CERTIFICATE, RIGHTS_HOLDER_NOTE,
+PRE_EMPTION_NOTICE, PRE_EMPTION_CLAIM, PRE_EMPTION_ACTION, NOTE_ENDED, ADDRESS_CHANGE, CORRECTION.
+Two choices beyond the sheet: a new issue's registration is its own REGISTRATION entry (the log
+cannot be edited to fill in `registered_on` later), and every note is ended by NOTE_ENDED naming it.
+
+**Fold.** `RegisterFold` applies the entries in order of effective date and sequence, skipping
+those voided by a CORRECTION (which names exactly one earlier entry; a correction cannot be
+corrected or repeated). Recording an entry folds the whole history with it added and refuses it if
+any step breaks, so a backdated entry or a correction that makes a later entry impossible is
+refused. Formation and opening entries must come before every other kind. SPLIT, REVERSE_SPLIT,
+BONUS_ISSUE and CONVERSION take the registration date as effective date. A reverse split renumbers
+from 1 in the order of the holders' first shares; surplus shares pass to the company (4:50); a
+surplus that does not make whole new shares is refused (`TODO(legal-verify)`). A transfer of shares
+with a rights-holder note is refused until the note is ended (AB-R4). The register at a date is
+folded on every read (one query); there is no second copy to drift.
+
+**Retention.** Nothing is ever removed from the log, and a holder named in it cannot be deleted
+(5:3); the GDPR documents state ten years after dissolution. Pruning after dissolution is not built.
+
+**2081.** `ShareCapitalCheck` compares the registered capital (registered shares × quota value; an
+unregistered new issue is shown apart, 2082 per BAS usage, `TODO(legal-verify)` for the
+accounting-checker) with the credit balance of 2081 on the date. A difference is an Overview todo
+that names both figures. Nothing is posted.
+
+**PDFs.** The full register (labelled "fullständig version för granskning hos bolaget", 5:10) and the
+courtesy copy, labelled on every page as voluntary and not the register for inspection, with birth
+dates instead of personal numbers and organisation numbers kept. Every print is in the audit log with
+its version (ADR-068 will move these reads to the read access log).
+
+**Meetings and minutes.** An AGM needs its fiscal year; its agenda is the usual procedure items, the
+three mandatory decisions (cannot be removed) and fees, with the year's result after tax (or the
+recorded disposition and dividend) as the allocation proposal. Election items are added by the user,
+because NONOX does not track terms yet. Minutes: DRAFT → CHECKED (7:48 / 8:24 checked from the
+register on the meeting day and the attendees) → APPROVED as "Godkänt i NONOX" with who and when,
+a stored PDF and its SHA-256; the PDF says the approval is not a signature. Approved minutes are
+locked by the model and a trigger; the meeting is locked too, except the date a notification reached
+Bolagsverket. A correction is new minutes with `corrects_minutes_id`. Board minutes are numbered on
+approval under the register row lock, so a discarded draft uses no number (8:26).
+
+**Notices and reminders.** `database/data/boardroom/rules.json` holds section H with `verified: false`
+on every value and a 15-working-day outer limit for "genast" (L6). The meeting page shows the notice
+window, the item-request deadline and the stored notice method as advice with "kontrollera mot
+aktiebolagslagen", flags a notice sent outside the window, and warns that an articles change may need
+notice by post (7:23). A new deadline type `company_registration` (category Bolagsverket) puts in Mina
+datum every decision marked to report until its `reported_on` is entered, and every unregistered new
+issue at decision + 6 months; each links to Bolagsverket's e-service (URL `TODO(legal-verify)`, L8).
+NONOX files and sends nothing.
+
+**Archive and data subjects.** The archive package gets `aktiebok/` (the full register at the year end
+and the whole history as CSV with each hash) and `protokoll/` (approved minutes of the year's meetings
+and of the AGM for the year, copied as stored). `/registerutdrag/aktieagare/{id}` gives a holder's
+register extract as JSON.
+
+**Not built yet.** Board composition and terms (8:13 effect on receipt is only shown as text); the
+annual report deadline computed from the recorded AGM date (ÅRL 8:3, AB-R43); the continued meeting
+(7:14); the extra meeting on demand (7:13); share certificates as documents; sole-owner reporting
+(SOU 2026:26) and pruning after dissolution.
+
+## Addendum 2026-11-09: after the cold review
+
+Changes from the review of the first build, with Lead's decisions:
+
+- **The register is checked at every date.** Recording an entry and `share-register:verify` fold
+  the register at every effective date and registration date in the history and as of now
+  (`RegisterFold::validate`), so an entry that the final register accepts but that breaks it on an
+  earlier date (a split while a new issue was still unregistered) is refused. Registration and
+  decision dates may not be in the future, and a new issue cannot be registered before allotment.
+- **No personal numbers in the chain.** `EventHash` replaces a personal number or foreign id number in
+  the payload with `hmac:` and HMAC-SHA256 under a dedicated key, `nonox.register_hash_key`
+  (`NONOX_REGISTER_HASH_KEY`), separate from APP_KEY and never rotated (a new key breaks every chain).
+  It is created at install by `php artisan share-register:hash-key --write` (part of `composer setup`).
+  The stored snapshot stays encrypted. The payloads go into the archive package as
+  `aktiebok/hashkedja.json`, so the chain can be recomputed without NONOX.
+  **The staff ledger (`app/Modules/StaffLedger/Domain/EntryHash.php`) has the same weakness**: it hashes
+  the personal number in clear text. It is in production, so Lead schedules that fix separately with a
+  hash version; it is not changed here.
+- **Clauses on the register.** The applicable articles' förköps-, samtyckes-, hembuds- and (new)
+  omvandlingsförbehåll are printed for all shares on the register page and PDF, with each class's
+  restriction text (5:5 p.5).
+- **Checkers.** A general meeting needs at least one adjuster other than the chair (unless the chair
+  and minute-taker alone represent all shares). A board of several members needs an attending ordinary
+  member who is not the chair. NONOX does not keep the registered board yet, so the board's size is the
+  number of attending ordinary members; that changes when board composition is built.
+- **Agenda after the notice.** Once `notice_sent_on` is set, items cannot be removed and a new item is
+  appended last without renumbering (7:31).
+- **Reverse split with a remainder** (Lead): recorded only with a note describing how the remainder is
+  handled (for example inlösen); the remainder is struck. The company becomes a holder only when whole
+  new shares pass to it (4:50). `TODO(legal-verify)` stays.
+- **Articles and classes** are behind the same 5:9 gate as register entries. A class belongs to the
+  articles version that introduced it (`articles_version_id`), and once shares carry it its code and
+  votes cannot change; a change is new articles, a new class and a CONVERSION.
+- **L9:** the firm check goes by role: a user with the Redovisningskonsult role who does not own the
+  company is treated as the firm. A consultant who is also an administrator is not gated.
+- Smaller: a correction of minutes must be for the same meeting; the PDF says "Markerat som justerat i
+  NONOX av"; the voting list from the register on the meeting day is frozen into general meeting
+  minutes at approval; the archive CSV goes through `Csv::row`; the register row creation retries on a
+  unique violation; the events page is paginated (50 per page; the fold still reads the whole history
+  once); a voided registration no longer silences the new-issue reminder.

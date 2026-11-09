@@ -64,6 +64,14 @@
       "omrade": "Lön"
     },
     {
+      "id": "2026-11-08-aktiebok-och-styrelserum",
+      "datum": "2026-11-08T19:30:00+01:00",
+      "rubrik": "Aktiebok och styrelserum för aktiebolag (beta)",
+      "beskrivning": "Den nya modulen Aktiebok och styrelserum för aktieboken som en historik där varje ändring är en egen händelse som inte kan ändras i efterhand, och skriver ut aktieboken per valfritt datum. Stämmor och styrelsemöten får dagordning, råd om när kallelsen ska skickas och protokoll som godkänns i NONOX och låses som PDF. NONOX jämför aktiekapitalet med konto 2081 och påminner i Mina datum om det som ska anmälas till Bolagsverket, men skickar ingenting dit.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-08-signering-utan-crm",
       "datum": "2026-11-08T19:00:00+01:00",
       "rubrik": "Offerter kan signeras med namnteckning även utan CRM",
