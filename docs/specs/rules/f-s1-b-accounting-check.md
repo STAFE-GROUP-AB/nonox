@@ -142,3 +142,136 @@ No other figure is wrong.
 4. **`forced_2025_2`.** It is plausible (see the transition-date table), but the fixture does not
    say which K2 1.1A/1.1B point forces the company off K2. Add one sentence (1.1B a, assessed on
    the 2025 annual report).
+
+## Re-check 732be4c3
+
+Checker, 2026-11-09. Read with `git show 732be4c3:tests/Fixtures/s1/f-s1-b/*`, focusing on the
+diff from 760a32f5. No amount changed, and I confirm that. Extra sources read: IL 18 kap.
+12–19 §§ (inventarier) and 23 kap. 10 § (underprisöverlåtelser), and ÅRL bilaga 2 (balance
+sheet items).
+
+### 1. T4 under the 35.27 relief, and the 2025 tax: **still WRONG**
+
+The new facts do not make the tax value unobtainable, and they open a gap in the 2025 tax
+computation.
+
+- **The year-end tax value under räkenskapsenlig avskrivning is the balance sheet value.**
+  The README says the return deducts the booked 80 000, which is räkenskapsenlig avskrivning
+  (IL 18:14: "om avdraget motsvarar avskrivningen i bokslutet"). The base for the next year is
+  then "värdet enligt balansräkningen vid räkenskapsenlig avskrivning" (IL 18:13 andra stycket
+  1 a). The tax value taken over under IL 23:10 enters only as the acquisition value in 2023,
+  and from 2024 the base is the book value. So at 2025-12-31 the tax value is 160 000, plus any
+  excess carried under IL 18:19 if a deduction ever exceeded the limit. It can be read from the
+  company's own balance sheet. That the transferor's records are lost does not make it
+  unobtainable, so 35.27 does not apply.
+- **The 2025 deduction of 80 000 is not supported on these facts.**
+  - The 30 % rule gives 30 % × 240 000 (balance sheet value at 2024-12-31) = 72 000.
+  - Reaching 80 000 needs the 20 % rule (IL 18:17): the tax value may be brought down to
+    "anskaffningsvärdet … minskat med en beräknad årlig avskrivning med 20 procent", that is
+    acquisition value × 40 % after three years. For 80 000 that requires a tax acquisition value
+    of at most 400 000.
+  - IL 23:10 changes the acquisition value only when the price is **below** the transferor's
+    tax value: "Tillgången anses i sådant fall förvärvad för samma belopp". If the booked cost
+    of 400 000 is the price, which the fixture does not say, the tax acquisition value is above
+    400 000. The 2025 deduction is then capped at max(72 000; 240 000 − 0,4 × value), which is
+    below 80 000.
+  - Taxable income 962 960 and tax 198 369,76 therefore hold only if the tax acquisition value
+    is at most 400 000. That contradicts the premise that IL 23:10 applied, unless the books
+    record the inherited value as cost, in which case the value is known from the company's own
+    books.
+  - The company would also have needed the inherited value for its own 2023 and 2025 deduction
+    limits. Its own tax computations are räkenskapsinformation that must be kept (BFL 7 kap.).
+- **Figures unchanged:** carrying amount 160 000, deferred tax 0, equity effect 0. These stay
+  CONFIRMED, because the difference is 0 on any lawful reading of the facts above.
+- **Recommendation:** in this fixture, drop the relief for T4: tax value 160 000, difference 0,
+  no 35.27 line in the disclosures, and remove the underprisöverlåtelse story. 2025 then holds
+  exactly as computed, with a tax acquisition value of 400 000, the 20 % rule floor at 160 000
+  and the 80 000 deduction allowed. Test the 35.27 mechanism (reason required, disclosed under
+  35.31, nothing recognised) in a feature test that does not claim to be a realistic case. A
+  credible relief case in a ledger fixture is hard to build for equipment, because a company
+  that files returns holds its own tax computations.
+
+### 2. Netting (29.32): CONFIRMED
+
+- Gross, which is the default because set-off is not confirmed: deferred tax asset 30 900,
+  Avsättningar för skatter 247 200, total 7 973 860.
+- Netted (`reconciliation_set_off`): 247 200 − 30 900 = 216 300 and no asset line. Total
+  7 942 960: equity and liabilities are 4 178 290,24 + 216 300 + 150 000 + 3 000 000 + 200 000
+  + 198 369,76 = 7 942 960. Equity is 4 178 290,24 in both branches, and the voucher is the
+  same.
+- The wording "kvittningsrätt ej bekräftad" and the ÅRL 2:4 p. 6 / 29.32 reasoning are right.
+
+### 3. "Avsättningar för skatter": CONFIRMED
+
+ÅRL bilaga 2, C. Avsättningar, item 2 "Avsättningar för skatter". K3 29.31 classifies the
+deferred tax liability as an avsättning. The asset has no item of its own in bilaga 2; K3
+29.19 (own line) and 29.31 (financial fixed asset) give the line "Uppskjuten skattefordran"
+used in the gross sheet. That is right.
+
+### 4. Reason for leaving K2, and the TODO premises
+
+- **forced_2025_2 through 1.1B a: CONFIRMED in substance, with two gaps.**
+  1. 1.1C first paragraph speaks of "vart och ett av de två senaste räkenskapsåren". The README
+     cites only 2025. The 2024 balance sheet total (7 360 000 at 2024-12-31, from the 2025
+     opening balances) also exceeds 1,5 MSEK. 2024 net turnover is not in the fixture: state it
+     (> 3 MSEK) or point to the balance sheet total and the turnover for both years.
+  2. 1.1C second paragraph is the exception for a company that applied K2 the year before and
+     "normalt inte omfattas av punkt 1.1B". It applies on its face here (K2 in 2025). Add one
+     sentence saying it fails because the building difference is lasting and growing (4 % for
+     tax against 2 % in the books), so the company normally is covered by 1.1B a.
+
+  Neither gap changes a figure, and 35.1 allows chapter 35 anyway.
+- **TODO(legal-verify) premises: CONFIRMED.** The 4 % tax depreciation on the building and the
+  cost-proportional allocation key for the components (35.18 gives no key) are both marked.
+- **T1 kind `BUILDING_COMPONENTS`: CONFIRMED** (matches ADR-059 A.2.6).
+
+### Re-check summary
+
+WRONG: T4. Under räkenskapsenlig avskrivning the year-end tax value is the book value (IL 18:13
+andra stycket 1 a), so the 35.27 relief still has no basis. On the new facts the 2025 deduction
+of 80 000 is allowed only if the tax acquisition value is at most 400 000 (IL 18:17), which
+conflicts with IL 23:10 applying. The amounts in the fixture are unchanged and correct once
+the relief and the underprisöverlåtelse premise are dropped.
+
+CONFIRMED: netting branch (216 300; 7 942 960), "Avsättningar för skatter", the T1 kind, the
+two TODO premises, and the reason for leaving K2, which needs two additions (both years for
+1.1C, and the 1.1C second paragraph).
+
+## Re-check 25abaa80
+
+Checker, 2026-11-09. Read the diff 732be4c3..25abaa80 for `tests/Fixtures/s1/f-s1-b/` and
+reran the independent recomputation on the new files. Every assertion passes: the vouchers
+balance, the 2025 ledger rolls forward to the 2026 opening balances, and all transition,
+reconciliation and component figures are unchanged. `vouchers.json` and
+`opening_balances.json` are unchanged; `expected.json` is reformatted, with the same values
+except T4 and the disclosures.
+
+1. **T4: CONFIRMED.** The equipment was bought for 400 000 on 2023-01-01 (tax acquisition value
+   400 000) and is depreciated räkenskapsenligt by 80 000 a year. The limits hold:
+   - 2023: 30 % × 400 000 = 120 000.
+   - 2024: 30 % × 320 000 = 96 000.
+   - 2025: the 30 % rule gives 30 % × 240 000 = 72 000, so the 20 % rule (IL 18:17) is needed.
+     It allows a floor of 400 000 × 40 % = 160 000, so 80 000 is allowed.
+
+   Tax value 160 000 = carrying amount, difference 0, no relief. 2025 taxable income
+   962 960, tax 198 369,76. Citation nit, not an error: the README cites "IL 18 kap. 13–14 §§,
+   the 20 % rule", but the 20 % rule itself is 18:17. Citing 13, 14 and 17 §§ would be exact.
+2. **1.1C table: CONFIRMED.**
+   - 2024 balance sheet total 7 360 000, from the assets at 2025-01-01:
+     6 000 000 − 1 080 000 + 1 000 000 + 400 000 − 160 000 + 1 200 000.
+   - 2025: 7 942 960.
+   - Net turnover 4 800 000 (2024, a premise in `prior_year_figures_2024`) and 5 000 000 (2025).
+   - 3 employees in both years, which is not "mer än 3".
+
+   Two criteria are exceeded in both years, so the first paragraph is not met.
+3. **Second-paragraph sentence: CONFIRMED.** K2 1.1C second paragraph requires the company both
+   to have applied K2 the year before and to "normalt inte omfattas av punkt 1.1B". The
+   difference grows every year (4 % for tax against 2 % in the books), so the company normally
+   is covered and the exception fails. The README's wording about being "caught for a single or
+   a few years" is a fair paraphrase of "normalt".
+4. **Disclosures: CONFIRMED.** "No relief in 35.21–35.30 is used"; `reliefs_used` and
+   `relief_items` are empty. That is consistent with 35.31, which then has nothing to list
+   beyond first-time application.
+
+**Verdict: confirmed.** Nothing is wrong. The open points from the first check are resolved,
+and the only remaining remark is the citation nit in point 1.
