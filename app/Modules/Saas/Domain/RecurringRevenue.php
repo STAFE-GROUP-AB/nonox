@@ -252,8 +252,8 @@ final class RecurringRevenue
                 $state = CustomerState::Churned;
                 $remembered['pauseMonths'] = 0;
                 $remembered['pausedParts'] = [];
-            } elseif ($movement === Movement::Contraction || ($compared === 0 && $revalued > 0)) {
-                // Clamped to 0, or only switched-off sources: the customer has not left.
+            } elseif ($movement === Movement::Contraction || ($compared === 0 && $revalued > 0) || ($sum < 0 && $own !== [])) {
+                // Clamped to 0 (and still clamped while its lines are in force), or only switched-off sources: not gone (re-check 3 G).
                 $state = $remembered['state'] ?? CustomerState::Active;
             } elseif ($isPaused) {
                 $state = CustomerState::Paused;

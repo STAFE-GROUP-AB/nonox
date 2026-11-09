@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Invoicing\IssueInvoice;
+use App\Actions\Invoicing\RunRecurringInvoice;
 use App\Actions\Invoicing\SaveRecurringInvoice;
 use App\Models\AuditLog;
 use App\Models\RecurringInvoice;
@@ -10,7 +12,13 @@ use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\Models\Agreement;
 use App\Modules\ModuleManager;
 use App\Modules\Saas\Actions\MarkSeparateAgreements;
+use App\Modules\Saas\Domain\ContractStatus;
+use App\Modules\Saas\Domain\ContractVersion;
+use App\Modules\Saas\Domain\CustomerState;
+use App\Modules\Saas\Domain\Movement;
 use App\Modules\Saas\Domain\RecurringRevenue;
+use App\Modules\Saas\Domain\RevenueLine;
+use App\Modules\Saas\Domain\SourceType;
 use App\Modules\Saas\Livewire\SourcesPage;
 use App\Modules\Saas\Models\SaasContractVersion;
 use App\Modules\Saas\Models\SaasSeparatePair;
@@ -205,4 +213,56 @@ it('moves the start of a new agreement later when its Gäller från is corrected
     expect($inForce('2026-11-10') === null || ! $inForce('2026-11-10')->inForceAt('2026-11-10'))->toBeTrue()
         ->and($inForce('2026-11-30')?->inForceAt('2026-11-30'))->toBeTrue()
         ->and(Saas::month('2026-11-01')->new_ore)->toBe(30_000);
+});
+
+it('writes nothing when a note is edited with a Gäller från on an invoiced agreement (re-check 3 F, Created)', function () {
+    $agreement = Saas::agreement($this->owner, $this->company, Saas::customer($this->owner, $this->company, 'Anteckning AB'), '300', 1, '2026-01-15');
+    app(IssueInvoice::class)($this->owner, app(RunRecurringInvoice::class)($this->owner, $agreement->fresh()));
+    $count = SaasContractVersion::query()->count();
+    $agreement = $agreement->fresh();
+
+    Saas::at('2026-03-10');
+    app(SaveRecurringInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $agreement->customer_id, 'name' => $agreement->name, 'interval_months' => 1, 'next_invoice_date' => $agreement->next_invoice_date->toDateString(),
+        'notes' => 'Bara en anteckning', 'effective_from' => '2026-03-01',
+        'rows' => [['description' => 'Licens', 'quantity' => '1', 'price' => '300', 'vat_rate' => 2500]],
+    ], $agreement);
+    Saas::recompute($this->company);
+
+    expect(SaasContractVersion::query()->count())->toBe($count)
+        ->and(Saas::month('2026-01-01')->mrr_ore)->toBe(30_000)
+        ->and(Saas::month('2026-02-01')->mrr_ore)->toBe(30_000);
+});
+
+it('writes nothing when a note is edited with a Gäller från on a backfilled agreement (re-check 3 F, Backfill)', function () {
+    [$owner, $company] = Bookkeeping::company();
+    CurrentCompany::set($company);
+    $this->actingAs($owner);
+    $agreement = Saas::agreement($owner, $company, Saas::customer($owner, $company, 'Inläst AB'), '400');
+    Saas::at('2026-02-10');
+    Saas::enable($company, $owner);
+    $count = SaasContractVersion::query()->count();
+
+    app(SaveRecurringInvoice::class)($owner, $company, [
+        'customer_id' => $agreement->customer_id, 'name' => $agreement->name, 'interval_months' => 1, 'next_invoice_date' => '2026-01-01',
+        'your_reference' => 'Ny referens', 'effective_from' => '2026-02-05',
+        'rows' => [['description' => 'Licens', 'quantity' => '1', 'price' => '400', 'vat_rate' => 2500]],
+    ], $agreement->fresh());
+
+    expect(SaasContractVersion::query()->count())->toBe($count)
+        ->and(Saas::month('2026-02-01')->mrr_ore)->toBe(40_000);
+});
+
+it('keeps a clamped customer with contracts in force active from month to month, so a return is an expansion (re-check 3 G)', function () {
+    $versions = [
+        new ContractVersion(1, SourceType::RecurringInvoice, 'a', 1, '2026-01-01', ContractStatus::Active, [new RevenueLine('l', '', 'SEK', 100_000)]),
+        new ContractVersion(2, SourceType::RecurringInvoice, 'b', 1, '2026-02-01', ContractStatus::Active, [new RevenueLine('l', '', 'SEK', -150_000)]),
+        new ContractVersion(3, SourceType::RecurringInvoice, 'b', 1, '2026-05-01', ContractStatus::Active, [new RevenueLine('l', '', 'SEK', -20_000)]),
+    ];
+    $history = (new RecurringRevenue)->history($versions, '2026-05-01');
+
+    expect($history->month('2026-03-01')->customers[1]->state)->toBe(CustomerState::Active)
+        ->and($history->month('2026-04-01')->customers[1]->state)->toBe(CustomerState::Active)
+        ->and($history->month('2026-05-01')->customers[1]->movement)->toBe(Movement::Expansion)
+        ->and($history->month('2026-05-01')->movementOre(Movement::Reactivation))->toBe(0);
 });

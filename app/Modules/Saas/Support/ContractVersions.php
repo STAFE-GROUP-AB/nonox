@@ -118,6 +118,8 @@ final class ContractVersions
                 'next_invoice_date' => $agreement->next_invoice_date->toDateString(),
                 'end_date' => $agreement->end_date?->toDateString(),
                 'agreement_status' => $agreement->status->value,
+                // Whether a person gave this version's date ("Gäller från"); only such a date may be moved later (re-check 3 F).
+                'explicit' => $effectiveFrom !== null && $cause !== VersionCause::Backfill,
             ],
         ], $previous, $effectiveFrom !== null && $cause !== VersionCause::Backfill);
     }
@@ -376,7 +378,7 @@ final class ContractVersions
         $pending = self::pending($versions, $from);
         $inForce = $versions->filter(fn (SaasContractVersion $version): bool => $version->effective_from->toDateString() <= $from)->last();
 
-        if ($sameAsLatest && $explicit && $from > $previous->effective_from->toDateString()) {
+        if ($sameAsLatest && $explicit && $from > $previous->effective_from->toDateString() && self::movable($previous)) {
             /*
              * The latest change moved to a later date (re-check 2 C): from its old date the
              * contract is again as it was before that change (or not yet started), and the
@@ -439,6 +441,27 @@ final class ContractVersions
         }
 
         return $written;
+    }
+
+    /**
+     * Whether the latest version's date may be moved later by saving the same
+     * content with a later "Gäller från" (re-check 3 F): only a date a person
+     * gave for a change, a pause, a resumption or an end. A new agreement's date
+     * only while nothing has been invoiced from it; never a backfill.
+     */
+    private static function movable(SaasContractVersion $previous): bool
+    {
+        if (! (bool) ($previous->source_ref['explicit'] ?? false)) {
+            return false;
+        }
+
+        if (in_array($previous->cause, [VersionCause::Changed, VersionCause::CancelScheduled, VersionCause::Paused, VersionCause::Resumed, VersionCause::Ended], true)) {
+            return true;
+        }
+
+        return $previous->cause === VersionCause::Created
+            && $previous->source_type === SourceType::RecurringInvoice
+            && ! Invoice::query()->where('recurring_invoice_id', $previous->source_id)->where('status', '!=', 'DRAFT')->exists();
     }
 
     /**

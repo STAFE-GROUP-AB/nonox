@@ -696,3 +696,13 @@ Build step 1 (the ledger and the metrics from NONOX's own data) is on branch
 - **Cohorts** (E): lines of a contract whose source is switched off at the as-of month or the
   counted month are left out on both sides, as for NRR/GRR; the table says so in a footnote.
 
+
+### Third re-check fixes 2026-11-09
+
+- **Only a given date moves** (F): a version records in `source_ref.explicit` whether a person gave
+  its "Gäller från". Saving the same counted content with a later date moves the latest version only
+  when that version had an explicit date and is a change, an end date, a pause, a resumption or an
+  end; a new agreement only while nothing has been invoiced from it; a backfill never. Any other
+  save with a date and nothing counted changed (a note, a reference, a row text) writes nothing.
+- **A clamped customer stays** (G): while its lines are in force and add up to less than zero, the
+  customer keeps its state from month to month, so a return above zero is Utökning.
