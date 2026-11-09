@@ -10,6 +10,8 @@ sokord: [körjournal, bilar, mätarställning, enskild firma, egen bil, 25 krono
 
 Under **Bokföring → Körjournal** finns företagets bilar och varje bils körjournal per månad. Sidan finns när **Använd körjournal** är påslaget under företagets uppgifter. Resorna skrivs in för hand; NONOX läser aldrig någons position.
 
+![Körjournalen med företagets bil, mätarställningen vid årets början och månadens resor.](/bilder/manual/bokforing/korjournal.webp)
+
 ## Bilar
 
 Ägare, administratörer och redovisningskonsulter lägger till företagets bilar under **Lägg till företagets bil** med märke och modell, registreringsnummer och drivmedel. En bil arkiveras med **Arkivera** i stället för att tas bort, så att resorna i den finns kvar. **Visa körjournalen** visar bilens resor för månaden, med förare, typ, sträcka och mätarställning.

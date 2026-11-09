@@ -11,6 +11,8 @@ sokord: [överlåtelse, aktieöverlåtelse, nyemission, fondemission, split, sam
 
 Allt som ändrar aktieboken förs in som en händelse under **Aktiebok → Händelser**. En händelse kan inte ändras eller tas bort när den är införd. NONOX kontrollerar varje händelse mot hela historiken: ingen aktie kan ägas av två personer samtidigt, och ingen aktie kan finnas utanför de utgivna.
 
+![Händelserna i aktieboken: bildandet, en nyemission och en överlåtelse.](/bilder/manual/aktiebok/handelser.webp)
+
 ## Så här startar du aktieboken
 
 - **Nytt bolag:** välj **Nytt bolag: registrera bildandet** på **Aktiebok**. Som datum anger du dagen då alla stiftare skrev under stiftelseurkunden. Gör en rad per ägare med aktienumren och aktiekapitalet för aktierna.

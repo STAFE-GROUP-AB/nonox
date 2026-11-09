@@ -416,9 +416,7 @@ carry a device-made UUID so a repeat is stored once), step 9 (payroll proposals)
   first day of the deadline month (F6); personalliggare hint above four prisbasbelopp for a
   business customer (F8; 2027 amount `TODO(legal-verify)`); ROT a conto paid one year without
   finished work by 31 January (F9, shown on the work order only, not yet on the invoice page).
-- **Open**: the landing page feature card (needs a real screenshot from `manual:screenshots`;
-  until then `work_orders` and `work_orders_ata` are SOON in `Features.php` and the
-  comparison row waits), the legal version bump (folded into the Lead's 1.7 bump; the privacy
+- **Open**: the legal version bump (folded into the Lead's 1.7 bump; the privacy
   policy and DPA texts are updated), and a credited final invoice does not reopen the
   contract sum.
 

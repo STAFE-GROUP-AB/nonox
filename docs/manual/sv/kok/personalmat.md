@@ -11,6 +11,8 @@ sokord: [personalmat, personalmåltid, kostförmån, förmån, representation, e
 
 Måltider till personalen dras från lagret som eget bruk enligt rättens recept. Ingen verifikation och ingen moms bokas.
 
+![Personalmaten för månaden, per anställd.](/bilder/manual/kok/personalmat.webp)
+
 ## Registrera en måltid
 
 1. Gå till **Kök → Personalmat**.

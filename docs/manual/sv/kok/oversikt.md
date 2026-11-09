@@ -34,6 +34,8 @@ Kök är en modul som kräver Lager. Den är avstängd tills ägaren slår på d
 
 Under **Kök → Inställningar** väljer du:
 
+![Kökets inställningar med lagerställe, mål för råvarukostnad och kostnad för en måltid.](/bilder/manual/kok/installningar.webp)
+
 - **Kökets lagerställe** – svinn och personalmat dras härifrån om inget annat väljs.
 - **Mål för råvarukostnad i procent** – rätter över målet markeras på menyn. NONOX ändrar aldrig ett pris.
 - **Snittkostnad för valfri rätt** – råvarukostnaden för en personalmåltid utan vald rätt.

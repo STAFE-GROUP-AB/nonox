@@ -9,6 +9,8 @@ sokord: [körjournal, milersättning, resa, bilersättning, egen bil, förmånsb
 
 Har du kört i tjänsten med din egen bil eller med företagets bil skriver du in resorna under **Körjournal** på Min sida. I slutet av månaden skickar du in dem, och när de är godkända betalas milersättningen med lönen. Körjournalen finns när din arbetsgivare har slagit på den.
 
+![Körjournalen på Min sida i mobilen.](/bilder/manual/personal/korjournal.webp)
+
 NONOX läser aldrig var du är. Du skriver själv in resorna, och körjournalen används bara för att betala milersättning och som underlag för förmånsbilar, aldrig för att följa upp hur du arbetar.
 
 ## Lägg in en resa

@@ -8,6 +8,8 @@ sokord: [demo, prova, testa, utan konto, utan registrering, gratis, provkör, g�
 
 Vill du se hur NONOX fungerar innan du ställer dig i kö kan du starta en demo. Du får ett eget påhittat företag med ett års bokföring, fakturor, leverantörsfakturor, moms och lön, och du behöver varken konto eller e-postadress.
 
+![Sidan där du väljer vilket företag du vill prova.](/bilder/manual/kom-igang/prova-utan-att-registrera.webp)
+
 ## Så här gör du
 
 1. Öppna startsidan och välj **Prova utan att registrera**.

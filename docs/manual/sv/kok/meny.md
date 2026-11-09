@@ -11,6 +11,8 @@ sokord: [meny, marginal, täckningsbidrag, råvarukostnad, food cost, sålda por
 
 Under **Kök → Meny** står varje rätt som har ett recept i portioner.
 
+![Menyn med pris, råvarukostnad och andel för varje rätt.](/bilder/manual/kok/meny.webp)
+
 ## Kolumnerna
 
 - **Pris exkl. moms** – rättens pris från artikeln.

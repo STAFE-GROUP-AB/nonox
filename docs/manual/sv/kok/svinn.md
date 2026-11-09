@@ -11,6 +11,8 @@ sokord: [svinn, matsvinn, kassation, slänga, skänka, tallrikssvinn, utgånget]
 
 Svinnloggen visar vad som har slängts eller skänkts och varför. Varorna dras från lagret direkt. Ingen verifikation bokförs: inköpet är redan en kostnad, och svinnet syns i lagervärdet vid bokslutet och i avvikelserapporten.
 
+![Svinnloggen med orsak, mängd och kostnad för varje rad.](/bilder/manual/kok/svinn.webp)
+
 Registrera bara det som har slängts eller ska slängas nu. Varor som väntar på att slängas registreras när de slängs.
 
 ## Registrera svinn
@@ -28,6 +30,8 @@ Orsakerna är **Utgånget datum**, **Fördärvat (kylfel, mögel, skadat)**, **B
 ## Med mobilen
 
 Under **Lager → Skanna** finns rutan **Svinn**. Välj **Råvara** eller **Rätt**, skanna eller välj varan, ange antal och orsak och välj **Registrera svinn**. Det fungerar utan nät och skickas en gång när telefonen har nät. Se [Skanna](/manual/lager/skanna).
+
+![Skanna i mobilen med rutan Svinn.](/bilder/manual/kok/svinn-mobil.webp)
 
 ## Tallrikssvinn
 

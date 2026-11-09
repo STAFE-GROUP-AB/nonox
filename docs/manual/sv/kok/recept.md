@@ -11,7 +11,11 @@ sokord: [recept, portionskostnad, kalkyl, grundrecept, sås, fond, svinn, utbyte
 
 Ett recept säger vad en rätt eller ett grundrecept görs av. NONOX räknar fram vad satsen och varje portion kostar, och marginalen mot menypriset.
 
+![Recepten i en restaurang: två rätter och ett grundrecept.](/bilder/manual/kok/recept.webp)
+
 ## Rätt eller grundrecept
+
+![Receptet på en rätt med råvaror, svinn i beredningen och kostnad per portion.](/bilder/manual/kok/recept-ratt.webp)
 
 - En **rätt** är en artikel på menyn med menypriset. Receptet ger ett antal **portioner**.
 - Ett **grundrecept** är en sås, fond eller deg som används i andra recept. Det är en lagerförd artikel, och receptet ger en mängd i artikelns enhet, till exempel 1 kg.
@@ -39,6 +43,8 @@ Välj **Ändra receptet**. Varje ändring sparas som en ny version från ett dat
 ## Kostnaden
 
 Kostnaden räknas från lagrets värde på varje råvara enligt företagets värderingsmetod, samma siffra som i bokföringen. Bredvid står **Senaste inköp**, och en rad markeras när de skiljer mer än 5 %. Saknar en råvara pris står **Saknar pris**, och portionskostnaden visas som ofullständig, aldrig som noll.
+
+![Ett grundrecept i ett café, kanelfyllning som används i kanelbullarna.](/bilder/manual/kok/grundrecept.webp)
 
 För en rätt visas **Täckningsbidrag per portion** och **Råvarukostnad i procent** mot menypriset exklusive moms. Siffrorna är en kalkyl, inte lagervärderingen. Ett grundrecept i kylen värderas till ingredienskostnad, exklusive arbete.
 

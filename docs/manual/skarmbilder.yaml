@@ -17,10 +17,12 @@
 #              menu); text=Moduler clicks the button or link with that text
 #   visa       a CSS selector to scroll to the top of the window
 #   anvandare  sign in as this made-up user (…@example.test) instead of the
-#              owner, or gast for no one signed in
+#              owner, gast for no one signed in, or portal:<address> for a
+#              made-up customer portal contact (…@….test)
 #   text       what must be on the page (default: the demo company's name)
 #   modell     may also be { tabell: …, dar: { column: value } }: the newest
-#              row of that table in the company
+#              row of that table in the company; portal_key is the company's
+#              customer portal address
 
 kom-igang/oversikten: { foretag: restaurang, rutt: dashboard }
 kom-igang/skapa-ett-foretag: { foretag: konsult, rutt: teams.create }
@@ -228,3 +230,50 @@ crm/utskick: { foretag: konsult, rutt: crm.mailings.show, modell: { tabell: crm_
 crm/skriv-ett-utskick: { foretag: konsult, rutt: crm.mailings.show, modell: { tabell: crm_mailings, dar: { name: 'Inbjudan till frukostseminarium' } } }
 crm/segment: { foretag: konsult, rutt: crm.segments, klick: ['[data-testid=crm-segment-guide] summary'] }
 crm/webbformular: { foretag: konsult, rutt: crm.forms }
+
+# Aktiebok och styrelserum (BoardroomExtras), in the consultancy. Needs NONOX_REGISTER_HASH_KEY when seeding.
+aktiebok/oversikt: { foretag: konsult, rutt: share-register.index }
+aktiebok/aktieagare: { foretag: konsult, rutt: share-register.shareholders }
+aktiebok/bolagsordning: { foretag: konsult, rutt: share-register.articles }
+aktiebok/handelser: { foretag: konsult, rutt: share-register.events }
+aktiebok/stammor-och-moten: { foretag: konsult, rutt: boardroom.meetings }
+aktiebok/arsstamma: { foretag: konsult, rutt: boardroom.meetings.show, modell: { tabell: boardroom_meetings, dar: { kind: AGM } }, visa: 'text=Kallelse' }
+aktiebok/protokoll: { foretag: konsult, rutt: boardroom.meetings.show, modell: { tabell: boardroom_meetings, dar: { kind: BOARD } }, visa: 'text=Protokoll' }
+
+# Kök (KitchenExtras), in the restaurant and the café.
+kok/recept: { foretag: restaurang, rutt: kitchen.recipes.index }
+kok/recept-ratt: { foretag: restaurang, rutt: kitchen.recipes.show, modell: { tabell: articles, dar: { number: M-101 } } }
+kok/grundrecept: { foretag: cafe, rutt: kitchen.recipes.show, modell: { tabell: articles, dar: { number: G-201 } } }
+kok/meny: { foretag: restaurang, rutt: kitchen.menu }
+kok/svinn: { foretag: restaurang, rutt: kitchen.waste }
+kok/svinn-mobil: { foretag: cafe, rutt: inventory.scanner, enhet: mobil }
+kok/personalmat: { foretag: restaurang, rutt: kitchen.meals }
+kok/avvikelser: { foretag: restaurang, rutt: kitchen.variance }
+kok/installningar: { foretag: restaurang, rutt: kitchen.settings }
+
+# Arbetsorder (WorkOrdersExtras), in the joinery. Theo Björk is the Utförare.
+fakturering/arbetsorder: { foretag: hantverkare, rutt: workOrders.index }
+fakturering/arbetsorder-kortet: { foretag: hantverkare, rutt: workOrders.show, modell: { tabell: work_orders, dar: { title: Badrumsrenovering } } }
+fakturering/arbetsorder-mina: { foretag: hantverkare, anvandare: theo.bjork@example.test, enhet: mobil, rutt: workOrders.mine }
+fakturering/arbetsorder-pa-plats: { foretag: hantverkare, anvandare: theo.bjork@example.test, enhet: mobil, rutt: workOrders.field, modell: { tabell: work_orders, dar: { title: Badrumsrenovering } } }
+fakturering/ata: { foretag: hantverkare, rutt: workOrders.show, modell: { tabell: work_orders, dar: { title: Badrumsrenovering } }, visa: 'text=ÄTA' }
+fakturering/fakturaunderlag-fran-arbetsorder: { foretag: hantverkare, rutt: workOrders.show, modell: { tabell: work_orders, dar: { title: 'Stomkomplettering, kvarteret Exemplet' } }, visa: 'text=Fakturor från arbetsordern' }
+fakturering/betalningsplan: { foretag: hantverkare, rutt: workOrders.show, modell: { tabell: work_orders, dar: { title: 'Altan med trappa' } }, visa: 'text=Betalningsplan' }
+bokslut/pagaende-arbeten: { foretag: hantverkare, rutt: workOrders.ongoing }
+
+# Körjournal (MileageExtras): the consultancy's car, and Adam Kvist in the joinery.
+bokforing/korjournal: { foretag: konsult, rutt: mileage.index }
+lon/korjournal: { foretag: hantverkare, rutt: payroll.requests, visa: 'text=Utlägg och milersättning att godkänna' }
+personal/korjournal: { foretag: hantverkare, anvandare: adam.kvist@example.test, enhet: mobil, rutt: payroll.portal.mileage }
+
+# Kundportal (CustomerPortalExtras): seed and serve with NONOX_CUSTOMER_PORTAL=true.
+fakturering/kundportal: { foretag: konsult, rutt: portal.admin }
+fakturering/kundportal-fragor: { foretag: konsult, rutt: portal.admin.questions }
+fakturering/kundportal-kunden: { foretag: konsult, anvandare: 'portal:karin.exempelsson@kunden-exempel.test', rutt: portal.home, modell: portal_key }
+
+# Läs in register (RegisterImportExtras): a customer file checked but not read in.
+flytta/las-in-register: { foretag: konsult, rutt: import.registers.show, modell: { tabell: register_imports } }
+flytta/las-in-register-rapport: { foretag: konsult, rutt: import.registers.show, modell: { tabell: register_imports }, visa: 'text=Rapport' }
+
+# Prova utan att registrera: needs the demo switched on in /hq (instance setting demo.enabled) in the demo database.
+kom-igang/prova-utan-att-registrera: { foretag: konsult, rutt: demo.show, anvandare: gast, text: 'Prova NONOX på ett påhittat företag.' }
