@@ -199,34 +199,8 @@
       "beskrivning": "En digital aktiebok för aktiebolaget, med historik över varje ändring. Protokoll från styrelsemöten och bolagsstämma, kallelser, och en påminnelse när en ändring ska anmälas till Bolagsverket.",
       "status": "Pågår",
       "omrade": "Bokslut",
-      "uppdaterad": "2026-11-08",
-      "kommentar": "Modulen är byggd som beta. Datum för kallelser visas som råd tills en jurist har gått igenom reglerna, och vi provar den med pilotföretagen."
-    },
-    {
-      "id": "korjournal-och-kvitto-i-mobilen",
-      "rubrik": "Körjournal och kvitton i mobilen",
-      "beskrivning": "Traktamente, milersättning och utlägg finns redan i lönen. Nu kommer en körjournal och ett snabbare sätt att fota ett kvitto i mobilen och få ett förslag på kontering, som du sedan godkänner.",
-      "status": "Pågår",
-      "omrade": "Lön",
-      "uppdaterad": "2026-11-08",
-      "kommentar": "Körjournalen, milersättningen via lönen, bokföringen för enskild firma och Fota kvitto i inkorgen är byggda och granskas nu innan de släpps till pilotföretagen."
-    },
-    {
-      "id": "recept-och-svinn",
-      "rubrik": "Recept och svinn för restauranger",
-      "beskrivning": "Räkna fram vad en rätt kostar med råvarupriserna från inleveranserna, se marginalen per rätt och för en logg över svinn. Kassans försäljningsrader visar vad som har sålts.",
-      "status": "Pågår",
-      "omrade": "Lager",
-      "uppdaterad": "2026-11-08",
-      "kommentar": "Modulen Kök är byggd: recept, meny, svinn, personalmat och avvikelser. Den provas med ett pilotföretag, och jurist och redovisningskonsult granskar reglerna innan den räknas som klar."
-    },
-    {
-      "id": "arbetsorder-och-ata",
-      "rubrik": "Arbetsorder och ÄTA för hantverkare",
-      "beskrivning": "Arbetsorder med tid och material som blir fakturaunderlag, och ändrings- och tilläggsarbeten (ÄTA) som kunden godkänner med pris innan arbetet görs. ROT- och RUT-avdrag används i samma flöde. Personalliggaren för byggarbetsplatser finns inte än och kommer i ett senare steg.",
-      "status": "Pågår",
-      "omrade": "Fakturering",
-      "uppdaterad": "2026-11-08"
+      "uppdaterad": "2026-11-09",
+      "kommentar": "I drift som beta. Kan slås på när driften har lagt in aktiebokens nyckel; kallelsetider visas som råd tills en jurist har granskat dem."
     },
     {
       "id": "kundportal",
@@ -234,7 +208,8 @@
       "beskrivning": "Dina kunder loggar in med en kod i mejlet och ser sina fakturor, kontoutdrag och offerter, ser hur de betalar med rätt OCR-nummer, godkänner offerter och skickar frågor till dig. Byggd och väntar på juristgranskning innan den kan slås på.",
       "status": "Pågår",
       "omrade": "Fakturering",
-      "uppdaterad": "2026-11-08"
+      "uppdaterad": "2026-11-09",
+      "kommentar": "Byggd. Slås på när en jurist har granskat hur kontaktpersonernas uppgifter får behandlas."
     },
     {
       "id": "flytt-fran-fler-program",
@@ -242,7 +217,8 @@
       "beskrivning": "Bokföringen går redan att flytta från alla program som kan ta fram en SIE-fil. Nu kommer inläsning av kund- och leverantörsregistret och en flyttguide per program.",
       "status": "Pågår",
       "omrade": "Bokföring",
-      "uppdaterad": "2026-11-08"
+      "uppdaterad": "2026-11-09",
+      "kommentar": "Inläsningen är i drift. Flyttguiderna per program publiceras när en jurist har granskat dem."
     },
     {
       "id": "prova-utan-att-registrera",
@@ -250,7 +226,8 @@
       "beskrivning": "Ett påhittat demoföretag med ett års bokföring, fakturor och lön, som vem som helst kan öppna och klicka runt i.",
       "status": "Pågår",
       "omrade": "Webbplats",
-      "uppdaterad": "2026-11-08"
+      "uppdaterad": "2026-11-09",
+      "kommentar": "Byggd med en egen demodatabas. Slås på när driften har satt upp den."
     },
     {
       "id": "statussida-och-sakerhet",
@@ -258,16 +235,17 @@
       "beskrivning": "En sida som visar om tjänsten är i drift och vilka störningar som har varit, en publicerad säkerhetspolicy med en adress för att rapportera sårbarheter, och resultatet från ett oberoende penetrationstest.",
       "status": "Pågår",
       "omrade": "Kvalitet",
-      "uppdaterad": "2026-11-08"
+      "uppdaterad": "2026-11-09",
+      "kommentar": "Statussidan och security.txt är i drift. Säkerhetspolicyn publiceras när en jurist har läst den, och penetrationstestet är inte beställt ännu."
     },
     {
       "id": "egna-moduler",
       "rubrik": "Bygg egna moduler",
       "beskrivning": "En beskrivning och en exempelmodul som visar hur du bygger ett eget tillägg till NONOX, på samma sätt som de moduler som finns i dag.",
-      "status": "Planerat",
+      "status": "Pågår",
       "omrade": "Connect/API",
-      "uppdaterad": "2026-11-08",
-      "kommentar": "Först bestämmer vi hur tillägg från andra ska hållas säkra."
+      "uppdaterad": "2026-11-09",
+      "kommentar": "Säkerheten först: modulregistret är härdat och separata databasanvändare är byggda. Appar via NONOX API kommer därefter."
     },
     {
       "id": "foreningar",
