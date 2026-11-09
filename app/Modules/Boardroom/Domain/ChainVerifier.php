@@ -13,8 +13,9 @@ use App\Support\Tenancy\CurrentCompany;
  * Recomputes a company's share register chain (`share-register:verify`),
  * the register's counterpart to LedgerVerifier: every entry must link to the
  * one before it, hash to what is stored, follow the sequence without gaps,
- * and the chain must end at the head kept on the register row. The fold is
- * run too, so an entry that breaks the share ranges is reported.
+ * and the chain must end at the head kept on the register row. The register
+ * is folded at every date it changes on, so an entry that breaks the share
+ * ranges on any date is reported.
  */
 final class ChainVerifier
 {
@@ -55,7 +56,7 @@ final class ChainVerifier
             }
 
             try {
-                RegisterFold::at(ShareEvent::query()->orderBy('sequence')->get());
+                RegisterFold::validate(array_values(ShareEvent::query()->orderBy('sequence')->get()->all()));
             } catch (RegisterException $exception) {
                 $problems[] = __('Aktieboken går inte ihop: :problem', ['problem' => $exception->getMessage()]);
             }

@@ -310,7 +310,7 @@ Kör sedan installationen. Ett kommando gör resten:
 composer setup
 ```
 
-Det skapar applikationsnyckeln, bygger alla tabeller och bygger webbsidans utseende. Det tar någon minut första gången. Allt har gått rätt om det sista som skrivs ut är `✓ built in …`.
+Det skapar applikationsnyckeln och nyckeln till aktiebokens hashkedja (`NONOX_REGISTER_HASH_KEY`, som aldrig får bytas), bygger alla tabeller och bygger webbsidans utseende. Det tar någon minut första gången. Allt har gått rätt om det sista som skrivs ut är `✓ built in …`.
 
 ### 5. Öppna appen
 

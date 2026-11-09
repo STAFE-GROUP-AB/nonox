@@ -71,9 +71,14 @@ final class BoardroomDeadlines implements DeadlineProvider
         }
 
         $months = BoardroomRules::int('new_issue_registration_months', 'value');
-        $registered = ShareEvent::query()->whereIn('kind', [ShareEventKind::Registration->value, ShareEventKind::NewIssueLapsed->value, ShareEventKind::Correction->value])->pluck('refers_to_event_id')->all();
+        $references = ShareEvent::query()
+            ->whereIn('kind', [ShareEventKind::Registration->value, ShareEventKind::NewIssueLapsed->value, ShareEventKind::Correction->value])
+            ->get(['id', 'kind', 'refers_to_event_id']);
+        $voided = $references->where('kind', ShareEventKind::Correction)->pluck('refers_to_event_id')->all();
+        // An issue is settled by a registration or lapse that is not itself voided, or is voided itself.
+        $settled = [...$references->filter(fn (ShareEvent $event): bool => $event->kind !== ShareEventKind::Correction && ! in_array($event->id, $voided, true))->pluck('refers_to_event_id')->all(), ...$voided];
 
-        foreach (ShareEvent::query()->where('kind', ShareEventKind::NewIssue->value)->whereNull('registered_on')->whereNotIn('id', $registered)->get() as $issue) {
+        foreach (ShareEvent::query()->where('kind', ShareEventKind::NewIssue->value)->whereNull('registered_on')->whereNotIn('id', $settled)->get() as $issue) {
             $decided = $issue->decided_on ?? $issue->effective_date;
             $deadlines[] = new Deadline(
                 'boardroom-new-issue:'.$issue->id,

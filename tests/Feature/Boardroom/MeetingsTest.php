@@ -239,6 +239,7 @@ it('reminds in Mina datum under Bolagsverket for a reportable decision until it 
 });
 
 it('reminds to register a new issue within six months of the decision (13 kap. 27 §)', function () {
+    $this->travelTo(CarbonImmutable::parse('2027-02-21 12:00:00'));
     $a = Boardroom::person($this->owner, $this->company);
     Boardroom::formation($this->owner, $this->company, $a);
     $issue = Boardroom::record($this->owner, $this->company, ['kind' => 'NEW_ISSUE', 'decided_on' => '2027-02-01', 'effective_date' => '2027-02-20', 'share_from' => 1001, 'share_to' => 1200, 'to_holder_id' => $a->id, 'capital_change_ore' => 500_000]);

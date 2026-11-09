@@ -6,14 +6,19 @@ namespace App\Modules\Boardroom\Domain;
 
 use App\Modules\Boardroom\Models\ShareEvent;
 use Carbon\CarbonImmutable;
+use RuntimeException;
 
 /**
  * The tamper-evident chain of a company's share register (ADR-070 §2):
  * hash = sha256(previous_hash || canonical_json(entry)), the same
- * construction as the voucher chain (ADR-007). The holder's details are
- * hashed in clear text, so re-encrypting them with a new key does not break
- * the chain. Dates are hashed as dates, the entry time in whole seconds of
- * the application's time zone.
+ * construction as the voucher chain (ADR-007). The holder's name and address
+ * are hashed as they are, so re-encrypting them with a new APP_KEY does not
+ * break the chain. A personal number or foreign id number is never in the
+ * payload in clear text: it is replaced by HMAC-SHA256 with the dedicated,
+ * stable key nonox.register_hash_key (NONOX_REGISTER_HASH_KEY), so the
+ * payload can be written to the archive package and a guessed personal
+ * number cannot be checked against a published hash. Dates are hashed as
+ * dates, the entry time in whole seconds of the application's time zone.
  */
 final class EventHash
 {
@@ -29,6 +34,12 @@ final class EventHash
         $snapshot = $event->holder_snapshot;
 
         if (is_array($snapshot)) {
+            foreach (['personal_number', 'other_id'] as $field) {
+                if (is_string($snapshot[$field] ?? null) && $snapshot[$field] !== '') {
+                    $snapshot[$field] = self::pseudonym($snapshot[$field]);
+                }
+            }
+
             ksort($snapshot);
         }
 
@@ -60,6 +71,23 @@ final class EventHash
         ];
 
         return (string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+    }
+
+    /** "hmac:" and HMAC-SHA256 of an id number with the register's own key. */
+    public static function pseudonym(string $value): string
+    {
+        return 'hmac:'.hash_hmac('sha256', $value, self::key());
+    }
+
+    private static function key(): string
+    {
+        $key = config('nonox.register_hash_key');
+
+        if (! is_string($key) || $key === '') {
+            throw new RuntimeException('NONOX_REGISTER_HASH_KEY is not set. Run php artisan share-register:hash-key --write once, and never change it.');
+        }
+
+        return $key;
     }
 
     /** The time as it reads back from the database: whole seconds in the application's time zone. */

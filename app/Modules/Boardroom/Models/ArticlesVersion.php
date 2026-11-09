@@ -36,6 +36,7 @@ use LogicException;
  * @property bool $pre_emption_clause
  * @property bool $consent_clause
  * @property bool $redemption_clause
+ * @property bool $conversion_clause
  * @property ?string $other_provisions
  * @property ?int $created_by
  */
@@ -49,7 +50,7 @@ class ArticlesVersion extends Model
     protected $fillable = [
         'company_id', 'version', 'adopted_on', 'registered_on', 'seat', 'notice_method', 'short_notice_clause',
         'share_capital_min_ore', 'share_capital_max_ore', 'shares_min', 'shares_max', 'board_min', 'board_max',
-        'has_auditor', 'pre_emption_clause', 'consent_clause', 'redemption_clause', 'other_provisions', 'created_by',
+        'has_auditor', 'pre_emption_clause', 'consent_clause', 'redemption_clause', 'conversion_clause', 'other_provisions', 'created_by',
     ];
 
     /** @return array<string, string> */
@@ -70,6 +71,7 @@ class ArticlesVersion extends Model
             'pre_emption_clause' => 'boolean',
             'consent_clause' => 'boolean',
             'redemption_clause' => 'boolean',
+            'conversion_clause' => 'boolean',
         ];
     }
 
@@ -83,6 +85,24 @@ class ArticlesVersion extends Model
                 throw new LogicException('A version of the articles cannot be changed; adopt a new version.');
             }
         });
+    }
+
+    /**
+     * The transfer and conversion clauses (förbehåll) that apply to every
+     * share and must show in the register (ABL 5 kap. 5 § 5): förköp (4 kap.
+     * 18 §), samtycke (4 kap. 8 §), hembud (4 kap. 27 §) and omvandling
+     * (4 kap. 6 §).
+     *
+     * @return list<string>
+     */
+    public function clauses(): array
+    {
+        return array_values(array_filter([
+            $this->pre_emption_clause ? (string) __('förköpsförbehåll (aktiebolagslagen 4 kap. 18 §)') : null,
+            $this->consent_clause ? (string) __('samtyckesförbehåll (aktiebolagslagen 4 kap. 8 §)') : null,
+            $this->redemption_clause ? (string) __('hembudsförbehåll (aktiebolagslagen 4 kap. 27 §)') : null,
+            $this->conversion_clause ? (string) __('omvandlingsförbehåll (aktiebolagslagen 4 kap. 6 §)') : null,
+        ]));
     }
 
     /**

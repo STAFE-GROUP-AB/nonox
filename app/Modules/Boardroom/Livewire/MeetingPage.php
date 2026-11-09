@@ -11,16 +11,13 @@ use App\Modules\Boardroom\Actions\SaveMeeting;
 use App\Modules\Boardroom\Domain\AgendaItemKind;
 use App\Modules\Boardroom\Domain\MinutesStatus;
 use App\Modules\Boardroom\Domain\NoticeWindow;
-use App\Modules\Boardroom\Domain\RegisterException;
 use App\Modules\Boardroom\Domain\ReportableKind;
 use App\Modules\Boardroom\Livewire\Concerns\InCurrentCompany;
 use App\Modules\Boardroom\Models\AgendaItem;
 use App\Modules\Boardroom\Models\ArticlesVersion;
 use App\Modules\Boardroom\Models\Meeting;
 use App\Modules\Boardroom\Models\Minutes;
-use App\Modules\Boardroom\Models\ShareClass;
 use App\Modules\Boardroom\Models\Shareholder;
-use App\Modules\Boardroom\Support\ShareRegister;
 use App\Support\Toast;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
@@ -222,22 +219,7 @@ class MeetingPage extends Component
         $window = NoticeWindow::for($meeting, $items, $articles);
         $approvers = User::query()->whereIn('id', $minutes->pluck('approved_by')->filter()->unique()->values())->pluck('name', 'id');
 
-        $votingList = [];
-
-        if ($meeting->kind->isGeneralMeeting()) {
-            try {
-                $state = ShareRegister::at($meeting->meeting_date);
-                $shares = $state->sharesByHolder();
-                $votes = $state->votesByHolder(ShareClass::query()->pluck('votes_tenths', 'id')->map(fn (mixed $tenths): int => (int) $tenths)->all());
-
-                foreach ((array) $meeting->attendees as $attendee) {
-                    $holder = $attendee['shareholder_id'] ?? null;
-                    $votingList[] = ['name' => $attendee['name'], 'role' => $attendee['role'], 'shares' => is_int($holder) ? ($shares[$holder] ?? 0) : 0, 'votes_tenths' => is_int($holder) ? ($votes[$holder] ?? 0) : 0];
-                }
-            } catch (RegisterException) {
-                $votingList = [];
-            }
-        }
+        $votingList = $meeting->kind->isGeneralMeeting() ? MinutesWorkflow::votingList($meeting) : [];
 
         return view('boardroom::livewire.meeting', [
             'meeting' => $meeting,

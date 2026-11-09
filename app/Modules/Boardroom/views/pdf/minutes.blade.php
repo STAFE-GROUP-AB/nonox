@@ -35,6 +35,16 @@
         @endforeach
     @endif
 
+    @if(! empty($body['voting_list']))
+        <h2>{{ __('Röstlängd') }}</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr><th style="text-align: left;">{{ __('Namn') }}</th><th style="text-align: left;">{{ __('Roll') }}</th><th style="text-align: right;">{{ __('Aktier') }}</th><th style="text-align: right;">{{ __('Röster') }}</th></tr>
+            @foreach($body['voting_list'] as $row)
+                <tr><td>{{ $row['name'] }}</td><td>{{ \App\Modules\Boardroom\Models\Meeting::roleLabel($row['role']) }}</td><td style="text-align: right;">{{ number_format($row['shares'], 0, ',', ' ') }}</td><td style="text-align: right;">{{ number_format($row['votes_tenths'] / 10, $row['votes_tenths'] % 10 === 0 ? 0 : 1, ',', ' ') }}</td></tr>
+            @endforeach
+        </table>
+    @endif
+
     <h2>{{ __('Ärenden') }}</h2>
     @foreach($body['items'] ?? [] as $item)
         <div class="item">
@@ -54,7 +64,7 @@
         <p>{{ __('Ordförande') }}: {{ $body['chair'] ?? '–' }}</p>
         <p>{{ __('Protokollförare') }}: {{ $body['minute_taker'] ?? '–' }}</p>
         <p>{{ __('Justerare') }}: {{ empty($body['adjusters']) ? '–' : implode(', ', $body['adjusters']) }}</p>
-        <p>{{ __('Justerat i NONOX :time.', ['time' => $minutes->checked_at?->format('Y-m-d H:i')]) }}</p>
+        <p>{{ __('Markerat som justerat i NONOX av :name :time.', ['name' => $checker?->name ?? '–', 'time' => $minutes->checked_at?->format('Y-m-d H:i')]) }}</p>
         <p><strong>{{ __('Godkänt i NONOX av :name :time.', ['name' => $approver->name, 'time' => $minutes->approved_at?->format('Y-m-d H:i')]) }}</strong></p>
         <p class="muted">{{ __('Godkännandet i NONOX visar vem som godkände protokollet och när. Det är inte en underskrift. Skriv under protokollet för hand eller med en elektronisk underskrift när lagen kräver det.') }}</p>
     </div>

@@ -11235,5 +11235,22 @@
     "Aktieboken och protokollen finns kvar och kan läsas och skrivas ut. Styrelsen ansvarar ändå för att aktieboken förs (aktiebolagslagen 5 kap. 7 §).": "The share register and the minutes remain and can be read and printed. The board is still responsible for keeping the share register (Companies Act chapter 5 section 7).",
     "Anmäl genast. Datumet är en yttre gräns att kontrollera med Bolagsverket.": "Report without delay. The date is an outer limit to check with Bolagsverket.",
     "Anmälan till Bolagsverket": "Notification to Bolagsverket",
-    "Aktieboken vid årets slut, aktiebokens hela historik med kontrollsummor och de godkända protokollen från årets möten och årsstämman (:count filer). Aktieboken bevaras så länge bolaget finns och minst tio år efter att det har upplösts (aktiebolagslagen 5 kap. 3 §).": "The share register at the year end, its whole history with checksums, and the approved minutes of the year's meetings and annual general meeting (:count files). The share register is kept as long as the company exists and for at least ten years after it is dissolved (Companies Act chapter 5 section 3)."
+    "Aktieboken vid årets slut, aktiebokens hela historik med kontrollsummor och de godkända protokollen från årets möten och årsstämman (:count filer). Aktieboken bevaras så länge bolaget finns och minst tio år efter att det har upplösts (aktiebolagslagen 5 kap. 3 §).": "The share register at the year end, its whole history with checksums, and the approved minutes of the year's meetings and annual general meeting (:count files). The share register is kept as long as the company exists and for at least ten years after it is dissolved (Companies Act chapter 5 section 3).",
+    "förköpsförbehåll (aktiebolagslagen 4 kap. 18 §)": "pre-emption clause (Companies Act chapter 4 section 18)",
+    "samtyckesförbehåll (aktiebolagslagen 4 kap. 8 §)": "consent clause (Companies Act chapter 4 section 8)",
+    "hembudsförbehåll (aktiebolagslagen 4 kap. 27 §)": "right of first refusal clause (Companies Act chapter 4 section 27)",
+    "omvandlingsförbehåll (aktiebolagslagen 4 kap. 6 §)": "conversion clause (Companies Act chapter 4 section 6)",
+    "Nyemissionen kan inte vara registrerad före tilldelningen.": "The new issue cannot be registered before the allotment.",
+    "Rättelsen måste gälla ett protokoll från samma möte.": "The correction must concern minutes of the same meeting.",
+    "Kallelsen är skickad och ärendenas nummer står fast (aktiebolagslagen 7 kap. 31 §). Ett ärende kan inte tas bort.": "The notice has been sent and the item numbers are fixed (Companies Act chapter 7 section 31). An item cannot be removed.",
+    "Aktieslaget finns i aktieboken. Beteckning och röster ändras inte i efterhand: för in en ny bolagsordning med ett nytt aktieslag och en omvandling.": "The share class is in the share register. Its code and votes are not changed afterwards: enter new articles with a new share class and a conversion.",
+    "Förbehåll enligt bolagsordningen, för alla aktier": "Clauses in the articles of association, for all shares",
+    "Markerat som justerat i NONOX av :name :time.": "Marked as checked in NONOX by :name :time.",
+    "Hur överskjutande aktier hanteras": "How surplus shares are handled",
+    "Krävs när aktierna inte går jämnt upp, till exempel: Två överskjutande aktier löses in enligt stämmans beslut.": "Required when the shares do not divide evenly, for example: Two surplus shares are redeemed under the meeting's resolution.",
+    "Omvandlingsförbehåll": "Conversion clause",
+    "omvandling": "conversion",
+    "Överskjutande aktier går inte jämnt upp i nya aktier. Beskriv i anteckningen hur resten hanteras, till exempel genom inlösen.": "Surplus shares do not add up to whole new shares. Describe in the note how the remainder is handled, for example by redemption.",
+    "Styrelsen har flera ledamöter: protokollet justeras också av en närvarande ledamot som styrelsen utsett och som inte är ordförande (aktiebolagslagen 8 kap. 24 §).": "The board has several members: the minutes are also checked by an attending member appointed by the board who is not the chair (Companies Act chapter 8 section 24).",
+    "aktiebok/hashkedja.json visar texten som varje händelse hashades från. Kedjan kontrolleras utan NONOX: SHA-256 av föregående hash följt av texten ska ge händelsens hash.": "aktiebok/hashkedja.json shows the text each event was hashed from. The chain is checked without NONOX: SHA-256 of the previous hash followed by the text must give the event's hash."
 }

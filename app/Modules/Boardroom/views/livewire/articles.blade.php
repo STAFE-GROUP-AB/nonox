@@ -45,6 +45,7 @@
                         <label class="flex items-center gap-3"><x-checkbox wire:model="form.pre_emption_clause" /> <span>{{ __('Förköpsförbehåll') }}</span></label>
                         <label class="flex items-center gap-3"><x-checkbox wire:model="form.consent_clause" /> <span>{{ __('Samtyckesförbehåll') }}</span></label>
                         <label class="flex items-center gap-3"><x-checkbox wire:model="form.redemption_clause" /> <span>{{ __('Hembudsförbehåll') }}</span></label>
+                        <label class="flex items-center gap-3"><x-checkbox wire:model="form.conversion_clause" /> <span>{{ __('Omvandlingsförbehåll') }}</span></label>
                     </div>
                 </fieldset>
                 <x-ui.field for="art-other" :label="__('Övriga bestämmelser')" error="form.other_provisions" class="sm:col-span-2">
@@ -64,7 +65,7 @@
                 <div><dt class="text-gray-600">{{ __('Så kallas aktieägarna') }}</dt><dd class="text-ink">{{ $version->notice_method }}</dd></div>
                 <div><dt class="text-gray-600">{{ __('Kallelse senast två veckor före') }}</dt><dd class="text-ink">{{ $version->short_notice_clause ? __('Ja') : __('Nej') }}</dd></div>
                 <div><dt class="text-gray-600">{{ __('Revisor') }}</dt><dd class="text-ink">{{ $version->has_auditor ? __('Ja') : __('Nej') }}</dd></div>
-                <div><dt class="text-gray-600">{{ __('Förbehåll') }}</dt><dd class="text-ink">{{ collect([$version->pre_emption_clause ? __('förköp') : null, $version->consent_clause ? __('samtycke') : null, $version->redemption_clause ? __('hembud') : null])->filter()->join(', ') ?: __('Inga') }}</dd></div>
+                <div><dt class="text-gray-600">{{ __('Förbehåll') }}</dt><dd class="text-ink">{{ collect([$version->pre_emption_clause ? __('förköp') : null, $version->consent_clause ? __('samtycke') : null, $version->redemption_clause ? __('hembud') : null, $version->conversion_clause ? __('omvandling') : null])->filter()->join(', ') ?: __('Inga') }}</dd></div>
             </dl>
             @if($canManage && $version->registered_on === null)
                 <form wire:submit="register({{ $version->id }})" class="mt-4 flex flex-wrap items-end gap-3">

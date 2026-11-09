@@ -37,6 +37,13 @@
                 <div><dt class="text-sm text-gray-600">{{ __('Ej registrerad nyemission') }}</dt><dd class="text-lg font-semibold tabular-nums text-ink">{{ \App\Support\Money\Money::ofOre($state->pendingCapitalOre())->format() }}</dd></div>
             </dl>
 
+            @if($articles !== null && $articles->clauses() !== [])
+                <p class="mt-4 text-sm text-gray-800"><span class="font-semibold">{{ __('Förbehåll enligt bolagsordningen, för alla aktier') }}:</span> {{ implode(', ', $articles->clauses()) }}.</p>
+            @endif
+            @foreach($classes->filter(fn ($class) => $class->restriction_text) as $class)
+                <p class="mt-1 text-sm text-gray-800"><span class="font-semibold">{{ $class->code }}:</span> {{ $class->restriction_text }}</p>
+            @endforeach
+
             <div class="mt-6 overflow-x-auto">
                 <table class="min-w-full divide-y divide-stone-200 text-sm">
                     <thead>

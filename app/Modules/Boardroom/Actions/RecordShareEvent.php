@@ -6,6 +6,7 @@ namespace App\Modules\Boardroom\Actions;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Boardroom\Domain\CompanyHolderNeeded;
 use App\Modules\Boardroom\Domain\EventHash;
 use App\Modules\Boardroom\Domain\HolderKind;
 use App\Modules\Boardroom\Domain\RegisterException;
@@ -53,7 +54,8 @@ final class RecordShareEvent
                 $toHolderId = $data['to_holder_id'];
 
                 if ($kind === ShareEventKind::ReverseSplit) {
-                    $toHolderId = self::companyItself($company)->id;
+                    // The company becomes a holder only when shares actually pass to it (see below).
+                    $toHolderId = Shareholder::query()->where('kind', HolderKind::CompanyItself->value)->first()?->id;
                 }
 
                 $recipient = $toHolderId === null ? null : Shareholder::query()->findOrFail($toHolderId);
@@ -87,8 +89,16 @@ final class RecordShareEvent
                 ]);
                 $event->id = (int) DB::scalar("select nextval(pg_get_serial_sequence('boardroom_share_events', 'id'))");
 
+                $history = array_values(ShareEvent::query()->orderBy('sequence')->get()->all());
+
                 try {
-                    RegisterFold::at([...ShareEvent::query()->orderBy('sequence')->get()->all(), $event]);
+                    try {
+                        RegisterFold::validate([...$history, $event]);
+                    } catch (CompanyHolderNeeded) {
+                        $itself = self::companyItself($company);
+                        $event->forceFill(['to_holder_id' => $itself->id, 'holder_snapshot' => $itself->snapshot()]);
+                        RegisterFold::validate([...$history, $event]);
+                    }
                 } catch (RegisterException $exception) {
                     throw ValidationException::withMessages(['event' => $exception->getMessage()]);
                 }
@@ -159,8 +169,8 @@ final class RecordShareEvent
         $validated = Validator::make($input, [
             'kind' => ['required', Rule::enum(ShareEventKind::class)],
             'effective_date' => [$kind?->effectiveOnRegistration() ? 'nullable' : 'required', 'date'],
-            'decided_on' => ['nullable', 'date'],
-            'registered_on' => [$kind?->effectiveOnRegistration() ? 'required' : 'nullable', 'date'],
+            'decided_on' => ['nullable', 'date', 'before_or_equal:today'],
+            'registered_on' => [$kind?->effectiveOnRegistration() ? 'required' : 'nullable', 'date', 'before_or_equal:today'],
             'share_from' => [$kind?->needsRange() ? 'required' : 'nullable', 'integer', 'min:1'],
             'share_to' => [$kind?->needsRange() ? 'required' : 'nullable', 'integer', 'min:1', 'gte:share_from'],
             'share_class_id' => ['nullable', 'integer', Rule::exists('boardroom_share_classes', 'id')->where('company_id', CurrentCompany::id())],
@@ -188,6 +198,10 @@ final class RecordShareEvent
             'note' => __('Anteckning'),
             'reason' => __('Skäl'),
         ])->validate();
+
+        if ($kind === ShareEventKind::NewIssue && isset($validated['registered_on'], $validated['effective_date']) && $validated['registered_on'] !== '' && CarbonImmutable::parse((string) $validated['registered_on'])->lessThan(CarbonImmutable::parse((string) $validated['effective_date']))) {
+            throw ValidationException::withMessages(['registered_on' => __('Nyemissionen kan inte vara registrerad före tilldelningen.')]);
+        }
 
         if ($kind?->issuesShares() && (int) $validated['capital_change_ore'] < 0) {
             throw ValidationException::withMessages(['capital_change_ore' => __('Aktiekapitalet för nya aktier kan inte vara negativt.')]);

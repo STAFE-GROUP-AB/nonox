@@ -16,6 +16,7 @@ use App\Modules\Boardroom\Models\AgendaItem;
 use App\Modules\Boardroom\Models\Meeting;
 use App\Modules\Boardroom\Models\Minutes;
 use App\Modules\Boardroom\Models\Register;
+use App\Modules\Boardroom\Models\ShareClass;
 use App\Modules\Boardroom\Support\BoardroomAccess;
 use App\Modules\Boardroom\Support\BoardroomPdf;
 use App\Modules\Boardroom\Support\ShareRegister;
@@ -56,6 +57,10 @@ final class MinutesWorkflow
 
             if ($corrects === null && SaveMeeting::isLocked($meeting)) {
                 throw ValidationException::withMessages(['minutes' => __('Protokollet är redan godkänt. Rätta det med ett nytt protokoll.')]);
+            }
+
+            if ($corrects !== null && $corrects->meeting_id !== $meeting->id) {
+                throw ValidationException::withMessages(['minutes' => __('Rättelsen måste gälla ett protokoll från samma möte.')]);
             }
 
             if ($corrects !== null && ! $corrects->isApproved()) {
@@ -145,10 +150,10 @@ final class MinutesWorkflow
                 $shares = [];
             }
 
-            if ($adjusters === [] && MinutesChecking::needsAdjuster($meeting, $shares)) {
-                throw ValidationException::withMessages(['adjusters' => $meeting->kind === MeetingKind::BoardMeeting
-                    ? __('Styrelsen har flera ledamöter: protokollet justeras också av en ledamot som styrelsen utsett (aktiebolagslagen 8 kap. 24 §).')
-                    : __('Protokollet justeras av ordföranden och minst en justerare som stämman utsett, om inte ordföranden och protokollföraren ensamma företräder alla aktier (aktiebolagslagen 7 kap. 48 §).')]);
+            $problem = MinutesChecking::problem($meeting, $shares, $chair, $adjusters);
+
+            if ($problem !== null) {
+                throw ValidationException::withMessages(['adjusters' => $problem]);
             }
 
             $meeting->save();
@@ -195,7 +200,14 @@ final class MinutesWorkflow
             }
 
             $approvedAt = CarbonImmutable::now();
-            $locked->forceFill(['number' => $number, 'approved_by' => $user->id, 'approved_at' => $approvedAt]);
+            $body = $locked->body;
+
+            if ($meeting->kind->isGeneralMeeting()) {
+                // The voting list as it stood on the meeting day is part of the minutes (ABL 7 kap. 48 §).
+                $body['voting_list'] = self::votingList($meeting);
+            }
+
+            $locked->forceFill(['number' => $number, 'approved_by' => $user->id, 'approved_at' => $approvedAt, 'body' => $body]);
             $pdf = BoardroomPdf::minutes($company, $meeting, $locked, $user);
             $path = "boardroom/{$company->id}/protokoll-{$locked->id}-".$approvedAt->format('YmdHis').'.pdf';
             Storage::disk(AttachToVoucher::DISK)->put($path, $pdf);
@@ -254,6 +266,37 @@ final class MinutesWorkflow
             ])->all()),
             'notes' => null,
         ];
+    }
+
+    /**
+     * The voting list from the register on the meeting day and the attendees
+     * who represent a holder (ABL 7 kap. 29 §).
+     *
+     * @return list<array{name: string, role: string, shares: int, votes_tenths: int}>
+     */
+    public static function votingList(Meeting $meeting): array
+    {
+        try {
+            $state = ShareRegister::at($meeting->meeting_date);
+        } catch (RegisterException) {
+            return [];
+        }
+
+        $shares = $state->sharesByHolder();
+        $votes = $state->votesByHolder(ShareClass::query()->pluck('votes_tenths', 'id')->map(fn (mixed $tenths): int => (int) $tenths)->all());
+        $list = [];
+
+        foreach ((array) $meeting->attendees as $attendee) {
+            $holder = $attendee['shareholder_id'] ?? null;
+            $list[] = [
+                'name' => (string) $attendee['name'],
+                'role' => (string) $attendee['role'],
+                'shares' => is_int($holder) ? ($shares[$holder] ?? 0) : 0,
+                'votes_tenths' => is_int($holder) ? ($votes[$holder] ?? 0) : 0,
+            ];
+        }
+
+        return $list;
     }
 
     private function ensureDraft(Minutes $minutes): void

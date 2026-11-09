@@ -33,7 +33,7 @@ Säljaren måste äga alla aktier i nummerserien. Har aktierna en anteckning om 
 | Händelse | Vad du fyller i |
 |---|---|
 | **Nyemission** | Nummerserie, ägare och aktiekapital. Aktierna förs in direkt men visas som *Nyemission, ej registrerad* tills du för in **Nyemission registrerad**. Faller emissionen för du in **Nyemission har fallit**. |
-| **Fondemission**, **Split**, **Sammanläggning**, **Omvandling av aktieslag** | **Registrerad hos Bolagsverket**. Ändringen gäller från registreringen. Vid sammanläggning övergår överskjutande aktier till bolaget. |
+| **Fondemission**, **Split**, **Sammanläggning**, **Omvandling av aktieslag** | **Registrerad hos Bolagsverket**. Ändringen gäller från registreringen. Vid sammanläggning övergår överskjutande aktier till bolaget. Går de inte jämnt upp i nya aktier beskriver du under **Hur överskjutande aktier hanteras** vad som görs med resten, till exempel inlösen. |
 | **Indragning** | Nummerserien och minskningen av aktiekapitalet som ett negativt belopp. |
 | **Aktiebrev** | Om aktiebrev är utfärdat för nummerserien. |
 | **Rättighetshavare**, **Anmälan om förköp**, **Begäran om förköp**, **Talan om förköp** | En anteckning som visas i aktieboken tills den avslutas med **Anteckning avslutad**. |
@@ -45,4 +45,4 @@ Säljaren måste äga alla aktier i nummerserien. Har aktierna en anteckning om 
 3. Välj **För in i aktieboken** och bekräfta.
 4. För sedan in den rätta händelsen.
 
-Rättelsen gör den gamla händelsen ogiltig, men den finns kvar och visas överstruken i historiken. En rättelse som skulle göra en senare händelse omöjlig godtas inte.
+Rättelsen gör den gamla händelsen ogiltig, men den finns kvar och visas överstruken i historiken. En rättelse som skulle göra en senare händelse omöjlig godtas inte, och NONOX prövar aktieboken vid varje datum den ändras, så en händelse som skulle göra aktieboken omöjlig en tidigare dag godtas inte heller. Datum för beslut och registrering kan inte ligga i framtiden.

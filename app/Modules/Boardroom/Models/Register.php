@@ -7,6 +7,7 @@ namespace App\Modules\Boardroom\Models;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 /**
  * One row per company: the head of the share register's hash chain and its
@@ -45,7 +46,12 @@ class Register extends Model
     /** The current company's row, created on first use. */
     public static function current(): self
     {
-        return self::query()->firstOrCreate([]);
+        // Two first entries at once may both try to create the row; the second reads the first's.
+        try {
+            return self::query()->firstOrCreate([]);
+        } catch (UniqueConstraintViolationException) {
+            return self::query()->firstOrFail();
+        }
     }
 
     /** The current company's row, locked until the transaction ends. */

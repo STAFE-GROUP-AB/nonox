@@ -120,6 +120,10 @@
                     <x-ui.field for="event-note" :label="__('Anteckning')" error="form.note" class="sm:col-span-2">
                         <textarea id="event-note" wire:model="form.note" rows="2" class="{{ $input }}" required></textarea>
                     </x-ui.field>
+                @elseif($kind === \App\Modules\Boardroom\Domain\ShareEventKind::ReverseSplit)
+                    <x-ui.field for="event-note" :label="__('Hur överskjutande aktier hanteras')" error="form.note" class="sm:col-span-2" :hint="__('Krävs när aktierna inte går jämnt upp, till exempel: Två överskjutande aktier löses in enligt stämmans beslut.')">
+                        <textarea id="event-note" wire:model="form.note" rows="2" class="{{ $input }}"></textarea>
+                    </x-ui.field>
                 @endif
 
                 @if($kind === \App\Modules\Boardroom\Domain\ShareEventKind::Correction)
@@ -161,7 +165,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-stone-100">
-                        @foreach($events as $event)
+                        @foreach($page->items() as $event)
                             @php($isVoided = in_array($event->id, $voided, true))
                             <tr @class(['text-gray-500 line-through' => $isVoided])>
                                 <td class="py-2 pr-4 tabular-nums">{{ $event->sequence }}</td>
@@ -188,6 +192,7 @@
                     </tbody>
                 </table>
             </div>
+            <div class="mt-4">{{ $page->links() }}</div>
         </x-ui.card>
     @endif
 </div>

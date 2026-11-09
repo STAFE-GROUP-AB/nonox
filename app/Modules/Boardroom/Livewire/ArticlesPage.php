@@ -59,6 +59,7 @@ class ArticlesPage extends Component
             'pre_emption_clause' => $previous->pre_emption_clause ?? false,
             'consent_clause' => $previous->consent_clause ?? false,
             'redemption_clause' => $previous->redemption_clause ?? false,
+            'conversion_clause' => $previous->conversion_clause ?? false,
             'other_provisions' => $previous->other_provisions ?? '',
         ];
         $this->resetErrorBag();

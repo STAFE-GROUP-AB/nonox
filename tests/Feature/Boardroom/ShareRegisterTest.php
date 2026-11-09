@@ -7,6 +7,7 @@ use App\Modules\Boardroom\Domain\HolderKind;
 use App\Modules\Boardroom\Domain\Holding;
 use App\Modules\Boardroom\Domain\RegisterState;
 use App\Modules\Boardroom\Models\ShareClass;
+use App\Modules\Boardroom\Models\Shareholder;
 use App\Modules\Boardroom\Support\ShareRegister;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -25,6 +26,8 @@ beforeEach(function () {
     [$this->owner, $this->company] = Bookkeeping::company();
     CurrentCompany::set($this->company);
     Boardroom::enable($this->company, $this->owner);
+    // The fixtures use the rule sheet's 2027 dates; registration and decision dates may not be in the future.
+    $this->travelTo(CarbonImmutable::parse('2027-12-31 12:00:00'));
     $this->a = Boardroom::person($this->owner, $this->company, 'Anna Andersson', '19800101123');
     $this->b = Boardroom::person($this->owner, $this->company, 'Bertil Berg', '19750505123');
 });
@@ -140,10 +143,26 @@ it('passes surplus shares to the company in a reverse split (ABL 4 kap. 50 §, A
         ->and($state->totalShares())->toBe(333);
 });
 
-it('refuses a reverse split whose surplus does not make whole shares', function () {
+it('records a reverse split with a remainder only with a note on how the remainder is handled (rule sheet 1000, 3:1)', function () {
     Boardroom::formation($this->owner, $this->company, $this->a, 1000);
 
-    refused(fn () => Boardroom::record($this->owner, $this->company, ['kind' => 'REVERSE_SPLIT', 'registered_on' => '2027-04-01', 'ratio' => 3]), 'Överskjutande aktier går inte jämnt upp');
+    refused(fn () => Boardroom::record($this->owner, $this->company, ['kind' => 'REVERSE_SPLIT', 'registered_on' => '2027-04-01', 'ratio' => 3]), 'Beskriv i anteckningen hur resten hanteras');
+
+    Boardroom::record($this->owner, $this->company, ['kind' => 'REVERSE_SPLIT', 'registered_on' => '2027-04-01', 'ratio' => 3, 'note' => 'Den överskjutande aktien löses in enligt stämmans beslut.']);
+
+    // 1000 → 333 new shares; the one surplus old share makes no new share, so the company gets none and is not added as holder.
+    expect(registerRows())->toBe([[1, 333, 'Anna Andersson']])
+        ->and(Shareholder::query()->where('kind', HolderKind::CompanyItself->value)->exists())->toBeFalse();
+});
+
+it('refuses a split while a new issue is not yet registered on the split\'s date (review P2-1)', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-07-01 12:00:00'));
+    Boardroom::formation($this->owner, $this->company, $this->a, 1000, 2_500_000, '2026-03-02');
+    Boardroom::record($this->owner, $this->company, ['kind' => 'NEW_ISSUE', 'effective_date' => '2026-04-01', 'registered_on' => '2026-06-01', 'share_from' => 1001, 'share_to' => 1500, 'to_holder_id' => $this->b->id, 'capital_change_ore' => 1_250_000]);
+
+    refused(fn () => Boardroom::record($this->owner, $this->company, ['kind' => 'SPLIT', 'registered_on' => '2026-05-01', 'ratio' => 2]), 'Det finns en nyemission som inte är registrerad');
+    refused(fn () => Boardroom::record($this->owner, $this->company, ['kind' => 'SPLIT', 'registered_on' => '2026-07-02', 'ratio' => 2]), 'Registrerad hos Bolagsverket');
+    refused(fn () => Boardroom::record($this->owner, $this->company, ['kind' => 'NEW_ISSUE', 'effective_date' => '2026-06-10', 'registered_on' => '2026-06-05', 'share_from' => 1501, 'share_to' => 1600, 'to_holder_id' => $this->b->id, 'capital_change_ore' => 100]), 'före tilldelningen');
 });
 
 it('corrects a wrong entry with a correction that names it, keeping the original (ADR-070 §2)', function () {

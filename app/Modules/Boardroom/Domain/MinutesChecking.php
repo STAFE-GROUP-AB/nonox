@@ -12,10 +12,46 @@ use App\Modules\Boardroom\Models\Meeting;
  * the meeting appointed, unless the chair and the minute-taker alone
  * represent all shares (ABL 7 kap. 48 §); board minutes by the chair and,
  * when the board has several members, a member the board appoints (8 kap.
- * 24 §).
+ * 24 §). NONOX does not keep the registered board yet, so the board's size
+ * is the number of attending ordinary members (role "member"), and the
+ * second checker must be one of them and not the chair.
  */
 final class MinutesChecking
 {
+    /**
+     * Why the named checkers are not enough, or null when they are.
+     *
+     * @param  array<int, int>  $sharesByHolder
+     * @param  list<string>  $adjusters
+     */
+    public static function problem(Meeting $meeting, array $sharesByHolder, string $chair, array $adjusters): ?string
+    {
+        if (! self::needsAdjuster($meeting, $sharesByHolder)) {
+            return null;
+        }
+
+        $chairKey = self::key($chair);
+        $others = array_values(array_filter($adjusters, fn (string $name): bool => self::key($name) !== $chairKey));
+
+        if ($meeting->kind === MeetingKind::BoardMeeting) {
+            $members = array_map(fn (array $attendee): string => self::key((string) $attendee['name']), array_filter((array) $meeting->attendees, fn (array $attendee): bool => $attendee['role'] === 'member'));
+            $eligible = array_filter($others, fn (string $name): bool => in_array(self::key($name), $members, true));
+
+            return $eligible === []
+                ? (string) __('Styrelsen har flera ledamöter: protokollet justeras också av en närvarande ledamot som styrelsen utsett och som inte är ordförande (aktiebolagslagen 8 kap. 24 §).')
+                : null;
+        }
+
+        return $others === []
+            ? (string) __('Protokollet justeras av ordföranden och minst en justerare som stämman utsett, om inte ordföranden och protokollföraren ensamma företräder alla aktier (aktiebolagslagen 7 kap. 48 §).')
+            : null;
+    }
+
+    private static function key(string $name): string
+    {
+        return mb_strtolower(trim($name));
+    }
+
     /**
      * Whether at least one adjuster is needed.
      *

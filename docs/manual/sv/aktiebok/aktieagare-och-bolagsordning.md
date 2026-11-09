@@ -29,10 +29,10 @@ Styrelsen kan bemyndiga någon, till exempel en redovisningsbyrå, att föra akt
 
 ## Bolagsordningen
 
-Under **Aktiebok → Bolagsordning** för du in de delar av bolagsordningen som NONOX använder: **Så kallas aktieägarna**, om bolagsordningen tillåter kallelse senast två veckor före stämman, gränserna för aktiekapital, aktier och styrelse, om bolaget ska ha revisor, och förköps-, samtyckes- och hembudsförbehåll.
+Under **Aktiebok → Bolagsordning** för du in de delar av bolagsordningen som NONOX använder: **Så kallas aktieägarna**, om bolagsordningen tillåter kallelse senast två veckor före stämman, gränserna för aktiekapital, aktier och styrelse, om bolaget ska ha revisor, och förköps-, samtyckes-, hembuds- och omvandlingsförbehåll. Förbehållen i den bolagsordning som gäller skrivs ut i aktieboken för alla aktier.
 
 En version ändras aldrig. Ändras bolagsordningen väljer du **Ny version av bolagsordningen**. Den nya versionen gäller först från den dag den registreras hos Bolagsverket: fyll i **Registrerad hos Bolagsverket** och välj **Spara registreringsdagen** när du vet datumet. Till dess använder NONOX den tidigare versionen, till exempel för hur aktieägarna kallas.
 
 ## Aktieslag
 
-Har bolaget bara ett aktieslag skapas det när du för in de första aktierna. Har bolaget till exempel A- och B-aktier väljer du **Lägg till aktieslag** och fyller i **Beteckning**, **Namn** och **Röster per aktie** (till exempel 10 för A-aktier och 1 för B-aktier). Med flera aktieslag ska varje aktie i aktieboken ha sitt slag.
+Har bolaget bara ett aktieslag skapas det när du för in de första aktierna. Ett aktieslag hör till den version av bolagsordningen som införde det. När aktier har förts in med ett aktieslag kan dess beteckning och röster inte ändras; då för du in en ny bolagsordning, ett nytt aktieslag och en omvandling. Har bolaget till exempel A- och B-aktier väljer du **Lägg till aktieslag** och fyller i **Beteckning**, **Namn** och **Röster per aktie** (till exempel 10 för A-aktier och 1 för B-aktier). Med flera aktieslag ska varje aktie i aktieboken ha sitt slag.

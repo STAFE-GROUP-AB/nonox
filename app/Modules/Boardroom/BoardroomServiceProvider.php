@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Boardroom;
 
 use App\Http\Middleware\EnsureUserHasCompany;
+use App\Modules\Boardroom\Console\RegisterHashKeyCommand;
 use App\Modules\Boardroom\Console\VerifyShareRegisterCommand;
 use App\Modules\Boardroom\Livewire\ArticlesPage;
 use App\Modules\Boardroom\Livewire\EventsPage;
@@ -37,7 +38,7 @@ class BoardroomServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([VerifyShareRegisterCommand::class]);
+            $this->commands([VerifyShareRegisterCommand::class, RegisterHashKeyCommand::class]);
         }
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {

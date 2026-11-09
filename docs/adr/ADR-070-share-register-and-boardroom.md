@@ -288,3 +288,44 @@ register extract as JSON.
 annual report deadline computed from the recorded AGM date (ÅRL 8:3, AB-R43); the continued meeting
 (7:14); the extra meeting on demand (7:13); share certificates as documents; sole-owner reporting
 (SOU 2026:26) and pruning after dissolution.
+
+## Addendum 2026-11-09: after the cold review
+
+Changes from the review of the first build, with Lead's decisions:
+
+- **The register is checked at every date.** Recording an entry and `share-register:verify` fold
+  the register at every effective date and registration date in the history and as of now
+  (`RegisterFold::validate`), so an entry that the final register accepts but that breaks it on an
+  earlier date (a split while a new issue was still unregistered) is refused. Registration and
+  decision dates may not be in the future, and a new issue cannot be registered before allotment.
+- **No personal numbers in the chain.** `EventHash` replaces a personal number or foreign id number in
+  the payload with `hmac:` and HMAC-SHA256 under a dedicated key, `nonox.register_hash_key`
+  (`NONOX_REGISTER_HASH_KEY`), separate from APP_KEY and never rotated (a new key breaks every chain).
+  It is created at install by `php artisan share-register:hash-key --write` (part of `composer setup`).
+  The stored snapshot stays encrypted. The payloads go into the archive package as
+  `aktiebok/hashkedja.json`, so the chain can be recomputed without NONOX.
+  **The staff ledger (`app/Modules/StaffLedger/Domain/EntryHash.php`) has the same weakness**: it hashes
+  the personal number in clear text. It is in production, so Lead schedules that fix separately with a
+  hash version; it is not changed here.
+- **Clauses on the register.** The applicable articles' förköps-, samtyckes-, hembuds- and (new)
+  omvandlingsförbehåll are printed for all shares on the register page and PDF, with each class's
+  restriction text (5:5 p.5).
+- **Checkers.** A general meeting needs at least one adjuster other than the chair (unless the chair
+  and minute-taker alone represent all shares). A board of several members needs an attending ordinary
+  member who is not the chair. NONOX does not keep the registered board yet, so the board's size is the
+  number of attending ordinary members; that changes when board composition is built.
+- **Agenda after the notice.** Once `notice_sent_on` is set, items cannot be removed and a new item is
+  appended last without renumbering (7:31).
+- **Reverse split with a remainder** (Lead): recorded only with a note describing how the remainder is
+  handled (for example inlösen); the remainder is struck. The company becomes a holder only when whole
+  new shares pass to it (4:50). `TODO(legal-verify)` stays.
+- **Articles and classes** are behind the same 5:9 gate as register entries. A class belongs to the
+  articles version that introduced it (`articles_version_id`), and once shares carry it its code and
+  votes cannot change; a change is new articles, a new class and a CONVERSION.
+- **L9:** the firm check goes by role: a user with the Redovisningskonsult role who does not own the
+  company is treated as the firm. A consultant who is also an administrator is not gated.
+- Smaller: a correction of minutes must be for the same meeting; the PDF says "Markerat som justerat i
+  NONOX av"; the voting list from the register on the meeting day is frozen into general meeting
+  minutes at approval; the archive CSV goes through `Csv::row`; the register row creation retries on a
+  unique violation; the events page is paginated (50 per page; the fold still reads the whole history
+  once); a voided registration no longer silences the new-issue reminder.

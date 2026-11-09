@@ -57,6 +57,7 @@
             "Composer\\Config::disableProcessTimeout",
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "@php -r \"exit(preg_match('/^APP_KEY=.+/m', file_get_contents('.env')) ? 0 : 1);\" || php artisan key:generate --ansi",
+            "@php artisan share-register:hash-key --write --ansi",
             "@php artisan migrate --force --ansi",
             "npm install",
             "npm run build"

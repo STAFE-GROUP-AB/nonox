@@ -4260,15 +4260,19 @@ räkenskapsinformation, men de bevaras och kontrolleras på samma sätt som bokf
   in den och en krypterad kopia av mottagarens uppgifter. Tabellen kan bara
   skrivas till: modellen och en PostgreSQL-trigger vägrar UPDATE, DELETE och
   TRUNCATE.
-- **Kontroll vid införandet.** Varje ny händelse prövas mot hela historiken
-  (`RegisterFold`): ingen aktie kan ägas av två samtidigt, ingen aktie kan
+- **Kontroll vid införandet.** Varje ny händelse prövas mot hela historiken,
+  per varje datum då aktieboken ändras (`RegisterFold::validate`): ingen aktie kan ägas av två samtidigt, ingen aktie kan
   finnas utanför de utgivna, en överlåtelse måste komma från den som äger
   aktierna, och en tillbakadaterad händelse eller rättelse som gör en senare
   händelse omöjlig vägras. En felaktig händelse rättas med en rättelse som
   pekar på den; originalet finns kvar och visas överstruket.
 - **Hashkedja.** Varje händelse har `hash = sha256(föregående hash ||
-  kanonisk JSON av händelsen)`, med ägaruppgifterna i klartext, och kedjans
-  sista länk sparas på `boardroom_registers`. `php artisan share-register:verify`
+  kanonisk JSON av händelsen)`, och kedjans sista länk sparas på
+  `boardroom_registers`. Namn och adress ingår som de är; person- och
+  id-nummer ingår bara som HMAC-SHA256 med en egen nyckel
+  (`NONOX_REGISTER_HASH_KEY`, skild från `APP_KEY`, skapas vid installationen
+  och byts aldrig). Personalliggarens kedja (avsnitt 5d) hashar i dag
+  personnumret i klartext; det rättas separat med en ny hashversion. `php artisan share-register:verify`
   räknar om kedjan, löpnumren och den sista länken och prövar aktieboken, varje
   natt kl. 03.45. Resultatet skrivs i behandlingshistoriken
   (`share_register.verified`) och visas på sidan Aktiebok.
@@ -4350,7 +4354,9 @@ räkenskapsinformation, men de bevaras och kontrolleras på samma sätt som bokf
     e-post.
   - `aktiebok/` och `protokoll/` (modulen Aktiebok och styrelserum, avsnitt
     5m): den fullständiga aktieboken per räkenskapsårets sista dag som PDF,
-    aktiebokens hela historik som CSV med varje händelses hash, och de
+    aktiebokens hela historik som CSV med varje händelses hash, texten som
+    varje händelse hashades från (`aktiebok/hashkedja.json`, med person- och
+    id-nummer bara som HMAC) så att kedjan kan räknas om utan NONOX, och de
     godkända protokollen från årets möten och årsstämman för året, som de
     sparades vid godkännandet.
   - `systemdokumentation/`: den här dokumentationen i den version som gällde
@@ -4861,4 +4867,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.114 | 2026-11-06 | Drivmedelsförmån rättad (avsnitt 5b, ADR-061): skatteavdraget räknas som förut på förmånsvärdet (marknadsvärdet × 1,2), men arbetsgivaravgiften nu på marknadsvärdet (socialavgiftslagen 2 kap. 10 a §); tidigare togs avgiften på hela förmånsvärdet. Den anställdas betalning för drivmedlet (löneart Egen betalning för drivmedel vid bilförmån, 7388) minskar den skattepliktiga förmånen och avgiftsunderlaget och redovisas i ruta 098, medan 018 har hela förmånsvärdet. Attesterade och bokförda löner ändras inte. Förmånsbilar: en period får inte omfatta en attesterad månad som bilen inte fanns i, och bara en bil per månad. |
 | 0.115 | 2026-11-06 | Bekräftelse och kontroller före inlämning (ägarbeslut 10 och 16): momsdeklarationen och arbetsgivardeklarationen till Skatteverket, betalfilen för leverantörsbetalningar och lönefilen kräver att användaren bekräftar "Jag har granskat siffrorna", och bekräftelsen sparas i behandlingshistoriken (`figures.reviewed`); ett K2-företag bekräftar de nya K2-villkoren (BFNAR 2025:2) en gång innan bokslutet för ett räkenskapsår som börjar efter 2025-12-31 kan fortsätta (`company.k2_conditions_confirmed`). SIE-importen stoppar en fil vars ingående balanser inte summerar till noll, och rapporten säger bara att varje konto stämmer när utgående balanser eller resultat har kontrollerats. Drivmedelsförmån kräver en förmånsbil i perioden. OCR-nummer på leverantörsfakturor kontrolleras med kontrollsiffran. Parametrarna för NE och INK4 2026 är inte längre markerade som kontrollerade, så beräkningen spärras tills en människa har kontrollerat dem. Rättelserna som driftsattes separat under versionsnumret 0.105 samma morgon (rutorna 20 och 23, årsredovisning bara enligt K2, belopp i hela kronor, övertid och mertid per art i Gröna Riks och Detaljhandeln, arbetsgivaravgift på drivmedelsförmån) ingår i 0.107, 0.109, 0.110 och 0.114 och i avsnitt 5h. |
 | 0.116 | 2026-11-07 | Regelverket (K1/K2/K3) hör till räkenskapsåret (avsnitt 3, ADR-059 tillägg A.2.1): varje år har sitt eget, ett nytt år ärver det föregående (annars närmaste senare) årets, och ett byte gäller ett valt år och alla senare år, i inställningarna som standard från det tidigaste öppna året utan fastställd årsredovisning. Stängda år och år med fastställd årsredovisning kan inte byta, och ett byte som inget år kan ta emot vägras. Bytet sparas på varje år och i behandlingshistoriken (`fiscal_year.framework_changed`, en post per år). Årsredovisningen, K2-bekräftelsen i bokslutet och NE-bilagan följer årets regelverk, så ett tidigare K2-år behåller sin årsredovisning när företaget byter till K3. Befintliga år fick företagets regelverk; ingen verifikation ändrades. Redovisningsprinciper för K3 som data (avsnitt 5a6.1, ADR-059 tillägget 2026-11-07, A.2.3): företagets val per princip gäller från ett räkenskapsårs första dag tills en ny rad ersätter det, utom svaren om övergången som bara gäller sitt eget år; val som NONOX ännu inte kan redovisa och byten av princip (K3 10.2, 23.37; inte att börja efter "inga", enligt kommentaren till 10.2, och inte kassaflödesanalysen) listas med regelns id som skäl till att K3-årsredovisningen inte kan tas fram; när det första räkenskapsårets datum ändras följer dess principer med; en rad kan inte sparas om den skulle gälla ett år vars årsredovisning har en fastställelsedag som har inträffat; byte från kapitel 12 till kapitel 11 nekas. Ändringen skrivs i behandlingshistoriken utan motiveringen. Ingenting i bokföringen ändras och ingen skärm använder principerna ännu. |
-| 0.117 | 2026-11-08 | Aktiebok och styrelserum (avsnitt 5m, ADR-070): aktieboken som en händelselogg som bara kan skrivas till, med hashkedja och nattlig kontroll (`share-register:verify`), prövning av varje händelse mot hela historiken och rättelser som nya händelser. Bevaras enligt aktiebolagslagen 5 kap. 3 §, skilt från bokföringslagens sju år. Jämförelse med konto 2081 utan bokföring. Protokoll godkänns i NONOX och låses som PDF med SHA-256. Arkivpaketet får `aktiebok/` och `protokoll/` (avsnitt 7a). |
+| 0.117 | 2026-11-08 | Aktiebok och styrelserum (avsnitt 5m, ADR-070): aktieboken som en händelselogg som bara kan skrivas till, med hashkedja (person- och id-nummer bara som HMAC med en egen nyckel) och nattlig kontroll (`share-register:verify`), prövad vid varje datum då aktieboken ändras, prövning av varje händelse mot hela historiken och rättelser som nya händelser. Bevaras enligt aktiebolagslagen 5 kap. 3 §, skilt från bokföringslagens sju år. Jämförelse med konto 2081 utan bokföring. Protokoll godkänns i NONOX och låses som PDF med SHA-256. Arkivpaketet får `aktiebok/` och `protokoll/` (avsnitt 7a). |

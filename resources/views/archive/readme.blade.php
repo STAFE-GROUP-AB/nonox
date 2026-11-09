@@ -20,6 +20,7 @@ moms/  {!! __('Momsdeklarationerna: rutor och belopp per period samt filen till 
 lon/  {!! __('Lönebesked och arbetsgivardeklarationer för lön som betalats ut under året (:count filer).', ['count' => $contents['lon']]) !!}
 @if(($contents['aktiebok'] ?? 0) > 0)
 aktiebok/, protokoll/  {!! __('Aktieboken vid årets slut, aktiebokens hela historik med kontrollsummor och de godkända protokollen från årets möten och årsstämman (:count filer). Aktieboken bevaras så länge bolaget finns och minst tio år efter att det har upplösts (aktiebolagslagen 5 kap. 3 §).', ['count' => $contents['aktiebok']]) !!}
+{!! __('aktiebok/hashkedja.json visar texten som varje händelse hashades från. Kedjan kontrolleras utan NONOX: SHA-256 av föregående hash följt av texten ska ge händelsens hash.') !!}
 @endif
 behandlingshistorik/  {!! __('Allt som gjorts i företaget från årets första dag tills paketet skapades: vem, när och vad (:count filer).', ['count' => $contents['behandlingshistorik']]) !!}
 systemdokumentation/  {!! __('Hur systemet fungerar: versionen när paketet skapades och de versioner som var i bruk under året (:count filer).', ['count' => $contents['systemdokumentation']]) !!}

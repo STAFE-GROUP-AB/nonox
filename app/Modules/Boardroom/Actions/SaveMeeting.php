@@ -144,7 +144,8 @@ final class SaveMeeting
             return DB::transaction(function () use ($user, $company, $meeting, $data, $kind, $item): AgendaItem {
                 if ($item === null) {
                     $last = AgendaItem::query()->where('meeting_id', $meeting->id)->orderByDesc('position')->first();
-                    $closing = $last !== null && $last->kind === AgendaItemKind::Procedure && str_contains(mb_strtolower($last->title), 'avslutande');
+                    // Once the notice is sent its numbering stands (ABL 7 kap. 31 §): a new item goes last, nothing moves.
+                    $closing = $meeting->notice_sent_on === null && $last !== null && $last->kind === AgendaItemKind::Procedure && str_contains(mb_strtolower($last->title), 'avslutande');
                     $position = $closing ? $last->position : (int) ($last->position ?? 0) + 1;
 
                     if ($closing) {
@@ -180,6 +181,10 @@ final class SaveMeeting
 
             if ($item->mandatory) {
                 throw ValidationException::withMessages(['item' => __('Årsstämman måste besluta i det här ärendet (aktiebolagslagen 7 kap. 11 §). Det kan inte tas bort.')]);
+            }
+
+            if ($meeting->notice_sent_on !== null) {
+                throw ValidationException::withMessages(['item' => __('Kallelsen är skickad och ärendenas nummer står fast (aktiebolagslagen 7 kap. 31 §). Ett ärende kan inte tas bort.')]);
             }
 
             DB::transaction(function () use ($item, $meeting): void {

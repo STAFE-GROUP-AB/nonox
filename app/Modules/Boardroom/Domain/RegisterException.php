@@ -11,4 +11,4 @@ use RuntimeException;
  * a share outside the issued ranges, a transfer from someone who does not
  * hold the shares. The message is Swedish and shown to the user.
  */
-final class RegisterException extends RuntimeException {}
+class RegisterException extends RuntimeException {}

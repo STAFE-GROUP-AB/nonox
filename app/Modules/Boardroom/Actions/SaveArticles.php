@@ -6,12 +6,11 @@ namespace App\Modules\Boardroom\Actions;
 
 use App\Models\Company;
 use App\Models\User;
-use App\Modules\Boardroom\BoardroomModule;
 use App\Modules\Boardroom\Models\ArticlesVersion;
 use App\Modules\Boardroom\Models\Register;
 use App\Modules\Boardroom\Models\ShareClass;
+use App\Modules\Boardroom\Models\ShareEvent;
 use App\Modules\Boardroom\Support\BoardroomAccess;
-use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
@@ -54,6 +53,7 @@ final class SaveArticles
             'pre_emption_clause' => ['nullable', 'boolean'],
             'consent_clause' => ['nullable', 'boolean'],
             'redemption_clause' => ['nullable', 'boolean'],
+            'conversion_clause' => ['nullable', 'boolean'],
             'other_provisions' => ['nullable', 'string', 'max:10000'],
         ], [], [
             'adopted_on' => __('Antagen'),
@@ -84,6 +84,7 @@ final class SaveArticles
                 'pre_emption_clause' => $bool('pre_emption_clause'),
                 'consent_clause' => $bool('consent_clause'),
                 'redemption_clause' => $bool('redemption_clause'),
+                'conversion_clause' => $bool('conversion_clause'),
                 'other_provisions' => isset($data['other_provisions']) && trim((string) $data['other_provisions']) !== '' ? trim((string) $data['other_provisions']) : null,
                 'created_by' => $user->id,
             ]);
@@ -139,9 +140,15 @@ final class SaveArticles
                 throw ValidationException::withMessages(['votes' => __('En aktie har minst en tiondels röst (aktiebolagslagen 4 kap. 5 §).')]);
             }
 
-            $class ??= new ShareClass;
+            $code = strtoupper(trim((string) $data['code']));
+
+            if ($class !== null && ShareEvent::query()->where('share_class_id', $class->id)->exists() && ($code !== $class->code || $tenths !== $class->votes_tenths)) {
+                throw ValidationException::withMessages(['votes' => __('Aktieslaget finns i aktieboken. Beteckning och röster ändras inte i efterhand: för in en ny bolagsordning med ett nytt aktieslag och en omvandling.')]);
+            }
+
+            $class ??= new ShareClass(['articles_version_id' => ArticlesVersion::query()->orderByDesc('version')->value('id')]);
             $class->fill([
-                'code' => strtoupper(trim((string) $data['code'])),
+                'code' => $code,
                 'name' => trim((string) $data['name']),
                 'votes_tenths' => $tenths,
                 'restriction_text' => isset($data['restriction_text']) && trim((string) $data['restriction_text']) !== '' ? trim((string) $data['restriction_text']) : null,
@@ -166,9 +173,9 @@ final class SaveArticles
         }
     }
 
+    /** The articles and classes are part of the register: the same 5:9 gate as an entry. */
     private function authorize(User $user, Company $company): void
     {
-        app(ModuleManager::class)->ensureEnabled(BoardroomModule::KEY, $company);
-        BoardroomAccess::authorize($user, $company, 'share-register:manage');
+        BoardroomAccess::authorizeEntry($user, $company);
     }
 }

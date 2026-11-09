@@ -47,6 +47,7 @@ final class BoardroomPdf
             'date' => $date,
             'masked' => $masked,
             'classes' => $classes,
+            'articles' => ArticlesVersion::applicable($date),
             'user' => $user,
             'createdAt' => CarbonImmutable::now(),
         ])->render();
@@ -62,6 +63,7 @@ final class BoardroomPdf
             'minutes' => $minutes,
             'body' => $minutes->body,
             'approver' => $user,
+            'checker' => $minutes->checked_by === null ? null : User::query()->find($minutes->checked_by),
             'corrects' => $corrects,
         ])->render());
     }

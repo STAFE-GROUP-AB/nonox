@@ -22,7 +22,7 @@ Protokollet skrivs på mötets sida i **Styrelserum**, under **Protokoll**. Det 
 1. Fyll i **Ordförande**, **Protokollförare** och **Justerare**.
 2. Välj **Markera som justerat**.
 
-Ett stämmoprotokoll justeras av ordföranden och minst en justerare som stämman utsett, om inte ordföranden och protokollföraren ensamma företräder alla aktier. Ett styrelseprotokoll justeras av ordföranden och, om styrelsen har flera ledamöter, av en ledamot som styrelsen utsett. NONOX kontrollerar det från aktieboken och de närvarande.
+Ett stämmoprotokoll justeras av ordföranden och minst en justerare som stämman utsett, om inte ordföranden och protokollföraren ensamma företräder alla aktier. Ett styrelseprotokoll justeras av ordföranden och, om styrelsen har flera ledamöter, av en ledamot som styrelsen utsett. Justeraren ska vara någon annan än ordföranden: på en stämma minst en, i styrelsen en närvarande ledamot. NONOX räknar styrelsens storlek från de närvarande ledamöterna och kontrollerar resten från aktieboken. På en stämma sparas röstlängden från stämmodagen i protokollet när det godkänns.
 
 ## Så här godkänner du protokollet
 

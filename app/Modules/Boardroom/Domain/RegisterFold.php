@@ -44,6 +44,38 @@ final class RegisterFold
     }
 
     /**
+     * Folds the register at every date the history changes on (each effective
+     * date and each registration date) and as of now, so an entry that the
+     * final register accepts but that would break the register on an earlier
+     * date (a split while an issue was still unregistered) is refused too.
+     * The register is small, so the extra folds cost little.
+     *
+     * @param  list<ShareEvent>  $events
+     *
+     * @throws RegisterException
+     */
+    public static function validate(array $events): RegisterState
+    {
+        $dates = [];
+
+        foreach ($events as $event) {
+            $dates[$event->effective_date->toDateString()] = true;
+
+            if ($event->registered_on !== null) {
+                $dates[$event->registered_on->toDateString()] = true;
+            }
+        }
+
+        ksort($dates);
+
+        foreach (array_keys($dates) as $date) {
+            self::at($events, CarbonImmutable::parse($date));
+        }
+
+        return self::at($events);
+    }
+
+    /**
      * @param  iterable<ShareEvent>  $events
      */
     private function run(iterable $events, ?CarbonImmutable $date): RegisterState
@@ -277,10 +309,12 @@ final class RegisterFold
     /**
      * A reverse split: every $ratio old shares become one new share, numbered
      * from 1 in the order of the holders' first shares. A holder's surplus
-     * shares pass to the company (ABL 4 kap. 50 §), which gets the new
-     * shares they add up to.
-     * TODO(legal-verify): how surplus shares that do not add up to a whole
-     * new share are handled; NONOX refuses the entry until that is answered.
+     * shares pass to the company (ABL 4 kap. 50 §), which gets the new shares
+     * they add up to. A remainder that makes no whole new share can only be
+     * recorded with a note saying how it is handled (for example inlösen),
+     * and is then struck from the register.
+     * TODO(legal-verify): how a remainder of surplus shares is handled; NONOX
+     * records what the user describes and does not judge it.
      */
     private function reverseSplit(ShareEvent $event): void
     {
@@ -319,19 +353,20 @@ final class RegisterFold
         }
 
         foreach ($surplus as $classKey => $count) {
-            if ($count === 0) {
-                continue;
-            }
-
-            if ($count % $ratio !== 0) {
-                throw new RegisterException(__('Överskjutande aktier går inte jämnt upp i nya aktier. Kontrollera beslutet; NONOX kan inte registrera sammanläggningen så här.'));
-            }
-
-            if ($event->to_holder_id === null) {
-                throw new RegisterException(__('Överskjutande aktier övergår till bolaget. Bolaget saknas som ägare i aktieboken.'));
+            if ($count % $ratio !== 0 && trim((string) $event->note) === '') {
+                throw new RegisterException(__('Överskjutande aktier går inte jämnt upp i nya aktier. Beskriv i anteckningen hur resten hanteras, till exempel genom inlösen.'));
             }
 
             $new = intdiv($count, $ratio);
+
+            if ($new === 0) {
+                continue;
+            }
+
+            if ($event->to_holder_id === null) {
+                throw new CompanyHolderNeeded(__('Överskjutande aktier övergår till bolaget. Bolaget saknas som ägare i aktieboken.'));
+            }
+
             $holdings[] = new Holding($next, $next + $new - 1, $event->to_holder_id, $classKey === '-' ? null : (int) $classKey);
             $next += $new;
         }

@@ -9,6 +9,7 @@ use App\Models\AuditLog;
 use App\Modules\Boardroom\Domain\RegisterException;
 use App\Modules\Boardroom\Domain\ShareCapitalCheck;
 use App\Modules\Boardroom\Livewire\Concerns\InCurrentCompany;
+use App\Modules\Boardroom\Models\ArticlesVersion;
 use App\Modules\Boardroom\Models\ShareClass;
 use App\Modules\Boardroom\Support\BoardroomAccess;
 use App\Modules\Boardroom\Support\ShareRegister;
@@ -56,6 +57,7 @@ class RegisterPage extends Component
             'state' => $state,
             'error' => $error,
             'classes' => ShareClass::query()->orderBy('code')->get()->keyBy('id'),
+            'articles' => ArticlesVersion::applicable($date),
             'check' => $state !== null && $state->started ? ShareCapitalCheck::at($state, $date) : null,
             'verified' => $verified,
             'canManage' => $this->mayChange('share-register:manage'),

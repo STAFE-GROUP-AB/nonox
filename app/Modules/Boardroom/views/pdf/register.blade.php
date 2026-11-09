@@ -36,6 +36,10 @@
         <p class="muted">{{ __('Aktieboken hålls tillgänglig hos bolaget för alla som vill ta del av den (aktiebolagslagen 5 kap. 10 §).') }}</p>
     @endif
 
+    @if($articles !== null && $articles->clauses() !== [])
+        <p><strong>{{ __('Förbehåll enligt bolagsordningen, för alla aktier') }}:</strong> {{ implode(', ', $articles->clauses()) }}.</p>
+    @endif
+
     <table>
         <thead>
             <tr>

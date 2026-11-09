@@ -25,7 +25,7 @@ Lägg till fler ärenden med **Lägg till ärende**. Val av styrelse, val av rev
 
 Under **Kallelse** visar NONOX när kallelsen tidigast och senast ska skickas, räknat från mötesdagen och bolagsordningen. Datumen är råd från NONOX: kontrollera dem mot aktiebolagslagen och bolagsordningen.
 
-Välj **Skriv ut kallelsen** för en kallelse med tid, plats och numrerad dagordning. NONOX skickar inte kallelsen; skicka den på det sätt bolagsordningen anger. Fyll sedan i **Kallelsen skickades** under **Ändra**, så visar NONOX om datumet ligger utanför råden.
+Välj **Skriv ut kallelsen** för en kallelse med tid, plats och numrerad dagordning. NONOX skickar inte kallelsen; skicka den på det sätt bolagsordningen anger. Fyll sedan i **Kallelsen skickades** under **Ändra**, så visar NONOX om datumet ligger utanför råden. När kallelsen är skickad står ärendenas nummer fast: ett ärende kan inte tas bort, och ett nytt hamnar sist.
 
 **Aktieboken per stämmodagen** skriver ut den fullständiga aktieboken som den ser ut på mötesdagen, och **Röstlängd** visar aktier och röster för de närvarande som företräder en aktieägare.
 

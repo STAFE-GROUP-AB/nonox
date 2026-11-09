@@ -10,10 +10,13 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * A share class from the articles of association: its code, the votes per
  * share (in tenths, so a B share with a tenth of a vote is 1) and any
- * restriction text (ABL 4 kap. 1–2 §§).
+ * restriction text (ABL 4 kap. 1–2 §§). It belongs to the version of the
+ * articles that introduced it; once shares carry it, its code and votes are
+ * never changed in place: new articles bring a new class and a conversion.
  *
  * @property int $id
  * @property int $company_id
+ * @property ?int $articles_version_id
  * @property string $code
  * @property string $name
  * @property int $votes_tenths
@@ -26,7 +29,7 @@ class ShareClass extends Model
     protected $table = 'boardroom_share_classes';
 
     /** @var list<string> */
-    protected $fillable = ['company_id', 'code', 'name', 'votes_tenths', 'restriction_text'];
+    protected $fillable = ['company_id', 'articles_version_id', 'code', 'name', 'votes_tenths', 'restriction_text'];
 
     /** @return array<string, string> */
     protected function casts(): array

@@ -17,11 +17,13 @@ use App\Modules\Boardroom\Models\Shareholder;
 use App\Modules\Boardroom\Support\ShareRegister;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use InvalidArgumentException;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 /**
  * Aktiebok → Händelser: every entry in the register, newest first, and the
@@ -33,6 +35,9 @@ class EventsPage extends Component
 {
     use InCurrentCompany;
     use ShowsToasts;
+    use WithPagination;
+
+    public const int PER_PAGE = 50;
 
     #[Url(as: 'ny', except: '')]
     public string $start = '';
@@ -113,10 +118,14 @@ class EventsPage extends Component
             $voided = [];
         }
 
-        $users = User::query()->whereIn('id', array_values(array_unique(array_filter(array_map(fn ($event): ?int => $event->user_id, $events)))))->pluck('name', 'id');
+        // The whole history is read once for the fold; the list shows it a page at a time, newest first.
+        $newestFirst = array_reverse($events);
+        $page = new LengthAwarePaginator(array_slice($newestFirst, ($this->getPage() - 1) * self::PER_PAGE, self::PER_PAGE), count($newestFirst), self::PER_PAGE, $this->getPage());
+        $users = User::query()->whereIn('id', array_values(array_unique(array_filter(array_map(fn ($event): ?int => $event->user_id, $page->items())))))->pluck('name', 'id');
 
         return view('boardroom::livewire.events', [
-            'events' => array_reverse($events),
+            'events' => $newestFirst,
+            'page' => $page,
             'bySequence' => collect($events)->keyBy('id'),
             'voided' => $voided,
             'holders' => Shareholder::query()->orderBy('name')->get(['id', 'name', 'kind'])->keyBy('id'),
