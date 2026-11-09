@@ -201,6 +201,8 @@ final class StatusSnapshot
     /** @return Component */
     private function queue(): array
     {
+        $driver = null;
+
         try {
             $connection = (string) config('queue.default', 'sync');
             $driver = (string) config("queue.connections.{$connection}.driver", $connection);
@@ -218,7 +220,10 @@ final class StatusSnapshot
                 default => self::component('queue', 'Bakgrundsjobb', ComponentState::Ok, 'Kön töms i takt.'),
             };
         } catch (Throwable) {
-            return self::component('queue', 'Bakgrundsjobb', ComponentState::Unknown, 'Kön mäts inte på den här installationen.');
+            // A queue we do measure that does not answer is a disruption; one we never measured stays unknown.
+            return in_array($driver ?? '', ['database', 'redis'], true)
+                ? self::component('queue', 'Bakgrundsjobb', ComponentState::Degraded, 'Kön svarar inte.')
+                : self::component('queue', 'Bakgrundsjobb', ComponentState::Unknown, 'Kön mäts inte på den här installationen.');
         }
     }
 
@@ -319,7 +324,8 @@ final class StatusSnapshot
                 $peppol = PeppolParticipant::query()
                     ->whereNotNull('provider_account')
                     ->selectRaw('count(*) as total')
-                    ->selectRaw('count(*) filter (where last_error is not null or last_polled_at is null or last_polled_at < ?) as bad', [CarbonImmutable::now()->subHour()])
+                    // Never polled counts only once the link is older than an hour, so a new one is not an outage.
+                    ->selectRaw('count(*) filter (where last_error is not null or coalesce(last_polled_at, created_at) < ?) as bad', [CarbonImmutable::now()->subHour()])
                     ->toBase()
                     ->first();
 

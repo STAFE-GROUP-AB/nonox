@@ -20,7 +20,9 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
+use Tests\Support\Banking;
 use Tests\Support\Bookkeeping;
+use Tests\Support\Peppol;
 
 /*
  * The public status page (ADR-078): a Swedish page with the state of the
@@ -406,4 +408,108 @@ it('colours the states with variables that keep 4.5:1 against the page in both t
     foreach (['#1B7F4B', '#8A5A00', '#B45309', '#B42318'] as $color) {
         expect($html)->toContain($color)->and($contrast($color, '#F7F5F0'))->toBeGreaterThanOrEqual(4.5);
     }
+});
+
+/** The state of the two connections on the public page, freshly built. */
+function connectionStates(): array
+{
+    StatusSnapshot::forget();
+    $external = collect(StatusSnapshot::get()['external'])->keyBy('key');
+
+    return ['bank' => $external['bank']['state'], 'peppol' => $external['peppol']['state']];
+}
+
+it('decides a widespread bank failure from real connections: a quarter of at least three, active only', function () {
+    Heartbeats::record(Heartbeats::BANK, true);
+    $companies = collect(range(1, 8))->map(fn () => Bookkeeping::company())->values();
+    $make = function (int $count, int $failing, string $status = 'ACTIVE', int $from = 0) use ($companies): array {
+        $ids = [];
+
+        foreach ($companies->slice($from, $count)->values() as $i => [$owner, $company]) {
+            Banking::enable($company, $owner);
+            $connection = Banking::connect($owner, $company);
+            DB::table('bank_connections')->where('id', $connection->id)->update([
+                'status' => $status,
+                'consecutive_failures' => $i < $failing ? 3 : 0,
+            ]);
+            $ids[] = $connection->id;
+        }
+
+        return $ids;
+    };
+    // A scenario's connections are taken out of the count by revoking them (they have accounts hanging on them).
+    $remove = fn (array $ids) => DB::table('bank_connections')->whereIn('id', $ids)->update(['status' => 'REVOKED', 'consecutive_failures' => 0]);
+
+    $ids = $make(4, 1);
+    expect(connectionStates()['bank'])->toBe('DEGRADED');
+    $remove($ids);
+
+    $ids = $make(5, 1);
+    expect(connectionStates()['bank'])->toBe('OK');
+    $remove($ids);
+
+    $ids = $make(2, 2);
+    expect(connectionStates()['bank'])->toBe('OK');
+    $remove($ids);
+
+    // Three active and healthy, three revoked and failing: the Active filter keeps the failing ones out.
+    $healthy = $make(3, 0);
+    $revoked = $make(3, 3, 'REVOKED', 3);
+    expect(connectionStates()['bank'])->toBe('OK');
+    $remove([...$healthy, ...$revoked]);
+});
+
+it('decides a widespread Peppol failure from real participants, leaving out unlinked ones and new links', function () {
+    Heartbeats::record(Heartbeats::PEPPOL, true);
+    $linked = collect(range(0, 5))->map(function (int $i): int {
+        [$owner, $company] = Bookkeeping::company();
+
+        return Peppol::ready($company, $owner, 'account-'.$i.'-'.uniqid())->id;
+    })->values();
+    $update = fn (array $ids, array $values) => DB::table('peppol_participants')->whereIn('id', $ids)->update($values);
+    $healthy = ['last_polled_at' => now(), 'last_error' => null];
+
+    // 1 failing of 4 linked (two participants without an account).
+    $update($linked->all(), $healthy);
+    $update($linked->slice(4)->all(), ['provider_account' => null]);
+    $update([$linked[0]], ['last_error' => 'timeout']);
+    expect(connectionStates()['peppol'])->toBe('DEGRADED');
+
+    // 1 failing of 5.
+    $update([$linked[4]], ['provider_account' => 'account-4-linked']);
+    expect(connectionStates()['peppol'])->toBe('OK');
+
+    // 2 failing of 2.
+    $update($linked->slice(2)->all(), ['provider_account' => null]);
+    $update($linked->take(2)->all(), ['last_error' => 'timeout']);
+    expect(connectionStates()['peppol'])->toBe('OK');
+
+    // Three linked and healthy, plus a failing participant without an account: it is not counted.
+    $update($linked->take(3)->all(), [...$healthy, 'provider_account' => DB::raw("'acct-' || id")]);
+    $update([$linked[3]], ['provider_account' => null, 'last_error' => 'timeout']);
+    expect(connectionStates()['peppol'])->toBe('OK');
+
+    // Never polled: a link under an hour old is fine, one older than an hour counts as failing.
+    $update($linked->take(3)->all(), ['last_polled_at' => null, 'last_error' => null, 'created_at' => now()->subMinutes(10)]);
+    expect(connectionStates()['peppol'])->toBe('OK');
+
+    $update($linked->take(3)->all(), ['created_at' => now()->subHours(2)]);
+    expect(connectionStates()['peppol'])->toBe('DEGRADED');
+});
+
+it('calls a measured queue that does not answer a disruption, and an unmeasured one unknown', function () {
+    config(['queue.default' => 'database']);
+    Queue::shouldReceive('connection')->with('database')->once()->andThrow(new RuntimeException('connection refused'));
+
+    $queue = collect(StatusSnapshot::get()['services'])->firstWhere('key', 'queue');
+
+    expect($queue['state'])->toBe('DEGRADED')->and($queue['note'])->toBe('Kön svarar inte.');
+
+    StatusSnapshot::forget();
+    config(['queue.default' => 'elsewhere', 'queue.connections.elsewhere' => ['driver' => 'sqs']]);
+    Queue::shouldReceive('connection')->with('elsewhere')->andThrow(new RuntimeException('no such driver'));
+
+    $unmeasured = collect(StatusSnapshot::get()['services'])->firstWhere('key', 'queue');
+
+    expect($unmeasured['state'])->toBe('UNKNOWN')->and($unmeasured['note'])->toContain('mäts inte');
 });

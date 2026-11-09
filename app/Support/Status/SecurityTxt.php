@@ -21,8 +21,9 @@ use Throwable;
  * - Expires (required, once): RFC 3339. It is the day the contact was last
  *   confirmed in /hq (the setting's updated_at) plus 364 days, or, when the
  *   contact comes from the environment, the day the build was made plus 364
- *   days. It is not renewed by being read: a stale file says so, and /hq
- *   warns before that happens.
+ *   days. With an environment contact every deploy renews it. It is not
+ *   renewed by being read: a stale file says so, and /hq warns before that
+ *   happens.
  * - Policy: only when the policy page is published (SecurityPolicy).
  * - Canonical, Policy: built from APP_URL, never from the request's Host
  *   header, so a forged Host cannot change what the file claims.
@@ -84,7 +85,10 @@ final class SecurityTxt
         return null;
     }
 
-    /** When the contact was last confirmed: the setting's update, else the build. */
+    /**
+     * When the contact was last confirmed: the setting's update, else the build.
+     * With a contact from the environment every deploy therefore renews Expires; that is accepted (ADR-078).
+     */
     public static function confirmedAt(): CarbonImmutable
     {
         $setting = InstanceSetting::query()->find(InstanceSettings::SECURITY_CONTACT);
@@ -100,7 +104,7 @@ final class SecurityTxt
                 return CarbonImmutable::parse($built);
             }
         } catch (Throwable) {
-            // No build date: the file then expires a year after the current moment, which a deploy never moves.
+            // No build date: the file then expires a year after the current moment.
         }
 
         return CarbonImmutable::now();

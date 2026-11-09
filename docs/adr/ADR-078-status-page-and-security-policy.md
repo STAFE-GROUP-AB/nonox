@@ -142,7 +142,7 @@ Built against RFC 9116 (rfc-editor.org/rfc/rfc9116), read 2026-11-08:
 - **Expires is the date of the last confirmation plus 364 days (Lead decision 2026-11-09).** It
   is the `security.contact` setting's `updated_at` plus 364 days, or, when the contact comes from
   the environment, the build date plus 364 days. It is not renewed by being read, so a file nobody
-  looks after goes stale and says so. /hq → Inställningar shows the date, warns 30 days before it
+  looks after goes stale and says so. With an environment-sourced contact the date follows the build, so every deploy renews it; we accept that, since a deployed installation is a maintained one, and an operator who wants a deliberate renewal sets the contact in /hq. /hq → Inställningar shows the date, warns 30 days before it
   (and after), and has a passkey-confirmed button "Bekräfta säkerhetskontakten" that renews it.
   The first version computed "today + 180 days" on every request; the review rejected that as a
   field that always claims freshness. 364 days (Lead decision) leaves no edge case against the RFC ("less than a year").
@@ -221,3 +221,7 @@ review on `/sakerhet` (`SecurityReview`), not onto the status page.
    know.
 5. **Subscriptions** (RSS/e-mail for incidents) are not built.
 6. **Penetration test** purchase and scope.
+7. **Route the `ledger:verify` error to a person.** On deviations the command writes `Log::error`
+   (company ids only). On the hosted service that log line must reach mail or Nightwatch, or nobody
+   is told, since the public page deliberately says only that the check ran. Operator action; noted
+   in `docs/drift/statussida-och-larm.md`.
