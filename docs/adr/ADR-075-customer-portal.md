@@ -560,3 +560,18 @@ steps. The drafts for the lawyer are in `docs/juridik/kundportal-utkast.md`.
   one query (`PortalRecipients`); the privacy page and a branded entry answer 404 while the portal is
   closed. The CRM account lookup in a quote's acceptance text moved out of `SalesDocument` into
   `CrmSigningHook` (`ResolvesSigningParty`, asked through `SigningHooks::party()`).
+
+## Addendum 2026-11-09: re-check of 0a3a2d0a
+
+- **Changing a contact's address [Lead]** no longer moves the contact: the new address gets a new
+  contact (same customer, status and quote right; an INVITED one is invited again at the new
+  address), and the old contact is removed as "Ta bort min inloggning" removes it (IP address and
+  browser cleared on its events, messages shown as "Borttagen kontakt"). Only the old contact's
+  portal closes for the previous person; their identity's other portals and sessions are untouched.
+  Tested: the successor's extract holds nothing of the predecessor's. The customer's threads stay the
+  customer's and are seen by its contacts, as before.
+- **Lock order**: `SignAtLink::sign()`/`decline()` now lock the document before the signing request,
+  like `SignInSession` and `SendForSigning`, and all their transactions retry a deadlock
+  (`DB::transaction($callback, 3)`).
+- **The invoice page's label** uses `IssuedInvoicePdf::isStored()`: no rendering and no storing on a
+  view; the stored file's hash is checked once and remembered (the row never changes).

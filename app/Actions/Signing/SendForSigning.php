@@ -59,6 +59,9 @@ final class SendForSigning
 
     private const string ZONE = 'Europe/Stockholm';
 
+    /** The document is locked before its links, as in SignAtLink; a deadlock is retried. */
+    private const int ATTEMPTS = SignAtLink::ATTEMPTS;
+
     public function __construct(private readonly SignableTypes $types) {}
 
     /**
@@ -124,7 +127,7 @@ final class SendForSigning
             Audit::record('crm.signing_sent', $request, ['signing_request_id' => $request->id, 'document_type' => $request->document_type, 'sales_document_id' => $request->sales_document_id, 'agreement_id' => $request->agreement_id, 'signable_id' => $request->signable_id, 'deal_id' => $dealId], $company, $user);
 
             return $request;
-        }));
+        }), self::ATTEMPTS);
 
         $url = route('signing.show', ['token' => $token['token']]);
 
@@ -152,7 +155,7 @@ final class SendForSigning
             $this->revokeRequest($user, $company, $locked);
 
             return $locked;
-        }));
+        }), self::ATTEMPTS);
     }
 
     /** The document's module (when it has one) must be on in the company. */

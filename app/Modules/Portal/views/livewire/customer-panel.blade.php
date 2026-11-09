@@ -28,7 +28,7 @@
                             <x-ui.field for="portal-new-email" :label="__('Ny e-postadress')" error="email">
                                 <input id="portal-new-email" type="email" class="{{ $input }} mt-1" wire:model="newEmail" autocomplete="off">
                             </x-ui.field>
-                            <x-button wire:loading.attr="disabled" wire:confirm="{{ __('Ändra adressen? Personen loggas ut och loggar sedan in med den nya adressen.') }}">{{ __('Spara') }}</x-button>
+                            <x-button wire:loading.attr="disabled" wire:confirm="{{ __('Ändra adressen? Den gamla adressen kan inte längre logga in här. Den nya adressen blir en ny kontakt; den tidigare kontaktens inloggningar och uppgifter följer inte med. Kundens frågor och fakturor ser den nya kontakten som andra kontakter hos kunden.') }}">{{ __('Spara') }}</x-button>
                             <button type="button" class="text-sm font-medium text-gray-700 underline" wire:click="$set('changingEmailFor', null)">{{ __('Avbryt') }}</button>
                         </form>
                     @endif

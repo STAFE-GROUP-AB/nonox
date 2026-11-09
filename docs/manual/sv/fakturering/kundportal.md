@@ -36,7 +36,7 @@ Samma person kan vara kontakt för flera kunder, och för kunder hos flera före
 5. Bocka i **Får godkänna offerter** om personen får binda kunden. Ett godkännande i kundportalen gör offerten till en order. För en kund som är privatperson är rutan ifylld från början, för en kontaktperson hos ett företag är den tom.
 6. Tryck på **Skicka inbjudan**.
 
-På kontaktens rad kan du sedan ändra rätten med **Får godkänna offerter** eller **Får inte godkänna offerter**, och byta adress med **Ändra e-post**. Byter du adress loggas personen ut, och loggar sedan in med den nya adressen.
+På kontaktens rad kan du sedan ändra rätten med **Får godkänna offerter** eller **Får inte godkänna offerter**, och byta adress med **Ändra e-post**. Byter du adress blir den nya adressen en ny kontakt för kunden, med samma status och rätt att godkänna offerter. Den gamla adressen kan inte längre logga in i kundportalen, och den tidigare kontaktens inloggningar och uppgifter följer inte med. Var kontakten fortfarande inbjuden går inbjudan till den nya adressen.
 
 Är kunden en privatperson kan du bara bjuda in kundens egen e-postadress, och bara en inloggning, eftersom fakturorna kan visa personuppgifter som ett personnummer för ROT- eller RUT-avdrag.
 

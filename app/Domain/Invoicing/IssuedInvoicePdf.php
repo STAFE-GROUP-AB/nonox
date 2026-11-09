@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceDocument;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -91,6 +92,31 @@ final class IssuedInvoicePdf
         }
 
         return ['bytes' => InvoicePdf::render($invoice), 'stored' => false];
+    }
+
+    /**
+     * Whether what get() hands out is the PDF as issued, without rendering
+     * or storing anything: a stored PDF whose bytes match their hash (checked
+     * once and remembered, the row never changes), or an invoice issued with
+     * stored PDFs whose PDF get() will store on first use.
+     */
+    public static function isStored(Invoice $invoice): bool
+    {
+        if ($invoice->isDraft()) {
+            return false;
+        }
+
+        $document = CurrentCompany::run($invoice->company_id, fn (): ?InvoiceDocument => InvoiceDocument::query()->where('invoice_id', $invoice->id)->first());
+
+        if (! $document instanceof InvoiceDocument) {
+            return $invoice->stores_issued_pdf;
+        }
+
+        return (bool) Cache::rememberForever("issued-invoice-pdf-intact:{$document->id}:{$document->sha256}", function () use ($document): bool {
+            $bytes = Storage::disk(InvoiceDocument::DISK)->get($document->path);
+
+            return is_string($bytes) && hash_equals($document->sha256, hash('sha256', $bytes));
+        });
     }
 
     public static function bytes(Invoice $invoice): string

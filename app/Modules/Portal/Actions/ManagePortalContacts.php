@@ -13,6 +13,7 @@ use App\Modules\ModuleManager;
 use App\Modules\Portal\Domain\ContactStatus;
 use App\Modules\Portal\Mail\PortalMail;
 use App\Modules\Portal\Models\PortalContact;
+use App\Modules\Portal\Models\PortalEvent;
 use App\Modules\Portal\Models\PortalIdentity;
 use App\Modules\Portal\Models\PortalInvitation;
 use App\Modules\Portal\Models\PortalSettings;
@@ -180,10 +181,15 @@ final class ManagePortalContacts
 
     /**
      * The company changes a contact's e-mail address, which is the sign-in
-     * (ADR-075 §12, rectification). The contact moves to the identity of the
-     * new address (made if there is none); the old identity's sessions end,
-     * and it is deleted when it has no contacts left. Identities are shared
-     * between companies, so one company never edits another's sign-in.
+     * (ADR-075 §12, rectification) [Lead]. The address belongs to a person,
+     * so the change makes a NEW contact for the identity of the new address
+     * (the same customer, status and quote right) and removes the old one
+     * the way "Ta bort min inloggning" does: the IP address and browser on
+     * its sign-in events are cleared and its messages show as "Borttagen
+     * kontakt". Nothing of the previous person's follows the new one. Only
+     * the old contact's portal closes for the previous person (its
+     * sessions answer 404 there); their portals elsewhere stay open. An
+     * old contact still INVITED gets its invitation sent to the new address.
      */
     public function changeEmail(User $by, Company $company, PortalContact $contact, string $email): PortalContact
     {
@@ -191,35 +197,72 @@ final class ManagePortalContacts
         $validated = Validator::make(['email' => $email], ['email' => ['required', 'email', 'max:255']], [], ['email' => __('e-post')])->validate();
         $email = PortalIdentity::normalise((string) $validated['email']);
 
-        return CurrentCompany::run($company, fn (): PortalContact => DB::transaction(function () use ($by, $contact, $email): PortalContact {
-            $locked = PortalContact::query()->whereKey($contact->id)->lockForUpdate()->firstOrFail();
-            $old = PortalIdentity::query()->findOrFail($locked->portal_identity_id);
+        $result = CurrentCompany::run($company, fn (): array => DB::transaction(function () use ($by, $contact, $email): array {
+            $old = PortalContact::query()->whereKey($contact->id)->lockForUpdate()->firstOrFail();
+            $oldIdentity = PortalIdentity::query()->findOrFail($old->portal_identity_id);
 
-            if ($old->email === $email) {
-                return $locked;
+            if ($oldIdentity->email === $email) {
+                return ['contact' => $old, 'invite' => null];
             }
 
             // Identities are global, like users: found by the address alone.
-            $new = CompanyScope::bypass(fn (): PortalIdentity => PortalIdentity::query()->firstOrCreate(['email' => $email], ['name' => $old->name]));
+            $identity = CompanyScope::bypass(fn (): PortalIdentity => PortalIdentity::query()->firstOrCreate(['email' => $email], ['name' => $oldIdentity->name]));
 
-            if (PortalContact::query()->where('customer_id', $locked->customer_id)->where('portal_identity_id', $new->id)->exists()) {
+            if (PortalContact::query()->where('customer_id', $old->customer_id)->where('portal_identity_id', $identity->id)->exists()) {
                 throw ValidationException::withMessages(['email' => __(':email har redan tillgång till kundportalen för den här kunden.', ['email' => $email])]);
             }
 
-            $locked->forceFill(['portal_identity_id' => $new->id])->save();
-            $this->revokeLinks($locked);
-            $old->forceFill(['sessions_valid_from' => now()])->save();
+            $invited = $old->status === ContactStatus::Invited;
+            $customerId = $old->customer_id;
+            $canAccept = $old->can_accept_quotes;
+            $name = $identity->name;
 
-            $left = CompanyScope::bypass(fn (): bool => PortalContact::query()->where('portal_identity_id', $old->id)->exists());
+            self::removeContact($old);
+            Audit::record('customer_portal.contact_email_changed', null, ['contact_id' => $old->id, 'customer_id' => $customerId], null, $by);
 
-            if (! $left) {
-                $old->delete();
+            if ($invited) {
+                // Invited again below, through the normal invitation, to the new address.
+                return ['contact' => null, 'invite' => ['customer_id' => $customerId, 'name' => $name, 'can_accept_quotes' => $canAccept]];
             }
 
-            Audit::record('customer_portal.contact_email_changed', $locked, ['contact_id' => $locked->id, 'customer_id' => $locked->customer_id], null, $by);
+            $successor = new PortalContact(['customer_id' => $customerId, 'portal_identity_id' => $identity->id]);
+            $successor->forceFill([
+                'status' => $old->status,
+                'can_accept_quotes' => $canAccept,
+                'invited_by' => $by->id,
+                'invited_at' => now(),
+                'accepted_at' => $old->status === ContactStatus::Active ? now() : null,
+                'disabled_by' => $old->status === ContactStatus::Disabled ? $by->id : null,
+                'disabled_at' => $old->status === ContactStatus::Disabled ? now() : null,
+            ])->save();
 
-            return $locked;
+            Audit::record('customer_portal.contact_invited', $successor, ['contact_id' => $successor->id, 'customer_id' => $customerId, 'replaces_contact_id' => $old->id], null, $by);
+
+            return ['contact' => $successor, 'invite' => null];
         }));
+
+        if ($result['invite'] !== null) {
+            $customer = CurrentCompany::run($company, fn (): Customer => Customer::query()->findOrFail($result['invite']['customer_id']));
+
+            return $this->invite($by, $company, $customer, ['name' => $result['invite']['name'], 'email' => $email, 'can_accept_quotes' => $result['invite']['can_accept_quotes']])['contact'];
+        }
+
+        /** @var PortalContact */
+        return $result['contact'];
+    }
+
+    /**
+     * Removes a contact as "Ta bort min inloggning" does (ADR-075 §12): the
+     * IP address and browser on its events are cleared (decision [Lead]; the
+     * events trigger allows only that), its messages keep their text with
+     * the author shown as "Borttagen kontakt", and the identity goes when it
+     * has no contacts left. Inside the contact's company and a transaction.
+     */
+    public static function removeContact(PortalContact $contact): void
+    {
+        // A query, not the model: the events are append-only.
+        PortalEvent::query()->where('contact_id', $contact->id)->update(['ip' => null, 'user_agent' => null]);
+        self::delete($contact);
     }
 
     public function disable(User $by, Company $company, PortalContact $contact): void

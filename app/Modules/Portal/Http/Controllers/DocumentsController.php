@@ -89,8 +89,8 @@ final class DocumentsController
                 'iban' => $invoice->isForeign() ? $company->iban : null,
                 'bic' => $invoice->isForeign() ? $company->bic : null,
             ],
-            // Stored and its bytes match their hash; an invoice issued with stored PDFs is stored now if it was not yet.
-            'stored' => IssuedInvoicePdf::get($invoice)['stored'],
+            // Without rendering or storing on every view: the hash check is made once and remembered.
+            'stored' => IssuedInvoicePdf::isStored($invoice),
         ]);
     }
 

@@ -116,9 +116,7 @@ final class PortalSelfService
 
         foreach ($contacts as $contact) {
             CurrentCompany::run($contact->company_id, fn () => DB::transaction(function () use ($contact): void {
-                // A query, not the model: the events are append-only, and only these two columns may be cleared (trigger).
-                PortalEvent::query()->where('contact_id', $contact->id)->update(['ip' => null, 'user_agent' => null]);
-                ManagePortalContacts::delete($contact);
+                ManagePortalContacts::removeContact($contact);
                 Audit::record('customer_portal.login_removed_by_contact', null, ['contact_id' => $contact->id, 'customer_id' => $contact->customer_id], $contact->company_id);
             }));
         }

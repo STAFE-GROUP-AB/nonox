@@ -2,17 +2,21 @@
 
 declare(strict_types=1);
 
+use App\Domain\Invoicing\IssuedInvoicePdf;
 use App\Models\AuditLog;
+use App\Models\InvoiceDocument;
 use App\Modules\ModuleManager;
 use App\Modules\Portal\Actions\ManagePortalContacts;
 use App\Modules\Portal\Actions\PortalQuestions;
 use App\Modules\Portal\Domain\EventType;
 use App\Modules\Portal\Livewire\CustomerPortalPanel;
 use App\Modules\Portal\Livewire\PortalQuestionsPage;
+use App\Modules\Portal\Mail\PortalMail;
 use App\Modules\Portal\Models\PortalAttachment;
 use App\Modules\Portal\Models\PortalContact;
 use App\Modules\Portal\Models\PortalEvent;
 use App\Modules\Portal\Models\PortalIdentity;
+use App\Modules\Portal\Models\PortalMessage;
 use App\Modules\Portal\Models\PortalSettings;
 use App\Modules\Portal\Models\PortalThread;
 use App\Modules\Portal\Notifications\PortalQuestionNotice;
@@ -182,23 +186,74 @@ it('ends the person\'s other sessions when they remove one login, and clears the
     $this->get(route('portal.mine'))->assertRedirect(route('portal.login'));
 });
 
-it('moves a contact to a new address when the company changes it, and ends the old sessions', function () {
+it('gives a changed address a new contact that inherits nothing from the previous person', function () {
+    // The previous person also has a portal in another company, which must stay open for them.
+    [$otherOwner, $other] = Bookkeeping::company();
+    Portal::enable($other, $otherOwner);
+    $elsewhere = Portal::contact($other, $otherOwner, Portal::customer($other, $otherOwner, 'Annan AB', ['email' => 'annan@example.test']));
+    CurrentCompany::set($this->company);
+    $this->contact->forceFill(['can_accept_quotes' => true])->save();
+    app(PortalQuestions::class)->open(reviewContext($this), ['subject' => 'Gammal fråga', 'body' => 'Föregångarens text', 'kind' => 'QUESTION'], null, null, []);
+
     Portal::signIn($this, $this->contact);
     $this->get(route('portal.home', ['portalKey' => $this->key]))->assertOk();
     $oldIdentity = $this->contact->portal_identity_id;
+    $oldContact = $this->contact->id;
 
     $this->actingAs($this->owner);
+    CurrentCompany::set($this->company);
     Livewire::test(CustomerPortalPanel::class, ['customerId' => $this->customer->id])
         ->call('startEmailChange', $this->contact->id)->set('newEmail', 'Ny@Kontorshuset.test')->call('changeEmail')->assertHasNoErrors();
 
-    $contact = $this->contact->fresh();
-    expect(PortalIdentity::query()->findOrFail($contact->portal_identity_id)->email)->toBe('ny@kontorshuset.test')
-        ->and(PortalIdentity::query()->whereKey($oldIdentity)->exists())->toBeFalse()
-        ->and(AuditLog::query()->where('action', 'customer_portal.contact_email_changed')->exists())->toBeTrue();
+    $successor = PortalContact::query()->where('customer_id', $this->customer->id)->sole();
+    expect($successor->id)->not->toBe($oldContact)
+        ->and(PortalIdentity::query()->findOrFail($successor->portal_identity_id)->email)->toBe('ny@kontorshuset.test')
+        ->and($successor->status->value)->toBe('ACTIVE')
+        ->and($successor->can_accept_quotes)->toBeTrue()
+        ->and(PortalContact::query()->whereKey($oldContact)->exists())->toBeFalse()
+        ->and(PortalEvent::query()->where('event', EventType::SignedIn->value)->sole()->ip)->toBeNull()
+        ->and(PortalMessage::query()->sole()->contact_id)->toBeNull()
+        // Only the old contact's portal closes for the previous person: their identity and its sessions elsewhere stay.
+        ->and(PortalIdentity::query()->findOrFail($oldIdentity)->sessions_valid_from)->toBeNull()
+        ->and(CurrentCompany::run($other, fn () => PortalContact::query()->whereKey($elsewhere->id)->exists()))->toBeTrue();
 
-    // The next request reads the signed-in identity again, as a new request in production does.
+    // The previous person's session no longer reaches this portal.
     Auth::forgetGuards();
-    $this->get(route('portal.home', ['portalKey' => $this->key]))->assertRedirect(route('portal.login'));
+    $this->get(route('portal.home', ['portalKey' => $this->key]))->assertNotFound();
+
+    // The successor's own extract holds nothing of the previous person.
+    Portal::signIn($this, $successor);
+    $extract = $this->get(route('portal.mine.export'))->assertOk()->json();
+    expect($extract['identity']['email'])->toBe('ny@kontorshuset.test')
+        ->and(json_encode($extract))->not->toContain('Föregångarens text')->not->toContain('anna@kontorshuset.test')
+        ->and($extract['portals'][0]['events'])->toBe([])
+        ->and($extract['portals'][0]['messages'])->toBe([]);
+});
+
+it('sends the invitation to the new address when the old contact was still invited', function () {
+    $invited = app(ManagePortalContacts::class)->invite($this->owner, $this->company, $this->customer, ['name' => 'Ina', 'email' => 'ina@kontorshuset.test'])['contact'];
+    Mail::fake();
+
+    $successor = app(ManagePortalContacts::class)->changeEmail($this->owner, $this->company, $invited, 'ina.ny@kontorshuset.test');
+
+    expect($successor->id)->not->toBe($invited->id)
+        ->and($successor->status->value)->toBe('INVITED')
+        ->and(PortalContact::query()->whereKey($invited->id)->exists())->toBeFalse();
+    Mail::assertQueued(PortalMail::class, fn ($mail): bool => $mail->kind === 'INVITATION' && $mail->hasTo('ina.ny@kontorshuset.test'));
+});
+
+it('labels the invoice as issued without rendering it on every view', function () {
+    config(['nonox.store_issued_invoice_pdfs' => true]);
+    $invoice = Portal::invoice($this->company, $this->owner, $this->customer, '2026-06-02');
+    CurrentCompany::set($this->company);
+
+    expect(IssuedInvoicePdf::isStored($invoice->fresh()))->toBeTrue()
+        ->and(InvoiceDocument::query()->where('invoice_id', $invoice->id)->exists())->toBeTrue();
+
+    // Remembered once checked: a later view reads no file.
+    Storage::disk('local')->delete(InvoiceDocument::query()->where('invoice_id', $invoice->id)->sole()->path);
+    expect(IssuedInvoicePdf::isStored($invoice->fresh()))->toBeTrue()
+        ->and(IssuedInvoicePdf::isStored($this->invoice->fresh()))->toBeFalse();
 });
 
 it('answers 404 for the privacy page and a branded entry while the portal is closed', function () {

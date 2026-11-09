@@ -115,7 +115,7 @@ class CustomerPortalPanel extends Component
         $this->resetErrorBag();
         $manage->changeEmail($this->user(), $this->company(), $this->contact((int) $this->changingEmailFor), $this->newEmail);
 
-        $this->toast(__('E-postadressen är ändrad. Den gamla adressen kan inte längre logga in.'));
+        $this->toast(__('E-postadressen är ändrad. Den gamla adressen kan inte längre logga in här, och den tidigare kontaktens inloggningar och uppgifter följer inte med.'));
         $this->reset('changingEmailFor', 'newEmail');
     }
 

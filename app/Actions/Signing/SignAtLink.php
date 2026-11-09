@@ -32,8 +32,9 @@ use Throwable;
  * What the signer does at the public link (ADR-046, core since ADR-075
  * §7): open it, sign it or decline it, for any Signable document. No account: the unguessable token is the only key, and it is
  * looked up by its SHA-256 alone, so the page can never reach another
- * company's data. Every step locks the request row, so a double submit or
- * two tabs sign once; a link is used once.
+ * company's data. Signing and declining lock the document and then the
+ * request row (the order every signing path takes; a deadlock is retried),
+ * so a double submit or two tabs sign once; a link is used once.
  *
  * Signing binds to the exact PDF shown: the form carries the SHA-256 the
  * page showed, and it must equal the one stored when the link was sent and
@@ -42,6 +43,9 @@ use Throwable;
  */
 final class SignAtLink
 {
+    /** Retries of a signing transaction that meets a deadlock. */
+    public const int ATTEMPTS = 3;
+
     /** The request behind a token, in any company, or null. */
     public function find(string $token): ?SigningRequest
     {
@@ -155,6 +159,8 @@ final class SignAtLink
         }
 
         $signed = CurrentCompany::run($request->company_id, fn (): SigningRequest => DB::transaction(function () use ($request, $validated, $name, $image, $ip, $userAgent): SigningRequest {
+            // The document first, then the request: the order every signing path takes (SignInSession, SendForSigning).
+            $request->document(lock: true);
             $locked = $this->lockUsable($request);
 
             // The confirmation stored is the one the page showed; its MAC proves the page made it.
@@ -207,7 +213,7 @@ final class SignAtLink
             }
 
             return $locked;
-        }));
+        }, self::ATTEMPTS));
 
         // The signature is saved. The signer's copy goes whatever happens to the order, and with a sync queue a failing
         // follow-up must never turn the signer's success into an error page: it is reported and retried by hand.
@@ -236,6 +242,7 @@ final class SignAtLink
         Validator::make(['reason' => $reason], ['reason' => ['nullable', 'string', 'max:1000']], [], ['reason' => __('anledning')])->validate();
 
         return CurrentCompany::run($request->company_id, fn (): SigningRequest => DB::transaction(function () use ($request, $reason): SigningRequest {
+            $request->document(lock: true);
             $locked = $this->lockUsable($request);
 
             $locked->forceFill([
@@ -253,7 +260,7 @@ final class SignAtLink
             app(SigningFollowUp::class)->declined($locked);
 
             return $locked;
-        }));
+        }, self::ATTEMPTS));
     }
 
     /** @throws SigningUnavailable */

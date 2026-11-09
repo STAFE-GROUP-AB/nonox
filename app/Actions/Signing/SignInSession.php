@@ -49,6 +49,8 @@ final class SignInSession
 {
     public const string PORTAL = 'PORTAL';
 
+    private const int ATTEMPTS = SignAtLink::ATTEMPTS;
+
     public function __construct(private readonly SignableTypes $types) {}
 
     /**
@@ -89,7 +91,7 @@ final class SignInSession
             }
 
             return $request;
-        }));
+        }, self::ATTEMPTS));
 
         CurrentCompany::run($signed->company_id, fn () => SigningFollowUp::mailSignerCopy($signed));
 
@@ -123,14 +125,15 @@ final class SignInSession
             app(SigningFollowUp::class)->declined($request);
 
             return $request;
-        }));
+        }, self::ATTEMPTS));
     }
 
     /** Revokes any open link for the document, then locks it and checks it is still open and unchanged. */
     /**
-     * Locks the document first, then its pending links (the order every
-     * signing path takes), checks that it is still open and unchanged, and
-     * revokes the open links.
+     * Locks the document first, then its pending links: the order SignAtLink
+     * and SendForSigning take too, so two paths wait for each other instead
+     * of deadlocking (and a deadlock is retried, ATTEMPTS). Checks that the
+     * document is still open and unchanged, and revokes the open links.
      */
     private function lockOpen(Signable $document, string $fingerprintShown): Signable
     {

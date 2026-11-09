@@ -11069,7 +11069,6 @@
     "Filerna kunde inte läsas. Välj dem igen.": "The files could not be read. Choose them again.",
     ":name kan inte längre godkänna offerter.": ":name can no longer accept quotes.",
     ":name får godkänna offerter.": ":name may accept quotes.",
-    "E-postadressen är ändrad. Den gamla adressen kan inte längre logga in.": "The e-mail address is changed. The old address can no longer sign in.",
     ":name kunde inte laddas upp. Den kan vara större än 10 MB.": ":name could not be uploaded. It may be larger than 10 MB.",
     "En kund har meddelat i kundportalen att :title är betald.": "A customer has said in the customer portal that :title is paid.",
     "får godkänna offerter": "may accept quotes",
@@ -11080,10 +11079,11 @@
     "Får godkänna offerter": "May accept quotes",
     "Ändra e-post": "Change e-mail",
     "Ny e-postadress": "New e-mail address",
-    "Ändra adressen? Personen loggas ut och loggar sedan in med den nya adressen.": "Change the address? The person is signed out and then signs in with the new address.",
     "Ett godkännande i kundportalen gör offerten till en order. Ge rätten bara till den som får binda kunden.": "An acceptance in the customer portal turns the quote into an order. Give the right only to someone who may bind the customer.",
     "Kunder som har meddelat att de har betalat": "Customers who have said they have paid",
     "Kundens egen notering. Inget är bokfört; registrera betalningen när den har kommit in.": "The customer's own note. Nothing is booked; register the payment when it has arrived.",
     "betald :date enligt :name": "paid :date according to :name",
-    "Kunden bestrider fakturan i kundportalen. Läs kundens meddelande och svara innan du skickar en påminnelse.": "The customer disputes the invoice in the customer portal. Read the customer's message and reply before you send a reminder."
+    "Kunden bestrider fakturan i kundportalen. Läs kundens meddelande och svara innan du skickar en påminnelse.": "The customer disputes the invoice in the customer portal. Read the customer's message and reply before you send a reminder.",
+    "E-postadressen är ändrad. Den gamla adressen kan inte längre logga in här, och den tidigare kontaktens inloggningar och uppgifter följer inte med.": "The e-mail address is changed. The old address can no longer sign in here, and the previous contact's sign-ins and data do not follow.",
+    "Ändra adressen? Den gamla adressen kan inte längre logga in här. Den nya adressen blir en ny kontakt; den tidigare kontaktens inloggningar och uppgifter följer inte med. Kundens frågor och fakturor ser den nya kontakten som andra kontakter hos kunden.": "Change the address? The old address can no longer sign in here. The new address becomes a new contact; the previous contact's sign-ins and data do not follow. The new contact sees the customer's questions and invoices like the customer's other contacts."
 }
