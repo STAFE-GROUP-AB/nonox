@@ -91,7 +91,7 @@ it('does not touch the demos that are live, and starts to drain when the databas
 
 it('does not rebuild while a build is running', function () {
     Demo::company(CarbonImmutable::now()->subHour());
-    DemoSessions::store()->put('demo:building', 1, 600);
+    DemoSessions::beat('a-running-build');
 
     expect(app(PurgeExpiredDemos::class)()['rebuilt'])->toBeFalse()
         ->and(DB::connection('demo')->table('users')->count())->toBeGreaterThan(0);

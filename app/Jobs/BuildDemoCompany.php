@@ -30,6 +30,8 @@ class BuildDemoCompany implements ShouldQueue
 
     public function handle(CreateDemo $create): void
     {
+        DemoSessions::startBeating($this->token);
+
         try {
             $guest = $create($this->industry, CarbonImmutable::now()->addHours((int) config('nonox.demo.hours')));
 
@@ -38,7 +40,7 @@ class BuildDemoCompany implements ShouldQueue
             report($exception);
             DemoSessions::markFailed($this->token);
         } finally {
-            DemoSessions::finishedBuilding();
+            DemoSessions::finishedBuilding($this->token);
         }
     }
 }

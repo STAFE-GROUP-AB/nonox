@@ -7,6 +7,7 @@ use App\Modules\Ai\AiModule;
 use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
 use App\Support\Demo\DemoMode;
+use App\Support\Demo\DemoSessions;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Demo;
@@ -208,4 +210,48 @@ it('makes every company created in the demo database a test company from its cre
 
     expect($made)->toBe([true, true])
         ->and((bool) $real->fresh()->is_test_company)->toBeFalse();
+});
+
+it('stops a crashed build from blocking new starts after a few minutes, and keeps a running one alive', function () {
+    Queue::fake();
+    $dead = DemoSessions::begin('bokforing-for-cafeer', 'a-session');
+    $alive = Str::random(40);
+    DemoSessions::beat($alive);
+    DemoSessions::startBeating($alive);
+
+    expect(DemoSessions::building())->toBe(2);
+
+    // Eleven seconds in, a query of the build refreshes its key; the dead worker's key is never refreshed.
+    $this->travel(11)->seconds();
+    DB::connection('demo')->table('users')->count();
+    $this->travel(175)->seconds();
+
+    expect(DemoSessions::building())->toBe(1);
+
+    DemoSessions::finishedBuilding($alive);
+
+    expect(DemoSessions::building())->toBe(0)
+        ->and($dead)->not->toBe($alive);
+});
+
+it('lets a grant log in once, even when two requests race for it', function () {
+    [$guest] = Demo::company();
+    $grant = DemoSessions::issueOpen($guest->id);
+
+    $first = DemoMode::onDemoConnection(fn () => DemoSessions::claim($grant));
+    $second = DemoMode::onDemoConnection(fn () => DemoSessions::claim($grant));
+
+    expect($first?->id)->toBe($guest->id)->and($second)->toBeNull();
+});
+
+it('flags a company as a test company by the connection it is made on, not only the default', function () {
+    // Made through the demo connection by name while the main one is the default.
+    $company = Company::factory()->make(['user_id' => Demo::company()[0]->id]);
+    $company->setConnection('demo');
+    $company->save();
+
+    expect($company->getConnectionName())->toBe('demo')
+        ->and(DemoMode::onDemoDatabase())->toBeFalse();
+
+    expect((bool) DB::connection('demo')->table('teams')->where('id', $company->id)->value('is_test_company'))->toBeTrue();
 });

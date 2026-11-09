@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 use Laravel\Jetstream\Events\TeamCreated;
 use Laravel\Jetstream\Events\TeamDeleted;
 use Laravel\Jetstream\Events\TeamUpdated;
@@ -260,7 +261,7 @@ class Company extends JetstreamTeam
     {
         // Every company made in the demo database is a test company from the start (ADR-077), not flagged afterwards.
         static::creating(function (self $company): void {
-            if (DemoMode::onDemoDatabase()) {
+            if (($company->getConnectionName() ?? DB::getDefaultConnection()) === DemoMode::CONNECTION) {
                 $company->is_test_company = true;
             }
         });

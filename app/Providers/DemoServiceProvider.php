@@ -6,12 +6,14 @@ namespace App\Providers;
 
 use App\Support\Demo\DemoMode;
 use App\Support\Demo\DemoSessionHandler;
+use App\Support\Demo\DemoSessions;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
@@ -83,6 +85,9 @@ final class DemoServiceProvider extends ServiceProvider
                 DemoMode::leave();
             }
         });
+
+        // The heartbeat of a running build: every query it makes keeps its "building" key alive (ADR-077).
+        DB::listen(fn () => DemoSessions::heartbeat());
 
         // A guest's session handler stores no IP address and no browser name.
         Session::extend('demo-database', fn ($app): DemoSessionHandler => new DemoSessionHandler(

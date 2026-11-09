@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * The visitor's side of a demo (ADR-077): ask for one, wait while it is
@@ -28,7 +29,16 @@ final class DemoSessions
 
     public const string FAILED = 'failed';
 
-    private const string BUILDING_COUNT = 'demo:building';
+    private const string BUILDING_PREFIX = 'demo:building:';
+
+    /** A running build keeps its key alive by a heartbeat; a dead worker's key runs out within this many seconds. */
+    private const int BUILDING_TTL = 180;
+
+    private static ?string $beating = null;
+
+    private static bool $inHeartbeat = false;
+
+    private static int $lastBeat = 0;
 
     private const int KEEP_SECONDS = 3600;
 
@@ -75,8 +85,7 @@ final class DemoSessions
             $token = Str::random(40);
 
             self::store()->put(self::key($token), ['status' => self::BUILDING, 'industry' => $industry, 'session' => self::bind($sessionId)], self::KEEP_SECONDS);
-            self::store()->add(self::BUILDING_COUNT, 0, self::KEEP_SECONDS);
-            self::store()->increment(self::BUILDING_COUNT);
+            self::beat($token);
 
             BuildDemoCompany::dispatch($token, $industry)->onConnection(DemoMode::CONNECTION);
 
@@ -107,9 +116,47 @@ final class DemoSessions
         self::store()->put(self::key($token), ['status' => self::FAILED, 'industry' => $state['industry'] ?? '', 'session' => $state['session'] ?? ''], self::KEEP_SECONDS);
     }
 
-    public static function finishedBuilding(): void
+    public static function finishedBuilding(string $token): void
     {
-        self::store()->put(self::BUILDING_COUNT, max(0, (int) self::store()->get(self::BUILDING_COUNT) - 1), self::KEEP_SECONDS);
+        self::stopBeating();
+        self::store()->forget(self::buildingKey($token));
+    }
+
+    /** Marks the build of $token as running for another BUILDING_TTL seconds. */
+    public static function beat(string $token): void
+    {
+        self::store()->put(self::buildingKey($token), 1, self::BUILDING_TTL);
+    }
+
+    /** From now on any query of this process (the build's) refreshes the build's key, at most every ten seconds. */
+    public static function startBeating(string $token): void
+    {
+        self::$beating = $token;
+        self::$lastBeat = now()->getTimestamp();
+    }
+
+    public static function stopBeating(): void
+    {
+        self::$beating = null;
+    }
+
+    /** Called for every query (a listener): cheap when no build runs here, and never re-entrant. */
+    public static function heartbeat(): void
+    {
+        if (self::$beating === null || self::$inHeartbeat || now()->getTimestamp() - self::$lastBeat < 10) {
+            return;
+        }
+
+        self::$inHeartbeat = true;
+
+        try {
+            self::$lastBeat = now()->getTimestamp();
+            self::beat(self::$beating);
+        } catch (Throwable) {
+            // A heartbeat never breaks the build's own queries (the cache table is missing while the database is rebuilt).
+        } finally {
+            self::$inHeartbeat = false;
+        }
     }
 
     /**
@@ -159,14 +206,13 @@ final class DemoSessions
     /** The guest a grant opens, once. Call it on the demo connection. */
     public static function claim(string $grant): ?User
     {
+        // Read and forget in one step: the same grant can never log in twice, however two requests race.
         /** @var ?array{user_id: int} $open */
-        $open = self::store()->get(self::openKey($grant));
+        $open = self::store()->pull(self::openKey($grant));
 
         if (! is_array($open)) {
             return null;
         }
-
-        self::store()->forget(self::openKey($grant));
         $guest = User::query()->find($open['user_id']);
 
         if (! $guest instanceof User) {
@@ -184,9 +230,20 @@ final class DemoSessions
         return DB::connection(DemoMode::CONNECTION)->table('demo_sessions')->where('expires_at', '>', now())->count();
     }
 
+    /** Builds that are running: the keys of the builds that have beaten within the last BUILDING_TTL seconds. */
     public static function building(): int
     {
-        return max(0, (int) self::store()->get(self::BUILDING_COUNT));
+        $prefix = (string) config('cache.stores.'.DemoMode::CONNECTION.'.prefix').self::BUILDING_PREFIX;
+
+        return DB::connection(DemoMode::CONNECTION)->table('cache')
+            ->where('key', 'like', str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $prefix).'%')
+            ->where('expiration', '>', now()->getTimestamp())
+            ->count();
+    }
+
+    private static function buildingKey(string $token): string
+    {
+        return self::BUILDING_PREFIX.hash('sha256', $token);
     }
 
     private static function bind(string $sessionId): string

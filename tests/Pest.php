@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Support\Demo\DemoDatabase;
 use App\Support\Demo\DemoMode;
+use App\Support\Demo\DemoSessions;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -35,4 +36,5 @@ pest()->beforeEach(function () {
     }
 
     DemoDatabase::stopDraining();
+    DemoSessions::stopBeating();
 })->in('Feature/Demo');
