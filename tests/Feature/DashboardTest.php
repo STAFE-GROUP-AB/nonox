@@ -85,8 +85,9 @@ it('uses a fixed number of queries', function () {
     // module that keeps an archive (payroll, staff ledger, boardroom) to decide whether its archive link shows, one per Livewire
     // component for the role fingerprint (LivewireCompanyGuard), the getting started steps and one for the overview's own fingerprint.
     // Cold also includes one lookup of reported VAT periods for Nästa datum (DeadlineCompletion), whatever the history,
-    // and Momsbufferten's fiscal-year lookup (it reads the balances only when a year has begun).
-    expect($cold)->toBeLessThan(48)
+    // and Momsbufferten's fiscal-year lookup (it reads the balances only when a year has begun), and one lookup of the
+    // waiting-list entry that let the user in (PersonalChecklist, ADR-038 addendum).
+    expect($cold)->toBeLessThan(49)
         ->and($warm)->toBeLessThan(17);
 });
 

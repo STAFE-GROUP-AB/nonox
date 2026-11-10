@@ -35,7 +35,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // callback runs before .env is loaded, so env() would always be empty.
 
         // The start page's migrate button works before the sessions table exists; it is guarded by a signed URL instead.
-        $middleware->validateCsrfTokens(except: ['start/uppdatera-databasen']);
+        // The one-click "Inga fler påminnelser" of a mail client posts without a session; the signed URL is the proof (ADR-038 addendum).
+        $middleware->validateCsrfTokens(except: ['start/uppdatera-databasen', 'ko/inga-paminnelser/*']);
 
         $middleware->web(prepend: [
             // First: a guest's request switches to the demo database before the session starts (ADR-077).

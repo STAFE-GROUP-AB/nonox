@@ -167,10 +167,11 @@ it('approves an entry only with a fresh passkey: creates the user, mails them an
 });
 
 it('mails the approval in Swedish with a link to /logga-in', function () {
-    $html = (new WaitlistApprovedMail('Kim'))->render();
+    $entry = WaitlistEntry::factory()->create(['name' => 'Kim Exempel']);
+    $html = (new WaitlistApprovedMail($entry))->render();
 
-    expect($html)->toContain('Välkommen in, Kim!')->toContain(route('login'))->toContain('1 februari 2027');
-    expect((new WaitlistApprovedMail('Kim'))->envelope()->subject)->toBe('Du är godkänd – logga in i NONOX');
+    expect($html)->toContain('Hej Kim, du är inne!')->toContain(route('login'))->toContain('1 februari 2027');
+    expect((new WaitlistApprovedMail($entry))->envelope()->subject)->toBe('Du är godkänd – logga in i NONOX');
 });
 
 it('lets an approved applicant log in with a code and sends them on to create their company', function () {

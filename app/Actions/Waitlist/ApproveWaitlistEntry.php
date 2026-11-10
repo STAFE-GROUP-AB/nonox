@@ -29,7 +29,9 @@ class ApproveWaitlistEntry
     {
         HqAccess::ensure($admin);
 
-        $user = DB::transaction(function () use ($admin, $entry, $note): User {
+        $sendWelcome = true;
+
+        $user = DB::transaction(function () use ($admin, $entry, $note, &$sendWelcome): User {
             $entry = WaitlistEntry::query()->lockForUpdate()->findOrFail($entry->id);
 
             if (! $entry->status->isOpen()) {
@@ -45,7 +47,15 @@ class ApproveWaitlistEntry
                 'decided_at' => now(),
                 'decision_note' => self::note($note),
                 'approved_user_id' => $user->id,
+                'approved_user_existed' => $existing !== null,
             ]);
+
+            // One welcome mail per user: an earlier approved entry of the same user has already sent it.
+            $sendWelcome = ! WaitlistEntry::query()
+                ->where('approved_user_id', $user->id)
+                ->where('status', WaitlistStatus::Approved->value)
+                ->whereKeyNot($entry->id)
+                ->exists();
 
             // No personal details in the append-only audit log: the entry itself can be deleted later.
             Audit::instance('waitlist.approved', $entry, ['user_id' => $user->id, 'user_created' => $existing === null], $admin);
@@ -53,7 +63,9 @@ class ApproveWaitlistEntry
             return $user;
         });
 
-        Mail::to($user->email)->queue(new WaitlistApprovedMail($entry->name));
+        if ($sendWelcome) {
+            Mail::to($user->email)->queue(new WaitlistApprovedMail($entry));
+        }
 
         return $user;
     }

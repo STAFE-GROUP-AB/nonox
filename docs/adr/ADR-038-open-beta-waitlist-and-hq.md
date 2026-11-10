@@ -214,3 +214,108 @@ applicant; see ADR-044.
   needs no passkey step beyond the one the session already passed" above:
   there is now always such a step. Decisions still need the fresh
   confirmation of `HqAccess::confirm`.
+
+## Addendum (2026-11-10): onboarding after approval
+
+What follows an approval used to be one generic mail and an empty form. It is
+now built from the answers on the waiting list (decided by the project owner).
+
+- **Welcome mail.** `WaitlistApprovedMail` takes the entry and is written to
+  the person: their first name and the company's name; a next step by
+  `current_system` (Fortnox: the automatic move at `/flytt/fortnox` and the
+  manual article; another program: a SIE file and importing the registers at
+  `/bokforing/las-in-uppgifter`; no program or "Kalkylblad eller papper":
+  start from scratch); payroll and moving payroll data when `employees` is not
+  "inga"; and the modules that suit the industry, each linked to its manual
+  section. The sender is the instance's normal address, Reply-To is
+  `config('nonox.waitlist.reply_to')` (`andreas@stafegroup.com`), the signature
+  is "Med vänliga hälsningar, Andreas Kviby", a line under the body says who
+  the sender is and where a reply goes, and the beta and 1.0 sentence keeps its
+  date from `nonox.launch_date`. No booking link. `OnboardingPlan` is the one
+  place that turns the answers into a plan, so the mail, the checklist and the
+  help mail cannot disagree. The module suggestions are a fixed map from
+  industry to module keys; a key is only used if the registry has it and, for a
+  module offered to some companies only, if the company is offered it.
+- **Prefilled `/kom-igang`.** `CreateCompanyForm` fills in name, organisation
+  number and industry from the user's approved entry (`approved_user_id`), all
+  of it editable, and runs the existing company lookup on the number (ADR-035),
+  which proposes address and legal form and lists what differs from the name
+  the user wrote.
+- **Kom igång checklist.** `PersonalChecklist` adds "Flytta från Fortnox" right
+  after "Skapa företaget" for a Fortnox user, "Lägg upp lön och anställda" when
+  there are employees, and "Slå på modulerna för din bransch" (names the modules
+  that are offered and not yet on, links to Inställningar → Moduler) when the
+  industry is known, from the company or else the entry. A company with no entry
+  and no industry sees the standard list. One extra query on the overview.
+- **Two follow-up mails.** `waitlist:send-onboarding-reminders` runs daily at
+  09:20: (a) two days after approval to someone with no sign-in and no company;
+  (b) five days after the company was created if no SIE import or register
+  import has finished and no Fortnox move has started. Each is sent at most once
+  per entry (`login_reminder_sent_at`, `help_reminder_sent_at`, checked again
+  under a row lock and stamped in the same transaction as the queueing), nothing
+  goes out later than 14 days after the approval, and never to an entry that is
+  not approved, is deleted or has opted out. Every mail carries "Inga fler
+  påminnelser": a signed, non-expiring one-click link to
+  `/ko/inga-paminnelser/{entry}` that sets `reminders_opted_out_at` (GET, and POST
+  for `List-Unsubscribe-Post`, which is exempt from CSRF; the signature is the
+  proof), also as the `List-Unsubscribe` header. A link to a deleted entry gets
+  the same answer. The audit log gets ids only: `waitlist.reminder_sent`
+  (`entry_id`, `kind`), `waitlist.reminders_opted_out`, `hq.onboarding_viewed`.
+- **HQ → Introduktion** (`/hq/introduktion`, `OnboardingProgress`): per approved
+  entry the approval date, signed in, company created, bookkeeping moved in,
+  first invoice sent and the reminders sent, filterable on each step and
+  sortable so the owner sees who to call. "Signed in" is an `auth.signed_in`
+  entry after the approval, "company created" a company the approved user owns,
+  created after the approval, "moved in" as above, "first invoice" an invoice
+  with a number. The facts are subqueries of the list query, so it costs the
+  same number of queries for 5 and for 50 entries (tested). Only presence and
+  dates are read, never amounts.
+
+Review amendments (2026-11-10):
+
+- The help mail goes out only for a company with nothing in it: no finished
+  import, no Fortnox move, no posted voucher and no issued invoice. The login
+  reminder is skipped when the approval reused an existing user
+  (`approved_user_existed`) or the person already owned a company.
+- A user gets one welcome mail and one set of reminders: a later approved entry
+  of the same user sends nothing. The mails keep plain values, not the entry,
+  so a deleted entry does not break a queued mail.
+- The sender is neutral by default: `WAITLIST_REPLY_TO` and `WAITLIST_SIGNATURE`
+  are empty, replies then go to `MAIL_FROM_ADDRESS` and the mails are signed
+  with the app name; the operator sets real values per instance.
+- Values the applicant wrote are escaped for Markdown before they enter a mail.
+- "Inga fler påminnelser": a GET shows a button, a POST (the button, or a mail
+  client's one-click per RFC 8058) opts out, and the audit row is written
+  without IP address and user agent. The signed link is built from `APP_URL`.
+- The form on `/kom-igang` (not `/foretag/nytt`) is prefilled, only for someone
+  who owns no company created since the approval, and the register lookup runs
+  once per number and session. The checklist additions apply only to a company
+  the person owns and created after the approval.
+- Module suggestions are service information: all NONOX modules are included at
+  no extra cost, and the mails never suggest a paid NONOX Connect service
+  (marknadsföringslagen (2008:486) 19 § is the rule to check, not the LEK).
+- The reminders start at the deploy, and the privacy policy text that describes
+  them is published at the same time. That is information under art. 13, not a
+  change of terms for existing users.
+
+Module suggestions per industry (2026-11-10, decided by the owner): each
+suggestion carries a one-sentence reason, in the mail and, for the first
+three, in the checklist step. Order: café and restaurant: personalliggare,
+payroll (with Min sida), planning, kassakopplingar, kök, lager, inkorg; hair and
+beauty: personalliggare, payroll, planning, kassakopplingar, lager, inkorg;
+crafts: arbetsorder, payroll (with the mileage log), planning, inkorg, AI;
+retail: kassakopplingar, lager, payroll, planning, inkorg; consultant: CRM,
+inkorg, AI, payroll; accounting firm and finance consultant: inkorg and CRM
+plus a pointer to Mina företag (core, not a module); other: inkorg, AI, payroll.
+With no employees payroll and planning are left out; the staff ledger stays for
+café, restaurant and hair and beauty, worded "Krav i branschen – gäller även
+ägaren i vissa fall". The customer portal is not live and is never suggested.
+`TODO(legal-verify)`: that wording, and that NONOX's staff ledger does not cover
+construction sites, so crafts are not offered it.
+
+Consequences: the data is the waiting list's own (ADR-038 §2) used for the
+service the person asked for. The register of processing, the retention list
+and the privacy policy (version 1.8) say so. `TODO(legal-verify)`: whether the
+reminders and module suggestions are service information and not direct
+marketing under 19 § marknadsföringslagen (2008:486);
+the opt-out and `List-Unsubscribe` are offered either way.
