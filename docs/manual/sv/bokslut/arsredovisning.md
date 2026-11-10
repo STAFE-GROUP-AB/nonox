@@ -1,5 +1,5 @@
 ---
-beskrivning: Upprätta årsredovisningen enligt K2 för aktiebolag och ekonomiska föreningar, och för ett mindre aktiebolag vars räkenskapsår följer K3 (beta). Siffrorna kommer från bokföringen; du skriver texterna och laddar ner en PDF.
+beskrivning: Årsredovisningen enligt K2, och för ett mindre aktiebolag som följer K3 (beta). Siffrorna kommer från bokföringen; du skriver texterna och laddar ner en PDF.
 ordning: 90
 roller: [owner, admin, accountant]
 rutter: [accounting.annualReport, accounting.annualReport.show, accounting.annualReport.pdf, accounting.annualReport.ixbrl]
