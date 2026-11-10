@@ -69,6 +69,10 @@ class AnalyzeDocument
      */
     public static function mayUseWhenOn(User $user, Company $company): bool
     {
+        if (! $user->ownsTeam($company) && ! $user->belongsToTeam($company)) {
+            return false;
+        }
+
         $role = $user->ownsTeam($company) ? 'owner' : $user->teamRole($company)?->key;
 
         if ($role === null) {

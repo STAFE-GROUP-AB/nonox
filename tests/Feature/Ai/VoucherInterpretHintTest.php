@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Livewire\Accounting\VoucherEditor;
+use App\Models\User;
+use App\Modules\Ai\Actions\AnalyzeDocument;
 use App\Modules\Ai\AiModule;
 use App\Modules\ModuleManager;
 use App\Support\Demo\DemoMode;
@@ -45,13 +47,15 @@ it('shows the sentence without the link to a bookkeeper, who may use NONOX AI bu
         ->assertDontSee(modulesTabUrl());
 });
 
-it('shows nothing to a role that would not get NONOX AI, even while the module is off', function (string $role) {
-    $member = Bookkeeping::member($this->company, $role);
+it('tells whether a person would get NONOX AI once the module is on, by role', function () {
+    $company = $this->company->fresh();
 
-    Livewire::actingAs($member)->test(VoucherEditor::class)
-        ->assertDontSee(INTERPRET_HINT)
-        ->assertDontSee(INTERPRET_LINK);
-})->with(['approver', 'auditor']);
+    expect(AnalyzeDocument::mayUseWhenOn($this->owner, $company))->toBeTrue()
+        ->and(AnalyzeDocument::mayUseWhenOn(Bookkeeping::member($company, 'bookkeeper'), $company->fresh()))->toBeTrue()
+        ->and(AnalyzeDocument::mayUseWhenOn(Bookkeeping::member($company, 'approver'), $company->fresh()))->toBeFalse()
+        ->and(AnalyzeDocument::mayUseWhenOn(Bookkeeping::member($company, 'auditor'), $company->fresh()))->toBeFalse()
+        ->and(AnalyzeDocument::mayUseWhenOn(User::factory()->create(), $company->fresh()))->toBeFalse();
+});
 
 it('shows neither the sentence nor the link once NONOX AI is on', function () {
     app(ModuleManager::class)->enable(AiModule::KEY, $this->company, $this->owner);
