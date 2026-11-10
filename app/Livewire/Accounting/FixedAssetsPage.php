@@ -406,7 +406,7 @@ class FixedAssetsPage extends Component
             ->with(['acquisitionVoucher.series', 'supplierInvoice', 'additions.voucher.series', 'additions.supplierInvoice'])
             ->orderBy('status')->orderBy('number')->get();
         $adding = $this->adding === null ? null : $list->firstWhere('id', $this->adding);
-        $candidates = $adding === null ? collect() : FixedAssets::additionCandidates($adding);
+        $candidates = $adding === null ? collect() : FixedAssets::additionCandidates($this->company(), $adding);
         // Components are listed under their asset, from the same query.
         $children = $list->whereNotNull('parent_id')->groupBy('parent_id');
         $split = $this->splitting === null ? null : $list->firstWhere('id', $this->splitting);
@@ -446,7 +446,7 @@ class FixedAssetsPage extends Component
      * value, and from which month and over how many months it is written off.
      *
      * @param  Collection<int, VoucherRow>  $candidates
-     * @return array{amount: int, total: int, from: string, life: int, depreciates: bool}|null
+     * @return array{amount: int, total: int, from: string, life: int, depreciates: bool, manual: bool}|null
      */
     private function additionReview(FixedAsset $asset, Collection $candidates): ?array
     {
@@ -465,6 +465,7 @@ class FixedAssetsPage extends Component
             'from' => $terms['from']->format('Y-m'),
             'life' => $terms['life'],
             'depreciates' => $asset->depreciates(),
+            'manual' => $asset->acquisition_voucher_id === null && $asset->supplier_invoice_id === null,
         ];
     }
 

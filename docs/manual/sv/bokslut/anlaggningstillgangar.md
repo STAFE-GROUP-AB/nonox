@@ -73,6 +73,7 @@ Läggs ett inköp till efter att tillgången har börjat skrivas av, skrivs belo
 
 > [!IMPORTANT]
 > Om ett tillägg efter att avskrivningen har börjat ska skrivas av över den återstående nyttjandeperioden eller över en egen period är en bedömning, och reglerna i K2 och K3 är inte juridiskt kontrollerade i NONOX. Fråga din redovisningskonsult om tillägget är stort.
+> Följer företaget K3 och har ett betydande tillägg en väsentligt annan nyttjandeperiod än resten av tillgången, ska det i regel vara en egen komponent – använd **Dela upp i komponenter** – i stället för att skrivas av tillsammans med tillgången.
 
 ### Det här går inte
 
@@ -81,7 +82,14 @@ Läggs ett inköp till efter att tillgången har börjat skrivas av, skrivs belo
 - Inköp i ett stängt räkenskapsår eller i en låst period kan inte läggas till.
 - Är tillgångens nyttjandeperiod slut, lägg in inköpet som en egen tillgång.
 - En tillgång som är uppdelad i komponenter tar inte emot inköp; lägg till inköpet i den komponent det hör till.
-- När tillgången har tillägg är **Anskaffningsvärde, kr** summan av inköpen och kan inte ändras under **Ändra**. Ett tillägg kan inte tas bort.
+- Ett inköp som redan finns i registret erbjuds inte: varken raden en tillgång eller ett tillägg gjordes av, registrets egna verifikationer (avskrivningar, omföring vid uppdelning, avyttring) eller – under kontantmetoden – betalningen av en leverantörsfaktura som redan blev en tillgång eller ett tillägg. Lades tillgången in i registret utan verifikation påminner **Det här händer** om att kontrollera att inköpet inte redan ingår.
+- När tillgången har tillägg är **Anskaffningsvärde, kr** summan av inköpen och kan inte ändras under **Ändra**. **Restvärde, kr** ska vara mindre än anskaffningsvärdet utan de inköp som skrivs av från en senare månad.
+- Tillgången kan inte säljas eller utrangeras med ett datum före det senaste inköpet som lades till.
+- En verifikation som en tillgång eller ett tillägg bygger på kan inte rättas, och ett tillägg kan inte tas bort.
+
+### Om ett inköp lades till av misstag
+
+Ett tillägg går ännu inte att ta bort eller backa i registret. Granska därför rutan **Det här händer** innan du klickar på **Lägg till i tillgången**. Har det ändå blivit fel, bokför inga egna rättelser på tillgångskontot – då stämmer registret och bokföringen inte längre överens. Prata med din redovisningskonsult om hur felet ska hanteras. Möjligheten att backa ett tillägg i registret tillsammans med en rättelse i bokföringen finns inte ännu.
 
 ## Så här bokför du månadens avskrivningar
 

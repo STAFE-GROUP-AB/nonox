@@ -135,8 +135,8 @@
                                     </span>
                                     @if($asset->additions->isNotEmpty())
                                         <span class="block text-xs text-gray-500" data-asset-sources>{{ __('Anskaffad med flera inköp:') }}
-                                            @foreach([$asset->acquisitionVoucher, ...$asset->additions->map(fn ($addition) => $addition->voucher)->all()] as $source)
-                                                @if($source)<a href="{{ route('accounting.vouchers.show', $source) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $source->reference() }}</a>@unless($loop->last),@endunless @endif
+                                            @foreach([$asset->acquisitionVoucher ?? $asset->supplierInvoice, ...$asset->additions->map(fn ($addition) => $addition->voucher ?? $addition->supplierInvoice)->all()] as $source)
+                                                @if($source instanceof \App\Models\Voucher)<a href="{{ route('accounting.vouchers.show', $source) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $source->reference() }}</a>@elseif($source instanceof \App\Models\SupplierInvoice)<a href="{{ route('payables.invoices.show', $source) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $source->title() }}</a>@else{{ __('Inlagd i registret') }}@endif{{ $loop->last ? '' : ',' }}
                                             @endforeach
                                         </span>
                                     @elseif($asset->acquisitionVoucher)
@@ -199,6 +199,9 @@
                                                             <li>{{ __('Beloppet skrivs av från :month över återstående :count månader av nyttjandeperioden.', ['month' => $additionReview['from'], 'count' => $additionReview['life']]) }}</li>
                                                         @endif
                                                         <li>{{ __('Bokförda avskrivningar ändras inte, och tillägget kan inte tas bort.') }}</li>
+                                                        @if($additionReview['manual'])
+                                                            <li class="font-medium text-amber-800">{{ __('Tillgången lades in i registret utan koppling till en verifikation. Kontrollera att inköpet inte redan ingår i dess anskaffningsvärde, annars räknas det två gånger.') }}</li>
+                                                        @endif
                                                     </ul>
                                                     <div class="mt-3 flex items-center gap-4">
                                                         <x-button type="button" wire:click="addPurchase" wire:loading.attr="disabled">{{ __('Lägg till i tillgången') }}</x-button>

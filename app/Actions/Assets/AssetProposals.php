@@ -64,7 +64,7 @@ class AssetProposals
             $label = __('Rad :line: anläggningstillgången:', ['line' => (int) $line + 1]);
 
             if (! blank($proposal['add_to'] ?? null)) {
-                $addition = $this->cleanAddition($proposal);
+                $addition = $this->cleanAddition($proposal, $eligible[(int) $line]);
 
                 if (is_string($addition)) {
                     $errors["rows.{$line}.asset"] = "{$label} {$addition}";
@@ -259,7 +259,6 @@ class AssetProposals
     {
         return self::proposalsFor($draft)->get()->mapWithKeys(fn (FixedAssetProposal $proposal): array => [$proposal->line => self::addsTo($proposal) !== null ? [
             'add_to' => (string) self::addsTo($proposal),
-            'acquisition' => (string) ($proposal->data['acquisition'] ?? ''),
         ] : [
             'name' => (string) ($proposal->data['name'] ?? ''),
             'category' => (string) ($proposal->data['category'] ?? AssetCategory::Equipment->value),
@@ -302,31 +301,35 @@ class AssetProposals
     }
 
     /**
-     * An addition proposal: the asset (active, in this company) and an
-     * optional value. The error message when it cannot be read.
+     * An addition proposal: an active asset in this company, not split into
+     * components, on the row's account. The amount is always the row's. The
+     * error message when it cannot be used.
      *
      * @param  array<string, mixed>  $proposal
-     * @return array{add_to: int, acquisition: string}|string
+     * @return array{add_to: int}|string
      */
-    private function cleanAddition(array $proposal): array|string
+    private function cleanAddition(array $proposal, int $account): array|string
     {
         $assetId = $proposal['add_to'];
+        $asset = is_numeric($assetId) ? FixedAsset::query()->whereKey((int) $assetId)->first(['id', 'status', 'asset_account']) : null;
 
-        if (! is_numeric($assetId) || ! FixedAsset::query()->whereKey((int) $assetId)->where('status', FixedAsset::ACTIVE)->exists()) {
+        if ($asset === null) {
             return __('Välj en tillgång i registret att lägga till inköpet i.');
         }
 
-        $acquisition = trim((string) ($proposal['acquisition'] ?? ''));
-
-        try {
-            if ($acquisition !== '' && Money::parse($acquisition)->ore <= 0) {
-                return __('Anskaffningsvärdet ska vara större än noll.');
-            }
-        } catch (InvalidArgumentException) {
-            return __('Beloppet går inte att läsa. Skriv till exempel 12 500 eller 12 500,50.');
+        if ($asset->isSplit()) {
+            return __('Tillgången är uppdelad i komponenter. Lägg till inköpet i den komponent det hör till.');
         }
 
-        return ['add_to' => (int) $assetId, 'acquisition' => $acquisition];
+        if ($asset->status !== FixedAsset::ACTIVE) {
+            return __('Tillgången är avyttrad, och inget kan läggas till i den.');
+        }
+
+        if ($asset->asset_account !== $account) {
+            return __('Inköpet är bokfört på konto :row men tillgången på :asset. Lägg bara till inköp som är bokförda på tillgångens konto.', ['row' => $account, 'asset' => $asset->asset_account]);
+        }
+
+        return ['add_to' => $asset->id];
     }
 
     /**
@@ -336,11 +339,10 @@ class AssetProposals
      */
     private function add(User $user, Company $company, FixedAssetProposal $proposal, int $account, int $amountOre, CarbonImmutable $date, array $links): void
     {
-        $acquisition = (string) ($proposal->data['acquisition'] ?? '');
-
         try {
             // Resolved here: FixedAssets books through PostVoucher, which itself adds through this class.
-            app(FixedAssets::class)->addFromPurchase($user, $company, (int) self::addsTo($proposal), $account, $acquisition !== '' ? Money::parse($acquisition)->ore : $amountOre, $date, $links);
+            // The row's own amount: the register then always equals the purchase as booked.
+            app(FixedAssets::class)->addFromPurchase($user, $company, (int) self::addsTo($proposal), $account, $amountOre, $date, $links);
         } catch (ValidationException $exception) {
             throw ValidationException::withMessages(["rows.{$proposal->line}.asset" => __('Rad :line: inköpet kunde inte läggas till i tillgången: :reason', [
                 'line' => $proposal->line + 1,
@@ -357,6 +359,8 @@ class AssetProposals
     private function create(User $user, Company $company, FixedAssetProposal $proposal, int $account, int $amountOre, string $date, ?CostCenter $costCenter, array $links): FixedAsset
     {
         $data = $proposal->data;
+        $acquisition = (string) ($data['acquisition'] ?? '');
+        $life = (int) ($data['life_months'] ?? 0);
         $category = AssetCategory::tryFrom($data['category'] ?? '') ?? AcquisitionAccounts::categoryFor($account);
         $acquiredOn = (string) ($data['acquired_on'] ?? '');
         $acquiredOn = $acquiredOn !== '' ? $acquiredOn : $date;
@@ -369,10 +373,10 @@ class AssetProposals
                 'name' => $data['name'] ?? '',
                 'category' => $category->value,
                 'acquired_on' => $acquiredOn,
-                'acquisition' => $data['acquisition'] !== '' ? $data['acquisition'] : Money::ofOre($amountOre)->format(withCurrency: false),
+                'acquisition' => $acquisition !== '' ? $acquisition : Money::ofOre($amountOre)->format(withCurrency: false),
                 'residual' => '',
                 'opening_accumulated' => '',
-                'life_months' => $data['life_months'] ?? 0,
+                'life_months' => $life,
                 'depreciation_start' => "{$start}-01",
                 'asset_account' => $account,
                 'accumulated_account' => $category->accounts()['accumulated'],
@@ -389,10 +393,10 @@ class AssetProposals
     }
 
     /**
-     * The draft's saved rows that are purchases on an acquisition account,
-     * by line.
+     * The draft's saved rows that are purchases on an acquisition account:
+     * their account number by line.
      *
-     * @return array<int, true>
+     * @return array<int, int>
      */
     private function eligibleLines(Company $company, Voucher|SupplierInvoice $draft): array
     {
@@ -402,7 +406,7 @@ class AssetProposals
         if ($draft instanceof Voucher) {
             foreach (VoucherRow::query()->where('voucher_id', $draft->id)->with('account')->orderBy('id')->get()->values() as $line => $row) {
                 if ($row->account instanceof Account && $this->isPurchase($accounts, $row->account->number, $row->debit_ore->ore, $row->credit_ore->ore)) {
-                    $eligible[(int) $line] = true;
+                    $eligible[(int) $line] = $row->account->number;
                 }
             }
 
@@ -415,7 +419,7 @@ class AssetProposals
 
         foreach (SupplierInvoiceRow::query()->where('supplier_invoice_id', $draft->id)->with('account')->orderBy('position')->get()->values() as $line => $row) {
             if ($row->account instanceof Account && $this->isPurchase($accounts, $row->account->number, $row->amount_ore->ore, 0)) {
-                $eligible[(int) $line] = true;
+                $eligible[(int) $line] = $row->account->number;
             }
         }
 

@@ -45,11 +45,7 @@
                                 <option :value="String(asset.id)" x-text="asset.label" :selected="String(asset.id) === item.row.asset.add_to"></option>
                             </template>
                         </select>
-                        <span class="mt-1 block font-normal text-gray-500">{{ __('Tillgångar på samma konto. Anskaffningsvärdet ökar med inköpet.') }}</span>
-                    </label>
-                    <label class="block text-xs font-medium text-gray-600">{{ __('Anskaffningsvärde, kr') }}
-                        <input type="text" inputmode="decimal" class="{{ $field }} mt-1 text-right tabular-nums" x-model="item.row.asset.acquisition" :placeholder="format(item.amount)">
-                        <span class="mt-1 block font-normal text-gray-500">{{ __('Tomt: radens belopp utan moms.') }}</span>
+                        <span class="mt-1 block font-normal text-gray-500">{{ __('Tillgångar på samma konto. Anskaffningsvärdet ökar med radens belopp utan moms.') }}</span>
                     </label>
                 </div>
             </template>

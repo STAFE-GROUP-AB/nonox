@@ -37,7 +37,6 @@ document.addEventListener('alpine:init', () => {
 
             item.row.asset = {
                 add_to: assets.length === 1 ? String(assets[0].id) : '',
-                acquisition: '',
             };
         },
 

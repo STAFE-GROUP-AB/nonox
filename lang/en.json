@@ -13408,7 +13408,6 @@
     "Raden hör redan till en tillgång i registret.": "The row already belongs to an asset in the register.",
     "Räkenskapsåret :year är stängt, och inget kan läggas till i tillgången från det.": "The fiscal year :year is closed, and nothing can be added to the asset from it.",
     "Summan av inköpen som tillgången består av.": "The sum of the purchases the asset is made of.",
-    "Tillgångar på samma konto. Anskaffningsvärdet ökar med inköpet.": "Assets on the same account. The acquisition value increases by the purchase.",
     "Tillgången är avyttrad, och inget kan läggas till i den.": "The asset has been disposed of, and nothing can be added to it.",
     "Tillgången är uppdelad i komponenter. Lägg till inköpet i den komponent det hör till.": "The asset is split into components. Add the purchase to the component it belongs to.",
     "Tillgångens nyttjandeperiod tog slut :month. Lägg in inköpet som en egen tillgång i stället.": "The asset's useful life ended in :month. Enter the purchase as an asset of its own instead.",
@@ -13417,5 +13416,11 @@
     "Välj tillgång": "Choose asset",
     "Välj verifikation": "Choose voucher",
     "skrivs av från :month": "depreciated from :month",
-    "Skrivs av från": "Depreciated from"
+    "Skrivs av från": "Depreciated from",
+    "Inköpet finns redan i anläggningsregistret, till exempel genom leverantörsfakturan det betalar eller registrets egen bokföring, och kan inte läggas till igen.": "The purchase is already in the fixed asset register, for example through the supplier invoice it pays or the register's own bookkeeping, and cannot be added again.",
+    "Det senaste inköpet lades till i tillgången :date. Tillgången kan inte avyttras före det.": "The latest purchase was added to the asset on :date. The asset cannot be disposed of before that.",
+    "Verifikationen bokför ett inköp som finns i anläggningsregistret (tillgång :numbers) och kan inte rättas. Ett inköp i registret går ännu inte att ta bort; läs i manualen under Anläggningsregistret hur du gör.": "The voucher posts a purchase that is in the fixed asset register (asset :numbers) and cannot be corrected. A purchase in the register cannot be removed yet; see the manual under the fixed asset register for what to do.",
+    "Restvärdet ska vara mindre än :amount, anskaffningsvärdet utan de inköp som skrivs av för sig från en senare månad.": "The residual value must be less than :amount, the acquisition value without the purchases depreciated separately from a later month.",
+    "Tillgångar på samma konto. Anskaffningsvärdet ökar med radens belopp utan moms.": "Assets on the same account. The acquisition value increases by the row's amount excluding VAT.",
+    "Tillgången lades in i registret utan koppling till en verifikation. Kontrollera att inköpet inte redan ingår i dess anskaffningsvärde, annars räknas det två gånger.": "The asset was entered in the register without a link to a voucher. Check that the purchase is not already part of its acquisition value, or it will be counted twice."
 }

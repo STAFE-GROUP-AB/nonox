@@ -73,7 +73,13 @@ final readonly class DepreciationPlan
         return $base;
     }
 
-    /** What the base plan writes off: the acquisition value less the separately planned additions, less residual. */
+    /**
+     * What the base plan writes off: the acquisition value less the
+     * separately planned additions, less the residual value, which stays on
+     * the base so an addition never changes a booked month. The register
+     * keeps the residual value below the base (FixedAssets), so the clamp
+     * at zero is never reached.
+     */
     private function baseDepreciableOre(): int
     {
         if ($this->lifeMonths <= 0) {

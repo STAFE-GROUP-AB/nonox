@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property ?string $voucher_id
  * @property ?string $supplier_invoice_id
  * @property int $line
- * @property array{name: string, category: string, acquisition: string, life_months: int, acquired_on: ?string, depreciation_start: ?string}|array{add_to: int, acquisition: string} $data the register's fields for a new asset, or add_to (an asset id) and acquisition to add the purchase to an existing one
+ * @property array{name: string, category: string, acquisition: string, life_months: int, acquired_on: ?string, depreciation_start: ?string}|array{add_to: int} $data the register's fields for a new asset, or add_to: the asset the purchase is added to, at the row's amount
  * @property int $created_by
  */
 class FixedAssetProposal extends Model

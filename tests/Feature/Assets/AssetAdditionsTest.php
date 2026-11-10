@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Actions\Accounting\CorrectVoucher;
 use App\Actions\Accounting\PostVoucher;
 use App\Actions\Accounting\SaveDraftVoucher;
 use App\Actions\Assets\FixedAssets;
+use App\Actions\Payables\ApproveSupplierInvoice;
+use App\Actions\Payables\PaySupplierInvoice;
 use App\Actions\Payables\RegisterSupplierInvoice;
 use App\Actions\Payables\SaveSupplier;
 use App\Actions\Payables\SaveSupplierInvoice;
@@ -15,6 +18,7 @@ use App\Models\FiscalYear;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetAddition;
 use App\Models\FixedAssetDepreciation;
+use App\Models\SupplierInvoice;
 use App\Models\Voucher;
 use App\Models\VoucherRow;
 use App\Support\Money\Money;
@@ -359,4 +363,168 @@ it('lists the register with a fixed number of queries however many additions the
     $few = $count(1, 1);
 
     expect($count(4, 5))->toBe($few);
+});
+
+/**
+ * A supplier invoice for 20 000 kr plus VAT on 1220, registered, approved and
+ * paid, with the given asset proposal on its row.
+ *
+ * @param  array<string, mixed>  $asset
+ */
+function paidFurnitureInvoice(array $asset, string $date = '2026-03-18'): SupplierInvoice
+{
+    $owner = test()->owner;
+    $company = test()->company;
+    $supplier = app(SaveSupplier::class)($owner, $company, ['name' => 'Möbelhuset AB', 'bankgiro' => '50501055', 'payment_terms_days' => 30]);
+    $draft = app(SaveSupplierInvoice::class)($owner, $company, [
+        'supplier_id' => $supplier->id, 'invoice_date' => $date, 'total' => '25 000', 'vat' => '5 000',
+        'rows' => [['account' => '1220', 'amount' => '20 000', 'description' => 'Konferensbord', 'asset' => $asset]],
+        'with_assets' => true,
+    ]);
+    $invoice = app(ApproveSupplierInvoice::class)($owner, app(RegisterSupplierInvoice::class)($owner, $draft));
+    app(PaySupplierInvoice::class)($owner, $invoice->fresh(), CarbonImmutable::parse('2026-04-02'), Money::parse('25 000'));
+
+    return $invoice->fresh();
+}
+
+it('never offers or adds the payment of a kontantmetoden invoice that already became the asset', function () {
+    $this->company->forceFill(['accounting_method' => 'KONTANTMETODEN', 'separate_supplier_approval' => false])->save();
+    $invoice = paidFurnitureInvoice(['name' => 'Konferensbord', 'category' => 'EQUIPMENT', 'acquisition' => '', 'life_months' => '60', 'acquired_on' => '', 'depreciation_start' => '']);
+    $asset = FixedAsset::query()->sole();
+    $paymentRow = VoucherRow::query()->whereHas('voucher', fn ($query) => $query->where('source_id', $invoice->id))->whereHas('account', fn ($query) => $query->where('number', 1220))->sole();
+
+    expect($asset->acquisition_voucher_row_id)->toBeNull()
+        ->and(FixedAssets::additionCandidates($this->company, $asset)->pluck('id')->all())->not->toContain($paymentRow->id)
+        ->and(fn () => $this->assets->addPurchase($this->owner, $this->company, $asset->id, $paymentRow->id))->toThrow(ValidationException::class, 'finns redan i anläggningsregistret');
+    expect($asset->fresh()->acquisition_ore->ore)->toBe(2_000_000);
+});
+
+it('never offers the payment of a kontantmetoden invoice that was added to an asset', function () {
+    $this->company->forceFill(['accounting_method' => 'KONTANTMETODEN', 'separate_supplier_approval' => false])->save();
+    $asset = kitchen();
+    $invoice = paidFurnitureInvoice(['add_to' => (string) $asset->id]);
+    $paymentRow = VoucherRow::query()->whereHas('voucher', fn ($query) => $query->where('source_id', $invoice->id))->whereHas('account', fn ($query) => $query->where('number', 1220))->sole();
+
+    expect(FixedAssetAddition::query()->sole()->voucher_row_id)->toBeNull()
+        ->and($asset->fresh()->acquisition_ore->ore)->toBe(8_000_000)
+        ->and(fn () => $this->assets->addPurchase($this->owner, $this->company, $asset->id, $paymentRow->id))->toThrow(ValidationException::class, 'finns redan i anläggningsregistret');
+    expect($asset->fresh()->acquisition_ore->ore)->toBe(8_000_000);
+});
+
+it('never offers the register\'s own reclassification of a split to the component it made', function () {
+    $this->company->forceFill(['reporting_framework' => 'K3'])->save();
+    FiscalYear::query()->update(['reporting_framework' => 'K3']);
+    $building = $this->assets->save($this->owner, $this->company, [
+        'name' => 'Fastigheten', 'category' => 'BUILDINGS', 'acquired_on' => '2026-01-01', 'acquisition' => '1 000 000',
+        'life_months' => '600', 'depreciation_start' => '2026-04-01', 'asset_account' => '1110', 'accumulated_account' => '1119', 'expense_account' => '7820',
+    ]);
+    $this->assets->addAccounts($this->owner, $this->company);
+    $split = $this->assets->split($this->owner, $this->company, $building->id, '2026-04-01', [
+        ['name' => 'Mark', 'kind' => 'land', 'cost' => '200 000'],
+        ['name' => 'Stomme', 'kind' => 'part', 'cost' => '800 000', 'life_months' => '600'],
+    ]);
+    $land = $split->components->firstWhere('name', 'Mark');
+    $reclassification = VoucherRow::query()->whereHas('account', fn ($query) => $query->where('number', 1130))->where('debit_ore', '>', 0)->sole();
+
+    expect(FixedAssets::additionCandidates($this->company, $land))->toHaveCount(0)
+        ->and(fn () => $this->assets->addPurchase($this->owner, $this->company, $land->id, $reclassification->id))->toThrow(ValidationException::class, 'finns redan i anläggningsregistret');
+});
+
+it('leaves rows in a locked period or a closed year out of the list', function () {
+    $asset = kitchen();
+    $locked = purchaseRow('2026-02-15', 100_000);
+    $open = purchaseRow('2026-04-15', 100_000);
+    $this->company->forceFill(['locked_until_date' => '2026-03-31'])->save();
+
+    expect(FixedAssets::additionCandidates($this->company->fresh(), $asset)->pluck('id')->all())->toBe([$open->id]);
+
+    FiscalYear::query()->update(['status' => 'CLOSED']);
+
+    expect(FixedAssets::additionCandidates($this->company->fresh(), $asset))->toHaveCount(0);
+});
+
+it('warns in the review when the asset was entered without a voucher', function () {
+    $asset = kitchen();
+    $row = purchaseRow('2026-03-15', 100_000);
+
+    Livewire::test(FixedAssetsPage::class)
+        ->call('startAddition', $asset->id)
+        ->set('additionRow', (string) $row->id)
+        ->call('reviewAddition')
+        ->assertSee('lades in i registret utan koppling till en verifikation');
+});
+
+it('always adds the row amount from a proposal and checks the asset when the draft is saved', function () {
+    $asset = kitchen();
+    $rows = fn (array $assetProposal, int $account = 1220): array => [
+        ['account' => $account, 'debit_ore' => 2_000_000, 'credit_ore' => 0, 'asset' => $assetProposal],
+        ['account' => 1930, 'debit_ore' => 0, 'credit_ore' => 2_000_000],
+    ];
+
+    expect(fn () => app(SaveDraftVoucher::class)($this->owner, $this->company, ['voucher_date' => '2026-03-20', 'description' => 'Maskin', 'rows' => $rows(['add_to' => (string) $asset->id], 1210), 'with_assets' => true]))
+        ->toThrow(ValidationException::class, 'konto 1210 men tillgången på 1220');
+
+    $draft = app(SaveDraftVoucher::class)($this->owner, $this->company, ['voucher_date' => '2026-03-20', 'description' => 'Diskmaskin', 'rows' => $rows(['add_to' => (string) $asset->id, 'acquisition' => '99']), 'with_assets' => true]);
+    app(PostVoucher::class)($this->owner, $draft);
+
+    expect(FixedAssetAddition::query()->sole()->amount_ore->ore)->toBe(2_000_000);
+});
+
+it('refuses an addition proposal for an asset split into components', function () {
+    $this->company->forceFill(['reporting_framework' => 'K3'])->save();
+    FiscalYear::query()->update(['reporting_framework' => 'K3']);
+    $asset = kitchen(['depreciation_start' => '2026-04-01']);
+    $this->assets->split($this->owner, $this->company, $asset->id, '2026-04-01', [
+        ['name' => 'Spis', 'kind' => 'part', 'cost' => '40 000', 'life_months' => '60'],
+        ['name' => 'Fläkt', 'kind' => 'part', 'cost' => '20 000', 'life_months' => '60'],
+    ]);
+
+    expect(fn () => app(SaveDraftVoucher::class)($this->owner, $this->company, [
+        'voucher_date' => '2026-04-20', 'description' => 'Diskmaskin',
+        'rows' => [
+            ['account' => 1220, 'debit_ore' => 2_000_000, 'credit_ore' => 0, 'asset' => ['add_to' => (string) $asset->id]],
+            ['account' => 1930, 'debit_ore' => 0, 'credit_ore' => 2_000_000],
+        ],
+        'with_assets' => true,
+    ]))->toThrow(ValidationException::class, 'uppdelad i komponenter');
+});
+
+it('keeps the residual value below the base plan so the plan never ends under it', function () {
+    $asset = kitchen(['acquisition' => '10 000', 'depreciation_start' => '2026-01-01']);
+    $this->assets->addPurchase($this->owner, $this->company, $asset->id, purchaseRow('2026-03-15', 5_000_000)->id);
+    $form = ['name' => 'Storköksutrustning', 'category' => 'EQUIPMENT', 'acquired_on' => '2026-01-10', 'acquisition' => '60 000', 'life_months' => '60', 'depreciation_start' => '2026-01-01', 'asset_account' => '1220', 'accumulated_account' => '1229', 'expense_account' => '7832'];
+
+    expect(fn () => $this->assets->save($this->owner, $this->company, [...$form, 'residual' => '20 000'], $asset->fresh()))
+        ->toThrow(ValidationException::class, 'Restvärdet ska vara mindre än');
+
+    $saved = $this->assets->save($this->owner, $this->company, [...$form, 'residual' => '2 000'], $asset->fresh());
+    $schedule = $saved->fresh()->plan()->schedule();
+
+    expect(end($schedule)['book_value'])->toBe(200_000);
+});
+
+it('uses the edited category when checking the additions', function () {
+    $asset = kitchen(['depreciation_start' => '2026-01-01', 'life_months' => '3']);
+    $this->assets->addPurchase($this->owner, $this->company, $asset->id, purchaseRow('2026-02-15', 100_000)->id);
+    $form = ['name' => 'Tomten', 'category' => 'LAND', 'acquired_on' => '2026-01-10', 'acquisition' => '61 000', 'life_months' => '0', 'depreciation_start' => '2026-01-01', 'asset_account' => '1220'];
+
+    expect($this->assets->save($this->owner, $this->company, $form, $asset->fresh())->category->value)->toBe('LAND');
+});
+
+it('refuses to correct a voucher that an asset or an addition rests on', function () {
+    $asset = kitchen();
+    $row = purchaseRow('2026-03-15', 100_000);
+    $this->assets->addPurchase($this->owner, $this->company, $asset->id, $row->id);
+
+    expect(fn () => app(CorrectVoucher::class)($this->owner, Voucher::query()->findOrFail($row->voucher_id), 'Fel'))
+        ->toThrow(ValidationException::class, 'finns i anläggningsregistret (tillgång 1)');
+    expect(Voucher::query()->findOrFail($row->voucher_id)->corrected_by_voucher_id)->toBeNull();
+});
+
+it('refuses a disposal dated before the last addition', function () {
+    $asset = kitchen();
+    $this->assets->addPurchase($this->owner, $this->company, $asset->id, purchaseRow('2026-03-15', 100_000)->id);
+
+    expect(fn () => $this->assets->dispose($this->owner, $asset->fresh(), '2026-03-10', '0'))
+        ->toThrow(ValidationException::class, 'kan inte avyttras före det');
 });

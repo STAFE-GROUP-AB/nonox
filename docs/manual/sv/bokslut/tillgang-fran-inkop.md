@@ -34,10 +34,9 @@ Kommer en investering på flera fakturor – en maskin som betalas i delar, elle
 
 1. Klicka på **Lägg till i befintlig tillgång** i stället för **Skapa anläggningstillgång**. Knappen visas när registret har en tillgång på samma konto som raden.
 2. Välj **Tillgång**. Bara tillgångar på radens konto finns i listan.
-3. Lämna **Anskaffningsvärde, kr** tomt för radens belopp utan moms, eller skriv ett eget belopp.
-4. Registrera fakturan eller bokför verifikationen.
+3. Registrera fakturan eller bokför verifikationen.
 
-Tillgångens anskaffningsvärde ökar med beloppet när inköpet bokförs. Vill du ångra innan dess, klicka på **Lägg inte till**. Ett inköp som redan är bokfört lägger du till under **Bokföring → Anläggningar** med **Lägg till inköp** – läs [Anläggningsregistret och avskrivningar](/manual/bokslut/anlaggningstillgangar#en-tillgang-av-flera-inkop).
+Tillgångens anskaffningsvärde ökar med radens belopp utan moms när inköpet bokförs. Vill du ångra innan dess, klicka på **Lägg inte till**. Ett inköp som redan är bokfört lägger du till under **Bokföring → Anläggningar** med **Lägg till inköp** – läs [Anläggningsregistret och avskrivningar](/manual/bokslut/anlaggningstillgangar#en-tillgang-av-flera-inkop).
 
 ## Det här händer
 

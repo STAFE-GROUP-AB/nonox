@@ -63,7 +63,7 @@ it('answers 404 from the page, also with a tampered id, and never lists another 
         ->call('addPurchase')
         ->assertNotFound();
 
-    $candidates = FixedAssets::additionCandidates($this->assetA);
+    $candidates = FixedAssets::additionCandidates($this->a, $this->assetA);
 
     expect($candidates->pluck('id')->all())->toBe([$this->rowA->id])
         ->and(FixedAssetAddition::query()->count())->toBe(0);

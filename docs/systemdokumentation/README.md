@@ -1837,9 +1837,17 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   bokför verifikationen eller registrerar fakturan), eller i registret med
   Lägg till inköp för en redan bokförd rad.
   - Raden ska vara i debet, på tillgångens eget tillgångskonto, i en bokförd
-    verifikation som inte är rättad, och inte redan höra till en tillgång
-    (`fixed_assets.acquisition_voucher_row_id`) eller ett tillägg
-    (`fixed_asset_additions.voucher_row_id`, unik). Tillgången ska vara aktiv;
+    verifikation som inte är rättad, och inte redan finnas i registret: inte
+    vara raden en tillgång (`fixed_assets.acquisition_voucher_row_id`) eller
+    ett tillägg (`fixed_asset_additions.voucher_row_id`, unik) gjordes av,
+    inte stå i en verifikation som registret självt bokförde (källa
+    FixedAsset: avskrivning, omföring vid uppdelning, avyttring), och inte stå
+    i en verifikation till en leverantörsfaktura som redan är en tillgång
+    eller ett tillägg utan egen rad (under kontantmetoden bokför betalningen
+    inköpet igen). Kontrollerna görs både i listan och när tillägget görs. En
+    tillgång som lades in utan verifikation har ingen länk; granskningen
+    påminner då om att inköpet kan ingå redan. Beloppet är alltid radens. I
+    listan visas bara rader i öppna räkenskapsår efter låsta perioder. Tillgången ska vara aktiv;
     en uppdelad tillgång tar inte emot tillägg (inköpet läggs till i en
     komponent), och en avyttrad inte heller. Dagen (verifikationens datum
     eller fakturadatum) ska ligga i ett öppet räkenskapsår och efter låsta
@@ -1851,7 +1859,13 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
     främmande nyckel mot tillgången omfattar `company_id`.
     `fixed_assets.acquisition_ore` är alltid summan: det första inköpet plus
     tilläggen. Har tillgången tillägg kan anskaffningsvärdet inte ändras i
-    formuläret.
+    formuläret. Restvärdet ligger på grundplanen, och medan planen kan ändras ska
+    det vara mindre än anskaffningsvärdet utan de tillägg som skrivs av från
+    en senare månad.
+  - En verifikation som en tillgång eller ett tillägg bygger på kan inte
+    rättas (CorrectVoucher nekar), och en avyttring kan inte dateras före det
+    senaste tillägget. Ett felaktigt tillägg kan ännu inte backas; ett
+    motsvarande negativt tillägg är planerat (ADR-010).
   - Avskrivning: ett tillägg i eller före första avskrivningsmånaden, när
     ingen månad är bokförd, ingår i planen från första månaden över hela
     nyttjandeperioden (en tillgång under uppbyggnad skrivs alltså av från den

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Accounting;
 
 use App\Actions\AnnualReport\VoidK3Transition;
+use App\Actions\Assets\FixedAssets;
 use App\Domain\Accounting\VoucherSource;
 use App\Models\Company;
 use App\Models\User;
@@ -52,6 +53,9 @@ class CorrectVoucher
 
             // A void K2-to-K3 transition stays void: its reversal cannot be undone (S1-P12).
             VoidK3Transition::refuseCorrection($original);
+
+            // An asset or addition in the register rests on this purchase; a reversal would leave it behind.
+            FixedAssets::refuseCorrection($original);
 
             $reversal = $original->rows->map(fn (VoucherRow $row): array => [
                 'account' => $row->account?->number,

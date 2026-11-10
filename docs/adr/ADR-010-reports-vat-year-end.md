@@ -713,9 +713,33 @@ finns särskilda skäl".
   booked depreciation month at the time (`booked_through`).
   `fixed_assets.acquisition_ore` stays the total, so book value, disposal,
   the balance sheet and the notes need no change.
+- **Residual value.** It stays on the base plan, so an addition never
+  changes a booked month. While the plan can change (nothing booked), the
+  residual value must stay below the acquisition value less the additions
+  written off from a later month; otherwise the base would be clamped at
+  zero and the plan would end below the residual value.
+- **Corrections.** A voucher that an asset or addition rests on (the voucher
+  it was made from, or under kontantmetoden a voucher of its supplier
+  invoice) cannot be corrected with CorrectVoucher: the reversal would leave
+  the register behind the ledger. A disposal cannot be dated before the last
+  addition.
+- **Follow-up.** A wrong addition cannot be undone yet. The intended design
+  is a reversing addition: a negative row in `fixed_asset_additions`, made
+  together with the correcting voucher and linked to it, written off
+  prospectively like any addition, so the table stays append-only and no
+  booked month changes.
 - **Rules.** The row must be a debit on the asset's own asset account, in a
-  posted, uncorrected voucher, and not already linked to an asset or an
-  addition (keeps the register equal to the ledger per account). The day must
+  posted, uncorrected voucher, and not already in the register: not the row
+  of an asset or addition, not in a voucher the register booked itself
+  (source FixedAsset: depreciation, a split's reclassification, a disposal),
+  and not in a voucher of a supplier invoice that already backs an asset or
+  addition without a row of its own (under kontantmetoden the payment
+  voucher books the purchase again). These are checked when the list is
+  built and again when the addition is made. They prevent the known double
+  counts; they do not make the register equal to the ledger by themselves:
+  an asset entered in the register without a voucher has no link, so the
+  review warns that its purchase may already be in its value. The amount is
+  always the row's (no override). The day must
   be in an open fiscal year and after the locked periods. A disposed asset
   and a split parent (K3 components) refuse additions; the purchase is added
   to the component instead, which keeps its carrying-amount plan. With
