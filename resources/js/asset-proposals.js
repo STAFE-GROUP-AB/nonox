@@ -3,7 +3,8 @@
  * create an asset in the register from a row booked to an acquisition
  * account. The proposal is kept on the row (row.asset) and saved with the
  * draft; the asset is created when the voucher is posted or the invoice is
- * registered.
+ * registered. A row can instead be added to an existing asset on the same
+ * account (row.asset.add_to): one investment from several purchases.
  */
 
 import { formatOre } from './money.js';
@@ -29,6 +30,23 @@ document.addEventListener('alpine:init', () => {
                 acquired_on: '',
                 depreciation_start: '',
             };
+        },
+
+        startAddition(item) {
+            const assets = this.assetsFor(item);
+
+            item.row.asset = {
+                add_to: assets.length === 1 ? String(assets[0].id) : '',
+                acquisition: '',
+            };
+        },
+
+        isAddition(item) {
+            return Boolean(item.row.asset) && Object.prototype.hasOwnProperty.call(item.row.asset, 'add_to');
+        },
+
+        assetsFor(item) {
+            return (this.settings.assets ?? []).filter((asset) => asset.account === item.account);
         },
 
         remove(item) {

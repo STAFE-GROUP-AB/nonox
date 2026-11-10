@@ -7,6 +7,7 @@ namespace App\Actions\Assets;
 use App\Actions\Accounting\BookVoucher;
 use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\VoucherSource;
+use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Assets\AcquisitionAccounts;
 use App\Domain\Assets\AssetCategory;
 use App\Domain\Assets\ComponentSplit;
@@ -18,14 +19,19 @@ use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\FiscalYear;
 use App\Models\FixedAsset;
+use App\Models\FixedAssetAddition;
 use App\Models\FixedAssetDepreciation;
+use App\Models\SupplierInvoice;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Models\VoucherRow;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -188,6 +194,10 @@ class FixedAssets
                 return $asset;
             }
 
+            if ($asset !== null && $asset->additions()->exists()) {
+                $this->assertPlanKeepsAdditions($asset, $acquisition, $life, CarbonImmutable::parse((string) $validated['depreciation_start'])->startOfMonth());
+            }
+
             $costCenter = blank($validated['cost_center'] ?? null) ? null : CostCenter::query()->where('code', $validated['cost_center'])->first()
                 ?? throw ValidationException::withMessages(['cost_center' => __('Kostnadsstället finns inte.')]);
 
@@ -238,6 +248,189 @@ class FixedAssets
     }
 
     /**
+     * Adds a posted voucher row to an existing asset: one investment built
+     * from several purchases. The row must be a purchase (debit only) on the
+     * asset's own account, not already linked to an asset or an addition, and
+     * not in a corrected voucher. The acquisition value grows by the row's
+     * amount; the depreciation already booked is left as it is
+     * (FixedAsset::additionTerms). Another company's asset or row answers 404.
+     */
+    public function addPurchase(User $user, Company $company, int $assetId, int $voucherRowId): FixedAssetAddition
+    {
+        $this->authorize($user, $company);
+
+        return CurrentCompany::run($company, fn (): FixedAssetAddition => DB::transaction(function () use ($user, $company, $assetId, $voucherRowId): FixedAssetAddition {
+            /** @var VoucherRow $row */
+            $row = VoucherRow::query()->whereKey($voucherRowId)->with(['voucher', 'account'])->firstOrFail();
+            $voucher = $row->voucher;
+
+            if (! $voucher instanceof Voucher || ! $voucher->isPosted() || $voucher->corrected_by_voucher_id !== null) {
+                throw ValidationException::withMessages(['addition' => __('Bara en rad i en bokförd verifikation som inte är rättad kan läggas till.')]);
+            }
+
+            if ($row->debit_ore->ore <= 0 || $row->credit_ore->ore !== 0) {
+                throw ValidationException::withMessages(['addition' => __('Bara en rad i debet, ett inköp, kan läggas till i en tillgång.')]);
+            }
+
+            $invoice = $voucher->source_type === (new SupplierInvoice)->getMorphClass() ? (string) $voucher->source_id : null;
+
+            return $this->storeAddition($user, $company, $assetId, (int) $row->account?->number, $row->debit_ore->ore, $voucher->voucher_date, [
+                'voucher_id' => $voucher->id,
+                'voucher_row_id' => $row->id,
+                'supplier_invoice_id' => $invoice,
+            ]);
+        }));
+    }
+
+    /**
+     * Adds the purchase being booked to an existing asset. Only for
+     * AssetProposals, inside the posting or registration transaction: the
+     * person who proposed the addition was checked for fiscal-years:manage
+     * when the proposal was saved.
+     *
+     * @param  array{voucher_id?: ?string, voucher_row_id?: ?int, supplier_invoice_id?: ?string}  $links
+     */
+    public function addFromPurchase(User $user, Company $company, int $assetId, int $account, int $amountOre, CarbonImmutable $date, array $links): FixedAssetAddition
+    {
+        return CurrentCompany::run($company, fn (): FixedAssetAddition => DB::transaction(
+            fn (): FixedAssetAddition => $this->storeAddition($user, $company, $assetId, $account, $amountOre, $date, $links),
+        ));
+    }
+
+    /**
+     * The posted purchases that can still be added to an asset: debit rows on
+     * its account, in vouchers that are not corrected, linked to no asset
+     * and no addition. Newest first, at most 100; one query.
+     *
+     * @return Collection<int, VoucherRow>
+     */
+    public static function additionCandidates(FixedAsset $asset): Collection
+    {
+        return VoucherRow::query()
+            ->select('voucher_rows.*')
+            ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
+            ->join('accounts', 'accounts.id', '=', 'voucher_rows.account_id')
+            ->where('vouchers.status', VoucherStatus::Posted->value)
+            ->whereNull('vouchers.corrected_by_voucher_id')
+            ->where('accounts.number', $asset->asset_account)
+            ->where('voucher_rows.debit_ore', '>', 0)
+            ->where('voucher_rows.credit_ore', 0)
+            ->whereNotExists(fn (QueryBuilder $query) => $query->from('fixed_assets')->whereColumn('fixed_assets.acquisition_voucher_row_id', 'voucher_rows.id'))
+            ->whereNotExists(fn (QueryBuilder $query) => $query->from('fixed_asset_additions')->whereColumn('fixed_asset_additions.voucher_row_id', 'voucher_rows.id'))
+            ->with('voucher.series')
+            ->orderByDesc('vouchers.voucher_date')
+            ->orderByDesc('voucher_rows.id')
+            ->limit(100)
+            ->get();
+    }
+
+    /**
+     * @param  array{voucher_id?: ?string, voucher_row_id?: ?int, supplier_invoice_id?: ?string}  $links
+     */
+    private function storeAddition(User $user, Company $company, int $assetId, int $account, int $amountOre, CarbonImmutable $date, array $links): FixedAssetAddition
+    {
+        // Inside the company: another company's asset answers 404.
+        /** @var FixedAsset $asset */
+        $asset = FixedAsset::query()->whereKey($assetId)->lockForUpdate()->firstOrFail();
+
+        if ($asset->isSplit()) {
+            throw ValidationException::withMessages(['addition' => __('Tillgången är uppdelad i komponenter. Lägg till inköpet i den komponent det hör till.')]);
+        }
+
+        if ($asset->status !== FixedAsset::ACTIVE) {
+            throw ValidationException::withMessages(['addition' => __('Tillgången är avyttrad, och inget kan läggas till i den.')]);
+        }
+
+        if ($account !== $asset->asset_account) {
+            throw ValidationException::withMessages(['addition' => __('Inköpet är bokfört på konto :row men tillgången på :asset. Lägg bara till inköp som är bokförda på tillgångens konto.', ['row' => $account, 'asset' => $asset->asset_account])]);
+        }
+
+        if ($amountOre <= 0) {
+            throw ValidationException::withMessages(['addition' => __('Anskaffningsvärdet ska vara större än noll.')]);
+        }
+
+        $rowId = $links['voucher_row_id'] ?? null;
+
+        if ($rowId !== null && (FixedAsset::query()->where('acquisition_voucher_row_id', $rowId)->exists() || FixedAssetAddition::query()->where('voucher_row_id', $rowId)->exists())) {
+            throw ValidationException::withMessages(['addition' => __('Raden hör redan till en tillgång i registret.')]);
+        }
+
+        $this->assertOpenForRegister($company, $date, 'addition');
+
+        $bookedThrough = $asset->depreciations()->max('period');
+        $bookedThrough = is_string($bookedThrough) ? $bookedThrough : null;
+        $terms = $asset->additionTerms($date, $bookedThrough);
+
+        if ($asset->depreciates() && $terms['life'] < 1) {
+            throw ValidationException::withMessages(['addition' => __('Tillgångens nyttjandeperiod tog slut :month. Lägg in inköpet som en egen tillgång i stället.', ['month' => $asset->plan()->lastMonth()])]);
+        }
+
+        $addition = FixedAssetAddition::create([
+            'fixed_asset_id' => $asset->id,
+            'amount_ore' => $amountOre,
+            'added_on' => $date->toDateString(),
+            'booked_through' => $bookedThrough,
+            'voucher_id' => $links['voucher_id'] ?? null,
+            'voucher_row_id' => $rowId,
+            'supplier_invoice_id' => $links['supplier_invoice_id'] ?? null,
+            'created_by' => $user->id,
+        ]);
+        $asset->forceFill(['acquisition_ore' => $asset->acquisition_ore->ore + $amountOre])->save();
+
+        // Ids, dates and amounts only.
+        Audit::record('fixed_asset.addition_added', $asset, array_filter([
+            'addition_id' => $addition->id,
+            'amount_ore' => $amountOre,
+            'acquisition_ore' => $asset->acquisition_ore->ore,
+            'added_on' => $date->toDateString(),
+            'depreciation_from' => $asset->depreciates() ? $terms['from']->format('Y-m') : null,
+            'voucher_id' => $addition->voucher_id,
+            'voucher_row_id' => $addition->voucher_row_id,
+            'supplier_invoice_id' => $addition->supplier_invoice_id,
+        ], fn (mixed $value): bool => $value !== null), $company, $user);
+
+        return $addition;
+    }
+
+    /**
+     * A changed plan of an asset with additions, before any month is booked:
+     * the acquisition value is the sum of the purchases and is not typed in,
+     * and every addition must still fall inside the useful life.
+     */
+    private function assertPlanKeepsAdditions(FixedAsset $asset, int $acquisition, int $life, CarbonImmutable $start): void
+    {
+        if ($acquisition !== $asset->acquisition_ore->ore) {
+            throw ValidationException::withMessages(['acquisition' => __('Anskaffningsvärdet är summan av inköpen som tillgången består av och kan inte ändras här.')]);
+        }
+
+        $changed = (clone $asset)->forceFill(['useful_life_months' => $life, 'depreciation_start' => $start->toDateString()]);
+
+        foreach ($asset->additions()->get() as $addition) {
+            if ($asset->depreciates() && $changed->additionTerms($addition->added_on, $addition->booked_through)['life'] < 1) {
+                throw ValidationException::withMessages(['life_months' => __('Inköpet från :date skulle hamna efter nyttjandeperiodens slut. Förläng nyttjandeperioden eller flytta första avskrivningsmånaden.', ['date' => $addition->added_on->toDateString()])]);
+            }
+        }
+    }
+
+    /** The day must be in an open fiscal year and after the locked periods. */
+    private function assertOpenForRegister(Company $company, CarbonImmutable $date, string $field): void
+    {
+        $fiscalYear = FiscalYear::query()->whereDate('start_date', '<=', $date->toDateString())->whereDate('end_date', '>=', $date->toDateString())->sharedLock()->first();
+
+        if ($fiscalYear === null) {
+            throw ValidationException::withMessages([$field => __('Det finns inget räkenskapsår för :date.', ['date' => $date->toDateString()])]);
+        }
+
+        if (! $fiscalYear->isOpen()) {
+            throw ValidationException::withMessages([$field => __('Räkenskapsåret :year är stängt, och inget kan läggas till i tillgången från det.', ['year' => $fiscalYear->label()])]);
+        }
+
+        if ($company->locked_until_date !== null && $date->lessThanOrEqualTo($company->locked_until_date)) {
+            throw ValidationException::withMessages([$field => __('Perioden till och med :date är låst, och inget kan läggas till i tillgången från den.', ['date' => $company->locked_until_date->toDateString()])]);
+        }
+    }
+
+    /**
      * What a month's depreciation would book, per active asset.
      *
      * @return list<array{asset: FixedAsset, amount: int}>
@@ -251,6 +444,7 @@ class FixedAssets
                 ->whereDate('depreciation_start', '<=', CarbonImmutable::parse("{$month}-01")->endOfMonth()->toDateString())
                 ->whereNotIn('id', $booked)
                 ->withSum('depreciations', 'amount_ore')
+                ->with('additions')
                 ->orderBy('number')
                 ->get();
 

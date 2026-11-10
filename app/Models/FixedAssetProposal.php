@@ -8,8 +8,8 @@ use App\Support\Tenancy\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * An asset to create when a draft is posted (a voucher) or registered (a
- * supplier invoice): the register's fields for the row at `line`, counted
+ * An asset to create, or an existing asset to add the purchase to, when a
+ * draft is posted (a voucher) or registered (a supplier invoice): the register's fields for the row at `line`, counted
  * from zero among the draft's saved rows. It goes away with the draft, and
  * is replaced by the asset itself when the purchase is booked.
  *
@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property ?string $voucher_id
  * @property ?string $supplier_invoice_id
  * @property int $line
- * @property array{name: string, category: string, acquisition: string, life_months: int, acquired_on: ?string, depreciation_start: ?string} $data
+ * @property array{name: string, category: string, acquisition: string, life_months: int, acquired_on: ?string, depreciation_start: ?string}|array{add_to: int, acquisition: string} $data the register's fields for a new asset, or add_to (an asset id) and acquisition to add the purchase to an existing one
  * @property int $created_by
  */
 class FixedAssetProposal extends Model

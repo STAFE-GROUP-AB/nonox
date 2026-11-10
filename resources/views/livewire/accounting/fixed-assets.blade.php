@@ -82,7 +82,7 @@
                         </select>
                     </x-ui.field>
                     <x-ui.field for="asset_acquired" :label="__('Anskaffningsdag')" error="acquired_on"><input id="asset_acquired" type="date" class="{{ $input }} mt-1" wire:model="form.acquired_on"></x-ui.field>
-                    <x-ui.field for="asset_value" :label="__('Anskaffningsvärde, kr')" error="acquisition"><input id="asset_value" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="form.acquisition"></x-ui.field>
+                    <x-ui.field for="asset_value" :label="__('Anskaffningsvärde, kr')" error="acquisition" :hint="$editingHasAdditions ? __('Summan av inköpen som tillgången består av.') : null"><input id="asset_value" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="form.acquisition" @readonly($editingHasAdditions)></x-ui.field>
                     <x-ui.field for="asset_residual" :label="__('Restvärde, kr')" error="residual" :hint="__('Oftast 0.')"><input id="asset_residual" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="form.residual"></x-ui.field>
                     <x-ui.field for="asset_life" :label="__('Nyttjandeperiod, månader')" error="life_months"><input id="asset_life" type="number" min="1" class="{{ $input }} mt-1" wire:model="form.life_months"></x-ui.field>
                     <x-ui.field for="asset_start" :label="__('Första avskrivningsmånad')" error="depreciation_start"><input id="asset_start" type="date" class="{{ $input }} mt-1" wire:model="form.depreciation_start"></x-ui.field>
@@ -133,7 +133,32 @@
                                         @if($asset->status === 'DISPOSED') · {{ __('Avyttrad :date', ['date' => $asset->disposed_on?->toDateString()]) }}@elseif($asset->isSplit()) · {{ __('Uppdelad i komponenter') }}@elseif($asset->depreciates() && $asset->isFullyDepreciated()) · {{ __('Fullt avskriven') }}@endif
                                         @if($asset->isComponent() && $asset->depreciates()) · {{ __('Skrivs av från :date', ['date' => $asset->depreciation_start->toDateString()]) }}@endif
                                     </span>
-                                    @if($asset->acquisitionVoucher)
+                                    @if($asset->additions->isNotEmpty())
+                                        <span class="block text-xs text-gray-500">{{ __('Anskaffad med flera inköp:') }}</span>
+                                        <ul class="text-xs text-gray-500" data-asset-sources>
+                                            <li>
+                                                @if($asset->acquisitionVoucher)
+                                                    <a href="{{ route('accounting.vouchers.show', $asset->acquisitionVoucher) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $asset->acquisitionVoucher->reference() }}</a>
+                                                @elseif($asset->supplierInvoice)
+                                                    <a href="{{ route('payables.invoices.show', $asset->supplierInvoice) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $asset->supplierInvoice->title() }}</a>
+                                                @else
+                                                    {{ __('Inlagd i registret') }}
+                                                @endif
+                                                · {{ $asset->acquired_on->toDateString() }} · <span class="tabular-nums">{{ $kr($asset->originalAcquisitionOre()) }}</span>
+                                            </li>
+                                            @foreach($asset->additions as $addition)
+                                                <li>
+                                                    @if($addition->voucher)
+                                                        <a href="{{ route('accounting.vouchers.show', $addition->voucher) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $addition->voucher->reference() }}</a>
+                                                    @elseif($addition->supplierInvoice)
+                                                        <a href="{{ route('payables.invoices.show', $addition->supplierInvoice) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $addition->supplierInvoice->title() }}</a>
+                                                    @endif
+                                                    · {{ $addition->added_on->toDateString() }} · <span class="tabular-nums">{{ $kr($addition->amount_ore->ore) }}</span>
+                                                    @if($asset->depreciates()) · {{ __('skrivs av från :month', ['month' => $asset->additionTerms($addition->added_on, $addition->booked_through)['from']->format('Y-m')]) }}@endif
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    @elseif($asset->acquisitionVoucher)
                                         <span class="block text-xs text-gray-500">{{ __('Anskaffad med verifikation') }} <a href="{{ route('accounting.vouchers.show', $asset->acquisitionVoucher) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $asset->acquisitionVoucher->reference() }}</a></span>
                                     @elseif($asset->supplierInvoice)
                                         <span class="block text-xs text-gray-500">{{ __('Anskaffad med') }} <a href="{{ route('payables.invoices.show', $asset->supplierInvoice) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $asset->supplierInvoice->title() }}</a></span>
@@ -146,6 +171,7 @@
                                 <td class="whitespace-nowrap px-3 py-3 text-right">
                                     @if($asset->status === 'ACTIVE')
                                         <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="edit({{ $asset->id }})">{{ __('Ändra') }}</button>
+                                        <button type="button" class="ms-3 text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="startAddition({{ $asset->id }})">{{ __('Lägg till inköp') }}</button>
                                         @if($k3 && ! $asset->isComponent() && $asset->depreciates())
                                             <button type="button" class="ms-3 text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="startSplit({{ $asset->id }})">{{ __('Dela upp i komponenter') }}</button>
                                         @endif
@@ -157,6 +183,49 @@
                                 <tr wire:key="split-{{ $asset->id }}">
                                     <td colspan="7" class="bg-paper px-3 py-4">
                                         @include('livewire.accounting.partials.fixed-asset-components', ['asset' => $asset])
+                                    </td>
+                                </tr>
+                            @endif
+                            @if($addingAsset?->id === $asset->id)
+                                <tr wire:key="add-{{ $asset->id }}">
+                                    <td colspan="7" class="bg-paper px-3 py-4" data-asset-addition>
+                                        <p class="text-sm font-semibold text-ink">{{ __('Lägg till inköp i :name', ['name' => $asset->name]) }}</p>
+                                        <p class="mt-1 text-xs text-gray-600">{{ __('Ett inköp som redan är bokfört i debet på konto :account blir en del av tillgången, till exempel nästa faktura för samma investering. Anskaffningsvärdet ökar med beloppet. Det som redan är avskrivet ändras inte.', ['account' => $asset->asset_account]) }}</p>
+                                        @if($candidates->isEmpty())
+                                            <p class="mt-3 text-sm text-gray-600">{{ __('Det finns inga bokförda inköp på konto :account som inte redan hör till en tillgång.', ['account' => $asset->asset_account]) }}</p>
+                                            <button type="button" class="mt-3 text-sm text-gray-600 underline" wire:click="cancelAddition">{{ __('Stäng') }}</button>
+                                        @else
+                                            <div class="mt-3 flex flex-wrap items-end gap-4">
+                                                <x-ui.field for="addition_row" :label="__('Inköp')" error="addition">
+                                                    <select id="addition_row" class="{{ $input }} mt-1" wire:model.live="additionRow">
+                                                        <option value="">{{ __('Välj verifikation') }}</option>
+                                                        @foreach($candidates as $candidate)
+                                                            <option value="{{ $candidate->id }}">{{ $candidate->voucher->reference() }} · {{ $candidate->voucher->voucher_date->toDateString() }} · {{ $kr($candidate->debit_ore->ore) }} · {{ $candidate->description ?? $candidate->voucher->description }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </x-ui.field>
+                                                @unless($confirmingAddition)
+                                                    <x-button type="button" wire:click="reviewAddition">{{ __('Granska tillägget') }}</x-button>
+                                                @endunless
+                                                <button type="button" class="text-sm text-gray-600 underline" wire:click="cancelAddition">{{ __('Avbryt') }}</button>
+                                            </div>
+                                            @if($additionReview)
+                                                <div class="mt-4 rounded-xl bg-white p-4 text-sm ring-1 ring-stone-200" role="alertdialog" aria-labelledby="addition_review_title">
+                                                    <p id="addition_review_title" class="font-semibold text-ink">{{ __('Det här händer') }}</p>
+                                                    <ul class="mt-2 list-disc space-y-1 ps-5 text-gray-700">
+                                                        <li>{{ __('Anskaffningsvärdet ökar med :amount till :total.', ['amount' => $kr($additionReview['amount']), 'total' => $kr($additionReview['total'])]) }}</li>
+                                                        @if($additionReview['depreciates'])
+                                                            <li>{{ __('Beloppet skrivs av från :month över återstående :count månader av nyttjandeperioden.', ['month' => $additionReview['from'], 'count' => $additionReview['life']]) }}</li>
+                                                        @endif
+                                                        <li>{{ __('Bokförda avskrivningar ändras inte, och tillägget kan inte tas bort.') }}</li>
+                                                    </ul>
+                                                    <div class="mt-3 flex items-center gap-4">
+                                                        <x-button type="button" wire:click="addPurchase" wire:loading.attr="disabled">{{ __('Lägg till i tillgången') }}</x-button>
+                                                        <button type="button" class="text-sm text-gray-600 underline" wire:click="$set('confirmingAddition', false)">{{ __('Tillbaka') }}</button>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        @endif
                                     </td>
                                 </tr>
                             @endif
