@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Accounting\ChangeFirstFiscalYear;
 use App\Actions\AnnualReport\BookK3Transition;
 use App\Actions\AnnualReport\K3NoteOverrides;
 use App\Actions\AnnualReport\K3TransitionItems;
@@ -15,11 +16,14 @@ use App\Domain\AnnualReport\K3PolicyKey;
 use App\Domain\AnnualReport\K3TransitionProposal;
 use App\Domain\AnnualReport\PrintedFigures;
 use App\Domain\Company\LegalForm;
+use App\Domain\Company\ReportingFramework;
 use App\Livewire\Accounting\AnnualReportPage;
 use App\Models\Account;
 use App\Models\AnnualReport;
+use App\Models\AnnualReportNoteOverride;
 use App\Models\ClosingCheck;
 use App\Models\CompanyAccountingPolicy;
+use App\Models\FiscalYear;
 use App\Models\PriorYearSizeFigure;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -311,26 +315,73 @@ describe('F-S1-b, a mindre aktiebolag in its first K3 year', function () {
         $this->get(route('accounting.annualReport.ixbrl', $this->year))->assertForbidden();
     });
 
-    it('A.5 reads the report with a fixed number of queries, however long the ledger', function () {
+    it('A.5 reads the report and renders the page with a fixed number of queries, however many accounts, assets, notes and owners', function () {
         answerK3DocumentQuestions($this);
-        $count = function (): int {
+        $count = function (callable $read): int {
             DB::flushQueryLog();
             DB::enableQueryLog();
-            k3Document($this)->html();
+            $read();
             $queries = count(DB::getQueryLog());
             DB::disableQueryLog();
 
             return $queries;
         };
+        $document = fn (): int => $count(fn () => k3Document($this)->html());
+        $page = fn (): int => $count(fn () => Livewire::test(AnnualReportPage::class, ['year' => $this->year->id]));
+        $assets = app(FixedAssets::class);
+        $accounts = [5010, 5060, 5410, 5460, 5610, 6071, 6110, 6212, 6230, 6310, 6530, 6570, 6991, 7690];
 
-        Bookkeeping::post($this->owner, $this->company, 1_000_000, 1930, 3001, '2026-02-01');
-        $short = $count();
-
-        foreach (range(1, 25) as $day) {
-            Bookkeeping::post($this->owner, $this->company, 100_000 + $day, 1930, 3001, sprintf('2026-03-%02d', $day));
+        foreach ($accounts as $number) {
+            Account::query()->firstOrCreate(['number' => $number], ['name' => "Kostnad {$number}", 'type' => AccountType::forNumber($number), 'is_active' => true]);
         }
 
-        expect($count())->toBe($short);
+        // Short: one voucher, one register asset, one owner, no optional note.
+        Bookkeeping::post($this->owner, $this->company, 1_000_000, 1930, 3001, '2026-02-01');
+        $assets->save($this->owner, $this->company, ['name' => 'Svarv 1', 'category' => 'EQUIPMENT', 'acquired_on' => '2026-02-01', 'acquisition' => '50000,00', 'opening_accumulated' => '', 'life_months' => '60', 'depreciation_start' => '2026-02-01', 'asset_account' => '1220', 'accumulated_account' => '1229', 'expense_account' => '7832']);
+        app(SaveK3ReportInputs::class)($this->owner, $this->year, ['k3_major_owners' => [['name' => 'Ägarbolaget Demo AB', 'owner_type' => 'legal', 'votes_bp' => 10_000, 'capital_bp' => 10_000]]]);
+        [$shortDocument, $shortPage] = [$document(), $page()];
+
+        // Long: many vouchers on many accounts, more register assets, more owners and the optional notes.
+        foreach ($accounts as $index => $number) {
+            Bookkeeping::post($this->owner, $this->company, 100_000 + $index, $number, 1930, sprintf('2026-03-%02d', $index + 1));
+            Bookkeeping::post($this->owner, $this->company, 200_000 + $index, 1930, 3001, sprintf('2026-04-%02d', $index + 1));
+        }
+
+        foreach (range(2, 6) as $n) {
+            $assets->save($this->owner, $this->company, ['name' => "Svarv {$n}", 'category' => 'EQUIPMENT', 'acquired_on' => '2026-02-01', 'acquisition' => '50000,00', 'opening_accumulated' => '', 'life_months' => (string) (36 + $n * 12), 'depreciation_start' => '2026-02-01', 'asset_account' => '1220', 'accumulated_account' => '1229', 'expense_account' => '7832']);
+        }
+
+        app(SaveK3ReportInputs::class)($this->owner, $this->year, [
+            'k3_major_owners' => [
+                ['name' => 'Ägarbolaget Demo AB', 'owner_type' => 'legal', 'votes_bp' => 4_000, 'capital_bp' => 4_000],
+                ['name' => 'Andra Ägarbolaget Demo AB', 'owner_type' => 'legal', 'votes_bp' => 3_000, 'capital_bp' => 3_000],
+                ['name' => 'Testa Testsson', 'owner_type' => 'natural', 'votes_bp' => 3_000, 'capital_bp' => 3_000],
+            ],
+            'k3_exceptional_items' => [['description' => 'Försäkringsersättning', 'amount' => '120000'], ['description' => 'Nedskrivning av fordran', 'amount' => '80000']],
+            'k3_off_balance_arrangements' => 'Hyresavtal för en lagerlokal.',
+            'k3_parent_company' => 'Ägarbolaget Demo AB, 559999-7029, Exempelstad.',
+        ]);
+        AnnualReport::query()->where('fiscal_year_id', $this->year->id)->update(['events_after' => 'Ny maskin beställd.', 'contingent_liabilities_ore' => 5_000_000, 'pledged_assets' => json_encode(['business_mortgages' => 200_000_000])]);
+
+        expect(count(k3Document($this)->notes()->notes()))->toBeGreaterThan(10)
+            ->and($document())->toBe($shortDocument)
+            ->and($page())->toBe($shortPage);
+    });
+
+    it('S1-R1.4 refuses a year that follows an earlier version of K3, such as a broken year 2025-07-01 to 2026-06-30', function () {
+        [$owner, $company] = Bookkeeping::company();
+        $company->forceFill(['legal_form' => LegalForm::Ab, 'reporting_framework' => ReportingFramework::K3])->save();
+        CurrentCompany::set($company);
+        $this->actingAs($owner);
+        $year = FiscalYear::query()->firstOrFail();
+        app(ChangeFirstFiscalYear::class)($owner, $year, '2025-07-01', '2026-06-30');
+        $year = $year->refresh();
+        $year->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
+
+        $document = K3AnnualReportDocument::for($company->refresh(), $year->refresh(), K3AnnualReportDocument::report($year));
+
+        expect(k3DocumentRules($document))->toContain('S1-R1.4')
+            ->and(collect($document->refusals())->firstWhere('rule', 'S1-R1.4')['message'])->toContain('BFNAR 2025:3');
     });
 
     it('is accessible: Swedish, one h1, headings in order, every table with column and row headers', function () {
@@ -406,6 +457,78 @@ describe('the Årsredovisning page for F-S1-b', function () {
 
         expect($xpath->query('//iframe[@title]')->length)->toBe(1);
     });
+});
+
+describe('permissions per role (AGENTS.md §4; spec S1: the auditor reads and exports)', function () {
+    beforeEach(function () {
+        loadK3DocumentFixture($this);
+        answerK3DocumentQuestions($this);
+    });
+
+    it('lets the roles that read reports view and export the K3 report, and refuses the approver', function (string $role, bool $reads) {
+        // Jetstream keeps the company's owner on the company itself.
+        $member = $role === 'owner' ? $this->owner : Bookkeeping::member($this->company, $role);
+        $this->actingAs($member);
+
+        if (! $reads) {
+            $this->get(route('accounting.annualReport.show', $this->year))->assertForbidden();
+            $this->get(route('accounting.annualReport.pdf', $this->year))->assertForbidden();
+            $this->get(route('accounting.annualReport.ixbrl', $this->year))->assertForbidden();
+            Livewire::test(AnnualReportPage::class, ['year' => $this->year->id])->assertForbidden();
+
+            return;
+        }
+
+        $this->get(route('accounting.annualReport.show', $this->year))->assertOk();
+        $this->get(route('accounting.annualReport.pdf', $this->year))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        // K3 iXBRL is not built (ADR-059 F.4), for any role.
+        $this->get(route('accounting.annualReport.ixbrl', $this->year))->assertForbidden();
+        // The K2 year before is readable too.
+        $this->get(route('accounting.annualReport.show', $this->k2))->assertOk();
+    })->with([
+        'owner' => ['owner', true],
+        'admin' => ['admin', true],
+        'accountant' => ['accountant', true],
+        'bookkeeper' => ['bookkeeper', true],
+        'auditor' => ['auditor', true],
+        'approver' => ['approver', false],
+    ]);
+
+    it('keeps the texts, the K3 inputs and the notes\' wording to fiscal-years:manage', function (string $role, bool $writes) {
+        // Jetstream keeps the company's owner on the company itself.
+        $member = $role === 'owner' ? $this->owner : Bookkeeping::member($this->company, $role);
+        $this->actingAs($member);
+        $page = Livewire::test(AnnualReportPage::class, ['year' => $this->year->id]);
+
+        if ($writes) {
+            $page->assertDontSee('Du kan läsa och ladda ner årsredovisningen')
+                ->call('saveK3')->assertHasNoErrors()->assertStatus(200)
+                ->call('editNote', 'average_employees')->assertSet('editingNote', 'average_employees')
+                ->set('noteText', 'Medelantalet anställda har varit tre.')->set('noteReason', 'Egen formulering.')
+                ->call('saveNote')->assertHasNoErrors()
+                ->call('removeNoteOverride', 'average_employees')->assertHasNoErrors()
+                ->call('save')->assertHasNoErrors();
+
+            return;
+        }
+
+        $page->assertSee('Du kan läsa och ladda ner årsredovisningen')
+            ->assertDontSee('Skriv med egna ord')
+            ->assertDontSee('Spara uppgifterna för K3');
+
+        Livewire::test(AnnualReportPage::class, ['year' => $this->year->id])->call('save')->assertForbidden();
+        Livewire::test(AnnualReportPage::class, ['year' => $this->year->id])->call('saveK3')->assertForbidden();
+        Livewire::test(AnnualReportPage::class, ['year' => $this->year->id])->call('editNote', 'average_employees')->assertForbidden();
+        Livewire::test(AnnualReportPage::class, ['year' => $this->year->id])->call('removeNoteOverride', 'fixed_assets.equipment')->assertForbidden();
+
+        expect(AnnualReportNoteOverride::query()->where('note_key', 'fixed_assets.equipment')->exists())->toBeTrue();
+    })->with([
+        'owner' => ['owner', true],
+        'admin' => ['admin', true],
+        'accountant' => ['accountant', true],
+        'bookkeeper' => ['bookkeeper', false],
+        'auditor' => ['auditor', false],
+    ]);
 });
 
 describe('refusals, each with its rule id', function () {

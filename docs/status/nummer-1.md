@@ -673,7 +673,7 @@ Next package: enligt prioritetslistan.
 
 ---
 
-Package: S1-P10, årsredovisning enligt K3 för mindre aktiebolag (ADR-059)
+Package: S1-P10, förhandsversion (beta) av årsredovisningen för mindre aktiebolag med K3 (ADR-059)
 Status: done (beta, Bokslut → Årsredovisning)
 Evidence: `tests/Feature/AnnualReport/K3/K3AnnualReportDocumentTest.php`, `tests/Tenancy/K3AnnualReportTenancyTest.php`, `tests/Fixtures/s1/f-s1-b/document/` (expected.json och hela HTML:en), `tests/Feature/AnnualReport/K3GuardTest.php`.
 - Ett räkenskapsår som följer K3 får förvaltningsberättelse, resultat- och balansräkning i K3:s uppställning, rapport över förändringar i eget kapital, eventuell kassaflödesanalys, noter, underskrifter och fastställelseintyg i ordningen i K3 3.10, i hela kronor. Första K3-året visar K2-året som jämförelse utan omräkning, med not om jämförbarhet.

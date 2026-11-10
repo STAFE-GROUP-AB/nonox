@@ -105,13 +105,6 @@ class SaveAnnualReport
             // ABL 17 kap. 3 §: the proposal may not distribute more than the free equity (#84).
             DividendLimit::ensureWithin($company, $fiscalYear, $dividend);
 
-            // BFNAR 2016:10 p. 5.5: a net sales variation over 30 % must be commented on (#93). A K2 rule: a K3 year (S1-P10) is not held to it.
-            $variation = $fiscalYear->reporting_framework === ReportingFramework::K3 ? null : (AnnualAccounts::for($fiscalYear)->netSalesVariations()[0] ?? null);
-
-            if ($variation !== null && blank($validated['net_sales_comment'] ?? null)) {
-                throw ValidationException::withMessages(['net_sales_comment' => __('Nettoomsättningen har förändrats med mer än 30 procent mellan :from och :to. Kommentera förändringen (BFNAR 2016:10 punkt 5.5).', ['from' => $variation['from'], 'to' => $variation['to']])]);
-            }
-
             return DB::transaction(function () use ($user, $company, $fiscalYear, $validated, $dividend, $pledged, $contingent): AnnualReport {
                 // Same lock order as ChangeReportingFramework (advisory lock, then the year's row), so a
                 // framework change and an adoption date cannot pass each other (ADR-059, A.2.1).
@@ -121,6 +114,14 @@ class SaveAnnualReport
 
                 if ($refusal !== null) {
                     throw ValidationException::withMessages(['report' => $refusal]);
+                }
+
+                // BFNAR 2016:10 p. 5.5: a net sales variation over 30 % must be commented on (#93). A K2 rule, read from
+                // the locked year: a K3 year (S1-P10) is not held to it.
+                $variation = $locked->reporting_framework === ReportingFramework::K3 ? null : (AnnualAccounts::for($locked)->netSalesVariations()[0] ?? null);
+
+                if ($variation !== null && blank($validated['net_sales_comment'] ?? null)) {
+                    throw ValidationException::withMessages(['net_sales_comment' => __('Nettoomsättningen har förändrats med mer än 30 procent mellan :from och :to. Kommentera förändringen (BFNAR 2016:10 punkt 5.5).', ['from' => $variation['from'], 'to' => $variation['to']])]);
                 }
 
                 return $this->write($user, $company, $locked, $validated, $dividend, $pledged, $contingent);

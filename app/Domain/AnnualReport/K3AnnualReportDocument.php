@@ -63,6 +63,9 @@ final class K3AnnualReportDocument
     /** The rule id of the legal-form refusal: only an aktiebolag is in S1 (ADR-059 A.4, "Not in S1: ekonomisk förening on K3"). */
     public const string RULE_LEGAL_FORM = 'S1-scope';
 
+    /** The only K3 version read for S1 (k3-rules.json `k3_version_by_fiscal_year`, S1-R1.4). */
+    public const string K3_VERSION = 'kons20251215';
+
     /**
      * BAS accounts that show capitalised own development (101x, 1081) and the
      * fund for development expenses (2089), for the ledger-based refusal of
@@ -252,8 +255,12 @@ final class K3AnnualReportDocument
             K3SizeClass::Mindre => null,
         };
 
-        if (K3Rules::entry('k3_version_by_fiscal_year', $this->fiscalYear->start_date, $this->fiscalYear->end_date) === null) {
-            $this->refuse('S1-R1.4', __('NONOX har inte K3 i den lydelse som gäller för räkenskapsåret :year.', ['year' => $this->fiscalYear->label()]));
+        // S1-R1.4: only the 2025-12-15 consolidation (BFNAR 2025:3) and ÅRL as of SFS 2026:780 were read for S1, so an
+        // earlier version (kons2024, years beginning 2024-07-01 to 2025-12-31) is refused, as K3Eligibility leaves those years unassessed.
+        $version = K3Rules::entry('k3_version_by_fiscal_year', $this->fiscalYear->start_date, $this->fiscalYear->end_date)['value'] ?? null;
+
+        if ($version !== self::K3_VERSION) {
+            $this->refuse('S1-R1.4', __('Årsredovisningen tas bara fram för räkenskapsår som ska följa K3 i lydelsen enligt BFNAR 2025:3 (räkenskapsår som börjar efter den 31 december 2025). Räkenskapsåret :year följer en äldre lydelse, som NONOX inte har läst in.', ['year' => $this->fiscalYear->label()]));
         }
 
         $this->policyRefusals($policies, $firstK3Year);

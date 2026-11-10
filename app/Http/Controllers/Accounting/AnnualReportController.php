@@ -105,6 +105,12 @@ class AnnualReportController
         ]);
     }
 
+    /** Who may see and export the annual report: reports:view (the auditor, ADR-059 A.5) or fiscal-years:manage. */
+    public static function canView(User $user, Company $company): bool
+    {
+        return $user->hasTeamPermission($company, 'reports:view') || $user->hasTeamPermission($company, 'fiscal-years:manage');
+    }
+
     /** @return array{0: Company, 1: AnnualReport} */
     private function resolve(Request $request, FiscalYear $fiscalYear): array
     {
@@ -112,7 +118,8 @@ class AnnualReportController
         $user = $request->user();
         $company = Company::query()->findOrFail($fiscalYear->company_id);
 
-        abort_unless($user->hasTeamPermission($company, 'fiscal-years:manage'), 403);
+        // Viewing and exporting is reading (AGENTS.md §4: the auditor reads everything and exports); writing the texts needs fiscal-years:manage.
+        abort_unless(self::canView($user, $company), 403);
         // The K2 document, or for a K3 year the K3 one (ADR-059 S1-P10); anything else is refused.
         abort_unless(AnnualReportDocument::supports($company, $fiscalYear) || K3AnnualReportDocument::supports($company, $fiscalYear), 403);
 

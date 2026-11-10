@@ -28,6 +28,10 @@
             <div class="space-y-6">
             <x-ui.card :title="__('Texter och underskrifter')">
                 <form wire:submit="save" class="space-y-4">
+                    @if(! $canEdit)
+                        <p class="rounded-xl bg-stone-50 px-3 py-2 text-sm text-gray-700 ring-1 ring-stone-200">{{ __('Du kan läsa och ladda ner årsredovisningen. Texterna ändras av den som hanterar räkenskapsår.') }}</p>
+                    @endif
+                    <fieldset @disabled(! $canEdit) class="min-w-0 space-y-4">
                     <x-ui.field for="ar_business" :label="__('Allmänt om verksamheten')" error="business_description" :hint="__('Vad företaget gör och var det har sitt säte.')"><textarea id="ar_business" rows="4" class="{{ $input }} mt-1" wire:model="form.business_description"></textarea></x-ui.field>
                     <x-ui.field for="ar_events" :label="__('Väsentliga händelser under året')" error="significant_events" :hint="__('Lämna tomt om inget särskilt har hänt.')"><textarea id="ar_events" rows="3" class="{{ $input }} mt-1" wire:model="form.significant_events"></textarea></x-ui.field>
                     @if($netSalesVariations !== [] || filled($form['net_sales_comment'] ?? ''))
@@ -76,8 +80,11 @@
                         </div>
                         <x-ui.field for="ar_adoption_decision" :label="__('Stämmans beslut om vinsten eller förlusten')" error="adoption_decision" :hint="__('Lämna tomt för att använda den bokförda resultatdispositionen.')"><textarea id="ar_adoption_decision" rows="3" class="{{ $input }} mt-1" wire:model="form.adoption_decision"></textarea></x-ui.field>
                     </fieldset>
+                    </fieldset>
                     <div class="flex flex-wrap items-center gap-4">
-                        <x-button>{{ __('Spara') }}</x-button>
+                        @if($canEdit)
+                            <x-button>{{ __('Spara') }}</x-button>
+                        @endif
                         @if(! $k3 || $k3Complete)
                             <a href="{{ route('accounting.annualReport.pdf', $fiscalYear) }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Ladda ner PDF') }}</a>
                         @else

@@ -13,6 +13,7 @@ use App\Domain\AnnualReport\K3AnnualReportDocument;
 use App\Domain\AnnualReport\PledgedAssetKind;
 use App\Domain\Closing\DividendLimit;
 use App\Domain\Company\LegalForm;
+use App\Http\Controllers\Accounting\AnnualReportController;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\AnnualReport;
 use App\Models\Company;
@@ -60,9 +61,14 @@ class AnnualReportPage extends Component
 
     public string $noteReason = '';
 
+    /** The K3 document built in this request (never sent to the browser). */
+    private ?K3AnnualReportDocument $k3Document = null;
+
+    private ?int $k3DocumentYear = null;
+
     public function mount(): void
     {
-        abort_unless($this->user()->hasTeamPermission($this->company(), 'fiscal-years:manage'), 403);
+        abort_unless(AnnualReportController::canView($this->user(), $this->company()), 403);
 
         if (FiscalYear::query()->whereKey($this->year)->doesntExist()) {
             // The latest year that has ended; otherwise the current one.
@@ -100,6 +106,7 @@ class AnnualReportPage extends Component
 
         $save($this->user(), FiscalYear::query()->findOrFail($this->year), $input);
         $this->version++;
+        $this->forgetK3Document();
         $this->toast(__('Uppgifterna för K3 är sparade.'));
     }
 
@@ -126,6 +133,7 @@ class AnnualReportPage extends Component
 
     public function editNote(string $key): void
     {
+        abort_unless($this->canEdit(), 403);
         $note = $this->k3Document()?->notes()?->note($key);
         abort_if($note === null, 404);
 
@@ -149,6 +157,7 @@ class AnnualReportPage extends Component
         }
 
         $overrides->set($this->user(), FiscalYear::query()->findOrFail($this->year), $this->editingNote, $this->noteText, $this->noteReason);
+        $this->forgetK3Document();
         $this->cancelNote();
         $this->version++;
         $this->toast(__('Noten har fått din egen formulering.'));
@@ -157,6 +166,7 @@ class AnnualReportPage extends Component
     public function removeNoteOverride(K3NoteOverrides $overrides, string $key): void
     {
         $overrides->remove($this->user(), FiscalYear::query()->findOrFail($this->year), $key);
+        $this->forgetK3Document();
         $this->version++;
         $this->toast(__('Noten använder åter den text som NONOX tar fram.'));
     }
@@ -165,6 +175,7 @@ class AnnualReportPage extends Component
     {
         $save($this->user(), FiscalYear::query()->findOrFail($this->year), $this->form);
         $this->version++;
+        $this->forgetK3Document();
         $this->toast(__('Årsredovisningen är sparad.'));
     }
 
@@ -193,6 +204,7 @@ class AnnualReportPage extends Component
             'hasBankLoans' => $supported && self::hasBankLoans($fiscalYear),
             'netSalesVariations' => $supported && ! $k3 ? AnnualAccounts::for($fiscalYear)->netSalesVariations() : [],
             'pledgedKinds' => PledgedAssetKind::cases(),
+            'canEdit' => $this->canEdit(),
         ]);
     }
 
@@ -279,7 +291,11 @@ class AnnualReportPage extends Component
         $this->cancelNote();
     }
 
-    /** The K3 document of the year, or null when the year is not a K3 year. */
+    /**
+     * The K3 document of the year, or null when the year is not a K3 year.
+     * Built once per request (editNote and the render share it); a write
+     * clears it, so the render after a save reads the saved data.
+     */
     private function k3Document(?FiscalYear $fiscalYear = null): ?K3AnnualReportDocument
     {
         $fiscalYear ??= FiscalYear::query()->findOrFail($this->year);
@@ -288,7 +304,18 @@ class AnnualReportPage extends Component
             return null;
         }
 
-        return K3AnnualReportDocument::for($this->company(), $fiscalYear, K3AnnualReportDocument::report($fiscalYear));
+        if ($this->k3DocumentYear !== $fiscalYear->id || $this->k3Document === null) {
+            $this->k3Document = K3AnnualReportDocument::for($this->company(), $fiscalYear, K3AnnualReportDocument::report($fiscalYear));
+            $this->k3DocumentYear = $fiscalYear->id;
+        }
+
+        return $this->k3Document;
+    }
+
+    private function forgetK3Document(): void
+    {
+        $this->k3Document = null;
+        $this->k3DocumentYear = null;
     }
 
     /** "25,5" (per cent) as 2550 basis points; anything unreadable as -1, which SaveK3ReportInputs refuses. */
@@ -302,6 +329,12 @@ class AnnualReportPage extends Component
     private static function percent(int $basisPoints): string
     {
         return rtrim(rtrim(number_format($basisPoints / 100, 2, ',', ''), '0'), ',');
+    }
+
+    /** Writing the texts, the K3 inputs and the notes' wording needs fiscal-years:manage; reading needs reports:view. */
+    private function canEdit(): bool
+    {
+        return $this->user()->hasTeamPermission($this->company(), 'fiscal-years:manage');
     }
 
     private function company(): Company

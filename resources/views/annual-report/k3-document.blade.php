@@ -167,7 +167,7 @@
                 @foreach($equityRows as $row)
                     <tr @class(['sum' => in_array($row['key'], ['opening', 'closing'], true)])>
                         <th scope="row">{{ $row['label'] }}</th>
-                        @foreach($equityColumns as $column)<td class="num">{{ $row['amounts'][$column['key']] === 0 && ! in_array($row['key'], ['opening', 'closing'], true) ? '' : $kr($row['amounts'][$column['key']]) }}</td>@endforeach
+                        @foreach($equityColumns as $column)<td class="num">{{ $row['amounts'][$column['key']] === 0 && ! in_array($row['key'], ['opening', 'closing'], true) && ! ($row['key'] === 'year_result' && $column['key'] === 'year_result') ? '' : $kr($row['amounts'][$column['key']]) }}</td>@endforeach
                         <td class="num">{{ $kr($row['total']) }}</td>
                     </tr>
                 @endforeach

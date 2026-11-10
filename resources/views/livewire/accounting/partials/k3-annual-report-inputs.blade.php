@@ -24,6 +24,7 @@
 
 <x-ui.card :title="__('Uppgifter för K3')" :description="__('Det som bokföringen inte kan svara på. Svaren styr vilka noter som tas med; en not utan uppgifter tas inte med.')">
     <form wire:submit="saveK3" class="space-y-4">
+        <fieldset @disabled(! $canEdit) class="min-w-0 space-y-4">
         <fieldset class="space-y-3">
             <legend class="text-sm font-semibold text-gray-900">{{ __('Frågor') }}</legend>
             @foreach($k3Answers as $key)
@@ -42,7 +43,7 @@
         <fieldset class="space-y-3 border-t border-stone-200 pt-4">
             <legend class="text-sm font-semibold text-gray-900">{{ __('Ägare med mer än tio procent') }}</legend>
             <p class="text-xs text-gray-500">{{ __('Förvaltningsberättelsen ska ange ägare med mer än tio procent av andelarna eller rösterna (K3 punkt 3.7 e). För en fysisk person anges bara namnet; ett personnummer sparas aldrig.') }}</p>
-            <label class="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" class="rounded border-stone-300 text-accent-600 focus:ring-accent-500" wire:model.live="ownersAnswered"> {{ __('Jag har angett ägarna (ingen rad betyder att ingen äger mer än tio procent)') }}</label>
+            <label class="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" class="rounded border-stone-300 text-accent-600 focus:ring-accent-500" wire:model="ownersAnswered"> {{ __('Jag har angett ägarna (ingen rad betyder att ingen äger mer än tio procent)') }}</label>
             @foreach($owners as $index => $owner)
                 <div wire:key="k3-owner-{{ $index }}" class="grid gap-3 rounded-2xl bg-stone-50 p-3 ring-1 ring-stone-200 sm:grid-cols-2">
                     <x-ui.field for="k3_owner_name_{{ $index }}" :label="__('Namn')" error="k3_major_owners.{{ $index }}.name"><input id="k3_owner_name_{{ $index }}" type="text" class="{{ $input }} mt-1" wire:model="owners.{{ $index }}.name"></x-ui.field>
@@ -83,7 +84,10 @@
             <button type="button" wire:click="addExceptional" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Lägg till post') }}</button>
         </fieldset>
 
-        <x-button>{{ __('Spara uppgifterna för K3') }}</x-button>
+        @if($canEdit)
+            <x-button>{{ __('Spara uppgifterna för K3') }}</x-button>
+        @endif
+        </fieldset>
     </form>
 </x-ui.card>
 
@@ -119,7 +123,7 @@
                                 <button type="button" wire:click="cancelNote" class="text-sm font-medium text-gray-700 hover:underline">{{ __('Avbryt') }}</button>
                             </div>
                         </form>
-                    @else
+                    @elseif($canEdit)
                         <div class="mt-2 flex flex-wrap gap-4">
                             <button type="button" wire:click="editNote('{{ $note->key }}')" class="text-sm font-medium text-accent-700 hover:underline">{{ $note->overridden() ? __('Ändra egen formulering') : __('Skriv med egna ord') }}</button>
                             @if($note->overridden())

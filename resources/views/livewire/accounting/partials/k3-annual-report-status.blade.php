@@ -2,7 +2,7 @@
 <div class="space-y-4">
     <div class="rounded-2xl bg-stone-50 px-4 py-3 text-sm text-gray-700 ring-1 ring-stone-200">
         <x-ui.badge tone="accent">{{ __('Beta') }}</x-ui.badge>
-        <span class="ml-2">{{ __('Årsredovisningen enligt K3 (BFNAR 2012:1) för ett mindre aktiebolag. Låt en redovisningskonsult granska den innan den skrivs under; NONOX tar inte fram den som iXBRL ännu.') }}</span>
+        <span class="ml-2">{{ __('För ett mindre aktiebolag vars räkenskapsår följer K3 tar NONOX fram en förhandsversion (beta) av årsredovisningen. Den är inte granskad av en auktoriserad redovisningskonsult, och en redovisningskonsult ska granska den innan den skrivs under. NONOX tar inte fram den som iXBRL.') }}</span>
     </div>
 
     @if($k3Refusals !== [])

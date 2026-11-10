@@ -13,7 +13,7 @@ När ett aktiebolag eller en ekonomisk förening går från K2 till K3 ska det f
 Sidan finns under **Bokföring → Bokslut**: klicka på **Gå till övergången till K3**. Länken visas för företagets första räkenskapsår som följer K3, när året innan följde K2. Steget och sidan är märkta **Beta**: övergången är inte granskad av en redovisningskonsult. Låt din redovisningskonsult granska den innan du bokför.
 
 > [!NOTE]
-> NONOX tar ännu inte fram någon årsredovisning enligt K3. Övergången bokförs i bokföringen, och sidan ger dig avstämningen och texten om jämförbarheten, men årsredovisningen gör du med din redovisningskonsult. Se [Årsredovisning](/manual/bokslut/arsredovisning).
+> För ett mindre aktiebolag vars räkenskapsår följer K3 tar NONOX fram en förhandsversion (beta) av årsredovisningen. Den är inte granskad av en auktoriserad redovisningskonsult, och en redovisningskonsult ska granska den innan den skrivs under. Se [Årsredovisning](/manual/bokslut/arsredovisning#forhandsversion-beta-for-mindre-aktiebolag-med-k3). Övergången bokförs i bokföringen, och sidan ger dig avstämningen och texten om jämförbarheten, men årsredovisningen gör du med din redovisningskonsult. Se [Årsredovisning](/manual/bokslut/arsredovisning).
 
 ## Innan du börjar
 

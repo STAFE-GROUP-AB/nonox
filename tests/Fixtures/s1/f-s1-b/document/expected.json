@@ -46,6 +46,7 @@
         "Summa tillgångar": [797386000, 794296000],
         "Aktiekapital": [10000000, 10000000],
         "Balanserad vinst eller förlust": [407829000, 356000000],
+        "Årets resultat": [0, 88459000],
         "Summa eget kapital": [417829000, 454459000],
         "Avsättningar för skatter": [24720000, 0],
         "varav uppskjuten skatt": [24720000, 0],
@@ -62,9 +63,10 @@
             "Belopp vid årets ingång": [10000000, 356000000, 88459000, 454459000],
             "Effekter av retroaktiv tillämpning och rättelse av fel": [null, -36630000, null, -36630000],
             "Omföring av föregående års resultat": [null, 88459000, -88459000, 0],
+            "Årets resultat": [null, null, 0, 0],
             "Belopp vid årets utgång": [10000000, 407829000, 0, 417829000]
         },
-        "_note": "The transition (equity effect −366 300 kr on 2091) is row b of K3 6.3 (S1-R8.3, H7). null: an empty cell. No 'Övriga förändringar' row."
+        "_note": "The transition (equity effect −366 300 kr on 2091) is row b of K3 6.3 (S1-R8.3, H7). Row a, the year's result, is 0 because 2026 has no vouchers but the transition. null: an empty cell. No 'Övriga förändringar' row."
     },
     "disposition": {
         "free_ore": 407829000,

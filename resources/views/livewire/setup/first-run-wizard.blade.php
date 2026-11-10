@@ -79,7 +79,7 @@
                 @else
                     @if($frameworkConditions)
                         <span class="hint" style="white-space: pre-line;">{{ $frameworkConditions }}</span>
-                        <label class="choice"><input type="checkbox" wire:model="framework_confirmed"> Företaget uppfyller villkoren ovan. Är du osäker, fråga din redovisningskonsult innan du väljer. Väljer du K3 tar NONOX fram årsredovisningen bara för ett mindre aktiebolag, och då som en beta; bokföring, bokslut och inkomstdeklaration fungerar som vanligt.</label>
+                        <label class="choice"><input type="checkbox" wire:model="framework_confirmed"> Företaget uppfyller villkoren ovan. Är du osäker, fråga din redovisningskonsult innan du väljer. Väljer du K3 tar NONOX bara fram en förhandsversion (beta) av årsredovisningen, och bara för ett mindre aktiebolag; den är inte granskad av en auktoriserad redovisningskonsult och ska granskas av en redovisningskonsult innan den skrivs under. Bokföring, bokslut och inkomstdeklaration fungerar som vanligt.</label>
                     @endif
                     @error('reporting_framework') <div class="error" role="alert">{{ $message }}</div> @enderror
                 @endif

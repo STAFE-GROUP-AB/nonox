@@ -1,26 +1,26 @@
 ---
-beskrivning: Årsredovisningen enligt K2, och för ett mindre aktiebolag som följer K3 (beta). Siffrorna kommer från bokföringen; du skriver texterna och laddar ner en PDF.
+beskrivning: Årsredovisningen enligt K2, och en förhandsversion (beta) för mindre aktiebolag med K3. Siffrorna kommer från bokföringen; du skriver texterna och laddar ner en PDF.
 ordning: 90
-roller: [owner, admin, accountant]
+roller: [owner, admin, accountant, bookkeeper, auditor]
 rutter: [accounting.annualReport, accounting.annualReport.show, accounting.annualReport.pdf, accounting.annualReport.ixbrl]
 sokord: [årsredovisning, k2, k3, bfnar 2012:1, egen formulering, rapport över förändringar i eget kapital, förvaltningsberättelse, resultaträkning, balansräkning, noter, flerårsöversikt, underskrifter, bolagsverket, ixbrl, digital inlämning, utdelning, fritt eget kapital, försiktighetsregeln]
 ---
 
 # Årsredovisning enligt K2
 
-Aktiebolag och ekonomiska föreningar ska upprätta en årsredovisning. I NONOX tas den fram enligt K2-regelverket direkt ur bokföringen; följer räkenskapsåret K3 läser du [Om räkenskapsåret följer K3 (beta)](#om-rakenskapsaret-foljer-k3-beta). Du skriver förvaltningsberättelsens texter, föreslår utdelning och anger vem som skriver under – siffrorna, uppställningarna och noterna gör NONOX.
+Aktiebolag och ekonomiska föreningar ska upprätta en årsredovisning. I NONOX tas den fram enligt K2-regelverket direkt ur bokföringen; följer räkenskapsåret K3 läser du [Förhandsversion (beta) för mindre aktiebolag med K3](#forhandsversion-beta-for-mindre-aktiebolag-med-k3). Du skriver förvaltningsberättelsens texter, föreslår utdelning och anger vem som skriver under – siffrorna, uppställningarna och noterna gör NONOX.
 
 Sidan finns under **Bokföring → Årsredovisning**.
 
 ![Årsredovisningen: texterna och underskrifterna till vänster, förhandsvisningen till höger.](/bilder/manual/bokslut/arsredovisning.webp)
 
-## Om räkenskapsåret följer K3 (beta)
+## Förhandsversion (beta) för mindre aktiebolag med K3
 
-Följer räkenskapsåret K3 (BFNAR 2012:1) tar NONOX fram årsredovisningen för ett **mindre aktiebolag** enligt K3. Den är en beta: låt en redovisningskonsult granska den innan den skrivs under. Sidan visar då **Beta** överst, och under texterna två rutor till: **Uppgifter för K3** och **Noter**. Regelverket väljer du under [Bokslut → Regelverk](/manual/bokslut/regelverk). Är det företagets första år med K3 bokför du först [övergången från K2](/manual/bokslut/overgang-till-k3).
+För ett mindre aktiebolag vars räkenskapsår följer K3 tar NONOX fram en förhandsversion (beta) av årsredovisningen. Den är inte granskad av en auktoriserad redovisningskonsult, och en redovisningskonsult ska granska den innan den skrivs under. Sidan visar då **Beta** överst, och under texterna två rutor till: **Uppgifter för K3** och **Noter**. Regelverket väljer du under [Bokslut → Regelverk](/manual/bokslut/regelverk). Är det företagets första år med K3 bokför du först [övergången från K2](/manual/bokslut/overgang-till-k3).
 
 ![Årsredovisning för ett aktiebolag som följer K3: texterna, Uppgifter för K3 och förhandsvisningen.](/bilder/manual/bokslut/arsredovisning-k3.webp)
 
-Årsredovisningen enligt K3 innehåller, i den här ordningen:
+Förhandsversionen innehåller, i den här ordningen:
 
 - **Förvaltningsberättelse** med verksamheten, väsentliga händelser, ägare med mer än tio procent, flerårsöversikten med regelverket för varje år och förslaget till resultatdisposition.
 - **Resultaträkning** och **Balansräkning** i K3:s uppställning, med föregående år. Är det första året med K3 står föregående år som det redovisades enligt K2; det räknas inte om, och en not om jämförbarhet säger det. Under **Avsättningar för skatter** står **varav uppskjuten skatt**.
@@ -33,7 +33,7 @@ Följer räkenskapsåret K3 (BFNAR 2012:1) tar NONOX fram årsredovisningen för
 K3 tillämpas helt eller inte alls. Finns något som NONOX inte stöder visas rutan **Det här hindrar årsredovisningen** med regeln bakom varje skäl, till exempel **(S1-R6)**, och ingen årsredovisning tas fram. I stället för förhandsvisningen står **Ingen förhandsvisning ännu**. Vanliga skäl:
 
 - Företaget är ett **större företag**, eller storleken går inte att avgöra. Årsredovisningen för ett större företag kommer i ett senare steg.
-- Företaget är en **ekonomisk förening**. Årsredovisningen enligt K3 görs bara för aktiebolag än så länge.
+- Företaget är en **ekonomisk förening**. Förhandsversionen görs bara för aktiebolag än så länge.
 - En princip under Regelverk saknas, eller är en som NONOX inte stöder: värdering till verkligt värde (kapitel 12), aktiveringsmodellen för utvecklingsutgifter, finansiella leasingavtal i balansräkningen eller låneutgifter i anskaffningsvärdet.
 - Bokföringen har saldo på konton för aktiverade utvecklingsutgifter eller fond för utvecklingsutgifter, fast kostnadsföringsmodellen är vald.
 - Det är första året med K3 och övergången är inte bokförd.
@@ -47,10 +47,14 @@ Det bokföringen inte kan svara på frågar NONOX efter i rutan **Frågor att be
 1. Under **Uppgifter för K3**, svara **Ja** eller **Nej** på frågorna, till exempel om företaget har åtaganden för koncern- eller intresseföretag.
 2. Ange **Medelantal anställda, heltidstjänster**.
 3. Under **Ägare med mer än tio procent**, klicka på **Lägg till ägare** för varje ägare med mer än tio procent av andelarna eller rösterna. För en fysisk person anges bara namnet, aldrig personnummer. Finns ingen sådan ägare, kryssa i rutan utan att lägga till någon rad.
-4. Fyll i de texter som gäller, till exempel **Skulder som förfaller efter mer än fem år, kr**. En not utan uppgifter tas inte med.
+4. Fyll i de texter som gäller, och beloppet under **Skulder som förfaller efter mer än fem år, kr** om företaget har sådana skulder. En not utan uppgifter tas inte med.
 5. Klicka på **Spara uppgifterna för K3**.
 
 När alla frågor är besvarade står **Alla frågor är besvarade** och **Ladda ner PDF** visas.
+
+En revisor eller bokförare kan läsa sidan och ladda ner PDF:en, men inte ändra texter, svar eller noter; sidan säger då **Du kan läsa och ladda ner årsredovisningen**.
+
+Förhandsversionen tas bara fram för räkenskapsår som börjar efter den 31 december 2025, när K3 i lydelsen enligt BFNAR 2025:3 gäller. Ett tidigare räkenskapsår med K3, till exempel ett brutet räkenskapsår från den 1 juli 2025, visar i stället skälet.
 
 ### Skriv en not med egna ord
 
@@ -70,7 +74,7 @@ iXBRL-filen görs bara för K2. Bokföringen, bokslutet och [inkomstdeklaratione
 
 Vilka regler som gäller enligt K3 beror på om företaget är ett större eller ett mindre företag enligt årsredovisningslagen. Ett företag är större om **samma två** av tre gränsvärden har överskridits under vart och ett av de två räkenskapsår som närmast föregår årsredovisningens år: medelantalet anställda mer än 50, balansomslutningen mer än 40 miljoner kronor och nettoomsättningen mer än 80 miljoner kronor. Året som årsredovisningen gäller räknas inte. Har företaget till exempel överskridit gränsvärdena för anställda och nettoomsättning det ena året men för balansomslutning och nettoomsättning det andra, är det bara nettoomsättningen som är överskriden båda åren, och företaget är mindre.
 
-NONOX förbereder den bedömningen inför årsredovisningen enligt K3 och hämtar siffrorna för de två föregående åren så här:
+NONOX förbereder den bedömningen och hämtar siffrorna för de två föregående åren så här:
 
 - **Nettoomsättning och balansomslutning** läses ur bokföringen för de räkenskapsår som finns i NONOX. Är ett år kortare eller längre än tolv månader räknas nettoomsättningen om till tolv månader. Balansomslutningen räknas inte om.
 - **Medelantal anställda** hämtas från årsredovisningarna för de två föregående åren. Antalet räknas i heltidstjänster. Ange det exakta medelantalet, avrunda inte – NONOX avrundar själv till ett helt tal innan det jämförs med gränsvärdet, som i Bokföringsnämndens exempel där 9,4 blir 9.
@@ -149,7 +153,7 @@ Bolagsverket tar emot årsredovisningar digitalt i formatet iXBRL: en webbsida d
 Årsredovisningen görs här för aktiebolag och ekonomiska föreningar. En enskild firma upprättar ingen årsredovisning utan ett förenklat årsbokslut.
 
 **Vi använder K3.**
-För ett mindre aktiebolag tar NONOX fram årsredovisningen enligt K3 som en beta. Står det **Det här hindrar årsredovisningen** visar rutan vad som behöver ändras. Se [Om räkenskapsåret följer K3 (beta)](#om-rakenskapsaret-foljer-k3-beta).
+För ett mindre aktiebolag tar NONOX fram en förhandsversion (beta) av årsredovisningen, som ska granskas av en redovisningskonsult. Står det **Det här hindrar årsredovisningen** visar rutan vad som behöver ändras. Se [Förhandsversion (beta) för mindre aktiebolag med K3](#forhandsversion-beta-for-mindre-aktiebolag-med-k3).
 
 **En siffra ser fel ut.**
 Kontrollera kontot i saldobalansen. Ligger beloppet på ett konto som hamnar på en annan rad än du väntat, prata med din redovisningskonsult. Rätta bokföringen och spara om – PDF:en byggs alltid från det som är bokfört.

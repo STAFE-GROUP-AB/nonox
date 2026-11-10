@@ -1651,6 +1651,24 @@ signed the checklist.
   P8's K3_TRANSITION refusal); a first K3 year whose transition is not booked
   (`S1-R7.7`, from note 22's `booked`); a note's `blocking` (`S1-R8.1`); an
   unbalanced sheet (`S1-R8.2`). Duplicate messages are listed once.
+- **Review fixes (2026-11-10).** P1: the S1-R1.4 check refuses any K3
+  version but `kons20251215` (`K3_VERSION`), since only that consolidation
+  and ÅRL as of SFS 2026:780 were read; a year beginning 2024-07-01 to
+  2025-12-31 (kons2024, also a broken year 2025-07-01 to 2026-06-30) is
+  refused, as K3Eligibility leaves those years unassessed. The demo moved to
+  K2 2025 → K3 2026 (shortened to 2026-01-01 – 2026-06-30 so the page opens
+  it). P2-b: viewing and exporting (page, preview, PDF, K2 iXBRL) needs
+  `reports:view` or `fiscal-years:manage`, so the auditor (§4) reads and
+  exports; texts, answers and overrides stay on `fiscal-years:manage`; the
+  navigation shows Årsredovisning to `reports:view`. Rule ids: the
+  legal-form refusal uses `S1-scope` because no rule-sheet row covers it
+  (the scope sentence "Not in S1: ekonomisk förening on K3" in A.4 is the
+  source); the unbalanced sheet uses `S1-R8.2` (the presentation rule the
+  K3 balance sheet implements; the refusal itself is the S1-P6 review
+  decision in A.3a). Public wording (P2-a): "förhandsversion (beta) av
+  årsredovisningen" for a mindre AB on K3, "inte granskad av en auktoriserad
+  redovisningskonsult", to be reviewed by a konsult before signing; never
+  "Årsredovisning enligt K3" as a product claim.
 - **Questions** (`questions()`): `K3Notes::questions()` and
   `K3ManagementReport::questions()`, without those a refusal already states.
   They never refuse the preview; `complete()` (no refusal, no question) is
@@ -1691,7 +1709,7 @@ signed the checklist.
   (another company's year → 404), `K3GuardTest` and
   `FrameworkPerFiscalYearTest` updated to the new routing.
 - **Demo and manual:** `database/seeders/K3DemoSeeder.php` (Verkstadshuset
-  Demo AB, synthetic, K2 2024 → K3 2025, transition booked) and the
+  Demo AB, synthetic, K2 2025 → K3 2026 shortened to six months, transition booked) and the
   `aktiebolagk3` company of `manual:screenshots`; manual Bokslut →
   Årsredovisning with two screenshots.
 - **Follow-ups (S1-P13):** lift the större refusal with the ÅRL 5:25–48 notes;
