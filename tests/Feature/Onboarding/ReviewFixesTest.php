@@ -254,6 +254,40 @@ describe('markdown in waitlist values', function () {
     });
 });
 
+describe('markdown is escaped once', function () {
+    it('renders ordinary values verbatim, without backslashes', function () {
+        [$entry] = Onboarding::approved(['name' => "Kim_O'Neil", 'email' => 'kim_o@x.test', 'company_name' => 'Bullar_AB (publ) (Väst)']);
+
+        foreach ([new WaitlistApprovedMail($entry), new OnboardingReminderMail($entry, 'login'), new OnboardingReminderMail($entry, 'help')] as $mail) {
+            $text = html_entity_decode(strip_tags($mail->render()), ENT_QUOTES);
+
+            expect($text)->toContain('Bullar_AB (publ) (Väst)')->not->toContain('\\');
+        }
+
+        $welcome = html_entity_decode(strip_tags((new WaitlistApprovedMail($entry))->render()), ENT_QUOTES);
+        expect($welcome)->toContain("Hej Kim_O'Neil")->toContain('kim_o@x.test');
+    });
+
+    it('still makes no link or emphasis of a value', function () {
+        [$entry] = Onboarding::approved(['company_name' => '[x](https://evil.test) *AB* _y_']);
+
+        foreach ([new WaitlistApprovedMail($entry), new OnboardingReminderMail($entry, 'help')] as $mail) {
+            $html = $mail->render();
+            expect($html)->not->toContain('href="https://evil.test')->not->toMatch('~<em[^>]*>~')
+                ->and(html_entity_decode(strip_tags($html)))->toContain('[x](https://evil.test) *AB* _y_');
+        }
+    });
+});
+
+describe('the earliest entry governs', function () {
+    it('is the one the prefill and the checklist use', function () {
+        [$first, $user] = Onboarding::approved(['company_name' => 'Första AB'], now()->subDays(3));
+        WaitlistEntry::factory()->status(WaitlistStatus::Approved)->create(['email' => 'annan@example.test', 'company_name' => 'Senare AB', 'decided_at' => now()->subDay(), 'approved_user_id' => $user->id]);
+
+        expect(WaitlistEntry::approvedFor($user)->id)->toBe($first->id);
+    });
+});
+
 describe('one set of mails per user', function () {
     it('sends one welcome mail per user', function () {
         config(['nonox.hq_admins' => ['hq@example.test']]);

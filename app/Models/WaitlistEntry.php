@@ -120,14 +120,14 @@ class WaitlistEntry extends Model
             ->delete();
     }
 
-    /** The approved entry that let this user in, if they came through the waiting list (the latest, if there are several). */
+    /** The approved entry that let this user in, if they came through the waiting list (the earliest, if there are several: the same one the mails follow). */
     public static function approvedFor(User $user): ?self
     {
         return self::query()
             ->where('approved_user_id', $user->id)
             ->where('status', WaitlistStatus::Approved->value)
-            ->orderByDesc('decided_at')
-            ->orderByDesc('id')
+            ->orderBy('decided_at')
+            ->orderBy('id')
             ->first();
     }
 
