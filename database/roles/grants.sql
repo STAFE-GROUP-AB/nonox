@@ -21,6 +21,7 @@ BEGIN
         ('agreement_proposals', 'SELECT, INSERT, UPDATE, DELETE'),
         ('agreement_rule_verifications', 'SELECT, INSERT'),
         ('agreement_rule_versions', 'SELECT, INSERT, UPDATE'),
+        ('annual_report_note_overrides', 'SELECT, INSERT, UPDATE, DELETE'),
         ('annual_reports', 'SELECT, INSERT, UPDATE, DELETE'),
         ('archive_packages', 'SELECT, INSERT, UPDATE, DELETE'),
         ('article_images', 'SELECT, INSERT, UPDATE, DELETE'),

@@ -8,6 +8,7 @@ use App\Models\Account;
 use App\Models\Accrual;
 use App\Models\AccrualPosting;
 use App\Models\AnnualReport;
+use App\Models\AnnualReportNoteOverride;
 use App\Models\ArchivePackage;
 use App\Models\Article;
 use App\Models\BankFileImport;
@@ -302,6 +303,7 @@ const COMPANY_SCOPED_MODELS = [
     FixedAsset::class => 'fixedAssetAttributes',
     Accrual::class => 'accrualAttributes',
     AnnualReport::class => 'annualReportAttributes',
+    AnnualReportNoteOverride::class => 'annualReportNoteOverrideAttributes',
     IncomeTaxReturn::class => 'incomeTaxReturnAttributes',
     IncomeTaxPartner::class => 'incomeTaxPartnerAttributes',
     K10Year::class => 'k10YearAttributes',
@@ -1043,6 +1045,22 @@ function annualReportAttributes(): array
         'business_description' => 'Hemlig verksamhet',
         'signatories' => [],
         'updated_by' => User::factory()->create()->id,
+    ];
+}
+
+function annualReportNoteOverrideAttributes(): array
+{
+    $user = User::factory()->create();
+    $year = FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31']);
+    $report = AnnualReport::query()->firstOrCreate(['fiscal_year_id' => $year->id], ['business_description' => 'Hemlig verksamhet', 'signatories' => [], 'updated_by' => $user->id]);
+
+    return [
+        'annual_report_id' => $report->id,
+        'note_key' => 'average_employees',
+        'text' => 'Hemlig formulering',
+        'reason' => 'Hemligt skäl',
+        'generated_hash' => str_repeat('0', 64),
+        'set_by' => $user->id,
     ];
 }
 

@@ -280,6 +280,18 @@ final class K3EquityStatement
     }
 
     /**
+     * The corrections in the year of an earlier year's voucher that change
+     * equity: errors corrected against opening equity, which belong to K3 6.3
+     * row b (the K3 notes' row 21 reads them, S1-P9).
+     *
+     * @return list<array{voucher: string, accounts: list<int>}>
+     */
+    public function earlierCorrections(): array
+    {
+        return $this->earlierCorrections;
+    }
+
+    /**
      * The equity columns of the statement, in order: the balance sheet's
      * equity posts plus any post a voucher moved during the year.
      *

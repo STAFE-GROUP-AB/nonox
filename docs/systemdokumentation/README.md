@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.127
+- Version: 0.128
 - Datum: 2026-11-09
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -2731,6 +2731,98 @@ konsoliderade K3 (vl12-1-k3-kons20251215), kapitel 35, och
   egen. Kassaflödesanalysen för det första K3-året behandlar ännu inte
   övergångens verifikation som en del av ingångsbalansen: den stoppas med
   verifikationen angiven (uppföljning i S1-P10).
+
+### 5a6.7 Noter och förvaltningsberättelse enligt K3 (förberedelse)
+
+Enligt AI-utredning 2026-11-09, juristgranskning återstår (ADR-059, tillägg
+2026-11-07, A.2.7, paket S1-P9). Källor: regelbladet
+`docs/specs/rules/s1.md`, S1-R8, R8.1 rad 1–27, R8.4, R3.7, R4.7, R7.5, och
+K3 punkt 8.6B. Ingenting syns för användaren ännu; K3-årsredovisningen
+(S1-P10) skriver ut noterna och förvaltningsberättelsen.
+
+- `K3Notes` tar fram noterna för ett mindre aktiebolag ur bokföringen,
+  anläggningsregistret, redovisningsprinciperna (avsnitt 5a6.1),
+  förändringarna i eget kapital (5a6.3), övergången (5a6.6) och det personen
+  har skrivit in. Varje not svarar mot en rad i regelbladets lista S1-R8.1
+  och finns bara när radens villkor är uppfyllt. Ordningen följer K3 punkt
+  8.2: redovisningsprinciperna (not 1, där varje princip ingår), noter till
+  posterna i resultaträkningens och balansräkningens ordning, övriga noter.
+- Not 1 anger att årsredovisningen följer årsredovisningslagen och K3 (K3
+  punkt 8.3) och listar de principer som gäller för året; en princip som
+  saknas blir en fråga. Avskrivning (linjär, nyttjandeperiod per slag ur
+  registret, för en komponent den totala, K3 punkt 17.23) och
+  komponentprincipen (beslut H4) och skatteprincipen med uppskjuten skatt
+  (S1-R4.7: ett mindre företag lämnar ingen not enligt
+  årsredovisningslagen 5 kap. 36 §) står i not 1.
+- Noter som K3 eller årsredovisningslagen bara kräver av större företag tas
+  aldrig fram. Ett större företag och ett företag vars storlek inte går att
+  avgöra nekas (beslut S1-H1); storleken avgörs av den som anropar, som för
+  kassaflödesanalysen.
+- En person kan skriva en not med egna ord (`annual_report_note_overrides`,
+  `K3NoteOverrides`). Bara texten byts: notens data, nummer och om den skrivs
+  ut alls kommer fortfarande ur bokföringen, och en text till en not som inte
+  finns skrivs inte ut. Varje not med egen text markeras, med skälet. Den
+  genererade texten sparas som en kontrollsumma; ändras bokföringen efteråt
+  visas den egna texten som inaktuell (kontrollsumman räknas alltid på den
+  svenska texten). Frågorna är av två slag: frågor om formuleringen (hur
+  färdigställandegraden bestäms, varför en effekt inte kan uppskattas, en
+  tillgångs nyttjandeperiod) besvaras av en egen text; frågor om bokföringen
+  eller fakta (en övergång som inte är bokförd, en princip som saknas, ett
+  belopp som inte stämmer med bokföringen, medelantalet anställda som inte är
+  angivet) stängs aldrig av en egen text.
+- Not om rättelse av fel (rad 21) tas bara med när ett fel från ett tidigare
+  år har rättats mot eget kapital vid årets ingång (rad b i förändringarna i
+  eget kapital) eller när personen har svarat att ett väsentligt fel har
+  rättats retroaktivt; en vanlig rättelseverifikation över årets resultat
+  ger ingen not (TODO(legal-verify): K3 punkt 10.14).
+- Anläggningsnoterna läser bara tillgångar som innehafts under året och
+  frågar aldrig efter nyttjandeperiod för pågående nyanläggningar och
+  förskott.
+- Förvaltningsberättelsen (`K3ManagementReport`) har verksamhetens art och
+  inriktning, väsentliga händelser, viktiga externa faktorer, speciella
+  omständigheter, ägare med mer än tio procent av andelarna eller rösterna,
+  väsentliga förändringar i ägarstrukturen (K3 punkt 3.7),
+  flerårsöversikten med regelverket för varje år och
+  resultatdispositionen. Delarna av årsredovisningslagen 6 kap. 1 § som inte
+  gäller mindre företag tas inte med. En föreslagen utdelning större än det
+  fria egna kapitalet blir en fråga (aktiebolagslagen 17 kap. 3 §), och
+  beloppet i ny räkning blir aldrig negativt på grund av utdelningen. Ska
+  jämförelsetalen räknas om vid övergången blir det en fråga, eftersom NONOX
+  inte räknar om dem ännu.
+- Det som bokföringen inte vet skrivs in i nya kolumner i `annual_reports`
+  (`SaveK3ReportInputs`): texterna till förvaltningsberättelsen (även viktiga
+  förändringar i verksamheten), ägarna (namn och andel; för en juridisk person
+  valfritt organisationsnummer eller utländskt registreringsnummer för
+  företaget med land, för en fysisk person bara namnet utan något nummer,
+  aldrig födelseår eller personnummer, och ett namn med ett personnummer
+  avvisas; i
+  årsredovisningen skrivs bara namn och andel ut; ett tomt svar betyder att
+  ingen ägare har mer än tio procent), skulder som förfaller senare än fem år
+  efter balansdagen (aldrig mer än de långfristiga skulderna på 2300–2399),
+  arrangemang utanför balansräkningen, lån till ledande befattningshavare,
+  poster av exceptionell storlek, moderföretaget, transaktioner med
+  närstående (publikt aktiebolag), avvikelser från allmänna råd och goodwill,
+  och ja/nej-svar (`k3_answers`) om noterna för åtaganden för koncernföretag,
+  arrangemang utanför balansräkningen, lån till ledande befattningshavare och
+  moderföretag gäller, om ett väsentligt fel har rättats retroaktivt (frågas
+  varje K3-år efter det första) och att företaget inte har haft några
+  anställda. Medelantalet anställda kan anges som heltidsekvivalenter
+  (`average_employees_fte`). En
+  sådan not kan aldrig utebli i tysthet: frågan står öppen tills svaret är
+  nej eller texten är skriven. K2-årsredovisningen läser inte kolumnerna.
+- Ett annat företags räkenskapsår ger 404. Båda åtgärderna kräver behörigheten att hantera räkenskapsår, gäller bara
+  ett år som följer K3 och nekas när året är stängt och årsredovisningen
+  fastställd. Behandlingshistoriken får
+  `annual_report.note_override_set`, `annual_report.note_override_removed`
+  (id och notens nyckel) och `annual_report.k3_inputs_saved` (namnen på de
+  fält som ändrats), aldrig texterna, skälen eller ägarnas namn.
+- Ett fast antal databasfrågor, oberoende av antalet verifikationer,
+  tillgångar och noter.
+- TODO(legal-verify): alla genererade texter är NONOX egna och granskas av
+  redovisningskonsulten (H10); K3 23.29, 10.14, 8.3A och kapitel 30 har inte
+  lästs i sin helhet; medelantalet anställda avrundas till hela personer;
+  bokstäverna a–d i K3 punkt 3.7; regelbladets rader 1–27 är ett minimum
+  (kapitel 9, 13–16, 19, 21–28 och 30–34 är inte genomlästa).
 
 ## 5a7. Inkomstdeklaration 2 (SRU)
 
@@ -5474,3 +5566,4 @@ påverkar bokföringen och fakturan:
 | 0.125 | 2026-11-09 | Inlästa obetalda fakturor (avsnitt 5a8a, ADR-076) behåller sitt gamla nummer som identitet och får inget nummer ur nummerserien; de kan inte skickas eller göras till PDF; betalning och avskrivning får verifikationstexten "Ingående balans (inläst)"; avstämningen mot 1510/2440 tar med öppna NONOX-fakturor och valda underkonton och tillåter kreditfakturor. |
 | 0.126 | 2026-11-09 | Databasroller (avsnitt 4.3a, ADR-079 etapp 2): NONOX kan köras som en roll (`nonox_app`) som inte äger tabellerna och inte kan stänga av, ta bort eller ersätta triggerna, tömma tabeller eller ändra schemat; migreringarna körs som ägaren (`nonox_owner`). Tabeller vars trigger nekar all ändring och borttagning blir append-only även genom behörigheterna. Behörigheterna läggs på efter varje migrering; en tabell utan beslut får ingen åtkomst. Påslaget med `DB_MIGRATION_USERNAME`, annars som förut med en användare; ägarens lösenord finns aldrig i programmets konfiguration. Triggerfunktionernas sökväg (version 0.119) läggs på igen efter varje migrering; personalliggarens gallring kontrolleras mot lagringstiden i databasen; signeringshändelser tas bara bort med sin begäran. Ingen bokföringsregel och inga data ändras. |
 | 0.127 | 2026-11-09 | Övergång från K2 till K3 (avsnitt 5a6.6, ADR-059 tillägg A.2.8, paket S1-P12, beslut H7 (a)): det första året med K3 lägger en person upp justeringarna av ingångsbalansräkningen (uppskjuten skatt, avsättningar, andra poster med hänvisning till K3; lättnadsregeln 35.27 per post med skäl), och förbjudna omräkningar (35.15, 35.16, 35.18, 35.20) nekas. Efter bekräftelse bokförs övergången en gång som en verifikation med den nya källan `K3_TRANSITION`, daterad årets första dag, mot 2091; migrationen lägger bara till källan i kontrollen av `vouchers.source`, utan ändring av triggrar eller `PostVoucher`. De ingående balanserna och K2-året ändras inte. Kapitel 35 tillämpas en gång, utom för ett företag som tvingas lämna K2 enligt BFNAR 2025:2. Omräknade jämförelsetal stöds inte ännu. Förändringar i eget kapital visar övergången på rad b, och uppskjuten skatt räknar årets förändring från ingångsbalansräkningen enligt K3. Nya tabeller `k3_transitions` (kan inte ändras) och `k3_transition_items` (låsta efter bokföringen). Byggnader som slaget `BUILDING_COMPONENTS`, kvittning av uppskjuten skatt endast i presentationen (29.32) med en bekräftelse per år, posten Avsättningar för skatter som en rad över 2240–2259, ogiltig övergång efter fullständig rättelse, ingen avsättning för nedmontering (35.29), ögonblicksbild av ingående balanser vid bokföringen och inget byte tillbaka till K2 för ett år med bokförd övergång. Ingen befintlig verifikation ändrades. |
+| 0.128 | 2026-11-09 | Noter och förvaltningsberättelse enligt K3 (avsnitt 5a6.7, ADR-059 tillägg A.2.7, paket S1-P9): noterna för ett mindre aktiebolag tas fram ur bokföringen, registret, principerna och övergången, en per rad i regelbladets lista S1-R8.1 och bara när villkoret är uppfyllt; en person kan skriva en not med egna ord, men notens data kommer alltid ur bokföringen och den egna texten markeras. Nya kolumner i `annual_reports` för det bokföringen inte vet (bland annat ägare med mer än tio procent med namn och andel, aldrig födelseår eller personnummer, och ja/nej-svar om noter som annars kunde utebli) och tabellen `annual_report_note_overrides`. Ingenting syns för användaren ännu och ingen verifikation ändras. |

@@ -11,8 +11,9 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * What a person writes in a K2 annual report; the figures are read from the
- * books every time the report is shown.
+ * What a person writes in an annual report; the figures are read from the
+ * books every time the report is shown. The k3_* columns belong to a K3
+ * report only (ADR-059 A.2.7, SaveK3ReportInputs); the K2 report ignores them.
  *
  * @property int $id
  * @property int $company_id
@@ -37,6 +38,20 @@ use Illuminate\Database\Eloquent\Model;
  * @property ?string $events_after
  * @property bool $events_effect_unknown
  * @property ?string $net_sales_comment
+ * @property ?array<string, bool> $k3_answers yes/no answers behind the K3 notes (SaveK3ReportInputs::ANSWERS)
+ * @property ?string $k3_business_changes K3 3.7, important changes in the business
+ * @property ?string $k3_external_factors K3 3.7, the K3 management report only (ADR-059 A.2.7)
+ * @property ?string $k3_special_circumstances
+ * @property ?string $k3_ownership_changes
+ * @property ?list<array{name: string, owner_type?: string, org_number: ?string, foreign_registration: ?string, country: ?string, votes_bp: int, capital_bp: int}> $k3_major_owners null until answered; [] means no owner above ten per cent
+ * @property ?int $k3_long_term_liabilities_ore liabilities due after five years (ÅRL 5 kap. 13 §)
+ * @property ?string $k3_off_balance_arrangements
+ * @property ?string $k3_loans_to_executives
+ * @property ?list<array{description: string, amount_ore: int}> $k3_exceptional_items
+ * @property ?string $k3_parent_company
+ * @property ?string $k3_related_party_transactions
+ * @property ?string $k3_departures
+ * @property ?string $k3_goodwill_note
  * @property int $updated_by
  */
 class AnnualReport extends Model
@@ -67,6 +82,20 @@ class AnnualReport extends Model
         'events_after',
         'events_effect_unknown',
         'net_sales_comment',
+        'k3_answers',
+        'k3_business_changes',
+        'k3_external_factors',
+        'k3_special_circumstances',
+        'k3_ownership_changes',
+        'k3_major_owners',
+        'k3_long_term_liabilities_ore',
+        'k3_off_balance_arrangements',
+        'k3_loans_to_executives',
+        'k3_exceptional_items',
+        'k3_parent_company',
+        'k3_related_party_transactions',
+        'k3_departures',
+        'k3_goodwill_note',
         'updated_by',
     ];
 
@@ -83,6 +112,10 @@ class AnnualReport extends Model
             'pledged_assets' => 'array',
             'contingent_liabilities_ore' => 'integer',
             'events_effect_unknown' => 'boolean',
+            'k3_answers' => 'array',
+            'k3_major_owners' => 'array',
+            'k3_long_term_liabilities_ore' => 'integer',
+            'k3_exceptional_items' => 'array',
         ];
     }
 }
