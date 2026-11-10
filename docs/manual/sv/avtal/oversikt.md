@@ -10,7 +10,7 @@ sokord: [kollektivavtal, avtal, Gröna Riks, Detaljhandelsavtalet, hängavtal, O
 
 Är företaget bundet av ett kollektivavtal styr avtalet en stor del av lönen: vilken lön som är lägst tillåten, vad en timme sent på kvällen eller en söndag ska kosta och hur övertid ersätts. Med modulen **Avtal** (NONOX Avtal) räknar lönen med avtalets egna satser, och varje belopp på lönebeskedet visar vilken version och vilken källa det kommer från.
 
-Avsnittet är för dig som sköter lönerna i ett företag med kollektivavtal, till exempel ett café, en restaurang, en butik, ett bageri eller en frisörsalong. Avtal bygger på lönemodulen; läs [Lön](/manual/lon) först om du inte har börjat med lönen i NONOX.
+Avsnittet är för dig som sköter lönerna i ett företag med kollektivavtal, till exempel ett café, en restaurang, en butik, ett bageri, en frisörsalong eller ett snickeri. Avtal bygger på lönemodulen; läs [Lön](/manual/lon) först om du inte har börjat med lönen i NONOX.
 
 > [!IMPORTANT]
 > Avtalets värden används först när en namngiven person i företaget har jämfört dem med parternas egna texter. Tills dess stoppas lönekörningen för de anställda som omfattas av avtalet. Det gör att ingen får lön efter en siffra som ingen har kontrollerat. NONOX lämnar inga garantier för att värdena stämmer för just ert företag – kontrollen är er.
@@ -21,6 +21,7 @@ Avsnittet är för dig som sköter lönerna i ett företag med kollektivavtal, t
 - [Välj avtal för företaget](/manual/avtal/valj-avtal)
 - [Avtal, lönegrupp och branschvana per anställd](/manual/avtal/avtal-per-anstalld)
 - [Versioner och kontroll av avtalets värden](/manual/avtal/versioner-och-kontroll)
+- [Träindustriavtalet – trä- och möbelindustrin](/manual/avtal/traindustriavtalet)
 
 ## I lönekörningen
 

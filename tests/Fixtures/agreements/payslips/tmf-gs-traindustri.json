@@ -1,0 +1,650 @@
+{
+  "agreement": "tmf-gs-traindustri",
+  "note": "Expected amounts worked out by hand from the agreement data and the 2026 premium rules (docs/avtal/datamodell.md §6.8). Synthetic agreements carry invented values.",
+  "cases": [
+    {
+      "name": "timavlönad yrkesarbetare: timlön",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "YRKES",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-03",
+      "payment_date": "2026-03-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-03-02"
+        }
+      ],
+      "expected": {
+        "lines": {},
+        "gross_ore": 2880000,
+        "employer": {
+          "TJANSTEPENSION": 129600,
+          "AVTALSFORSAKRING": 12960
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "OB a) måndag–torsdag kl. 17–24",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "YRKES",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-03",
+      "payment_date": "2026-03-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-03-02"
+        },
+        {
+          "code": "TMF_OB_A",
+          "quantity": "10",
+          "date": "2026-03-03"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TMF_OB_A": 38800
+        },
+        "gross_ore": 2918800,
+        "employer": {
+          "TJANSTEPENSION": 131346,
+          "AVTALSFORSAKRING": 13135
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "OB b) natt tisdag–fredag kl. 00–05",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "YRKES",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-03",
+      "payment_date": "2026-03-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-03-02"
+        },
+        {
+          "code": "TMF_OB_B",
+          "quantity": "5",
+          "date": "2026-03-04"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TMF_OB_B": 23125
+        },
+        "gross_ore": 2903125,
+        "employer": {
+          "TJANSTEPENSION": 130641,
+          "AVTALSFORSAKRING": 13064
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "OB c) lördag",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "YRKES",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-03",
+      "payment_date": "2026-03-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-03-02"
+        },
+        {
+          "code": "TMF_OB_C",
+          "quantity": "8",
+          "date": "2026-03-07"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TMF_OB_C": 70880
+        },
+        "gross_ore": 2950880,
+        "employer": {
+          "TJANSTEPENSION": 132790,
+          "AVTALSFORSAKRING": 13279
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "OB d) trettondagen",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "YRKES",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-01",
+      "payment_date": "2026-01-23",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-01-02"
+        },
+        {
+          "code": "TMF_OB_D",
+          "quantity": "6",
+          "date": "2026-01-06"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TMF_OB_D": 64020
+        },
+        "gross_ore": 2944020,
+        "employer": {
+          "TJANSTEPENSION": 132481,
+          "AVTALSFORSAKRING": 13248
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "OB e) julafton",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "YRKES",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2025-12",
+      "payment_date": "2026-01-23",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2025-12-02"
+        },
+        {
+          "code": "TMF_OB_E",
+          "quantity": "8",
+          "date": "2025-12-24"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TMF_OB_E": 179480
+        },
+        "gross_ore": 3059480,
+        "employer": {
+          "TJANSTEPENSION": 137677,
+          "AVTALSFORSAKRING": 13767
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "helgdagslön för timavlönad: trettondagen på en arbetsdag",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "YRKES",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-01",
+      "payment_date": "2026-01-23",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-01-02"
+        },
+        {
+          "code": "TMF_HELGDAG",
+          "quantity": "8",
+          "date": "2026-01-06"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TMF_HELGDAG": 144000
+        },
+        "gross_ore": 3024000,
+        "employer": {
+          "TJANSTEPENSION": 136080,
+          "AVTALSFORSAKRING": 13608
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "timavlönad: övertidstillägg 58,50 kr utan timlönen igen",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "YRKES",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-03",
+      "payment_date": "2026-03-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-03-02"
+        },
+        {
+          "code": "TMF_OT_TL",
+          "quantity": "4",
+          "date": "2026-03-10"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TMF_OT_TL": 23400
+        },
+        "gross_ore": 2903400,
+        "employer": {
+          "TJANSTEPENSION": 130653,
+          "AVTALSFORSAKRING": 13065
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "timavlönad deltid 50 %: mertidstillägg",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 5000,
+        "weekly_hours": "20",
+        "group": "YRKES",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-03",
+      "payment_date": "2026-03-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "80",
+          "date": "2026-03-02"
+        },
+        {
+          "code": "TMF_MT_TL",
+          "quantity": "3",
+          "date": "2026-03-11"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TMF_MT_TL": 17550
+        },
+        "gross_ore": 1457550,
+        "employer": {
+          "TJANSTEPENSION": 65590,
+          "AVTALSFORSAKRING": 6560
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "skiftformstillägg kontinuerligt tvåskift 8,1 %",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "YRKES",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-03",
+      "payment_date": "2026-03-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-03-02"
+        },
+        {
+          "code": "TMF_SKIFT_2K",
+          "quantity": "120",
+          "date": "2026-03-02"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TMF_SKIFT_2K": 174960
+        },
+        "gross_ore": 3054960,
+        "employer": {
+          "TJANSTEPENSION": 137473,
+          "AVTALSFORSAKRING": 13747
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "arbete utom verkstaden 10 %",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "YRKES",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-03",
+      "payment_date": "2026-03-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-03-02"
+        },
+        {
+          "code": "TMF_UTOM",
+          "quantity": "20",
+          "date": "2026-03-12"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TMF_UTOM": 36000
+        },
+        "gross_ore": 2916000,
+        "employer": {
+          "TJANSTEPENSION": 131220,
+          "AVTALSFORSAKRING": 13122
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "yrkesarbetare med fem års branschvana under lägsta timlönen",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 17000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "YRKES",
+        "experience_from": "2020-01-01",
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-03",
+      "payment_date": "2026-03-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-03-02"
+        }
+      ],
+      "expected": {
+        "lines": {},
+        "gross_ore": 2720000,
+        "employer": {
+          "TJANSTEPENSION": 122400,
+          "AVTALSFORSAKRING": 12240
+        },
+        "warnings": [
+          "under minimilönen"
+        ]
+      }
+    },
+    {
+      "name": "månadsavlönad: övertid med 1/175 av månadslönen och tillägget",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3150000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "YRKES",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-03",
+      "payment_date": "2026-03-25",
+      "inputs": [
+        {
+          "code": "TMF_OT",
+          "quantity": "3",
+          "date": "2026-03-10"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "MANADSLON": 3150000,
+          "TMF_OT": 71550
+        },
+        "gross_ore": 3221550,
+        "employer": {
+          "TJANSTEPENSION": 144970,
+          "AVTALSFORSAKRING": 14497
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "månadsavlönad deltid 75 %: mertid med deltidens timlön och tillägget",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3150000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 7500,
+        "weekly_hours": "30",
+        "group": "YRKES",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-03",
+      "payment_date": "2026-03-25",
+      "inputs": [
+        {
+          "code": "TMF_MT",
+          "quantity": "2",
+          "date": "2026-03-11"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "MANADSLON": 2362500,
+          "TMF_MT": 47700
+        },
+        "gross_ore": 2410200,
+        "employer": {
+          "TJANSTEPENSION": 108459,
+          "AVTALSFORSAKRING": 10846
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "semester: 12,96 % (12 % uppräknat med 1,08)",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "YRKES",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-03",
+      "payment_date": "2026-03-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-03-02"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "SEMESTERLON": 414720
+        },
+        "gross_ore": 3294720,
+        "employer": {
+          "TJANSTEPENSION": 148262,
+          "AVTALSFORSAKRING": 14826
+        },
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "VACATION",
+          "date": "2026-03-16",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-03-17",
+          "hours": "8"
+        }
+      ],
+      "vacation": {
+        "rule": "PROCENTREGELN",
+        "paid_days_earned": 25,
+        "basis_ore": 40000000
+      }
+    },
+    {
+      "name": "semester: lägsta semesterlön per dag",
+      "agreement": "tmf-gs-traindustri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "YRKES",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-03",
+      "payment_date": "2026-03-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-03-02"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "SEMESTERLON": 338000
+        },
+        "gross_ore": 3218000,
+        "employer": {
+          "TJANSTEPENSION": 144810,
+          "AVTALSFORSAKRING": 14481
+        },
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "VACATION",
+          "date": "2026-03-16",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-03-17",
+          "hours": "8"
+        }
+      ],
+      "vacation": {
+        "rule": "PROCENTREGELN",
+        "paid_days_earned": 25,
+        "basis_ore": 5000000
+      }
+    }
+  ]
+}

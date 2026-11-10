@@ -1,0 +1,1043 @@
+{
+    "schema": "nonox.agreement/1",
+    "agreement": {
+        "key": "tmf-gs-traindustri",
+        "name": "Träindustriavtalet (Trä- och Möbelföretagen – GS-facket)",
+        "short_name": "Träindustriavtalet",
+        "parties": [
+            "Trä- och Möbelföretagen (TMF)",
+            "GS – Facket för skogs-, trä- och grafisk bransch"
+        ],
+        "collective": "ARBETARE",
+        "variant": "MEMBER",
+        "base_agreement": null,
+        "segments": [
+            "snickeri",
+            "möbelindustri",
+            "trähusfabrik",
+            "båtbyggeri",
+            "trävaruindustri"
+        ],
+        "source": "TI23#s. 1; kollektivavtal s. 8"
+    },
+    "valid_from": "2023-04-01",
+    "valid_to": "2025-03-31",
+    "validity_source": "TI23#§ 16 s. 74",
+    "sources": [
+        {
+            "id": "TI23",
+            "title": "Träindustriavtalet 2023-04-01 – 2025-03-31 (avtalsbok)",
+            "publisher": "Trä- och Möbelföretagen/GS-facket",
+            "url": "https://www.gsfacket.se/globalassets/dokument/avtalsbocker/avtalsbocker-2023-2026/traindustriavtalet-2023-04-01--2025-03-31.pdf",
+            "edition": "2023-04-01",
+            "retrieved_at": "2026-11-10",
+            "sha256": "c0739bb8305aaa597f3a9ee398d2534755c6b6350d77dbfe3bb8ba94f76e70bb"
+        },
+        {
+            "id": "P26",
+            "title": "Premier 2026, arbetsgivare med kollektivavtal – arbetare (Svenskt Näringsliv–LO)",
+            "publisher": "Avtalat (Fora/AFA/AMF/Svenskt Näringsliv/LO)",
+            "url": "https://www.avtalat.se/media/10ql04hg/2026-premier_asl_22-12-2025.pdf",
+            "edition": "2025-12-22",
+            "retrieved_at": "2026-11-02"
+        }
+    ],
+    "working_time": {
+        "full_time_hours_per_week": "40",
+        "overtime_method": {
+            "method": "DAILY",
+            "source": "TI23#§ 4 mom 12 kommentar s. 36–37; § 5 mom 2 s. 42"
+        },
+        "hourly_divisor": {
+            "monthly_to_hourly": "175",
+            "part_time": {
+                "type": "WEEKLY_HOURS_TIMES",
+                "factor": "4.375"
+            },
+            "source": "TI23#bilaga 1 p. 2 A s. 78; p. 6 s. 81"
+        },
+        "source": "TI23#§ 4 mom 2 s. 22"
+    },
+    "groups": [
+        {
+            "code": "SPECIAL",
+            "name": "Specialarbetare",
+            "description": "Arbetande förmän och speciellt kvalificerade arbetare som självständigt utför specialuppgifter som kräver flerårig inlärning",
+            "source": "TI23#§ 1 mom 2 anm. a s. 11"
+        },
+        {
+            "code": "YRKES",
+            "name": "Yrkesarbetare",
+            "description": "Befattningar med kvalificerade inslag, t.ex. bänksnickare, maskinsnickare, möbelsnickare, båtbyggare, ytbehandlare, truckförare med utbildning; de två första åren som övriga arbetare",
+            "source": "TI23#§ 1 mom 2 anm. b–c s. 11–12"
+        },
+        {
+            "code": "OVRIGA",
+            "name": "Övriga arbetare som fyllt 18",
+            "description": "Befattningar utan kvalificerade inslag, t.ex. inmatare, fråntagare, viss lagerpersonal",
+            "source": "TI23#§ 1 mom 2 anm. c s. 11–12"
+        },
+        {
+            "code": "MINDERARIG",
+            "name": "Minderåriga arbetare",
+            "description": "Arbetare under 18 år (inte feriearbetare)",
+            "source": "TI23#§ 1 mom 2 s. 9–11"
+        }
+    ],
+    "day_types": {
+        "HELG_D": {
+            "name": "Trettondagen, Kristi himmelsfärdsdag och alla helgons dag (kl. 17 dagen före till kl. 06 dagen efter)",
+            "days": [
+                {
+                    "day": "TRETTONDEDAGSAFTON",
+                    "from": "17:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "TRETTONDEDAG_JUL",
+                    "from": "00:00",
+                    "to_next_day": "06:00"
+                },
+                {
+                    "day": "DAGEN_FORE_KRISTI_HIMMELSFARD",
+                    "from": "17:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "KRISTI_HIMMELSFARDSDAG",
+                    "from": "00:00",
+                    "to_next_day": "06:00"
+                },
+                {
+                    "day": "DAGEN_FORE_ALLA_HELGONS_DAG",
+                    "from": "17:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "ALLA_HELGONS_DAG",
+                    "from": "00:00",
+                    "to_next_day": "06:00"
+                }
+            ],
+            "source": "TI23#§ 5 mom 1 s. 41"
+        },
+        "STORHELG_E": {
+            "name": "Påsk, nyår, jul, 1 maj, nationaldagen, midsommar och pingst (kl. 17 dagen före till kl. 06 efter helgen)",
+            "days": [
+                {
+                    "day": "SKARTORSDAGEN",
+                    "from": "17:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "LANGFREDAGEN",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "PASKAFTON",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "PASKDAGEN",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "ANNANDAG_PASK",
+                    "from": "00:00",
+                    "to_next_day": "06:00"
+                },
+                {
+                    "day": "DAGEN_FORE_NYARSAFTON",
+                    "from": "17:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "NYARSAFTON",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "NYARSDAGEN",
+                    "from": "00:00",
+                    "to_next_day": "06:00"
+                },
+                {
+                    "day": "DAGEN_FORE_JULAFTON",
+                    "from": "17:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "JULAFTON",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "JULDAGEN",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "ANNANDAG_JUL",
+                    "from": "00:00",
+                    "to_next_day": "06:00"
+                },
+                {
+                    "day": "VALBORGSMASSOAFTON",
+                    "from": "17:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "FORSTA_MAJ",
+                    "from": "00:00",
+                    "to_next_day": "06:00"
+                },
+                {
+                    "day": "DAGEN_FORE_NATIONALDAGEN",
+                    "from": "17:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "NATIONALDAGEN",
+                    "from": "00:00",
+                    "to_next_day": "06:00"
+                },
+                {
+                    "day": "DAGEN_FORE_MIDSOMMARAFTON",
+                    "from": "17:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "MIDSOMMARAFTON",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "MIDSOMMARDAGEN",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "DAGEN_EFTER_MIDSOMMARDAGEN",
+                    "from": "00:00",
+                    "to_next_day": "06:00"
+                },
+                {
+                    "day": "DAGEN_FORE_PINGSTAFTON",
+                    "from": "17:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "PINGSTAFTON",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "PINGSTDAGEN",
+                    "from": "00:00",
+                    "to_next_day": "06:00"
+                }
+            ],
+            "source": "TI23#§ 5 mom 1 s. 41"
+        },
+        "HELGDAGSLON": {
+            "name": "Dagar med helgdagslön för timavlönade (när dagen är arbetsdag enligt schemat)",
+            "days": [
+                {
+                    "day": "NYARSAFTON",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "NYARSDAGEN",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "TRETTONDEDAG_JUL",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "LANGFREDAGEN",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "PASKAFTON",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "PASKDAGEN",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "ANNANDAG_PASK",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "FORSTA_MAJ",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "KRISTI_HIMMELSFARDSDAG",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "PINGSTAFTON",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "PINGSTDAGEN",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "NATIONALDAGEN",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "MIDSOMMARAFTON",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "MIDSOMMARDAGEN",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "ALLA_HELGONS_DAG",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "JULAFTON",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "JULDAGEN",
+                    "from": "00:00",
+                    "to": "24:00"
+                },
+                {
+                    "day": "ANNANDAG_JUL",
+                    "from": "00:00",
+                    "to": "24:00"
+                }
+            ],
+            "source": "TI23#§ 8 mom 2–4 s. 54–55"
+        }
+    },
+    "ob_windows": [
+        {
+            "code": "TMF_OB_A",
+            "days": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU"
+            ],
+            "from": "17:00",
+            "to": "24:00",
+            "overlap": "HIGHEST_ONLY",
+            "source": "TI23#§ 5 mom 1 s. 41"
+        },
+        {
+            "code": "TMF_OB_A",
+            "days": [
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+            ],
+            "from": "05:00",
+            "to": "06:00",
+            "overlap": "HIGHEST_ONLY",
+            "source": "TI23#§ 5 mom 1 s. 41"
+        },
+        {
+            "code": "TMF_OB_B",
+            "days": [
+                "TUE",
+                "WED",
+                "THU",
+                "FRI"
+            ],
+            "from": "00:00",
+            "to": "05:00",
+            "overlap": "HIGHEST_ONLY",
+            "source": "TI23#§ 5 mom 1 s. 41"
+        },
+        {
+            "code": "TMF_OB_C",
+            "days": [
+                "FRI"
+            ],
+            "from": "17:00",
+            "to": "24:00",
+            "overlap": "HIGHEST_ONLY",
+            "source": "TI23#§ 5 mom 1 s. 41"
+        },
+        {
+            "code": "TMF_OB_C",
+            "days": [
+                "SAT",
+                "SUN"
+            ],
+            "from": "00:00",
+            "to": "24:00",
+            "overlap": "HIGHEST_ONLY",
+            "source": "TI23#§ 5 mom 1 s. 41"
+        },
+        {
+            "code": "TMF_OB_C",
+            "days": [
+                "MON"
+            ],
+            "from": "00:00",
+            "to": "06:00",
+            "overlap": "HIGHEST_ONLY",
+            "source": "TI23#§ 5 mom 1 s. 41"
+        },
+        {
+            "code": "TMF_OB_D",
+            "day_type": "HELG_D",
+            "overlap": "HIGHEST_ONLY",
+            "source": "TI23#§ 5 mom 1 s. 41"
+        },
+        {
+            "code": "TMF_OB_E",
+            "day_type": "STORHELG_E",
+            "overlap": "HIGHEST_ONLY",
+            "source": "TI23#§ 5 mom 1 s. 41"
+        }
+    ],
+    "minimum_wages": {
+        "age_reference": "PERIOD_END",
+        "check": "WARN",
+        "source": "TI23#§ 1 mom 2 s. 9–11",
+        "steps": [
+            {
+                "valid_from": "2023-04-01",
+                "rows": [
+                    {
+                        "group": "SPECIAL",
+                        "hourly_ore": 17460,
+                        "monthly_ore": 3055500,
+                        "source": "TI23#§ 1 mom 2 s. 9"
+                    },
+                    {
+                        "group": "YRKES",
+                        "hourly_ore": 14580,
+                        "monthly_ore": 2551500,
+                        "source": "TI23#§ 1 mom 2 s. 9"
+                    },
+                    {
+                        "group": "YRKES",
+                        "experience_months_min": 12,
+                        "hourly_ore": 15100,
+                        "monthly_ore": 2642500,
+                        "source": "TI23#§ 1 mom 2 s. 9"
+                    },
+                    {
+                        "group": "YRKES",
+                        "experience_months_min": 24,
+                        "hourly_ore": 15385,
+                        "monthly_ore": 2692375,
+                        "source": "TI23#§ 1 mom 2 s. 9"
+                    },
+                    {
+                        "group": "YRKES",
+                        "experience_months_min": 36,
+                        "hourly_ore": 15775,
+                        "monthly_ore": 2760625,
+                        "source": "TI23#§ 1 mom 2 s. 9"
+                    },
+                    {
+                        "group": "YRKES",
+                        "experience_months_min": 48,
+                        "hourly_ore": 16185,
+                        "monthly_ore": 2832375,
+                        "source": "TI23#§ 1 mom 2 s. 9"
+                    },
+                    {
+                        "group": "OVRIGA",
+                        "age_min": 18,
+                        "hourly_ore": 14580,
+                        "monthly_ore": 2551500,
+                        "source": "TI23#§ 1 mom 2 s. 9"
+                    },
+                    {
+                        "group": "OVRIGA",
+                        "age_min": 18,
+                        "experience_months_min": 12,
+                        "hourly_ore": 15100,
+                        "monthly_ore": 2642500,
+                        "source": "TI23#§ 1 mom 2 s. 9"
+                    },
+                    {
+                        "group": "OVRIGA",
+                        "age_min": 18,
+                        "experience_months_min": 24,
+                        "hourly_ore": 15300,
+                        "monthly_ore": 2677500,
+                        "source": "TI23#§ 1 mom 2 s. 9"
+                    },
+                    {
+                        "group": "MINDERARIG",
+                        "age_min": 17,
+                        "age_max": 17,
+                        "hourly_ore": 12310,
+                        "monthly_ore": 2154250,
+                        "source": "TI23#§ 1 mom 2 s. 9"
+                    },
+                    {
+                        "group": "MINDERARIG",
+                        "age_min": 16,
+                        "age_max": 16,
+                        "hourly_ore": 11125,
+                        "monthly_ore": 1946875,
+                        "source": "TI23#§ 1 mom 2 s. 9"
+                    },
+                    {
+                        "group": "MINDERARIG",
+                        "age_max": 15,
+                        "hourly_ore": 9870,
+                        "monthly_ore": 1727250,
+                        "source": "TI23#§ 1 mom 2 s. 9"
+                    }
+                ]
+            },
+            {
+                "valid_from": "2024-04-01",
+                "rows": [
+                    {
+                        "group": "SPECIAL",
+                        "hourly_ore": 18290,
+                        "monthly_ore": 3200750,
+                        "source": "TI23#§ 1 mom 2 s. 10"
+                    },
+                    {
+                        "group": "YRKES",
+                        "hourly_ore": 15170,
+                        "monthly_ore": 2654750,
+                        "source": "TI23#§ 1 mom 2 s. 10"
+                    },
+                    {
+                        "group": "YRKES",
+                        "experience_months_min": 12,
+                        "hourly_ore": 15825,
+                        "monthly_ore": 2769375,
+                        "source": "TI23#§ 1 mom 2 s. 10"
+                    },
+                    {
+                        "group": "YRKES",
+                        "experience_months_min": 24,
+                        "hourly_ore": 16120,
+                        "monthly_ore": 2821000,
+                        "source": "TI23#§ 1 mom 2 s. 10"
+                    },
+                    {
+                        "group": "YRKES",
+                        "experience_months_min": 36,
+                        "hourly_ore": 16525,
+                        "monthly_ore": 2891875,
+                        "source": "TI23#§ 1 mom 2 s. 10"
+                    },
+                    {
+                        "group": "YRKES",
+                        "experience_months_min": 48,
+                        "hourly_ore": 16950,
+                        "monthly_ore": 2966250,
+                        "source": "TI23#§ 1 mom 2 s. 10"
+                    },
+                    {
+                        "group": "OVRIGA",
+                        "age_min": 18,
+                        "hourly_ore": 15170,
+                        "monthly_ore": 2654750,
+                        "source": "TI23#§ 1 mom 2 s. 10"
+                    },
+                    {
+                        "group": "OVRIGA",
+                        "age_min": 18,
+                        "experience_months_min": 12,
+                        "hourly_ore": 15825,
+                        "monthly_ore": 2769375,
+                        "source": "TI23#§ 1 mom 2 s. 10"
+                    },
+                    {
+                        "group": "OVRIGA",
+                        "age_min": 18,
+                        "experience_months_min": 24,
+                        "hourly_ore": 16030,
+                        "monthly_ore": 2805250,
+                        "source": "TI23#§ 1 mom 2 s. 10"
+                    },
+                    {
+                        "group": "MINDERARIG",
+                        "age_min": 17,
+                        "age_max": 17,
+                        "hourly_ore": 12895,
+                        "monthly_ore": 2256625,
+                        "source": "TI23#§ 1 mom 2 s. 10"
+                    },
+                    {
+                        "group": "MINDERARIG",
+                        "age_min": 16,
+                        "age_max": 16,
+                        "hourly_ore": 11655,
+                        "monthly_ore": 2039625,
+                        "source": "TI23#§ 1 mom 2 s. 10"
+                    },
+                    {
+                        "group": "MINDERARIG",
+                        "age_max": 15,
+                        "hourly_ore": 10340,
+                        "monthly_ore": 1809500,
+                        "source": "TI23#§ 1 mom 2 s. 10"
+                    }
+                ]
+            }
+        ]
+    },
+    "codes": {
+        "TMF_OB_A": {
+            "name": "OB-tillägg a) kväll och morgon",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Måndag–torsdag kl. 17–24 och tisdag–fredag kl. 05–06",
+            "rates": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 3650
+                    }
+                },
+                {
+                    "valid_from": "2024-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 3765
+                    }
+                }
+            ],
+            "source": "TI23#§ 5 mom 1 s. 41"
+        },
+        "TMF_OB_B": {
+            "name": "OB-tillägg b) natt",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Tisdag–fredag kl. 00–05",
+            "rates": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 4345
+                    }
+                },
+                {
+                    "valid_from": "2024-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 4485
+                    }
+                }
+            ],
+            "source": "TI23#§ 5 mom 1 s. 41"
+        },
+        "TMF_OB_C": {
+            "name": "OB-tillägg c) helg",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Fredag kl. 17 till måndag kl. 06, och en dag som är fridag enligt arbetstidsschemat",
+            "rates": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 8330
+                    }
+                },
+                {
+                    "valid_from": "2024-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 8595
+                    }
+                }
+            ],
+            "source": "TI23#§ 5 mom 1 s. 41"
+        },
+        "TMF_OB_D": {
+            "name": "OB-tillägg d) trettondagen, Kristi himmelsfärd, alla helgons dag",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Kl. 17 dagen före till kl. 06 dagen efter",
+            "day_type": "HELG_D",
+            "rates": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 10030
+                    }
+                },
+                {
+                    "valid_from": "2024-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 10350
+                    }
+                }
+            ],
+            "source": "TI23#§ 5 mom 1 s. 41"
+        },
+        "TMF_OB_E": {
+            "name": "OB-tillägg e) storhelg",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Påsk, nyår, jul, 1 maj, nationaldagen, midsommar och pingst, kl. 17 dagen före till kl. 06 efter helgen",
+            "day_type": "STORHELG_E",
+            "rates": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 21085
+                    }
+                },
+                {
+                    "valid_from": "2024-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 21760
+                    }
+                }
+            ],
+            "source": "TI23#§ 5 mom 1 s. 41"
+        },
+        "TMF_OT": {
+            "name": "Övertid",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Månadsavlönad: 1/175 av månadslönen per timme och övertidstillägget",
+            "rates": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 5500,
+                        "plus_hourly_wage": true
+                    }
+                },
+                {
+                    "valid_from": "2024-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 5675,
+                        "plus_hourly_wage": true
+                    }
+                }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "TI23#§ 3 mom 4 s. 16 (procentregeln på all lön); § 3 mom 5 s. 18 (semesterlön enligt lag på övertidsersättning för månadsavlönade)",
+            "source": "TI23#§ 5 mom 2 s. 42; TI23#bilaga 1 p. 6 s. 81"
+        },
+        "TMF_OT_TL": {
+            "name": "Övertidstillägg timavlönad",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Bara tillägget, för timavlönad vars timlön redan betalar timmen",
+            "rates": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 5500
+                    }
+                },
+                {
+                    "valid_from": "2024-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 5675
+                    }
+                }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "TI23#§ 3 mom 4 s. 16 (procentregeln på all lön); § 3 mom 5 s. 18 (semesterlön enligt lag på övertidsersättning för månadsavlönade)",
+            "source": "TI23#§ 5 mom 2 s. 42"
+        },
+        "TMF_MT": {
+            "name": "Mertid",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Månadsavlönad deltid: timlönen och mertidstillägget",
+            "rates": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 2750,
+                        "plus_hourly_wage": true
+                    }
+                },
+                {
+                    "valid_from": "2024-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 2840,
+                        "plus_hourly_wage": true
+                    }
+                }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "TI23#§ 3 mom 4 s. 16 (procentregeln på all lön); § 3 mom 5 s. 18 (semesterlön enligt lag på övertidsersättning för månadsavlönade)",
+            "source": "TI23#§ 5 mom 2 s. 43"
+        },
+        "TMF_MT_TL": {
+            "name": "Mertidstillägg timavlönad",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Bara tillägget, för timavlönad deltid vars timlön redan betalar timmen",
+            "rates": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 2750
+                    }
+                },
+                {
+                    "valid_from": "2024-04-01",
+                    "rate": {
+                        "type": "ORE_PER_HOUR",
+                        "ore": 2840
+                    }
+                }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "TI23#§ 3 mom 4 s. 16 (procentregeln på all lön); § 3 mom 5 s. 18 (semesterlön enligt lag på övertidsersättning för månadsavlönade)",
+            "source": "TI23#§ 5 mom 2 s. 43"
+        },
+        "TMF_SKIFT_2I": {
+            "name": "Skiftformstillägg intermittent två- och treskift",
+            "kind": "SUPPLEMENT",
+            "unit": "HOUR",
+            "pay_code": "AVTALSTILLAGG",
+            "description": "5,3 % av den ordinarie förtjänsten per timme i skift",
+            "rates": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rate": {
+                        "type": "PERCENT_OF_HOURLY",
+                        "bp": 530
+                    }
+                }
+            ],
+            "source": "TI23#§ 5 mom 3 s. 46"
+        },
+        "TMF_SKIFT_2K": {
+            "name": "Skiftformstillägg kontinuerligt tvåskift",
+            "kind": "SUPPLEMENT",
+            "unit": "HOUR",
+            "pay_code": "AVTALSTILLAGG",
+            "description": "8,1 % av den ordinarie förtjänsten per timme i skift",
+            "rates": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rate": {
+                        "type": "PERCENT_OF_HOURLY",
+                        "bp": 810
+                    }
+                }
+            ],
+            "source": "TI23#§ 5 mom 3 s. 46"
+        },
+        "TMF_SKIFT_3K": {
+            "name": "Skiftformstillägg kontinuerligt treskift",
+            "kind": "SUPPLEMENT",
+            "unit": "HOUR",
+            "pay_code": "AVTALSTILLAGG",
+            "description": "11,1 % av den ordinarie förtjänsten per timme i skift",
+            "rates": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rate": {
+                        "type": "PERCENT_OF_HOURLY",
+                        "bp": 1110
+                    }
+                }
+            ],
+            "source": "TI23#§ 5 mom 3 s. 46"
+        },
+        "TMF_SKIFT_NATT": {
+            "name": "Skiftformstillägg ständig natt",
+            "kind": "SUPPLEMENT",
+            "unit": "HOUR",
+            "pay_code": "AVTALSTILLAGG",
+            "description": "14,3 % av den ordinarie förtjänsten per timme",
+            "rates": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rate": {
+                        "type": "PERCENT_OF_HOURLY",
+                        "bp": 1430
+                    }
+                }
+            ],
+            "source": "TI23#§ 5 mom 3 s. 46"
+        },
+        "TMF_UTOM": {
+            "name": "Arbete utom verkstaden",
+            "kind": "SUPPLEMENT",
+            "unit": "HOUR",
+            "pay_code": "AVTALSTILLAGG",
+            "description": "10 % av medeltimförtjänsten per timme utom verkstaden (inte uppsättningsarbete)",
+            "rates": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rate": {
+                        "type": "PERCENT_OF_HOURLY",
+                        "bp": 1000
+                    }
+                }
+            ],
+            "source": "TI23#§ 6 mom 5 s. 50"
+        },
+        "TMF_HELGDAG": {
+            "name": "Helgdagslön timavlönad",
+            "kind": "SUPPLEMENT",
+            "unit": "HOUR",
+            "pay_code": "AVTALSTILLAGG",
+            "description": "Ordinarie timlön för de timmar helgdagen annars hade varit arbetstid enligt schemat (bara timavlönade)",
+            "day_type": "HELGDAGSLON",
+            "rates": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rate": {
+                        "type": "PERCENT_OF_HOURLY",
+                        "bp": 10000
+                    }
+                }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "TI23#§ 3 mom 4 s. 16 (procentregeln på intjänad lön, helgdagslön räknas i arbetsinkomsten)",
+            "source": "TI23#§ 8 mom 2–4 s. 54–55"
+        }
+    },
+    "overtime": {
+        "hourly_paid": {
+            "supplement_codes": {
+                "TMF_OT": "TMF_OT_TL",
+                "TMF_MT": "TMF_MT_TL"
+            },
+            "source": "TI23#§ 5 mom 2 s. 42; TI23#§ 5 mom 2 s. 43"
+        },
+        "comp_time": {
+            "hours_per_hour": {
+                "TMF_OT": "1"
+            },
+            "requires_agreement": true,
+            "source": "TI23#§ 4 mom 12 s. 35"
+        }
+    },
+    "sick_pay": {
+        "includes_ob": true,
+        "hour_value": {
+            "method": "MONTHLY_PER_WEEK",
+            "months_per_year": "12",
+            "weeks_per_year": "52",
+            "source": "TI23#bilaga 1 p. 1 a s. 77"
+        },
+        "karens": {
+            "unit": "HOURS",
+            "percent_of_weekly_hours_bp": 2000,
+            "weekly_hours": "AVERAGE",
+            "source": "TI23#bilaga 1 p. 1 s. 75; anm. 6 s. 77; § 11 mom 2 s. 64"
+        },
+        "source": "TI23#§ 11 mom 2 s. 64–65; bilaga 1 p. 1 s. 75–77"
+    },
+    "notes": [
+        "Version ur avtalsboken 2023–2025 (TI23), den senaste fulltexten som är publik. En lönekörning kan bara använda den när både perioden och utbetalningsdagen ligger till och med 2025-03-31; en körning med period eller utbetalningsdag från 2025-04-01 kräver versionen 2025-04-01.",
+        "Avtalet heter Träindustriavtalet och gäller arbetare hos medlemmar i Trä- och Möbelföretagen (TMF); motpart är GS-facket (TI23 s. 1, 8). Stoppmöbelindustriavtalet är ett eget avtal och finns inte här.",
+        "OB a–e utesluter varandra: där fönstren överlappar (en storhelg som infaller på en vardag eller helg) betalas bara det högsta beloppet (overlap HIGHEST_ONLY). TODO(legal-verify): att avtalet avser ett belopp per timme och inte flera.",
+        "TODO(legal-verify): 'dag före nyårshelgen' läses som 30 december och 'dag före julhelgen' som 23 december, och 'efterföljande dag' som dagen efter helgens sista dag (annandag påsk, nyårsdagen, annandag jul). Läsningen följer helguppehållets tider i § 4 mom 5 (TI23 s. 29–30) men står inte uttryckligen i § 5 mom 1.",
+        "OB c) för en dag som är fridag enligt arbetstidsschemat (till exempel en skiftarbetares friskift) räknas inte av passdelningen; lägg in timmarna med koden TMF_OB_C. TODO(legal-verify).",
+        "OB betalas även på övertid (§ 4 mom 12 kommentar s. 36–37, § 5 mom 1 kommentar s. 41); det är därför inte data att bara det högsta betalas mellan OB och övertid.",
+        "Övertid räknas per dag utöver det dagliga arbetstidsmåttet för heltid (overtime_method DAILY); för deltid ger tid över den egna dagliga tiden mertid och tid över heltidsmåttet övertid (§ 5 mom 2 s. 42–43). NONOX jämför med den planerade tiden. TODO(legal-verify): deltidsanställdas gräns mot heltidsmåttet räknas inte separat.",
+        "Månadsavlönad får 1/175 av månadslönen per övertidstimme plus övertidstillägget (bilaga 1 p. 6 s. 81). Mertid för månadsavlönad deltid prissätts på samma sätt med deltidens timlön (delaren 175 i proportion till veckoarbetstiden, bilaga 1 p. 2 A s. 78); TODO(legal-verify) att mertiden ska ha timlönen utöver tillägget.",
+        "Kompensationsledighet ges med en timme per övertidstimme, men övertidstillägget (och OB) ska ändå betalas (§ 4 mom 12 s. 35). NONOX tar komptiden med faktor 1 men betalar inte tillägget automatiskt; lägg in TMF_OT_TL för de timmarna. TODO(legal-verify).",
+        "Skiftformstilläggen räknas på den ordinarie förtjänsten och även på OB-ersättningen, men inte på övertid (§ 5 mom 3 s. 46). NONOX räknar dem på timlönen; tillägget på OB-beloppen är inte data. TODO(legal-verify).",
+        "Tillägget för arbete utom verkstaden räknas på medeltimförtjänsten (bilaga 2), som NONOX inte har; timlönen används. TODO(legal-verify).",
+        "Helgdagslön (§ 8) gäller bara timavlönade; månadsavlönades helglön ingår i månadslönen. Koden TMF_HELGDAG betalar timlönen för de timmar dagen annars hade varit arbetstid. Att även OB enligt § 5 mom 1 och premielön ingår i helgdagslönen, och undantagen i § 8 mom 4 (sjukpenning, tidsbegränsad anställning högst en månad, olovlig frånvaro), är inte data. TODO(legal-verify).",
+        "Reglering av lägsta lönen efter år i branschen görs efter varje kvartals utgång (§ 1 mom 2 protokollsanteckning 2); NONOX räknar branschvanan i hela månader vid periodens slut. TODO(legal-verify). Specialarbetarens lägsta lön står i kolumnen '5:e och därefter' och gäller här oavsett branschvana. TODO(legal-verify).",
+        "Minderåriga feriearbetare (fast timlön inklusive semesterersättning) och lärlingslöner (bilaga 9) är inte data.",
+        "Ackord (§ 2), restidsersättning (§ 6 mom 2), överflyttningsersättning (§ 5 mom 4), sommartid (§ 5 mom 5), permitteringslön (bilaga 3) och arbetstidskontot (bilaga 12) är inte data.",
+        "Sjuklön: för timavlönade enligt sjuklönelagen med OB enligt § 5 mom 1 i underlaget (§ 11 mom 2 s. 64–65); för månadsavlönade timvärdet månadslönen × 12 / (52 × veckoarbetstiden) och karens 20 % av veckoarbetstiden i tid (bilaga 1 p. 1 s. 75–77). Avdraget från dag 15 med månadslönen × 12 / 365 per kalenderdag (bilaga 1 s. 78) är inte data i den här versionen; NONOX drar enligt lönens egen metod.",
+        "Semester för månadsavlönade: semesterersättning 5,4 % av månadslönen per outtagen dag och 4,6 % vid ändrad sysselsättningsgrad (§ 3 mom 5 s. 18–20) räknas inte; procentsatsen 12,96 % används bara för procentregeln."
+    ],
+    "vacation": {
+        "rule_monthly": "SAMMALONEREGELN",
+        "percent_bp": 1296,
+        "supplement_bp_per_day": 80,
+        "variable_pay_percent_bp": 1296,
+        "minimum_daily": {
+            "min_employment_months": 3,
+            "part_time": "PRO_RATA",
+            "steps": [
+                {
+                    "valid_from": "2023-04-01",
+                    "rows": [
+                        {
+                            "age_min": 18,
+                            "ore": 158800
+                        },
+                        {
+                            "age_max_exclusive": 18,
+                            "ore": 120700
+                        }
+                    ]
+                },
+                {
+                    "valid_from": "2024-04-01",
+                    "rows": [
+                        {
+                            "age_min": 18,
+                            "ore": 163900
+                        },
+                        {
+                            "age_max_exclusive": 18,
+                            "ore": 124600
+                        }
+                    ]
+                }
+            ],
+            "source": "TI23#§ 3 mom 4 s. 17; mom 5 s. 18–19"
+        },
+        "source": "TI23#§ 3 mom 4 s. 16; mom 5 s. 18",
+        "note": "Timavlönade: procentregeln med underlaget uppräknat med faktorn 1,08, alltså 12 % × 1,08 = 12,96 %. Månadsavlönade: sammalöneregeln med semestertillägg 0,8 % av månadslönen per betald dag, och semesterlön enligt lag med faktorn 1,08 på rörliga lönedelar och övertid (sparas, räknas inte). Lägsta semesterlön per dag efter tre månaders anställning, i proportion för deltid; under tre månader 'brutet tal', som inte räknas. TODO(legal-verify): om steget ska väljas efter semesterdagen."
+    },
+    "pension": {
+        "rule_key": "pension.saf_lo",
+        "source": "TI23#§ 14 mom 1 s. 71; P26"
+    },
+    "insurances": {
+        "rule_key": "insurance.fora.arbetare",
+        "source": "TI23#§ 14 mom 1 och 3 s. 71; P26"
+    }
+}

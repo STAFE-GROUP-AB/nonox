@@ -134,7 +134,9 @@ final class ShiftCost
     private static function obRate(AgreementRules $agreement, array $rate, ?string $salaryForm, ?int $hourlyRateOre, ?int $monthlySalaryOre, BigDecimal $hourly): ?BigDecimal
     {
         return match ($rate['type'] ?? null) {
-            'ORE_PER_HOUR' => BigDecimal::of((int) $rate['ore']),
+            'ORE_PER_HOUR' => ($rate['plus_hourly_wage'] ?? false) === true
+                ? self::agreementHourly($agreement, $salaryForm, $hourlyRateOre, $monthlySalaryOre, $hourly)->plus((int) $rate['ore'])
+                : BigDecimal::of((int) $rate['ore']),
             'PERCENT_OF_HOURLY' => self::agreementHourly($agreement, $salaryForm, $hourlyRateOre, $monthlySalaryOre, $hourly)
                 ->multipliedBy((int) $rate['bp'])
                 ->dividedBy(Units::BASIS_POINTS, Units::SCALE, RoundingMode::HalfUp),

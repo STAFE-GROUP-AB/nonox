@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.129
+- Version: 0.130
 - Datum: 2026-11-10
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -4453,6 +4453,19 @@ förslag från NONOX AI (ADR-033 §6).
   tjänstemannaavtalens semester, garantibelopp för deltid i handeln, ITP 2,
   sjukpension och premiebefrielse i ITP 1, TGL för tjänstemän, Foras och
   Collectums egna filformat.
+- **Träindustriavtalet (version 0.130).** Avtalet för arbetare i trä- och
+  möbelindustrin (Trä- och Möbelföretagen – GS-facket, `tmf-gs-traindustri`,
+  `docs/avtal/traindustriavtalet.md`) i två versioner: 2023-04-01 –
+  2025-03-31 ur den publicerade avtalstexten, som kan kontrolleras, och
+  2025-04-01 – 2027-03-31 med belopp ur en sekundär källa, märkta
+  `unverified`, så att lönekörningen stoppas för anställda på avtalet från
+  2025-04-01 tills en version med källa finns. Två allmänna tillägg i
+  formatet: en sats `ORE_PER_HOUR` kan ha `plus_hourly_wage` (timlönen plus
+  ett krontal per timme, avtalets övertid för månadsavlönade), och
+  kalendern har sju hjälpdagar för OB-spann som börjar kvällen före en helg
+  (`DayCalendar::HELPER_DAYS`). Inga konton eller verifikationer ändras; en
+  rad med avtalets löneart bokförs som systemets OB-tillägg, Övertid eller
+  Tillägg enligt avtal.
 
 ## 5i. Planering (modul)
 
@@ -5635,4 +5648,4 @@ påverkar bokföringen och fakturan:
 | 0.126 | 2026-11-09 | Databasroller (avsnitt 4.3a, ADR-079 etapp 2): NONOX kan köras som en roll (`nonox_app`) som inte äger tabellerna och inte kan stänga av, ta bort eller ersätta triggerna, tömma tabeller eller ändra schemat; migreringarna körs som ägaren (`nonox_owner`). Tabeller vars trigger nekar all ändring och borttagning blir append-only även genom behörigheterna. Behörigheterna läggs på efter varje migrering; en tabell utan beslut får ingen åtkomst. Påslaget med `DB_MIGRATION_USERNAME`, annars som förut med en användare; ägarens lösenord finns aldrig i programmets konfiguration. Triggerfunktionernas sökväg (version 0.119) läggs på igen efter varje migrering; personalliggarens gallring kontrolleras mot lagringstiden i databasen; signeringshändelser tas bara bort med sin begäran. Ingen bokföringsregel och inga data ändras. |
 | 0.127 | 2026-11-09 | Övergång från K2 till K3 (avsnitt 5a6.6, ADR-059 tillägg A.2.8, paket S1-P12, beslut H7 (a)): det första året med K3 lägger en person upp justeringarna av ingångsbalansräkningen (uppskjuten skatt, avsättningar, andra poster med hänvisning till K3; lättnadsregeln 35.27 per post med skäl), och förbjudna omräkningar (35.15, 35.16, 35.18, 35.20) nekas. Efter bekräftelse bokförs övergången en gång som en verifikation med den nya källan `K3_TRANSITION`, daterad årets första dag, mot 2091; migrationen lägger bara till källan i kontrollen av `vouchers.source`, utan ändring av triggrar eller `PostVoucher`. De ingående balanserna och K2-året ändras inte. Kapitel 35 tillämpas en gång, utom för ett företag som tvingas lämna K2 enligt BFNAR 2025:2. Omräknade jämförelsetal stöds inte ännu. Förändringar i eget kapital visar övergången på rad b, och uppskjuten skatt räknar årets förändring från ingångsbalansräkningen enligt K3. Nya tabeller `k3_transitions` (kan inte ändras) och `k3_transition_items` (låsta efter bokföringen). Byggnader som slaget `BUILDING_COMPONENTS`, kvittning av uppskjuten skatt endast i presentationen (29.32) med en bekräftelse per år, posten Avsättningar för skatter som en rad över 2240–2259, ogiltig övergång efter fullständig rättelse, ingen avsättning för nedmontering (35.29), ögonblicksbild av ingående balanser vid bokföringen och inget byte tillbaka till K2 för ett år med bokförd övergång. Ingen befintlig verifikation ändrades. |
 | 0.128 | 2026-11-09 | Noter och förvaltningsberättelse enligt K3 (avsnitt 5a6.7, ADR-059 tillägg A.2.7, paket S1-P9): noterna för ett mindre aktiebolag tas fram ur bokföringen, registret, principerna och övergången, en per rad i regelbladets lista S1-R8.1 och bara när villkoret är uppfyllt; en person kan skriva en not med egna ord, men notens data kommer alltid ur bokföringen och den egna texten markeras. Nya kolumner i `annual_reports` för det bokföringen inte vet (bland annat ägare med mer än tio procent med namn och andel, aldrig födelseår eller personnummer, och ja/nej-svar om noter som annars kunde utebli) och tabellen `annual_report_note_overrides`. Ingenting syns för användaren ännu och ingen verifikation ändras. |
-| 0.129 | 2026-11-10 | Förhandsversion (beta) av årsredovisningen för mindre aktiebolag med K3, inte granskad av en auktoriserad redovisningskonsult (avsnitt 5a6.8, ADR-059 A.4 paket S1-P10): ett räkenskapsår som följer K3 får förvaltningsberättelse, resultat- och balansräkning, rapport över förändringar i eget kapital, eventuell kassaflödesanalys och noter i ordningen i K3 punkt 3.10, i hela kronor. Allt som NONOX inte stöder nekar hela årsredovisningen med regelns id (K3 tillämpas helt eller inte alls); PDF:en görs när alla frågor är besvarade. K2-dokumentet ändras inte; iXBRL görs bara för K2. Ingen verifikation ändras. |
+| 0.130 | 2026-11-10 | Förhandsversion (beta) av årsredovisningen för mindre aktiebolag med K3, inte granskad av en auktoriserad redovisningskonsult (avsnitt 5a6.8, ADR-059 A.4 paket S1-P10): ett räkenskapsår som följer K3 får förvaltningsberättelse, resultat- och balansräkning, rapport över förändringar i eget kapital, eventuell kassaflödesanalys och noter i ordningen i K3 punkt 3.10, i hela kronor. Allt som NONOX inte stöder nekar hela årsredovisningen med regelns id (K3 tillämpas helt eller inte alls); PDF:en görs när alla frågor är besvarade. K2-dokumentet ändras inte; iXBRL görs bara för K2. Ingen verifikation ändras. Dessutom: träindustriavtalet i Avtal (avsnitt 5h, ADR-033 tillägg L1): avtalsdata för trä- och möbelindustrin i två versioner, där versionen 2025–2027 bara har belopp ur en sekundär källa och därför inte kan kontrolleras, så lönekörningen stoppas för anställda på avtalet. Satsen `ORE_PER_HOUR` kan ha `plus_hourly_wage` (timlön plus krontal per timme), och avtalskalendern har sju hjälpdagar före och efter helger. Inga konton eller verifikationer ändras. |

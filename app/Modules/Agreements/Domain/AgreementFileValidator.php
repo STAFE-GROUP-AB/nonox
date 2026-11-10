@@ -481,7 +481,7 @@ final class AgreementFileValidator
      */
     private function dayTypes(array $dayTypes): array
     {
-        $known = [...array_keys(DayCalendar::NAMED_DAYS), ...array_keys(DayCalendar::GENERIC_DAYS)];
+        $known = [...array_keys(DayCalendar::NAMED_DAYS), ...array_keys(DayCalendar::HELPER_DAYS), ...array_keys(DayCalendar::GENERIC_DAYS)];
 
         foreach ($dayTypes as $type => $definition) {
             $definition = (array) $definition;

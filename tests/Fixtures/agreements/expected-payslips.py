@@ -314,6 +314,59 @@ bg.append(bg_case("deltid 50 %: lägsta semesterlön i proportion", [], {"SEMEST
                   employment=emp(ADULT, salary_form="HOURLY", hourly_rate_ore=H, employment_rate_bp=5000, weekly_hours="20", group="BAGERI")))
 fixtures["livsmedelsforetagen-livs-bageri"] = bg
 
+# ---------------------------------------------------------------- Träindustriavtalet (TMF–GS, L1)
+# The 2025-04-01 file: amounts from Adda's procurement annex (ADDA25), which cannot be verified, and the
+# mechanics of the 2023–2025 agreement text (TI23). The golden payslips check that the engine reads the file;
+# a real run stays blocked until a human can verify the version. The file has no 2026-04-01 step, so the
+# cases lie before April 2026.
+TMF = "tmf-gs-traindustri/MEMBER-2025-04-01.json"
+TH = 18_000                    # 180 kr per hour
+TS = 3_150_000                 # 31 500 kr a month = 180 kr × 175
+tmf = []
+
+
+def tmf_hourly(name, inputs, lines, period="2026-03", payment="2026-03-25", hours=160, employment=None, warnings=None, **kw):
+    e = employment or emp(ADULT, salary_form="HOURLY", hourly_rate_ore=TH, group="YRKES")
+    base = hours * e["hourly_rate_ore"]
+    g = base + sum(lines.values())
+    return case(name, TMF, e, [{"code": "TIMLON", "quantity": str(hours), "date": f"{period}-02"}] + inputs,
+                {"lines": lines, "gross_ore": g, "employer": arbetare_costs(g, 35), "warnings": warnings or []}, period=period, payment=payment, **kw)
+
+
+def tmf_monthly(name, inputs, lines, employment=None, period="2026-03", payment="2026-03-25"):
+    e = employment or emp(ADULT, monthly_salary_ore=TS, group="YRKES")
+    salary = e["monthly_salary_ore"] * e["employment_rate_bp"] // 10000
+    g = salary + sum(lines.values())
+    return case(name, TMF, e, inputs, {"lines": {"MANADSLON": salary, **lines}, "gross_ore": g, "employer": arbetare_costs(g, 35), "warnings": []}, period=period, payment=payment)
+
+
+def march_vacation(n):
+    return [{"type": "VACATION", "date": f"2026-03-{16 + i:02d}", "hours": "8"} for i in range(n)]
+
+
+tmf.append(tmf_hourly("timavlönad yrkesarbetare: timlön", [], {}))
+tmf.append(tmf_hourly("OB a) måndag–torsdag kl. 17–24", [inp("TMF_OB_A", "10", "2026-03-03")], {"TMF_OB_A": 10 * 3880}))
+tmf.append(tmf_hourly("OB b) natt tisdag–fredag kl. 00–05", [inp("TMF_OB_B", "5", "2026-03-04")], {"TMF_OB_B": 5 * 4625}))
+tmf.append(tmf_hourly("OB c) lördag", [inp("TMF_OB_C", "8", "2026-03-07")], {"TMF_OB_C": 8 * 8860}))
+tmf.append(tmf_hourly("OB d) trettondagen", [inp("TMF_OB_D", "6", "2026-01-06")], {"TMF_OB_D": 6 * 10670}, period="2026-01", payment="2026-01-23"))
+tmf.append(tmf_hourly("OB e) julafton", [inp("TMF_OB_E", "8", "2025-12-24")], {"TMF_OB_E": 8 * 22435}, period="2025-12", payment="2026-01-23"))
+tmf.append(tmf_hourly("helgdagslön för timavlönad: trettondagen på en arbetsdag", [inp("TMF_HELGDAG", "8", "2026-01-06")], {"TMF_HELGDAG": 8 * TH}, period="2026-01", payment="2026-01-23"))
+tmf.append(tmf_hourly("timavlönad: övertidstillägg 58,50 kr utan timlönen igen", [inp("TMF_OT_TL", "4", "2026-03-10")], {"TMF_OT_TL": 4 * 5850}))
+tmf.append(tmf_hourly("timavlönad deltid 50 %: mertidstillägg", [inp("TMF_MT_TL", "3", "2026-03-11")], {"TMF_MT_TL": 3 * 5850}, hours=80,
+                      employment=emp(ADULT, salary_form="HOURLY", hourly_rate_ore=TH, employment_rate_bp=5000, weekly_hours="20", group="YRKES")))
+tmf.append(tmf_hourly("skiftformstillägg kontinuerligt tvåskift 8,1 %", [inp("TMF_SKIFT_2K", "120", "2026-03-02")], {"TMF_SKIFT_2K": 120 * percent_rate(TH, 810)}))
+tmf.append(tmf_hourly("arbete utom verkstaden 10 %", [inp("TMF_UTOM", "20", "2026-03-12")], {"TMF_UTOM": 20 * percent_rate(TH, 1000)}))
+tmf.append(tmf_hourly("yrkesarbetare med fem års branschvana under lägsta timlönen", [], {}, warnings=["under minimilönen"],
+                      employment=emp(ADULT, salary_form="HOURLY", hourly_rate_ore=17_000, group="YRKES", experience_from="2020-01-01")))
+tmf.append(tmf_monthly("månadsavlönad: övertid med 1/175 av månadslönen och tillägget", [inp("TMF_OT", "3", "2026-03-10")], {"TMF_OT": 3 * (TS // 175 + 5850)}))
+pt = hu(D(TS) * 7500 / 10000 / (D(30) * D("4.375")))
+tmf.append(tmf_monthly("månadsavlönad deltid 75 %: mertid med deltidens timlön och tillägget", [inp("TMF_MT", "2", "2026-03-11")], {"TMF_MT": 2 * (pt + 5850)},
+                       employment=emp(ADULT, monthly_salary_ore=TS, employment_rate_bp=7500, weekly_hours="30", group="YRKES")))
+pay = hu(D(40_000_000) * 1296 / 10000 / 25 * 2)
+tmf.append(tmf_hourly("semester: 12,96 % (12 % uppräknat med 1,08)", [], {"SEMESTERLON": pay}, absences=march_vacation(2), vacation={"rule": "PROCENTREGELN", "paid_days_earned": 25, "basis_ore": 40_000_000}))
+tmf.append(tmf_hourly("semester: lägsta semesterlön per dag", [], {"SEMESTERLON": 2 * 169_000}, absences=march_vacation(2), vacation={"rule": "PROCENTREGELN", "paid_days_earned": 25, "basis_ore": 5_000_000}))
+fixtures["tmf-gs-traindustri"] = tmf
+
 # ---------------------------------------------------------------- Frisör (synthetic agreement, values invented for the test)
 FR = "synthetic"
 fr = []

@@ -50,6 +50,23 @@ final class DayCalendar
         'NYARSAFTON' => 'Nyårsafton',
     ];
 
+    /**
+     * Days before or after a named day that some agreements use as the
+     * start or end of a holiday's OB span (Träindustriavtalet § 5 mom 1 d–e:
+     * "kl. 17 dag före …"). They answer to their name like the named days
+     * but are not listed in an agreement's calendar unless a day type uses
+     * them.
+     */
+    public const array HELPER_DAYS = [
+        'DAGEN_FORE_NYARSAFTON' => 'Dagen före nyårsafton',
+        'DAGEN_FORE_NATIONALDAGEN' => 'Dagen före nationaldagen',
+        'DAGEN_FORE_PINGSTAFTON' => 'Dagen före pingstafton',
+        'DAGEN_FORE_MIDSOMMARAFTON' => 'Dagen före midsommarafton',
+        'DAGEN_EFTER_MIDSOMMARDAGEN' => 'Dagen efter midsommardagen',
+        'DAGEN_FORE_ALLA_HELGONS_DAG' => 'Dagen före alla helgons dag',
+        'DAGEN_FORE_JULAFTON' => 'Dagen före julafton',
+    ];
+
     /** Kinds of day that are not one date a year. PUBLIC_HOLIDAY means the law's holidays other than ordinary Sundays. */
     public const array GENERIC_DAYS = [
         'SATURDAY' => 'Lördag',
@@ -101,6 +118,13 @@ final class DayCalendar
             'JULDAGEN' => $date(12, 25),
             'ANNANDAG_JUL' => $date(12, 26),
             'NYARSAFTON' => $date(12, 31),
+            'DAGEN_FORE_NYARSAFTON' => $date(12, 30),
+            'DAGEN_FORE_NATIONALDAGEN' => $date(6, 5),
+            'DAGEN_FORE_PINGSTAFTON' => $easter->addDays(47),
+            'DAGEN_FORE_MIDSOMMARAFTON' => $midsummer->subDays(2),
+            'DAGEN_EFTER_MIDSOMMARDAGEN' => $midsummer->addDay(),
+            'DAGEN_FORE_ALLA_HELGONS_DAG' => $saturdayFrom(10, 31)->subDay(),
+            'DAGEN_FORE_JULAFTON' => $date(12, 23),
         ];
 
         return self::$cache[$year] = array_map(fn (CarbonImmutable $day): string => $day->toDateString(), $days);
@@ -207,7 +231,7 @@ final class DayCalendar
 
     public static function label(string $name): string
     {
-        return __(self::NAMED_DAYS[$name] ?? self::GENERIC_DAYS[$name] ?? $name);
+        return __(self::NAMED_DAYS[$name] ?? self::HELPER_DAYS[$name] ?? self::GENERIC_DAYS[$name] ?? $name);
     }
 
     /** @param  array<string, mixed>  $entry */

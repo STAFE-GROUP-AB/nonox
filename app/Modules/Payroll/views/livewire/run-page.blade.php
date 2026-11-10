@@ -192,7 +192,10 @@
                     <x-ui.field for="import_file" :label="__('Fil (PAXml eller CSV, högst 10 MB)')" error="payrollFile">
                         <input id="import_file" type="file" accept=".xml,.csv,.txt" class="mt-1 block w-full text-sm" wire:model="payrollFile">
                     </x-ui.field>
-                    <div class="sm:col-span-3"><x-button wire:loading.attr="disabled" wire:target="payrollFile,importPayrollFile">{{ __('Läs in filen') }}</x-button></div>
+                    <div class="flex flex-wrap items-center gap-4 sm:col-span-3">
+                        <x-button wire:loading.attr="disabled" wire:target="payrollFile,importPayrollFile">{{ __('Läs in filen') }}</x-button>
+                        <x-ui.link :href="route('payroll.migration.template', 'loneunderlag')">{{ __('Hämta mall för CSV') }}</x-ui.link>
+                    </div>
                 </form>
             @endif
             @if($fileImports->isNotEmpty())

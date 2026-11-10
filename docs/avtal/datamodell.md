@@ -662,3 +662,24 @@ Riks två första timmar räknas per dag eller per tillfälle, och om
 Detaljhandelns 70 % gäller övertid 00.00–06.00 en vardagsmorgon. Inte
 byggt: undantagen för mertidsersättning vid byte av pass eller kortare
 frånvaro hos andra (§ 9.5).
+
+## 9. Träindustriavtalet (L1, 2026-11-10)
+
+Två tillägg i formatet, båda frivilliga:
+
+- **Fast krontal ovanpå timlönen.** `{"type": "ORE_PER_HOUR", "ore": 5850,
+  "plus_hourly_wage": true}` ger timlönen (timlön, eller månadslönen genom
+  avtalets delare) plus beloppet per timme. Träindustriavtalets övertid för
+  månadsavlönade är 1/175 av månadslönen plus övertidstillägget (TI23 bilaga 1
+  p. 6). Utan flaggan är `ORE_PER_HOUR` som förut bara beloppet. Läses av
+  `AgreementPricer`, `ShiftCost` och `ObSplitter` (jämförelsen vid
+  `HIGHEST_ONLY`).
+- **Hjälpdagar i kalendern.** `DayCalendar::HELPER_DAYS`:
+  `DAGEN_FORE_NYARSAFTON`, `DAGEN_FORE_NATIONALDAGEN`,
+  `DAGEN_FORE_PINGSTAFTON`, `DAGEN_FORE_MIDSOMMARAFTON`,
+  `DAGEN_EFTER_MIDSOMMARDAGEN`, `DAGEN_FORE_ALLA_HELGONS_DAG` och
+  `DAGEN_FORE_JULAFTON`, för OB-spann som börjar "kl. 17 dagen före" en helg
+  (TI23 § 5 mom 1 d–e). De kan användas i `day_types` som de namngivna dagarna
+  men visas inte i ett avtals kalender om ingen dagtyp använder dem.
+
+Data: `tmf-gs-traindustri` (se `traindustriavtalet.md`).

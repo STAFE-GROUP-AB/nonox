@@ -217,7 +217,9 @@ final class ObSplitter
         }
 
         return match ($rate['type'] ?? null) {
-            'ORE_PER_HOUR' => (float) ($rate['ore'] ?? 0),
+            'ORE_PER_HOUR' => ($rate['plus_hourly_wage'] ?? false) === true
+                ? ($hourlyOre === null ? null : (float) ($rate['ore'] ?? 0) + $hourlyOre)
+                : (float) ($rate['ore'] ?? 0),
             'PERCENT_OF_HOURLY' => $hourlyOre === null ? null : (float) ($rate['bp'] ?? 0) * $hourlyOre / 10000,
             'DIVISOR_OF_MONTHLY' => $monthlyOre === null || (float) ($rate['divisor'] ?? 0) <= 0 ? null : $monthlyOre / (float) $rate['divisor'],
             default => null,
