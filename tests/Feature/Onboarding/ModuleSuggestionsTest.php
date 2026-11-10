@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domain\Company\Industry;
 use App\Domain\Waitlist\OnboardingPlan;
+use App\Mail\OnboardingReminderMail;
 use App\Mail\WaitlistApprovedMail;
 use App\Modules\Contracts\OfferedTo;
 use App\Modules\ModuleRegistry;
@@ -122,4 +123,18 @@ it('points an accounting firm to Mina företag, which is core and not a module',
     [$entry] = Onboarding::approved(['industry' => 'for-redovisningsbyraer']);
 
     expect((new WaitlistApprovedMail($entry))->render())->toContain('Mina företag')->toContain(url('/manual/byra/mina-foretag'));
+});
+
+it('puts room between the list items, inlined on every li so mail clients keep it', function () {
+    [$entry] = Onboarding::approved(['industry' => 'bokforing-for-cafeer', 'employees' => '5-9']);
+
+    foreach ([new WaitlistApprovedMail($entry), new OnboardingReminderMail($entry, 'help')] as $mail) {
+        preg_match_all('~<li[^>]*>~', $mail->render(), $items);
+
+        expect($items[0])->not->toBe([]);
+
+        foreach ($items[0] as $tag) {
+            expect($tag)->toContain('margin-bottom: 10px');
+        }
+    }
 });

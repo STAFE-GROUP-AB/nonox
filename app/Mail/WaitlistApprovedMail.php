@@ -30,6 +30,9 @@ class WaitlistApprovedMail extends Mailable implements ShouldQueue
 {
     use Queueable;
 
+    /** The theme with room between list items (resources/views/vendor/mail/html/themes/onboarding.css). */
+    public $theme = 'onboarding';
+
     public readonly string $applicantName;
 
     public readonly string $forCompany;
