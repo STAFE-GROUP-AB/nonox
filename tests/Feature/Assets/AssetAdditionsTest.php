@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use App\Actions\Accounting\CorrectVoucher;
+use App\Actions\Accounting\CreateNextFiscalYear;
 use App\Actions\Accounting\PostVoucher;
 use App\Actions\Accounting\SaveDraftVoucher;
 use App\Actions\Assets\FixedAssets;
+use App\Actions\Closing\YearEndClosing;
 use App\Actions\Payables\ApproveSupplierInvoice;
 use App\Actions\Payables\PaySupplierInvoice;
 use App\Actions\Payables\RegisterSupplierInvoice;
@@ -527,4 +529,54 @@ it('refuses a disposal dated before the last addition', function () {
 
     expect(fn () => $this->assets->dispose($this->owner, $asset->fresh(), '2026-03-10', '0'))
         ->toThrow(ValidationException::class, 'kan inte avyttras före det');
+});
+
+/** A kontantmetoden supplier invoice of 20 000 kr on 1220, registered and left unpaid, with the given proposal. */
+function unpaidFurnitureInvoice(?array $asset): SupplierInvoice
+{
+    $supplier = app(SaveSupplier::class)(test()->owner, test()->company, ['name' => 'Möbelhuset AB', 'bankgiro' => '50501055', 'payment_terms_days' => 30]);
+    $draft = app(SaveSupplierInvoice::class)(test()->owner, test()->company, [
+        'supplier_id' => $supplier->id, 'invoice_date' => '2026-11-20', 'total' => '25 000', 'vat' => '5 000',
+        'rows' => [['account' => '1220', 'amount' => '20 000', 'description' => 'Konferensbord', 'asset' => $asset]],
+        'with_assets' => $asset !== null,
+    ]);
+
+    return app(RegisterSupplierInvoice::class)(test()->owner, $draft);
+}
+
+/** Books kontantmetoden's unpaid invoices on 2026-12-31; the 1220 debit of that closing voucher. */
+function yearEndAssetRow(): VoucherRow
+{
+    test()->travelTo(CarbonImmutable::parse('2027-01-15 10:00:00'));
+    app(CreateNextFiscalYear::class)(test()->owner, test()->company);
+    app(YearEndClosing::class)->bookUnpaidInvoices(test()->owner, FiscalYear::query()->whereDate('start_date', '2026-01-01')->firstOrFail());
+
+    return VoucherRow::query()->whereHas('voucher', fn ($query) => $query->where('source', 'CLOSING')->whereDate('voucher_date', '2026-12-31'))
+        ->whereHas('account', fn ($query) => $query->where('number', 1220))->where('debit_ore', '>', 0)->sole();
+}
+
+it('never offers or adds the closing\'s booking of an unpaid asset invoice under kontantmetoden', function () {
+    $this->company->forceFill(['accounting_method' => 'KONTANTMETODEN', 'separate_supplier_approval' => false])->save();
+    unpaidFurnitureInvoice(['name' => 'Konferensbord', 'category' => 'EQUIPMENT', 'acquisition' => '', 'life_months' => '60', 'acquired_on' => '', 'depreciation_start' => '']);
+    $asset = FixedAsset::query()->sole();
+    $row = yearEndAssetRow();
+
+    expect(FixedAssets::additionCandidates($this->company->fresh(), $asset))->toHaveCount(0)
+        ->and(fn () => $this->assets->addPurchase($this->owner, $this->company, $asset->id, $row->id))->toThrow(ValidationException::class, 'finns redan i anläggningsregistret');
+    expect($asset->fresh()->acquisition_ore->ore)->toBe(2_000_000);
+});
+
+it('never adds the closing\'s booking of an unpaid invoice that is no asset, so its payment is added once', function () {
+    $this->company->forceFill(['accounting_method' => 'KONTANTMETODEN', 'separate_supplier_approval' => false])->save();
+    $asset = kitchen();
+    $invoice = unpaidFurnitureInvoice(null);
+    $row = yearEndAssetRow();
+
+    expect(FixedAssets::additionCandidates($this->company->fresh(), $asset)->pluck('id')->all())->not->toContain($row->id)
+        ->and(fn () => $this->assets->addPurchase($this->owner, $this->company, $asset->id, $row->id))->toThrow(ValidationException::class, 'finns redan i anläggningsregistret');
+
+    app(PaySupplierInvoice::class)($this->owner, app(ApproveSupplierInvoice::class)($this->owner, $invoice->fresh())->fresh(), CarbonImmutable::parse('2027-01-20'), Money::parse('25 000'));
+    $payment = VoucherRow::query()->whereHas('voucher', fn ($query) => $query->where('source_id', $invoice->id))->whereHas('account', fn ($query) => $query->where('number', 1220))->sole();
+
+    expect(FixedAssets::additionCandidates($this->company->fresh(), $asset)->pluck('id')->all())->toBe([$payment->id]);
 });

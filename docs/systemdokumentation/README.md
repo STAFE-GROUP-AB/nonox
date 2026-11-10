@@ -1841,7 +1841,9 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
     vara raden en tillgång (`fixed_assets.acquisition_voucher_row_id`) eller
     ett tillägg (`fixed_asset_additions.voucher_row_id`, unik) gjordes av,
     inte stå i en verifikation som registret självt bokförde (källa
-    FixedAsset: avskrivning, omföring vid uppdelning, avyttring), och inte stå
+    FixedAsset: avskrivning, omföring vid uppdelning, avyttring) eller i
+    bokslutets verifikationer (källa CLOSING, till exempel de obetalda
+    fakturorna under kontantmetoden), och inte stå
     i en verifikation till en leverantörsfaktura som redan är en tillgång
     eller ett tillägg utan egen rad (under kontantmetoden bokför betalningen
     inköpet igen). Kontrollerna görs både i listan och när tillägget görs. En

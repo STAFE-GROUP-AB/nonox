@@ -732,6 +732,8 @@ finns särskilda skäl".
   posted, uncorrected voucher, and not already in the register: not the row
   of an asset or addition, not in a voucher the register booked itself
   (source FixedAsset: depreciation, a split's reclassification, a disposal),
+  not in any voucher of the closing (source CLOSING, such as kontantmetoden's
+  unpaid invoices booked on the last day and reversed the next),
   and not in a voucher of a supplier invoice that already backs an asset or
   addition without a row of its own (under kontantmetoden the payment
   voucher books the purchase again). These are checked when the list is

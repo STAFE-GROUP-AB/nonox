@@ -359,7 +359,9 @@ class FixedAssets
      * Voucher rows not already in the register: in a posted, uncorrected
      * voucher; not the row an asset or addition was made from; not in a
      * voucher the register booked itself (depreciation, a split's
-     * reclassification, a disposal: source FixedAsset); and not in a voucher
+     * reclassification, a disposal: source FixedAsset), nor any voucher of
+     * the closing (source CLOSING, such as kontantmetoden's unpaid invoices
+     * on the last day of the year); and not in a voucher
      * of a supplier invoice that already backs an asset or addition without a
      * row of its own, which under kontantmetoden is the payment voucher that
      * books the same purchase again.
@@ -376,6 +378,8 @@ class FixedAssets
             ->where('vouchers.status', VoucherStatus::Posted->value)
             ->whereNull('vouchers.corrected_by_voucher_id')
             ->where(fn ($query) => $query->whereNull('vouchers.source_type')->orWhere('vouchers.source_type', '!=', (new FixedAsset)->getMorphClass()))
+            // The closing's own vouchers (under kontantmetoden the unpaid invoices on the last day, reversed the next) book no purchase.
+            ->where('vouchers.source', '!=', VoucherSource::Closing->value)
             ->whereNotExists(fn (QueryBuilder $query) => $query->from('fixed_assets')->whereColumn('fixed_assets.acquisition_voucher_row_id', 'voucher_rows.id'))
             ->whereNotExists(fn (QueryBuilder $query) => $query->from('fixed_asset_additions')->whereColumn('fixed_asset_additions.voucher_row_id', 'voucher_rows.id'))
             // The ids are compared as text: vouchers.source_id is a string column for every kind of source.

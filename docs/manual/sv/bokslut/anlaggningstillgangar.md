@@ -82,7 +82,7 @@ Läggs ett inköp till efter att tillgången har börjat skrivas av, skrivs belo
 - Inköp i ett stängt räkenskapsår eller i en låst period kan inte läggas till.
 - Är tillgångens nyttjandeperiod slut, lägg in inköpet som en egen tillgång.
 - En tillgång som är uppdelad i komponenter tar inte emot inköp; lägg till inköpet i den komponent det hör till.
-- Ett inköp som redan finns i registret erbjuds inte: varken raden en tillgång eller ett tillägg gjordes av, registrets egna verifikationer (avskrivningar, omföring vid uppdelning, avyttring) eller – under kontantmetoden – betalningen av en leverantörsfaktura som redan blev en tillgång eller ett tillägg. Lades tillgången in i registret utan verifikation påminner **Det här händer** om att kontrollera att inköpet inte redan ingår.
+- Ett inköp som redan finns i registret erbjuds inte: varken raden en tillgång eller ett tillägg gjordes av, registrets egna verifikationer (avskrivningar, omföring vid uppdelning, avyttring), bokslutets verifikationer (till exempel obetalda fakturor vid årets slut under kontantmetoden) eller – under kontantmetoden – betalningen av en leverantörsfaktura som redan blev en tillgång eller ett tillägg. Lades tillgången in i registret utan verifikation påminner **Det här händer** om att kontrollera att inköpet inte redan ingår.
 - När tillgången har tillägg är **Anskaffningsvärde, kr** summan av inköpen och kan inte ändras under **Ändra**. **Restvärde, kr** ska vara mindre än anskaffningsvärdet utan de inköp som skrivs av från en senare månad.
 - Tillgången kan inte säljas eller utrangeras med ett datum före det senaste inköpet som lades till.
 - En verifikation som en tillgång eller ett tillägg bygger på kan inte rättas, och ett tillägg kan inte tas bort.
