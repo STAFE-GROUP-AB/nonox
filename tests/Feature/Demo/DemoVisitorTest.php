@@ -376,3 +376,19 @@ it('shows no try button and 404s the explanation for a signed-in visitor while t
     $this->actingAs($member)->get('/')->assertOk()->assertDontSee('data-try-link', false);
     $this->actingAs($member)->get(route('demo.show'))->assertNotFound();
 });
+
+it('treats a demo guest on /prova as before: the entry pages run on the main database, so they see the form', function () {
+    [$guest] = Demo::company();
+
+    $this->get(route('demo.open', Demo::token($guest)))->assertRedirect(route('dashboard'));
+
+    $session = Demo::sessionId();
+
+    $this->withCookie(DemoMode::COOKIE, $session)->get(route('demo.show'))
+        ->assertOk()
+        ->assertSee('data-demo-form', false)
+        ->assertDontSee('Demon är en egen gästsession');
+    $this->withCookie(DemoMode::COOKIE, $session)->post(route('demo.start'), [])
+        ->assertRedirect()
+        ->assertRedirectContains('/prova');
+});

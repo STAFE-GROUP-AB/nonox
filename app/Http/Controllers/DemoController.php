@@ -31,10 +31,6 @@ class DemoController
     {
         abort_unless(DemoMode::enabled(), 404);
 
-        if (Auth::check() && DemoMode::active()) {
-            return redirect()->route('dashboard');
-        }
-
         if (Auth::check()) {
             return view('start.try-signed-in', [
                 ...LandingPage::data(),
@@ -58,7 +54,7 @@ class DemoController
         abort_unless(DemoMode::enabled(), 404);
 
         if (Auth::check()) {
-            return DemoMode::active() ? redirect()->route('dashboard') : redirect()->route('demo.show');
+            return redirect()->route('demo.show');
         }
 
         $limiter = DemoSessions::limiter();

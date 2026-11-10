@@ -15,7 +15,7 @@
     <p style="margin-top:22px">Du är inloggad med ditt konto. Demon körs som en gäst som är skild från ditt konto och dina företag, så den kan inte startas medan du är inloggad. Ditt konto och dina uppgifter påverkas inte.</p>
     <p>Du har två sätt att prova:</p>
     <ul class="tr-facts">
-      <li><strong>Logga ut</strong> här intill och välj <strong>Prova utan att registrera</strong> på startsidan.</li>
+      <li><strong>Logga ut</strong> nedan och välj <strong>Prova utan att registrera</strong> på startsidan.</li>
       <li>Eller öppna nonox.app i ett <strong>privat fönster</strong> (ett inkognitofönster) i webbläsaren och starta demon där. Då förblir du inloggad i det vanliga fönstret.</li>
     </ul>
   </section>

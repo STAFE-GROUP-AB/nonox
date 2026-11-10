@@ -675,6 +675,6 @@ Next package: enligt prioritetslistan.
 
 Package: Prova utan att registrera för inloggade (kö 18)
 Status: done
-Evidence: `tests/Feature/Demo/DemoVisitorTest.php`, `ManualTest`, `LandingPageTest`.
+Evidence: `tests/Feature/Demo/DemoVisitorTest.php`.
 - Knappen på startsidan visas också för inloggade (när demon är på). `GET /prova` för en inloggad visar en förklaring (egen gästsession, logga ut eller privat fönster, Till översikten) i stället för att omdirigera; `POST /prova` startar ingen demo. Demogäster behåller nuvarande beteende. Manualens steg 1 uppdaterad.
 Next package: enligt prioritetslistan.
