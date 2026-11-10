@@ -149,6 +149,7 @@ final class DatabaseGrants
         'expenses' => GrantDecision::ReadWrite,
         'failed_jobs' => GrantDecision::ReadWrite,
         'fiscal_years' => GrantDecision::ReadWrite,
+        'fixed_asset_additions' => GrantDecision::AppendOnly,
         'fixed_asset_depreciations' => GrantDecision::AppendOnly,
         'fixed_asset_proposals' => GrantDecision::ReadWrite,
         'fixed_assets' => GrantDecision::ReadWrite,

@@ -124,6 +124,7 @@ BEGIN
         ('expenses', 'SELECT, INSERT, UPDATE, DELETE'),
         ('failed_jobs', 'SELECT, INSERT, UPDATE, DELETE'),
         ('fiscal_years', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('fixed_asset_additions', 'SELECT, INSERT'),
         ('fixed_asset_depreciations', 'SELECT, INSERT'),
         ('fixed_asset_proposals', 'SELECT, INSERT, UPDATE, DELETE'),
         ('fixed_assets', 'SELECT, INSERT, UPDATE, DELETE'),
