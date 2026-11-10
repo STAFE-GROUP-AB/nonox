@@ -17,6 +17,7 @@ use App\Actions\Company\ChangeReportingFramework;
 use App\Actions\Company\UpdateCompanyDetails;
 use App\Domain\Accounting\AccountType;
 use App\Domain\AnnualReport\AnnualReportDocument;
+use App\Domain\AnnualReport\K3AnnualReportDocument;
 use App\Domain\Closing\K2Reconfirmation;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\IncomeTax\Ne;
@@ -406,19 +407,20 @@ it('fills in NE by the year\'s framework: a sole trader on K1 for 2026 and K2 fo
         ->and(Ne::for($company->fresh(), $year2027->fresh(), null)->ne()[NeCodes::NOT_SIMPLIFIED] ?? null)->toBe('X');
 });
 
-it('locks the fiscal year before saving the annual report, and refuses a year moved to K3 meanwhile', function () {
-    $this->year2026->forceFill(['reporting_framework' => ReportingFramework::K3])->save();
+it('locks the fiscal year before saving the annual report, and refuses a year moved to K1 meanwhile', function () {
+    // A K3 year saves its texts since S1-P10 (ADR-059 A.3), so the year moves to K1, which is still refused.
+    $this->year2026->forceFill(['reporting_framework' => ReportingFramework::K1])->save();
 
     // The caller's model still says K2; the locked row decides.
     $stale = $this->year2026->replicate()->forceFill(['id' => $this->year2026->id, 'reporting_framework' => ReportingFramework::K2]);
     $stale->exists = true;
 
     expect(fn () => app(SaveAnnualReport::class)($this->owner, $stale, ['average_employees' => '0']))
-        ->toThrow(ValidationException::class, 'NONOX tar ännu inte fram årsredovisningar enligt K3')
+        ->toThrow(ValidationException::class, 'Räkenskapsåret har regelverket K1')
         ->and(AnnualReport::query()->exists())->toBeFalse();
 });
 
-it('keeps the K2 report of 2026 for a company on K3 from 2027, and refuses the 2027 report', function () {
+it('keeps the K2 report of 2026 for a company on K3 from 2027, and routes the 2027 report to the K3 document', function () {
     Bookkeeping::post($this->owner, $this->company, 10_000_000, 1930, 3001, '2026-03-01');
     $next = frameworkNextYear($this->owner, $this->company);
     app(ChangeReportingFramework::class)($this->owner, $next, ReportingFramework::K3);
@@ -428,14 +430,18 @@ it('keeps the K2 report of 2026 for a company on K3 from 2027, and refuses the 2
         ->and(AnnualReportDocument::supports($company, $this->year2026))->toBeTrue()
         ->and(AnnualReportDocument::refusal($company, $this->year2026))->toBeNull()
         ->and(AnnualReportDocument::supports($company, $next))->toBeFalse()
-        ->and(AnnualReportDocument::refusal($company, $next))->toContain('NONOX tar ännu inte fram årsredovisningar enligt K3')
+        // ADR-059 A.3 (S1-P10): a K3 year is not refused here; K3AnnualReportDocument gives its reasons.
+        ->and(AnnualReportDocument::refusal($company, $next))->toBeNull()
+        ->and(K3AnnualReportDocument::supports($company, $next))->toBeTrue()
+        ->and(K3AnnualReportDocument::supports($company, $this->year2026))->toBeFalse()
         // Without a year the company's framework decides, as before.
         ->and(AnnualReportDocument::supports($company))->toBeFalse();
 
     $this->get(route('accounting.annualReport.show', $this->year2026))->assertOk();
     $this->get(route('accounting.annualReport.pdf', $this->year2026))->assertOk();
-    $this->get(route('accounting.annualReport.show', $next))->assertForbidden();
-    $this->get(route('accounting.annualReport.pdf', $next))->assertForbidden();
+    // The 2027 K3 report is refused (the policies of the year are not chosen), so there is no preview and no PDF.
+    $this->get(route('accounting.annualReport.show', $next))->assertNotFound();
+    $this->get(route('accounting.annualReport.pdf', $next))->assertRedirect();
     $this->get(route('accounting.annualReport.ixbrl', $next))->assertForbidden();
 
     Livewire::test(AnnualReportPage::class, ['year' => $this->year2026->id])
@@ -443,8 +449,8 @@ it('keeps the K2 report of 2026 for a company on K3 from 2027, and refuses the 2
         ->assertDontSee('Årsredovisning enligt K3 finns inte ännu');
 
     Livewire::test(AnnualReportPage::class, ['year' => $next->id])
-        ->assertSee('Årsredovisning enligt K3 finns inte ännu')
-        ->assertDontSee('Texter och underskrifter');
+        ->assertSee('Det här hindrar årsredovisningen')
+        ->assertSee('Uppgifter för K3');
 });
 
 it('asks for the K2 conditions by the year\'s framework, not the company default', function () {

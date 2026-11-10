@@ -32,11 +32,10 @@ use Dompdf\Options;
 final class AnnualReportDocument
 {
     /**
-     * Whether NONOX makes this company's annual report: an aktiebolag or an
-     * ekonomisk förening that applies K2. The document states in note 1 that
-     * it follows BFNAR 2016:10, which is false for a company on K3, so a K3
-     * company (and any other framework) is refused until a K3 report exists
-     * (ADR-059, stage F.1).
+     * Whether this K2 document is the company's annual report: an aktiebolag
+     * or an ekonomisk förening that applies K2. The document states in note 1
+     * that it follows BFNAR 2016:10, which is false for a year on K3; a K3
+     * year gets K3AnnualReportDocument instead (ADR-059, S1-P10).
      *
      * The framework is the fiscal year's (ADR-059, A.2.1): a company that
      * moves to K3 keeps the K2 report of its earlier years. Without a year
@@ -64,14 +63,20 @@ final class AnnualReportDocument
         return in_array($company->legal_form, [LegalForm::Ab, LegalForm::EkonomiskForening], true);
     }
 
-    /** Why NONOX does not make the company's annual report, in Swedish, or null when it does. */
+    /**
+     * Why NONOX does not make the company's annual report, in Swedish, or null
+     * when it does. A K3 year is not refused here: its report is
+     * K3AnnualReportDocument, whose refusal() gives the K3 reasons (ADR-059
+     * A.3, S1-P10). So null means "this document or the K3 one"; a caller
+     * that needs the K2 document itself (the K2 iXBRL file) checks supports().
+     */
     public static function refusal(Company $company, ?FiscalYear $fiscalYear = null): ?string
     {
         $framework = self::framework($company, $fiscalYear);
 
         $refusal = match (true) {
             ! self::supportsLegalForm($company) => __('Årsredovisningen görs här för aktiebolag och ekonomiska föreningar.'),
-            $framework === ReportingFramework::K3 => __('NONOX tar ännu inte fram årsredovisningar enligt K3 (BFNAR 2012:1). Räkenskapsåret har regelverket K3, och en årsredovisning enligt K2 skulle inte stämma med det regelverket.'),
+            $framework === ReportingFramework::K3 => null,
             $framework === ReportingFramework::K1 => __('NONOX tar fram årsredovisningar enligt K2. Räkenskapsåret har regelverket K1, som inte används för en årsredovisning.'),
             default => null,
         };

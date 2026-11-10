@@ -20,6 +20,7 @@ use App\Modules\Portal\Models\PortalSettings;
 use App\Modules\Portal\Support\PortalSession;
 use App\Support\Tenancy\CurrentCompany;
 use Database\Seeders\Demo\DemoIndustries;
+use Database\Seeders\K3DemoSeeder;
 use Database\Seeders\TaxFormsDemoSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Cookie\CookieValuePrefix;
@@ -107,7 +108,11 @@ class ManualScreenshotsCommand extends Command
 
             foreach ($groups as $key => $group) {
                 [$short, $login] = explode('|', (string) $key);
-                $company = $companies[$short] ?? throw new RuntimeException(in_array($short, ['enskildfirma', 'handelsbolag'], true) ? "Demoföretaget {$short} finns inte. Kör först: php artisan db:seed --class=TaxFormsDemoSeeder" : "Okänt demoföretag: {$short}.");
+                $company = $companies[$short] ?? throw new RuntimeException(match (true) {
+                    in_array($short, ['enskildfirma', 'handelsbolag'], true) => "Demoföretaget {$short} finns inte. Kör först: php artisan db:seed --class=TaxFormsDemoSeeder",
+                    $short === 'aktiebolagk3' => "Demoföretaget {$short} finns inte. Kör först: php artisan db:seed --class=K3DemoSeeder",
+                    default => "Okänt demoföretag: {$short}.",
+                });
                 $portal = str_starts_with($login, 'portal:') ? substr($login, 7) : null;
                 $user = match (true) {
                     $portal !== null, $login === 'gast' => null,
@@ -172,8 +177,9 @@ class ManualScreenshotsCommand extends Command
                 ?? throw new RuntimeException("Demoföretaget för {$slug} finns inte. Kör först: php artisan db:seed --class=IndustryDemoSeeder");
         }
 
-        // The sole trader and the handelsbolag for the income tax pages (ADR-053), when TaxFormsDemoSeeder has run.
-        foreach (['enskildfirma' => TaxFormsDemoSeeder::SOLE_TRADER, 'handelsbolag' => TaxFormsDemoSeeder::PARTNERSHIP] as $short => $orgNumber) {
+        // The sole trader and the handelsbolag for the income tax pages (ADR-053), when TaxFormsDemoSeeder has run,
+        // and the aktiebolag in its first K3 year for the K3 annual report (ADR-059 S1-P10), when K3DemoSeeder has run.
+        foreach (['enskildfirma' => TaxFormsDemoSeeder::SOLE_TRADER, 'handelsbolag' => TaxFormsDemoSeeder::PARTNERSHIP, 'aktiebolagk3' => K3DemoSeeder::ORG_NUMBER] as $short => $orgNumber) {
             $company = Company::query()->where('org_number', $orgNumber)->first();
 
             if ($company instanceof Company) {

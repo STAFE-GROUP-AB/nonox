@@ -911,7 +911,7 @@ table).
 | S1-P1 | `AnnualReportDocument.php` | `supports()` and `refusal()` take an optional `FiscalYear` and read **its** framework (company column when null, so every existing caller behaves as today); callers in `AnnualReportPage`, `AnnualReportController`, `SaveAnnualReport` and `K2AnnualReportIxbrl` pass the year | Without it, a company that moves to K3 for 2026 loses its 2025 K2 report, and a K3 year cannot be routed to the K3 document. K2 HTML/iXBRL unchanged. |
 | S1-P4 | `AnnualReportDocument.php` | `depreciationPrinciples()` skips the `Land` category and `SPLIT` parents | Otherwise a K2 company that registers land prints "Mark: 0 år" in its principles note. Golden files have no register rows, so they stay byte-identical; a new K2 unit test covers the case. |
 | S1-P6 | `PrintedFigures.php` | `apply()` gains a schedule parameter defaulting to `K2Schedule` (it reads `K2Schedule::INCOME_SUBTOTALS`, `BALANCE` order, `SECTIONS`, `ASSET_SECTIONS` directly), plus the ordered list of equity cells that take a rounding leftover (K2: today's order; K3: never a new "Övriga förändringar" row) | The K3 balance sheet has its own lines (1370 deferred tax asset, 2240 deferred tax liability, the development fund) and K3 6.3 forbids the residual equity row; printing K3 through the same rounding keeps "one figures source" (spec Behaviour 5, §4). |
-| S1-P10 | `AnnualReportDocument.php` | `refusal()` no longer refuses a K3 **year** once the K3 document supports it; the K3 refusal reasons move to `K3AnnualReportDocument::refusal()` | Routing; K2 paths unchanged. |
+| S1-P10 | `AnnualReportDocument.php` | `refusal()` no longer refuses a K3 **year** once the K3 document supports it; the K3 refusal reasons move to `K3AnnualReportDocument::refusal()` | Routing; K2 paths unchanged. **Built 2026-11-10** (As built S1-P10). |
 | — | `tests/Fixtures/annual-report/**` | **No change** in any package | Byte-identical K2 output is part of every package's definition of done. |
 | S1-P12 (only if H7 chooses a voucher) | `vouchers` table | migration adding `K3_TRANSITION` to the `source` check | New voucher source; no trigger or `PostVoucher` change. |
 
@@ -1604,6 +1604,109 @@ package. Nothing is visible to a user yet: the K3 document (S1-P10) prints it.
 - *Row 21 (P3).* "Har ett väsentligt fel från tidigare år rättats
   retroaktivt?" is asked every K3 year after the first; no closes it.
 
+#### As built (S1-P10, 2026-11-10)
+
+Enligt AI-utredning 2026-11-10, juristgranskning återstår. Sources: the rule
+sheet S1-R8.2 (K3 3.10), S1-R9.3, K3 1.4/1.6, and the rules the earlier
+packages built on; nothing new was read. Beta: the public claim
+"Årsredovisning enligt K3" stays not allowed until the accountant (H10) has
+signed the checklist.
+
+- **Document** (`App\Domain\AnnualReport\K3AnnualReportDocument`,
+  `resources/views/annual-report/k3-document.blade.php` with two partials).
+  `supports(company, ?year)` is a K3 year of an AB or ekonomisk förening;
+  `for(company, year, report)` builds once, in Swedish: the size test (with
+  the listing and first-year answers, as K3Eligibility reads them),
+  `K3Policies`, `AnnualAccounts` (K3 layout), `K3EquityStatement`,
+  `CashFlowStatement::forYear()`, `K3Notes` and `K3ManagementReport` (both
+  given the same accounts and policies), then `PrintedFigures` and
+  `CashFlowPrintedFigures`. Parts in `K3Schedule::PARTS` order:
+  förvaltningsberättelse (management sections, the four-year overview with
+  each year's framework, the disposition), income statement, balance sheet
+  (letter groups with their sums; "varav uppskjuten skatt" under
+  Avsättningar för skatter, the P12 re-check P3-a choice), the equity
+  statement as its own report, the cash flow statement when the policy is
+  `indirect`, the notes (note 1 with every principle as a sub-heading; the
+  fixed asset notes with the printed movement table and the note's text),
+  signatures and the fastställelseintyg. Note numbers are shown at the fixed
+  asset lines, personnel costs, the equity sections and the long-term
+  liabilities. `html(preview)` marks an overridden note ("Egen formulering",
+  stale: the books changed) and a draft only in the preview; the PDF prints
+  the person's text without a marker (A.2.7).
+- **Refusals** (`refusals()`, each `{rule, message}`; `refusal()` joins them
+  with the rule ids). K3 is all or nothing, so any refusal means no document:
+  not an AB (`S1-scope`: an ekonomisk förening on K3 is outside S1); större
+  (`S1-R9.3`, until H1); undetermined size (`S1-R9`, with the classifier's
+  reason); no K3 version for the year (`S1-R1.4`); a missing policy (the
+  key's rule id, transition answers included in a first K3 year) and every
+  `K3Policies::refusals()` entry (`chapter_12` S1-R6, `capitalise` S1-R10,
+  `classify` S1-R5, borrowing costs, K3 10.2/23.37 changes); comparatives to
+  be restated in a first K3 year (`S1-R7.1`); H9 (b): the expensing model with
+  a balance on 1010–1019, 1081 or 2089 (`S1-R10.3`, accounts
+  `TODO(legal-verify)` until H9); a confirmed 29.32 set-off with balances on
+  both 137x and 224x (`S1-R4.6`: the balance sheet is gross only, so it
+  refuses instead of printing a wrong presentation); a refused equity
+  statement (`S1-R8.3`); a refused or impossible cash flow statement
+  (`S1-R2`, `S1-R2.1`; a first K3 year with `indirect` is refused through
+  P8's K3_TRANSITION refusal); a first K3 year whose transition is not booked
+  (`S1-R7.7`, from note 22's `booked`); a note's `blocking` (`S1-R8.1`); an
+  unbalanced sheet (`S1-R8.2`). Duplicate messages are listed once.
+- **Questions** (`questions()`): `K3Notes::questions()` and
+  `K3ManagementReport::questions()`, without those a refusal already states.
+  They never refuse the preview; `complete()` (no refusal, no question) is
+  required for the PDF. Decision of this package (P9 follow-up "treat
+  blocking and questions() as refusals or confirmations"): blocking →
+  refusal, questions → draft until answered.
+- **Hot spot (A.3).** `AnnualReportDocument::refusal()` returns null for a K3
+  year (legal-form refusal unchanged, K1 unchanged); `supports()` still means
+  the K2 document. Callers: `AnnualReportController` routes a K3 year to the
+  K3 document (preview 404 while refused, PDF back with a toast until
+  complete, iXBRL 403); `K2AnnualReportIxbrl::render()` refuses a K3 year
+  itself; `SaveAnnualReport` saves the common columns for a K3 year and skips
+  the K2-only net sales comment (BFNAR 2016:10 5.5). K2 output byte-identical
+  (`AnnualReportGoldenTest` unchanged, `tests/Fixtures/annual-report/**`
+  untouched).
+- **Page** (Bokslut → Årsredovisning, `AnnualReportPage`): for a K3 year a
+  Beta notice, "Det här hindrar årsredovisningen" (message and rule id),
+  "Frågor att besvara", the common texts, "Uppgifter för K3"
+  (`SaveK3ReportInputs`: the yes/no answers, FTE, owners above 10 % with
+  "Lägg till ägare", the texts, the amount due after five years, exceptional
+  items), "Noter" (number, heading, rules, "Egen formulering", "Inaktuell",
+  open questions; "Skriv med egna ord" / "Ändra egen formulering" / "Använd
+  NONOX text" through `K3NoteOverrides`), the preview frame or "Ingen
+  förhandsvisning ännu", and "Ladda ner PDF" only when complete. iXBRL is
+  not offered for K3. `K3PolicyKey::valueLabel()` gained the label of
+  `buildings_always_others_by_choice` (note 1 printed the raw value).
+- **Tests:** `tests/Feature/AnnualReport/K3/K3AnnualReportDocumentTest.php`
+  (F-S1-b with the transition booked: parts in order, income statement,
+  balance sheet and equity statement to the krona against
+  `tests/Fixtures/s1/f-s1-b/document/expected.json`, written by this builder
+  from F-S1-b's expected figures and to be checked independently; note order
+  and references; the whole HTML against `document.html`, rewritten only
+  with `NONOX_UPDATE_K3_GOLDEN=1`; override marker and stale state; routes;
+  fixed query count with 1 and 26 vouchers; accessibility of the preview: lang,
+  one h1, no skipped heading level, column and row headers in every table,
+  labelled fields and a titled frame on the page; every refusal with its rule
+  id, F-S1-a as större), `tests/Tenancy/K3AnnualReportTenancyTest.php`
+  (another company's year → 404), `K3GuardTest` and
+  `FrameworkPerFiscalYearTest` updated to the new routing.
+- **Demo and manual:** `database/seeders/K3DemoSeeder.php` (Verkstadshuset
+  Demo AB, synthetic, K2 2024 → K3 2025, transition booked) and the
+  `aktiebolagk3` company of `manual:screenshots`; manual Bokslut →
+  Årsredovisning with two screenshots.
+- **Follow-ups (S1-P13):** lift the större refusal with the ÅRL 5:25–48 notes;
+  the netted 29.32 presentation in the balance sheet; an ekonomisk förening
+  on K3. **(S1-P14):** time `K3AnnualReportDocument::for()->html()` on 50 000
+  vouchers; the equity statement's stale-statistics plan (P8 note). Others:
+  note texts print amounts with öre (`Money::format`) while the statements
+  are in whole kronor; bilaga 2 items 14, 15 and 17 (H10 accounts); the
+  share register could suggest the owners; K3 iXBRL (F.4); the cash flow of a
+  first K3 year with `indirect` (P8 refuses the K3_TRANSITION voucher).
+- **TODO(legal-verify):** the document as a whole (H10); H9's accounts;
+  printing the transition on row b (H7, from P7/P12); the "varav uppskjuten
+  skatt" specification row as ÅRL bilaga 1 C.2 presentation; the page's
+  wording of the refusals.
+
 ### A.5 Test plan and performance
 
 **Unit tests per rule id** (Pest, `tests/Unit/AnnualReport/K3/…`), named with the
@@ -1713,7 +1816,8 @@ accountant checklist; R8.3 the transition in row (b) (A.1.5).
   and the cash flow statement (P8) need none for their build either, only for two
   confirmations and the deferred tax asset side.
 - The K3 document ships for a mindre AB first; a större AB gets figures only until
-  H1. F.1's guard stays until P10 replaces it for K3 years.
+  H1. F.1's guard stays until P10 replaces it for K3 years (done 2026-11-10:
+  a K3 year gets K3AnnualReportDocument).
 - Hot-spot changes are limited to four small parameter-with-K2-default edits in
   `AnnualReportDocument` and `PrintedFigures`, each guarded by the byte-identical
   K2 golden files.

@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.128
-- Datum: 2026-11-09
+- Version: 0.129
+- Datum: 2026-11-10
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -2190,18 +2190,19 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   ifylld; det skrivs under hos Bolagsverket, inte i NONOX. Är
   `BOLAGSVERKET_TAXONOMY_DIR` satt kontrolleras varje begrepp mot taxonomin
   innan filen lämnas ut.
-- Årsredovisningen görs bara för ett räkenskapsår vars regelverk är K2 (sedan
-  2026-11-06, ADR-059 etapp F.1; per år sedan 2026-11-07, avsnitt 3). Ett
-  företag som byter till K3 från ett visst år kan alltså fortfarande ta fram
-  årsredovisningen för ett tidigare K2-år, och den blir identisk med före
-  bytet. Dokumentet skriver i not 1 att det följer
-  BFNAR 2016:10 och iXBRL-filen märks enligt K2-taxonomin, vilket inte stämmer
-  för ett företag som har valt K3 (BFNAR 2012:1). För ett aktiebolag eller en
-  ekonomisk förening med K3 (eller K1) visar sidan en förklaring i stället för
-  formuläret; förhandsvisningen, PDF:en och iXBRL-filen nekas (403) och
-  texterna kan inte sparas. Inkomstdeklaration 2 tas fram som förut, eftersom
-  den följer företagsformen. Arkivpaketet innehåller ingen årsredovisning,
-  varken för K2 eller K3. Ingenting i bokföringen ändras.
+- K2-årsredovisningen görs bara för ett räkenskapsår vars regelverk är K2
+  (sedan 2026-11-06, ADR-059 etapp F.1; per år sedan 2026-11-07, avsnitt 3).
+  Ett företag som byter till K3 från ett visst år kan alltså fortfarande ta
+  fram årsredovisningen för ett tidigare K2-år, och den blir identisk med före
+  bytet. Dokumentet skriver i not 1 att det följer BFNAR 2016:10 och
+  iXBRL-filen märks enligt K2-taxonomin, så ett K3-år får aldrig
+  K2-dokumentet. Sedan 2026-11-10 (avsnitt 5a6.8) får ett K3-år i stället
+  årsredovisningen enligt K3 (Beta) eller, så länge den nekas, skälen med
+  regelns id; iXBRL-filen nekas för ett K3-år (403). För K1 visar sidan en
+  förklaring i stället för formuläret och förhandsvisningen och PDF:en nekas
+  (403). Inkomstdeklaration 2 tas fram som förut, eftersom den följer
+  företagsformen. Arkivpaketet innehåller ingen årsredovisning, varken för K2
+  eller K3. Ingenting i bokföringen ändras.
 - Villkoren för K2 som användaren bekräftar när företaget skapas eller
   regelverket ändras omfattar för aktiebolag och ekonomiska föreningar även
   BFNAR 2016:10 punkt 1.1A–1.1C i lydelsen enligt BFNAR 2025:2 (räkenskapsår
@@ -2737,8 +2738,8 @@ konsoliderade K3 (vl12-1-k3-kons20251215), kapitel 35, och
 Enligt AI-utredning 2026-11-09, juristgranskning återstår (ADR-059, tillägg
 2026-11-07, A.2.7, paket S1-P9). Källor: regelbladet
 `docs/specs/rules/s1.md`, S1-R8, R8.1 rad 1–27, R8.4, R3.7, R4.7, R7.5, och
-K3 punkt 8.6B. Ingenting syns för användaren ännu; K3-årsredovisningen
-(S1-P10) skriver ut noterna och förvaltningsberättelsen.
+K3 punkt 8.6B. Sedan 2026-11-10 skriver K3-årsredovisningen (avsnitt 5a6.8,
+S1-P10) ut noterna och förvaltningsberättelsen.
 
 - `K3Notes` tar fram noterna för ett mindre aktiebolag ur bokföringen,
   anläggningsregistret, redovisningsprinciperna (avsnitt 5a6.1),
@@ -2823,6 +2824,65 @@ K3 punkt 8.6B. Ingenting syns för användaren ännu; K3-årsredovisningen
   lästs i sin helhet; medelantalet anställda avrundas till hela personer;
   bokstäverna a–d i K3 punkt 3.7; regelbladets rader 1–27 är ett minimum
   (kapitel 9, 13–16, 19, 21–28 och 30–34 är inte genomlästa).
+
+### 5a6.8 Årsredovisning enligt K3 för mindre aktiebolag (Beta)
+
+Enligt AI-utredning 2026-11-10, juristgranskning återstår (ADR-059, tillägg
+2026-11-07, A.4 paket S1-P10). Källor: regelbladet `docs/specs/rules/s1.md`,
+S1-R8.2 (K3 punkt 3.10), S1-R9.3, K3 punkterna 1.4 och 1.6, och de regler
+som avsnitten 5a6.1–5a6.7 bygger på.
+
+- Ett räkenskapsår som följer K3, för ett aktiebolag eller en ekonomisk
+  förening, får årsredovisningen enligt K3 (`K3AnnualReportDocument`) under
+  Bokslut → Årsredovisning. Delarna kommer i ordningen i K3 punkt 3.10:
+  förvaltningsberättelse (5a6.7), resultaträkning och balansräkning i K3:s
+  uppställning (5a6.2), rapport över förändringar i eget kapital som egen
+  räkning direkt efter balansräkningen (5a6.3), kassaflödesanalys när
+  principen säger det (5a6.4), noter (5a6.7), underskrifter och
+  fastställelseintyg. Beloppen skrivs i hela kronor med samma avrundning som
+  K2 (`PrintedFigures` med K3:s uppställning); jämförelseåret är föregående
+  år som det redovisades, för ett första K3-år alltså K2-siffror som inte
+  räknats om (K3 punkt 35.7, not om jämförbarhet). Avsättningar för skatter
+  är en rad med "varav uppskjuten skatt" under. Notnumret står vid
+  anläggningsposterna, personalkostnaderna, eget kapital och de långfristiga
+  skulderna.
+- K3 tillämpas helt eller inte alls (K3 punkterna 1.4 och 1.6). När något
+  som årsredovisningen behöver ligger utanför det NONOX stöder görs ingen
+  årsredovisning alls, och skälen visas med regelns id: en annan
+  företagsform än aktiebolag (en ekonomisk förening med K3 ingår inte än),
+  ett större företag (S1-R9.3, till beslut S1-H1), en storlek som inte går
+  att avgöra (S1-R9), ingen lydelse av K3 för året (S1-R1.4), en princip som
+  saknas eller som inte stöds (kapitel 12, S1-R6; aktiveringsmodellen,
+  S1-R10; finansiella leasingavtal i balansräkningen, S1-R5; aktiverade
+  låneutgifter; byte av princip, K3 10.2), kostnadsföringsmodellen med saldo
+  på 1010–1019, 1081 eller 2089 (S1-R10.3, beslut H9), ett första K3-år där
+  övergången inte är bokförd eller jämförelsetalen ska räknas om (S1-R7.7,
+  S1-R7.1), förändringar i eget kapital eller kassaflödesanalys som inte kan
+  upprättas (S1-R8.3, S1-R2), en balansräkning som inte går ihop, bekräftad
+  kvittning av uppskjuten skatt (K3 punkt 29.32, visas inte kvittad ännu)
+  och en not som beskriver något som nekas.
+- Frågor som noterna och förvaltningsberättelsen ställer hindrar inte
+  förhandsvisningen, som då är märkt som utkast. PDF:en kan laddas ner först
+  när ingenting nekar årsredovisningen och alla frågor är besvarade.
+- En not med egen formulering märks i förhandsvisningen, och märks som
+  inaktuell när bokföringen har ändrats sedan texten skrevs; i PDF:en står
+  bara texten (ADR-059 A.2.7). Skälet till en egen formulering skrivs aldrig
+  ut.
+- Sidan visar skälen, frågorna, formuläret Uppgifter för K3
+  (`SaveK3ReportInputs`), listan över noter där en not kan skrivas med egna
+  ord (`K3NoteOverrides`), förhandsvisningen och PDF:en. Texterna som K2 och
+  K3 har gemensamt sparas som förut (`SaveAnnualReport`); för ett K3-år gäller
+  inte K2:s krav på kommentar till nettoomsättningen (BFNAR 2016:10 punkt
+  5.5). iXBRL-filen görs bara för K2.
+- Ett annat företags räkenskapsår ger 404. Ett fast antal databasfrågor,
+  oberoende av antalet verifikationer, tillgångar och noter. Ingenting
+  bokförs, och ingen verifikation ändras.
+- K2-dokumentet och K2-iXBRL-filen är oförändrade (jämförs byte för byte med
+  `tests/Fixtures/annual-report/`).
+- TODO(legal-verify): hela dokumentet granskas av redovisningskonsulten
+  (H10) innan påståendet "Årsredovisning enligt K3" får göras; BAS-kontona
+  för aktiverad utveckling och fonden (H9); belopp i noternas text skrivs
+  med ören medan räkningarna står i hela kronor.
 
 ## 5a7. Inkomstdeklaration 2 (SRU)
 
@@ -5567,3 +5627,4 @@ påverkar bokföringen och fakturan:
 | 0.126 | 2026-11-09 | Databasroller (avsnitt 4.3a, ADR-079 etapp 2): NONOX kan köras som en roll (`nonox_app`) som inte äger tabellerna och inte kan stänga av, ta bort eller ersätta triggerna, tömma tabeller eller ändra schemat; migreringarna körs som ägaren (`nonox_owner`). Tabeller vars trigger nekar all ändring och borttagning blir append-only även genom behörigheterna. Behörigheterna läggs på efter varje migrering; en tabell utan beslut får ingen åtkomst. Påslaget med `DB_MIGRATION_USERNAME`, annars som förut med en användare; ägarens lösenord finns aldrig i programmets konfiguration. Triggerfunktionernas sökväg (version 0.119) läggs på igen efter varje migrering; personalliggarens gallring kontrolleras mot lagringstiden i databasen; signeringshändelser tas bara bort med sin begäran. Ingen bokföringsregel och inga data ändras. |
 | 0.127 | 2026-11-09 | Övergång från K2 till K3 (avsnitt 5a6.6, ADR-059 tillägg A.2.8, paket S1-P12, beslut H7 (a)): det första året med K3 lägger en person upp justeringarna av ingångsbalansräkningen (uppskjuten skatt, avsättningar, andra poster med hänvisning till K3; lättnadsregeln 35.27 per post med skäl), och förbjudna omräkningar (35.15, 35.16, 35.18, 35.20) nekas. Efter bekräftelse bokförs övergången en gång som en verifikation med den nya källan `K3_TRANSITION`, daterad årets första dag, mot 2091; migrationen lägger bara till källan i kontrollen av `vouchers.source`, utan ändring av triggrar eller `PostVoucher`. De ingående balanserna och K2-året ändras inte. Kapitel 35 tillämpas en gång, utom för ett företag som tvingas lämna K2 enligt BFNAR 2025:2. Omräknade jämförelsetal stöds inte ännu. Förändringar i eget kapital visar övergången på rad b, och uppskjuten skatt räknar årets förändring från ingångsbalansräkningen enligt K3. Nya tabeller `k3_transitions` (kan inte ändras) och `k3_transition_items` (låsta efter bokföringen). Byggnader som slaget `BUILDING_COMPONENTS`, kvittning av uppskjuten skatt endast i presentationen (29.32) med en bekräftelse per år, posten Avsättningar för skatter som en rad över 2240–2259, ogiltig övergång efter fullständig rättelse, ingen avsättning för nedmontering (35.29), ögonblicksbild av ingående balanser vid bokföringen och inget byte tillbaka till K2 för ett år med bokförd övergång. Ingen befintlig verifikation ändrades. |
 | 0.128 | 2026-11-09 | Noter och förvaltningsberättelse enligt K3 (avsnitt 5a6.7, ADR-059 tillägg A.2.7, paket S1-P9): noterna för ett mindre aktiebolag tas fram ur bokföringen, registret, principerna och övergången, en per rad i regelbladets lista S1-R8.1 och bara när villkoret är uppfyllt; en person kan skriva en not med egna ord, men notens data kommer alltid ur bokföringen och den egna texten markeras. Nya kolumner i `annual_reports` för det bokföringen inte vet (bland annat ägare med mer än tio procent med namn och andel, aldrig födelseår eller personnummer, och ja/nej-svar om noter som annars kunde utebli) och tabellen `annual_report_note_overrides`. Ingenting syns för användaren ännu och ingen verifikation ändras. |
+| 0.129 | 2026-11-10 | Årsredovisning enligt K3 för mindre aktiebolag, Beta (avsnitt 5a6.8, ADR-059 A.4 paket S1-P10): ett räkenskapsår som följer K3 får förvaltningsberättelse, resultat- och balansräkning, rapport över förändringar i eget kapital, eventuell kassaflödesanalys och noter i ordningen i K3 punkt 3.10, i hela kronor. Allt som NONOX inte stöder nekar hela årsredovisningen med regelns id (K3 tillämpas helt eller inte alls); PDF:en görs när alla frågor är besvarade. K2-dokumentet ändras inte; iXBRL görs bara för K2. Ingen verifikation ändras. |

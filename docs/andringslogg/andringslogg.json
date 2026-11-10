@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-10-arsredovisning-k3-mindre-aktiebolag",
+      "datum": "2026-11-10T11:30:00+01:00",
+      "rubrik": "Årsredovisning för mindre aktiebolag som följer K3 (beta)",
+      "beskrivning": "För ett räkenskapsår som följer K3 visar Årsredovisning nu förvaltningsberättelse, resultat- och balansräkning, rapport över förändringar i eget kapital, noter och underskrifter, med noter du kan skriva med egna ord och som märks i förhandsvisningen. Det som hindrar årsredovisningen visas med regeln bakom, till exempel ett större företag eller verkligt värde enligt kapitel 12, och PDF:en kan laddas ner när alla frågor är besvarade.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-10-introduktion-efter-godkannande",
       "datum": "2026-11-10T08:30:00+01:00",
       "rubrik": "Personlig introduktion när du släpps in från kön",
