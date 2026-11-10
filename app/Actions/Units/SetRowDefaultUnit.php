@@ -10,6 +10,7 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -27,7 +28,8 @@ class SetRowDefaultUnit
         Gate::forUser($user)->authorize('create', [Article::class, $company]);
 
         return DB::transaction(fn (): Unit => CurrentCompany::run($company, function () use ($user, $company, $unitId): Unit {
-            $unit = Unit::query()->lockForUpdate()->findOrFail($unitId);
+            // Lock the company's units, so two people choosing at once end with one default.
+            $unit = Unit::query()->lockForUpdate()->get()->firstWhere('id', $unitId) ?? throw (new ModelNotFoundException)->setModel(Unit::class, [$unitId]);
 
             if ($unit->isArchived()) {
                 throw ValidationException::withMessages(['unit' => __('Enheten :unit är arkiverad och kan inte väljas.', ['unit' => $unit->code])]);

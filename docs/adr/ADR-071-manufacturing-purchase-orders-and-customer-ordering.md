@@ -598,8 +598,35 @@ are linked when created (`HasRegisterUnit`), adding the spelling if needed.
 **No accounting behaviour changes**: amounts, VAT, booking and the ledger are untouched, and the
 printed unit of every existing row stays as it was. The system documentation is therefore unchanged.
 
-Open: the API change from "any text" to "a unit of the register" is stricter than the v1 rule of
-additive changes only; it is listed under Changed in the API changelog. Linking issued invoice rows
+**Matching a text.** A text names a unit by its code, an alias or its name, case-insensitive, with one
+trailing full stop ignored: `st.` is st, `tim.` is h, `kilogram` is kg, `kvadratmeter` is m². The
+same rule serves the screens and the API (`UnitRegister::match`), imports and the backfill
+(`UnitCatalogue::find`/`resolve`), so a spelling never becomes a second unit of the same kind.
+`resolve` inserts with ON CONFLICT DO NOTHING and reads the unit back, so two imports adding the same
+spelling at once share it.
+
+**The default unit.** Styck is marked as the row default when a company's catalogue is seeded, also
+for companies created after the migration. The unit that is the default, whether marked or by
+fallback, cannot be archived. Choosing a default locks the company's units.
+
+**Archived units.** An article's own unit stays selectable on its rows (editors and API) and on the
+article (API PATCH), as in `RecordMaterial` and `ResolveArticleUnits`. An import whose text names an
+archived unit uses it instead of failing the row. A credited row saved before the register gets the
+unit its text names in the editor.
+
+**Imports** resolve the unit inside the row's savepoint, after which the row is saved; a row that is
+refused adds no unit and none is reported. **Rows written with only a text** (`HasRegisterUnit`) are
+linked when the text names a unit; an unknown text throws, unless the code runs inside
+`UnitCatalogue::addingUnits()` (meant for importers of rows), so no screen or API adds units by
+accident. **Work order invoicing** maps each labour kind to a fixed register code (h, resa, km,
+`LabourUnit::registerCode()`), whatever the language, prints the label when it names that unit, and
+looks each unit up once per draft.
+
+**API decision (owner, 2026-11-10): no free text.** The 422 for an unknown unit text is kept as a
+documented breaking exception to the v1 rule of additive changes only, dated 2026-11-10 in the API
+changelog with the way to adapt: send `unit_id` or a code/alias/name from `GET /units`.
+
+Open: linking issued invoice rows
 and old material entries would need a one-time exception in their triggers (NULL → id only); not
 done. Peppol still maps the printed text, not `units.rec20_code`, so the `TODO(legal-verify)` items
 of §12.5 stand.

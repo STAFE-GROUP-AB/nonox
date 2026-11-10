@@ -15,6 +15,7 @@ use App\Domain\Units\UnitCatalogue;
 use App\Livewire\Invoicing\InvoiceEditor;
 use App\Livewire\Invoicing\Units as UnitsPage;
 use App\Migration\Import\RegisterKind;
+use App\Models\Article;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -258,8 +259,13 @@ it('links existing rows to the register without changing their text, and leaves 
         ['description' => 'Två', 'quantity' => '1', 'unit' => 'st', 'price' => '10', 'vat_rate' => 2500],
     ]));
 
-    // As before the register: a free spelling and no unit id. The issued row is left as it is.
+    // As before the register: free spellings and no unit id. The issued row is left as it is.
+    $more = everywhereDraft($this->owner, $this->company, $this->customer, array_map(fn (int $i): array => ['description' => "Rad {$i}", 'quantity' => '1', 'price' => '10', 'vat_rate' => 2500], range(1, 4)));
     DB::table('invoice_rows')->where('invoice_id', $draft->id)->update(['unit' => 'Bunt', 'unit_id' => null]);
+    foreach ($more->rows()->orderBy('position')->get() as $index => $row) {
+        DB::table('invoice_rows')->where('id', $row->id)->update(['unit' => ['st.', 'tim.', 'kilogram', 'kubikmeter'][$index], 'unit_id' => null]);
+    }
+    $before = Unit::query()->count();
 
     UnitBackfill::rows('invoice_rows', updatable: fn ($query) => $query->whereIn('invoice_id', DB::table('invoices')->where('status', 'DRAFT')->select('id')));
 
@@ -267,7 +273,11 @@ it('links existing rows to the register without changing their text, and leaves 
 
     expect($draft->rows()->sole())->unit_id->toBe($bunt->id)->unit->toBe('Bunt')
         ->and($bunt->dimension->value)->toBe('OTHER')
-        ->and($issued->rows()->sole()->unit)->toBe('st');
+        ->and($issued->rows()->sole()->unit)->toBe('st')
+        // Only Bunt is new: a full stop, an alias or the unit's name finds the unit that exists.
+        ->and(Unit::query()->count())->toBe($before + 1)
+        ->and($more->rows()->orderBy('position')->get()->map(fn (InvoiceRow $row): array => [$row->unit_id, $row->unit])->all())
+        ->toBe([[everywhereUnit('st')->id, 'st.'], [everywhereUnit('h')->id, 'tim.'], [everywhereUnit('kg')->id, 'kilogram'], [everywhereUnit('m³')->id, 'kubikmeter']]);
 });
 
 it('matches a long unit text cut to a code again instead of adding it twice', function () {
@@ -276,6 +286,9 @@ it('matches a long unit text cut to a code again instead of adding it twice', fu
 
     expect($first)->toMatchArray(['code' => 'kubikdecim', 'created' => true])
         ->and($again)->toMatchArray(['id' => $first['id'], 'created' => false]);
+
+    // A name longer than a row's unit column (crm rows take 20 characters) finds the unit by its name too.
+    expect(UnitCatalogue::resolve((int) $this->company->id, 'Kvadratmeter'))->toMatchArray(['id' => everywhereUnit('m²')->id, 'created' => false]);
 });
 
 it('asks for the units once, whatever the number of rows in the editor', function () {
@@ -311,4 +324,79 @@ it('keeps quotes made from the editor on register units', function () {
     ]);
 
     expect($quote->rows()->sole())->unit_id->toBe(everywhereUnit('m²')->id)->unit->toBe('kvm');
+});
+
+it('marks styck as the default for a company created after the migration, and never lets the default be archived', function () {
+    $owner = User::factory()->withCompany()->create();
+    $company = $owner->currentCompany();
+    CurrentCompany::set($company);
+    $this->actingAs($owner);
+
+    UnitCatalogue::seed((int) $company->id);
+
+    expect(Unit::query()->where('row_default', true)->pluck('code')->all())->toBe(['st']);
+
+    expect(fn () => app(SetUnitArchived::class)($owner, $company, everywhereUnit('st')->id, true))
+        ->toThrow(ValidationException::class, 'Enheten st är standard för nya rader.');
+
+    // Also when no unit is marked: the fallback default cannot be archived either.
+    Unit::query()->update(['row_default' => false]);
+
+    expect(fn () => app(SetUnitArchived::class)($owner, $company, everywhereUnit('st')->id, true))
+        ->toThrow(ValidationException::class, 'standard för nya rader');
+});
+
+it('offers and accepts an article\'s own archived unit on its rows', function () {
+    $roll = app(SaveUnit::class)($this->owner, $this->company, ['code' => 'rulle', 'name' => 'rulle', 'dimension' => 'OTHER']);
+    app(SaveArticle::class)($this->owner, $this->company, ['number' => 'TAP', 'name' => 'Tapet', 'unit' => 'rulle', 'price' => '400', 'vat_rate' => 2500]);
+    app(SetUnitArchived::class)($this->owner, $this->company, $roll->id, true);
+
+    Livewire::test(InvoiceEditor::class)
+        ->assertSee('rulle (arkiverad)')
+        ->set('customerId', (string) $this->customer->id)
+        ->set('rows', [['article' => 'TAP', 'description' => 'Tapet', 'quantity' => '2', 'unit_id' => (string) $roll->id, 'price' => '400', 'discount' => '', 'vat_rate' => '2500', 'account' => '']])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(InvoiceRow::query()->where('unit_id', $roll->id)->exists())->toBeTrue();
+});
+
+it('uses an archived unit an import names, and reports no unit from a refused row', function () {
+    $pall = app(SaveUnit::class)($this->owner, $this->company, ['code' => 'pall', 'name' => 'pall', 'dimension' => 'OTHER']);
+    app(SetUnitArchived::class)($this->owner, $this->company, $pall->id, true);
+
+    // Row 2 is refused (no name), so its new unit "bunt" is neither kept nor reported.
+    $csv = "Nr;Namn;Enhet;Pris;Moms\n1;Lastpall;pall;100;25\n2;;bunt;100;25\n";
+    $import = RegisterImports::run($this->owner, $this->company, RegisterKind::Articles, RegisterImports::contents($csv), 'nonox', [
+        'mapping' => ['number' => 'Nr', 'name' => 'Namn', 'unit' => 'Enhet', 'price' => 'Pris', 'vat_rate' => 'Moms'],
+    ]);
+
+    expect($import->result['created'])->toBe(1)
+        ->and($import->result['units_created'] ?? [])->toBe([])
+        ->and(Unit::query()->where('code', 'bunt')->exists())->toBeFalse()
+        ->and(CurrentCompany::run($this->company, fn () => Article::query()->where('number', '1')->value('sales_unit_id')))->toBe($pall->id);
+});
+
+it('refuses to add a unit from a row written with an unknown text, except inside an import', function () {
+    $invoice = everywhereDraft($this->owner, $this->company, $this->customer, [['description' => 'X', 'quantity' => '1', 'price' => '1', 'vat_rate' => 2500]]);
+    $row = fn (string $unit): array => ['invoice_id' => $invoice->id, 'description' => 'Y', 'quantity' => '1', 'unit' => $unit, 'unit_price_ore' => 100, 'vat_rate' => 2500, 'account_id' => $invoice->rows()->value('account_id'), 'net_ore' => 100, 'position' => 9];
+
+    expect(InvoiceRow::create($row('Styck'))->unit_id)->toBe(everywhereUnit('st')->id)
+        ->and(fn () => InvoiceRow::create($row('kartong')))->toThrow(LogicException::class);
+
+    $added = UnitCatalogue::addingUnits(fn () => InvoiceRow::create($row('kartong')));
+
+    expect($added->unit_id)->toBe(everywhereUnit('kartong')->id);
+});
+
+it('accepts an article PATCH that sends back its own archived unit', function () {
+    Connect::setUp();
+    [$owner, $company] = Connect::company();
+    $key = Connect::apiKey($owner, $company, ['invoices:view', 'invoices:create']);
+    $id = $this->withToken($key)->withHeader('Idempotency-Key', 'p-1')->postJson('/api/v1/articles', ['number' => 'B1', 'name' => 'Bräda', 'unit' => 'lpm', 'price_ore' => 100, 'vat_rate' => 2500])->assertCreated()->json('data.id');
+    $unitId = $this->withToken($key)->getJson("/api/v1/articles/{$id}")->json('data.unit_id');
+    app(SetUnitArchived::class)($owner, $company, $unitId, true);
+
+    $this->withToken($key)->withHeader('Idempotency-Key', 'p-2')->patchJson("/api/v1/articles/{$id}", ['name' => 'Bräda 22', 'unit_id' => $unitId])
+        ->assertOk()->assertJsonPath('data.unit_id', $unitId);
 });

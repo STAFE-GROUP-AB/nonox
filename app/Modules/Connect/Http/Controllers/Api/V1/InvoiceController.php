@@ -232,7 +232,8 @@ final class InvoiceController
             ];
         }, $rows, array_keys($rows));
 
-        $units->assertSelectable($chosen, $keptUnitIds);
+        // An article's own unit stays allowed on its rows when it has been archived, as on the article.
+        $units->assertSelectable($chosen, [...$keptUnitIds, ...$articles->map(fn (Article $article): ?int => $article->sales_unit_id ?? $article->stock_unit_id)->filter()->values()->all()]);
 
         return $input;
     }

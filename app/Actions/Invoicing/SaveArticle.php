@@ -35,8 +35,9 @@ class SaveArticle
 
     /**
      * @param  array<string, mixed>  $input  number, name, unit (or the stock, purchase and sales unit ids and material size, ADR-071 §12), price (kronor as written), vat_rate, account (number, optional), and any of the advanced fields in ArticleDetails::KEYS
+     * @param  bool  $import  an importer: a unit text naming an archived unit is used instead of refused (ADR-071 §12.9)
      */
-    public function __invoke(User $user, Company $company, array $input, ?Article $article = null): Article
+    public function __invoke(User $user, Company $company, array $input, ?Article $article = null, bool $import = false): Article
     {
         $article === null
             ? Gate::forUser($user)->authorize('create', [Article::class, $company])
@@ -68,13 +69,13 @@ class SaveArticle
             throw ValidationException::withMessages(['price' => __('Priset går inte att läsa. Skriv till exempel 149,00.')]);
         }
 
-        return DB::transaction(fn (): Article => CurrentCompany::run($company, function () use ($validated, $input, $price, $article, $company, $user): Article {
+        return DB::transaction(fn (): Article => CurrentCompany::run($company, function () use ($validated, $input, $price, $article, $company, $user, $import): Article {
             $rate = (int) $validated['vat_rate'];
             $number = (int) ($validated['account'] ?? self::DEFAULT_ACCOUNTS[$rate]);
             $account = Account::query()->where('number', $number)->first()
                 ?? throw ValidationException::withMessages(['account' => __('Konto :number finns inte i kontoplanen.', ['number' => $number])]);
 
-            $units = (new ResolveArticleUnits)((int) $company->id, $article, $input, $validated['unit'] ?? null);
+            $units = (new ResolveArticleUnits)((int) $company->id, $article, $input, $validated['unit'] ?? null, $import);
 
             $attributes = [
                 'number' => trim((string) $validated['number']),

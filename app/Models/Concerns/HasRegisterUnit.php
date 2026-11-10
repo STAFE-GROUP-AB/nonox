@@ -8,13 +8,15 @@ use App\Domain\Units\UnitCatalogue;
 use App\Models\Unit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
 
 /**
  * A row whose unit is a unit of the company's register (ADR-071 §12.9),
  * with the unit text kept beside it as printed. A row written with only a
- * text (an older code path, an import) is linked to the unit the text
- * names when it is created, and a new unit is added for a spelling the
- * register does not know, so every new row has one.
+ * text is linked to the unit the text names when it is created. A text the
+ * register does not know is a bug in the code that wrote the row and
+ * throws; only an import may add the spelling, inside
+ * UnitCatalogue::addingUnits().
  *
  * @property ?int $unit_id
  *
@@ -31,7 +33,14 @@ trait HasRegisterUnit
                 return;
             }
 
-            $row->setAttribute('unit_id', UnitCatalogue::resolveId((int) $row->getAttribute('company_id'), (string) $text));
+            $companyId = (int) $row->getAttribute('company_id');
+            $found = UnitCatalogue::find($companyId, (string) $text);
+
+            if ($found === null && ! UnitCatalogue::addsUnits()) {
+                throw new LogicException("The unit text \"{$text}\" is not in the company's unit register; resolve it before writing the row.");
+            }
+
+            $row->setAttribute('unit_id', $found['id'] ?? UnitCatalogue::resolveId($companyId, (string) $text));
         });
     }
 

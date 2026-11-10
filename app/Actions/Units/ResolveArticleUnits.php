@@ -56,14 +56,15 @@ final class ResolveArticleUnits
 
     /**
      * @param  array<string, mixed>  $input
+     * @param  bool  $archivedTextAllowed  an import may name an archived unit by its text: it is used, not refused (§12.9)
      * @return array{attributes: array<string, mixed>, manual: ?array<string, BigRational>}
      *
      * @throws ValidationException
      */
-    public function __invoke(int $companyId, ?Article $article, array $input, ?string $unitText): array
+    public function __invoke(int $companyId, ?Article $article, array $input, ?string $unitText, bool $archivedTextAllowed = false): array
     {
         $input = $this->idsFromCodes($companyId, $input);
-        $attributes = $this->units($companyId, $article, $input, $unitText);
+        $attributes = $this->units($companyId, $article, $input, $unitText, $archivedTextAllowed);
 
         foreach (self::DIMENSIONS as $key => $column) {
             if (array_key_exists($key, $input)) {
@@ -118,7 +119,7 @@ final class ResolveArticleUnits
      * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
-    private function units(int $companyId, ?Article $article, array $input, ?string $unitText): array
+    private function units(int $companyId, ?Article $article, array $input, ?string $unitText, bool $archivedTextAllowed): array
     {
         if (! self::isExplicit($input)) {
             // The text must name a unit of the register (ADR-071 §12.9); importers add unknown spellings first (UnitCatalogue::resolve).
@@ -126,7 +127,7 @@ final class ResolveArticleUnits
             $unit = UnitRegister::load()->match((string) $unitText)
                 ?? throw ValidationException::withMessages(['unit' => __('Enheten :unit finns inte i enhetslistan. Välj en enhet ur listan, eller lägg till den under Enheter.', ['unit' => mb_substr(trim((string) $unitText), 0, 20)])]);
 
-            if ($unit->isArchived() && $unit->id !== ($article === null ? null : ($article->sales_unit_id ?? $article->stock_unit_id))) {
+            if (! $archivedTextAllowed && $unit->isArchived() && $unit->id !== ($article === null ? null : ($article->sales_unit_id ?? $article->stock_unit_id))) {
                 throw ValidationException::withMessages(['unit' => __('Enheten :unit är arkiverad och kan inte väljas.', ['unit' => $unit->code])]);
             }
             $simple = $article === null

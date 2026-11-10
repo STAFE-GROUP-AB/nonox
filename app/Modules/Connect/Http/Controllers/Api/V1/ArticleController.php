@@ -53,16 +53,17 @@ final class ArticleController
         $current = ApiPresenter::article($article->load('account'));
         $body = [...array_intersect_key($current, array_flip(['number', 'name', 'unit', 'price_ore', 'vat_rate', 'account', 'is_active'])), ...ApiInput::body($request->json()->all())];
 
-        $saved = $save($this->user(), $this->company(), $this->input($body), $article);
+        $saved = $save($this->user(), $this->company(), $this->input($body, $article), $article);
 
         return CursorList::one(ApiPresenter::article($saved->refresh()->load('account')));
     }
 
     /**
      * @param  array<string, mixed>  $body
+     * @param  ?Article  $article  the article being changed: its own unit stays allowed when archived
      * @return array<string, mixed>
      */
-    private function input(array $body): array
+    private function input(array $body, ?Article $article = null): array
     {
         $input = array_intersect_key($body, array_flip(['number', 'name', 'unit', 'vat_rate', 'account', 'is_active']));
 
@@ -70,7 +71,7 @@ final class ArticleController
         if (($body['unit_id'] ?? null) !== null) {
             $unit = UnitRegister::load()->find($body['unit_id'])
                 ?? throw ValidationException::withMessages(['unit_id' => __('Enheten finns inte i företagets enhetslista.')]);
-            UnitRegister::load()->assertSelectable(['unit_id' => $unit->id]);
+            UnitRegister::load()->assertSelectable(['unit_id' => $unit->id], array_filter([$article?->sales_unit_id, $article?->stock_unit_id]));
             $input['unit'] = $unit->code;
         }
 

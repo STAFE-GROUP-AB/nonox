@@ -27,6 +27,7 @@ use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
@@ -159,13 +160,17 @@ class FortnoxMove
         $unitsCreated = [];
         // A unit the register does not know is added to it (dimension Annat) and listed in the result (ADR-071 §12.9).
         $saveArticle = function (array $input) use ($user, $company, &$unitsCreated): void {
-            $unit = UnitCatalogue::resolve((int) $company->id, (string) ($input['unit'] ?? ''));
+            // Inside a savepoint, so an article that is refused adds no unit; an archived unit its text names is used.
+            $unit = DB::transaction(function () use ($input, $user, $company): array {
+                $unit = UnitCatalogue::resolve((int) $company->id, (string) ($input['unit'] ?? ''));
+                ($this->saveArticle)($user, $company, $input, null, true);
+
+                return $unit;
+            });
 
             if ($unit['created']) {
                 $unitsCreated[] = $unit['code'];
             }
-
-            ($this->saveArticle)($user, $company, $input);
         };
 
         $result = CurrentCompany::run($company, fn (): array => [

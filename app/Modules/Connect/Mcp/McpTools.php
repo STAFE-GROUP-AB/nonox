@@ -280,7 +280,7 @@ final class McpTools
                                 'article' => ['type' => 'string', 'description' => 'Article number; its name, price and VAT rate are used when left out.'],
                                 'description' => ['type' => 'string'],
                                 'quantity' => ['type' => 'string', 'pattern' => '^\\d{1,9}(\\.\\d{1,3})?$', 'description' => 'Quantity as text, for example "1" or "1.5" (default 1).'],
-                                'unit_id' => ['type' => 'integer', 'description' => 'A unit of the company\'s unit register (GET /references or the article\'s unit_id).'],
+                                'unit_id' => ['type' => 'integer', 'description' => 'A unit of the company\'s unit register (GET /units, or the article\'s unit_id).'],
                                 'unit' => ['type' => 'string', 'description' => 'A code or alias of the company\'s unit register, for example "st" or "h"; any other text is refused. Default: the article\'s unit, or the company\'s default unit.'],
                                 'unit_price_ore' => ['type' => 'integer', 'description' => 'Price per unit excluding VAT, in öre.'],
                                 'discount_bp' => ['type' => 'integer', 'minimum' => 0, 'maximum' => 10000],

@@ -50,17 +50,12 @@ final class UnitRegister
         return $id > 0 ? $this->units->first(fn (Unit $unit): bool => $unit->id === $id) : null;
     }
 
-    /** The unit a code or alias names, case-insensitive; null when the register has none. */
+    /** The unit a code, alias or name names, as UnitCatalogue::find() reads it; null when the register has none. */
     public function match(string $text): ?Unit
     {
-        $key = UnitDefaults::normalise($text);
+        $index = UnitCatalogue::matchIn($this->units->map(fn (Unit $unit): array => ['code' => $unit->code, 'name' => $unit->name, 'aliases' => $unit->aliases])->values()->all(), $text);
 
-        if ($key === '') {
-            return null;
-        }
-
-        return $this->units->first(fn (Unit $unit): bool => mb_strtolower($unit->code) === $key)
-            ?? $this->units->first(fn (Unit $unit): bool => in_array($key, $unit->aliases, true));
+        return $index === null ? null : $this->units->values()->get($index);
     }
 
     /** The unit a free row starts with: the one the company marked, otherwise styck, otherwise the first active unit. */

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Units;
 
+use App\Domain\Units\UnitRegister;
 use App\Models\Article;
 use App\Models\Company;
 use App\Models\Unit;
@@ -28,7 +29,7 @@ class SetUnitArchived
         return DB::transaction(fn (): Unit => CurrentCompany::run($company, function () use ($user, $company, $unitId, $archived): Unit {
             $unit = Unit::query()->findOrFail($unitId);
 
-            if ($archived && $unit->row_default) {
+            if ($archived && $unit->id === UnitRegister::load()->default()->id) {
                 throw ValidationException::withMessages(['unit' => __('Enheten :unit är standard för nya rader. Välj en annan standardenhet först.', ['unit' => $unit->code])]);
             }
 

@@ -200,8 +200,7 @@ class InvoiceEditor extends Component
         return view('livewire.invoicing.invoice-editor', [
             'customers' => Customer::query()->where('is_active', true)->whereNull('processing_restricted_at')->orderBy('name')->get(['id', 'number', 'name']),
             'currencies' => self::CURRENCIES,
-            'articles' => $this->rowArticles(),
-            ...$this->rowUnitData(),
+            ...$this->rowData(),
             'vatRules' => $this->salesVatRules(),
             'ossThreshold' => $this->ossThreshold(),
             'vatUnregistered' => ! $this->company()->isVatRegistered(),

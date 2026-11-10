@@ -207,15 +207,6 @@ final class RegisterImportRunner
     {
         $record = $plan->existingId === null ? null : ($existing[$plan->existingId] ?? null);
 
-        // A unit the register does not know is added to it (dimension Annat) and named in the result (ADR-071 §12.9).
-        if ($kind === RegisterKind::Articles) {
-            $unit = UnitCatalogue::resolve((int) $company->id, (string) ($plan->values['unit'] ?? ''));
-
-            if ($unit['created']) {
-                $result['units_created'] = array_values(array_unique([...($result['units_created'] ?? []), $unit['code']]));
-            }
-        }
-
         match ($kind) {
             RegisterKind::Customers => $plan->status === RowPlan::FILL
                 ? ($this->saveCustomer)($user, $company, ['name' => $record?->name, 'payment_terms_days' => $record?->payment_terms_days, ...$plan->fill], $record instanceof Customer ? $record : null)
@@ -223,7 +214,7 @@ final class RegisterImportRunner
             RegisterKind::Suppliers => $plan->status === RowPlan::FILL
                 ? ($this->saveSupplier)($user, $company, ['name' => $record?->name, 'payment_terms_days' => $record?->payment_terms_days, ...$plan->fill], $record instanceof Supplier ? $record : null)
                 : ($this->saveSupplier)($user, $company, $plan->values),
-            RegisterKind::Articles => ($this->saveArticle)($user, $company, [...$plan->values, 'external_ref' => $plan->values['number']]),
+            RegisterKind::Articles => $this->article($plan, $company, $user, $result),
             default => throw new RuntimeException('Not a register kind.'),
         };
     }
@@ -351,6 +342,28 @@ final class RegisterImportRunner
         }
 
         return $values;
+    }
+
+    /**
+     * An article row. A unit the register does not know is added to it
+     * (dimension Annat) inside the row's savepoint, so a row that fails
+     * adds nothing, and is named in the result only when the row is saved
+     * (ADR-071 §12.9). A text naming an archived unit uses that unit.
+     *
+     * @param  array<string, mixed>  $result
+     */
+    private function article(RowPlan $plan, Company $company, User $user, array &$result): void
+    {
+        $unit = DB::transaction(function () use ($plan, $company, $user): array {
+            $unit = UnitCatalogue::resolve((int) $company->id, (string) ($plan->values['unit'] ?? ''));
+            ($this->saveArticle)($user, $company, [...$plan->values, 'external_ref' => $plan->values['number']], null, true);
+
+            return $unit;
+        });
+
+        if ($unit['created']) {
+            $result['units_created'] = array_values(array_unique([...($result['units_created'] ?? []), $unit['code']]));
+        }
     }
 
     /** @return array<string, mixed> */
