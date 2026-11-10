@@ -8,7 +8,7 @@ Mänskliga beslut finns i [manskliga-beslut.md](manskliga-beslut.md).
 
 Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanför är klart, om inte ägaren säger något annat. Nya önskemål läggs sist, inte före.
 
-1. **Spec nummer-1, S1** (pågår): S1-P4, S1-P9 och S1-P12 klara; kvar S1-P10 och S1-P14. S1-P13 (större aktiebolag) läggs utanför S1 enligt beslut S1-H1.
+1. **Spec nummer-1, S1** (pågår): S1-P4, S1-P9, S1-P10 och S1-P12 klara; kvar S1-P14 (byggs). S1-P13 (större aktiebolag) läggs utanför S1 enligt beslut S1-H1.
 2. **Aktiebok och styrelserum** (ADR-070, `aktiebok-och-styrelserum`).
 3. **Körjournal och kvitto i mobilen** (`korjournal-och-kvitto-i-mobilen`).
 4. **Recept och svinn** för restaurang (`recept-och-svinn`).
@@ -28,6 +28,7 @@ Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanf�
 18. **Prova utan att registrera för inloggade** (ägaren 2026-11-10): knappen "Prova utan att registrera" visas även för den som är inloggad och leder då till en sida som förklarar att demon kräver att man loggar ut eller öppnar ett privat fönster; manualens steg 1 säger detsamma.
 19. **En investering av flera fakturor** (kundönskemål via ägaren 2026-11-10): i anläggningsregistret kan flera inköp (leverantörsfakturor eller verifikationer) läggas till samma tillgång, så att anskaffningsvärdet byggs upp av alla fakturor och avskrivningen börjar när tillgången tas i bruk; i dag blir varje fakturarad en egen tillgång. Komponentavskrivning finns redan för K3; under K2 läggs byggnad och mark in som två tillgångar.
 20. **Tolka underlag i verifikationen syns även utan NONOX AI** (kundönskemål via ägaren 2026-11-10): tolkningen med bokföringsförslag finns redan i verifikationen när NONOX AI är påslagen; när den är avstängd visas i stället en rad som förklarar funktionen och länkar till inställningen, så att den går att hitta. Manualens artikel om underlag säger detsamma.
+21. **Enhetstabellen styr alla enheter, ingen fritext** (ägaren 2026-11-10, byggs i kväll ovanpå M1): företagets enhetsregister (M1, ADR-071 §12.1) är det enda stället enheter skapas och ändras; fakturarader, offert- och orderrader, avtalsfakturor, offertmallar, recept och andra rader väljer enhet ur registret i stället för att skriva fritt. Gamla fritextenheter mappas mot registret vid migreringen, okända skapas som enheter i registret. Utskrifter, API och Peppol fortsätter visa enhetens kod.
 
 Ägarens ordning 2026-11-09 för det som pågår: (a) skärmbilder till de nya manualartiklarna, (b) databasanvändarna och demodatabasen på nonox.app, (c) status på önskelistan i färdplanen, (d) NONOX SaaS med Stripe.
 
