@@ -12,6 +12,7 @@ use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Archives a unit so it is no longer offered, or brings it back (ADR-071
@@ -26,6 +27,11 @@ class SetUnitArchived
 
         return DB::transaction(fn (): Unit => CurrentCompany::run($company, function () use ($user, $company, $unitId, $archived): Unit {
             $unit = Unit::query()->findOrFail($unitId);
+
+            if ($archived && $unit->row_default) {
+                throw ValidationException::withMessages(['unit' => __('Enheten :unit är standard för nya rader. Välj en annan standardenhet först.', ['unit' => $unit->code])]);
+            }
+
             $unit->update(['archived_at' => $archived ? now() : null]);
             Audit::record($archived ? 'unit.archived' : 'unit.restored', $unit, ['code' => $unit->code], $company, $user);
 

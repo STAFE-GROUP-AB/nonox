@@ -3598,6 +3598,81 @@ paths:
           $ref: '#/components/responses/Unprocessable'
         429:
           $ref: '#/components/responses/TooManyRequests'
+  /units:
+    get:
+      operationId: listUnits
+      tags:
+        - Artiklar
+      summary: 'List units'
+      description: 'The company''s unit register: the only units invoice rows and articles may use. A row names its unit by id (unit_id) or by a code or alias of this list; any other text answers 422. Archived units stay on the rows that have them but cannot be chosen again. is_default marks the unit a row without an article gets. Not paginated.'
+      x-sv-summary: 'Lista enheter'
+      x-sv-description: 'Företagets enhetslista: de enda enheter som rader och artiklar kan ha. Inte sidindelad.'
+      security:
+        - oauth2:
+            - 'invoices:view'
+        - apiKey:
+            - 'invoices:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'invoices:view'
+      responses:
+        200:
+          description: 'All units of the company, archived ones included.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Unit'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 4
+                        code: h
+                        name: timme
+                        dimension: TIME
+                        rec20_code: HUR
+                        aliases:
+                          - tim
+                          - timme
+                          - timmar
+                          - hour
+                        is_default: false
+                        is_archived: false
+                      - id: 1
+                        code: st
+                        name: styck
+                        dimension: COUNT
+                        rec20_code: H87
+                        aliases:
+                          - styck
+                          - stk
+                          - pcs
+                          - pc
+                        is_default: true
+                        is_archived: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
   /articles:
     get:
       operationId: listArticles
@@ -11504,6 +11579,42 @@ components:
           description: 'Default expense account number.'
         is_active:
           type: boolean
+    Unit:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+          description: 'As printed, for example m² or st.'
+        name:
+          type: string
+        dimension:
+          type: string
+          enum:
+            - COUNT
+            - LENGTH
+            - AREA
+            - VOLUME
+            - VOLUME_LIQUID
+            - MASS
+            - TIME
+            - OTHER
+        rec20_code:
+          type:
+            - string
+            - 'null'
+          description: 'UN/ECE Recommendation 20 code for e-invoices.'
+        aliases:
+          type: array
+          items:
+            type: string
+          description: 'Lower-case spellings that also name the unit.'
+        is_default:
+          type: boolean
+          description: 'The unit a row without an article gets.'
+        is_archived:
+          type: boolean
     Article:
       type: object
       properties:
@@ -11515,6 +11626,12 @@ components:
           type: string
         unit:
           type: string
+          description: 'The unit as printed on invoices.'
+        unit_id:
+          type:
+            - integer
+            - 'null'
+          description: 'The article''s sales unit in the company''s unit register (GET /units).'
         price_ore:
           type: integer
           description: 'Price excluding VAT, öre.'
@@ -11541,7 +11658,6 @@ components:
       required:
         - number
         - name
-        - unit
         - price_ore
         - vat_rate
       properties:
@@ -11554,6 +11670,10 @@ components:
         unit:
           type: string
           maxLength: 10
+          description: 'A code or alias of the company''s unit register (GET /units), for example st or h. Any other text answers 422.'
+        unit_id:
+          type: integer
+          description: 'A unit of the company''s unit register (GET /units), instead of unit. Another company''s unit or an archived one answers 422.'
         price_ore:
           type: integer
           description: 'Price excluding VAT, whole öre (an integer; decimals are refused).'
@@ -11584,6 +11704,10 @@ components:
         unit:
           type: string
           maxLength: 10
+          description: 'A code or alias of the company''s unit register (GET /units), for example st or h. Any other text answers 422.'
+        unit_id:
+          type: integer
+          description: 'A unit of the company''s unit register (GET /units), instead of unit. Another company''s unit or an archived one answers 422.'
         price_ore:
           type: integer
           description: 'Price excluding VAT, whole öre (an integer; decimals are refused).'
@@ -11655,6 +11779,12 @@ components:
           description: 'Decimal string, up to three decimals; negative on credit invoices.'
         unit:
           type: string
+          description: 'The unit as printed on the invoice.'
+        unit_id:
+          type:
+            - integer
+            - 'null'
+          description: 'The row''s unit in the company''s unit register (GET /units); null on rows of invoices issued before the register.'
         unit_price_ore:
           type: integer
           description: 'Kronor. For an invoice in another currency, the price converted at the booking rate.'
@@ -11997,6 +12127,10 @@ components:
         unit:
           type: string
           maxLength: 10
+          description: 'A code or alias of the company''s unit register (GET /units), for example st or h. Any other text answers 422. Default: the article''s sales unit, or the company''s default unit.'
+        unit_id:
+          type: integer
+          description: 'A unit of the company''s unit register (GET /units), instead of unit. Another company''s unit, or an archived unit the invoice did not already have, answers 422.'
         unit_price_ore:
           type: integer
           description: 'Price in öre, for an invoice in SEK.'

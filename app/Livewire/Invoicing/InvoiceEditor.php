@@ -201,6 +201,7 @@ class InvoiceEditor extends Component
             'customers' => Customer::query()->where('is_active', true)->whereNull('processing_restricted_at')->orderBy('name')->get(['id', 'number', 'name']),
             'currencies' => self::CURRENCIES,
             'articles' => $this->rowArticles(),
+            ...$this->rowUnitData(),
             'vatRules' => $this->salesVatRules(),
             'ossThreshold' => $this->ossThreshold(),
             'vatUnregistered' => ! $this->company()->isVatRegistered(),

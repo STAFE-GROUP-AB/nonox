@@ -10,6 +10,7 @@ use App\Actions\Invoicing\SaveSalesDocument;
 use App\Actions\Invoicing\SendSalesDocument;
 use App\Domain\Invoicing\SalesDocumentPdf;
 use App\Domain\Invoicing\SalesDocumentStatus;
+use App\Domain\Units\UnitCatalogue;
 use App\Livewire\Invoicing\SalesDocumentEditor;
 use App\Livewire\Invoicing\SalesDocuments;
 use App\Mail\SalesDocumentMail;
@@ -78,6 +79,7 @@ it('turns an order into a draft invoice row for row, and the invoice books it', 
 
 it('keeps an article\'s own revenue account', function () {
     $account = Account::create(['number' => 3051, 'name' => 'Catering', 'type' => 'REVENUE']);
+    UnitCatalogue::resolve((int) $this->company->id, 'pers');
     app(SaveArticle::class)($this->owner, $this->company, ['number' => 'CAT', 'name' => 'Catering', 'unit' => 'pers', 'price' => '250', 'vat_rate' => 1200, 'account' => 3051]);
 
     $quote = app(SaveSalesDocument::class)($this->owner, $this->company, SalesDocument::QUOTE, [

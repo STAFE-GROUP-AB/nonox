@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\WorkOrders\Livewire;
 
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Domain\Units\UnitRegister;
+use App\Models\Article;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\SupplierInvoiceRow;
@@ -293,6 +295,8 @@ class WorkOrderPage extends Component
             'instalments' => $instalments,
             'supplierRows' => $supplierRows,
             'kinds' => LabourKind::query()->where('is_active', true)->orderBy('position')->get(),
+            'units' => $canManage ? UnitRegister::load()->choices() : collect(),
+            'canManageUnits' => $this->user()->can('create', [Article::class, $this->company()]),
             'canManage' => $canManage,
             'canSend' => $this->can('send'),
             'canReport' => Gate::forUser($this->user())->allows('report', $workOrder),
@@ -320,6 +324,6 @@ class WorkOrderPage extends Component
     {
         $today = CarbonImmutable::today()->toDateString();
         $this->time = ['labour_kind_id' => (string) (LabourKind::query()->where('is_active', true)->orderBy('position')->value('id') ?? ''), 'work_date' => $today, 'hours' => '', 'quantity' => '', 'change_order_id' => '', 'note' => '', 'billable' => true, 'rate' => ''];
-        $this->material = ['source' => 'FREE', 'article_id' => '', 'location_id' => '', 'supplier_invoice_row_id' => '', 'description' => '', 'quantity' => '', 'unit' => 'st', 'unit_cost' => '', 'unit_price' => '', 'change_order_id' => '', 'work_date' => $today, 'note' => '', 'billable' => true];
+        $this->material = ['source' => 'FREE', 'article_id' => '', 'location_id' => '', 'supplier_invoice_row_id' => '', 'description' => '', 'quantity' => '', 'unit_id' => (string) UnitRegister::load()->default()->id, 'unit_cost' => '', 'unit_price' => '', 'change_order_id' => '', 'work_date' => $today, 'note' => '', 'billable' => true];
     }
 }

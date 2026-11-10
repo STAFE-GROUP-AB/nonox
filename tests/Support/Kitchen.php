@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use App\Actions\Invoicing\SaveArticle;
+use App\Domain\Units\UnitCatalogue;
 use App\Models\Article;
 use App\Models\Company;
 use App\Models\User;
@@ -105,6 +106,9 @@ final class Kitchen
     /** A stocked ingredient. */
     public static function ingredient(Company $company, User $owner, string $number, string $name, string $unit, string $cost): Article
     {
+        // A unit the kitchen uses (fl) is in the company's unit register first (ADR-071 §12.9).
+        UnitCatalogue::resolve((int) $company->id, $unit);
+
         return app(SaveArticle::class)($owner, $company, [
             'number' => $number,
             'name' => $name,

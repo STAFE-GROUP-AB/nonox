@@ -48,6 +48,9 @@
                     <div><dt class="text-sm text-gray-600">{{ __('Hoppade över') }}</dt><dd class="text-xl font-semibold">{{ $import->result['skipped'] }}</dd></div>
                     <div><dt class="text-sm text-gray-600">{{ __('Fel') }}</dt><dd class="text-xl font-semibold">{{ $import->result['error_count'] }}</dd></div>
                 </dl>
+                @if(! empty($import->result['units_created']))
+                    <p class="mt-4 text-sm text-gray-700" data-units-created>{{ __('Nya enheter i enhetslistan: :units. Kontrollera vad de mäter under Enheter.', ['units' => implode(', ', $import->result['units_created'])]) }} <a href="{{ route('invoicing.units') }}" class="font-medium text-accent-700 underline">{{ __('Hantera enheter') }}</a></p>
+                @endif
                 @if(! empty($import->result['errors']))
                     <ul class="mt-4 list-disc space-y-1 ps-5 text-sm text-gray-700">
                         @foreach($import->result['errors'] as $error)

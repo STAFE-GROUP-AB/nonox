@@ -6,6 +6,7 @@ namespace App\Modules\WorkOrders\Actions;
 
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Domain\Units\UnitRegister;
 use App\Models\Article;
 use App\Models\Company;
 use App\Models\SupplierInvoice;
@@ -41,6 +42,8 @@ use Illuminate\Validation\ValidationException;
  *   the customer, once (a unique index backs this up);
  * - FREE: typed by hand.
  *
+ * The unit is one of the company's register (ADR-071 §12.9); material
+ * from stock is always in the article's stock unit, the unit Lager moves.
  * The sales price is the article's price, or the cost with the work order's
  * mark-up. Only a manager may type prices; a field worker never sees them.
  * Material is never ROT or RUT labour (AO-R13).
@@ -53,7 +56,7 @@ class RecordMaterial
 
     /**
      * @param  array<string, mixed>  $input  source, article_id, location_id (STOCK), supplier_invoice_row_id, description,
-     *                                       quantity, unit, unit_cost and unit_price (kronor, managers only), change_order_id,
+     *                                       quantity, unit_id (or unit: a code of the register), unit_cost and unit_price (kronor, managers only), change_order_id,
      *                                       work_date, note, billable (managers only), id (uuid, optional)
      */
     public function __invoke(User $user, Company $company, WorkOrder $workOrder, array $input): MaterialEntry
@@ -69,6 +72,7 @@ class RecordMaterial
             'description' => ['nullable', 'string', 'max:255'],
             'quantity' => ['nullable', 'string', 'max:12'],
             'unit' => ['nullable', 'string', 'max:10'],
+            'unit_id' => ['nullable', 'integer'],
             'unit_cost' => ['nullable', 'string', 'max:20'],
             'unit_price' => ['nullable', 'string', 'max:20'],
             'change_order_id' => ['nullable', 'integer'],
@@ -209,17 +213,39 @@ class RecordMaterial
         }
 
         $vatRate = $article !== null && in_array($article->vat_rate, InvoiceCalculator::VAT_RATES, true) ? $article->vat_rate : $workOrder->vat_rate;
+        $units = UnitRegister::load();
+        $unit = $source === MaterialSource::Stock
+            ? $units->forRow($article->stock_unit_id, $article->unit, null, 'unit_id')
+            : $units->forRow($validated['unit_id'] ?? null, $validated['unit'] ?? null, $article, 'unit_id');
+
+        if ($source !== MaterialSource::Stock) {
+            $units->assertSelectable(['unit_id' => $unit->id], array_filter([$article?->sales_unit_id, $article?->stock_unit_id]));
+        }
 
         return [
             'article_id' => $article?->id,
             'description' => mb_substr($description, 0, 255),
             'quantity_milli' => $quantity,
-            'unit' => mb_substr(trim((string) ($validated['unit'] ?? '')) ?: ($article->unit ?? 'st'), 0, 10),
+            'unit' => $units->snapshot($unit, $article, $validated['unit'] ?? null),
+            'unit_id' => $unit->id,
             'unit_cost_ore' => $article->purchase_price_ore ?? 0,
             ...($article !== null && $article->price_ore->ore > 0 ? ['unit_price_ore' => $article->price_ore->ore] : []),
             'vat_rate' => $vatRate,
             'stock_location_id' => $source === MaterialSource::Stock ? (int) $validated['location_id'] : null,
         ];
+    }
+
+    /**
+     * A supplier invoice row is billed on as one piece: styck from the register, or its default unit.
+     *
+     * @return array{unit: string, unit_id: int}
+     */
+    private function piece(): array
+    {
+        $units = UnitRegister::load();
+        $unit = $units->match('st') ?? $units->default();
+
+        return ['unit' => $unit->code, 'unit_id' => $unit->id];
     }
 
     /** @return array<string, mixed> */
@@ -242,7 +268,7 @@ class RecordMaterial
         return [
             'description' => mb_substr(trim((string) $row->description) ?: $invoice->supplierName(), 0, 255),
             'quantity_milli' => 1000,
-            'unit' => 'st',
+            ...$this->piece(),
             'unit_cost_ore' => $row->amount_ore->ore,
             'vat_rate' => $workOrder->vat_rate,
             'supplier_invoice_row_id' => $row->id,

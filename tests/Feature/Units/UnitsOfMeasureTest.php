@@ -295,6 +295,7 @@ it('refuses a row that is zero in the stock unit and warns about a coarse round 
 });
 
 it('converts unit conversions entered one at a time, with exact fractions (the Omräkningar panel action)', function () {
+    UnitCatalogue::resolve((int) $this->company->id, 'fl');
     $bottle = ($this->save)($this->owner, $this->company, ['number' => 'GIN', 'name' => 'Gin', 'unit' => 'fl', 'price' => '300', 'vat_rate' => 2500]);
     Inventory::enable($this->company, $this->owner);
     $actions = app(UnitConversions::class);

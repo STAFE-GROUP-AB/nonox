@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property ?string $rec20_code
  * @property list<string> $aliases
  * @property bool $is_default
+ * @property bool $row_default the unit a free row starts with (one per company)
  * @property ?CarbonInterface $archived_at
  */
 class Unit extends Model
@@ -32,7 +33,7 @@ class Unit extends Model
     use BelongsToCompany;
 
     /** @var list<string> */
-    protected $fillable = ['company_id', 'code', 'name', 'dimension', 'base_numerator', 'base_denominator', 'rec20_code', 'aliases', 'is_default', 'archived_at'];
+    protected $fillable = ['company_id', 'code', 'name', 'dimension', 'base_numerator', 'base_denominator', 'rec20_code', 'aliases', 'is_default', 'row_default', 'archived_at'];
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -43,6 +44,7 @@ class Unit extends Model
             'base_denominator' => 'integer',
             'aliases' => 'array',
             'is_default' => 'boolean',
+            'row_default' => 'boolean',
             'archived_at' => 'datetime',
         ];
     }

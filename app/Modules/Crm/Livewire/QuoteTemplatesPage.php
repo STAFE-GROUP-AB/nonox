@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Crm\Livewire;
 
 use App\Domain\Invoicing\InvoiceCalculator;
+use App\Domain\Units\UnitRegister;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Article;
 use App\Models\Company;
@@ -66,7 +67,7 @@ class QuoteTemplatesPage extends Component
             'article' => (string) $row->article?->number,
             'description' => (string) $row->description,
             'quantity' => str_replace('.', ',', rtrim(rtrim($row->quantity, '0'), '.')),
-            'unit' => (string) $row->unit,
+            'unit_id' => (string) $row->unit_id,
             'price' => $row->article_id === null ? Money::ofOre($row->unit_price_ore)->format(withCurrency: false) : '',
             'vat_rate' => (string) $row->vat_rate,
             'discount' => $row->discount_bp === 0 ? '' : sprintf('%d,%02d', intdiv($row->discount_bp, 100), $row->discount_bp % 100),
@@ -114,6 +115,8 @@ class QuoteTemplatesPage extends Component
 
     public function render(): View
     {
+        $register = $this->editingId === null ? null : UnitRegister::load();
+
         return view('crm::livewire.quote-templates', [
             'templates' => QuoteTemplate::query()
                 ->when($this->archived, fn ($query) => $query->whereNotNull('archived_at'), fn ($query) => $query->whereNull('archived_at'))
@@ -122,13 +125,26 @@ class QuoteTemplatesPage extends Component
                 ->get(),
             'articles' => $this->editingId === null ? collect() : Article::query()->where('is_active', true)->orderBy('number')->limit(2000)->get(['id', 'number', 'name', 'unit', 'price_ore', 'vat_rate']),
             'vatRates' => InvoiceCalculator::VAT_RATES,
+            'units' => $register?->choices($this->keptUnitIds()) ?? collect(),
+            'defaultUnitCode' => $register?->default()->code ?? '',
+            'canManageUnits' => $this->user()->can('create', [Article::class, $this->company()]),
         ]);
+    }
+
+    /**
+     * The units the template's rows already have: offered even when archived.
+     *
+     * @return list<int>
+     */
+    private function keptUnitIds(): array
+    {
+        return $this->editingId ? array_values(QuoteTemplateRow::query()->where('template_id', $this->editingId)->whereNotNull('unit_id')->pluck('unit_id')->map(intval(...))->all()) : [];
     }
 
     /** @return array<string, string> */
     private function blankRow(): array
     {
-        return ['article' => '', 'description' => '', 'quantity' => '1', 'unit' => '', 'price' => '', 'vat_rate' => '2500', 'discount' => ''];
+        return ['article' => '', 'description' => '', 'quantity' => '1', 'unit_id' => '', 'price' => '', 'vat_rate' => '2500', 'discount' => ''];
     }
 
     private function user(): User

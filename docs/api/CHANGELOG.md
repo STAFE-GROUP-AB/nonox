@@ -13,6 +13,30 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-10: enhetslistan
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-10: the unit register
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Tillagt
+- `GET /units`: företagets enhetslista, med id, kod, namn, vad enheten mäter, Peppol-kod, alternativa stavningar och vilken enhet en rad utan artikel får (`is_default`).
+- Fakturarader och artiklar har det nya fältet `unit_id`, enheten i enhetslistan. En rad eller artikel kan skickas med `unit_id` i stället för `unit`. `unit` är kvar och visar enheten som den skrivs på fakturan.
+
+### Ändrat
+- `unit` på fakturarader och artiklar ska vara en kod eller stavning som finns i enhetslistan, till exempel `st` eller `tim`. En annan text, ett `unit_id` som hör till ett annat företag eller en arkiverad enhet som fakturan inte redan har svarar 422 med fältet `rows.N.unit_id` (fakturor) eller `unit`/`unit_id` (artiklar). Tidigare sparades vilken text som helst. Lägg till enheten under Artiklar → Enheter om den saknas.
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+- `GET /units`: the company's unit register, with id, code, name, what the unit measures, Peppol code, alternative spellings and the unit a row without an article gets (`is_default`).
+- Invoice rows and articles have a new field `unit_id`, the unit in the register. A row or article can be sent with `unit_id` instead of `unit`. `unit` stays and shows the unit as printed on the invoice.
+
+### Changed
+- `unit` on invoice rows and articles must be a code or spelling the register knows, for example `st` or `tim`. Any other text, a `unit_id` of another company, or an archived unit the invoice does not already have answers 422 with the field `rows.N.unit_id` (invoices) or `unit`/`unit_id` (articles). Any text used to be stored. Add the unit under Artiklar → Enheter when it is missing.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-09: external_ref på fakturor
 <!-- /lang -->
 <!-- lang:en -->

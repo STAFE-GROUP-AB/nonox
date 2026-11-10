@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Crm\Models;
 
 use App\Models\Article;
+use App\Models\Concerns\HasRegisterUnit;
 use App\Support\Tenancy\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class QuoteTemplateRow extends Model
 {
     use BelongsToCompany;
+    use HasRegisterUnit;
 
     protected $table = 'crm_quote_template_rows';
 
@@ -40,6 +42,7 @@ class QuoteTemplateRow extends Model
         'description',
         'quantity',
         'unit',
+        'unit_id',
         'unit_price_ore',
         'vat_rate',
         'discount_bp',

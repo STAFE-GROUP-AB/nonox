@@ -54,6 +54,17 @@ final class UnitCatalogue
      */
     public static function resolveId(int $companyId, string $text): int
     {
+        return self::resolve($companyId, $text)['id'];
+    }
+
+    /**
+     * As resolveId, and whether the unit was added to the register just now,
+     * so an import can report the units it created (ADR-071 §12.9).
+     *
+     * @return array{id: int, code: string, created: bool}
+     */
+    public static function resolve(int $companyId, string $text): array
+    {
         $text = trim($text);
         $key = UnitDefaults::normalise($text);
         $key = $key === '' ? 'st' : $key;
@@ -62,20 +73,24 @@ final class UnitCatalogue
             self::seed($companyId);
         }
 
+        // A longer text was stored cut to the code's ten characters; it names that unit again.
+        $cut = mb_substr($key, 0, 10);
+
         foreach (DB::table('units')->where('company_id', $companyId)->get(['id', 'code', 'aliases']) as $unit) {
             $aliases = json_decode((string) $unit->aliases, true);
 
-            if (mb_strtolower($unit->code) === $key || in_array($key, is_array($aliases) ? $aliases : [], true)) {
-                return (int) $unit->id;
+            if (in_array(mb_strtolower($unit->code), [$key, $cut], true) || in_array($key, is_array($aliases) ? $aliases : [], true)) {
+                return ['id' => (int) $unit->id, 'code' => (string) $unit->code, 'created' => false];
             }
         }
 
         $rec20 = UblInvoiceWriter::UNITS[$key] ?? null;
         $now = now();
 
-        return (int) DB::table('units')->insertGetId([
+        $code = mb_substr($text === '' ? 'st' : $text, 0, 10);
+        $id = (int) DB::table('units')->insertGetId([
             'company_id' => $companyId,
-            'code' => mb_substr($text === '' ? 'st' : $text, 0, 10),
+            'code' => $code,
             'name' => mb_substr($text === '' ? 'st' : $text, 0, 60),
             'dimension' => UnitDimension::Other->value,
             'base_numerator' => null,
@@ -86,5 +101,7 @@ final class UnitCatalogue
             'created_at' => $now,
             'updated_at' => $now,
         ]);
+
+        return ['id' => $id, 'code' => $code, 'created' => true];
     }
 }

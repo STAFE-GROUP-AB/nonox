@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\WorkOrders\Support;
 
 use App\Domain\Invoicing\TaxReduction;
+use App\Domain\Units\UnitCatalogue;
 use App\Models\Article;
 use App\Models\Invoice;
 use App\Modules\WorkOrders\Domain\ChangeOrderStatus;
@@ -146,7 +147,7 @@ final class InvoiceDraft
         foreach ($material->groupBy(fn (MaterialEntry $entry): string => "{$entry->article_id}|{$entry->description}|{$entry->unit_price_ore}|{$entry->vat_rate}|{$entry->unit}") as $group) {
             /** @var MaterialEntry $first */
             $first = $group->first();
-            $this->row($prefix.$first->description, self::decimal((int) $group->sum('quantity_milli')), $first->unit, $first->unit_price_ore, $first->vat_rate, false, $first->article_id === null ? null : $articles->get($first->article_id));
+            $this->row($prefix.$first->description, self::decimal((int) $group->sum('quantity_milli')), $first->unit, $first->unit_price_ore, $first->vat_rate, false, $first->article_id === null ? null : $articles->get($first->article_id), $first->unit_id);
         }
 
         $this->consume($time, $material, $eligible);
@@ -291,12 +292,18 @@ final class InvoiceDraft
         return $eligible && $this->workOrder->tax_reduction !== null;
     }
 
-    private function row(string $description, string $quantity, string $unit, int $priceOre, int $vatRate, bool $labour, ?string $article = null): void
+    /**
+     * One invoice row. Its unit is a unit of the register (ADR-071 §12.9):
+     * the material entry's, or the one the text names (st, tim, resa, km),
+     * added to the register when the company does not have it yet.
+     */
+    private function row(string $description, string $quantity, string $unit, int $priceOre, int $vatRate, bool $labour, ?string $article = null, ?int $unitId = null): void
     {
         $this->rows[] = [
             'article' => $article,
             'description' => mb_substr($description, 0, 255),
             'quantity' => $quantity,
+            'unit_id' => $unitId ?? UnitCatalogue::resolveId((int) $this->workOrder->company_id, $unit),
             'unit' => mb_substr($unit, 0, 10),
             'price' => self::kronor($priceOre),
             'vat_rate' => $vatRate,

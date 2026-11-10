@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Crm\Actions;
 
 use App\Domain\Invoicing\InvoiceCalculator;
+use App\Domain\Units\UnitRegister;
 use App\Models\Article;
 use App\Models\Company;
 use App\Models\User;
@@ -28,9 +29,11 @@ use InvalidArgumentException;
  * Input: name, intro_text, terms_text (each at most 900 characters, so a
  * quote's message of 2 000 holds both), validity_days (1–365), and rows:
  * article (an active article's number) or a free row with description,
- * price (kronor) and vat_rate; quantity, unit and discount (percent) on
- * both. An article row keeps no price: the quote takes the article's price
- * on the day it is made.
+ * price (kronor) and vat_rate; quantity, unit_id (a unit of the company's
+ * register, or unit: one of its codes) and discount (percent) on both. An
+ * article row keeps no price: the quote takes the article's price on the
+ * day it is made, and without a unit it takes the article's sales unit
+ * then. A free row without a unit gets the company's default unit.
  */
 final class SaveQuoteTemplate
 {
@@ -53,6 +56,7 @@ final class SaveQuoteTemplate
             'rows.*.description' => ['nullable', 'string', 'max:255'],
             'rows.*.quantity' => ['nullable', 'string', 'max:20'],
             'rows.*.unit' => ['nullable', 'string', 'max:20'],
+            'rows.*.unit_id' => ['nullable', 'integer'],
             'rows.*.price' => ['nullable', 'string', 'max:30'],
             'rows.*.vat_rate' => ['nullable', 'integer', Rule::in(InvoiceCalculator::VAT_RATES)],
             'rows.*.discount' => ['nullable', 'string', 'max:10'],
@@ -62,7 +66,7 @@ final class SaveQuoteTemplate
         ], ['name' => __('namn'), 'validity_days' => __('giltighet'), 'intro_text' => __('inledning'), 'terms_text' => __('villkor')])->validate();
 
         return DB::transaction(fn (): QuoteTemplate => CurrentCompany::run($company, function () use ($user, $company, $validated, $template): QuoteTemplate {
-            $rows = $this->rows($validated['rows']);
+            $rows = $this->rows($validated['rows'], $template === null ? [] : array_values($template->rows()->whereNotNull('unit_id')->pluck('unit_id')->map(intval(...))->all()));
             $created = $template === null;
             $template ??= new QuoteTemplate(['created_by' => $user->id]);
 
@@ -105,10 +109,12 @@ final class SaveQuoteTemplate
 
     /**
      * @param  array<int, array<string, mixed>>  $input
+     * @param  list<int>  $keptUnitIds  the units the template's rows had: still allowed when archived
      * @return list<array<string, mixed>>
      */
-    private function rows(array $input): array
+    private function rows(array $input, array $keptUnitIds): array
     {
+        $units = UnitRegister::load();
         $numbers = array_filter(array_map(fn (array $row): string => trim((string) ($row['article'] ?? '')), $input));
         $articles = Article::query()->whereIn('number', $numbers)->where('is_active', true)->get()->keyBy('number');
         $rows = [];
@@ -139,12 +145,27 @@ final class SaveQuoteTemplate
                 continue;
             }
 
+            $unit = null;
+
+            try {
+                // An article row without a unit follows the article's sales unit when the quote is made.
+                $unit = $article instanceof Article && blank($row['unit_id'] ?? null) && blank($row['unit'] ?? null)
+                    ? null
+                    : $units->forRow($row['unit_id'] ?? null, $row['unit'] ?? null, null, "rows.{$index}.unit_id");
+                $units->assertSelectable(["rows.{$index}.unit_id" => $unit?->id], $keptUnitIds);
+            } catch (ValidationException $exception) {
+                $errors["rows.{$index}.unit_id"] = __('Rad :line: :message', ['line' => $line, 'message' => $exception->validator->errors()->first()]);
+
+                continue;
+            }
+
             if ($article instanceof Article) {
                 $rows[] = [
                     'article_id' => $article->id,
                     'description' => blank($row['description'] ?? null) ? null : trim((string) $row['description']),
                     'quantity' => $quantity,
-                    'unit' => blank($row['unit'] ?? null) ? null : trim((string) $row['unit']),
+                    'unit' => $unit?->code,
+                    'unit_id' => $unit?->id,
                     'unit_price_ore' => 0,
                     'vat_rate' => $article->vat_rate,
                     'discount_bp' => $discount,
@@ -171,7 +192,8 @@ final class SaveQuoteTemplate
                 'article_id' => null,
                 'description' => trim((string) $row['description']),
                 'quantity' => $quantity,
-                'unit' => blank($row['unit'] ?? null) ? null : trim((string) $row['unit']),
+                'unit' => $unit?->code,
+                'unit_id' => $unit?->id,
                 'unit_price_ore' => $price->ore,
                 'vat_rate' => (int) ($row['vat_rate'] ?? 2500),
                 'discount_bp' => $discount,

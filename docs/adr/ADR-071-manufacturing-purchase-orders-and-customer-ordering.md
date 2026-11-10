@@ -539,6 +539,71 @@ XPK as a unit code, codes for dm², dl, cl, ml), whether the 0,5 % threshold is 
 (it is the constant `UnitConverter::WARN_ABOVE`), whether a sawmill-type customer needs m³ as a
 stock unit, and `value_ore` in the valuation (accounting check).
 
+### 12.9 Units everywhere (item 21, 2026-11-10)
+
+The owner: "bygg en enhetstabell som man kan styra per företag som sedan används, och tillåt
+inte fritext". The catalogue of §12.1 is now the only source of units. Every place that took a
+unit as free text takes a unit of the company's register instead.
+
+**Inventory of places that entered or stored a unit as text, and what changed**
+
+| Place | Stored in | Now |
+|---|---|---|
+| Invoice rows, credit invoices (invoice editor, `SaveDraftInvoice`, `CreditInvoice`) | `invoice_rows.unit` | `unit_id` + text snapshot; select in the row grid |
+| Quotes and orders (`SalesDocumentEditor`, `SaveSalesDocument`, `ProgressSalesDocument`) | `sales_document_rows.unit` | `unit_id` + snapshot; select |
+| Recurring invoices (`AgreementEditor`, `SaveRecurringInvoice`, `RunRecurringInvoice`) | `recurring_invoice_rows.unit` | `unit_id` + snapshot; select |
+| CRM quote templates (`QuoteTemplatesPage`, `SaveQuoteTemplate`) | `crm_quote_template_rows.unit` (null = the article's) | `unit_id` (null = the article's sales unit) + snapshot; select with "Artikelns enhet" / "Standardenheten" |
+| CRM quotes from a template or a deal (`CreateQuoteFromTemplate`, `CreateQuoteForDeal`) | through `SaveSalesDocument` | pass the template row's `unit_id`; a deal's quote row gets the default unit (was the text `st`) |
+| Work order material (`WorkOrderPage`, `FieldWorkOrderPage`, `RecordMaterial`) | `work_order_material_entries.unit` | `unit_id` + snapshot; select. Material from stock always takes the article's stock unit |
+| Work order invoicing (`InvoiceDraft`) | invoice rows | each row carries `unit_id`: the material entry's, or the unit its text names (`st`, the labour kind's `tim`/`resa`/`km`), added to the register if missing |
+| Article conversions (article form Avancerad, Lager → artikel → Omräkningar, `ResolveArticleUnits`, `UnitConversions`) | `article_unit_conversions.unit` (a code) | select of register units; a code the register does not know is refused. Kept as a code, not an id: the conversion is keyed by the code everywhere in `UnitConverter` |
+| Article unit text (article form Enkel, `SaveArticle`) | `articles.unit` | already a select (M1); the server now refuses a text the register does not know, or an archived unit the article did not already have |
+| Recipe rows (Kök) | `bom_rows.entered_unit` | already a select of the units the article converts to (M1); unchanged |
+| API: invoices (`POST/PATCH /invoices`), articles, MCP `create_invoice_draft` | — | `unit_id` or a code/alias of the register; anything else is 422. New `GET /units`. `unit_id` in the responses |
+| Register import (CSV/Excel, ADR-076) and the move from the previous program | `articles.unit` via `SaveArticle` | the importer adds an unknown spelling to the register first (`UnitCatalogue::resolve`, dimension OTHER) and lists the new units in the import result; it never fails on a unit |
+
+Not free text, so unchanged: work order labour kinds (`LabourUnit` enum: HOUR, TRIP, KM), payroll
+and agreements (`AMOUNT`, `HOURS`, … enums), the planning rules, the recipe's yield unit
+(`PORTIONS`/`UNIT`). The customer portal only shows saved rows; it prints the snapshot as before.
+
+**Data model.** `invoice_rows`, `sales_document_rows`, `recurring_invoice_rows`,
+`crm_quote_template_rows` and `work_order_material_entries` get `unit_id` (nullable FK to
+`units`). The `unit` text stays as the printed snapshot, so PDFs, Peppol (which still maps the text
+through `UblInvoiceWriter::UNITS`), SIE and history read exactly what they read before. `units` gets
+`row_default` (one per company, partial unique index): the unit a row without an article starts with.
+Without a marked unit it is st, otherwise the first active unit.
+
+**The snapshot.** A row prints the unit's code, unless the row or its article already carries
+another spelling of the same unit: an article written "tim" (unit h) still prints "tim", and so does
+a labour row from a work order. Changing the row's unit to another one prints the new code.
+
+**Validation.** Server side, in `UnitRegister`: a `unit_id` must be a unit of the current company
+(another company's id answers "Enheten finns inte i företagets enhetslista", never the other unit);
+a text must be a code or alias; an archived unit is refused on a new row. The editors keep the units
+their document had when it was opened (`keptUnitIds`, `#[Locked]`), so an old row still shows and
+saves its archived unit. Copy flows (credit, quote → order → invoice, recurring runs) carry the saved
+`unit_id` and are not refused when a unit has since been archived. An archived unit cannot be the
+row default, and the row default cannot be archived before another unit is chosen.
+
+**Migration and backfill** (`UnitBackfill`, `up()` only, additive). Every distinct
+(company, unit text) on the five tables is resolved through `UnitCatalogue::resolveId`: its code or
+alias, otherwise a new company unit with that code and dimension OTHER, so no spelling is lost.
+Rows are then linked, except where a trigger forbids it: rows of issued invoices
+(`invoice_rows_protect_issued`) and the append-only material entries keep `unit_id` null and their
+text, which remains authoritative for them; their spellings are still added to the register. A text
+longer than a code (CRM rows allowed 20 characters) is stored cut to ten characters, and
+`resolveId` matches the cut form again. Rows written later by any code path that sends only a text
+are linked when created (`HasRegisterUnit`), adding the spelling if needed.
+
+**No accounting behaviour changes**: amounts, VAT, booking and the ledger are untouched, and the
+printed unit of every existing row stays as it was. The system documentation is therefore unchanged.
+
+Open: the API change from "any text" to "a unit of the register" is stricter than the v1 rule of
+additive changes only; it is listed under Changed in the API changelog. Linking issued invoice rows
+and old material entries would need a one-time exception in their triggers (NULL → id only); not
+done. Peppol still maps the printed text, not `units.rec20_code`, so the `TODO(legal-verify)` items
+of §12.5 stand.
+
 ## Addendum 2026-11-09: production planning calendar (§13)
 
 The owner: "en slags planeringskalender där jag kan se alla orders, produkter som tillverkas

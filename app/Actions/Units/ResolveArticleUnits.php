@@ -9,6 +9,7 @@ use App\Domain\Units\MaterialConversions;
 use App\Domain\Units\UnitCatalogue;
 use App\Domain\Units\UnitConverter;
 use App\Domain\Units\UnitDefaults;
+use App\Domain\Units\UnitRegister;
 use App\Models\Article;
 use App\Models\Unit;
 use App\Modules\Inventory\Models\ArticleUnitConversion;
@@ -120,7 +121,14 @@ final class ResolveArticleUnits
     private function units(int $companyId, ?Article $article, array $input, ?string $unitText): array
     {
         if (! self::isExplicit($input)) {
-            $unit = Unit::query()->findOrFail(UnitCatalogue::resolveId($companyId, (string) $unitText));
+            // The text must name a unit of the register (ADR-071 §12.9); importers add unknown spellings first (UnitCatalogue::resolve).
+            UnitCatalogue::seed($companyId);
+            $unit = UnitRegister::load()->match((string) $unitText)
+                ?? throw ValidationException::withMessages(['unit' => __('Enheten :unit finns inte i enhetslistan. Välj en enhet ur listan, eller lägg till den under Enheter.', ['unit' => mb_substr(trim((string) $unitText), 0, 20)])]);
+
+            if ($unit->isArchived() && $unit->id !== ($article === null ? null : ($article->sales_unit_id ?? $article->stock_unit_id))) {
+                throw ValidationException::withMessages(['unit' => __('Enheten :unit är arkiverad och kan inte väljas.', ['unit' => $unit->code])]);
+            }
             $simple = $article === null
                 || ($article->stock_unit_id === null)
                 || (($article->purchase_unit_id ?? $article->stock_unit_id) === $article->stock_unit_id && ($article->sales_unit_id ?? $article->stock_unit_id) === $article->stock_unit_id);
@@ -199,6 +207,7 @@ final class ResolveArticleUnits
     private function manual(mixed $rows, string $stockCode): array
     {
         $result = [];
+        $units = UnitRegister::load();
 
         foreach ((array) $rows as $index => $row) {
             $unit = UnitDefaults::normalise((string) ($row['unit'] ?? ''));
@@ -210,6 +219,10 @@ final class ResolveArticleUnits
 
             if ($unit === '' || mb_strlen($unit) > 10) {
                 throw ValidationException::withMessages(["conversions.{$index}.unit" => __('Välj enheten omräkningen gäller.')]);
+            }
+
+            if ($units->match($unit) === null) {
+                throw ValidationException::withMessages(["conversions.{$index}.unit" => __('Enheten :unit finns inte i enhetslistan. Välj en enhet ur listan, eller lägg till den under Enheter.', ['unit' => $unit])]);
             }
 
             if (UnitConverter::enteredPerStock($stockCode, $unit) !== null) {

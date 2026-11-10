@@ -84,6 +84,7 @@ Route::get('/fiscal-years/{fiscalYear}/sie', [FiscalYearController::class, 'sie'
 Route::middleware('connect.scope:invoices:view')->group(function (): void {
     Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
     Route::get('/customers/{customer}', [CustomerController::class, 'show'])->whereNumber('customer')->name('customers.show');
+    Route::get('/units', [ReferenceController::class, 'units'])->name('units.index');
     Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
     Route::get('/articles/{article}', [ArticleController::class, 'show'])->whereNumber('article')->name('articles.show');
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');

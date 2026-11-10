@@ -11,6 +11,7 @@ use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Payables\SaveSupplier;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Domain\Units\UnitCatalogue;
 use App\Migration\Import\Actions\AnalyseRegisterImport;
 use App\Models\Company;
 use App\Models\Customer;
@@ -170,7 +171,7 @@ final class RegisterImportRunner
         DB::transaction(function () use ($chunk, $kind, $company, $user, &$result, $existing): void {
             foreach ($chunk as $plan) {
                 try {
-                    $this->write($plan, $kind, $company, $user, $existing);
+                    $this->write($plan, $kind, $company, $user, $existing, $result);
                     $result[$plan->status === RowPlan::CREATE ? 'created' : 'filled']++;
                 } catch (ValidationException $error) {
                     $this->fail($result, $plan->line, (string) collect($error->errors())->flatten()->first());
@@ -198,10 +199,22 @@ final class RegisterImportRunner
         };
     }
 
-    /** @param  array<int|string, Customer|Supplier>  $existing */
-    private function write(RowPlan $plan, RegisterKind $kind, Company $company, User $user, array $existing): void
+    /**
+     * @param  array<int|string, Customer|Supplier>  $existing
+     * @param  array<string, mixed>  $result
+     */
+    private function write(RowPlan $plan, RegisterKind $kind, Company $company, User $user, array $existing, array &$result): void
     {
         $record = $plan->existingId === null ? null : ($existing[$plan->existingId] ?? null);
+
+        // A unit the register does not know is added to it (dimension Annat) and named in the result (ADR-071 §12.9).
+        if ($kind === RegisterKind::Articles) {
+            $unit = UnitCatalogue::resolve((int) $company->id, (string) ($plan->values['unit'] ?? ''));
+
+            if ($unit['created']) {
+                $result['units_created'] = array_values(array_unique([...($result['units_created'] ?? []), $unit['code']]));
+            }
+        }
 
         match ($kind) {
             RegisterKind::Customers => $plan->status === RowPlan::FILL

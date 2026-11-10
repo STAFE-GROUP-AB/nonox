@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Connect\Http\Controllers\Api\V1;
 
+use App\Domain\Units\UnitRegister;
 use App\Models\Account;
 use App\Models\FiscalYear;
+use App\Models\Unit;
 use App\Models\VoucherSeries;
 use App\Modules\Connect\Http\Resources\ApiPresenter;
 use App\Modules\Connect\Http\Resources\CursorList;
@@ -54,6 +56,15 @@ final class ReferenceController
     public function vatCodes(): JsonResponse
     {
         return new JsonResponse(['data' => VatCodes::all()], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
+    /** The company's unit register (ADR-071 §12.9): the units rows and articles may use. */
+    public function units(): JsonResponse
+    {
+        $register = UnitRegister::load();
+        $default = $register->default()->id;
+
+        return new JsonResponse(['data' => $register->all()->map(fn (Unit $unit): array => ApiPresenter::unit($unit, $default))->values()->all()], 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     public function fiscalYears(Request $request): JsonResponse

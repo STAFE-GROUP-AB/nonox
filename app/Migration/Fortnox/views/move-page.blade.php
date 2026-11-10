@@ -61,6 +61,9 @@
                             @foreach(array_slice($registers[$key]['failed'], 0, 5) as $failure)
                                 <dd class="mt-1 text-xs text-accent-700">{{ $failure }}</dd>
                             @endforeach
+                            @if(! empty($registers[$key]['units_created']))
+                                <dd class="mt-1 text-xs text-gray-700">{{ __('Nya enheter i enhetslistan: :units. Kontrollera vad de mäter under Enheter.', ['units' => implode(', ', $registers[$key]['units_created'])]) }}</dd>
+                            @endif
                         </div>
                     @endforeach
                 </dl>

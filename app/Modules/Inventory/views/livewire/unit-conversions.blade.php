@@ -17,7 +17,12 @@
             <input id="conversion-factor-{{ $article->id }}" wire:model="form.factor" inputmode="decimal" class="{{ $input }} w-24 text-right tabular-nums" placeholder="70">
         </x-ui.field>
         <x-ui.field for="conversion-unit-{{ $article->id }}" :label="__('Enhet')" error="form.unit">
-            <input id="conversion-unit-{{ $article->id }}" wire:model="form.unit" maxlength="10" class="{{ $input }} w-24" placeholder="cl">
+            <select id="conversion-unit-{{ $article->id }}" wire:model="form.unit" class="{{ $input }} w-32">
+                <option value="">{{ __('Välj enhet') }}</option>
+                @foreach($units->reject(fn ($unit) => $unit->id === $article->stock_unit_id) as $unit)
+                    <option value="{{ $unit->code }}">{{ $unit->code }} ({{ $unit->name }})</option>
+                @endforeach
+            </select>
         </x-ui.field>
         <x-secondary-button type="button" wire:click="add">{{ __('Lägg till omräkning') }}</x-secondary-button>
     </div>

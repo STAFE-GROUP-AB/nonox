@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Connect\Http\Controllers\Api\V1;
 
 use App\Actions\Invoicing\SaveArticle;
+use App\Domain\Units\UnitRegister;
 use App\Models\Article;
 use App\Modules\Connect\Http\Controllers\Api\V1\Concerns\ActsAsCredential;
 use App\Modules\Connect\Http\Resources\ApiPresenter;
@@ -12,6 +13,7 @@ use App\Modules\Connect\Http\Resources\CursorList;
 use App\Modules\Connect\Support\ApiInput;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Articles over the API (ADR-032), through SaveArticle like the UI. Prices
@@ -63,6 +65,14 @@ final class ArticleController
     private function input(array $body): array
     {
         $input = array_intersect_key($body, array_flip(['number', 'name', 'unit', 'vat_rate', 'account', 'is_active']));
+
+        // unit_id names a unit of the company's register; a unit text must be one of its codes or aliases (ADR-071 §12.9).
+        if (($body['unit_id'] ?? null) !== null) {
+            $unit = UnitRegister::load()->find($body['unit_id'])
+                ?? throw ValidationException::withMessages(['unit_id' => __('Enheten finns inte i företagets enhetslista.')]);
+            UnitRegister::load()->assertSelectable(['unit_id' => $unit->id]);
+            $input['unit'] = $unit->code;
+        }
 
         if (array_key_exists('price_ore', $body)) {
             $input['price'] = ApiInput::kronor($body['price_ore'], 'price_ore');
