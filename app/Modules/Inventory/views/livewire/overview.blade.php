@@ -31,7 +31,7 @@
                 @foreach($low as $article)
                     <li class="flex flex-wrap items-center justify-between gap-3 py-2 text-sm" wire:key="low-{{ $article->id }}">
                         <span><span class="font-semibold tabular-nums">{{ $article->number }}</span> {{ $article->name }}</span>
-                        <span class="tabular-nums text-accent-700">{{ $q((int) $article->stock_milli) }} {{ $article->unit }} · {{ __('beställ :quantity', ['quantity' => $q($article->reorder_quantity_milli)]) }}</span>
+                        <span class="tabular-nums text-accent-700">{{ $q((int) $article->stock_milli) }} {{ $article->stockUnitCode() }} · {{ __('beställ :quantity', ['quantity' => $q($article->reorder_quantity_milli)]) }}</span>
                     </li>
                 @endforeach
             </ul>
@@ -61,7 +61,7 @@
                                 <td class="py-2 pr-4">{{ $movement->type->label() }}</td>
                                 <td class="py-2 pr-4"><span class="tabular-nums">{{ $movement->article?->number }}</span> {{ $movement->article?->name }}</td>
                                 <td class="py-2 pr-4 tabular-nums">{{ $movement->location?->full_code }}</td>
-                                <td @class(['py-2 pr-4 text-right tabular-nums whitespace-nowrap', 'text-accent-700' => $movement->quantity_milli < 0])>{{ $movement->quantity_milli > 0 ? '+' : '' }}{{ $q($movement->quantity_milli) }} {{ $movement->article?->unit }}</td>
+                                <td @class(['py-2 pr-4 text-right tabular-nums whitespace-nowrap', 'text-accent-700' => $movement->quantity_milli < 0])>{{ $movement->quantity_milli > 0 ? '+' : '' }}{{ $q($movement->quantity_milli) }} {{ $movement->article?->stockUnitCode() }}</td>
                                 <td class="py-2 text-gray-600">{{ $movement->creator?->name }}</td>
                             </tr>
                         @endforeach

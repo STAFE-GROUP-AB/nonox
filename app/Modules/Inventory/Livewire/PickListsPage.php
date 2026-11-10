@@ -157,7 +157,7 @@ class PickListsPage extends Component
             'lists' => PickList::query()->withCount('lines')->with('customer:id,name')
                 ->when($this->status === 'oppna', fn ($query) => $query->where('status', PickList::OPEN))
                 ->latest('number')->paginate(25),
-            'current' => $this->open === null ? null : PickList::query()->with(['lines.article:id,number,name,unit,gtin', 'lines.article.mainImage', 'lines.location:id,full_code,name', 'customer:id,name'])->find($this->open),
+            'current' => $this->open === null ? null : PickList::query()->with(['lines.article:id,number,name,unit,gtin,stock_unit_id', 'lines.article.stockUnit:id,code', 'lines.article.mainImage', 'lines.location:id,full_code,name', 'customer:id,name'])->find($this->open),
             'orders' => $creating === 'order' ? SalesDocument::query()->where('kind', SalesDocument::ORDER)->whereIn('status', [SalesDocumentStatus::Open->value, SalesDocumentStatus::Accepted->value])->with('customer:id,name')->latest('number')->limit(100)->get(['id', 'number', 'customer_id', 'document_date']) : collect(),
             'invoices' => $creating === 'invoice' ? Invoice::query()->whereNull('import_source')->whereIn('status', [InvoiceStatus::Draft->value, InvoiceStatus::Issued->value, InvoiceStatus::Paid->value])->with('customer:id,name')->latest('invoice_date')->limit(100)->get(['id', 'number', 'customer_id', 'invoice_date', 'status']) : collect(),
             'articles' => $creating === 'manual' ? Article::query()->where('is_stock_item', true)->orderBy('number')->get(['id', 'number', 'name', 'unit']) : collect(),

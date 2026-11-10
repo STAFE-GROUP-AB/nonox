@@ -32,7 +32,7 @@ Ett grundrecept kan användas i ett annat recept i flera nivåer. Ett recept som
 
 **Nettomängd** är det som hamnar i rätten. **Svinn %** är skal, ben och putsning i procent av bruttomängden. NONOX räknar bruttomängden, det som tas ur lagret, som nettomängd × 100 / (100 − svinn %). En gul lök med 400 g netto och 12 % svinn blir 455 g brutto.
 
-Du kan skriva gram för en artikel i kg och ml, cl eller dl för en artikel i liter. Andra enheter, till exempel cl av en flaska på 70 cl, behöver en omräkning på artikeln: öppna artikeln, fliken **Avancerad**, och lägg till den under **Omräkningar för recept**.
+Du kan skriva gram för en artikel i kg och ml, cl eller dl för en artikel i liter. Andra enheter, till exempel cl av en flaska på 70 cl, behöver en omräkning på artikeln: öppna artikeln, fliken **Avancerad**, och lägg till den under **Omräkningar för recept**. Receptraden räknas i artikelns lagerenhet; du kan skriva mängden i vilken enhet som helst som artikeln räknas om till, och det du skrev visas under mängden. Se [Enheter på artiklar](/manual/fakturering/enheter-pa-artiklar).
 
 En rätt med utbyte i portioner kan inte vara ingrediens i ett annat recept. Ett grundrecept som används i andra recept ger alltid en mängd i artikelns enhet.
 

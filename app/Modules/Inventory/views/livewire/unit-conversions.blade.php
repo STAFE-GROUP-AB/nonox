@@ -6,14 +6,14 @@
         <ul class="divide-y divide-stone-200 text-sm">
             @foreach($conversions as $conversion)
                 <li class="flex justify-between py-2" wire:key="conversion-{{ $conversion->id }}">
-                    <span>{{ __('1 :article = :factor :unit', ['article' => $article->unit, 'factor' => App\Modules\Inventory\Domain\Quantity::format($conversion->factor_milli), 'unit' => $conversion->unit]) }}</span>
+                    <span>{{ __('1 :article = :factor :unit', ['article' => $article->stockUnit?->code ?? $article->unit, 'factor' => App\Domain\Units\UnitFractions::format($conversion->fraction()), 'unit' => $conversion->unit]) }}@if($conversion->source === 'DIMENSIONS') <span class="text-xs text-gray-500">({{ __('från måtten') }})</span>@endif</span>
                     <button type="button" wire:click="remove({{ $conversion->id }})" wire:confirm="{{ __('Ta bort omräkningen? Sparade recept ändras inte.') }}" class="text-sm font-semibold text-gray-700 underline">{{ __('Ta bort') }}</button>
                 </li>
             @endforeach
         </ul>
     @endif
     <div class="flex flex-wrap items-end gap-3">
-        <x-ui.field for="conversion-factor-{{ $article->id }}" :label="__('1 :unit är', ['unit' => $article->unit])" error="form.factor">
+        <x-ui.field for="conversion-factor-{{ $article->id }}" :label="__('1 :unit är', ['unit' => $article->stockUnit?->code ?? $article->unit])" error="form.factor">
             <input id="conversion-factor-{{ $article->id }}" wire:model="form.factor" inputmode="decimal" class="{{ $input }} w-24 text-right tabular-nums" placeholder="70">
         </x-ui.field>
         <x-ui.field for="conversion-unit-{{ $article->id }}" :label="__('Enhet')" error="form.unit">

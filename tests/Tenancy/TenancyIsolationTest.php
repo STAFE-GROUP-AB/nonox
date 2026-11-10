@@ -73,6 +73,7 @@ use App\Models\TaskChecklistItem;
 use App\Models\TaskComment;
 use App\Models\TaskRecurrence;
 use App\Models\TaxAccountPosting;
+use App\Models\Unit;
 use App\Models\User;
 use App\Models\VatNumberCheck;
 use App\Models\VatReport;
@@ -326,6 +327,7 @@ const COMPANY_SCOPED_MODELS = [
     NumberSeries::class => ['key' => 'invoices', 'next_number' => 1],
     Customer::class => ['number' => 1, 'name' => 'Hemlig kund AB', 'payment_terms_days' => 30],
     Article::class => 'articleAttributes',
+    Unit::class => ['code' => 'rulle', 'name' => 'Rulle', 'dimension' => 'OTHER'],
     Invoice::class => 'invoiceAttributes',
     InvoiceRow::class => 'invoiceRowAttributes',
     InvoicePayment::class => 'invoicePaymentAttributes',

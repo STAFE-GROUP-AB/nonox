@@ -20,12 +20,12 @@ Artiklarna finns under **Register → Artiklar**.
 2. Skriv ett **Artikelnummer**. Du väljer det själv, med siffror eller bokstäver, högst 30 tecken. Samma nummer kan inte användas två gånger.
 3. Skriv **Benämning**, till exempel *Konsulttimme*. Den står på fakturaraden.
 4. Skriv **Pris exkl. moms**, till exempel *149,00*.
-5. Kontrollera **Enhet**. Från början står det *st*; skriv till exempel *tim* eller *kg* om det passar bättre.
+5. Välj **Enhet** i listan, till exempel *st*, *h*, *kg* eller *m²*. Saknas den du söker lägger du till den under **Enheter**. Se [Enheter på artiklar](/manual/fakturering/enheter-pa-artiklar).
 6. Välj **Moms**: 25 %, 12 %, 6 % eller **Momsfri**.
 7. Låt **Intäktskonto** stå på **Standard**, eller välj ett annat konto mellan 3000 och 3999.
 8. Tryck på **Spara**.
 
-Fälten ovan finns på fliken **Enkel**. På fliken **Avancerad** kan du fylla i EAN-kod, SKU, inköpspris, leverantör, egenskaper, mått, momshantering och om artikeln är utgången. Har företaget modulen Lager finns där också lagerfälten. Se [Artiklar i lager](/manual/lager/artiklar).
+Fälten ovan finns på fliken **Enkel**. På fliken **Avancerad** kan du fylla i lager-, inköps- och försäljningsenhet, materialets mått, EAN-kod, SKU, inköpspris, leverantör, egenskaper, mått, momshantering och om artikeln är utgången. Har företaget modulen Lager finns där också lagerfälten. Se [Artiklar i lager](/manual/lager/artiklar).
 
 ## Vilket konto försäljningen bokförs på
 
@@ -47,7 +47,7 @@ Kontot och momssatsen ska passa ihop: 3001 är för 25 % moms, 3002 för 12 %, 3
 
 ## Listan över artiklar
 
-Listan visar nummer, benämning med enhet, pris utan moms, momssats och konto. Kolumnen **Sålt** visar vad artikeln har sålts för i år, utan moms, och hur många enheter. Utkast räknas inte med.
+Listan visar nummer, benämning med enhet (och lagerenheten när den är en annan), pris utan moms, momssats och konto. Kolumnen **Sålt** visar vad artikeln har sålts för i år, utan moms, och hur många enheter. Utkast räknas inte med.
 
 Tryck på **Ändra** för att ändra en artikel. Ett nytt pris gäller fakturor du skriver efter ändringen; fakturor som redan finns behåller sina priser.
 
@@ -69,5 +69,6 @@ Standardkontot för momssatsen saknas i företagets kontoplan. Lägg till kontot
 ## Läs också
 
 - [Skapa en faktura](/manual/fakturering/skapa-en-faktura)
+- [Enheter på artiklar](/manual/fakturering/enheter-pa-artiklar)
 - [Offerter och order](/manual/fakturering/offerter-och-order)
 - [Kontoplanen](/manual/bokforing/kontoplan)

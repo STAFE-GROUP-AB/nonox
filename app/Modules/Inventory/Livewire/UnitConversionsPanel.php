@@ -56,7 +56,7 @@ class UnitConversionsPanel extends Component
     public function render(): View
     {
         return view('inventory::livewire.unit-conversions', [
-            'article' => Article::query()->findOrFail($this->articleId, ['id', 'unit']),
+            'article' => Article::query()->with('stockUnit:id,code')->findOrFail($this->articleId, ['id', 'unit', 'stock_unit_id']),
             'conversions' => ArticleUnitConversion::query()->where('article_id', $this->articleId)->orderBy('unit')->get(),
         ]);
     }

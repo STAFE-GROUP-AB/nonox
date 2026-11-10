@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Kitchen\Livewire;
 
+use App\Domain\Units\ArticleUnits;
 use App\Models\Article;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Domain\StructureMath;
@@ -135,6 +136,11 @@ class RecipePage extends Component
         }
 
         $this->toast(__('Receptet är sparat som version :version, som gäller från :date.', ['version' => $recipe->version, 'date' => $recipe->valid_from->toDateString()]));
+
+        foreach ($save->warnings() as $warning) {
+            $this->toast($warning, 'error');
+        }
+
         $this->editing = false;
 
         if ($this->articleId === null) {
@@ -158,9 +164,9 @@ class RecipePage extends Component
         $book = StructureBook::for($company);
         $today = CarbonImmutable::today();
         $seesCosts = $this->can('seeCosts');
-        $article = $this->articleId === null ? null : Article::query()->find($this->articleId);
+        $article = $this->articleId === null ? null : Article::query()->with('stockUnit:id,code')->find($this->articleId);
         $current = $this->articleId === null ? null : $book->validOn($this->articleId, $today);
-        $current?->rows->load('component:id,name,unit');
+        $current?->rows->load('component:id,name,unit,stock_unit_id', 'component.stockUnit:id,code');
         $cost = $current !== null && $seesCosts ? $book->cost($current, UnitCosts::at($company, $today), $today) : null;
         $data = [
             'article' => $article,
@@ -185,10 +191,10 @@ class RecipePage extends Component
         }
 
         if ($this->editing) {
-            $articles = Article::query()->where('is_active', true)->orderBy('name')->get(['id', 'number', 'name', 'unit', 'is_stock_item']);
-            $conversions = ArticleUnitConversion::query()->get(['article_id', 'unit', 'factor_milli'])->groupBy('article_id');
+            $articles = Article::query()->with('stockUnit:id,code')->where('is_active', true)->orderBy('name')->get(['id', 'number', 'name', 'unit', 'is_stock_item', 'stock_unit_id']);
+            $conversions = ArticleUnitConversion::query()->get(['article_id', 'unit', 'numerator', 'denominator'])->groupBy('article_id');
             $data['articles'] = $articles;
-            $data['units'] = $articles->mapWithKeys(fn (Article $item): array => [$item->id => StructureUnits::choices($item->unit, $conversions->get($item->id, collect())->mapWithKeys(fn (ArticleUnitConversion $conversion): array => [StructureUnits::normalise($conversion->unit) => $conversion->factor_milli])->all())])->all();
+            $data['units'] = $articles->mapWithKeys(fn (Article $item): array => [$item->id => StructureUnits::choices(ArticleUnits::stockCode($item), ArticleUnits::fractions($conversions->get($item->id, collect())))])->all();
         }
 
         return view('kitchen::livewire.recipe', $data);

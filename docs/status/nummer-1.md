@@ -670,3 +670,17 @@ Evidence: `tests/Feature/Onboarding/*`, `tests/Feature/Waitlist/*`, `tests/Featu
 - Efter driftsättning: klicka på en riktig avregistreringslänk på nonox.app och kontrollera att den fungerar.
 Open legal-verify items: den juridiska bedömningen av uppföljningsmejlen (berättigat intresse och avregistrering) enligt integritetspolicyn.
 Next package: enligt prioritetslistan.
+
+---
+
+Package: M1, enheter på artiklar (prioritet 11, ADR-071 §12)
+Status: done (lager-, inköps- och försäljningsenhet per artikel, enhetslista per företag, omräkningar som exakta bråk)
+Evidence: `tests/Unit/Units/UnitConverterTest.php`, `tests/Feature/Units/UnitsOfMeasureTest.php`, `tests/Fixtures/units/units-of-measure.json` (fixtur F-U1–F-U8), `tests/Tenancy/TenancyIsolationTest.php` (Unit).
+- Enhetslistan (`units`) skapas med företaget och av migreringen; artiklar får lager-, inköps- och försäljningsenhet, `articles.unit` behåller texten som skrevs. Omräkningar från samma slags enhet är inbyggda, för trä och skivor räknas de fram ur materialets mått, övriga anges per artikel.
+- Mängder förblir tusendelar av lagerenheten, avrundade halvt upp en gång vid inmatning; noll avvisas och mer än 0,5 % ändring varnar (visas i receptsparandet). Receptrader lagras i lagerenheten.
+- Sidan Register → Artiklar → Enheter, enhetsavsnittet under Avancerad, manualartikeln `fakturering/enheter-pa-artiklar` med skärmbilder, ändringslogg och ADR-071 §12.8 "As built".
+- Ingen bokföringsbeteende ändrat (värderingen och `value_ore` är orörda), så systemdokumentationen är oförändrad.
+- Hela sviten: 8 605 gröna, 18 röda; röda är xlsx-tester (OpenSpout saknas i den lokala vendor-mappen) och databasrollernas testharness (känd låsning); grants-testerna är gröna när de körs ensamma efter registreringen av `units`. phpstan: bara de gamla OpenSpout-fynden. pint rent.
+Open legal-verify items: Peppol-koder för löpmeter, förpackning (XPK) som enhetskod, dm², dl, cl, ml; om enhetstexten (t.ex. lpm) räcker enligt ML 17 kap. 24 §.
+Follow-ups: skannern, rapporter, Kök svinn/avvikelse, etiketter och API:et visar fortfarande enhetstexten i stället för lagerenheten; 0,5 %-gränsen som företagsinställning; `value_ore` (kräver bokföringskontroll).
+Next package: M2, stycklistor med arbetssteg.

@@ -65,7 +65,7 @@ final class UblInvoiceWriter
     private const string CBC = 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2';
 
     /** Units as written on NONOX rows => UN/ECE Recommendation 20 (BR-CL-23). */
-    private const array UNITS = [
+    public const array UNITS = [
         'st' => 'H87', 'styck' => 'H87', 'stk' => 'H87', 'pcs' => 'H87', 'pc' => 'H87',
         'tim' => 'HUR', 'timme' => 'HUR', 'timmar' => 'HUR', 'h' => 'HUR', 'hour' => 'HUR',
         'min' => 'MIN', 'dag' => 'DAY', 'dagar' => 'DAY', 'dygn' => 'DAY', 'vecka' => 'WEE', 'v' => 'WEE',

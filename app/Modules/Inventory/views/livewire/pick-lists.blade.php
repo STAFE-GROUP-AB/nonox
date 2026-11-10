@@ -71,7 +71,7 @@
                             @endif
                             <span>
                                 <span class="font-semibold tabular-nums">{{ $line->article?->number }}</span> {{ $line->article?->name }}
-                                <span class="block text-sm text-gray-600">{{ __('Plocka :quantity :unit', ['quantity' => $q($line->quantity_milli), 'unit' => $line->article?->unit]) }}@if($line->article?->gtin) · EAN {{ $line->article->gtin }}@endif</span>
+                                <span class="block text-sm text-gray-600">{{ __('Plocka :quantity :unit', ['quantity' => $q($line->quantity_milli), 'unit' => $line->article?->stockUnitCode()]) }}@if($line->article?->gtin) · EAN {{ $line->article->gtin }}@endif</span>
                             </span>
                         </span>
                         @if($current->status === 'OPEN' && $canCount)

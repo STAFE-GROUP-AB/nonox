@@ -6,6 +6,8 @@ namespace App\Livewire\Invoicing;
 
 use App\Actions\Invoicing\SaveArticle;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Domain\Units\UnitCatalogue;
+use App\Domain\Units\UnitFractions;
 use App\Domain\Vat\SalesVatRules;
 use App\Livewire\Concerns\OpensFormFromLink;
 use App\Livewire\Concerns\ShowsToasts;
@@ -13,6 +15,7 @@ use App\Models\Account;
 use App\Models\Article;
 use App\Models\Company;
 use App\Models\Supplier;
+use App\Models\Unit;
 use App\Models\User;
 use App\Modules\Ai\Support\AiAnalysisException;
 use App\Modules\Inventory\Actions\ArticleImages;
@@ -20,6 +23,7 @@ use App\Modules\Inventory\Actions\SuggestArticleDetails;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\Models\ArticleImage;
+use App\Modules\Inventory\Models\ArticleUnitConversion;
 use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Inventory\Support\ArticlePhoto;
 use App\Modules\Inventory\Support\ArticleSuggestion;
@@ -29,6 +33,7 @@ use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -82,6 +87,13 @@ class Articles extends Component
     /** @var list<string> the proposed fields the person has ticked */
     public array $aiChosen = [];
 
+    /** The unit fields on the Avancerad tab are sent only once the person has touched them (ADR-071 §12). */
+    public bool $unitsTouched = false;
+
+    public bool $dimensionsTouched = false;
+
+    public bool $conversionsTouched = false;
+
     /** The advanced fields the form edits, besides the stock fields. */
     private const array ADVANCED = ['sku', 'gtin', 'scanner_code', 'brand', 'model', 'description', 'colours', 'materials', 'weight_grams', 'length_mm', 'width_mm', 'height_mm', 'purchase_price', 'vat_treatment', 'default_supplier_id', 'supplier_article_number'];
 
@@ -110,9 +122,12 @@ class Articles extends Component
             'is_stock_item' => false,
             'is_active' => '1',
             'properties' => [],
+            'stock_unit_id' => '', 'purchase_unit_id' => '', 'sales_unit_id' => '',
+            'material_length' => '', 'material_width' => '', 'material_thickness' => '',
+            'conversions' => [],
         ];
         $this->tab = 'enkel';
-        $this->reset('upload', 'pending', 'alts', 'aiSuggestion', 'aiChosen', 'camera');
+        $this->reset('upload', 'pending', 'alts', 'aiSuggestion', 'aiChosen', 'camera', 'unitsTouched', 'dimensionsTouched', 'conversionsTouched');
         $this->showForm = true;
         $this->resetErrorBag();
     }
@@ -154,11 +169,48 @@ class Articles extends Component
             'net_realisable_value' => $article->net_realisable_value_ore === null ? '' : Money::ofOre($article->net_realisable_value_ore)->format(withCurrency: false),
             'net_realisable_value_note' => (string) $article->net_realisable_value_note,
             'stock_class' => (string) $article->stock_class?->value,
+            'stock_unit_id' => (string) $article->stock_unit_id,
+            'purchase_unit_id' => (string) $article->purchase_unit_id,
+            'sales_unit_id' => (string) $article->sales_unit_id,
+            'material_length' => self::millimetres($article->material_length_um),
+            'material_width' => self::millimetres($article->material_width_um),
+            'material_thickness' => self::millimetres($article->material_thickness_um),
+            'conversions' => ArticleUnitConversion::query()->where('article_id', $article->id)->where('source', ArticleUnitConversion::MANUAL)->orderBy('unit')->get()
+                ->map(fn (ArticleUnitConversion $row): array => ['unit' => $row->unit, 'per' => UnitFractions::format($row->fraction())])->all(),
         ];
-        $this->reset('upload', 'pending', 'aiSuggestion', 'aiChosen', 'camera');
+        $this->reset('upload', 'pending', 'aiSuggestion', 'aiChosen', 'camera', 'unitsTouched', 'dimensionsTouched', 'conversionsTouched');
         $this->alts = ArticleImage::query()->where('article_id', $article->id)->pluck('alt', 'id')->map(fn (?string $alt): string => (string) $alt)->all();
         $this->showForm = true;
         $this->resetErrorBag();
+    }
+
+    public function updatedForm(mixed $value, string $key): void
+    {
+        match (true) {
+            in_array($key, ['stock_unit_id', 'purchase_unit_id', 'sales_unit_id'], true) => $this->unitsTouched = true,
+            in_array($key, ['material_length', 'material_width', 'material_thickness'], true) => $this->dimensionsTouched = true,
+            str_starts_with($key, 'conversions') => $this->conversionsTouched = true,
+            default => null,
+        };
+    }
+
+    public function addConversion(): void
+    {
+        $this->form['conversions'][] = ['unit' => '', 'per' => ''];
+        $this->conversionsTouched = true;
+    }
+
+    public function removeConversion(int $index): void
+    {
+        unset($this->form['conversions'][$index]);
+        $this->form['conversions'] = array_values($this->form['conversions']);
+        $this->conversionsTouched = true;
+    }
+
+    /** Micrometres as millimetres for the form: 45000 is "45", 600 is "0,6". */
+    private static function millimetres(?int $micrometres): string
+    {
+        return $micrometres === null ? '' : str_replace('.', ',', rtrim(rtrim(number_format($micrometres / 1000, 3, '.', ''), '0'), '.'));
     }
 
     public function addProperty(): void
@@ -294,6 +346,20 @@ class Articles extends Component
         $keys = ['number', 'name', 'unit', 'price', 'is_active', ...self::ADVANCED, 'properties', ...($modules->isEnabled(InventoryModule::KEY, $this->company()) ? self::STOCK : [])];
         $input = array_intersect_key($this->form, array_flip($keys));
 
+        if ($this->unitsTouched) {
+            foreach (['stock_unit_id', 'purchase_unit_id', 'sales_unit_id'] as $key) {
+                $input[$key] = ($this->form[$key] ?? '') === '' ? null : (int) $this->form[$key];
+            }
+        }
+
+        if ($this->dimensionsTouched) {
+            $input += array_intersect_key($this->form, array_flip(['material_length', 'material_width', 'material_thickness']));
+        }
+
+        if ($this->conversionsTouched) {
+            $input['conversions'] = $this->form['conversions'] ?? [];
+        }
+
         foreach (['default_supplier_id', 'default_location_id', 'weight_grams', 'length_mm', 'width_mm', 'height_mm'] as $key) {
             if (array_key_exists($key, $input)) {
                 $input[$key] = ($input[$key] ?? '') === '' ? null : (int) $input[$key];
@@ -333,7 +399,7 @@ class Articles extends Component
 
         return view('livewire.invoicing.articles', [
             'articles' => Article::query()
-                ->with(['account', ...($inventory ? ['mainImage'] : [])])
+                ->with(['account', 'stockUnit:id,code', ...($inventory ? ['mainImage'] : [])])
                 ->withSum(['invoiceRows as sold_this_year' => fn (Builder $query) => $query->whereHas('invoice', fn (Builder $invoice) => $invoice
                     ->where('status', '<>', InvoiceStatus::Draft->value)
                     ->whereBetween('invoice_date', [$year->toDateString(), $year->endOfYear()->toDateString()]))], 'net_ore')
@@ -346,6 +412,10 @@ class Articles extends Component
             'revenueAccounts' => Account::query()->whereBetween('number', [3000, 3999])->where('is_active', true)->orderBy('number')->get(['number', 'name']),
             'canManage' => $this->user()->can('create', [Article::class, $this->company()]),
             'inventory' => $inventory,
+            'units' => $this->showForm ? $this->unitChoices() : collect(),
+            'derived' => $advanced && $this->editingId !== null
+                ? ArticleUnitConversion::query()->where('article_id', $this->editingId)->where('source', ArticleUnitConversion::DIMENSIONS)->orderBy('unit')->get()
+                : collect(),
             'suppliers' => $advanced ? Supplier::query()->orderBy('name')->get(['id', 'name']) : collect(),
             'locations' => $advanced && $inventory ? StockLocation::query()->where('is_active', true)->orderBy('sort_key')->get(['id', 'full_code', 'name']) : collect(),
             'images' => $inventory && $this->showForm && $this->editingId !== null
@@ -354,6 +424,18 @@ class Articles extends Component
             'aiAvailable' => $inventory && $this->showForm && SuggestArticleDetails::availableFor($this->user(), $this->company()),
             'aiRows' => $this->aiSuggestion === null ? [] : ArticleSuggestion::rows($this->aiSuggestion, $this->form),
         ]);
+    }
+
+    /** @return Collection<int, Unit> the units offered: not archived, and the article's own even when archived */
+    private function unitChoices(): Collection
+    {
+        if (! Unit::query()->exists()) {
+            UnitCatalogue::seed((int) $this->company()->id);
+        }
+
+        $own = array_filter([(int) ($this->form['stock_unit_id'] ?? 0), (int) ($this->form['purchase_unit_id'] ?? 0), (int) ($this->form['sales_unit_id'] ?? 0)]);
+
+        return Unit::query()->where(fn (Builder $query) => $query->whereNull('archived_at')->orWhereIn('id', $own))->orderBy('is_default', 'desc')->orderBy('code')->get();
     }
 
     /**

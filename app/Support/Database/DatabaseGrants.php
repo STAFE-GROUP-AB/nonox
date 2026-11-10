@@ -307,6 +307,7 @@ final class DatabaseGrants
         'team_user' => GrantDecision::ReadWrite,
         'teams' => GrantDecision::ReadWrite,
         'time_reports' => GrantDecision::ReadWrite,
+        'units' => GrantDecision::ReadWrite,
         'users' => GrantDecision::ReadWrite,
         'vacation_liability_snapshots' => GrantDecision::AppendOnly,
         'vacation_opening_balances' => GrantDecision::ReadWrite,

@@ -32,7 +32,7 @@ class OverviewPage extends Component
     {
         $total = '(select coalesce(sum(quantity_milli), 0) from stock_levels where stock_levels.article_id = articles.id)';
         $low = Article::query()->where('is_stock_item', true)->whereNotNull('reorder_point_milli')->whereRaw("{$total} <= reorder_point_milli")
-            ->withSum('stockLevels as stock_milli', 'quantity_milli')->orderBy('number');
+            ->withSum('stockLevels as stock_milli', 'quantity_milli')->with('stockUnit:id,code')->orderBy('number');
 
         return view('inventory::livewire.overview', [
             'value' => $this->seesPrices() ? StockValuationReport::at($this->company(), CarbonImmutable::today()) : null,
@@ -41,7 +41,7 @@ class OverviewPage extends Component
             'low' => $low->limit(10)->get(),
             'openReceipts' => StockReceipt::query()->whereIn('status', [StockReceipt::OPEN, StockReceipt::PARTIAL])->count(),
             'openPickLists' => PickList::query()->where('status', PickList::OPEN)->count(),
-            'movements' => StockMovement::query()->with(['article:id,number,name,unit', 'location:id,full_code', 'creator:id,name'])->latest('id')->limit(12)->get(),
+            'movements' => StockMovement::query()->with(['article:id,number,name,unit,stock_unit_id', 'article.stockUnit:id,code', 'location:id,full_code', 'creator:id,name'])->latest('id')->limit(12)->get(),
         ]);
     }
 }

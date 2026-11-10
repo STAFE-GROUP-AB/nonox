@@ -33,7 +33,7 @@
                 <tr>
                     <td class="loc">{{ $line->location?->full_code ?? '–' }}</td>
                     <td>{{ $line->article?->number }} {{ $line->article?->name }}@if($line->article?->gtin)<br>EAN {{ $line->article->gtin }}@endif</td>
-                    <td class="num">{{ $q($line->quantity_milli) }} {{ $line->article?->unit }}</td>
+                    <td class="num">{{ $q($line->quantity_milli) }} {{ $line->article?->stockUnitCode() }}</td>
                     <td><div class="box"></div></td>
                 </tr>
             @endforeach

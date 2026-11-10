@@ -151,7 +151,7 @@
                                     @endforelse
                                 </td>
                                 <td @class(['py-2 pr-4 text-right font-semibold tabular-nums whitespace-nowrap', 'text-accent-700' => $low || (int) $article->stock_milli < 0])>
-                                    {{ $q((int) $article->stock_milli) }} {{ $article->unit }}
+                                    {{ $q((int) $article->stock_milli) }} {{ $article->stockUnitCode() }}
                                     @if($low)<span class="block text-xs font-normal">{{ __('Beställ :quantity', ['quantity' => $q($article->reorder_quantity_milli)]) }}</span>@endif
                                 </td>
                                 @if($seesPrices)

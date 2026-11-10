@@ -129,7 +129,7 @@ class ArticlesPage extends Component
 
         $articles = Article::query()
             ->withSum('stockLevels as stock_milli', 'quantity_milli')
-            ->with('mainImage')
+            ->with(['mainImage', 'stockUnit:id,code'])
             ->with(['stockLevels' => fn ($query) => $query->where('quantity_milli', '<>', 0)
                 ->when($warehouse !== null, fn ($inner) => $inner->whereHas('location', fn (Builder $location) => $location->where('full_code', $warehouse?->full_code)->orWhere('full_code', 'like', $warehouse?->full_code.'-%')))
                 ->with('location:id,full_code,name,sort_key')])

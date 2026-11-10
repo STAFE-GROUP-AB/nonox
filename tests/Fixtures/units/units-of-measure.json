@@ -1,0 +1,28 @@
+{
+    "source": "ADR-071 §12.6, synthetic data only",
+    "conversions": [
+        {"id": "F-U1", "note": "Stud 45 x 95, L 4 800 mm, stock lpm: buy 2,5 m3", "stock": "lpm", "length_um": 4800000, "width_um": 95000, "thickness_um": 45000, "entered": "2.5", "unit": "m³", "fraction": "171/40000", "stock_milli": 584795, "warns": false},
+        {"id": "F-U1b", "note": "same, BOM row 4 st: 19,2 lpm", "stock": "lpm", "length_um": 4800000, "width_um": 95000, "thickness_um": 45000, "entered": "4", "unit": "st", "fraction": "5/24", "stock_milli": 19200, "warns": false},
+        {"id": "F-U2", "note": "Oak board 27 mm, 2 440 x 1 220 mm, stock m2: 1 st", "stock": "m²", "length_um": 2440000, "width_um": 1220000, "thickness_um": 27000, "entered": "1", "unit": "st", "stock_milli": 2977, "warns": false},
+        {"id": "F-U2c", "note": "same: 1 m2 is 0,027 m3", "stock": "m²", "length_um": 2440000, "width_um": 1220000, "thickness_um": 27000, "entered": "1", "unit": "m³", "fraction": "27/1000", "stock_milli": 37037, "warns": false},
+        {"id": "F-U3", "note": "Oak veneer 0,6 mm, stock m2: 0,001 m3", "stock": "m²", "length_um": null, "width_um": null, "thickness_um": 600, "entered": "0.001", "unit": "m³", "stock_milli": 1667, "warns": false, "change_percent": "0,02"},
+        {"id": "F-U3b", "note": "same veneer with stock m3: 0,3 m2 rounds to zero", "stock": "m³", "length_um": null, "width_um": null, "thickness_um": 600, "entered": "0.3", "unit": "m²", "refused": true},
+        {"id": "F-U4", "note": "Board, stock m2: 250 dm2 (built in)", "stock": "m²", "length_um": null, "width_um": null, "thickness_um": null, "entered": "250", "unit": "dm²", "stock_milli": 2500, "warns": false},
+        {"id": "F-U4b", "note": "Lacquer, stock l: 0,012 m3 (built in)", "stock": "l", "length_um": null, "width_um": null, "thickness_um": null, "entered": "0.012", "unit": "m³", "stock_milli": 12000, "warns": false},
+        {"id": "F-U5", "note": "Screw, stock st, 1 forp = 200 st: 3 forp", "stock": "st", "length_um": null, "width_um": null, "thickness_um": null, "manual": {"förp": "1/200"}, "entered": "3", "unit": "förp", "stock_milli": 600000, "warns": false},
+        {"id": "F-U6", "note": "Stud: 0,000001 m3 is 0,000234 lpm, zero milli", "stock": "lpm", "length_um": 4800000, "width_um": 95000, "thickness_um": 45000, "entered": "0.000001", "unit": "m³", "refused": true},
+        {"id": "F-U6b", "note": "Stud: 0,0001 m3 is 23 milli-lpm, round trip 1,675 % off (the ADR's 1,7 %)", "stock": "lpm", "length_um": 4800000, "width_um": 95000, "thickness_um": 45000, "entered": "0.0001", "unit": "m³", "stock_milli": 23, "warns": true, "change_percent": "1,68"}
+    ],
+    "values": [
+        {"id": "F-U1c", "note": "2,5 m3 at 6 500 kr/m3 is 1 625 000 ore; 584 795 milli-lpm", "quantity": "2.5", "price_ore": 650000, "value_ore": 1625000, "stock_milli": 584795, "unit_cost_ore": 2779},
+        {"id": "F-U2b", "note": "1,62 m2 at 1 450 kr/m2", "quantity": "1.62", "price_ore": 145000, "value_ore": 234900},
+        {"id": "F-U5", "note": "3 forp at 189 kr/forp, 600 000 milli-st", "quantity": "3", "price_ore": 18900, "value_ore": 56700, "stock_milli": 600000, "unit_cost_ore": 95}
+    ],
+    "migration": [
+        {"id": "F-U7", "text": "Styck", "code": "st"},
+        {"id": "F-U7", "text": "kvm", "code": "m²"},
+        {"id": "F-U7", "text": "tim", "code": "h"},
+        {"id": "F-U7", "text": "M3", "code": "m³"},
+        {"id": "F-U7", "text": "rulle", "code": "rulle", "dimension": "OTHER", "rec20": null}
+    ]
+}

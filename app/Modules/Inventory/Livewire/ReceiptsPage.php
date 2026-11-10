@@ -187,7 +187,7 @@ class ReceiptsPage extends Component
             ->latest('number')
             ->paginate(25);
 
-        $receiving = $this->receiving === null ? null : StockReceipt::query()->with(['lines.article:id,number,name,unit', 'supplier:id,name'])->find($this->receiving);
+        $receiving = $this->receiving === null ? null : StockReceipt::query()->with(['lines.article:id,number,name,unit,stock_unit_id', 'lines.article.stockUnit:id,code', 'supplier:id,name'])->find($this->receiving);
 
         return view('inventory::livewire.receipts', [
             'receipts' => $receipts,
