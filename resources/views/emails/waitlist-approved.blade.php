@@ -29,6 +29,10 @@
 @foreach($moduleLines as $line)
 - {!! $line !!}
 @endforeach
+@if($plan->isFirm())
+
+{{ __('Som byrå arbetar du i Mina företag. Det är en del av grunden och ingen modul, så det finns redan:') }} [{{ __('Mina företag') }}]({{ url('/manual/byra/mina-foretag') }})
+@endif
 
 @endif
 {{ __('NONOX är i öppen beta. Skarp lansering av version 1.0 sker den :date, och det du lägger in under betan ligger kvar.', ['date' => $launchDate]) }}

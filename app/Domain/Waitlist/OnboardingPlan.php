@@ -27,25 +27,6 @@ final readonly class OnboardingPlan
     public const string NO_PROGRAM = 'none';
 
     /**
-     * The modules worth switching on for an industry, in the order they
-     * make sense. A module's dependencies come before it. Every key is
-     * checked against the registry when the plan is used.
-     *
-     * @var array<string, list<string>>
-     */
-    private const array MODULES = [
-        'cafe' => ['inventory', 'pos', 'kitchen'],
-        'restaurant' => ['inventory', 'pos', 'kitchen'],
-        'crafts' => ['work_orders', 'portal', 'inbox'],
-        'consultant' => ['crm', 'inbox'],
-        'retail' => ['inventory', 'pos', 'inbox'],
-        'hair_beauty' => ['inventory', 'pos'],
-        'accounting_firm' => ['inbox', 'crm'],
-        'finance_consultant' => ['inbox', 'crm'],
-        'other' => ['inbox'],
-    ];
-
-    /**
      * Where each module is explained in the manual: a section or an article
      * under /manual.
      *
@@ -60,6 +41,9 @@ final readonly class OnboardingPlan
         'crm' => 'crm',
         'inbox' => 'leverantorer/inkorgen',
         'payroll' => 'lon',
+        'staff_ledger' => 'personalliggare',
+        'planning' => 'planering',
+        'ai' => 'installningar/nonox-ai',
     ];
 
     /**
@@ -108,10 +92,95 @@ final readonly class OnboardingPlan
         return null;
     }
 
-    /** @return list<string> */
-    public static function moduleKeysFor(?Industry $industry): array
+    /**
+     * The keys suggested for an industry, in the order they are shown.
+     *
+     * @return list<string>
+     */
+    public static function moduleKeysFor(?Industry $industry, bool $hasEmployees = true): array
     {
-        return self::MODULES[($industry ?? Industry::Other)->value];
+        return array_map(fn (array $suggestion): string => $suggestion[0], self::suggestions($industry, $hasEmployees));
+    }
+
+    /**
+     * The suggestions per industry, each with its reason, in the order the
+     * owner decided. A module's dependencies are not reordered here; the
+     * module settings tell what has to be on first. The customer portal is
+     * not live and is never suggested. Payroll and planning are left out when
+     * there are no employees; the staff ledger stays for the industries
+     * where it is required, since the owner can be covered too.
+     *
+     * TODO(legal-verify): the staff ledger text "gäller även ägaren i vissa
+     * fall", and that NONOX's staff ledger does not cover construction sites,
+     * so crafts get none.
+     *
+     * @return list<array{0: string, 1: string}> key and reason
+     */
+    private static function suggestions(?Industry $industry, bool $hasEmployees): array
+    {
+        $ledger = fn (string $industryText): array => ['staff_ledger', $industryText.' '.__('Personalen checkar in och ut på en surfplatta eller med mobilen, även utan internet.')];
+        $payroll = ['payroll', __('Löner, lönebesked och arbetsgivardeklaration. På Min sida har de anställda sina lönebesked och kan sjukanmäla sig och ansöka om ledighet i mobilen.')];
+        $payrollMileage = ['payroll', __('Löner, lönebesked och arbetsgivardeklaration, med körjournal för resorna. På Min sida har de anställda sina lönebesked och kan sjukanmäla sig och ansöka om ledighet i mobilen.')];
+        $planning = ['planning', __('Schemat med OB och lönekostnad medan du planerar, och tiden går direkt vidare till lönen.')];
+        $pos = ['pos', __('Hämtar försäljningen från kassasystemet till bokföringen.')];
+        $inbox = ['inbox', __('Leverantörsfakturor och kvitton mejlas in och blir förslag som du godkänner.')];
+
+        $list = match ($industry) {
+            Industry::Cafe, Industry::Restaurant => [
+                $ledger(__('Krav i branschen – gäller även ägaren i vissa fall.')),
+                $payroll,
+                $planning,
+                $pos,
+                ['kitchen', __('Recept med portionskostnad, svinn och personalmat.')],
+                ['inventory', __('Lagersaldo och inleverans, så du ser vad som finns och vad det kostar.')],
+                $inbox,
+            ],
+            Industry::HairBeauty => [
+                $ledger(__('Krav i branschen för frisörer och skönhetsvård – gäller även ägaren i vissa fall.')),
+                $payroll,
+                $planning,
+                $pos,
+                ['inventory', __('Lager för produkter du säljer vidare.')],
+                $inbox,
+            ],
+            Industry::Crafts => [
+                ['work_orders', __('ÄTA, ROT och RUT, tid och material direkt på plats.')],
+                $payrollMileage,
+                $planning,
+                $inbox,
+                ['ai', __('Fotografera kvitton så fyller NONOX AI i förslaget åt dig.')],
+            ],
+            Industry::Retail => [
+                $pos,
+                ['inventory', __('Artiklar, saldo och inventering.')],
+                $payroll,
+                $planning,
+                $inbox,
+            ],
+            Industry::Consultant => [
+                ['crm', __('Kunder, aktiviteter och nästa steg samlat på ett ställe.')],
+                $inbox,
+                ['ai', __('Läser fakturor och kvitton och fyller i ett förslag som du kontrollerar.')],
+                $payrollMileage,
+            ],
+            Industry::AccountingFirm, Industry::FinanceConsultant => [
+                $inbox,
+                ['crm', __('Dina klienter och prospekt med nästa steg.')],
+            ],
+            Industry::Other, null => [
+                $inbox,
+                ['ai', __('Läser fakturor och kvitton och fyller i ett förslag som du kontrollerar.')],
+                $payroll,
+            ],
+        };
+
+        return array_values(array_filter($list, fn (array $suggestion): bool => $hasEmployees || ! in_array($suggestion[0], ['payroll', 'planning'], true)));
+    }
+
+    /** An accounting firm or a finance consultant works in Mina företag, which is core and not a module. */
+    public function isFirm(): bool
+    {
+        return in_array($this->industry, [Industry::AccountingFirm, Industry::FinanceConsultant], true);
     }
 
     /**
@@ -120,14 +189,14 @@ final readonly class OnboardingPlan
      * about; one that is already on is left out when a company is given and
      * `$includeEnabled` is false.
      *
-     * @return list<array{key: string, name: string, manual: string, extra: list<array{name: string, url: string}>, enabled: bool}>
+     * @return list<array{key: string, name: string, reason: string, manual: string, extra: list<array{name: string, url: string}>, enabled: bool}>
      */
     public function modules(?Company $company = null, bool $includeEnabled = true): array
     {
         $registry = app(ModuleRegistry::class);
         $modules = [];
 
-        foreach (self::moduleKeysFor($this->industry) as $key) {
+        foreach (self::suggestions($this->industry, $this->hasEmployees) as [$key, $reason]) {
             if (! $registry->has($key)) {
                 continue;
             }
@@ -146,14 +215,36 @@ final readonly class OnboardingPlan
 
             $extra = [];
 
-            foreach (self::MANUAL_EXTRA[$key] ?? [] as $label => $path) {
+            foreach ($this->extraFor($key) as $label => $path) {
                 $extra[] = ['name' => $label, 'url' => url('/manual/'.$path)];
             }
 
-            $modules[] = ['key' => $key, 'name' => $module->name(), 'manual' => self::manualUrl($key), 'extra' => $extra, 'enabled' => $enabled];
+            $modules[] = ['key' => $key, 'name' => $module->name(), 'reason' => $reason, 'manual' => self::manualUrl($key), 'extra' => $extra, 'enabled' => $enabled];
         }
 
         return $modules;
+    }
+
+    /**
+     * Further articles for a module: label => path under /manual. Payroll
+     * points to Min sida for employees, and to the mileage log where the
+     * industry drives for work.
+     *
+     * @return array<string, string>
+     */
+    private function extraFor(string $key): array
+    {
+        $extra = self::MANUAL_EXTRA[$key] ?? [];
+
+        if ($key === 'payroll') {
+            $extra[__('Min sida')] = 'lon/min-sida-for-anstallda';
+
+            if (in_array($this->industry, [Industry::Crafts, Industry::Consultant], true)) {
+                $extra[__('Körjournal')] = 'lon/korjournal';
+            }
+        }
+
+        return $extra;
     }
 
     /** "ett kafé", "en restaurang": what the modules suit, in a sentence, or null when the industry is not known. */

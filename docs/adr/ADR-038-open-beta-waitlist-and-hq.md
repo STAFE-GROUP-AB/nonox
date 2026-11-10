@@ -298,6 +298,21 @@ Review amendments (2026-11-10):
   them is published at the same time. That is information under art. 13, not a
   change of terms for existing users.
 
+Module suggestions per industry (2026-11-10, decided by the owner): each
+suggestion carries a one-sentence reason, in the mail and, for the first
+three, in the checklist step. Order: café and restaurant: personalliggare,
+payroll (with Min sida), planning, kassakopplingar, kök, lager, inkorg; hair and
+beauty: personalliggare, payroll, planning, kassakopplingar, lager, inkorg;
+crafts: arbetsorder, payroll (with the mileage log), planning, inkorg, AI;
+retail: kassakopplingar, lager, payroll, planning, inkorg; consultant: CRM,
+inkorg, AI, payroll; accounting firm and finance consultant: inkorg and CRM
+plus a pointer to Mina företag (core, not a module); other: inkorg, AI, payroll.
+With no employees payroll and planning are left out; the staff ledger stays for
+café, restaurant and hair and beauty, worded "Krav i branschen – gäller även
+ägaren i vissa fall". The customer portal is not live and is never suggested.
+`TODO(legal-verify)`: that wording, and that NONOX's staff ledger does not cover
+construction sites, so crafts are not offered it.
+
 Consequences: the data is the waiting list's own (ADR-038 §2) used for the
 service the person asked for. The register of processing, the retention list
 and the privacy policy (version 1.8) say so. `TODO(legal-verify)`: whether the

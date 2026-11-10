@@ -87,7 +87,7 @@ class WaitlistApprovedMail extends Mailable implements ShouldQueue
                 $links[] = "[{$extra['name']}]({$extra['url']})";
             }
 
-            return implode(', ', $links);
+            return implode(', ', $links).' – '.$module['reason'];
         }, $this->plan->modules());
     }
 

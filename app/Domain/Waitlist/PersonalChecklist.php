@@ -99,14 +99,19 @@ final class PersonalChecklist
 
         $remaining = array_values(array_filter($suggested, fn (array $module): bool => ! $module['enabled']));
         $industryPhrase = $plan->phrase() ?? __('ditt företag');
-        $names = implode(', ', array_column($remaining === [] ? $suggested : $remaining, 'name'));
+        $shown = $remaining === [] ? $suggested : $remaining;
+        $names = implode(', ', array_column($shown, 'name'));
+        // Room for a reason on the first three; the rest are named.
+        $withReasons = implode(' ', array_map(fn (array $module): string => $module['name'].': '.$module['reason'], array_slice($shown, 0, 3)));
+        $others = array_column(array_slice($shown, 3), 'name');
+        $detail = $withReasons.($others === [] ? '' : ' '.__('Även:').' '.implode(', ', $others).'.');
 
         return [
             'done' => $remaining === [],
             'title' => __('Slå på modulerna för din bransch'),
             'text' => $remaining === []
                 ? __('Modulerna som brukar passa :industry är påslagna: :modules.', ['industry' => $industryPhrase, 'modules' => $names])
-                : __('Det här brukar passa :industry: :modules. Slå på de du behöver under Moduler.', ['industry' => $industryPhrase, 'modules' => $names]),
+                : __('Det här brukar passa :industry. :modules Slå på de du behöver under Moduler.', ['industry' => $industryPhrase, 'modules' => $detail]),
             'link' => route('teams.show', ['company' => $company->id, 'flik' => 'moduler']),
             'allowed' => $user->hasTeamPermission($company, 'modules:manage'),
             'soon' => false,
