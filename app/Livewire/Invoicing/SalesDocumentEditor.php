@@ -106,6 +106,9 @@ class SalesDocumentEditor extends Component
             return;
         }
 
+        // The saved rows come back with their keys, so a row keeps what hangs on it (ADR-071 §4) at the next save.
+        $this->rows = $this->rowsFrom($document->load('rows.account')->rows);
+        $this->dispatch('sales-document-saved');
         $this->toast(__(':title är sparad.', ['title' => $document->title()]));
     }
 

@@ -202,6 +202,7 @@ final class DatabaseGrants
         'oauth_clients' => GrantDecision::ReadWrite,
         'oauth_refresh_tokens' => GrantDecision::ReadWrite,
         'opening_balances' => GrantDecision::ReadWrite,
+        'operations' => GrantDecision::ReadWrite,
         'operator_links' => GrantDecision::ReadWrite,
         'passkeys' => GrantDecision::ReadWrite,
         'pay_codes' => GrantDecision::ReadWrite,
@@ -263,6 +264,8 @@ final class DatabaseGrants
         // Pairs marked as separate agreements under Källor; undoing deletes the row.
         'saas_separate_pairs' => GrantDecision::ReadWrite,
         'salary_changes' => GrantDecision::ReadWrite,
+        'sales_document_row_structure_lines' => GrantDecision::ReadWrite,
+        'sales_document_row_structures' => GrantDecision::ReadWrite,
         'sales_document_rows' => GrantDecision::ReadWrite,
         'sales_documents' => GrantDecision::ReadWrite,
         'saved_views' => GrantDecision::ReadWrite,

@@ -80,6 +80,12 @@ kok:
   for: foretag
   modul: kitchen
   ikon: receipt
+tillverkning:
+  titel: Tillverkning
+  beskrivning: Stycklistor med komponenter och arbetssteg, en egen stycklista per offert- och orderrad, och kalkyl med material, arbete och marginal.
+  for: foretag
+  modul: manufacturing
+  ikon: factory
 crm:
   titel: CRM
   beskrivning: Kunder och prospekt med kontaktpersoner, aktiviteter med nästa steg, affärer i en säljtratt med prognos och mål, kundstatus, nyckeltal ur bokföringen och GDPR.

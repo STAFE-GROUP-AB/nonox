@@ -18,6 +18,7 @@ use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -73,7 +74,9 @@ class SaveSalesDocument
             $customer->ensureNotRestricted('customer_id');
 
             // validate() keeps only fields with rules, so the rows are read from the input itself.
-            $rows = SalesRowInput::parse(array_values(array_filter((array) $input['rows'], is_array(...))));
+            $inputRows = array_values(array_filter((array) $input['rows'], is_array(...)));
+            $rows = SalesRowInput::parse($inputRows);
+            $lineKeys = self::lineKeys($inputRows);
             $totals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => $row['net_ore'], 'vat_rate' => $row['vat_rate']], $rows));
 
             $isNew = $document === null;
@@ -102,7 +105,7 @@ class SaveSalesDocument
             SalesDocumentRow::query()->where('sales_document_id', $document->id)->delete();
 
             foreach ($rows as $position => $row) {
-                SalesDocumentRow::create(['sales_document_id' => $document->id, 'position' => $position, ...$row]);
+                SalesDocumentRow::create(['sales_document_id' => $document->id, 'position' => $position, 'line_key' => $lineKeys[$position], ...$row]);
             }
 
             if ($isNew) {
@@ -115,5 +118,25 @@ class SaveSalesDocument
 
             return $document->load('rows');
         }));
+    }
+
+    /**
+     * The key of each row (ADR-071 §4): the one it came with when it is a
+     * UUID not already taken by an earlier row, else a new one. SalesRowInput
+     * keeps the rows in their order, so the keys line up with its result.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<string>
+     */
+    private static function lineKeys(array $rows): array
+    {
+        $keys = [];
+
+        foreach ($rows as $row) {
+            $key = strtolower(trim((string) ($row['line_key'] ?? '')));
+            $keys[] = Str::isUuid($key) && ! in_array($key, $keys, true) ? $key : (string) Str::uuid();
+        }
+
+        return $keys;
     }
 }

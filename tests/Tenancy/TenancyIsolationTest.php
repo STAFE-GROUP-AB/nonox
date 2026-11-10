@@ -169,6 +169,9 @@ use App\Modules\Kitchen\Models\SaleConsumption;
 use App\Modules\Kitchen\Models\StaffMeal;
 use App\Modules\Kitchen\Models\WasteEntry;
 use App\Modules\Kitchen\Models\WasteMeasurement;
+use App\Modules\Manufacturing\Models\Operation;
+use App\Modules\Manufacturing\Models\RowStructure;
+use App\Modules\Manufacturing\Models\RowStructureLine;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\AgiSubmission;
@@ -445,6 +448,9 @@ const COMPANY_SCOPED_MODELS = [
     BillOfMaterials::class => 'structureAttributes',
     BomRow::class => 'structureRowAttributes',
     ArticleUnitConversion::class => 'unitConversionAttributes',
+    Operation::class => ['name' => 'Hemligt arbetssteg', 'hourly_cost_ore' => 45_000],
+    RowStructure::class => 'rowStructureAttributes',
+    RowStructureLine::class => 'rowStructureLineAttributes',
     WasteEntry::class => 'kitchenWasteAttributes',
     WasteMeasurement::class => ['measured_on' => '2026-03-01', 'kg_milli' => 1500],
     StaffMeal::class => ['served_on' => '2026-03-01', 'meal' => 'LUNCH', 'quantity_milli' => 1000, 'reason' => 'REPRESENTATION'],
@@ -1863,6 +1869,18 @@ function structureAttributes(): array
 function structureRowAttributes(): array
 {
     return ['bill_of_materials_id' => BillOfMaterials::create(structureAttributes())->id, 'component_article_id' => Article::create(articleAttributes())->id, 'quantity_milli' => 100];
+}
+
+function rowStructureAttributes(): array
+{
+    $document = SalesDocument::create(salesDocumentAttributes());
+
+    return ['sales_document_id' => $document->id, 'line_key' => (string) Str::uuid(), 'output_article_id' => Article::create(articleAttributes())->id, 'name' => 'Hemlig stycklista', 'yield_milli' => 1000];
+}
+
+function rowStructureLineAttributes(): array
+{
+    return ['row_structure_id' => RowStructure::create(rowStructureAttributes())->id, 'component_article_id' => Article::create(articleAttributes())->id, 'quantity_milli' => 100];
 }
 
 function unitConversionAttributes(): array

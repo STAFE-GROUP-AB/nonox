@@ -155,6 +155,11 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Personalmat som dras från lagret som eget bruk, och med Lön påslaget föreslås kostförmånerna till lönen, där löneadministratören godkänner dem. Ingen verifikation och ingen moms bokas för svinn eller personalmat.
 - Avvikelser mellan två inventeringar: vad kassans försäljning borde ha använt, svinn och personalmat, jämfört med vad som räknades. Kan också dra råvarorna från lagret varje natt när kassan säljer (avstängt från början). Rollen Kökspersonal registrerar utan att se några priser.
 
+### Tillverkning (modul) – ny
+- Stycklistor med komponenter i flera nivåer och arbetssteg: komponenter med nettomängd i valfri enhet som artikeln kan räknas om till, spill i procent, och arbetssteg som Kapning, Montering och Lackering med minuter. Varje ändring blir en ny version från ett datum, och en stycklista som skulle gå i en ring stoppas.
+- Arbetssteg med timkostnad och kapacitet i timmar per dag. Timkostnaden är företagets egen siffra och gäller nästa kalkyl.
+- Kalkyl på offerten och ordern: hämta stycklistan till en rad, ändra den för just den raden utan att mallen ändras, och se material, arbete, omkostnadspålägg, kostnad per styck, täckningsbidrag och marginal per rad och för hela dokumentet. Kalkylen syns bara internt, aldrig på kundens PDF, och följer med när offerten blir en order. Radens stycklista kan sparas som en ny stycklista.
+
 ### CRM (modul) – ny
 - Kunder och prospekt med kontaktpersoner: när modulen är på blir Kunder ett CRM, och varje kund i kundregistret får ett kort. Ett prospekt får kundnummer först när det blir kund. En person kan höra till flera företag med en roll hos varje (beslutsfattare, ambassadör, påverkare, användare, fakturamottagare), och varje person har en rättslig grund enligt GDPR.
 - Aktiviteter med nästa steg: samtal med utfall, möten, anteckningar, e-post och uppgifter, och Mina aktiviteter med försenat, i dag och kommande. Klarmarkera med ett tryck, och NONOX frågar efter nästa steg.

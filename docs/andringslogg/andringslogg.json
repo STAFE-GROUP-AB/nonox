@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-10-stycklistor-och-kalkyl",
+      "datum": "2026-11-10T19:30:00+01:00",
+      "rubrik": "Ny modul Tillverkning: stycklistor, arbetssteg och kalkyl på offerter och ordrar",
+      "beskrivning": "En produkt får en stycklista med komponenter i flera nivåer och arbetssteg med minuter och timkostnad. På offerten och ordern hämtar du stycklistan till raden, ändrar den för just den raden och ser direkt material, arbete, täckningsbidrag och marginal, som aldrig syns på kundens PDF. Kopian följer med när offerten blir en order.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-10-enheter-pa-artiklar",
       "datum": "2026-11-10T11:20:00+01:00",
       "rubrik": "Enheter på artiklar: styck, löpmeter, kvadrat, kubik och egna",

@@ -44,7 +44,7 @@ Every company-scoped model uses `BelongsToCompany`; queued jobs get `company_id`
 | `app/Actions/{Domain}` | Single-purpose, invokable, transactional business actions. The UI and the API both call these. |
 | `app/Domain/{Domain}` | Enums, value objects, domain services and rules. |
 | `app/Livewire/**` | Thin screen components that call Actions. |
-| `app/Modules/{Name}` | Optional modules (ADR-017): own routes, views, migrations, Livewire, policies. Keys: `agreements`, `ai`, `banking`, `connect`, `crm`, `inbox`, `inventory`, `payroll`, `planning`, `pos`; plus StaffLedger and Contracts. A module is switched on per company in `company_modules`; its permissions only exist while it is on. |
+| `app/Modules/{Name}` | Optional modules (ADR-017): own routes, views, migrations, Livewire, policies. Keys: `agreements`, `ai`, `banking`, `connect`, `crm`, `inbox`, `inventory`, `manufacturing`, `payroll`, `planning`, `pos`; plus StaffLedger and Contracts. A module is switched on per company in `company_modules`; its permissions only exist while it is on. |
 | `app/Support/**` | Money, Luhn, SIE, Tenancy, Audit, Manual, Landing (public pages data), Chat, Instance settings. |
 | `app/Http/Controllers/Api/V1`, `app/Modules/Connect` | REST API and NONOX Connect (OAuth apps, API keys, webhooks). OpenAPI in `docs/api/openapi.yaml`. |
 | `resources/views/start/**` | Public website (landing, comparison, industries, moving guide, legal pages). |
