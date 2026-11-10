@@ -264,6 +264,15 @@
         @error('uploads') <p class="mt-2 text-sm text-accent-700" role="alert">{{ $message }}</p> @enderror
         @include('ai::partials.analyze-panel', ['canAnalyze' => $aiAvailable && ($uploads !== [] || $attachments->isNotEmpty())])
 
+        @if($aiOff)
+            <p class="mt-3 text-xs text-gray-600">
+                {{ __('NONOX kan läsa underlaget och föreslå kontering när NONOX AI är påslaget.') }}
+                @if($aiSettingsUrl)
+                    <a href="{{ $aiSettingsUrl }}" class="font-medium text-accent-700 underline">{{ __('Slå på NONOX AI') }}</a>
+                @endif
+            </p>
+        @endif
+
         @if($attachments->isNotEmpty() || $uploads !== [])
             <ul class="mt-4 divide-y divide-gray-100 text-sm">
                 @foreach($attachments as $attachment)

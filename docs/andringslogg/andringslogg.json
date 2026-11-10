@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-10-tolka-underlag-utan-ai",
+      "datum": "2026-11-10T18:00:00+01:00",
+      "rubrik": "Under underlaget visas hur NONOX AI kan hjälpa till",
+      "beskrivning": "När NONOX AI inte är påslaget står nu under underlaget på en verifikation att NONOX kan läsa underlaget och föreslå konteringen, med en länk till inställningen för den som får slå på modulen. Den som inte får ändra inställningarna ser bara meningen, och när NONOX AI är påslaget ändras ingenting.",
+      "typ": "Förbättrat",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-10-introduktion-efter-godkannande",
       "datum": "2026-11-10T08:30:00+01:00",
       "rubrik": "Personlig introduktion när du släpps in från kön",

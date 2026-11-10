@@ -58,6 +58,8 @@ AI:n sparar och bokför aldrig något själv – den fyller bara i formuläret. 
 
 Ser underlaget ut som en obetald leverantörsfaktura säger rutan det och erbjuder **Registrera som leverantörsfaktura**. Då flyttas filen till en ny leverantörsfaktura i stället, där den får förfallodag, betalning och leverantör. Bokför den bara som verifikation om den redan är betald. Se [Registrera en leverantörsfaktura](/manual/leverantorer/registrera-en-leverantorsfaktura).
 
+Är modulen inte påslagen står under underlaget raden **NONOX kan läsa underlaget och föreslå kontering när NONOX AI är påslaget.** Den som får slå på modulen ser också länken **Slå på NONOX AI**, som tar dig till fliken Moduler under företagets uppgifter.
+
 Hur modulen slås på och vilken AI-nyckel som används står i [NONOX AI](/manual/installningar/nonox-ai).
 
 ## Vanliga frågor
