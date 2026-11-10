@@ -456,7 +456,8 @@ it('is downloaded with the annual report permission, by an aktiebolag, and never
         ->assertSee('Ladda ner som iXBRL (Beta)')
         ->assertSee('NONOX lämnar inte in filen åt dig än');
 
-    $bookkeeper = Bookkeeping::member($this->company, 'bookkeeper');
+    // Exporting needs reports:view or fiscal-years:manage since S1-P10; the approver has neither.
+    $bookkeeper = Bookkeeping::member($this->company, 'approver');
     $other = Company::factory()->create();
     $foreign = CurrentCompany::run($other, fn () => FiscalYear::create(['start_date' => '2027-01-01', 'end_date' => '2027-12-31']));
 

@@ -1,0 +1,109 @@
+{
+    "fixture": "F-S1-b",
+    "document": "K3 annual report 2026 (S1-P10)",
+    "status": "written 2026-11-10 by the S1-P10 builder, not by the independent Fixture author; every figure is taken from ../expected.json and ../README.md and should be re-derived by the Checker",
+    "synthetic": true,
+    "conventions": {
+        "amounts": "integer öre as printed: whole kronor (multiples of 100), lines rounded half a krona away from zero, sums the sums of the printed lines",
+        "pairs": "[2026, 2025]: the K3 year and its comparative, the last K2 year, not restated (S1-R7.1, K3 35.7)",
+        "signs": "income statement as printed (costs negative); balance sheet lines positive as presented; equity statement credit positive"
+    },
+    "answers_given": {
+        "_note": "What the test enters before rendering, so no question is left open: the four yes/no questions answered no, no owner above ten per cent, 1 000 000 kr of the bank loan due after five years, the equipment note (only in the ledger) in the person's own words, a business description and the signing place, date and signatory.",
+        "k3_long_term_liabilities_ore": 100000000
+    },
+    "rule_ids": ["S1-R8.2", "S1-R8.3", "S1-R8.1", "S1-R8.4", "S1-R7.5", "S1-R9"],
+    "size_class": "mindre",
+    "parts_in_order": [
+        "Förvaltningsberättelse",
+        "Resultaträkning",
+        "Balansräkning",
+        "Rapport över förändringar i eget kapital",
+        "Noter",
+        "Underskrifter",
+        "Fastställelseintyg"
+    ],
+    "cash_flow_statement": false,
+    "cash_flow_statement_note": "Policy cash_flow_statement = none for a mindre aktiebolag (S1-R2: required of a större företag only).",
+    "income_statement": {
+        "Nettoomsättning": [0, 500000000],
+        "Råvaror och förnödenheter": [0, -200000000],
+        "Personalkostnader": [0, -157704000],
+        "Avskrivningar och nedskrivningar av materiella och immateriella anläggningstillgångar": [0, -20000000],
+        "Rörelseresultat": [0, 122296000],
+        "Räntekostnader och liknande resultatposter": [0, -14000000],
+        "Resultat efter finansiella poster": [0, 108296000],
+        "Resultat före skatt": [0, 108296000],
+        "Skatt på årets resultat": [0, -19837000],
+        "Årets resultat": [0, 88459000]
+    },
+    "income_statement_note": "2026 has no vouchers but the transition voucher, which goes to equity (row b) and the balance sheet only. 2025: tax 198 369,76 kr prints as 198 370, the result 884 590,24 kr as 884 590.",
+    "balance_sheet": {
+        "Byggnader och mark": [580000000, 580000000],
+        "Inventarier, verktyg och installationer": [16000000, 16000000],
+        "Uppskjuten skattefordran": [3090000, 0],
+        "Kassa och bank": [198296000, 198296000],
+        "Summa tillgångar": [797386000, 794296000],
+        "Aktiekapital": [10000000, 10000000],
+        "Balanserad vinst eller förlust": [407829000, 356000000],
+        "Årets resultat": [0, 88459000],
+        "Summa eget kapital": [417829000, 454459000],
+        "Avsättningar för skatter": [24720000, 0],
+        "varav uppskjuten skatt": [24720000, 0],
+        "Övriga avsättningar": [15000000, 0],
+        "Övriga skulder till kreditinstitut": [300000000, 300000000],
+        "Leverantörsskulder": [20000000, 20000000],
+        "Skatteskulder": [19837000, 19837000],
+        "Summa eget kapital och skulder": [797386000, 794296000]
+    },
+    "balance_sheet_note": "Gross presentation, set-off not confirmed (../expected.json transition.reconciliation): total 7 973 860 kr, equity 4 178 290,24 kr printed 4 178 290. 2025 is the K2 balance sheet in the K3 layout (7 942 960 kr). Avsättningar för skatter is one ÅRL bilaga 1 C.2 line with the deferred tax part as its specification.",
+    "equity_statement": {
+        "columns": ["Aktiekapital", "Balanserad vinst eller förlust", "Årets resultat", "Totalt eget kapital"],
+        "rows": {
+            "Belopp vid årets ingång": [10000000, 356000000, 88459000, 454459000],
+            "Effekter av retroaktiv tillämpning och rättelse av fel": [null, -36630000, null, -36630000],
+            "Omföring av föregående års resultat": [null, 88459000, -88459000, 0],
+            "Årets resultat": [null, null, 0, 0],
+            "Belopp vid årets utgång": [10000000, 407829000, 0, 417829000]
+        },
+        "_note": "The transition (equity effect −366 300 kr on 2091) is row b of K3 6.3 (S1-R8.3, H7). Row a, the year's result, is 0 because 2026 has no vouchers but the transition. null: an empty cell. No 'Övriga förändringar' row."
+    },
+    "disposition": {
+        "free_ore": 407829000,
+        "carried_ore": 407829000
+    },
+    "notes": [
+        {"number": 1, "heading": "Redovisningsprinciper"},
+        {"number": 1, "heading": "Anläggningstillgångar"},
+        {"number": 1, "heading": "Inkomstskatter"},
+        {"number": 1, "heading": "Första tillämpningen av K3"},
+        {"number": 1, "heading": "Jämförbarhet"},
+        {"number": 2, "heading": "Byggnader och mark"},
+        {"number": 3, "heading": "Inventarier, verktyg och installationer"},
+        {"number": 4, "heading": "Bundet och fritt eget kapital"},
+        {"number": 5, "heading": "Långfristiga skulder"},
+        {"number": 6, "heading": "Medelantalet anställda"}
+    ],
+    "note_references": {
+        "Byggnader och mark": 2,
+        "Inventarier, verktyg och installationer": 3,
+        "Personalkostnader": 6
+    },
+    "texts": [
+        "BFNAR 2012:1 Årsredovisning och koncernredovisning (K3)",
+        "Tidpunkten för övergång är 2026-01-01.",
+        "Övergången har minskat eget kapital den 2026-01-01 med 366 300,00 kr",
+        "Jämförelsetalen för räkenskapsåret 2025 har inte räknats om och är upprättade enligt BFNAR 2016:10",
+        "Mark skrivs inte av.",
+        "Inventarier skrivs av linjärt över fem år.",
+        "Medelantalet anställda under räkenskapsåret har varit 3.",
+        "Ingen ägare har mer än tio procent av andelarna eller rösterna.",
+        "Beloppen för räkenskapsår som upprättades enligt K2 har inte räknats om enligt K3."
+    ],
+    "absent": [
+        "BFNAR 2016:10) om årsredovisning i mindre företag",
+        "Övriga förändringar",
+        "Kassaflödesanalys",
+        "Utkast"
+    ]
+}

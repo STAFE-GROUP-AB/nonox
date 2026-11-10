@@ -4,7 +4,8 @@
 # Each key is the image's path under public/bilder/manual, without .webp,
 # and the article that shows it is usually the one with the same path.
 #   foretag    the demo company: restaurang, cafe, butik, frisor,
-#              (enskildfirma and handelsbolag come from TaxFormsDemoSeeder)
+#              (enskildfirma and handelsbolag come from TaxFormsDemoSeeder,
+#              aktiebolagk3 from K3DemoSeeder)
 #              hantverkare, konsult, byra or ekonomikonsult
 #   rutt       the route name in the app
 #   modell     what fills the route's parameter: voucher, invoice,
@@ -66,6 +67,8 @@ bokslut/checklistan: { foretag: konsult, rutt: accounting.closing }
 bokslut/periodiseringar: { foretag: konsult, rutt: accounting.accruals }
 bokslut/anlaggningstillgangar: { foretag: konsult, rutt: accounting.fixedAssets }
 bokslut/arsredovisning: { foretag: konsult, rutt: accounting.annualReport }
+bokslut/arsredovisning-k3: { foretag: aktiebolagk3, rutt: accounting.annualReport, text: 'Uppgifter för K3' }
+bokslut/arsredovisning-k3-noter: { foretag: aktiebolagk3, rutt: accounting.annualReport, del: '[data-k3-notes]', text: 'Skriv med egna ord' }
 bokslut/inkomstdeklaration: { foretag: konsult, rutt: accounting.incomeTax }
 bokslut/inkomstdeklaration-ne: { foretag: enskildfirma, rutt: accounting.incomeTax, text: 'NE-bilagan, fält för fält' }
 bokslut/inkomstdeklaration-ink4: { foretag: handelsbolag, rutt: accounting.incomeTax, text: 'Delägare' }

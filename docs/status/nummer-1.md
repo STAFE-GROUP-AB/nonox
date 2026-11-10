@@ -671,3 +671,16 @@ Evidence: `tests/Feature/Onboarding/*`, `tests/Feature/Waitlist/*`, `tests/Featu
 - Efter driftsättning: klicka på en riktig avregistreringslänk på nonox.app och kontrollera att den fungerar.
 Open legal-verify items: den juridiska bedömningen av uppföljningsmejlen (berättigat intresse och avregistrering) enligt integritetspolicyn.
 Next package: enligt prioritetslistan.
+
+---
+
+Package: S1-P10, förhandsversion (beta) av årsredovisningen för mindre aktiebolag med K3 (ADR-059)
+Status: done (beta, Bokslut → Årsredovisning)
+Evidence: `tests/Feature/AnnualReport/K3/K3AnnualReportDocumentTest.php`, `tests/Tenancy/K3AnnualReportTenancyTest.php`, `tests/Fixtures/s1/f-s1-b/document/` (expected.json och hela HTML:en), `tests/Feature/AnnualReport/K3GuardTest.php`.
+- Ett räkenskapsår som följer K3 får förvaltningsberättelse, resultat- och balansräkning i K3:s uppställning, rapport över förändringar i eget kapital, eventuell kassaflödesanalys, noter, underskrifter och fastställelseintyg i ordningen i K3 3.10, i hela kronor. Första K3-året visar K2-året som jämförelse utan omräkning, med not om jämförbarhet.
+- K3 helt eller inte alls: allt NONOX inte stöder nekar hela årsredovisningen med regelns id (kapitel 12, aktiveringsmodellen, leasing i balansräkningen, större företag, ekonomisk förening, storlek som inte går att avgöra, obokad övergång m.fl.). Frågor ger ett utkast; PDF:en görs när alla är besvarade.
+- Egen formulering av en not märks i förhandsvisningen och som inaktuell när bokföringen ändras; PDF:en skriver bara texten. Sidan har Uppgifter för K3 och listan över noter.
+- K2-dokumentet och K2-golden-filerna är oförändrade; iXBRL görs bara för K2. Demoföretaget Verkstadshuset Demo AB (K3DemoSeeder) för manualens skärmbilder.
+Open legal-verify items: hela dokumentet granskas av redovisningskonsulten (H10); kontona för aktiverad utveckling och fonden (H9); raden "varav uppskjuten skatt"; texternas belopp med ören.
+Public claim now allowed: inget nytt. Public claim still not allowed: "Årsredovisning enligt K3".
+Next package: S1-P13 (större företag, efter H1), S1-P14 (prestanda).

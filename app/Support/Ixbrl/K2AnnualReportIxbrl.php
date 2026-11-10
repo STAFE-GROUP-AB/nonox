@@ -40,7 +40,9 @@ final class K2AnnualReportIxbrl
         }
 
         // The file is tagged with the K2 taxonomy and says BFNAR 2016:10 in note 1; the year's framework decides (ADR-059, A.2.1).
-        $refusal = AnnualReportDocument::refusal($company, $fiscalYear);
+        // A K3 year is not refused by AnnualReportDocument::refusal() (its report is K3AnnualReportDocument), but K3 iXBRL is not built (ADR-059 F.4).
+        $refusal = AnnualReportDocument::refusal($company, $fiscalYear)
+            ?? (AnnualReportDocument::supports($company, $fiscalYear) ? null : (string) __('iXBRL-filen görs bara för en årsredovisning enligt K2 (BFNAR 2016:10). NONOX tar ännu inte fram årsredovisningen enligt K3 som iXBRL; räkenskapsåret följer K3.'));
 
         if ($refusal !== null) {
             throw new IxbrlRefused([__('Regelverket')], $refusal);

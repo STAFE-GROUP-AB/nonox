@@ -13,7 +13,7 @@ Ett aktiebolag eller en ekonomisk förening som följer K3 redovisar uppskjuten 
 Sidan finns under **Bokföring → Bokslut**, i **2. Bokslutsverifikationer**: klicka på **Gå till uppskjuten skatt**. Länken visas för räkenskapsår som följer K3, i aktiebolag och ekonomiska föreningar. För andra år förklarar sidan varför det inte finns någon uppskjuten skatt att räkna fram. Steget är märkt **Beta**: beräkningen är inte granskad av en redovisningskonsult. Låt din redovisningskonsult granska den.
 
 > [!NOTE]
-> NONOX tar ännu inte fram någon årsredovisning enligt K3. Uppskjuten skatt bokförs i bokföringen, men årsredovisningen gör du med din redovisningskonsult. Se [Årsredovisning](/manual/bokslut/arsredovisning).
+> För ett mindre aktiebolag vars räkenskapsår följer K3 tar NONOX fram en förhandsversion (beta) av årsredovisningen. Den är inte granskad av en auktoriserad redovisningskonsult, och en redovisningskonsult ska granska den innan den skrivs under. Se [Årsredovisning](/manual/bokslut/arsredovisning#forhandsversion-beta-for-mindre-aktiebolag-med-k3). Uppskjuten skatt bokförs i bokföringen, men årsredovisningen gör du med din redovisningskonsult. Se [Årsredovisning](/manual/bokslut/arsredovisning).
 
 ## Så här lägger du upp en post
 

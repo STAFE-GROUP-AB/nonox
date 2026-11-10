@@ -9,6 +9,7 @@ use App\Domain\AnnualReport\AnnualAccounts;
 use App\Domain\AnnualReport\AnnualReportDocument;
 use App\Domain\AnnualReport\PledgedAssetKind;
 use App\Domain\Closing\DividendLimit;
+use App\Domain\Company\ReportingFramework;
 use App\Models\AnnualReport;
 use App\Models\Company;
 use App\Models\FiscalYear;
@@ -25,7 +26,9 @@ use InvalidArgumentException;
 
 /**
  * Saves the texts of a fiscal year's annual report. Signatories are given
- * one per line as "Name, role". Needs fiscal-years:manage.
+ * one per line as "Name, role". Needs fiscal-years:manage. A K3 year saves
+ * the same common columns (ADR-059 A.3, S1-P10); its K3 inputs and note
+ * overrides are SaveK3ReportInputs' and K3NoteOverrides'.
  */
 class SaveAnnualReport
 {
@@ -102,13 +105,6 @@ class SaveAnnualReport
             // ABL 17 kap. 3 §: the proposal may not distribute more than the free equity (#84).
             DividendLimit::ensureWithin($company, $fiscalYear, $dividend);
 
-            // BFNAR 2016:10 p. 5.5: a net sales variation over 30 % must be commented on (#93).
-            $variation = AnnualAccounts::for($fiscalYear)->netSalesVariations()[0] ?? null;
-
-            if ($variation !== null && blank($validated['net_sales_comment'] ?? null)) {
-                throw ValidationException::withMessages(['net_sales_comment' => __('Nettoomsättningen har förändrats med mer än 30 procent mellan :from och :to. Kommentera förändringen (BFNAR 2016:10 punkt 5.5).', ['from' => $variation['from'], 'to' => $variation['to']])]);
-            }
-
             return DB::transaction(function () use ($user, $company, $fiscalYear, $validated, $dividend, $pledged, $contingent): AnnualReport {
                 // Same lock order as ChangeReportingFramework (advisory lock, then the year's row), so a
                 // framework change and an adoption date cannot pass each other (ADR-059, A.2.1).
@@ -118,6 +114,14 @@ class SaveAnnualReport
 
                 if ($refusal !== null) {
                     throw ValidationException::withMessages(['report' => $refusal]);
+                }
+
+                // BFNAR 2016:10 p. 5.5: a net sales variation over 30 % must be commented on (#93). A K2 rule, read from
+                // the locked year: a K3 year (S1-P10) is not held to it.
+                $variation = $locked->reporting_framework === ReportingFramework::K3 ? null : (AnnualAccounts::for($locked)->netSalesVariations()[0] ?? null);
+
+                if ($variation !== null && blank($validated['net_sales_comment'] ?? null)) {
+                    throw ValidationException::withMessages(['net_sales_comment' => __('Nettoomsättningen har förändrats med mer än 30 procent mellan :from och :to. Kommentera förändringen (BFNAR 2016:10 punkt 5.5).', ['from' => $variation['from'], 'to' => $variation['to']])]);
                 }
 
                 return $this->write($user, $company, $locked, $validated, $dividend, $pledged, $contingent);

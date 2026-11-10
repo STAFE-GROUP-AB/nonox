@@ -216,7 +216,7 @@ final class Navigation
             $can('vat:prepare') ? ['label' => __('EU-rapporter'), 'route' => 'vat.euReports', 'group' => $reports] : null,
             ['label' => __('Räkenskapsår'), 'route' => 'accounting.fiscalYears', 'group' => $closing],
             $can('fiscal-years:manage') ? ['label' => __('Bokslut'), 'route' => 'accounting.closing', 'active' => ['accounting.closing', 'accounting.closing.*'], 'group' => $closing] : null,
-            $can('fiscal-years:manage') ? ['label' => __('Årsredovisning'), 'route' => 'accounting.annualReport', 'group' => $closing] : null,
+            $can('fiscal-years:manage') || $can('reports:view') ? ['label' => __('Årsredovisning'), 'route' => 'accounting.annualReport', 'group' => $closing] : null,
             $can('fiscal-years:manage') ? ['label' => __('Inkomstdeklaration'), 'route' => 'accounting.incomeTax', 'active' => ['accounting.incomeTax', 'accounting.incomeTax.*', 'accounting.k10', 'accounting.k10.*'], 'group' => $closing] : null,
             ['label' => __('Kontoplan'), 'route' => 'accounting.accounts', 'group' => $settings],
             ['label' => __('Verifikationsserier'), 'route' => 'accounting.voucherSeries', 'group' => $settings],

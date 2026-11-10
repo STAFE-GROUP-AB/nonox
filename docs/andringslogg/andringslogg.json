@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-10-arsredovisning-k3-mindre-aktiebolag",
+      "datum": "2026-11-10T11:30:00+01:00",
+      "rubrik": "Förhandsversion (beta) av årsredovisningen för mindre aktiebolag med K3",
+      "beskrivning": "För ett mindre aktiebolag vars räkenskapsår följer K3 tar NONOX fram en förhandsversion (beta) av årsredovisningen. Den är inte granskad av en auktoriserad redovisningskonsult, och en redovisningskonsult ska granska den innan den skrivs under. Det som hindrar den visas med regeln bakom, till exempel ett större företag eller verkligt värde enligt kapitel 12, och PDF:en kan laddas ner när alla frågor är besvarade.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-10-introduktion-efter-godkannande",
       "datum": "2026-11-10T08:30:00+01:00",
       "rubrik": "Personlig introduktion när du släpps in från kön",

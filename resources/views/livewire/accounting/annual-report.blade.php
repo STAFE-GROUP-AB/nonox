@@ -13,7 +13,7 @@
     </nav>
 
     @if(! $supported && $legalFormSupported)
-        <x-ui.empty-state :title="$k3 ? __('Årsredovisning enligt K3 finns inte ännu') : __('Inte för det här regelverket')">
+        <x-ui.empty-state :title="__('Inte för det här regelverket')">
             <span class="block">{{ $refusal }}</span>
             <span class="mt-2 block">{{ __('Bokföringen, bokslutet och inkomstdeklarationen fungerar som vanligt. Årsredovisningen upprättar du i ett program som stöder regelverket, eller med hjälp av en redovisningskonsult: ladda ner årets SIE-fil under Räkenskapsår och läs in den där.') }}</span>
             <span class="mt-2 block">{{ __('Har företaget valt regelverk av misstag, och uppfyller det villkoren för K2, kan en ägare eller administratör ändra regelverket under Inställningar för företaget.') }}</span>
@@ -21,9 +21,17 @@
     @elseif(! $supported)
         <x-ui.empty-state :title="__('Inte för den här företagsformen')">{{ __('Årsredovisningen görs här för aktiebolag och ekonomiska föreningar. Enskilda firmor upprättar ingen årsredovisning utan ett förenklat årsbokslut.') }}</x-ui.empty-state>
     @else
+        @if($k3)
+            @include('livewire.accounting.partials.k3-annual-report-status')
+        @endif
         <div class="grid gap-6 xl:grid-cols-[minmax(0,26rem)_1fr]">
+            <div class="space-y-6">
             <x-ui.card :title="__('Texter och underskrifter')">
                 <form wire:submit="save" class="space-y-4">
+                    @if(! $canEdit)
+                        <p class="rounded-xl bg-stone-50 px-3 py-2 text-sm text-gray-700 ring-1 ring-stone-200">{{ __('Du kan läsa och ladda ner årsredovisningen. Texterna ändras av den som hanterar räkenskapsår.') }}</p>
+                    @endif
+                    <fieldset @disabled(! $canEdit) class="min-w-0 space-y-4">
                     <x-ui.field for="ar_business" :label="__('Allmänt om verksamheten')" error="business_description" :hint="__('Vad företaget gör och var det har sitt säte.')"><textarea id="ar_business" rows="4" class="{{ $input }} mt-1" wire:model="form.business_description"></textarea></x-ui.field>
                     <x-ui.field for="ar_events" :label="__('Väsentliga händelser under året')" error="significant_events" :hint="__('Lämna tomt om inget särskilt har hänt.')"><textarea id="ar_events" rows="3" class="{{ $input }} mt-1" wire:model="form.significant_events"></textarea></x-ui.field>
                     @if($netSalesVariations !== [] || filled($form['net_sales_comment'] ?? ''))
@@ -72,9 +80,16 @@
                         </div>
                         <x-ui.field for="ar_adoption_decision" :label="__('Stämmans beslut om vinsten eller förlusten')" error="adoption_decision" :hint="__('Lämna tomt för att använda den bokförda resultatdispositionen.')"><textarea id="ar_adoption_decision" rows="3" class="{{ $input }} mt-1" wire:model="form.adoption_decision"></textarea></x-ui.field>
                     </fieldset>
+                    </fieldset>
                     <div class="flex flex-wrap items-center gap-4">
-                        <x-button>{{ __('Spara') }}</x-button>
-                        <a href="{{ route('accounting.annualReport.pdf', $fiscalYear) }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Ladda ner PDF') }}</a>
+                        @if($canEdit)
+                            <x-button>{{ __('Spara') }}</x-button>
+                        @endif
+                        @if(! $k3 || $k3Complete)
+                            <a href="{{ route('accounting.annualReport.pdf', $fiscalYear) }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Ladda ner PDF') }}</a>
+                        @else
+                            <span class="text-sm text-gray-600">{{ __('PDF:en kan laddas ner när inget hindrar årsredovisningen och alla frågor är besvarade.') }}</span>
+                        @endif
                     </div>
                     <p class="text-xs text-gray-500">{{ __('Gör bokslutet först så att årets resultat och skatt är bokförda. Revisionsberättelsen läggs till utanför systemet.') }}</p>
                     @if($ixbrl)
@@ -85,10 +100,18 @@
                     @endif
                 </form>
             </x-ui.card>
-
-            <div class="overflow-hidden rounded-[28px] bg-white shadow-xs ring-1 ring-stone-200">
-                <iframe wire:key="preview-{{ $fiscalYear->id }}-{{ $version }}" src="{{ route('accounting.annualReport.show', $fiscalYear) }}" title="{{ __('Förhandsvisning av årsredovisningen') }}" class="h-280 w-full bg-white"></iframe>
+            @if($k3)
+                @include('livewire.accounting.partials.k3-annual-report-inputs')
+            @endif
             </div>
+
+            @if($k3 && $k3Refusals !== [])
+                <x-ui.empty-state :title="__('Ingen förhandsvisning ännu')">{{ __('Årsredovisningen enligt K3 visas när det som står under "Det här hindrar årsredovisningen" är åtgärdat.') }}</x-ui.empty-state>
+            @else
+                <div class="overflow-hidden rounded-[28px] bg-white shadow-xs ring-1 ring-stone-200">
+                    <iframe wire:key="preview-{{ $fiscalYear->id }}-{{ $version }}" src="{{ route('accounting.annualReport.show', $fiscalYear) }}" title="{{ __('Förhandsvisning av årsredovisningen') }}" class="h-280 w-full bg-white"></iframe>
+                </div>
+            @endif
         </div>
     @endif
 </div>

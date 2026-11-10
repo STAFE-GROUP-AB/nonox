@@ -86,11 +86,11 @@
     },
     {
       "id": "k3-arsredovisning",
-      "rubrik": "Årsredovisning enligt K3",
-      "beskrivning": "I dag tar NONOX bara fram årsredovisningar enligt K2. Har företaget valt K3 säger sidan det, i stället för att visa en K2-rapport. K3 byggs i steg, och större företag och ekonomiska föreningar på K3 kommer senare, om alls.",
-      "status": "Planerat",
+      "rubrik": "Årsredovisning för företag som följer K3",
+      "beskrivning": "För ett mindre aktiebolag vars räkenskapsår följer K3 tar NONOX fram en förhandsversion (beta) av årsredovisningen. Den är inte granskad av en auktoriserad redovisningskonsult, och en redovisningskonsult ska granska den innan den skrivs under. Granskningen av en auktoriserad redovisningskonsult återstår, och större företag och ekonomiska föreningar på K3 kommer senare, om alls.",
+      "status": "Pågår",
       "omrade": "Bokslut",
-      "uppdaterad": "2026-11-06"
+      "uppdaterad": "2026-11-10"
     },
     {
       "id": "koncernredovisning",

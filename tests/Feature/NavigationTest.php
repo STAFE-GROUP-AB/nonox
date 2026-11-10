@@ -65,9 +65,9 @@ it('filters the pages of Bokföring by permission, as the page links did', funct
 
     expect(pageLabels(openSection($member, $this->company, 'accounting.vouchers.index')))->toBe($expected);
 })->with([
-    'bookkeeper' => ['bookkeeper', ['Verifikationer', 'Bankavstämning', 'Rapporter', 'Reskontra', 'Räkenskapsår', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt']],
+    'bookkeeper' => ['bookkeeper', ['Verifikationer', 'Bankavstämning', 'Rapporter', 'Reskontra', 'Räkenskapsår', 'Årsredovisning', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt']],
     'approver' => ['approver', ['Verifikationer', 'Räkenskapsår', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt']],
-    'auditor' => ['auditor', ['Verifikationer', 'Rapporter', 'Reskontra', 'Räkenskapsår', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt']],
+    'auditor' => ['auditor', ['Verifikationer', 'Rapporter', 'Reskontra', 'Räkenskapsår', 'Årsredovisning', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt']],
     'accountant' => ['accountant', [
         'Verifikationer', 'Bankavstämning', 'Periodiseringar', 'Anläggningar', 'Läs in SIE-fil', 'Läs in register',
         'Rapporter', 'Reskontra', 'Moms', 'EU-rapporter',

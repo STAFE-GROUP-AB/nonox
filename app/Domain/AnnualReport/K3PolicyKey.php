@@ -115,6 +115,7 @@ enum K3PolicyKey: string
             K3YesNo::No => __('Nej'),
             K3LeftK2Reason::Forced20252 => __('Får inte längre tillämpa K2 (BFNAR 2025:2)'),
             K3LeftK2Reason::Voluntary => __('Eget val'),
+            K3Components::BuildingsAlwaysOthersByChoice => __('Byggnader delas alltid upp i komponenter, andra tillgångar när skillnaden är väsentlig'),
             default => $value,
         };
     }
