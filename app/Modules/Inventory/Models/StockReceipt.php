@@ -16,12 +16,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * Inleverans: goods expected from a supplier, received in one go or in
  * parts. Receiving posts RECEIPT movements; it never touches the ledger.
+ * One made from a purchase order ticks off the order's rows (ADR-071 §2).
  *
  * @property int $id
  * @property int $company_id
  * @property int $number
  * @property ?int $supplier_id
  * @property ?string $supplier_invoice_id
+ * @property ?int $purchase_order_id
  * @property string $status
  * @property ?CarbonImmutable $expected_on
  * @property ?string $reference
@@ -48,6 +50,7 @@ class StockReceipt extends Model
         'number',
         'supplier_id',
         'supplier_invoice_id',
+        'purchase_order_id',
         'status',
         'expected_on',
         'reference',
@@ -89,6 +92,12 @@ class StockReceipt extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    /** @return BelongsTo<PurchaseOrder, $this> */
+    public function purchaseOrder(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrder::class);
     }
 
     /** @return BelongsTo<SupplierInvoice, $this> */

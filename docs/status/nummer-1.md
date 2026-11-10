@@ -684,3 +684,16 @@ Evidence: `tests/Unit/Units/UnitConverterTest.php`, `tests/Feature/Units/UnitsOf
 Open legal-verify items: Peppol-koder för löpmeter, förpackning (XPK) som enhetskod, dm², dl, cl, ml; om enhetstexten (t.ex. lpm) räcker enligt ML 17 kap. 24 §.
 Follow-ups: skannern, rapporter, Kök svinn/avvikelse, etiketter och API:et visar fortfarande enhetstexten i stället för lagerenheten; 0,5 %-gränsen som företagsinställning; `value_ore` (kräver bokföringskontroll).
 Next package: M2, stycklistor med arbetssteg.
+
+---
+
+Package: M3, inköpsorder och inköpsförslag (ADR-071 §2, §5, §12)
+Status: done (inköpsorder med versioner, PDF och utskick, inleverans mot ordern, avstämning mot leverantörsfakturan, inköpsförslag från beställningspunkter och öppna kundordrar)
+Evidence: `tests/Feature/Inventory/PurchaseOrdersTest.php`, `tests/Feature/Inventory/PurchaseOrderPagesTest.php` (sidor och fast antal frågor), `tests/Tenancy/PurchaseOrderTenancyTest.php`, `tests/Tenancy/TenancyIsolationTest.php` (fyra nya modeller).
+- Rader i valfri enhet som artikeln räknas om till, lagrade i lagerenheten med det inskrivna kvar; pris per radens enhet (F-U1, F-U1c, F-U5). En skickad order ändras bara som ny version; skickade versioner sparas och deras PDF kan öppnas igen.
+- Skicka visar PDF och mottagare först; e-post i företagets namn med svarsadress, eller utskriven. Attestgräns per företag (Lager → Inställningar). Egen menysektion Beställningar så att attestanten når ordrarna utan att se lagret.
+- Inleverans från ordern bockar av raderna; inget bokförs av ordern, inleveransen eller kopplingen till fakturan, så varorna bokförs en gång (med leverantörsfakturan). Systemdokumentationen oförändrad.
+- Förlängningspunkt för M4: `PurchaseDemandSource`/`PurchaseDemandSources` (tillverkningsorderns komponenter registreras där).
+- Manualartiklarna `lager/inkopsorder` och `lager/inkopsforslag` med skärmbilder från demobutiken, ändringslogg, README, landningssidan, ADR-071 "As built (M3)", GDPR-dokumenten och registerutdraget per leverantör.
+Open legal-verify items: om en skickad inköpsorder är räkenskapsinformation (BFL 5 kap. 6 §); om den som skrev en order över attestgränsen får skicka den själv; bokföringskontrollen av `value_ore` (§12.4).
+Next package: M2/M4 enligt prioritetslistan.

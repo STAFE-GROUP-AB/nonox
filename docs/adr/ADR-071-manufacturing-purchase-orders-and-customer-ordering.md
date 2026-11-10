@@ -754,3 +754,104 @@ lists (who does what, when) for F-P0 and F-P1 are in the specification's appendi
 6. Build order: resources and calendars → the scheduler with fixtures F-P0 to F-P6 → timeline
    and order list → deviations and impact → simulation and locks → customer date messages →
    terminal deviation reports → mobile view.
+
+## Addendum 2026-11-10: as built (M3), purchase orders and purchase proposals
+
+Built in the `inventory` module, as §1 says: §2 (purchase orders), §5 (availability and purchase
+suggestions) for stock articles, and the purchase side of §12 (a row in any unit the article
+converts to, stored in the stock unit, priced per its own unit). The bills-of-materials part of
+§5 waits for M2/M4 (see "Extension point" below).
+
+**Data.** `purchase_orders` (number from the series `purchase_orders`, `version`, supplier,
+status, `source`, order date, requested delivery date, our reference, delivery address, notes,
+created by, sent at/to/by and method), `purchase_order_rows` (article, supplier article number,
+description, `entered_quantity` as typed and `unit_id` from the company's unit catalogue,
+`quantity_milli` in the stock unit, `price_ore` per the row's unit, expected date,
+`received_milli`), `purchase_order_versions` (each sent version as a JSON snapshot of header and
+rows, its total, method, recipient, sender and time; written once, the model refuses changes and
+the app role may only insert), `purchase_order_invoices` (a supplier invoice matched with an
+order by a person). `stock_receipts.purchase_order_id` and
+`stock_receipt_lines.purchase_order_row_id` link a goods receipt to the order. Every table has
+`company_id` and `BelongsToCompany`.
+
+**Lifecycle.** DRAFT → SENT → PARTIALLY_RECEIVED → RECEIVED, or CANCELLED. Sending writes the
+version and sets the status from what the rows have received. "Ny version" (`revise`) on a sent
+order that waits for goods turns it back into a DRAFT with the next version number; the sent
+versions stay as they were and their PDFs can be opened again (`?version=n`). A row goods have
+arrived on cannot be removed, change article, or drop below what was received. An order with
+received goods is not cancelled; cancelling an order also cancels its goods receipt where
+nothing has arrived.
+
+**Sending.** The order page shows the PDF (Dompdf, the company's branding, ADR-030) and the
+recipient (prefilled from the supplier's e-mail) before anything goes. E-mail goes through the
+app's mail from the company's name with its e-mail as reply-to, counts against the documents
+mail quota, and never leaves a test company (ADR-032). "Utskriven, markera som skickad" sends
+nothing. The supplier sees the row's own unit and its own article number only (§12.5). A
+supplier under restricted processing (GDPR art. 18) gets no new order.
+
+**Receiving and the supplier invoice, without double booking.** "Ta emot varor" makes (or
+reopens; at most one open per order) a goods receipt with the rows still to come, at the row's
+cost per stock unit (`UnitConverter::unitCostOre(lineValueOre(entered, price), quantity_milli)`,
+F-U1c and F-U5) and the article's default location. `ReceiveStock` ticks off the order's rows
+and refreshes its status. A receipt made from an order cannot be edited through `SaveReceipt`
+(it would lose the row links). Matching a supplier invoice shows ordered value, received value
+and the invoice's amount excluding VAT, and flags rows where received ≠ ordered and a difference
+between the invoice and the received value; it approves nothing. Purchase orders, receipts and
+matches create no voucher: the cost is booked once, by the supplier invoice, as before, and the
+stock meets the books at the year-end valuation. `stock_movements.value_ore` (§12.4) is still not
+written, so the receipt's unit cost is the rounded cost per stock unit as today; the exact line
+value remains for the accounting check of §12.4. No accounting behaviour changed, so the system
+documentation is unchanged.
+
+**Permissions (§1).** `purchase-orders:view`, `:manage`, `:send` exist while Lager is on. Owner and
+admin get all; accountant and auditor view; bookkeeper view and manage; approver view and send.
+Choices where the ADR was open: sending needs `:send`, or `:manage` while the order is at or
+below the company's approval amount (`purchase_order_approval_above_ore` in Lager's settings,
+"Attestgräns för inköpsorder", off by default). The approver's `:send` is granted whether or not
+an amount is set. There is no rule that the sender must differ from the creator (§4's
+segregation of duties covers payments; open question below). Purchasing has its own menu section
+"Beställningar" (the core "Inköp" holds the supplier invoices), so an approver, who does not see the stock, can reach the orders. Lagerpersonal receives
+an order's goods on Inleveranser without seeing the order or its prices.
+
+**Purchase proposal (§5).** For each active stock article with a reorder point or a reservation:
+on hand (all locations), reserved (sum over the registered demand sources), coming (rows of
+DRAFT, SENT and PARTIALLY_RECEIVED orders not yet received, with the earliest expected date;
+drafts count, so a proposal is not made twice), short = max(0, reserved − on hand − coming). An
+article at or below its reorder point after reservations and coming goods is refilled with
+max(reorder quantity, reorder point − available). The proposal is the larger of the shortage and
+the refill, expressed in the purchase unit (the stock unit when the purchase unit does not
+convert) and rounded up: to whole units for COUNT units and units without a fixed size (förp,
+par, set, a company's own unit: the pack is the supplier's pack quantity), otherwise to a
+thousandth. Articles have no separate supplier minimum; the reorder quantity is the minimum for
+a refill. "Skapa inköpsordrar för det som saknas" makes one DRAFT per supplier (source PROPOSAL);
+an article without a supplier needs one chosen first. The "can start now / on a date" column of
+§5 belongs to production orders and comes with M4.
+
+**Open customer orders as demand.** `OpenCustomerOrderDemand` reserves the stock articles on
+ORDER sales documents with status OPEN. Quantities already taken out by a completed pick list for
+the order are deducted. A row's unit text is converted when the article converts it; otherwise
+the quantity is read in the stock unit, as pick lists do.
+
+**Extension point for M4.** `App\Modules\Inventory\Purchasing\PurchaseDemandSource` (label,
+reserved per article in stock milli) and the singleton `PurchaseDemandSources`. Manufacturing
+registers a source that explodes its open production orders' structures (§5, with scrap) in its
+service provider; the proposal, the page and the order creation then include it unchanged. Source
+`PRODUCTION_ORDER` exists in `PurchaseOrderSource` for orders created from a production order.
+
+**Deviations from the text above.** `source` is MANUAL, PROPOSAL or PRODUCTION_ORDER (§2 says
+"reorder point"; a proposal combines reorder points and customer orders). Only stock articles can
+be ordered (receiving goes through goods receipts, which take stock articles only). No API: §2
+does not specify one; the Connect API is unchanged. Purchase orders are in SEK; matching an
+invoice in another currency compares the booked kronor and says so. The delivery address is one
+text field, prefilled from the first warehouse with an address, otherwise the company's address.
+
+**Personal data.** The recipient's e-mail, the delivery address and our reference are stored per
+order and version; the audit log gets numbers, versions and methods only. The orders are in the
+supplier's register extract. `docs/gdpr/registerforteckning.md` and `lagringstider.md` describe
+them.
+
+Still open (`TODO(legal-verify)`): whether a sent purchase order is räkenskapsinformation (BFL 5
+kap. 6 §, an agreement of particular importance) and must be kept as such, or may be pruned
+earlier (until decided, nothing is pruned); whether segregation of duties should forbid the
+creator of an order above the approval amount from sending it; the §12.4 accounting check of
+`value_ore` before receipts keep the exact line value.

@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-10-inkopsorder",
+      "datum": "2026-11-10T19:30:00+01:00",
+      "rubrik": "Inköpsorder och inköpsförslag",
+      "beskrivning": "Under Inköp skriver du inköpsorder i leverantörens enhet, ser PDF:en och mottagaren och skickar den med e-post eller skriver ut den; en ändrad order blir en ny version. Varorna tas emot mot ordern och leverantörsfakturan stäms av mot det som kom, utan att något bokförs två gånger. Inköpsförslaget visar vad som behöver beställas utifrån beställningspunkter, öppna kundordrar och det som redan är på väg.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-10-enheter-pa-artiklar",
       "datum": "2026-11-10T11:20:00+01:00",
       "rubrik": "Enheter på artiklar: styck, löpmeter, kvadrat, kubik och egna",

@@ -43,6 +43,9 @@ final class InventorySettings
         'raw_material_change_account' => 4910,
         // K2 12.5: the stock at no less than 97 % of its total cost. Offered to K2 companies only, off by default (Lead O3).
         'rule_97' => false,
+        // ADR-071 §1: purchase orders above this amount (öre, excluding VAT) are sent only by someone
+        // holding purchase-orders:send (Attestant); null means no approval is required.
+        'purchase_order_approval_above_ore' => null,
     ];
 
     /** Stock accounts offered: BAS 1400–1499. */
@@ -117,6 +120,14 @@ final class InventorySettings
             ?? FiscalYear::query()->orderByDesc('start_date')->first());
 
         return $year?->reporting_framework === ReportingFramework::K2;
+    }
+
+    /** The amount above which a purchase order needs purchase-orders:send, in öre; null when none is set. */
+    public static function purchaseApprovalAboveOre(Company $company): ?int
+    {
+        $value = self::for($company)['purchase_order_approval_above_ore'];
+
+        return $value === null || $value === '' ? null : (int) $value;
     }
 
     public static function allowsNegative(Company $company): bool

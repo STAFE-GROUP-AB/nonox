@@ -20,6 +20,8 @@ use App\Models\VehicleTrip;
 use App\Modules\Crm\Support\CrmExport;
 use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMessage;
+use App\Modules\Inventory\Models\PurchaseOrder;
+use App\Modules\Inventory\Models\PurchaseOrderVersion;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
@@ -95,6 +97,16 @@ final class DataSubjectExport
             'leverantor' => $supplier->only(['number', 'name', 'org_number', 'vat_number', 'email', 'phone', 'address_line1', 'postal_code', 'city', 'country', 'bankgiro', 'plusgiro', 'iban', 'bic']),
             'leverantorsfakturor' => SupplierInvoice::query()->where('supplier_id', $supplier->id)->orderBy('invoice_date')->get()
                 ->map(fn (SupplierInvoice $invoice): array => ['nummer' => $invoice->invoice_number, 'datum' => $invoice->invoice_date->toDateString(), 'belopp_ore' => $invoice->total_ore->ore, 'status' => $invoice->status->value])->all(),
+            // Inköpsorder (ADR-071 §2): the orders and to which address each version went.
+            'inkopsorder' => PurchaseOrder::query()->where('supplier_id', $supplier->id)->with('versions')->orderBy('number')->get()
+                ->map(fn (PurchaseOrder $order): array => [
+                    'nummer' => $order->number,
+                    'datum' => $order->order_date->toDateString(),
+                    'status' => $order->status->value,
+                    'leveransadress' => $order->delivery_address,
+                    'var_referens' => $order->our_reference,
+                    'skickade_versioner' => $order->versions->map(fn (PurchaseOrderVersion $version): array => ['version' => $version->version, 'skickad' => $version->sent_at->toDateString(), 'satt' => $version->method, 'till' => $version->sent_to])->values()->all(),
+                ])->all(),
         ];
     }
 

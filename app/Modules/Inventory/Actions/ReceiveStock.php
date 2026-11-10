@@ -7,8 +7,11 @@ namespace App\Modules\Inventory\Actions;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Inventory\Actions\Concerns\GuardsInventory;
+use App\Modules\Inventory\Actions\Purchasing\PurchaseOrderStatuses;
 use App\Modules\Inventory\Domain\MovementType;
 use App\Modules\Inventory\Domain\Quantity;
+use App\Modules\Inventory\Models\PurchaseOrder;
+use App\Modules\Inventory\Models\PurchaseOrderRow;
 use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Models\StockReceiptLine;
 use App\Modules\Inventory\Support\StockLedger;
@@ -21,8 +24,9 @@ use InvalidArgumentException;
 /**
  * Receives goods on an inleverans, all of it or a part: posts a RECEIPT
  * movement per line at the line's cost and location, adds to what is
- * received, and marks the receipt partly or fully received. Nothing is
- * booked in the ledger (ADR-039).
+ * received, and marks the receipt partly or fully received; a receipt for a
+ * purchase order ticks off the order's rows. Nothing is booked in the
+ * ledger (ADR-039, ADR-071 §2).
  */
 class ReceiveStock
 {
@@ -86,11 +90,40 @@ class ReceiveStock
                 $line->update(['received_milli' => $line->received_milli + $quantity, 'location_id' => $line->location_id ?? $locationId]);
             }
 
+            $this->tickOffPurchaseOrder($receipt, $updates);
+
             $done = $lines->every(fn (StockReceiptLine $line): bool => $line->received_milli >= $line->ordered_milli);
             $receipt->update(['status' => $done ? StockReceipt::RECEIVED : StockReceipt::PARTIAL]);
 
             return $receipt;
         }));
+    }
+
+    /**
+     * A receipt made from a purchase order adds what arrived to the order's
+     * rows and moves the order to partly or fully received (ADR-071 §2).
+     *
+     * @param  list<array{0: StockReceiptLine, 1: int, 2: int}>  $updates
+     */
+    private function tickOffPurchaseOrder(StockReceipt $receipt, array $updates): void
+    {
+        if ($receipt->purchase_order_id === null) {
+            return;
+        }
+
+        $order = PurchaseOrder::query()->whereKey($receipt->purchase_order_id)->lockForUpdate()->first();
+
+        if ($order === null) {
+            return;
+        }
+
+        foreach ($updates as [$line, $quantity]) {
+            if ($line->purchase_order_row_id !== null) {
+                PurchaseOrderRow::query()->whereKey($line->purchase_order_row_id)->where('purchase_order_id', $order->id)->increment('received_milli', $quantity);
+            }
+        }
+
+        PurchaseOrderStatuses::refresh($order);
     }
 
     /** Receives what remains on every line, at each line's location. */

@@ -129,14 +129,28 @@
             </x-slot:cta>
         @endif
 
-        <div class="mb-4">
-            <label class="block max-w-xs">
+        <div class="mb-4 flex flex-wrap items-end gap-6">
+            <label class="block w-full max-w-xs">
                 <span class="text-sm font-medium text-gray-700">{{ __('Visa') }}</span>
                 <select wire:model.live="status" class="{{ $input }}">
                     <option value="oppna">{{ __('Väntar eller delvis mottagna') }}</option>
                     <option value="alla">{{ __('Alla') }}</option>
                 </select>
             </label>
+            @if($awaiting->isNotEmpty())
+                <form wire:submit="receivePurchaseOrder" class="flex flex-wrap items-end gap-3">
+                    <label class="block w-full max-w-sm">
+                        <span class="text-sm font-medium text-gray-700">{{ __('Ta emot inköpsorder') }}</span>
+                        <select wire:model="purchaseOrderId" class="{{ $input }}">
+                            <option value="">{{ __('Välj inköpsorder') }}</option>
+                            @foreach($awaiting as $order)
+                                <option value="{{ $order->id }}">{{ $order->title() }} · {{ $order->supplier?->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <x-secondary-button type="submit">{{ __('Ta emot') }}</x-secondary-button>
+                </form>
+            @endif
         </div>
 
         @if($receipts->isEmpty())
@@ -153,6 +167,7 @@
                                 {{ __('Rader: :count', ['count' => $receipt->lines->count()]) }}
                                 @if($receipt->expected_on) · {{ __('väntas :date', ['date' => $receipt->expected_on->toDateString()]) }}@endif
                                 @if($receipt->reference) · {{ $receipt->reference }}@endif
+                                @if($receipt->purchaseOrder && $seesOrders) · <a href="{{ route('inventory.purchaseOrders.show', $receipt->purchaseOrder->id) }}" class="text-accent-700 underline">{{ $receipt->purchaseOrder->title() }}</a>@endif
                             </span>
                         </span>
                         <span class="flex flex-wrap gap-3 text-sm font-semibold">

@@ -152,6 +152,10 @@ use App\Modules\Inventory\Models\BomRow;
 use App\Modules\Inventory\Models\LabelTemplate;
 use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\PickListLine;
+use App\Modules\Inventory\Models\PurchaseOrder;
+use App\Modules\Inventory\Models\PurchaseOrderInvoice;
+use App\Modules\Inventory\Models\PurchaseOrderRow;
+use App\Modules\Inventory\Models\PurchaseOrderVersion;
 use App\Modules\Inventory\Models\ScanOperation;
 use App\Modules\Inventory\Models\StockCount;
 use App\Modules\Inventory\Models\StockCountLine;
@@ -425,6 +429,10 @@ const COMPANY_SCOPED_MODELS = [
     StockReceiptLine::class => 'inventoryReceiptLineAttributes',
     PickList::class => 'inventoryPickListAttributes',
     PickListLine::class => 'inventoryPickListLineAttributes',
+    PurchaseOrder::class => 'purchaseOrderAttributes',
+    PurchaseOrderRow::class => 'purchaseOrderRowAttributes',
+    PurchaseOrderVersion::class => 'purchaseOrderVersionAttributes',
+    PurchaseOrderInvoice::class => 'purchaseOrderInvoiceAttributes',
     InvoiceTaxReductionBuyer::class => 'invoiceTaxReductionBuyerAttributes',
     WorkOrder::class => 'workOrderAttributes',
     WorkOrderLabourKind::class => 'workOrderLabourKindAttributes',
@@ -1920,6 +1928,28 @@ function inventoryPickListLineAttributes(): array
     return ['pick_list_id' => PickList::create(['number' => random_int(1, 1_000_000), 'status' => 'OPEN'])->id, 'article_id' => Article::create(articleAttributes())->id, 'quantity_milli' => 1000];
 }
 
+function purchaseOrderAttributes(): array
+{
+    return ['number' => random_int(1, 1_000_000), 'supplier_id' => Supplier::query()->firstOrCreate(['number' => 1], ['name' => 'Hemlig leverantör AB'])->id, 'order_date' => '2026-03-01', 'delivery_address' => 'Hemlig gata 1'];
+}
+
+function purchaseOrderRowAttributes(): array
+{
+    $unit = Unit::query()->firstOrCreate(['code' => 'st'], ['name' => 'styck', 'dimension' => 'COUNT']);
+
+    return ['purchase_order_id' => PurchaseOrder::create(purchaseOrderAttributes())->id, 'article_id' => Article::create(articleAttributes())->id, 'description' => 'Hemlig vara', 'entered_quantity' => '1', 'unit_id' => $unit->id, 'quantity_milli' => 1000, 'price_ore' => 100];
+}
+
+function purchaseOrderVersionAttributes(): array
+{
+    return ['purchase_order_id' => PurchaseOrder::create(purchaseOrderAttributes())->id, 'version' => 1, 'snapshot' => ['number' => 1], 'total_ore' => 100, 'method' => 'PRINT', 'sent_at' => '2026-03-01 10:00:00'];
+}
+
+function purchaseOrderInvoiceAttributes(): array
+{
+    return ['purchase_order_id' => PurchaseOrder::create(purchaseOrderAttributes())->id, 'supplier_invoice_id' => SupplierInvoice::create(supplierInvoiceAttributes())->id];
+}
+
 function inventoryCountLineAttributes(): array
 {
     return ['stock_count_id' => StockCount::create(['number' => random_int(1, 1_000_000), 'status' => 'OPEN', 'counted_on' => '2026-12-31'])->id, 'article_id' => Article::create(articleAttributes())->id, 'location_id' => StockLocation::create(inventoryLocationAttributes())->id, 'system_milli' => 0];
@@ -1941,7 +1971,7 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class];
+const NEVER_UPDATED = [PurchaseOrderVersion::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
 const APPEND_ONLY = [WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];

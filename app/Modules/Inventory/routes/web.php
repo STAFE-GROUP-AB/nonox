@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Modules\Inventory\Http\ArticleImageController;
 use App\Modules\Inventory\Http\LabelPrintController;
 use App\Modules\Inventory\Http\PickListPdfController;
+use App\Modules\Inventory\Http\PurchaseOrderController;
 use App\Modules\Inventory\Http\ScannerController;
 use Illuminate\Support\Facades\Route;
 
@@ -14,6 +15,13 @@ Route::view('/lager/artiklar', 'inventory::articles')->name('inventory.articles'
 Route::get('/lager/artiklar/{article}/bilder/{image}', ArticleImageController::class)->whereNumber(['article', 'image'])->name('inventory.articleImages.show');
 Route::view('/lager/lagerstallen', 'inventory::locations')->name('inventory.locations');
 Route::view('/lager/inleveranser', 'inventory::receipts')->name('inventory.receipts');
+// Inköpsorder and the purchase proposal (ADR-071 §2, §5).
+Route::view('/lager/inkopsorder', 'inventory::purchase-orders')->name('inventory.purchaseOrders');
+Route::get('/lager/inkopsorder/ny', [PurchaseOrderController::class, 'create'])->name('inventory.purchaseOrders.create');
+Route::get('/lager/inkopsorder/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->whereNumber('purchaseOrder')->name('inventory.purchaseOrders.show');
+Route::get('/lager/inkopsorder/{purchaseOrder}/andra', [PurchaseOrderController::class, 'edit'])->whereNumber('purchaseOrder')->name('inventory.purchaseOrders.edit');
+Route::get('/lager/inkopsorder/{purchaseOrder}/pdf', [PurchaseOrderController::class, 'pdf'])->whereNumber('purchaseOrder')->name('inventory.purchaseOrders.pdf');
+Route::view('/lager/inkopsforslag', 'inventory::purchase-proposals')->name('inventory.purchaseProposals');
 Route::view('/lager/plocklistor', 'inventory::pick-lists')->name('inventory.pickLists');
 Route::get('/lager/plocklistor/{pickList}/pdf', PickListPdfController::class)->whereNumber('pickList')->name('inventory.pickLists.pdf');
 Route::view('/lager/inventering', 'inventory::counts')->name('inventory.counts');
