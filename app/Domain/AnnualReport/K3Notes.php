@@ -450,7 +450,14 @@ final class K3Notes
     private function errorCorrection(): void
     {
         $corrections = $this->equityStatement()->earlierCorrections();
-        $answered = ($this->report->k3_answers['material_error_corrected'] ?? null) === true;
+        $answer = $this->report->k3_answers['material_error_corrected'] ?? null;
+        $answered = $answer === true;
+
+        // Asked every K3 year after the first (Lead decision after the S1-P9 re-check); a first K3 year has the transition notes instead.
+        if ($answer === null && $corrections === [] && $this->fiscalYear->reporting_framework === ReportingFramework::K3
+            && ! SaveFrameworkChoice::isFirstK3Year($this->fiscalYear, $this->accounts->previousYear)) {
+            $this->extraQuestions[] = ['key' => 'material_error_corrected', 'row' => 21, 'message' => __('Har ett väsentligt fel från tidigare år rättats retroaktivt?')];
+        }
 
         if ($corrections === [] && ! $answered) {
             return;
@@ -807,8 +814,15 @@ final class K3Notes
     {
         $fte = $this->report->average_employees_fte;
         $whole = (int) ($this->report->average_employees ?? 0);
-        // Nothing entered: no full-time equivalent and the column's default 0. Never print a 0 nobody gave.
-        $average = $fte !== null ? (int) round((float) $fte, 0, PHP_ROUND_HALF_UP) : ($whole > 0 ? $whole : null);
+        $none = ($this->report->k3_answers['no_employees'] ?? null) === true;
+        // Nothing entered: no full-time equivalent, the column's default 0 and no answer "no employees".
+        // Never print a 0 nobody gave (SaveK3ReportInputs writes the FTE or the answer).
+        $average = match (true) {
+            $fte !== null => (int) round((float) $fte, 0, PHP_ROUND_HALF_UP),
+            $whole > 0 => $whole,
+            $none => 0,
+            default => null,
+        };
 
         $this->add('average_employees', 15, self::OTHER, __('Medelantalet anställda'), ['ÅRL 5 kap. 20 §', 'K3 8.6B'], [
             'average_employees' => $average,

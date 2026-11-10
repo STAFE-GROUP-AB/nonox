@@ -43,7 +43,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property ?string $k3_external_factors K3 3.7, the K3 management report only (ADR-059 A.2.7)
  * @property ?string $k3_special_circumstances
  * @property ?string $k3_ownership_changes
- * @property ?list<array{name: string, org_number: ?string, foreign_registration: ?string, country: ?string, votes_bp: int, capital_bp: int}> $k3_major_owners null until answered; [] means no owner above ten per cent
+ * @property ?list<array{name: string, owner_type?: string, org_number: ?string, foreign_registration: ?string, country: ?string, votes_bp: int, capital_bp: int}> $k3_major_owners null until answered; [] means no owner above ten per cent
  * @property ?int $k3_long_term_liabilities_ore liabilities due after five years (ÅRL 5 kap. 13 §)
  * @property ?string $k3_off_balance_arrangements
  * @property ?string $k3_loans_to_executives

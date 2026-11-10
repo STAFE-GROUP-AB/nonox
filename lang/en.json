@@ -13275,5 +13275,9 @@
     "Ange antingen ett svenskt organisationsnummer eller ett utländskt registreringsnummer, inte båda.": "Enter either a Swedish organisation number or a foreign registration number, not both.",
     "Ett personnummer sparas aldrig. För en fysisk person anges bara namnet.": "A personal identity number is never stored. For a natural person only the name is given.",
     "Ange ett giltigt svenskt organisationsnummer, eller lämna fältet tomt.": "Enter a valid Swedish organisation number, or leave the field empty.",
-    "Ange landet för ett utländskt registreringsnummer, med landskod (till exempel DE). Ett svenskt företag anges med organisationsnummer.": "Enter the country of a foreign registration number as a country code (for example DE). A Swedish company is given by its organisation number."
+    "Ange landet för ett utländskt registreringsnummer, med landskod (till exempel DE). Ett svenskt företag anges med organisationsnummer.": "Enter the country of a foreign registration number as a country code (for example DE). A Swedish company is given by its organisation number.",
+    "För en fysisk person anges bara namnet och andelen, inget nummer.": "For a natural person only the name and the share are given, no number.",
+    "Numret ser ut som ett personnummer. Fältet är till för företagets registreringsnummer; för en fysisk person anges bara namnet.": "The number looks like a personal identity number. The field is for the company's registration number; for a natural person only the name is given.",
+    "Ange medelantalet anställda som ett tal med högst två decimaler, till exempel 3,4.": "Enter the average number of employees as a number with at most two decimals, for example 3.4.",
+    "Har ett väsentligt fel från tidigare år rättats retroaktivt?": "Has a material error from an earlier year been corrected retroactively?"
 }

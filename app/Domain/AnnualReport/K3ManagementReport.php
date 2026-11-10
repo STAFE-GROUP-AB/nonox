@@ -10,6 +10,7 @@ use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
+use Illuminate\Support\Facades\App;
 use LogicException;
 
 /**
@@ -78,7 +79,15 @@ final class K3ManagementReport
 
         return CurrentCompany::run($company, function () use ($company, $fiscalYear, $report, $accounts, $size): self {
             $management = new self($company, $fiscalYear, $report, $size, $accounts);
-            $management->build();
+            // The annual report is a Swedish document: built in Swedish, the caller's locale restored.
+            $locale = App::getLocale();
+            App::setLocale('sv');
+
+            try {
+                $management->build();
+            } finally {
+                App::setLocale($locale);
+            }
 
             return $management;
         });
@@ -152,6 +161,7 @@ final class K3ManagementReport
 
         $owners = array_map(fn (array $owner): array => [
             'name' => (string) $owner['name'],
+            'owner_type' => isset($owner['owner_type']) ? (string) $owner['owner_type'] : null,
             'org_number' => isset($owner['org_number']) ? (string) $owner['org_number'] : null,
             'foreign_registration' => isset($owner['foreign_registration']) ? (string) $owner['foreign_registration'] : null,
             'country' => isset($owner['country']) ? (string) $owner['country'] : null,

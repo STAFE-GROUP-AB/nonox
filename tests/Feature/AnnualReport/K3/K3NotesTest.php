@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Accounting\CorrectVoucher;
+use App\Actions\AnnualReport\SaveK3ReportInputs;
 use App\Actions\AnnualReport\SetAccountingPolicy;
 use App\Actions\Assets\FixedAssets;
 use App\Domain\Accounting\AccountType;
@@ -404,18 +405,46 @@ it('S1-R8.1 row 15 always gives the average number of employees, as full-time eq
 });
 
 it('S1-R8.1 row 15 asks for the average number of employees instead of printing 0 when nothing is entered', function () {
-    $this->report->forceFill(['average_employees' => 0, 'average_employees_fte' => null])->save();
+    $this->report->delete();
+    $save = fn (array $input) => app(SaveK3ReportInputs::class)($this->owner, $this->year->refresh(), $input);
+    $this->report = $save(['k3_external_factors' => 'Räntor.']);
     $note = k3NotesFor($this)->note('average_employees');
 
     expect($note->data['average_employees'])->toBeNull()
         ->and($note->generatedText)->toBe([])
         ->and($note->facts)->toHaveCount(1);
+});
 
-    $this->report->forceFill(['average_employees_fte' => '0.00'])->save();
+it('S1-R8.1 row 15 lets a company without employees close the question through the action, and prints 0', function () {
+    $this->report->delete();
+    $this->report = app(SaveK3ReportInputs::class)($this->owner, $this->year->refresh(), ['k3_answers' => ['no_employees' => true]]);
     $note = k3NotesFor($this)->note('average_employees');
 
     expect($note->data['average_employees'])->toBe(0)
+        ->and($note->facts)->toBe([])
+        ->and(implode(' ', $note->generatedText))->toContain('varit 0');
+});
+
+it('S1-R8.1 row 15 takes the full-time equivalents a person enters through the action', function () {
+    $this->report->delete();
+    $this->report = app(SaveK3ReportInputs::class)($this->owner, $this->year->refresh(), ['average_employees_fte' => '3,40']);
+    $note = k3NotesFor($this)->note('average_employees');
+
+    expect($this->report->refresh()->average_employees_fte)->toBe('3.40')
+        ->and($note->data['average_employees'])->toBe(3)
         ->and($note->facts)->toBe([]);
+});
+
+it('S1-R8.1 row 21 asks every K3 year after the first whether a material error was corrected retroactively', function () {
+    expect(array_column(k3NotesFor($this)->questions(), 'key'))->not->toContain('material_error_corrected');
+
+    k3NotesPreviousYear($this, ReportingFramework::K3);
+
+    expect(array_column(k3NotesFor($this)->questions(), 'key'))->toContain('material_error_corrected');
+
+    $this->report->forceFill(['k3_answers' => ['material_error_corrected' => false]])->save();
+
+    expect(array_column(k3NotesFor($this)->questions(), 'key'))->not->toContain('material_error_corrected');
 });
 
 it('S1-R8.1 row 16 names the parent company of the smallest group that prepares group accounts (ÅRL 5:21)', function () {

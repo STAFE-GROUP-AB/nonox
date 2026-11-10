@@ -1590,6 +1590,20 @@ package. Nothing is visible to a user yet: the K3 document (S1-P10) prints it.
   actions. New migration `2026_12_31_320000_add_k3_answers_to_annual_reports`
   (`k3_answers` jsonb, `k3_business_changes`).
 
+**Re-check fixes (2026-11-10), Lead decisions.**
+- *Employees (P2).* `SaveK3ReportInputs` writes `average_employees_fte` and
+  the answer `k3_answers.no_employees`; either closes the question, and a
+  stored 0 with `no_employees` prints 0. Proved through the action.
+- *Owners (P3).* `owner_type` (`legal`, `natural`) is required; a natural
+  person gets no identifier at all. A name containing anything shaped like a
+  Swedish personal or coordination number is refused. Dash variants and
+  spaces are normalised before every check. The foreign field is for company
+  registration numbers: Norwegian 11-digit and Danish DDMMYY-NNNN shapes are
+  refused; `TODO(legal-verify)` for other countries.
+- *Locale (P3).* `K3ManagementReport` is built in Swedish like `K3Notes`.
+- *Row 21 (P3).* "Har ett väsentligt fel från tidigare år rättats
+  retroaktivt?" is asked every K3 year after the first; no closes it.
+
 ### A.5 Test plan and performance
 
 **Unit tests per rule id** (Pest, `tests/Unit/AnnualReport/K3/…`), named with the

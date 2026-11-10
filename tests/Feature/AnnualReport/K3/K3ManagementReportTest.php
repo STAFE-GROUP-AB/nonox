@@ -53,9 +53,9 @@ it('S1-R8.4 stores the K3 3.7 texts and prints them in the management report', f
         'k3_business_changes' => 'Bolaget har börjat hyra ut lager.',
         'k3_ownership_changes' => 'Grundaren sålde 30 % till en ny delägare.',
         'k3_major_owners' => [
-            ['name' => 'Fiktiva Ägarbolaget AB', 'org_number' => '556036-0793', 'votes_bp' => 5000, 'capital_bp' => 5000],
-            ['name' => 'Example Holding GmbH', 'foreign_registration' => 'HRB 12345', 'country' => 'DE', 'votes_bp' => 2000, 'capital_bp' => 2000],
-            ['name' => 'Anna Exempel', 'votes_bp' => 3000, 'capital_bp' => 3000],
+            ['name' => 'Fiktiva Ägarbolaget AB', 'owner_type' => 'legal', 'org_number' => '556036-0793', 'votes_bp' => 5000, 'capital_bp' => 5000],
+            ['name' => 'Example Holding GmbH', 'owner_type' => 'legal', 'foreign_registration' => 'HRB 12345', 'country' => 'DE', 'votes_bp' => 2000, 'capital_bp' => 2000],
+            ['name' => 'Anna Exempel', 'owner_type' => 'natural', 'votes_bp' => 3000, 'capital_bp' => 3000],
         ],
     ]);
 
@@ -65,9 +65,9 @@ it('S1-R8.4 stores the K3 3.7 texts and prints them in the management report', f
         ->and($sections['business_changes']['paragraphs'])->toBe(['Bolaget har börjat hyra ut lager.'])
         ->and($sections['ownership_changes']['paragraphs'])->toBe(['Grundaren sålde 30 % till en ny delägare.'])
         ->and($sections['major_owners']['data']['owners'])->toBe([
-            ['name' => 'Fiktiva Ägarbolaget AB', 'org_number' => '556036-0793', 'foreign_registration' => null, 'country' => null, 'votes_bp' => 5000, 'capital_bp' => 5000],
-            ['name' => 'Example Holding GmbH', 'org_number' => null, 'foreign_registration' => 'HRB 12345', 'country' => 'DE', 'votes_bp' => 2000, 'capital_bp' => 2000],
-            ['name' => 'Anna Exempel', 'org_number' => null, 'foreign_registration' => null, 'country' => null, 'votes_bp' => 3000, 'capital_bp' => 3000],
+            ['name' => 'Fiktiva Ägarbolaget AB', 'owner_type' => 'legal', 'org_number' => '556036-0793', 'foreign_registration' => null, 'country' => null, 'votes_bp' => 5000, 'capital_bp' => 5000],
+            ['name' => 'Example Holding GmbH', 'owner_type' => 'legal', 'org_number' => null, 'foreign_registration' => 'HRB 12345', 'country' => 'DE', 'votes_bp' => 2000, 'capital_bp' => 2000],
+            ['name' => 'Anna Exempel', 'owner_type' => 'natural', 'org_number' => null, 'foreign_registration' => null, 'country' => null, 'votes_bp' => 3000, 'capital_bp' => 3000],
         ])
         ->and($sections['major_owners']['rule'])->toBe('K3 3.7 e')
         ->and($sections['major_owners']['paragraphs'])->toBe([
@@ -78,33 +78,64 @@ it('S1-R8.4 stores the K3 3.7 texts and prints them in the management report', f
 });
 
 it('S1-R8.4 never stores a personal identity number or a birth year for an owner (GDPR, ADR-059 A.2.7)', function () {
-    expect(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Anna Exempel', 'org_number' => '19750101-1234', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
+    expect(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Anna Exempel', 'owner_type' => 'legal', 'org_number' => '19750101-1234', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
         ->toThrow(ValidationException::class)
-        ->and(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Anna Exempel', 'org_number' => '750101-1239', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
+        ->and(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Anna Exempel', 'owner_type' => 'legal', 'org_number' => '750101-1239', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
         ->toThrow(ValidationException::class)
-        ->and(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Anna Exempel', 'foreign_registration' => '19900101-2389', 'country' => 'NO', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
+        ->and(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Anna Exempel', 'owner_type' => 'legal', 'foreign_registration' => '19900101-2389', 'country' => 'NO', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
         ->toThrow(ValidationException::class)
         ->and(AnnualReport::query()->count())->toBe(0);
 
-    ($this->save)(['k3_major_owners' => [['name' => 'Anna Exempel', 'birth_year' => 1975, 'votes_bp' => 5000, 'capital_bp' => 5000]]]);
+    ($this->save)(['k3_major_owners' => [['name' => 'Anna Exempel', 'owner_type' => 'natural', 'birth_year' => 1975, 'votes_bp' => 5000, 'capital_bp' => 5000]]]);
 
     expect(json_encode(AnnualReport::query()->value('k3_major_owners')))->not->toContain('1975');
 });
 
 it('S1-R8.4 asks a foreign registration number for a country, and only one identifier per owner', function () {
-    expect(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Example GmbH', 'foreign_registration' => 'HRB 1', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
+    expect(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Example GmbH', 'owner_type' => 'legal', 'foreign_registration' => 'HRB 1', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
         ->toThrow(ValidationException::class)
-        ->and(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Example GmbH', 'foreign_registration' => 'HRB 1', 'country' => 'SE', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
+        ->and(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Example GmbH', 'owner_type' => 'legal', 'foreign_registration' => 'HRB 1', 'country' => 'SE', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
         ->toThrow(ValidationException::class)
-        ->and(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Example AB', 'org_number' => '556036-0793', 'foreign_registration' => 'HRB 1', 'country' => 'DE', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
+        ->and(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Example AB', 'owner_type' => 'legal', 'org_number' => '556036-0793', 'foreign_registration' => 'HRB 1', 'country' => 'DE', 'votes_bp' => 5000, 'capital_bp' => 5000]]]))
         ->toThrow(ValidationException::class);
 });
 
+it('S1-R8.4 refuses a personal number in an owner\'s name, and an identifier for a natural person', function (array $owner) {
+    expect(fn () => ($this->save)(['k3_major_owners' => [[...$owner, 'votes_bp' => 5000, 'capital_bp' => 5000]]]))->toThrow(ValidationException::class)
+        ->and(AnnualReport::query()->count())->toBe(0);
+})->with([
+    'name with a personal number' => [['name' => 'Anna Exempel 19750101-1234', 'owner_type' => 'natural']],
+    'name with a short personal number' => [['name' => 'Anna Exempel 7501011234', 'owner_type' => 'natural']],
+    'name with a coordination number and an en dash' => [['name' => 'Anna Exempel 750161–1234', 'owner_type' => 'natural']],
+    'natural person with an org number' => [['name' => 'Anna Exempel', 'owner_type' => 'natural', 'org_number' => '556036-0793']],
+    'natural person with a foreign number' => [['name' => 'Anna Exempel', 'owner_type' => 'natural', 'foreign_registration' => 'HRB 1', 'country' => 'DE']],
+    'no owner type' => [['name' => 'Fiktiva Ägarbolaget AB', 'org_number' => '556036-0793']],
+    'foreign number with an em dash personal number' => [['name' => 'Example AS', 'owner_type' => 'legal', 'foreign_registration' => '750101 — 1234', 'country' => 'NO']],
+    'foreign number with a minus sign personal number' => [['name' => 'Example AS', 'owner_type' => 'legal', 'foreign_registration' => '19750101−1234', 'country' => 'FI']],
+    'Norwegian national identity number shape' => [['name' => 'Example AS', 'owner_type' => 'legal', 'foreign_registration' => '01017512345', 'country' => 'NO']],
+    'Danish CPR shape' => [['name' => 'Example ApS', 'owner_type' => 'legal', 'foreign_registration' => '010175-1234', 'country' => 'DK']],
+]);
+
+it('S1-R8.4 accepts a Norwegian organisation number for a legal person', function () {
+    ($this->save)(['k3_major_owners' => [['name' => 'Example AS', 'owner_type' => 'legal', 'foreign_registration' => '923 609 016', 'country' => 'NO', 'votes_bp' => 5000, 'capital_bp' => 5000]]]);
+
+    expect(AnnualReport::query()->value('k3_major_owners'))->toHaveCount(1);
+});
+
+it('builds the management report in Swedish whatever the locale, and restores the locale', function () {
+    ($this->save)(['k3_external_factors' => 'Räntor.']);
+    app()->setLocale('en');
+    $sections = collect(($this->report)()->sections())->keyBy('key');
+
+    expect($sections['external_factors']['heading'])->toBe('Viktiga externa faktorer')
+        ->and(app()->getLocale())->toBe('en');
+});
+
 it('S1-R8.4 takes only owners with more than ten per cent of the shares or the votes (K3 3.7 e)', function () {
-    expect(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Liten ägare', 'votes_bp' => 1000, 'capital_bp' => 1000]]]))
+    expect(fn () => ($this->save)(['k3_major_owners' => [['name' => 'Liten ägare', 'owner_type' => 'natural', 'votes_bp' => 1000, 'capital_bp' => 1000]]]))
         ->toThrow(ValidationException::class);
 
-    ($this->save)(['k3_major_owners' => [['name' => 'Röstägare', 'votes_bp' => 1001, 'capital_bp' => 500]]]);
+    ($this->save)(['k3_major_owners' => [['name' => 'Röstägare', 'owner_type' => 'natural', 'votes_bp' => 1001, 'capital_bp' => 500]]]);
 
     expect(AnnualReport::query()->value('k3_major_owners'))->toHaveCount(1);
 });
@@ -245,7 +276,7 @@ it('lets the owner, an administrator and an accountant save, not a bookkeeper or
 ]);
 
 it('audits which fields changed, never their content', function () {
-    ($this->save)(['k3_external_factors' => 'Hemlig faktor', 'k3_major_owners' => [['name' => 'Hemlig Ägare', 'votes_bp' => 5000, 'capital_bp' => 5000]]]);
+    ($this->save)(['k3_external_factors' => 'Hemlig faktor', 'k3_major_owners' => [['name' => 'Hemlig Ägare', 'owner_type' => 'natural', 'votes_bp' => 5000, 'capital_bp' => 5000]]]);
 
     $log = AuditLog::query()->where('action', 'annual_report.k3_inputs_saved')->firstOrFail();
 

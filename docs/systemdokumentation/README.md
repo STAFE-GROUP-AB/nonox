@@ -2792,8 +2792,10 @@ K3 punkt 8.6B. Ingenting syns för användaren ännu; K3-årsredovisningen
 - Det som bokföringen inte vet skrivs in i nya kolumner i `annual_reports`
   (`SaveK3ReportInputs`): texterna till förvaltningsberättelsen (även viktiga
   förändringar i verksamheten), ägarna (namn och andel; för en juridisk person
-  valfritt organisationsnummer eller utländskt registreringsnummer med land,
-  för en fysisk person bara namnet, aldrig födelseår eller personnummer; i
+  valfritt organisationsnummer eller utländskt registreringsnummer för
+  företaget med land, för en fysisk person bara namnet utan något nummer,
+  aldrig födelseår eller personnummer, och ett namn med ett personnummer
+  avvisas; i
   årsredovisningen skrivs bara namn och andel ut; ett tomt svar betyder att
   ingen ägare har mer än tio procent), skulder som förfaller senare än fem år
   efter balansdagen (aldrig mer än de långfristiga skulderna på 2300–2399),
@@ -2802,7 +2804,10 @@ K3 punkt 8.6B. Ingenting syns för användaren ännu; K3-årsredovisningen
   närstående (publikt aktiebolag), avvikelser från allmänna råd och goodwill,
   och ja/nej-svar (`k3_answers`) om noterna för åtaganden för koncernföretag,
   arrangemang utanför balansräkningen, lån till ledande befattningshavare och
-  moderföretag gäller och om ett väsentligt fel har rättats retroaktivt. En
+  moderföretag gäller, om ett väsentligt fel har rättats retroaktivt (frågas
+  varje K3-år efter det första) och att företaget inte har haft några
+  anställda. Medelantalet anställda kan anges som heltidsekvivalenter
+  (`average_employees_fte`). En
   sådan not kan aldrig utebli i tysthet: frågan står öppen tills svaret är
   nej eller texten är skriven. K2-årsredovisningen läser inte kolumnerna.
 - Ett annat företags räkenskapsår ger 404. Båda åtgärderna kräver behörigheten att hantera räkenskapsår, gäller bara
