@@ -65,7 +65,7 @@ rapporter/verifikationslista: { foretag: butik, rutt: accounting.reports, fraga:
 bokslut/checklistan: { foretag: konsult, rutt: accounting.closing }
 bokslut/periodiseringar: { foretag: konsult, rutt: accounting.accruals }
 bokslut/anlaggningstillgangar: { foretag: konsult, rutt: accounting.fixedAssets }
-bokslut/tillgang-av-flera-inkop: { foretag: konsult, rutt: accounting.fixedAssets, del: 'table:has([data-asset-sources])' }
+bokslut/tillgang-av-flera-inkop: { foretag: konsult, rutt: accounting.fixedAssets, klick: ['text=Inredning mötesrummet'], del: 'tr:has([data-asset-purchases])' }
 bokslut/arsredovisning: { foretag: konsult, rutt: accounting.annualReport }
 bokslut/inkomstdeklaration: { foretag: konsult, rutt: accounting.incomeTax }
 bokslut/inkomstdeklaration-ne: { foretag: enskildfirma, rutt: accounting.incomeTax, text: 'NE-bilagan, fält för fält' }

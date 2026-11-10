@@ -134,30 +134,11 @@
                                         @if($asset->isComponent() && $asset->depreciates()) · {{ __('Skrivs av från :date', ['date' => $asset->depreciation_start->toDateString()]) }}@endif
                                     </span>
                                     @if($asset->additions->isNotEmpty())
-                                        <span class="block text-xs text-gray-500">{{ __('Anskaffad med flera inköp:') }}</span>
-                                        <ul class="text-xs text-gray-500" data-asset-sources>
-                                            <li>
-                                                @if($asset->acquisitionVoucher)
-                                                    <a href="{{ route('accounting.vouchers.show', $asset->acquisitionVoucher) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $asset->acquisitionVoucher->reference() }}</a>
-                                                @elseif($asset->supplierInvoice)
-                                                    <a href="{{ route('payables.invoices.show', $asset->supplierInvoice) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $asset->supplierInvoice->title() }}</a>
-                                                @else
-                                                    {{ __('Inlagd i registret') }}
-                                                @endif
-                                                · {{ $asset->acquired_on->toDateString() }} · <span class="tabular-nums">{{ $kr($asset->originalAcquisitionOre()) }}</span>
-                                            </li>
-                                            @foreach($asset->additions as $addition)
-                                                <li>
-                                                    @if($addition->voucher)
-                                                        <a href="{{ route('accounting.vouchers.show', $addition->voucher) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $addition->voucher->reference() }}</a>
-                                                    @elseif($addition->supplierInvoice)
-                                                        <a href="{{ route('payables.invoices.show', $addition->supplierInvoice) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $addition->supplierInvoice->title() }}</a>
-                                                    @endif
-                                                    · {{ $addition->added_on->toDateString() }} · <span class="tabular-nums">{{ $kr($addition->amount_ore->ore) }}</span>
-                                                    @if($asset->depreciates()) · {{ __('skrivs av från :month', ['month' => $asset->additionTerms($addition->added_on, $addition->booked_through)['from']->format('Y-m')]) }}@endif
-                                                </li>
+                                        <span class="block text-xs text-gray-500" data-asset-sources>{{ __('Anskaffad med flera inköp:') }}
+                                            @foreach([$asset->acquisitionVoucher, ...$asset->additions->map(fn ($addition) => $addition->voucher)->all()] as $source)
+                                                @if($source)<a href="{{ route('accounting.vouchers.show', $source) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $source->reference() }}</a>@unless($loop->last),@endunless @endif
                                             @endforeach
-                                        </ul>
+                                        </span>
                                     @elseif($asset->acquisitionVoucher)
                                         <span class="block text-xs text-gray-500">{{ __('Anskaffad med verifikation') }} <a href="{{ route('accounting.vouchers.show', $asset->acquisitionVoucher) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $asset->acquisitionVoucher->reference() }}</a></span>
                                     @elseif($asset->supplierInvoice)
@@ -243,15 +224,62 @@
                                     </td>
                                 </tr>
                             @endif
-                            @if($shown?->id === $asset->id && $asset->depreciates())
+                            @if($shown?->id === $asset->id && ($asset->depreciates() || $asset->additions->isNotEmpty()))
                                 <tr wire:key="plan-{{ $asset->id }}">
                                     <td colspan="7" class="bg-paper px-3 py-4">
+                                        @if($asset->additions->isNotEmpty())
+                                            <p class="mb-2 text-sm font-semibold text-ink">{{ __('Inköp') }}</p>
+                                            <div class="mb-4 overflow-x-auto">
+                                                <table class="text-left text-xs" data-asset-purchases>
+                                                    <thead>
+                                                        <tr class="text-gray-500">
+                                                            <th scope="col" class="py-1 pe-6 font-medium">{{ __('Verifikation') }}</th>
+                                                            <th scope="col" class="py-1 pe-6 font-medium">{{ __('Datum') }}</th>
+                                                            <th scope="col" class="py-1 pe-6 text-right font-medium">{{ __('Belopp') }}</th>
+                                                            @if($asset->depreciates())<th scope="col" class="py-1 font-medium">{{ __('Skrivs av från') }}</th>@endif
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="tabular-nums">
+                                                        <tr>
+                                                            <td class="py-1 pe-6">
+                                                                @if($asset->acquisitionVoucher)
+                                                                    <a href="{{ route('accounting.vouchers.show', $asset->acquisitionVoucher) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $asset->acquisitionVoucher->reference() }}</a>
+                                                                @elseif($asset->supplierInvoice)
+                                                                    <a href="{{ route('payables.invoices.show', $asset->supplierInvoice) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $asset->supplierInvoice->title() }}</a>
+                                                                @else
+                                                                    {{ __('Inlagd i registret') }}
+                                                                @endif
+                                                            </td>
+                                                            <td class="py-1 pe-6">{{ $asset->acquired_on->toDateString() }}</td>
+                                                            <td class="py-1 pe-6 text-right">{{ $kr($asset->originalAcquisitionOre()) }}</td>
+                                                            @if($asset->depreciates())<td class="py-1">{{ $asset->depreciation_start->format('Y-m') }}</td>@endif
+                                                        </tr>
+                                                        @foreach($asset->additions as $addition)
+                                                            <tr>
+                                                                <td class="py-1 pe-6">
+                                                                    @if($addition->voucher)
+                                                                        <a href="{{ route('accounting.vouchers.show', $addition->voucher) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $addition->voucher->reference() }}</a>
+                                                                    @elseif($addition->supplierInvoice)
+                                                                        <a href="{{ route('payables.invoices.show', $addition->supplierInvoice) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $addition->supplierInvoice->title() }}</a>
+                                                                    @endif
+                                                                </td>
+                                                                <td class="py-1 pe-6">{{ $addition->added_on->toDateString() }}</td>
+                                                                <td class="py-1 pe-6 text-right">{{ $kr($addition->amount_ore->ore) }}</td>
+                                                                @if($asset->depreciates())<td class="py-1">{{ $asset->additionTerms($addition->added_on, $addition->booked_through)['from']->format('Y-m') }}</td>@endif
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        @endif
+                                        @if($asset->depreciates())
                                         <p class="mb-2 text-sm font-semibold text-ink">{{ __('Avskrivningsplan') }}</p>
                                         <div class="grid gap-x-6 gap-y-1 text-xs tabular-nums sm:grid-cols-3 lg:grid-cols-4">
                                             @foreach($asset->plan()->schedule() as $row)
                                                 <span class="flex justify-between gap-3"><span class="text-gray-500">{{ $row['month'] }}</span><span>{{ $kr($row['amount']) }}</span></span>
                                             @endforeach
                                         </div>
+                                        @endif
                                     </td>
                                 </tr>
                             @endif

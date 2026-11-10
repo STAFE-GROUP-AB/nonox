@@ -13416,5 +13416,6 @@
     "Välj ett inköp att lägga till.": "Choose a purchase to add.",
     "Välj tillgång": "Choose asset",
     "Välj verifikation": "Choose voucher",
-    "skrivs av från :month": "depreciated from :month"
+    "skrivs av från :month": "depreciated from :month",
+    "Skrivs av från": "Depreciated from"
 }

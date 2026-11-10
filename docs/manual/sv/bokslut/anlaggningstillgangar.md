@@ -59,9 +59,9 @@ Det nya inköpet läggs till direkt när du bokför det: välj **Lägg till i be
 4. Klicka på **Granska tillägget**. Rutan **Det här händer** visar hur mycket anskaffningsvärdet ökar och från vilken månad beloppet skrivs av.
 5. Klicka på **Lägg till i tillgången**.
 
-![En tillgång som består av tre inköp, med en rad per verifikation.](/bilder/manual/bokslut/tillgang-av-flera-inkop.webp)
+![En tillgång som består av tre inköp, med inköpen och avskrivningsplanen.](/bilder/manual/bokslut/tillgang-av-flera-inkop.webp)
 
-Tillgången visar sedan **Anskaffad med flera inköp:** med en rad per verifikation, datum och belopp. Verifikationen visar vilken tillgång inköpet lades till i.
+Tillgången visar sedan **Anskaffad med flera inköp:** och verifikationerna. Klicka på tillgångens namn, så visar **Inköp** varje verifikation med **Datum**, **Belopp** och **Skrivs av från**, ovanför avskrivningsplanen. Verifikationen visar vilken tillgång inköpet lades till i.
 
 ### En tillgång som inte används ännu
 

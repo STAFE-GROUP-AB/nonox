@@ -43,7 +43,7 @@ Tillgångens anskaffningsvärde ökar med beloppet när inköpet bokförs. Vill 
 
 - Tillgången skapas i registret i samma steg som inköpet bokförs. Misslyckas bokföringen skapas ingen tillgång, och går tillgången inte att skapa bokförs inget.
 - Radens kostnadsställe följer med till tillgången.
-- I registret står **Anskaffad med verifikation** med en länk, och verifikationen visar vilka tillgångar som skapades. En tillgång av flera inköp visar **Anskaffad med flera inköp:** och en rad per verifikation.
+- I registret står **Anskaffad med verifikation** med en länk, och verifikationen visar vilka tillgångar som skapades. En tillgång av flera inköp visar **Anskaffad med flera inköp:** och alla verifikationerna.
 - Avskrivningarna bokförs sedan från registret varje månad. Läs [Anläggningsregistret och avskrivningar](/manual/bokslut/anlaggningstillgangar).
 
 ## Vilka konton räknas som anskaffningskonton?
