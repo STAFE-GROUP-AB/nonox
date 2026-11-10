@@ -8,7 +8,7 @@ Mänskliga beslut finns i [manskliga-beslut.md](manskliga-beslut.md).
 
 Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanför är klart, om inte ägaren säger något annat. Nya önskemål läggs sist, inte före.
 
-1. **Spec nummer-1, S1** (pågår): S1-P4 och S1-P12 klara; kvar S1-P9, sedan S1-P10 och S1-P14. S1-P13 (större aktiebolag) läggs utanför S1 enligt beslut S1-H1.
+1. **Spec nummer-1, S1** (pågår): S1-P4, S1-P9 och S1-P12 klara; kvar S1-P10 och S1-P14. S1-P13 (större aktiebolag) läggs utanför S1 enligt beslut S1-H1.
 2. **Aktiebok och styrelserum** (ADR-070, `aktiebok-och-styrelserum`).
 3. **Körjournal och kvitto i mobilen** (`korjournal-och-kvitto-i-mobilen`).
 4. **Recept och svinn** för restaurang (`recept-och-svinn`).
@@ -642,3 +642,17 @@ Evidence: `tests/Unit/Saas/*`, `tests/Feature/Saas/*`, `tests/Tenancy/SaasTenanc
 Open legal-verify items: GDPR-avvägning för modulen, lagringstid för raderna, om biträdesavtalets ändamålslista ska nämna återkommande intäkter.
 Follow-ups: CRM `RenewAgreements` skriver ingen version vid förnyelse av icke-automatiska avtal; egen deadline-typ i Mina datum i stället för Bokslut; steg 2 (Stripe-import) måste göra alla externa anrop utanför ledger-låset.
 Next package: steg 2, Stripe i NONOX Connect (läsnyckel), därefter steg 3a (utbetalningar och avgifter).
+
+---
+
+Package: S1-P9, noter och förvaltningsberättelse för K3 (mindre AB) (ADR-059)
+Status: done (beta, Bokslut → Årsredovisning)
+Evidence: `tests/Feature/AnnualReport/K3/K3NotesTest.php`, `K3NotesFixtureTest.php`, `K3NoteOverridesTest.php`, `K3ManagementReportTest.php`.
+- Noterna 1–27 för ett mindre aktiebolag genereras ur data i den ordning K3 8.2 anger, med not 1 om ÅRL och K3, tillämpade principer, avskrivning och komponenter samt skatt.
+- Egna formuleringar (överstyrningar) ersätter bara ordalydelsen, märks som överstyrda och blir inaktuella när bokföringen ändras. Bok- och faktafrågor kan inte överstyras.
+- Förvaltningsberättelsen byggs enligt K3 3.7 för ett mindre företag. Ägare över 10 % lagras utan personnummer och födelseår: bara namn, andel och eventuellt organisations- eller utländskt registreringsnummer skrivs ut.
+- Frågorna (anställda, väsentligt fel rättat i efterhand, utdelning över fritt eget kapital, förändringar i verksamheten) ställs i bokslutet; ett företag utan anställda svarar "inga anställda".
+- Kall granskning i tre omgångar; allt rättat. Hela sviten efter sammanslagning: 8 440 gröna, 0 röda (6 hoppade, 8 todos), phpstan och pint rena.
+Open legal-verify items: se `docs/specs/rules/s1.md` (noterna för K3, bl.a. gränsvärden och formuleringar som juristen ska bekräfta).
+Public claim now allowed: inget nytt. Public claim still not allowed: "Årsredovisning enligt K3".
+Next package: S1-P10.
