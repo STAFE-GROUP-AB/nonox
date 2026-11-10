@@ -264,11 +264,11 @@
         @error('uploads') <p class="mt-2 text-sm text-accent-700" role="alert">{{ $message }}</p> @enderror
         @include('ai::partials.analyze-panel', ['canAnalyze' => $aiAvailable && ($uploads !== [] || $attachments->isNotEmpty())])
 
-        @if($aiOff)
+        @if($showAiHint)
             <p class="mt-3 text-xs text-gray-600">
                 {{ __('NONOX kan läsa underlaget och föreslå kontering när NONOX AI är påslaget.') }}
                 @if($aiSettingsUrl)
-                    <a href="{{ $aiSettingsUrl }}" class="font-medium text-accent-700 underline">{{ __('Slå på NONOX AI') }}</a>
+                    <a href="{{ $aiSettingsUrl }}" target="_blank" rel="noopener" class="font-medium text-accent-700 underline">{{ __('Slå på NONOX AI') }}<span class="sr-only"> {{ __('(öppnas i en ny flik)') }}</span></a>
                 @endif
             </p>
         @endif

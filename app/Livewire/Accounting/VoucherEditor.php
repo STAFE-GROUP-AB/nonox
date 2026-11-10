@@ -31,6 +31,7 @@ use App\Modules\Ai\Actions\AnalyzeDocument;
 use App\Modules\Ai\AiModule;
 use App\Modules\Ai\Support\AiAnalysisException;
 use App\Modules\ModuleManager;
+use App\Support\Demo\DemoMode;
 use App\Support\Files\PrivateFile;
 use App\Support\Money\Money;
 use App\Support\Toast;
@@ -439,7 +440,9 @@ class VoucherEditor extends Component
             'accountSigns' => $accounts->mapWithKeys(fn (Account $account): array => [$account->number => AccountBalances::sign($account->type)])->all(),
             'seriesOptions' => VoucherSeries::query()->orderBy('code')->get(['code', 'name']),
             'aiAvailable' => AnalyzeDocument::availableFor($this->user(), $this->company()),
-            'aiOff' => ! app(ModuleManager::class)->isEnabled(AiModule::KEY, $this->company()),
+            'showAiHint' => ! DemoMode::moduleBlocked(AiModule::KEY)
+                && ! app(ModuleManager::class)->isEnabled(AiModule::KEY, $this->company())
+                && AnalyzeDocument::mayUseWhenOn($this->user(), $this->company()),
             'aiSettingsUrl' => $this->user()->hasTeamPermission($this->company(), 'modules:manage')
                 ? route('teams.show', ['company' => $this->company()->id, 'flik' => 'moduler'])
                 : null,

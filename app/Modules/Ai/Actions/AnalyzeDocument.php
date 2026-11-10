@@ -16,6 +16,7 @@ use App\Modules\Ai\Support\AiAnalysisException;
 use App\Modules\Ai\Support\AiProvider;
 use App\Modules\Ai\Support\HeicImage;
 use App\Modules\ModuleManager;
+use App\Modules\ModuleRegistry;
 use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Support\Audit\Audit;
@@ -60,6 +61,23 @@ class AnalyzeDocument
     {
         return app(ModuleManager::class)->isEnabled(AiModule::KEY, $company)
             && $user->hasTeamPermission($company, 'ai:use');
+    }
+
+    /**
+     * Whether this person's role gets ai:use once the module is on. While the
+     * module is off its permissions do not exist, so the role map is read instead.
+     */
+    public static function mayUseWhenOn(User $user, Company $company): bool
+    {
+        $role = $user->ownsTeam($company) ? 'owner' : $user->teamRole($company)?->key;
+
+        if ($role === null) {
+            return false;
+        }
+
+        $registry = app(ModuleRegistry::class);
+
+        return in_array('ai:use', $registry->rolePermissionsOf($registry->get(AiModule::KEY))[$role] ?? [], true);
     }
 
     /**
