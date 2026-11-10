@@ -656,3 +656,17 @@ Evidence: `tests/Feature/AnnualReport/K3/K3NotesTest.php`, `K3NotesFixtureTest.p
 Open legal-verify items: se `docs/specs/rules/s1.md` (noterna för K3, bl.a. gränsvärden och formuleringar som juristen ska bekräfta).
 Public claim now allowed: inget nytt. Public claim still not allowed: "Årsredovisning enligt K3".
 Next package: S1-P10.
+
+---
+
+Package: Onboarding efter godkännande i kön (prioritet 15, ADR-038)
+Status: done (kön, `/kom-igang`, Kom igång-listan och /hq)
+Evidence: `tests/Feature/Onboarding/*`, `tests/Feature/Waitlist/*`, `tests/Feature/Hq/*`, `tests/Tenancy`.
+- Personligt välkomstmejl utifrån svaren i kön (tidigare program, bransch, anställda), förifyllt `/kom-igang`, Kom igång-listan anpassad efter bransch och program och modulförslag per bransch med skäl.
+- Högst två uppföljningsmejl (ingen inloggning efter 2 dagar, inget inflyttat efter 5 dagar) med avregistrering som fungerar utan förfrågningsdata; en uppsättning mejl per användare; den tidigast godkända posten styr förifyllning och lista; neutral avsändare.
+- /hq visar hur långt varje godkänd användare har kommit.
+- Granskning och omkontroller; allt rättat. Juridiska sidor version 1.8, ikraft 2027-01-18 oförändrat.
+- Ägaren godkände mejlen 2026-11-10. `WAITLIST_REPLY_TO` och signaturen är redan satta i produktionens env.
+- Efter driftsättning: klicka på en riktig avregistreringslänk på nonox.app och kontrollera att den fungerar.
+Open legal-verify items: den juridiska bedömningen av uppföljningsmejlen (berättigat intresse och avregistrering) enligt integritetspolicyn.
+Next package: enligt prioritetslistan.
