@@ -124,7 +124,7 @@ it('links to the page from the landing page for visitors, with Swedish text and 
     expect(route('demo.show', absolute: false))->toBe('/prova');
 
     [$member] = Bookkeeping::company();
-    $this->actingAs($member)->get('/')->assertDontSee('data-try-link', false);
+    $this->actingAs($member)->get('/')->assertOk()->assertSee('data-try-link', false)->assertSee('Prova utan att registrera');
 });
 
 /** Keeps the main session cookie of a response for the next requests: the same browser. */
@@ -346,9 +346,33 @@ it('starts nothing while the demo database waits to be built again', function ()
     Queue::assertNothingPushed();
 });
 
-it('sends a signed-in visitor to the dashboard instead of the form', function () {
+it('explains to a signed-in visitor that the demo is a separate guest session, with a logout form', function () {
     [$member] = Bookkeeping::company();
 
-    $this->actingAs($member)->get(route('demo.show'))->assertRedirect(route('dashboard'));
-    $this->actingAs($member)->post(route('demo.start'), [])->assertRedirect(route('dashboard'));
+    $this->actingAs($member)->get(route('demo.show'))
+        ->assertOk()
+        ->assertSee('Demon är en egen gästsession')
+        ->assertSee('privat fönster')
+        ->assertSee('action="'.route('logout').'"', false)
+        ->assertSee('Logga ut')
+        ->assertSee('Till översikten')
+        ->assertSee(route('dashboard'), false)
+        ->assertDontSee('data-demo-form', false);
+});
+
+it('starts no demo for a signed-in visitor and sends them to the explanation', function () {
+    Queue::fake();
+    [$member] = Bookkeeping::company();
+
+    $this->actingAs($member)->post(route('demo.start'), [])->assertRedirect(route('demo.show'));
+
+    Queue::assertNothingPushed();
+});
+
+it('shows no try button and 404s the explanation for a signed-in visitor while the demo is off', function () {
+    demoSetting(false);
+    [$member] = Bookkeeping::company();
+
+    $this->actingAs($member)->get('/')->assertOk()->assertDontSee('data-try-link', false);
+    $this->actingAs($member)->get(route('demo.show'))->assertNotFound();
 });

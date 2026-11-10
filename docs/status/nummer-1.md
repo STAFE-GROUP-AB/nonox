@@ -670,3 +670,11 @@ Evidence: `tests/Feature/Onboarding/*`, `tests/Feature/Waitlist/*`, `tests/Featu
 - Efter driftsättning: klicka på en riktig avregistreringslänk på nonox.app och kontrollera att den fungerar.
 Open legal-verify items: den juridiska bedömningen av uppföljningsmejlen (berättigat intresse och avregistrering) enligt integritetspolicyn.
 Next package: enligt prioritetslistan.
+
+---
+
+Package: Prova utan att registrera för inloggade (kö 18)
+Status: done
+Evidence: `tests/Feature/Demo/DemoVisitorTest.php`, `ManualTest`, `LandingPageTest`.
+- Knappen på startsidan visas också för inloggade (när demon är på). `GET /prova` för en inloggad visar en förklaring (egen gästsession, logga ut eller privat fönster, Till översikten) i stället för att omdirigera; `POST /prova` startar ingen demo. Demogäster behåller nuvarande beteende. Manualens steg 1 uppdaterad.
+Next package: enligt prioritetslistan.

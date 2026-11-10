@@ -31,7 +31,7 @@
         <a class="lp9" href="{{ auth()->check() ? route('dashboard') : App\Support\Landing\SignupPath::url() }}" style="display:inline-flex;align-items:center;gap:10px;min-height:54px;padding:0 26px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:16.5px;font-weight:700">{{ auth()->check() ? 'Till översikten' : App\Support\Landing\SignupPath::label() }}</a>
         <a class="lp10" href="#kor-sjalv" style="display:inline-flex;align-items:center;gap:10px;min-height:54px;padding:0 26px;border-radius:999px;border:1.5px solid var(--ink);color:var(--ink);text-decoration:none;font-size:16.5px;font-weight:600">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>Ladda ner NONOX gratis</a>
-        @if(! auth()->check() && App\Support\Demo\DemoMode::enabled())
+        @if(App\Support\Demo\DemoMode::enabled())
           <a class="lp10" href="{{ route('demo.show') }}" data-try-link style="display:inline-flex;align-items:center;gap:10px;min-height:54px;padding:0 26px;border-radius:999px;border:1.5px solid var(--ink);color:var(--ink);text-decoration:none;font-size:16.5px;font-weight:600">Prova utan att registrera</a>
         @endif
       </div>
