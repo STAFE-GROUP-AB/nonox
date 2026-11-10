@@ -138,7 +138,7 @@ class RecipePage extends Component
         $this->toast(__('Receptet är sparat som version :version, som gäller från :date.', ['version' => $recipe->version, 'date' => $recipe->valid_from->toDateString()]));
 
         foreach ($save->warnings() as $warning) {
-            $this->toast($warning, 'error');
+            $this->toast($warning, 'warning');
         }
 
         $this->editing = false;

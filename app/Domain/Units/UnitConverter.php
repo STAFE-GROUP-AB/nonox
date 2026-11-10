@@ -6,6 +6,7 @@ namespace App\Domain\Units;
 
 use Brick\Math\BigDecimal;
 use Brick\Math\BigRational;
+use Brick\Math\Exception\MathException;
 use Brick\Math\RoundingMode;
 
 /**
@@ -59,12 +60,17 @@ final class UnitConverter
      * of the stock unit: round_half_up(entered × 1000 / enteredPerStock).
      *
      * @throws QuantityRoundsToZero when the result is zero
+     * @throws QuantityOutOfRange when it does not fit a stock quantity
      */
     public static function toStock(BigDecimal|string $entered, BigRational $enteredPerStock): QuantityConversion
     {
         $entered = BigDecimal::of($entered);
-        $stockMilli = BigRational::of($entered)->multipliedBy(1000)->dividedBy($enteredPerStock)
-            ->toScale(0, RoundingMode::HalfUp)->toInt();
+        try {
+            $stockMilli = BigRational::of($entered)->multipliedBy(1000)->dividedBy($enteredPerStock)
+                ->toScale(0, RoundingMode::HalfUp)->toInt();
+        } catch (MathException) {
+            throw new QuantityOutOfRange;
+        }
 
         if ($stockMilli <= 0) {
             throw new QuantityRoundsToZero;

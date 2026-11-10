@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Inventory\Domain;
 
 use Brick\Math\BigDecimal;
+use Brick\Math\Exception\MathException;
 use Brick\Math\RoundingMode;
 use InvalidArgumentException;
 
@@ -32,7 +33,11 @@ final class Quantity
             throw new InvalidArgumentException("Not a quantity: {$input}");
         }
 
-        return BigDecimal::of($text)->multipliedBy(self::SCALE)->toScale(0)->toInt();
+        try {
+            return BigDecimal::of($text)->multipliedBy(self::SCALE)->toScale(0)->toInt();
+        } catch (MathException) {
+            throw new InvalidArgumentException("Not a quantity: {$input}");
+        }
     }
 
     /** Thousandths as Swedish text without trailing zeros: 1500 → "1,5". */

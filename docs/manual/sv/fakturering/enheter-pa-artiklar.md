@@ -25,7 +25,7 @@ Lämnar du inköps- eller försäljningsenheten tom är den samma som lagerenhet
 1. Gå till **Register → Artiklar** och tryck på **Ändra** vid artikeln, eller på **Ny artikel**.
 2. Öppna fliken **Avancerad**. Under **Enheter** väljer du **Lagerenhet**, **Inköpsenhet** och **Försäljningsenhet**.
 3. För trä och skivor: fyll i **Längd (mm)**, **Bredd (mm)** och **Tjocklek (mm)** under **Materialets mått**. Skriv i millimeter med högst tre decimaler, till exempel *45* eller *0,6* för faner.
-4. Behövs en omräkning som NONOX inte kan räkna fram, till exempel förpackning till styck, trycker du på **Lägg till omräkning**, skriver hur många som går på en lagerenhet och väljer enheten.
+4. Behövs en omräkning som NONOX inte kan räkna fram, till exempel förpackning till styck, trycker du på **Lägg till omräkning**. Raden läses som en mening: *1 st = 0,005 förp* betyder att en lagerenhet (st) är 0,005 förpackningar, alltså att en förpackning är 200 st. Skriv talet efter likhetstecknet och välj enheten.
 5. Tryck på **Spara**.
 
 NONOX stoppar en inköps- eller försäljningsenhet som inte går att räkna om till lagerenheten och säger vilken omräkning som saknas.
@@ -36,7 +36,7 @@ NONOX stoppar en inköps- eller försäljningsenhet som inte går att räkna om 
 
 - **Samma slag av enhet räknas om av sig själv.** Meter, löpmeter, centimeter och millimeter hör ihop, liksom kilo och gram, liter och deciliter, kvadratmeter och kvadratdecimeter, kubikmeter och liter, timme och minut.
 - **Från materialets mått.** Med längd, bredd och tjocklek räknar NONOX fram omräkningarna mellan löpmeter, kvadratmeter, kubikmeter och styck. En regel på 45 × 95 mm och 4 800 mm är 0,004275 kubikmeter per löpmeter, och en bit är 4,8 löpmeter. Omräkningarna visas under måtten med texten *från måtten* och räknas om när måtten ändras.
-- **Egna omräkningar.** För förpackning, par, set och egna enheter anger du själv hur många som går på en lagerenhet. En omräkning du skrivit själv gäller före en som räknats fram.
+- **Egna omräkningar.** För förpackning, par, set och egna enheter anger du själv vad en lagerenhet är i den enheten, till exempel 1 st = 0,005 förp. En omräkning du skrivit själv gäller före en som räknats fram.
 
 Omräkningarna är exakta bråk, så ingenting avrundas på vägen. En mängd du skriver in, till exempel 2,5 kubikmeter, räknas om till lagerenheten en gång när den matas in och avrundas då till närmaste tusendel av lagerenheten. Blir resultatet noll avvisas raden med texten *Mängden blir noll i lagerenheten*. Blir ändringen av avrundningen större än 0,5 procent visas en varning med båda mängderna, och raden sparas ändå. Det du skrev sparas bredvid, så raden visas alltid som du skrev den. Mängder skrivs in i dag på receptraderna i Kök. Inköpsorder och stycklistor får samma regler när de byggs.
 

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Domain\Units\UnitCatalogue;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -75,11 +74,11 @@ return new class extends Migration
         DB::statement("ALTER TABLE article_unit_conversions ADD CONSTRAINT article_unit_conversions_source_known CHECK (source IN ('MANUAL', 'DIMENSIONS'))");
 
         foreach (DB::table('teams')->pluck('id') as $companyId) {
-            UnitCatalogue::seed((int) $companyId);
+            self::seed((int) $companyId);
         }
 
         foreach (DB::table('articles')->select('company_id', 'unit')->distinct()->get() as $group) {
-            $unitId = UnitCatalogue::resolveId((int) $group->company_id, (string) $group->unit);
+            $unitId = self::resolveId((int) $group->company_id, (string) $group->unit);
 
             DB::table('articles')->where('company_id', $group->company_id)->where('unit', $group->unit)->update([
                 'stock_unit_id' => $unitId,
@@ -87,6 +86,95 @@ return new class extends Migration
                 'sales_unit_id' => $unitId,
             ]);
         }
+    }
+
+    /**
+     * The catalogue as it was when this migration was written, frozen here so
+     * later changes to the defaults in code never change what it does:
+     * code => [name, dimension, base numerator, base denominator, rec20, aliases].
+     */
+    private const array DEFAULTS = [
+        'st' => ['styck', 'COUNT', 1, 1, 'H87', ['styck', 'stk', 'pcs', 'pc']],
+        'm' => ['meter', 'LENGTH', 1, 1, 'MTR', ['meter']],
+        'lpm' => ['löpmeter', 'LENGTH', 1, 1, 'MTR', ['löpmeter', 'lopmeter', 'löpm']],
+        'm²' => ['kvadratmeter', 'AREA', 1, 1, 'MTK', ['m2', 'kvm']],
+        'm³' => ['kubikmeter', 'VOLUME', 1, 1, 'MTQ', ['m3']],
+        'kg' => ['kilogram', 'MASS', 1, 1, 'KGM', []],
+        'g' => ['gram', 'MASS', 1, 1000, 'GRM', []],
+        'l' => ['liter', 'VOLUME_LIQUID', 1, 1000, 'LTR', ['liter']],
+        'h' => ['timme', 'TIME', 1, 1, 'HUR', ['tim', 'timme', 'timmar', 'hour']],
+        'förp' => ['förpackning', 'COUNT', null, null, 'XPK', ['paket']],
+        'par' => ['par', 'COUNT', null, null, 'PR', []],
+        'set' => ['set', 'COUNT', null, null, 'SET', []],
+        'mm' => ['millimeter', 'LENGTH', 1, 1000, 'MMT', []],
+        'cm' => ['centimeter', 'LENGTH', 1, 100, 'CMT', []],
+        'dm²' => ['kvadratdecimeter', 'AREA', 1, 100, null, ['dm2']],
+        'dl' => ['deciliter', 'VOLUME_LIQUID', 1, 10_000, null, []],
+        'cl' => ['centiliter', 'VOLUME_LIQUID', 1, 100_000, null, []],
+        'ml' => ['milliliter', 'VOLUME_LIQUID', 1, 1_000_000, null, []],
+        'min' => ['minut', 'TIME', 1, 60, 'MIN', []],
+    ];
+
+    /** The Rec 20 codes Peppol knew for unit texts at the time (UblInvoiceWriter::UNITS). */
+    private const array REC20 = [
+        'st' => 'H87', 'styck' => 'H87', 'stk' => 'H87', 'pcs' => 'H87', 'pc' => 'H87',
+        'tim' => 'HUR', 'timme' => 'HUR', 'timmar' => 'HUR', 'h' => 'HUR', 'hour' => 'HUR',
+        'min' => 'MIN', 'dag' => 'DAY', 'dagar' => 'DAY', 'dygn' => 'DAY', 'vecka' => 'WEE', 'v' => 'WEE',
+        'mån' => 'MON', 'månad' => 'MON', 'mån.' => 'MON', 'år' => 'ANN',
+        'kg' => 'KGM', 'g' => 'GRM', 'ton' => 'TNE', 't' => 'TNE',
+        'm' => 'MTR', 'meter' => 'MTR', 'km' => 'KMT', 'cm' => 'CMT', 'mm' => 'MMT', 'mil' => 'KMT',
+        'm2' => 'MTK', 'm²' => 'MTK', 'kvm' => 'MTK', 'm3' => 'MTQ', 'm³' => 'MTQ',
+        'l' => 'LTR', 'liter' => 'LTR', 'kwh' => 'KWH', 'paket' => 'XPK', 'förp' => 'XPK', 'par' => 'PR', 'set' => 'SET',
+    ];
+
+    private static function seed(int $companyId): void
+    {
+        $have = DB::table('units')->where('company_id', $companyId)->pluck('code')->map(fn (string $code): string => mb_strtolower($code))->all();
+        $now = now();
+        $rows = [];
+
+        foreach (self::DEFAULTS as $code => [$name, $dimension, $numerator, $denominator, $rec20, $aliases]) {
+            if (in_array($code, $have, true)) {
+                continue;
+            }
+
+            $rows[] = [
+                'company_id' => $companyId, 'code' => $code, 'name' => $name, 'dimension' => $dimension,
+                'base_numerator' => $numerator, 'base_denominator' => $denominator, 'rec20_code' => $rec20,
+                'aliases' => json_encode($aliases, JSON_UNESCAPED_UNICODE), 'is_default' => true,
+                'created_at' => $now, 'updated_at' => $now,
+            ];
+        }
+
+        if ($rows !== []) {
+            DB::table('units')->insert($rows);
+        }
+    }
+
+    /** The id of the unit a text names (code or alias, any case), or a new unit of the company with dimension OTHER (F-U7). */
+    private static function resolveId(int $companyId, string $text): int
+    {
+        $text = trim($text);
+        $key = mb_strtolower($text);
+        $key = $key === '' ? 'st' : $key;
+
+        self::seed($companyId);
+
+        foreach (DB::table('units')->where('company_id', $companyId)->get(['id', 'code', 'aliases']) as $unit) {
+            $aliases = json_decode((string) $unit->aliases, true);
+
+            if (mb_strtolower($unit->code) === $key || in_array($key, is_array($aliases) ? $aliases : [], true)) {
+                return (int) $unit->id;
+            }
+        }
+
+        $now = now();
+
+        return (int) DB::table('units')->insertGetId([
+            'company_id' => $companyId, 'code' => mb_substr($text === '' ? 'st' : $text, 0, 10), 'name' => mb_substr($text === '' ? 'st' : $text, 0, 60),
+            'dimension' => 'OTHER', 'base_numerator' => null, 'base_denominator' => null, 'rec20_code' => self::REC20[$key] ?? null,
+            'aliases' => '[]', 'is_default' => false, 'created_at' => $now, 'updated_at' => $now,
+        ]);
     }
 
     private static function gcd(int $a, int $b): int

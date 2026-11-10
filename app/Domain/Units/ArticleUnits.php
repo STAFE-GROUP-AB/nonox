@@ -97,7 +97,7 @@ final class ArticleUnits
         $manual = ArticleUnitConversion::query()->where('article_id', $article->id)->pluck('unit')->map(fn (string $unit): string => UnitDefaults::codeFor($unit) ?? UnitDefaults::normalise($unit))->all();
 
         foreach ($derived as $code => $fraction) {
-            if (in_array($code, $manual, true)) {
+            if (in_array($code, $manual, true) || ! self::fits($fraction)) {
                 continue;
             }
 
@@ -120,15 +120,22 @@ final class ArticleUnits
         return $row;
     }
 
+    /** True when numerator and denominator of the fraction fit the bigint columns. */
+    public static function fits(BigRational $fraction): bool
+    {
+        return $fraction->getNumerator()->isLessThanOrEqualTo(PHP_INT_MAX) && $fraction->getDenominator()->isLessThanOrEqualTo(PHP_INT_MAX);
+    }
+
     /**
      * A decimal as typed ("70", "0,6", "1 234,5") as an exact fraction, with
-     * up to nine decimals; null when it is not a positive number.
+     * up to nine digits before and nine decimals (so numerator and
+     * denominator fit a bigint); null when it is not a positive number.
      */
     public static function parseFraction(string $text): ?BigRational
     {
         $text = str_replace(',', '.', str_replace([' ', "\u{00A0}", "\u{202F}"], '', trim($text)));
 
-        if (preg_match('/^\d+(\.\d{1,9})?$/', $text) !== 1) {
+        if (preg_match('/^\d{1,9}(\.\d{1,9})?$/', $text) !== 1) {
             return null;
         }
 

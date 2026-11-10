@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Actions\Invoicing\SaveArticle;
 use App\Actions\Units\SaveUnit;
 use App\Actions\Units\SetUnitArchived;
+use App\Domain\Units\QuantityOutOfRange;
 use App\Domain\Units\UnitCatalogue;
+use App\Domain\Units\UnitConverter;
 use App\Domain\Units\UnitDefaults;
 use App\Livewire\Invoicing\Articles;
 use App\Livewire\Invoicing\Units as UnitsPage;
@@ -21,6 +23,7 @@ use App\Modules\Inventory\Structures\StructureWriter;
 use App\Modules\Kitchen\Actions\SaveRecipe;
 use App\Support\Peppol\UblInvoiceWriter;
 use App\Support\Tenancy\CurrentCompany;
+use Brick\Math\BigRational;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -178,7 +181,9 @@ it('refuses conversions that make no sense', function (array $row, string $messa
     'the stock unit itself' => [['unit' => 'kg', 'per' => '1'], 'räknas redan om'],
     'zero' => [['unit' => 'förp', 'per' => '0'], 'Mer än noll'],
     'not a number' => [['unit' => 'förp', 'per' => 'många'], 'Mer än noll'],
-    'ten decimals' => [['unit' => 'förp', 'per' => '0,1234567891'], 'högst nio decimaler'],
+    'ten decimals' => [['unit' => 'förp', 'per' => '0,1234567891'], 'högst nio siffror'],
+    'too many digits' => [['unit' => 'förp', 'per' => '99999999999999999999'], 'högst nio siffror'],
+    'ten integer digits' => [['unit' => 'förp', 'per' => '1234567890'], 'högst nio siffror'],
     'no unit' => [['unit' => '', 'per' => '5'], 'Välj enheten'],
 ]);
 
@@ -502,4 +507,50 @@ it('hands the round-trip warning of a recipe to the screen, and still saves the 
     $save($owner, $company, $cake, ['name' => 'Tårta', 'valid_from' => '2099-01-01', 'yield' => '1', 'yield_unit' => BillOfMaterials::UNIT, 'rows' => [['article_id' => $flour->id, 'quantity' => '2', 'unit' => 'g']]]);
 
     expect($save->warnings())->toBe([]);
+});
+
+it('writes the conversion row as a sentence with the stock unit, so 1 st = 0,005 förp (the screw)', function () {
+    $screw = ($this->save)($this->owner, $this->company, [
+        'number' => 'SKR', 'name' => 'Skruv', 'price' => '2', 'vat_rate' => 2500,
+        'stock_unit' => 'st', 'purchase_unit' => 'förp', 'conversions' => [['unit' => 'förp', 'per' => '0,005']],
+    ]);
+
+    Livewire::test(Articles::class)->call('edit', $screw->id)->set('tab', 'avancerad')
+        ->assertSee('1 st =')
+        ->assertSet('form.conversions.0.per', '0,005')
+        ->assertDontSee('placeholder="200"', false);
+});
+
+it('answers a huge number or size with a validation error, not a server error', function () {
+    foreach (['99999999999999999999', '1234567890'] as $per) {
+        expect(fn () => ($this->save)($this->owner, $this->company, ['number' => 'O'.$per, 'name' => 'O', 'unit' => 'kg', 'price' => '1', 'vat_rate' => 2500, 'conversions' => [['unit' => 'förp', 'per' => $per]]]))
+            ->toThrow(ValidationException::class);
+    }
+
+    expect(fn () => ($this->save)($this->owner, $this->company, [
+        'number' => 'BIG', 'name' => 'Stor', 'price' => '1', 'vat_rate' => 2500, 'stock_unit' => 'st',
+        'material_length' => '99999,999', 'material_width' => '99999,999', 'material_thickness' => '99999,999',
+    ]))->toThrow(ValidationException::class, 'Måtten är för stora');
+
+    expect(fn () => UnitConverter::toStock('99999999999999999999', BigRational::one()))
+        ->toThrow(QuantityOutOfRange::class);
+
+    Inventory::enable($this->company, $this->owner);
+    $kg = ($this->save)($this->owner, $this->company, ['number' => 'KG', 'name' => 'Kg', 'unit' => 'kg', 'price' => '1', 'vat_rate' => 2500]);
+    $dish = ($this->save)($this->owner, $this->company, ['number' => 'D', 'name' => 'Rätt', 'unit' => 'st', 'price' => '1', 'vat_rate' => 2500]);
+
+    expect(fn () => app(StructureWriter::class)->save($this->company, $this->owner, StructureKind::Recipe, $dish, ['name' => 'R', 'yield' => '1', 'yield_unit' => BillOfMaterials::UNIT, 'rows' => [['article_id' => $kg->id, 'quantity' => '99999999999999999999']]]))
+        ->toThrow(ValidationException::class);
+});
+
+it('keeps the unit text when the sales unit does not change, and writes the code when it does', function () {
+    $article = ($this->save)($this->owner, $this->company, ['number' => 'T', 'name' => 'Arbete', 'unit' => 'tim', 'price' => '600', 'vat_rate' => 2500]);
+
+    $saved = ($this->save)($this->owner, $this->company, ['number' => 'T', 'name' => 'Arbete 2', 'price' => '600', 'vat_rate' => 2500, 'stock_unit_id' => unitId('h'), 'purchase_unit_id' => unitId('min')], $article);
+
+    expect($saved->fresh())->unit->toBe('tim')->name->toBe('Arbete 2');
+
+    $changed = ($this->save)($this->owner, $this->company, ['number' => 'T', 'name' => 'Arbete 2', 'price' => '600', 'vat_rate' => 2500, 'sales_unit_id' => unitId('min')], $saved);
+
+    expect($changed->fresh()->unit)->toBe('min');
 });

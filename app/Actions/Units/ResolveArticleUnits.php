@@ -73,6 +73,7 @@ final class ResolveArticleUnits
         $stockCode = Unit::query()->findOrFail((int) $attributes['stock_unit_id'])->code;
         $manual = array_key_exists('conversions', $input) ? $this->manual($input['conversions'], $stockCode) : null;
 
+        $this->checkDerivedFit($article, $attributes, $stockCode);
         $this->checkConversions($article, $attributes, $manual, $stockCode);
 
         return ['attributes' => $attributes, 'manual' => $manual];
@@ -163,11 +164,14 @@ final class ResolveArticleUnits
             throw ValidationException::withMessages(['stock_unit_id' => __('Lagerenheten kan inte ändras när artikeln har lagerrörelser eller ingår i recept. Skapa en ny artikel i den nya enheten.')]);
         }
 
+        // The text stays as it is when the sales unit does not change ("tim" is not turned into "h").
+        $unchanged = $article !== null && ($salesId ?? $stockId) === ($article->sales_unit_id ?? $article->stock_unit_id) && (string) $article->unit !== '';
+
         return [
             'stock_unit_id' => $stockId,
             'purchase_unit_id' => $purchaseId,
             'sales_unit_id' => $salesId,
-            'unit' => ($found['sales_unit_id'] ?? $found['stock_unit_id'])->code,
+            'unit' => $unchanged ? $article->unit : ($found['sales_unit_id'] ?? $found['stock_unit_id'])->code,
         ];
     }
 
@@ -215,7 +219,7 @@ final class ResolveArticleUnits
             $fraction = ArticleUnits::parseFraction($per);
 
             if ($fraction === null) {
-                throw ValidationException::withMessages(["conversions.{$index}.per" => __('Skriv hur många :unit en :stock är, till exempel 200. Mer än noll, högst nio decimaler.', ['unit' => $unit, 'stock' => $stockCode])]);
+                throw ValidationException::withMessages(["conversions.{$index}.per" => __('Skriv hur många :unit som går på en :stock. Mer än noll, högst nio siffror före och nio efter kommatecknet.', ['unit' => $unit, 'stock' => $stockCode])]);
             }
 
             $result[UnitDefaults::codeFor($unit) ?? $unit] = $fraction;
@@ -249,6 +253,23 @@ final class ResolveArticleUnits
 
             if (UnitConverter::enteredPerStock($stockCode, $code, [...$known, ...$entered]) === null) {
                 throw ValidationException::withMessages([$key => __('Det saknas en omräkning mellan :stock och :unit. Lägg till den under Omräkningar, eller ange måtten om den kan räknas fram.', ['stock' => $stockCode, 'unit' => $code])]);
+            }
+        }
+    }
+
+    /**
+     * Sizes whose derived conversions would not fit the columns (a 100 m
+     * board in all three directions) are refused with the size fields.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function checkDerivedFit(?Article $article, array $attributes, string $stockCode): void
+    {
+        $size = fn (string $column): ?int => array_key_exists($column, $attributes) ? $attributes[$column] : $article?->{$column};
+
+        foreach (MaterialConversions::for($stockCode, $size('material_length_um'), $size('material_width_um'), $size('material_thickness_um')) as $fraction) {
+            if (! ArticleUnits::fits($fraction)) {
+                throw ValidationException::withMessages(['material_length' => __('Måtten är för stora för att räkna om mellan enheterna. Kontrollera att de är i millimeter.')]);
             }
         }
     }

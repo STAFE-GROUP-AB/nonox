@@ -51,11 +51,11 @@
     @endif
 
     <p class="text-sm font-medium text-gray-700 sm:col-span-6">{{ __('Omräkningar') }}</p>
-    <p class="-mt-2 text-sm text-gray-500 sm:col-span-6">{{ __('När en enhet inte räknas om av sig själv, till exempel förpackning till styck: hur många av enheten går det på en lagerenhet? Enheter av samma slag, som meter och millimeter, behöver ingen omräkning.') }}</p>
+    <p class="-mt-2 text-sm text-gray-500 sm:col-span-6">{{ __('När en enhet inte räknas om av sig själv, till exempel förpackning till styck: raden läses som en mening, till exempel 1 st = 0,005 förp. Enheter av samma slag, som meter och millimeter, behöver ingen omräkning.') }}</p>
     @foreach(($form['conversions'] ?? []) as $index => $conversion)
         <div class="grid gap-2 sm:col-span-6 sm:grid-cols-6" wire:key="conversion-row-{{ $index }}">
-            <x-ui.field :for="'conversion_per_'.$index" :label="__('Så många går på en lagerenhet')" :error="'conversions.'.$index.'.per'" class="sm:col-span-2">
-                <input id="conversion_per_{{ $index }}" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model.blur="form.conversions.{{ $index }}.per" placeholder="200">
+            <x-ui.field :for="'conversion_per_'.$index" :label="__('1 :unit =', ['unit' => $stockCode])" :error="'conversions.'.$index.'.per'" class="sm:col-span-2">
+                <input id="conversion_per_{{ $index }}" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model.blur="form.conversions.{{ $index }}.per" placeholder="0,005">
             </x-ui.field>
             <x-ui.field :for="'conversion_unit_'.$index" :label="__('Enhet')" :error="'conversions.'.$index.'.unit'" class="sm:col-span-2">
                 <select id="conversion_unit_{{ $index }}" class="{{ $input }} mt-1" wire:model.blur="form.conversions.{{ $index }}.unit">

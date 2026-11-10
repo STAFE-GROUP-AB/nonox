@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Inventory\Structures;
 
 use App\Domain\Units\ArticleUnits;
+use App\Domain\Units\QuantityOutOfRange;
 use App\Domain\Units\QuantityRoundsToZero;
 use App\Domain\Units\UnitConverter;
 use App\Models\Article;
@@ -149,6 +150,8 @@ final class StructureWriter
 
                 try {
                     $conversion = UnitConverter::toStock(Quantity::decimal($entered), $perStock);
+                } catch (QuantityOutOfRange) {
+                    throw ValidationException::withMessages(["rows.{$index}.quantity" => __('Mängden är för stor för lagerenheten.')]);
                 } catch (QuantityRoundsToZero) {
                     throw ValidationException::withMessages(["rows.{$index}.quantity" => __('Mängden blir noll i lagerenheten. Skriv en större mängd.')]);
                 }

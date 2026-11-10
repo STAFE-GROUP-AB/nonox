@@ -13441,5 +13441,10 @@
     "Välj enhet": "Choose unit",
     "Det artiklarna räknas, köps och säljs i: styck, meter, kvadrat, kubik och egna enheter.": "What articles are counted, bought and sold in: pieces, metres, square metres, cubic metres and your own units.",
     "Tillbaka till artiklar": "Back to articles",
-    "Enheten :unit finns inte i enhetslistan.": "The unit :unit is not in the unit list."
+    "Enheten :unit finns inte i enhetslistan.": "The unit :unit is not in the unit list.",
+    "1 :unit =": "1 :unit =",
+    "Skriv hur många :unit som går på en :stock. Mer än noll, högst nio siffror före och nio efter kommatecknet.": "Write how many :unit make one :stock. More than zero, at most nine digits before and nine after the decimal comma.",
+    "Måtten är för stora för att räkna om mellan enheterna. Kontrollera att de är i millimeter.": "The sizes are too large to convert between the units. Check that they are in millimetres.",
+    "Mängden är för stor för lagerenheten.": "The quantity is too large for the stock unit.",
+    "När en enhet inte räknas om av sig själv, till exempel förpackning till styck: raden läses som en mening, till exempel 1 st = 0,005 förp. Enheter av samma slag, som meter och millimeter, behöver ingen omräkning.": "When a unit does not convert by itself, for example package to piece: the row reads as a sentence, for example 1 pc = 0,005 pack. Units of the same kind, such as metres and millimetres, need no conversion."
 }
