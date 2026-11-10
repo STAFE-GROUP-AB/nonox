@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.128
-- Datum: 2026-11-09
+- Version: 0.129
+- Datum: 2026-11-10
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -1830,6 +1830,44 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
     och alla senare år med ett delat lås.
   - Behandlingshistoriken: `fixed_asset.split` med datum, komponenternas id,
     anskaffningsvärde, avskrivet och omföringens verifikation (inga namn).
+- **En tillgång av flera inköp (ADR-010, tillägg 2026-11-10).** En senare
+  inköpsrad kan läggas till i en befintlig tillgång i stället för att bli en
+  egen: på utkastet med Lägg till i befintlig tillgång (förslaget sparas i
+  `fixed_asset_proposals` med `add_to` och läggs till i samma transaktion som
+  bokför verifikationen eller registrerar fakturan), eller i registret med
+  Lägg till inköp för en redan bokförd rad.
+  - Raden ska vara i debet, på tillgångens eget tillgångskonto, i en bokförd
+    verifikation som inte är rättad, och inte redan höra till en tillgång
+    (`fixed_assets.acquisition_voucher_row_id`) eller ett tillägg
+    (`fixed_asset_additions.voucher_row_id`, unik). Tillgången ska vara aktiv;
+    en uppdelad tillgång tar inte emot tillägg (inköpet läggs till i en
+    komponent), och en avyttrad inte heller. Dagen (verifikationens datum
+    eller fakturadatum) ska ligga i ett öppet räkenskapsår och efter låsta
+    perioder.
+  - Varje tillägg sparas i `fixed_asset_additions` med belopp, dag, länk till
+    verifikation, rad och leverantörsfaktura, och den senast bokförda
+    avskrivningsmånaden när tillägget gjordes (`booked_through`). Tabellen går
+    inte att ändra eller ta bort ur (modellen och en trigger), och dess
+    främmande nyckel mot tillgången omfattar `company_id`.
+    `fixed_assets.acquisition_ore` är alltid summan: det första inköpet plus
+    tilläggen. Har tillgången tillägg kan anskaffningsvärdet inte ändras i
+    formuläret.
+  - Avskrivning: ett tillägg i eller före första avskrivningsmånaden, när
+    ingen månad är bokförd, ingår i planen från första månaden över hela
+    nyttjandeperioden (en tillgång under uppbyggnad skrivs alltså av från den
+    månad den tas i bruk, som är första avskrivningsmånaden). Ett senare
+    tillägg skrivs av linjärt från månaden efter tillägget, och aldrig i eller
+    före en redan bokförd månad, över den återstående nyttjandeperioden, så
+    att tillgången blir fullt avskriven samma månad som förut. Inga månader
+    tas igen bakåt och ingen bokförd avskrivning eller verifikation ändras.
+    Är nyttjandeperioden slut nekas tillägget. `TODO(legal-verify)`: om ett
+    tillägg efter avskrivningens start (förbättringsutgift) ska skrivas av
+    över den återstående nyttjandeperioden eller en egen, enligt K2 och K3.
+  - Registret visar "Anskaffad med flera inköp:" med en rad per verifikation,
+    och verifikationen visar vilken tillgång inköpet lades till i.
+  - Behandlingshistoriken: `fixed_asset.addition_added` med tilläggets id,
+    belopp, nytt anskaffningsvärde, dag, första avskrivningsmånad,
+    verifikation, rad och faktura (inga namn).
 
 ## 5a3. Periodiseringar
 
@@ -5567,3 +5605,4 @@ påverkar bokföringen och fakturan:
 | 0.126 | 2026-11-09 | Databasroller (avsnitt 4.3a, ADR-079 etapp 2): NONOX kan köras som en roll (`nonox_app`) som inte äger tabellerna och inte kan stänga av, ta bort eller ersätta triggerna, tömma tabeller eller ändra schemat; migreringarna körs som ägaren (`nonox_owner`). Tabeller vars trigger nekar all ändring och borttagning blir append-only även genom behörigheterna. Behörigheterna läggs på efter varje migrering; en tabell utan beslut får ingen åtkomst. Påslaget med `DB_MIGRATION_USERNAME`, annars som förut med en användare; ägarens lösenord finns aldrig i programmets konfiguration. Triggerfunktionernas sökväg (version 0.119) läggs på igen efter varje migrering; personalliggarens gallring kontrolleras mot lagringstiden i databasen; signeringshändelser tas bara bort med sin begäran. Ingen bokföringsregel och inga data ändras. |
 | 0.127 | 2026-11-09 | Övergång från K2 till K3 (avsnitt 5a6.6, ADR-059 tillägg A.2.8, paket S1-P12, beslut H7 (a)): det första året med K3 lägger en person upp justeringarna av ingångsbalansräkningen (uppskjuten skatt, avsättningar, andra poster med hänvisning till K3; lättnadsregeln 35.27 per post med skäl), och förbjudna omräkningar (35.15, 35.16, 35.18, 35.20) nekas. Efter bekräftelse bokförs övergången en gång som en verifikation med den nya källan `K3_TRANSITION`, daterad årets första dag, mot 2091; migrationen lägger bara till källan i kontrollen av `vouchers.source`, utan ändring av triggrar eller `PostVoucher`. De ingående balanserna och K2-året ändras inte. Kapitel 35 tillämpas en gång, utom för ett företag som tvingas lämna K2 enligt BFNAR 2025:2. Omräknade jämförelsetal stöds inte ännu. Förändringar i eget kapital visar övergången på rad b, och uppskjuten skatt räknar årets förändring från ingångsbalansräkningen enligt K3. Nya tabeller `k3_transitions` (kan inte ändras) och `k3_transition_items` (låsta efter bokföringen). Byggnader som slaget `BUILDING_COMPONENTS`, kvittning av uppskjuten skatt endast i presentationen (29.32) med en bekräftelse per år, posten Avsättningar för skatter som en rad över 2240–2259, ogiltig övergång efter fullständig rättelse, ingen avsättning för nedmontering (35.29), ögonblicksbild av ingående balanser vid bokföringen och inget byte tillbaka till K2 för ett år med bokförd övergång. Ingen befintlig verifikation ändrades. |
 | 0.128 | 2026-11-09 | Noter och förvaltningsberättelse enligt K3 (avsnitt 5a6.7, ADR-059 tillägg A.2.7, paket S1-P9): noterna för ett mindre aktiebolag tas fram ur bokföringen, registret, principerna och övergången, en per rad i regelbladets lista S1-R8.1 och bara när villkoret är uppfyllt; en person kan skriva en not med egna ord, men notens data kommer alltid ur bokföringen och den egna texten markeras. Nya kolumner i `annual_reports` för det bokföringen inte vet (bland annat ägare med mer än tio procent med namn och andel, aldrig födelseår eller personnummer, och ja/nej-svar om noter som annars kunde utebli) och tabellen `annual_report_note_overrides`. Ingenting syns för användaren ännu och ingen verifikation ändras. |
+| 0.129 | 2026-11-10 | En anläggningstillgång av flera inköp (avsnitt 5a2, ADR-010 tillägg 2026-11-10): en senare inköpsrad på tillgångens konto kan läggas till i en befintlig tillgång, från utkastet eller i registret för en bokförd rad. Ny tabell `fixed_asset_additions` (kan inte ändras eller tas bort). Ett tillägg före avskrivningens start ingår i planen från första avskrivningsmånaden; ett senare skrivs av framåt över den återstående nyttjandeperioden. Tillägg nekas i stängda år och låsta perioder, på uppdelade och avyttrade tillgångar och efter nyttjandeperiodens slut. Ingen bokförd avskrivning eller verifikation ändras. |

@@ -22,8 +22,10 @@ use Database\Seeders\Demo\DemoIndustries;
 
 /**
  * The closing pages of the manual, in the consultancy: a printer and a
- * laptop bought on supplier invoices that create fixed assets, their
- * monthly depreciation, the printer scrapped in October, and a year's
+ * laptop bought on supplier invoices that create fixed assets, the
+ * meeting room's furniture bought on three invoices that build one asset
+ * (taken into use in May, the last invoice after depreciation started),
+ * their monthly depreciation, the printer scrapped in October, and a year's
  * insurance paid in January and spread over the year as an accrual.
  */
 final class ClosingExtras extends DemoExtra
@@ -69,6 +71,22 @@ final class ClosingExtras extends DemoExtra
             ['account' => '1250', 'amount' => '24000.00', 'description' => 'Bärbar dator 14 tum', 'asset' => ['name' => 'Bärbar dator, Anna', 'category' => 'COMPUTERS', 'life_months' => 36]],
         ]);
 
+        $furniture = app(SaveSupplier::class)($c->user, $c->company, [
+            'name' => 'Kontorsinredning Demo AB', 'org_number' => DemoIndustries::orgNumber('73'), 'bankgiro' => '5050-1055', 'payment_terms_days' => 30, 'default_account' => 5410,
+        ]);
+
+        $this->purchase($c, $furniture, CarbonImmutable::parse('2026-03-10'), '9031', 'Mötesrum, bord och stolar', 3_750_000, 750_000, [
+            ['account' => '1220', 'amount' => '30000.00', 'description' => 'Konferensbord och tolv stolar', 'asset' => ['name' => 'Inredning mötesrummet', 'category' => 'EQUIPMENT', 'life_months' => 60, 'depreciation_start' => '2026-05']],
+        ]);
+
+        $this->purchase($c, $furniture, CarbonImmutable::parse('2026-04-14'), '9057', 'Mötesrum, akustikpaneler', 1_500_000, 300_000, [
+            ['account' => '1220', 'amount' => '12000.00', 'description' => 'Akustikpaneler', 'asset' => ['add_to_name' => 'Inredning mötesrummet']],
+        ]);
+
+        $this->purchase($c, $furniture, CarbonImmutable::parse('2026-08-18'), '9112', 'Mötesrum, skärm', 750_000, 150_000, [
+            ['account' => '1220', 'amount' => '6000.00', 'description' => 'Väggskärm 75 tum', 'asset' => ['add_to_name' => 'Inredning mötesrummet']],
+        ]);
+
         for ($month = $c->start; $month <= $c->end; $month = $month->addMonthNoOverflow()) {
             $last = $month->endOfMonth()->startOfDay();
             $period = $month->format('Y-m');
@@ -93,13 +111,19 @@ final class ClosingExtras extends DemoExtra
 
     /**
      * A supplier invoice registered, approved and paid on its due date, the
-     * way the demo books every purchase; rows may carry an asset.
+     * way the demo books every purchase; rows may carry an asset, or
+     * add_to_name: the name of the asset the row is added to.
      *
      * @param  list<array<string, mixed>>  $rows
      */
     private function purchase(DemoContext $c, Supplier $supplier, CarbonImmutable $date, string $number, string $description, int $total, int $vat, array $rows): void
     {
         $c->on($date, 30, function () use ($c, $supplier, $date, $number, $description, $total, $vat, $rows): void {
+            // A row added to an asset made earlier: its id is known only once that purchase is booked.
+            $rows = array_map(fn (array $row): array => isset($row['asset']['add_to_name'])
+                ? [...$row, 'asset' => ['add_to' => (string) FixedAsset::query()->where('name', $row['asset']['add_to_name'])->value('id'), 'acquisition' => '']]
+                : $row, $rows);
+
             $draft = app(SaveSupplierInvoice::class)($c->user, $c->company, [
                 'supplier_id' => $supplier->id,
                 'invoice_number' => $number,

@@ -2,7 +2,7 @@
 beskrivning: Skapa anläggningstillgången direkt när inköpet bokförs, från en verifikation eller en leverantörsfaktura, och ställ in gränsen för inventarier av mindre värde.
 ordning: 40
 roller: [owner, admin, accountant]
-sokord: [skapa tillgång, inköp av inventarier, anskaffningskonto, inventarier av mindre värde, korttidsinventarier, direktavdrag, halva prisbasbeloppet, gräns]
+sokord: [skapa tillgång, lägg till i befintlig tillgång, flera fakturor, inköp av inventarier, anskaffningskonto, inventarier av mindre värde, korttidsinventarier, direktavdrag, halva prisbasbeloppet, gräns]
 ---
 
 # Anläggningstillgång direkt från inköpet
@@ -28,11 +28,22 @@ Köper du en dator eller en maskin behöver du inte först bokföra inköpet och
 
 Ska raden inte bli en tillgång, klicka på **Skapa ingen tillgång**.
 
+### Lägga till inköpet i en tillgång som redan finns
+
+Kommer en investering på flera fakturor – en maskin som betalas i delar, eller en ombyggnad med en faktura i månaden – ska den vara en enda tillgång. Lägg då nästa inköp till i tillgången i stället för att skapa en ny:
+
+1. Klicka på **Lägg till i befintlig tillgång** i stället för **Skapa anläggningstillgång**. Knappen visas när registret har en tillgång på samma konto som raden.
+2. Välj **Tillgång**. Bara tillgångar på radens konto finns i listan.
+3. Lämna **Anskaffningsvärde, kr** tomt för radens belopp utan moms, eller skriv ett eget belopp.
+4. Registrera fakturan eller bokför verifikationen.
+
+Tillgångens anskaffningsvärde ökar med beloppet när inköpet bokförs. Vill du ångra innan dess, klicka på **Lägg inte till**. Ett inköp som redan är bokfört lägger du till under **Bokföring → Anläggningar** med **Lägg till inköp** – läs [Anläggningsregistret och avskrivningar](/manual/bokslut/anlaggningstillgangar#en-tillgang-av-flera-inkop).
+
 ## Det här händer
 
 - Tillgången skapas i registret i samma steg som inköpet bokförs. Misslyckas bokföringen skapas ingen tillgång, och går tillgången inte att skapa bokförs inget.
 - Radens kostnadsställe följer med till tillgången.
-- I registret står **Anskaffad med verifikation** med en länk, och verifikationen visar vilka tillgångar som skapades.
+- I registret står **Anskaffad med verifikation** med en länk, och verifikationen visar vilka tillgångar som skapades. En tillgång av flera inköp visar **Anskaffad med flera inköp:** och en rad per verifikation.
 - Avskrivningarna bokförs sedan från registret varje månad. Läs [Anläggningsregistret och avskrivningar](/manual/bokslut/anlaggningstillgangar).
 
 ## Vilka konton räknas som anskaffningskonton?

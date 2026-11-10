@@ -696,3 +696,46 @@ finns särskilda skäl".
 - TODO(legal-verify): the plain-Swedish summary of 1.1A–1.1C; the
   exclusions for other legal forms that prepare a K2 annual report; the
   wording of punkt 1.1 for fiscal years beginning before 2026-01-01.
+
+## Fixed asset additions: one asset from several purchases (2026-11-10)
+
+- **Context.** An investment is often invoiced in parts (a machine delivered
+  in stages, a refit billed monthly). The register created one asset per
+  purchase row, so a customer's single investment became several assets with
+  separate plans.
+- **Decision.** A later purchase can be *added* to an existing asset:
+  from the draft (the proposal carries `add_to`, the asset id, and the
+  addition is made in the posting or registration transaction, like a new
+  asset) or from the register (Lägg till inköp, for an already posted row).
+  Each addition is a row in `fixed_asset_additions` (append-only, model and
+  trigger; composite foreign key with `company_id`) with amount, day, the
+  links to voucher, voucher row (unique) and supplier invoice, and the last
+  booked depreciation month at the time (`booked_through`).
+  `fixed_assets.acquisition_ore` stays the total, so book value, disposal,
+  the balance sheet and the notes need no change.
+- **Rules.** The row must be a debit on the asset's own asset account, in a
+  posted, uncorrected voucher, and not already linked to an asset or an
+  addition (keeps the register equal to the ledger per account). The day must
+  be in an open fiscal year and after the locked periods. A disposed asset
+  and a split parent (K3 components) refuse additions; the purchase is added
+  to the component instead, which keeps its carrying-amount plan. With
+  additions, the acquisition value cannot be typed in the form.
+- **Depreciation.** No new plan concept: an asset not yet in use simply has a
+  later first depreciation month (`depreciation_start`, existing field). An
+  addition in or before that month, with nothing booked, joins the plan from
+  its first month over the whole life. A later addition is written off
+  linearly from the month after it, never in or before a booked month, over
+  the remaining life (useful life less the months since the first month), so
+  the asset is still fully written off in the plan's last month. It is
+  prospective: no month is caught up and no posted depreciation voucher
+  changes (AGENTS.md §1.2). When nothing of the life remains, the addition
+  is refused. `DepreciationPlan` takes the later additions as linear
+  sub-plans next to the base plan (acquisition less those additions).
+- **Alternatives rejected.** Changing the acquisition value in place (loses
+  the link to each voucher and would catch up booked months on the cost
+  basis); a life of its own per addition (a new concept, and the K2/K3 answer
+  is not verified).
+- TODO(legal-verify): whether an addition after depreciation started
+  (förbättringsutgift, K2 chapter 10, K3 17.5) should be written off over the
+  remaining life of the asset (chosen) or over a life of its own, and whether
+  K2 and K3 differ here.

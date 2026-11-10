@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-10-tillgang-av-flera-inkop",
+      "datum": "2026-11-10T18:30:00+01:00",
+      "rubrik": "En anläggningstillgång av flera inköp",
+      "beskrivning": "En investering som faktureras i flera omgångar kan nu byggas upp som en enda tillgång: lägg till nästa faktura eller verifikation i en befintlig tillgång, direkt från raden eller med Lägg till inköp i registret. Tillgången skrivs av från den första avskrivningsmånaden, och ett inköp som läggs till efter att avskrivningen har börjat skrivs av över den återstående nyttjandeperioden utan att bokförda månader ändras.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-10-introduktion-efter-godkannande",
       "datum": "2026-11-10T08:30:00+01:00",
       "rubrik": "Personlig introduktion när du släpps in från kön",
