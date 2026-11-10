@@ -243,7 +243,7 @@ describe('versions', function () {
     });
 
     it('re-imports the shipped files without touching anything', function () {
-        $this->artisan('agreements:import')->assertSuccessful()->expectsOutputToContain('0 nya, 0 uppdaterade, 8 oförändrade');
+        $this->artisan('agreements:import')->assertSuccessful()->expectsOutputToContain('0 nya, 0 uppdaterade, 10 oförändrade');
     });
 
     it('lets a person with agreements:verify check a version for the company, with a toast, but not the hairdressers\' agreement', function () {

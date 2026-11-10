@@ -130,9 +130,10 @@
       "id": "tra-och-mobelavtalet",
       "rubrik": "Trä- och möbelavtalet i lönen",
       "beskrivning": "Avtalet för arbetare i trä- och möbelindustrin läggs in som data i lönen, med lönetillägg, övertid, OB och semesterregler, så att lönen räknas enligt avtalet.",
-      "status": "Planerat",
+      "status": "Pågår",
       "omrade": "Avtal",
-      "uppdaterad": "2026-11-09"
+      "uppdaterad": "2026-11-10",
+      "kommentar": "Avtalet finns som data med källa. Lönekörningen stoppas tills 2025 års avtalstext kan kontrolleras av en person; den texten är inte publik ännu."
     },
     {
       "id": "storskarm-verkstad",

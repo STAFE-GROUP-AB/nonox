@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Modules\Payroll\Http;
 
 use App\Modules\Payroll\Support\Migration\PayrollCsv;
+use App\Modules\Payroll\Support\Paxml\PayrollFileCsv;
 use Illuminate\Http\Response;
 
 /**
- * An empty CSV file with the columns for one step of moving payroll data.
+ * An empty CSV file with the columns for one step of moving payroll data,
+ * or for a month's payroll lines (löneunderlag) from another payroll or
+ * scheduling program, read in on the payroll run's page.
  */
 class MigrationTemplateController
 {
@@ -16,6 +19,7 @@ class MigrationTemplateController
         'anstallda' => [PayrollCsv::EMPLOYEES, PayrollCsv::EMPLOYEES_OPTIONAL],
         'hittills-i-ar' => [PayrollCsv::YEAR_TO_DATE, PayrollCsv::YEAR_TO_DATE_OPTIONAL],
         'semester' => [PayrollCsv::VACATION, PayrollCsv::VACATION_OPTIONAL],
+        'loneunderlag' => [PayrollFileCsv::COLUMNS, []],
     ];
 
     public function __invoke(string $template): Response

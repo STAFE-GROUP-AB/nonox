@@ -28,7 +28,7 @@ Route::get('/lon/korningar/{run}/lonefil', SalaryPaymentFileController::class)->
 Route::get('/lon/korningar/{run}/underlag/{import}', [PayrollFileImportController::class, 'show'])->whereNumber(['run', 'import'])->name('payroll.runs.imports.show');
 Route::get('/lon/korningar/{run}/underlag/{import}/fil', [PayrollFileImportController::class, 'download'])->whereNumber(['run', 'import'])->name('payroll.runs.imports.file');
 Route::view('/lon/flytt', 'payroll::migration')->name('payroll.migration');
-Route::get('/lon/flytt/mall/{template}', MigrationTemplateController::class)->whereIn('template', ['anstallda', 'hittills-i-ar', 'semester'])->name('payroll.migration.template');
+Route::get('/lon/flytt/mall/{template}', MigrationTemplateController::class)->whereIn('template', ['anstallda', 'hittills-i-ar', 'semester', 'loneunderlag'])->name('payroll.migration.template');
 Route::view('/lon/rapporter', 'payroll::reports')->name('payroll.reports');
 Route::view('/lon/arbetsgivardeklaration', 'payroll::agi')->name('payroll.agi');
 Route::get('/lon/arbetsgivardeklaration/{submission}/fil', AgiFileController::class)->whereNumber('submission')->name('payroll.agi.file');

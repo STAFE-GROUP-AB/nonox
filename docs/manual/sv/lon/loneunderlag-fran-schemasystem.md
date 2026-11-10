@@ -4,7 +4,7 @@ ordning: 70
 roller: [owner, payroll_admin]
 modul: payroll
 rutter: [payroll.runs.imports.show]
-sokord: [PAXml, lönefil import, löneunderlag, schemasystem, tidsystem, CSV lön, importera timmar, OB-fil]
+sokord: [PAXml, lönefil import, löneunderlag, schemasystem, tidsystem, CSV lön, importera timmar, OB-fil, mall löneunderlag, lönedata från annat program]
 ---
 
 # Löneunderlag från schemasystem (PAXml och CSV)
@@ -14,7 +14,7 @@ Många restauranger, caféer och butiker räknar timmar och OB i ett schema- ell
 NONOX läser:
 
 - **PAXml**, den svenska standarden för löneunderlag, i versionerna 1.0 och 2.0–2.3.
-- **CSV**, semikolonseparerad med rubrikraden `anstallningsnummer;personnummer;loneart;benamning;datum;datum_tom;antal;apris;belopp`. `loneart` och antingen anställningsnummer eller personnummer måste finnas. Decimalkomma eller decimalpunkt går bra.
+- **CSV**, semikolonseparerad med rubrikraden `anstallningsnummer;personnummer;loneart;benamning;datum;datum_tom;antal;apris;belopp`. `loneart` och antingen anställningsnummer eller personnummer måste finnas. Decimalkomma eller decimalpunkt går bra. Kommer timmarna från ett annat lön- eller tidprogram som inte kan göra PAXml, klicka på **Hämta mall för CSV** bredvid filfältet i lönekörningen och klistra in programmets export under rubrikraden.
 
 Filen får vara högst 10 MB.
 

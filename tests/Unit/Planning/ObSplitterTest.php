@@ -141,3 +141,31 @@ it('returns nothing for an empty or reversed interval', function () {
         expect($split->minutes)->toBe([])->and($split->notes)->toBe([])->and($split->totalMinutes)->toBe(0);
     }
 });
+
+// Träindustriavtalet 2023–2025 (TI23 § 5 mom 1 s. 41): a–e exclude each other, so the highest code wins where they overlap.
+it('splits Träindustriavtalet shifts into OB a–e, the highest where they overlap', function (string $start, string $end, array $minutes, int $total) {
+    expect(obSplit('tmf-gs-traindustri/MEMBER-2023-04-01.json', $start, $end))->toBe(['minutes' => $minutes, 'total' => $total, 'notes' => []]);
+})->with([
+    // Tue: a) from 17:00.
+    'weekday evening a' => ['2024-11-05 15:00', '2024-11-05 23:00', ['TMF_OB_A' => 360], 480],
+    // Wed: b) 00–05, a) 05–06.
+    'night b then a' => ['2024-11-06 03:00', '2024-11-06 07:00', ['TMF_OB_A' => 60, 'TMF_OB_B' => 120], 240],
+    // Mon 00–06 belongs to the weekend c), not to a) or b).
+    'monday morning c' => ['2024-11-04 04:00', '2024-11-04 08:00', ['TMF_OB_C' => 120], 240],
+    // Fri 17:00 starts the weekend c); a) is Monday–Thursday only.
+    'friday evening c' => ['2024-11-08 15:00', '2024-11-08 19:00', ['TMF_OB_C' => 120], 240],
+    // Thursday before midsommarafton: e) from 17:00 beats a).
+    'midsommar from thursday 17' => ['2024-06-20 15:00', '2024-06-20 20:00', ['TMF_OB_E' => 180], 300],
+    // Sunday after midsommardagen: e) until Monday 06:00, beating the weekend c).
+    'midsommar until monday 06' => ['2024-06-23 22:00', '2024-06-24 07:00', ['TMF_OB_E' => 480], 540],
+    // Friday before alla helgons dag: d) from 17:00 beats the weekend c).
+    'alla helgons dag d' => ['2024-11-01 15:00', '2024-11-01 20:00', ['TMF_OB_D' => 180], 300],
+    // Wednesday before Kristi himmelsfärd: d) beats a).
+    'kristi himmelsfard d' => ['2024-05-08 16:00', '2024-05-08 22:00', ['TMF_OB_D' => 300], 360],
+    // Julafton daytime is e).
+    'julafton e' => ['2024-12-24 08:00', '2024-12-24 12:00', ['TMF_OB_E' => 240], 240],
+    // 30 December from 17:00 is the day before the nyårshelg.
+    'nyar from 30 december' => ['2024-12-30 16:00', '2024-12-30 18:00', ['TMF_OB_E' => 60], 120],
+    // Annandag påsk night: e) until Tuesday 06:00, beating b) and a).
+    'pask until tuesday 06' => ['2024-04-01 22:00', '2024-04-02 07:00', ['TMF_OB_E' => 480], 540],
+]);

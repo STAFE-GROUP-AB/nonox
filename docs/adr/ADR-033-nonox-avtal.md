@@ -400,6 +400,56 @@ every worked minute per day; overtime is counted per period). Decision:
   the systemdokumentation is not changed; the amounts on the salary voucher
   are lower where both were paid before.
 
+### As built (Trä- och möbelavtalet, L1, 2026-11-10)
+
+The first agreement of wave 4 (manufacturing, ADR-071): Träindustriavtalet
+between Trä- och Möbelföretagen and GS-facket, key `tmf-gs-traindustri`,
+workers, member variant (`docs/avtal/traindustriavtalet.md`).
+
+- **Sources.** The 2025–2027 text is not public (TMF's agreements need a
+  member login, GS's 2025 path returns no PDF). The latest public text is the
+  2023–2025 agreement book on gsfacket.se (TI23). The 2025 amounts come from a
+  public procurement annex (Adda, Bilaga 05, 2025-07-04) that says its terms
+  are taken from the agreement: a secondary source.
+- **Two versions.** `MEMBER-2023-04-01` (2023-04-01 – 2025-03-31) from TI23,
+  every value with page; it can be verified by a named person and covers
+  corrections and retroactive pay for that period. `MEMBER-2025-04-01`
+  (2025-04-01 – 2027-03-31) with the annex's amounts and TI23's mechanics,
+  every amount `unverified: true`, so `VerifyAgreementVersion` refuses it and
+  a run with an employment on the agreement is blocked for pay from
+  2025-04-01. No 2026-04-01 step exists anywhere public, and none is guessed.
+- **Data.** Minimum hourly and monthly wages per group (specialarbetare,
+  yrkesarbetare, övriga, minderåriga) and years in the trade; OB a–e as fixed
+  krontal with `overlap: HIGHEST_ONLY` (one amount per hour); the holiday
+  spans "kl. 17 dagen före … till kl. 06 dagen efter" as day types; overtime
+  per day (`DAILY`) with the övertidstillägg, mertid with the mertidstillägg,
+  supplement-only codes for hourly pay, comp time 1:1; shift form supplements
+  (5,3 / 8,1 / 11,1 / 14,3 %), work outside the workshop (10 %) and
+  helgdagslön for hourly-paid staff as `SUPPLEMENT` codes; vacation 12,96 %
+  (12 % × 1,08), semestertillägg 0,8 % and lowest vacation pay per day; the
+  monthly-paid sick-pay hour value 12/52 and karens in time; SAF-LO and Fora.
+- **Engine, generic.** `ORE_PER_HOUR` may carry `plus_hourly_wage: true` (the
+  hour's wage plus a krontal: monthly-paid overtime is 1/175 of the monthly
+  salary plus the supplement, TI23 bilaga 1 p. 6); and `DayCalendar` knows
+  seven helper days (the day before nyårsafton, nationaldagen, pingstafton,
+  midsommarafton and alla helgons dag, the day after midsommardagen, the day
+  before julafton) that day types may use. No accounts or vouchers change.
+- **Not built** (`TODO(legal-verify)` in the files): the shift form
+  supplement on the OB amounts, medeltimförtjänst (bilaga 2), OB and premium
+  pay inside helgdagslön and its exceptions, the overtime supplement on comp
+  time, OB c) on a scheduled day off, the deduction from day 15 for
+  monthly-paid staff, semesterersättning 5,4 % for monthly-paid staff, the
+  arbetstidskonto, ackord, travel time, the quarter-end step for years in the
+  trade.
+- **Before use** a human must verify the data: TI23 page by page for the 2023
+  version; for 2025–2027 a new file from the agreement book, with both steps.
+
+Also in L1: a CSV template for a month's payroll lines from another payroll
+or scheduling program (`/lon/flytt/mall/loneunderlag`, linked as **Hämta mall
+för CSV** next to the file field on the payroll run), using the existing
+reader (PAYROLL_MODULE.md B.16a), and a re-check of the 2027 payroll rules
+(no pending value had been published on 2026-11-10).
+
 
 ## Legal questions (all `TODO(legal-verify)`)
 

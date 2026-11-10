@@ -181,7 +181,8 @@ final class AgreementPricer
     private function rate(PayrollContext $context, AgreementRules $rules, array $rate, string $item): array
     {
         return match ($rate['type'] ?? null) {
-            'ORE_PER_HOUR', 'ORE' => [(int) $rate['ore'], ['type' => 'fixed']],
+            'ORE_PER_HOUR' => ($rate['plus_hourly_wage'] ?? false) === true ? $this->fixedPlusHourly($context, $rules, $rate, $item) : [(int) $rate['ore'], ['type' => 'fixed']],
+            'ORE' => [(int) $rate['ore'], ['type' => 'fixed']],
             'PERCENT_OF_HOURLY' => $this->percentOfHourly($context, $rules, $rate, $item),
             'DIVISOR_OF_MONTHLY' => $this->divisorOfMonthly($context, $rate, $item),
             default => throw new PayrollBlockedException(__(':item: avtalets sats har en form som NONOX inte räknar ännu.', ['item' => $item])),
@@ -200,6 +201,25 @@ final class AgreementPricer
         return [
             $hourly->multipliedBy($percent)->dividedBy(Units::BASIS_POINTS, 0, RoundingMode::HalfUp)->toInt(),
             [...$basis, 'percent_bp' => $percent, 'hourly_wage_ore' => (string) $hourly->toScale(Units::SHOWN_DECIMALS, RoundingMode::HalfUp)],
+        ];
+    }
+
+    /**
+     * A fixed amount per hour on top of the hourly wage, for an agreement
+     * whose overtime is the hour's wage plus a krontal (Träindustriavtalet
+     * § 5 mom 2 and bilaga 1 p. 6: 1/175 of the monthly salary plus the
+     * övertidstillägg).
+     *
+     * @param  array<string, mixed>  $rate
+     * @return array{int, array<string, mixed>}
+     */
+    private function fixedPlusHourly(PayrollContext $context, AgreementRules $rules, array $rate, string $item): array
+    {
+        [$hourly, $basis] = $this->hourlyWage($context, $rules, $item);
+
+        return [
+            $hourly->plus((int) $rate['ore'])->toScale(0, RoundingMode::HalfUp)->toInt(),
+            [...$basis, 'fixed_ore' => (int) $rate['ore'], 'plus_hourly_wage' => true, 'hourly_wage_ore' => (string) $hourly->toScale(Units::SHOWN_DECIMALS, RoundingMode::HalfUp)],
         ];
     }
 

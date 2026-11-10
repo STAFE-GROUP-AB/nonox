@@ -670,3 +670,17 @@ Evidence: `tests/Feature/Onboarding/*`, `tests/Feature/Waitlist/*`, `tests/Featu
 - Efter driftsättning: klicka på en riktig avregistreringslänk på nonox.app och kontrollera att den fungerar.
 Open legal-verify items: den juridiska bedömningen av uppföljningsmejlen (berättigat intresse och avregistrering) enligt integritetspolicyn.
 Next package: enligt prioritetslistan.
+
+---
+
+Package: L1, Trä- och möbelavtalet (Träindustriavtalet), lönereglerna 2027 och mall för lönedata (prioritet 11, ADR-033 tillägg L1)
+Status: done men spärrat (avtalsdata finns; lönekörningen stoppas för anställda på avtalet tills 2025 års text kan kontrolleras)
+Evidence: `tests/Feature/Agreements/TraindustriavtaletTest.php`, `tests/Fixtures/agreements/payslips/tmf-gs-traindustri.json` (16 gyllene lönespecar), `tests/Unit/Planning/ObSplitterTest.php`, `tests/Feature/Payroll/PayrollFileTemplateTest.php`.
+- Träindustriavtalet (TMF–GS, `tmf-gs-traindustri`) i två versioner: 2023–2025 ur avtalsboken på gsfacket.se (kan kontrolleras) och 2025–2027 med belopp ur Addas upphandlingsbilaga (sekundär, `unverified`, kan inte kontrolleras). Inget steg från 2026-04-01 hittat och inget gissat.
+- Minimilöner, OB a–e (högsta gäller), övertid per dag med tillägg, mertid, skiftformstillägg, arbete utom verkstaden, helgdagslön för timavlönade, semester 12,96 % och 0,8 %, lägsta semesterlön, sjuklönens timvärde och karens, SAF-LO och Fora.
+- Motorn: `ORE_PER_HOUR` med `plus_hourly_wage` och sju hjälpdagar i avtalskalendern. Inga konton eller verifikationer ändras. Systemdokumentation 0.129.
+- Mall för CSV för löneunderlag från andra program (`/lon/flytt/mall/loneunderlag`, länken **Hämta mall för CSV** i lönekörningen).
+- Lönereglerna 2027: alla nycklar täckta (värde, ej publicerat eller löpande); omkontroll 2026-11-10 utan nya publicerade värden (inkomstbasbeloppet, Skatteverkets belopp och premierna kommer i nov–dec).
+- Hela sviten (PGTZ=UTC): 8 513 gröna, 60 röda som alla följde av den kända DatabaseRoles/Grants-flaken på demo-anslutningen och blev gröna vid omkörning; phpstan och pint rena.
+Open legal-verify items: se `docs/avtal/traindustriavtalet.md` (läsningen av helgspannen, fridag enligt schema, komptid med tillägg, skiftformstillägg på OB, medeltimförtjänst, helgdagslönens innehåll, mertid 58,50 kr i ADDA25, giltigheten 2025–2027).
+Next package: M1 enheter på artiklar.

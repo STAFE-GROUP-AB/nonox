@@ -168,6 +168,7 @@ personalliggare/liggaren-och-rattelser: { foretag: restaurang, rutt: staff-ledge
 
 avtal/valj-avtal: { foretag: restaurang, rutt: agreements.index }
 avtal/versioner-och-kontroll: { foretag: restaurang, rutt: agreements.versions }
+avtal/traindustriavtalet: { foretag: restaurang, rutt: agreements.versions, visa: '[data-agreement-key="tmf-gs-traindustri"]' }
 avtal/ob-och-overtid: { foretag: restaurang, rutt: payroll.runs.show, modell: { tabell: payroll_runs, dar: { status: CALCULATED } } }
 
 leverantorer/inkorgen: { foretag: restaurang, rutt: inbox.index, klick: ['text=Utkast klara (1)'] }

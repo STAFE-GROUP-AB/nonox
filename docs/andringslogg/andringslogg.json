@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-10-traindustriavtalet",
+      "datum": "2026-11-10T11:30:00+01:00",
+      "rubrik": "Träindustriavtalet för trä- och möbelindustrin i lönen",
+      "beskrivning": "Avtalets minimilöner, OB, övertid, skiftformstillägg, helgdagslön och semesterregler finns nu som data med källa, men lönekörningen stoppas tills 2025 års avtalstext kan kontrolleras av en person. Lönekörningen har också fått en mall för CSV för timmar och tillägg från andra lön- och tidprogram.",
+      "typ": "Nytt",
+      "omrade": "Avtal"
+    },
+    {
       "id": "2026-11-10-introduktion-efter-godkannande",
       "datum": "2026-11-10T08:30:00+01:00",
       "rubrik": "Personlig introduktion när du släpps in från kön",

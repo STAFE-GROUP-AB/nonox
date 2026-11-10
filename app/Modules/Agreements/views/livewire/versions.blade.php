@@ -20,7 +20,7 @@
                     <tbody class="divide-y divide-gray-100">
                         @foreach($versions as $version)
                             @php($rules = $version->agreementRules())
-                            <tr>
+                            <tr data-agreement-key="{{ $version->agreement_key }}">
                                 <td class="py-2 pr-4 align-top">
                                     <button type="button" class="font-medium text-gray-900 underline decoration-gray-300 hover:text-accent-700" wire:click="show({{ $version->id }})" aria-expanded="{{ $openVersion?->id === $version->id ? 'true' : 'false' }}">{{ $rules->name() }}</button>
                                     <span class="block text-xs text-gray-500">{{ implode(' – ', $rules->parties()) }}</span>
@@ -133,7 +133,7 @@
                                     @php($rate = (array) $step['rate'])
                                     {{ __('från :date:', ['date' => $step['valid_from']]) }}
                                     @switch($rate['type'] ?? '')
-                                        @case('ORE_PER_HOUR') {{ __(':amount per timme', ['amount' => App\Support\Money\Money::ofOre((int) $rate['ore'])->format()]) }} @break
+                                        @case('ORE_PER_HOUR') {{ ($rate['plus_hourly_wage'] ?? false) ? __('timlön + :amount per timme', ['amount' => App\Support\Money\Money::ofOre((int) $rate['ore'])->format()]) : __(':amount per timme', ['amount' => App\Support\Money\Money::ofOre((int) $rate['ore'])->format()]) }} @break
                                         @case('PERCENT_OF_HOURLY') {{ ($rate['plus_hourly_wage'] ?? false) ? __('timlön + :percent %', ['percent' => number_format($rate['bp'] / 100, 2, ',', ' ')]) : __(':percent % av timlönen', ['percent' => number_format($rate['bp'] / 100, 2, ',', ' ')]) }} @break
                                         @case('DIVISOR_OF_MONTHLY') {{ __('månadslönen / :divisor per timme', ['divisor' => $rate['divisor']]) }} @break
                                         @case('ORE') {{ __(':amount per tillfälle eller dag', ['amount' => App\Support\Money\Money::ofOre((int) $rate['ore'])->format()]) }} @break

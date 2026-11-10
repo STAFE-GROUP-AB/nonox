@@ -3,7 +3,7 @@ beskrivning: Vad ett kollektivavtal betyder för lönen, vilka avtal NONOX har d
 ordning: 10
 roller: [owner, admin, accountant, payroll_admin]
 modul: agreements
-sokord: [kollektivavtal, hängavtal, medlem arbetsgivarorganisation, Visita, Svensk Handel, Handels, HRF, Unionen, Livs, Frisörföretagarna, avtalsdata]
+sokord: [kollektivavtal, hängavtal, medlem arbetsgivarorganisation, Visita, Svensk Handel, Handels, HRF, Unionen, Livs, Frisörföretagarna, TMF, GS-facket, Träindustriavtalet, avtalsdata]
 ---
 
 # Kollektivavtal i lönen – vad modulen gör
@@ -40,11 +40,12 @@ Det som inte är byggt ännu, till exempel OB räknad direkt från arbetspassens
 | Lager- och E-handelsavtalet | Svensk Handel – Handels | Arbetare i lager och e-handel | Medlem |
 | Livsmedelsavtalet med tilläggsavtal för bageriföretag | Livsmedelsföretagen – Livs | Arbetare i bageri och konditori (produktion) | Medlem |
 | Frisöravtalet | Frisörföretagarna – Handels | Frisörer och barberare | Medlem, kan inte kontrolleras |
+| Träindustriavtalet | Trä- och Möbelföretagen – GS-facket | Arbetare i trä- och möbelindustrin, till exempel snickerier och möbelfabriker | Medlem; versionen från 2025 kan inte kontrolleras |
 
-Versionerna gäller avtalsperioden som började 2025. Exakta datum står under **Lön → Avtal → Versioner och kalender**.
+Versionerna gäller avtalsperioden som började 2025. För Träindustriavtalet finns även perioden 2023–2025; se [Träindustriavtalet](/manual/avtal/traindustriavtalet). Exakta datum står under **Lön → Avtal → Versioner och kalender**.
 
 > [!NOTE]
-> Frisöravtalets text för 2025–2027 är inte publik. Värdena kommer från en sammanfattning, så versionen kan inte kontrolleras mot en primär källa och kan därför inte användas i lönen. Tills en version med källa finns anger du lönen på raderna själv.
+> Frisöravtalets och Träindustriavtalets texter för 2025–2027 är inte publika. Värdena kommer från en sammanfattning, så versionen kan inte kontrolleras mot en primär källa och kan därför inte användas i lönen. Tills en version med källa finns anger du lönen på raderna själv.
 
 För de avtal där bara medlemsvarianten finns som data kan du inte välja hängavtal ännu. Är ni bundna genom hängavtal till ett av dem, kontakta oss.
 

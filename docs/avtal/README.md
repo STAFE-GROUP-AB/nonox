@@ -27,6 +27,7 @@ aldrig som avtalstext — och en lönekörning stoppas tills versionen som gäll
 | `lager-och-e-handelsavtalet.md` | Lager och E-handel (Svensk Handel–Handels) |
 | `bageri.md` | Livsmedelsavtalet + tilläggsavtal bageriföretag |
 | `frisoravtalet.md` | Frisörföretagarna–Handels |
+| `traindustriavtalet.md` | Träindustriavtalet (TMF–GS), våg 4 |
 
 ## 1. Avtal i omfång
 
@@ -71,6 +72,12 @@ tjänstemannaavtalen i våg 1.
 
 Våg 3 kräver ackord, restid, avtalstraktamente och ID06-koppling till
 personalliggaren — egen gapanalys när vågen startar.
+
+### Våg 4 — tillverkning (ADR-071)
+
+| Avtal | Parter | Kollektiv | Giltighet | Status |
+|---|---|---|---|---|
+| **Träindustriavtalet** ("Trä- och möbelavtalet") | Trä- och Möbelföretagen – GS-facket | arbetare | 2025-04-01 – 2027-03-31 (sekundär källa) | data i två versioner: 2023–2025 ur avtalstexten (kan verifieras), 2025–2027 ur en upphandlingsbilaga (kan inte verifieras, körningen stoppas). Se `traindustriavtalet.md` |
 
 ### Utanför omfång
 

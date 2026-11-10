@@ -21,6 +21,9 @@ final class PayrollFileCsv
 {
     public const array OPTIONAL = ['anstallningsnummer', 'personnummer', 'benamning', 'datum', 'datum_tom', 'antal', 'apris', 'belopp'];
 
+    /** Every column in the documented order, for the template a payroll program's export is copied into. */
+    public const array COLUMNS = ['anstallningsnummer', 'personnummer', 'loneart', 'benamning', 'datum', 'datum_tom', 'antal', 'apris', 'belopp'];
+
     public function read(string $contents): PayrollFile
     {
         if (strlen($contents) > PaxmlReader::MAX_BYTES) {
