@@ -23,6 +23,7 @@ Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanf�
 13. **Datum för version 1.0** (ägaren 2026-11-09): rätta kvarvarande "1 januari 2027" till 1 februari 2027 (ADR-038, en äldre ändringsloggpost); görs i samma push som S1-P9.
 14. **Aktuella bilder i manualen** (ägaren 2026-11-09): gå igenom manualens skärmbilder mot dagens skärmar och ta om de som är inaktuella, först Företagsguiden. Skärmbilderna tas från demodata i en ny `nonox_demo_*`-databas.
 15. **Onboarding efter godkännande i kön** (ägaren 2026-11-10, byggs nu parallellt med S1): personligt välkomstmejl utifrån svaren i kön (tidigare program, bransch, anställda), förifyllt `/kom-igang`, Kom igång-listan anpassad efter bransch och program, högst två uppföljningsmejl (ingen inloggning efter 2 dagar, inget inflyttat efter 5 dagar, med avregistrering), och en lista i /hq över hur långt varje godkänt företag har kommit. Avsändare nonox.app, svar till andreas@stafegroup.com, undertecknat av Andreas, ingen bokningslänk.
+16. **Länktext på startsidan** (ägaren 2026-11-10): "Så fungerar det i manualen →" blir "Läs mer i manualen →"; följer med i samma push som S1-P9.
 
 Ägarens ordning 2026-11-09 för det som pågår: (a) skärmbilder till de nya manualartiklarna, (b) databasanvändarna och demodatabasen på nonox.app, (c) status på önskelistan i färdplanen, (d) NONOX SaaS med Stripe.
 
