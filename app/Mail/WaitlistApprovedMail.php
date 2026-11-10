@@ -22,7 +22,9 @@ use Illuminate\Mail\Mailables\Envelope;
  * The mail keeps plain values, not the entry, so it still works if the entry
  * is deleted before the queue picks it up. Its properties are named so that
  * they do not clash with the view's variables: a public property overrides the
- * view data of the same name, and the view gets the escaped values.
+ * view data of the same name. Values go in raw: Markdown::withSecuredEncoding()
+ * (AppServiceProvider) already neutralises brackets, angle brackets and
+ * backslashes, so a value cannot become a link.
  */
 class WaitlistApprovedMail extends Mailable implements ShouldQueue
 {
@@ -54,18 +56,16 @@ class WaitlistApprovedMail extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
-        $escape = OnboardingPlan::escapeMarkdown(...);
-
         return new Content(markdown: 'emails.waitlist-approved', with: [
-            'firstName' => $escape(self::firstName($this->applicantName)),
-            'companyName' => $escape($this->forCompany),
-            'email' => $escape($this->forEmail),
+            'firstName' => self::firstName($this->applicantName),
+            'companyName' => $this->forCompany,
+            'email' => $this->forEmail,
             'plan' => $this->plan,
             'moduleLines' => $this->moduleLines(),
             'industryPhrase' => $this->plan->phrase(),
             'loginUrl' => route('login'),
             'launchDate' => WaitlistConfirmationMail::launchDate(),
-            'signature' => $escape(OnboardingPlan::signature()),
+            'signature' => OnboardingPlan::signature(),
             'replyToAddress' => OnboardingPlan::replyTo(),
             'fromAddress' => (string) config('mail.from.address'),
         ]);

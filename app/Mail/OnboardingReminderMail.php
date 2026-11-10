@@ -23,7 +23,9 @@ use Illuminate\Support\Facades\URL;
  * The mail keeps plain values, not the entry, so it still works if the entry
  * is deleted before the queue picks it up. Its properties are named so that
  * they do not clash with the view's variables: a public property overrides the
- * view data of the same name, and the view gets the escaped values.
+ * view data of the same name. Values go in raw: Markdown::withSecuredEncoding()
+ * (AppServiceProvider) already neutralises brackets, angle brackets and
+ * backslashes, so a value cannot become a link.
  */
 class OnboardingReminderMail extends Mailable implements ShouldQueue
 {
@@ -67,16 +69,14 @@ class OnboardingReminderMail extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
-        $escape = OnboardingPlan::escapeMarkdown(...);
-
         return new Content(markdown: 'emails.onboarding-reminder', with: [
             'kind' => $this->kind,
-            'firstName' => $escape(WaitlistApprovedMail::firstName($this->applicantName)),
-            'companyName' => $escape($this->forCompany),
+            'firstName' => WaitlistApprovedMail::firstName($this->applicantName),
+            'companyName' => $this->forCompany,
             'plan' => $this->plan,
             'loginUrl' => route('login'),
             'unsubscribeUrl' => $this->unsubscribeUrl(),
-            'signature' => $escape(OnboardingPlan::signature()),
+            'signature' => OnboardingPlan::signature(),
             'replyToAddress' => OnboardingPlan::replyTo(),
             'fromAddress' => (string) config('mail.from.address'),
         ]);

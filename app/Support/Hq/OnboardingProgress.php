@@ -50,7 +50,7 @@ final class OnboardingProgress
                 ." or exists (select 1 from fortnox_connections f where f.company_id in ({$companies}))) as moved_in")
             ->selectRaw("exists (select 1 from vouchers v where v.status = 'POSTED' and v.company_id in ({$companies})) as bookkept")
             ->selectRaw('exists (select 1 from teams t where t.user_id = w.approved_user_id and t.created_at < w.decided_at) as owned_company_before')
-            ->selectRaw("exists (select 1 from waitlist_entries o where o.approved_user_id = w.approved_user_id and o.status = 'APPROVED' and o.id < w.id) as has_earlier_entry")
+            ->selectRaw("exists (select 1 from waitlist_entries o where o.approved_user_id = w.approved_user_id and o.status = 'APPROVED' and (o.decided_at < w.decided_at or (o.decided_at = w.decided_at and o.id < w.id))) as has_earlier_entry")
             ->selectRaw("exists (select 1 from invoices i where i.number is not null and i.company_id in ({$companies})) as invoice_sent");
 
         return WaitlistEntry::query()

@@ -174,18 +174,6 @@ final readonly class OnboardingPlan
         return $phrase === null ? null : (string) $phrase;
     }
 
-    /**
-     * Keeps `*`, `_` and backticks in a value someone else wrote from becoming
-     * emphasis or code. Backslashes, brackets and angle brackets are already
-     * handled once by Markdown::withSecuredEncoding() (AppServiceProvider), so
-     * they must not be escaped here again; numeric entities are used because
-     * that encoding leaves them alone and Markdown shows them as the character.
-     */
-    public static function escapeMarkdown(string $text): string
-    {
-        return strtr($text, ['*' => '&#42;', '_' => '&#95;', '`' => '&#96;']);
-    }
-
     /** Where replies go: the instance's own setting, else its from address. */
     public static function replyTo(): string
     {

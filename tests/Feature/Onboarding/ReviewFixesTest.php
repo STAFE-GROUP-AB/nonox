@@ -13,6 +13,8 @@ use App\Models\WaitlistEntry;
 use App\Support\CompanyRegistry\FakeCompanyRegistry;
 use App\Support\CompanyRegistry\RegisteredCompany;
 use Database\Factories\CompanyFactory;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\MailManager;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
@@ -244,38 +246,42 @@ describe('login reminder', function () {
 });
 
 describe('markdown in waitlist values', function () {
-    it('is escaped in both mails', function () {
+    it('cannot make a link in any of the mails', function () {
         [$entry] = Onboarding::approved(['name' => '[Logga in](https://evil.test) Kim', 'company_name' => '[Logga in](https://evil.test) *AB*']);
 
         foreach ([new WaitlistApprovedMail($entry), new OnboardingReminderMail($entry, 'login'), new OnboardingReminderMail($entry, 'help')] as $mail) {
             $html = $mail->render();
-            expect($html)->not->toContain('href="https://evil.test')->not->toMatch('~<em[^>]*>AB</em>~');
+            expect($html)->not->toContain('href="https://evil.test');
         }
     });
 });
 
-describe('markdown is escaped once', function () {
-    it('renders ordinary values verbatim, without backslashes', function () {
-        [$entry] = Onboarding::approved(['name' => "Kim_O'Neil", 'email' => 'kim_o@x.test', 'company_name' => 'Bullar_AB (publ) (Väst)']);
+describe('values in the mails', function () {
+    /** @return array{text: string, html: string} what a mail client receives, through the array mailer */
+    function sentParts(Mailable $mail): array
+    {
+        // A mail manager of its own: Mail::fake() has replaced the container's.
+        $mailer = (new MailManager(app()))->mailer('array');
+        $mailer->sendNow($mail->to('mottagare@example.test'));
+        $message = $mailer->getSymfonyTransport()->messages()->last()->getOriginalMessage();
+
+        return ['text' => (string) $message->getTextBody(), 'html' => html_entity_decode((string) $message->getHtmlBody(), ENT_QUOTES)];
+    }
+
+    it('are verbatim in the text part and in the HTML part, and make no link', function () {
+        [$entry] = Onboarding::approved(['name' => "Kim_O'Neil", 'email' => 'kim_o@x.test', 'company_name' => 'Bullar_AB (publ) (Väst) [x](https://evil.test)']);
 
         foreach ([new WaitlistApprovedMail($entry), new OnboardingReminderMail($entry, 'login'), new OnboardingReminderMail($entry, 'help')] as $mail) {
-            $text = html_entity_decode(strip_tags($mail->render()), ENT_QUOTES);
+            $parts = sentParts($mail);
 
-            expect($text)->toContain('Bullar_AB (publ) (Väst)')->not->toContain('\\');
+            foreach ($parts as $kind => $content) {
+                expect($content)->toContain('Bullar_AB (publ) (Väst)')->not->toContain('&#95;')->not->toContain('href="https://evil.test');
+            }
         }
 
-        $welcome = html_entity_decode(strip_tags((new WaitlistApprovedMail($entry))->render()), ENT_QUOTES);
-        expect($welcome)->toContain("Hej Kim_O'Neil")->toContain('kim_o@x.test');
-    });
-
-    it('still makes no link or emphasis of a value', function () {
-        [$entry] = Onboarding::approved(['company_name' => '[x](https://evil.test) *AB* _y_']);
-
-        foreach ([new WaitlistApprovedMail($entry), new OnboardingReminderMail($entry, 'help')] as $mail) {
-            $html = $mail->render();
-            expect($html)->not->toContain('href="https://evil.test')->not->toMatch('~<em[^>]*>~')
-                ->and(html_entity_decode(strip_tags($html)))->toContain('[x](https://evil.test) *AB* _y_');
-        }
+        $welcome = sentParts(new WaitlistApprovedMail($entry));
+        expect($welcome['text'])->toContain("Kim_O'Neil")->toContain('kim_o@x.test')
+            ->and($welcome['html'])->toContain("Kim_O'Neil")->toContain('kim_o@x.test');
     });
 });
 
@@ -285,6 +291,20 @@ describe('the earliest entry governs', function () {
         WaitlistEntry::factory()->status(WaitlistStatus::Approved)->create(['email' => 'annan@example.test', 'company_name' => 'Senare AB', 'decided_at' => now()->subDay(), 'approved_user_id' => $user->id]);
 
         expect(WaitlistEntry::approvedFor($user)->id)->toBe($first->id);
+    });
+});
+
+describe('the earliest entry is ordered by decision date, then id', function () {
+    it('sends the reminders for the entry decided first, also when its id is higher', function () {
+        [$later, $user] = Onboarding::approved([], now()->subDays(3));
+        $later->update(['decided_at' => now()->subDays(3)]);
+        $earlier = WaitlistEntry::factory()->status(WaitlistStatus::Approved)->create(['email' => 'tidig@example.test', 'decided_at' => now()->subDays(4), 'approved_user_id' => $user->id]);
+
+        reviewRun();
+
+        expect(WaitlistEntry::approvedFor($user)->id)->toBe($earlier->id)
+            ->and($earlier->fresh()->login_reminder_sent_at)->not->toBeNull()
+            ->and($later->fresh()->login_reminder_sent_at)->toBeNull();
     });
 });
 
