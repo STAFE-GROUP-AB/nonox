@@ -41,6 +41,8 @@ Schedule::command('guide:send-deadline-reminders')->dailyAt('06:50')->withoutOve
 // The waiting list of the open beta (ADR-038): retention, and one summary a day for the HQ admins.
 Schedule::command('waitlist:prune')->dailyAt('04:40')->withoutOverlapping();
 Schedule::command('waitlist:digest')->dailyAt('07:15')->withoutOverlapping();
+// The two follow-up mails after approval (ADR-038 addendum), at a time when people read mail; at most once each, never after 14 days.
+Schedule::command('waitlist:send-onboarding-reminders')->dailyAt('09:20')->withoutOverlapping();
 // CRM (ADR-043): prospect, active and inactive from the ledger, once a day.
 Schedule::command('crm:refresh-statuses')->dailyAt('05:25')->withoutOverlapping();
 // CRM stage 2: "Vinn tillbaka" tasks for lost deals and accounts whose date has come, after the status rules.

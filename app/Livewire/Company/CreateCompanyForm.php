@@ -9,17 +9,21 @@ use App\Domain\Accounting\FiscalYearRules;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Company\Industry;
 use App\Domain\Company\LegalForm;
+use App\Domain\Company\OrganisationNumber;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\ReportingFrameworkRules;
 use App\Domain\Company\VatPeriod;
+use App\Domain\Waitlist\OnboardingPlan;
 use App\Livewire\Concerns\LooksUpCompanies;
 use App\Models\Company;
 use App\Models\User;
+use App\Models\WaitlistEntry;
 use App\Support\Tenancy\SpansCompanies;
 use App\Support\Toast;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
+use Throwable;
 
 class CreateCompanyForm extends Component implements SpansCompanies
 {
@@ -83,6 +87,42 @@ class CreateCompanyForm extends Component implements SpansCompanies
         $prefill = (array) session()->pull('company.prefill', []);
         $this->name = (string) ($prefill['name'] ?? $this->name);
         $this->org_number = (string) ($prefill['org_number'] ?? $this->org_number);
+
+        if ($prefill === []) {
+            $this->prefillFromWaitlist();
+        }
+    }
+
+    /**
+     * Someone let in from the waiting list has already told us the company's
+     * name, organisation number and industry (ADR-038 addendum). They are put
+     * in the form, all of them editable, and the company lookup runs on the
+     * number so the address and legal form are proposed too.
+     */
+    private function prefillFromWaitlist(): void
+    {
+        /** @var ?User $user */
+        $user = Auth::user();
+        $entry = $user === null ? null : WaitlistEntry::approvedFor($user);
+
+        if ($entry === null) {
+            return;
+        }
+
+        $this->name = $entry->company_name;
+        $this->org_number = (string) $entry->org_number;
+        $this->industry = OnboardingPlan::industryFor($entry->industry)->value ?? '';
+
+        if (OrganisationNumber::tryFrom($this->org_number) === null || ! $this->companyLookupAvailable()) {
+            return;
+        }
+
+        try {
+            $this->lookUpCompany();
+        } catch (Throwable $exception) {
+            // The form works without the proposal: the user fills in the rest by hand.
+            report($exception);
+        }
     }
 
     public function updatedOrgNumber(): void

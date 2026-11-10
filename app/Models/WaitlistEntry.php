@@ -35,6 +35,9 @@ use Illuminate\Support\Facades\DB;
  * @property ?CarbonImmutable $decided_at
  * @property ?string $decision_note
  * @property ?int $approved_user_id
+ * @property ?CarbonImmutable $login_reminder_sent_at
+ * @property ?CarbonImmutable $help_reminder_sent_at
+ * @property ?CarbonImmutable $reminders_opted_out_at
  * @property ?string $ip_hash
  * @property ?string $user_agent
  * @property CarbonImmutable $created_at
@@ -62,6 +65,9 @@ class WaitlistEntry extends Model
         'decided_at',
         'decision_note',
         'approved_user_id',
+        'login_reminder_sent_at',
+        'help_reminder_sent_at',
+        'reminders_opted_out_at',
         'ip_hash',
         'user_agent',
     ];
@@ -73,6 +79,9 @@ class WaitlistEntry extends Model
             'status' => WaitlistStatus::class,
             'consent_at' => 'immutable_datetime',
             'decided_at' => 'immutable_datetime',
+            'login_reminder_sent_at' => 'immutable_datetime',
+            'help_reminder_sent_at' => 'immutable_datetime',
+            'reminders_opted_out_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];
@@ -106,6 +115,17 @@ class WaitlistEntry extends Model
             ->where('type', NewWaitlistEntry::class)
             ->whereIn(DB::raw("(data::jsonb->>'waitlist_entry_id')"), array_map('strval', $ids))
             ->delete();
+    }
+
+    /** The approved entry that let this user in, if they came through the waiting list (the latest, if there are several). */
+    public static function approvedFor(User $user): ?self
+    {
+        return self::query()
+            ->where('approved_user_id', $user->id)
+            ->where('status', WaitlistStatus::Approved->value)
+            ->orderByDesc('decided_at')
+            ->orderByDesc('id')
+            ->first();
     }
 
     /** The salted hash the entry keeps instead of the IP address. */

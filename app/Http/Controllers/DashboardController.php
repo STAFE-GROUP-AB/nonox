@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Domain\Accounting\SieImport\SieImportStatus;
 use App\Domain\Company\FirmActivity;
+use App\Domain\Waitlist\PersonalChecklist;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\Invoice;
@@ -48,7 +49,7 @@ class DashboardController
             'canManage' => $user->can('update', $company),
             'firm' => FirmActivity::forViewer($user, $company),
             'hideGettingStarted' => $user->hidesPanel(GettingStartedController::PANEL, $company),
-            'steps' => [
+            'steps' => self::withPersonalSteps([
                 [
                     'done' => true,
                     'title' => __('Skapa företaget'),
@@ -88,7 +89,37 @@ class DashboardController
                     'allowed' => $user->hasTeamPermission($company, 'invoices:create'),
                     'soon' => false,
                 ],
-            ],
+            ], PersonalChecklist::for($user, $company)),
         ]);
+    }
+
+    /**
+     * Adds the steps that follow the waiting-list answers and the industry
+     * (ADR-038 addendum): the Fortnox move right after "Skapa företaget",
+     * payroll and the industry's modules before the first invoice.
+     *
+     * @param  list<array<string, mixed>>  $steps
+     * @param  array{fortnox: ?array<string, mixed>, payroll: ?array<string, mixed>, modules: ?array<string, mixed>}  $personal
+     * @return list<array<string, mixed>>
+     */
+    private static function withPersonalSteps(array $steps, array $personal): array
+    {
+        $last = array_pop($steps);
+
+        if ($personal['fortnox'] !== null) {
+            array_splice($steps, 1, 0, [$personal['fortnox']]);
+        }
+
+        foreach (['payroll', 'modules'] as $key) {
+            if ($personal[$key] !== null) {
+                $steps[] = $personal[$key];
+            }
+        }
+
+        if ($last !== null) {
+            $steps[] = $last;
+        }
+
+        return $steps;
     }
 }

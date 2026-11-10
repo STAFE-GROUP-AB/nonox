@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-10-introduktion-efter-godkannande",
+      "datum": "2026-11-10T08:30:00+01:00",
+      "rubrik": "Personlig introduktion när du släpps in från kön",
+      "beskrivning": "Välkomstmejlet bygger på dina svar i kön, och Kom igång är förifylld med företagets namn, organisationsnummer och bransch. Listan på översikten anpassas efter ditt gamla program, om du har anställda och din bransch, och du får högst två påminnelser som du kan stänga av med ett klick.",
+      "typ": "Nytt",
+      "omrade": "Övrigt"
+    },
+    {
       "id": "2026-11-09-aterkommande-intakter",
       "datum": "2026-11-09T13:40:00+01:00",
       "rubrik": "Ny modul NONOX SaaS: återkommande intäkter med MRR, ARR och churn",

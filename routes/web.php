@@ -50,6 +50,7 @@ use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\Vat\VatFileController;
 use App\Http\Controllers\WaitlistController;
+use App\Http\Controllers\WaitlistUnsubscribeController;
 use App\Http\Middleware\EnsureHqAdmin;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Models\SalesDocument;
@@ -78,6 +79,8 @@ Route::get('/prova/bygger/{token}/status', [DemoController::class, 'status'])->w
 Route::get('/prova/oppna/{token}', [DemoController::class, 'open'])->where('token', '[A-Za-z0-9]{40}')->name('demo.open');
 // The waiting list of the open beta (ADR-038): the way in for new users of the hosted service.
 Route::get('/ko', WaitlistController::class)->name('waitlist');
+// "Inga fler påminnelser" in the onboarding mails (ADR-038 addendum): signed, one click; POST is the mail clients' one-click button.
+Route::match(['get', 'post'], '/ko/inga-paminnelser/{entry}', WaitlistUnsubscribeController::class)->whereNumber('entry')->middleware('signed')->name('waitlist.unsubscribe');
 Route::get('/integritetspolicy', LegalPageController::class)->defaults('document', 'privacy')->name('legal.privacy');
 Route::get('/villkor', LegalPageController::class)->defaults('document', 'terms')->name('legal.terms');
 Route::get('/personuppgiftsbitradesavtal', LegalPageController::class)->defaults('document', 'dpa')->name('legal.dpa');
@@ -150,6 +153,8 @@ Route::post('/logga-ut', LogoutController::class)->middleware('auth')->name('log
 Route::prefix('hq')->name('hq.')->middleware(EnsureHqAdmin::class)->group(function () {
     Route::view('/', 'hq.waitlist')->name('waitlist');
     Route::get('/ko/{entry}', fn (int $entry) => view('hq.entry', ['entryId' => $entry]))->whereNumber('entry')->name('waitlist.show');
+    // How far the approved have got after the first sign-in, so the owner sees who to call (ADR-038 addendum).
+    Route::view('/introduktion', 'hq.onboarding')->name('onboarding');
     // Kunder: the companies and users of the instance, read-only metadata (ADR-038).
     Route::view('/kunder', 'hq.customers')->name('customers');
     Route::get('/kunder/foretag/{companyId}', fn (int $companyId) => view('hq.customer-company', ['companyId' => $companyId]))->whereNumber('companyId')->name('customers.company');

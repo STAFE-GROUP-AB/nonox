@@ -53,7 +53,7 @@ class ApproveWaitlistEntry
             return $user;
         });
 
-        Mail::to($user->email)->queue(new WaitlistApprovedMail($entry->name));
+        Mail::to($user->email)->queue(new WaitlistApprovedMail($entry));
 
         return $user;
     }

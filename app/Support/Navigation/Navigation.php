@@ -65,6 +65,7 @@ final class Navigation
         $active = $currentRoute !== null && Str::is($patterns, $currentRoute);
         $children = $active ? $this->links([
             ['label' => __('Kö'), 'route' => 'hq.waitlist'],
+            ['label' => __('Introduktion'), 'route' => 'hq.onboarding'],
             ['label' => __('Kunder'), 'route' => 'hq.customers'],
             ['label' => __('Inställningar'), 'route' => 'hq.settings'],
             ['label' => __('Företagsregistret'), 'route' => 'hq.registry'],
