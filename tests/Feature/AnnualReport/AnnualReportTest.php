@@ -100,8 +100,9 @@ it('saves the texts and renders the report as a page and a PDF', function () {
         ->and(AnnualReportDocument::filename($this->company, $this->year))->toEndWith('-2026.pdf');
 });
 
-it('is for companies with an annual report, and only for those who close the year', function () {
-    $bookkeeper = Bookkeeping::member($this->company, 'bookkeeper');
+it('is for companies with an annual report, and only for those who read reports or close the year', function () {
+    // Since S1-P10 reading needs reports:view (the auditor reads and exports, AGENTS.md §4); the approver has neither.
+    $bookkeeper = Bookkeeping::member($this->company, 'approver');
     $other = Company::factory()->create();
 
     Livewire::test(AnnualReportPage::class)
