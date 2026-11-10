@@ -21,13 +21,13 @@
 3. **{{ __('Lön.') }}** {{ __('Ni har anställda, så slå på modulen Lön under Inställningar för företaget, fliken Moduler. Har ni löner i ett annat program finns hjälp att flytta lönedata:') }} [{{ __('Lön') }}]({{ url('/manual/lon') }}), [{{ __('Flytta lönedata') }}]({{ url('/manual/lon/flytt-av-lonedata') }})
 @endif
 
-@if(count($modules) > 0)
-**{{ __('Moduler som brukar passa: :industry', ['industry' => mb_strtolower($industryLabel)]) }}**
+@if(count($moduleLines) > 0)
+**{{ $industryPhrase ? __('Moduler som brukar passa :industry', ['industry' => $industryPhrase]) : __('Moduler som kan passa ditt företag') }}**
 
-{{ __('Utöver bokföring och fakturering brukar företag i din bransch ha nytta av de här modulerna. Du slår på dem under Inställningar för företaget, fliken Moduler.') }}
+{{ __('Utöver bokföring och fakturering kan de här modulerna passa. Alla moduler ingår utan extra kostnad, och du slår på dem under Inställningar för företaget, fliken Moduler.') }}
 
-@foreach($modules as $module)
-- [{{ $module['name'] }}]({{ $module['manual'] }})
+@foreach($moduleLines as $line)
+- {!! $line !!}
 @endforeach
 
 @endif

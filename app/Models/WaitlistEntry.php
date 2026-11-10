@@ -35,6 +35,7 @@ use Illuminate\Support\Facades\DB;
  * @property ?CarbonImmutable $decided_at
  * @property ?string $decision_note
  * @property ?int $approved_user_id
+ * @property bool $approved_user_existed
  * @property ?CarbonImmutable $login_reminder_sent_at
  * @property ?CarbonImmutable $help_reminder_sent_at
  * @property ?CarbonImmutable $reminders_opted_out_at
@@ -65,6 +66,7 @@ class WaitlistEntry extends Model
         'decided_at',
         'decision_note',
         'approved_user_id',
+        'approved_user_existed',
         'login_reminder_sent_at',
         'help_reminder_sent_at',
         'reminders_opted_out_at',
@@ -79,6 +81,7 @@ class WaitlistEntry extends Model
             'status' => WaitlistStatus::class,
             'consent_at' => 'immutable_datetime',
             'decided_at' => 'immutable_datetime',
+            'approved_user_existed' => 'boolean',
             'login_reminder_sent_at' => 'immutable_datetime',
             'help_reminder_sent_at' => 'immutable_datetime',
             'reminders_opted_out_at' => 'immutable_datetime',

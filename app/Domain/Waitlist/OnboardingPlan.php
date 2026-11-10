@@ -53,13 +53,22 @@ final readonly class OnboardingPlan
      */
     public const array MANUAL = [
         'inventory' => 'lager',
-        'pos' => 'lager',
+        'pos' => 'lager/kassa-onslip',
         'kitchen' => 'kok',
         'work_orders' => 'fakturering/arbetsorder',
         'portal' => 'fakturering/kundportal',
         'crm' => 'crm',
         'inbox' => 'leverantorer/inkorgen',
         'payroll' => 'lon',
+    ];
+
+    /**
+     * Further articles for a module with more than one: label => path under /manual.
+     *
+     * @var array<string, array<string, string>>
+     */
+    public const array MANUAL_EXTRA = [
+        'pos' => ['Zettle' => 'lager/kassa-zettle'],
     ];
 
     public function __construct(
@@ -111,7 +120,7 @@ final readonly class OnboardingPlan
      * about; one that is already on is left out when a company is given and
      * `$includeEnabled` is false.
      *
-     * @return list<array{key: string, name: string, manual: string, enabled: bool}>
+     * @return list<array{key: string, name: string, manual: string, extra: list<array{name: string, url: string}>, enabled: bool}>
      */
     public function modules(?Company $company = null, bool $includeEnabled = true): array
     {
@@ -135,10 +144,52 @@ final readonly class OnboardingPlan
                 continue;
             }
 
-            $modules[] = ['key' => $key, 'name' => $module->name(), 'manual' => self::manualUrl($key), 'enabled' => $enabled];
+            $extra = [];
+
+            foreach (self::MANUAL_EXTRA[$key] ?? [] as $label => $path) {
+                $extra[] = ['name' => $label, 'url' => url('/manual/'.$path)];
+            }
+
+            $modules[] = ['key' => $key, 'name' => $module->name(), 'manual' => self::manualUrl($key), 'extra' => $extra, 'enabled' => $enabled];
         }
 
         return $modules;
+    }
+
+    /** "ett kafé", "en restaurang": what the modules suit, in a sentence, or null when the industry is not known. */
+    public function phrase(): ?string
+    {
+        $phrase = match ($this->industry) {
+            Industry::Cafe => __('ett kafé'),
+            Industry::Restaurant => __('en restaurang'),
+            Industry::Crafts => __('ett hantverks- eller byggföretag'),
+            Industry::Consultant => __('en konsult'),
+            Industry::Retail => __('en butik eller e-handel'),
+            Industry::HairBeauty => __('en frisör- eller skönhetssalong'),
+            Industry::AccountingFirm => __('en redovisningsbyrå'),
+            Industry::FinanceConsultant => __('en ekonomikonsult'),
+            Industry::Other, null => null,
+        };
+
+        return $phrase === null ? null : (string) $phrase;
+    }
+
+    /** Escapes what Markdown would act on, for a value someone else wrote that is put into a mail's Markdown. */
+    public static function escapeMarkdown(string $text): string
+    {
+        return (string) preg_replace('/([\\\\\[\]()*_`#])/', '\\\\$1', $text);
+    }
+
+    /** Where replies go: the instance's own setting, else its from address. */
+    public static function replyTo(): string
+    {
+        return (string) (config('nonox.waitlist.reply_to') ?: config('mail.from.address'));
+    }
+
+    /** Who signs the mails: the instance's own setting, else the app's name. */
+    public static function signature(): string
+    {
+        return (string) (config('nonox.waitlist.signature') ?: config('app.name'));
     }
 
     public static function manualUrl(string $key): string

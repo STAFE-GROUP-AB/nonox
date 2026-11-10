@@ -13253,5 +13253,18 @@
     "Påminnelse om inloggning skickad": "Sign-in reminder sent",
     "Hjälpmejl skickat": "Help mail sent",
     "Har tackat nej till påminnelser": "Has opted out of reminders",
-    "Inga påminnelser skickade": "No reminders sent"
+    "Inga påminnelser skickade": "No reminders sent",
+    "ditt företag": "your company",
+    "ett kafé": "a café",
+    "en restaurang": "a restaurant",
+    "ett hantverks- eller byggföretag": "a craft or construction company",
+    "en konsult": "a consultant",
+    "en butik eller e-handel": "a shop or online store",
+    "en frisör- eller skönhetssalong": "a hair or beauty salon",
+    "en redovisningsbyrå": "an accounting firm",
+    "en ekonomikonsult": "a finance consultant",
+    "Moduler som brukar passa :industry": "Modules that usually suit :industry",
+    "Moduler som kan passa ditt företag": "Modules that may suit your company",
+    "Utöver bokföring och fakturering kan de här modulerna passa. Alla moduler ingår utan extra kostnad, och du slår på dem under Inställningar för företaget, fliken Moduler.": "Besides bookkeeping and invoicing, these modules may suit you. All modules are included at no extra cost, and you switch them on under Company settings, the Modules tab.",
+    "Klicka på knappen så slutar vi skicka påminnelser om att komma igång. Mejl om din inloggning och om dina uppgifter påverkas inte.": "Click the button and we stop sending reminders about getting started. Mails about your sign-in and your details are not affected."
 }

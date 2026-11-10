@@ -21,7 +21,8 @@ use Throwable;
  *
  *  - login: some days after approval, to someone who has not signed in;
  *  - help: some days after the company was created, if nothing has been
- *    moved in (no finished SIE or register import, no Fortnox move).
+ *    moved in (no finished SIE or register import, no Fortnox move, no posted
+ *    voucher and no issued invoice).
  *
  * Each goes out at most once per entry (the sent_at columns, checked again
  * under a row lock), nothing goes out later than 14 days after the approval,
@@ -67,6 +68,7 @@ class SendOnboardingRemindersCommand extends Command
 
         $query = OnboardingProgress::query()
             ->whereNull('reminders_opted_out_at')
+            ->where('has_earlier_entry', false)
             ->where('decided_at', '>', $stop);
 
         if ($kind === OnboardingReminderMail::LOGIN) {
@@ -74,13 +76,17 @@ class SendOnboardingRemindersCommand extends Command
                 ->whereNull('login_reminder_sent_at')
                 ->where('decided_at', '<=', now()->subDays((int) config('nonox.waitlist.login_reminder_after_days', 2)))
                 ->where('signed_in', false)
-                ->where('has_company', false);
+                ->where('has_company', false)
+                ->where('owned_company_before', false)
+                ->where('approved_user_existed', false);
         }
 
         return $query
             ->whereNull('help_reminder_sent_at')
             ->where('has_company', true)
             ->where('moved_in', false)
+            ->where('bookkept', false)
+            ->where('invoice_sent', false)
             ->where('company_created_at', '<=', now()->subDays((int) config('nonox.waitlist.help_reminder_after_days', 5)));
     }
 

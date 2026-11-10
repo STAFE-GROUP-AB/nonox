@@ -43,9 +43,9 @@ På översikten anpassas listan **Kom igång** efter dina svar:
 Vi skickar högst två påminnelser efter att du har godkänts:
 
 1. Har du inte loggat in två dagar efter godkännandet får du ett mejl med en knapp för att logga in.
-2. Har du skapat ditt företag men inte läst in någon bokföring eller något register fem dagar senare får du ett mejl med rubriken **Behöver du hjälp?** med länkar till flyttguiderna och manualen. Det enklaste är att svara på mejlet.
+2. Har du skapat ditt företag men varken läst in bokföring eller något register, bokfört något eller skickat någon faktura fem dagar senare får du ett mejl med rubriken **Behöver du hjälp?** med länkar till flyttguiderna och manualen. Det enklaste är att svara på mejlet.
 
-Varje påminnelse skickas bara en gång, och inget skickas senare än 14 dagar efter godkännandet. Längst ner i mejlet finns länken **Inga fler påminnelser**. Ett klick räcker, du behöver inte logga in. Mejlet om att du är godkänd och mejl om din inloggning påverkas inte.
+Varje påminnelse skickas bara en gång, och inget skickas senare än 14 dagar efter godkännandet. Längst ner i mejlet finns länken **Inga fler påminnelser**. Du klickar på den och sedan på knappen **Inga fler påminnelser**, du behöver inte logga in. Mejlet om att du är godkänd och mejl om din inloggning påverkas inte.
 
 ## Om du blir inbjuden
 

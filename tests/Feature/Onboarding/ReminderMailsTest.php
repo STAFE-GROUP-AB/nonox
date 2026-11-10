@@ -20,6 +20,7 @@ use Tests\Support\Onboarding;
 
 beforeEach(function () {
     Mail::fake();
+    config(['nonox.waitlist.reply_to' => 'andreas@stafegroup.com', 'nonox.waitlist.signature' => 'Andreas Kviby']);
     $this->travelTo(now()->startOfDay()->addHours(9));
 });
 
@@ -203,7 +204,7 @@ describe('who never gets a mail', function () {
 });
 
 describe('opt-out', function () {
-    it('is a signed one-click link that sets the flag and stops the mails', function () {
+    it('is a signed link whose button sets the flag and stops the mails', function () {
         [$entry] = Onboarding::approved(approvedAt: now()->subDays(3));
         $html = (new OnboardingReminderMail($entry, 'login'))->render();
 
@@ -212,7 +213,10 @@ describe('opt-out', function () {
 
         expect($url)->not->toBe('');
 
-        $this->get($url)->assertOk()->assertSee('Inga fler påminnelser')->assertSee('Du får inga fler');
+        $this->get($url)->assertOk()->assertSee('Inga fler påminnelser');
+        expect($entry->fresh()->reminders_opted_out_at)->toBeNull();
+
+        $this->post($url)->assertOk()->assertSee('Du får inga fler');
         expect($entry->fresh()->reminders_opted_out_at)->not->toBeNull();
 
         runReminders();
@@ -234,7 +238,7 @@ describe('opt-out', function () {
         $url = URL::signedRoute('waitlist.unsubscribe', $entry->id);
         $entry->delete();
 
-        $this->get($url)->assertOk()->assertSee('Du får inga fler');
+        $this->post($url)->assertOk()->assertSee('Du får inga fler');
     });
 
     it('also takes the one-click POST of a mail client', function () {

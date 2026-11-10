@@ -79,8 +79,9 @@ Route::get('/prova/bygger/{token}/status', [DemoController::class, 'status'])->w
 Route::get('/prova/oppna/{token}', [DemoController::class, 'open'])->where('token', '[A-Za-z0-9]{40}')->name('demo.open');
 // The waiting list of the open beta (ADR-038): the way in for new users of the hosted service.
 Route::get('/ko', WaitlistController::class)->name('waitlist');
-// "Inga fler påminnelser" in the onboarding mails (ADR-038 addendum): signed, one click; POST is the mail clients' one-click button.
-Route::match(['get', 'post'], '/ko/inga-paminnelser/{entry}', WaitlistUnsubscribeController::class)->whereNumber('entry')->middleware('signed')->name('waitlist.unsubscribe');
+// "Inga fler påminnelser" in the onboarding mails (ADR-038 addendum): signed. GET shows a button, POST (the button, or a mail client's one-click) opts out.
+Route::get('/ko/inga-paminnelser/{entry}', [WaitlistUnsubscribeController::class, 'show'])->whereNumber('entry')->middleware('signed')->name('waitlist.unsubscribe');
+Route::post('/ko/inga-paminnelser/{entry}', [WaitlistUnsubscribeController::class, 'stop'])->whereNumber('entry')->middleware('signed');
 Route::get('/integritetspolicy', LegalPageController::class)->defaults('document', 'privacy')->name('legal.privacy');
 Route::get('/villkor', LegalPageController::class)->defaults('document', 'terms')->name('legal.terms');
 Route::get('/personuppgiftsbitradesavtal', LegalPageController::class)->defaults('document', 'dpa')->name('legal.dpa');

@@ -18,6 +18,8 @@ use Tests\Support\Onboarding;
  * answers on the waiting list, signed by Andreas, replies go to him.
  */
 
+beforeEach(fn () => config(['nonox.waitlist.reply_to' => 'andreas@stafegroup.com', 'nonox.waitlist.signature' => 'Andreas Kviby']));
+
 function welcomeHtml(WaitlistEntry $entry): string
 {
     return (new WaitlistApprovedMail($entry))->render();
@@ -127,7 +129,7 @@ it('is queued by the approval with the entry in it', function () {
 
     app(ApproveWaitlistEntry::class)($admin, $entry);
 
-    Mail::assertQueued(WaitlistApprovedMail::class, fn (WaitlistApprovedMail $mail): bool => $mail->hasTo('kim@example.test') && $mail->entry->company_name === 'Kims AB');
+    Mail::assertQueued(WaitlistApprovedMail::class, fn (WaitlistApprovedMail $mail): bool => $mail->hasTo('kim@example.test') && $mail->forCompany === 'Kims AB');
 
     $audit = AuditLog::query()->where('action', 'waitlist.approved')->latest('id')->firstOrFail();
     expect(json_encode($audit->payload))->not->toContain('Kims AB')->not->toContain('kim@example.test');

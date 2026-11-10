@@ -42,6 +42,6 @@
             <p class="mt-2 text-gray-600">{{ __('Allt i systemet hör till ett företag. Du kan lägga till fler företag senare och byta mellan dem uppe i menyn.') }}</p>
         </div>
 
-        <livewire:company.create-company-form />
+        <livewire:company.create-company-form :prefill-from-waitlist="true" />
     </div>
 </x-app-layout>

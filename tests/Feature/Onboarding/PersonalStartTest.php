@@ -24,7 +24,7 @@ describe('prefilled /kom-igang', function () {
         $number = CompanyFactory::organisationNumber();
         [$entry, $user] = Onboarding::approved(['company_name' => 'Exempelkaféet AB', 'org_number' => $number->formatted(), 'industry' => 'bokforing-for-cafeer']);
 
-        Livewire::actingAs($user)->test(CreateCompanyForm::class)
+        Livewire::actingAs($user)->test(CreateCompanyForm::class, ['prefillFromWaitlist' => true])
             ->assertSet('name', 'Exempelkaféet AB')
             ->assertSet('org_number', $number->formatted())
             ->assertSet('industry', Industry::Cafe->value)
@@ -41,7 +41,7 @@ describe('prefilled /kom-igang', function () {
         $fake->answer($number->digits, [RegisteredCompany::fromArray(['name' => 'Exempelkaféet Aktiebolag', 'legalFormCode' => 'AB', 'legalFormText' => 'Aktiebolag', 'street' => 'Kaféstråket 1', 'postalCode' => '54321', 'city' => 'EXEMPELBY'])]);
         [, $user] = Onboarding::approved(['company_name' => 'Exempelkaféet AB', 'org_number' => $number->formatted()]);
 
-        Livewire::actingAs($user)->test(CreateCompanyForm::class)
+        Livewire::actingAs($user)->test(CreateCompanyForm::class, ['prefillFromWaitlist' => true])
             ->assertSet('name', 'Exempelkaféet AB')
             ->assertSet('address_line1', 'Kaféstråket 1')
             ->assertSet('city', 'Exempelby')
@@ -53,7 +53,7 @@ describe('prefilled /kom-igang', function () {
     it('leaves the form empty for someone without an approved entry', function () {
         $user = User::factory()->create();
 
-        Livewire::actingAs($user)->test(CreateCompanyForm::class)
+        Livewire::actingAs($user)->test(CreateCompanyForm::class, ['prefillFromWaitlist' => true])
             ->assertSet('name', '')->assertSet('org_number', '')->assertSet('industry', '');
     });
 
@@ -62,13 +62,13 @@ describe('prefilled /kom-igang', function () {
         $pending = User::factory()->create();
         WaitlistEntry::factory()->create(['email' => $pending->email, 'company_name' => 'Väntar AB', 'approved_user_id' => $pending->id]);
 
-        Livewire::actingAs($pending)->test(CreateCompanyForm::class)->assertSet('name', '');
+        Livewire::actingAs($pending)->test(CreateCompanyForm::class, ['prefillFromWaitlist' => true])->assertSet('name', '');
     });
 
     it('leaves an industry of "Annat" unselected', function () {
         [, $user] = Onboarding::approved(['industry' => 'annat']);
 
-        Livewire::actingAs($user)->test(CreateCompanyForm::class)->assertSet('industry', '');
+        Livewire::actingAs($user)->test(CreateCompanyForm::class, ['prefillFromWaitlist' => true])->assertSet('industry', '');
     });
 
     it('shows the page to the signed-in user', function () {

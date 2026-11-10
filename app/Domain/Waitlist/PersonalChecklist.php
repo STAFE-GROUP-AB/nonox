@@ -31,6 +31,11 @@ final class PersonalChecklist
     public static function for(User $user, Company $company): array
     {
         $entry = WaitlistEntry::approvedFor($user);
+
+        // The entry's answers are about the person's first company: one they own and created after the approval.
+        if ($entry !== null && ($company->user_id !== $user->id || $entry->decided_at === null || $company->created_at < $entry->decided_at)) {
+            $entry = null;
+        }
         $plan = new OnboardingPlan(
             $entry === null ? OnboardingPlan::NO_PROGRAM : OnboardingPlan::systemFor($entry->current_system),
             $entry !== null && $entry->employees !== 'inga',
@@ -93,14 +98,15 @@ final class PersonalChecklist
         }
 
         $remaining = array_values(array_filter($suggested, fn (array $module): bool => ! $module['enabled']));
+        $industryPhrase = $plan->phrase() ?? __('ditt företag');
         $names = implode(', ', array_column($remaining === [] ? $suggested : $remaining, 'name'));
 
         return [
             'done' => $remaining === [],
             'title' => __('Slå på modulerna för din bransch'),
             'text' => $remaining === []
-                ? __('Modulerna som brukar passa :industry är påslagna: :modules.', ['industry' => mb_strtolower($industry->label()), 'modules' => $names])
-                : __('Det här brukar passa :industry: :modules. Slå på de du behöver under Moduler.', ['industry' => mb_strtolower($industry->label()), 'modules' => $names]),
+                ? __('Modulerna som brukar passa :industry är påslagna: :modules.', ['industry' => $industryPhrase, 'modules' => $names])
+                : __('Det här brukar passa :industry: :modules. Slå på de du behöver under Moduler.', ['industry' => $industryPhrase, 'modules' => $names]),
             'link' => route('teams.show', ['company' => $company->id, 'flik' => 'moduler']),
             'allowed' => $user->hasTeamPermission($company, 'modules:manage'),
             'soon' => false,

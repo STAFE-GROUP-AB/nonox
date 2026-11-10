@@ -271,8 +271,36 @@ now built from the answers on the waiting list (decided by the project owner).
   same number of queries for 5 and for 50 entries (tested). Only presence and
   dates are read, never amounts.
 
+Review amendments (2026-11-10):
+
+- The help mail goes out only for a company with nothing in it: no finished
+  import, no Fortnox move, no posted voucher and no issued invoice. The login
+  reminder is skipped when the approval reused an existing user
+  (`approved_user_existed`) or the person already owned a company.
+- A user gets one welcome mail and one set of reminders: a later approved entry
+  of the same user sends nothing. The mails keep plain values, not the entry,
+  so a deleted entry does not break a queued mail.
+- The sender is neutral by default: `WAITLIST_REPLY_TO` and `WAITLIST_SIGNATURE`
+  are empty, replies then go to `MAIL_FROM_ADDRESS` and the mails are signed
+  with the app name; the operator sets real values per instance.
+- Values the applicant wrote are escaped for Markdown before they enter a mail.
+- "Inga fler påminnelser": a GET shows a button, a POST (the button, or a mail
+  client's one-click per RFC 8058) opts out, and the audit row is written
+  without IP address and user agent. The signed link is built from `APP_URL`.
+- The form on `/kom-igang` (not `/foretag/nytt`) is prefilled, only for someone
+  who owns no company created since the approval, and the register lookup runs
+  once per number and session. The checklist additions apply only to a company
+  the person owns and created after the approval.
+- Module suggestions are service information: all NONOX modules are included at
+  no extra cost, and the mails never suggest a paid NONOX Connect service
+  (marknadsföringslagen (2008:486) 19 § is the rule to check, not the LEK).
+- The reminders start at the deploy, and the privacy policy text that describes
+  them is published at the same time. That is information under art. 13, not a
+  change of terms for existing users.
+
 Consequences: the data is the waiting list's own (ADR-038 §2) used for the
 service the person asked for. The register of processing, the retention list
 and the privacy policy (version 1.8) say so. `TODO(legal-verify)`: whether the
-reminders are service messages and not direct marketing under 9 kap. 21 § LEK;
+reminders and module suggestions are service information and not direct
+marketing under 19 § marknadsföringslagen (2008:486);
 the opt-out and `List-Unsubscribe` are offered either way.

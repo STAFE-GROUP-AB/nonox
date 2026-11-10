@@ -68,10 +68,10 @@ return [
         // Submissions per IP address and per e-mail address and hour.
         'max_per_ip_per_hour' => 5,
         'max_per_email_per_hour' => 3,
-        // The onboarding mails after approval (ADR-038 addendum): the welcome mail and the two reminders are signed
-        // by this person, and a reply goes to this address.
-        'reply_to' => env('WAITLIST_REPLY_TO', 'andreas@stafegroup.com'),
-        'signature' => env('WAITLIST_SIGNATURE', 'Andreas Kviby'),
+        // The onboarding mails after approval (ADR-038 addendum) are signed by this person and a reply goes to this
+        // address. Empty: replies go to MAIL_FROM_ADDRESS and the mails are signed with the app's name.
+        'reply_to' => env('WAITLIST_REPLY_TO'),
+        'signature' => env('WAITLIST_SIGNATURE'),
         // The first reminder goes out this many days after approval to someone who has not signed in; the second this
         // many days after the company was created if nothing has moved in. Nothing is sent later than the last day.
         'login_reminder_after_days' => 2,

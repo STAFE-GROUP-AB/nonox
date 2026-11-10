@@ -24,6 +24,9 @@ use Illuminate\Support\Facades\DB;
  *   company_created_at  when the first company of the person was created
  *   moved_in            a finished SIE import or register import, or a started Fortnox move
  *   invoice_sent        an invoice with a number, i.e. one that has been issued
+ *   bookkept            a posted voucher
+ *   owned_company_before  the person owned a company before the approval
+ *   has_earlier_entry   an earlier approved entry of the same user: one set of mails per user
  */
 final class OnboardingProgress
 {
@@ -45,12 +48,15 @@ final class OnboardingProgress
             ->selectRaw("(exists (select 1 from sie_imports s where s.status = 'COMPLETED' and s.company_id in ({$companies}))"
                 ." or exists (select 1 from register_imports r where r.status = 'COMPLETED' and r.company_id in ({$companies}))"
                 ." or exists (select 1 from fortnox_connections f where f.company_id in ({$companies}))) as moved_in")
+            ->selectRaw("exists (select 1 from vouchers v where v.status = 'POSTED' and v.company_id in ({$companies})) as bookkept")
+            ->selectRaw('exists (select 1 from teams t where t.user_id = w.approved_user_id and t.created_at < w.decided_at) as owned_company_before')
+            ->selectRaw("exists (select 1 from waitlist_entries o where o.approved_user_id = w.approved_user_id and o.status = 'APPROVED' and o.id < w.id) as has_earlier_entry")
             ->selectRaw("exists (select 1 from invoices i where i.number is not null and i.company_id in ({$companies})) as invoice_sent");
 
         return WaitlistEntry::query()
             ->fromSub($inner, 'waitlist_entries')
             ->select('waitlist_entries.*')
-            ->withCasts(['signed_in_at' => 'immutable_datetime', 'company_created_at' => 'immutable_datetime', 'moved_in' => 'boolean', 'invoice_sent' => 'boolean', 'signed_in' => 'boolean', 'has_company' => 'boolean']);
+            ->withCasts(['signed_in_at' => 'immutable_datetime', 'company_created_at' => 'immutable_datetime', 'moved_in' => 'boolean', 'invoice_sent' => 'boolean', 'bookkept' => 'boolean', 'owned_company_before' => 'boolean', 'has_earlier_entry' => 'boolean', 'signed_in' => 'boolean', 'has_company' => 'boolean']);
     }
 
     /** How many of the four steps are done, as SQL for ordering. */
