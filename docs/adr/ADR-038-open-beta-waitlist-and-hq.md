@@ -118,7 +118,7 @@ Every self-signup call to action (header, hero, prices, industry pages,
 comparison pages, moving guide, closing sections) now says **"Ställ dig i
 kö"** and links to `/ko`; the header keeps a small "Logga in" for approved
 users. A banner on every public page, the manual and the Swedish developer
-pages says "Öppen beta – skarp lansering av version 1.0 den 1 januari 2027".
+pages says "Öppen beta – skarp lansering av version 1.0 den 1 januari 2027" (moved on 2026-11-09 by the owner to 1 februari 2027; the banner now says 1 februari 2027).
 It sits in the flow above the header and scrolls away, so it never covers
 content. Download links for running NONOX yourself stay: the software is
 open source and needs no queue.
