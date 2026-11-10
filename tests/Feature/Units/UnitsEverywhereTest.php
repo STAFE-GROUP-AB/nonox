@@ -10,7 +10,6 @@ use App\Actions\Invoicing\SaveSalesDocument;
 use App\Actions\Units\SaveUnit;
 use App\Actions\Units\SetRowDefaultUnit;
 use App\Actions\Units\SetUnitArchived;
-use App\Domain\Units\UnitBackfill;
 use App\Domain\Units\UnitCatalogue;
 use App\Livewire\Invoicing\InvoiceEditor;
 use App\Livewire\Invoicing\Units as UnitsPage;
@@ -267,7 +266,9 @@ it('links existing rows to the register without changing their text, and leaves 
     }
     $before = Unit::query()->count();
 
-    UnitBackfill::rows('invoice_rows', updatable: fn ($query) => $query->whereIn('invoice_id', DB::table('invoices')->where('status', 'DRAFT')->select('id')));
+    // The backfill of the migration itself, a frozen copy of the matching.
+    $migration = require base_path('database/migrations/2027_01_08_100000_add_unit_id_to_sales_rows.php');
+    $migration::rows('invoice_rows', updatable: fn ($query) => $query->whereIn('invoice_id', DB::table('invoices')->where('status', 'DRAFT')->select('id')));
 
     $bunt = everywhereUnit('Bunt');
 

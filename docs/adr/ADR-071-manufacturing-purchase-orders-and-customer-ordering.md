@@ -585,15 +585,18 @@ saves its archived unit. Copy flows (credit, quote → order → invoice, recurr
 `unit_id` and are not refused when a unit has since been archived. An archived unit cannot be the
 row default, and the row default cannot be archived before another unit is chosen.
 
-**Migration and backfill** (`UnitBackfill`, `up()` only, additive). Every distinct
-(company, unit text) on the five tables is resolved through `UnitCatalogue::resolveId`: its code or
-alias, otherwise a new company unit with that code and dimension OTHER, so no spelling is lost.
-Rows are then linked, except where a trigger forbids it: rows of issued invoices
-(`invoice_rows_protect_issued`) and the append-only material entries keep `unit_id` null and their
-text, which remains authoritative for them; their spellings are still added to the register. A text
-longer than a code (CRM rows allowed 20 characters) is stored cut to ten characters, and
-`resolveId` matches the cut form again. Rows written later by any code path that sends only a text
-are linked when created (`HasRegisterUnit`), adding the spelling if needed.
+**Migration and backfill** (`up()` only, additive). The Crm and WorkOrders modules add `unit_id` to
+their tables (`2027_01_07_200100`, `2027_01_07_200200`); `2027_01_08_100000_add_unit_id_to_sales_rows`
+adds it to the three core tables, marks each company's row default and links the rows of all five.
+Like M1's migration it is self-contained: its matching is a frozen copy of `UnitCatalogue::find()`
+and `resolve()` (code, alias or name, a trailing full stop ignored), so later changes to the app do not
+change what it does. Every distinct (company, unit text) is resolved: an existing unit, otherwise a
+new company unit with that code and dimension OTHER, so no spelling is lost. Rows are then linked,
+except where a trigger forbids it: rows of issued invoices (`invoice_rows_protect_issued`) and the
+append-only material entries keep `unit_id` null and their text, which remains authoritative for
+them; their spellings are still added to the register. A text longer than a code (CRM rows allowed
+20 characters) is stored cut to ten characters and matches the cut form again. Rows written later
+with only a text are linked when created (`HasRegisterUnit`, below).
 
 **No accounting behaviour changes**: amounts, VAT, booking and the ledger are untouched, and the
 printed unit of every existing row stays as it was. The system documentation is therefore unchanged.

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Domain\Units\UnitBackfill;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -10,7 +9,8 @@ use Illuminate\Support\Facades\Schema;
 /*
  * Units everywhere (ADR-071 §12.9): a quote template row points at a unit
  * of the company's register. A row without a unit still means the
- * article's sales unit, so only rows with a unit text are linked.
+ * article's sales unit. The existing rows are linked by
+ * 2027_01_08_100000_add_unit_id_to_sales_rows, with the other row tables.
  */
 return new class extends Migration
 {
@@ -19,7 +19,5 @@ return new class extends Migration
         Schema::table('crm_quote_template_rows', function (Blueprint $table) {
             $table->foreignId('unit_id')->nullable()->constrained('units');
         });
-
-        UnitBackfill::rows('crm_quote_template_rows', fn ($query) => $query->where(fn ($query) => $query->whereNotNull('unit')->orWhereNull('article_id')));
     }
 };

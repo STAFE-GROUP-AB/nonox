@@ -6,7 +6,6 @@ namespace App\Domain\Units;
 
 use App\Support\Peppol\UblInvoiceWriter;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 /**
  * Seeds a company's unit catalogue and turns a free unit text into a unit
@@ -46,13 +45,23 @@ final class UnitCatalogue
             DB::table('units')->insert($rows);
         }
 
-        // Styck starts as the unit of new rows (§12.9). The migration that first seeds runs before the column exists.
-        if (self::$rowDefaultColumn || (self::$rowDefaultColumn = Schema::hasColumn('units', 'row_default'))) {
-            UnitBackfill::ensureRowDefault($companyId);
-        }
+        self::ensureRowDefault($companyId);
     }
 
-    private static bool $rowDefaultColumn = false;
+    /** Styck (or, without it, the first active unit) as the unit of new rows (§12.9), unless one is marked. */
+    public static function ensureRowDefault(int $companyId): void
+    {
+        if (DB::table('units')->where('company_id', $companyId)->where('row_default', true)->exists()) {
+            return;
+        }
+
+        $id = DB::table('units')->where('company_id', $companyId)->whereNull('archived_at')->where('code', 'st')->value('id')
+            ?? DB::table('units')->where('company_id', $companyId)->whereNull('archived_at')->orderBy('id')->value('id');
+
+        if ($id !== null) {
+            DB::table('units')->where('id', $id)->update(['row_default' => true]);
+        }
+    }
 
     private static int $adding = 0;
 
