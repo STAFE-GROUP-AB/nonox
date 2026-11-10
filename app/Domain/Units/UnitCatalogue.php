@@ -144,7 +144,8 @@ final class UnitCatalogue
      * The unit of the company a text names, without adding one: its code,
      * an alias or its name, case-insensitive, with one trailing full stop
      * ignored ("st.", "Kilogram", "kvadratmeter"). A longer text stored cut
-     * to the code's ten characters names that unit again. An empty text
+     * to the code's ten characters names that unit again, and so does a name
+     * cut that way ("kvadratmet"). An empty text
      * means styck.
      *
      * @return ?array{id: int, code: string}
@@ -188,7 +189,8 @@ final class UnitCatalogue
         foreach ([
             fn (array $unit): bool => in_array(mb_strtolower($unit['code']), [...$keys, ...$cut], true),
             fn (array $unit): bool => array_intersect($keys, $unit['aliases']) !== [],
-            fn (array $unit): bool => in_array(mb_strtolower($unit['name']), $keys, true),
+            // A name typed in full was stored cut to the code's ten characters ("kvadratmet") by older code.
+            fn (array $unit): bool => in_array(mb_strtolower($unit['name']), $keys, true) || in_array(mb_substr(mb_strtolower($unit['name']), 0, 10), $cut, true),
         ] as $test) {
             foreach ($units as $index => $unit) {
                 if ($test($unit)) {

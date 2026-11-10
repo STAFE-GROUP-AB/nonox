@@ -132,7 +132,7 @@ return new class extends Migration
 
         $unit = $units->first(fn (stdClass $unit): bool => in_array(mb_strtolower((string) $unit->code), [...$keys, ...$cut], true))
             ?? $units->first(fn (stdClass $unit): bool => array_intersect($keys, $aliases($unit)) !== [])
-            ?? $units->first(fn (stdClass $unit): bool => in_array(mb_strtolower((string) $unit->name), $keys, true));
+            ?? $units->first(fn (stdClass $unit): bool => in_array(mb_strtolower((string) $unit->name), $keys, true) || in_array(mb_substr(mb_strtolower((string) $unit->name), 0, 10), $cut, true));
 
         if ($unit !== null) {
             return (int) $unit->id;

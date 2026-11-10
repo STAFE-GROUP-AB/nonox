@@ -259,10 +259,10 @@ it('links existing rows to the register without changing their text, and leaves 
     ]));
 
     // As before the register: free spellings and no unit id. The issued row is left as it is.
-    $more = everywhereDraft($this->owner, $this->company, $this->customer, array_map(fn (int $i): array => ['description' => "Rad {$i}", 'quantity' => '1', 'price' => '10', 'vat_rate' => 2500], range(1, 4)));
+    $more = everywhereDraft($this->owner, $this->company, $this->customer, array_map(fn (int $i): array => ['description' => "Rad {$i}", 'quantity' => '1', 'price' => '10', 'vat_rate' => 2500], range(1, 6)));
     DB::table('invoice_rows')->where('invoice_id', $draft->id)->update(['unit' => 'Bunt', 'unit_id' => null]);
     foreach ($more->rows()->orderBy('position')->get() as $index => $row) {
-        DB::table('invoice_rows')->where('id', $row->id)->update(['unit' => ['st.', 'tim.', 'kilogram', 'kubikmeter'][$index], 'unit_id' => null]);
+        DB::table('invoice_rows')->where('id', $row->id)->update(['unit' => ['st.', 'tim.', 'kilogram', 'kubikmeter', 'kvadratmet', 'förpacknin'][$index], 'unit_id' => null]);
     }
     $before = Unit::query()->count();
 
@@ -278,7 +278,7 @@ it('links existing rows to the register without changing their text, and leaves 
         // Only Bunt is new: a full stop, an alias or the unit's name finds the unit that exists.
         ->and(Unit::query()->count())->toBe($before + 1)
         ->and($more->rows()->orderBy('position')->get()->map(fn (InvoiceRow $row): array => [$row->unit_id, $row->unit])->all())
-        ->toBe([[everywhereUnit('st')->id, 'st.'], [everywhereUnit('h')->id, 'tim.'], [everywhereUnit('kg')->id, 'kilogram'], [everywhereUnit('m³')->id, 'kubikmeter']]);
+        ->toBe([[everywhereUnit('st')->id, 'st.'], [everywhereUnit('h')->id, 'tim.'], [everywhereUnit('kg')->id, 'kilogram'], [everywhereUnit('m³')->id, 'kubikmeter'], [everywhereUnit('m²')->id, 'kvadratmet'], [everywhereUnit('förp')->id, 'förpacknin']]);
 });
 
 it('matches a long unit text cut to a code again instead of adding it twice', function () {
@@ -290,6 +290,8 @@ it('matches a long unit text cut to a code again instead of adding it twice', fu
 
     // A name longer than a row's unit column (crm rows take 20 characters) finds the unit by its name too.
     expect(UnitCatalogue::resolve((int) $this->company->id, 'Kvadratmeter'))->toMatchArray(['id' => everywhereUnit('m²')->id, 'created' => false]);
+    expect(UnitCatalogue::resolve((int) $this->company->id, 'kvadratmet'))->toMatchArray(['id' => everywhereUnit('m²')->id, 'created' => false])
+        ->and(UnitCatalogue::resolve((int) $this->company->id, 'förpacknin'))->toMatchArray(['id' => everywhereUnit('förp')->id, 'created' => false]);
 });
 
 it('asks for the units once, whatever the number of rows in the editor', function () {
