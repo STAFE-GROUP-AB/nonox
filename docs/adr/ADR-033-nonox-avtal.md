@@ -412,8 +412,10 @@ workers, member variant (`docs/avtal/traindustriavtalet.md`).
   public procurement annex (Adda, Bilaga 05, 2025-07-04) that says its terms
   are taken from the agreement: a secondary source.
 - **Two versions.** `MEMBER-2023-04-01` (2023-04-01 – 2025-03-31) from TI23,
-  every value with page; it can be verified by a named person and covers
-  corrections and retroactive pay for that period. `MEMBER-2025-04-01`
+  every value with page; it can be verified by a named person, and a run
+  can use it only when its period and payment date both fall on or before
+  2025-03-31 (`AgreementContextExtension` checks the period's first and last
+  day and the payment date). `MEMBER-2025-04-01`
   (2025-04-01 – 2027-03-31) with the annex's amounts and TI23's mechanics,
   every amount `unverified: true`, so `VerifyAgreementVersion` refuses it and
   a run with an employment on the agreement is blocked for pay from

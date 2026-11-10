@@ -682,5 +682,5 @@ Evidence: `tests/Feature/Agreements/TraindustriavtaletTest.php`, `tests/Fixtures
 - Mall för CSV för löneunderlag från andra program (`/lon/flytt/mall/loneunderlag`, länken **Hämta mall för CSV** i lönekörningen).
 - Lönereglerna 2027: alla nycklar täckta (värde, ej publicerat eller löpande); omkontroll 2026-11-10 utan nya publicerade värden (inkomstbasbeloppet, Skatteverkets belopp och premierna kommer i nov–dec).
 - Hela sviten (PGTZ=UTC): 8 513 gröna, 60 röda som alla följde av den kända DatabaseRoles/Grants-flaken på demo-anslutningen och blev gröna vid omkörning; phpstan och pint rena.
-Open legal-verify items: se `docs/avtal/traindustriavtalet.md` (läsningen av helgspannen, fridag enligt schema, komptid med tillägg, skiftformstillägg på OB, medeltimförtjänst, helgdagslönens innehåll, mertid 58,50 kr i ADDA25, giltigheten 2025–2027).
+Open legal-verify items: se `docs/avtal/traindustriavtalet.md` (läsningen av helgspannen, fridag enligt schema, komptid med tillägg, skiftformstillägg på OB, medeltimförtjänst, helgdagslönens innehåll, mertid 58,50 kr i ADDA25, OB-beloppen som ADDA25 anger gälla "from 1 april 2019" men som läses som 2025 års, giltigheten 2025–2027).
 Next package: M1 enheter på artiklar.

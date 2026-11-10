@@ -148,6 +148,27 @@ it('gives an hourly-paid Gröna Riks employee the overtime supplement only, besi
         ->and(PayCode::query()->where('code', 'GR_OT_A_TL')->sole()->is_vacation_basis)->toBeTrue();
 });
 
+it('gives an hourly-paid employee on Träindustriavtalet TMF_OT_TL, not TMF_OT with the hourly wage again', function () {
+    $owner = $this->owner;
+    $company = $this->company;
+    app(ModuleManager::class)->enable(AgreementsModule::KEY, $company, $owner);
+    $setup = app(AgreementSetup::class);
+    $binding = $setup->saveBinding($owner, $company, ['agreement_key' => 'tmf-gs-traindustri', 'variant' => 'MEMBER', 'bound_from' => '2025-04-01']);
+    $setup->saveEmployment($owner, $company, Employment::query()->where('employee_id', $this->anna->id)->sole(), ['collective_agreement_id' => $binding->id, 'agreement_group' => 'YRKES']);
+    // Verified inside the test only: the shipped 2025 version cannot be verified (its amounts have no primary source).
+    AgreementRuleVersion::query()->where('agreement_key', 'tmf-gs-traindustri')->whereDate('valid_from', '2025-04-01')->sole()->forceFill(['verified_by' => 'Granskare', 'verified_at' => now()])->save();
+    overtimeSettings(['overtime_pay_code' => 'TMF_OT']);
+    overtimeSchedule($this->anna, '2026-11-09');
+    overtimeWorked($this->anna, '2026-11-10', '17:30');
+
+    app(AttestPeriod::class)($this->owner, $this->company, $this->from, $this->to);
+    app(SendToPayroll::class)($this->owner, $this->company, $this->from, $this->to);
+
+    // TMF_OT is 1/175 of the monthly salary plus 58,50 kr; the hourly-paid get only the 58,50 kr (TI23 § 5 mom 2 s. 42).
+    // 17:00–17:30 on a Tuesday is also OB a), paid beside the overtime (TI23 § 4 mom 12 kommentar s. 36–37).
+    expect(overtimeReports())->toBe(['TMF_OB_A 0.50', 'TMF_OT_TL 0.50']);
+});
+
 it('counts approved leave on a scheduled day as worked when measuring overtime', function () {
     overtimeSettings(['overtime_pay_code' => 'OVERTID']);
     overtimeSchedule($this->bertil, '2026-11-09');

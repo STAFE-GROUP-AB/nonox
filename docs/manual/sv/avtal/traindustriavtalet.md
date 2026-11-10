@@ -18,7 +18,7 @@ NONOX har avtalets värden som data, men **2025 års avtalstext är inte publik*
 
 Under **Lön → Avtal**, fliken **Versioner och kalender**, finns avtalet två gånger:
 
-- **2023-04-01 – 2025-03-31.** Värdena kommer från avtalsboken som GS-facket har publicerat. Versionen kan kontrolleras och används för lön för arbete fram till och med mars 2025, till exempel en rättelse eller retroaktiv lön.
+- **2023-04-01 – 2025-03-31.** Värdena kommer från avtalsboken som GS-facket har publicerat. Versionen kan kontrolleras. En lönekörning kan bara använda den när både perioden och utbetalningsdagen ligger till och med 2025-03-31.
 - **2025-04-01 – 2027-03-31.** Beloppen kommer från en upphandlingsbilaga som återger avtalets villkor, inte från avtalet självt. Versionen visas som **Kan inte kontrolleras** och **Värden saknar primär källa.** Lönestegen från 1 april 2026 saknas helt; NONOX gissar dem inte.
 
 Klicka på avtalets namn för att se minimilöner, tillägg, källor och listan **Det här räknar NONOX inte ännu**.

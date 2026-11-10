@@ -34,7 +34,7 @@ Status: **avläst, inte verifierad**. Två versioner:
 
 | Version | Källa för beloppen | Kan verifieras |
 |---|---|---|
-| `MEMBER-2023-04-01` (2023-04-01 – 2025-03-31) | TI23 | ja, av en namngiven person |
+| `MEMBER-2023-04-01` (2023-04-01 – 2025-03-31) | TI23 | ja, av en namngiven person; en körning kan bara använda den när både perioden och utbetalningsdagen ligger till och med 2025-03-31 |
 | `MEMBER-2025-04-01` (2025-04-01 – 2027-03-31) | ADDA25, mekaniken ur TI23 | **nej**: varje belopp har `unverified: true` |
 
 En lönekörning med en anställning på avtalet stoppas därför för all lön från
@@ -63,6 +63,8 @@ så gruppen `YRKES` har övrigas belopp för 0–23 månaders branschvana.
 | d | kl. 17 dagen före trettondagen, Kristi himmelsfärd, alla helgons dag – kl. 06 dagen efter | 100,30 | 103,50 | 106,70 |
 | e | kl. 17 dagen före påsk-, nyårs- och julhelgen, 1 maj och nationaldagen – kl. 06 dagen efter; kl. 17 dagen före midsommar- och pingstafton – kl. 06 efterföljande vardag | 210,85 | 217,60 | 224,35 |
 
+- ADDA25 anger att OB-beloppen gäller "from 1 april 2019"; de är 3,05 % högre än
+  TI23:s belopp från 2024-04-01 och läses därför som 2025 års. TODO(legal-verify).
 - Ett belopp per timme: där fönstren överlappar gäller det högsta (`overlap: HIGHEST_ONLY`).
 - OB betalas även när tiden är övertid (TI23 s. 36–37, 41).
 - Fridag enligt schema (c) räknas inte av passdelningen; timmarna läggs in med `TMF_OB_C`.

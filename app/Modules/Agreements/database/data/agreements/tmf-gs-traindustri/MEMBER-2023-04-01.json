@@ -973,7 +973,7 @@
         "source": "TI23#§ 11 mom 2 s. 64–65; bilaga 1 p. 1 s. 75–77"
     },
     "notes": [
-        "Version ur avtalsboken 2023–2025 (TI23), den senaste fulltexten som är publik. Den gäller lön för arbete till och med 2025-03-31 (till exempel retroaktiv lön och rättelser); för arbete från 2025-04-01 gäller versionen 2025-04-01.",
+        "Version ur avtalsboken 2023–2025 (TI23), den senaste fulltexten som är publik. En lönekörning kan bara använda den när både perioden och utbetalningsdagen ligger till och med 2025-03-31; en körning med period eller utbetalningsdag från 2025-04-01 kräver versionen 2025-04-01.",
         "Avtalet heter Träindustriavtalet och gäller arbetare hos medlemmar i Trä- och Möbelföretagen (TMF); motpart är GS-facket (TI23 s. 1, 8). Stoppmöbelindustriavtalet är ett eget avtal och finns inte här.",
         "OB a–e utesluter varandra: där fönstren överlappar (en storhelg som infaller på en vardag eller helg) betalas bara det högsta beloppet (overlap HIGHEST_ONLY). TODO(legal-verify): att avtalet avser ett belopp per timme och inte flera.",
         "TODO(legal-verify): 'dag före nyårshelgen' läses som 30 december och 'dag före julhelgen' som 23 december, och 'efterföljande dag' som dagen efter helgens sista dag (annandag påsk, nyårsdagen, annandag jul). Läsningen följer helguppehållets tider i § 4 mom 5 (TI23 s. 29–30) men står inte uttryckligen i § 5 mom 1.",
