@@ -9,7 +9,7 @@ sokord: [tillverkning, snickeri, produktion, stycklista, bom, arbetssteg, kalkyl
 
 # Tillverkning
 
-Med Tillverkning beskriver du vad dina produkter består av och hur lång tid de tar att göra. När du väljer en stycklista på en offert eller en order ser du direkt vad materialet och arbetet kostar och vilken marginal raden ger.
+Med Tillverkning beskriver du vad dina produkter består av och hur lång tid de tar att göra. När du väljer en stycklista på en offert eller en order ser du direkt vad materialet och arbetet kostar och vilken marginal raden ger. Planeringen visar när ordrarna i verkstaden troligen blir klara.
 
 Tillverkning är en modul som kräver Lager. Den är avstängd tills ägaren slår på den. Tillverkning bokför ingenting: kalkylen är en siffra för dig när du sätter pris, inte lagervärdet i bokföringen.
 
@@ -20,11 +20,13 @@ Tillverkning är en modul som kräver Lager. Den är avstängd tills ägaren sl�
 3. Lägg upp stegen i verkstaden med vad en timme kostar under **Tillverkning → Arbetssteg**. Se [Arbetssteg](/manual/tillverkning/arbetssteg).
 4. Skriv stycklistorna under **Tillverkning → Stycklistor**. Se [Stycklistor](/manual/tillverkning/stycklistor).
 5. Välj stycklistan på raderna i en offert eller en order. Se [Kalkyl på offert och order](/manual/tillverkning/kalkyl-pa-offert-och-order).
+6. Ge personerna i verkstaden sina kompetenser och följ ordrarna under **Tillverkning → Planering**. Se [Planering](/manual/tillverkning/planering).
 
 ## Sidorna
 
 - **Stycklistor** – varje produkt med komponenter, arbetssteg och kostnad per enhet.
-- **Arbetssteg** – stegen i verkstaden med timkostnad och kapacitet.
+- **Arbetssteg** – stegen i verkstaden med timkostnad, kapacitet, kompetens och väntetid.
+- **Planering** – tidslinje, ordrar, resurser, kalender och avvikelser, med prognos mot utlovat datum.
 - **Inställningar** – omkostnadspålägget som kalkylen lägger på material och arbete.
 
 På offerter och order finns kortet **Stycklistor och kalkyl** under raderna.
@@ -34,4 +36,4 @@ På offerter och order finns kortet **Stycklistor och kalkyl** under raderna.
 Ägare och administratörer ändrar stycklistor, arbetssteg och inställningar. Redovisningskonsulter och revisorer ser stycklistorna och kalkylen men ändrar dem inte. För att ändra stycklistan på en offert- eller orderrad behöver du dessutom få ändra offerten eller ordern.
 
 > [!NOTE]
-> Tillverkningsorder, materialbehov och inköpsförslag, verkstadsterminalen och leveransdatum kommer i senare steg.
+> Sidorna för tillverkningsorder och verkstadsterminalen kommer i senare steg.

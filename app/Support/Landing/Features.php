@@ -78,6 +78,7 @@ final class Features
         'kitchen_variance' => ['name' => 'Avvikelser mellan sålt och inventerat', 'status' => self::LIVE, 'readme' => 'Avvikelser mellan två inventeringar', 'module' => 'Kök'],
         'manufacturing_bom' => ['name' => 'Stycklistor med komponenter och arbetssteg', 'status' => self::LIVE, 'readme' => 'Stycklistor med komponenter i flera nivåer och arbetssteg', 'module' => 'Tillverkning'],
         'manufacturing_costing' => ['name' => 'Material, arbete och marginal direkt på offerten och ordern', 'status' => self::LIVE, 'readme' => 'Kalkyl på offerten och ordern', 'module' => 'Tillverkning'],
+        'manufacturing_planning' => ['name' => 'Planeringskalender med leveransprognos och avvikelser', 'status' => self::LIVE, 'readme' => 'Planeringskalender för verkstaden', 'module' => 'Tillverkning'],
         'crm' => ['name' => 'CRM med nyckeltal ur bokföringen', 'status' => self::LIVE, 'readme' => 'Kunder och prospekt med kontaktpersoner', 'module' => 'CRM'],
         'crm_activities' => ['name' => 'Aktiviteter med nästa steg', 'status' => self::LIVE, 'readme' => 'Aktiviteter med nästa steg', 'module' => 'CRM'],
         'crm_key_figures' => ['name' => 'Nyckeltal per kund ur bokföringen', 'status' => self::LIVE, 'readme' => 'Nyckeltal ur bokföringen per kund', 'module' => 'CRM'],

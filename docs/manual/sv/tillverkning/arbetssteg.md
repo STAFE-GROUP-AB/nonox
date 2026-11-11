@@ -4,7 +4,7 @@ ordning: 10
 roller: [owner, admin, accountant, auditor]
 modul: manufacturing
 rutter: [manufacturing.operations]
-sokord: [arbetssteg, moment, timkostnad, kapacitet, verkstad, maskin]
+sokord: [arbetssteg, moment, timkostnad, kapacitet, verkstad, maskin, kompetens, torktid, väntetid]
 ---
 
 # Arbetssteg
@@ -19,7 +19,9 @@ Ett arbetssteg är ett moment i verkstaden, till exempel Kapning, Hyvling, Monte
 2. Skriv **Namn**, till exempel Montering.
 3. Skriv **Timkostnad (kr)**, vad en timme i steget kostar företaget.
 4. Skriv gärna **Kapacitet, timmar per dag**: hur många bemannade timmar steget har en vanlig arbetsdag, till exempel 16 för två personer.
-5. Välj **Spara arbetssteget**.
+5. Välj vid behov **Kräver kompetens**. Då lägger planeringen steget bara på personer som har kompetensen.
+6. Skriv vid behov **Väntetid efter, timmar**, till exempel 12 timmars torkning efter lackering. Nästa steg börjar tidigast när väntetiden har gått.
+7. Välj **Spara arbetssteget**.
 
 ## Timkostnaden
 

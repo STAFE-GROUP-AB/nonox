@@ -266,6 +266,12 @@ tillverkning/stycklista: { foretag: hantverkare, rutt: manufacturing.boms.show, 
 tillverkning/arbetssteg: { foretag: hantverkare, rutt: manufacturing.operations }
 tillverkning/kalkyl-pa-offert: { foretag: hantverkare, rutt: invoicing.quotes.show, modell: { tabell: sales_documents, dar: { your_reference: 'Möbler till samlingslokalen' } }, visa: 'text=Stycklistor och kalkyl' }
 
+# Planeringskalender (PlanningCalendarExtras), in the joinery: a plan with an absence and a stop in the Lackbox.
+tillverkning/planering: { foretag: hantverkare, rutt: manufacturing.planning.timeline }
+tillverkning/planering-ordrar: { foretag: hantverkare, rutt: manufacturing.planning.orders }
+tillverkning/planering-resurser: { foretag: hantverkare, rutt: manufacturing.planning.resources }
+tillverkning/planering-avvikelser: { foretag: hantverkare, rutt: manufacturing.planning.deviations }
+
 # Arbetsorder (WorkOrdersExtras), in the joinery. Theo Björk is the Utförare.
 fakturering/arbetsorder: { foretag: hantverkare, rutt: workOrders.index }
 fakturering/arbetsorder-kortet: { foretag: hantverkare, rutt: workOrders.show, modell: { tabell: work_orders, dar: { title: Badrumsrenovering } } }
