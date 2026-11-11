@@ -742,3 +742,16 @@ Evidence: `tests/Feature/Inventory/PurchaseOrdersTest.php`, `tests/Feature/Inven
 - Manualartiklarna `lager/inkopsorder` och `lager/inkopsforslag` med skärmbilder från demobutiken, ändringslogg, README, landningssidan, ADR-071 "As built (M3)", GDPR-dokumenten och registerutdraget per leverantör.
 Open legal-verify items: om en skickad inköpsorder är räkenskapsinformation (BFL 5 kap. 6 §), och därmed om de skickade versionerna (mottagare och leverantörens uppgifter i ögonblicksbilden) ska anonymiseras när en leverantör raderas, vilket i dag inte görs eftersom de bara kan läggas till; om den som skrev en order över attestgränsen får skicka den själv; bokföringskontrollen av `value_ore` (§12.4).
 Next package: M2/M4 enligt prioritetslistan.
+
+---
+
+Package: M6, planeringskalender för tillverkningen (ADR-071 §13)
+Status: done på grenen `feat/m6-planning-calendar` (byggd på M4:s datamodell a03fa86d; ombasering när M4 är klar; ingen push)
+Evidence: `tests/Unit/Manufacturing/PlanningSchedulerTest.php` (F-P0 till F-P6 och slotlistorna för F-P0 och F-P1), `tests/Unit/Manufacturing/PlanningSchedulerSpeedTest.php` (300 order × 8 steg × 20 resurser under två sekunder), `tests/Feature/Manufacturing/PlanningCalendarTest.php` (databasen ger F-P0, materialdatum från inköpsorder, frånvarofrågan läser aldrig typ eller anteckning, fast antal frågor), `tests/Feature/Manufacturing/PlanningActionsTest.php`, `tests/Feature/Manufacturing/PlanningPagesTest.php` (sidorna, Frånvarande, polling, behörigheter, fast antal frågor per vy), `tests/Tenancy/PlanningCalendarTenancyTest.php`.
+- Deterministisk schemaläggning i minnet, resurser (arbetsstationer med stopp, kompetenser, egen arbetsvecka, övertid), planer som räknas om i ett unikt köat jobb per företag och varje natt, avvikelser med påverkan på leveranser, förslag som simuleras, Tänk om, låsningar och nytt leveransdatum till kunden först efter granskning.
+- Frånvaro visas bara som "Frånvarande"; planen läser aldrig orsaken. GDPR-dokumenten uppdaterade.
+- Manualen `tillverkning/planering` med skärmbilder från snickeridemon, landningssidan, README, ändringsloggen, färdplanen (posten flyttad till ändringsloggen) och ADR-071 "As built (M6)".
+- Läsmodellen `PlanBoard` är till för M7 (storskärm i verkstaden).
+Öppet för ägaren: kompetenser delas inte med Planering; bokförare får inte se kalendern (§1 mot §13.7); arbetstidsvarningar på förslaget om övertid; kopplingen från verkstadsterminalen (M5) till avvikelserna.
+Open legal-verify items: de fyra i §13.7 (snävare krets för "Frånvarande", slutledning om hälsa, 24 månader, terminalen och dagens frånvaro).
+Next package: M7 enligt prioritetslistan.

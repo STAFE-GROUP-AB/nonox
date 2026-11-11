@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-11-planeringskalender-verkstad",
+      "datum": "2026-11-11T14:30:00+01:00",
+      "rubrik": "Planeringskalender för verkstaden",
+      "beskrivning": "Tillverkning har fått en planeringskalender som lägger arbetsstegen på personer med rätt kompetens och lediga arbetsstationer och visar beräknat leveransdatum mot utlovat för varje order. Frånvaro, försenat material, stopp och steg som tar längre tid blir avvikelser som visar vilka leveranser som flyttas, med beräknade förslag och Tänk om. Ett nytt leveransdatum går till kunden först när någon har granskat meddelandet.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-11-stycklistor-skydd",
       "datum": "2026-11-11T09:00:00+01:00",
       "rubrik": "Stycklistor: skydd för lagerenheten och tydligare varning på offerten",

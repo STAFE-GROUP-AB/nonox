@@ -331,15 +331,6 @@
       "omrade": "Lager",
       "uppdaterad": "2026-11-09",
       "kommentar": "Beslutet finns i ADR-071. Vi provar enheterna med ett snickeri innan de byggs färdigt."
-    },
-    {
-      "id": "planeringskalender-tillverkning",
-      "rubrik": "Planeringskalender för tillverkningen",
-      "beskrivning": "En kalender med alla ordrar och tillverkningsorder, där arbetsstegen läggs ut på de personer och arbetsplatser som kan göra dem. Du ser när varje order troligen blir klar och jämför med datumet du lovat kunden. När någon är frånvarande, en leverans blir sen eller ett moment tar längre tid ser du vilka ordrar som flyttas och vilka kunder som berörs, och får förslag på vad du kan göra. Ett nytt datum går till kunden först när du godkänt det.",
-      "status": "Planerat",
-      "omrade": "Lager",
-      "uppdaterad": "2026-11-09",
-      "kommentar": "Beslutet finns i ADR-071. Kalendern visar bara att någon är frånvarande, aldrig varför."
     }
   ]
 }
