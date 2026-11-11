@@ -13568,5 +13568,6 @@
     "Det du beställer från leverantörer. En inköpsorder bokförs inte; lagret ökar när varorna tas emot och kostnaden bokförs med leverantörsfakturan.": "What you order from suppliers. A purchase order is not booked; the stock increases when the goods are received and the cost is booked with the supplier invoice.",
     "Tillverkningsorder": "Production order",
     "Delvis mottagen": "Partly received",
-    "Beställningar": "Orders"
+    "Beställningar": "Orders",
+    "Varor har tagits emot på raden, så enheten kan inte bytas.": "Goods have been received on the row, so the unit cannot be changed."
 }

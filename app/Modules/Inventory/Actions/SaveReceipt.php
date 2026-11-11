@@ -18,6 +18,7 @@ use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Models\StockReceiptLine;
+use App\Modules\Inventory\Purchasing\PurchaseOrderReceipts;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
@@ -128,6 +129,8 @@ class SaveReceipt
         $this->guard($user, $company, 'count');
 
         return CurrentCompany::run($company, fn (): StockReceipt => DB::transaction(function () use ($user, $company, $order): StockReceipt {
+            // Receipts first, then the order (PurchaseOrderReceipts).
+            PurchaseOrderReceipts::lockOpen($order->id);
             $order = PurchaseOrder::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
 
             if (! $order->wasSent() || ! $order->status->isOpen()) {
@@ -137,7 +140,11 @@ class SaveReceipt
             $open = StockReceipt::query()->where('purchase_order_id', $order->id)->whereIn('status', [StockReceipt::OPEN, StockReceipt::PARTIAL])->latest('id')->first();
 
             if ($open !== null) {
-                return $open;
+                PurchaseOrderReceipts::sync($order);
+
+                if ($open->refresh()->isOpen()) {
+                    return $open;
+                }
             }
 
             $rows = $order->rows()->with('article:id,default_location_id,is_stock_item')->get()->filter(fn (PurchaseOrderRow $row): bool => $row->remainingMilli() > 0);

@@ -10,6 +10,7 @@ use App\Modules\Inventory\Actions\Concerns\GuardsPurchaseOrders;
 use App\Modules\Inventory\Domain\PurchaseOrderStatus;
 use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\StockReceipt;
+use App\Modules\Inventory\Purchasing\PurchaseOrderReceipts;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +32,8 @@ class PurchaseOrderLifecycle
         $this->guard($user, $company, 'manage');
 
         return CurrentCompany::run($company, fn (): PurchaseOrder => DB::transaction(function () use ($user, $company, $order): PurchaseOrder {
+            // Receipts first, then the order, as ReceiveStock locks them (PurchaseOrderReceipts).
+            PurchaseOrderReceipts::lockOpen($order->id);
             $order = PurchaseOrder::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
 
             if (! $order->status->awaitsGoods()) {
@@ -49,6 +52,9 @@ class PurchaseOrderLifecycle
         $this->guard($user, $company, 'manage');
 
         return CurrentCompany::run($company, fn (): PurchaseOrder => DB::transaction(function () use ($user, $company, $order): PurchaseOrder {
+            // Receipts first, then the order, as ReceiveStock locks them, so a receipt
+            // being received and the order being cancelled never wait on each other.
+            PurchaseOrderReceipts::lockOpen($order->id);
             $order = PurchaseOrder::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
 
             if (! $order->status->isOpen()) {

@@ -847,8 +847,19 @@ text field, prefilled from the first warehouse with an address, otherwise the co
 
 **Personal data.** The recipient's e-mail, the delivery address and our reference are stored per
 order and version; the audit log gets numbers, versions and methods only. The orders are in the
-supplier's register extract. `docs/gdpr/registerforteckning.md` and `lagringstider.md` describe
-them.
+supplier's register extract. Erasing a supplier (art. 17) that has purchase orders anonymises
+it instead of deleting it (the orders point at it) and clears `purchase_orders.sent_to`. The sent
+versions, with their recipient and the supplier block of the snapshot, are append-only for the app
+and are kept as sent: `TODO(legal-verify)` whether they are räkenskapsinformation (art. 17.3 b) or
+must be anonymised too, which would need a privileged erasure path. `docs/gdpr/registerforteckning.md`
+and `lagringstider.md` describe them.
+
+**Open receipt follows the order.** A goods receipt made from an earlier version is rebuilt when a
+sent order's rows are saved and when it is sent again (`PurchaseOrderReceipts::sync`): lines where
+nothing has arrived follow their row (article, what remains, cost per stock unit), rows added in a
+revision get lines, lines of removed rows are dropped. A row goods have arrived on keeps its article
+and unit and cannot go below what arrived. Everywhere an order and its receipts are both locked, the
+open receipts are locked first, then the order, as `ReceiveStock` does.
 
 Still open (`TODO(legal-verify)`): whether a sent purchase order is räkenskapsinformation (BFL 5
 kap. 6 §, an agreement of particular importance) and must be kept as such, or may be pruned

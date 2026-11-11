@@ -695,5 +695,5 @@ Evidence: `tests/Feature/Inventory/PurchaseOrdersTest.php`, `tests/Feature/Inven
 - Inleverans från ordern bockar av raderna; inget bokförs av ordern, inleveransen eller kopplingen till fakturan, så varorna bokförs en gång (med leverantörsfakturan). Systemdokumentationen oförändrad.
 - Förlängningspunkt för M4: `PurchaseDemandSource`/`PurchaseDemandSources` (tillverkningsorderns komponenter registreras där).
 - Manualartiklarna `lager/inkopsorder` och `lager/inkopsforslag` med skärmbilder från demobutiken, ändringslogg, README, landningssidan, ADR-071 "As built (M3)", GDPR-dokumenten och registerutdraget per leverantör.
-Open legal-verify items: om en skickad inköpsorder är räkenskapsinformation (BFL 5 kap. 6 §); om den som skrev en order över attestgränsen får skicka den själv; bokföringskontrollen av `value_ore` (§12.4).
+Open legal-verify items: om en skickad inköpsorder är räkenskapsinformation (BFL 5 kap. 6 §), och därmed om de skickade versionerna (mottagare och leverantörens uppgifter i ögonblicksbilden) ska anonymiseras när en leverantör raderas, vilket i dag inte görs eftersom de bara kan läggas till; om den som skrev en order över attestgränsen får skicka den själv; bokföringskontrollen av `value_ore` (§12.4).
 Next package: M2/M4 enligt prioritetslistan.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\Invoicing\SaveArticle;
 use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Invoicing\SaveSalesDocument;
+use App\Actions\Privacy\EraseRegisterEntry;
 use App\Models\AuditLog;
 use App\Models\SalesDocument;
 use App\Models\Voucher;
@@ -32,6 +33,7 @@ use App\Support\Privacy\DataSubjectExport;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Inventory;
@@ -405,4 +407,106 @@ it('lets an approver open and send orders without seeing the stock', function ()
     $this->get('/lager/inkopsorder')->assertOk()->assertSee('Beställningar');
     $this->get("/lager/inkopsorder/{$order->id}")->assertOk()->assertSee('Skicka till leverantören')->assertDontSee('Ta emot varor');
     $this->get('/lager')->assertForbidden();
+});
+
+it('rebuilds the open goods receipt when a new version changes a row nothing has arrived on (review P1, A and B)', function () {
+    $order = Purchasing::order($this->owner, $this->company, $this->supplier, [
+        ['article_id' => $this->screw->id, 'quantity' => '1', 'price' => '189'],
+        ['article_id' => $this->screw->id, 'quantity' => '10', 'unit_id' => Purchasing::unitId($this->company, 'st'), 'price' => '1'],
+    ]);
+    app(SendPurchaseOrder::class)->printed($this->owner, $this->company, $order);
+    $receipt = app(SaveReceipt::class)->fromPurchaseOrder($this->owner, $this->company, $order->fresh());
+    [$first, $second] = $order->rows()->get()->all();
+
+    $revised = app(PurchaseOrderLifecycle::class)->revise($this->owner, $this->company, $order->fresh());
+    app(SavePurchaseOrder::class)($this->owner, $this->company, ['supplier_id' => $this->supplier->id, 'rows' => [
+        // A: the pack of screws becomes 12 lpm of studs.
+        ['id' => $first->id, 'article_id' => $this->stud->id, 'quantity' => '12', 'unit_id' => Purchasing::unitId($this->company, 'lpm'), 'price' => '27,50'],
+        // B: 10 st at 1 kr becomes 4 st at 5 kr.
+        ['id' => $second->id, 'article_id' => $this->screw->id, 'quantity' => '4', 'unit_id' => Purchasing::unitId($this->company, 'st'), 'price' => '5'],
+    ]], $revised);
+    app(SendPurchaseOrder::class)->printed($this->owner, $this->company, $revised->fresh());
+
+    $lines = $receipt->lines()->get()->keyBy('purchase_order_row_id');
+
+    expect($lines[$first->id]->article_id)->toBe($this->stud->id)
+        ->and($lines[$first->id]->ordered_milli)->toBe(12000)
+        ->and($lines[$first->id]->unit_cost_ore)->toBe(2750)
+        ->and($lines[$second->id]->ordered_milli)->toBe(4000)
+        ->and($lines[$second->id]->unit_cost_ore)->toBe(500);
+
+    app(ReceiveStock::class)->all($this->owner, $this->company, $receipt->fresh(), CarbonImmutable::parse('2026-07-01'));
+
+    expect(Inventory::level($this->stud, $this->places['bin1']))->toBe(12000)
+        ->and(Inventory::level($this->screw, $this->places['bin2']))->toBe(4000)
+        ->and(StockMovement::query()->where('article_id', $this->screw->id)->sole()->unit_cost_ore)->toBe(500)
+        ->and($order->fresh()->status)->toBe(PurchaseOrderStatus::Received);
+});
+
+it('adds rows of a new version to a partly received receipt and drops removed ones (review P1, C)', function () {
+    $order = Purchasing::order($this->owner, $this->company, $this->supplier, [
+        ['article_id' => $this->screw->id, 'quantity' => '3', 'price' => '189'],
+        ['article_id' => $this->stud->id, 'quantity' => '10', 'unit_id' => Purchasing::unitId($this->company, 'lpm'), 'price' => '27,50'],
+    ]);
+    app(SendPurchaseOrder::class)->printed($this->owner, $this->company, $order);
+    $receipt = app(SaveReceipt::class)->fromPurchaseOrder($this->owner, $this->company, $order->fresh());
+    [$screwRow, $studRow] = $order->rows()->get()->all();
+    app(ReceiveStock::class)($this->owner, $this->company, $receipt, [$receipt->lines()->where('purchase_order_row_id', $screwRow->id)->sole()->id => ['quantity' => '200']], CarbonImmutable::parse('2026-07-01'));
+
+    $revised = app(PurchaseOrderLifecycle::class)->revise($this->owner, $this->company, $order->fresh());
+
+    // The received row keeps its unit.
+    expect(fn () => app(SavePurchaseOrder::class)($this->owner, $this->company, ['supplier_id' => $this->supplier->id, 'rows' => [
+        ['id' => $screwRow->id, 'article_id' => $this->screw->id, 'quantity' => '600', 'unit_id' => Purchasing::unitId($this->company, 'st')],
+    ]], $revised))->toThrow(ValidationException::class);
+
+    $other = Purchasing::screw($this->owner, $this->company, $this->supplier, ['number' => 'SKR-550', 'name' => 'Skruv 5×50', 'default_location_id' => $this->places['bin2']->id]);
+    app(SavePurchaseOrder::class)($this->owner, $this->company, ['supplier_id' => $this->supplier->id, 'rows' => [
+        ['id' => $screwRow->id, 'article_id' => $this->screw->id, 'quantity' => '2', 'price' => '189'],
+        ['article_id' => $other->id, 'quantity' => '1', 'price' => '200'],
+    ]], $revised);
+    app(SendPurchaseOrder::class)->printed($this->owner, $this->company, $revised->fresh());
+
+    $lines = $receipt->lines()->get();
+
+    expect($receipt->fresh()->status)->toBe(StockReceipt::PARTIAL)
+        ->and($lines->pluck('purchase_order_row_id')->contains($studRow->id))->toBeFalse()
+        ->and($lines->firstWhere('purchase_order_row_id', $screwRow->id)->ordered_milli)->toBe(400000)
+        ->and($lines->firstWhere('article_id', $other->id)->ordered_milli)->toBe(200000);
+
+    app(ReceiveStock::class)->all($this->owner, $this->company, $receipt->fresh(), CarbonImmutable::parse('2026-07-02'));
+
+    expect($order->fresh()->status)->toBe(PurchaseOrderStatus::Received)
+        ->and(Inventory::level($other, $this->places['bin2']))->toBe(200000);
+});
+
+it('takes the mail quota only for an order that is really sent', function () {
+    $order = Purchasing::order($this->owner, $this->company, $this->supplier, [['article_id' => $this->screw->id, 'quantity' => '1']]);
+    app(SendPurchaseOrder::class)->printed($this->owner, $this->company, $order);
+    $key = "mail-quota:documents:{$this->company->id}";
+    $before = RateLimiter::attempts($key);
+
+    expect(fn () => app(SendPurchaseOrder::class)->email($this->owner, $this->company, $order->fresh(), 'order@virkesgrossisten.example'))->toThrow(ValidationException::class)
+        ->and(RateLimiter::attempts($key))->toBe($before);
+});
+
+it('anonymises a supplier with only a draft purchase order instead of deleting it (review P2)', function () {
+    Purchasing::order($this->owner, $this->company, $this->supplier, [['article_id' => $this->screw->id, 'quantity' => '1']]);
+
+    expect(app(EraseRegisterEntry::class)->supplier($this->owner, $this->company, $this->supplier))->toBe('anonymised')
+        ->and($this->supplier->fresh()->name)->toStartWith('Anonymiserad leverantör')
+        ->and($this->supplier->fresh()->email)->toBeNull();
+});
+
+it('anonymises a supplier with a sent purchase order and clears where the order went (review P2)', function () {
+    $order = Purchasing::order($this->owner, $this->company, $this->supplier, [['article_id' => $this->screw->id, 'quantity' => '1']]);
+    app(SendPurchaseOrder::class)->email($this->owner, $this->company, $order, 'order@virkesgrossisten.example');
+    app(PurchaseOrderLifecycle::class)->revise($this->owner, $this->company, $order->fresh());
+    app(SendPurchaseOrder::class)->email($this->owner, $this->company, $order->fresh(), 'inkop@virkesgrossisten.example');
+
+    expect(app(EraseRegisterEntry::class)->supplier($this->owner, $this->company, $this->supplier))->toBe('anonymised')
+        ->and($order->fresh()->sent_to)->toBeNull()
+        ->and($this->supplier->fresh()->bankgiro)->toBeNull()
+        // The sent versions are append-only and kept as sent (TODO(legal-verify) in ADR-071, M3).
+        ->and(PurchaseOrderVersion::query()->where('purchase_order_id', $order->id)->count())->toBe(2);
 });

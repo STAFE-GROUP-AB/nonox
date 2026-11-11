@@ -47,7 +47,7 @@ Vill du skicka ordern på annat sätt skriver du ut PDF:en och klickar på **Uts
 
 En skickad order ändras inte. Klicka på **Ny version** i stället. Ordern blir ett utkast med nästa versionsnummer, du ändrar raderna och skickar den igen. Den version som leverantören redan har fått sparas som den var under **Skickade versioner**, med sin PDF. På PDF:en för den nya versionen står att den ersätter tidigare versioner.
 
-En rad där varor redan har tagits emot finns kvar, och antalet kan inte bli mindre än det som har kommit.
+En rad där varor redan har tagits emot finns kvar med samma artikel och enhet, och antalet kan inte bli mindre än det som har kommit. Finns det en inleverans som väntar på ordern följer den med den nya versionen: nya rader kommer med, borttagna rader försvinner och antal och pris blir de nya.
 
 ## Ta emot varorna
 
@@ -58,6 +58,8 @@ Kom bara en del står ordern som **Delvis mottagen**. När allt har kommit står
 ## Stäm av leverantörsfakturan
 
 När fakturan har registrerats öppnar du den under **Leverantörsfakturor**. Under **Koppla till inköpsorder** väljer du ordern och klickar på **Koppla**. NONOX visar vad som beställdes, vad som har tagits emot och vad som är fakturerat utan moms, och markerar skillnader i antal och pris. Ingenting attesteras automatiskt: du avgör om fakturan stämmer.
+
+Jämförelsen gäller hela ordern. Faktureras en order i flera delar, en faktura per leverans, visar varje faktura en skillnad mot ordern. Kontrollera då att delfakturorna tillsammans stämmer med det som har kommit.
 
 ![Leverantörsfakturan med den kopplade inköpsordern och jämförelsen mot det som har tagits emot.](/bilder/manual/lager/inkopsorder-pa-fakturan.webp)
 

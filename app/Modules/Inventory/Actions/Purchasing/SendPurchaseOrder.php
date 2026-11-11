@@ -11,6 +11,7 @@ use App\Modules\Inventory\Mail\PurchaseOrderMail;
 use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\PurchaseOrderVersion;
 use App\Modules\Inventory\Purchasing\PurchaseOrderDocument;
+use App\Modules\Inventory\Purchasing\PurchaseOrderReceipts;
 use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
 use App\Support\MailQuota;
@@ -58,15 +59,18 @@ class SendPurchaseOrder
         return CurrentCompany::run($company, function () use ($user, $company, $order, $method, $email): PurchaseOrderVersion {
             Gate::forUser($user)->authorize('send', [$order, $company]);
 
-            if ($method === PurchaseOrder::EMAIL) {
-                MailQuota::take($company, 'documents');
-            }
-
             return DB::transaction(function () use ($user, $company, $order, $method, $email): PurchaseOrderVersion {
+                // Receipts first, then the order (PurchaseOrderReceipts).
+                PurchaseOrderReceipts::lockOpen($order->id);
                 $order = PurchaseOrder::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
 
                 if (! $order->isDraft()) {
                     throw ValidationException::withMessages(['order' => __('Inköpsordern är redan skickad eller makulerad.')]);
+                }
+
+                // Only an order that will really be sent uses the mail quota.
+                if ($method === PurchaseOrder::EMAIL) {
+                    MailQuota::take($company, 'documents');
                 }
 
                 $order->load('rows');
@@ -92,6 +96,7 @@ class SendPurchaseOrder
                 ]);
 
                 $order->forceFill(['sent_at' => $now, 'sent_to' => $email, 'sent_method' => $method, 'sent_by' => $user->id])->save();
+                PurchaseOrderReceipts::sync($order);
                 PurchaseOrderStatuses::refresh($order, afterSending: true);
 
                 Audit::record('inventory.purchase_order_sent', $order, ['number' => $order->number, 'version' => $order->version, 'method' => $method], $company, $user);

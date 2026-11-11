@@ -22,7 +22,7 @@ use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\PurchaseOrderRow;
 use App\Modules\Inventory\Models\StockLocation;
-use App\Modules\Inventory\Models\StockReceiptLine;
+use App\Modules\Inventory\Purchasing\PurchaseOrderReceipts;
 use App\Modules\Inventory\Purchasing\PurchaseQuantities;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
@@ -89,6 +89,8 @@ class SavePurchaseOrder
 
         return CurrentCompany::run($company, fn (): PurchaseOrder => DB::transaction(function () use ($validated, $order, $company, $user, $source): PurchaseOrder {
             if ($order !== null) {
+                // Receipts first, then the order (PurchaseOrderReceipts).
+                PurchaseOrderReceipts::lockOpen($order->id);
                 $order = PurchaseOrder::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
 
                 if (! $order->isDraft()) {
@@ -150,7 +152,13 @@ class SavePurchaseOrder
 
             if ($removed !== []) {
                 $this->guardRemoval($existing->only($removed)->all());
+                PurchaseOrderReceipts::releaseRows(array_values($removed));
                 PurchaseOrderRow::query()->whereKey($removed)->delete();
+            }
+
+            // A goods receipt made from an earlier version follows the order's rows now.
+            if ($order->wasSent()) {
+                PurchaseOrderReceipts::sync($order);
             }
 
             Audit::record('inventory.purchase_order_saved', $order, ['number' => $order->number, 'version' => $order->version, 'rows' => count($rows), 'source' => $order->source->value], $company, $user);
@@ -228,6 +236,10 @@ class SavePurchaseOrder
                     throw ValidationException::withMessages(["rows.{$index}.article_id" => __('Varor har tagits emot på raden, så artikeln kan inte bytas.')]);
                 }
 
+                if ($current->unit_id !== $unit->id) {
+                    throw ValidationException::withMessages(["rows.{$index}.unit_id" => __('Varor har tagits emot på raden, så enheten kan inte bytas.')]);
+                }
+
                 if ($conversion->stockMilli < $current->received_milli) {
                     throw ValidationException::withMessages(["rows.{$index}.quantity" => __('Antalet kan inte bli mindre än det som redan har tagits emot (:received :unit).', ['received' => Quantity::format($current->received_milli), 'unit' => $stockCode])]);
                 }
@@ -266,8 +278,8 @@ class SavePurchaseOrder
     }
 
     /**
-     * A row goods have been received on, or that sits on a goods receipt,
-     * stays on the order.
+     * A row goods have been received on stays on the order; a row that only
+     * sits on an open goods receipt leaves it with the row.
      *
      * @param  array<int, PurchaseOrderRow>  $rows
      */
@@ -279,9 +291,6 @@ class SavePurchaseOrder
             }
         }
 
-        if (StockReceiptLine::query()->whereIn('purchase_order_row_id', array_keys($rows))->exists()) {
-            throw ValidationException::withMessages(['rows' => __('En rad du tog bort finns på en inleverans. Makulera inleveransen först.')]);
-        }
     }
 
     /**
