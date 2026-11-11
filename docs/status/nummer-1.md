@@ -742,3 +742,17 @@ Evidence: `tests/Feature/Inventory/PurchaseOrdersTest.php`, `tests/Feature/Inven
 - Manualartiklarna `lager/inkopsorder` och `lager/inkopsforslag` med skärmbilder från demobutiken, ändringslogg, README, landningssidan, ADR-071 "As built (M3)", GDPR-dokumenten och registerutdraget per leverantör.
 Open legal-verify items: om en skickad inköpsorder är räkenskapsinformation (BFL 5 kap. 6 §), och därmed om de skickade versionerna (mottagare och leverantörens uppgifter i ögonblicksbilden) ska anonymiseras när en leverantör raderas, vilket i dag inte görs eftersom de bara kan läggas till; om den som skrev en order över attestgränsen får skicka den själv; bokföringskontrollen av `value_ore` (§12.4).
 Next package: M2/M4 enligt prioritetslistan.
+
+---
+
+Package: M4, tillverkningsorder med färdigvarulager (ADR-071 §8, §5)
+Status: done (tillverkningsorder med egen kopia av stycklistan, status utkast → frisläppt → startad → färdig eller makulerad, uttag och mottagning i lagret, produkter i arbete vid bokslutet)
+Evidence: `tests/Feature/Manufacturing/ProductionOrdersTest.php` (fixturerna F-M1–F-M6), `tests/Feature/Manufacturing/ProductionValuationTest.php` (F-V1–F-V3), `tests/Fixtures/manufacturing/production-orders.json`, `tests/Feature/Manufacturing/ProductionOrderPagesTest.php` (sidor och fast antal frågor), `tests/Tenancy/ProductionOrderTenancyTest.php`, `tests/Tenancy/TenancyIsolationTest.php` (fem nya modeller).
+- Nya rörelsetyper `PRODUCTION_ISSUE` (komponenter ut till anskaffningsvärdet enligt FIFO eller vägt genomsnitt) och `PRODUCTION_RECEIPT` (färdiga produkter in till tillverkningskostnaden: material plus direkt arbete, omkostnader bara om företaget väljer det). Uttag och arbete i egna tabeller som bara kan läggas till.
+- Ingen verifikation per order. Bokslutets lagervärdering tar med produkter i arbete på ett eget kontopar (1440/4940 från början) via den nya förlängningspunkten `StockValuationAdditions` i Lager. Systemdokumentation 0.132 (avsnitt 5o och 5j).
+- Inköpsförslaget: frisläppta och startade order reserverar komponenterna (`ProductionOrderDemand`), och deras färdiga produkter räknas som på väg in (`PurchaseSupplySource`, ny).
+- För M5/M6: `production_order_operations` (§13.8:s tabell) och `production_labour_entries` med källan TERMINAL för verkstadsterminalen.
+- Sidorna under `/tillverkning/tillverkningsorder`, länk från kundorderns kalkylpanel, inställningar för omkostnader i lagervärdet och kontona för produkter i arbete. Manualartikeln `tillverkning/tillverkningsorder` med skärmbilder från Snickeri Norrby Demo AB, ändringslogg, README, landningssidan, ADR-071 "As built (M4)"; färdplanens punkt `stycklistor-och-tillverkning` är levererad och borttagen.
+- Hela sviten (PGTZ=UTC): 8 965 gröna, 5 röda, 8 todos, 6 hoppade över. Den ena röda (modellistan i TenancyIsolationTest) är rättad och `tests/Tenancy/TenancyIsolationTest.php` är grön efteråt (2 359). De fyra andra (DemoScheduleTest ×2, DatabaseGrantsTest ×2) är kända flakes och gröna när de körs ensamma (35 gröna). phpstan inga fel, pint grönt, `npm test` grönt, `npm run build` ok.
+Open legal-verify items: om K2 (BFNAR 2016:10 kap. 12, p. 12.10) och K3 (kap. 13) tillåter, kräver eller förbjuder indirekta kostnader i anskaffningsvärdet för egentillverkade varor; BAS-konton för produkter i arbete och färdiga varor (1440/1450) och förändringskontona (4940, 4950 eller 4970); om ÅRL 4 kap. 9 § godtar arbetsstegets standardtimkostnad; om 97-procentsregeln och lägsta värdets princip gäller produkter i arbete.
+Next package: M5 verkstadsterminal.

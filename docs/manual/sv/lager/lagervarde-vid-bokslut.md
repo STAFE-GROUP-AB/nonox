@@ -47,6 +47,10 @@ NONOX sparar värderingen med alla rader som underlag och bokför skillnaden på
 
 Ökar lagret debiteras lagerkontot; minskar det krediteras det. Lagerslaget väljs per artikel under **Lagerslag**, och **Lagerslag för artiklar utan eget** under **Lager → Inställningar**, där du också väljer kontona. Har du aldrig valt lagerslag bokförs allt som förut på handelsvarornas konton.
 
+## Produkter i arbete
+
+Har företaget Tillverkning räknas tillverkningsorder som är startade men inte färdiga på årets sista dag som produkter i arbete: det material som har tagits ut till dem plus det arbete som har rapporterats. De visas under **Produkter i arbete** på bokslutssidan, order för order, och bokförs i samma verifikation på ett eget kontopar, 1440 mot 4940 om du inte väljer andra under **Tillverkning → Inställningar**. 97-procentsregeln gäller inte dem. Färdiga produkter ligger i lagret som andra artiklar, till sin tillverkningskostnad. Se [Tillverkningsorder](/manual/tillverkning/tillverkningsorder).
+
 ## 97-procentsregeln
 
 Ett företag som följer K2 kan under **Lager → Inställningar** välja **Ta upp lagret till 97 procent av anskaffningsvärdet (K2 punkt 12.5)**. Den är avstängd från början. Regeln gäller bara när ingen vara är nedskriven till nettoförsäljningsvärde; annars stoppar NONOX bokningen. Varor som ska kasseras måste ha flyttats bort från lagret för att slängas. Ligger de kvar, värderade till noll, får regeln inte användas för något i lagret (K2 punkt 12.18).
@@ -64,3 +68,4 @@ När Lager är påslaget heter punkten **Varulagret är inventerat och värderat
 
 - [Checklistan](/manual/bokslut/checklistan)
 - [Bokslutsverifikationer](/manual/bokslut/bokslutsverifikationer)
+- [Tillverkningsorder](/manual/tillverkning/tillverkningsorder)

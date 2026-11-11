@@ -175,6 +175,11 @@ use App\Modules\Kitchen\Models\StaffMeal;
 use App\Modules\Kitchen\Models\WasteEntry;
 use App\Modules\Kitchen\Models\WasteMeasurement;
 use App\Modules\Manufacturing\Models\Operation;
+use App\Modules\Manufacturing\Models\ProductionLabourEntry;
+use App\Modules\Manufacturing\Models\ProductionOrder;
+use App\Modules\Manufacturing\Models\ProductionOrderComponent;
+use App\Modules\Manufacturing\Models\ProductionOrderIssue;
+use App\Modules\Manufacturing\Models\ProductionOrderOperation;
 use App\Modules\Manufacturing\Models\RowStructure;
 use App\Modules\Manufacturing\Models\RowStructureLine;
 use App\Modules\Payroll\Models\Absence;
@@ -461,6 +466,11 @@ const COMPANY_SCOPED_MODELS = [
     Operation::class => ['name' => 'Hemligt arbetssteg', 'hourly_cost_ore' => 45_000],
     RowStructure::class => 'rowStructureAttributes',
     RowStructureLine::class => 'rowStructureLineAttributes',
+    ProductionOrder::class => 'productionOrderAttributes',
+    ProductionOrderComponent::class => 'productionOrderComponentAttributes',
+    ProductionOrderOperation::class => 'productionOrderOperationAttributes',
+    ProductionOrderIssue::class => 'productionOrderIssueAttributes',
+    ProductionLabourEntry::class => 'productionLabourEntryAttributes',
     WasteEntry::class => 'kitchenWasteAttributes',
     WasteMeasurement::class => ['measured_on' => '2026-03-01', 'kg_milli' => 1500],
     StaffMeal::class => ['served_on' => '2026-03-01', 'meal' => 'LUNCH', 'quantity_milli' => 1000, 'reason' => 'REPRESENTATION'],
@@ -1904,6 +1914,36 @@ function rowStructureLineAttributes(): array
     return ['row_structure_id' => RowStructure::create(rowStructureAttributes())->id, 'component_article_id' => Article::create(articleAttributes())->id, 'quantity_milli' => 100];
 }
 
+function productionOrderAttributes(): array
+{
+    return ['number' => random_int(1, 1_000_000), 'article_id' => Article::create(articleAttributes())->id, 'name' => 'Hemlig tillverkning', 'yield_milli' => 1000, 'quantity_milli' => 2000];
+}
+
+function productionOrderComponentAttributes(): array
+{
+    return ['production_order_id' => ProductionOrder::create(productionOrderAttributes())->id, 'component_article_id' => Article::create(articleAttributes())->id, 'quantity_milli' => 100, 'required_milli' => 200];
+}
+
+function productionOrderOperationAttributes(): array
+{
+    return ['production_order_id' => ProductionOrder::create(productionOrderAttributes())->id, 'operation_id' => Operation::create(['name' => 'Steg '.Str::random(8), 'hourly_cost_ore' => 45_000])->id, 'minutes' => 30, 'planned_minutes' => 60];
+}
+
+function productionOrderIssueAttributes(): array
+{
+    $component = ProductionOrderComponent::create(productionOrderComponentAttributes());
+    $movement = StockMovement::create([...inventoryMovementAttributes(), 'article_id' => $component->component_article_id, 'quantity_milli' => -100, 'unit_cost_ore' => null, 'type' => 'PRODUCTION_ISSUE']);
+
+    return ['production_order_id' => $component->production_order_id, 'production_order_component_id' => $component->id, 'article_id' => $component->component_article_id, 'location_id' => $movement->location_id, 'stock_movement_id' => $movement->id, 'quantity_milli' => 100, 'value_ore' => 500, 'issued_on' => '2026-03-01'];
+}
+
+function productionLabourEntryAttributes(): array
+{
+    $operation = ProductionOrderOperation::create(productionOrderOperationAttributes());
+
+    return ['production_order_id' => $operation->production_order_id, 'production_order_operation_id' => $operation->id, 'source' => 'ENTERED', 'minutes' => 30, 'hourly_cost_ore' => 45_000, 'cost_ore' => 22_500, 'worked_on' => '2026-03-01'];
+}
+
 function unitConversionAttributes(): array
 {
     return ['article_id' => Article::create(articleAttributes())->id, 'unit' => 'cl', 'factor_milli' => 70_000];
@@ -2005,7 +2045,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [PurchaseOrderVersion::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];
+const APPEND_ONLY = [WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

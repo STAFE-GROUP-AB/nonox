@@ -42,3 +42,9 @@ Varje komponent räknas med lagrets värde enligt företagets värderingsmetod n
 ## Versioner
 
 Varje ändring sparas som en ny version från ett datum, med **Ändra stycklistan**. Offerter och order behåller den stycklista de redan har. En version som ska gälla bakåt i tiden kräver att du bekräftar det. **Inaktivera stycklistan** gör att den inte kan väljas på nya rader; rader som redan har en kopia behåller den.
+
+## Läs också
+
+- [Tillverkningsorder](/manual/tillverkning/tillverkningsorder)
+- [Kalkyl på offert och order](/manual/tillverkning/kalkyl-pa-offert-och-order)
+- [Arbetssteg](/manual/tillverkning/arbetssteg)

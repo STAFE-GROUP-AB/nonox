@@ -1026,3 +1026,118 @@ kap. 6 §, an agreement of particular importance) and must be kept as such, or m
 earlier (until decided, nothing is pruned); whether segregation of duties should forbid the
 creator of an order above the approval amount from sending it; the §12.4 accounting check of
 `value_ore` before receipts keep the exact line value.
+
+## Addendum 2026-11-11: as built (M4), production orders and the books (§8)
+
+Built in the `manufacturing` module: §8 (production orders, the two movement types, finished goods
+and work in progress in the year-end valuation) and the production-order half of §5 (reservations
+and the "can start now" view on the order page). Fixtures F-M1–F-M6 (cost) and F-V1–F-V3 (valuation)
+are in `tests/Fixtures/manufacturing/production-orders.json`.
+
+**Data.** `production_orders` (number from the series `production_orders`, shown TO-<n>; status;
+article; the source version; the copy's name and batch `yield_milli`; `quantity_milli` in the stock
+unit with what was typed and its `unit_id`; `location_id` where the finished goods are received;
+`sales_document_id` + `sales_line_key` for the customer order row; planned start, due date; who and
+when for release, start, finish and cancel; and at finish `produced_milli`, material, labour and
+overhead cost, `overhead_bp` and the receipt's `unit_cost_ore`). The copy is two tables shaped like
+`bom_rows`: `production_order_components` (net quantity, loss, typed quantity and unit, note, plus
+`required_milli` for the whole order and `issued_milli`/`issued_value_ore`) and
+`production_order_operations` (operation, batch minutes, `planned_minutes` for the order, note). The
+latter is §13.8's table: M6 adds its workstation, remaining-minutes override and waiting time there.
+Two append-only ledgers (model events and Lager's `inventory_append_only()` trigger, grant
+`AppendOnly`): `production_order_issues` (component, article, location, stock movement, signed
+quantity and value, date) and `production_labour_entries` (order operation, source PLANNED, ENTERED
+or TERMINAL, signed minutes, the hourly cost when recorded, cost, date). Every table has `company_id`
+and `BelongsToCompany`.
+
+**Copy.** A new order copies the customer order row's own copy (§4) when it serves one, else the
+article's bill of materials valid today, through the same shape as M2 (`StructureLines`, now shared
+by `SaveRowStructure` and `SaveProductionOrder`, so loops, nesting, units and loss are checked the same
+way). The template is never touched. Quantity and copy change only while the order is a draft; each
+change recomputes `required_milli = round_half_up(gross × quantity ÷ batch)` (at least one milli) and
+`planned_minutes = round_half_up(minutes × quantity ÷ batch)`.
+
+**Status machine** (`ProductionOrderStatus`, `ProductionOrderLifecycle`): DRAFT → RELEASED (needs a
+component; reserves) ⇄ back to DRAFT; RELEASED → STARTED (optionally issuing everything); while
+STARTED, "Ta ut komponenter" issues what remains; STARTED → FINISHED; DRAFT/RELEASED/STARTED →
+CANCELLED (a started order needs a reason). Each step locks the order row and is audited
+(`manufacturing.production_order_*`, ids, numbers, dates and amounts only).
+
+**Movements and cost.**
+
+- `PRODUCTION_ISSUE` out: each component is taken from its default location first, then the others
+  holding it in code order; what is not on hand is refused unless negative stock is allowed. The
+  value of an issue is what the article's cost value under the company's method loses (cost value on
+  the day before the issue minus after it, from the movement ledger), so FIFO takes the oldest layers
+  and the average takes the average, and stock plus work in progress always adds up to what came in
+  (F-M5, F-M6). With negative stock allowed, the part not on hand is valued at the purchase price.
+  Components that are not stock articles are not issued; at finish they count at their costing price
+  (`ManufacturingBook`: own bill of materials, latest receipt, purchase price) and an article without
+  one blocks the finish.
+- Labour: on finish each operation gets a labour entry dated the finish day. Minutes entered are the
+  operation's total, so only the difference to what was already reported is added (ENTERED); an
+  operation nobody reported on gets its planned minutes (PLANNED); an operation with terminal minutes
+  and nothing entered gets nothing more. The cost uses the operation's hourly cost at that moment.
+  M5's terminal writes TERMINAL rows to the same table.
+- `PRODUCTION_RECEIPT` in: produced quantity (the order's by default) at
+  `unit_cost = round_half_up((material + labour + overhead) × 1000 ÷ produced_milli)`, at the order's
+  location. Overhead is `ManufacturingSettings::overhead_bp` of material plus labour, only when the
+  company sets `overhead_in_stock_value` (Tillverkning → Inställningar, off by default); the costing
+  overhead of M2 is unchanged. As with M3 receipts, `stock_movements.value_ore` is not written, so the
+  receipt carries the rounded cost per stock unit.
+- Cancel: every location's net issue goes back as one `PRODUCTION_ISSUE` movement in at the issued
+  cost per stock unit (rounded half up) and a negative issue row with the exact value. Reported labour
+  stays on the order.
+
+**No voucher per order.** The year-end valuation includes:
+
+- finished goods, as ordinary stock articles valued from their movements (the receipt's cost), on the
+  article's stock class pair; and
+- work in progress (`WorkInProgress::at`): for orders neither finished nor cancelled on the day, the
+  issues and labour up to that day, plus overhead when the company includes it. It is a new
+  extension point in Lager: `StockValuationAddition`/`StockValuationAdditions`, which
+  `BookStockValuation::plan()` adds as its own group on its own pair (`wip_stock_account`/
+  `wip_change_account`, 1440/4940 by default), in the same voucher, included when it has a value or
+  its stock account carries a balance. Lager knows nothing of production. The 97 % rule applies to
+  the stock classes only.
+
+**Purchase proposal.** `ProductionOrderDemand` (a `PurchaseDemandSource`) reserves
+`required − issued` of stock components of released and started orders. A second small extension,
+`PurchaseSupplySource` (`PurchaseDemandSources::registerSupply()`), lets `ProductionOrderSupply` count
+the finished goods of released and started orders as coming, so an article made for a customer order
+is not proposed for purchase as well. The order page shows per component: needed, issued, on hand,
+reserved by other released and started orders, coming on purchase orders, short. Purchase orders for
+the shortage are made from the purchase proposal (M3); there is no button on the order page.
+
+**Screens.** Tillverkning → Tillverkningsorder (`/tillverkning/tillverkningsorder`, filters `oppna`,
+`utkast`, `frislappta`, `startade`, `fardiga`, `makulerade`, `alla` and `sok`), `/ny` (from an article
+or from a customer order row, `?kundorder=&rad=`; the order's Stycklistor och kalkyl panel links each
+row there and lists its orders), and the order page. Every irreversible step has a Swedish
+confirmation and every save a toast. Lager's closing page shows the work in progress per order.
+Permissions are `manufacturing:view` and `manufacturing:manage` (§1); there is no separate
+production permission. Query-count tests cover the list and the order page.
+
+**Design choices where this ADR left room.**
+
+1. Separate tables for components and operations instead of one copy table, so M5 can reference an
+   order operation and M6 can extend it.
+2. Labour is a dated ledger, not a field on the operation, so work in progress can be valued on any
+   past day and M5 feeds it without a schema change.
+3. Issues are valued by the valuation delta rather than by a stored cost on the out movement, which
+   keeps ADR-039's ledger unchanged (out movements carry no cost).
+4. The finished article must be a stock article; the order refuses one that is not.
+5. The year-end change of finished goods is booked on the article's stock class pair; there is no
+   separate finished-goods class yet (see the open questions).
+
+The system documentation is at 0.132 (section 5o and 5j).
+
+Still open (`TODO(legal-verify)`, also in code and in the system documentation §8):
+
+- whether K2 (BFNAR 2016:10 ch. 12, point 12.10) and K3 (ch. 13) allow, require or forbid indirect
+  costs (overhead) in the cost of own-manufactured goods; NONOX counts material and direct labour,
+  overhead only by the company's choice;
+- the BAS accounts for work in progress and finished goods (1440/1450) and their change accounts
+  (4940, and 4950 or 4970) beside 1460/4960;
+- whether ÅRL 4:9 accepts the operation's standard hourly cost as an approximation of the actual
+  cost;
+- whether the K2 97 % rule (point 12.5) and lägsta värdets princip apply to work in progress.

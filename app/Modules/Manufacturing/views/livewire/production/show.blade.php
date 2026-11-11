@@ -240,7 +240,7 @@
         </x-ui.card>
     @endif
 
-    <x-ui.card :title="__('Komponenter')" :description="$status->isOpen() ? __('Behövs är det som återstår att ta ut, spill inräknat. Reserverat är det andra frisläppta och startade order behöver.') : null">
+    <x-ui.card :title="__('Komponenter')" :description="$status->isOpen() ? __('Ordern behöver är hela orderns behov, spill inräknat. Saknas räknas på det som återstår att ta ut. Reserverat är det andra frisläppta och startade order behöver.') : null">
         @if($canManage && $status === ProductionOrderStatus::Draft && ! $editingStructure)
             <x-slot:cta>
                 <x-secondary-button type="button" wire:click="editStructure">{{ __('Ändra orderns stycklista') }}</x-secondary-button>

@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.131
-- Datum: 2026-11-10
+- Version: 0.132
+- Datum: 2026-11-11
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -4594,7 +4594,8 @@ bokslutet (ADR-039). Modulen ändrar bokföringen bara i bokslutssteget nedan.
   modellen och en databastrigger stoppar ändring och borttagning. Ett fel
   rättas med en ny rörelse. Varje rörelse har artikel, plats, antal med
   tecken, kostnad per enhet för det som kommer in, typ (inleverans, plock,
-  flytt, inventering, kassa, retur, kassation), datum, källa och vem.
+  flytt, inventering, kassa, retur, kassation, uttag till och mottagning
+  från tillverkning), datum, källa och vem.
   Saldot per artikel och plats (`stock_levels`) ändras i samma transaktion,
   med raden låst; `php artisan inventory:verify` jämför saldona med
   rörelserna. Antal lagras som tusendelar av enheten, aldrig som flyttal.
@@ -4638,6 +4639,15 @@ bokslutet (ADR-039). Modulen ändrar bokföringen bara i bokslutssteget nedan.
   "Varulagret är inventerat och värderat" i checklistan blir klar när
   värderingen är sparad, eller när en person bekräftar den för hand. När
   Lager är avstängd är punkten manuell som förut.
+- **Produkter i arbete** (Tillverkning, avsnitt 5o): bokslutssteget tar
+  också med värdet av tillverkningsorder som inte är färdiga på årets sista
+  dag, på ett eget kontopar (från början 1440 Produkter i arbete mot 4940
+  Förändring av produkter i arbete) i samma verifikation. Paret tas med när
+  något pågår eller när lagerkontot har ett saldo under året. Det värderas
+  till anskaffningsvärdet; 97-procentsregeln gäller bara lagerslagen.
+  Lager känner inte till tillverkningen: Tillverkning registrerar sitt
+  tillägg i Lager (`StockValuationAdditions`), och värderingen sparas med
+  orderna i `classes`.
 - **Behörigheter:** `inventory:view`, `inventory:count`,
   `inventory:manage`, `inventory:settings`; rollen Lagerpersonal ser och
   hanterar varor men inte priser eller inställningar. Att bokföra
@@ -5035,6 +5045,60 @@ räkenskapsinformation, men de bevaras och kontrolleras på samma sätt som bokf
   inte är registrerade visas i Mina datum under Bolagsverket. Datum för
   kallelser kommer från `database/data/boardroom/rules.json` och visas som råd så
   länge värdena inte är kontrollerade. NONOX skickar ingenting till Bolagsverket.
+
+## 5o. Tillverkningsorder (modulen Tillverkning)
+
+Beskrivs i [ADR-071](../adr/ADR-071-manufacturing-purchase-orders-and-customer-ordering.md)
+§8 och tillägget "As built (M4)". Stycklistor, arbetssteg och kalkylen på
+offerter och ordrar (M2) bokför ingenting och beskrivs i ADR:en.
+
+- **Ingen verifikation per order.** Material och löner bokförs när de köps
+  och betalas, som tidigare. Tillverkningsordern flyttar bara varor i
+  lagerreskontran, och böckerna möter lagret vid bokslutets lagervärdering
+  (avsnitt 5j).
+- **Ordern** (`production_orders`) har ett nummer ur en egen nummerserie
+  (visas TO-1, TO-2 …), en artikel som måste vara lagerförd, ett antal i
+  artikelns lagerenhet, en egen kopia av stycklistan
+  (`production_order_components` och `production_order_operations`) och
+  eventuellt kundorderraden den tillverkas till. Status: utkast →
+  frisläppt → startad → färdig, eller makulerad. Antal och kopia ändras
+  bara i utkast. Varje steg skrivs i behandlingshistoriken
+  (`manufacturing.production_order_*`) med id, nummer, datum och belopp.
+- **Uttag av komponenter** (`PRODUCTION_ISSUE`, ut ur lagret) sker när
+  ordern startas eller under tiden den pågår, och det som återstår när den
+  färdigmeldas. Varje uttag sparas i `production_order_issues` med sin
+  lagerrörelse och det värde som lämnade lagret: artikelns anskaffningsvärde
+  enligt företagets metod (FIFO eller vägt genomsnitt) dagen före uttaget
+  minus värdet efter. Lagret och produkterna i arbete summerar därför alltid
+  till det som kom in. Där negativt saldo är tillåtet och mer tas ut än som
+  finns, värderas överskottet till artikelns inköpspris.
+- **Arbete** (`production_labour_entries`) sparas med minuter, arbetsstegets
+  timkostnad när minuterna registrerades, belopp och datum. Fram till
+  verkstadsterminalen (ADR-071 §7) kommer minuterna från färdigmeldningen:
+  den tid som skrivs in per arbetssteg, annars den planerade tiden från
+  kopian om inget har rapporterats. En rättelse är en ny rad.
+- **Färdigmeldning** (`PRODUCTION_RECEIPT`, in i lagret): produkterna tas
+  emot till tillverkningskostnaden, det vill säga uttagna komponenters
+  värde, plus komponenter som inte är lagerförda till sitt kalkylpris, plus
+  arbetet, plus omkostnadspålägget bara om företaget har valt det
+  (Tillverkning → Inställningar, avstängt från början). Kostnaden per
+  lagerenhet avrundas halvt uppåt till helt öre. Den färdiga produkten
+  värderas sedan som alla lagerartiklar (avsnitt 5j).
+- **Makulering** lägger tillbaka uttagna komponenter på samma plats till det
+  värde de lämnade med (`PRODUCTION_ISSUE` in, och en negativ rad i
+  `production_order_issues`). Rapporterat arbete finns kvar men räknas inte
+  som produkter i arbete.
+- **Produkter i arbete** på en dag är summan av uttag och arbete fram till
+  den dagen för order som inte var färdiga eller makulerade den dagen, plus
+  omkostnadspålägget om företaget har valt det. Uttag och arbete kan bara
+  läggas till (modellen och en databastrigger stoppar ändring och
+  borttagning), så värdet kan räknas för vilken tidigare dag som helst.
+- **Inköpsförslaget** (Lager): frisläppta och startade order reserverar det
+  komponenterna ännu behöver, och deras färdiga produkter räknas som på väg
+  in.
+- **Behörigheter:** `manufacturing:view` (ägare, administratör,
+  redovisningskonsult, revisor) ser orderna; `manufacturing:manage` (ägare,
+  administratör) skapar och ändrar dem.
 
 ## 6. Belopp
 
@@ -5517,6 +5581,22 @@ kontrollerat dem mot källan. Särskilt:
 - Skanna (ADR-040) ändrar inga regler: den använder lagrets åtgärder och
   har inga egna juridiska värden.
 
+### Tillverkningsorder (5o)
+
+- Om K2 (BFNAR 2016:10 kapitel 12; punkt 12.10 kräver direkt lön och
+  arbetsgivaravgifter) och K3 (kapitel 13) tillåter, kräver eller förbjuder
+  indirekta kostnader (omkostnader) i anskaffningsvärdet för egentillverkade
+  varor. NONOX räknar material och direkt arbete, och omkostnader bara om
+  företaget väljer det.
+- BAS-konton för produkter i arbete och färdiga varor (1440 och 1450) och
+  deras förändringskonton (4940, och 4950 eller 4970) bredvid 1460/4960.
+  NONOX bokar produkter i arbete på 1440/4940 från början och färdiga
+  produkter på artikelns lagerslag.
+- Om ÅRL 4 kap. 9 § godtar arbetsstegets standardtimkostnad som en
+  uppskattning av den faktiska kostnaden.
+- Om 97-procentsregeln (K2 punkt 12.5) och lägsta värdets princip ska
+  tillämpas på produkter i arbete; i dag värderas de till anskaffningsvärdet.
+
 ### Arbetsorder (5m)
 
 Frågorna L1–L16 i `docs/specs/rules/arbetsorder-och-ata.md`. Det som
@@ -5705,3 +5785,4 @@ påverkar bokföringen och fakturan:
 | 0.129 | 2026-11-10 | Förhandsversion (beta) av årsredovisningen för mindre aktiebolag med K3, inte granskad av en auktoriserad redovisningskonsult (avsnitt 5a6.8, ADR-059 A.4 paket S1-P10): ett räkenskapsår som följer K3 får förvaltningsberättelse, resultat- och balansräkning, rapport över förändringar i eget kapital, eventuell kassaflödesanalys och noter i ordningen i K3 punkt 3.10, i hela kronor. Allt som NONOX inte stöder nekar hela årsredovisningen med regelns id (K3 tillämpas helt eller inte alls); PDF:en görs när alla frågor är besvarade. K2-dokumentet ändras inte; iXBRL görs bara för K2. Ingen verifikation ändras. |
 | 0.130 | 2026-11-10 | Träindustriavtalet i Avtal (avsnitt 5h, ADR-033 tillägg L1): avtalsdata för trä- och möbelindustrin i två versioner, där versionen 2025–2027 bara har belopp ur en sekundär källa och därför inte kan kontrolleras, så lönekörningen stoppas för anställda på avtalet. Satsen `ORE_PER_HOUR` kan ha `plus_hourly_wage` (timlön plus krontal per timme), och avtalskalendern har sju hjälpdagar före och efter helger. Inga konton eller verifikationer ändras. |
 | 0.131 | 2026-11-10 | En anläggningstillgång av flera inköp (avsnitt 5a2, ADR-010 tillägg 2026-11-10): en senare inköpsrad på tillgångens konto kan läggas till i en befintlig tillgång, från utkastet eller i registret för en bokförd rad. Ny tabell `fixed_asset_additions` (kan inte ändras eller tas bort). Ett tillägg före avskrivningens start ingår i planen från första avskrivningsmånaden; ett senare skrivs av framåt över den återstående nyttjandeperioden. Tillägg nekas i stängda år och låsta perioder, på uppdelade och avyttrade tillgångar och efter nyttjandeperiodens slut. Ingen bokförd avskrivning eller verifikation ändras. |
+| 0.132 | 2026-11-11 | Tillverkningsorder (avsnitt 5o och 5j, ADR-071 §8 och tillägget As built (M4)): komponenter tas ur lagret som `PRODUCTION_ISSUE` till anskaffningsvärdet enligt företagets metod och färdiga produkter tas emot som `PRODUCTION_RECEIPT` till tillverkningskostnaden (material plus direkt arbete, omkostnader bara om företaget väljer det). Nya tabeller `production_orders`, `production_order_components`, `production_order_operations`, `production_order_issues` och `production_labour_entries` (de två sista kan inte ändras eller tas bort). Ingen verifikation per order; bokslutets lagervärdering tar med produkter i arbete på ett eget kontopar (1440/4940 från början) i samma verifikation. Öppna frågor om kostnader och konton i avsnitt 8. |

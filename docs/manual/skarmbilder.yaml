@@ -265,6 +265,9 @@ kok/installningar: { foretag: restaurang, rutt: kitchen.settings }
 tillverkning/stycklista: { foretag: hantverkare, rutt: manufacturing.boms.show, modell: { tabell: articles, dar: { number: BORD-180 } } }
 tillverkning/arbetssteg: { foretag: hantverkare, rutt: manufacturing.operations }
 tillverkning/kalkyl-pa-offert: { foretag: hantverkare, rutt: invoicing.quotes.show, modell: { tabell: sales_documents, dar: { your_reference: 'Möbler till samlingslokalen' } }, visa: 'text=Stycklistor och kalkyl' }
+tillverkning/tillverkningsorder: { foretag: hantverkare, rutt: manufacturing.productionOrders.index }
+tillverkning/tillverkningsorder-ordern: { foretag: hantverkare, rutt: manufacturing.productionOrders.show, modell: { tabell: production_orders, dar: { status: STARTED } } }
+tillverkning/tillverkningsorder-fardigmeld: { foretag: hantverkare, rutt: manufacturing.productionOrders.show, modell: { tabell: production_orders, dar: { status: STARTED } }, klick: ['text=Färdigmeld'], visa: 'text=Färdigmeld ordern' }
 
 # Arbetsorder (WorkOrdersExtras), in the joinery. Theo Björk is the Utförare.
 fakturering/arbetsorder: { foretag: hantverkare, rutt: workOrders.index }
