@@ -174,6 +174,15 @@ final class StructureWriter
                 ];
             }
 
+            // Structures nested in each other at most MAX_DEPTH levels, counted with the ones that use this output.
+            $levels = 1 + max([0, ...array_map(fn (array $row): int => isset($row['component_article_id']) ? $book->depth((int) $row['component_article_id']) : 0, $prepared)]) + $book->height($output->id);
+
+            if ($levels > StructureBook::MAX_DEPTH) {
+                throw ValidationException::withMessages(['rows' => $bom
+                    ? __('Stycklistan blir för djup: högst :max nivåer av stycklistor i varandra.', ['max' => StructureBook::MAX_DEPTH])
+                    : __('Receptet blir för djupt: högst :max nivåer av recept i varandra.', ['max' => StructureBook::MAX_DEPTH])]);
+            }
+
             $allergens = $input['allergens'] ?? null;
 
             if (is_string($allergens)) {

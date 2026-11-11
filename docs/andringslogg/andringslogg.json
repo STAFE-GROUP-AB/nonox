@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-11-stycklistor-skydd",
+      "datum": "2026-11-11T09:00:00+01:00",
+      "rubrik": "Stycklistor: skydd för lagerenheten och tydligare varning på offerten",
+      "beskrivning": "Lagerenheten kan inte längre ändras på en artikel som är produkt eller komponent i en stycklista, och stycklistor kan läggas högst tolv nivåer i varandra. Byter en offertrad artikel visar kalkylen att radens stycklista gäller en annan produkt, och en underdel utan fullständig stycklista räknas med sitt inköpspris.",
+      "typ": "Förbättrat",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-10-arsredovisning-manga-verifikationer",
       "datum": "2026-11-10T19:30:00+01:00",
       "rubrik": "Årsredovisningen tas fram snabbt även med många verifikationer",

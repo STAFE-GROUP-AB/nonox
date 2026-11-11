@@ -150,6 +150,61 @@ final class StructureBook
     }
 
     /**
+     * How many levels of structures lie under the article through the
+     * components of its active versions: 0 when it is not made from one,
+     * 1 when its components are all bought, and so on.
+     *
+     * @param  array<int, true>  $seen
+     */
+    public function depth(int $articleId, array $seen = []): int
+    {
+        if (isset($seen[$articleId])) {
+            return 0;
+        }
+
+        $seen[$articleId] = true;
+        $deepest = null;
+
+        foreach ($this->versions($articleId) as $version) {
+            if (! $version->is_active) {
+                continue;
+            }
+
+            $deepest = max($deepest ?? 0, 0);
+
+            foreach ($version->rows as $row) {
+                if ($row->component_article_id !== null) {
+                    $deepest = max($deepest, $this->depth((int) $row->component_article_id, $seen));
+                }
+            }
+        }
+
+        return $deepest === null ? 0 : $deepest + 1;
+    }
+
+    /**
+     * How many levels of structures lie above the article: 0 when no active
+     * version uses it as a component.
+     *
+     * @param  array<int, true>  $seen
+     */
+    public function height(int $articleId, array $seen = []): int
+    {
+        if (isset($seen[$articleId])) {
+            return 0;
+        }
+
+        $seen[$articleId] = true;
+        $highest = 0;
+
+        foreach ($this->usedIn($articleId) as $user) {
+            $highest = max($highest, 1 + $this->height($user, $seen));
+        }
+
+        return $highest;
+    }
+
+    /**
      * Explodes quantities of output articles (thousandths of the yield unit:
      * portions for a dish) into the components that are not made from a
      * structure on that date. An output without a valid structure is
