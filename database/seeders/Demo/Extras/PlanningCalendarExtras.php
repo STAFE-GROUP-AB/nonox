@@ -20,6 +20,7 @@ use App\Modules\Manufacturing\ManufacturingModule;
 use App\Modules\Manufacturing\Models\Operation;
 use App\Modules\Manufacturing\Models\ProductionOrder;
 use App\Modules\Manufacturing\Models\ProductionOrderOperation;
+use App\Modules\Manufacturing\Models\Workstation;
 use App\Modules\Manufacturing\Planning\PlanningSettings;
 use App\Modules\Manufacturing\Planning\ProductionPlanner;
 use App\Modules\ModuleManager;
@@ -68,7 +69,7 @@ final class PlanningCalendarExtras extends DemoExtra
         }
 
         $this->atomically($c, 'Planeringskalender', fn () => CurrentCompany::run($c->company, function () use ($c): void {
-            if (ProductionOrder::query()->exists()) {
+            if (Workstation::query()->exists()) {
                 return;
             }
 
@@ -114,8 +115,10 @@ final class PlanningCalendarExtras extends DemoExtra
             $today = $c->today->startOfDay();
             $workingDay = fn (int $days): CarbonImmutable => $calendar->addWorkingDays($today, $days);
 
+            // The production orders of ManufacturingExtras are planned as they are; only a company without any gets these.
+            $hasOrders = ProductionOrder::query()->exists();
             $customer = Customer::query()->where('name', 'Bostadsrättsföreningen Exemplet')->first() ?? Customer::query()->orderBy('id')->firstOrFail();
-            $order = app(SaveSalesDocument::class)($c->user, $c->company, SalesDocument::ORDER, [
+            $order = $hasOrders ? null : app(SaveSalesDocument::class)($c->user, $c->company, SalesDocument::ORDER, [
                 'customer_id' => $customer->id,
                 'document_date' => $today->toDateString(),
                 'until_date' => $workingDay(self::ORDERS['BYRA-80'][2])->toDateString(),
@@ -153,11 +156,13 @@ final class PlanningCalendarExtras extends DemoExtra
                 }
             };
 
-            [$quantity, $minutes] = self::ORDERS['BYRA-80'];
-            $make('BYRA-80', $quantity, $minutes, null, $order);
-            [$quantity, $minutes, $days] = self::ORDERS['BORD-180'];
-            $make('BORD-180', $quantity, $minutes, $workingDay($days)->toDateString(), null);
-            $make('BORD-180', 2, $minutes, $workingDay(15)->toDateString(), null);
+            if (! $hasOrders) {
+                [$quantity, $minutes] = self::ORDERS['BYRA-80'];
+                $make('BYRA-80', $quantity, $minutes, null, $order);
+                [$quantity, $minutes, $days] = self::ORDERS['BORD-180'];
+                $make('BORD-180', $quantity, $minutes, $workingDay($days)->toDateString(), null);
+                $make('BORD-180', 2, $minutes, $workingDay(15)->toDateString(), null);
+            }
 
             $planner = app(ProductionPlanner::class);
             $planner->run($c->company, PlanTrigger::Manual);
