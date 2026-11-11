@@ -13588,5 +13588,10 @@
     "Ge stycklistan ett namn.": "Give the bill of materials a name.",
     "En stycklista kan inte innehålla sin egen artikel.": "A bill of materials cannot contain its own article.",
     "Stycklistan kan inte användas igen: den skulle gå i en ring med en annan stycklista.": "The bill of materials cannot be used again: it would loop with another bill of materials.",
-    ":count stycklista|:count stycklistor": ":count bill of materials|:count bills of materials"
+    ":count stycklista|:count stycklistor": ":count bill of materials|:count bills of materials",
+    "Lagerenheten kan inte ändras när artikeln har lagerrörelser eller ingår i ett recept eller en stycklista. Skapa en ny artikel i den nya enheten.": "The stock unit cannot be changed once the article has stock movements or is part of a recipe or a bill of materials. Create a new article in the new unit.",
+    "Stycklistan blir för djup: högst :max nivåer av stycklistor i varandra.": "The bill of materials is nested too deep: at most :max levels of bills of materials inside each other.",
+    "Receptet blir för djupt: högst :max nivåer av recept i varandra.": "The recipe is nested too deep: at most :max levels of recipes inside each other.",
+    "Raden gäller nu :row, men stycklistan gör :output.": "The row is now for :row, but the bill of materials makes :output.",
+    "Ta bort stycklistan och hämta den för den nya artikeln, eller ändra den för raden.": "Remove the bill of materials and fetch the one for the new article, or change it for this row."
 }

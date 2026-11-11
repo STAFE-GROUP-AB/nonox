@@ -12,8 +12,11 @@ use App\Domain\Units\UnitDefaults;
 use App\Models\Article;
 use App\Models\Unit;
 use App\Modules\Inventory\Models\ArticleUnitConversion;
+use App\Modules\Inventory\Models\BillOfMaterials;
 use App\Modules\Inventory\Models\BomRow;
 use App\Modules\Inventory\Models\StockMovement;
+use App\Modules\Manufacturing\Models\RowStructure;
+use App\Modules\Manufacturing\Models\RowStructureLine;
 use Brick\Math\BigDecimal;
 use Brick\Math\BigRational;
 use Brick\Math\Exception\MathException;
@@ -161,7 +164,7 @@ final class ResolveArticleUnits
         }
 
         if ($article !== null && $article->stock_unit_id !== null && $stockId !== $article->stock_unit_id && $this->hasStock($article)) {
-            throw ValidationException::withMessages(['stock_unit_id' => __('Lagerenheten kan inte ändras när artikeln har lagerrörelser eller ingår i recept. Skapa en ny artikel i den nya enheten.')]);
+            throw ValidationException::withMessages(['stock_unit_id' => __('Lagerenheten kan inte ändras när artikeln har lagerrörelser eller ingår i ett recept eller en stycklista. Skapa en ny artikel i den nya enheten.')]);
         }
 
         // The text stays as it is when the sales unit does not change ("tim" is not turned into "h").
@@ -185,10 +188,19 @@ final class ResolveArticleUnits
         return ($input[$key] ?? '') === '' ? null : (int) $input[$key];
     }
 
+    /**
+     * Whether quantities are already stored in the article's stock unit: its
+     * stock movements, a structure (recipe or bill of materials) it is a
+     * component or the output of, or a quote or order row's bill of
+     * materials copy it is a component or the output of (ADR-071 §4, §12.2).
+     */
     private function hasStock(Article $article): bool
     {
         return StockMovement::query()->where('article_id', $article->id)->exists()
-            || BomRow::query()->where('component_article_id', $article->id)->exists();
+            || BomRow::query()->where('component_article_id', $article->id)->exists()
+            || BillOfMaterials::query()->where('output_article_id', $article->id)->exists()
+            || RowStructureLine::query()->where('component_article_id', $article->id)->exists()
+            || RowStructure::query()->where('output_article_id', $article->id)->exists();
     }
 
     /**
