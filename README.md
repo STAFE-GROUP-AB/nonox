@@ -162,6 +162,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Kalkyl på offerten och ordern: hämta stycklistan till en rad, ändra den för just den raden utan att mallen ändras, och se material, arbete, omkostnadspålägg, kostnad per styck, täckningsbidrag och marginal per rad och för hela dokumentet. Kalkylen syns bara internt, aldrig på kundens PDF, och följer med när offerten blir en order. Radens stycklista kan sparas som en ny stycklista.
 - Verkstadsterminal: surfplattor i verkstaden där var och en trycker på sin bild, skriver en kod på fyra siffror och rapporterar timmar och minuter för i dag på en öppen tillverkningsorder och ett arbetssteg. Tiden blir arbetskostnad på ordern, men är produktionstid och inte närvaro eller lönetid. Rapporterna kan bara rättas med en ny rapport, var och en ser bara sina egna, och namnet tas bort ur rapporten efter 24 månader. Ett arbetssteg kan markeras som väntande på material eller på arbete. Plattan kopplas med en engångskod, och de som är på den behöver inget konto.
 - Efterkalkyl: kalkyl mot rapporterad tid per produkt och arbetssteg med spridning och utveckling, köer mot kapacitet och väntande order, material och arbete var för sig. Bara per produkt och arbetssteg; uppföljning per person finns inte (ADR-071 §7).
+- Tillverkningsorder: en order för en produkt och ett antal, mot lager eller till en rad på en kundorder, med en egen kopia av stycklistan. Utkast → frisläppt → startad → färdig, eller makulerad. En frisläppt order reserverar komponenterna i inköpsförslaget, och sidan visar per komponent vad som finns i lager, vad andra order har reserverat, vad som kommer och vad som saknas. Startad tar komponenterna ur lagret till sitt lagervärde (FIFO eller vägt genomsnitt); färdigmeld tar ut resten och tar emot produkterna i lagret till tillverkningskostnaden, material plus arbete till arbetsstegens timkostnad (omkostnader bara om företaget väljer det). Ingen verifikation per order: vid bokslutet räknas pågående order som produkter i arbete på ett eget konto (1440/4940 från början). Makulerad lägger tillbaka det som togs ut.
 
 ### CRM (modul) – ny
 - Kunder och prospekt med kontaktpersoner: när modulen är på blir Kunder ett CRM, och varje kund i kundregistret får ett kort. Ett prospekt får kundnummer först när det blir kund. En person kan höra till flera företag med en roll hos varje (beslutsfattare, ambassadör, påverkare, användare, fakturamottagare), och varje person har en rättslig grund enligt GDPR.
@@ -543,7 +544,7 @@ Medvetet utanför scope:
 
 - ❌ ERP-system
 - ❌ CRM
-- ❌ Lagerhantering för tillverkning och flera lager mellan företag. Lager för handel finns som modul, se ovan.
+- ❌ Flera lager mellan företag. Lager och tillverkning finns som moduler, se ovan.
 - ❌ Kassasystem. NONOX bokför kassans dagsrapporter och SIE-filer, se Inkorg ovan, men sköter inte försäljningen.
 - ❌ Inkasso
 

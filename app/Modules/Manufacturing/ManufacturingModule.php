@@ -18,17 +18,21 @@ use Carbon\CarbonImmutable;
  * Tillverkning (ADR-071): bills of materials (stycklistor) with components
  * on several levels and operations (arbetssteg) with an hourly cost, the
  * copy a quote or order row keeps for itself, and the costing of material,
- * labour and overhead on quotes and orders. Needs Lager, whose structure
- * engine (ADR-073) stores the bills of materials. Off by default. Writes
- * nothing to the books: the costing is a management figure.
+ * labour and overhead on quotes and orders, and production orders that
+ * take components out of stock and receive the finished goods at their
+ * manufacturing cost (§8). Needs Lager, whose structure engine (ADR-073)
+ * stores the bills of materials. Off by default. Writes no voucher: the
+ * costing is a management figure, and production orders meet the books
+ * at the year-end stock valuation.
  *
  * Permissions: production:report sets up the workshop terminal (pairs
  * tablets, adds the people on it); a worker at the terminal is not a NONOX
  * user and can only report time. production:analyse sees the
  * post-calculation (ADR-071 §7). manufacturing:view sees bills of materials, operations and
  * the costing on quotes and orders; manufacturing:manage changes bills of
- * materials, operations and the settings. Changing a row's own copy needs
- * manufacturing:view and the right to change the quote or order.
+ * materials, operations, production orders and the settings. Changing a
+ * row's own copy needs manufacturing:view and the right to change the
+ * quote or order.
  */
 final class ManufacturingModule implements IsNew, Module
 {
@@ -53,7 +57,7 @@ final class ManufacturingModule implements IsNew, Module
 
     public function description(): string
     {
-        return __('Stycklistor med komponenter och arbetssteg, en egen stycklista per offert- och orderrad, och kalkyl med material, arbete och marginal. Kräver Lager.');
+        return __('Stycklistor med komponenter och arbetssteg, en egen stycklista per offert- och orderrad, kalkyl med material, arbete och marginal, och tillverkningsorder som tar komponenter ur lagret och tar emot de färdiga produkterna. Kräver Lager.');
     }
 
     public function icon(): string
@@ -105,6 +109,7 @@ final class ManufacturingModule implements IsNew, Module
                 'permission' => 'manufacturing:view',
                 'active' => 'manufacturing.*',
                 'children' => fn (User $user, Company $company): array => [
+                    ['label' => __('Tillverkningsorder'), 'route' => 'manufacturing.productionOrders.index', 'active' => ['manufacturing.productionOrders.index', 'manufacturing.productionOrders.show', 'manufacturing.productionOrders.create']],
                     ['label' => __('Stycklistor'), 'route' => 'manufacturing.boms.index', 'active' => ['manufacturing.boms.index', 'manufacturing.boms.show', 'manufacturing.boms.create']],
                     ['label' => __('Arbetssteg'), 'route' => 'manufacturing.operations', 'active' => ['manufacturing.operations']],
                     ...($user->hasTeamPermission($company, 'production:analyse') ? [
@@ -135,7 +140,8 @@ final class ManufacturingModule implements IsNew, Module
     {
         return new ModuleCheck(warnings: [
             __('Tillverkning döljs, och offerter och ordrar visar ingen kalkyl medan modulen är avstängd.'),
-            __('Stycklistor, arbetssteg och radernas egna stycklistor finns kvar om modulen slås på igen.'),
+            __('Stycklistor, arbetssteg, tillverkningsorder och radernas egna stycklistor finns kvar om modulen slås på igen.'),
+            __('Pågående tillverkningsorder räknas fortfarande som produkter i arbete i lagervärderingen vid bokslutet.'),
         ]);
     }
 

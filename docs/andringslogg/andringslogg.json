@@ -36,6 +36,10 @@
       "datum": "2026-11-11T14:00:00+01:00",
       "rubrik": "Verkstadsterminal och efterkalkyl i Tillverkning",
       "beskrivning": "Surfplattor i verkstaden där var och en trycker på sin bild, skriver sin kod och rapporterar tid på öppna tillverkningsorder; tiden blir orderns arbetskostnad. Efterkalkylen jämför kalkylerad och rapporterad tid per produkt och arbetssteg, visar köer mot kapacitet och vad ordrarna väntar på, aldrig per person.",
+      "id": "2026-11-11-tillverkningsorder",
+      "datum": "2026-11-11T13:00:00+01:00",
+      "rubrik": "Tillverkningsorder med lager för färdiga produkter",
+      "beskrivning": "Under Tillverkning → Tillverkningsorder skapas en order för en produkt med stycklista, mot lager eller från en rad på en kundorder, med en egen kopia av stycklistan. En frisläppt order reserverar komponenterna i inköpsförslaget, och när den färdigmeldas tas komponenterna ut ur lagret till sitt lagervärde och produkterna tas emot till tillverkningskostnaden, material plus arbete. Ordern bokförs inte; pågående order räknas som produkter i arbete i lagervärderingen vid bokslutet.",
       "typ": "Nytt",
       "omrade": "Lager"
     },

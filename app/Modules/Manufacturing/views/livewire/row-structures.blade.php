@@ -31,6 +31,17 @@
                             @endif
                         </div>
 
+                        @if($row->line_key !== null && $row->article_id !== null && ($canProduce || $productionOrders->has($row->line_key)))
+                            <p class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                                @foreach($productionOrders->get($row->line_key, collect()) as $production)
+                                    <a href="{{ route('manufacturing.productionOrders.show', $production->id) }}" class="text-accent-700 underline">{{ $production->reference() }}</a> <span class="text-gray-500">{{ $production->status->label() }}</span>
+                                @endforeach
+                                @if($canProduce)
+                                    <a href="{{ route('manufacturing.productionOrders.create', ['kundorder' => $document->id, 'rad' => $row->line_key]) }}" class="font-semibold text-accent-700 underline">{{ __('Skapa tillverkningsorder') }}</a>
+                                @endif
+                            </p>
+                        @endif
+
                         @if($structure === null)
                             @if($row->line_key === null)
                                 <p class="mt-2 text-sm text-gray-600">{{ __('Spara dokumentet en gång till, så kan raden få en stycklista.') }}</p>
