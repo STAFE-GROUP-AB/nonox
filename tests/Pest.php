@@ -20,7 +20,8 @@ pest()->extend(TestCase::class)
  * Tests of the demo database (ADR-077) work in a transaction on the demo
  * connection too, rolled back afterwards, like every test does on the main one.
  * The rebuild tests are in Feature/DemoRebuild and do not: they drop the demo
- * database's schema.
+ * database's schema. Any other test that makes a demo guest (Demo::company)
+ * must be listed here too, or its rows stay behind and break DemoScheduleTest.
  */
 pest()->beforeEach(function () {
     DB::connection('demo')->beginTransaction();
@@ -37,4 +38,4 @@ pest()->beforeEach(function () {
 
     DemoDatabase::stopDraining();
     DemoSessions::stopBeating();
-})->in('Feature/Demo');
+})->in('Feature/Demo', 'Feature/Ai/VoucherInterpretHintTest.php');
