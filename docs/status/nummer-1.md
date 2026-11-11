@@ -719,3 +719,13 @@ Status: done
 Evidence: `tests/Feature/Demo/DemoVisitorTest.php`.
 - Knappen på startsidan visas också för inloggade (när demon är på). `GET /prova` för en inloggad visar en förklaring (egen gästsession, logga ut eller privat fönster, Till översikten) i stället för att omdirigera; `POST /prova` startar ingen demo. Demogäster behåller nuvarande beteende. Manualens steg 1 uppdaterad.
 Next package: enligt prioritetslistan.
+Package: Sammanslagning, integration/batch2 (S1-P14, M1, kö 18, 21, 19, 20)
+Status: done (sex grenar sammanslagna i den ordningen; ingen push)
+Evidence: hela sviten `PGTZ=UTC … php -d memory_limit=1G vendor/bin/pest`: 8 769 gröna, 2 röda, 8 todos, 6 hoppade över. De två röda (`Demo/DemoScheduleTest`, "only checks and does nothing when no demo has expired" och "does not touch the demos…") är den kända demoflaken; `tests/Feature/Demo` ensam: 83 gröna. phpstan inga fel, pint grönt, `npm test` 103 gröna, `npm run build` ok.
+- Systemdokumentationen: versionen 0.131 (anläggningstillgång av flera inköp, kö 19) följer på 0.130; M1 och kö 21 ändrar inget bokföringsbeteende.
+- `package-lock.json`: ett oavsiktligt namnbyte från assets-grenen återställt till main.
+Follow-ups:
+- S1-P14: P3, avreferera foreach-referensen i K3EquityStatement; notering om språkcachen; prestandatestet seedar långsamt, ungefär 395 s CI på main.
+- Samma join finns kvar i LedgerReconciliation, ClosingChecklist, DeferredTaxProposal och YearResult.
+- Hela sviten lämnar demoschemat tomt mitt i körningen (orsak till demoflaken), vilket behöver en egen ärende.
+Next package: enligt prioritetslistan.
