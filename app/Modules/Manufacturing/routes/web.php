@@ -14,3 +14,5 @@ Route::view('/tillverkning/tillverkningsorder/ny', 'manufacturing::production-or
 Route::view('/tillverkning/tillverkningsorder/{order}', 'manufacturing::production-order')->whereNumber('order')->name('manufacturing.productionOrders.show');
 Route::view('/tillverkning/arbetssteg', 'manufacturing::operations')->name('manufacturing.operations');
 Route::view('/tillverkning/installningar', 'manufacturing::settings')->name('manufacturing.settings');
+Route::view('/tillverkning/verkstadsterminal', 'manufacturing::terminal-admin')->name('manufacturing.terminal.admin');
+Route::view('/tillverkning/efterkalkyl', 'manufacturing::analysis')->name('manufacturing.analysis');

@@ -1026,3 +1026,81 @@ kap. 6 §, an agreement of particular importance) and must be kept as such, or m
 earlier (until decided, nothing is pruned); whether segregation of duties should forbid the
 creator of an order above the approval amount from sending it; the §12.4 accounting check of
 `value_ore` before receipts keep the exact line value.
+
+## As built (M5, 2026-11-11): workshop terminal, deviations and the post-calculation (§7, §13.5)
+
+Built on the data model of M4 (production orders, `production_labour_entries`,
+`production_order_operations`); no existing table was altered (M6 adds columns to
+`production_order_operations`). Migration `2027_01_10_100000_create_workshop_terminal_tables`.
+
+**Tables (all prefixed `workshop_`).**
+
+- `workshop_people`: name, optional photo (private disk, only with consent), code salt and PBKDF2
+  verifier (the staff ledger's `Pin`), failed attempts and lock. Not NONOX users, not staff-ledger
+  people, no personal number.
+- `workshop_devices`: a tablet paired with a one-time code (15 minutes) for a device token whose
+  SHA-256 is kept, as ADR-022's kiosk. A tablet that reported is hidden, not deleted.
+- `workshop_time_entries`: person, device, order, operation, day, signed minutes, entered-at, the
+  `production_labour_entries` row it created (source TERMINAL, which carries the cost and no person)
+  and `corrects_entry_id`. A trigger refuses every change except removing `person_id`, and every
+  delete; the grants are `NoDelete`.
+- `workshop_waiting_flags`: MATERIAL or WORK, a reason of at most 200 characters, the raising
+  device, cleared-at. One open flag per operation (partial unique index). It never names a person.
+
+**Setting and permissions.** `terminal_enabled` in the module settings, off by default. Under
+Tillverkning, `production:report` (owner, admin) sets the terminal up: pairs tablets, adds people,
+codes, photos, register extracts. `production:analyse` (owner, admin, accountant) sees the
+post-calculation. A person at the terminal is not a user and can only report time.
+
+**The terminal** (`/verkstad/terminal`, a PWA, no session or CSRF, throttled, SecurityHeaders):
+pictures, a four-digit code, open orders (RELEASED or STARTED) with product, customer, quantity and
+due date, then hours and minutes for today on an operation. The server checks the code and returns
+a signed session token (ids, a fingerprint of the code and an expiry, ten minutes, refreshed on use;
+a new code ends old sessions). Five wrong codes lock the person for five minutes, per person, not per
+tablet. The tablet signs out itself after one minute without touch. Unlike the kiosk it is online
+only: a report that could not be sent is not shown as saved. The page says in Swedish that this is
+production time, not attendance and not payroll time, and nothing reads or writes either.
+
+**Reports.** `RecordTerminalTime` writes a labour entry and a time entry in one transaction with the
+order row locked, so finishing and reporting cannot cross. 1 minute to 16 hours, today only, only on
+open orders. The hourly cost is the operation's as it is at that moment. A correction is a new pair
+that cancels the first (once, own entries only, not on a closed order, not a correction of a
+correction), then the right time is reported again. At finish M4 already treats reported minutes as
+the actual time; an operation with terminal minutes is not topped up with planned ones (tested).
+Audit entries carry ids, minutes, the day and the device, never the person, and no IP address.
+
+**Waiting.** A worker flags an operation as waiting for material or for work, with a reason. A new
+flag replaces the old; reporting time on the operation clears it. The flag is the piece of §13.5 that
+does not need M6's calendar. **Left to M6:** the `production_deviations` table and the deviation types
+scrap, overrun with a new remaining estimate and stopped workstation raised from the terminal, and
+anything that changes a plan. The terminal has no screen for them yet.
+
+**Post-calculation** (`/tillverkning/efterkalkyl`, `WorkshopAnalysis`). Per product and operation over
+finished orders in a period (3, 6, 12, 24 months): calculated against actual minutes (entered at
+finish or from the terminal; minutes filled in from the plan are not actual), deviation, spread (minimum,
+median, maximum of the per-order deviation), and trend (newer half against older half in percentage
+points, from four orders, five points to count). Bottlenecks two ways: the most queued days (remaining
+planned minutes on open orders divided by the operation's daily capacity) and the largest overruns.
+Orders waiting for material and for work are two lists, with waiting time per kind. Fourteen queries
+whatever the number of products (tested); it never reads `workshop_time_entries` or `workshop_people`,
+which a test checks on the SQL.
+
+**Personal data.** Retention 24 months: `PruneWorkshopTime`, run by `privacy:prune`, removes the person
+from old entries and deletes archived people without entries. Register extract per person
+(`/registerutdrag/verkstad/{person}`). Photo only with consent, deleted when the person is archived or
+the photo removed. `docs/gdpr/` updated (register of processing, retention times).
+
+**The per-person analysis (`per_person_analysis`) is not built, and its setting does not exist.** It is
+blocked by `TODO(legal-verify)` (§7): GDPR art. 6.1 f and 13 (legitimate-interest assessment and what staff
+must be told), and MBL 11 § and 19 § (whether negotiation is needed before it is introduced and what
+the information must contain). The design supports this: time entries carry the person, so building it
+later needs no migration, but nothing built now is a step towards it, and the analysis cannot read
+the person.
+
+**Open legal-verify items from M5.** (1) The interest assessment and information to staff for
+reporting time per person on the terminal at all, even without analysis per person (art. 6.1 f, 13).
+(2) Whether MBL 11 § and 19 § apply to the terminal itself. (3) Whether 24 months is too long. (4) The
+free text of a waiting reason, which could name a person despite the instruction.
+
+**Not in M5.** A timer mode (start and stop), offline reporting, linking to payroll, scrap and
+workstation deviations (M6), clearing a flag from the planner's screens.

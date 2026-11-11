@@ -355,6 +355,11 @@ final class DatabaseGrants
         'work_order_users' => GrantDecision::ReadWrite,
         'work_orders' => GrantDecision::NoDelete,
         'work_schedules' => GrantDecision::ReadWrite,
+        // The terminal's roster, tablets and flags are ordinary; its time entries are never deleted and only lose their person after retention (ADR-071 §7).
+        'workshop_devices' => GrantDecision::ReadWrite,
+        'workshop_people' => GrantDecision::ReadWrite,
+        'workshop_time_entries' => GrantDecision::NoDelete,
+        'workshop_waiting_flags' => GrantDecision::ReadWrite,
         'year_end_entries' => GrantDecision::AppendOnly,
     ];
 

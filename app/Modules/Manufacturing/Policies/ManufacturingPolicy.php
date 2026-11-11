@@ -25,4 +25,16 @@ class ManufacturingPolicy
     {
         return $user->hasTeamPermission($company, 'manufacturing:manage');
     }
+
+    /** Setting up the workshop terminal: tablets and the people on it (ADR-071 §7). */
+    public function terminal(User $user, Company $company): bool
+    {
+        return $user->hasTeamPermission($company, 'production:report');
+    }
+
+    /** The post-calculation per product and operation (ADR-071 §7). */
+    public function analyse(User $user, Company $company): bool
+    {
+        return $user->hasTeamPermission($company, 'production:analyse');
+    }
 }

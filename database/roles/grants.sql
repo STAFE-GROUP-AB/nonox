@@ -312,6 +312,10 @@ BEGIN
         ('work_order_users', 'SELECT, INSERT, UPDATE, DELETE'),
         ('work_orders', 'SELECT, INSERT, UPDATE'),
         ('work_schedules', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('workshop_devices', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('workshop_people', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('workshop_time_entries', 'SELECT, INSERT, UPDATE'),
+        ('workshop_waiting_flags', 'SELECT, INSERT, UPDATE, DELETE'),
         ('year_end_entries', 'SELECT, INSERT')
     ) AS decisions(table_name, privileges)
     LOOP

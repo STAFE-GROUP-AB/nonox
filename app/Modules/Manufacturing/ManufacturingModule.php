@@ -22,7 +22,10 @@ use Carbon\CarbonImmutable;
  * engine (ADR-073) stores the bills of materials. Off by default. Writes
  * nothing to the books: the costing is a management figure.
  *
- * Permissions: manufacturing:view sees bills of materials, operations and
+ * Permissions: production:report sets up the workshop terminal (pairs
+ * tablets, adds the people on it); a worker at the terminal is not a NONOX
+ * user and can only report time. production:analyse sees the
+ * post-calculation (ADR-071 §7). manufacturing:view sees bills of materials, operations and
  * the costing on quotes and orders; manufacturing:manage changes bills of
  * materials, operations and the settings. Changing a row's own copy needs
  * manufacturing:view and the right to change the quote or order.
@@ -31,7 +34,7 @@ final class ManufacturingModule implements IsNew, Module
 {
     public const string KEY = 'manufacturing';
 
-    public const array PERMISSIONS = ['manufacturing:view', 'manufacturing:manage'];
+    public const array PERMISSIONS = ['manufacturing:view', 'manufacturing:manage', 'production:report', 'production:analyse'];
 
     public function newUntil(): CarbonImmutable
     {
@@ -78,7 +81,7 @@ final class ManufacturingModule implements IsNew, Module
         return [
             'owner' => self::PERMISSIONS,
             'admin' => self::PERMISSIONS,
-            'accountant' => ['manufacturing:view'],
+            'accountant' => ['manufacturing:view', 'production:analyse'],
             'auditor' => ['manufacturing:view'],
         ];
     }
@@ -104,6 +107,12 @@ final class ManufacturingModule implements IsNew, Module
                 'children' => fn (User $user, Company $company): array => [
                     ['label' => __('Stycklistor'), 'route' => 'manufacturing.boms.index', 'active' => ['manufacturing.boms.index', 'manufacturing.boms.show', 'manufacturing.boms.create']],
                     ['label' => __('Arbetssteg'), 'route' => 'manufacturing.operations', 'active' => ['manufacturing.operations']],
+                    ...($user->hasTeamPermission($company, 'production:analyse') ? [
+                        ['label' => __('Efterkalkyl'), 'route' => 'manufacturing.analysis', 'active' => ['manufacturing.analysis']],
+                    ] : []),
+                    ...($user->hasTeamPermission($company, 'production:report') ? [
+                        ['label' => __('Verkstadsterminal'), 'route' => 'manufacturing.terminal.admin', 'active' => ['manufacturing.terminal.admin']],
+                    ] : []),
                     ...($user->hasTeamPermission($company, 'manufacturing:manage') ? [
                         ['label' => __('Inställningar'), 'route' => 'manufacturing.settings', 'active' => ['manufacturing.settings']],
                     ] : []),

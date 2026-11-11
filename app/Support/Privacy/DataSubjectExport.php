@@ -22,6 +22,9 @@ use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\PurchaseOrderVersion;
+use App\Modules\Manufacturing\Models\WorkshopDevice;
+use App\Modules\Manufacturing\Models\WorkshopPerson;
+use App\Modules\Manufacturing\Models\WorkshopTimeEntry;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
@@ -264,6 +267,46 @@ final class DataSubjectExport
                 'flaggor' => $entry->flags,
                 'skal' => $entry->reason,
             ])->values()->all(),
+        ];
+    }
+
+    /**
+     * A person on the workshop terminal (ADR-071 §7): the register entry and
+     * every time they reported, corrections included. The code is never part
+     * of it, and the photo is described (stored or not, consent given when)
+     * rather than included. Time older than the retention period has no
+     * person any more and is not here.
+     *
+     * @return array<string, mixed>
+     */
+    public static function workshopPerson(WorkshopPerson $person): array
+    {
+        $devices = WorkshopDevice::query()->pluck('name', 'id');
+        $entries = WorkshopTimeEntry::query()->where('person_id', $person->id)->with(['order', 'orderOperation.operation'])->orderBy('entered_at')->orderBy('id')->get();
+
+        return [
+            'utdrag' => self::meta('Person på verkstadsterminalen'),
+            'person' => [
+                'namn' => $person->name,
+                'arkiverad' => $person->archived_at?->toIso8601String(),
+                'har_kod' => $person->hasCode(),
+            ],
+            'foto' => [
+                'sparat' => $person->photo_path !== null,
+                'samtycke_lamnat' => $person->photo_consent_at?->toIso8601String(),
+                'kommentar' => 'Fotot visas på verkstadsterminalen bara med personens samtycke. Samtycket kan återkallas när som helst, och då raderas fotot.',
+            ],
+            'rapporterad_tid' => $entries->map(fn (WorkshopTimeEntry $entry): array => [
+                'id' => $entry->id,
+                'order' => $entry->order?->reference(),
+                'arbetssteg' => $entry->orderOperation->operation->name ?? null,
+                'dag' => $entry->worked_on->toDateString(),
+                'minuter' => $entry->minutes,
+                'rattar_rapport' => $entry->corrects_entry_id,
+                'surfplatta' => $devices[$entry->device_id] ?? null,
+                'inmatad' => $entry->entered_at->toIso8601String(),
+            ])->values()->all(),
+            'kommentar' => 'Tiden är produktionstid på en tillverkningsorder, inte närvaro och inte lönetid. Namnet tas bort ur rapporterna 24 månader efter inmatningen; minuterna finns kvar som kostnad på ordern.',
         ];
     }
 

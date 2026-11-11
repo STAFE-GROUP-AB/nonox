@@ -222,6 +222,7 @@ Route::middleware([
         Route::get('/registerutdrag/leverantor/{supplier}', [DataSubjectExportController::class, 'supplier'])->whereNumber('supplier')->name('privacy.export.supplier');
         Route::get('/registerutdrag/anstalld/{employee}', [DataSubjectExportController::class, 'employee'])->whereNumber('employee')->name('privacy.export.employee');
         Route::get('/registerutdrag/personal/{person}', [DataSubjectExportController::class, 'staffLedgerPerson'])->whereNumber('person')->name('privacy.export.staffLedgerPerson');
+        Route::get('/registerutdrag/verkstad/{person}', [DataSubjectExportController::class, 'workshopPerson'])->whereNumber('person')->name('privacy.export.workshopPerson');
         Route::get('/registerutdrag/delagare/{incomeTaxPartner}', [DataSubjectExportController::class, 'incomeTaxPartner'])->whereNumber('incomeTaxPartner')->name('privacy.export.incomeTaxPartner');
         Route::get('/registerutdrag/k10-agare/{k10Owner}', [DataSubjectExportController::class, 'k10Owner'])->whereNumber('k10Owner')->name('privacy.export.k10Owner');
         Route::get('/registerutdrag/inkorg', [DataSubjectExportController::class, 'inboxSender'])->name('privacy.export.inboxSender');

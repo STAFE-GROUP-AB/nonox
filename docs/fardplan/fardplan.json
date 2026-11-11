@@ -299,13 +299,13 @@
       "uppdaterad": "2026-11-08"
     },
     {
-      "id": "produktionsterminal",
-      "rubrik": "Produktionsterminal på läsplattan",
-      "beskrivning": "I verkstaden trycker man på sin bild, slår sin kod, väljer en öppen tillverkningsorder och anger hur länge man arbetat med den. Tiden ger orderns verkliga arbetskostnad och visar var arbetet tar längre tid än beräknat.",
-      "status": "Planerat",
+      "id": "uppfoljning-per-person-verkstad",
+      "rubrik": "Uppföljning per person i verkstaden",
+      "beskrivning": "Minuter per produkt och arbetssteg per person mot medianen. Det är övervakning av anställda och byggs inte förrän en jurist har bedömt vad som krävs: berättigat intresse och information till personalen enligt dataskyddsförordningen, och förhandling enligt medbestämmandelagen.",
+      "status": "Önskemål",
       "omrade": "Lager",
-      "uppdaterad": "2026-11-08",
-      "kommentar": "Uppföljning per person kräver information till personalen och ibland förhandling, och är därför avstängd tills företaget slår på den."
+      "uppdaterad": "2026-11-11",
+      "kommentar": "Verkstadsterminalen och efterkalkylen per produkt och arbetssteg finns. Någon inställning för uppföljning per person finns inte."
     },
     {
       "id": "orderportal-for-kunder",

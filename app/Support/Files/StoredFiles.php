@@ -59,6 +59,7 @@ final class StoredFiles
         'teams' => 'logo_path',
         'article_images' => 'path',
         'staff_ledger_people' => 'photo_path',
+        'workshop_people' => 'photo_path',
         'peppol_transmissions' => 'xml_path',
         'work_order_photos' => 'path',
         'change_orders' => 'decided_document_path',

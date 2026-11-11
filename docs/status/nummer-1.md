@@ -742,3 +742,17 @@ Evidence: `tests/Feature/Inventory/PurchaseOrdersTest.php`, `tests/Feature/Inven
 - Manualartiklarna `lager/inkopsorder` och `lager/inkopsforslag` med skärmbilder från demobutiken, ändringslogg, README, landningssidan, ADR-071 "As built (M3)", GDPR-dokumenten och registerutdraget per leverantör.
 Open legal-verify items: om en skickad inköpsorder är räkenskapsinformation (BFL 5 kap. 6 §), och därmed om de skickade versionerna (mottagare och leverantörens uppgifter i ögonblicksbilden) ska anonymiseras när en leverantör raderas, vilket i dag inte görs eftersom de bara kan läggas till; om den som skrev en order över attestgränsen får skicka den själv; bokföringskontrollen av `value_ore` (§12.4).
 Next package: M2/M4 enligt prioritetslistan.
+
+---
+
+Package: M5, verkstadsterminal, avvikelser och efterkalkyl (ADR-071 §7, §13.5)
+Status: done (surfplatta som PWA med koppling, bilder och kod, tid på öppna tillverkningsorder, rättelse med ny rapport, väntande arbetssteg, efterkalkyl per produkt och arbetssteg); uppföljning per person är medvetet inte byggd
+Evidence: `tests/Feature/Manufacturing/WorkshopTerminalTest.php` (koppling, kod, spärr, order, tid, rättelse, endast egna rapporter, append-only, väntar, fast antal frågor), `WorkshopAnalysisTest.php` (kalkyl mot utfall, spridning, utveckling, kö, väntar, fast antal frågor, läser aldrig personen), `WorkshopAdminTest.php` (inställningar, behörighet, foto med samtycke, gallring, registerutdrag), `tests/Tenancy/WorkshopTenancyTest.php`, `tests/Tenancy/TenancyIsolationTest.php` (fyra nya modeller), `tests/js/workshop-terminal.test.mjs`.
+- Fyra nya tabeller med prefixet `workshop_`; `production_labour_entries` och `production_order_operations` är inte ändrade. Tiden skrivs som arbetsrad med källan TERMINAL och en egen rad med person, surfplatta och tidpunkt som bara får tappa personen efter 24 månader (trigger). Revisionsloggen har aldrig personen.
+- Surfplattan är bara online: en rapport som inte kunde skickas visas inte som sparad. Inget bokförs; tiden blir orderns arbetskostnad och räknas som verklig tid vid färdigmelding.
+- Från §13.5 finns väntande på material eller arbete med orsak. Skrot, överskridande med ny återstående tid och stoppad arbetsstation från terminalen hör till M6 (`production_deviations`) och är inte gjorda.
+- Manualartiklarna `tillverkning/verkstadsterminal` och `tillverkning/efterkalkyl` med skärmbilder från Snickeri Norrby Demo AB (demodata i `WorkshopExtras`), ändringslogg, README, landningssidan, ADR-071 "As built (M5)", GDPR-dokumenten och registerutdrag per person. Terminalens egna skärmar finns inte som skärmbilder eftersom `manual:screenshots` loggar in som användare och terminalen kräver en kopplad surfplatta.
+- Systemdokumentationen är inte ändrad: inget bokföringsbeteende utöver M4:s arbetsrader.
+Follow-ups: `TenancyIsolationTest` ("lists every model") och `TranslationsTest` är röda tills M4:s egna modeller och texter är registrerade; `ManufacturingModule`, `ManufacturingServiceProvider`, `ManufacturingSettings` och `routes/web.php` har små tillägg som kan krocka med M4 och M6.
+Open legal-verify items: berättigat intresse och information till personalen (art. 6.1 f, 13) och om medbestämmandelagens 11 och 19 §§ gäller för terminalen, även utan analys per person; om 24 månaders bevarande är för långt; fritexten i en väntande-orsak. Uppföljning per person (`per_person_analysis`) är spärrad tills en jurist svarat och byggs inte.
+Next package: M6, planeringskalender.
