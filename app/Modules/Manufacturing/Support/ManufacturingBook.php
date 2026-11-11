@@ -20,7 +20,6 @@ use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
-use LogicException;
 
 /**
  * Every bill of materials of a company with its operations and the cost of
@@ -117,8 +116,10 @@ final class ManufacturingBook
      */
     private function costAt(iterable $lines, int $yieldMilli, int $depth, bool $withOverhead): Costing
     {
+        // Saving refuses nesting past the limit (StructureWriter, SaveRowStructure); a structure that gets
+        // there anyway is costed as incomplete rather than failing the page.
         if ($depth > self::MAX_DEPTH) {
-            throw new LogicException('The bill of materials is nested too deep or loops.');
+            return new Costing([], 0, 0, 0, 0, 0, 0, 0, false);
         }
 
         $rows = [];
@@ -204,9 +205,11 @@ final class ManufacturingBook
         if ($structure !== null) {
             $sub = $this->costAt($structure->rows, $structure->yield_milli, $depth, false);
 
-            return $this->unitCosts[$articleId] = $sub->complete
-                ? ['material' => $sub->materialPerUnitOre, 'labour' => $sub->labourPerUnitOre, 'source' => StructureCost::SOURCE]
-                : ['material' => null, 'labour' => null, 'source' => null];
+            if ($sub->complete) {
+                return $this->unitCosts[$articleId] = ['material' => $sub->materialPerUnitOre, 'labour' => $sub->labourPerUnitOre, 'source' => StructureCost::SOURCE];
+            }
+
+            // An incomplete sub-assembly is costed as a bought one: its latest receipt cost, else its purchase price (design choice 4).
         }
 
         return $this->unitCosts[$articleId] = ['material' => $stock['ore'], 'labour' => null, 'source' => $stock['source']];

@@ -60,6 +60,13 @@
                                 · {{ __('gäller för :yield :unit', ['yield' => $qty($structure->yield_milli), 'unit' => $structure->outputArticle?->stockUnit?->code ?? $structure->outputArticle?->unit]) }}
                             </p>
 
+                            @if($row->article_id !== null && $row->article_id !== $structure->output_article_id)
+                                <p class="mt-2 rounded-xl bg-accent-50 px-3 py-2 text-sm font-medium text-accent-800" role="alert">
+                                    {{ __('Raden gäller nu :row, men stycklistan gör :output.', ['row' => $row->article?->name, 'output' => $structure->outputArticle?->name]) }}
+                                    {{ __('Ta bort stycklistan och hämta den för den nya artikeln, eller ändra den för raden.') }}
+                                </p>
+                            @endif
+
                             @if($editingKey === $row->line_key)
                                 <form wire:submit="update" class="mt-4 grid gap-4 sm:grid-cols-6">
                                     <x-ui.field for="copy-name" :label="__('Namn')" error="form.name" class="sm:col-span-4">

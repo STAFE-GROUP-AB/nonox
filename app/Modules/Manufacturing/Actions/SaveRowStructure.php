@@ -205,6 +205,12 @@ class SaveRowStructure
                 ];
             }
 
+            $levels = 1 + max([0, ...array_map(fn (array $line): int => isset($line['component_article_id']) ? $book->depth((int) $line['component_article_id']) : 0, $prepared)]);
+
+            if ($levels > StructureBook::MAX_DEPTH) {
+                throw ValidationException::withMessages(['lines' => __('Stycklistan blir för djup: högst :max nivåer av stycklistor i varandra.', ['max' => StructureBook::MAX_DEPTH])]);
+            }
+
             $structure->lines()->delete();
 
             foreach ($prepared as $line) {
