@@ -5,16 +5,12 @@ declare(strict_types=1);
 namespace App\Modules\Inventory\Structures;
 
 use App\Domain\Units\ArticleUnits;
-use App\Domain\Units\QuantityOutOfRange;
-use App\Domain\Units\QuantityRoundsToZero;
-use App\Domain\Units\UnitConverter;
 use App\Models\Article;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Domain\StructureKind;
 use App\Modules\Inventory\Domain\StructureMath;
-use App\Modules\Inventory\Domain\StructureUnits;
 use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\Models\ArticleUnitConversion;
 use App\Modules\Inventory\Models\BillOfMaterials;
@@ -59,38 +55,49 @@ final class StructureWriter
 
     /**
      * The input as the form sends it: name, valid_from (Y-m-d, today when
-     * empty), yield and yield_unit (PORTIONS or UNIT), method, allergens
-     * (a list or comma-separated text), and rows of article_id, quantity
-     * as written ("1,5"), unit (the article's when empty), loss in percent
-     * ("12,5") and note.
+     * empty), yield and yield_unit (PORTIONS or UNIT; a bill of materials
+     * is always UNIT), method, allergens (a list or comma-separated text),
+     * and rows. A component row has article_id, quantity as written ("1,5"),
+     * unit (the article's when empty), loss in percent ("12,5") and note. A
+     * bill of materials may also have operation rows (ADR-071 §3):
+     * operation_id and minutes for the batch; $operations lists the
+     * company's operations it may use (id => name), checked by the caller.
      *
      * @param  array<string, mixed>  $input
+     * @param  array<int, string>  $operations
      *
      * @throws ValidationException
      */
-    public function save(Company $company, ?User $by, StructureKind $kind, Article $output, array $input): BillOfMaterials
+    public function save(Company $company, ?User $by, StructureKind $kind, Article $output, array $input, array $operations = []): BillOfMaterials
     {
         $this->modules->ensureEnabled(InventoryModule::KEY, $company);
         $this->warnings = [];
+        $bom = $kind === StructureKind::Bom;
 
-        return CurrentCompany::run($company, fn (): BillOfMaterials => DB::transaction(function () use ($company, $by, $kind, $output, $input): BillOfMaterials {
+        return CurrentCompany::run($company, fn (): BillOfMaterials => DB::transaction(function () use ($company, $by, $kind, $bom, $output, $input, $operations): BillOfMaterials {
             // One structure save per company at a time, so two saves cannot close a loop between them.
             self::lock($company);
             Article::query()->whereKey($output->id)->lockForUpdate()->firstOrFail();
 
+            if (BillOfMaterials::query()->where('output_article_id', $output->id)->where('kind', '!=', $kind->value)->exists()) {
+                throw ValidationException::withMessages(['output_article_id' => $bom
+                    ? __(':name har redan ett recept i Kök och kan inte också ha en stycklista.', ['name' => $output->name])
+                    : __(':name har redan en stycklista i Tillverkning och kan inte också ha ett recept.', ['name' => $output->name])]);
+            }
+
             $name = trim((string) ($input['name'] ?? ''));
 
             if ($name === '') {
-                throw ValidationException::withMessages(['name' => __('Ge receptet ett namn.')]);
+                throw ValidationException::withMessages(['name' => $bom ? __('Ge stycklistan ett namn.') : __('Ge receptet ett namn.')]);
             }
 
             $yield = self::quantity((string) ($input['yield'] ?? ''), 'yield');
 
             if ($yield <= 0) {
-                throw ValidationException::withMessages(['yield' => __('Ange hur mycket receptet ger, mer än noll.')]);
+                throw ValidationException::withMessages(['yield' => $bom ? __('Ange hur många stycklistan gäller för, mer än noll.') : __('Ange hur mycket receptet ger, mer än noll.')]);
             }
 
-            $yieldUnit = (string) ($input['yield_unit'] ?? '');
+            $yieldUnit = $bom ? BillOfMaterials::UNIT : (string) ($input['yield_unit'] ?? '');
 
             if (! in_array($yieldUnit, [BillOfMaterials::PORTIONS, BillOfMaterials::UNIT], true)) {
                 throw ValidationException::withMessages(['yield_unit' => __('Välj om receptet ger portioner eller en mängd.')]);
@@ -102,77 +109,68 @@ final class StructureWriter
                 throw ValidationException::withMessages(['valid_from' => __('Datumet går inte att läsa.')]);
             }
 
-            $rows = array_values(array_filter((array) ($input['rows'] ?? []), fn (mixed $row): bool => is_array($row) && ($row['article_id'] ?? '') !== '' && ($row['article_id'] ?? null) !== null));
+            $rows = array_values(array_filter((array) ($input['rows'] ?? []), fn (mixed $row): bool => is_array($row) && (self::filled($row['article_id'] ?? null) || ($bom && self::filled($row['operation_id'] ?? null)))));
 
-            if ($rows === []) {
-                throw ValidationException::withMessages(['rows' => __('Lägg till minst en ingrediens.')]);
+            if (! array_filter($rows, fn (array $row): bool => self::filled($row['article_id'] ?? null))) {
+                throw ValidationException::withMessages(['rows' => $bom ? __('Lägg till minst en komponent.') : __('Lägg till minst en ingrediens.')]);
             }
 
             if (count($rows) > self::MAX_ROWS) {
-                throw ValidationException::withMessages(['rows' => __('Ett recept kan ha högst :max rader.', ['max' => self::MAX_ROWS])]);
+                throw ValidationException::withMessages(['rows' => $bom ? __('En stycklista kan ha högst :max rader.', ['max' => self::MAX_ROWS]) : __('Ett recept kan ha högst :max rader.', ['max' => self::MAX_ROWS])]);
             }
 
-            $articles = Article::query()->with('stockUnit')->whereKey(array_map(fn (array $row): int => (int) $row['article_id'], $rows))->get()->keyBy('id');
+            $componentIds = array_map(fn (array $row): int => (int) $row['article_id'], array_filter($rows, fn (array $row): bool => self::filled($row['article_id'] ?? null)));
+            $articles = Article::query()->with('stockUnit')->whereKey($componentIds)->get()->keyBy('id');
             $conversions = ArticleUnitConversion::query()->whereIn('article_id', $articles->keys()->all())->get()
                 ->groupBy('article_id')
                 ->map(fn ($group): array => ArticleUnits::fractions($group));
-            $book = StructureBook::for($company);
+            $book = StructureBook::for($company, $kind);
             $prepared = [];
 
             foreach ($rows as $index => $row) {
+                $note = ($row['note'] ?? '') === '' ? null : mb_substr(trim((string) $row['note']), 0, 255);
+
+                if (! self::filled($row['article_id'] ?? null)) {
+                    $prepared[] = [
+                        'operation_id' => self::operation($row['operation_id'] ?? null, $operations, "rows.{$index}.operation_id"),
+                        'minutes' => self::minutes($row['minutes'] ?? null, "rows.{$index}.minutes"),
+                        'position' => $index,
+                        'note' => $note,
+                    ];
+
+                    continue;
+                }
+
                 $article = $articles->get((int) $row['article_id']) ?? throw ValidationException::withMessages(["rows.{$index}.article_id" => __('Artikeln finns inte.')]);
 
                 if ($article->id === $output->id) {
-                    throw ValidationException::withMessages(["rows.{$index}.article_id" => __('Ett recept kan inte innehålla sig självt.')]);
+                    throw ValidationException::withMessages(["rows.{$index}.article_id" => $bom ? __('En stycklista kan inte innehålla sin egen artikel.') : __('Ett recept kan inte innehålla sig självt.')]);
                 }
 
-                if ($book->yieldsPortions($article->id)) {
+                if (! $bom && $book->yieldsPortions($article->id)) {
                     throw ValidationException::withMessages(["rows.{$index}.article_id" => __(':name är en rätt med utbyte i portioner och kan inte vara en ingrediens. Ge grundreceptet utbyte i artikelns enhet.', ['name' => $article->name])]);
                 }
 
                 if ($book->reaches($article->id, $output->id)) {
-                    throw ValidationException::withMessages(["rows.{$index}.article_id" => __(':name innehåller redan :output, så receptet skulle gå i en ring.', ['name' => $article->name, 'output' => $output->name])]);
+                    throw ValidationException::withMessages(["rows.{$index}.article_id" => $bom
+                        ? __(':name innehåller redan :output, så stycklistan skulle gå i en ring.', ['name' => $article->name, 'output' => $output->name])
+                        : __(':name innehåller redan :output, så receptet skulle gå i en ring.', ['name' => $article->name, 'output' => $output->name])]);
                 }
 
-                $entered = self::quantity((string) ($row['quantity'] ?? ''), "rows.{$index}.quantity");
+                $quantity = RowQuantity::of($article, $conversions->get($article->id, []), (string) ($row['quantity'] ?? ''), (string) ($row['unit'] ?? ''), "rows.{$index}.");
 
-                if ($entered <= 0) {
-                    throw ValidationException::withMessages(["rows.{$index}.quantity" => __('Mängden måste vara mer än noll.')]);
+                if ($quantity->warning !== null) {
+                    $this->warnings[] = $quantity->warning;
                 }
-
-                $stockCode = ArticleUnits::stockCode($article);
-                $unit = StructureUnits::normalise((string) (($row['unit'] ?? null) ?: $stockCode));
-                $perStock = UnitConverter::enteredPerStock($stockCode, $unit, $conversions->get($article->id, []));
-
-                if ($perStock === null) {
-                    throw ValidationException::withMessages(["rows.{$index}.unit" => __(':name har enheten :unit. Lägg till en omräkning från :entered på artikeln, eller skriv mängden i :unit.', ['name' => $article->name, 'unit' => $stockCode, 'entered' => $unit])]);
-                }
-
-                try {
-                    $conversion = UnitConverter::toStock(Quantity::decimal($entered), $perStock);
-                } catch (QuantityOutOfRange) {
-                    throw ValidationException::withMessages(["rows.{$index}.quantity" => __('Mängden är för stor för lagerenheten.')]);
-                } catch (QuantityRoundsToZero) {
-                    throw ValidationException::withMessages(["rows.{$index}.quantity" => __('Mängden blir noll i lagerenheten. Skriv en större mängd.')]);
-                }
-
-                $quantity = $conversion->stockMilli;
-                $sameUnit = $perStock->isEqualTo(1);
-
-                if ($conversion->warns) {
-                    $this->warnings[] = __(':name: :entered :unit blir :stock :stockUnit i lagerenheten, en ändring på :percent %.', ['name' => $article->name, 'entered' => Quantity::format($entered), 'unit' => $unit, 'stock' => Quantity::format($quantity), 'stockUnit' => $stockCode, 'percent' => $conversion->changePercent]);
-                }
-
-                $loss = self::loss($row['loss'] ?? null, "rows.{$index}.loss");
 
                 $prepared[] = [
                     'component_article_id' => $article->id,
-                    'quantity_milli' => $quantity,
-                    'loss_bp' => $loss,
-                    'entered_quantity' => $sameUnit ? null : Quantity::decimal($entered),
-                    'entered_unit' => $sameUnit ? null : $unit,
+                    'quantity_milli' => $quantity->stockMilli,
+                    'loss_bp' => self::loss($row['loss'] ?? null, "rows.{$index}.loss", $bom),
+                    'entered_quantity' => $quantity->enteredQuantity,
+                    'entered_unit' => $quantity->enteredUnit,
                     'position' => $index,
-                    'note' => ($row['note'] ?? '') === '' ? null : mb_substr(trim((string) $row['note']), 0, 255),
+                    'note' => $note,
                 ];
             }
 
@@ -222,13 +220,15 @@ final class StructureWriter
             $versions = BillOfMaterials::query()->where('output_article_id', $output->id)->with('rows')->get();
             $versions->each(fn (BillOfMaterials $version) => $version->forceFill(['is_active' => $active])->save());
 
-            if ($active) {
-                $book = StructureBook::for($company);
+            if ($active && $versions->isNotEmpty()) {
+                $book = StructureBook::for($company, $versions->first()->kind);
 
                 foreach ($versions as $version) {
                     foreach ($version->rows as $row) {
                         if ($row->component_article_id !== null && $book->reaches((int) $row->component_article_id, $output->id)) {
-                            throw ValidationException::withMessages(['active' => __('Receptet kan inte användas igen: det skulle gå i en ring med ett annat recept.')]);
+                            throw ValidationException::withMessages(['active' => $version->kind === StructureKind::Bom
+                                ? __('Stycklistan kan inte användas igen: den skulle gå i en ring med en annan stycklista.')
+                                : __('Receptet kan inte användas igen: det skulle gå i en ring med ett annat recept.')]);
                         }
                     }
 
@@ -248,6 +248,39 @@ final class StructureWriter
         DB::select('SELECT pg_advisory_xact_lock(?, ?)', [self::LOCK_KEY, $company->id]);
     }
 
+    private static function filled(mixed $value): bool
+    {
+        return $value !== null && $value !== '';
+    }
+
+    /**
+     * An operation row's operation: one of the company's operations.
+     *
+     * @param  array<int, string>  $operations
+     */
+    private static function operation(mixed $value, array $operations, string $field): int
+    {
+        $id = (int) $value;
+
+        if (! isset($operations[$id])) {
+            throw ValidationException::withMessages([$field => __('Välj ett arbetssteg som finns och inte är arkiverat.')]);
+        }
+
+        return $id;
+    }
+
+    /** Whole minutes for the batch, above zero. */
+    private static function minutes(mixed $value, string $field): int
+    {
+        $text = str_replace(' ', '', trim((string) ($value ?? '')));
+
+        if (preg_match('/^\d{1,6}$/', $text) !== 1 || (int) $text <= 0) {
+            throw ValidationException::withMessages([$field => __('Skriv tiden i hela minuter, mer än noll.')]);
+        }
+
+        return (int) $text;
+    }
+
     private static function quantity(string $text, string $field): int
     {
         try {
@@ -258,7 +291,7 @@ final class StructureWriter
     }
 
     /** A loss in percent as written ("12,5") as basis points, 0–9 999. */
-    private static function loss(mixed $value, string $field): int
+    private static function loss(mixed $value, string $field, bool $bom = false): int
     {
         $text = str_replace([' ', ','], ['', '.'], trim((string) ($value ?? '')));
 
@@ -269,11 +302,11 @@ final class StructureWriter
         try {
             $bp = BigDecimal::of($text)->multipliedBy(100)->toScale(0, RoundingMode::HalfUp)->toInt();
         } catch (MathException) {
-            throw ValidationException::withMessages([$field => __('Svinnet går inte att läsa. Skriv procent, till exempel 10 eller 12,5.')]);
+            throw ValidationException::withMessages([$field => $bom ? __('Spillet går inte att läsa. Skriv procent, till exempel 10 eller 12,5.') : __('Svinnet går inte att läsa. Skriv procent, till exempel 10 eller 12,5.')]);
         }
 
         if ($bp < 0 || $bp >= StructureMath::BP) {
-            throw ValidationException::withMessages([$field => __('Svinnet måste vara från 0 till under 100 procent.')]);
+            throw ValidationException::withMessages([$field => $bom ? __('Spillet måste vara från 0 till under 100 procent.') : __('Svinnet måste vara från 0 till under 100 procent.')]);
         }
 
         return $bp;

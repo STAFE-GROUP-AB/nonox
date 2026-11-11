@@ -7,6 +7,7 @@ namespace App\Modules\Kitchen\Livewire;
 use App\Domain\Units\ArticleUnits;
 use App\Models\Article;
 use App\Modules\Inventory\Domain\Quantity;
+use App\Modules\Inventory\Domain\StructureKind;
 use App\Modules\Inventory\Domain\StructureMath;
 use App\Modules\Inventory\Domain\StructureUnits;
 use App\Modules\Inventory\Models\ArticleUnitConversion;
@@ -60,7 +61,7 @@ class RecipePage extends Component
         }
 
         $article = Article::query()->findOrFail($recept);
-        abort_unless(BillOfMaterials::query()->where('output_article_id', $article->id)->exists(), 404);
+        abort_unless(BillOfMaterials::query()->where('kind', StructureKind::Recipe)->where('output_article_id', $article->id)->exists(), 404);
         $this->articleId = $article->id;
     }
 

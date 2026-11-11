@@ -13,6 +13,7 @@ use App\Modules\Crm\CrmServiceProvider;
 use App\Modules\Inbox\InboxServiceProvider;
 use App\Modules\Inventory\InventoryServiceProvider;
 use App\Modules\Kitchen\KitchenServiceProvider;
+use App\Modules\Manufacturing\ManufacturingServiceProvider;
 use App\Modules\ModuleServiceProvider;
 use App\Modules\Payroll\PayrollServiceProvider;
 use App\Modules\Peppol\PeppolServiceProvider;
@@ -44,6 +45,7 @@ return [
     CrmServiceProvider::class,
     PosServiceProvider::class,
     KitchenServiceProvider::class,
+    ManufacturingServiceProvider::class,
     InboxServiceProvider::class,
     PeppolServiceProvider::class,
     PortalServiceProvider::class,

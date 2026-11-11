@@ -37,7 +37,7 @@ final class ModuleRegistry
     /** Keys of the modules that ship with NONOX. */
     public const array FIRST_PARTY = [
         'agreements', 'ai', 'banking', 'boardroom', 'connect', 'crm', 'inbox',
-        'inventory', 'kitchen', 'payroll', 'peppol', 'planning', 'portal', 'pos',
+        'inventory', 'kitchen', 'manufacturing', 'payroll', 'peppol', 'planning', 'portal', 'pos',
         'saas', 'staff_ledger', 'work_orders',
     ];
 

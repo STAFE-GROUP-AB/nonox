@@ -13,6 +13,7 @@ use App\Modules\Inventory\Models\BomRow;
 use App\Modules\Inventory\Structures\StructureBook;
 use App\Modules\Inventory\Structures\StructureWriter;
 use App\Modules\Inventory\Structures\UnitCosts;
+use App\Modules\Manufacturing\Models\Operation;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -184,7 +185,9 @@ it('marks a dish without a cost for an ingredient as incomplete, never as free',
 });
 
 it('ignores an operation row when costing and exploding', function () {
-    BomRow::create(['bill_of_materials_id' => $this->fx['butter']->id, 'component_article_id' => null, 'minutes' => 15, 'position' => 9]);
+    // An operation row needs an operation (ADR-071 §3, bom_rows_component_or_operation).
+    $operation = Operation::create(['name' => 'Montering', 'hourly_cost_ore' => 48_000]);
+    BomRow::create(['bill_of_materials_id' => $this->fx['butter']->id, 'component_article_id' => null, 'operation_id' => $operation->id, 'minutes' => 15, 'position' => 9]);
 
     $cost = StructureBook::for($this->company)->cost(StructureBook::for($this->company)->validOn($this->fx['articles']['vitloksmor']->id, $this->on), UnitCosts::at($this->company, $this->on), $this->on);
 

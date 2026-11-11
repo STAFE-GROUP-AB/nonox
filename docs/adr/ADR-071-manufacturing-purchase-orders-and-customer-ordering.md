@@ -634,6 +634,71 @@ and old material entries would need a one-time exception in their triggers (NULL
 done. Peppol still maps the printed text, not `units.rec20_code`, so the `TODO(legal-verify)` items
 of §12.5 stand.
 
+## As built (M2, 2026-11-10): bills of materials, operations and costing (§3, §4, §6)
+
+M2 builds §3, §4 and §6 in a new module `manufacturing` (Tillverkning, requires `inventory`, off by
+default), on the structure engine of ADR-073, with the units of §12 for every quantity. Nothing is
+bookkeeping: no voucher, no stock movement, and the costing is a management figure, not the stock
+valuation. No accounting behaviour changed, so the system documentation is unchanged.
+
+Built:
+
+- **Operations** (`operations`): name (unique per company, case-insensitive), `hourly_cost_ore`
+  (≥ 0), `daily_capacity_minutes` (entered as staffed hours per day, nullable), `archived_at`.
+  Archived, never deleted. Page: Tillverkning → Arbetssteg.
+- **Bills of materials** are `bills_of_materials` of kind BOM, always `yield_unit = UNIT` (the batch,
+  normally 1). `bom_rows` gains the foreign key to `operations` and the check that a row is either a
+  component or an operation with minutes > 0. Operation rows carry whole minutes for the batch.
+  `SaveBillOfMaterials` goes through `StructureWriter` (versions, loops, units, scrap with ADR-073's
+  loss formula) and has the backdating guard of the note of 2026-11-09: a `valid_from` before today
+  or before the latest completed count needs `confirm_backdate` and is audited
+  (`manufacturing.bom_backdated`). Pages: Tillverkning → Stycklistor (list and one bill of
+  materials with versions, edit as a new version, switch off and on).
+- **The row's own copy** (§4): `sales_document_row_structures` and
+  `sales_document_row_structure_lines` (same shape as `bom_rows`), on a new stable row key
+  `sales_document_rows.line_key` (UUID). Choosing copies the version valid today; the copy is edited
+  for the row only (quantities, units, scrap, swapped/added/removed components and operations,
+  minutes, batch); "Spara som ny stycklista" saves it as a new version of a chosen product (a new
+  bill of materials if it has none, `manufacturing:manage`). The copy follows the quote into the
+  order: when `ProgressSalesDocument::toOrder` links the order to its quote, a listener in the
+  module copies every row copy to the order row with the same `line_key`.
+- **Costing** (§6) in `ManufacturingBook` / `Costing` / `DocumentCosting`, shown on the bill of
+  materials page and in the panel "Stycklistor och kalkyl" on the quote and order page (internal,
+  never on the PDF): material, labour, overhead (company setting `overhead_bp`, off by default),
+  cost per unit, row cost, contribution and margin per row and summed over the rows with a copy.
+- Audit (ids, enums, counts and amounts only): `manufacturing.operation_created|updated|archived|restored`,
+  `.bom_saved`, `.bom_backdated`, `.bom_activated|deactivated`, `.row_structure_chosen|changed|removed|saved_as_bom`.
+- Permissions: `manufacturing:view` (owner, admin, accountant, auditor) and `manufacturing:manage`
+  (owner, admin). Bookkeepers get neither, as §1 says.
+
+Design choices where this ADR left room:
+
+1. **Stable row key.** Quote and order rows are written anew on every save, so the copy hangs on
+   `line_key`, which the editor sends back with each row and `SaveSalesDocument` keeps (a missing or
+   duplicate key gets a new UUID). Rows saved before M2 get a key on their next save. The editor
+   reloads its rows after a save, so new rows keep their keys.
+2. **The copy is edited in its own panel under the rows**, not inside the shared row grid of quotes,
+   orders and invoices, so invoice rows and the browser-side row editor are untouched. Only saved rows
+   can get a copy; the costing uses the saved row (the panel says so).
+3. **Copies are kept, not pruned**, when their row disappears; they are simply not shown.
+4. **Cost of a component**: the valuation cost when on hand (the company's FIFO or weighted average),
+   else its own bill of materials valid today (a sub-assembly, its labour counted as labour), else the
+   latest receipt cost, else the purchase price. Each line is rounded half up once; per unit each part
+   is rounded and the total is the sum of the parts.
+5. **Overhead** is a percentage of material plus labour, applied once at the top level (not inside
+   sub-assemblies), and only in the costing.
+6. **The row quantity** is converted to the output's stock unit with the unit catalogue and the
+   article's conversions; when the row's unit does not convert, the row shows no cost and says why.
+7. **Changing a row's copy** needs `manufacturing:view` plus the right to change the open document
+   (`invoices:create`); another company's document answers 404.
+8. **A structure book holds one kind.** `StructureBook::for()` loads Kök's recipes unless asked for
+   another kind, and an article cannot have both a recipe and a bill of materials.
+
+Not built in M2: the payroll suggestion for the hourly cost (§6; payroll keeps no worked hours per
+period to divide by, so the source needs a decision), learning from reported minutes (§6, needs
+production orders and the terminal), `production:report` and `production:analyse` (added with the
+terminal), and the API (this ADR asks for none in M2).
+
 ## Addendum 2026-11-09: production planning calendar (§13)
 
 The owner: "en slags planeringskalender där jag kan se alla orders, produkter som tillverkas

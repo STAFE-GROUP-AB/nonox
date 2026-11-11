@@ -11,9 +11,12 @@ use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 /**
- * A row of a quote or an order, shaped like an invoice row.
+ * A row of a quote or an order, shaped like an invoice row. Rows are
+ * written anew on every save; line_key stays the same, so what hangs on a
+ * row (a bill of materials copy, ADR-071 §4) follows it.
  *
  * @property string $sales_document_id
  * @property ?int $article_id
@@ -26,12 +29,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $account_id
  * @property Money $net_ore
  * @property int $position
+ * @property ?string $line_key
  */
 class SalesDocumentRow extends Model
 {
     use BelongsToCompany;
     use HasRegisterUnit;
-    use SalesRowFields;
+    use SalesRowFields {
+        asInput as private rowFields;
+    }
 
     /** @var list<string> */
     protected $fillable = [
@@ -48,6 +54,7 @@ class SalesDocumentRow extends Model
         'account_id',
         'net_ore',
         'position',
+        'line_key',
     ];
 
     /** @return array<string, string> */
@@ -60,6 +67,30 @@ class SalesDocumentRow extends Model
             'vat_rate' => 'integer',
             'position' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $row): void {
+            $row->line_key ??= (string) Str::uuid();
+        });
+    }
+
+    /**
+     * As SalesRowFields, with the row's key, so a quote's rows keep their
+     * keys in the order made from it.
+     *
+     * @return array<string, mixed>
+     */
+    public function asInput(): array
+    {
+        return [...$this->rowFields(), 'line_key' => $this->line_key];
+    }
+
+    /** @return BelongsTo<Article, $this> */
+    public function article(): BelongsTo
+    {
+        return $this->belongsTo(Article::class);
     }
 
     /** @return BelongsTo<Account, $this> */

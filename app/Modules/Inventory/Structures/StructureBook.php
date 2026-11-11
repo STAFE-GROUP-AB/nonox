@@ -6,6 +6,7 @@ namespace App\Modules\Inventory\Structures;
 
 use App\Models\Company;
 use App\Modules\Inventory\Domain\Quantity;
+use App\Modules\Inventory\Domain\StructureKind;
 use App\Modules\Inventory\Domain\StructureMath;
 use App\Modules\Inventory\Models\BillOfMaterials;
 use App\Modules\Inventory\Models\BomRow;
@@ -31,6 +32,10 @@ use LogicException;
  *
  * Loops are refused when a version is saved (StructureWriter); this class
  * stops at a depth limit as a second guard.
+ *
+ * A book holds one kind: Kök's recipes unless another is asked for, so a
+ * bill of materials (ADR-071) never shows up as a recipe, and a recipe
+ * never in a bill of materials. Null loads every kind.
  */
 final class StructureBook
 {
@@ -39,10 +44,11 @@ final class StructureBook
     /** @param  array<int, list<BillOfMaterials>>  $byOutput  output article => versions, newest first */
     private function __construct(private readonly array $byOutput) {}
 
-    public static function for(Company $company): self
+    public static function for(Company $company, ?StructureKind $kind = StructureKind::Recipe): self
     {
-        return CurrentCompany::run($company, function (): self {
+        return CurrentCompany::run($company, function () use ($kind): self {
             $structures = BillOfMaterials::query()
+                ->when($kind !== null, fn ($query) => $query->where('kind', $kind?->value))
                 ->with(['rows' => fn ($query) => $query->whereNotNull('component_article_id')])
                 ->orderByDesc('valid_from')->orderByDesc('version')
                 ->get();
