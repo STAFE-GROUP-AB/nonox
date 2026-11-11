@@ -1,5 +1,5 @@
 ---
-beskrivning: Vem som får se lagret, ta emot, plocka och räkna, ändra artiklar och priser, och vad rollen Lagerpersonal får göra.
+beskrivning: Vem som får se lagret, ta emot, plocka och räkna, ändra artiklar och priser, hantera inköpsorder, och vad rollen Lagerpersonal får göra.
 ordning: 90
 roller: [owner, admin]
 modul: inventory
@@ -23,7 +23,21 @@ Lager har fyra nivåer: att se lagret, att hantera varor (ta emot, plocka, flytt
 
 Alla som får ta emot, plocka och räkna får också skriva ut etiketter. Priset kommer bara med på etiketten för den som får ändra artiklar och priser. Etikettmallarna ändras under Inställningar.
 
-Attestanter har ingen åtkomst till Lager. Att bokföra lagerförändringen vid bokslutet kräver dessutom att du får sköta räkenskapsåret.
+Attestanter har ingen åtkomst till lagret. Att bokföra lagerförändringen vid bokslutet kräver dessutom att du får sköta räkenskapsåret.
+
+## Inköpsorder
+
+| Roll | Se inköpsorder och förslag | Skriva, ändra och makulera | Skicka |
+|---|---|---|---|
+| **Ägare** | Ja | Ja | Ja |
+| **Administratör** | Ja | Ja | Ja |
+| **Redovisningskonsult** | Ja | Nej | Nej |
+| **Bokförare** | Ja | Ja | Upp till attestgränsen |
+| **Attestant** | Ja | Nej | Ja |
+| **Revisor** | Ja | Nej | Nej |
+| **Lagerpersonal** | Nej | Nej | Nej |
+
+Utan attestgräns skickar bokföraren alla ordrar. Med en **Attestgräns för inköpsorder** under **Lager → Inställningar** skickas en order över beloppet bara av ägaren, en administratör eller en attestant. Attestanten ser inköpsordrarna under **Beställningar** men inte lagret. Lagerpersonal tar emot varor från en inköpsorder under **Lager → Inleveranser** utan att se ordern.
 
 ## Lagerpersonal
 

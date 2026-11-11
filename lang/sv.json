@@ -166,5 +166,6 @@
     ":count resa, :distance, skickas in som milersättning för :month.|:count resor, :distance, skickas in som milersättning för :month.": ":count resa, :distance, skickas in som milersättning för :month.|:count resor, :distance, skickas in som milersättning för :month.",
     "{1} månad|[2,*] :count månader": "{1} månad|[2,*] :count månader",
     "{1} En sak i underlaget behöver granskas.|[2,*] :count saker i underlaget behöver granskas.": "{1} En sak i underlaget behöver granskas.|[2,*] :count saker i underlaget behöver granskas.",
-    ":count stycklista|:count stycklistor": ":count stycklista|:count stycklistor"
+    ":count stycklista|:count stycklistor": ":count stycklista|:count stycklistor",
+    "{1} En inköpsorder är skapad som utkast. Granska och skicka den.|[2,*] :count inköpsorder är skapade som utkast, en per leverantör. Granska och skicka dem.": "{1} En inköpsorder är skapad som utkast. Granska och skicka den.|[2,*] :count inköpsorder är skapade som utkast, en per leverantör. Granska och skicka dem."
 }

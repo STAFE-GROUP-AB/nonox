@@ -42,6 +42,9 @@
             </span>
         </label>
     @endif
+    <x-ui.field for="inventory-purchase-approval" :label="__('Attestgräns för inköpsorder')" error="settings.purchase_order_approval_above" class="sm:col-span-2" :hint="__('Inköpsorder över beloppet (exkl. moms) skickas bara av någon med rätt att skicka inköpsorder, till exempel en attestant. Tomt: alla som hanterar inköpsorder får skicka dem.')">
+        <input id="inventory-purchase-approval" wire:model="settings.purchase_order_approval_above" inputmode="decimal" class="{{ $input }} w-40 text-right tabular-nums">
+    </x-ui.field>
     <div class="sm:col-span-2">
         <x-button type="submit" wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
     </div>

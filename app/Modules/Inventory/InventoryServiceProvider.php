@@ -15,6 +15,11 @@ use App\Modules\Inventory\Livewire\LabelStudioPage;
 use App\Modules\Inventory\Livewire\LocationsPage;
 use App\Modules\Inventory\Livewire\OverviewPage;
 use App\Modules\Inventory\Livewire\PickListsPage;
+use App\Modules\Inventory\Livewire\Purchasing\PurchaseOrderEditor;
+use App\Modules\Inventory\Livewire\Purchasing\PurchaseOrderMatchPanel;
+use App\Modules\Inventory\Livewire\Purchasing\PurchaseOrderPage;
+use App\Modules\Inventory\Livewire\Purchasing\PurchaseOrdersPage;
+use App\Modules\Inventory\Livewire\Purchasing\PurchaseProposalsPage;
 use App\Modules\Inventory\Livewire\ReceiptsPage;
 use App\Modules\Inventory\Livewire\ReportsPage;
 use App\Modules\Inventory\Livewire\UnitConversionsPanel;
@@ -24,6 +29,7 @@ use App\Modules\Inventory\Models\BillOfMaterials;
 use App\Modules\Inventory\Models\BomRow;
 use App\Modules\Inventory\Models\LabelTemplate;
 use App\Modules\Inventory\Models\PickList;
+use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\ScanOperation;
 use App\Modules\Inventory\Models\StockCount;
 use App\Modules\Inventory\Models\StockLevel;
@@ -32,6 +38,8 @@ use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Models\StockValuation;
 use App\Modules\Inventory\Policies\InventoryPolicy;
+use App\Modules\Inventory\Policies\PurchaseOrderPolicy;
+use App\Modules\Inventory\Purchasing\PurchaseDemandSources;
 use App\Modules\Inventory\Scanner\ScannerExtensions;
 use App\Modules\ModuleRegistry;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -52,6 +60,8 @@ class InventoryServiceProvider extends ServiceProvider
     {
         $this->app->make(ModuleRegistry::class)->register(new InventoryModule);
         $this->app->singleton(ScannerExtensions::class);
+        // Demand that reserves stock in the purchase proposal (ADR-071 §5); manufacturing adds its own.
+        $this->app->singleton(PurchaseDemandSources::class);
     }
 
     public function boot(): void
@@ -62,6 +72,8 @@ class InventoryServiceProvider extends ServiceProvider
         foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockReceipt::class, PickList::class, StockCount::class, StockValuation::class, ArticleImage::class, LabelTemplate::class, ScanOperation::class, BillOfMaterials::class, BomRow::class, ArticleUnitConversion::class] as $model) {
             Gate::policy($model, InventoryPolicy::class);
         }
+
+        Gate::policy(PurchaseOrder::class, PurchaseOrderPolicy::class);
 
         Livewire::component(InventorySettingsForm::NAME, InventorySettingsForm::class);
         Livewire::component('inventory.overview', OverviewPage::class);
@@ -74,6 +86,11 @@ class InventoryServiceProvider extends ServiceProvider
         Livewire::component(LabelStudioPage::NAME, LabelStudioPage::class);
         Livewire::component(LabelPrintPanel::NAME, LabelPrintPanel::class);
         Livewire::component(UnitConversionsPanel::NAME, UnitConversionsPanel::class);
+        Livewire::component(PurchaseOrdersPage::NAME, PurchaseOrdersPage::class);
+        Livewire::component(PurchaseOrderEditor::NAME, PurchaseOrderEditor::class);
+        Livewire::component(PurchaseOrderPage::NAME, PurchaseOrderPage::class);
+        Livewire::component(PurchaseProposalsPage::NAME, PurchaseProposalsPage::class);
+        Livewire::component(PurchaseOrderMatchPanel::NAME, PurchaseOrderMatchPanel::class);
 
         if ($this->app->runningInConsole()) {
             $this->commands([VerifyStockCommand::class]);

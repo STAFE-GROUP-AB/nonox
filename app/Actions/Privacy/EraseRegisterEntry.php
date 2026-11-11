@@ -17,6 +17,7 @@ use App\Models\SalesDocument;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\User;
+use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
@@ -106,7 +107,10 @@ class EraseRegisterEntry
                 throw ValidationException::withMessages(['erase' => __('Leverantören har fakturor som inte är betalda. Uppgifterna kan tas bort när de är betalda.')]);
             }
 
-            if (! SupplierInvoice::query()->where('supplier_id', $supplier->id)->exists()) {
+            // A purchase order points at the supplier (ADR-071 §2): the entry is anonymised, never deleted.
+            $ordered = PurchaseOrder::query()->where('supplier_id', $supplier->id)->exists();
+
+            if (! $ordered && ! SupplierInvoice::query()->where('supplier_id', $supplier->id)->exists()) {
                 $supplier->delete();
                 Audit::record('privacy.erased', null, ['subject' => 'supplier', 'number' => $supplier->number, 'mode' => 'deleted'], $company, $user);
 
@@ -128,6 +132,12 @@ class EraseRegisterEntry
                 'bic' => null,
                 'is_active' => false,
             ])->save();
+
+            // The address each purchase order last went to. The sent versions (their recipient and the
+            // supplier's details in the snapshot) are append-only for the app and stay as sent.
+            // TODO(legal-verify): whether a sent purchase order is räkenskapsinformation that keeps the
+            // supplier's details (BFL 5 kap. 6 §, art. 17.3 b), or the versions must be anonymised too.
+            PurchaseOrder::query()->where('supplier_id', $supplier->id)->update(['sent_to' => null]);
 
             Audit::record('privacy.erased', $supplier, ['subject' => 'supplier', 'mode' => 'anonymised'], $company, $user);
 

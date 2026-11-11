@@ -11,5 +11,8 @@
             @endif
             <livewire:payables.supplier-invoice-actions :invoice="$invoice" />
         </div>
+        @if(app(App\Modules\ModuleManager::class)->isEnabled(App\Modules\Inventory\InventoryModule::KEY, auth()->user()->currentCompany()) && auth()->user()->hasTeamPermission(auth()->user()->currentCompany(), App\Modules\Inventory\InventoryModule::PURCHASE_VIEW))
+            <livewire:inventory.purchase-order-match :invoice-id="$invoice->id" />
+        @endif
     </div>
 </x-app-layout>

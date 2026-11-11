@@ -12,10 +12,13 @@ use App\Modules\Inventory\Domain\ValuationMethod;
 use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\InventorySettings;
 use App\Modules\ModuleManager;
+use App\Support\Money\Money;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use InvalidArgumentException;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
@@ -23,7 +26,8 @@ use Livewire\Component;
  * Lager's settings, on Lager → Inställningar and under Moduler: the
  * valuation method, whether stock may go below zero, the default stock
  * class and the account pair per class the year-end stock change is booked
- * on (ADR-073 §9), and for K2 companies the 97 % rule.
+ * on (ADR-073 §9), for K2 companies the 97 % rule, and the amount above
+ * which a purchase order needs someone allowed to send it (ADR-071 §1).
  */
 class InventorySettingsForm extends Component
 {
@@ -43,6 +47,8 @@ class InventorySettingsForm extends Component
 
         $this->companyId = $company->id;
         $this->settings = InventorySettings::for($company);
+        $limit = InventorySettings::purchaseApprovalAboveOre($company);
+        $this->settings['purchase_order_approval_above'] = $limit === null ? '' : Money::ofOre($limit)->format(withCurrency: false);
     }
 
     public function save(ModuleManager $modules): void
@@ -69,6 +75,18 @@ class InventorySettingsForm extends Component
             'settings.raw_material_change_account.between' => __('Välj ett konto för lagerförändring mellan :from och :to.', ['from' => $changeFrom, 'to' => $changeTo]),
         ])->validate();
 
+        $limit = trim((string) ($this->settings['purchase_order_approval_above'] ?? ''));
+
+        try {
+            $limitOre = $limit === '' ? null : Money::parse($limit)->ore;
+        } catch (InvalidArgumentException) {
+            throw ValidationException::withMessages(['settings.purchase_order_approval_above' => __('Beloppet går inte att läsa. Skriv till exempel 25 000.')]);
+        }
+
+        if ($limitOre !== null && $limitOre < 0) {
+            throw ValidationException::withMessages(['settings.purchase_order_approval_above' => __('Beloppet kan inte vara negativt.')]);
+        }
+
         $modules->updateSettings(InventoryModule::KEY, $company, $this->user(), [
             'valuation_method' => (string) $validated['settings']['valuation_method'],
             'allow_negative_stock' => (bool) ($validated['settings']['allow_negative_stock'] ?? false),
@@ -79,6 +97,7 @@ class InventorySettingsForm extends Component
             'raw_material_change_account' => (int) $validated['settings']['raw_material_change_account'],
             // Offered to K2 companies only (Lead decision O3); never on for another framework.
             'rule_97' => InventorySettings::offersRule97($company) && (bool) ($validated['settings']['rule_97'] ?? false),
+            'purchase_order_approval_above_ore' => $limitOre,
         ]);
 
         $this->toast(__('Inställningarna för lagret är sparade.'));

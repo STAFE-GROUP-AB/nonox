@@ -24,6 +24,10 @@ En inleverans är det du väntar på från en leverantör. När varorna kommer t
 
 Bara artiklar som är markerade som lagerförda kan tas emot.
 
+## Från en inköpsorder
+
+Har du beställt varorna med en [inköpsorder](/manual/lager/inkopsorder) väljer du ordern under **Ta emot inköpsorder** och klickar på **Ta emot**. Inleveransen får orderns rader med det som återstår, i lagerenheten och till orderns pris. Det du tar emot bockas av på inköpsordern. En sådan inleverans kan inte ändras; makulera den och gör en ny från ordern om något blev fel.
+
 ## Så här tar du emot varorna
 
 1. Klicka på **Ta emot** vid inleveransen.

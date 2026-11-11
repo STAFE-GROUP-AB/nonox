@@ -10,8 +10,11 @@ use App\Models\SupplierInvoice;
 use App\Modules\Inventory\Actions\PrintLabels;
 use App\Modules\Inventory\Actions\ReceiveStock;
 use App\Modules\Inventory\Actions\SaveReceipt;
+use App\Modules\Inventory\Domain\PurchaseOrderStatus;
 use App\Modules\Inventory\Domain\Quantity;
+use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\Livewire\Concerns\InventoryPage;
+use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Inventory\Models\StockReceipt;
 use Carbon\CarbonImmutable;
@@ -23,7 +26,8 @@ use Livewire\WithPagination;
 
 /**
  * Lager → Inleveranser: expected and received goods. A receipt is made on
- * its own or from a supplier invoice (?leverantorsfaktura=<id>), and goods
+ * its own, from a supplier invoice (?leverantorsfaktura=<id>) or from a sent
+ * purchase order (ADR-071 §2; ?inleverans=<id> opens one), and goods
  * are received in full or line by line, and labels can be printed for what
  * came in. Mobile friendly: one column per line on a phone.
  */
@@ -50,9 +54,24 @@ class ReceiptsPage extends Component
     /** @var ?array<int, int> article id => copies while the label print step is open */
     public ?array $printing = null;
 
+    /** The purchase order chosen under "Ta emot inköpsorder". */
+    public string $purchaseOrderId = '';
+
     public function mount(): void
     {
         abort_unless($this->can('viewAny'), 403);
+
+        $receiptId = request()->query('inleverans');
+
+        if (is_string($receiptId) && ctype_digit($receiptId) && $this->can('count')) {
+            $receipt = StockReceipt::query()->find((int) $receiptId);
+
+            if ($receipt instanceof StockReceipt && $receipt->isOpen()) {
+                $this->openReceive($receipt->id);
+
+                return;
+            }
+        }
 
         $invoiceId = request()->query('leverantorsfaktura');
 
@@ -108,6 +127,29 @@ class ReceiptsPage extends Component
 
         if ($ok && $receipt instanceof StockReceipt) {
             $this->cancel();
+            $this->openReceive($receipt->id);
+        }
+    }
+
+    /** Makes (or opens) the goods receipt for a sent purchase order and opens it for receiving (ADR-071 §2). */
+    public function receivePurchaseOrder(SaveReceipt $save): void
+    {
+        abort_unless($this->can('count'), 403);
+
+        if ($this->purchaseOrderId === '') {
+            $this->toast(__('Välj en inköpsorder.'), 'error');
+
+            return;
+        }
+
+        $order = PurchaseOrder::query()->findOrFail((int) $this->purchaseOrderId);
+        $receipt = null;
+        $ok = $this->attempt(function () use ($save, $order, &$receipt): void {
+            $receipt = $save->fromPurchaseOrder($this->user(), $this->company(), $order);
+        }, '', '');
+
+        if ($ok && $receipt instanceof StockReceipt) {
+            $this->purchaseOrderId = '';
             $this->openReceive($receipt->id);
         }
     }
@@ -182,7 +224,7 @@ class ReceiptsPage extends Component
     public function render(): View
     {
         $receipts = StockReceipt::query()
-            ->with(['supplier:id,name', 'lines'])
+            ->with(['supplier:id,name', 'lines', 'purchaseOrder:id,number'])
             ->when($this->status === 'oppna', fn ($query) => $query->whereIn('status', [StockReceipt::OPEN, StockReceipt::PARTIAL]))
             ->latest('number')
             ->paginate(25);
@@ -198,6 +240,10 @@ class ReceiptsPage extends Component
                 ? SupplierInvoice::query()->where('supplier_id', (int) $this->form['supplier_id'])->latest('invoice_date')->limit(30)->get(['id', 'invoice_number', 'invoice_date', 'total_ore'])
                 : collect(),
             'locations' => StockLocation::query()->where('is_active', true)->orderBy('sort_key')->get(['id', 'full_code', 'name']),
+            'awaiting' => $this->can('count') && ! $this->creating && $this->receiving === null
+                ? PurchaseOrder::query()->with('supplier:id,name')->whereNotNull('sent_at')->whereIn('status', [PurchaseOrderStatus::Sent->value, PurchaseOrderStatus::PartiallyReceived->value, PurchaseOrderStatus::Draft->value])->latest('number')->limit(100)->get(['id', 'number', 'supplier_id', 'status'])
+                : collect(),
+            'seesOrders' => $this->allowed(InventoryModule::PURCHASE_VIEW),
             'canCount' => $this->can('count'),
             'canPrint' => $this->can('printLabels'),
             'seesPrices' => $this->seesPrices(),
