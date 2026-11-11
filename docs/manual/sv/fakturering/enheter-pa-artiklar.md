@@ -3,7 +3,7 @@ beskrivning: Ange hur en artikel räknas, köps och säljs, i styck, meter, kvad
 ordning: 25
 roller: [owner, admin, accountant, bookkeeper]
 rutter: [invoicing.units]
-sokord: [enhet, enheter, styck, löpmeter, kvadratmeter, kubikmeter, förpackning, omräkning, lagerenhet, inköpsenhet, försäljningsenhet, trä, virke, skivor, mått]
+sokord: [enhet, enheter, enhetslista, standardenhet, styck, löpmeter, kvadratmeter, kubikmeter, förpackning, omräkning, lagerenhet, inköpsenhet, försäljningsenhet, trä, virke, skivor, mått]
 ---
 
 # Enheter på artiklar
@@ -55,7 +55,18 @@ Under **Register → Artiklar → Enheter** finns alla enheter: styck, meter, l�
 4. Välj en **Peppol-kod** om enheten ska ha en särskild kod på e-fakturor. Utan kod skickas enheten som ett.
 5. Tryck på **Spara**.
 
-Enhetens namn och Peppol-kod kan ändras senare, men inte själva enheten, eftersom artiklarna skriver ut den. En enhet som används raderas inte. Du kan **Arkivera** den, så föreslås den inte längre, och **Använd igen** när du vill ha tillbaka den. Artiklar som redan har den behåller den.
+Enhetens namn och Peppol-kod kan ändras senare, men inte själva enheten, eftersom artiklarna skriver ut den. En enhet som används raderas inte. Du kan **Arkivera** den, så föreslås den inte längre, och **Använd igen** när du vill ha tillbaka den. Artiklar och rader som redan har den behåller den.
+
+## Enhetslistan gäller överallt
+
+Listan är företagets enda källa till enheter. På fakturor, offerter, ordrar, avtal, offertmallar och arbetsordrar väljer du enheten i en lista i stället för att skriva den. Saknas en enhet lägger du till den här, så finns den sedan på alla ställen. Länken **Hantera enheter** under raderna leder hit för den som får ändra artiklar.
+
+- En rad med en artikel får artikelns försäljningsenhet. Du kan välja en annan.
+- En rad utan artikel får standardenheten. Kolumnen **Nya rader** visar vilken det är, och **Gör till standard** byter. Från början är det styck. Standardenheten kan inte arkiveras förrän du valt en annan.
+- En arkiverad enhet kan inte väljas på en ny rad. En faktura, offert eller mall som redan har den visar den med texten *arkiverad* och kan sparas med den.
+- På fakturan står enheten som den heter i listan. En artikel där enheten skrevs på ett annat sätt, till exempel *tim* för timme, skrivs ut som förut.
+- När du läser in artiklar från en fil eller från ditt tidigare program läggs enheter som saknas till i listan med **Vad enheten mäter** satt till **Annat**. Resultatet av inläsningen visar vilka. Kontrollera dem här efteråt.
+- Fakturor som redan har skickats ändras inte.
 
 ## Bra att veta
 
@@ -70,3 +81,4 @@ Enhetens namn och Peppol-kod kan ändras senare, men inte själva enheten, efter
 - [Artiklar](/manual/fakturering/artiklar)
 - [Artiklar i lager](/manual/lager/artiklar)
 - [Skapa en faktura](/manual/fakturering/skapa-en-faktura)
+- [Offerter och order](/manual/fakturering/offerter-och-order)

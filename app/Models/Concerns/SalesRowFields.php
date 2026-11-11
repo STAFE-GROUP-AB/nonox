@@ -15,6 +15,7 @@ use App\Support\Money\Money;
  * @property string $description
  * @property string $quantity
  * @property string $unit
+ * @property ?int $unit_id
  * @property int $discount_bp
  * @property int $vat_rate
  * @property Money $unit_price_ore
@@ -22,7 +23,7 @@ use App\Support\Money\Money;
 trait SalesRowFields
 {
     /**
-     * @return array{description: string, quantity: string, unit: string, price: string, discount: string, vat_rate: int, account: ?int, labour: bool, vat_exemption: ?string}
+     * @return array{description: string, quantity: string, unit: string, unit_id: string, price: string, discount: string, vat_rate: int, account: ?int, labour: bool, vat_exemption: ?string}
      */
     public function asInput(): array
     {
@@ -34,7 +35,9 @@ trait SalesRowFields
         return [
             'description' => $this->description,
             'quantity' => str_replace('.', ',', rtrim(rtrim(ltrim($this->quantity, '-'), '0'), '.')),
+            // The unit as saved: its id when the row has one, otherwise the printed text, which the register matches.
             'unit' => $this->unit,
+            'unit_id' => $this->unit_id === null ? '' : (string) $this->unit_id,
             'price' => $price->format(withCurrency: false),
             'discount' => $this->discount_bp === 0 ? '' : sprintf('%d,%02d', intdiv($this->discount_bp, 100), $this->discount_bp % 100),
             'vat_rate' => $this->vat_rate,

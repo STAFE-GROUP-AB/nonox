@@ -11,6 +11,7 @@ use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Payables\SaveSupplier;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Domain\Units\UnitCatalogue;
 use App\Migration\Import\Actions\AnalyseRegisterImport;
 use App\Models\Company;
 use App\Models\Customer;
@@ -170,7 +171,7 @@ final class RegisterImportRunner
         DB::transaction(function () use ($chunk, $kind, $company, $user, &$result, $existing): void {
             foreach ($chunk as $plan) {
                 try {
-                    $this->write($plan, $kind, $company, $user, $existing);
+                    $this->write($plan, $kind, $company, $user, $existing, $result);
                     $result[$plan->status === RowPlan::CREATE ? 'created' : 'filled']++;
                 } catch (ValidationException $error) {
                     $this->fail($result, $plan->line, (string) collect($error->errors())->flatten()->first());
@@ -198,8 +199,11 @@ final class RegisterImportRunner
         };
     }
 
-    /** @param  array<int|string, Customer|Supplier>  $existing */
-    private function write(RowPlan $plan, RegisterKind $kind, Company $company, User $user, array $existing): void
+    /**
+     * @param  array<int|string, Customer|Supplier>  $existing
+     * @param  array<string, mixed>  $result
+     */
+    private function write(RowPlan $plan, RegisterKind $kind, Company $company, User $user, array $existing, array &$result): void
     {
         $record = $plan->existingId === null ? null : ($existing[$plan->existingId] ?? null);
 
@@ -210,7 +214,7 @@ final class RegisterImportRunner
             RegisterKind::Suppliers => $plan->status === RowPlan::FILL
                 ? ($this->saveSupplier)($user, $company, ['name' => $record?->name, 'payment_terms_days' => $record?->payment_terms_days, ...$plan->fill], $record instanceof Supplier ? $record : null)
                 : ($this->saveSupplier)($user, $company, $plan->values),
-            RegisterKind::Articles => ($this->saveArticle)($user, $company, [...$plan->values, 'external_ref' => $plan->values['number']]),
+            RegisterKind::Articles => $this->article($plan, $company, $user, $result),
             default => throw new RuntimeException('Not a register kind.'),
         };
     }
@@ -338,6 +342,28 @@ final class RegisterImportRunner
         }
 
         return $values;
+    }
+
+    /**
+     * An article row. A unit the register does not know is added to it
+     * (dimension Annat) inside the row's savepoint, so a row that fails
+     * adds nothing, and is named in the result only when the row is saved
+     * (ADR-071 §12.9). A text naming an archived unit uses that unit.
+     *
+     * @param  array<string, mixed>  $result
+     */
+    private function article(RowPlan $plan, Company $company, User $user, array &$result): void
+    {
+        $unit = DB::transaction(function () use ($plan, $company, $user): array {
+            $unit = UnitCatalogue::resolve((int) $company->id, (string) ($plan->values['unit'] ?? ''));
+            ($this->saveArticle)($user, $company, [...$plan->values, 'external_ref' => $plan->values['number']], null, true);
+
+            return $unit;
+        });
+
+        if ($unit['created']) {
+            $result['units_created'] = array_values(array_unique([...($result['units_created'] ?? []), $unit['code']]));
+        }
     }
 
     /** @return array<string, mixed> */

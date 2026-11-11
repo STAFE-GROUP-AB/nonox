@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Livewire;
 
+use App\Domain\Units\UnitRegister;
 use App\Models\Article;
 use App\Modules\Inventory\Actions\UnitConversions;
 use App\Modules\Inventory\Livewire\Concerns\InventoryPage;
@@ -58,6 +59,7 @@ class UnitConversionsPanel extends Component
         return view('inventory::livewire.unit-conversions', [
             'article' => Article::query()->with('stockUnit:id,code')->findOrFail($this->articleId, ['id', 'unit', 'stock_unit_id']),
             'conversions' => ArticleUnitConversion::query()->where('article_id', $this->articleId)->orderBy('unit')->get(),
+            'units' => UnitRegister::load()->choices(),
         ]);
     }
 }

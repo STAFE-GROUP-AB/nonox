@@ -148,7 +148,7 @@ class AgreementEditor extends Component
             'agreement' => $agreement,
             'editable' => $agreement === null || Gate::allows('update', $agreement),
             'customers' => Customer::query()->where('is_active', true)->whereNull('processing_restricted_at')->orderBy('name')->get(['id', 'number', 'name', 'email']),
-            'articles' => $this->rowArticles(),
+            ...$this->rowData(),
             'vatRules' => $this->salesVatRules(),
             'tracksRecurringRevenue' => $this->tracksRecurringRevenue(),
         ]);

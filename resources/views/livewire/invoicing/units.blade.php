@@ -35,7 +35,7 @@
         </x-ui.card>
     @endif
 
-    <x-ui.card>
+    <x-ui.card :description="__('Bara enheterna i listan kan väljas på fakturor, offerter, ordrar, avtal, offertmallar och arbetsordrar. En ny rad utan artikel får standardenheten.')">
         @if($canManage && ! $showForm)
             <x-slot:cta>
                 <x-button type="button" wire:click="create">{{ __('Ny enhet') }}</x-button>
@@ -50,6 +50,7 @@
                         <th class="py-2 pr-4 font-medium">{{ __('Namn') }}</th>
                         <th class="py-2 pr-4 font-medium">{{ __('Mäter') }}</th>
                         <th class="py-2 pr-4 font-medium">{{ __('Peppol-kod') }}</th>
+                        <th class="py-2 pr-4 font-medium">{{ __('Nya rader') }}</th>
                         <th scope="col"><span class="sr-only">{{ __('Åtgärder') }}</span></th>
                     </tr>
                 </thead>
@@ -60,6 +61,13 @@
                             <td class="py-2 pr-4">{{ $unit->name }}@if($unit->isArchived()) <span class="text-xs">({{ __('arkiverad') }})</span>@endif</td>
                             <td class="py-2 pr-4">{{ $unit->dimension->label() }}</td>
                             <td class="py-2 pr-4 tabular-nums">{{ $unit->rec20_code ?? '–' }}</td>
+                            <td class="py-2 pr-4">
+                                @if($unit->id === $rowDefaultId)
+                                    <span class="font-medium" data-row-default>{{ __('Standard') }}</span>
+                                @elseif($canManage && ! $unit->isArchived())
+                                    <button type="button" class="text-sm font-medium text-gray-700 underline" wire:click="makeRowDefault({{ $unit->id }})">{{ __('Gör till standard') }}</button>
+                                @endif
+                            </td>
                             <td class="py-2 text-right">
                                 @if($canManage)
                                     <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="edit({{ $unit->id }})">{{ __('Ändra') }}</button>

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Livewire\Invoicing;
 
 use App\Actions\Units\SaveUnit;
+use App\Actions\Units\SetRowDefaultUnit;
 use App\Actions\Units\SetUnitArchived;
 use App\Domain\Units\UnitCatalogue;
 use App\Domain\Units\UnitDefaults;
 use App\Domain\Units\UnitDimension;
+use App\Domain\Units\UnitRegister;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Article;
 use App\Models\Company;
@@ -21,8 +23,10 @@ use Livewire\Component;
 /**
  * The company's unit catalogue (ADR-071 §12.1): the units articles can be
  * counted, bought and sold in, with the ones every company starts with and
- * those the company adds (rulle, bunt, pall). Reached from Artiklar.
- * Two queries for the page, whatever the number of units.
+ * those the company adds (rulle, bunt, pall), and the one new rows start
+ * with. It is the only source of units on invoices, quotes, orders,
+ * templates and work orders (§12.9). Reached from Artiklar. A fixed
+ * number of queries for the page, whatever the number of units.
  */
 class Units extends Component
 {
@@ -93,6 +97,13 @@ class Units extends Component
         $this->toast(__('Enheten :code används igen.', ['code' => $unit->code]));
     }
 
+    public function makeRowDefault(int $unitId, SetRowDefaultUnit $setDefault): void
+    {
+        abort_unless($this->canManage(), 403);
+        $unit = $setDefault($this->user(), $this->company(), $unitId);
+        $this->toast(__('Nya rader får enheten :code.', ['code' => $unit->code]));
+    }
+
     public function render(): View
     {
         if ($this->canManage() && ! Unit::query()->exists()) {
@@ -100,11 +111,13 @@ class Units extends Component
         }
 
         $units = Unit::query()->orderBy('is_default', 'desc')->orderBy('code')->get();
+        $register = UnitRegister::load();
 
         return view('livewire.invoicing.units', [
             'units' => $this->showArchived ? $units : $units->reject(fn (Unit $unit): bool => $unit->isArchived())->values(),
             'archivedCount' => $units->filter(fn (Unit $unit): bool => $unit->isArchived())->count(),
             'canManage' => $this->canManage(),
+            'rowDefaultId' => $register->default()->id,
             'dimensions' => UnitDimension::cases(),
             'rec20' => UnitDefaults::REC20_CHOICES,
         ]);

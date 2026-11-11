@@ -6,6 +6,7 @@ namespace App\Modules\Inventory\Actions;
 
 use App\Domain\Units\ArticleUnits;
 use App\Domain\Units\UnitConverter;
+use App\Domain\Units\UnitRegister;
 use App\Models\Article;
 use App\Models\Company;
 use App\Models\User;
@@ -36,6 +37,13 @@ class UnitConversions
         }
 
         return CurrentCompany::run($company, function () use ($user, $company, $article, $unit, $perStockUnit): ArticleUnitConversion {
+            // Only a unit of the company's register (ADR-071 §12.9).
+            $units = UnitRegister::load();
+            $registered = $units->match($unit)
+                ?? throw ValidationException::withMessages(['unit' => __('Enheten :unit finns inte i enhetslistan. Välj en enhet ur listan, eller lägg till den under Enheter.', ['unit' => $unit])]);
+            $units->assertSelectable(['unit' => $registered->id]);
+            $unit = StructureUnits::normalise($registered->code);
+
             $article = Article::query()->with('stockUnit')->findOrFail($article->id);
             $stock = ArticleUnits::stockCode($article);
 

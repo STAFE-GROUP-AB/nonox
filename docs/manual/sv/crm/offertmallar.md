@@ -20,7 +20,7 @@ Mallarna kräver modulen CRM och att du får skapa offerter.
 1. Öppna **CRM → Offertmallar** och tryck på **Ny mall**.
 2. Skriv **Namn** och **Giltig i antal dagar**.
 3. Skriv gärna **Inledning (frivilligt)** och **Villkor (frivilligt)**. De blir offertens meddelande och står på PDF:en.
-4. Lägg till raderna. Välj en **Artikel**, eller **Fri rad** och skriv benämning, pris och moms själv. Ange **Antal**, **Enhet** och **Rabatt %** om du vill.
+4. Lägg till raderna. Välj en **Artikel**, eller **Fri rad** och skriv benämning, pris och moms själv. Ange **Antal**, **Enhet** och **Rabatt %** om du vill. **Enhet** väljs i företagets enhetslista. På en artikelrad betyder **Artikelns enhet** att offerten får artikelns enhet, och på en fri rad betyder **Standardenheten** den enhet företaget valt för nya rader. Saknas en enhet trycker du på **Hantera enheter**.
 5. Tryck på **Spara mallen**.
 
 ## Priser från artikelregistret

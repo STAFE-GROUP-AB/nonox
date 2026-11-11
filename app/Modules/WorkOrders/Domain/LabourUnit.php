@@ -14,6 +14,16 @@ enum LabourUnit: string
     case Trip = 'TRIP';
     case Km = 'KM';
 
+    /** The unit of the company's register an invoice row for this kind is in (ADR-071 §12.9); fixed, whatever the language. */
+    public function registerCode(): string
+    {
+        return match ($this) {
+            self::Hour => 'h',
+            self::Trip => 'resa',
+            self::Km => 'km',
+        };
+    }
+
     public function label(): string
     {
         return match ($this) {

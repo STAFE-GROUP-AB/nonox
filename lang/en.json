@@ -13547,5 +13547,14 @@
     "Skriv hur många :unit som går på en :stock. Mer än noll, högst nio siffror före och nio efter kommatecknet.": "Write how many :unit make one :stock. More than zero, at most nine digits before and nine after the decimal comma.",
     "Måtten är för stora för att räkna om mellan enheterna. Kontrollera att de är i millimeter.": "The sizes are too large to convert between the units. Check that they are in millimetres.",
     "Mängden är för stor för lagerenheten.": "The quantity is too large for the stock unit.",
-    "När en enhet inte räknas om av sig själv, till exempel förpackning till styck: raden läses som en mening, till exempel 1 st = 0,005 förp. Enheter av samma slag, som meter och millimeter, behöver ingen omräkning.": "When a unit does not convert by itself, for example package to piece: the row reads as a sentence, for example 1 pc = 0,005 pack. Units of the same kind, such as metres and millimetres, need no conversion."
+    "När en enhet inte räknas om av sig själv, till exempel förpackning till styck: raden läses som en mening, till exempel 1 st = 0,005 förp. Enheter av samma slag, som meter och millimeter, behöver ingen omräkning.": "When a unit does not convert by itself, for example package to piece: the row reads as a sentence, for example 1 pc = 0,005 pack. Units of the same kind, such as metres and millimetres, need no conversion.",
+    "Artikelns enhet": "The article's unit",
+    "Bara enheterna i listan kan väljas på fakturor, offerter, ordrar, avtal, offertmallar och arbetsordrar. En ny rad utan artikel får standardenheten.": "Only the units in this list can be chosen on invoices, quotes, orders, agreements, quote templates and work orders. A new row without an article gets the default unit.",
+    "Enheten :unit finns inte i enhetslistan. Välj en enhet ur listan, eller lägg till den under Enheter.": "The unit :unit is not in the unit list. Choose a unit from the list, or add it under Units.",
+    "Enheten :unit är standard för nya rader. Välj en annan standardenhet först.": "The unit :unit is the default for new rows. Choose another default unit first.",
+    "Enheten finns inte i företagets enhetslista.": "The unit is not in the company's unit list.",
+    "Nya enheter i enhetslistan: :units. Kontrollera vad de mäter under Enheter.": "New units in the unit list: :units. Check what they measure under Units.",
+    "Nya rader": "New rows",
+    "Nya rader får enheten :code.": "New rows get the unit :code.",
+    "Standardenheten (:unit)": "The default unit (:unit)"
 }

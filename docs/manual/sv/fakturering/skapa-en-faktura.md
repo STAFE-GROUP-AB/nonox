@@ -24,7 +24,7 @@ Fakturorna finns under **Försäljning → Fakturor**.
 4. Lämna **Förfallodag** tom om kundens betalningsvillkor ska gälla, eller välj ett eget datum. Förfallodagen kan inte vara före fakturadatum.
 5. Fyll i **Leveransdatum** om leveransen skedde en annan dag än fakturadatum. Tomt betyder samma dag som fakturadatum.
 6. Fyll i **Er referens** (kundens kontaktperson) och **Vår referens** om du vill.
-7. Fyll i raderna under **Rader**. Skriv ett artikelnummer i **Artikel** för att hämta artikeln, eller skriv en egen rad med **Benämning**, **Antal**, **Enhet**, **À-pris** och **Moms**. Priserna är utan moms. Tryck på **+ Lägg till rad** för fler rader och på **×** för att ta bort en.
+7. Fyll i raderna under **Rader**. Skriv ett artikelnummer i **Artikel** för att hämta artikeln, eller skriv en egen rad med **Benämning**, **Antal**, **Enhet**, **À-pris** och **Moms**. Priserna är utan moms. **Enhet** väljs i företagets enhetslista: en artikel ger sin egen enhet, en egen rad får standardenheten. Saknas en enhet trycker du på **Hantera enheter** och lägger till den, se [Enheter på artiklar](/manual/fakturering/enheter-pa-artiklar). Tryck på **+ Lägg till rad** för fler rader och på **×** för att ta bort en.
 8. Skriv eventuellt en rabatt i procent i **Rabatt %** på en rad.
 9. Skriv ett **Meddelande på fakturan (frivilligt)** om kunden ska få veta något mer.
 10. Tryck på **Spara som utkast** om du vill fortsätta senare. Utkastet ligger kvar under **Fakturor** med filtret **Utkast**.

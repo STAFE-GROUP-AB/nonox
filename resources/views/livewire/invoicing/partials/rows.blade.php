@@ -3,6 +3,7 @@
     resources/js/sales-rows.js) until the document is saved, so stepping
     through the fields is never slowed down or overwritten by the server.
     The server calculates everything again when the document is saved.
+    The unit is chosen from the company's unit register (ADR-071 §12.9).
 --}}
 @php
     $cell = 'w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-md text-sm max-lg:min-h-11';
@@ -14,13 +15,14 @@
     $articleMap = $articles->mapWithKeys(fn ($article) => [$article->number => [
         'name' => $article->name,
         'unit' => $article->unit,
+        'unit_id' => $article->sales_unit_id ?? $article->stock_unit_id,
         'price' => $article->price_ore->ore,
         'vat_rate' => $article->vat_rate,
         'account' => $article->account?->number,
     ]]);
 @endphp
 
-<div x-data="salesRows($wire.entangle('rows'), @js($articleMap), @js($negative), {{ isset($reverseCharge) ? "() => \$wire.reverseCharge || (\$wire.foreignSale !== '' && \$wire.foreignSale !== 'EU_CONSUMER_OSS')" : 'false' }}, {{ isset($withCurrency) ? '() => $wire.currency' : "() => 'SEK'" }}, @js($vatRules ?? []))">
+<div x-data="salesRows($wire.entangle('rows'), @js($articleMap), @js($negative), {{ isset($reverseCharge) ? "() => \$wire.reverseCharge || (\$wire.foreignSale !== '' && \$wire.foreignSale !== 'EU_CONSUMER_OSS')" : 'false' }}, {{ isset($withCurrency) ? '() => $wire.currency' : "() => 'SEK'" }}, @js($vatRules ?? []), @js((string) $defaultUnitId))">
     <datalist id="article-options">
         @foreach($articles as $article)
             <option value="{{ $article->number }}">{{ $article->name }}</option>
@@ -36,7 +38,7 @@
                         <th class="pb-2 pr-2 font-medium w-28">{{ __('Artikel') }}</th>
                         <th class="pb-2 pr-2 font-medium">{{ __('Benämning') }}</th>
                         <th class="pb-2 pr-2 font-medium w-20 text-right">{{ __('Antal') }}</th>
-                        <th class="pb-2 pr-2 font-medium w-16">{{ __('Enhet') }}</th>
+                        <th class="pb-2 pr-2 font-medium w-24">{{ __('Enhet') }}</th>
                         <th class="pb-2 pr-2 font-medium w-28 text-right">{{ __('À-pris') }}</th>
                         <th class="pb-2 pr-2 font-medium w-20 text-right">{{ __('Rabatt %') }}</th>
                         <th class="pb-2 pr-2 font-medium w-24">{{ __('Moms') }}</th>
@@ -64,7 +66,11 @@
                             </td>
                             <td class="{{ $field }} col-span-3 sm:col-span-2">
                                 <span class="{{ $label }}" aria-hidden="true">{{ __('Enhet') }}</span>
-                                <input type="text" class="{{ $cell }}" x-model="row.unit" maxlength="10" :aria-label="'{{ __('Enhet, rad') }} ' + (index + 1)">
+                                <select class="{{ $cell }}" x-model="row.unit_id" :aria-label="'{{ __('Enhet, rad') }} ' + (index + 1)">
+                                    @foreach($units as $unit)
+                                        <option value="{{ $unit->id }}">{{ $unit->code }}{{ $unit->isArchived() ? ' ('.__('arkiverad').')' : '' }}</option>
+                                    @endforeach
+                                </select>
                             </td>
                             <td class="{{ $field }} col-span-3 sm:col-span-2">
                                 <span class="{{ $label }}" aria-hidden="true">{{ __('À-pris') }}</span>
@@ -110,7 +116,12 @@
                 </tbody>
             </table>
         </div>
-        <button type="button" class="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-accent-600 hover:text-accent-700 lg:inline lg:min-h-0" x-on:click="addRow()">+ {{ __('Lägg till rad') }}</button>
+        <div class="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
+            <button type="button" class="inline-flex min-h-11 items-center text-sm font-medium text-accent-600 hover:text-accent-700 lg:inline lg:min-h-0" x-on:click="addRow()">+ {{ __('Lägg till rad') }}</button>
+            @if($canManageUnits)
+                <a href="{{ route('invoicing.units') }}" class="text-sm font-medium text-accent-700 underline">{{ __('Hantera enheter') }}</a>
+            @endif
+        </div>
 
         @foreach($errors->getMessages() as $key => $messages)
             @if(str_starts_with($key, 'rows'))

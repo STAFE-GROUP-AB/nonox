@@ -20,7 +20,7 @@ Du hittar dem under **Försäljning → Offerter** och **Försäljning → Order
 2. Välj **Kund**.
 3. Kontrollera **Datum** och **Giltig till**. Offerten gäller 30 dagar från början.
 4. Fyll i **Er referens** och **Vår referens** om du vill.
-5. Fyll i raderna på samma sätt som på en faktura: artikelnummer eller fri text, antal, enhet, à-pris utan moms, rabatt och moms.
+5. Fyll i raderna på samma sätt som på en faktura: artikelnummer eller fri text, antal, enhet, à-pris utan moms, rabatt och moms. **Enhet** väljs i företagets enhetslista.
 6. Skriv ett **Meddelande (frivilligt)** om kunden ska få veta något mer, till exempel vad som ingår.
 7. Tryck på **Spara**. Offerten får ett nummer, till exempel *Offert 12*.
 

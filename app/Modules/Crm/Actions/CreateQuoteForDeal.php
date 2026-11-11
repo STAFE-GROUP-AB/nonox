@@ -105,7 +105,7 @@ final class CreateQuoteForDeal
             'rows' => [[
                 'description' => $deal->title,
                 'quantity' => '1',
-                'unit' => 'st',
+                // No unit: the company's default unit (ADR-071 §12.9).
                 'price' => Money::ofOre($deal->value_ore)->format(withCurrency: false),
                 'vat_rate' => DefaultVat::rateFor($company, $customer),
             ]],

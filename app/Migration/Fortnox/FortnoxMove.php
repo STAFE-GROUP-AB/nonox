@@ -11,6 +11,7 @@ use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Payables\SaveSupplier;
 use App\Domain\Accounting\LedgerBalances;
 use App\Domain\Company\OrganisationNumber;
+use App\Domain\Units\UnitCatalogue;
 use App\Models\Account;
 use App\Models\Article;
 use App\Models\Company;
@@ -26,6 +27,7 @@ use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
@@ -148,18 +150,35 @@ class FortnoxMove
      * NONOX cannot read (for example an invalid organisation number) is
      * saved without that field, or listed as skipped.
      *
-     * @return array{customers: array{created: int, existing: int, failed: list<string>}, suppliers: array{created: int, existing: int, failed: list<string>}, articles: array{created: int, existing: int, failed: list<string>}}
+     * @return array{customers: array{created: int, existing: int, failed: list<string>}, suppliers: array{created: int, existing: int, failed: list<string>}, articles: array{created: int, existing: int, failed: list<string>, units_created?: list<string>}}
      */
     public function importRegisters(User $user, Company $company, FortnoxConnection $connection): array
     {
         Gate::forUser($user)->authorize('importFortnox', $company);
         $client = $this->client($connection);
 
+        $unitsCreated = [];
+        // A unit the register does not know is added to it (dimension Annat) and listed in the result (ADR-071 §12.9).
+        $saveArticle = function (array $input) use ($user, $company, &$unitsCreated): void {
+            // Inside a savepoint, so an article that is refused adds no unit; an archived unit its text names is used.
+            $unit = DB::transaction(function () use ($input, $user, $company): array {
+                $unit = UnitCatalogue::resolve((int) $company->id, (string) ($input['unit'] ?? ''));
+                ($this->saveArticle)($user, $company, $input, null, true);
+
+                return $unit;
+            });
+
+            if ($unit['created']) {
+                $unitsCreated[] = $unit['code'];
+            }
+        };
+
         $result = CurrentCompany::run($company, fn (): array => [
             'customers' => $this->importEach($client->each('customers', 'Customers'), fn (array $item): bool => $this->customerExists($item), fn (array $input) => ($this->saveCustomer)($user, $company, $input), self::customerInput(...), ['org_number', 'personal_number', 'vat_number', 'email', 'country']),
             'suppliers' => $this->importEach($client->each('suppliers', 'Suppliers'), fn (array $item): bool => $this->supplierExists($item), fn (array $input) => ($this->saveSupplier)($user, $company, $input), self::supplierInput(...), ['org_number', 'vat_number', 'email', 'bankgiro', 'plusgiro', 'iban', 'bic']),
-            'articles' => $this->importEach($client->each('articles', 'Articles'), fn (array $item): bool => Article::query()->where('number', (string) ($item['ArticleNumber'] ?? ''))->exists(), fn (array $input) => ($this->saveArticle)($user, $company, $input), self::articleInput(...), ['account', 'vat_rate']),
+            'articles' => $this->importEach($client->each('articles', 'Articles'), fn (array $item): bool => Article::query()->where('number', (string) ($item['ArticleNumber'] ?? ''))->exists(), $saveArticle, self::articleInput(...), ['account', 'vat_rate']),
         ]);
+        $result['articles']['units_created'] = array_values(array_unique($unitsCreated));
 
         CurrentCompany::run($company, function () use ($connection, $result, $company, $user): void {
             $progress = $connection->progress;

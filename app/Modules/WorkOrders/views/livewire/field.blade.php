@@ -65,9 +65,14 @@
             @error('material.description')<p class="text-sm text-red-700" role="alert">{{ $message }}</p>@enderror
             <div class="grid grid-cols-2 gap-3">
                 <label class="block"><span class="text-sm font-medium text-gray-700">{{ __('Antal') }}</span><input wire:model="material.quantity" inputmode="decimal" class="{{ $input }}"></label>
-                <label class="block"><span class="text-sm font-medium text-gray-700">{{ __('Enhet') }}</span><input wire:model="material.unit" maxlength="10" class="{{ $input }}"></label>
+                <label class="block"><span class="text-sm font-medium text-gray-700">{{ __('Enhet') }}</span>
+                    <select wire:model="material.unit_id" class="{{ $input }}">
+                        @foreach($units as $unit)<option value="{{ $unit->id }}">{{ $unit->code }} ({{ $unit->name }})</option>@endforeach
+                    </select>
+                </label>
             </div>
             @error('material.quantity')<p class="text-sm text-red-700" role="alert">{{ $message }}</p>@enderror
+            @error('material.unit_id')<p class="text-sm text-red-700" role="alert">{{ $message }}</p>@enderror
             @if($locations->isNotEmpty() && ($material['article_id'] ?? '') !== '')
                 <label class="block"><span class="text-sm font-medium text-gray-700">{{ __('Taget från lager (valfritt)') }}</span>
                     <select wire:model="material.location_id" class="{{ $input }}">

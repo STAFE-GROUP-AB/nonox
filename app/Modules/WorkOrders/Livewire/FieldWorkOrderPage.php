@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\WorkOrders\Livewire;
 
+use App\Domain\Units\UnitRegister;
 use App\Models\Article;
 use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\Models\StockLocation;
@@ -104,6 +105,7 @@ class FieldWorkOrderPage extends Component
         $article = Article::query()->findOrFail($id);
         $this->material['article_id'] = (string) $article->id;
         $this->material['description'] = $article->name;
+        $this->material['unit_id'] = (string) ($article->sales_unit_id ?? $article->stock_unit_id);
         $this->material['unit'] = $article->unit;
         $this->articleSearch = '';
     }
@@ -207,6 +209,7 @@ class FieldWorkOrderPage extends Component
             'articles' => mb_strlen($term) < 2 ? collect() : Article::query()->where('is_active', true)
                 ->where(fn ($query) => $query->where('name', 'ilike', "%{$term}%")->orWhere('number', $term)->orWhere('gtin', $term)->orWhere('scanner_code', $term))
                 ->orderBy('name')->limit(8)->get(['id', 'number', 'name', 'unit']),
+            'units' => UnitRegister::load()->choices(),
             'locations' => $inventory ? StockLocation::query()->where('is_active', true)->orderBy('sort_key')->get(['id', 'full_code', 'name']) : collect(),
             'myTime' => TimeEntry::query()->where('work_order_id', $workOrder->id)->where('user_id', $this->user()->id)->whereDate('work_date', $today)->with('labourKind')->orderByDesc('entered_at')->get(),
             'myMaterial' => MaterialEntry::query()->where('work_order_id', $workOrder->id)->where('user_id', $this->user()->id)->whereDate('work_date', $today)->orderByDesc('entered_at')->get(),
@@ -223,6 +226,6 @@ class FieldWorkOrderPage extends Component
     {
         $today = CarbonImmutable::today()->toDateString();
         $this->time = ['id' => (string) Str::uuid(), 'labour_kind_id' => (string) (LabourKind::query()->where('is_active', true)->orderBy('position')->value('id') ?? ''), 'work_date' => $today, 'hours' => '', 'quantity' => '', 'change_order_id' => $this->time['change_order_id'] ?? '', 'note' => ''];
-        $this->material = ['id' => (string) Str::uuid(), 'article_id' => '', 'location_id' => '', 'description' => '', 'quantity' => '1', 'unit' => 'st', 'change_order_id' => $this->material['change_order_id'] ?? '', 'work_date' => $today, 'note' => ''];
+        $this->material = ['id' => (string) Str::uuid(), 'article_id' => '', 'location_id' => '', 'description' => '', 'quantity' => '1', 'unit_id' => (string) UnitRegister::load()->default()->id, 'unit' => '', 'change_order_id' => $this->material['change_order_id'] ?? '', 'work_date' => $today, 'note' => ''];
     }
 }

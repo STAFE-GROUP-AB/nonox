@@ -40,6 +40,14 @@
       "omrade": "Bokslut"
     },
     {
+      "id": "2026-11-10-enhetslistan-overallt",
+      "datum": "2026-11-10T14:00:00+01:00",
+      "rubrik": "En enhetslista för hela företaget",
+      "beskrivning": "Enheten på fakturor, offerter, ordrar, avtal, offertmallar och arbetsordrar väljs nu ur företagets enhetslista i stället för att skrivas fritt. Under Artiklar → Enheter väljer du vilken enhet en ny rad får, och import från andra program lägger till enheter som saknas. Fakturor som redan skickats ändras inte.",
+      "typ": "Förbättrat",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-10-prova-for-inloggade",
       "datum": "2026-11-10T12:00:00+01:00",
       "rubrik": "Prova utan att registrera syns också när du är inloggad",

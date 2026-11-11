@@ -118,7 +118,11 @@
                 @else
                     <x-ui.field for="material-description" :label="__('Material')" error="material.description" class="sm:col-span-4"><input id="material-description" wire:model="material.description" maxlength="255" class="{{ $input }}"></x-ui.field>
                     <x-ui.field for="material-quantity" :label="__('Antal')" error="material.quantity" class="sm:col-span-1"><input id="material-quantity" wire:model="material.quantity" inputmode="decimal" class="{{ $input }}"></x-ui.field>
-                    <x-ui.field for="material-unit" :label="__('Enhet')" error="material.unit" class="sm:col-span-1"><input id="material-unit" wire:model="material.unit" maxlength="10" class="{{ $input }}"></x-ui.field>
+                    <x-ui.field for="material-unit" :label="__('Enhet')" error="material.unit_id" class="sm:col-span-1">
+                        <select id="material-unit" wire:model="material.unit_id" class="{{ $input }}">
+                            @foreach($units as $unit)<option value="{{ $unit->id }}">{{ $unit->code }}</option>@endforeach
+                        </select>
+                    </x-ui.field>
                     <x-ui.field for="material-cost" :label="__('Inköpspris per enhet')" error="material.unit_cost" class="sm:col-span-2"><input id="material-cost" wire:model="material.unit_cost" inputmode="decimal" class="{{ $input }}"></x-ui.field>
                 @endif
                 <x-ui.field for="material-price" :label="__('Försäljningspris per enhet (valfritt)')" error="material.unit_price" class="sm:col-span-2"><input id="material-price" wire:model="material.unit_price" inputmode="decimal" class="{{ $input }}"></x-ui.field>
@@ -129,7 +133,12 @@
                     </select>
                 </x-ui.field>
                 <x-ui.field for="material-date" :label="__('Datum')" error="material.work_date" class="sm:col-span-2"><input id="material-date" type="date" wire:model="material.work_date" class="{{ $input }}"></x-ui.field>
-                <div class="sm:col-span-6 sm:text-right"><x-button type="submit" wire:loading.attr="disabled">{{ __('Registrera material') }}</x-button></div>
+                <div class="flex flex-wrap items-center justify-end gap-4 sm:col-span-6">
+                    @if($canManageUnits)
+                        <a href="{{ route('invoicing.units') }}" class="text-sm font-medium text-accent-700 underline">{{ __('Hantera enheter') }}</a>
+                    @endif
+                    <x-button type="submit" wire:loading.attr="disabled">{{ __('Registrera material') }}</x-button>
+                </div>
             </form>
             @if($material['source'] === 'STOCK')
                 <p class="mb-4 text-sm text-gray-500">{{ __('Material från lagret registreras enklast på plats, där du kan skanna artikeln.') }}</p>

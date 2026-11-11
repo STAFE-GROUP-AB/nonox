@@ -26,7 +26,7 @@
                     <ol class="mt-3 space-y-3">
                         @foreach($rows as $index => $row)
                             <li wire:key="template-row-{{ $index }}" class="grid gap-3 rounded-xl p-3 ring-1 ring-stone-200 sm:grid-cols-12">
-                                <div class="sm:col-span-3">
+                                <div class="sm:col-span-2">
                                     <label for="row-{{ $index }}-article" class="text-xs font-medium text-gray-700">{{ __('Artikel') }}</label>
                                     <select id="row-{{ $index }}-article" class="{{ $input }} mt-1" wire:model.live="rows.{{ $index }}.article">
                                         <option value="">{{ __('Fri rad') }}</option>
@@ -46,9 +46,15 @@
                                     <input id="row-{{ $index }}-quantity" type="text" inputmode="decimal" class="{{ $input }} mt-1 tabular-nums" wire:model="rows.{{ $index }}.quantity">
                                     <x-input-error for="rows.{{ $index }}.quantity" class="mt-1" />
                                 </div>
-                                <div class="sm:col-span-1">
+                                <div class="sm:col-span-2">
                                     <label for="row-{{ $index }}-unit" class="text-xs font-medium text-gray-700">{{ __('Enhet') }}</label>
-                                    <input id="row-{{ $index }}-unit" type="text" class="{{ $input }} mt-1" wire:model="rows.{{ $index }}.unit" maxlength="20">
+                                    <select id="row-{{ $index }}-unit" class="{{ $input }} mt-1" wire:model="rows.{{ $index }}.unit_id">
+                                        <option value="">{{ $row['article'] !== '' ? __('Artikelns enhet') : __('Standardenheten (:unit)', ['unit' => $defaultUnitCode]) }}</option>
+                                        @foreach($units as $unit)
+                                            <option value="{{ $unit->id }}">{{ $unit->code }}{{ $unit->isArchived() ? ' ('.__('arkiverad').')' : '' }}</option>
+                                        @endforeach
+                                    </select>
+                                    <x-input-error for="rows.{{ $index }}.unit_id" class="mt-1" />
                                 </div>
                                 @if($row['article'] === '')
                                     <div class="sm:col-span-2">
@@ -79,6 +85,9 @@
                         @endforeach
                     </ol>
                     <button type="button" class="mt-3 min-h-11 rounded-lg px-4 text-sm font-semibold ring-1 ring-gray-300 hover:bg-gray-50" wire:click="addRow">{{ __('Lägg till rad') }}</button>
+                    @if($canManageUnits)
+                        <a href="{{ route('invoicing.units') }}" class="mt-3 ml-4 inline-block text-sm font-medium text-accent-700 underline">{{ __('Hantera enheter') }}</a>
+                    @endif
                 </fieldset>
 
                 <div class="flex flex-wrap items-center justify-end gap-3">

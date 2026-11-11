@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\HasRegisterUnit;
 use App\Models\Concerns\SalesRowFields;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
@@ -35,6 +36,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class InvoiceRow extends Model
 {
     use BelongsToCompany;
+    use HasRegisterUnit;
     use SalesRowFields;
 
     /** @var list<string> */
@@ -45,6 +47,7 @@ class InvoiceRow extends Model
         'description',
         'quantity',
         'unit',
+        'unit_id',
         'unit_price_ore',
         'discount_bp',
         'vat_rate',

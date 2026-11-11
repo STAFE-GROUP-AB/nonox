@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\WorkOrders\Models;
 
 use App\Models\Article;
+use App\Models\Concerns\HasRegisterUnit;
 use App\Models\SupplierInvoiceRow;
 use App\Models\User;
 use App\Modules\WorkOrders\Domain\MaterialSource;
@@ -49,13 +50,14 @@ class MaterialEntry extends Model
 {
     use AppendOnlyEntry;
     use BelongsToCompany;
+    use HasRegisterUnit;
     use HasUuids;
 
     protected $table = 'work_order_material_entries';
 
     /** @var list<string> */
     protected $fillable = [
-        'id', 'company_id', 'work_order_id', 'change_order_id', 'user_id', 'article_id', 'description', 'quantity_milli', 'unit',
+        'id', 'company_id', 'work_order_id', 'change_order_id', 'user_id', 'article_id', 'description', 'quantity_milli', 'unit', 'unit_id',
         'unit_cost_ore', 'unit_price_ore', 'vat_rate', 'billable', 'source', 'stock_location_id', 'supplier_invoice_row_id',
         'work_date', 'note', 'entered_at', 'reverses_id', 'reversal_reason', 'created_by',
     ];

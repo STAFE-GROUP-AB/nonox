@@ -9,12 +9,13 @@ import { formatOre } from './money.js';
 import { rowNet, totals } from './sales-math.js';
 import { ratePercent, salesRowVatWarnings } from './vat-rate-check.js';
 
-function blankRow() {
-    return { article: '', description: '', quantity: '1', unit: 'st', price: '', discount: '', vat_rate: '2500', account: '' };
+/** A new row, in the company's default unit (a unit of its register, by id). */
+function blankRow(unitId) {
+    return { article: '', description: '', quantity: '1', unit_id: unitId, price: '', discount: '', vat_rate: '2500', account: '' };
 }
 
 document.addEventListener('alpine:init', () => {
-    window.Alpine.data('salesRows', (rows, articles, negative, vatFree = false, currency = () => 'SEK', vatRules = {}) => ({
+    window.Alpine.data('salesRows', (rows, articles, negative, vatFree = false, currency = () => 'SEK', vatRules = {}, defaultUnitId = '') => ({
         // Sales accounts and the VAT rates they take (App\Domain\Vat\SalesVatRules, #62).
         vatRules,
         rows,
@@ -24,6 +25,7 @@ document.addEventListener('alpine:init', () => {
         vatFree,
         // An invoice in another currency is written in it, and its total is not rounded to whole kronor.
         currency,
+        defaultUnitId,
 
         get currencyCode() {
             return String(this.currency() || 'SEK').toUpperCase();
@@ -31,7 +33,7 @@ document.addEventListener('alpine:init', () => {
 
         init() {
             if (this.rows.length === 0) {
-                this.rows.push(blankRow());
+                this.rows.push(blankRow(this.defaultUnitId));
             }
         },
 
@@ -69,7 +71,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         addRow() {
-            this.rows.push(blankRow());
+            this.rows.push(blankRow(this.defaultUnitId));
             this.$nextTick(() => this.$root.querySelectorAll('[data-row-article]')[this.rows.length - 1]?.focus());
         },
 
@@ -77,7 +79,7 @@ document.addEventListener('alpine:init', () => {
             this.rows.splice(index, 1);
 
             if (this.rows.length === 0) {
-                this.rows.push(blankRow());
+                this.rows.push(blankRow(this.defaultUnitId));
             }
         },
 
@@ -91,7 +93,7 @@ document.addEventListener('alpine:init', () => {
             }
 
             row.description = article.name;
-            row.unit = article.unit;
+            row.unit_id = article.unit_id ? String(article.unit_id) : row.unit_id;
             // Article prices are kronor; in another currency the price is left for the person to write.
             row.price = this.currencyCode === 'SEK' ? formatOre(article.price) : row.price;
             row.vat_rate = String(article.vat_rate);

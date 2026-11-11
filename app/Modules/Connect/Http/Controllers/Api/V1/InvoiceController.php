@@ -12,6 +12,7 @@ use App\Actions\Invoicing\SendInvoice;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoicePdf;
 use App\Domain\Invoicing\IssuedInvoicePdf;
+use App\Domain\Units\UnitRegister;
 use App\Models\Article;
 use App\Models\Invoice;
 use App\Modules\Connect\Http\Controllers\Api\V1\Concerns\ActsAsCredential;
@@ -100,7 +101,7 @@ final class InvoiceController
             ...ApiInput::body($request->json()->all()),
         ];
 
-        $saved = $save($this->user(), $this->company(), $this->input($body), $invoice);
+        $saved = $save($this->user(), $this->company(), $this->input($body, $invoice->rows->pluck('unit_id')->filter()->all()), $invoice);
 
         return CursorList::one(ApiPresenter::invoice($saved->refresh()->load(self::RELATIONS)));
     }
@@ -170,10 +171,15 @@ final class InvoiceController
      * points to percent, and an article's price, text and VAT rate when a
      * row names an article and leaves them out.
      *
+     * A row's unit is unit_id or a code (or alias) of the company's unit
+     * register (ADR-071 §12.9); an unknown text, another company's unit or
+     * an archived unit the invoice did not already have is refused (422).
+     *
      * @param  array<string, mixed>  $body
+     * @param  array<mixed>  $keptUnitIds  the units the invoice's rows already have
      * @return array<string, mixed>
      */
-    private function input(array $body): array
+    private function input(array $body, array $keptUnitIds = []): array
     {
         $input = array_intersect_key($body, array_flip(self::FIELDS));
         $currency = strtoupper(is_string($body['invoice_currency'] ?? null) ? $body['invoice_currency'] : 'SEK');
@@ -200,15 +206,21 @@ final class InvoiceController
         $numbers = array_filter(array_map(fn (mixed $row): string => is_array($row) ? trim((string) ($row['article'] ?? '')) : '', $rows));
         $articles = Article::query()->whereIn('number', $numbers)->get()->keyBy('number');
 
-        $input['rows'] = array_map(function (mixed $row, int $index) use ($articles, $foreign): array {
+        $units = UnitRegister::load();
+        $chosen = [];
+
+        $input['rows'] = array_map(function (mixed $row, int $index) use ($articles, $foreign, $units, &$chosen): array {
             $row = is_array($row) ? $row : [];
             $article = $articles->get(trim((string) ($row['article'] ?? '')));
+            $unitId = $row['unit_id'] ?? (is_string($row['unit'] ?? null) ? $units->match($row['unit'])?->id : null);
+            $chosen["rows.{$index}.unit_id"] = $unitId;
 
             return [
                 'article' => $row['article'] ?? null,
                 'description' => $row['description'] ?? $article?->name,
                 'quantity' => ApiInput::quantity($row['quantity'] ?? 1, "rows.{$index}.quantity"),
-                'unit' => $row['unit'] ?? $article?->unit,
+                'unit_id' => $unitId,
+                'unit' => is_string($row['unit'] ?? null) ? $row['unit'] : null,
                 // Article prices are kronor, so an invoice in another currency needs its own price.
                 'price' => $foreign
                     ? ApiInput::kronor($row['unit_price_minor'] ?? 0, "rows.{$index}.unit_price_minor")
@@ -219,6 +231,9 @@ final class InvoiceController
                 'labour' => (bool) ($row['labour'] ?? false),
             ];
         }, $rows, array_keys($rows));
+
+        // An article's own unit stays allowed on its rows when it has been archived, as on the article.
+        $units->assertSelectable($chosen, [...$keptUnitIds, ...$articles->map(fn (Article $article): ?int => $article->sales_unit_id ?? $article->stock_unit_id)->filter()->values()->all()]);
 
         return $input;
     }

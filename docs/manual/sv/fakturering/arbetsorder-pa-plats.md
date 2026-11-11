@@ -27,7 +27,7 @@ Står det att ÄTA:t inte är godkänt får du registrera tiden, men den hålls 
 
 ## Material och foton
 
-- Under **Material** söker du artikeln eller skannar koden i **Sök artikel, eller skanna koden**. Med Lager påslaget kan du välja **Taget från lager**, så minskar saldot. Tryck på **Spara material**.
+- Under **Material** söker du artikeln eller skannar koden i **Sök artikel, eller skanna koden**. Skriv **Antal** och välj **Enhet** i företagets enhetslista; en artikel ger sin egen enhet. Med Lager påslaget kan du välja **Taget från lager**, så minskar saldot. Material från lagret räknas alltid i artikelns lagerenhet. Tryck på **Spara material**.
 - Under **Foto** tar du en bild och trycker på **Spara bilden**. Fotografera inte personer i onödan.
 
 ## Rätta en post

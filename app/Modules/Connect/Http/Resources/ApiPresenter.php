@@ -18,6 +18,7 @@ use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceRow;
 use App\Models\SupplierPayment;
+use App\Models\Unit;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
 use App\Models\VoucherRow;
@@ -208,6 +209,21 @@ final class ApiPresenter
         ];
     }
 
+    /** @return array<string, mixed> */
+    public static function unit(Unit $unit, int $defaultUnitId): array
+    {
+        return [
+            'id' => $unit->id,
+            'code' => $unit->code,
+            'name' => $unit->name,
+            'dimension' => $unit->dimension->value,
+            'rec20_code' => $unit->rec20_code,
+            'aliases' => $unit->aliases,
+            'is_default' => $unit->id === $defaultUnitId,
+            'is_archived' => $unit->isArchived(),
+        ];
+    }
+
     /**
      * Needs account loaded.
      *
@@ -220,6 +236,7 @@ final class ApiPresenter
             'number' => $article->number,
             'name' => $article->name,
             'unit' => $article->unit,
+            'unit_id' => $article->sales_unit_id ?? $article->stock_unit_id,
             'price_ore' => $article->price_ore->ore,
             'currency' => 'SEK',
             'vat_rate' => $article->vat_rate,
@@ -344,6 +361,7 @@ final class ApiPresenter
                 'description' => $row->description,
                 'quantity' => $row->quantity,
                 'unit' => $row->unit,
+                'unit_id' => $row->unit_id,
                 'unit_price_ore' => $row->unit_price_ore->ore,
                 // Hundredths of the invoice's currency, as written on the invoice; equal to the öre for SEK.
                 'unit_price_minor' => $row->foreign_unit_price_minor ?? $row->unit_price_ore->ore,

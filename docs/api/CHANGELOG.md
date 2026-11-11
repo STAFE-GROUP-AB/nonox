@@ -13,6 +13,32 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-10: enhetslistan
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-10: the unit register
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Tillagt
+- `GET /units`: företagets enhetslista, med id, kod, namn, vad enheten mäter, Peppol-kod, alternativa stavningar och vilken enhet en rad utan artikel får (`is_default`).
+- Fakturarader och artiklar har det nya fältet `unit_id`, enheten i enhetslistan. En rad eller artikel kan skickas med `unit_id` i stället för `unit`. `unit` är kvar och visar enheten som den skrivs på fakturan.
+
+### Ändrat (brytande undantag, 2026-11-10)
+- **Det här är ett medvetet undantag från regeln att v1 bara utökas.** Företagets ägare har bestämt att enheter inte får vara fritext. `unit` på fakturarader och artiklar ska vara en kod, stavning eller ett namn som finns i enhetslistan, till exempel `st`, `tim` eller `kilogram`. En annan text, ett `unit_id` som hör till ett annat företag eller en arkiverad enhet som fakturan eller artikeln inte redan har svarar 422 med fältet `rows.N.unit_id` (fakturor) eller `unit`/`unit_id` (artiklar). Tidigare sparades vilken text som helst.
+- **Så anpassar du integrationen:** hämta enheterna med `GET /units` och skicka `unit_id`, eller en kod eller stavning ur listan i `unit`. Saknas en enhet lägger företaget till den under Artiklar → Enheter. En rad utan enhet får artikelns enhet, eller företagets standardenhet.
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+- `GET /units`: the company's unit register, with id, code, name, what the unit measures, Peppol code, alternative spellings and the unit a row without an article gets (`is_default`).
+- Invoice rows and articles have a new field `unit_id`, the unit in the register. A row or article can be sent with `unit_id` instead of `unit`. `unit` stays and shows the unit as printed on the invoice.
+
+### Changed (breaking exception, 2026-11-10)
+- **This is a deliberate exception to the rule that v1 only grows.** The owner decided that units may not be free text. `unit` on invoice rows and articles must be a code, spelling or name the register knows, for example `st`, `tim` or `kilogram`. Any other text, a `unit_id` of another company, or an archived unit the invoice or article does not already have answers 422 with the field `rows.N.unit_id` (invoices) or `unit`/`unit_id` (articles). Any text used to be stored.
+- **How to adapt an integration:** read the units with `GET /units` and send `unit_id`, or a code or spelling from the list in `unit`. When a unit is missing, the company adds it under Artiklar → Enheter. A row without a unit gets the article's unit, or the company's default unit.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-09: external_ref på fakturor
 <!-- /lang -->
 <!-- lang:en -->

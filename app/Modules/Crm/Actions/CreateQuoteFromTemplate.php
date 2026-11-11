@@ -72,7 +72,8 @@ final class CreateQuoteFromTemplate
             return [
                 'description' => (string) $row->description,
                 'quantity' => $quantity,
-                'unit' => (string) ($row->unit ?? 'st'),
+                'unit_id' => (string) $row->unit_id,
+                'unit' => (string) $row->unit,
                 'price' => Money::ofOre($row->unit_price_ore)->format(withCurrency: false),
                 'discount' => $discount,
                 'vat_rate' => $row->vat_rate,
@@ -89,7 +90,9 @@ final class CreateQuoteFromTemplate
             'article' => $article->number,
             'description' => $row->description ?? $article->name,
             'quantity' => $quantity,
-            'unit' => $row->unit ?? $article->unit,
+            // Without a unit of its own the row takes the article's sales unit (SalesRowInput).
+            'unit_id' => (string) $row->unit_id,
+            'unit' => (string) $row->unit,
             'price' => $article->price_ore->format(withCurrency: false),
             'discount' => $discount,
             'vat_rate' => $article->vat_rate,
