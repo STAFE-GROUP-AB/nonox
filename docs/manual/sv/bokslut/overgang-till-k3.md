@@ -10,6 +10,8 @@ sokord: [övergång, K2 till K3, förstagångstillämpning, kapitel 35, ingångs
 
 När ett aktiebolag eller en ekonomisk förening går från K2 till K3 ska det första året med K3 börja med en ingångsbalansräkning som följer K3. De skillnader som uppstår mot K2, till exempel uppskjuten skatt eller en avsättning som K2 inte krävde, redovisas direkt mot eget kapital (K3 punkt 35.11). Det görs en gång, i det första året med K3.
 
+![Övergången till K3: justeringarna mot eget kapital och uppdelningen av en byggnad i komponenter.](/bilder/manual/bokslut/overgang-till-k3.webp)
+
 Sidan finns under **Bokföring → Bokslut**: klicka på **Gå till övergången till K3**. Länken visas för företagets första räkenskapsår som följer K3, när året innan följde K2. Steget och sidan är märkta **Beta**: övergången är inte granskad av en redovisningskonsult. Låt din redovisningskonsult granska den innan du bokför.
 
 > [!NOTE]

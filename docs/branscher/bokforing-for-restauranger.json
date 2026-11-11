@@ -34,6 +34,7 @@
             {"title": "Attest av leverantörsfakturor", "text": "Fakturorna kommer till inkorgen, och en annan person än den som registrerade attesterar. Betalfilen godkänns också av någon annan innan den kan laddas ner. Det gör det svårare att betala fel faktura.", "features": ["supplier_invoices", "payment_files", "inbox"]},
             {"title": "Resultat per enhet", "text": "Märk verifikationsrader och leverantörsfakturor med kostnadsställe, till exempel restaurang och catering, och ta fram resultatet per kostnadsställe som PDF eller CSV.", "features": ["cost_centres", "reports"]},
             {"title": "Moms och bank utan dubbelarbete", "text": "Momsen räknas fram ur bokföringen och blir en fil till Skatteverket. Bankavstämningen visar vilka kortutbetalningar och betalningar som ännu inte stämmer.", "features": ["vat_return", "bank_reconciliation"]},
+            {"title": "Recept, marginal och svinn", "text": "Lägg in recepten med ingredienser, svinn och utbyte, så räknar NONOX ut portionskostnaden och täckningsbidraget per rätt utifrån lagrets värde. Svinn med orsak registrerar du på sidan eller med mobilens Svinn-ruta, och personalmat dras från lagret. NONOX ändrar aldrig ett pris. Kök är en modul som du slår på under Inställningar → Moduler, och den bygger på modulen Lager.", "features": ["kitchen_recipes", "kitchen_waste", "kitchen_variance"]},
             {"title": "Gröna Riks i lönen", "text": "Slå på modulen Avtal och välj Gröna Riks, som medlem i Visita eller med hängavtal. Minimilönen kontrolleras per lönegrupp, ålder och branschvana, och OB- och övertidstimmar från Planering eller ett annat schemasystem prissätts med avtalets satser. Värdena kommer med källa och används först när en namngiven person har kontrollerat versionen mot avtalet.", "features": ["agreements"]}
         ]
     },
@@ -50,7 +51,7 @@
     },
     "limits": [
         {"text": "Med Planering och Avtal räknas OB ur passens klockslag, och övertid och mertid per art enligt Gröna Riks, också tillägget för timanställda. Med ett annat avtal eller utan kollektivavtal går månadsavlönades övertid på en löneart du väljer, och timanställdas tid utöver schemat betalas bara som timlön. Utan Planering lägger du in OB och övertid själv. Semesterskulden och delar av sjuklönereglerna räknas inte enligt avtalet ännu."},
-        {"text": "NONOX är inget kassasystem och har inga recept eller råvaruuttag per sålt rätt; lagret räknas vid inventeringen i modulen Lager. Du behåller kassan; NONOX bokför dagsrapporten."},
+        {"text": "NONOX är inget kassasystem. Du behåller kassan; NONOX bokför dagsrapporten. Recept, svinn och marginal finns i modulen Kök, men råvaruuttag per sålt rätt kräver att kassans försäljning kommer in per rätt, och kassakopplingarna är inte i drift än; tills dess jämförs svinn och personalmat med inventeringen."},
         {"text": "Personalliggaren visas och exporteras som PDF, CSV och XML vid kontrollbesök, men skickas inte direkt till Skatteverket ännu."},
         {"text": "NONOX har ett öppet API med webhooks, men inget kassasystem har ännu byggt en färdig koppling till det, så kassan kan inte kopplas direkt till NONOX än. Kassasystemen och deras integrationsplattformar kan bygga kopplingen mot API:t. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "pos_integrations"}
     ],

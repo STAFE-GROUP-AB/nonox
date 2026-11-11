@@ -10,6 +10,8 @@ sokord: [uppskjuten skatt, uppskjuten skatteskuld, uppskjuten skattefordran, tem
 
 Ett aktiebolag eller en ekonomisk förening som följer K3 redovisar uppskjuten skatt när det redovisade värdet på en tillgång eller skuld skiljer sig från det skattemässiga värdet. Ett vanligt exempel är en byggnad som skrivs av snabbare i deklarationen än i bokföringen. Skillnaden kallas en temporär skillnad, och skatten på den bokförs som en uppskjuten skatteskuld eller skattefordran.
 
+![Uppskjuten skatt för ett räkenskapsår med K3, där posterna läggs upp och bekräftas.](/bilder/manual/bokslut/uppskjuten-skatt.webp)
+
 Sidan finns under **Bokföring → Bokslut**, i **2. Bokslutsverifikationer**: klicka på **Gå till uppskjuten skatt**. Länken visas för räkenskapsår som följer K3, i aktiebolag och ekonomiska föreningar. För andra år förklarar sidan varför det inte finns någon uppskjuten skatt att räkna fram. Steget är märkt **Beta**: beräkningen är inte granskad av en redovisningskonsult. Låt din redovisningskonsult granska den.
 
 > [!NOTE]

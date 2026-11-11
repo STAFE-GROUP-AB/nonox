@@ -10,6 +10,8 @@ sokord: [K2, K3, regelverk, BFNAR 2016:10, BFNAR 2012:1, BFNAR 2025:2, byta rege
 
 Sidan **Regelverk** under **Bokföring → Bokslut** visar för ett räkenskapsår om företaget får välja K2 eller ska tillämpa K3. Den går igenom villkoren i K2 (BFNAR 2016:10 punkt 1.1–1.1C i lydelsen enligt BFNAR 2025:2), visar vad NONOX ser i bokföringen och frågar efter resten. Allt som ändras när du sparar visas innan du sparar. Du når sidan från bokslutet (**Se om företaget får använda K2 eller ska använda K3**) och från företagets inställningar.
 
+![Sidan Regelverk för ett företag som följer K3, med frågorna som NONOX inte kan svara på själv.](/bilder/manual/bokslut/regelverk.webp)
+
 Överst väljer du räkenskapsår. Rutan under visar svaret för året:
 
 - **Företaget får välja K2 eller K3** – enligt uppgifterna och era svar är inget av hindren för K2 uppfyllt. K3 får alltid väljas.

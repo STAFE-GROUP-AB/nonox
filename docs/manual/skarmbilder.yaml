@@ -295,3 +295,7 @@ flytta/las-in-register-rapport: { foretag: konsult, rutt: import.registers.show,
 
 # Prova utan att registrera: needs the demo switched on in /hq (instance setting demo.enabled) in the demo database.
 kom-igang/prova-utan-att-registrera: { foretag: konsult, rutt: demo.show, anvandare: gast, text: 'Prova NONOX på ett påhittat företag.' }
+
+bokslut/regelverk: { foretag: aktiebolagk3, rutt: accounting.closingFramework }
+bokslut/overgang-till-k3: { foretag: aktiebolagk3, rutt: accounting.closing.k3Transition }
+bokslut/uppskjuten-skatt: { foretag: aktiebolagk3, rutt: accounting.closing.deferredTax }
