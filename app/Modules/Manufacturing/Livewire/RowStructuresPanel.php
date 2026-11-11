@@ -15,6 +15,7 @@ use App\Modules\Inventory\Models\BillOfMaterials;
 use App\Modules\Manufacturing\Actions\SaveRowStructure;
 use App\Modules\Manufacturing\Livewire\Concerns\ManufacturingPage;
 use App\Modules\Manufacturing\Models\Operation;
+use App\Modules\Manufacturing\Models\ProductionOrder;
 use App\Modules\Manufacturing\Models\RowStructure;
 use App\Modules\Manufacturing\Models\RowStructureLine;
 use App\Modules\Manufacturing\Support\DocumentCosting;
@@ -236,6 +237,11 @@ class RowStructuresPanel extends Component
             'operations' => $book->operations,
             'editable' => Gate::allows('update', $document),
             'canManage' => $this->can('manage'),
+            // Production orders made for the rows of a customer order (ADR-071 §8).
+            'productionOrders' => $document->kind === SalesDocument::ORDER
+                ? ProductionOrder::query()->where('sales_document_id', $document->id)->orderBy('number')->get(['id', 'number', 'status', 'sales_line_key'])->groupBy('sales_line_key')
+                : collect(),
+            'canProduce' => $document->kind === SalesDocument::ORDER && $document->isOpen() && $this->can('manage'),
         ];
 
         if ($this->editingKey !== null) {

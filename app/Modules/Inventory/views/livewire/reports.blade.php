@@ -147,6 +147,33 @@
                     </ul>
                 @endif
 
+                @foreach($plan['groups'] ?? [] as $group)
+                    @foreach($group['additions'] ?? [] as $addition)
+                        <h3 class="mb-2 text-sm font-semibold text-ink">{{ $addition['label'] }} · {{ __(':stock mot :change', ['stock' => $group['stock_account'], 'change' => $group['change_account']]) }}</h3>
+                        @if($addition['lines'] === [])
+                            <p class="mb-6 text-sm text-gray-600">{{ __('Inget pågår på årets sista dag. Saldot på kontot bokförs bort.') }}</p>
+                        @else
+                            <div class="mb-6 overflow-x-auto">
+                                <table class="min-w-full text-sm">
+                                    <tbody class="divide-y divide-stone-100">
+                                        @foreach($addition['lines'] as $line)
+                                            <tr wire:key="addition-{{ $addition['key'] }}-{{ $loop->index }}">
+                                                <td class="py-2 pr-4 tabular-nums">{{ $line['reference'] }}</td>
+                                                <td class="py-2 pr-4">{{ $line['name'] }}</td>
+                                                <td class="py-2 text-right"><x-ui.amount :money="$money($line['value_ore'])" /></td>
+                                            </tr>
+                                        @endforeach
+                                        <tr class="font-semibold">
+                                            <td class="py-2 pr-4" colspan="2">{{ __('Summa') }}</td>
+                                            <td class="py-2 text-right"><x-ui.amount :money="$money($addition['value_ore'])" /></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    @endforeach
+                @endforeach
+
                 @include('inventory::livewire.partials.valuation-table', ['valuation' => $closing])
             @endif
         </x-ui.card>
