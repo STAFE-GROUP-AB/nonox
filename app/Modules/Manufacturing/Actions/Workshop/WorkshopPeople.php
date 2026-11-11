@@ -34,6 +34,9 @@ final class WorkshopPeople
 {
     public const string DISK = 'local';
 
+    /** The wording of the consent shown when the photo is saved (the checkbox text on the admin page); raise it when the text changes. */
+    public const string CONSENT_VERSION = 'v1';
+
     public const int PHOTO_SIZE = 256;
 
     /** About a 48-megapixel phone photo; larger is refused before decoding. */
@@ -107,29 +110,29 @@ final class WorkshopPeople
         $path = "manufacturing/workshop-photos/{$company->id}/".basename('person-'.Str::uuid().'.jpg');
         Storage::disk(self::DISK)->put($path, $jpeg);
 
-        $person->forceFill(['photo_path' => $path, 'photo_consent_at' => CarbonImmutable::now()])->save();
+        $person->forceFill(['photo_path' => $path, 'photo_consent_at' => CarbonImmutable::now(), 'photo_consent_version' => self::CONSENT_VERSION])->save();
 
         Audit::record('manufacturing.terminal_photo_set', $person, ['consent' => true], $company, $user);
     }
 
     public function removePhoto(User $user, Company $company, WorkshopPerson $person): void
     {
-        $this->authorize($user, $company);
+        $this->authorize($user, $company, false);
         $this->deletePhotoFile($person);
-        $person->forceFill(['photo_path' => null, 'photo_consent_at' => null])->save();
+        $person->forceFill(['photo_path' => null, 'photo_consent_at' => null, 'photo_consent_version' => null])->save();
 
         Audit::record('manufacturing.terminal_photo_removed', $person, [], $company, $user);
     }
 
     public function archive(User $user, Company $company, WorkshopPerson $person, bool $archived): void
     {
-        $this->authorize($user, $company);
+        $this->authorize($user, $company, false);
         $person->forceFill(['archived_at' => $archived ? CarbonImmutable::now() : null])->save();
 
         // An archived person keeps no photo on the terminal's disk longer than needed.
         if ($archived) {
             $this->deletePhotoFile($person);
-            $person->forceFill(['photo_path' => null, 'photo_consent_at' => null])->save();
+            $person->forceFill(['photo_path' => null, 'photo_consent_at' => null, 'photo_consent_version' => null])->save();
         }
 
         Audit::record($archived ? 'manufacturing.terminal_person_archived' : 'manufacturing.terminal_person_restored', $person, [], $company, $user);
@@ -141,7 +144,7 @@ final class WorkshopPeople
      */
     public function delete(User $user, Company $company, WorkshopPerson $person): bool
     {
-        $this->authorize($user, $company);
+        $this->authorize($user, $company, false);
 
         if (WorkshopTimeEntry::query()->where('person_id', $person->id)->exists()) {
             $this->archive($user, $company, $person, true);
@@ -241,10 +244,19 @@ final class WorkshopPeople
         return (string) ob_get_clean();
     }
 
-    private function authorize(User $user, Company $company): void
+    /**
+     * Setting people up needs the module and the terminal on. Withdrawing a
+     * photo, archiving or deleting a person does not: those must work also
+     * with the terminal or the module off, as long as the time is kept
+     * (GDPR art. 7.3 and 17; ManufacturingModule::archivePermissions).
+     */
+    private function authorize(User $user, Company $company, bool $setup = true): void
     {
-        app(ModuleManager::class)->ensureEnabled(ManufacturingModule::KEY, $company);
         Gate::forUser($user)->authorize('terminal', [WorkshopPerson::class, $company]);
-        abort_unless(ManufacturingSettings::terminalEnabled($company), 404);
+
+        if ($setup) {
+            app(ModuleManager::class)->ensureEnabled(ManufacturingModule::KEY, $company);
+            abort_unless(ManufacturingSettings::terminalEnabled($company), 404);
+        }
     }
 }

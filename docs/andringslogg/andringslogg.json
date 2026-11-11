@@ -35,7 +35,7 @@
       "id": "2026-11-11-verkstadsterminal",
       "datum": "2026-11-11T14:00:00+01:00",
       "rubrik": "Verkstadsterminal och efterkalkyl i Tillverkning",
-      "beskrivning": "Surfplattor i verkstaden där var och en trycker på sin bild, skriver sin kod och rapporterar tid på öppna tillverkningsorder; tiden blir orderns arbetskostnad. Efterkalkylen jämför kalkylerad och rapporterad tid per produkt och arbetssteg, visar köer mot kapacitet och vad ordrarna väntar på, aldrig per person.",
+      "beskrivning": "Surfplattor i verkstaden där var och en trycker på sin bild, skriver sin kod och rapporterar tid på öppna tillverkningsorder; tiden blir orderns arbetskostnad. Efterkalkylen jämför kalkylerad och rapporterad tid per produkt och arbetssteg, visar köer mot kapacitet och vad ordrarna väntar på, utan vy per person.",
       "typ": "Nytt",
       "omrade": "Lager"
     },

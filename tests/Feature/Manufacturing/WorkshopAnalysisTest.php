@@ -12,6 +12,7 @@ use App\Modules\Manufacturing\ManufacturingSettings;
 use App\Modules\Manufacturing\Models\Operation;
 use App\Modules\Manufacturing\Models\ProductionLabourEntry;
 use App\Modules\Manufacturing\Models\ProductionOrder;
+use App\Modules\Manufacturing\Models\WorkshopTimeEntry;
 use App\Modules\Manufacturing\Support\WorkshopAnalysis;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -207,19 +208,53 @@ it('runs a fixed number of queries whatever the number of products and orders', 
     expect($count())->toBe($few)->and($few)->toBeLessThanOrEqual(20);
 });
 
-it('never reads who reported the time', function () {
+it('reads no person, only how many different people reported on a product and operation', function () {
     plant($this);
     [$device] = Workshop::device($this->owner, $this->company);
     app(RecordTerminalTime::class)($device, Workshop::person($this->owner, $this->company), Workshop::order($this, '1')->operations()->first()->id, 1, 0);
 
     $sql = [];
     DB::listen(function ($query) use (&$sql): void {
-        $sql[] = $query->sql;
+        $sql[] = strtolower($query->sql);
     });
     WorkshopAnalysis::for(12);
 
+    $touching = array_values(array_filter($sql, fn (string $query): bool => str_contains($query, 'workshop_time_entries')));
+
     expect($sql)->not->toBeEmpty()
-        ->and(implode("\n", $sql))->not->toContain('workshop_time_entries')->not->toContain('workshop_people')->not->toContain('person');
+        ->and(implode("\n", $sql))->not->toContain('workshop_people')
+        ->and($touching)->toHaveCount(1)
+        ->and($touching[0])->toContain('count(distinct entries.person_id)')
+        ->and($touching[0])->not->toContain('select entries.person_id');
+});
+
+it('hides spread, series and trend where fewer than three people reported, and shows them from three', function () {
+    plant($this);
+    [$device] = Workshop::device($this->owner, $this->company);
+    $people = collect(['Anna Lind', 'Bo Berg', 'Cia Ek'])->map(fn (string $name) => Workshop::person($this->owner, $this->company, $name));
+    $cut = fn (): int => Operation::query()->where('name', 'Kapning')->value('id');
+
+    // The planted orders' Kapning was entered at finish: no person, so nothing is hidden.
+    $find = fn () => collect(WorkshopAnalysis::for(12)['products'])->firstWhere('operation', 'Kapning');
+    expect($find()['detail_hidden'])->toBeFalse()->and($find()['spread'])->not->toBeNull();
+
+    // Two people report on a finished order's Kapning (written as terminal time on an order that is then finished).
+    $order = finishedOrder($this, '2026-10-28', ['cut' => 40]);
+    $step = $order->operations()->orderBy('position')->first();
+    foreach ([$people[0], $people[1]] as $person) {
+        $labour = ProductionLabourEntry::create(['production_order_id' => $order->id, 'production_order_operation_id' => $step->id, 'source' => 'TERMINAL', 'minutes' => 1, 'hourly_cost_ore' => 45_000, 'cost_ore' => 0, 'worked_on' => '2026-10-28']);
+        WorkshopTimeEntry::create(['person_id' => $person->id, 'device_id' => $device->id, 'production_order_id' => $order->id, 'production_order_operation_id' => $step->id, 'production_labour_entry_id' => $labour->id, 'minutes' => 1, 'worked_on' => '2026-10-28', 'entered_at' => '2026-10-28 10:00:00']);
+    }
+
+    $hidden = $find();
+    expect($hidden['detail_hidden'])->toBeTrue()->and($hidden['spread'])->toBeNull()->and($hidden['series'])->toBe([])->and($hidden['trend'])->toBeNull()
+        ->and($hidden['planned_minutes'])->toBeGreaterThan(0)->and($hidden['orders'])->toBe(5);
+
+    $labour = ProductionLabourEntry::create(['production_order_id' => $order->id, 'production_order_operation_id' => $step->id, 'source' => 'TERMINAL', 'minutes' => 1, 'hourly_cost_ore' => 45_000, 'cost_ore' => 0, 'worked_on' => '2026-10-28']);
+    WorkshopTimeEntry::create(['person_id' => $people[2]->id, 'device_id' => $device->id, 'production_order_id' => $order->id, 'production_order_operation_id' => $step->id, 'production_labour_entry_id' => $labour->id, 'minutes' => 1, 'worked_on' => '2026-10-28', 'entered_at' => '2026-10-28 10:00:00']);
+
+    expect($find()['detail_hidden'])->toBeFalse()->and($find()['spread'])->not->toBeNull()->and($cut())->toBeInt();
+    $this->get(route('manufacturing.analysis'))->assertOk();
 });
 
 it('shows the page to production:analyse only and carries no per-person view', function () {

@@ -83,7 +83,7 @@ final class RecordTerminalTime
 
             $operation = ProductionOrderOperation::query()->with('operation')->findOrFail($entry->production_order_operation_id);
 
-            return $this->write($device, $person, $order, $operation, -$entry->minutes, $entry->worked_on, $entry);
+            return $this->write($device, $person, $order, $operation, -$entry->minutes, CarbonImmutable::today(), $entry);
         });
     }
 

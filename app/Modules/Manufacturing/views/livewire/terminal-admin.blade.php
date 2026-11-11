@@ -4,18 +4,21 @@
         <ul class="list-disc space-y-1 ps-5 text-sm text-gray-700">
             <li>{{ __('Tiden på verkstadsterminalen är tid på en tillverkningsorder. Det är inte närvaro, och den ersätter inte personalliggaren.') }}</li>
             <li>{{ __('Den är inte lönetid och går inte till lönen. Terminalen och lönen är inte kopplade.') }}</li>
-            <li>{{ __('Var och en ser bara sina egna rapporter på surfplattan. Rapporterna används för efterkalkylen per produkt och arbetssteg, inte för att jämföra personer.') }}</li>
+            <li>{{ __('Var och en ser bara sina egna rapporter på surfplattan. Rapporterna används för efterkalkylen per produkt och arbetssteg. Det finns ingen vy per person, men i en liten verkstad kan siffrorna för ett arbetssteg ändå gå att koppla till en person.') }}</li>
             <li>{{ __('Namnet på den som rapporterat sparas 24 månader. Därefter tas det bort ur rapporten, och minuterna finns kvar som kostnad på ordern.') }}</li>
         </ul>
     </x-ui.card>
 
-    <x-ui.card :title="__('Verkstadsterminalen')" :description="$enabled ? __('Påslagen. Kopplade surfplattor kan rapportera tid.') : __('Avstängd. Slå på den för att koppla surfplattor och lägga till personer.')">
-        @if($enabled)
-            <x-secondary-button type="button" wire:click="enable(false)" wire:confirm="{{ __('Stänga av verkstadsterminalen? Surfplattorna kan inte rapportera tid förrän du slår på den igen. Inget raderas.') }}">{{ __('Stäng av') }}</x-secondary-button>
-        @else
-            <x-button type="button" wire:click="enable(true)">{{ __('Slå på verkstadsterminalen') }}</x-button>
-        @endif
-    </x-ui.card>
+    @if($moduleOn)
+        <x-ui.card :title="__('Verkstadsterminalen')" :description="$enabled ? __('Påslagen. Kopplade surfplattor kan rapportera tid.') : __('Avstängd. Slå på den för att koppla surfplattor och lägga till personer.')">
+            @if($enabled)
+                <x-secondary-button type="button" wire:click="enable(false)" wire:confirm="{{ __('Stänga av verkstadsterminalen? Surfplattorna kan inte rapportera tid förrän du slår på den igen. Inget raderas.') }}">{{ __('Stäng av') }}</x-secondary-button>
+            @else
+                <label class="mb-4 flex items-start gap-3 text-sm text-gray-700"><x-checkbox wire:model="informed" /> <span>{{ __('Personalen är informerad om vad terminalen sparar och varför, och jag har bedömt om förhandlingsskyldighet enligt medbestämmandelagen gäller innan terminalen tas i bruk.') }}</span></label>
+                <x-button type="button" wire:click="enable(true)">{{ __('Slå på verkstadsterminalen') }}</x-button>
+            @endif
+        </x-ui.card>
+    @endif
 
     @if($enabled)
         @if($pairing)
@@ -98,8 +101,10 @@
                 </form>
             </x-ui.card>
         @endif
+    @endif
 
-        <x-ui.card :title="__('Personer på surfplattan')" :description="__('Bara namn, kod och ett frivilligt foto. Inget personnummer. De här personerna behöver inget konto i NONOX.')">
+    <x-ui.card :title="__('Personer på surfplattan')" :description="__('Bara namn, kod och ett frivilligt foto. Inget personnummer. De här personerna behöver inget konto i NONOX.')">
+            @if($enabled)
             <form wire:submit="addPerson" class="mb-6 flex flex-wrap items-end gap-3">
                 <x-ui.field for="person-name" :label="__('Namn')" error="name">
                     <input id="person-name" wire:model="personName" maxlength="100" class="{{ $input }} w-64" required>
@@ -109,6 +114,7 @@
                 </x-ui.field>
                 <x-button type="submit">{{ __('Lägg till person') }}</x-button>
             </form>
+            @endif
 
             @if($people->isEmpty())
                 <x-ui.empty-state :title="__('Inga personer ännu')">{{ __('Lägg till dem som ska rapportera tid. Den som saknar kod syns inte på surfplattan.') }}</x-ui.empty-state>
@@ -124,8 +130,10 @@
                             </div>
                             <div class="whitespace-nowrap">
                                 @if(! $person->archived_at)
-                                    <button type="button" wire:click="startCode({{ $person->id }})" class="text-sm font-semibold text-accent-700 underline">{{ $person->hasCode() ? __('Ny kod') : __('Välj kod') }}</button>
-                                    <button type="button" wire:click="startPhoto({{ $person->id }})" class="ms-3 text-sm font-semibold text-accent-700 underline">{{ __('Foto') }}</button>
+                                    @if($enabled)
+                                        <button type="button" wire:click="startCode({{ $person->id }})" class="text-sm font-semibold text-accent-700 underline">{{ $person->hasCode() ? __('Ny kod') : __('Välj kod') }}</button>
+                                        <button type="button" wire:click="startPhoto({{ $person->id }})" class="ms-3 text-sm font-semibold text-accent-700 underline">{{ __('Foto') }}</button>
+                                    @endif
                                     @if($person->photo_path)
                                         <button type="button" wire:click="removePhoto({{ $person->id }})" class="ms-3 text-sm font-semibold text-gray-700 underline">{{ __('Ta bort foto') }}</button>
                                     @endif
@@ -140,6 +148,28 @@
                     @endforeach
                 </ul>
             @endif
+        </x-ui.card>
+
+    <x-ui.card :title="__('Information till personalen')" :description="__('Visa eller skriv ut den här texten för dem som rapporterar tid. Det är företaget som är ansvarigt för uppgifterna.')">
+        <p class="text-sm text-gray-700">{{ __('Vad sparas? När du rapporterar tid på surfplattan sparas ditt namn, vilken order och vilket arbetssteg, dagen, minuterna och vilken surfplatta det gjordes på. Det används för att räkna ut vad ordern kostade och för efterkalkylen per produkt och arbetssteg. Det är inte närvaro och inte lönetid. Ditt namn tas bort ur rapporten efter 24 månader. Du kan be arbetsgivaren om ett utdrag med dina uppgifter, och ett eventuellt foto kan du när som helst be att få borttaget.') }}</p>
+    </x-ui.card>
+
+    @if($flags->isNotEmpty())
+        <x-ui.card :title="__('Markeringar av väntande arbetssteg')" :description="__('Orsaken är fri text och kan ha fått med ett namn. Ta bort orsaken när den inte behövs; tiderna finns kvar. Orsaker som är över ett år gamla tas bort automatiskt.')">
+            <ul class="divide-y divide-stone-100">
+                @foreach($flags as $flag)
+                    <li class="flex flex-wrap items-center justify-between gap-3 py-2 text-sm" wire:key="flag-{{ $flag->id }}">
+                        <div>
+                            <span class="font-semibold text-ink">{{ $flag->order?->reference() }}</span>
+                            <span class="text-gray-600"> · {{ $flag->kind->label() }} · {{ $flag->raised_at->format('Y-m-d') }}</span>
+                            <p class="text-gray-700">{{ $flag->reason }}</p>
+                        </div>
+                        @if($flag->reason !== \App\Modules\Manufacturing\Actions\Workshop\WaitingFlags::ERASED)
+                            <button type="button" wire:click="eraseReason({{ $flag->id }})" wire:confirm="{{ __('Ta bort orsaken? Markeringen och tiderna finns kvar.') }}" class="text-sm font-semibold text-gray-700 underline">{{ __('Ta bort orsaken') }}</button>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
         </x-ui.card>
     @endif
 </div>

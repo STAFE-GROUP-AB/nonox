@@ -344,7 +344,8 @@ function peopleScreen() {
             state.people.length === 0
                 ? el('p', { class: 'w-empty' }, t('people_empty'))
                 : el('div', { class: 'w-people' }, state.people.map(tile)),
-            note()),
+            note(),
+            el('p', { class: 'w-note' }, t('what_is_saved'))),
     ];
 }
 
@@ -394,7 +395,7 @@ function ordersScreen() {
                     el('span', { class: 'w-ref' }, order.reference),
                     el('span', { class: 'w-product' }, order.product),
                     el('span', { class: 'w-meta' }, fill(t('quantity'), { quantity: order.quantity })),
-                    order.customer ? el('span', { class: 'w-meta' }, fill(t('customer'), { customer: [order.customer, order.your_reference].filter(Boolean).join(', ') })) : null,
+                    order.customer ? el('span', { class: 'w-meta' }, fill(t('customer'), { customer: order.customer })) : null,
                     order.due_on ? el('span', { class: 'w-meta' }, fill(t('due'), { date: order.due_on })) : null,
                     order.operations.some((operation) => operation.waiting) ? el('span', { class: 'w-flag' }, t('waiting_button')) : null,
                 )))),

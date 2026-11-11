@@ -14,7 +14,7 @@ Efterkalkylen visar vad ni kalkylerade mot vad som rapporterades i verkstaden, p
 ![Efterkalkylen med kalkyl mot utfall per produkt och arbetssteg, köer och order som väntar.](/bilder/manual/tillverkning/efterkalkyl.webp)
 
 > [!NOTE]
-> Efterkalkylen är bara per produkt och arbetssteg. Det finns ingen vy per person, och rapporterna går inte att jämföra mellan personer.
+> Efterkalkylen är per produkt och arbetssteg. Det finns ingen vy per person. I en liten verkstad kan ändå siffrorna för ett arbetssteg gå att koppla till den som gör det. Därför visas spridning och utveckling inte för en produkt och ett arbetssteg där färre än tre personer har rapporterat tid; summan visas alltid. Tänk på det innan ni använder siffrorna, och fråga en jurist om ni har kollektivavtal.
 
 ## Kalkyl mot utfall
 

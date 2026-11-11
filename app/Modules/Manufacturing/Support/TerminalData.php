@@ -73,7 +73,6 @@ final class TerminalData
             'reference' => $order->reference(),
             'product' => $order->article->name ?? $order->name,
             'customer' => $order->salesDocument?->customer?->name,
-            'your_reference' => $order->salesDocument?->your_reference,
             'quantity' => Quantity::format($order->quantity_milli).' '.($order->article?->stockUnitCode() ?? ''),
             'due_on' => $order->due_on?->toDateString(),
             'status' => $order->status->value,

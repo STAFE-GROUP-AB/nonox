@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Manufacturing\Actions\Workshop;
 
+use App\Models\Company;
+use App\Models\User;
 use App\Modules\Manufacturing\Domain\WaitingKind;
 use App\Modules\Manufacturing\Models\ProductionOrder;
 use App\Modules\Manufacturing\Models\ProductionOrderOperation;
@@ -12,6 +14,7 @@ use App\Modules\Manufacturing\Models\WorkshopWaitingFlag;
 use App\Support\Audit\Audit;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -27,6 +30,23 @@ use Illuminate\Validation\ValidationException;
  */
 final class WaitingFlags
 {
+    /** What a reason is replaced by when it is erased or has been kept long enough. */
+    public const string ERASED = '–';
+
+    /** Months after which a reason is blanked by privacy:prune; kind and times stay. */
+    public const int REASON_RETENTION_MONTHS = 12;
+
+    /** Blanks the free text of a flag (it may have named a person); the kind and the times stay. */
+    public function eraseReason(User $user, Company $company, WorkshopWaitingFlag $flag): void
+    {
+        // Also with the module off, like withdrawing a photo: the free text may name someone.
+        Gate::forUser($user)->authorize('terminal', [WorkshopDevice::class, $company]);
+
+        $flag->forceFill(['reason' => self::ERASED])->save();
+
+        Audit::record('manufacturing.terminal_waiting_reason_erased', $flag, ['production_order_operation_id' => $flag->production_order_operation_id], $company, $user);
+    }
+
     public function raise(WorkshopDevice $device, int $operationId, WaitingKind $kind, string $reason): WorkshopWaitingFlag
     {
         $reason = trim($reason);

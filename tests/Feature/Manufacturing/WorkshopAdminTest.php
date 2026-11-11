@@ -5,13 +5,16 @@ declare(strict_types=1);
 use App\Models\AuditLog;
 use App\Modules\Manufacturing\Actions\Workshop\PruneWorkshopTime;
 use App\Modules\Manufacturing\Actions\Workshop\RecordTerminalTime;
+use App\Modules\Manufacturing\Actions\Workshop\WaitingFlags;
 use App\Modules\Manufacturing\Actions\Workshop\WorkshopDevices;
 use App\Modules\Manufacturing\Actions\Workshop\WorkshopPeople;
+use App\Modules\Manufacturing\Domain\WaitingKind;
 use App\Modules\Manufacturing\Livewire\Workshop\TerminalAdminPage;
 use App\Modules\Manufacturing\ManufacturingSettings;
 use App\Modules\Manufacturing\Models\WorkshopDevice;
 use App\Modules\Manufacturing\Models\WorkshopPerson;
 use App\Modules\Manufacturing\Models\WorkshopTimeEntry;
+use App\Modules\ModuleDisabledException;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -47,6 +50,9 @@ it('is off until it is switched on, and then pairs tablets and adds people', fun
     Livewire::test(TerminalAdminPage::class)
         ->assertSee('Det här är produktionstid')
         ->assertSee('Avstängd')
+        ->call('enable', true)
+        ->assertSee('Avstängd')
+        ->set('informed', true)
         ->call('enable', true)
         ->assertSee('Påslagen')
         ->set('deviceName', 'Snickeriet')->call('registerDevice')
@@ -146,11 +152,67 @@ it('gives the terminal to owner and admin only, and the analysis also to the acc
     'auditor' => ['auditor', false, false],
 ]);
 
-it('answers 404 on the admin page and the analysis while the module is off', function () {
+it('answers 404 on the analysis while the module is off, and keeps the people reachable for withdrawing and the extract', function () {
+    Workshop::enable($this->company, $this->owner);
+    $person = Workshop::person($this->owner, $this->company);
+    Storage::fake('local');
+    app(WorkshopPeople::class)->setPhoto($this->owner, $this->company, $person, UploadedFile::fake()->image('a.jpg'), true);
     app(ModuleManager::class)->disable('manufacturing', $this->company, $this->owner, confirmed: true);
 
-    $this->get(route('manufacturing.terminal.admin'))->assertNotFound();
     $this->get(route('manufacturing.analysis'))->assertNotFound();
+    $this->get(route('manufacturing.terminal.admin'))->assertOk()->assertSee($person->name)->assertDontSee('Slå på verkstadsterminalen')->assertDontSee('Lägg till person');
+    $this->get(route('privacy.export.workshopPerson', $person))->assertOk();
+
+    Livewire::test(TerminalAdminPage::class)->call('removePhoto', $person->id)->assertHasNoErrors();
+    expect($person->refresh()->photo_path)->toBeNull()->and($person->photo_consent_version)->toBeNull();
+    expect(fn () => app(WorkshopPeople::class)->create($this->owner, $this->company, ['name' => 'Ny']))->toThrow(ModuleDisabledException::class);
+
+    Livewire::test(TerminalAdminPage::class)->call('archivePerson', $person->id, true);
+    expect($person->refresh()->archived_at)->not->toBeNull();
+    Livewire::test(TerminalAdminPage::class)->call('deletePerson', $person->id);
+    expect(WorkshopPerson::query()->find($person->id))->toBeNull();
+});
+
+it('keeps the people reachable with the terminal switched off, and stores the consent version with a photo', function () {
+    Storage::fake('local');
+    Workshop::enable($this->company, $this->owner);
+    $person = Workshop::person($this->owner, $this->company);
+    app(WorkshopPeople::class)->setPhoto($this->owner, $this->company, $person, UploadedFile::fake()->image('a.jpg'), true);
+    expect($person->refresh()->photo_consent_version)->toBe('v1');
+
+    app(ModuleManager::class)->updateSettings('manufacturing', $this->company, $this->owner, ['terminal_enabled' => false]);
+
+    Livewire::test(TerminalAdminPage::class)->assertSee($person->name)->assertSee('Ladda ner registerutdrag')->call('removePhoto', $person->id);
+    expect($person->refresh()->photo_path)->toBeNull();
+    expect(fn () => app(WorkshopPeople::class)->setCode($this->owner, $this->company, $person, '7391'))->toThrow(HttpException::class);
+});
+
+it('lets a manager remove a waiting reason, and blanks old reasons on privacy:prune, keeping kind and times', function () {
+    Workshop::enable($this->company, $this->owner);
+    [$device] = Workshop::device($this->owner, $this->company);
+    $order = Workshop::order($this);
+    $flags = app(WaitingFlags::class);
+    $first = $flags->raise($device, $order->operations()->orderBy('position')->first()->id, WaitingKind::Material, 'Anna ringde leverantören');
+    $second = $flags->raise($device, $order->operations()->orderBy('position')->get()[1]->id, WaitingKind::Work, 'Bo är sjuk');
+
+    Livewire::test(TerminalAdminPage::class)->assertSee('Anna ringde leverantören')->call('eraseReason', $first->id)->assertDontSee('Anna ringde leverantören');
+    expect($first->refresh()->reason)->toBe('–')->and($first->kind->value)->toBe('MATERIAL')->and($first->raised_at)->not->toBeNull();
+
+    $this->travelTo(CarbonImmutable::parse('2027-11-12 10:00:00'));
+    expect(app(PruneWorkshopTime::class)()['reasons'])->toBe(1)
+        ->and($second->refresh()->reason)->toBe('–')->and($second->kind->value)->toBe('WORK');
+
+    $accountant = Bookkeeping::member($this->company, 'accountant');
+    expect(fn () => $flags->eraseReason($accountant, $this->company, $second))->toThrow(AuthorizationException::class);
+});
+
+it('asks for an acknowledgement before the terminal is switched on, and shows the information text', function () {
+    Livewire::test(TerminalAdminPage::class)
+        ->assertSee('Personalen är informerad')
+        ->call('enable', true)->assertSee('Avstängd')
+        ->set('informed', true)->call('enable', true)->assertSee('Påslagen')->assertSee('Information till personalen')->assertSee('Vad sparas?');
+
+    expect(ManufacturingSettings::terminalEnabled($this->company))->toBeTrue();
 });
 
 it('cuts time entries loose from their person after 24 months, and nothing else', function () {
@@ -167,12 +229,12 @@ it('cuts time entries loose from their person after 24 months, and nothing else'
     $this->travelTo(CarbonImmutable::parse('2028-11-11 10:00:00'));
     $result = app(PruneWorkshopTime::class)();
 
-    expect($result)->toBe(['entries' => 1, 'people' => 0])
+    expect($result)->toBe(['entries' => 1, 'people' => 0, 'reasons' => 0])
         ->and($old->refresh()->person_id)->toBeNull()->and($old->minutes)->toBe(60)->and($old->production_order_id)->toBe($operation->production_order_id)
         ->and($recent->refresh()->person_id)->toBe($person->id);
 
     // Run again: nothing more to do. And privacy:prune runs it.
-    expect(app(PruneWorkshopTime::class)())->toBe(['entries' => 0, 'people' => 0]);
+    expect(app(PruneWorkshopTime::class)())->toBe(['entries' => 0, 'people' => 0, 'reasons' => 0]);
     $this->artisan('privacy:prune')->assertSuccessful()->expectsOutputToContain('workshop_time_entries');
 });
 
@@ -183,7 +245,7 @@ it('removes an archived person with no entries left after retention', function (
 
     $this->travelTo(CarbonImmutable::parse('2028-11-11 10:00:00'));
 
-    expect(app(PruneWorkshopTime::class)())->toBe(['entries' => 0, 'people' => 1])
+    expect(app(PruneWorkshopTime::class)())->toBe(['entries' => 0, 'people' => 1, 'reasons' => 0])
         ->and(WorkshopPerson::query()->count())->toBe(0);
 });
 

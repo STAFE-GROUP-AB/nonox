@@ -96,6 +96,9 @@ class ManufacturingServiceProvider extends ServiceProvider
         Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.ManufacturingModule::KEY])
             ->group(__DIR__.'/routes/web.php');
 
+        $archive = ['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class];
+        Route::middleware($archive)->group(__DIR__.'/routes/archive.php');
+
         // The workshop terminal needs no sign-in: its tablets carry a device token (ADR-071 §7).
         Route::middleware([SecurityHeaders::class, 'throttle:workshop-terminal'])->group(__DIR__.'/routes/terminal.php');
     }

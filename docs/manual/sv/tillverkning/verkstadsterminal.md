@@ -20,7 +20,7 @@ Terminalen kräver modulen Tillverkning och är avstängd tills du slår på den
 
 ## Så här kommer du igång
 
-1. Gå till **Tillverkning → Verkstadsterminal** och välj **Slå på verkstadsterminalen**.
+1. Gå till **Tillverkning → Verkstadsterminal**, bekräfta att personalen är informerad och att du bedömt förhandlingsskyldigheten, och välj **Slå på verkstadsterminalen**. Texten under **Information till personalen** kan du visa eller skriva ut.
 2. Under **Surfplattor** skriver du ett namn, till exempel Snickeriet, och väljer **Lägg till surfplatta**. NONOX visar en kopplingskod och en QR-kod.
 3. Öppna länken i surfplattans webbläsare, eller skanna QR-koden, och skriv koden om den inte fylls i. Koden gäller i 15 minuter och kan bara användas en gång. Lägg gärna sidan på hemskärmen så blir den en egen app i helskärm.
 4. Under **Personer på surfplattan** skriver du namnet och en kod på fyra siffror och väljer **Lägg till person**. Den som saknar kod syns inte på surfplattan.
@@ -56,7 +56,8 @@ Terminalen sparar namnet på den som rapporterat, tillsammans med order, arbetss
 - Namnet tas bort ur rapporten 24 månader efter inmatningen. Minuterna finns kvar som kostnad på ordern.
 - Koden sparas aldrig, bara ett kontrollvärde. Fem felaktiga koder i rad spärrar personen i fem minuter. Efter tre sådana spärrar inom ett dygn är personen spärrad tills du väljer en ny kod, och ägare och administratörer får en avisering. En surfplatta som fått tjugo felaktiga koder på en timme pausas resten av timmen. En ny kod häver spärren.
 - Under **Personer på surfplattan** hämtar du ett **registerutdrag** för en person som begär ut sina uppgifter.
-- Rapporterna används till efterkalkylen per produkt och arbetssteg. Det finns ingen uppföljning per person.
+- Rapporterna används till efterkalkylen per produkt och arbetssteg. Det finns ingen vy per person, men i en liten verkstad kan siffrorna för ett arbetssteg gå att koppla till en person; spridning och utveckling döljs därför när färre än tre personer har rapporterat.
+- Orsaken till en väntande markering är fri text. Under **Verkstadsterminal** kan du ta bort en orsak, och orsaker äldre än ett år tas bort automatiskt.
 
 > [!NOTE]
 > Ägaren ansvarar för att personalen vet vad terminalen sparar och varför. Fråga en jurist om vad som gäller hos er, till exempel om ni har kollektivavtal.

@@ -294,6 +294,7 @@ final class DataSubjectExport
             'foto' => [
                 'sparat' => $person->photo_path !== null,
                 'samtycke_lamnat' => $person->photo_consent_at?->toIso8601String(),
+                'samtyckestext_version' => $person->photo_consent_version,
                 'kommentar' => 'Fotot visas på verkstadsterminalen bara med personens samtycke. Samtycket kan återkallas när som helst, och då raderas fotot.',
             ],
             'rapporterad_tid' => $entries->map(fn (WorkshopTimeEntry $entry): array => [

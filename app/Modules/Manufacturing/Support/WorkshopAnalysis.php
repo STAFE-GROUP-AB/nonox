@@ -12,7 +12,9 @@ use App\Modules\Manufacturing\Models\ProductionLabourEntry;
 use App\Modules\Manufacturing\Models\ProductionOrder;
 use App\Modules\Manufacturing\Models\ProductionOrderOperation;
 use App\Modules\Manufacturing\Models\WorkshopWaitingFlag;
+use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The post-calculation (efterkalkyl, ADR-071 §7): per product and operation
@@ -20,11 +22,15 @@ use Carbon\CarbonImmutable;
  * which way it is going; which operations are bottlenecks; and what
  * the open orders are waiting for, material and work kept apart.
  *
- * It reads the order's own ledgers only: planned minutes, labour entries of
+ * It reads the order's own ledgers: planned minutes, labour entries of
  * the kinds somebody reported (entered at finish and from the terminal;
  * minutes the system filled in from the plan are not "actual"), and the
- * waiting flags. It never reads who reported, so it cannot say anything
- * about a person. The per-person analysis (`per_person_analysis`) is blocked
+ * waiting flags. It never reads who reported, with one exception: a count
+ * of how many different people reported on a product and operation, so
+ * that the variation over time is hidden where one or two people did it
+ * all. Even the totals can relate to a single person in a small workshop:
+ * TODO(legal-verify) whether that is per-person follow-up under MBL 11 and
+ * 19 §§ and GDPR art. 6.1 f and 13. The per-person analysis (`per_person_analysis`) is blocked
  * on a legal review (GDPR art. 6.1 f and 13, MBL 11 and 19 §§) and is not
  * built; nothing here is a step towards it.
  *
@@ -36,6 +42,9 @@ final class WorkshopAnalysis
 
     /** A product needs this many orders before its trend means anything. */
     public const int TREND_MIN_ORDERS = 4;
+
+    /** Spread, series and trend are shown only when at least this many people reported on the product and operation (GDPR, MBL 11 and 19 §§). */
+    public const int MIN_PEOPLE_FOR_DETAIL = 3;
 
     /** Percentage points the newer half must differ by to count as a trend. */
     public const int TREND_THRESHOLD = 5;
@@ -90,6 +99,7 @@ final class WorkshopAnalysis
             ->groupBy('production_order_operation_id')->selectRaw('production_order_operation_id, sum(minutes) as minutes')
             ->pluck('minutes', 'production_order_operation_id');
         $byOrder = $orders->keyBy('id');
+        $people = self::peoplePerProductAndOperation($orders->pluck('id')->all());
 
         /** @var array<string, array{article: string, operation: string, rows: list<array{planned: int, actual: int, on: string}>, unreported: int}> $groups */
         $groups = [];
@@ -128,7 +138,7 @@ final class WorkshopAnalysis
 
         $products = [];
 
-        foreach ($groups as $group) {
+        foreach ($groups as $key => $group) {
             $rows = $group['rows'];
 
             // Nobody reported on this step: there is no actual time to compare.
@@ -140,6 +150,9 @@ final class WorkshopAnalysis
             $actual = array_sum(array_column($rows, 'actual'));
             $deviations = array_map(fn (array $row): int => self::percent($row['actual'] - $row['planned'], $row['planned']), $rows);
 
+            // Where one or two people did all the reporting, the variation over time is theirs in all but name.
+            $hidden = isset($people[$key]) && $people[$key] < self::MIN_PEOPLE_FOR_DETAIL;
+
             $products[] = [
                 'article' => $group['article'],
                 'operation' => $group['operation'],
@@ -148,9 +161,10 @@ final class WorkshopAnalysis
                 'planned_minutes' => $planned,
                 'actual_minutes' => $actual,
                 'deviation_percent' => self::percent($actual - $planned, $planned),
-                'spread' => ['min' => min($deviations), 'median' => self::median($deviations), 'max' => max($deviations)],
-                'series' => array_slice($deviations, -12),
-                'trend' => self::trend($deviations),
+                'detail_hidden' => $hidden,
+                'spread' => $hidden ? null : ['min' => min($deviations), 'median' => self::median($deviations), 'max' => max($deviations)],
+                'series' => $hidden ? [] : array_slice($deviations, -12),
+                'trend' => $hidden ? null : self::trend($deviations),
             ];
         }
 
@@ -163,6 +177,37 @@ final class WorkshopAnalysis
             ...$row,
             'deviation_percent' => self::percent($row['actual'] - $row['planned'], $row['planned']),
         ], $overruns), 0, 5)];
+    }
+
+    /**
+     * How many different people reported time on each product and
+     * operation of these orders, as a count only: which people is never
+     * read. Operations nobody reported on at the terminal (the time was
+     * entered when the order was finished) have no entry, and nothing is
+     * hidden for them.
+     *
+     * @param  list<int>  $orderIds
+     * @return array<string, int> "article-operation" => distinct people
+     */
+    private static function peoplePerProductAndOperation(array $orderIds): array
+    {
+        $rows = DB::table('workshop_time_entries as entries')
+            ->join('production_orders as orders', 'orders.id', '=', 'entries.production_order_id')
+            ->join('production_order_operations as steps', 'steps.id', '=', 'entries.production_order_operation_id')
+            ->where('entries.company_id', CurrentCompany::id())
+            ->whereIn('entries.production_order_id', $orderIds)
+            ->whereNotNull('entries.person_id')
+            ->groupBy('orders.article_id', 'steps.operation_id')
+            ->selectRaw('orders.article_id, steps.operation_id, count(distinct entries.person_id) as people')
+            ->get();
+
+        $counts = [];
+
+        foreach ($rows as $row) {
+            $counts[$row->article_id.'-'.$row->operation_id] = (int) $row->people;
+        }
+
+        return $counts;
     }
 
     /**

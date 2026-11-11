@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $name
  * @property ?string $photo_path
  * @property ?CarbonImmutable $photo_consent_at
+ * @property ?string $photo_consent_version
  * @property ?string $code_salt
  * @property ?string $code_verifier
  * @property int $failed_attempts

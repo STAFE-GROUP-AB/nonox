@@ -79,27 +79,30 @@ final class WorkshopDevices
     {
         $hash = hash('sha256', strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code) ?? ''));
 
-        // The tablet has no company yet: the code is what identifies it.
-        $device = CompanyScope::bypass(fn (): ?WorkshopDevice => WorkshopDevice::query()->where('pairing_code_hash', $hash)->first());
+        // The tablet has no company yet: the code is what identifies it. The row is locked, so two tablets
+        // entering the same code at once cannot both get a token.
+        return DB::transaction(function () use ($hash): ?array {
+            $device = CompanyScope::bypass(fn (): ?WorkshopDevice => WorkshopDevice::query()->where('pairing_code_hash', $hash)->lockForUpdate()->first());
 
-        if (! $device instanceof WorkshopDevice || $device->revoked_at !== null || $device->pairing_expires_at === null || $device->pairing_expires_at->isPast()) {
-            return null;
-        }
+            if (! $device instanceof WorkshopDevice || $device->revoked_at !== null || $device->pairing_expires_at === null || $device->pairing_expires_at->isPast()) {
+                return null;
+            }
 
-        $token = Str::random(64);
+            $token = Str::random(64);
 
-        CurrentCompany::run($device->company_id, function () use ($device, $token): void {
-            $device->forceFill([
-                'token_hash' => hash('sha256', $token),
-                'pairing_code_hash' => null,
-                'pairing_expires_at' => null,
-                'paired_at' => CarbonImmutable::now(),
-            ])->save();
+            CurrentCompany::run($device->company_id, function () use ($device, $token): void {
+                $device->forceFill([
+                    'token_hash' => hash('sha256', $token),
+                    'pairing_code_hash' => null,
+                    'pairing_expires_at' => null,
+                    'paired_at' => CarbonImmutable::now(),
+                ])->save();
 
-            Audit::record('manufacturing.terminal_device_paired', $device, [], $device->company_id);
+                Audit::record('manufacturing.terminal_device_paired', $device, [], $device->company_id);
+            });
+
+            return [$device, $token];
         });
-
-        return [$device, $token];
     }
 
     public function revoke(User $user, Company $company, WorkshopDevice $device): void

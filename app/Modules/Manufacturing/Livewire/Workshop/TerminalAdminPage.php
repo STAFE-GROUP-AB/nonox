@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Modules\Manufacturing\Livewire\Workshop;
 
 use App\Livewire\Concerns\ShowsToasts;
+use App\Modules\Manufacturing\Actions\Workshop\WaitingFlags;
 use App\Modules\Manufacturing\Actions\Workshop\WorkshopDevices;
 use App\Modules\Manufacturing\Actions\Workshop\WorkshopPeople;
 use App\Modules\Manufacturing\ManufacturingModule;
 use App\Modules\Manufacturing\ManufacturingSettings;
 use App\Modules\Manufacturing\Models\WorkshopDevice;
 use App\Modules\Manufacturing\Models\WorkshopPerson;
+use App\Modules\Manufacturing\Models\WorkshopWaitingFlag;
 use App\Modules\ModuleManager;
 use App\Modules\StaffLedger\Livewire\Concerns\InCurrentCompany;
 use App\Modules\StaffLedger\Support\QrSvg;
@@ -35,6 +37,9 @@ class TerminalAdminPage extends Component
     use InCurrentCompany;
     use ShowsToasts;
     use WithFileUploads;
+
+    /** Staff have been told and the duty to negotiate has been assessed (ADR-071 §7); asked for before the terminal is switched on. */
+    public bool $informed = false;
 
     public string $deviceName = '';
 
@@ -66,6 +71,14 @@ class TerminalAdminPage extends Component
     public function enable(bool $on, ModuleManager $modules): void
     {
         $this->authorizeTerminal();
+
+        if ($on && ! $this->informed) {
+            $this->toast(__('Bekräfta först att personalen är informerad och att förhandlingsskyldigheten är bedömd.'), 'error');
+
+            return;
+        }
+
+        $modules->ensureEnabled(ManufacturingModule::KEY, $this->company());
         $modules->updateSettings(ManufacturingModule::KEY, $this->company(), $this->user(), ['terminal_enabled' => $on]);
         $this->toast($on ? __('Verkstadsterminalen är påslagen.') : __('Verkstadsterminalen är avstängd. Surfplattorna kan inte rapportera tid förrän den slås på igen.'));
     }
@@ -98,6 +111,13 @@ class TerminalAdminPage extends Component
         $device = WorkshopDevice::query()->findOrFail($deviceId);
 
         $this->attempt(fn () => $devices->remove($this->user(), $this->company(), $device), __('Surfplattan är borttagen.'));
+    }
+
+    public function eraseReason(int $flagId, WaitingFlags $flags): void
+    {
+        $flag = WorkshopWaitingFlag::query()->findOrFail($flagId);
+
+        $this->attempt(fn () => $flags->eraseReason($this->user(), $this->company(), $flag), __('Orsaken är borttagen.'));
     }
 
     public function addPerson(WorkshopPeople $people): void
@@ -181,12 +201,16 @@ class TerminalAdminPage extends Component
     public function render(): View
     {
         $company = $this->company();
-        $enabled = ManufacturingSettings::terminalEnabled($company);
+        $moduleOn = app(ModuleManager::class)->isEnabled(ManufacturingModule::KEY, $company);
+        $enabled = $moduleOn && ManufacturingSettings::terminalEnabled($company);
 
         return view('manufacturing::livewire.terminal-admin', [
+            'moduleOn' => $moduleOn,
             'enabled' => $enabled,
             'devices' => $enabled ? WorkshopDevice::query()->whereNull('removed_at')->orderBy('name')->get() : collect(),
-            'people' => $enabled ? WorkshopPerson::query()->orderByRaw('archived_at IS NOT NULL')->orderBy('name')->get() : collect(),
+            // The people stay listed also with the terminal or the module off, so a photo can be withdrawn and an extract fetched.
+            'people' => WorkshopPerson::query()->orderByRaw('archived_at IS NOT NULL')->orderBy('name')->get(),
+            'flags' => WorkshopWaitingFlag::query()->with('order')->orderByDesc('raised_at')->limit(20)->get(),
             'pairingQr' => $this->pairing === null ? null : QrSvg::render($this->pairing['url'], 200),
         ]);
     }

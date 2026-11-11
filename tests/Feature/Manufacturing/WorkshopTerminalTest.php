@@ -222,7 +222,8 @@ it('lists released and started orders with product, customer and quantity, and n
     expect(collect($orders)->pluck('reference')->all())->toBe([$this->order->reference(), $forCustomer->reference()])
         ->and(collect($orders)->pluck('reference')->all())->not->toContain($draft->reference())
         ->and($orders[0])->toMatchArray(['product' => 'Ekbord 180', 'quantity' => '2 st', 'due_on' => '2026-11-20', 'customer' => null])
-        ->and($orders[1])->toMatchArray(['customer' => 'Exempelkunden AB', 'your_reference' => 'Maria på Kunden', 'quantity' => '3 st'])
+        ->and($orders[1])->toMatchArray(['customer' => 'Exempelkunden AB', 'quantity' => '3 st'])
+        ->and($orders[1])->not->toHaveKey('your_reference')
         ->and(collect($orders[0]['operations'])->pluck('name')->all())->toBe(['Kapning', 'Montering', 'Lackering'])
         ->and(collect($orders[0]['operations'])->pluck('planned_minutes')->all())->toBe([60, 180, 60]);
 });
@@ -592,4 +593,34 @@ it('pauses a tablet after twenty wrong codes in an hour, whoever they were tried
 
     $this->travel(61)->minutes();
     wsSignIn($this, $this->bo, '1397');
+});
+
+it('dates a correction the day it is made, so an earlier valued day is never changed', function () {
+    $session = wsSignIn($this, $this->anna, '2580');
+    wsReport($this, $session, $this->cut->id, 1, 0)->assertOk();
+    $entryId = wsCall($this, 'orders', session: $session, method: 'get')->json('mine.0.id');
+
+    $this->travelTo(CarbonImmutable::parse('2026-11-12 09:00:00'));
+    $session = wsSignIn($this, $this->anna, '2580');
+    wsCall($this, 'correct', ['entry_id' => $entryId], $session)->assertOk();
+
+    CurrentCompany::set($this->company);
+    expect(ProductionLabourEntry::query()->orderBy('id')->pluck('worked_on')->map->toDateString()->all())->toBe(['2026-11-10', '2026-11-12'])
+        ->and(WorkshopTimeEntry::query()->orderBy('id')->pluck('worked_on')->map->toDateString()->all())->toBe(['2026-11-10', '2026-11-12'])
+        ->and(WorkshopTimeEntry::query()->orderBy('id')->get()[1]->corrects_entry_id)->toBe($entryId);
+});
+
+it('lets only one tablet pair on a code', function () {
+    CurrentCompany::set($this->company);
+    [, $code] = app(WorkshopDevices::class)->register($this->owner, $this->company, 'Ny plattan');
+    CurrentCompany::forget();
+
+    $first = app(WorkshopDevices::class)->pair($code);
+    $second = app(WorkshopDevices::class)->pair($code);
+
+    expect($first)->not->toBeNull()->and($second)->toBeNull();
+});
+
+it('shows the order without a customer reference on the shared tablet and tells what is saved', function () {
+    $this->get('/verkstad/terminal')->assertOk()->assertSee('Vad sparas?', false);
 });

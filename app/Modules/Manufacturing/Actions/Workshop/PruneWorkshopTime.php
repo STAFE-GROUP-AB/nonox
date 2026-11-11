@@ -6,6 +6,7 @@ namespace App\Modules\Manufacturing\Actions\Workshop;
 
 use App\Modules\Manufacturing\Models\WorkshopPerson;
 use App\Modules\Manufacturing\Models\WorkshopTimeEntry;
+use App\Modules\Manufacturing\Models\WorkshopWaitingFlag;
 use App\Support\Tenancy\CompanyScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -28,14 +29,15 @@ final class PruneWorkshopTime
     public const int RETENTION_MONTHS = 24;
 
     /**
-     * @return array{entries: int, people: int}
+     * @return array{entries: int, people: int, reasons: int}
      */
     public function __invoke(?CarbonImmutable $now = null): array
     {
-        $cutoff = ($now ?? CarbonImmutable::now())->subMonths(self::RETENTION_MONTHS);
+        $now ??= CarbonImmutable::now();
+        $cutoff = $now->subMonths(self::RETENTION_MONTHS);
 
         // Retention runs across every company at once.
-        return CompanyScope::bypass(function () use ($cutoff): array {
+        return CompanyScope::bypass(function () use ($cutoff, $now): array {
             $entries = WorkshopTimeEntry::query()->whereNotNull('person_id')->where('entered_at', '<', $cutoff)->update(['person_id' => null]);
 
             $people = WorkshopPerson::query()
@@ -45,7 +47,13 @@ final class PruneWorkshopTime
                 ->each(fn (WorkshopPerson $person) => $person->delete())
                 ->count();
 
-            return ['entries' => $entries, 'people' => $people];
+            // The free text of a waiting flag may have named someone and serves only the waiting time: blank it after a year.
+            $reasons = WorkshopWaitingFlag::query()
+                ->where('raised_at', '<', $now->subMonths(WaitingFlags::REASON_RETENTION_MONTHS))
+                ->where('reason', '<>', WaitingFlags::ERASED)
+                ->update(['reason' => WaitingFlags::ERASED]);
+
+            return ['entries' => $entries, 'people' => $people, 'reasons' => $reasons];
         });
     }
 }

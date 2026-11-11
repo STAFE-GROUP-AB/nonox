@@ -34,6 +34,7 @@ final class TerminalStrings
             'delete' => __('Radera'),
             'sign_out' => __('Logga ut'),
             'production_time_note' => __('Det här är produktionstid: tid du lägger på en tillverkningsorder. Det är inte närvaro (personalliggaren) och inte lönetid.'),
+            'what_is_saved' => __('Vad sparas? Ditt namn, vilken order och vilket arbetssteg du rapporterat på, dagen, minuterna och vilken surfplatta. Det används för vad ordern kostade och för efterkalkylen per produkt och arbetssteg. Ditt namn tas bort efter 24 månader. Be arbetsgivaren om ett utdrag med dina uppgifter.'),
             'orders_title' => __('Öppna order'),
             'orders_empty' => __('Det finns inga öppna order just nu.'),
             'due' => __('Klar :date'),

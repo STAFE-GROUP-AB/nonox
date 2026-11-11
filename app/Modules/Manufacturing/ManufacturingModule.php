@@ -90,9 +90,10 @@ final class ManufacturingModule implements IsNew, Module
         ];
     }
 
+    /** Withdrawing a photo, archiving a person and the register extract must work also with the module off (GDPR art. 7.3, 15). */
     public function archivePermissions(): array
     {
-        return [];
+        return ['production:report'];
     }
 
     public function archiveNavigation(Company $company): array

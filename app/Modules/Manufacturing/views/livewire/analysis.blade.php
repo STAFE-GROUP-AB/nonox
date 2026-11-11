@@ -38,9 +38,11 @@
                                 <td class="py-2 pe-4 text-right tabular-nums">{{ $duration($row['planned_minutes']) }}</td>
                                 <td class="py-2 pe-4 text-right tabular-nums">{{ $duration($row['actual_minutes']) }}</td>
                                 <td class="py-2 pe-4 text-right font-semibold tabular-nums {{ $row['deviation_percent'] > 0 ? 'text-red-700' : 'text-green-700' }}">{{ $signed($row['deviation_percent']) }}</td>
-                                <td class="py-2 pe-4 text-right tabular-nums">{{ $signed($row['spread']['min']) }}, {{ $signed($row['spread']['median']) }}, {{ $signed($row['spread']['max']) }}</td>
+                                <td class="py-2 pe-4 text-right tabular-nums">@if($row['detail_hidden']) <span class="text-gray-500" title="{{ __('Visas inte när färre än tre personer har rapporterat, så att det inte går att läsa ut en enskild persons arbete.') }}">{{ __('Dolt') }}</span> @else {{ $signed($row['spread']['min']) }}, {{ $signed($row['spread']['median']) }}, {{ $signed($row['spread']['max']) }} @endif</td>
                                 <td class="py-2">
-                                    @if($row['trend'] === null)
+                                    @if($row['detail_hidden'])
+                                        <span class="text-gray-500">{{ __('Dolt') }}</span>
+                                    @elseif($row['trend'] === null)
                                         <span class="text-gray-500">{{ __('För få order') }}</span>
                                     @else
                                         <span class="font-semibold {{ $row['trend']['direction'] === 'worse' ? 'text-red-700' : ($row['trend']['direction'] === 'better' ? 'text-green-700' : 'text-gray-700') }}">
