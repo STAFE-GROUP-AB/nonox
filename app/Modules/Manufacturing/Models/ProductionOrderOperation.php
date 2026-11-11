@@ -14,7 +14,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * minutes for the batch and the planned minutes for the whole order. The
  * actual minutes are the sum of its labour entries (finish now, the
  * workshop terminal in M5); the planning calendar (M6) adds its own
- * columns here.
+ * columns here: a workstation, the latest estimate of the minutes that
+ * remain, and the waiting time after it (drying), each overriding the
+ * operation's own.
  *
  * @property int $id
  * @property int $company_id
@@ -23,6 +25,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $operation_id
  * @property int $minutes
  * @property int $planned_minutes
+ * @property ?int $workstation_id
+ * @property ?int $remaining_minutes_override
+ * @property ?int $wait_minutes
  * @property ?string $note
  */
 class ProductionOrderOperation extends Model
@@ -37,6 +42,9 @@ class ProductionOrderOperation extends Model
         'operation_id',
         'minutes',
         'planned_minutes',
+        'workstation_id',
+        'remaining_minutes_override',
+        'wait_minutes',
         'note',
     ];
 
@@ -47,6 +55,8 @@ class ProductionOrderOperation extends Model
             'position' => 'integer',
             'minutes' => 'integer',
             'planned_minutes' => 'integer',
+            'remaining_minutes_override' => 'integer',
+            'wait_minutes' => 'integer',
         ];
     }
 
@@ -60,6 +70,12 @@ class ProductionOrderOperation extends Model
     public function operation(): BelongsTo
     {
         return $this->belongsTo(Operation::class);
+    }
+
+    /** @return BelongsTo<Workstation, $this> */
+    public function workstation(): BelongsTo
+    {
+        return $this->belongsTo(Workstation::class);
     }
 
     /** @return HasMany<ProductionLabourEntry, $this> */

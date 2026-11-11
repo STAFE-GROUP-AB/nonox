@@ -26,12 +26,17 @@ use Carbon\CarbonImmutable;
  * the costing on quotes and orders; manufacturing:manage changes bills of
  * materials, operations and the settings. Changing a row's own copy needs
  * manufacturing:view and the right to change the quote or order.
+ *
+ * The planning calendar (§13): manufacturing:view sees it; production:plan
+ * moves, locks, splits and reprioritises work, applies scenarios and handles
+ * deviations; production:confirm-dates confirms a delivery date to the
+ * customer and sends the message.
  */
 final class ManufacturingModule implements IsNew, Module
 {
     public const string KEY = 'manufacturing';
 
-    public const array PERMISSIONS = ['manufacturing:view', 'manufacturing:manage'];
+    public const array PERMISSIONS = ['manufacturing:view', 'manufacturing:manage', 'production:plan', 'production:confirm-dates'];
 
     public function newUntil(): CarbonImmutable
     {
@@ -80,6 +85,8 @@ final class ManufacturingModule implements IsNew, Module
             'admin' => self::PERMISSIONS,
             'accountant' => ['manufacturing:view'],
             'auditor' => ['manufacturing:view'],
+            // Planering's scheduler plans the workshop too (ADR-071 §13.7).
+            'scheduler' => ['manufacturing:view', 'production:plan'],
         ];
     }
 
@@ -104,6 +111,7 @@ final class ManufacturingModule implements IsNew, Module
                 'children' => fn (User $user, Company $company): array => [
                     ['label' => __('Stycklistor'), 'route' => 'manufacturing.boms.index', 'active' => ['manufacturing.boms.index', 'manufacturing.boms.show', 'manufacturing.boms.create']],
                     ['label' => __('Arbetssteg'), 'route' => 'manufacturing.operations', 'active' => ['manufacturing.operations']],
+                    ['label' => __('Planering'), 'route' => 'manufacturing.planning.timeline', 'active' => ['manufacturing.planning.*']],
                     ...($user->hasTeamPermission($company, 'manufacturing:manage') ? [
                         ['label' => __('Inställningar'), 'route' => 'manufacturing.settings', 'active' => ['manufacturing.settings']],
                     ] : []),

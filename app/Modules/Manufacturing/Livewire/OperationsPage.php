@@ -7,6 +7,7 @@ namespace App\Modules\Manufacturing\Livewire;
 use App\Modules\Manufacturing\Actions\SaveOperation;
 use App\Modules\Manufacturing\Livewire\Concerns\ManufacturingPage;
 use App\Modules\Manufacturing\Models\Operation;
+use App\Modules\Manufacturing\Models\ProductionSkill;
 use App\Support\Money\Money;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -35,7 +36,7 @@ class OperationsPage extends Component
     public bool $editing = false;
 
     /** @var array<string, string> */
-    public array $form = ['name' => '', 'hourly_cost' => '', 'capacity_hours' => ''];
+    public array $form = ['name' => '', 'hourly_cost' => '', 'capacity_hours' => '', 'skill_id' => '', 'wait_hours' => ''];
 
     public function mount(): void
     {
@@ -46,7 +47,7 @@ class OperationsPage extends Component
     {
         abort_unless($this->can('manage'), 403);
         $this->editingId = null;
-        $this->form = ['name' => '', 'hourly_cost' => '', 'capacity_hours' => ''];
+        $this->form = ['name' => '', 'hourly_cost' => '', 'capacity_hours' => '', 'skill_id' => '', 'wait_hours' => ''];
         $this->editing = true;
         $this->resetErrorBag();
     }
@@ -60,6 +61,8 @@ class OperationsPage extends Component
             'name' => $operation->name,
             'hourly_cost' => Money::ofOre($operation->hourly_cost_ore)->format(withCurrency: false),
             'capacity_hours' => $operation->daily_capacity_minutes === null ? '' : str_replace('.', ',', rtrim(rtrim((string) BigDecimal::of($operation->daily_capacity_minutes)->dividedBy(60, 2, RoundingMode::HalfUp), '0'), '.')),
+            'skill_id' => $operation->required_skill_id === null ? '' : (string) $operation->required_skill_id,
+            'wait_hours' => $operation->wait_minutes === 0 ? '' : str_replace('.', ',', rtrim(rtrim((string) BigDecimal::of($operation->wait_minutes)->dividedBy(60, 2, RoundingMode::HalfUp), '0'), '.')),
         ];
         $this->editing = true;
         $this->resetErrorBag();
@@ -69,7 +72,7 @@ class OperationsPage extends Component
     {
         $this->editing = false;
         $this->editingId = null;
-        $this->form = ['name' => '', 'hourly_cost' => '', 'capacity_hours' => ''];
+        $this->form = ['name' => '', 'hourly_cost' => '', 'capacity_hours' => '', 'skill_id' => '', 'wait_hours' => ''];
         $this->resetErrorBag();
     }
 
@@ -106,12 +109,14 @@ class OperationsPage extends Component
         $operations = Operation::query()
             ->when(! $this->showArchived, fn ($query) => $query->whereNull('archived_at'))
             ->withCount(['bomRows as used_in' => fn ($query) => $query->select(DB::raw('count(distinct bill_of_materials_id)'))])
+            ->with('requiredSkill:id,name')
             ->orderBy('position')->orderBy('name')
             ->get();
 
         return view('manufacturing::livewire.operations', [
             'operations' => $operations,
             'canManage' => $this->can('manage'),
+            'skills' => ProductionSkill::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 }

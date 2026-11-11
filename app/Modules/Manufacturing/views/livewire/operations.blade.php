@@ -13,6 +13,17 @@
                 <x-ui.field for="operation-capacity" :label="__('Kapacitet, timmar per dag')" error="form.capacity_hours" class="sm:col-span-2" :hint="__('Frivilligt. Bemannade timmar per arbetsdag, till exempel 16 för två personer.')">
                     <input id="operation-capacity" wire:model="form.capacity_hours" inputmode="decimal" class="{{ $input }} text-right tabular-nums">
                 </x-ui.field>
+                <x-ui.field for="operation-skill" :label="__('Kräver kompetens')" error="form.skill_id" class="sm:col-span-3" :hint="__('Planeringen lägger steget bara på personer med kompetensen. Lägg upp kompetenser under Planering → Inställningar.')">
+                    <select id="operation-skill" wire:model="form.skill_id" class="{{ $input }}">
+                        <option value="">{{ __('Ingen särskild') }}</option>
+                        @foreach($skills as $skill)
+                            <option value="{{ $skill->id }}">{{ $skill->name }}</option>
+                        @endforeach
+                    </select>
+                </x-ui.field>
+                <x-ui.field for="operation-wait" :label="__('Väntetid efter, timmar')" error="form.wait_hours" class="sm:col-span-3" :hint="__('Frivilligt. Tid då nästa steg får vänta, till exempel 12 timmars torkning efter lackering.')">
+                    <input id="operation-wait" wire:model="form.wait_hours" inputmode="decimal" class="{{ $input }} text-right tabular-nums">
+                </x-ui.field>
                 <div class="flex flex-wrap gap-3 sm:col-span-6">
                     <x-button type="submit" wire:loading.attr="disabled">{{ __('Spara arbetssteget') }}</x-button>
                     <x-secondary-button type="button" wire:click="cancel">{{ __('Avbryt') }}</x-secondary-button>
@@ -45,6 +56,8 @@
                             <th class="py-2 pr-4 font-medium">{{ __('Arbetssteg') }}</th>
                             <th class="py-2 pr-4 text-right font-medium">{{ __('Timkostnad') }}</th>
                             <th class="py-2 pr-4 text-right font-medium">{{ __('Kapacitet per dag') }}</th>
+                            <th class="py-2 pr-4 font-medium">{{ __('Kompetens') }}</th>
+                            <th class="py-2 pr-4 text-right font-medium">{{ __('Väntetid efter') }}</th>
                             <th class="py-2 pr-4 text-right font-medium">{{ __('Används i') }}</th>
                             @if($canManage)
                                 <th class="py-2"><span class="sr-only">{{ __('Åtgärder') }}</span></th>
@@ -60,6 +73,8 @@
                                 </td>
                                 <td class="py-2 pr-4 text-right"><x-ui.amount :money="$money($operation->hourly_cost_ore)" /></td>
                                 <td class="py-2 pr-4 text-right tabular-nums">{{ $operation->daily_capacity_minutes === null ? '–' : App\Modules\Manufacturing\Livewire\OperationsPage::duration($operation->daily_capacity_minutes) }}</td>
+                                <td class="py-2 pr-4">{{ $operation->requiredSkill?->name ?? '–' }}</td>
+                                <td class="py-2 pr-4 text-right tabular-nums">{{ $operation->wait_minutes === 0 ? '–' : App\Modules\Manufacturing\Livewire\OperationsPage::duration($operation->wait_minutes) }}</td>
                                 <td class="py-2 pr-4 text-right tabular-nums">{{ trans_choice(':count stycklista|:count stycklistor', (int) $operation->used_in, ['count' => (int) $operation->used_in]) }}</td>
                                 @if($canManage)
                                     <td class="py-2 text-right whitespace-nowrap">

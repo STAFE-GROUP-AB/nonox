@@ -20,6 +20,18 @@ class ManufacturingPolicy
         return $user->hasTeamPermission($company, 'manufacturing:view');
     }
 
+    /** Moves, locks, splits and reprioritises planned work, applies scenarios, handles deviations (ADR-071 §13.7). */
+    public function plan(User $user, Company $company): bool
+    {
+        return $user->hasTeamPermission($company, 'production:plan');
+    }
+
+    /** Confirms a delivery date to the customer and sends the message (§13.5). */
+    public function confirmDates(User $user, Company $company): bool
+    {
+        return $user->hasTeamPermission($company, 'production:confirm-dates');
+    }
+
     /** Bills of materials, operations and the settings. */
     public function manage(User $user, Company $company): bool
     {

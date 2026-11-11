@@ -44,6 +44,7 @@ use Illuminate\Support\Collection;
  * @property ?string $sales_line_key
  * @property ?CarbonImmutable $planned_start_on
  * @property ?CarbonImmutable $due_on
+ * @property ?int $plan_priority
  * @property ?string $notes
  * @property ?CarbonInterface $released_at
  * @property ?int $released_by
@@ -88,6 +89,7 @@ class ProductionOrder extends Model
         'sales_line_key',
         'planned_start_on',
         'due_on',
+        'plan_priority',
         'notes',
         'released_at',
         'released_by',
@@ -124,6 +126,7 @@ class ProductionOrder extends Model
             'produced_milli' => 'integer',
             'planned_start_on' => 'immutable_date',
             'due_on' => 'immutable_date',
+            'plan_priority' => 'integer',
             'released_at' => 'immutable_datetime',
             'started_on' => 'immutable_date',
             'finished_on' => 'immutable_date',

@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\Manufacturing\Actions\Concerns\GuardsManufacturing;
 use App\Modules\Manufacturing\Models\Operation;
+use App\Modules\Manufacturing\Models\ProductionSkill;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
@@ -32,7 +33,8 @@ class SaveOperation
     public const int MAX_CAPACITY_HOURS = 10_000;
 
     /**
-     * @param  array<string, mixed>  $input  name, hourly_cost (kronor as written, "450,00"), capacity_hours (optional, "16" or "7,5")
+     * @param  array<string, mixed>  $input  name, hourly_cost (kronor as written, "450,00"), capacity_hours (optional, "16" or "7,5"),
+     *                                       and for the planning calendar (§13.2, both optional and kept when absent): skill_id, wait_hours ("12" or "1,5")
      */
     public function __invoke(User $user, Company $company, array $input, ?Operation $operation = null): Operation
     {
@@ -46,8 +48,9 @@ class SaveOperation
 
         $hourly = self::hourlyCost((string) ($input['hourly_cost'] ?? ''));
         $capacity = self::capacity((string) ($input['capacity_hours'] ?? ''));
+        $planning = self::planning($input);
 
-        return CurrentCompany::run($company, fn (): Operation => DB::transaction(function () use ($user, $company, $operation, $name, $hourly, $capacity): Operation {
+        return CurrentCompany::run($company, fn (): Operation => DB::transaction(function () use ($user, $company, $operation, $name, $hourly, $capacity, $planning): Operation {
             $taken = Operation::query()
                 ->whereRaw('lower(name) = ?', [mb_strtolower($name)])
                 ->when($operation !== null, fn ($query) => $query->whereKeyNot($operation?->id))
@@ -66,11 +69,13 @@ class SaveOperation
                 'hourly_cost_ore' => $hourly,
                 'daily_capacity_minutes' => $capacity,
                 'position' => $isNew ? (int) Operation::query()->max('position') + 1 : $operation->position,
+                ...$planning,
             ])->save();
 
             Audit::record($isNew ? 'manufacturing.operation_created' : 'manufacturing.operation_updated', $operation, [
                 'hourly_cost_ore' => $hourly,
                 'daily_capacity_minutes' => $capacity,
+                ...$planning,
                 'before' => $before,
             ], $company, $user);
 
@@ -91,6 +96,41 @@ class SaveOperation
 
             return $operation;
         });
+    }
+
+    /**
+     * The skill a person needs to be planned on the step and the waiting time
+     * after it (drying, curing), when the form sends them.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array{required_skill_id?: ?int, wait_minutes?: int}
+     */
+    private static function planning(array $input): array
+    {
+        $values = [];
+
+        if (array_key_exists('skill_id', $input)) {
+            $skill = (int) $input['skill_id'];
+            $values['required_skill_id'] = $skill > 0 && ProductionSkill::query()->whereKey($skill)->exists() ? $skill : null;
+        }
+
+        if (array_key_exists('wait_hours', $input)) {
+            $text = str_replace([' ', ','], ['', '.'], trim((string) $input['wait_hours']));
+
+            try {
+                $hours = $text === '' ? BigDecimal::zero() : BigDecimal::of($text);
+            } catch (MathException) {
+                throw ValidationException::withMessages(['wait_hours' => __('Skriv väntetiden i timmar, till exempel 12 eller 1,5.')]);
+            }
+
+            if ($hours->isNegative() || $hours->isGreaterThan(24 * 14)) {
+                throw ValidationException::withMessages(['wait_hours' => __('Väntetiden ska vara mellan 0 och 336 timmar.')]);
+            }
+
+            $values['wait_minutes'] = $hours->multipliedBy(60)->toScale(0, RoundingMode::HalfUp)->toInt();
+        }
+
+        return $values;
     }
 
     private static function hourlyCost(string $text): int

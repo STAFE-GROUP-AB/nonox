@@ -1,0 +1,124 @@
+{
+    "_comment": "ADR-071 §13.9: the scheduling algorithm on synthetic data. An invented workshop, never a real company's. Times are Europe/Stockholm.",
+    "now": "2026-11-16 07:00",
+    "week": {
+        "days": [1, 2, 3, 4, 5],
+        "start": "07:00",
+        "end": "16:00",
+        "break_start": "12:00",
+        "break_minutes": 60
+    },
+    "people": [
+        {"key": "maja", "name": "Maja", "skills": ["Montering"]},
+        {"key": "omar", "name": "Omar", "skills": ["Kapning", "Hyvling", "Montering"]},
+        {"key": "tove", "name": "Tove", "skills": ["Slipning", "Lackering"]},
+        {"key": "jonas", "name": "Jonas", "skills": ["Kapning", "Hyvling"]},
+        {"key": "lina", "name": "Lina", "skills": ["Slipning"]}
+    ],
+    "operations": [
+        {"name": "Kapning", "wait_minutes": 0},
+        {"name": "Hyvling", "wait_minutes": 0},
+        {"name": "Montering", "wait_minutes": 0},
+        {"name": "Slipning", "wait_minutes": 0},
+        {"name": "Lackering", "wait_minutes": 720, "workstation": "Lackbox"}
+    ],
+    "workstations": [
+        {"key": "lackbox", "name": "Lackbox", "operations": ["Lackering"]}
+    ],
+    "orders": [
+        {"number": 1042, "product": "Byrå 80", "quantity": 6, "minutes": [40, 30, 120, 60, 45], "material_ready_on": null, "promised_on": "2026-11-24"},
+        {"number": 1041, "product": "Ekbord 180", "quantity": 10, "minutes": [30, 25, 90, 45, 30], "material_ready_on": null, "promised_on": "2026-11-25"},
+        {"number": 1043, "product": "Pall", "quantity": 20, "minutes": [10, 0, 25, 15, 10], "material_ready_on": "2026-11-24", "promised_on": "2026-12-01"}
+    ],
+    "cases": {
+        "F-P0": {
+            "event": "Base plan",
+            "changes": [],
+            "expected": {"1042": ["2026-11-20", "GREEN", null], "1041": ["2026-11-23", "GREEN", null], "1043": ["2026-11-27", "GREEN", null]}
+        },
+        "F-P1": {
+            "event": "Tove absent 11-17 – 11-23",
+            "changes": [{"type": "ABSENCE", "person": "tove", "from": "2026-11-17", "to": "2026-11-23"}],
+            "expected": {"1042": ["2026-11-25", "RED", 3], "1041": ["2026-11-26", "RED", 3], "1043": ["2026-11-27", "GREEN", 0]}
+        },
+        "F-P1a": {
+            "event": "F-P1 + overtime for Tove 11-24 16–19",
+            "changes": [
+                {"type": "ABSENCE", "person": "tove", "from": "2026-11-17", "to": "2026-11-23"},
+                {"type": "OVERTIME", "person": "tove", "date": "2026-11-24", "from": "16:00", "to": "19:00"}
+            ],
+            "expected": {"1042": ["2026-11-25", "RED", 3], "1041": ["2026-11-25", "YELLOW", 2], "1043": ["2026-11-27", "GREEN", 0]}
+        },
+        "F-P1b": {
+            "event": "F-P1 + TO-1041 prioritised first",
+            "changes": [
+                {"type": "ABSENCE", "person": "tove", "from": "2026-11-17", "to": "2026-11-23"},
+                {"type": "PRIORITY", "order": 1041, "priority": 1}
+            ],
+            "expected": {"1042": ["2026-11-26", "RED", 4], "1041": ["2026-11-25", "YELLOW", 2], "1043": ["2026-11-27", "GREEN", 0]}
+        },
+        "F-P2": {
+            "event": "Purchase order for TO-1043 delayed to 11-30",
+            "changes": [{"type": "MATERIAL", "order": 1043, "ready_on": "2026-11-30"}],
+            "expected": {"1042": ["2026-11-20", "GREEN", 0], "1041": ["2026-11-23", "GREEN", 0], "1043": ["2026-12-03", "RED", 4]}
+        },
+        "F-P3": {
+            "event": "Lackbox down 11-18 07:00 – 11-19 16:00",
+            "changes": [{"type": "DOWNTIME", "workstation": "lackbox", "from": "2026-11-18 07:00", "to": "2026-11-19 16:00"}],
+            "expected": {"1042": ["2026-11-23", "GREEN", 1], "1041": ["2026-11-24", "GREEN", 1], "1043": ["2026-11-27", "GREEN", 0]}
+        },
+        "F-P4": {
+            "event": "Montering on TO-1042 takes 240 min longer",
+            "changes": [{"type": "REMAINING", "order": 1042, "operation": "Montering", "add_minutes": 240}],
+            "expected": {"1042": ["2026-11-23", "GREEN", 1], "1041": ["2026-11-23", "GREEN", 0], "1043": ["2026-11-27", "GREEN", 0]}
+        },
+        "F-P5": {
+            "event": "One top scrapped on TO-1041 (+45 min Slipning, +30 min Lackering)",
+            "changes": [
+                {"type": "REMAINING", "order": 1041, "operation": "Slipning", "add_minutes": 45},
+                {"type": "REMAINING", "order": 1041, "operation": "Lackering", "add_minutes": 30}
+            ],
+            "expected": {"1042": ["2026-11-20", "GREEN", 0], "1041": ["2026-11-24", "GREEN", 1], "1043": ["2026-11-27", "GREEN", 0]}
+        },
+        "F-P6": {
+            "event": "TO-1041 quantity 10 → 14",
+            "changes": [{"type": "QUANTITY", "order": 1041, "quantity": 14}],
+            "expected": {"1042": ["2026-11-20", "GREEN", 0], "1041": ["2026-11-25", "YELLOW", 2], "1043": ["2026-11-27", "GREEN", 0]}
+        }
+    },
+    "_slots_comment": "Who does what, when, in the base plan and with Tove absent, as derived by hand from §13.3 (the specification's appendix is outside the repository). Each slot: order, operation, person, workstation, first start, last end.",
+    "slots": {
+        "F-P0": [
+            [1042, "Kapning", "omar", null, "2026-11-16 07:00", "2026-11-16 11:00"],
+            [1042, "Hyvling", "jonas", null, "2026-11-16 11:00", "2026-11-16 15:00"],
+            [1042, "Montering", "maja", null, "2026-11-16 15:00", "2026-11-18 10:00"],
+            [1042, "Slipning", "tove", null, "2026-11-18 10:00", "2026-11-19 08:00"],
+            [1042, "Lackering", "tove", "lackbox", "2026-11-19 08:00", "2026-11-19 13:30"],
+            [1041, "Kapning", "jonas", null, "2026-11-16 07:00", "2026-11-16 16:00"],
+            [1041, "Hyvling", "omar", null, "2026-11-17 07:00", "2026-11-17 11:10"],
+            [1041, "Montering", "omar", null, "2026-11-17 11:10", "2026-11-19 10:10"],
+            [1041, "Slipning", "lina", null, "2026-11-19 10:10", "2026-11-20 09:40"],
+            [1041, "Lackering", "tove", "lackbox", "2026-11-20 09:40", "2026-11-20 15:40"],
+            [1043, "Kapning", "jonas", null, "2026-11-24 07:00", "2026-11-24 10:20"],
+            [1043, "Montering", "maja", null, "2026-11-24 10:20", "2026-11-25 10:40"],
+            [1043, "Slipning", "lina", null, "2026-11-25 10:40", "2026-11-26 07:40"],
+            [1043, "Lackering", "tove", "lackbox", "2026-11-26 07:40", "2026-11-26 11:00"]
+        ],
+        "F-P1": [
+            [1042, "Kapning", "omar", null, "2026-11-16 07:00", "2026-11-16 11:00"],
+            [1042, "Hyvling", "jonas", null, "2026-11-16 11:00", "2026-11-16 15:00"],
+            [1042, "Montering", "maja", null, "2026-11-16 15:00", "2026-11-18 10:00"],
+            [1042, "Slipning", "lina", null, "2026-11-18 10:00", "2026-11-19 08:00"],
+            [1042, "Lackering", "tove", "lackbox", "2026-11-24 07:00", "2026-11-24 11:30"],
+            [1041, "Kapning", "jonas", null, "2026-11-16 07:00", "2026-11-16 16:00"],
+            [1041, "Hyvling", "omar", null, "2026-11-17 07:00", "2026-11-17 11:10"],
+            [1041, "Montering", "omar", null, "2026-11-17 11:10", "2026-11-19 10:10"],
+            [1041, "Slipning", "lina", null, "2026-11-19 10:10", "2026-11-20 09:40"],
+            [1041, "Lackering", "tove", "lackbox", "2026-11-24 11:30", "2026-11-25 08:30"],
+            [1043, "Kapning", "jonas", null, "2026-11-24 07:00", "2026-11-24 10:20"],
+            [1043, "Montering", "maja", null, "2026-11-24 10:20", "2026-11-25 10:40"],
+            [1043, "Slipning", "tove", null, "2026-11-25 10:40", "2026-11-26 07:40"],
+            [1043, "Lackering", "tove", "lackbox", "2026-11-26 07:40", "2026-11-26 11:00"]
+        ]
+    }
+}
