@@ -9,14 +9,22 @@ use App\Actions\Invoicing\SaveSalesDocument;
 use App\Models\Article;
 use App\Models\Customer;
 use App\Models\SalesDocument;
+use App\Modules\Inventory\Actions\ReceiveStock;
+use App\Modules\Inventory\Actions\SaveLocation;
+use App\Modules\Inventory\Actions\SaveReceipt;
 use App\Modules\Inventory\InventoryModule;
+use App\Modules\Inventory\Models\StockLocation;
+use App\Modules\Manufacturing\Actions\Production\ProductionOrderLifecycle;
+use App\Modules\Manufacturing\Actions\Production\SaveProductionOrder;
 use App\Modules\Manufacturing\Actions\SaveBillOfMaterials;
 use App\Modules\Manufacturing\Actions\SaveOperation;
 use App\Modules\Manufacturing\Actions\SaveRowStructure;
 use App\Modules\Manufacturing\ManufacturingModule;
 use App\Modules\Manufacturing\Models\Operation;
+use App\Modules\Manufacturing\Models\ProductionOrder;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Database\Seeders\Demo\DemoContext;
 use Database\Seeders\Demo\DemoExtra;
 use LogicException;
@@ -27,7 +35,8 @@ use LogicException;
  * cost, oak board by the square metre, legs, handles, screws and lacquer,
  * the bills of materials of an oak table and a chest of drawers (its drawer
  * is a sub-assembly with its own bill of materials), and an open quote whose
- * table row has a copy changed for that row. Made-up articles and prices.
+ * table row has a copy changed for that row, and production orders in every
+ * open status plus a finished one. Made-up articles and prices.
  */
 final class ManufacturingExtras extends DemoExtra
 {
@@ -105,6 +114,72 @@ final class ManufacturingExtras extends DemoExtra
 
             $this->quote($c, $a, $operations);
         }));
+
+        // Separately, so a refusal here keeps the bills of materials and the quote above.
+        $this->atomically($c, 'Tillverkningsorder', fn () => CurrentCompany::run($c->company, fn () => $this->productionOrders($c)));
+    }
+
+    /**
+     * Production orders (ADR-071 §8) for the manual and the landing page: the
+     * components received a month ago, two tables made for stock and
+     * finished with the planned minutes, three tables started with every
+     * component taken out (work in progress), two chests released for a
+     * customer order row with its own copy, and a draft for stock.
+     */
+    private function productionOrders(DemoContext $c): void
+    {
+        if (ProductionOrder::query()->exists()) {
+            return;
+        }
+
+        $articles = Article::query()->whereIn('number', ['EK-27-M2', 'BEN-EK70', 'HAND-MS', 'SKR-5X50', 'LACK-MATT', 'BORD-180', 'BYRA-80'])->get()->keyBy('number')->all();
+
+        if (count($articles) < 7) {
+            return;
+        }
+
+        $today = $c->today->min(CarbonImmutable::today());
+        $location = StockLocation::query()->where('is_active', true)->orderBy('sort_key')->first()
+            ?? app(SaveLocation::class)($c->user, $c->company, [
+                'type' => 'WAREHOUSE', 'code' => 'VS', 'name' => 'Verkstaden',
+                'address_line1' => (string) $c->company->getAttribute('address_line1'), 'postal_code' => (string) $c->company->getAttribute('postal_code'), 'city' => (string) $c->company->getAttribute('city'),
+            ]);
+
+        foreach (['BORD-180', 'BYRA-80'] as $number) {
+            $articles[$number]->forceFill(['is_stock_item' => true, 'default_location_id' => $location->id])->save();
+        }
+
+        $receipt = app(SaveReceipt::class)($c->user, $c->company, ['reference' => 'Virke och beslag', 'lines' => array_map(fn (array $line): array => [
+            'article_id' => $articles[$line[0]]->id, 'location_id' => $location->id, 'quantity' => $line[1], 'unit_cost' => $line[2],
+        ], [['EK-27-M2', '30', '1 450,00'], ['BEN-EK70', '24', '350,00'], ['HAND-MS', '40', '45,00'], ['SKR-5X50', '600', '0,95'], ['LACK-MATT', '10', '240,00']])]);
+        app(ReceiveStock::class)->all($c->user, $c->company, $receipt, $today->subDays(30));
+
+        $save = app(SaveProductionOrder::class);
+        $life = app(ProductionOrderLifecycle::class);
+        $table = $articles['BORD-180']->id;
+
+        $finished = $save->create($c->user, $c->company, ['article_id' => $table, 'quantity' => '2', 'planned_start_on' => $today->subDays(21)->toDateString(), 'due_on' => $today->subDays(14)->toDateString(), 'notes' => 'Lagerbord till utställningen.']);
+        $life->release($c->user, $c->company, $finished);
+        $life->start($c->user, $c->company, $finished, $today->subDays(20)->toDateString(), true);
+        $life->finish($c->user, $c->company, $finished, ['date' => $today->subDays(15)->toDateString()]);
+
+        $started = $save->create($c->user, $c->company, ['article_id' => $table, 'quantity' => '3', 'planned_start_on' => $today->subDays(3)->toDateString(), 'due_on' => $today->addDays(4)->toDateString()]);
+        $life->release($c->user, $c->company, $started);
+        $life->start($c->user, $c->company, $started, $today->subDays(2)->toDateString(), true);
+
+        $customer = Customer::query()->where('name', 'Bostadsrättsföreningen Exemplet')->first() ?? Customer::query()->orderBy('id')->firstOrFail();
+        $order = app(SaveSalesDocument::class)($c->user, $c->company, SalesDocument::ORDER, [
+            'customer_id' => $customer->id,
+            'document_date' => $today->subDays(5)->toDateString(),
+            'your_reference' => 'Byråer till kontoret',
+            'rows' => [['article' => 'BYRA-80', 'description' => 'Byrå 80, mässingsknoppar', 'quantity' => '2', 'price' => '11 900,00', 'vat_rate' => 2500]],
+        ]);
+        $key = (string) $order->rows->firstOrFail()->line_key;
+        app(SaveRowStructure::class)->choose($c->user, $order, $key, $articles['BYRA-80']);
+        $released = $save->create($c->user, $c->company, ['sales_document_id' => $order->id, 'line_key' => $key, 'planned_start_on' => $today->addDays(3)->toDateString(), 'due_on' => $today->addDays(12)->toDateString()]);
+        $life->release($c->user, $c->company, $released);
+
+        $save->create($c->user, $c->company, ['article_id' => $table, 'quantity' => '4', 'planned_start_on' => $today->addDays(14)->toDateString(), 'notes' => 'Inför vårmässan.']);
     }
 
     /** @return array{board: Article, leg: Article, handle: Article, screw: Article, lacquer: Article, drawer: Article, table: Article, chest: Article} */

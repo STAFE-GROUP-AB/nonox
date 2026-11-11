@@ -160,6 +160,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Stycklistor med komponenter i flera nivåer och arbetssteg: komponenter med nettomängd i valfri enhet som artikeln kan räknas om till, spill i procent, och arbetssteg som Kapning, Montering och Lackering med minuter. Varje ändring blir en ny version från ett datum, och en stycklista som skulle gå i en ring stoppas.
 - Arbetssteg med timkostnad och kapacitet i timmar per dag. Timkostnaden är företagets egen siffra och gäller nästa kalkyl.
 - Kalkyl på offerten och ordern: hämta stycklistan till en rad, ändra den för just den raden utan att mallen ändras, och se material, arbete, omkostnadspålägg, kostnad per styck, täckningsbidrag och marginal per rad och för hela dokumentet. Kalkylen syns bara internt, aldrig på kundens PDF, och följer med när offerten blir en order. Radens stycklista kan sparas som en ny stycklista.
+- Tillverkningsorder: en order för en produkt och ett antal, mot lager eller till en rad på en kundorder, med en egen kopia av stycklistan. Utkast → frisläppt → startad → färdig, eller makulerad. En frisläppt order reserverar komponenterna i inköpsförslaget, och sidan visar per komponent vad som finns i lager, vad andra order har reserverat, vad som kommer och vad som saknas. Startad tar komponenterna ur lagret till sitt lagervärde (FIFO eller vägt genomsnitt); färdigmeld tar ut resten och tar emot produkterna i lagret till tillverkningskostnaden, material plus arbete till arbetsstegens timkostnad (omkostnader bara om företaget väljer det). Ingen verifikation per order: vid bokslutet räknas pågående order som produkter i arbete på ett eget konto (1440/4940 från början). Makulerad lägger tillbaka det som togs ut.
 - Planeringskalender för verkstaden: tidslinje, ordrar med utlovat datum mot prognos och trafikljus, resurser per person och arbetsstation, leveranskalender och avvikelser. Planen läggs i tur och ordning efter prioritet och utlovat datum på personer med rätt kompetens och lediga arbetsstationer, med material, frånvaro, stopp och övertid, och räknas om av sig själv när något ändras. Avvikelser visar vilka leveranser som flyttas, med beräknade förslag (flytta, dela, övertid, prioritet), Tänk om prövar ändringar utan att röra planen, och ett nytt leveransdatum går till kunden först efter granskning. Frånvaro visas bara som "Frånvarande".
 
 ### CRM (modul) – ny
@@ -542,7 +543,7 @@ Medvetet utanför scope:
 
 - ❌ ERP-system
 - ❌ CRM
-- ❌ Lagerhantering för tillverkning och flera lager mellan företag. Lager för handel finns som modul, se ovan.
+- ❌ Flera lager mellan företag. Lager och tillverkning finns som moduler, se ovan.
 - ❌ Kassasystem. NONOX bokför kassans dagsrapporter och SIE-filer, se Inkorg ovan, men sköter inte försäljningen.
 - ❌ Inkasso
 

@@ -745,8 +745,22 @@ Next package: M2/M4 enligt prioritetslistan.
 
 ---
 
+Package: M4, tillverkningsorder med färdigvarulager (ADR-071 §8, §5)
+Status: done (tillverkningsorder med egen kopia av stycklistan, status utkast → frisläppt → startad → färdig eller makulerad, uttag och mottagning i lagret, produkter i arbete vid bokslutet)
+Evidence: `tests/Feature/Manufacturing/ProductionOrdersTest.php` (fixturerna F-M1–F-M6), `tests/Feature/Manufacturing/ProductionValuationTest.php` (F-V1–F-V3), `tests/Fixtures/manufacturing/production-orders.json`, `tests/Feature/Manufacturing/ProductionOrderPagesTest.php` (sidor och fast antal frågor), `tests/Tenancy/ProductionOrderTenancyTest.php`, `tests/Tenancy/TenancyIsolationTest.php` (fem nya modeller).
+- Nya rörelsetyper `PRODUCTION_ISSUE` (komponenter ut till anskaffningsvärdet enligt FIFO eller vägt genomsnitt) och `PRODUCTION_RECEIPT` (färdiga produkter in till tillverkningskostnaden: material plus direkt arbete, omkostnader bara om företaget väljer det). Uttag och arbete i egna tabeller som bara kan läggas till.
+- Ingen verifikation per order. Bokslutets lagervärdering tar med produkter i arbete på ett eget kontopar (1440/4940 från början) via den nya förlängningspunkten `StockValuationAdditions` i Lager. Systemdokumentation 0.132 (avsnitt 5o och 5j).
+- Inköpsförslaget: frisläppta och startade order reserverar komponenterna (`ProductionOrderDemand`), och deras färdiga produkter räknas som på väg in (`PurchaseSupplySource`, ny).
+- För M5/M6: `production_order_operations` (§13.8:s tabell) och `production_labour_entries` med källan TERMINAL för verkstadsterminalen.
+- Sidorna under `/tillverkning/tillverkningsorder`, länk från kundorderns kalkylpanel, inställningar för omkostnader i lagervärdet och kontona för produkter i arbete. Manualartikeln `tillverkning/tillverkningsorder` med skärmbilder från Snickeri Norrby Demo AB, ändringslogg, README, landningssidan, ADR-071 "As built (M4)"; färdplanens punkt `stycklistor-och-tillverkning` är levererad och borttagen.
+- Hela sviten (PGTZ=UTC): 8 965 gröna, 5 röda, 8 todos, 6 hoppade över. Den ena röda (modellistan i TenancyIsolationTest) är rättad och `tests/Tenancy/TenancyIsolationTest.php` är grön efteråt (2 359). De fyra andra (DemoScheduleTest ×2, DatabaseGrantsTest ×2) är kända flakes och gröna när de körs ensamma (35 gröna). phpstan inga fel, pint grönt, `npm test` grönt, `npm run build` ok.
+Open legal-verify items: om K2 (BFNAR 2016:10 kap. 12, p. 12.10) och K3 (kap. 13) tillåter, kräver eller förbjuder indirekta kostnader i anskaffningsvärdet för egentillverkade varor; BAS-konton för produkter i arbete och färdiga varor (1440/1450) och förändringskontona (4940, 4950 eller 4970); om ÅRL 4 kap. 9 § godtar arbetsstegets standardtimkostnad; om 97-procentsregeln och lägsta värdets princip gäller produkter i arbete.
+Next package: M5 verkstadsterminal.
+
+---
+
 Package: M6, planeringskalender för tillverkningen (ADR-071 §13)
-Status: done på grenen `feat/m6-planning-calendar` (byggd på M4:s datamodell a03fa86d; ombasering när M4 är klar; ingen push)
+Status: done på grenen `feat/m6-planning-calendar` (M4 b94594a3 sammanslagen in i grenen; ingen push)
 Evidence: `tests/Unit/Manufacturing/PlanningSchedulerTest.php` (F-P0 till F-P6 och slotlistorna för F-P0 och F-P1), `tests/Unit/Manufacturing/PlanningSchedulerSpeedTest.php` (300 order × 8 steg × 20 resurser under två sekunder), `tests/Feature/Manufacturing/PlanningCalendarTest.php` (databasen ger F-P0, materialdatum från inköpsorder, frånvarofrågan läser aldrig typ eller anteckning, fast antal frågor), `tests/Feature/Manufacturing/PlanningActionsTest.php`, `tests/Feature/Manufacturing/PlanningPagesTest.php` (sidorna, Frånvarande, polling, behörigheter, fast antal frågor per vy), `tests/Tenancy/PlanningCalendarTenancyTest.php`.
 - Deterministisk schemaläggning i minnet, resurser (arbetsstationer med stopp, kompetenser, egen arbetsvecka, övertid), planer som räknas om i ett unikt köat jobb per företag och varje natt, avvikelser med påverkan på leveranser, förslag som simuleras, Tänk om, låsningar och nytt leveransdatum till kunden först efter granskning.
 - Frånvaro visas bara som "Frånvarande"; planen läser aldrig orsaken. GDPR-dokumenten uppdaterade.
