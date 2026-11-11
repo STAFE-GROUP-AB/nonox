@@ -703,3 +703,14 @@ Evidence: `tests/Feature/Agreements/TraindustriavtaletTest.php`, `tests/Fixtures
 - Hela sviten (PGTZ=UTC): 8 513 gröna, 60 röda som alla följde av den kända DatabaseRoles/Grants-flaken på demo-anslutningen och blev gröna vid omkörning; phpstan och pint rena.
 Open legal-verify items: se `docs/avtal/traindustriavtalet.md` (läsningen av helgspannen, fridag enligt schema, komptid med tillägg, skiftformstillägg på OB, medeltimförtjänst, helgdagslönens innehåll, mertid 58,50 kr i ADDA25, OB-beloppen som ADDA25 anger gälla "from 1 april 2019" men som läses som 2025 års, giltigheten 2025–2027).
 Next package: M1 enheter på artiklar.
+Package: M1, enheter på artiklar (prioritet 11, ADR-071 §12)
+Status: done (lager-, inköps- och försäljningsenhet per artikel, enhetslista per företag, omräkningar som exakta bråk)
+Evidence: `tests/Unit/Units/UnitConverterTest.php`, `tests/Feature/Units/UnitsOfMeasureTest.php`, `tests/Fixtures/units/units-of-measure.json` (fixtur F-U1–F-U8), `tests/Tenancy/TenancyIsolationTest.php` (Unit).
+- Enhetslistan (`units`) skapas med företaget och av migreringen; artiklar får lager-, inköps- och försäljningsenhet, `articles.unit` behåller texten som skrevs. Omräkningar från samma slags enhet är inbyggda, för trä och skivor räknas de fram ur materialets mått, övriga anges per artikel.
+- Mängder förblir tusendelar av lagerenheten, avrundade halvt upp en gång vid inmatning; noll avvisas och mer än 0,5 % ändring varnar (visas i receptsparandet). Receptrader lagras i lagerenheten.
+- Sidan Register → Artiklar → Enheter, enhetsavsnittet under Avancerad, manualartikeln `fakturering/enheter-pa-artiklar` med skärmbilder, ändringslogg och ADR-071 §12.8 "As built".
+- Ingen bokföringsbeteende ändrat (värderingen och `value_ore` är orörda), så systemdokumentationen är oförändrad.
+- Hela sviten: 8 605 gröna, 18 röda; röda är xlsx-tester (OpenSpout saknas i den lokala vendor-mappen) och databasrollernas testharness (känd låsning); grants-testerna är gröna när de körs ensamma efter registreringen av `units`. phpstan: bara de gamla OpenSpout-fynden. pint rent.
+Open legal-verify items: Peppol-koder för löpmeter, förpackning (XPK) som enhetskod, dm², dl, cl, ml; om enhetstexten (t.ex. lpm) räcker enligt ML 17 kap. 24 §.
+Follow-ups: skannern, rapporter, Kök svinn/avvikelse, etiketter och API:et visar fortfarande enhetstexten i stället för lagerenheten; 0,5 %-gränsen som företagsinställning; `value_ore` (kräver bokföringskontroll).
+Next package: M2, stycklistor med arbetssteg.

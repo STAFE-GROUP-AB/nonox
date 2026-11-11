@@ -271,6 +271,7 @@ BEGIN
         ('team_user', 'SELECT, INSERT, UPDATE, DELETE'),
         ('teams', 'SELECT, INSERT, UPDATE, DELETE'),
         ('time_reports', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('units', 'SELECT, INSERT, UPDATE, DELETE'),
         ('users', 'SELECT, INSERT, UPDATE, DELETE'),
         ('vacation_liability_snapshots', 'SELECT, INSERT'),
         ('vacation_opening_balances', 'SELECT, INSERT, UPDATE, DELETE'),

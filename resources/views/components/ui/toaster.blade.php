@@ -12,7 +12,7 @@
         add(message, type = 'success') {
             const id = this.next++;
             this.toasts.push({ id, message, type, visible: true });
-            this.expire(id, type === 'error' ? 8000 : 5000);
+            this.expire(id, type === 'error' || type === 'warning' ? 8000 : 5000);
         },
         {{-- A toast stays while the pointer or keyboard focus is on it (WCAG 2.2.1). --}}
         expire(id, after) {
@@ -35,8 +35,8 @@
     aria-live="polite"
 >
     <template x-for="toast in toasts" :key="toast.id">
-        <div class="nx-toast" :class="{ 'nx-toast--error': toast.type === 'error', 'nx-toast--hidden': ! toast.visible }">
-            <span class="nx-toast__icon" aria-hidden="true" x-text="toast.type === 'error' ? '!' : '✓'"></span>
+        <div class="nx-toast" :class="{ 'nx-toast--error': toast.type === 'error', 'nx-toast--warning': toast.type === 'warning', 'nx-toast--hidden': ! toast.visible }">
+            <span class="nx-toast__icon" aria-hidden="true" x-text="toast.type === 'error' || toast.type === 'warning' ? '!' : '✓'"></span>
             <p class="nx-toast__message" x-text="toast.message"></p>
             <button type="button" class="nx-toast__close" x-on:click="remove(toast.id)" aria-label="Stäng">×</button>
         </div>
@@ -62,6 +62,7 @@
         width: 1.4rem; height: 1.4rem; border-radius: 50%; background: #2f6b3a; color: #fff; font-size: .8rem; font-weight: 700;
     }
     .nx-toast--error .nx-toast__icon { background: #9e2a1b; }
+    .nx-toast--warning .nx-toast__icon { background: #8a5a00; }
     .nx-toast__message { margin: 0; flex: 1; padding-top: .05rem; }
     .nx-toast__close {
         flex: none; background: none; border: 0; color: inherit; opacity: .7; cursor: pointer;

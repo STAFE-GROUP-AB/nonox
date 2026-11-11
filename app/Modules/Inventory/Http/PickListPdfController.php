@@ -27,7 +27,7 @@ final class PickListPdfController
         $company = $user->currentCompany();
         abort_unless($company !== null && Gate::forUser($user)->allows('viewAny', [StockMovement::class, $company]), 403);
 
-        $list = PickList::query()->with(['lines.article:id,number,name,unit,gtin', 'lines.location:id,full_code,name', 'customer:id,name'])->findOrFail($pickList);
+        $list = PickList::query()->with(['lines.article:id,number,name,unit,gtin,stock_unit_id', 'lines.article.stockUnit:id,code', 'lines.location:id,full_code,name', 'customer:id,name'])->findOrFail($pickList);
 
         $options = new Options;
         $options->setIsRemoteEnabled(false);

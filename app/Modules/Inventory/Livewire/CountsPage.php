@@ -137,7 +137,7 @@ class CountsPage extends Component
 
     public function render(): View
     {
-        $current = $this->open === null ? null : StockCount::query()->with(['location:id,full_code,name', 'lines.article:id,number,name,unit', 'lines.location:id,full_code,sort_key'])->find($this->open);
+        $current = $this->open === null ? null : StockCount::query()->with(['location:id,full_code,name', 'lines.article:id,number,name,unit,stock_unit_id', 'lines.article.stockUnit:id,code', 'lines.location:id,full_code,sort_key'])->find($this->open);
 
         return view('inventory::livewire.counts', [
             'counts' => StockCount::query()->withCount('lines')->with('location:id,full_code,name')->latest('number')->paginate(25),

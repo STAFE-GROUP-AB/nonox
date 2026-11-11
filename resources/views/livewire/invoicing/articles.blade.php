@@ -30,7 +30,14 @@
                         <input id="article_price" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="form.price" placeholder="149,00">
                     </x-ui.field>
                     <x-ui.field for="article_unit" :label="__('Enhet')" error="unit">
-                        <input id="article_unit" type="text" class="{{ $input }} mt-1" wire:model="form.unit" maxlength="10">
+                        <select id="article_unit" class="{{ $input }} mt-1" wire:model="form.unit">
+                            @foreach($units->reject(fn ($unit) => $unit->isArchived() && $unit->code !== ($form['unit'] ?? '')) as $unit)
+                                <option value="{{ $unit->code }}">{{ $unit->code }} ({{ $unit->name }})</option>
+                            @endforeach
+                            @if(! $units->contains(fn ($unit) => $unit->code === ($form['unit'] ?? '')))
+                                <option value="{{ $form['unit'] ?? '' }}">{{ $form['unit'] ?? '' }}</option>
+                            @endif
+                        </select>
                     </x-ui.field>
                     <x-ui.field for="article_vat" :label="__('Moms')" error="vat_rate">
                         <select id="article_vat" class="{{ $input }} mt-1" wire:model="form.vat_rate">
@@ -54,6 +61,7 @@
                     @if($inventory)
                         @include('livewire.invoicing.partials.article-images', ['compact' => false])
                     @endif
+                    @include('livewire.invoicing.partials.article-units')
                     @include('livewire.invoicing.partials.article-advanced')
                 @endif
                 <div class="flex items-center gap-4 sm:col-span-6">
@@ -67,6 +75,7 @@
     <x-ui.card>
         @if($canManage && ! $showForm)
             <x-slot:cta>
+                <a href="{{ route('invoicing.units') }}" class="mr-4 text-sm font-medium text-accent-700 underline">{{ __('Enheter') }}</a>
                 <x-button type="button" wire:click="create">{{ __('Ny artikel') }}</x-button>
             </x-slot:cta>
         @endif
@@ -100,7 +109,7 @@
                                         @elseif($inventory)
                                             <span class="size-10 shrink-0 rounded-md bg-stone-100" aria-hidden="true"></span>
                                         @endif
-                                        <span>{{ $article->name }} <span class="text-gray-500">/ {{ $article->unit }}</span>@if($article->external_ref)<span class="block text-xs text-gray-500">{{ __('Nummer i tidigare program') }}: {{ $article->external_ref }}</span>@endif</span>
+                                        <span>{{ $article->name }} <span class="text-gray-500">/ {{ $article->unit }}@if($article->stockUnit && $article->stockUnit->code !== $article->unit), {{ __('lager i :unit', ['unit' => $article->stockUnit->code]) }}@endif</span>@if($article->external_ref)<span class="block text-xs text-gray-500">{{ __('Nummer i tidigare program') }}: {{ $article->external_ref }}</span>@endif</span>
                                     </span>
                                 </td>
                                 <td class="py-2 pr-4 text-right"><x-ui.amount :money="$article->price_ore" /></td>

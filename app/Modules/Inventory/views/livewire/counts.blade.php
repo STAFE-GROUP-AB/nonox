@@ -44,7 +44,7 @@
                             <span class="sm:col-span-5">
                                 <span class="font-bold tabular-nums">{{ $line->location?->full_code }}</span>
                                 <span class="block"><span class="font-semibold tabular-nums">{{ $line->article?->number }}</span> {{ $line->article?->name }}</span>
-                                <span class="block text-sm text-gray-600">{{ __('Systemet: :quantity :unit', ['quantity' => $q($line->system_milli), 'unit' => $line->article?->unit]) }}
+                                <span class="block text-sm text-gray-600">{{ __('Systemet: :quantity :unit', ['quantity' => $q($line->system_milli), 'unit' => $line->article?->stockUnitCode()]) }}
                                     @if($difference !== null && $difference !== 0)<span class="font-semibold text-accent-700"> · {{ __('Skillnad :difference', ['difference' => ($difference > 0 ? '+' : '').$q($difference)]) }}</span>@endif
                                 </span>
                             </span>

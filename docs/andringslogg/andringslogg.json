@@ -56,6 +56,14 @@
       "omrade": "Avtal"
     },
     {
+      "id": "2026-11-10-enheter-pa-artiklar",
+      "datum": "2026-11-10T11:20:00+01:00",
+      "rubrik": "Enheter på artiklar: styck, löpmeter, kvadrat, kubik och egna",
+      "beskrivning": "En artikel har nu en lagerenhet, en inköpsenhet och en försäljningsenhet, till exempel kubikmeter in, löpmeter på lagret och styck ut. Omräkningarna är exakta, och för trä och skivor räknas de fram ur materialets mått. Under Artiklar → Enheter lägger du till egna enheter.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-10-introduktion-efter-godkannande",
       "datum": "2026-11-10T08:30:00+01:00",
       "rubrik": "Personlig introduktion när du släpps in från kön",

@@ -26,7 +26,8 @@ Artikelnummer, benämning, pris exklusive moms, enhet, moms och intäktskonto. D
 - **Varumärke, modell och beskrivning.**
 - **Egenskaper** – en lista med egenskap och värde, till exempel storlek: M eller skick: begagnad.
 - **Färger och material** – skilj med komma.
-- **Vikt och mått** – i gram och millimeter.
+- **Vikt och mått** – i gram och millimeter. Det här är förpackningens mått.
+- **Enheter** – lagerenhet, inköpsenhet och försäljningsenhet, materialets mått för trä och skivor, och omräkningar mellan enheterna. Saldot räknas alltid i lagerenheten. Se [Enheter på artiklar](/manual/fakturering/enheter-pa-artiklar).
 - **Inköpspris** – används som kostnad när inget annat pris anges vid inleveransen.
 - **Momshantering** – vanlig moms eller vinstmarginalbeskattning (VMB) för begagnade varor.
 - **Leverantör och leverantörens artikelnummer.**
@@ -59,6 +60,7 @@ Från listan kan du också:
 
 ## Läs också
 
+- [Enheter på artiklar](/manual/fakturering/enheter-pa-artiklar)
 - [Bilder och NONOX AI](/manual/lager/bilder-och-ai)
 - [Lagerställen](/manual/lager/lagerstallen)
 - [Skriv ut etiketter](/manual/lager/etiketter) – pris- och hyllkantsetiketter med streckkod.

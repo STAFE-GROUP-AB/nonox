@@ -95,7 +95,7 @@
                         <li class="grid gap-3 py-3 sm:grid-cols-12 sm:items-end" wire:key="receive-{{ $line->id }}">
                             <div class="sm:col-span-5">
                                 <span class="font-semibold tabular-nums">{{ $line->article?->number }}</span> {{ $line->article?->name }}
-                                <span class="block text-sm text-gray-500">{{ __('Beställt :ordered, mottaget :received', ['ordered' => $q($line->ordered_milli), 'received' => $q($line->received_milli)]) }} {{ $line->article?->unit }}</span>
+                                <span class="block text-sm text-gray-500">{{ __('Beställt :ordered, mottaget :received', ['ordered' => $q($line->ordered_milli), 'received' => $q($line->received_milli)]) }} {{ $line->article?->stockUnitCode() }}</span>
                             </div>
                             <x-ui.field for="receive-quantity-{{ $line->id }}" :label="__('Kom nu')" error="receive.{{ $line->id }}.quantity" class="sm:col-span-2">
                                 <input id="receive-quantity-{{ $line->id }}" wire:model="receive.{{ $line->id }}.quantity" inputmode="decimal" class="{{ $input }} text-right tabular-nums">

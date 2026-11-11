@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace App\Actions\Invoicing;
 
+use App\Actions\Units\ResolveArticleUnits;
 use App\Domain\Invoicing\InvoiceCalculator;
+use App\Domain\Units\ArticleUnits;
 use App\Models\Account;
 use App\Models\Article;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Inventory\Models\ArticleUnitConversion;
 use App\Modules\Inventory\Support\ArticleDetails;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
+use Brick\Math\BigRational;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -30,7 +34,7 @@ class SaveArticle
     public const array DEFAULT_ACCOUNTS = [2500 => 3001, 1200 => 3002, 600 => 3003, 0 => 3004];
 
     /**
-     * @param  array<string, mixed>  $input  number, name, unit, price (kronor as written), vat_rate, account (number, optional), and any of the advanced fields in ArticleDetails::KEYS
+     * @param  array<string, mixed>  $input  number, name, unit (or the stock, purchase and sales unit ids and material size, ADR-071 §12), price (kronor as written), vat_rate, account (number, optional), and any of the advanced fields in ArticleDetails::KEYS
      */
     public function __invoke(User $user, Company $company, array $input, ?Article $article = null): Article
     {
@@ -43,7 +47,7 @@ class SaveArticle
             'name' => ['required', 'string', 'max:255'],
             // The number the article had in the previous program (ADR-076); only importers write it.
             'external_ref' => ['nullable', 'string', 'max:100'],
-            'unit' => ['required', 'string', 'max:10'],
+            'unit' => [Rule::requiredIf(! ResolveArticleUnits::isExplicit($input)), 'nullable', 'string', 'max:10'],
             'price' => ['required', 'string'],
             'vat_rate' => ['required', 'integer', Rule::in(InvoiceCalculator::VAT_RATES)],
             'account' => ['nullable', 'integer', 'between:3000,3999'],
@@ -70,10 +74,12 @@ class SaveArticle
             $account = Account::query()->where('number', $number)->first()
                 ?? throw ValidationException::withMessages(['account' => __('Konto :number finns inte i kontoplanen.', ['number' => $number])]);
 
+            $units = (new ResolveArticleUnits)((int) $company->id, $article, $input, $validated['unit'] ?? null);
+
             $attributes = [
                 'number' => trim((string) $validated['number']),
                 'name' => trim((string) $validated['name']),
-                'unit' => trim((string) $validated['unit']),
+                ...$units['attributes'],
                 'price_ore' => $price->ore,
                 'vat_rate' => $rate,
                 'account_id' => $account->id,
@@ -85,14 +91,31 @@ class SaveArticle
             if ($article === null) {
                 $article = Article::create($attributes);
                 Audit::record('article.created', $article, ['number' => $article->number, 'name' => $article->name], $company, $user);
-
-                return $article;
+            } else {
+                $article->update($attributes);
+                Audit::record('article.updated', $article, ['number' => $article->number, 'name' => $article->name], $company, $user);
             }
 
-            $article->update($attributes);
-            Audit::record('article.updated', $article, ['number' => $article->number, 'name' => $article->name], $company, $user);
+            $this->saveConversions($article->load('stockUnit'), $units['manual']);
 
             return $article;
         }));
+    }
+
+    /**
+     * @param  ?array<string, BigRational>  $manual  the conversions typed on the form, or null when the form did not send any
+     */
+    private function saveConversions(Article $article, ?array $manual): void
+    {
+        if ($manual !== null) {
+            ArticleUnitConversion::query()->where('article_id', $article->id)->where('source', ArticleUnitConversion::MANUAL)
+                ->whereNotIn('unit', array_keys($manual))->delete();
+
+            foreach ($manual as $unit => $fraction) {
+                ArticleUnits::saveManual($article, (string) $unit, $fraction);
+            }
+        }
+
+        ArticleUnits::syncDerived($article);
     }
 }

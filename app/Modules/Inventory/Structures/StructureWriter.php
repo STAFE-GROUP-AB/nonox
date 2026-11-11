@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Structures;
 
+use App\Domain\Units\ArticleUnits;
+use App\Domain\Units\QuantityOutOfRange;
+use App\Domain\Units\QuantityRoundsToZero;
+use App\Domain\Units\UnitConverter;
 use App\Models\Article;
 use App\Models\Company;
 use App\Models\User;
@@ -42,6 +46,15 @@ final class StructureWriter
     /** First key of the PostgreSQL advisory lock for structure writes; the second is the company. */
     private const int LOCK_KEY = 73_001;
 
+    /**
+     * Rows of the last save whose conversion to the stock unit changed what
+     * was typed by more than 0,5 % (ADR-071 §12.4): the row is saved, the
+     * screen may show the warning. Each is text for the person.
+     *
+     * @var list<string>
+     */
+    public array $warnings = [];
+
     public function __construct(private readonly ModuleManager $modules) {}
 
     /**
@@ -58,6 +71,7 @@ final class StructureWriter
     public function save(Company $company, ?User $by, StructureKind $kind, Article $output, array $input): BillOfMaterials
     {
         $this->modules->ensureEnabled(InventoryModule::KEY, $company);
+        $this->warnings = [];
 
         return CurrentCompany::run($company, fn (): BillOfMaterials => DB::transaction(function () use ($company, $by, $kind, $output, $input): BillOfMaterials {
             // One structure save per company at a time, so two saves cannot close a loop between them.
@@ -98,10 +112,10 @@ final class StructureWriter
                 throw ValidationException::withMessages(['rows' => __('Ett recept kan ha högst :max rader.', ['max' => self::MAX_ROWS])]);
             }
 
-            $articles = Article::query()->whereKey(array_map(fn (array $row): int => (int) $row['article_id'], $rows))->get()->keyBy('id');
+            $articles = Article::query()->with('stockUnit')->whereKey(array_map(fn (array $row): int => (int) $row['article_id'], $rows))->get()->keyBy('id');
             $conversions = ArticleUnitConversion::query()->whereIn('article_id', $articles->keys()->all())->get()
                 ->groupBy('article_id')
-                ->map(fn ($group): array => $group->mapWithKeys(fn (ArticleUnitConversion $conversion): array => [StructureUnits::normalise($conversion->unit) => $conversion->factor_milli])->all());
+                ->map(fn ($group): array => ArticleUnits::fractions($group));
             $book = StructureBook::for($company);
             $prepared = [];
 
@@ -126,17 +140,27 @@ final class StructureWriter
                     throw ValidationException::withMessages(["rows.{$index}.quantity" => __('Mängden måste vara mer än noll.')]);
                 }
 
-                $unit = StructureUnits::normalise((string) (($row['unit'] ?? null) ?: $article->unit));
-                $factor = StructureUnits::factor($article->unit, $unit, $conversions->get($article->id, []));
+                $stockCode = ArticleUnits::stockCode($article);
+                $unit = StructureUnits::normalise((string) (($row['unit'] ?? null) ?: $stockCode));
+                $perStock = UnitConverter::enteredPerStock($stockCode, $unit, $conversions->get($article->id, []));
 
-                if ($factor === null) {
-                    throw ValidationException::withMessages(["rows.{$index}.unit" => __(':name har enheten :unit. Lägg till en omräkning från :entered på artikeln, eller skriv mängden i :unit.', ['name' => $article->name, 'unit' => $article->unit, 'entered' => $unit])]);
+                if ($perStock === null) {
+                    throw ValidationException::withMessages(["rows.{$index}.unit" => __(':name har enheten :unit. Lägg till en omräkning från :entered på artikeln, eller skriv mängden i :unit.', ['name' => $article->name, 'unit' => $stockCode, 'entered' => $unit])]);
                 }
 
-                $quantity = StructureUnits::convert($entered, $factor);
+                try {
+                    $conversion = UnitConverter::toStock(Quantity::decimal($entered), $perStock);
+                } catch (QuantityOutOfRange) {
+                    throw ValidationException::withMessages(["rows.{$index}.quantity" => __('Mängden är för stor för lagerenheten.')]);
+                } catch (QuantityRoundsToZero) {
+                    throw ValidationException::withMessages(["rows.{$index}.quantity" => __('Mängden blir noll i lagerenheten. Skriv en större mängd.')]);
+                }
 
-                if ($quantity <= 0) {
-                    throw ValidationException::withMessages(["rows.{$index}.quantity" => __('Mängden blir noll i artikelns enhet. Skriv en större mängd.')]);
+                $quantity = $conversion->stockMilli;
+                $sameUnit = $perStock->isEqualTo(1);
+
+                if ($conversion->warns) {
+                    $this->warnings[] = __(':name: :entered :unit blir :stock :stockUnit i lagerenheten, en ändring på :percent %.', ['name' => $article->name, 'entered' => Quantity::format($entered), 'unit' => $unit, 'stock' => Quantity::format($quantity), 'stockUnit' => $stockCode, 'percent' => $conversion->changePercent]);
                 }
 
                 $loss = self::loss($row['loss'] ?? null, "rows.{$index}.loss");
@@ -145,8 +169,8 @@ final class StructureWriter
                     'component_article_id' => $article->id,
                     'quantity_milli' => $quantity,
                     'loss_bp' => $loss,
-                    'entered_quantity' => $factor === 1000 ? null : Quantity::decimal($entered),
-                    'entered_unit' => $factor === 1000 ? null : $unit,
+                    'entered_quantity' => $sameUnit ? null : Quantity::decimal($entered),
+                    'entered_unit' => $sameUnit ? null : $unit,
                     'position' => $index,
                     'note' => ($row['note'] ?? '') === '' ? null : mb_substr(trim((string) $row['note']), 0, 255),
                 ];

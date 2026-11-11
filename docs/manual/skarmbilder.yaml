@@ -45,6 +45,8 @@ fakturering/skicka-en-faktura: { foretag: konsult, rutt: invoicing.invoices.show
 fakturering/obetalda-fakturor: { foretag: hantverkare, rutt: invoicing.invoices.index, fraga: { visa: obetalda } }
 fakturering/kunder: { foretag: hantverkare, rutt: invoicing.customers }
 fakturering/artiklar: { foretag: hantverkare, rutt: invoicing.articles }
+fakturering/enheter: { foretag: hantverkare, rutt: invoicing.units }
+fakturering/enheter-pa-artikeln: { foretag: hantverkare, rutt: invoicing.articles, klick: ['tbody tr:nth-child(3) button', 'text=Avancerad'], visa: '#article_stock_unit' }
 fakturering/rot-och-rut: { foretag: hantverkare, rutt: invoicing.invoices.show, modell: rot_invoice }
 fakturering/omvand-betalningsskyldighet-bygg: { foretag: hantverkare, rutt: invoicing.invoices.show, modell: reverse_charge_invoice }
 fakturering/inbetalningar: { foretag: hantverkare, rutt: invoicing.incomingPayments }

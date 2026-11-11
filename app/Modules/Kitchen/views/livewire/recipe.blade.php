@@ -90,7 +90,7 @@
     @endif
 
     @if($article)
-        <x-ui.card :title="$article->name" :description="$current ? __('Version :version, gäller från :date. Ger :yield :unit.', ['version' => $current->version, 'date' => $current->valid_from->toDateString(), 'yield' => $qty($current->yield_milli), 'unit' => $current->isPortions() ? __('portioner') : $article->unit]) : __('Inget recept gäller i dag.')">
+        <x-ui.card :title="$article->name" :description="$current ? __('Version :version, gäller från :date. Ger :yield :unit.', ['version' => $current->version, 'date' => $current->valid_from->toDateString(), 'yield' => $qty($current->yield_milli), 'unit' => $current->isPortions() ? __('portioner') : ($article->stockUnit?->code ?? $article->unit)]) : __('Inget recept gäller i dag.')">
             @if($canManage && ! $editing)
                 <x-slot:cta>
                     <x-button type="button" wire:click="edit">{{ __('Ändra receptet') }}</x-button>
@@ -121,9 +121,9 @@
                                 @php($line = $cost?->rows[$index] ?? null)
                                 <tr wire:key="ingredient-{{ $row->id }}">
                                     <td class="py-2 pr-4">{{ $row->component?->name }}</td>
-                                    <td class="py-2 pr-4 text-right tabular-nums">{{ $qty($row->quantity_milli) }} {{ $row->component?->unit }}@if($row->entered_unit)<span class="block text-xs text-gray-500">{{ str_replace('.', ',', (string) $row->entered_quantity) }} {{ $row->entered_unit }}</span>@endif</td>
+                                    <td class="py-2 pr-4 text-right tabular-nums">{{ $qty($row->quantity_milli) }} {{ $row->component?->stockUnit?->code ?? $row->component?->unit }}@if($row->entered_unit)<span class="block text-xs text-gray-500">{{ str_replace('.', ',', (string) $row->entered_quantity) }} {{ $row->entered_unit }}</span>@endif</td>
                                     <td class="py-2 pr-4 text-right tabular-nums">{{ $pct($row->loss_bp) }}</td>
-                                    <td class="py-2 pr-4 text-right tabular-nums">{{ $qty($row->grossMilli()) }} {{ $row->component?->unit }}</td>
+                                    <td class="py-2 pr-4 text-right tabular-nums">{{ $qty($row->grossMilli()) }} {{ $row->component?->stockUnit?->code ?? $row->component?->unit }}</td>
                                     @if($seesCosts)
                                         <td class="py-2 pr-4 text-right">
                                             @if($line && $line['unit_cost_ore'] !== null)
@@ -157,7 +157,7 @@
                             <dd class="mt-1 text-xl font-bold"><x-ui.amount :money="$money($cost->batchCostOre)" /></dd>
                         </div>
                         <div class="rounded-2xl bg-stone-50 p-4">
-                            <dt class="text-sm text-gray-500">{{ $current->isPortions() ? __('Kostnad per portion') : __('Kostnad per :unit', ['unit' => $article->unit]) }}</dt>
+                            <dt class="text-sm text-gray-500">{{ $current->isPortions() ? __('Kostnad per portion') : __('Kostnad per :unit', ['unit' => $article->stockUnit?->code ?? $article->unit]) }}</dt>
                             <dd class="mt-1 text-xl font-bold">@if($cost->complete)<x-ui.amount :money="$money($cost->perUnitOre)" />@else<span class="text-accent-700">{{ __('Ofullständig – en ingrediens saknar pris') }}</span>@endif</dd>
                         </div>
                         @if($margin)

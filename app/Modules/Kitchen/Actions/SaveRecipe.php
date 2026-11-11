@@ -32,6 +32,18 @@ class SaveRecipe
 
     public function __construct(private readonly StructureWriter $writer) {}
 
+    /**
+     * Rows of the last save whose conversion to the stock unit changed the
+     * typed quantity by more than 0,5 % (ADR-071 §12.4). The recipe is saved;
+     * the screen shows these.
+     *
+     * @return list<string>
+     */
+    public function warnings(): array
+    {
+        return $this->writer->warnings;
+    }
+
     /** @param  array<string, mixed>  $input  as StructureWriter::save */
     public function __invoke(User $user, Company $company, Article $output, array $input): BillOfMaterials
     {

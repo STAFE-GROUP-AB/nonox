@@ -12,6 +12,7 @@ use App\Domain\Company\LegalForm;
 use App\Domain\Company\OrganisationNumber;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\VatPeriod;
+use App\Domain\Units\UnitCatalogue;
 use App\Http\Controllers\LegalPageController;
 use App\Models\Company;
 use App\Models\User;
@@ -65,6 +66,9 @@ class CreateCompany implements CreatesTeams
             // AGENTS.md §3.4 steps 3-5: chart of accounts, first fiscal year,
             // default voucher series.
             ($this->initialiseBookkeeping)($company, $user);
+
+            // The unit catalogue every company starts with (ADR-071 §12.1).
+            UnitCatalogue::seed((int) $company->id);
 
             // TODO(T-1.5): default VAT codes (§3.4 step 6).
             // TODO(Phase 2): number series for invoices and customers (§3.4 step 7).

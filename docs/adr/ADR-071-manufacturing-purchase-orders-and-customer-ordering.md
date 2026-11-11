@@ -475,6 +475,70 @@ threshold should be a company setting; whether a sawmill-type customer needs m³
 unit (then this decision is revisited, with micro-units only for the affected columns);
 `value_ore` in the valuation (accounting check).
 
+### 12.8 As built (M1, 2026-11-10)
+
+Built: the unit catalogue (`units`, seeded on company creation and by the migration), the
+stock, purchase and sales unit and the material's nominal size on `articles`, conversions as
+exact fractions (`article_unit_conversions.numerator`, `denominator`, `source`), the Enheter
+page (Artiklar → Enheter), the units section on the article form (Avancerad), and the
+conversion rules of §12.2–§12.4 in `App\Domain\Units` (`UnitConverter`, `MaterialConversions`,
+`UnitDefaults`, `UnitCatalogue`, `ArticleUnits`). The fixtures of §12.6 are in
+`tests/Fixtures/units/units-of-measure.json` and run in `tests/Unit/Units/UnitConverterTest.php`.
+Not built, as scoped: bills of materials, purchase orders and production orders (they will use
+`UnitConverter::toStock`); invoice rows are unchanged.
+
+Where the build deliberately differs from, or adds to, the text above:
+
+- **`articles.unit` keeps what was typed.** An article saved with only a unit text (the old form,
+  the API, an importer) keeps that text ("tim" stays "tim"); its catalogue unit is the one the
+  text names (§12.2's matching) and all three units follow it. Only an article saved with explicit
+  units gets `unit` from the sales unit's code (the stock unit's when there is none). This keeps
+  invoices and Peppol exactly as before for every existing article. The migration does not touch
+  `articles.unit`.
+- **Articles written without units** (`Article::create`) get the stock unit their text names, in a
+  `creating` hook, so every article has one.
+- **Units named by code.** SaveArticle also accepts `stock_unit`, `purchase_unit` and
+  `sales_unit` as codes (for imports and the demo), besides the ids.
+- **A unit a company adds has no base factor** (dimension is informational); only the defaults
+  convert by themselves. The `units.rec20_code` column is `varchar(3)`.
+- **Derived conversions are a superset of §12.3.** Every pair among lpm/m, m², m³ and st is
+  derived when the dimensions it needs are set (m³ to m² from the thickness alone, which F-U3b
+  needs). Derived rows have `source = DIMENSIONS`; a manual row for the same unit wins and a
+  removed manual row gives the derived one back.
+- **`factor_milli` is nullable** and its check constraint is dropped: a derived fraction can be
+  smaller than one thousandth. It is filled in when it fits and no reader uses it any more; the
+  model fills the fraction from `factor_milli` for rows written the old way.
+- **Entered quantities** may have any number of decimals in `UnitConverter` (F-U6 is 0,000001 m³);
+  the structure writer still reads at most three, as before.
+- **The structure writer and recipes store rows in the stock unit** (§12.2) and use the fractions
+  and the catalogue's built-in conversions; `StructureUnits::FIXED` is gone and `StructureUnits`
+  now delegates. The zero refusal reads "Mängden blir noll i lagerenheten"; the 0,5 % warning is
+  collected in `StructureWriter::$warnings` and shown as a toast on the recipe page. Bills of
+  materials and purchase orders will show it on their own screens.
+- **Stock screens show the stock unit.** `Article::stockUnitCode()` reads the eager-loaded
+  `stockUnit` relation (it never queries, so lists keep a fixed number of queries) and falls back
+  to the unit text. Lager → Artiklar, the overview, receipts, counts, pick lists and their PDF,
+  and the recipe page load it. Still on the unit text, to be moved when M2–M4 touch them: the
+  scanner, the stock and valuation reports, the Kök waste and variance pages, the labels'
+  comparison price and the Connect API (`unit` there stays the unit text).
+- **The stock unit cannot change** once the article has stock movements or sits in a structure
+  (SaveArticle refuses with a Swedish message); the text says to create a new article.
+- **Helper units** (mm, cm, dm², dl, cl, ml, min) are in the catalogue and offered as conversion
+  units, but the stock-unit choices in code (`UnitDefaults::stockChoices()`) exclude them. The
+  article form's selects still list every unit: filtering them is left for the screens that
+  warn about m³ as a stock unit.
+- **`value_ore` and the valuation are not changed.** `UnitConverter::lineValueOre` and
+  `unitCostOre` compute F-U1c and F-U5 and are tested against them, but nothing writes them to
+  the stock ledger. No accounting behaviour changed, so the system documentation is unchanged.
+- **Peppol and invoices.** `UblInvoiceWriter::UNITS` is unchanged (it is now public, so the
+  catalogue can read it); `lpm` still goes out as C62. The Rec 20 codes in the catalogue are the
+  ones of §12.1.
+
+Still open, as in §12.7: the Peppol unit codes (`TODO(legal-verify)`: MTR for running metres,
+XPK as a unit code, codes for dm², dl, cl, ml), whether the 0,5 % threshold is a company setting
+(it is the constant `UnitConverter::WARN_ABOVE`), whether a sawmill-type customer needs m³ as a
+stock unit, and `value_ore` in the valuation (accounting check).
+
 ## Addendum 2026-11-09: production planning calendar (§13)
 
 The owner: "en slags planeringskalender där jag kan se alla orders, produkter som tillverkas

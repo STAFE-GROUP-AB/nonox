@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Units\UnitCatalogue;
 use App\Modules\Inventory\Domain\StockClass;
 use App\Modules\Inventory\Models\ArticleImage;
 use App\Modules\Inventory\Models\StockLevel;
@@ -55,6 +56,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property ?StockClass $stock_class
  * @property ?CarbonInterface $labels_printed_at
  * @property int $labels_printed_count
+ * @property ?int $stock_unit_id
+ * @property ?int $purchase_unit_id
+ * @property ?int $sales_unit_id
+ * @property ?int $material_length_um
+ * @property ?int $material_width_um
+ * @property ?int $material_thickness_um
  */
 class Article extends Model
 {
@@ -96,7 +103,28 @@ class Article extends Model
         'net_realisable_value_ore',
         'net_realisable_value_note',
         'stock_class',
+        'stock_unit_id',
+        'purchase_unit_id',
+        'sales_unit_id',
+        'material_length_um',
+        'material_width_um',
+        'material_thickness_um',
     ];
+
+    /**
+     * An article written without units (an importer, the API, a test) gets
+     * the catalogue unit its unit text names as stock unit, so every article
+     * has one (ADR-071 §12.2). The article form and SaveArticle set them
+     * explicitly.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (Article $article): void {
+            if ($article->stock_unit_id === null && $article->getAttribute('company_id') !== null) {
+                $article->stock_unit_id = UnitCatalogue::resolveId((int) $article->company_id, (string) $article->unit);
+            }
+        });
+    }
 
     /** Normal VAT at the article's rate. */
     public const string VAT_STANDARD = 'STANDARD';
@@ -126,6 +154,9 @@ class Article extends Model
             'stock_class' => StockClass::class,
             'labels_printed_at' => 'datetime',
             'labels_printed_count' => 'integer',
+            'material_length_um' => 'integer',
+            'material_width_um' => 'integer',
+            'material_thickness_um' => 'integer',
         ];
     }
 
@@ -133,6 +164,38 @@ class Article extends Model
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
+    }
+
+    /**
+     * The code of the unit stock is counted in, for screens that show a stock
+     * quantity (ADR-071 §12.5). Reads the loaded `stockUnit` relation and never
+     * queries by itself, so a list stays at a fixed number of queries; where
+     * the relation is not loaded it is the unit text, as before.
+     */
+    public function stockUnitCode(): string
+    {
+        /** @var ?Unit $unit */
+        $unit = $this->relationLoaded('stockUnit') ? $this->stockUnit : null;
+
+        return $unit->code ?? (string) $this->unit;
+    }
+
+    /** @return BelongsTo<Unit, $this> */
+    public function stockUnit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'stock_unit_id');
+    }
+
+    /** @return BelongsTo<Unit, $this> */
+    public function purchaseUnit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'purchase_unit_id');
+    }
+
+    /** @return BelongsTo<Unit, $this> */
+    public function salesUnit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'sales_unit_id');
     }
 
     /** @return HasMany<InvoiceRow, $this> */

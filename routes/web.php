@@ -280,6 +280,7 @@ Route::middleware([
         Route::get('/leverantorsfakturor/{supplierInvoice}/andra', [SupplierInvoiceController::class, 'edit'])->whereUuid('supplierInvoice')->name('payables.invoices.edit');
         Route::get('/leverantorsfakturor/{supplierInvoice}/faktura', [SupplierInvoiceController::class, 'file'])->whereUuid('supplierInvoice')->name('payables.invoices.file');
         Route::view('/artiklar', 'invoicing.articles')->name('invoicing.articles');
+        Route::view('/artiklar/enheter', 'invoicing.units')->name('invoicing.units');
 
         Route::view('/rapporter', 'accounting.reports')->name('accounting.reports');
         Route::view('/reskontra', 'accounting.ledgers')->name('accounting.ledgers');
