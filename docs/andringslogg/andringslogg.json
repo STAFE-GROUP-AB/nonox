@@ -32,11 +32,43 @@
   ],
   "poster": [
     {
+      "id": "2026-11-11-dokumentationen-ikapp",
+      "datum": "2026-11-11T13:20:00+01:00",
+      "rubrik": "Flyttguiden, branschsidorna och startsidan visar det som finns nu",
+      "beskrivning": "Flyttguiden säger att kunder, leverantörer, artiklar, obetalda fakturor och underlag kan läsas in med en fil, och sidorna för hantverkare och restauranger beskriver Arbetsorder och Kök. Startsidan har ett kort för Kundportalen, som kommer snart, och Bokslut nämner K3-förhandsversionen. Manualen har fått bilder för Regelverk, Övergång till K3 och Uppskjuten skatt.",
+      "typ": "Förbättrat",
+      "omrade": "Webbplats"
+    },
+    {
+      "id": "2026-11-11-inkopsorder-ny-version-inleverans",
+      "datum": "2026-11-11T12:40:00+01:00",
+      "rubrik": "Inleveransen följer med när en skickad inköpsorder ändras",
+      "beskrivning": "Den öppna inleveransen följer med när en skickad inköpsorder ändras och skickas igen: rader där inget har kommit följer ordern, medan rader som varor redan har kommit på behåller sin artikel och enhet. En leverantör med inköpsorder anonymiseras nu vid radering i stället för att tas bort, och de skickade versionerna finns kvar.",
+      "typ": "Rättat",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-11-stycklistor-skydd",
       "datum": "2026-11-11T09:00:00+01:00",
       "rubrik": "Stycklistor: skydd för lagerenheten och tydligare varning på offerten",
       "beskrivning": "Lagerenheten kan inte längre ändras på en artikel som är produkt eller komponent i en stycklista, och stycklistor kan läggas högst tolv nivåer i varandra. Byter en offertrad artikel visar kalkylen att radens stycklista gäller en annan produkt, och en underdel utan fullständig stycklista räknas med sitt inköpspris.",
       "typ": "Förbättrat",
+      "omrade": "Lager"
+    },
+    {
+      "id": "2026-11-08-rot-rut-timmar-och-flera-kopare",
+      "datum": "2026-11-08T11:00:00+01:00",
+      "rubrik": "ROT och RUT med arbetade timmar, typ av arbete och flera köpare",
+      "beskrivning": "Fakturan med ROT- eller RUT-avdrag visar arbetade timmar och typ av arbete, som Skatteverket frågar efter när du begär utbetalningen. Delar flera köpare på avdraget, till exempel makar, får var och en sin rad och sitt eget tak.",
+      "typ": "Förbättrat",
+      "omrade": "Fakturering"
+    },
+    {
+      "id": "2026-11-08-lagerslag-vid-bokslut",
+      "datum": "2026-11-08T09:30:00+01:00",
+      "rubrik": "Lagerslag: råvaror och handelsvaror bokförs för sig vid bokslutet",
+      "beskrivning": "Varje artikel kan få ett lagerslag, och lagerförändringen vid bokslutet bokförs med ett kontopar per slag: råvaror mot 1410 och 4910, handelsvaror mot 1460 och 4960. Ett K2-företag kan välja 97-procentsregeln. Företag som aldrig väljer lagerslag får bokföringen som förut.",
+      "typ": "Nytt",
       "omrade": "Lager"
     },
     {

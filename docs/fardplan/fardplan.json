@@ -183,7 +183,7 @@
       "status": "Pågår",
       "omrade": "Lager",
       "uppdaterad": "2026-11-10",
-      "kommentar": "Stycklistor, arbetssteg och kalkyl på offerter och ordrar finns i modulen Tillverkning. Tillverkningsorder och kontrollen av om delarna räcker kommer härnäst."
+      "kommentar": "Stycklistor, arbetssteg och kalkyl på offerter och ordrar finns i modulen Tillverkning, och inköpsorder med inköpsförslag finns i Lager. Tillverkningsorder med färdigvarulager och kontrollen av om delarna räcker kommer härnäst."
     },
     {
       "id": "fraga-siffrorna",
@@ -239,7 +239,7 @@
     {
       "id": "flytt-fran-fler-program",
       "rubrik": "Flytt från fler bokföringsprogram",
-      "beskrivning": "Bokföringen går redan att flytta från alla program som kan ta fram en SIE-fil. Nu kommer inläsning av kund- och leverantörsregistret och en flyttguide per program.",
+      "beskrivning": "Bokföringen går redan att flytta från alla program som kan ta fram en SIE-fil. Inläsning av kunder, leverantörer, artiklar, obetalda fakturor och underlag finns. Kvar är en flyttguide per program.",
       "status": "Pågår",
       "omrade": "Bokföring",
       "uppdaterad": "2026-11-09",
@@ -291,14 +291,6 @@
       "kommentar": "Vi har inte bestämt om det blir en egen modul eller en koppling till befintliga bokningssystem."
     },
     {
-      "id": "inkopsorder",
-      "rubrik": "Inköpsordrar till leverantörer",
-      "beskrivning": "Det som saknas till en order eller ligger under beställningspunkten blir förslag på inköpsordrar, en per leverantör. Du granskar dem och skriver ut eller mejlar dem till leverantören. Inleveransen bockas av mot ordern och leverantörsfakturan stäms av mot den.",
-      "status": "Planerat",
-      "omrade": "Lager",
-      "uppdaterad": "2026-11-08"
-    },
-    {
       "id": "produktionsterminal",
       "rubrik": "Produktionsterminal på läsplattan",
       "beskrivning": "I verkstaden trycker man på sin bild, slår sin kod, väljer en öppen tillverkningsorder och anger hur länge man arbetat med den. Tiden ger orderns verkliga arbetskostnad och visar var arbetet tar längre tid än beräknat.",
@@ -322,15 +314,6 @@
       "status": "Pågår",
       "omrade": "Fakturering",
       "uppdaterad": "2026-11-09"
-    },
-    {
-      "id": "enheter-pa-artiklar",
-      "rubrik": "Artiklar i flera enheter: styck, meter, kvadrat och kubik",
-      "beskrivning": "Varje artikel får en enhet som lagret räknas i och egna enheter för inköp och försäljning. Virke kan köpas i kubikmeter, lagras i löpmeter och användas i stycklistan i styck, och NONOX räknar om mellan dem utifrån virkets längd, bredd och tjocklek. Enheten syns på varje rad, med lagerenheten bredvid när de skiljer sig åt.",
-      "status": "Planerat",
-      "omrade": "Lager",
-      "uppdaterad": "2026-11-09",
-      "kommentar": "Beslutet finns i ADR-071. Vi provar enheterna med ett snickeri innan de byggs färdigt."
     },
     {
       "id": "planeringskalender-tillverkning",

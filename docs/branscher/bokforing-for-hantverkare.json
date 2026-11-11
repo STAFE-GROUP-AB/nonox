@@ -28,6 +28,7 @@
         "intro": "Allt nedan finns i NONOX i dag. Lön är en modul som du slår på under Inställningar → Moduler.",
         "items": [
             {"title": "Från offert till faktura i ett svep", "text": "Skriv offerten, gör den till en order när kunden säger ja och till en faktura när jobbet är klart. Fakturan får OCR-nummer, går ut som PDF med e-post och bokförs direkt. Inbetalningar från bankens fil matchas på OCR-numret.", "features": ["quotes_orders", "invoices", "incoming_payments", "registers"]},
+            {"title": "Arbetsorder med tid, material och ÄTA", "text": "Skriv tid och material på plats i mobilen, med foton, och gör fakturaunderlaget till ett fakturautkast. Ändrar kunden jobbet signerar hen ÄTA:n med sin namnteckning innan arbetet görs, via en länk eller på plats i din telefon. Arbetsorder är en modul som du slår på under Inställningar → Moduler.", "features": ["work_orders", "work_orders_ata"]},
             {"title": "ROT- och RUT-avdrag på fakturan", "text": "Markera raderna som är arbetskostnad. NONOX räknar avdraget, kunden betalar resten och avdraget bokförs som en egen fordran. När Skatteverket betalat registrerar du det på fakturan.", "features": ["rot_rut"]},
             {"title": "Omvänd betalningsskyldighet för byggtjänster", "text": "Välj omvänd byggmoms på fakturan, så får den rätt text, rätt konto och rätt ruta i momsdeklarationen. Du avgör själv om tjänsten är en byggtjänst; NONOX sköter resten.", "features": ["construction_reverse_charge", "vat_return"]},
             {"title": "Projekt för varje jobb", "text": "Märk leverantörsfakturor och verifikationsrader med projekt eller kostnadsställe, så ser du vart materialet tog vägen. Leverantörsfakturorna attesteras och betalas med en betalfil till banken.", "features": ["cost_centres", "supplier_invoices", "payment_files", "reports"]},
@@ -37,8 +38,7 @@
     },
     "limits": [
         {"text": "Personalliggaren i NONOX är byggd för restaurang, frisör och skönhet, fordonsservice, tvätterier och grossister. Byggbranschens personalliggare med ID06 och byggarbetsplatsanmälan finns inte ännu."},
-        {"text": "ROT och RUT fungerar med fakturametoden. Utbetalningen begär du i Skatteverkets e-tjänst; NONOX gör ingen fil för begäran."},
-        {"text": "NONOX har ingen tidrapportering mot kund. Timmarna skriver du på fakturaraden."}
+        {"text": "ROT och RUT fungerar med fakturametoden. Utbetalningen begär du i Skatteverkets e-tjänst; NONOX gör ingen fil för begäran."}
     ],
     "pricing": {
         "employees": 3,
@@ -53,7 +53,7 @@
         {"q": "Kan jag följa upp vad varje jobb kostat?", "a": "Ja. Lägg upp ett projekt per jobb och märk leverantörsfakturor och verifikationsrader med det. Rapporterna kan tas fram per kostnadsställe, och projektet följer med raderna."},
         {"q": "Kan jag skicka fakturan direkt från mobilen?", "a": "Ja. NONOX installeras som app på hemskärmen direkt från mobilens webbläsare, utan App Store, och där skapar och skickar du fakturan. Appen behöver internet; ingen bokföring sparas i telefonen."},
         {"q": "Vad kostar NONOX för ett hantverksföretag?", "a": "{pris} per år med drift för upp till {max} anställda, med lön, ROT och RUT inräknade. Kör du NONOX själv kostar det ingenting."},
-        {"q": "Hur flyttar jag mina obetalda fakturor?", "a": "Bokföringen flyttar du med SIE4. Obetalda kundfakturor tar du med som en lista på flyttdagen, och kommer du från Fortnox jämför NONOX dem åt dig. Flyttguiden visar alla steg."}
+        {"q": "Hur flyttar jag mina obetalda fakturor?", "a": "Bokföringen flyttar du med SIE4. Obetalda kundfakturor läser du in med en fil under Bokföring → Läs in register eller tar med som en lista på flyttdagen, och kommer du från Fortnox jämför NONOX dem åt dig. Flyttguiden visar alla steg."}
     ],
     "related": ["bokforing-for-konsulter", "bokforing-for-butiker", "for-ekonomikonsulter"],
     "legal_verify": [
