@@ -54,7 +54,7 @@ Ingenting bokförs när tid rapporteras. Tiden blir arbetskostnad på ordern, me
 Terminalen sparar namnet på den som rapporterat, tillsammans med order, arbetssteg, dag, minuter och surfplatta.
 
 - Namnet tas bort ur rapporten 24 månader efter inmatningen. Minuterna finns kvar som kostnad på ordern.
-- Koden sparas aldrig, bara ett kontrollvärde. Fem felaktiga koder i rad spärrar personen i fem minuter, och en ny kod häver spärren.
+- Koden sparas aldrig, bara ett kontrollvärde. Fem felaktiga koder i rad spärrar personen i fem minuter. Efter tre sådana spärrar inom ett dygn är personen spärrad tills du väljer en ny kod, och ägare och administratörer får en avisering. En surfplatta som fått tjugo felaktiga koder på en timme pausas resten av timmen. En ny kod häver spärren.
 - Under **Personer på surfplattan** hämtar du ett **registerutdrag** för en person som begär ut sina uppgifter.
 - Rapporterna används till efterkalkylen per produkt och arbetssteg. Det finns ingen uppföljning per person.
 

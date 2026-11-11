@@ -29,6 +29,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property ?string $code_salt
  * @property ?string $code_verifier
  * @property int $failed_attempts
+ * @property int $lockouts
+ * @property ?CarbonImmutable $last_lockout_at
+ * @property ?CarbonImmutable $code_blocked_at
  * @property ?CarbonImmutable $locked_until
  * @property ?CarbonImmutable $archived_at
  * @property ?int $created_by
@@ -42,6 +45,11 @@ class WorkshopPerson extends Model
 
     public const int LOCK_MINUTES = 5;
 
+    /** Lock-outs within LOCKOUT_WINDOW_HOURS after which the person stays blocked until a manager sets a new code. */
+    public const int ESCALATE_AFTER = 3;
+
+    public const int LOCKOUT_WINDOW_HOURS = 24;
+
     /** @var list<string> */
     protected $hidden = ['code_salt', 'code_verifier'];
 
@@ -54,6 +62,9 @@ class WorkshopPerson extends Model
         return [
             'photo_consent_at' => 'immutable_datetime',
             'locked_until' => 'immutable_datetime',
+            'last_lockout_at' => 'immutable_datetime',
+            'code_blocked_at' => 'immutable_datetime',
+            'lockouts' => 'integer',
             'archived_at' => 'immutable_datetime',
             'failed_attempts' => 'integer',
         ];
@@ -75,7 +86,13 @@ class WorkshopPerson extends Model
 
     public function isLocked(): bool
     {
-        return $this->locked_until !== null && $this->locked_until->isFuture();
+        return $this->isBlocked() || ($this->locked_until !== null && $this->locked_until->isFuture());
+    }
+
+    /** Blocked after repeated lock-outs: only a new code from a manager lifts it. */
+    public function isBlocked(): bool
+    {
+        return $this->code_blocked_at !== null;
     }
 
     public function codeMatches(string $code): bool

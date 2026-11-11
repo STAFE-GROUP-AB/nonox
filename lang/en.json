@@ -14136,5 +14136,10 @@
     "Verkstadsterminalen": "The workshop terminal",
     "Inget pågår på årets sista dag. Saldot på kontot bokförs bort.": "Nothing is in progress on the last day of the year. The balance on the account is booked out.",
     "Till tillverkning": "To production",
-    "Tillverkat": "Manufactured"
+    "Tillverkat": "Manufactured",
+    "Öppna Verkstadsterminal": "Open Workshop terminal",
+    "Koden för :name är spärrad efter upprepade felaktiga försök. Välj en ny kod under Tillverkning, Verkstadsterminal.": "The code for :name is blocked after repeated wrong attempts. Choose a new code under Manufacturing, Workshop terminal.",
+    "Din kod är spärrad efter för många felaktiga försök. Be arbetsledaren välja en ny kod.": "Your code is blocked after too many wrong attempts. Ask the supervisor to choose a new code.",
+    "Surfplattan är pausad en stund efter för många felaktiga koder. Försök igen om en timme eller be arbetsledaren.": "The tablet is paused for a while after too many wrong codes. Try again in an hour or ask the supervisor.",
+    "Spärrad tills ny kod väljs": "Blocked until a new code is chosen"
 }

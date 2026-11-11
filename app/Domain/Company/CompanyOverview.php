@@ -76,6 +76,8 @@ final class CompanyOverview
         'crm-forms' => 'crm.forms',
         // Questions and disputes from the customer portal (ADR-075).
         'customer-portal-questions' => 'portal.admin.questions',
+        // A workshop terminal code blocked after repeated wrong guesses (ADR-071 §7).
+        'workshop-terminal' => 'manufacturing.terminal.admin',
         // Reminders of a company's dates (ADR-051, stage 2).
         'mina-datum' => 'guide.dates',
     ];

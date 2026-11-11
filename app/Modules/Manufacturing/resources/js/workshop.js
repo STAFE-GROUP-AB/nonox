@@ -251,7 +251,7 @@ async function enterCode(digit) {
 
     if (result.status === 429) {
         show('people');
-        notice(t('code_locked'), 'error');
+        notice(t(result.data?.paused ? 'device_paused' : (result.data?.blocked ? 'code_blocked' : 'code_locked')), 'error');
 
         return;
     }

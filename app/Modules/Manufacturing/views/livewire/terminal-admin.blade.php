@@ -119,7 +119,7 @@
                             <div>
                                 <span class="font-semibold text-ink">{{ $person->name }}</span>
                                 @if($person->archived_at)<x-ui.badge>{{ __('Arkiverad') }}</x-ui.badge>@endif
-                                @if($person->isLocked())<x-ui.badge>{{ __('Spärrad en stund') }}</x-ui.badge>@endif
+                                @if($person->isBlocked())<x-ui.badge>{{ __('Spärrad tills ny kod väljs') }}</x-ui.badge>@elseif($person->isLocked())<x-ui.badge>{{ __('Spärrad en stund') }}</x-ui.badge>@endif
                                 <span class="ms-2 text-sm text-gray-500">{{ $person->hasCode() ? __('Kod vald') : __('Ingen kod') }}{{ $person->photo_path ? ' · '.__('foto') : '' }}</span>
                             </div>
                             <div class="whitespace-nowrap">

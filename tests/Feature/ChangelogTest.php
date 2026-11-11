@@ -41,6 +41,56 @@ it('has a changelog that follows its schema', function () {
     }
 });
 
+it('has no duplicate keys inside any entry of the changelog or the roadmap', function () {
+    foreach (['andringslogg/andringslogg.json', 'fardplan/fardplan.json'] as $file) {
+        $json = (string) file_get_contents(base_path("docs/{$file}"));
+
+        // Every object's keys, in the order written: a repeated key inside one object means two entries were merged.
+        $seen = [[]];
+        $inString = false;
+        $escaped = false;
+        $token = '';
+        $afterKey = false;
+
+        foreach (str_split($json) as $char) {
+            if ($inString) {
+                if ($escaped) {
+                    $token .= $char;
+                    $escaped = false;
+                } elseif ($char === '\\') {
+                    $token .= $char;
+                    $escaped = true;
+                } elseif ($char === '"') {
+                    $inString = false;
+                    $afterKey = true;
+                } else {
+                    $token .= $char;
+                }
+
+                continue;
+            }
+
+            if ($char === '"') {
+                $inString = true;
+                $token = '';
+            } elseif ($char === ':' && $afterKey) {
+                $depth = count($seen) - 1;
+                expect(isset($seen[$depth][$token]))->toBeFalse("{$file}: the key \"{$token}\" is repeated inside one object.");
+                $seen[$depth][$token] = true;
+                $afterKey = false;
+            } elseif ($char === '{') {
+                $seen[] = [];
+                $afterKey = false;
+            } elseif ($char === '}') {
+                array_pop($seen);
+                $afterKey = false;
+            } elseif (! ctype_space($char)) {
+                $afterKey = false;
+            }
+        }
+    }
+});
+
 it('has a roadmap that follows its schema', function () {
     expect(Roadmap::errors())->toBe([])
         ->and(Roadmap::all())->not->toBeEmpty();

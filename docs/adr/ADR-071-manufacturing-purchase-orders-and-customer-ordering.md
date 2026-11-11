@@ -1057,7 +1057,7 @@ pictures, a four-digit code, open orders (RELEASED or STARTED) with product, cus
 due date, then hours and minutes for today on an operation. The server checks the code and returns
 a signed session token (ids, a fingerprint of the code and an expiry, ten minutes, refreshed on use;
 a new code ends old sessions). Five wrong codes lock the person for five minutes, per person, not per
-tablet. The tablet signs out itself after one minute without touch. Unlike the kiosk it is online
+tablet. Review of M5: three such lock-outs within 24 hours block the person until a manager sets a new code (a notice goes to everyone with `production:report`), and a tablet with twenty wrong codes in an hour is paused for that hour, so a four-digit code cannot be guessed over days and a person cannot be locked out repeatedly by a stranger at one tablet. The tablet signs out itself after one minute without touch. Unlike the kiosk it is online
 only: a report that could not be sent is not shown as saved. The page says in Swedish that this is
 production time, not attendance and not payroll time, and nothing reads or writes either.
 

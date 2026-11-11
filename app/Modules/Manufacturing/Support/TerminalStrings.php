@@ -28,6 +28,8 @@ final class TerminalStrings
             'code_help' => __('Skriv din kod.'),
             'code_wrong' => __('Fel kod. Försök igen.'),
             'code_locked' => __('För många felaktiga koder. Vänta fem minuter eller be arbetsledaren om en ny kod.'),
+            'code_blocked' => __('Din kod är spärrad efter för många felaktiga försök. Be arbetsledaren välja en ny kod.'),
+            'device_paused' => __('Surfplattan är pausad en stund efter för många felaktiga koder. Försök igen om en timme eller be arbetsledaren.'),
             'back' => __('Tillbaka'),
             'delete' => __('Radera'),
             'sign_out' => __('Logga ut'),

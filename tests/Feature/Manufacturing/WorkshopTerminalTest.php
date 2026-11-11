@@ -266,7 +266,8 @@ it('reports hours and minutes for today as a labour entry priced at the hourly c
 
     $audit = AuditLog::query()->where('action', 'manufacturing.terminal_time_entered')->latest('id')->first();
     expect($audit->payload)->toMatchArray(['minutes' => 90, 'device_id' => $this->device->id, 'production_order_operation_id' => $this->cut->id])
-        ->and(json_encode($audit->payload))->not->toContain((string) $this->anna->id)->not->toContain('Anna')
+        ->and(array_keys($audit->payload))->toEqualCanonicalizing(['production_order_operation_id', 'minutes', 'worked_on', 'device_id'])
+        ->and(json_encode($audit->payload))->not->toContain('Anna')
         ->and($audit->ip_address)->toBeNull();
 });
 
@@ -513,4 +514,82 @@ it('runs a fixed number of queries for the order list and the person\'s own repo
 
     expect(wsCall($this, 'orders', session: $session, method: 'get')->json('orders'))->toHaveCount(10)
         ->and($count())->toBe($few)->and($few)->toBeLessThanOrEqual(25);
+});
+
+// ---------- guessing the code ----------
+
+function wsLockOut(object $test, WorkshopPerson $person): TestResponse
+{
+    foreach (range(1, 4) as $_) {
+        wsCall($test, 'sign-in', ['person_id' => $person->id, 'code' => '9999'])->assertOk()->assertJsonPath('ok', false);
+    }
+
+    return wsCall($test, 'sign-in', ['person_id' => $person->id, 'code' => '9999']);
+}
+
+it('keeps a person blocked until a manager sets a new code after three lock-outs in 24 hours, and tells the managers', function () {
+    wsLockOut($this, $this->anna)->assertStatus(429)->assertJsonPath('locked', true)->assertJsonPath('blocked', false);
+    $this->travel(6)->minutes();
+    wsLockOut($this, $this->anna)->assertStatus(429)->assertJsonPath('blocked', false);
+    $this->travel(6)->minutes();
+
+    // The third lock-out blocks until a new code is set.
+    wsLockOut($this, $this->anna)->assertStatus(429)->assertJsonPath('blocked', true);
+    $this->travel(30)->minutes();
+    wsCall($this, 'sign-in', ['person_id' => $this->anna->id, 'code' => '2580'])->assertStatus(429)->assertJsonPath('blocked', true);
+    $this->travel(2)->days();
+    wsCall($this, 'sign-in', ['person_id' => $this->anna->id, 'code' => '2580'])->assertStatus(429)->assertJsonPath('blocked', true);
+
+    // The managers (the owner) have a notice that names the company and the person.
+    CurrentCompany::set($this->company);
+    $notice = $this->owner->notifications()->where('data->kind', 'workshop_code_blocked')->get();
+    expect($notice)->toHaveCount(1)
+        ->and($notice[0]->data['person_id'])->toBe($this->anna->id)
+        ->and($notice[0]->data['destination'])->toBe('workshop-terminal');
+    expect(WorkshopPerson::query()->find($this->anna->id)->code_blocked_at)->not->toBeNull();
+
+    // A new code lifts it, and the history starts again.
+    app(WorkshopPeople::class)->setCode($this->owner, $this->company, $this->anna, '7391');
+    $fresh = WorkshopPerson::query()->find($this->anna->id);
+    expect($fresh->code_blocked_at)->toBeNull()->and($fresh->lockouts)->toBe(0);
+    CurrentCompany::forget();
+    wsSignIn($this, $this->anna, '7391');
+});
+
+it('does not escalate lock-outs that are more than 24 hours apart', function () {
+    wsLockOut($this, $this->anna)->assertStatus(429);
+    $this->travel(25)->hours();
+    wsLockOut($this, $this->anna)->assertStatus(429);
+    $this->travel(25)->hours();
+    wsLockOut($this, $this->anna)->assertStatus(429)->assertJsonPath('blocked', false);
+    $this->travel(6)->minutes();
+
+    wsSignIn($this, $this->anna, '2580');
+    CurrentCompany::set($this->company);
+    expect($this->owner->notifications()->where('data->kind', 'workshop_code_blocked')->count())->toBe(0);
+});
+
+it('pauses a tablet after twenty wrong codes in an hour, whoever they were tried on', function () {
+    // Twenty wrong codes spread over several people stay below each person's own lock.
+    foreach (range(1, 20) as $i) {
+        $person = $i % 2 === 0 ? $this->anna : $this->bo;
+        $response = wsCall($this, 'sign-in', ['person_id' => $person->id, 'code' => '9999']);
+
+        if ($i % 5 === 0) {
+            $this->travel(6)->minutes();
+        }
+
+        expect($response->status())->toBeIn([200, 429]);
+    }
+
+    wsCall($this, 'sign-in', ['person_id' => $this->bo->id, 'code' => '1397'])->assertStatus(429)->assertJsonPath('paused', true);
+
+    // Another tablet is not affected.
+    CurrentCompany::set($this->company);
+    [, $other] = Workshop::device($this->owner, $this->company, 'Lackeringen');
+    CurrentCompany::forget();
+    wsCall($this, 'sign-in', ['person_id' => $this->bo->id, 'code' => '1397'], token: $other)->assertOk()->assertJsonPath('ok', true);
+
+    $this->travel(61)->minutes();
+    wsSignIn($this, $this->bo, '1397');
 });

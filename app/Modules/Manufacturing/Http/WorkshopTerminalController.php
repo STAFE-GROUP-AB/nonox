@@ -137,8 +137,12 @@ class WorkshopTerminalController
             return response()->json(['ok' => false, 'locked' => false]);
         }
 
+        if (isset($result['paused'])) {
+            return response()->json(['ok' => false, 'paused' => true], 429);
+        }
+
         if (isset($result['locked'])) {
-            return response()->json(['ok' => false, 'locked' => true], 429);
+            return response()->json(['ok' => false, 'locked' => true, 'blocked' => $result['blocked']], 429);
         }
 
         return response()->json(['ok' => true, 'token' => $result['token'], 'name' => $result['name']], 200, ['Cache-Control' => 'no-store']);

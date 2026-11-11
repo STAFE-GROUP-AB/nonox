@@ -68,10 +68,12 @@ final class WorkshopPeople
         Audit::record('manufacturing.terminal_person_changed', $person, [], $company, $user);
     }
 
-    /** Sets a new code and lifts a lock-out. */
+    /** Sets a new code and lifts a lock-out, also one that blocked the person after repeated wrong guesses. */
     public function setCode(User $user, Company $company, WorkshopPerson $person, string $code): void
     {
         $this->authorize($user, $company);
+        // The lock-out fields change at the terminal meanwhile, so a stale model must not hide them.
+        $person->refresh();
         $this->applyCode($person, $code);
 
         Audit::record('manufacturing.terminal_code_set', $person, [], $company, $user);
@@ -191,6 +193,9 @@ final class WorkshopPeople
             'code_verifier' => Pin::verifier($code, $salt),
             'failed_attempts' => 0,
             'locked_until' => null,
+            'lockouts' => 0,
+            'last_lockout_at' => null,
+            'code_blocked_at' => null,
         ])->save();
     }
 
