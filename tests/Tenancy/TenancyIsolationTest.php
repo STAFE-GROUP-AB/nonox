@@ -174,14 +174,27 @@ use App\Modules\Kitchen\Models\SaleConsumption;
 use App\Modules\Kitchen\Models\StaffMeal;
 use App\Modules\Kitchen\Models\WasteEntry;
 use App\Modules\Kitchen\Models\WasteMeasurement;
+use App\Modules\Manufacturing\Models\CustomerDateChange;
+use App\Modules\Manufacturing\Models\Downtime;
 use App\Modules\Manufacturing\Models\Operation;
+use App\Modules\Manufacturing\Models\Overtime;
+use App\Modules\Manufacturing\Models\ProductionDeviation;
+use App\Modules\Manufacturing\Models\ProductionDeviationImpact;
 use App\Modules\Manufacturing\Models\ProductionLabourEntry;
 use App\Modules\Manufacturing\Models\ProductionOrder;
 use App\Modules\Manufacturing\Models\ProductionOrderComponent;
 use App\Modules\Manufacturing\Models\ProductionOrderIssue;
 use App\Modules\Manufacturing\Models\ProductionOrderOperation;
+use App\Modules\Manufacturing\Models\ProductionPlanForecast;
+use App\Modules\Manufacturing\Models\ProductionPlanLock;
+use App\Modules\Manufacturing\Models\ProductionPlanRun;
+use App\Modules\Manufacturing\Models\ProductionPlanSlot;
+use App\Modules\Manufacturing\Models\ProductionScenario;
+use App\Modules\Manufacturing\Models\ProductionSkill;
 use App\Modules\Manufacturing\Models\RowStructure;
 use App\Modules\Manufacturing\Models\RowStructureLine;
+use App\Modules\Manufacturing\Models\WorkPattern;
+use App\Modules\Manufacturing\Models\Workstation;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\AgiSubmission;
@@ -471,6 +484,19 @@ const COMPANY_SCOPED_MODELS = [
     ProductionOrderOperation::class => 'productionOrderOperationAttributes',
     ProductionOrderIssue::class => 'productionOrderIssueAttributes',
     ProductionLabourEntry::class => 'productionLabourEntryAttributes',
+    ProductionSkill::class => ['name' => 'Hemlig kompetens'],
+    Workstation::class => ['name' => 'Hemlig station'],
+    Downtime::class => 'planningDowntimeAttributes',
+    WorkPattern::class => 'planningWorkPatternAttributes',
+    Overtime::class => 'planningOvertimeAttributes',
+    ProductionPlanRun::class => ['trigger' => 'MANUAL', 'planned_from' => '2026-03-02 07:00', 'horizon_until' => '2026-08-31 07:00'],
+    ProductionPlanSlot::class => 'planningSlotAttributes',
+    ProductionPlanForecast::class => 'planningForecastAttributes',
+    ProductionPlanLock::class => 'planningLockAttributes',
+    ProductionScenario::class => ['changes' => [], 'expires_at' => '2026-03-09 07:00'],
+    ProductionDeviation::class => ['type' => 'OVERRUN', 'details' => []],
+    ProductionDeviationImpact::class => 'planningImpactAttributes',
+    CustomerDateChange::class => 'planningDateChangeAttributes',
     WasteEntry::class => 'kitchenWasteAttributes',
     WasteMeasurement::class => ['measured_on' => '2026-03-01', 'kg_milli' => 1500],
     StaffMeal::class => ['served_on' => '2026-03-01', 'meal' => 'LUNCH', 'quantity_milli' => 1000, 'reason' => 'REPRESENTATION'],
@@ -1944,6 +1970,48 @@ function productionLabourEntryAttributes(): array
     return ['production_order_id' => $operation->production_order_id, 'production_order_operation_id' => $operation->id, 'source' => 'ENTERED', 'minutes' => 30, 'hourly_cost_ore' => 45_000, 'cost_ore' => 22_500, 'worked_on' => '2026-03-01'];
 }
 
+function planningDowntimeAttributes(): array
+{
+    return ['workstation_id' => Workstation::create(['name' => 'Station '.Str::random(8)])->id, 'starts_at' => '2026-03-02 07:00', 'reason' => 'BREAKDOWN'];
+}
+
+function planningWorkPatternAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'weekday' => 1, 'start_time' => '07:00', 'end_time' => '16:00'];
+}
+
+function planningOvertimeAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'starts_at' => '2026-03-02 16:00', 'ends_at' => '2026-03-02 19:00'];
+}
+
+function planningDateChangeAttributes(): array
+{
+    return ['sales_document_id' => SalesDocument::create(salesDocumentAttributes())->id, 'new_on' => '2026-03-20'];
+}
+
+function planningSlotAttributes(): array
+{
+    $operation = ProductionOrderOperation::create(productionOrderOperationAttributes());
+
+    return ['run_id' => ProductionPlanRun::create(['trigger' => 'MANUAL', 'planned_from' => '2026-03-02 07:00', 'horizon_until' => '2026-08-31 07:00'])->id, 'production_order_id' => $operation->production_order_id, 'production_order_operation_id' => $operation->id, 'starts_at' => '2026-03-02 07:00', 'ends_at' => '2026-03-02 08:00', 'minutes' => 60, 'segments' => []];
+}
+
+function planningForecastAttributes(): array
+{
+    return ['run_id' => ProductionPlanRun::create(['trigger' => 'MANUAL', 'planned_from' => '2026-03-02 07:00', 'horizon_until' => '2026-08-31 07:00'])->id, 'production_order_id' => ProductionOrder::create(productionOrderAttributes())->id, 'status' => 'GREY', 'waits_for' => 'NOTHING', 'flags' => []];
+}
+
+function planningLockAttributes(): array
+{
+    return ['production_order_operation_id' => ProductionOrderOperation::create(productionOrderOperationAttributes())->id, 'kind' => 'ASSIGN', 'employee_id' => Employee::create(payrollEmployeeAttributes())->id];
+}
+
+function planningImpactAttributes(): array
+{
+    return ['deviation_id' => ProductionDeviation::create(['type' => 'OVERRUN', 'details' => []])->id, 'production_order_id' => ProductionOrder::create(productionOrderAttributes())->id, 'change_working_days' => 1];
+}
+
 function unitConversionAttributes(): array
 {
     return ['article_id' => Article::create(articleAttributes())->id, 'unit' => 'cl', 'factor_milli' => 70_000];
@@ -2042,7 +2110,7 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [PurchaseOrderVersion::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class];
+const NEVER_UPDATED = [PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
 const APPEND_ONLY = [WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];
