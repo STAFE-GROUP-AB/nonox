@@ -1952,6 +1952,8 @@ function workshopWaitingFlagAttributes(): array
     $operation = workshopOrderOperation();
 
     return ['production_order_id' => $operation->production_order_id, 'production_order_operation_id' => $operation->id, 'kind' => 'MATERIAL', 'reason' => 'Hemlig orsak', 'raised_by_device_id' => WorkshopDevice::create(['name' => 'Hemlig surfplatta'])->id, 'raised_at' => '2026-03-01 10:00:00'];
+}
+
 function productionOrderAttributes(): array
 {
     return ['number' => random_int(1, 1_000_000), 'article_id' => Article::create(articleAttributes())->id, 'name' => 'Hemlig tillverkning', 'yield_milli' => 1000, 'quantity_milli' => 2000];
