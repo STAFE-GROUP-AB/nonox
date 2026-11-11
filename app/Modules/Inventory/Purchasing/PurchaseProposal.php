@@ -17,7 +17,9 @@ use Illuminate\Support\Facades\DB;
  * The purchase proposal (ADR-071 §5) for articles kept in stock:
  *
  *     free now = on hand − reserved (by every demand source)
- *     coming   = open purchase order rows not yet received, with their date
+ *     coming   = open purchase order rows not yet received, with their date,
+ *                plus what other supply sources will bring in (the finished
+ *                goods of open production orders)
  *     short    = max(0, reserved − on hand − coming)
  *
  * An article with a reorder point whose free stock plus what is coming is at
@@ -66,13 +68,21 @@ final class PurchaseProposal
             ->groupBy('purchase_order_rows.article_id')
             ->get(['purchase_order_rows.article_id', DB::raw('sum(purchase_order_rows.quantity_milli - purchase_order_rows.received_milli) as milli'), DB::raw('min(purchase_order_rows.expected_on) as first_expected')])
             ->keyBy('article_id');
+        $supplied = [];
+
+        foreach ($this->sources->supplies() as $supply) {
+            foreach ($supply->coming($company) as $articleId => $milli) {
+                $supplied[$articleId] = ($supplied[$articleId] ?? 0) + $milli;
+            }
+        }
+
         $conversions = PurchaseQuantities::conversions($ids);
         $lines = [];
 
         foreach ($articles as $article) {
             $have = (int) ($onHand[$article->id] ?? 0);
             $taken = $reserved[$article->id] ?? 0;
-            $incoming = (int) ($coming->get($article->id)?->getAttribute('milli') ?? 0);
+            $incoming = (int) ($coming->get($article->id)?->getAttribute('milli') ?? 0) + ($supplied[$article->id] ?? 0);
             $available = $have - $taken + $incoming;
             $short = max(0, $taken - $have - $incoming);
             $below = $article->reorder_point_milli !== null && $available <= $article->reorder_point_milli;

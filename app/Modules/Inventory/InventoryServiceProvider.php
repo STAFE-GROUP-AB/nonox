@@ -41,6 +41,7 @@ use App\Modules\Inventory\Policies\InventoryPolicy;
 use App\Modules\Inventory\Policies\PurchaseOrderPolicy;
 use App\Modules\Inventory\Purchasing\PurchaseDemandSources;
 use App\Modules\Inventory\Scanner\ScannerExtensions;
+use App\Modules\Inventory\Support\StockValuationAdditions;
 use App\Modules\ModuleRegistry;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -62,6 +63,7 @@ class InventoryServiceProvider extends ServiceProvider
         $this->app->singleton(ScannerExtensions::class);
         // Demand that reserves stock in the purchase proposal (ADR-071 §5); manufacturing adds its own.
         $this->app->singleton(PurchaseDemandSources::class);
+        $this->app->singleton(StockValuationAdditions::class);
     }
 
     public function boot(): void

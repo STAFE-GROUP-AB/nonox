@@ -9,7 +9,8 @@ namespace App\Modules\Inventory\Domain;
  * goods in at a cost; picks, POS sales and scrapping take them out; a
  * transfer is two rows (out and in) with the same transfer group. Kök
  * (ADR-073) adds drawing sold dishes' ingredients and the business's own
- * use.
+ * use; Tillverkning (ADR-071 §8) issues components to production orders and
+ * receives the finished goods.
  */
 enum MovementType: string
 {
@@ -42,6 +43,12 @@ enum MovementType: string
     /** Eget bruk: food used by the business itself, such as staff meals and representation (ADR-073 §7). */
     case InternalUse = 'INTERNAL_USE';
 
+    /** Tillverkning: components taken out for a production order (out), or back when it is cancelled (in) (ADR-071 §8). */
+    case ProductionIssue = 'PRODUCTION_ISSUE';
+
+    /** Tillverkat: finished goods received from a production order at its manufacturing cost (ADR-071 §8). */
+    case ProductionReceipt = 'PRODUCTION_RECEIPT';
+
     public function label(): string
     {
         return match ($this) {
@@ -55,6 +62,8 @@ enum MovementType: string
             self::WorkOrderIssue => __('Arbetsorder'),
             self::RecipeSale => __('Såld via recept'),
             self::InternalUse => __('Eget bruk'),
+            self::ProductionIssue => __('Till tillverkning'),
+            self::ProductionReceipt => __('Tillverkat'),
         };
     }
 

@@ -249,6 +249,12 @@ final class DatabaseGrants
         'pos_webhook_messages' => GrantDecision::ReadWrite,
         'prior_year_size_figures' => GrantDecision::ReadWrite,
         'projects' => GrantDecision::ReadWrite,
+        // Production order issues and labour are ledgers for the work in progress (ADR-071 §8): never changed.
+        'production_labour_entries' => GrantDecision::AppendOnly,
+        'production_order_components' => GrantDecision::ReadWrite,
+        'production_order_issues' => GrantDecision::AppendOnly,
+        'production_order_operations' => GrantDecision::ReadWrite,
+        'production_orders' => GrantDecision::ReadWrite,
         'purchase_order_invoices' => GrantDecision::ReadWrite,
         'purchase_order_rows' => GrantDecision::ReadWrite,
         'purchase_order_versions' => GrantDecision::AppendOnly,
