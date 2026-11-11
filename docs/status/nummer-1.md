@@ -742,3 +742,17 @@ Evidence: `tests/Feature/Inventory/PurchaseOrdersTest.php`, `tests/Feature/Inven
 - Manualartiklarna `lager/inkopsorder` och `lager/inkopsforslag` med skärmbilder från demobutiken, ändringslogg, README, landningssidan, ADR-071 "As built (M3)", GDPR-dokumenten och registerutdraget per leverantör.
 Open legal-verify items: om en skickad inköpsorder är räkenskapsinformation (BFL 5 kap. 6 §), och därmed om de skickade versionerna (mottagare och leverantörens uppgifter i ögonblicksbilden) ska anonymiseras när en leverantör raderas, vilket i dag inte görs eftersom de bara kan läggas till; om den som skrev en order över attestgränsen får skicka den själv; bokföringskontrollen av `value_ore` (§12.4).
 Next package: M2/M4 enligt prioritetslistan.
+
+---
+
+Package: Sammanslagning, integration/batch2 (M2, M3)
+Status: done (M2 och M3 sammanslagna i den ordningen; ingen push)
+Evidence: hela sviten `PGTZ=UTC … php -d memory_limit=1G vendor/bin/pest`: 8 922 gröna, 2 röda (båda `DemoScheduleTest`), 8 todos, 6 skipped. `DemoScheduleTest` ensam: 14 gröna; `tests/Feature/Demo` ensam: 82 gröna, 1 röd (samma demoflake mellan filer). phpstan nivå 8: inga fel. `pint --test`: godkänd. `npm test`: 103 gröna. `npm run build`: ok.
+- Konflikter: `SalesDocumentRow` (både `HasRegisterUnit` och `asInput`-aliaset behålls), ADR-071 (båda "As built"-avsnitten), andringslogg, lang/en.json och lang/sv.json (union, validerade som JSON), status.
+- Systemdokumentationen oförändrad (0.131); `package-lock.json` utan ändring.
+Follow-ups:
+- M2 P2: skyddet mot byte av lagerenhet missar radkopiornas rader och utdata.
+- M2 P3: reservkostnad för delmontage, ett 500 när nästlingen går djupare än 12 nivåer, byte av radens artikel mot dess kopia.
+- M3, ägarens val: ett reviderat osänt utkast ändrar redan den öppna inleveransen.
+- M3 legal-verify: skickade inköpsordrars versioner anonymiseras inte.
+Next package: enligt prioritetslistan.
