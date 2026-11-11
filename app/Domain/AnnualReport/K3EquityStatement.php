@@ -7,10 +7,11 @@ namespace App\Domain\AnnualReport;
 use App\Domain\Accounting\VoucherSource;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Closing\ClosingAccounts;
-use App\Models\VoucherRow;
+use App\Models\Voucher;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 use stdClass;
+use WeakMap;
 
 /**
  * The specification of changes in equity of a K3 annual report (ADR-059
@@ -183,12 +184,25 @@ final class K3EquityStatement
         }
     }
 
+    /**
+     * The statement for these accounts, built once per AnnualAccounts: the
+     * document, its notes, the cash flow statement and equityChanges() all
+     * ask for it, and AnnualAccounts is itself a snapshot of the ledger
+     * (S1-P14).
+     */
     public static function of(AnnualAccounts $accounts): self
     {
+        /** @var WeakMap<AnnualAccounts, self> $built */
+        static $built = new WeakMap;
+
+        if (isset($built[$accounts])) {
+            return $built[$accounts];
+        }
+
         $statement = new self($accounts);
         $statement->build();
 
-        return $statement;
+        return $built[$accounts] = $statement;
     }
 
     /**
@@ -393,41 +407,45 @@ final class K3EquityStatement
     /**
      * The posted vouchers of the year with a row on an equity account, each
      * with its rows summed per account, credit positive. One query: the
-     * year's posted rows grouped by voucher and account, with a window over
-     * each voucher that marks whether any of its accounts is in equity (no
-     * IN subquery, whose semi join was planned badly; S1-P7 review).
+     * year's posted vouchers, each voucher's rows summed per account through
+     * the lateral subquery AnnualAccounts::ledger() uses (looked up by
+     * voucher id whatever the statistics; S1-P14), with a window over the
+     * voucher's accounts that marks whether any of them is in equity (no IN
+     * subquery, whose semi join was planned badly; S1-P7 review).
      *
      * @return list<array{id: string, references: list<string>, source: string, corrects: ?string, earlier: ?string, rows: array<int, int>}>
      */
     private function vouchers(): array
     {
-        $rows = VoucherRow::query()
-            ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
-            ->join('accounts', 'accounts.id', '=', 'voucher_rows.account_id')
-            ->join('voucher_series', 'voucher_series.id', '=', 'vouchers.series_id')
-            ->where('vouchers.fiscal_year_id', $this->accounts->fiscalYear->id)
-            ->where('vouchers.status', VoucherStatus::Posted->value)
-            ->groupBy('voucher_rows.voucher_id', 'vouchers.source', 'vouchers.number', 'vouchers.corrects_voucher_id', 'voucher_series.code', 'accounts.number')
-            ->selectRaw('voucher_rows.voucher_id, vouchers.source, vouchers.number AS voucher_number, vouchers.corrects_voucher_id, voucher_series.code AS series_code, accounts.number AS account_number, SUM(voucher_rows.credit_ore) - SUM(voucher_rows.debit_ore) AS net_credit, BOOL_OR(accounts.number BETWEEN ? AND ?) OVER (PARTITION BY voucher_rows.voucher_id) AS touches_equity', self::EQUITY_ACCOUNTS);
+        $numbers = $this->accounts->accountNumbers();
+        $equity = array_keys(array_filter($numbers, fn (int $number): bool => $number >= self::EQUITY_ACCOUNTS[0] && $number <= self::EQUITY_ACCOUNTS[1]));
+        $rows = AnnualAccounts::voucherAccountRows('SUM(voucher_rows.credit_ore) FILTER (WHERE voucher_rows.company_id = vouchers.company_id) - SUM(voucher_rows.debit_ore) FILTER (WHERE voucher_rows.company_id = vouchers.company_id) AS net_credit, BOOL_OR(voucher_rows.account_id = ANY(?::bigint[])) OVER () AS touches_equity, vouchers.corrects_voucher_id')
+            ->addBinding('{'.implode(',', $equity).'}', 'select');
 
         // The voucher a correction corrects, looked up by its key for the few equity rows
-        // only (a lateral join, so the lookup is by primary key whatever the statistics),
-        // and never outside the company even if a corrects_voucher_id were corrupt.
+        // only: the lookup refers to year_rows, so it runs after year_rows' equity filter,
+        // and LIMIT keeps it a lateral subquery (never flattened into a join), so it is by
+        // primary key whatever the statistics. Never outside the company even if a
+        // corrects_voucher_id were corrupt.
         $original = DB::table('vouchers as originals')
             ->join('voucher_series as original_series', 'original_series.id', '=', 'originals.series_id')
             ->join('fiscal_years as original_years', 'original_years.id', '=', 'originals.fiscal_year_id')
             ->whereColumn('originals.id', 'year_rows.corrects_voucher_id')
             ->where('originals.company_id', $this->accounts->fiscalYear->company_id)
+            ->limit(1)
             ->selectRaw('originals.fiscal_year_id AS original_year_id, originals.number AS original_number, original_series.code AS original_series_code, original_years.start_date AS original_start, original_years.end_date AS original_end');
 
-        $result = DB::query()
-            ->fromSub($rows, 'year_rows')
+        $result = Voucher::query()
+            ->join('voucher_series', 'voucher_series.id', '=', 'vouchers.series_id')
+            ->joinLateral($rows, 'year_rows')
             ->leftJoinLateral($original, 'original')
+            ->where('vouchers.fiscal_year_id', $this->accounts->fiscalYear->id)
+            ->where('vouchers.status', VoucherStatus::Posted->value)
             ->where('year_rows.touches_equity', true)
-            ->orderBy('year_rows.series_code')
-            ->orderBy('year_rows.voucher_number')
-            ->orderBy('year_rows.account_number')
-            ->select(['year_rows.*', 'original.*'])
+            ->orderBy('voucher_series.code')
+            ->orderBy('vouchers.number')
+            ->select(['vouchers.id AS voucher_id', 'vouchers.source', 'vouchers.number AS voucher_number', 'vouchers.corrects_voucher_id', 'voucher_series.code AS series_code', 'year_rows.account_id', 'year_rows.net_credit', 'original.*'])
+            ->toBase()
             ->get();
 
         $vouchers = [];
@@ -442,7 +460,11 @@ final class K3EquityStatement
                 'earlier' => self::earlierOriginal($row, $this->accounts->fiscalYear->id),
                 'rows' => [],
             ];
-            $vouchers[$id]['rows'][(int) $row->account_number] = (int) $row->net_credit;
+            $vouchers[$id]['rows'][$numbers[(int) $row->account_id]] = (int) $row->net_credit;
+        }
+
+        foreach ($vouchers as &$voucher) {
+            ksort($voucher['rows']);
         }
 
         return array_values($vouchers);

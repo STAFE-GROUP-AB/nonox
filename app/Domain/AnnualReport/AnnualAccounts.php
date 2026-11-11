@@ -9,9 +9,9 @@ use App\Models\Account;
 use App\Models\FiscalYear;
 use App\Models\OpeningBalance;
 use App\Models\Voucher;
-use App\Models\VoucherRow;
 use App\Models\YearEndEntry;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The figures of an annual report for one fiscal year in the layout of a
@@ -20,8 +20,8 @@ use Illuminate\Support\Collection;
  * overview, changes in equity, the free equity at the meeting's disposal
  * and the note on fixed assets. Amounts are öre, shown the way the report
  * shows them: income and assets positive, costs negative, equity and
- * liabilities positive. Three queries per year and one for the purchase
- * accounts marked as goods for resale.
+ * liabilities positive. One query for the chart of accounts, two per year
+ * and one for the purchase accounts marked as goods for resale.
  */
 final class AnnualAccounts
 {
@@ -30,6 +30,9 @@ final class AnnualAccounts
 
     /** @var ?array<int, array{opening: int, debit: int, credit: int}> */
     private ?array $previous;
+
+    /** @var array<int, int> account number by account id, the company's whole chart */
+    private array $accountNumbers;
 
     /** @var array<int, int> purchase accounts marked as goods for resale (K2Schedule::PURCHASES) */
     private array $resale;
@@ -42,8 +45,9 @@ final class AnnualAccounts
         public readonly ?FiscalYear $previousYear,
         public readonly string $schedule = K2Schedule::class,
     ) {
-        $this->current = self::ledger($fiscalYear);
-        $this->previous = $previousYear === null ? null : self::ledger($previousYear);
+        $this->accountNumbers = Account::query()->pluck('number', 'id')->map(fn (mixed $number): int => (int) $number)->all();
+        $this->current = self::ledger($fiscalYear, $this->accountNumbers);
+        $this->previous = $previousYear === null ? null : self::ledger($previousYear, $this->accountNumbers);
         $this->resale = Account::query()
             ->whereBetween('number', $schedule::PURCHASES)
             ->where('sru_code', $schedule::GOODS_FOR_RESALE_SRU)
@@ -609,36 +613,81 @@ final class AnnualAccounts
     }
 
     /**
+     * The account number of every account id in the company's chart.
+     *
+     * @return array<int, int>
+     */
+    public function accountNumbers(): array
+    {
+        return $this->accountNumbers;
+    }
+
+    /**
      * Opening balance, debit and credit per account number for a year.
      *
+     * The movements are read voucher by voucher: the year's posted vouchers,
+     * and through a lateral subquery each voucher's rows summed per account,
+     * looked up by voucher id. The subquery groups, so PostgreSQL cannot
+     * flatten it into a plain join; a plain join of voucher_rows to vouchers
+     * was planned, with stale statistics (a large import not yet analysed),
+     * as a nested loop that read every row of the company once per voucher
+     * (S1-P14: 402 s for the K3 report of 50 000 vouchers). The rows' own
+     * company is checked in FILTER clauses, not in WHERE, so the planner has
+     * no company condition to look rows up by; the vouchers are the
+     * company's own through CompanyScope.
+     *
+     * @param  array<int, int>  $numbers  account number by account id
      * @return array<int, array{opening: int, debit: int, credit: int}>
      */
-    private static function ledger(FiscalYear $fiscalYear): array
+    private static function ledger(FiscalYear $fiscalYear, array $numbers): array
     {
-        /** @var Collection<int, int> $numbers */
-        $numbers = Account::query()->pluck('number', 'id')->map(fn (mixed $number): int => (int) $number);
         $ledger = [];
 
         foreach (OpeningBalance::query()->where('fiscal_year_id', $fiscalYear->id)->get(['account_id', 'amount_ore']) as $balance) {
-            $number = (int) $numbers[$balance->account_id];
+            $number = $numbers[$balance->account_id];
             $ledger[$number] = ['opening' => $balance->amount_ore->ore, 'debit' => 0, 'credit' => 0];
         }
 
-        $movements = VoucherRow::query()
-            ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
+        $movements = Voucher::query()
+            ->joinLateral(self::voucherAccountRows('SUM(voucher_rows.debit_ore) FILTER (WHERE voucher_rows.company_id = vouchers.company_id) AS debit, SUM(voucher_rows.credit_ore) FILTER (WHERE voucher_rows.company_id = vouchers.company_id) AS credit'), 'voucher_account_rows')
             ->where('vouchers.fiscal_year_id', $fiscalYear->id)
             ->where('vouchers.status', VoucherStatus::Posted->value)
-            ->groupBy('voucher_rows.account_id')
-            ->selectRaw('voucher_rows.account_id, SUM(voucher_rows.debit_ore) AS debit, SUM(voucher_rows.credit_ore) AS credit')
+            ->groupBy('voucher_account_rows.account_id')
+            ->selectRaw('voucher_account_rows.account_id, SUM(voucher_account_rows.debit) AS debit, SUM(voucher_account_rows.credit) AS credit')
+            ->toBase()
             ->get();
 
         foreach ($movements as $row) {
-            $number = (int) $numbers[(int) $row->account_id];
+            $number = $numbers[(int) $row->account_id];
             $ledger[$number] ??= ['opening' => 0, 'debit' => 0, 'credit' => 0];
-            $ledger[$number]['debit'] = (int) $row->getAttribute('debit');
-            $ledger[$number]['credit'] = (int) $row->getAttribute('credit');
+            $ledger[$number]['debit'] = (int) $row->debit;
+            $ledger[$number]['credit'] = (int) $row->credit;
         }
 
         return $ledger;
+    }
+
+    /**
+     * The rows of the voucher `vouchers` (the outer query's) grouped by
+     * account, with the given columns (aggregates, or the outer voucher's
+     * own), for a lateral join (see ledger()).
+     * Only rows of the voucher's own company count: an account whose rows
+     * all belong to another company is left out.
+     *
+     * voucher_rows is read without CompanyScope on purpose: its company
+     * condition would be a constant the planner could look every row of the
+     * company up by, once per voucher. The rows are reached only through
+     * vouchers that CompanyScope has already limited to the company, and the
+     * FILTER and HAVING clauses check each row's company against them.
+     *
+     * @param  literal-string  $columns
+     */
+    public static function voucherAccountRows(string $columns): Builder
+    {
+        return DB::table('voucher_rows')
+            ->whereColumn('voucher_rows.voucher_id', 'vouchers.id')
+            ->groupBy('voucher_rows.account_id')
+            ->havingRaw('COUNT(*) FILTER (WHERE voucher_rows.company_id = vouchers.company_id) > 0')
+            ->selectRaw("voucher_rows.account_id, {$columns}");
     }
 }

@@ -112,6 +112,12 @@ jobs:
           BOLAGSVERKET_TAXONOMY_DIR: ${{ steps.taxonomy.outputs.dir }}
         run: vendor/bin/pest
 
+      # ADR-059 A.5 (S1-P14): the K3 annual report of 50 000 vouchers in under 3 s. tests/Performance
+      # is in no test suite, so the step above never runs it; it runs on main only.
+      - name: Performance (K3 annual report, 50 000 vouchers)
+        if: github.ref == 'refs/heads/main'
+        run: vendor/bin/pest tests/Performance --group=performance
+
   # ADR-058 stage E.3: full XBRL validation of the golden iXBRL files with Arelle (Apache-2.0).
   # Arelle runs only here, as an external tool; it is not a dependency of the app.
   # Blocking: any Arelle ERROR fails the job. The defects of the first run (empty class

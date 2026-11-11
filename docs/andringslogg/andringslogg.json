@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-10-arsredovisning-manga-verifikationer",
+      "datum": "2026-11-10T19:30:00+01:00",
+      "rubrik": "Årsredovisningen tas fram snabbt även med många verifikationer",
+      "beskrivning": "Årsredovisningen läser bokföringen verifikation för verifikation på ett sätt som håller farten även när databasen ännu inte har uppdaterat sin statistik, till exempel direkt efter en stor import. I vårt prestandatest tas K3-årsredovisningen för ett år med 50 000 verifikationer fram på under en sekund i stället för flera minuter.",
+      "typ": "Förbättrat",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-10-arsredovisning-k3-mindre-aktiebolag",
       "datum": "2026-11-10T11:30:00+01:00",
       "rubrik": "Förhandsversion (beta) av årsredovisningen för mindre aktiebolag med K3",
