@@ -757,3 +757,12 @@ Follow-ups:
 - M3, ägarens val: ett reviderat osänt utkast ändrar redan den öppna inleveransen.
 - M3 legal-verify: skickade inköpsordrars versioner anonymiseras inte.
 Next package: enligt prioritetslistan.
+
+---
+
+Package: Sammanslagning, integration/batch2 (omgång 4)
+Status: done (ingen push)
+Evidence: `fix/demo-schedule-isolation` (f4d46269), `fix/m2-review-followups` (11fa13ba) och `docs/sync-launch` (76f56f4d) sammanslagna i den ordningen. Hela sviten `PGTZ=UTC … php -d memory_limit=1G vendor/bin/pest`: 8 930 gröna, 8 todos, 6 skipped, 0 röda (61 885 assertions). `grep -rl RefreshDatabase tests/` tom. phpstan (egen tmpDir): inga fel. `pint --test`: passed. `npm test`: 103 gröna. `npm run build`: ok, `public/build` ej incheckad.
+- Konflikter: andringslogg.json (nyaste först, redigerad som text, `omrade` på stycklistor-skydd) och lang/en.json (union utan dubbletter). `package-lock.json` utan ändring; systemdokumentationen oförändrad (0.131).
+Follow-ups: de från omgång M2/M3 gäller fortfarande.
+Next package: enligt prioritetslistan.
