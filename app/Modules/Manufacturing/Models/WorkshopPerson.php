@@ -18,6 +18,9 @@ use Illuminate\Database\Eloquent\Model;
  * person off the terminal; their reported time stays until the retention
  * period has passed.
  *
+ * TODO(legal-verify): the photo consent and the register extract
+ * (DataSubjectExport::workshopPerson) for people who are not NONOX users.
+ *
  * @property int $id
  * @property int $company_id
  * @property string $name

@@ -19,6 +19,10 @@ use LogicException;
  * After the retention period the person is removed from the row
  * (PruneWorkshopTime); nothing else about it ever changes.
  *
+ * TODO(legal-verify): the person on a time entry (GDPR art. 6.1 f and 13,
+ * MBL 11 and 19 §§ before the terminal is used), the 24 months, and the
+ * separate roster in WorkshopPerson instead of the staff ledger's people.
+ *
  * @property int $id
  * @property int $company_id
  * @property ?int $person_id
