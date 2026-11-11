@@ -72,9 +72,9 @@ final class PlanningCalendarExtras extends DemoExtra
                 return;
             }
 
-            $operations = Operation::query()->active()->get()->keyBy('name');
+            $operations = Operation::query()->active()->get()->keyBy('name')->all();
 
-            if ($operations->count() < 5) {
+            if (count($operations) < 5) {
                 return;
             }
 
