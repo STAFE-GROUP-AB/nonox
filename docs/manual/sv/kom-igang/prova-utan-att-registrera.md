@@ -12,7 +12,7 @@ Vill du se hur NONOX fungerar innan du ställer dig i kö kan du starta en demo.
 
 ## Så här gör du
 
-1. Öppna startsidan och välj **Prova utan att registrera**.
+1. Är du inte inloggad öppnar du startsidan och väljer **Prova utan att registrera**. Är du inloggad ser du samma knapp, men demon körs som en egen gäst, skild från ditt konto. Du får då en sida som heter **Demon är en egen gästsession**, där du väljer **Logga ut** och startar demon från startsidan, eller öppnar nonox.app i ett privat fönster i webbläsaren. **Till översikten** tar dig tillbaka utan att något ändras.
 2. Välj vilken sorts företag du vill prova, till exempel ett café eller en hantverkare.
 3. Tryck på **Starta demon** och vänta medan året läggs in. Det tar upp till en minut, och sidan öppnas av sig själv.
 4. Du hamnar på översikten i ditt demoföretag. Överst på varje sida står hur lång tid som finns kvar.

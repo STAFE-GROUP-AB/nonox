@@ -714,3 +714,8 @@ Evidence: `tests/Unit/Units/UnitConverterTest.php`, `tests/Feature/Units/UnitsOf
 Open legal-verify items: Peppol-koder för löpmeter, förpackning (XPK) som enhetskod, dm², dl, cl, ml; om enhetstexten (t.ex. lpm) räcker enligt ML 17 kap. 24 §.
 Follow-ups: skannern, rapporter, Kök svinn/avvikelse, etiketter och API:et visar fortfarande enhetstexten i stället för lagerenheten; 0,5 %-gränsen som företagsinställning; `value_ore` (kräver bokföringskontroll).
 Next package: M2, stycklistor med arbetssteg.
+Package: Prova utan att registrera för inloggade (kö 18)
+Status: done
+Evidence: `tests/Feature/Demo/DemoVisitorTest.php`.
+- Knappen på startsidan visas också för inloggade (när demon är på). `GET /prova` för en inloggad visar en förklaring (egen gästsession, logga ut eller privat fönster, Till översikten) i stället för att omdirigera; `POST /prova` startar ingen demo. Demogäster behåller nuvarande beteende. Manualens steg 1 uppdaterad.
+Next package: enligt prioritetslistan.

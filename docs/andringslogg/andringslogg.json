@@ -40,6 +40,14 @@
       "omrade": "Bokslut"
     },
     {
+      "id": "2026-11-10-prova-for-inloggade",
+      "datum": "2026-11-10T12:00:00+01:00",
+      "rubrik": "Prova utan att registrera syns också när du är inloggad",
+      "beskrivning": "Knappen visas nu även för dig som redan har ett konto. Demon körs som en egen gäst, så du får en förklaring och väljer att logga ut eller öppna nonox.app i ett privat fönster.",
+      "typ": "Nytt",
+      "omrade": "Webbplats"
+    },
+    {
       "id": "2026-11-10-arsredovisning-k3-mindre-aktiebolag",
       "datum": "2026-11-10T11:30:00+01:00",
       "rubrik": "Förhandsversion (beta) av årsredovisningen för mindre aktiebolag med K3",

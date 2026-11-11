@@ -32,7 +32,11 @@ class DemoController
         abort_unless(DemoMode::enabled(), 404);
 
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return view('start.try-signed-in', [
+                ...LandingPage::data(),
+                'pageTitle' => 'Prova NONOX som gäst – NONOX',
+                'pageDescription' => 'Demon körs som en egen gästsession, skild från ditt konto.',
+            ]);
         }
 
         return view('start.try', [
@@ -50,7 +54,7 @@ class DemoController
         abort_unless(DemoMode::enabled(), 404);
 
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return redirect()->route('demo.show');
         }
 
         $limiter = DemoSessions::limiter();
