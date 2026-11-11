@@ -3,7 +3,7 @@ beskrivning: Lägg in inventarier, datorer, maskiner och bilar i anläggningsreg
 ordning: 30
 roller: [owner, admin, accountant]
 rutter: [accounting.fixedAssets]
-sokord: [anläggningsregister, anläggningstillgång, inventarier, avskrivning, avskrivningsplan, planenlig avskrivning, nyttjandeperiod, restvärde, 1220, 1229, 7832, bokfört värde, byggnad, mark, komponent, komponentavskrivning, 1110, 1119, 1130, 7820]
+sokord: [anläggningsregister, flera inköp, lägg till inköp, pågående investering, tas i bruk, anläggningstillgång, inventarier, avskrivning, avskrivningsplan, planenlig avskrivning, nyttjandeperiod, restvärde, 1220, 1229, 7832, bokfört värde, byggnad, mark, komponent, komponentavskrivning, 1110, 1119, 1130, 7820]
 ---
 
 # Anläggningsregistret och avskrivningar
@@ -46,6 +46,50 @@ Nyttjandeperioden är företagets egen bedömning av hur länge tillgången anv�
 | Mark | 1130 | – | – |
 
 Kontona kan ändras per tillgång. Saknas något i kontoplanen visar registret vilka och knappen **Lägg till kontona**. Kontona för byggnader och mark föreslås först när registret har en byggnad eller mark.
+
+## En tillgång av flera inköp
+
+En investering kommer ibland på flera fakturor: en maskin som levereras i delar, en ombyggnad som faktureras varje månad eller en inredning från flera leverantörer. Den ska ändå vara en tillgång i registret. Skapa tillgången från det första inköpet och lägg sedan till de följande i den.
+
+Det nya inköpet läggs till direkt när du bokför det: välj **Lägg till i befintlig tillgång** på raden, se [Anläggningstillgång direkt från inköpet](/manual/bokslut/tillgang-fran-inkop). Är inköpet redan bokfört gör du så här:
+
+1. Gå till **Bokföring → Anläggningar**.
+2. Klicka på **Lägg till inköp** på tillgångens rad.
+3. Välj inköpet under **Inköp**. Listan visar bokförda rader i debet på tillgångens konto som inte redan hör till en tillgång, de senaste först.
+4. Klicka på **Granska tillägget**. Rutan **Det här händer** visar hur mycket anskaffningsvärdet ökar och från vilken månad beloppet skrivs av.
+5. Klicka på **Lägg till i tillgången**.
+
+![En tillgång som består av tre inköp, med inköpen och avskrivningsplanen.](/bilder/manual/bokslut/tillgang-av-flera-inkop.webp)
+
+Tillgången visar sedan **Anskaffad med flera inköp:** och verifikationerna. Klicka på tillgångens namn, så visar **Inköp** varje verifikation med **Datum**, **Belopp** och **Skrivs av från**, ovanför avskrivningsplanen. Verifikationen visar vilken tillgång inköpet lades till i.
+
+### En tillgång som inte används ännu
+
+Skrivs tillgången inte av förrän den tas i bruk – till exempel en maskin som installeras under flera månader – sätter du **Första avskrivningsmånad** till månaden då den tas i bruk. Fram till dess skrivs inget av, och inköp som läggs till före eller under den månaden ingår i avskrivningen från början, över hela nyttjandeperioden.
+
+### Ett inköp efter att avskrivningen har börjat
+
+Läggs ett inköp till efter att tillgången har börjat skrivas av, skrivs beloppet av från månaden efter inköpet – och aldrig i en månad som redan är bokförd – över det som är kvar av nyttjandeperioden. Tillgången blir alltså fullt avskriven samma månad som förut. Bokförda avskrivningar ändras inte, och inga månader tas igen bakåt.
+
+> [!IMPORTANT]
+> Om ett tillägg efter att avskrivningen har börjat ska skrivas av över den återstående nyttjandeperioden eller över en egen period är en bedömning, och reglerna i K2 och K3 är inte juridiskt kontrollerade i NONOX. Fråga din redovisningskonsult om tillägget är stort.
+> Följer företaget K3 och har ett betydande tillägg en väsentligt annan nyttjandeperiod än resten av tillgången, ska det i regel vara en egen komponent – använd **Dela upp i komponenter** – i stället för att skrivas av tillsammans med tillgången.
+
+### Det här går inte
+
+- Inköpet ska vara bokfört på tillgångens eget konto, i debet, i en verifikation som inte är rättad.
+- En rad som redan hör till en tillgång kan inte läggas till igen.
+- Inköp i ett stängt räkenskapsår eller i en låst period kan inte läggas till.
+- Är tillgångens nyttjandeperiod slut, lägg in inköpet som en egen tillgång.
+- En tillgång som är uppdelad i komponenter tar inte emot inköp; lägg till inköpet i den komponent det hör till.
+- Ett inköp som redan finns i registret erbjuds inte: varken raden en tillgång eller ett tillägg gjordes av, registrets egna verifikationer (avskrivningar, omföring vid uppdelning, avyttring), bokslutets verifikationer (till exempel obetalda fakturor vid årets slut under kontantmetoden) eller – under kontantmetoden – betalningen av en leverantörsfaktura som redan blev en tillgång eller ett tillägg. Lades tillgången in i registret utan verifikation påminner **Det här händer** om att kontrollera att inköpet inte redan ingår.
+- När tillgången har tillägg är **Anskaffningsvärde, kr** summan av inköpen och kan inte ändras under **Ändra**. **Restvärde, kr** ska vara mindre än anskaffningsvärdet utan de inköp som skrivs av från en senare månad.
+- Tillgången kan inte säljas eller utrangeras med ett datum före det senaste inköpet som lades till.
+- En verifikation som en tillgång eller ett tillägg bygger på kan inte rättas, och ett tillägg kan inte tas bort.
+
+### Om ett inköp lades till av misstag
+
+Ett tillägg går ännu inte att ta bort eller backa i registret. Granska därför rutan **Det här händer** innan du klickar på **Lägg till i tillgången**. Har det ändå blivit fel, bokför inga egna rättelser på tillgångskontot – då stämmer registret och bokföringen inte längre överens. Prata med din redovisningskonsult om hur felet ska hanteras. Möjligheten att backa ett tillägg i registret tillsammans med en rättelse i bokföringen finns inte ännu.
 
 ## Så här bokför du månadens avskrivningar
 

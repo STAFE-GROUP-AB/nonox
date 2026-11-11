@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.130
+- Version: 0.131
 - Datum: 2026-11-10
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -1830,6 +1830,60 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
     och alla senare år med ett delat lås.
   - Behandlingshistoriken: `fixed_asset.split` med datum, komponenternas id,
     anskaffningsvärde, avskrivet och omföringens verifikation (inga namn).
+- **En tillgång av flera inköp (ADR-010, tillägg 2026-11-10).** En senare
+  inköpsrad kan läggas till i en befintlig tillgång i stället för att bli en
+  egen: på utkastet med Lägg till i befintlig tillgång (förslaget sparas i
+  `fixed_asset_proposals` med `add_to` och läggs till i samma transaktion som
+  bokför verifikationen eller registrerar fakturan), eller i registret med
+  Lägg till inköp för en redan bokförd rad.
+  - Raden ska vara i debet, på tillgångens eget tillgångskonto, i en bokförd
+    verifikation som inte är rättad, och inte redan finnas i registret: inte
+    vara raden en tillgång (`fixed_assets.acquisition_voucher_row_id`) eller
+    ett tillägg (`fixed_asset_additions.voucher_row_id`, unik) gjordes av,
+    inte stå i en verifikation som registret självt bokförde (källa
+    FixedAsset: avskrivning, omföring vid uppdelning, avyttring) eller i
+    bokslutets verifikationer (källa CLOSING, till exempel de obetalda
+    fakturorna under kontantmetoden), och inte stå
+    i en verifikation till en leverantörsfaktura som redan är en tillgång
+    eller ett tillägg utan egen rad (under kontantmetoden bokför betalningen
+    inköpet igen). Kontrollerna görs både i listan och när tillägget görs. En
+    tillgång som lades in utan verifikation har ingen länk; granskningen
+    påminner då om att inköpet kan ingå redan. Beloppet är alltid radens. I
+    listan visas bara rader i öppna räkenskapsår efter låsta perioder. Tillgången ska vara aktiv;
+    en uppdelad tillgång tar inte emot tillägg (inköpet läggs till i en
+    komponent), och en avyttrad inte heller. Dagen (verifikationens datum
+    eller fakturadatum) ska ligga i ett öppet räkenskapsår och efter låsta
+    perioder.
+  - Varje tillägg sparas i `fixed_asset_additions` med belopp, dag, länk till
+    verifikation, rad och leverantörsfaktura, och den senast bokförda
+    avskrivningsmånaden när tillägget gjordes (`booked_through`). Tabellen går
+    inte att ändra eller ta bort ur (modellen och en trigger), och dess
+    främmande nyckel mot tillgången omfattar `company_id`.
+    `fixed_assets.acquisition_ore` är alltid summan: det första inköpet plus
+    tilläggen. Har tillgången tillägg kan anskaffningsvärdet inte ändras i
+    formuläret. Restvärdet ligger på grundplanen, och medan planen kan ändras ska
+    det vara mindre än anskaffningsvärdet utan de tillägg som skrivs av från
+    en senare månad.
+  - En verifikation som en tillgång eller ett tillägg bygger på kan inte
+    rättas (CorrectVoucher nekar), och en avyttring kan inte dateras före det
+    senaste tillägget. Ett felaktigt tillägg kan ännu inte backas; ett
+    motsvarande negativt tillägg är planerat (ADR-010).
+  - Avskrivning: ett tillägg i eller före första avskrivningsmånaden, när
+    ingen månad är bokförd, ingår i planen från första månaden över hela
+    nyttjandeperioden (en tillgång under uppbyggnad skrivs alltså av från den
+    månad den tas i bruk, som är första avskrivningsmånaden). Ett senare
+    tillägg skrivs av linjärt från månaden efter tillägget, och aldrig i eller
+    före en redan bokförd månad, över den återstående nyttjandeperioden, så
+    att tillgången blir fullt avskriven samma månad som förut. Inga månader
+    tas igen bakåt och ingen bokförd avskrivning eller verifikation ändras.
+    Är nyttjandeperioden slut nekas tillägget. `TODO(legal-verify)`: om ett
+    tillägg efter avskrivningens start (förbättringsutgift) ska skrivas av
+    över den återstående nyttjandeperioden eller en egen, enligt K2 och K3.
+  - Registret visar "Anskaffad med flera inköp:" med en rad per verifikation,
+    och verifikationen visar vilken tillgång inköpet lades till i.
+  - Behandlingshistoriken: `fixed_asset.addition_added` med tilläggets id,
+    belopp, nytt anskaffningsvärde, dag, första avskrivningsmånad,
+    verifikation, rad och faktura (inga namn).
 
 ## 5a3. Periodiseringar
 
@@ -5650,3 +5704,4 @@ påverkar bokföringen och fakturan:
 | 0.128 | 2026-11-09 | Noter och förvaltningsberättelse enligt K3 (avsnitt 5a6.7, ADR-059 tillägg A.2.7, paket S1-P9): noterna för ett mindre aktiebolag tas fram ur bokföringen, registret, principerna och övergången, en per rad i regelbladets lista S1-R8.1 och bara när villkoret är uppfyllt; en person kan skriva en not med egna ord, men notens data kommer alltid ur bokföringen och den egna texten markeras. Nya kolumner i `annual_reports` för det bokföringen inte vet (bland annat ägare med mer än tio procent med namn och andel, aldrig födelseår eller personnummer, och ja/nej-svar om noter som annars kunde utebli) och tabellen `annual_report_note_overrides`. Ingenting syns för användaren ännu och ingen verifikation ändras. |
 | 0.129 | 2026-11-10 | Förhandsversion (beta) av årsredovisningen för mindre aktiebolag med K3, inte granskad av en auktoriserad redovisningskonsult (avsnitt 5a6.8, ADR-059 A.4 paket S1-P10): ett räkenskapsår som följer K3 får förvaltningsberättelse, resultat- och balansräkning, rapport över förändringar i eget kapital, eventuell kassaflödesanalys och noter i ordningen i K3 punkt 3.10, i hela kronor. Allt som NONOX inte stöder nekar hela årsredovisningen med regelns id (K3 tillämpas helt eller inte alls); PDF:en görs när alla frågor är besvarade. K2-dokumentet ändras inte; iXBRL görs bara för K2. Ingen verifikation ändras. |
 | 0.130 | 2026-11-10 | Träindustriavtalet i Avtal (avsnitt 5h, ADR-033 tillägg L1): avtalsdata för trä- och möbelindustrin i två versioner, där versionen 2025–2027 bara har belopp ur en sekundär källa och därför inte kan kontrolleras, så lönekörningen stoppas för anställda på avtalet. Satsen `ORE_PER_HOUR` kan ha `plus_hourly_wage` (timlön plus krontal per timme), och avtalskalendern har sju hjälpdagar före och efter helger. Inga konton eller verifikationer ändras. |
+| 0.131 | 2026-11-10 | En anläggningstillgång av flera inköp (avsnitt 5a2, ADR-010 tillägg 2026-11-10): en senare inköpsrad på tillgångens konto kan läggas till i en befintlig tillgång, från utkastet eller i registret för en bokförd rad. Ny tabell `fixed_asset_additions` (kan inte ändras eller tas bort). Ett tillägg före avskrivningens start ingår i planen från första avskrivningsmånaden; ett senare skrivs av framåt över den återstående nyttjandeperioden. Tillägg nekas i stängda år och låsta perioder, på uppdelade och avyttrade tillgångar och efter nyttjandeperiodens slut. Ingen bokförd avskrivning eller verifikation ändras. |

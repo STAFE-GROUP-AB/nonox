@@ -28,6 +28,7 @@ use App\Models\DeadlineReminder;
 use App\Models\DeferredTaxItem;
 use App\Models\FiscalYear;
 use App\Models\FixedAsset;
+use App\Models\FixedAssetAddition;
 use App\Models\FixedAssetDepreciation;
 use App\Models\FixedAssetProposal;
 use App\Models\ImportedVoucher;
@@ -323,6 +324,7 @@ const COMPANY_SCOPED_MODELS = [
     FortnoxImportedFile::class => ['file_id' => 'f-1', 'fortnox_year' => 1, 'voucher_series' => 'A', 'voucher_number' => 1],
     AccrualPosting::class => 'accrualPostingAttributes',
     FixedAssetDepreciation::class => 'fixedAssetDepreciationAttributes',
+    FixedAssetAddition::class => 'fixedAssetAdditionAttributes',
     FixedAssetProposal::class => 'fixedAssetProposalAttributes',
     NumberSeries::class => ['key' => 'invoices', 'next_number' => 1],
     Customer::class => ['number' => 1, 'name' => 'Hemlig kund AB', 'payment_terms_days' => 30],
@@ -906,6 +908,17 @@ function fixedAssetDepreciationAttributes(): array
         'period' => '2026-0'.random_int(1, 9),
         'amount_ore' => 66_667,
         'voucher_id' => Voucher::create(voucherAttributes())->id,
+    ];
+}
+
+function fixedAssetAdditionAttributes(): array
+{
+    return [
+        'fixed_asset_id' => FixedAsset::create(fixedAssetAttributes())->id,
+        'amount_ore' => 1_200_000,
+        'added_on' => '2026-03-15',
+        'voucher_id' => Voucher::create(voucherAttributes())->id,
+        'created_by' => User::factory()->create()->id,
     ];
 }
 
@@ -1944,7 +1957,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];
+const APPEND_ONLY = [WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

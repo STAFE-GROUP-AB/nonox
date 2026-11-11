@@ -261,7 +261,7 @@ final class ClosingChecklist
     /** @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string, confirm: ?string} */
     private static function assets(string $endMonth): array
     {
-        $assets = FixedAsset::query()->where('status', FixedAsset::ACTIVE)->withSum('depreciations', 'amount_ore')->get();
+        $assets = FixedAsset::query()->where('status', FixedAsset::ACTIVE)->withSum('depreciations', 'amount_ore')->with('additions')->get();
         $behind = $assets->filter(fn (FixedAsset $asset): bool => $asset->plan()->amountFor($endMonth, $asset->accumulatedOre()) > 0);
 
         return self::item('assets', __('Avskrivningarna är bokförda'), match (true) {

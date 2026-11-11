@@ -18,6 +18,7 @@ use App\Models\Voucher;
 use App\Models\VoucherRow;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Validator;
@@ -33,6 +34,10 @@ use InvalidArgumentException;
  * that posts the voucher (PostVoucher) or registers the invoice
  * (RegisterSupplierInvoice), linked to what booked it. If the posting
  * fails, there is no asset. Depreciation is booked by the register as usual.
+ *
+ * A proposal with `add_to` (an asset id) adds the purchase to that existing
+ * asset instead of creating one: one investment built from several invoices
+ * (FixedAssets::addFromPurchase).
  */
 class AssetProposals
 {
@@ -56,6 +61,22 @@ class AssetProposals
                 continue;
             }
 
+            $label = __('Rad :line: anläggningstillgången:', ['line' => (int) $line + 1]);
+
+            if (! blank($proposal['add_to'] ?? null)) {
+                $addition = $this->cleanAddition($proposal, $eligible[(int) $line]);
+
+                if (is_string($addition)) {
+                    $errors["rows.{$line}.asset"] = "{$label} {$addition}";
+
+                    continue;
+                }
+
+                $clean[(int) $line] = $addition;
+
+                continue;
+            }
+
             $validator = Validator::make($proposal, [
                 'name' => ['required', 'string', 'max:255'],
                 'category' => ['required', Rule::enum(AssetCategory::class)],
@@ -64,7 +85,6 @@ class AssetProposals
                 'acquired_on' => ['nullable', 'date_format:Y-m-d'],
                 'depreciation_start' => ['nullable', 'date_format:Y-m'],
             ]);
-            $label = __('Rad :line: anläggningstillgången:', ['line' => (int) $line + 1]);
 
             if ($validator->fails()) {
                 $errors["rows.{$line}.asset"] = "{$label} ".$validator->errors()->first();
@@ -127,7 +147,11 @@ class AssetProposals
         }
 
         if ($clean !== [] || $had > 0) {
-            Audit::record('fixed_asset.proposed', $draft, ['lines' => array_keys($clean), 'names' => array_column($clean, 'name')], $company, $user);
+            Audit::record('fixed_asset.proposed', $draft, [
+                'lines' => array_keys($clean),
+                'names' => array_column($clean, 'name'),
+                'add_to' => array_column($clean, 'add_to'),
+            ], $company, $user);
         }
     }
 
@@ -154,6 +178,15 @@ class AssetProposals
 
             if (! $row instanceof VoucherRow || ! $row->account instanceof Account || ! $this->isPurchase($accounts, $row->account->number, $row->debit_ore->ore, $row->credit_ore->ore)) {
                 throw ValidationException::withMessages(["rows.{$proposal->line}.asset" => __('Rad :line: anläggningstillgången hör inte längre till en rad med inköp på ett anskaffningskonto. Ta bort förslaget eller rätta raden.', ['line' => $proposal->line + 1])]);
+            }
+
+            if (self::addsTo($proposal) !== null) {
+                $this->add($user, $company, $proposal, $row->account->number, $row->debit_ore->ore, $voucher->voucher_date, [
+                    'voucher_id' => $voucher->id,
+                    'voucher_row_id' => $row->id,
+                ]);
+
+                continue;
             }
 
             $this->create($user, $company, $proposal, $row->account->number, $row->debit_ore->ore, $voucher->voucher_date->toDateString(), $row->costCenter, [
@@ -197,6 +230,16 @@ class AssetProposals
             $voucherRow = $voucherRows->get($proposal->line);
             $linkedRow = $voucherRow instanceof VoucherRow && $voucherRow->account?->number === $row->account->number ? $voucherRow : null;
 
+            if (self::addsTo($proposal) !== null) {
+                $this->add($user, $company, $proposal, $row->account->number, $row->amount_ore->ore, $invoice->invoice_date, [
+                    'voucher_id' => $voucher?->id,
+                    'voucher_row_id' => $linkedRow?->id,
+                    'supplier_invoice_id' => $invoice->id,
+                ]);
+
+                continue;
+            }
+
             $this->create($user, $company, $proposal, $row->account->number, $row->amount_ore->ore, $invoice->invoice_date->toDateString(), $row->costCenter, [
                 'acquisition_voucher_id' => $voucher?->id,
                 'acquisition_voucher_row_id' => $linkedRow?->id,
@@ -210,11 +253,13 @@ class AssetProposals
     /**
      * A draft's proposals for its editor, per line.
      *
-     * @return array<int, array{name: string, category: string, acquisition: string, life_months: string, acquired_on: string, depreciation_start: string}>
+     * @return array<int, array<string, string>>
      */
     public static function forms(Voucher|SupplierInvoice $draft): array
     {
-        return self::proposalsFor($draft)->get()->mapWithKeys(fn (FixedAssetProposal $proposal): array => [$proposal->line => [
+        return self::proposalsFor($draft)->get()->mapWithKeys(fn (FixedAssetProposal $proposal): array => [$proposal->line => self::addsTo($proposal) !== null ? [
+            'add_to' => (string) self::addsTo($proposal),
+        ] : [
             'name' => (string) ($proposal->data['name'] ?? ''),
             'category' => (string) ($proposal->data['category'] ?? AssetCategory::Equipment->value),
             'acquisition' => (string) ($proposal->data['acquisition'] ?? ''),
@@ -228,11 +273,14 @@ class AssetProposals
      * What the editors need to offer an asset per row: the acquisition
      * accounts, the threshold and each category's suggestions.
      *
-     * @return array{ranges: list<array{0: int, 1: int}>, threshold: ?int, categories: list<array{value: string, label: string, life: int, asset: int}>}
+     * @return array{ranges: list<array{0: int, 1: int}>, threshold: ?int, categories: list<array{value: string, label: string, life: int, asset: int}>, assets: list<array{id: int, label: string, account: int}>}
      */
     public static function editorSettings(Company $company): array
     {
         return [
+            // The assets a purchase can be added to: active, not split into components; one query.
+            'assets' => array_values(FixedAsset::query()->where('status', FixedAsset::ACTIVE)->orderBy('number')->get(['id', 'number', 'name', 'asset_account'])
+                ->map(fn (FixedAsset $asset): array => ['id' => $asset->id, 'label' => "{$asset->number} {$asset->name}", 'account' => $asset->asset_account])->all()),
             'ranges' => AcquisitionAccounts::for($company)->ranges,
             'threshold' => $company->asset_small_value_threshold_ore,
             'categories' => array_map(fn (AssetCategory $category): array => [
@@ -244,6 +292,65 @@ class AssetProposals
         ];
     }
 
+    /** The asset a proposal adds the purchase to, or null when it creates one. */
+    private static function addsTo(FixedAssetProposal $proposal): ?int
+    {
+        $assetId = $proposal->data['add_to'] ?? null;
+
+        return is_numeric($assetId) ? (int) $assetId : null;
+    }
+
+    /**
+     * An addition proposal: an active asset in this company, not split into
+     * components, on the row's account. The amount is always the row's. The
+     * error message when it cannot be used.
+     *
+     * @param  array<string, mixed>  $proposal
+     * @return array{add_to: int}|string
+     */
+    private function cleanAddition(array $proposal, int $account): array|string
+    {
+        $assetId = $proposal['add_to'];
+        $asset = is_numeric($assetId) ? FixedAsset::query()->whereKey((int) $assetId)->first(['id', 'status', 'asset_account']) : null;
+
+        if ($asset === null) {
+            return __('Välj en tillgång i registret att lägga till inköpet i.');
+        }
+
+        if ($asset->isSplit()) {
+            return __('Tillgången är uppdelad i komponenter. Lägg till inköpet i den komponent det hör till.');
+        }
+
+        if ($asset->status !== FixedAsset::ACTIVE) {
+            return __('Tillgången är avyttrad, och inget kan läggas till i den.');
+        }
+
+        if ($asset->asset_account !== $account) {
+            return __('Inköpet är bokfört på konto :row men tillgången på :asset. Lägg bara till inköp som är bokförda på tillgångens konto.', ['row' => $account, 'asset' => $asset->asset_account]);
+        }
+
+        return ['add_to' => $asset->id];
+    }
+
+    /**
+     * @param  array{voucher_id?: ?string, voucher_row_id?: ?int, supplier_invoice_id?: ?string}  $links
+     *
+     * @throws ValidationException
+     */
+    private function add(User $user, Company $company, FixedAssetProposal $proposal, int $account, int $amountOre, CarbonImmutable $date, array $links): void
+    {
+        try {
+            // Resolved here: FixedAssets books through PostVoucher, which itself adds through this class.
+            // The row's own amount: the register then always equals the purchase as booked.
+            app(FixedAssets::class)->addFromPurchase($user, $company, (int) self::addsTo($proposal), $account, $amountOre, $date, $links);
+        } catch (ValidationException $exception) {
+            throw ValidationException::withMessages(["rows.{$proposal->line}.asset" => __('Rad :line: inköpet kunde inte läggas till i tillgången: :reason', [
+                'line' => $proposal->line + 1,
+                'reason' => (string) collect($exception->errors())->flatten()->first(),
+            ])]);
+        }
+    }
+
     /**
      * @param  array{acquisition_voucher_id?: ?string, acquisition_voucher_row_id?: ?int, supplier_invoice_id?: ?string}  $links
      *
@@ -252,20 +359,24 @@ class AssetProposals
     private function create(User $user, Company $company, FixedAssetProposal $proposal, int $account, int $amountOre, string $date, ?CostCenter $costCenter, array $links): FixedAsset
     {
         $data = $proposal->data;
-        $category = AssetCategory::tryFrom($data['category']) ?? AcquisitionAccounts::categoryFor($account);
-        $acquiredOn = (string) $data['acquired_on'] !== '' ? (string) $data['acquired_on'] : $date;
-        $start = (string) $data['depreciation_start'] !== '' ? (string) $data['depreciation_start'] : substr($acquiredOn, 0, 7);
+        $acquisition = (string) ($data['acquisition'] ?? '');
+        $life = (int) ($data['life_months'] ?? 0);
+        $category = AssetCategory::tryFrom($data['category'] ?? '') ?? AcquisitionAccounts::categoryFor($account);
+        $acquiredOn = (string) ($data['acquired_on'] ?? '');
+        $acquiredOn = $acquiredOn !== '' ? $acquiredOn : $date;
+        $start = (string) ($data['depreciation_start'] ?? '');
+        $start = $start !== '' ? $start : substr($acquiredOn, 0, 7);
 
         try {
             // Resolved here: FixedAssets books through PostVoucher, which itself creates assets through this class.
             return app(FixedAssets::class)->createFromPurchase($user, $company, [
-                'name' => $data['name'],
+                'name' => $data['name'] ?? '',
                 'category' => $category->value,
                 'acquired_on' => $acquiredOn,
-                'acquisition' => $data['acquisition'] !== '' ? $data['acquisition'] : Money::ofOre($amountOre)->format(withCurrency: false),
+                'acquisition' => $acquisition !== '' ? $acquisition : Money::ofOre($amountOre)->format(withCurrency: false),
                 'residual' => '',
                 'opening_accumulated' => '',
-                'life_months' => (int) $data['life_months'],
+                'life_months' => $life,
                 'depreciation_start' => "{$start}-01",
                 'asset_account' => $account,
                 'accumulated_account' => $category->accounts()['accumulated'],
@@ -282,10 +393,10 @@ class AssetProposals
     }
 
     /**
-     * The draft's saved rows that are purchases on an acquisition account,
-     * by line.
+     * The draft's saved rows that are purchases on an acquisition account:
+     * their account number by line.
      *
-     * @return array<int, true>
+     * @return array<int, int>
      */
     private function eligibleLines(Company $company, Voucher|SupplierInvoice $draft): array
     {
@@ -295,7 +406,7 @@ class AssetProposals
         if ($draft instanceof Voucher) {
             foreach (VoucherRow::query()->where('voucher_id', $draft->id)->with('account')->orderBy('id')->get()->values() as $line => $row) {
                 if ($row->account instanceof Account && $this->isPurchase($accounts, $row->account->number, $row->debit_ore->ore, $row->credit_ore->ore)) {
-                    $eligible[(int) $line] = true;
+                    $eligible[(int) $line] = $row->account->number;
                 }
             }
 
@@ -308,7 +419,7 @@ class AssetProposals
 
         foreach (SupplierInvoiceRow::query()->where('supplier_invoice_id', $draft->id)->with('account')->orderBy('position')->get()->values() as $line => $row) {
             if ($row->account instanceof Account && $this->isPurchase($accounts, $row->account->number, $row->amount_ore->ore, 0)) {
-                $eligible[(int) $line] = true;
+                $eligible[(int) $line] = $row->account->number;
             }
         }
 

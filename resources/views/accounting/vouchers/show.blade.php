@@ -39,6 +39,17 @@
             </div>
         @endif
 
+        @if($assetAdditions->isNotEmpty())
+            <div class="rounded-xl border border-gray-200 bg-white px-5 py-4 text-sm text-gray-700" data-asset-additions>
+                <p>{{ __('Inköp i verifikationen som lades till i en befintlig anläggningstillgång:') }}</p>
+                <ul class="mt-2 space-y-1">
+                    @foreach($assetAdditions as $addition)
+                        <li><a href="{{ route('accounting.fixedAssets') }}" class="font-semibold text-accent-600 hover:text-accent-700">{{ $addition->asset?->number }} {{ $addition->asset?->name }}</a> · {{ $addition->amount_ore->format() }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-start">
         <div class="space-y-8">
         <x-ui.card>

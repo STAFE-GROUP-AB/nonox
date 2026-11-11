@@ -4,6 +4,7 @@
     Alpine component, whose `rows` it reads; the proposal is kept on the row.
     $kind: 'voucher' or 'supplier'; $blocked: an Alpine expression that hides
     the offer; $fallbackName: an Alpine expression for the default name.
+    A row can instead be added to an existing asset (row.asset.add_to).
 --}}
 @php
     $field = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-md text-sm max-md:min-h-11';
@@ -23,15 +24,33 @@
                     <span class="font-medium tabular-nums" x-text="item.account"></span>,
                     <span class="tabular-nums" x-text="format(item.amount) + ' kr'"></span>
                 </p>
-                <button type="button" class="text-sm font-semibold text-accent-600 hover:text-accent-700" x-show="! item.row.asset && ! item.small" x-on:click="start(item, {{ $fallbackName }})">{{ __('Skapa anläggningstillgång') }}</button>
-                <button type="button" class="text-sm text-gray-600 underline" x-show="item.row.asset" x-on:click="remove(item)">{{ __('Skapa ingen tillgång') }}</button>
+                <span class="flex flex-wrap gap-4">
+                    <button type="button" class="text-sm font-semibold text-accent-600 hover:text-accent-700" x-show="! item.row.asset && ! item.small" x-on:click="start(item, {{ $fallbackName }})">{{ __('Skapa anläggningstillgång') }}</button>
+                    <button type="button" class="text-sm font-semibold text-accent-600 hover:text-accent-700" x-show="! item.row.asset && assetsFor(item).length > 0" x-on:click="startAddition(item)">{{ __('Lägg till i befintlig tillgång') }}</button>
+                    <button type="button" class="text-sm text-gray-600 underline" x-show="item.row.asset && ! isAddition(item)" x-on:click="remove(item)">{{ __('Skapa ingen tillgång') }}</button>
+                    <button type="button" class="text-sm text-gray-600 underline" x-show="isAddition(item)" x-on:click="remove(item)">{{ __('Lägg inte till') }}</button>
+                </span>
             </div>
 
             @if($thresholdText !== '')
                 <p class="mt-1 text-xs text-gray-600" x-show="item.small && ! item.row.asset">{{ __('Under företagets gräns för inventarier av mindre värde (:amount), så ingen anläggningstillgång föreslås. Gränsen ändrar du under Anläggningar.', ['amount' => $thresholdText]) }}</p>
             @endif
 
-            <template x-if="item.row.asset">
+            <template x-if="isAddition(item)">
+                <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <label class="block text-xs font-medium text-gray-600 sm:col-span-2">{{ __('Tillgång') }}
+                        <select class="{{ $field }} mt-1" x-model="item.row.asset.add_to">
+                            <option value="">{{ __('Välj tillgång') }}</option>
+                            <template x-for="asset in assetsFor(item)" :key="asset.id">
+                                <option :value="String(asset.id)" x-text="asset.label" :selected="String(asset.id) === item.row.asset.add_to"></option>
+                            </template>
+                        </select>
+                        <span class="mt-1 block font-normal text-gray-500">{{ __('Tillgångar på samma konto. Anskaffningsvärdet ökar med radens belopp utan moms.') }}</span>
+                    </label>
+                </div>
+            </template>
+
+            <template x-if="item.row.asset && ! isAddition(item)">
                 <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <label class="block text-xs font-medium text-gray-600 sm:col-span-2 lg:col-span-1">{{ __('Benämning') }}
                         <input type="text" class="{{ $field }} mt-1" x-model="item.row.asset.name" maxlength="255">

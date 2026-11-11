@@ -24,6 +24,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * depreciated again; its components are assets with parent_id set, each with
  * its own plan on the carrying-amount basis. Land is never depreciated.
  *
+ * Additions (ADR-010, one investment from several purchases): a later
+ * purchase added to the asset raises acquisition_ore, which is always the
+ * total. An addition made before depreciation starts joins the plan from its
+ * first month; one made later is written off over the remaining life from
+ * the month after it (and after the last booked month), so no booked month
+ * is ever changed or caught up (additionTerms).
+ *
  * @property int $id
  * @property int $company_id
  * @property int $number
@@ -115,9 +122,26 @@ class FixedAsset extends Model
         ];
     }
 
-    /** The plan; land's has no life and writes off nothing (S1-R3.2). */
+    /**
+     * The plan; land's has no life and writes off nothing (S1-R3.2). Reads
+     * preloaded additions when there are (with('additions')), so a list asks
+     * one query for all of them.
+     */
     public function plan(): DepreciationPlan
     {
+        $additions = [];
+
+        foreach ($this->planAdditions() as $addition) {
+            $terms = $this->additionTerms($addition->added_on, $addition->booked_through);
+
+            // Joined from the first month: part of the plan's own acquisition value.
+            if ($terms['from']->equalTo($this->depreciation_start->startOfMonth())) {
+                continue;
+            }
+
+            $additions[] = ['amount' => $addition->amount_ore->ore, 'start' => $terms['from'], 'life' => $terms['life']];
+        }
+
         return new DepreciationPlan(
             $this->acquisition_ore->ore,
             $this->residual_ore->ore,
@@ -125,7 +149,56 @@ class FixedAsset extends Model
             $this->depreciation_start,
             $this->opening_accumulated_ore->ore,
             $this->depreciation_basis,
+            $additions,
         );
+    }
+
+    /**
+     * From which month, and over how many months, an amount added on a day
+     * is written off. Before depreciation has started (nothing booked and
+     * the addition in or before the first month) it joins the plan from the
+     * first month over the whole life. Otherwise it starts the month after
+     * the addition, never in or before a month already booked
+     * ($bookedThrough), and runs over what is left of the life, so the asset
+     * is still fully written off in the plan's last month. A life of zero or
+     * less means the plan has ended and the amount cannot be added.
+     *
+     * TODO(legal-verify): whether a later addition (förbättringsutgift,
+     * K2 10.x / K3 17.5) should be written off over the remaining life of the
+     * asset (chosen here) or over a life of its own, under K2 and K3.
+     *
+     * @return array{from: CarbonImmutable, life: int}
+     */
+    public function additionTerms(CarbonImmutable $addedOn, ?string $bookedThrough): array
+    {
+        $first = $this->depreciation_start->startOfMonth();
+        $month = $addedOn->startOfMonth();
+
+        if ($bookedThrough === null && $month->lessThanOrEqualTo($first)) {
+            return ['from' => $first, 'life' => $this->useful_life_months];
+        }
+
+        $from = $month->addMonthNoOverflow();
+
+        if ($bookedThrough !== null) {
+            $from = $from->max(CarbonImmutable::parse("{$bookedThrough}-01")->addMonthNoOverflow());
+        }
+
+        $from = $from->max($first);
+        $passed = ($from->year - $first->year) * 12 + ($from->month - $first->month);
+
+        return ['from' => $from, 'life' => $this->useful_life_months - $passed];
+    }
+
+    /** @return iterable<FixedAssetAddition> */
+    private function planAdditions(): iterable
+    {
+        if ($this->relationLoaded('additions')) {
+            return $this->additions;
+        }
+
+        // A new asset has none; otherwise one query, never a lazy load.
+        return $this->exists ? $this->additions()->get() : [];
     }
 
     /** The useful life applied (K3 17.23): a component's total life, else the plan's life. */
@@ -172,7 +245,11 @@ class FixedAsset extends Model
 
     public function isFullyDepreciated(): bool
     {
-        return $this->accumulatedOre() >= $this->plan()->depreciableOre();
+        $depreciable = $this->category->depreciates() && $this->useful_life_months > 0
+            ? max(0, $this->acquisition_ore->ore - $this->residual_ore->ore)
+            : 0;
+
+        return $this->accumulatedOre() >= $depreciable;
     }
 
     /** @return BelongsTo<FixedAsset, $this> */
@@ -185,6 +262,22 @@ class FixedAsset extends Model
     public function components(): HasMany
     {
         return $this->hasMany(FixedAsset::class, 'parent_id');
+    }
+
+    /**
+     * The later purchases added to the asset, oldest first.
+     *
+     * @return HasMany<FixedAssetAddition, $this>
+     */
+    public function additions(): HasMany
+    {
+        return $this->hasMany(FixedAssetAddition::class)->orderBy('added_on')->orderBy('id');
+    }
+
+    /** The acquisition value booked when the asset was created, before any addition. */
+    public function originalAcquisitionOre(): int
+    {
+        return $this->acquisition_ore->ore - (int) collect($this->planAdditions())->sum(fn (FixedAssetAddition $addition): int => $addition->amount_ore->ore);
     }
 
     /** @return HasMany<FixedAssetDepreciation, $this> */

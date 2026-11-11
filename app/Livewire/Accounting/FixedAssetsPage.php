@@ -14,8 +14,11 @@ use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\FixedAsset;
 use App\Models\User;
+use App\Models\Voucher;
+use App\Models\VoucherRow;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -26,7 +29,8 @@ use Livewire\Component;
 /**
  * Bokföring → Anläggningar: the fixed asset register, the month's
  * depreciation and disposals, and Komponenter: splitting an asset into
- * components in a K3 year (ADR-059 A.2.4, S1-P4).
+ * components in a K3 year (ADR-059 A.2.4, S1-P4), and Lägg till inköp:
+ * a posted purchase added to an existing asset (ADR-010).
  */
 class FixedAssetsPage extends Component
 {
@@ -63,6 +67,15 @@ class FixedAssetsPage extends Component
 
     /** The split is shown with its consequences before it is made. */
     public bool $confirmingSplit = false;
+
+    /** The asset a posted purchase is being added to. */
+    public ?int $adding = null;
+
+    /** The voucher row chosen to add. */
+    public string $additionRow = '';
+
+    /** The addition is shown with its consequences before it is made. */
+    public bool $confirmingAddition = false;
 
     /** @var array{accounts: string, threshold: string} the acquisition accounts and the threshold for assets created from purchases */
     public array $settings = ['accounts' => '', 'threshold' => ''];
@@ -320,6 +333,67 @@ class FixedAssetsPage extends Component
         $this->toast(__(':name är uppdelad i :count komponenter från :date.', ['name' => $asset->name, 'count' => $asset->components->count(), 'date' => $asset->components->first()?->depreciation_start->toDateString()]));
     }
 
+    /** Opens Lägg till inköp under an asset: a posted purchase on its account becomes part of it. */
+    public function startAddition(int $assetId): void
+    {
+        $asset = FixedAsset::query()->findOrFail($assetId);
+
+        if ($asset->status !== FixedAsset::ACTIVE) {
+            $this->toast($asset->isSplit()
+                ? __('Tillgången är uppdelad i komponenter. Lägg till inköpet i den komponent det hör till.')
+                : __('Tillgången är avyttrad, och inget kan läggas till i den.'), 'error');
+
+            return;
+        }
+
+        $this->adding = $asset->id;
+        $this->additionRow = '';
+        $this->confirmingAddition = false;
+        $this->reset('creating', 'editing', 'disposing', 'splitting');
+        $this->resetErrorBag();
+    }
+
+    public function reviewAddition(): void
+    {
+        $this->resetErrorBag();
+
+        if ($this->adding === null || $this->additionRow === '') {
+            $this->addError('addition', __('Välj ett inköp att lägga till.'));
+
+            return;
+        }
+
+        $this->confirmingAddition = true;
+    }
+
+    public function cancelAddition(): void
+    {
+        $this->reset('adding', 'additionRow', 'confirmingAddition');
+        $this->resetErrorBag();
+    }
+
+    public function addPurchase(FixedAssets $assets): void
+    {
+        if ($this->adding === null || ! ctype_digit($this->additionRow)) {
+            return;
+        }
+
+        $this->confirmingAddition = false;
+
+        try {
+            $addition = $assets->addPurchase($this->user(), $this->company(), $this->adding, (int) $this->additionRow);
+        } catch (ValidationException $exception) {
+            $this->setErrorBag($exception->validator->errors());
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        $asset = FixedAsset::query()->findOrFail($addition->fixed_asset_id);
+        $this->cancelAddition();
+        $this->toast(__(':amount är tillagt i :name. Anskaffningsvärdet är nu :total.', ['amount' => $addition->amount_ore->format(), 'name' => $asset->name, 'total' => $asset->acquisition_ore->format()]));
+    }
+
     public function addAccounts(FixedAssets $assets): void
     {
         $added = $assets->addAccounts($this->user(), $this->company());
@@ -328,7 +402,11 @@ class FixedAssetsPage extends Component
 
     public function render(FixedAssets $assets): View
     {
-        $list = FixedAsset::query()->withSum('depreciations', 'amount_ore')->with(['acquisitionVoucher.series', 'supplierInvoice'])->orderBy('status')->orderBy('number')->get();
+        $list = FixedAsset::query()->withSum('depreciations', 'amount_ore')
+            ->with(['acquisitionVoucher.series', 'supplierInvoice', 'additions.voucher.series', 'additions.supplierInvoice'])
+            ->orderBy('status')->orderBy('number')->get();
+        $adding = $this->adding === null ? null : $list->firstWhere('id', $this->adding);
+        $candidates = $adding === null ? collect() : FixedAssets::additionCandidates($this->company(), $adding);
         // Components are listed under their asset, from the same query.
         $children = $list->whereNotNull('parent_id')->groupBy('parent_id');
         $split = $this->splitting === null ? null : $list->firstWhere('id', $this->splitting);
@@ -356,7 +434,39 @@ class FixedAssetsPage extends Component
                 'book_value' => $list->where('status', FixedAsset::ACTIVE)->sum(fn (FixedAsset $asset): int => $asset->bookValueOre()),
             ],
             'today' => CarbonImmutable::today(),
+            'addingAsset' => $adding,
+            'editingHasAdditions' => $this->editing !== null && ($list->firstWhere('id', $this->editing)?->additions->isNotEmpty() ?? false),
+            'candidates' => $candidates,
+            'additionReview' => $adding !== null && $this->confirmingAddition ? $this->additionReview($adding, $candidates) : null,
         ]);
+    }
+
+    /**
+     * What adding the chosen purchase does: the amount, the new acquisition
+     * value, and from which month and over how many months it is written off.
+     *
+     * @param  Collection<int, VoucherRow>  $candidates
+     * @return array{amount: int, total: int, from: string, life: int, depreciates: bool, manual: bool}|null
+     */
+    private function additionReview(FixedAsset $asset, Collection $candidates): ?array
+    {
+        $row = $candidates->firstWhere('id', (int) $this->additionRow);
+
+        if (! $row instanceof VoucherRow || ! $row->voucher instanceof Voucher) {
+            return null;
+        }
+
+        $booked = $asset->depreciations()->max('period');
+        $terms = $asset->additionTerms($row->voucher->voucher_date, is_string($booked) ? $booked : null);
+
+        return [
+            'amount' => $row->debit_ore->ore,
+            'total' => $asset->acquisition_ore->ore + $row->debit_ore->ore,
+            'from' => $terms['from']->format('Y-m'),
+            'life' => $terms['life'],
+            'depreciates' => $asset->depreciates(),
+            'manual' => $asset->acquisition_voucher_id === null && $asset->supplier_invoice_id === null,
+        ];
     }
 
     /**

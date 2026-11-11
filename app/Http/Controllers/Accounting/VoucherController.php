@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Actions\Accounting\AttachToVoucher;
 use App\Domain\Accounting\AccountBalances;
 use App\Models\CostCenter;
+use App\Models\FixedAssetAddition;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\Voucher;
@@ -55,6 +56,7 @@ class VoucherController
             'voucher' => $voucher,
             'postedBy' => $voucher->posted_by ? User::query()->find($voucher->posted_by) : null,
             'acquiredAssets' => $voucher->isPosted() ? $voucher->acquiredAssets()->orderBy('number')->get(['id', 'number', 'name', 'acquisition_ore']) : collect(),
+            'assetAdditions' => $voucher->isPosted() ? FixedAssetAddition::query()->where('voucher_id', $voucher->id)->with('asset:id,number,name')->orderBy('id')->get() : collect(),
             'balances' => $voucher->isPosted()
                 ? AccountBalances::afterRows($voucher->fiscal_year_id, $voucher->rows)
                 : AccountBalances::afterDraftRows($voucher->rows, AccountBalances::atDate($voucher->fiscal_year_id, $voucher->voucher_date)),
