@@ -1725,6 +1725,72 @@ signed the checklist.
   skatt" specification row as ÅRL bilaga 1 C.2 presentation; the page's
   wording of the refusals.
 
+#### As built (S1-P14, 2026-11-10)
+
+- **Test.** `tests/Performance/K3ReportPerformanceTest.php` (group
+  `performance`) loads F-S1-b as the K3 document tests do (the loader moved to
+  `tests/Support/K3DocumentFixture.php`), then seeds 50 000 vouchers of four
+  rows (200 000 rows) in 2026 inside the test's transaction: drafts and their
+  rows with two `INSERT … SELECT`, then one `UPDATE` that posts them, so
+  `vouchers_check_balance_on_post` checks every voucher (no trigger is
+  disabled; the hash is a placeholder, the chain is not what is measured).
+  It times `K3AnnualReportDocument::for()` plus `html()` (not Dompdf), asserts
+  no refusal and that the net sales grew by exactly 50 000 × 10,00 kr, and
+  prints the time, the query count and the five slowest queries. Budget 3 s,
+  9 s on macOS (A.5). `tests/Performance` is in no PHPUnit test suite, so
+  `vendor/bin/pest` (local and CI) does not run it; CI runs it in a separate
+  step on `main` only: `vendor/bin/pest tests/Performance --group=performance`.
+- **Measured** (Apple M4 Max, macOS, PostgreSQL 17.7 from Homebrew, the
+  table statistics stale as they are in a test transaction, which is also
+  the state right after a large import that autovacuum has not analysed):
+  **before 401,9 s**, 45 queries; after **0,85 s**, 42 queries. With fresh
+  statistics (`ANALYZE` inside the transaction) the old code took 0,89 s, so
+  the gap is the plan, not the volume. Per-query times on Herd/macOS are
+  noisy and far slower than on the Linux server (QUICKSTART §6); judge by the
+  plan and the count, and read CI's number for the Linux budget.
+- **Cause.** Both `AnnualAccounts::ledger()` (debit and credit per account)
+  and `K3EquityStatement` joined `voucher_rows` to `vouchers`. With every
+  estimate at one row the planner ANDed the company's whole
+  `voucher_rows (company_id, …)` bitmap with the voucher's, once per voucher
+  (`EXPLAIN (ANALYZE, BUFFERS)` at 5 000 vouchers: 5 001 loops reading 20 032
+  index entries each, 829 ms for the equity query; at 50 000: 113 s for the
+  ledger and about 100 s for each of three equity reads). An index on
+  `voucher_rows (voucher_id, company_id)` plus `vouchers (fiscal_year_id,
+  status)` fixed that plan, but then the planner chose a nested loop with a
+  join filter over the company's rows (the P2-D plan), which did not finish
+  in 600 s: indexes alone do not make the join safe.
+- **Fix.** The year's posted vouchers are read first and each voucher's rows
+  through a lateral subquery grouped by account
+  (`AnnualAccounts::voucherAccountRows()`). The grouping keeps PostgreSQL from
+  flattening it into a join, so the rows are looked up by `voucher_id` once
+  per voucher whatever the statistics (Bitmap Index Scan on
+  `voucher_rows_search_voucher`, about 4 µs per voucher). The subquery has no
+  company constant to look rows up by: `voucher_rows` is read without
+  CompanyScope, the vouchers are the company's through CompanyScope, and the
+  FILTER and HAVING clauses count only rows of the voucher's own company.
+  The equity statement marks a voucher that touches equity with a window
+  over that voucher's own accounts (`= ANY` of the equity account ids, from
+  the chart AnnualAccounts already read), so it no longer sorts all 200 000
+  rows; the lookup of a corrected original refers to the lateral rows and
+  has `LIMIT 1`, so it runs by primary key for the equity rows only (four
+  loops in the test). `K3EquityStatement::of()` builds once per
+  `AnnualAccounts` (a `WeakMap`), instead of three times per document.
+  `AnnualAccounts` reads the chart once instead of once per year, so the
+  ledger is one query fewer (`K3ScheduleFixtureTest`: 8 → 7); no count grows
+  with the vouchers.
+- **No index.** With the rewrite the plans use the existing
+  `voucher_rows_search_voucher (voucher_id)` and `vouchers (company_id,
+  status)`; the two indexes above measured the same within the noise (1,29 s
+  against 0,86 s, both runs on the loaded Mac), so A.5's condition for a new
+  index (a sequential scan dominating) is not met and no migration is added.
+- **Results unchanged:** F-S1-a and F-S1-b, the K2 golden files and the
+  query-count tests are green to the öre.
+- **Remaining:** the same `voucher_rows` × `vouchers` join is in
+  `LedgerReconciliation`, `ClosingChecklist`, `DeferredTaxProposal` and
+  `YearResult` (closing, not the annual report; not measured here); the
+  50 000-voucher budget for the K2 document and the closing page is not
+  tested.
+
 ### A.5 Test plan and performance
 
 **Unit tests per rule id** (Pest, `tests/Unit/AnnualReport/K3/…`), named with the

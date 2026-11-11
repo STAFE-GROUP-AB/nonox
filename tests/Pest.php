@@ -14,7 +14,7 @@ use Tests\TestCase;
  */
 pest()->extend(TestCase::class)
     ->use(DatabaseTransactions::class)
-    ->in('Feature', 'Unit', 'Tenancy');
+    ->in('Feature', 'Unit', 'Tenancy', 'Performance');
 
 /*
  * Tests of the demo database (ADR-077) work in a transaction on the demo

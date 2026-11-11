@@ -220,7 +220,7 @@ it('S1-R8.3 rounds F-S1-a\'s equity specification without adding a row, and ever
     }
 });
 
-it('reads the ledger with as many queries under K3 as under K2: one for the previous year, three per year, one for goods for resale', function () {
+it('reads the ledger with as many queries under K3 as under K2: one for the previous year, one for the chart, two per year, one for goods for resale', function () {
     $count = function (string $schedule): int {
         DB::flushQueryLog();
         DB::enableQueryLog();
@@ -235,5 +235,5 @@ it('reads the ledger with as many queries under K3 as under K2: one for the prev
     };
 
     expect($count(K3Schedule::class))->toBe($count(K2Schedule::class))
-        ->and($count(K2Schedule::class))->toBe(8);
+        ->and($count(K2Schedule::class))->toBe(7);
 });
