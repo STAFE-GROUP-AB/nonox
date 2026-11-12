@@ -38,6 +38,7 @@
                                     {{ $forecast->forecast_delivery_on?->toDateString() ?? __('Efter horisonten') }}
                                     @if($forecast->hasFlag('assumed_material'))<span class="block text-xs text-amber-800">{{ __('Antaget materialdatum') }}</span>@endif
                                     @if($forecast->hasFlag('lock_broken'))<span class="block text-xs text-red-700">{{ __('Låsning går inte att hålla') }}</span>@endif
+                                    @if($forecast->hasFlag('lock_out_of_order'))<span class="block text-xs text-red-700">{{ __('Ett låst steg börjar innan steget före är klart') }}</span>@endif
                                     @if($forecast->hasFlag('no_resource'))<span class="block text-xs text-red-700">{{ __('Ingen med rätt kompetens') }}</span>@endif
                                 </td>
                                 <td class="py-2 pr-4 text-right tabular-nums">{{ $difference === null ? '–' : trans_choice(':count arbetsdag|:count arbetsdagar', $difference, ['count' => ($difference > 0 ? '+' : '').$difference]) }}</td>

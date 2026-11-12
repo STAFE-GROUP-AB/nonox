@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Manufacturing\Domain\ForecastStatus;
 use App\Modules\Manufacturing\Domain\WaitsFor;
+use App\Modules\Manufacturing\Planning\Availability;
 use App\Modules\Manufacturing\Planning\Engine\Clock;
 use App\Modules\Manufacturing\Planning\Engine\FreeTime;
 use App\Modules\Manufacturing\Planning\Engine\MaterialPlanner;
@@ -12,6 +13,8 @@ use App\Modules\Manufacturing\Planning\Engine\PlanOrder;
 use App\Modules\Manufacturing\Planning\Engine\PlanPin;
 use App\Modules\Manufacturing\Planning\Engine\PlanSplit;
 use App\Modules\Manufacturing\Planning\Engine\Scheduler;
+use App\Modules\Manufacturing\Planning\Engine\WeekPattern;
+use Carbon\CarbonImmutable;
 use Tests\Support\PlanningFixture;
 
 /*
@@ -168,16 +171,40 @@ it('allocates stock and incoming purchase orders in planning order', function ()
 });
 
 it('takes a part-day absence out of every day it covers, and a full day\'s hours as the whole day', function () {
-    $from = Carbon\CarbonImmutable::parse('2026-11-16', Clock::ZONE);
-    $week = App\Modules\Manufacturing\Planning\Engine\WeekPattern::uniform([1, 2, 3, 4, 5], 420, 960, 720, 60);
+    $from = CarbonImmutable::parse('2026-11-16', Clock::ZONE);
+    $week = WeekPattern::uniform([1, 2, 3, 4, 5], 420, 960, 720, 60);
     $free = new FreeTime($week->intervals($from, $from->addDays(6)));
 
-    $days = App\Modules\Manufacturing\Planning\Availability::removeAbsence($free, '2026-11-16', '2026-11-17', 10_000, 4.0, $from, $from->addDays(6));
+    $days = Availability::removeAbsence($free, '2026-11-16', '2026-11-17', 10_000, 4.0, $from, $from->addDays(6));
 
     expect($days)->toBe(['2026-11-16', '2026-11-17'])
         ->and($free->minutesBetween(Clock::local('2026-11-16', 0), Clock::local('2026-11-17', 0)))->toBe(240)
         ->and($free->minutesBetween(Clock::local('2026-11-17', 0), Clock::local('2026-11-18', 0)))->toBe(240);
 
-    App\Modules\Manufacturing\Planning\Availability::removeAbsence($free, '2026-11-18', '2026-11-18', 10_000, 8.0, $from, $from->addDays(6));
+    Availability::removeAbsence($free, '2026-11-18', '2026-11-18', 10_000, 8.0, $from, $from->addDays(6));
     expect($free->minutesBetween(Clock::local('2026-11-18', 0), Clock::local('2026-11-19', 0)))->toBe(0);
+});
+
+it('flags locked work that starts before an earlier operation ends, and books nothing when a split cannot be done', function () {
+    $input = PlanningFixture::input();
+    $tove = PlanningFixture::personId('tove');
+    $orders = $input->orders;
+
+    // TO-1042 Slipning locked Monday 07:00, before Kapning, Hyvling and Montering can be done.
+    $orders[0] = new PlanOrder(1042, 1042, array_map(fn (PlanOperation $op): PlanOperation => $op->id === 10423
+        ? new PlanOperation($op->id, $op->operationId, $op->minutes, $op->skillId, $op->workstationIds, $op->waitMinutes, new PlanPin(9, $tove, null, Clock::local('2026-11-16', 7 * 60)))
+        : $op, $orders[0]->operations), promisedOn: '2026-11-24');
+
+    expect((new Scheduler)->schedule($input->with(orders: $orders))->forecast(1042)?->has('lock_out_of_order'))->toBeTrue();
+
+    // Lackering split to Tove: the rest must go to someone else with the skill, and nobody else lacquers.
+    $orders = $input->orders;
+    $orders[0] = new PlanOrder(1042, 1042, array_map(fn (PlanOperation $op): PlanOperation => $op->id === 10424
+        ? new PlanOperation($op->id, $op->operationId, $op->minutes, $op->skillId, $op->workstationIds, $op->waitMinutes, null, new PlanSplit(3, $tove, 60))
+        : $op, $orders[0]->operations), promisedOn: '2026-11-24');
+
+    $result = (new Scheduler)->schedule($input->with(orders: $orders));
+
+    expect(collect($result->slots)->where('orderOperationId', 10424)->all())->toBe([])
+        ->and($result->forecast(1042)?->has('no_resource'))->toBeTrue();
 });

@@ -169,10 +169,13 @@ final class Scheduler
         $last = null;
         $beyond = false;
         $noResource = false;
+        $outOfOrder = false;
 
         foreach ($order->operations as $operation) {
             if (isset($done[$operation->id])) {
                 [$start, $end] = $done[$operation->id];
+                // Locked work that starts before the work before it can be finished.
+                $outOfOrder = $outOfOrder || ($last !== null && $start < $cursor);
                 $first = $first === null ? $start : min($first, $start);
                 $last = max($last ?? $end, $end);
                 $cursor = max($cursor, $end + $operation->waitMinutes);
@@ -207,6 +210,7 @@ final class Scheduler
             $beyond ? PlanForecast::BEYOND_HORIZON : null,
             $noResource ? PlanForecast::NO_RESOURCE : null,
             $lockBroken ? PlanForecast::LOCK_BROKEN : null,
+            $outOfOrder ? PlanForecast::LOCK_OUT_OF_ORDER : null,
         ]));
 
         return new PlanForecast(
@@ -234,6 +238,7 @@ final class Scheduler
     {
         $split = $operation->split;
         $minutes = $operation->minutes;
+        $splitBooking = null;
         $start = null;
         $end = null;
 
@@ -246,6 +251,7 @@ final class Scheduler
             }
 
             $this->book($order, $operation, $best[0], $best[1], $best[2], locked: false, part: 1);
+            $splitBooking = $best;
             [$start, $end] = [$best[2]->start, $best[2]->end];
             $minutes -= $part;
         }
@@ -259,6 +265,11 @@ final class Scheduler
             $best = $this->best($operation, $candidates, $cursor, $minutes);
 
             if (! is_array($best)) {
+                // The split part alone does not finish the operation: give its time back.
+                if ($splitBooking !== null) {
+                    $this->unbook($splitBooking[0], $splitBooking[1], $splitBooking[2]);
+                }
+
                 return $best;
             }
 
@@ -320,6 +331,19 @@ final class Scheduler
         }
 
         $this->slots[] = new PlanSlot($order->id, $operation->id, $personId, $workstationId, $fill->start, $fill->end, $fill->minutes, $fill->segments, $locked, $part);
+    }
+
+    private function unbook(int $personId, ?int $workstationId, Fill $fill): void
+    {
+        $this->people[$personId]->add($fill->segments);
+        $this->bookedPerson[$personId] -= $fill->minutes;
+
+        if ($workstationId !== null && isset($this->workstations[$workstationId])) {
+            $this->workstations[$workstationId]->add($fill->segments);
+            $this->bookedWorkstation[$workstationId] -= $fill->minutes;
+        }
+
+        array_pop($this->slots);
     }
 
     public static function status(WorkingCalendar $calendar, ?string $delivery, ?string $promised, bool $assumedMaterial): ForecastStatus

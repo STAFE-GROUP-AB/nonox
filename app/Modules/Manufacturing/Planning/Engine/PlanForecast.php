@@ -12,7 +12,7 @@ use App\Modules\Manufacturing\Domain\WaitsFor;
  * when its material is ready, when it starts and finishes, the forecast
  * delivery date against the promised date, the traffic light, what it
  * waits for, and flags (assumed_material, beyond_horizon, no_resource,
- * lock_broken).
+ * lock_broken, lock_out_of_order).
  */
 final readonly class PlanForecast
 {
@@ -23,6 +23,8 @@ final readonly class PlanForecast
     public const string NO_RESOURCE = 'no_resource';
 
     public const string LOCK_BROKEN = 'lock_broken';
+
+    public const string LOCK_OUT_OF_ORDER = 'lock_out_of_order';
 
     /**
      * @param  list<string>  $flags
