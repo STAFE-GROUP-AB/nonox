@@ -100,11 +100,11 @@ final class WorkshopAnalysis
             ->groupBy('production_order_operation_id')->selectRaw('production_order_operation_id, sum(minutes) as minutes')
             ->pluck('minutes', 'production_order_operation_id');
         $byOrder = $orders->keyBy('id');
-        [$people, $peopleByOperation] = self::peopleCounts($orders->pluck('id')->all());
+        [$people, $peopleByOperation] = self::peopleCounts($orders->map(fn (ProductionOrder $order): int => $order->id)->values()->all());
 
         /** @var array<string, array{article: string, operation: string, rows: list<array{planned: int, actual: int, on: string}>, unreported: int}> $groups */
         $groups = [];
-        /** @var array<int, array{operation: string, planned: int, actual: int, over: int, orders: int, over_orders: int}> $byOperation */
+        /** @var array<int, array{operation_id: int, operation: string, planned: int, actual: int, over: int, orders: int, over_orders: int}> $byOperation */
         $byOperation = [];
 
         foreach ($operations as $operation) {
@@ -192,7 +192,7 @@ final class WorkshopAnalysis
      * on at the terminal (the time was entered when the order was finished)
      * have no entry, and nothing is hidden for them.
      *
-     * @param  list<int>  $orderIds
+     * @param  array<int, int>  $orderIds
      * @return array{0: array<string, int>, 1: array<int, int>} "article-operation" => people, and operation id => people
      */
     private static function peopleCounts(array $orderIds): array
@@ -205,7 +205,8 @@ final class WorkshopAnalysis
             ->whereNotNull('entries.person_id')
             ->groupBy([...$columns, 'entries.person_id'])
             ->havingRaw('sum(entries.minutes) > 0')
-            ->selectRaw(implode(', ', $columns).', 1 as reporter');
+            ->select($columns)
+            ->selectRaw('1 as reporter');
 
         $byProduct = [];
 
