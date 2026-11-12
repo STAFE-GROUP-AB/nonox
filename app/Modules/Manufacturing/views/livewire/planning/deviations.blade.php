@@ -110,31 +110,31 @@
                         <div wire:key="suggestion-{{ $index }}" class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-stone-200 p-3 text-sm">
                             <div>
                                 <p class="font-medium text-ink">
-                                    @switch($suggestion->kind)
-                                        @case('MOVE') {{ __('Flytta :operation från :from till :to', $suggestion->facts) }} @break
-                                        @case('SPLIT') {{ __('Dela :operation: :minutes min till :to', $suggestion->facts) }} @break
-                                        @case('OVERTIME') {{ __('Övertid för :person :date kl. :from–:to', $suggestion->facts) }} @break
-                                        @case('PRIORITY') {{ __('Lägg :order först', $suggestion->facts) }} @break
-                                        @case('NEW_DATE') {{ __('Nytt datum till kunden: :date', $suggestion->facts) }} @break
+                                    @switch($suggestion['kind'])
+                                        @case('MOVE') {{ __('Flytta :operation från :from till :to', $suggestion['facts']) }} @break
+                                        @case('SPLIT') {{ __('Dela :operation: :minutes min till :to', $suggestion['facts']) }} @break
+                                        @case('OVERTIME') {{ __('Övertid för :person :date kl. :from–:to', $suggestion['facts']) }} @break
+                                        @case('PRIORITY') {{ __('Lägg :order först', $suggestion['facts']) }} @break
+                                        @case('NEW_DATE') {{ __('Nytt datum till kunden: :date', $suggestion['facts']) }} @break
                                     @endswitch
                                 </p>
                                 <p class="text-gray-600">
-                                    @if($suggestion->kind !== 'NEW_DATE')
-                                        {{ $suggestion->helps ? __('Prognos :before → :after', ['before' => $suggestion->before ?? __('efter horisonten'), 'after' => $suggestion->after ?? __('efter horisonten')]) : __('Hjälper inte: prognosen blir :after', ['after' => $suggestion->after ?? __('efter horisonten')]) }}
-                                        @if($suggestion->delayed !== []) · {{ trans_choice(':count annan order blir senare|:count andra ordrar blir senare', count($suggestion->delayed)) }}@endif
-                                        @if($suggestion->costOre !== null) · {{ __('uppskattad arbetskostnad :amount', ['amount' => App\Support\Money\Money::ofOre($suggestion->costOre)->format()]) }}@endif
+                                    @if($suggestion['kind'] !== 'NEW_DATE')
+                                        {{ $suggestion['helps'] ? __('Prognos :before → :after', ['before' => $suggestion['before'] ?? __('efter horisonten'), 'after' => $suggestion['after'] ?? __('efter horisonten')]) : __('Hjälper inte: prognosen blir :after', ['after' => $suggestion['after'] ?? __('efter horisonten')]) }}
+                                        @if($suggestion['delayed'] > 0) · {{ trans_choice(':count annan order blir senare|:count andra ordrar blir senare', $suggestion['delayed']) }}@endif
+                                        @if($suggestion['costOre'] !== null) · {{ __('uppskattad arbetskostnad :amount', ['amount' => App\Support\Money\Money::ofOre($suggestion['costOre'])->format()]) }}@endif
                                     @endif
                                 </p>
-                                @if($suggestion->kind === 'OVERTIME')
+                                @if($suggestion['kind'] === 'OVERTIME')
                                     <p class="text-xs text-gray-500">{{ __('Kontrollera arbetstidsreglerna innan övertiden bestäms. Kostnaden räknas på arbetsstegets timkostnad, inte på övertidsersättningen.') }}</p>
                                 @endif
                             </div>
-                            @if($suggestion->changes !== [] && $suggestion->helps)
-                                <x-secondary-button type="button" wire:click="apply({{ $index }})" wire:confirm="{{ __('Tillämpa förslaget? Planen ändras och beräknas om.') }}">{{ __('Tillämpa') }}</x-secondary-button>
-                            @elseif($suggestion->kind === 'NEW_DATE' && $canConfirm)
-                                @php($impact = $deviation->impacts->firstWhere('production_order_id', $suggestion->orderId))
+                            @if($suggestion['changes'] !== [] && $suggestion['helps'])
+                                <x-secondary-button type="button" wire:click="apply({{ $index }}, '{{ $suggestion['hash'] }}')" wire:confirm="{{ __('Tillämpa förslaget? Planen ändras och beräknas om.') }}">{{ __('Tillämpa') }}</x-secondary-button>
+                            @elseif($suggestion['kind'] === 'NEW_DATE' && $canConfirm)
+                                @php($impact = $deviation->impacts->firstWhere('production_order_id', $suggestion['orderId']))
                                 @if($impact?->sales_document_id)
-                                    <x-secondary-button type="button" wire:click="startConfirm({{ $deviation->id }}, '{{ $impact->sales_document_id }}', '{{ $suggestion->facts['date'] }}')">{{ __('Bekräfta till kunden') }}</x-secondary-button>
+                                    <x-secondary-button type="button" wire:click="startConfirm({{ $deviation->id }}, '{{ $impact->sales_document_id }}', '{{ $suggestion['facts']['date'] }}')">{{ __('Bekräfta till kunden') }}</x-secondary-button>
                                 @endif
                             @endif
                         </div>

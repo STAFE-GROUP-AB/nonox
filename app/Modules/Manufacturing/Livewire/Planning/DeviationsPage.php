@@ -47,29 +47,74 @@ class DeviationsPage extends Component
 
     public string $recipient = '';
 
-    /** @var list<Suggestion>|null */
-    private ?array $suggestions = null;
+    /**
+     * The suggestions as shown, computed once when the panel opens, for the run they were computed on.
+     *
+     * @var list<array{kind: string, changes: list<array<string, mixed>>, facts: array<string, mixed>, orderId: int, before: ?string, after: ?string, helps: bool, delayed: int, costOre: ?int, hash: string}>
+     */
+    #[Locked]
+    public array $shown = [];
 
-    public function suggest(?int $id): void
+    #[Locked]
+    public ?int $shownRunId = null;
+
+    public function suggest(?int $id, Suggestions $suggestions): void
     {
         abort_unless($this->can('plan'), 403);
         $this->suggestingId = $this->suggestingId === $id ? null : $id;
+        $this->shown = [];
+        $this->shownRunId = null;
+
+        if ($this->suggestingId === null) {
+            return;
+        }
+
+        $deviation = ProductionDeviation::query()->findOrFail($this->suggestingId);
+        $this->shownRunId = $this->runId;
+        $this->shown = array_map(fn (Suggestion $suggestion): array => [
+            'kind' => $suggestion->kind,
+            'changes' => $suggestion->changes,
+            'facts' => $suggestion->facts,
+            'orderId' => $suggestion->orderId,
+            'before' => $suggestion->before,
+            'after' => $suggestion->after,
+            'helps' => $suggestion->helps,
+            'delayed' => count($suggestion->delayed),
+            'costOre' => $suggestion->costOre,
+            'hash' => self::hash($suggestion->changes),
+        ], $suggestions->for($this->company(), $deviation));
     }
 
-    public function apply(int $index, Scenarios $scenarios): void
+    /** Applies the suggestion exactly as shown; refused when the plan has changed since, or the hash does not match. */
+    public function apply(int $index, string $hash, Scenarios $scenarios): void
     {
         abort_unless($this->can('plan'), 403);
-        $suggestion = $this->suggestionList()[$index] ?? null;
+        $suggestion = $this->shown[$index] ?? null;
 
-        if ($suggestion === null || $suggestion->changes === []) {
+        if ($suggestion === null || $suggestion['changes'] === [] || ! hash_equals($suggestion['hash'], $hash)) {
+            $this->toast(__('Förslaget finns inte längre. Visa förslagen igen.'), 'error');
+
+            return;
+        }
+
+        if ($this->shownRunId !== $this->runId) {
+            $this->toast(__('Planen har ändrats sedan förslagen beräknades. Visa förslagen igen.'), 'error');
+
             return;
         }
 
         $this->attempt(function () use ($scenarios, $suggestion): void {
-            $scenarios->apply($this->user(), $this->company(), $scenarios->save($this->user(), $this->company(), $suggestion->changes));
+            $scenarios->apply($this->user(), $this->company(), $scenarios->save($this->user(), $this->company(), $suggestion['changes']));
         }, __('Förslaget är tillämpat. Planen beräknas om.'));
 
-        $this->suggestions = null;
+        $this->shown = [];
+        $this->suggestingId = null;
+    }
+
+    /** @param  list<array<string, mixed>>  $changes */
+    private static function hash(array $changes): string
+    {
+        return hash('sha256', json_encode($changes, JSON_THROW_ON_ERROR));
     }
 
     public function decide(int $id, string $status, DecideDeviation $decide): void
@@ -124,16 +169,6 @@ class DeviationsPage extends Component
         $this->recipient = '';
     }
 
-    /** @return list<Suggestion> */
-    private function suggestionList(): array
-    {
-        if ($this->suggestingId === null) {
-            return [];
-        }
-
-        return $this->suggestions ??= app(Suggestions::class)->for($this->company(), ProductionDeviation::query()->findOrFail($this->suggestingId));
-    }
-
     public function render(): View
     {
         $deviations = ProductionDeviation::query()
@@ -157,7 +192,7 @@ class DeviationsPage extends Component
             'canConfirm' => $this->can('confirmDates'),
             'deviations' => $deviations,
             'workstations' => $workstations,
-            'suggestions' => $this->suggestionList(),
+            'suggestions' => $this->shown,
             'preview' => $preview,
         ]);
     }

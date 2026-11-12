@@ -24,6 +24,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Tests\Support\Manufacturing;
+use Tests\Support\Planning;
 use Tests\Support\PlanningWorkshop;
 use Tests\Support\Purchasing;
 
@@ -164,7 +165,7 @@ it('stores the plan\'s times as the moments they are, whatever the session time 
 it('raises no deviation for an absence of someone outside the workshop, or outside the horizon', function () {
     $shop = PlanningWorkshop::build($this->company, $this->owner);
     app(ProductionPlanner::class)->run($this->company, PlanTrigger::Manual, $this->now);
-    $office = Tests\Support\Planning::employee($this->owner, $this->company, 'Kontorist', '910707789', ['last_name' => 'Testsson']);
+    $office = Planning::employee($this->owner, $this->company, 'Kontorist', '910707789', ['last_name' => 'Testsson']);
 
     CurrentCompany::run($this->company, function () use ($office, $shop) {
         Absence::create(['employee_id' => $office->id, 'type' => 'SICK', 'date_from' => '2026-11-17', 'date_to' => '2026-11-18', 'status' => 'APPROVED']);

@@ -9,6 +9,8 @@ use App\Modules\Manufacturing\Livewire\Planning\DeviationsPage;
 use App\Modules\Manufacturing\Livewire\Planning\OrdersPage;
 use App\Modules\Manufacturing\Livewire\Planning\ResourcesPage;
 use App\Modules\Manufacturing\Livewire\Planning\TimelinePage;
+use App\Modules\Manufacturing\Models\ProductionDeviation;
+use App\Modules\Manufacturing\Models\ProductionScenario;
 use App\Modules\Manufacturing\Planning\Engine\Clock;
 use App\Modules\Manufacturing\Planning\ProductionPlanner;
 use App\Modules\Payroll\Models\Absence;
@@ -109,3 +111,50 @@ it('runs a fixed number of queries on each screen, whatever the number of orders
 
     expect($count())->toBe($ten);
 })->with([TimelinePage::class, OrdersPage::class, ResourcesPage::class, CalendarPage::class, DeviationsPage::class]);
+
+it('computes suggestions once, applies exactly the one shown, and refuses it after the plan changed', function () {
+    Absence::query();
+    CurrentCompany::run($this->company, fn () => Absence::create([
+        'employee_id' => $this->shop['people']['tove']->id, 'type' => 'SICK', 'date_from' => '2026-11-17', 'date_to' => '2026-11-23', 'status' => 'APPROVED',
+    ]));
+    $deviation = CurrentCompany::run($this->company, fn () => ProductionDeviation::query()->sole());
+
+    $page = Livewire::test(DeviationsPage::class)->call('suggest', $deviation->id);
+    $shown = $page->get('shown');
+    expect($shown)->not->toBeEmpty();
+
+    // With the panel open, a render runs no simulation: the same queries as with it closed.
+    $count = function () use ($page): int {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $page->call('$refresh');
+        $queries = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        return $queries;
+    };
+    $open = $count();
+    $closed = Livewire::test(DeviationsPage::class);
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    $closed->call('$refresh');
+    $closedQueries = count(DB::getQueryLog());
+    DB::disableQueryLog();
+    expect($open)->toBe($closedQueries);
+
+    // A hash that is not the shown suggestion's is refused.
+    $index = collect($shown)->search(fn (array $s): bool => $s['changes'] !== [] && $s['helps']);
+    $page->call('apply', $index, 'not-the-hash')->assertSet('shown', $shown);
+    expect(ProductionScenario::query()->count())->toBe(0);
+
+    // After a new run the shown suggestions are stale.
+    app(ProductionPlanner::class)->run($this->company, PlanTrigger::Manual, $this->now);
+    $page->call('checkRun')->call('apply', $index, $shown[$index]['hash']);
+    expect(ProductionScenario::query()->count())->toBe(0);
+
+    // Shown again on the latest plan, it applies.
+    $page->call('suggest', $deviation->id)->call('suggest', $deviation->id);
+    $fresh = $page->get('shown');
+    $page->call('apply', $index, $fresh[$index]['hash']);
+    expect(ProductionScenario::query()->whereNotNull('applied_at')->sole()->changes)->toEqual($fresh[$index]['changes']);
+});
