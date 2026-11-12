@@ -240,3 +240,14 @@ it('plans only on people in the plan, and raises a deviation only for a longer e
     app(PlanChanges::class)->remaining($this->owner, $this->company, $assembly->fresh(), 1000);
     expect(ProductionDeviation::query()->where('type', DeviationType::Overrun->value)->count())->toBe(1);
 });
+
+it('writes the date message in Swedish whatever the sender\'s language', function () {
+    $order = Manufacturing::document($this->company, $this->owner, [['P-1041', '10', '1000']], App\Models\SalesDocument::ORDER);
+    $change = app(ConfirmCustomerDate::class)($this->owner, $this->company, $order, '2026-11-26');
+    app()->setLocale('en');
+
+    $mail = new DeliveryDateMail($this->company, $change);
+
+    expect($mail->locale)->toBe('sv')
+        ->and($mail->render())->toContain('Vi bekräftar leveransdatum')->toContain('november');
+});

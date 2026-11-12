@@ -31,6 +31,8 @@ class DeliveryDateMail extends Mailable
     {
         $this->companyId = $company->id;
         $this->changeId = $change->id;
+        // The customer is Swedish unless told otherwise: customers have no language of their own yet.
+        $this->locale('sv');
     }
 
     public function envelope(): Envelope
