@@ -29,13 +29,15 @@ Tillverkning är en modul som kräver Lager. Den är avstängd tills ägaren sl�
 - **Tillverkningsorder** – det som ska tillverkas, med komponenter, arbetssteg och kostnad.
 - **Stycklistor** – varje produkt med komponenter, arbetssteg och kostnad per enhet.
 - **Arbetssteg** – stegen i verkstaden med timkostnad och kapacitet.
+- **Efterkalkyl** – kalkyl mot rapporterad tid per produkt och arbetssteg, köer och vad ordrarna väntar på. Se [Efterkalkyl](/manual/tillverkning/efterkalkyl).
+- **Verkstadsterminal** – surfplattorna i verkstaden där personalen rapporterar produktionstid. Se [Verkstadsterminal](/manual/tillverkning/verkstadsterminal).
 - **Inställningar** – omkostnadspålägget, om det också ska ingå i lagervärdet, och kontona för produkter i arbete.
 
 På offerter och order finns kortet **Stycklistor och kalkyl** under raderna.
 
 ## Vem ser vad
 
-Ägare och administratörer ändrar stycklistor, arbetssteg, tillverkningsorder och inställningar. Redovisningskonsulter och revisorer ser stycklistorna, tillverkningsorderna och kalkylen men ändrar dem inte. För att ändra stycklistan på en offert- eller orderrad behöver du dessutom få ändra offerten eller ordern.
+Ägare och administratörer ändrar stycklistor, arbetssteg, tillverkningsorder och inställningar och sätter upp verkstadsterminalen. Redovisningskonsulter ser också efterkalkylen. Redovisningskonsulter och revisorer ser stycklistorna, tillverkningsorderna och kalkylen men ändrar dem inte. För att ändra stycklistan på en offert- eller orderrad behöver du dessutom få ändra offerten eller ordern.
 
 > [!NOTE]
-> Verkstadsterminalen, planeringskalendern och leveransdatum kommer i senare steg.
+> Planeringskalendern och leveransdatum kommer i senare steg.

@@ -10,7 +10,7 @@ export default defineConfig({
             // So is the Lager scanning app (/lager/skanna), which works offline (ADR-040).
             // So are the developer site (/utvecklare) and the manual (/manual), which load only their own small scripts.
             // So is the public signing page (/signera, ADR-046), with its strict content security policy.
-            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/passkeys.js', 'resources/js/developer-portal.js', 'resources/js/manual.js', 'resources/js/signing.js', 'resources/js/portal.js', 'app/Modules/StaffLedger/resources/js/kiosk.js', 'app/Modules/Inventory/resources/js/scanner.js'],
+            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/passkeys.js', 'resources/js/developer-portal.js', 'resources/js/manual.js', 'resources/js/signing.js', 'resources/js/portal.js', 'app/Modules/StaffLedger/resources/js/kiosk.js', 'app/Modules/Inventory/resources/js/scanner.js', 'app/Modules/Manufacturing/resources/js/workshop.js'],
             refresh: true,
         }),
         tailwindcss(),

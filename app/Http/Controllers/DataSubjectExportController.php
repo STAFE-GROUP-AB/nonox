@@ -10,6 +10,8 @@ use App\Models\IncomeTaxPartner;
 use App\Models\K10Owner;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Modules\Manufacturing\Models\WorkshopDevice;
+use App\Modules\Manufacturing\Models\WorkshopPerson;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\StaffLedger\Models\Person;
 use App\Support\Audit\Audit;
@@ -76,6 +78,18 @@ class DataSubjectExportController
         $this->log($request, $person, 'staff_ledger_person');
 
         return $this->download(DataSubjectExport::staffLedgerPerson($person), 'registerutdrag-personal-'.$person->id);
+    }
+
+    /**
+     * A person on the workshop terminal (ADR-071 §7), for those who may set
+     * the terminal up. Another company's person answers 404.
+     */
+    public function workshopPerson(Request $request, WorkshopPerson $person): JsonResponse
+    {
+        ArchivedCompany::reading(fn () => Gate::authorize('terminal', [WorkshopDevice::class, Company::query()->findOrFail($person->company_id)]));
+        $this->log($request, $person, 'workshop_person');
+
+        return $this->download(DataSubjectExport::workshopPerson($person), 'registerutdrag-verkstad-'.$person->id);
     }
 
     /**
@@ -147,7 +161,7 @@ class DataSubjectExportController
         return $this->download(DataSubjectExport::inboxSender($email), 'registerutdrag-inkorg');
     }
 
-    private function log(Request $request, Customer|Supplier|Employee|Person|IncomeTaxPartner|K10Owner $subject, string $kind): void
+    private function log(Request $request, Customer|Supplier|Employee|Person|WorkshopPerson|IncomeTaxPartner|K10Owner $subject, string $kind): void
     {
         /** @var User $user */
         $user = $request->user();

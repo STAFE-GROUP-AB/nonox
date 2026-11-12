@@ -16,6 +16,9 @@ use App\Modules\ModuleManager;
  * - overhead_in_stock_value: whether that overhead is also part of the
  *   manufacturing cost of finished goods and of the work in progress
  *   (§8); off by default, so the stock value is material and direct labour.
+ * - terminal_enabled: whether the workshop terminal (ADR-071 §7) may be
+ *   paired and used; off by default, switched on under Tillverkning →
+ *   Verkstadsterminal.
  * - wip_stock_account, wip_change_account: the account pair the year-end
  *   valuation books the work in progress on (BAS 1440 Produkter i arbete,
  *   4940 Förändring av produkter i arbete by default).
@@ -31,6 +34,7 @@ final class ManufacturingSettings
     public const array DEFAULTS = [
         'overhead_bp' => null,
         'overhead_in_stock_value' => false,
+        'terminal_enabled' => false,
         'wip_stock_account' => 1440,
         'wip_change_account' => 4940,
     ];
@@ -60,6 +64,12 @@ final class ManufacturingSettings
     public static function overheadInStockValue(Company $company): bool
     {
         return (bool) self::for($company)['overhead_in_stock_value'];
+    }
+
+    /** Whether the workshop terminal is switched on for the company (§7); off by default. */
+    public static function terminalEnabled(Company $company): bool
+    {
+        return (bool) self::for($company)['terminal_enabled'];
     }
 
     /** @return array{0: int, 1: int} the work in progress stock account and its change account */

@@ -62,6 +62,8 @@ final class FollowablePath
         '/^privacy\.export\./',
         '/^staff-ledger\.control-visit/',
         '/^staff-ledger\.kiosk/',
+        '/^manufacturing\.terminal\./',
+        '/^manufacturing\.terminal$/',
         // Opening the absence requests is a logged read of absence causes, which can be health data.
         '/^payroll\.requests$/',
         '/^(login|logout|register|passkeys\.challenge)$/',
@@ -77,6 +79,7 @@ final class FollowablePath
         '#^/(bank|flytt/fortnox)/#i',
         '#^/profil/mina-uppgifter(/|$)#i',
         '#/kiosk(/|$)#i',
+        '#^/verkstad/terminal(/|$)#i',
     ];
 
     public function __construct(private readonly Router $router) {}

@@ -182,6 +182,10 @@ use App\Modules\Manufacturing\Models\ProductionOrderIssue;
 use App\Modules\Manufacturing\Models\ProductionOrderOperation;
 use App\Modules\Manufacturing\Models\RowStructure;
 use App\Modules\Manufacturing\Models\RowStructureLine;
+use App\Modules\Manufacturing\Models\WorkshopDevice;
+use App\Modules\Manufacturing\Models\WorkshopPerson;
+use App\Modules\Manufacturing\Models\WorkshopTimeEntry;
+use App\Modules\Manufacturing\Models\WorkshopWaitingFlag;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\AgiSubmission;
@@ -466,6 +470,10 @@ const COMPANY_SCOPED_MODELS = [
     Operation::class => ['name' => 'Hemligt arbetssteg', 'hourly_cost_ore' => 45_000],
     RowStructure::class => 'rowStructureAttributes',
     RowStructureLine::class => 'rowStructureLineAttributes',
+    WorkshopPerson::class => ['name' => 'Hemlig person'],
+    WorkshopDevice::class => ['name' => 'Hemlig surfplatta'],
+    WorkshopTimeEntry::class => 'workshopTimeEntryAttributes',
+    WorkshopWaitingFlag::class => 'workshopWaitingFlagAttributes',
     ProductionOrder::class => 'productionOrderAttributes',
     ProductionOrderComponent::class => 'productionOrderComponentAttributes',
     ProductionOrderOperation::class => 'productionOrderOperationAttributes',
@@ -1914,6 +1922,38 @@ function rowStructureLineAttributes(): array
     return ['row_structure_id' => RowStructure::create(rowStructureAttributes())->id, 'component_article_id' => Article::create(articleAttributes())->id, 'quantity_milli' => 100];
 }
 
+function workshopOrderOperation(): ProductionOrderOperation
+{
+    $order = ProductionOrder::create(['number' => random_int(1, 1_000_000), 'status' => 'RELEASED', 'article_id' => Article::create(articleAttributes())->id, 'name' => 'Hemlig order', 'yield_milli' => 1000, 'quantity_milli' => 1000]);
+    $operation = Operation::create(['name' => 'Hemligt arbetssteg '.random_int(1, 1_000_000), 'hourly_cost_ore' => 45_000]);
+
+    return ProductionOrderOperation::create(['production_order_id' => $order->id, 'operation_id' => $operation->id, 'minutes' => 10, 'planned_minutes' => 10]);
+}
+
+function workshopTimeEntryAttributes(): array
+{
+    $operation = workshopOrderOperation();
+    $labour = ProductionLabourEntry::create(['production_order_id' => $operation->production_order_id, 'production_order_operation_id' => $operation->id, 'source' => 'TERMINAL', 'minutes' => 10, 'hourly_cost_ore' => 45_000, 'cost_ore' => 7_500, 'worked_on' => '2026-03-01']);
+
+    return [
+        'person_id' => WorkshopPerson::create(['name' => 'Hemlig person'])->id,
+        'device_id' => WorkshopDevice::create(['name' => 'Hemlig surfplatta'])->id,
+        'production_order_id' => $operation->production_order_id,
+        'production_order_operation_id' => $operation->id,
+        'production_labour_entry_id' => $labour->id,
+        'minutes' => 10,
+        'worked_on' => '2026-03-01',
+        'entered_at' => '2026-03-01 10:00:00',
+    ];
+}
+
+function workshopWaitingFlagAttributes(): array
+{
+    $operation = workshopOrderOperation();
+
+    return ['production_order_id' => $operation->production_order_id, 'production_order_operation_id' => $operation->id, 'kind' => 'MATERIAL', 'reason' => 'Hemlig orsak', 'raised_by_device_id' => WorkshopDevice::create(['name' => 'Hemlig surfplatta'])->id, 'raised_at' => '2026-03-01 10:00:00'];
+}
+
 function productionOrderAttributes(): array
 {
     return ['number' => random_int(1, 1_000_000), 'article_id' => Article::create(articleAttributes())->id, 'name' => 'Hemlig tillverkning', 'yield_milli' => 1000, 'quantity_milli' => 2000];
@@ -2042,10 +2082,10 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [PurchaseOrderVersion::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class];
+const NEVER_UPDATED = [WorkshopWaitingFlag::class, PurchaseOrderVersion::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];
+const APPEND_ONLY = [WorkshopTimeEntry::class, WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

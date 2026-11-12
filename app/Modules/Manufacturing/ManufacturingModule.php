@@ -25,7 +25,10 @@ use Carbon\CarbonImmutable;
  * costing is a management figure, and production orders meet the books
  * at the year-end stock valuation.
  *
- * Permissions: manufacturing:view sees bills of materials, operations and
+ * Permissions: production:report sets up the workshop terminal (pairs
+ * tablets, adds the people on it); a worker at the terminal is not a NONOX
+ * user and can only report time. production:analyse sees the
+ * post-calculation (ADR-071 §7). manufacturing:view sees bills of materials, operations and
  * the costing on quotes and orders; manufacturing:manage changes bills of
  * materials, operations, production orders and the settings. Changing a
  * row's own copy needs manufacturing:view and the right to change the
@@ -35,7 +38,7 @@ final class ManufacturingModule implements IsNew, Module
 {
     public const string KEY = 'manufacturing';
 
-    public const array PERMISSIONS = ['manufacturing:view', 'manufacturing:manage'];
+    public const array PERMISSIONS = ['manufacturing:view', 'manufacturing:manage', 'production:report', 'production:analyse'];
 
     public function newUntil(): CarbonImmutable
     {
@@ -82,14 +85,15 @@ final class ManufacturingModule implements IsNew, Module
         return [
             'owner' => self::PERMISSIONS,
             'admin' => self::PERMISSIONS,
-            'accountant' => ['manufacturing:view'],
+            'accountant' => ['manufacturing:view', 'production:analyse'],
             'auditor' => ['manufacturing:view'],
         ];
     }
 
+    /** Withdrawing a photo, archiving a person and the register extract must work also with the module off (GDPR art. 7.3, 15). */
     public function archivePermissions(): array
     {
-        return [];
+        return ['production:report'];
     }
 
     public function archiveNavigation(Company $company): array
@@ -109,6 +113,12 @@ final class ManufacturingModule implements IsNew, Module
                     ['label' => __('Tillverkningsorder'), 'route' => 'manufacturing.productionOrders.index', 'active' => ['manufacturing.productionOrders.index', 'manufacturing.productionOrders.show', 'manufacturing.productionOrders.create']],
                     ['label' => __('Stycklistor'), 'route' => 'manufacturing.boms.index', 'active' => ['manufacturing.boms.index', 'manufacturing.boms.show', 'manufacturing.boms.create']],
                     ['label' => __('Arbetssteg'), 'route' => 'manufacturing.operations', 'active' => ['manufacturing.operations']],
+                    ...($user->hasTeamPermission($company, 'production:analyse') ? [
+                        ['label' => __('Efterkalkyl'), 'route' => 'manufacturing.analysis', 'active' => ['manufacturing.analysis']],
+                    ] : []),
+                    ...($user->hasTeamPermission($company, 'production:report') ? [
+                        ['label' => __('Verkstadsterminal'), 'route' => 'manufacturing.terminal.admin', 'active' => ['manufacturing.terminal.admin']],
+                    ] : []),
                     ...($user->hasTeamPermission($company, 'manufacturing:manage') ? [
                         ['label' => __('Inställningar'), 'route' => 'manufacturing.settings', 'active' => ['manufacturing.settings']],
                     ] : []),

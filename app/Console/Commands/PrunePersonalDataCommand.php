@@ -12,6 +12,7 @@ use App\Models\SkatteverketToken;
 use App\Models\TeamInvitation;
 use App\Models\VatSubmission;
 use App\Modules\Crm\Actions\PruneCrm;
+use App\Modules\Manufacturing\Actions\Workshop\PruneWorkshopTime;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Expense;
 use App\Modules\StaffLedger\Actions\PruneStaffLedger;
@@ -30,7 +31,7 @@ use Illuminate\Support\Facades\DB;
  * absence and outlay requests that never reached the payroll or the books,
  * and staff ledger entries and people whose retention period is over
  * (PruneStaffLedger), Mina datum calendar links stopped 30 days ago, Skatteverket sign-ins that have run out and customer events two years old or without their fetcher (ADR-054), and CRM contact people and prospects with no
- * activity for the company's set number of months (PruneCrm, ADR-043).
+ * activity for the company's set number of months (PruneCrm, ADR-043), and the workshop terminal's time entries, which lose the reporting person after 24 months (PruneWorkshopTime, ADR-071 §7).
  *
  * TODO(legal-verify): the periods in RETENTION (see docs/gdpr/lagringstider.md).
  */
@@ -110,6 +111,13 @@ class PrunePersonalDataCommand extends Command
         $crm = ArchivedCompany::maintenance(fn (): array => app(PruneCrm::class)());
         $counts['crm_people'] = $crm['people'];
         $counts['crm_prospects'] = $crm['prospects'];
+
+        // The workshop terminal's time entries lose their person after 24 months (ADR-071 §7).
+        $workshop = ArchivedCompany::maintenance(fn (): array => app(PruneWorkshopTime::class)());
+        $counts['workshop_time_entries'] = $workshop['entries'];
+        $counts['workshop_people'] = $workshop['people'];
+        $counts['workshop_waiting_reasons'] = $workshop['reasons'];
+        $counts['workshop_code_notices'] = $workshop['notices'];
 
         Audit::record('privacy.pruned', null, $counts);
 

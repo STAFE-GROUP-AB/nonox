@@ -80,6 +80,8 @@ final class Features
         'kitchen_variance' => ['name' => 'Avvikelser mellan sålt och inventerat', 'status' => self::LIVE, 'readme' => 'Avvikelser mellan två inventeringar', 'module' => 'Kök'],
         'manufacturing_bom' => ['name' => 'Stycklistor med komponenter och arbetssteg', 'status' => self::LIVE, 'readme' => 'Stycklistor med komponenter i flera nivåer och arbetssteg', 'module' => 'Tillverkning'],
         'manufacturing_costing' => ['name' => 'Material, arbete och marginal direkt på offerten och ordern', 'status' => self::LIVE, 'readme' => 'Kalkyl på offerten och ordern', 'module' => 'Tillverkning'],
+        'manufacturing_terminal' => ['name' => 'Verkstadsterminal: tid på tillverkningsorder från en surfplatta', 'status' => self::LIVE, 'readme' => 'Verkstadsterminal: surfplattor i verkstaden', 'module' => 'Tillverkning'],
+        'manufacturing_postcalc' => ['name' => 'Efterkalkyl per produkt och arbetssteg', 'status' => self::LIVE, 'readme' => 'Efterkalkyl: kalkyl mot rapporterad tid per produkt och arbetssteg', 'module' => 'Tillverkning'],
         'manufacturing_orders' => ['name' => 'Tillverkningsorder som tar komponenter ur lagret och tar emot färdiga produkter', 'status' => self::LIVE, 'readme' => 'Tillverkningsorder', 'module' => 'Tillverkning'],
         'crm' => ['name' => 'CRM med nyckeltal ur bokföringen', 'status' => self::LIVE, 'readme' => 'Kunder och prospekt med kontaktpersoner', 'module' => 'CRM'],
         'crm_activities' => ['name' => 'Aktiviteter med nästa steg', 'status' => self::LIVE, 'readme' => 'Aktiviteter med nästa steg', 'module' => 'CRM'],
