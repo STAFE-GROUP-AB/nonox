@@ -10,7 +10,8 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Extra working time a planner gave a person (ADR-071 §13.5, a suggestion
- * or a scenario applied), on top of the working week or the shifts.
+ * or a scenario applied), on top of the working week or the shifts. Removed
+ * nightly 90 days after it ended.
  *
  * @property int $id
  * @property int $company_id
@@ -22,6 +23,9 @@ use Illuminate\Database\Eloquent\Model;
 class Overtime extends Model
 {
     use BelongsToCompany;
+
+    /** Overtime is only input to the plan: removed this many days after it ended. */
+    public const int KEEP_DAYS = 90;
 
     protected $table = 'production_overtimes';
 

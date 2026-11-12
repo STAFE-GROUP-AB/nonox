@@ -7,6 +7,7 @@ namespace App\Modules\Manufacturing\Console;
 use App\Models\Company;
 use App\Modules\Manufacturing\Domain\PlanTrigger;
 use App\Modules\Manufacturing\ManufacturingModule;
+use App\Modules\Manufacturing\Models\Overtime;
 use App\Modules\Manufacturing\Models\ProductionDeviation;
 use App\Modules\Manufacturing\Models\ProductionPlanRun;
 use App\Modules\Manufacturing\Models\ProductionPlanSlot;
@@ -19,7 +20,8 @@ use Throwable;
 
 /**
  * The nightly plan (ADR-071 §13.4) for every company with Tillverkning,
- * each inside its own company. Also removes expired scenarios (§13.6) and,
+ * each inside its own company. Also removes expired scenarios (§13.6),
+ * overtime that ended more than 90 days ago, and,
  * after 24 months, the employee from deviations and from the slots of the
  * plans they keep, keeping the rest for delivery accuracy (§13.7).
  */
@@ -47,6 +49,7 @@ class PlanProductionCommand extends Command
                 $planner->run($company, PlanTrigger::Nightly);
                 CurrentCompany::run($company, function (): void {
                     ProductionScenario::query()->where('expires_at', '<', now())->delete();
+                    Overtime::query()->where('ends_at', '<', now()->subDays(Overtime::KEEP_DAYS))->delete();
                     ProductionDeviation::query()
                         ->whereNotNull('employee_id')
                         ->where('created_at', '<', now()->subMonths(ProductionDeviation::RETENTION_MONTHS))

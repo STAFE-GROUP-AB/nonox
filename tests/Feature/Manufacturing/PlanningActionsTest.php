@@ -242,7 +242,7 @@ it('plans only on people in the plan, and raises a deviation only for a longer e
 });
 
 it('writes the date message in Swedish whatever the sender\'s language', function () {
-    $order = Manufacturing::document($this->company, $this->owner, [['P-1041', '10', '1000']], App\Models\SalesDocument::ORDER);
+    $order = Manufacturing::document($this->company, $this->owner, [['P-1041', '10', '1000']], SalesDocument::ORDER);
     $change = app(ConfirmCustomerDate::class)($this->owner, $this->company, $order, '2026-11-26');
     app()->setLocale('en');
 

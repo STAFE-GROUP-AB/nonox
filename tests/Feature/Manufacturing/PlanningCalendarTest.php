@@ -9,6 +9,7 @@ use App\Modules\Manufacturing\Domain\ForecastStatus;
 use App\Modules\Manufacturing\Domain\PlanTrigger;
 use App\Modules\Manufacturing\Domain\ProductionOrderStatus;
 use App\Modules\Manufacturing\Domain\WaitsFor;
+use App\Modules\Manufacturing\Models\Overtime;
 use App\Modules\Manufacturing\Models\ProductionDeviation;
 use App\Modules\Manufacturing\Models\ProductionOrderComponent;
 use App\Modules\Manufacturing\Models\ProductionPlanForecast;
@@ -211,4 +212,17 @@ it('computes one company\'s plan at a time, under an advisory lock taken before 
     $snapshot = $queries->search(fn (string $q): bool => str_contains($q, 'from "production_orders"'));
 
     expect($lock)->not->toBeFalse()->and($lock)->toBeLessThan($snapshot);
+});
+
+it('removes overtime nightly once it ended more than 90 days ago', function () {
+    $shop = PlanningWorkshop::build($this->company, $this->owner);
+
+    CurrentCompany::run($this->company, function () use ($shop) {
+        Overtime::create(['employee_id' => $shop['people']['tove']->id, 'starts_at' => $this->now->subDays(120), 'ends_at' => $this->now->subDays(120)->addHours(3)]);
+        Overtime::create(['employee_id' => $shop['people']['tove']->id, 'starts_at' => $this->now->subDays(10), 'ends_at' => $this->now->subDays(10)->addHours(3)]);
+    });
+
+    $this->artisan('manufacturing:plan', ['--company' => $this->company->id])->assertSuccessful();
+
+    CurrentCompany::run($this->company, fn () => expect(Overtime::query()->count())->toBe(1));
 });
