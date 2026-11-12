@@ -100,13 +100,18 @@ it('F-V3: a finished order leaves no work in progress, and its goods are stock a
         ->and(WorkInProgress::at($this->company, CarbonImmutable::parse('2026-12-14'))->valueOre)->toBe($this->fixtures['F-V1']['wip_ore']);
 });
 
-it('includes the overhead in the work in progress only when the company has chosen it', function () {
-    app(ModuleManager::class)->updateSettings(ManufacturingModule::KEY, $this->company, $this->owner, ['overhead_bp' => 1_000]);
+it('includes the overhead in the work in progress only when the company had chosen it when the order started', function () {
+    // The order in beforeEach started without overhead; choosing it now does not revalue it.
+    app(ModuleManager::class)->updateSettings(ManufacturingModule::KEY, $this->company, $this->owner, ['overhead_bp' => 1_000, 'overhead_in_stock_value' => true]);
     expect(WorkInProgress::at($this->company, $this->year->end_date)->valueOre)->toBe(785_024);
 
-    app(ModuleManager::class)->updateSettings(ManufacturingModule::KEY, $this->company, $this->owner, ['overhead_bp' => 1_000, 'overhead_in_stock_value' => true]);
-    // 785 024 × 10 % = 78 502,4 → 78 502.
-    expect(WorkInProgress::at($this->company, $this->year->end_date)->valueOre)->toBe(863_526);
+    Manufacturing::stock($this->company, $this->owner, $this->fx, $this->places['bin1']);
+    $second = app(SaveProductionOrder::class)->create($this->owner, $this->company, ['article_id' => $this->fx['articles']['table']->id, 'quantity' => '2', 'location_id' => $this->places['bin2']->id]);
+    $this->life->release($this->owner, $this->company, $second);
+    $this->life->start($this->owner, $this->company, $second, '2026-12-10', true);
+
+    // The second order: 785 024 × 10 % = 78 502,4 → 78 502 on top.
+    expect(WorkInProgress::at($this->company, $this->year->end_date)->valueOre)->toBe(785_024 + 863_526);
 });
 
 it('books the work in progress down when the order is cancelled before year end', function () {

@@ -61,6 +61,8 @@ Under **Arbetssteg** står den planerade tiden för hela antalet och den tid som
 > [!WARNING]
 > Uttag ur lagret och färdigmeldningen går inte att ändra efteråt. Ett uttag ångras bara genom att makulera ordern innan den är färdig.
 
+Ett datum kan inte ligga i framtiden, i ett stängt räkenskapsår eller i en låst period. Färdigmeldning och makulering kan inte dateras före orderns senaste uttag eller rapporterade tid, och ett uttag inte före en senare lagerrörelse på samma komponent.
+
 Komponenterna tas i första hand från artikelns standardplats och sedan från andra lagerställen som har den. Finns det inte tillräckligt i lager stoppar NONOX uttaget, om inte företaget tillåter negativt lager.
 
 ## Tillverkningskostnaden
@@ -69,7 +71,7 @@ Under **Kostnad** står **Kalkyl**, räknad från orderns stycklista med dagens 
 
 - **Material**: komponenterna till det värde de hade i lagret när de togs ut, enligt företagets värderingsmetod (FIFO eller vägt genomsnitt). En komponent som inte är lagerförd räknas till sitt kalkylpris.
 - **Arbete**: minuterna per arbetssteg gånger arbetsstegets timkostnad.
-- **Omkostnader**: bara om ni under **Tillverkning → Inställningar** har kryssat i **Räkna in pålägget i lagervärdet för tillverkade produkter och produkter i arbete**. Det är avstängt från början.
+- **Omkostnader**: bara om ni under **Tillverkning → Inställningar** hade kryssat i **Räkna in pålägget i lagervärdet för tillverkade produkter och produkter i arbete** när ordern startades. Det är avstängt från början, och en senare ändring gäller bara order som startas efter den.
 
 Kostnaden per styck är tillverkningskostnaden delad med antalet tillverkade.
 

@@ -58,7 +58,7 @@ return new class extends Migration
             $table->date('cancelled_on')->nullable();
             $table->foreignId('cancelled_by')->nullable()->constrained('users');
             $table->string('cancel_reason')->nullable();
-            // The manufacturing cost at finish (öre) and the receipt's cost per stock unit.
+            // The manufacturing cost at finish (öre), the overhead fixed when the order starts, and the receipt's cost per stock unit.
             $table->bigInteger('material_cost_ore')->nullable();
             $table->bigInteger('labour_cost_ore')->nullable();
             $table->bigInteger('overhead_cost_ore')->nullable();

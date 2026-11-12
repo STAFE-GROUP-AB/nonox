@@ -14159,7 +14159,6 @@
     "Skriv varför en startad order makuleras.": "Write why a started order is cancelled.",
     "Ordern är :status och kan inte bli :next.": "The order is :status and cannot become :next.",
     ":number :name saknar pris. Ange ett inköpspris på artikeln innan ordern färdigmeldas.": ":number :name has no price. Enter a purchase price on the article before the order is finished.",
-    "Datumet kan inte vara före :date, då ordern startade.": "The date cannot be before :date, when the order started.",
     "Antalet tillverkade måste vara mer än noll.": "The quantity made must be more than zero.",
     "Skriv tiden i hela minuter.": "Write the time in whole minutes.",
     "Stycklistor med komponenter och arbetssteg, en egen stycklista per offert- och orderrad, kalkyl med material, arbete och marginal, och tillverkningsorder som tar komponenter ur lagret och tar emot de färdiga produkterna. Kräver Lager.": "Bills of materials with components and operations, an own bill of materials per quote and order row, costing with material, labour and margin, and production orders that take components out of stock and receive the finished products. Requires Inventory.",
@@ -14259,5 +14258,8 @@
     "Verkstadsterminalen": "The workshop terminal",
     "Inget pågår på årets sista dag. Saldot på kontot bokförs bort.": "Nothing is in progress on the last day of the year. The balance on the account is booked out.",
     "Till tillverkning": "To production",
-    "Tillverkat": "Manufactured"
+    "Tillverkat": "Manufactured",
+    "Räkenskapsåret :year är stängt. Välj ett datum i ett öppet räkenskapsår.": "The fiscal year :year is closed. Choose a date in an open fiscal year.",
+    "Datumet kan inte vara före :date, den senaste händelsen på ordern.": "The date cannot be before :date, the latest event on the order.",
+    "Komponenter kan inte tas ut eller läggas tillbaka med ett datum före :date, då :number :name senast ändrades i lagret. Välj :date eller senare.": "Components cannot be taken out or put back with a date before :date, when :number :name last changed in stock. Choose :date or later."
 }

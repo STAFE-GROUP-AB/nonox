@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Modules\Manufacturing\Production;
 
 use App\Models\Company;
-use App\Modules\Manufacturing\ManufacturingSettings;
 use App\Modules\Manufacturing\Models\ProductionLabourEntry;
 use App\Modules\Manufacturing\Models\ProductionOrder;
 use App\Modules\Manufacturing\Models\ProductionOrderIssue;
@@ -16,8 +15,8 @@ use Carbon\CarbonImmutable;
  * Work in progress on a day (ADR-071 §8): every production order not yet
  * finished or cancelled on that day, valued at the components it had
  * taken out of stock (at their valuation cost) plus the labour reported on
- * it up to that day, plus the overhead when the company includes overhead
- * in the stock value. Built from the append-only issue and labour ledgers,
+ * it up to that day, plus the overhead the order took when it started (the
+ * company's choice then, so a later change does not revalue past days). Built from the append-only issue and labour ledgers,
  * so it can be run for any past day. Three queries whatever the number of
  * orders.
  *
@@ -41,9 +40,8 @@ final class WorkInProgress
     public static function at(Company $company, CarbonImmutable $date): self
     {
         $day = $date->toDateString();
-        $overheadBp = ManufacturingSettings::overheadInStockValue($company) ? ManufacturingSettings::overheadBp($company) : 0;
 
-        return CurrentCompany::run($company, function () use ($date, $day, $overheadBp): self {
+        return CurrentCompany::run($company, function () use ($date, $day): self {
             $material = ProductionOrderIssue::query()->whereDate('issued_on', '<=', $day)
                 ->groupBy('production_order_id')->selectRaw('production_order_id, sum(value_ore) as ore')
                 ->pluck('ore', 'production_order_id');
@@ -62,14 +60,14 @@ final class WorkInProgress
                 ->where(fn ($query) => $query->whereNull('finished_on')->orWhereDate('finished_on', '>', $day))
                 ->where(fn ($query) => $query->whereNull('cancelled_on')->orWhereDate('cancelled_on', '>', $day))
                 ->orderBy('number')
-                ->get(['id', 'number', 'article_id']);
+                ->get(['id', 'number', 'article_id', 'overhead_bp']);
             $lines = [];
             $total = 0;
 
             foreach ($orders as $order) {
                 $orderMaterial = (int) ($material[$order->id] ?? 0);
                 $orderLabour = (int) ($labour[$order->id] ?? 0);
-                $overhead = ProductionMath::overhead($orderMaterial, $orderLabour, $overheadBp);
+                $overhead = ProductionMath::overhead($orderMaterial, $orderLabour, (int) $order->overhead_bp);
                 $value = $orderMaterial + $orderLabour + $overhead;
 
                 if ($value === 0) {

@@ -37,7 +37,9 @@ use Illuminate\Validation\ValidationException;
  * not on hand is costed at the article's purchase price.
  *
  * Each article is taken from its default location first, then from the
- * other locations that hold it, in code order. Only stock articles are
+ * other locations that hold it, in code order. An issue is never dated
+ * before a later movement of the component, which would make FIFO value
+ * the same receipts twice. Only stock articles are
  * issued; the caller locks the order. Runs inside the company's
  * transaction.
  */
@@ -81,6 +83,7 @@ final class ComponentIssues
         }
 
         $articleIds = array_values(array_unique(array_map(fn (array $item): int => $item[1]->id, $wanted)));
+        $this->refuseBeforeLaterMovements(array_map(fn (array $item): Article => $item[1], $wanted), $date);
         $plan = $this->locations($company, $wanted, $articleIds);
         $before = $this->ledgerFor($articleIds, $date);
         $lines = [];
@@ -140,9 +143,10 @@ final class ComponentIssues
     /**
      * Puts everything the order has taken back where it came from, at the
      * cost it left with: a cancelled order (§8). Each location's net issue
-     * is returned as one PRODUCTION_ISSUE movement in, at the issued cost
-     * per stock unit (rounded half up), and recorded as a negative issue
-     * with the exact value.
+     * is returned as a PRODUCTION_ISSUE movement in at the issued cost per
+     * stock unit, with the rounding on its last thousandth so exactly the
+     * issued value comes back (to the default or first active location when
+     * the original one is switched off), and recorded as a negative issue.
      *
      * @return int the value returned, öre
      */
@@ -163,20 +167,42 @@ final class ComponentIssues
             return 0;
         }
 
-        $lines = array_map(fn (array $item): array => [
-            'article_id' => $item['article_id'],
-            'location_id' => $item['location_id'],
-            'quantity_milli' => $item['milli'],
-            'unit_cost_ore' => BigDecimal::of(max(0, $item['value']))->multipliedBy(Quantity::SCALE)->dividedBy($item['milli'], 0, RoundingMode::HalfUp)->toInt(),
-        ], $net);
+        $articles = Article::query()->whereKey(array_values(array_unique(array_column($net, 'article_id'))))->get();
+        $this->refuseBeforeLaterMovements(array_values($articles->all()), $date);
+        $active = StockLocation::query()->where('is_active', true)->orderBy('sort_key')->pluck('id')->all();
+        $defaults = $articles->pluck('default_location_id', 'id');
+        $lines = [];
+        $owner = [];
+
+        foreach ($net as $index => $item) {
+            $location = $item['location_id'];
+
+            // A location switched off since the issue cannot receive goods: the article's default, else the first active one.
+            if (! in_array($location, $active, true)) {
+                $default = $defaults[$item['article_id']] ?? null;
+                $location = $default !== null && in_array((int) $default, $active, true) ? (int) $default : ($active[0] ?? $location);
+                $net[$index]['location_id'] = $location;
+            }
+
+            foreach (self::exactLines(max(0, $item['value']), $item['milli']) as [$milli, $unitCost]) {
+                $lines[] = ['article_id' => $item['article_id'], 'location_id' => $location, 'quantity_milli' => $milli, 'unit_cost_ore' => $unitCost];
+                $owner[] = $index;
+            }
+        }
 
         $movements = $this->ledger->post($company, $user, MovementType::ProductionIssue, $lines, $date, $order, $order->reference());
+        $first = [];
+
+        foreach ($owner as $position => $index) {
+            $first[$index] ??= $movements[$position];
+        }
+
         $components = ProductionOrderComponent::query()->whereKey(array_column($net, 'component_id'))->get()->keyBy('id');
         $total = 0;
 
         foreach ($net as $index => $item) {
             /** @var StockMovement $movement */
-            $movement = $movements[$index];
+            $movement = $first[$index];
 
             ProductionOrderIssue::create([
                 'production_order_id' => $order->id,
@@ -203,6 +229,53 @@ final class ComponentIssues
         }
 
         return $total;
+    }
+
+    /**
+     * Movements that bring back exactly $valueOre for $milli: one line at the
+     * cost per stock unit when that adds up (rounded half up), otherwise that
+     * line less one thousandth and the remainder on the last thousandth, so
+     * the stock gets back exactly what left it.
+     *
+     * @return list<array{0: int, 1: int}> milli and cost per stock unit
+     */
+    private static function exactLines(int $valueOre, int $milli): array
+    {
+        $unitCost = BigDecimal::of($valueOre)->multipliedBy(Quantity::SCALE)->dividedBy($milli, 0, RoundingMode::HalfUp)->toInt();
+
+        if ($milli === 1 || Quantity::value($milli, $unitCost) === $valueOre) {
+            return [[$milli, $unitCost]];
+        }
+
+        $rest = $valueOre - Quantity::value($milli - 1, $unitCost);
+
+        return [[$milli - 1, $unitCost], [1, max(0, $rest) * Quantity::SCALE]];
+    }
+
+    /**
+     * The value of an issue is read from the ledger up to its day, which is
+     * right only when nothing has moved the article after that day: FIFO would
+     * otherwise value the same layers twice. An issue is therefore never dated
+     * before the component's latest movement.
+     *
+     * @param  list<Article>  $articles
+     */
+    private function refuseBeforeLaterMovements(array $articles, CarbonImmutable $date): void
+    {
+        $latest = StockMovement::query()->whereIn('article_id', array_map(fn (Article $article): int => $article->id, $articles))->whereDate('occurred_on', '>', $date->toDateString())
+            ->groupBy('article_id')->selectRaw('article_id, max(occurred_on) as last_on')->pluck('last_on', 'article_id');
+
+        foreach ($articles as $article) {
+            $last = $latest[$article->id] ?? null;
+
+            if ($last !== null) {
+                throw ValidationException::withMessages(['date' => __('Komponenter kan inte tas ut eller läggas tillbaka med ett datum före :date, då :number :name senast ändrades i lagret. Välj :date eller senare.', [
+                    'date' => substr((string) $last, 0, 10),
+                    'number' => $article->number,
+                    'name' => $article->name,
+                ])]);
+            }
+        }
     }
 
     /**

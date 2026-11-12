@@ -273,7 +273,8 @@ class ProductionOrderPage extends Component
             ->get()->keyBy('production_order_operation_id');
         $book = ManufacturingBook::for($this->company());
         $costing = $book->cost($order->structureLines(), $order->yield_milli);
-        $overheadBp = ManufacturingSettings::overheadInStockValue($this->company()) ? ManufacturingSettings::overheadBp($this->company()) : 0;
+        // A started order keeps the overhead it took when it started; a draft or released one shows today's choice.
+        $overheadBp = $order->overhead_bp ?? (ManufacturingSettings::overheadInStockValue($this->company()) ? ManufacturingSettings::overheadBp($this->company()) : 0);
         $actualMaterial = (int) $order->components->sum('issued_value_ore');
         $actualLabour = (int) $reported->sum('cost');
         $data = [

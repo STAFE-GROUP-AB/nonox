@@ -1142,6 +1142,23 @@ Still open (`TODO(legal-verify)`, also in code and in the system documentation �
   cost;
 - whether the K2 97 % rule (point 12.5) and lägsta värdets princip apply to work in progress.
 
+**Review fixes (2026-11-11).** A cold review found two ways back-dating broke the identity
+"stock + work in progress = what came in", fixed with failing tests first
+(`tests/Feature/Manufacturing/ProductionReviewFixesTest.php`):
+
+- An issue (and a return on cancel) is refused when the component has a stock movement dated after
+  the issue's day: the issue is valued from the ledger up to its day, and under FIFO a later issue of
+  the same article would otherwise value the same receipts twice.
+- Finish and cancel are refused before the order's last event (start, issue or labour), so goods are
+  never both stock and work in progress on the days between.
+- A cancel returns exactly the issued value: the cost per stock unit with the rounding on the last
+  thousandth (a second one-milli movement); and to the article's default or the first active
+  location when the original location has been switched off.
+- The overhead in the stock value is fixed on the order when it starts (`production_orders.overhead_bp`)
+  and used for its work in progress and its finish, so changing the setting does not revalue past days.
+- Start, issue, finish and cancel refuse a day in a closed fiscal year or a locked period
+  (`teams.locked_until_date`), or a day with no fiscal year, as the rest of NONOX does.
+
 ## As built (M6, 2026-11-11): production planning calendar (§13)
 
 Built in `manufacturing`, on M4's production orders, at `/tillverkning/planering` with the views

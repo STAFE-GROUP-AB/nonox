@@ -6,6 +6,7 @@ namespace App\Modules\Manufacturing\Actions\Production;
 
 use App\Models\Article;
 use App\Models\Company;
+use App\Models\FiscalYear;
 use App\Models\User;
 use App\Modules\Inventory\Domain\MovementType;
 use App\Modules\Inventory\Domain\Quantity;
@@ -18,6 +19,7 @@ use App\Modules\Manufacturing\Models\Operation;
 use App\Modules\Manufacturing\Models\ProductionLabourEntry;
 use App\Modules\Manufacturing\Models\ProductionOrder;
 use App\Modules\Manufacturing\Models\ProductionOrderComponent;
+use App\Modules\Manufacturing\Models\ProductionOrderIssue;
 use App\Modules\Manufacturing\Models\RowStructureLine;
 use App\Modules\Manufacturing\Production\ComponentIssues;
 use App\Modules\Manufacturing\Production\ProductionMath;
@@ -42,7 +44,7 @@ use InvalidArgumentException;
  *   now, or the planned minutes for an operation nobody reported on) and
  *   receives the finished goods at the manufacturing cost: the components'
  *   valuation cost, plus labour at the operations' hourly cost, plus the
- *   overhead when the company includes it;
+ *   overhead when the company included it when the order started;
  * - cancel: an open order is kept with its number; what it took out of
  *   stock goes back at the cost it left with.
  *
@@ -97,8 +99,11 @@ class ProductionOrderLifecycle
     {
         return $this->run($user, $company, $order, function (ProductionOrder $order) use ($user, $company, $date, $issue): ProductionOrder {
             $this->expect($order, ProductionOrderStatus::Started);
-            $day = self::day($date, null);
-            $order->forceFill(['status' => ProductionOrderStatus::Started, 'started_on' => $day->toDateString(), 'started_by' => $user->id, 'updated_by' => $user->id])->save();
+            $day = self::day($company, $date, null);
+            // The overhead in the stock value is fixed for the order when it starts (§8), so a later change of
+            // the setting does not revalue its work in progress on past days.
+            $overheadBp = ManufacturingSettings::overheadInStockValue($company) ? ManufacturingSettings::overheadBp($company) : 0;
+            $order->forceFill(['status' => ProductionOrderStatus::Started, 'started_on' => $day->toDateString(), 'started_by' => $user->id, 'overhead_bp' => $overheadBp, 'updated_by' => $user->id])->save();
             $value = $issue ? $this->issues->issue($company, $user, $order, $this->components($order), $day) : 0;
 
             Audit::record('manufacturing.production_order_started', $order, ['number' => $order->number, 'date' => $day->toDateString(), 'issued' => $issue, 'issued_value_ore' => $value], $company, $user);
@@ -115,7 +120,7 @@ class ProductionOrderLifecycle
                 throw ValidationException::withMessages(['order' => __('Komponenter plockas ut till en startad order.')]);
             }
 
-            $day = self::day($date, $order->started_on);
+            $day = self::day($company, $date, $order->started_on);
             $components = $this->components($order)->filter(fn (ProductionOrderComponent $component): bool => $component->remainingMilli() > 0 && $component->component?->is_stock_item === true);
 
             if ($components->isEmpty()) {
@@ -141,7 +146,7 @@ class ProductionOrderLifecycle
     {
         return $this->run($user, $company, $order, function (ProductionOrder $order) use ($user, $company, $input): ProductionOrder {
             $this->expect($order, ProductionOrderStatus::Finished);
-            $day = self::day($input['date'] ?? null, $order->started_on);
+            $day = self::day($company, $input['date'] ?? null, self::lastActivity($order));
             $produced = self::produced($input['produced'] ?? null, $order->quantity_milli);
             $minutes = self::minutes((array) ($input['minutes'] ?? []));
 
@@ -153,7 +158,7 @@ class ProductionOrderLifecycle
             $components = ProductionOrderComponent::query()->where('production_order_id', $order->id)->with('component')->orderBy('position')->get();
             $material = (int) $components->sum('issued_value_ore') + $this->notInStock($company, $components, $day);
             $labour = $this->labour($user, $order, $minutes, $day);
-            $overheadBp = ManufacturingSettings::overheadInStockValue($company) ? ManufacturingSettings::overheadBp($company) : 0;
+            $overheadBp = (int) $order->overhead_bp;
             $overhead = ProductionMath::overhead($material, $labour, $overheadBp);
             $unitCost = ProductionMath::unitCost($material + $labour + $overhead, $produced);
 
@@ -202,7 +207,7 @@ class ProductionOrderLifecycle
                 throw ValidationException::withMessages(['reason' => __('Skriv varför en startad order makuleras.')]);
             }
 
-            $day = self::day($date, $order->started_on);
+            $day = self::day($company, $date, self::lastActivity($order));
             $returned = $this->issues->returnAll($company, $user, $order, $day);
             $order->forceFill([
                 'status' => ProductionOrderStatus::Cancelled,
@@ -332,8 +337,51 @@ class ProductionOrderLifecycle
         return (int) ProductionLabourEntry::query()->where('production_order_id', $order->id)->sum('cost_ore');
     }
 
-    /** The day of a step: today when empty, never in the future, never before $notBefore. */
-    private static function day(mixed $value, ?CarbonImmutable $notBefore): CarbonImmutable
+    /**
+     * The last day something happened on the order: started, a component
+     * taken out or put back, labour reported. A finish or a cancel dated
+     * earlier would count the same goods both as stock and as work in
+     * progress on the days between.
+     */
+    private static function lastActivity(ProductionOrder $order): ?CarbonImmutable
+    {
+        $days = array_filter([
+            $order->started_on?->toDateString(),
+            ProductionOrderIssue::query()->where('production_order_id', $order->id)->max('issued_on'),
+            ProductionLabourEntry::query()->where('production_order_id', $order->id)->max('worked_on'),
+        ]);
+
+        return $days === [] ? null : CarbonImmutable::parse(substr((string) max($days), 0, 10));
+    }
+
+    /**
+     * The day of a step: today when empty, never in the future, never before
+     * $notBefore, and never in a closed fiscal year or a locked period, as
+     * for anything else that ends up in the books.
+     */
+    private static function day(Company $company, mixed $value, ?CarbonImmutable $notBefore): CarbonImmutable
+    {
+        $day = self::parseDay($value, $notBefore);
+        $fiscalYear = FiscalYear::query()->whereDate('start_date', '<=', $day->toDateString())->whereDate('end_date', '>=', $day->toDateString())->first();
+
+        if ($fiscalYear === null) {
+            throw ValidationException::withMessages(['date' => __('Det finns inget räkenskapsår för :date.', ['date' => $day->toDateString()])]);
+        }
+
+        if (! $fiscalYear->isOpen()) {
+            throw ValidationException::withMessages(['date' => __('Räkenskapsåret :year är stängt. Välj ett datum i ett öppet räkenskapsår.', ['year' => $fiscalYear->label()])]);
+        }
+
+        $locked = Company::query()->whereKey($company->id)->value('locked_until_date');
+
+        if ($locked !== null && $day->toDateString() <= substr((string) $locked, 0, 10)) {
+            throw ValidationException::withMessages(['date' => __('Perioden till och med :date är låst. Välj ett senare datum.', ['date' => substr((string) $locked, 0, 10)])]);
+        }
+
+        return $day;
+    }
+
+    private static function parseDay(mixed $value, ?CarbonImmutable $notBefore): CarbonImmutable
     {
         $text = trim((string) ($value ?? ''));
         $today = CarbonImmutable::today();
@@ -353,7 +401,7 @@ class ProductionOrderLifecycle
         }
 
         if ($notBefore !== null && $day->isBefore($notBefore)) {
-            throw ValidationException::withMessages(['date' => __('Datumet kan inte vara före :date, då ordern startade.', ['date' => $notBefore->toDateString()])]);
+            throw ValidationException::withMessages(['date' => __('Datumet kan inte vara före :date, den senaste händelsen på ordern.', ['date' => $notBefore->toDateString()])]);
         }
 
         return $day;

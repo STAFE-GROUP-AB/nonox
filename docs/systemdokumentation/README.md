@@ -5071,7 +5071,9 @@ offerter och ordrar (M2) bokför ingenting och beskrivs i ADR:en.
   enligt företagets metod (FIFO eller vägt genomsnitt) dagen före uttaget
   minus värdet efter. Lagret och produkterna i arbete summerar därför alltid
   till det som kom in. Där negativt saldo är tillåtet och mer tas ut än som
-  finns, värderas överskottet till artikelns inköpspris.
+  finns, värderas överskottet till artikelns inköpspris. Ett uttag kan inte
+  dateras före en senare lagerrörelse på samma artikel, eftersom FIFO då
+  skulle värdera samma inleveranser två gånger.
 - **Arbete** (`production_labour_entries`) sparas med minuter, arbetsstegets
   timkostnad när minuterna registrerades, belopp och datum. Fram till
   verkstadsterminalen (ADR-071 §7) kommer minuterna från färdigmeldningen:
@@ -5080,19 +5082,27 @@ offerter och ordrar (M2) bokför ingenting och beskrivs i ADR:en.
 - **Färdigmeldning** (`PRODUCTION_RECEIPT`, in i lagret): produkterna tas
   emot till tillverkningskostnaden, det vill säga uttagna komponenters
   värde, plus komponenter som inte är lagerförda till sitt kalkylpris, plus
-  arbetet, plus omkostnadspålägget bara om företaget har valt det
-  (Tillverkning → Inställningar, avstängt från början). Kostnaden per
+  arbetet, plus omkostnadspålägget bara om företaget hade valt det när
+  ordern startades (Tillverkning → Inställningar, avstängt från början;
+  pålägget låses på ordern vid start). Kostnaden per
   lagerenhet avrundas halvt uppåt till helt öre. Den färdiga produkten
   värderas sedan som alla lagerartiklar (avsnitt 5j).
-- **Makulering** lägger tillbaka uttagna komponenter på samma plats till det
-  värde de lämnade med (`PRODUCTION_ISSUE` in, och en negativ rad i
-  `production_order_issues`). Rapporterat arbete finns kvar men räknas inte
+- **Makulering** lägger tillbaka uttagna komponenter på samma plats (eller
+  artikelns standardplats, annars första aktiva plats, om platsen har
+  stängts) till exakt det värde de lämnade med: kostnaden per lagerenhet,
+  med avrundningen på den sista tusendelen (`PRODUCTION_ISSUE` in, och en
+  negativ rad i `production_order_issues`). Rapporterat arbete finns kvar men räknas inte
   som produkter i arbete.
 - **Produkter i arbete** på en dag är summan av uttag och arbete fram till
   den dagen för order som inte var färdiga eller makulerade den dagen, plus
-  omkostnadspålägget om företaget har valt det. Uttag och arbete kan bara
+  det omkostnadspålägg som låstes på ordern när den startades. Uttag och arbete kan bara
   läggas till (modellen och en databastrigger stoppar ändring och
   borttagning), så värdet kan räknas för vilken tidigare dag som helst.
+- **Datum:** start, uttag, färdigmeldning och makulering kan dateras bakåt,
+  men aldrig i framtiden, i ett stängt räkenskapsår eller i en låst period,
+  och färdigmeldning och makulering aldrig före orderns senaste uttag eller
+  rapporterade arbete. Annars skulle samma varor räknas både som lager och
+  som produkter i arbete dagarna däremellan.
 - **Inköpsförslaget** (Lager): frisläppta och startade order reserverar det
   komponenterna ännu behöver, och deras färdiga produkter räknas som på väg
   in.
@@ -5785,4 +5795,4 @@ påverkar bokföringen och fakturan:
 | 0.129 | 2026-11-10 | Förhandsversion (beta) av årsredovisningen för mindre aktiebolag med K3, inte granskad av en auktoriserad redovisningskonsult (avsnitt 5a6.8, ADR-059 A.4 paket S1-P10): ett räkenskapsår som följer K3 får förvaltningsberättelse, resultat- och balansräkning, rapport över förändringar i eget kapital, eventuell kassaflödesanalys och noter i ordningen i K3 punkt 3.10, i hela kronor. Allt som NONOX inte stöder nekar hela årsredovisningen med regelns id (K3 tillämpas helt eller inte alls); PDF:en görs när alla frågor är besvarade. K2-dokumentet ändras inte; iXBRL görs bara för K2. Ingen verifikation ändras. |
 | 0.130 | 2026-11-10 | Träindustriavtalet i Avtal (avsnitt 5h, ADR-033 tillägg L1): avtalsdata för trä- och möbelindustrin i två versioner, där versionen 2025–2027 bara har belopp ur en sekundär källa och därför inte kan kontrolleras, så lönekörningen stoppas för anställda på avtalet. Satsen `ORE_PER_HOUR` kan ha `plus_hourly_wage` (timlön plus krontal per timme), och avtalskalendern har sju hjälpdagar före och efter helger. Inga konton eller verifikationer ändras. |
 | 0.131 | 2026-11-10 | En anläggningstillgång av flera inköp (avsnitt 5a2, ADR-010 tillägg 2026-11-10): en senare inköpsrad på tillgångens konto kan läggas till i en befintlig tillgång, från utkastet eller i registret för en bokförd rad. Ny tabell `fixed_asset_additions` (kan inte ändras eller tas bort). Ett tillägg före avskrivningens start ingår i planen från första avskrivningsmånaden; ett senare skrivs av framåt över den återstående nyttjandeperioden. Tillägg nekas i stängda år och låsta perioder, på uppdelade och avyttrade tillgångar och efter nyttjandeperiodens slut. Ingen bokförd avskrivning eller verifikation ändras. |
-| 0.132 | 2026-11-11 | Tillverkningsorder (avsnitt 5o och 5j, ADR-071 §8 och tillägget As built (M4)): komponenter tas ur lagret som `PRODUCTION_ISSUE` till anskaffningsvärdet enligt företagets metod och färdiga produkter tas emot som `PRODUCTION_RECEIPT` till tillverkningskostnaden (material plus direkt arbete, omkostnader bara om företaget väljer det). Nya tabeller `production_orders`, `production_order_components`, `production_order_operations`, `production_order_issues` och `production_labour_entries` (de två sista kan inte ändras eller tas bort). Ingen verifikation per order; bokslutets lagervärdering tar med produkter i arbete på ett eget kontopar (1440/4940 från början) i samma verifikation. Öppna frågor om kostnader och konton i avsnitt 8. |
+| 0.132 | 2026-11-11 | Tillverkningsorder (avsnitt 5o och 5j, ADR-071 §8 och tillägget As built (M4)): komponenter tas ur lagret som `PRODUCTION_ISSUE` till anskaffningsvärdet enligt företagets metod och färdiga produkter tas emot som `PRODUCTION_RECEIPT` till tillverkningskostnaden (material plus direkt arbete, omkostnader bara om företaget har valt det när ordern startar). Datum kan inte läggas i stängda år, låsta perioder, före orderns senaste händelse eller, för uttag, före en senare lagerrörelse på artikeln. Nya tabeller `production_orders`, `production_order_components`, `production_order_operations`, `production_order_issues` och `production_labour_entries` (de två sista kan inte ändras eller tas bort). Ingen verifikation per order; bokslutets lagervärdering tar med produkter i arbete på ett eget kontopar (1440/4940 från början) i samma verifikation. Öppna frågor om kostnader och konton i avsnitt 8. |

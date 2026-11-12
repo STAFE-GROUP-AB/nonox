@@ -40,6 +40,11 @@ beforeEach(function () {
         $life = app(ProductionOrderLifecycle::class);
         $life->release($owner, $company, $order);
         $life->start($owner, $company, $order, null, true);
+        // A finished order, so labour entries exist on both sides.
+        $finished = app(SaveProductionOrder::class)->create($owner, $company, ['article_id' => $fx['articles']['table']->id, 'quantity' => '1']);
+        $life->release($owner, $company, $finished);
+        $life->start($owner, $company, $finished);
+        $life->finish($owner, $company, $finished);
         $sales = Manufacturing::document($company, $owner, [['BORD-180', '1', '12000,00', 'Ekbord 180']], SalesDocument::ORDER);
         $this->{$side} = compact('owner', 'company', 'fx', 'order', 'sales');
     }
@@ -51,7 +56,7 @@ beforeEach(function () {
 it('scopes every production order model to the current company', function (string $model) {
     expect($model::query()->count())->toBeGreaterThan(0)
         ->and($model::query()->pluck('company_id')->unique()->all())->toBe([$this->a['company']->id]);
-})->with([ProductionOrder::class, ProductionOrderComponent::class, ProductionOrderOperation::class, ProductionOrderIssue::class]);
+})->with([ProductionOrder::class, ProductionOrderComponent::class, ProductionOrderOperation::class, ProductionOrderIssue::class, ProductionLabourEntry::class]);
 
 it('answers 404 for the other company\'s order on the page and in the actions', function () {
     $this->get(route('manufacturing.productionOrders.show', $this->b['order']->id))->assertNotFound();
@@ -73,7 +78,6 @@ it('refuses another company\'s article or customer order row', function () {
 });
 
 it('keeps the purchase proposal, the labour and the work in progress inside the company', function () {
-    ProductionLabourEntry::query()->count();
     $wip = WorkInProgress::at($this->a['company'], CarbonImmutable::today());
 
     expect($wip->lines)->toHaveCount(1)
