@@ -198,3 +198,17 @@ it('removes the person from plans kept longer than the retention period, nightly
             ->and(ProductionPlanSlot::query()->where('run_id', $recent->id)->whereNotNull('employee_id')->count())->toBeGreaterThan(0);
     });
 });
+
+it('computes one company\'s plan at a time, under an advisory lock taken before the snapshot', function () {
+    PlanningWorkshop::build($this->company, $this->owner);
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    app(ProductionPlanner::class)->run($this->company, PlanTrigger::Manual, $this->now);
+    $queries = collect(DB::getQueryLog())->pluck('query')->values();
+    DB::disableQueryLog();
+
+    $lock = $queries->search(fn (string $q): bool => str_contains($q, 'pg_advisory_xact_lock'));
+    $snapshot = $queries->search(fn (string $q): bool => str_contains($q, 'from "production_orders"'));
+
+    expect($lock)->not->toBeFalse()->and($lock)->toBeLessThan($snapshot);
+});

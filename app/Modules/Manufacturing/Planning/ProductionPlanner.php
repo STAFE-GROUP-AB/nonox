@@ -24,9 +24,9 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Computes and stores the plan (ADR-071 §13.4): a snapshot, the scheduler
- * in memory, then one transaction that writes the run with its slots and
- * forecasts, compares it with the previous run, gives every deviation
+ * Computes and stores the plan (ADR-071 §13.4), in one transaction under an
+ * advisory lock per company: a snapshot, the scheduler in memory, then the
+ * run with its slots and forecasts, compares it with the previous run, gives every deviation
  * waiting for a run its impact on the deliveries, raises LOCK_BROKEN and
  * MATERIAL_SHORTAGE deviations the run itself found, and prunes old runs.
  *
@@ -35,19 +35,25 @@ use Illuminate\Support\Facades\DB;
  */
 final class ProductionPlanner
 {
+    /** The first key of the advisory lock that keeps one company's runs apart (ADR-071, §13). */
+    public const int LOCK_KEY = 7113;
+
     public function __construct(private readonly PlanSnapshot $snapshot) {}
 
     public function run(Company $company, PlanTrigger $trigger, ?CarbonImmutable $now = null): ProductionPlanRun
     {
         return CurrentCompany::run($company, function () use ($company, $trigger, $now): ProductionPlanRun {
             $now = ($now ?? CarbonImmutable::now())->setTimezone(Clock::ZONE)->startOfMinute();
-            $data = $this->snapshot->load($company, $now);
-            $started = hrtime(true);
-            $result = (new Scheduler)->schedule($data->input);
-            $duration = (int) round((hrtime(true) - $started) / 1e6);
-            $calendar = PlanningSettings::for($company)->calendar();
 
-            return DB::transaction(function () use ($company, $trigger, $now, $data, $result, $duration, $calendar): ProductionPlanRun {
+            return DB::transaction(function () use ($company, $trigger, $now): ProductionPlanRun {
+                // One plan per company at a time: a second run waits here and then reads what the first wrote.
+                DB::select('SELECT pg_advisory_xact_lock(?, ?)', [self::LOCK_KEY, $company->id]);
+
+                $data = $this->snapshot->load($company, $now);
+                $started = hrtime(true);
+                $result = (new Scheduler)->schedule($data->input);
+                $duration = (int) round((hrtime(true) - $started) / 1e6);
+                $calendar = PlanningSettings::for($company)->calendar();
                 $previous = ProductionPlanRun::query()->latest('id')->lockForUpdate()->first();
 
                 $run = ProductionPlanRun::create([

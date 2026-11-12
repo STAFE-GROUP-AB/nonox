@@ -26,6 +26,7 @@ use App\Modules\Manufacturing\Planning\Engine\Clock;
 use App\Modules\Manufacturing\Planning\ProductionPlanner;
 use App\Modules\Manufacturing\Planning\Suggestions;
 use App\Modules\Payroll\Models\Absence;
+use App\Modules\Payroll\Models\Employment;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -35,6 +36,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Manufacturing;
+use Tests\Support\Planning;
 use Tests\Support\PlanningWorkshop;
 
 /*
@@ -225,8 +227,8 @@ it('sends the date message at most once: the row is locked, marked first, and a 
 it('plans only on people in the plan, and raises a deviation only for a longer estimate', function () {
     $assembly = operationOf($this->shop['orders'][1041]->id, 'Montering');
     $maja = $this->shop['people']['maja'];
-    App\Modules\Payroll\Models\Employment::query()->where('employee_id', $maja->id)->update(['end_date' => '2026-10-31']);
-    $office = Tests\Support\Planning::employee($this->owner, $this->company, 'Kontorist', '910707789');
+    Employment::query()->where('employee_id', $maja->id)->update(['end_date' => '2026-10-31']);
+    $office = Planning::employee($this->owner, $this->company, 'Kontorist', '910707789');
 
     expect(fn () => app(HoldOperation::class)->assign($this->owner, $this->company, $assembly, $maja->id))->toThrow(ValidationException::class)
         ->and(fn () => app(PlanChanges::class)->overtime($this->owner, $this->company, $office->id, CarbonImmutable::parse('2026-11-17 16:00', Clock::ZONE), CarbonImmutable::parse('2026-11-17 18:00', Clock::ZONE)))->toThrow(ValidationException::class);
