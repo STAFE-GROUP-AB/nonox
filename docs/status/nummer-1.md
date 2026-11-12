@@ -38,6 +38,10 @@ Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanf�
 - "Prova utan att registrera" (ADR-077) körs i en egen demodatabas. Spärrarna i produktionsdatabasen får inga undantag. Bara den särskilda demodatabasen får tömmas eller byggas om, och påslag i produktion kräver ägarens bekräftelse vid driftsättningen.
 - Separata databasanvändare (ADR-079 steg 2): en ägare som bara kör migreringar, en appanvändare utan rätt att ändra tabeller, spärrar eller funktioner, och en läsanvändare. Omställningen av nonox.app görs i ett underhållsfönster enligt en runbook.
 
+Ägarens beslut 2026-11-12:
+- Kön ovan byggs klart, med M7 (väggskärmen) och branschsidan för tillverkande företag. Nya önskemål från ägaren går inte in i kön, utan läggs på raden "Önskemål som inte byggs nu" (och på /fardplan som Önskemål när de är publika).
+- "Prova utan att registrera" är påslagen på nonox.app med en egen demodatabas. Varje driftsättning migrerar även demodatabasen.
+
 Önskemål som inte byggs nu: föreningar, bordsbokning, installationsanvisningar och skript för egen server (`egen-server-guide`, ägaren 2026-11-09), koppling till webbutik (`kassa-och-ehandel`, kommer senare). Byggs inte: webbshop, eget kassasystem.
 
 ## Statuskontroll 2026-11-07
@@ -779,4 +783,15 @@ Evidence: `tests/Feature/Manufacturing/ProductionOrdersTest.php` (fixturerna F-M
 - Sidorna under `/tillverkning/tillverkningsorder`, länk från kundorderns kalkylpanel, inställningar för omkostnader i lagervärdet och kontona för produkter i arbete. Manualartikeln `tillverkning/tillverkningsorder` med skärmbilder från Snickeri Norrby Demo AB, ändringslogg, README, landningssidan, ADR-071 "As built (M4)"; färdplanens punkt `stycklistor-och-tillverkning` är levererad och borttagen.
 - Hela sviten (PGTZ=UTC): 8 965 gröna, 5 röda, 8 todos, 6 hoppade över. Den ena röda (modellistan i TenancyIsolationTest) är rättad och `tests/Tenancy/TenancyIsolationTest.php` är grön efteråt (2 359). De fyra andra (DemoScheduleTest ×2, DatabaseGrantsTest ×2) är kända flakes och gröna när de körs ensamma (35 gröna). phpstan inga fel, pint grönt, `npm test` grönt, `npm run build` ok.
 Open legal-verify items: om K2 (BFNAR 2016:10 kap. 12, p. 12.10) och K3 (kap. 13) tillåter, kräver eller förbjuder indirekta kostnader i anskaffningsvärdet för egentillverkade varor; BAS-konton för produkter i arbete och färdiga varor (1440/1450) och förändringskontona (4940, 4950 eller 4970); om ÅRL 4 kap. 9 § godtar arbetsstegets standardtimkostnad; om 97-procentsregeln och lägsta värdets princip gäller produkter i arbete.
+Next package: M5 verkstadsterminal.
+
+---
+
+Package: Sammanslagning, integration/batch2 (omgång 5: M4 tillverkningsorder)
+Status: done (`feat/m4-production-orders` sammanslagen; ingen push)
+Evidence: hela sviten `PGTZ=UTC … php -d memory_limit=1G vendor/bin/pest`: 9 021 gröna, 8 todos, 6 skipped, 1 röd (`DatabaseGrantsTest`, känd låsflake, grön ensam). Första körningen hade 90 röda i Demo, DemoRebuild och VoucherInterpretHintTest för att demodatabasen inte var migrerad (`migrate --database=demo`); efter migreringen gröna. phpstan, pint, `npm test` och `npm run build` rena. Sekretessgranskning av diffen utan fynd.
+- Konflikter: andringslogg.json (nyaste först, `omrade` på alla poster), fardplan.json (posten om stycklistor och tillverkning är levererad och tas bort), lang/en.json (union) och status. Systemdokumentation 0.132, tabellen utan luckor.
+Follow-ups:
+- P3-1 avrundning: `max(0, …)` kan ge ungefär 1 öre för mycket när den avrundade enhetskostnaden överskjuter.
+- Lager: vägra lagerrörelser daterade på eller före ett bokfört `StockValuation`-datum.
 Next package: M5 verkstadsterminal.
