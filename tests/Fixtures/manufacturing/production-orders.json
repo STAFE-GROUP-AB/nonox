@@ -1,0 +1,102 @@
+{
+    "about": "Production orders (ADR-071 §8): the manufacturing cost of two oak tables made from the bill of materials of Tests\\Support\\Manufacturing, and the work in progress at year end. Synthetic joinery, invented prices. Stock received 2026-11-01 unless a case says otherwise; the order is for 2 tables, batch 1. All amounts in öre, quantities in milli of the stock unit, every rounding half up once.",
+    "stock": [
+        {"article": "top", "quantity": "10", "unit_cost": "1500,00"},
+        {"article": "leg", "quantity": "20", "unit_cost": "350,00"},
+        {"article": "screw", "quantity": "1000", "unit_cost": "0,95"},
+        {"article": "lacquer", "quantity": "5", "unit_cost": "240,00"}
+    ],
+    "required_milli": {"top": 3240, "leg": 8000, "screw": 32000, "lacquer": 666},
+    "planned_minutes": {"cut": 60, "assembly": 180, "lacquering": 60},
+    "cases": [
+        {
+            "id": "F-M1",
+            "case": "Planned minutes, FIFO, no overhead",
+            "method": "FIFO",
+            "minutes": {},
+            "issued_value_ore": {"top": 486000, "leg": 280000, "screw": 3040, "lacquer": 15984},
+            "material_ore": 785024,
+            "labour_ore": 241000,
+            "overhead_ore": 0,
+            "unit_cost_ore": 513012
+        },
+        {
+            "id": "F-M2",
+            "case": "Montering took 200 minutes, entered on finish",
+            "method": "FIFO",
+            "minutes": {"assembly": "200"},
+            "material_ore": 785024,
+            "labour_ore": 257000,
+            "overhead_ore": 0,
+            "unit_cost_ore": 521012
+        },
+        {
+            "id": "F-M3",
+            "case": "Overhead 15 % included in the stock value by the company's choice",
+            "method": "FIFO",
+            "overhead_bp": 1500,
+            "overhead_in_stock_value": true,
+            "minutes": {},
+            "material_ore": 785024,
+            "labour_ore": 241000,
+            "overhead_ore": 153904,
+            "unit_cost_ore": 589964
+        },
+        {
+            "id": "F-M4",
+            "case": "Overhead 15 % set for the costing only: not in the stock value",
+            "method": "FIFO",
+            "overhead_bp": 1500,
+            "overhead_in_stock_value": false,
+            "minutes": {},
+            "material_ore": 785024,
+            "labour_ore": 241000,
+            "overhead_ore": 0,
+            "unit_cost_ore": 513012
+        },
+        {
+            "id": "F-M5",
+            "case": "Legs received twice, 10 at 300,00 on 2026-10-01 and 10 at 400,00 on 2026-11-01; FIFO issues the oldest",
+            "method": "FIFO",
+            "legs": [{"quantity": "10", "unit_cost": "300,00", "date": "2026-10-01"}, {"quantity": "10", "unit_cost": "400,00", "date": "2026-11-01"}],
+            "minutes": {},
+            "issued_value_ore": {"leg": 240000},
+            "material_ore": 745024,
+            "labour_ore": 241000,
+            "overhead_ore": 0,
+            "unit_cost_ore": 493012
+        },
+        {
+            "id": "F-M6",
+            "case": "Same legs, weighted average 350,00",
+            "method": "AVERAGE",
+            "legs": [{"quantity": "10", "unit_cost": "300,00", "date": "2026-10-01"}, {"quantity": "10", "unit_cost": "400,00", "date": "2026-11-01"}],
+            "minutes": {},
+            "issued_value_ore": {"leg": 280000},
+            "material_ore": 785024,
+            "labour_ore": 241000,
+            "overhead_ore": 0,
+            "unit_cost_ore": 513012
+        }
+    ],
+    "valuation": [
+        {
+            "id": "F-V1",
+            "case": "Order started 2026-12-10 with every component issued, not finished on 2026-12-31: work in progress is the issued components; the shelves lose the same amount",
+            "wip_ore": 785024,
+            "stock_ore_before": 2415000,
+            "stock_ore_after": 1629976
+        },
+        {
+            "id": "F-V2",
+            "case": "F-V1 plus 120 terminal minutes of Montering on 2026-12-20 at 480,00/h",
+            "wip_ore": 881024
+        },
+        {
+            "id": "F-V3",
+            "case": "Order finished 2026-12-15 with planned minutes: two tables in stock at 513 012 each, no work in progress",
+            "wip_ore": 0,
+            "finished_goods_ore": 1026024
+        }
+    ]
+}

@@ -18,6 +18,8 @@ use App\Modules\Inventory\Actions\Concerns\GuardsInventory;
 use App\Modules\Inventory\Domain\StockClass;
 use App\Modules\Inventory\InventorySettings;
 use App\Modules\Inventory\Models\StockValuation;
+use App\Modules\Inventory\Support\StockValuationAddition;
+use App\Modules\Inventory\Support\StockValuationAdditions;
 use App\Modules\Inventory\Support\StockValuationReport;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
@@ -146,25 +148,34 @@ class BookStockValuation
     /**
      * What booking would do, without writing anything: the valuation report,
      * and per stock account its classes, cost, value, the balance on the
-     * account in the books, and the change to book. For the page and for
+     * account in the books, and the change to book. Additions registered by
+     * other modules (the work in progress of production orders, ADR-071 §8)
+     * get their own account pair. For the page and for
      * the booking itself. Refuses the 97 % rule when an article is written
      * down.
      *
-     * @return array{report: StockValuationReport, rule_97: bool, value_ore: int, book_value_ore: int, change_ore: int, groups: list<array{classes: list<string>, stock_account: int, change_account: int, cost_value_ore: int, value_ore: int, book_value_ore: int, change_ore: int}>}
+     * @return array{report: StockValuationReport, rule_97: bool, value_ore: int, book_value_ore: int, change_ore: int, groups: list<array{classes: list<string>, stock_account: int, change_account: int, cost_value_ore: int, value_ore: int, book_value_ore: int, change_ore: int, additions?: list<array{key: string, label: string, value_ore: int, lines: list<array{reference: string, name: string, value_ore: int}>}>}>}
      */
     public static function plan(Company $company, FiscalYear $fiscalYear): array
     {
         $rule97 = InventorySettings::usesRule97($company, $fiscalYear);
         $pairs = InventorySettings::pairs($company);
+        $additions = app(StockValuationAdditions::class)->all();
 
-        return CurrentCompany::run($company, function () use ($company, $fiscalYear, $rule97, $pairs): array {
+        return CurrentCompany::run($company, function () use ($company, $fiscalYear, $rule97, $pairs, $additions): array {
             $report = StockValuationReport::at($company, $fiscalYear->end_date);
 
             if ($rule97 && collect($report->lines)->contains(fn (array $line): bool => $line['written_down'])) {
                 throw ValidationException::withMessages(['valuation' => __('97-procentsregeln kan inte användas när någon vara är nedskriven till nettoförsäljningsvärde (K2 punkt 12.5). Stäng av regeln eller ta bort nedskrivningen.')]);
             }
 
-            $accounts = Account::query()->whereIn('number', array_unique(array_merge(...array_values($pairs))))->pluck('id', 'number');
+            $extra = array_map(fn (StockValuationAddition $addition): array => [
+                'addition' => $addition,
+                'accounts' => $addition->accounts($company),
+                'value' => $addition->value($company, $fiscalYear->end_date),
+            ], $additions);
+            $numbers = array_merge(...array_values($pairs), ...array_column($extra, 'accounts'));
+            $accounts = Account::query()->whereIn('number', array_unique($numbers))->pluck('id', 'number');
             $opening = LedgerBalances::opening($fiscalYear);
             $movements = LedgerBalances::movements($fiscalYear);
             $balance = function (int $number) use ($accounts, $opening, $movements): int {
@@ -174,6 +185,7 @@ class BookStockValuation
             };
 
             $groups = self::groups($company, $report, $pairs, $rule97, $balance);
+            $groups = self::withAdditions($groups, $extra, $balance);
             $planned = [];
 
             foreach ($groups as $stockNumber => $group) {
@@ -186,6 +198,7 @@ class BookStockValuation
                     'value_ore' => $group['value_ore'],
                     'book_value_ore' => $book,
                     'change_ore' => $group['value_ore'] - $book,
+                    ...(isset($group['additions']) ? ['additions' => $group['additions']] : []),
                 ];
             }
 
@@ -194,6 +207,45 @@ class BookStockValuation
 
             return ['report' => $report, 'rule_97' => $rule97, 'value_ore' => $value, 'book_value_ore' => $book, 'change_ore' => $value - $book, 'groups' => $planned];
         });
+    }
+
+    /**
+     * The additions (StockValuationAddition), such as the work in progress of
+     * unfinished production orders (ADR-071 §8), each on its own account
+     * pair: included when it has a value or its stock account carries a
+     * balance for the year (then booked down to what it is worth now). Valued
+     * at cost; the 97 % rule applies to the stock classes only.
+     *
+     * TODO(legal-verify): whether the K2 97 % rule (punkt 12.5) also covers
+     * work in progress, and lägsta värdets princip (ÅRL 4:9) for it.
+     *
+     * @param  array<int, array{change_account: int, classes: list<string>, cost_value_ore: int, value_ore: int, additions?: list<array{key: string, label: string, value_ore: int, lines: list<array{reference: string, name: string, value_ore: int}>}>}>  $groups
+     * @param  list<array{addition: StockValuationAddition, accounts: array{0: int, 1: int}, value: array{value_ore: int, lines: list<array{reference: string, name: string, value_ore: int}>}}>  $extra
+     * @param  callable(int): int  $balance
+     * @return array<int, array{change_account: int, classes: list<string>, cost_value_ore: int, value_ore: int, additions?: list<array{key: string, label: string, value_ore: int, lines: list<array{reference: string, name: string, value_ore: int}>}>}>
+     */
+    private static function withAdditions(array $groups, array $extra, callable $balance): array
+    {
+        foreach ($extra as $item) {
+            [$stock, $change] = $item['accounts'];
+            $value = $item['value']['value_ore'];
+
+            if ($value === 0 && $item['value']['lines'] === [] && $balance($stock) === 0) {
+                continue;
+            }
+
+            if (isset($groups[$stock]) && $groups[$stock]['change_account'] !== $change) {
+                throw ValidationException::withMessages(['valuation' => __('Lagerkonto :account används för två lagerslag med olika konton för lagerförändring. Rätta kontona under Lager → Inställningar.', ['account' => $stock])]);
+            }
+
+            $groups[$stock] ??= ['change_account' => $change, 'classes' => [], 'cost_value_ore' => 0, 'value_ore' => 0];
+            $groups[$stock]['classes'][] = $item['addition']->key();
+            $groups[$stock]['cost_value_ore'] += $value;
+            $groups[$stock]['value_ore'] += $value;
+            $groups[$stock]['additions'][] = ['key' => $item['addition']->key(), 'label' => $item['addition']->label(), 'value_ore' => $value, 'lines' => $item['value']['lines']];
+        }
+
+        return $groups;
     }
 
     /**
@@ -254,7 +306,13 @@ class BookStockValuation
             return $account;
         }
 
-        $name = InventorySettings::ACCOUNT_NAMES[$number] ?? throw ValidationException::withMessages(['valuation' => __('Konto :number finns inte i kontoplanen. Lägg till det först.', ['number' => $number])]);
+        $names = InventorySettings::ACCOUNT_NAMES;
+
+        foreach (app(StockValuationAdditions::class)->all() as $addition) {
+            $names += $addition->accountNames();
+        }
+
+        $name = $names[$number] ?? throw ValidationException::withMessages(['valuation' => __('Konto :number finns inte i kontoplanen. Lägg till det först.', ['number' => $number])]);
         $account = Account::create(['number' => $number, 'name' => $name, 'type' => AccountType::forNumber($number)]);
         Audit::record('account.created', $account, ['number' => $number, 'name' => $name, 'reason' => 'stock_valuation'], $company, $user);
 

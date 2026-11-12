@@ -105,4 +105,30 @@ final class Manufacturing
             'rows' => array_map(fn (array $row): array => ['article' => $row[0], 'description' => $row[3] ?? $row[0], 'quantity' => $row[1], 'price' => $row[2], 'vat_rate' => 2500], $rows),
         ]);
     }
+
+    /**
+     * The fixture stock of tests/Fixtures/manufacturing/production-orders.json
+     * received into bin A-01 on 2026-11-01, and the table made a stock
+     * article so production orders can receive it.
+     *
+     * @param  array{articles: array<string, Article>}  $fx
+     */
+    public static function stock(Company $company, User $owner, array $fx, StockLocation $location, bool $legs = true): void
+    {
+        $fx['articles']['table']->forceFill(['is_stock_item' => true])->save();
+
+        foreach (self::productionFixtures()['stock'] as $line) {
+            if ($line['article'] === 'leg' && ! $legs) {
+                continue;
+            }
+
+            Inventory::receive($company, $owner, $fx['articles'][$line['article']], $location, $line['quantity'], $line['unit_cost'], '2026-11-01');
+        }
+    }
+
+    /** @return array<string, mixed> */
+    public static function productionFixtures(): array
+    {
+        return json_decode((string) file_get_contents(base_path('tests/Fixtures/manufacturing/production-orders.json')), true, 512, JSON_THROW_ON_ERROR);
+    }
 }

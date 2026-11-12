@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\Manufacturing\Actions;
 
-use App\Domain\Units\ArticleUnits;
 use App\Models\Article;
 use App\Models\Company;
 use App\Models\SalesDocument;
@@ -12,21 +11,17 @@ use App\Models\SalesDocumentRow;
 use App\Models\User;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Domain\StructureKind;
-use App\Modules\Inventory\Domain\StructureMath;
-use App\Modules\Inventory\Models\ArticleUnitConversion;
 use App\Modules\Inventory\Models\BillOfMaterials;
 use App\Modules\Inventory\Models\BomRow;
-use App\Modules\Inventory\Structures\RowQuantity;
-use App\Modules\Inventory\Structures\StructureBook;
 use App\Modules\Manufacturing\ManufacturingModule;
 use App\Modules\Manufacturing\Models\Operation;
 use App\Modules\Manufacturing\Models\RowStructure;
 use App\Modules\Manufacturing\Models\RowStructureLine;
+use App\Modules\Manufacturing\Support\StructureLines;
 use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Brick\Math\BigDecimal;
-use Brick\Math\Exception\MathException;
 use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
 use Closure;
@@ -50,7 +45,7 @@ use InvalidArgumentException;
 class SaveRowStructure
 {
     /** A copy has at most this many lines, as a bill of materials (StructureWriter::MAX_ROWS). */
-    public const int MAX_LINES = 200;
+    public const int MAX_LINES = StructureLines::MAX_LINES;
 
     /** @var list<string> conversions of the last update that changed the typed quantity by more than 0,5 % */
     public array $warnings = [];
@@ -143,73 +138,9 @@ class SaveRowStructure
                 throw ValidationException::withMessages(['yield' => __('Ange hur många stycklistan gäller för, mer än noll.')]);
             }
 
-            $lines = array_values(array_filter((array) ($input['lines'] ?? []), fn (mixed $line): bool => is_array($line) && (($line['article_id'] ?? '') !== '' || ($line['operation_id'] ?? '') !== '')));
-
-            if (! array_filter($lines, fn (array $line): bool => ($line['article_id'] ?? '') !== '')) {
-                throw ValidationException::withMessages(['lines' => __('Lägg till minst en komponent.')]);
-            }
-
-            if (count($lines) > self::MAX_LINES) {
-                throw ValidationException::withMessages(['lines' => __('En stycklista kan ha högst :max rader.', ['max' => self::MAX_LINES])]);
-            }
-
-            // An archived operation already on the copy may stay; a new line takes an active one.
-            $operations = Operation::query()->where(fn ($query) => $query->whereNull('archived_at')->orWhereIn('id', $structure->lines->pluck('operation_id')->filter()->all()))->pluck('id')->flip()->all();
-            $componentIds = array_map(fn (array $line): int => (int) $line['article_id'], array_filter($lines, fn (array $line): bool => ($line['article_id'] ?? '') !== ''));
-            $articles = Article::query()->with('stockUnit')->whereKey($componentIds)->get()->keyBy('id');
-            $conversions = ArticleUnitConversion::query()->whereIn('article_id', $articles->keys()->all())->get()->groupBy('article_id')->map(fn ($group): array => ArticleUnits::fractions($group));
-            $book = StructureBook::for($company, StructureKind::Bom);
-            $prepared = [];
-
-            foreach ($lines as $index => $line) {
-                $note = ($line['note'] ?? '') === '' ? null : mb_substr(trim((string) $line['note']), 0, 255);
-
-                if (($line['article_id'] ?? '') === '') {
-                    $operationId = (int) $line['operation_id'];
-
-                    if (! isset($operations[$operationId])) {
-                        throw ValidationException::withMessages(["lines.{$index}.operation_id" => __('Välj ett arbetssteg som finns och inte är arkiverat.')]);
-                    }
-
-                    $minutes = str_replace(' ', '', trim((string) ($line['minutes'] ?? '')));
-
-                    if (preg_match('/^\d{1,6}$/', $minutes) !== 1 || (int) $minutes <= 0) {
-                        throw ValidationException::withMessages(["lines.{$index}.minutes" => __('Skriv tiden i hela minuter, mer än noll.')]);
-                    }
-
-                    $prepared[] = ['position' => $index, 'operation_id' => $operationId, 'minutes' => (int) $minutes, 'note' => $note];
-
-                    continue;
-                }
-
-                $article = $articles->get((int) $line['article_id']) ?? throw ValidationException::withMessages(["lines.{$index}.article_id" => __('Artikeln finns inte.')]);
-
-                if ($article->id === $output->id || $book->reaches($article->id, $output->id)) {
-                    throw ValidationException::withMessages(["lines.{$index}.article_id" => __(':name innehåller redan :output, så stycklistan skulle gå i en ring.', ['name' => $article->name, 'output' => $output->name])]);
-                }
-
-                $quantity = RowQuantity::of($article, $conversions->get($article->id, []), (string) ($line['quantity'] ?? ''), (string) ($line['unit'] ?? ''), "lines.{$index}.");
-
-                if ($quantity->warning !== null) {
-                    $this->warnings[] = $quantity->warning;
-                }
-
-                $prepared[] = [
-                    'position' => $index,
-                    'component_article_id' => $article->id,
-                    'quantity_milli' => $quantity->stockMilli,
-                    'loss_bp' => self::loss($line['loss'] ?? null, "lines.{$index}.loss"),
-                    'entered_quantity' => $quantity->enteredQuantity,
-                    'entered_unit' => $quantity->enteredUnit,
-                    'note' => $note,
-                ];
-            }
-
-            $levels = 1 + max([0, ...array_map(fn (array $line): int => isset($line['component_article_id']) ? $book->depth((int) $line['component_article_id']) : 0, $prepared)]);
-
-            if ($levels > StructureBook::MAX_DEPTH) {
-                throw ValidationException::withMessages(['lines' => __('Stycklistan blir för djup: högst :max nivåer av stycklistor i varandra.', ['max' => StructureBook::MAX_DEPTH])]);
-            }
+            $prepare = app(StructureLines::class);
+            $prepared = $prepare->prepare($company, $output, (array) ($input['lines'] ?? []), array_values(array_filter($structure->lines->map(fn (RowStructureLine $line): ?int => $line->operation_id)->all())));
+            $this->warnings = $prepare->warnings;
 
             $structure->lines()->delete();
 
@@ -312,27 +243,5 @@ class SaveRowStructure
 
             return $callback($company, $row);
         }));
-    }
-
-    /** A loss in percent as written ("12,5") as basis points, 0–9 999. */
-    private static function loss(mixed $value, string $field): int
-    {
-        $text = str_replace([' ', ','], ['', '.'], trim((string) ($value ?? '')));
-
-        if ($text === '') {
-            return 0;
-        }
-
-        try {
-            $bp = BigDecimal::of($text)->multipliedBy(100)->toScale(0, RoundingMode::HalfUp)->toInt();
-        } catch (MathException) {
-            throw ValidationException::withMessages([$field => __('Spillet går inte att läsa. Skriv procent, till exempel 10 eller 12,5.')]);
-        }
-
-        if ($bp < 0 || $bp >= StructureMath::BP) {
-            throw ValidationException::withMessages([$field => __('Spillet måste vara från 0 till under 100 procent.')]);
-        }
-
-        return $bp;
     }
 }
