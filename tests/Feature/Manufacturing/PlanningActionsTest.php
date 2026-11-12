@@ -221,3 +221,20 @@ it('sends the date message at most once: the row is locked, marked first, and a 
     expect($sql)->not->toBeNull()
         ->and(fn () => $confirm->send($this->owner, $this->company, $change, 'inkop@kunden.example'))->toThrow(ValidationException::class);
 });
+
+it('plans only on people in the plan, and raises a deviation only for a longer estimate', function () {
+    $assembly = operationOf($this->shop['orders'][1041]->id, 'Montering');
+    $maja = $this->shop['people']['maja'];
+    App\Modules\Payroll\Models\Employment::query()->where('employee_id', $maja->id)->update(['end_date' => '2026-10-31']);
+    $office = Tests\Support\Planning::employee($this->owner, $this->company, 'Kontorist', '910707789');
+
+    expect(fn () => app(HoldOperation::class)->assign($this->owner, $this->company, $assembly, $maja->id))->toThrow(ValidationException::class)
+        ->and(fn () => app(PlanChanges::class)->overtime($this->owner, $this->company, $office->id, CarbonImmutable::parse('2026-11-17 16:00', Clock::ZONE), CarbonImmutable::parse('2026-11-17 18:00', Clock::ZONE)))->toThrow(ValidationException::class);
+
+    // 900 planned minutes: 600 is shorter, so no deviation; 1000 is longer.
+    app(PlanChanges::class)->remaining($this->owner, $this->company, $assembly, 600);
+    expect(ProductionDeviation::query()->count())->toBe(0);
+
+    app(PlanChanges::class)->remaining($this->owner, $this->company, $assembly->fresh(), 1000);
+    expect(ProductionDeviation::query()->where('type', DeviationType::Overrun->value)->count())->toBe(1);
+});

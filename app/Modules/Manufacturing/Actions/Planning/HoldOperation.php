@@ -14,6 +14,7 @@ use App\Modules\Manufacturing\Models\ProductionOrderOperation;
 use App\Modules\Manufacturing\Models\ProductionPlanLock;
 use App\Modules\Manufacturing\Models\ProductionPlanSlot;
 use App\Modules\Manufacturing\Models\ProductionSkill;
+use App\Modules\Manufacturing\Planning\PlanSnapshot;
 use App\Modules\Manufacturing\Planning\PlanTriggers;
 use App\Modules\Payroll\Models\Employee;
 use App\Support\Audit\Audit;
@@ -43,6 +44,10 @@ class HoldOperation
                 throw ValidationException::withMessages(['slot' => __('Arbetet har ingen person att låsa.')]);
             }
 
+            if (! app(PlanSnapshot::class)->plans($company, $slot->employee_id)) {
+                throw ValidationException::withMessages(['slot' => __('Personen planeras inte i verkstaden: ge hen en kompetens och se att anställningen pågår.')]);
+            }
+
             $lock = $this->write($slot->production_order_operation_id, LockKind::Lock, [
                 'employee_id' => $slot->employee_id,
                 'workstation_id' => $slot->workstation_id,
@@ -66,7 +71,7 @@ class HoldOperation
 
         return CurrentCompany::run($company, fn (): ProductionPlanLock => DB::transaction(function () use ($user, $company, $operation, $employeeId): ProductionPlanLock {
             $operation = ProductionOrderOperation::query()->findOrFail($operation->id);
-            $this->ensureQualified($operation, $employeeId);
+            $this->ensureQualified($company, $operation, $employeeId);
 
             ProductionPlanLock::query()->where('production_order_operation_id', $operation->id)->where('kind', LockKind::Lock->value)->delete();
             $lock = $this->write($operation->id, LockKind::Assign, ['employee_id' => $employeeId, 'workstation_id' => null, 'starts_at' => null, 'minutes' => null, 'created_by' => $user->id]);
@@ -89,7 +94,7 @@ class HoldOperation
 
         return CurrentCompany::run($company, fn (): ProductionPlanLock => DB::transaction(function () use ($user, $company, $operation, $employeeId, $minutes): ProductionPlanLock {
             $operation = ProductionOrderOperation::query()->findOrFail($operation->id);
-            $this->ensureQualified($operation, $employeeId);
+            $this->ensureQualified($company, $operation, $employeeId);
 
             $lock = $this->write($operation->id, LockKind::Split, ['employee_id' => $employeeId, 'workstation_id' => null, 'starts_at' => null, 'minutes' => $minutes, 'created_by' => $user->id]);
 
@@ -121,9 +126,13 @@ class HoldOperation
         return $lock;
     }
 
-    private function ensureQualified(ProductionOrderOperation $operation, int $employeeId): void
+    private function ensureQualified(Company $company, ProductionOrderOperation $operation, int $employeeId): void
     {
         $employee = Employee::query()->find($employeeId) ?? throw ValidationException::withMessages(['employee_id' => __('Välj en person.')]);
+
+        if (! app(PlanSnapshot::class)->plans($company, $employee->id)) {
+            throw ValidationException::withMessages(['employee_id' => __('Personen planeras inte i verkstaden: ge hen en kompetens och se att anställningen pågår.')]);
+        }
         $skill = Operation::query()->whereKey($operation->operation_id)->value('required_skill_id');
 
         if ($skill !== null && ! ProductionSkill::query()->whereKey($skill)->whereHas('employees', fn ($query) => $query->whereKey($employee->id))->exists()) {

@@ -13,6 +13,7 @@ use App\Modules\Manufacturing\Models\Overtime;
 use App\Modules\Manufacturing\Models\ProductionOrder;
 use App\Modules\Manufacturing\Models\ProductionOrderOperation;
 use App\Modules\Manufacturing\Planning\Engine\Clock;
+use App\Modules\Manufacturing\Planning\PlanSnapshot;
 use App\Modules\Manufacturing\Planning\PlanTriggers;
 use App\Modules\Payroll\Models\Employee;
 use App\Support\Audit\Audit;
@@ -25,7 +26,8 @@ use Illuminate\Validation\ValidationException;
  * The planner's other changes (ADR-071 §13.5, §13.6): a manual priority,
  * a new estimate of the minutes an operation still needs (it takes longer,
  * or a part was scrapped), and overtime for a person. Each is audited and
- * starts a new plan; a longer estimate raises an OVERRUN or SCRAP deviation.
+ * starts a new plan; only a longer estimate raises an OVERRUN or SCRAP
+ * deviation, and only someone in the plan can get overtime.
  */
 class PlanChanges
 {
@@ -66,15 +68,27 @@ class PlanChanges
             $type = DeviationType::Overrun;
         }
 
-        $operation = CurrentCompany::run($company, fn (): ProductionOrderOperation => DB::transaction(function () use ($user, $company, $operation, $minutes, $type): ProductionOrderOperation {
-            $operation = ProductionOrderOperation::query()->lockForUpdate()->findOrFail($operation->id);
-            $before = $operation->remaining_minutes_override;
-            $operation->forceFill(['remaining_minutes_override' => $minutes])->save();
+        $longer = false;
+        $operation = CurrentCompany::run($company, function () use ($user, $company, $operation, $minutes, $type, &$longer): ProductionOrderOperation {
+            return DB::transaction(function () use ($user, $company, $operation, $minutes, $type, &$longer): ProductionOrderOperation {
+                $operation = ProductionOrderOperation::query()->lockForUpdate()->findOrFail($operation->id);
+                $before = $operation->remaining_minutes_override;
+                $was = $before ?? max(0, $operation->planned_minutes - (int) $operation->labourEntries()->sum('minutes'));
+                $longer = $minutes !== null && $minutes > $was;
+                $operation->forceFill(['remaining_minutes_override' => $minutes])->save();
 
-            Audit::record('manufacturing.remaining_changed', $operation, ['production_order_id' => $operation->production_order_id, 'before' => $before, 'after' => $minutes, 'type' => $type->value], $company, $user);
+                Audit::record('manufacturing.remaining_changed', $operation, ['production_order_id' => $operation->production_order_id, 'before' => $before, 'after' => $minutes, 'type' => $type->value], $company, $user);
+
+                return $operation;
+            });
+        });
+
+        // Only a longer estimate is a deviation; a shorter one just replans.
+        if (! $longer) {
+            PlanTriggers::recompute($company->id, PlanTrigger::Terminal);
 
             return $operation;
-        }));
+        }
 
         PlanTriggers::deviation($company->id, $type, $operation, [
             'details' => ['production_order_id' => $operation->production_order_id, 'operation_id' => $operation->operation_id, 'remaining_minutes' => $minutes],
@@ -95,6 +109,10 @@ class PlanChanges
 
         return CurrentCompany::run($company, function () use ($user, $company, $employeeId, $start, $end, $minutes): Overtime {
             $employee = Employee::query()->find($employeeId) ?? throw ValidationException::withMessages(['employee_id' => __('Välj en person.')]);
+
+            if (! app(PlanSnapshot::class)->plans($company, $employee->id)) {
+                throw ValidationException::withMessages(['employee_id' => __('Personen planeras inte i verkstaden: ge hen en kompetens och se att anställningen pågår.')]);
+            }
 
             $overtime = Overtime::create([
                 'employee_id' => $employee->id,

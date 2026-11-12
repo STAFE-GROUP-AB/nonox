@@ -13,6 +13,7 @@ use App\Modules\Manufacturing\Models\ProductionOrderOperation;
 use App\Modules\Manufacturing\Models\ProductionScenario;
 use App\Modules\Manufacturing\Planning\Engine\Clock;
 use App\Modules\Manufacturing\Planning\PlanningSettings;
+use App\Modules\Manufacturing\Planning\PlanSnapshot;
 use App\Modules\Manufacturing\Planning\PlanTriggers;
 use App\Modules\Manufacturing\Planning\ProductionPlanner;
 use App\Modules\Manufacturing\Planning\ScenarioOutcome;
@@ -117,7 +118,7 @@ class Scenarios
      */
     public function validate(Company $company, array $changes): array
     {
-        return CurrentCompany::run($company, function () use ($changes): array {
+        return CurrentCompany::run($company, function () use ($company, $changes): array {
             $clean = [];
 
             foreach ($changes as $index => $change) {
@@ -127,7 +128,7 @@ class Scenarios
                     throw ValidationException::withMessages(["changes.{$index}" => __('Okänd ändring i scenariot.')]);
                 }
 
-                if (isset($change['employee_id']) && ! Employee::query()->whereKey((int) $change['employee_id'])->exists()) {
+                if (isset($change['employee_id']) && (! Employee::query()->whereKey((int) $change['employee_id'])->exists() || ! app(PlanSnapshot::class)->plans($company, (int) $change['employee_id']))) {
                     throw ValidationException::withMessages(["changes.{$index}" => __('Välj en person.')]);
                 }
 
