@@ -29,6 +29,7 @@ use App\Modules\Payroll\Models\Absence;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
@@ -197,4 +198,26 @@ it('gives Planering\'s scheduler view and plan, and the accountant view only', f
         ->and($gate($accountant)->allows('plan', [Operation::class, $this->company]))->toBeFalse()
         ->and($gate($this->owner)->allows('confirmDates', [Operation::class, $this->company]))->toBeTrue()
         ->and((new ManufacturingModule)->rolePermissions()['scheduler'])->toBe(['manufacturing:view', 'production:plan']);
+});
+
+it('sends the date message at most once: the row is locked, marked first, and a failed send rolls back', function () {
+    $order = Manufacturing::document($this->company, $this->owner, [['P-1041', '10', '1000']], SalesDocument::ORDER);
+    $confirm = app(ConfirmCustomerDate::class);
+    $change = $confirm($this->owner, $this->company, $order, '2026-11-26');
+
+    Mail::shouldReceive('to')->once()->ordered()->andThrow(new RuntimeException('Mailgun svarar inte'));
+    expect(fn () => $confirm->send($this->owner, $this->company, $change, 'inkop@kunden.example'))->toThrow(RuntimeException::class);
+    expect($change->fresh()->message_sent_at)->toBeNull()
+        ->and(AuditLog::query()->where('action', 'manufacturing.customer_date_message_sent')->count())->toBe(0);
+
+    $pending = Mockery::mock();
+    $pending->shouldReceive('send')->once()->withArgs(fn ($mail): bool => $mail instanceof DeliveryDateMail);
+    Mail::shouldReceive('to')->once()->ordered()->with('inkop@kunden.example')->andReturn($pending);
+    DB::enableQueryLog();
+    $confirm->send($this->owner, $this->company, $change, 'inkop@kunden.example');
+    $sql = collect(DB::getQueryLog())->pluck('query')->first(fn (string $q): bool => str_contains($q, 'production_customer_date_changes') && str_contains($q, 'for update'));
+    DB::disableQueryLog();
+
+    expect($sql)->not->toBeNull()
+        ->and(fn () => $confirm->send($this->owner, $this->company, $change, 'inkop@kunden.example'))->toThrow(ValidationException::class);
 });

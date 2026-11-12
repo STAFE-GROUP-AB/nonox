@@ -86,23 +86,25 @@ class ConfirmCustomerDate
             throw ValidationException::withMessages(['recipient' => __('Ange en giltig e-postadress.')]);
         }
 
-        return CurrentCompany::run($company, function () use ($user, $company, $change, $recipient): CustomerDateChange {
-            $change = CustomerDateChange::query()->findOrFail($change->id);
+        // Locked and marked as sent before the mail goes, in one transaction: a second click waits for the
+        // lock and finds it sent, and a failed send rolls the mark back.
+        return CurrentCompany::run($company, fn (): CustomerDateChange => DB::transaction(function () use ($user, $company, $change, $recipient): CustomerDateChange {
+            $change = CustomerDateChange::query()->lockForUpdate()->findOrFail($change->id);
 
             if ($change->message_sent_at !== null) {
                 throw ValidationException::withMessages(['recipient' => __('Meddelandet är redan skickat.')]);
             }
+
+            $change->forceFill(['message_to' => $recipient, 'message_sent_at' => now(), 'message_sent_by' => $user->id])->save();
 
             if (! $company->isTestCompany()) {
                 MailQuota::take($company, 'documents', 'recipient');
                 Mail::to($recipient)->send(new DeliveryDateMail($company, $change));
             }
 
-            $change->forceFill(['message_to' => $recipient, 'message_sent_at' => now(), 'message_sent_by' => $user->id])->save();
-
             Audit::record('manufacturing.customer_date_message_sent', $change, ['sales_document_id' => $change->sales_document_id, 'new_on' => $change->new_on->toDateString()], $company, $user);
 
             return $change;
-        });
+        }));
     }
 }
