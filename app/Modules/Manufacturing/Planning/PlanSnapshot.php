@@ -187,19 +187,7 @@ final class PlanSnapshot
      */
     public function people(Company $company, PlanningSettings $settings, CarbonImmutable $from, CarbonImmutable $to, array $changes = []): array
     {
-        $employees = DB::table('employees')
-            ->where('employees.company_id', $company->id)
-            ->where(fn (Builder $query) => $query
-                ->whereExists(fn (Builder $exists) => $exists->from('production_work_patterns')->whereColumn('production_work_patterns.employee_id', 'employees.id'))
-                ->orWhereExists(fn (Builder $exists) => $exists->from('production_employee_skills')->whereColumn('production_employee_skills.employee_id', 'employees.id')))
-            ->where(fn (Builder $query) => $query
-                ->whereNotExists(fn (Builder $exists) => $exists->from('employments')->whereColumn('employments.employee_id', 'employees.id'))
-                ->orWhereExists(fn (Builder $exists) => $exists->from('employments')->whereColumn('employments.employee_id', 'employees.id')
-                    ->where(fn (Builder $active) => $active->whereNull('employments.end_date')->orWhere('employments.end_date', '>=', $from->toDateString()))))
-            ->orderBy('employees.id')
-            ->pluck('employees.id')
-            ->map(fn ($id): int => (int) $id)
-            ->all();
+        $employees = $this->employeeIds($company, $from);
 
         if ($employees === []) {
             return [[], []];
@@ -274,6 +262,36 @@ final class PlanSnapshot
         }
 
         return [$people, array_map(fn (array $days): array => array_values(array_unique($days)), $absent)];
+    }
+
+    /**
+     * The employees the plan schedules: those with a production skill or a
+     * working week of their own, and no employment that ended before the day.
+     *
+     * @return list<int>
+     */
+    public function employeeIds(Company $company, CarbonImmutable $from, ?int $only = null): array
+    {
+        return array_values(DB::table('employees')
+            ->where('employees.company_id', $company->id)
+            ->where(fn (Builder $query) => $query
+                ->whereExists(fn (Builder $exists) => $exists->from('production_work_patterns')->whereColumn('production_work_patterns.employee_id', 'employees.id'))
+                ->orWhereExists(fn (Builder $exists) => $exists->from('production_employee_skills')->whereColumn('production_employee_skills.employee_id', 'employees.id')))
+            ->where(fn (Builder $query) => $query
+                ->whereNotExists(fn (Builder $exists) => $exists->from('employments')->whereColumn('employments.employee_id', 'employees.id'))
+                ->orWhereExists(fn (Builder $exists) => $exists->from('employments')->whereColumn('employments.employee_id', 'employees.id')
+                    ->where(fn (Builder $active) => $active->whereNull('employments.end_date')->orWhere('employments.end_date', '>=', $from->toDateString()))))
+            ->when($only !== null, fn (Builder $query) => $query->where('employees.id', $only))
+            ->orderBy('employees.id')
+            ->pluck('employees.id')
+            ->map(fn ($id): int => (int) $id)
+            ->all());
+    }
+
+    /** Whether the plan schedules this employee: only their absence can move it (§13.5, §13.7). */
+    public function plans(Company $company, int $employeeId): bool
+    {
+        return $this->employeeIds($company, CarbonImmutable::now(Clock::ZONE)->startOfDay(), $employeeId) !== [];
     }
 
     /**

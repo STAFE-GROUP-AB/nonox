@@ -160,3 +160,20 @@ it('stores the plan\'s times as the moments they are, whatever the session time 
     expect($first->starts_at->setTimezone(Clock::ZONE)->format('Y-m-d H:i'))->toBe('2026-11-16 07:00')
         ->and(Clock::minute($first->starts_at))->toBe($first->segments[0][0]);
 });
+
+it('raises no deviation for an absence of someone outside the workshop, or outside the horizon', function () {
+    $shop = PlanningWorkshop::build($this->company, $this->owner);
+    app(ProductionPlanner::class)->run($this->company, PlanTrigger::Manual, $this->now);
+    $office = Tests\Support\Planning::employee($this->owner, $this->company, 'Kontorist', '910707789', ['last_name' => 'Testsson']);
+
+    CurrentCompany::run($this->company, function () use ($office, $shop) {
+        Absence::create(['employee_id' => $office->id, 'type' => 'SICK', 'date_from' => '2026-11-17', 'date_to' => '2026-11-18', 'status' => 'APPROVED']);
+        Absence::create(['employee_id' => $shop['people']['tove']->id, 'type' => 'VACATION', 'date_from' => '2026-10-01', 'date_to' => '2026-10-02', 'status' => 'APPROVED']);
+        Absence::create(['employee_id' => $shop['people']['tove']->id, 'type' => 'VACATION', 'date_from' => '2028-01-10', 'date_to' => '2028-01-11', 'status' => 'APPROVED']);
+
+        expect(ProductionDeviation::query()->count())->toBe(0);
+    });
+
+    $this->actingAs($this->owner)->get(route('manufacturing.planning.deviations', ['stangda' => 1]))
+        ->assertOk()->assertDontSee('Kontorist')->assertSee('Inga öppna avvikelser');
+});

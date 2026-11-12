@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Manufacturing;
 
 use App\Http\Middleware\EnsureUserHasCompany;
+use App\Models\Company;
 use App\Models\SalesDocument;
 use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\PurchaseOrderRow;
@@ -38,11 +39,15 @@ use App\Modules\Manufacturing\Models\ProductionOrder;
 use App\Modules\Manufacturing\Models\RowStructure;
 use App\Modules\Manufacturing\Models\RowStructureLine;
 use App\Modules\Manufacturing\Models\Workstation;
+use App\Modules\Manufacturing\Planning\Engine\Clock;
+use App\Modules\Manufacturing\Planning\PlanningSettings;
+use App\Modules\Manufacturing\Planning\PlanSnapshot;
 use App\Modules\Manufacturing\Planning\PlanTriggers;
 use App\Modules\Manufacturing\Policies\ManufacturingPolicy;
 use App\Modules\Manufacturing\Production\ProductionOrderDemand;
 use App\Modules\Manufacturing\Production\ProductionOrderSupply;
 use App\Modules\Manufacturing\Production\WorkInProgressValuation;
+use App\Modules\ModuleManager;
 use App\Modules\ModuleRegistry;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Planning\Events\PeriodPublished;
@@ -130,12 +135,28 @@ class ManufacturingServiceProvider extends ServiceProvider
      */
     private function planningHooks(): void
     {
-        // Absence: only the employee and the dates reach the plan, never the type (§13.7).
-        $absence = function (Absence $absence): void {
+        // Absence: only the employee and the dates reach the plan, never the type (§13.7). Only someone the
+        // plan schedules, and only an absence that reaches into the horizon, can move a delivery.
+        $concerns = function (Absence $absence): bool {
+            $company = Company::query()->find($absence->company_id);
+
+            if (! $company instanceof Company || ! app(ModuleManager::class)->isEnabled(ManufacturingModule::KEY, $company)) {
+                return false;
+            }
+
+            $today = CarbonImmutable::now(Clock::ZONE)->startOfDay();
+            $horizon = $today->addWeeks(PlanningSettings::for($company)->horizonWeeks());
+
+            return $absence->date_to->greaterThanOrEqualTo($today)
+                && $absence->date_from->lessThanOrEqualTo($horizon)
+                && CurrentCompany::run($company, fn (): bool => app(PlanSnapshot::class)->plans($company, $absence->employee_id));
+        };
+
+        Absence::saved(function (Absence $absence) use ($concerns): void {
             $approved = $absence->status === 'APPROVED';
             $relevant = $absence->wasChanged(['status', 'date_from', 'date_to', 'extent_bp', 'hours']) || $absence->wasRecentlyCreated;
 
-            if (! $relevant || (! $approved && $absence->getOriginal('status') !== 'APPROVED')) {
+            if (! $relevant || (! $approved && $absence->getOriginal('status') !== 'APPROVED') || ! $concerns($absence)) {
                 return;
             }
 
@@ -150,9 +171,8 @@ class ManufacturingServiceProvider extends ServiceProvider
                 'starts_on' => $absence->date_from->toDateString(),
                 'ends_on' => $absence->date_to->toDateString(),
             ], PlanTrigger::Absence);
-        };
-        Absence::saved($absence);
-        Absence::deleted(fn (Absence $absence) => $absence->status === 'APPROVED' ? PlanTriggers::recompute($absence->company_id, PlanTrigger::Absence) : null);
+        });
+        Absence::deleted(fn (Absence $absence) => $absence->status === 'APPROVED' && $concerns($absence) ? PlanTriggers::recompute($absence->company_id, PlanTrigger::Absence) : null);
 
         Event::listen(PeriodPublished::class, fn (PeriodPublished $event) => PlanTriggers::recompute($event->companyId, PlanTrigger::Shift));
 
