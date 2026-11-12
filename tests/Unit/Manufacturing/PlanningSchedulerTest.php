@@ -166,3 +166,18 @@ it('allocates stock and incoming purchase orders in planning order', function ()
         ->and($ready[2])->toBe(['2026-11-30', false])
         ->and($ready[3])->toBe(['2026-11-30', true]);
 });
+
+it('takes a part-day absence out of every day it covers, and a full day\'s hours as the whole day', function () {
+    $from = Carbon\CarbonImmutable::parse('2026-11-16', Clock::ZONE);
+    $week = App\Modules\Manufacturing\Planning\Engine\WeekPattern::uniform([1, 2, 3, 4, 5], 420, 960, 720, 60);
+    $free = new FreeTime($week->intervals($from, $from->addDays(6)));
+
+    $days = App\Modules\Manufacturing\Planning\Availability::removeAbsence($free, '2026-11-16', '2026-11-17', 10_000, 4.0, $from, $from->addDays(6));
+
+    expect($days)->toBe(['2026-11-16', '2026-11-17'])
+        ->and($free->minutesBetween(Clock::local('2026-11-16', 0), Clock::local('2026-11-17', 0)))->toBe(240)
+        ->and($free->minutesBetween(Clock::local('2026-11-17', 0), Clock::local('2026-11-18', 0)))->toBe(240);
+
+    App\Modules\Manufacturing\Planning\Availability::removeAbsence($free, '2026-11-18', '2026-11-18', 10_000, 8.0, $from, $from->addDays(6));
+    expect($free->minutesBetween(Clock::local('2026-11-18', 0), Clock::local('2026-11-19', 0)))->toBe(0);
+});

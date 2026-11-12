@@ -10,9 +10,10 @@ use Carbon\CarbonImmutable;
 
 /**
  * Takes an approved absence out of a person's working time (ADR-071
- * §13.2). A whole-day absence removes the days; a part-day one (hours on a
- * single day, or an extent below 100 %) removes that much from the end of
- * each day's working time. Only the dates and the extent are used, never
+ * §13.2). A whole-day absence removes the days; a part-day one (hours per
+ * day, as payroll keeps them, or an extent below 100 %) removes that much
+ * from the end of each day's working time, and hours that cover the working
+ * day remove the whole day. Only the dates and the extent are used, never
  * the kind of absence.
  */
 final class Availability
@@ -34,13 +35,14 @@ final class Availability
             $end = Clock::local($day->addDay()->toDateString(), 0);
             $days[] = $date;
 
+            $working = $free->minutesBetween($start, $end);
             $minutes = match (true) {
-                $hours !== null && $hours > 0 && $from === $to => (int) round($hours * 60),
-                $extentBp > 0 && $extentBp < 10_000 => intdiv($free->minutesBetween($start, $end) * $extentBp, 10_000),
+                $hours !== null && $hours > 0 => (int) round($hours * 60),
+                $extentBp > 0 && $extentBp < 10_000 => intdiv($working * $extentBp, 10_000),
                 default => null,
             };
 
-            if ($minutes === null) {
+            if ($minutes === null || $minutes >= $working) {
                 $free->remove([[$start, $end]]);
 
                 continue;
