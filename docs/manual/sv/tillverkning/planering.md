@@ -1,7 +1,7 @@
 ---
 beskrivning: Se när ordrarna i verkstaden troligen blir klara, vad som händer med leveranserna när någon är borta eller en maskin står still, och pröva lösningar innan du bestämmer.
 ordning: 40
-roller: [owner, admin, accountant, auditor]
+roller: [owner, admin, accountant, auditor, scheduler]
 modul: manufacturing
 rutter: [manufacturing.planning.timeline, manufacturing.planning.orders, manufacturing.planning.resources, manufacturing.planning.calendar, manufacturing.planning.deviations, manufacturing.planning.scenario, manufacturing.planning.setup]
 sokord: [planering, produktionsplanering, beläggning, gantt, tidslinje, leveransdatum, prognos, avvikelse, frånvaro, flaskhals, kapacitet, övertid]
@@ -110,3 +110,6 @@ Under **Arbetsstationer** registrerar du också ett stopp med **Registrera stopp
 ## Vem ser vad
 
 Alla som ser Tillverkning ser planeringen. Ägare och administratörer planerar: låser, flyttar, delar, prioriterar, tillämpar förslag och hanterar avvikelser. Schemaläggare i Planering kan också planera. Bara ägare och administratörer bekräftar ett leveransdatum till kunden och skickar meddelandet. Redovisningskonsulter och revisorer ser planen men ändrar den inte.
+
+> [!IMPORTANT]
+> Ni som arbetsgivare ansvarar för att informera och vid behov förhandla med de anställda innan ni börjar planera arbetet per person, och för att övertid och mertid följer arbetstidslagen och ert kollektivavtal. NONOX föreslår övertid men kontrollerar inte reglerna åt er.

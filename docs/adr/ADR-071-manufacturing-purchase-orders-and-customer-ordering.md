@@ -857,6 +857,13 @@ purchase orders).
 to a deviation can still reveal health by inference; the 24-month retention; and whether the
 workshop terminal may show who is absent today (proposed: it does not).
 
+`TODO(legal-verify)` (added by the M6 review, 2026-11-12): whether planning work per named employee,
+with absence, is an important change in the employer's business that needs negotiation under MBL
+11 § before it is introduced, or information under MBL 19 §; and how ATL 8–10 b §§ (overtime,
+additional time and the limits on them) apply to the overtime the calendar suggests and a planner
+applies. NONOX only warns; the employer is responsible for negotiation, information and the
+working-time rules.
+
 ### 13.8 Data model
 
 `production_workstations`, `production_workstation_operations`, `production_downtimes`,
