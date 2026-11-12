@@ -178,3 +178,23 @@ it('raises no deviation for an absence of someone outside the workshop, or outsi
     $this->actingAs($this->owner)->get(route('manufacturing.planning.deviations', ['stangda' => 1]))
         ->assertOk()->assertDontSee('Kontorist')->assertSee('Inga öppna avvikelser');
 });
+
+it('removes the person from plans kept longer than the retention period, nightly', function () {
+    PlanningWorkshop::build($this->company, $this->owner);
+    $old = app(ProductionPlanner::class)->run($this->company, PlanTrigger::Manual, $this->now);
+    $recent = app(ProductionPlanner::class)->run($this->company, PlanTrigger::Manual, $this->now);
+
+    CurrentCompany::run($this->company, function () use ($old) {
+        // A deviation keeps the old run from being pruned.
+        ProductionDeviation::create(['type' => 'OVERRUN', 'run_before_id' => $old->id, 'details' => []]);
+        DB::table('production_plan_runs')->where('id', $old->id)->update(['created_at' => $this->now->subMonths(ProductionDeviation::RETENTION_MONTHS + 1)]);
+    });
+
+    $this->artisan('manufacturing:plan', ['--company' => $this->company->id])->assertSuccessful();
+
+    CurrentCompany::run($this->company, function () use ($old, $recent) {
+        expect(ProductionPlanSlot::query()->where('run_id', $old->id)->whereNotNull('employee_id')->count())->toBe(0)
+            ->and(ProductionPlanSlot::query()->where('run_id', $old->id)->count())->toBeGreaterThan(0)
+            ->and(ProductionPlanSlot::query()->where('run_id', $recent->id)->whereNotNull('employee_id')->count())->toBeGreaterThan(0);
+    });
+});
