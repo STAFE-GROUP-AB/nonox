@@ -809,3 +809,16 @@ Follow-ups:
 - P3-1 avrundning: `max(0, …)` kan ge ungefär 1 öre för mycket när den avrundade enhetskostnaden överskjuter.
 - Lager: vägra lagerrörelser daterade på eller före ett bokfört `StockValuation`-datum.
 Next package: M5 verkstadsterminal.
+
+---
+
+Package: M6, planeringskalender för tillverkningen (ADR-071 §13)
+Status: done på grenen `feat/m6-planning-calendar` (M4 b94594a3 sammanslagen in i grenen; ingen push)
+Evidence: `tests/Unit/Manufacturing/PlanningSchedulerTest.php` (F-P0 till F-P6 och slotlistorna för F-P0 och F-P1), `tests/Unit/Manufacturing/PlanningSchedulerSpeedTest.php` (300 order × 8 steg × 20 resurser under två sekunder), `tests/Feature/Manufacturing/PlanningCalendarTest.php` (databasen ger F-P0, materialdatum från inköpsorder, frånvarofrågan läser aldrig typ eller anteckning, fast antal frågor), `tests/Feature/Manufacturing/PlanningActionsTest.php`, `tests/Feature/Manufacturing/PlanningPagesTest.php` (sidorna, Frånvarande, polling, behörigheter, fast antal frågor per vy), `tests/Tenancy/PlanningCalendarTenancyTest.php`.
+- Deterministisk schemaläggning i minnet, resurser (arbetsstationer med stopp, kompetenser, egen arbetsvecka, övertid), planer som räknas om i ett unikt köat jobb per företag och varje natt, avvikelser med påverkan på leveranser, förslag som simuleras, Tänk om, låsningar och nytt leveransdatum till kunden först efter granskning.
+- Frånvaro visas bara som "Frånvarande"; planen läser aldrig orsaken. GDPR-dokumenten uppdaterade.
+- Manualen `tillverkning/planering` med skärmbilder från snickeridemon, landningssidan, README, ändringsloggen, färdplanen (posten flyttad till ändringsloggen) och ADR-071 "As built (M6)".
+- Läsmodellen `PlanBoard` är till för M7 (storskärm i verkstaden).
+Öppet för ägaren: kompetenser delas inte med Planering; bokförare får inte se kalendern (§1 mot §13.7); arbetstidsvarningar på förslaget om övertid; kopplingen från verkstadsterminalen (M5) till avvikelserna.
+Open legal-verify items: de fyra i §13.7 (snävare krets för "Frånvarande", slutledning om hälsa, 24 månader, terminalen och dagens frånvaro).
+Next package: M7 enligt prioritetslistan.

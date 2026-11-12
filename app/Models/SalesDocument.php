@@ -33,6 +33,7 @@ use LogicException;
  * @property SalesDocumentStatus $status
  * @property CarbonImmutable $document_date
  * @property ?CarbonImmutable $until_date
+ * @property ?CarbonImmutable $confirmed_delivery_on
  * @property ?string $your_reference
  * @property ?string $our_reference
  * @property ?string $notes
@@ -63,6 +64,7 @@ class SalesDocument extends Model implements Signable
         'customer_id',
         'document_date',
         'until_date',
+        'confirmed_delivery_on',
         'your_reference',
         'our_reference',
         'notes',
@@ -83,6 +85,7 @@ class SalesDocument extends Model implements Signable
             'status' => SalesDocumentStatus::class,
             'document_date' => 'immutable_date',
             'until_date' => 'immutable_date',
+            'confirmed_delivery_on' => 'immutable_date',
             'net_ore' => MoneyCast::class,
             'vat_ore' => MoneyCast::class,
             'rounding_ore' => MoneyCast::class,

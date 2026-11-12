@@ -857,6 +857,13 @@ purchase orders).
 to a deviation can still reveal health by inference; the 24-month retention; and whether the
 workshop terminal may show who is absent today (proposed: it does not).
 
+`TODO(legal-verify)` (added by the M6 review, 2026-11-12): whether planning work per named employee,
+with absence, is an important change in the employer's business that needs negotiation under MBL
+11 § before it is introduced, or information under MBL 19 §; and how ATL 8–10 b §§ (overtime,
+additional time and the limits on them) apply to the overtime the calendar suggests and a planner
+applies. NONOX only warns; the employer is responsible for negotiation, information and the
+working-time rules.
+
 ### 13.8 Data model
 
 `production_workstations`, `production_workstation_operations`, `production_downtimes`,
@@ -1250,3 +1257,130 @@ Still open (`TODO(legal-verify)`, also in code and in the system documentation �
 - The customer's reference (often a named person at the customer) is no longer shown on the shared tablet.
 - **Overruns per operation** are hidden like the detail when fewer than three people reported on the operation, so that comparing the periods 3, 6, 12 and 24 months cannot show one person's development. A person counts only when their minutes on the group add up to more than zero.
 - **The notice that a code is blocked** names the person; it is deleted when a new code is set and after 30 days by `privacy:prune`. A paused tablet is shown on the admin page, and every waiting flag that still has a reason is listed, paginated.
+
+## As built (M6, 2026-11-11): production planning calendar (§13)
+
+Built in `manufacturing`, on M4's production orders, at `/tillverkning/planering` with the views
+of §13.1 (Tidslinje, Ordrar, Resurser, Kalender, Avvikelser) plus Tänk om and Inställningar. Nothing
+is bookkeeping and no accounting behaviour changed, so the system documentation is unchanged.
+
+**Engine.** `Planning/Engine` is pure (no database): `Scheduler` implements §13.3 steps 3–6 over
+`FreeTime` (sorted free intervals in epoch minutes, filled across breaks, days and gaps, booked by
+removal), `MaterialPlanner` step 2, `WorkingCalendar` the delivery date and working-day counts. The
+§13.9 fixtures are `tests/Fixtures/manufacturing/planning-calendar.json`; F-P0 to F-P6 and the slot
+lists for F-P0 and F-P1 (derived by hand from §13.3, since the specification's appendix is outside
+the repository) pass unchanged (`tests/Unit/Manufacturing/PlanningSchedulerTest.php`). 300 orders × 8
+operations × 20 resources schedule in well under two seconds (`PlanningSchedulerSpeedTest`).
+
+**Running it.** `PlanSnapshot` loads the input in a fixed number of queries (proved at 10 and 100
+orders); `ProductionPlanner::run` writes `production_plan_runs` with slots and forecasts in one
+transaction, attaches impacts to waiting deviations, raises the run's own deviations and keeps the
+latest 30 runs (plus those a deviation or lock refers to). `RecomputeProductionPlan` is
+`ShouldBeUniqueUntilProcessing`, dispatched 5 seconds late and after commit by the hooks of §13.4
+(approved absence, published shift, downtime, purchase order row and status, receipt, labour entry,
+production order status/date/quantity/priority, customer order date or status, locks, resources);
+`manufacturing:plan` runs nightly at 02:35 and also removes expired scenarios and, after 24 months,
+the employee id on deviations. The screens poll `PlanBoard::latestRunId` every 15 seconds while
+visible and render again only when it changed. Times are stored as `timestamptz` with their offset;
+each slot also keeps its segments as epoch minutes.
+
+**Read model for M7.** `App\Modules\Manufacturing\Planning\PlanBoard`: `latestRun`, `latestRunId`,
+`forecasts(run)`, `slots(run, from, to)` and `load(run, from, days)` (per person and workstation per
+day: available, booked, absent), each a fixed number of queries. Absence is only ever a boolean.
+
+Choices where this ADR left room, or where building showed something else:
+
+1. **Skills are Tillverkning's own** (`production_skills`, `production_employee_skills`, same shape as
+   Planering's), also when Planering is on. `operations.required_skill_id` can point at one table
+   only, and switching source when Planering is turned on or off would orphan every operation's skill.
+   Open for the owner: sharing Planering's skills.
+2. **An operation needs a workstation when some workstation serves it**
+   (`production_workstation_operations`), or the one set on the order's operation. **A workstation is
+   open whenever a person works it**, except while it is down: F-P1a only holds if Tove's overtime
+   16–19 can use the Lackbox, so the company's working hours cannot bound it. Own calendars per
+   workstation are not built.
+3. **The company's working hours** are Tillverkning settings (`plan_working_days`, `plan_day_start`,
+   `plan_day_end`, `plan_break_start`, `plan_break_minutes`; Monday–Friday 07–16, lunch 12–13 by
+   default). They are the week of a person without one of their own and the calendar of delivery
+   days. Also `plan_horizon_weeks` (26, at most 52), `plan_delivery_buffer_days` (0),
+   `plan_frozen_days` (0) and `plan_lead_time_days` (10; articles have no lead time of their own).
+4. **People** are employees (Lön's table) with a production skill or a working week of their own, and
+   no employment that has ended. With Planering on, their time is the published shifts (a shift's
+   break, which has no time of its own, is placed in its middle); otherwise their week, public
+   holidays left out. Overtime a planner gives is kept in `production_overtimes` (not listed in §13.8).
+5. **Absence**: one query selects `employee_id, date_from, date_to, extent_bp, hours` of approved
+   absences, never `type` or `note` (a test asserts the SQL). A part-day absence (hours on a single
+   day, or an extent below 100 %) removes that much from the end of each day's working time.
+6. **Promised date**: the confirmed delivery date (`sales_documents.confirmed_delivery_on`, new), else
+   the customer order's delivery date (`until_date` on an order), else the production order's due
+   date. **Remaining minutes**: the latest override, else planned minutes less every labour entry.
+   The earliest start also respects the production order's planned start.
+7. **Material**: stock components still to issue; free stock, then rows of sent or partly received
+   purchase orders (expected date, else the order's requested date), in planning order. A row whose
+   date has passed counts as today and flags the forecast as resting on an assumed date. The
+   supplier's lead time is the median days from sent to the last update of its fully received orders
+   over twelve months.
+8. **Holds** (`production_plan_locks`): LOCK keeps person, workstation and start; ASSIGN keeps only
+   the person (a move, also from a suggestion); SPLIT gives minutes to a second person in parallel.
+   A lock whose person or workstation is not free at its start is planned as any other operation and
+   raises LOCK_BROKEN. With a frozen window, the latest run's slots starting inside it act as locks.
+9. **Deviations** are written when the event happens, with the latest run as run before; the next
+   run becomes run after and gives the impact per production order whose forecast moved (with the
+   customer, promised date and change in working days). One that moved nothing is closed as
+   `NO_IMPACT`. Deviations recorded between the same two runs share the same impacts. The run itself
+   raises LOCK_BROKEN and MATERIAL_SHORTAGE (an order newly resting on an assumed material date).
+   QUANTITY_CHANGE comes from a production order's quantity; PURCHASE_DELAY from a purchase order
+   row's later expected date when an open production order needs the article; WORKSTATION_DOWN from
+   `SaveDowntime`; OVERRUN and SCRAP from `PlanChanges::remaining` (the planner's "Återstår,
+   minuter" today). **M5** reports scrap, overrun and a stopped workstation from the terminal through
+   the same two entry points (`PlanChanges::remaining` with `DeviationType::Scrap` or `Overrun`, and
+   `SaveDowntime` with source TERMINAL), or through `PlanTriggers::deviation`; wiring the terminal to
+   them is left to the integration of M5 and M6.
+10. **Suggestions** are computed for the most delayed order of a deviation, on at most its last
+    three operations: move to another qualified person, split half with one, three hours' overtime
+    after the day's end for the person doing it (cost at the operation's hourly cost, said so on the
+    screen), and putting the order first; each simulated, the best per kind shown, one that does not
+    help shown as such, with the number of other orders it makes later. ADR-037's working-time
+    warnings are not run on the overtime suggestion yet; the screen asks the planner to check the
+    rules. A new date to the customer is offered with the forecast date.
+11. **Customer date**: `ConfirmCustomerDate` sets the confirmed date and keeps the change
+    (`production_customer_date_changes`); sending is a second step after the message and recipient
+    are shown, through the app's mail in the company's name with its e-mail as reply-to, counted
+    against the documents quota, never from a test company. The message says nothing about why.
+12. **What it waits for**: material when the material ready date is after today; capacity when the
+    first slot starts on a later day than the first working moment after its earliest start.
+13. **Permissions**: `production:plan` and `production:confirm-dates` for owner and admin;
+    Planering's scheduler gets `manufacturing:view` and `production:plan`. **Bookkeepers still get
+    no `manufacturing:view`**, as §1 and M2 decided; §13.7's "bookkeeper view only" would also open
+    the bills of materials and the costing to them, so it is left for the owner to decide.
+14. **Audit** (ids, enums, dates and minutes): the actions of §13.6, plus
+    `manufacturing.workstation_saved|archived|restored`, `.downtime_recorded|ended`, `.skill_saved|deleted`,
+    `.work_pattern_saved`, `.overtime_added`, `.remaining_changed`.
+
+**Review fixes (2026-11-12).** The cold review of M6 found, and failing tests now cover:
+- an ABSENCE deviation was raised for every approved absence of every employee; it is now raised
+  (and the plan recomputed) only for someone the plan schedules (`PlanSnapshot::plans`) and an
+  absence that reaches from today into the horizon;
+- a suggestion was applied by its position in a list computed again on the click; the suggestions
+  are now computed once when the panel opens, kept as shown in a locked property with the run they
+  were computed on, and applied only with the matching hash and while that run is still the latest.
+  Rendering with the panel open runs no simulation;
+- slots of runs kept for a deviation or a lock lose the employee id after 24 months (nightly);
+- the date message is sent inside a transaction that locks the change and marks it sent first, so a
+  second click finds it sent and a failed send rolls the mark back;
+- locks, moves, splits, overtime and scenarios take only people the plan schedules (an ended
+  employment is refused); only a longer estimate is an OVERRUN or SCRAP deviation; absence hours
+  apply per day (payroll keeps hours per day) and hours that cover the day remove it; locked work
+  that starts before the operation before it can end is flagged `lock_out_of_order`; a split's time
+  is given back when the rest of the operation cannot be placed; a run holds
+  `pg_advisory_xact_lock(7113, company)` from the snapshot to the stored plan; the date message is
+  rendered in Swedish (customers have no language yet); overtime is removed 90 days after it ended.
+ beyond responsive tables (§13.10 step 8), an API, broadcasting,
+the history-based delivery range of §10 as fallback, ADR-037's working-time warnings on overtime,
+own calendars per workstation, a capacity lane for operations nobody is qualified for (they are
+forecast "efter horisonten" with the flag `no_resource`), and Planering's skills.
+
+`TODO(legal-verify)`, unchanged from §13.7: whether "Frånvarande" for a named person to everyone with
+`manufacturing:view` needs a narrower audience (art. 5.1 c); whether absence next to a deviation can
+reveal health by inference; the 24-month retention; whether the workshop terminal may show who is
+absent today (proposed: it does not).

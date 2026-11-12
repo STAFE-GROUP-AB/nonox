@@ -33,12 +33,17 @@ use Carbon\CarbonImmutable;
  * materials, operations, production orders and the settings. Changing a
  * row's own copy needs manufacturing:view and the right to change the
  * quote or order.
+ *
+ * The planning calendar (§13): manufacturing:view sees it; production:plan
+ * moves, locks, splits and reprioritises work, applies scenarios and handles
+ * deviations; production:confirm-dates confirms a delivery date to the
+ * customer and sends the message.
  */
 final class ManufacturingModule implements IsNew, Module
 {
     public const string KEY = 'manufacturing';
 
-    public const array PERMISSIONS = ['manufacturing:view', 'manufacturing:manage', 'production:report', 'production:analyse'];
+    public const array PERMISSIONS = ['manufacturing:view', 'manufacturing:manage', 'production:report', 'production:analyse', 'production:plan', 'production:confirm-dates'];
 
     public function newUntil(): CarbonImmutable
     {
@@ -87,6 +92,8 @@ final class ManufacturingModule implements IsNew, Module
             'admin' => self::PERMISSIONS,
             'accountant' => ['manufacturing:view', 'production:analyse'],
             'auditor' => ['manufacturing:view'],
+            // Planering's scheduler plans the workshop too (ADR-071 §13.7).
+            'scheduler' => ['manufacturing:view', 'production:plan'],
         ];
     }
 
@@ -119,6 +126,7 @@ final class ManufacturingModule implements IsNew, Module
                     ...($user->hasTeamPermission($company, 'production:report') ? [
                         ['label' => __('Verkstadsterminal'), 'route' => 'manufacturing.terminal.admin', 'active' => ['manufacturing.terminal.admin']],
                     ] : []),
+                    ['label' => __('Planering'), 'route' => 'manufacturing.planning.timeline', 'active' => ['manufacturing.planning.*']],
                     ...($user->hasTeamPermission($company, 'manufacturing:manage') ? [
                         ['label' => __('Inställningar'), 'route' => 'manufacturing.settings', 'active' => ['manufacturing.settings']],
                     ] : []),

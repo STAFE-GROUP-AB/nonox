@@ -271,6 +271,12 @@ tillverkning/tillverkningsorder: { foretag: hantverkare, rutt: manufacturing.pro
 tillverkning/tillverkningsorder-ordern: { foretag: hantverkare, rutt: manufacturing.productionOrders.show, modell: { tabell: production_orders, dar: { status: STARTED } } }
 tillverkning/tillverkningsorder-fardigmeld: { foretag: hantverkare, rutt: manufacturing.productionOrders.show, modell: { tabell: production_orders, dar: { status: STARTED } }, klick: ['text=Färdigmeld'], visa: 'text=Färdigmeld ordern' }
 
+# Planeringskalender (PlanningCalendarExtras), in the joinery: a plan with an absence and a stop in the Lackbox.
+tillverkning/planering: { foretag: hantverkare, rutt: manufacturing.planning.timeline }
+tillverkning/planering-ordrar: { foretag: hantverkare, rutt: manufacturing.planning.orders }
+tillverkning/planering-resurser: { foretag: hantverkare, rutt: manufacturing.planning.resources }
+tillverkning/planering-avvikelser: { foretag: hantverkare, rutt: manufacturing.planning.deviations }
+
 # Arbetsorder (WorkOrdersExtras), in the joinery. Theo Björk is the Utförare.
 fakturering/arbetsorder: { foretag: hantverkare, rutt: workOrders.index }
 fakturering/arbetsorder-kortet: { foretag: hantverkare, rutt: workOrders.show, modell: { tabell: work_orders, dar: { title: Badrumsrenovering } } }
