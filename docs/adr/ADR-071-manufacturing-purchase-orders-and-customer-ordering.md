@@ -1265,7 +1265,25 @@ Choices where this ADR left room, or where building showed something else:
     `manufacturing.workstation_saved|archived|restored`, `.downtime_recorded|ended`, `.skill_saved|deleted`,
     `.work_pattern_saved`, `.overtime_added`, `.remaining_changed`.
 
-Not built in M6: the mobile view beyond responsive tables (§13.10 step 8), an API, broadcasting,
+**Review fixes (2026-11-12).** The cold review of M6 found, and failing tests now cover:
+- an ABSENCE deviation was raised for every approved absence of every employee; it is now raised
+  (and the plan recomputed) only for someone the plan schedules (`PlanSnapshot::plans`) and an
+  absence that reaches from today into the horizon;
+- a suggestion was applied by its position in a list computed again on the click; the suggestions
+  are now computed once when the panel opens, kept as shown in a locked property with the run they
+  were computed on, and applied only with the matching hash and while that run is still the latest.
+  Rendering with the panel open runs no simulation;
+- slots of runs kept for a deviation or a lock lose the employee id after 24 months (nightly);
+- the date message is sent inside a transaction that locks the change and marks it sent first, so a
+  second click finds it sent and a failed send rolls the mark back;
+- locks, moves, splits, overtime and scenarios take only people the plan schedules (an ended
+  employment is refused); only a longer estimate is an OVERRUN or SCRAP deviation; absence hours
+  apply per day (payroll keeps hours per day) and hours that cover the day remove it; locked work
+  that starts before the operation before it can end is flagged `lock_out_of_order`; a split's time
+  is given back when the rest of the operation cannot be placed; a run holds
+  `pg_advisory_xact_lock(7113, company)` from the snapshot to the stored plan; the date message is
+  rendered in Swedish (customers have no language yet); overtime is removed 90 days after it ended.
+ beyond responsive tables (§13.10 step 8), an API, broadcasting,
 the history-based delivery range of §10 as fallback, ADR-037's working-time warnings on overtime,
 own calendars per workstation, a capacity lane for operations nobody is qualified for (they are
 forecast "efter horisonten" with the flag `no_resource`), and Planering's skills.
