@@ -822,3 +822,19 @@ Evidence: `tests/Unit/Manufacturing/PlanningSchedulerTest.php` (F-P0 till F-P6 o
 Öppet för ägaren: kompetenser delas inte med Planering; bokförare får inte se kalendern (§1 mot §13.7); arbetstidsvarningar på förslaget om övertid; kopplingen från verkstadsterminalen (M5) till avvikelserna.
 Open legal-verify items: de fyra i §13.7 (snävare krets för "Frånvarande", slutledning om hälsa, 24 månader, terminalen och dagens frånvaro).
 Next package: M7 enligt prioritetslistan.
+
+---
+
+Package: Sammanslagning, integration/batch2 (omgång 6: M5 verkstadsterminal + M6 planeringskalender)
+Status: done (`feat/m5-workshop-terminal` a32d170d och `feat/m6-planning-calendar` 9c23ad82 sammanslagna i den ordningen; ingen push)
+Evidence: hela sviten `PGTZ=UTC … php -d memory_limit=1G vendor/bin/pest`: 9 322 gröna, 4 röda, 8 todos, 6 skipped (65 136 assertions). De fyra: `DatabaseGrantsTest` (2, känd deadlock, 21 gröna ensam) och `WorkshopTerminalTest` (2, 35 gröna ensam; föll under körningen då `npm run build` kördes samtidigt). `grep -rl RefreshDatabase tests/` tom. `pint --test` grön efter att importordningen i `ManufacturingServiceProvider` och `TenancyIsolationTest` rättats. `npm test`: 107 gröna. `npm run build`: ok.
+- Konflikter: Manufacturing (`ManufacturingModule` behörigheter och meny, `ManufacturingServiceProvider`, `routes/web.php`: terminalen och planeringskalendern finns båda kvar), ADR-071 (alla "As built"- och granskningsavsnitt), andringslogg (nyaste först), fardplan (`produktionsterminal` och `planeringskalender-tillverkning` borttagna, `storskarm-verkstad` kvar), manualöversikten, lang/en.json och lang/sv.json (union, inga dubbletter), TenancyIsolationTest. Migreringarna har olika tidsstämplar. Systemdokumentationen oförändrad (0.131).
+- phpstan nivå 8: tre fel, alla i M5:s `WorkshopAnalysis.php` (rad 103 `list<int>`, rad 178 `operation_id` kan saknas, rad 208 `selectRaw` literal-string). Inte rättade här.
+- Demo-seed: "Arbetsorder: This action is unauthorized" och betalfilsmeddelandet är kända. Nytt: "Verkstadsterminal: Komponenter kan inte tas ut ... före 2026-11-10" (M4:s skydd mot bakdaterade uttag stoppar M5:s demodata i `WorkshopExtras`).
+Follow-ups:
+- M5: rensa #kod ur adressfältet efter kopplingen (`history.replaceState`); ge JS som läser fragmentet ett Node-test; personalliggarens kiosk skickar fortfarande ?kod= (`LocationsPage.php:175`, `kiosk.js:661`) med samma exponering i åtkomstloggen.
+- M5: de tre phpstan-felen ovan; demodatan i `WorkshopExtras` måste datera uttagen efter lagrets senaste rörelse.
+- M6: P1-testet kunde gå via `PayrollRuns` bokstavligt; M5-terminalen bör mata avvikelser via `PlanChanges::remaining`/`SaveDowntime`.
+- Ägarbeslut (M6): rollen scheduler får `manufacturing:view` enligt ADR-071 §13.7, vilket visar stycklistor och timkostnader. Bekräfta.
+Next package: M7 enligt prioritetslistan.
+
