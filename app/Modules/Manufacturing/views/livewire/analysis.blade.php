@@ -91,6 +91,9 @@
         <x-ui.card :title="__('Största överskridanden')" :description="__('Arbetsstegen där utfallet mest överstigit kalkylen på färdiga order, i minuter.')">
             @if(count($analysis['overruns']) === 0)
                 <x-ui.empty-state :title="__('Inga överskridanden')">{{ __('Inget arbetssteg har överstigit kalkylen under perioden.') }}</x-ui.empty-state>
+                @if($analysis['overruns_hidden'] > 0)
+                    <p class="mt-3 text-xs text-gray-500">{{ trans_choice(':count arbetssteg är dolt eftersom färre än tre personer har rapporterat.|:count arbetssteg är dolda eftersom färre än tre personer har rapporterat.', $analysis['overruns_hidden'], ['count' => $analysis['overruns_hidden']]) }}</p>
+                @endif
             @else
                 <table class="min-w-full text-sm">
                     <thead>
@@ -112,6 +115,9 @@
                         @endforeach
                     </tbody>
                 </table>
+                @if($analysis['overruns_hidden'] > 0)
+                    <p class="mt-3 text-xs text-gray-500">{{ trans_choice(':count arbetssteg är dolt eftersom färre än tre personer har rapporterat.|:count arbetssteg är dolda eftersom färre än tre personer har rapporterat.', $analysis['overruns_hidden'], ['count' => $analysis['overruns_hidden']]) }}</p>
+                @endif
             @endif
         </x-ui.card>
     </div>

@@ -73,6 +73,7 @@ final class WorkshopAnalysis
             'months' => $months,
             'products' => $history['products'],
             'overruns' => $history['overruns'],
+            'overruns_hidden' => $history['overruns_hidden'],
             'queue' => self::queue(),
             ...self::waiting($since, $now),
         ];
@@ -81,7 +82,7 @@ final class WorkshopAnalysis
     /**
      * Per product and operation over the finished orders of the period.
      *
-     * @return array{products: list<array<string, mixed>>, overruns: list<array<string, mixed>>}
+     * @return array{products: list<array<string, mixed>>, overruns: list<array<string, mixed>>, overruns_hidden: int}
      */
     private static function history(CarbonImmutable $since): array
     {
@@ -90,7 +91,7 @@ final class WorkshopAnalysis
             ->orderBy('finished_on')->orderBy('id')->get(['id', 'article_id', 'number', 'finished_on']);
 
         if ($orders->isEmpty()) {
-            return ['products' => [], 'overruns' => []];
+            return ['products' => [], 'overruns' => [], 'overruns_hidden' => 0];
         }
 
         $operations = ProductionOrderOperation::query()->with('operation:id,name')->whereIn('production_order_id', $orders->pluck('id'))->get(['id', 'production_order_id', 'operation_id', 'planned_minutes']);
@@ -99,7 +100,7 @@ final class WorkshopAnalysis
             ->groupBy('production_order_operation_id')->selectRaw('production_order_operation_id, sum(minutes) as minutes')
             ->pluck('minutes', 'production_order_operation_id');
         $byOrder = $orders->keyBy('id');
-        $people = self::peoplePerProductAndOperation($orders->pluck('id')->all());
+        [$people, $peopleByOperation] = self::peopleCounts($orders->pluck('id')->all());
 
         /** @var array<string, array{article: string, operation: string, rows: list<array{planned: int, actual: int, on: string}>, unreported: int}> $groups */
         $groups = [];
@@ -125,7 +126,7 @@ final class WorkshopAnalysis
 
             $groups[$key]['rows'][] = ['planned' => $operation->planned_minutes, 'actual' => $actual, 'on' => $order->finished_on?->toDateString() ?? ''];
 
-            $byOperation[$operation->operation_id] ??= ['operation' => $operation->operation->name ?? '', 'planned' => 0, 'actual' => 0, 'over' => 0, 'orders' => 0, 'over_orders' => 0];
+            $byOperation[$operation->operation_id] ??= ['operation_id' => $operation->operation_id, 'operation' => $operation->operation->name ?? '', 'planned' => 0, 'actual' => 0, 'over' => 0, 'orders' => 0, 'over_orders' => 0];
             $byOperation[$operation->operation_id]['planned'] += $operation->planned_minutes;
             $byOperation[$operation->operation_id]['actual'] += $actual;
             $byOperation[$operation->operation_id]['orders']++;
@@ -173,41 +174,52 @@ final class WorkshopAnalysis
         $overruns = array_values(array_filter($byOperation, fn (array $row): bool => $row['over'] > 0));
         usort($overruns, fn (array $a, array $b): int => $b['over'] <=> $a['over']);
 
-        return ['products' => $products, 'overruns' => array_slice(array_map(fn (array $row): array => [
+        // Comparing periods of an operation one or two people do would show their work over time, as the detail above would.
+        $shown = array_values(array_filter($overruns, fn (array $row): bool => ! isset($peopleByOperation[$row['operation_id']]) || $peopleByOperation[$row['operation_id']] >= self::MIN_PEOPLE_FOR_DETAIL));
+
+        return ['products' => $products, 'overruns_hidden' => count($overruns) - count($shown), 'overruns' => array_slice(array_map(fn (array $row): array => [
             ...$row,
             'deviation_percent' => self::percent($row['actual'] - $row['planned'], $row['planned']),
-        ], $overruns), 0, 5)];
+        ], $shown), 0, 5)];
     }
 
     /**
-     * How many different people reported time on each product and
-     * operation of these orders, as a count only: which people is never
-     * read. Operations nobody reported on at the terminal (the time was
-     * entered when the order was finished) have no entry, and nothing is
-     * hidden for them.
+     * How many different people reported time on each product and operation
+     * of these orders, and on each operation across products, as counts
+     * only: which people is never read. A person counts when their minutes
+     * on the group add up to more than nothing, so a report that was
+     * corrected away does not make anyone count. Operations nobody reported
+     * on at the terminal (the time was entered when the order was finished)
+     * have no entry, and nothing is hidden for them.
      *
      * @param  list<int>  $orderIds
-     * @return array<string, int> "article-operation" => distinct people
+     * @return array{0: array<string, int>, 1: array<int, int>} "article-operation" => people, and operation id => people
      */
-    private static function peoplePerProductAndOperation(array $orderIds): array
+    private static function peopleCounts(array $orderIds): array
     {
-        $rows = DB::table('workshop_time_entries as entries')
+        $perPerson = fn (array $columns) => DB::table('workshop_time_entries as entries')
             ->join('production_orders as orders', 'orders.id', '=', 'entries.production_order_id')
             ->join('production_order_operations as steps', 'steps.id', '=', 'entries.production_order_operation_id')
             ->where('entries.company_id', CurrentCompany::id())
             ->whereIn('entries.production_order_id', $orderIds)
             ->whereNotNull('entries.person_id')
-            ->groupBy('orders.article_id', 'steps.operation_id')
-            ->selectRaw('orders.article_id, steps.operation_id, count(distinct entries.person_id) as people')
-            ->get();
+            ->groupBy([...$columns, 'entries.person_id'])
+            ->havingRaw('sum(entries.minutes) > 0')
+            ->selectRaw(implode(', ', $columns).', 1 as reporter');
 
-        $counts = [];
+        $byProduct = [];
 
-        foreach ($rows as $row) {
-            $counts[$row->article_id.'-'.$row->operation_id] = (int) $row->people;
+        foreach (DB::query()->fromSub($perPerson(['orders.article_id', 'steps.operation_id']), 'reporters')->groupBy('article_id', 'operation_id')->selectRaw('article_id, operation_id, count(*) as people')->get() as $row) {
+            $byProduct[$row->article_id.'-'.$row->operation_id] = (int) $row->people;
         }
 
-        return $counts;
+        $byOperation = [];
+
+        foreach (DB::query()->fromSub($perPerson(['steps.operation_id']), 'reporters')->groupBy('operation_id')->selectRaw('operation_id, count(*) as people')->get() as $row) {
+            $byOperation[(int) $row->operation_id] = (int) $row->people;
+        }
+
+        return [$byProduct, $byOperation];
     }
 
     /**

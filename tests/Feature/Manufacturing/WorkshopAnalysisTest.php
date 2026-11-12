@@ -12,6 +12,7 @@ use App\Modules\Manufacturing\ManufacturingSettings;
 use App\Modules\Manufacturing\Models\Operation;
 use App\Modules\Manufacturing\Models\ProductionLabourEntry;
 use App\Modules\Manufacturing\Models\ProductionOrder;
+use App\Modules\Manufacturing\Models\WorkshopDevice;
 use App\Modules\Manufacturing\Models\WorkshopTimeEntry;
 use App\Modules\Manufacturing\Support\WorkshopAnalysis;
 use App\Support\Tenancy\CurrentCompany;
@@ -223,9 +224,8 @@ it('reads no person, only how many different people reported on a product and op
 
     expect($sql)->not->toBeEmpty()
         ->and(implode("\n", $sql))->not->toContain('workshop_people')
-        ->and($touching)->toHaveCount(1)
-        ->and($touching[0])->toContain('count(distinct entries.person_id)')
-        ->and($touching[0])->not->toContain('select entries.person_id');
+        ->and($touching)->toHaveCount(2)
+        ->and(collect($touching)->every(fn (string $query): bool => str_contains($query, 'count(*) as people') && str_contains($query, 'having sum(entries.minutes) > 0')))->toBeTrue();
 });
 
 it('hides spread, series and trend where fewer than three people reported, and shows them from three', function () {
@@ -274,4 +274,46 @@ it('has no per-person setting at all', function () {
         ->and(Schema::hasColumn('workshop_time_entries', 'per_person_analysis'))->toBeFalse();
 
     $this->actingAs($this->owner)->get(route('manufacturing.settings'))->assertOk()->assertDontSee('per person', false)->assertDontSee('Per person');
+});
+
+/** @param  list<WorkshopPerson>  $people */
+function reportedBy(object $test, WorkshopDevice $device, array $people, ProductionOrder $order, int $minutes = 1): void
+{
+    $step = $order->operations()->orderBy('position')->first();
+
+    foreach ($people as $person) {
+        $labour = ProductionLabourEntry::create(['production_order_id' => $order->id, 'production_order_operation_id' => $step->id, 'source' => 'TERMINAL', 'minutes' => $minutes, 'hourly_cost_ore' => 45_000, 'cost_ore' => 0, 'worked_on' => '2026-10-28']);
+        WorkshopTimeEntry::create(['person_id' => $person->id, 'device_id' => $device->id, 'production_order_id' => $order->id, 'production_order_operation_id' => $step->id, 'production_labour_entry_id' => $labour->id, 'minutes' => $minutes, 'worked_on' => '2026-10-28', 'entered_at' => '2026-10-28 10:00:00']);
+    }
+}
+
+it('hides the overruns of an operation that fewer than three people reported on, and says how many', function () {
+    plant($this);
+    expect(WorkshopAnalysis::for(12))->toMatchArray(['overruns_hidden' => 0])->and(WorkshopAnalysis::for(12)['overruns'])->toHaveCount(1);
+
+    [$device] = Workshop::device($this->owner, $this->company);
+    $order = finishedOrder($this, '2026-10-28', ['cut' => 40]);
+    $people = collect(['Anna Lind', 'Bo Berg', 'Cia Ek'])->map(fn (string $name) => Workshop::person($this->owner, $this->company, $name));
+    reportedBy($this, $device, [$people[0], $people[1]], $order);
+
+    $hidden = WorkshopAnalysis::for(12);
+    expect($hidden['overruns'])->toBe([])->and($hidden['overruns_hidden'])->toBe(1);
+
+    reportedBy($this, $device, [$people[2]], $order);
+    expect(WorkshopAnalysis::for(12)['overruns'])->toHaveCount(1)->and(WorkshopAnalysis::for(12)['overruns_hidden'])->toBe(0);
+});
+
+it('counts only people whose minutes add up to more than nothing', function () {
+    plant($this);
+    [$device] = Workshop::device($this->owner, $this->company);
+    $order = finishedOrder($this, '2026-10-28', ['cut' => 40]);
+    $people = collect(['Anna Lind', 'Bo Berg', 'Cia Ek'])->map(fn (string $name) => Workshop::person($this->owner, $this->company, $name));
+    reportedBy($this, $device, [$people[0], $people[1]], $order);
+
+    // Cia reports and is corrected away: she must not make three.
+    reportedBy($this, $device, [$people[2]], $order, 30);
+    reportedBy($this, $device, [$people[2]], $order, -30);
+
+    $row = collect(WorkshopAnalysis::for(12)['products'])->firstWhere('operation', 'Kapning');
+    expect($row['detail_hidden'])->toBeTrue();
 });

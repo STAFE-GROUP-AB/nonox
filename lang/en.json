@@ -14154,5 +14154,7 @@
     "Markeringar av väntande arbetssteg": "Markings of waiting operations",
     "Orsaken är fri text och kan ha fått med ett namn. Ta bort orsaken när den inte behövs; tiderna finns kvar. Orsaker som är över ett år gamla tas bort automatiskt.": "The reason is free text and may have included a name. Remove the reason when it is no longer needed; the times are kept. Reasons more than a year old are removed automatically.",
     "Ta bort orsaken? Markeringen och tiderna finns kvar.": "Remove the reason? The marking and the times are kept.",
-    "Ta bort orsaken": "Remove the reason"
+    "Ta bort orsaken": "Remove the reason",
+    ":count arbetssteg är dolt eftersom färre än tre personer har rapporterat.|:count arbetssteg är dolda eftersom färre än tre personer har rapporterat.": ":count operation is hidden because fewer than three people have reported.|:count operations are hidden because fewer than three people have reported.",
+    "Pausad efter felaktiga koder": "Paused after wrong codes"
 }

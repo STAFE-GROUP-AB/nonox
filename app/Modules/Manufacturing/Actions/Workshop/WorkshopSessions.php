@@ -42,9 +42,9 @@ final class WorkshopSessions
      */
     public function signIn(WorkshopDevice $device, int $personId, string $code): ?array
     {
-        $failures = 'workshop-device-failures:'.$device->id;
+        $failures = self::failuresKey($device);
 
-        if (RateLimiter::tooManyAttempts($failures, self::DEVICE_FAILURES_PER_HOUR)) {
+        if (self::isPaused($device)) {
             return ['paused' => true];
         }
 
@@ -81,6 +81,17 @@ final class WorkshopSessions
         }
 
         return $result;
+    }
+
+    /** Whether the tablet is paused after too many wrong codes this hour. */
+    public static function isPaused(WorkshopDevice $device): bool
+    {
+        return RateLimiter::tooManyAttempts(self::failuresKey($device), self::DEVICE_FAILURES_PER_HOUR);
+    }
+
+    private static function failuresKey(WorkshopDevice $device): string
+    {
+        return 'workshop-device-failures:'.$device->id;
     }
 
     /**

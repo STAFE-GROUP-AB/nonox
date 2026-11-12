@@ -8,6 +8,7 @@ use App\Livewire\Concerns\ShowsToasts;
 use App\Modules\Manufacturing\Actions\Workshop\WaitingFlags;
 use App\Modules\Manufacturing\Actions\Workshop\WorkshopDevices;
 use App\Modules\Manufacturing\Actions\Workshop\WorkshopPeople;
+use App\Modules\Manufacturing\Actions\Workshop\WorkshopSessions;
 use App\Modules\Manufacturing\ManufacturingModule;
 use App\Modules\Manufacturing\ManufacturingSettings;
 use App\Modules\Manufacturing\Models\WorkshopDevice;
@@ -25,6 +26,7 @@ use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
+use Livewire\WithPagination;
 
 /**
  * Tillverkning → Verkstadsterminal (ADR-071 §7): switching the terminal on,
@@ -37,6 +39,7 @@ class TerminalAdminPage extends Component
     use InCurrentCompany;
     use ShowsToasts;
     use WithFileUploads;
+    use WithPagination;
 
     /** Staff have been told and the duty to negotiate has been assessed (ADR-071 §7); asked for before the terminal is switched on. */
     public bool $informed = false;
@@ -203,14 +206,16 @@ class TerminalAdminPage extends Component
         $company = $this->company();
         $moduleOn = app(ModuleManager::class)->isEnabled(ManufacturingModule::KEY, $company);
         $enabled = $moduleOn && ManufacturingSettings::terminalEnabled($company);
+        $devices = $enabled ? WorkshopDevice::query()->whereNull('removed_at')->orderBy('name')->get() : collect();
 
         return view('manufacturing::livewire.terminal-admin', [
             'moduleOn' => $moduleOn,
             'enabled' => $enabled,
-            'devices' => $enabled ? WorkshopDevice::query()->whereNull('removed_at')->orderBy('name')->get() : collect(),
+            'devices' => $devices,
             // The people stay listed also with the terminal or the module off, so a photo can be withdrawn and an extract fetched.
             'people' => WorkshopPerson::query()->orderByRaw('archived_at IS NOT NULL')->orderBy('name')->get(),
-            'flags' => WorkshopWaitingFlag::query()->with('order')->orderByDesc('raised_at')->limit(20)->get(),
+            'flags' => WorkshopWaitingFlag::query()->with('order')->where('reason', '<>', WaitingFlags::ERASED)->orderByDesc('raised_at')->orderByDesc('id')->paginate(15),
+            'paused' => $enabled ? $devices->filter(fn (WorkshopDevice $device): bool => WorkshopSessions::isPaused($device))->pluck('id')->all() : [],
             'pairingQr' => $this->pairing === null ? null : QrSvg::render($this->pairing['url'], 200),
         ]);
     }
@@ -246,7 +251,7 @@ class TerminalAdminPage extends Component
         $this->pairing = [
             'device' => $device->name,
             'code' => $code,
-            'url' => route('manufacturing.terminal', ['kod' => $code]),
+            'url' => route('manufacturing.terminal').'#kod='.$code,
             'expires' => CarbonImmutable::now()->addMinutes(WorkshopDevices::PAIRING_MINUTES)->format('H:i'),
         ];
     }

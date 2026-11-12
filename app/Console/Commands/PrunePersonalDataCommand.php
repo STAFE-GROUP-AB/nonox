@@ -117,6 +117,7 @@ class PrunePersonalDataCommand extends Command
         $counts['workshop_time_entries'] = $workshop['entries'];
         $counts['workshop_people'] = $workshop['people'];
         $counts['workshop_waiting_reasons'] = $workshop['reasons'];
+        $counts['workshop_code_notices'] = $workshop['notices'];
 
         Audit::record('privacy.pruned', null, $counts);
 

@@ -57,6 +57,9 @@
                                 @else
                                     <x-ui.badge>{{ __('Väntar på koppling') }}</x-ui.badge>
                                 @endif
+                                @if(in_array($device->id, $paused, true))
+                                    <x-ui.badge>{{ __('Pausad efter felaktiga koder') }}</x-ui.badge>
+                                @endif
                                 @if($device->last_seen_at)
                                     <span class="ms-2 text-sm text-gray-500">{{ __('Senast sedd :time', ['time' => $device->last_seen_at->format('Y-m-d H:i')]) }}</span>
                                 @endif
@@ -154,7 +157,7 @@
         <p class="text-sm text-gray-700">{{ __('Vad sparas? När du rapporterar tid på surfplattan sparas ditt namn, vilken order och vilket arbetssteg, dagen, minuterna och vilken surfplatta det gjordes på. Det används för att räkna ut vad ordern kostade och för efterkalkylen per produkt och arbetssteg. Det är inte närvaro och inte lönetid. Ditt namn tas bort ur rapporten efter 24 månader. Du kan be arbetsgivaren om ett utdrag med dina uppgifter, och ett eventuellt foto kan du när som helst be att få borttaget.') }}</p>
     </x-ui.card>
 
-    @if($flags->isNotEmpty())
+    @if($flags->total() > 0)
         <x-ui.card :title="__('Markeringar av väntande arbetssteg')" :description="__('Orsaken är fri text och kan ha fått med ett namn. Ta bort orsaken när den inte behövs; tiderna finns kvar. Orsaker som är över ett år gamla tas bort automatiskt.')">
             <ul class="divide-y divide-stone-100">
                 @foreach($flags as $flag)
@@ -170,6 +173,7 @@
                     </li>
                 @endforeach
             </ul>
+            <div class="mt-4">{{ $flags->links() }}</div>
         </x-ui.card>
     @endif
 </div>

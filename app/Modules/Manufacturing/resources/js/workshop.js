@@ -325,7 +325,7 @@ function tile(person) {
 }
 
 function startScreen() {
-    const input = el('input', { id: 'pair-code', class: 'w-input', autocomplete: 'off', autocapitalize: 'characters', inputmode: 'text', maxlength: '9', 'aria-label': t('pair_label'), placeholder: 'ABCD-EFGH', value: new URLSearchParams(location.search).get('kod') ?? '' });
+    const input = el('input', { id: 'pair-code', class: 'w-input', autocomplete: 'off', autocapitalize: 'characters', inputmode: 'text', maxlength: '9', 'aria-label': t('pair_label'), placeholder: 'ABCD-EFGH', value: new URLSearchParams(location.hash.slice(1)).get('kod') ?? '' });
 
     return el('main', { class: 'w-center' },
         el('h1', {}, t('pair_title')),

@@ -7,6 +7,7 @@ namespace App\Modules\Manufacturing\Actions\Workshop;
 use App\Modules\Manufacturing\Models\WorkshopPerson;
 use App\Modules\Manufacturing\Models\WorkshopTimeEntry;
 use App\Modules\Manufacturing\Models\WorkshopWaitingFlag;
+use App\Modules\Manufacturing\Notifications\WorkshopCodeBlocked;
 use App\Support\Tenancy\CompanyScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -28,8 +29,11 @@ final class PruneWorkshopTime
 {
     public const int RETENTION_MONTHS = 24;
 
+    /** Days a notice that a code was blocked is kept; it names the person. */
+    public const int NOTICE_DAYS = 30;
+
     /**
-     * @return array{entries: int, people: int, reasons: int}
+     * @return array{entries: int, people: int, reasons: int, notices: int}
      */
     public function __invoke(?CarbonImmutable $now = null): array
     {
@@ -53,7 +57,9 @@ final class PruneWorkshopTime
                 ->where('reason', '<>', WaitingFlags::ERASED)
                 ->update(['reason' => WaitingFlags::ERASED]);
 
-            return ['entries' => $entries, 'people' => $people, 'reasons' => $reasons];
+            $notices = DB::table('notifications')->where('type', WorkshopCodeBlocked::class)->where('created_at', '<', $now->subDays(self::NOTICE_DAYS))->delete();
+
+            return ['entries' => $entries, 'people' => $people, 'reasons' => $reasons, 'notices' => $notices];
         });
     }
 }

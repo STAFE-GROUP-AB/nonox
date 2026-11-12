@@ -10,6 +10,7 @@ use App\Modules\Manufacturing\ManufacturingModule;
 use App\Modules\Manufacturing\ManufacturingSettings;
 use App\Modules\Manufacturing\Models\WorkshopPerson;
 use App\Modules\Manufacturing\Models\WorkshopTimeEntry;
+use App\Modules\Manufacturing\Notifications\WorkshopCodeBlocked;
 use App\Modules\ModuleManager;
 use App\Modules\StaffLedger\Domain\Pin;
 use App\Support\Audit\Audit;
@@ -191,6 +192,9 @@ final class WorkshopPeople
         }
 
         $salt = Pin::newSalt();
+        // A new code settles the notice that it was blocked.
+        DB::table('notifications')->where('type', WorkshopCodeBlocked::class)->where('data->person_id', $person->id)->delete();
+
         $person->forceFill([
             'code_salt' => $salt,
             'code_verifier' => Pin::verifier($code, $salt),

@@ -14,6 +14,8 @@ use App\Modules\Manufacturing\ManufacturingSettings;
 use App\Modules\Manufacturing\Models\WorkshopDevice;
 use App\Modules\Manufacturing\Models\WorkshopPerson;
 use App\Modules\Manufacturing\Models\WorkshopTimeEntry;
+use App\Modules\Manufacturing\Models\WorkshopWaitingFlag;
+use App\Modules\Manufacturing\Notifications\WorkshopCodeBlocked;
 use App\Modules\ModuleDisabledException;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
@@ -56,7 +58,7 @@ it('is off until it is switched on, and then pairs tablets and adds people', fun
         ->call('enable', true)
         ->assertSee('Påslagen')
         ->set('deviceName', 'Snickeriet')->call('registerDevice')
-        ->assertSee('Koppla Snickeriet')->assertSee('/verkstad/terminal?kod=')
+        ->assertSee('Koppla Snickeriet')->assertSee('/verkstad/terminal#kod=')
         ->set('personName', 'Anna Lind')->set('personCode', '2580')->call('addPerson')
         ->assertSee('Anna Lind')->assertSee('Kod vald');
 
@@ -229,12 +231,12 @@ it('cuts time entries loose from their person after 24 months, and nothing else'
     $this->travelTo(CarbonImmutable::parse('2028-11-11 10:00:00'));
     $result = app(PruneWorkshopTime::class)();
 
-    expect($result)->toBe(['entries' => 1, 'people' => 0, 'reasons' => 0])
+    expect($result)->toBe(['entries' => 1, 'people' => 0, 'reasons' => 0, 'notices' => 0])
         ->and($old->refresh()->person_id)->toBeNull()->and($old->minutes)->toBe(60)->and($old->production_order_id)->toBe($operation->production_order_id)
         ->and($recent->refresh()->person_id)->toBe($person->id);
 
     // Run again: nothing more to do. And privacy:prune runs it.
-    expect(app(PruneWorkshopTime::class)())->toBe(['entries' => 0, 'people' => 0, 'reasons' => 0]);
+    expect(app(PruneWorkshopTime::class)())->toBe(['entries' => 0, 'people' => 0, 'reasons' => 0, 'notices' => 0]);
     $this->artisan('privacy:prune')->assertSuccessful()->expectsOutputToContain('workshop_time_entries');
 });
 
@@ -245,7 +247,7 @@ it('removes an archived person with no entries left after retention', function (
 
     $this->travelTo(CarbonImmutable::parse('2028-11-11 10:00:00'));
 
-    expect(app(PruneWorkshopTime::class)())->toBe(['entries' => 0, 'people' => 1, 'reasons' => 0])
+    expect(app(PruneWorkshopTime::class)())->toBe(['entries' => 0, 'people' => 1, 'reasons' => 0, 'notices' => 0])
         ->and(WorkshopPerson::query()->count())->toBe(0);
 });
 
@@ -289,4 +291,58 @@ it('refuses the register extract to those who may not set the terminal up, and f
     CurrentCompany::set($this->company);
 
     $this->get(route('privacy.export.workshopPerson', $theirs))->assertNotFound();
+});
+
+it('lists every waiting flag that still has a reason, a page at a time', function () {
+    Workshop::enable($this->company, $this->owner);
+    [$device] = Workshop::device($this->owner, $this->company);
+    $flags = app(WaitingFlags::class);
+
+    foreach (range(1, 17) as $i) {
+        $order = Workshop::order($this, '1');
+        $flags->raise($device, $order->operations()->first()->id, WaitingKind::Work, "Orsak nummer {$i}");
+    }
+    $erased = WorkshopWaitingFlag::query()->orderBy('id')->first();
+    $erased->forceFill(['reason' => '–'])->save();
+
+    $page = Livewire::test(TerminalAdminPage::class);
+    expect($page->viewData('flags')->total())->toBe(16)->and($page->viewData('flags')->count())->toBe(15);
+    $page->assertSee('Orsak nummer 17');
+
+    $page->call('gotoPage', 2);
+    expect($page->viewData('flags')->pluck('reason')->all())->toBe(['Orsak nummer 2']);
+});
+
+it('shows a paused tablet on the admin page', function () {
+    Workshop::enable($this->company, $this->owner);
+    [$device, $token] = Workshop::device($this->owner, $this->company);
+    $person = Workshop::person($this->owner, $this->company);
+    CurrentCompany::forget();
+
+    foreach (range(1, 20) as $_) {
+        $this->withToken($token)->postJson(route('manufacturing.terminal.sign-in'), ['person_id' => $person->id, 'code' => '9999']);
+        if ($_ % 5 === 0) {
+            $this->travel(6)->minutes();
+        }
+    }
+
+    CurrentCompany::set($this->company);
+    Livewire::test(TerminalAdminPage::class)->assertSee('Pausad efter felaktiga koder');
+    $this->travel(61)->minutes();
+    Livewire::test(TerminalAdminPage::class)->assertDontSee('Pausad efter felaktiga koder');
+});
+
+it('keeps the notice that a code was blocked only until a new code is set or 30 days have passed, and prunes it', function () {
+    Workshop::enable($this->company, $this->owner);
+    $person = Workshop::person($this->owner, $this->company);
+    $notice = new WorkshopCodeBlocked($this->company->id, 'X', $person->id, 'Spärrad');
+    $this->owner->notify($notice);
+    expect($this->owner->notifications()->count())->toBe(1);
+
+    app(WorkshopPeople::class)->setCode($this->owner, $this->company, $person, '7391');
+    expect($this->owner->notifications()->count())->toBe(0);
+
+    $this->owner->notify($notice);
+    $this->travelTo(CarbonImmutable::parse('2026-12-20 10:00:00'));
+    expect(app(PruneWorkshopTime::class)()['notices'])->toBe(1)->and($this->owner->notifications()->count())->toBe(0);
 });
