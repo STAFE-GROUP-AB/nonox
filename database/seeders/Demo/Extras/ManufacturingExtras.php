@@ -149,6 +149,9 @@ final class ManufacturingExtras extends DemoExtra
             $articles[$number]->forceFill(['is_stock_item' => true, 'default_location_id' => $location->id])->save();
         }
 
+        // The workshop's finished orders go first: components cannot be issued before the stock's latest movement.
+        app(WorkshopExtras::class)->prepare($c);
+
         $receipt = app(SaveReceipt::class)($c->user, $c->company, ['reference' => 'Virke och beslag', 'lines' => array_map(fn (array $line): array => [
             'article_id' => $articles[$line[0]]->id, 'location_id' => $location->id, 'quantity' => $line[1], 'unit_cost' => $line[2],
         ], [['EK-27-M2', '30', '1 450,00'], ['BEN-EK70', '24', '350,00'], ['HAND-MS', '40', '45,00'], ['SKR-5X50', '600', '0,95'], ['LACK-MATT', '10', '240,00']])]);

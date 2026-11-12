@@ -15,6 +15,7 @@ use App\Modules\Manufacturing\Actions\Workshop\RecordTerminalTime;
 use App\Modules\Manufacturing\Actions\Workshop\WaitingFlags;
 use App\Modules\Manufacturing\Actions\Workshop\WorkshopDevices;
 use App\Modules\Manufacturing\Actions\Workshop\WorkshopPeople;
+use App\Modules\Manufacturing\Domain\ProductionOrderStatus;
 use App\Modules\Manufacturing\Domain\WaitingKind;
 use App\Modules\Manufacturing\ManufacturingModule;
 use App\Modules\Manufacturing\Models\Operation;
@@ -48,10 +49,10 @@ final class WorkshopExtras extends DemoExtra
         ['BYRA-80', 120, 1, [41, 133, 61, 46]],
         ['BORD-180', 96, 2, [37, 25, 105, 46, 29]],
         ['BORD-180', 70, 1, [40, 27, 101, 45, 31]],
-        ['BYRA-80', 52, 2, [47, 128, 60, 44]],
-        ['BORD-180', 33, 2, [44, 26, 96, 47, 30]],
-        ['BORD-180', 18, 1, [47, 25, 92, 45, 32]],
-        ['BYRA-80', 9, 1, [52, 126, 61, 45]],
+        ['BYRA-80', 56, 2, [47, 128, 60, 44]],
+        ['BORD-180', 48, 2, [44, 26, 96, 47, 30]],
+        ['BORD-180', 41, 1, [47, 25, 92, 45, 32]],
+        ['BYRA-80', 35, 1, [52, 126, 61, 45]],
     ];
 
     public function industries(): array
@@ -78,10 +79,24 @@ final class WorkshopExtras extends DemoExtra
             [$device] = app(WorkshopDevices::class)->pair($code) ?? [null];
             app(WorkshopDevices::class)->register($c->user, $c->company, 'Lackeringen');
 
-            $stock = $this->stock($c);
-            $this->history($c, $stock);
+            $this->prepare($c);
+            $stock = ['location' => StockLocation::query()->where('is_active', true)->orderBy('sort_key')->firstOrFail()];
             $this->open($c, $stock, $people, $device);
         }));
+    }
+
+    /**
+     * The stock and the finished orders. Components can only be issued on or after the stock's latest
+     * movement (ADR-071 review fixes), so this runs from ManufacturingExtras before its own orders; the
+     * history stops a month back, before the receipt and orders it makes.
+     */
+    public function prepare(DemoContext $c): void
+    {
+        if (ProductionOrder::query()->where('status', ProductionOrderStatus::Finished->value)->exists()) {
+            return;
+        }
+
+        $this->history($c, $this->stock($c));
     }
 
     /** @return array{location: StockLocation} */
