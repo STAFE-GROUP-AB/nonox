@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-12-verkstadens-demohistorik",
+      "datum": "2026-11-12T15:00:00+01:00",
+      "rubrik": "Demoföretagets verkstad har rätt historik",
+      "beskrivning": "Verkstadsterminalens tidrapporter i demoföretaget skapas nu före tillverkningsordrarna, så att inga komponentuttag dateras före lagrets senaste händelse. Prova utan att registrera visar därför terminalens historik och efterkalkylen med riktiga siffror.",
+      "typ": "Rättat",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-11-planeringskalender-verkstad",
       "datum": "2026-11-11T14:30:00+01:00",
       "rubrik": "Planeringskalender för verkstaden",
