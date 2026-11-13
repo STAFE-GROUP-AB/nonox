@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Manufacturing\Livewire\Planning;
 
 use App\Modules\Manufacturing\Livewire\Concerns\PlanningScreen;
+use App\Modules\Manufacturing\Models\ProductionPlanSlot;
 use App\Modules\Manufacturing\Planning\Engine\Clock;
 use App\Modules\Manufacturing\Planning\PlanBoard;
 use Carbon\CarbonImmutable;
@@ -14,8 +15,9 @@ use Livewire\Component;
 use Throwable;
 
 /**
- * Tillverkning → Planering → Kalender (ADR-071 §13.1): the forecast finish
- * and delivery dates in a month or a week, each order marked with its
+ * Tillverkning → Planering → Kalender (ADR-071 §13.1): when the work on each
+ * order is done (with any waiting time after it) and the forecast delivery
+ * dates, in a month or a week, each order marked with its
  * traffic light.
  */
 class CalendarPage extends Component
@@ -58,7 +60,14 @@ class CalendarPage extends Component
 
         $forecasts = $run === null ? collect() : $board->forecasts($this->company(), $run);
         $deliveries = $forecasts->filter(fn ($forecast): bool => $forecast->forecast_delivery_on !== null)->groupBy(fn ($forecast): string => $forecast->forecast_delivery_on->toDateString());
-        $finishes = $forecasts->filter(fn ($forecast): bool => $forecast->finish_at !== null)->groupBy(fn ($forecast): string => $forecast->finish_at->setTimezone(Clock::ZONE)->toDateString());
+        // The day the work ends is the last slot's end; the finish can be later by a waiting time (drying, curing).
+        $workEnds = $run === null ? collect() : ProductionPlanSlot::query()->where('run_id', $run->id)->groupBy('production_order_id')
+            ->selectRaw('production_order_id, MAX(ends_at) AS ends_at')->pluck('ends_at', 'production_order_id')
+            ->map(fn ($end): CarbonImmutable => CarbonImmutable::parse((string) $end)->setTimezone(Clock::ZONE));
+        $finishes = $forecasts
+            ->filter(fn ($forecast): bool => $forecast->finish_at !== null && $workEnds->has($forecast->production_order_id))
+            ->map(fn ($forecast): array => ['forecast' => $forecast, 'work' => $workEnds->get($forecast->production_order_id), 'finish' => $forecast->finish_at->setTimezone(Clock::ZONE)])
+            ->groupBy(fn (array $done): string => $done['work']->toDateString());
 
         $days = [];
 

@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-13-planeringskalender-arbetet-klart",
+      "datum": "2026-11-13T09:00:00+01:00",
+      "rubrik": "Planeringskalendern visar när arbetet är klart och väntetiden efter",
+      "beskrivning": "Kalendern i Tillverkning → Planering visade tiden då en order var klar efter väntetiden, till exempel torkning efter lackering, så att det såg ut som att arbetet slutade mitt i natten. Nu står när det sista arbetssteget blir klart, och väntetiden till efter. Prognosen och leveransdatumen är oförändrade.",
+      "typ": "Rättat",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-12-verkstadens-demohistorik",
       "datum": "2026-11-12T15:00:00+01:00",
       "rubrik": "Demoföretagets verkstad har rätt historik",

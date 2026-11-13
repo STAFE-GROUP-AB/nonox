@@ -25,8 +25,13 @@
                             @foreach($deliveries->get($key, collect()) as $forecast)
                                 <li><x-ui.badge :tone="$forecast->status->tone()">{{ __('Leverans') }} {{ $forecast->order->reference() }}</x-ui.badge></li>
                             @endforeach
-                            @foreach($finishes->get($key, collect()) as $forecast)
-                                <li class="text-gray-600">{{ __('Klar') }} {{ $forecast->order->reference() }} {{ $forecast->finish_at->setTimezone('Europe/Stockholm')->format('H:i') }}</li>
+                            @foreach($finishes->get($key, collect()) as $done)
+                                <li class="text-gray-600">
+                                    {{ __('Arbetet klart :order :time', ['order' => $done['forecast']->order->reference(), 'time' => $done['work']->format('H:i')]) }}
+                                    @if($done['finish']->greaterThan($done['work']))
+                                        <span class="block text-xs text-gray-500">{{ __('väntetid till :time', ['time' => $done['finish']->isSameDay($done['work']) ? $done['finish']->format('H:i') : $done['finish']->format('j/n H:i')]) }}</span>
+                                    @endif
+                                </li>
                             @endforeach
                         </ul>
                     </div>

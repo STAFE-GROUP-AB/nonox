@@ -69,9 +69,9 @@ Låst arbete flyttas aldrig. Om personen inte kan göra det, till exempel för a
 
 ## Kalender
 
-**Kalender** visar beräknade leveranser och när ordrarna blir klara, per **Månad** eller **Vecka**.
+**Kalender** visar beräknade leveranser och när arbetet med varje order blir klart, per **Månad** eller **Vecka**. **Leverans TO-3** står på den beräknade leveransdagen. **Arbetet klart TO-3 14:30** står på dagen då det sista arbetssteget blir klart. Har steget en väntetid efter sig, till exempel torkning efter lackering, står **väntetid till** och klockslaget under, och leveransen räknas från när väntetiden är slut.
 
-![En vecka i kalendern med två beräknade leveranser och när ordrarna blir klara.](/bilder/manual/tillverkning/planering-kalender.webp)
+![En vecka i kalendern med två beräknade leveranser, när arbetet blir klart och väntetiden efter.](/bilder/manual/tillverkning/planering-kalender.webp)
 
 ## Avvikelser
 

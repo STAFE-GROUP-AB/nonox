@@ -14422,5 +14422,7 @@
     "Förslaget finns inte längre. Visa förslagen igen.": "The suggestion is no longer there. Show the suggestions again.",
     "Planen har ändrats sedan förslagen beräknades. Visa förslagen igen.": "The plan has changed since the suggestions were computed. Show the suggestions again.",
     "Personen planeras inte i verkstaden: ge hen en kompetens och se att anställningen pågår.": "The person is not planned in the workshop: give them a skill and check that the employment is current.",
-    "Ett låst steg börjar innan steget före är klart": "A locked operation starts before the one before it is finished"
+    "Ett låst steg börjar innan steget före är klart": "A locked operation starts before the one before it is finished",
+    "Arbetet klart :order :time": "Work done :order :time",
+    "väntetid till :time": "waiting time until :time"
 }
