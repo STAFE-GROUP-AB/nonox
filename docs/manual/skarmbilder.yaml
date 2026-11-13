@@ -275,6 +275,7 @@ tillverkning/tillverkningsorder-fardigmeld: { foretag: hantverkare, rutt: manufa
 tillverkning/planering: { foretag: hantverkare, rutt: manufacturing.planning.timeline }
 tillverkning/planering-ordrar: { foretag: hantverkare, rutt: manufacturing.planning.orders }
 tillverkning/planering-resurser: { foretag: hantverkare, rutt: manufacturing.planning.resources }
+tillverkning/planering-kalender: { foretag: hantverkare, rutt: manufacturing.planning.calendar, fraga: { vy: vecka, datum: '2026-11-16' } }
 tillverkning/planering-avvikelser: { foretag: hantverkare, rutt: manufacturing.planning.deviations }
 
 # Arbetsorder (WorkOrdersExtras), in the joinery. Theo Björk is the Utförare.

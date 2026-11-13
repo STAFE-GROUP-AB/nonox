@@ -71,6 +71,8 @@ Låst arbete flyttas aldrig. Om personen inte kan göra det, till exempel för a
 
 **Kalender** visar beräknade leveranser och när ordrarna blir klara, per **Månad** eller **Vecka**.
 
+![En vecka i kalendern med två beräknade leveranser och när ordrarna blir klara.](/bilder/manual/tillverkning/planering-kalender.webp)
+
 ## Avvikelser
 
 **Avvikelser** visar det som har flyttat planen och vad det gör med varje leverans: **Prognos före**, **Prognos efter** och **Ändring** i arbetsdagar. En avvikelse som inte flyttade någon leverans stängs av sig själv.
