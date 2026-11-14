@@ -11,7 +11,7 @@
         @vite([App\Modules\Manufacturing\Http\WallScreenController::ENTRY_JS])
     </head>
     <body>
-        <div id="wall" aria-live="polite">
+        <div id="wall">
             <noscript>{{ __('Storskärmen behöver JavaScript.') }}</noscript>
         </div>
     </body>

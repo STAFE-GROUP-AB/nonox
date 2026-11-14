@@ -70,7 +70,9 @@ final class WorkshopDevices
         $this->authorize($user, $company, $device->kind);
 
         if ($device->paired_at !== null || $device->revoked_at !== null) {
-            throw ValidationException::withMessages(['device' => __('Surfplattan är redan kopplad. Lägg till en ny i stället.')]);
+            throw ValidationException::withMessages(['device' => $device->kind === DeviceKind::WallScreen
+                ? __('Skärmen är redan kopplad. Lägg till en ny i stället.')
+                : __('Surfplattan är redan kopplad. Lägg till en ny i stället.')]);
         }
 
         return $this->issueCode($device);

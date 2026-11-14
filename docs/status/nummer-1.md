@@ -838,3 +838,15 @@ Follow-ups:
 - Ägarbeslut (M6): rollen scheduler får `manufacturing:view` enligt ADR-071 §13.7, vilket visar stycklistor och timkostnader. Bekräfta.
 Next package: M7 enligt prioritetslistan.
 
+
+---
+
+Package: M7, storskärm i verkstaden (ADR-071, färdplanens `storskarm-verkstad`)
+Status: done på grenen `feat/m7-wall-screen` (main dd9b7bfa sammanslagen in; ingen push)
+Evidence: `tests/Feature/Manufacturing/WallScreenTest.php` (koppling per enhetstyp, dagens arbete, försenat, leveranser, väntar och stopp, inga namn/frånvaro/kunder/orsaker, fast antal frågor vid 10 och 100 order, behörigheter), `tests/Tenancy/WallScreenTenancyTest.php`, `tests/js/workshop-wall.test.mjs` (#kod läses ur fragmentet och tas bort ur adressen).
+- `/verkstad/storskarm` för en tv på väggen: dagens planerade arbete per tillverkningsorder, försenade order, det som är lovat de närmaste fem arbetsdagarna och det som väntar, står still eller har planerat stopp i dag. Läser M6:s `PlanBoard`; kopplas som M5:s surfplattor men som egen enhetstyp (`workshop_devices.kind`).
+- Visar inga namn på personer, ingen frånvaro, inga kundnamn och inte väntande-orsakens fritext.
+- Tillverkning → Storskärm med förhandsvisning (`manufacturing:view`) och koppling (`production:plan`). Manualartikeln `tillverkning/storskarm` med skärmbilder från snickeridemon, ändringslogg, README, startsidan, färdplanen (posten borttagen), ADR-071 "As built (M7)", registerförteckningen. Systemdokumentationen oförändrad.
+Öppet för ägaren: kundnamn på skärmen som val per företag; färdiga order som väntar på leverans; en skärm per arbetsstation; fler än fem arbetsdagar framåt.
+Open legal-verify items: om dagens arbetssteg med arbetsstation och klockslag i en mycket liten verkstad ändå kan kopplas till en namngiven person, och om det kräver information enligt art. 13 eller 19 § MBL.
+Next package: branschsidan "Tillverkande företag".

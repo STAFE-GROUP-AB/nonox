@@ -1401,6 +1401,10 @@ The terminal's admin page lists and acts only on tablets, the wall screen's only
 screen needs the module, not the terminal setting. `production:plan` sets screens up (owner, admin,
 Planering's scheduler); `manufacturing:view` sees the page and the preview. Audit events
 `manufacturing.wall_screen_registered|paired|revoked|removed`; the terminal's keep their names.
+**A wall screen's token does not expire**, like a terminal tablet's: it is valid until the screen is
+revoked or removed under Tillverkning → Storskärm, which the page and the manual say. The token reads
+only the board, which holds no personal data, and `last_seen_at` on the setup page shows a screen that
+has gone quiet or is somewhere it should not be.
 
 **The screen** (`/verkstad/storskarm`, no session or CSRF, throttled, SecurityHeaders; its own Vite
 entry `wall.js` with `wall.css`): a pairing form that reads `#kod=` from the fragment and removes it
@@ -1427,7 +1431,11 @@ number of orders, tested at 10 and 100):
 - **Ska levereras**: forecasts promised from today through the fifth working day (today counted when it
   is a working day), with their light.
 - **Väntar och stopp**: open waiting flags from the terminal (order, operation, kind, since when) and
-  downtimes going on now or starting today (workstation, reason, until when).
+  downtimes going on now ("står still") or planned later today ("Planerat stopp … från"), at most eight
+  of each, the rest counted. Product names come from the article; without one only the reference is
+  shown, since a production order's own name is free text.
+- The date beside a forecast is the forecast **delivery** date ("Leverans"), as M6's calendar now
+  separates "Arbetet klart", "väntetid till" and the delivery.
 
 **Personal data (decided here).** The screen is seen by everyone in the workshop, visitors too, so it
 names nobody. `PlanBoard::slots` and `forecasts` gained `withPeople` and `withCustomers` (default on, so

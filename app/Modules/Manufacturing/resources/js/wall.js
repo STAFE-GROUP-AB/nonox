@@ -19,6 +19,8 @@ const state = {
     screen: 'loading',
     notice: null,
     timer: null,
+    // The server's clock less the screen's: a television's own clock is often wrong.
+    offset: 0,
 };
 
 const t = (key, replace = {}) => fill(config.strings[key] ?? key, replace);
@@ -101,6 +103,7 @@ async function load() {
     if (result.status === 200 && result.data) {
         state.board = result.data;
         state.lastOk = Date.now();
+        state.offset = Date.parse(result.data.now) - Date.now();
         state.screen = 'board';
     } else if (result.status === 401 && !config.preview) {
         keepToken(null);
@@ -164,7 +167,7 @@ function pairScreen() {
 }
 
 function message(text) {
-    return el('main', { class: 'wall-center' }, el('h1', {}, t('title')), el('p', { class: 'wall-help' }, text));
+    return el('main', { class: 'wall-center' }, el('h1', {}, t('title')), el('p', { class: 'wall-help', role: 'status', 'aria-live': 'polite' }, text));
 }
 
 function light(status, label) {
@@ -232,25 +235,29 @@ function deliveriesPanel(board) {
 function waitingPanel(board) {
     const rows = [
         ...board.stopped.map((stop) => el('li', { class: 'wall-row' },
-            el('div', { class: 'wall-order' }, el('strong', { class: 'wall-red-text' }, t('stopped', { station: stop.workstation }))),
-            el('div', { class: 'wall-row-meta' }, el('span', {}, stop.reason), el('span', {}, stop.until ? t('until', { time: stop.until }) : t('until_further'))))),
+            el('div', { class: 'wall-order' }, stop.planned
+                ? el('strong', { class: 'wall-amber-text' }, t('planned_stop', { station: stop.workstation }))
+                : el('strong', { class: 'wall-red-text' }, t('stopped', { station: stop.workstation }))),
+            el('div', { class: 'wall-row-meta' }, el('span', {}, stop.reason),
+                stop.planned ? el('span', {}, t('from', { time: stop.from })) : null,
+                el('span', {}, stop.until ? t('until', { time: stop.until }) : t('until_further'))))),
         ...board.waiting.map((item) => el('li', { class: 'wall-row' },
             orderTitle(item),
             el('div', { class: 'wall-row-meta' }, el('strong', { class: 'wall-amber-text' }, item.kind_label), el('span', {}, item.operation), el('span', {}, t('since', { time: item.since }))))),
     ];
-    const count = board.stopped.length + board.waiting.length + board.waiting_more;
+    const count = board.stopped.length + board.stopped_more + board.waiting.length + board.waiting_more;
 
-    return panel(t('waiting'), count, [rows.length === 0 ? el('p', { class: 'wall-empty wall-good' }, t('waiting_empty')) : el('ul', { class: 'wall-rows' }, rows), more(board.waiting_more)]);
+    return panel(t('waiting'), count, [rows.length === 0 ? el('p', { class: 'wall-empty wall-good' }, t('waiting_empty')) : el('ul', { class: 'wall-rows' }, rows), more(board.waiting_more + board.stopped_more)]);
 }
 
 function header(board) {
-    const now = new Date();
+    const now = new Date(Date.now() + state.offset);
     const date = new Intl.DateTimeFormat('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Stockholm' }).format(now);
     const stale = isStale(state.lastOk, Date.now(), board.refresh_seconds);
 
     return el('header', { class: 'wall-header' },
         el('div', {}, el('p', { class: 'wall-company' }, board.company), el('h1', {}, t('title'))),
-        el('div', { class: 'wall-status' },
+        el('div', { class: 'wall-status', role: 'status', 'aria-live': 'polite' },
             stale ? el('p', { class: 'wall-stale', role: 'status' }, t('stale', { time: clock(new Date(state.lastOk).toISOString()) })) : null,
             config.preview ? el('p', { class: 'wall-preview' }, t('preview')) : null,
             board.run ? el('p', {}, t('updated', { time: clock(board.run.at) })) : null),
@@ -308,10 +315,11 @@ if (config.preview) {
 } else {
     state.token = storedToken();
 
-    if (state.token) {
-        load();
-    } else if (state.pendingCode !== '') {
+    // A code in the address is a new pairing, also on a screen paired before.
+    if (state.pendingCode !== '') {
         pair(state.pendingCode);
+    } else if (state.token) {
+        load();
     } else {
         state.screen = 'pair';
         render();

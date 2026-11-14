@@ -26,6 +26,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Manufacturing;
@@ -212,6 +213,30 @@ it('shows waiting operations without their reason, and stopped workstations', fu
         ->assertJsonPath('waiting.0.since', '09:30')
         ->assertJsonPath('stopped.0.workstation', 'Lackbox')
         ->assertJsonPath('stopped.0.until', '14:00');
+});
+
+it('tells a stop going on now from one planned for later today', function () {
+    CurrentCompany::run($this->company, function (): void {
+        Downtime::create(['workstation_id' => $this->shop['lackbox']->id, 'starts_at' => $this->now->setTime(13, 0), 'ends_at' => $this->now->setTime(15, 0), 'reason' => DowntimeReason::Maintenance, 'source' => Downtime::MANUAL]);
+        Downtime::create(['workstation_id' => $this->shop['lackbox']->id, 'starts_at' => $this->now->subHour(), 'ends_at' => $this->now->setTime(10, 0), 'reason' => DowntimeReason::Breakdown, 'source' => Downtime::MANUAL]);
+    });
+    wallPlan($this);
+    [, $token] = wallScreen($this);
+
+    wallBoard($this, $token)->assertOk()
+        ->assertJsonCount(2, 'stopped')
+        ->assertJsonPath('stopped.0.planned', false)
+        ->assertJsonPath('stopped.0.until', '10:00')
+        ->assertJsonPath('stopped.1.planned', true)
+        ->assertJsonPath('stopped.1.from', '13:00')
+        ->assertJsonPath('stopped_more', 0);
+});
+
+it('names a wall screen, not a tablet, when a code is asked for one already paired', function () {
+    [$screen] = wallScreen($this);
+
+    expect(fn () => app(WorkshopDevices::class)->renewCode($this->owner, $this->company, $screen->fresh()))
+        ->toThrow(ValidationException::class, 'Skärmen är redan kopplad. Lägg till en ny i stället.');
 });
 
 it('says there is no plan yet in a company that has not planned', function () {

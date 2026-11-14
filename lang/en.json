@@ -14483,5 +14483,9 @@
     "Storskärmen behöver JavaScript.": "The wall screen needs JavaScript.",
     "Ge skärmen ett namn, till exempel Tv:n i verkstaden.": "Give the screen a name, for example The workshop TV.",
     "Arbetet klart :order :time": "Work done :order :time",
-    "väntetid till :time": "waiting time until :time"
+    "väntetid till :time": "waiting time until :time",
+    "Leverans :date": "Delivery :date",
+    "Planerat stopp i :station": "Planned stop at :station",
+    "från :time": "from :time",
+    "Skärmen är redan kopplad. Lägg till en ny i stället.": "The screen is already paired. Add a new one instead."
 }

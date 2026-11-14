@@ -79,7 +79,7 @@ final class WallBoard
             if ($run === null) {
                 $articles = $this->articles($flags->pluck('order.article_id')->filter()->all());
 
-                return [...$base, 'work' => [], 'work_more' => 0, 'late' => [], 'late_more' => 0, 'deliveries' => [], 'deliveries_more' => 0, ...$this->stops($flags, $downtimes, $articles, $today)];
+                return [...$base, 'work' => [], 'work_more' => 0, 'late' => [], 'late_more' => 0, 'deliveries' => [], 'deliveries_more' => 0, ...$this->stops($flags, $downtimes, $articles, $now)];
             }
 
             $calendar = PlanningSettings::for($company)->calendar();
@@ -126,7 +126,7 @@ final class WallBoard
                     'status_label' => $forecast->status->label(),
                 ])->values()->all(),
                 'deliveries_more' => max(0, $deliveries->count() - self::LIST_LIMIT),
-                ...$this->stops($flags, $downtimes, $articles, $today),
+                ...$this->stops($flags, $downtimes, $articles, $now),
             ];
         });
     }
@@ -189,15 +189,19 @@ final class WallBoard
 
     /**
      * Operations flagged as waiting at the terminal, without their reason,
-     * and the workstations stopped today.
+     * and the workstations stopped now or planned to stop later today
+     * (`planned`), the ones going on first.
      *
      * @param  Collection<int, WorkshopWaitingFlag>  $flags
      * @param  Collection<int, Downtime>  $downtimes
      * @param  Collection<int, Article>  $articles
-     * @return array{waiting: list<array<string, mixed>>, waiting_more: int, stopped: list<array<string, mixed>>}
+     * @return array{waiting: list<array<string, mixed>>, waiting_more: int, stopped: list<array<string, mixed>>, stopped_more: int}
      */
-    private function stops(Collection $flags, Collection $downtimes, Collection $articles, CarbonImmutable $today): array
+    private function stops(Collection $flags, Collection $downtimes, Collection $articles, CarbonImmutable $now): array
     {
+        $today = $now->startOfDay();
+        $downtimes = $downtimes->sortBy(fn (Downtime $downtime): array => [$downtime->starts_at->greaterThan($now) ? 1 : 0, $downtime->starts_at->getTimestamp(), $downtime->id])->values();
+
         $when = fn (CarbonImmutable $at): string => $at->setTimezone(Clock::ZONE)->toDateString() === $today->toDateString()
             ? $at->setTimezone(Clock::ZONE)->format('H:i')
             : $at->setTimezone(Clock::ZONE)->toDateString();
@@ -211,12 +215,14 @@ final class WallBoard
                 'since' => $when($flag->raised_at),
             ])->all()),
             'waiting_more' => max(0, $flags->count() - self::LIST_LIMIT),
-            'stopped' => array_values($downtimes->map(fn (Downtime $downtime): array => [
+            'stopped' => array_values($downtimes->take(self::LIST_LIMIT)->map(fn (Downtime $downtime): array => [
                 'workstation' => $downtime->workstation->name ?? '',
+                'planned' => $downtime->starts_at->greaterThan($now),
                 'reason' => $downtime->reason->label(),
                 'from' => $when($downtime->starts_at),
                 'until' => $downtime->ends_at === null ? null : $when($downtime->ends_at),
             ])->all()),
+            'stopped_more' => max(0, $downtimes->count() - self::LIST_LIMIT),
         ];
     }
 
@@ -233,9 +239,10 @@ final class WallBoard
         $article = $articles->get($order->article_id);
         $quantity = $order->getAttributes()['quantity_milli'] ?? null;
 
+        // Without the article only the reference: the order's own name is free text and could hold a customer's name.
         return [
             'reference' => $order->reference(),
-            'product' => $article->name ?? $order->name,
+            'product' => $article->name ?? '',
             'quantity' => $quantity === null ? '' : trim(Quantity::format((int) $quantity).' '.($article?->stockUnitCode() ?? '')),
         ];
     }

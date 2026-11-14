@@ -1,7 +1,7 @@
 ---
 beskrivning: En tv på väggen i verkstaden som visar dagens arbete, vad som är försenat och vad som ska levereras, utan att någon är inloggad vid den. Så kopplar du skärmen.
 ordning: 50
-roller: [owner, admin, scheduler]
+roller: [owner, admin, accountant, auditor, scheduler]
 modul: manufacturing
 rutter: [manufacturing.wallScreen.admin, manufacturing.wallScreen.preview]
 sokord: [storskärm, tv, väggskärm, tavla, informationsskärm, dashboard, verkstad, leveranser, försenat, andon]
@@ -19,8 +19,8 @@ Skärmen bygger på den senaste planen under **Tillverkning → Planering**. Se 
 
 - **I dag** – de tillverkningsorder som planen har arbete på i dag, med produkt, antal, arbetssteg, arbetsstation och klockslag. Det som pågår just nu är markerat, och varje order har planens trafikljus.
 - **Försenat** – order som planen räknar med blir klara efter det datum ni har lovat, med hur många arbetsdagar det skiljer och om ordern väntar på material eller kapacitet.
-- **Ska levereras** – det som är lovat de närmaste fem arbetsdagarna, med planens bedömning: I tid, På gränsen eller Försenad.
-- **Väntar och stopp** – arbetssteg som någon har markerat som väntande på verkstadsterminalen, och arbetsstationer som står still.
+- **Ska levereras** – det som är lovat de närmaste fem arbetsdagarna, med planens leveransdatum och bedömning: I tid, På gränsen eller Försenad.
+- **Väntar och stopp** – arbetssteg som någon har markerat som väntande på verkstadsterminalen, arbetsstationer som står still och stopp som är planerade senare i dag.
 
 Skärmen hämtar läget var 30:e sekund. Tappar den anslutningen visar den det senaste läget och skriver från vilken tid det är.
 
@@ -46,11 +46,11 @@ Vill du se vad skärmen visar just nu väljer du **Visa tavlan**. Då öppnas sa
 
 ## Spärra eller ta bort en skärm
 
-Välj **Spärra** om en skärm har flyttats eller kommit bort. Den slutar visa tavlan direkt och måste kopplas på nytt med en ny kod. **Ta bort** tar bort skärmen ur listan.
+En kopplad skärm är kopplad tills den spärras; kopplingen går inte ut av sig själv. Välj **Spärra** om en skärm har flyttats eller kommit bort. Den slutar visa tavlan direkt och måste kopplas på nytt med en ny kod. **Ta bort** tar bort skärmen ur listan.
 
 > [!TIP]
 > Vilken tv eller skärm som helst med en webbläsare fungerar, till exempel en smart-tv, en liten dator eller en surfplatta på ett stativ. Skärmen behöver bara nå NONOX över internet.
 
 ## Vem kan göra vad
 
-Alla som ser Tillverkning kan öppna sidan **Storskärm** och se tavlan. Ägare, administratörer och schemaläggare, som får planera verkstaden, lägger till, spärrar och tar bort skärmar.
+Alla som ser Tillverkning (ägare, administratörer, redovisningskonsulter, revisorer och schemaläggare) kan öppna sidan **Storskärm** och se tavlan. Ägare, administratörer och schemaläggare, som får planera verkstaden, lägger till, spärrar och tar bort skärmar.
