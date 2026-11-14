@@ -10,6 +10,9 @@ use App\Modules\Manufacturing\Livewire\Planning\OrdersPage;
 use App\Modules\Manufacturing\Livewire\Planning\ResourcesPage;
 use App\Modules\Manufacturing\Livewire\Planning\TimelinePage;
 use App\Modules\Manufacturing\Models\ProductionDeviation;
+use App\Modules\Manufacturing\Models\ProductionPlanForecast;
+use App\Modules\Manufacturing\Models\ProductionPlanRun;
+use App\Modules\Manufacturing\Models\ProductionPlanSlot;
 use App\Modules\Manufacturing\Models\ProductionScenario;
 use App\Modules\Manufacturing\Planning\Engine\Clock;
 use App\Modules\Manufacturing\Planning\ProductionPlanner;
@@ -157,4 +160,20 @@ it('computes suggestions once, applies exactly the one shown, and refuses it aft
     $fresh = $page->get('shown');
     $page->call('apply', $index, $fresh[$index]['hash']);
     expect(ProductionScenario::query()->whereNotNull('applied_at')->sole()->changes)->toEqual($fresh[$index]['changes']);
+});
+
+it('shows when the work is done, and the waiting time after it, not the finish after drying as if work ended at night', function () {
+    $run = ProductionPlanRun::query()->latest('id')->first();
+    $order = $this->shop['orders'][1042];
+    $lastEnd = CurrentCompany::run($this->company, fn () => ProductionPlanSlot::query()->where('run_id', $run->id)->where('production_order_id', $order->id)->max('ends_at'));
+    $forecast = CurrentCompany::run($this->company, fn () => ProductionPlanForecast::query()->where('run_id', $run->id)->where('production_order_id', $order->id)->sole());
+
+    // The rule (ADR-071 §13.3 step 5): the work ends inside working hours, the finish adds the 12 hours' wait.
+    expect(CarbonImmutable::parse($lastEnd)->setTimezone(Clock::ZONE)->format('Y-m-d H:i'))->toBe('2026-11-19 13:30')
+        ->and($forecast->finish_at->setTimezone(Clock::ZONE)->format('Y-m-d H:i'))->toBe('2026-11-20 01:30');
+
+    $this->get(route('manufacturing.planning.calendar'))->assertOk()
+        ->assertSee('Arbetet klart TO-1042 13:30')
+        ->assertSee('väntetid till 20/11 01:30')
+        ->assertDontSee('Klar TO-1042 01:30');
 });

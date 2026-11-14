@@ -14481,5 +14481,7 @@
     "Storskärm": "Wall screen",
     "En tv på väggen i verkstaden som visar dagens tillverkning, vad som är försenat och vad som ska levereras. Ingen behöver vara inloggad vid skärmen.": "A TV on the workshop wall that shows today's production, what is late and what is to be delivered. Nobody needs to be signed in at the screen.",
     "Storskärmen behöver JavaScript.": "The wall screen needs JavaScript.",
-    "Ge skärmen ett namn, till exempel Tv:n i verkstaden.": "Give the screen a name, for example The workshop TV."
+    "Ge skärmen ett namn, till exempel Tv:n i verkstaden.": "Give the screen a name, for example The workshop TV.",
+    "Arbetet klart :order :time": "Work done :order :time",
+    "väntetid till :time": "waiting time until :time"
 }
