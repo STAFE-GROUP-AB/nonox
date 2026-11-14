@@ -40,25 +40,41 @@ final class PlanBoard
         return CurrentCompany::run($company, fn (): ?int => ($id = ProductionPlanRun::query()->max('id')) === null ? null : (int) $id);
     }
 
-    /** @return Collection<int, ProductionPlanForecast> */
-    public function forecasts(Company $company, ProductionPlanRun $run): Collection
+    /**
+     * The wall screen asks without customers: it names no customer (M7).
+     *
+     * @return Collection<int, ProductionPlanForecast>
+     */
+    public function forecasts(Company $company, ProductionPlanRun $run, bool $withCustomers = true): Collection
     {
         return CurrentCompany::run($company, fn (): Collection => ProductionPlanForecast::query()
             ->where('run_id', $run->id)
-            ->with(['order.article:id,number,name', 'salesDocument:id,number,customer_id,kind', 'salesDocument.customer:id,name'])
+            ->with($withCustomers
+                ? ['order.article:id,number,name', 'salesDocument:id,number,customer_id,kind', 'salesDocument.customer:id,name']
+                : ['order.article:id,number,name', 'salesDocument:id,number,kind'])
             ->get()
             ->sortBy(fn (ProductionPlanForecast $forecast): array => [$forecast->status->rank(), $forecast->promised_on?->toDateString() ?? '9999-12-31', $forecast->production_order_id])
             ->values());
     }
 
-    /** @return Collection<int, ProductionPlanSlot> slots with any working time in [from, to) */
-    public function slots(Company $company, ProductionPlanRun $run, CarbonImmutable $from, CarbonImmutable $to): Collection
+    /**
+     * The wall screen asks without people: it names nobody (M7).
+     *
+     * @return Collection<int, ProductionPlanSlot> slots with any working time in [from, to)
+     */
+    public function slots(Company $company, ProductionPlanRun $run, CarbonImmutable $from, CarbonImmutable $to, bool $withPeople = true): Collection
     {
         return CurrentCompany::run($company, fn (): Collection => ProductionPlanSlot::query()
             ->where('run_id', $run->id)
             ->where('starts_at', '<', $to)
             ->where('ends_at', '>', $from)
-            ->with(['order:id,number,name,article_id,sales_document_id', 'orderOperation:id,operation_id,position', 'orderOperation.operation:id,name', 'employee:id,first_name,last_name', 'workstation:id,name'])
+            ->with([
+                'order:id,number,name,article_id,sales_document_id',
+                'orderOperation:id,operation_id,position',
+                'orderOperation.operation:id,name',
+                ...($withPeople ? ['employee:id,first_name,last_name'] : []),
+                'workstation:id,name',
+            ])
             ->orderBy('starts_at')
             ->orderBy('id')
             ->get());

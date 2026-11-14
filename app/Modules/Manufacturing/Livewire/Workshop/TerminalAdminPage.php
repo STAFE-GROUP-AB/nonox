@@ -9,6 +9,7 @@ use App\Modules\Manufacturing\Actions\Workshop\WaitingFlags;
 use App\Modules\Manufacturing\Actions\Workshop\WorkshopDevices;
 use App\Modules\Manufacturing\Actions\Workshop\WorkshopPeople;
 use App\Modules\Manufacturing\Actions\Workshop\WorkshopSessions;
+use App\Modules\Manufacturing\Domain\DeviceKind;
 use App\Modules\Manufacturing\ManufacturingModule;
 use App\Modules\Manufacturing\ManufacturingSettings;
 use App\Modules\Manufacturing\Models\WorkshopDevice;
@@ -97,21 +98,21 @@ class TerminalAdminPage extends Component
 
     public function renewCode(int $deviceId, WorkshopDevices $devices): void
     {
-        $device = WorkshopDevice::query()->findOrFail($deviceId);
+        $device = WorkshopDevice::query()->ofKind(DeviceKind::Terminal)->findOrFail($deviceId);
 
         $this->attempt(fn () => $this->showPairing($device, $devices->renewCode($this->user(), $this->company(), $device)), __('Här är en ny kopplingskod.'));
     }
 
     public function revokeDevice(int $deviceId, WorkshopDevices $devices): void
     {
-        $device = WorkshopDevice::query()->findOrFail($deviceId);
+        $device = WorkshopDevice::query()->ofKind(DeviceKind::Terminal)->findOrFail($deviceId);
 
         $this->attempt(fn () => $devices->revoke($this->user(), $this->company(), $device), __('Surfplattan är spärrad.'));
     }
 
     public function removeDevice(int $deviceId, WorkshopDevices $devices): void
     {
-        $device = WorkshopDevice::query()->findOrFail($deviceId);
+        $device = WorkshopDevice::query()->ofKind(DeviceKind::Terminal)->findOrFail($deviceId);
 
         $this->attempt(fn () => $devices->remove($this->user(), $this->company(), $device), __('Surfplattan är borttagen.'));
     }
@@ -206,7 +207,7 @@ class TerminalAdminPage extends Component
         $company = $this->company();
         $moduleOn = app(ModuleManager::class)->isEnabled(ManufacturingModule::KEY, $company);
         $enabled = $moduleOn && ManufacturingSettings::terminalEnabled($company);
-        $devices = $enabled ? WorkshopDevice::query()->whereNull('removed_at')->orderBy('name')->get() : collect();
+        $devices = $enabled ? WorkshopDevice::query()->ofKind(DeviceKind::Terminal)->whereNull('removed_at')->orderBy('name')->get() : collect();
 
         return view('manufacturing::livewire.terminal-admin', [
             'moduleOn' => $moduleOn,

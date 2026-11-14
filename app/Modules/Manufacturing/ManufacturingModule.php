@@ -38,6 +38,9 @@ use Carbon\CarbonImmutable;
  * moves, locks, splits and reprioritises work, applies scenarios and handles
  * deviations; production:confirm-dates confirms a delivery date to the
  * customer and sends the message.
+ *
+ * The workshop wall screen (M7): manufacturing:view sees its preview;
+ * production:plan pairs and revokes the screens.
  */
 final class ManufacturingModule implements IsNew, Module
 {
@@ -127,6 +130,7 @@ final class ManufacturingModule implements IsNew, Module
                         ['label' => __('Verkstadsterminal'), 'route' => 'manufacturing.terminal.admin', 'active' => ['manufacturing.terminal.admin']],
                     ] : []),
                     ['label' => __('Planering'), 'route' => 'manufacturing.planning.timeline', 'active' => ['manufacturing.planning.*']],
+                    ['label' => __('Storskärm'), 'route' => 'manufacturing.wallScreen.admin', 'active' => ['manufacturing.wallScreen.*']],
                     ...($user->hasTeamPermission($company, 'manufacturing:manage') ? [
                         ['label' => __('Inställningar'), 'route' => 'manufacturing.settings', 'active' => ['manufacturing.settings']],
                     ] : []),

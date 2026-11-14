@@ -33,6 +33,7 @@ Tillverkning är en modul som kräver Lager. Den är avstängd tills ägaren sl�
 - **Efterkalkyl** – kalkyl mot rapporterad tid per produkt och arbetssteg, köer och vad ordrarna väntar på. Se [Efterkalkyl](/manual/tillverkning/efterkalkyl).
 - **Verkstadsterminal** – surfplattorna i verkstaden där personalen rapporterar produktionstid. Se [Verkstadsterminal](/manual/tillverkning/verkstadsterminal).
 - **Planering** – tidslinje, ordrar, resurser, kalender och avvikelser, med prognos mot utlovat datum.
+- **Storskärm** – en tv på väggen i verkstaden som visar dagens arbete, förseningar och leveranser. Se [Storskärm i verkstaden](/manual/tillverkning/storskarm).
 - **Inställningar** – omkostnadspålägget, om det också ska ingå i lagervärdet, och kontona för produkter i arbete.
 
 På offerter och order finns kortet **Stycklistor och kalkyl** under raderna.

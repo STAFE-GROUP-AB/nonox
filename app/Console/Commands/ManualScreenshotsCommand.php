@@ -78,6 +78,7 @@ class ManualScreenshotsCommand extends Command
     private const array DEVICES = [
         'dator' => ['width' => 1280, 'height' => 800, 'scale' => 2, 'mobile' => false],
         'mobil' => ['width' => 390, 'height' => 844, 'scale' => 3, 'mobile' => true],
+        'tv' => ['width' => 1920, 'height' => 1080, 'scale' => 1, 'mobile' => false],
     ];
 
     public function handle(Encrypter $encrypter): int

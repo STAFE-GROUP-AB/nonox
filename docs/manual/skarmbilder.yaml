@@ -12,7 +12,8 @@
 #              rot_invoice, reverse_charge_invoice, supplier_invoice_to_approve
 #              or company (the demo company itself)
 #   fraga      the query string, as a map
-#   enhet      dator (1280 × 800, the default) or mobil (390 × 844)
+#   enhet      dator (1280 × 800, the default), mobil (390 × 844) or tv
+#              (1920 × 1080, for the workshop wall screen)
 #   del        a CSS selector: crop the image to that element
 #   klick      CSS selectors to click in order first (a tab, a dialog, a
 #              menu); text=Moduler clicks the button or link with that text
@@ -276,6 +277,10 @@ tillverkning/planering: { foretag: hantverkare, rutt: manufacturing.planning.tim
 tillverkning/planering-ordrar: { foretag: hantverkare, rutt: manufacturing.planning.orders }
 tillverkning/planering-resurser: { foretag: hantverkare, rutt: manufacturing.planning.resources }
 tillverkning/planering-avvikelser: { foretag: hantverkare, rutt: manufacturing.planning.deviations }
+
+# Storskärm i verkstaden (PlanningCalendarExtras: the plan and a paired screen); the preview of the board on a television.
+tillverkning/storskarm: { foretag: hantverkare, rutt: manufacturing.wallScreen.preview, enhet: tv }
+tillverkning/storskarm-installning: { foretag: hantverkare, rutt: manufacturing.wallScreen.admin, visa: 'text=Förhandsvisning' }
 
 # Arbetsorder (WorkOrdersExtras), in the joinery. Theo Björk is the Utförare.
 fakturering/arbetsorder: { foretag: hantverkare, rutt: workOrders.index }

@@ -35,6 +35,7 @@ use App\Modules\Manufacturing\Livewire\Production\ProductionOrdersPage;
 use App\Modules\Manufacturing\Livewire\RowStructuresPanel;
 use App\Modules\Manufacturing\Livewire\Workshop\AnalysisPage;
 use App\Modules\Manufacturing\Livewire\Workshop\TerminalAdminPage;
+use App\Modules\Manufacturing\Livewire\Workshop\WallScreenAdminPage;
 use App\Modules\Manufacturing\Models\Operation;
 use App\Modules\Manufacturing\Models\ProductionDeviation;
 use App\Modules\Manufacturing\Models\ProductionLabourEntry;
@@ -101,6 +102,7 @@ class ManufacturingServiceProvider extends ServiceProvider
         Livewire::component('manufacturing.production-order', ProductionOrderPage::class);
         Livewire::component('manufacturing.production-order-create', CreateProductionOrderPage::class);
         Livewire::component('manufacturing.terminal-admin', TerminalAdminPage::class);
+        Livewire::component('manufacturing.wall-screen-admin', WallScreenAdminPage::class);
         Livewire::component('manufacturing.analysis', AnalysisPage::class);
 
         RateLimiter::for('workshop-terminal', fn (Request $request): Limit => Limit::perMinute(120)->by('workshop:'.$request->ip()));
@@ -148,6 +150,9 @@ class ManufacturingServiceProvider extends ServiceProvider
 
         // The workshop terminal needs no sign-in: its tablets carry a device token (ADR-071 §7).
         Route::middleware([SecurityHeaders::class, 'throttle:workshop-terminal'])->group(__DIR__.'/routes/terminal.php');
+
+        // Nor does the wall screen: it carries a device token of its own kind (M7).
+        Route::middleware([SecurityHeaders::class, 'throttle:workshop-terminal'])->group(__DIR__.'/routes/wall.php');
     }
 
     /**

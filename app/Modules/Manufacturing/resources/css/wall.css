@@ -1,0 +1,123 @@
+/*
+ * NONOX Storskärm i verkstaden. Plain CSS (no framework), read from across
+ * the room: a dark ground against glare, large type that scales with the
+ * screen's width, and colour never on its own (every light carries its
+ * word). Contrast of every text against its ground is at least 4.5:1
+ * (WCAG 2.2 AA).
+ */
+:root {
+    --wall-ground: #111113;
+    --wall-panel: #1c1c20;
+    --wall-line: #33333a;
+    --wall-text: #f5f5f4;
+    --wall-muted: #b8b5ae;
+    --wall-accent: #ff6a3d;
+    --wall-green: #4ade80;
+    --wall-amber: #fbbf24;
+    --wall-red: #f87171;
+    --wall-grey: #a8a29e;
+    color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--wall-ground);
+    color: var(--wall-text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Arial, sans-serif;
+    font-size: clamp(16px, 1.05vw, 30px);
+    font-variant-numeric: tabular-nums;
+}
+
+#wall { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+
+h1, h2, p { margin: 0; }
+
+.wall-header {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 2rem;
+    padding: 1rem 1.75rem;
+    border-bottom: 2px solid var(--wall-line);
+}
+.wall-header h1 { font-size: 1.9rem; }
+.wall-company { color: var(--wall-muted); font-size: 1rem; }
+.wall-status { text-align: end; color: var(--wall-muted); display: grid; gap: .25rem; }
+.wall-clock { text-align: end; }
+.wall-time-now { font-size: 2.6rem; font-weight: 700; line-height: 1; }
+.wall-clock p:last-child { color: var(--wall-muted); }
+/* Swedish capitalises only the first word: "Fredag 13 november". */
+.wall-clock p:last-child::first-letter, .wall-date::first-letter { text-transform: uppercase; }
+.wall-stale { color: var(--wall-ground); background: var(--wall-amber); padding: .25rem .75rem; border-radius: .5rem; font-weight: 700; }
+.wall-preview { color: var(--wall-accent); font-weight: 700; }
+
+.wall-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: 1.25rem;
+    padding: 1.25rem 1.75rem 1.75rem;
+}
+.wall-side { display: grid; gap: 1.25rem; align-content: start; }
+
+.wall-panel { background: var(--wall-panel); border: 2px solid var(--wall-line); border-radius: 1rem; padding: 1rem 1.25rem; min-width: 0; }
+.wall-panel h2 { display: flex; align-items: center; gap: .75rem; font-size: 1.5rem; margin-bottom: .75rem; }
+.wall-alert { border-color: var(--wall-red); }
+.wall-count { min-width: 2.2rem; padding: .1rem .6rem; border-radius: 999px; background: var(--wall-line); font-size: 1.1rem; text-align: center; }
+
+.wall-cards, .wall-rows, .wall-steps { list-style: none; margin: 0; padding: 0; }
+.wall-cards { display: grid; gap: .9rem; }
+.wall-card { border: 2px solid var(--wall-line); border-radius: .75rem; padding: .75rem 1rem; }
+.wall-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: .5rem; }
+
+.wall-order { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem; min-width: 0; }
+.wall-ref { font-weight: 800; color: var(--wall-accent); font-size: 1.2rem; }
+.wall-product { font-weight: 700; font-size: 1.2rem; }
+.wall-qty { color: var(--wall-muted); }
+
+.wall-steps { display: grid; gap: .3rem; }
+.wall-step { display: grid; grid-template-columns: 7.5em minmax(0, 1fr) auto auto; gap: .75rem; align-items: baseline; padding: .3rem .5rem; border-radius: .5rem; }
+.wall-step.is-now { background: #2b2118; outline: 2px solid var(--wall-accent); }
+.wall-step.is-done { color: var(--wall-muted); }
+.wall-time { font-weight: 700; }
+.wall-station { color: var(--wall-muted); }
+.wall-tag { font-weight: 800; color: var(--wall-ground); background: var(--wall-accent); padding: 0 .5rem; border-radius: .4rem; }
+.wall-tag-quiet { background: var(--wall-line); color: var(--wall-text); }
+
+.wall-rows { display: grid; gap: .6rem; }
+.wall-row { display: grid; gap: .2rem; padding-bottom: .6rem; border-bottom: 1px solid var(--wall-line); }
+.wall-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.wall-row-meta { display: flex; flex-wrap: wrap; gap: .25rem 1rem; color: var(--wall-muted); }
+.wall-date { font-weight: 800; }
+
+.wall-light { display: inline-flex; align-items: center; gap: .4rem; font-weight: 700; white-space: nowrap; }
+.wall-light::before { content: ""; width: .8em; height: .8em; border-radius: 50%; background: currentColor; }
+.wall-green { color: var(--wall-green); }
+.wall-yellow { color: var(--wall-amber); }
+.wall-red { color: var(--wall-red); }
+.wall-grey { color: var(--wall-grey); }
+.wall-red-text { color: var(--wall-red); }
+.wall-amber-text { color: var(--wall-amber); }
+
+.wall-empty { color: var(--wall-muted); padding: .5rem 0; }
+.wall-good { color: var(--wall-green); }
+.wall-no-plan { grid-column: 1 / -1; font-size: 1.4rem; text-align: center; padding: 2rem; }
+.wall-more { color: var(--wall-muted); margin-top: .6rem; }
+
+.wall-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem; padding: 2rem; text-align: center; }
+.wall-help { color: var(--wall-muted); max-width: 40rem; }
+.wall-form { display: grid; gap: .75rem; width: min(26rem, 100%); }
+.wall-input { font: inherit; font-size: 1.8rem; letter-spacing: .15em; text-align: center; padding: .6rem; border-radius: .75rem; border: 2px solid var(--wall-line); background: var(--wall-panel); color: var(--wall-text); text-transform: uppercase; }
+.wall-primary { font: inherit; font-weight: 700; padding: .8rem; border: 0; border-radius: .75rem; background: var(--wall-accent); color: var(--wall-ground); cursor: pointer; }
+.wall-notice { color: var(--wall-red); font-weight: 700; }
+:focus-visible { outline: 4px solid var(--wall-accent); outline-offset: 3px; }
+
+@media (max-width: 900px) {
+    .wall-grid { grid-template-columns: 1fr; }
+    .wall-header { grid-template-columns: 1fr; text-align: start; }
+    .wall-status, .wall-clock { text-align: start; }
+    .wall-step { grid-template-columns: 7em minmax(0, 1fr); }
+}

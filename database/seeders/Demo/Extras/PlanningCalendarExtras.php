@@ -14,6 +14,8 @@ use App\Modules\Manufacturing\Actions\Planning\SavePlanningPerson;
 use App\Modules\Manufacturing\Actions\Planning\SaveSkill;
 use App\Modules\Manufacturing\Actions\Planning\SaveWorkstation;
 use App\Modules\Manufacturing\Actions\SaveOperation;
+use App\Modules\Manufacturing\Actions\Workshop\WorkshopDevices;
+use App\Modules\Manufacturing\Domain\DeviceKind;
 use App\Modules\Manufacturing\Domain\PlanTrigger;
 use App\Modules\Manufacturing\Domain\ProductionOrderStatus;
 use App\Modules\Manufacturing\ManufacturingModule;
@@ -39,7 +41,7 @@ use Database\Seeders\Demo\DemoExtra;
  * Lackbox with 12 hours' drying, three released production orders (one for
  * an open customer order with a delivery date), a plan, then an absence and
  * a stop in the Lackbox so the deviations page has something to show, and a
- * new plan. Runs after ManufacturingExtras (file name order). Dates follow
+ * new plan, and a paired wall screen. Runs after ManufacturingExtras (file name order). Dates follow
  * the day the demo is built. Made-up orders; only "Frånvarande" is shown.
  */
 final class PlanningCalendarExtras extends DemoExtra
@@ -183,6 +185,11 @@ final class PlanningCalendarExtras extends DemoExtra
             ]);
 
             $planner->run($c->company, PlanTrigger::Manual);
+
+            // The television on the workshop wall (M7), paired, for the manual's page about it.
+            $devices = app(WorkshopDevices::class);
+            [, $code] = $devices->register($c->user, $c->company, 'Tv:n i verkstaden', DeviceKind::WallScreen);
+            $devices->pair($code, DeviceKind::WallScreen);
         }));
     }
 }
