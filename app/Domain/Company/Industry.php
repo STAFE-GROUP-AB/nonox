@@ -17,6 +17,7 @@ enum Industry: string
     case Cafe = 'cafe';
     case Restaurant = 'restaurant';
     case Crafts = 'crafts';
+    case Manufacturing = 'manufacturing';
     case Consultant = 'consultant';
     case Retail = 'retail';
     case HairBeauty = 'hair_beauty';
@@ -30,6 +31,7 @@ enum Industry: string
             self::Cafe => __('Kafé'),
             self::Restaurant => __('Restaurang'),
             self::Crafts => __('Hantverk och bygg'),
+            self::Manufacturing => __('Tillverkande företag'),
             self::Consultant => __('Konsult'),
             self::Retail => __('Butik och e-handel'),
             self::HairBeauty => __('Frisör och skönhet'),
@@ -46,6 +48,7 @@ enum Industry: string
             self::Cafe => 'bokforing-for-cafeer',
             self::Restaurant => 'bokforing-for-restauranger',
             self::Crafts => 'bokforing-for-hantverkare',
+            self::Manufacturing => 'bokforing-for-tillverkande-foretag',
             self::Consultant => 'bokforing-for-konsulter',
             self::Retail => 'bokforing-for-butiker',
             self::HairBeauty => 'bokforing-for-frisorer',
@@ -76,6 +79,7 @@ enum Industry: string
             self::Retail => 'butik-och-handel',
             self::HairBeauty => 'frisor-och-skonhet',
             self::Crafts => 'hantverkare',
+            self::Manufacturing => 'tillverkande-foretag',
             self::Consultant => 'konsult',
             self::AccountingFirm => 'redovisningsbyra',
             self::FinanceConsultant => 'ekonomikonsult',

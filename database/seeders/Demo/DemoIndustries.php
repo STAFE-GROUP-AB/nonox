@@ -241,6 +241,41 @@ final class DemoIndustries
                     ['first_name' => 'Theo', 'last_name' => 'Björk', 'birth' => '20040610', 'position_title' => 'Lärling', 'salary_form' => 'HOURLY', 'salary' => '165,00', 'employment_type' => 'PROVANSTALLNING', 'employment_rate' => 100],
                 ],
             ],
+            'bokforing-for-tillverkande-foretag' => [
+                'org_serial' => '09',
+                'salary_account' => 7010,
+                'name' => 'Möbelsnickeriet Ekebo Demo AB',
+                'city' => 'Vimmerby',
+                'postal_code' => '598 30',
+                'vat_period' => 'QUARTERLY',
+                'firm' => 'for-redovisningsbyraer',
+                'opening_bank' => 240_000,
+                'sales' => ['kind' => 'invoices', 'invoices_per_month' => 5, 'hours' => [16, 60]],
+                'articles' => [
+                    ['number' => 'ARB', 'name' => 'Arbete snickare', 'unit' => 'tim', 'price' => '595', 'vat_rate' => 2500],
+                    ['number' => 'MAT', 'name' => 'Material enligt specifikation', 'unit' => 'st', 'price' => '2400', 'vat_rate' => 2500],
+                    ['number' => 'LEV', 'name' => 'Leverans och montering', 'unit' => 'st', 'price' => '850', 'vat_rate' => 2500],
+                ],
+                'customers' => [
+                    ['name' => 'Kontorsinredarna Exempel AB', 'org_number' => self::orgNumber('28'), 'vat_number' => self::vatNumber('28'), 'city' => 'Vimmerby', 'payment_terms_days' => 30],
+                    ['name' => 'Bostadsrättsföreningen Exemplet', 'org_number' => self::orgNumber('29', '769'), 'city' => 'Vimmerby', 'payment_terms_days' => 30],
+                    ['name' => 'Lisa Lindqvist', 'personal_number' => self::personalNumber('19720508', '175'), 'city' => 'Hultsfred', 'payment_terms_days' => 20],
+                ],
+                'suppliers' => [
+                    ['name' => 'Träbolaget Demo AB', 'org_number' => self::orgNumber('71'), 'bankgiro' => '5050-1055', 'payment_terms_days' => 30, 'default_account' => 4010],
+                    ['name' => 'Beslag och Lack Demo AB', 'org_number' => self::orgNumber('72'), 'bankgiro' => '5050-1055', 'payment_terms_days' => 30, 'default_account' => 4010],
+                    ['name' => 'Verkstadsfastigheter Demo AB', 'org_number' => self::orgNumber('73'), 'bankgiro' => '5050-1055', 'payment_terms_days' => 0, 'default_account' => 5010],
+                ],
+                'costs' => [
+                    ['supplier' => 'Träbolaget Demo AB', 'account' => 4010, 'every' => 'week', 'amount' => [6_000, 20_000], 'vat_rate' => 2500, 'description' => 'Trävaror'],
+                    ['supplier' => 'Beslag och Lack Demo AB', 'account' => 4010, 'every' => 'month', 'amount' => [2_000, 6_000], 'vat_rate' => 2500, 'description' => 'Beslag och ytbehandling'],
+                    ['supplier' => 'Verkstadsfastigheter Demo AB', 'account' => 5010, 'every' => 'month', 'amount' => [9_000, 9_000], 'vat_rate' => 2500, 'description' => 'Hyra verkstadslokal'],
+                ],
+                'employees' => [
+                    ['first_name' => 'Gustav', 'last_name' => 'Ekebo', 'birth' => '19790312', 'position_title' => 'Snickare, verkstadschef', 'salary_form' => 'MONTHLY', 'salary' => '39 000', 'employment_type' => 'TILLSVIDARE', 'employment_rate' => 100],
+                    ['first_name' => 'Maja', 'last_name' => 'Strand', 'birth' => '19950620', 'position_title' => 'Möbelsnickare', 'salary_form' => 'HOURLY', 'salary' => '190,00', 'employment_type' => 'TILLSVIDARE', 'employment_rate' => 100],
+                ],
+            ],
             'bokforing-for-konsulter' => [
                 'org_serial' => '06',
                 'salary_account' => 7220,

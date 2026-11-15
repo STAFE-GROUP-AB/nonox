@@ -465,7 +465,7 @@ Taxonomitestet för iXBRL-årsredovisningen hoppas över om `BOLAGSVERKET_TAXONO
 
 ### Demoföretag per bransch
 
-Ett påhittat demoföretag för varje branschsida (restaurang, café, butik, frisör, hantverkare, konsult, redovisningsbyrå och ekonomikonsult), med årets bokföring fram till i går: dagsrapporter eller kundfakturor (med ROT och omvänd betalningsskyldighet hos hantverkaren), leverantörsfakturor med attest och betalning, löner, momsdeklarationer, anställda och personalliggare. Byråerna är kopplade till sina kundföretag.
+Ett påhittat demoföretag för varje branschsida (restaurang, café, butik, frisör, hantverkare, konsult, redovisningsbyrå och ekonomikonsult); sidan för tillverkande företag har ett eget möbelsnickeri med stycklistor, tillverkningsorder, planering och storskärm, med årets bokföring fram till i går: dagsrapporter eller kundfakturor (med ROT och omvänd betalningsskyldighet hos hantverkaren), leverantörsfakturor med attest och betalning, löner, momsdeklarationer, anställda och personalliggare. Byråerna är kopplade till sina kundföretag.
 
 Lägg dem i en egen databas, så att de inte blandas med riktiga företag:
 

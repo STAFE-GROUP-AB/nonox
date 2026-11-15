@@ -19,6 +19,7 @@ Företagsbranscher heter `/bokforing-for-…`, sidor för den som för bokförin
 | `/bokforing-for-cafeer` | `bokforing-for-cafeer.json` | Caféer |
 | `/bokforing-for-restauranger` | `bokforing-for-restauranger.json` | Restauranger |
 | `/bokforing-for-hantverkare` | `bokforing-for-hantverkare.json` | Bygg, el och VVS |
+| `/bokforing-for-tillverkande-foretag` | `bokforing-for-tillverkande-foretag.json` | Tillverkande företag: snickerier, möbler och verkstäder |
 | `/bokforing-for-konsulter` | `bokforing-for-konsulter.json` | Konsultbolag |
 | `/bokforing-for-butiker` | `bokforing-for-butiker.json` | Butiker och handel |
 | `/bokforing-for-frisorer` | `bokforing-for-frisorer.json` | Frisörer och skönhetssalonger |

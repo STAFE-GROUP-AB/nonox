@@ -1,7 +1,7 @@
 ---
 beskrivning: Vad som är särskilt för åtta vanliga branscher, med en checklista per bransch och länkar till det som gäller just dig.
 ordning: 0
-sokord: [bransch, branscher, kafé, restaurang, butik, frisör, hantverkare, bygg, konsult, redovisningsbyrå, ekonomikonsult]
+sokord: [bransch, branscher, kafé, restaurang, butik, frisör, hantverkare, bygg, tillverkning, snickeri, konsult, redovisningsbyrå, ekonomikonsult]
 kallor:
   - titel: Skatteverket – För dig som vill starta företag
     url: https://www.skatteverket.se/foretag/drivaforetag/startaochregistrera/fordigsomvillstartaforetag.4.6e8a1495181dad540842251.html
@@ -32,9 +32,10 @@ Välj den bransch som liknar din verksamhet mest. Varje översikt har en checkli
 - [Butik och handel](/foretagsguiden/branscher/butik-och-handel)
 - [Frisör och skönhet](/foretagsguiden/branscher/frisor-och-skonhet)
 
-**Hantverk och tjänster**
+**Hantverk, tillverkning och tjänster**
 
 - [Hantverkare inom bygg, el och VVS](/foretagsguiden/branscher/hantverkare)
+- [Tillverkande företag](/foretagsguiden/branscher/tillverkande-foretag)
 - [Konsult](/foretagsguiden/branscher/konsult)
 
 **Ekonomi åt andra**

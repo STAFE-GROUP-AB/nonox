@@ -61,7 +61,7 @@ final class PlanningCalendarExtras extends DemoExtra
 
     public function industries(): array
     {
-        return ['bokforing-for-hantverkare'];
+        return ['bokforing-for-hantverkare', 'bokforing-for-tillverkande-foretag'];
     }
 
     public function afterAll(DemoContext $c): void
