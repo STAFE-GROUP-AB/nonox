@@ -842,7 +842,7 @@ Next package: M7 enligt prioritetslistan.
 ---
 
 Package: M7, storskärm i verkstaden (ADR-071, färdplanens `storskarm-verkstad`)
-Status: done på grenen `feat/m7-wall-screen` (main dd9b7bfa sammanslagen in; ingen push)
+Status: done och live (granskad CLEAR TO MERGE efter rättningar 93628382 och bb3f9190; hela sviten 9347 gröna med PGTZ=UTC, phpstan 0 fel)
 Evidence: `tests/Feature/Manufacturing/WallScreenTest.php` (koppling per enhetstyp, dagens arbete, försenat, leveranser, väntar och stopp, inga namn/frånvaro/kunder/orsaker, fast antal frågor vid 10 och 100 order, behörigheter), `tests/Tenancy/WallScreenTenancyTest.php`, `tests/js/workshop-wall.test.mjs` (#kod läses ur fragmentet och tas bort ur adressen).
 - `/verkstad/storskarm` för en tv på väggen: dagens planerade arbete per tillverkningsorder, försenade order, det som är lovat de närmaste fem arbetsdagarna och det som väntar, står still eller har planerat stopp i dag. Läser M6:s `PlanBoard`; kopplas som M5:s surfplattor men som egen enhetstyp (`workshop_devices.kind`).
 - Visar inga namn på personer, ingen frånvaro, inga kundnamn och inte väntande-orsakens fritext.
