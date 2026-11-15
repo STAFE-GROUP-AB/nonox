@@ -132,3 +132,23 @@ it('builds a restaurant demo on a Sunday evening, when this Sunday\'s shifts hav
 
     expect(DemoSessions::state($token)['status'])->toBe(DemoSessions::READY);
 });
+
+it('builds the manufacturing demo with a working plan, skills and a paired wall screen', function () {
+    Queue::fake();
+    $token = DemoSessions::begin('bokforing-for-tillverkande-foretag');
+    (new BuildDemoCompany($token, 'bokforing-for-tillverkande-foretag'))->handle(app(CreateDemo::class));
+
+    $state = DemoSessions::state($token);
+    expect($state['status'])->toBe(DemoSessions::READY);
+
+    DemoMode::onDemoConnection(function () use ($state) {
+        $guest = User::query()->findOrFail($state['user_id']);
+        $company = $guest->current_team_id;
+        $count = fn (string $table): int => DB::table($table)->where('company_id', $company)->count();
+
+        expect($count('production_plan_slots'))->toBeGreaterThan(0)
+            ->and($count('production_employee_skills'))->toBeGreaterThan(0)
+            ->and($count('production_orders'))->toBeGreaterThan(0)
+            ->and(DB::table('workshop_devices')->where('company_id', $company)->where('kind', 'WALL')->whereNotNull('paired_at')->count())->toBe(1);
+    });
+});

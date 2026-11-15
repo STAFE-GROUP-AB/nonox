@@ -13,6 +13,7 @@ granskad: 2026-11-15
 mansklig_granskning:
 legal_verify:
   - Artikeln beskriver K2 för årsredovisning (BFNAR 2016:10) och nämner bara att pågående arbeten och färdiga varor kan höra till varulagret. Kontrollera vad som gäller för ditt företag och din redovisningsform med en redovisningskonsult.
+  - Konsumentköplagen och konsumenttjänstlagen beskrivs bara övergripande. Vilken lag som gäller beror på avtalet; kontrollera med Konsumentverket.
   - Kollektivavtalets betydelse för lön beskrivs bara övergripande. Avtalets innehåll avgörs av avtalstexten och parterna.
 ---
 
@@ -25,7 +26,7 @@ Tillverkar du på beställning, till exempel möbler, snickerier eller detaljer 
 - **Lager och produkter i arbete.** Material, halvfabrikat och färdiga produkter som ännu inte är sålda kan vara tillgångar i bokslutet. Hur de ska värderas och redovisas beror på din redovisningsform. K2 för mindre aktiebolag har egna regler, se [Lager och inventering](/foretagsguiden/branscher/lager-och-inventering).
 - **Verifikationer och underlag.** Allt som påverkar bokföringen ska ha en verifikation och sparas enligt bokföringslagen, även inköp av material och leverantörsfakturor som hör till ett visst jobb.
 - **Kollektivavtal.** Är ditt företag bundet av ett kollektivavtal, som Träindustriavtalet för trä- och möbelindustrin, styr det minimilöner, tillägg för övertid och OB samt semesterregler. Vad som gäller dig avgörs av avtalet och av hur ditt företag är bundet av det.
-- **Arbete åt konsumenter.** Tillverkar eller monterar du hos privatpersoner kan konsumenttjänstlagen gälla, se [Offert, ÄTA och projekt](/foretagsguiden/branscher/ata-och-projekt).
+- **Försäljning till konsumenter.** Tillverkar du en vara på beställning åt en privatperson gäller oftast konsumentköplagen (2022:260). Monterar eller reparerar du något hos kunden kan konsumenttjänstlagen (1985:716) gälla, se [Offert, ÄTA och projekt](/foretagsguiden/branscher/ata-och-projekt). Kontrollera med Konsumentverket vad som gäller ditt avtal.
 
 ## Så här gör du
 

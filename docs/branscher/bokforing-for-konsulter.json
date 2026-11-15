@@ -51,7 +51,7 @@
         {"q": "Ingår bokslut och årsredovisning?", "a": "Ja. Bokslut med checklista, årsredovisning enligt K2 som PDF och inkomstdeklaration 2 som SRU-filer ingår i priset. Digital inlämning av årsredovisningen till Bolagsverket finns inte ännu."},
         {"q": "Kan jag betala ut lön till mig själv?", "a": "Ja. Lönemodulen fungerar lika bra för en anställd som för många, med skattetabeller, arbetsgivaravgifter, lönefil och arbetsgivardeklaration."},
         {"q": "Kan min redovisningskonsult arbeta i samma system?", "a": "Ja. Bjud in konsulten med rollen redovisningskonsult, så arbetar ni i samma bokföring, utan filer fram och tillbaka."},
-        {"q": "Vad kostar NONOX för ett konsultbolag?", "a": "{pris} per år med drift, med lön, bokslut och årsredovisning inräknade. Kör du NONOX själv kostar det ingenting."}
+        {"q": "Vad kostar NONOX för ett konsultbolag?", "a": "{pris} per år med drift, med lön, bokslut och årsredovisning inräknade. Kör du NONOX själv betalar du ingen licens, bara din egen drift."}
     ],
     "related": ["for-ekonomikonsulter", "bokforing-for-hantverkare", "for-redovisningsbyraer"],
     "legal_verify": [

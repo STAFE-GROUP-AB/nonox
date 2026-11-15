@@ -46,7 +46,7 @@ use Database\Seeders\Demo\DemoExtra;
  */
 final class PlanningCalendarExtras extends DemoExtra
 {
-    /** First name => the operations the person does. */
+    /** First name => the operations the person does. A company without these names gives the roles to its employees in order. */
     private const array PEOPLE = [
         'Erik' => ['Kapning', 'Hyvling', 'Montering'],
         'Adam' => ['Montering', 'Slipning', 'Lackering'],
@@ -98,8 +98,12 @@ final class PlanningCalendarExtras extends DemoExtra
 
             $people = [];
 
-            foreach (self::PEOPLE as $first => $names) {
-                $employee = Employee::query()->where('first_name', $first)->first();
+            $byName = Employee::query()->whereIn('first_name', array_keys(self::PEOPLE))->get()->keyBy('first_name');
+            $inOrder = Employee::query()->orderBy('id')->get()->values();
+
+            foreach (array_keys(self::PEOPLE) as $position => $first) {
+                $names = self::PEOPLE[$first];
+                $employee = $byName->isNotEmpty() ? $byName->get($first) : $inOrder->get($position);
 
                 if ($employee === null) {
                     continue;

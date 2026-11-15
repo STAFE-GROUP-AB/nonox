@@ -1,5 +1,5 @@
 ---
-beskrivning: Vad som är särskilt för åtta vanliga branscher, med en checklista per bransch och länkar till det som gäller just dig.
+beskrivning: Vad som är särskilt för nio vanliga branscher, med en checklista per bransch och länkar till det som gäller just dig.
 ordning: 0
 sokord: [bransch, branscher, kafé, restaurang, butik, frisör, hantverkare, bygg, tillverkning, snickeri, konsult, redovisningsbyrå, ekonomikonsult]
 kallor:

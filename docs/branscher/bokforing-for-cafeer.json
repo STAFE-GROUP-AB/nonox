@@ -68,7 +68,7 @@
         {"q": "Måste mitt café ha personalliggare?", "a": "Det beror på verksamheten. Många caféer räknas till restaurangbranschen, som ska föra personalliggare. Det är Skatteverkets regler som avgör, så kontrollera där om du är osäker. Behöver du en liggare finns den i NONOX som en modul."},
         {"q": "Fungerar personalliggaren om internet går ner?", "a": "Ja. Kiosken sparar varje in- och utcheckning på surfplattan direkt och skickar dem när nätet är tillbaka. Personen ser att incheckningen gått igenom med en gång."},
         {"q": "Hur bokförs Swish och kortbetalningar?", "a": "Som betalsätt på dagsrapporten: kort, Swish och kontant bokförs på de konton du valt i mallen. När pengarna kommer in på banken stämmer du av dem i bankavstämningen. Avgifterna kan du bokföra med en konteringsmall."},
-        {"q": "Vad kostar NONOX för ett café?", "a": "{pris} per år med drift för upp till {max} anställda, med lön, personalliggare och inkorg inräknade. Kör du NONOX själv kostar det ingenting."},
+        {"q": "Vad kostar NONOX för ett café?", "a": "{pris} per år med drift för upp till {max} anställda, med lön, personalliggare och inkorg inräknade. Kör du NONOX själv betalar du ingen licens, bara din egen drift."},
         {"q": "Hur flyttar jag från mitt nuvarande program?", "a": "Exportera en SIE4-fil för varje räkenskapsår och läs in dem i NONOX, eller hämta allt direkt om du kommer från Fortnox. Flyttguiden visar varje steg."}
     ],
     "related": ["bokforing-for-restauranger", "bokforing-for-butiker", "bokforing-for-frisorer"],
