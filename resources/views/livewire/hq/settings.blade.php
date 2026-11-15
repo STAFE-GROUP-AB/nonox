@@ -72,6 +72,13 @@
                         <p id="hq-migration-guides-public-hint" class="text-sm text-gray-600">{{ __('Av: sidorna under /flytta-fran svarar inte. Sätt på dem först när den juridiska granskningen av sidorna som nämner andra program är gjord.') }}</p>
                     </div>
                 </div>
+                <div class="flex items-start gap-3">
+                    <input id="hq-stripe-enabled" type="checkbox" wire:model="stripeEnabled" class="mt-1 h-5 w-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" aria-describedby="hq-stripe-enabled-hint">
+                    <div>
+                        <label for="hq-stripe-enabled" class="text-sm font-medium text-gray-800">{{ __('Stripe i NONOX Connect') }}</label>
+                        <p id="hq-stripe-enabled-hint" class="text-sm text-gray-600">{{ __('Av: inget företag kan koppla Stripe, Stripe-sidan säger att kopplingen inte finns än, inläsningen står still och webhooken svarar inte. Sätt på först när biträdesavtalet nämner NONOX SaaS och Stripe.') }}</p>
+                    </div>
+                </div>
             </div>
         </x-ui.card>
 

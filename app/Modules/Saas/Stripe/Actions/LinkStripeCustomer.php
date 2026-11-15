@@ -10,10 +10,12 @@ use App\Models\Company;
 use App\Models\Customer;
 use App\Models\User;
 use App\Modules\Saas\Jobs\RecomputeSaas;
+use App\Modules\Saas\SaasModule;
 use App\Modules\Saas\Stripe\Models\StripeCustomerLink;
 use App\Modules\Saas\Stripe\Support\StripeLedger;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -71,9 +73,35 @@ class LinkStripeCustomer
         ], 'stripe.customer_unlinked');
     }
 
+    /**
+     * Erases a Stripe customer that is not linked, on the person's request
+     * (GDPR art. 17, review P2-2): its details are cleared and never read in
+     * again, and its raw subscriptions are deleted; it still counts under its
+     * provisional id with ids and amounts only. A linked Stripe customer is
+     * erased with its customer in the customer register. Works also while
+     * Stripe is switched off.
+     */
+    public function erase(User $user, Company $company, StripeCustomerLink $link): void
+    {
+        if (! $user->hasTeamPermission($company, SaasModule::MANAGE)) {
+            throw new AuthorizationException(__('Du har inte behörighet att hantera återkommande intäkter.'));
+        }
+
+        if ($link->isLinked()) {
+            throw ValidationException::withMessages(['link' => __('Stripe-kunden är kopplad till en kund. Radera eller anonymisera kunden i kundregistret i stället.')]);
+        }
+
+        CurrentCompany::run($company, fn () => DB::transaction(fn () => PruneStripe::erase($link)));
+        Audit::record('stripe.customer_erased', $link, ['link' => $link->id], $company, $user);
+    }
+
     public function createCustomer(User $user, Company $company, StripeCustomerLink $link): Customer
     {
         StripePermissions::authorizeManage($user, $company);
+
+        if ($link->isErased()) {
+            throw ValidationException::withMessages(['link' => __('Stripe-kundens uppgifter är raderade.')]);
+        }
 
         if ($link->isLinked()) {
             throw ValidationException::withMessages(['link' => __('Stripe-kunden är redan kopplad till en kund.')]);

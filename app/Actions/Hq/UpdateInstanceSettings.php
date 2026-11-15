@@ -52,6 +52,7 @@ final class UpdateInstanceSettings
             }],
             'demo_enabled' => ['sometimes', 'boolean'],
             'migration_guides_public' => ['sometimes', 'boolean'],
+            'stripe_enabled' => ['sometimes', 'boolean'],
         ], [], [
             'operator_company_id' => __('driftbolag'),
             'security_contact' => __('säkerhetskontakt'),
@@ -75,6 +76,7 @@ final class UpdateInstanceSettings
             InstanceSettings::SECURITY_CONTACT => $contact === '' ? null : $contact,
             InstanceSettings::DEMO_ENABLED => (bool) ($validated['demo_enabled'] ?? $demoBefore),
             InstanceSettings::MIGRATION_GUIDES_PUBLIC => array_key_exists('migration_guides_public', $validated) ? (bool) $validated['migration_guides_public'] : (bool) InstanceSettings::current()->get(InstanceSettings::MIGRATION_GUIDES_PUBLIC),
+            InstanceSettings::STRIPE_ENABLED => array_key_exists('stripe_enabled', $validated) ? (bool) $validated['stripe_enabled'] : InstanceSettings::current()->stripeEnabled(),
         ];
 
         $changed = array_keys(array_filter($new, fn (mixed $value, string $key): bool => $before[$key] !== $value, ARRAY_FILTER_USE_BOTH));

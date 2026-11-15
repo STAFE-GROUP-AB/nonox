@@ -255,6 +255,7 @@ it('clears the Stripe customers of an anonymised customer at once, and the rest 
     $this->fake->customer('cus_1', ['email' => 'person@example.test', 'metadata' => ['nonox_customer_number' => (string) $customer->number]]);
     $this->fake->customer('cus_2', ['email' => 'annan@example.test']);
     $this->fake->subscription('sub_1', 'cus_1', 10_000);
+    $this->fake->subscription('sub_2', 'cus_2', 20_000);
     $connection = SaasStripe::connect($this->owner, $this->company, $this->fake);
 
     event(new CustomerAnonymised($this->company->id, $customer->id));

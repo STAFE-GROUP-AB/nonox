@@ -109,8 +109,8 @@ it('never writes the key to a log, the audit log, a page or the browser', functi
     });
 
     $component = Livewire\Livewire::test(StripePage::class)
-        ->set('key', StripeFake::KEY)
-        ->call('connect');
+        ->set('key', StripeFake::KEY);
+    SaasStripe::connect($this->owner, $this->company, $this->fake);
     $this->fake->revoked = true;
     app(StripeSync::class)->run(StripeConnection::query()->sole());
     $page = $this->get(route('saas.stripe'))->assertOk()->getContent();

@@ -88,6 +88,7 @@ class StripeSyncRun extends Model
 
         return match ($this->error) {
             'unauthorized' => __('Stripe godtar inte nyckeln längre. Kopplingen är avslutad.'),
+            'key_changed' => __('Nyckeln byttes under inläsningen. Nästa inläsning använder den nya nyckeln.'),
             'forbidden' => __('Nyckeln saknar en läsbehörighet som NONOX behöver.'),
             'rate_limited' => __('Stripe bad NONOX vänta. Inläsningen fortsätter nästa gång.'),
             'unavailable' => __('Stripe svarade inte. Inläsningen fortsätter nästa gång.'),

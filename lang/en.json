@@ -14608,5 +14608,19 @@
     "NONOX SaaS är inte påslaget för företaget.": "NONOX SaaS is not switched on for the company.",
     "Du behöver behörighet att ändra inställningar för att slå på NONOX Connect.": "You need permission to change settings to switch on NONOX Connect.",
     "Stripe godtar inte längre nyckeln för :company. Kopplingen är avslutad; koppla Stripe igen med en ny begränsad nyckel.": "Stripe no longer accepts the key for :company. The connection has ended; connect Stripe again with a new restricted key.",
-    "Öppna Stripe": "Open Stripe"
+    "Öppna Stripe": "Open Stripe",
+    "Stripe-kundens uppgifter är raderade i NONOX och läses inte in igen. Ta också bort kunden i Stripe om personen har begärt radering.": "The Stripe customer's details are erased in NONOX and will not be read in again. Also delete the customer in Stripe if the person asked for erasure.",
+    "Kopplingen finns inte än": "The connection is not available yet",
+    "Kopplingen till Stripe finns inte än i den här installationen. När den slås på kan du koppla ditt Stripe-konto här.": "The connection to Stripe is not available yet on this installation. When it is switched on you can connect your Stripe account here.",
+    "Stripe ingår i tillägget NONOX Connect. Priset är leverantörens pris till NONOX plus 10 %. NONOX betalar inget till Stripe för kopplingen, så priset blir 0 kr. Dina egna avgifter till Stripe betalar du som förut direkt till Stripe.": "Stripe is part of the NONOX Connect add-on. The price is the provider's price to NONOX plus 10 %. NONOX pays Stripe nothing for the connection, so the price is SEK 0. You pay your own fees to Stripe directly to Stripe, as before.",
+    "Priset är 0 kr i månaden enligt raderna ovan. Ändras priset får du besked minst 30 dagar innan det nya priset gäller, och du kan stänga av kopplingen innan dess.": "The price is SEK 0 a month, as the lines above show. If the price changes you will be told at least 30 days before the new price applies, and you can switch the connection off before then.",
+    "Uppgifterna raderade": "Details erased",
+    "Radera uppgifterna": "Erase the details",
+    "Namn, e-post, adress och skatte-id raderas i NONOX och läses inte in igen. Siffrorna i Återkommande intäkter, som bara har id och belopp, finns kvar. Ta också bort kunden i Stripe.": "Name, e-mail, address and tax ids are erased in NONOX and not read in again. The figures in Recurring revenue, which hold only ids and amounts, remain. Also delete the customer in Stripe.",
+    "Nyckeln byttes under inläsningen. Nästa inläsning använder den nya nyckeln.": "The key was replaced during the read. The next read uses the new key.",
+    "Stripe-kunden är kopplad till en kund. Radera eller anonymisera kunden i kundregistret i stället.": "The Stripe customer is linked to a customer. Delete or anonymise the customer in the customer register instead.",
+    "Stripe-kundens uppgifter är raderade.": "The Stripe customer's details are erased.",
+    "Kopplingen till Stripe finns inte än i den här installationen.": "The connection to Stripe is not available yet on this installation.",
+    "Stripe i NONOX Connect": "Stripe in NONOX Connect",
+    "Av: inget företag kan koppla Stripe, Stripe-sidan säger att kopplingen inte finns än, inläsningen står still och webhooken svarar inte. Sätt på först när biträdesavtalet nämner NONOX SaaS och Stripe.": "Off: no company can connect Stripe, the Stripe page says the connection is not available yet, reading stops and the webhook does not answer. Switch it on only when the DPA names NONOX SaaS and Stripe."
 }

@@ -330,37 +330,48 @@ final class ContractVersions
      * month is never touched: the next recompute books the difference as
      * Rättelse in the first open month (SA-R22). Takes the ledger lock.
      *
+     * @param  list<string>  $sourceIds  the contracts to move, read in one query (review P3-6)
      * @return int the versions written
      */
-    public function moveToCustomer(SourceType $type, string $sourceId, ?int $customerId, ?int $userId): int
+    public function moveToCustomer(SourceType $type, array $sourceIds, ?int $customerId, ?int $userId): int
     {
-        self::lock((int) CurrentCompany::id());
-
-        $versions = SaasContractVersion::query()
-            ->where('source_type', $type->value)
-            ->where('source_id', $sourceId)
-            ->orderBy('id')
-            ->get();
-        $visible = self::pending($versions, '0000-00-00');
-
-        if ($visible === [] || collect($visible)->every(fn (SaasContractVersion $version): bool => $version->customer_id === $customerId)) {
+        if ($sourceIds === []) {
             return 0;
         }
 
-        foreach ($visible as $version) {
-            $this->write([
-                'source_type' => $type,
-                'source_id' => $sourceId,
-                ...self::state($version),
-                'customer_id' => $customerId,
-                'effective_from' => $version->effective_from->toDateString(),
-                'recorded_by' => $userId,
-                'cause' => $version->cause,
-                'source_ref' => [...(array) $version->source_ref, 'moved_from_version' => $version->id],
-            ]);
+        self::lock((int) CurrentCompany::id());
+
+        $bySource = SaasContractVersion::query()
+            ->where('source_type', $type->value)
+            ->whereIn('source_id', $sourceIds)
+            ->orderBy('id')
+            ->get()
+            ->groupBy('source_id');
+        $written = 0;
+
+        foreach ($bySource as $sourceId => $versions) {
+            $visible = self::pending($versions->values(), '0000-00-00');
+
+            if ($visible === [] || collect($visible)->every(fn (SaasContractVersion $version): bool => $version->customer_id === $customerId)) {
+                continue;
+            }
+
+            foreach ($visible as $version) {
+                $this->write([
+                    'source_type' => $type,
+                    'source_id' => (string) $sourceId,
+                    ...self::state($version),
+                    'customer_id' => $customerId,
+                    'effective_from' => $version->effective_from->toDateString(),
+                    'recorded_by' => $userId,
+                    'cause' => $version->cause,
+                    'source_ref' => [...(array) $version->source_ref, 'moved_from_version' => $version->id],
+                ]);
+                $written++;
+            }
         }
 
-        return count($visible);
+        return $written;
     }
 
     private static function crmCancel(Agreement $agreement): ?string

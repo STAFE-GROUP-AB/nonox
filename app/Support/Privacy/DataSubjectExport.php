@@ -32,6 +32,7 @@ use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\SalaryChange;
+use App\Modules\Saas\Stripe\Models\StripeCustomerLink;
 use App\Modules\StaffLedger\Models\Entry;
 use App\Modules\StaffLedger\Models\Location;
 use App\Modules\StaffLedger\Models\Person;
@@ -89,7 +90,37 @@ final class DataSubjectExport
                 ->map(fn (Invoice $invoice): array => ['nummer' => $invoice->number, 'nummer_i_tidigare_program' => $invoice->external_ref, 'datum' => $invoice->invoice_date->toDateString(), 'belopp_ore' => $invoice->total_ore->ore, 'status' => $invoice->status->value])->all(),
             // CRM (ADR-043): the customer's account and activities, when it has one.
             'crm' => CrmExport::forCustomer($customer),
+            // Stripe in NONOX Connect (ADR-080 step 2): the Stripe customers linked to the customer.
+            'stripe' => StripeCustomerLink::query()->where('customer_id', $customer->id)->orderBy('id')->get()
+                ->map(fn (StripeCustomerLink $link): array => self::stripeCustomer($link))->all(),
         ];
+    }
+
+    /**
+     * One Stripe customer as NONOX holds it: for a linked customer's extract,
+     * and on its own for a Stripe customer that is not linked.
+     *
+     * @return array<string, mixed>
+     */
+    public static function stripeCustomer(StripeCustomerLink $link): array
+    {
+        return [
+            'stripe_kund_id' => $link->stripe_customer_id,
+            'namn' => $link->name,
+            'e_post' => $link->email,
+            'land' => $link->country,
+            'adress' => $link->address,
+            'skatte_id' => $link->tax_ids,
+            'kopplad_genom' => $link->method,
+            'granskad' => $link->confirmed_at?->toIso8601String(),
+            'raderad' => $link->erased_at?->toIso8601String(),
+        ];
+    }
+
+    /** @return array<string, mixed> a Stripe customer that is not linked to a customer (ADR-080 step 2) */
+    public static function unlinkedStripeCustomer(StripeCustomerLink $link): array
+    {
+        return ['utdrag' => self::meta('Stripe-kund'), 'stripe_kund' => self::stripeCustomer($link)];
     }
 
     /** @return array<string, mixed> */

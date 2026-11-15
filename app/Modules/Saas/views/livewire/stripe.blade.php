@@ -22,9 +22,19 @@
 
     @include('saas::partials.note')
 
+    @if(! $available)
+        <x-ui.card :title="__('Kopplingen finns inte än')">
+            <div class="space-y-3 text-sm text-gray-700" data-testid="stripe-unavailable">
+                <p>{{ __('Kopplingen till Stripe finns inte än i den här installationen. När den slås på kan du koppla ditt Stripe-konto här.') }}</p>
+                @if($active && $canConnect)
+                    <button type="button" class="text-sm font-semibold text-red-700 underline" wire:click="disconnect" wire:loading.attr="disabled">{{ __('Koppla från Stripe') }}</button>
+                @endif
+            </div>
+        </x-ui.card>
+    @else
     <x-ui.card :title="__('NONOX Connect')">
         <div class="space-y-3 text-sm text-gray-700">
-            <p>{{ __('Stripe ingår i tillägget NONOX Connect. Priset är leverantörens pris till NONOX plus 10 %. Stripe tar inget betalt av NONOX för att läsa ditt konto, så priset blir 0 kr. Dina egna avgifter till Stripe betalar du som förut direkt till Stripe.') }}</p>
+            <p>{{ __('Stripe ingår i tillägget NONOX Connect. Priset är leverantörens pris till NONOX plus 10 %. NONOX betalar inget till Stripe för kopplingen, så priset blir 0 kr. Dina egna avgifter till Stripe betalar du som förut direkt till Stripe.') }}</p>
             <dl class="grid max-w-sm grid-cols-2 gap-x-4 gap-y-1" data-testid="stripe-price">
                 <dt>{{ __('Leverantörens pris') }}</dt>
                 <dd class="text-right tabular-nums">{{ Money::ofOre($price['provider_ore'])->format() }}</dd>
@@ -43,7 +53,7 @@
                     <x-button type="button" x-show="! confirming" x-on:click="confirming = true">{{ __('Slå på Stripe i NONOX Connect') }}</x-button>
                     <div x-show="confirming" x-cloak class="rounded-2xl bg-amber-50 p-4 text-amber-900 ring-1 ring-amber-200" role="alertdialog" aria-labelledby="stripe-addon-title">
                         <p id="stripe-addon-title" class="font-semibold">{{ __('Slå på Stripe i NONOX Connect?') }}</p>
-                        <p class="mt-1">{{ __('Priset är 0 kr i månaden enligt raderna ovan. Ändras Stripes pris till NONOX får du veta det innan något debiteras.') }}</p>
+                        <p class="mt-1">{{ __('Priset är 0 kr i månaden enligt raderna ovan. Ändras priset får du besked minst 30 dagar innan det nya priset gäller, och du kan stänga av kopplingen innan dess.') }}</p>
                         <div class="mt-3 flex flex-wrap gap-3">
                             <x-button type="button" wire:click="enableAddon" wire:loading.attr="disabled">{{ __('Ja, slå på') }}</x-button>
                             <button type="button" class="text-sm text-gray-700 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>
@@ -164,7 +174,7 @@
                                     @foreach($section['rows'] as $link)
                                         <li class="flex flex-wrap items-center justify-between gap-3 py-3" wire:key="stripe-link-{{ $link->id }}">
                                             <div>
-                                                <p class="font-medium text-ink">{{ $link->label() }}</p>
+                                                <p class="font-medium text-ink">{{ $link->label() }} @if($link->isErased())<x-ui.badge>{{ __('Uppgifterna raderade') }}</x-ui.badge>@endif</p>
                                                 <p class="text-gray-600">{{ collect([$link->email, $link->country, $link->stripe_customer_id])->filter()->implode(' · ') }}</p>
                                                 @if($link->isLinked())
                                                     <p>{{ __('Kopplad till :number :name (:method).', ['number' => $link->customer?->number, 'name' => $link->customer?->name, 'method' => $methods[$link->method] ?? '']) }}</p>
@@ -188,13 +198,29 @@
                                                             </div>
                                                             <button type="submit" class="min-h-11 text-sm font-semibold text-accent-700 hover:text-accent-800">{{ __('Koppla') }}</button>
                                                         </form>
-                                                        <button type="button" class="min-h-11 text-sm text-gray-700 underline" wire:click="createCustomer({{ $link->id }})" wire:loading.attr="disabled">{{ __('Skapa kund') }}</button>
+                                                        @if(! $link->isErased())
+                                                            <button type="button" class="min-h-11 text-sm text-gray-700 underline" wire:click="createCustomer({{ $link->id }})" wire:loading.attr="disabled">{{ __('Skapa kund') }}</button>
+                                                        @endif
+                                                        <a href="{{ route('saas.stripe.export', ['link' => $link->id]) }}" class="inline-flex min-h-11 items-center text-sm text-gray-700 underline">{{ __('Registerutdrag') }}</a>
+                                                        @if(! $link->isErased())
+                                                            <div x-data="{ confirming: false }">
+                                                                <button type="button" class="min-h-11 text-sm text-red-700 underline" x-show="! confirming" x-on:click="confirming = true">{{ __('Radera uppgifterna') }}</button>
+                                                                <div x-show="confirming" x-cloak class="rounded-2xl bg-amber-50 p-3 text-amber-900 ring-1 ring-amber-200" role="alertdialog" aria-labelledby="stripe-erase-{{ $link->id }}">
+                                                                    <p id="stripe-erase-{{ $link->id }}">{{ __('Namn, e-post, adress och skatte-id raderas i NONOX och läses inte in igen. Siffrorna i Återkommande intäkter, som bara har id och belopp, finns kvar. Ta också bort kunden i Stripe.') }}</p>
+                                                                    <div class="mt-2 flex flex-wrap gap-3">
+                                                                        <x-button type="button" wire:click="erase({{ $link->id }})" wire:loading.attr="disabled">{{ __('Ja, radera') }}</x-button>
+                                                                        <button type="button" class="text-sm text-gray-700 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endif
                                                     @endif
                                                 </div>
                                             @endif
                                         </li>
                                     @endforeach
                                 </ul>
+                                <div class="mt-3">{{ $section['rows']->links() }}</div>
                             </section>
                         @endif
                     @endforeach
@@ -242,5 +268,6 @@
                 @endif
             </x-ui.card>
         @endif
+    @endif
     @endif
 </div>

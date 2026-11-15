@@ -44,6 +44,9 @@ final class InstanceSettings
 
     public const string MIGRATION_GUIDES_PUBLIC = 'migration.guides_public';
 
+    /** Stripe in NONOX Connect (ADR-080 step 2) may be used on this installation. Off by default: the hosted service's DPA must name it first. */
+    public const string STRIPE_ENABLED = 'stripe.enabled';
+
     /** @var array<string, mixed> the defaults, which are also the only keys */
     public const array DEFAULTS = [
         self::OPERATOR => null,
@@ -52,6 +55,7 @@ final class InstanceSettings
         self::SECURITY_CONTACT => null,
         self::DEMO_ENABLED => null,
         self::MIGRATION_GUIDES_PUBLIC => false,
+        self::STRIPE_ENABLED => false,
     ];
 
     /** @var ?array<string, mixed> */
@@ -128,6 +132,12 @@ final class InstanceSettings
     public function selfRegistrationOpen(): bool
     {
         return (bool) $this->get(self::REGISTRATION_OPEN);
+    }
+
+    /** Whether companies may connect Stripe in NONOX Connect (ADR-080 step 2). */
+    public function stripeEnabled(): bool
+    {
+        return (bool) $this->get(self::STRIPE_ENABLED);
     }
 
     /** Whether strangers may try NONOX on a demo company (ADR-077). */

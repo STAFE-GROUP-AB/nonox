@@ -20,11 +20,14 @@ use Illuminate\Database\Eloquent\Builder;
  *   deleted, and the Stripe customers' name, e-mail, address and tax ids are
  *   cleared. Nothing of it is underlag for bookkeeping in step 2. The ledger
  *   keeps only ids and amounts and is not touched.
- * - When a NONOX customer is anonymised (EraseRegisterEntry), the Stripe
- *   customers linked to it are cleared the same way at once.
+ * - When a NONOX customer is anonymised (EraseRegisterEntry), or a Stripe
+ *   customer is erased on request on the Stripe page, it is erased at once
+ *   (erase()): cleared, marked so that no sync reads it back in, and its raw
+ *   subscriptions deleted. A customer deleted in Stripe is cleared by the
+ *   sync the same way.
  *
- * Step 3 (Stripe bookkeeping) will keep the objects a voucher was built from
- * for the BFL retention period instead; TODO(legal-verify) then.
+ * Step 3 (Stripe bookkeeping) must mark what becomes underlag and keep it out
+ * of this prune (ADR-080 addendum, step-3 rule); TODO(legal-verify) then.
  */
 class PruneStripe
 {
@@ -53,14 +56,40 @@ class PruneStripe
         });
     }
 
+    /**
+     * A NONOX customer anonymised on request: the Stripe customers linked to
+     * it are erased at once, in the same transaction.
+     */
     public function customerAnonymised(CustomerAnonymised $event): void
     {
-        CurrentCompany::run($event->companyId, fn (): int => self::clear(StripeCustomerLink::query()->where('customer_id', $event->customerId)));
+        CurrentCompany::run($event->companyId, function () use ($event): void {
+            foreach (StripeCustomerLink::query()->where('customer_id', $event->customerId)->lockForUpdate()->get() as $link) {
+                self::erase($link);
+            }
+        });
+    }
+
+    /**
+     * Erases one Stripe customer (ADR-080 §8, review P2-2): its name, e-mail,
+     * address, tax ids and metadata number are cleared and marked erased, so
+     * no later sync reads them back in, and the raw subscriptions it was the
+     * customer of are deleted. The ledger's versions keep ids and amounts only
+     * and stay. Run inside the company.
+     */
+    public static function erase(StripeCustomerLink $link): void
+    {
+        $link->forceFill([...StripeCustomerLink::ERASED_FIELDS, 'erased_at' => $link->erased_at ?? now()])->save();
+
+        StripeObject::query()
+            ->where('connection_id', $link->connection_id)
+            ->where('type', StripeObject::SUBSCRIPTION)
+            ->whereRaw("payload->>'customer' = ?", [$link->stripe_customer_id])
+            ->delete();
     }
 
     /** @param  Builder<StripeCustomerLink>  $query */
     private static function clear($query): int
     {
-        return $query->update(['name' => null, 'email' => null, 'address' => null, 'tax_ids' => null, 'nonox_customer_number' => null]);
+        return $query->update(StripeCustomerLink::ERASED_FIELDS);
     }
 }

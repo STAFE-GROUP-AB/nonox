@@ -11,7 +11,6 @@ use App\Modules\Saas\Models\SaasContractVersion;
 use App\Modules\Saas\Stripe\Domain\SubscriptionContract;
 use App\Modules\Saas\Stripe\Models\StripeConnection;
 use App\Modules\Saas\Stripe\Models\StripeCustomerLink;
-use App\Modules\Saas\Stripe\Models\StripeObject;
 use App\Modules\Saas\Support\ContractVersions;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
@@ -61,13 +60,7 @@ final class StripeLedger
      */
     public function follow(StripeCustomerLink $link, ?int $userId): int
     {
-        $moved = 0;
-
-        foreach (self::subscriptionsOf($link) as $subscription) {
-            $moved += $this->versions->moveToCustomer(SourceType::StripeSubscription, $subscription, $link->ledgerCustomerId(), $userId);
-        }
-
-        return $moved;
+        return $this->versions->moveToCustomer(SourceType::StripeSubscription, self::subscriptionsOf($link), $link->ledgerCustomerId(), $userId);
     }
 
     /**
@@ -103,16 +96,22 @@ final class StripeLedger
         return $written;
     }
 
-    /** @return list<string> the ids of the Stripe customer's subscriptions */
+    /**
+     * The ids of the Stripe customer's subscriptions, read from the ledger's
+     * own versions (their source_ref), so they are found also after the raw
+     * objects were erased or pruned. One query.
+     *
+     * @return list<string>
+     */
     public static function subscriptionsOf(StripeCustomerLink $link): array
     {
-        return array_values(StripeObject::query()
-            ->where('connection_id', $link->connection_id)
-            ->where('type', StripeObject::SUBSCRIPTION)
-            ->whereRaw("payload->>'customer' = ?", [$link->stripe_customer_id])
+        return array_values(SaasContractVersion::query()
+            ->where('source_type', SourceType::StripeSubscription->value)
+            ->whereRaw("source_ref->>'connection' = ?", [(string) $link->connection_id])
+            ->whereRaw("source_ref->>'customer' = ?", [$link->stripe_customer_id])
             ->distinct()
-            ->orderBy('stripe_id')
-            ->pluck('stripe_id')
+            ->orderBy('source_id')
+            ->pluck('source_id')
             ->map(fn (mixed $id): string => (string) $id)
             ->all());
     }
@@ -120,22 +119,11 @@ final class StripeLedger
     /** @return Collection<int, SaasContractVersion> the latest version of each subscription of the connection */
     private static function latestOf(StripeConnection $connection): Collection
     {
-        $ids = StripeObject::query()
-            ->where('connection_id', $connection->id)
-            ->where('type', StripeObject::SUBSCRIPTION)
-            ->distinct()
-            ->pluck('stripe_id')
-            ->all();
-
-        if ($ids === []) {
-            return collect();
-        }
-
         return SaasContractVersion::query()
             ->whereIn('id', SaasContractVersion::query()
                 ->selectRaw('max(id)')
                 ->where('source_type', SourceType::StripeSubscription->value)
-                ->whereIn('source_id', $ids)
+                ->whereRaw("source_ref->>'connection' = ?", [(string) $connection->id])
                 ->groupBy('source_id'))
             ->orderBy('id')
             ->get();

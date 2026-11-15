@@ -18,11 +18,11 @@ use App\Modules\Saas\Stripe\Models\StripeCustomerLink;
 use App\Modules\Saas\Stripe\Models\StripeSyncRun;
 use App\Support\Connect\ConnectAddons;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 /**
  * Återkommande intäkter → Stripe (ADR-080 §7, step 2): Stripe in NONOX
@@ -36,8 +36,10 @@ class StripePage extends Component
 {
     use InSaas;
     use ShowsToasts;
+    use WithPagination;
 
-    public const int LIMIT = 50;
+    /** Stripe customers per list and page; each list pages on its own, in the query string (review P3-7). */
+    public const int LIMIT = 25;
 
     public string $key = '';
 
@@ -49,6 +51,22 @@ class StripePage extends Component
     public function mount(): void
     {
         $this->authorizeView();
+    }
+
+    /** The key and the signing secret never go back to the browser, whatever the answer (review P3-2). */
+    public function dehydrate(): void
+    {
+        $this->key = '';
+        $this->webhookSecret = '';
+    }
+
+    public function erase(int $link, LinkStripeCustomer $action): void
+    {
+        $this->attempt(function () use ($link, $action): string {
+            $action->erase($this->user(), $this->company(), StripeCustomerLink::query()->findOrFail($link));
+
+            return __('Stripe-kundens uppgifter är raderade i NONOX och läses inte in igen. Ta också bort kunden i Stripe om personen har begärt radering.');
+        });
     }
 
     public function enableAddon(): void
@@ -197,9 +215,11 @@ class StripePage extends Component
     public function render(): View
     {
         $company = $this->company();
+        $available = StripePermissions::available();
         $connection = StripeConnection::query()->orderByRaw("status = 'ACTIVE' desc")->orderByDesc('id')->first();
-        $links = collect();
         $counts = [];
+        $lists = ['review' => null, 'suggested' => null, 'unlinked' => null];
+        $canConnect = $this->canManage() && $this->user()->hasTeamPermission($company, 'settings:manage');
 
         if ($connection !== null) {
             $counts = StripeCustomerLink::query()
@@ -212,32 +232,34 @@ class StripePage extends Component
                 ->map(fn ($row): array => ['count' => (int) $row->getAttribute('count'), 'review' => (int) $row->getAttribute('review')])
                 ->all();
 
-            $list = fn (string $status, bool $unconfirmed = false) => StripeCustomerLink::query()
+            $list = fn (string $status, string $page, bool $unconfirmed = false) => StripeCustomerLink::query()
+                ->with(['customer:id,number,name', 'suggested:id,number,name'])
                 ->where('connection_id', $connection->id)
                 ->where('status', $status)
                 ->when($unconfirmed, fn ($query) => $query->whereNull('confirmed_at'))
                 ->withSubscriptions()
                 ->orderBy('id')
-                ->limit(self::LIMIT)
-                ->get();
-            $links = $list(StripeCustomerLink::LINKED, true)->concat($list(StripeCustomerLink::SUGGESTED))->concat($list(StripeCustomerLink::UNLINKED));
-            // Two queries for the customers of all three lists.
-            $links = (new EloquentCollection($links->all()))->load(['customer:id,number,name', 'suggested:id,number,name']);
+                ->paginate(self::LIMIT, pageName: $page);
+            $lists = [
+                'review' => $list(StripeCustomerLink::LINKED, 'granska', true),
+                'suggested' => $list(StripeCustomerLink::SUGGESTED, 'forslag'),
+                'unlinked' => $list(StripeCustomerLink::UNLINKED, 'kunder'),
+            ];
         }
 
         return view('saas::livewire.stripe', [
+            'available' => $available,
             'addonOn' => ConnectAddons::isOn($company, ConnectAddons::STRIPE),
             'price' => ConnectAddons::price(ConnectAddons::STRIPE),
             'connection' => $connection,
             'runs' => $connection === null ? collect() : StripeSyncRun::query()->where('connection_id', $connection->id)->orderByDesc('id')->limit(10)->get(),
-            'review' => $links->filter(fn (StripeCustomerLink $link): bool => $link->needsReview())->values(),
-            'suggested' => $links->where('status', StripeCustomerLink::SUGGESTED)->values(),
-            'unlinked' => $links->where('status', StripeCustomerLink::UNLINKED)->values(),
+            ...$lists,
             'counts' => $counts,
-            'canConnect' => $this->canManage() && $this->user()->hasTeamPermission($company, 'settings:manage'),
+            'canConnect' => $canConnect,
             'canManage' => $this->canManage(),
             'canSettings' => $this->user()->hasTeamPermission($company, 'settings:manage'),
-            'webhookUrl' => $connection === null ? null : route('saas.stripe.webhook', ['token' => $connection->webhook_token]),
+            // Only for those who set the webhook up (review P3-10).
+            'webhookUrl' => $connection === null || ! $canConnect ? null : route('saas.stripe.webhook', ['token' => $connection->webhook_token]),
         ]);
     }
 }

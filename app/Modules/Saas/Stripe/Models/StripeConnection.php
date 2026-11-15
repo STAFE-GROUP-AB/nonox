@@ -35,6 +35,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?int $last_event_created
  * @property ?CarbonImmutable $last_synced_at
  * @property int $consecutive_failures
+ * @property int $key_version
  */
 class StripeConnection extends Model
 {
@@ -70,6 +71,7 @@ class StripeConnection extends Model
         'last_event_created',
         'last_synced_at',
         'consecutive_failures',
+        'key_version',
     ];
 
     /** @var list<string> */
@@ -91,6 +93,7 @@ class StripeConnection extends Model
             'last_event_created' => 'integer',
             'last_synced_at' => 'immutable_datetime',
             'consecutive_failures' => 'integer',
+            'key_version' => 'integer',
         ];
     }
 

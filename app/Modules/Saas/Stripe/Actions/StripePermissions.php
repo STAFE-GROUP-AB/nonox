@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Saas\SaasModule;
 use App\Support\Connect\ConnectAddons;
+use App\Support\Instance\InstanceSettings;
 use Illuminate\Auth\Access\AuthorizationException;
 
 /**
@@ -19,6 +20,23 @@ use Illuminate\Auth\Access\AuthorizationException;
  */
 final class StripePermissions
 {
+    /**
+     * Stripe may be used on this installation at all (ADR-080 step 2, review A):
+     * an instance setting in /hq, off by default, so the hosted service ships it
+     * dark until its DPA names NONOX SaaS and Stripe.
+     */
+    public static function available(): bool
+    {
+        return InstanceSettings::current()->stripeEnabled();
+    }
+
+    public static function authorizeAvailable(): void
+    {
+        if (! self::available()) {
+            throw new AuthorizationException(__('Kopplingen till Stripe finns inte än i den här installationen.'));
+        }
+    }
+
     public static function authorizeConnect(User $user, Company $company): void
     {
         self::authorizeManage($user, $company);
@@ -30,6 +48,8 @@ final class StripePermissions
 
     public static function authorizeManage(User $user, Company $company): void
     {
+        self::authorizeAvailable();
+
         if (! app(ModuleManager::class)->isEnabled(SaasModule::KEY, $company) || ! ConnectAddons::isOn($company, ConnectAddons::STRIPE)) {
             throw new AuthorizationException(__('Stripe är inte påslaget i NONOX Connect för företaget.'));
         }
@@ -42,6 +62,8 @@ final class StripePermissions
     /** Turning Stripe on or off in NONOX Connect: settings:manage (ADR-064 §3). */
     public static function authorizeAddon(User $user, Company $company): void
     {
+        self::authorizeAvailable();
+
         if (! app(ModuleManager::class)->isEnabled(SaasModule::KEY, $company)) {
             throw new AuthorizationException(__('NONOX SaaS är inte påslaget för företaget.'));
         }

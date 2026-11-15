@@ -41,6 +41,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?list<array{type: string, value: string, country: ?string}> $tax_ids
  * @property ?string $nonox_customer_number
  * @property bool $deleted_in_stripe
+ * @property ?CarbonImmutable $erased_at
  */
 class StripeCustomerLink extends Model
 {
@@ -70,6 +71,12 @@ class StripeCustomerLink extends Model
     /** "Skapa kund": a NONOX customer made from the Stripe customer. */
     public const string BY_CREATED = 'CREATED';
 
+    /** The tax id types matching and "Skapa kund" use; others are not kept (minimisation, review C4). */
+    public const array TAX_ID_TYPES = ['eu_vat', 'gb_vat', 'no_vat', 'ch_vat'];
+
+    /** What erasure clears: everything but the id, the country and the link to the customer register. */
+    public const array ERASED_FIELDS = ['name' => null, 'email' => null, 'address' => null, 'tax_ids' => null, 'nonox_customer_number' => null];
+
     protected $table = 'stripe_customer_links';
 
     /** @var list<string> */
@@ -91,6 +98,7 @@ class StripeCustomerLink extends Model
         'tax_ids',
         'nonox_customer_number',
         'deleted_in_stripe',
+        'erased_at',
     ];
 
     /** @return array<string, string> */
@@ -105,6 +113,7 @@ class StripeCustomerLink extends Model
             'address' => 'array',
             'tax_ids' => 'array',
             'deleted_in_stripe' => 'boolean',
+            'erased_at' => 'immutable_datetime',
         ];
     }
 
@@ -131,6 +140,11 @@ class StripeCustomerLink extends Model
         return $this->isLinked() && $this->confirmed_at === null;
     }
 
+    public function isErased(): bool
+    {
+        return $this->erased_at !== null;
+    }
+
     public function label(): string
     {
         return $this->name !== null && $this->name !== '' ? $this->name : $this->stripe_customer_id;
@@ -147,10 +161,11 @@ class StripeCustomerLink extends Model
     {
         return $query->whereExists(fn ($exists) => $exists
             ->selectRaw('1')
-            ->from('stripe_objects')
-            ->whereColumn('stripe_objects.connection_id', 'stripe_customer_links.connection_id')
-            ->where('stripe_objects.type', StripeObject::SUBSCRIPTION)
-            ->whereRaw("stripe_objects.payload->>'customer' = stripe_customer_links.stripe_customer_id"));
+            ->from('saas_contract_versions')
+            ->whereColumn('saas_contract_versions.company_id', 'stripe_customer_links.company_id')
+            ->where('saas_contract_versions.source_type', 'STRIPE_SUBSCRIPTION')
+            ->whereRaw("saas_contract_versions.source_ref->>'connection' = stripe_customer_links.connection_id::text")
+            ->whereRaw("saas_contract_versions.source_ref->>'customer' = stripe_customer_links.stripe_customer_id"));
     }
 
     /** @return BelongsTo<Customer, $this> */

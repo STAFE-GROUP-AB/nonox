@@ -6,6 +6,7 @@ namespace App\Modules\Saas\Stripe\Http;
 
 use App\Modules\ModuleManager;
 use App\Modules\Saas\SaasModule;
+use App\Modules\Saas\Stripe\Actions\StripePermissions;
 use App\Modules\Saas\Stripe\Domain\WebhookSignature;
 use App\Modules\Saas\Stripe\Jobs\SyncStripe;
 use App\Modules\Saas\Stripe\Models\StripeConnection;
@@ -40,7 +41,8 @@ class StripeWebhookController
     {
         $connection = CompanyScope::bypass(fn (): ?StripeConnection => StripeConnection::query()->where('webhook_token', $token)->first());
 
-        if (! $connection instanceof StripeConnection
+        if (! StripePermissions::available()
+            || ! $connection instanceof StripeConnection
             || ! $connection->isActive()
             || ! $connection->hasWebhook()
             || ! $modules->isEnabled(SaasModule::KEY, $connection->company_id)

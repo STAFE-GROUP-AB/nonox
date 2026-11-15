@@ -9,6 +9,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use SensitiveParameter;
 
 /**
  * Read-only calls to the Stripe API with one company's restricted key
@@ -47,7 +48,7 @@ final class StripeClient
     /**
      * @param  ?Closure(int): void  $sleep  waits the given milliseconds; tests pass a no-op
      */
-    public function __construct(private readonly string $key, ?Closure $sleep = null)
+    public function __construct(#[SensitiveParameter] private readonly string $key, ?Closure $sleep = null)
     {
         $this->sleep = $sleep ?? app(StripeSleeper::class)->closure();
     }

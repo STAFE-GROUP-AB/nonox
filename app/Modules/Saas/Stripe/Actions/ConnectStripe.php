@@ -17,6 +17,8 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
+use SensitiveParameter;
 
 /**
  * Connects the company's own Stripe account with a restricted read-only key
@@ -54,7 +56,7 @@ class ConnectStripe
         '/v1/events' => 'Events',
     ];
 
-    public function __invoke(User $user, Company $company, string $key): StripeConnection
+    public function __invoke(User $user, Company $company, #[SensitiveParameter] string $key): StripeConnection
     {
         StripePermissions::authorizeConnect($user, $company);
         $key = trim($key);
@@ -73,7 +75,7 @@ class ConnectStripe
                             throw ValidationException::withMessages(['key' => __('Nyckeln hör till ett annat Stripe-konto än det som är kopplat. Koppla från först om du vill byta konto.')]);
                         }
 
-                        $active->forceFill(['secret_key' => $key, 'key_last4' => substr($key, -4), 'livemode' => $live])->save();
+                        $active->forceFill(['secret_key' => $key, 'key_last4' => substr($key, -4), 'livemode' => $live, 'key_version' => $active->key_version + 1])->save();
                         Audit::record('stripe.key_rotated', $active, ['connection' => $active->id], $company, $user);
 
                         return $active;
@@ -108,6 +110,7 @@ class ConnectStripe
                         'initial_import_done_at' => null,
                         'cursor' => null,
                         'consecutive_failures' => 0,
+                        'key_version' => $connection->exists ? $connection->key_version + 1 : 1,
                     ])->save();
 
                     Audit::record('stripe.connected', $connection, ['connection' => $connection->id, 'livemode' => $live], $company, $user);
@@ -120,13 +123,14 @@ class ConnectStripe
                     throw self::takenElsewhere();
                 }
 
-                throw $exception;
+                // Rethrown without the query: its bindings hold the encrypted key and the webhook token (review P3-1).
+                throw new RuntimeException('The Stripe connection could not be saved.');
             }
         });
     }
 
     /** @return bool whether it is a live key */
-    public static function checkFormat(string $key): bool
+    public static function checkFormat(#[SensitiveParameter] string $key): bool
     {
         if (str_starts_with($key, 'sk_') || str_starts_with($key, 'pk_')) {
             throw ValidationException::withMessages(['key' => __('Det här är inte en begränsad nyckel. Skapa en begränsad nyckel (den börjar med rk_live_) med bara läsbehörighet, och klistra in den. En hemlig nyckel (sk_) ger full åtkomst till ditt Stripe-konto och ska inte lämnas ut.')]);
@@ -144,7 +148,7 @@ class ConnectStripe
     }
 
     /** @return string the account id */
-    private function verify(string $key): string
+    private function verify(#[SensitiveParameter] string $key): string
     {
         $client = new StripeClient($key);
         $missing = [];

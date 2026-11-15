@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Modules\Saas\Stripe\Models\StripeConnection;
 use App\Support\Audit\Audit;
 use Illuminate\Validation\ValidationException;
+use SensitiveParameter;
 
 /**
  * The signing secret (whsec_…) of the event destination the company adds in
@@ -17,7 +18,7 @@ use Illuminate\Validation\ValidationException;
  */
 class SaveStripeWebhookSecret
 {
-    public function __invoke(User $user, Company $company, StripeConnection $connection, string $secret): void
+    public function __invoke(User $user, Company $company, StripeConnection $connection, #[SensitiveParameter] string $secret): void
     {
         StripePermissions::authorizeConnect($user, $company);
         $secret = trim($secret);

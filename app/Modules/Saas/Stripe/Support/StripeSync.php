@@ -12,6 +12,7 @@ use App\Modules\Saas\Stripe\Models\StripeEvent;
 use App\Modules\Saas\Stripe\Models\StripeObject;
 use App\Modules\Saas\Stripe\Models\StripeSyncRun;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -44,6 +45,8 @@ final class StripeSync
     public const int EVENT_DAYS = 27;
 
     public const int OVERLAP_SECONDS = 3 * 86_400;
+
+    public const int EVENT_CHUNK = 200;
 
     /** The event types that can change a customer, a subscription or what a subscription is priced with (at most 20, `types`). */
     public const array EVENT_TYPES = [
@@ -108,6 +111,8 @@ final class StripeSync
             'started_at' => $now,
         ]);
         $client = new StripeClient((string) $connection->secret_key);
+        // The key this run uses: a 401 revokes only while the connection still holds it (review P2-1).
+        $keyVersion = $connection->key_version;
         $this->counts = ['customers' => 0, 'subscriptions' => 0, 'objects' => 0, 'versions' => 0, 'events' => 0, 'linked' => 0];
         $this->versionsWritten = false;
 
@@ -123,9 +128,11 @@ final class StripeSync
             $run->status = $failure->retryable() ? StripeSyncRun::INTERRUPTED : StripeSyncRun::FAILED;
             $run->error = $failure->reason;
 
-            if ($failure->reason === 'unauthorized') {
-                app(EndStripeConnection::class)->revokedByStripe($connection->fresh() ?? $connection);
-            } else {
+            if ($failure->reason === 'unauthorized' && ! app(EndStripeConnection::class)->revokedByStripe($connection, $keyVersion)) {
+                // The key was replaced while the run used the old one: the next run uses the new key.
+                $run->status = StripeSyncRun::INTERRUPTED;
+                $run->error = 'key_changed';
+            } elseif ($failure->reason !== 'unauthorized') {
                 $connection->forceFill(['consecutive_failures' => $connection->consecutive_failures + 1])->save();
             }
         } finally {
@@ -162,9 +169,14 @@ final class StripeSync
         // Events from a little before the import started are read afterwards, so nothing changed meanwhile is missed.
         $watermark = (int) ($cursor['watermark'] ?? $now->subMinutes(5)->getTimestamp());
         $stages = array_keys(self::RESOURCES);
-        $start = in_array($cursor['stage'] ?? null, $stages, true) ? array_search($cursor['stage'], $stages, true) : 0;
+        // 'done': every page was written before the run stopped; only the finishing step is left (review P3-4).
+        $start = match (true) {
+            ($cursor['stage'] ?? null) === 'done' => count($stages),
+            in_array($cursor['stage'] ?? null, $stages, true) => (int) array_search($cursor['stage'], $stages, true),
+            default => 0,
+        };
 
-        foreach (array_slice($stages, (int) $start) as $stage) {
+        foreach (array_slice($stages, $start) as $stage) {
             [$path, $query] = self::RESOURCES[$stage];
             $after = ($cursor['stage'] ?? null) === $stage ? ($cursor['after'] ?? null) : null;
 
@@ -230,9 +242,25 @@ final class StripeSync
             return;
         }
 
+        // In chunks: each chunk's objects are fetched before its own short transaction (review P3-5).
+        foreach ($pending->chunk(self::EVENT_CHUNK) as $chunk) {
+            $this->handleEvents($connection, $client, $chunk->values());
+        }
+
+        $connection->forceFill(['last_event_created' => $newest])->save();
+    }
+
+    /**
+     * Fetches the objects a chunk of events is about, then writes them and
+     * marks the events handled in one short transaction.
+     *
+     * @param  Collection<int, StripeEvent>  $events
+     */
+    private function handleEvents(StripeConnection $connection, StripeClient $client, Collection $events): void
+    {
         $targets = ['coupons' => [], 'products' => [], 'prices' => [], 'customers' => [], 'subscriptions' => []];
 
-        foreach ($pending as $event) {
+        foreach ($events as $event) {
             $resource = match (true) {
                 str_starts_with($event->type, 'customer.subscription.') => 'subscriptions',
                 str_starts_with($event->type, 'customer.') => 'customers',
@@ -264,13 +292,12 @@ final class StripeSync
             $fetched = array_merge_recursive($fetched, $this->fetchDependencies($connection, $client, $stage, $fetched[$stage] ?? []));
         }
 
-        DB::transaction(function () use ($connection, $fetched, $pending, $newest): void {
+        DB::transaction(function () use ($connection, $fetched, $events): void {
             $this->write($connection, $fetched);
-            StripeEvent::query()->whereIn('id', $pending->pluck('id')->all())->update(['processed_at' => now()]);
-            $connection->forceFill(['last_event_created' => $newest])->save();
+            StripeEvent::query()->whereIn('id', $events->pluck('id')->all())->update(['processed_at' => now()]);
         });
 
-        $this->counts['events'] += $pending->count();
+        $this->counts['events'] += $events->count();
     }
 
     /**
@@ -396,7 +423,8 @@ final class StripeSync
             $customer = (string) ($subscription['customer'] ?? '');
             $link = $byCustomer->get($customer) ?? $this->placeholder($connection, $customer);
             $byCustomer->put($customer, $link);
-            $sha = $this->store($connection, StripeObject::SUBSCRIPTION, $subscription);
+            // An erased Stripe customer's subscriptions are not kept raw (§8): only the version, with ids and amounts.
+            $sha = $this->store($connection, StripeObject::SUBSCRIPTION, $subscription, keep: $link->erased_at === null);
             $this->counts['subscriptions']++;
 
             if ($this->ledger->record($connection, $subscription, $coupons, $link, $sha) !== null) {
@@ -408,8 +436,15 @@ final class StripeSync
 
     /**
      * The Stripe customer's link, created the first time it is seen, with
-     * the fields matching needs (minimised, §8). A deleted customer keeps
-     * its link and is marked as such.
+     * the fields matching needs (minimised, §8): name, e-mail, country,
+     * address, the tax ids of the types matching and "Skapa kund" use, and
+     * the customer number in metadata. The row is locked first, so a
+     * person's decision made meanwhile is not overwritten (review P3-8).
+     *
+     * - A customer deleted in Stripe keeps its id and country; its name,
+     *   e-mail, address and tax ids are cleared at once (review C3).
+     * - An erased one (anonymised in NONOX, erased on request, or deleted in
+     *   Stripe) keeps only its id: nothing is read back in (review P2-2).
      *
      * @param  array<string, mixed>  $customer
      */
@@ -421,15 +456,18 @@ final class StripeSync
             return null;
         }
 
-        $link = StripeCustomerLink::query()->firstOrNew(['connection_id' => $connection->id, 'stripe_customer_id' => $id]);
-
-        if (! $link->exists) {
-            $link->forceFill(['company_id' => $connection->company_id, 'status' => StripeCustomerLink::UNLINKED]);
-        }
+        $link = StripeCustomerLink::query()->where('connection_id', $connection->id)->where('stripe_customer_id', $id)->lockForUpdate()->first()
+            ?? (new StripeCustomerLink)->forceFill(['connection_id' => $connection->id, 'stripe_customer_id' => $id, 'company_id' => $connection->company_id, 'status' => StripeCustomerLink::UNLINKED]);
+        $this->counts['customers']++;
 
         if (($customer['deleted'] ?? false) === true) {
-            $link->forceFill(['deleted_in_stripe' => true])->save();
-            $this->counts['customers']++;
+            $link->forceFill([...StripeCustomerLink::ERASED_FIELDS, 'deleted_in_stripe' => true, 'erased_at' => $link->erased_at ?? now()])->save();
+
+            return $link;
+        }
+
+        if ($link->erased_at !== null) {
+            $link->save();
 
             return $link;
         }
@@ -438,8 +476,8 @@ final class StripeSync
         $taxIds = [];
 
         foreach ((array) (is_array($customer['tax_ids'] ?? null) ? ($customer['tax_ids']['data'] ?? []) : []) as $taxId) {
-            if (is_array($taxId) && is_string($taxId['type'] ?? null) && is_string($taxId['value'] ?? null)) {
-                $taxIds[] = ['type' => $taxId['type'], 'value' => $taxId['value'], 'country' => is_string($taxId['country'] ?? null) ? $taxId['country'] : null];
+            if (is_array($taxId) && in_array($taxId['type'] ?? null, StripeCustomerLink::TAX_ID_TYPES, true) && is_string($taxId['value'] ?? null)) {
+                $taxIds[] = ['type' => (string) $taxId['type'], 'value' => mb_substr($taxId['value'], 0, 64), 'country' => is_string($taxId['country'] ?? null) ? $taxId['country'] : null];
             }
         }
 
@@ -455,7 +493,6 @@ final class StripeSync
             'nonox_customer_number' => is_scalar($metadata['nonox_customer_number'] ?? null) ? mb_substr((string) $metadata['nonox_customer_number'], 0, 64) : null,
             'deleted_in_stripe' => false,
         ])->save();
-        $this->counts['customers']++;
 
         return $link;
     }
@@ -474,10 +511,14 @@ final class StripeSync
      *
      * @param  array<string, mixed>  $object
      */
-    private function store(StripeConnection $connection, string $type, array $object): string
+    private function store(StripeConnection $connection, string $type, array $object, bool $keep = true): string
     {
         $json = (string) json_encode(self::canonical($object), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $sha = hash('sha256', $json);
+
+        if (! $keep) {
+            return $sha;
+        }
 
         $this->counts['objects'] += StripeObject::query()->insertOrIgnore([
             'company_id' => $connection->company_id,

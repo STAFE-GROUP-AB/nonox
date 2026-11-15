@@ -35,7 +35,20 @@ final class CustomerMatcher
      */
     public function match(Collection $links): array
     {
-        $open = $links->filter(fn (StripeCustomerLink $link): bool => $link->status !== StripeCustomerLink::LINKED && $link->confirmed_at === null && ! $link->deleted_in_stripe)->values();
+        $ids = $links->filter(fn (StripeCustomerLink $link): bool => $link->exists)->pluck('id')->all();
+
+        if ($ids === []) {
+            return [];
+        }
+
+        // Read again under a row lock, so a person's decision made meanwhile wins (review P3-8). An erased one is never matched.
+        $open = StripeCustomerLink::query()
+            ->whereIn('id', $ids)
+            ->lockForUpdate()
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (StripeCustomerLink $link): bool => $link->status !== StripeCustomerLink::LINKED && $link->confirmed_at === null && ! $link->deleted_in_stripe && $link->erased_at === null)
+            ->values();
 
         if ($open->isEmpty()) {
             return [];
@@ -125,7 +138,7 @@ final class CustomerMatcher
         $numbers = [];
 
         foreach ((array) $link->tax_ids as $taxId) {
-            if (! in_array($taxId['type'], ['eu_vat', 'gb_vat', 'no_vat', 'ch_vat'], true)) {
+            if (! in_array($taxId['type'], StripeCustomerLink::TAX_ID_TYPES, true)) {
                 continue;
             }
 

@@ -831,8 +831,62 @@ transactions, payouts, fee accounts, series S, drafts and bank reconciliation
 ### Open
 
 - `TODO(verify)`: the exact permission labels in Stripe's restricted-key form (a sandbox key).
-- `TODO(legal-verify)`: the GDPR balancing test for reading Stripe customers (art. 6.1 f), whether
-  the DPA's purposes cover it, and whether the company must inform its Stripe customers (art. 14);
-  whether the privacy policy needs a version for Stripe (§8 asks for one; not bumped here because
-  parallel branches collide on the legal version, see QUICKSTART §9).
+- `TODO(legal-verify)`: the DPA's purpose list must name NONOX SaaS and Stripe before the
+  installation switch is turned on for the hosted service; whether the privacy policy needs a
+  version for Stripe (§8 asks for one; the legal documents and their version are done separately
+  after an owner decision). The balancing test is written in `registerforteckning.md` (review C7).
 - Owner: whether the NONOX Connect switch is the company's (built) or the operator's (HQ).
+
+### Review fixes 2026-11-15 (security and legal review of step 2)
+
+- **Dark on the hosted service** (legal P1). An installation setting `stripe.enabled` in /hq →
+  Inställningar ("Stripe i NONOX Connect"), off by default like the other switches there
+  (`InstanceSettings::stripeEnabled`, `UpdateInstanceSettings`, audited as `hq.settings_updated`).
+  While it is off: connecting, the NONOX Connect switch and every Stripe action are refused
+  ("Kopplingen till Stripe finns inte än i den här installationen."), the page shows only that
+  sentence (and "Koppla från Stripe" for a connection made earlier), `SyncStripe` returns without a
+  request, and the webhook answers 404. Disconnecting, the register extract and erasure on request
+  still work: they only remove data or hand it to the data subject.
+- **A rotated key is never revoked by an old run** (P2-1). `stripe_connections.key_version`
+  (additive migration) counts each key; "Byt nyckel" and reconnecting raise it. A run carries the
+  version it started with; on a 401 the connection is revoked only when the row, read under a row
+  lock, still holds that version. Otherwise the run ends `INTERRUPTED` with `key_changed` and the
+  next run uses the new key.
+- **Erasure stays erased** (P2-2, C1, C3). `stripe_customer_links.erased_at` (additive migration).
+  Anonymising a customer, "Radera uppgifterna" on an unlinked Stripe customer (`saas:manage`,
+  audit `stripe.customer_erased`) and a customer deleted in Stripe clear the name, e-mail, address,
+  tax ids and metadata number, set `erased_at`, and delete the Stripe customer's raw subscriptions
+  (§8). While `erased_at` is set the sync keeps only the id and the deleted flag, stores no raw
+  subscription of that customer, and the matcher skips the row. The country and the link to the
+  customer register stay, so the ledger's versions can be explained. Which subscriptions belong to
+  a Stripe customer is read from the versions' `source_ref`, not from the raw objects, so a link
+  still moves them after erasure. The customer's register extract (`DataSubjectExport::customer`)
+  has a `stripe` part; an unlinked Stripe customer has its own extract on the Stripe page
+  (`saas.stripe.export`, 404 for another company's).
+- **Minimisation** (C4): only the tax id types matching and "Skapa kund" use are kept (`eu_vat`,
+  `gb_vat`, `no_vat`, `ch_vat`).
+- **Smaller fixes.** `#[\SensitiveParameter]` on the key and the signing secret; a database error
+  while saving a connection is rethrown without its query, whose bindings hold the encrypted key
+  and the webhook token. The key and the secret are emptied in the component's `dehydrate()`.
+  `SyncStripe` uses `retryUntil` (six hours) and `maxExceptions` instead of a fixed number of tries,
+  so a release while an import runs never ends in failed_jobs. A cursor at `done` finishes the
+  import instead of starting it again. Pending events are handled 200 at a time, each chunk fetched
+  before its own short transaction. Moving a Stripe customer's subscriptions reads their versions in
+  one query. The lists on the Stripe page are paged 25 at a time in the query string
+  (`granska`, `forslag`, `kunder`). The matcher and the customer writer read the link rows again
+  under a row lock, so a person's decision made meanwhile wins. The webhook is throttled per token
+  and per address; the webhook address is shown only to those who may connect. The manual says
+  that customers can edit their tax ids in Stripe's portal, which is why a tax-id link waits for
+  review.
+- **One account, one company** (P3-12): the partial unique index and its Swedish message tell a
+  person that a Stripe account is connected elsewhere, but only a person who holds a working key to
+  that account can learn it, and the message names no company.
+- **Objects across reconnects** (P3-11): a company that connects account A, then B, then A again
+  takes up A's earlier connection row, so A's objects, events and customer links are kept with it
+  and B's stay with B's (ended) row until its 90-day prune. Noted, not changed.
+- **Step-3 rule for later** (C13, BFL 7 kap.): when Stripe is booked in step 3, every object a
+  voucher is built from must be marked as underlag and excluded from `PruneStripe`; it is kept
+  in the form received until seven years after the end of the calendar year in which the fiscal
+  year ended (AGENTS.md §10), goes into the archive
+  package, and customer details on underlag are not cleared on anonymisation or erasure (GDPR art.
+  17.3 b).

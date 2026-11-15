@@ -16,8 +16,10 @@ Säljer du abonnemang genom Stripe kan NONOX läsa prenumerationerna och räkna 
 ## Det här behövs
 
 - Modulen **NONOX SaaS** påslagen.
-- Stripe påslaget i **NONOX Connect**. Priset är leverantörens pris plus 10 %. Stripe tar inget betalt av NONOX för att läsa ditt konto, så priset blir 0 kr i månaden. Dina avgifter till Stripe betalar du som förut direkt till Stripe.
+- Kopplingen till Stripe påslagen för installationen. Är den inte det står det på sidan **Stripe** att kopplingen inte finns än.
+- Stripe påslaget i **NONOX Connect**. Priset är leverantörens pris plus 10 %. NONOX betalar inget till Stripe för kopplingen, så priset blir 0 kr i månaden. Dina avgifter till Stripe betalar du som förut direkt till Stripe.
 - För att slå på NONOX Connect behöver du behörighet att ändra inställningar. För att koppla och koppla från Stripe behöver du dessutom behörighet att hantera återkommande intäkter (Ägare, Administratör eller Redovisningskonsult med inställningar).
+- Du är personuppgiftsansvarig för dina Stripe-kunder. Kontrollera att din egen integritetspolicy nämner att du följer upp försäljningen och att du använder ett affärssystem för det.
 
 ## Så här skapar du nyckeln i Stripe
 
@@ -65,6 +67,8 @@ NONOX kopplar en Stripe-kund till en av dina kunder så här:
 
 ![Kunder i Stripe med en automatisk koppling att granska, ett förslag och Stripe-kunder som inte är kopplade.](/bilder/manual/fakturering/stripe-i-aterkommande-intakter-kunder.webp)
 
+Dina kunder kan själva ändra skatte-id i Stripes kundportal. Därför visas också en koppling via momsregistreringsnummer för granskning, och du bekräftar den med **Stämmer**.
+
 Hittar en regel två eller fler kunder bestämmer NONOX ingenting. För varje Stripe-kund kan du:
 
 - trycka på **Stämmer** när en automatisk koppling är rätt,
@@ -72,6 +76,10 @@ Hittar en regel två eller fler kunder bestämmer NONOX ingenting. För varje St
 - skriva ett **Kundnummer** och trycka på **Koppla**,
 - trycka på **Skapa kund** för att lägga upp kunden i kundregistret med namn, e-post, adress och momsnummer från Stripe,
 - trycka på **Koppla bort**. Då räknas Stripe-kunden för sig och kopplas inte automatiskt igen.
+
+För en Stripe-kund som inte är kopplad finns också **Registerutdrag**, som laddar ner det NONOX har om Stripe-kunden, och **Radera uppgifterna**, som tar bort namn, e-post, adress och skatte-id i NONOX när personen begär det. Är Stripe-kunden kopplad finns uppgifterna i kundens eget registerutdrag.
+
+Raderar eller anonymiserar du en kund i NONOX töms Stripe-kundens uppgifter här och läses inte in igen. Ta också bort kunden i Stripe om personen har begärt radering, eftersom uppgifterna annars finns kvar där. Tas en kund bort i Stripe töms dess uppgifter här direkt.
 
 En Stripe-kund som inte är kopplad räknas som en egen kund i MRR tills du kopplar den, och står under **Källor**. Kopplar du den senare flyttas dess hela historik till kunden. Stängda månader ändras inte; skillnaden visas som **Rättelse** i den första öppna månaden, se [Stäng en månad i Återkommande intäkter](/manual/fakturering/stang-en-manad-i-aterkommande-intakter).
 
@@ -88,7 +96,7 @@ NONOX kontrollerar Stripes signatur på varje händelse och läser sedan prenume
 ## Byta nyckel eller koppla från
 
 - **Byt nyckel**: klistra in en ny begränsad nyckel för samma Stripe-konto. Låt sedan den gamla gå ut i Stripe.
-- **Koppla från Stripe**: nyckeln och signeringshemligheten raderas direkt. Prenumerationerna räknas inte från den dagen, och det syns som en egen rad i rörelserna, inte som churn. Låt också nyckeln gå ut i Stripe. Det som är inläst raderas 90 dagar efter frånkopplingen.
+- **Koppla från Stripe**: nyckeln och signeringshemligheten raderas direkt. Prenumerationerna räknas inte från den dagen, och det syns som en egen rad i rörelserna, inte som churn. Låt också nyckeln gå ut i Stripe. 90 dagar efter frånkopplingen raderas de inlästa prenumerationerna, produkterna, priserna, kupongerna och händelserna, och Stripe-kundernas namn, e-post, adress och skatte-id töms. Siffrorna i Återkommande intäkter, som bara har id och belopp, finns kvar.
 
 Svarar Stripe att nyckeln inte gäller längre avslutar NONOX kopplingen på samma sätt, och de som hanterar återkommande intäkter får ett meddelande i NONOX.
 

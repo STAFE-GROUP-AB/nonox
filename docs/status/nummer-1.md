@@ -665,7 +665,8 @@ Evidence: `tests/Unit/Saas/StripeDomainTest.php`, `tests/Feature/Saas/StripeConn
 - Ingen bokföring ändras (systemdokumentationen orörd), inget API (OpenAPI orört). Manualartikeln `fakturering/stripe-i-aterkommande-intakter` med två skärmbilder från demodata (konsultbolagets påhittade Stripe-konto, som saknar nyckel och aldrig anropar Stripe), ändringslogg, färdplan, README, GDPR-dokumenten.
 - Hela sviten (PGTZ=UTC): 9 450 gröna, 1 röd (deadlock i `DatabaseGrantsTest`, den kända låsningen i databasrollernas testharness; 21/21 gröna ensam), 8 todos, 6 hoppade. phpstan nivå 8 inga fel, pint grönt, `npm test` 116 gröna.
 Open legal-verify items: intresseavvägningen för att läsa Stripe-kunder (art. 6.1 f), om biträdesavtalets ändamål täcker det, information till Stripe-kunderna (art. 14), om integritetspolicyn ska få en version för Stripe; behörighetsnamnen i Stripes nyckelformulär (verifieras med en testnyckel).
-Owner decisions: om NONOX Connect-brytaren är företagets (byggd så) eller driftbolagets på /hq.
+- Granskningsrättelser (säkerhet och juridik): installationens brytare **Stripe i NONOX Connect** i /hq, av från början (allt utom frånkoppling, registerutdrag och radering står still medan den är av); en nyckel som byttes revokeras aldrig av en gammal körning (key_version); radering, anonymisering och borttagning i Stripe töms och läses inte in igen (erased_at), raderar de hämtade prenumerationerna och ger registerutdrag; bara de skatte-id som matchningen använder sparas; sidans listor sidindelade; webhooken begränsas också per adress.
+Owner decisions: om NONOX Connect-brytaren är företagets (byggd så) eller driftbolagets på /hq; när biträdesavtalet nämner NONOX SaaS och Stripe så att brytaren i /hq kan slås på för den drivna tjänsten.
 Next package: steg 3a, Stripes utbetalningar och avgifter.
 
 ---

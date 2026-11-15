@@ -90,7 +90,11 @@ class SaasServiceProvider extends ServiceProvider
         Route::middleware($middleware)->group(__DIR__.'/routes/web.php');
 
         // Technical, never seen by users (ADR-080 §1, §7.4): no session, no CSRF, throttled per token.
-        RateLimiter::for('stripe-webhook', fn (Request $request): Limit => Limit::perMinute(300)->by('stripe-webhook:'.(string) $request->route('token')));
+        RateLimiter::for('stripe-webhook', fn (Request $request): array => [
+            Limit::perMinute(300)->by('stripe-webhook:'.(string) $request->route('token')),
+            // Also per address, so guessing tokens from one place is slow (review P3-10).
+            Limit::perMinute(600)->by('stripe-webhook-ip:'.(string) $request->ip()),
+        ]);
         Route::post('/webhooks/stripe/{token}', StripeWebhookController::class)
             ->where('token', '[A-Za-z0-9]{48}')
             ->middleware('throttle:stripe-webhook')
