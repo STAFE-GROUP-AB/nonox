@@ -859,3 +859,14 @@ Evidence: `tests/Feature/Demo/WorkOrdersDemoExtraTest.php`, `tests/Feature/Demo/
 - `WorkOrdersExtras`: ägarens cachade `currentTeam` släpps före och efter företagsbytet, så behörighetskontrollen ser rätt företag.
 - `PurchasesExtras` och `PayrollExtras`: demon anger `figuresReviewed` för sina påhittade betal- och lönefiler, som aldrig skickas någonstans. Spärren i koden är oförändrad.
 Next package: branschsidan "Tillverkande företag".
+
+---
+
+Package: branschsidan "Tillverkande företag" (sista delen av kö 11, ADR-071)
+Status: done och live (granskad CLEAR TO MERGE och juridiskt CLEAR efter rättningar d6a0187b och 635afd76; hela sviten 9355 gröna med PGTZ=UTC, phpstan 0 fel)
+Evidence: `tests/Feature/IndustryPagesTest.php`, `tests/Unit/IndustryTest.php`, `tests/Unit/IndustryDemoDataTest.php`, `tests/Feature/Demo/CreateDemoTest.php` (tillverkningsdemon får plan, kompetenser och en kopplad storskärm).
+- `/bokforing-for-tillverkande-foretag` med bara levande funktioner (M1–M7, lön, bokföring), inga priser i filen, åtta vanliga frågor; Träindustriavtalet bara under begränsningar (2025 från sekundär källa, steget 2026-04-01 saknas, bara arbetare); arbetsgivarens ansvar (art. 13, MBL 11 och 19 §§) för terminal och planering; lagervärdet till verklig timkostnad.
+- `Industry::Manufacturing` med förslag i kom-igång, demoföretaget Möbelsnickeriet Ekebo Demo AB (påhittat), Företagsguidens artikel `branscher/tillverkande-foretag` (Beta tills mänsklig granskning), delningsbilder, ändringslogg.
+- Alla branschsidor: "Kör du NONOX själv betalar du ingen licens, bara din egen drift" och "fri licens i egen drift" i stället för "kostar det ingenting"/"0 kr i egen drift" (juristens granskning, MFL 10 och 12 §§).
+Open legal-verify items: i sidans `legal_verify` (Träindustriavtalet, MBL/GDPR för terminal och planering, indirekta kostnader och standardtimkostnad i lagervärdet, konsumentköplagen mot konsumenttjänstlagen, "Frånvarande" i planeringen, demomeningen).
+Next package: kö 14 och resten av kön i ordning.
