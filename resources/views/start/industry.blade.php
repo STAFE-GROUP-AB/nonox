@@ -73,7 +73,7 @@
           <a href="{{ auth()->check() ? route('dashboard') : App\Support\Landing\SignupPath::url() }}" class="in-btn lp8" style="background:#FF5A36;color:#15171C">{{ auth()->check() ? 'Till översikten' : App\Support\Landing\SignupPath::label() }}</a>
           <a href="#pris" class="in-btn" style="border:1.5px solid var(--ink);color:var(--ink);font-weight:600">Se vad det kostar</a>
         </div>
-        <p style="margin:20px 0 0;font-size:14.5px;color:var(--muted)">0 kr i egen drift · {{ $kr((int) App\Support\Landing\LandingPage::PLANS[0]['price']) }}/år med drift, upp till {{ App\Support\Landing\LandingPage::PLANS[0]['max'] }} anställda · Alla moduler ingår. NONOX Connect (Peppol, Skatteverket, bank) är ett tillägg som kostar extra: leverantörens pris + 10 %, från 2027-01-11.</p>
+        <p style="margin:20px 0 0;font-size:14.5px;color:var(--muted)">Fri licens i egen drift · {{ $kr((int) App\Support\Landing\LandingPage::PLANS[0]['price']) }}/år med drift, upp till {{ App\Support\Landing\LandingPage::PLANS[0]['max'] }} anställda · Alla moduler ingår. NONOX Connect (Peppol, Skatteverket, bank) är ett tillägg som kostar extra: leverantörens pris + 10 %, från 2027-01-11.</p>
       </div>
       <div aria-hidden="true" style="position:relative;max-width:440px;width:100%;justify-self:center;aspect-ratio:1/1">
         <svg viewBox="0 0 400 400" style="width:100%;height:auto;display:block">

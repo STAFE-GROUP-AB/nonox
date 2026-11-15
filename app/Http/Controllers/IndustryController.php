@@ -36,7 +36,7 @@ class IndustryController
                 ['name' => 'Branscher', 'url' => route('industries')],
             ],
             'pageTitle' => 'Bokföringsprogram för din bransch – NONOX',
-            'pageDescription' => self::placeholders('Bokföring för caféer, restauranger, hantverkare, tillverkare, konsulter, butiker, frisörer och byråer. Öppen källkod, 0 kr i egen drift eller {pris}/år med drift.'),
+            'pageDescription' => self::placeholders('Bokföring för caféer, restauranger, hantverkare, tillverkare, konsulter, butiker, frisörer och byråer. Öppen källkod: fri licens eller {pris}/år med drift.'),
         ]);
     }
 
