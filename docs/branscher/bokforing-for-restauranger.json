@@ -68,7 +68,7 @@
         {"q": "Kan personalen checka in när nätet ligger nere?", "a": "Ja. Kiosken sparar incheckningarna på surfplattan och skickar dem i ordning när nätet är tillbaka. Ingenting försvinner ur kön."},
         {"q": "Räknar NONOX lön från personalliggaren?", "a": "Ja, när lönemodulen är påslagen. Passen blir ett förslag till tidrapport som du godkänner, och sedan betalas timmarna ut som timlön i nästa lönekörning. Med Planering påslagen jämförs passen med schemat i stället: du attesterar avvikelserna, och timlön och OB enligt avtalet går till lönekörningen."},
         {"q": "Kan jag se resultatet för restaurangen och cateringen var för sig?", "a": "Ja. Lägg upp ett kostnadsställe per del, märk raderna och ta fram resultatrapporten per kostnadsställe."},
-        {"q": "Vad kostar NONOX för en restaurang?", "a": "{pris} per år med drift för upp till {max} anställda, med lön, personalliggare och inkorg inräknade. Kör du NONOX själv kostar det ingenting."},
+        {"q": "Vad kostar NONOX för en restaurang?", "a": "{pris} per år med drift för upp till {max} anställda, med lön, personalliggare och inkorg inräknade. Kör du NONOX själv betalar du ingen licens, bara din egen drift."},
         {"q": "Kan jag byta mitt i ett räkenskapsår?", "a": "Ja. Ingående balanser och årets verifikationer följer med via SIE4. Flyttguiden föreslår att du byter direkt efter en redovisad momsperiod."}
     ],
     "related": ["bokforing-for-cafeer", "bokforing-for-butiker", "for-redovisningsbyraer"],

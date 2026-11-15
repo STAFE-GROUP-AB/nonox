@@ -1,0 +1,214 @@
+{
+    "slug": "bokforing-for-tillverkande-foretag",
+    "order": 4,
+    "group": "foretag",
+    "name": "Tillverkande företag",
+    "menu_text": "Snickerier, möbeltillverkare och verkstäder: stycklistor, kalkyl, lager och verkstadens planering.",
+    "icon": "M3 21V10l6 4v-4l6 4V4h4v17z",
+    "title": "Bokföring för tillverkande företag – stycklistor och lager",
+    "description": "Bokföring för snickerier, möbeltillverkare och verkstäder: stycklistor, kalkyl, tillverkningsorder, lager och planering. {pris}/år med drift.",
+    "eyebrow": "Bokföring för tillverkande företag",
+    "h1": "Bokföring för tillverkande företag",
+    "h1_accent": "som tillverkar på beställning.",
+    "lead": "Du gör möbler, snickerier eller detaljer i en liten verkstad, och varje order är lite olika. NONOX räknar kalkylen på offerten ur en stycklista, gör ordern till en tillverkningsorder som tar material ur lagret och tar emot den färdiga produkten, och låter verkstaden rapportera tiden på en surfplatta. Bokföringen, fakturan och lönen finns i samma system.",
+    "month": {
+        "heading": "Så ser en månad ut i en liten verkstad.",
+        "intro": "Det mesta av ekonomin avgörs innan första brädan sågas: vad jobbet kostar, vad som ska inköpas och när det hinner bli klart. Det är också där det är lätt att räkna för hand.",
+        "items": [
+            {
+                "title": "Offerten ska bygga på en kalkyl",
+                "text": "Material, arbetstid i Kapning, Montering och Lackering, spill och en rimlig marginal ska in i priset. Räknas det på ett löst papper är det lätt att missa en timme eller ett kantband."
+            },
+            {
+                "title": "Samma artikel i flera mått",
+                "text": "Plattor köps i kvadratmeter, lister i meter och beslag i styck, men en produkt går åt i delar av dem. Omräkningarna görs ofta i huvudet."
+            },
+            {
+                "title": "Material som tar slut mitt i en order",
+                "text": "Det man inte vet saknas förrän man står vid sågen. Inköp ska göras i tid, och leverantörens leveranstid avgör vilket leveransdatum man kan lova kunden."
+            },
+            {
+                "title": "Vem gör vad, och när hinner det bli klart?",
+                "text": "Flera order pågår samtidigt, några personer kan lackera och en maskin kan bara köra en sak i taget. Ett nytt jobb eller en sjukdag flyttar allt."
+            },
+            {
+                "title": "Tiden i verkstaden",
+                "text": "Timmarna per order är underlaget för nästa offert. Kommer de in sent, eller bara som en summa i slutet av veckan, går det inte att se var det tog längre tid än tänkt."
+            },
+            {
+                "title": "Lön enligt avtal och bokslut med lager",
+                "text": "Arbetare i trä- och möbelindustrin omfattas ofta av kollektivavtal, och lager och produkter i arbete ska värderas vid bokslutet."
+            }
+        ]
+    },
+    "solutions": {
+        "heading": "Det här gör NONOX åt ditt tillverkande företag.",
+        "intro": "Allt nedan finns i NONOX i dag. Tillverkning, Lager och Lön är moduler som du slår på under Inställningar → Moduler.",
+        "items": [
+            {
+                "title": "Enheter som räknas om exakt",
+                "text": "En artikel kan ha flera enheter, till exempel kvadratmeter, meter och styck, med exakta omräkningar mellan dem. Stycklistan, inköpet och lagret kan då räkna i den enhet som passar var och en.",
+                "features": [
+                    "units",
+                    "registers"
+                ]
+            },
+            {
+                "title": "Stycklistor med komponenter och arbetssteg",
+                "text": "Lägg upp en produkt med sina komponenter i flera nivåer, spill i procent och arbetssteg med minuter. Varje arbetssteg har en timkostnad och en kapacitet i timmar per dag som är företagets egna siffror. Varje ändring blir en ny version från ett datum.",
+                "features": [
+                    "manufacturing_bom"
+                ]
+            },
+            {
+                "title": "Kalkyl direkt på offerten och ordern",
+                "text": "Hämta stycklistan till en offertrad, ändra den för just den raden och se material, arbete, kostnad per styck, täckningsbidrag och marginal. Kalkylen syns bara internt, aldrig på kundens PDF, och följer med när offerten blir en order.",
+                "features": [
+                    "manufacturing_costing",
+                    "quotes_orders",
+                    "invoices"
+                ]
+            },
+            {
+                "title": "Inköpsorder och inköpsförslag",
+                "text": "Det som behövs till en order men inte finns i lager blir ett inköpsförslag, som du gör om till en inköpsorder till leverantören. Leveransen tas emot mot ordern, och leverantörsfakturan attesteras och betalas med en betalfil till banken.",
+                "features": [
+                    "inventory_purchase_orders",
+                    "inventory",
+                    "supplier_invoices",
+                    "payment_files"
+                ]
+            },
+            {
+                "title": "Tillverkningsorder och färdiga produkter i lagret",
+                "text": "En tillverkningsorder gäller en produkt och ett antal, mot lager eller till en rad på en kundorder. Den reserverar komponenterna, tar dem ur lagret när tillverkningen startar och tar emot den färdiga produkten i lagret till tillverkningskostnaden: material och arbete efter arbetsstegets timkostnad. Vid bokslutet räknar NONOX fram lagervärdet enligt FIFO eller vägt genomsnittspris och bokför färdiga produkter och produkter i arbete.",
+                "features": [
+                    "manufacturing_orders",
+                    "inventory_valuation"
+                ]
+            },
+            {
+                "title": "Verkstadsterminal med tid per arbetssteg",
+                "text": "Var och en trycker på sin bild eller sitt namn på en surfplatta i verkstaden, skriver en kod på fyra siffror och rapporterar timmar och minuter för i dag på ett arbetssteg. Tiden blir arbetskostnad på ordern, och du kan markera att ett steg väntar på material eller arbete. De som använder plattan behöver inget konto.",
+                "features": [
+                    "manufacturing_terminal"
+                ]
+            },
+            {
+                "title": "Efterkalkyl: stämde kalkylen?",
+                "text": "Kalkylen jämförs med den rapporterade tiden per produkt och arbetssteg, med material och arbete var för sig, så att nästa offert bygger på hur lång tid det faktiskt tog. Efterkalkylen visas per produkt och arbetssteg, inte per person.",
+                "features": [
+                    "manufacturing_postcalc"
+                ]
+            },
+            {
+                "title": "Planeringskalender med leveransprognos",
+                "text": "Planen läggs efter prioritet och utlovat datum på personer med rätt kompetens och lediga arbetsstationer, med material, frånvaro och stopp. Trafikljus visar vilka order som riskerar bli försenade, och Tänk om prövar en ändring utan att röra planen. Ett nytt leveransdatum går till kunden först efter att du granskat det.",
+                "features": [
+                    "manufacturing_planning"
+                ]
+            },
+            {
+                "title": "Storskärm i verkstaden",
+                "text": "En tv på väggen visar dagens arbete per tillverkningsorder med arbetssteg, arbetsstation och klockslag, vad som blir försenat och vad som är lovat de närmaste fem arbetsdagarna. Skärmen visar inga personnamn, ingen frånvaro och inga kundnamn.",
+                "features": [
+                    "manufacturing_wall_screen"
+                ]
+            },
+            {
+                "title": "Lön för timanställda och månadsanställda",
+                "text": "Månads- eller timlön med Skatteverkets skattetabeller, timlön från godkända tidrapporter, semester och sjuklön och arbetsgivardeklaration som fil.",
+                "features": [
+                    "payroll",
+                    "hourly_pay",
+                    "vacation_sick_pay",
+                    "agi"
+                ]
+            },
+            {
+                "title": "Bokföringen under allt det här",
+                "text": "Verifikationer som aldrig kan ändras efter bokning, momsdeklaration som fil, huvudbok och rapporter per kostnadsställe och projekt, kvitton och fakturor via företagets inkorg, och SIE4 in och ut.",
+                "features": [
+                    "vouchers",
+                    "vat_return",
+                    "reports",
+                    "cost_centres",
+                    "inbox",
+                    "sie"
+                ]
+            }
+        ]
+    },
+    "limits": [
+        {
+            "text": "Träindustriavtalet för arbetare (Trä- och Möbelföretagen och GS-facket) finns i NONOX som data, men 2025 års belopp kommer från en sekundär källa och beloppen från 2026-04-01 saknas. Lönekörningen stoppas för anställda som omfattas tills avtalsboken för 2025–2027 finns och en namngiven person har kontrollerat värdena mot den. Stoppmöbelindustriavtalet och tjänstemannaavtalet finns inte."
+        },
+        {
+            "text": "Tiden på verkstadsterminalen är produktionstid och inte närvaro eller lönetid. Den är ingen personalliggare och ingen tidrapport för lönen."
+        },
+        {
+            "text": "Terminalen sparar vem som rapporterat tiden; namnet tas bort ur rapporten efter 24 månader. Som arbetsgivare ansvarar du för att informera personalen (dataskyddsförordningen artikel 13) och för att bedöma om införandet kräver förhandling eller information enligt medbestämmandelagen 11 och 19 §§, både för terminalen och för planering per person. NONOX ber dig bekräfta det innan terminalen slås på, och har en text till personalen som du kan skriva ut."
+        },
+        {
+            "text": "Tillverkningen bokförs inte med en verifikation per tillverkningsorder. Material tas ut och produkter tas in i lagret, och vid bokslutet räknas pågående order som produkter i arbete."
+        },
+        {
+            "text": "NONOX är byggt för små verkstäder som tillverkar på beställning. Det är inget system för styrning av maskiner eller för stora serier i många fabriker."
+        }
+    ],
+    "pricing": {
+        "employees": 6,
+        "label": "Ett snickeri med sex anställda",
+        "text": "Bokföring, fakturering, lager, tillverkning och lön för sex anställda, med samma paket och listpriser som i vår jämförelse av bokföringsprogram."
+    },
+    "comparison_features": ["Stycklistor med arbetssteg och kalkyl på offerter och ordrar", "Lager med lagerställen", "Alla moduler ingår i priset"],
+    "faqs": [
+        {
+            "q": "Vilka företag passar NONOX Tillverkning för?",
+            "a": "Små verkstäder som tillverkar på beställning, till exempel snickerier, möbeltillverkare och metallverkstäder, där varje order har en stycklista och några arbetssteg. Det är inget system för att styra maskiner eller för stora serier i flera fabriker."
+        },
+        {
+            "q": "Kan jag räkna en kalkyl innan jag lämnar offerten?",
+            "a": "Ja. Du hämtar stycklistan till en offertrad och ser material, arbete, kostnad per styck, täckningsbidrag och marginal. Kalkylen visas bara internt och aldrig på kundens PDF. Timkostnaden per arbetssteg är din egen siffra."
+        },
+        {
+            "q": "Hur vet jag vad som ska köpas in?",
+            "a": "En frisläppt tillverkningsorder reserverar sina komponenter, och det som saknas i lager visas i ett inköpsförslag. Du gör förslaget till en inköpsorder till leverantören och tar emot leveransen mot ordern."
+        },
+        {
+            "q": "Hur rapporterar verkstaden tid?",
+            "a": "På en surfplatta i verkstaden. Var och en trycker på sin bild eller sitt namn, skriver en kod på fyra siffror och rapporterar timmar och minuter på ett arbetssteg. De som använder plattan behöver inget konto, och var och en ser bara sina egna rapporter. Tiden är produktionstid och inte lönetid."
+        },
+        {
+            "q": "Klarar NONOX lön enligt Trä- och möbelavtalet?",
+            "a": "Inte ännu. Träindustriavtalet för arbetare finns som data, men 2025 års belopp kommer från en sekundär källa och beloppen från 2026-04-01 saknas, så lönekörningen stoppas för anställda som omfattas tills avtalstexten för 2025–2027 finns och värdena har kontrollerats. Lön med timlön, månadslön och skattetabeller fungerar redan."
+        },
+        {
+            "q": "Hur värderas lagret vid bokslutet?",
+            "a": "NONOX räknar fram lagervärdet ur lagrets rörelser enligt FIFO eller vägt genomsnittspris (årsredovisningslagen 4 kap. 11 §), och pågående tillverkningsorder räknas som produkter i arbete. Lagret får inte tas upp högre än det kostade, så timkostnaden ska motsvara vad arbetet faktiskt kostar med lön och sociala avgifter, inte ditt timpris. Vad som får räknas in enligt K2 eller K3 avgör du med din redovisningskonsult eller revisor."
+        },
+        {
+            "q": "Vad kostar NONOX för ett tillverkande företag?",
+            "a": "{pris} per år med drift för upp till {max} anställda, med lager, tillverkning och lön inräknade. Kör du NONOX själv betalar du ingen licens, bara din egen drift."
+        },
+        {
+            "q": "Kan jag se ett exempel innan jag bestämmer mig?",
+            "a": "Ja. I Prova utan att registrera väljer du Tillverkande företag och får ett påhittat möbelsnickeri med stycklistor, tillverkningsorder, planering och en storskärm i verkstaden. Allt i det är exempeldata och inte ett verkligt företag."
+        }
+    ],
+    "related": [
+        "bokforing-for-hantverkare",
+        "bokforing-for-butiker",
+        "for-ekonomikonsulter"
+    ],
+    "legal_verify": [
+        "Träindustriavtalet: 2025 års belopp kommer från en sekundär källa (Adda, bilaga 05) och kan inte kontrolleras förrän avtalsboken 2025–2027 är publik; lönesteget 2026-04-01 saknas; bara avtalet för arbetare ingår (inte Stoppmöbelindustriavtalet eller tjänstemannaavtalet). Se docs/avtal/traindustriavtalet.md.",
+        "Lagervärdering och produkter i arbete: sidan nämner FIFO, vägt genomsnittspris och produkter i arbete utan att säga vad som är tillåtet i den enskilda årsredovisningen (K2/K3). Låt jurist eller redovisningskonsult granska.",
+        "Verkstadsterminalen: tiden sägs vara produktionstid och inte närvaro eller lönetid, och namnet tas bort ur rapporten efter 24 månader (ADR-071). Kontrollera mot GDPR-registret innan sidan lovar något om personuppgifter.",
+        "Exemplet i Prova utan att registrera: demot är ett eget påhittat möbelsnickeri (Möbelsnickeriet Ekebo Demo AB); kontrollera att demot visar den verkstadsdata sidan beskriver (stycklistor, tillverkningsorder, planering, storskärm) innan sidan marknadsförs.",
+        "Terminalen och planering per person: MBL 11 och 19 §§ (förhandling och information), GDPR art. 6.1 f och 13, samt intresseavvägningen (ADR-071 M5, §13.7). Sidan säger att arbetsgivaren ansvarar och att NONOX ber om bekräftelse och har en utskrivbar text.",
+        "Lagervärdet: indirekta kostnader och schablonmässig timkostnad i värdet (ADR-071 §8; K2 kap. 12, K3 kap. 13, ÅRL 4 kap. 9 §) och FIFO eller vägt genomsnittspris (ÅRL 4 kap. 11 §).",
+        "Konsumentköplagen (2022:260) och konsumenttjänstlagen (1985:716): gäller bara försäljning till konsumenter, och vilken lag som gäller beror på avtalet.",
+        "Planering visar \"Frånvarande\" utan orsak: kontrollera mot GDPR art. 9 (indirekt hälsouppgift) och art. 5.1 c (uppgiftsminimering)."
+    ]
+}

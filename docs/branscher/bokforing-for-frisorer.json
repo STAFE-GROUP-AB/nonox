@@ -1,6 +1,6 @@
 {
     "slug": "bokforing-for-frisorer",
-    "order": 6,
+    "order": 7,
     "group": "foretag",
     "name": "Frisörer och skönhet",
     "menu_text": "Personalliggare, stolshyra, dagskassa och lön.",
@@ -64,7 +64,7 @@
         {"q": "Kan jag fakturera stolshyran automatiskt?", "a": "Ja. Med avtalsfakturering skapas en faktura per hyresgäst varje månad, som utkast eller skickad direkt med e-post."},
         {"q": "Fungerar incheckningen utan internet?", "a": "Ja. Kiosken på surfplattan sparar varje incheckning direkt och skickar dem när nätet är tillbaka."},
         {"q": "Kan NONOX läsa dagsrapporten från min kassa?", "a": "Ja, om kassan kan mejla rapporten som CSV, Excel (XLSX), text eller PDF med text i. Du kopplar raderna till konton en gång och godkänner. Det går också med en SIE-fil från kassan. NONOX har ett öppet API, men en färdig direktkoppling från kassasystemen finns inte ännu."},
-        {"q": "Vad kostar NONOX för en salong?", "a": "{pris} per år med drift för upp till {max} anställda, med personalliggare och lön inräknade. Kör du NONOX själv kostar det ingenting."}
+        {"q": "Vad kostar NONOX för en salong?", "a": "{pris} per år med drift för upp till {max} anställda, med personalliggare och lön inräknade. Kör du NONOX själv betalar du ingen licens, bara din egen drift."}
     ],
     "related": ["bokforing-for-cafeer", "bokforing-for-butiker", "bokforing-for-restauranger"],
     "legal_verify": [

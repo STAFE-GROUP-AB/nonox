@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-15-branschsida-tillverkande-foretag",
+      "datum": "2026-11-15T13:40:00+01:00",
+      "rubrik": "Ny branschsida för tillverkande företag",
+      "beskrivning": "Snickerier, möbeltillverkare och verkstäder har fått en egen sida om stycklistor, kalkyl, inköp, tillverkningsorder, verkstadsterminal och planering, med ett eget demoföretag och ett spår i Företagsguiden. Sidan säger att lön enligt Träindustriavtalet inte går att köra förrän avtalstexten för 2025–2027 finns och värdena har kontrollerats.",
+      "typ": "Nytt",
+      "omrade": "Webbplats"
+    },
+    {
       "id": "2026-11-15-demo-arbetsordrar-betalfil",
       "datum": "2026-11-15T09:00:00+01:00",
       "rubrik": "Demoföretagen har arbetsordrar och betalfiler igen",

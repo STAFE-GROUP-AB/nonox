@@ -1,6 +1,6 @@
 {
     "slug": "bokforing-for-butiker",
-    "order": 5,
+    "order": 6,
     "group": "foretag",
     "name": "Butiker och handel",
     "menu_text": "Dagskassa, presentkort, inköp från EU och personal.",
@@ -66,7 +66,7 @@
         {"q": "Har NONOX lagerhantering?", "a": "Ja, med modulen Lager: saldo per artikel och hylla, EAN-koder, inleveranser, plocklistor, inventering och lagervärdet vid bokslutet enligt FIFO eller vägt genomsnittspris. Kassan är ännu inte kopplad till lagret, så försäljningen i kassan drar inte varor automatiskt."},
         {"q": "Kan jag bokföra inköp från leverantörer i andra EU-länder?", "a": "Ja. Inköp från andra EU-länder bokförs med momsen i rätt rutor. Importerar du varor från ett land utanför EU skriver du in beloppen från Tullverkets tullräkning, och NONOX föreslår verifikationen för importmomsen till rutorna 50, 60–62 och 48."},
         {"q": "Måste en butik ha personalliggare?", "a": "Personalliggaren i NONOX är byggd för de branscher som har krav på liggare. En butik kan använda den bara för att stämpla in och ut och få timmarna till lönen. Om din verksamhet har krav på liggare avgör Skatteverkets regler."},
-        {"q": "Vad kostar NONOX för en butik?", "a": "{pris} per år med drift för upp till {max} anställda, med lön och inkorg inräknade. Kör du NONOX själv kostar det ingenting."}
+        {"q": "Vad kostar NONOX för en butik?", "a": "{pris} per år med drift för upp till {max} anställda, med lön och inkorg inräknade. Kör du NONOX själv betalar du ingen licens, bara din egen drift."}
     ],
     "related": ["bokforing-for-cafeer", "bokforing-for-restauranger", "bokforing-for-frisorer"],
     "legal_verify": [

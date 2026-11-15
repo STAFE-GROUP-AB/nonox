@@ -37,7 +37,7 @@ final class ShareCards
                 'eyebrow' => 'Branscher',
                 'title' => 'Bokföring för',
                 'accent' => 'din bransch.',
-                'text' => 'Caféer, restauranger, butiker, frisörer, hantverkare, konsulter och redovisningsbyråer.',
+                'text' => 'Caféer, restauranger, butiker, frisörer, hantverkare, tillverkande företag, konsulter och redovisningsbyråer.',
             ],
             'sakerhet' => [
                 'eyebrow' => 'Säkerhet och regelverk',
