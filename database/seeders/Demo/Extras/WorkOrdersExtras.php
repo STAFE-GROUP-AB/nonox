@@ -67,6 +67,8 @@ final class WorkOrdersExtras extends DemoExtra
         // The work order policy asks for the user's current company, as in a request: the owner works in the joinery.
         $team = $c->user->current_team_id;
         $c->user->forceFill(['current_team_id' => $c->company->id])->save();
+        // currentCompany() reads the loaded relation, which still names the company the builder left behind.
+        $c->user->unsetRelation('currentTeam');
 
         try {
             $this->atomically($c, 'Arbetsorder', fn () => CurrentCompany::run($c->company, function () use ($c): void {
@@ -79,6 +81,7 @@ final class WorkOrdersExtras extends DemoExtra
         } finally {
             Carbon::setTestNow($previous);
             $c->user->forceFill(['current_team_id' => $team])->save();
+            $c->user->unsetRelation('currentTeam');
         }
     }
 

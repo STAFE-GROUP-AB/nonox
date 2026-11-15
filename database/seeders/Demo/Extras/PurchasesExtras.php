@@ -125,7 +125,8 @@ final class PurchasesExtras extends DemoExtra
                 ->map(fn (mixed $id): string => (string) $id)
                 ->all());
 
-            $batch = app(CreatePaymentBatch::class)($c->user, $c->company, $ids, $c->today->addDay());
+            // The demo's owner has reviewed the synthetic figures; the file goes nowhere (ADR-077).
+            $batch = app(CreatePaymentBatch::class)($c->user, $c->company, $ids, $c->today->addDay(), figuresReviewed: true);
             app(ApprovePaymentBatch::class)($c->user, $batch);
         } catch (ValidationException $exception) {
             $c->warn('betalfil: '.collect($exception->errors())->flatten()->implode(' '));
