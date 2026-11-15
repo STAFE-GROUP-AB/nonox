@@ -44,7 +44,7 @@
                         @foreach($rows as $row)
                             <tr>
                                 <td class="py-2 pr-4">
-                                    <a href="{{ route('saas.customers.show', ['customer' => $row->customer_id]) }}" class="font-medium text-ink hover:text-accent-700 hover:underline">{{ $row->customer?->name ?? __('Kund :id', ['id' => $row->customer_id]) }}</a>
+                                    @include('saas::partials.customer-link', ['id' => $row->customer_id, 'customer' => $row->customer])
                                     @if($row->reclass_ore !== 0)
                                         <span class="block text-xs text-gray-600">{{ __('Pausad längre än 12 månader: räknas nu som churn.') }}</span>
                                     @endif

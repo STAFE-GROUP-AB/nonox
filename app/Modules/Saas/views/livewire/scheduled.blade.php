@@ -31,7 +31,7 @@
                     <tbody class="divide-y divide-stone-100">
                         @foreach($contracts as $contract)
                             <tr>
-                                <td class="py-2 pr-4"><a href="{{ route('saas.customers.show', ['customer' => $contract['customer_id']]) }}" class="font-medium text-ink hover:text-accent-700 hover:underline">{{ $contract['customer']?->name ?? __('Kund :id', ['id' => $contract['customer_id']]) }}</a></td>
+                                <td class="py-2 pr-4">@include('saas::partials.customer-link', ['id' => $contract['customer_id'], 'customer' => $contract['customer']])</td>
                                 <td class="py-2 pr-4">{{ SourceType::from($contract['source_type'])->label() }} · {{ $contract['description'] }}</td>
                                 <td class="py-2 pr-4 text-right"><x-ui.amount :money="Money::ofOre($contract['mrr_ore'])" /></td>
                                 <td class="py-2 pr-4 tabular-nums whitespace-nowrap">{{ \Carbon\CarbonImmutable::parse($contract['ends'])->subDay()->toDateString() }}</td>

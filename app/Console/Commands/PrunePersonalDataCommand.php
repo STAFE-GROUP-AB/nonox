@@ -15,6 +15,7 @@ use App\Modules\Crm\Actions\PruneCrm;
 use App\Modules\Manufacturing\Actions\Workshop\PruneWorkshopTime;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Expense;
+use App\Modules\Saas\Stripe\Actions\PruneStripe;
 use App\Modules\StaffLedger\Actions\PruneStaffLedger;
 use App\Support\Audit\Audit;
 use App\Support\Files\StoredFiles;
@@ -31,7 +32,7 @@ use Illuminate\Support\Facades\DB;
  * absence and outlay requests that never reached the payroll or the books,
  * and staff ledger entries and people whose retention period is over
  * (PruneStaffLedger), Mina datum calendar links stopped 30 days ago, Skatteverket sign-ins that have run out and customer events two years old or without their fetcher (ADR-054), and CRM contact people and prospects with no
- * activity for the company's set number of months (PruneCrm, ADR-043), and the workshop terminal's time entries, which lose the reporting person after 24 months (PruneWorkshopTime, ADR-071 §7).
+ * activity for the company's set number of months (PruneCrm, ADR-043), and the workshop terminal's time entries, which lose the reporting person after 24 months (PruneWorkshopTime, ADR-071 §7), and Stripe's raw objects, events and customer details 90 days after a Stripe connection ended (PruneStripe, ADR-080 §8).
  *
  * TODO(legal-verify): the periods in RETENTION (see docs/gdpr/lagringstider.md).
  */
@@ -118,6 +119,12 @@ class PrunePersonalDataCommand extends Command
         $counts['workshop_people'] = $workshop['people'];
         $counts['workshop_waiting_reasons'] = $workshop['reasons'];
         $counts['workshop_code_notices'] = $workshop['notices'];
+
+        // Stripe objects, events and customers 90 days after the connection ended (ADR-080 §8).
+        $stripe = ArchivedCompany::maintenance(fn (): array => app(PruneStripe::class)());
+        $counts['stripe_objects'] = $stripe['objects'];
+        $counts['stripe_events'] = $stripe['events'];
+        $counts['stripe_customers'] = $stripe['customers'];
 
         Audit::record('privacy.pruned', null, $counts);
 

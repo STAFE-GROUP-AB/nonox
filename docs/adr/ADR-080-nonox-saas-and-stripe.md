@@ -706,3 +706,133 @@ Build step 1 (the ledger and the metrics from NONOX's own data) is on branch
   save with a date and nothing counted changed (a note, a reference, a row text) writes nothing.
 - **A clamped customer stays** (G): while its lines are in force and add up to less than zero, the
   customer keeps its state from month to month, so a return above zero is Utökning.
+
+## Addendum 2026-11-15: step 2 as built (Stripe read-only for metrics)
+
+Branch `feat/saas-stripe`. Build step 2 as the list above names it: `stripe_connections`, the
+restricted-key flow and its refusals, initial and incremental sync of customers, products, prices,
+subscriptions and events, `stripe_objects`, matching (§7.5) and the webhook (§7.4). Coupons are
+read as well, because a subscription's discounts name their coupon only by id. Left out, as §7.2
+and step 3 put them there: invoices, credit notes, charges, refunds, disputes, balance
+transactions, payouts, fee accounts, series S, drafts and bank reconciliation
+(`/aterkommande-intakter/stripe/utbetalningar`). The fee-account part of the `/stripe` page
+(§1 table) belongs to step 3a and is not on the page yet.
+
+### Sources read (2026-11-15, docs.stripe.com)
+
+| Topic | Page | What was relied on |
+|---|---|---|
+| API version | `/api/versioning` | "The current version is 2026-10-28.endive"; requests use the account's default unless `Stripe-Version` is set. NONOX pins `2026-10-28.endive` on every request (`StripeClient::API_VERSION`). |
+| Restricted keys | `/keys/restricted-api-keys` | Prefix `rk_live_`/`rk_test_`; Read/Write/None per resource; GET needs read; a key lacking a permission gets an error (403 in the request log); secret keys "Dangerous" to share with a third party. |
+| Errors | `/api/errors` | 401 no valid key, 403 key lacks permission, 404, 429, 5xx. |
+| Lists | `/api/pagination`, `/api/subscriptions/list`, `/api/events/list` | `limit` 1–100, `starting_after`, `has_more`; subscriptions default to "not canceled", `status=all` returns every status; events "going back up to 30 days", `created[gte]`, `types` up to 20. |
+| Objects | `/api/subscriptions/object`, `/api/customers/object`, `/api/tax_ids/object`, `/api/discounts/object`, `/api/coupons/object` | the fields `SubscriptionContract` reads (status values, `start_date`, `trial_end`, `cancel_at`, `cancel_at_period_end`, `ended_at`, `pause_collection`, items with `current_period_end` and `price.recurring`), `tax_ids` (includable, `expand[]=data.tax_ids`), discount `source.coupon` and `end`, coupon `percent_off`/`amount_off`/`duration`. |
+| Rate limits | `/rate-limits` | 100 requests/s global live, 25 per endpoint; 429 with `Stripe-Rate-Limited-Reason`; lock timeouts also 429; retry with exponential backoff and jitter; client-side token bucket recommended. |
+| Webhook signatures | `/webhooks` ("Verify signatures manually") | split on `,` and `=`; keep `t` and every `v1`, ignore other schemes; `signed_payload = t + "." + raw body`; HMAC-SHA256; constant-time compare to every `v1`; libraries' default tolerance 5 minutes; several `v1` during a secret roll. |
+| Currencies | `/currencies` | amounts in the currency's minor unit; the zero-decimal list (BIF, CLP, DJF, GNF, JPY, KMF, KRW, MGA, PYG, RWF, UGX, VND, VUV, XAF, XOF, XPF); ISK and UGX sent as two-decimal values ending in 00. |
+
+### Decisions
+
+- **Plain Laravel Http, no SDK.** Step 2 makes GET requests to eight endpoints; `Http::fake`
+  covers them in tests without a client mock; nothing is added to `composer.json` (AGENTS.md
+  §1.4). `stripe/stripe-php` (MIT, AGPL-compatible) would bring webhooks and typed objects we do
+  not need, and its default API version follows the package release; plain Http pins the version
+  in one constant. Revisit for step 3 if the bookkeeping objects make the SDK worth it.
+- **Fetch first, then write** (step-1 follow-up). `StripeSync` makes every request for a page (and
+  the Stripe customers and coupons that page refers to) before a short `DB::transaction` that
+  stores it and takes the ledger lock (`ContractVersions::lock`) through `recordExternal`. Connect
+  checks the key with all its requests before its transaction.
+- **NONOX Connect switch.** ADR-064 left the add-on's switch to a later task; step 2 needed one, so
+  the smallest coherent switch is built: `connect_addons` (company, connection, on/off, who, when;
+  `App\Support\Connect\ConnectAddons`), turned on by someone with `settings:manage` on the Stripe
+  page after the price is shown as two lines, "Leverantörens pris 0 kr" and "Påslag 10 % 0 kr"
+  (O1). Only Stripe has a switch; Peppol, Skatteverket and open banking keep their own gates.
+  Turning it off needs the connection disconnected first. Audit `connect.addon_enabled`,
+  `connect.addon_disabled`.
+- **Key.** `sk_` and `pk_` refused; the format `rk_(live|test)_[A-Za-z0-9]{10,}`; `rk_test_`
+  refused unless the environment is local or testing. One read per resource (`/v1/account`,
+  customers, products, prices, coupons, subscriptions, events, `limit=1`); every 403 is collected
+  and named. `Account: Read` is added to §7.1's list because the account id comes from
+  `GET /v1/account` (`TODO(verify)`: the label in Stripe's key form). Stored with the `encrypted`
+  cast, hidden, the last four characters in `key_last4`; the Livewire field is emptied before every
+  answer. A Stripe account is active in one company (partial unique index) and a company has one
+  active connection; reconnecting the same account in the same company takes up the earlier row,
+  so its customer links and objects stay. Rotation (§7.7) is "Byt nyckel": the same checks, and the
+  account must be the same.
+- **Versions.** One `STRIPE_SUBSCRIPTION` version per subscription when what counts changed
+  (`ContractVersions::recordExternal`, the step-1 `append` rules). `source_id` is the subscription
+  id; `source_ref` holds the connection, subscription and Stripe customer ids and the SHA-256 of the
+  object read. The first version is effective from `start_date` with the state as fetched (history
+  before the connection is not invented, like a backfill); a later one from the day it is fetched.
+  Because the object is always fetched again and dated by the fetch, events in any order give the
+  same versions. Mapping (`SubscriptionContract`, pure): `unit_amount_decimal × quantity` per
+  `interval`/`interval_count` (day, week, month, year, normalised by `RevenueLine`); metered is a
+  usage line (O3); tiered or no unit amount → `STRIPE_UNSUPPORTED_PRICE` (Källor); incomplete →
+  `STRIPE_NOT_STARTED`; trialing → 0 until `trial_end` (SA-R6); `paused` or `pause_collection` →
+  Paus (SA-R9); canceled → ends at `ended_at`; `cancel_at` or `cancel_at_period_end` → the
+  earliest item `current_period_end` (SA-R15); past_due and unpaid count (SA-R10). Discounts:
+  item discounts then the subscription's percentages (Stripe's order); `once` coupons ignored
+  (SA-R5); `repeating` until the discount's `end`, several time-limited ones on a line end
+  together at the earliest end; a subscription-level `amount_off` is its own negative line.
+  Customer-level discounts are not read (a known gap, matched against invoices in step 3).
+- **Money.** Stripe minor units become hundredths (`StripeAmount`): zero-decimal × 100; ISK and
+  UGX as given; BHD, JOD, KWD, OMR, TND ÷ 10 half up; others as given. The ledger then converts to
+  öre at Riksbanken's month-end rate as in step 1; amounts are never floats (`percent_off` is
+  turned into basis points).
+- **Provisional customers.** An unlinked Stripe customer is counted under the negative of its
+  `stripe_customer_links.id`, so it is a customer of its own in MRR, cohorts and churn, listed under
+  Källor ("Stripe-kund som inte är kopplad"). Linking or unlinking writes the subscription's whole
+  visible timeline again under the new customer, in date order (`moveToCustomer`), so the history is
+  the same from its first day; closed months stay as they were and the next recompute books the
+  move as Rättelse in the first open month (tested to the öre with `saas:verify` clean). Pages link
+  a negative id to the Stripe page instead of the customer page.
+- **Matching** (§7.5) in `CustomerMatcher`, five queries per page of Stripe customers: rule 1
+  `metadata.nonox_customer_number` → customer number; rule 2 a VAT number (`eu_vat`, `gb_vat`,
+  `no_vat`, `ch_vat`) equal to a customer's, or a Swedish `SE…01` whose ten digits pass Luhn equal
+  to an organisation number; rule 3 the e-mail of exactly one customer; rule 4 the name and country
+  of exactly one customer. 1–2 link and wait for review ("Stämmer"); 3–4 only suggest. Two or more
+  candidates decide nothing. A person's decision (link, confirm, unlink) is never re-matched.
+  "Skapa kund" uses `SaveCustomer` with the Stripe name, e-mail, address, VAT number and, for a
+  Swedish legal person, the organisation number (a sole trader's personal number is not copied).
+- **Sync.** `SyncStripe` (company id, connection id; `ShouldBeUniqueUntilProcessing`,
+  `WithoutOverlapping` per connection, `CurrentCompany::run`) checks the module, the switch and the
+  connection. Initial import per resource with a cursor stored with each page (resumable);
+  incremental from `last_event_created` minus three days, filtered to 19 event types; an event not
+  seen for 27 days or more means a full read again (Stripe keeps 30). Events are stored once per
+  connection (`stripe_events`, id, type, object id, time; no payload). Client: at most 20 requests
+  per second per connection, one at a time; a request answered 429 or 5xx, or not answered, is
+  tried at most five times with exponential backoff and full jitter (`Retry-After` honoured); after that the run is
+  `INTERRUPTED` and the job is released to continue from the cursor. 401 → the connection is
+  `REVOKED`, the key erased, members with `saas:manage` get an in-app notice. Hourly
+  `saas:stripe-sync`. The sync log (`stripe_sync_runs`) shows kind, status, requests and counts,
+  never a message from Stripe.
+- **Webhook.** `POST /webhooks/stripe/{token}` outside the web middleware (no session, no CSRF),
+  throttled 300 a minute per token. Token lookup first; 404 for an unknown token, an ended
+  connection, one without a signing secret, or with the module or the switch off. Then the
+  signature (400 when it fails, nothing stored); then the event id once; then a queued sync. Events
+  from the other mode and of other types are answered 200 and ignored. The object is fetched again
+  with the company's key, so an event about another company's object finds nothing (tested).
+- **Disconnect and revoke.** The key and the webhook secret are erased at once; every subscription
+  gets a version from today excluded as `STRIPE_DISCONNECTED`, a source switched off like CRM_OFF
+  (`ExclusionReason::isSourceOff`), so its MRR leaves through the source row, not as churn.
+- **Raw objects.** `stripe_objects` keeps products, prices, coupons and subscriptions as fetched,
+  one row per hash, never updated (trigger; grant append-and-prune). Customers are not kept raw:
+  `stripe_customer_links` keeps the id, name, e-mail, country, address, tax ids and the metadata
+  number (minimisation, §8). 90 days after a connection ended, `privacy:prune` (`PruneStripe`)
+  deletes the objects and events and clears the customers' details; anonymising a customer clears
+  the linked Stripe customers at once (`CustomerAnonymised`). No step-2 object is bookkeeping
+  underlag.
+- **Audit** (ids and enums only): `stripe.connected`, `stripe.key_rotated`, `stripe.disconnected`,
+  `stripe.revoked_by_provider`, `stripe.webhook_configured`, `stripe.webhook_removed`,
+  `stripe.customer_linked`, `stripe.customer_link_confirmed`, `stripe.customer_unlinked`.
+- **Demo.** The consultancy demo company has made-up Stripe data stored through
+  `StripeSync::storeFetched`, and an active connection with no key, so nothing ever calls Stripe.
+
+### Open
+
+- `TODO(verify)`: the exact permission labels in Stripe's restricted-key form (a sandbox key).
+- `TODO(legal-verify)`: the GDPR balancing test for reading Stripe customers (art. 6.1 f), whether
+  the DPA's purposes cover it, and whether the company must inform its Stripe customers (art. 14);
+  whether the privacy policy needs a version for Stripe (§8 asks for one; not bumped here because
+  parallel branches collide on the legal version, see QUICKSTART §9).
+- Owner: whether the NONOX Connect switch is the company's (built) or the operator's (HQ).

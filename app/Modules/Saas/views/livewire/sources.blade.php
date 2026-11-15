@@ -13,8 +13,16 @@
             <li>{{ __('Avtalsfakturering: varje rad, utan moms och efter rabatt, omräknad till en månad.') }}</li>
             <li>{{ __('Avtalsregistret i CRM, när CRM är påslaget: avtalets värde per månad, kvartal eller år. Ett avtal som faktureras med en avtalsfakturering räknas bara där, så ingenting räknas två gånger.') }}</li>
             <li>{{ __('Engångsbelopp, fakturor utan avtal och kreditfakturor ändrar inte MRR. En kreditfaktura som hör till en ändring av avtalet syns genom ändringen.') }}</li>
+            <li>{{ __('Stripe, när det är kopplat: varje prenumeration med pris per period, utan moms och efter återkommande rabatter. Förbrukningsbaserade priser räknas inte i MRR.') }}</li>
         </ul>
     </x-ui.card>
+
+    @if($stripeUnlinked > 0)
+        <div class="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-200" role="status" data-testid="sources-stripe-unlinked">
+            {{ trans_choice(':count Stripe-kund är inte kopplad till någon av dina kunder och räknas som en egen kund tills den kopplas.|:count Stripe-kunder är inte kopplade till någon av dina kunder och räknas som egna kunder tills de kopplas.', $stripeUnlinked, ['count' => $stripeUnlinked]) }}
+            <a href="{{ route('saas.stripe') }}#kunder" class="font-semibold underline">{{ __('Koppla Stripe-kunder') }}</a>
+        </div>
+    @endif
 
     @if($missingRates !== [])
         <div class="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-200" role="status">
@@ -66,7 +74,7 @@
         <x-ui.card :title="__('Kunder med negativ återkommande intäkt')" :description="__('Kundens avtalsrader blir tillsammans mindre än noll, till exempel en rabattrad som är större än priset. Kunden räknas som 0 kr tills avtalet är rättat.')">
             <ul class="divide-y divide-stone-100 text-sm">
                 @foreach($negative as $row)
-                    <li class="py-2"><a href="{{ route('saas.customers.show', ['customer' => $row->customer_id]) }}" class="text-accent-700 hover:underline">{{ $row->customer?->name ?? __('Kund :id', ['id' => $row->customer_id]) }}</a></li>
+                    <li class="py-2">@include('saas::partials.customer-link', ['id' => $row->customer_id, 'customer' => $row->customer, 'class' => 'text-accent-700 hover:underline'])</li>
                 @endforeach
             </ul>
         </x-ui.card>

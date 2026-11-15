@@ -9,6 +9,7 @@ use App\Models\RecurringInvoiceRow;
 use App\Modules\Crm\Models\Agreement;
 use App\Modules\Saas\Domain\LineMonth;
 use App\Modules\Saas\Domain\SourceType;
+use App\Modules\Saas\Stripe\Models\StripeObject;
 
 /**
  * The texts behind the ledger's ids (review 7, GDPR): the ledger keeps ids,
@@ -32,6 +33,7 @@ final class SourceLabels
     {
         $recurring = [];
         $crm = [];
+        $stripe = [];
 
         foreach ($sources as [$type, $id]) {
             if ($type === SourceType::RecurringInvoice->value) {
@@ -40,6 +42,10 @@ final class SourceLabels
 
             if ($type === SourceType::CrmAgreement->value && ctype_digit($id)) {
                 $crm[(int) $id] = true;
+            }
+
+            if ($type === SourceType::StripeSubscription->value) {
+                $stripe[$id] = true;
             }
         }
 
@@ -57,6 +63,37 @@ final class SourceLabels
 
         foreach (Agreement::query()->whereIn('id', array_keys($crm))->get(['id', 'title']) as $agreement) {
             $agreements[SourceType::CrmAgreement->value.':'.$agreement->id] = $agreement->title;
+        }
+
+        // Stripe (ADR-080 step 2): a line is named by its product, read from the stored objects (two queries).
+        if ($stripe !== []) {
+            $products = [];
+            $items = [];
+
+            foreach (StripeObject::query()->where('type', StripeObject::SUBSCRIPTION)->whereIn('stripe_id', array_keys($stripe))->orderBy('id')->get(['stripe_id', 'payload']) as $object) {
+                foreach ((array) ($object->payload['items']['data'] ?? []) as $item) {
+                    $product = is_array($item) ? ($item['price']['product'] ?? null) : null;
+
+                    if (is_string($product) && is_string($item['id'] ?? null)) {
+                        $items["{$object->stripe_id}:{$item['id']}"] = $product;
+                        $products[$product] = true;
+                    }
+                }
+            }
+
+            $names = [];
+
+            foreach (StripeObject::query()->where('type', StripeObject::PRODUCT)->whereIn('stripe_id', array_keys($products))->orderBy('id')->get(['stripe_id', 'payload']) as $object) {
+                $names[$object->stripe_id] = is_string($object->payload['name'] ?? null) ? $object->payload['name'] : $object->stripe_id;
+            }
+
+            foreach ($items as $key => $product) {
+                $rows[SourceType::StripeSubscription->value.':'.$key] = $names[$product] ?? $product;
+            }
+
+            foreach (array_keys($stripe) as $id) {
+                $agreements[SourceType::StripeSubscription->value.':'.$id] = __('Stripe-prenumeration :id', ['id' => $id]);
+            }
         }
 
         return new self($rows, $agreements);
@@ -83,6 +120,10 @@ final class SourceLabels
     {
         if ($type === SourceType::RecurringInvoice) {
             return $this->rows["{$id}:{$key}"] ?? __('Rad :n', ['n' => ((int) substr($key, 1)) + 1]);
+        }
+
+        if ($type === SourceType::StripeSubscription) {
+            return $this->rows["{$type->value}:{$id}:{$key}"] ?? (str_starts_with($key, 'discount:') ? __('Rabatt') : $key);
         }
 
         return $this->agreements["{$type->value}:{$id}"] ?? __('Avtal #:id', ['id' => $id]);

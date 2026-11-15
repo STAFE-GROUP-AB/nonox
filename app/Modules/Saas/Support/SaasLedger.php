@@ -547,6 +547,7 @@ final class SaasLedger
             $latest[$version->contractKey()] = $version;
         }
 
-        return count(array_filter($latest, fn (ContractVersion $version): bool => ($version->excluded !== null && ! $version->excluded->isExpected()) || ($version->excluded === null && $version->customerId === null)));
+        // A Stripe customer not linked yet counts provisionally under a negative id and waits under Källor (§7.5).
+        return count(array_filter($latest, fn (ContractVersion $version): bool => ($version->excluded !== null && ! $version->excluded->isExpected()) || ($version->excluded === null && ($version->customerId === null || $version->customerId < 0))));
     }
 }

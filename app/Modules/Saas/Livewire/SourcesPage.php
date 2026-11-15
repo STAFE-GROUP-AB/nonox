@@ -11,6 +11,7 @@ use App\Modules\Saas\Domain\SourceType;
 use App\Modules\Saas\Jobs\RecomputeSaas;
 use App\Modules\Saas\Livewire\Concerns\InSaas;
 use App\Modules\Saas\Models\SaasContractVersion;
+use App\Modules\Saas\Stripe\Models\StripeCustomerLink;
 use App\Modules\Saas\Support\SaasReport;
 use App\Modules\Saas\Support\SourceLabels;
 use Carbon\CarbonImmutable;
@@ -94,6 +95,7 @@ class SourcesPage extends Component
             'labels' => SourceLabels::for($sources),
             'missingRates' => $latest === null ? [] : (array) $latest->missing_rates,
             'latest' => $latest,
+            'stripeUnlinked' => StripeCustomerLink::query()->where('status', '!=', StripeCustomerLink::LINKED)->withSubscriptions()->count(),
         ]);
     }
 }

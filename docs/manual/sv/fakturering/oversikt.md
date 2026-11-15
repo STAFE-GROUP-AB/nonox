@@ -36,6 +36,7 @@ Avsnittet är för dig som säljer och fakturerar, och för dig som sköter bokf
 - [Avtalsfakturering](/manual/fakturering/avtalsfakturering) – samma faktura varje månad, kvartal, halvår eller år.
 - [Återkommande intäkter](/manual/fakturering/aterkommande-intakter) – MRR, ARR, churn och kohorter ur avtalen, med modulen NONOX SaaS.
 - [Stäng en månad i Återkommande intäkter](/manual/fakturering/stang-en-manad-i-aterkommande-intakter) – så att månadens siffror står fast.
+- [Stripe i Återkommande intäkter](/manual/fakturering/stripe-i-aterkommande-intakter) – prenumerationerna från ditt Stripe-konto, med en nyckel som bara kan läsa.
 
 ## Särskilda fakturor
 

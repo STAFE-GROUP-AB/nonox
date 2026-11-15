@@ -73,6 +73,7 @@ När NONOX SaaS är påslaget har avtalet i avtalsfaktureringen fältet **Gälle
 - **Uppsagda** – avtal som är uppsagda men fortfarande löper.
 - **Rättelser** och **Månader** – se [Stäng en månad i Återkommande intäkter](/manual/fakturering/stang-en-manad-i-aterkommande-intakter).
 - **Källor** – det som inte kan räknas med och varför, till exempel ett avtal i avtalsregistret vars kundkonto inte är kopplat till en kund.
+- **Stripe** – koppla ditt Stripe-konto så att prenumerationerna räknas, se [Stripe i Återkommande intäkter](/manual/fakturering/stripe-i-aterkommande-intakter).
 
 ![Rörelser per månad med en kolumn per rad i bryggan.](/bilder/manual/fakturering/aterkommande-intakter-rorelser.webp)
 
@@ -89,5 +90,6 @@ När NONOX SaaS är påslaget har avtalet i avtalsfaktureringen fältet **Gälle
 ## Läs också
 
 - [Stäng en månad i Återkommande intäkter](/manual/fakturering/stang-en-manad-i-aterkommande-intakter)
+- [Stripe i Återkommande intäkter](/manual/fakturering/stripe-i-aterkommande-intakter)
 - [Avtalsfakturering](/manual/fakturering/avtalsfakturering)
 - [Kunder](/manual/fakturering/kunder)

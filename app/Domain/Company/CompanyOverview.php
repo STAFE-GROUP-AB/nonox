@@ -80,6 +80,8 @@ final class CompanyOverview
         'workshop-terminal' => 'manufacturing.terminal.admin',
         // Reminders of a company's dates (ADR-051, stage 2).
         'mina-datum' => 'guide.dates',
+        // Stripe no longer accepts the key (ADR-080 §7.7).
+        'saas-stripe' => 'saas.stripe',
     ];
 
     /** A deadline this close counts as urgent. */
