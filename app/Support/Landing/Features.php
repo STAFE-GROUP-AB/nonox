@@ -84,6 +84,7 @@ final class Features
         'manufacturing_postcalc' => ['name' => 'Efterkalkyl per produkt och arbetssteg', 'status' => self::LIVE, 'readme' => 'Efterkalkyl: kalkyl mot rapporterad tid per produkt och arbetssteg', 'module' => 'Tillverkning'],
         'manufacturing_orders' => ['name' => 'Tillverkningsorder som tar komponenter ur lagret och tar emot färdiga produkter', 'status' => self::LIVE, 'readme' => 'Tillverkningsorder', 'module' => 'Tillverkning'],
         'manufacturing_planning' => ['name' => 'Planeringskalender med leveransprognos och avvikelser', 'status' => self::LIVE, 'readme' => 'Planeringskalender för verkstaden', 'module' => 'Tillverkning'],
+        'manufacturing_wall_screen' => ['name' => 'Storskärm i verkstaden med dagens arbete, förseningar och leveranser', 'status' => self::LIVE, 'readme' => 'Storskärm i verkstaden', 'module' => 'Tillverkning'],
         'crm' => ['name' => 'CRM med nyckeltal ur bokföringen', 'status' => self::LIVE, 'readme' => 'Kunder och prospekt med kontaktpersoner', 'module' => 'CRM'],
         'crm_activities' => ['name' => 'Aktiviteter med nästa steg', 'status' => self::LIVE, 'readme' => 'Aktiviteter med nästa steg', 'module' => 'CRM'],
         'crm_key_figures' => ['name' => 'Nyckeltal per kund ur bokföringen', 'status' => self::LIVE, 'readme' => 'Nyckeltal ur bokföringen per kund', 'module' => 'CRM'],

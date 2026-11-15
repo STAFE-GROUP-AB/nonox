@@ -1384,3 +1384,74 @@ forecast "efter horisonten" with the flag `no_resource`), and Planering's skills
 `manufacturing:view` needs a narrower audience (art. 5.1 c); whether absence next to a deviation can
 reveal health by inference; the 24-month retention; whether the workshop terminal may show who is
 absent today (proposed: it does not).
+
+## As built (M7, 2026-11-13): the workshop wall screen
+
+The roadmap's "Storskärm i verkstaden": a page for a television on the workshop wall that shows
+today's production, what is late and what is to be delivered, with nobody signed in at the
+screen. It reads the plan of M6 through `PlanBoard` and is paired like M5's terminal. Nothing is
+bookkeeping, so the system documentation is unchanged.
+
+**Pairing.** A wall screen is a row in `workshop_devices` with `kind = WALL` (new column, default
+`TERMINAL`; migration `2027_01_13_100000_add_kind_to_workshop_devices`), not a table of its own, so
+`WorkshopDevices` pairs, renews, revokes and removes both. A code and a token answer only for the
+kind they were made for (`DeviceKind`): the terminal's page refuses a wall screen's code, a wall
+screen's token gets 401 from the terminal's endpoints, and a tablet's token gets 401 from the board.
+The terminal's admin page lists and acts only on tablets, the wall screen's only on screens. A wall
+screen needs the module, not the terminal setting. `production:plan` sets screens up (owner, admin,
+Planering's scheduler); `manufacturing:view` sees the page and the preview. Audit events
+`manufacturing.wall_screen_registered|paired|revoked|removed`; the terminal's keep their names.
+**A wall screen's token does not expire**, like a terminal tablet's: it is valid until the screen is
+revoked or removed under Tillverkning → Storskärm, which the page and the manual say. The token reads
+only the board, which holds no personal data, and `last_seen_at` on the setup page shows a screen that
+has gone quiet or is somewhere it should not be.
+
+**The screen** (`/verkstad/storskarm`, no session or CSRF, throttled, SecurityHeaders; its own Vite
+entry `wall.js` with `wall.css`): a pairing form that reads `#kod=` from the fragment and removes it
+from the address at once with `history.replaceState` (the M5 follow-up, done here for the wall
+screen; the terminal still leaves it, and the staff ledger kiosk still sends `?kod=`), then the board
+from `/verkstad/storskarm/tavla` with the bearer token every 30 seconds. While the connection is down it
+keeps the last board and says from what time it is (after three missed refreshes). A dark ground, type
+that scales with the width, every traffic light with its word. `last_seen_at` is written at most every
+five minutes, so polling does not write on every request. No service worker: the screen is online by
+nature. The signed-in preview (`/tillverkning/storskarm/visa`, fed from
+`/tillverkning/storskarm/visa/tavla` with the session) is the same page and script; the manual's
+screenshot is taken from it on a new `tv` device (1920 × 1080).
+
+**What it shows** (`Support/WallBoard`, from the latest run, a fixed number of queries whatever the
+number of orders, tested at 10 and 100):
+
+- **I dag**: the run's slots with working time today (from their segments), grouped per production
+  order in the order they start: reference, product, quantity in the stock unit, the forecast's light,
+  and per operation the workstation and today's times, marked as going on now or done according to the
+  plan. At most 12 orders; the rest is counted.
+- **Försenat**: forecasts with a red light, with promised and forecast date, the working days between
+  them in the company's calendar ("efter horisonten" without a forecast), and material or capacity when
+  the order waits for one.
+- **Ska levereras**: forecasts promised from today through the fifth working day (today counted when it
+  is a working day), with their light.
+- **Väntar och stopp**: open waiting flags from the terminal (order, operation, kind, since when) and
+  downtimes going on now ("står still") or planned later today ("Planerat stopp … från"), at most eight
+  of each, the rest counted. Product names come from the article; without one only the reference is
+  shown, since a production order's own name is free text.
+- The date beside a forecast is the forecast **delivery** date ("Leverans"), as M6's calendar now
+  separates "Arbetet klart", "väntetid till" and the delivery.
+
+**Personal data (decided here).** The screen is seen by everyone in the workshop, visitors too, so it
+names nobody. `PlanBoard::slots` and `forecasts` gained `withPeople` and `withCustomers` (default on, so
+the planning screens are unchanged); the board asks without them, so the employee and the customer are
+not even loaded. No person's name, no absence (absent people simply have no slots), no load or minutes
+per person, no customer name (a customer can be a natural person, and the customer list is the company's
+own), no free-text reason of a waiting flag (it could name a person, M5 review), and no amounts. A test
+checks the JSON for the fixture's names, the absence's type and note, "Frånvarande", and the reason. The
+per-person thresholds of the post-calculation (`WorkshopAnalysis::MIN_PEOPLE_FOR_DETAIL`) do not apply,
+since the screen has no per-person or per-operation history. `docs/gdpr/registerforteckning.md` says
+what the screen shows and that it stores nothing new about people.
+
+`TODO(legal-verify)`: whether today's operations with workstation and times can still be tied to a named
+person in a very small workshop where only one person does a step, and if so whether that needs
+information under art. 13 or MBL 19 §.
+
+**Open for the owner.** Customer names on the screen (left out; an opt-in setting per company would be
+the way to add them); finished production orders still to be delivered (the board knows only open orders
+in the plan); a screen per workstation or a filter by workstation; more than five working days ahead.

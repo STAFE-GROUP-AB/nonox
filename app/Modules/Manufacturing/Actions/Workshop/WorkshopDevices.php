@@ -6,6 +6,7 @@ namespace App\Modules\Manufacturing\Actions\Workshop;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Manufacturing\Domain\DeviceKind;
 use App\Modules\Manufacturing\ManufacturingModule;
 use App\Modules\Manufacturing\ManufacturingSettings;
 use App\Modules\Manufacturing\Models\WorkshopDevice;
@@ -29,6 +30,10 @@ use Illuminate\Validation\ValidationException;
  * SHA-256 hash. The token identifies the company; a tablet serves exactly
  * one. A tablet can be revoked at any time, and one that must be set up
  * again becomes a new device.
+ *
+ * A wall screen (M7) is paired the same way, as a device of its own kind:
+ * production:plan sets it up, and it needs the module but not the terminal.
+ * A code and a token answer only for the kind they were made for.
  */
 final class WorkshopDevices
 {
@@ -39,19 +44,21 @@ final class WorkshopDevices
     /**
      * @return array{0: WorkshopDevice, 1: string} the device and its pairing code
      */
-    public function register(User $user, Company $company, string $name): array
+    public function register(User $user, Company $company, string $name, DeviceKind $kind = DeviceKind::Terminal): array
     {
-        $this->authorize($user, $company);
+        $this->authorize($user, $company, $kind);
 
         if (trim($name) === '' || mb_strlen($name) > 100) {
-            throw ValidationException::withMessages(['deviceName' => __('Ge surfplattan ett namn, till exempel Snickeriet.')]);
+            throw ValidationException::withMessages(['deviceName' => $kind === DeviceKind::WallScreen
+                ? __('Ge skärmen ett namn, till exempel Tv:n i verkstaden.')
+                : __('Ge surfplattan ett namn, till exempel Snickeriet.')]);
         }
 
-        return DB::transaction(function () use ($user, $company, $name): array {
-            $device = WorkshopDevice::create(['name' => trim($name), 'created_by' => $user->id]);
+        return DB::transaction(function () use ($user, $company, $name, $kind): array {
+            $device = WorkshopDevice::create(['name' => trim($name), 'kind' => $kind, 'created_by' => $user->id]);
             $code = $this->issueCode($device);
 
-            Audit::record('manufacturing.terminal_device_registered', $device, [], $company, $user);
+            Audit::record(self::event($kind, 'registered'), $device, [], $company, $user);
 
             return [$device, $code];
         });
@@ -60,10 +67,12 @@ final class WorkshopDevices
     /** A new pairing code for a tablet that has not been paired yet. */
     public function renewCode(User $user, Company $company, WorkshopDevice $device): string
     {
-        $this->authorize($user, $company);
+        $this->authorize($user, $company, $device->kind);
 
         if ($device->paired_at !== null || $device->revoked_at !== null) {
-            throw ValidationException::withMessages(['device' => __('Surfplattan är redan kopplad. Lägg till en ny i stället.')]);
+            throw ValidationException::withMessages(['device' => $device->kind === DeviceKind::WallScreen
+                ? __('Skärmen är redan kopplad. Lägg till en ny i stället.')
+                : __('Surfplattan är redan kopplad. Lägg till en ny i stället.')]);
         }
 
         return $this->issueCode($device);
@@ -71,18 +80,19 @@ final class WorkshopDevices
 
     /**
      * Exchanges a pairing code for a device token. Nobody is signed in, so
-     * the code is looked up across companies; it is single use and expires.
+     * the code is looked up across companies; it is single use and expires,
+     * and it pairs only a device of the kind the page asking is for.
      *
      * @return array{0: WorkshopDevice, 1: string}|null the device and its token, or null for an unknown or expired code
      */
-    public function pair(string $code): ?array
+    public function pair(string $code, DeviceKind $kind = DeviceKind::Terminal): ?array
     {
         $hash = hash('sha256', strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code) ?? ''));
 
         // The tablet has no company yet: the code is what identifies it. The row is locked, so two tablets
         // entering the same code at once cannot both get a token.
-        return DB::transaction(function () use ($hash): ?array {
-            $device = CompanyScope::bypass(fn (): ?WorkshopDevice => WorkshopDevice::query()->where('pairing_code_hash', $hash)->lockForUpdate()->first());
+        return DB::transaction(function () use ($hash, $kind): ?array {
+            $device = CompanyScope::bypass(fn (): ?WorkshopDevice => WorkshopDevice::query()->where('pairing_code_hash', $hash)->ofKind($kind)->lockForUpdate()->first());
 
             if (! $device instanceof WorkshopDevice || $device->revoked_at !== null || $device->pairing_expires_at === null || $device->pairing_expires_at->isPast()) {
                 return null;
@@ -98,7 +108,7 @@ final class WorkshopDevices
                     'paired_at' => CarbonImmutable::now(),
                 ])->save();
 
-                Audit::record('manufacturing.terminal_device_paired', $device, [], $device->company_id);
+                Audit::record(self::event($device->kind, 'paired'), $device, [], $device->company_id);
             });
 
             return [$device, $token];
@@ -107,11 +117,11 @@ final class WorkshopDevices
 
     public function revoke(User $user, Company $company, WorkshopDevice $device): void
     {
-        $this->authorize($user, $company);
+        $this->authorize($user, $company, $device->kind);
 
         $device->forceFill(['revoked_at' => CarbonImmutable::now(), 'revoked_by' => $user->id, 'pairing_code_hash' => null, 'token_hash' => null])->save();
 
-        Audit::record('manufacturing.terminal_device_revoked', $device, [], $company, $user);
+        Audit::record(self::event($device->kind, 'revoked'), $device, [], $company, $user);
     }
 
     /**
@@ -121,13 +131,13 @@ final class WorkshopDevices
      */
     public function remove(User $user, Company $company, WorkshopDevice $device): void
     {
-        $this->authorize($user, $company);
+        $this->authorize($user, $company, $device->kind);
 
         DB::transaction(function () use ($user, $company, $device): void {
             $used = WorkshopTimeEntry::query()->where('device_id', $device->id)->exists()
                 || WorkshopWaitingFlag::query()->where('raised_by_device_id', $device->id)->orWhere('cleared_by_device_id', $device->id)->exists();
 
-            Audit::record('manufacturing.terminal_device_removed', $device, ['kept' => $used], $company, $user);
+            Audit::record(self::event($device->kind, 'removed'), $device, ['kept' => $used], $company, $user);
 
             if (! $used) {
                 $device->delete();
@@ -145,15 +155,15 @@ final class WorkshopDevices
         });
     }
 
-    /** The active device for a token, across companies (the token identifies the company). */
-    public static function forToken(string $token): ?WorkshopDevice
+    /** The active device of a kind for a token, across companies (the token identifies the company). */
+    public static function forToken(string $token, DeviceKind $kind = DeviceKind::Terminal): ?WorkshopDevice
     {
         if (strlen($token) < 32) {
             return null;
         }
 
         // A terminal request has no signed-in user: the token is what identifies the company.
-        $device = CompanyScope::bypass(fn (): ?WorkshopDevice => WorkshopDevice::query()->where('token_hash', hash('sha256', $token))->first());
+        $device = CompanyScope::bypass(fn (): ?WorkshopDevice => WorkshopDevice::query()->where('token_hash', hash('sha256', $token))->ofKind($kind)->first());
 
         return $device instanceof WorkshopDevice && $device->isActive() ? $device : null;
     }
@@ -174,10 +184,24 @@ final class WorkshopDevices
         return substr($code, 0, 4).'-'.substr($code, 4);
     }
 
-    private function authorize(User $user, Company $company): void
+    /** The terminal's tablets need production:report and the terminal on; a wall screen needs production:plan. */
+    private function authorize(User $user, Company $company, DeviceKind $kind): void
     {
         app(ModuleManager::class)->ensureEnabled(ManufacturingModule::KEY, $company);
+
+        if ($kind === DeviceKind::WallScreen) {
+            Gate::forUser($user)->authorize('plan', [WorkshopDevice::class, $company]);
+
+            return;
+        }
+
         Gate::forUser($user)->authorize('terminal', [WorkshopDevice::class, $company]);
         abort_unless(ManufacturingSettings::terminalEnabled($company), 404);
+    }
+
+    /** The audit event: the terminal's names are kept as they were, a wall screen has its own. */
+    private static function event(DeviceKind $kind, string $what): string
+    {
+        return $kind === DeviceKind::WallScreen ? "manufacturing.wall_screen_{$what}" : "manufacturing.terminal_device_{$what}";
     }
 }

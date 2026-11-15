@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-14-storskarm-verkstad",
+      "datum": "2026-11-14T14:50:00+01:00",
+      "rubrik": "Storskärm i verkstaden",
+      "beskrivning": "En tv på väggen i verkstaden kan visa dagens planerade arbete, vad som är försenat, vad som ska levereras de närmaste arbetsdagarna och vad som väntar eller står still. Skärmen kopplas en gång med en engångskod och ingen behöver vara inloggad vid den. Den visar inga namn på personer, ingen frånvaro och inga kundnamn.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-13-planeringskalender-arbetet-klart",
       "datum": "2026-11-13T09:00:00+01:00",
       "rubrik": "Planeringskalendern visar när arbetet är klart och väntetiden efter",

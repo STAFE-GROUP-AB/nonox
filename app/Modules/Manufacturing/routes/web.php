@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Manufacturing\Http\WallScreenController;
 use Illuminate\Support\Facades\Route;
 
 // Behind module:manufacturing: 404 while the module is off.
@@ -24,3 +25,8 @@ Route::view('/tillverkning/planering/ordrar', 'manufacturing::planning.page', ['
 Route::view('/tillverkning/planering/avvikelser', 'manufacturing::planning.page', ['screen' => 'deviations'])->name('manufacturing.planning.deviations');
 Route::view('/tillverkning/planering/tank-om', 'manufacturing::planning.page', ['screen' => 'scenario'])->name('manufacturing.planning.scenario');
 Route::view('/tillverkning/planering/installningar', 'manufacturing::planning.page', ['screen' => 'setup'])->name('manufacturing.planning.setup');
+
+// The workshop wall screen (M7): setting screens up, and a preview of the board for a signed-in user.
+Route::view('/tillverkning/storskarm', 'manufacturing::wall-admin')->name('manufacturing.wallScreen.admin');
+Route::get('/tillverkning/storskarm/visa', [WallScreenController::class, 'preview'])->name('manufacturing.wallScreen.preview');
+Route::get('/tillverkning/storskarm/visa/tavla', [WallScreenController::class, 'previewBoard'])->name('manufacturing.wallScreen.preview.board');
