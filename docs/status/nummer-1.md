@@ -850,3 +850,12 @@ Evidence: `tests/Feature/Manufacturing/WallScreenTest.php` (koppling per enhetst
 Öppet för ägaren: kundnamn på skärmen som val per företag; färdiga order som väntar på leverans; en skärm per arbetsstation; fler än fem arbetsdagar framåt.
 Open legal-verify items: om dagens arbetssteg med arbetsstation och klockslag i en mycket liten verkstad ändå kan kopplas till en namngiven person, och om det kräver information enligt art. 13 eller 19 § MBL.
 Next package: branschsidan "Tillverkande företag".
+
+---
+
+Package: Demoföretagets arbetsorder och betalfiler (kö 22)
+Status: done och live
+Evidence: `tests/Feature/Demo/WorkOrdersDemoExtraTest.php`, `tests/Feature/Demo/PaymentFileDemoExtraTest.php`; seedning in i en tom databas utan fel (Snickeri Norrby Demo AB får 3 arbetsorder, Konsultbolaget en betalfil).
+- `WorkOrdersExtras`: ägarens cachade `currentTeam` släpps före och efter företagsbytet, så behörighetskontrollen ser rätt företag.
+- `PurchasesExtras` och `PayrollExtras`: demon anger `figuresReviewed` för sina påhittade betal- och lönefiler, som aldrig skickas någonstans. Spärren i koden är oförändrad.
+Next package: branschsidan "Tillverkande företag".

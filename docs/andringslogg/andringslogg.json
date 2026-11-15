@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-15-demo-arbetsordrar-betalfil",
+      "datum": "2026-11-15T09:00:00+01:00",
+      "rubrik": "Demoföretagen har arbetsordrar och betalfiler igen",
+      "beskrivning": "Snickeridemon får nu sina arbetsordrar, och demoföretagen får en betalfil till leverantörerna och en lönefil, som i Prova utan att registrera. Filerna skickas ingenstans.",
+      "typ": "Rättat",
+      "omrade": "Övrigt"
+    },
+    {
       "id": "2026-11-14-storskarm-verkstad",
       "datum": "2026-11-14T14:50:00+01:00",
       "rubrik": "Storskärm i verkstaden",
