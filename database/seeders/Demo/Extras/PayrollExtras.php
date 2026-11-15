@@ -336,7 +336,8 @@ final class PayrollExtras extends DemoExtra
 
         $run = $this->runs->calculate($user, $run);
         $run = $this->runs->approve(self::approverUser() ?? $user, $run->fresh() ?? $run);
-        app(SalaryPaymentFile::class)($user, $run);
+        // The demo's owner has reviewed the synthetic figures; the file goes nowhere (ADR-077).
+        app(SalaryPaymentFile::class)($user, $run, figuresReviewed: true);
         $run = $this->runs->markPaid($user, $run);
         $this->runs->post($user, $run);
     }
