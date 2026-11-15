@@ -63,3 +63,30 @@ export function clock(iso) {
 export function isStale(lastOkMs, nowMs, refreshSeconds) {
     return lastOkMs !== null && nowMs - lastOkMs > refreshSeconds * 3000;
 }
+
+/** A time from the board: "09:30" today as it is, an earlier or later date as formatDay writes it. */
+export function moment(value, today, t) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(String(value)) ? formatDay(value, today, t) : value;
+}
+
+/**
+ * What the screen does when it starts: the preview loads, a code in the
+ * address pairs (also on a screen paired before), a stored token loads,
+ * and otherwise the pairing form is shown.
+ */
+export function startAction({ preview, token, code }) {
+    if (preview) {
+        return 'load';
+    }
+
+    if (code !== '') {
+        return 'pair';
+    }
+
+    return token ? 'load' : 'form';
+}
+
+/** After a code is refused: a screen that is already paired keeps showing its board. */
+export function afterFailedPair(token) {
+    return token ? 'load' : 'form';
+}

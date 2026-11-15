@@ -1,7 +1,7 @@
 // The workshop wall screen's logic that needs no page (ADR-071, M7).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { clock, codeFromHash, fill, formatDay, isStale, lateText, withoutCode } from '../../app/Modules/Manufacturing/resources/js/wall-core.js';
+import { afterFailedPair, clock, codeFromHash, fill, formatDay, isStale, lateText, moment, startAction, withoutCode } from '../../app/Modules/Manufacturing/resources/js/wall-core.js';
 
 const strings = {
     day_today: 'i dag', day_tomorrow: 'i morgon', day_yesterday: 'i går',
@@ -46,4 +46,23 @@ test('marks the board as old after three refreshes without an answer', () => {
     assert.equal(isStale(null, 1_000_000, 30), false);
     assert.equal(isStale(1_000_000, 1_000_000 + 89_000, 30), false);
     assert.equal(isStale(1_000_000, 1_000_000 + 91_000, 30), true);
+});
+
+test('writes a time today as it is and another day as a date', () => {
+    assert.equal(moment('09:30', '2026-11-16', t), '09:30');
+    assert.equal(moment('2026-11-16', '2026-11-16', t), 'i dag');
+    assert.match(moment('2026-11-13', '2026-11-16', t), /^fre\s+13\s+nov$/);
+});
+
+test('pairs when the address has a code, also on a paired screen, and otherwise loads or asks for a code', () => {
+    assert.equal(startAction({ preview: true, token: null, code: '' }), 'load');
+    assert.equal(startAction({ preview: false, token: 'abc', code: 'ABCD-EFGH' }), 'pair');
+    assert.equal(startAction({ preview: false, token: null, code: 'ABCD-EFGH' }), 'pair');
+    assert.equal(startAction({ preview: false, token: 'abc', code: '' }), 'load');
+    assert.equal(startAction({ preview: false, token: null, code: '' }), 'form');
+});
+
+test('keeps showing the board when a new code is refused on a paired screen', () => {
+    assert.equal(afterFailedPair('abc'), 'load');
+    assert.equal(afterFailedPair(null), 'form');
 });

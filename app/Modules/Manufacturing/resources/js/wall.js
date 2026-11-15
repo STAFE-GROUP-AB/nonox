@@ -5,7 +5,7 @@
 // It asks for the board every 30 seconds and keeps showing the last answer,
 // marked as old, while the connection is down. A signed-in user sees the
 // same page as a preview, fed from the session.
-import { clock, codeFromHash, fill, formatDay, isStale, lateText, withoutCode } from './wall-core.js';
+import { afterFailedPair, clock, codeFromHash, fill, formatDay, isStale, lateText, moment, startAction, withoutCode } from './wall-core.js';
 import '../css/wall.css';
 
 const config = JSON.parse(document.getElementById('wall-config').textContent);
@@ -136,6 +136,13 @@ async function pair(code) {
     const result = await call(config.urls.pair, { method: 'POST', body: { code } });
 
     if (result.status !== 200 || !result.data?.token) {
+        // A screen paired before keeps its board; the stored token still holds.
+        if (afterFailedPair(state.token) === 'load') {
+            await load();
+
+            return;
+        }
+
         state.notice = result.status === 0 ? t('no_connection') : t('pair_invalid');
         state.screen = 'pair';
         render();
@@ -239,11 +246,11 @@ function waitingPanel(board) {
                 ? el('strong', { class: 'wall-amber-text' }, t('planned_stop', { station: stop.workstation }))
                 : el('strong', { class: 'wall-red-text' }, t('stopped', { station: stop.workstation }))),
             el('div', { class: 'wall-row-meta' }, el('span', {}, stop.reason),
-                stop.planned ? el('span', {}, t('from', { time: stop.from })) : null,
-                el('span', {}, stop.until ? t('until', { time: stop.until }) : t('until_further'))))),
+                stop.planned ? el('span', {}, t('from', { time: moment(stop.from, board.today, t) })) : null,
+                el('span', {}, stop.until ? t('until', { time: moment(stop.until, board.today, t) }) : t('until_further'))))),
         ...board.waiting.map((item) => el('li', { class: 'wall-row' },
             orderTitle(item),
-            el('div', { class: 'wall-row-meta' }, el('strong', { class: 'wall-amber-text' }, item.kind_label), el('span', {}, item.operation), el('span', {}, t('since', { time: item.since }))))),
+            el('div', { class: 'wall-row-meta' }, el('strong', { class: 'wall-amber-text' }, item.kind_label), el('span', {}, item.operation), el('span', {}, t('since', { time: moment(item.since, board.today, t) }))))),
     ];
     const count = board.stopped.length + board.stopped_more + board.waiting.length + board.waiting_more;
 
@@ -310,18 +317,16 @@ setInterval(() => {
     }
 }, 20000);
 
-if (config.preview) {
-    load();
-} else {
-    state.token = storedToken();
+state.token = config.preview ? null : storedToken();
 
-    // A code in the address is a new pairing, also on a screen paired before.
-    if (state.pendingCode !== '') {
-        pair(state.pendingCode);
-    } else if (state.token) {
+switch (startAction({ preview: config.preview, token: state.token, code: config.preview ? '' : state.pendingCode })) {
+    case 'load':
         load();
-    } else {
+        break;
+    case 'pair':
+        pair(state.pendingCode);
+        break;
+    default:
         state.screen = 'pair';
         render();
-    }
 }
