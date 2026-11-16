@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-16-tillverkning-jamforelse-och-systemdokumentation",
+      "datum": "2026-11-16T15:10:00+01:00",
+      "rubrik": "Tillverkning i jämförelsen, körjournal på branschsidorna, ny systemdokumentation",
+      "beskrivning": "Jämförelsens rad om tillverkning omfattar nu stycklistor, kalkyl, tillverkningsorder, verkstadsterminal, efterkalkyl, planeringskalender och storskärm. Branschsidorna för konsulter och hantverkare nämner körjournalen på Min sida, där resorna skickas in och betalas som milersättning med lönen och som är underlag för förmånsbil. Systemdokumentationen har ett nytt avsnitt om Återkommande intäkter.",
+      "typ": "Förbättrat",
+      "omrade": "Webbplats"
+    },
+    {
       "id": "2026-11-16-dokumentationen-uppdaterad",
       "datum": "2026-11-16T12:55:00+01:00",
       "rubrik": "Dokumentationen följer funktionerna",

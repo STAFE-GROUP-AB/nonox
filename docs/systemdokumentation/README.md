@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.132
-- Datum: 2026-11-11
+- Version: 0.133
+- Datum: 2026-11-16
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -5110,6 +5110,61 @@ offerter och ordrar (M2) bokför ingenting och beskrivs i ADR:en.
   redovisningskonsult, revisor) ser orderna; `manufacturing:manage` (ägare,
   administratör) skapar och ändrar dem.
 
+## 5p. Återkommande intäkter (modulen NONOX SaaS)
+
+Beskrivs i [ADR-080](../adr/ADR-080-nonox-saas-and-stripe.md). Modulen är en
+rapport över avtalen och bokför ingenting.
+
+- **Ingen verifikation.** Modulen skapar inga verifikationer och ändrar inget
+  konto, ingen faktura och inget avtal. Den läser avtalsfakturering,
+  avtalsregistret i CRM (när CRM är påslaget) och, när företaget har slagit
+  på det, Stripe. Siffrorna
+  (MRR, ARR, avgångar, kohorter) räknas ur dess egna rader och är en analys,
+  inte bokföring.
+- **Avtalets historik** sparas i `saas_contract_versions`, en rad per känt
+  tillstånd för ett avtal från ett visst datum (med tidpunkt, orsak och
+  kontrollsumma `sha256`). Tabellen och `saas_corrections` kan inte ändras
+  eller tas bort: en PostgreSQL-trigger stoppar UPDATE, DELETE och TRUNCATE
+  (en rad försvinner bara när hela företaget tas bort), och modellerna
+  stoppar ändring och borttagning. En ändring av ett pris, en paus eller ett slut är en ny
+  version, aldrig en ändrad rad.
+- **Stängda månader skrivs inte om.** Månaden stängs av en person med
+  `saas:manage` (Stäng månad på Månader, eller `saas:close-month --user=` när
+  en driftansvarig gör det på personens begäran), i ordning, först när den har
+  tagit slut och när Riksbanken har kurser för alla valutor. Stängningen sparar den högsta version som var känd
+  (`versions_known_until`) och de växelkurser som användes. En stängd rad i
+  `saas_months` och månadens rader i `saas_customer_months` kan inte ändras
+  eller tas bort, och `saas_months`, `saas_customer_months`,
+  `saas_contract_versions` och `saas_corrections` kan inte tömmas med TRUNCATE.
+- **Senare ändringar blir rättelserader.** Visar en senare version att en
+  redan stängd månad skulle ha blivit en annan summa, skrivs skillnaden som en
+  rad i `saas_corrections` i den första öppna månaden. Den stängda månaden
+  står kvar som rapporterad, och vyn "Med rättelser" visar månaden plus de
+  rättelser som berör den.
+- **Kontroll.** `saas:verify` räknar fram varje stängd månad på nytt ur de
+  versioner som var kända när den stängdes och de frusna kurserna, och
+  jämför rad för rad. Resultatet skrivs i behandlingshistoriken
+  (`saas.verified`) och visas på Månader. Kontrollen körs varje natt, och en
+  avvikelse är ett fel som ska rättas.
+- **Stripe** (bara när installationen har slagit på Stripe och modulen och
+  kopplingen är påslagna) läses med en begränsad nyckel (`rk_live_`;
+  `rk_test_` bara i en testinstallation) som företaget själv skapar med
+  läsrättigheter. Hemliga (`sk_`) och publicerbara (`pk_`) nycklar nekas, och
+  NONOX kontrollerar att nyckeln kan läsa det som behövs. NONOX kan inte se om
+  nyckeln också har skrivrättigheter, men gör bara läsanrop mot Stripe.
+  Produkter, priser, rabatter och prenumerationer sparas orörda i
+  `stripe_objects` med kontrollsumma `sha256`, en ny rad bara när innehållet
+  ändras, och en trigger stoppar UPDATE. Kunder sparas inte råa; bara det som
+  behövs för matchningen sparas i `stripe_customer_links`.
+  Inget av det som hämtas från Stripe är underlag för bokföringen, och inget
+  bokförs ur Stripe. 90 dagar efter att kopplingen har upphört (frånkopplad
+  eller nyckeln återkallad) raderas de hämtade objekten och händelserna, och
+  Stripe-kundernas namn, e-post, adress och skatte-id töms (`privacy:prune`,
+  varje natt). Utplånas en kund, eller tas kunden bort i Stripe, töms
+  uppgifterna och kundens prenumerationsobjekt raderas direkt.
+- **Personuppgifter.** Stripe-kunder som är fysiska personer är personuppgifter;
+  ändamål, gallring och utplåning står i registerförteckningen och i ADR-080.
+
 ## 6. Belopp
 
 - Belopp lagras som hela ören i heltal, aldrig som flyttal. Avrundning sker till
@@ -5796,3 +5851,4 @@ påverkar bokföringen och fakturan:
 | 0.130 | 2026-11-10 | Träindustriavtalet i Avtal (avsnitt 5h, ADR-033 tillägg L1): avtalsdata för trä- och möbelindustrin i två versioner, där versionen 2025–2027 bara har belopp ur en sekundär källa och därför inte kan kontrolleras, så lönekörningen stoppas för anställda på avtalet. Satsen `ORE_PER_HOUR` kan ha `plus_hourly_wage` (timlön plus krontal per timme), och avtalskalendern har sju hjälpdagar före och efter helger. Inga konton eller verifikationer ändras. |
 | 0.131 | 2026-11-10 | En anläggningstillgång av flera inköp (avsnitt 5a2, ADR-010 tillägg 2026-11-10): en senare inköpsrad på tillgångens konto kan läggas till i en befintlig tillgång, från utkastet eller i registret för en bokförd rad. Ny tabell `fixed_asset_additions` (kan inte ändras eller tas bort). Ett tillägg före avskrivningens start ingår i planen från första avskrivningsmånaden; ett senare skrivs av framåt över den återstående nyttjandeperioden. Tillägg nekas i stängda år och låsta perioder, på uppdelade och avyttrade tillgångar och efter nyttjandeperiodens slut. Ingen bokförd avskrivning eller verifikation ändras. |
 | 0.132 | 2026-11-11 | Tillverkningsorder (avsnitt 5o och 5j, ADR-071 §8 och tillägget As built (M4)): komponenter tas ur lagret som `PRODUCTION_ISSUE` till anskaffningsvärdet enligt företagets metod och färdiga produkter tas emot som `PRODUCTION_RECEIPT` till tillverkningskostnaden (material plus direkt arbete, omkostnader bara om företaget har valt det när ordern startar). Datum kan inte läggas i stängda år, låsta perioder, före orderns senaste händelse eller, för uttag, före en senare lagerrörelse på artikeln. Nya tabeller `production_orders`, `production_order_components`, `production_order_operations`, `production_order_issues` och `production_labour_entries` (de två sista kan inte ändras eller tas bort). Ingen verifikation per order; bokslutets lagervärdering tar med produkter i arbete på ett eget kontopar (1440/4940 från början) i samma verifikation. Öppna frågor om kostnader och konton i avsnitt 8. |
+| 0.133 | 2026-11-16 | Återkommande intäkter (avsnitt 5p, ADR-080): modulen skapar inga verifikationer och ändrar ingen bokföring. Avtalens versioner (`saas_contract_versions`) och rättelser (`saas_corrections`) kan inte ändras, tas bort eller tömmas; stängda månader skrivs inte om och senare ändringar blir rättelserader i första öppna månaden; `saas:verify` räknar om stängda månader varje natt. Stripe läses bara, med en begränsad nyckel; produkter, priser, rabatter och prenumerationer sparas orörda med kontrollsumma i `stripe_objects` och raderas 90 dagar efter att kopplingen upphört. Inget bokförs ur Stripe. |

@@ -161,7 +161,7 @@
         "label": "Ett snickeri med sex anställda",
         "text": "Bokföring, fakturering, lager, tillverkning och lön för sex anställda, med samma paket och listpriser som i vår jämförelse av bokföringsprogram."
     },
-    "comparison_features": ["Stycklistor med arbetssteg och kalkyl på offerter och ordrar", "Lager med lagerställen", "Alla moduler ingår i priset"],
+    "comparison_features": ["Tillverkning: stycklistor, kalkyl, tillverkningsorder och verkstadsterminal", "Lager med lagerställen", "Alla moduler ingår i priset"],
     "faqs": [
         {
             "q": "Vilka företag passar NONOX Tillverkning för?",
