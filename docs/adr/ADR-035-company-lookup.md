@@ -225,3 +225,79 @@ own.
 - The feature is invisible on installations without credentials.
 - One more outside dependency, limited by quotas and a short cache; when it
   is down, the user types the details as before.
+
+## Addendum 2026-11-16: NONOX's own register first
+
+**Context.** The hosted service has no Bolagsverket credentials, so the lookup
+button was hidden and onboarding had to be typed by hand, while the instance
+already holds a company register of about 1.17 million legal persons
+(`company_registry`, ADR-047, from Bolagsverket's and SCB's free bulk files).
+
+**Decision.**
+
+1. A new source, `LocalRegistry` (key `register`), answers from
+   `company_registry` with one query. Lookup order in `LookUpCompany`:
+   an organisation number (third digit 2 or more) is looked up in the own
+   register first; if it is not there, or the number is a personal number
+   (sole traders are deliberately not in the register), the configured API
+   driver (Bolagsverket) is asked when it is configured; otherwise "not found".
+2. The lookup is available when the own register is switched on **and** has rows,
+   **or** an API driver is configured (`CompanyRegistries::isConfigured()`); an
+   installation with an empty table and no credentials keeps the hidden button.
+   The existence check is remembered for the request and for ten minutes, only a yes.
+   **The own register is an instance switch**, `services.company_registry.local`
+   from `COMPANY_REGISTRY_LOCAL` (empty = on locally and in tests, off elsewhere).
+   The privacy policy names the purpose from version 1.8.1 (effective 2026-11-17,
+   its own version, `LegalPageController::PRIVACY_VERSION`; the terms and the DPA
+   stay on `VERSION`). The hosted service ships with the switch off and the operator
+   sets `COMPANY_REGISTRY_LOCAL=true` in the production `.env` after the deploy. A personal number with no API driver gets its own message
+   ("NONOX företagsregister har bara juridiska personer…") and no automatic lookup.
+3. **Fake and local coexist** by order, not by switch: the register is asked
+   first and the invented register (`fake`, local and test environments only)
+   is the API driver behind it. With an empty table, as in the test suite,
+   nothing changes; a test that wants the register inserts rows in its
+   transaction, and any number not in them falls through to the fake.
+4. A company with an exclusion `ALL` (objection or erasure, ADR-047) is never
+   returned, and one with `NAME` gets the replacement name, both in the same
+   query. Deregistration and ongoing proceedings are shown as with Bolagsverket.
+5. All limits stay: Luhn first, per user and per company for every lookup, and the
+   installation-wide 50 a minute only for calls to the API (it protects Bolagsverket's
+   limit), and the hashed cache key for the API answers (the own register is not cached: one
+   indexed query is cheaper and can never serve a company that was just excluded).
+6. The result line names the source and the date: "Enligt NONOX företagsregister
+   (bearbetade uppgifter från Bolagsverket och SCB), hämtade 4 nov 2026". The date
+   is the older of the row's two fetch dates (the data is only as fresh as its oldest
+   source). A name left out after an objection is not proposed and the line says
+   "Namnet visas inte".
+7. SCB legal form codes are mapped: 49 aktiebolag, 51 and 53 ekonomisk förening
+   (a bostadsrättsförening is one), 61 ideell förening, 71 and 72 stiftelse. SCB's
+   code 31 covers handelsbolag and kommanditbolag together, so the firm name
+   decides as a heuristic (it usually contains "kommanditbolag"/"KB" or
+   "handelsbolag"/"HB"; a name with neither, or both, leaves the field
+   unproposed). Handelsregisterlagen (1974:157) 6 § requires the word "handelsbolag" or "kommanditbolag" in the name; TODO(legal-verify): Bolagsverket's practice on the abbreviations HB/KB and names registered before 2019. Code 21 is *enkla bolag* (not a kommanditbolag)
+   and is never in the register. Any other code leaves the field alone.
+8. Addresses in capitals ("SKÖNSTAVÄGEN 3 A") are written in normal case;
+   postal codes as "123 45".
+9. **Onboarding only** (`CreateCompanyForm`), with the same rule as other
+   fields (filled only when empty, still the preset, or an earlier lookup's
+   value; never over what the user typed or changed; shown as a suggestion):
+   - industry from the SNI 2025 code (`SniIndustry`, checked against SCB's list
+     in `database/data/sni/sni-2025.json`): 56110, 56120 and 56300
+     (Barverksamhet, a bar or pub, not a cafe) restaurant, 41–43 crafts, 10–33 manufacturing, 47 retail, 96210–96230 hair and
+     beauty, 69201 accounting firm, 62, 70200 and 71 consultant, everything else
+     other (also division 74, which is design and photography, and 69202 audit);
+   - registered employer from the employee class (class 1 is "0 anställda" in
+     SCB's AnstKl, so false; classes 2 and up true; unknown nothing). The class
+     comes only from the SCB API source, so it is empty until the operator has
+     the SCB key (ADR-047);
+   - a hint, never a choice, when the classes say that both the number of
+     employees (100 or more, certainly over 50) and the turnover (100 Mkr or
+     more, certainly over 80 Mkr) exceed the limits for K2. K3 is never
+     selected. TODO(legal-verify): the limits against ÅRL 1 kap. 3 §.
+10. Company settings, customers and suppliers get the own register through the
+    shared concern, without industry or employer suggestions.
+
+**Consequences.** Onboarding works without Bolagsverket credentials. The
+register is public data already readable by every CRM user; a lookup returns
+one company per request and counts against the same limits, so it is not a
+scraping endpoint. See ADR-047's addendum for the purpose.

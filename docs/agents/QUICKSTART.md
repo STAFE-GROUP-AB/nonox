@@ -100,7 +100,7 @@ Tests enforce most of these, so a forgotten one turns the suite red.
 | add a company-scoped model | `BelongsToCompany` + a tenancy test (another company's id → 404) | `tests/Tenancy` |
 | change accounting behaviour | `docs/systemdokumentation/README.md` and its version header | `SystemDocumentationVersionsTest` |
 | change the API | `docs/api/openapi.yaml` and the API changelog | `OpenApiSpecTest` |
-| change personal-data processing | `docs/gdpr/registerforteckning.md`, `lagringstider.md`, the privacy policy in `docs/juridik/`; a policy change bumps `LegalPageController::VERSION`/`EFFECTIVE` (one bump per deploy; parallel branches collide here) | legal page tests |
+| change personal-data processing | `docs/gdpr/registerforteckning.md`, `lagringstider.md`, the privacy policy in `docs/juridik/`; a change to the privacy policy alone bumps `LegalPageController::PRIVACY_VERSION`/`PRIVACY_EFFECTIVE`; a change to the terms or the DPA bumps `VERSION`/`EFFECTIVE` (with the 60-day notice; what a company accepts at creation is `VERSION`). One bump per deploy; parallel branches collide here | legal page tests |
 | make a design decision | an ADR, or an addendum to the relevant one | — |
 | are unsure about law | `// TODO(legal-verify): …` and say so in the report; never invent legal rules | — |
 

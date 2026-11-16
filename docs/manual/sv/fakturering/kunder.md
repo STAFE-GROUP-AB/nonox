@@ -26,7 +26,7 @@ Kundregistret är listan över dem du fakturerar. Uppgifterna du skriver här ha
 
 ## Hämta uppgifter med organisationsnumret
 
-Om NONOX är kopplat till Bolagsverkets register syns rutan *Hämta namn och adress från …* under personnummerfältet, med knappen **Hämta uppgifter**.
+Om NONOX har ett eget företagsregister eller är kopplat till Bolagsverkets register syns rutan *Hämta namn och adress från …* under personnummerfältet, med knappen **Hämta uppgifter**.
 
 - Tryck på **Hämta uppgifter** för att hämta namn, adress, postnummer och ort. NONOX kontrollerar först att numret stämmer.
 - Har du redan skrivit något som skiljer sig från registret ändras det inte av sig självt. Du får se skillnaderna och väljer **Använd registrets uppgifter** eller **Behåll mina**.

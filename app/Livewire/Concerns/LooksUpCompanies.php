@@ -38,6 +38,9 @@ trait LooksUpCompanies
 
     public string $registryNotice = '';
 
+    /** @var list<string> non-blocking hints from a lookup, e.g. that a company may be too large for K2 */
+    public array $registryHints = [];
+
     /**
      * Which of the register's values this form has, and where they go:
      * name, address_line1, address_line2, postal_code, city, legal_form.
@@ -81,7 +84,14 @@ trait LooksUpCompanies
             return;
         }
 
-        if (OrganisationNumber::tryFrom($this->registryNumber()) === null) {
+        $number = OrganisationNumber::tryFrom($this->registryNumber());
+
+        if ($number === null) {
+            return;
+        }
+
+        // A sole trader's personal number is only answered by an API driver: without one there is nothing to ask.
+        if ((int) $number->digits[2] < 2 && CompanyRegistries::make() === null) {
             return;
         }
 
@@ -115,17 +125,30 @@ trait LooksUpCompanies
 
     public function registrySourceName(): string
     {
-        return CompanyRegistries::make()?->sourceName() ?? '';
+        return (CompanyRegistries::local() ?? CompanyRegistries::make())?->sourceName() ?? '';
+    }
+
+    /** Takes back what an earlier lookup suggested, before a new lookup or after a failed one. */
+    protected function clearRegistrySuggestions(): void {}
+
+    /**
+     * Suggestions beyond the shared fields (industry, employer, hints),
+     * for a form that wants them: only onboarding does. Returns the hints to show.
+     *
+     * @return list<string>
+     */
+    protected function applyRegistrySuggestions(RegisteredCompany $found): array
+    {
+        return [];
     }
 
     private function runCompanyLookup(bool $automatic): void
     {
         $this->registryNotice = '';
         $this->registryConflicts = [];
+        $this->registryHints = [];
 
-        $registry = CompanyRegistries::make();
-
-        if ($registry === null) {
+        if (! CompanyRegistries::isConfigured()) {
             if (! $automatic) {
                 $this->registryNotice = __('Hämtning av företagsuppgifter är inte påslagen i den här installationen.');
             }
@@ -141,22 +164,37 @@ trait LooksUpCompanies
         } catch (ValidationException $exception) {
             $this->registryResult = null;
             $this->registryNotice = (string) collect($exception->errors())->flatten()->first();
+            $this->clearRegistrySuggestions();
 
             return;
         }
 
+        $this->clearRegistrySuggestions();
+
+        $source = (string) $found->sourceName;
         $this->registryResult = [
-            'source' => $registry->sourceName(),
-            'name' => $found->name,
+            'source' => $source,
+            'source_date' => self::swedishDate($found->sourceDate),
+            'name' => $found->nameExcluded ? (string) __('Namnet visas inte') : $found->name,
             'legal_form' => $found->legalFormText,
-            'registered_on' => $found->registeredOn,
-            'deregistered_on' => $found->deregisteredOn,
+            'registered_on' => self::swedishDate($found->registeredOn),
+            'deregistered_on' => self::swedishDate($found->deregisteredOn),
             'proceedings' => $found->proceedings,
         ];
 
         $fields = $this->registryFields();
         $presets = $this->registryPresets();
         $filled = 0;
+
+        $this->registryHints = $this->applyRegistrySuggestions($found);
+
+        // The earlier company's name, filled in by a lookup, must not stay next to this company's address when its name is not shown.
+        $namePath = $fields['name'] ?? null;
+
+        if ($found->nameExcluded && $namePath !== null && isset($this->registryFilled['name']) && trim((string) data_get($this, $namePath)) === $this->registryFilled['name']) {
+            data_set($this, $namePath, '');
+            unset($this->registryFilled['name']);
+        }
 
         foreach ($this->proposal($found) as $key => $value) {
             if (! isset($fields[$key])) {
@@ -181,8 +219,8 @@ trait LooksUpCompanies
         }
 
         $message = $this->registryConflicts === []
-            ? __('Uppgifterna är hämtade från :source. Kontrollera dem innan du sparar.', ['source' => $registry->sourceName()])
-            : __('Uppgifterna är hämtade från :source. Några skiljer sig från det du har skrivit – välj vad som ska gälla.', ['source' => $registry->sourceName()]);
+            ? __('Uppgifterna är hämtade från :source. Kontrollera dem innan du sparar.', ['source' => $source])
+            : __('Uppgifterna är hämtade från :source. Några skiljer sig från det du har skrivit – välj vad som ska gälla.', ['source' => $source]);
 
         if ($filled > 0 || $this->registryConflicts !== []) {
             $this->dispatch('toast', message: $message, type: 'success');
@@ -193,13 +231,26 @@ trait LooksUpCompanies
     private function proposal(RegisteredCompany $found): array
     {
         return array_filter([
-            'name' => $found->name,
-            'address_line1' => (string) $found->street,
-            'address_line2' => (string) $found->coAddress,
+            // A name left out after an objection is not proposed: the placeholder would end up on the invoices.
+            'name' => $found->nameExcluded ? '' : $found->name,
+            'address_line1' => (string) $found->formattedStreet(),
+            'address_line2' => (string) $found->formattedCoAddress(),
             'postal_code' => (string) $found->formattedPostalCode(),
             'city' => (string) $found->formattedCity(),
             'legal_form' => (string) $found->legalForm()?->value,
         ], fn (string $value): bool => $value !== '');
+    }
+
+    /** "4 nov 2026" for a date as Y-m-d, or null. */
+    public static function swedishDate(?string $date): ?string
+    {
+        if ($date === null || preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $date, $m) !== 1) {
+            return null;
+        }
+
+        $months = ['jan', 'feb', 'mars', 'apr', 'maj', 'juni', 'juli', 'aug', 'sep', 'okt', 'nov', 'dec'];
+
+        return (int) $m[3].' '.($months[(int) $m[2] - 1] ?? '').' '.$m[1];
     }
 
     /** The label for a proposal key and how its value reads, for the view. */

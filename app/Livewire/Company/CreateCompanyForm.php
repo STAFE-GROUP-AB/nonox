@@ -18,6 +18,11 @@ use App\Livewire\Concerns\LooksUpCompanies;
 use App\Models\Company;
 use App\Models\User;
 use App\Models\WaitlistEntry;
+use App\Support\CompanyRegistry\CompanySize;
+use App\Support\CompanyRegistry\RegisteredCompany;
+use App\Support\CompanyRegistry\RegistryCodes;
+use App\Support\CompanyRegistry\Sni;
+use App\Support\CompanyRegistry\SniIndustry;
 use App\Support\Tenancy\SpansCompanies;
 use App\Support\Toast;
 use Illuminate\Support\Facades\Auth;
@@ -64,6 +69,80 @@ class CreateCompanyForm extends Component implements SpansCompanies
     public bool $framework_confirmed = false;
 
     public bool $calendar_year_exempt = false;
+
+    /** @var array<string, string> what the register's suggestion for a field was based on, shown beside the field */
+    public array $suggested = [];
+
+    /** @var array<string, bool> fields the user has changed by hand: a lookup never suggests for them again */
+    public array $suggestionTouched = [];
+
+    public function updatedIndustry(): void
+    {
+        $this->suggestionTouched['industry'] = true;
+        unset($this->suggested['industry']);
+    }
+
+    public function updatedEmployerRegistered(): void
+    {
+        $this->suggestionTouched['employer_registered'] = true;
+        unset($this->suggested['employer_registered']);
+    }
+
+    /**
+     * Takes back what an earlier lookup suggested, so that a lookup that
+     * finds less, or fails, leaves nothing of the previous company behind.
+     * A value the user has changed by hand is not touched.
+     */
+    protected function clearRegistrySuggestions(): void
+    {
+        if (! ($this->suggestionTouched['industry'] ?? false) && ($this->registryFilled['industry'] ?? null) === $this->industry) {
+            $this->industry = '';
+        }
+
+        if (! ($this->suggestionTouched['employer_registered'] ?? false) && isset($this->suggested['employer_registered'])) {
+            $this->employer_registered = false;
+        }
+
+        unset($this->registryFilled['industry']);
+        $this->suggested = [];
+    }
+
+    /**
+     * Industry from the SNI code and employer from the employee class
+     * (ADR-035 addendum): suggestions with the same rule as the other
+     * fields, so a field the user has filled in or changed is left alone.
+     * Never K3: the K2 hint only warns.
+     *
+     * @return list<string>
+     */
+    protected function applyRegistrySuggestions(RegisteredCompany $found): array
+    {
+        $industry = SniIndustry::for($found->sniCode);
+
+        if ($industry !== null
+            && ! ($this->suggestionTouched['industry'] ?? false)
+            && ($this->industry === '' || $this->industry === ($this->registryFilled['industry'] ?? null))) {
+            $this->industry = $industry->value;
+            $this->registryFilled['industry'] = $industry->value;
+            $this->suggested['industry'] = (string) Sni::label($found->sniCode);
+        }
+
+        $hasEmployees = CompanySize::hasEmployees($found->employeeClass);
+
+        if ($hasEmployees !== null && ! ($this->suggestionTouched['employer_registered'] ?? false)) {
+            $this->employer_registered = $hasEmployees;
+            $this->suggested['employer_registered'] = (string) RegistryCodes::employees($found->employeeClass);
+        }
+
+        if (! CompanySize::likelyAboveK2Limits($found->employeeClass, $found->turnoverClass)) {
+            return [];
+        }
+
+        return [__('Registret visar :employees och en omsättning på :turnover. Då kan företaget vara ett större företag som inte får använda K2. Läs villkoren under "Regelverk för årsbokslut" innan du väljer.', [
+            'employees' => mb_strtolower((string) RegistryCodes::employees($found->employeeClass)),
+            'turnover' => mb_strtolower((string) RegistryCodes::turnover($found->turnoverClass)),
+        ])];
+    }
 
     /** A new framework means new conditions to confirm. */
     public function updatedReportingFramework(): void

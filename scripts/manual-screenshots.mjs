@@ -6,8 +6,9 @@
 //     "shots": [{ "url", "file", "width", "height", "scale", "mobile", "selector", "clicks", "reveal", "expect", "forbid" }] }
 //
 // `clicks` are CSS selectors (or text=… for a button or link with exactly
-// that text) clicked in order before the shot, `reveal` one
-// scrolled to the top of the window.
+// that text) clicked in order before the shot, `fills` a map of CSS selector
+// to text typed into that field (then Tab, so a blur-bound field updates)
+// before the clicks, `reveal` one scrolled to the top of the window.
 //
 // A shot is saved only when its page shows `expect`, the demo company's name,
 // and none of `forbid` (the local administrator's address, for one).
@@ -140,6 +141,24 @@ try {
         }, sessionId);
         const page = JSON.parse(result.value);
 
+        // Type into fields first and leave each one with Tab, as a person does, so that wire:model.blur sees the value.
+        for (const [selector, value] of Object.entries(shot.fills ?? {})) {
+            await send('Emulation.setFocusEmulationEnabled', { enabled: true }, sessionId);
+            await send('Runtime.evaluate', {
+                expression: `(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return; el.scrollIntoView({ block: 'center' }); el.focus(); el.select?.(); })()`,
+            }, sessionId);
+            await send('Input.insertText', { text: value }, sessionId);
+
+            const settled = networkIdle(sessionId, 500, 8_000);
+
+            for (const type of ['rawKeyDown', 'keyUp']) {
+                await send('Input.dispatchKeyEvent', { type, key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 }, sessionId);
+            }
+
+            await settled;
+            await sleep(800);
+        }
+
         // Open a dialog, a tab or a menu first; each click waits for what it loads.
         let clickFailed = null;
 
@@ -172,6 +191,11 @@ try {
             console.log(`✗ ${shot.file}: nothing to click at ${clickFailed}`);
 
             continue;
+        }
+
+        // The toasts of the typing and clicking (a success message for each lookup) are not part of the picture.
+        if (Object.keys(shot.fills ?? {}).length > 0) {
+            await send('Runtime.evaluate', { expression: "document.querySelectorAll('.nx-toaster').forEach((el) => { el.style.display = 'none'; })" }, sessionId);
         }
 
         if (shot.reveal) {

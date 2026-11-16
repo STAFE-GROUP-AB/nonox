@@ -24,7 +24,7 @@ Alla i företaget kan se uppgifterna, men bara ägare och administratörer kan �
 
 ## Företagsuppgifter
 
-**Företagsnamn**, **Adress**, **Postnummer**, **Ort**, **E-post**, **Telefon** och **Webbplats** står på dina fakturor och offerter. Med **Hämta uppgifter** hämtar du namn och adress från Bolagsverket, om knappen finns; se [Skapa ett företag](/manual/kom-igang/skapa-ett-foretag#hamta-uppgifter-fran-bolagsverket).
+**Företagsnamn**, **Adress**, **Postnummer**, **Ort**, **E-post**, **Telefon** och **Webbplats** står på dina fakturor och offerter. Med **Hämta uppgifter** hämtar du namn och adress från NONOX företagsregister eller Bolagsverket, om knappen finns; se [Skapa ett företag](/manual/kom-igang/skapa-ett-foretag#hamta-uppgifter-fran-foretagsregistret).
 
 **Organisationsnummer** och **Företagsform** kan inte ändras, eftersom det då är ett annat företag. Har företaget bytt form, till exempel från enskild firma till aktiebolag, är det ett nytt företag som du [lägger till](/manual/kom-igang/skapa-ett-foretag).
 

@@ -23,6 +23,18 @@ class LegalPageController
 
     public const string EFFECTIVE = '2027-01-18';
 
+    /**
+     * The privacy policy has a version of its own: it can be published on a
+     * day of its own (2026-11-16 decision) while the terms and the data
+     * processing agreement, which a company accepts when it is created
+     * (companies.agreement_version, CreateCompany), stay on VERSION. The
+     * label cannot be mistaken for a terms version: it is the policy text of
+     * 1.8 with one change, so 1.8.1.
+     */
+    public const string PRIVACY_VERSION = '1.8.1';
+
+    public const string PRIVACY_EFFECTIVE = '2026-11-17';
+
     /** Route name => file in docs/juridik and page title. */
     public const array DOCUMENTS = [
         'privacy' => ['file' => 'integritetspolicy', 'title' => 'Integritetspolicy'],
@@ -54,7 +66,7 @@ class LegalPageController
         $markdown = $document === 'securityPolicy' ? SecurityPolicy::filter($markdown) : $markdown;
         $markdown = (string) preg_replace('/<!--.*?-->/s', '', $markdown);
 
-        return Str::markdown(strtr($markdown, self::placeholders()), ['html_input' => 'escape', 'allow_unsafe_links' => false]);
+        return Str::markdown(strtr($markdown, self::placeholders($document)), ['html_input' => 'escape', 'allow_unsafe_links' => false]);
     }
 
     /** The contact shown in the security policy: the one in security.txt, without mailto:. */
@@ -66,7 +78,7 @@ class LegalPageController
     }
 
     /** @return array<string, string> */
-    public static function placeholders(): array
+    public static function placeholders(string $document = ''): array
     {
         $company = (string) (config('app.landing.company_name') ?: 'Stafe Development AB');
         $orgnr = (string) config('app.landing.org_number');
@@ -79,8 +91,8 @@ class LegalPageController
             '{epost}' => $email !== '' ? $email : 'kontaktuppgifterna på webbplatsen',
             '{adress}' => $address !== '' ? $address : '',
             '{webbplats}' => url('/'),
-            '{version}' => self::VERSION,
-            '{datum}' => self::EFFECTIVE,
+            '{version}' => $document === 'privacy' ? self::PRIVACY_VERSION : self::VERSION,
+            '{datum}' => $document === 'privacy' ? self::PRIVACY_EFFECTIVE : self::EFFECTIVE,
             '{session}' => (string) config('session.lifetime'),
             '{pub}' => route('legal.dpa'),
             '{integritet}' => route('legal.privacy'),

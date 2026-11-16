@@ -223,6 +223,8 @@ return [
      */
     'company_registry' => [
         'driver' => env('COMPANY_REGISTRY_DRIVER'),
+        // NONOX's own register as a lookup source (ADR-035 addendum): empty = on locally and in tests, off elsewhere.
+        'local' => env('COMPANY_REGISTRY_LOCAL'),
         'cache_minutes' => (int) env('COMPANY_REGISTRY_CACHE_MINUTES', 10),
         'bolagsverket' => [
             'client_id' => env('BOLAGSVERKET_CLIENT_ID'),

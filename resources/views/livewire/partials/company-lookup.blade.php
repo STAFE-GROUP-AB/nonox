@@ -16,7 +16,11 @@
         @if($registryResult)
             <div role="status" class="space-y-1">
                 <p class="text-gray-800">
-                    {{ __('Enligt :source:', ['source' => $registryResult['source']]) }}
+                    @if($registryResult['source_date'] ?? null)
+                        {{ __('Enligt :source, hämtade :date:', ['source' => $registryResult['source'], 'date' => $registryResult['source_date']]) }}
+                    @else
+                        {{ __('Enligt :source:', ['source' => $registryResult['source']]) }}
+                    @endif
                     <span class="font-medium text-gray-900">{{ $registryResult['name'] }}</span>@if($registryResult['legal_form']) · {{ $registryResult['legal_form'] }}@endif @if($registryResult['registered_on']) · {{ __('registrerat :date', ['date' => $registryResult['registered_on']]) }}@endif
                 </p>
                 @if($registryResult['deregistered_on'])
@@ -24,6 +28,9 @@
                 @endif
                 @foreach($registryResult['proceedings'] as $proceeding)
                     <p class="font-medium text-accent-700">{{ __('Pågående: :what.', ['what' => $proceeding]) }}</p>
+                @endforeach
+                @foreach($registryHints as $hint)
+                    <p class="text-accent-700" data-registry-hint>{{ $hint }}</p>
                 @endforeach
                 @if($registryConflicts === [])
                     <p class="text-gray-600">{{ __('Uppgifterna är ifyllda nedan och sparas först när du sparar.') }}</p>

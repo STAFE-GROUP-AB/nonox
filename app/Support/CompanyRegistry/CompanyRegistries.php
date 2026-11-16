@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Support\CompanyRegistry;
 
 /**
- * Which register this installation looks companies up in
- * (services.company_registry.driver). Without a setting, local and test
+ * Where this installation looks companies up. Two sources, in this order
+ * (ADR-035 addendum): NONOX's own register (LocalRegistry, whenever the
+ * company_registry table has rows), then the API driver set in
+ * services.company_registry.driver, which is also the only source for a
+ * sole trader's personal number. Without a setting, local and test
  * installations use the invented register and every other installation
  * has no lookup at all, so the button is hidden until an operator has
  * Bolagsverket credentials. The invented register is refused in
@@ -25,7 +28,23 @@ final class CompanyRegistries
         return $driver;
     }
 
+    /** Whether the lookup can answer at all: the own register is on and has rows, or an API driver is configured. */
     public static function isConfigured(): bool
+    {
+        return self::localEnabled() && LocalRegistry::hasRows() || self::apiConfigured();
+    }
+
+    /** The instance switch for the own register (services.company_registry.local); on by default locally and in tests only. */
+    public static function localEnabled(): bool
+    {
+        $setting = config('services.company_registry.local');
+
+        return $setting === null || $setting === ''
+            ? app()->environment('local', 'testing')
+            : filter_var($setting, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    public static function apiConfigured(): bool
     {
         return match (self::driver()) {
             FakeCompanyRegistry::KEY => ! app()->isProduction(),
@@ -34,10 +53,16 @@ final class CompanyRegistries
         };
     }
 
-    /** The installation's register, or null when lookup is switched off. */
+    /** NONOX's own register, or null while it is empty. */
+    public static function local(): ?CompanyRegistry
+    {
+        return self::localEnabled() && LocalRegistry::hasRows() ? app(LocalRegistry::class) : null;
+    }
+
+    /** The API driver (Bolagsverket, or the invented register locally), or null when none is configured. */
     public static function make(): ?CompanyRegistry
     {
-        if (! self::isConfigured()) {
+        if (! self::apiConfigured()) {
             return null;
         }
 
