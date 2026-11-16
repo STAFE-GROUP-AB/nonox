@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-16-dokumentationen-uppdaterad",
+      "datum": "2026-11-16T12:55:00+01:00",
+      "rubrik": "Dokumentationen följer funktionerna",
+      "beskrivning": "Manualens modulöversikt listar nu alla moduler, med Aktiebok och Kundportal markerade som kommer snart, och artikeln om NONOX API beskriver Stripe. Funktionslistan och README säger att uppgifter med organisationsnumret hämtas ur NONOX eget företagsregister, med Bolagsverkets API som reserv där installationen är kopplad till det.",
+      "typ": "Förbättrat",
+      "omrade": "Manual"
+    },
+    {
       "id": "2026-11-16-manualens-bilder-tagna-om",
       "datum": "2026-11-16T10:00:00+01:00",
       "rubrik": "Manualens bilder är tagna om",
