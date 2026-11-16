@@ -105,7 +105,7 @@ Vill du eller en utvecklare prova API:t utan att röra den riktiga bokföringen?
 
 ## Stripe
 
-Säljer du abonnemang genom Stripe kan du koppla ditt Stripe-konto med en begränsad nyckel som bara kan läsa, så räknas prenumerationerna i MRR under **Återkommande intäkter**. Det kräver modulen **NONOX SaaS** och att Stripe är påslaget i NONOX Connect. Priset är leverantörens pris plus 10 %; NONOX betalar inget till Stripe för kopplingen, så priset blir 0 kr i månaden. På nonox.app är kopplingen byggd men ännu inte påslagen; den slås på när personuppgiftsbiträdesavtalet har uppdaterats. Är den inte påslagen står det på sidan **Stripe**. Se [Stripe i Återkommande intäkter](/manual/fakturering/stripe-i-aterkommande-intakter).
+Säljer du abonnemang genom Stripe kan du koppla ditt Stripe-konto med en begränsad nyckel som bara kan läsa, så räknas prenumerationerna i MRR under **Återkommande intäkter**. Det kräver modulen **NONOX SaaS** och att Stripe är påslaget i NONOX Connect. Priset är leverantörens pris plus 10 %; NONOX betalar inget till Stripe för kopplingen, så priset blir 0 kr i månaden. Dina avgifter till Stripe betalar du som förut direkt till Stripe. Kopplingen måste också vara påslagen för installationen. På nonox.app är kopplingen byggd men ännu inte påslagen; den slås på tidigast när personuppgiftsbiträdesavtalet har uppdaterats. Är den inte påslagen står det på sidan **Stripe**. Se [Stripe i Återkommande intäkter](/manual/fakturering/stripe-i-aterkommande-intakter).
 
 ## Kassa
 

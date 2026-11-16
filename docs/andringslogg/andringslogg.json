@@ -35,7 +35,7 @@
       "id": "2026-11-16-dokumentationen-uppdaterad",
       "datum": "2026-11-16T12:55:00+01:00",
       "rubrik": "Dokumentationen följer funktionerna",
-      "beskrivning": "Manualens modulöversikt listar nu alla moduler, med Aktiebok och Kundportal markerade som kommer snart, och artikeln om NONOX API beskriver Stripe. Funktionslistan och README säger att uppgifter med organisationsnumret hämtas ur NONOX eget företagsregister först och från Bolagsverket som reserv.",
+      "beskrivning": "Manualens modulöversikt listar nu alla moduler, med Aktiebok och Kundportal markerade som kommer snart, och artikeln om NONOX API beskriver Stripe. Funktionslistan och README säger att uppgifter med organisationsnumret hämtas ur NONOX eget företagsregister, med Bolagsverkets API som reserv där installationen är kopplad till det.",
       "typ": "Förbättrat",
       "omrade": "Manual"
     },

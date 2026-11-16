@@ -23,15 +23,15 @@ Att stänga av en modul tar aldrig bort några uppgifter. De finns kvar så län
 | **Inkorg** | En egen e-postadress dit leverantörer, kassasystem och personal skickar fakturor, kvitton och dagsrapporter. Varje underlag blir ett förslag som någon godkänner. | [Inkorgen](/manual/leverantorer/inkorgen) |
 | **CRM** | Kunder och prospekt med kontaktpersoner, aktiviteter med nästa steg och nyckeltal ur bokföringen. Ersätter kundregistret under **Kunder** medan den är på. | [CRM](/manual/crm) |
 | **Bank** | Kopplar företagets bankkonton med BankID och hämtar transaktioner och saldon automatiskt. NONOX kan bara läsa, aldrig betala. Erbjuds inte på nonox.app än. | [Bankmodulen](/manual/installningar/bankmodulen) |
-| **Planering** | Schema för personalen med lönekostnaden synlig medan du planerar, öppna pass och byten, och personalkostnad mot dagens försäljning. | [Planering](/manual/planering) |
+| **Planering** | Schema för personalen med lönekostnaden synlig medan du planerar, öppna pass och byten, och personalkostnad mot dagens försäljning. Kräver att **Lön** är påslagen. | [Planering](/manual/planering) |
 | **Lager** | Lagerförda artiklar med EAN, lagerställen, inleveranser, plocklistor, inventering, inköpsorder och lagervärdet vid bokslutet. | [Lager](/manual/lager) |
 | **Kök** | Recept med portionskostnad och marginal, meny, svinn, personalmat och avvikelsen mellan sålt och inventerat. Kräver att **Lager** är påslagen. | [Kök](/manual/kok) |
 | **Tillverkning** | Stycklistor med komponenter och arbetssteg, kalkyl på offert och order och tillverkningsorder som tar komponenter ur lagret. Kräver att **Lager** är påslagen. | [Tillverkning](/manual/tillverkning) |
 | **Arbetsorder** | Jobb hos kunder med tid och material på plats, ÄTA som kunden godkänner och fakturaunderlag med ROT, RUT och omvänd byggmoms. | [Arbetsorder](/manual/fakturering/arbetsorder) |
-| **NONOX SaaS** | Återkommande intäkter ur avtal och avtalsfakturering: MRR, ARR, rörelser per månad, churn och kohorter. Stripe kopplas genom NONOX Connect. | [Återkommande intäkter](/manual/fakturering/aterkommande-intakter) |
-| **Kassakopplingar** | Kopplar kassan (Zettle eller Onslip): försäljningen dras från lagret och varje dag blir ett verifikationsutkast i serie K. Byggd men ännu inte öppen för alla. | [Kassa: Zettle](/manual/lager/kassa-zettle) |
-| **Peppol e-faktura** | Skickar kundfakturor som e-faktura via Peppol och tar emot leverantörsfakturor i inkorgen. Kan bara slås på när installationen har ett avtal med en Peppol-operatör; inte påslagen på nonox.app än. | [E-faktura via Peppol](/manual/fakturering/e-faktura-via-peppol) |
-| **Aktiebok och styrelserum** | Aktieboken med historik som inte kan ändras i efterhand, stämmor och styrelsemöten med protokoll, för aktiebolag. Kommer snart: byggd som beta och inte öppen för alla än. | [Aktiebok och styrelserum](/manual/aktiebok) |
+| **NONOX SaaS** | Återkommande intäkter ur avtal och avtalsfakturering: MRR, ARR, rörelser per månad, churn och kohorter. Stripe kan kopplas genom NONOX Connect (inte påslaget på nonox.app än). | [Återkommande intäkter](/manual/fakturering/aterkommande-intakter) |
+| **Kassakopplingar** | Kopplar kassan (Zettle eller Onslip): försäljningen dras från lagret och varje dag blir ett verifikationsutkast i serie K. Kräver att **Lager** är påslagen. Byggd men ännu inte öppen för alla. | [Kassa: Zettle](/manual/lager/kassa-zettle) |
+| **Peppol e-faktura** | Skickar kundfakturor som e-faktura via Peppol och tar emot leverantörsfakturor i inkorgen (mottagningen kräver **Inkorg**). Kan bara slås på när installationen har ett avtal med en Peppol-operatör; inte påslagen på nonox.app än. | [E-faktura via Peppol](/manual/fakturering/e-faktura-via-peppol) |
+| **Aktiebok och styrelserum** | Aktieboken med historik som inte kan ändras i efterhand, stämmor och styrelsemöten med protokoll, för aktiebolag. Kommer snart: byggd, men går inte att slå på på nonox.app förrän juristgranskningen är klar. | [Aktiebok och styrelserum](/manual/aktiebok) |
 | **Kundportal** | Dina kunder loggar in med en kod i mejlet och ser fakturor, kontoutdrag och offerter. Kommer snart: byggd, men inte öppen förrän en jurist har svarat på hur kontaktpersoners uppgifter får behandlas. | [Kundportal](/manual/fakturering/kundportal) |
 | **NONOX AI** | Läser leverantörsfakturor, kvitton och andra underlag och fyller i ett förslag. Du kontrollerar och sparar. | [NONOX AI](/manual/installningar/nonox-ai) |
 | **NONOX API** | Ett öppet API för andra program: anslutna appar, API-nycklar och webhooks. | [NONOX API](/manual/installningar/nonox-connect) |
@@ -84,7 +84,7 @@ Alla moduler ingår i priset. **NONOX Connect** är inte en modul utan ett separ
 - **Du väljer själv.** En koppling är avstängd tills du slår på den, och du kan stänga av den när som helst. En avstängd koppling kostar ingenting.
 - **Priset är leverantörens pris plus 10 %.** Innan du slår på en koppling visar vi leverantörens pris och påslaget var för sig, och fakturan anger samma sak. Priserna är exklusive moms.
 - **Ändrar leverantören sitt pris** ändras ditt pris i samma mån. Vi meddelar dig så snart vi fått beskedet, och du kan stänga av kopplingen innan det nya priset gäller.
-- **Stripe** i NONOX Connect: se [Stripe i Återkommande intäkter](/manual/fakturering/stripe-i-aterkommande-intakter).
+- **Stripe** i NONOX Connect kostar 0 kr, eftersom NONOX inte betalar något till Stripe för kopplingen. Se [Stripe i Återkommande intäkter](/manual/fakturering/stripe-i-aterkommande-intakter).
 - **NONOX API** (API-nycklar och webhooks) är en modul och ingår i priset. En MCP-server för AI-assistenter kommer, men är inte tillgänglig ännu.
 
 Det exakta villkoret finns i de [allmänna villkoren](/villkor), avsnitt 5.
