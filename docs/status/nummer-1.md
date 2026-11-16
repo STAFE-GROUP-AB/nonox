@@ -656,6 +656,17 @@ Next package: steg 2, Stripe i NONOX Connect (läsnyckel), därefter steg 3a (ut
 
 ---
 
+Package: Aktuella bilder i manualen (kö 14)
+Status: done 2026-11-16, driftsatt (7319a93a)
+Evidence: `tests/Feature/ManualTest.php`, `tests/Feature/ChangelogTest.php`; hela sviten 9 535 gröna, phpstan och pint rena.
+- Alla skärmbilder i `docs/manual/skarmbilder.yaml` är tagna om från en ny demodatabas och jämförda mot de gamla bild för bild; 210 bilder ändrades, Företagsguiden först (den gamla visade "1 januari 2027", äldre meny och färre steg). Min startplan har fått en egen bild.
+- Rättat på vägen: demons avtalspremieregler (novemberlönen räknades inte), tillverkningsdemon planerar från arbetsdagens början med frånvaron på sista lackeringen (avvikelsesidan var tom), relativa datum (`@…`) i skärmbildslistan, sessionStorage rensas per bild (chattpanelen följde med), inleveransbilden klickar radens Ta emot. CalendarFeedTest fick ett fast företagsnamn (faker-namn med "Anna" gav ett slumpfel i CI).
+- Kall granskning CLEAR TO MERGE; anmärkningarna rättade.
+Open legal-verify items: inga.
+Next package: kö 23, dokumentationen ikapp.
+
+---
+
 Package: NONOX SaaS, steg 2, Stripe i NONOX Connect (läsnyckel) (prioritet 12, ADR-080 §7, tillägg 2026-11-15)
 Status: done 2026-11-16, sammanslagen och driftsatt men avstängd på nonox.app (brytaren i /hq slås på när biträdesavtalet 1.9 gäller, tidigast 2027-01-18). Kall granskning CLEAR TO MERGE efter rättningar 05d8e444 och 58a72570; juristens texter i ändringslogg, färdplan och /hq.
 Evidence: `tests/Unit/Saas/StripeDomainTest.php`, `tests/Feature/Saas/StripeConnectTest.php`, `tests/Feature/Saas/StripeSyncTest.php`, `tests/Feature/Saas/StripeWebhookTest.php`, `tests/Feature/Saas/StripeReviewTest.php`, `tests/Feature/Saas/StripeRecheckTest.php`, `tests/Tenancy/StripeTenancyTest.php`.

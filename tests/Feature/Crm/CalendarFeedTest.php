@@ -34,6 +34,8 @@ use Tests\Support\Crm;
 beforeEach(function () {
     $this->travelTo(CarbonImmutable::parse('2026-06-15 10:00:00'));
     [$this->owner, $this->company] = Bookkeeping::company();
+    // A fixed name: the feed's title carries it, and a faker name such as "Annasson AB" would fail the "no person" checks below.
+    $this->company->forceFill(['name' => 'Exempelbolaget AB'])->save();
     CurrentCompany::set($this->company);
     $this->actingAs($this->owner);
     Crm::enable($this->company, $this->owner);
