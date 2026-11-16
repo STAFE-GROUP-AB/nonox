@@ -662,7 +662,7 @@ Evidence: `tests/Feature/ManualTest.php`, `tests/Feature/LandingPageTest.php`, `
 - En genomgång av allt som skickats sedan 2026-10-25 mot manual, guider, ändringslogg, funktionslista, startsidans kort, README och färdplan. Ändringsloggen och startsidans kort var redan ikapp.
 - Rättat: organisationsnummeruppslaget beskrivs med NONOX eget företagsregister först (funktionslistan, README och installationsavsnittet); manualens modulsida listar alla 18 moduler med beroenden och tillgänglighet (Aktiebok och Kundportal kommer snart); NONOX API-artikeln har ett avsnitt om Stripe; agentguidens modulnycklar och ADR-förteckning till ADR-080.
 - Kall granskning: inga P1, fem P2 och sex P3, alla rättade utom en som inte gick att kontrollera i repot och kontrollerades i prod (registret påslaget med 1,17 miljoner rader, inga Bolagsverket-uppgifter, ingen nyckel till aktiebokens hashkedja).
-- Lämnat som bedömning: rader för tillverkningsorder, terminal och planeringskalender i jämförelsen, körjournal på branschsidorna för konsulter och hantverkare, ett avsnitt om Återkommande intäkter i systemdokumentationen.
+- Ägarens beslut 2026-11-16 på de tre bedömningsfrågorna, genomförda (`docs/q23-owner-decisions`): jämförelsens stycklisterad utökad till hela tillverkningen (ingen ny rad), körjournalen nämns i resekorten för konsulter och hantverkare (inga nya kort), och systemdokumentationen 0.133 har avsnitt 5p om Återkommande intäkter. Kall granskning: två P2 i 5p (fel källmodul, fel beskrivning av gallringen av Stripe-data) och sju mindre, alla rättade.
 Open legal-verify items: inga.
 Next package: inget kvar i kön före kö 24 (byggd); 2026-11-18 juridisk version 1.9 för villkor och biträdesavtal.
 
