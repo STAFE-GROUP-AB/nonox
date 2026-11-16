@@ -22,6 +22,7 @@ use App\Modules\Manufacturing\ManufacturingModule;
 use App\Modules\Manufacturing\Models\Operation;
 use App\Modules\Manufacturing\Models\ProductionOrder;
 use App\Modules\Manufacturing\Models\ProductionOrderOperation;
+use App\Modules\Manufacturing\Models\ProductionPlanSlot;
 use App\Modules\Manufacturing\Models\Workstation;
 use App\Modules\Manufacturing\Planning\PlanningSettings;
 use App\Modules\Manufacturing\Planning\ProductionPlanner;
@@ -30,7 +31,9 @@ use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Employee;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\Carbon;
 use Carbon\CarbonImmutable;
+use Closure;
 use Database\Seeders\Demo\DemoContext;
 use Database\Seeders\Demo\DemoExtra;
 
@@ -170,30 +173,52 @@ final class PlanningCalendarExtras extends DemoExtra
                 $make('BORD-180', 2, $minutes, $workingDay(15)->toDateString(), null);
             }
 
-            $planner = app(ProductionPlanner::class);
-            $planner->run($c->company, PlanTrigger::Manual);
+            // Planned from the start of the working day, not the hour the seeder happens to run: later in the day
+            // the plan starts after the absence and the stop below, and the deviations page would be empty.
+            Carbon::setTestNow($today->setTime(7, 0));
 
-            // Adam, the only one who lacquers, is away two days, and the Lackbox stops for maintenance: both move deliveries.
-            Absence::create([
-                'employee_id' => $people['Adam']->id,
-                'type' => 'VACATION',
-                'date_from' => $workingDay(2)->toDateString(),
-                'date_to' => $workingDay(3)->toDateString(),
-                'status' => 'APPROVED',
-            ]);
-
-            app(SaveDowntime::class)($c->user, $c->company, $lackbox, [
-                'starts_at' => $workingDay(4)->setTime(7, 0)->format('Y-m-d H:i'),
-                'ends_at' => $workingDay(4)->setTime(12, 0)->format('Y-m-d H:i'),
-                'reason' => 'MAINTENANCE',
-            ]);
-
-            $planner->run($c->company, PlanTrigger::Manual);
+            try {
+                $this->plan($c, $people['Adam'], $lackbox, $workingDay);
+            } finally {
+                Carbon::setTestNow();
+            }
 
             // The television on the workshop wall (M7), paired, for the manual's page about it.
             $devices = app(WorkshopDevices::class);
             [, $code] = $devices->register($c->user, $c->company, 'Tv:n i verkstaden', DeviceKind::WallScreen);
             $devices->pair($code, DeviceKind::WallScreen);
         }));
+    }
+
+    /**
+     * A plan, then an absence and a stop in the Lackbox that move deliveries, and a new plan.
+     *
+     * @param  Closure(int): CarbonImmutable  $workingDay
+     */
+    private function plan(DemoContext $c, Employee $adam, Workstation $lackbox, Closure $workingDay): void
+    {
+        $planner = app(ProductionPlanner::class);
+        $run = $planner->run($c->company, PlanTrigger::Manual);
+
+        // Adam, the only one who lacquers, is away two days from the day of his last lacquering in the plan, so a
+        // delivery moves whatever the plan looks like; and the Lackbox stops for maintenance.
+        $last = $run->slots()->where('employee_id', $adam->id)->where('workstation_id', $lackbox->id)->orderByDesc('starts_at')->first();
+        $away = $last instanceof ProductionPlanSlot ? $last->starts_at->startOfDay() : $workingDay(2);
+
+        Absence::create([
+            'employee_id' => $adam->id,
+            'type' => 'VACATION',
+            'date_from' => $away->toDateString(),
+            'date_to' => PlanningSettings::for($c->company)->calendar()->addWorkingDays($away, 1)->toDateString(),
+            'status' => 'APPROVED',
+        ]);
+
+        app(SaveDowntime::class)($c->user, $c->company, $lackbox, [
+            'starts_at' => $workingDay(4)->setTime(7, 0)->format('Y-m-d H:i'),
+            'ends_at' => $workingDay(4)->setTime(12, 0)->format('Y-m-d H:i'),
+            'reason' => 'MAINTENANCE',
+        ]);
+
+        $planner->run($c->company, PlanTrigger::Manual);
     }
 }

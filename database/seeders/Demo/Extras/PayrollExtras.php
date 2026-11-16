@@ -90,6 +90,20 @@ final class PayrollExtras extends DemoExtra
         'vacation.qualifying_absence_days' => ['SICK' => 180, 'PARENTAL' => 120, 'VAB' => 120, 'MILITARY' => 60],
         'agi.schema_version' => ['version' => '1.1'],
         'agi.deadlines' => ['turnover_up_to_40_msek' => ['2026-01-19', '2026-05-12'], 'turnover_over_40_msek_declare_day' => 26],
+        // The agreement premiums the restaurant's collective agreement points at (tests/Support/Payroll.php AGREEMENT_RULES).
+        'prisbasbelopp' => ['ore' => 5_920_000],
+        'pension.saf_lo' => ['name' => 'Avtalspension SAF-LO', 'below_bp' => 450, 'above_bp' => 3000, 'threshold_ibb' => '7.5', 'from_age' => 22, 'to_age_exclusive' => 65],
+        'pension.itp1' => ['name' => 'ITP 1', 'below_bp' => 450, 'above_bp' => 3000, 'threshold_ibb' => '7.5', 'ceiling_ibb' => '30', 'from_age' => 25],
+        'insurance.fora.arbetare' => ['components' => [
+            ['key' => 'AGS', 'name' => 'AGS', 'bp' => 0, 'cap_pbb' => '7.5'],
+            ['key' => 'TFA', 'name' => 'TFA', 'bp' => 1],
+            ['key' => 'TGL', 'name' => 'TGL', 'bp' => 10, 'cap_pbb' => '7.5'],
+            ['key' => 'TSL', 'name' => 'Omställningsstöd (TSL)', 'bp' => 34, 'hangavtal_bp' => 74, 'cap_pbb' => '7.5'],
+        ]],
+        'insurance.fora.tjansteman' => ['components' => [
+            ['key' => 'TFA', 'name' => 'TFA', 'bp' => 2],
+            ['key' => 'TRR', 'name' => 'Omställning (TRR)', 'bp' => 40, 'hangavtal_bp' => 80, 'to_age_exclusive' => 67],
+        ]],
     ];
 
     private const string TAX_TABLE = 'tests/Fixtures/payroll/skattetabell-2026-manad-tabell-33.txt';

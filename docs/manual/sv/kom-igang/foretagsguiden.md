@@ -24,6 +24,8 @@ Min startplan är en lista över det ett nytt företag behöver göra, i den ord
 
 Överst står hur många steg som är klara, till exempel **3 av 9 klara**, och vilket som är **Nästa steg**. **Läs om nästa steg** öppnar artikeln om det. Stegen är ordnade i grupperna Registrering, Pengar och skatt, Bokföring i NONOX, Avtal och skydd, Din bransch och Att växa, och varje grupp visar hur många av dess steg som är klara. **Din bransch** visas när du har valt en bransch för företaget, med steg som bara gäller den branschen.
 
+![Min startplan för ett aktiebolag: hur många steg som är klara, nästa steg och grupperna Registrering och Pengar och skatt.](/bilder/manual/kom-igang/min-startplan.webp)
+
 ## Så här gör du
 
 1. Klicka på **Företagsguiden** längst ner i menyn, eller på **Fortsätt din startplan** under Att göra på översikten.

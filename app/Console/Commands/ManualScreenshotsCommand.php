@@ -19,6 +19,7 @@ use App\Modules\Portal\Models\PortalContact;
 use App\Modules\Portal\Models\PortalSettings;
 use App\Modules\Portal\Support\PortalSession;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Database\Seeders\Demo\DemoIndustries;
 use Database\Seeders\K3DemoSeeder;
 use Database\Seeders\TaxFormsDemoSeeder;
@@ -49,6 +50,12 @@ use Symfony\Component\Yaml\Yaml;
  *
  * Not `php artisan serve`: it does not pass DB_DATABASE on to the server, which
  * then reads .env and the real database.
+ *
+ * Seed and serve with NONOX_BANKING_DRIVER=fake, NONOX_CUSTOMER_PORTAL=true,
+ * MAIL_MAILER=log and a NONOX_REGISTER_HASH_KEY, or the bank, customer portal
+ * and share register demos are skipped; and switch the installation's
+ * demo.enabled and stripe.enabled on in the demo database (instance_settings)
+ * for the "try without registering" and Stripe images.
  *
  * @phpstan-type Shot array{foretag: string, rutt: string, modell?: string|array{tabell: string, dar?: array<string, scalar>}, fraga?: array<string, string>, enhet?: string, del?: string, klick?: list<string>, fyll?: array<string, string>, visa?: string, anvandare?: string, text?: string}
  */
@@ -267,7 +274,14 @@ class ManualScreenshotsCommand extends Command
         $parameters = isset($shot['modell']) ? [$this->model($shot['modell'], $company)] : [];
         $url = route($shot['rutt'], $parameters, false);
 
-        return isset($shot['fraga']) ? $url.'?'.http_build_query($shot['fraga']) : $url;
+        if (! isset($shot['fraga'])) {
+            return $url;
+        }
+
+        // A value starting with @ is a date relative to today, the way the demo dates its data: '@monday this week -1 week'.
+        $query = array_map(fn (string $value): string => str_starts_with($value, '@') ? CarbonImmutable::today()->modify(substr($value, 1))->toDateString() : $value, $shot['fraga']);
+
+        return $url.'?'.http_build_query($query);
     }
 
     /** @param  string|array{tabell: string, dar?: array<string, scalar>}  $kind */

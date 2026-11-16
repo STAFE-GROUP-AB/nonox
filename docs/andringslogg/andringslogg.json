@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-16-manualens-bilder-tagna-om",
+      "datum": "2026-11-16T10:00:00+01:00",
+      "rubrik": "Manualens bilder är tagna om",
+      "beskrivning": "Manualens skärmbilder är tagna om från dagens skärmar, med Företagsguiden först, och artikeln om Min startplan har fått en egen bild. Demoföretagen i Prova utan att registrera har åter en pågående lönekörning för november, och tillverkningens planering visar öppna avvikelser som flyttar leveranser.",
+      "typ": "Rättat",
+      "omrade": "Manual"
+    },
+    {
       "id": "2026-11-16-stripe-i-aterkommande-intakter",
       "datum": "2026-11-16T07:00:00+01:00",
       "rubrik": "Stripe i Återkommande intäkter",

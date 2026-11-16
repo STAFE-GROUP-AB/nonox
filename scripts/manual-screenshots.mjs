@@ -127,6 +127,9 @@ try {
             width: shot.width, height: shot.height, deviceScaleFactor: shot.scale, mobile: shot.mobile,
         }, sessionId);
 
+        // Each image starts from a clean tab: what one shot opened (the chat panel keeps its state in sessionStorage) stays out of the next.
+        await send('Runtime.evaluate', { expression: 'try { sessionStorage.clear(); } catch (e) {}' }, sessionId);
+
         const idle = networkIdle(sessionId);
         const { errorText } = await send('Page.navigate', { url: shot.url }, sessionId);
         await idle;
