@@ -258,11 +258,11 @@
     {
       "id": "foreningar",
       "rubrik": "Föreningar",
-      "beskrivning": "Medlemsregister, medlemsavgifter och årsmöte för ideella föreningar, i samma system som bokföringen. Bostadsrättsföreningar har egna regler för årsredovisningen och är en separat fråga.",
+      "beskrivning": "Ekonomin för idrottsföreningar och andra ideella föreningar: bokföring som en enkel kassabok, medlems- och träningsavgifter med Swish och OCR, LOK-stöd och andra bidrag, ersättningar till ledare och domare, lotterier, förenklat årsbokslut och underlag till årsmötet och revisorerna. Medlemsregistret och närvaron sköts i föreningens medlemssystem. Bostadsrättsföreningar har egna regler och är en separat fråga.",
       "status": "Önskemål",
       "omrade": "Övrigt",
-      "uppdaterad": "2026-11-08",
-      "kommentar": "Vi har inte bestämt oss ännu."
+      "uppdaterad": "2026-11-16",
+      "kommentar": "Regelverket är genomgånget. Vi har inte bestämt när det byggs."
     },
     {
       "id": "bordsbokning",

@@ -43,7 +43,7 @@ Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanf�
 - Kön ovan byggs klart, med M7 (väggskärmen) och branschsidan för tillverkande företag. Nya önskemål från ägaren går inte in i kön, utan läggs på raden "Önskemål som inte byggs nu" (och på /fardplan som Önskemål när de är publika).
 - "Prova utan att registrera" är påslagen på nonox.app med en egen demodatabas. Varje driftsättning migrerar även demodatabasen.
 
-Önskemål som inte byggs nu: föreningar, bordsbokning, installationsanvisningar och skript för egen server (`egen-server-guide`, ägaren 2026-11-09), koppling till webbutik (`kassa-och-ehandel`, kommer senare). Byggs inte: webbshop, eget kassasystem.
+Önskemål som inte byggs nu: **NONOX Förening för idrottsföreningar** (ägaren 2026-11-16, större önskemål; regelblad med källor, fem faser och L-frågor i `docs/specs/rules/idrottsforening.md`: bokföring som kassabok, avgifter med "betald till och med", Swish- och OCR-matchning, LOK och andra bidrag, ersättningar till ledare och domare med gränsbevakning, lotterier, kiosk och skattestatus, årsmötespaket och kassörsbyte; ekonomin, inte medlemsregister eller närvaro; prisidé 995 kr per år, ej beslutad), bordsbokning, installationsanvisningar och skript för egen server (`egen-server-guide`, ägaren 2026-11-09), koppling till webbutik (`kassa-och-ehandel`, kommer senare). Byggs inte: webbshop, eget kassasystem.
 
 ## Statuskontroll 2026-11-07
 
