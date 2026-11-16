@@ -3,6 +3,7 @@ beskrivning: Aktieboken, bolagsordningen och styrelserummet i NONOX – för akt
 ordning: 0
 roller: [owner, admin, accountant, auditor]
 modul: boardroom
+rutter: [share-register.index]
 sokord: [aktiebok, aktieägare, aktieägarförteckning, styrelseprotokoll, stämmoprotokoll, årsstämma, bolagsstämma, kallelse]
 ---
 
