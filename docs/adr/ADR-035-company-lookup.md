@@ -274,7 +274,7 @@ already holds a company register of about 1.17 million legal persons
    code 31 covers handelsbolag and kommanditbolag together, so the firm name
    decides as a heuristic (it usually contains "kommanditbolag"/"KB" or
    "handelsbolag"/"HB"; a name with neither, or both, leaves the field
-   unproposed). TODO(legal-verify): Bolagsverket's practice on the abbreviations; the rule is handelsregisterlagen (1974:157) 6 §. Code 21 is *enkla bolag* (not a kommanditbolag)
+   unproposed). Handelsregisterlagen (1974:157) 6 § requires the word "handelsbolag" or "kommanditbolag" in the name; TODO(legal-verify): Bolagsverket's practice on the abbreviations HB/KB and names registered before 2019. Code 21 is *enkla bolag* (not a kommanditbolag)
    and is never in the register. Any other code leaves the field alone.
 8. Addresses in capitals ("SKÖNSTAVÄGEN 3 A") are written in normal case;
    postal codes as "123 45".
