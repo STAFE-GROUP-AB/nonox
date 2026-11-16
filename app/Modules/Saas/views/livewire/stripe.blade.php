@@ -7,6 +7,8 @@
 
     $input = 'mt-1 block w-full rounded-xl border-stone-300 shadow-xs focus:border-accent-500 focus:ring-accent-500';
     $active = $connection !== null && $connection->status === StripeConnection::ACTIVE;
+    // Linking needs Stripe switched on; the register extract and erasure never do (re-check P3b).
+    $usable = $available && $addonOn;
     $methods = [
         StripeCustomerLink::BY_METADATA => __('kundnummer i Stripe'),
         StripeCustomerLink::BY_TAX_ID => __('momsregistreringsnummer'),
@@ -150,82 +152,6 @@
         @endif
 
         @if($connection !== null)
-            <x-ui.card :title="__('Kunder i Stripe')">
-                <div class="space-y-6 text-sm text-gray-700">
-                    <p>{{ __('NONOX kopplar en Stripe-kund till en av dina kunder när kundnumret står i Stripe (metadata nonox_customer_number) eller när momsregistreringsnumret stämmer. Samma e-postadress, eller samma namn och land, blir bara ett förslag. En Stripe-kund som inte är kopplad räknas som en egen kund tills du kopplar den; kopplar du den senare flyttas dess historik och visas som rättelse i stängda månader.') }}</p>
-                    <p data-testid="stripe-counts">
-                        {{ __('Stripe-kunder med prenumeration. Kopplade: :linked. Att granska: :review. Förslag: :suggested. Inte kopplade: :unlinked.', [
-                            'linked' => $counts[StripeCustomerLink::LINKED]['count'] ?? 0,
-                            'review' => $counts[StripeCustomerLink::LINKED]['review'] ?? 0,
-                            'suggested' => $counts[StripeCustomerLink::SUGGESTED]['count'] ?? 0,
-                            'unlinked' => $counts[StripeCustomerLink::UNLINKED]['count'] ?? 0,
-                        ]) }}
-                    </p>
-
-                    @foreach([
-                        ['rows' => $review, 'title' => __('Kopplade automatiskt, att granska'), 'id' => 'granska'],
-                        ['rows' => $suggested, 'title' => __('Förslag'), 'id' => 'forslag'],
-                        ['rows' => $unlinked, 'title' => __('Inte kopplade'), 'id' => 'kunder'],
-                    ] as $section)
-                        @if($section['rows']->isNotEmpty())
-                            <section id="{{ $section['id'] }}" aria-labelledby="stripe-{{ $section['id'] }}">
-                                <h3 id="stripe-{{ $section['id'] }}" class="font-semibold text-ink">{{ $section['title'] }}</h3>
-                                <ul class="mt-2 divide-y divide-stone-100" data-testid="stripe-{{ $section['id'] }}">
-                                    @foreach($section['rows'] as $link)
-                                        <li class="flex flex-wrap items-center justify-between gap-3 py-3" wire:key="stripe-link-{{ $link->id }}">
-                                            <div>
-                                                <p class="font-medium text-ink">{{ $link->label() }} @if($link->isErased())<x-ui.badge>{{ __('Uppgifterna raderade') }}</x-ui.badge>@endif</p>
-                                                <p class="text-gray-600">{{ collect([$link->email, $link->country, $link->stripe_customer_id])->filter()->implode(' · ') }}</p>
-                                                @if($link->isLinked())
-                                                    <p>{{ __('Kopplad till :number :name (:method).', ['number' => $link->customer?->number, 'name' => $link->customer?->name, 'method' => $methods[$link->method] ?? '']) }}</p>
-                                                @elseif($link->suggested !== null)
-                                                    <p>{{ __('Förslag: :number :name (:method).', ['number' => $link->suggested->number, 'name' => $link->suggested->name, 'method' => $methods[$link->suggestion_method] ?? '']) }}</p>
-                                                @endif
-                                            </div>
-                                            @if($canManage)
-                                                <div class="flex flex-wrap items-end gap-2">
-                                                    @if($link->isLinked())
-                                                        <x-button type="button" wire:click="confirm({{ $link->id }})" wire:loading.attr="disabled">{{ __('Stämmer') }}</x-button>
-                                                        <button type="button" class="text-sm text-gray-700 underline" wire:click="unlink({{ $link->id }})" wire:loading.attr="disabled">{{ __('Koppla bort') }}</button>
-                                                    @else
-                                                        @if($link->suggested !== null)
-                                                            <x-button type="button" wire:click="acceptSuggestion({{ $link->id }})" wire:loading.attr="disabled">{{ __('Koppla till förslaget') }}</x-button>
-                                                        @endif
-                                                        <form wire:submit="linkTo({{ $link->id }})" class="flex items-end gap-2">
-                                                            <div>
-                                                                <label for="stripe-number-{{ $link->id }}" class="block text-xs text-gray-600">{{ __('Kundnummer') }}</label>
-                                                                <input id="stripe-number-{{ $link->id }}" type="text" inputmode="numeric" class="mt-1 block w-28 rounded-xl border-stone-300 shadow-xs focus:border-accent-500 focus:ring-accent-500" wire:model="numbers.{{ $link->id }}">
-                                                            </div>
-                                                            <button type="submit" class="min-h-11 text-sm font-semibold text-accent-700 hover:text-accent-800">{{ __('Koppla') }}</button>
-                                                        </form>
-                                                        @if(! $link->isErased())
-                                                            <button type="button" class="min-h-11 text-sm text-gray-700 underline" wire:click="createCustomer({{ $link->id }})" wire:loading.attr="disabled">{{ __('Skapa kund') }}</button>
-                                                        @endif
-                                                        <a href="{{ route('saas.stripe.export', ['link' => $link->id]) }}" class="inline-flex min-h-11 items-center text-sm text-gray-700 underline">{{ __('Registerutdrag') }}</a>
-                                                        @if(! $link->isErased())
-                                                            <div x-data="{ confirming: false }">
-                                                                <button type="button" class="min-h-11 text-sm text-red-700 underline" x-show="! confirming" x-on:click="confirming = true">{{ __('Radera uppgifterna') }}</button>
-                                                                <div x-show="confirming" x-cloak class="rounded-2xl bg-amber-50 p-3 text-amber-900 ring-1 ring-amber-200" role="alertdialog" aria-labelledby="stripe-erase-{{ $link->id }}">
-                                                                    <p id="stripe-erase-{{ $link->id }}">{{ __('Namn, e-post, adress och skatte-id raderas i NONOX och läses inte in igen. Siffrorna i Återkommande intäkter, som bara har id och belopp, finns kvar. Ta också bort kunden i Stripe.') }}</p>
-                                                                    <div class="mt-2 flex flex-wrap gap-3">
-                                                                        <x-button type="button" wire:click="erase({{ $link->id }})" wire:loading.attr="disabled">{{ __('Ja, radera') }}</x-button>
-                                                                        <button type="button" class="text-sm text-gray-700 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        @endif
-                                                    @endif
-                                                </div>
-                                            @endif
-                                        </li>
-                                    @endforeach
-                                </ul>
-                                <div class="mt-3">{{ $section['rows']->links() }}</div>
-                            </section>
-                        @endif
-                    @endforeach
-                </div>
-            </x-ui.card>
 
             <x-ui.card :title="__('Inläsningar')">
                 @if($runs->isEmpty())
@@ -269,5 +195,87 @@
             </x-ui.card>
         @endif
     @endif
+    @endif
+    @if($connection !== null)
+        <x-ui.card :title="__('Kunder i Stripe')">
+            <div class="space-y-6 text-sm text-gray-700">
+                <p>{{ __('NONOX kopplar en Stripe-kund till en av dina kunder när kundnumret står i Stripe (metadata nonox_customer_number) eller när momsregistreringsnumret stämmer. Samma e-postadress, eller samma namn och land, blir bara ett förslag. En Stripe-kund som inte är kopplad räknas som en egen kund tills du kopplar den; kopplar du den senare flyttas dess historik och visas som rättelse i stängda månader.') }}</p>
+                <p data-testid="stripe-counts">
+                    {{ __('Stripe-kunder med prenumeration. Kopplade: :linked. Att granska: :review. Förslag: :suggested. Inte kopplade: :unlinked.', [
+                        'linked' => $counts[StripeCustomerLink::LINKED]['count'] ?? 0,
+                        'review' => $counts[StripeCustomerLink::LINKED]['review'] ?? 0,
+                        'suggested' => $counts[StripeCustomerLink::SUGGESTED]['count'] ?? 0,
+                        'unlinked' => $counts[StripeCustomerLink::UNLINKED]['count'] ?? 0,
+                    ]) }}
+                </p>
+
+                @foreach([
+                    ['rows' => $review, 'title' => __('Kopplade automatiskt, att granska'), 'id' => 'granska'],
+                    ['rows' => $suggested, 'title' => __('Förslag'), 'id' => 'forslag'],
+                    ['rows' => $unlinked, 'title' => __('Inte kopplade'), 'id' => 'kunder'],
+                ] as $section)
+                    @if($section['rows']->isNotEmpty())
+                        <section id="{{ $section['id'] }}" aria-labelledby="stripe-{{ $section['id'] }}">
+                            <h3 id="stripe-{{ $section['id'] }}" class="font-semibold text-ink">{{ $section['title'] }}</h3>
+                            <ul class="mt-2 divide-y divide-stone-100" data-testid="stripe-{{ $section['id'] }}">
+                                @foreach($section['rows'] as $link)
+                                    <li class="flex flex-wrap items-center justify-between gap-3 py-3" wire:key="stripe-link-{{ $link->id }}">
+                                        <div>
+                                            <p class="font-medium text-ink">{{ $link->label() }} @if($link->isErased())<x-ui.badge>{{ __('Uppgifterna raderade') }}</x-ui.badge>@endif</p>
+                                            <p class="text-gray-600">{{ collect([$link->email, $link->country, $link->stripe_customer_id])->filter()->implode(' · ') }}</p>
+                                            @if($link->isLinked())
+                                                <p>{{ __('Kopplad till :number :name (:method).', ['number' => $link->customer?->number, 'name' => $link->customer?->name, 'method' => $methods[$link->method] ?? '']) }}</p>
+                                            @elseif($link->suggested !== null)
+                                                <p>{{ __('Förslag: :number :name (:method).', ['number' => $link->suggested->number, 'name' => $link->suggested->name, 'method' => $methods[$link->suggestion_method] ?? '']) }}</p>
+                                            @endif
+                                        </div>
+                                        @if($canManage)
+                                            <div class="flex flex-wrap items-end gap-2">
+                                                @if($link->isLinked())
+                                                    @if($usable)
+                                                        <x-button type="button" wire:click="confirm({{ $link->id }})" wire:loading.attr="disabled">{{ __('Stämmer') }}</x-button>
+                                                        <button type="button" class="text-sm text-gray-700 underline" wire:click="unlink({{ $link->id }})" wire:loading.attr="disabled">{{ __('Koppla bort') }}</button>
+                                                    @endif
+                                                @else
+                                                    @if($usable && $link->suggested !== null)
+                                                        <x-button type="button" wire:click="acceptSuggestion({{ $link->id }})" wire:loading.attr="disabled">{{ __('Koppla till förslaget') }}</x-button>
+                                                    @endif
+                                                    @if($usable)
+                                                    <form wire:submit="linkTo({{ $link->id }})" class="flex items-end gap-2">
+                                                        <div>
+                                                            <label for="stripe-number-{{ $link->id }}" class="block text-xs text-gray-600">{{ __('Kundnummer') }}</label>
+                                                            <input id="stripe-number-{{ $link->id }}" type="text" inputmode="numeric" class="mt-1 block w-28 rounded-xl border-stone-300 shadow-xs focus:border-accent-500 focus:ring-accent-500" wire:model="numbers.{{ $link->id }}">
+                                                        </div>
+                                                        <button type="submit" class="min-h-11 text-sm font-semibold text-accent-700 hover:text-accent-800">{{ __('Koppla') }}</button>
+                                                    </form>
+                                                    @if(! $link->isErased())
+                                                        <button type="button" class="min-h-11 text-sm text-gray-700 underline" wire:click="createCustomer({{ $link->id }})" wire:loading.attr="disabled">{{ __('Skapa kund') }}</button>
+                                                    @endif
+                                                    @endif
+                                                    <a href="{{ route('saas.stripe.export', ['link' => $link->id]) }}" class="inline-flex min-h-11 items-center text-sm text-gray-700 underline">{{ __('Registerutdrag') }}</a>
+                                                    @if(! $link->isErased())
+                                                        <div x-data="{ confirming: false }">
+                                                            <button type="button" class="min-h-11 text-sm text-red-700 underline" x-show="! confirming" x-on:click="confirming = true">{{ __('Radera uppgifterna') }}</button>
+                                                            <div x-show="confirming" x-cloak class="rounded-2xl bg-amber-50 p-3 text-amber-900 ring-1 ring-amber-200" role="alertdialog" aria-labelledby="stripe-erase-{{ $link->id }}">
+                                                                <p id="stripe-erase-{{ $link->id }}">{{ __('Namn, e-post, adress och skatte-id raderas i NONOX och läses inte in igen. Siffrorna i Återkommande intäkter, som bara har id och belopp, finns kvar. Ta också bort kunden i Stripe.') }}</p>
+                                                                <div class="mt-2 flex flex-wrap gap-3">
+                                                                    <x-button type="button" wire:click="erase({{ $link->id }})" wire:loading.attr="disabled">{{ __('Ja, radera') }}</x-button>
+                                                                    <button type="button" class="text-sm text-gray-700 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endif
+                                                @endif
+                                            </div>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                            <div class="mt-3">{{ $section['rows']->links() }}</div>
+                        </section>
+                    @endif
+                @endforeach
+            </div>
+        </x-ui.card>
     @endif
 </div>

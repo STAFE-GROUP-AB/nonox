@@ -10,6 +10,7 @@ use App\Models\InstanceSetting;
 use App\Models\User;
 use App\Modules\Saas\Livewire\StripePage;
 use App\Modules\Saas\Stripe\Actions\ConnectStripe;
+use App\Modules\Saas\Stripe\Actions\EndStripeConnection;
 use App\Modules\Saas\Stripe\Actions\LinkStripeCustomer;
 use App\Modules\Saas\Stripe\Actions\SaveStripeWebhookSecret;
 use App\Modules\Saas\Stripe\Domain\WebhookSignature;
@@ -101,8 +102,10 @@ it('never revokes a key that replaced the one an old run used', function () {
     $run = app(StripeSync::class)->run($stale);
     $fresh = $connection->fresh();
 
-    expect($run->status)->toBe(StripeSyncRun::INTERRUPTED)
-        ->and($run->error)->toBe('key_changed')
+    // The run sees the new key before its first request and stops (re-check P2); a 401 that raced it would not revoke either.
+    expect($run->status)->toBe(StripeSyncRun::FAILED)
+        ->and($run->error)->toBe('ended')
+        ->and(app(EndStripeConnection::class)->revokedByStripe($stale, 1))->toBeFalse()
         ->and($fresh->status)->toBe(StripeConnection::ACTIVE)
         ->and($fresh->key_version)->toBe(2)
         ->and($fresh->secret_key)->toBe('rk_test_FakeRestrictedKey000000000099')

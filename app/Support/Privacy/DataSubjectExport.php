@@ -32,6 +32,8 @@ use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\SalaryChange;
+use App\Modules\Saas\Domain\SourceType;
+use App\Modules\Saas\Models\SaasContractVersion;
 use App\Modules\Saas\Stripe\Models\StripeCustomerLink;
 use App\Modules\StaffLedger\Models\Entry;
 use App\Modules\StaffLedger\Models\Location;
@@ -114,6 +116,33 @@ final class DataSubjectExport
             'kopplad_genom' => $link->method,
             'granskad' => $link->confirmed_at?->toIso8601String(),
             'raderad' => $link->erased_at?->toIso8601String(),
+            // What Återkommande intäkter recorded for the Stripe customer's subscriptions: ids, amounts and dates (re-check P3c).
+            'prenumerationer' => SaasContractVersion::query()
+                ->where('source_type', SourceType::StripeSubscription->value)
+                ->whereRaw("source_ref->>'connection' = ?", [(string) $link->connection_id])
+                ->whereRaw("source_ref->>'customer' = ?", [$link->stripe_customer_id])
+                ->orderBy('source_id')
+                ->orderBy('id')
+                ->get()
+                ->map(fn (SaasContractVersion $version): array => [
+                    'prenumeration' => $version->source_id,
+                    'galler_fran' => $version->effective_from->toDateString(),
+                    'registrerad' => $version->recorded_at->toIso8601String(),
+                    'orsak' => $version->cause->value,
+                    'status' => $version->status->value,
+                    'startar' => $version->starts_on?->toDateString(),
+                    'upphor' => $version->cancel_effective_on?->toDateString(),
+                    'raknas_inte' => $version->excluded?->value,
+                    'rader' => array_map(fn (array $line): array => [
+                        'valuta' => $line['currency'] ?? null,
+                        'belopp_hundradelar' => $line['amount_minor'] ?? null,
+                        'intervall' => $line['interval_unit'] ?? null,
+                        'antal_intervall' => $line['interval_count'] ?? null,
+                        'forbrukning' => $line['usage'] ?? false,
+                        'rabatt_till' => $line['discount_until'] ?? null,
+                        'provperiod_till' => $line['trial_until'] ?? null,
+                    ], (array) $version->lines),
+                ])->all(),
         ];
     }
 

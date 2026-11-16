@@ -14622,5 +14622,6 @@
     "Stripe-kundens uppgifter är raderade.": "The Stripe customer's details are erased.",
     "Kopplingen till Stripe finns inte än i den här installationen.": "The connection to Stripe is not available yet on this installation.",
     "Stripe i NONOX Connect": "Stripe in NONOX Connect",
-    "Av: inget företag kan koppla Stripe, Stripe-sidan säger att kopplingen inte finns än, inläsningen står still och webhooken svarar inte. Sätt på först när biträdesavtalet nämner NONOX SaaS och Stripe.": "Off: no company can connect Stripe, the Stripe page says the connection is not available yet, reading stops and the webhook does not answer. Switch it on only when the DPA names NONOX SaaS and Stripe."
+    "Av: inget företag kan koppla Stripe, Stripe-sidan säger att kopplingen inte finns än, inläsningen står still och webhooken svarar inte. Sätt på först när biträdesavtalet nämner NONOX SaaS och Stripe.": "Off: no company can connect Stripe, the Stripe page says the connection is not available yet, reading stops and the webhook does not answer. Switch it on only when the DPA names NONOX SaaS and Stripe.",
+    "Kopplingen avslutades eller stängdes av under inläsningen. Inget mer lästes in.": "The connection was ended or switched off during the read. Nothing more was read."
 }

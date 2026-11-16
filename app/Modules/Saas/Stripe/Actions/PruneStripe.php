@@ -63,7 +63,7 @@ class PruneStripe
     public function customerAnonymised(CustomerAnonymised $event): void
     {
         CurrentCompany::run($event->companyId, function () use ($event): void {
-            foreach (StripeCustomerLink::query()->where('customer_id', $event->customerId)->lockForUpdate()->get() as $link) {
+            foreach (StripeCustomerLink::query()->where('customer_id', $event->customerId)->get() as $link) {
                 self::erase($link);
             }
         });
@@ -78,6 +78,9 @@ class PruneStripe
      */
     public static function erase(StripeCustomerLink $link): void
     {
+        // The connection's row lock, as a running sync takes before it writes (re-check P3d): a sync never writes this customer back meanwhile.
+        StripeConnection::query()->lockForUpdate()->find($link->connection_id);
+
         $link->forceFill([...StripeCustomerLink::ERASED_FIELDS, 'erased_at' => $link->erased_at ?? now()])->save();
 
         StripeObject::query()

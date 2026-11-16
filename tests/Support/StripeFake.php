@@ -47,6 +47,9 @@ final class StripeFake
     public array $failures = [];
 
     /** A request whose log line contains this is answered 503, failTimes times. */
+    /** @var array<string, callable(): void> run once when a request whose log line contains the key has been answered */
+    public array $hooks = [];
+
     public ?string $failWhen = null;
 
     public int $failTimes = 0;
@@ -174,6 +177,13 @@ final class StripeFake
         $path = (string) ($url['path'] ?? '');
         parse_str((string) ($url['query'] ?? ''), $query);
         $this->log[] = $request->method().' '.$path.' '.http_build_query($query);
+
+        foreach ($this->hooks as $needle => $hook) {
+            if (str_contains(end($this->log), $needle)) {
+                unset($this->hooks[$needle]);
+                $hook();
+            }
+        }
 
         if ($request->method() !== 'GET') {
             return Http::response(['error' => ['type' => 'invalid_request_error']], 405);

@@ -6,6 +6,8 @@ namespace App\Modules\Saas\Stripe\Support;
 
 use App\Modules\Saas\Jobs\RecomputeSaas;
 use App\Modules\Saas\Stripe\Actions\EndStripeConnection;
+use App\Modules\Saas\Stripe\Actions\PruneStripe;
+use App\Modules\Saas\Stripe\Actions\StripePermissions;
 use App\Modules\Saas\Stripe\Models\StripeConnection;
 use App\Modules\Saas\Stripe\Models\StripeCustomerLink;
 use App\Modules\Saas\Stripe\Models\StripeEvent;
@@ -85,6 +87,9 @@ final class StripeSync
 
     private bool $versionsWritten = false;
 
+    /** The key the running sync uses (StripeConnection::key_version). */
+    private int $keyVersion = 0;
+
     public function __construct(
         private readonly StripeLedger $ledger,
         private readonly CustomerMatcher $matcher,
@@ -113,6 +118,7 @@ final class StripeSync
         $client = new StripeClient((string) $connection->secret_key);
         // The key this run uses: a 401 revokes only while the connection still holds it (review P2-1).
         $keyVersion = $connection->key_version;
+        $this->keyVersion = $keyVersion;
         $this->counts = ['customers' => 0, 'subscriptions' => 0, 'objects' => 0, 'versions' => 0, 'events' => 0, 'linked' => 0];
         $this->versionsWritten = false;
 
@@ -132,7 +138,7 @@ final class StripeSync
                 // The key was replaced while the run used the old one: the next run uses the new key.
                 $run->status = StripeSyncRun::INTERRUPTED;
                 $run->error = 'key_changed';
-            } elseif ($failure->reason !== 'unauthorized') {
+            } elseif ($failure->reason !== 'unauthorized' && $failure->reason !== 'ended') {
                 $connection->forceFill(['consecutive_failures' => $connection->consecutive_failures + 1])->save();
             }
         } finally {
@@ -181,6 +187,7 @@ final class StripeSync
             $after = ($cursor['stage'] ?? null) === $stage ? ($cursor['after'] ?? null) : null;
 
             do {
+                $this->guard($connection);
                 $page = $client->page($path, $query, is_string($after) ? $after : null);
                 $fetched = $this->fetchDependencies($connection, $client, $stage, $page['data']);
                 $after = $page['last'];
@@ -189,6 +196,7 @@ final class StripeSync
                     : ['stage' => $stages[array_search($stage, $stages, true) + 1] ?? 'done', 'after' => null, 'watermark' => $watermark];
 
                 DB::transaction(function () use ($connection, $stage, $page, $fetched, $next): void {
+                    $this->guard($connection, lock: true);
                     $this->write($connection, [$stage => $page['data'], ...$fetched]);
                     $connection->forceFill(['cursor' => $next])->save();
                 });
@@ -215,6 +223,7 @@ final class StripeSync
         $after = null;
 
         do {
+            $this->guard($connection);
             $page = $client->page('/v1/events', ['created' => ['gte' => $since], 'types' => self::EVENT_TYPES], $after);
             array_push($listed, ...$page['data']);
             $after = $page['last'];
@@ -280,6 +289,7 @@ final class StripeSync
 
         foreach ($targets as $resource => $ids) {
             foreach (array_keys($ids) as $id) {
+                $this->guard($connection);
                 $object = $this->retrieve($client, $resource, (string) $id);
 
                 if ($object !== null) {
@@ -293,11 +303,33 @@ final class StripeSync
         }
 
         DB::transaction(function () use ($connection, $fetched, $events): void {
+            $this->guard($connection, lock: true);
             $this->write($connection, $fetched);
             StripeEvent::query()->whereIn('id', $events->pluck('id')->all())->update(['processed_at' => now()]);
         });
 
         $this->counts['events'] += $events->count();
+    }
+
+    /**
+     * Stops a running sync the moment its connection may no longer be read or
+     * written (re-check P2): the connection was disconnected or revoked, its
+     * key was replaced, or Stripe was switched off for the installation.
+     * Checked before every request to Stripe, and again under the
+     * connection's row lock inside each transaction that writes, so a sync
+     * that holds an old key never writes after EndStripeConnection or an
+     * erasure has taken the same lock.
+     */
+    private function guard(StripeConnection $connection, bool $lock = false): void
+    {
+        $fresh = StripeConnection::query()->when($lock, fn ($query) => $query->lockForUpdate())->find($connection->id);
+
+        if (! $fresh instanceof StripeConnection
+            || $fresh->status !== StripeConnection::ACTIVE
+            || $fresh->key_version !== $this->keyVersion
+            || ! StripePermissions::available()) {
+            throw new StripeFailure('ended');
+        }
     }
 
     /**
@@ -333,6 +365,7 @@ final class StripeSync
         $fetched = [];
 
         foreach (array_diff($customers, $known) as $customer) {
+            $this->guard($connection);
             $object = $this->retrieve($client, 'customers', $customer);
 
             if ($object !== null) {
@@ -341,6 +374,7 @@ final class StripeSync
         }
 
         foreach (array_diff(array_keys($coupons), $knownCoupons) as $coupon) {
+            $this->guard($connection);
             $object = $this->retrieve($client, 'coupons', (string) $coupon);
 
             if ($object !== null) {
@@ -461,7 +495,9 @@ final class StripeSync
         $this->counts['customers']++;
 
         if (($customer['deleted'] ?? false) === true) {
-            $link->forceFill([...StripeCustomerLink::ERASED_FIELDS, 'deleted_in_stripe' => true, 'erased_at' => $link->erased_at ?? now()])->save();
+            $link->forceFill(['deleted_in_stripe' => true])->save();
+            // Cleared and marked erased, and its raw subscriptions deleted (re-check P3a).
+            PruneStripe::erase($link);
 
             return $link;
         }
