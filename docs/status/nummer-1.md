@@ -31,6 +31,7 @@ Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanf�
 21. **Enhetstabellen styr alla enheter, ingen fritext** (ägaren 2026-11-10, byggs i kväll ovanpå M1): företagets enhetsregister (M1, ADR-071 §12.1) är det enda stället enheter skapas och ändras; fakturarader, offert- och orderrader, avtalsfakturor, offertmallar, recept och andra rader väljer enhet ur registret i stället för att skriva fritt. Gamla fritextenheter mappas mot registret vid migreringen, okända skapas som enheter i registret. Utskrifter, API och Peppol fortsätter visa enhetens kod.
 22. **Demoföretagets arbetsorder saknas** (upptäckt vid granskning 2026-11-10): demoseedningen av Snickeri Norrby Demo AB avbryts med "Arbetsorder: This action is unauthorized." (`WorkOrdersExtras`), så demon och skärmbilderna saknar arbetsorder. Rättas så att demon får sina arbetsorder igen.
 23. **Dokumentationen ikapp** (ägaren 2026-11-11): manual, guider, ändringslogg, funktionslista och startsidans sektioner (byggs).
+24. **Organisationsnummeruppslag från eget register** (ägaren 2026-11-16, undantag från frysen "eftersom detta underlättar onboard"): när organisationsnumret skrivs in fylls namn, adress och företagsform i från NONOX företagsregister (ADR-047), och i kom-igång föreslås bransch, arbetsgivare och en K2-notis. Integritetspolicyn får en egen version.
 
 Ägarens ordning 2026-11-09 för det som pågår: (a) skärmbilder till de nya manualartiklarna, (b) databasanvändarna och demodatabasen på nonox.app, (c) status på önskelistan i färdplanen, (d) NONOX SaaS med Stripe.
 
@@ -870,3 +871,15 @@ Evidence: `tests/Feature/IndustryPagesTest.php`, `tests/Unit/IndustryTest.php`, 
 - Alla branschsidor: "Kör du NONOX själv betalar du ingen licens, bara din egen drift" och "fri licens i egen drift" i stället för "kostar det ingenting"/"0 kr i egen drift" (juristens granskning, MFL 10 och 12 §§).
 Open legal-verify items: i sidans `legal_verify` (Träindustriavtalet, MBL/GDPR för terminal och planering, indirekta kostnader och standardtimkostnad i lagervärdet, konsumentköplagen mot konsumenttjänstlagen, "Frånvarande" i planeringen, demomeningen).
 Next package: kö 14 och resten av kön i ordning.
+
+---
+
+Package: Organisationsnummeruppslag från eget register (kö 24, ADR-035 och ADR-047)
+Status: done (granskad CLEAR TO MERGE och juridiskt CLEAR efter rättningar eeed9f03, e6480d9d och 3265cbc0); på nonox.app när `COMPANY_REGISTRY_LOCAL=true` har satts efter driftsättningen
+Evidence: `tests/Feature/Company/LocalRegistryLookupTest.php`, `tests/Feature/PrivacyPolicyVersionTest.php`, `tests/Feature/Company/CreateCompanyTest.php`.
+- `LocalRegistry` svarar ur `company_registry` före API-drivrutinen (Bolagsverket); personnummer frågas aldrig i registret, invändningar (hela posten eller namnet) gäller i samma fråga. Gränserna per användare och företag gäller före uppslaget; installationens gräns bara för API-anrop.
+- Kom igång: bransch ur SNI 2025, arbetsgivare ur anställdaklassen och en K2-notis (ÅRL 1 kap. 3 §) som förslag, aldrig över det användaren valt. Arbetsgivare och K2 kräver SCB:s API-nyckel, som nonox.app inte har.
+- Källraden "Enligt NONOX företagsregister (bearbetade uppgifter från Bolagsverket och SCB), hämtade …" med det äldre av källornas datum.
+- Integritetspolicyn har en egen version (`PRIVACY_VERSION` 1.8.1, gäller från 2026-11-17); villkor och personuppgiftsbiträdesavtal är kvar på 1.8. Skatteverket-kopplingen står som "inte tillgänglig ännu" tills produktionsnycklarna finns.
+Open legal-verify items: Bolagsverkets licensvillkor och praxis för förkortningarna HB/KB; ÅRL 1 kap. 3 § ordagrant; en ny version av integritetspolicyn till operatörsbytet 2027-01-11 (med information till personerna i kön).
+Next package: NONOX SaaS steg 2 (Stripe), sedan kö 14 och resten av kön i ordning.
