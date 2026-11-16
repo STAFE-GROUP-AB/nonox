@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-16-stripe-i-aterkommande-intakter",
+      "datum": "2026-11-16T07:00:00+01:00",
+      "rubrik": "Stripe i Återkommande intäkter",
+      "beskrivning": "Med NONOX SaaS kan företaget koppla sitt eget Stripe-konto med en begränsad nyckel som bara kan läsa, under Återkommande intäkter → Stripe. Kopplingen är byggd men ännu inte påslagen på nonox.app; den slås på när personuppgiftsbiträdesavtalet har uppdaterats. Prenumerationerna räknas då i MRR, rörelser och kohorter, och Stripe-kunderna kopplas till kundregistret med kundnummer eller momsnummer eller som förslag som en person godkänner. Kopplingen till Stripe kostar 0 kr i NONOX Connect, och avgifterna till Stripe betalar företaget som förut direkt till Stripe; NONOX ändrar ingenting i Stripe och bokför ingenting från Stripe än.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-16-foretagsuppgifter-fran-nonox-register",
       "datum": "2026-11-16T00:30:00+01:00",
       "rubrik": "Företagsuppgifter fylls i från NONOX eget företagsregister",

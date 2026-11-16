@@ -656,6 +656,22 @@ Next package: steg 2, Stripe i NONOX Connect (läsnyckel), därefter steg 3a (ut
 
 ---
 
+Package: NONOX SaaS, steg 2, Stripe i NONOX Connect (läsnyckel) (prioritet 12, ADR-080 §7, tillägg 2026-11-15)
+Status: byggd på grenen `feat/saas-stripe`, inte sammanslagen (väntar på kall granskning och juristgranskning)
+Evidence: `tests/Unit/Saas/StripeDomainTest.php`, `tests/Feature/Saas/StripeConnectTest.php`, `tests/Feature/Saas/StripeSyncTest.php`, `tests/Feature/Saas/StripeWebhookTest.php`, `tests/Tenancy/StripeTenancyTest.php`.
+- `/aterkommande-intakter/stripe`: Stripe i NONOX Connect med priset på två rader (0 kr + 10 % = 0 kr), kopplingen med en begränsad läsnyckel (sk_/pk_ vägras, saknade läsbehörigheter namnges, nyckeln krypterad och bara de fyra sista tecknen i klartext), byt nyckel, koppla från, valfri webhook och inläsningsloggen.
+- Import av kunder, produkter, priser, kuponger och prenumerationer, sedan händelser med tre dagars överlapp; varje hämtning görs före den korta transaktionen som skriver och tar ledger-låset. Återupptas från sidan där den stannade; 429/5xx försöks igen med backoff; 401 avslutar kopplingen och meddelar.
+- Prenumerationer blir STRIPE_SUBSCRIPTION-versioner (en per ändring, samma versioner i vilken ordning händelserna än kommer). Nolldecimalvalutor räknas om rätt. En Stripe-kund som inte är kopplad räknas som egen kund och en senare koppling bokas som rättelse; stängda månader ändras inte.
+- Kundmatchning: kundnummer i metadata och momsnummer kopplar (granskas), e-post och namn föreslår; Skapa kund. Webhook med Stripe-signatur och 404 för allt som skulle avslöja ett företag; A:s token når aldrig B.
+- Ingen bokföring ändras (systemdokumentationen orörd), inget API (OpenAPI orört). Manualartikeln `fakturering/stripe-i-aterkommande-intakter` med två skärmbilder från demodata (konsultbolagets påhittade Stripe-konto, som saknar nyckel och aldrig anropar Stripe), ändringslogg, färdplan, README, GDPR-dokumenten.
+- Hela sviten (PGTZ=UTC): 9 450 gröna, 1 röd (deadlock i `DatabaseGrantsTest`, den kända låsningen i databasrollernas testharness; 21/21 gröna ensam), 8 todos, 6 hoppade. phpstan nivå 8 inga fel, pint grönt, `npm test` 116 gröna.
+Open legal-verify items: intresseavvägningen för att läsa Stripe-kunder (art. 6.1 f), om biträdesavtalets ändamål täcker det, information till Stripe-kunderna (art. 14), om integritetspolicyn ska få en version för Stripe; behörighetsnamnen i Stripes nyckelformulär (verifieras med en testnyckel).
+- Granskningsrättelser (säkerhet och juridik): installationens brytare **Stripe i NONOX Connect** i /hq, av från början (allt utom frånkoppling, registerutdrag och radering står still medan den är av); en nyckel som byttes revokeras aldrig av en gammal körning (key_version); radering, anonymisering och borttagning i Stripe töms och läses inte in igen (erased_at), raderar de hämtade prenumerationerna och ger registerutdrag; bara de skatte-id som matchningen använder sparas; sidans listor sidindelade; webhooken begränsas också per adress.
+Owner decisions: om NONOX Connect-brytaren är företagets (byggd så) eller driftbolagets på /hq; när biträdesavtalet nämner NONOX SaaS och Stripe så att brytaren i /hq kan slås på för den drivna tjänsten.
+Next package: steg 3a, Stripes utbetalningar och avgifter.
+
+---
+
 Package: S1-P9, noter och förvaltningsberättelse för K3 (mindre AB) (ADR-059)
 Status: done (beta, Bokslut → Årsredovisning)
 Evidence: `tests/Feature/AnnualReport/K3/K3NotesTest.php`, `K3NotesFixtureTest.php`, `K3NoteOverridesTest.php`, `K3ManagementReportTest.php`.

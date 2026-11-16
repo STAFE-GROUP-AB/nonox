@@ -21,6 +21,7 @@ use App\Models\CompanyAccountingPolicy;
 use App\Models\CompanyGuideStep;
 use App\Models\CompanyHolding;
 use App\Models\CompanyModule;
+use App\Models\ConnectAddon;
 use App\Models\CostCenter;
 use App\Models\Customer;
 use App\Models\DeadlineCalendarFeed;
@@ -268,6 +269,11 @@ use App\Modules\Saas\Models\SaasCustomerMonth;
 use App\Modules\Saas\Models\SaasEstimate;
 use App\Modules\Saas\Models\SaasMonth;
 use App\Modules\Saas\Models\SaasSeparatePair;
+use App\Modules\Saas\Stripe\Models\StripeConnection;
+use App\Modules\Saas\Stripe\Models\StripeCustomerLink;
+use App\Modules\Saas\Stripe\Models\StripeEvent;
+use App\Modules\Saas\Stripe\Models\StripeObject;
+use App\Modules\Saas\Stripe\Models\StripeSyncRun;
 use App\Modules\StaffLedger\Models\Device as StaffLedgerDevice;
 use App\Modules\StaffLedger\Models\Entry as StaffLedgerEntry;
 use App\Modules\StaffLedger\Models\Location as StaffLedgerLocation;
@@ -437,6 +443,12 @@ const COMPANY_SCOPED_MODELS = [
     SaasCorrection::class => ['booked_month' => '2026-11-01', 'affects_month' => '2026-10-01', 'customer_id' => 1, 'amount_ore' => -10_000],
     SaasEstimate::class => ['month' => '2026-09-01', 'customer_id' => 1, 'mrr_ore' => 50_000, 'invoice_ids' => []],
     SaasSeparatePair::class => ['crm_agreement_id' => 1, 'recurring_invoice_id' => 'hemligt-avtal'],
+    ConnectAddon::class => ['connection' => 'stripe', 'enabled' => true],
+    StripeConnection::class => 'stripeConnectionAttributes',
+    StripeObject::class => 'stripeObjectAttributes',
+    StripeCustomerLink::class => 'stripeCustomerLinkAttributes',
+    StripeEvent::class => 'stripeEventAttributes',
+    StripeSyncRun::class => 'stripeSyncRunAttributes',
     PlanningArea::class => ['name' => 'Hemligt kök', 'colour' => '#e4572e'],
     PlanningSkill::class => ['name' => 'Hemlig kompetens'],
     PlanningEmployeeSkill::class => 'planningEmployeeSkillAttributes',
@@ -663,6 +675,36 @@ function staffLedgerEntryAttributes(): array
         'flags' => [],
         'hash' => str_repeat('a', 64),
     ];
+}
+
+/** @return array<string, mixed> */
+function stripeConnectionAttributes(): array
+{
+    return ['status' => 'DISCONNECTED', 'account_id' => 'acct_hemligt'.random_int(1, 1_000_000), 'key_last4' => 'abcd', 'webhook_token' => Str::random(48), 'connected_at' => now()];
+}
+
+/** @return array<string, mixed> */
+function stripeObjectAttributes(): array
+{
+    return ['connection_id' => StripeConnection::create(stripeConnectionAttributes())->id, 'type' => 'subscription', 'stripe_id' => 'sub_hemlig', 'payload' => ['id' => 'sub_hemlig'], 'sha256' => str_repeat('a', 64), 'fetched_at' => now()];
+}
+
+/** @return array<string, mixed> */
+function stripeCustomerLinkAttributes(): array
+{
+    return ['connection_id' => StripeConnection::create(stripeConnectionAttributes())->id, 'stripe_customer_id' => 'cus_hemlig', 'status' => 'UNLINKED', 'name' => 'Hemlig Stripekund'];
+}
+
+/** @return array<string, mixed> */
+function stripeEventAttributes(): array
+{
+    return ['connection_id' => StripeConnection::create(stripeConnectionAttributes())->id, 'event_id' => 'evt_hemlig', 'type' => 'customer.updated', 'event_created' => 1, 'received_from' => 'LIST', 'received_at' => now()];
+}
+
+/** @return array<string, mixed> */
+function stripeSyncRunAttributes(): array
+{
+    return ['connection_id' => StripeConnection::create(stripeConnectionAttributes())->id, 'kind' => 'INITIAL', 'status' => 'OK', 'started_at' => now()];
 }
 
 function saasContractVersionAttributes(): array
@@ -2150,7 +2192,7 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [WorkshopWaitingFlag::class, PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class];
+const NEVER_UPDATED = [WorkshopWaitingFlag::class, PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class, StripeObject::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
 const APPEND_ONLY = [WorkshopTimeEntry::class, WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];

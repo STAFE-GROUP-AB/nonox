@@ -88,6 +88,8 @@ final class DatabaseGrants
         'company_registry_codes' => GrantDecision::NoDelete,
         'company_registry_exclusions' => GrantDecision::ReadWrite,
         'company_registry_imports' => GrantDecision::ReadWrite,
+        // The NONOX Connect add-on switch per company and connection (ADR-064 §2, ADR-080 step 2).
+        'connect_addons' => GrantDecision::ReadWrite,
         'connect_api_keys' => GrantDecision::ReadWrite,
         'connect_grants' => GrantDecision::ReadWrite,
         'connect_idempotency_keys' => GrantDecision::ReadWrite,
@@ -318,6 +320,12 @@ final class DatabaseGrants
         'stock_receipt_lines' => GrantDecision::ReadWrite,
         'stock_receipts' => GrantDecision::ReadWrite,
         'stock_valuations' => GrantDecision::AppendOnly,
+        // Stripe in NONOX Connect (ADR-080 step 2). The raw objects are never changed (trigger), only pruned after a disconnect.
+        'stripe_connections' => GrantDecision::ReadWrite,
+        'stripe_customer_links' => GrantDecision::ReadWrite,
+        'stripe_events' => GrantDecision::ReadWrite,
+        'stripe_objects' => GrantDecision::AppendAndPrune,
+        'stripe_sync_runs' => GrantDecision::ReadWrite,
         'supplier_invoice_rows' => GrantDecision::ReadWrite,
         'supplier_invoices' => GrantDecision::ReadWrite,
         'supplier_payment_batch_items' => GrantDecision::NoDelete,

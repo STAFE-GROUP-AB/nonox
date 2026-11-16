@@ -54,6 +54,8 @@ class Settings extends Component implements SpansCompanies
 
     public bool $migrationGuidesPublic = false;
 
+    public bool $stripeEnabled = false;
+
     public function mount(): void
     {
         $this->fill(self::stored());
@@ -73,6 +75,7 @@ class Settings extends Component implements SpansCompanies
             'security_contact' => $this->securityContact,
             'demo_enabled' => $this->demoEnabled,
             'migration_guides_public' => $this->migrationGuidesPublic,
+            'stripe_enabled' => $this->stripeEnabled,
         ]);
 
         $this->fill(self::stored());
@@ -235,7 +238,7 @@ class Settings extends Component implements SpansCompanies
         });
     }
 
-    /** @return array{operatorCompanyId: string, waitlistOpen: bool, registrationOpen: bool, securityContact: string, demoEnabled: bool, migrationGuidesPublic: bool} */
+    /** @return array{operatorCompanyId: string, waitlistOpen: bool, registrationOpen: bool, securityContact: string, demoEnabled: bool, migrationGuidesPublic: bool, stripeEnabled: bool} */
     private static function stored(): array
     {
         $settings = InstanceSettings::current();
@@ -249,6 +252,7 @@ class Settings extends Component implements SpansCompanies
             'securityContact' => $settings->securityContact() ?? '',
             'demoEnabled' => $settings->demoEnabled(),
             'migrationGuidesPublic' => $settings->migrationGuidesPublic(),
+            'stripeEnabled' => $settings->stripeEnabled(),
         ];
     }
 }

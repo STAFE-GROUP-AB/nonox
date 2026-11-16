@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Saas\Http\SaasCsvController;
+use App\Modules\Saas\Stripe\Http\StripeCustomerExportController;
 use Illuminate\Support\Facades\Route;
 
 // Behind module:saas: every page answers 404 while the module is off (ADR-080 §1).
@@ -20,6 +21,10 @@ Route::view('/aterkommande-intakter/uppsagda', 'saas::page', ['livewire' => 'saa
 Route::view('/aterkommande-intakter/rattelser', 'saas::page', ['livewire' => 'saas.corrections'])->name('saas.corrections');
 Route::view('/aterkommande-intakter/manader', 'saas::page', ['livewire' => 'saas.months'])->name('saas.months');
 Route::view('/aterkommande-intakter/kallor', 'saas::page', ['livewire' => 'saas.sources'])->name('saas.sources');
+Route::view('/aterkommande-intakter/stripe', 'saas::page', ['livewire' => 'saas.stripe'])->name('saas.stripe');
+Route::get('/aterkommande-intakter/stripe/registerutdrag/{link}', StripeCustomerExportController::class)
+    ->whereNumber('link')
+    ->name('saas.stripe.export');
 Route::get('/aterkommande-intakter/export/{list}', SaasCsvController::class)
     ->whereIn('list', SaasCsvController::LISTS)
     ->name('saas.export');

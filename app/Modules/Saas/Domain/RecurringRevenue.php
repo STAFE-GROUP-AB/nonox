@@ -106,7 +106,7 @@ final class RecurringRevenue
                 continue;
             }
 
-            if ($version->excluded === ExclusionReason::CrmOff) {
+            if ($version->excluded?->isSourceOff() === true) {
                 $sourceOff[$key] = $version->customerId;
 
                 continue;

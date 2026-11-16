@@ -20,6 +20,7 @@ use App\Modules\Saas\Domain\RevenueLine;
 use App\Modules\Saas\Domain\SourceType;
 use App\Modules\Saas\Domain\VersionCause;
 use App\Modules\Saas\Models\SaasContractVersion;
+use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -280,6 +281,97 @@ final class ContractVersions
         }
 
         return $next;
+    }
+
+    /**
+     * A contract from outside NONOX (a Stripe subscription, ADR-080 §7) as it
+     * was fetched. The first version is effective from the contract's start
+     * (its history before the fetch is unknown, as with a backfill); a later
+     * one from today, the day the change became known. Written only when what
+     * counts changed, so fetching the same state twice, or in another order,
+     * writes nothing new. Takes the ledger lock: the caller fetches first and
+     * calls this inside a short transaction of its own.
+     *
+     * @param  array{customer_id: ?int, status: ContractStatus, starts_on: ?string, cancel_effective_on: ?string, excluded: ?ExclusionReason, lines: list<array<string, mixed>>, cause: VersionCause, source_ref: array<string, mixed>}  $state
+     */
+    public function recordExternal(SourceType $type, string $sourceId, array $state, ?CarbonImmutable $today = null): ?SaasContractVersion
+    {
+        $today ??= CarbonImmutable::today();
+        self::lock((int) CurrentCompany::id());
+        $previous = self::latest($type, $sourceId);
+        $cause = $state['cause'];
+
+        if ($previous !== null && $cause === VersionCause::Import) {
+            $cause = VersionCause::Changed;
+        }
+
+        return $this->append([
+            'source_type' => $type,
+            'source_id' => $sourceId,
+            'customer_id' => $state['customer_id'],
+            'effective_from' => $previous === null ? ($state['starts_on'] ?? $today->toDateString()) : $today->toDateString(),
+            'recorded_by' => null,
+            'cause' => $cause,
+            'status' => $state['status'],
+            'starts_on' => $state['starts_on'],
+            'cancel_effective_on' => $state['cancel_effective_on'],
+            'excluded' => $state['excluded'],
+            'lines' => $state['lines'],
+            'source_ref' => $state['source_ref'],
+        ], $previous);
+    }
+
+    /**
+     * Moves a contract's whole known timeline to another customer (ADR-080
+     * §7.5): a Stripe customer linked to a NONOX customer, or unlinked again.
+     * Every version still in force on its own date is written again, in date
+     * order, with the new customer and otherwise unchanged, so the contract's
+     * history is the same under the new customer from its first day. A closed
+     * month is never touched: the next recompute books the difference as
+     * Rättelse in the first open month (SA-R22). Takes the ledger lock.
+     *
+     * @param  list<string>  $sourceIds  the contracts to move, read in one query (review P3-6)
+     * @return int the versions written
+     */
+    public function moveToCustomer(SourceType $type, array $sourceIds, ?int $customerId, ?int $userId): int
+    {
+        if ($sourceIds === []) {
+            return 0;
+        }
+
+        self::lock((int) CurrentCompany::id());
+
+        $bySource = SaasContractVersion::query()
+            ->where('source_type', $type->value)
+            ->whereIn('source_id', $sourceIds)
+            ->orderBy('id')
+            ->get()
+            ->groupBy('source_id');
+        $written = 0;
+
+        foreach ($bySource as $sourceId => $versions) {
+            $visible = self::pending($versions->values(), '0000-00-00');
+
+            if ($visible === [] || collect($visible)->every(fn (SaasContractVersion $version): bool => $version->customer_id === $customerId)) {
+                continue;
+            }
+
+            foreach ($visible as $version) {
+                $this->write([
+                    'source_type' => $type,
+                    'source_id' => (string) $sourceId,
+                    ...self::state($version),
+                    'customer_id' => $customerId,
+                    'effective_from' => $version->effective_from->toDateString(),
+                    'recorded_by' => $userId,
+                    'cause' => $version->cause,
+                    'source_ref' => [...(array) $version->source_ref, 'moved_from_version' => $version->id],
+                ]);
+                $written++;
+            }
+        }
+
+        return $written;
     }
 
     private static function crmCancel(Agreement $agreement): ?string

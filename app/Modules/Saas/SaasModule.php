@@ -115,6 +115,7 @@ final class SaasModule implements IsNew, Module, ProvidesDeadlines
                     ['label' => __('Rättelser'), 'route' => 'saas.corrections', 'active' => ['saas.corrections']],
                     ['label' => __('Månader'), 'route' => 'saas.months', 'active' => ['saas.months']],
                     ['label' => __('Källor'), 'route' => 'saas.sources', 'active' => ['saas.sources']],
+                    ['label' => __('Stripe'), 'route' => 'saas.stripe', 'active' => ['saas.stripe']],
                 ],
             ],
         ];

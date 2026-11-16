@@ -296,6 +296,8 @@ fakturering/fakturaunderlag-fran-arbetsorder: { foretag: hantverkare, rutt: work
 fakturering/aterkommande-intakter: { foretag: konsult, rutt: saas.overview }
 fakturering/aterkommande-intakter-rorelser: { foretag: konsult, rutt: saas.movements }
 fakturering/stang-en-manad-i-aterkommande-intakter: { foretag: konsult, rutt: saas.months }
+fakturering/stripe-i-aterkommande-intakter: { foretag: konsult, rutt: saas.stripe, text: Appstudion }
+fakturering/stripe-i-aterkommande-intakter-kunder: { foretag: konsult, rutt: saas.stripe, text: Appstudion, visa: '#granska' }
 fakturering/betalningsplan: { foretag: hantverkare, rutt: workOrders.show, modell: { tabell: work_orders, dar: { title: 'Altan med trappa' } }, visa: 'text=Betalningsplan' }
 bokslut/pagaende-arbeten: { foretag: hantverkare, rutt: workOrders.ongoing }
 

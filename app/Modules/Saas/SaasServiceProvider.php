@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Saas;
 
+use App\Events\CustomerAnonymised;
 use App\Events\RecurringInvoiceChanged;
 use App\Events\RecurringInvoiceStatusChanged;
 use App\Http\Middleware\EnsureUserHasCompany;
@@ -23,8 +24,16 @@ use App\Modules\Saas\Livewire\MovementsPage;
 use App\Modules\Saas\Livewire\OverviewPage;
 use App\Modules\Saas\Livewire\ScheduledPage;
 use App\Modules\Saas\Livewire\SourcesPage;
+use App\Modules\Saas\Livewire\StripePage;
+use App\Modules\Saas\Stripe\Actions\PruneStripe;
+use App\Modules\Saas\Stripe\Console\SyncStripeCommand;
+use App\Modules\Saas\Stripe\Http\StripeWebhookController;
+use App\Modules\Saas\Stripe\Support\StripeSleeper;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -39,6 +48,7 @@ class SaasServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->make(ModuleRegistry::class)->register(new SaasModule);
+        $this->app->singleton(StripeSleeper::class);
     }
 
     public function boot(): void
@@ -49,15 +59,19 @@ class SaasServiceProvider extends ServiceProvider
         Event::listen(RecurringInvoiceChanged::class, [RecordContractVersion::class, 'recurringInvoice']);
         Event::listen(RecurringInvoiceStatusChanged::class, [RecordContractVersion::class, 'recurringInvoiceStatus']);
         Event::listen(CrmAgreementChanged::class, [RecordContractVersion::class, 'crmAgreement']);
+        // A customer anonymised on request: the Stripe customers linked to it are cleared at once (ADR-080 §8).
+        Event::listen(CustomerAnonymised::class, [PruneStripe::class, 'customerAnonymised']);
 
         if ($this->app->runningInConsole()) {
-            $this->commands([RecomputeSaasCommand::class, VerifySaasCommand::class, CloseSaasMonthCommand::class]);
+            $this->commands([RecomputeSaasCommand::class, VerifySaasCommand::class, CloseSaasMonthCommand::class, SyncStripeCommand::class]);
         }
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             // After midnight, so the current month follows the calendar; verification after ledger:verify.
             $schedule->command('saas:recompute')->dailyAt('02:20')->withoutOverlapping();
             $schedule->command('saas:verify')->dailyAt('03:50')->withoutOverlapping();
+            // Stripe (ADR-080 §7.3): changes at most an hour old without a webhook.
+            $schedule->command('saas:stripe-sync')->hourlyAt(17)->withoutOverlapping();
         });
 
         Livewire::component('saas.overview', OverviewPage::class);
@@ -70,8 +84,20 @@ class SaasServiceProvider extends ServiceProvider
         Livewire::component('saas.corrections', CorrectionsPage::class);
         Livewire::component('saas.months', MonthsPage::class);
         Livewire::component('saas.sources', SourcesPage::class);
+        Livewire::component('saas.stripe', StripePage::class);
 
         $middleware = ['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.SaasModule::KEY];
         Route::middleware($middleware)->group(__DIR__.'/routes/web.php');
+
+        // Technical, never seen by users (ADR-080 §1, §7.4): no session, no CSRF, throttled per token.
+        RateLimiter::for('stripe-webhook', fn (Request $request): array => [
+            Limit::perMinute(300)->by('stripe-webhook:'.(string) $request->route('token')),
+            // Also per address, so guessing tokens from one place is slow (review P3-10).
+            Limit::perMinute(600)->by('stripe-webhook-ip:'.(string) $request->ip()),
+        ]);
+        Route::post('/webhooks/stripe/{token}', StripeWebhookController::class)
+            ->where('token', '[A-Za-z0-9]{48}')
+            ->middleware('throttle:stripe-webhook')
+            ->name('saas.stripe.webhook');
     }
 }

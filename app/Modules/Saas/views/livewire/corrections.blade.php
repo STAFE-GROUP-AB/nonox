@@ -32,7 +32,7 @@
                             <tr>
                                 <td class="py-2 pr-4 whitespace-nowrap">{{ Months::label($correction->booked_month->toDateString()) }}</td>
                                 <td class="py-2 pr-4 whitespace-nowrap">{{ Months::label($correction->affects_month->toDateString()) }}</td>
-                                <td class="py-2 pr-4"><a href="{{ route('saas.customers.show', ['customer' => $correction->customer_id]) }}" class="font-medium text-ink hover:text-accent-700 hover:underline">{{ $correction->customer?->name ?? __('Kund :id', ['id' => $correction->customer_id]) }}</a></td>
+                                <td class="py-2 pr-4">@include('saas::partials.customer-link', ['id' => $correction->customer_id, 'customer' => $correction->customer])</td>
                                 <td class="py-2 pr-4 text-right"><x-ui.amount :money="Money::ofOre($correction->amount_ore)" /></td>
                                 <td class="py-2 tabular-nums whitespace-nowrap">{{ $correction->created_at?->timezone('Europe/Stockholm')->format('Y-m-d H:i') }}</td>
                             </tr>
