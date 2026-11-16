@@ -528,4 +528,20 @@ describe('review fixes', function () {
             ->assertSet('industry', 'retail')
             ->assertSet('employer_registered', true);
     });
+
+    it('clears an earlier company\'s name when the next lookup does not show its name', function () {
+        $second = CompanyFactory::organisationNumber();
+        localRegistryRow($this->number->digits, ['name' => 'Först AB']);
+        localRegistryRow($second->digits, ['name' => 'Andra AB', 'address_line1' => 'ANDRAGATAN 2']);
+        RegistryExclusion::create(['org_number' => $second->digits, 'field' => RegistryExclusion::NAME, 'reason' => 'OBJECTION']);
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(CreateCompanyForm::class)
+            ->set('org_number', $this->number->digits)
+            ->assertSet('name', 'Först AB')
+            ->set('org_number', $second->digits)
+            ->call('lookUpCompany')
+            ->assertSet('name', '')
+            ->assertSet('address_line1', 'Andragatan 2');
+    });
 });

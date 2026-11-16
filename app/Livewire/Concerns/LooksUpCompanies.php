@@ -188,6 +188,14 @@ trait LooksUpCompanies
 
         $this->registryHints = $this->applyRegistrySuggestions($found);
 
+        // The earlier company's name, filled in by a lookup, must not stay next to this company's address when its name is not shown.
+        $namePath = $fields['name'] ?? null;
+
+        if ($found->nameExcluded && $namePath !== null && isset($this->registryFilled['name']) && trim((string) data_get($this, $namePath)) === $this->registryFilled['name']) {
+            data_set($this, $namePath, '');
+            unset($this->registryFilled['name']);
+        }
+
         foreach ($this->proposal($found) as $key => $value) {
             if (! isset($fields[$key])) {
                 continue;
