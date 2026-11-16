@@ -536,3 +536,18 @@ of its name instead of paging, and choose how many hits a page shows.
 3. **Credit data**: when a contract exists, implement `CreditData` for the
    provider and set `CREDIT_DATA_DRIVER`.
 4. Confirm the `TODO(legal-verify)` items above with the lawyer.
+
+## Addendum 2026-11-16: filling in the user's own forms
+
+The register has a second purpose: when a user types an organisation number in
+a form of their own (a new company in onboarding, the company's details, a
+customer or a supplier), the name, address and legal form of that one company
+are proposed from the register, and for a new company also an industry (from
+SNI), whether it has employees (from the employee class) and a hint about K2
+(ADR-035, addendum). The data is the same public data, the user asks for one
+company at a time and decides what is saved, a personal number is never looked
+up here, and a company with an exclusion (`company_registry_exclusions`) is
+never returned. The lookup is bound by the limits of ADR-035. The register
+entry in `docs/gdpr/registerforteckning.md` names the purpose; the privacy
+policy's purpose column and its paragraph "Uppgifter som vi inte har fått från dig" need a matching sentence, proposed in the
+owner's pending legal text and not yet published.

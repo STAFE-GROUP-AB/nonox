@@ -17,6 +17,9 @@
 #   del        a CSS selector: crop the image to that element
 #   klick      CSS selectors to click in order first (a tab, a dialog, a
 #              menu); text=Moduler clicks the button or link with that text
+#   fyll       a map of CSS selector to text typed into that field first,
+#              then blur (so a blur-bound field such as an organisation
+#              number runs its lookup), before the clicks
 #   visa       a CSS selector to scroll to the top of the window
 #   anvandare  sign in as this made-up user (…@example.test) instead of the
 #              owner, gast for no one signed in, or portal:<address> for a
@@ -27,7 +30,7 @@
 #              customer portal address
 
 kom-igang/oversikten: { foretag: restaurang, rutt: dashboard }
-kom-igang/skapa-ett-foretag: { foretag: konsult, rutt: teams.create }
+kom-igang/skapa-ett-foretag: { foretag: konsult, rutt: teams.create, fyll: { '#org_number': '5599999991' }, klick: ['[data-company-lookup] button'], del: 'form[wire\:submit="create"]', text: Enligt NONOX företagsregister }
 kom-igang/din-profil: { foretag: konsult, rutt: profile.show }
 kom-igang/oversikten-mobil: { foretag: cafe, rutt: dashboard, enhet: mobil }
 kom-igang/krypterad-chatt: { foretag: konsult, rutt: dashboard, klick: ['[data-chat-trigger]', 'text=Starta chatt'] }

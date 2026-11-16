@@ -38,6 +38,9 @@ trait LooksUpCompanies
 
     public string $registryNotice = '';
 
+    /** @var list<string> non-blocking hints from a lookup, e.g. that a company may be too large for K2 */
+    public array $registryHints = [];
+
     /**
      * Which of the register's values this form has, and where they go:
      * name, address_line1, address_line2, postal_code, city, legal_form.
@@ -115,17 +118,27 @@ trait LooksUpCompanies
 
     public function registrySourceName(): string
     {
-        return CompanyRegistries::make()?->sourceName() ?? '';
+        return (CompanyRegistries::local() ?? CompanyRegistries::make())?->sourceName() ?? '';
+    }
+
+    /**
+     * Suggestions beyond the shared fields (industry, employer, hints),
+     * for a form that wants them: only onboarding does. Returns the hints to show.
+     *
+     * @return list<string>
+     */
+    protected function applyRegistrySuggestions(RegisteredCompany $found): array
+    {
+        return [];
     }
 
     private function runCompanyLookup(bool $automatic): void
     {
         $this->registryNotice = '';
         $this->registryConflicts = [];
+        $this->registryHints = [];
 
-        $registry = CompanyRegistries::make();
-
-        if ($registry === null) {
+        if (! CompanyRegistries::isConfigured()) {
             if (! $automatic) {
                 $this->registryNotice = __('Hämtning av företagsuppgifter är inte påslagen i den här installationen.');
             }
@@ -145,8 +158,11 @@ trait LooksUpCompanies
             return;
         }
 
+        $source = (string) $found->sourceName;
+
         $this->registryResult = [
-            'source' => $registry->sourceName(),
+            'source' => $source,
+            'source_date' => self::swedishDate($found->sourceDate),
             'name' => $found->name,
             'legal_form' => $found->legalFormText,
             'registered_on' => $found->registeredOn,
@@ -157,6 +173,8 @@ trait LooksUpCompanies
         $fields = $this->registryFields();
         $presets = $this->registryPresets();
         $filled = 0;
+
+        $this->registryHints = $this->applyRegistrySuggestions($found);
 
         foreach ($this->proposal($found) as $key => $value) {
             if (! isset($fields[$key])) {
@@ -181,8 +199,8 @@ trait LooksUpCompanies
         }
 
         $message = $this->registryConflicts === []
-            ? __('Uppgifterna är hämtade från :source. Kontrollera dem innan du sparar.', ['source' => $registry->sourceName()])
-            : __('Uppgifterna är hämtade från :source. Några skiljer sig från det du har skrivit – välj vad som ska gälla.', ['source' => $registry->sourceName()]);
+            ? __('Uppgifterna är hämtade från :source. Kontrollera dem innan du sparar.', ['source' => $source])
+            : __('Uppgifterna är hämtade från :source. Några skiljer sig från det du har skrivit – välj vad som ska gälla.', ['source' => $source]);
 
         if ($filled > 0 || $this->registryConflicts !== []) {
             $this->dispatch('toast', message: $message, type: 'success');
@@ -194,12 +212,24 @@ trait LooksUpCompanies
     {
         return array_filter([
             'name' => $found->name,
-            'address_line1' => (string) $found->street,
-            'address_line2' => (string) $found->coAddress,
+            'address_line1' => (string) $found->formattedStreet(),
+            'address_line2' => (string) $found->formattedCoAddress(),
             'postal_code' => (string) $found->formattedPostalCode(),
             'city' => (string) $found->formattedCity(),
             'legal_form' => (string) $found->legalForm()?->value,
         ], fn (string $value): bool => $value !== '');
+    }
+
+    /** "4 nov 2026" for a date as Y-m-d, or null. */
+    public static function swedishDate(?string $date): ?string
+    {
+        if ($date === null || preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $date, $m) !== 1) {
+            return null;
+        }
+
+        $months = ['jan', 'feb', 'mars', 'apr', 'maj', 'juni', 'juli', 'aug', 'sep', 'okt', 'nov', 'dec'];
+
+        return (int) $m[3].' '.($months[(int) $m[2] - 1] ?? '').' '.$m[1];
     }
 
     /** The label for a proposal key and how its value reads, for the view. */

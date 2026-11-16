@@ -70,6 +70,9 @@
                         <option value="{{ $option->value }}">{{ $option->label() }}</option>
                     @endforeach
                 </select>
+                @isset($suggested['industry'])
+                    <p class="mt-1 text-sm text-accent-700" data-registry-suggestion="industry">{{ __('Förslag från registret, utifrån branschkoden :sni. Ändra om det inte stämmer.', ['sni' => $suggested['industry']]) }}</p>
+                @endisset
                 <x-input-error for="industry" class="mt-2" />
             </div>
         </div>
@@ -168,6 +171,9 @@
                 <x-checkbox wire:model="employer_registered" />
                 <span class="text-sm text-gray-700">{{ __('Företaget är registrerat som arbetsgivare') }}</span>
             </label>
+            @isset($suggested['employer_registered'])
+                <p class="text-sm text-accent-700" data-registry-suggestion="employer_registered">{{ __('Förslag från registret: :class. Ändra om det inte stämmer.', ['class' => $suggested['employer_registered']]) }}</p>
+            @endisset
         </div>
     </section>
 

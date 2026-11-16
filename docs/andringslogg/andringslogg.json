@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-16-foretagsuppgifter-fran-nonox-register",
+      "datum": "2026-11-16T00:30:00+01:00",
+      "rubrik": "Företagsuppgifter fylls i från NONOX eget företagsregister",
+      "beskrivning": "När du skriver organisationsnumret fylls namn, adress och företagsform i från NONOX företagsregister, så det fungerar utan uppgifter från Bolagsverket. När du skapar ett företag föreslås också bransch och om företaget har anställda, och du får en notis om företaget kan vara för stort för K2.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-15-branschsida-tillverkande-foretag",
       "datum": "2026-11-15T13:40:00+01:00",
       "rubrik": "Ny branschsida för tillverkande företag",

@@ -18,8 +18,9 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Looks an organisation number up in the installation's company register
- * (ADR-035) and returns what it says, for a form to propose. Nothing is
+ * Looks an organisation number up in NONOX's own company register and,
+ * failing that (or for a personal number), in the installation's API
+ * register (ADR-035 and its addendum) and returns what it says, for a form to propose. Nothing is
  * saved here: the user sees the answer and saves the form.
  *
  * The number is checked with Luhn first, so a typo never reaches the
@@ -38,9 +39,7 @@ class LookUpCompany
     /** @throws ValidationException */
     public function __invoke(User $user, ?Company $company, string $input, string $field = 'org_number'): RegisteredCompany
     {
-        $registry = CompanyRegistries::make();
-
-        if ($registry === null) {
+        if (! CompanyRegistries::isConfigured()) {
             throw ValidationException::withMessages([$field => __('Hämtning av företagsuppgifter är inte påslagen i den här installationen.')]);
         }
 
@@ -54,18 +53,42 @@ class LookUpCompany
 
         $identity = self::identity($number, $input);
 
-        try {
-            $found = $this->find($registry, $identity);
-        } catch (RegistryUnavailable $exception) {
-            report($exception);
+        // NONOX's own register first, for organisation numbers only: it holds legal persons, never a sole trader's personal number.
+        $local = strlen($identity) === 10 ? CompanyRegistries::local() : null;
+        $asked = $local;
 
-            throw ValidationException::withMessages([$field => __(':source svarar inte just nu. Fyll i uppgifterna själv eller försök igen om en stund.', ['source' => $registry->sourceName()])]);
+        if ($local !== null) {
+            $found = $local->find($identity);
+
+            if ($found !== []) {
+                return $this->pick($found);
+            }
         }
 
-        if ($found === []) {
-            throw ValidationException::withMessages([$field => __(':source hittar inget företag med organisationsnumret :number.', ['source' => $registry->sourceName(), 'number' => $number->formatted()])]);
+        $registry = CompanyRegistries::make();
+
+        if ($registry !== null) {
+            $asked = $registry;
+
+            try {
+                $found = $this->find($registry, $identity);
+            } catch (RegistryUnavailable $exception) {
+                report($exception);
+
+                throw ValidationException::withMessages([$field => __(':source svarar inte just nu. Fyll i uppgifterna själv eller försök igen om en stund.', ['source' => $registry->sourceName()])]);
+            }
+
+            if ($found !== []) {
+                return $this->pick($found)->withSource($registry->sourceName());
+            }
         }
 
+        throw ValidationException::withMessages([$field => __(':source hittar inget företag med organisationsnumret :number.', ['source' => $asked?->sourceName() ?? '', 'number' => $number->formatted()])]);
+    }
+
+    /** @param  list<RegisteredCompany>  $found */
+    private function pick(array $found): RegisteredCompany
+    {
         return collect($found)->first(fn (RegisteredCompany $candidate): bool => $candidate->isActive()) ?? $found[0];
     }
 

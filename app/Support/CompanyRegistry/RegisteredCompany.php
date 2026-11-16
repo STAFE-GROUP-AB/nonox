@@ -28,6 +28,11 @@ final readonly class RegisteredCompany
         public ?string $registeredOn = null,
         public ?string $deregisteredOn = null,
         public array $proceedings = [],
+        public ?string $sourceName = null,
+        public ?string $sourceDate = null,
+        public ?string $sniCode = null,
+        public ?int $employeeClass = null,
+        public ?int $turnoverClass = null,
     ) {}
 
     /**
@@ -44,6 +49,10 @@ final readonly class RegisteredCompany
         $code = strtoupper((string) $this->legalFormCode);
         $text = mb_strtolower(trim((string) $this->legalFormText));
 
+        if (preg_match('/^\d{2}$/', $code) === 1) {
+            return $this->legalFormFromScbCode($code);
+        }
+
         return match (true) {
             $code === 'AB' || $text === 'aktiebolag' => LegalForm::Ab,
             $code === 'E' || $text === 'enskild näringsidkare' => LegalForm::Ef,
@@ -54,6 +63,43 @@ final readonly class RegisteredCompany
             str_contains($text, 'stiftelse') => LegalForm::Stiftelse,
             default => null,
         };
+    }
+
+    /**
+     * SCB's two-digit JurForm, as the company register holds it (RegistryCodes::LEGAL_FORMS).
+     * SCB's code 31 covers handelsbolag and kommanditbolag together, so the
+     * name decides: the firm of a kommanditbolag must contain "kommanditbolag"
+     * or "KB", that of a handelsbolag "handelsbolag" or "HB". A name that
+     * says neither leaves the form unproposed.
+     *
+     * TODO(legal-verify): confirm the firm-name rule in firmalagen (2018:1653) for HB and KB.
+     */
+    private function legalFormFromScbCode(string $code): ?LegalForm
+    {
+        return match ($code) {
+            '49' => LegalForm::Ab,
+            '51', '53' => LegalForm::EkonomiskForening,
+            '61' => LegalForm::IdeellForening,
+            '71', '72' => LegalForm::Stiftelse,
+            '31' => $this->partnershipForm(),
+            default => null,
+        };
+    }
+
+    private function partnershipForm(): ?LegalForm
+    {
+        $name = mb_strtolower($this->name);
+
+        return match (true) {
+            str_contains($name, 'kommanditbolag') || preg_match('/(^|[\s,.])kb\.?($|[\s,.])/u', $name) === 1 => LegalForm::Kb,
+            str_contains($name, 'handelsbolag') || preg_match('/(^|[\s,.])hb\.?($|[\s,.])/u', $name) === 1 => LegalForm::Hb,
+            default => null,
+        };
+    }
+
+    public function withSource(string $name, ?string $date = null): self
+    {
+        return self::fromArray([...$this->toArray(), 'sourceName' => $name, 'sourceDate' => $date]);
     }
 
     public function isActive(): bool
@@ -71,6 +117,29 @@ final readonly class RegisteredCompany
         }
 
         return substr($digits, 0, 3).' '.substr($digits, 3);
+    }
+
+    /** The street as written in an address: "SKÖNSTAVÄGEN 3 A" becomes "Skönstavägen 3 A". */
+    public function formattedStreet(): ?string
+    {
+        return self::sentenceCase($this->street);
+    }
+
+    public function formattedCoAddress(): ?string
+    {
+        return self::sentenceCase($this->coAddress);
+    }
+
+    /** Text in capitals ("SKÖNSTAVÄGEN 3 A") in normal case; text that already has lower case is left as it is. */
+    public static function sentenceCase(?string $text): ?string
+    {
+        if ($text === null || $text !== mb_strtoupper($text)) {
+            return $text;
+        }
+
+        $cased = mb_convert_case(mb_strtolower($text), MB_CASE_TITLE);
+
+        return (string) preg_replace('/\bC\/O\b/u', 'c/o', $cased);
     }
 
     /** The city as written in an address: registers often answer in capitals ("ESLÖV"). */
@@ -106,6 +175,11 @@ final readonly class RegisteredCompany
             registeredOn: $text('registeredOn'),
             deregisteredOn: $text('deregisteredOn'),
             proceedings: array_values(array_filter((array) ($data['proceedings'] ?? []), 'is_string')),
+            sourceName: $text('sourceName'),
+            sourceDate: $text('sourceDate'),
+            sniCode: $text('sniCode'),
+            employeeClass: isset($data['employeeClass']) && is_numeric($data['employeeClass']) ? (int) $data['employeeClass'] : null,
+            turnoverClass: isset($data['turnoverClass']) && is_numeric($data['turnoverClass']) ? (int) $data['turnoverClass'] : null,
         );
     }
 }

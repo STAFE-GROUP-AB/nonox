@@ -50,7 +50,7 @@ use Symfony\Component\Yaml\Yaml;
  * Not `php artisan serve`: it does not pass DB_DATABASE on to the server, which
  * then reads .env and the real database.
  *
- * @phpstan-type Shot array{foretag: string, rutt: string, modell?: string|array{tabell: string, dar?: array<string, scalar>}, fraga?: array<string, string>, enhet?: string, del?: string, klick?: list<string>, visa?: string, anvandare?: string, text?: string}
+ * @phpstan-type Shot array{foretag: string, rutt: string, modell?: string|array{tabell: string, dar?: array<string, scalar>}, fraga?: array<string, string>, enhet?: string, del?: string, klick?: list<string>, fyll?: array<string, string>, visa?: string, anvandare?: string, text?: string}
  */
 class ManualScreenshotsCommand extends Command
 {
@@ -143,6 +143,7 @@ class ManualScreenshotsCommand extends Command
                         'file' => public_path("bilder/manual/{$name}.webp"),
                         ...self::DEVICES[$shot['enhet'] ?? 'dator'],
                         'selector' => $shot['del'] ?? null,
+                        'fills' => $shot['fyll'] ?? [],
                         'clicks' => $shot['klick'] ?? [],
                         'reveal' => $shot['visa'] ?? null,
                         'expect' => $shot['text'] ?? $company->name,

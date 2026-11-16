@@ -17,7 +17,7 @@ SIE-filen innehåller bokföringen men inte registren, och inte fakturorna som f
 
 - Börja med de kunder du fakturerar oftast och de leverantörer du betalar oftast. Resten lägger du in när de behövs.
 - Under **Register → Kunder**, **Register → Leverantörer** och **Register → Artiklar**. Se [Kunder](/manual/fakturering/kunder).
-- Har installationen **Hämta uppgifter** hämtas namn och adress från Bolagsverket med organisationsnumret, så du slipper skriva av dem.
+- Har installationen **Hämta uppgifter** hämtas namn och adress från NONOX företagsregister eller Bolagsverket med organisationsnumret, så du slipper skriva av dem.
 
 Har ni en utvecklare kan registren också läggas in med NONOX öppna API; se [NONOX API](/manual/installningar/nonox-connect).
 
