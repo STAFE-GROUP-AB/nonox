@@ -34,7 +34,7 @@ Leverantören får nästa nummer i registrets egen nummerserie. Numren återanv�
 - **IBAN** ska börja med landskoden och **BIC** vara 8 eller 11 tecken.
 - **Kontot** måste finnas och vara aktivt i kontoplanen.
 
-## Hämta uppgifter från Bolagsverket
+## Hämta uppgifter från företagsregistret
 
 När NONOX har ett eget företagsregister eller har kopplats till Bolagsverkets register visas knappen **Hämta uppgifter** vid organisationsnumret. Den hämtar namn, adress, postnummer och ort.
 

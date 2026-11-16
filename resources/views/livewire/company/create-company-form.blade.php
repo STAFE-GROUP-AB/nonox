@@ -64,14 +64,14 @@
         <div class="grid gap-6 sm:grid-cols-2">
             <div>
                 <x-label for="industry" value="{{ __('Bransch (frivilligt)') }}" />
-                <select id="industry" class="{{ $select }}" wire:model="industry" aria-describedby="industry_help">
+                <select id="industry" class="{{ $select }}" wire:model="industry" aria-describedby="industry_help{{ isset($suggested['industry']) ? ' industry_suggestion' : '' }}">
                     <option value="">{{ __('Välj bransch') }}</option>
                     @foreach($industries as $option)
                         <option value="{{ $option->value }}">{{ $option->label() }}</option>
                     @endforeach
                 </select>
                 @isset($suggested['industry'])
-                    <p class="mt-1 text-sm text-accent-700" data-registry-suggestion="industry">{{ __('Förslag från registret, utifrån branschkoden :sni. Ändra om det inte stämmer.', ['sni' => $suggested['industry']]) }}</p>
+                    <p id="industry_suggestion" class="mt-1 text-sm text-accent-700" data-registry-suggestion="industry">{{ __('Förslag från registret, utifrån branschkoden :sni. Ändra om det inte stämmer.', ['sni' => $suggested['industry']]) }}</p>
                 @endisset
                 <x-input-error for="industry" class="mt-2" />
             </div>
@@ -168,11 +168,11 @@
             </label>
 
             <label class="flex items-center gap-3">
-                <x-checkbox wire:model="employer_registered" />
+                <x-checkbox wire:model="employer_registered" aria-describedby="{{ isset($suggested['employer_registered']) ? 'employer_suggestion' : '' }}" />
                 <span class="text-sm text-gray-700">{{ __('Företaget är registrerat som arbetsgivare') }}</span>
             </label>
             @isset($suggested['employer_registered'])
-                <p class="text-sm text-accent-700" data-registry-suggestion="employer_registered">{{ __('Förslag från registret: :class. Ändra om det inte stämmer.', ['class' => $suggested['employer_registered']]) }}</p>
+                <p id="employer_suggestion" class="text-sm text-accent-700" data-registry-suggestion="employer_registered">{{ __('Förslag från registret: :class. Ändra om det inte stämmer.', ['class' => $suggested['employer_registered']]) }}</p>
             @endisset
         </div>
     </section>

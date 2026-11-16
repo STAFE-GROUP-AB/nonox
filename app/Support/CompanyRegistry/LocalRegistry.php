@@ -28,21 +28,26 @@ final class LocalRegistry implements CompanyRegistry
 
     public function sourceName(): string
     {
-        return (string) __('NONOX företagsregister (Bolagsverket och SCB)');
+        return (string) __('NONOX företagsregister (bearbetade uppgifter från Bolagsverket och SCB)');
     }
 
     /** Whether the register has any rows. Only a yes is remembered, so a first import shows at once. */
     public static function hasRows(): bool
     {
-        if (Cache::get(self::HAS_ROWS_KEY) === true) {
+        // A yes is remembered for the request (in the container, so a test starts clean) and for ten minutes in the cache.
+        if (app()->bound(self::HAS_ROWS_KEY)) {
             return true;
         }
 
-        if (! RegistryCompany::query()->exists()) {
-            return false;
+        if (Cache::get(self::HAS_ROWS_KEY) !== true) {
+            if (! RegistryCompany::query()->exists()) {
+                return false;
+            }
+
+            Cache::put(self::HAS_ROWS_KEY, true, now()->addMinutes(10));
         }
 
-        Cache::put(self::HAS_ROWS_KEY, true, now()->addMinutes(10));
+        app()->instance(self::HAS_ROWS_KEY, true);
 
         return true;
     }
@@ -66,10 +71,12 @@ final class LocalRegistry implements CompanyRegistry
         }
 
         $proceeding = RegistryCodes::proceedings($row->proceedings);
-        $fetched = collect([$row->fetched_at, $row->bolagsverket_fetched_at])->filter()->max();
+        // The older of the two: the data is only as fresh as its oldest source.
+        $fetched = collect([$row->fetched_at, $row->bolagsverket_fetched_at])->filter()->min();
 
         return [new RegisteredCompany(
             name: (bool) $row->getAttribute('name_excluded') ? RegistryExclusion::replacementName($row->org_number) : $row->name,
+            nameExcluded: (bool) $row->getAttribute('name_excluded'),
             legalFormCode: $row->legal_form,
             legalFormText: RegistryCodes::legalForm($row->legal_form),
             street: $row->address_line1,

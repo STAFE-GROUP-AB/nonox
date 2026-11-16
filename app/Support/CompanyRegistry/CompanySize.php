@@ -43,9 +43,10 @@ final class CompanySize
      * limits apply to each of the two latest fiscal years, and the register's
      * turnover comes from the VAT returns.
      *
-     * TODO(legal-verify): confirm the limits in ÅRL (1999:1078) 1 kap. 3 §
-     * against the law text; the repository's ReportingFrameworkRules quotes
-     * them from BFNAR 2016:10.
+     * TODO(legal-verify): cite ÅRL (1999:1078) 1 kap. 3 § första stycket 4 verbatim
+     * (the numbers 50, 40 and 80 are confirmed) and watch the ongoing review of the
+     * size limits (dir. 2025); the repository's ReportingFrameworkRules quotes them
+     * from BFNAR 2016:10.
      */
     public static function likelyAboveK2Limits(?int $employeeClass, ?int $turnoverClass): bool
     {

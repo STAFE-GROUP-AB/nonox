@@ -20,7 +20,7 @@ Ha organisationsnumret till hands, och gärna besluten från Skatteverket om mom
 ## Så här gör du
 
 1. Logga in. Har du inget företag ännu kommer du direkt till **Kom igång**. Har du redan ett företag klickar du på företagets namn högst upp i menyn och väljer **Lägg till ett företag**.
-2. Skriv **Organisationsnummer**, med tio siffror. Är numret ett aktiebolag, en förening eller ett annat företag som finns i NONOX företagsregister fylls namn, adress och företagsform i av sig själv när du lämnar fältet. Klicka annars på **Hämta uppgifter** om knappen finns; se [Hämta uppgifter från företagsregistret](#hamta-uppgifter-fran-foretagsregistret). Finns ingen knapp, eller hittas inte numret, väljer du **Företagsform** och skriver **Företagsnamn**, **Adress (frivilligt)**, **Postnummer** och **Ort** själv.
+2. Skriv **Organisationsnummer**, med tio siffror. Är numret ett aktiebolag, en förening eller ett annat företag som finns i NONOX företagsregister fylls namn och adress, och oftast företagsform, i av sig själv när du lämnar fältet. Klicka annars på **Hämta uppgifter** om knappen finns; se [Hämta uppgifter från företagsregistret](#hamta-uppgifter-fran-foretagsregistret). Finns ingen knapp, eller hittas inte numret, väljer du **Företagsform** och skriver **Företagsnamn**, **Adress (frivilligt)**, **Postnummer** och **Ort** själv.
 3. Kontrollera uppgifterna som fylldes i. Du kan ändra allt.
 4. Fyll gärna i **E-post till företaget (frivilligt)** och **Bransch (frivilligt)**. Har NONOX hämtat uppgifter är branschen redan föreslagen, med texten *Förslag från registret*; ändra den om den inte stämmer. Företagsguiden väljer steg och tips efter branschen, företagsformen och om företaget är momsregistrerat; se [Företagsguiden och Min startplan](/manual/kom-igang/foretagsguiden). Passar ingen bransch väljer du **Annan bransch**.
 5. Under **Bokföring och moms** väljer du när **Räkenskapsåret börjar i** och vilken **Bokföringsmetod** företaget använder.
@@ -78,7 +78,7 @@ Du arbetar sedan i det nya företaget. Har du flera företag byter du mellan dem
 
 ## Hämta uppgifter från företagsregistret
 
-Med organisationsnumret hämtar NONOX namn, adress och företagsform. NONOX letar först i sitt eget företagsregister, som bygger på öppna uppgifter från Bolagsverket och SCB, och frågar sedan Bolagsverket om numret saknas där, eller om det är en enskild firmas personnummer. Enskilda firmor finns inte i NONOX eget register. Under uppgifterna står var de kommer från och hur gamla de är, till exempel *Enligt NONOX företagsregister (Bolagsverket och SCB) per 4 nov 2026*.
+Med organisationsnumret hämtar NONOX namn, adress och oftast företagsform. NONOX letar först i sitt eget företagsregister, som bygger på bearbetade öppna uppgifter från Bolagsverket och SCB. Saknas numret där frågar NONOX Bolagsverket, men bara om installationen har kopplats till Bolagsverket. Enskilda firmor finns inte i NONOX eget register; för en enskild firma fyller du i uppgifterna själv, om inte installationen har kopplats till Bolagsverket. Under uppgifterna står var de kommer från och hur gamla de är, till exempel *Enligt NONOX företagsregister (bearbetade uppgifter från Bolagsverket och SCB), hämtade 4 nov 2026*.
 
 Knappen **Hämta uppgifter** visas när NONOX har ett företagsregister eller har uppgifter för att fråga Bolagsverket. Kör ditt företag NONOX själv och har varken registret eller uppgifter från Bolagsverket finns ingen knapp; den som sköter servern kan lägga in dem.
 
@@ -86,7 +86,7 @@ Knappen **Hämta uppgifter** visas när NONOX har ett företagsregister eller ha
 - Har du redan skrivit något som skiljer sig från registret visar NONOX skillnaderna. Välj **Använd registrets uppgifter** eller **Behåll mina**.
 - Är företaget avregistrerat, eller pågår konkurs eller likvidation, står det i rutan. Kontrollera då att du har skrivit rätt nummer.
 - Bara när du skapar ett nytt företag föreslår NONOX också **Bransch**, utifrån företagets branschkod (SNI), och **Företaget är registrerat som arbetsgivare**, utifrån om registret har anställda. Förslagen fylls bara i där du inte redan har valt något, och ändrar du något själv ändras det inte igen. Passar ingen bransch föreslås **Annan bransch**. Uppgiften om anställda finns bara i registret när den som sköter servern har en nyckel från SCB.
-- Visar registret ett företag med många anställda och en stor omsättning står det en notis om att företaget kan vara ett större företag som inte får använda K2. NONOX väljer aldrig regelverk åt dig; läs villkoren under **Regelverk för årsbokslut**.
+- Visar registret ett företag med många anställda och en stor omsättning står det en notis om att företaget kan vara ett större företag som inte får använda K2. NONOX väljer aldrig regelverk åt dig; läs villkoren under **Regelverk för årsbokslut**. Att ingen notis visas betyder inte att företaget får använda K2: registret saknar balansomslutningen och visar bara ett år. Notisen kräver också uppgifter om anställda och omsättning, som bara finns när den som sköter servern har en nyckel från SCB.
 - Ett företag kan be att få sina uppgifter borttagna ur registret. Då hittar NONOX inte numret, och du skriver uppgifterna själv.
 
 ## Vanliga frågor

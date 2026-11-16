@@ -89,6 +89,25 @@ class CreateCompanyForm extends Component implements SpansCompanies
     }
 
     /**
+     * Takes back what an earlier lookup suggested, so that a lookup that
+     * finds less, or fails, leaves nothing of the previous company behind.
+     * A value the user has changed by hand is not touched.
+     */
+    protected function clearRegistrySuggestions(): void
+    {
+        if (! ($this->suggestionTouched['industry'] ?? false) && ($this->registryFilled['industry'] ?? null) === $this->industry) {
+            $this->industry = '';
+        }
+
+        if (! ($this->suggestionTouched['employer_registered'] ?? false) && isset($this->suggested['employer_registered'])) {
+            $this->employer_registered = false;
+        }
+
+        unset($this->registryFilled['industry']);
+        $this->suggested = [];
+    }
+
+    /**
      * Industry from the SNI code and employer from the employee class
      * (ADR-035 addendum): suggestions with the same rule as the other
      * fields, so a field the user has filled in or changed is left alone.

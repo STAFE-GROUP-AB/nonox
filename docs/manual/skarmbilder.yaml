@@ -30,7 +30,7 @@
 #              customer portal address
 
 kom-igang/oversikten: { foretag: restaurang, rutt: dashboard }
-kom-igang/skapa-ett-foretag: { foretag: konsult, rutt: teams.create, fyll: { '#org_number': '5599999991' }, klick: ['[data-company-lookup] button'], del: 'form[wire\:submit="create"]', text: Enligt NONOX företagsregister }
+kom-igang/skapa-ett-foretag: { foretag: konsult, rutt: teams.create, fyll: { '#org_number': '5599999991' }, klick: ['[data-company-lookup] button'], del: 'main', text: Enligt NONOX företagsregister }
 kom-igang/din-profil: { foretag: konsult, rutt: profile.show }
 kom-igang/oversikten-mobil: { foretag: cafe, rutt: dashboard, enhet: mobil }
 kom-igang/krypterad-chatt: { foretag: konsult, rutt: dashboard, klick: ['[data-chat-trigger]', 'text=Starta chatt'] }

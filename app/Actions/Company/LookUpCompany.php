@@ -67,8 +67,14 @@ class LookUpCompany
 
         $registry = CompanyRegistries::make();
 
+        if ($registry === null && strlen($identity) === 12) {
+            throw ValidationException::withMessages([$field => __('NONOX företagsregister har bara juridiska personer. Fyll i en enskild firmas uppgifter själv.')]);
+        }
+
         if ($registry !== null) {
             $asked = $registry;
+
+            $this->takeInstallationQuota($field);
 
             try {
                 $found = $this->find($registry, $identity);
@@ -152,15 +158,22 @@ class LookUpCompany
             WorkQuota::take($company, 'company_lookup', $field);
         }
 
-        foreach ([
-            ["company-lookup:user:{$user->id}", self::USER_LIMIT_PER_HOUR, 3600],
-            ['company-lookup:installation', self::INSTALLATION_LIMIT_PER_MINUTE, 60],
-        ] as [$key, $limit, $seconds]) {
-            if (RateLimiter::tooManyAttempts($key, $limit)) {
-                throw ValidationException::withMessages([$field => WorkQuota::message()]);
-            }
+        $this->hit("company-lookup:user:{$user->id}", self::USER_LIMIT_PER_HOUR, 3600, $field);
+    }
 
-            RateLimiter::hit($key, $seconds);
+    /** The installation-wide cap protects the outside register's own limit, so only calls to it count. */
+    private function takeInstallationQuota(string $field): void
+    {
+        $this->hit('company-lookup:installation', self::INSTALLATION_LIMIT_PER_MINUTE, 60, $field);
+    }
+
+    /** @throws ValidationException */
+    private function hit(string $key, int $limit, int $seconds, string $field): void
+    {
+        if (RateLimiter::tooManyAttempts($key, $limit)) {
+            throw ValidationException::withMessages([$field => WorkQuota::message()]);
         }
+
+        RateLimiter::hit($key, $seconds);
     }
 }

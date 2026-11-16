@@ -84,7 +84,14 @@ trait LooksUpCompanies
             return;
         }
 
-        if (OrganisationNumber::tryFrom($this->registryNumber()) === null) {
+        $number = OrganisationNumber::tryFrom($this->registryNumber());
+
+        if ($number === null) {
+            return;
+        }
+
+        // A sole trader's personal number is only answered by an API driver: without one there is nothing to ask.
+        if ((int) $number->digits[2] < 2 && CompanyRegistries::make() === null) {
             return;
         }
 
@@ -121,6 +128,9 @@ trait LooksUpCompanies
         return (CompanyRegistries::local() ?? CompanyRegistries::make())?->sourceName() ?? '';
     }
 
+    /** Takes back what an earlier lookup suggested, before a new lookup or after a failed one. */
+    protected function clearRegistrySuggestions(): void {}
+
     /**
      * Suggestions beyond the shared fields (industry, employer, hints),
      * for a form that wants them: only onboarding does. Returns the hints to show.
@@ -154,19 +164,21 @@ trait LooksUpCompanies
         } catch (ValidationException $exception) {
             $this->registryResult = null;
             $this->registryNotice = (string) collect($exception->errors())->flatten()->first();
+            $this->clearRegistrySuggestions();
 
             return;
         }
 
-        $source = (string) $found->sourceName;
+        $this->clearRegistrySuggestions();
 
+        $source = (string) $found->sourceName;
         $this->registryResult = [
             'source' => $source,
             'source_date' => self::swedishDate($found->sourceDate),
-            'name' => $found->name,
+            'name' => $found->nameExcluded ? (string) __('Namnet visas inte') : $found->name,
             'legal_form' => $found->legalFormText,
-            'registered_on' => $found->registeredOn,
-            'deregistered_on' => $found->deregisteredOn,
+            'registered_on' => self::swedishDate($found->registeredOn),
+            'deregistered_on' => self::swedishDate($found->deregisteredOn),
             'proceedings' => $found->proceedings,
         ];
 
@@ -211,7 +223,8 @@ trait LooksUpCompanies
     private function proposal(RegisteredCompany $found): array
     {
         return array_filter([
-            'name' => $found->name,
+            // A name left out after an objection is not proposed: the placeholder would end up on the invoices.
+            'name' => $found->nameExcluded ? '' : $found->name,
             'address_line1' => (string) $found->formattedStreet(),
             'address_line2' => (string) $found->formattedCoAddress(),
             'postal_code' => (string) $found->formattedPostalCode(),

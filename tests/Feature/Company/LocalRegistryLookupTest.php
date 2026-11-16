@@ -79,7 +79,7 @@ describe('LookUpCompany with the local register', function () {
             ->and($found->formattedCoAddress())->toBe('c/o Demoförvaltning')
             ->and($found->formattedPostalCode())->toBe('123 45')
             ->and($found->formattedCity())->toBe('Demostad')
-            ->and($found->sourceName)->toBe('NONOX företagsregister (Bolagsverket och SCB)')
+            ->and($found->sourceName)->toBe('NONOX företagsregister (bearbetade uppgifter från Bolagsverket och SCB)')
             ->and($found->sourceDate)->toBe('2026-11-04')
             ->and($fake->calls)->toBe(0);
     });
@@ -157,7 +157,7 @@ describe('LookUpCompany with the local register', function () {
         expect(CompanyRegistries::apiConfigured())->toBeFalse()
             ->and(CompanyRegistries::isConfigured())->toBeTrue()
             ->and(fn () => app(LookUpCompany::class)($this->owner, $this->company, $this->number->digits))
-            ->toThrow(ValidationException::class, 'NONOX företagsregister (Bolagsverket och SCB) hittar inget företag');
+            ->toThrow(ValidationException::class, 'NONOX företagsregister (bearbetade uppgifter från Bolagsverket och SCB) hittar inget företag');
     });
 
     it('is available with rows and no API driver, and hidden with neither', function () {
@@ -192,7 +192,13 @@ describe('LookUpCompany with the local register', function () {
             RateLimiter::hit('company-lookup:installation', 60);
         }
 
-        expect(fn () => app(LookUpCompany::class)(User::factory()->create(), null, $this->number->digits))
+        // The installation-wide cap protects the outside register only: a lookup in our own register is not counted.
+        expect(app(LookUpCompany::class)(User::factory()->create(), null, $this->number->digits)->name)->toBe('Demobolaget Norr AB');
+
+        localFakeApi();
+        $other = CompanyFactory::organisationNumber();
+
+        expect(fn () => app(LookUpCompany::class)(User::factory()->create(), null, $other->digits))
             ->toThrow(ValidationException::class, WorkQuota::message());
     });
 
@@ -231,6 +237,9 @@ describe('register data in a form', function () {
         'kommanditbolag by abbreviation' => ['31', 'Demo KB', LegalForm::Kb],
         'kommanditbolag by name' => ['31', 'Demo Kommanditbolag', LegalForm::Kb],
         'partnership with neither' => ['31', 'Demo & Söner', null],
+        'the word beats the abbreviation' => ['31', 'KB Bygg Handelsbolag', LegalForm::Hb],
+        'both words' => ['31', 'Handelsbolag och Kommanditbolag', null],
+        'both abbreviations' => ['31', 'KB HB Demo', null],
         'ekonomisk förening' => ['51', 'Demo ek för', LegalForm::EkonomiskForening],
         'bostadsrättsförening' => ['53', 'Brf Demo', LegalForm::EkonomiskForening],
         'ideell förening' => ['61', 'Demoklubben', LegalForm::IdeellForening],
@@ -243,7 +252,7 @@ describe('register data in a form', function () {
         $company = new RegisteredCompany(name: 'X', street: 'SKÖNSTAVÄGEN 3 A', coAddress: 'C/O DEMO AB', postalCode: '12345', city: 'UPPLANDS VÄSBY');
 
         expect($company->formattedStreet())->toBe('Skönstavägen 3 A')
-            ->and($company->formattedCoAddress())->toBe('c/o Demo Ab')
+            ->and($company->formattedCoAddress())->toBe('c/o Demo AB')
             ->and($company->formattedPostalCode())->toBe('123 45')
             ->and($company->formattedCity())->toBe('Upplands Väsby')
             ->and((new RegisteredCompany(name: 'X', street: 'Byggvägen 7 b'))->formattedStreet())->toBe('Byggvägen 7 b');
@@ -254,7 +263,7 @@ describe('register data in a form', function () {
     })->with([
         'restaurant' => ['56110', Industry::Restaurant],
         'mobile restaurant' => ['56120', Industry::Restaurant],
-        'bar and cafe' => ['56300', Industry::Cafe],
+        'bar (Barverksamhet)' => ['56300', Industry::Restaurant],
         'catering' => ['56210', Industry::Other],
         'building' => ['41200', Industry::Crafts],
         'specialised construction' => ['43210', Industry::Crafts],
@@ -300,7 +309,7 @@ describe('onboarding', function () {
             ->assertSet('city', 'Demostad')
             ->assertSet('industry', 'consultant')
             ->assertSet('employer_registered', true)
-            ->assertSee('Enligt NONOX företagsregister (Bolagsverket och SCB) per 4 nov 2026')
+            ->assertSee('Enligt NONOX företagsregister (bearbetade uppgifter från Bolagsverket och SCB), hämtade 4 nov 2026')
             ->assertSee('Förslag från registret, utifrån branschkoden 62100')
             ->assertDontSeeHtml('data-registry-hint');
     });
@@ -393,7 +402,130 @@ describe('onboarding', function () {
 
         Livewire::test(CompanyDetailsForm::class, ['company' => $this->company])
             ->call('lookUpCompany')
-            ->assertSee('Enligt NONOX företagsregister (Bolagsverket och SCB) per 4 nov 2026')
+            ->assertSee('Enligt NONOX företagsregister (bearbetade uppgifter från Bolagsverket och SCB), hämtade 4 nov 2026')
             ->assertDontSeeHtml('data-registry-suggestion');
+    });
+});
+
+describe('review fixes', function () {
+    it('says that the register only has legal persons for a personal number when no API driver is configured', function () {
+        $this->travelTo('2026-11-01');
+        config(['services.company_registry.driver' => 'bolagsverket']);
+        localRegistryRow($this->number->digits);
+
+        expect(fn () => app(LookUpCompany::class)($this->owner, null, '198112189876'))
+            ->toThrow(ValidationException::class, 'har bara juridiska personer');
+
+        $this->actingAs(User::factory()->create());
+        $before = RateLimiter::attempts('company-lookup:installation');
+
+        Livewire::test(CreateCompanyForm::class)
+            ->set('org_number', '198112189876')
+            ->assertSet('name', '')
+            ->assertDontSee('hittar inget företag');
+
+        expect(RateLimiter::attempts('company-lookup:installation'))->toBe($before);
+    });
+
+    it('is off when the instance switch is off, even with rows, and on by default locally', function () {
+        localRegistryRow($this->number->digits);
+        config(['services.company_registry.driver' => 'bolagsverket', 'services.company_registry.local' => 'false']);
+
+        expect(CompanyRegistries::localEnabled())->toBeFalse()
+            ->and(CompanyRegistries::isConfigured())->toBeFalse()
+            ->and(CompanyRegistries::local())->toBeNull();
+
+        config(['services.company_registry.local' => 'true']);
+
+        expect(CompanyRegistries::isConfigured())->toBeTrue();
+
+        config(['services.company_registry.local' => null]);
+
+        expect(CompanyRegistries::localEnabled())->toBeTrue();
+
+        app()->detectEnvironment(fn (): string => 'production');
+
+        expect(CompanyRegistries::localEnabled())->toBeFalse();
+    });
+
+    it('uses the older of the two fetch dates', function () {
+        localRegistryRow($this->number->digits, ['fetched_at' => '2026-11-04 03:00:00+00', 'bolagsverket_fetched_at' => '2026-11-01 03:00:00+00']);
+
+        expect(app(LocalRegistry::class)->find($this->number->digits)[0]->sourceDate)->toBe('2026-11-01');
+    });
+
+    it('does not propose a name that was excluded, and says so', function () {
+        localRegistryRow($this->number->digits);
+        RegistryExclusion::create(['org_number' => $this->number->digits, 'field' => RegistryExclusion::NAME, 'reason' => 'OBJECTION']);
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(CreateCompanyForm::class)
+            ->set('org_number', $this->number->digits)
+            ->call('lookUpCompany')
+            ->assertSet('name', '')
+            ->assertSet('address_line1', 'Skönstavägen 3 A')
+            ->assertSee('Namnet visas inte');
+    });
+
+    it('keeps abbreviations and apostrophes right in capitals', function () {
+        $company = new RegisteredCompany(name: 'X', street: "O'NEILLS VÄG 4 LGH 1101", coAddress: 'C/O DEMO AB');
+
+        expect($company->formattedStreet())->toBe("O'Neills Väg 4 LGH 1101")
+            ->and($company->formattedCoAddress())->toBe('c/o Demo AB');
+    });
+
+    it('formats the registration date as the source date', function () {
+        localRegistryRow($this->number->digits);
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(CreateCompanyForm::class)
+            ->set('org_number', $this->number->digits)
+            ->call('lookUpCompany')
+            ->assertSee('registrerat')
+            ->assertDontSee('2019-03-15');
+    });
+
+    it('takes a suggestion back when the next lookup has nothing to suggest, or fails', function () {
+        $second = CompanyFactory::organisationNumber();
+        localRegistryRow($this->number->digits, ['employee_class' => 8, 'turnover_class' => 9]);
+        localRegistryRow($second->digits, ['name' => 'Demoandra AB', 'sni_code' => null, 'sni_division' => null, 'employee_class' => null]);
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(CreateCompanyForm::class)
+            ->set('org_number', $this->number->digits)
+            ->assertSet('industry', 'consultant')
+            ->assertSet('employer_registered', true)
+            ->assertSeeHtml('data-registry-hint')
+            ->set('org_number', $second->digits)
+            ->call('lookUpCompany')
+            ->assertSet('industry', '')
+            ->assertSet('employer_registered', false)
+            ->assertDontSeeHtml('data-registry-hint')
+            ->assertDontSeeHtml('data-registry-suggestion')
+            ->set('org_number', $this->number->digits)
+            ->call('lookUpCompany')
+            ->assertSet('industry', 'consultant')
+            ->set('org_number', '1234')
+            ->call('lookUpCompany')
+            ->assertSet('industry', '')
+            ->assertSet('employer_registered', false)
+            ->assertDontSeeHtml('data-registry-hint');
+    });
+
+    it('keeps what the user chose when a later lookup finds less', function () {
+        $second = CompanyFactory::organisationNumber();
+        localRegistryRow($this->number->digits, ['employee_class' => 3]);
+        localRegistryRow($second->digits, ['name' => 'Demoandra AB', 'sni_code' => null, 'sni_division' => null, 'employee_class' => null]);
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(CreateCompanyForm::class)
+            ->set('org_number', $this->number->digits)
+            ->set('industry', 'retail')
+            ->set('employer_registered', false)
+            ->set('employer_registered', true)
+            ->set('org_number', $second->digits)
+            ->call('lookUpCompany')
+            ->assertSet('industry', 'retail')
+            ->assertSet('employer_registered', true);
     });
 });

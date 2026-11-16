@@ -14492,8 +14492,10 @@
     "ett tillverkande företag": "a manufacturing company",
     "Stycklistor, kalkyl, tillverkningsorder, verkstadsterminal och planering för verkstaden.": "Bills of materials, costing, manufacturing orders, the workshop terminal and planning for the workshop.",
     "Lager för material och färdiga produkter, och inköpsorder till leverantörerna.": "Stock for materials and finished products, and purchase orders to the suppliers.",
-    "NONOX företagsregister (Bolagsverket och SCB)": "NONOX company register (Bolagsverket and SCB)",
-    "Enligt :source per :date:": "According to :source as of :date:",
+    "NONOX företagsregister (bearbetade uppgifter från Bolagsverket och SCB)": "NONOX company register (processed data from Bolagsverket and SCB)",
+    "Enligt :source, hämtade :date:": "According to :source, fetched :date:",
+    "NONOX företagsregister har bara juridiska personer. Fyll i en enskild firmas uppgifter själv.": "NONOX company register only has legal persons. Fill in a sole trader's details yourself.",
+    "Namnet visas inte": "The name is not shown",
     "Förslag från registret, utifrån branschkoden :sni. Ändra om det inte stämmer.": "Suggested from the register, based on the industry code :sni. Change it if it is wrong.",
     "Förslag från registret: :class. Ändra om det inte stämmer.": "Suggested from the register: :class. Change it if it is wrong.",
     "Registret visar :employees och en omsättning på :turnover. Då kan företaget vara ett större företag som inte får använda K2. Läs villkoren under \"Regelverk för årsbokslut\" innan du väljer.": "The register shows :employees and a turnover of :turnover. The company may then be a larger company that may not use K2. Read the conditions under \"Regelverk för årsbokslut\" before you choose."

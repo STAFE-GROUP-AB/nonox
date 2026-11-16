@@ -156,7 +156,7 @@ try {
             }
 
             await settled;
-            await sleep(600);
+            await sleep(800);
         }
 
         // Open a dialog, a tab or a menu first; each click waits for what it loads.
@@ -191,6 +191,11 @@ try {
             console.log(`✗ ${shot.file}: nothing to click at ${clickFailed}`);
 
             continue;
+        }
+
+        // The toasts of the typing and clicking (a success message for each lookup) are not part of the picture.
+        if (Object.keys(shot.fills ?? {}).length > 0) {
+            await send('Runtime.evaluate', { expression: "document.querySelectorAll('.nx-toaster').forEach((el) => { el.style.display = 'none'; })" }, sessionId);
         }
 
         if (shot.reveal) {

@@ -28,10 +28,20 @@ final class CompanyRegistries
         return $driver;
     }
 
-    /** Whether the lookup can answer at all: the own register has rows, or an API driver is configured. */
+    /** Whether the lookup can answer at all: the own register is on and has rows, or an API driver is configured. */
     public static function isConfigured(): bool
     {
-        return LocalRegistry::hasRows() || self::apiConfigured();
+        return self::localEnabled() && LocalRegistry::hasRows() || self::apiConfigured();
+    }
+
+    /** The instance switch for the own register (services.company_registry.local); on by default locally and in tests only. */
+    public static function localEnabled(): bool
+    {
+        $setting = config('services.company_registry.local');
+
+        return $setting === null || $setting === ''
+            ? app()->environment('local', 'testing')
+            : filter_var($setting, FILTER_VALIDATE_BOOLEAN);
     }
 
     public static function apiConfigured(): bool
@@ -46,7 +56,7 @@ final class CompanyRegistries
     /** NONOX's own register, or null while it is empty. */
     public static function local(): ?CompanyRegistry
     {
-        return LocalRegistry::hasRows() ? app(LocalRegistry::class) : null;
+        return self::localEnabled() && LocalRegistry::hasRows() ? app(LocalRegistry::class) : null;
     }
 
     /** The API driver (Bolagsverket, or the invented register locally), or null when none is configured. */

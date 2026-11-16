@@ -35,7 +35,7 @@
       "id": "2026-11-16-foretagsuppgifter-fran-nonox-register",
       "datum": "2026-11-16T00:30:00+01:00",
       "rubrik": "Företagsuppgifter fylls i från NONOX eget företagsregister",
-      "beskrivning": "När du skriver organisationsnumret fylls namn, adress och företagsform i från NONOX företagsregister, så det fungerar utan uppgifter från Bolagsverket. När du skapar ett företag föreslås också bransch och om företaget har anställda, och du får en notis om företaget kan vara för stort för K2.",
+      "beskrivning": "När du skriver organisationsnumret till ett aktiebolag, en förening eller ett annat företag i NONOX företagsregister föreslås namn, adress och oftast företagsform, även utan en egen koppling till Bolagsverket. När du skapar ett företag föreslås också bransch, och när registret har uppgifter om antal anställda även om företaget är arbetsgivare och en notis om det kan vara för stort för K2.",
       "typ": "Nytt",
       "omrade": "Bokföring"
     },

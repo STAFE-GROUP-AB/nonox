@@ -17,7 +17,7 @@
             <div role="status" class="space-y-1">
                 <p class="text-gray-800">
                     @if($registryResult['source_date'] ?? null)
-                        {{ __('Enligt :source per :date:', ['source' => $registryResult['source'], 'date' => $registryResult['source_date']]) }}
+                        {{ __('Enligt :source, hämtade :date:', ['source' => $registryResult['source'], 'date' => $registryResult['source_date']]) }}
                     @else
                         {{ __('Enligt :source:', ['source' => $registryResult['source']]) }}
                     @endif
