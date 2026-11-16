@@ -657,8 +657,9 @@ Next package: steg 2, Stripe i NONOX Connect (läsnyckel), därefter steg 3a (ut
 ---
 
 Package: NONOX SaaS, steg 2, Stripe i NONOX Connect (läsnyckel) (prioritet 12, ADR-080 §7, tillägg 2026-11-15)
-Status: byggd på grenen `feat/saas-stripe`, inte sammanslagen (väntar på kall granskning och juristgranskning)
-Evidence: `tests/Unit/Saas/StripeDomainTest.php`, `tests/Feature/Saas/StripeConnectTest.php`, `tests/Feature/Saas/StripeSyncTest.php`, `tests/Feature/Saas/StripeWebhookTest.php`, `tests/Tenancy/StripeTenancyTest.php`.
+Status: done 2026-11-16, sammanslagen och driftsatt men avstängd på nonox.app (brytaren i /hq slås på när biträdesavtalet 1.9 gäller, tidigast 2027-01-18). Kall granskning CLEAR TO MERGE efter rättningar 05d8e444 och 58a72570; juristens texter i ändringslogg, färdplan och /hq.
+Evidence: `tests/Unit/Saas/StripeDomainTest.php`, `tests/Feature/Saas/StripeConnectTest.php`, `tests/Feature/Saas/StripeSyncTest.php`, `tests/Feature/Saas/StripeWebhookTest.php`, `tests/Feature/Saas/StripeReviewTest.php`, `tests/Feature/Saas/StripeRecheckTest.php`, `tests/Tenancy/StripeTenancyTest.php`.
+- Omgranskning: en inläsning som pågår stannar när kopplingen avslutas, nyckeln byts eller Stripe stängs av i /hq (kontroll före varje anrop och under radlåset före varje skrivning); en kund som raderats i Stripe raderas också i NONOX; kunderna i Stripe, radering och registerutdrag syns även när Stripe är avstängt; registerutdraget tar med prenumerationerna.
 - `/aterkommande-intakter/stripe`: Stripe i NONOX Connect med priset på två rader (0 kr + 10 % = 0 kr), kopplingen med en begränsad läsnyckel (sk_/pk_ vägras, saknade läsbehörigheter namnges, nyckeln krypterad och bara de fyra sista tecknen i klartext), byt nyckel, koppla från, valfri webhook och inläsningsloggen.
 - Import av kunder, produkter, priser, kuponger och prenumerationer, sedan händelser med tre dagars överlapp; varje hämtning görs före den korta transaktionen som skriver och tar ledger-låset. Återupptas från sidan där den stannade; 429/5xx försöks igen med backoff; 401 avslutar kopplingen och meddelar.
 - Prenumerationer blir STRIPE_SUBSCRIPTION-versioner (en per ändring, samma versioner i vilken ordning händelserna än kommer). Nolldecimalvalutor räknas om rätt. En Stripe-kund som inte är kopplad räknas som egen kund och en senare koppling bokas som rättelse; stängda månader ändras inte.
@@ -668,7 +669,7 @@ Evidence: `tests/Unit/Saas/StripeDomainTest.php`, `tests/Feature/Saas/StripeConn
 Open legal-verify items: intresseavvägningen för att läsa Stripe-kunder (art. 6.1 f), om biträdesavtalets ändamål täcker det, information till Stripe-kunderna (art. 14), om integritetspolicyn ska få en version för Stripe; behörighetsnamnen i Stripes nyckelformulär (verifieras med en testnyckel).
 - Granskningsrättelser (säkerhet och juridik): installationens brytare **Stripe i NONOX Connect** i /hq, av från början (allt utom frånkoppling, registerutdrag och radering står still medan den är av); en nyckel som byttes revokeras aldrig av en gammal körning (key_version); radering, anonymisering och borttagning i Stripe töms och läses inte in igen (erased_at), raderar de hämtade prenumerationerna och ger registerutdrag; bara de skatte-id som matchningen använder sparas; sidans listor sidindelade; webhooken begränsas också per adress.
 Owner decisions: om NONOX Connect-brytaren är företagets (byggd så) eller driftbolagets på /hq; när biträdesavtalet nämner NONOX SaaS och Stripe så att brytaren i /hq kan slås på för den drivna tjänsten.
-Next package: steg 3a, Stripes utbetalningar och avgifter.
+Next package: kö 14, aktuella bilder i manualen (först Företagsguiden). Steg 3a, Stripes utbetalningar och avgifter, väntar på L-svaren och biträdesavtalet 1.9.
 
 ---
 

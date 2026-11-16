@@ -46,10 +46,10 @@ final class StripeFake
     /** @var list<int> statuses to answer before the real answer, one per request */
     public array $failures = [];
 
-    /** A request whose log line contains this is answered 503, failTimes times. */
     /** @var array<string, callable(): void> run once when a request whose log line contains the key has been answered */
     public array $hooks = [];
 
+    /** A request whose log line contains this is answered 503, failTimes times. */
     public ?string $failWhen = null;
 
     public int $failTimes = 0;

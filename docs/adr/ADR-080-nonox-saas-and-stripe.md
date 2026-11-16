@@ -884,9 +884,16 @@ transactions, payouts, fee accounts, series S, drafts and bank reconciliation
 - **Objects across reconnects** (P3-11): a company that connects account A, then B, then A again
   takes up A's earlier connection row, so A's objects, events and customer links are kept with it
   and B's stay with B's (ended) row until its 90-day prune. Noted, not changed.
-- **Step-3 rule for later** (C13, BFL 7 kap.): when Stripe is booked in step 3, every object a
+- **Step-3 rule for later** (C13, BFL 7 kap. 2 §): when Stripe is booked in step 3, every object a
   voucher is built from must be marked as underlag and excluded from `PruneStripe`; it is kept
   in the form received until seven years after the end of the calendar year in which the fiscal
   year ended (AGENTS.md §10), goes into the archive
   package, and customer details on underlag are not cleared on anonymisation or erasure (GDPR art.
   17.3 b).
+- **A sync ends when its connection ends** (re-check P2, 58a72570): `StripeSync::guard()` re-reads
+  the connection before every request to Stripe and again under the connection row lock at the
+  start of each writing transaction, and stops the run as `ended` when the connection is no longer
+  active, its key was replaced, or Stripe is switched off for the installation. Disconnecting takes
+  the same lock, so nothing is written after a switch-off. The precise guarantee is "no new request
+  after the switch": a request that has already passed the guard, with its retries, can still
+  complete, and its answer is then discarded at the locked check.
