@@ -32,7 +32,8 @@ Beskedet säger på hur många pass uppgiften lades.
 
 - När du sparar ett pass, och när du lägger ut en mall eller kopierar en vecka och sedan publicerar schemat, får passet de uppgifter som passar.
 - När du ändrar eller tar bort en uppgiftsmall följer passen som inte har börjat med. Är något redan avbockat på ett pass lämnas det passet som det är.
-- Pass som redan har varit ändras aldrig i efterhand.
+- Publicerade pass som redan har varit ändras aldrig i efterhand.
+- Ändrar du ett publicerat pass får det nya uppgifter först när du publicerar igen, så att personalen ser samma version av passet och uppgifterna.
 - Flyttar du ett pass till en annan avdelning byts uppgifterna ut mot dem som passar den nya avdelningen.
 
 ## En uppgift bara för ett pass
@@ -47,7 +48,7 @@ Uppgifter som kommer från en mall ändrar eller stänger du av under **Planerin
 
 ## Så ser du vad som är gjort
 
-På passet i schemat visas ett litet märke, till exempel **✓ 2/3**: två av tre uppgifter är avbockade. Öppnar du passet ser du varje uppgift och klockan den bockades av. Du ser aldrig vem som bockade av den.
+På passet i schemat visas ett litet märke, till exempel **✓ 2/3**: två av tre uppgifter är avbockade. Öppnar du passet ser du varje uppgift och klockan den bockades av. Du ser inte vem som bockade av den, men eftersom passet tillhör en person ser du vad som är avbockat på just hens pass.
 
 Du kan själv bocka av en uppgift i passet, om personen inte kan göra det. Du kan ångra en avbockning samma dag som den gjordes.
 
@@ -57,7 +58,7 @@ Personalen ser uppgifterna på passet på Min sida och bockar av dem där. Se [M
 
 ## Personuppgifter och förhandling
 
-- En avbockning är en uppgift om hur arbetet utförts: vilken tid den gjordes och vilket konto som gjorde den. NONOX visar den utan namn, använder den inte till något annat och räknar aldrig ihop den per person.
+- En avbockning är en uppgift om hur arbetet utförts: vilken tid den gjordes och vilket konto som gjorde den. Den visas på personens pass utan namnet på den som bockade av, används inte till något annat och skrivs inte i behandlingshistoriken. NONOX har ingen rapport som räknar ihop eller jämför avbockningar per person.
 - Uppgifter och avbockningar tas bort automatiskt tolv månader efter att passet slutade.
 - Skriv inga personuppgifter och inget om hälsa i uppgifterna.
 - Har ni kollektivavtal kan det kräva att ni förhandlar med den fackliga organisationen innan ni inför uppgifter på passen (11 § medbestämmandelagen). NONOX avgör inget av det åt er.
@@ -71,7 +72,7 @@ Kontrollera att passet börjar en av uppgiftens veckodagar, att avdelning och ko
 Då är något redan avbockat på passet, eller så har passet redan varit. Det lämnas som det är.
 
 **Kan jag se hur många uppgifter varje person har gjort?**
-Nej. Uppgifterna är ett stöd för passet och används inte för att jämföra personal.
+Du ser vad som är avbockat på varje pass, men det finns ingen sammanställning per person. Uppgifterna är ett stöd för passet och ska inte användas för att jämföra personal.
 
 ## Läs också
 

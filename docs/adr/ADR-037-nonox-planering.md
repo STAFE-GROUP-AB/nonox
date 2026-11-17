@@ -288,16 +288,26 @@ egenkontroll under the food legislation or as part of the staff ledger.
   midnight holds the time on either of its two days). Templates and
   instances live in `planning_task_templates` and `planning_shift_tasks`;
   `ShiftTasks::sync` makes a shift's template tasks follow the active
-  templates in three reads and at most two bulk writes. It never touches a
-  task written for one shift (no template), a shift where any task is ticked,
-  a cancelled shift, or a published shift that has started.
+  templates in three reads; the writes are one delete, one insert
+  (`insertOrIgnore`, safe against a concurrent run) and one update per
+  template whose text changed, never one per task, and they only touch tasks
+  that are not ticked. It never touches a task written for one shift (no
+  template), a shift where any task is ticked, a cancelled shift, or a
+  published shift that has started. Saving a shift that has been published
+  does not change its tasks (the employee sees the published version); they
+  follow when the period is published again. A template change reaches shifts
+  within the next year.
 - Tick window: from the start of the shift's day to the end of the day after
   the shift ended, for the employee the shift was *published* to
   (`published_snapshot`, so an unpublished reassignment changes nothing for
   them) and for a planner (`planning:manage`). An undo is allowed only on the
-  day of the tick. A tick holds `done_at` and `done_by`; it is shown as a
-  time and a count, never with a name, there is no report per person, and
-  the audit log holds ids and `EMPLOYEE`/`PLANNER` only.
+  day of the tick. A tick holds `done_at` and `done_by` and nothing else
+  records it: it is **not written to the audit log**, which keeps user, IP and
+  browser for years and would outlive the 12 months a tick is kept. It is
+  shown as a time and a count without the ticker's name, but on the shift of
+  a named person, so a planner can see what is ticked on that person's shift;
+  there is no report, ranking or export per person. Template and task
+  administration is audited with ids and field names only.
 - Retention (proposed default, the owner's decision): tasks and ticks are
   deleted 12 months after the shift ended (`planning:prune-tasks`, daily).
   The employee's ticks are part of their register extract.

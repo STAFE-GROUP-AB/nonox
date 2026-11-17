@@ -54,7 +54,7 @@ beforeEach(function () {
 });
 
 /** @param  array<string, mixed>  $input */
-function taskTemplate(array $input = []): TaskTemplate
+function p3TaskTemplate(array $input = []): TaskTemplate
 {
     $test = test();
 
@@ -67,7 +67,7 @@ function taskTemplate(array $input = []): TaskTemplate
 }
 
 /** @param  array<string, mixed>  $input */
-function taskShift(array $input = []): Shift
+function p3TaskShift(array $input = []): Shift
 {
     return Planning::shift(test()->owner, test()->company, [
         'employee_id' => test()->anna->id,
@@ -79,18 +79,18 @@ function taskShift(array $input = []): Shift
     ]);
 }
 
-function publishTasksWeek(): void
+function p3PublishTasksWeek(): void
 {
     $test = test();
     CurrentCompany::run($test->company, fn () => app(PublishPeriod::class)($test->owner, $test->company, $test->monday, $test->monday->addDays(6)));
 }
 
 it('puts a template\'s task on the shifts that match when a shift is saved', function () {
-    taskTemplate();
+    p3TaskTemplate();
 
-    $matching = taskShift();
-    $otherDay = taskShift(['date' => '2026-11-11']);
-    $otherArea = taskShift(['area_id' => $this->hall->id]);
+    $matching = p3TaskShift();
+    $otherDay = p3TaskShift(['date' => '2026-11-11']);
+    $otherArea = p3TaskShift(['area_id' => $this->hall->id]);
 
     expect($matching->tasks()->pluck('title')->all())->toBe(['Kontrollera kylen'])
         ->and($otherDay->tasks()->count())->toBe(0)
@@ -100,14 +100,14 @@ it('puts a template\'s task on the shifts that match when a shift is saved', fun
 
 it('matches on skill and on a time of day inside the shift, also past midnight', function () {
     $till = app(SaveSkill::class)($this->owner, $this->company, 'Kassa');
-    taskTemplate(['title' => 'Räkna kassan', 'area_id' => null, 'skill_id' => $till->id, 'weekdays' => [2]]);
-    taskTemplate(['title' => 'Stäng ugnen', 'area_id' => null, 'due_time' => '22:30', 'weekdays' => [2]]);
+    p3TaskTemplate(['title' => 'Räkna kassan', 'area_id' => null, 'skill_id' => $till->id, 'weekdays' => [2]]);
+    p3TaskTemplate(['title' => 'Stäng ugnen', 'area_id' => null, 'due_time' => '22:30', 'weekdays' => [2]]);
 
-    $day = taskShift(['area_id' => null]);
-    $withSkill = taskShift(['area_id' => null, 'skill_id' => $till->id, 'start' => '08:00', 'end' => '12:00']);
-    $evening = taskShift(['area_id' => null, 'start' => '18:00', 'end' => '23:00']);
-    $overMidnight = taskShift(['area_id' => null, 'start' => '20:00', 'end' => '02:00', 'date' => '2026-11-10']);
-    $monday = taskShift(['area_id' => null, 'date' => '2026-11-09', 'start' => '21:00', 'end' => '02:00']);
+    $day = p3TaskShift(['area_id' => null]);
+    $withSkill = p3TaskShift(['area_id' => null, 'skill_id' => $till->id, 'start' => '08:00', 'end' => '12:00']);
+    $evening = p3TaskShift(['area_id' => null, 'start' => '18:00', 'end' => '23:00']);
+    $overMidnight = p3TaskShift(['area_id' => null, 'start' => '20:00', 'end' => '02:00', 'date' => '2026-11-10']);
+    $monday = p3TaskShift(['area_id' => null, 'date' => '2026-11-09', 'start' => '21:00', 'end' => '02:00']);
 
     expect($day->tasks()->count())->toBe(0)
         ->and($withSkill->tasks()->pluck('title')->all())->toBe(['Räkna kassan'])
@@ -117,18 +117,18 @@ it('matches on skill and on a time of day inside the shift, also past midnight',
 });
 
 it('respects the weekdays, the validity period and the active switch', function () {
-    taskTemplate(['title' => 'Bara senare', 'valid_from' => '2026-11-11']);
-    taskTemplate(['title' => 'Bara tidigare', 'valid_to' => '2026-11-09']);
-    taskTemplate(['title' => 'Avstängd', 'is_active' => false]);
-    taskTemplate(['title' => 'Alla dagar', 'weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
+    p3TaskTemplate(['title' => 'Bara senare', 'valid_from' => '2026-11-11']);
+    p3TaskTemplate(['title' => 'Bara tidigare', 'valid_to' => '2026-11-09']);
+    p3TaskTemplate(['title' => 'Avstängd', 'is_active' => false]);
+    p3TaskTemplate(['title' => 'Alla dagar', 'weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
 
-    expect(taskShift()->tasks()->pluck('title')->all())->toBe(['Alla dagar']);
+    expect(p3TaskShift()->tasks()->pluck('title')->all())->toBe(['Alla dagar']);
 });
 
 it('puts a new template on shifts that already exist and have not started, not on what has happened', function () {
-    $future = taskShift();
-    publishTasksWeek();
-    $later = taskShift(['date' => '2026-11-17']);
+    $future = p3TaskShift();
+    p3PublishTasksWeek();
+    $later = p3TaskShift(['date' => '2026-11-17']);
 
     $result = app(SaveTaskTemplate::class)($this->owner, $this->company, ['title' => 'Kontrollera kylen', 'weekdays' => [2], 'area_id' => $this->kitchen->id]);
 
@@ -145,22 +145,22 @@ it('puts a new template on shifts that already exist and have not started, not o
 });
 
 it('puts the tasks on shifts when the period is published', function () {
-    $shift = taskShift();
+    $shift = p3TaskShift();
     ShiftTask::query()->delete();
     expect($shift->tasks()->count())->toBe(0);
 
-    taskTemplate();
+    p3TaskTemplate();
     ShiftTask::query()->delete();
-    publishTasksWeek();
+    p3PublishTasksWeek();
 
     expect($shift->tasks()->pluck('title')->all())->toBe(['Kontrollera kylen']);
 });
 
 it('keeps a template task in step with its template until something is ticked', function () {
-    $template = taskTemplate();
-    $shift = taskShift();
-    $other = taskShift(['date' => '2026-11-17']);
-    publishTasksWeek();
+    $template = p3TaskTemplate();
+    $shift = p3TaskShift();
+    $other = p3TaskShift(['date' => '2026-11-17']);
+    p3PublishTasksWeek();
 
     $this->travelTo(CarbonImmutable::parse('2026-11-10 09:00:00', 'Europe/Stockholm'));
     app(TickShiftTask::class)($this->owner, $this->company, $shift->tasks()->first(), true);
@@ -181,8 +181,8 @@ it('keeps a template task in step with its template until something is ticked', 
 });
 
 it('removes the task from a shift that stops matching, and never touches a task written for the shift', function () {
-    taskTemplate();
-    $shift = taskShift();
+    p3TaskTemplate();
+    $shift = p3TaskShift();
     app(SaveShiftTask::class)($this->owner, $this->company, $shift, ['title' => 'Ring leverantören']);
 
     app(SaveShift::class)($this->owner, $this->company, ['employee_id' => $this->anna->id, 'area_id' => $this->hall->id, 'date' => '2026-11-10', 'start' => '08:00', 'end' => '16:00'], $shift);
@@ -194,8 +194,8 @@ it('removes the task from a shift that stops matching, and never touches a task 
 });
 
 it('writes, limits and removes tasks on one shift, but leaves template tasks to the template', function () {
-    taskTemplate();
-    $shift = taskShift();
+    p3TaskTemplate();
+    $shift = p3TaskShift();
     $save = app(SaveShiftTask::class);
 
     $task = $save($this->owner, $this->company, $shift, ['title' => 'Ring leverantören', 'instructions' => 'Före lunch']);
@@ -215,9 +215,9 @@ it('writes, limits and removes tasks on one shift, but leaves template tasks to 
 });
 
 it('lets the employee on the published shift tick a task off in Min sida and take it back the same day', function () {
-    taskTemplate();
-    $shift = taskShift();
-    publishTasksWeek();
+    p3TaskTemplate();
+    $shift = p3TaskShift();
+    p3PublishTasksWeek();
     $task = $shift->tasks()->firstOrFail();
 
     $this->travelTo(CarbonImmutable::parse('2026-11-10 09:00:00', 'Europe/Stockholm'));
@@ -240,9 +240,9 @@ it('lets the employee on the published shift tick a task off in Min sida and tak
 });
 
 it('shows the tasks on the next shift card too', function () {
-    taskTemplate();
-    $shift = taskShift();
-    publishTasksWeek();
+    p3TaskTemplate();
+    $shift = p3TaskShift();
+    p3PublishTasksWeek();
     $this->travelTo(CarbonImmutable::parse('2026-11-10 07:00:00', 'Europe/Stockholm'));
 
     $this->actingAs($this->worker);
@@ -250,9 +250,9 @@ it('shows the tasks on the next shift card too', function () {
 });
 
 it('does not let a tick be made before the day of the shift or long after it, or undone another day', function () {
-    taskTemplate();
-    $shift = taskShift();
-    publishTasksWeek();
+    p3TaskTemplate();
+    $shift = p3TaskShift();
+    p3PublishTasksWeek();
     $task = $shift->tasks()->firstOrFail();
     $tick = app(TickShiftTask::class);
 
@@ -270,8 +270,8 @@ it('does not let a tick be made before the day of the shift or long after it, or
 });
 
 it('does not let anyone but the employee on the published shift, or a planner, tick a task', function () {
-    taskTemplate();
-    $shift = taskShift();
+    p3TaskTemplate();
+    $shift = p3TaskShift();
     $task = $shift->tasks()->firstOrFail();
     $tick = app(TickShiftTask::class);
     $this->travelTo(CarbonImmutable::parse('2026-11-10 09:00:00', 'Europe/Stockholm'));
@@ -280,7 +280,7 @@ it('does not let anyone but the employee on the published shift, or a planner, t
     expect(fn () => $tick($this->worker, $this->company, $task, true))->toThrow(AuthorizationException::class);
 
     CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-11-04 10:00:00', 'Europe/Stockholm'));
-    publishTasksWeek();
+    p3PublishTasksWeek();
     $this->travelTo(CarbonImmutable::parse('2026-11-10 09:00:00', 'Europe/Stockholm'));
 
     expect(fn () => $tick($this->colleague, $this->company, $task, true))->toThrow(AuthorizationException::class)
@@ -294,9 +294,9 @@ it('does not let anyone but the employee on the published shift, or a planner, t
 });
 
 it('refuses to tick a task on a cancelled shift and while Planering is off', function () {
-    taskTemplate();
-    $shift = taskShift();
-    publishTasksWeek();
+    p3TaskTemplate();
+    $shift = p3TaskShift();
+    p3PublishTasksWeek();
     $task = $shift->tasks()->firstOrFail();
     $this->travelTo(CarbonImmutable::parse('2026-11-10 09:00:00', 'Europe/Stockholm'));
 
@@ -308,9 +308,9 @@ it('refuses to tick a task on a cancelled shift and while Planering is off', fun
 });
 
 it('shows a planner the ticks on the schedule, lets them tick, and shows no name', function () {
-    taskTemplate();
-    $shift = taskShift();
-    publishTasksWeek();
+    p3TaskTemplate();
+    $shift = p3TaskShift();
+    p3PublishTasksWeek();
     $task = $shift->tasks()->firstOrFail();
     $this->travelTo(CarbonImmutable::parse('2026-11-10 09:00:00', 'Europe/Stockholm'));
     app(TickShiftTask::class)($this->worker, $this->company, $task, true);
@@ -339,7 +339,7 @@ it('keeps the task templates from employees', function () {
 });
 
 it('creates, changes and removes a task template from the page with a toast each time', function () {
-    taskShift();
+    p3TaskShift();
     $this->actingAs($this->scheduler);
 
     $page = Livewire::test(TaskTemplatesPage::class)
@@ -360,8 +360,8 @@ it('creates, changes and removes a task template from the page with a toast each
 });
 
 it('audits with ids and field names, never the task text, and never touches the staff ledger', function () {
-    $template = taskTemplate(['title' => 'Hemlig titel', 'instructions' => 'Hemlig instruktion']);
-    $shift = taskShift();
+    $template = p3TaskTemplate(['title' => 'Hemlig titel', 'instructions' => 'Hemlig instruktion']);
+    $shift = p3TaskShift();
     $task = $shift->tasks()->firstOrFail();
     $this->travelTo(CarbonImmutable::parse('2026-11-10 09:00:00', 'Europe/Stockholm'));
     app(TickShiftTask::class)($this->owner, $this->company, $task, true);
@@ -369,17 +369,18 @@ it('audits with ids and field names, never the task text, and never touches the 
 
     $audit = AuditLog::query()->where('action', 'like', 'planning.%task%')->get();
 
-    expect($audit->pluck('action')->all())->toContain('planning.task_template_created', 'planning.shift_task_done', 'planning.shift_task_added')
+    // A tick is not a bookkeeping event: it is not audited (the audit log outlives the tick's 12 months).
+    expect($audit->pluck('action')->all())->toContain('planning.task_template_created', 'planning.shift_task_added')
+        ->and($audit->pluck('action')->all())->not->toContain('planning.shift_task_done')
         ->and(json_encode($audit->pluck('payload')->all()))->not->toContain('Hemlig')
-        ->and($audit->firstWhere('action', 'planning.shift_task_done')->payload)->toMatchArray(['shift_id' => $shift->id, 'by' => 'PLANNER'])
         ->and($template->fresh()->title)->toBe('Hemlig titel')
         ->and(Entry::query()->count())->toBe(0);
 });
 
 it('removes tasks and their ticks a year after the shift ended, and keeps the rest', function () {
-    taskTemplate(['weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
-    $old = taskShift(['date' => '2025-10-01']);
-    $recent = taskShift(['date' => '2026-06-01']);
+    p3TaskTemplate(['weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
+    $old = p3TaskShift(['date' => '2025-10-01']);
+    $recent = p3TaskShift(['date' => '2026-06-01']);
 
     expect(ShiftTask::query()->count())->toBe(2);
 
@@ -390,7 +391,7 @@ it('removes tasks and their ticks a year after the shift ended, and keeps the re
 });
 
 it('loads Min sida in the same number of queries with 1 task and with 12', function () {
-    taskTemplate(['weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
+    p3TaskTemplate(['weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
     $count = function (): int {
         DB::flushQueryLog();
         DB::enableQueryLog();
@@ -401,21 +402,21 @@ it('loads Min sida in the same number of queries with 1 task and with 12', funct
         return $queries;
     };
 
-    taskShift();
-    publishTasksWeek();
+    p3TaskShift();
+    p3PublishTasksWeek();
     $this->actingAs($this->worker);
     $count();
     $few = $count();
 
     foreach (range(1, 11) as $number) {
-        taskTemplate(['title' => "Uppgift {$number}", 'weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
+        p3TaskTemplate(['title' => "Uppgift {$number}", 'weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
     }
 
     foreach (['2026-11-11', '2026-11-12', '2026-11-13'] as $date) {
-        taskShift(['date' => $date]);
+        p3TaskShift(['date' => $date]);
     }
 
-    publishTasksWeek();
+    p3PublishTasksWeek();
 
     expect($count())->toBe($few);
 });
@@ -434,26 +435,26 @@ it('loads the schedule and saves shifts in the same number of queries however ma
     $taskReads = function (): int {
         DB::flushQueryLog();
         DB::enableQueryLog();
-        publishTasksWeek();
+        p3PublishTasksWeek();
         $queries = collect(DB::getQueryLog())->filter(fn (array $query): bool => str_starts_with(strtolower($query['query']), 'select') && (str_contains($query['query'], 'planning_shift_tasks') || str_contains($query['query'], 'planning_task_templates')))->count();
         DB::disableQueryLog();
 
         return $queries;
     };
 
-    taskTemplate(['weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
-    taskShift();
+    p3TaskTemplate(['weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
+    p3TaskShift();
     $this->actingAs($this->scheduler);
     $count();
     $few = $count();
     $fewReads = $taskReads();
 
     foreach (range(1, 9) as $number) {
-        taskTemplate(['title' => "Uppgift {$number}", 'weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
+        p3TaskTemplate(['title' => "Uppgift {$number}", 'weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
     }
 
     foreach (['2026-11-09', '2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14'] as $date) {
-        taskShift(['date' => $date]);
+        p3TaskShift(['date' => $date]);
     }
 
     expect($count())->toBe($few);
@@ -477,15 +478,60 @@ it('answers 404 for another company\'s task', function () {
 });
 
 it('includes the employee\'s own ticks, and only theirs, in the register extract', function () {
-    taskTemplate(['weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
-    $shift = taskShift();
-    publishTasksWeek();
+    p3TaskTemplate(['weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
+    $shift = p3TaskShift();
+    p3PublishTasksWeek();
     $this->travelTo(CarbonImmutable::parse('2026-11-10 09:00:00', 'Europe/Stockholm'));
     app(TickShiftTask::class)($this->worker, $this->company, $shift->tasks()->firstOrFail(), true);
 
     $annas = DataSubjectExport::employee($this->anna)['avbockade_uppgifter'];
 
     expect($annas)->toHaveCount(1)
-        ->and($annas[0])->toMatchArray(['uppgift' => 'Kontrollera kylen', 'pass' => $shift->id])
+        ->and($annas[0])->toMatchArray(['uppgift' => 'Kontrollera kylen', 'pass' => $shift->id, 'avbockad_av_kontot' => true])
         ->and(DataSubjectExport::employee($this->bertil)['avbockade_uppgifter'])->toBe([]);
+});
+
+it('writes no audit row when a task is ticked or unticked, by the employee or a planner', function () {
+    p3TaskTemplate(['weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
+    $shift = p3TaskShift();
+    p3PublishTasksWeek();
+    $task = $shift->tasks()->firstOrFail();
+    $this->travelTo(CarbonImmutable::parse('2026-11-10 09:00:00', 'Europe/Stockholm'));
+    $before = AuditLog::query()->count();
+
+    app(TickShiftTask::class)($this->worker, $this->company, $task, true);
+    app(TickShiftTask::class)($this->worker, $this->company, $task->fresh(), false);
+    app(TickShiftTask::class)($this->scheduler, $this->company, $task->fresh(), true);
+
+    expect(AuditLog::query()->count())->toBe($before);
+});
+
+it('leaves the tasks of a published shift alone when it is edited, until it is published again', function () {
+    p3TaskTemplate();
+    $shift = p3TaskShift();
+    p3PublishTasksWeek();
+    expect($shift->tasks()->pluck('title')->all())->toBe(['Kontrollera kylen']);
+
+    app(SaveShift::class)($this->owner, $this->company, ['employee_id' => $this->anna->id, 'area_id' => $this->hall->id, 'date' => '2026-11-10', 'start' => '08:00', 'end' => '16:00'], $shift->fresh());
+    expect($shift->tasks()->pluck('title')->all())->toBe(['Kontrollera kylen']);
+
+    p3PublishTasksWeek();
+    expect($shift->tasks()->count())->toBe(0);
+});
+
+it('changes a template\'s text with one update however many shifts it is on, and never on a ticked task', function () {
+    $template = p3TaskTemplate(['weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
+
+    foreach (['2026-11-10', '2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14'] as $date) {
+        p3TaskShift(['date' => $date]);
+    }
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    app(SaveTaskTemplate::class)($this->owner, $this->company, ['title' => 'Ny rubrik', 'weekdays' => [1, 2, 3, 4, 5, 6, 7]], $template);
+    $updates = collect(DB::getQueryLog())->filter(fn (array $query): bool => str_starts_with(strtolower($query['query']), 'update "planning_shift_tasks"'))->count();
+    DB::disableQueryLog();
+
+    expect($updates)->toBe(1)
+        ->and(ShiftTask::query()->where('title', 'Ny rubrik')->count())->toBe(5);
 });

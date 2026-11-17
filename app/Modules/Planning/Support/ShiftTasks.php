@@ -19,20 +19,25 @@ use Illuminate\Support\Collection;
  * rest follows the template. Tasks written for one shift (no template) are
  * never touched, and a shift where a task has been ticked is left as it is.
  * Only shifts that are not published yet, or that start in the future, are
- * touched: what has happened stays as it was. Three queries and at most
- * three writes, whatever the number of shifts.
+ * touched: what has happened stays as it was. Three reads whatever the number
+ * of shifts; the writes are one delete, one insert and one update per
+ * template whose text changed (never one per task), and they only ever touch
+ * tasks that are not ticked, so a tick made meanwhile is never undone.
  */
 final class ShiftTasks
 {
     /**
+     * With $includePublished false a shift that has been published is left alone (a planner's unpublished edit
+     * must not change what the employee sees); it gets its tasks when the period is published.
+     *
      * @param  iterable<Shift>  $shifts
      * @return int tasks added
      */
-    public function sync(Company $company, iterable $shifts): int
+    public function sync(Company $company, iterable $shifts, bool $includePublished = true): int
     {
         $now = CarbonImmutable::now();
         $eligible = collect($shifts)->filter(fn (Shift $shift): bool => $shift->status !== Shift::CANCELLED
-            && ($shift->published_at === null || $shift->starts_at->greaterThan($now)))->values();
+            && ($shift->published_at === null || ($includePublished && $shift->starts_at->greaterThan($now))))->values();
 
         if ($eligible->isEmpty()) {
             return 0;
@@ -43,6 +48,7 @@ final class ShiftTasks
         $existing = ShiftTask::query()->whereIn('shift_id', $eligible->pluck('id')->all())->get()->groupBy('shift_id');
         $insert = [];
         $remove = [];
+        $retext = [];
         $stamp = $now->utc()->format('Y-m-d H:i:sP');
 
         foreach ($eligible as $shift) {
@@ -71,7 +77,7 @@ final class ShiftTasks
 
                 if ($task instanceof ShiftTask) {
                     if ($task->title !== $template->title || $task->instructions !== $template->instructions || $task->due_time !== $template->due_time) {
-                        $task->forceFill(['title' => $template->title, 'instructions' => $template->instructions, 'due_time' => $template->due_time])->save();
+                        $retext[$template->id][] = $task->id;
                     }
 
                     continue;
@@ -92,19 +98,24 @@ final class ShiftTasks
         }
 
         if ($remove !== []) {
-            ShiftTask::query()->whereKey($remove)->delete();
+            ShiftTask::query()->whereKey($remove)->whereNull('done_at')->delete();
         }
 
-        if ($insert !== []) {
-            ShiftTask::query()->insert($insert);
+        foreach ($retext as $templateId => $ids) {
+            $template = $templates->get($templateId);
+
+            if ($template instanceof TaskTemplate) {
+                ShiftTask::query()->whereKey($ids)->whereNull('done_at')->update(['title' => $template->title, 'instructions' => $template->instructions, 'due_time' => $template->due_time, 'updated_at' => $stamp]);
+            }
         }
 
-        return count($insert);
+        // The unique index (shift, template) makes a concurrent run harmless: a row that is already there is skipped.
+        return $insert === [] ? 0 : ShiftTask::query()->insertOrIgnore($insert);
     }
 
     /**
-     * Applies the templates to every shift that has not started (or is not
-     * published yet): after a template was added, changed or removed.
+     * Applies the templates to every shift within the next year that has not
+     * started (or is not published yet): after a template was added, changed or removed.
      */
     public function syncUpcoming(Company $company): int
     {
@@ -112,7 +123,8 @@ final class ShiftTasks
         $shifts = Shift::query()
             ->where('status', '<>', Shift::CANCELLED)
             ->where('starts_at', '>=', ShiftQuery::instant($from))
-            ->get();
+            ->where('starts_at', '<', ShiftQuery::instant($from->addYear()))
+            ->get(['id', 'area_id', 'skill_id', 'starts_at', 'ends_at', 'status', 'published_at']);
 
         return $this->sync($company, $shifts);
     }

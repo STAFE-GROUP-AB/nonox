@@ -12,7 +12,6 @@ use App\Modules\Planning\Models\ShiftTask;
 use App\Modules\Planning\PlanningModule;
 use App\Modules\Planning\Support\LocalTimestamp;
 use App\Modules\Planning\Support\SelfService;
-use App\Support\Audit\Audit;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -24,9 +23,11 @@ use Illuminate\Validation\ValidationException;
  * people may: the employee the shift was published to (in Min sida) and a
  * planner (on the schedule). A tick can be made from the start of the shift's
  * day until the end of the day after the shift ends, and undone only on the
- * day it was made. The tick holds the time and the user and is shown without
- * a name; the audit log holds ids and who ticked (employee or planner), never
- * the task text. A work aid, not an egenkontroll or a ledger record.
+ * day it was made. The tick holds the time and the user (done_at, done_by) and
+ * is shown without a name. It is deliberately NOT written to the audit log:
+ * that keeps user, IP and browser for years, longer than the 12 months a tick
+ * is kept and against the rule that it is never summed up per person. A work
+ * aid, not an egenkontroll or a ledger record.
  */
 final class TickShiftTask
 {
@@ -67,8 +68,6 @@ final class TickShiftTask
             }
 
             $task->forceFill($done ? ['done_at' => $now, 'done_by' => $user->id] : ['done_at' => null, 'done_by' => null])->save();
-
-            Audit::record($done ? 'planning.shift_task_done' : 'planning.shift_task_undone', $task, ['shift_id' => $shift->id, 'by' => $by], $company, $user);
 
             return $task;
         });

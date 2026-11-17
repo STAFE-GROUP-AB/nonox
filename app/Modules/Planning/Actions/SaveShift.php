@@ -109,7 +109,7 @@ final class SaveShift
 
             $this->coster->apply($company, [$shift]);
             $shift->save();
-            $this->tasks->sync($company, [$shift]);
+            $this->tasks->sync($company, [$shift], includePublished: false);
 
             Audit::record($before === null ? 'planning.shift_created' : 'planning.shift_updated', $shift, $before === null
                 ? ['after' => $shift->snapshot()]
