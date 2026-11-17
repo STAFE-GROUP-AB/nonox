@@ -21,8 +21,9 @@ use Illuminate\Support\Collection;
  * What approving a request would mean for the people who get a shift: the
  * working-time checks re-run on their schedule with the change applied, and
  * whether they said the time does not suit them. Dropping a shift only
- * removes work, so it is not checked. Warnings only; they never block. Four
- * queries for any number of requests.
+ * removes work, so it is not checked. Warnings only; they never block. Five
+ * queries for any number of requests (the fifth is the absence marks, with
+ * no type or note: AbsenceDays).
  */
 final class RequestChecks
 {
@@ -30,7 +31,7 @@ final class RequestChecks
 
     /**
      * @param  Collection<int, ShiftRequest>  $requests  with shift and counterpartShift loaded
-     * @return array<int, list<array{message: string, source: string}>> request id => warnings
+     * @return array<int, list<array{code: string, message: string, source: string}>> request id => warnings (the code is a rule key, safe for the audit log; the message may name a person)
      */
     public function for(Company $company, Collection $requests): array
     {
@@ -61,6 +62,7 @@ final class RequestChecks
             ->groupBy('employee_id');
         $employees = Employee::query()->with('employments')->whereKey($employeeIds)->get()->keyBy('id');
         $availability = Availability::query()->whereIn('employee_id', $employeeIds)->get()->groupBy('employee_id');
+        $absence = AbsenceDays::between(min($starts)->startOfDay(), max(array_map(fn (array $gain): CarbonImmutable => $gain[2]->ends_at, $gains)));
         $named = count($employeeIds) > 1 || $requests->contains('kind', ShiftRequest::SWAP);
 
         foreach ($gains as [$requestId, $employeeId, $gained, $given]) {
@@ -83,11 +85,15 @@ final class RequestChecks
             );
 
             foreach ($warnings as $warning) {
-                $result[$requestId][] = ['message' => $prefix.$warning->message, 'source' => $warning->source];
+                $result[$requestId][] = ['code' => $warning->rule, 'message' => $prefix.$warning->message, 'source' => $warning->source];
+            }
+
+            if (AbsenceDays::absentDuring($absence, $employeeId, $gained)) {
+                $result[$requestId][] = ['code' => 'absent', 'message' => $prefix.AbsenceDays::warning(), 'source' => ''];
             }
 
             if (self::isUnavailable($availability->get($employeeId, collect()), $gained)) {
-                $result[$requestId][] = ['message' => $prefix.__('Har angett att den tiden inte passar.'), 'source' => ''];
+                $result[$requestId][] = ['code' => 'unavailable', 'message' => $prefix.__('Har angett att den tiden inte passar.'), 'source' => ''];
             }
         }
 

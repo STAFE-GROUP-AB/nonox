@@ -191,6 +191,7 @@ planering/schema: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka
 planering/schema-avdelningar: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '@monday this week -1 week', rader: avdelningar } }
 planering/schema-dag: { foretag: restaurang, rutt: planning.schedule, fraga: { vy: dag, dag: '@monday this week -2 days' } }
 planering/schema-utkast: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '@monday this week +3 weeks' } }
+planering/schema-franvaro: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '@monday this week +1 week' } }
 planering/mallar: { foretag: restaurang, rutt: planning.templates }
 planering/installningar: { foretag: restaurang, rutt: planning.settings }
 planering/forfragningar: { foretag: restaurang, rutt: planning.requests }

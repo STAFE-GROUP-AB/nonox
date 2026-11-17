@@ -35,4 +35,5 @@ Håll muspekaren över etiketten för att se klockslagen och personens antecknin
 
 - [Schemat](/manual/planering/schemat)
 - [Öppna pass och byten](/manual/planering/oppna-pass-och-byten)
+- [Frånvaro i schemat](/manual/planering/franvaro-i-schemat) – godkänd frånvaro under Lön.
 - [Mitt schema](/manual/personal/mitt-schema) – så anger personalen sin tillgänglighet.

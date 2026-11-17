@@ -168,7 +168,7 @@ class SchedulePage extends Component
         }
 
         $this->showEditor = false;
-        $this->toast($shift === null ? __('Passet är tillagt som utkast.') : $this->savedMessage($saved, __('Passet är sparat.')));
+        $this->toast($this->withAbsence($save, $saved, $shift === null ? __('Passet är tillagt som utkast.') : $this->savedMessage($saved, __('Passet är sparat.'))));
     }
 
     /**
@@ -185,7 +185,7 @@ class SchedulePage extends Component
             'employee_id' => $employeeId,
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
-        ], $shift), fn (Shift $saved): string => $this->savedMessage($saved, __('Passet är flyttat.')));
+        ], $shift), fn (Shift $saved): string => $this->withAbsence($save, $saved, $this->savedMessage($saved, __('Passet är flyttat.'))));
     }
 
     /** A drop in the grid with areas as rows: the shift's new area and times, same person. */
@@ -198,7 +198,7 @@ class SchedulePage extends Component
             'area_id' => $areaId,
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
-        ], $shift), fn (Shift $saved): string => $this->savedMessage($saved, __('Passet är flyttat.')));
+        ], $shift), fn (Shift $saved): string => $this->withAbsence($save, $saved, $this->savedMessage($saved, __('Passet är flyttat.'))));
     }
 
     /** Drag to create on the timeline: a new draft at once, without the editor. */
@@ -210,7 +210,7 @@ class SchedulePage extends Component
             'ends_at' => $endsAt,
             'area_id' => $this->area,
             'skill_id' => $this->skill,
-        ]), __('Passet är tillagt som utkast.'));
+        ]), fn (Shift $saved): string => $this->withAbsence($save, $saved, __('Passet är tillagt som utkast.')));
     }
 
     /** Paste (v) or a drop with Alt: a copy of the shift on another person and day, same times. */
@@ -226,7 +226,7 @@ class SchedulePage extends Component
             'date' => $date,
             'start' => $shift->starts_at->format('H:i'),
             'end' => $shift->ends_at->format('H:i'),
-        ]), __('Passet är kopierat.'));
+        ]), fn (Shift $saved): string => $this->withAbsence($save, $saved, __('Passet är kopierat.')));
     }
 
     public function deleteShift(string $id, DeleteShift $delete): void
@@ -254,6 +254,7 @@ class SchedulePage extends Component
     public function publish(PublishPeriod $publish): void
     {
         [$from, $to] = $this->period();
+        $absent = PublishPeriod::absentCount($from, $to);
 
         try {
             $publication = $publish($this->user(), $this->company(), $from, $to);
@@ -264,10 +265,17 @@ class SchedulePage extends Component
         }
 
         $this->showPublish = false;
-        $this->toast(trans_choice('{1} 1 pass är publicerat. :notified har fått besked.|[2,*] :count pass är publicerade. :notified har fått besked.', $publication->shift_count, [
-            'count' => $publication->shift_count,
-            'notified' => trans_choice('{0} Ingen|{1} 1 person|[2,*] :count personer', $publication->notified_count, ['count' => $publication->notified_count]),
-        ]));
+        $this->toast($this->publishedMessage($publication->shift_count, $publication->notified_count, $absent));
+    }
+
+    private function publishedMessage(int $count, int $notified, int $absent): string
+    {
+        $message = trans_choice('{1} 1 pass är publicerat. :notified har fått besked.|[2,*] :count pass är publicerade. :notified har fått besked.', $count, [
+            'count' => $count,
+            'notified' => trans_choice('{0} Ingen|{1} 1 person|[2,*] :count personer', $notified, ['count' => $notified]),
+        ]);
+
+        return $absent === 0 ? $message : $message.' '.trans_choice('{1} 1 pass ligger på en dag då personen är frånvarande.|[2,*] :count pass ligger på dagar då personen är frånvarande.', $absent, ['count' => $absent]);
     }
 
     public function openCopy(): void
@@ -336,7 +344,7 @@ class SchedulePage extends Component
     public function render(ScheduleData $data): View
     {
         [$from, $to] = $this->period();
-        $loaded = $data->load($this->company(), $from, $to, ['area' => $this->area, 'skill' => $this->skill, 'location' => $this->location]);
+        $loaded = $data->load($this->company(), $from, $to, ['area' => $this->area, 'skill' => $this->skill, 'location' => $this->location], $this->allowed('planning:manage'));
 
         return view('planning::livewire.schedule', [
             ...$loaded,
@@ -447,6 +455,14 @@ class SchedulePage extends Component
         return PlanningSettings::bool($this->settings(), 'notify_on_publish')
             ? __(':done Personen får besked när du publicerar igen.', ['done' => $done])
             : __(':done Publicera igen för att visa ändringen. Aviseringar är avstängda, så personen får inget besked.', ['done' => $done]);
+    }
+
+    /** The toast, with the absence warning when the person is absent that day (it never blocks). */
+    private function withAbsence(SaveShift $save, Shift $saved, string $message): string
+    {
+        $warning = $save->absenceWarning($saved);
+
+        return $warning === null ? $message : "{$message} {$warning}";
     }
 
     /** @return array<string, mixed> */

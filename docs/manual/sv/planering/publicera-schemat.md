@@ -16,7 +16,7 @@ Passen du lägger är utkast. Personalen ser dem först när du publicerar. När
 
 1. Gå till **Planering → Schema** och öppna veckan, eller dagen, du vill publicera.
 2. Klicka på **Publicera**. Siffran på knappen är antalet utkast och ändrade pass i perioden. Står det **Publicerat** finns inget nytt att publicera.
-3. Läs sammanfattningen: hur många nya och ändrade pass det är, hur många öppna pass utan person, hur många pass som ligger på en tid personen har sagt inte passar, och vem som får besked.
+3. Läs sammanfattningen: hur många nya och ändrade pass det är, hur många öppna pass utan person, hur många pass som ligger på en tid personen har sagt inte passar, hur många som ligger på en dag då personen är [frånvarande](/manual/planering/franvaro-i-schemat), och vem som får besked.
 4. Klicka på **Publicera**.
 
 Det du publicerar är perioden du har öppen: hela veckan i veckovyn, eller bara dagen i dagvyn.

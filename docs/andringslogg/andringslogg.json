@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-17-planering-franvaro-i-schemat",
+      "datum": "2026-11-17T17:41:36+01:00",
+      "rubrik": "Godkänd frånvaro syns i schemat",
+      "beskrivning": "Schemat visar Frånvarande och Delvis frånvarande på dagar med godkänd frånvaro, och Frånvaro begärd för dig som planerar. Du får en varning när ett pass läggs, publiceras eller godkänns på en frånvarodag, och en sak att göra när publicerade pass ligger hos frånvarande personal. Orsaken till frånvaron läses aldrig och kollegorna ser ingenting.",
+      "typ": "Nytt",
+      "omrade": "Planering"
+    },
+    {
       "id": "2026-11-17-aktiebok-och-styrelserum-gar-att-sla-pa",
       "datum": "2026-11-17T17:25:00+01:00",
       "rubrik": "Aktiebok och styrelserum går nu att slå på",

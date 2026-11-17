@@ -172,6 +172,13 @@ Every action: authorized by policy, transactional, audited, tenancy-safe.
   be notified. Warnings from `WorkingTimeChecks` as badges on the shift.
   Keyboard: arrows to move focus, Enter to edit, Delete to remove a draft, `c`
   copy, `v` paste. Works on a tablet; read-only list on a phone.
+  Approved absence is shown per person and day as **Frånvarande** (or
+  **Delvis frånvarande** when `extent_bp` < 10 000), and **Frånvaro begärd**
+  to holders of `planning:manage` only. `AbsenceDays` is the one reader: it
+  selects `employee_id`, `date_from`, `date_to`, `extent_bp` and `status`,
+  never the type, the note or the certificate (health data). A shift on an
+  absent day gets the warning "Personen är frånvarande den här dagen." on
+  save, publish and request decisions; it never blocks (ADR-037, gap 6).
 - **Mallar**: templates; apply to weeks.
 - **Öppna pass och byten**: requests to decide, with the checks re-run.
 - **Tid att attestera** (`/planering/attest`): per period, per person per
@@ -184,7 +191,7 @@ Every action: authorized by policy, transactional, audited, tenancy-safe.
   page), open shifts to claim, swap or drop a shift, availability, iCal
   link, and the existing check-in.
 - Overview todos: next period not published, open requests, days to attest
-  before the next payroll run.
+  before the next payroll run, published shifts held by absent staff.
 
 ## 8. Payroll integration
 

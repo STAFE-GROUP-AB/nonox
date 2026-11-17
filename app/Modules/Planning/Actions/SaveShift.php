@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\Planning\Actions\Concerns\GuardsPlanning;
 use App\Modules\Planning\Models\Shift;
+use App\Modules\Planning\Support\AbsenceDays;
 use App\Modules\Planning\Support\LocalTimestamp;
 use App\Modules\Planning\Support\ShiftCoster;
 use App\Support\Audit\Audit;
@@ -114,6 +115,12 @@ final class SaveShift
 
             return $shift;
         });
+    }
+
+    /** The warning to show after a save when the person has approved absence on the shift's day: never blocks, never says why (AbsenceDays). */
+    public function absenceWarning(Shift $shift): ?string
+    {
+        return isset(AbsenceDays::shiftsOfAbsent([$shift])[(string) $shift->id]) ? AbsenceDays::warning() : null;
     }
 
     /**

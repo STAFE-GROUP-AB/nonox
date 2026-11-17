@@ -8,6 +8,7 @@ use App\Models\TeamInvitation;
 use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\InviteEmployeeToPortal;
+use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Planning\Actions\ApplyTemplate;
 use App\Modules\Planning\Actions\AttestDay;
@@ -56,6 +57,8 @@ use RuntimeException;
  *   claim of an open shift waiting, her swap with Maja accepted by Maja and
  *   waiting for the manager, Maja's swap with Lina waiting for Lina, Maja's
  *   claim approved, and Lina's calendar link.
+ * - At the restaurant next week has approved vacation (Ali), a half day
+ *   (Johan) and a requested day off (Elin), for the absence band.
  * - Attest: the clean days are attested, a few days with deviations are left
  *   open, and at the café a forgotten check-out is entered by the manager.
  *   At the restaurant only the first week is attested: the staff ledger's
@@ -189,6 +192,7 @@ final class PlanningExtras extends DemoExtra
         $this->changeAfterPublishing($context, $monday);
 
         if ($context->slug === self::RESTAURANT) {
+            $this->absences($context, $monday);
             $this->selfService($context, $monday);
         }
 
@@ -381,6 +385,30 @@ final class PlanningExtras extends DemoExtra
             'break_minutes' => $shift->break_minutes,
             'note' => 'Flyttat en timme: leverans på morgonen.',
         ], $shift);
+    }
+
+    /**
+     * Next week at the restaurant: Ali is on approved vacation Wednesday and
+     * Thursday (his published shifts are then in Planering's to-dos), Johan
+     * is half absent on Thursday and Elin has requested a day off on
+     * Saturday. Written as rows only; the schedule never reads the type.
+     */
+    private function absences(DemoContext $context, CarbonImmutable $monday): void
+    {
+        $next = $monday->addWeek();
+        $row = fn (string $name, string $type, CarbonImmutable $from, CarbonImmutable $to, string $status, int $extent): Absence => CurrentCompany::run($context->company, fn (): Absence => Absence::query()->create([
+            'employee_id' => $this->employee($context, $name)->id,
+            'type' => $type,
+            'date_from' => $from->toDateString(),
+            'date_to' => $to->toDateString(),
+            'extent_bp' => $extent,
+            'hours' => $extent === 10000 ? '8' : '4',
+            'status' => $status,
+        ]));
+
+        $row('Ali', 'VACATION', $next->addDays(2), $next->addDays(3), 'APPROVED', 10000);
+        $row('Johan', 'VAB', $next->addDays(3), $next->addDays(3), 'APPROVED', 5000);
+        $row('Elin', 'VACATION', $next->addDays(5), $next->addDays(5), 'REQUESTED', 10000);
     }
 
     /**

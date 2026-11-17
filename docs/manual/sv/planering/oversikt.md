@@ -31,6 +31,7 @@ Avsnittet är för dig som planerar eller attesterar tid: ägaren, en administra
 ## Personalens önskemål
 
 - [Tillgänglighet](/manual/planering/tillganglighet) – när personalen kan, inte kan eller gärna jobbar.
+- [Frånvaro i schemat](/manual/planering/franvaro-i-schemat) – godkänd frånvaro, varning på frånvarodagar och pass hos frånvarande personal.
 - [Öppna pass och byten](/manual/planering/oppna-pass-och-byten) – godkänn eller avslå förfrågningar.
 - [Kalenderlänk](/manual/planering/kalenderlank) – personalens pass i telefonens kalender.
 
