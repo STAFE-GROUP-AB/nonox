@@ -104,7 +104,7 @@ describe('pension and insurances (A10)', function () {
 
         $payCodes = PayCode::query()->get()->keyBy('id');
         $accounts = Account::query()->get()->keyBy('id');
-        $rows = collect(SalaryVoucher::rows(Payslip::query()->with(['lines', 'employment.costCenter'])->get(), $payCodes, $accounts));
+        $rows = collect(SalaryVoucher::rows(Payslip::query()->with(['lines.costCenter', 'employment.costCenter', 'employment.project'])->get(), $payCodes, $accounts));
 
         expect($rows->where('account', 7570)->sum('amount'))->toBe(14_400)
             ->and($rows->where('account', 7410)->sum('amount'))->toBe(144_000)

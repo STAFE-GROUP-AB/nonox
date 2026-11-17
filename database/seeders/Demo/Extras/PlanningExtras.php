@@ -189,7 +189,7 @@ final class PlanningExtras extends DemoExtra
      * Cost centres per company and the areas on them (ADR-037, gap 7): the
      * restaurant books the kitchen apart from the dining room and bar.
      *
-     * @var array<string, array<string, array{string, list<string>}>>
+     * @var array<string, array<int, array{string, list<string>}>>
      */
     private const array COST_CENTRES = [
         self::RESTAURANT => [
