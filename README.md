@@ -129,6 +129,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Bemanning och kostnad: planerad och faktisk tid och lönekostnad i procent av försäljningen ur bokföringen, dag för dag.
 - Uppgifter på passen: återkommande uppgifter efter avdelning, kompetens, veckodag och klockslag läggs på passen när de sparas och publiceras. Personalen bockar av dem på Min sida och planeraren ser det på schemat, utan namn och utan jämförelse mellan personer. Ett stöd i arbetet, inte egenkontroll.
 - Bemanningsbehov: prognos för försäljningen (snittet för samma veckodag de senaste veckorna, helgdagar från samma helgdag förra året, egna ändringar med anledning) och bemanningsmål per avdelning, med försäljning per bemannad timme och minsta bemanning. Fördelningen per timme kommer från kassans kvitton eller en egen timprofil. Schemats dagvy visar behovet mot passen timme för timme, med varning för under- och överbemanning.
+- Budget för personalkostnad: per vecka för hela företaget eller en avdelning, som ett belopp eller en andel av prognosen. Schemat visar den beräknade kostnaden mot budgeten och varnar från 95 % och vid 100 %, utan att stoppa planeringen. Schema över företag visar varje företags budget.
 
 ### Lager (modul) – ny
 - Lagerförda artiklar i samma artikelregister som fakturorna, med fliken Avancerad: EAN/GTIN med kontroll av kontrollsiffran, SKU, skannerkod, inköpspris, leverantör, egenskaper, mått och vinstmarginalbeskattning för begagnat.

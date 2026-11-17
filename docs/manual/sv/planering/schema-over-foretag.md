@@ -33,7 +33,7 @@ Vyn visas under **Sparade vyer**. Klicka på namnet för att välja samma föret
 
 Bläddra med **‹** och **›**, eller klicka på **Idag**. Överst står summor för de valda företagen: **Pass** (med antal öppna), **Planerad tid**, **Uppskattad kostnad** och **Krockar mellan företag**. Kostnaden är samma uppskattning som i företagets eget schema, inte lön.
 
-Varje företag har ett eget block med dagarna i kolumner. Ett pass visar tid, person och avdelning. Utkast har streckad kant och ordet **utkast**. Överst i blocket står passen, öppna pass, planerad tid och kostnaden för företaget den veckan.
+Varje företag har ett eget block med dagarna i kolumner. Ett pass visar tid, person och avdelning. Utkast har streckad kant och ordet **utkast**. Överst i blocket står passen, öppna pass, planerad tid och kostnaden för företaget den veckan. Har företaget en budget för veckan står **Budget** och hur stor del av den kostnaden är, röd när den är över och gul när den är nära. Budgeten sätts i företaget, se [Budget för personalkostnad](/manual/planering/budget).
 
 ## Öppna ett pass i sitt företag
 

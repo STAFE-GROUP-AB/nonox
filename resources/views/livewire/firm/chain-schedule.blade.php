@@ -1,5 +1,6 @@
 @php
     use App\Modules\Planning\Domain\WorkingTimeChecks;
+    use App\Modules\Planning\Support\Budget\BudgetText;
     use App\Support\Money\Money;
 
     $locale = app()->getLocale();
@@ -110,6 +111,13 @@
                                 @if($block['cost'] > 0) · {{ $money($block['cost']) }}@if($block['incomplete']) *@endif @endif
                                 @if($block['drafts'] > 0) · {{ __(':count utkast', ['count' => $block['drafts']]) }}@endif
                             </p>
+                            @if($budget = $block['extra']['budget'] ?? null)
+                                <p class="text-xs tabular-nums text-gray-600" data-chain-budget>
+                                    {{ __('Budget') }} {{ $budget['text'] }} ·
+                                    <span @class(['font-semibold', 'text-red-700' => $budget['status'] === 'OVER', 'text-amber-800' => $budget['status'] === 'NEAR', 'text-ink' => ! in_array($budget['status'], ['OVER', 'NEAR'], true)])>{{ BudgetText::percent($budget['percent']) }}</span>
+                                    @if($budget['warning'])<span class="sr-only">{{ $budget['warning'] }}</span>@endif
+                                </p>
+                            @endif
                         </div>
                         @include('firm.open-in-company', [
                             'companyId' => $block['id'],

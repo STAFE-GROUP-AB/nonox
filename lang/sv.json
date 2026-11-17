@@ -181,5 +181,9 @@
     "{1} 1 har redan ett pass då|[2,*] :count har redan ett pass då": "{1} 1 har redan ett pass då|[2,*] :count har redan ett pass då",
     "{1} 1 skulle få en varning för vilotid eller arbetstid|[2,*] :count skulle få en varning för vilotid eller arbetstid": "{1} 1 skulle få en varning för vilotid eller arbetstid|[2,*] :count skulle få en varning för vilotid eller arbetstid",
     "{0} Uppgiften är sparad. Den hamnar på de pass den passar.|{1} Uppgiften är sparad och lagd på 1 pass.|[2,*] Uppgiften är sparad och lagd på :count pass.": "{0} Uppgiften är sparad. Den hamnar på de pass den passar.|{1} Uppgiften är sparad och lagd på 1 pass.|[2,*] Uppgiften är sparad och lagd på :count pass.",
-    "{1} Försäljningen samma veckodag :dates.|[2,*] Snitt av samma veckodag :count veckor: :dates.": "{1} Försäljningen samma veckodag :dates.|[2,*] Snitt av samma veckodag :count veckor: :dates."
+    "{1} Försäljningen samma veckodag :dates.|[2,*] Snitt av samma veckodag :count veckor: :dates.": "{1} Försäljningen samma veckodag :dates.|[2,*] Snitt av samma veckodag :count veckor: :dates.",
+    "{1} Budgeten för veckan är sparad.|[2,*] Budgeten är sparad för :count veckor.": "{1} Budgeten för veckan är sparad.|[2,*] Budgeten är sparad för :count veckor.",
+    "{0} Ingen budget är kopierad.|{1} 1 veckobudget är kopierad.|[2,*] :count veckobudgetar är kopierade.": "{0} Ingen budget är kopierad.|{1} 1 veckobudget är kopierad.|[2,*] :count veckobudgetar är kopierade.",
+    "{1} 1 vecka hade redan en budget och är oförändrad.|[2,*] :count veckor hade redan en budget och är oförändrade.": "{1} 1 vecka hade redan en budget och är oförändrad.|[2,*] :count veckor hade redan en budget och är oförändrade.",
+    "{1} Passen 1 dag utan prognos (:amount) räknas inte mot budgeten.|[2,*] Passen :count dagar utan prognos (:amount) räknas inte mot budgeten.": "{1} Passen 1 dag utan prognos (:amount) räknas inte mot budgeten.|[2,*] Passen :count dagar utan prognos (:amount) räknas inte mot budgeten."
 }

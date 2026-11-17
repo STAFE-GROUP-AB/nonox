@@ -207,6 +207,8 @@ planering/attest-restaurang: { foretag: restaurang, rutt: planning.attest, fraga
 planering/bemanning: { foretag: restaurang, rutt: planning.staffing, fraga: { fran: '@monday this week -4 weeks', till: '@monday this week -1 day' } }
 planering/bemanningsbehov: { foretag: restaurang, rutt: planning.demand }
 planering/schema-dag-behov: { foretag: restaurang, rutt: planning.schedule, fraga: { vy: dag, dag: '@monday this week +1 week +4 days' } }
+planering/budget: { foretag: restaurang, rutt: planning.budget, fraga: { vecka: '@monday this week' } }
+planering/schema-budget: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '@monday this week' }, visa: '[data-budget]' }
 planering/min-sida-schema: { foretag: restaurang, anvandare: lina.berg@example.test, enhet: mobil, rutt: payroll.portal.home }
 planering/min-sida-uppgifter: { foretag: restaurang, anvandare: lina.berg@example.test, enhet: mobil, rutt: payroll.portal.home, visa: '[data-next-shift]' }
 

@@ -238,6 +238,7 @@ use App\Modules\Peppol\Models\PeppolTransmission;
 use App\Modules\Planning\Models\Area as PlanningArea;
 use App\Modules\Planning\Models\Attestation as PlanningAttestation;
 use App\Modules\Planning\Models\Availability as PlanningAvailability;
+use App\Modules\Planning\Models\Budget as PlanningBudget;
 use App\Modules\Planning\Models\EmployeeSkill as PlanningEmployeeSkill;
 use App\Modules\Planning\Models\ForecastOverride as PlanningForecastOverride;
 use App\Modules\Planning\Models\HourProfile as PlanningHourProfile;
@@ -475,6 +476,7 @@ const COMPANY_SCOPED_MODELS = [
     PlanningSalesSource::class => 'planningSalesSourceAttributes',
     PlanningHourProfile::class => ['weekday' => 5, 'shares' => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2000, 2000, 1000, 0, 0, 0, 1000, 2000, 2000, 0, 0, 0, 0]],
     PlanningForecastOverride::class => ['date' => '2026-12-12', 'amount_ore' => 4_500_000, 'reason' => 'Hemlig konsert'],
+    PlanningBudget::class => ['week_start' => '2026-11-23', 'amount_ore' => 2_500_000],
     PlanningStaffingRule::class => ['weekday' => 5, 'start_minute' => 660, 'end_minute' => 840, 'sales_per_staff_hour_ore' => 120_000, 'min_staff' => 2, 'valid_from' => '2026-11-01'],
     StockLocation::class => 'inventoryLocationAttributes',
     StockMovement::class => 'inventoryMovementAttributes',

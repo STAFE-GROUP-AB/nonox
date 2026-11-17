@@ -24,6 +24,7 @@ use App\Modules\Planning\Actions\RequestShift;
 use App\Modules\Planning\Actions\SaveActualTime;
 use App\Modules\Planning\Actions\SaveArea;
 use App\Modules\Planning\Actions\SaveAvailability;
+use App\Modules\Planning\Actions\SaveBudget;
 use App\Modules\Planning\Actions\SaveForecastOverride;
 use App\Modules\Planning\Actions\SaveHourProfile;
 use App\Modules\Planning\Actions\SaveShift;
@@ -36,7 +37,9 @@ use App\Modules\Planning\Actions\TickShiftTask;
 use App\Modules\Planning\Models\Shift;
 use App\Modules\Planning\Models\ShiftRequest;
 use App\Modules\Planning\PlanningModule;
+use App\Modules\Planning\Support\Budget\BudgetData;
 use App\Modules\Planning\Support\LocalTimestamp;
+use App\Modules\Planning\Support\ShiftQuery;
 use App\Modules\StaffLedger\Domain\LedgerQuery;
 use App\Modules\StaffLedger\Models\Location;
 use App\Modules\StaffLedger\Models\Person;
@@ -270,6 +273,7 @@ final class PlanningExtras extends DemoExtra
             $this->tickTasks($context, $monday);
             $this->selfService($context, $monday);
             $this->at($monday->subDays(3)->setTime(15, 30), fn () => $this->demand($context, $monday));
+            $this->at($monday->subDays(3)->setTime(16, 0), fn () => $this->budget($context, $monday, $areas));
         } else {
             $this->sharedLogin($context, $monday);
         }
@@ -527,6 +531,33 @@ final class PlanningExtras extends DemoExtra
             'amount' => '45 000',
             'reason' => 'Julbordspremiär, 40 bokade gäster',
         ]);
+    }
+
+    /**
+     * Budget för personalkostnad at the restaurant (ADR-037 gap 2): the
+     * whole company's budget this week just above the planned cost, so the
+     * schedule warns near the budget; next week with room to spare and the
+     * kitchen's budget below its cost; the two weeks after as 30 % of the
+     * forecast. Amounts follow the demo's own shifts, rounded to 500 kr.
+     *
+     * @param  array<string, int>  $areas  area ids by name
+     */
+    private function budget(DemoContext $context, CarbonImmutable $monday, array $areas): void
+    {
+        $costs = BudgetData::costs(CurrentCompany::run($context->company, fn () => ShiftQuery::startingOn($monday, $monday->addDays(13))
+            ->where('status', '<>', Shift::CANCELLED)
+            ->get()))[(int) $context->company->id] ?? [];
+        $thisWeek = array_sum(array_column($costs[$monday->toDateString()] ?? [], 'cost'));
+        $next = $costs[$monday->addWeek()->toDateString()] ?? [];
+        $nextWeek = array_sum(array_column($next, 'cost'));
+        $kronor = fn (int $ore, float $factor): string => (string) max(500, (int) (round($ore * $factor / 100 / 500) * 500));
+        $save = app(SaveBudget::class);
+
+        $save($context->user, $context->company, ['from' => $monday->toDateString(), 'kind' => SaveBudget::AMOUNT, 'value' => $kronor($thisWeek, 1 / 0.97)]);
+        $save($context->user, $context->company, ['from' => $monday->addWeek()->toDateString(), 'kind' => SaveBudget::AMOUNT, 'value' => $kronor($nextWeek, 1.15)]);
+        $save($context->user, $context->company, ['area_id' => $areas['Kök'], 'from' => $monday->addWeek()->toDateString(), 'kind' => SaveBudget::AMOUNT, 'value' => $kronor($next[$areas['Kök']]['cost'] ?? 0, 0.9)]);
+        $save($context->user, $context->company, ['area_id' => $areas['Servering'], 'from' => $monday->addWeek()->toDateString(), 'kind' => SaveBudget::AMOUNT, 'value' => $kronor($next[$areas['Servering']]['cost'] ?? 0, 1.2)]);
+        $save($context->user, $context->company, ['from' => $monday->addWeeks(2)->toDateString(), 'to' => $monday->addWeeks(3)->toDateString(), 'kind' => SaveBudget::PERCENT, 'value' => '30']);
     }
 
     /** A published shift later this week moved by two hours and not yet published again. */

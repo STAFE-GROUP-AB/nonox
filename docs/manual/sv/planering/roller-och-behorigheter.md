@@ -8,19 +8,19 @@ sokord: [schemaläggare, behörighet, roll, vem får attestera, chef, arbetsleda
 
 # Roller och behörigheter
 
-Planering har tre nivåer: att se schemat, att planera och publicera, och att attestera tid till lönen. Planering ger dessutom en ny roll, **Schemaläggare**, för den som lägger schemat men inte ska sköta lönen.
+Planering har fyra nivåer: att se schemat, att planera och publicera, att sätta budgeten för personalkostnaden och att attestera tid till lönen. Planering ger dessutom en ny roll, **Schemaläggare**, för den som lägger schemat men inte ska sköta lönen.
 
 ![Inställningarna för Planering. Löneinställningarna kräver behörighet att attestera.](/bilder/manual/planering/installningar.webp)
 
 ## Vem får göra vad
 
-| Roll | Se schemat och kostnaderna | Planera, publicera, svara på förfrågningar | Attestera tid och skicka till lönen | Eget schema på Min sida |
-|---|---|---|---|---|
-| **Ägare** | Ja | Ja | Ja | Ja |
-| **Administratör** | Ja | Ja | Ja | Ja |
-| **Löneadministratör** | Ja | Ja | Ja | Ja |
-| **Schemaläggare** | Ja | Ja | Nej | Ja |
-| **Anställd** | Nej | Nej | Nej | Ja |
+| Roll | Se schemat och kostnaderna | Planera, publicera, svara på förfrågningar | Sätta budget för personalkostnad | Attestera tid och skicka till lönen | Eget schema på Min sida |
+|---|---|---|---|---|---|
+| **Ägare** | Ja | Ja | Ja | Ja | Ja |
+| **Administratör** | Ja | Ja | Ja | Ja | Ja |
+| **Löneadministratör** | Ja | Ja | Ja | Ja | Ja |
+| **Schemaläggare** | Ja | Ja | Nej | Nej | Ja |
+| **Anställd** | Nej | Nej | Nej | Nej | Ja |
 
 Övriga roller, till exempel redovisningskonsult och revisor, har ingen åtkomst till Planering.
 
@@ -38,6 +38,7 @@ En schemaläggare kan till exempel vara en restaurangchef eller en arbetsledare.
 - skapa uppgifter som följer med passen och se vad som är avbockat,
 - svara på förfrågningar om öppna pass och byten,
 - se den uppskattade kostnaden per pass och **Bemanning och kostnad**,
+- se budgeten för personalkostnaden och varningarna, men inte ändra budgeten,
 - ändra inställningarna utom de som ändrar lönen.
 
 Hen kan inte attestera tid eller skicka den till lönen. **Tid att attestera** syns inte i hens meny. Det gör att den som planerar inte ensam godkänner den tid som blir lön.

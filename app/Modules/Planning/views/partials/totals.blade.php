@@ -28,3 +28,33 @@
         @endif
     </div>
 @endforeach
+{{-- The week's staff-cost budget (ADR-037, gap 2): the estimated cost against each budget, warnings at the threshold and at 100 %. Never blocks. --}}
+@if(($budget ?? null) && ! $budget->isEmpty())
+    @php($budgetText = \App\Modules\Planning\Support\Budget\BudgetText::class)
+    @php($areaNames = $areas->pluck('name', 'id')->all())
+    <div class="border-t border-stone-200 bg-stone-50 px-3 py-2 text-xs text-gray-700" style="grid-column: 1 / -1;" role="gridcell" data-budget>
+        <div class="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+            <p class="font-semibold uppercase tracking-wide text-gray-500">{{ __('Budget vecka :week', ['week' => \Carbon\CarbonImmutable::parse($budget->monday)->isoWeek()]) }}</p>
+            @foreach($budget->lines() as $line)
+                @php($status = $line->status())
+                <p class="tabular-nums">
+                    <span class="text-gray-500">{{ $budgetText::scope($line, $areaNames) }}</span>
+                    <span class="font-semibold text-ink">{{ $money($line->costOre) }}{{ $line->incomplete ? ' *' : '' }}</span>
+                    <span class="text-gray-500">{{ __('av') }} {{ $budgetText::budget($line) }}</span>
+                    <span @class(['font-semibold', 'text-red-700' => $status === 'OVER', 'text-amber-800' => $status === 'NEAR', 'text-ink' => ! in_array($status, ['OVER', 'NEAR'], true)])>{{ $budgetText::percent($line->usedPercent()) }}</span>
+                    @if($status === 'OVER')<span aria-hidden="true">▲</span><span class="sr-only">{{ __('Över budget') }}</span>@elseif($status === 'NEAR')<span aria-hidden="true">!</span><span class="sr-only">{{ __('Nära budget') }}</span>@endif
+                </p>
+            @endforeach
+            <a href="{{ route('planning.budget', ['vecka' => $budget->monday]) }}" class="font-semibold text-accent-700 underline">{{ ($canBudget ?? false) ? __('Ändra budget') : __('Visa budget') }}</a>
+        </div>
+        @foreach($budget->lines() as $line)
+            @if($note = $budgetText::forecastNote($line))
+                <p class="mt-1 text-gray-600">{{ $budgetText::scope($line, $areaNames) }}: {{ $note }}</p>
+            @endif
+        @endforeach
+        @foreach($budget->warnings() as $line)
+            <p class="mt-1 {{ $line->status() === 'OVER' ? 'text-red-700' : 'text-amber-800' }}">{{ $budgetText::warning($line, $budget->monday, $areaNames) }}</p>
+        @endforeach
+        <p class="mt-1 text-gray-500">{{ __('Kostnaden är en uppskattning. Budgeten varnar men hindrar aldrig planeringen.') }}</p>
+    </div>
+@endif

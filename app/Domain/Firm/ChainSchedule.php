@@ -7,12 +7,15 @@ namespace App\Domain\Firm;
 use App\Models\CompanyModule;
 use App\Models\User;
 use App\Modules\Payroll\Models\Employee;
+use App\Modules\Planning\Domain\Budget\BudgetWeek;
 use App\Modules\Planning\Domain\PlannedShift;
 use App\Modules\Planning\Domain\WorkingTimeChecks;
 use App\Modules\Planning\Models\Area;
 use App\Modules\Planning\Models\Shift;
 use App\Modules\Planning\PlanningModule;
 use App\Modules\Planning\PlanningSettings;
+use App\Modules\Planning\Support\Budget\BudgetData;
+use App\Modules\Planning\Support\Budget\BudgetText;
 use App\Modules\Planning\Support\ShiftQuery;
 use App\Support\Tenancy\CompanyScope;
 use Carbon\CarbonImmutable;
@@ -35,9 +38,11 @@ use Illuminate\Support\Collection;
  * logged company switch.
  *
  * Fixed number of queries whatever the number of companies and shifts. The
- * budget column (P6) is filled into each company block's "extra"; budget
- * figures follow planning:view in that company (ADR-037, permissions) and
- * setting a budget is planning:budget. It is empty until then.
+ * staff-cost budget (ADR-037 gap 2) is in each company block's
+ * extra['budget']: the week's total budget against the estimated cost, read
+ * only. Budget figures follow planning:view in that company (ADR-037,
+ * permissions), which every company read here has; setting a budget is
+ * planning:budget, in the company itself. Null when the week has no budget.
  *
  * @phpstan-type Chip array{
  *     id: string, company_id: int, date: string, start: string, end: string, person: ?string,
@@ -54,6 +59,8 @@ use Illuminate\Support\Collection;
 final class ChainSchedule
 {
     public const string PERMISSION = 'planning:view';
+
+    public function __construct(private readonly BudgetData $budgets) {}
 
     /** @return list<int> the companies where the user holds planning:view, the only ones a view or a selection may name */
     public function eligibleIds(User $user): array
@@ -99,8 +106,12 @@ final class ChainSchedule
         // Read across the user's own companies at once; every id comes from the user's memberships and holds planning:view.
         // Conflicts are looked for across every company the user may see; only the selected ones are drawn.
         $read = CompanyScope::bypass(fn (): array => $this->read($eligibleIds, $monday));
+        // The budgets of the selected companies only, from the same memberships; the shifts and settings are already read.
+        $weekEnd = $monday->addDays(7);
+        $inWeek = $read['shifts']->filter(fn (Shift $shift): bool => $shift->starts_at->greaterThanOrEqualTo($monday) && $shift->starts_at->lessThan($weekEnd));
+        $budgets = CompanyScope::bypass(fn (): array => $this->budgets->forCompanies($selected, [$monday], $read['settings']->all(), BudgetData::costs($inWeek)));
 
-        return $this->build($selected, $eligible, $days, $monday, $read);
+        return $this->build($selected, $eligible, $days, $monday, $read, $budgets);
     }
 
     /**
@@ -138,13 +149,14 @@ final class ChainSchedule
      * @param  array<int, string>  $eligible
      * @param  list<CarbonImmutable>  $days
      * @param  array{shifts: Collection<int, Shift>, employees: Collection<int, Employee>, areas: Collection<int, Area>, settings: Collection<int, array<string, mixed>>}  $read
+     * @param  array<int, array<string, BudgetWeek>>  $budgets
      * @return array{
      *     eligible: array<int, string>, selected: list<int>, days: list<CarbonImmutable>,
      *     companies: list<CompanyBlock>, conflicts: list<Conflict>,
      *     totals: array{minutes: int, cost: int, shifts: int, open: int, incomplete: bool}
      * }
      */
-    private function build(array $selected, array $eligible, array $days, CarbonImmutable $monday, array $read): array
+    private function build(array $selected, array $eligible, array $days, CarbonImmutable $monday, array $read, array $budgets = []): array
     {
         $conflicts = $this->conflicts($read['shifts'], $read['employees'], $read['settings'], $eligible);
         $warned = [];
@@ -195,7 +207,7 @@ final class ChainSchedule
                 'open' => $shifts->whereNull('employee_id')->count(),
                 'drafts' => $shifts->where('status', Shift::DRAFT)->count(),
                 'warnings' => $shifts->filter(fn (Shift $shift): bool => isset($warned[(string) $shift->id]))->count(),
-                'extra' => [],
+                'extra' => ['budget' => $this->budget($budgets[$id][$monday->toDateString()] ?? null, $read['areas']->where('company_id', $id))],
             ];
         }
 
@@ -312,6 +324,33 @@ final class ChainSchedule
         $rules = (array) $company['working_time_rules'];
 
         return WorkingTimeChecks::ruleEnabled($rules, 'daily_rest') ? (int) $rules['daily_rest']['value'] : 0;
+    }
+
+    /**
+     * The week's total budget of one company against its estimated cost,
+     * as plain figures for the view; null without a budget.
+     *
+     * @param  Collection<int, Area>  $areas  the company's areas
+     * @return ?array{text: string, cost: int, percent: ?float, status: string, incomplete: bool, warning: ?string}
+     */
+    private function budget(?BudgetWeek $week, Collection $areas): ?array
+    {
+        $line = $week?->total();
+
+        if ($week === null || $line === null) {
+            return null;
+        }
+
+        $names = $areas->mapWithKeys(fn (Area $area): array => [(int) $area->id => (string) $area->name])->all();
+
+        return [
+            'text' => BudgetText::budget($line),
+            'cost' => $line->costOre,
+            'percent' => $line->usedPercent(),
+            'status' => $line->status(),
+            'incomplete' => $line->incomplete,
+            'warning' => BudgetText::warning($line, $week->monday, $names),
+        ];
     }
 
     /** @return array{minutes: int, cost: int, shifts: int, open: int, incomplete: bool} */
