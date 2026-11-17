@@ -19,6 +19,7 @@ use App\Modules\Planning\Actions\AttestPeriod;
 use App\Modules\Planning\Actions\DecideRequest;
 use App\Modules\Planning\Actions\IssueIcalToken;
 use App\Modules\Planning\Actions\MakeProposal;
+use App\Modules\Planning\Actions\MarkMessage;
 use App\Modules\Planning\Actions\PublishPeriod;
 use App\Modules\Planning\Actions\RequestShift;
 use App\Modules\Planning\Actions\SaveActualTime;
@@ -32,8 +33,11 @@ use App\Modules\Planning\Actions\SaveSkill;
 use App\Modules\Planning\Actions\SaveStaffingRule;
 use App\Modules\Planning\Actions\SaveTaskTemplate;
 use App\Modules\Planning\Actions\SaveTemplate;
+use App\Modules\Planning\Actions\SendMessage;
 use App\Modules\Planning\Actions\SendToPayroll;
 use App\Modules\Planning\Actions\TickShiftTask;
+use App\Modules\Planning\Models\Message;
+use App\Modules\Planning\Models\MessageRecipient;
 use App\Modules\Planning\Models\Shift;
 use App\Modules\Planning\Models\ShiftRequest;
 use App\Modules\Planning\PlanningModule;
@@ -272,6 +276,7 @@ final class PlanningExtras extends DemoExtra
             $this->absences($context, $monday);
             $this->tickTasks($context, $monday);
             $this->selfService($context, $monday);
+            $this->messages($context, $monday);
             $this->at($monday->subDays(3)->setTime(15, 30), fn () => $this->demand($context, $monday));
             $this->at($monday->subDays(3)->setTime(16, 0), fn () => $this->budget($context, $monday, $areas));
         } else {
@@ -673,6 +678,56 @@ final class PlanningExtras extends DemoExtra
         ]);
 
         app(IssueIcalToken::class)($lina, $company);
+    }
+
+    /**
+     * Messages to the staff (ADR-037 gap 5): one to everyone working this
+     * week that asks for a confirmation (Maja has confirmed, Lina has read it
+     * but not confirmed), and one to everyone on the day of Lina's next shift
+     * that Lina has not opened yet.
+     */
+    private function messages(DemoContext $context, CarbonImmutable $monday): void
+    {
+        $company = $context->company->fresh() ?? $context->company;
+        $send = app(SendMessage::class);
+        $mark = app(MarkMessage::class);
+        $lina = PortalExtras::user() ?? throw new RuntimeException('Lina Berg has no login.');
+        $maja = User::query()->where('email', PayrollExtras::email($this->employee($context, self::SECOND_EMPLOYEE)))->firstOrFail();
+        $linaId = (int) $this->employee($context, PortalExtras::EMPLOYEE)->id;
+        $now = CarbonImmutable::now(LocalTimestamp::ZONE);
+
+        $week = $this->at($now->subDays(2)->setTime(16, 5), fn (): Message => $send($context->user, $company, [
+            'scope' => Message::PERIOD,
+            'date_from' => $monday->toDateString(),
+            'date_to' => $monday->addDays(6)->toDateString(),
+            'body' => "Julbordet börjar nästa vecka. På torsdag kl. 14.30 går vi igenom menyn och allergenerna i köket, cirka 15 minuter.\nSäg till om du inte kan komma.",
+            'requires_ack' => true,
+        ])['message']);
+
+        $receipts = MessageRecipient::query()->where('message_id', $week->id)->get()->keyBy('employee_id');
+        $majaId = (int) $this->employee($context, self::SECOND_EMPLOYEE)->id;
+
+        $majas = $receipts->get($majaId);
+        $linas = $receipts->get($linaId);
+
+        if ($majas instanceof MessageRecipient) {
+            $this->at($now->subDays(2)->setTime(18, 40), fn () => $mark->acknowledge($maja, $company, $majas));
+        }
+
+        if ($linas instanceof MessageRecipient) {
+            $this->at($now->subDay()->setTime(8, 15), fn () => $mark->read($lina, $company, $linas));
+        }
+
+        $next = Shift::query()->where('employee_id', $linaId)->where('status', Shift::PUBLISHED)
+            ->where('starts_at', '>', $now->toIso8601String())->orderBy('starts_at')->first();
+
+        if ($next instanceof Shift) {
+            $this->at($now->subHours(3), fn () => $send($context->user, $company, [
+                'scope' => Message::DAY,
+                'date_from' => $next->starts_at->toDateString(),
+                'body' => 'Grossisten kommer kl. 07.30 i stället för 09.00. Den som öppnar tar emot leveransen och ställer kylvarorna in direkt.',
+            ]));
+        }
     }
 
     /**

@@ -17,3 +17,4 @@ Route::view('/planering/budget', 'planning::budget')->name('planning.budget');
 Route::view('/planering/forfragningar', 'planning::requests')->name('planning.requests');
 Route::view('/planering/attest', 'planning::attest')->name('planning.attest');
 Route::view('/planering/forslag', 'planning::proposals')->name('planning.proposals');
+Route::view('/planering/meddelanden', 'planning::messages')->name('planning.messages');

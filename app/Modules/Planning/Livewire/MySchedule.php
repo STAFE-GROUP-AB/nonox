@@ -7,6 +7,7 @@ namespace App\Modules\Planning\Livewire;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Planning\Actions\IssueIcalToken;
+use App\Modules\Planning\Actions\MarkMessage;
 use App\Modules\Planning\Actions\RequestShift;
 use App\Modules\Planning\Actions\RevokeIcalToken;
 use App\Modules\Planning\Actions\SaveAvailability;
@@ -15,6 +16,7 @@ use App\Modules\Planning\Models\Area;
 use App\Modules\Planning\Models\Availability;
 use App\Modules\Planning\Models\EmployeeSkill;
 use App\Modules\Planning\Models\IcalToken;
+use App\Modules\Planning\Models\MessageRecipient;
 use App\Modules\Planning\Models\Shift;
 use App\Modules\Planning\Models\ShiftRequest;
 use App\Modules\Planning\Models\ShiftTask;
@@ -34,8 +36,8 @@ use Livewire\Component;
  * Min sida → Mitt schema (PLANNING_MODULE.md §7), phone first: the next
  * shift, the week as a list (published shifts only, news marked), swaps a
  * colleague asks of me to accept or decline, open shifts to claim,
- * swapping or giving up a shift, availability and the
- * calendar link. Shown only to a login linked to an employee while
+ * swapping or giving up a shift, availability, the calendar link and the
+ * messages about the schedule (ADR-037 gap 5). Shown only to a login linked to an employee while
  * Planering is on. All logic is in the actions.
  */
 class MySchedule extends Component
@@ -46,6 +48,9 @@ class MySchedule extends Component
     public const int OPEN_DAYS = 28;
 
     public const int MAX_WEEKS_AHEAD = 12;
+
+    /** The newest schedule messages shown (ADR-037 gap 5). */
+    public const int MESSAGES = 10;
 
     /** Weeks from this week: 0 is this week. */
     public int $week = 0;
@@ -148,6 +153,32 @@ class MySchedule extends Component
         }
 
         $this->toast($ticked->isDone() ? __('Uppgiften är avbockad.') : __('Bocken är borttagen.'));
+    }
+
+    /** Opens one of my messages: it counts as read. Someone else's answers 404. */
+    public function readMessage(int $receiptId, MarkMessage $mark): void
+    {
+        try {
+            $mark->read($this->user(), $this->company(), MessageRecipient::query()->findOrFail($receiptId));
+        } catch (AuthorizationException) {
+            abort(404);
+        }
+    }
+
+    /** Confirms that I have read a message that asks for it. Someone else's answers 404. */
+    public function acknowledgeMessage(int $receiptId, MarkMessage $mark): void
+    {
+        try {
+            $mark->acknowledge($this->user(), $this->company(), MessageRecipient::query()->findOrFail($receiptId));
+        } catch (AuthorizationException) {
+            abort(404);
+        } catch (ValidationException $exception) {
+            $this->toast($this->firstError($exception), 'error');
+
+            return;
+        }
+
+        $this->toast(__('Tack, din chef ser att du har läst meddelandet.'));
     }
 
     public function newAvailability(): void
@@ -255,6 +286,7 @@ class MySchedule extends Component
             'next' => $next,
             'tasksByShift' => $taskShiftIds === [] ? collect() : ShiftTask::query()->whereIn('shift_id', $taskShiftIds)->orderBy('position')->orderBy('id')->get()->groupBy('shift_id'),
             'weekShifts' => $weekShifts,
+            'messages' => MessageRecipient::query()->with('message.author:id,name')->where('employee_id', $employee->id)->latest('id')->limit(self::MESSAGES)->get()->filter(fn (MessageRecipient $receipt): bool => $receipt->message !== null)->values(),
             'areas' => Area::query()->get(['id', 'name', 'colour'])->keyBy('id'),
             'openShifts' => $claims ? $this->openShifts($employee, $now) : collect(),
             'requests' => $requests,

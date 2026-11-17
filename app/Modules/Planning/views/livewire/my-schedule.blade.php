@@ -11,6 +11,8 @@
 <div>
     @if($employee)
         <div class="space-y-6">
+            @include('planning::partials.my-messages')
+
             <x-ui.card>
                 <p class="text-xs font-medium uppercase tracking-wide text-gray-500">{{ __('Nästa pass') }}</p>
                 @if($next)

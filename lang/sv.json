@@ -185,5 +185,9 @@
     "{1} Budgeten för veckan är sparad.|[2,*] Budgeten är sparad för :count veckor.": "{1} Budgeten för veckan är sparad.|[2,*] Budgeten är sparad för :count veckor.",
     "{0} Ingen budget är kopierad.|{1} 1 veckobudget är kopierad.|[2,*] :count veckobudgetar är kopierade.": "{0} Ingen budget är kopierad.|{1} 1 veckobudget är kopierad.|[2,*] :count veckobudgetar är kopierade.",
     "{1} 1 vecka hade redan en budget och är oförändrad.|[2,*] :count veckor hade redan en budget och är oförändrade.": "{1} 1 vecka hade redan en budget och är oförändrad.|[2,*] :count veckor hade redan en budget och är oförändrade.",
-    "{1} Passen 1 dag utan prognos (:amount) räknas inte mot budgeten.|[2,*] Passen :count dagar utan prognos (:amount) räknas inte mot budgeten.": "{1} Passen 1 dag utan prognos (:amount) räknas inte mot budgeten.|[2,*] Passen :count dagar utan prognos (:amount) räknas inte mot budgeten."
+    "{1} Passen 1 dag utan prognos (:amount) räknas inte mot budgeten.|[2,*] Passen :count dagar utan prognos (:amount) räknas inte mot budgeten.": "{1} Passen 1 dag utan prognos (:amount) räknas inte mot budgeten.|[2,*] Passen :count dagar utan prognos (:amount) räknas inte mot budgeten.",
+    "{1} Meddelandet är skickat till 1 person.|[2,*] Meddelandet är skickat till :count personer.": "{1} Meddelandet är skickat till 1 person.|[2,*] Meddelandet är skickat till :count personer.",
+    "{1} 1 nås inte eftersom hen inte har någon inloggning.|[2,*] :count nås inte eftersom de inte har någon inloggning.": "{1} 1 nås inte eftersom hen inte har någon inloggning.|[2,*] :count nås inte eftersom de inte har någon inloggning.",
+    "{1} Meddelandet når 1 person.|[2,*] Meddelandet når :count personer.": "{1} Meddelandet når 1 person.|[2,*] Meddelandet når :count personer.",
+    "{1} 1 nås inte|[2,*] :count nås inte": "{1} 1 nås inte|[2,*] :count nås inte"
 }

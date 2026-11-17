@@ -32,6 +32,8 @@ use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\SalaryChange;
+use App\Modules\Planning\Models\Message as ScheduleMessage;
+use App\Modules\Planning\Models\MessageRecipient as ScheduleMessageRecipient;
 use App\Modules\Planning\Models\Shift;
 use App\Modules\Planning\Models\ShiftTask;
 use App\Modules\Saas\Domain\SourceType;
@@ -72,6 +74,11 @@ final class DataSubjectExport
             ])->values()->all(),
             'anstalld_i' => CompanyScope::bypass(fn (): array => Employee::query()->where('user_id', $user->id)->get()
                 ->map(fn (Employee $employee): array => CurrentCompany::run($employee->company_id, fn (): array => self::employee($employee)))
+                ->all()),
+            // Schedule messages the user wrote as a planner (ADR-037 gap 5), in every company: the
+            // author's own text. Across companies because the extract covers the account.
+            'skrivna_schemameddelanden' => CompanyScope::bypass(fn (): array => ScheduleMessage::query()->where('author_id', $user->id)->orderBy('id')->get()
+                ->map(fn (ScheduleMessage $message): array => ['foretag' => $message->company_id, 'skickat' => $message->created_at?->toIso8601String(), 'till' => $message->scope, 'fran' => $message->date_from->toDateString(), 'till_och_med' => $message->date_to->toDateString(), 'meddelande' => $message->body, 'bekraftelse_begard' => $message->requires_ack])
                 ->all()),
             'behandlingshistorik' => AuditLog::query()->where('user_id', $user->id)->latest('id')->limit(5000)->get(['action', 'subject_type', 'created_at', 'ip_address', 'user_agent'])
                 ->map(fn (AuditLog $entry): array => [
@@ -274,6 +281,10 @@ final class DataSubjectExport
                     ->orWhere('done_by', $employee->user_id ?? 0))
                 ->whereNotNull('done_at')->orderBy('done_at')->get()
                 ->map(fn (ShiftTask $task): array => ['tid' => $task->done_at?->toIso8601String(), 'uppgift' => $task->title, 'pass' => $task->shift_id, 'avbockad_av_kontot' => $employee->user_id !== null && $task->done_by === $employee->user_id])->all(),
+            // Schedule messages the person received (ADR-037 gap 5): the text and their own receipts, never the other recipients.
+            'schemameddelanden' => ScheduleMessageRecipient::query()->with('message')->where('company_id', $employee->company_id)->where('employee_id', $employee->id)->orderBy('id')->get()
+                ->filter(fn (ScheduleMessageRecipient $receipt): bool => $receipt->message !== null)
+                ->map(fn (ScheduleMessageRecipient $receipt): array => ['skickat' => $receipt->message?->created_at?->toIso8601String(), 'fran' => $receipt->message?->date_from->toDateString(), 'till_och_med' => $receipt->message?->date_to->toDateString(), 'meddelande' => $receipt->message?->body, 'aviserad' => $receipt->notified_at?->toIso8601String(), 'last' => $receipt->read_at?->toIso8601String(), 'bekraftad' => $receipt->acknowledged_at?->toIso8601String()])->values()->all(),
             // The körjournal (ADR-072 §9): every trip the person logged, with what it holds.
             'korjournal' => VehicleTrip::query()->where('employee_id', $employee->id)->orderBy('trip_date')->get()
                 ->map(fn (VehicleTrip $trip): array => ['datum' => $trip->trip_date->toDateString(), 'typ' => $trip->kind->value, 'stracka_hm' => $trip->distance_hm, 'fran' => $trip->from_place, 'till' => $trip->to_place, 'arende' => $trip->purpose, 'matare_start_km' => $trip->odometer_start_km, 'matare_slut_km' => $trip->odometer_end_km, 'status' => $trip->status->value])->all(),

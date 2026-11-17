@@ -476,6 +476,32 @@ default and the owner's decision (open questions). Messages are part of the
 register extract for author and recipients and are listed in
 `docs/gdpr/registerforteckning.md` and `lagringstider.md`.
 
+*Built (P4), decisions the design left open:*
+
+- Scopes: `SHIFT` (the employee the published shift was shown to), `DAY`,
+  `PERIOD` and `AREA` (everyone the published schedule shows with a shift
+  starting in the dates, in the area for `AREA`), and `ALL` (every employee,
+  not terminated, with an employment overlapping the dates, shifts or not).
+  Areas have no members, so "all employees of the area" is those with a
+  published shift in it in the chosen dates. A message concerns at most 31
+  days. "Published" is the published version (`published_snapshot`), as Min
+  sida shows it: drafts, cancelled shifts and unpublished reassignments
+  neither add nor remove anyone. `MessageAudience` resolves it in one query.
+- Only employees with a login are notified (`ScheduleNotifier::message`);
+  an employee without one is not e-mailed, since the e-mail could only link
+  to a page they cannot open, and their row has `notified_at` null ("nås
+  inte"). A login linked later can still read it.
+- Opening a message on Min sida ("Läs meddelandet") sets `read_at`; showing
+  the list does not, so a receipt means the person opened it. "Jag har läst"
+  sets `acknowledged_at` and is refused on a message that asks for none.
+- Read and acknowledgement receipts are not written to the audit log, for
+  the same reason as task ticks (gap 4): the log outlives the 12 months.
+  Sending and withdrawing are audited with the scope, ids and counts.
+- A planner can withdraw a message; it and its receipts are deleted. A sent
+  message cannot be edited.
+- The notice's link opens Min sida in the message's company through the
+  company switch (`CompanyOverview::DESTINATIONS['my-page']`).
+
 ### Gap 6: approved vacation and absence in the schedule
 
 **Decision.** The schedule reads `absences` for the visible period in one
