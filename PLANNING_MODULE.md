@@ -127,6 +127,10 @@ planning_proposals    id, company_id, period_from, period_to, parameters jsonb, 
                       accepted_by, created_by (deleted after 90 days)
 planning_proposal_items  id, company_id, proposal_id, shift_id, employee_id null, position,
                       score_parts jsonb, reasons jsonb (codes, ids and counts), accepted_at
+planning_task_templates  id, company_id, title, instructions null, area_id null, skill_id null,
+                      weekdays jsonb (ISO), due_time null, valid_from null, valid_to null, is_active
+planning_shift_tasks  id, company_id, shift_id (uuid, cascade), template_id null, title, instructions null,
+                      due_time null, position, done_at null, done_by null (ADR-037 gap 4)
 ```
 Indexes: `(company_id, starts_at)`, `(company_id, employee_id, starts_at)`.
 A published shift that is changed keeps its history in the audit log.
@@ -209,6 +213,11 @@ Every action: authorized by policy, transactional, audited, tenancy-safe.
   of at most four weeks and "Vad väger mest", make a proposal for the open
   shifts, read each shift's reasons, accept the ticked ones or all. Stale
   proposals ("Schemat har ändrats …") are refused.
+- **Uppgifter** (`/planering/uppgifter`): task templates by area, skill, weekday
+  and time of day (ADR-037 gap 4). They are put on shifts when a shift is
+  saved and when a period is published; the employee on the published shift
+  ticks them off in Min sida, a planner sees `✓ n/m` on the chip and ticks in
+  the shift editor. Work aid, not egenkontroll.
 - **Öppna pass och byten**: requests to decide, with the checks re-run.
 - **Tid att attestera** (`/planering/attest`): per period, per person per
   day: plan, actual, difference, OB split, warnings; attest a row, a person

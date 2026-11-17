@@ -12,6 +12,7 @@ use App\Modules\Planning\Support\AbsenceDays;
 use App\Modules\Planning\Support\CostCenterInput;
 use App\Modules\Planning\Support\LocalTimestamp;
 use App\Modules\Planning\Support\ShiftCoster;
+use App\Modules\Planning\Support\ShiftTasks;
 use App\Support\Audit\Audit;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +27,8 @@ use Throwable;
  * move and resize. Times come as a date with wall-clock times (an end at or
  * before the start ends the next day) or as two instants. A change to a
  * published shift makes it a draft again until the next publication; the
- * employee keeps seeing the published version. The estimate is recalculated.
+ * employee keeps seeing the published version. The estimate is recalculated
+ * and the recurring tasks of the task templates are put on the shift.
  * Audited with before and after.
  *
  * The cost centre (ADR-037, gap 7) is typed by code. Left out, a new shift,
@@ -41,7 +43,7 @@ final class SaveShift
 
     public const int MAX_MINUTES = 24 * 60;
 
-    public function __construct(private readonly ShiftCoster $coster) {}
+    public function __construct(private readonly ShiftCoster $coster, private readonly ShiftTasks $tasks) {}
 
     /**
      * @param  array<string, mixed>  $input
@@ -140,6 +142,7 @@ final class SaveShift
 
             $this->coster->apply($company, [$shift]);
             $shift->save();
+            $this->tasks->sync($company, [$shift], includePublished: false);
 
             Audit::record($before === null ? 'planning.shift_created' : 'planning.shift_updated', $shift, $before === null
                 ? ['after' => [...$shift->snapshot(), 'cost_center_id' => $shift->cost_center_id]]

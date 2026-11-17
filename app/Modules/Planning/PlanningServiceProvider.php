@@ -8,6 +8,7 @@ use App\Http\Middleware\EnsureUserHasCompany;
 use App\Http\Middleware\SecurityHeaders;
 use App\Modules\ModuleRegistry;
 use App\Modules\Planning\Console\PruneProposalsCommand;
+use App\Modules\Planning\Console\PruneTasksCommand;
 use App\Modules\Planning\Livewire\AttestPage;
 use App\Modules\Planning\Livewire\MySchedule;
 use App\Modules\Planning\Livewire\PlanningSettingsForm;
@@ -16,6 +17,7 @@ use App\Modules\Planning\Livewire\RequestsPage;
 use App\Modules\Planning\Livewire\SchedulePage;
 use App\Modules\Planning\Livewire\SetupPage;
 use App\Modules\Planning\Livewire\StaffingPage;
+use App\Modules\Planning\Livewire\TaskTemplatesPage;
 use App\Modules\Planning\Livewire\TemplatesPage;
 use App\Modules\Planning\Models\Area;
 use App\Modules\Planning\Models\Attestation;
@@ -24,7 +26,9 @@ use App\Modules\Planning\Models\IcalToken;
 use App\Modules\Planning\Models\Proposal;
 use App\Modules\Planning\Models\Shift;
 use App\Modules\Planning\Models\ShiftRequest;
+use App\Modules\Planning\Models\ShiftTask;
 use App\Modules\Planning\Models\Skill;
+use App\Modules\Planning\Models\TaskTemplate;
 use App\Modules\Planning\Models\Template;
 use App\Modules\Planning\Policies\PlanningPolicy;
 use App\Modules\Planning\Policies\SelfServicePolicy;
@@ -53,10 +57,10 @@ class PlanningServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([PruneProposalsCommand::class]);
+            $this->commands([PruneProposalsCommand::class, PruneTasksCommand::class]);
         }
 
-        foreach ([Shift::class, Area::class, Skill::class, Template::class, Attestation::class, Proposal::class] as $model) {
+        foreach ([Shift::class, Area::class, Skill::class, Template::class, Attestation::class, Proposal::class, TaskTemplate::class, ShiftTask::class] as $model) {
             Gate::policy($model, PlanningPolicy::class);
         }
 
@@ -73,6 +77,7 @@ class PlanningServiceProvider extends ServiceProvider
         Livewire::component('planning.staffing', StaffingPage::class);
         Livewire::component('planning.attest', AttestPage::class);
         Livewire::component('planning.proposals', ProposalPage::class);
+        Livewire::component('planning.tasks', TaskTemplatesPage::class);
 
         Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.PlanningModule::KEY])
             ->group(__DIR__.'/routes/web.php');

@@ -332,6 +332,41 @@ Tasks are a work aid, not a statutory record: they are not presented as
 egenkontroll under the food legislation or as part of the staff ledger.
 `TODO(legal-verify)` before any such claim.
 
+*Built (P3), decisions the design left open:*
+
+- A template matches a shift by the day the shift *starts* (ISO weekday), its
+  area and skill when it names them (empty means any), its validity dates,
+  and, when it has a time of day, a clock time inside the shift (a shift past
+  midnight holds the time on either of its two days). Templates and
+  instances live in `planning_task_templates` and `planning_shift_tasks`;
+  `ShiftTasks::sync` makes a shift's template tasks follow the active
+  templates in three reads; the writes are one delete, one insert
+  (`insertOrIgnore`, safe against a concurrent run) and one update per
+  template whose text changed, never one per task, and they only touch tasks
+  that are not ticked. It never touches a task written for one shift (no
+  template), a shift where any task is ticked, a cancelled shift, or a
+  published shift that has started. Saving a shift that has been published
+  does not change its tasks (the employee sees the published version); they
+  follow when the period is published again. A template change reaches shifts
+  within the next year.
+- Tick window: from the start of the shift's day to the end of the day after
+  the shift ended, for the employee the shift was *published* to
+  (`published_snapshot`, so an unpublished reassignment changes nothing for
+  them) and for a planner (`planning:manage`). An undo is allowed only on the
+  day of the tick. A tick holds `done_at` and `done_by` and nothing else
+  records it: it is **not written to the audit log**, which keeps user, IP and
+  browser for years and would outlive the 12 months a tick is kept. It is
+  shown as a time and a count without the ticker's name, but on the shift of
+  a named person, so a planner can see what is ticked on that person's shift;
+  there is no report, ranking or export per person. Template and task
+  administration is audited with ids and field names only.
+- Retention (proposed default, the owner's decision): tasks and ticks are
+  deleted 12 months after the shift ended (`planning:prune-tasks`, daily).
+  The employee's ticks are part of their register extract.
+  `TODO(legal-verify)`: the period, and whether ticks are information about
+  work performance that needs a shorter period, information under art. 13 or
+  negotiation under 11 § MBL.
+
 ### Gap 5: messages to staff tied to the schedule
 
 **Decision.** Persistent, company-scoped schedule messages, **not** the
