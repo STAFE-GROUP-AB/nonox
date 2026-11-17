@@ -64,7 +64,7 @@ function absenceShift(int $employeeId, string $date, string $start = '08:00', st
     return Planning::shift(test()->owner, test()->company, ['employee_id' => $employeeId, 'date' => $date, 'start' => $start, 'end' => $end]);
 }
 
-function publishWeek(): void
+function publishAbsenceWeek(): void
 {
     $test = test();
     CurrentCompany::run($test->company, fn () => app(PublishPeriod::class)($test->owner, $test->company, $test->monday, $test->monday->addDays(6)));
@@ -144,7 +144,7 @@ it('counts shifts on absent days in the publish summary and the toast, and audit
 
 it('warns when a request is decided for a person who is absent', function () {
     $open = Planning::shift($this->owner, $this->company, ['date' => '2026-11-10', 'start' => '08:00', 'end' => '16:00']);
-    publishWeek();
+    publishAbsenceWeek();
     absent($this->anna->id, '2026-11-10', '2026-11-10');
     $request = app(RequestShift::class)($this->worker, $this->company, ['kind' => 'CLAIM', 'shift_id' => $open->id]);
 
@@ -169,7 +169,7 @@ it('puts published shifts of absent staff in the to-do list, for planners only',
 
     absenceShift($this->anna->id, '2026-11-10');
     absenceShift($this->bertil->id, '2026-11-11');
-    publishWeek();
+    publishAbsenceWeek();
 
     expect($find())->toBeNull();
 
@@ -192,7 +192,7 @@ it('puts published shifts of absent staff in the to-do list, for planners only',
 it('shows colleagues nothing: Min sida has no absence marker and open shifts carry none', function () {
     absenceShift($this->anna->id, '2026-11-10');
     absenceShift($this->bertil->id, '2026-11-10', '12:00', '20:00');
-    publishWeek();
+    publishAbsenceWeek();
     absent($this->anna->id, '2026-11-10', '2026-11-10');
 
     $this->actingAs($this->colleague);
@@ -206,7 +206,7 @@ it('shows colleagues nothing: Min sida has no absence marker and open shifts car
 it('reads only employee, dates, extent and status of an absence, never the type, the note or the certificate', function () {
     absent($this->anna->id, '2026-11-10', '2026-11-10', note: 'Hemlig anteckning');
     absenceShift($this->anna->id, '2026-11-10');
-    publishWeek();
+    publishAbsenceWeek();
 
     DB::flushQueryLog();
     DB::enableQueryLog();
@@ -296,7 +296,7 @@ it('looks only eight weeks ahead and only at people with absence for the to-do l
     absenceShift($this->anna->id, '2026-11-10');
     absenceShift($this->bertil->id, '2026-11-10');
     absenceShift($this->anna->id, '2027-03-02');
-    publishWeek();
+    publishAbsenceWeek();
     $march = CarbonImmutable::parse('2027-03-01', 'Europe/Stockholm');
     CurrentCompany::run($this->company, fn () => app(PublishPeriod::class)($this->owner, $this->company, $march, $march->addDays(6)));
     absent($this->anna->id, '2026-11-10', '2027-03-31');
