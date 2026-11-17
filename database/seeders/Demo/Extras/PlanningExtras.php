@@ -21,8 +21,10 @@ use App\Modules\Planning\Actions\SaveArea;
 use App\Modules\Planning\Actions\SaveAvailability;
 use App\Modules\Planning\Actions\SaveShift;
 use App\Modules\Planning\Actions\SaveSkill;
+use App\Modules\Planning\Actions\SaveTaskTemplate;
 use App\Modules\Planning\Actions\SaveTemplate;
 use App\Modules\Planning\Actions\SendToPayroll;
+use App\Modules\Planning\Actions\TickShiftTask;
 use App\Modules\Planning\Models\Shift;
 use App\Modules\Planning\Models\ShiftRequest;
 use App\Modules\Planning\PlanningModule;
@@ -56,6 +58,10 @@ use RuntimeException;
  *   claim of an open shift waiting, her swap with Maja accepted by Maja and
  *   waiting for the manager, Maja's swap with Lina waiting for Lina, Maja's
  *   claim approved, and Lina's calendar link.
+ * - Tasks in shifts at the restaurant (ADR-037 gap 4): four task templates
+ *   by area and weekday, put on the coming shifts when they are published,
+ *   and ticked off on this week's shifts that have been worked, a few left
+ *   open.
  * - Attest: the clean days are attested, a few days with deviations are left
  *   open, and at the café a forgotten check-out is entered by the manager.
  *   At the restaurant only the first week is attested: the staff ledger's
@@ -160,6 +166,19 @@ final class PlanningExtras extends DemoExtra
         'bokforing-for-cafeer' => ['late_start' => 17, 'late_finish' => 12, 'unplanned' => 10, 'no_show' => 7],
     ];
 
+    /**
+     * Task templates at the restaurant: [title, instructions, area, ISO
+     * weekdays, time of day or null].
+     *
+     * @var list<array{string, ?string, string, list<int>, ?string}>
+     */
+    private const array TASKS = [
+        ['Kontrollera kylen och frysen', 'Skriv upp temperaturen på listan i köket.', 'Kök', [2, 3, 4, 5, 6, 7], '10:00'],
+        ['Stäng av ugnar och grill', null, 'Kök', [3, 4, 5, 6, 7], '21:30'],
+        ['Fyll på servetter och bestick', null, 'Servering', [1, 2, 3, 4, 5, 6, 7], null],
+        ['Räkna kassan', 'Två personer räknar, en skriver under.', 'Servering', [5, 6], '23:00'],
+    ];
+
     /** Maja Lund, hourly waitress at the restaurant, also uses Min sida. */
     private const string SECOND_EMPLOYEE = 'Maja';
 
@@ -189,6 +208,7 @@ final class PlanningExtras extends DemoExtra
         $this->changeAfterPublishing($context, $monday);
 
         if ($context->slug === self::RESTAURANT) {
+            $this->tickTasks($context, $monday);
             $this->selfService($context, $monday);
         }
 
@@ -353,8 +373,46 @@ final class PlanningExtras extends DemoExtra
             ]);
         }
 
+        if ($context->slug === self::RESTAURANT) {
+            foreach (self::TASKS as [$title, $instructions, $area, $weekdays, $time]) {
+                app(SaveTaskTemplate::class)($context->user, $context->company, [
+                    'title' => $title,
+                    'instructions' => $instructions,
+                    'area_id' => $areas[$area],
+                    'weekdays' => $weekdays,
+                    'due_time' => $time,
+                ]);
+            }
+        }
+
         app(PublishPeriod::class)($context->user, $context->company, $monday, $monday->addWeeks(3)->subDay());
         app(ApplyTemplate::class)($context->user, $context->company, $template, $monday->addWeeks(3));
+    }
+
+    /**
+     * This week's shifts that have been worked: the tasks ticked off by the
+     * planner on the schedule an hour into the shift, every fifth left open.
+     */
+    private function tickTasks(DemoContext $context, CarbonImmutable $monday): void
+    {
+        $shifts = Shift::query()
+            ->with('tasks')
+            ->where('status', Shift::PUBLISHED)
+            ->where('starts_at', '>=', $monday->toIso8601String())
+            ->where('starts_at', '<', CarbonImmutable::now()->subHours(2)->toIso8601String())
+            ->orderBy('starts_at')
+            ->get();
+        $number = 0;
+
+        foreach ($shifts as $shift) {
+            foreach ($shift->tasks as $task) {
+                if (++$number % 5 === 0) {
+                    continue;
+                }
+
+                $this->at($shift->starts_at->addHour(), fn () => app(TickShiftTask::class)($context->user, $context->company, $task, true));
+            }
+        }
     }
 
     /** A published shift later this week moved by two hours and not yet published again. */

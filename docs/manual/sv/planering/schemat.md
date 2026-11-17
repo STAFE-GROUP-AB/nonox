@@ -41,6 +41,8 @@ Passet läggs till som utkast. En sluttid före starttiden betyder att passet sl
 
 I dagvyn kan du också rita ett nytt pass direkt på en tom rad.
 
+Öppnar du ett sparat pass ser du dess uppgifter och kan lägga till egna. Se [Uppgifter på passen](/manual/planering/uppgifter-pa-pass).
+
 ## Flytta och ändra
 
 - **Flytta:** dra passet till en annan person eller dag.

@@ -1,5 +1,5 @@
 ---
-beskrivning: Se dina pass på Min sida, ta ett öppet pass, byt eller lämna ett pass, berätta när du kan jobba och få schemat i telefonens kalender.
+beskrivning: Se dina pass på Min sida, bocka av uppgifterna på passet, ta ett öppet pass, byt eller lämna ett pass, berätta när du kan jobba och få schemat i telefonens kalender.
 ordning: 25
 modul: planning
 sokord: [schema, mitt schema, pass, nästa pass, byta pass, öppet pass, ledig, kalender, när jobbar jag]
@@ -22,6 +22,18 @@ Ser du inget schema? Då använder din arbetsgivare inte Planering, eller så ä
 **Nytt eller ändrat** betyder att passet är nytt eller har ändrats nyss. **Inställt** betyder att passet inte blir av.
 
 Du ser bara pass som din chef har publicerat. Oftast får du ett mejl när schemat publiceras eller när ett pass ställs in. Det bestämmer din arbetsgivare.
+
+## Uppgifter på passet
+
+Har ditt pass uppgifter, till exempel "Kontrollera kylen och frysen", ser du dem under passet och under **Nästa pass**.
+
+1. Hitta passet under **Nästa pass** eller **Mitt schema**.
+2. Kryssa i rutan vid uppgiften när du har gjort den.
+3. Vill du ångra, ta bort krysset. Det går bara samma dag som du kryssade i.
+
+Du kan kryssa i en uppgift från passets dag och till dagen efter att passet slutat. Bredvid en klar uppgift står klockan den bockades av, aldrig vem som gjorde det. Din chef ser att uppgiften är klar, men uppgifterna räknas inte ihop per person. Uppgifterna tas bort tolv månader efter passet.
+
+![Nästa pass på mobilen med uppgifter att bocka av.](/bilder/manual/planering/min-sida-uppgifter.webp)
 
 ## Ta ett öppet pass
 

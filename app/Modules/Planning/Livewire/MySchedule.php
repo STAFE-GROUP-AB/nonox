@@ -10,18 +10,21 @@ use App\Modules\Planning\Actions\IssueIcalToken;
 use App\Modules\Planning\Actions\RequestShift;
 use App\Modules\Planning\Actions\RevokeIcalToken;
 use App\Modules\Planning\Actions\SaveAvailability;
+use App\Modules\Planning\Actions\TickShiftTask;
 use App\Modules\Planning\Models\Area;
 use App\Modules\Planning\Models\Availability;
 use App\Modules\Planning\Models\EmployeeSkill;
 use App\Modules\Planning\Models\IcalToken;
 use App\Modules\Planning\Models\Shift;
 use App\Modules\Planning\Models\ShiftRequest;
+use App\Modules\Planning\Models\ShiftTask;
 use App\Modules\Planning\PlanningSettings;
 use App\Modules\Planning\Support\LocalTimestamp;
 use App\Modules\Planning\Support\PublishedSchedule;
 use App\Modules\Planning\Support\SelfService;
 use App\Modules\StaffLedger\Livewire\Concerns\InCurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -129,6 +132,24 @@ class MySchedule extends Component
         $this->answerSwap($requestId, false, $requestShift);
     }
 
+    /** Ticks one of my tasks off, or takes the tick back the same day. Someone else's task answers 404. */
+    public function toggleTask(int $taskId, TickShiftTask $tick): void
+    {
+        $task = ShiftTask::query()->findOrFail($taskId);
+
+        try {
+            $ticked = $tick($this->user(), $this->company(), $task, ! $task->isDone());
+        } catch (AuthorizationException) {
+            abort(404);
+        } catch (ValidationException $exception) {
+            $this->toast($this->firstError($exception), 'error');
+
+            return;
+        }
+
+        $this->toast($ticked->isDone() ? __('Uppgiften är avbockad.') : __('Bocken är borttagen.'));
+    }
+
     public function newAvailability(): void
     {
         $this->resetErrorBag();
@@ -224,12 +245,15 @@ class MySchedule extends Component
         $weekShifts = PublishedSchedule::forEmployee($employee->id, $monday, $monday->addDays(6));
         $requests = ShiftRequest::query()->with(['shift', 'counterpartShift'])->where('requested_by', $employee->id)->latest('id')->limit(10)->get();
         $pending = $requests->whereIn('status', ShiftRequest::OPEN);
+        $next = $upcoming->first(fn ($shift): bool => $shift->end->greaterThan($now));
+        $taskShiftIds = $weekShifts->pluck('id')->push($next?->id)->filter()->unique()->values()->all();
 
         return view('planning::livewire.my-schedule', [
             'employee' => $employee,
             'now' => $now,
             'monday' => $monday,
-            'next' => $upcoming->first(fn ($shift): bool => $shift->end->greaterThan($now)),
+            'next' => $next,
+            'tasksByShift' => $taskShiftIds === [] ? collect() : ShiftTask::query()->whereIn('shift_id', $taskShiftIds)->orderBy('position')->orderBy('id')->get()->groupBy('shift_id'),
             'weekShifts' => $weekShifts,
             'areas' => Area::query()->get(['id', 'name', 'colour'])->keyBy('id'),
             'openShifts' => $claims ? $this->openShifts($employee, $now) : collect(),

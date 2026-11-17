@@ -32,6 +32,7 @@ use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\SalaryChange;
+use App\Modules\Planning\Models\ShiftTask;
 use App\Modules\Saas\Domain\SourceType;
 use App\Modules\Saas\Models\SaasContractVersion;
 use App\Modules\Saas\Stripe\Models\StripeCustomerLink;
@@ -266,6 +267,9 @@ final class DataSubjectExport
                 ->map(fn (Expense $expense): array => ['datum' => $expense->date->toDateString(), 'beskrivning' => $expense->description, 'belopp_ore' => $expense->amount_ore->ore, 'status' => $expense->status])->all(),
             'sparade_vagar' => $employee->user_id === null ? [] : MileageRoute::query()->where('user_id', $employee->user_id)->orderBy('id')->get()
                 ->map(fn (MileageRoute $route): array => ['vag' => $route->label, 'stracka_hm' => $route->distance_hm])->all(),
+            // Tasks on shifts the person ticked off in Planering (ADR-037 gap 4): when, which task and which shift.
+            'avbockade_uppgifter' => $employee->user_id === null ? [] : ShiftTask::query()->where('done_by', $employee->user_id)->orderBy('done_at')->get()
+                ->map(fn (ShiftTask $task): array => ['tid' => $task->done_at?->toIso8601String(), 'uppgift' => $task->title, 'pass' => $task->shift_id])->all(),
             // The körjournal (ADR-072 §9): every trip the person logged, with what it holds.
             'korjournal' => VehicleTrip::query()->where('employee_id', $employee->id)->orderBy('trip_date')->get()
                 ->map(fn (VehicleTrip $trip): array => ['datum' => $trip->trip_date->toDateString(), 'typ' => $trip->kind->value, 'stracka_hm' => $trip->distance_hm, 'fran' => $trip->from_place, 'till' => $trip->to_place, 'arende' => $trip->purpose, 'matare_start_km' => $trip->odometer_start_km, 'matare_slut_km' => $trip->odometer_end_km, 'status' => $trip->status->value])->all(),

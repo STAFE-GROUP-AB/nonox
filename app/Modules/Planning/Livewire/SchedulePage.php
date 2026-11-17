@@ -12,8 +12,11 @@ use App\Modules\Planning\Actions\DeleteShift;
 use App\Modules\Planning\Actions\PublishPeriod;
 use App\Modules\Planning\Actions\RecalculateCosts;
 use App\Modules\Planning\Actions\SaveShift;
+use App\Modules\Planning\Actions\SaveShiftTask;
 use App\Modules\Planning\Actions\SaveTemplate;
+use App\Modules\Planning\Actions\TickShiftTask;
 use App\Modules\Planning\Models\Shift;
+use App\Modules\Planning\Models\ShiftTask;
 use App\Modules\Planning\Models\Template;
 use App\Modules\Planning\PlanningModule;
 use App\Modules\Planning\PlanningSettings;
@@ -68,6 +71,9 @@ class SchedulePage extends Component
     /** @var array<string, mixed> */
     public array $form = [];
 
+    /** A task being written for the shift in the editor. */
+    public string $newTask = '';
+
     public bool $showPublish = false;
 
     public bool $showCopy = false;
@@ -121,6 +127,7 @@ class SchedulePage extends Component
         abort_unless($this->allowed('planning:manage'), 403);
         $this->resetErrorBag();
         $this->editing = null;
+        $this->newTask = '';
         $this->form = [
             'employee_id' => $employeeId,
             'date' => $date ?? $this->dayDate()->toDateString(),
@@ -140,6 +147,7 @@ class SchedulePage extends Component
         $shift = Shift::query()->findOrFail($id);
         $this->resetErrorBag();
         $this->editing = $shift->id;
+        $this->newTask = '';
         $this->form = [
             'employee_id' => $shift->employee_id,
             'date' => $shift->starts_at->toDateString(),
@@ -227,6 +235,54 @@ class SchedulePage extends Component
             'start' => $shift->starts_at->format('H:i'),
             'end' => $shift->ends_at->format('H:i'),
         ]), __('Passet är kopierat.'));
+    }
+
+    /** A task written for the shift being edited (the ones from the task templates come by themselves). */
+    public function addTask(SaveShiftTask $save): void
+    {
+        abort_unless($this->editing !== null, 404);
+        $shift = Shift::query()->findOrFail($this->editing);
+
+        try {
+            $save($this->user(), $this->company(), $shift, ['title' => $this->newTask]);
+        } catch (ValidationException $exception) {
+            $this->toast($this->firstError($exception), 'error');
+
+            return;
+        }
+
+        $this->newTask = '';
+        $this->toast(__('Uppgiften är tillagd på passet.'));
+    }
+
+    public function removeTask(int $taskId, SaveShiftTask $save): void
+    {
+        try {
+            $save->delete($this->user(), $this->company(), ShiftTask::query()->findOrFail($taskId));
+        } catch (ValidationException $exception) {
+            $this->toast($this->firstError($exception), 'error');
+
+            return;
+        }
+
+        $this->toast(__('Uppgiften är borttagen från passet.'));
+    }
+
+    /** A planner ticks a task off for the shift, or takes the tick back the same day. */
+    public function toggleTask(int $taskId, TickShiftTask $tick): void
+    {
+        abort_unless($this->allowed('planning:manage'), 403);
+        $task = ShiftTask::query()->findOrFail($taskId);
+
+        try {
+            $ticked = $tick($this->user(), $this->company(), $task, ! $task->isDone());
+        } catch (ValidationException $exception) {
+            $this->toast($this->firstError($exception), 'error');
+
+            return;
+        }
+
+        $this->toast($ticked->isDone() ? __('Uppgiften är avbockad.') : __('Bocken är borttagen.'));
     }
 
     public function deleteShift(string $id, DeleteShift $delete): void
@@ -338,8 +394,12 @@ class SchedulePage extends Component
         [$from, $to] = $this->period();
         $loaded = $data->load($this->company(), $from, $to, ['area' => $this->area, 'skill' => $this->skill, 'location' => $this->location]);
 
+        $shown = $loaded['shifts']->pluck('id')->all();
+
         return view('planning::livewire.schedule', [
             ...$loaded,
+            'taskCounts' => $this->taskCounts($shown),
+            'editingTasks' => $this->editing === null ? collect() : ShiftTask::query()->where('shift_id', $this->editing)->orderBy('position')->orderBy('id')->get(),
             'from' => $from,
             'to' => $to,
             'canManage' => $this->allowed('planning:manage'),
@@ -347,6 +407,28 @@ class SchedulePage extends Component
             'templates' => $this->showTemplate ? Template::query()->orderBy('name')->get(['id', 'name', 'weeks']) : collect(),
             'step' => (int) $loaded['settings']['time_step_minutes'],
         ]);
+    }
+
+    /**
+     * Tasks per shift for the chips: how many and how many are ticked. One
+     * query on the shifts shown; never who ticked and never per person.
+     *
+     * @param  list<string>  $shiftIds
+     * @return array<string, array{total: int, done: int}>
+     */
+    private function taskCounts(array $shiftIds): array
+    {
+        if ($shiftIds === []) {
+            return [];
+        }
+
+        return ShiftTask::query()
+            ->whereIn('shift_id', $shiftIds)
+            ->selectRaw('shift_id, count(*) as total, count(done_at) as done')
+            ->groupBy('shift_id')
+            ->get()
+            ->mapWithKeys(fn (ShiftTask $row): array => [$row->shift_id => ['total' => (int) $row->getAttribute('total'), 'done' => (int) $row->getAttribute('done')]])
+            ->all();
     }
 
     /** @return array{CarbonImmutable, CarbonImmutable} */

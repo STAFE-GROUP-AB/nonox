@@ -31,6 +31,8 @@ Schedule::command('connect:webhooks')->everyMinute()->withoutOverlapping();
 Schedule::command('inbox:fetch')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('inbox:daily-summary')->dailyAt('07:00')->withoutOverlapping();
 Schedule::command('inbox:prune')->dailyAt('04:25')->withoutOverlapping();
+// NONOX Planering (ADR-037): shift tasks and tick-offs are removed a year after the shift.
+Schedule::command('planning:prune-tasks')->dailyAt('04:30')->withoutOverlapping();
 // Peppol e-faktura (ADR-050): received e-invoices and delivery status, beside the access point's webhook.
 Schedule::command('peppol:sync')->everyFifteenMinutes()->withoutOverlapping();
 // Tasks (ADR-028): this period's recurring tasks, and the morning digest for those who asked for it.

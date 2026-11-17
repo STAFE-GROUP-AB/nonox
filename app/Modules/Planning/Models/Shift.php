@@ -11,6 +11,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A planned shift (pass). Without an employee it is an open shift. A draft
@@ -112,6 +113,12 @@ class Shift extends Model
     public function skill(): BelongsTo
     {
         return $this->belongsTo(Skill::class);
+    }
+
+    /** @return HasMany<ShiftTask, $this> */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(ShiftTask::class)->orderBy('position')->orderBy('id');
     }
 
     public function isOpen(): bool

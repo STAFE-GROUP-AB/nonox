@@ -24,6 +24,7 @@
                             @if($next->breakMinutes > 0) · {{ __('Rast :minutes min', ['minutes' => $next->breakMinutes]) }}@endif
                         </p>
                         @if($next->note)<p class="mt-2 text-sm text-gray-700">{{ $next->note }}</p>@endif
+                        <div class="mt-3 flex flex-wrap">@include('planning::partials.my-tasks', ['shift' => $next])</div>
                     </div>
                 @else
                     <p class="mt-2 text-sm text-gray-600">{{ __('Du har inga publicerade pass de närmaste två månaderna.') }}</p>
@@ -64,6 +65,7 @@
                                     </span>
                                 @endif
                             @endif
+                            @include('planning::partials.my-tasks', ['shift' => $shift])
                         </li>
                     @empty
                         <li class="py-3 text-sm text-gray-600">{{ __('Inga pass den här veckan.') }}</li>

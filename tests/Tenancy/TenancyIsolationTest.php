@@ -243,7 +243,9 @@ use App\Modules\Planning\Models\IcalToken as PlanningIcalToken;
 use App\Modules\Planning\Models\Publication as PlanningPublication;
 use App\Modules\Planning\Models\Shift as PlanningShift;
 use App\Modules\Planning\Models\ShiftRequest as PlanningShiftRequest;
+use App\Modules\Planning\Models\ShiftTask as PlanningShiftTask;
 use App\Modules\Planning\Models\Skill as PlanningSkill;
+use App\Modules\Planning\Models\TaskTemplate as PlanningTaskTemplate;
 use App\Modules\Planning\Models\Template as PlanningTemplate;
 use App\Modules\Planning\Models\TemplateShift as PlanningTemplateShift;
 use App\Modules\Portal\Models\PortalAttachment;
@@ -460,6 +462,8 @@ const COMPANY_SCOPED_MODELS = [
     PlanningShiftRequest::class => 'planningShiftRequestAttributes',
     PlanningIcalToken::class => 'planningIcalTokenAttributes',
     PlanningAttestation::class => 'planningAttestationAttributes',
+    PlanningTaskTemplate::class => ['title' => 'Hemlig uppgift', 'weekdays' => [1, 2]],
+    PlanningShiftTask::class => 'planningShiftTaskAttributes',
     StockLocation::class => 'inventoryLocationAttributes',
     StockMovement::class => 'inventoryMovementAttributes',
     ScanOperation::class => 'inventoryScanOperationAttributes',
@@ -748,6 +752,11 @@ function planningEmployeeSkillAttributes(): array
 function planningShiftAttributes(): array
 {
     return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'starts_at' => '2026-11-10 08:00', 'ends_at' => '2026-11-10 16:00', 'status' => 'DRAFT'];
+}
+
+function planningShiftTaskAttributes(): array
+{
+    return ['shift_id' => PlanningShift::create(planningShiftAttributes())->id, 'title' => 'Hemlig uppgift', 'position' => 0];
 }
 
 function planningTemplateShiftAttributes(): array

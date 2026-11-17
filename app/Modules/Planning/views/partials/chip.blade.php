@@ -12,6 +12,7 @@
     $shiftWarnings = $warnings[$shift->id] ?? [];
     $label = $chipLabel($shift);
     $missing = $shift->employee_id !== null && ($shift->cost_estimate_ore === null || ((array) ($shift->cost_details['missing'] ?? [])) !== []);
+    $taskCount = $taskCounts[$shift->id] ?? null;
     $state = $shift->hasUnpublishedChanges() ? __('Ändrat, inte publicerat') : ($shift->isDraft() ? __('Utkast') : __('Publicerat'));
 @endphp
 <div
@@ -58,6 +59,9 @@
     </span>
     @if($label !== '')
         <span class="block truncate text-gray-700">{{ $label }}</span>
+    @endif
+    @if($taskCount && ! $timeline)
+        <span @class(['block tabular-nums font-semibold', 'text-green-800' => $taskCount['done'] === $taskCount['total'], 'text-gray-600' => $taskCount['done'] !== $taskCount['total']]) title="{{ __('Uppgifter: :done av :total klara', ['done' => $taskCount['done'], 'total' => $taskCount['total']]) }}" data-task-count>✓ {{ $taskCount['done'] }}/{{ $taskCount['total'] }}</span>
     @endif
     @if(! $timeline && $shift->employee_id !== null)
         <span class="block tabular-nums text-gray-500">{{ $shift->cost_estimate_ore === null ? '–' : $money($shift->cost_estimate_ore) }}{{ $missing ? ' *' : '' }}</span>

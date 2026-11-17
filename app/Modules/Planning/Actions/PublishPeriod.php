@@ -20,6 +20,7 @@ use App\Modules\Planning\Support\PlanningWebhooks;
 use App\Modules\Planning\Support\RequestChecks;
 use App\Modules\Planning\Support\ScheduleNotifier;
 use App\Modules\Planning\Support\ShiftQuery;
+use App\Modules\Planning\Support\ShiftTasks;
 use App\Support\Audit\Audit;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -29,14 +30,15 @@ use Illuminate\Validation\ValidationException;
 /**
  * Publishes the drafts of a period (PLANNING_MODULE.md §6): they become
  * published, what the employee is shown is kept, a publication row records
- * it, and every employee whose schedule changed is sent their shifts for the
- * period (when the company notifies on publish). Audited.
+ * it, the recurring tasks are put on the shifts, and every employee whose
+ * schedule changed is sent their shifts for the period (when the company
+ * notifies on publish). Audited.
  */
 final class PublishPeriod
 {
     use GuardsPlanning;
 
-    public function __construct(private readonly ScheduleNotifier $notifier) {}
+    public function __construct(private readonly ScheduleNotifier $notifier, private readonly ShiftTasks $tasks) {}
 
     public function __invoke(User $user, Company $company, CarbonImmutable $from, CarbonImmutable $to): Publication
     {
@@ -49,6 +51,8 @@ final class PublishPeriod
             if ($drafts->isEmpty()) {
                 throw ValidationException::withMessages(['period' => __('Det finns inga ändringar att publicera för perioden.')]);
             }
+
+            $this->tasks->sync($company, $drafts);
 
             $now = CarbonImmutable::now();
             $changes = [];

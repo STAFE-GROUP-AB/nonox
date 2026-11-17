@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-17-planering-uppgifter-pa-pass",
+      "datum": "2026-11-17T18:10:00+01:00",
+      "rubrik": "Uppgifter på passen i Planering",
+      "beskrivning": "Återkommande uppgifter läggs på passen efter avdelning, kompetens, veckodag och klockslag. Personalen bockar av dem på Min sida och planeraren ser på schemat hur långt de har kommit, utan namn. Uppgifterna är ett stöd i arbetet, inte egenkontroll.",
+      "typ": "Nytt",
+      "omrade": "Planering"
+    },
+    {
       "id": "2026-11-16-tillverkning-jamforelse-och-systemdokumentation",
       "datum": "2026-11-16T15:10:00+01:00",
       "rubrik": "Tillverkning i jämförelsen, körjournal på branschsidorna, ny systemdokumentation",

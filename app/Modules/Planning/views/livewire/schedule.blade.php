@@ -297,6 +297,35 @@
                 <x-ui.field for="shift-note" :label="__('Anteckning')" error="form.note" class="sm:col-span-2">
                     <input id="shift-note" wire:model="form.note" maxlength="500" class="{{ $input }} mt-1">
                 </x-ui.field>
+                <div class="sm:col-span-2" data-shift-task-editor>
+                    <p class="text-sm font-medium text-gray-700">{{ __('Uppgifter') }}</p>
+                    @if($editing === null)
+                        <p class="mt-1 text-sm text-gray-500">{{ __('Spara passet först. Uppgifterna från Planering → Uppgifter läggs på det när du sparar, och här kan du lägga till egna.') }}</p>
+                    @else
+                        <ul class="mt-1 divide-y divide-stone-100">
+                            @forelse($editingTasks as $task)
+                                <li wire:key="editor-task-{{ $task->id }}" class="flex items-start gap-3 py-2 text-sm">
+                                    <input type="checkbox" class="mt-0.5 size-4 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500" wire:click="toggleTask({{ $task->id }})" @checked($task->done_at !== null) aria-label="{{ __('Klar: :task', ['task' => $task->title]) }}">
+                                    <span class="min-w-0 flex-1">
+                                        <span @class(['block text-gray-900', 'text-gray-500 line-through' => $task->done_at !== null])>{{ $task->title }}@if($task->due_time) <span class="tabular-nums text-gray-500">({{ __('kl. :time', ['time' => $task->due_time]) }})</span>@endif</span>
+                                        @if($task->done_at)<span class="block text-xs text-green-800">{{ __('Klar :time', ['time' => $task->done_at->format('H:i')]) }}</span>@endif
+                                        @if($task->template_id)<span class="block text-xs text-gray-500">{{ __('Från en mall') }}</span>@endif
+                                    </span>
+                                    @if($task->template_id === null)
+                                        <button type="button" wire:click="removeTask({{ $task->id }})" class="text-xs font-semibold text-red-800 underline">{{ __('Ta bort') }}</button>
+                                    @endif
+                                </li>
+                            @empty
+                                <li class="py-2 text-sm text-gray-500">{{ __('Inga uppgifter på passet.') }}</li>
+                            @endforelse
+                        </ul>
+                        <div class="mt-2 flex gap-2">
+                            <input id="shift-new-task" wire:model="newTask" wire:keydown.enter.prevent="addTask" maxlength="120" placeholder="{{ __('Ny uppgift') }}" aria-label="{{ __('Ny uppgift') }}" class="{{ $input }}">
+                            <x-secondary-button type="button" wire:click="addTask">{{ __('Lägg till') }}</x-secondary-button>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">{{ __('Skriv inga personuppgifter i uppgifterna.') }}</p>
+                    @endif
+                </div>
                 @if($editing && ($current = $shifts->firstWhere('id', $editing)))
                     @if($current->cost_details)
                         <div class="rounded-xl bg-stone-50 p-3 text-sm text-gray-700 sm:col-span-2">

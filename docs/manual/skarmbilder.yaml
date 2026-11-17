@@ -192,6 +192,8 @@ planering/schema-avdelningar: { foretag: restaurang, rutt: planning.schedule, fr
 planering/schema-dag: { foretag: restaurang, rutt: planning.schedule, fraga: { vy: dag, dag: '@monday this week -2 days' } }
 planering/schema-utkast: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '@monday this week +3 weeks' } }
 planering/mallar: { foretag: restaurang, rutt: planning.templates }
+planering/uppgifter: { foretag: restaurang, rutt: planning.tasks }
+planering/schema-uppgifter: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '@monday this week' }, del: 'div[role=grid]' }
 planering/installningar: { foretag: restaurang, rutt: planning.settings }
 planering/forfragningar: { foretag: restaurang, rutt: planning.requests }
 planering/attest: { foretag: cafe, rutt: planning.attest, fraga: { fran: '@monday this week -3 weeks', till: '@monday this week -1 day' } }
@@ -199,6 +201,7 @@ planering/attest-avvikelser: { foretag: cafe, rutt: planning.attest, fraga: { fr
 planering/attest-restaurang: { foretag: restaurang, rutt: planning.attest, fraga: { fran: '@monday this week -1 week', till: '@monday this week -1 day' } }
 planering/bemanning: { foretag: restaurang, rutt: planning.staffing, fraga: { fran: '@monday this week -4 weeks', till: '@monday this week -1 day' } }
 planering/min-sida-schema: { foretag: restaurang, anvandare: lina.berg@example.test, enhet: mobil, rutt: payroll.portal.home }
+planering/min-sida-uppgifter: { foretag: restaurang, anvandare: lina.berg@example.test, enhet: mobil, rutt: payroll.portal.home, visa: '[data-next-shift]' }
 
 # Lager (InventoryExtras), in the shop.
 lager/oversikt: { foretag: butik, rutt: inventory.overview }
