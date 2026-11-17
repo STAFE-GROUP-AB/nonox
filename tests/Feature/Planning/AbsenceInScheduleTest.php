@@ -112,7 +112,8 @@ it('never rejects, only warns: a shift on an absent day saves with a warning', f
 
     expect(array_map(fn ($warning): string => $warning->message, $week['warnings'][$shift->id]))->toContain('Personen är frånvarande den här dagen.');
 
-    $page->call('edit', $shift->id)->assertSee('Personen är frånvarande den här dagen.');
+    // The warning is on the shift's chip in the schedule (its hover text and mark), with the editor closed.
+    $page->call('$refresh')->assertSet('showEditor', false)->assertSee('Personen är frånvarande den här dagen.')->assertSeeHtml('data-shift="'.$shift->id.'"');
 });
 
 it('warns on a shift that runs past midnight into an absent day, and on a partial absence', function () {
@@ -150,7 +151,16 @@ it('warns when a request is decided for a person who is absent', function () {
     $warnings = app(DecideRequest::class)($this->owner, $this->company, $request, true);
 
     expect(array_column($warnings, 'message'))->toContain('Personen är frånvarande den här dagen.')
+        ->and(array_column($warnings, 'code'))->toContain('absent')
         ->and($open->fresh()->employee_id)->toBe($this->anna->id);
+
+    // The audit log holds rule codes only: no text, no name, no mention of absence.
+    $payload = AuditLog::query()->where('action', 'planning.request_approved')->sole()->payload;
+    $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
+    expect($payload['warnings'])->toContain('absent')
+        ->and($json)->not->toContain('frånvarande')
+        ->and($json)->not->toContain('Anna')
+        ->and($json)->not->toContain('Kock');
 });
 
 it('puts published shifts of absent staff in the to-do list, for planners only', function () {
@@ -259,4 +269,38 @@ it('loads the absence marks in one query however many absences and shifts there 
         absenceShift($this->bertil->id, sprintf('2026-11-%02d', $day));
     }
     expect($todo())->toBe($many);
+});
+
+it('derives a part day from the hours against the employment\'s day, or the extent', function () {
+    // Anna: 8 h a day by default. 4 h missed is half a day, 8 h the whole day; Bertil has an extent of 25 %.
+    absent($this->anna->id, '2026-11-10', '2026-11-10')->forceFill(['hours' => '4'])->save();
+    absent($this->anna->id, '2026-11-11', '2026-11-11');
+    absent($this->bertil->id, '2026-11-12', '2026-11-12', extent: 2500);
+
+    $marks = AbsenceDays::between($this->monday, $this->monday->addDays(6));
+
+    expect($marks[$this->anna->id])->toBe(['2026-11-10' => AbsenceDays::PARTIAL, '2026-11-11' => AbsenceDays::FULL])
+        ->and($marks[$this->bertil->id])->toBe(['2026-11-12' => AbsenceDays::PARTIAL]);
+});
+
+it('warns about a Sunday night shift that runs into an absent Monday', function () {
+    absent($this->anna->id, '2026-11-16', '2026-11-16');
+    $night = absenceShift($this->anna->id, '2026-11-15', '22:00', '06:00');
+
+    $week = app(ScheduleData::class)->load($this->company, $this->monday->addWeek()->subWeek(), $this->monday->addDays(6));
+
+    expect(array_map(fn ($warning): string => $warning->rule, $week['warnings'][$night->id] ?? []))->toContain('absent');
+});
+
+it('looks only eight weeks ahead and only at people with absence for the to-do list', function () {
+    absenceShift($this->anna->id, '2026-11-10');
+    absenceShift($this->bertil->id, '2026-11-10');
+    absenceShift($this->anna->id, '2027-03-02');
+    publishWeek();
+    absent($this->anna->id, '2026-11-10', '2027-03-31');
+
+    $found = AbsenceDays::upcomingShiftsOfAbsent(CarbonImmutable::today('Europe/Stockholm'));
+
+    expect($found)->toHaveCount(1)
+        ->and($found->first()->employee_id)->toBe($this->anna->id);
 });

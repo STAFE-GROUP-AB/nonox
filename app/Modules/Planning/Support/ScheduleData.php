@@ -101,7 +101,8 @@ final class ScheduleData
         }
 
         // Absence: one query, no type or note (AbsenceDays). Requested absence only for those who manage.
-        $absence = AbsenceDays::between($from, $to, $manager);
+        // One day more than shown: a shift at 22:00 running into an absent Monday is warned about; labels only use the shown days.
+        $absence = AbsenceDays::between($from, $to->addDay(), $manager);
 
         foreach ($visible->whereNotNull('employee_id') as $shift) {
             if (AbsenceDays::absentDuring($absence, $shift->employee_id, $shift)) {

@@ -337,10 +337,22 @@ B.15); Planering never asks for it, also not for vacation.
   absence marker.
 - The attest logic that already reads absences is unchanged.
 
-`TODO(legal-verify)`: whether "frånvarande" derived from a sick report is
-itself health data (GDPR art. 9) in the planner's view, and the legal basis
-for showing it to a scheduler without `payroll:view-sensitive` (proposed:
-art. 9.2 b with lagen (2018:218) 3 kap. 2 §, limited to "absent").
+`TODO(legal-verify)`: whether "frånvarande" derived from a sick or VAB
+report is itself health data (GDPR art. 9) in the planner's view; whether
+"Frånvaro begärd" (employees' own sick and VAB requests, up to seven days
+ahead) and "Delvis frånvarande" are, and whether a pattern of such marks
+lets a scheduler infer a cause; and the legal basis for showing any of them
+to a scheduler without `payroll:view-sensitive` (proposed: art. 9.2 b with
+dataskyddslagen (2018:218) 3 kap. 2 §, limited to "absent").
+
+*As built (P1):* the query also selects `hours` (scheduled hours missed per
+day, not health data), because payroll's paths set only the hours, not the
+extent: part of a day is an `extent_bp` below 10 000, else the hours against
+the employment's hours per working day (weekly hours over five, else 8). The
+warning also covers the day after the visible period (a shift running past
+midnight), the to-do looks eight weeks ahead for the shifts of people with
+approved absence only, and the audit log of a request decision holds rule
+codes, never warning texts.
 
 ### Gap 7: shifts on cost centres, carried to the payroll voucher
 

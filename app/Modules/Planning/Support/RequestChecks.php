@@ -31,7 +31,7 @@ final class RequestChecks
 
     /**
      * @param  Collection<int, ShiftRequest>  $requests  with shift and counterpartShift loaded
-     * @return array<int, list<array{message: string, source: string}>> request id => warnings
+     * @return array<int, list<array{code: string, message: string, source: string}>> request id => warnings (the code is a rule key, safe for the audit log; the message may name a person)
      */
     public function for(Company $company, Collection $requests): array
     {
@@ -85,15 +85,15 @@ final class RequestChecks
             );
 
             foreach ($warnings as $warning) {
-                $result[$requestId][] = ['message' => $prefix.$warning->message, 'source' => $warning->source];
+                $result[$requestId][] = ['code' => $warning->rule, 'message' => $prefix.$warning->message, 'source' => $warning->source];
             }
 
             if (AbsenceDays::absentDuring($absence, $employeeId, $gained)) {
-                $result[$requestId][] = ['message' => $prefix.AbsenceDays::warning(), 'source' => ''];
+                $result[$requestId][] = ['code' => 'absent', 'message' => $prefix.AbsenceDays::warning(), 'source' => ''];
             }
 
             if (self::isUnavailable($availability->get($employeeId, collect()), $gained)) {
-                $result[$requestId][] = ['message' => $prefix.__('Har angett att den tiden inte passar.'), 'source' => ''];
+                $result[$requestId][] = ['code' => 'unavailable', 'message' => $prefix.__('Har angett att den tiden inte passar.'), 'source' => ''];
             }
         }
 

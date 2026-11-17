@@ -18,7 +18,7 @@ När någon har godkänd frånvaro under Lön ser du det i schemat, så att du i
 I rutan för personen och dagen står en etikett, och på dagvyn ligger ett ränderat band över personens rad:
 
 - **Frånvarande** – personen har godkänd frånvaro hela dagen.
-- **Delvis frånvarande** – godkänd frånvaro för en del av dagen, till exempel en halv dag.
+- **Delvis frånvarande** – godkänd frånvaro för en del av dagen, till exempel en halv dag. NONOX avgör det av de timmar per dag som är registrerade under Lön jämfört med personens timmar per arbetsdag (veckotimmarna delat med fem, annars 8), eller av en omfattning under 100 procent.
 - **Frånvaro begärd** – personen har begärt frånvaro som ingen har godkänt ännu. Den syns bara för dig som får planera. Den räknas inte som frånvaro förrän den är godkänd, och ger ingen varning.
 
 Etiketten säger aldrig om frånvaron är semester, sjukdom eller något annat. Orsaken är känslig uppgift och planeringen läser den inte. Den ser bara vem som är frånvarande, vilka dagar och hur stor del av dagen. Orsaken ser bara den som har behörighet till känsliga uppgifter under Lön.
@@ -27,7 +27,7 @@ Etiketten säger aldrig om frånvaron är semester, sjukdom eller något annat. 
 
 Lägger eller flyttar du ett pass till en person som är frånvarande samma dag, sparas passet ändå. Du får varningen **Personen är frånvarande den här dagen.**
 
-- I rutan efter att du sparat, och när du öppnar passet igen.
+- Som ett varningsmärke (!) på passet i schemat. Peka på passet för att läsa texten. Efter att du sparat står den också i beskedet.
 - När du publicerar: sammanfattningen säger hur många pass som ligger på en dag då personen är frånvarande, och beskedet efter publiceringen nämner det.
 - När du godkänner en förfrågan om ett öppet pass eller ett byte, om personen som får passet är frånvarande.
 

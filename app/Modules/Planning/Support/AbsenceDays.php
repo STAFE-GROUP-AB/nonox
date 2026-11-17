@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Planning\Support;
 
 use App\Modules\Payroll\Models\Absence;
+use App\Modules\Payroll\Models\Employment;
 use App\Modules\Planning\Models\Shift;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
@@ -14,18 +15,23 @@ use Illuminate\Support\Collection;
  *
  * The absence type is health data for sick leave, so Planering never asks
  * for it, also not for vacation: the one query here selects employee_id,
- * date_from, date_to, extent_bp and status, and nothing else (no type, note
- * or doctor certificate). All a planner learns is "frånvarande" (approved),
+ * date_from, date_to, extent_bp, hours (the scheduled hours missed per day)
+ * and status, and nothing else (no type, note or doctor certificate). Part
+ * of a day is the extent when payroll has one below 100 %, else the hours
+ * against the employment's hours per working day (weekly hours over five, or
+ * 8: the same default as payroll's absence approval). All a planner learns is "frånvarande" (approved),
  * "delvis frånvarande" (approved, less than the whole day) and, for holders
  * of planning:manage, "frånvaro begärd" (requested, not yet decided).
  * Nothing here reads a person's own absence for Min sida, and colleagues
  * never get a marker.
  *
- * TODO(legal-verify): whether "frånvarande" derived from a sick report is
- * itself health data (GDPR art. 9) in the planner's view, and the legal
- * basis for showing it to a scheduler without payroll:view-sensitive
- * (proposed: art. 9.2 b with lagen (2018:218) 3 kap. 2 §, limited to
- * "absent").
+ * TODO(legal-verify): whether "frånvarande" derived from a sick or VAB
+ * report is itself health data (GDPR art. 9) in the planner's view; whether
+ * "Frånvaro begärd" (employees' own sick and VAB requests, up to seven days
+ * ahead) and "Delvis frånvarande" are, and whether a pattern of such marks
+ * lets a scheduler infer a cause; and the legal basis for showing any of
+ * them to a scheduler without payroll:view-sensitive (proposed: art. 9.2 b
+ * with dataskyddslagen (2018:218) 3 kap. 2 §, limited to "absent").
  */
 final class AbsenceDays
 {
@@ -57,8 +63,9 @@ final class AbsenceDays
             ->whereIn('status', $withRequested ? ['APPROVED', 'REQUESTED'] : ['APPROVED'])
             ->whereDate('date_from', '<=', $to->toDateString())
             ->whereDate('date_to', '>=', $from->toDateString())
-            ->get(['employee_id', 'date_from', 'date_to', 'extent_bp', 'status']);
+            ->get(['employee_id', 'date_from', 'date_to', 'extent_bp', 'hours', 'status']);
 
+        $daily = self::dailyHours($rows, $from, $to);
         $extent = [];
         $requested = [];
 
@@ -69,7 +76,7 @@ final class AbsenceDays
                 $date = $day->toDateString();
 
                 if ($absence->status === 'APPROVED') {
-                    $extent[$absence->employee_id][$date] = min(self::WHOLE_DAY_BP, ($extent[$absence->employee_id][$date] ?? 0) + (int) $absence->extent_bp);
+                    $extent[$absence->employee_id][$date] = min(self::WHOLE_DAY_BP, ($extent[$absence->employee_id][$date] ?? 0) + self::shareOfDay($absence, $daily[$absence->employee_id] ?? 8.0));
 
                     continue;
                 }
@@ -93,6 +100,55 @@ final class AbsenceDays
         }
 
         return $marks;
+    }
+
+    /** The part of a working day an absence covers, in basis points: the extent below 100 %, else the hours missed against the day's hours. */
+    private static function shareOfDay(Absence $absence, float $dailyHours): int
+    {
+        $extent = (int) $absence->extent_bp;
+        $hours = (float) str_replace(',', '.', (string) $absence->hours);
+
+        if ($extent > 0 && $extent < self::WHOLE_DAY_BP) {
+            return $extent;
+        }
+
+        if ($hours > 0 && $dailyHours > 0 && $hours < $dailyHours - 0.01) {
+            return (int) round($hours / $dailyHours * self::WHOLE_DAY_BP);
+        }
+
+        return self::WHOLE_DAY_BP;
+    }
+
+    /**
+     * Each person's hours per working day (weekly hours over five, else 8),
+     * read only for people with an approved absence that states hours. One
+     * query, or none.
+     *
+     * @param  Collection<int, Absence>  $rows
+     * @return array<int, float>
+     */
+    private static function dailyHours(Collection $rows, CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        $ids = $rows->where('status', 'APPROVED')->filter(fn (Absence $absence): bool => (float) $absence->hours > 0)->pluck('employee_id')->unique()->values()->all();
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $daily = [];
+        $employments = Employment::query()
+            ->whereIn('employee_id', $ids)
+            ->whereDate('start_date', '<=', $to->toDateString())
+            ->where(fn ($query) => $query->whereNull('end_date')->orWhereDate('end_date', '>=', $from->toDateString()))
+            ->orderBy('start_date')
+            ->get(['employee_id', 'weekly_hours']);
+
+        foreach ($employments as $employment) {
+            $weekly = (float) $employment->weekly_hours;
+            $daily[$employment->employee_id] = $weekly > 0 ? $weekly / 5 : 8.0;
+        }
+
+        return $daily;
     }
 
     /**
@@ -166,25 +222,35 @@ final class AbsenceDays
         return $dates;
     }
 
+    /** How far ahead the to-do list looks for shifts of absent people. */
+    public const int HORIZON_WEEKS = 8;
+
     /**
-     * Published shifts of absent people from the start of today, for the
-     * to-do list. Three queries.
+     * Published shifts of absent people from the start of today, up to
+     * HORIZON_WEEKS ahead, for the to-do list. Only the shifts of people with
+     * approved absence in that window are read. Three queries (four with a
+     * part-day absence).
      *
      * @return Collection<int, Shift>
      */
     public static function upcomingShiftsOfAbsent(CarbonImmutable $today): Collection
     {
         $from = $today->setTimezone(LocalTimestamp::ZONE)->startOfDay();
-        $last = Absence::query()->where('status', 'APPROVED')->whereDate('date_to', '>=', $from->toDateString())->max('date_to');
+        $horizon = $from->addWeeks(self::HORIZON_WEEKS);
+        $absences = Absence::query()
+            ->where('status', 'APPROVED')
+            ->whereDate('date_to', '>=', $from->toDateString())
+            ->whereDate('date_from', '<=', $horizon->toDateString())
+            ->get(['employee_id', 'date_to']);
 
-        if ($last === null) {
+        if ($absences->isEmpty()) {
             return collect();
         }
 
-        $to = CarbonImmutable::parse((string) $last, LocalTimestamp::ZONE)->startOfDay();
+        $to = $absences->max('date_to')->min($horizon);
         $shifts = ShiftQuery::startingOn($from, $to)
             ->where('status', Shift::PUBLISHED)
-            ->whereNotNull('employee_id')
+            ->whereIn('employee_id', $absences->pluck('employee_id')->unique()->values()->all())
             ->orderBy('starts_at')
             ->get(['id', 'employee_id', 'starts_at', 'ends_at']);
         $absent = self::shiftsOfAbsent($shifts);

@@ -37,7 +37,7 @@ final class DecideRequest
 
     public function __construct(private readonly SaveShift $save, private readonly RequestChecks $checks) {}
 
-    /** @return list<array{message: string, source: string}> the warnings of the approved change */
+    /** @return list<array{code: string, message: string, source: string}> the warnings of the approved change */
     public function __invoke(User $user, Company $company, ShiftRequest $request, bool $approve, ?string $reason = null): array
     {
         $this->guard($user, $company);
@@ -146,7 +146,7 @@ final class DecideRequest
     }
 
     /**
-     * @param  list<array{message: string, source: string}>  $warnings
+     * @param  list<array{code: string, message: string, source: string}>  $warnings
      */
     private function close(User $user, Company $company, ShiftRequest $request, string $status, ?string $reason, array $warnings = []): void
     {
@@ -163,7 +163,8 @@ final class DecideRequest
             'counterpart_shift_id' => $request->counterpart_shift_id,
             'employee_id' => $request->requested_by,
             'reason' => $reason,
-            'warnings' => array_column($warnings, 'message'),
+            // Rule codes only: a message can name a person or an absence (audit log holds ids, enums and codes).
+            'warnings' => array_column($warnings, 'code'),
         ], $company, $user);
     }
 
