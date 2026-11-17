@@ -297,10 +297,22 @@ it('looks only eight weeks ahead and only at people with absence for the to-do l
     absenceShift($this->bertil->id, '2026-11-10');
     absenceShift($this->anna->id, '2027-03-02');
     publishWeek();
+    $march = CarbonImmutable::parse('2027-03-01', 'Europe/Stockholm');
+    CurrentCompany::run($this->company, fn () => app(PublishPeriod::class)($this->owner, $this->company, $march, $march->addDays(6)));
     absent($this->anna->id, '2026-11-10', '2027-03-31');
 
-    $found = AbsenceDays::upcomingShiftsOfAbsent(CarbonImmutable::today('Europe/Stockholm'));
+    expect(Shift::query()->where('status', Shift::PUBLISHED)->count())->toBe(3);
 
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+    $found = AbsenceDays::upcomingShiftsOfAbsent(CarbonImmutable::today('Europe/Stockholm'));
+    $sql = collect(DB::getQueryLog())->pluck('query')->filter(fn (string $query): bool => str_contains($query, 'planning_shifts'));
+    DB::disableQueryLog();
+
+    // Only Anna's shift inside the eight weeks: not the March one (beyond the horizon), not Bertil's.
     expect($found)->toHaveCount(1)
-        ->and($found->first()->employee_id)->toBe($this->anna->id);
+        ->and($found->first()->employee_id)->toBe($this->anna->id)
+        ->and($found->first()->starts_at->toDateString())->toBe('2026-11-10')
+        // Only the shifts of people with absence are read at all.
+        ->and($sql->first(fn (string $query): bool => str_contains($query, '"employee_id" in')))->not->toBeNull();
 });

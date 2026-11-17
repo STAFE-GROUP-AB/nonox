@@ -37,7 +37,7 @@ Varningen stoppar inget. Du bestämmer om passet ska ligga kvar.
 
 Blir en frånvaro godkänd efter att du har publicerat passen dyker det upp en sak att göra på Översikt: **Pass hos frånvarande personal**. Länken öppnar schemat på veckan med det första passet. Där kan du ge passet till någon annan, göra det till ett öppet pass eller låta det ligga kvar. Publicera igen så får personerna besked.
 
-Saken att göra räknar bara publicerade pass från och med idag. Utkast och pass som redan har varit visas inte.
+Saken att göra räknar bara publicerade pass från och med idag och högst åtta veckor framåt. Utkast och pass som redan har varit visas inte.
 
 ## Bra att veta
 
