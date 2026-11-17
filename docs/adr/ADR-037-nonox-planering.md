@@ -184,7 +184,15 @@ and over-staffing are warnings.
 - Planned staff per hour = the minutes people's shifts cover in the hour ÷
   its length; breaks are not placed in time and are not taken off; open
   shifts are shown apart and do not count. Over-staffed means at least one
-  person more than required.
+  person more than the sales target requires; a minimum staff alone is a
+  floor, never a ceiling. With hours, the hours decide the day's status;
+  per day only, the planned minutes inside the targeted hours are compared
+  with the day's need. Time outside every target's window counts for
+  neither. Per day only, an hour shows its minimum staff only when it has
+  one.
+- `SalesFromBooks` gains two optional parameters (a cost centre, and single
+  extra dates for last year's holidays) instead of a second reader; its
+  existing callers are unchanged.
 - Tills give the shape from the forecast's own basis days. A scope uses the
   tills mapped to it, else those mapped to the whole company; the whole
   company, with none mapped to it, uses every mapped till together.
@@ -192,7 +200,10 @@ and over-staffing are warnings.
   `planning_areas.cost_center_id` (P2); without it the area's demand uses the
   whole company's sales and the page says so.
 - The schedule footer's "≈" is now this forecast (it was a four-week
-  average), so the schedule shows one forecast.
+  average, now removed from `ScheduleData`), so the schedule shows one
+  forecast; without an area filter the books are read once for both.
+- Sales booked per week or month cannot give a forecast per weekday: the
+  page warns when fewer than half the weekdays of the look-back have sales.
 
 ### Gap 2: staff-cost budget per week and area
 

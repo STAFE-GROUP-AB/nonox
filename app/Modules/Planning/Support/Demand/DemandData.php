@@ -19,6 +19,7 @@ use App\Modules\Planning\Models\StaffingRule;
 use App\Modules\Planning\PlanningModule;
 use App\Modules\Planning\PlanningSettings;
 use App\Modules\Planning\Support\LocalTimestamp;
+use App\Modules\Planning\Support\SalesFromBooks;
 use App\Modules\Planning\Support\ShiftQuery;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -42,7 +43,7 @@ final class DemandData
     public function __construct(private readonly ModuleManager $modules) {}
 
     /**
-     * @return array{days: array<string, DayDemand>, area: ?Area, sales_scope: string, weeks: int, till: bool, profiles: bool, rules: Collection<int, StaffingRule>}
+     * @return array{days: array<string, DayDemand>, area: ?Area, sales_scope: string, weeks: int, till: bool, profiles: bool, rules: Collection<int, StaffingRule>, sales: array<string, int>, lumped: bool}
      */
     public function load(Company $company, CarbonImmutable $from, CarbonImmutable $to, ?Area $area = null): array
     {
@@ -74,7 +75,7 @@ final class DemandData
         $costCentre = AreaCostCentre::of($area);
         $lookback = Forecaster::lookbackFrom($from, $today, $weeks);
         $holidays = Forecaster::lastYearHolidays($days);
-        $sales = BookedSales::perDay(
+        $sales = SalesFromBooks::perDay(
             $lookback,
             $to,
             PlanningSettings::int($settings, 'sales_account_from'),
@@ -119,7 +120,34 @@ final class DemandData
             'till' => $tills !== [],
             'profiles' => $profiles->isNotEmpty(),
             'rules' => $rules,
+            'sales' => $sales,
+            'lumped' => self::lumped($sales, $lookback, $today),
         ];
+    }
+
+    /**
+     * Whether the books look booked in lumps (per week or month) rather than
+     * per day: fewer than half the weekdays (Monday–Friday, not holidays) of
+     * the look-back before today have sales. A forecast per weekday is then
+     * not meaningful, and the page says so.
+     *
+     * @param  array<string, int>  $sales
+     */
+    public static function lumped(array $sales, CarbonImmutable $from, CarbonImmutable $today): bool
+    {
+        $weekdays = 0;
+        $withSales = 0;
+
+        for ($day = $from; $day->lessThan($today->startOfDay()); $day = $day->addDay()) {
+            if ($day->isWeekend() || Forecaster::holidayKey($day) !== null) {
+                continue;
+            }
+
+            $weekdays++;
+            $withSales += ($sales[$day->toDateString()] ?? 0) > 0 ? 1 : 0;
+        }
+
+        return $weekdays > 0 && $withSales * 2 < $weekdays;
     }
 
     /**

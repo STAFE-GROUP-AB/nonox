@@ -337,9 +337,17 @@ class SchedulePage extends Component
     public function render(ScheduleData $data, DemandData $demand): View
     {
         [$from, $to] = $this->period();
-        $loaded = $data->load($this->company(), $from, $to, ['area' => $this->area, 'skill' => $this->skill, 'location' => $this->location]);
-        // Demand follows the area filter; without one it is the whole company's (ADR-037, gap 1).
-        $needs = $demand->load($this->company(), $from, $to, $this->area === null ? null : $loaded['areas']->firstWhere('id', $this->area));
+        $filters = ['area' => $this->area, 'skill' => $this->skill, 'location' => $this->location];
+
+        // Demand follows the area filter (ADR-037, gap 1). Without one it is the whole company's, and its
+        // books are the footer's sales, read once; with one, the footer keeps the whole company's sales.
+        if ($this->area === null) {
+            $needs = $demand->load($this->company(), $from, $to);
+            $loaded = $data->load($this->company(), $from, $to, $filters, $needs['sales']);
+        } else {
+            $loaded = $data->load($this->company(), $from, $to, $filters);
+            $needs = $demand->load($this->company(), $from, $to, $loaded['areas']->firstWhere('id', $this->area));
+        }
 
         // The footer's ≈ figure is the demand forecast, so the schedule shows one forecast, explained in one place.
         foreach ($loaded['totals'] as $date => $total) {

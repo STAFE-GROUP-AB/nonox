@@ -36,6 +36,9 @@ Prognosen för en dag är snittet av samma veckodag de senaste sex veckorna i bo
 
 Prognosen räknar inte med trender, säsong eller väder. Vet ni att en dag blir annorlunda ändrar ni den själva.
 
+> [!IMPORTANT]
+> Bokför försäljningen per dag, till exempel dagskassan, för att prognosen ska stämma. Bokförs den per vecka eller månad hamnar allt på en dag och snittet per veckodag blir fel. Har färre än hälften av vardagarna de senaste veckorna bokförd försäljning står en varning överst på sidan.
+
 ### Varifrån försäljningen kommer
 
 Dagens summa kommer alltid från bokföringen: bokförda verifikationer på försäljningskontona, utan moms, per verifikationsdatum. En verifikation har ett datum men ingen tid, så bokföringen ger bara försäljningen per dag.
@@ -58,14 +61,16 @@ Ett bemanningsmål gäller en veckodag eller alla dagar, en tid och från ett da
 
 Behovet en timme är det högsta av minsta bemanningen och timmens försäljning delad med målet, avrundat uppåt. Säljer ni 6 000 kr mellan 12 och 13 och målet är 1 000 kr behövs sex personer den timmen.
 
-Utan fördelning per timme är behovet för dagen försäljningen delad med målet, avrundat uppåt till hela timmar, men aldrig mindre än minsta bemanningen räknad över målets timmar.
+Utan fördelning per timme är behovet för dagen försäljningen delad med målet, avrundat uppåt till hela timmar, men aldrig mindre än minsta bemanningen räknad över målets timmar. Timmarna visar då bara minsta bemanningen, och bara när målet har en.
+
+Bara tiden inom målens tider räknas. Den som börjar före öppning eller stänger efter gör inte dagen överbemannad. Överbemannat räknas bara mot försäljningen per bemannad timme: minsta bemanning är ett golv, inget tak.
 
 > [!TIP]
 > Gäller flera mål samma timme används det med senast **Gäller från**. Ett mål för en viss veckodag går före ett för **Alla dagar**. Tider över midnatt lägger du in som två mål, till exempel 18:00–24:00 och 00:00–01:00.
 
 ## Ändra prognosen för en dag
 
-Under **Ändra prognosen för en dag** skriver du in **Datum**, **Försäljning** och **Anledning**, till exempel en konsert i närheten, och klickar på **Spara ändringen**. Din siffra ersätter prognosen och visas som **ändrad**, med den uträknade prognosen bredvid. Sparar du samma dag igen ersätts ändringen. **Ta bort** gör att dagen följer prognosen igen.
+Under **Ändra prognosen för en dag** skriver du in **Datum**, **Försäljning** och **Anledning**, till exempel en konsert i närheten, och klickar på **Spara ändringen**. Skriv inte namn eller hälsouppgifter i anledningen. Din siffra ersätter prognosen och visas som **ändrad**, med den uträknade prognosen bredvid. Sparar du samma dag igen ersätts ändringen. **Ta bort** gör att dagen följer prognosen igen.
 
 ## Timprofil (egen uppskattning)
 
@@ -84,10 +89,10 @@ Under **Kassor och underlag** väljer du för varje kopplad kassa om den använd
 I schemats dagvy finns raden **Behov per timme** ovanför passen. Varje timme visar bemannat mot behov, till exempel 2/3:
 
 - **Röd** betyder underbemannat: färre bemannade än behovet.
-- **Gul** betyder överbemannat: minst en person mer än behovet.
+- **Gul** betyder överbemannat: minst en person mer än försäljningen behöver.
 - **Grön** betyder bemannat enligt behovet.
 
-Bemannat är tiden personer har pass den timmen. Rasten dras inte av eftersom schemat inte vet när den tas, och öppna pass räknas inte förrän någon har dem. Utan fördelning per timme heter raden **Minsta bemanning** och visar bara den.
+Bemannat är tiden personer har pass den timmen. Rasten dras inte av eftersom schemat inte vet när den tas, och öppna pass räknas inte förrän någon har dem. Utan fördelning per timme heter raden **Minsta bemanning** och visar bara den, för de timmar där målet har en minsta bemanning.
 
 Under raden står prognosen, hur den räknades, fördelningen och behovet för dagen i timmar. I veckovyn står **Behov** i summan för varje dag, med en pil när dagen är under- eller överbemannad. Under [Bemanning och kostnad](/manual/planering/bemanning-och-kostnad) finns kolumnerna **Behov** och **Prognos** per dag och vecka.
 

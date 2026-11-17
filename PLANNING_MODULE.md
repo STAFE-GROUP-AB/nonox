@@ -191,7 +191,7 @@ Every action: authorized by policy, transactional, audited, tenancy-safe.
   shape (`planning_sales_sources`) and the number of weeks averaged
   (`forecast_weeks`, default 6). Domain in `Domain/Demand` (Forecaster,
   HourShape, DayBuckets, StaffingNeed), reads in `Support/Demand`
-  (BookedSales, TillSales, DemandData; AreaCostCentre is where P2's area cost
+  (SalesFromBooks with an optional cost centre, TillSales, DemandData; AreaCostCentre is where P2's area cost
   centre plugs in). The day view shows a band "Behov per timme" (planned /
   required per hour, red under, amber over); the week footer shows "Behov"
   per day. Deterministic, no AI; warnings never block.

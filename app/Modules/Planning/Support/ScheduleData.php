@@ -31,22 +31,21 @@ use Illuminate\Support\Collection;
  * whatever the number of people and shifts (PLANNING_MODULE.md §1.5): the
  * people employed in the period, areas, skills, the shifts (with three weeks
  * before for the working-time checks), and the sales in the books for the
- * period and the four weeks before it. Costs are the estimates stored on
- * the shifts; the warnings are computed here, in memory.
+ * period (unless the caller already read them). Costs are the estimates
+ * stored on the shifts; the warnings are computed here, in memory.
  */
 final class ScheduleData
 {
     public const int CONTEXT_WEEKS = 3;
 
-    public const int REFERENCE_WEEKS = 4;
-
     public function __construct(private readonly ModuleManager $modules) {}
 
     /**
      * @param  array{area?: ?int, skill?: ?int, location?: ?int}  $filters
+     * @param  ?array<string, int>  $sales  the whole company's booked sales per day when already read (DemandData), else read here
      * @return array<string, mixed>
      */
-    public function load(Company $company, CarbonImmutable $from, CarbonImmutable $to, array $filters = []): array
+    public function load(Company $company, CarbonImmutable $from, CarbonImmutable $to, array $filters = [], ?array $sales = null): array
     {
         $settings = PlanningSettings::resolve($this->modules->settings(PlanningModule::KEY, $company));
         $days = [];
@@ -99,7 +98,7 @@ final class ScheduleData
                 $warnings[$shift->id][] = new WorkingTimeWarning($shift->id, 'unavailable', __('Har angett att den tiden inte passar.'), '');
             }
         }
-        $sales = SalesFromBooks::perDay($from->subWeeks(self::REFERENCE_WEEKS), $to, PlanningSettings::int($settings, 'sales_account_from'), PlanningSettings::int($settings, 'sales_account_to'));
+        $sales ??= SalesFromBooks::perDay($from, $to, PlanningSettings::int($settings, 'sales_account_from'), PlanningSettings::int($settings, 'sales_account_to'));
 
         return [
             'settings' => $settings,
@@ -224,8 +223,9 @@ final class ScheduleData
 
     /**
      * Per day: planned hours, the estimated cost (and whether part of it is
-     * missing), the sales booked that day, the average of the same weekday
-     * in the four weeks before, and the labour cost as a share of sales.
+     * missing), the sales booked that day and the labour cost as a share of
+     * sales. The forecast (reference, "≈") is filled in by the schedule page
+     * from Bemanningsbehov (DemandData), ADR-037 gap 1.
      *
      * @param  list<CarbonImmutable>  $days
      * @param  Collection<int, Shift>  $shifts
@@ -242,18 +242,15 @@ final class ScheduleData
             $dayShifts = $byDay->get($date, collect());
             $cost = (int) $dayShifts->sum(fn (Shift $shift): int => $shift->cost_estimate_ore ?? 0);
             $incomplete = $dayShifts->contains(fn (Shift $shift): bool => $shift->employee_id !== null && ($shift->cost_estimate_ore === null || ((array) ($shift->cost_details['missing'] ?? [])) !== []));
-            $references = array_values(array_filter(array_map(fn (int $back): ?int => $sales[$day->subWeeks($back)->toDateString()] ?? null, range(1, self::REFERENCE_WEEKS)), fn (?int $value): bool => $value !== null));
-            $reference = $references === [] ? null : intdiv(array_sum($references), count($references));
             $actual = $sales[$date] ?? null;
-            $base = $actual ?? $reference;
 
             $totals[$date] = [
                 'minutes' => (int) $dayShifts->sum(fn (Shift $shift): int => $shift->workedMinutes()),
                 'cost' => $cost,
                 'incomplete' => $incomplete,
                 'sales' => $actual,
-                'reference' => $reference,
-                'percent' => $base !== null && $base > 0 && $cost > 0 ? round($cost * 100 / $base, 1) : null,
+                'reference' => null,
+                'percent' => $actual !== null && $actual > 0 && $cost > 0 ? round($cost * 100 / $actual, 1) : null,
             ];
         }
 

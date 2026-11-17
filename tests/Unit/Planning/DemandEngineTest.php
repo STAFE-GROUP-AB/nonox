@@ -156,13 +156,63 @@ it('requires max(minimum staff, ceil(hour sales ÷ target)) per hour and warns u
         ->and($day->status)->toBe(DayDemand::UNDER)
         ->and(DayDemand::ranges($day->underHours()))->toBe(['11–13']);
 
-    // Six people at 11–14 with a floor of 2 and no sales target: over-staffed.
-    $floor = [demandRule(['start_minute' => 660, 'end_minute' => 840, 'min_staff' => 2])];
-    $many = array_fill(0, 3, demandShift('2026-11-17 11:00', '2026-11-17 14:00'));
-    $over = StaffingNeed::day(demandDay('2026-11-17'), $forecast, $shape, $floor, $many, []);
+    // Six people at 11–14 where the sales need four: over-staffed.
+    $many = array_fill(0, 6, demandShift('2026-11-17 11:00', '2026-11-17 14:00'));
+    $over = StaffingNeed::day(demandDay('2026-11-17'), $forecast, $shape, $rules, $many, []);
 
     expect($over->status)->toBe(DayDemand::OVER)
         ->and($over->overHours())->toBe([11, 12, 13]);
+
+    // A minimum staff alone is a floor, never a ceiling.
+    $floor = [demandRule(['start_minute' => 660, 'end_minute' => 840, 'min_staff' => 2])];
+    $floorOnly = StaffingNeed::day(demandDay('2026-11-17'), $forecast, $shape, $floor, $many, []);
+    expect($floorOnly->status)->toBe(DayDemand::OK)->and($floorOnly->overHours())->toBe([]);
+});
+
+it('judges the day by the targeted hours only, not by time outside every target', function () {
+    // Lunch 11–14 and dinner 17–22, at least two and 1 000 kr per staffed hour; 8 000 kr spread evenly over those 8 hours.
+    $rules = [
+        demandRule(['start_minute' => 660, 'end_minute' => 840, 'sales_per_staff_hour_ore' => 100_000, 'min_staff' => 2]),
+        demandRule(['start_minute' => 1020, 'end_minute' => 1320, 'sales_per_staff_hour_ore' => 100_000, 'min_staff' => 2]),
+    ];
+    $profile = array_fill(0, 24, 0);
+    foreach ([11, 12, 13, 17, 18, 19, 20, 21] as $hour) {
+        $profile[$hour] = 1250;
+    }
+    $forecast = new Forecast('2026-11-17', 800_000, Forecast::AVERAGE, ['2026-11-10']);
+    // Two people 10–23: thirteen hours each, exactly two in every targeted hour.
+    $two = array_fill(0, 2, demandShift('2026-11-17 10:00', '2026-11-17 23:00'));
+
+    $hourly = StaffingNeed::day(demandDay('2026-11-17'), $forecast, HourShape::fromProfile($profile), $rules, $two, []);
+    $daily = StaffingNeed::day(demandDay('2026-11-17'), $forecast, null, $rules, $two, []);
+
+    expect($hourly->status)->toBe(DayDemand::OK)
+        ->and($hourly->needMinutes)->toBe(960)
+        ->and($hourly->plannedMinutes)->toBe(960)
+        ->and($hourly->overHours())->toBe([])
+        ->and($hourly->hours[10]['status'])->toBe(DayDemand::NONE)
+        ->and($daily->status)->toBe(DayDemand::OK)
+        ->and($daily->needMinutes)->toBe(960)
+        ->and($daily->plannedMinutes)->toBe(960);
+});
+
+it('shows no hourly figure per day only when a target has no minimum staff', function () {
+    $rules = [demandRule(['start_minute' => 660, 'end_minute' => 840, 'sales_per_staff_hour_ore' => 100_000])];
+    $forecast = new Forecast('2026-11-17', 600_000, Forecast::AVERAGE, ['2026-11-10']);
+    $two = array_fill(0, 2, demandShift('2026-11-17 11:00', '2026-11-17 14:00'));
+
+    $day = StaffingNeed::day(demandDay('2026-11-17'), $forecast, null, $rules, $two, []);
+
+    // 6 000 kr ÷ 1 000 kr = 6 staff-hours against 6 planned in the window: staffed as needed, no "2/0".
+    expect($day->hours[12])->toMatchArray(['need' => null, 'status' => DayDemand::NONE])
+        ->and($day->overHours())->toBe([])
+        ->and($day->needMinutes)->toBe(360)
+        ->and($day->plannedMinutes)->toBe(360)
+        ->and($day->status)->toBe(DayDemand::OK);
+
+    // A third person for the whole window is a staff-hour more than needed: over-staffed by the day's target.
+    $three = StaffingNeed::day(demandDay('2026-11-17'), $forecast, null, $rules, [...$two, demandShift('2026-11-17 11:00', '2026-11-17 14:00')], []);
+    expect($three->status)->toBe(DayDemand::OVER)->and($three->overHours())->toBe([]);
 });
 
 it('falls back to staff-hours per day when the sales have no shape', function () {

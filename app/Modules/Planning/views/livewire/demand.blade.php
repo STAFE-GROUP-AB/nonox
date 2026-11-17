@@ -38,6 +38,12 @@
         </p>
     </div>
 
+    @if($lumped)
+        <div class="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-200" role="status">
+            {{ __('Färre än hälften av vardagarna de senaste veckorna har bokförd försäljning. Bokförs försäljningen per vecka eller månad blir prognosen per veckodag fel. Bokför försäljningen per dag, till exempel dagskassan, för att prognosen ska stämma.') }}
+        </div>
+    @endif
+
     {{-- The next two weeks --}}
     <x-ui.card :title="__('Prognos de kommande två veckorna')" :description="__('Snittet av samma veckodag de senaste :weeks veckorna i bokföringen. Helgdagar och aftnar räknas inte med i snittet; en helgdag får samma helgdag förra året. Dagar utan försäljning hoppas över.', ['weeks' => $weeks])">
         <div class="-mx-2 overflow-x-auto">
@@ -72,7 +78,7 @@
                 </tbody>
             </table>
         </div>
-        <p class="mt-3 text-xs text-gray-500">{{ __('Behovet är bemannade timmar. Bemannat är tiden personer har pass, utan att rasten dras av; öppna pass räknas inte. Varningarna stoppar ingenting.') }}</p>
+        <p class="mt-3 text-xs text-gray-500">{{ __('Behovet är bemannade timmar. Bemannat är tiden personer har pass under målens tider, utan att rasten dras av; öppna pass räknas inte. Varningarna stoppar ingenting.') }}</p>
     </x-ui.card>
 
     {{-- Staffing targets --}}
@@ -163,7 +169,7 @@
                 <x-ui.field for="override-amount" :label="__('Försäljning')" :hint="__('I kronor utan moms.')" error="override.amount">
                     <input id="override-amount" wire:model="override.amount" inputmode="decimal" placeholder="45 000" class="{{ $input }} tabular-nums" required>
                 </x-ui.field>
-                <x-ui.field for="override-reason" class="sm:col-span-2" :label="__('Anledning')" error="override.reason">
+                <x-ui.field for="override-reason" class="sm:col-span-2" :label="__('Anledning')" :hint="__('Skriv inte namn eller hälsouppgifter.')" error="override.reason">
                     <input id="override-reason" wire:model="override.reason" maxlength="255" class="{{ $input }}" required>
                 </x-ui.field>
                 <div class="sm:col-span-4"><x-button type="submit">{{ __('Spara ändringen') }}</x-button></div>

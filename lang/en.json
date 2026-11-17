@@ -14713,5 +14713,8 @@
     "behov :need, bemannat :planned": "demand :need, staffed :planned",
     "öppna pass :open": "open shifts :open",
     "prognos :amount": "forecast :amount",
-    "Lägg till bemanningsmål": "Add staffing targets"
+    "Lägg till bemanningsmål": "Add staffing targets",
+    "Färre än hälften av vardagarna de senaste veckorna har bokförd försäljning. Bokförs försäljningen per vecka eller månad blir prognosen per veckodag fel. Bokför försäljningen per dag, till exempel dagskassan, för att prognosen ska stämma.": "Fewer than half the weekdays in recent weeks have booked sales. If sales are booked per week or month, the forecast per weekday is wrong. Book the sales per day, for example the daily till report, for the forecast to be right.",
+    "Skriv inte namn eller hälsouppgifter.": "Do not write names or health information.",
+    "Behovet är bemannade timmar. Bemannat är tiden personer har pass under målens tider, utan att rasten dras av; öppna pass räknas inte. Varningarna stoppar ingenting.": "The demand is staffed hours. Staffed is the time people have shifts within the targets' hours, without taking off breaks; open shifts do not count. The warnings block nothing."
 }

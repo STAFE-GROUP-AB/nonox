@@ -12,6 +12,7 @@ use App\Modules\Planning\Actions\SaveArea;
 use App\Modules\Planning\Actions\SaveForecastOverride;
 use App\Modules\Planning\Actions\SaveHourProfile;
 use App\Modules\Planning\Actions\SaveSalesSource;
+use App\Modules\Planning\Actions\SaveSkill;
 use App\Modules\Planning\Actions\SaveStaffingRule;
 use App\Modules\Planning\Domain\Demand\DayDemand;
 use App\Modules\Planning\Domain\Demand\Forecast;
@@ -34,6 +35,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Planning;
 
@@ -114,7 +116,8 @@ it('forecasts from the books, spreads by the own hour profile and puts the need 
         ->and($day->hours[12])->toMatchArray(['sales' => 600_000, 'need' => 6, 'planned' => 2.0, 'open' => 1.0, 'status' => DayDemand::UNDER])
         ->and($day->hours[10]['need'])->toBeNull()
         ->and($day->needMinutes)->toBe(12 * 60)
-        ->and($day->plannedMinutes)->toBe(7 * 60)
+        // Inside the target's 11–14 only: Anna 3 h, Bo 2 h; her 10–11 and 14–15 count for neither.
+        ->and($day->plannedMinutes)->toBe(5 * 60)
         ->and($day->status)->toBe(DayDemand::UNDER);
 
     // Without the profile the day is per day only: ceil(12 000 ÷ 1 000) = 12 staff-hours.
@@ -294,8 +297,7 @@ it('answers 404 for another company\'s targets, overrides, tills and areas', fun
     $foreignRule = demandLunchRule((object) ['owner' => $otherOwner, 'company' => $other]);
     $foreignOverride = app(SaveForecastOverride::class)($otherOwner, $other, ['date' => '2026-11-24', 'amount' => '1 000', 'reason' => 'Hemlig']);
     $foreignTill = demandTill((object) ['owner' => $otherOwner, 'company' => $other]);
-    // SaveArea creates in the current company, like the rest of Planering's actions before this package.
-    $foreignArea = CurrentCompany::run($other, fn () => app(SaveArea::class)($otherOwner, $other, ['name' => 'Hemligt', 'colour' => '#e4572e']));
+    $foreignArea = app(SaveArea::class)($otherOwner, $other, ['name' => 'Hemligt', 'colour' => '#e4572e']);
 
     CurrentCompany::set($this->company);
     $this->actingAs($this->owner);
@@ -311,6 +313,47 @@ it('answers 404 for another company\'s targets, overrides, tills and areas', fun
 
     // A's demand never reads B's targets or overrides.
     expect(demandLoad($this, '2026-11-24', '2026-11-24')['days']['2026-11-24']->hasRules)->toBeFalse();
+});
+
+it('creates areas and skills in the company given, whatever company is current, and refuses another company\'s', function () {
+    [$otherOwner, $other] = Bookkeeping::company();
+    collect([PayrollModule::KEY, PlanningModule::KEY])->each(fn (string $key) => app(ModuleManager::class)->enable($key, $other, $otherOwner));
+    CurrentCompany::set($this->company);
+
+    $area = app(SaveArea::class)($otherOwner, $other, ['name' => 'Bar', 'colour' => '#e4572e']);
+    $skill = app(SaveSkill::class)($otherOwner, $other, 'Kassa');
+
+    expect($area->company_id)->toBe($other->id)
+        ->and($skill->company_id)->toBe($other->id);
+
+    // A's owner, acting for A, cannot change, archive or delete B's.
+    expect(fn () => app(SaveArea::class)($this->owner, $this->company, ['name' => 'X', 'colour' => '#e4572e'], $area))->toThrow(NotFoundHttpException::class)
+        ->and(fn () => app(SaveArea::class)->archive($this->owner, $this->company, $area))->toThrow(NotFoundHttpException::class)
+        ->and(fn () => app(SaveSkill::class)($this->owner, $this->company, 'Y', $skill))->toThrow(NotFoundHttpException::class)
+        ->and(fn () => app(SaveSkill::class)->delete($this->owner, $this->company, $skill))->toThrow(NotFoundHttpException::class)
+        ->and(fn () => app(SaveSkill::class)->assign($this->owner, $this->company, CurrentCompany::run($other, fn () => Planning::employee($otherOwner, $other, 'Cia', '880101234')), []))->toThrow(NotFoundHttpException::class);
+
+    // Archiving in B while A is current still archives B's area.
+    expect(app(SaveArea::class)->archive($otherOwner, $other, $area)->archived_at)->not->toBeNull();
+});
+
+it('warns when the books hold sales in lumps rather than per day', function () {
+    // One week averaged: the look-back is 4–17 November, ten weekdays. Sales on Mondays only: 2 of 10.
+    app(SaveSalesSource::class)->weeks($this->owner, $this->company, 1);
+
+    foreach (['2026-11-16', '2026-11-09', '2026-11-02'] as $monday) {
+        Bookkeeping::post($this->owner, $this->company, 5000000, 1930, 3001, $monday);
+    }
+
+    expect(demandLoad($this, '2026-11-24', '2026-11-24')['lumped'])->toBeTrue();
+    Livewire::test(DemandPage::class)->assertSee('Bokför försäljningen per dag, till exempel dagskassan, för att prognosen ska stämma.');
+
+    demandTuesdaySales($this);
+    foreach (['2026-11-04', '2026-11-05', '2026-11-06', '2026-11-11', '2026-11-12', '2026-11-13', '2026-11-17'] as $day) {
+        Bookkeeping::post($this->owner, $this->company, 100000, 1930, 3001, $day);
+    }
+
+    expect(demandLoad($this, '2026-11-24', '2026-11-24')['lumped'])->toBeFalse();
 });
 
 it('shows the band in the day view, the need in the week footer and on Bemanning och kostnad', function () {

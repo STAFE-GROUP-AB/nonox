@@ -14,7 +14,8 @@ use Carbon\CarbonImmutable;
  *   ceil(the hour's sales ÷ the sales one staffed hour should carry)).
  * - Per day only, without a shape: required staff-hours = ceil(the day's
  *   sales ÷ the target), and at least the minimum staff summed over the
- *   hours; the hours then show the minimum staff alone.
+ *   hours; an hour then shows its minimum staff only when it has one (else
+ *   no figure), and can only fall short of it.
  *
  * The rule for an hour is the newest one valid that day whose window holds
  * the hour's start (latest valid-from first, a named weekday before "every
@@ -22,7 +23,10 @@ use Carbon\CarbonImmutable;
  * shifts cover in the hour, divided by its length; breaks are not placed in
  * time, so they are not taken off. An hour is under-staffed when planned is
  * below required, and over-staffed when at least one more person is planned
- * than required. Both are warnings, never blocks.
+ * than its sales target needs (a minimum staff alone is never exceeded).
+ * With hours, the hours decide the day; per day only, the planned minutes
+ * inside the targeted hours are compared with the day's need. Time outside
+ * every target's window counts for neither. Warnings, never blocks.
  */
 final class StaffingNeed
 {
@@ -45,23 +49,36 @@ final class StaffingNeed
         $rows = [];
         $floorMinutes = 0;
         $hourlyNeedMinutes = 0;
+        // Planned minutes inside the hours a target covers: time outside them (preparing, closing) is never over-staffing.
+        $plannedInTargets = 0;
 
         foreach ($hours as $hour) {
             $minutes = $lengths[$hour];
             $rule = self::ruleFor($hour * 60, $applicable);
+            $staff = $minutes > 0 ? ($planned[$hour] ?? 0) / $minutes : 0.0;
             $need = null;
+            $status = DayDemand::NONE;
 
             if ($rule !== null) {
                 $floor = $rule->min_staff ?? 0;
-                $byTarget = $sales !== null && $rule->sales_per_staff_hour_ore !== null
-                    ? self::ceilDiv($sales[$hour] * 60, $rule->sales_per_staff_hour_ore * $minutes)
-                    : 0;
-                $need = max($floor, $byTarget);
                 $floorMinutes += $floor * $minutes;
-                $hourlyNeedMinutes += $need * $minutes;
-            }
+                $plannedInTargets += $planned[$hour] ?? 0;
 
-            $staff = $minutes > 0 ? ($planned[$hour] ?? 0) / $minutes : 0.0;
+                if ($sales !== null) {
+                    // Per hour: the hour's sales against the target, never below the floor.
+                    $byTarget = $rule->sales_per_staff_hour_ore !== null
+                        ? self::ceilDiv($sales[$hour] * 60, $rule->sales_per_staff_hour_ore * $minutes)
+                        : 0;
+                    $need = max($floor, $byTarget);
+                    $status = self::status($need, $staff, $rule->sales_per_staff_hour_ore !== null);
+                } elseif ($floor > 0) {
+                    // Per day only: the hour shows its floor, and can only fall short of it.
+                    $need = $floor;
+                    $status = $staff + 0.001 < $floor ? DayDemand::UNDER : DayDemand::OK;
+                }
+
+                $hourlyNeedMinutes += ($need ?? 0) * $minutes;
+            }
 
             $rows[$hour] = [
                 'hour' => $hour,
@@ -70,29 +87,38 @@ final class StaffingNeed
                 'need' => $need,
                 'planned' => round($staff, 1),
                 'open' => $minutes > 0 ? round(($opened[$hour] ?? 0) / $minutes, 1) : 0.0,
-                'status' => self::status($need, $staff),
+                'status' => $status,
             ];
         }
 
         $needMinutes = null;
+        $target = self::dailyTarget($applicable);
+        $perDay = $sales === null;
 
         if ($applicable !== []) {
             $needMinutes = $hourlyNeedMinutes;
-            $target = self::dailyTarget($applicable);
 
             // Per day only: the day's sales against the newest target, never below the floors.
-            if ($sales === null && $target !== null && $forecast->amountOre !== null) {
+            if ($perDay && $target !== null && $forecast->amountOre !== null) {
                 $needMinutes = max($floorMinutes, self::ceilDiv($forecast->amountOre, $target) * 60);
             }
         }
 
-        $plannedMinutes = (int) array_sum($planned);
+        $statuses = array_column($rows, 'status');
         $status = DayDemand::NONE;
 
         if ($needMinutes !== null) {
-            $under = in_array(DayDemand::UNDER, array_column($rows, 'status'), true) || $plannedMinutes < $needMinutes;
-            $status = $under ? DayDemand::UNDER : ($plannedMinutes >= $needMinutes + 60 ? DayDemand::OVER : DayDemand::OK);
+            $status = match (true) {
+                // Per hour: the hours decide.
+                ! $perDay => in_array(DayDemand::UNDER, $statuses, true) ? DayDemand::UNDER : (in_array(DayDemand::OVER, $statuses, true) ? DayDemand::OVER : DayDemand::OK),
+                // Per day only: a floor not met, or the targeted hours' staff-hours against the need.
+                in_array(DayDemand::UNDER, $statuses, true), $plannedInTargets < $needMinutes => DayDemand::UNDER,
+                $target !== null && $plannedInTargets >= $needMinutes + 60 => DayDemand::OVER,
+                default => DayDemand::OK,
+            };
         }
+
+        $plannedMinutes = $applicable === [] ? (int) array_sum($planned) : $plannedInTargets;
 
         return new DayDemand(
             date: $date->toDateString(),
@@ -172,17 +198,14 @@ final class StaffingNeed
         return $covered;
     }
 
-    private static function status(?int $need, float $staff): string
+    /** Over-staffing is judged only against a sales target: a minimum staff is a floor, not a ceiling. */
+    private static function status(int $need, float $staff, bool $hasTarget): string
     {
-        if ($need === null) {
-            return DayDemand::NONE;
-        }
-
         if ($staff + 0.001 < $need) {
             return DayDemand::UNDER;
         }
 
-        return $staff >= $need + 1 ? DayDemand::OVER : DayDemand::OK;
+        return $hasTarget && $staff >= $need + 1 ? DayDemand::OVER : DayDemand::OK;
     }
 
     private static function ceilDiv(int $numerator, int $denominator): int

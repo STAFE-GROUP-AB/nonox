@@ -12,7 +12,7 @@ use App\Modules\Planning\Models\Area;
  * revenue rows carry it. The column planning_areas.cost_center_id arrives
  * with package P2; until then every area answers null and demand uses the
  * whole company's sales, saying so. Nothing else needs to change when the
- * column exists: BookedSales filters voucher_rows.cost_center_id on the id
+ * column exists: SalesFromBooks filters voucher_rows.cost_center_id on the id
  * returned here.
  */
 final class AreaCostCentre
