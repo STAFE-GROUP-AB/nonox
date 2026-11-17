@@ -54,7 +54,7 @@ class Shift extends Model
 
     public const string CANCELLED = 'CANCELLED';
 
-    public const array SOURCES = ['MANUAL', 'TEMPLATE', 'COPY', 'SWAP', 'CLAIM'];
+    public const array SOURCES = ['MANUAL', 'TEMPLATE', 'COPY', 'SWAP', 'CLAIM', 'PROPOSAL'];
 
     protected $table = 'planning_shifts';
 

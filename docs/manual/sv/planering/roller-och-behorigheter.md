@@ -26,6 +26,8 @@ Planering har tre nivåer: att se schemat, att planera och publicera, och att at
 
 När modulen Personalliggare är på kan **Anställd** och **Schemaläggare** dessutom checka in och ut i sin egen mobil under **Min incheckning**, på de lokaler där mobil incheckning är påslagen. Tiden hamnar i personalliggaren och blir underlaget vid attesten. Se [QR-kort och mobil incheckning](/manual/personalliggare/qr-kort-och-mobil-incheckning).
 
+**Planering → Schemaförslag** syns bara för dem som får planera. Där ser de förslagen och skälen, som handlar om hur arbetet fördelas mellan personalen.
+
 Att slå på och av modulen kan bara ägare och administratörer. Under **Planering → Inställningar** kan alla som får planera ändra avdelningar, kompetenser, regler och aviseringar. **Tolerans vid attest**, avrundningen och lönearterna för övertid och mertid kan bara den som får attestera tid ändra, eftersom de ändrar lönen.
 
 ## Schemaläggare

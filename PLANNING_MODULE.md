@@ -57,8 +57,9 @@ only, never another product's texts, layout, colours or feature names.
 - Roles: owner, admin → all; `payroll_admin` → all; new role `scheduler`
   (**Schemaläggare**) → view + manage; employees see only their own schedule
   in Min sida.
-- Navigation: **Planering** → Schema, Tid att attestera, Öppna pass och
-  byten, Bemanning och kostnad, Inställningar.
+- Navigation: **Planering** → Schema, Mallar, Schemaförslag (planners),
+  Tid att attestera, Öppna pass och byten, Bemanning och kostnad,
+  Inställningar.
 - Turning the module off hides it and stops notifications; nothing is
   deleted.
 
@@ -90,6 +91,11 @@ only, never another product's texts, layout, colours or feature names.
   added 2026-11-02 (fix-overtid, see §8).
 - Sales source for labour cost %: revenue accounts (default 3000–3799) from
   the books, per day.
+- Schedule proposals (ADR-037 amendment, gap 3): `proposal_weights` (the
+  level of each soft criterion, "Vad väger mest"), `fairness_weeks` (default
+  8, 1–26) and the company's own unsocial time, `unsocial_from` and
+  `unsocial_to` (default 19:00–07:00 on weekdays; weekends and public
+  holidays always count). Saved from the proposal page.
 
 ## 4. Data model
 
@@ -100,7 +106,7 @@ planning_employee_skills  employee_id, skill_id
 planning_shifts       id (uuid), company_id, employee_id null (null = open shift), area_id null,
                       skill_id null, starts_at, ends_at (timestamptz, Europe/Stockholm),
                       break_minutes, note, status (DRAFT | PUBLISHED), published_at, published_by,
-                      source (MANUAL | TEMPLATE | COPY | SWAP | CLAIM), template_id null,
+                      source (MANUAL | TEMPLATE | COPY | SWAP | CLAIM | PROPOSAL), template_id null,
                       cost_estimate_ore null, cost_calculated_at null, created_by, updated_by
 planning_templates    id, company_id, name, weeks (1–8), notes
 planning_template_shifts  template_id, week_index, weekday, start, end, break_minutes,
@@ -115,6 +121,11 @@ planning_attestations id, company_id, employee_id, date, planned_minutes, actual
                       basis jsonb (minutes per pay code), deviations jsonb, status (OPEN | ATTESTED | SENT),
                       attested_by, attested_at, time_report_ids jsonb
 planning_ical_tokens  employee_id, token_hash, created_at, revoked_at
+planning_proposals    id, company_id, period_from, period_to, parameters jsonb, engine_version,
+                      slot_count, filled_count, swaps_kept, accepted_count, accepted_at,
+                      accepted_by, created_by (deleted after 90 days)
+planning_proposal_items  id, company_id, proposal_id, shift_id, employee_id null, position,
+                      score_parts jsonb, reasons jsonb (codes, ids and counts), accepted_at
 ```
 Indexes: `(company_id, starts_at)`, `(company_id, employee_id, starts_at)`.
 A published shift that is changed keeps its history in the audit log.
@@ -142,6 +153,14 @@ A published shift that is changed keeps its history in the audit log.
 - `PlanVsActual`: matches staff-ledger shifts (LedgerQuery) to planned
   shifts per employee and day; classifies: on time, early/late start,
   early/late finish, missing check-out, unplanned work, no-show.
+- `Proposal\ProposalEngine` (ADR-037 amendment, gap 3): proposes who
+  should work the open shifts that exist. Hard constraints (never
+  proposed): not employed, missing skill, "Kan inte", approved absence,
+  overlap, any new warning from `WorkingTimeChecks` incl. the minors' rules
+  (mertid excepted, it is soft). Soft score with the company's weights:
+  fairness over the window (planned ÷ contracted hours, unsocial ÷ planned
+  minutes, by `UnsocialTime`), contracted hours, preference, continuity,
+  mertid. Never pay. Hardest shift first, then at most 2 000 swaps. Pure.
 - `PayrollBasis`: from attested days: ordinary minutes, OB per code,
   overtime/mertid beyond the planned or contracted time (rule from the
   agreement or settings), absence (from payroll absences).
@@ -157,7 +176,10 @@ RequestShift (claim/swap/drop), DecideRequest (approve re-runs the checks),
 AttestDay / AttestPeriod (writes approved `TimeReport` rows per pay code for
 the payroll run; replaces the staff ledger's "Föreslå tidrapport" when the
 module is on), ReopenAttestation (only before the payroll run is attested),
-IssueIcalToken / RevokeIcalToken.
+IssueIcalToken / RevokeIcalToken, MakeProposal and AcceptProposal (gap 3:
+accepting gives open shifts the proposed person as drafts through
+SaveShift, source PROPOSAL, after re-checking every hard constraint on
+fresh data; never publishes).
 
 Every action: authorized by policy, transactional, audited, tenancy-safe.
 
@@ -180,6 +202,10 @@ Every action: authorized by policy, transactional, audited, tenancy-safe.
   absent day gets the warning "Personen är frånvarande den här dagen." on
   save, publish and request decisions; it never blocks (ADR-037, gap 6).
 - **Mallar**: templates; apply to weeks.
+- **Schemaförslag** (`/planering/forslag`, `planning:manage`): pick a period
+  of at most four weeks and "Vad väger mest", make a proposal for the open
+  shifts, read each shift's reasons, accept the ticked ones or all. Stale
+  proposals ("Schemat har ändrats …") are refused.
 - **Öppna pass och byten**: requests to decide, with the checks re-run.
 - **Tid att attestera** (`/planering/attest`): per period, per person per
   day: plan, actual, difference, OB split, warnings; attest a row, a person

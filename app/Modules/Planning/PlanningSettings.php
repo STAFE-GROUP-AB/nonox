@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Planning;
 
+use App\Modules\Planning\Domain\Proposal\ProposalWeights;
 use Carbon\CarbonImmutable;
 
 /**
@@ -52,7 +53,15 @@ final class PlanningSettings
         // Sales for labour cost %: posted rows on these revenue accounts, per day.
         'sales_account_from' => 3000,
         'sales_account_to' => 3799,
+        // Schedule proposals (ADR-037 amendment, gap 3): "Vad väger mest", the fairness window in weeks before the period, and the company's own unsocial time.
+        'proposal_weights' => ProposalWeights::DEFAULTS,
+        'fairness_weeks' => 8,
+        'unsocial_from' => '19:00',
+        'unsocial_to' => '07:00',
     ];
+
+    /** The fairness window the proposal form accepts, in weeks before the period. */
+    public const array FAIRNESS_WEEKS = [1, 26];
 
     /**
      * The working-time rules checked on a plan, from lagen (1982:673),
@@ -211,6 +220,30 @@ final class PlanningSettings
         $value = $settings['comp_time_factor'] ?? null;
 
         return is_string($value) && preg_match('/^\d(\.\d{1,2})?$/', $value) === 1 && (float) $value > 0 ? $value : '1';
+    }
+
+    /**
+     * A wall-clock time setting as "tt:mm", else the default.
+     *
+     * @param  array<string, mixed>  $settings
+     */
+    public static function time(array $settings, string $key): string
+    {
+        $value = $settings[$key] ?? null;
+
+        $default = self::DEFAULTS[$key] ?? null;
+
+        if (is_string($value) && preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $value) === 1) {
+            return $value;
+        }
+
+        return is_string($default) ? $default : '00:00';
+    }
+
+    /** @param  array<string, mixed>  $settings */
+    public static function fairnessWeeks(array $settings): int
+    {
+        return max(self::FAIRNESS_WEEKS[0], min(self::FAIRNESS_WEEKS[1], self::int($settings, 'fairness_weeks')));
     }
 
     /** @param  array<string, mixed>  $settings */

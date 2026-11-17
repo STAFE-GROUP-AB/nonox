@@ -258,6 +258,35 @@ shift in its period changed after it was made; accepting a stale proposal is
 refused with "Schemat har ändrats sedan förslaget gjordes. Gör ett nytt
 förslag." Proposals are deleted after 90 days.
 
+*As built (P7, v1):* `Domain/Proposal/ProposalEngine` with `ProposalLoader`
+(a fixed number of queries; it never reads a wage), `MakeProposal`,
+`AcceptProposal`, `ProposalPage` and `planning:prune-proposals` (nightly).
+Where the build had to choose:
+
+- Unsocial time is the company's own definition for everyone
+  (`UnsocialTime`, settings `unsocial_from`/`unsocial_to`, default weekdays
+  19–07, weekends and public holidays in full), also for staff on an
+  agreement: the share is then comparable between people on different
+  agreements, and `ObSplitter` sums cumulative OB codes, which would count a
+  minute twice. Agreement OB windows can be added later as an option.
+- Mertid (`extra_time_week`) is the one rule warning that does not block: it
+  is information about pay, not a limit. It is shown as the reason "Ger
+  mertid" and scored by "Undvik mertid" (the extra-cost criterion, which
+  counts only mertid: overtime over the ordinary week is a hard constraint,
+  and OB is the same whoever works the shift). Every other rule warning,
+  counted per rule and week, is hard.
+- Each soft part is in [-1, 1] before weighting (levels Mycket 3, Något 2,
+  Lite 1, Inte alls 0). Fairness is the distance from the mean of those who
+  could take the shift, relative to the mean; the unsocial part counts by
+  the shift's own share of unsocial time. A swap is kept when the two
+  shifts' summed scores fall.
+- Accepting re-checks every hard constraint on freshly loaded data
+  (absence, availability, skills and rules may have changed outside the
+  period), besides the period's `updated_at`; a proposal is accepted once.
+- The page shows reasons only, never scores, so nothing reads as a ranking
+  of employees; the score parts are stored for the 90 days as the
+  explanation.
+
 ### Gap 4: tasks in shifts
 
 **Decision.**

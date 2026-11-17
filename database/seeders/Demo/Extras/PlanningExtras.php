@@ -15,6 +15,7 @@ use App\Modules\Planning\Actions\AttestDay;
 use App\Modules\Planning\Actions\AttestPeriod;
 use App\Modules\Planning\Actions\DecideRequest;
 use App\Modules\Planning\Actions\IssueIcalToken;
+use App\Modules\Planning\Actions\MakeProposal;
 use App\Modules\Planning\Actions\PublishPeriod;
 use App\Modules\Planning\Actions\RequestShift;
 use App\Modules\Planning\Actions\SaveActualTime;
@@ -59,6 +60,8 @@ use RuntimeException;
  *   claim approved, and Lina's calendar link.
  * - At the restaurant next week has approved vacation (Ali), a half day
  *   (Johan) and a requested day off (Elin), for the absence band.
+ * - At the restaurant the draft week has five open shifts and a schedule
+ *   proposal for them, not yet accepted (ADR-037 amendment, gap 3).
  * - Attest: the clean days are attested, a few days with deviations are left
  *   open, and at the café a forgotten check-out is entered by the manager.
  *   At the restaurant only the first week is attested: the staff ledger's
@@ -144,6 +147,12 @@ final class PlanningExtras extends DemoExtra
             [0, 7, '11:00', '16:00', 'Servering', '', 'Extra lunchpass, sällskap på 40 personer.'],
             [1, 4, '17:00', '23:00', 'Servering', '', 'Julbordspremiär, extra servering.'],
             [1, 6, '19:00', '01:30', 'Bar', 'Bartender', 'Privat fest i baren.'],
+            // The draft week: open shifts for the schedule proposal (proposal()).
+            [3, 2, '11:00', '15:00', 'Servering', '', 'Lunch för en konferens.'],
+            [3, 3, '17:00', '23:00', 'Servering', 'Kassa', 'Extra kassa, bokat sällskap.'],
+            [3, 5, '19:00', '01:30', 'Bar', 'Bartender', 'Afterwork med livemusik.'],
+            [3, 6, '11:00', '16:00', 'Kök', 'Grill', 'Grillbuffé på terrassen.'],
+            [3, 7, '16:00', '22:00', 'Servering', '', 'Söndagsmiddag, fullbokat.'],
         ],
         'bokforing-for-cafeer' => [
             [0, 6, '09:00', '14:00', 'Disk', '', 'Julmarknad på torget, extra i disken.'],
@@ -197,6 +206,10 @@ final class PlanningExtras extends DemoExtra
         }
 
         $this->attest($context);
+
+        if ($context->slug === self::RESTAURANT) {
+            $this->proposal($context, $monday);
+        }
     }
 
     /**
@@ -409,6 +422,18 @@ final class PlanningExtras extends DemoExtra
         $row('Ali', 'VACATION', $next->addDays(2), $next->addDays(3), 'APPROVED', 10000);
         $row('Johan', 'VAB', $next->addDays(3), $next->addDays(3), 'APPROVED', 5000);
         $row('Elin', 'VACATION', $next->addDays(5), $next->addDays(5), 'REQUESTED', 10000);
+    }
+
+    /**
+     * A schedule proposal for the open shifts of the draft week, made last so
+     * nothing changes the week after it and it is not stale. Not accepted:
+     * the review page shows it with its reasons.
+     */
+    private function proposal(DemoContext $context, CarbonImmutable $monday): void
+    {
+        $week = $monday->addWeeks(3);
+
+        app(MakeProposal::class)($context->user, $context->company, ['from' => $week->toDateString(), 'to' => $week->addDays(6)->toDateString()]);
     }
 
     /**

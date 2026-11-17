@@ -36,13 +36,20 @@ final class SaveShift
 
     public function __construct(private readonly ShiftCoster $coster) {}
 
-    /** @param  array<string, mixed>  $input */
-    public function __invoke(User $user, Company $company, array $input, ?Shift $shift = null): Shift
+    /**
+     * @param  array<string, mixed>  $input
+     * @param  ?string  $source  where the change comes from (Shift::SOURCES), e.g. PROPOSAL when a planner accepts a schedule proposal; null keeps the shift's own
+     */
+    public function __invoke(User $user, Company $company, array $input, ?Shift $shift = null, ?string $source = null): Shift
     {
         $this->guard($user, $company);
 
         if ($shift?->status === Shift::CANCELLED) {
             throw ValidationException::withMessages(['shift' => __('Passet är inställt och kan inte ändras.')]);
+        }
+
+        if ($source !== null && ! in_array($source, Shift::SOURCES, true)) {
+            throw new \InvalidArgumentException("Unknown shift source {$source}.");
         }
 
         $validated = Validator::make($input, [
@@ -83,7 +90,7 @@ final class SaveShift
             throw ValidationException::withMessages(['break_minutes' => __('Rasten måste vara kortare än passet.')]);
         }
 
-        return DB::transaction(function () use ($user, $company, $validated, $shift, $start, $end, $break): Shift {
+        return DB::transaction(function () use ($user, $company, $validated, $shift, $start, $end, $break, $source): Shift {
             $before = $shift?->snapshot();
             $shift ??= new Shift(['status' => Shift::DRAFT, 'source' => 'MANUAL', 'created_by' => $user->id]);
 
@@ -104,6 +111,10 @@ final class SaveShift
 
             if ($shift->status === Shift::PUBLISHED) {
                 $shift->status = Shift::DRAFT;
+            }
+
+            if ($source !== null) {
+                $shift->source = $source;
             }
 
             $this->coster->apply($company, [$shift]);

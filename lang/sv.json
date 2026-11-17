@@ -173,5 +173,11 @@
     ":count arbetsdag|:count arbetsdagar": ":count arbetsdag|:count arbetsdagar",
     ":count annan order blir senare|:count andra ordrar blir senare": ":count annan order blir senare|:count andra ordrar blir senare",
     ":count Stripe-kund är inte kopplad till någon av dina kunder och räknas som en egen kund tills den kopplas.|:count Stripe-kunder är inte kopplade till någon av dina kunder och räknas som egna kunder tills de kopplas.": ":count Stripe-kund är inte kopplad till någon av dina kunder och räknas som en egen kund tills den kopplas.|:count Stripe-kunder är inte kopplade till någon av dina kunder och räknas som egna kunder tills de kopplas.",
-    "{1} 1 pass ligger på en dag då personen är frånvarande.|[2,*] :count pass ligger på dagar då personen är frånvarande.": "{1} 1 pass ligger på en dag då personen är frånvarande.|[2,*] :count pass ligger på dagar då personen är frånvarande."
+    "{1} 1 pass ligger på en dag då personen är frånvarande.|[2,*] :count pass ligger på dagar då personen är frånvarande.": "{1} 1 pass ligger på en dag då personen är frånvarande.|[2,*] :count pass ligger på dagar då personen är frånvarande.",
+    "{1} 1 pass har fått en person som utkast. Publicera schemat när du är nöjd.|[2,*] :count pass har fått en person som utkast. Publicera schemat när du är nöjd.": "{1} 1 pass har fått en person som utkast. Publicera schemat när du är nöjd.|[2,*] :count pass har fått en person som utkast. Publicera schemat när du är nöjd.",
+    "{1} Godkänt: 1 pass blev ett utkast i schemat.|[2,*] Godkänt: :count pass blev utkast i schemat.": "{1} Godkänt: 1 pass blev ett utkast i schemat.|[2,*] Godkänt: :count pass blev utkast i schemat.",
+    "{1} 1 kan inte den tiden|[2,*] :count kan inte den tiden": "{1} 1 kan inte den tiden|[2,*] :count kan inte den tiden",
+    "{1} 1 är frånvarande|[2,*] :count är frånvarande": "{1} 1 är frånvarande|[2,*] :count är frånvarande",
+    "{1} 1 har redan ett pass då|[2,*] :count har redan ett pass då": "{1} 1 har redan ett pass då|[2,*] :count har redan ett pass då",
+    "{1} 1 skulle få en varning för vilotid eller arbetstid|[2,*] :count skulle få en varning för vilotid eller arbetstid": "{1} 1 skulle få en varning för vilotid eller arbetstid|[2,*] :count skulle få en varning för vilotid eller arbetstid"
 }
