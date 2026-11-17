@@ -335,6 +335,19 @@
                         </select>
                     </x-ui.field>
                 @endif
+                @if($costCenters->isNotEmpty() || filled($form['cost_center'] ?? null))
+                    <x-ui.field for="shift-cost-center" :label="__('Kostnadsställe')" :hint="__('Lönen för passet bokförs här.')" error="form.cost_center">
+                        <select id="shift-cost-center" wire:model="form.cost_center" class="{{ $input }} mt-1">
+                            <option value="">{{ __('Avdelningens eller anställningens') }}</option>
+                            @foreach($costCenters as $option)
+                                <option value="{{ $option->code }}">{{ $option->label() }}</option>
+                            @endforeach
+                            @if(filled($form['cost_center'] ?? null) && ! $costCenters->contains('code', $form['cost_center']))
+                                <option value="{{ $form['cost_center'] }}">{{ $form['cost_center'] }} ({{ __('inaktivt') }})</option>
+                            @endif
+                        </select>
+                    </x-ui.field>
+                @endif
                 <x-ui.field for="shift-note" :label="__('Anteckning')" error="form.note" class="sm:col-span-2">
                     <input id="shift-note" wire:model="form.note" maxlength="500" class="{{ $input }} mt-1">
                 </x-ui.field>

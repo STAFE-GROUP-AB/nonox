@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Modules\Planning\Actions\Concerns\GuardsPlanning;
 use App\Modules\Planning\Models\Shift;
 use App\Modules\Planning\Support\AbsenceDays;
+use App\Modules\Planning\Support\CostCenterInput;
 use App\Modules\Planning\Support\LocalTimestamp;
 use App\Modules\Planning\Support\ShiftCoster;
 use App\Support\Audit\Audit;
@@ -27,6 +28,12 @@ use Throwable;
  * published shift makes it a draft again until the next publication; the
  * employee keeps seeing the published version. The estimate is recalculated.
  * Audited with before and after.
+ *
+ * The cost centre (ADR-037, gap 7) is typed by code. Left out, a new shift,
+ * or one moved to another area, takes the area's (while it is active) and
+ * a shift otherwise keeps its own; given empty, the area's applies. Null
+ * means the employment's cost centre in payroll. A change of only the cost
+ * centre does not unpublish the shift: the employee does not see it.
  */
 final class SaveShift
 {
@@ -63,6 +70,7 @@ final class SaveShift
             'ends_at' => ['required_with:starts_at', 'nullable', 'date'],
             'break_minutes' => ['nullable', 'integer', 'between:0,720'],
             'note' => ['nullable', 'string', 'max:500'],
+            'cost_center' => ['nullable', 'string', 'max:20'],
         ], [], [
             'employee_id' => __('Person'),
             'area_id' => __('Avdelning'),
@@ -72,6 +80,7 @@ final class SaveShift
             'end' => __('Sluttid'),
             'break_minutes' => __('Rast'),
             'note' => __('Anteckning'),
+            'cost_center' => __('Kostnadsställe'),
         ])->validate();
 
         [$start, $end] = self::interval($validated);
@@ -90,8 +99,18 @@ final class SaveShift
             throw ValidationException::withMessages(['break_minutes' => __('Rasten måste vara kortare än passet.')]);
         }
 
-        return DB::transaction(function () use ($user, $company, $validated, $shift, $start, $end, $break, $source): Shift {
+        $areaId = isset($validated['area_id']) ? (int) $validated['area_id'] : null;
+        $costCenterId = match (true) {
+            filled($validated['cost_center'] ?? null) => CostCenterInput::resolve($company, $validated['cost_center'], $shift?->cost_center_id, 'cost_center'),
+            $shift === null, $shift->area_id !== $areaId => CostCenterInput::areaDefault($company, $areaId),
+            // Empty on the same area: the area's, and a shift already on it keeps it also when it has become inactive.
+            array_key_exists('cost_center', $input) => CostCenterInput::areaDefault($company, $areaId, $shift->cost_center_id),
+            default => $shift->cost_center_id,
+        };
+
+        return DB::transaction(function () use ($user, $company, $validated, $shift, $start, $end, $break, $source, $costCenterId): Shift {
             $before = $shift?->snapshot();
+            $beforeCostCenter = $shift?->cost_center_id;
             $shift ??= new Shift(['status' => Shift::DRAFT, 'source' => 'MANUAL', 'created_by' => $user->id]);
 
             $shift->fill([
@@ -102,14 +121,16 @@ final class SaveShift
                 'ends_at' => $end,
                 'break_minutes' => $break,
                 'note' => ($validated['note'] ?? null) === '' ? null : ($validated['note'] ?? null),
+                'cost_center_id' => $costCenterId,
                 'updated_by' => $user->id,
             ]);
 
-            if ($before !== null && $before === $shift->snapshot() && ! $shift->isDirty('skill_id')) {
+            if ($before !== null && $before === $shift->snapshot() && ! $shift->isDirty('skill_id') && ! $shift->isDirty('cost_center_id')) {
                 return $shift;
             }
 
-            if ($shift->status === Shift::PUBLISHED) {
+            // The employee does not see the cost centre: a change of only that keeps the shift published.
+            if ($shift->status === Shift::PUBLISHED && ($before !== $shift->snapshot() || $shift->isDirty('skill_id'))) {
                 $shift->status = Shift::DRAFT;
             }
 
@@ -121,8 +142,8 @@ final class SaveShift
             $shift->save();
 
             Audit::record($before === null ? 'planning.shift_created' : 'planning.shift_updated', $shift, $before === null
-                ? ['after' => $shift->snapshot()]
-                : Audit::changes($before, $shift->snapshot()), $company, $user);
+                ? ['after' => [...$shift->snapshot(), 'cost_center_id' => $shift->cost_center_id]]
+                : Audit::changes([...$before, 'cost_center_id' => $beforeCostCenter], [...$shift->snapshot(), 'cost_center_id' => $shift->cost_center_id]), $company, $user);
 
             return $shift;
         });

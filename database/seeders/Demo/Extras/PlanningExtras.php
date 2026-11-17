@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo\Extras;
 
+use App\Actions\Accounting\SaveDimensionObject;
+use App\Domain\Accounting\Dimension;
 use App\Models\TeamInvitation;
 use App\Models\User;
 use App\Modules\ModuleManager;
@@ -174,6 +176,19 @@ final class PlanningExtras extends DemoExtra
         'bokforing-for-cafeer' => ['late_start' => 17, 'late_finish' => 12, 'unplanned' => 10, 'no_show' => 7],
     ];
 
+    /**
+     * Cost centres per company and the areas on them (ADR-037, gap 7): the
+     * restaurant books the kitchen apart from the dining room and bar.
+     *
+     * @var array<string, array<string, array{string, list<string>}>>
+     */
+    private const array COST_CENTRES = [
+        self::RESTAURANT => [
+            '10' => ['Kök', ['Kök']],
+            '20' => ['Matsal och bar', ['Servering', 'Bar']],
+        ],
+    ];
+
     /** Maja Lund, hourly waitress at the restaurant, also uses Min sida. */
     private const string SECOND_EMPLOYEE = 'Maja';
 
@@ -229,12 +244,23 @@ final class PlanningExtras extends DemoExtra
         $homes = [];
         $sort = 0;
 
+        $costCentres = [];
+
+        foreach (self::COST_CENTRES[$context->slug] ?? [] as $code => [$name, $inAreas]) {
+            app(SaveDimensionObject::class)($context->user, $context->company, Dimension::CostCenter, ['code' => (string) $code, 'name' => $name]);
+
+            foreach ($inAreas as $area) {
+                $costCentres[$area] = (string) $code;
+            }
+        }
+
         foreach ($plan['areas'] as $name => $colour) {
             $areas[$name] = app(SaveArea::class)($context->user, $context->company, [
                 'name' => $name,
                 'colour' => $colour,
                 'location_id' => $location?->id,
                 'sort' => $sort += 10,
+                'cost_center' => $costCentres[$name] ?? null,
             ])->id;
         }
 

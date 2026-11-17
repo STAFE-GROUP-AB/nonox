@@ -236,11 +236,11 @@ final class ContextBuilder
     }
 
     /**
-     * Approved time reports as one hourly pay line: the hours of the period
-     * at the employment's hourly rate (the Additions step prices it), taxed
-     * and earning vacation pay as the pay code says. Reports on supplement
-     * pay codes (OB, overtime, from Planering) follow as one line per pay
-     * code (supplementReports).
+     * Approved time reports as one hourly pay line per cost centre: the
+     * hours of the period at the employment's hourly rate (the Additions
+     * step prices it), taxed and earning vacation pay as the pay code says.
+     * Reports on supplement pay codes (OB, overtime, from Planering) follow
+     * as one line per pay code and cost centre (supplementReports).
      *
      * @param  Collection<int, TimeReport>  $reports
      * @param  Collection<int, PayCode>  $payCodes  by id
@@ -256,10 +256,11 @@ final class ContextBuilder
 
     /**
      * Approved reports on supplement pay codes (TimeReportPay::supplementCodes),
-     * one line per pay code with the hours of the period. A pay code the
-     * collective agreement prices is priced by it per work date (the hours
-     * per date go along, so a new rate step mid-period is respected);
-     * otherwise the Additions step takes the hourly rate, or blocks.
+     * one line per pay code and cost centre with the hours of the period. A
+     * pay code the collective agreement prices is priced by it per work date
+     * (the hours per date go along, so a new rate step mid-period is
+     * respected); otherwise the Additions step takes the hourly rate, or
+     * blocks.
      *
      * @param  Collection<int, TimeReport>  $reports
      * @param  Collection<int, PayCode>  $payCodes  by id
@@ -269,40 +270,92 @@ final class ContextBuilder
     {
         $inputs = [];
 
-        foreach ($reports->groupBy('pay_code_id') as $codeId => $own) {
+        foreach ($reports->groupBy('pay_code_id') as $codeId => $byCode) {
             $code = $payCodes->get($codeId) ?? throw new PayrollBlockedException(__('En löneart saknas.'));
-            $byDate = [];
 
-            // A report can be priced on another day than it is paid with (priced_on: overtime of a period sent with its last day, ADR-033 H.1).
-            foreach ($own->sortBy(fn (TimeReport $report): string => ($report->priced_on ?? $report->date)->toDateString()) as $report) {
-                $date = ($report->priced_on ?? $report->date)->toDateString();
-                $byDate[$date] = (string) BigDecimal::of($byDate[$date] ?? '0')->plus((string) $report->hours);
+            foreach (self::byCostCenter($byCode) as $own) {
+                $byDate = [];
+
+                // A report can be priced on another day than it is paid with (priced_on: overtime of a period sent with its last day, ADR-033 H.1).
+                foreach ($own->sortBy(fn (TimeReport $report): string => ($report->priced_on ?? $report->date)->toDateString()) as $report) {
+                    $date = ($report->priced_on ?? $report->date)->toDateString();
+                    $byDate[$date] = (string) BigDecimal::of($byDate[$date] ?? '0')->plus((string) $report->hours);
+                }
+
+                $inputs[] = new PayInput(
+                    $code->code,
+                    self::onCostCenter(__(':name enligt tidrapport', ['name' => $code->name_sv]), $own),
+                    $code->category,
+                    $code->is_taxable,
+                    $code->tax_method,
+                    $code->is_contribution_basis,
+                    $code->is_vacation_basis,
+                    quantity: (string) TimeReportPay::hours($own),
+                    explanation: [
+                        'source' => 'time_report',
+                        'days' => count($byDate),
+                        'time_report_ids' => $own->pluck('id')->values()->all(),
+                        ...self::costCenterExplanation($own),
+                        ...($code->isAgreementPriced() ? [
+                            Additions::AGREEMENT_PRICED => true,
+                            'date_from' => array_key_first($byDate),
+                            'date_to' => array_key_last($byDate),
+                            'hours_by_date' => $byDate,
+                        ] : []),
+                    ],
+                );
             }
-
-            $inputs[] = new PayInput(
-                $code->code,
-                __(':name enligt tidrapport', ['name' => $code->name_sv]),
-                $code->category,
-                $code->is_taxable,
-                $code->tax_method,
-                $code->is_contribution_basis,
-                $code->is_vacation_basis,
-                quantity: (string) TimeReportPay::hours($own),
-                explanation: [
-                    'source' => 'time_report',
-                    'days' => count($byDate),
-                    'time_report_ids' => $own->pluck('id')->values()->all(),
-                    ...($code->isAgreementPriced() ? [
-                        Additions::AGREEMENT_PRICED => true,
-                        'date_from' => array_key_first($byDate),
-                        'date_to' => array_key_last($byDate),
-                        'hours_by_date' => $byDate,
-                    ] : []),
-                ],
-            );
         }
 
         return $inputs;
+    }
+
+    /**
+     * The reports per cost centre (ADR-037, gap 7): those without one first
+     * (the employment's cost centre), then by cost centre id. Reports
+     * without any cost centre stay one group, as before.
+     *
+     * @param  Collection<int, TimeReport>  $reports
+     * @return list<Collection<int, TimeReport>>
+     */
+    private static function byCostCenter(Collection $reports): array
+    {
+        $groups = $reports->groupBy(fn (TimeReport $report): string => $report->cost_center_id === null ? '' : sprintf('c%020d', $report->cost_center_id))->sortKeys();
+
+        return array_values($groups->map(fn (Collection $group): Collection => $group->values())->all());
+    }
+
+    /**
+     * The cost centre a group of reports is on, for the payslip line it
+     * becomes (PayrollRuns carries it to payslip_lines.cost_center_id).
+     *
+     * @param  Collection<int, TimeReport>  $reports  one cost centre's
+     * @return array{cost_center_id?: int}
+     */
+    private static function costCenterExplanation(Collection $reports): array
+    {
+        $id = $reports->first()?->cost_center_id;
+
+        return $id === null ? [] : ['cost_center_id' => $id];
+    }
+
+    /**
+     * A line on a cost centre says which, so two lines of the same pay code
+     * can be told apart on the payslip.
+     *
+     * @param  Collection<int, TimeReport>  $reports  one cost centre's
+     */
+    private static function onCostCenter(string $description, Collection $reports): string
+    {
+        $report = $reports->first();
+
+        if ($report === null || $report->cost_center_id === null) {
+            return $description;
+        }
+
+        $code = $report->relationLoaded('costCenter') ? $report->costCenter?->code : null;
+
+        return $code === null ? $description : __(':line, kostnadsställe :code', ['line' => $description, 'code' => $code]);
     }
 
     /**
@@ -319,17 +372,17 @@ final class ContextBuilder
         $code = $payCodes->first(fn (PayCode $code): bool => $code->code === TimeReportPay::PAY_CODE)
             ?? throw new PayrollBlockedException(__('Lönearten Timlön saknas. Slå av och på lönemodulen för att lägga till systemets lönearter.'));
 
-        return [new PayInput(
+        return array_map(fn (Collection $own): PayInput => new PayInput(
             $code->code,
-            __('Timlön enligt tidrapport'),
+            self::onCostCenter(__('Timlön enligt tidrapport'), $own),
             $code->category,
             $code->is_taxable,
             $code->tax_method,
             $code->is_contribution_basis,
             $code->is_vacation_basis,
-            quantity: (string) TimeReportPay::hours($reports),
-            explanation: ['source' => 'time_report', 'days' => $reports->count(), 'time_report_ids' => $reports->pluck('id')->values()->all()],
-        )];
+            quantity: (string) TimeReportPay::hours($own),
+            explanation: ['source' => 'time_report', 'days' => $own->count(), 'time_report_ids' => $own->pluck('id')->values()->all(), ...self::costCenterExplanation($own)],
+        ), self::byCostCenter($reports));
     }
 
     /**
@@ -361,7 +414,7 @@ final class ContextBuilder
 
             return new PayInput(
                 $code->code,
-                __('Timlön enligt tidrapport (:month)', ['month' => $month]),
+                self::onCostCenter(__('Timlön enligt tidrapport (:month)', ['month' => $month]), $group['reports']),
                 $code->category,
                 $code->is_taxable,
                 $code->tax_method,
@@ -369,7 +422,7 @@ final class ContextBuilder
                 $code->is_vacation_basis,
                 quantity: (string) TimeReportPay::hours($group['reports']),
                 rateOre: $group['rate_ore'],
-                explanation: ['source' => 'time_report', 'month' => $group['month']->format('Y-m'), 'days' => $group['reports']->count(), 'time_report_ids' => $group['reports']->pluck('id')->values()->all()],
+                explanation: ['source' => 'time_report', 'month' => $group['month']->format('Y-m'), 'days' => $group['reports']->count(), 'time_report_ids' => $group['reports']->pluck('id')->values()->all(), ...self::costCenterExplanation($group['reports'])],
             );
         }, $groups);
     }

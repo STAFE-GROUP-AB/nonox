@@ -52,7 +52,7 @@ Inställningarna finns under **Företagsinställningar → Moduler → Lön → 
 - **Semesterdagar för deltid** – om bara schemalagda arbetsdagar räknas (färre dagar för den som arbetar färre dagar i veckan) eller alla vardagar.
 - **Skatt på semesterersättning med varje lön** – enligt skattetabell som lönen, eller som engångsbelopp.
 - **Den som beräknar får inte attestera** – på från början. Den som räknar lönen kan då inte också godkänna den. Är du ensam i företaget behöver du stänga av den här kontrollen.
-- **Kostnadsställe och projekt från anställningen** – lönekostnaden bokförs på anställningens kostnadsställe.
+- **Kostnadsställe och projekt från anställningen** – lönekostnaden och arbetsgivaravgifterna bokförs på anställningens kostnadsställe. Av: de bokförs utan kostnadsställe. Timmar från Planering på ett kostnadsställe bokförs alltid där.
 - **Självservice för anställda** – om de anställda kan använda Min sida. Se [Min sida för de anställda](/manual/lon/min-sida-for-anstallda).
 - **Deklarationsdag för arbetsgivardeklarationen** – visar vilken grupp företaget hör till. Den styrs av företagets inställning för moms och beskattningsunderlaget för moms, som du ändrar under företagets uppgifter.
 

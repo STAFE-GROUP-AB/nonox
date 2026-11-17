@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property ?int $debit_account_id
  * @property ?int $credit_account_id
  * @property bool $is_system
+ * @property ?bool $use_employment_dimensions whether a line without its own cost centre takes the employment's dimensions
  * @property ?string $formula_ref
  */
 class PayCode extends Model

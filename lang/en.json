@@ -14723,5 +14723,13 @@
     "Veckans pass i flera av dina företag bredvid varandra. Du ser bara företag där du har rätt att se schemat, och här går det inte att ändra något.": "This week's shifts in several of your companies side by side. You only see companies where you may see the schedule, and nothing can be changed here.",
     "Tillbaka till Mina företag": "Back to My companies",
     "Per avdelning": "Per area",
-    "Urvalet är för stort för att sparas som vy. Välj färre företag.": "The selection is too large to save as a view. Choose fewer companies."
+    "Urvalet är för stort för att sparas som vy. Välj färre företag.": "The selection is too large to save as a view. Choose fewer companies.",
+    "Kostnadsstället :code är inaktivt. Välj ett aktivt kostnadsställe.": "The cost centre :code is inactive. Choose an active cost centre.",
+    ":line, kostnadsställe :code": ":line, cost centre :code",
+    "Valfritt. Nya pass i avdelningen bokförs på kostnadsstället i lönen. Utan kostnadsställe gäller anställningens.": "Optional. New shifts in the area are booked on the cost centre in payroll. Without one, the employment's applies.",
+    "Inget (anställningens)": "None (the employment's)",
+    "inaktivt": "inactive",
+    "Kostnadsställe :name": "Cost centre :name",
+    "Avdelningens eller anställningens": "The area's or the employment's",
+    "Lönen för passet bokförs här.": "The pay for the shift is booked here."
 }

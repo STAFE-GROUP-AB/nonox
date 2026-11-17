@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Planning\Livewire;
 
 use App\Livewire\Concerns\ShowsToasts;
+use App\Models\CostCenter;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Planning\Actions\SaveArea;
@@ -20,8 +21,8 @@ use Illuminate\View\View;
 use Livewire\Component;
 
 /**
- * Planering → Inställningar: the areas shifts are planned in, with colours
- * and an optional staff-ledger location, the skills shifts can ask for, and
+ * Planering → Inställningar: the areas shifts are planned in, with colours,
+ * an optional staff-ledger location and an optional cost centre, the skills shifts can ask for, and
  * which employees have them. The rule set and notifications are
  * PlanningSettingsForm, on the same page.
  */
@@ -52,14 +53,14 @@ class SetupPage extends Component
     public function createArea(): void
     {
         $this->editing = 0;
-        $this->form = ['name' => '', 'colour' => self::COLOURS[Area::query()->count() % count(self::COLOURS)], 'location_id' => null, 'sort' => Area::query()->max('sort') + 1];
+        $this->form = ['name' => '', 'colour' => self::COLOURS[Area::query()->count() % count(self::COLOURS)], 'location_id' => null, 'cost_center' => '', 'sort' => Area::query()->max('sort') + 1];
     }
 
     public function editArea(int $id): void
     {
-        $area = Area::query()->findOrFail($id);
+        $area = Area::query()->with('costCenter:id,code')->findOrFail($id);
         $this->editing = $area->id;
-        $this->form = $area->only(['name', 'colour', 'location_id', 'sort']);
+        $this->form = [...$area->only(['name', 'colour', 'location_id', 'sort']), 'cost_center' => (string) $area->costCenter?->code];
     }
 
     public function saveArea(SaveArea $save): void
@@ -139,13 +140,14 @@ class SetupPage extends Component
     public function render(ModuleManager $modules): View
     {
         return view('planning::livewire.setup', [
-            'areas' => Area::query()->orderByRaw('archived_at is not null')->orderBy('sort')->orderBy('name')->get(),
+            'areas' => Area::query()->with('costCenter:id,code,name')->orderByRaw('archived_at is not null')->orderBy('sort')->orderBy('name')->get(),
             'skills' => Skill::query()->orderBy('name')->get(),
             'employees' => Employee::query()->where('status', '<>', 'TERMINATED')->orderBy('first_name')->orderBy('last_name')->get(['id', 'first_name', 'last_name']),
             'employeeSkills' => EmployeeSkill::query()->get(['employee_id', 'skill_id'])->map(fn (EmployeeSkill $row): string => "{$row->employee_id}|{$row->skill_id}")->flip(),
             'locations' => $modules->isEnabled(StaffLedgerModule::KEY, $this->company()) ? Location::query()->whereNull('archived_at')->orderBy('name')->pluck('name', 'id') : collect(),
             'canManage' => $this->allowed('planning:manage'),
             'colours' => self::COLOURS,
+            'costCenters' => CostCenter::query()->orderBy('code')->get(['id', 'code', 'name', 'is_active']),
         ]);
     }
 }

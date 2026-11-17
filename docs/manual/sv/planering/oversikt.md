@@ -40,6 +40,7 @@ Avsnittet är för dig som planerar eller attesterar tid: ägaren, en administra
 
 - [Tid att attestera](/manual/planering/tid-att-attestera) – plan mot faktisk tid, avvikelser, attest och skicka till lönen.
 - [OB och övertid i lönen](/manual/planering/ob-och-overtid-i-lonen) – hur attesterad tid blir tidrapporter och rader i lönen.
+- [Kostnadsställen på pass](/manual/planering/kostnadsstallen) – lönen för passen och arbetsgivaravgifterna på avdelningens kostnadsställe.
 - [Bemanning och kostnad](/manual/planering/bemanning-och-kostnad) – personalkostnad mot försäljningen i bokföringen.
 
 ## Läs också

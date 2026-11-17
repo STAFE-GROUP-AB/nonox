@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Planning\Models;
 
+use App\Models\CostCenter;
 use App\Modules\StaffLedger\Models\Location;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
@@ -21,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $name
  * @property string $colour
  * @property ?int $location_id
+ * @property ?int $cost_center_id the default for new shifts in the area (ADR-037, gap 7)
  * @property int $sort
  * @property ?CarbonImmutable $archived_at
  * @property ?CarbonInterface $created_at
@@ -33,13 +35,14 @@ class Area extends Model
     protected $table = 'planning_areas';
 
     /** @var list<string> */
-    protected $fillable = ['company_id', 'name', 'colour', 'location_id', 'sort', 'archived_at'];
+    protected $fillable = ['company_id', 'name', 'colour', 'location_id', 'cost_center_id', 'sort', 'archived_at'];
 
     /** @return array<string, string> */
     protected function casts(): array
     {
         return [
             'location_id' => 'integer',
+            'cost_center_id' => 'integer',
             'sort' => 'integer',
             'archived_at' => 'immutable_datetime',
         ];
@@ -49,5 +52,11 @@ class Area extends Model
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
+    }
+
+    /** @return BelongsTo<CostCenter, $this> */
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class);
     }
 }

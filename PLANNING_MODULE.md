@@ -100,14 +100,15 @@ only, never another product's texts, layout, colours or feature names.
 ## 4. Data model
 
 ```
-planning_areas        id, company_id, name, colour, location_id null, sort, archived_at
+planning_areas        id, company_id, name, colour, location_id null, cost_center_id null, sort, archived_at
 planning_skills       id, company_id, name
 planning_employee_skills  employee_id, skill_id
 planning_shifts       id (uuid), company_id, employee_id null (null = open shift), area_id null,
                       skill_id null, starts_at, ends_at (timestamptz, Europe/Stockholm),
                       break_minutes, note, status (DRAFT | PUBLISHED), published_at, published_by,
                       source (MANUAL | TEMPLATE | COPY | SWAP | CLAIM | PROPOSAL), template_id null,
-                      cost_estimate_ore null, cost_calculated_at null, created_by, updated_by
+                      cost_estimate_ore null, cost_calculated_at null, cost_center_id null,
+                      created_by, updated_by
 planning_templates    id, company_id, name, weeks (1–8), notes
 planning_template_shifts  template_id, week_index, weekday, start, end, break_minutes,
                       employee_id null, area_id null, skill_id null
@@ -259,6 +260,19 @@ Every action: authorized by policy, transactional, audited, tenancy-safe.
 - A day sent to payroll is locked in Planning; changes after that need
   ReopenAttestation before the run is attested, or a correction line in the
   next run.
+- Cost centres (ADR-037 gap 7): an area's `cost_center_id` is the default
+  of new shifts in it; a shift may have its own (by code, an inactive one
+  refused for a new choice); null means the employment's. SendToPayroll
+  writes one time report per date, pay code and cost centre: a day whose
+  shifts are on several cost centres has hourly pay and the day's overtime
+  and mertid split by planned minutes, and each OB code by the OB the
+  shifts' planned times give under the agreement, in hundredths of an hour
+  by the largest remainder, so the sum is the hours one report would hold.
+  A week's or period's overtime and mertid stay on the employment's. The
+  run makes one line per pay code and cost centre
+  (`payslip_lines.cost_center_id`); SalaryVoucher books it there and splits
+  employer contributions per payslip over the cost centres in proportion to
+  the contribution basis, largest remainder to the öre (`CostCenterShares`).
 
 ## 9. API and integrations
 

@@ -40,6 +40,22 @@
       "omrade": "Planering"
     },
     {
+      "id": "2026-11-17-lon-kostnadsstalle-installning",
+      "datum": "2026-11-17T18:25:00+01:00",
+      "rubrik": "Inställningen för kostnadsställe i lönen gäller nu",
+      "beskrivning": "Löneinställningen Kostnadsställe och projekt från anställningen styr nu lönens verifikation: avstängd bokförs lönekostnaden utan kostnadsställe. Arbetsgivaravgifterna följer kostnadsställena i stället för att stå utan. Tid att attestera visar också den publicerade tiden för ett pass som har ändrats till utkast igen.",
+      "typ": "Rättat",
+      "omrade": "Lön"
+    },
+    {
+      "id": "2026-11-17-planering-kostnadsstallen",
+      "datum": "2026-11-17T17:55:00+01:00",
+      "rubrik": "Pass på kostnadsställen i lönebokföringen",
+      "beskrivning": "Avdelningar och pass i Planering kan ha ett kostnadsställe, och timmarna skickas till lönen per kostnadsställe. Lönens verifikation bokför lönen för passen där och fördelar arbetsgivaravgifterna efter avgiftsunderlaget per kostnadsställe, avrundat till hela ören så att den balanserar.",
+      "typ": "Nytt",
+      "omrade": "Planering"
+    },
+    {
       "id": "2026-11-17-planering-franvaro-i-schemat",
       "datum": "2026-11-17T17:41:36+01:00",
       "rubrik": "Godkänd frånvaro syns i schemat",

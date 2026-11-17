@@ -37,8 +37,9 @@ En avdelning är en del av verksamheten som ni planerar pass i, till exempel Kö
 2. Klicka på **Ny avdelning** under **Avdelningar**.
 3. Skriv **Namn** och välj en **Färg**, eller en egen färg.
 4. Har ni personalliggaren kan du välja **Lokal i personalliggaren**. Då kan schemat filtreras per lokal.
-5. Ändra **Ordning** om avdelningen ska stå före eller efter de andra.
-6. Klicka på **Spara**.
+5. Har företaget kostnadsställen kan du välja **Kostnadsställe**. Nya pass i avdelningen bokförs då på kostnadsstället i lönen, se [Kostnadsställen på pass](/manual/planering/kostnadsstallen).
+6. Ändra **Ordning** om avdelningen ska stå före eller efter de andra.
+7. Klicka på **Spara**.
 
 En avdelning ni inte använder längre kan du **Arkivera**. Den visas då inte som en egen rad när schemat visas per avdelning, och när du väljer avdelning för ett pass står den som arkiverad. Passen som redan har den behåller den. Med **Återställ** tar du tillbaka den.
 
