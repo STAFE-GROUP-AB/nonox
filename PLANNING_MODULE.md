@@ -240,6 +240,20 @@ Every action: authorized by policy, transactional, audited, tenancy-safe.
   centre plugs in). The day view shows a band "Behov per timme" (planned /
   required per hour, red under, amber over); the week footer shows "Behov"
   per day. Deterministic, no AI; warnings never block.
+- **Budget** (`/planering/budget`, ADR-037 amendment gap 2): the staff-cost
+  budget per ISO week for the whole company or an area (`planning_budgets`:
+  `week_start` a Monday, `amount_ore` or `percent_bp` of the week's
+  forecast), set for one week or a period, copied forward (existing weeks
+  kept) or removed, with `planning:budget` (owner, admin, payroll_admin).
+  The estimate is the sum of the week's `cost_estimate_ore` (a shift counts
+  in the week it starts). `Support/Budget/BudgetData` reads any number of
+  weeks and companies in a fixed number of queries (the forecast through
+  `Forecaster` and `SalesFromBooks::perCompanyDay`, only when a budget is a
+  share). Warnings from `budget_warn_at_bp` (default 9 500) and at 100 %:
+  the row "Budget vecka" in the week footer, the toast after a save that
+  raises a week's cost to or over the threshold, and after publishing. The
+  chain view shows each company's total in `extra['budget']`, read only.
+  Never blocks.
 - **Min sida** (employee): my schedule (week list, next shift on the start
   page), open shifts to claim, swap or drop a shift, availability, iCal
   link, and the existing check-in.

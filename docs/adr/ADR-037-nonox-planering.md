@@ -225,6 +225,46 @@ the toast; it never blocks. The figure stays labelled an estimate.
 payroll_admin). The scheduler sees the budget and the warnings
 (`planning:view`) but cannot change it.
 
+*Built in P6 (2026-11-17), choices the text above left open:*
+
+- `planning_budgets` holds one row per company, scope (area or null) and
+  week (unique on `COALESCE(area_id, 0)`), with a CHECK that exactly one of
+  `amount_ore` and `percent_bp` (1–10 000) is set and that `week_start` is a
+  Monday. Setting a period replaces what the weeks had; copying a week
+  forward copies every scope of it and keeps a week that already has a
+  budget for that scope. At most 53 weeks in one go.
+- A share of the forecast is the sum of the week's day forecasts that
+  exist (Bemanningsbehov's `Forecaster` on the same inputs: the area's own
+  sales with a cost centre, else the whole company's, with the scope's
+  overrides), rounded half up to the öre. A week with no forecast at all
+  has no amount and never warns. Such a budget is compared only with the
+  cost of the shifts on the days that have a forecast; the cost of shifts
+  on days without one is left out and named as visible text ("Passen N
+  dagar utan prognos (…) räknas inte mot budgeten"), so a partial forecast
+  cannot give a false "Över budget". A day with neither a forecast nor
+  shifts (a closed day) is no gap and gives no note. The toast after a save
+  follows the same rule.
+- A budget on an archived area does not count (the budget page lists only
+  active areas, so it could not be reached), read with a subquery and no
+  extra query; `SaveBudget` refuses an archived area. Two saves of the same
+  new week at once: the loser's unique violation becomes a Swedish
+  validation message, never an error page.
+- The day view shows the budget of the day's own week.
+- The estimate is the sum of `cost_estimate_ore` of the week's shifts that
+  are not cancelled, by the week a shift starts (Swedish time); drafts
+  count, open shifts carry no cost. Missing parts are flagged with *.
+- The whole company's line is its own budget; without one, the sum of the
+  areas' budgets against the cost of those areas' shifts ("Summan av
+  avdelningarnas budgetar").
+- Status: NEAR from `budget_warn_at_bp` (50–99,99 %, set on the budget
+  page), OVER from 100 %. A save's toast warns only when the save raised
+  the cost of a line at or over the threshold (moving a shift into or
+  within a week, not shortening or removing it); publishing warns for every
+  line of the period's weeks at or over it.
+- The chain view reads the selected companies' budgets in the same
+  `CompanyScope::bypass` pattern, one grouped query per table, and shows
+  each company's total line; it never writes.
+
 ### Gap 3: a schedule proposal
 
 **Decision.** A deterministic, explainable constraint heuristic

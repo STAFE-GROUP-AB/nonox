@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-17-planering-budget",
+      "datum": "2026-11-17T23:00:00+01:00",
+      "rubrik": "Budget för personalkostnad i schemat",
+      "beskrivning": "Under Planering → Budget sätter du personalkostnaden per vecka för hela företaget eller en avdelning, som ett belopp eller en andel av prognosen för försäljningen. Schemat visar veckans beräknade kostnad mot budgeten och varnar från 95 % och vid 100 %, både i veckans summa och när du sparar eller publicerar pass. Varningen stoppar aldrig planeringen.",
+      "typ": "Nytt",
+      "omrade": "Planering"
+    },
+    {
       "id": "2026-11-17-planering-schemaforslag",
       "datum": "2026-11-17T18:30:00+01:00",
       "rubrik": "Schemaförslag fyller de öppna passen",

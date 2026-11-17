@@ -232,6 +232,8 @@ final class DatabaseGrants
         'planning_areas' => GrantDecision::ReadWrite,
         'planning_attestations' => GrantDecision::ReadWrite,
         'planning_availability' => GrantDecision::ReadWrite,
+        // Budget för personalkostnad (ADR-037 gap 2): budgets a holder of planning:budget sets and removes.
+        'planning_budgets' => GrantDecision::ReadWrite,
         'planning_employee_skills' => GrantDecision::ReadWrite,
         // Bemanningsbehov (ADR-037 gap 1): settings a planner changes and removes.
         'planning_forecast_overrides' => GrantDecision::ReadWrite,

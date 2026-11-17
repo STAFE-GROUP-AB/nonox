@@ -44,6 +44,7 @@ Avsnittet är för dig som planerar eller attesterar tid: ägaren, en administra
 - [Kostnadsställen på pass](/manual/planering/kostnadsstallen) – lönen för passen och arbetsgivaravgifterna på avdelningens kostnadsställe.
 - [Bemanning och kostnad](/manual/planering/bemanning-och-kostnad) – personalkostnad mot försäljningen i bokföringen.
 - [Bemanningsbehov](/manual/planering/bemanningsbehov) – prognos för försäljningen och hur många som behöver jobba, per timme i schemat.
+- [Budget för personalkostnad](/manual/planering/budget) – budget per vecka och avdelning, med varning i schemat när kostnaden närmar sig den.
 
 ## Läs också
 

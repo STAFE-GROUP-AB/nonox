@@ -21,6 +21,8 @@ use App\Modules\Planning\Models\ShiftTask;
 use App\Modules\Planning\Models\Template;
 use App\Modules\Planning\PlanningModule;
 use App\Modules\Planning\PlanningSettings;
+use App\Modules\Planning\Support\Budget\BudgetData;
+use App\Modules\Planning\Support\Budget\BudgetWarnings;
 use App\Modules\Planning\Support\Demand\DemandData;
 use App\Modules\Planning\Support\LocalTimestamp;
 use App\Modules\Planning\Support\ScheduleData;
@@ -169,6 +171,7 @@ class SchedulePage extends Component
     public function save(SaveShift $save): void
     {
         $shift = $this->editing === null ? null : Shift::query()->findOrFail($this->editing);
+        $prior = $shift === null ? null : BudgetWarnings::prior($shift);
         $form = array_map(fn (mixed $value): mixed => $value === '' ? null : $value, $this->form);
 
         try {
@@ -181,7 +184,7 @@ class SchedulePage extends Component
         }
 
         $this->showEditor = false;
-        $this->toast($this->withAbsence($save, $saved, $shift === null ? __('Passet är tillagt som utkast.') : $this->savedMessage($saved, __('Passet är sparat.'))));
+        $this->toast($this->withBudget($prior, $saved, $this->withAbsence($save, $saved, $shift === null ? __('Passet är tillagt som utkast.') : $this->savedMessage($saved, __('Passet är sparat.')))));
     }
 
     /**
@@ -192,26 +195,28 @@ class SchedulePage extends Component
     public function moveShift(string $id, ?int $employeeId, string $startsAt, string $endsAt, SaveShift $save): bool
     {
         $shift = Shift::query()->findOrFail($id);
+        $prior = BudgetWarnings::prior($shift);
 
         return $this->attempt(fn () => $save($this->user(), $this->company(), [
             ...$this->current($shift),
             'employee_id' => $employeeId,
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
-        ], $shift), fn (Shift $saved): string => $this->withAbsence($save, $saved, $this->savedMessage($saved, __('Passet är flyttat.'))));
+        ], $shift), fn (Shift $saved): string => $this->withBudget($prior, $saved, $this->withAbsence($save, $saved, $this->savedMessage($saved, __('Passet är flyttat.')))));
     }
 
     /** A drop in the grid with areas as rows: the shift's new area and times, same person. */
     public function moveShiftToArea(string $id, ?int $areaId, string $startsAt, string $endsAt, SaveShift $save): bool
     {
         $shift = Shift::query()->findOrFail($id);
+        $prior = BudgetWarnings::prior($shift);
 
         return $this->attempt(fn () => $save($this->user(), $this->company(), [
             ...$this->current($shift),
             'area_id' => $areaId,
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
-        ], $shift), fn (Shift $saved): string => $this->withAbsence($save, $saved, $this->savedMessage($saved, __('Passet är flyttat.'))));
+        ], $shift), fn (Shift $saved): string => $this->withBudget($prior, $saved, $this->withAbsence($save, $saved, $this->savedMessage($saved, __('Passet är flyttat.')))));
     }
 
     /** Drag to create on the timeline: a new draft at once, without the editor. */
@@ -223,7 +228,7 @@ class SchedulePage extends Component
             'ends_at' => $endsAt,
             'area_id' => $this->area,
             'skill_id' => $this->skill,
-        ]), fn (Shift $saved): string => $this->withAbsence($save, $saved, __('Passet är tillagt som utkast.')));
+        ]), fn (Shift $saved): string => $this->withBudget(null, $saved, $this->withAbsence($save, $saved, __('Passet är tillagt som utkast.'))));
     }
 
     /** Paste (v) or a drop with Alt: a copy of the shift on another person and day, same times. */
@@ -239,7 +244,7 @@ class SchedulePage extends Component
             'date' => $date,
             'start' => $shift->starts_at->format('H:i'),
             'end' => $shift->ends_at->format('H:i'),
-        ]), fn (Shift $saved): string => $this->withAbsence($save, $saved, __('Passet är kopierat.')));
+        ]), fn (Shift $saved): string => $this->withBudget(null, $saved, $this->withAbsence($save, $saved, __('Passet är kopierat.'))));
     }
 
     /** A task written for the shift being edited (the ones from the task templates come by themselves). */
@@ -326,7 +331,9 @@ class SchedulePage extends Component
         }
 
         $this->showPublish = false;
-        $this->toast($this->publishedMessage($publication->shift_count, $publication->notified_count, $absent));
+        $budget = app(BudgetWarnings::class)->forPeriod($this->company(), $from, $to);
+        $message = $this->publishedMessage($publication->shift_count, $publication->notified_count, $absent);
+        $this->toast($budget === null ? $message : "{$message} {$budget}");
     }
 
     private function publishedMessage(int $count, int $notified, int $absent): string
@@ -402,7 +409,7 @@ class SchedulePage extends Component
         $this->toast(__('Kostnaderna är omräknade.'));
     }
 
-    public function render(ScheduleData $data, DemandData $demand): View
+    public function render(ScheduleData $data, DemandData $demand, BudgetData $budgets): View
     {
         [$from, $to] = $this->period();
         $filters = ['area' => $this->area, 'skill' => $this->skill, 'location' => $this->location];
@@ -426,6 +433,8 @@ class SchedulePage extends Component
         }
 
         $shown = $loaded['shifts']->pluck('id')->all();
+        // The day view's own week: ?dag is not synced into ?vecka.
+        $budgetMonday = $this->view === 'dag' ? $this->dayDate()->startOfWeek(CarbonImmutable::MONDAY) : $this->monday();
 
         return view('planning::livewire.schedule', [
             ...$loaded,
@@ -433,6 +442,9 @@ class SchedulePage extends Component
             'editingTasks' => $this->editing === null ? collect() : ShiftTask::query()->where('shift_id', $this->editing)->orderBy('position')->orderBy('id')->get(),
             'demand' => $needs['days'],
             'demandScope' => $needs,
+            // The staff-cost budget of the week shown (ADR-037, gap 2), for everyone with planning:view.
+            'budget' => $budgets->forCompany($this->company(), [$budgetMonday])[$budgetMonday->toDateString()] ?? null,
+            'canBudget' => $this->allowed('planning:budget'),
             'from' => $from,
             'to' => $to,
             'canManage' => $this->allowed('planning:manage'),
@@ -563,6 +575,19 @@ class SchedulePage extends Component
         return PlanningSettings::bool($this->settings(), 'notify_on_publish')
             ? __(':done Personen får besked när du publicerar igen.', ['done' => $done])
             : __(':done Publicera igen för att visa ändringen. Aviseringar är avstängda, så personen får inget besked.', ['done' => $done]);
+    }
+
+    /**
+     * The toast, with the budget warning when the save raised a week's
+     * estimated cost to or over the threshold of its budget (it never blocks).
+     *
+     * @param  ?array{monday: string, date: string, area_id: ?int, cost: int}  $prior
+     */
+    private function withBudget(?array $prior, Shift $saved, string $message): string
+    {
+        $warning = app(BudgetWarnings::class)->afterSave($this->company(), $prior, $saved);
+
+        return $warning === null ? $message : "{$message} {$warning}";
     }
 
     /** The toast, with the absence warning when the person is absent that day (it never blocks). */

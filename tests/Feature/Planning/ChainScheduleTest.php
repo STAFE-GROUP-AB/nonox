@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\PayrollModule;
+use App\Modules\Planning\Actions\SaveArea;
+use App\Modules\Planning\Actions\SaveBudget;
 use App\Modules\Planning\Models\Shift;
 use App\Modules\Planning\PlanningModule;
 use App\Support\Tenancy\CurrentCompany;
@@ -57,6 +59,19 @@ function chainCompany(string $name, string $role = 'scheduler', bool $planning =
 function chainEmployee(Company $company, string $first, ?User $login = null, string $nine = '900615123'): void
 {
     Planning::employee($company->owner, $company, $first, $nine, $login === null ? [] : ['user_id' => $login->id]);
+}
+
+/** An amount budget on one area, a share of the forecast for the whole company and a share on another area, week 45, with a sale to forecast from. */
+function p6ChainBudgets(Company $company): void
+{
+    $owner = $company->owner;
+    $save = app(SaveBudget::class);
+    $kitchen = app(SaveArea::class)($owner, $company, ['name' => 'Kök', 'colour' => '#e4572e']);
+    $bar = app(SaveArea::class)($owner, $company, ['name' => 'Bar', 'colour' => '#2e86e4']);
+    Bookkeeping::post($owner, $company, 500000, 1930, 3001, '2026-10-27');
+    $save($owner, $company, ['from' => '2026-11-02', 'kind' => 'percent', 'value' => '30']);
+    $save($owner, $company, ['area_id' => $kitchen->id, 'from' => '2026-11-02', 'kind' => 'amount', 'value' => '5 000']);
+    $save($owner, $company, ['area_id' => $bar->id, 'from' => '2026-11-02', 'kind' => 'percent', 'value' => '20']);
 }
 
 function chainShift(Company $company, string $first, string $date, string $start, string $end): Shift
@@ -270,6 +285,8 @@ it('reads a fixed number of queries whatever the number of companies and shifts'
     $first->users()->attach($login, ['role' => 'employee']);
     chainEmployee($first, 'Anna', $login);
     chainShift($first, 'Anna', '2026-11-03', '08:00', '12:00');
+    // The budget column (P6): an amount, a share of the forecast and an area's share, with sales so the forecast is read.
+    p6ChainBudgets($first);
     $few = $count();
 
     foreach (range(1, 24) as $number) {
@@ -279,6 +296,10 @@ it('reads a fixed number of queries whatever the number of companies and shifts'
 
         foreach (['2026-11-02', '2026-11-04', '2026-11-05'] as $date) {
             chainShift($company, 'Anna', $date, '13:00', '17:00');
+        }
+
+        if ($number % 3 === 0) {
+            p6ChainBudgets($company);
         }
     }
 

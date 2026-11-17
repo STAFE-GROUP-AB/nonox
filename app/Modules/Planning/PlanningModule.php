@@ -27,7 +27,10 @@ final class PlanningModule implements IsNew, Module, ProvidesTodos
 {
     public const string KEY = 'planning';
 
-    public const array PERMISSIONS = ['planning:view', 'planning:manage', 'planning:attest'];
+    public const array PERMISSIONS = ['planning:view', 'planning:manage', 'planning:attest', self::BUDGET];
+
+    /** Setting the staff-cost budget (ADR-037, gap 2); everyone with planning:view sees it. */
+    public const string BUDGET = 'planning:budget';
 
     /** Min sida: the employee's own schedule, availability, requests and calendar link. */
     public const string SELF_SERVICE = 'self:schedule';
@@ -111,6 +114,7 @@ final class PlanningModule implements IsNew, Module, ProvidesTodos
                     ['label' => __('Öppna pass och byten'), 'route' => 'planning.requests', 'active' => ['planning.requests']],
                     ['label' => __('Bemanning och kostnad'), 'route' => 'planning.staffing', 'active' => ['planning.staffing']],
                     ['label' => __('Bemanningsbehov'), 'route' => 'planning.demand', 'active' => ['planning.demand']],
+                    ['label' => __('Budget'), 'route' => 'planning.budget', 'active' => ['planning.budget']],
                     ['label' => __('Inställningar'), 'route' => 'planning.settings', 'active' => ['planning.settings']],
                 ],
             ],

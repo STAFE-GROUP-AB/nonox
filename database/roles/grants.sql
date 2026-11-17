@@ -200,6 +200,7 @@ BEGIN
         ('planning_areas', 'SELECT, INSERT, UPDATE, DELETE'),
         ('planning_attestations', 'SELECT, INSERT, UPDATE, DELETE'),
         ('planning_availability', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_budgets', 'SELECT, INSERT, UPDATE, DELETE'),
         ('planning_employee_skills', 'SELECT, INSERT, UPDATE, DELETE'),
         ('planning_forecast_overrides', 'SELECT, INSERT, UPDATE, DELETE'),
         ('planning_hour_profiles', 'SELECT, INSERT, UPDATE, DELETE'),

@@ -60,7 +60,12 @@ final class PlanningSettings
         'unsocial_to' => '07:00',
         // Bemanningsbehov: the forecast averages the same weekday over this many weeks (ADR-037, gap 1).
         'forecast_weeks' => 6,
+        // Budget för personalkostnad (ADR-037, gap 2): warn from this share of a week's budget, in basis points (9 500 = 95 %), and always at 100 %.
+        'budget_warn_at_bp' => 9500,
     ];
+
+    /** The threshold the budget page accepts, in basis points: 50 %–99,99 %. */
+    public const array BUDGET_WARN_AT = [5000, 9999];
 
     /** The fairness window the proposal form accepts, in weeks before the period. */
     public const array FAIRNESS_WEEKS = [1, 26];
@@ -246,6 +251,12 @@ final class PlanningSettings
     public static function fairnessWeeks(array $settings): int
     {
         return max(self::FAIRNESS_WEEKS[0], min(self::FAIRNESS_WEEKS[1], self::int($settings, 'fairness_weeks')));
+    }
+
+    /** @param  array<string, mixed>  $settings */
+    public static function budgetWarnAt(array $settings): int
+    {
+        return max(self::BUDGET_WARN_AT[0], min(self::BUDGET_WARN_AT[1], self::int($settings, 'budget_warn_at_bp')));
     }
 
     /** @param  array<string, mixed>  $settings */
