@@ -611,15 +611,24 @@ final class PlanningExtras extends DemoExtra
     }
 
     /**
-     * A schedule proposal for the open shifts of the draft week, made last so
-     * nothing changes the week after it and it is not stale. Not accepted:
-     * the review page shows it with its reasons.
+     * A schedule proposal for the draft week, made last so nothing changes
+     * the week after it and it is not stale: who should take the open shifts,
+     * and, with "Föreslå nya pass" on (v2), the new shifts the staffing
+     * targets need within the week's budget: an amount about 30 % over what
+     * is planned, so some new shifts fit and the rest are named as over the
+     * budget. Not accepted: the review page shows it with its reasons.
      */
     private function proposal(DemoContext $context, CarbonImmutable $monday): void
     {
         $week = $monday->addWeeks(3);
+        $costs = BudgetData::costs(CurrentCompany::run($context->company, fn () => ShiftQuery::startingOn($week, $week->addDays(6))
+            ->where('status', '<>', Shift::CANCELLED)
+            ->get()))[(int) $context->company->id][$week->toDateString()] ?? [];
+        $planned = array_sum(array_column($costs, 'cost'));
 
-        app(MakeProposal::class)($context->user, $context->company, ['from' => $week->toDateString(), 'to' => $week->addDays(6)->toDateString()]);
+        app(SaveBudget::class)($context->user, $context->company, ['from' => $week->toDateString(), 'kind' => SaveBudget::AMOUNT, 'value' => (string) max(500, (int) (round($planned * 1.3 / 100 / 500) * 500))]);
+
+        app(MakeProposal::class)($context->user, $context->company, ['from' => $week->toDateString(), 'to' => $week->addDays(6)->toDateString(), 'new_shifts' => true]);
     }
 
     /**

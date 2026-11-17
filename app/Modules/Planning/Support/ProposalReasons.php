@@ -30,6 +30,8 @@ final class ProposalReasons
             'extra_time' => __('Ger mertid över den avtalade veckotiden'),
             'only_candidate' => __('Den enda som kan ta passet'),
             'balanced' => __('Jämnast fördelning av dem som kan ta passet'),
+            'covers_demand' => trans_choice('{1} Nytt pass: täcker 1 timme med för få i schemat|[2,*] Nytt pass: täcker :count timmar med för få i schemat', (int) ($reason['hours'] ?? 1), ['count' => (int) ($reason['hours'] ?? 1)]),
+            'over_budget' => __('Ryms inte i veckans budget för personalkostnad. Lägg passet själv om det ändå behövs.'),
             'nobody_employed' => __('Ingen är anställd den dagen.'),
             'no_skill' => $skill === null ? __('Ingen anställd har kompetensen som passet kräver.') : __('Ingen anställd har kompetensen :skill.', ['skill' => $skill]),
             'blocked' => self::blocked($reason, $skill),

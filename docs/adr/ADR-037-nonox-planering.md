@@ -385,6 +385,63 @@ Where the build had to choose:
   of employees; the score parts are stored for the 90 days as the
   explanation.
 
+*As built (P8, v2, engine `P8-1`):* `Domain/Proposal/DemandBlocks` and
+`BudgetFit` (pure), `Support/ProposalDemand` (a fixed number of queries,
+`DemandData::forScopes` for every scope at once), the loader's
+`withBlocks`, and new columns on `planning_proposal_items` (`starts_at`,
+`ends_at`, `break_minutes`, `area_id`; `shift_id` nullable, a CHECK that an
+item has a shift or its own times). Proposals made by P7 (`P7-1`) read and
+accept as before. Where the build had to choose:
+
+- Off by default: "Föreslå nya pass utifrån bemanningsbehovet" on the
+  proposal page (setting `proposal_new_shifts`). The allowed lengths are
+  the company's own, in whole hours 2–10 (`proposal_shift_hours`, default
+  4, 6, 8): at most ten, so one break in the middle keeps every part within
+  five hours. A new shift gets the company's break (`proposal_break_minutes`,
+  default 30) once for each time it would otherwise run past the
+  `max_without_break` value (300 minutes when the rule has none), also when
+  the rule is switched off: off only silences the warning
+  (`TODO(legal-verify)`: arbetstidslagen 15 §). Neither is a legal value.
+- The gap of an hour is required staff less planned staff less the open
+  shifts already there (the proposal fills those first), rounded up. From
+  the earliest hour with a gap, one shift at a time: the length that covers
+  the most hours with a gap, then the fewest without, then the shortest;
+  each shift takes one person off every hour it covers in full. No shift
+  runs past midnight or starts before now. Breaks are not placed in time,
+  as in gap 1.
+- Honest granularity: per day only (no till, no hour profile), only the
+  minimum staff has hours, so only that becomes shifts; the rest of the
+  day's need is named on the page ("Behovet finns bara per dag …"), never
+  spread over invented hours.
+- Scopes: areas with their own staffing target get shifts in that area;
+  the whole company's target is used only when no area has one, so a need
+  is never counted twice, and the page says so. Archived areas get nothing.
+  At most 96 new shifts per day and scope; a gap left beyond that is named.
+  An open shift nobody can take still counts as covered (the manual says
+  so).
+- The budget: who will take a new shift is not known, and cost must not
+  choose people, so a new shift is costed the same whoever takes it: its
+  worked hours times the average `cost_estimate_ore` per worked hour of the
+  shifts planned with a person in the fairness window and the period (the
+  area's, else the company's), one aggregate query and never a wage. Every
+  budget line it counts against (`BudgetLine::counts`) must have room after
+  the open shifts the proposal fills; shifts covering the most under-staffed
+  hours go first, then the earliest, so the end of the week is not starved;
+  one without room is stored without a person ("Ryms inte i veckans
+  budget"). Accepting re-runs the budget check on today's budget, with the
+  accepted open shifts first, and refuses as stale when a new shift no
+  longer fits; a new shift whose start has passed is stale too.
+  No budget, no limit; no average, the page says the budget could not be
+  checked. The engine's scoring is unchanged and never sees the figure.
+- New shifts reach the engine as slots like open shifts (the same hard
+  constraints, the same scoring); their items get the reason
+  `covers_demand` (hours covered). Accepting creates each as a draft through
+  `SaveShift` (source `PROPOSAL`) after the same lock and re-check, and
+  points the item at the new shift. Accepting also changes the period, so
+  any other proposal for it is stale.
+- Audit: `planning.proposal_made` adds the counts `new_shifts` and
+  `over_budget` when v2 was used.
+
 ### Gap 4: tasks in shifts
 
 **Decision.**

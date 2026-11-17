@@ -19,7 +19,30 @@
             </label>
             <x-button type="submit" wire:loading.attr="disabled" wire:target="make">{{ __('Gör förslag') }}</x-button>
         </div>
-        <p class="text-sm text-gray-600">{{ __('Förslaget fyller bara öppna pass som redan finns i schemat och som inte har börjat, högst fyra veckor åt gången. Lägg ut en mall utan personer eller lägg till öppna pass först.') }}</p>
+        <p class="text-sm text-gray-600">{{ __('Förslaget fyller öppna pass som redan finns i schemat och som inte har börjat, högst fyra veckor åt gången. Lägg ut en mall utan personer eller lägg till öppna pass först.') }}</p>
+
+        <fieldset class="space-y-3 rounded-2xl bg-stone-50 p-4" data-new-shifts>
+            <label class="flex items-start gap-3 text-sm">
+                <input type="checkbox" wire:model.live="newShifts" class="mt-0.5 rounded border-gray-300 text-accent-600 focus:ring-accent-500">
+                <span>
+                    <span class="font-semibold text-ink">{{ __('Föreslå nya pass utifrån bemanningsbehovet') }}</span>
+                    <span class="block text-gray-600">{{ __('Där schemat har för få mot bemanningsmålen under Bemanningsbehov föreslås nya pass, så länge de ryms i veckans budget för personalkostnad.') }}</span>
+                </span>
+            </label>
+            @if($newShifts)
+                <div class="flex flex-wrap items-end gap-3">
+                    <label class="block text-sm">
+                        <span class="font-medium text-gray-700">{{ __('Passlängder (timmar)') }}</span>
+                        <input type="text" wire:model="shiftHours" inputmode="numeric" class="{{ $input }} mt-1 w-40" aria-describedby="shift-hours-help">
+                    </label>
+                    <label class="block text-sm">
+                        <span class="font-medium text-gray-700">{{ __('Rast i långa nya pass (minuter)') }}</span>
+                        <input type="number" min="0" max="120" wire:model="breakMinutes" class="{{ $input }} mt-1 w-40">
+                    </label>
+                </div>
+                <p id="shift-hours-help" class="text-xs text-gray-600">{{ __('Hela timmar mellan 2 och 10, till exempel 4, 6, 8. Ett nytt pass får en rast för varje gång det annars skulle bli mer än :hours timmar i följd (gränsen för arbete utan rast under Inställningar).', ['hours' => rtrim(rtrim(number_format($breakAfter / 60, 2, ',', ''), '0'), ',')]) }}</p>
+            @endif
+        </fieldset>
 
         <details class="rounded-2xl bg-stone-50 p-4" data-weights>
             <summary class="cursor-pointer text-sm font-semibold text-ink">{{ __('Vad väger mest') }}</summary>
@@ -57,28 +80,56 @@
         </x-ui.card>
     @else
         <x-ui.card :title="__('Förslag för :from–:to', ['from' => $proposal->period_from->locale($locale)->isoFormat('D MMM'), 'to' => $proposal->period_to->locale($locale)->isoFormat('D MMM YYYY')])"
-                   :description="__(':filled av :total öppna pass har ett förslag. Gjort :made.', ['filled' => $proposal->filled_count, 'total' => $proposal->slot_count, 'made' => $proposal->created_at->setTimezone(App\Modules\Planning\Support\LocalTimestamp::ZONE)->format('Y-m-d H:i')])">
+                   :description="__(($proposal->parameters['new_shifts'] ?? false) === true ? ':filled av :total pass har ett förslag. Gjort :made.' : ':filled av :total öppna pass har ett förslag. Gjort :made.', ['filled' => $proposal->filled_count, 'total' => $proposal->slot_count, 'made' => $proposal->created_at->setTimezone(App\Modules\Planning\Support\LocalTimestamp::ZONE)->format('Y-m-d H:i')])">
             @if($accepted)
                 <p class="mt-4 rounded-2xl bg-green-50 p-3 text-sm text-green-800" data-accepted>{{ trans_choice('{1} Godkänt: 1 pass blev ett utkast i schemat.|[2,*] Godkänt: :count pass blev utkast i schemat.', $proposal->accepted_count, ['count' => $proposal->accepted_count]) }} <a href="{{ route('planning.schedule', ['vecka' => $proposal->period_from->startOfWeek()->toDateString()]) }}" class="font-semibold underline" wire:navigate>{{ __('Öppna schemat och publicera') }}</a></p>
             @elseif($stale)
                 <p class="mt-4 rounded-2xl bg-amber-50 p-3 text-sm text-amber-900" data-stale>{{ App\Modules\Planning\Actions\AcceptProposal::staleMessage() }}</p>
             @endif
 
+            @if(($proposal->parameters['new_shifts'] ?? false) === true)
+                <div class="mt-4 space-y-2 text-sm text-gray-700" data-demand-notes>
+                    @foreach(($proposal->parameters['estimates'] ?? []) as $monday => $estimate)
+                        <p>{{ __('Nya pass vecka :week: ungefär :amount i personalkostnad (uppskattning, samma för vem som än tar passet).', ['week' => (int) \Carbon\CarbonImmutable::parse($monday)->format('W'), 'amount' => App\Support\Money\Money::ofOre((int) $estimate)->format()]) }}</p>
+                    @endforeach
+                    @if(($proposal->parameters['budget_unchecked'] ?? false) === true)
+                        <p class="rounded-2xl bg-amber-50 p-3 text-amber-900">{{ __('Budgeten kunde inte kontrolleras för alla nya pass, eftersom inga planerade pass har en uppskattad kostnad än.') }}</p>
+                    @endif
+                    @if(($proposal->parameters['company_ignored'] ?? false) === true)
+                        <p data-company-ignored>{{ __('Bemanningsmålen för hela företaget används inte för nya pass, eftersom avdelningarna har egna mål. Annars skulle samma behov räknas två gånger.') }}</p>
+                    @endif
+                    @if(($proposal->parameters['cut'] ?? []) !== [])
+                        <p class="rounded-2xl bg-amber-50 p-3 text-amber-900">{{ __('Ungefär :hours timmar av behovet fick inget nytt pass, eftersom ingen av passlängderna får plats där eller förslaget redan lagt :max nya pass den dagen. Lägg dem själv.', ['max' => App\Modules\Planning\Domain\Proposal\DemandBlocks::MAX_PER_DAY, 'hours' => (int) round(array_sum($proposal->parameters['cut']) / 60)]) }}</p>
+                    @endif
+                    @if(($proposal->parameters['unplaced'] ?? []) !== [])
+                        <p class="rounded-2xl bg-amber-50 p-3 text-amber-900" data-unplaced>{{ __('Behovet finns bara per dag för :days, så förslaget lägger inga nya pass för ungefär :hours timmar av det. Lägg dem själv, eller ange en egen timprofil under Bemanningsbehov.', [
+                            'days' => collect(array_keys($proposal->parameters['unplaced']))->map(fn ($date) => \Carbon\CarbonImmutable::parse($date)->locale($locale)->isoFormat('ddd D MMM'))->join(', ', ' '.__('och').' '),
+                            'hours' => (int) round(array_sum($proposal->parameters['unplaced']) / 60),
+                        ]) }}</p>
+                    @endif
+                </div>
+            @endif
+
             @forelse($days as $date => $dayItems)
                 <h3 class="mt-6 text-sm font-semibold uppercase tracking-wide text-gray-500">{{ $date === '' ? __('Passet finns inte längre') : ucfirst(\Carbon\CarbonImmutable::parse($date)->locale($locale)->isoFormat('dddd D MMMM')) }}</h3>
                 <ul class="mt-2 divide-y divide-stone-100">
                     @foreach($dayItems as $item)
-                        @php($shift = $shifts->get($item->shift_id))
-                        <li class="flex flex-wrap items-start gap-3 py-3" wire:key="item-{{ $item->id }}" data-item="{{ $item->id }}" data-filled="{{ $item->employee_id ? 'ja' : 'nej' }}">
+                        @php($shift = $item->shift_id === null ? null : $shifts->get($item->shift_id))
+                        @php($start = $item->isNew() ? $item->starts_at : $shift?->starts_at)
+                        @php($end = $item->isNew() ? $item->ends_at : $shift?->ends_at)
+                        @php($areaId = $item->isNew() ? $item->area_id : $shift?->area_id)
+                        <li class="flex flex-wrap items-start gap-3 py-3" wire:key="item-{{ $item->id }}" data-item="{{ $item->id }}" data-filled="{{ $item->employee_id ? 'ja' : 'nej' }}" @if($item->isNew()) data-new @endif>
                             @if(! $accepted && $item->employee_id !== null)
                                 <input type="checkbox" id="item-{{ $item->id }}" value="{{ $item->id }}" wire:model="selected" class="mt-1 rounded border-gray-300 text-accent-600 focus:ring-accent-500" aria-label="{{ __('Godkänn förslaget för passet') }}">
                             @endif
                             <div class="min-w-0 flex-1">
                                 <p class="text-sm tabular-nums text-gray-700">
-                                    @if($shift)
-                                        {{ $shift->starts_at->format('H:i') }}–{{ $shift->ends_at->format('H:i') }}
-                                        @if($shift->area_id && $areas->get($shift->area_id)) · {{ $areas->get($shift->area_id) }}@endif
-                                        @if($shift->skill_id && $skills->get($shift->skill_id)) · {{ $skills->get($shift->skill_id) }}@endif
+                                    @if($start && $end)
+                                        @if($item->isNew())<x-ui.badge tone="accent" class="mr-1">{{ __('Nytt pass') }}</x-ui.badge>@endif
+                                        {{ $start->format('H:i') }}–{{ $end->format('H:i') }}
+                                        @if($areaId && $areas->get($areaId)) · {{ $areas->get($areaId) }}@endif
+                                        @if($item->isNew() && $item->break_minutes > 0) · {{ __(':minutes min rast', ['minutes' => $item->break_minutes]) }}@endif
+                                        @if(! $item->isNew() && $shift?->skill_id && $skills->get($shift->skill_id)) · {{ $skills->get($shift->skill_id) }}@endif
                                     @endif
                                 </p>
                                 @if($item->employee_id !== null)
@@ -92,7 +143,7 @@
                                     </ul>
                                 @else
                                     <p class="font-semibold text-gray-600">{{ __('Inget förslag') }}</p>
-                                    <p class="mt-1 text-sm text-amber-900" data-reasons>{{ collect($item->reasons)->map(fn ($reason) => ProposalReasons::label($reason, $skills))->join(' ') }}</p>
+                                    <p class="mt-1 text-sm text-amber-900" data-reasons>{{ collect($item->reasons)->map(fn ($reason) => ProposalReasons::label($reason, $skills))->map(fn ($label) => str_ends_with($label, '.') ? $label : $label.'.')->join(' ') }}</p>
                                 @endif
                             </div>
                         </li>

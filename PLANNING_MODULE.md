@@ -96,6 +96,12 @@ only, never another product's texts, layout, colours or feature names.
   8, 1–26) and the company's own unsocial time, `unsocial_from` and
   `unsocial_to` (default 19:00–07:00 on weekdays; weekends and public
   holidays always count). Saved from the proposal page.
+- New shifts in proposals (v2, P8): `proposal_new_shifts` (default off),
+  `proposal_shift_hours` (allowed lengths in whole hours, 2–10, default
+  4, 6, 8) and `proposal_break_minutes` (0–120, default 30, given once per
+  `max_without_break` span a new shift would otherwise exceed, also with the
+  rule off). The company's own
+  choices, not legal values. Saved from the proposal page.
 
 ## 4. Data model
 
@@ -125,8 +131,10 @@ planning_ical_tokens  employee_id, token_hash, created_at, revoked_at
 planning_proposals    id, company_id, period_from, period_to, parameters jsonb, engine_version,
                       slot_count, filled_count, swaps_kept, accepted_count, accepted_at,
                       accepted_by, created_by (deleted after 90 days)
-planning_proposal_items  id, company_id, proposal_id, shift_id, employee_id null, position,
-                      score_parts jsonb, reasons jsonb (codes, ids and counts), accepted_at
+planning_proposal_items  id, company_id, proposal_id, shift_id null, employee_id null, position,
+                      score_parts jsonb, reasons jsonb (codes, ids and counts), accepted_at;
+                      v2: starts_at, ends_at, break_minutes, area_id null for a new shift
+                      (CHECK: a shift or its own times; shift_id set when accepted)
 planning_task_templates  id, company_id, title, instructions null, area_id null, skill_id null,
                       weekdays jsonb (ISO), due_time null, valid_from null, valid_to null, is_active
 planning_shift_tasks  id, company_id, shift_id (uuid, cascade), template_id null, title, instructions null,
@@ -212,7 +220,10 @@ Every action: authorized by policy, transactional, audited, tenancy-safe.
 - **Schemaförslag** (`/planering/forslag`, `planning:manage`): pick a period
   of at most four weeks and "Vad väger mest", make a proposal for the open
   shifts, read each shift's reasons, accept the ticked ones or all. Stale
-  proposals ("Schemat har ändrats …") are refused.
+  proposals ("Schemat har ändrats …") are refused. With "Föreslå nya pass
+  utifrån bemanningsbehovet" (v2) it also proposes new shifts from the
+  staffing gap within the week's budget; accepted, they are created as
+  drafts.
 - **Uppgifter** (`/planering/uppgifter`): task templates by area, skill, weekday
   and time of day (ADR-037 gap 4). They are put on shifts when a shift is
   saved and when a period is published; the employee on the published shift

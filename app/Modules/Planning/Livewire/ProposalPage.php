@@ -18,9 +18,11 @@ use App\Modules\Planning\Models\Skill;
 use App\Modules\Planning\PlanningModule;
 use App\Modules\Planning\PlanningSettings;
 use App\Modules\Planning\Support\LocalTimestamp;
+use App\Modules\Planning\Support\ProposalDemand;
 use App\Modules\Planning\Support\ShiftQuery;
 use App\Modules\StaffLedger\Livewire\Concerns\InCurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
@@ -29,7 +31,9 @@ use Livewire\Component;
 /**
  * Planering → Schemaförslag (/planering/forslag, ADR-037 amendment, gap 3):
  * the planner picks a period and what weighs most, the engine proposes who
- * should work the open shifts, and each proposed shift shows its reasons.
+ * should work the open shifts and, with "Föreslå nya pass" on (v2, P8),
+ * which new shifts the staffing demand needs within the budget and who
+ * should work them; each proposed shift shows its reasons.
  * The planner accepts all or some; accepted shifts become drafts, nothing
  * is published. Planners only (planning:manage). A fixed number of queries
  * whatever the number of shifts and people.
@@ -57,6 +61,12 @@ class ProposalPage extends Component
 
     public string $unsocialTo = '07:00';
 
+    public bool $newShifts = false;
+
+    public string $shiftHours = '4, 6, 8';
+
+    public int $breakMinutes = 30;
+
     /** @var list<int|string> item ids ticked for acceptance */
     public array $selected = [];
 
@@ -69,6 +79,9 @@ class ProposalPage extends Component
         $this->fairnessWeeks = PlanningSettings::fairnessWeeks($settings);
         $this->unsocialFrom = PlanningSettings::time($settings, 'unsocial_from');
         $this->unsocialTo = PlanningSettings::time($settings, 'unsocial_to');
+        $this->newShifts = PlanningSettings::bool($settings, 'proposal_new_shifts');
+        $this->shiftHours = implode(', ', array_map(fn (int $minutes): int => intdiv($minutes, 60), PlanningSettings::shiftLengths($settings)));
+        $this->breakMinutes = PlanningSettings::breakMinutes($settings);
 
         $proposal = $this->proposal();
 
@@ -99,6 +112,9 @@ class ProposalPage extends Component
                 'fairness_weeks' => $this->fairnessWeeks,
                 'unsocial_from' => $this->unsocialFrom,
                 'unsocial_to' => $this->unsocialTo,
+                'new_shifts' => $this->newShifts,
+                'shift_hours' => $this->shiftHours,
+                'break_minutes' => $this->breakMinutes,
             ]);
         } catch (ValidationException $exception) {
             $this->toast($this->firstError($exception), 'error');
@@ -109,9 +125,14 @@ class ProposalPage extends Component
         $this->proposalId = $proposal->id;
         $this->selected = self::filledItems($proposal);
 
-        $this->toast($proposal->slot_count === 0
-            ? __('Det finns inga öppna pass att fylla i perioden. Lägg till öppna pass i schemat först.')
-            : __('Förslaget är klart: :filled av :total öppna pass har ett förslag. Inget i schemat är ändrat förrän du godkänner.', ['filled' => $proposal->filled_count, 'total' => $proposal->slot_count]));
+        $new = (int) ($proposal->parameters['new_count'] ?? 0) + (int) ($proposal->parameters['over_budget'] ?? 0);
+
+        $this->toast(match (true) {
+            $proposal->slot_count === 0 && ($proposal->parameters['new_shifts'] ?? false) === true => __('Det finns inga öppna pass och inget behov som saknar pass i perioden.'),
+            $proposal->slot_count === 0 => __('Det finns inga öppna pass att fylla i perioden. Lägg till öppna pass i schemat först.'),
+            $new > 0 => __('Förslaget är klart: :filled av :total pass har ett förslag, varav :new nya pass utifrån bemanningsbehovet. Inget i schemat är ändrat förrän du godkänner.', ['filled' => $proposal->filled_count, 'total' => $proposal->slot_count, 'new' => $new]),
+            default => __('Förslaget är klart: :filled av :total öppna pass har ett förslag. Inget i schemat är ändrat förrän du godkänner.', ['filled' => $proposal->filled_count, 'total' => $proposal->slot_count]),
+        });
     }
 
     public function acceptSelected(AcceptProposal $accept): void
@@ -155,14 +176,19 @@ class ProposalPage extends Component
 
         if ($proposal instanceof Proposal) {
             $items = ProposalItem::query()->where('proposal_id', $proposal->id)->orderBy('position')->get();
-            $shifts = Shift::query()->whereKey($items->pluck('shift_id')->all())->get(['id', 'starts_at', 'ends_at', 'break_minutes', 'area_id', 'skill_id', 'employee_id', 'status'])->keyBy('id');
+            $shifts = Shift::query()->whereKey($items->pluck('shift_id')->filter()->values()->all())->get(['id', 'starts_at', 'ends_at', 'break_minutes', 'area_id', 'skill_id', 'employee_id', 'status'])->keyBy('id');
             $people = Employee::query()->whereKey($items->pluck('employee_id')->filter()->unique()->values()->all())->get(['id', 'first_name', 'last_name'])->keyBy('id');
-            $stale = ! $proposal->isAccepted() && ($items->count() !== $proposal->slot_count || ShiftQuery::startingOn($proposal->period_from, $proposal->period_to)->where('updated_at', '>', $proposal->created_at)->exists());
+            $now = CarbonImmutable::now(LocalTimestamp::ZONE);
+            // A new shift with a person whose start has passed cannot be accepted: it would be created in the past.
+            $started = $items->contains(fn (ProposalItem $item): bool => $item->isNew() && $item->employee_id !== null && $item->starts_at !== null && $item->starts_at->lessThanOrEqualTo($now));
+            $stale = ! $proposal->isAccepted() && ($started || $items->count() !== $proposal->slot_count || ShiftQuery::startingOn($proposal->period_from, $proposal->period_to)->where('updated_at', '>', $proposal->created_at)->exists());
         }
 
         return view('planning::livewire.proposals', [
             'proposal' => $proposal,
-            'days' => $items->groupBy(fn (ProposalItem $item): string => $shifts->get($item->shift_id)?->starts_at->toDateString() ?? ''),
+            'days' => $items
+                ->sortBy(fn (ProposalItem $item): array => [self::startOf($item, $shifts)?->getTimestamp() ?? PHP_INT_MAX, $item->position])
+                ->groupBy(fn (ProposalItem $item): string => self::startOf($item, $shifts)?->toDateString() ?? ''),
             'shifts' => $shifts,
             'people' => $people,
             'areas' => Area::query()->pluck('name', 'id'),
@@ -170,6 +196,7 @@ class ProposalPage extends Component
             'stale' => $stale,
             'criteria' => ProposalWeights::CRITERIA,
             'levels' => array_keys(ProposalWeights::LEVELS),
+            'breakAfter' => ProposalDemand::maxWithoutBreak((array) PlanningSettings::resolve(app(ModuleManager::class)->settings(PlanningModule::KEY, $this->company()))['working_time_rules']),
         ]);
     }
 
@@ -185,6 +212,16 @@ class ProposalPage extends Component
     private static function filledItems(Proposal $proposal): array
     {
         return array_values(ProposalItem::query()->where('proposal_id', $proposal->id)->whereNotNull('employee_id')->orderBy('position')->pluck('id')->map(fn (mixed $id): int => (int) $id)->all());
+    }
+
+    /**
+     * When the item's shift starts: a new shift's own time, else its open shift's.
+     *
+     * @param  Collection<string, Shift>  $shifts
+     */
+    private static function startOf(ProposalItem $item, Collection $shifts): ?CarbonImmutable
+    {
+        return $item->isNew() ? $item->starts_at : ($item->shift_id === null ? null : $shifts->get($item->shift_id)?->starts_at);
     }
 
     private static function isDate(string $value): bool

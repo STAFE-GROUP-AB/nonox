@@ -9,6 +9,7 @@ use App\Modules\ModuleManager;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
 use App\Modules\Planning\Domain\Proposal\CandidateShift;
+use App\Modules\Planning\Domain\Proposal\DemandBlock;
 use App\Modules\Planning\Domain\Proposal\ProposalCandidate;
 use App\Modules\Planning\Domain\Proposal\ProposalInput;
 use App\Modules\Planning\Domain\Proposal\ProposalSlot;
@@ -38,7 +39,22 @@ final class ProposalLoader
     /** Weeks of shifts read around the window and the period, for the four-week rules. */
     public const int CONTEXT_WEEKS = 4;
 
-    public function __construct(private readonly ModuleManager $modules) {}
+    /** The prefix of a new shift's slot id: new-0, new-1 … by its place in the proposal's list of new shifts. */
+    public const string NEW_SLOT = 'new-';
+
+    /** @var Collection<int|string, EloquentCollection<int, Availability>> availability of the last load, by employee */
+    private Collection $availability;
+
+    /** @var array<int, array<string, string>> approved absence of the last load, by employee and date */
+    private array $absence = [];
+
+    /** @var list<int> the employees of the last load */
+    private array $employeeIds = [];
+
+    public function __construct(private readonly ModuleManager $modules)
+    {
+        $this->availability = collect();
+    }
 
     /** @param  ?ProposalWeights  $weights  weights to use instead of the stored ones */
     public function load(Company $company, CarbonImmutable $from, CarbonImmutable $to, CarbonImmutable $now, ?ProposalWeights $weights = null, ?int $fairnessWeeks = null): ProposalInput
@@ -80,17 +96,10 @@ final class ProposalLoader
             ->get(['id', 'employee_id', 'starts_at', 'ends_at', 'break_minutes', 'area_id'])
             ->groupBy('employee_id');
 
-        $slots = $open->map(fn (Shift $shift): ProposalSlot => new ProposalSlot(
-            id: (string) $shift->id,
-            start: $shift->starts_at,
-            end: $shift->ends_at,
-            breakMinutes: $shift->break_minutes,
-            areaId: $shift->area_id,
-            skillId: $shift->skill_id,
-            unavailable: $this->matching($availability, $shift, fn (EloquentCollection $rows): bool => self::unavailableDuring($rows, $shift)),
-            absent: array_values(array_filter($ids, fn (int $id): bool => isset($absence[$id]) && AbsenceDays::absentDuring($absence, $id, $shift))),
-            preferred: $this->matching($availability, $shift, fn (EloquentCollection $rows): bool => self::prefers($rows, $shift)),
-        ))->all();
+        $this->availability = $availability;
+        $this->absence = $absence;
+        $this->employeeIds = array_values(array_map('intval', $ids));
+        $slots = $open->map(fn (Shift $shift): ProposalSlot => $this->slot((string) $shift->id, $shift))->all();
 
         $candidates = $employees->map(fn (Employee $employee): ProposalCandidate => new ProposalCandidate(
             employeeId: $employee->id,
@@ -114,6 +123,63 @@ final class ProposalLoader
             fairnessWeeks: $fairnessWeeks,
             unsocialFrom: PlanningSettings::time($settings, 'unsocial_from'),
             unsocialTo: PlanningSettings::time($settings, 'unsocial_to'),
+        );
+    }
+
+    /**
+     * The input with the new shifts made from the demand added as slots
+     * (v2, P8), each checked against the availability and approved absence
+     * of the last load exactly like an open shift. No query.
+     *
+     * @param  list<DemandBlock>  $blocks
+     */
+    public function withBlocks(ProposalInput $input, array $blocks): ProposalInput
+    {
+        if ($blocks === []) {
+            return $input;
+        }
+
+        $slots = $input->slots;
+
+        foreach ($blocks as $index => $block) {
+            $shift = (new Shift)->forceFill([
+                'starts_at' => $block->start,
+                'ends_at' => $block->end,
+                'break_minutes' => $block->breakMinutes,
+                'area_id' => $block->areaId,
+            ]);
+            $slots[] = $this->slot(self::NEW_SLOT.$index, $shift);
+        }
+
+        return new ProposalInput(
+            slots: $slots,
+            candidates: $input->candidates,
+            periodFrom: $input->periodFrom,
+            periodTo: $input->periodTo,
+            rules: $input->rules,
+            minorsEnabled: $input->minorsEnabled,
+            minorsRules: $input->minorsRules,
+            weights: $input->weights,
+            fairnessWeeks: $input->fairnessWeeks,
+            unsocialFrom: $input->unsocialFrom,
+            unsocialTo: $input->unsocialTo,
+            maxSwaps: $input->maxSwaps,
+        );
+    }
+
+    /** An open or a new shift as a slot, with who cannot, who is absent and who would rather work then. */
+    private function slot(string $id, Shift $shift): ProposalSlot
+    {
+        return new ProposalSlot(
+            id: $id,
+            start: $shift->starts_at,
+            end: $shift->ends_at,
+            breakMinutes: (int) $shift->break_minutes,
+            areaId: $shift->area_id,
+            skillId: $shift->skill_id,
+            unavailable: $this->matching($this->availability, $shift, fn (EloquentCollection $rows): bool => self::unavailableDuring($rows, $shift)),
+            absent: array_values(array_filter($this->employeeIds, fn (int $id): bool => isset($this->absence[$id]) && AbsenceDays::absentDuring($this->absence, $id, $shift))),
+            preferred: $this->matching($this->availability, $shift, fn (EloquentCollection $rows): bool => self::prefers($rows, $shift)),
         );
     }
 

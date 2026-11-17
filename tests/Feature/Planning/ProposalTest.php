@@ -90,7 +90,7 @@ it('proposes people for the open shifts with reasons, and changes nothing in the
         ->and($published->fresh()->status)->toBe(Shift::PUBLISHED);
 
     $payload = AuditLog::query()->where('action', 'planning.proposal_made')->sole()->payload;
-    expect($payload)->toEqual(['period_from' => '2026-11-23', 'period_to' => '2026-11-29', 'slots' => 2, 'filled' => 2, 'swaps_kept' => $proposal->swaps_kept, 'engine_version' => 'P7-1'])
+    expect($payload)->toEqual(['period_from' => '2026-11-23', 'period_to' => '2026-11-29', 'slots' => 2, 'filled' => 2, 'swaps_kept' => $proposal->swaps_kept, 'engine_version' => 'P8-1'])
         ->and(json_encode($payload))->not->toContain('Anna');
 });
 

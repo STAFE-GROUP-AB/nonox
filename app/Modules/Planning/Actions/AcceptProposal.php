@@ -6,13 +6,20 @@ namespace App\Modules\Planning\Actions;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\ModuleManager;
 use App\Modules\Planning\Actions\Concerns\GuardsPlanning;
+use App\Modules\Planning\Domain\Proposal\DemandBlock;
 use App\Modules\Planning\Domain\Proposal\ProposalEngine;
+use App\Modules\Planning\Domain\Proposal\ProposalInput;
+use App\Modules\Planning\Domain\Proposal\ProposalSlot;
 use App\Modules\Planning\Domain\Proposal\ProposalWeights;
 use App\Modules\Planning\Models\Proposal;
 use App\Modules\Planning\Models\ProposalItem;
 use App\Modules\Planning\Models\Shift;
+use App\Modules\Planning\PlanningModule;
+use App\Modules\Planning\PlanningSettings;
 use App\Modules\Planning\Support\LocalTimestamp;
+use App\Modules\Planning\Support\ProposalDemand;
 use App\Modules\Planning\Support\ProposalLoader;
 use App\Modules\Planning\Support\ShiftQuery;
 use App\Support\Audit\Audit;
@@ -23,9 +30,10 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * A planner accepts all or some of a schedule proposal (ADR-037 amendment,
- * gap 3). Each accepted item gives its open shift the proposed person
- * through SaveShift (source PROPOSAL), so the shift becomes a draft and the
- * employee sees nothing until the period is published; every existing
+ * gap 3). Each accepted item gives its open shift the proposed person, or,
+ * for a new shift made from the demand (v2, P8), creates the shift with the
+ * person, through SaveShift (source PROPOSAL), so the shift is a draft and
+ * the employee sees nothing until the period is published; every existing
  * check and audit applies. A proposal is accepted once.
  *
  * Refused as stale ("Schemat har ändrats …") when a shift in the period
@@ -46,6 +54,8 @@ final class AcceptProposal
     public function __construct(
         private readonly SaveShift $save,
         private readonly ProposalLoader $loader,
+        private readonly ProposalDemand $demand,
+        private readonly ModuleManager $modules,
     ) {}
 
     /** @param  ?list<int>  $itemIds  the items to accept; null accepts every item with a proposed person */
@@ -80,13 +90,27 @@ final class AcceptProposal
             }
 
             // The shifts are locked before the checks, so nobody can give them to someone else between the check and the save.
-            $shifts = Shift::query()->whereKey($items->pluck('shift_id')->all())->lockForUpdate()->get()->keyBy('id');
+            $shifts = Shift::query()->whereKey($items->pluck('shift_id')->filter()->values()->all())->lockForUpdate()->get()->keyBy('id');
 
             if ($this->isStale($company, $locked, $items, $shifts, $now)) {
                 throw ValidationException::withMessages(['proposal' => self::staleMessage()]);
             }
 
             foreach ($items as $item) {
+                if ($item->isNew()) {
+                    $created = ($this->save)($user, $company, [
+                        'employee_id' => $item->employee_id,
+                        'area_id' => $item->area_id,
+                        'starts_at' => $item->starts_at?->toIso8601String(),
+                        'ends_at' => $item->ends_at?->toIso8601String(),
+                        'break_minutes' => (int) $item->break_minutes,
+                    ], null, 'PROPOSAL');
+                    // The item points at the shift it became, so the proposal shows what was made.
+                    ProposalItem::query()->whereKey($item->id)->update(['shift_id' => $created->id]);
+
+                    continue;
+                }
+
                 /** @var Shift $shift */
                 $shift = $shifts->get($item->shift_id);
 
@@ -137,6 +161,15 @@ final class AcceptProposal
         }
 
         foreach ($items as $item) {
+            if ($item->isNew()) {
+                // A new shift whose start has passed would be created in the past.
+                if ($item->starts_at === null || $item->starts_at->lessThanOrEqualTo($now)) {
+                    return true;
+                }
+
+                continue;
+            }
+
             $shift = $shifts->get($item->shift_id);
 
             if (! $shift instanceof Shift || $shift->employee_id !== null || $shift->status === Shift::CANCELLED) {
@@ -154,6 +187,42 @@ final class AcceptProposal
             is_numeric($parameters['fairness_weeks'] ?? null) ? (int) $parameters['fairness_weeks'] : null,
         );
 
-        return ProposalEngine::verify($input, $items->mapWithKeys(fn (ProposalItem $item): array => [$item->shift_id => (int) $item->employee_id])->all()) !== [];
+        // The accepted new shifts are slots again, checked on today's data like the open ones.
+        $new = $items->filter(fn (ProposalItem $item): bool => $item->isNew())->values();
+        $blocks = array_values($new->map(fn (ProposalItem $item): DemandBlock => new DemandBlock(
+            $item->starts_at ?? $now,
+            $item->ends_at ?? $now,
+            (int) $item->break_minutes,
+            $item->area_id,
+            ($item->starts_at ?? $now)->toDateString(),
+            (int) ($item->reasons[0]['hours'] ?? 0),
+        ))->all());
+        $input = $this->loader->withBlocks($input, $blocks);
+        $assignments = [];
+
+        foreach ($items as $item) {
+            $key = $item->isNew() ? ProposalLoader::NEW_SLOT.$new->search(fn (ProposalItem $candidate): bool => $candidate->id === $item->id) : (string) $item->shift_id;
+            $assignments[$key] = (int) $item->employee_id;
+        }
+
+        if (ProposalEngine::verify($input, $assignments) !== []) {
+            return true;
+        }
+
+        if ($blocks === []) {
+            return false;
+        }
+
+        // The new shifts must still fit today's budget, with the accepted open shifts taking their room first: a budget lowered since is not passed.
+        $accepted = $items->reject(fn (ProposalItem $item): bool => $item->isNew())->pluck('shift_id')->map(fn (mixed $id): string => (string) $id)->all();
+        $reserved = new ProposalInput(
+            slots: array_values(array_filter($input->slots, fn (ProposalSlot $slot): bool => in_array($slot->id, $accepted, true))),
+            candidates: [],
+            periodFrom: $input->periodFrom,
+            periodTo: $input->periodTo,
+        );
+        $settings = PlanningSettings::resolve($this->modules->settings(PlanningModule::KEY, $company));
+
+        return $this->demand->fit($company, $reserved, $blocks, $settings)['over'] !== [];
     }
 }
