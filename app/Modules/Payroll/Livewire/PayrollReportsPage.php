@@ -7,8 +7,10 @@ namespace App\Modules\Payroll\Livewire;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\ClosePayrollYear;
 use App\Modules\Payroll\Models\PayrollYearClosing;
+use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Reports\PayrollReports;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
@@ -85,7 +87,7 @@ class PayrollReportsPage extends Component
                 'journal' => $reports->journal($from, $to),
                 'pay-codes' => $reports->payCodes($from, $to),
                 'ytd' => $reports->yearToDate($year),
-                'cost-centers' => $reports->costCenters($from, $to),
+                'cost-centers' => $reports->costCenters($from, $to, (bool) (app(ModuleManager::class)->settings(PayrollModule::KEY, $this->company())['use_employment_dimensions'] ?? true)),
                 'pension' => $reports->pension($from, $to),
                 'reconciliation' => $reports->reconciliation($year),
                 default => [],

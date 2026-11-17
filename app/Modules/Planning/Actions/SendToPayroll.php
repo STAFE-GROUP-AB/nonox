@@ -6,33 +6,50 @@ namespace App\Modules\Planning\Actions;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Agreements\Domain\AgreementRules;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\CompTimeEntries;
 use App\Modules\Payroll\Actions\PayrollRuns;
+use App\Modules\Payroll\Domain\CostCenterShares;
 use App\Modules\Payroll\Models\CompTimeEntry;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Planning\Actions\Concerns\GuardsPlanning;
+use App\Modules\Planning\Domain\ObSplitter;
 use App\Modules\Planning\Domain\OvertimeKinds;
 use App\Modules\Planning\Domain\WeekBasis;
+use App\Modules\Planning\Domain\WorkInterval;
 use App\Modules\Planning\Models\Attestation;
+use App\Modules\Planning\Models\Shift;
 use App\Modules\Planning\Support\AttestData;
 use App\Modules\Planning\Support\AttestRow;
+use App\Modules\Planning\Support\EmploymentAgreements;
+use App\Modules\Planning\Support\LocalTimestamp;
+use App\Modules\Planning\Support\ShiftQuery;
 use App\Support\Audit\Audit;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
+use Closure;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
  * "Skicka till lönen" (PLANNING_MODULE.md §8): the attested days of a
- * period become approved time reports, one per day and pay code (hours with
- * two decimals), the same rows the staff ledger's proposals and the payroll
- * files feed, so the payroll run picks them up unchanged. The day is then
+ * period become approved time reports, one per day, pay code and cost
+ * centre (hours with two decimals), the same rows the staff ledger's
+ * proposals and the payroll files feed, so the payroll run picks them up
+ * unchanged. A day's cost centre is that of its shifts (ADR-037, gap 7;
+ * none: the employment's); a day whose shifts are on several cost centres
+ * has hourly pay split by the shifts' planned minutes and each OB code by
+ * the OB the shifts' planned times give (weights()), in hundredths of an
+ * hour by the largest remainder, so the hours add up to exactly what one
+ * report would have held. The day's overtime and mertid follow the planned
+ * minutes like hourly pay; a week's or period's stay on the employment's
+ * cost centre. The day is then
  * sent and locked. A day is skipped, with the reason, when its month's run
  * is already attested, when another time report or a pending ledger
  * proposal covers it, or when a pay code is missing. Sending a sent day
@@ -65,6 +82,8 @@ final class SendToPayroll
             $skipped = [];
             $months = [];
             $weeks = 0;
+            $costCenters = $this->costCenterShifts($from, $to, array_values(array_unique($rows->map(fn (AttestRow $row): int => $row->employee->id)->all())));
+            $agreements = new EmploymentAgreements(app(ModuleManager::class), $company, $rows->flatMap(fn (AttestRow $row): Collection => $row->employee->employments)->values());
 
             foreach ($rows as $row) {
                 /** @var Attestation $attestation */
@@ -99,14 +118,21 @@ final class SendToPayroll
 
                 $ids = [];
 
+                $dayShifts = $costCenters["{$attestation->employee_id}|{$attestation->date->toDateString()}"] ?? [];
+
                 foreach ($attestation->basis ?? [] as $code => $minutes) {
-                    $ids[] = TimeReport::create([
-                        'employee_id' => $attestation->employee_id,
-                        'date' => $attestation->date->toDateString(),
-                        'hours' => (string) BigDecimal::of($minutes)->dividedBy(60, 2, RoundingMode::HalfUp),
-                        'pay_code_id' => $codes->get($code),
-                        'status' => 'APPROVED',
-                    ])->id;
+                    $weights = self::weights((string) $code, $dayShifts, array_keys((array) ($attestation->details['ob'] ?? [])), fn (): ?AgreementRules => $agreements->on(AttestData::employmentOn($row->employee, $row->date), $row->date)[0]);
+
+                    foreach (self::hoursPerCostCenter($minutes, $weights) as [$costCenterId, $hours]) {
+                        $ids[] = TimeReport::create([
+                            'employee_id' => $attestation->employee_id,
+                            'date' => $attestation->date->toDateString(),
+                            'hours' => $hours,
+                            'pay_code_id' => $codes->get($code),
+                            'cost_center_id' => $costCenterId,
+                            'status' => 'APPROVED',
+                        ])->id;
+                    }
                 }
 
                 $attestation->forceFill([
@@ -325,6 +351,144 @@ final class SendToPayroll
         ])->save();
 
         return count($ids);
+    }
+
+    /**
+     * Where a pay code's minutes of a day arose, as weights per cost centre
+     * ('' for none, the employment's):
+     *
+     * - an OB code: the OB minutes of that code that each shift's planned
+     *   time gives under the agreement (ObSplitter), so evening OB in the bar
+     *   is not put on the morning's kitchen; when the shifts give none of
+     *   it (the OB arose outside the plan), the planned minutes;
+     * - anything else (hourly pay, and the day's overtime and mertid): the
+     *   planned minutes of the day's shifts on each, so a day on one cost
+     *   centre puts it all there. A week's or period's overtime and mertid
+     *   (sendWeek) is written without a cost centre: the employment's.
+     *
+     * The agreement is read only when the day has shifts on more than one
+     * cost centre.
+     *
+     * @param  list<array{cost_center: string, start: CarbonImmutable, end: CarbonImmutable, minutes: int}>  $shifts
+     * @param  list<string>  $obCodes  the day's OB codes (details.ob)
+     * @param  Closure(): ?AgreementRules  $rules
+     * @return array<string, int>
+     */
+    public static function weights(string $code, array $shifts, array $obCodes, Closure $rules): array
+    {
+        $planned = [];
+
+        foreach ($shifts as $shift) {
+            $planned[$shift['cost_center']] = ($planned[$shift['cost_center']] ?? 0) + $shift['minutes'];
+        }
+
+        if (! in_array($code, $obCodes, true)) {
+            return $planned;
+        }
+
+        if (count(array_filter($planned, fn (int $minutes): bool => $minutes > 0)) <= 1) {
+            return $planned;
+        }
+
+        $agreement = $rules();
+
+        if ($agreement === null) {
+            return $planned;
+        }
+
+        $ob = [];
+
+        foreach ($shifts as $shift) {
+            $minutes = ObSplitter::split($agreement, $shift['start'], $shift['end'])->minutesFor($code);
+
+            if ($minutes > 0) {
+                $ob[$shift['cost_center']] = ($ob[$shift['cost_center']] ?? 0) + $minutes;
+            }
+        }
+
+        return $ob === [] ? $planned : $ob;
+    }
+
+    /**
+     * The published shifts (as the employee was shown them) in the period
+     * per employee and day, with their cost centre and planned minutes, in
+     * one query. The cost centre is the shift's current one: it is not
+     * shown to the employee and does not unpublish the shift. Keyed
+     * "employee|date"; the cost centre as CostCenterShares::key ('' for
+     * none).
+     *
+     * @param  list<int>  $employeeIds
+     * @return array<string, list<array{cost_center: string, start: CarbonImmutable, end: CarbonImmutable, minutes: int}>>
+     */
+    private function costCenterShifts(CarbonImmutable $from, CarbonImmutable $to, array $employeeIds): array
+    {
+        if ($employeeIds === []) {
+            return [];
+        }
+
+        $days = [];
+        $shifts = ShiftQuery::startingOn($from, $to)
+            ->whereIn('status', [Shift::PUBLISHED, Shift::DRAFT])
+            ->get(['id', 'employee_id', 'starts_at', 'ends_at', 'break_minutes', 'status', 'published_at', 'published_snapshot', 'cost_center_id']);
+
+        foreach ($shifts as $shift) {
+            if ($shift->status === Shift::PUBLISHED) {
+                $employeeId = $shift->employee_id;
+                $interval = new WorkInterval($shift->starts_at, $shift->ends_at, $shift->break_minutes);
+            } else {
+                $snapshot = $shift->published_snapshot;
+
+                if ($shift->published_at === null || ! is_array($snapshot) || ! is_numeric($snapshot['employee_id'] ?? null)) {
+                    continue;
+                }
+
+                $employeeId = (int) $snapshot['employee_id'];
+                $interval = WorkInterval::fromArray(['start' => $snapshot['starts_at'] ?? null, 'end' => $snapshot['ends_at'] ?? null, 'break_minutes' => $snapshot['break_minutes'] ?? 0]);
+            }
+
+            if ($employeeId === null || ! in_array($employeeId, $employeeIds, true) || $interval->start === null || $interval->end === null || ! $interval->isComplete()) {
+                continue;
+            }
+
+            $key = "{$employeeId}|{$interval->anchor()->setTimezone(LocalTimestamp::ZONE)->toDateString()}";
+            $days[$key][] = ['cost_center' => CostCenterShares::key($shift->cost_center_id), 'start' => $interval->start, 'end' => $interval->end, 'minutes' => $interval->workedMinutes()];
+        }
+
+        return $days;
+    }
+
+    /**
+     * A pay code's minutes of a day as hours per cost centre: all on the one
+     * cost centre of the day's shifts, or split over several in proportion
+     * to their planned minutes, in hundredths of an hour by the largest
+     * remainder (CostCenterShares::split), so the parts sum to the hours one
+     * report would have held. Parts of 0,00 hours are left out.
+     *
+     * @param  array<string, int>  $weights  planned minutes per cost centre ('' for none)
+     * @return list<array{?int, string}> cost centre id (null: the employment's) and hours
+     */
+    public static function hoursPerCostCenter(int $minutes, array $weights): array
+    {
+        $hours = BigDecimal::of($minutes)->dividedBy(60, 2, RoundingMode::HalfUp);
+        $weights = array_filter($weights, fn (int $weight): bool => $weight > 0);
+
+        if (count($weights) <= 1) {
+            $key = (string) array_key_first($weights);
+
+            return [[$key === '' ? null : (int) $key, (string) $hours]];
+        }
+
+        $parts = [];
+
+        foreach (CostCenterShares::split($hours->getUnscaledValue()->toInt(), $weights) as $key => $hundredths) {
+            if ($hundredths === 0) {
+                continue;
+            }
+
+            $parts[] = [(string) $key === '' ? null : (int) $key, (string) BigDecimal::ofUnscaledValue($hundredths, 2)];
+        }
+
+        return $parts;
     }
 
     /** Why the day cannot be sent: it is already in another time report or a pending ledger proposal. */

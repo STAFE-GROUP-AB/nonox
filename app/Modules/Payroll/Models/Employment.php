@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Payroll\Models;
 
 use App\Models\CostCenter;
+use App\Models\Project;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
@@ -100,6 +101,12 @@ class Employment extends Model
     public function costCenter(): BelongsTo
     {
         return $this->belongsTo(CostCenter::class);
+    }
+
+    /** @return BelongsTo<Project, $this> */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     /** @return BelongsTo<CollectiveAgreement, $this> */

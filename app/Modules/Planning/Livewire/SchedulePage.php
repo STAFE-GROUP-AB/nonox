@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Planning\Livewire;
 
 use App\Livewire\Concerns\ShowsToasts;
+use App\Models\CostCenter;
 use App\Modules\ModuleManager;
 use App\Modules\Planning\Actions\ApplyTemplate;
 use App\Modules\Planning\Actions\CopyPeriod;
@@ -130,6 +131,7 @@ class SchedulePage extends Component
             'area_id' => $this->area,
             'skill_id' => $this->skill,
             'note' => '',
+            'cost_center' => '',
         ];
         $this->showEditor = true;
     }
@@ -137,7 +139,7 @@ class SchedulePage extends Component
     public function edit(string $id): void
     {
         abort_unless($this->allowed('planning:manage'), 403);
-        $shift = Shift::query()->findOrFail($id);
+        $shift = Shift::query()->with(['costCenter:id,code', 'area:id,cost_center_id'])->findOrFail($id);
         $this->resetErrorBag();
         $this->editing = $shift->id;
         $this->form = [
@@ -149,6 +151,8 @@ class SchedulePage extends Component
             'area_id' => $shift->area_id,
             'skill_id' => $shift->skill_id,
             'note' => (string) $shift->note,
+            // Empty: the area's cost centre (ADR-037, gap 7), so a change of area brings its own.
+            'cost_center' => $shift->cost_center_id === null || $shift->cost_center_id === $shift->area?->cost_center_id ? '' : (string) $shift->costCenter?->code,
         ];
         $this->showEditor = true;
     }
@@ -344,6 +348,7 @@ class SchedulePage extends Component
             'to' => $to,
             'canManage' => $this->allowed('planning:manage'),
             'summary' => $this->showPublish ? PublishPeriod::summary($from, $to) : null,
+            'costCenters' => $this->showEditor ? CostCenter::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name']) : collect(),
             'templates' => $this->showTemplate ? Template::query()->orderBy('name')->get(['id', 'name', 'weeks']) : collect(),
             'step' => (int) $loaded['settings']['time_step_minutes'],
         ]);

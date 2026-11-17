@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Models;
 
+use App\Models\CostCenter;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $status
  * @property ?int $payroll_run_id
  * @property ?CarbonImmutable $priced_on
+ * @property ?int $cost_center_id null: the employment's cost centre (ADR-037, gap 7)
  */
 class TimeReport extends Model
 {
@@ -40,6 +42,7 @@ class TimeReport extends Model
         'project_id',
         'status',
         'priced_on',
+        'cost_center_id',
     ];
 
     /** @return array<string, string> */
@@ -48,6 +51,7 @@ class TimeReport extends Model
         return [
             'date' => 'immutable_date',
             'priced_on' => 'immutable_date',
+            'cost_center_id' => 'integer',
         ];
     }
 
@@ -55,5 +59,11 @@ class TimeReport extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    /** @return BelongsTo<CostCenter, $this> */
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class);
     }
 }

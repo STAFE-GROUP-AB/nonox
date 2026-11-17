@@ -14,10 +14,16 @@ use Illuminate\Validation\ValidationException;
 /**
  * The rows of a salary voucher (PAYROLL_MODULE.md B.12) for a paid run:
  * each payslip line on its pay code's account (cost lines debit, with the
- * employment's cost centre; deductions after tax credit their account),
- * withheld tax credit 2710, employer contributions debit 7510 and credit
- * 2730, and net pay credit the bank account it was paid from. The voucher
- * balances by construction: gross − tax ± items after tax = net.
+ * line's cost centre when it was priced from a time report on one, else
+ * the employment's cost centre and project when the payroll setting
+ * "Kostnadsställe och projekt från anställningen" and the pay code say so;
+ * deductions after tax credit their account), withheld
+ * tax credit 2710, employer contributions debit 7510 split over the cost
+ * centres in proportion to each payslip's contribution basis on them
+ * (ADR-037, gap 7; CostCenterShares) and credit 2730, and net pay credit the bank
+ * account it was paid from. The voucher balances by construction: gross −
+ * tax ± items after tax = net, and the contribution parts sum to the
+ * contributions to the öre.
  */
 final class SalaryVoucher
 {
@@ -38,21 +44,33 @@ final class SalaryVoucher
     public const int VACATION_CONTRIBUTIONS_LIABILITY = 2940;
 
     /**
-     * @param  Collection<int, Payslip>  $payslips  with lines and employment.costCenter
+     * @param  Collection<int, Payslip>  $payslips  with lines.costCenter, employment.costCenter and employment.project
      * @param  Collection<int, PayCode>  $payCodes  by id
      * @param  Collection<int, Account>  $accounts  by id
-     * @return list<array{account: int, amount: int, description?: ?string, cost_center?: ?string}>
+     * @param  bool  $useEmploymentDimensions  the payroll setting "Kostnadsställe och projekt från anställningen"
+     * @return list<array{account: int, amount: int, description?: ?string, cost_center?: ?string, project?: ?string}>
      */
-    public static function rows(Collection $payslips, Collection $payCodes, Collection $accounts): array
+    public static function rows(Collection $payslips, Collection $payCodes, Collection $accounts, bool $useEmploymentDimensions = true): array
     {
         $rows = [];
         $missing = [];
         $tax = 0;
         $contributions = 0;
+        $contributionsByDimension = [];
         $net = 0;
 
         foreach ($payslips as $payslip) {
-            $costCenter = $payslip->employment?->costCenter?->code;
+            $employmentCostCenter = $payslip->employment?->costCenter;
+            $employmentProject = $payslip->employment?->project?->code;
+            $costCenterOf = CostCenterShares::resolver($employmentCostCenter?->id, $useEmploymentDimensions, $payCodes);
+            $codes = [CostCenterShares::key($employmentCostCenter?->id) => $employmentCostCenter?->code];
+
+            foreach ($payslip->lines as $line) {
+                /** @var PayslipLine $line */
+                if ($line->costCenter !== null) {
+                    $codes[CostCenterShares::key($line->costCenter->id)] = $line->costCenter->code;
+                }
+            }
 
             foreach ($payslip->lines as $line) {
                 /** @var PayslipLine $line */
@@ -71,6 +89,8 @@ final class SalaryVoucher
                 }
 
                 $amount = $line->amount_ore->ore;
+                $costCenter = $codes[CostCenterShares::key($costCenterOf($line))] ?? null;
+                $project = CostCenterShares::usesEmployment($useEmploymentDimensions, $payCode) ? $employmentProject : null;
 
                 // Pension and the special payroll tax on it: the employer's cost against its liability.
                 if ($line->tax_effect === 'EMPLOYER') {
@@ -83,8 +103,8 @@ final class SalaryVoucher
                         continue;
                     }
 
-                    $rows[] = ['account' => $debit->number, 'amount' => $amount, 'description' => $line->description, 'cost_center' => $costCenter];
-                    $rows[] = ['account' => $credit->number, 'amount' => -$amount, 'description' => $line->description, 'cost_center' => null];
+                    $rows[] = ['account' => $debit->number, 'amount' => $amount, 'description' => $line->description, 'cost_center' => $costCenter, 'project' => $project];
+                    $rows[] = ['account' => $credit->number, 'amount' => -$amount, 'description' => $line->description, 'cost_center' => null, 'project' => null];
 
                     continue;
                 }
@@ -99,12 +119,21 @@ final class SalaryVoucher
                     continue;
                 }
 
-                $rows[] = ['account' => $account->number, 'amount' => $amount, 'description' => $line->description, 'cost_center' => $isNet ? null : $costCenter];
+                $rows[] = ['account' => $account->number, 'amount' => $amount, 'description' => $line->description, 'cost_center' => $isNet ? null : $costCenter, 'project' => $isNet ? null : $project];
             }
 
             $tax += $payslip->tax_ore->ore;
             $contributions += $payslip->employer_contribution_ore->ore;
             $net += $payslip->net_ore->ore;
+            $contributionProject = $useEmploymentDimensions ? $employmentProject : null;
+            $fallback = $useEmploymentDimensions ? $employmentCostCenter?->id : null;
+
+            foreach (CostCenterShares::contributions($payslip, $payCodes, $costCenterOf, $fallback) as $key => $part) {
+                $code = $codes[(string) $key] ?? null;
+                $dimension = $code.'|'.$contributionProject;
+                $contributionsByDimension[$dimension] ??= ['cost_center' => $code, 'project' => $contributionProject, 'amount' => 0];
+                $contributionsByDimension[$dimension]['amount'] += $part;
+            }
         }
 
         if ($missing !== []) {
@@ -113,7 +142,7 @@ final class SalaryVoucher
 
         return [
             ...self::summarise($rows),
-            ['account' => self::CONTRIBUTIONS_COST, 'amount' => $contributions, 'description' => __('Arbetsgivaravgifter')],
+            ...self::contributionRows($contributionsByDimension, $contributions),
             ['account' => self::TAX, 'amount' => -$tax, 'description' => __('Personalskatt')],
             ['account' => self::CONTRIBUTIONS_LIABILITY, 'amount' => -$contributions, 'description' => __('Arbetsgivaravgifter att betala')],
             ['account' => self::BANK, 'amount' => -$net, 'description' => __('Utbetalda nettolöner')],
@@ -121,25 +150,50 @@ final class SalaryVoucher
     }
 
     /**
-     * One row per account and cost centre: the voucher is räkenskapsinformation
-     * that bookkeepers and auditors read, so it shows totals, not what each
-     * employee earned or was paid in sick pay (GDPR art. 5.1 c). The
-     * payslips themselves keep the detail.
+     * One row per account, cost centre and project: the voucher is
+     * räkenskapsinformation that bookkeepers and auditors read, so it shows
+     * totals, not what each employee earned or was paid in sick pay (GDPR
+     * art. 5.1 c). The payslips themselves keep the detail.
      *
-     * @param  list<array{account: int, amount: int, description: string, cost_center: mixed}>  $rows
-     * @return list<array{account: int, amount: int, description: string, cost_center: mixed}>
+     * @param  list<array{account: int, amount: int, description: ?string, cost_center: ?string, project: ?string}>  $rows
+     * @return list<array{account: int, amount: int, description: string, cost_center: ?string, project: ?string}>
      */
     private static function summarise(array $rows): array
     {
         $totals = [];
 
         foreach ($rows as $row) {
-            $key = $row['account'].'|'.(is_object($row['cost_center']) ? spl_object_id($row['cost_center']) : (string) $row['cost_center']);
-            $totals[$key] ??= ['account' => $row['account'], 'amount' => 0, 'description' => __('Löner enligt lönekörningen'), 'cost_center' => $row['cost_center']];
+            $key = $row['account'].'|'.$row['cost_center'].'|'.$row['project'];
+            $totals[$key] ??= ['account' => $row['account'], 'amount' => 0, 'description' => __('Löner enligt lönekörningen'), 'cost_center' => $row['cost_center'], 'project' => $row['project']];
             $totals[$key]['amount'] += $row['amount'];
         }
 
         return array_values(array_filter($totals, fn (array $row): bool => $row['amount'] !== 0));
+    }
+
+    /**
+     * Employer contributions on 7510, one row per cost centre and project
+     * (by code, none last). Without any payslip, one row of the total
+     * as before.
+     *
+     * @param  array<string, array{cost_center: ?string, project: ?string, amount: int}>  $byDimension
+     * @return list<array{account: int, amount: int, description: string, cost_center: ?string, project: ?string}>
+     */
+    private static function contributionRows(array $byDimension, int $total): array
+    {
+        if ($byDimension === []) {
+            return [['account' => self::CONTRIBUTIONS_COST, 'amount' => $total, 'description' => __('Arbetsgivaravgifter'), 'cost_center' => null, 'project' => null]];
+        }
+
+        ksort($byDimension, SORT_STRING);
+
+        return array_values(array_map(fn (array $part): array => [
+            'account' => self::CONTRIBUTIONS_COST,
+            'amount' => $part['amount'],
+            'description' => __('Arbetsgivaravgifter'),
+            'cost_center' => $part['cost_center'],
+            'project' => $part['project'],
+        ], $byDimension));
     }
 
     /**

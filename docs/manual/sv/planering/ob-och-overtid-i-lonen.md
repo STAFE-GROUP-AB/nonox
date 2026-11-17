@@ -8,7 +8,7 @@ sokord: [OB, OB-tillägg, obekväm arbetstid, övertid, mertid, övertidsart, ö
 
 # OB och övertid i lönen
 
-När du skickar attesterade dagar till lönen blir de godkända tidrapporter, en per dag och löneart. Lönekörningen för dagens månad tar med dem när du klickar på **Beräkna**, på samma sätt som tidrapporter från personalliggaren eller från en fil. Planering säger hur mycket tid av vilket slag. Vad tiden kostar räknar lönen.
+När du skickar attesterade dagar till lönen blir de godkända tidrapporter, en per dag och löneart, och per kostnadsställe när passen ligger på kostnadsställen (se [Kostnadsställen på pass](/manual/planering/kostnadsstallen)). Lönekörningen för dagens månad tar med dem när du klickar på **Beräkna**, på samma sätt som tidrapporter från personalliggaren eller från en fil. Planering säger hur mycket tid av vilket slag. Vad tiden kostar räknar lönen.
 
 I kolumnen **Till lönen** på [Tid att attestera](/manual/planering/tid-att-attestera) ser du före attesten vilka lönearter och hur många timmar dagen blir.
 

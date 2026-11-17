@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Modules\Payroll\Support\Reports;
 
 use App\Models\Account;
+use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\VoucherRow;
+use App\Modules\ModuleManager;
+use App\Modules\Payroll\Domain\CostCenterShares;
 use App\Modules\Payroll\Models\AgiSubmission;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
@@ -15,7 +18,9 @@ use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\PayslipLine;
 use App\Modules\Payroll\Models\PensionPlan;
+use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Agi\AgiDeclaration;
+use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -105,24 +110,49 @@ final class PayrollReports
     }
 
     /**
-     * Kostnad per kostnadsställe: gross pay and contributions by the
-     * employment's cost center.
+     * Kostnad per kostnadsställe: gross pay and contributions by cost
+     * centre, as the salary voucher books them (ADR-037, gap 7): a line
+     * priced from a time report on a cost centre counts there, every other
+     * line on the employment's when the payroll setting and the pay code use
+     * the employment's dimensions, and the contributions are split in
+     * proportion to the contribution basis (CostCenterShares). Pass the
+     * payroll setting when the caller has the company; otherwise it is read.
      *
      * @return list<array{code: string, name: string, gross_ore: int, contributions_ore: int}>
      */
-    public function costCenters(string $from, string $to): array
+    public function costCenters(string $from, string $to, ?bool $useEmploymentDimensions = null): array
     {
-        $payslips = Payslip::query()->whereIn('payroll_run_id', $this->runs($from, $to)->pluck('id'))->get();
+        $payslips = Payslip::query()->with('lines:id,payslip_id,pay_code_id,amount_ore,tax_effect,explanation,cost_center_id')->whereIn('payroll_run_id', $this->runs($from, $to)->pluck('id'))->get();
         $centerOf = Employment::query()->whereIn('id', $payslips->pluck('employment_id'))->pluck('cost_center_id', 'id');
-        $centers = CostCenter::query()->whereIn('id', $centerOf->filter()->unique())->get()->keyBy('id');
+        $payCodes = PayCode::query()->get()->keyBy('id');
+        $company = $useEmploymentDimensions === null ? CurrentCompany::id() : null;
+        $useEmployment = $useEmploymentDimensions ?? ($company === null || (bool) (app(ModuleManager::class)->settings(PayrollModule::KEY, Company::query()->findOrFail($company))['use_employment_dimensions'] ?? true));
+        $totals = [];
 
-        return array_values($payslips->groupBy(fn (Payslip $payslip): string => (string) $centerOf->get($payslip->employment_id))
-            ->map(fn (Collection $rows, string $centerId): array => [
-                'code' => (string) $centers->get((int) $centerId)?->code,
-                'name' => $centerId === '' ? __('Utan kostnadsställe') : (string) $centers->get((int) $centerId)?->name,
-                'gross_ore' => (int) $rows->sum(fn (Payslip $payslip): int => $payslip->gross_ore->ore),
-                'contributions_ore' => (int) $rows->sum(fn (Payslip $payslip): int => $payslip->employer_contribution_ore->ore),
-            ])->sortBy('code')->values()->all());
+        foreach ($payslips as $payslip) {
+            $own = $centerOf->get($payslip->employment_id);
+            $own = $own === null ? null : (int) $own;
+            $costCenterOf = CostCenterShares::resolver($own, $useEmployment, $payCodes);
+
+            foreach (CostCenterShares::gross($payslip, $costCenterOf) as $key => $gross) {
+                $totals[(string) $key] ??= ['gross_ore' => 0, 'contributions_ore' => 0];
+                $totals[(string) $key]['gross_ore'] += $gross;
+            }
+
+            foreach (CostCenterShares::contributions($payslip, $payCodes, $costCenterOf, $useEmployment ? $own : null) as $key => $part) {
+                $totals[(string) $key] ??= ['gross_ore' => 0, 'contributions_ore' => 0];
+                $totals[(string) $key]['contributions_ore'] += $part;
+            }
+        }
+
+        $centers = CostCenter::query()->whereIn('id', array_map('intval', array_filter(array_keys($totals), fn (int|string $key): bool => $key !== '')))->get()->keyBy('id');
+
+        return array_values(collect($totals)->map(fn (array $total, int|string $centerId): array => [
+            'code' => (string) $centers->get((int) $centerId)?->code,
+            'name' => $centerId === '' ? __('Utan kostnadsställe') : (string) $centers->get((int) $centerId)?->name,
+            'gross_ore' => $total['gross_ore'],
+            'contributions_ore' => $total['contributions_ore'],
+        ])->sortBy('code')->values()->all());
     }
 
     /**

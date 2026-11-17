@@ -193,6 +193,7 @@ planering/schema-dag: { foretag: restaurang, rutt: planning.schedule, fraga: { v
 planering/schema-utkast: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '@monday this week +3 weeks' } }
 planering/mallar: { foretag: restaurang, rutt: planning.templates }
 planering/installningar: { foretag: restaurang, rutt: planning.settings }
+planering/kostnadsstallen: { foretag: restaurang, rutt: planning.settings, klick: ['button[wire\:click^="editArea"]'], del: 'form[wire\:submit="saveArea"]' }
 planering/forfragningar: { foretag: restaurang, rutt: planning.requests }
 planering/attest: { foretag: cafe, rutt: planning.attest, fraga: { fran: '@monday this week -3 weeks', till: '@monday this week -1 day' } }
 planering/attest-avvikelser: { foretag: cafe, rutt: planning.attest, fraga: { fran: '@monday this week -3 weeks', till: '@monday this week -1 day', visa: avvikelser } }

@@ -33,7 +33,7 @@ Längst ner står en summa per dag: **Tid**, **Kostnad**, **Försäljning** och 
 2. Välj **Person**, eller **Öppet pass (ingen ännu)**.
 3. Kontrollera **Datum** och fyll i **Starttid** och **Sluttid**.
 4. Fyll i **Rast (minuter)**.
-5. Välj **Avdelning** och, om ni har kompetenser, **Kompetens**.
+5. Välj **Avdelning** och, om ni har kompetenser, **Kompetens**. Har företaget kostnadsställen kan du välja ett annat **Kostnadsställe** än avdelningens, se [Kostnadsställen på pass](/manual/planering/kostnadsstallen).
 6. Skriv en **Anteckning** om det behövs. Personen ser den på Min sida.
 7. Klicka på **Spara**.
 

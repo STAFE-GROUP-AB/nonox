@@ -61,6 +61,7 @@ final class CopyPeriod
                     'ends_at' => $shift->ends_at->addWeeks($add),
                     'break_minutes' => $shift->break_minutes,
                     'note' => $shift->note,
+                    'cost_center_id' => $shift->cost_center_id,
                 ];
             }
         }

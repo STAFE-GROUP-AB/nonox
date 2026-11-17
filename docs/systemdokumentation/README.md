@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.133
-- Datum: 2026-11-16
+- Version: 0.134
+- Datum: 2026-11-17
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -3281,10 +3281,33 @@ lönebeskeden låsta i databasen.
   behandlingshistoriken. Frånvarons orsak visas bara för den som har
   behörighet till känsliga uppgifter.
 - När lönen är utbetald bokförs lönekörningen som en verifikation i serie L
-  på utbetalningsdagen: varje lönerad på lönearternas konton (med
-  anställningens kostnadsställe), personalskatt på 2710, arbetsgivaravgifter
-  på 7510 mot 2730 och nettolönerna mot 1930. Verifikationen balanserar alltid:
-  brutto − skatt ± nettoposter = netto.
+  på utbetalningsdagen: varje lönerad på lönearternas konton, personalskatt
+  på 2710, arbetsgivaravgifter på 7510 mot 2730 och nettolönerna mot 1930.
+  Verifikationen balanserar alltid: brutto − skatt ± nettoposter = netto.
+- Kostnadsställe och projekt (version 0.134, ADR-037 lucka 7): en lönerad
+  som prissätts ur en tidrapport med kostnadsställe
+  (`payslip_lines.cost_center_id`, från Planering, se 5i) bokförs alltid på
+  det kostnadsstället. Övriga kostnadsrader (månadslön, förmåner,
+  frånvaroavdrag, pension) får anställningens kostnadsställe och projekt
+  bara när löneinställningen "Kostnadsställe och projekt från anställningen"
+  (`use_employment_dimensions`, på från början) är på och lönearten inte
+  har stängt av det (`pay_codes.use_employment_dimensions`); annars bokförs
+  de utan. Före 0.134 lästes inställningen inte och anställningens
+  kostnadsställe användes alltid. Arbetsgivaravgifterna på 7510 fördelas
+  per lönebesked över kostnadsställena i proportion till
+  avgiftsunderlaget på vart och ett (raderna vars löneart är
+  avgiftsgrundande, till det värde som bär avgifter, för drivmedelsförmån
+  marknadsvärdet), i hela ören med största rest (`CostCenterShares`):
+  varje del får heltalet av sin exakta andel och de ören som blir över går
+  ett i taget till de största resterna (vid lika rest det större
+  underlaget, sedan ordningen), så att delarna alltid summerar till
+  lönebeskedets avgift och verifikationen balanserar. Ett lönebesked utan
+  positivt avgiftsunderlag på något kostnadsställe får hela avgiften på
+  anställningens (eller utan, när inställningen är av). Skulden på 2730 är
+  en rad utan kostnadsställe, och verifikationen summerar per konto,
+  kostnadsställe och projekt. Rapporten Kostnad per kostnadsställe räknar
+  på samma sätt. Även utan Planering följer avgifterna på 7510 nu
+  anställningens kostnadsställe i stället för att stå utan.
 - Jämkning (enligt granskning 2026-11-02, juristgranskning återstår,
   AUD-LON-01, #69): Skatteverkets beslut om särskild beräkningsgrund sparas
   på den anställda (`tax_adjustment_type` PERCENT, TABLE eller AMOUNT, med
@@ -4531,7 +4554,10 @@ Personalliggare och Avtal när de är påslagna.
 - **Pass** (`planning_shifts`) planeras per anställd och avdelning, eller som
   öppna pass utan anställd. Ett pass är utkast tills perioden publiceras;
   publiceringen sparar passet som det publicerades (`published_snapshot`)
-  och aviserar de berörda i appen och med e-post. Ett publicerat pass som tas
+  och aviserar de berörda i appen och med e-post. Tid att attestera jämför
+  med den publicerade tiden också när passet har ändrats till utkast igen
+  (före 0.134 lästes snapshotens klockslag fel och passet saknades i
+  jämförelsen). Ett publicerat pass som tas
   bort ställs in och den anställde får besked. Allt skrivs till
   behandlingshistoriken.
 - **Lönekostnad** per pass är en uppskattning: timlön, eller månadslön
@@ -4562,8 +4588,27 @@ Personalliggare och Avtal när de är påslagna.
   inställningarna. Kortare tid dras aldrig av; frånvaro hanteras i Lön. OB
   delas upp med avtalets OB-fönster och dagtyper och räknas inte när OB ingår
   i lönen; ett avtal utan kontrollerad version stoppar dagen.
-- **Skicka till lönen** skriver en godkänd tidrapport per dag och löneart
-  (timmar med två decimaler). Att skicka igen ändrar inget. En dag hoppas
+- **Kostnadsställen (version 0.134, ADR-037 lucka 7).** En avdelning kan ha
+  ett kostnadsställe (`planning_areas.cost_center_id`) och ett pass får
+  avdelningens när det sparas, eller ett eget (`planning_shifts.cost_center_id`);
+  koden slås upp i företaget och ett inaktivt kostnadsställe nekas för nya
+  val. Tomt betyder anställningens kostnadsställe. Att bara byta
+  kostnadsställe gör inte om ett publicerat pass till utkast, eftersom den
+  anställde inte ser det.
+- **Skicka till lönen** skriver en godkänd tidrapport per dag, löneart och
+  kostnadsställe (timmar med två decimaler, `time_reports.cost_center_id`).
+  Dagens kostnadsställe är de publicerade passens. Har dagens pass flera
+  kostnadsställen delas Timlön i proportion till passens planerade minuter
+  och varje OB-art i proportion till den OB som passens planerade tider ger
+  enligt avtalet (`ObSplitter`), så att kvällens OB i baren inte hamnar på
+  förmiddagens kök; ger passen ingen sådan OB (den uppstod utanför planen)
+  används de planerade minuterna. Dagens övertid och mertid delas som
+  Timlön, så en dag på ett enda kostnadsställe bokförs helt där. Delningen
+  görs i hundradels timmar med största rest, så att delarna blir exakt de
+  timmar en enda tidrapport hade fått. Övertid och mertid för en vecka
+  eller beräkningsperiod ligger på anställningens kostnadsställe. Lönekörningen gör en
+  lönerad per löneart och kostnadsställe och för kostnadsstället vidare
+  till lönebeskedets rad (se 5b). Att skicka igen ändrar inget. En dag hoppas
   över med en förklaring om en annan tidrapport redan täcker den eller om
   månadens lönekörning är attesterad; rättelsen görs då i nästa körning. En
   dag kan öppnas igen bara medan lönekörningen som betalar den inte är
@@ -5852,3 +5897,4 @@ påverkar bokföringen och fakturan:
 | 0.131 | 2026-11-10 | En anläggningstillgång av flera inköp (avsnitt 5a2, ADR-010 tillägg 2026-11-10): en senare inköpsrad på tillgångens konto kan läggas till i en befintlig tillgång, från utkastet eller i registret för en bokförd rad. Ny tabell `fixed_asset_additions` (kan inte ändras eller tas bort). Ett tillägg före avskrivningens start ingår i planen från första avskrivningsmånaden; ett senare skrivs av framåt över den återstående nyttjandeperioden. Tillägg nekas i stängda år och låsta perioder, på uppdelade och avyttrade tillgångar och efter nyttjandeperiodens slut. Ingen bokförd avskrivning eller verifikation ändras. |
 | 0.132 | 2026-11-11 | Tillverkningsorder (avsnitt 5o och 5j, ADR-071 §8 och tillägget As built (M4)): komponenter tas ur lagret som `PRODUCTION_ISSUE` till anskaffningsvärdet enligt företagets metod och färdiga produkter tas emot som `PRODUCTION_RECEIPT` till tillverkningskostnaden (material plus direkt arbete, omkostnader bara om företaget har valt det när ordern startar). Datum kan inte läggas i stängda år, låsta perioder, före orderns senaste händelse eller, för uttag, före en senare lagerrörelse på artikeln. Nya tabeller `production_orders`, `production_order_components`, `production_order_operations`, `production_order_issues` och `production_labour_entries` (de två sista kan inte ändras eller tas bort). Ingen verifikation per order; bokslutets lagervärdering tar med produkter i arbete på ett eget kontopar (1440/4940 från början) i samma verifikation. Öppna frågor om kostnader och konton i avsnitt 8. |
 | 0.133 | 2026-11-16 | Återkommande intäkter (avsnitt 5p, ADR-080): modulen skapar inga verifikationer och ändrar ingen bokföring. Avtalens versioner (`saas_contract_versions`) och rättelser (`saas_corrections`) kan inte ändras, tas bort eller tömmas; stängda månader skrivs inte om och senare ändringar blir rättelserader i första öppna månaden; `saas:verify` räknar om stängda månader varje natt. Stripe läses bara, med en begränsad nyckel; produkter, priser, rabatter och prenumerationer sparas orörda med kontrollsumma i `stripe_objects` och raderas 90 dagar efter att kopplingen upphört. Inget bokförs ur Stripe. |
+| 0.134 | 2026-11-17 | Pass på kostnadsställen till lönebokföringen (avsnitt 5b och 5i, ADR-037 lucka 7, paket P2): avdelningar och pass kan ha ett kostnadsställe, Skicka till lönen skriver en tidrapport per dag, löneart och kostnadsställe (Timlön och dagens övertid och mertid delas efter passens planerade minuter, OB efter den OB passen ger enligt avtalet, i hundradels timmar med största rest; veckans eller periodens övertid och mertid på anställningens), och lönekörningen för kostnadsstället till lönebeskedets rad. Lönens verifikation bokför den raden på dess kostnadsställe; övriga rader får anställningens kostnadsställe och projekt bara när inställningen Kostnadsställe och projekt från anställningen och lönearten säger det (inställningen lästes inte förut). Arbetsgivaravgifterna på 7510 fördelas per lönebesked i proportion till avgiftsunderlaget per kostnadsställe, i hela ören med största rest, så att verifikationen balanserar. Tid att attestera läser nu ett publicerat pass som ändrats till utkast med rätt klockslag. Nya nullbara kolumner `cost_center_id` på `planning_areas`, `planning_shifts`, `time_reports` och `payslip_lines`. Ingen bokförd verifikation ändras. |

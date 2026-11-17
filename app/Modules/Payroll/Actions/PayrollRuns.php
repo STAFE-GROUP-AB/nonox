@@ -420,6 +420,8 @@ class PayrollRuns
                         'tax_effect' => $line->taxEffect,
                         'rule_version_id' => $line->ruleVersionId,
                         'explanation' => $line->explanation,
+                        // The time report's cost centre (ADR-037, gap 7); other lines keep the employment's.
+                        'cost_center_id' => is_int($line->explanation['cost_center_id'] ?? null) ? $line->explanation['cost_center_id'] : null,
                     ]);
                 }
             }
@@ -641,11 +643,11 @@ class PayrollRuns
                 throw ValidationException::withMessages(['run' => [__('Lönekörningen är inte markerad som utbetald.')]]);
             }
 
-            $payslips = Payslip::query()->with(['lines', 'employment.costCenter'])->where('payroll_run_id', $run->id)->get();
+            $payslips = Payslip::query()->with(['lines.costCenter', 'employment.costCenter', 'employment.project'])->where('payroll_run_id', $run->id)->get();
             $payCodes = PayCode::query()->get()->keyBy('id');
             $accounts = Account::query()->whereIn('id', $payCodes->pluck('debit_account_id')->merge($payCodes->pluck('credit_account_id'))->filter()->unique())->get()->keyBy('id');
 
-            $salaryRows = SalaryVoucher::rows($payslips, $payCodes, $accounts);
+            $salaryRows = SalaryVoucher::rows($payslips, $payCodes, $accounts, (bool) ($this->modules->settings(PayrollModule::KEY, $company)['use_employment_dimensions'] ?? true));
             $liability = $this->vacationLiability($company, $run);
 
             $voucher = app(BookVoucher::class)->rows(

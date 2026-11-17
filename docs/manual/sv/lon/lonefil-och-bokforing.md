@@ -64,7 +64,9 @@ Lönens verifikation i serie L innehåller:
 | Skuld till företaget när avdragen är större än lönen, och samma skuld när den dras från nästa lön | 1680 | Debet / kredit |
 | Utbetalda nettolöner | 1930 | Kredit |
 
-Verifikationen balanserar alltid: bruttolön minus skatt, plus och minus poster efter skatt, är lika med nettolönen. Är **Kostnadsställe och projekt från anställningen** på i löneinställningarna bokförs lönekostnaden på anställningens kostnadsställe.
+Verifikationen balanserar alltid: bruttolön minus skatt, plus och minus poster efter skatt, är lika med nettolönen. Är **Kostnadsställe och projekt från anställningen** på i löneinställningarna, vilket den är från början, bokförs lönekostnaden på anställningens kostnadsställe. Stänger du av den bokförs lönekostnaden utan kostnadsställe.
+
+Arbetsgivaravgifterna på 7510 följer kostnadsställena: de fördelas för varje lönebesked efter avgiftsunderlaget på vart och ett, avrundat till hela ören så att verifikationen balanserar. Utan Planering betyder det att avgifterna bokförs på anställningens kostnadsställe, där de förut stod utan kostnadsställe. Kommer timmarna från Planering och passen ligger på kostnadsställen bokförs de raderna, och deras del av avgifterna, på passens kostnadsställen. Se [Kostnadsställen på pass](/manual/planering/kostnadsstallen).
 
 Bokför företaget semesterlöneskulden **Varje månad** får samma verifikation också rader som för skulden till rätt nivå vid periodens slut: 7090 mot 2920 för semesterlönerna och 7519 mot 2940 för de sociala avgifterna på skulden. Se [Semester](/manual/lon/semester).
 

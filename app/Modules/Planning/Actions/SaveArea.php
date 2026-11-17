@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\Planning\Actions\Concerns\GuardsPlanning;
 use App\Modules\Planning\Models\Area;
+use App\Modules\Planning\Support\CostCenterInput;
 use App\Support\Audit\Audit;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,9 @@ use Illuminate\Validation\Rule;
 
 /**
  * Creates or changes an area (avdelning): its name, colour, order and,
- * optionally, the staff-ledger location it is at. Audited.
+ * optionally, the staff-ledger location it is at and the cost centre its
+ * new shifts are on (ADR-037, gap 7; by code, an inactive one is refused).
+ * Shifts already planned keep their cost centre. Audited.
  */
 final class SaveArea
 {
@@ -32,16 +35,25 @@ final class SaveArea
             'colour' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'location_id' => ['nullable', 'integer', Rule::exists('staff_ledger_locations', 'id')->where('company_id', $company->id)],
             'sort' => ['nullable', 'integer', 'between:0,999'],
+            'cost_center' => ['nullable', 'string', 'max:20'],
         ], [
             'colour.regex' => __('Välj en färg.'),
         ], [
             'name' => __('Namn'),
             'colour' => __('Färg'),
             'location_id' => __('Lokal'),
+            'cost_center' => __('Kostnadsställe'),
         ])->validate();
 
         $validated['colour'] = strtolower((string) $validated['colour']);
         $validated['sort'] = (int) ($validated['sort'] ?? 0);
+
+        // Left out of the input, the area keeps its cost centre.
+        if (array_key_exists('cost_center', $input)) {
+            $validated['cost_center_id'] = CostCenterInput::resolve($company, $validated['cost_center'] ?? null, $area?->cost_center_id, 'cost_center');
+        }
+
+        unset($validated['cost_center']);
 
         return DB::transaction(function () use ($user, $company, $validated, $area): Area {
             $before = $area?->only(array_keys($validated)) ?? [];

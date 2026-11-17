@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Planning\Models;
 
+use App\Models\CostCenter;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Planning\Support\LocalTimestamp;
 use App\Support\Tenancy\BelongsToCompany;
@@ -25,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?int $employee_id
  * @property ?int $area_id
  * @property ?int $skill_id
+ * @property ?int $cost_center_id taken from the area when saved, changeable; null: the employment's cost centre
  * @property CarbonImmutable $starts_at
  * @property CarbonImmutable $ends_at
  * @property int $break_minutes
@@ -64,6 +66,7 @@ class Shift extends Model
         'employee_id',
         'area_id',
         'skill_id',
+        'cost_center_id',
         'starts_at',
         'ends_at',
         'break_minutes',
@@ -82,6 +85,7 @@ class Shift extends Model
             'employee_id' => 'integer',
             'area_id' => 'integer',
             'skill_id' => 'integer',
+            'cost_center_id' => 'integer',
             'starts_at' => LocalTimestamp::class,
             'ends_at' => LocalTimestamp::class,
             'break_minutes' => 'integer',
@@ -106,6 +110,12 @@ class Shift extends Model
     public function area(): BelongsTo
     {
         return $this->belongsTo(Area::class);
+    }
+
+    /** @return BelongsTo<CostCenter, $this> */
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class);
     }
 
     /** @return BelongsTo<Skill, $this> */

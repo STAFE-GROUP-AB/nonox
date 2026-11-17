@@ -34,6 +34,18 @@
                         </select>
                     </x-ui.field>
                 @endif
+                @if($costCenters->isNotEmpty())
+                    <x-ui.field for="area-cost-center" :label="__('Kostnadsställe')" :hint="__('Valfritt. Nya pass i avdelningen bokförs på kostnadsstället i lönen. Utan kostnadsställe gäller anställningens.')" error="form.cost_center">
+                        <select id="area-cost-center" wire:model="form.cost_center" class="{{ $input }}">
+                            <option value="">{{ __('Inget (anställningens)') }}</option>
+                            @foreach($costCenters as $costCenter)
+                                @if($costCenter->is_active || $costCenter->code === ($form['cost_center'] ?? ''))
+                                    <option value="{{ $costCenter->code }}">{{ $costCenter->label() }}@if(! $costCenter->is_active) ({{ __('inaktivt') }})@endif</option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </x-ui.field>
+                @endif
                 <x-ui.field for="area-sort" :label="__('Ordning')" error="form.sort">
                     <input id="area-sort" type="number" min="0" max="999" wire:model="form.sort" class="{{ $input }} w-24 tabular-nums">
                 </x-ui.field>
@@ -51,6 +63,7 @@
                         <span class="size-4 rounded-full" style="background: {{ $area->colour }}"></span>
                         <span @class(['font-medium', 'text-ink' => ! $area->archived_at, 'text-gray-500 line-through' => $area->archived_at])>{{ $area->name }}</span>
                         @if($area->location_id && $locations->has($area->location_id))<span class="text-sm text-gray-500">{{ $locations->get($area->location_id) }}</span>@endif
+                        @if($area->costCenter)<span class="text-sm text-gray-500">{{ __('Kostnadsställe :name', ['name' => $area->costCenter->label()]) }}</span>@endif
                     </span>
                     @if($canManage)
                         <span class="flex gap-3 text-sm font-semibold">

@@ -426,7 +426,7 @@ final class AttestData
         return intdiv($fullTime * $employment->employment_rate_bp, 10000);
     }
 
-    private static function employmentOn(Employee $employee, CarbonImmutable $day): ?Employment
+    public static function employmentOn(Employee $employee, CarbonImmutable $day): ?Employment
     {
         $employment = $employee->employments->last(fn (Employment $employment): bool => $employment->start_date->lessThanOrEqualTo($day)
             && ($employment->end_date === null || $employment->end_date->greaterThanOrEqualTo($day)));
@@ -515,7 +515,12 @@ final class AttestData
                 continue;
             }
 
-            $planned[(int) $snapshot['employee_id']][] = WorkInterval::fromArray($snapshot);
+            // Shift::snapshot() keeps the times as starts_at and ends_at.
+            $planned[(int) $snapshot['employee_id']][] = WorkInterval::fromArray([
+                'start' => $snapshot['starts_at'] ?? null,
+                'end' => $snapshot['ends_at'] ?? null,
+                'break_minutes' => $snapshot['break_minutes'] ?? 0,
+            ]);
         }
 
         return array_intersect_key($planned, array_flip($ids));

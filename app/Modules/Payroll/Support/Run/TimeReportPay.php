@@ -11,6 +11,7 @@ use App\Modules\Payroll\Models\TimeReport;
 use Brick\Math\BigDecimal;
 use Carbon\CarbonImmutable;
 use Closure;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 
 /**
@@ -86,7 +87,21 @@ final class TimeReportPay
             ->orderBy('id')
             ->lockForUpdate()
             ->get()
+            ->tap(fn (EloquentCollection $reports) => self::loadCostCenters($reports))
             ->toBase();
+    }
+
+    /**
+     * The cost centre codes of reports on one (ADR-037, gap 7), for the
+     * payslip line's text; one query, and none when no report has one.
+     *
+     * @param  EloquentCollection<int, TimeReport>  $reports
+     */
+    private static function loadCostCenters(EloquentCollection $reports): void
+    {
+        if ($reports->contains(fn (TimeReport $report): bool => $report->cost_center_id !== null)) {
+            $reports->load('costCenter:id,code');
+        }
     }
 
     /**
@@ -209,8 +224,8 @@ final class TimeReportPay
     }
 
     /**
-     * Late reports for one payslip as lines: one per month and employment
-     * paid by the hour that was in force on the day, at that employment's
+     * Late reports for one payslip as lines: one per month, cost centre and
+     * employment paid by the hour that was in force on the day, at that employment's
      * hourly rate. A report without such an employment is left out (and so
      * not claimed).
      *
@@ -232,7 +247,8 @@ final class TimeReportPay
                 continue;
             }
 
-            $key = $report->date->format('Y-m').'|'.$employment->id;
+            // One line per cost centre too (ADR-037, gap 7); reports without one stay one group, as before.
+            $key = $report->date->format('Y-m').'|'.$employment->id.'|'.($report->cost_center_id === null ? '' : sprintf('c%020d', $report->cost_center_id));
             $groups[$key] ??= ['month' => $report->date->startOfMonth(), 'rate_ore' => $employment->hourly_rate_ore?->ore, 'reports' => collect()];
             $groups[$key]['reports']->push($report);
         }
