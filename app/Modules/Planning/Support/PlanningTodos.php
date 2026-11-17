@@ -9,6 +9,7 @@ use App\Domain\Overview\TodoItem;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\ModuleManager;
+use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Planning\Models\Attestation;
 use App\Modules\Planning\Models\Shift;
@@ -20,9 +21,10 @@ use Carbon\CarbonImmutable;
 /**
  * Planering's part of "Att göra" on Översikt: drafts within the period the
  * company wants published ahead (default 14 days) that nobody has published.
- * Requests from staff waiting for an answer. Days with published shifts
+ * Requests from staff waiting for an answer. Published shifts on days when
+ * the person has approved absence (no type: AbsenceDays). Days with published shifts
  * in the month of the next payroll run that are not yet sent to payroll.
- * Five queries.
+ * A fixed number of queries.
  */
 final class PlanningTodos implements TodoProvider
 {
@@ -59,6 +61,20 @@ final class PlanningTodos implements TodoProvider
                 $requests === 1 ? __('1 förfrågan om pass väntar på svar') : __(':count förfrågningar om pass väntar på svar', ['count' => $requests]),
                 __('Personalen vill ta öppna pass, byta eller lämna pass. Inget ändras förrän du godkänner.'),
                 route('planning.requests'),
+                TodoItem::PRIORITY_STAFF_LEDGER,
+            );
+        }
+
+        $absent = AbsenceDays::upcomingShiftsOfAbsent($today);
+
+        if ($absent->isNotEmpty()) {
+            $count = $absent->count();
+            $todos[] = new TodoItem(
+                'planning-absent',
+                'calendar',
+                $count === 1 ? __('1 pass hos frånvarande personal') : __(':count pass hos frånvarande personal', ['count' => $count]),
+                __('Personalen har godkänd frånvaro de dagarna. Ge passen till någon annan eller gör dem öppna.'),
+                route('planning.schedule', ['vecka' => $absent->first()->starts_at->startOfWeek(CarbonImmutable::MONDAY)->toDateString()]),
                 TodoItem::PRIORITY_STAFF_LEDGER,
             );
         }
@@ -123,6 +139,6 @@ final class PlanningTodos implements TodoProvider
 
     public function invalidatedBy(): array
     {
-        return [Shift::class, ShiftRequest::class, Attestation::class];
+        return [Shift::class, ShiftRequest::class, Attestation::class, Absence::class];
     }
 }

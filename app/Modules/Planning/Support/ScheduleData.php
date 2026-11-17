@@ -46,7 +46,7 @@ final class ScheduleData
      * @param  array{area?: ?int, skill?: ?int, location?: ?int}  $filters
      * @return array<string, mixed>
      */
-    public function load(Company $company, CarbonImmutable $from, CarbonImmutable $to, array $filters = []): array
+    public function load(Company $company, CarbonImmutable $from, CarbonImmutable $to, array $filters = [], bool $manager = false): array
     {
         $settings = PlanningSettings::resolve($this->modules->settings(PlanningModule::KEY, $company));
         $days = [];
@@ -99,6 +99,15 @@ final class ScheduleData
                 $warnings[$shift->id][] = new WorkingTimeWarning($shift->id, 'unavailable', __('Har angett att den tiden inte passar.'), '');
             }
         }
+
+        // Absence: one query, no type or note (AbsenceDays). Requested absence only for those who manage.
+        $absence = AbsenceDays::between($from, $to, $manager);
+
+        foreach ($visible->whereNotNull('employee_id') as $shift) {
+            if (AbsenceDays::absentDuring($absence, $shift->employee_id, $shift)) {
+                $warnings[$shift->id][] = new WorkingTimeWarning($shift->id, 'absent', AbsenceDays::warning(), '');
+            }
+        }
         $sales = SalesFromBooks::perDay($from->subWeeks(self::REFERENCE_WEEKS), $to, PlanningSettings::int($settings, 'sales_account_from'), PlanningSettings::int($settings, 'sales_account_to'));
 
         return [
@@ -114,6 +123,7 @@ final class ScheduleData
             'totals' => $this->totals($days, $shown, $sales),
             'drafts' => $visible->where('status', Shift::DRAFT)->count(),
             'unknownEmployees' => $shown->pluck('employee_id')->filter()->unique()->diff($employees->pluck('id'))->values()->all(),
+            'absence' => $absence,
             'availability' => PlanningSettings::bool($settings, 'allow_availability') ? $this->availability($days, $availability) : [],
         ];
     }

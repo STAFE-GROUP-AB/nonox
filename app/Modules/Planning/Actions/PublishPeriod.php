@@ -15,6 +15,7 @@ use App\Modules\Planning\Models\Shift;
 use App\Modules\Planning\Notifications\ScheduleNotice;
 use App\Modules\Planning\PlanningModule;
 use App\Modules\Planning\PlanningSettings;
+use App\Modules\Planning\Support\AbsenceDays;
 use App\Modules\Planning\Support\LocalTimestamp;
 use App\Modules\Planning\Support\PlanningWebhooks;
 use App\Modules\Planning\Support\RequestChecks;
@@ -50,6 +51,7 @@ final class PublishPeriod
                 throw ValidationException::withMessages(['period' => __('Det finns inga ändringar att publicera för perioden.')]);
             }
 
+            $absent = AbsenceDays::shiftsOfAbsent($drafts);
             $now = CarbonImmutable::now();
             $changes = [];
             $affected = [];
@@ -106,6 +108,7 @@ final class PublishPeriod
                 'to' => $to->toDateString(),
                 'shifts' => $drafts->pluck('id')->all(),
                 'notified' => $notified,
+                'absent_shifts' => count($absent),
             ], $company, $user);
 
             PlanningWebhooks::published($publication);
@@ -117,9 +120,10 @@ final class PublishPeriod
     /**
      * What Publicera would do, for the confirmation: new and changed shifts,
      * open shifts, shifts at a time the person said does not suit them, and
-     * who is told and who cannot be reached. Three queries.
+     * who is told and who cannot be reached, and shifts on a day the person
+     * has approved absence (no type, AbsenceDays). Four queries.
      *
-     * @return array{new: int, changed: int, open: int, unavailable: int, notify: list<string>, unreachable: list<string>}
+     * @return array{new: int, changed: int, open: int, unavailable: int, absent: int, notify: list<string>, unreachable: list<string>}
      */
     public static function summary(CarbonImmutable $from, CarbonImmutable $to): array
     {
@@ -135,10 +139,19 @@ final class PublishPeriod
             'new' => $drafts->whereNull('published_at')->count(),
             'changed' => $drafts->whereNotNull('published_at')->count(),
             'open' => $drafts->whereNull('employee_id')->count(),
+            'absent' => count(AbsenceDays::shiftsOfAbsent($drafts)),
             'unavailable' => $drafts->filter(fn (Shift $shift): bool => $shift->employee_id !== null && RequestChecks::isUnavailable($availability->get($shift->employee_id, collect()), $shift))->count(),
             'notify' => array_values($employees->filter(fn (Employee $employee): bool => $employee->user_id !== null || ($employee->email ?? '') !== '')->map($name)->all()),
             'unreachable' => array_values($employees->filter(fn (Employee $employee): bool => $employee->user_id === null && ($employee->email ?? '') === '')->map($name)->all()),
         ];
+    }
+
+    /** How many drafts of the period are on a day the person is absent: for the toast after publishing. */
+    public static function absentCount(CarbonImmutable $from, CarbonImmutable $to): int
+    {
+        [$from, $to] = self::days($from, $to);
+
+        return count(AbsenceDays::shiftsOfAbsent(self::drafts($from, $to)->get(['id', 'employee_id', 'starts_at', 'ends_at'])));
     }
 
     /** @return Builder<Shift> */

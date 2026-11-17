@@ -144,6 +144,7 @@
                         <li class="flex items-baseline justify-between gap-3 py-2 text-sm">
                             <span class="tabular-nums font-semibold text-ink">{{ $shift->starts_at->format('H:i') }}–{{ $shift->ends_at->format('H:i') }}</span>
                             <span class="min-w-0 flex-1 truncate text-gray-700">{{ $shift->employee_id === null ? __('Öppet pass') : (($p = $peopleById->get($shift->employee_id)) ? $p->first_name.' '.$p->last_name : __('Tidigare anställd')) }}</span>
+                            @if(in_array($absence[$shift->employee_id ?? 0][$day->toDateString()] ?? null, [App\Modules\Planning\Support\AbsenceDays::FULL, App\Modules\Planning\Support\AbsenceDays::PARTIAL], true))<span class="text-xs font-semibold text-stone-700">{{ __('Frånvarande') }}</span>@endif
                             @if($shift->area_id)<span class="text-xs text-gray-500">{{ $areaById->get($shift->area_id)?->name }}</span>@endif
                         </li>
                     @empty
@@ -190,6 +191,10 @@
                             aria-label="{{ $row['label'] }}, {{ $day->locale($locale)->isoFormat('dddd D MMMM') }}"
                             @class(['group relative min-h-16 border-b border-l border-stone-200 p-1.5 outline-none focus-visible:ring-2 focus-visible:ring-accent-500', 'bg-stone-50/70' => $rowIndex === 0, 'bg-accent-50/30' => $day->isToday() && $rowIndex > 0])
                         >
+                            @if($rows !== 'avdelningar' && $row['key'] !== 'open' && isset($absence[(int) $row['key']][$day->toDateString()]))
+                                <div @class(['pointer-events-none absolute inset-0 rounded-sm', 'bg-stone-200/50' => $absence[(int) $row['key']][$day->toDateString()] !== App\Modules\Planning\Support\AbsenceDays::REQUESTED]) aria-hidden="true"></div>
+                            @endif
+                            @include('planning::partials.absence', ['mark' => $rows !== 'avdelningar' && $row['key'] !== 'open' ? ($absence[(int) $row['key']][$day->toDateString()] ?? null) : null])
                             @include('planning::partials.availability', ['mark' => $rows !== 'avdelningar' && $row['key'] !== 'open' ? ($availability[(int) $row['key']][$day->toDateString()] ?? null) : null])
                             <div data-chips class="space-y-1">
                                 @foreach($cellShifts as $shift)
@@ -226,6 +231,7 @@
                             @if($row['colour'])<span class="size-2.5 shrink-0 rounded-full" style="background: {{ $row['colour'] }}"></span>@endif
                             <span @class(['truncate text-sm', 'font-semibold text-ink' => $rowIndex > 0, 'italic text-gray-600' => $rowIndex === 0])>{{ $row['label'] }}</span>
                             @include('planning::partials.availability', ['mark' => $rows !== 'avdelningar' && $row['key'] !== 'open' ? ($availability[(int) $row['key']][$date] ?? null) : null])
+                            @include('planning::partials.absence', ['mark' => $rows !== 'avdelningar' && $row['key'] !== 'open' ? ($absence[(int) $row['key']][$date] ?? null) : null])
                         </div>
                         <div
                             data-track data-row="{{ $row['key'] }}" data-date="{{ $date }}"
@@ -233,6 +239,9 @@
                             @class(['relative h-14 select-none border-l border-stone-200 outline-none focus-visible:ring-2 focus-visible:ring-accent-500', 'bg-stone-50/70' => $rowIndex === 0, 'cursor-crosshair' => $canManage])
                             style="background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(100% / 24 - 1px), rgb(231 229 228) calc(100% / 24 - 1px), rgb(231 229 228) calc(100% / 24));"
                         >
+                            @if($rows !== 'avdelningar' && $row['key'] !== 'open' && in_array($absence[(int) $row['key']][$date] ?? null, [App\Modules\Planning\Support\AbsenceDays::FULL, App\Modules\Planning\Support\AbsenceDays::PARTIAL], true))
+                                <div class="pointer-events-none absolute inset-0 bg-stone-200/60" style="background-image: repeating-linear-gradient(135deg, transparent 0, transparent 6px, rgb(214 211 209 / 0.7) 6px, rgb(214 211 209 / 0.7) 8px);" aria-hidden="true"></div>
+                            @endif
                             @foreach($rowShifts as $shift)
                                 @include('planning::partials.chip', ['shift' => $shift, 'timeline' => true])
                             @endforeach
@@ -342,6 +351,7 @@
                     <li>{{ trans_choice('{0} Inga nya pass.|{1} 1 nytt pass.|[2,*] :count nya pass.', $summary['new'], ['count' => $summary['new']]) }}</li>
                     <li>{{ trans_choice('{0} Inga ändrade pass.|{1} 1 ändrat pass.|[2,*] :count ändrade pass.', $summary['changed'], ['count' => $summary['changed']]) }}</li>
                     @if(($summary['unavailable'] ?? 0) > 0)<li class="text-amber-800">{{ trans_choice('{1} 1 pass ligger på en tid som personen har sagt inte passar.|[2,*] :count pass ligger på tider som personerna har sagt inte passar.', $summary['unavailable'], ['count' => $summary['unavailable']]) }}</li>@endif
+                    @if(($summary['absent'] ?? 0) > 0)<li class="text-amber-800">{{ trans_choice('{1} 1 pass ligger på en dag då personen är frånvarande.|[2,*] :count pass ligger på dagar då personen är frånvarande.', $summary['absent'], ['count' => $summary['absent']]) }}</li>@endif
                     @if($summary['open'] > 0)<li>{{ trans_choice('{1} 1 öppet pass utan person.|[2,*] :count öppna pass utan person.', $summary['open'], ['count' => $summary['open']]) }}</li>@endif
                 </ul>
                 @if(! $settings['notify_on_publish'])

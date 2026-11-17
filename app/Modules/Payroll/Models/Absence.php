@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $type
  * @property CarbonImmutable $date_from
  * @property CarbonImmutable $date_to
+ * @property int $extent_bp
  * @property ?string $hours
  * @property string $status
  * @property ?string $note
