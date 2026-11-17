@@ -171,11 +171,10 @@
     {
       "id": "planering-toppklass",
       "rubrik": "Planering: förslag till schema, bemanningsbehov och budget",
-      "beskrivning": "Planering har redan schema, kostnad per pass, arbetstidsregler, byten, tillgänglighet och attest direkt till lönen. Nästa steg vi tittar på är bemanningsbehov per timme från försäljningen och kassan, en budget per vecka som varnar, ett förslag till schema som följer reglerna, kompetenserna och önskemålen och fördelar passen rättvist, uppgifter i passen och meddelanden till personalen i schemat.",
-      "status": "Önskemål",
+      "beskrivning": "Planering har redan schema, kostnad per pass, arbetstidsregler, byten, tillgänglighet och attest direkt till lönen. Nu bygger vi bemanningsbehov per timme från försäljningen och kassan, en budget per vecka som varnar, ett förslag till schema som följer reglerna, kompetenserna och önskemålen och fördelar passen rättvist, uppgifter i passen och meddelanden till personalen i schemat.",
+      "status": "Pågår",
       "omrade": "Planering",
-      "uppdaterad": "2026-11-17",
-      "kommentar": "Vi har inte bestämt oss ännu."
+      "uppdaterad": "2026-11-17"
     },
     {
       "id": "fraga-siffrorna",
