@@ -242,6 +242,8 @@ use App\Modules\Planning\Models\EmployeeSkill as PlanningEmployeeSkill;
 use App\Modules\Planning\Models\ForecastOverride as PlanningForecastOverride;
 use App\Modules\Planning\Models\HourProfile as PlanningHourProfile;
 use App\Modules\Planning\Models\IcalToken as PlanningIcalToken;
+use App\Modules\Planning\Models\Message as PlanningMessage;
+use App\Modules\Planning\Models\MessageRecipient as PlanningMessageRecipient;
 use App\Modules\Planning\Models\Proposal as PlanningProposal;
 use App\Modules\Planning\Models\ProposalItem as PlanningProposalItem;
 use App\Modules\Planning\Models\Publication as PlanningPublication;
@@ -472,6 +474,8 @@ const COMPANY_SCOPED_MODELS = [
     PlanningProposalItem::class => 'planningProposalItemAttributes',
     PlanningTaskTemplate::class => ['title' => 'Hemlig uppgift', 'weekdays' => [1, 2]],
     PlanningShiftTask::class => 'planningShiftTaskAttributes',
+    PlanningMessage::class => ['scope' => 'PERIOD', 'date_from' => '2026-11-09', 'date_to' => '2026-11-15', 'body' => 'Hemligt meddelande'],
+    PlanningMessageRecipient::class => 'planningMessageRecipientAttributes',
     PlanningSalesSource::class => 'planningSalesSourceAttributes',
     PlanningHourProfile::class => ['weekday' => 5, 'shares' => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2000, 2000, 1000, 0, 0, 0, 1000, 2000, 2000, 0, 0, 0, 0]],
     PlanningForecastOverride::class => ['date' => '2026-12-12', 'amount_ore' => 4_500_000, 'reason' => 'Hemlig konsert'],
@@ -769,6 +773,14 @@ function planningShiftAttributes(): array
 function planningShiftTaskAttributes(): array
 {
     return ['shift_id' => PlanningShift::create(planningShiftAttributes())->id, 'title' => 'Hemlig uppgift', 'position' => 0];
+}
+
+function planningMessageRecipientAttributes(): array
+{
+    return [
+        'message_id' => PlanningMessage::create(['scope' => 'ALL', 'date_from' => '2026-11-09', 'date_to' => '2026-11-15', 'body' => 'Hemligt meddelande'])->id,
+        'employee_id' => Employee::create(payrollEmployeeAttributes())->id,
+    ];
 }
 
 function planningSalesSourceAttributes(): array

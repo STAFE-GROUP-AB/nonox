@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-17-planering-meddelanden",
+      "datum": "2026-11-17T22:50:00+01:00",
+      "rubrik": "Meddelanden till personalen i Planering",
+      "beskrivning": "Under Planering → Meddelanden skriver du till personen på ett pass, alla som jobbar en dag, en vecka eller på en avdelning, eller alla anställda, och kan be om bekräftelse. Personalen läser på Min sida och får en notis och ett e-postmeddelande om att det finns ett meddelande, men texten skickas aldrig med e-post. Du ser per meddelande vem som har läst och bekräftat, och meddelandena tas bort efter tolv månader.",
+      "typ": "Nytt",
+      "omrade": "Planering"
+    },
+    {
       "id": "2026-11-17-planering-schemaforslag",
       "datum": "2026-11-17T18:30:00+01:00",
       "rubrik": "Schemaförslag fyller de öppna passen",

@@ -16,3 +16,4 @@ Route::view('/planering/bemanningsbehov', 'planning::demand')->name('planning.de
 Route::view('/planering/forfragningar', 'planning::requests')->name('planning.requests');
 Route::view('/planering/attest', 'planning::attest')->name('planning.attest');
 Route::view('/planering/forslag', 'planning::proposals')->name('planning.proposals');
+Route::view('/planering/meddelanden', 'planning::messages')->name('planning.messages');

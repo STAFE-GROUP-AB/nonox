@@ -69,6 +69,8 @@ final class CompanyOverview
         'tasks' => 'tasks.index',
         // The schedule across companies opens a week or a shift in its own company (ADR-037, gap 8).
         'planning' => 'planning.schedule',
+        // A schedule message is read on Min sida (ADR-037, gap 5).
+        'my-page' => 'payroll.portal.home',
         // CRM signing notices (ADR-046).
         'quotes' => 'invoicing.quotes',
         'crm-agreements' => 'crm.agreements',

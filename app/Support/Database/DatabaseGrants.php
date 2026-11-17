@@ -237,6 +237,9 @@ final class DatabaseGrants
         'planning_forecast_overrides' => GrantDecision::ReadWrite,
         'planning_hour_profiles' => GrantDecision::ReadWrite,
         'planning_ical_tokens' => GrantDecision::ReadWrite,
+        // planning:prune-messages deletes messages (and their recipients by cascade) a year after their last day.
+        'planning_message_recipients' => GrantDecision::ReadWrite,
+        'planning_messages' => GrantDecision::ReadWrite,
         // planning:prune-proposals deletes proposals (and their items by cascade) after 90 days.
         'planning_proposal_items' => GrantDecision::ReadWrite,
         'planning_proposals' => GrantDecision::ReadWrite,

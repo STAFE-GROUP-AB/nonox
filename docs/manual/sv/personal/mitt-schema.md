@@ -1,8 +1,8 @@
 ---
-beskrivning: Se dina pass på Min sida, bocka av uppgifterna på passet, ta ett öppet pass, byt eller lämna ett pass, berätta när du kan jobba och få schemat i telefonens kalender.
+beskrivning: Se dina pass på Min sida, läs meddelanden om schemat, bocka av uppgifterna på passet, ta ett öppet pass, byt eller lämna ett pass, berätta när du kan jobba och få schemat i telefonens kalender.
 ordning: 25
 modul: planning
-sokord: [schema, mitt schema, pass, nästa pass, byta pass, öppet pass, ledig, kalender, när jobbar jag]
+sokord: [schema, mitt schema, meddelande, meddelanden, pass, nästa pass, byta pass, öppet pass, ledig, kalender, när jobbar jag]
 ---
 
 # Mitt schema
@@ -22,6 +22,15 @@ Ser du inget schema? Då använder din arbetsgivare inte Planering, eller så ä
 **Nytt eller ändrat** betyder att passet är nytt eller har ändrats nyss. **Inställt** betyder att passet inte blir av.
 
 Du ser bara pass som din chef har publicerat. Oftast får du ett mejl när schemat publiceras eller när ett pass ställs in. Det bestämmer din arbetsgivare.
+
+## Meddelanden om schemat
+
+Skickar din chef ett meddelande om schemat, till exempel att leveransen kommer tidigare på lördag, ser du det överst på Min sida under **Meddelanden om schemat**. Du får också en notis och ett mejl om att det finns ett nytt meddelande. Själva texten står inte i mejlet.
+
+1. Tryck **Läs meddelandet**. Nu ser din chef att du har läst det.
+2. Står det **Jag har läst** under meddelandet vill din chef att du bekräftar. Tryck på knappen när du har förstått.
+
+Du ser bara dina egna meddelanden, aldrig vilka andra som fick dem. Det går inte att svara på ett meddelande här; frågor tar du med din chef. Meddelandena tas bort tolv månader efter den sista dagen de gäller.
 
 ## Uppgifter på passet
 

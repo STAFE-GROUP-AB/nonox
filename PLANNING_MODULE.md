@@ -131,6 +131,10 @@ planning_task_templates  id, company_id, title, instructions null, area_id null,
                       weekdays jsonb (ISO), due_time null, valid_from null, valid_to null, is_active
 planning_shift_tasks  id, company_id, shift_id (uuid, cascade), template_id null, title, instructions null,
                       due_time null, position, done_at null, done_by null (ADR-037 gap 4)
+planning_messages     id, company_id, author_id null, scope (SHIFT | DAY | PERIOD | AREA | ALL), shift_id null,
+                      area_id null, date_from, date_to, body (encrypted, ≤ 2 000 chars), requires_ack (ADR-037 gap 5)
+planning_message_recipients  id, company_id, message_id (cascade), employee_id, notified_at null, read_at null,
+                      acknowledged_at null; unique (message_id, employee_id), frozen when sent
 ```
 Indexes: `(company_id, starts_at)`, `(company_id, employee_id, starts_at)`.
 A published shift that is changed keeps its history in the audit log.
@@ -218,6 +222,13 @@ Every action: authorized by policy, transactional, audited, tenancy-safe.
   saved and when a period is published; the employee on the published shift
   ticks them off in Min sida, a planner sees `✓ n/m` on the chip and ticks in
   the shift editor. Work aid, not egenkontroll.
+- **Meddelanden** (`/planering/meddelanden`, `planning:manage`): a message to
+  the person on a shift, everyone with a published shift on a day, in a period
+  or in an area, or everyone employed in a period (≤ 31 days), optionally
+  asking for a confirmation (ADR-037 gap 5). Recipients are frozen when sent;
+  those with a login get a notice and an e-mail without the text; the planner
+  sees read and confirmed per recipient. Employees read and confirm on Min
+  sida. Pruned 12 months after `date_to` (`planning:prune-messages`).
 - **Öppna pass och byten**: requests to decide, with the checks re-run.
 - **Tid att attestera** (`/planering/attest`): per period, per person per
   day: plan, actual, difference, OB split, warnings; attest a row, a person

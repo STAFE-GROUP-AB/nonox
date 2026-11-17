@@ -27,6 +27,7 @@ Avsnittet är för dig som planerar eller attesterar tid: ägaren, en administra
 - [Mallar och kopiera veckor](/manual/planering/mallar-och-kopiera-veckor) – veckor som återkommer, och rullande scheman.
 - [Schemaförslag](/manual/planering/schemaforslag) – låt NONOX föreslå vem som ska ta de öppna passen, med skälen.
 - [Uppgifter på passen](/manual/planering/uppgifter-pa-pass) – återkommande uppgifter som personalen bockar av på Min sida.
+- [Meddelanden till personalen](/manual/planering/meddelanden) – skriv till personalen på ett pass, en dag eller en vecka och se vem som har läst.
 - [Publicera schemat](/manual/planering/publicera-schemat) – när personalen ser passen, och vem som får besked.
 - [Lönekostnad och varningar](/manual/planering/lonekostnad-och-varningar) – vad kostnaden räknas på och reglerna för vilotid och arbetstid.
 

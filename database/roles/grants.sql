@@ -204,6 +204,8 @@ BEGIN
         ('planning_forecast_overrides', 'SELECT, INSERT, UPDATE, DELETE'),
         ('planning_hour_profiles', 'SELECT, INSERT, UPDATE, DELETE'),
         ('planning_ical_tokens', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_message_recipients', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_messages', 'SELECT, INSERT, UPDATE, DELETE'),
         ('planning_proposal_items', 'SELECT, INSERT, UPDATE, DELETE'),
         ('planning_proposals', 'SELECT, INSERT, UPDATE, DELETE'),
         ('planning_publications', 'SELECT, INSERT, UPDATE, DELETE'),

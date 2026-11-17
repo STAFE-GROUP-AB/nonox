@@ -36,6 +36,7 @@ En schemaläggare kan till exempel vara en restaurangchef eller en arbetsledare.
 
 - lägga, flytta och ställa in pass, använda mallar och publicera schemat,
 - skapa uppgifter som följer med passen och se vad som är avbockat,
+- skicka meddelanden till personalen och se vem som har läst dem,
 - svara på förfrågningar om öppna pass och byten,
 - se den uppskattade kostnaden per pass och **Bemanning och kostnad**,
 - ändra inställningarna utom de som ändrar lönen.
@@ -46,7 +47,7 @@ Ge någon rollen när du bjuder in hen, eller ändra rollen för en befintlig an
 
 ## De anställda
 
-De anställda ser bara sitt eget schema, på Min sida, och bockar av uppgifterna på sina egna pass. De ser aldrig utkast, andras schema eller kostnader. När de vill byta pass ser de kollegornas publicerade pass med förnamn och första bokstaven i efternamnet. Det kräver att Min sida är öppen för företaget och att deras inloggning är kopplad till deras anställning. Se [Min sida för de anställda](/manual/lon/min-sida-for-anstallda).
+De anställda ser bara sitt eget schema, på Min sida, bockar av uppgifterna på sina egna pass och läser meddelanden som skickats till dem. De ser aldrig utkast, andras schema eller kostnader. När de vill byta pass ser de kollegornas publicerade pass med förnamn och första bokstaven i efternamnet. Det kräver att Min sida är öppen för företaget och att deras inloggning är kopplad till deras anställning. Se [Min sida för de anställda](/manual/lon/min-sida-for-anstallda).
 
 ## Läs också
 

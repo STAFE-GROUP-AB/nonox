@@ -197,6 +197,7 @@ planering/schema-franvaro: { foretag: restaurang, rutt: planning.schedule, fraga
 planering/mallar: { foretag: restaurang, rutt: planning.templates }
 planering/schemaforslag: { foretag: restaurang, rutt: planning.proposals }
 planering/uppgifter: { foretag: restaurang, rutt: planning.tasks }
+planering/meddelanden: { foretag: restaurang, rutt: planning.messages }
 planering/schema-uppgifter: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '@monday this week' }, del: 'div[role=grid]' }
 planering/installningar: { foretag: restaurang, rutt: planning.settings }
 planering/kostnadsstallen: { foretag: restaurang, rutt: planning.settings, klick: ['button[wire\:click^="editArea"]'], del: 'form[wire\:submit="saveArea"]' }
@@ -209,6 +210,7 @@ planering/bemanningsbehov: { foretag: restaurang, rutt: planning.demand }
 planering/schema-dag-behov: { foretag: restaurang, rutt: planning.schedule, fraga: { vy: dag, dag: '@monday this week +1 week +4 days' } }
 planering/min-sida-schema: { foretag: restaurang, anvandare: lina.berg@example.test, enhet: mobil, rutt: payroll.portal.home }
 planering/min-sida-uppgifter: { foretag: restaurang, anvandare: lina.berg@example.test, enhet: mobil, rutt: payroll.portal.home, visa: '[data-next-shift]' }
+planering/min-sida-meddelanden: { foretag: restaurang, anvandare: lina.berg@example.test, enhet: mobil, rutt: payroll.portal.home, visa: '[data-my-messages]' }
 
 # Lager (InventoryExtras), in the shop.
 lager/oversikt: { foretag: butik, rutt: inventory.overview }

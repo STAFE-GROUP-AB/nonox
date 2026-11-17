@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Planning\Models\Area;
 use App\Modules\Planning\Models\Shift;
+use App\Modules\Planning\Notifications\ScheduleMessageNotice;
 use App\Modules\Planning\Notifications\ScheduleNotice;
 use Carbon\CarbonImmutable;
 use Illuminate\Notifications\Notification as BaseNotification;
@@ -52,6 +53,36 @@ final class ScheduleNotifier
         }
 
         return $notified;
+    }
+
+    /**
+     * Tells the recipients of a schedule message that it exists (ADR-037 gap
+     * 5), only those with a login: the message is read on Min sida, so an
+     * employee without one cannot read it and is not e-mailed ("nås inte").
+     * The notice holds no message text. Two queries however many recipients.
+     *
+     * @param  list<int>  $employeeIds
+     * @return list<int> the employees that were told
+     */
+    public function message(Company $company, array $employeeIds, bool $requiresAck): array
+    {
+        if ($employeeIds === []) {
+            return [];
+        }
+
+        $notice = new ScheduleMessageNotice($company->id, (string) $company->name, $requiresAck);
+        $told = [];
+
+        foreach (Employee::query()->with('user')->whereKey($employeeIds)->whereNotNull('user_id')->get() as $employee) {
+            if ($employee->user instanceof User) {
+                $employee->user->notify($notice);
+                $told[] = $employee->id;
+            }
+        }
+
+        sort($told);
+
+        return $told;
     }
 
     /**

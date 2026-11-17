@@ -107,6 +107,7 @@ final class PlanningModule implements IsNew, Module, ProvidesTodos
                     ['label' => __('Mallar'), 'route' => 'planning.templates', 'active' => ['planning.templates']],
                     ...($user->hasTeamPermission($company, 'planning:manage') ? [['label' => __('Schemaförslag'), 'route' => 'planning.proposals', 'active' => ['planning.proposals']]] : []),
                     ['label' => __('Uppgifter'), 'route' => 'planning.tasks', 'active' => ['planning.tasks']],
+                    ...($user->hasTeamPermission($company, 'planning:manage') ? [['label' => __('Meddelanden'), 'route' => 'planning.messages', 'active' => ['planning.messages']]] : []),
                     ...($user->hasTeamPermission($company, 'planning:attest') ? [['label' => __('Tid att attestera'), 'route' => 'planning.attest', 'active' => ['planning.attest']]] : []),
                     ['label' => __('Öppna pass och byten'), 'route' => 'planning.requests', 'active' => ['planning.requests']],
                     ['label' => __('Bemanning och kostnad'), 'route' => 'planning.staffing', 'active' => ['planning.staffing']],
