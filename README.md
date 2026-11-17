@@ -212,6 +212,10 @@ Modulen är byggd (ADR-034) men erbjuds inte i den driftade tjänsten på nonox.
 ### NONOX AI (modul)
 - Läser leverantörsfakturor, kvitton och utlägg direkt när de laddats upp eller fotograferats, och föreslår konton och belopp med företagets egen nyckel till OpenAI, Claude eller Gemini. Med Lager påslaget föreslår den artikelns uppgifter från bilder på varan. En person kontrollerar och sparar alltid, AI:n sparar aldrig själv. Kvitton från anställda läses bara; AI:n bedömer aldrig inköpet eller personen.
 
+### Aktiebok och styrelserum (modul)
+
+- Aktiebok och styrelserum för aktiebolag: aktieboken som en historik där varje ändring är en egen händelse som inte kan ändras i efterhand, stämmor och styrelsemöten med dagordning, kallelse och protokoll som godkänns i NONOX, och påminnelser om det som ska anmälas till Bolagsverket. Datum för kallelser visas som råd tills en jurist har gått igenom reglerna.
+
 ### Företaget och din data
 - Ingen registrerar sig själv: nya användare kommer in via kön (anmälan på /ko som ägaren godkänner i /hq med passkey) eller via en inbjudan från ett företag. Inloggningen skickar bara kod till befintliga användare och inbjudna, utan att avslöja vilka adresser som har ett konto. HQ kan stänga kön och öppna självregistreringen utan ny driftsättning.
 - HQ kan peka ut ett driftbolag bland företagen i installationen: de andra företagen blir då kunder i dess kundregister och köanmälningarna prospekt i dess CRM, hålls uppdaterade utan dubbletter och gallras med kön. Utan driftbolag händer ingenting, vilket är standard när du kör NONOX själv.
@@ -236,7 +240,6 @@ Modulen är byggd (ADR-034) men erbjuds inte i den driftade tjänsten på nonox.
 - E-faktura via Peppol genom Qvalia, i version 1.0: skicka kundfakturor och ta emot leverantörsfakturor i inkorgen enligt Peppol BIS Billing 3.0. Byggt, och slås på när den första kunden vill skicka e-faktura (ADR-050).
 - Kundportal där dina kunder loggar in med en kod i mejlet och ser sina fakturor, kreditfakturor, påminnelser och kontoutdrag, betalningsuppgifterna med OCR-nummer och sina offerter, som de kan godkänna, och ställer frågor till dig (ADR-075). Byggd, och slås på när en jurist har granskat hur kundernas kontaktpersoners uppgifter får behandlas.
 - Färdiga kopplingar från kassasystem och e-handel, direkt eller via de integrationsplattformar som programmen redan använder. API:t och webhooks finns; kopplingarna byggs mot dem.
-- Aktiebok och styrelserum för aktiebolag: aktieboken som en historik där varje ändring är en egen händelse som inte kan ändras i efterhand, stämmor och styrelsemöten med dagordning, kallelse och protokoll som godkänns i NONOX, och påminnelser om det som ska anmälas till Bolagsverket. Byggd som beta och provas med pilotföretagen; datum för kallelser visas som råd tills en jurist har gått igenom reglerna.
 
 Det som pågår, är planerat eller önskat står på färdplanen på webbplatsen (`/fardplan`), och allt som har levererats, och de utredningar och granskningar som ligger bakom, står med datum och klockslag i ändringsloggen (`/andringslogg`, med RSS-flöde), grupperat efter projektets faser. Båda skrivs på vanlig svenska för den som inte läser koden; posterna finns i `docs/andringslogg` och `docs/fardplan` och hålls aktuella enligt [CONTRIBUTING.md](CONTRIBUTING.md).
 

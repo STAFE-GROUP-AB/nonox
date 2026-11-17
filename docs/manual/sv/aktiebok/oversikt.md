@@ -14,7 +14,7 @@ Varje aktiebolag ska ha en aktiebok som visar vem som äger varje aktie, hålla 
 
 Aktieboken förs som en historik: varje ändring är en egen händelse med datum som inte kan ändras i efterhand. Ett fel rättas med en ny händelse, och den gamla finns kvar. Du kan se och skriva ut aktieboken som den såg ut vilken dag som helst.
 
-Modulen finns bara för aktiebolag och slås på under **Inställningar för företaget → Moduler**. Den ingår i NONOX utan extra kostnad. På nonox.app går modulen inte att slå på än; den öppnas när juristgranskningen är klar.
+Modulen finns bara för aktiebolag och slås på under **Inställningar för företaget → Moduler**. Den ingår i NONOX utan extra kostnad.
 
 > [!IMPORTANT]
 > Styrelsen ansvarar för att aktieboken förs, bevaras och hålls tillgänglig, även när en redovisningsbyrå för den. NONOX påminner om det som ska anmälas till Bolagsverket men skickar ingenting dit, och datum för kallelser visas som råd.

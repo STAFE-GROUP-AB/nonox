@@ -210,15 +210,6 @@
       "kommentar": "Vi utreder vad som går att stödja på ett trovärdigt sätt."
     },
     {
-      "id": "aktiebok-och-styrelserum",
-      "rubrik": "Aktiebok och styrelserum",
-      "beskrivning": "En digital aktiebok för aktiebolaget, med historik över varje ändring. Protokoll från styrelsemöten och bolagsstämma, kallelser, och en påminnelse när en ändring ska anmälas till Bolagsverket.",
-      "status": "Pågår",
-      "omrade": "Bokslut",
-      "uppdaterad": "2026-11-09",
-      "kommentar": "I drift som beta. Kan slås på när driften har lagt in aktiebokens nyckel; kallelsetider visas som råd tills en jurist har granskat dem."
-    },
-    {
       "id": "kundportal",
       "rubrik": "Kundportal",
       "beskrivning": "Dina kunder loggar in med en kod i mejlet och ser sina fakturor, kontoutdrag och offerter, ser hur de betalar med rätt OCR-nummer, godkänner offerter och skickar frågor till dig. Byggd och väntar på juristgranskning innan den kan slås på.",
