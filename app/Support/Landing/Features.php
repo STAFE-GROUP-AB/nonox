@@ -65,6 +65,7 @@ final class Features
         'planning_payroll' => ['name' => 'Schema och personalliggare blir löneunderlag', 'status' => self::LIVE, 'readme' => 'Schema och personalliggare blir löneunderlag', 'module' => 'Planering'],
         'planning_staffing' => ['name' => 'Lönekostnad i procent av försäljningen', 'status' => self::LIVE, 'readme' => 'lönekostnad i procent av försäljningen ur bokföringen', 'module' => 'Planering'],
         'planning_self_service' => ['name' => 'Mitt schema, öppna pass och byten på Min sida', 'status' => self::LIVE, 'readme' => 'Min sida visar mitt schema, lediga pass att ta, byten och kalenderlänk', 'module' => 'Planering'],
+        'planning_demand' => ['name' => 'Bemanningsbehov från försäljningen', 'status' => self::LIVE, 'readme' => 'Bemanningsbehov: prognos för försäljningen', 'module' => 'Planering'],
         'inventory' => ['name' => 'Lager med lagerställen och EAN', 'status' => self::LIVE, 'readme' => 'Lagerställen i lager, zoner, hyllor och fack', 'module' => 'Lager'],
         'inventory_flow' => ['name' => 'Inleveranser, plocklistor och inventering', 'status' => self::LIVE, 'readme' => 'Inventering per hylla eller hela lagret', 'module' => 'Lager'],
         'inventory_purchase_orders' => ['name' => 'Inköpsorder och inköpsförslag', 'status' => self::LIVE, 'readme' => 'Inköpsorder till leverantörer', 'module' => 'Lager'],

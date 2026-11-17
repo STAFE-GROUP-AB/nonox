@@ -219,6 +219,7 @@
                         @endfor
                     </div>
                 </div>
+                @include('planning::partials.demand-band', ['need' => $demand[$date] ?? null, 'money' => $money, 'hours' => $hours])
                 @foreach($rowList as $rowIndex => $row)
                     @php($rowShifts = $byCell->get($row['key'].'|'.$date, collect()))
                     <div class="grid border-b border-stone-200" style="grid-template-columns: 12rem 1fr;" role="row">
@@ -248,7 +249,8 @@
 
     <p class="text-xs text-gray-500">
         {{ __('Kostnaden är en uppskattning: timlön (månadslön räknad per timme), OB enligt kollektivavtalet och, när reglerna är kontrollerade, semesterersättning och arbetsgivaravgifter. Lönen räknas alltid i lönekörningen.') }}
-        {{ __('Försäljningen är bokförda intäkter på konto :from–:to; ≈ är snittet för samma veckodag de fyra veckorna före.', ['from' => $settings['sales_account_from'], 'to' => $settings['sales_account_to']]) }}
+        {{ __('Försäljningen är bokförda intäkter på konto :from–:to; ≈ är prognosen, snittet för samma veckodag de senaste :weeks veckorna utan helgdagar.', ['from' => $settings['sales_account_from'], 'to' => $settings['sales_account_to'], 'weeks' => $demandScope['weeks']]) }}
+        @if($canManage)<a href="{{ route('planning.demand') }}" class="font-semibold text-accent-700 underline">{{ __('Bemanningsbehov') }}</a>@endif
     </p>
 
     {{-- The shift editor --}}

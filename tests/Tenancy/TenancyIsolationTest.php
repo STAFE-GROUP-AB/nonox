@@ -239,11 +239,15 @@ use App\Modules\Planning\Models\Area as PlanningArea;
 use App\Modules\Planning\Models\Attestation as PlanningAttestation;
 use App\Modules\Planning\Models\Availability as PlanningAvailability;
 use App\Modules\Planning\Models\EmployeeSkill as PlanningEmployeeSkill;
+use App\Modules\Planning\Models\ForecastOverride as PlanningForecastOverride;
+use App\Modules\Planning\Models\HourProfile as PlanningHourProfile;
 use App\Modules\Planning\Models\IcalToken as PlanningIcalToken;
 use App\Modules\Planning\Models\Publication as PlanningPublication;
+use App\Modules\Planning\Models\SalesSource as PlanningSalesSource;
 use App\Modules\Planning\Models\Shift as PlanningShift;
 use App\Modules\Planning\Models\ShiftRequest as PlanningShiftRequest;
 use App\Modules\Planning\Models\Skill as PlanningSkill;
+use App\Modules\Planning\Models\StaffingRule as PlanningStaffingRule;
 use App\Modules\Planning\Models\Template as PlanningTemplate;
 use App\Modules\Planning\Models\TemplateShift as PlanningTemplateShift;
 use App\Modules\Portal\Models\PortalAttachment;
@@ -460,6 +464,10 @@ const COMPANY_SCOPED_MODELS = [
     PlanningShiftRequest::class => 'planningShiftRequestAttributes',
     PlanningIcalToken::class => 'planningIcalTokenAttributes',
     PlanningAttestation::class => 'planningAttestationAttributes',
+    PlanningSalesSource::class => 'planningSalesSourceAttributes',
+    PlanningHourProfile::class => ['weekday' => 5, 'shares' => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2000, 2000, 1000, 0, 0, 0, 1000, 2000, 2000, 0, 0, 0, 0]],
+    PlanningForecastOverride::class => ['date' => '2026-12-12', 'amount_ore' => 4_500_000, 'reason' => 'Hemlig konsert'],
+    PlanningStaffingRule::class => ['weekday' => 5, 'start_minute' => 660, 'end_minute' => 840, 'sales_per_staff_hour_ore' => 120_000, 'min_staff' => 2, 'valid_from' => '2026-11-01'],
     StockLocation::class => 'inventoryLocationAttributes',
     StockMovement::class => 'inventoryMovementAttributes',
     ScanOperation::class => 'inventoryScanOperationAttributes',
@@ -748,6 +756,11 @@ function planningEmployeeSkillAttributes(): array
 function planningShiftAttributes(): array
 {
     return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'starts_at' => '2026-11-10 08:00', 'ends_at' => '2026-11-10 16:00', 'status' => 'DRAFT'];
+}
+
+function planningSalesSourceAttributes(): array
+{
+    return ['pos_connection_id' => PosConnection::create(posConnectionAttributes())->id];
 }
 
 function planningTemplateShiftAttributes(): array

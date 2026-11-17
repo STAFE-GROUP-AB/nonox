@@ -108,6 +108,7 @@ final class PlanningModule implements IsNew, Module, ProvidesTodos
                     ...($user->hasTeamPermission($company, 'planning:attest') ? [['label' => __('Tid att attestera'), 'route' => 'planning.attest', 'active' => ['planning.attest']]] : []),
                     ['label' => __('Öppna pass och byten'), 'route' => 'planning.requests', 'active' => ['planning.requests']],
                     ['label' => __('Bemanning och kostnad'), 'route' => 'planning.staffing', 'active' => ['planning.staffing']],
+                    ['label' => __('Bemanningsbehov'), 'route' => 'planning.demand', 'active' => ['planning.demand']],
                     ['label' => __('Inställningar'), 'route' => 'planning.settings', 'active' => ['planning.settings']],
                 ],
             ],

@@ -25,7 +25,9 @@ Schemat är byggt för surfplatta och dator. På mobilen visas det som en lista 
 - Översta raden, **Öppna pass**, är passen som ingen har ännu. Med avdelningar som rader heter den **Utan avdelning**.
 - Helgdagar står under datumet. Bredvid varje person står hur många timmar hen är planerad den veckan.
 
-Längst ner står en summa per dag: **Tid**, **Kostnad**, **Försäljning** och **Personalkostnad** i procent av försäljningen. Läs mer i [Lönekostnad och varningar](/manual/planering/lonekostnad-och-varningar).
+Längst ner står en summa per dag: **Tid**, **Kostnad**, **Försäljning** och **Personalkostnad** i procent av försäljningen, och **Behov** när ni har bemanningsmål. Läs mer i [Lönekostnad och varningar](/manual/planering/lonekostnad-och-varningar).
+
+I dagvyn visar raden **Behov per timme** hur många som behövs mot hur många som har pass, timme för timme. Filtrerar du på en avdelning gäller behovet den avdelningen. Läs mer i [Bemanningsbehov](/manual/planering/bemanningsbehov#behovet-i-schemat).
 
 ## Så här lägger du ett pass
 

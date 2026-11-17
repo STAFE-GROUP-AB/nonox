@@ -198,6 +198,8 @@ planering/attest: { foretag: cafe, rutt: planning.attest, fraga: { fran: '@monda
 planering/attest-avvikelser: { foretag: cafe, rutt: planning.attest, fraga: { fran: '@monday this week -3 weeks', till: '@monday this week -1 day', visa: avvikelser } }
 planering/attest-restaurang: { foretag: restaurang, rutt: planning.attest, fraga: { fran: '@monday this week -1 week', till: '@monday this week -1 day' } }
 planering/bemanning: { foretag: restaurang, rutt: planning.staffing, fraga: { fran: '@monday this week -4 weeks', till: '@monday this week -1 day' } }
+planering/bemanningsbehov: { foretag: restaurang, rutt: planning.demand }
+planering/schema-dag-behov: { foretag: restaurang, rutt: planning.schedule, fraga: { vy: dag, dag: '@monday this week +1 week +4 days' } }
 planering/min-sida-schema: { foretag: restaurang, anvandare: lina.berg@example.test, enhet: mobil, rutt: payroll.portal.home }
 
 # Lager (InventoryExtras), in the shop.

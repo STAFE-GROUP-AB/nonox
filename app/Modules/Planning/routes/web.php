@@ -11,5 +11,6 @@ Route::view('/planering/mallar', 'planning::templates')->name('planning.template
 Route::view('/planering/installningar', 'planning::settings')->name('planning.settings');
 Route::view('/planering/bemanning', 'planning::staffing')->name('planning.staffing');
 Route::get('/planering/bemanning/csv', StaffingCsvController::class)->name('planning.staffing.csv');
+Route::view('/planering/bemanningsbehov', 'planning::demand')->name('planning.demand');
 Route::view('/planering/forfragningar', 'planning::requests')->name('planning.requests');
 Route::view('/planering/attest', 'planning::attest')->name('planning.attest');

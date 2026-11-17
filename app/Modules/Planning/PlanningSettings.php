@@ -52,6 +52,8 @@ final class PlanningSettings
         // Sales for labour cost %: posted rows on these revenue accounts, per day.
         'sales_account_from' => 3000,
         'sales_account_to' => 3799,
+        // Bemanningsbehov: the forecast averages the same weekday over this many weeks (ADR-037, gap 1).
+        'forecast_weeks' => 6,
     ];
 
     /**

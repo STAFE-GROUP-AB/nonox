@@ -127,6 +127,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Schemat publiceras med besked i appen och via e-post. Min sida visar mitt schema, lediga pass att ta, byten och kalenderlänk.
 - Schema och personalliggare blir löneunderlag: planen jämförs med in- och utcheckningarna, chefen attesterar avvikelserna och tiden blir tidrapporter med timlön, OB per OB-art enligt avtalet och övertid eller komptid, direkt i lönekörningen. Utan personalliggare kan chefen skriva in arbetad tid, även en dag utan planerat pass.
 - Bemanning och kostnad: planerad och faktisk tid och lönekostnad i procent av försäljningen ur bokföringen, dag för dag.
+- Bemanningsbehov: prognos för försäljningen (snittet för samma veckodag de senaste veckorna, helgdagar från samma helgdag förra året, egna ändringar med anledning) och bemanningsmål per avdelning, med försäljning per bemannad timme och minsta bemanning. Fördelningen per timme kommer från kassans kvitton eller en egen timprofil. Schemats dagvy visar behovet mot passen timme för timme, med varning för under- och överbemanning.
 
 ### Lager (modul) – ny
 - Lagerförda artiklar i samma artikelregister som fakturorna, med fliken Avancerad: EAN/GTIN med kontroll av kontrollsiffran, SKU, skannerkod, inköpspris, leverantör, egenskaper, mått och vinstmarginalbeskattning för begagnat.

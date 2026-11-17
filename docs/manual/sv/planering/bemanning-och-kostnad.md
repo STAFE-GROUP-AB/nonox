@@ -40,6 +40,7 @@ Under summan finns ett diagram och en tabell per dag, eller per vecka när perio
 - **Faktisk tid** kommer från attesterad tid där den finns, annars från personalliggaren. Personalliggaren räknar tiden från incheckning till utcheckning, utan att dra av rast. Finns ingen av dem för perioden visas ingen faktisk tid.
 - **Försäljning** är bokförda verifikationer på försäljningskontona per verifikationsdatum, kredit minus debet. Standard är konto 3000–3799. Kontona ändrar du i modulens inställningar.
 - **Förra året** är samma veckor ett år tidigare, 52 veckor bakåt, så att veckodagarna stämmer. Det visas när bokföringen eller schemat har något för de veckorna.
+- **Prognos** och **Behov** kommer från [Bemanningsbehov](/manual/planering/bemanningsbehov): prognosen för försäljningen och de bemannade timmar som behövs enligt era bemanningsmål. ▲ betyder underbemannat och ▼ överbemannat. Utan bemanningsmål visas inget behov.
 
 > [!NOTE]
 > Försäljningen gäller alltid hela företaget, även när du har valt en avdelning. Personalkostnaden i procent för en avdelning är alltså avdelningens kostnad mot företagets försäljning.

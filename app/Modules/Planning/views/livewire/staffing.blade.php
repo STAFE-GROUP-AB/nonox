@@ -34,6 +34,23 @@
     ];
     $sourceLabels = ['attested' => __('attesterad tid'), 'ledger' => __('personalliggaren')];
     $presets = ['vecka' => __('Denna vecka'), 'forra-veckan' => __('Förra veckan'), 'fyra-veckor' => __('Fyra veckor'), 'manad' => __('Denna månad'), 'forra-manaden' => __('Förra månaden')];
+    // The forecast and the staffing demand (Bemanningsbehov) summed over some days.
+    $demandFor = function (array $dates) use ($demand): array {
+        $rows = array_values(array_filter(array_map(fn (string $date) => $demand[$date] ?? null, $dates)));
+        $forecasts = array_filter(array_map(fn ($row) => $row->forecast->amountOre, $rows), fn ($value) => $value !== null);
+        $needs = array_filter(array_map(fn ($row) => $row->needMinutes, $rows), fn ($value) => $value !== null);
+        $statuses = array_map(fn ($row) => $row->status, $rows);
+        $status = in_array('UNDER', $statuses, true) ? 'UNDER' : (in_array('OVER', $statuses, true) ? 'OVER' : null);
+
+        return [
+            'forecast' => $forecasts === [] ? null : (int) array_sum($forecasts),
+            'need' => $needs === [] ? null : (int) array_sum($needs),
+            'status' => $status,
+            'title' => count($rows) === 1 ? trim((\App\Modules\Planning\Support\Demand\DemandText::warning($rows[0]) ?? '').' '.\App\Modules\Planning\Support\Demand\DemandText::forecast($rows[0]->forecast)) : '',
+        ];
+    };
+    $needCell = fn (array $cell): string => $cell['need'] === null ? '–' : $hours($cell['need']).($cell['status'] === 'UNDER' ? ' ▲' : ($cell['status'] === 'OVER' ? ' ▼' : ''));
+    $needClass = fn (array $cell): string => $cell['status'] === 'UNDER' ? 'text-red-700 font-semibold' : ($cell['status'] === 'OVER' ? 'text-amber-800' : '');
 @endphp
 
 <div class="space-y-6">
@@ -111,6 +128,11 @@
         @foreach($notes as $note)
             <p>{{ $note }}</p>
         @endforeach
+        <p>
+            {{ __('Prognos och Behov kommer från Bemanningsbehov: prognosen är snittet för samma veckodag de senaste veckorna, utan helgdagar, och behovet är bemannade timmar enligt era bemanningsmål. ▲ betyder underbemannat och ▼ överbemannat.') }}
+            @unless($demandHasRules){{ __('Inga bemanningsmål finns ännu, så behovet visas inte.') }}@endunless
+            <a href="{{ route('planning.demand', array_filter(['avdelning' => $this->area])) }}" class="font-semibold text-accent-700 underline">{{ __('Bemanningsbehov') }}</a>
+        </p>
     </div>
 
     {{-- Charts --}}
@@ -170,10 +192,12 @@
                     <tr class="border-b border-stone-200">
                         <th scope="col" class="{{ $th }}">{{ __('Period') }}</th>
                         <th scope="col" class="{{ $thNum }}">{{ __('Planerad tid') }}</th>
+                        <th scope="col" class="{{ $thNum }}">{{ __('Behov') }}</th>
                         <th scope="col" class="{{ $thNum }}">{{ __('Planerad kostnad') }}</th>
                         <th scope="col" class="{{ $thNum }}">{{ __('Faktisk tid') }}</th>
                         <th scope="col" class="{{ $thNum }}">{{ __('Faktisk kostnad') }}</th>
                         <th scope="col" class="{{ $thNum }}">{{ __('Försäljning') }}</th>
+                        <th scope="col" class="{{ $thNum }}">{{ __('Prognos') }}</th>
                         <th scope="col" class="{{ $thNum }}">{{ __('Andel planerad') }}</th>
                         <th scope="col" class="{{ $thNum }}">{{ __('Andel faktisk') }}</th>
                         <th scope="col" class="{{ $thNum }}">{{ __('Försäljning förra året') }}</th>
@@ -182,13 +206,16 @@
                 </thead>
                 @foreach($weeks as $week)
                     <tbody class="divide-y divide-gray-100" wire:key="week-{{ $week['week'] }}">
+                        @php($weekDemand = $demandFor(array_column(array_filter($days, fn ($day) => $day['week'] === $week['week']), 'date')))
                         <tr class="bg-stone-50 font-semibold text-ink">
                             <th scope="row" class="{{ $td }} text-left font-semibold text-ink">{{ __('Vecka :week', ['week' => $week['number']]) }}</th>
                             <td class="{{ $tdNum }}">{{ $hours($week['planned_minutes']) }}</td>
+                            <td class="{{ $tdNum }} {{ $needClass($weekDemand) }}">{{ $needCell($weekDemand) }}</td>
                             <td class="{{ $tdNum }}">{{ $money($week['planned_cost']) }}{{ $week['planned_incomplete'] ? ' *' : '' }}</td>
                             <td class="{{ $tdNum }}">{{ $hours($week['actual_minutes']) }}</td>
                             <td class="{{ $tdNum }}">{{ $money($week['actual_cost']) }}{{ $week['actual_incomplete'] ? ' *' : '' }}</td>
                             <td class="{{ $tdNum }}">{{ $money($week['sales']) }}</td>
+                            <td class="{{ $tdNum }}">{{ $money($weekDemand['forecast']) }}</td>
                             <td class="{{ $tdNum }}">{{ $percent($week['planned_percent']) }}</td>
                             <td class="{{ $tdNum }}">{{ $percent($week['actual_percent']) }}</td>
                             <td class="{{ $tdNum }}">{{ $money($week['last_year_sales']) }}</td>
@@ -196,13 +223,16 @@
                         </tr>
                         @foreach($days as $day)
                             @continue($day['week'] !== $week['week'])
+                            @php($dayDemand = $demandFor([$day['date']]))
                             <tr>
                                 <th scope="row" class="{{ $td }} text-left font-normal">{{ ucfirst(\Carbon\CarbonImmutable::parse($day['date'])->locale($locale)->isoFormat('dddd D MMM')) }}</th>
                                 <td class="{{ $tdNum }}">{{ $hours($day['planned_minutes']) }}</td>
+                                <td class="{{ $tdNum }} {{ $needClass($dayDemand) }}" title="{{ $dayDemand['title'] }}">{{ $needCell($dayDemand) }}</td>
                                 <td class="{{ $tdNum }}">{{ $money($day['planned_cost']) }}{{ $day['planned_incomplete'] ? ' *' : '' }}</td>
                                 <td class="{{ $tdNum }}" title="{{ $day['actual_source'] ? __('Från :source', ['source' => $sourceLabels[$day['actual_source']] ?? '']) : '' }}">{{ $hours($day['actual_minutes']) }}</td>
                                 <td class="{{ $tdNum }}">{{ $money($day['actual_cost']) }}{{ $day['actual_incomplete'] ? ' *' : '' }}</td>
                                 <td class="{{ $tdNum }}">{{ $money($day['sales']) }}</td>
+                                <td class="{{ $tdNum }}" title="{{ $dayDemand['title'] }}">{{ $money($dayDemand['forecast']) }}</td>
                                 <td class="{{ $tdNum }}">{{ $percent($day['planned_percent']) }}</td>
                                 <td class="{{ $tdNum }}">{{ $percent($day['actual_percent']) }}</td>
                                 <td class="{{ $tdNum }}" title="{{ $day['last_year_date'] }}">{{ $money($day['last_year_sales']) }}</td>
@@ -214,11 +244,14 @@
                 <tfoot>
                     <tr class="border-t-2 border-stone-300 font-bold text-ink">
                         <th scope="row" class="{{ $td }} text-left font-bold text-ink">{{ __('Summa') }}</th>
+                        @php($allDemand = $demandFor(array_column($days, 'date')))
                         <td class="{{ $tdNum }}">{{ $hours($totals['planned_minutes']) }}</td>
+                        <td class="{{ $tdNum }} {{ $needClass($allDemand) }}">{{ $needCell($allDemand) }}</td>
                         <td class="{{ $tdNum }}">{{ $money($totals['planned_cost']) }}</td>
                         <td class="{{ $tdNum }}">{{ $hours($totals['actual_minutes']) }}</td>
                         <td class="{{ $tdNum }}">{{ $money($totals['actual_cost']) }}</td>
                         <td class="{{ $tdNum }}">{{ $money($totals['sales']) }}</td>
+                        <td class="{{ $tdNum }}">{{ $money($allDemand['forecast']) }}</td>
                         <td class="{{ $tdNum }}">{{ $percent($totals['planned_percent']) }}</td>
                         <td class="{{ $tdNum }}">{{ $percent($totals['actual_percent']) }}</td>
                         <td class="{{ $tdNum }}">{{ $money($totals['last_year_sales']) }}</td>

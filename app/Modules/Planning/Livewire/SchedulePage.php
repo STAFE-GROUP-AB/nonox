@@ -17,6 +17,7 @@ use App\Modules\Planning\Models\Shift;
 use App\Modules\Planning\Models\Template;
 use App\Modules\Planning\PlanningModule;
 use App\Modules\Planning\PlanningSettings;
+use App\Modules\Planning\Support\Demand\DemandData;
 use App\Modules\Planning\Support\LocalTimestamp;
 use App\Modules\Planning\Support\ScheduleData;
 use App\Modules\StaffLedger\Livewire\Concerns\InCurrentCompany;
@@ -333,13 +334,25 @@ class SchedulePage extends Component
         $this->toast(__('Kostnaderna är omräknade.'));
     }
 
-    public function render(ScheduleData $data): View
+    public function render(ScheduleData $data, DemandData $demand): View
     {
         [$from, $to] = $this->period();
         $loaded = $data->load($this->company(), $from, $to, ['area' => $this->area, 'skill' => $this->skill, 'location' => $this->location]);
+        // Demand follows the area filter; without one it is the whole company's (ADR-037, gap 1).
+        $needs = $demand->load($this->company(), $from, $to, $this->area === null ? null : $loaded['areas']->firstWhere('id', $this->area));
+
+        // The footer's ≈ figure is the demand forecast, so the schedule shows one forecast, explained in one place.
+        foreach ($loaded['totals'] as $date => $total) {
+            $forecast = ($needs['days'][$date] ?? null)?->forecast->amountOre;
+            $base = $total['sales'] ?? $forecast;
+            $loaded['totals'][$date]['reference'] = $forecast;
+            $loaded['totals'][$date]['percent'] = $base !== null && $base > 0 && $total['cost'] > 0 ? round($total['cost'] * 100 / $base, 1) : null;
+        }
 
         return view('planning::livewire.schedule', [
             ...$loaded,
+            'demand' => $needs['days'],
+            'demandScope' => $needs,
             'from' => $from,
             'to' => $to,
             'canManage' => $this->allowed('planning:manage'),

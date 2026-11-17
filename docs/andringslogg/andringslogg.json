@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-17-bemanningsbehov",
+      "datum": "2026-11-17T17:55:00+01:00",
+      "rubrik": "Bemanningsbehov från försäljningen",
+      "beskrivning": "Under Planering → Bemanningsbehov räknas en prognos för försäljningen från bokföringen, med samma helgdag förra året och egna ändringar med anledning, och bemanningsmål blir ett behov av personal per timme. Fördelningen över timmarna kommer från kassans kvitton eller en egen timprofil, annars visas behovet per dag. Schemats dagvy och Bemanning och kostnad visar behovet mot passen och varnar för under- och överbemanning.",
+      "typ": "Nytt",
+      "omrade": "Planering"
+    },
+    {
       "id": "2026-11-16-tillverkning-jamforelse-och-systemdokumentation",
       "datum": "2026-11-16T15:10:00+01:00",
       "rubrik": "Tillverkning i jämförelsen, körjournal på branschsidorna, ny systemdokumentation",
