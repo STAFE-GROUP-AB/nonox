@@ -43,6 +43,7 @@ Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanf�
 Ägarens beslut 2026-11-17:
 - Planering i toppklass (punkt 25) byggs nu, före juridikversion 1.9.
 - Juridikversion 1.9 (villkor och personuppgiftsbiträdesavtal, Stripe-texterna) skjuts: aviseringen skickas 2026-12-05, förhandsgranskning till ägaren först.
+- Juridikversion 1.9 (ägaren samma dag, Leads rekommendation): gäller för nya kunder från 2026-12-05; befintliga kunder får varslet 2026-12-05 och 1.9 gäller för dem från 2027-02-03 (60 dagars varsel, villkoren §12). Ett befintligt företag som kopplar Stripe före dess godkänner 1.9 med en kryssruta. Biträdesavtalet tar också med Planering.
 - Aktieboken ska gå att slå på på nonox.app: nyckeln till hashkedjan skapades i prod-.env 2026-11-17.
 
 Ägarens beslut 2026-11-12:
