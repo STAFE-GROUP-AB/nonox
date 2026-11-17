@@ -246,6 +246,38 @@
         @endif
     </div>
 
+    @if($areas->whereNull('archived_at')->isNotEmpty() && ! $isDay)
+        <section class="rounded-3xl bg-white p-4 shadow-xs ring-1 ring-stone-200" aria-labelledby="unit-totals-heading">
+            <h2 id="unit-totals-heading" class="text-sm font-semibold text-ink">{{ __('Per avdelning') }}</h2>
+            <div class="mt-3 overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                            <th scope="col" class="py-2 pr-4">{{ __('Avdelning') }}</th>
+                            <th scope="col" class="px-3 py-2 text-right">{{ __('Pass') }}</th>
+                            <th scope="col" class="px-3 py-2 text-right">{{ __('Öppna pass') }}</th>
+                            <th scope="col" class="px-3 py-2 text-right">{{ __('Tid') }}</th>
+                            <th scope="col" class="py-2 pl-3 text-right">{{ __('Kostnad') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-stone-200">
+                        @foreach($areas->whereNull('archived_at')->map(fn ($area) => ['key' => (string) $area->id, 'label' => $area->name, 'colour' => $area->colour])->push(['key' => 'none', 'label' => __('Utan avdelning'), 'colour' => '#a8a29e']) as $unit)
+                            @php($figures = $unitTotals[$unit['key']] ?? null)
+                            @continue($figures === null)
+                            <tr>
+                                <th scope="row" class="py-2 pr-4 text-left font-medium text-ink"><span class="inline-flex items-center gap-2"><span class="size-2.5 rounded-full" style="background: {{ $unit['colour'] }}"></span>{{ $unit['label'] }}</span></th>
+                                <td class="px-3 py-2 text-right tabular-nums">{{ $figures['shifts'] }}</td>
+                                <td class="px-3 py-2 text-right tabular-nums">{{ $figures['open'] }}</td>
+                                <td class="px-3 py-2 text-right tabular-nums">{{ $hours($figures['minutes']) }}</td>
+                                <td class="py-2 pl-3 text-right tabular-nums">{{ $figures['cost'] > 0 ? $money($figures['cost']) : '–' }}@if($figures['incomplete']) <span title="{{ __('Någon kostnad saknas') }}">*</span>@endif</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    @endif
+
     <p class="text-xs text-gray-500">
         {{ __('Kostnaden är en uppskattning: timlön (månadslön räknad per timme), OB enligt kollektivavtalet och, när reglerna är kontrollerade, semesterersättning och arbetsgivaravgifter. Lönen räknas alltid i lönekörningen.') }}
         {{ __('Försäljningen är bokförda intäkter på konto :from–:to; ≈ är snittet för samma veckodag de fyra veckorna före.', ['from' => $settings['sales_account_from'], 'to' => $settings['sales_account_to']]) }}

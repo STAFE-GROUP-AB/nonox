@@ -27,6 +27,10 @@ Schemat är byggt för surfplatta och dator. På mobilen visas det som en lista 
 
 Längst ner står en summa per dag: **Tid**, **Kostnad**, **Försäljning** och **Personalkostnad** i procent av försäljningen. Läs mer i [Lönekostnad och varningar](/manual/planering/lonekostnad-och-varningar).
 
+Under veckan står **Per avdelning**: antal pass, **Öppna pass**, **Tid** och **Kostnad** för varje avdelning, och för passen **Utan avdelning**. Filtrerar du på avdelning, kompetens eller lokal gäller summorna bara det du ser. Driver du flera företag kan du se alla på en sida i [Schema över företag](/manual/planering/schema-over-foretag).
+
+![Veckovyn med avdelningar som rader och summorna per avdelning under veckan.](/bilder/manual/planering/schema-per-avdelning.webp)
+
 ## Så här lägger du ett pass
 
 1. Peka på rutan för personen och dagen och klicka på **+**. Eller markera rutan och tryck <kbd>Enter</kbd>.

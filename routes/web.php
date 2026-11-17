@@ -198,6 +198,8 @@ Route::middleware([
         Route::post('/kan-folja', 'followable')->name('followable');
     });
     Route::view('/mina-foretag', 'companies.overview')->name('companies.overview');
+    // Read-only week across the companies where the user may see the schedule (ADR-037, gap 8); like Mina företag it spans companies.
+    Route::view('/mina-foretag/schema', 'firm.chain-schedule')->name('companies.schedule');
     // The user's own groups of companies, for internal reporting (ADR-060); spans companies like Mina företag.
     Route::view('/koncern', 'group.overview')->name('group.overview');
     Route::get('/koncern/{group}/csv', GroupCsvController::class)->whereNumber('group')->name('group.csv');

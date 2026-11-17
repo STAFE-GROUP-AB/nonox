@@ -67,6 +67,8 @@ final class CompanyOverview
         'bank-reconciliation' => 'accounting.bankReconciliation',
         'annual-report' => 'accounting.annualReport',
         'tasks' => 'tasks.index',
+        // The schedule across companies opens a week or a shift in its own company (ADR-037, gap 8).
+        'planning' => 'planning.schedule',
         // CRM signing notices (ADR-046).
         'quotes' => 'invoicing.quotes',
         'crm-agreements' => 'crm.agreements',

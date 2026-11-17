@@ -8,6 +8,7 @@ use App\Models\TeamInvitation;
 use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\InviteEmployeeToPortal;
+use App\Modules\Payroll\Actions\SaveEmployee;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Planning\Actions\ApplyTemplate;
 use App\Modules\Planning\Actions\AttestDay;
@@ -30,6 +31,7 @@ use App\Modules\Planning\Support\LocalTimestamp;
 use App\Modules\StaffLedger\Domain\LedgerQuery;
 use App\Modules\StaffLedger\Models\Location;
 use App\Modules\StaffLedger\Models\Person;
+use App\Support\Luhn;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
@@ -190,6 +192,8 @@ final class PlanningExtras extends DemoExtra
 
         if ($context->slug === self::RESTAURANT) {
             $this->selfService($context, $monday);
+        } else {
+            $this->sharedLogin($context, $monday);
         }
 
         $this->attest($context);
@@ -434,6 +438,50 @@ final class PlanningExtras extends DemoExtra
         ]);
 
         app(IssueIcalToken::class)($lina, $company);
+    }
+
+    /**
+     * Lina also helps out at the café, with the same login as at the
+     * restaurant (the chain schedule, ADR-037 gap 8): a café shift that
+     * overlaps her restaurant shift on Friday and one on Saturday morning
+     * that leaves too little rest after it. Only the café's own schedule is
+     * written; the chain view reads both.
+     */
+    private function sharedLogin(DemoContext $context, CarbonImmutable $monday): void
+    {
+        $lina = PortalExtras::user();
+
+        if (! $lina instanceof User) {
+            return;
+        }
+
+        $company = $context->company;
+
+        if (! $company->hasUser($lina)) {
+            $company->users()->attach($lina, ['role' => 'employee']);
+        }
+
+        // A fresh model: the one in the context has its members cached from before.
+        $company = $company->fresh() ?? $company;
+
+        $nine = '910604123';
+        $employee = app(SaveEmployee::class)($context->user, $company, [
+            'first_name' => 'Lina', 'last_name' => 'Berg', 'personal_number' => '19'.$nine.Luhn::checkDigit($nine), 'email' => PortalExtras::EMAIL,
+            'tax_residence' => 'SE', 'tax_table' => 33, 'tax_column' => 1,
+            'start_date' => $monday->subMonths(6)->toDateString(), 'employment_type' => 'TIMANSTALLD', 'salary_form' => 'HOURLY', 'salary' => '140', 'employment_rate' => 25, 'weekly_hours' => '10',
+            'user_id' => $lina->id,
+        ]);
+
+        foreach ([[4, '17:00', '21:00'], [5, '05:00', '09:00']] as [$offset, $start, $end]) {
+            app(SaveShift::class)($context->user, $company, [
+                'employee_id' => $employee->id,
+                'date' => $monday->addDays($offset)->toDateString(),
+                'start' => $start,
+                'end' => $end,
+                'break_minutes' => 0,
+                'note' => 'Hjälper till i caféet.',
+            ]);
+        }
     }
 
     /**

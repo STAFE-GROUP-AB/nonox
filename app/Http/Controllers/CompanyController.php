@@ -69,7 +69,22 @@ class CompanyController
         // From Mina företag a row opens a page in that company; only known pages.
         $destination = CompanyOverview::DESTINATIONS[(string) $request->input('till')] ?? 'dashboard';
 
-        return redirect()->route($destination, status: 303);
+        // The chain schedule (ADR-037, gap 8) opens the week or the day of a shift in its own company.
+        $query = $request->input('till') === 'planning' ? $this->scheduleQuery($request) : [];
+
+        return redirect()->route($destination, $query, status: 303);
+    }
+
+    /** @return array<string, string> */
+    private function scheduleQuery(Request $request): array
+    {
+        $valid = fn (mixed $value): bool => is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1 && checkdate((int) substr($value, 5, 2), (int) substr($value, 8, 2), (int) substr($value, 0, 4));
+
+        if ($valid($request->input('dag'))) {
+            return ['vy' => 'dag', 'dag' => (string) $request->input('dag')];
+        }
+
+        return $valid($request->input('vecka')) ? ['vecka' => (string) $request->input('vecka')] : [];
     }
 
     private function findForMember(User $user, int $companyId): Company

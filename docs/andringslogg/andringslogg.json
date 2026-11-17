@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-17-schema-over-foretag",
+      "datum": "2026-11-17T00:30:00+01:00",
+      "rubrik": "Schema över företag och summor per avdelning",
+      "beskrivning": "Under Mina företag visar Schema över företag veckans pass i flera av dina företag bredvid varandra, bara att läsa, med varning när samma inloggning har krockande pass i två av dem. I schemat står summor per avdelning under veckan.",
+      "typ": "Nytt",
+      "omrade": "Planering"
+    },
+    {
       "id": "2026-11-16-tillverkning-jamforelse-och-systemdokumentation",
       "datum": "2026-11-16T15:10:00+01:00",
       "rubrik": "Tillverkning i jämförelsen, körjournal på branschsidorna, ny systemdokumentation",
