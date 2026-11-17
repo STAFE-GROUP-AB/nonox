@@ -272,7 +272,7 @@ it('reads a fixed number of queries whatever the number of companies and shifts'
     chainShift($first, 'Anna', '2026-11-03', '08:00', '12:00');
     $few = $count();
 
-    foreach (range(1, 6) as $number) {
+    foreach (range(1, 24) as $number) {
         $company = chainCompany("Kedjan {$number} AB");
         $company->users()->attach($login, ['role' => 'employee']);
         chainEmployee($company, 'Anna', $login);
@@ -283,4 +283,54 @@ it('reads a fixed number of queries whatever the number of companies and shifts'
     }
 
     expect($count())->toBe($few);
+});
+
+it('looks for conflicts across every company the user may see, but draws only the chosen ones', function () {
+    $cafe = chainCompany('Café Hamnen AB');
+    $bistro = chainCompany('Bistro Torget AB');
+    $login = User::factory()->create();
+    $cafe->users()->attach($login, ['role' => 'employee']);
+    $bistro->users()->attach($login, ['role' => 'employee']);
+    chainEmployee($cafe, 'Anna', $login);
+    chainEmployee($bistro, 'Anna', $login);
+    chainShift($cafe, 'Anna', '2026-11-03', '08:00', '16:00');
+    chainShift($bistro, 'Anna', '2026-11-03', '15:00', '20:00');
+
+    $data = app(ChainSchedule::class)->for($this->viewer->fresh(), $this->monday, [$cafe->id]);
+
+    expect($data['selected'])->toBe([$cafe->id])
+        ->and(collect($data['companies'])->pluck('id')->all())->toBe([$cafe->id])
+        ->and($data['conflicts'])->not->toBe([])
+        ->and($data['companies'][0]['chips']['2026-11-03'][0]['warnings'])->not->toBe([]);
+});
+
+it('shows a former employee as such and never an unknown employee as an open shift', function () {
+    $cafe = chainCompany('Café Hamnen AB');
+    chainEmployee($cafe, 'Anna');
+    chainShift($cafe, 'Anna', '2026-11-03', '08:00', '16:00');
+    Employee::query()->withoutGlobalScopes()->where('company_id', $cafe->id)->update(['status' => 'TERMINATED']);
+
+    $chip = app(ChainSchedule::class)->for($this->viewer->fresh(), $this->monday)['companies'][0]['chips']['2026-11-03'][0];
+
+    expect($chip['person'])->toBe('Tidigare anställd')->and($chip['open'])->toBeFalse();
+});
+
+it('saves only companies the user may see, so a selection of unknown ids saves nothing', function () {
+    $cafe = chainCompany('Café Hamnen AB');
+    $other = Bookkeeping::company()[1];
+    $this->actingAs($this->viewer->fresh());
+
+    Livewire::test(ChainScheduleComponent::class)
+        ->set('chosen', [(string) $cafe->id, (string) $other->id])
+        ->set('viewName', 'Mitt urval')
+        ->call('saveView');
+
+    expect(SavedView::query()->where('name', 'Mitt urval')->value('filters'))->toBe(['foretag' => (string) $cafe->id]);
+
+    Livewire::test(ChainScheduleComponent::class)
+        ->set('chosen', array_map(fn (int $n): string => (string) (900000000 + $n), range(1, 60)))
+        ->set('viewName', 'För stor')
+        ->call('saveView');
+
+    expect(SavedView::query()->where('name', 'För stor')->value('filters'))->toBe([]);
 });

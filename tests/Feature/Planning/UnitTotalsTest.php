@@ -76,3 +76,10 @@ it('reads the same number of queries for a short and a long history', function (
 
     expect($count())->toBe($few);
 });
+
+it('counts an archived area that still has shifts, so the units add up to the week', function () {
+    Planning::shift($this->owner, $this->company, ['employee_id' => $this->anna->id, 'area_id' => $this->bar->id, 'date' => '2026-11-03', 'start' => '08:00', 'end' => '12:00']);
+    $this->bar->forceFill(['archived_at' => now()])->save();
+
+    Livewire::withQueryParams(['vecka' => '2026-11-02', 'rader' => 'avdelningar'])->test(SchedulePage::class)->assertSee('Baren (arkiverad)');
+});

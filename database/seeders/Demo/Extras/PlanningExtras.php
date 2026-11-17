@@ -31,13 +31,13 @@ use App\Modules\Planning\Support\LocalTimestamp;
 use App\Modules\StaffLedger\Domain\LedgerQuery;
 use App\Modules\StaffLedger\Models\Location;
 use App\Modules\StaffLedger\Models\Person;
-use App\Support\Luhn;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Closure;
 use Database\Seeders\Demo\DemoContext;
 use Database\Seeders\Demo\DemoExtra;
+use Database\Seeders\Demo\DemoIndustries;
 use Laravel\Jetstream\Contracts\AddsTeamMembers;
 use RuntimeException;
 
@@ -442,7 +442,7 @@ final class PlanningExtras extends DemoExtra
 
     /**
      * Lina also helps out at the café, with the same login as at the
-     * restaurant (the chain schedule, ADR-037 gap 8): a café shift that
+     * restaurant, under the same personal number (the chain schedule, ADR-037 gap 8): a café shift that
      * overlaps her restaurant shift on Friday and one on Saturday morning
      * that leaves too little rest after it. Only the café's own schedule is
      * written; the chain view reads both.
@@ -464,9 +464,8 @@ final class PlanningExtras extends DemoExtra
         // A fresh model: the one in the context has its members cached from before.
         $company = $company->fresh() ?? $company;
 
-        $nine = '910604123';
         $employee = app(SaveEmployee::class)($context->user, $company, [
-            'first_name' => 'Lina', 'last_name' => 'Berg', 'personal_number' => '19'.$nine.Luhn::checkDigit($nine), 'email' => PortalExtras::EMAIL,
+            'first_name' => 'Lina', 'last_name' => 'Berg', 'personal_number' => DemoIndustries::personalNumber('19990217', '912'), 'email' => PortalExtras::EMAIL,
             'tax_residence' => 'SE', 'tax_table' => 33, 'tax_column' => 1,
             'start_date' => $monday->subMonths(6)->toDateString(), 'employment_type' => 'TIMANSTALLD', 'salary_form' => 'HOURLY', 'salary' => '140', 'employment_rate' => 25, 'weekly_hours' => '10',
             'user_id' => $lina->id,

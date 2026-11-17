@@ -94,3 +94,13 @@ it('does not reach another company through the open-in-company switch', function
     expect(Employee::query()->withoutGlobalScopes()->where('company_id', $this->b->id)->exists())->toBeTrue()
         ->and($this->userA->fresh()->current_team_id)->toBe($this->a->id);
 });
+
+it('leaves out an archived company', function () {
+    $this->b->users()->attach($this->userA, ['role' => 'scheduler']);
+    $this->b->forceFill(['archived_at' => now()])->save();
+
+    $data = app(ChainSchedule::class)->for(User::query()->findOrFail($this->userA->id), $this->monday);
+
+    expect(array_keys($data['eligible']))->toBe([$this->a->id])
+        ->and(json_encode($data))->not->toContain('Bertil');
+});

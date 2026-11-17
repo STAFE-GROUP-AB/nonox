@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Support\Tenancy\SpansCompanies;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -60,9 +61,16 @@ class ChainSchedule extends Component implements SpansCompanies
         $this->chosen = [];
     }
 
-    public function saveView(SaveView $save): void
+    public function saveView(SaveView $save, ChainScheduleData $chain): void
     {
-        $view = $save($this->user(), self::PAGE, $this->viewName, ['foretag' => implode(',', $this->chosenIds())], ['foretag'], self::MAX_VALUE_LENGTH);
+        // Only companies the user may see are saved; a view never names more than that.
+        $ids = implode(',', array_values(array_intersect($this->chosenIds(), $chain->eligibleIds($this->user()))));
+
+        if (mb_strlen($ids) > self::MAX_VALUE_LENGTH) {
+            throw ValidationException::withMessages(['viewName' => __('Urvalet är för stort för att sparas som vy. Välj färre företag.')]);
+        }
+
+        $view = $save($this->user(), self::PAGE, $this->viewName, ['foretag' => $ids], ['foretag'], self::MAX_VALUE_LENGTH);
         $this->viewName = '';
         $this->toast(__('Vyn ”:name” är sparad.', ['name' => $view->name]));
     }

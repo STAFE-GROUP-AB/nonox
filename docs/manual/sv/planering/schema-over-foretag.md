@@ -41,14 +41,16 @@ Klicka på ett pass för att byta till företaget och öppna dagen i dess schema
 
 ## Krockar mellan företag
 
-Samma person kan jobba i två av dina företag. NONOX känner igen henne bara om hon har **samma inloggning** i båda, det vill säga att båda anställningarna är kopplade till samma användare. Namn, personnummer eller e-postadress räcker inte.
+Samma person kan jobba i två av dina företag. NONOX känner igen personen bara om hen har **samma inloggning** i båda, det vill säga att båda anställningarna är kopplade till samma användare. Namn, personnummer eller e-postadress räcker inte.
 
 Då varnar sidan när:
 
 - två pass överlappar varandra, eller
 - det är för kort tid mellan ett pass i det ena företaget och ett i det andra. Gränsen är dygnsvilan i företagens inställningar, och gäller den strängare av de två.
 
-Varningen visas bara för företag du själv får se schemat i. Har personen ett pass i ett företag du inte får se, får du ingen varning och ingen ledtråd om att det finns. Det är en varning, ingenting hindrar planeringen. Hur arbetstidsreglerna gäller för en person med flera arbetsgivare i samma koncern är inte kontrollerat, så bedöm varje fall själv.
+Varningen letar bland alla företag du får se schemat i, också de du inte har ibockade, men visas bara för passen i de företag som är ibockade. För minderåriga gäller den regel för dygnsvila som företaget har för dem.
+
+Varningen gäller bara företag du själv får se schemat i. Har personen ett pass i ett företag du inte får se, får du ingen varning och ingen ledtråd om att det finns. Det är en varning, ingenting hindrar planeringen. Hur arbetstidsreglerna gäller för en person med flera arbetsgivare i samma koncern är inte kontrollerat, så bedöm varje fall själv.
 
 Ändra passet i det företag där det ligger, under **Planering → Schema**.
 

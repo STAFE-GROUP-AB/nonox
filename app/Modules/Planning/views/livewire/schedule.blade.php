@@ -246,7 +246,7 @@
         @endif
     </div>
 
-    @if($areas->whereNull('archived_at')->isNotEmpty() && ! $isDay)
+    @if($areas->isNotEmpty() && ! $isDay)
         <section class="rounded-3xl bg-white p-4 shadow-xs ring-1 ring-stone-200" aria-labelledby="unit-totals-heading">
             <h2 id="unit-totals-heading" class="text-sm font-semibold text-ink">{{ __('Per avdelning') }}</h2>
             <div class="mt-3 overflow-x-auto">
@@ -261,7 +261,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-stone-200">
-                        @foreach($areas->whereNull('archived_at')->map(fn ($area) => ['key' => (string) $area->id, 'label' => $area->name, 'colour' => $area->colour])->push(['key' => 'none', 'label' => __('Utan avdelning'), 'colour' => '#a8a29e']) as $unit)
+                        @foreach($areas->filter(fn ($area) => $area->archived_at === null || isset($unitTotals[(string) $area->id]))->map(fn ($area) => ['key' => (string) $area->id, 'label' => $area->name.($area->archived_at !== null ? ' ('.__('arkiverad').')' : ''), 'colour' => $area->colour])->push(['key' => 'none', 'label' => __('Utan avdelning'), 'colour' => '#a8a29e']) as $unit)
                             @php($figures = $unitTotals[$unit['key']] ?? null)
                             @continue($figures === null)
                             <tr>

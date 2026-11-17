@@ -398,7 +398,11 @@ view built exactly like the firm workspace (ADR-028 §2).
   accounting are per employer, and a pool would need either cross-company
   writes (against AGENTS.md §1.3) or a new legal construction. A later ADR if
   chains ask for it. `TODO(legal-verify)`: how arbetstidslagen's limits apply
-  to one person with several employers in the same group.
+  to one person with several employers in the same group. `TODO(legal-verify)`:
+  whether reading one employee's shifts across companies for the conflict
+  check is compatible with the purpose they were collected for (GDPR art.
+  6.4), and what art. 13 information employees with one login in several
+  companies must get.
 
 ### Permissions
 

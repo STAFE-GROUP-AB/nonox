@@ -14656,5 +14656,6 @@
     "Schema över företag": "Schedule across companies",
     "Veckans pass i flera av dina företag bredvid varandra. Du ser bara företag där du har rätt att se schemat, och här går det inte att ändra något.": "This week's shifts in several of your companies side by side. You only see companies where you may see the schedule, and nothing can be changed here.",
     "Tillbaka till Mina företag": "Back to My companies",
-    "Per avdelning": "Per area"
+    "Per avdelning": "Per area",
+    "Urvalet är för stort för att sparas som vy. Välj färre företag.": "The selection is too large to save as a view. Choose fewer companies."
 }
