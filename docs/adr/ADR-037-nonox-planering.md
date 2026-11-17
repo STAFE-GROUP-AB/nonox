@@ -293,7 +293,11 @@ Where the build had to choose:
   five per day), so someone back from leave is not put first.
 - The loader reads only the employment's dates and weekly hours: no pay
   column is selected at all.
-- Accepting locks the proposal and its shifts, then re-checks.
+- Week rules are checked in every week the shift touches: a shift over
+  Sunday midnight takes rest and hours from the next week too.
+- Accepting takes a transaction-scoped advisory lock per company, locks the
+  proposal and its shifts, then re-checks, so two proposals for the same
+  person cannot be accepted at once.
 - Each soft part is in [-1, 1] before weighting (levels Mycket 3, Något 2,
   Lite 1, Inte alls 0). Fairness is the distance from the mean of those who
   could take the shift, relative to the mean; the unsocial part counts by

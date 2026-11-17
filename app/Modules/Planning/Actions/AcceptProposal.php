@@ -40,6 +40,9 @@ final class AcceptProposal
 {
     use GuardsPlanning;
 
+    /** The first key of the transaction-scoped advisory lock taken per company while a proposal is accepted. */
+    public const int LOCK_NAMESPACE = 37_007;
+
     public function __construct(
         private readonly SaveShift $save,
         private readonly ProposalLoader $loader,
@@ -68,6 +71,8 @@ final class AcceptProposal
         $now = CarbonImmutable::now(LocalTimestamp::ZONE);
 
         return DB::transaction(function () use ($user, $company, $proposal, $items, $now): int {
+            // One acceptance per company at a time: two proposals with different shifts for the same person must not both pass the re-check.
+            DB::select('SELECT pg_advisory_xact_lock(?, ?)', [self::LOCK_NAMESPACE, $company->id]);
             $locked = Proposal::query()->whereKey($proposal->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->isAccepted()) {

@@ -163,6 +163,23 @@ it('accepts the ticked shifts as drafts with the person, publishes nothing and a
         ->toThrow(ValidationException::class, 'Förslaget är redan godkänt.');
 });
 
+it('accepts under a per-company advisory lock, so two acceptances cannot pass the re-check together', function () {
+    proposalOpenShift('2026-11-24');
+    $proposal = proposalMake();
+
+    DB::enableQueryLog();
+    CurrentCompany::run($this->company, fn () => app(AcceptProposal::class)($this->owner, $this->company, $proposal));
+    $queries = array_column(DB::getQueryLog(), 'query');
+    DB::disableQueryLog();
+
+    $lock = array_search('SELECT pg_advisory_xact_lock(?, ?)', $queries, true);
+    $proposalLock = collect($queries)->search(fn (string $query): bool => str_contains($query, 'planning_proposals') && str_contains($query, 'for update'));
+
+    expect($lock)->not->toBeFalse()
+        ->and($proposalLock)->not->toBeFalse()
+        ->and($lock)->toBeLessThan($proposalLock);
+});
+
 it('accepts all with one click', function () {
     proposalOpenShift('2026-11-24');
     proposalOpenShift('2026-11-26');

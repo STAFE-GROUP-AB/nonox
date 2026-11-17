@@ -401,3 +401,18 @@ it('takes approved absence off the contracted hours, so someone back from leave 
 
     expect($outcome->employeeId)->toBe(3);
 });
+
+it('never takes the weekly rest of the next week with a shift over Sunday midnight', function () {
+    // Next week Tuesday to Sunday 12–16: the longest rest that week is Monday 00:00 to Tuesday 12:00, exactly 36 hours.
+    $next = proposalWeek('n', [1, 2, 3, 4, 5, 6], '12:00', '16:00', 0, 1);
+    $slots = [proposalSlot('night', '2026-11-29 22:00', '2026-11-30 06:00')];
+    $outcome = proposeFor($slots, [proposalCandidate(1, $next)])['night'];
+    $settings = PlanningSettings::resolve([]);
+    $input = new ProposalInput($slots, [proposalCandidate(1, $next)], proposalAt('2026-11-23'), proposalAt('2026-11-29'), $settings['working_time_rules']);
+
+    expect($outcome->employeeId)->toBeNull()
+        ->and($outcome->reasons)->toEqual([['code' => 'blocked', 'rules' => 1]])
+        ->and(ProposalEngine::verify($input, ['night' => 1]))->toBe(['night'])
+        // The same shift ending at midnight leaves the next week's rest whole.
+        ->and(proposeFor([proposalSlot('evening', '2026-11-29 16:00', '2026-11-30 00:00')], [proposalCandidate(1, $next)])['evening']->employeeId)->toBe(1);
+});

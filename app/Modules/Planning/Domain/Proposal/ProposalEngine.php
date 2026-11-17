@@ -87,7 +87,7 @@ final class ProposalEngine
     /** @var array<string, ProposalSlot> */
     private array $slots = [];
 
-    /** @var array<string, array{start: int, end: int, worked: int, unsocial: int, week: string, day: string}> */
+    /** @var array<string, array{start: int, end: int, worked: int, unsocial: int, week: string, day: string, endWeek: string}> */
     private array $slotInfo = [];
 
     /** @var array<string, int> slot id => employee id */
@@ -198,6 +198,8 @@ final class ProposalEngine
                 'unsocial' => min($worked, UnsocialTime::minutes($slot->start, $slot->end, $input->unsocialFrom, $input->unsocialTo)),
                 'week' => $this->weekOf[$slot->id] = self::week($slot->start),
                 'day' => $this->dayOf[$slot->id] = $slot->start->setTimezone(UnsocialTime::ZONE)->toDateString(),
+                // A shift over Sunday midnight also takes rest and hours from the next week.
+                'endWeek' => self::week($slot->end->subMinute()),
             ];
             $this->eligibility($slot);
         }
@@ -528,7 +530,8 @@ final class ProposalEngine
     /**
      * Whether the employee's shifts with the slot added carry a hard rule
      * warning anywhere the slot can affect, whether or not it was there
-     * before: on the slot itself; a week rule in the slot's week (a week
+     * before: on the slot itself; a week rule in a week the slot touches,
+     * where it starts or, over Sunday midnight, where it ends (a week
      * rule gives at most one warning per week, so a full week stays full);
      * the four-week overtime cap in the slot's week and the three after it;
      * the daily rest or overlap of the shift right after the slot; and the
@@ -567,18 +570,22 @@ final class ProposalEngine
             }
         }
 
-        $weeks = [$week];
+        $touched = array_values(array_unique([$week, $info['endWeek']]));
+        $weeks = [];
 
-        for ($i = 1; $i <= 3; $i++) {
+        for ($i = 0; $i <= 3; $i++) {
             $weeks[] = CarbonImmutable::parse($week, UnsocialTime::ZONE)->addWeeks($i)->toDateString();
+            $weeks[] = CarbonImmutable::parse($info['endWeek'], UnsocialTime::ZONE)->addWeeks($i)->toDateString();
         }
+
+        $weeks = array_values(array_unique($weeks));
 
         foreach ($warnings as $warning) {
             if (in_array($warning->rule, self::SOFT_RULES, true)) {
                 continue;
             }
 
-            if ($this->inScope($warning, $slotId, $weeks, $nextId, $info['day'])) {
+            if ($this->inScope($warning, $slotId, $touched, $weeks, $nextId, $info['day'])) {
                 return true;
             }
         }
@@ -586,8 +593,11 @@ final class ProposalEngine
         return false;
     }
 
-    /** @param  list<string>  $weeks  the slot's week and the three after it */
-    private function inScope(WorkingTimeWarning $warning, string $slotId, array $weeks, ?string $nextId, string $day): bool
+    /**
+     * @param  list<string>  $touched  the weeks the slot touches: where it starts and where it ends
+     * @param  list<string>  $weeks  those weeks and the three after each
+     */
+    private function inScope(WorkingTimeWarning $warning, string $slotId, array $touched, array $weeks, ?string $nextId, string $day): bool
     {
         $rule = $warning->rule;
         $shiftWeek = $this->weekOf[$warning->shiftId] ?? null;
@@ -601,7 +611,7 @@ final class ProposalEngine
         }
 
         if (in_array($rule, self::WEEK_RULES, true)) {
-            return $shiftWeek === $weeks[0];
+            return in_array($shiftWeek, $touched, true);
         }
 
         if (in_array($rule, self::REST_RULES, true)) {
