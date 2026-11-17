@@ -189,5 +189,6 @@
     "{1} Meddelandet är skickat till 1 person.|[2,*] Meddelandet är skickat till :count personer.": "{1} Meddelandet är skickat till 1 person.|[2,*] Meddelandet är skickat till :count personer.",
     "{1} 1 nås inte eftersom hen inte har någon inloggning.|[2,*] :count nås inte eftersom de inte har någon inloggning.": "{1} 1 nås inte eftersom hen inte har någon inloggning.|[2,*] :count nås inte eftersom de inte har någon inloggning.",
     "{1} Meddelandet når 1 person.|[2,*] Meddelandet når :count personer.": "{1} Meddelandet når 1 person.|[2,*] Meddelandet når :count personer.",
-    "{1} 1 nås inte|[2,*] :count nås inte": "{1} 1 nås inte|[2,*] :count nås inte"
+    "{1} 1 nås inte|[2,*] :count nås inte": "{1} 1 nås inte|[2,*] :count nås inte",
+    "{1} Nytt pass: täcker 1 timme med för få i schemat|[2,*] Nytt pass: täcker :count timmar med för få i schemat": "{1} Nytt pass: täcker 1 timme med för få i schemat|[2,*] Nytt pass: täcker :count timmar med för få i schemat"
 }

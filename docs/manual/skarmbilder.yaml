@@ -196,6 +196,7 @@ planering/schema-utkast: { foretag: restaurang, rutt: planning.schedule, fraga: 
 planering/schema-franvaro: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '@monday this week +1 week' } }
 planering/mallar: { foretag: restaurang, rutt: planning.templates }
 planering/schemaforslag: { foretag: restaurang, rutt: planning.proposals }
+planering/schemaforslag-nya-pass: { foretag: restaurang, rutt: planning.proposals, visa: '[data-new]' }
 planering/uppgifter: { foretag: restaurang, rutt: planning.tasks }
 planering/meddelanden: { foretag: restaurang, rutt: planning.messages }
 planering/schema-uppgifter: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '@monday this week' }, del: 'div[role=grid]' }

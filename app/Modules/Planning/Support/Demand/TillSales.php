@@ -26,6 +26,29 @@ final class TillSales
      */
     public static function perHour(array $connectionIds, CarbonImmutable $from, CarbonImmutable $to, array $alsoDates = []): array
     {
+        $result = [];
+
+        foreach (self::perHourByConnection($connectionIds, $from, $to, $alsoDates) as $days) {
+            foreach ($days as $day => $hours) {
+                foreach ($hours as $hour => $net) {
+                    $result[$day][$hour] = ($result[$day][$hour] ?? 0) + $net;
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * The same, per till, in one grouped query: for several scopes with
+     * different tills at once (the schedule proposal, gap 3).
+     *
+     * @param  list<int>  $connectionIds
+     * @param  list<string>  $alsoDates  Y-m-d outside the period
+     * @return array<int, array<string, array<int, int>>> till id => Y-m-d => local hour => öre
+     */
+    public static function perHourByConnection(array $connectionIds, CarbonImmutable $from, CarbonImmutable $to, array $alsoDates = []): array
+    {
         if ($connectionIds === []) {
             return [];
         }
@@ -43,15 +66,15 @@ final class TillSales
                         ->where('sold_at', '<', ShiftQuery::instant($last->setTimezone(DayBuckets::ZONE)->addDay()->startOfDay())));
                 }
             })
-            ->groupByRaw("{$local}::date, EXTRACT(HOUR FROM {$local})")
-            ->selectRaw("{$local}::date::text AS day, EXTRACT(HOUR FROM {$local})::int AS hour, SUM(pos_sales.total_ore - pos_sales.vat_ore) AS net")
+            ->groupByRaw("pos_sales.pos_connection_id, {$local}::date, EXTRACT(HOUR FROM {$local})")
+            ->selectRaw("pos_sales.pos_connection_id AS till, {$local}::date::text AS day, EXTRACT(HOUR FROM {$local})::int AS hour, SUM(pos_sales.total_ore - pos_sales.vat_ore) AS net")
             ->toBase()
             ->get();
 
         $result = [];
 
         foreach ($rows as $row) {
-            $result[substr((string) $row->day, 0, 10)][(int) $row->hour] = (int) $row->net;
+            $result[(int) $row->till][substr((string) $row->day, 0, 10)][(int) $row->hour] = (int) $row->net;
         }
 
         return $result;

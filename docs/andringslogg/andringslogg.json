@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-17-planering-schemaforslag-nya-pass",
+      "datum": "2026-11-17T23:40:00+01:00",
+      "rubrik": "Schemaförslag lägger till de pass som saknas",
+      "beskrivning": "Med Föreslå nya pass utifrån bemanningsbehovet ikryssat lägger Schemaförslag till nya pass där schemat har för få mot bemanningsmålen, i de passlängder du väljer, och föreslår vem som ska ta dem med samma regler för vilotid, frånvaro och jämn fördelning som förut. Bara de pass som ryms i veckans budget för personalkostnad läggs till, och kostnaden räknas lika vem som än tar passet. Du godkänner själv, och passen blir utkast i schemat.",
+      "typ": "Nytt",
+      "omrade": "Planering"
+    },
+    {
       "id": "2026-11-17-planering-budget",
       "datum": "2026-11-17T23:00:00+01:00",
       "rubrik": "Budget för personalkostnad i schemat",

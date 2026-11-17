@@ -58,6 +58,10 @@ final class PlanningSettings
         'fairness_weeks' => 8,
         'unsocial_from' => '19:00',
         'unsocial_to' => '07:00',
+        // Schedule proposals, v2 (gap 3, P8): also propose new shifts from the staffing demand, of these lengths in whole hours, with this break when a shift is longer than the rule for work without a break. The company's own choices, not legal values.
+        'proposal_new_shifts' => false,
+        'proposal_shift_hours' => [4, 6, 8],
+        'proposal_break_minutes' => 30,
         // Bemanningsbehov: the forecast averages the same weekday over this many weeks (ADR-037, gap 1).
         'forecast_weeks' => 6,
         // Budget för personalkostnad (ADR-037, gap 2): warn from this share of a week's budget, in basis points (9 500 = 95 %), and always at 100 %.
@@ -66,6 +70,16 @@ final class PlanningSettings
 
     /** The threshold the budget page accepts, in basis points: 50 %–99,99 %. */
     public const array BUDGET_WARN_AT = [5000, 9999];
+
+    /**
+     * The lengths of new shifts a proposal may make, in whole hours. At most
+     * ten: with one break in the middle no part is then longer than five
+     * hours (arbetstidslagen 15 §), and a longer day is for a person to plan.
+     */
+    public const array SHIFT_HOURS = [2, 10];
+
+    /** The break a proposal gives a long new shift, in minutes. */
+    public const array BREAK_MINUTES = [0, 120];
 
     /** The fairness window the proposal form accepts, in weeks before the period. */
     public const array FAIRNESS_WEEKS = [1, 26];
@@ -251,6 +265,48 @@ final class PlanningSettings
     public static function fairnessWeeks(array $settings): int
     {
         return max(self::FAIRNESS_WEEKS[0], min(self::FAIRNESS_WEEKS[1], self::int($settings, 'fairness_weeks')));
+    }
+
+    /**
+     * The lengths a proposal may give new shifts, in minutes, shortest first:
+     * the stored whole hours inside SHIFT_HOURS, else the defaults.
+     *
+     * @param  array<string, mixed>  $settings
+     * @return list<int>
+     */
+    public static function shiftLengths(array $settings): array
+    {
+        $hours = self::shiftHours($settings['proposal_shift_hours'] ?? null);
+
+        return array_map(fn (int $hour): int => $hour * 60, $hours === [] ? self::DEFAULTS['proposal_shift_hours'] : $hours);
+    }
+
+    /**
+     * Whole hours inside SHIFT_HOURS, unique and sorted, from a stored list
+     * or a typed text such as "4, 6, 8"; anything else is dropped.
+     *
+     * @return list<int>
+     */
+    public static function shiftHours(mixed $value): array
+    {
+        $parts = is_array($value) ? $value : (is_string($value) ? preg_split('/[\s,;]+/', $value, -1, PREG_SPLIT_NO_EMPTY) : []);
+        $hours = [];
+
+        foreach ((array) $parts as $part) {
+            if ((is_int($part) || (is_string($part) && ctype_digit($part))) && (int) $part >= self::SHIFT_HOURS[0] && (int) $part <= self::SHIFT_HOURS[1]) {
+                $hours[(int) $part] = (int) $part;
+            }
+        }
+
+        ksort($hours);
+
+        return array_values($hours);
+    }
+
+    /** @param  array<string, mixed>  $settings */
+    public static function breakMinutes(array $settings): int
+    {
+        return max(self::BREAK_MINUTES[0], min(self::BREAK_MINUTES[1], self::int($settings, 'proposal_break_minutes')));
     }
 
     /** @param  array<string, mixed>  $settings */

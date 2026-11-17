@@ -126,6 +126,116 @@ final class DemandData
     }
 
     /**
+     * The demand of several scopes at once, for the schedule proposal (gap
+     * 3, P8), in a fixed number of queries whatever the number of areas,
+     * days, shifts or receipts: the rules, hour profiles, overrides and till
+     * mappings of every scope, the books' daily sales per cost centre, the
+     * tills' hourly sales per till, and the shifts. Each scope is worked out
+     * exactly as load() does it. Only scopes with a staffing target of their
+     * own are returned: the whole company under 'company', an area under its
+     * id.
+     *
+     * @param  iterable<Area>  $areas  the areas that may be scopes (active ones)
+     * @param  array<string, mixed>  $settings  resolved planning settings
+     * @return array<int|string, array<string, DayDemand>> scope => date => day
+     */
+    public function forScopes(Company $company, CarbonImmutable $from, CarbonImmutable $to, iterable $areas, array $settings): array
+    {
+        $weeks = Forecaster::clampWeeks(PlanningSettings::int($settings, 'forecast_weeks'));
+        $today = CarbonImmutable::today(LocalTimestamp::ZONE);
+        $from = $from->setTimezone(LocalTimestamp::ZONE)->startOfDay();
+        $to = $to->setTimezone(LocalTimestamp::ZONE)->startOfDay();
+        $days = [];
+
+        for ($day = $from; $day->lessThanOrEqualTo($to); $day = $day->addDay()) {
+            $days[] = $day;
+        }
+
+        $key = fn (mixed $areaId): string => $areaId === null ? 'company' : (string) $areaId;
+        /** @var Collection<string, Collection<int, StaffingRule>> $rules */
+        $rules = StaffingRule::query()->orderBy('valid_from')->orderBy('start_minute')->orderBy('id')->get()->groupBy(fn (StaffingRule $rule): string => $key($rule->area_id));
+
+        if ($rules->isEmpty()) {
+            return [];
+        }
+
+        $profiles = HourProfile::query()->get()->groupBy(fn (HourProfile $profile): string => $key($profile->area_id));
+        $overrides = [];
+
+        foreach (ForecastOverride::query()->whereBetween('date', [$from->toDateString(), $to->toDateString()])->get() as $row) {
+            $overrides[$key($row->area_id)][$row->date->toDateString()] = ['amount' => $row->amount_ore, 'reason' => $row->reason];
+        }
+
+        $sources = SalesSource::query()->get(['pos_connection_id', 'area_id']);
+        $lookback = Forecaster::lookbackFrom($from, $today, $weeks);
+        $holidays = Forecaster::lastYearHolidays($days);
+        $sales = SalesFromBooks::perCompanyDay(
+            [(int) $company->id => [PlanningSettings::int($settings, 'sales_account_from'), PlanningSettings::int($settings, 'sales_account_to')]],
+            $lookback,
+            $to,
+            $holidays,
+        )[(int) $company->id] ?? ['all' => [], 'centres' => []];
+        $tillSales = TillSales::perHourByConnection(array_values(array_unique(array_map('intval', $sources->pluck('pos_connection_id')->all()))), $lookback, $to, $holidays);
+        $shifts = ShiftQuery::startingOn($from->subDay(), $to)
+            ->where('status', '<>', Shift::CANCELLED)
+            ->get(['id', 'employee_id', 'area_id', 'starts_at', 'ends_at']);
+
+        $scopes = [null];
+
+        foreach ($areas as $area) {
+            $scopes[] = $area;
+        }
+
+        $result = [];
+
+        foreach ($scopes as $area) {
+            $scopeKey = $key($area?->id);
+            $scopeRules = $rules->get($scopeKey);
+
+            if ($scopeRules === null || $scopeRules->isEmpty()) {
+                continue;
+            }
+
+            $centre = AreaCostCentre::of($area);
+            $scopeSales = $centre === null ? $sales['all'] : ($sales['centres'][$centre] ?? []);
+            $till = [];
+
+            foreach ($this->tills($sources, $area) as $tillId) {
+                foreach ($tillSales[$tillId] ?? [] as $date => $hours) {
+                    foreach ($hours as $hour => $net) {
+                        $till[$date][$hour] = ($till[$date][$hour] ?? 0) + $net;
+                    }
+                }
+            }
+
+            $scopeProfiles = $profiles->get($scopeKey, collect())->keyBy('weekday');
+            $forecasts = Forecaster::forDays($days, $scopeSales, $overrides[$scopeKey] ?? [], $weeks, $today);
+            $scopeShifts = ($area === null ? $shifts : $shifts->where('area_id', $area->id))
+                ->groupBy(fn (Shift $shift): string => $shift->starts_at->setTimezone(LocalTimestamp::ZONE)->toDateString());
+
+            foreach ($days as $day) {
+                $date = $day->toDateString();
+                $forecast = $forecasts[$date];
+                $shape = HourShape::fromTill($till, $forecast->basis)
+                    ?? HourShape::fromProfile(($profile = $scopeProfiles->get($day->isoWeekday())) instanceof HourProfile ? $profile->shares : null);
+                $nearby = $scopeShifts->get($day->subDay()->toDateString(), collect())->merge($scopeShifts->get($date, collect()));
+                $interval = fn (Shift $shift): array => [$shift->starts_at, $shift->ends_at];
+
+                $result[$scopeKey][$date] = StaffingNeed::day(
+                    $day,
+                    $forecast,
+                    $shape,
+                    $scopeRules,
+                    array_values($nearby->whereNotNull('employee_id')->map($interval)->all()),
+                    array_values($nearby->whereNull('employee_id')->map($interval)->all()),
+                );
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Whether the books look booked in lumps (per week or month) rather than
      * per day: fewer than half the weekdays (Monday–Friday, not holidays) of
      * the look-back before today have sales. A forecast per weekday is then

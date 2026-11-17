@@ -10,9 +10,13 @@ use App\Modules\Planning\Domain\WorkingTimeWarning;
 use Carbon\CarbonImmutable;
 
 /**
- * The schedule proposal, v1 (ADR-037 amendment, gap 3): proposes who should
- * work the open shifts that already exist. Deterministic and explainable;
- * pure PHP, no database, no AI. The same input gives the same output.
+ * The schedule proposal (ADR-037 amendment, gap 3): proposes who should work
+ * the open shifts that already exist (v1, P7) and, in v2 (P8), the new
+ * shifts made from the staffing demand within the budget (DemandBlocks,
+ * BudgetFit), which reach the engine as slots like any open shift and are
+ * held to the same hard constraints and scored the same way. Deterministic
+ * and explainable; pure PHP, no database, no AI. The same input gives the
+ * same output. Proposals saved by v1 (VERSION P7-1) read as before.
  *
  * Hard constraints, never proposed: not employed on the day, a missing
  * required skill, "Kan inte" for the time, approved absence on a day the
@@ -49,7 +53,7 @@ use Carbon\CarbonImmutable;
  */
 final class ProposalEngine
 {
-    public const string VERSION = 'P7-1';
+    public const string VERSION = 'P8-1';
 
     public const int MAX_SWAPS = 2000;
 

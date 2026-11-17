@@ -1,21 +1,21 @@
 ---
-beskrivning: Låt NONOX föreslå vem som ska ta de öppna passen, med skälen till varje förslag. Du godkänner det du vill ha, och passen blir utkast i schemat.
+beskrivning: Låt NONOX föreslå vem som ska ta de öppna passen, och vilka nya pass bemanningsbehovet kräver inom budgeten, med skälen. Du godkänner det du vill ha, och passen blir utkast i schemat.
 ordning: 38
 roller: [owner, admin, payroll_admin, scheduler]
 modul: planning
 rutter: [planning.proposals]
-sokord: [schemaförslag, föreslå schema, automatiskt schema, fyll öppna pass, bemanna, rättvis fördelning, jämn fördelning, kvällspass, helgpass, obekväm arbetstid]
+sokord: [schemaförslag, föreslå schema, automatiskt schema, fyll öppna pass, bemanna, rättvis fördelning, jämn fördelning, kvällspass, helgpass, obekväm arbetstid, nya pass, bemanningsbehov, passlängd, budget]
 ---
 
 # Schemaförslag
 
-Har du öppna pass i schemat kan NONOX föreslå vem som ska ta dem. Förslaget följer reglerna för vilotid och arbetstid, hoppar över den som är frånvarande eller har sagt att tiden inte passar, och fördelar timmar, kvällar och helger så jämnt som möjligt. Varje förslag visar varför. Inget ändras i schemat förrän du godkänner.
+Har du öppna pass i schemat kan NONOX föreslå vem som ska ta dem. Har du bemanningsmål under **Bemanningsbehov** kan förslaget också lägga till de pass som saknas, inom veckans budget för personalkostnad. Förslaget följer reglerna för vilotid och arbetstid, hoppar över den som är frånvarande eller har sagt att tiden inte passar, och fördelar timmar, kvällar och helger så jämnt som möjligt. Varje förslag visar varför. Inget ändras i schemat förrän du godkänner.
 
 ![Ett förslag för en vecka: de öppna passen har en föreslagen person med skälen under, ikryssade för att godkännas.](/bilder/manual/planering/schemaforslag.webp)
 
 ## Så här gör du
 
-1. Lägg först in de pass som behövs, utan person. Lägg ut en mall eller kopiera en vecka med rutan **Med personerna (annars blir passen öppna)** urkryssad, eller lägg till pass med **Öppet pass (ingen ännu)** i schemat.
+1. Lägg in de pass som behövs, utan person. Lägg ut en mall eller kopiera en vecka med rutan **Med personerna (annars blir passen öppna)** urkryssad, eller lägg till pass med **Öppet pass (ingen ännu)** i schemat. Vill du att förslaget också lägger till pass, kryssa i **Föreslå nya pass utifrån bemanningsbehovet** (se nedan).
 2. Gå till **Planering → Schemaförslag**.
 3. Välj perioden under **Från** och **Till**. Ett förslag gäller högst fyra veckor och tidigast från idag.
 4. Öppna **Vad väger mest** om du vill ändra hur förslaget väljer (se nedan).
@@ -50,6 +50,31 @@ Bland dem som kan väljer förslaget den som jämnar ut fördelningen bäst. Sk�
 
 Lönen påverkar aldrig vem som föreslås. Att välja den som kostar minst skulle gynna yngre personal med lägre lön, och det kan vara diskriminering. Därför läser förslaget aldrig lönen.
 
+## Nya pass utifrån bemanningsbehovet
+
+Kryssa i **Föreslå nya pass utifrån bemanningsbehovet** så tittar förslaget också på bemanningsmålen under [Bemanningsbehov](/manual/planering/bemanningsbehov). Där schemat har färre personer än målet en viss timme lägger förslaget till nya pass, och föreslår vem som ska ta dem på samma sätt som för de öppna passen.
+
+![Nya pass i ett förslag: märkta Nytt pass, med hur många timmar med för få de täcker och vem som föreslås.](/bilder/manual/planering/schemaforslag-nya-pass.webp)
+
+- **Passlängder (timmar)** är de längder ett nytt pass får ha, i hela timmar mellan 2 och 10, till exempel `4, 6, 8`. Förslaget börjar vid den första timmen som saknar folk och väljer den längd som täcker flest timmar med för få, sedan den som ger minst tid utan behov, sedan den kortaste. Ett nytt pass slutar senast vid midnatt.
+- **Rast i långa nya pass (minuter)** läggs på ett nytt pass en gång för varje gång det annars skulle bli längre än gränsen för arbete utan rast under **Inställningar** (standard fem timmar), alltså en rast i ett pass på 6, 8 eller 10 timmar. Det gäller också när varningen för raster är avstängd: avstängd tar bara bort varningen. Rasten står vid passet, till exempel "· 30 min rast", men placeras inte på en viss tid, precis som i bemanningsbehovet.
+- Öppna pass som redan finns räknas som bemannade, eftersom förslaget fyller dem först. Kan ingen ta ett öppet pass räknas det ändå som bemannat, så förslaget lägger inget nytt pass för samma timmar. Den timmen saknar då fortfarande folk: ett öppet pass som förslaget inte kan fylla lämnar luckan kvar. Lägg passet på någon själv eller ändra det.
+- Får ingen av passlängderna plats runt en timme som saknar folk (till exempel en timme strax före midnatt med bara långa pass), eller har förslaget redan lagt många nya pass samma dag, står det i förslaget hur många timmar av behovet som blev kvar.
+- Har en avdelning egna bemanningsmål läggs de nya passen på den avdelningen. Hela företagets mål används bara när ingen avdelning har egna, så att samma behov inte räknas två gånger, och förslaget säger till när det händer. Arkiverade avdelningar får inga nya pass.
+- Ett nytt pass står med **Nytt pass** och skälet "Nytt pass: täcker 3 timmar med för få i schemat". När du godkänner det blir det ett utkast i schemat med personen.
+
+Det du väljer sparas och gäller nästa förslag också.
+
+### Inom budgeten
+
+Har veckan en [budget för personalkostnad](/manual/planering/budget) läggs bara de nya pass till som ryms i den. Ett nytt pass får samma uppskattade kostnad vem som än tar det: passets timmar gånger den genomsnittliga uppskattade kostnaden per timme för de pass som redan är planerade på avdelningen (annars hela företaget). De öppna passen som förslaget fyller räknas av först. Sedan går de pass först som täcker flest timmar med för få, och vid lika många det tidigaste, så att en fredag eller lördag inte blir utan bara för att den kommer sist i veckan. Ett pass som inte ryms står med **Inget förslag** och "Ryms inte i veckans budget för personalkostnad. Lägg passet själv om det ändå behövs." Kostnaden avgör aldrig vem som föreslås, bara hur många nya pass som ryms.
+
+Överst i förslaget står ungefär vad de nya passen kostar per vecka. Det är en uppskattning, som budgeten. Finns det ingen budget läggs alla nya pass som behövs till. Har inget planerat pass en uppskattad kostnad än går budgeten inte att kontrollera, och det står då i förslaget.
+
+### När behovet bara finns per dag
+
+Utan kassa och utan egen timprofil vet bemanningsbehovet bara hur många personaltimmar dagen behöver, inte vilka timmar. Då lägger förslaget nya pass bara för de timmar som har en lägsta bemanning, och skriver hur många timmar som är kvar: "Behovet finns bara per dag för …". Lägg dem själv, eller ange en egen timprofil under **Bemanningsbehov**.
+
 ## Vad väger mest
 
 Under **Vad väger mest** väljer du hur mycket varje sak ska väga: **Mycket**, **Något**, **Lite** eller **Inte alls**. Det du väljer sparas och gäller nästa förslag också.
@@ -66,11 +91,11 @@ Under **Vad väger mest** väljer du hur mycket varje sak ska väga: **Mycket**,
 
 Ändras ett pass i perioden efter att du gjort förslaget, eller har någon fått godkänd frånvaro, ändrat sin tillgänglighet eller fått ett pass som krockar, går förslaget inte att godkänna. Du ser **Schemat har ändrats sedan förslaget gjordes. Gör ett nytt förslag.** Tryck på **Gör förslag** igen.
 
-Ett förslag kan godkännas en gång. Godkänner du bara en del och vill fylla resten, gör ett nytt förslag.
+Ett nytt pass går inte att godkänna när det redan har börjat, och budgeten kontrolleras igen när du godkänner: har den sänkts så att de nya passen inte längre ryms, gör ett nytt förslag. Ett förslag kan godkännas en gång. Godkänner du bara en del och vill fylla resten, gör ett nytt förslag.
 
 ## Bra att veta
 
-- Förslaget fyller bara pass som redan finns. Det lägger inte till nya pass och tar inte bort några.
+- Utan **Föreslå nya pass utifrån bemanningsbehovet** fyller förslaget bara pass som redan finns. Det tar aldrig bort några pass.
 - Samma schema och samma inställningar ger samma förslag.
 - Sidan visar skälen, aldrig någon poäng, och ingen lista över personalen rangordnas.
 - Förslagen sparas i 90 dagar och tas sedan bort automatiskt.
@@ -85,4 +110,6 @@ Ett förslag kan godkännas en gång. Godkänner du bara en del och vill fylla r
 - [Publicera schemat](/manual/planering/publicera-schemat)
 - [Tillgänglighet](/manual/planering/tillganglighet) – när personalen kan, inte kan eller gärna jobbar.
 - [Frånvaro i schemat](/manual/planering/franvaro-i-schemat)
+- [Bemanningsbehov](/manual/planering/bemanningsbehov) – målen som de nya passen räknas från.
+- [Budget för personalkostnad](/manual/planering/budget) – veckans budget.
 - [Lönekostnad och varningar](/manual/planering/lonekostnad-och-varningar) – reglerna för vilotid och arbetstid.
