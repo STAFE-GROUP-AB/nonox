@@ -122,6 +122,7 @@ final class ScheduleData
             'shifts' => $shown->values(),
             'warnings' => $warnings,
             'totals' => $this->totals($days, $shown, $sales),
+            'unitTotals' => $this->unitTotals($shown),
             'drafts' => $visible->where('status', Shift::DRAFT)->count(),
             'unknownEmployees' => $shown->pluck('employee_id')->filter()->unique()->diff($employees->pluck('id'))->values()->all(),
             'absence' => $absence,
@@ -269,5 +270,31 @@ final class ScheduleData
         }
 
         return $totals;
+    }
+
+    /**
+     * Per unit (area): planned hours, estimated cost (and whether part of it
+     * is missing), shifts and open shifts, for the shifts shown. Shifts
+     * without an area are keyed 'none'. Computed in memory from the shifts
+     * already read.
+     *
+     * @param  Collection<int, Shift>  $shifts
+     * @return array<string, array{minutes: int, cost: int, incomplete: bool, shifts: int, open: int}>
+     */
+    private function unitTotals(Collection $shifts): array
+    {
+        $units = [];
+
+        foreach ($shifts->groupBy(fn (Shift $shift): string => (string) ($shift->area_id ?? 'none')) as $key => $unitShifts) {
+            $units[(string) $key] = [
+                'minutes' => (int) $unitShifts->sum(fn (Shift $shift): int => $shift->workedMinutes()),
+                'cost' => (int) $unitShifts->sum(fn (Shift $shift): int => $shift->cost_estimate_ore ?? 0),
+                'incomplete' => $unitShifts->contains(fn (Shift $shift): bool => $shift->employee_id !== null && ($shift->cost_estimate_ore === null || ((array) ($shift->cost_details['missing'] ?? [])) !== [])),
+                'shifts' => $unitShifts->count(),
+                'open' => $unitShifts->whereNull('employee_id')->count(),
+            ];
+        }
+
+        return $units;
     }
 }
