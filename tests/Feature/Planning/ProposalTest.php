@@ -111,6 +111,27 @@ it('never proposes someone with approved absence or who cannot, and says so', fu
         ->assertDontSee('Sjuk');
 });
 
+it('checks "Kan inte" on every day a night shift touches', function () {
+    // Friday 22:00 to Saturday 06:00; both have said that Saturday does not suit them.
+    $night = proposalOpenShift('2026-11-27', '22:00', '06:00');
+
+    foreach ([$this->anna, $this->bertil] as $employee) {
+        CurrentCompany::run($this->company, fn () => Availability::create(['employee_id' => $employee->id, 'date' => '2026-11-28', 'kind' => Availability::UNAVAILABLE]));
+    }
+
+    $item = ProposalItem::query()->where('proposal_id', proposalMake()->id)->sole();
+
+    expect($item->shift_id)->toBe($night->id)
+        ->and($item->employee_id)->toBeNull()
+        ->and($item->reasons)->toEqual([['code' => 'blocked', 'unavailable' => 2]]);
+
+    // Saturday afternoon only does not touch the night shift.
+    Availability::query()->update(['from' => '12:00', 'to' => '18:00']);
+    $this->travel(1)->minutes();
+
+    expect(ProposalItem::query()->where('proposal_id', proposalMake()->id)->sole()->employee_id)->not->toBeNull();
+});
+
 it('accepts the ticked shifts as drafts with the person, publishes nothing and audits counts', function () {
     $first = proposalOpenShift('2026-11-24');
     $second = proposalOpenShift('2026-11-26');

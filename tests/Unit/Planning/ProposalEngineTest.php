@@ -264,7 +264,7 @@ it('drops unknown weights and invalid levels, and has no criterion for pay', fun
         ->and(ProposalWeights::CRITERIA)->toBe(['fairness', 'contracted', 'preference', 'continuity', 'extra_cost']);
 });
 
-it('fills 150 open shifts among 40 people with eight weeks of history in a few seconds', function () {
+it('fills 300 open shifts among 40 people with eight weeks of history within the ADR target, with a margin for CI', function () {
     mt_srand(37);
     $candidates = [];
 
@@ -288,7 +288,7 @@ it('fills 150 open shifts among 40 people with eight weeks of history in a few s
 
     $slots = [];
 
-    foreach (range(0, 149) as $index) {
+    foreach (range(0, 299) as $index) {
         $date = proposalAt('2026-11-23')->addDays($index % 7)->toDateString();
         $hour = [6, 9, 11, 14, 17][intdiv($index, 7) % 5];
         $slots[] = proposalSlot("s{$index}", sprintf('%s %02d:00', $date, $hour), sprintf('%s %02d:00', $date, $hour + 6), [
@@ -306,8 +306,98 @@ it('fills 150 open shifts among 40 people with eight weeks of history in a few s
     $result = ProposalEngine::propose($input);
     $seconds = (hrtime(true) - $started) / 1e9;
 
-    expect($result->outcomes)->toHaveCount(150)
-        ->and($result->filled())->toBeGreaterThan(100)
-        ->and($seconds)->toBeLessThan(5.0)
+    expect($result->outcomes)->toHaveCount(300)
+        ->and($result->filled())->toBeGreaterThan(150)
+        ->and($seconds)->toBeLessThan(4.0, sprintf('The run took %.2f s. ADR target: under 2 s on the production server; the test allows 4 s for slow CI machines.', $seconds))
         ->and(ProposalEngine::verify($input, array_filter($result->assignments())))->toBe([]);
+});
+
+/**
+ * Shifts on given days of the period's week (offsets from Monday 2026-11-23).
+ *
+ * @param  list<int>  $days
+ * @return list<CandidateShift>
+ */
+function proposalWeek(string $prefix, array $days, string $start, string $end, int $break = 30, int $weeksAhead = 0): array
+{
+    $shifts = [];
+
+    foreach ($days as $day) {
+        $date = proposalAt('2026-11-23')->addWeeks($weeksAhead)->addDays($day)->toDateString();
+        $shifts[] = new CandidateShift("{$prefix}{$weeksAhead}-{$day}", proposalAt("{$date} {$start}"), $end <= $start ? proposalAt("{$date} {$end}")->addDay() : proposalAt("{$date} {$end}"), $break);
+    }
+
+    return $shifts;
+}
+
+it('never adds to a week that is already over 48 hours, even though the week warns only once', function () {
+    $week = proposalWeek('w', [0, 1, 2, 3, 4], '07:00', '17:30');
+    $outcome = proposeFor([proposalSlot('sunday', '2026-11-29 15:00', '2026-11-29 23:30')], [proposalCandidate(1, $week)])['sunday'];
+
+    expect($outcome->employeeId)->toBeNull()->and($outcome->reasons)->toEqual([['code' => 'blocked', 'rules' => 1]]);
+});
+
+it('gives no more overtime in a week already over the ordinary 40 hours', function () {
+    $week = [...proposalWeek('w', [0, 1, 2, 3], '07:00', '15:30'), ...proposalWeek('f', [4], '07:00', '16:30')];
+    $outcome = proposeFor([proposalSlot('saturday', '2026-11-28 10:00', '2026-11-28 14:00')], [proposalCandidate(1, $week)])['saturday'];
+
+    expect($outcome->employeeId)->toBeNull()->and($outcome->reasons)->toEqual([['code' => 'blocked', 'rules' => 1]]);
+});
+
+it('never adds to a week that already lacks its weekly rest', function () {
+    $week = proposalWeek('w', [0, 1, 2, 3, 4, 5], '10:00', '14:30');
+    $outcome = proposeFor([proposalSlot('sunday', '2026-11-29 10:00', '2026-11-29 14:30')], [proposalCandidate(1, $week)])['sunday'];
+
+    expect($outcome->employeeId)->toBeNull()->and($outcome->reasons)->toEqual([['code' => 'blocked', 'rules' => 1]]);
+});
+
+it('never proposes in a week whose four-week overtime cap is already passed in the weeks after', function () {
+    $rules = PlanningSettings::resolve([])['working_time_rules'];
+    $rules['overtime_four_weeks']['value'] = 10;
+    $shifts = [
+        ...proposalWeek('a', [0, 1, 2], '08:00', '16:30'),
+        ...proposalWeek('b', [0, 1, 2, 3, 4], '07:00', '16:45', 30, 1),
+        ...proposalWeek('c', [0, 1, 2, 3, 4], '07:00', '16:45', 30, 2),
+    ];
+    $slots = [proposalSlot('thursday', '2026-11-26 08:00', '2026-11-26 16:30')];
+
+    expect(proposeFor($slots, [proposalCandidate(1, $shifts)], ['rules' => $rules])['thursday']->employeeId)->toBeNull()
+        ->and(proposeFor($slots, [proposalCandidate(1, $shifts)])['thursday']->employeeId)->toBe(1);
+});
+
+it('never puts a shift between two shifts that already lack their daily rest', function () {
+    $shifts = [
+        new CandidateShift('early', proposalAt('2026-11-24 06:00'), proposalAt('2026-11-24 10:00')),
+        new CandidateShift('late', proposalAt('2026-11-24 19:00'), proposalAt('2026-11-24 23:00')),
+        new CandidateShift('next', proposalAt('2026-11-25 06:00'), proposalAt('2026-11-25 10:00')),
+    ];
+
+    $between = proposeFor([proposalSlot('mid', '2026-11-24 12:00', '2026-11-24 16:00')], [proposalCandidate(1, $shifts)])['mid'];
+    $before = proposeFor([proposalSlot('evening', '2026-11-26 14:00', '2026-11-26 22:00')], [proposalCandidate(1, [new CandidateShift('morning', proposalAt('2026-11-27 06:00'), proposalAt('2026-11-27 12:00'))])])['evening'];
+
+    expect($between->employeeId)->toBeNull()
+        ->and($before->employeeId)->toBeNull()
+        ->and($before->reasons)->toEqual([['code' => 'blocked', 'rules' => 1]]);
+});
+
+it('needs the employment on every day a night shift touches', function () {
+    $outcome = proposeFor(
+        [proposalSlot('night', '2026-11-24 22:00', '2026-11-25 06:00')],
+        [proposalCandidate(1, overrides: ['employments' => [[proposalAt('2025-01-01'), proposalAt('2026-11-24')]]])],
+    )['night'];
+
+    expect($outcome->reasons)->toBe([['code' => 'nobody_employed']]);
+});
+
+it('takes approved absence off the contracted hours, so someone back from leave is not put first', function () {
+    $sixWeeks = array_values(array_filter(proposalHistory(0, 5), fn (CandidateShift $shift): bool => $shift->start->lessThan(proposalAt('2026-11-09'))));
+    $back = array_map(fn (CandidateShift $shift): CandidateShift => new CandidateShift("b{$shift->id}", $shift->start, $shift->end), $sixWeeks);
+    $other = array_map(fn (CandidateShift $shift): CandidateShift => new CandidateShift("o{$shift->id}", $shift->start, $shift->end), $sixWeeks);
+
+    $outcome = proposeFor([proposalSlot('s', '2026-11-24 09:00', '2026-11-24 17:00')], [
+        proposalCandidate(2, $back, ['absentWeekdays' => 10.0]),
+        proposalCandidate(3, $other),
+    ])['s'];
+
+    expect($outcome->employeeId)->toBe(3);
 });

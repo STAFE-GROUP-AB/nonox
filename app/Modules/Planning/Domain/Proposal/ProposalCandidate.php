@@ -9,8 +9,10 @@ use Carbon\CarbonImmutable;
 /**
  * An employee the engine may propose: skills, birth date (for the minors'
  * rules), contracted weekly hours (null or zero for hourly staff without
- * contracted hours), the employments as [first day, last day or null], and
- * the shifts they already have. No pay: the engine never sees a wage.
+ * contracted hours), the employments as [first day, last day or null], the
+ * shifts they already have, and the weekdays of approved absence in the
+ * fairness window (a part day as a half). No pay: the engine never sees a
+ * wage.
  */
 final readonly class ProposalCandidate
 {
@@ -26,6 +28,7 @@ final readonly class ProposalCandidate
         public ?string $weeklyHours = null,
         public array $employments = [],
         public array $shifts = [],
+        public float $absentWeekdays = 0.0,
     ) {}
 
     /** Contracted minutes per week, or null without contracted hours. */
@@ -47,6 +50,21 @@ final readonly class ProposalCandidate
         }
 
         return false;
+    }
+
+    /** Whether employed on every day a shift from $start to $end touches. */
+    public function isEmployedDuring(CarbonImmutable $start, CarbonImmutable $end): bool
+    {
+        $day = $start->setTimezone('Europe/Stockholm')->startOfDay();
+        $last = $end->setTimezone('Europe/Stockholm')->subMinute()->startOfDay();
+
+        for (; $day->lessThanOrEqualTo($last); $day = $day->addDay()) {
+            if (! $this->isEmployedOn($day)) {
+                return false;
+            }
+        }
+
+        return $this->isEmployedOn($start->setTimezone('Europe/Stockholm')->startOfDay());
     }
 
     /** Days employed between two dates, both included. */

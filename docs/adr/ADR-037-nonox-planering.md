@@ -204,13 +204,22 @@ for one company and a period of at most four weeks. Semi-automatic first:
   allowed shift lengths, within the budget (gap 2).
 
 *Hard constraints* (never proposed; the slot stays open with the reason):
-availability `UNAVAILABLE`; approved absence on the day (gap 6, any extent);
+availability `UNAVAILABLE` on any day the shift touches; approved absence on
+the day (gap 6, any extent);
 a missing required skill; overlap with another shift; every rule in the
 company's working-time rule set (daily rest, weekly rest, weekly hours, the
 four-week overtime cap) and the minors' rules, evaluated by
 `WorkingTimeChecks` on the employee's shifts including the proposal so far.
 The rules are unverified data (`TODO(legal-verify)` as today), so the engine
-applies them conservatively: an accepted proposal never adds a warning.
+applies them conservatively: a proposal is never made where a hard rule
+warning exists after the addition in the scope the shift affects (its own
+warnings, its week for the week rules, its week and the three after it for
+the four-week overtime cap, the next shift's daily rest, the minors' hours on
+its day), even when that warning was already there. The one exception is
+mertid (`extra_time_week`), which is information about pay rather than a
+limit: an accepted proposal can add a mertid notice, shown as the reason
+"Ger mertid" and scored last. The yearly mertid and overtime caps (200 h)
+need worked time and are not checked on a plan.
 
 *Soft criteria* (a score, lower is better; the weights are company settings
 shown as "Vad väger mest", defaults in brackets):
@@ -273,8 +282,18 @@ Where the build had to choose:
   is information about pay, not a limit. It is shown as the reason "Ger
   mertid" and scored by "Undvik mertid" (the extra-cost criterion, which
   counts only mertid: overtime over the ordinary week is a hard constraint,
-  and OB is the same whoever works the shift). Every other rule warning,
-  counted per rule and week, is hard.
+  and OB is the same whoever works the shift). Every other rule warning is
+  hard in the scope above: a week rule gives at most one warning per week,
+  so a rise in the count is not enough (a 50-hour week would otherwise take
+  more).
+- "Kan inte" is checked on every day the shift touches, against that day's
+  times; employment must cover every day too.
+- Approved absence in the fairness window (weekdays, a part day as a half,
+  from `AbsenceDays`) is taken off the contracted hours (weekly hours over
+  five per day), so someone back from leave is not put first.
+- The loader reads only the employment's dates and weekly hours: no pay
+  column is selected at all.
+- Accepting locks the proposal and its shifts, then re-checks.
 - Each soft part is in [-1, 1] before weighting (levels Mycket 3, Något 2,
   Lite 1, Inte alls 0). Fairness is the distance from the mean of those who
   could take the shift, relative to the mean; the unsocial part counts by

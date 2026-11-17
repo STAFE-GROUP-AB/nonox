@@ -17,10 +17,11 @@ use Carbon\CarbonImmutable;
  * Hard constraints, never proposed: not employed on the day, a missing
  * required skill, "Kan inte" for the time, approved absence on a day the
  * shift touches, overlap with another shift, and any warning the company's
- * working-time or minors' rules (WorkingTimeChecks) would gain from the
- * assignment, counted per rule and week. Mertid (extra_time_week) is the
- * one rule warning that is soft: it is information about pay, not a limit,
- * and the score puts it last.
+ * working-time or minors' rules (WorkingTimeChecks) carry after the
+ * assignment in the scope it affects, even a warning that was there before
+ * (breaksRules). Mertid (extra_time_week) is the one rule warning that is
+ * soft: it is information about pay, not a limit, and the score puts it
+ * last.
  *
  * Soft criteria, a score per candidate (lower is better), each part in
  * [-1, 1] (fairness [-2, 2]) times the company's weight:
@@ -67,6 +68,15 @@ final class ProposalEngine
     /** Rule warnings that do not block a proposal. */
     public const array SOFT_RULES = ['extra_time_week'];
 
+    /** Rules checked per calendar week: at most one warning per week. */
+    private const array WEEK_RULES = ['weekly_rest', 'total_week', 'ordinary_week', 'under_16_max_week', 'under_18_max_week'];
+
+    /** Rules on the gap before a shift: they land on the later shift. */
+    private const array REST_RULES = ['daily_rest', 'under_18_daily_rest', 'overlap'];
+
+    /** Rules on the hours of one day. */
+    private const array DAY_RULES = ['under_16_max_day', 'under_18_max_day'];
+
     private const float EPSILON = 0.000001;
 
     private ProposalInput $input;
@@ -77,7 +87,7 @@ final class ProposalEngine
     /** @var array<string, ProposalSlot> */
     private array $slots = [];
 
-    /** @var array<string, array{start: int, end: int, worked: int, unsocial: int, week: string}> */
+    /** @var array<string, array{start: int, end: int, worked: int, unsocial: int, week: string, day: string}> */
     private array $slotInfo = [];
 
     /** @var array<string, int> slot id => employee id */
@@ -97,6 +107,9 @@ final class ProposalEngine
 
     /** @var array<string, string> shift or slot id => Monday of its week */
     private array $weekOf = [];
+
+    /** @var array<string, string> shift or slot id => the day it starts on */
+    private array $dayOf = [];
 
     /** @var array<string, list<int>> slot id => employee ids who pass the static constraints */
     private array $eligible = [];
@@ -184,6 +197,7 @@ final class ProposalEngine
                 'worked' => $worked,
                 'unsocial' => min($worked, UnsocialTime::minutes($slot->start, $slot->end, $input->unsocialFrom, $input->unsocialTo)),
                 'week' => $this->weekOf[$slot->id] = self::week($slot->start),
+                'day' => $this->dayOf[$slot->id] = $slot->start->setTimezone(UnsocialTime::ZONE)->toDateString(),
             ];
             $this->eligibility($slot);
         }
@@ -508,30 +522,23 @@ final class ProposalEngine
             }
         }
 
-        $before = $this->warningCounts($employeeId, $shifts);
-        $after = $this->warningCounts($employeeId, [...$shifts, $this->planned($slotId)]);
-
-        foreach ($after as $key => $count) {
-            if ($count > ($before[$key] ?? 0)) {
-                return self::RULES;
-            }
-        }
-
-        return null;
+        return $this->breaksRules($employeeId, [...$shifts, $this->planned($slotId)], $slotId) ? self::RULES : null;
     }
 
     /**
-     * The rule warnings per rule and week, soft rules left out.
+     * Whether the employee's shifts with the slot added carry a hard rule
+     * warning anywhere the slot can affect, whether or not it was there
+     * before: on the slot itself; a week rule in the slot's week (a week
+     * rule gives at most one warning per week, so a full week stays full);
+     * the four-week overtime cap in the slot's week and the three after it;
+     * the daily rest or overlap of the shift right after the slot; and the
+     * minors' hours per day on the slot's day. Mertid (SOFT_RULES) never
+     * blocks.
      *
-     * @param  list<PlannedShift>  $shifts
-     * @return array<string, int>
+     * @param  list<PlannedShift>  $shifts  including the slot
      */
-    private function warningCounts(int $employeeId, array $shifts): array
+    private function breaksRules(int $employeeId, array $shifts, string $slotId): bool
     {
-        if ($shifts === []) {
-            return [];
-        }
-
         $candidate = $this->candidates[$employeeId];
         $warnings = WorkingTimeChecks::run(
             $shifts,
@@ -541,19 +548,71 @@ final class ProposalEngine
             $candidate->birthDate,
             $candidate->weeklyHours,
         );
-        $counts = [];
+
+        if ($warnings === []) {
+            return false;
+        }
+
+        $info = $this->slotInfo[$slotId];
+        $week = $info['week'];
+        $nextId = null;
+        $nextStart = PHP_INT_MAX;
+
+        foreach ($shifts as $shift) {
+            $start = $shift->start->getTimestamp();
+
+            if ($shift->id !== $slotId && $start >= $info['start'] && $start < $nextStart) {
+                $nextStart = $start;
+                $nextId = $shift->id;
+            }
+        }
+
+        $weeks = [$week];
+
+        for ($i = 1; $i <= 3; $i++) {
+            $weeks[] = CarbonImmutable::parse($week, UnsocialTime::ZONE)->addWeeks($i)->toDateString();
+        }
 
         foreach ($warnings as $warning) {
-            /** @var WorkingTimeWarning $warning */
             if (in_array($warning->rule, self::SOFT_RULES, true)) {
                 continue;
             }
 
-            $key = $warning->rule.'|'.($this->weekOf[$warning->shiftId] ?? '');
-            $counts[$key] = ($counts[$key] ?? 0) + 1;
+            if ($this->inScope($warning, $slotId, $weeks, $nextId, $info['day'])) {
+                return true;
+            }
         }
 
-        return $counts;
+        return false;
+    }
+
+    /** @param  list<string>  $weeks  the slot's week and the three after it */
+    private function inScope(WorkingTimeWarning $warning, string $slotId, array $weeks, ?string $nextId, string $day): bool
+    {
+        $rule = $warning->rule;
+        $shiftWeek = $this->weekOf[$warning->shiftId] ?? null;
+
+        if ($warning->shiftId === $slotId) {
+            return true;
+        }
+
+        if ($rule === 'overtime_four_weeks') {
+            return in_array($shiftWeek, $weeks, true);
+        }
+
+        if (in_array($rule, self::WEEK_RULES, true)) {
+            return $shiftWeek === $weeks[0];
+        }
+
+        if (in_array($rule, self::REST_RULES, true)) {
+            return $warning->shiftId === $nextId;
+        }
+
+        if (in_array($rule, self::DAY_RULES, true)) {
+            return ($this->dayOf[$warning->shiftId] ?? null) === $day;
+        }
+
+        return false;
     }
 
     private function planned(string $slotId): PlannedShift
@@ -592,14 +651,13 @@ final class ProposalEngine
     /** Who could take the slot before anything is proposed, and why the others cannot. */
     private function eligibility(ProposalSlot $slot): void
     {
-        $day = $slot->start->setTimezone(UnsocialTime::ZONE)->startOfDay();
         $eligible = [];
         $blocks = [];
         $employed = 0;
         $skilled = 0;
 
         foreach ($this->candidates as $employeeId => $candidate) {
-            if (! $candidate->isEmployedOn($day)) {
+            if (! $candidate->isEmployedDuring($slot->start, $slot->end)) {
                 continue;
             }
 
@@ -686,6 +744,7 @@ final class ProposalEngine
             $start = $shift->start->getTimestamp();
             $worked = $shift->workedMinutes();
             $week = $this->weekOf[$shift->id] = self::week($shift->start);
+            $this->dayOf[$shift->id] = $shift->start->setTimezone(UnsocialTime::ZONE)->toDateString();
             $existing[] = [$start, new PlannedShift($shift->id, $shift->start, $shift->end, $shift->breakMinutes)];
             $busy[] = [$start, $shift->end->getTimestamp()];
             $stats['weeks'][$week] = ($stats['weeks'][$week] ?? 0) + $worked;
@@ -716,7 +775,8 @@ final class ProposalEngine
         $weekly = $candidate->weeklyMinutes();
 
         if ($weekly !== null) {
-            $stats['contractWindow'] = (int) round($weekly * $candidate->employedDays($windowFrom, $this->input->periodTo) / 7);
+            // Approved absence in the window is not time the person could be planned: weekly hours over five per absent weekday.
+            $stats['contractWindow'] = max(0, (int) round($weekly * $candidate->employedDays($windowFrom, $this->input->periodTo) / 7 - $weekly * $candidate->absentWeekdays / 5));
             $stats['contractPeriod'] = (int) round($weekly * $candidate->employedDays($this->input->periodFrom, $this->input->periodTo) / 7);
         }
 

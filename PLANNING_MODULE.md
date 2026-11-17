@@ -155,9 +155,11 @@ A published shift that is changed keeps its history in the audit log.
   early/late finish, missing check-out, unplanned work, no-show.
 - `Proposal\ProposalEngine` (ADR-037 amendment, gap 3): proposes who
   should work the open shifts that exist. Hard constraints (never
-  proposed): not employed, missing skill, "Kan inte", approved absence,
-  overlap, any new warning from `WorkingTimeChecks` incl. the minors' rules
-  (mertid excepted, it is soft). Soft score with the company's weights:
+  proposed): not employed (every day the shift touches), missing skill,
+  "Kan inte" (every day the shift touches), approved absence, overlap, any
+  warning from `WorkingTimeChecks` incl. the minors' rules in the scope the
+  shift affects, even one that was there before (mertid excepted, it is
+  soft). Soft score with the company's weights:
   fairness over the window (planned ÷ contracted hours, unsocial ÷ planned
   minutes, by `UnsocialTime`), contracted hours, preference, continuity,
   mertid. Never pay. Hardest shift first, then at most 2 000 swaps. Pure.

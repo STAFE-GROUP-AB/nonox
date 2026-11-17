@@ -59,7 +59,8 @@ final class ProposalLoader
         $employees = Employee::query()
             ->where('status', '<>', 'TERMINATED')
             ->whereHas('employments', fn ($query) => self::overlapping($query, $from, $to))
-            ->with(['employments' => fn ($query) => $query->orderBy('start_date')])
+            // Only the dates and the contracted hours: no pay column is read.
+            ->with(['employments' => fn ($query) => $query->select(['id', 'employee_id', 'start_date', 'end_date', 'weekly_hours'])->orderBy('start_date')])
             ->orderBy('id')
             ->get(['id', 'birth_date']);
         $ids = $employees->pluck('id')->all();
@@ -70,8 +71,9 @@ final class ProposalLoader
             ->where(fn ($query) => $query->whereNotNull('weekday')->orWhereBetween('date', [$from->toDateString(), $to->addDay()->toDateString()]))
             ->get()
             ->groupBy('employee_id');
-        // One day more than the period: a night shift on the last day runs into the next.
-        $absence = AbsenceDays::between($from, $to->addDay());
+        // The fairness window (for the contracted hours) and one day more than the period: a night shift on the last day runs into the next.
+        $windowFrom = $from->subWeeks($fairnessWeeks);
+        $absence = AbsenceDays::between($windowFrom, $to->addDay());
         $shifts = ShiftQuery::startingOn($from->subWeeks($fairnessWeeks + self::CONTEXT_WEEKS), $to->addWeeks(self::CONTEXT_WEEKS))
             ->whereIn('employee_id', $ids)
             ->where('status', '<>', Shift::CANCELLED)
@@ -85,7 +87,7 @@ final class ProposalLoader
             breakMinutes: $shift->break_minutes,
             areaId: $shift->area_id,
             skillId: $shift->skill_id,
-            unavailable: $this->matching($availability, $shift, fn (EloquentCollection $rows): bool => RequestChecks::isUnavailable($rows, $shift)),
+            unavailable: $this->matching($availability, $shift, fn (EloquentCollection $rows): bool => self::unavailableDuring($rows, $shift)),
             absent: array_values(array_filter($ids, fn (int $id): bool => isset($absence[$id]) && AbsenceDays::absentDuring($absence, $id, $shift))),
             preferred: $this->matching($availability, $shift, fn (EloquentCollection $rows): bool => self::prefers($rows, $shift)),
         ))->all();
@@ -97,6 +99,7 @@ final class ProposalLoader
             weeklyHours: $employee->employments->filter(fn (Employment $employment): bool => $employment->start_date->lessThanOrEqualTo($to))->last()?->weekly_hours,
             employments: array_values($employee->employments->map(fn (Employment $employment): array => [$employment->start_date, $employment->end_date])->all()),
             shifts: array_values($shifts->get($employee->id, collect())->map(fn (Shift $shift): CandidateShift => new CandidateShift((string) $shift->id, $shift->starts_at, $shift->ends_at, $shift->break_minutes, $shift->area_id))->all()),
+            absentWeekdays: self::absentWeekdays($absence[$employee->id] ?? [], $windowFrom, $to),
         ))->all();
 
         return new ProposalInput(
@@ -134,6 +137,67 @@ final class ProposalLoader
         sort($ids);
 
         return $ids;
+    }
+
+    /**
+     * Whether the employee said a time the shift covers does not suit them,
+     * on any day the shift touches: a night shift from Friday 22:00 to
+     * Saturday 06:00 is checked against Friday's and Saturday's rows. On each
+     * day a row for the date decides over the weekly rows, as in the
+     * schedule's marks; a row with times blocks only when they overlap the
+     * part of the shift on that day.
+     *
+     * @param  Collection<int, Availability>  $rows
+     */
+    public static function unavailableDuring(Collection $rows, Shift $shift): bool
+    {
+        $start = $shift->starts_at->setTimezone(LocalTimestamp::ZONE);
+        $end = $shift->ends_at->setTimezone(LocalTimestamp::ZONE);
+
+        foreach (AbsenceDays::days($shift) as $date) {
+            $day = CarbonImmutable::parse($date, LocalTimestamp::ZONE)->startOfDay();
+            $matching = $rows->filter(fn (Availability $row): bool => $row->appliesTo($day));
+            $dated = $matching->whereNotNull('date');
+
+            foreach ($dated->isNotEmpty() ? $dated : $matching as $row) {
+                if ($row->kind !== Availability::UNAVAILABLE) {
+                    continue;
+                }
+
+                $from = $row->isWholeDay() ? $day : CarbonImmutable::parse("{$date} {$row->from}", LocalTimestamp::ZONE);
+                $to = $row->isWholeDay() ? $day->addDay() : CarbonImmutable::parse("{$date} {$row->to}", LocalTimestamp::ZONE);
+
+                if ($start->lessThan($to) && $end->greaterThan($from)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Weekdays of approved absence from the first day of the fairness window
+     * to the last day of the period, a part day as a half: time the person
+     * could not be planned, taken off their contracted hours.
+     *
+     * @param  array<string, string>  $marks  date => AbsenceDays mark
+     */
+    private static function absentWeekdays(array $marks, CarbonImmutable $from, CarbonImmutable $to): float
+    {
+        $days = 0.0;
+
+        foreach ($marks as $date => $mark) {
+            $day = CarbonImmutable::parse($date, LocalTimestamp::ZONE);
+
+            if ($date < $from->toDateString() || $date > $to->toDateString() || $day->isWeekend()) {
+                continue;
+            }
+
+            $days += $mark === AbsenceDays::FULL ? 1.0 : ($mark === AbsenceDays::PARTIAL ? 0.5 : 0.0);
+        }
+
+        return $days;
     }
 
     /**

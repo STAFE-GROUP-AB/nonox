@@ -32,8 +32,9 @@ use Illuminate\Validation\ValidationException;
  * changed after the proposal was made, an accepted shift is gone or no
  * longer open, or the accepted assignments no longer hold against today's
  * availability, absence, skills and working-time rules (the engine
- * re-checks them on freshly loaded data): an accepted proposal never adds
- * a warning. Audited with ids and counts only.
+ * re-checks them on freshly loaded data, with the proposal and its shifts
+ * locked): an accepted proposal never breaks a hard rule (mertid is only
+ * shown). Audited with ids and counts only.
  */
 final class AcceptProposal
 {
@@ -65,17 +66,19 @@ final class AcceptProposal
         }
 
         $now = CarbonImmutable::now(LocalTimestamp::ZONE);
-        $shifts = Shift::query()->whereKey($items->pluck('shift_id')->all())->get()->keyBy('id');
 
-        if ($this->isStale($company, $proposal, $items, $shifts, $now)) {
-            throw ValidationException::withMessages(['proposal' => self::staleMessage()]);
-        }
-
-        return DB::transaction(function () use ($user, $company, $proposal, $items, $shifts, $now): int {
+        return DB::transaction(function () use ($user, $company, $proposal, $items, $now): int {
             $locked = Proposal::query()->whereKey($proposal->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->isAccepted()) {
                 throw ValidationException::withMessages(['proposal' => __('Förslaget är redan godkänt. Gör ett nytt förslag för passen som är kvar.')]);
+            }
+
+            // The shifts are locked before the checks, so nobody can give them to someone else between the check and the save.
+            $shifts = Shift::query()->whereKey($items->pluck('shift_id')->all())->lockForUpdate()->get()->keyBy('id');
+
+            if ($this->isStale($company, $locked, $items, $shifts, $now)) {
+                throw ValidationException::withMessages(['proposal' => self::staleMessage()]);
             }
 
             foreach ($items as $item) {
