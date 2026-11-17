@@ -240,6 +240,8 @@ use App\Modules\Planning\Models\Attestation as PlanningAttestation;
 use App\Modules\Planning\Models\Availability as PlanningAvailability;
 use App\Modules\Planning\Models\EmployeeSkill as PlanningEmployeeSkill;
 use App\Modules\Planning\Models\IcalToken as PlanningIcalToken;
+use App\Modules\Planning\Models\Proposal as PlanningProposal;
+use App\Modules\Planning\Models\ProposalItem as PlanningProposalItem;
 use App\Modules\Planning\Models\Publication as PlanningPublication;
 use App\Modules\Planning\Models\Shift as PlanningShift;
 use App\Modules\Planning\Models\ShiftRequest as PlanningShiftRequest;
@@ -460,6 +462,8 @@ const COMPANY_SCOPED_MODELS = [
     PlanningShiftRequest::class => 'planningShiftRequestAttributes',
     PlanningIcalToken::class => 'planningIcalTokenAttributes',
     PlanningAttestation::class => 'planningAttestationAttributes',
+    PlanningProposal::class => 'planningProposalAttributes',
+    PlanningProposalItem::class => 'planningProposalItemAttributes',
     StockLocation::class => 'inventoryLocationAttributes',
     StockMovement::class => 'inventoryMovementAttributes',
     ScanOperation::class => 'inventoryScanOperationAttributes',
@@ -773,6 +777,22 @@ function payrollCompTimeEntryAttributes(): array
 function planningAttestationAttributes(): array
 {
     return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'date' => '2026-11-10', 'note' => 'Hemlig anteckning'];
+}
+
+function planningProposalAttributes(): array
+{
+    return ['period_from' => '2026-11-09', 'period_to' => '2026-11-15', 'parameters' => ['weights' => []], 'engine_version' => 'P7-1', 'slot_count' => 1];
+}
+
+function planningProposalItemAttributes(): array
+{
+    return [
+        'proposal_id' => PlanningProposal::create(planningProposalAttributes())->id,
+        'shift_id' => PlanningShift::create([...planningShiftAttributes(), 'employee_id' => null])->id,
+        'employee_id' => Employee::create(payrollEmployeeAttributes())->id,
+        'position' => 0,
+        'reasons' => [['code' => 'fewer_hours']],
+    ];
 }
 
 function planningIcalTokenAttributes(): array

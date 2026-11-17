@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-17-planering-schemaforslag",
+      "datum": "2026-11-17T18:30:00+01:00",
+      "rubrik": "Schemaförslag fyller de öppna passen",
+      "beskrivning": "Under Planering → Schemaförslag föreslår NONOX vem som ska ta de öppna passen, utan att bryta mot vilotider, frånvaro, kompetens eller vad personalen sagt att de inte kan, och med timmar, kvällar och helger jämnt fördelade. Varje förslag visar varför, lönen påverkar aldrig valet, och du väljer själv vad som ska väga mest. Det du godkänner blir utkast i schemat som du publicerar som vanligt.",
+      "typ": "Nytt",
+      "omrade": "Planering"
+    },
+    {
       "id": "2026-11-17-planering-franvaro-i-schemat",
       "datum": "2026-11-17T17:41:36+01:00",
       "rubrik": "Godkänd frånvaro syns i schemat",

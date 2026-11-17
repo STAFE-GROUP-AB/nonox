@@ -21,6 +21,8 @@ Schedule::command('signing:prune')->dailyAt('04:15')->withoutOverlapping();
 // The customer portal's invitations, inactive and disabled contacts, events and closed questions (ADR-075).
 Schedule::command('portal:prune')->dailyAt('04:20')->withoutOverlapping();
 Schedule::command('connect:prune')->dailyAt('04:25')->withoutOverlapping();
+// Planering's schedule proposals (ADR-037 amendment, gap 3): deleted 90 days after they were made.
+Schedule::command('planning:prune-proposals')->dailyAt('04:35')->withoutOverlapping();
 // Source files of register imports (ADR-076): 30 days after a finished import, 7 after an unconfirmed preview.
 Schedule::command('register-import:prune')->dailyAt('04:40')->withoutOverlapping();
 // The encrypted chat (ADR-045): expired chats in a file store, which does not expire them by itself.

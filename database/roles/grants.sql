@@ -202,6 +202,8 @@ BEGIN
         ('planning_availability', 'SELECT, INSERT, UPDATE, DELETE'),
         ('planning_employee_skills', 'SELECT, INSERT, UPDATE, DELETE'),
         ('planning_ical_tokens', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_proposal_items', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('planning_proposals', 'SELECT, INSERT, UPDATE, DELETE'),
         ('planning_publications', 'SELECT, INSERT, UPDATE, DELETE'),
         ('planning_requests', 'SELECT, INSERT, UPDATE, DELETE'),
         ('planning_shifts', 'SELECT, INSERT, UPDATE, DELETE'),

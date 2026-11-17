@@ -105,6 +105,7 @@ final class PlanningModule implements IsNew, Module, ProvidesTodos
                 'children' => fn (User $user, Company $company): array => [
                     ['label' => __('Schema'), 'route' => 'planning.schedule', 'active' => ['planning.schedule']],
                     ['label' => __('Mallar'), 'route' => 'planning.templates', 'active' => ['planning.templates']],
+                    ...($user->hasTeamPermission($company, 'planning:manage') ? [['label' => __('Schemaförslag'), 'route' => 'planning.proposals', 'active' => ['planning.proposals']]] : []),
                     ...($user->hasTeamPermission($company, 'planning:attest') ? [['label' => __('Tid att attestera'), 'route' => 'planning.attest', 'active' => ['planning.attest']]] : []),
                     ['label' => __('Öppna pass och byten'), 'route' => 'planning.requests', 'active' => ['planning.requests']],
                     ['label' => __('Bemanning och kostnad'), 'route' => 'planning.staffing', 'active' => ['planning.staffing']],
