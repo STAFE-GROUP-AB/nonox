@@ -15,8 +15,8 @@ from a collective agreement. Today NONOX has the ledger, the payroll and the
 agreements, but no schedule, and OB hours are entered by hand or imported
 from another scheduling system. The industry pages say so.
 
-A competitor review (2026-11-02; Personalkollen, Caspeco, Quinyx, Planday,
-Tamigo, and the schedule offer of the large bookkeeping programs) found:
+A review of the scheduling products on the Swedish market and the schedule
+offer of the large bookkeeping programs (2026-11-02) found:
 
 - every scheduling product has a shift grid with templates, check-in tied to
   the shift, plan-versus-actual attest and a payroll basis; most show labour
@@ -449,6 +449,21 @@ decision.
 Fully automatic scheduling or publishing; AI choosing people; sales per
 employee; tips; SMS; weather or event feeds; booking-system integrations; a
 shared staff pool across companies; group chat between employees.
+
+### Lead decisions on the open questions (2026-11-17, under the owner's mandate)
+
+The owner asked for the package to be built now; Lead chose the recommended
+options so the build is not blocked. The owner may overturn any of them
+before P10.
+
+- Schedule messages are kept 12 months after the last day the message
+  concerns, then pruned.
+- Employer contributions are split over cost centres in proportion to gross
+  pay.
+- Chains get the read-only chain view (P9). A shared staff pool and lending
+  between companies stay out and need their own ADR and legal review.
+- The competitor names in this ADR's original context are replaced by a
+  neutral description.
 
 ### Build packages
 
