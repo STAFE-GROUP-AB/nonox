@@ -131,7 +131,8 @@ it('sums hours, cost, sales from the books and labour cost per day', function ()
         ->and($monday['sales'])->toBe(1_399_900)
         ->and($monday['percent'])->toBe(6.3)
         ->and($tuesday['sales'])->toBeNull()
-        ->and($tuesday['reference'])->toBe(300000);
+        // The ≈ forecast comes from Bemanningsbehov on the page (DemandTest), not from here.
+        ->and($tuesday['reference'])->toBeNull();
 });
 
 it('prices OB from a checked agreement version and names an unchecked one', function () {

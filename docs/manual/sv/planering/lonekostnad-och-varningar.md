@@ -37,8 +37,9 @@ Längst ner i schemat står för varje dag:
 
 - **Tid** – planerade timmar.
 - **Kostnad** – summan av passens uppskattade kostnad. En stjärna betyder att någon del saknas för något pass.
-- **Försäljning** – bokförda intäkter på försäljningskontona den dagen. Finns ingen försäljning bokförd än visas **≈** och snittet för samma veckodag de fyra veckorna före.
-- **Personalkostnad** – kostnaden i procent av försäljningen, eller av snittet när dagen inte har någon bokförd försäljning.
+- **Försäljning** – bokförda intäkter på försäljningskontona den dagen. Finns ingen försäljning bokförd än visas **≈** och prognosen: snittet för samma veckodag de senaste veckorna, utan helgdagar. Se [Bemanningsbehov](/manual/planering/bemanningsbehov#prognosen).
+- **Personalkostnad** – kostnaden i procent av försäljningen, eller av prognosen när dagen inte har någon bokförd försäljning.
+- **Behov** – bemannade timmar som behövs enligt era bemanningsmål, med en pil när dagen är under- eller överbemannad. Visas när det finns bemanningsmål.
 
 Vilka konton som räknas som försäljning ställer du in med **Försäljning från konto** och **till och med konto**. Standard är 3000–3799. Se [Bemanning och kostnad](/manual/planering/bemanning-och-kostnad) för hela perioden.
 

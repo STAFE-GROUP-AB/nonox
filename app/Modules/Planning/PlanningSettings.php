@@ -58,6 +58,8 @@ final class PlanningSettings
         'fairness_weeks' => 8,
         'unsocial_from' => '19:00',
         'unsocial_to' => '07:00',
+        // Bemanningsbehov: the forecast averages the same weekday over this many weeks (ADR-037, gap 1).
+        'forecast_weeks' => 6,
     ];
 
     /** The fairness window the proposal form accepts, in weeks before the period. */

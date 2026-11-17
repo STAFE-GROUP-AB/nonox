@@ -10,6 +10,7 @@ use App\Modules\Planning\Actions\Concerns\GuardsPlanning;
 use App\Modules\Planning\Models\Area;
 use App\Modules\Planning\Support\CostCenterInput;
 use App\Support\Audit\Audit;
+use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -19,7 +20,8 @@ use Illuminate\Validation\Rule;
  * Creates or changes an area (avdelning): its name, colour, order and,
  * optionally, the staff-ledger location it is at and the cost centre its
  * new shifts are on (ADR-037, gap 7; by code, an inactive one is refused).
- * Shifts already planned keep their cost centre. Audited.
+ * Shifts already planned keep their cost centre. Audited. Runs in the
+ * given company, and another company's area answers 404.
  */
 final class SaveArea
 {
@@ -29,6 +31,7 @@ final class SaveArea
     public function __invoke(User $user, Company $company, array $input, ?Area $area = null): Area
     {
         $this->guard($user, $company);
+        abort_if($area !== null && $area->company_id !== $company->id, 404);
 
         $validated = Validator::make($input, [
             'name' => ['required', 'string', 'max:100'],
@@ -55,7 +58,7 @@ final class SaveArea
 
         unset($validated['cost_center']);
 
-        return DB::transaction(function () use ($user, $company, $validated, $area): Area {
+        return CurrentCompany::run($company, fn (): Area => DB::transaction(function () use ($user, $company, $validated, $area): Area {
             $before = $area?->only(array_keys($validated)) ?? [];
             $area ??= new Area;
             $area->fill($validated)->save();
@@ -63,17 +66,21 @@ final class SaveArea
             Audit::record($before === [] ? 'planning.area_created' : 'planning.area_updated', $area, Audit::changes($before, $area->only(array_keys($validated))), $company, $user);
 
             return $area;
-        });
+        }));
     }
 
     /** Archives an area, or restores it. Its shifts keep it. */
     public function archive(User $user, Company $company, Area $area): Area
     {
         $this->guard($user, $company);
-        $archived = $area->archived_at === null;
-        $area->forceFill(['archived_at' => $archived ? CarbonImmutable::now() : null])->save();
-        Audit::record($archived ? 'planning.area_archived' : 'planning.area_restored', $area, [], $company, $user);
+        abort_unless($area->company_id === $company->id, 404);
 
-        return $area;
+        return CurrentCompany::run($company, function () use ($user, $company, $area): Area {
+            $archived = $area->archived_at === null;
+            $area->forceFill(['archived_at' => $archived ? CarbonImmutable::now() : null])->save();
+            Audit::record($archived ? 'planning.area_archived' : 'planning.area_restored', $area, [], $company, $user);
+
+            return $area;
+        });
     }
 }

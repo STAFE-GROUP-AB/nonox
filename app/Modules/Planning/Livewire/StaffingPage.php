@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Planning\Livewire;
 
+use App\Modules\Planning\Support\Demand\DemandData;
 use App\Modules\Planning\Support\LocalTimestamp;
 use App\Modules\Planning\Support\Staffing\StaffingReport;
 use App\Modules\StaffLedger\Livewire\Concerns\InCurrentCompany;
@@ -79,13 +80,17 @@ class StaffingPage extends Component
         }
     }
 
-    public function render(StaffingReport $report): View
+    public function render(StaffingReport $report, DemandData $demand): View
     {
         [$from, $to] = $this->period();
         $data = $report->load($this->company(), $from, $to, $this->area);
+        // The forecast and the staffing demand for the same days and area (ADR-037, gap 1).
+        $needs = $demand->load($this->company(), $from, $to, $data['area']);
 
         return view('planning::livewire.staffing', [
             ...$data,
+            'demand' => $needs['days'],
+            'demandHasRules' => $needs['rules']->isNotEmpty(),
             'csvUrl' => route('planning.staffing.csv', array_filter(['fran' => $this->from, 'till' => $this->to, 'avdelning' => $this->area])),
         ]);
     }

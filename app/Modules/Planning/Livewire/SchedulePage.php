@@ -21,6 +21,7 @@ use App\Modules\Planning\Models\ShiftTask;
 use App\Modules\Planning\Models\Template;
 use App\Modules\Planning\PlanningModule;
 use App\Modules\Planning\PlanningSettings;
+use App\Modules\Planning\Support\Demand\DemandData;
 use App\Modules\Planning\Support\LocalTimestamp;
 use App\Modules\Planning\Support\ScheduleData;
 use App\Modules\StaffLedger\Livewire\Concerns\InCurrentCompany;
@@ -401,10 +402,28 @@ class SchedulePage extends Component
         $this->toast(__('Kostnaderna är omräknade.'));
     }
 
-    public function render(ScheduleData $data): View
+    public function render(ScheduleData $data, DemandData $demand): View
     {
         [$from, $to] = $this->period();
-        $loaded = $data->load($this->company(), $from, $to, ['area' => $this->area, 'skill' => $this->skill, 'location' => $this->location], $this->allowed('planning:manage'));
+        $filters = ['area' => $this->area, 'skill' => $this->skill, 'location' => $this->location];
+
+        // Demand follows the area filter (ADR-037, gap 1). Without one it is the whole company's, and its
+        // books are the footer's sales, read once; with one, the footer keeps the whole company's sales.
+        if ($this->area === null) {
+            $needs = $demand->load($this->company(), $from, $to);
+            $loaded = $data->load($this->company(), $from, $to, $filters, $this->allowed('planning:manage'), $needs['sales']);
+        } else {
+            $loaded = $data->load($this->company(), $from, $to, $filters, $this->allowed('planning:manage'));
+            $needs = $demand->load($this->company(), $from, $to, $loaded['areas']->firstWhere('id', $this->area));
+        }
+
+        // The footer's ≈ figure is the demand forecast, so the schedule shows one forecast, explained in one place.
+        foreach ($loaded['totals'] as $date => $total) {
+            $forecast = ($needs['days'][$date] ?? null)?->forecast->amountOre;
+            $base = $total['sales'] ?? $forecast;
+            $loaded['totals'][$date]['reference'] = $forecast;
+            $loaded['totals'][$date]['percent'] = $base !== null && $base > 0 && $total['cost'] > 0 ? round($total['cost'] * 100 / $base, 1) : null;
+        }
 
         $shown = $loaded['shifts']->pluck('id')->all();
 
@@ -412,6 +431,8 @@ class SchedulePage extends Component
             ...$loaded,
             'taskCounts' => $this->taskCounts($shown),
             'editingTasks' => $this->editing === null ? collect() : ShiftTask::query()->where('shift_id', $this->editing)->orderBy('position')->orderBy('id')->get(),
+            'demand' => $needs['days'],
+            'demandScope' => $needs,
             'from' => $from,
             'to' => $to,
             'canManage' => $this->allowed('planning:manage'),

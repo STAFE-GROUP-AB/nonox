@@ -43,6 +43,7 @@ Avsnittet är för dig som planerar eller attesterar tid: ägaren, en administra
 - [OB och övertid i lönen](/manual/planering/ob-och-overtid-i-lonen) – hur attesterad tid blir tidrapporter och rader i lönen.
 - [Kostnadsställen på pass](/manual/planering/kostnadsstallen) – lönen för passen och arbetsgivaravgifterna på avdelningens kostnadsställe.
 - [Bemanning och kostnad](/manual/planering/bemanning-och-kostnad) – personalkostnad mot försäljningen i bokföringen.
+- [Bemanningsbehov](/manual/planering/bemanningsbehov) – prognos för försäljningen och hur många som behöver jobba, per timme i schemat.
 
 ## Läs också
 

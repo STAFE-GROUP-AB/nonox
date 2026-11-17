@@ -170,6 +170,41 @@ per day = ceil(forecast ÷ target). The day view shows required against
 planned per hour as a band; the week view shows staff-hours per day; under-
 and over-staffing are warnings.
 
+*Built in P5 (2026-11-17), choices the text above left open:*
+
+- "The last N weeks" are counted back from the newest same weekday before
+  today, so a day weeks ahead uses weeks already booked; today's sales are
+  incomplete and never used. A skipped week is not replaced.
+- Overlapping rules: the hour takes the rule with the latest `valid_from`,
+  then one for a named weekday before one for every day, then the latest
+  saved. A window is `[start, end)` inside one day (`24:00` allowed); times
+  over midnight are two rules.
+- Daily data only: required staff-hours = max(the floors summed over the
+  rules' hours, ceil(forecast ÷ the newest applicable target)).
+- Planned staff per hour = the minutes people's shifts cover in the hour ÷
+  its length; breaks are not placed in time and are not taken off; open
+  shifts are shown apart and do not count. Over-staffed means at least one
+  person more than the sales target requires; a minimum staff alone is a
+  floor, never a ceiling. With hours, the hours decide the day's status;
+  per day only, the planned minutes inside the targeted hours are compared
+  with the day's need. Time outside every target's window counts for
+  neither. Per day only, an hour shows its minimum staff only when it has
+  one.
+- `SalesFromBooks` gains two optional parameters (a cost centre, and single
+  extra dates for last year's holidays) instead of a second reader; its
+  existing callers are unchanged.
+- Tills give the shape from the forecast's own basis days. A scope uses the
+  tills mapped to it, else those mapped to the whole company; the whole
+  company, with none mapped to it, uses every mapped till together.
+- Area sales on a cost centre plug in through `AreaCostCentre`, which reads
+  `planning_areas.cost_center_id` (P2); without it the area's demand uses the
+  whole company's sales and the page says so.
+- The schedule footer's "≈" is now this forecast (it was a four-week
+  average, now removed from `ScheduleData`), so the schedule shows one
+  forecast; without an area filter the books are read once for both.
+- Sales booked per week or month cannot give a forecast per weekday: the
+  page warns when fewer than half the weekdays of the look-back have sales.
+
 ### Gap 2: staff-cost budget per week and area
 
 **Decision.** `planning_budgets`: per company, area (null = whole company)

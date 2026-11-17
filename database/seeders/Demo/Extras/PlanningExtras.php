@@ -24,8 +24,11 @@ use App\Modules\Planning\Actions\RequestShift;
 use App\Modules\Planning\Actions\SaveActualTime;
 use App\Modules\Planning\Actions\SaveArea;
 use App\Modules\Planning\Actions\SaveAvailability;
+use App\Modules\Planning\Actions\SaveForecastOverride;
+use App\Modules\Planning\Actions\SaveHourProfile;
 use App\Modules\Planning\Actions\SaveShift;
 use App\Modules\Planning\Actions\SaveSkill;
+use App\Modules\Planning\Actions\SaveStaffingRule;
 use App\Modules\Planning\Actions\SaveTaskTemplate;
 use App\Modules\Planning\Actions\SaveTemplate;
 use App\Modules\Planning\Actions\SendToPayroll;
@@ -208,6 +211,32 @@ final class PlanningExtras extends DemoExtra
         ['Räkna kassan', 'Två personer räknar, en skriver under.', 'Servering', [5, 6], '23:00'],
     ];
 
+    /**
+     * The restaurant's staffing targets: [ISO weekdays, from, to, sales per
+     * staffed hour in kronor, minimum staff]. Closed on Mondays.
+     *
+     * @var list<array{list<int>, string, string, string, int}>
+     */
+    private const array DEMAND_RULES = [
+        [[2, 3, 4, 5, 6], '11:00', '14:00', '1 000', 2],
+        [[2, 3, 4], '17:00', '22:00', '1 000', 2],
+        [[5, 6], '17:00', '24:00', '1 000', 3],
+        [[7], '11:00', '16:00', '1 000', 2],
+    ];
+
+    /**
+     * The restaurant's own estimate of the day per hour, in percent, by ISO
+     * weekdays: lunch and dinner, a later evening on Friday and Saturday,
+     * lunch only on Sunday.
+     *
+     * @var array<int|string, array<int, string>>
+     */
+    private const array HOUR_PROFILES = [
+        '2,3,4' => [11 => '8', 12 => '15', 13 => '9', 14 => '3', 15 => '2', 16 => '3', 17 => '8', 18 => '15', 19 => '17', 20 => '13', 21 => '7'],
+        '5,6' => [11 => '6', 12 => '11', 13 => '7', 14 => '2', 15 => '2', 16 => '3', 17 => '7', 18 => '13', 19 => '15', 20 => '13', 21 => '9', 22 => '7', 23 => '5'],
+        '7' => [11 => '15', 12 => '25', 13 => '25', 14 => '15', 15 => '12', 16 => '8'],
+    ];
+
     /** Maja Lund, hourly waitress at the restaurant, also uses Min sida. */
     private const string SECOND_EMPLOYEE = 'Maja';
 
@@ -240,6 +269,7 @@ final class PlanningExtras extends DemoExtra
             $this->absences($context, $monday);
             $this->tickTasks($context, $monday);
             $this->selfService($context, $monday);
+            $this->at($monday->subDays(3)->setTime(15, 30), fn () => $this->demand($context, $monday));
         } else {
             $this->sharedLogin($context, $monday);
         }
@@ -460,6 +490,43 @@ final class PlanningExtras extends DemoExtra
                 $this->at($shift->starts_at->addHour(), fn () => app(TickShiftTask::class)($context->user, $context->company, $task, true));
             }
         }
+    }
+
+    /**
+     * Bemanningsbehov at the restaurant (ADR-037 gap 1): staffing targets for
+     * lunch and dinner on the open days, the company's own hour profile
+     * (the demo has no till with receipt times), and one override for the
+     * Christmas buffet opening next week.
+     */
+    private function demand(DemoContext $context, CarbonImmutable $monday): void
+    {
+        $validFrom = $monday->subWeeks(4)->toDateString();
+        $rules = app(SaveStaffingRule::class);
+
+        foreach (self::DEMAND_RULES as [$weekdays, $start, $end, $target, $minimum]) {
+            foreach ($weekdays as $weekday) {
+                $rules($context->user, $context->company, [
+                    'weekday' => $weekday,
+                    'start' => $start,
+                    'end' => $end,
+                    'sales_per_staff_hour' => $target,
+                    'min_staff' => $minimum,
+                    'valid_from' => $validFrom,
+                ]);
+            }
+        }
+
+        foreach (self::HOUR_PROFILES as $weekdays => $shares) {
+            foreach (array_map('intval', explode(',', (string) $weekdays)) as $weekday) {
+                app(SaveHourProfile::class)($context->user, $context->company, null, $weekday, $shares);
+            }
+        }
+
+        app(SaveForecastOverride::class)($context->user, $context->company, [
+            'date' => $monday->addWeek()->addDays(3)->toDateString(),
+            'amount' => '45 000',
+            'reason' => 'Julbordspremiär, 40 bokade gäster',
+        ]);
     }
 
     /** A published shift later this week moved by two hours and not yet published again. */

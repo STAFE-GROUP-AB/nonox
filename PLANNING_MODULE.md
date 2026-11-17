@@ -224,7 +224,22 @@ Every action: authorized by policy, transactional, audited, tenancy-safe.
   or all rows without deviations with one click; then "Skicka till lönen".
 - **Bemanning och kostnad**: per day and week, planned and actual hours,
   labour cost, sales from the books and labour cost %; compared with the same
-  weeks last year when the books have them.
+  weeks last year when the books have them; the forecast and the staffing
+  demand per day and week (Prognos, Behov).
+- **Bemanningsbehov** (`/planering/bemanningsbehov`, ADR-037 amendment gap
+  1): per area or the whole company, the forecast for the next two weeks
+  with the days it averaged, staffing targets (`planning_staffing_rules`:
+  weekday or every day, window, valid from, sales per staffed hour and/or
+  minimum staff), overrides of a day with a reason
+  (`planning_forecast_overrides`), the own hour profile per weekday
+  (`planning_hour_profiles`, "Egen uppskattning"), which till gives the
+  shape (`planning_sales_sources`) and the number of weeks averaged
+  (`forecast_weeks`, default 6). Domain in `Domain/Demand` (Forecaster,
+  HourShape, DayBuckets, StaffingNeed), reads in `Support/Demand`
+  (SalesFromBooks with an optional cost centre, TillSales, DemandData; AreaCostCentre is where P2's area cost
+  centre plugs in). The day view shows a band "Behov per timme" (planned /
+  required per hour, red under, amber over); the week footer shows "Behov"
+  per day. Deterministic, no AI; warnings never block.
 - **Min sida** (employee): my schedule (week list, next shift on the start
   page), open shifts to claim, swap or drop a shift, availability, iCal
   link, and the existing check-in.
@@ -288,7 +303,9 @@ Every action: authorized by policy, transactional, audited, tenancy-safe.
 - Connect API (read): shifts and published schedule per period; webhooks
   `planning.published`, `planning.attested`.
 - iCal feed per employee (secret, revocable URL).
-- Hourly POS sales: later; daily sales come from the books now.
+- Hourly POS sales: the shape of the day for Bemanningsbehov, from
+  `pos_sales.sold_at` per local hour, net of VAT, tips excluded; the daily
+  total still comes from the books.
 
 ## 10. Tests
 
@@ -302,7 +319,8 @@ tests for the grid interactions. Never `RefreshDatabase`.
 ## 11. Out of scope for the first version
 
 Automatic scheduling (AI), forecasting beyond "same weekday last weeks",
-hourly POS integration, tips distribution, chat/messaging, SMS.
+tips distribution, chat/messaging, SMS. ADR-037's amendment of 2026-11-17
+reverses parts of this gap by gap; hourly POS sales are in (gap 1).
 
 ## 12. Tasks (in order)
 

@@ -10,6 +10,7 @@ use App\Modules\ModuleRegistry;
 use App\Modules\Planning\Console\PruneProposalsCommand;
 use App\Modules\Planning\Console\PruneTasksCommand;
 use App\Modules\Planning\Livewire\AttestPage;
+use App\Modules\Planning\Livewire\DemandPage;
 use App\Modules\Planning\Livewire\MySchedule;
 use App\Modules\Planning\Livewire\PlanningSettingsForm;
 use App\Modules\Planning\Livewire\ProposalPage;
@@ -78,6 +79,7 @@ class PlanningServiceProvider extends ServiceProvider
         Livewire::component('planning.attest', AttestPage::class);
         Livewire::component('planning.proposals', ProposalPage::class);
         Livewire::component('planning.tasks', TaskTemplatesPage::class);
+        Livewire::component('planning.demand', DemandPage::class);
 
         Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.PlanningModule::KEY])
             ->group(__DIR__.'/routes/web.php');
