@@ -31,9 +31,9 @@ Beskedet säger på hur många pass uppgiften lades.
 ## När uppgifterna hamnar på passen
 
 - När du sparar ett pass, och när du lägger ut en mall eller kopierar en vecka och sedan publicerar schemat, får passet de uppgifter som passar.
-- När du ändrar eller tar bort en uppgiftsmall följer passen som inte har börjat med. Är något redan avbockat på ett pass lämnas det passet som det är.
+- När du ändrar eller tar bort en uppgiftsmall följer passen som inte har börjat med, upp till ett år framåt. Är något redan avbockat på ett pass lämnas det passet som det är.
 - Publicerade pass som redan har varit ändras aldrig i efterhand.
-- Ändrar du ett publicerat pass får det nya uppgifter först när du publicerar igen, så att personalen ser samma version av passet och uppgifterna.
+- Ändrar du ett publicerat pass får det nya uppgifter först när du publicerar igen, så att personalen ser samma version av passet och uppgifterna. Det gäller också när du ändrar en uppgiftsmall under tiden. En uppgift som du skriver direkt på passet syns däremot för personalen på en gång.
 - Flyttar du ett pass till en annan avdelning byts uppgifterna ut mot dem som passar den nya avdelningen.
 
 ## En uppgift bara för ett pass

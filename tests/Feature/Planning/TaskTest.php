@@ -519,6 +519,19 @@ it('leaves the tasks of a published shift alone when it is edited, until it is p
     expect($shift->tasks()->count())->toBe(0);
 });
 
+it('does not change the tasks of a published shift with unpublished edits when a template changes', function () {
+    p3TaskTemplate();
+    $shift = p3TaskShift();
+    p3PublishTasksWeek();
+
+    app(SaveShift::class)($this->owner, $this->company, ['employee_id' => $this->anna->id, 'area_id' => $this->hall->id, 'date' => '2026-11-10', 'start' => '08:00', 'end' => '16:00'], $shift->fresh());
+    p3TaskTemplate(['title' => 'Duka borden', 'area_id' => $this->hall->id]);
+    expect($shift->tasks()->pluck('title')->all())->toBe(['Kontrollera kylen']);
+
+    p3PublishTasksWeek();
+    expect($shift->tasks()->pluck('title')->all())->toBe(['Duka borden']);
+});
+
 it('changes a template\'s text with one update however many shifts it is on, and never on a ticked task', function () {
     $template = p3TaskTemplate(['weekdays' => [1, 2, 3, 4, 5, 6, 7], 'area_id' => null]);
 

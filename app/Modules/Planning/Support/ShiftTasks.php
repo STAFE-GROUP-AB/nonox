@@ -124,7 +124,9 @@ final class ShiftTasks
             ->where('status', '<>', Shift::CANCELLED)
             ->where('starts_at', '>=', ShiftQuery::instant($from))
             ->where('starts_at', '<', ShiftQuery::instant($from->addYear()))
-            ->get(['id', 'area_id', 'skill_id', 'starts_at', 'ends_at', 'status', 'published_at']);
+            ->get(['id', 'area_id', 'skill_id', 'starts_at', 'ends_at', 'status', 'published_at'])
+            // A published shift with unpublished edits keeps the tasks of the version the employee sees; publishing syncs it.
+            ->reject(fn (Shift $shift): bool => $shift->hasUnpublishedChanges());
 
         return $this->sync($company, $shifts);
     }
