@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-17-aktiebok-och-styrelserum-gar-att-sla-pa",
+      "datum": "2026-11-17T17:25:00+01:00",
+      "rubrik": "Aktiebok och styrelserum går nu att slå på",
+      "beskrivning": "Aktiebolag kan slå på modulen under Inställningar för företaget, Moduler, och föra aktieboken som en historik, kalla till stämma och styrelsemöte och skriva protokoll i NONOX. Datum för kallelser visas som råd tills en jurist har gått igenom reglerna.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-16-tillverkning-jamforelse-och-systemdokumentation",
       "datum": "2026-11-16T15:10:00+01:00",
       "rubrik": "Tillverkning i jämförelsen, körjournal på branschsidorna, ny systemdokumentation",
