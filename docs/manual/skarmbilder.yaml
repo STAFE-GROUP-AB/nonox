@@ -190,6 +190,8 @@ bank/bankkoppling: { foretag: restaurang, rutt: banking.index }
 planering/schema: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '@monday this week' } }
 planering/schema-avdelningar: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '@monday this week -1 week', rader: avdelningar } }
 planering/schema-dag: { foretag: restaurang, rutt: planning.schedule, fraga: { vy: dag, dag: '@monday this week -2 days' } }
+planering/schema-over-foretag: { foretag: restaurang, rutt: companies.schedule, fraga: { vecka: '@monday this week' }, visa: '#chain-conflicts' }
+planering/schema-per-avdelning: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '@monday this week', rader: avdelningar }, visa: '#unit-totals-heading' }
 planering/schema-utkast: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '@monday this week +3 weeks' } }
 planering/schema-franvaro: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '@monday this week +1 week' } }
 planering/mallar: { foretag: restaurang, rutt: planning.templates }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support\Navigation;
 
+use App\Domain\Firm\Memberships;
 use App\Domain\Mileage\MileageLog;
 use App\Models\Company;
 use App\Models\User;
@@ -180,9 +181,11 @@ final class Navigation
             $sections[] = [
                 'label' => __('Mina företag'),
                 'route' => 'companies.overview',
-                'patterns' => ['companies.overview', 'group.*'],
+                'patterns' => ['companies.overview', 'companies.schedule', 'group.*'],
                 'children' => fn (User $user, Company $company): array => [
                     ['label' => __('Koncernöversikt'), 'route' => 'group.overview', 'active' => ['group.overview']],
+                    // Only for someone who may see the schedule in at least one company (ADR-037, gap 8).
+                    ...(Memberships::of($user, active: true)->where('planning:view') === [] ? [] : [['label' => __('Schema över företag'), 'route' => 'companies.schedule', 'active' => ['companies.schedule']]]),
                 ],
             ];
         }

@@ -254,7 +254,7 @@ final class WorkingTimeChecks
      * @param  list<PlannedShift>  $shifts
      * @return array<string, string>
      */
-    private static function minorBand(CarbonImmutable $birthDate, array $shifts): array
+    public static function minorBand(CarbonImmutable $birthDate, array $shifts): array
     {
         $band = [];
 
@@ -308,6 +308,12 @@ final class WorkingTimeChecks
         }
 
         return intdiv(max($longest, $to->getTimestamp() - $cursor), 60);
+    }
+
+    /** @param  array<string, array<string, mixed>>  $rules */
+    public static function ruleEnabled(array $rules, string $key): bool
+    {
+        return self::enabled($rules, $key);
     }
 
     /** @param  array<string, array<string, mixed>>  $rules */

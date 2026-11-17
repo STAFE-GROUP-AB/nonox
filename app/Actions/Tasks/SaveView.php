@@ -18,8 +18,9 @@ class SaveView
     /**
      * @param  array<string, mixed>  $filters
      * @param  list<string>  $keys  the filters the page knows
+     * @param  int  $maxValueLength  the longest value kept; a list of company ids needs more than a short filter
      */
-    public function __invoke(User $user, string $page, string $name, array $filters, array $keys): SavedView
+    public function __invoke(User $user, string $page, string $name, array $filters, array $keys, int $maxValueLength = 40): SavedView
     {
         $name = trim($name);
 
@@ -32,7 +33,7 @@ class SaveView
         foreach ($keys as $key) {
             $value = $filters[$key] ?? '';
 
-            if (is_scalar($value) && (string) $value !== '' && mb_strlen((string) $value) <= 40) {
+            if (is_scalar($value) && (string) $value !== '' && mb_strlen((string) $value) <= $maxValueLength) {
                 $clean[$key] = (string) $value;
             }
         }
