@@ -659,6 +659,39 @@ Branch `spec/s2/group-model`. One migration set and one action set, no screen.
   group contribution (S2-R7's 6.6 second paragraph), and intra-group balances in a first year's opening
   balance by suggestion.
 
+**S2-1.6 as built (2026-11-18, ADR-081 E26).** Details the addendum left open, decided in the build:
+
+- No migration and no new table. Screen Mina företag → Koncernrapporter (`/koncern/rapporter`, route `group.reports`,
+  `App\Livewire\Group\GroupReportsPage`) with files `/koncern/rapporter/{run}/csv` and `/pdf` (routes
+  `group.reports.csv`, `group.reports.pdf`, `App\Http\Controllers\Group\GroupReportController`). The Elimineringar
+  screen is E25's and is unchanged; Konsolidering links the selected run to its report.
+- The report (`App\Domain\Group\GroupReport`) shows one **stored run**, never a new reading of the books: the column
+  Koncernen is the run's output, Elimineringar the rows of the group ledger entries the run names in
+  `inputs.group_entries` (their stored hashes compared with the ledger's; a difference is shown as a fault), and
+  Företagen the difference. So Företagen + Elimineringar = Koncernen on every row and total, and a test proves that
+  Företagen equals a run of the same period made before the entries were accepted. An account eliminated to zero is
+  not in the run's output; it is added to the report with the parent's or the BAS name, as the engine names accounts.
+- **Access per stored run (cold review P1).** `ConsolidateGroup::runLevel()` decides what a user sees of a stored run
+  from the companies **the run read** (`inputs.companies`), not from the group's members today: FULL when the user has
+  `reports:view`, not limited to dimensions, in every one of them (`RecordGroupEntry::visibleCompanies`); otherwise
+  CONSOLIDATED only through the group role while still a member of the parent (not limited there) and only for a run
+  `shownToConsolidated()`; otherwise NONE (404 in the files, "Körningen visas inte" on the page). Without this, after
+  a subsidiary left, a user with `reports:view` in the parent and the remaining members (never in the leaver) would
+  count as FULL and could subtract the others from an older run. Konsolidering (E24) uses the same rule for a stored run
+  and in "Kontrollera mot bokföringen". CONSOLIDATED gets the column Koncernen, member names and ConsolidationView's
+  totals per type; an account eliminated to zero is not shown to them.
+- **Integrity.** Each applied entry must match the hash the run stored **and** its recomputed hash
+  (`GroupEntry::recomputedHash()`, rows included), and the amounts per type must equal the run's
+  `output.eliminations.by_type`; otherwise the breakdown is not shown and the fault message is.
+- **Label (2.4, S2-R14).** `Consolidation::LABEL` on screen and in print, as the first line of the CSV, at the top
+  and the last line of the CSV, at the top of the PDF and in a fixed footer on every PDF page; file names `intern-koncernrapport_{from}_{to}_korning-{id}`.
+  G.1's overview label and CSV first line are aligned to the same wording, and its CSV file name now starts with
+  `intern-koncernrapport_`. The wording is still `TODO(legal-verify)` under H5.
+- PDF through dompdf (ADR-002, as the K10 worksheets), counted against the parent's `WorkQuota` `pdf` quota. Downloads
+  write no audit entry, as the companies' own report files. The page runs a fixed number of queries whatever the
+  number of runs, entries and vouchers (query-count test). Tests: `tests/Feature/Group/GroupReportsTest.php`,
+  `tests/Tenancy/GroupReportsTenancyTest.php`.
+
 #### 3.2 Remaining stage 1 packages
 
 - **S2-1.2 Koncern → Översikt** (screen): structure tree from holdings, capital/voting,

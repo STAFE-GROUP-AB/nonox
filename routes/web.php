@@ -26,6 +26,7 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\FirmLogoController;
 use App\Http\Controllers\GettingStartedController;
 use App\Http\Controllers\Group\GroupCsvController;
+use App\Http\Controllers\Group\GroupReportController;
 use App\Http\Controllers\GuideController;
 use App\Http\Controllers\GuideTipsController;
 use App\Http\Controllers\IndustryController;
@@ -212,6 +213,10 @@ Route::middleware([
     Route::view('/koncern/konsolidering', 'group.consolidation')->name('group.consolidation');
     // Elimination suggestions and the group ledger (ADR-081 E25, ADR-060 S2-1.5); spans companies, so GroupAccess decides what is shown.
     Route::view('/koncern/elimineringar', 'group.eliminations')->name('group.eliminations');
+    // Group reports from a stored run, as CSV and PDF with the internal label (ADR-081 E26, ADR-060 S2-1.6); spans companies, so GroupAccess and GroupReport decide what is shown.
+    Route::view('/koncern/rapporter', 'group.reports')->name('group.reports');
+    Route::get('/koncern/rapporter/{run}/csv', [GroupReportController::class, 'csv'])->whereNumber('run')->name('group.reports.csv');
+    Route::get('/koncern/rapporter/{run}/pdf', [GroupReportController::class, 'pdf'])->whereNumber('run')->name('group.reports.pdf');
     // Across every company the user belongs to (ADR-028).
     Route::view('/uppgifter', 'tasks.index')->name('tasks.index');
     Route::redirect('/mina-uppgifter', '/uppgifter');

@@ -126,6 +126,17 @@ final class GroupAccess
     }
 
     /**
+     * The CONSOLIDATED path alone: the group role, granted under the user's
+     * current membership in the parent. A stored run is judged by the
+     * companies it read (ADR-081 E26), so whether the user would have FULL
+     * access to the group as it is today does not decide it.
+     */
+    public function readsSums(CorporateGroup $group): bool
+    {
+        return $this->memberships->has($group->parent_company_id) && $this->hasRole($group, GroupRole::Viewer);
+    }
+
+    /**
      * Owner or administrator, live, in every member company and the parent.
      * An archived company cannot be administered, so an archived member
      * freezes the group's administration until it leaves; $except names the

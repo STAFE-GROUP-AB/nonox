@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-koncernrapporter",
+      "datum": "2026-11-18T22:30:00+01:00",
+      "rubrik": "Koncernrapporter som CSV och PDF",
+      "beskrivning": "Under Mina företag → Koncernrapporter visar du en intern sammanställd resultaträkning och balansräkning för koncernen från en sparad konsolidering, med företagens summor, elimineringarna och koncernens belopp konto för konto, och hämtar dem som CSV eller PDF. Sidan, filerna och filnamnen är märkta som intern koncernrapport och inte en koncernredovisning enligt ÅRL, och den som bara får läsa sammanställningen ser bara koncernens belopp, elimineringarna per slag och vilka företag som ingår. Koncernöversikten har fått samma märkning.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-18-signering-kontroll",
       "datum": "2026-11-18T15:00:00+01:00",
       "rubrik": "Kontrollera den som signerar med en kod",

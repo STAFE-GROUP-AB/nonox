@@ -214,7 +214,7 @@ it('shows the page with the internal-reporting notice, in print too, and a CSV o
     $this->actingAs($this->me);
 
     $this->get(route('group.overview'))->assertOk()
-        ->assertSee('Intern översikt, inte en koncernredovisning')
+        ->assertSee('Intern koncernrapport, inte en koncernredovisning enligt ÅRL')
         ->assertSee('Min koncern')
         ->assertSee('Holding AB')
         ->assertSee('Ägarandel 62,5 %')
@@ -229,7 +229,7 @@ it('shows the page with the internal-reporting notice, in print too, and a CSV o
 
     $lines = grpCsv($csv->streamedContent());
 
-    expect($lines[0])->toBe(['Intern koncernöversikt, inte en koncernredovisning', ''])
+    expect($lines[0])->toBe(['Intern koncernrapport, inte en koncernredovisning enligt ÅRL', ''])
         ->and($lines[1])->toBe(['', 'Dotter Ett AB', 'Dotter Två AB', 'Holding AB', 'Summa'])
         ->and($lines)->toContain(['3001 Försäljning inom Sverige, 25 % moms', '0,00', '1000,00', '2000,00', '3000,00'])
         ->and($lines)->toContain(['Årets resultat', '-1500,00', '1000,00', '2000,00', '1500,00']);

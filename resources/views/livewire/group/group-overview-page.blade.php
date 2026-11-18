@@ -19,7 +19,7 @@
 <div class="space-y-6">
     {{-- ADR-060: this is internal reporting and must say so on the page, in print too. --}}
     <div class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="note">
-        <p class="font-semibold">{{ __('Intern översikt, inte en koncernredovisning') }}</p>
+        <p class="font-semibold">{{ __('Intern koncernrapport, inte en koncernredovisning enligt ÅRL') }}</p>
         <p class="mt-1">{{ __('Siffrorna är bara en sammanställning av företagens egen bokföring för ditt eget underlag. Det är ingen koncernredovisning enligt årsredovisningslagen: ingenting konsolideras, ingen bokföring ändras och elimineringarna är förslag som inte bokförs någonstans.') }}</p>
     </div>
 
@@ -62,7 +62,7 @@
             @endforeach
         </nav>
 
-        <h2 class="hidden print:block text-lg font-semibold">{{ $current->name }} · {{ __('Intern översikt, inte en koncernredovisning') }}</h2>
+        <h2 class="hidden print:block text-lg font-semibold">{{ $current->name }} · {{ __('Intern koncernrapport, inte en koncernredovisning enligt ÅRL') }}</h2>
 
         @if($hidden > 0)
             <p class="text-sm text-gray-600" role="status">{{ trans_choice('{1} Ett företag i koncernen visas inte, eftersom du inte har tillgång till dess rapporter.|[2,*] :count företag i koncernen visas inte, eftersom du inte har tillgång till deras rapporter.', $hidden, ['count' => $hidden]) }}</p>
