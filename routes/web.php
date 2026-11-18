@@ -300,6 +300,8 @@ Route::middleware([
         // Budgets (ADR-081 gap 2, E3).
         Route::view('/budget', 'accounting.budgets')->name('accounting.budgets');
         Route::view('/budget/utfall', 'accounting.budget-report')->name('accounting.budgets.report');
+        // Rolling forecast across the fiscal year boundary (ADR-081 gap 2, E5).
+        Route::view('/budget/rullande-12-manader', 'accounting.budget-rolling')->name('accounting.budgets.rolling');
         Route::get('/budget/{budgetVersion}', [BudgetController::class, 'show'])->whereNumber('budgetVersion')->name('accounting.budgets.show');
         Route::get('/budget/{budgetVersion}/csv', [BudgetController::class, 'csv'])->whereNumber('budgetVersion')->name('accounting.budgets.csv');
         Route::view('/kostnadsstallen', 'accounting.dimensions', ['dimension' => 'kostnadsstallen'])->name('accounting.costCenters');

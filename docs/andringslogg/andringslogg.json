@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-rullande-prognos",
+      "datum": "2026-11-18T11:15:00+01:00",
+      "rubrik": "Rullande prognos och Rullande 12 månader",
+      "beskrivning": "Under Bokföring → Budget gör du en prognos från en brytmånad: utfallet hittills ur bokföringen, och resten av året med budgeten, snittet av de senaste månaderna eller samma månad i fjol plus en procentsats, med egna belopp där du vet bättre. Rullande 12 månader visar de kommande tolv månaderna över årsskiftet ur prognosen och nästa års budget. Prognosen bokförs aldrig och räknas med enkla regler, utan AI.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-18-signering-fler-undertecknare",
       "datum": "2026-11-18T02:50:00+01:00",
       "rubrik": "Fler undertecknare på offerter och avtal",

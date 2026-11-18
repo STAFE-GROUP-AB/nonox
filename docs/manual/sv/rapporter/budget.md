@@ -83,6 +83,7 @@ En låst budget för ett räkenskapsår som är stängt går inte att ta bort. D
 
 ## Läs också
 
+- [Rullande prognos](/manual/rapporter/prognos)
 - [Budget mot utfall](/manual/rapporter/budget-mot-utfall)
 - [Kostnadsställen och projekt](/manual/bokforing/kostnadsstallen-och-projekt)
 - [Resultatrapporten](/manual/rapporter/resultatrapport)

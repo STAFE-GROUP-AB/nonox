@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Budget;
 
+use App\Domain\Budget\BudgetKind;
 use App\Domain\Budget\BudgetMonths;
 use App\Models\Account;
 use App\Models\BudgetLine;
@@ -32,6 +33,11 @@ class SaveBudgetLines
     public function __invoke(User $user, BudgetVersion $version, array $rows): BudgetVersion
     {
         Gate::forUser($user)->authorize('update', $version);
+
+        // A forecast's months up to the cut-off are the books' outcome; it is saved by SaveForecast only.
+        if ($version->kind === BudgetKind::Forecast) {
+            throw ValidationException::withMessages(['version' => __('En prognos ändras i prognosens eget rutnät.')]);
+        }
 
         $company = $version->company_id;
 

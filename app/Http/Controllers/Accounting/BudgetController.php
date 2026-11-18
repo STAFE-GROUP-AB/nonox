@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Accounting;
 
 use App\Domain\Budget\BudgetCsv;
+use App\Domain\Budget\BudgetKind;
 use App\Domain\Budget\BudgetMonths;
 use App\Domain\Budget\BudgetScope;
 use App\Models\BudgetVersion;
@@ -14,7 +15,7 @@ use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * A budget version's grid, and the grid as a CSV file. Route model binding
+ * A budget or forecast version's grid, and the grid as a CSV file. Route model binding
  * goes through the company scope, so another company's version answers 404.
  */
 class BudgetController
@@ -23,7 +24,10 @@ class BudgetController
     {
         Gate::authorize('view', $budgetVersion);
 
-        return view('accounting.budget', ['version' => $budgetVersion->load('fiscalYear')]);
+        // A rolling forecast (E5) has a grid of its own: outcome up to the cut-off, methods after it.
+        $view = $budgetVersion->kind === BudgetKind::Forecast ? 'accounting.forecast' : 'accounting.budget';
+
+        return view($view, ['version' => $budgetVersion->load('fiscalYear')]);
     }
 
     public function csv(BudgetVersion $budgetVersion): StreamedResponse
@@ -50,7 +54,7 @@ class BudgetController
         }
 
         $csv = BudgetCsv::write($months, array_values($rows));
-        $name = 'budget_'.Str::slug($budgetVersion->name).'_'.$budgetVersion->fiscalYear->start_date->format('Y').'.csv';
+        $name = ($budgetVersion->kind === BudgetKind::Forecast ? 'prognos_' : 'budget_').Str::slug($budgetVersion->name).'_'.$budgetVersion->fiscalYear->start_date->format('Y').'.csv';
 
         return response()->streamDownload(function () use ($csv): void {
             echo $csv;

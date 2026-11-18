@@ -18,8 +18,8 @@ use App\Support\Tenancy\ArchivedCompany;
 final class BudgetLines
 {
     /**
-     * @param  list<array{account_id: int, cost_center_id: ?int, project_id: ?int, period: string, amount_ore: int}>  $lines
-     * @return int the number of lines written (zero amounts are skipped)
+     * @param  list<array{account_id: int, cost_center_id: ?int, project_id: ?int, period: string, amount_ore: int, is_override?: bool}>  $lines
+     * @return int the number of lines written (zero amounts are skipped, except a forecast month typed by hand)
      */
     public static function insert(BudgetVersion $version, array $lines): int
     {
@@ -34,7 +34,9 @@ final class BudgetLines
         $rows = [];
 
         foreach ($lines as $line) {
-            if ($line['amount_ore'] === 0) {
+            $override = $line['is_override'] ?? false;
+
+            if ($line['amount_ore'] === 0 && ! $override) {
                 continue;
             }
 
@@ -46,7 +48,7 @@ final class BudgetLines
                 'project_id' => $line['project_id'],
                 'period' => $line['period'],
                 'amount_ore' => $line['amount_ore'],
-                'is_override' => false,
+                'is_override' => $override,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];

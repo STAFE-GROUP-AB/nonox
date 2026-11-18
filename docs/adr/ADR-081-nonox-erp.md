@@ -1358,3 +1358,56 @@ Built on branch `feat/erp-e2-attestmotor`. Choices the gap 8 text left open:
 - **UI.** `/attestfloden` (`approvals.policies`, under Inköp): policies,
   dimension owners, substitutes. The approval card on the supplier invoice
   and the payment file list show the steps and decisions.
+
+## Addendum: E5 as built (rolling forecast)
+
+Built on branch `feat/erp-e5-prognos` on E3's tables; choices the gap 2 text
+left open:
+
+- **A forecast is a snapshot.** A `FORECAST` version stores every month as
+  `budget_lines`: the posted outcome up to the cut-off (exact öre) and the
+  computed months after it (whole kronor). "Spara och räkna om" reads the
+  ledger and the active budget again and rewrites the lines; months typed by
+  hand (`is_override`, also a typed zero) are kept. `BudgetLines::insert`
+  keeps zero lines only when they are overrides. `SaveBudgetLines` refuses a
+  forecast, so outcome months are never typed.
+- **Cut-off.** `forecast_cutoff` is the last day of an ended month, from the
+  month before the fiscal year (all forecast) to the year's last month. Two
+  new CHECKs: a cut-off exactly on forecasts, and always a month end.
+  "Closed months" in owner decision 7 is read as ended calendar months up to
+  the cut-off. A new forecast defaults to the last month inside the company's
+  locked period (`locked_until_date`), else the last ended month; an unlocked
+  cut-off is flagged in the form and the editor. Typed amounts for months up
+  to the cut-off are skipped, not refused.
+- **Methods** (`ForecastMethod`, `ForecastSettings` in `method` jsonb):
+  revenue rows (`BudgetMonths::isRevenue`) and cost rows each have a default
+  (`BUDGET` and `AVERAGE` with N = 3), a row may have its own. The average
+  counts only months inside this or the previous fiscal year, so a young
+  company averages over the months it has; `LAST_YEAR` reads only months up
+  to the cut-off. Both read the outcome without YearEndClosing's entries
+  (vouchers of source `CLOSING` whose subject is a `FiscalYear`: tax,
+  deferred tax, appropriations, revaluations and their reversals on the next
+  year's first day); monthly depreciation and accruals (`CLOSING` with an
+  asset or accrual subject) stay in, and the outcome months show everything.
+  The page says how many months the average covers and when there is no
+  previous year. A method that needs the budget is refused when the year has
+  no active budget; the create form then defaults revenue to the average.
+- **Rows.** The active budget's rows, rows added by hand and the rows the
+  outcome needs. Each posted amount goes to one row, the most specific
+  (account+cost centre+project, account+cost centre, account+project,
+  account; the last is made when missing), so nothing is counted twice.
+- **Moving on.** A draft forecast's cut-off can be moved (overrides that
+  become outcome are dropped), or a new forecast is made "from" an earlier
+  one (`source_version_id`), carrying its row methods and the overrides after
+  the new cut-off. A row with its own method stays a row (the editor sends
+  every row it shows) even when its method gives nothing. The first forecast
+  of a year is active.
+- **Rullande 12 månader** (`/budget/rullande-12-manader`,
+  `accounting.budgets.rolling`, `RollingTwelveMonths`): each month from its
+  fiscal year's active forecast, else its active budget; months without
+  either are named; each forecast's cut-off is shown, and a forecast more
+  than a month behind the books is flagged and no longer decides the start
+  month. Four queries. Refused for dimension-limited members, like
+  every budget page.
+- **Audit:** `budget.forecast_created` and `budget.forecast_saved` with ids,
+  cut-off month, method codes and counts.

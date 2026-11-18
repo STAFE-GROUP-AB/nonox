@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.141
+- Version: 0.142
 - Version: 0.135
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
@@ -1022,6 +1022,24 @@ används av koncernens interna sammanställning (ADR-060 tillägg 2.4).
   skapas, sparas, låses, används eller tas bort skrivs i
   behandlingshistoriken (`budget.*`) med id och antal, aldrig namn.
 - Budgeten följer inte med i SIE-filen (`#PBUDGET` läses och skrivs inte).
+- En rullande prognos (paket E5) är en version av slaget `FORECAST` i samma
+  tabeller, med en brytmånad (`forecast_cutoff`, alltid sista dagen i en
+  månad som har tagit slut; en databaskontroll kräver brytmånad på en
+  prognos och ingen på en budget). Månaderna till och med brytmånaden är
+  bokförda belopp ur verifikationerna, läst på samma sätt som rapporterna;
+  månaderna efter räknas med en av tre regler per rad: den aktiva budgeten,
+  snittet av de senaste N avslutade månaderna (3 från början, också från
+  föregående räkenskapsår) eller samma månad i fjol med en procentsats,
+  avrundat till hela kronor. Snittet och fjolåret räknas utan bokslutets
+  poster för räkenskapsåret (källa `CLOSING` med räkenskapsåret som underlag:
+  skatt, uppskjuten skatt, bokslutsdispositioner och deras återföringar);
+  månatliga avskrivningar och periodiseringar ingår. Ett belopp som skrivs för hand markeras
+  (`is_override`) och behålls när prognosen räknas om. Varje bokfört belopp
+  räknas på en rad. Valen sparas i `method` med id och koder, och skapande
+  och omräkning skrivs i behandlingshistoriken (`budget.forecast_*`) med id,
+  brytmånad, metoder och antal.
+- Prognosen bokförs aldrig, ingår inte i kontrollsummekedjan och ändrar
+  ingen bokförd rad; Rullande 12 månader läser bara prognoser och budgetar.
 
 ### 4.13 Moms
 
@@ -6244,3 +6262,4 @@ påverkar bokföringen och fakturan:
 | 0.139 | 2026-11-18 | Dokumentarkivet (avsnitt 4.5 och 7a, ADR-081 lucka 9, paket E19): företagets egna dokument med versioner som inte kan ändras, krypterade filer med SHA-256, lagringsklasserna räkenskapsinformation (sju år enligt BFL 7 kap. 2 §), avtal (också som räkenskapsinformation), personal och övrigt, ett `retain_until` som aldrig går under regelns golv (triggern räknar golvet för räkenskapsinformation ur räkenskapsåret) och en bevarandespärr med skäl; radering vägras av policyn, modellen och en PostgreSQL-trigger. Räkenskapsinformation blir underlag till en verifikation genom `voucher_attachments` med samma fil, utan kopia. Arkivpaketet får `dokument/` med förteckning och kontrollsummor. Ingen verifikation skapas eller ändras. |
 | 0.140 | 2026-11-18 | Koncernmarkeringar (avsnitt 4.10a, ADR-060 tillägg 2.3, ADR-081 paket E23): kunder och leverantörer kan markeras som koncernföretag med det andra företagets organisationsnummer, och bokförda rader får en markering med koncernföretag, typ och källa i de nya tabellerna `intercompany_counterparties` och `intercompany_row_tags`, bredvid `voucher_rows`. Raderna på fakturor, betalningar och leverantörsfakturor till och från markerade kunder och leverantörer markeras efter kontointervall när en person bekräftar, också i rättelser av dem (vända rader får samma typ), och rader på ett konto under en period i bulk. En trigger nekar markeringar på utkast och på ett annat företags rader. Ingen verifikation, rad, numrering eller hashkedja ändras, och ingenting skrivs i ett annat företags bokföring. |
 | 0.141 | 2026-11-18 | Signering med flera undertecknare (avsnitt 5, ADR-046 tillägg 2026-11-18, paket S1): ett kuvert har ett dokument, upp till tio undertecknare i steg (samma steg signerar samtidigt) och upp till tio kopiemottagare. En offert blir order först när alla har signerat; ett avböjande eller ett tillbakadraget kuvert ger ingen order. Varje befintlig signeringsbegäran fick ett eget kuvert med samma status, utan att bevisen ändrades. Ingen bokföringsregel ändras. |
+| 0.142 | 2026-11-18 | Rullande prognos (avsnitt 4.12a, ADR-081 lucka 2, paket E5): prognoser som versioner av slaget `FORECAST` i `budget_versions` med brytmånad, utfall ur bokförda verifikationer till och med brytmånaden och tre regler för månaderna efter (budgeten, snittet av de senaste månaderna, samma månad i fjol med procentsats), egna belopp som markeras och behålls, och Rullande 12 månader över årsskiftet. Nya databaskontroller på `budget_versions`: brytmånad bara på prognoser, och alltid en månads sista dag. Prognosen bokförs aldrig, och ingen bokförd verifikation ändras. |
