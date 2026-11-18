@@ -176,8 +176,10 @@ final class ConsolidateGroup
     /**
      * @param  array<string, mixed>  $input
      * @return array{0: CarbonImmutable, 1: CarbonImmutable}
+     *
+     * @throws ValidationException
      */
-    private static function period(array $input): array
+    public static function period(array $input): array
     {
         $data = Validator::make($input, [
             'from' => ['required', 'date_format:Y-m-d'],
