@@ -353,6 +353,8 @@ final class DatabaseGrants
         // Envelopes (ADR-046 S1): triggers keep a copy recipient's address, a token and a finished envelope fixed;
         // the prune deletes unsigned envelopes, and a completed one is refused by its delete trigger.
         'signing_copy_recipients' => GrantDecision::ReadWrite,
+        // Evidence (ADR-046 S2): the trigger refuses UPDATE, and DELETE except the cascade from the envelope.
+        'signing_document_versions' => GrantDecision::AppendOnly,
         'signing_envelopes' => GrantDecision::ReadWrite,
         'signing_link_tokens' => GrantDecision::ReadWrite,
         'skatteverket_events' => GrantDecision::ReadWrite,

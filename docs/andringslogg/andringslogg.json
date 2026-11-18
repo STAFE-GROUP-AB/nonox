@@ -48,6 +48,14 @@
       "omrade": "Bokföring"
     },
     {
+      "id": "2026-11-18-signering-hashkedja",
+      "datum": "2026-11-18T11:20:00+01:00",
+      "rubrik": "Signeringens händelser i en hashkedja",
+      "beskrivning": "Varje händelse i en signering länkas nu till den förra med en kontrollsumma, med början i dokumentets egen kontrollsumma, och den sista länken sparas i behandlingshistoriken när signeringen är klar, avböjd eller tillbakadragen. Varje natt räknas alla kedjor och dokument om, och signeringspanelen visar om de var oförändrade vid senaste kontrollen. Signeringar som redan fanns fick en första länk som täcker deras tidigare händelser, utan att något av det befintliga ändrades.",
+      "typ": "Säkerhet",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-18-rullande-prognos",
       "datum": "2026-11-18T11:15:00+01:00",
       "rubrik": "Rullande prognos och Rullande 12 månader",

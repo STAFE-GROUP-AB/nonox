@@ -298,6 +298,7 @@ BEGIN
         ('sick_pay_periods', 'SELECT, INSERT, UPDATE, DELETE'),
         ('sie_imports', 'SELECT, INSERT, UPDATE, DELETE'),
         ('signing_copy_recipients', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('signing_document_versions', 'SELECT, INSERT'),
         ('signing_envelopes', 'SELECT, INSERT, UPDATE, DELETE'),
         ('signing_link_tokens', 'SELECT, INSERT, UPDATE, DELETE'),
         ('skatteverket_events', 'SELECT, INSERT, UPDATE, DELETE'),

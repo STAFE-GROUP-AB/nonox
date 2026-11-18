@@ -43,6 +43,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?CarbonImmutable $voided_at
  * @property ?int $voided_by
  * @property ?CarbonImmutable $followed_up_at
+ * @property ?string $chain_head
+ * @property ?int $chain_sequence
+ * @property int $next_sequence the chain's next sequence number, kept by the event insert trigger (ADR-046 S2)
+ * @property ?string $last_hash the chain's last hash, kept by the same trigger
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
  */
@@ -87,6 +91,8 @@ class SigningEnvelope extends Model
         return [
             'status' => EnvelopeStatus::class,
             'current_step' => 'integer',
+            'chain_sequence' => 'integer',
+            'next_sequence' => 'integer',
             'deadline_at' => 'immutable_datetime',
             'sent_at' => 'immutable_datetime',
             'completed_at' => 'immutable_datetime',

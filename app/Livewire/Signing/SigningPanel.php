@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Livewire\Signing;
 
 use App\Actions\Signing\SendForSigning;
+use App\Console\Commands\VerifySigningChainsCommand;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SignedDocuments;
 use App\Domain\Signing\SigningStatus;
 use App\Livewire\Concerns\ShowsToasts;
+use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\SalesDocument;
@@ -22,6 +24,7 @@ use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\Deal;
 use App\Modules\ModuleManager;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -204,6 +207,7 @@ class SigningPanel extends Component
             'open' => $document->signingIsOpen() && ! ($isQuote && SignedDocuments::isQuoteSigned($document->id)),
             'canInvoice' => $isQuote && $user->hasTeamPermission($this->company(), 'invoices:create'),
             'now' => now(),
+            'chainCheck' => $this->chainCheck(),
         ]);
     }
 
@@ -263,6 +267,33 @@ class SigningPanel extends Component
         }
 
         return $document->signingIsOpen();
+    }
+
+    /**
+     * The latest nightly check of the company's signing chains
+     * (signing:verify, ADR-046 amendment, gap 4): when it ran and which
+     * envelopes it found changed. One query.
+     *
+     * @return array{at: CarbonImmutable, broken: array<string, true>}|null
+     */
+    private function chainCheck(): ?array
+    {
+        $entry = AuditLog::query()->forCompany($this->company())->where('action', VerifySigningChainsCommand::ACTION)->latest('id')->first(['payload', 'created_at']);
+
+        if (! $entry instanceof AuditLog) {
+            return null;
+        }
+
+        $broken = [];
+
+        foreach ((array) ($entry->payload['problems'] ?? []) as $problem) {
+            $broken[(string) ($problem['envelope_id'] ?? '')] = true;
+        }
+
+        /** @var CarbonImmutable $at */
+        $at = $entry->created_at;
+
+        return ['at' => $at, 'broken' => $broken];
     }
 
     public static function statusOf(SigningRequest $request): SigningStatus

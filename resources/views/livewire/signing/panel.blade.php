@@ -179,6 +179,22 @@
                             @endforeach
                         </ol>
                         <p class="mt-2 break-all text-xs text-gray-600">{{ __('SHA-256: :hash', ['hash' => $signing->document_sha256]) }}</p>
+                        @if($envelope?->chain_head)
+                            <p class="mt-1 break-all text-xs text-gray-600">{{ __('Händelsekedjans sista länk: :hash', ['hash' => $envelope->chain_head]) }}</p>
+                        @endif
+                        @if($envelope !== null)
+                            @php($chainChecked = $chainCheck !== null && ($envelope->sent_at === null || $chainCheck['at']->greaterThanOrEqualTo($envelope->sent_at)))
+                            @php($chainBroken = $chainCheck !== null && isset($chainCheck['broken'][$envelope->id]))
+                            <p class="mt-1 text-xs {{ $chainBroken ? 'font-semibold text-red-700' : 'text-gray-600' }}" data-testid="signing-chain-check">
+                                @if($chainBroken)
+                                    {{ __('Kontrollen :time hittade en avvikelse i händelsekedjan eller dokumenten. Kontakta den som driftar NONOX.', ['time' => $chainCheck['at']->setTimezone($zone)->format('Y-m-d H:i')]) }}
+                                @elseif(! $chainChecked)
+                                    {{ __('Händelsekedjan har inte kontrollerats än. Kontrollen körs varje natt.') }}
+                                @else
+                                    {{ __('Händelsekedjan och dokumenten var oförändrade vid kontrollen :time.', ['time' => $chainCheck['at']->setTimezone($zone)->format('Y-m-d H:i')]) }}
+                                @endif
+                            </p>
+                        @endif
                     </details>
                 </li>
             @endforeach

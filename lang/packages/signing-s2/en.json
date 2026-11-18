@@ -1,0 +1,9 @@
+{
+    "Händelsekedjan startade": "The event chain started",
+    "Signeringen är klar": "Signing is complete",
+    "Signeringen avbröts": "Signing was stopped",
+    "Händelsekedjans sista länk: :hash": "Last link of the event chain: :hash",
+    "Händelsekedjan har inte kontrollerats än. Kontrollen körs varje natt.": "The event chain has not been checked yet. The check runs every night.",
+    "Kontrollen :time hittade en avvikelse i händelsekedjan eller dokumenten. Kontakta den som driftar NONOX.": "The check at :time found a deviation in the event chain or the documents. Contact whoever runs NONOX.",
+    "Händelsekedjan och dokumenten var oförändrade vid kontrollen :time.": "The event chain and the documents were unchanged at the check at :time."
+}

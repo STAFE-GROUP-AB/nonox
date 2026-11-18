@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace App\Domain\Signing;
 
+use App\Domain\Signing\Chain\SigningChain;
+use App\Models\SigningDocumentVersion;
 use App\Models\SigningEnvelope;
-use App\Models\SigningEvent;
 use App\Models\SigningLinkToken;
 use App\Models\SigningRequest;
 use App\Support\Audit\Audit;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * The envelope rules (ADR-046 amendment 2026-11-18, gap 1), used inside the
@@ -34,7 +36,10 @@ use Illuminate\Database\Eloquent\Collection;
  */
 final class SigningEnvelopes
 {
-    public function __construct(private readonly SignableTypes $types) {}
+    public function __construct(
+        private readonly SignableTypes $types,
+        private readonly SigningChain $chain,
+    ) {}
 
     /**
      * A new envelope for a document; inside the sending transaction, with the document locked.
@@ -43,7 +48,7 @@ final class SigningEnvelopes
      */
     public function create(Signable $document, array $file, ?CarbonImmutable $deadline, ?int $userId): SigningEnvelope
     {
-        return SigningEnvelope::create([
+        $envelope = SigningEnvelope::create([
             ...$this->types->attributesFor($document),
             'title' => mb_substr($document->signingTitle(), 0, 255),
             'document_path' => $file['path'],
@@ -54,6 +59,17 @@ final class SigningEnvelopes
             'created_by' => $userId,
             'sent_at' => now(),
         ]);
+
+        // The file that was sent, with its SHA-256: the first version signing:verify checks (ADR-046 amendment, gap 4).
+        SigningDocumentVersion::create([
+            'envelope_id' => $envelope->id,
+            'kind' => SigningDocumentVersion::ORIGINAL,
+            'path' => $file['path'],
+            'sha256' => $file['sha256'],
+            'bytes' => Storage::disk(SigningRequest::DISK)->size($file['path']),
+        ]);
+
+        return $envelope;
     }
 
     /** Whether an envelope has more than one signer: the envelope rules apply only then. */
@@ -79,7 +95,7 @@ final class SigningEnvelopes
             'reason' => SigningLinkToken::SENT,
         ]);
 
-        SigningEvent::create(['signing_request_id' => $signer->id, 'event' => SigningEventType::Sent, 'user_id' => $userId]);
+        $this->chain->record($signer, SigningEventType::Sent, $userId);
 
         return route('signing.show', ['token' => $token['token']]);
     }
@@ -109,6 +125,8 @@ final class SigningEnvelopes
             if ($several) {
                 Audit::record('crm.signing_envelope_completed', $envelope, ['envelope_id' => $envelope->id, 'signers' => $signers->count()], $envelope->company_id);
             }
+
+            $this->chain->close($envelope, $signer, SigningEventType::Completed, payload: ['signers' => $signers->count()]);
 
             return ['completed' => true, 'several' => $several, 'envelope' => $envelope, 'opened' => []];
         }
@@ -150,11 +168,14 @@ final class SigningEnvelopes
         $signers = $this->signers($envelope);
 
         if ($signers->count() < 2) {
+            $this->chain->close($envelope, $signer);
+
             return [];
         }
 
         $this->revokeOthers($signers, $signer->id, null, 'ENVELOPE_DECLINED');
         Audit::record('crm.signing_envelope_declined', $envelope, ['envelope_id' => $envelope->id, 'signers' => $signers->count()], $envelope->company_id);
+        $this->chain->close($envelope, $signer);
 
         $signed = [];
 
@@ -187,11 +208,14 @@ final class SigningEnvelopes
         $signers = $this->signers($envelope);
 
         if ($signers->count() < 2) {
+            $this->chain->close($envelope, $signer, SigningEventType::Voided, $userId, ['reason' => $reason]);
+
             return [];
         }
 
         $others = $this->revokeOthers($signers, $signer->id, $userId, $reason);
         Audit::record('crm.signing_envelope_voided', $envelope, ['envelope_id' => $envelope->id, 'signers' => $signers->count(), 'reason' => $reason], $envelope->company_id);
+        $this->chain->close($envelope, $signer, SigningEventType::Voided, $userId, ['reason' => $reason]);
 
         return $others;
     }
@@ -222,7 +246,7 @@ final class SigningEnvelopes
             }
 
             $row->forceFill(['status' => SigningStatus::Revoked, 'revoked_at' => now()])->save();
-            SigningEvent::create(['signing_request_id' => $row->id, 'event' => SigningEventType::Revoked, 'user_id' => $userId]);
+            $this->chain->record($row, SigningEventType::Revoked, $userId);
             Audit::record('crm.signing_revoked', $row, ['signing_request_id' => $row->id, 'envelope_id' => $row->envelope_id, 'reason' => $reason], $row->company_id);
             $this->revokeTokens($row->id);
             $revoked[] = $row->id;

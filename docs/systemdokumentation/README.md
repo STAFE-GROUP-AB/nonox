@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.144
+- Version: 0.145
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -1524,6 +1524,24 @@ balances").
   bevis (dokumentets SHA-256, namn, tid, IP-adress, webbläsare) ändras aldrig,
   och ett slutfört kuvert ändras eller tas aldrig bort (databasutlösare). Med
   en undertecknare är flödet oförändrat.
+- Signeringens händelser är en hashkedja per kuvert (version 0.145,
+  [ADR-046](../adr/ADR-046-crm-signing.md) tillägg 2026-11-18, lucka 4, paket
+  S2): varje händelse (skickad, öppnad, signerad, avböjd, återkallad, utgången,
+  klar, avbruten) får ett löpnummer i kuvertet och hashen sha256(föregående
+  hash || kanonisk JSON av händelsen), och den första händelsens föregående
+  hash är SHA-256 för dokumentet som skickades. Signerad och avböjd bär en
+  hash av undertecknarens bevis (namn, tid, metod, signaturbild, IP-adress,
+  webbläsare, godkännandetext), aldrig värdena. När kuvertet är klart, avböjt
+  eller tillbakadraget sparas kedjans sista hash på kuvertet (en gång) och i
+  behandlingshistoriken (`signing.completed`, `signing.declined`,
+  `signing.voided`). Varje dokument som skickats sparas i
+  `signing_document_versions` med sin SHA-256. `php artisan signing:verify`
+  räknar om varje kedja, jämför bevisen och filernas kontrollsummor och kollar
+  behandlingshistoriken; den körs varje natt och resultatet
+  (`signing.verified`) visas i signeringspanelen. Kuvert från före kedjan fick
+  en första händelse `CHAIN_STARTED` med antal och en sammanfattande hash av de
+  tidigare händelserna per undertecknare; ingen befintlig rad ändrades.
+  Signeringen bokför ingenting och ingen bokföringsregel ändras.
 - Varje skapad, skickad och betald faktura, offert och order skrivs till
   behandlingshistoriken.
 
@@ -6385,3 +6403,4 @@ påverkar bokföringen och fakturan:
 | 0.142 | 2026-11-18 | SIE-budget (avsnitt 4.9, 4.11 och 4.12a, ADR-081 paket E4): `#PBUDGET 0` i en SIE-fil blir en ny budget när filen läses in, med hela beloppet, varje kostnadsställe och varje projekt per konto och månad exakt som i filen; en budget som inte går att läsa säkert läses inte in men hindrar aldrig bokföringen. Under Budget kan bara budgeten i en fil av typ 2, 3 eller 4 läsas in, i två steg, mot räkenskapsår, konton och objekt som redan finns. SIE-exporten skriver årets budget bara med rutan Ta med budget. Budgeten bokförs aldrig och ingår inte i avstämningen eller kontrollsummekedjan. Ingen verifikation ändras. |
 | 0.143 | 2026-11-18 | Rullande prognos (avsnitt 4.12a, ADR-081 lucka 2, paket E5): prognoser som versioner av slaget `FORECAST` i `budget_versions` med brytmånad, utfall ur bokförda verifikationer till och med brytmånaden och tre regler för månaderna efter (budgeten, snittet av de senaste månaderna, samma månad i fjol med procentsats), egna belopp som markeras och behålls, och Rullande 12 månader över årsskiftet. Nya databaskontroller på `budget_versions`: brytmånad bara på prognoser, och alltid en månads sista dag. Prognosen bokförs aldrig, och ingen bokförd verifikation ändras. |
 | 0.144 | 2026-11-18 | Konsolidering och körlogg för koncerner (avsnitt 4.10b, ADR-060 tillägg 2.4, ADR-081 paket E24): koncernens bekräftade medlemmar läses var för sig inom sitt företag, ett dotterföretags intäkter och kostnader räknas från förvärvet till avyttringen och dess balans tas med om det är medlem periodens sista dag, kontona flyttas enligt kontomappningen (`group_account_maps`, inom samma kontoklass) och beloppen summeras. Varje körning sparas i `corporate_group_runs` med indata och resultat och deras SHA-256 (samma indata ger samma resultat); tabellen kan inte ändras eller tas bort. Inga elimineringar ännu. Ingenting skrivs i något företags bokföring och ingen verifikation ändras. |
+| 0.145 | 2026-11-18 | Hashkedja för signeringens händelser (avsnitt 5, ADR-046 tillägg 2026-11-18, paket S2): varje händelse i ett kuvert länkas till den förra med SHA-256, från dokumentets SHA-256, och en PostgreSQL-trigger nekar en händelse som inte följer löpnumret eller inte länkar. Kedjans sista hash sparas på kuvertet och i behandlingshistoriken när kuvertet avslutas. Kuvertet har en räknare (`next_sequence`, `last_hash`) som bara triggern flyttar, så ett löpnummer används aldrig två gånger, och en avslutad kedja tar inte emot fler händelser. Ny tabell `signing_document_versions` (kan inte ändras) och nya kolumner på `crm_signing_events` och `signing_envelopes`. Den nattliga `signing:verify` räknar om kedjorna och filernas kontrollsummor. Befintliga kuvert fick en första kedjehändelse; inga befintliga rader ändrades. Ingen bokföringsregel ändras. |

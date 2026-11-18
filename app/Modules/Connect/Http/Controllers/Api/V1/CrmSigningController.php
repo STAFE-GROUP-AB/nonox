@@ -150,7 +150,8 @@ final class CrmSigningController
             'order_id' => $request->order_id,
             'invoice_id' => $request->invoice_id,
             'sent_by' => $request->sent_by,
-            'events' => $request->events->map(fn (SigningEvent $event): array => ['event' => $event->event->value, 'at' => self::time($event->created_at)])->values()->all(),
+            // The signer's own steps only: the envelope's chain events (CHAIN_STARTED, COMPLETED, VOIDED, ADR-046 S2) are not part of this contract.
+            'events' => $request->events->filter(fn (SigningEvent $event): bool => $event->event->isSignerStep())->map(fn (SigningEvent $event): array => ['event' => $event->event->value, 'at' => self::time($event->created_at)])->values()->all(),
             'created_at' => self::time($request->created_at),
         ];
     }
