@@ -177,7 +177,7 @@ it('signs: evidence kept, a certificate made, the quote becomes an order, the de
         ->and($this->deal->order_id)->toBe($order->id)
         ->and(Activity::query()->where('account_id', $this->account->id)->where('subject', 'Offert '.$this->quote->number.' signerades')->whereNotNull('done_at')->exists())->toBeTrue()
         ->and($this->owner->notifications()->where('type', SigningNotice::class)->count())->toBe(1)
-        ->and(SigningEvent::query()->where('signing_request_id', $request->id)->pluck('event')->map->value->all())->toBe(['SENT', 'SIGNED']);
+        ->and(SigningEvent::query()->where('signing_request_id', $request->id)->pluck('event')->map->value->all())->toBe(['SENT', 'SIGNED', 'COMPLETED']);
 
     Mail::assertQueued(SignedDocumentMail::class, 2);
     Mail::assertQueued(SignedDocumentMail::class, fn (SignedDocumentMail $mail): bool => $mail->hasTo('anna@kontorshuset.test') && $mail->toSigner);

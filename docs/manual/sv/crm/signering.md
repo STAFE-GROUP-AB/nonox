@@ -63,6 +63,18 @@ Signeringsbeviset är en PDF som visar vilket dokument som signerades, dess kont
 
 Under **Signering** på offerten eller avtalet hittar du **PDF:en som skickades**, **Signeringsbevis** och **Händelser** för varje länk.
 
+## Händelsekedjan och den nattliga kontrollen
+
+Varje händelse i en signering länkas till den förra med en kontrollsumma (SHA-256), och den första länken utgår från dokumentets egen kontrollsumma. Ändras eller tas en händelse bort i efterhand går kedjan inte längre ihop. När signeringen är klar, avböjd eller tillbakadragen sparas kedjans sista länk, och den skrivs också i behandlingshistoriken, som aldrig kan ändras.
+
+Varje natt räknar NONOX om alla kedjor och jämför dokumenten och signeringsbevisen med sina kontrollsummor. Under **Händelser** står resultatet av den senaste kontrollen:
+
+- **Händelsekedjan och dokumenten var oförändrade vid kontrollen** med tid: allt stämmer.
+- **Kontrollen … hittade en avvikelse i händelsekedjan eller dokumenten**: något har ändrats utanför NONOX. Kontakta den som driftar NONOX; signeringen har inte ändrats av någon i appen.
+- **Händelsekedjan har inte kontrollerats än**: kontrollen har inte körts sedan signeringen skickades.
+
+För en avslutad signering står också **Händelsekedjans sista länk** med sin kontrollsumma.
+
 ## Om offerten ändras
 
 Sista dag att signera kan inte vara efter offertens giltighetsdag. En offert som har ändrats efter att länken skickades går inte att signera: kunden ser att dokumentet har ändrats, och länken återkallas. Skicka en ny länk när offerten är klar. Så blir ordern alltid det som kunden faktiskt godkände.

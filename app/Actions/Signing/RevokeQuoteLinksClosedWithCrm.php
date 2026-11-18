@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Actions\Signing;
 
+use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\SigningEnvelopes;
 use App\Domain\Signing\SigningEventType;
 use App\Domain\Signing\SigningStatus;
 use App\Models\CompanyModule;
 use App\Models\SalesDocument;
-use App\Models\SigningEvent;
 use App\Models\SigningRequest;
 use App\Modules\Crm\CrmModule;
 use App\Support\Audit\Audit;
@@ -53,7 +53,7 @@ final class RevokeQuoteLinksClosedWithCrm
                 }
 
                 $locked->forceFill(['status' => SigningStatus::Revoked, 'revoked_at' => $now])->save();
-                SigningEvent::create(['signing_request_id' => $locked->id, 'event' => SigningEventType::Revoked]);
+                app(SigningChain::class)->record($locked, SigningEventType::Revoked);
                 Audit::record('crm.signing_revoked', $locked, ['signing_request_id' => $locked->id, 'reason' => 'closed_without_crm'], $locked->company_id);
                 app(SigningEnvelopes::class)->revoked($locked, null, 'closed_without_crm');
             }, SignAtLink::ATTEMPTS));

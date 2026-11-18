@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Signing;
 
+use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\EnvelopeStatus;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
@@ -18,7 +19,6 @@ use App\Models\Company;
 use App\Models\SalesDocument;
 use App\Models\SigningCopyRecipient;
 use App\Models\SigningEnvelope;
-use App\Models\SigningEvent;
 use App\Models\SigningRequest;
 use App\Models\User;
 use App\Modules\Crm\CrmModule;
@@ -76,6 +76,7 @@ final class SendForSigning
     public function __construct(
         private readonly SignableTypes $types,
         private readonly SigningEnvelopes $envelopes,
+        private readonly SigningChain $chain,
     ) {}
 
     /**
@@ -125,7 +126,7 @@ final class SendForSigning
                 'sent_by' => $user->id,
             ]);
 
-            SigningEvent::create(['signing_request_id' => $request->id, 'event' => SigningEventType::Sent, 'user_id' => $user->id]);
+            $this->chain->record($request, SigningEventType::Sent, $user->id);
             Audit::record('crm.signing_sent', $request, ['signing_request_id' => $request->id, 'document_type' => $request->document_type, 'sales_document_id' => $request->sales_document_id, 'agreement_id' => $request->agreement_id, 'signable_id' => $request->signable_id, 'deal_id' => $dealId], $company, $user);
 
             return $request;
@@ -461,7 +462,7 @@ final class SendForSigning
     private function revokeRequest(User $user, Company $company, SigningRequest $request, string $reason): array
     {
         $request->forceFill(['status' => SigningStatus::Revoked, 'revoked_at' => now()])->save();
-        SigningEvent::create(['signing_request_id' => $request->id, 'event' => SigningEventType::Revoked, 'user_id' => $user->id]);
+        $this->chain->record($request, SigningEventType::Revoked, $user->id);
         Audit::record('crm.signing_revoked', $request, ['signing_request_id' => $request->id], $company, $user);
 
         return [$request->id, ...$this->envelopes->revoked($request, $user->id, $reason)];

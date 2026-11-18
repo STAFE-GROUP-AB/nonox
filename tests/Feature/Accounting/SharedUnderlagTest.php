@@ -198,6 +198,8 @@ it('knows every column in the schema that holds a stored file path', function ()
             'crm_signing_requests.signed_document_path',
             // The envelope keeps the path of the document its signer rows share (ADR-046 S1); never linked as underlag.
             'signing_envelopes.document_path',
+            // Every file of an envelope with its SHA-256 (ADR-046 S2): the same files as above, never linked as underlag.
+            'signing_document_versions.path',
             // The issued invoice PDF and portal attachments (ADR-075): each written for one row only and never linked as underlag.
             'invoice_documents.path',
             'customer_portal_attachments.path',

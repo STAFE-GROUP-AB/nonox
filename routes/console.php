@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('nonox:record-version')->hourlyAt(7)->withoutOverlapping();
 // Nightly integrity check of every company's ledger (AGENTS.md §6.4).
 Schedule::command('ledger:verify --all')->dailyAt('03:15')->withoutOverlapping();
+// Nightly check of every signing envelope's hash chain and files (ADR-046 amendment, gap 4).
+Schedule::command('signing:verify')->dailyAt('03:25')->withoutOverlapping();
 // The next fiscal year, thirty days before the latest one ends (ADR-010), before agreements invoice into it.
 Schedule::command('fiscal-years:create-next')->dailyAt('05:35')->withoutOverlapping();
 Schedule::command('invoices:run-agreements')->dailyAt('06:00')->withoutOverlapping();

@@ -831,6 +831,103 @@ in the test database, with the trigger disabled, and proves that
 Anchoring chain heads outside NONOX (for example a public transparency log).
 The timestamp of gap 5 already gives an independent time.
 
+### As built in S2 (2026-11-18)
+
+- Migration `database/migrations/2027_02_03_100000_chain_signing_events.php`:
+  the event columns as specified, `chain_head` and `chain_sequence` on
+  `signing_envelopes`, and `signing_document_versions` (append-only, deleted
+  only by the cascade from its envelope, signer row or company). The event
+  column is widened from 10 to 20 characters for `CHAIN_STARTED`; a longer
+  varchar limit is a catalogue change in PostgreSQL that rewrites no row.
+  `crm_signing_events_append_only` and `crm_signing_events_delete_with_request`
+  are untouched.
+- Code: `app/Domain/Signing/Chain/` (`CanonicalJson`, `EventHash`,
+  `SigningChain`, `SigningChainBackfill`, `ChainVerifier`) and
+  `VerifySigningChainsCommand` (`signing:verify {company?}`, nightly 03:25).
+  Every `SigningEvent` write goes through `SigningChain::record`.
+- **Insert trigger** `crm_signing_events_chain`: an event of an envelope must
+  be the next sequence, link to the previous hash (the document's SHA-256 for
+  the first) and belong to its signer row's envelope; once an envelope's
+  chain has started, an unchained event for it is refused. The app computes
+  the hash; the trigger checks the links. `signing_envelopes_protect_chain`
+  sets the head once from null.
+- **Deviation: no foreign key on `crm_signing_events.envelope_id`.** Events go
+  with their signer row (the evidence delete trigger); a second cascade path
+  from the envelope could reach an event while its row still exists, and be
+  refused. The insert trigger checks the envelope instead.
+- **Times in whole seconds.** `crm_signing_events.created_at` is
+  `timestamptz(0)`, which rounds. Chained events are written cut to the
+  second, so the canonical JSON (UTC, six fraction digits as specified) is of
+  what is stored.
+- **Evidence in the chain:** SIGNED and DECLINED carry `evidence`, a SHA-256
+  of the signer row's evidence columns (name, title, method, signature image,
+  acceptance text, times, IP address, browser, document hash, decline
+  reason); the values stay on the row. `signing:verify` recomputes it.
+- **Envelope events:** `COMPLETED` (payload: the number of signers) and
+  `VOIDED` (payload: the reason code) are recorded on the signer row that
+  caused them; a decline ends with the signer's own `DECLINED`. Then the head
+  goes on the envelope and to the audit log as `signing.completed`,
+  `signing.declined` or `signing.voided` (ids, status, sequence, head). The
+  other new event types of this gap come with the packages that cause them
+  (S3, S4, S6, S9, S10, S11, S13).
+- **Backfill (in the migration, insert only):** an `ORIGINAL` version per
+  envelope (size empty: the file is not read), and a `CHAIN_STARTED` event
+  whose payload counts and digests the earlier events **per signer row**, on
+  a signed row where there is one. A finished envelope gets its head and an
+  audit entry `signing.chain_backfilled`. An envelope still out continues its
+  chain from there. Verified in a test that every earlier event and request
+  row is byte for byte unchanged, and that a second run adds nothing.
+- **Pruning and the chain:** `signing:prune` deletes a declined or revoked
+  signer row of an envelope that keeps a signed one; its events go with it.
+  Their sequence numbers and hashes are first written to the audit log
+  (`signing.events_pruned`), so the chain still links and `signing:verify`
+  tells a pruned signer from a removed one. The prune also no longer deletes
+  the envelope's shared PDF while another signer row still uses it (a defect
+  in S1: pruning a declined signer deleted the document of the signer who
+  had signed).
+- **Status in the UI:** the signing panel shows, under **Händelser**, the
+  result of the latest `signing.verified` for the envelope and its head.
+  Inställningar → Signering does not exist yet (S7/S16); the status goes
+  there when it does. The head is not yet printed on the Signeringsbevis,
+  which is made per signer before the envelope finishes; S10 (the sealed
+  PDF) and S12 (Verify page) carry it.
+- **Review round (2026-11-18):**
+  - **Chain counter.** `signing_envelopes.next_sequence` and `last_hash`
+    (migration `2027_02_03_100100_count_signing_chain_sequences.php`) are kept
+    by the insert trigger only (`pg_trigger_depth`, never backwards). The next
+    sequence and previous hash come from them, never from `max(sequence)` of
+    the remaining rows, so a pruned signer's events never free a number. The
+    trigger also checks the company of the signer row and the envelope, and
+    refuses any event once the envelope's head is set. The backfill moved into
+    this migration and calls `SigningChainBackfill` on purpose: one canonical
+    JSON and one hash shared with `signing:verify`; a frozen copy could drift
+    and raise false alarms. It runs with `SET LOCAL lock_timeout = '5s'`.
+  - **Daylight saving.** `SigningEvent` and `SigningRequest` write their times
+    with the offset (`Y-m-d H:i:sP`), so the repeated autumn hour stores the
+    instant that was hashed (event time, and `signed_at`/`declined_at` in the
+    evidence digest).
+  - **Verifier.** Every envelope is checked up to its counter, also one
+    without signer rows: a head or a moved counter without a chain, a missing
+    link not named in `signing.events_pruned`, a counter that is not the last
+    link, and an event after the head are reported. Pruned links carry their
+    event type, so a pruned `CHAIN_STARTED` counts as started. Versions of an
+    envelope without signers are not read (their PDF went with the last
+    signer). Signer rows are read without the drawn signature, which is
+    decrypted in chunks for the evidence check only.
+  - **API.** The per-link `events` list of the NONOX API shows only the six
+    signer steps; `CHAIN_STARTED`, `COMPLETED` and `VOIDED` are filtered out,
+    so the contract in `docs/api/openapi.yaml` is unchanged.
+  - **Canonical JSON, precisely:** PHP `json_encode` with
+    `JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES`, so U+2028 and U+2029
+    stay escaped as `\u2028` and `\u2029` while other characters are written
+    as UTF-8; strings are not normalised (no NFC), so the bytes as stored are
+    hashed; `CanonicalJson::seconds()` truncates to the second (as Eloquent
+    writes the signer row's times), `time()` keeps six fraction digits.
+- **Deploy note:** between the migration and the new code going live, an old
+  worker's unchained insert for an envelope whose chain has started is
+  refused by the trigger, and that signing transaction rolls back (nothing is
+  half-saved); the signer retries.
+
 ## Gap 5: the finished PDF sealed with PAdES and a timestamp, mailed to everyone
 
 ### What exists

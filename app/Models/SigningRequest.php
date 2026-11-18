@@ -83,6 +83,9 @@ class SigningRequest extends Model
 
     protected $table = 'crm_signing_requests';
 
+    /** Times are written with their offset: signed_at and declined_at enter the chain's evidence digest (ADR-046 S2), and the repeated autumn hour must store the instant hashed. */
+    protected $dateFormat = 'Y-m-d H:i:sP';
+
     /** @var list<string> */
     protected $fillable = [
         'company_id',

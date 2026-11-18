@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Signing;
 
+use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SignedDocuments;
@@ -16,7 +17,6 @@ use App\Domain\Signing\SigningToken;
 use App\Events\QuoteSigned;
 use App\Jobs\FollowUpSigning;
 use App\Models\SalesDocument;
-use App\Models\SigningEvent;
 use App\Models\SigningRequest;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
@@ -59,6 +59,7 @@ final class SignInSession
     public function __construct(
         private readonly SignableTypes $types,
         private readonly SigningEnvelopes $envelopes,
+        private readonly SigningChain $chain,
     ) {}
 
     /**
@@ -83,7 +84,7 @@ final class SignInSession
                 'signed_at' => now(),
             ])->save();
 
-            SigningEvent::create(['signing_request_id' => $request->id, 'event' => SigningEventType::Signed, 'ip' => $request->signer_ip, 'user_agent' => $request->signer_user_agent]);
+            $this->chain->record($request, SigningEventType::Signed, null, $request->signer_ip, $request->signer_user_agent, SigningChain::evidence($request));
 
             $certificate = SigningPdfs::certificate($request->refresh());
             $path = dirname($request->document_path).'/'.pathinfo($request->document_path, PATHINFO_FILENAME).'-signeringsbevis.pdf';
@@ -128,7 +129,7 @@ final class SignInSession
             $request = $this->record($locked, [...$signer, 'ip' => null, 'user_agent' => null]);
 
             $request->forceFill(['status' => SigningStatus::Declined, 'declined_at' => now(), 'decline_reason' => blank($reason) ? null : trim((string) $reason)])->save();
-            SigningEvent::create(['signing_request_id' => $request->id, 'event' => SigningEventType::Declined]);
+            $this->chain->record($request, SigningEventType::Declined, payload: SigningChain::evidence($request));
             $this->envelopes->declined($request);
 
             Audit::record('crm.signing_declined', $request, ['signing_request_id' => $request->id, 'document_type' => $request->document_type, 'channel' => self::PORTAL, 'reason_given' => ! blank($reason)], $request->company_id);
@@ -178,7 +179,7 @@ final class SignInSession
             }
 
             $link->forceFill(['status' => SigningStatus::Revoked, 'revoked_at' => now()])->save();
-            SigningEvent::create(['signing_request_id' => $link->id, 'event' => SigningEventType::Revoked]);
+            $this->chain->record($link, SigningEventType::Revoked);
             Audit::record('crm.signing_revoked', $link, ['signing_request_id' => $link->id, 'reason' => 'ACCEPTED_IN_PORTAL'], $link->company_id);
             $done = [...$done, $link->id, ...$this->envelopes->revoked($link, null, 'ACCEPTED_IN_PORTAL')];
         }

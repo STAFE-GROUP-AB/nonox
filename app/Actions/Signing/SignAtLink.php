@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Signing;
 
+use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\EnvelopeStatus;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignatureImage;
@@ -60,7 +61,10 @@ final class SignAtLink
     /** Retries of a signing transaction that meets a deadlock. */
     public const int ATTEMPTS = 3;
 
-    public function __construct(private readonly SigningEnvelopes $envelopes) {}
+    public function __construct(
+        private readonly SigningEnvelopes $envelopes,
+        private readonly SigningChain $chain,
+    ) {}
 
     /** The request behind a token, in any company, or null. */
     public function find(string $token): ?SigningRequest
@@ -151,12 +155,14 @@ final class SignAtLink
             }
 
             DB::transaction(function () use ($request): void {
+                // The document first, then the request and its envelope (the chain's lock): the order every signing path takes.
+                $request->document(lock: true);
                 $updated = SigningRequest::query()->whereKey($request->id)->whereNull('opened_at')->where('status', SigningStatus::Pending->value)->update(['opened_at' => now()]);
 
                 if ($updated === 1) {
-                    SigningEvent::create(['signing_request_id' => $request->id, 'event' => SigningEventType::Opened]);
+                    $this->chain->record($request, SigningEventType::Opened);
                 }
-            });
+            }, self::ATTEMPTS);
         });
     }
 
@@ -165,6 +171,8 @@ final class SignAtLink
     {
         CurrentCompany::run($request->company_id, function () use ($request): void {
             DB::transaction(function () use ($request): void {
+                // The document first, then the request and its envelope (the chain's lock): the order every signing path takes.
+                $request->document(lock: true);
                 $locked = SigningRequest::query()->whereKey($request->id)->lockForUpdate()->first();
 
                 if (! $locked instanceof SigningRequest || $locked->effectiveStatus() !== SigningStatus::Expired) {
@@ -172,9 +180,9 @@ final class SignAtLink
                 }
 
                 if (! SigningEvent::query()->where('signing_request_id', $locked->id)->where('event', SigningEventType::Expired->value)->exists()) {
-                    SigningEvent::create(['signing_request_id' => $locked->id, 'event' => SigningEventType::Expired]);
+                    $this->chain->record($locked, SigningEventType::Expired);
                 }
-            });
+            }, self::ATTEMPTS);
         });
     }
 
@@ -246,12 +254,7 @@ final class SignAtLink
                 'signer_user_agent' => $userAgent === null ? null : mb_substr($userAgent, 0, 500),
             ])->save();
 
-            SigningEvent::create([
-                'signing_request_id' => $locked->id,
-                'event' => SigningEventType::Signed,
-                'ip' => $locked->signer_ip,
-                'user_agent' => $locked->signer_user_agent,
-            ]);
+            $this->chain->record($locked, SigningEventType::Signed, null, $locked->signer_ip, $locked->signer_user_agent, SigningChain::evidence($locked));
 
             $certificate = SigningPdfs::certificate($locked->refresh());
             $path = dirname($locked->document_path).'/'.pathinfo($locked->document_path, PATHINFO_FILENAME).'-signeringsbevis.pdf';
@@ -323,10 +326,7 @@ final class SignAtLink
                 'decline_reason' => blank($reason) ? null : trim((string) $reason),
             ])->save();
 
-            SigningEvent::create([
-                'signing_request_id' => $locked->id,
-                'event' => SigningEventType::Declined,
-            ]);
+            $this->chain->record($locked, SigningEventType::Declined, payload: SigningChain::evidence($locked));
 
             Audit::record('crm.signing_declined', $locked, ['signing_request_id' => $locked->id, 'document_type' => $locked->document_type, 'reason_given' => ! blank($reason)], $locked->company_id);
 
@@ -385,7 +385,7 @@ final class SignAtLink
                 }
 
                 $locked->forceFill(['status' => SigningStatus::Revoked, 'revoked_at' => CarbonImmutable::now()])->save();
-                SigningEvent::create(['signing_request_id' => $locked->id, 'event' => SigningEventType::Revoked]);
+                $this->chain->record($locked, SigningEventType::Revoked);
                 Audit::record('crm.signing_revoked', $locked, ['signing_request_id' => $locked->id, 'reason' => 'DOCUMENT_CHANGED'], $locked->company_id);
                 $this->envelopes->revoked($locked, null, 'DOCUMENT_CHANGED');
             }, self::ATTEMPTS);
