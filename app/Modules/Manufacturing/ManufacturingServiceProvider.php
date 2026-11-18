@@ -204,6 +204,11 @@ class ManufacturingServiceProvider extends ServiceProvider
 
         // A supplier's later date on a component an open production order needs is a delay; anything else just replans.
         PurchaseOrderRow::saved(function (PurchaseOrderRow $row): void {
+            // A row without an article is no component and never part of the plan (ADR-081 E10).
+            if (! $row->isStock()) {
+                return;
+            }
+
             if (! $row->wasChanged('expected_on') && ! $row->wasChanged('received_milli') && ! $row->wasRecentlyCreated) {
                 return;
             }

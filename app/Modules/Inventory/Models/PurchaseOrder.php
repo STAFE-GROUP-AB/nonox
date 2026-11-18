@@ -39,6 +39,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?string $sent_to
  * @property ?string $sent_method
  * @property ?int $sent_by
+ * @property ?int $prepared_by
+ * @property int $approval_round
+ * @property ?int $approval_request_id
+ * @property ?int $approved_by
+ * @property ?CarbonInterface $approved_at
  * @property ?CarbonInterface $created_at
  * @property ?CarbonInterface $updated_at
  */
@@ -70,11 +75,17 @@ class PurchaseOrder extends Model
         'sent_to',
         'sent_method',
         'sent_by',
+        'prepared_by',
+        'approval_round',
+        'approval_request_id',
+        'approved_by',
+        'approved_at',
     ];
 
     /** @var array<string, mixed> */
     protected $attributes = [
         'version' => 1,
+        'approval_round' => 1,
         'status' => 'DRAFT',
         'source' => 'MANUAL',
     ];
@@ -90,6 +101,8 @@ class PurchaseOrder extends Model
             'order_date' => 'immutable_date',
             'requested_delivery_on' => 'immutable_date',
             'sent_at' => 'immutable_datetime',
+            'approval_round' => 'integer',
+            'approved_at' => 'immutable_datetime',
         ];
     }
 
@@ -101,6 +114,12 @@ class PurchaseOrder extends Model
     public function isDraft(): bool
     {
         return $this->status === PurchaseOrderStatus::Draft;
+    }
+
+    /** Approved through the company's own approval flow for the current round (ADR-081 E10). */
+    public function isApproved(): bool
+    {
+        return $this->approval_request_id !== null;
     }
 
     /** Sent at least once: a change makes a new version. */
@@ -140,6 +159,12 @@ class PurchaseOrder extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     /** @return BelongsTo<User, $this> */

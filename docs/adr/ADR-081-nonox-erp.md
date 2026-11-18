@@ -1523,3 +1523,60 @@ left open:
   refused to limited members (`DimensionScopeRegistry`).
 - **Queries.** A fixed number per page and drill-down (one each for the ledger and the budget), whatever the
   number of projects, years, accounts or rows (`ProjectResultTest`).
+
+## Addendum: E10 as built (purchase order approval and rows without an article)
+
+Built on branch `feat/erp-e10-inkopsorder-attest`, on top of the approval engine (E2). Owner decisions 8 and 9 apply.
+
+- **`article_id` choice: made nullable, additively.** `purchase_order_rows.article_id`
+  is loosened with `ALTER COLUMN … DROP NOT NULL`; no row moves or changes, so
+  there is no new table. A check constraint requires an article or an account on
+  every row (`purchase_order_rows_article_or_account`). The row gains nullable
+  `account_id`, `cost_center_id`, `project_id`, `confirmed_at` and
+  `confirmed_by`. A row without an article ("utan artikel") is a service or
+  consumable: description, account (cost centre and project when the account
+  requires them), quantity as typed in a unit from the company's unit register
+  (default unit when none is chosen), a price that must be typed, and no stock
+  unit (`quantity_milli` is the typed quantity ×1000). `remainingMilli()` is 0 for
+  it, so goods receipts, the purchase proposal and the planning queries (which
+  filter on `article_id`) never see it. The PDF and the e-mailed snapshot show
+  the description, quantity, unit and price; the account is internal.
+- **Subject and rounds.** The engine subject is `PURCHASE_ORDER`, with the subject id
+  `"{order id}.{approval_round}"`. `purchase_orders.approval_round` starts at 1 and is
+  raised (with `approval_request_id`, `approved_by`, `approved_at` cleared and any
+  open request withdrawn) when a draft that already has a request is saved again
+  and when a sent order is revised into its next version, so an approval never
+  covers something other than what was approved. Each round has its own
+  request and decisions; earlier rounds stay in the history. The engine's one
+  pending request per subject rule needed no change.
+- **The threshold is the default policy.** `PurchaseOrderApprovals::mode()` is
+  `POLICY` when a policy of the company applies (or the round has a request),
+  `THRESHOLD` when no policy applies and the total exceeds
+  `purchase_order_approval_above_ore`, otherwise `NONE`. A company that never
+  edits a policy gets no approval rows: `PurchaseOrderPolicy::send` behaves as before
+  (`purchase-orders:send` always; `:manage` only up to the amount), and
+  `DefaultApprovalPolicy` style tests cover it.
+- **Decision 9.** In `THRESHOLD` mode the creator (`created_by`) cannot send the order while
+  `separate_supplier_approval` is on (`SendPurchaseOrder`). In `POLICY` mode the
+  engine keeps the creator out of every step under the same setting. This is the
+  one deliberate behaviour change for default-policy companies, taken from
+  decision 9: an order above the threshold created by a user who can also send
+  it must now be sent by someone else, or the owner switches the setting off.
+- **Permission.** The subject's base permission is `purchase-orders:send` (approver,
+  administrator, owner); the prepare permission is `purchase-orders:manage`.
+  Step permissions are that or `approvals:manage`. The policy page offers the
+  purchase order flow only while Lager is on, and saving such a policy needs Lager.
+- **Sending.** `SendPurchaseOrder` refuses an order a policy applies to until it is
+  approved for its round. The version that goes keeps `approval_request_id`,
+  `approved_by` and `approved_at`; for the threshold, the sender is recorded as approver.
+- **Confirming delivery.** `ConfirmOrderRowDelivery` ticks (and un-ticks) a row without an
+  article on a sent, not cancelled order, without a stock movement. An order is
+  fulfilled when every stock row is received and every other row is confirmed
+  (`PurchaseOrderRow::isFulfilled`). A confirmed row cannot be removed or become a
+  stock row, and an order with a confirmed row cannot be cancelled. The match with
+  the supplier invoice counts a confirmed row at its full value and flags an
+  unconfirmed one.
+- **Not done here.** Per-row three-way matching and tolerances (E11); requisitions
+  (E9). Purchase order approvals are not in the archive package's `attest/` CSVs:
+  whether an order is räkenskapsinformation is the open TODO(legal-verify) of
+  ADR-071; the rows stay in the database and nothing is pruned.

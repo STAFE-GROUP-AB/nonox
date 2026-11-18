@@ -18,6 +18,7 @@ final class StepDescription
         return match ($permission) {
             'supplier-invoices:approve' => __('alla med attesträtt för leverantörsfakturor'),
             'payments:approve' => __('alla med rätt att godkänna betalningar'),
+            'purchase-orders:send' => __('alla med rätt att skicka inköpsorder'),
             'approvals:manage' => __('ägare och administratörer'),
             default => (string) $permission,
         };

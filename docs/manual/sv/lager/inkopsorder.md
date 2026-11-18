@@ -24,7 +24,18 @@ En inköpsorder bokför ingenting. Lagret ökar när varorna tas emot, och kostn
 5. Lämna **À-pris** tomt för att använda artikelns inköpspris, eller skriv leverantörens pris per radens enhet.
 6. Klicka på **Spara utkast**.
 
-Bara lagerförda artiklar kan beställas. **Leverantörens art.nr** fylls i från artikeln när leverantören är artikelns leverantör.
+Rader med artikel gäller lagerförda artiklar. **Leverantörens art.nr** fylls i från artikeln när leverantören är artikelns leverantör. Vill du beställa en tjänst eller något som inte läggs i lagret, till exempel hyra av lift eller städning, lägger du en rad utan artikel (se nedan).
+
+### Rader utan artikel
+
+Kryssa i **Utan artikel (tjänst eller förbrukning)** på raden. Då skriver du i stället:
+
+1. **Beskrivning** av det som beställs, till exempel "Hyra av lift, 2 dagar".
+2. **Konto**, där kostnaden bokförs när fakturan kommer. Förslagen kommer från företagets kontoplan.
+3. **Kostnadsställe** och **Projekt** om kontot kräver dem eller om kostnaden ska följa ett av dem.
+4. **Antal**, **Enhet** och **À-pris**. À-priset måste fyllas i, eftersom det inte finns något artikelpris att ta.
+
+En rad utan artikel ger ingen inleverans och påverkar inte lagret. Kontot, kostnadsstället och projektet syns bara för er: leverantörens PDF visar beskrivningen, antalet, enheten och priset.
 
 ### Enheter
 
@@ -41,7 +52,22 @@ Blir mängden noll i lagerenheten går raden inte att spara. Ändras mängden me
 Vill du skicka ordern på annat sätt skriver du ut PDF:en och klickar på **Utskriven, markera som skickad**. Ordern får status **Skickad** och väntar på varor.
 
 > [!NOTE]
-> Har företaget en **Attestgräns för inköpsorder** under **Lager → Inställningar** skickas en order över beloppet bara av ägaren, en administratör eller en attestant. Den som skrev ordern ser en upplysning om det.
+> Har företaget en **Attestgräns för inköpsorder** under **Lager → Inställningar** skickas en order över beloppet bara av ägaren, en administratör eller en attestant. Den som skrev ordern ser en upplysning om det. Kräver företaget att någon annan attesterar (se [Attest](/manual/leverantorer/attest)) kan den som skapade en order över gränsen inte skicka den själv.
+
+## Attest av inköpsorder
+
+Utan att du gör något gäller attestgränsen ovan: det är **standardattesten** för inköpsorder. Behöver ni mer, till exempel att en order från 10 000 kr ska godkännas av en person innan den får skickas, lägger en ägare eller administratör upp ett flöde under **Inköp → Attestflöden** med **Nytt flöde för inköpsorder**. Se [Attestflöden](/manual/leverantorer/attestfloden). Flödet syns bara när Lager är påslaget.
+
+Gäller ett flöde en order visar ordern kortet **Attestflöde** med stegen och vem som har godkänt. Den som får godkänna nuvarande steg ser knappen **Attestera ordern**, eller **Godkänn steg 1 av 2** när flödet har flera steg. Knappen **Skicka till leverantören** visas först när sista steget är godkänt.
+
+![En inköpsorder som väntar på attest i ett flöde för order från 10 000 kr, med kortet Attestflöde och knappen Attestera ordern.](/bilder/manual/lager/inkopsorder-attest.webp)
+
+- Den som skapade ordern kan inte attestera den när företaget kräver att någon annan attesterar.
+- Stämmer något inte klickar du på **Avvisa**, skriver gärna ett skäl och klickar på **Ja, avvisa**. Ordern går tillbaka till den som skapade den, som kan ändra den eller klicka på **Skicka till attest igen**.
+- Sparar du ordern igen efter att den är attesterad, eller gör en ny version av en skickad order, måste ordern attesteras på nytt. Attesten av en version som redan har skickats finns kvar på den versionen under **Skickade versioner**, med namn och datum.
+- En order som ett flöde inte gäller, till exempel för att beloppet är för litet, följer standardattesten.
+
+Attest av en inköpsorder bokför ingenting.
 
 ## Ändra en skickad order
 
@@ -55,6 +81,14 @@ Klicka på **Ta emot varor** på ordern. NONOX gör en inleverans med det som å
 
 Kom bara en del står ordern som **Delvis mottagen**. När allt har kommit står den som **Mottagen**.
 
+### Bekräfta leverans av en rad utan artikel
+
+En rad utan artikel tas inte emot i en inleverans. När tjänsten är utförd eller varan har kommit klickar du på **Bekräfta leverans** på raden. Ingenting läggs in i lagret och ingenting bokförs. Är alla rader tagna emot eller bekräftade står ordern som **Mottagen**. Klickade du fel tar du bort bekräftelsen med **Ta bort bekräftelsen**.
+
+![En skickad order med en lagerrad och en rad utan artikel, där leveransen av den senare ännu inte är bekräftad.](/bilder/manual/lager/inkopsorder-utan-artikel.webp)
+
+I jämförelsen med leverantörsfakturan räknas en bekräftad rad utan artikel som levererad till hela sitt värde, och en rad som inte är bekräftad markeras.
+
 ## Stäm av leverantörsfakturan
 
 När fakturan har registrerats öppnar du den under **Leverantörsfakturor**. Under **Koppla till inköpsorder** väljer du ordern och klickar på **Koppla**. NONOX visar vad som beställdes, vad som har tagits emot och vad som är fakturerat utan moms, och markerar skillnader i antal och pris. Ingenting attesteras automatiskt: du avgör om fakturan stämmer.
@@ -65,10 +99,11 @@ Jämförelsen gäller hela ordern. Faktureras en order i flera delar, en faktura
 
 ## Makulera
 
-En order där inga varor har tagits emot kan makuleras med **Makulera**. Numret finns kvar. Har ordern skickats behöver du själv meddela leverantören.
+En order där inga varor har tagits emot och ingen leverans är bekräftad kan makuleras med **Makulera**. Numret finns kvar. Har ordern skickats behöver du själv meddela leverantören.
 
 ## Läs också
 
 - [Inköpsförslag](/manual/lager/inkopsforslag) – låt NONOX föreslå vad som behöver beställas.
 - [Inleverans](/manual/lager/inleverans) – ta emot varor.
+- [Attestflöden](/manual/leverantorer/attestfloden) – lägg upp ett eget flöde för inköpsorder.
 - [Attest och betalning](/manual/leverantorer/attest) – leverantörsfakturan.

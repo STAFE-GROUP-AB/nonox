@@ -6,10 +6,12 @@ namespace App\Modules\Inventory\Actions\Purchasing;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Inventory\Domain\PurchaseOrderApprovalMode;
 use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\Mail\PurchaseOrderMail;
 use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\PurchaseOrderVersion;
+use App\Modules\Inventory\Purchasing\PurchaseOrderApprovals;
 use App\Modules\Inventory\Purchasing\PurchaseOrderDocument;
 use App\Modules\Inventory\Purchasing\PurchaseOrderReceipts;
 use App\Modules\ModuleManager;
@@ -17,6 +19,7 @@ use App\Support\Audit\Audit;
 use App\Support\MailQuota;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
@@ -29,6 +32,12 @@ use Illuminate\Validation\ValidationException;
  * printed and marked as sent. The screen has shown the PDF and the
  * recipient before this runs. The version that went is kept as it was; the
  * order then waits for goods. Nothing is booked.
+ *
+ * Approval (ADR-081 E10): an order a policy of the company's own applies to
+ * must have been approved through it for its current round; an order above the
+ * company's amount (the default policy) is sent by someone with
+ * purchase-orders:send, and not by its creator while the company requires
+ * separate approval. The version that goes keeps who approved it.
  */
 class SendPurchaseOrder
 {
@@ -68,6 +77,8 @@ class SendPurchaseOrder
                     throw ValidationException::withMessages(['order' => __('Inköpsordern är redan skickad eller makulerad.')]);
                 }
 
+                [$requestId, $approvedBy, $approvedAt] = $this->approval($user, $company, $order);
+
                 // Only an order that will really be sent uses the mail quota.
                 if ($method === PurchaseOrder::EMAIL) {
                     MailQuota::take($company, 'documents');
@@ -93,6 +104,9 @@ class SendPurchaseOrder
                     'sent_to' => $email,
                     'sent_by' => $user->id,
                     'sent_at' => $now,
+                    'approval_request_id' => $requestId,
+                    'approved_by' => $approvedBy,
+                    'approved_at' => $approvedAt,
                 ]);
 
                 $order->forceFill(['sent_at' => $now, 'sent_to' => $email, 'sent_method' => $method, 'sent_by' => $user->id])->save();
@@ -104,5 +118,35 @@ class SendPurchaseOrder
                 return $version;
             });
         });
+    }
+
+    /**
+     * Who approved the order for the version that goes: a policy's last
+     * decision, the sender of an order above the threshold, or nobody.
+     *
+     * @return array{0: ?int, 1: ?int, 2: ?CarbonImmutable}
+     */
+    private function approval(User $user, Company $company, PurchaseOrder $order): array
+    {
+        switch (PurchaseOrderApprovals::mode($order, $company)) {
+            case PurchaseOrderApprovalMode::Policy:
+                if (! $order->isApproved()) {
+                    throw ValidationException::withMessages(['order' => __('Inköpsordern väntar på attest innan den kan skickas till leverantören.')]);
+                }
+
+                return [$order->approval_request_id, $order->approved_by, $order->approved_at === null ? null : CarbonImmutable::instance($order->approved_at)];
+            case PurchaseOrderApprovalMode::Threshold:
+                if (! $user->hasTeamPermission($company, InventoryModule::PURCHASE_SEND)) {
+                    throw new AuthorizationException(__('Ordern är över företagets attestgräns. Någon med rätt att skicka inköpsorder behöver skicka den.'));
+                }
+
+                if ($company->separate_supplier_approval && in_array($user->id, array_filter([$order->created_by, $order->prepared_by]), true)) {
+                    throw ValidationException::withMessages(['order' => __('Du skapade eller ändrade ordern och kan därför inte skicka den när den är över företagets attestgräns. Någon annan med rätt att skicka ordern behöver göra det. Är ni bara en person i företaget kan en ägare stänga av kravet under Leverantörsfakturor.')]);
+                }
+
+                return [null, $user->id, CarbonImmutable::now()];
+            default:
+                return [null, null, null];
+        }
     }
 }

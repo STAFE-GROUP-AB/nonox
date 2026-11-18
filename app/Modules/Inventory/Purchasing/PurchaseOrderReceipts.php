@@ -73,7 +73,8 @@ final class PurchaseOrderReceipts
             return;
         }
 
-        $rows = $order->rows()->with('article:id,default_location_id')->get()->keyBy('id');
+        // A row without an article is never goods in stock (ADR-081 E10), so it has no line.
+        $rows = $order->rows()->whereNotNull('article_id')->with('article:id,default_location_id')->get()->keyBy('id');
         $lines = $receipt->lines()->get();
         $covered = [];
 
