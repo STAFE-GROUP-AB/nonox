@@ -4,6 +4,7 @@
 |---|---|---|---|
 | Räkenskapsinformation: verifikationer, fakturor, underlag, lönebesked, AGI, behandlingshistorik | 7 år efter utgången av det kalenderår då räkenskapsåret avslutades | Bokföringslagen 7 kap. 2 § | Kan inte raderas i systemet; arkivpaket per år |
 | Användarkonto (namn, e-post, medlemskap) | Tills användaren raderar kontot | Avtal | "Radera mitt konto" på profilen: kontot raderas, eller pseudonymiseras om bokföring eller behandlingshistorik hänvisar till det (då finns bara användar-id:t kvar, med namnet "Raderad användare") |
+| Behörighet per enhet: medlemskap, användar-id och id för valda kostnadsställen och projekt (ADR-081 lucka 10) | Så länge medlemskapet finns | Åtkomstbegränsning (art. 32), berättigat intresse (art. 6.1 f) | Raderas när personen lämnar företaget eller begränsningen tas bort; ändringarna finns kvar i behandlingshistoriken med dess lagringstid |
 | Inloggningskoder | 1 dygn | Behövs bara för inloggningen | `privacy:prune` varje natt |
 | Kön till den öppna betan: nekade anmälningar | 30 dagar efter beslutet | Hinner rättas om beslutet var fel; saknar ändamål därefter | `waitlist:prune` varje natt |
 | Kön till den öppna betan: anmälningar som väntar eller är parkerade | 12 månader efter anmälan | Den som inte släppts in på ett år har inget kvar att vänta på | `waitlist:prune` |

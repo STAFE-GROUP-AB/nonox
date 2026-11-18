@@ -9,6 +9,7 @@ use App\Domain\Accounting\Reports\ReportTable;
 use App\Models\Company;
 use App\Models\User;
 use App\Support\Csv;
+use App\Support\Tenancy\DimensionScope;
 use App\Support\Toast;
 use App\Support\WorkQuota;
 use Illuminate\Http\RedirectResponse;
@@ -30,8 +31,11 @@ class ReportCsvController
 
         abort_unless($user->hasTeamPermission($company, 'reports:view'), 403);
 
-        $filters = ReportFilters::fromInput($request->query());
+        // A member limited to cost centres or projects downloads only a unit report for one of their own (ADR-081 gap 10).
+        $scope = DimensionScope::for($user, $company);
+        $filters = ReportFilters::fromInput($request->query(), $scope);
         abort_if($filters === null, 404);
+        abort_if($scope->restricted && ! $filters->answers($request->query()), 404);
 
         if (! WorkQuota::attempt($company, 'pdf')) {
             Toast::flash(WorkQuota::message(), 'error');
@@ -39,7 +43,7 @@ class ReportCsvController
             return back();
         }
 
-        $rows = $table->rows($filters->report, $filters->query(), $filters->account, $filters->compare);
+        $rows = $table->rows($filters->report, $filters->query(), $filters->account, $filters->compare, $scope);
         $name = "{$filters->report}_{$filters->from->toDateString()}_{$filters->to->toDateString()}.csv";
 
         return response()->streamDownload(function () use ($rows): void {

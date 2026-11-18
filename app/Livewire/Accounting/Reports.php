@@ -13,6 +13,7 @@ use App\Models\FiscalYear;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Support\Tenancy\DimensionScope;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -71,17 +72,19 @@ class Reports extends Component
 
     public function render(LedgerReports $reports): View
     {
-        $filters = ReportFilters::fromInput($this->only(['rapport', 'ar', 'fran', 'till', 'kst', 'projekt', 'konto', 'jamfor']));
+        // A member limited to cost centres or projects reads the unit reports for their own units only (ADR-081 gap 10).
+        $scope = DimensionScope::for($this->user(), $this->company());
+        $filters = ReportFilters::fromInput($this->only(['rapport', 'ar', 'fran', 'till', 'kst', 'projekt', 'konto', 'jamfor']), $scope);
 
         if ($filters === null) {
-            return view('livewire.accounting.reports-empty');
+            return view('livewire.accounting.reports-empty', ['limited' => $scope->restricted]);
         }
 
         $query = $filters->query();
         $data = match ($filters->report) {
             'resultat' => $reports->incomeStatement($query, $filters->compare ? LedgerReports::previousPeriod($query) : null),
             'balans' => $reports->balanceSheet($query),
-            'huvudbok' => $reports->generalLedger($query, $filters->account),
+            'huvudbok' => $reports->generalLedger($query, $filters->account, $scope),
             'verifikationer' => $reports->voucherList($query),
             default => $reports->trialBalance($query),
         };
@@ -89,8 +92,9 @@ class Reports extends Component
         return view('livewire.accounting.reports', [
             'filters' => $filters,
             'fiscalYears' => FiscalYear::query()->orderByDesc('start_date')->get(),
-            'costCenters' => CostCenter::query()->orderBy('code')->get(['id', 'code', 'name']),
-            'projects' => Project::query()->orderBy('code')->get(['id', 'code', 'name']),
+            'costCenters' => CostCenter::query()->when($scope->restricted, fn ($query) => $query->whereIn('id', $scope->costCenterIds))->orderBy('code')->get(['id', 'code', 'name']),
+            'projects' => Project::query()->when($scope->restricted, fn ($query) => $query->whereIn('id', $scope->projectIds))->orderBy('code')->get(['id', 'code', 'name']),
+            'limited' => $scope->restricted,
             'data' => $data,
             // The Verifikationslista shows each account's balance after the row, all rows in one query.
             'balances' => $data instanceof Collection

@@ -13,6 +13,7 @@ use App\Models\FiscalYear;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Support\Audit\Audit;
+use App\Support\Tenancy\DimensionScope;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -57,6 +58,9 @@ class VoucherList extends Component
         // A full hash-chain check is heavy: only for those who see the vouchers, a few times a minute.
         abort_unless((bool) Auth::guard('web')->user()?->hasTeamPermission($company, 'vouchers:view'), 403);
 
+        // It reads and counts every voucher of the company: not for a member limited to cost centres or projects (ADR-081 gap 10).
+        abort_if(DimensionScope::current()->restricted, 404);
+
         if (RateLimiter::tooManyAttempts("ledger-check:{$company->id}", 3)) {
             $this->toast(__('Kontrollen kördes nyss. Vänta en minut och försök igen.'), 'error');
 
@@ -83,11 +87,14 @@ class VoucherList extends Component
     public function render(): View
     {
         $company = $this->company();
+        $limited = DimensionScope::current()->restricted;
 
         return view('livewire.accounting.voucher-list', [
             'vouchers' => $this->vouchers(),
             'fiscalYears' => FiscalYear::query()->orderByDesc('start_date')->get(),
-            'lastCheck' => AuditLog::forCompany($company)->where('action', 'ledger.verified')->latest('id')->first(),
+            // The check covers the whole ledger, with its count: not for a limited member.
+            'lastCheck' => $limited ? null : AuditLog::forCompany($company)->where('action', 'ledger.verified')->latest('id')->first(),
+            'canCheckLedger' => ! $limited,
             'canCreate' => $this->user()->can('create', [Voucher::class, $company]),
         ]);
     }
@@ -97,7 +104,7 @@ class VoucherList extends Component
     {
         $search = trim($this->search);
 
-        return Voucher::query()
+        $query = Voucher::query()
             ->with('series')
             ->withSum('rows as debit_total', 'debit_ore')
             ->when($this->fiscalYearId !== null, fn ($query) => $query->where('fiscal_year_id', $this->fiscalYearId))
@@ -114,8 +121,10 @@ class VoucherList extends Component
             })
             ->orderByRaw("CASE WHEN status = 'DRAFT' THEN 0 ELSE 1 END")
             ->orderByDesc('voucher_date')
-            ->orderByDesc('number')
-            ->paginate(50);
+            ->orderByDesc('number');
+
+        // A member limited to cost centres or projects sees the vouchers whose rows are inside the scope, never payroll (ADR-081 gap 10).
+        return DimensionScope::current()->constrainVouchers($query)->paginate(50);
     }
 
     private function user(): User

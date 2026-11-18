@@ -11,11 +11,13 @@ use App\Modules\ModuleRegistry;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\ArchivedCompany;
 use App\Support\Tenancy\CurrentCompany;
+use App\Support\Tenancy\DimensionScope;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
@@ -136,6 +138,21 @@ class User extends Authenticatable implements PasskeyUser
             ->values();
     }
 
+    /**
+     * Jetstream's memberships, with the dimension-scope flag of each (ADR-081
+     * gap 10), so DimensionScope knows whether a member is limited without a
+     * query of its own.
+     *
+     * @return BelongsToMany<Company, $this, CompanyMembership, 'membership'>
+     */
+    public function teams(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class, CompanyMembership::class, 'user_id', 'team_id')
+            ->withPivot('role', 'dimension_scoped')
+            ->withTimestamps()
+            ->as('membership');
+    }
+
     public function switchCompany(Company $company): bool
     {
         $previous = $this->current_team_id;
@@ -168,6 +185,11 @@ class User extends Authenticatable implements PasskeyUser
 
         // An archived company can only be read (ADR-024).
         if ($team instanceof Company && $team->isArchived() && ! ArchivedCompany::allows($permission)) {
+            return false;
+        }
+
+        // A member limited to cost centres or projects keeps only the permissions whose pages apply the scope (ADR-081 gap 10).
+        if (DimensionScope::narrows($this, $team, $permission)) {
             return false;
         }
 

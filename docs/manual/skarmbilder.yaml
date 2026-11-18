@@ -116,6 +116,7 @@ moms/omvand-betalningsskyldighet: { foretag: hantverkare, rutt: vat.index }
 installningar/moduler: { foretag: restaurang, rutt: teams.show, modell: company, fraga: { flik: moduler } }
 installningar/varumarke: { foretag: konsult, rutt: teams.show, modell: company, fraga: { flik: varumarke } }
 installningar/agarskap-och-arkivering: { foretag: konsult, rutt: teams.show, modell: company, fraga: { flik: agarskap } }
+installningar/behorighet-per-enhet: { foretag: konsult, rutt: teams.show, modell: company, fraga: { flik: enheter }, text: Ulla Utbildningschef }
 installningar/passkeys-och-inloggningar: { foretag: konsult, rutt: profile.show, visa: 'text=Passkeys' }
 installningar/personuppgifter: { foretag: konsult, rutt: profile.show, visa: 'text=Mina uppgifter' }
 installningar/radera-ditt-konto: { foretag: konsult, rutt: profile.show, visa: 'text=Radera mitt konto' }

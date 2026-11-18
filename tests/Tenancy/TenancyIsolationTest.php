@@ -45,6 +45,7 @@ use App\Models\K10Owner;
 use App\Models\K10Year;
 use App\Models\K3Transition;
 use App\Models\K3TransitionItem;
+use App\Models\MembershipDimensionScope;
 use App\Models\MileageRoute;
 use App\Models\MonthCloseCheck;
 use App\Models\NumberSeries;
@@ -331,6 +332,7 @@ const COMPANY_SCOPED_MODELS = [
     VehicleYearReading::class => 'vehicleYearReadingAttributes',
     VehicleTrip::class => 'vehicleTripAttributes',
     MileageRoute::class => 'mileageRouteAttributes',
+    MembershipDimensionScope::class => 'membershipDimensionScopeAttributes',
     // Records that need other records of the same company get a closure.
     Voucher::class => 'voucherAttributes',
     VoucherRow::class => 'voucherRowAttributes',
@@ -1033,6 +1035,12 @@ function vehicleYearReadingAttributes(): array
 function vehicleTripAttributes(): array
 {
     return ['vehicle_id' => Vehicle::create(['kind' => 'COMPANY_CAR', 'label' => 'Hemlig bil', 'fuel' => 'PETROL'])->id, 'trip_date' => '2026-03-02', 'kind' => 'BUSINESS', 'distance_hm' => 420, 'purpose' => 'Hemligt ärende'];
+}
+
+/** A dimension scope row (ADR-081 gap 10); the membership id needs no row of its own here. */
+function membershipDimensionScopeAttributes(): array
+{
+    return ['user_id' => User::factory()->create()->id, 'team_user_id' => random_int(1, 1_000_000), 'dimension' => 'COST_CENTER', 'object_id' => random_int(1, 1_000_000)];
 }
 
 function mileageRouteAttributes(): array

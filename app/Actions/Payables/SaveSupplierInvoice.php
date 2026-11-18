@@ -23,6 +23,7 @@ use App\Support\FileName;
 use App\Support\Luhn;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
+use App\Support\Tenancy\DimensionScope;
 use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Http\UploadedFile;
@@ -112,6 +113,12 @@ class SaveSupplierInvoice
 
             [$currency, $foreignTotal, $rate] = $this->currency($validated, $total);
             $rows = $this->rows(is_array($input['rows'] ?? null) ? $input['rows'] : [], $supplier, $treatment, $user, $company);
+
+            // A member limited to cost centres or projects registers only inside them, so the invoice stays theirs to see (ADR-081 gap 10).
+            if (! DimensionScope::for($user, $company)->allowsRows($rows)) {
+                throw ValidationException::withMessages(['rows' => __('Varje rad med kostnadsställe eller projekt måste höra till de enheter du når, och minst en rad måste ha ett av dem.')]);
+            }
+
             $sum = array_sum(array_column($rows, 'amount_ore'));
 
             if ($sum + $vat->ore !== $total->ore) {

@@ -11,6 +11,10 @@
         'huvudbok' => __('Huvudbok'),
         'verifikationer' => __('Verifikationslista'),
     ];
+    // A member limited to cost centres or projects reads only the unit reports (ADR-081 gap 10).
+    if ($limited) {
+        $tabs = array_intersect_key($tabs, array_flip(App\Domain\Accounting\Reports\ReportFilters::SCOPED_REPORTS));
+    }
     $th = 'py-2 pr-4 font-medium';
     // On a phone the account column stays in place while the amounts scroll sideways.
     $sticky = 'sticky left-0 z-[1] bg-white max-sm:min-w-40';
@@ -24,7 +28,11 @@
 @endphp
 
 <div class="space-y-6">
-    <livewire:accounting.stale-opening-balances-notice :fiscal-year-id="$filters->fiscalYear->id" />
+    @if($limited)
+        <p class="rounded-xl border border-gray-200 bg-white px-5 py-4 text-sm text-gray-700" data-dimension-scope-notice>{{ __('Du ser rapporterna för de kostnadsställen och projekt du är begränsad till, ett i taget.') }}</p>
+    @else
+        <livewire:accounting.stale-opening-balances-notice :fiscal-year-id="$filters->fiscalYear->id" />
+    @endif
 
     <nav class="flex flex-wrap gap-2 print:hidden" aria-label="{{ __('Rapporter') }}">
         @foreach($tabs as $key => $label)
@@ -59,7 +67,7 @@
             @if($costCenters->isNotEmpty())
                 <x-ui.field for="report_cost_center" :label="__('Kostnadsställe')">
                     <select id="report_cost_center" class="{{ $input }} mt-1" wire:model.live="kst">
-                        <option value="">{{ __('Alla') }}</option>
+                        <option value="">{{ $limited ? __('Välj') : __('Alla') }}</option>
                         @foreach($costCenters as $costCenter)
                             <option value="{{ $costCenter->code }}">{{ $costCenter->label() }}</option>
                         @endforeach
@@ -69,7 +77,7 @@
             @if($projects->isNotEmpty())
                 <x-ui.field for="report_project" :label="__('Projekt')">
                     <select id="report_project" class="{{ $input }} mt-1" wire:model.live="projekt">
-                        <option value="">{{ __('Alla') }}</option>
+                        <option value="">{{ $limited ? __('Välj') : __('Alla') }}</option>
                         @foreach($projects as $project)
                             <option value="{{ $project->code }}">{{ $project->label() }}</option>
                         @endforeach
@@ -274,7 +282,7 @@
                                 @foreach($account['rows'] as $row)
                                     <tr>
                                         <td class="py-1.5 pr-4 tabular-nums">{{ $row['date'] }}</td>
-                                        <td class="py-1.5 pr-4"><a href="{{ route('accounting.vouchers.show', $row['voucher_id']) }}" class="font-medium text-accent-600 hover:text-accent-700 print:text-gray-900">{{ $row['reference'] }}</a></td>
+                                        <td class="py-1.5 pr-4">@if($row['linked'])<a href="{{ route('accounting.vouchers.show', $row['voucher_id']) }}" class="font-medium text-accent-600 hover:text-accent-700 print:text-gray-900">{{ $row['reference'] }}</a>@else<span class="font-medium text-gray-700">{{ $row['reference'] }}</span>@endif</td>
                                         <td class="py-1.5 pr-4 text-gray-700">{{ $row['description'] }}</td>
                                         <td class="py-1.5 pr-4 text-right">@if($row['debit'])<x-ui.amount :money="$m($row['debit'])" :currency="false" />@endif</td>
                                         <td class="py-1.5 pr-4 text-right">@if($row['credit'])<x-ui.amount :money="$m($row['credit'])" :currency="false" />@endif</td>

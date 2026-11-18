@@ -6,7 +6,9 @@ namespace App\Actions\Jetstream;
 
 use App\Actions\Company\WithdrawInvitationsSentBy;
 use App\Models\Company;
+use App\Models\MembershipDimensionScope;
 use App\Models\User;
+use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -30,6 +32,9 @@ class RemoveTeamMember implements RemovesTeamMembers
 
         DB::transaction(function () use ($team, $teamMember): void {
             $team->removeUser($teamMember);
+
+            // A scope belongs to the membership; with it gone the rows only take room (ADR-081 gap 10).
+            CurrentCompany::run($team, fn () => MembershipDimensionScope::query()->where('user_id', $teamMember->id)->delete());
 
             ($this->withdrawInvitations)($team, $teamMember, 'member_removed');
         });

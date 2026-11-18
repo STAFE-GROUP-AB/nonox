@@ -32,6 +32,7 @@ use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Agi\AgiDeadlines;
 use App\Support\Tenancy\CompanyScope;
+use App\Support\Tenancy\DimensionScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -107,6 +108,9 @@ final class CompanyOverview
 
     /** @var array<int, ?string> the user's role per company, null for the owner */
     private array $roles = [];
+
+    /** @var array<int, bool> memberships limited to cost centres or projects (ADR-081 gap 10) */
+    private array $limited = [];
 
     /**
      * @return list<array{
@@ -466,10 +470,14 @@ final class CompanyOverview
         $this->today = $today;
         $this->agiRules = collect();
         $this->roles = [];
+        $this->limited = [];
         $companies = $user->companies();
 
         foreach ($companies as $company) {
-            $this->roles[$company->id] = $user->ownsTeam($company) ? null : (string) $company->getRelationValue('membership')?->getAttribute('role');
+            $membership = $company->getRelationValue('membership');
+            $this->roles[$company->id] = $user->ownsTeam($company) ? null : (string) $membership?->getAttribute('role');
+            $this->limited[$company->id] = $this->roles[$company->id] !== null
+                && DimensionScope::limitsMembership($this->roles[$company->id], (bool) $membership?->getAttribute('dimension_scoped'));
             $this->largeEmployer[$company->id] = AgiDates::isLarge($company);
         }
 
@@ -552,6 +560,11 @@ final class CompanyOverview
      */
     private function may(int $companyId, string $permission): bool
     {
+        // Mina företag shows each company whole: nothing of one where the user is limited to cost centres or projects (ADR-081 gap 10).
+        if ($this->limited[$companyId] ?? false) {
+            return false;
+        }
+
         $module = app(ModuleRegistry::class)->moduleForPermission($permission);
 
         if ($module !== null && ! $this->enabled($companyId, $module->key())) {

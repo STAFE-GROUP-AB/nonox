@@ -1037,6 +1037,68 @@ scoped member carry the scope.
 Row-level rules on accounts or suppliers, field-level hiding, scopes across
 companies, time-limited scopes (use delegation of gap 8 instead).
 
+### As built (E1, 2026-11-18)
+
+- **Three layers.** (1) Permissions: a limited member keeps only
+  `DimensionScope::SCOPE_AWARE_PERMISSIONS` (`reports:view`, `vouchers:view`,
+  `vouchers:create`, `vouchers:post`, `supplier-invoices:create`,
+  `supplier-invoices:approve`), in `User::hasTeamPermission`; every other
+  permission of the role, module permissions included, is refused. In
+  `Memberships::may` (pages that span companies: Mina företag, koncern,
+  month close, chain schedule) a limited membership grants nothing, because
+  none of those pages applies a scope. (2) Routes and Livewire components:
+  `DimensionScopeRegistry` names the scoped and neutral ones by exact name;
+  everything else answers 404 (`EnforceDimensionScope` on the web group and
+  after `AuthenticateConnect` on the API and MCP, `LivewireDimensionScopeGuard`
+  for components). Refused areas may be named by prefix, so a new route there
+  is refused; `DimensionScopeRegistryTest` fails a signed-in route outside
+  every known area. (3) Data: the voucher and supplier-invoice lists use
+  `DimensionScope::constrain`, the policies answer `denyAsNotFound` for a
+  record outside the scope, and `SaveDraftVoucher` and `SaveSupplierInvoice`
+  refuse rows outside it.
+- **Row rule.** A row is inside when its cost centre is one of the member's
+  or its project is one of the member's (union). Rows without either decide
+  nothing. A voucher or invoice is visible when every dimensioned row is
+  inside and at least one is; a member books only such records, so what they
+  book stays visible to them.
+- **Reports.** Only Resultatrapport and Huvudbok
+  (`ReportFilters::SCOPED_REPORTS`), always with one of the member's cost
+  centres or projects; a request for another report or unit is narrowed on
+  the page and refused (404) for the CSV file. Reports count rows, so a row
+  on the member's unit counts even when its voucher also has rows elsewhere
+  and the voucher itself is not visible. Account balances of the whole
+  company (voucher page, editor) are not shown. The ledger hash check is
+  refused (it reads and counts the whole ledger).
+- **API.** Every `/api/v1` endpoint and MCP answers 404 for a limited
+  member's key or token in E1: the scope is carried by refusal until an
+  endpoint applies it.
+- **`unit_manager`** is a `CompanyRole` case with `reports:view` only (E3,
+  E6 and E17 add their view permissions when they exist) and is always
+  limited: without cost centres or projects it reaches nothing.
+- **Storage.** `team_user.dimension_scoped` says whether a membership is
+  limited, so an unlimited member costs no query (it comes with the pivot
+  Jetstream reads; `User::teams()` adds it to the pivot). The rows are read
+  once per request and user (`DimensionScopeCache`) and are part of the
+  Livewire access fingerprint, so an open page answers 404 after a change.
+  Leaving the company deletes the rows; a role change to admin, accountant or
+  auditor lifts the scope.
+- **Payroll** (review 2026-11-18, P1): vouchers with source `PAYROLL` and
+  corrections of them are never shown to a limited member, in lists,
+  voucher pages or reports (`DimensionScope::constrainVouchers`,
+  `withoutPayroll`, `LedgerQuery::$withoutPayroll`). A small unit's salary
+  cost can be one person's pay; E17 may open aggregated pay with its rule
+  that hides cells under three people (owner decision 17).
+- **Huvudbok**: for a row whose voucher the member may not open, only the
+  row's own text and the reference without a link.
+- **Shared registers**: the supplier register stays shared; a limited member
+  who registers supplier invoices sees every supplier. The deadline calendar
+  feed, role-based notices (payroll, new fiscal year) and the user's
+  register extract (`begransad_till`) know about scopes.
+- **Not in E1:** customer invoices (their rows get dimensions in E6, until
+  then `invoices:*` are refused to a limited member), corrections
+  (`vouchers:correct` refused), payments and payment files, modules
+  (warehouses in E13), the spotlight search, notifications.
+
 ## Translations per package (lang/en.json conflicts)
 
 Laravel supports extra JSON translation paths cleanly. Relied on: the

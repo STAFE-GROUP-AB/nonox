@@ -194,6 +194,8 @@ final class DatabaseGrants
         'kitchen_waste_measurements' => GrantDecision::AppendOnly,
         'label_templates' => GrantDecision::ReadWrite,
         'login_codes' => GrantDecision::ReadWrite,
+        // Dimension scopes (ADR-081 gap 10): a member's scope is replaced as a whole, so rows are deleted.
+        'membership_dimension_scopes' => GrantDecision::ReadWrite,
         // Laravel reads which migrations have run (the setup page); only the owner writes.
         'migrations' => GrantDecision::ReadOnly,
         'mileage_routes' => GrantDecision::ReadWrite,

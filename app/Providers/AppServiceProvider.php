@@ -29,7 +29,9 @@ use App\Support\Overview\TaskTodoProvider;
 use App\Support\Status\Heartbeats;
 use App\Support\Tenancy\CompanyContext;
 use App\Support\Tenancy\CurrentCompany;
+use App\Support\Tenancy\DimensionScopeCache;
 use App\Support\Tenancy\LivewireCompanyGuard;
+use App\Support\Tenancy\LivewireDimensionScopeGuard;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -69,6 +71,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(CompanyDeadlines::class);
         // Registered before Livewire boots, which binds its hooks at boot time.
         Livewire::componentHook(LivewireCompanyGuard::class);
+        // A member limited to cost centres or projects reaches only the components that apply the scope (ADR-081 gap 10).
+        Livewire::componentHook(LivewireDimensionScopeGuard::class);
+        $this->app->scoped(DimensionScopeCache::class);
 
         // Uploads are read from their path, so they wait on a plain disk (config/filesystems.php).
         config(['livewire.temporary_file_upload.disk' => 'uploads']);

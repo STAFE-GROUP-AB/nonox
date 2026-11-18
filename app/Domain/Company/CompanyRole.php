@@ -15,9 +15,11 @@ enum CompanyRole: string
     case Bookkeeper = 'bookkeeper';
     case Approver = 'approver';
     case Auditor = 'auditor';
+    /** Limited to cost centres or projects by role (ADR-081 gap 10); DimensionScope::ALWAYS_SCOPED_ROLES. */
+    case UnitManager = 'unit_manager';
 
     public const array PERMISSIONS = [
-        'company:update', 'company:archive', 'members:manage',
+        'company:update', 'company:archive', 'members:manage', 'members:scope',
         'accounts:manage', 'fiscal-years:manage', 'periods:lock',
         'vouchers:create', 'vouchers:post', 'vouchers:correct', 'vouchers:view',
         'invoices:create', 'invoices:send', 'invoices:credit', 'invoices:view',
@@ -37,6 +39,7 @@ enum CompanyRole: string
             self::Bookkeeper => __('Bokförare'),
             self::Approver => __('Attestant'),
             self::Auditor => __('Revisor'),
+            self::UnitManager => __('Enhetschef'),
         };
     }
 
@@ -48,6 +51,7 @@ enum CompanyRole: string
             self::Bookkeeper => __('Bokför verifikationer och hanterar kund- och leverantörsfakturor. Kan inte låsa perioder eller göra bokslut.'),
             self::Approver => __('Attesterar leverantörsfakturor och betalningar.'),
             self::Auditor => __('Kan läsa och exportera allt, men inte bokföra något.'),
+            self::UnitManager => __('Ser rapporterna för de kostnadsställen och projekt hen är begränsad till, och inget annat.'),
         };
     }
 
@@ -85,6 +89,10 @@ enum CompanyRole: string
                 'export:sie', 'export:archive', 'audit-log:view',
                 'tasks:view',
                 'mileage:view',
+            ],
+            // Budgets, projects and analysis join when their packages add those permissions (ADR-081 E3, E6, E17).
+            self::UnitManager => [
+                'reports:view',
             ],
         };
     }

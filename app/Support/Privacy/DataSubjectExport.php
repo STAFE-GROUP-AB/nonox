@@ -7,12 +7,14 @@ namespace App\Support\Privacy;
 use App\Domain\IncomeTax\IncomeTaxForms;
 use App\Models\AuditLog;
 use App\Models\Company;
+use App\Models\CostCenter;
 use App\Models\Customer;
 use App\Models\FiscalYear;
 use App\Models\IncomeTaxPartner;
 use App\Models\Invoice;
 use App\Models\K10Owner;
 use App\Models\MileageRoute;
+use App\Models\Project;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\User;
@@ -44,6 +46,7 @@ use App\Modules\StaffLedger\Models\Location;
 use App\Modules\StaffLedger\Models\Person;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
+use App\Support\Tenancy\DimensionScope;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -71,6 +74,8 @@ final class DataSubjectExport
                 'namn' => $company->name,
                 'organisationsnummer' => $company->org_number,
                 'roll' => $company->user_id === $user->id ? 'owner' : DB::table('team_user')->where('team_id', $company->id)->where('user_id', $user->id)->value('role'),
+                // The cost centres and projects the user is limited to (ADR-081 gap 10); null when not limited.
+                'begransad_till' => self::dimensionScope($user, $company),
             ])->values()->all(),
             'anstalld_i' => CompanyScope::bypass(fn (): array => Employee::query()->where('user_id', $user->id)->get()
                 ->map(fn (Employee $employee): array => CurrentCompany::run($employee->company_id, fn (): array => self::employee($employee)))
@@ -434,6 +439,21 @@ final class DataSubjectExport
             ])
             ->values()
             ->all());
+    }
+
+    /** @return ?array{kostnadsstallen: list<string>, projekt: list<string>} */
+    private static function dimensionScope(User $user, Company $company): ?array
+    {
+        $scope = DimensionScope::for($user, $company);
+
+        if (! $scope->restricted) {
+            return null;
+        }
+
+        return CurrentCompany::run($company, fn (): array => [
+            'kostnadsstallen' => array_values(CostCenter::query()->whereIn('id', $scope->costCenterIds)->orderBy('code')->get()->map(fn (CostCenter $object): string => $object->label())->all()),
+            'projekt' => array_values(Project::query()->whereIn('id', $scope->projectIds)->orderBy('code')->get()->map(fn (Project $object): string => $object->label())->all()),
+        ]);
     }
 
     /** @return array{typ: string, skapat: string, rattslig_grund: string} */

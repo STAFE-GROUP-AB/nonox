@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Jetstream;
 
 use App\Actions\Company\ReconcileFirmLinks;
+use App\Actions\Company\SetDimensionScope;
 use App\Actions\Company\WithdrawInvitationsSentBy;
 use App\Models\Company;
 use App\Models\User;
@@ -14,7 +15,8 @@ use Laravel\Jetstream\Actions\UpdateTeamMemberRole as JetstreamUpdateTeamMemberR
 /**
  * Jetstream's role change, bound in its place (JetstreamServiceProvider). A
  * member whose new role takes away members:manage also loses the invitations
- * they sent that nobody has accepted yet.
+ * they sent that nobody has accepted yet, and a member whose new role can
+ * never be limited loses their dimension scope (ADR-081 gap 10).
  */
 class UpdateTeamMemberRole extends JetstreamUpdateTeamMemberRole
 {
@@ -42,6 +44,9 @@ class UpdateTeamMemberRole extends JetstreamUpdateTeamMemberRole
             $couldManageMembers = $this->canManageMembers($member, $team);
 
             parent::update($user, $team, $teamMemberId, $role);
+
+            // Admin, accountant and auditor are never limited to cost centres or projects (ADR-081 gap 10).
+            SetDimensionScope::liftForRole($team, $member->id, $role, $user instanceof User ? $user : null);
 
             if (! $couldManageMembers || $this->canManageMembers($member, $team)) {
                 return;

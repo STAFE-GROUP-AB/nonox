@@ -26,6 +26,7 @@ use App\Support\Currency\ExchangeRate;
 use App\Support\Currency\RiksbankRates;
 use App\Support\Files\PrivateFile;
 use App\Support\Money\Money;
+use App\Support\Tenancy\DimensionScope;
 use App\Support\Toast;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -373,14 +374,16 @@ class SupplierInvoiceEditor extends Component
 
     public function render(): View
     {
+        $scope = DimensionScope::for($this->user(), $this->company());
         $invoice = $this->invoiceId === null ? null : SupplierInvoice::query()->findOrFail($this->invoiceId);
 
         return view('livewire.payables.supplier-invoice-editor', [
             'invoice' => $invoice,
             'suppliers' => Supplier::query()->where('is_active', true)->whereNull('processing_restricted_at')->with('defaultAccount:id,number,name')->orderBy('name')->get(['id', 'number', 'name', 'payment_terms_days', 'default_account_id']),
             'accounts' => Account::query()->where('is_active', true)->whereBetween('number', [1000, 8999])->orderBy('number')->get(['number', 'name']),
-            'costCenters' => CostCenter::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']),
-            'projects' => Project::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']),
+            // A member limited to cost centres or projects chooses only among them (ADR-081 gap 10).
+            'costCenters' => CostCenter::query()->where('is_active', true)->when($scope->restricted, fn ($query) => $query->whereIn('id', $scope->costCenterIds))->orderBy('code')->get(['code', 'name']),
+            'projects' => Project::query()->where('is_active', true)->when($scope->restricted, fn ($query) => $query->whereIn('id', $scope->projectIds))->orderBy('code')->get(['code', 'name']),
             'treatments' => VatTreatment::cases(),
             'currencies' => self::CURRENCIES,
             'aiAvailable' => AnalyzeDocument::availableFor($this->user(), $this->company()),

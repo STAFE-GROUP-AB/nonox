@@ -163,6 +163,7 @@ BEGIN
         ('kitchen_waste_measurements', 'SELECT, INSERT'),
         ('label_templates', 'SELECT, INSERT, UPDATE, DELETE'),
         ('login_codes', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('membership_dimension_scopes', 'SELECT, INSERT, UPDATE, DELETE'),
         ('migrations', 'SELECT'),
         ('mileage_routes', 'SELECT, INSERT, UPDATE, DELETE'),
         ('month_close_checks', 'SELECT, INSERT, UPDATE, DELETE'),

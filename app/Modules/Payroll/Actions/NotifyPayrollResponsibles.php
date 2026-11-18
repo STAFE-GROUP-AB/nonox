@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Notifications\PayrollYearNotice;
 use App\Modules\Payroll\PayrollModule;
+use App\Support\Tenancy\DimensionScope;
 use Closure;
 use Illuminate\Support\Facades\DB;
 use Laravel\Jetstream\Jetstream;
@@ -37,7 +38,8 @@ final class NotifyPayrollResponsibles
 
         $companies = Company::query()->whereIn('id', $ids)->whereNull('archived_at')->get(['id', 'name', 'user_id']);
         $roles = array_values(array_filter(array_keys(Jetstream::$roles), fn (string $role): bool => in_array('payroll:settings', Jetstream::findRole($role)->permissions ?? [], true)));
-        $members = DB::table('team_user')->whereIn('team_id', $companies->modelKeys())->whereIn('role', $roles)->get(['team_id', 'user_id'])->groupBy('team_id');
+        // Not a member limited to cost centres or projects: payroll is closed to them (ADR-081 gap 10).
+        $members = DimensionScope::whereUnlimited(DB::table('team_user')->whereIn('team_id', $companies->modelKeys())->whereIn('role', $roles))->get(['team_id', 'user_id'])->groupBy('team_id');
         $userIds = $companies->pluck('user_id')->merge($members->flatten(1)->pluck('user_id'))->unique()->all();
         $users = User::query()->whereIn('id', $userIds)->get()->keyBy('id');
         $told = 0;

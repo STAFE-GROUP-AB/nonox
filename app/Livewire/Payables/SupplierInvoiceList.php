@@ -10,6 +10,7 @@ use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\SupplierInvoice;
 use App\Models\User;
+use App\Support\Tenancy\DimensionScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -64,8 +65,10 @@ class SupplierInvoiceList extends Component
             ->when($this->filter === 'betalda', fn ($query) => $query->where('status', SupplierInvoiceStatus::Paid->value))
             ->when(in_array($this->filter, ['att-betala', 'forfallna', 'attest'], true),
                 fn ($query) => $query->orderBy('due_date'),
-                fn ($query) => $query->orderByRaw('number IS NOT NULL, number DESC')->orderByDesc('created_at'))
-            ->paginate(25);
+                fn ($query) => $query->orderByRaw('number IS NOT NULL, number DESC')->orderByDesc('created_at'));
+
+        // A member limited to cost centres or projects sees the invoices whose rows are inside the scope (ADR-081 gap 10).
+        $invoices = DimensionScope::current()->constrain($invoices, 'supplier_invoice_rows', 'supplier_invoice_id', 'supplier_invoices.id')->paginate(25);
 
         return view('livewire.payables.supplier-invoice-list', [
             'invoices' => $invoices,
