@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-planering-i-toppklass",
+      "datum": "2026-11-18T00:55:00+01:00",
+      "rubrik": "Planering i toppklass",
+      "beskrivning": "Planering har nu bemanningsbehov uppskattat ur försäljningen, budget för personalkostnad per vecka, schemaförslag som kontrolleras mot företagets regler för vilotid och arbetstid, uppgifter i passen, meddelanden till personalen med läst och bekräftat, godkänd frånvaro i schemat, pass på kostnadsställen och schemat för flera företag på en sida. Prognoser och kostnader är uppskattningar, och varningarna stoppar aldrig planeringen. NONOX föreslår men publicerar aldrig själv: en person granskar och bestämmer.",
+      "typ": "Nytt",
+      "omrade": "Planering"
+    },
+    {
       "id": "2026-11-17-planering-schemaforslag-nya-pass",
       "datum": "2026-11-17T23:40:00+01:00",
       "rubrik": "Schemaförslag lägger till de pass som saknas",
