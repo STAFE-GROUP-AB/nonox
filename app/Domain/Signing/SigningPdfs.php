@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Domain\Signing;
 
+use App\Domain\Signing\Pdf\PdfScripts;
 use App\Models\Company;
 use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Support\Branding\Brand;
+use Closure;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Illuminate\Support\Facades\App;
 
 /**
  * The PDFs of signing (ADR-046, ADR-002): the document that is shown and
@@ -122,19 +125,73 @@ final class SigningPdfs
         return "Signeringsbevis-{$request->id}.pdf";
     }
 
-    /** HTML to an A4 PDF with dompdf, no remote resources. */
+    /**
+     * HTML to an A4 PDF with dompdf, no remote resources. Chinese, Japanese
+     * and Korean text gets Noto Sans CJK where this installation has it, and
+     * otherwise a placeholder and a notice (PdfScripts, S20).
+     */
     public static function render(string $html): string
     {
+        $font = PdfScripts::cjkFont();
+        $prepared = PdfScripts::prepare($html, $font !== null);
+
+        if ($prepared['degraded']) {
+            $notice = '<div class="box"><span class="muted">'.self::bilingualBlock('Namnet eller texten innehåller kinesiska, japanska eller koreanska tecken, men typsnittet för dem finns inte installerat här. De visas som […]. Det exakta innehållet är det som lagrats och som kontrollsumman och händelsekedjan gäller; signeringsbeviset visar bara inte tecknen.').'</span></div>';
+            $prepared['html'] = str_contains($prepared['html'], '</body>') ? str_replace('</body>', $notice.'</body>', $prepared['html']) : $prepared['html'].$notice;
+        }
+
         $options = new Options;
         $options->setIsRemoteEnabled(false);
         $options->setDefaultFont('DejaVu Sans');
         $options->setChroot(resource_path('views'));
 
-        $pdf = new Dompdf($options);
-        $pdf->loadHtml($html);
+        $pdf = $prepared['cjk'] && $font !== null ? PdfScripts::dompdfWith($options, $font) : new Dompdf($options);
+        $pdf->loadHtml($prepared['html']);
         $pdf->setPaper('A4');
         $pdf->render();
 
         return (string) $pdf->output();
+    }
+
+    /**
+     * The text in Swedish and English, "Namn / Name" (decision 19: one
+     * bilingual certificate for every signer). Identical texts, such as a
+     * name or a number, are shown once.
+     *
+     * @param  array<string, string|int>  $replace
+     */
+    public static function bilingual(string $key, array $replace = []): string
+    {
+        return self::bilingualOf(fn (): string => __($key, $replace));
+    }
+
+    /** The text as two paragraphs, Swedish then English, escaped, for a longer notice. */
+    public static function bilingualBlock(string $key): string
+    {
+        $sv = self::inLocale('sv', fn (): string => __($key));
+        $en = self::inLocale('en', fn (): string => __($key));
+
+        return $sv === $en ? '<p>'.e($sv).'</p>' : '<p>'.e($sv).'</p><p lang="en">'.e($en).'</p>';
+    }
+
+    /** What the closure returns in Swedish and in English, joined. */
+    public static function bilingualOf(Closure $text): string
+    {
+        $sv = self::inLocale('sv', $text);
+        $en = self::inLocale('en', $text);
+
+        return $sv === $en ? $sv : "{$sv} / {$en}";
+    }
+
+    private static function inLocale(string $locale, Closure $text): string
+    {
+        $before = App::getLocale();
+        App::setLocale($locale);
+
+        try {
+            return $text();
+        } finally {
+            App::setLocale($before);
+        }
     }
 }

@@ -1,4 +1,5 @@
 @php
+    $b = fn (string $key, array $replace = []): string => App\Domain\Signing\SigningPdfs::bilingual($key, $replace);
     $zone = config('app.timezone');
     $time = fn ($value): string => $value === null ? '' : $value->setTimezone($zone)->format('Y-m-d H:i:s T');
 @endphp
@@ -6,7 +7,7 @@
 <html lang="sv">
 <head>
 <meta charset="utf-8">
-<title>{{ __('Sammanställning av signeringen') }}</title>
+<title>{{ $b('Sammanställning av signeringen') }}</title>
 <style>
     @page { margin: 18mm 16mm 22mm; }
     body { font-family: 'DejaVu Sans', sans-serif; font-size: 9pt; color: #1f2933; }
@@ -29,35 +30,35 @@
                 @include('invoicing.partials.brand-sender')
             </td>
             <td>
-                <h1>{{ __('Sammanställning av signeringen') }}</h1>
+                <h1>{{ $b('Sammanställning av signeringen') }}</h1>
                 <span class="muted">{{ $title }}</span>
             </td>
         </tr>
     </table>
 
-    <h2>{{ __('Dokumentet som signerades') }}</h2>
+    <h2>{{ $b('Dokumentet som signerades') }}</h2>
     <table class="meta">
-        <tr><td class="muted" style="width: 38%">{{ __('Dokument') }}</td><td>{{ $title }} ({{ $envelope->document_name }})</td></tr>
-        <tr><td class="muted">{{ __('Kontrollsumma (SHA-256)') }}</td><td class="mono">{{ $envelope->document_sha256 }}</td></tr>
-        <tr><td class="muted">{{ __('Avsändare') }}</td><td>{{ $company->legal_name ?: $company->name }}@if($company->org_number) ({{ $company->org_number }})@endif</td></tr>
-        <tr><td class="muted">{{ __('Signerat av alla') }}</td><td>{{ $time($envelope->completed_at) }}</td></tr>
+        <tr><td class="muted" style="width: 38%">{{ $b('Dokument') }}</td><td>{{ $title }} ({{ $envelope->document_name }})</td></tr>
+        <tr><td class="muted">{{ $b('Kontrollsumma (SHA-256)') }}</td><td class="mono">{{ $envelope->document_sha256 }}</td></tr>
+        <tr><td class="muted">{{ $b('Avsändare') }}</td><td>{{ $company->legal_name ?: $company->name }}@if($company->org_number) ({{ $company->org_number }})@endif</td></tr>
+        <tr><td class="muted">{{ $b('Signerat av alla') }}</td><td>{{ $time($envelope->completed_at) }}</td></tr>
     </table>
 
-    <h2>{{ __('Undertecknare') }}</h2>
+    <h2>{{ $b('Undertecknare') }}</h2>
     <table class="meta">
-        <tr><th class="muted">{{ __('Steg') }}</th><th class="muted">{{ __('Namn') }}</th><th class="muted">{{ __('Signerad') }}</th><th class="muted">{{ __('Sätt') }}</th></tr>
+        <tr><th class="muted">{{ $b('Steg') }}</th><th class="muted">{{ $b('Namn') }}</th><th class="muted">{{ $b('Signerad') }}</th><th class="muted">{{ $b('Sätt') }}</th></tr>
         @foreach($signers as $signer)
             <tr>
                 <td>{{ $signer->step }}</td>
                 <td>{{ $signer->signer_name }}@if($signer->signer_title), {{ $signer->signer_title }}@endif</td>
                 <td>{{ $time($signer->signed_at) }}</td>
-                <td>{{ $signer->signature_method === App\Models\SigningRequest::TYPED ? __('Skrivet namn som underskrift') : __('Ritad namnteckning') }}</td>
+                <td>{{ $signer->signature_method === App\Models\SigningRequest::TYPED ? $b('Skrivet namn som underskrift') : $b('Ritad namnteckning') }}</td>
             </tr>
         @endforeach
     </table>
 
     <div class="box">
-        <span class="muted">{{ __('En sammanställning för den som får en kopia. Varje underskrift är en enkel elektronisk underskrift, och PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Det fullständiga signeringsbeviset för varje underskrift finns hos avsändaren.') }}</span>
+        <span class="muted">{!! App\Domain\Signing\SigningPdfs::bilingualBlock('En sammanställning för den som får en kopia. Varje underskrift är en enkel elektronisk underskrift, och PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Det fullständiga signeringsbeviset för varje underskrift finns hos avsändaren.') !!}</span>
     </div>
 </body>
 </html>

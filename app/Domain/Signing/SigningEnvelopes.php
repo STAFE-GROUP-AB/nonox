@@ -97,7 +97,7 @@ final class SigningEnvelopes
 
         $this->chain->record($signer, SigningEventType::Sent, $userId);
 
-        return route('signing.show', ['token' => $token['token']]);
+        return SigningHost::link($token['token']);
     }
 
     /**

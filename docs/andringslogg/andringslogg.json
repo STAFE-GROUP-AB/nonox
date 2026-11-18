@@ -72,6 +72,14 @@
       "omrade": "Bokföring"
     },
     {
+      "id": "2026-11-18-signering-varumarke-sprak",
+      "datum": "2026-11-18T11:40:00+01:00",
+      "rubrik": "Signeringsbeviset på svenska och engelska, med företagets färg",
+      "beskrivning": "Signeringsbeviset och sammanställningen visar nu varje rubrik på svenska och engelska, och namn på grekiska, kyrilliska, kinesiska, japanska och koreanska skrivs ut rätt. De tre signeringsmejlen har företagets färg, och en installation kan ha en egen signeringsadress. Utan typsnittet för kinesiska, japanska och koreanska visas de tecknen som […] med en notis, aldrig som trasiga tecken.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-18-signering-hashkedja",
       "datum": "2026-11-18T11:20:00+01:00",
       "rubrik": "Signeringens händelser i en hashkedja",

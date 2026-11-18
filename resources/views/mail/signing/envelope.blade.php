@@ -15,7 +15,7 @@
             {{ __(':title är signerat av alla. Här är dokumentet med signeringsbevisen.', ['title' => $title]) }}
         @endif
     </div>
-    <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 28px;">
+    <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 28px; border-top: 6px solid {{ $color }};">
         <p style="margin: 0 0 4px; font-size: 13px; color: #616e7c;">{{ $companyName }}</p>
         @if($kind === App\Mail\SigningEnvelopeMail::NOTICE)
             <h1 style="margin: 0 0 16px; font-size: 22px;">{{ __(':title är skickat för signering', ['title' => $title]) }}</h1>
