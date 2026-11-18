@@ -63,7 +63,7 @@
             </fieldset>
 
             <div class="grid gap-4 sm:grid-cols-2">
-                <x-ui.field for="signing-expires-several" :label="__('Sista dag att signera (frivilligt)')" error="expires_on" :hint="$isQuote ? __('Annars offertens giltighetsdag, eller 30 dagar. Högst 90 dagar.') : __('Annars 30 dagar. Högst 90 dagar.')">
+                <x-ui.field for="signing-expires-several" :label="__('Sista dag att signera (frivilligt)')" error="expires_on" :hint="$isQuote ? __('Annars offertens giltighetsdag, eller 30 dagar. Mellan :min och :max dagar fram.', ['min' => $minDays, 'max' => $maxDays]) : __('Annars 30 dagar. Mellan :min och :max dagar fram.', ['min' => $minDays, 'max' => $maxDays])">
                     <input id="signing-expires-several" type="date" class="{{ $input }} mt-1" wire:model="expiresOn">
                 </x-ui.field>
                 @if($deals->isNotEmpty())
@@ -83,6 +83,23 @@
                     </label>
                 @endif
             </div>
+            <fieldset data-testid="signing-reminder-settings">
+                <legend class="text-sm font-semibold text-gray-900">{{ __('Påminnelser') }}</legend>
+                <label class="mt-2 flex items-start gap-3 text-sm">
+                    <input type="checkbox" class="mt-0.5 size-5 rounded border-gray-300 text-accent-600" wire:model.live="autoReminders">
+                    <span>{{ __('Påminn de som ska signera automatiskt, mellan 08 och 18 på dagtid. Högst :count påminnelser per person.', ['count' => $maxReminders]) }}</span>
+                </label>
+                @if($autoReminders)
+                    <x-ui.field for="signing-reminder-days-several" :label="__('Hur ofta')" error="reminder_days" class="mt-3 max-w-xs">
+                        <select id="signing-reminder-days-several" class="{{ $input }} mt-1" wire:model="reminderDays">
+                            @foreach($intervals as $days)
+                                <option value="{{ $days }}">{{ $days === 1 ? __('Varje dag') : __('Var :days:e dag', ['days' => $days]) }}</option>
+                            @endforeach
+                            <option value="single">{{ __('En gång, två dagar före sista dag') }}</option>
+                        </select>
+                    </x-ui.field>
+                @endif
+            </fieldset>
             <x-input-error for="document" />
             <div>
                 <div class="flex flex-wrap items-center gap-4">
@@ -97,7 +114,7 @@
             <x-ui.field for="signing-email" :label="__('E-post till den som ska signera')" error="email">
                 <input id="signing-email" type="email" class="{{ $input }} mt-1" wire:model="email" autocomplete="off" required>
             </x-ui.field>
-            <x-ui.field for="signing-expires" :label="__('Sista dag att signera (frivilligt)')" error="expires_on" :hint="$isQuote ? __('Annars offertens giltighetsdag, eller 30 dagar. Högst 90 dagar.') : __('Annars 30 dagar. Högst 90 dagar.')">
+            <x-ui.field for="signing-expires" :label="__('Sista dag att signera (frivilligt)')" error="expires_on" :hint="$isQuote ? __('Annars offertens giltighetsdag, eller 30 dagar. Mellan :min och :max dagar fram.', ['min' => $minDays, 'max' => $maxDays]) : __('Annars 30 dagar. Mellan :min och :max dagar fram.', ['min' => $minDays, 'max' => $maxDays])">
                 <input id="signing-expires" type="date" class="{{ $input }} mt-1" wire:model="expiresOn">
             </x-ui.field>
             @if($deals->isNotEmpty())
@@ -116,6 +133,23 @@
                     <span>{{ __('Gör också ett fakturautkast när offerten är signerad') }}</span>
                 </label>
             @endif
+            <fieldset class="sm:col-span-2" data-testid="signing-reminder-settings">
+                <legend class="text-sm font-semibold text-gray-900">{{ __('Påminnelser') }}</legend>
+                <label class="mt-2 flex items-start gap-3 text-sm">
+                    <input type="checkbox" class="mt-0.5 size-5 rounded border-gray-300 text-accent-600" wire:model.live="autoReminders">
+                    <span>{{ __('Påminn de som ska signera automatiskt, mellan 08 och 18 på dagtid. Högst :count påminnelser per person.', ['count' => $maxReminders]) }}</span>
+                </label>
+                @if($autoReminders)
+                    <x-ui.field for="signing-reminder-days" :label="__('Hur ofta')" error="reminder_days" class="mt-3 max-w-xs">
+                        <select id="signing-reminder-days" class="{{ $input }} mt-1" wire:model="reminderDays">
+                            @foreach($intervals as $days)
+                                <option value="{{ $days }}">{{ $days === 1 ? __('Varje dag') : __('Var :days:e dag', ['days' => $days]) }}</option>
+                            @endforeach
+                            <option value="single">{{ __('En gång, två dagar före sista dag') }}</option>
+                        </select>
+                    </x-ui.field>
+                @endif
+            </fieldset>
             <x-input-error for="document" class="sm:col-span-2" />
             <div class="sm:col-span-2">
                 <div class="flex flex-wrap items-center gap-4">
@@ -143,19 +177,57 @@
                         @if($envelope->copies->isNotEmpty())
                             <span class="text-sm text-gray-700">{{ __('Kopia till :emails', ['emails' => $envelope->copies->pluck('email')->implode(', ')]) }}</span>
                         @endif
-                        @if($envelope->status === App\Domain\Signing\EnvelopeStatus::Out && $canSend)
-                            <button type="button" class="ms-auto min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="voidEnvelope('{{ $envelope->id }}')" wire:confirm="{{ __('Dra tillbaka dokumentet? Alla länkar slutar gälla, och de som inte har signerat ser att dokumentet är tillbakadraget.') }}">{{ __('Dra tillbaka') }}</button>
+@if($envelopeStatus === App\Domain\Signing\EnvelopeStatus::Out)
+                            <span class="text-sm text-gray-700" data-testid="signing-reminder-note">{{ $envelope->auto_reminders ? ($envelope->reminder_interval_days === null ? __('Påminner en gång före sista dag') : ($envelope->reminder_interval_days === 1 ? __('Påminner varje dag') : __('Påminner var :days:e dag', ['days' => $envelope->reminder_interval_days]))) : __('Inga automatiska påminnelser') }}</span>
                         @endif
+                        @if($envelopeStatus === App\Domain\Signing\EnvelopeStatus::Out && $canSend)
+                            <button type="button" class="ms-auto min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="editDeadline('{{ $envelope->id }}')">{{ __('Ändra sista dag') }}</button>
+                            <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="voidEnvelope('{{ $envelope->id }}')" wire:confirm="{{ __('Dra tillbaka dokumentet? Alla länkar slutar gälla, och de som inte har signerat ser att dokumentet är tillbakadraget.') }}">{{ __('Dra tillbaka') }}</button>
+                        @endif
+                        <div class="w-full">
+                            @if($deadlineFor === $envelope->id)
+                                <form wire:submit="changeDeadline" class="mt-3 flex flex-wrap items-end gap-3" data-testid="signing-deadline-form">
+                                    <x-ui.field for="signing-new-deadline-{{ $envelope->id }}" :label="__('Ny sista dag att signera')" error="expires_on" :hint="__('Mellan :min och :max dagar fram.', ['min' => $minDays, 'max' => $maxDays])">
+                                        <input id="signing-new-deadline-{{ $envelope->id }}" type="date" class="{{ $input }} mt-1" wire:model="newDeadline" required>
+                                    </x-ui.field>
+                                    <x-button wire:loading.attr="disabled">{{ __('Spara ny sista dag') }}</x-button>
+                                    <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="cancelDeadline">{{ __('Avbryt') }}</button>
+                                </form>
+                            @endif
+                        </div>
                     </li>
                 @endif
                 <li wire:key="signing-{{ $signing->id }}" class="py-4">
                     <div class="flex flex-wrap items-center gap-3">
                         <x-ui.badge :tone="$status->tone()">{{ $status->label() }}</x-ui.badge>
                         <span class="text-sm text-gray-700">@if($inEnvelope){{ __('steg :step', ['step' => $signing->step]) }} · @endif{{ __('till :email', ['email' => $signing->email]) }} · {{ __('gäller till :date', ['date' => $signing->expires_at->setTimezone($zone)->format('Y-m-d')]) }}</span>
+                        @if($status === App\Domain\Signing\SigningStatus::Pending && $canSend && $envelope !== null && $envelope->status === App\Domain\Signing\EnvelopeStatus::Out && $signing->channel === 'LINK' && $signing->step <= $envelope->current_step)
+                            <button type="button" class="ms-auto min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="remindNow({{ $signing->id }})" wire:confirm="{{ __('Skicka en påminnelse med en ny länk till :email?', ['email' => $signing->email]) }}" data-testid="signing-remind-now">{{ __('Påminn nu') }}</button>
+                            @if(! $inEnvelope)
+                                <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="editDeadline('{{ $envelope->id }}')">{{ __('Ändra sista dag') }}</button>
+                            @endif
+                        @endif
                         @if($status === App\Domain\Signing\SigningStatus::Pending && $canSend && ! $inEnvelope)
-                            <button type="button" class="ms-auto min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="revoke({{ $signing->id }})" wire:confirm="{{ __('Återkalla länken? Den går inte längre att använda, och kunden ser att den är återkallad.') }}">{{ __('Återkalla') }}</button>
+                            <button type="button" class="@if($envelope === null || $envelope->status !== App\Domain\Signing\EnvelopeStatus::Out) ms-auto @endif min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="revoke({{ $signing->id }})" wire:confirm="{{ __('Återkalla länken? Den går inte längre att använda, och kunden ser att den är återkallad.') }}">{{ __('Återkalla') }}</button>
                         @endif
                     </div>
+                    @if($status === App\Domain\Signing\SigningStatus::Pending && $signing->reminder_count > 0)
+                        <p class="mt-2 text-sm text-gray-700" data-testid="signing-reminded">{{ trans_choice('{1} :count påminnelse skickad, senast :time|[2,*] :count påminnelser skickade, senast :time', $signing->reminder_count, ['count' => $signing->reminder_count, 'time' => $signing->last_reminded_at?->setTimezone($zone)->format('Y-m-d H:i')]) }}</p>
+                    @endif
+                    @if($envelope !== null && ! $inEnvelope && $status === App\Domain\Signing\SigningStatus::Pending)
+                        <p class="mt-2 text-sm text-gray-700" data-testid="signing-reminder-note">{{ $envelope->auto_reminders ? ($envelope->reminder_interval_days === null ? __('Påminner en gång före sista dag') : ($envelope->reminder_interval_days === 1 ? __('Påminner varje dag') : __('Påminner var :days:e dag', ['days' => $envelope->reminder_interval_days]))) : __('Inga automatiska påminnelser') }}</p>
+                    @endif
+                    @if($envelope !== null && ! $inEnvelope)
+                        @if($deadlineFor === $envelope->id)
+                            <form wire:submit="changeDeadline" class="mt-3 flex flex-wrap items-end gap-3" data-testid="signing-deadline-form">
+                                <x-ui.field for="signing-new-deadline-{{ $envelope->id }}" :label="__('Ny sista dag att signera')" error="expires_on" :hint="__('Mellan :min och :max dagar fram.', ['min' => $minDays, 'max' => $maxDays])">
+                                    <input id="signing-new-deadline-{{ $envelope->id }}" type="date" class="{{ $input }} mt-1" wire:model="newDeadline" required>
+                                </x-ui.field>
+                                <x-button wire:loading.attr="disabled">{{ __('Spara ny sista dag') }}</x-button>
+                                <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="cancelDeadline">{{ __('Avbryt') }}</button>
+                            </form>
+                        @endif
+                    @endif
                     @if($signing->signed_at && $isQuote && $signing->order_id === null && ! $inEnvelope)
                         <p class="mt-2 text-sm font-semibold text-accent-700">{{ __('Signerad – ordern är inte skapad') }}</p>
                     @endif

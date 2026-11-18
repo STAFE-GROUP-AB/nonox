@@ -61,6 +61,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?string $invoice_id
  * @property ?CarbonImmutable $followed_up_at
  * @property ?int $sent_by
+ * @property int $reminder_count reminders sent to this signer, automatic and manual (ADR-046 S9)
+ * @property ?CarbonImmutable $last_reminded_at
  * @property string $channel LINK (signed at /signera) or PORTAL (accepted by a signed-in customer portal contact)
  * @property ?int $portal_contact_id
  * @property ?CarbonImmutable $created_at
@@ -114,6 +116,7 @@ class SigningRequest extends Model
         'status' => 'PENDING',
         'channel' => 'LINK',
         'step' => 1,
+        'reminder_count' => 0,
     ];
 
     /** @var list<string> */
@@ -125,6 +128,8 @@ class SigningRequest extends Model
         return [
             'status' => SigningStatus::class,
             'step' => 'integer',
+            'reminder_count' => 'integer',
+            'last_reminded_at' => 'immutable_datetime',
             'expires_at' => 'immutable_datetime',
             'opened_at' => 'immutable_datetime',
             'signed_at' => 'immutable_datetime',
@@ -180,6 +185,12 @@ class SigningRequest extends Model
     public function envelope(): BelongsTo
     {
         return $this->belongsTo(SigningEnvelope::class, 'envelope_id');
+    }
+
+    /** @return HasMany<SigningLinkToken, $this> */
+    public function linkTokens(): HasMany
+    {
+        return $this->hasMany(SigningLinkToken::class, 'signing_request_id');
     }
 
     /** @return BelongsTo<Deal, $this> */

@@ -13,6 +13,7 @@ declare(strict_types=1);
 use App\Domain\Signing\SigningPdfs;
 use App\Domain\Signing\SigningStatus;
 use App\Mail\SignedDocumentMail;
+use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Modules\ModuleManager;
 use App\Modules\WorkOrders\Actions\CreateInvoiceBasis;
@@ -64,7 +65,8 @@ it('F1: sends the ÄTA for signing, locks its content, and approves it when the 
     expect($changeOrder->status)->toBe(ChangeOrderStatus::Sent)
         ->and($sent['request']->email)->toBe('eva@example.com')
         ->and($sent['request']->document_type)->toBe('ATA')
-        ->and($sent['request']->signable_id)->toBe((string) $changeOrder->id);
+        ->and($sent['request']->signable_id)->toBe((string) $changeOrder->id)
+        ->and(SigningEnvelope::query()->findOrFail($sent['request']->envelope_id)->auto_reminders)->toBeFalse();
 
     expect(fn () => DB::transaction(fn () => DB::table('change_orders')->where('id', $changeOrder->id)->update(['labour_ore' => 1])))->toThrow(QueryException::class);
 

@@ -6,6 +6,7 @@ namespace Database\Seeders\Demo\Extras;
 
 use App\Actions\Signing\SendForSigning;
 use App\Actions\Signing\SignAtLink;
+use App\Actions\Signing\SigningReminders;
 use App\Domain\Signing\SigningPdfs;
 use App\Models\SigningRequest;
 use App\Modules\Crm\Actions\CreateQuoteFromTemplate;
@@ -31,7 +32,8 @@ use Throwable;
  * at the customers (one signed through the signing flow, one renewing soon,
  * one terminated) and a prospect's agreement out for signing, a quote made
  * from a template and signed with a drawn signature (it became an order),
- * and an open quote out for signing.
+ * and an open quote out for signing. The envelope with two signers has had
+ * one automatic reminder, for the manual's page on deadlines and reminders.
  *
  * Every name and address is made up; e-mail addresses end in .test.
  */
@@ -192,6 +194,11 @@ final class CrmSigningExtras extends DemoExtra
             if ($first instanceof SigningRequest) {
                 $this->at(4, fn () => $this->guard($c, fn () => $this->signRequest(['request' => $first, 'url' => ''], 'Karin Exempelsson', 'VD', drawn: true)));
             }
+
+            // The second signer's link has been open three days, so the reminder rule fires yesterday afternoon (ADR-046 amendment, gap 9).
+            $this->at(1, function () use ($c): void {
+                $this->guard($c, fn () => app(SigningReminders::class)->run(CarbonImmutable::now()));
+            });
         }
 
         // A signed quote, three days ago: it became an order.

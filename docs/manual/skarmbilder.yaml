@@ -276,6 +276,7 @@ crm/lagg-till-i-kalendern: { foretag: konsult, rutt: crm.accounts.show, modell: 
 crm/planera-mote-med-inbjudan: { foretag: konsult, rutt: crm.accounts.show, modell: { tabell: crm_accounts, dar: { name: 'Kunden Exempel AB' } }, klick: ['text=Planera möte'], visa: '#activity_type' }
 crm/signering: { foretag: konsult, rutt: invoicing.quotes.show, modell: signed_quote, del: '[data-testid=crm-signing-panel]' }
 crm/fler-undertecknare: { foretag: konsult, rutt: invoicing.quotes.show, modell: envelope_quote, del: '[data-testid=crm-signing-panel]' }
+crm/signering-paminnelser: { foretag: konsult, rutt: invoicing.quotes.show, modell: envelope_quote, del: '[data-testid=crm-signing-panel]', klick: ['text=Ändra sista dag'] }
 crm/signera-offert: { foretag: konsult, rutt: signing.show, modell: signing_link, anvandare: gast, visa: '#signera' }
 crm/signera-offert-mobil: { foretag: konsult, rutt: signing.show, modell: signing_link, anvandare: gast, enhet: mobil }
 crm/offertmallar: { foretag: konsult, rutt: crm.quoteTemplates, klick: ['text=Ändra'] }

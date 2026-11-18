@@ -19,10 +19,11 @@ Offerter kan signeras med eller utan modulen CRM. Avtal finns i CRM och kräver 
 
 1. Öppna offerten under **Fakturering → Offerter**. Den ska vara öppen.
 2. Under **Signering**, skriv **E-post till den som ska signera**.
-3. Välj gärna **Sista dag att signera (frivilligt)**. Annars gäller länken till offertens giltighetsdag, eller i 30 dagar. Den gäller aldrig längre än 90 dagar.
+3. Välj gärna **Sista dag att signera (frivilligt)**. Annars gäller länken till offertens giltighetsdag, eller i 30 dagar. Dagen ska vara mellan 3 och 90 dagar fram, och aldrig efter offertens giltighetsdag. Mer om det under Sista dag och påminnelser nedan.
 4. Med CRM på: välj **Affär som vinns vid signering** om offerten hör till en affär. Har kunden bara en öppen affär är den redan vald.
 5. Bocka i **Gör också ett fakturautkast när offerten är signerad** om du vill fakturera direkt.
-6. Tryck på **Skicka för signering**.
+6. Under **Påminnelser** väljer du om NONOX ska påminna den som ska signera, och hur ofta.
+7. Tryck på **Skicka för signering**.
 
 Mejlet går ut med företagets namn som avsändare, och svarar kunden går svaret till företagets e-postadress. Länken kan användas en gång. Skickar du igen slutar den tidigare länken att gälla.
 
@@ -75,9 +76,27 @@ Varje natt räknar NONOX om alla kedjor och jämför dokumenten och signeringsbe
 
 För en avslutad signering står också **Händelsekedjans sista länk** med sin kontrollsumma.
 
+## Sista dag och påminnelser
+
+Sista dag att signera ligger mellan 3 och 90 dagar från idag, och slutar vid dagens slut. Väljer du ingen gäller offertens giltighetsdag, eller 30 dagar. Är offerten giltig kortare tid än 3 dagar blir dess sista giltiga dag också sista dag att signera.
+
+![Signering med en påminnelse som har skickats och formuläret för att ändra sista dag.](/bilder/manual/crm/signering-paminnelser.webp)
+
+**Påminnelser.** Under **Påminnelser** är **Påminn de som ska signera automatiskt, mellan 08 och 18 på dagtid** ibockat från början. Välj **Hur ofta**: varje dag, var 2:e, var 3:e (förvalt) eller var 7:e dag, eller **En gång, två dagar före sista dag**. NONOX skickar högst 10 påminnelser till en person, bara mellan 08 och 18 svensk tid, bara till den vars steg är öppet, och aldrig efter sista dag. Den som har signerat, avböjt eller fått länken återkallad påminns inte. Skickar du med mindre än två dagar kvar till sista dag går den första påminnelsen ut vid nästa körning inom tiderna 08–18. Tar du bort bocken skickas inga automatiska påminnelser. Dokument som skickas från API:t eller som ÄTA får inga automatiska påminnelser, men du kan använda **Påminn nu**.
+
+Varje påminnelse är ett eget mejl med en ny, personlig länk. De äldre länkarna gäller fram till sista dag. Under **Signering** står hur många påminnelser en undertecknare har fått och när den senaste skickades, och under **Händelser** står varje påminnelse.
+
+**Påminn nu.** Vid en undertecknare vars steg är öppet trycker du på **Påminn nu** och bekräftar. Samma person kan påminnas för hand högst en gång i timmen, och påminnelserna för hand räknas med i de högst 10 som en person kan få. En undertecknare vars steg inte har öppnats än får sin länk först när steget före har signerat.
+
+**Ändra sista dag.** Så länge dokumentet är ute trycker du på **Ändra sista dag**, väljer **Ny sista dag att signera** och trycker på **Spara ny sista dag**. Dagen räknas från idag, med samma gränser som när du skickade: 3–90 dagar, och inte efter offertens giltighetsdag. Du kan välja både en senare och en tidigare dag. De som kan signera just nu får ett mejl om den nya dagen. Ändringen sparas som en händelse med den gamla och den nya tiden.
+
+**När sista dag har gått.** Dokumentet kan inte längre signeras, och den som öppnar länken ser att den har gått ut. NONOX noterar utgången en gång under **Händelser** (**Gick ut**) och du som skickade får en notis. En offert kan då ändras och skickas på nytt. Sista dag kan inte ändras för ett dokument som har gått ut, eftersom ett nytt utskick är vägen vidare.
+
+Påminnelserna går som mejl från företaget genom NONOX och räknas mot företagets timgräns för mejl, men stoppas aldrig av den när signeringen väl har börjat. Är företaget ett testföretag lämnar inga mejl NONOX.
+
 ## Om offerten ändras
 
-Sista dag att signera kan inte vara efter offertens giltighetsdag. En offert som har ändrats efter att länken skickades går inte att signera: kunden ser att dokumentet har ändrats, och länken återkallas. Skicka en ny länk när offerten är klar. Så blir ordern alltid det som kunden faktiskt godkände.
+En offert som har ändrats efter att länken skickades går inte att signera: kunden ser att dokumentet har ändrats, och länken återkallas. Skicka en ny länk när offerten är klar. Så blir ordern alltid det som kunden faktiskt godkände.
 
 ## Återkalla en länk
 
@@ -92,7 +111,7 @@ Ska fler än en person skriva under, till exempel både VD och ordförande hos k
    - **I tur och ordning**: ge undertecknarna steg 1, 2, 3 och så vidare. Den i steg 2 får sin länk först när den i steg 1 har signerat.
    - **Samtidigt**: ge dem samma steg. Alla i steget får sin länk på en gång, och nästa steg får sin länk när alla i steget före har signerat.
 3. Vill du att någon ska få en kopia utan att signera, till exempel kundens ekonomiavdelning eller din revisor, tryck på **Lägg till kopiemottagare**. Högst 10. Bocka i **Meddela kopiemottagarna redan nu att dokumentet är skickat** om de ska få veta det direkt.
-4. Välj sista dag, affär och fakturautkast som för en undertecknare. Affären vinns och fakturautkastet görs först när alla har signerat.
+4. Välj sista dag, påminnelser, affär och fakturautkast som för en undertecknare. Affären vinns och fakturautkastet görs först när alla har signerat.
 5. Tryck på **Skicka till undertecknarna**. **En undertecknare** tar dig tillbaka till det vanliga formuläret.
 
 ![Signering med två undertecknare i tur och ordning och en kopiemottagare.](/bilder/manual/crm/fler-undertecknare.webp)

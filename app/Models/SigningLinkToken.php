@@ -30,6 +30,11 @@ class SigningLinkToken extends Model
 
     public const string SENT = 'SENT';
 
+    public const string REMINDER = 'REMINDER';
+
+    /** Times are written with their offset (ADR-046 S9): a reminder is due from the time the link was issued, also across the repeated autumn hour. */
+    protected $dateFormat = 'Y-m-d H:i:sP';
+
     /** @var list<string> */
     protected $fillable = [
         'company_id',

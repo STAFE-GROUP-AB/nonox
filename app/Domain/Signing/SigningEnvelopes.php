@@ -45,8 +45,9 @@ final class SigningEnvelopes
      * A new envelope for a document; inside the sending transaction, with the document locked.
      *
      * @param  array{path: string, name: string, sha256: string}  $file
+     * @param  array{auto: bool, interval: ?int}  $reminders  the sender's choice (ADR-046 S9); off when not given
      */
-    public function create(Signable $document, array $file, ?CarbonImmutable $deadline, ?int $userId): SigningEnvelope
+    public function create(Signable $document, array $file, ?CarbonImmutable $deadline, ?int $userId, array $reminders = ['auto' => false, 'interval' => null]): SigningEnvelope
     {
         $envelope = SigningEnvelope::create([
             ...$this->types->attributesFor($document),
@@ -56,6 +57,8 @@ final class SigningEnvelopes
             'document_sha256' => $file['sha256'],
             'content_hash' => $document->signingFingerprint(),
             'deadline_at' => $deadline,
+            'auto_reminders' => $reminders['auto'],
+            'reminder_interval_days' => $reminders['auto'] ? $reminders['interval'] : null,
             'created_by' => $userId,
             'sent_at' => now(),
         ]);
