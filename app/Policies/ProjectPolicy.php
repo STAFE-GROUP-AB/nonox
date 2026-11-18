@@ -66,4 +66,46 @@ class ProjectPolicy extends DimensionObjectPolicy
 
         return DimensionScope::for($user, $company)->allowsProject($project->id) ? true : Response::denyAsNotFound();
     }
+
+    /**
+     * Work in progress on projects at a balance sheet date (ADR-081 E8): the
+     * figures and draft vouchers span every project, so a member limited to
+     * cost centres or projects never reaches them.
+     */
+    public function proposeWip(User $user, Company $company): bool
+    {
+        return $user->hasTeamPermission($company, 'projects:view')
+            && $user->hasTeamPermission($company, 'vouchers:create')
+            && ! DimensionScope::limits($user, $company);
+    }
+
+    /** A project's billing plan, read (ADR-081 E8); not for limited members. */
+    public function viewBillingPlan(User $user, Project $project): bool
+    {
+        $company = Company::query()->find($project->company_id);
+
+        return $company instanceof Company
+            && ($user->hasTeamPermission($company, 'projects:view') || $user->hasTeamPermission($company, 'projects:manage') || $user->hasTeamPermission($company, 'accounts:manage'))
+            && ! DimensionScope::limits($user, $company);
+    }
+
+    /** Keeping a project's billing plan: whoever keeps the register (ADR-081 E8). */
+    public function manageBillingPlan(User $user, Project $project): bool
+    {
+        $company = Company::query()->find($project->company_id);
+
+        return $company instanceof Company
+            && ($user->hasTeamPermission($company, 'projects:manage') || $user->hasTeamPermission($company, 'accounts:manage'))
+            && ! DimensionScope::limits($user, $company);
+    }
+
+    /** Turning a milestone into a draft invoice: the billing plan read, and `invoices:create` (ADR-081 E8). */
+    public function invoiceMilestone(User $user, Project $project): bool
+    {
+        $company = Company::query()->find($project->company_id);
+
+        return $company instanceof Company
+            && $this->viewBillingPlan($user, $project)
+            && $user->hasTeamPermission($company, 'invoices:create');
+    }
 }

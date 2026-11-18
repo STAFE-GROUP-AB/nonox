@@ -10,6 +10,7 @@ use App\Domain\Accounting\StaleOpeningBalances;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Accruals\AccrualPlan;
 use App\Domain\Company\AccountingMethod;
+use App\Domain\Projects\ProjectWip;
 use App\Domain\Vat\VatPeriods;
 use App\Models\Account;
 use App\Models\Accrual;
@@ -119,6 +120,11 @@ final class ClosingChecklist
             // Arbetsorder (ADR-074 §7): ongoing work is proposed, never booked, so the point only reminds.
             if (app(ModuleManager::class)->isEnabled(WorkOrdersModule::KEY, $company)) {
                 $items[] = self::item('ongoing_work', __('Pågående arbeten är granskade'), __('Arbetsorder som pågår på balansdagen kan ge upparbetad men ej fakturerad intäkt eller förskott från kunder. Granska förslaget under Arbetsorder → Pågående arbeten och bokför det som stämmer. Ingenting bokförs automatiskt.'), self::WARN, 'workOrders.ongoing');
+            }
+
+            // Projects without a work order (ADR-081 E8): proposed, never booked, so the point only reminds.
+            if (ProjectWip::applies($fiscalYear->end_date)) {
+                $items[] = self::item('project_wip', __('Pågående projekt är granskade'), __('Projekt till fast pris som pågår på balansdagen kan ge upparbetad men ej fakturerad intäkt eller fakturerat i förskott. Granska förslaget under Bokslut → Pågående projekt och bokför det som stämmer. Ingenting bokförs automatiskt.'), self::WARN, 'accounting.projectWip');
             }
 
             foreach (self::MANUAL as $key => [$label, $detail]) {

@@ -69,6 +69,8 @@ use App\Models\PaymentResponse;
 use App\Models\PaymentResponseImport;
 use App\Models\PriorYearSizeFigure;
 use App\Models\Project;
+use App\Models\ProjectBillingMilestone;
+use App\Models\ProjectWipSnapshot;
 use App\Models\RecentItem;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceRow;
@@ -392,6 +394,8 @@ const COMPANY_SCOPED_MODELS = [
     IntercompanyCounterparty::class => 'intercompanyCounterpartyAttributes',
     IntercompanyRowTag::class => 'intercompanyRowTagAttributes',
     GroupAccountMap::class => 'groupAccountMapAttributes',
+    ProjectBillingMilestone::class => 'e8MilestoneAttributes',
+    ProjectWipSnapshot::class => 'e8WipSnapshotAttributes',
     CompanyHolding::class => ['held_org_number' => '556036-0793', 'held_name' => 'Hemligt Dotterbolag AB', 'capital_bp' => 10000, 'voting_bp' => 10000, 'control_basis' => 'VOTES', 'acquired_on' => '2024-01-01'],
     PriorYearSizeFigure::class => ['start_date' => '2024-01-01', 'end_date' => '2024-12-31', 'average_employees_fte' => '3.40', 'balance_sheet_total_ore' => 150_000_000, 'net_turnover_ore' => 300_000_000],
     ClosingCheck::class => 'closingCheckAttributes',
@@ -1034,6 +1038,25 @@ function intercompanyCounterpartyAttributes(): array
     $customer = Customer::create(['number' => (int) Customer::query()->max('number') + 1, 'name' => 'Hemligt koncernföretag AB', 'payment_terms_days' => 30]);
 
     return ['customer_id' => $customer->id, 'counterparty_org_number' => '556036-0793'];
+}
+
+/** A milestone of a billing plan on a project of the current company (ADR-081 E8). */
+function e8MilestoneAttributes(): array
+{
+    $project = Project::create(['code' => 'E8-'.random_int(1000, 9999), 'name' => 'Hemligt projekt']);
+
+    return ['project_id' => $project->id, 'position' => 1, 'description' => 'Hemlig etapp', 'amount_ore' => 1_000_000];
+}
+
+/** A WIP snapshot on a project of the current company (ADR-081 E8). */
+function e8WipSnapshotAttributes(): array
+{
+    $project = Project::create(['code' => 'E8W-'.random_int(1000, 9999), 'name' => 'Hemligt projekt']);
+
+    return [
+        'project_id' => $project->id, 'as_of' => '2026-12-31', 'method' => 'K2_MAIN', 'contract_ore' => 1_000_000,
+        'costs_ore' => 100_000, 'invoiced_ore' => 0, 'adjustment_ore' => 0, 'revenue_account' => 3001, 'created_by' => User::query()->value('id'),
+    ];
 }
 
 /** A tag on a row of a posted voucher of the current company; the trigger refuses drafts. */
@@ -2486,7 +2509,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [WorkshopWaitingFlag::class, MrpRun::class, PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class, StripeObject::class, DocumentVersion::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [ApprovalRequest::class, ApprovalDecision::class, ApprovalDelegation::class, WorkshopTimeEntry::class, WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];
+const APPEND_ONLY = [ApprovalRequest::class, ApprovalDecision::class, ApprovalDelegation::class, WorkshopTimeEntry::class, WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class, ProjectWipSnapshot::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

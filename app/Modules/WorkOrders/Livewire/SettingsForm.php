@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\WorkOrders\Livewire;
 
+use App\Actions\Projects\SetFixedPriceMethod;
 use App\Domain\Accounting\FiscalYearStatus;
 use App\Models\Company;
 use App\Models\FiscalYear;
@@ -57,7 +58,7 @@ class SettingsForm extends Component
         $settings = WorkOrdersSettings::for($company);
         $this->autoProject = (bool) $settings['auto_project'];
         $this->markup = rtrim(rtrim(number_format(((int) $settings['material_markup_bp']) / 100, 2, ',', ''), '0'), ',');
-        $this->fixedPriceMethod = (string) $settings['fixed_price_method'];
+        $this->fixedPriceMethod = WorkOrdersSettings::fixedPriceMethod($company)->value;
     }
 
     public function save(ModuleManager $modules): void
@@ -74,11 +75,20 @@ class SettingsForm extends Component
                 throw ValidationException::withMessages(['method' => __('Välj en metod.')]);
             }
 
+            if ($this->fixedPriceMethod !== WorkOrdersSettings::fixedPriceMethod($company)->value && ! $this->user()->hasTeamPermission($company, 'fiscal-years:manage')) {
+                throw ValidationException::withMessages(['method' => __('Metoden för fastprisuppdrag gäller hela företaget och ändras av den som hanterar räkenskapsåren.')]);
+            }
+
             $modules->updateSettings(WorkOrdersModule::KEY, $company, $this->user(), [
                 'auto_project' => $this->autoProject,
                 'material_markup_bp' => $markup,
                 'fixed_price_method' => $this->fixedPriceMethod,
             ]);
+
+            // The method is the company's, shared with the projects, and only whoever keeps the fiscal years changes it (ADR-081 E8).
+            if ($this->user()->hasTeamPermission($company, 'fiscal-years:manage')) {
+                app(SetFixedPriceMethod::class)($this->user(), $company, FixedPriceMethod::from($this->fixedPriceMethod));
+            }
         }, __('Inställningarna för arbetsorder är sparade.'), '');
 
         // K2 6.15 (review P3-7): one method for all fixed-price jobs, and a change needs special reasons. Advice only.

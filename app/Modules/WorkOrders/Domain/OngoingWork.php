@@ -22,6 +22,7 @@ use App\Modules\WorkOrders\WorkOrdersSettings;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 /**
@@ -66,11 +67,7 @@ final class OngoingWork
         return CurrentCompany::run($company, function () use ($company, $date, $estimatedCosts): array {
             $method = WorkOrdersSettings::fixedPriceMethod($company);
             $k1 = $company->reporting_framework === ReportingFramework::K1;
-            $workOrders = WorkOrder::query()
-                ->whereDate('created_at', '<=', $date->toDateString())
-                ->where(fn ($query) => $query->whereNotIn('status', [WorkOrderStatus::Closed->value, WorkOrderStatus::Cancelled->value])
-                    ->orWhere('closed_at', '>', $date->endOfDay()))
-                ->where('status', '<>', WorkOrderStatus::Cancelled->value)
+            $workOrders = self::countedOn(WorkOrder::query(), $date)
                 ->orderBy('number')
                 ->get();
 
@@ -101,6 +98,23 @@ final class OngoingWork
 
             return array_values(array_filter($result, fn (array $line): bool => array_filter($line['figures'], fn (?int $value): bool => (int) $value !== 0) !== []));
         });
+    }
+
+    /**
+     * The work orders this step counts on the balance sheet date: created by
+     * then, not cancelled, and not closed by then. The projects' step (ADR-081
+     * E8) leaves exactly these work orders' projects to this one.
+     *
+     * @param  Builder<WorkOrder>  $query
+     * @return Builder<WorkOrder>
+     */
+    public static function countedOn(Builder $query, CarbonImmutable $date): Builder
+    {
+        return $query
+            ->whereDate('work_orders.created_at', '<=', $date->toDateString())
+            ->where(fn ($inner) => $inner->whereNotIn('work_orders.status', [WorkOrderStatus::Closed->value, WorkOrderStatus::Cancelled->value])
+                ->orWhere('work_orders.closed_at', '>', $date->endOfDay()))
+            ->where('work_orders.status', '<>', WorkOrderStatus::Cancelled->value);
     }
 
     /**
@@ -162,7 +176,29 @@ final class OngoingWork
             ? $changeOrder->netOre()
             : (int) $entries->where('change_order_id', $changeOrder->id)->sum(fn (TimeEntry|MaterialEntry $entry): int => $entry->netOre()));
         $contract = (int) $workOrder->contract_sum_ore?->ore + $changes;
-        $degree = $estimated !== null && $estimated > 0 ? min(10_000, intdiv($costs * 10_000, $estimated)) : null;
+        $proposal = self::fixedPrice($contract, $costs, $estimated, $invoiced, $method, $k1, $revenue, (string) __('Välj metod för fastprisuppdrag under Arbetsorder → Inställningar för att få ett förslag.'));
+
+        return [
+            'work_order' => $workOrder,
+            'kind' => 'FIXED',
+            'figures' => ['contract' => $contract, 'change_orders' => $changes, 'costs' => $costs, 'estimated' => $estimated, 'degree_bp' => $proposal['degree_bp'], 'earned' => $proposal['earned'], 'invoiced' => $invoiced],
+            'rows' => $proposal['rows'],
+            'note' => $proposal['note'],
+        ];
+    }
+
+    /**
+     * The fixed-price proposal on the balance sheet date, shared by work
+     * orders and by projects without one (ADR-081 gap 6, E8): the degree of
+     * completion from the costs against the estimated total cost, the revenue
+     * to date, and the adjustment against what is invoiced, by the company's
+     * method. K1 and a method not chosen give figures only.
+     *
+     * @return array{degree_bp: ?int, earned: ?int, rows: list<array{account: int, debit_ore: int, credit_ore: int}>, note: ?string}
+     */
+    public static function fixedPrice(int $contract, int $costs, ?int $estimated, int $invoiced, FixedPriceMethod $method, bool $k1, int $revenue, string $notSetNote, bool $withChangeOrders = true): array
+    {
+        $degree = $estimated !== null && $estimated > 0 ? max(0, min(10_000, intdiv($costs * 10_000, $estimated))) : null;
         $earned = $degree === null ? null : intdiv($contract * $degree, 10_000);
         $rows = [];
         $note = null;
@@ -170,7 +206,7 @@ final class OngoingWork
         if ($k1) {
             $note = (string) __('K1: siffrorna visas utan förslag till verifikation.');
         } elseif ($method === FixedPriceMethod::NotSet) {
-            $note = (string) __('Välj metod för fastprisuppdrag under Arbetsorder → Inställningar för att få ett förslag.');
+            $note = $notSetNote;
         } elseif ($method->recognisesProgress() && $earned === null) {
             $note = (string) __('Skriv den beräknade totala kostnaden för att räkna ut färdigställandegraden.');
         } elseif ($method->recognisesProgress()) {
@@ -189,17 +225,13 @@ final class OngoingWork
 
         // A probable loss is expensed at once (K2 6.19, review P3-7): advice only, never a proposal. TODO(legal-verify): L13.
         if ($estimated !== null && $estimated > $contract) {
-            $loss = (string) __('Den beräknade totala kostnaden är :loss högre än priset med ÄTA. En befarad förlust ska kostnadsföras direkt (K2 6.19); förslaget tar inte med den, så bedöm den med din redovisningskonsult.', ['loss' => Money::ofOre($estimated - $contract)->format()]);
+            $loss = $withChangeOrders
+                ? (string) __('Den beräknade totala kostnaden är :loss högre än priset med ÄTA. En befarad förlust ska kostnadsföras direkt (K2 6.19); förslaget tar inte med den, så bedöm den med din redovisningskonsult.', ['loss' => Money::ofOre($estimated - $contract)->format()])
+                : (string) __('Den beräknade totala kostnaden är :loss högre än kontraktssumman. En befarad förlust ska kostnadsföras direkt (K2 6.19); förslaget tar inte med den, så bedöm den med din redovisningskonsult.', ['loss' => Money::ofOre($estimated - $contract)->format()]);
             $note = $note === null ? $loss : "{$note} {$loss}";
         }
 
-        return [
-            'work_order' => $workOrder,
-            'kind' => 'FIXED',
-            'figures' => ['contract' => $contract, 'change_orders' => $changes, 'costs' => $costs, 'estimated' => $estimated, 'degree_bp' => $degree, 'earned' => $earned, 'invoiced' => $invoiced],
-            'rows' => $rows,
-            'note' => $note,
-        ];
+        return ['degree_bp' => $degree, 'earned' => $earned, 'rows' => $rows, 'note' => $note];
     }
 
     /**
@@ -209,7 +241,7 @@ final class OngoingWork
      * @param  array<int, int>  $projectIds
      * @return array<int, int>
      */
-    private static function projectCosts(array $projectIds, CarbonImmutable $date): array
+    public static function projectCosts(array $projectIds, CarbonImmutable $date): array
     {
         if ($projectIds === []) {
             return [];

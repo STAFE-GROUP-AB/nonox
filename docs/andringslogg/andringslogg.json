@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-pagaende-projekt-och-faktureringsplan",
+      "datum": "2026-11-18T13:40:00+01:00",
+      "rubrik": "Pågående projekt och faktureringsplan",
+      "beskrivning": "Under Bokslut → Pågående projekt räknar NONOX ut upparbetat men ej fakturerat, och fakturerat i förskott, för projekt till fast pris utan arbetsorder, och föreslår två verifikationsutkast som du själv granskar och bokför. På projektets sida lägger du upp en faktureringsplan med delfaktureringar, och Fakturera gör ett fakturautkast till projektets kund med projektet på raden. Metoden för fastprisuppdrag gäller nu hela företaget, både projekt och arbetsorder.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-18-behovsplanering",
       "datum": "2026-11-18T11:25:00+01:00",
       "rubrik": "Behovsplanering vecka för vecka",
