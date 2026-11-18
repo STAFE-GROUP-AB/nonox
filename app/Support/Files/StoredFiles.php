@@ -67,6 +67,8 @@ final class StoredFiles
         'change_orders' => 'decided_document_path',
         'boardroom_minutes' => 'pdf_path',
         'document_versions' => 'path',
+        // A standalone document uploaded for signing (ADR-046 S7).
+        'signing_documents' => 'path',
     ];
 
     /**

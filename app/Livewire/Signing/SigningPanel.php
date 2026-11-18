@@ -305,6 +305,7 @@ class SigningPanel extends Component
             'maxDays' => SigningDeadlines::MAX_DAYS,
             'maxReminders' => SigningDeadlines::MAX_REMINDERS,
             'canSend' => $this->canSend($document),
+            'wizardUrl' => $this->wizardUrl($document),
             'deals' => $this->openDeals($document),
             'open' => $document->signingIsOpen() && ! ($isQuote && SignedDocuments::isQuoteSigned($document->id)),
             'canInvoice' => $isQuote && $user->hasTeamPermission($this->company(), 'invoices:create'),
@@ -358,6 +359,22 @@ class SigningPanel extends Component
         }
 
         return Deal::query()->where('account_id', $accountId)->where('status', DealStatus::Open->value)->orderBy('title')->get(['id', 'title']);
+    }
+
+    /**
+     * "Fler undertecknare" opens the send wizard of the Signering module for
+     * this document (ADR-046 amendment, gaps 1 and 10) when the module is on
+     * and the member may send there; otherwise the panel keeps its own form.
+     */
+    private function wizardUrl(Signable $document): ?string
+    {
+        $company = $this->company();
+
+        if (! app(ModuleManager::class)->isEnabled('signing', $company) || ! $this->user()->hasTeamPermission($company, 'signing:send')) {
+            return null;
+        }
+
+        return route('signing.new', ['typ' => $document->signingType(), 'dokument' => $document->signingKey()]);
     }
 
     private function canSend(Signable $document): bool

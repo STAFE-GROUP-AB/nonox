@@ -1860,3 +1860,76 @@ before the trust-service item in gap 5 is answered.
 - A reminder's token does not revoke earlier tokens (all stay valid to the deadline). `SigningReminderMail` carries the URL like `SigningRequestMail` does. `SigningRequest` already writes times with offset.
 - Open items: reminders by SMS and a deadline per signer stay out of scope;
   a reminder for an envelope sent through the API waits for S19.
+
+### S7 as built (2026-11-18): the module Signering
+
+- **Module** `App\Modules\Signing\SigningModule` (key `signing`, added to
+  `ModuleRegistry::FIRST_PARTY`), provider `SigningModuleServiceProvider`
+  (the core's `App\Providers\SigningServiceProvider` is untouched). Permissions
+  `signing:view`, `signing:send`, `signing:manage` as in gap 10's table
+  (`sales` is the CRM role; the approver gets nothing); `signing:view` is an
+  archive permission. `signing:settings` and `signing:privacy` come with S16.
+  The new strings must still be added to AGENTS.md §4 by a human-approved edit.
+- **Migrations:** `database/migrations/2027_03_05_100000_add_confidential_to_signing_envelopes.php`
+  (core: `signing_envelopes.confidential`, fixed from sending by a new trigger
+  `signing_envelopes_protect_confidential`) and the module's
+  `2027_03_05_100100_create_signing_documents_table.php` (uuid key,
+  `company_id`, title, path, name, sha256, bytes, page_count, nullable
+  `customer_id`/`supplier_id`, `uploaded_by`, `archived_at`). Triggers fix the
+  file columns and refuse deleting a document that has an envelope (except by
+  the company cascade). Grant decision `ReadWrite`: the app deletes a document
+  that was never sent (**deviation:** gap 10 lists only `archived_at`; a mistaken
+  upload that may hold personal data must be removable, art. 5.1 e). The path is
+  registered in `StoredFiles::REFERENCES`.
+- **`DOCUMENT` type:** `SigningDocument` is a `Signable` (key in `signable_id`,
+  fingerprint = the file's SHA-256) and a new core interface
+  `App\Domain\Signing\RestrictsEnvelopes` (who may see an envelope; who may
+  remind, move or withdraw it). The engine asks the document, so no module is
+  named in the core: `SendForSigning::authorizeAct` is used by void, revoke,
+  `ChangeSigningDeadline` and `SigningReminders::manual`, and
+  `SigningFileController` answers for a document that implements it, also while
+  the module is off for a signed one (the archive). `signingIsOpen` is true until
+  the envelope is completed, so a later signer of a several-signer envelope can
+  still sign.
+- **Upload checks** (`StoreSigningDocument`): size, the `%PDF-` header, the type
+  by content (`finfo`), then `PdfEngine::inspect()->assertAcceptable()` (page
+  count, encryption, JavaScript, launch, embedded files, XFA, submit and
+  import actions), and the stored bytes must be the inspected ones (SHA-256).
+  **Without the engine nothing is uploaded** ("Kräver PDF-motorn"): a PDF
+  cannot be judged safe from its first bytes. The first wizard step is an ordinary
+  form post (`UploadController`), not a Livewire upload: Livewire's temporary
+  upload allows 12 MB for every component, and decision 22 says 20 MB. The stored
+  name is sanitised; the audit entry holds ids, pages and bytes only. A
+  `sandbox` CSP is not set on the file response: Chrome refuses to show a PDF
+  in a sandboxed frame, and no iframe is used (the pages link to the file).
+- **Pages:** `/signering` (list) and `/signering/{envelope}` are outside
+  `module:signing` so the archive works; they show only signed standalone
+  documents while the module is off. `/signering/ny` (wizard and upload post) is
+  behind the module. `EnvelopeVisibility` is the one rule, as a query and as a
+  check: standalone documents with `signing:view` (a confidential one only to its
+  sender and `signing:manage`), quotes with `invoices:view`, agreements with
+  `crm:view` and CRM on, ÄTA with `work-orders:view` and Arbetsorder on. The routes
+  are named `signing.*`, so limited members are refused
+  (`DimensionScopeRegistry`). The list, the envelope page and their filters run a
+  fixed number of queries (a query-count test with one and with ten
+  envelopes and signers).
+- **Wizard:** Dokument, Undertecknare, Kontroller, Tid och påminnelser, Granska
+  och skicka (the field step comes with S8). It sends through
+  `SendForSigning::envelope(…, minSigners: 1)`, so one to ten signers go
+  through the same code, limits and checks as "Fler undertecknare". A standalone
+  document defaults to an e-mail code (decision 9), a quote or an agreement to
+  none. Opened from a quote's or an agreement's panel it carries the deal and
+  the invoice draft. "Fler undertecknare" in `SigningPanel` links to it while the
+  module is on and the member may send there; otherwise the panel keeps its own form.
+- **Confidential envelopes:** the choice is made when sending and fixed by a
+  trigger; only a document that implements `RestrictsEnvelopes` can be
+  confidential (a quote cannot). The company's copy (with prices and every
+  certificate) of a confidential envelope goes to its sender only, never to a
+  shared company address (`SigningFollowUp::mailCompanyCopy`).
+- **Engine changes (S1 gap):** one signer with copy recipients now gets the copies
+  at completion (`mailEnvelopeCopies(…, toSigners: false)`): before, copy
+  recipients were mailed only for envelopes with several signers.
+- `TODO(legal-verify)`: how long an uploaded document that is never sent may stay
+  (proposal: 90 days, S16); the legal text of the acceptance sentence "Jag har läst
+  dokumentet och godkänner det."; whether a personnel document sent for signing
+  should follow the rules for personnel documents in Dokument.

@@ -1,0 +1,125 @@
+@php
+    $input = 'block min-h-11 sm:min-h-0 border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
+@endphp
+
+<div class="space-y-6" data-testid="signing-envelope-page">
+    <div>
+        <a href="{{ route('signing.envelopes') }}" class="text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Alla signeringar') }}</a>
+        <div class="mt-2 flex flex-wrap items-center gap-3">
+            <h1 class="text-2xl font-semibold text-ink">{{ $envelope->title }}</h1>
+            <x-ui.badge :tone="$status->tone()">{{ $status->label() }}</x-ui.badge>
+            @if($envelope->confidential)
+                <x-ui.badge tone="warning" data-testid="signing-confidential">{{ __('Konfidentiell') }}</x-ui.badge>
+            @endif
+        </div>
+        <p class="mt-1 text-sm text-gray-600">
+            {{ $typeLabel }} · {{ __('Skickad :time av :name', ['time' => $envelope->sent_at?->setTimezone($zone)->format('Y-m-d H:i') ?? '–', 'name' => $envelope->creator?->name ?? '–']) }}
+            @if($envelope->deadline_at) · {{ __('Sista dag att signera :date', ['date' => $envelope->deadline_at->setTimezone($zone)->format('Y-m-d')]) }}@endif
+        </p>
+        @if($envelope->confidential)
+            <p class="mt-1 text-sm text-gray-600">{{ __('Den här signeringen syns bara för den som skickade den och för den som hanterar signering.') }}</p>
+        @endif
+        @if($link || $register['customer'] || $register['supplier'])
+            <p class="mt-1 text-sm text-gray-700">
+                @if($link)<a href="{{ $link['url'] }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $link['label'] }}</a>@endif
+                @if($register['customer'])@if($link) · @endif{{ __('Kund: :name', ['name' => $register['customer']]) }}@endif
+                @if($register['supplier'])@if($link || $register['customer']) · @endif{{ __('Leverantör: :name', ['name' => $register['supplier']]) }}@endif
+            </p>
+        @endif
+    </div>
+
+    <x-ui.card :title="__('Undertecknare')" :description="__('Undertecknare med samma steg signerar samtidigt. Nästa steg får sin länk när alla i steget före har signerat.')">
+        @if($canAct && $status === App\Domain\Signing\EnvelopeStatus::Out)
+            <div class="mt-4 flex flex-wrap items-center gap-4" data-testid="signing-envelope-actions">
+                <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="editDeadline">{{ __('Ändra sista dag') }}</button>
+                <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="voidEnvelope" wire:confirm="{{ __('Dra tillbaka dokumentet? Alla länkar slutar gälla, och de som inte har signerat ser att dokumentet är tillbakadraget.') }}">{{ __('Dra tillbaka') }}</button>
+            </div>
+            @if($newDeadline !== null)
+                <form wire:submit="changeDeadline" class="mt-3 flex flex-wrap items-end gap-3" data-testid="signing-deadline-form">
+                    <x-ui.field for="envelope-new-deadline" :label="__('Ny sista dag att signera')" error="expires_on" :hint="__('Mellan :min och :max dagar fram.', ['min' => $minDays, 'max' => $maxDays])">
+                        <input id="envelope-new-deadline" type="date" class="{{ $input }} mt-1" wire:model="newDeadline" required>
+                    </x-ui.field>
+                    <x-button wire:loading.attr="disabled">{{ __('Spara ny sista dag') }}</x-button>
+                    <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="cancelDeadline">{{ __('Avbryt') }}</button>
+                </form>
+            @endif
+        @endif
+
+        <div class="mt-4 overflow-x-auto">
+            <table class="w-full min-w-[40rem] text-sm" data-testid="signing-signers">
+                <thead>
+                    <tr class="border-b border-gray-200 text-left text-gray-600">
+                        <th scope="col" class="py-2 pr-3 font-medium">{{ __('Steg') }}</th>
+                        <th scope="col" class="py-2 pr-3 font-medium">{{ __('Undertecknare') }}</th>
+                        <th scope="col" class="py-2 pr-3 font-medium">{{ __('Kontroll') }}</th>
+                        <th scope="col" class="py-2 pr-3 font-medium">{{ __('Status') }}</th>
+                        <th scope="col" class="py-2 font-medium">{{ __('Filer') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($signers as $signer)
+                        @php($signerStatus = $signer->effectiveStatus())
+                        <tr wire:key="signer-{{ $signer->id }}" class="border-b border-gray-100 align-top">
+                            <td class="py-3 pr-3 tabular-nums">{{ $signer->step }}</td>
+                            <td class="py-3 pr-3">
+                                {{ $signer->email }}
+                                @if($signer->signed_at)
+                                    <span class="block text-gray-600">{{ __('Signerade :time som :name', ['time' => $signer->signed_at->setTimezone($zone)->format('Y-m-d H:i'), 'name' => $signer->signer_name]) }}@if($signer->signer_title), {{ $signer->signer_title }}@endif</span>
+                                @endif
+                                @if($signer->declined_at)
+                                    <span class="block text-gray-600">{{ __('Avböjde :time', ['time' => $signer->declined_at->setTimezone($zone)->format('Y-m-d H:i')]) }}@if($signer->decline_reason): ”{{ $signer->decline_reason }}”@endif</span>
+                                @endif
+                                @if($signerStatus === App\Domain\Signing\SigningStatus::Pending && $signer->reminder_count > 0)
+                                    <span class="block text-gray-600" data-testid="signing-reminded">{{ trans_choice('{1} :count påminnelse skickad, senast :time|[2,*] :count påminnelser skickade, senast :time', $signer->reminder_count, ['count' => $signer->reminder_count, 'time' => $signer->last_reminded_at?->setTimezone($zone)->format('Y-m-d H:i')]) }}</span>
+                                @endif
+                            </td>
+                            <td class="py-3 pr-3">
+                                {{ $signer->verification->label() }}
+                                @if($signer->locked_at !== null && $signerStatus === App\Domain\Signing\SigningStatus::Pending)
+                                    <span class="block font-semibold text-red-700">{{ __('låst efter för många felaktiga försök') }}</span>
+                                    @if($canAct)
+                                        <button type="button" class="min-h-11 text-sm font-normal text-gray-700 underline sm:min-h-0" wire:click="unlock({{ $signer->id }})" wire:confirm="{{ __('Lås upp länken? Undertecknaren får försöka igen. Gör det bara om du vet att det var undertecknaren som skrev fel.') }}" data-testid="signing-unlock">{{ __('Lås upp') }}</button>
+                                    @endif
+                                @elseif($signer->verified_at)
+                                    <span class="block text-gray-600">{{ __('godkänd :time', ['time' => $signer->verified_at->setTimezone($zone)->format('Y-m-d H:i')]) }}</span>
+                                @endif
+                            </td>
+                            <td class="py-3 pr-3">
+                                <x-ui.badge :tone="$signerStatus->tone()">{{ $signerStatus->label() }}</x-ui.badge>
+                                @if($canAct && $signerStatus === App\Domain\Signing\SigningStatus::Pending && $signer->channel === 'LINK' && $signer->step <= $envelope->current_step)
+                                    <button type="button" class="ms-2 min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="remind({{ $signer->id }})" wire:confirm="{{ __('Skicka en påminnelse med en ny länk till :email?', ['email' => $signer->email]) }}" data-testid="signing-remind-now">{{ __('Påminn nu') }}</button>
+                                @endif
+                            </td>
+                            <td class="py-3">
+                                <a href="{{ route('signing.file', ['signing' => $signer->id, 'file' => 'dokument']) }}" class="block font-medium text-accent-600 hover:text-accent-700">{{ __('PDF:en som skickades') }}</a>
+                                @if($signer->signed_document_path)
+                                    <a href="{{ route('signing.file', ['signing' => $signer->id, 'file' => 'signeringsbevis']) }}" class="block font-medium text-accent-600 hover:text-accent-700">{{ __('Signeringsbevis') }}</a>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        <x-input-error for="signing" class="mt-2" />
+        <x-input-error for="expires_on" class="mt-2" />
+
+        @if($copies->isNotEmpty())
+            <div class="mt-4 text-sm text-gray-700" data-testid="signing-copies">
+                <h3 class="font-semibold text-gray-900">{{ __('Kopiemottagare') }}</h3>
+                <p>{{ $copies->pluck('email')->implode(', ') }}</p>
+            </div>
+        @endif
+        <p class="mt-4 break-all text-xs text-gray-600">{{ __('SHA-256: :hash', ['hash' => $envelope->document_sha256]) }}</p>
+    </x-ui.card>
+
+    <x-ui.card :title="__('Händelser')">
+        <ol class="mt-3 space-y-1 text-sm" data-testid="signing-timeline">
+            @forelse($events as $event)
+                <li class="tabular-nums text-gray-700">{{ $event->created_at->setTimezone($zone)->format('Y-m-d H:i') }} · {{ $event->event->label() }}@if($emails->has($event->signing_request_id)) · {{ $emails[$event->signing_request_id] }}@endif</li>
+            @empty
+                <li class="text-gray-600">{{ __('Inga händelser än.') }}</li>
+            @endforelse
+        </ol>
+    </x-ui.card>
+</div>

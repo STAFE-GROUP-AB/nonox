@@ -95,7 +95,7 @@ final class SigningReminders
     {
         $document = $signer->document();
         abort_unless($document instanceof Signable, 404);
-        $document->authorizeSigning($user, revoke: true);
+        SendForSigning::authorizeAct($document, $user, $signer->envelope_id === null ? null : SigningEnvelope::query()->find($signer->envelope_id));
 
         $now = CarbonImmutable::now();
 
@@ -168,6 +168,11 @@ final class SigningReminders
             $document = $probe?->document(lock: true);
 
             if (! $probe instanceof SigningRequest || ! $document instanceof Signable) {
+                return null;
+            }
+
+            // A link whose document's module is off is refused by the signing page, so no reminder is mailed for it.
+            if (! SendForSigning::moduleOn($document, $probe->company_id)) {
                 return null;
             }
 
@@ -249,6 +254,12 @@ final class SigningReminders
 
         if (! $signer instanceof SigningRequest || ! $envelope instanceof SigningEnvelope) {
             return __('Undertecknaren finns inte.');
+        }
+
+        $document = $signer->document();
+
+        if ($document instanceof Signable && ! SendForSigning::moduleOn($document, $signer->company_id)) {
+            return __('Modulen för dokumentet är avstängd, så länken fungerar inte. Slå på modulen för att kunna påminna.');
         }
 
         return $this->refusal($envelope, $signer, $now, self::MANUAL) ?? __('Påminnelsen kunde inte skickas. Försök igen.');

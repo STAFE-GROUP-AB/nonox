@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-signering-modul",
+      "datum": "2026-11-18T15:10:00+01:00",
+      "rubrik": "Modulen Signering: egna PDF-dokument och en lista över alla signeringar",
+      "beskrivning": "Med modulen Signering kan du ladda upp en egen PDF, till exempel ett anställningsavtal, och skicka den för signering i en guide med flera undertecknare i vald ordning, kontroll av undertecknaren, kopiemottagare och påminnelser. Under Signering ser du alla signeringar, även offerter, avtal och ÄTA, och en signering kan göras konfidentiell så att bara du och den som hanterar signering ser den. Från Fler undertecknare på en offert eller ett avtal öppnas samma guide.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-18-signering-kontroll",
       "datum": "2026-11-18T15:00:00+01:00",
       "rubrik": "Kontrollera den som signerar med en kod",

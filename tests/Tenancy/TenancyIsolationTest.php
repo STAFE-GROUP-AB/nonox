@@ -326,6 +326,7 @@ use App\Modules\Saas\Stripe\Models\StripeCustomerLink;
 use App\Modules\Saas\Stripe\Models\StripeEvent;
 use App\Modules\Saas\Stripe\Models\StripeObject;
 use App\Modules\Saas\Stripe\Models\StripeSyncRun;
+use App\Modules\Signing\Models\SigningDocument;
 use App\Modules\StaffLedger\Models\Device as StaffLedgerDevice;
 use App\Modules\StaffLedger\Models\Entry as StaffLedgerEntry;
 use App\Modules\StaffLedger\Models\Location as StaffLedgerLocation;
@@ -651,6 +652,8 @@ const COMPANY_SCOPED_MODELS = [
     SigningLinkToken::class => 'signingLinkTokenAttributes',
     SigningCopyRecipient::class => 'signingCopyRecipientAttributes',
     SigningDocumentVersion::class => 'signingDocumentVersionAttributes',
+    // A standalone document uploaded for signing (ADR-046 S7).
+    SigningDocument::class => ['title' => 'Hemligt avtal', 'path' => 'signing-documents/hemligt.pdf', 'name' => 'Hemligt.pdf', 'sha256' => '0000000000000000000000000000000000000000000000000000000000000000', 'bytes' => 100, 'page_count' => 1],
     SigningVerificationCode::class => 'signingVerificationCodeAttributes',
     // The stored issued invoice PDF and the customer portal (ADR-075).
     InvoiceDocument::class => 'invoiceDocumentAttributes',

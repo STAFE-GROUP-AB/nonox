@@ -186,7 +186,11 @@
             <div class="sm:col-span-2">
                 <div class="flex flex-wrap items-center gap-4">
                     <x-button wire:loading.attr="disabled">{{ __('Skicka för signering') }}</x-button>
-                    <button type="button" class="min-h-11 text-sm font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="severalSigners">{{ __('Fler undertecknare') }}</button>
+                    @if($wizardUrl)
+                        <a href="{{ $wizardUrl }}" class="inline-flex min-h-11 items-center text-sm font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" data-testid="signing-several-wizard">{{ __('Fler undertecknare') }}</a>
+                    @else
+                        <button type="button" class="min-h-11 text-sm font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="severalSigners">{{ __('Fler undertecknare') }}</button>
+                    @endif
                 </div>
                 <p class="mt-2 text-sm text-gray-600">{{ __('Ett mejl med en personlig länk går till adressen. Länken kan användas en gång. En tidigare länk för samma dokument slutar gälla.') }}</p>
             </div>

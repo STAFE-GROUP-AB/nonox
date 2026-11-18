@@ -92,6 +92,12 @@ crm:
   for: foretag
   modul: crm
   ikon: users
+signering:
+  titel: Signering
+  beskrivning: Egna PDF-dokument för signering med flera undertecknare i vald ordning, kontroll av undertecknaren, påminnelser, konfidentiella signeringar och en lista över alla signeringar.
+  for: foretag
+  modul: signing
+  ikon: pen
 aktiebok:
   titel: Aktiebok och styrelserum
   beskrivning: Aktieboken med historik, aktieägare och bolagsordning, årsstämma och styrelsemöten med kallelse och protokoll, och det som ska anmälas till Bolagsverket.

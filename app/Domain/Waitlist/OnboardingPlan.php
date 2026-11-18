@@ -38,6 +38,7 @@ final readonly class OnboardingPlan
         'kitchen' => 'kok',
         'manufacturing' => 'tillverkning',
         'work_orders' => 'fakturering/arbetsorder',
+        'signing' => 'signering',
         'portal' => 'fakturering/kundportal',
         'crm' => 'crm',
         'inbox' => 'leverantorer/inkorgen',
