@@ -15,10 +15,22 @@ are not obvious from the code. Read both before the first change.
    `nonox_demo_<topic>` for demo data and screenshots. `php artisan migrate --force` creates
    a missing database (`createdb` may not be installed). `php artisan serve` needs
    `--no-reload` to keep env overrides.
-3. **Run the full suite with the database session in UTC** before you call anything done:
-   `PGTZ=UTC DB_DATABASE=nonox_test php -d memory_limit=1G vendor/bin/pest` (sequential). CI's PostgreSQL runs in
-   UTC; local machines usually do not. NONOX itself is fixed to `Europe/Stockholm` in
+3. **Run the full suite with the database session in UTC** before you call anything done. The full
+   suite is **two steps**: a parallel run, then the sequential group `sequential`
+   (PostgreSQL roles are cluster-wide, and the demo tests share files under `storage/` and rebuild the demo schema, so neither can run concurrently; `tests/Pest.php` lists the files; Pest takes one group name per option, so a new roles test file must be added there):
+   ```bash
+   PGTZ=UTC DB_DATABASE=nonox_test php -d memory_limit=1G vendor/bin/pest --parallel --processes=8 --passthru-php="-d memory_limit=1G" --exclude-group=sequential
+   PGTZ=UTC DB_DATABASE=nonox_test php -d memory_limit=1G vendor/bin/pest --group=sequential
+   ```
+   CI's PostgreSQL runs in UTC; local machines usually do not. NONOX itself is fixed to `Europe/Stockholm` in
    `config/app.php` and `config/database.php` — never make the time zone configurable.
+   A run without a `Tests:` line is not a green run; check both steps. Parallel workers do not inherit `php -d`, hence
+   `--passthru-php`; without it a worker dies at 256 MB ("WorkerCrashedException").
+   Parallel testing (Laravel's `DatabaseTransactions` hook, see `Illuminate\Testing\Concerns\TestDatabases`) creates
+   and migrates one database per process, `<DB_DATABASE>_test_<n>`, by itself; the base database
+   `DB_DATABASE` must exist and the database user must be allowed to `CREATE DATABASE`. `tests/TestCase.php` does the same
+   for the demo database (`<DB_DATABASE>_test_<n>_demo`). Those per-process databases are disposable
+   (add `--recreate-databases` only when you want them rebuilt, never against anything else).
 4. **Pushing to `main` deploys the hosted service.** Work on a branch; merge only what is
    tested and reviewed; after a push, check GitHub Actions (`gh run list --branch main`)
    until it is green.
@@ -71,7 +83,8 @@ DB_DATABASE=nonox_test vendor/bin/pest --dirty
 
 # before calling it done (once, after the last change)
 grep -rl RefreshDatabase tests/
-PGTZ=UTC DB_DATABASE=nonox_test php -d memory_limit=1G vendor/bin/pest   # full suite, sequential
+PGTZ=UTC DB_DATABASE=nonox_test php -d memory_limit=1G vendor/bin/pest --parallel --processes=8 --passthru-php="-d memory_limit=1G" --exclude-group=sequential   # full suite, step 1 (parallel)
+PGTZ=UTC DB_DATABASE=nonox_test php -d memory_limit=1G vendor/bin/pest --group=sequential                                  # full suite, step 2 (sequential roles + demo tests)
 vendor/bin/phpstan analyse --memory-limit=2G
 vendor/bin/pint --test
 npm test && npm run build

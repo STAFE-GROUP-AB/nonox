@@ -370,7 +370,8 @@ it('tells the assistant that tool results are data, not instructions', function 
 });
 
 it('has no /api/mcp route at all while the switch is off, which is the default', function () {
-    $_ENV['NONOX_MCP_ENABLED'] = 'false';
+    // $_SERVER too: under `pest --parallel` the worker inherits the variable in the real environment, and Laravel reads $_SERVER first.
+    $_ENV['NONOX_MCP_ENABLED'] = $_SERVER['NONOX_MCP_ENABLED'] = 'false';
     putenv('NONOX_MCP_ENABLED=false');
 
     try {
@@ -382,7 +383,7 @@ it('has no /api/mcp route at all while the switch is off, which is the default',
         $this->postJson('/api/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list'])->assertNotFound();
         $this->getJson('/api/mcp')->assertNotFound();
     } finally {
-        $_ENV['NONOX_MCP_ENABLED'] = 'true';
+        $_ENV['NONOX_MCP_ENABLED'] = $_SERVER['NONOX_MCP_ENABLED'] = 'true';
         putenv('NONOX_MCP_ENABLED=true');
     }
 });
@@ -406,7 +407,7 @@ it('ships with the MCP server switched off when NONOX_MCP_ENABLED is not set', f
 
         expect($config['mcp_enabled'])->toBeFalse();
     } finally {
-        $_ENV['NONOX_MCP_ENABLED'] = $saved ?? 'true';
+        $_ENV['NONOX_MCP_ENABLED'] = $_SERVER['NONOX_MCP_ENABLED'] = $saved ?? 'true';
         putenv('NONOX_MCP_ENABLED='.($saved ?? 'true'));
     }
 });
