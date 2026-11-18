@@ -131,6 +131,11 @@
         </x-ui.card>
 
         <livewire:accounting.voucher-actions :voucher="$voucher" />
+
+        {{-- The company's own approval of a manual draft (ADR-081 E21); not for a member limited to cost centres or projects. --}}
+        @if(! $voucher->isPosted() && App\Domain\Approval\DraftApprovals::isManualVoucher($voucher) && ! App\Support\Tenancy\DimensionScope::limits(auth()->user(), $voucher->company_id))
+            <livewire:approval.draft-approval-card type="MANUAL_VOUCHER" :draft-id="$voucher->id" />
+        @endif
         </div>
 
         <livewire:accounting.voucher-attachments :voucher="$voucher" />

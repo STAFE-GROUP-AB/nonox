@@ -17,6 +17,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceRow;
 use App\Models\InvoiceTaxReductionBuyer;
 use App\Models\User;
+use App\Support\Audit\Audit;
 use App\Support\Currency\ExchangeRate;
 use App\Support\Currency\RiksbankRates;
 use App\Support\Tenancy\CurrentCompany;
@@ -282,6 +283,11 @@ class SaveDraftInvoice
 
             foreach ($buyerDeductions as $buyer) {
                 InvoiceTaxReductionBuyer::create(['invoice_id' => $invoice->id, ...$buyer]);
+            }
+
+            // Everyone who saves a credit draft counts as one of its preparers in an approval (ADR-081 E21, DraftEditors).
+            if ($draft !== null && $invoice->isCredit()) {
+                Audit::record('invoice.draft_saved', $invoice, ['rows' => count($rows)], $company, $user);
             }
 
             return $invoice->load('rows', 'taxReductionBuyers');

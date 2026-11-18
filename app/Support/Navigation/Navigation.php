@@ -138,6 +138,7 @@ final class Navigation
                 'children' => fn (User $user, Company $company): array => [
                     ['label' => __('Leverantörsfakturor'), 'route' => 'payables.invoices.index'],
                     ['label' => __('Betalfiler'), 'route' => 'payables.batches.index'],
+                    ['label' => __('Att godkänna'), 'route' => 'approvals.queue'],
                     ['label' => __('Attestflöden'), 'route' => 'approvals.policies'],
                 ],
             ],

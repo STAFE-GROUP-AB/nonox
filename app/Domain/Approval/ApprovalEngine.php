@@ -312,6 +312,42 @@ final class ApprovalEngine
         return $this->open($facts, $this->resolve($context, $facts) ?? $this->defaultSnapshot($facts->type), $actor);
     }
 
+    /**
+     * Sends a subject to approval before anyone has decided on it (ADR-081
+     * E21): opens a request with the company's policy as it is now. A
+     * subject that was rejected is sent again through resubmit(). Refused
+     * when a request is already open or approved, and when no policy of the
+     * company's own applies (the default policy then decides). Call it inside
+     * a transaction with the subject locked.
+     */
+    public function submit(ApprovalContext $context, User $actor, SubjectFacts $facts): ApprovalRequest
+    {
+        if ($this->lockPending($facts) instanceof ApprovalRequest) {
+            throw ValidationException::withMessages(['approve' => __('Underlaget väntar redan på attest.')]);
+        }
+
+        $latest = ApprovalRequest::query()
+            ->where('company_id', $facts->companyId)
+            ->where('subject_type', $facts->type->value)
+            ->where('subject_id', $facts->subjectId)
+            ->where('status', '!=', ApprovalRequestStatus::Withdrawn->value)
+            ->orderByDesc('id')
+            ->first();
+
+        if ($latest?->status === ApprovalRequestStatus::Rejected) {
+            return $this->resubmit($context, $actor, $facts);
+        }
+
+        if ($latest?->status === ApprovalRequestStatus::Approved) {
+            throw ValidationException::withMessages(['approve' => __('Underlaget är redan attesterat.')]);
+        }
+
+        $snapshot = $this->resolve($context, $facts)
+            ?? throw ValidationException::withMessages(['approve' => __('Inget attestflöde gäller underlaget, så det behöver ingen attest.')]);
+
+        return $this->open($facts, $snapshot, $actor);
+    }
+
     /** Ends an open request because its subject is gone (a cancelled payment file). */
     public function withdraw(SubjectFacts $facts, User $actor): void
     {

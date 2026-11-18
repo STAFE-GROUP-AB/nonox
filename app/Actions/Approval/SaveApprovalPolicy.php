@@ -193,7 +193,9 @@ class SaveApprovalPolicy
         }
 
         if (array_diff($conditions->usedKeys(), $type->conditionKeys()) !== []) {
-            $fail('cost_center_id', __('För betalfiler kan villkoret bara vara ett belopp.'));
+            $type === ApprovalSubjectType::PaymentBatch
+                ? $fail('cost_center_id', __('För betalfiler kan villkoret bara vara ett belopp.'))
+                : $fail('supplier_id', __('En leverantör kan inte vara villkor för :type.', ['type' => mb_strtolower($type->label())]));
         }
 
         return [

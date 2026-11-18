@@ -8,6 +8,7 @@ use App\Actions\Accounting\AttachToVoucher;
 use App\Actions\Accounting\ExportSie;
 use App\Domain\Accounting\Reports\LedgerQuery;
 use App\Domain\Accounting\Reports\ReportTable;
+use App\Domain\Accounting\VoucherSource;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Approval\ApprovalSubjectType;
 use App\Domain\Documents\DocumentAccess;
@@ -33,6 +34,7 @@ use App\Models\User;
 use App\Models\VatReport;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
+use App\Models\VoucherSeries;
 use App\Modules\Boardroom\Support\BoardroomArchive;
 use App\Modules\Payroll\Models\AgiSubmission;
 use App\Modules\Payroll\Models\ImportedPayslip;
@@ -367,7 +369,8 @@ final class ArchivePackageBuilder
 
     /**
      * The approval history (ADR-081 gap 8) of the year's supplier invoices
-     * (by invoice date) and payment files (by payment date): every request
+     * (by invoice date), payment files (by payment date), manual vouchers (by
+     * fiscal year) and credit invoices (by invoice date): every request
      * with the policy copy it followed, every decision, and the substitutes
      * whose period touches the year. Empty when the company has no approval
      * policy of its own. TODO(legal-verify): whether this is behandlingshistorik
@@ -387,6 +390,21 @@ final class ArchivePackageBuilder
             ->with(['decisions'])
             ->orderBy('id')
             ->get();
+
+        // Manual vouchers of the year and credit invoices dated in it (ADR-081 E21): a request names "{id}.{version}".
+        $vouchers = Voucher::query()->where('fiscal_year_id', $fiscalYear->id)->where('source', VoucherSource::Manual->value)->get(['id', 'number', 'series_id', 'status'])->keyBy('id');
+        $credits = Invoice::query()->where('kind', Invoice::CREDIT)->whereDate('invoice_date', '>=', $start)->whereDate('invoice_date', '<=', $end)->pluck('number', 'id');
+        $drafts = ApprovalRequest::query()
+            ->whereIn('subject_type', [ApprovalSubjectType::ManualVoucher->value, ApprovalSubjectType::CreditInvoice->value])
+            ->with(['decisions'])
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (ApprovalRequest $request): bool => $request->subject_type === ApprovalSubjectType::ManualVoucher
+                ? $vouchers->has((string) strtok($request->subject_id, '.'))
+                : $credits->has((string) strtok($request->subject_id, '.')));
+        $requests = $requests->merge($drafts)->sortBy('id')->values();
+        $seriesCodes = $vouchers->isEmpty() ? collect() : VoucherSeries::query()->pluck('code', 'id');
+
         $delegations = ApprovalDelegation::query()->where('starts_on', '<=', $end)->where('ends_on', '>=', $start)->orderBy('id')->get();
 
         if ($requests->isEmpty() && $delegations->isEmpty()) {
@@ -399,9 +417,19 @@ final class ArchivePackageBuilder
             ->filter()->unique()->values())->pluck('name', 'id');
         $name = fn (?int $id): string => $id === null ? '' : (string) ($names[$id] ?? $id);
         $time = fn (?CarbonImmutable $at): string => $at?->setTimezone('Europe/Stockholm')->format('Y-m-d H:i:s') ?? '';
-        $subject = fn (ApprovalRequest $request): string => $request->subject_type === ApprovalSubjectType::PaymentBatch
-            ? __('Betalfil :number', ['number' => $batches[$request->subject_id] ?? ''])
-            : __('Leverantörsfaktura :number', ['number' => $invoices[$request->subject_id] ?? '']);
+        $subject = function (ApprovalRequest $request) use ($batches, $invoices, $vouchers, $credits, $seriesCodes): string {
+            $draftId = (string) strtok($request->subject_id, '.');
+            $voucher = $vouchers->get($draftId);
+
+            return match ($request->subject_type) {
+                ApprovalSubjectType::PaymentBatch => __('Betalfil :number', ['number' => $batches[$request->subject_id] ?? '']),
+                ApprovalSubjectType::ManualVoucher => $voucher instanceof Voucher && $voucher->number !== null
+                    ? __('Verifikation :reference', ['reference' => ($seriesCodes[$voucher->series_id] ?? '').$voucher->number])
+                    : __('Verifikationsutkast'),
+                ApprovalSubjectType::CreditInvoice => $credits->get($draftId) !== null ? __('Kreditfaktura :number', ['number' => $credits->get($draftId)]) : __('Kreditfaktura, utkast'),
+                default => __('Leverantörsfaktura :number', ['number' => $invoices[$request->subject_id] ?? '']),
+            };
+        };
 
         $this->csv('attest/Attestarenden.csv', [
             [__('Ärende'), __('Avser'), __('Id'), __('Status'), __('Aktuellt steg'), __('Förberett av'), __('Startat'), __('Avslutat'), __('Flöde (kopia, JSON)')],

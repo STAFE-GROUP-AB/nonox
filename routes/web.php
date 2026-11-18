@@ -287,6 +287,8 @@ Route::middleware([
         Route::view('/leverantorsfakturor/betalfiler', 'payables.batches')->name('payables.batches.index');
         // Approval policies, dimension owners and substitutes (ADR-081 gap 8).
         Route::view('/attestfloden', 'approvals.policies')->name('approvals.policies');
+        // What waits for the person's approval (ADR-067 phase 1; the approval engine's requests, ADR-081 E21).
+        Route::view('/att-godkanna', 'approvals.queue')->name('approvals.queue');
         Route::get('/leverantorsfakturor/betalfiler/{batch}', PaymentBatchFileController::class)->whereUuid('batch')->name('payables.batches.file');
         Route::get('/leverantorsfakturor/{supplierInvoice}', [SupplierInvoiceController::class, 'show'])->whereUuid('supplierInvoice')->name('payables.invoices.show');
         Route::get('/leverantorsfakturor/{supplierInvoice}/andra', [SupplierInvoiceController::class, 'edit'])->whereUuid('supplierInvoice')->name('payables.invoices.edit');

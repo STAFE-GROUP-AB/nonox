@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Actions\Accounting;
 
 use App\Actions\Assets\AssetProposals;
+use App\Domain\Approval\DraftApprovals;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherRow;
 use App\Models\VoucherSeries;
+use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\Tenancy\DimensionScope;
 use Carbon\CarbonImmutable;
@@ -109,6 +111,11 @@ class SaveDraftVoucher
 
             if (($input['with_assets'] ?? false) === true) {
                 $this->assetProposals->sync($user, $company, $voucher, array_map(fn (array $row): mixed => $row['asset'] ?? null, $rowInput));
+            }
+
+            // Everyone who saves a manual draft again counts as one of its preparers in an approval (ADR-081 E21, DraftEditors).
+            if ($draft !== null && DraftApprovals::isManualVoucher($voucher)) {
+                Audit::record('voucher.draft_saved', $voucher, ['rows' => count($rows)], $company, $user);
             }
 
             return $voucher->load('rows');

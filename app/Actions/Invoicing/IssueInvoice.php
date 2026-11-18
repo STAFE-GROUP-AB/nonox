@@ -7,6 +7,11 @@ namespace App\Actions\Invoicing;
 use App\Actions\Accounting\BookVoucher;
 use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\VoucherSource;
+use App\Domain\Approval\ApprovalRequired;
+use App\Domain\Approval\ApprovalSubjectType;
+use App\Domain\Approval\DraftApprovals;
+use App\Domain\Approval\DraftApprovalStatus;
+use App\Domain\Approval\SubjectFacts;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Invoicing\ForeignSale;
 use App\Domain\Invoicing\FullInvoice;
@@ -18,6 +23,7 @@ use App\Domain\Vat\OssRates;
 use App\Domain\Vat\OssThreshold;
 use App\Jobs\StoreIssuedInvoicePdf;
 use App\Models\Account;
+use App\Models\ApprovalRequest;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -71,6 +77,9 @@ class IssueInvoice
             if (! $invoice->isCredit()) {
                 $customer->ensureNotRestricted('invoice');
             }
+
+            // A CREDIT_INVOICE policy of the company's own holds the draft until this version is approved (ADR-081 E21); without one, nothing changes.
+            $approval = $invoice->isCredit() ? $this->approval($invoice) : null;
 
             if ($invoice->rows->isEmpty() || $invoice->total_ore->isZero()) {
                 throw ValidationException::withMessages(['invoice' => __('Fakturan saknar belopp.')]);
@@ -173,6 +182,10 @@ class IssueInvoice
                 'exchange_rate_source' => $invoice->exchange_rate_source,
             ] : []), $company, $user);
 
+            if ($approval !== null) {
+                $this->closeApproval($user, $invoice, $approval);
+            }
+
             // The PDF exactly as issued is stored once the issue has committed (ADR-075, decision O6).
             if (config('nonox.store_issued_invoice_pdfs')) {
                 StoreIssuedInvoicePdf::dispatch($invoice->company_id, $invoice->id)->afterCommit();
@@ -180,6 +193,51 @@ class IssueInvoice
 
             return $invoice;
         }));
+    }
+
+    /**
+     * Where the credit draft stands in the company's own approval policy:
+     * null when no policy can hold it (one query), the version's subject id
+     * when it may be issued, and ApprovalRequired when it waits.
+     *
+     * @return ?array{subject_id: string, status: DraftApprovalStatus}
+     */
+    private function approval(Invoice $invoice): ?array
+    {
+        if (! DraftApprovals::mayBeHeld(ApprovalSubjectType::CreditInvoice, $invoice->company_id, $invoice->id)) {
+            return null;
+        }
+
+        $subjectId = DraftApprovals::invoiceSubjectId($invoice);
+        $status = DraftApprovals::status(ApprovalSubjectType::CreditInvoice, $invoice->company_id, $subjectId, fn (): SubjectFacts => SubjectFacts::forCreditInvoice($invoice));
+
+        if (! $status->allowsPosting()) {
+            throw ApprovalRequired::forCreditInvoice($status, $subjectId);
+        }
+
+        return ['subject_id' => $subjectId, 'status' => $status];
+    }
+
+    /**
+     * Links the issued credit invoice to the approval of its version and ends
+     * any request still open on an earlier version of the draft.
+     *
+     * @param  array{subject_id: string, status: DraftApprovalStatus}  $approval
+     */
+    private function closeApproval(User $user, Invoice $invoice, array $approval): void
+    {
+        if ($approval['status'] === DraftApprovalStatus::Approved) {
+            $request = ApprovalRequest::query()
+                ->where('subject_type', ApprovalSubjectType::CreditInvoice->value)
+                ->where('subject_id', $approval['subject_id'])
+                ->where('status', DraftApprovalStatus::Approved->value)
+                ->orderByDesc('id')
+                ->firstOrFail();
+
+            Audit::record('invoice.issued_after_approval', $invoice, ['number' => $invoice->number, 'approval_request_id' => $request->id], $invoice->company_id, $user);
+        }
+
+        DraftApprovals::withdrawOtherVersions(ApprovalSubjectType::CreditInvoice, $invoice->company_id, $invoice->id, $approval['subject_id'], $user);
     }
 
     /**

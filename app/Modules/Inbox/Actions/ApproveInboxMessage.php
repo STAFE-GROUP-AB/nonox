@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Modules\Inbox\Actions;
 
 use App\Actions\Accounting\AttachToVoucher;
-use App\Actions\Accounting\PostVoucher;
+use App\Actions\Accounting\PostManualVoucher;
 use App\Actions\Accounting\SaveDraftVoucher;
 use App\Actions\Payables\RegisterSupplierInvoice;
 use App\Actions\Payables\SaveSupplierInvoice;
+use App\Domain\Approval\ApprovalRequired;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Models\Account;
 use App\Models\Company;
@@ -53,7 +54,7 @@ class ApproveInboxMessage
 
     public function __construct(
         private readonly SaveDraftVoucher $saveDraft,
-        private readonly PostVoucher $postVoucher,
+        private readonly PostManualVoucher $postVoucher,
         private readonly SaveSupplierInvoice $saveInvoice,
         private readonly RegisterSupplierInvoice $registerInvoice,
         private readonly AttachToVoucher $attach,
@@ -188,7 +189,12 @@ class ApproveInboxMessage
             $this->linkUnderlag($user, $draft, $message, null);
 
             if ($mode === self::POST) {
-                ($this->postVoucher)($user, $draft);
+                try {
+                    ($this->postVoucher)($user, $draft);
+                } catch (ApprovalRequired) {
+                    // The company's own MANUAL_VOUCHER policy holds it (ADR-081 E21): a draft is made and sent to approval from the voucher.
+                    throw ValidationException::withMessages(['proposal' => __('Verifikationen ska attesteras innan den bokförs. Skapa ett utkast i stället och skicka det till attest från verifikationen.')]);
+                }
             }
 
             $ids[] = $draft->id;

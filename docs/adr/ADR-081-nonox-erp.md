@@ -1680,3 +1680,65 @@ Built on branch `feat/erp-e16-materialbehov`. Choices the gap 5 text left open:
 - **Database.** `mrp_runs` and `mrp_planned_orders` are `ReadWrite`; check
   constraints on horizon (1–52, Monday start), kind, exception, quantities
   and the converted pair.
+
+## Addendum: E21 as built (manual vouchers and credit invoices as approval subjects)
+
+Built on branch `feat/erp-e21-attestamnen`, on top of the approval engine (E2)
+and the purchase order wiring (E10). Owner decision 19 applies.
+
+- **Subjects.** `MANUAL_VOUCHER` (a voucher a person enters, source `MANUAL`:
+  the voucher editor, the inbox and the API; not invoicing, payments, payroll,
+  VAT, closing, SIE or corrections) and `CREDIT_INVOICE` (a customer credit
+  invoice). Base permissions `vouchers:post` and `invoices:credit`; prepare
+  permissions `vouchers:create` and `invoices:create`. Conditions: amount
+  (a voucher's debit total; a credit invoice's total including VAT, tested
+  without sign), cost centre, project, account range; no supplier.
+- **The default policy is "no approval".** With no active policy of the
+  company's own for the type and no request on the draft, posting and issuing
+  are unchanged and write nothing new (`DraftApprovals::mayBeHeld`, one or two
+  `exists` queries). `ApprovalSubjectType::hasDefaultApproval()` is false for
+  both, so the policy page says so.
+- **`PostVoucher` is not changed.** `App\Actions\Accounting\PostManualVoucher`
+  is the caller used by the voucher editor, the API (`POST
+  /api/v1/vouchers/{id}/post`, which answers 422 while approval is missing)
+  and the inbox; it locks the voucher first (PostVoucher's own first lock),
+  checks the approval and then calls PostVoucher in the same transaction.
+  `IssueInvoice` checks a credit draft the same way before it takes the
+  invoice number. A waiting, rejected or deleted draft has no number, so
+  series and invoice numbers stay gapless.
+- **Approval is bound to a version, without a new column.** The subject id is
+  `"{draft uuid}.{fingerprint}"`, the fingerprint a 24-hex SHA-256 over the
+  draft's own columns and rows (and, for a voucher, its attachments' SHA-256),
+  read from the database without row ids, so the editors' save-before-post
+  keeps it and any change gives a new subject (`DraftFingerprint`). Pending
+  requests on other versions are withdrawn when a version is sent, decided,
+  posted or issued, and when a voucher draft is deleted. The card on the
+  voucher page and in the credit invoice editor carries the version it showed
+  (`#[Locked]`), and every action re-checks it under the draft's row lock.
+- **Sending.** The editors' Bokför and Skapa send the draft to approval
+  (`SubmitForApproval`, a new `ApprovalEngine::submit()`) when a policy holds
+  it; the card offers Skicka till attest, Attestera, Avvisa and, for an
+  approved voucher, Bokför (with a confirmation). Approving
+  (`ApproveDraft`) never posts.
+- **Preparers.** The creator and everyone who saved the draft or changed its
+  attachments (`DraftEditors`, read from the audit log; new entries
+  `voucher.draft_saved` and `invoice.draft_saved` with a row count only).
+- **Wiring check (requisitions and orders).** Purchase orders go through the
+  generic `RejectApproval`/`ResubmitApproval` and the queue correctly. One
+  gap was closed: the order's preparers were only `created_by` and
+  `prepared_by` (last editor); they now include everyone who saved the order
+  (`inventory.purchase_order_saved`/`_revised`). The threshold mode of
+  `SendPurchaseOrder` still checks creator and last editor only. Requisitions
+  (E9) have a marked hook in `ApprovalSubjects` and in
+  `ApprovalRequestSource` (loader and page) and are refused until wired.
+- **ADR-067 source.** `App\Domain\Review\Contracts\ReviewSource`,
+  `ReviewItem`, `ReviewSources` and `Sources\ApprovalRequestSource`: the open
+  requests the person may decide on their current step, for every wired
+  subject, in a fixed number of queries. Page `/att-godkanna`
+  (`approvals.queue`, under Inköp), read-only with links (ADR-067 phase 1).
+  A draft saved after it was sent is listed as stale and read-only.
+- **Archive package.** Requests and decisions for the year's manual vouchers
+  (by fiscal year) and credit invoices (by invoice date) join `attest/`.
+- **No migration.** No table or column was added.
+- **Limited members (gap 10).** The card is not shown to a member limited to
+  cost centres or projects, and the queue page is refused for them.

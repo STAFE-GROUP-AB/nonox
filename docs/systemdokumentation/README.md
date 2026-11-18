@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.144
+- Version: 0.145
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -651,6 +651,10 @@ year").
 ### 4.2 Utkast och bokföring
 
 - En verifikation börjar som utkast. Utkast kan ändras och tas bort fritt.
+- Har företaget ett eget attestflöde för manuella verifikationer bokförs ett
+  utkast som en person har fört in först när just den versionen är
+  attesterad (avsnitt 5a1e). Utkastet har inget nummer medan det väntar;
+  numret tas vid bokföringen som vanligt, så serien förblir obruten.
 - Vid bokföringen kontrolleras att verifikationen har minst två rader, att debet
   och kredit är lika stora och större än noll, att datumet ligger i ett öppet
   räkenskapsår, att perioden inte är låst och att alla konton är aktiva.
@@ -2163,6 +2167,60 @@ Koden finns i `App\Domain\Approval\ApprovalEngine`, `ApprovalContext`,
   beslut och ersättare tas med i arkivpaketet per räkenskapsår
   (`attest/Attestarenden.csv` med flödeskopian, `Attestbeslut.csv`,
   `Ersattare.csv`, med SHA-256 i manifestet).
+
+### 5a1e. Attest av manuella verifikationer och kreditfakturor (ADR-081 paket E21)
+
+([ADR-081](../adr/ADR-081-nonox-erp.md), lucka 8 och tillägget "E21 as built".)
+Koden finns i `App\Actions\Accounting\PostManualVoucher`,
+`App\Actions\Invoicing\IssueInvoice`, `App\Domain\Approval\DraftApprovals`,
+`DraftFingerprint`, `DraftEditors` och `App\Actions\Approval\SubmitForApproval`
+och `ApproveDraft`.
+
+- **Standard: ingen attest.** Utan ett eget flöde för manuella verifikationer
+  eller kreditfakturor bokförs och skapas de som förut, och ingen rad i
+  attestflödets tabeller skrivs (ägarbeslut 19 i ADR-081). Ett företag lägger
+  till ett flöde under Inköp → Attestflöden.
+- **Vad flödet gäller.** "Manuella verifikationer" är verifikationer som en
+  person för in: i verifikationsregistreringen, från inkorgen och över API:t
+  (källa `MANUAL`). Verifikationer som faktureringen, betalningar, lönen,
+  momsen, bokslutet, SIE-inläsningen eller en rättelse skapar omfattas inte.
+  "Kreditfakturor" är kundkreditfakturor. Villkoren kan vara belopp
+  (verifikationens summa debet; kreditfakturans summa med moms utan tecken),
+  kostnadsställe, projekt och kontointervall. Attestant är den som har
+  `vouchers:post` respektive `invoices:credit`, utvalda personer som själva
+  har den behörigheten, ägare av kostnadsställe eller projekt, eller ägare och
+  administratörer.
+- **Utkastet väntar, numret tas vid bokföringen.** Medan ett flöde gäller är
+  verifikationen eller kreditfakturan ett utkast. `PostManualVoucher` anropar
+  `PostVoucher`, som inte är ändrad, först när utkastets version är
+  attesterad; `IssueInvoice` tar fakturanumret först när kreditfakturans
+  version är attesterad. Ett utkast som väntar, avvisas eller tas bort har
+  inget nummer, så verifikationsserierna och fakturanumren förblir obrutna.
+  Bokföringen och utfärdandet görs alltid av en person, aldrig av attesten.
+- **Attesten gäller en version.** Attestärendet gäller utkastet så som det
+  såg ut: ärendets id för underlaget är utkastets id och en SHA-256 över
+  datum, text, serie, källa, rader (konto, belopp, kostnadsställe, projekt,
+  radtext, antal) och underlagens SHA-256, respektive kreditfakturans kund,
+  datum, belopp, valuta, texter och rader. Sparas utkastet med samma innehåll
+  är det samma version; ändras något behöver den nya versionen attesteras, och
+  ett pågående ärende på en tidigare version återkallas när den nya skickas
+  till attest, när utkastet bokförs eller när det tas bort. Ett beslut prövas
+  mot versionen under radlås på utkastet, så ingen attesterar något hen inte
+  har sett.
+- **Den som förberett.** Den som skapade utkastet och alla som har sparat det
+  eller lagt till eller tagit bort underlag räknas som dess förberedare och
+  hålls utanför när steget eller företaget kräver att någon annan attesterar.
+  Det läses ur behandlingshistoriken, som för det får posterna
+  `voucher.draft_saved` och `invoice.draft_saved` (antal rader, inga texter).
+  Samma regel gäller nu inköpsorder: alla som har sparat ordern räknas.
+- **Behandlingshistorik.** Utöver attestflödets poster (avsnitt 5a1d)
+  skrivs `voucher.posted_after_approval` och `invoice.issued_after_approval`
+  med verifikationens referens respektive fakturanumret och attestärendets
+  id. Ärendena och besluten för årets manuella verifikationer och
+  kreditfakturor tas med i arkivpaketets `attest/`-filer.
+- **Att godkänna.** Sidan Inköp → Att godkänna listar de ärenden som väntar på
+  personens beslut i det steg de står i, för alla underlag, med länk till
+  underlagets sida där beslutet fattas. Sidan beslutar ingenting själv.
 
 ## 5a2. Anläggningsregister
 
@@ -6385,3 +6443,4 @@ påverkar bokföringen och fakturan:
 | 0.142 | 2026-11-18 | SIE-budget (avsnitt 4.9, 4.11 och 4.12a, ADR-081 paket E4): `#PBUDGET 0` i en SIE-fil blir en ny budget när filen läses in, med hela beloppet, varje kostnadsställe och varje projekt per konto och månad exakt som i filen; en budget som inte går att läsa säkert läses inte in men hindrar aldrig bokföringen. Under Budget kan bara budgeten i en fil av typ 2, 3 eller 4 läsas in, i två steg, mot räkenskapsår, konton och objekt som redan finns. SIE-exporten skriver årets budget bara med rutan Ta med budget. Budgeten bokförs aldrig och ingår inte i avstämningen eller kontrollsummekedjan. Ingen verifikation ändras. |
 | 0.143 | 2026-11-18 | Rullande prognos (avsnitt 4.12a, ADR-081 lucka 2, paket E5): prognoser som versioner av slaget `FORECAST` i `budget_versions` med brytmånad, utfall ur bokförda verifikationer till och med brytmånaden och tre regler för månaderna efter (budgeten, snittet av de senaste månaderna, samma månad i fjol med procentsats), egna belopp som markeras och behålls, och Rullande 12 månader över årsskiftet. Nya databaskontroller på `budget_versions`: brytmånad bara på prognoser, och alltid en månads sista dag. Prognosen bokförs aldrig, och ingen bokförd verifikation ändras. |
 | 0.144 | 2026-11-18 | Konsolidering och körlogg för koncerner (avsnitt 4.10b, ADR-060 tillägg 2.4, ADR-081 paket E24): koncernens bekräftade medlemmar läses var för sig inom sitt företag, ett dotterföretags intäkter och kostnader räknas från förvärvet till avyttringen och dess balans tas med om det är medlem periodens sista dag, kontona flyttas enligt kontomappningen (`group_account_maps`, inom samma kontoklass) och beloppen summeras. Varje körning sparas i `corporate_group_runs` med indata och resultat och deras SHA-256 (samma indata ger samma resultat); tabellen kan inte ändras eller tas bort. Inga elimineringar ännu. Ingenting skrivs i något företags bokföring och ingen verifikation ändras. |
+| 0.145 | 2026-11-18 | Attest av manuella verifikationer och kreditfakturor (avsnitt 4.2 och 5a1e, ADR-081 lucka 8, paket E21): med ett eget flöde förblir en verifikation som en person för in, eller en kundkreditfaktura, ett utkast utan nummer tills just den versionen är attesterad; numret tas vid bokföringen respektive utfärdandet, så serierna förblir obrutna, och `PostVoucher` är oförändrad. Attesten gäller utkastets version (SHA-256 över innehållet); alla som sparat utkastet räknas som förberedare, också för inköpsorder. Utan eget flöde ändras ingenting. Sidan Att godkänna listar väntande attester. |

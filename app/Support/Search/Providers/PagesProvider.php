@@ -41,6 +41,7 @@ final class PagesProvider extends BaseSearchProvider
         'invoicing.agreements' => ['avtalsfakturering', 'återkommande', 'abonnemang'],
         'payables.batches.index' => ['betalningar', 'pain', 'bankgirot'],
         'approvals.policies' => ['attest', 'godkännande', 'ersättare'],
+        'approvals.queue' => ['attestera', 'godkänna', 'väntar'],
         'invoicing.customers' => ['kundregister'],
         'payables.suppliers' => ['leverantörsregister'],
         'companies.overview' => ['byt företag', 'klienter'],

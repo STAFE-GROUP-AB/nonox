@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace App\Livewire\Accounting;
 
 use App\Actions\Accounting\AttachToVoucher;
-use App\Actions\Accounting\PostVoucher;
+use App\Actions\Accounting\PostManualVoucher;
 use App\Actions\Accounting\RemoveAttachment;
 use App\Actions\Accounting\SaveDraftVoucher;
+use App\Actions\Approval\SubmitForApproval;
 use App\Actions\Assets\AssetProposals;
 use App\Actions\Vat\ProposeImportVat;
 use App\Domain\Accounting\AccountBalances;
 use App\Domain\Accounting\VoucherTemplate;
+use App\Domain\Approval\ApprovalRequired;
+use App\Domain\Approval\ApprovalSubjectType;
+use App\Domain\Approval\DraftApprovalStatus;
 use App\Domain\Vat\ImportVat;
 use App\Domain\Vat\SalesVatRules;
 use App\Livewire\Concerns\ShowsToasts;
@@ -52,7 +56,8 @@ use Livewire\WithFileUploads;
 /**
  * Keyboard-first voucher entry (AGENTS.md §11.2). The balance is calculated
  * live in the browser; every rule is enforced again on the server by
- * SaveDraftVoucher and PostVoucher.
+ * SaveDraftVoucher and PostVoucher (through PostManualVoucher, which lets
+ * the company's own approval policy hold the draft, ADR-081 E21).
  */
 class VoucherEditor extends Component
 {
@@ -402,7 +407,7 @@ class VoucherEditor extends Component
         $this->toast(__('Utkastet är sparat.'));
     }
 
-    public function post(SaveDraftVoucher $saveDraft, PostVoucher $postVoucher): void
+    public function post(SaveDraftVoucher $saveDraft, PostManualVoucher $postVoucher): void
     {
         $voucher = $this->persist($saveDraft);
 
@@ -414,6 +419,10 @@ class VoucherEditor extends Component
 
         try {
             $posted = $postVoucher($this->user(), $voucher);
+        } catch (ApprovalRequired $required) {
+            $this->sendToApproval($required, $voucher);
+
+            return;
         } catch (ValidationException $exception) {
             $this->addErrorsFrom($exception, $this->rowInput());
 
@@ -422,6 +431,32 @@ class VoucherEditor extends Component
 
         Toast::flash(__(':reference är bokförd.', ['reference' => $posted->reference()]));
         $this->redirectRoute('accounting.vouchers.show', ['voucher' => $posted->id]);
+    }
+
+    /**
+     * A MANUAL_VOUCHER policy of the company's own holds the draft (ADR-081
+     * E21): Bokför sends it to approval instead, and the draft is posted by a
+     * person once that version is approved. Nothing is numbered meanwhile.
+     */
+    private function sendToApproval(ApprovalRequired $required, Voucher $voucher): void
+    {
+        if ($required->approvalStatus === DraftApprovalStatus::Pending) {
+            Toast::flash(__('Verifikationen väntar redan på attest. Du kan bokföra den när den är attesterad.'));
+            $this->redirectRoute('accounting.vouchers.show', ['voucher' => $voucher->id]);
+
+            return;
+        }
+
+        try {
+            app(SubmitForApproval::class)($this->user(), $this->company(), ApprovalSubjectType::ManualVoucher, $required->subjectId);
+        } catch (ValidationException $exception) {
+            $this->addErrorsFrom($exception, $this->rowInput());
+
+            return;
+        }
+
+        Toast::flash(__('Verifikationen är skickad till attest. Du kan bokföra den när den är attesterad.'));
+        $this->redirectRoute('accounting.vouchers.show', ['voucher' => $voucher->id]);
     }
 
     public function render(): View

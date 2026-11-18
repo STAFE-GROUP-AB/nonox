@@ -159,6 +159,8 @@ moms/importmoms: { foretag: butik, rutt: accounting.vouchers.create, klick: ['te
 
 leverantorer/betalfiler: { foretag: konsult, rutt: payables.batches.index }
 leverantorer/attestfloden: { foretag: konsult, rutt: approvals.policies }
+leverantorer/att-godkanna: { foretag: konsult, rutt: approvals.queue }
+bokforing/attest-av-verifikationer: { foretag: konsult, rutt: accounting.vouchers.show, modell: { tabell: vouchers, dar: { description: 'Datorinköp, kontant med företagskortet' } }, visa: '[data-draft-approval]' }
 leverantorer/attestflode-pa-fakturan: { foretag: konsult, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { invoice_number: ATT-2026-17 } }, visa: '[data-approval-flow]' }
 leverantorer/kreditnotor: { foretag: konsult, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { kind: CREDIT } } }
 leverantorer/utlandsk-valuta: { foretag: konsult, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { invoice_currency: EUR } } }
