@@ -46,6 +46,8 @@ use App\Models\FixedAssetProposal;
 use App\Models\ImportedVoucher;
 use App\Models\IncomeTaxPartner;
 use App\Models\IncomeTaxReturn;
+use App\Models\IntercompanyCounterparty;
+use App\Models\IntercompanyRowTag;
 use App\Models\Invoice;
 use App\Models\InvoiceDocument;
 use App\Models\InvoicePayment;
@@ -375,6 +377,8 @@ const COMPANY_SCOPED_MODELS = [
     K10Year::class => 'k10YearAttributes',
     K10Owner::class => 'k10OwnerAttributes',
     CompanyAccountingPolicy::class => ['key' => 'leasing', 'value' => 'classify', 'applies_from' => '2026-01-01'],
+    IntercompanyCounterparty::class => 'intercompanyCounterpartyAttributes',
+    IntercompanyRowTag::class => 'intercompanyRowTagAttributes',
     CompanyHolding::class => ['held_org_number' => '556036-0793', 'held_name' => 'Hemligt Dotterbolag AB', 'capital_bp' => 10000, 'voting_bp' => 10000, 'control_basis' => 'VOTES', 'acquired_on' => '2024-01-01'],
     PriorYearSizeFigure::class => ['start_date' => '2024-01-01', 'end_date' => '2024-12-31', 'average_employees_fte' => '3.40', 'balance_sheet_total_ore' => 150_000_000, 'net_turnover_ore' => 300_000_000],
     ClosingCheck::class => 'closingCheckAttributes',
@@ -991,6 +995,27 @@ function voucherRowAttributes(): array
         'debit_ore' => 100,
         'credit_ore' => 0,
     ];
+}
+
+/** A customer of the current company marked as a group company (ADR-060 addendum 2.3). */
+function intercompanyCounterpartyAttributes(): array
+{
+    $customer = Customer::create(['number' => (int) Customer::query()->max('number') + 1, 'name' => 'Hemligt koncernföretag AB', 'payment_terms_days' => 30]);
+
+    return ['customer_id' => $customer->id, 'counterparty_org_number' => '556036-0793'];
+}
+
+/** A tag on a row of a posted voucher of the current company; the trigger refuses drafts. */
+function intercompanyRowTagAttributes(): array
+{
+    $voucher = Voucher::create(voucherAttributes());
+    $bank = Account::query()->firstOrCreate(['number' => 1930], ['name' => 'Bank', 'type' => 'ASSET']);
+    $sales = Account::query()->firstOrCreate(['number' => 3001], ['name' => 'Försäljning', 'type' => 'REVENUE']);
+    $row = VoucherRow::create(['voucher_id' => $voucher->id, 'account_id' => $bank->id, 'debit_ore' => 100, 'credit_ore' => 0]);
+    VoucherRow::create(['voucher_id' => $voucher->id, 'account_id' => $sales->id, 'debit_ore' => 0, 'credit_ore' => 100]);
+    $voucher->forceFill(['status' => 'POSTED', 'number' => (int) Voucher::query()->max('number') + 1, 'posted_at' => now(), 'hash' => str_repeat('0', 64)])->save();
+
+    return ['voucher_row_id' => $row->id, 'counterparty_org_number' => '556036-0793', 'kind' => 'SALES', 'source' => 'MANUAL'];
 }
 
 function openingBalanceAttributes(): array

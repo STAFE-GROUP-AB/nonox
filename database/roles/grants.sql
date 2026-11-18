@@ -154,6 +154,8 @@ BEGIN
         ('income_tax_partners', 'SELECT, INSERT, UPDATE, DELETE'),
         ('income_tax_returns', 'SELECT, INSERT, UPDATE, DELETE'),
         ('instance_settings', 'SELECT, INSERT, UPDATE'),
+        ('intercompany_counterparties', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('intercompany_row_tags', 'SELECT, INSERT, UPDATE, DELETE'),
         ('inventory_scan_operations', 'SELECT, INSERT, UPDATE, DELETE'),
         ('invoice_documents', 'SELECT, INSERT'),
         ('invoice_payments', 'SELECT, INSERT'),

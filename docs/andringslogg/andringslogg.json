@@ -72,6 +72,14 @@
       "omrade": "Bokföring"
     },
     {
+      "id": "2026-11-18-koncernmarkeringar",
+      "datum": "2026-11-18T01:45:00+01:00",
+      "rubrik": "Koncernmarkeringar för kunder, leverantörer och rader",
+      "beskrivning": "Under Bokföring → Koncernmarkeringar markerar du kunder och leverantörer som är andra företag i koncernen, och NONOX markerar raderna på deras fakturor och betalningar efter att du har sett vad som ändras. Lån, räntor, utdelningar och koncernbidrag markerar du per konto och period. Markeringarna ligger bredvid bokföringen och ändrar aldrig en verifikation.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-18-batch-och-serienummer",
       "datum": "2026-11-18T01:40:00+01:00",
       "rubrik": "Batch och serienummer i Lager",

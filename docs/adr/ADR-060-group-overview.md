@@ -451,6 +451,47 @@ Branch `spec/s2/group-model`. One migration set and one action set, no screen.
   CSV and PDF answering 404 (S2-1.2/1.6), and the CONSOLIDATED payload without per-company
   data (S2-1.4).
 
+**S2-1.3 as built (2026-11-18, ADR-081 E23).** Details the addendum left open, decided in the build:
+
+- Migration `2027_01_23_100000_create_intercompany_tables`. `intercompany_counterparties` has a CHECK
+  that exactly one of `customer_id` and `supplier_id` is set, a unique marking per customer and per
+  supplier, and a trigger that refuses a customer or supplier of another company.
+  `intercompany_row_tags` has a trigger that refuses a row of a draft or of another company (on
+  insert and update); `source` has a CHECK. Both are `GrantDecision::ReadWrite`.
+- The organisation number must be a legal person's (a personnummer is refused, so none is stored)
+  and not the company's own (`IntercompanyOrgNumber`). It defaults to the customer's or supplier's.
+- The rule (`IntercompanyKindRule::forCounterparty`) is a table of BAS ranges per side: customer
+  1500–1599 and 1660–1669 RECEIVABLE, 3000–3999 except 3960–3969 SALES, 8300–8399 INTEREST_INCOME;
+  supplier 2400–2499 and 2860–2869 PAYABLE, 4000–7999 except 7960–7969 PURCHASES, 8400–8499
+  INTEREST_EXPENSE. Bank, VAT, exchange differences and write-offs are never tagged. The direction
+  does not change the kind. Vouchers qualify by `source` (INVOICE, PAYMENT, SUPPLIER_INVOICE) and a
+  `source_type` of `Invoice` or `SupplierInvoice`, joined on the invoice's own company.
+- `RefreshIntercompanyTags` has `plan()` (read, `vouchers:view`) and `__invoke()` (write), with an
+  optional period for S2-1.4. It adds, changes and removes only COUNTERPARTY tags; a tag a person
+  changes becomes MANUAL and is left alone afterwards. Idempotent, a fixed number of queries.
+- Bulk tagging (`TagIntercompanyRows`) skips rows that already have a tag. The default kind is the
+  user's own G.1 account mark for that company and account when all their groups agree (source
+  ACCOUNT_MARK when kept), else `IntercompanyKindRule::suggest` from BAS numbers and the account
+  name.
+- Correcting vouchers (source CORRECTION) of a candidate voucher, and corrections of those, are
+  followed level by level: a reversed row (same account, amounts swapped) gets the kind and org
+  number of the row it reverses (a person's own tag on that row wins), so a kind nets to zero; a
+  re-booked row gets the kind from the account rule with the original's org number. Öresavrundning
+  (3740–3749) is excluded on the customer side.
+- Known limitation: the rule does not catch intra-group sales of fixed assets (12xx, 3970, 7970) or
+  advances (1480, 2420). Those are tagged in bulk until S2-1.4/S2-1.5 handle them.
+- Tags can be changed in locked periods and closed years: they are not bookkeeping. Every change
+  logs `in_closed_year` and `in_locked_period` (booleans for one row, counts for a run or bulk
+  change), and the page shows the counts before a person confirms. The consolidation run log
+  (S2-1.4) hashes the tag set, so a change after a run shows as a changed input.
+- Refresh, bulk tagging and bulk removal take `pg_advisory_xact_lock(81023, company_id)` first in
+  their transaction. Every removal asks for confirmation; bulk tagging warns for bank, VAT and
+  exchange-difference accounts.
+- Screen: Bokföring → Koncernmarkeringar (`/koncernmarkeringar`, route `accounting.intercompany`),
+  `App\Livewire\Group\IntercompanyPage`. Suggestions come only from the company's own holdings.
+- Tests: `tests/Feature/Group/IntercompanyTest.php` (behaviour, immutability with `ledger:verify`,
+  query count) and `tests/Tenancy/IntercompanyTenancyTest.php`.
+
 #### 3.2 Remaining stage 1 packages
 
 - **S2-1.2 Koncern → Översikt** (screen): structure tree from holdings, capital/voting,
