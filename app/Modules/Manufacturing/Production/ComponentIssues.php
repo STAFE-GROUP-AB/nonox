@@ -293,7 +293,7 @@ final class ComponentIssues
         $codes = StockLocation::query()->pluck('full_code', 'id');
         $levels = [];
 
-        foreach (StockLevel::query()->whereIn('article_id', $articleIds)->where('quantity_milli', '>', 0)->get(['article_id', 'location_id', 'quantity_milli']) as $level) {
+        foreach (StockLevel::query()->whereIn('article_id', $articleIds)->where('quantity_milli', '>', 0)->whereHas('location', fn ($location) => $location->physical())->get(['article_id', 'location_id', 'quantity_milli']) as $level) {
             $levels[$level->article_id][$level->location_id] = $level->quantity_milli;
         }
 

@@ -42,6 +42,16 @@
                     <x-ui.field for="location-city" :label="__('Ort')" error="form.city" class="sm:col-span-2">
                         <input id="location-city" wire:model="form.city" class="{{ $input }}" autocomplete="address-level2">
                     </x-ui.field>
+                    @if($costCenters->isNotEmpty())
+                        <x-ui.field for="location-cost-center" :label="__('Kostnadsställe')" error="form.cost_center_id" class="sm:col-span-6" :hint="__('Valfritt. Lagret räknas som en enhet genom sitt kostnadsställe, så att den som är begränsad till kostnadsstället hör ihop med lagret.')">
+                            <select id="location-cost-center" wire:model="form.cost_center_id" class="{{ $input }}">
+                                <option value="">{{ __('Inget kostnadsställe') }}</option>
+                                @foreach($costCenters as $costCenter)
+                                    <option value="{{ $costCenter->id }}">{{ $costCenter->code }} {{ $costCenter->name }}</option>
+                                @endforeach
+                            </select>
+                        </x-ui.field>
+                    @endif
                 @endif
                 <div class="flex flex-wrap gap-3 sm:col-span-6">
                     <x-button type="submit" wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
@@ -85,6 +95,7 @@
                             <span class="text-gray-700">{{ $location->name }}</span>
                             <span class="ml-1 text-xs text-gray-500">{{ $location->type->label() }}</span>
                             @if($location->city)<span class="block text-sm text-gray-500">{{ $location->address_line1 }}, {{ $location->postal_code }} {{ $location->city }}</span>@endif
+                            @if($location->costCenter)<span class="block text-sm text-gray-500">{{ __('Kostnadsställe :code', ['code' => $location->costCenter->code.' '.$location->costCenter->name]) }}</span>@endif
                         </span>
                         <span class="flex flex-wrap items-center gap-3 text-sm">
                             <span class="tabular-nums text-gray-600">{{ App\Modules\Inventory\Domain\Quantity::format((int) $location->stock_milli) }} {{ __('i lager') }}</span>

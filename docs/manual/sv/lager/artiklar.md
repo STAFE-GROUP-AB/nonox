@@ -49,6 +49,25 @@ När Lager är påslaget finns de här fälten längst ned under Avancerad:
 
 En artikel som har varor i lager kan inte sluta vara lagerförd. Plocka, kassera eller inventera bort varorna först.
 
+## Beställningspunkt per lager
+
+Har du flera lager kan varje lager ha en egen beställningspunkt. Öppna artikeln, gå till fliken **Avancerad** och leta upp **Beställningspunkt per lager**.
+
+![Beställningspunkt per lager på en artikel, med punkter för butiken och förrådet.](/bilder/manual/lager/bestallningspunkt-per-lager.webp)
+
+1. Välj **Lager**.
+2. Skriv **Beställningspunkt** och, om du vill, **Beställ antal** för det lagret.
+3. Klicka på **Spara för lagret**.
+
+Så fort en artikel har en beställningspunkt för något lager bedömer [Inköpsförslaget](/manual/lager/inkopsforslag) artikeln lager för lager, och beställningspunkten för hela företaget används inte längre för den artikeln. Det som är på väg till lagret med en [flyttorder](/manual/lager/flyttorder) räknas med. Bedömningen är enkel med flit:
+
+- Ett överskott i ett lager räknas inte av mot ett annat lagers brist. Ibland är en flyttorder bättre än ett inköp.
+- Utkast till flyttorder räknas inte, men skickade flyttorder till lagret gör det.
+- Öppna inköpsorder räknas av för hela företaget, eftersom de inte hör till något lager.
+- Det som är reserverat för kundordrar räknas på samma sätt som för artiklar utan lagerpunkter.
+
+Ta bort lagrets punkt med **Ta bort** om du vill gå tillbaka till en gemensam.
+
 ## Listan Lager → Artiklar
 
 Här ser du de lagerförda artiklarna med saldo totalt och per lagerställe. Du kan söka på nummer, namn, EAN eller SKU, välja ett lager och visa bara artiklar under beställningspunkten eller med negativt saldo.

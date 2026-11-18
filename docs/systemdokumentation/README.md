@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.141
+- Version: 0.142
 - Version: 0.135
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
@@ -4976,6 +4976,17 @@ bokslutet (ADR-039). Modulen ändrar bokföringen bara i bokslutssteget nedan.
   med leverantörsfakturan som tidigare.
 - **Plocklista** görs från en order, en faktura eller för hand och sorteras
   efter plats. När den klarmarkeras dras det plockade från lagret.
+- **Flyttorder** (ADR-081 E13) flyttar varor mellan två lager. När den
+  skickas dras varorna från avsändarens plats och läggs på en plats av typen
+  `TRANSIT` (På väg), en per par av lager, som är inaktiv och inte syns i
+  listor; när de tas emot, helt eller i delar, läggs de på mottagarens plats.
+  Båda stegen är vanliga flyttrörelser (`TRANSFER`) i samma logg, med
+  flyttordern som källa och med batch eller serienummer. En flytt har ingen
+  kostnad, så artikelns totala saldo och värdet vid bokslutet är oförändrade
+  hela vägen och räknas som förut för hela företaget; det som är på väg ingår
+  i artikelns saldo. `php artisan inventory:verify` jämför också saldot på
+  platserna På väg med vad flyttorderns öppna rader har kvar att leverera.
+  Flyttordern bokför ingenting.
 - **Inventering** sparar systemets antal när den startar. Skillnaden mot det
   räknade förs in som inventeringsrörelser med orsak när inventeringen
   slutförs.
@@ -6244,3 +6255,4 @@ påverkar bokföringen och fakturan:
 | 0.139 | 2026-11-18 | Dokumentarkivet (avsnitt 4.5 och 7a, ADR-081 lucka 9, paket E19): företagets egna dokument med versioner som inte kan ändras, krypterade filer med SHA-256, lagringsklasserna räkenskapsinformation (sju år enligt BFL 7 kap. 2 §), avtal (också som räkenskapsinformation), personal och övrigt, ett `retain_until` som aldrig går under regelns golv (triggern räknar golvet för räkenskapsinformation ur räkenskapsåret) och en bevarandespärr med skäl; radering vägras av policyn, modellen och en PostgreSQL-trigger. Räkenskapsinformation blir underlag till en verifikation genom `voucher_attachments` med samma fil, utan kopia. Arkivpaketet får `dokument/` med förteckning och kontrollsummor. Ingen verifikation skapas eller ändras. |
 | 0.140 | 2026-11-18 | Koncernmarkeringar (avsnitt 4.10a, ADR-060 tillägg 2.3, ADR-081 paket E23): kunder och leverantörer kan markeras som koncernföretag med det andra företagets organisationsnummer, och bokförda rader får en markering med koncernföretag, typ och källa i de nya tabellerna `intercompany_counterparties` och `intercompany_row_tags`, bredvid `voucher_rows`. Raderna på fakturor, betalningar och leverantörsfakturor till och från markerade kunder och leverantörer markeras efter kontointervall när en person bekräftar, också i rättelser av dem (vända rader får samma typ), och rader på ett konto under en period i bulk. En trigger nekar markeringar på utkast och på ett annat företags rader. Ingen verifikation, rad, numrering eller hashkedja ändras, och ingenting skrivs i ett annat företags bokföring. |
 | 0.141 | 2026-11-18 | Signering med flera undertecknare (avsnitt 5, ADR-046 tillägg 2026-11-18, paket S1): ett kuvert har ett dokument, upp till tio undertecknare i steg (samma steg signerar samtidigt) och upp till tio kopiemottagare. En offert blir order först när alla har signerat; ett avböjande eller ett tillbakadraget kuvert ger ingen order. Varje befintlig signeringsbegäran fick ett eget kuvert med samma status, utan att bevisen ändrades. Ingen bokföringsregel ändras. |
+| 0.142 | 2026-11-18 | Flyttorder mellan lager (avsnitt 5j, ADR-081 paket E13): varor flyttas mellan två lager via platsen På väg (`TRANSIT`) med vanliga flyttrörelser och med batch eller serienummer. Artikelns saldo och värdet vid bokslutet är oförändrade, ingen kostnad läggs på och ingenting bokförs. Platsen På väg kan bara röras av en flyttorder. |

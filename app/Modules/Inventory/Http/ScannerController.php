@@ -7,6 +7,7 @@ namespace App\Modules\Inventory\Http;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Inventory\Actions\RunScanOperation;
+use App\Modules\Inventory\Domain\LocationType;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Models\ArticleImage;
 use App\Modules\Inventory\Models\StockLevel;
@@ -123,6 +124,7 @@ class ScannerController
         if ($found['type'] === 'article') {
             $article = $found['article']->load(['images' => fn ($query) => $query->orderBy('position')->orderBy('id')]);
             $levels = StockLevel::query()->where('article_id', $article->id)->where('quantity_milli', '<>', 0)
+                ->whereHas('location', fn ($place) => $place->where('type', '<>', LocationType::Transit->value))
                 ->when($places !== null, fn ($query) => $query->whereIn('location_id', $places ?? []))
                 ->with('location:id,full_code,name,sort_key')->get()
                 ->sortBy(fn (StockLevel $level): string => $level->location->sort_key ?? '');

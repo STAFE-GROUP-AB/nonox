@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Inventory\Scanner;
 
 use App\Models\Article;
+use App\Modules\Inventory\Domain\LocationType;
 use App\Modules\Inventory\Models\StockLocation;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -113,7 +114,7 @@ final class ScanCode
     {
         $code = mb_strtoupper(trim($code));
 
-        return $code === '' ? null : StockLocation::query()->whereRaw('upper(full_code) = ?', [$code])->first();
+        return $code === '' ? null : StockLocation::query()->where('type', '<>', LocationType::Transit->value)->whereRaw('upper(full_code) = ?', [$code])->first();
     }
 
     /** @return Builder<Article> */

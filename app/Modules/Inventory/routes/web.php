@@ -7,6 +7,7 @@ use App\Modules\Inventory\Http\LabelPrintController;
 use App\Modules\Inventory\Http\PickListPdfController;
 use App\Modules\Inventory\Http\PurchaseOrderController;
 use App\Modules\Inventory\Http\ScannerController;
+use App\Modules\Inventory\Http\StockTransferPdfController;
 use Illuminate\Support\Facades\Route;
 
 // Behind module:inventory: 404 while the module is off.
@@ -24,6 +25,9 @@ Route::get('/lager/inkopsorder/{purchaseOrder}/pdf', [PurchaseOrderController::c
 Route::view('/lager/inkopsforslag', 'inventory::purchase-proposals')->name('inventory.purchaseProposals');
 Route::view('/lager/plocklistor', 'inventory::pick-lists')->name('inventory.pickLists');
 Route::get('/lager/plocklistor/{pickList}/pdf', PickListPdfController::class)->whereNumber('pickList')->name('inventory.pickLists.pdf');
+// Flyttorder between warehouses with goods in transit (ADR-081 E13).
+Route::view('/lager/flyttorder', 'inventory::stock-transfers')->name('inventory.transfers');
+Route::get('/lager/flyttorder/{stockTransfer}/pdf', StockTransferPdfController::class)->whereNumber('stockTransfer')->name('inventory.transfers.pdf');
 Route::view('/lager/inventering', 'inventory::counts')->name('inventory.counts');
 Route::view('/lager/batcher', 'inventory::lots')->name('inventory.lots');
 Route::view('/lager/prognos', 'inventory::forecast')->name('inventory.forecast');

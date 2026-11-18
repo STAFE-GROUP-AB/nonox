@@ -6,10 +6,14 @@ namespace App\Modules\Inventory\Support;
 
 use App\Models\Article;
 use App\Models\Company;
+use App\Modules\Inventory\Domain\LocationType;
 use App\Modules\Inventory\Domain\Tracking;
 use App\Modules\Inventory\Models\StockLevel;
+use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Inventory\Models\StockLotLevel;
 use App\Modules\Inventory\Models\StockMovement;
+use App\Modules\Inventory\Models\StockTransfer;
+use App\Modules\Inventory\Models\StockTransferLine;
 use App\Support\Tenancy\CurrentCompany;
 
 /**
@@ -95,6 +99,47 @@ final class StockBalanceCheck
 
                 if ($balance !== $lots) {
                     $differences[] = ['article_id' => $article, 'location_id' => $location, 'lot_id' => null, 'balance' => $balance, 'movements' => $lots];
+                }
+            }
+
+            return $differences;
+        });
+    }
+
+    /**
+     * Goods in transit (ADR-081 E13): what a transit location holds of an
+     * article is what the open lines of the transfer orders on their way
+     * through it still have to deliver. Two queries.
+     *
+     * @return list<array{article_id: int, location_id: int, balance: int, movements: int}>
+     */
+    public static function transitDifferences(Company $company): array
+    {
+        return CurrentCompany::run($company, function (): array {
+            $transit = StockLocation::query()->where('type', LocationType::Transit->value)->pluck('id');
+
+            if ($transit->isEmpty()) {
+                return [];
+            }
+
+            $levels = StockLevel::query()->whereIn('location_id', $transit->all())->get(['article_id', 'location_id', 'quantity_milli'])
+                ->mapWithKeys(fn (StockLevel $level): array => ["{$level->article_id}:{$level->location_id}" => $level->quantity_milli]);
+            $open = StockTransferLine::query()
+                ->join('stock_transfers', 'stock_transfers.id', '=', 'stock_transfer_lines.stock_transfer_id')
+                ->whereIn('stock_transfers.status', [StockTransfer::SENT, StockTransfer::PARTIALLY_RECEIVED])
+                ->groupBy('stock_transfer_lines.article_id', 'stock_transfers.transit_location_id')
+                ->selectRaw('stock_transfer_lines.article_id AS article_id, stock_transfers.transit_location_id AS location_id, SUM(quantity_milli - received_milli - returned_milli) AS total')
+                ->get()
+                ->mapWithKeys(fn (StockTransferLine $row): array => ["{$row->getAttribute('article_id')}:{$row->getAttribute('location_id')}" => (int) $row->getAttribute('total')]);
+            $differences = [];
+
+            foreach ($levels->keys()->merge($open->keys())->unique() as $key) {
+                $balance = (int) ($levels[$key] ?? 0);
+                $expected = (int) ($open[$key] ?? 0);
+
+                if ($balance !== $expected) {
+                    [$article, $location] = array_map('intval', explode(':', (string) $key));
+                    $differences[] = ['article_id' => $article, 'location_id' => $location, 'balance' => $balance, 'movements' => $expected];
                 }
             }
 

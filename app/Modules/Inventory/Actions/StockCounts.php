@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\NumberSeries;
 use App\Models\User;
 use App\Modules\Inventory\Actions\Concerns\GuardsInventory;
+use App\Modules\Inventory\Domain\LocationType;
 use App\Modules\Inventory\Domain\MovementType;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Models\StockCount;
@@ -60,9 +61,11 @@ class StockCounts
             ]);
 
             $levels = StockLevel::query()->when($ids !== null, fn ($query) => $query->whereIn('location_id', $ids))
+                ->whereHas('location', fn ($place) => $place->where('type', '<>', LocationType::Transit->value))
                 ->where('quantity_milli', '<>', 0)->get(['article_id', 'location_id', 'quantity_milli']);
             // A tracked article is counted per batch or serial number (ADR-081 E12).
             $lotLevels = StockLotLevel::query()->when($ids !== null, fn ($query) => $query->whereIn('location_id', $ids))
+                ->whereHas('location', fn ($place) => $place->where('type', '<>', LocationType::Transit->value))
                 ->where('quantity_milli', '>', 0)->get(['article_id', 'location_id', 'lot_id', 'quantity_milli']);
             $perLot = $lotLevels->mapWithKeys(fn (StockLotLevel $level): array => ["{$level->article_id}:{$level->location_id}" => true]);
 

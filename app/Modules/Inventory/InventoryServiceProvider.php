@@ -23,9 +23,12 @@ use App\Modules\Inventory\Livewire\Purchasing\PurchaseOrderPage;
 use App\Modules\Inventory\Livewire\Purchasing\PurchaseOrdersPage;
 use App\Modules\Inventory\Livewire\Purchasing\PurchaseProposalsPage;
 use App\Modules\Inventory\Livewire\ReceiptsPage;
+use App\Modules\Inventory\Livewire\ReorderPointsPanel;
 use App\Modules\Inventory\Livewire\ReportsPage;
+use App\Modules\Inventory\Livewire\StockTransfersPage;
 use App\Modules\Inventory\Livewire\UnitConversionsPanel;
 use App\Modules\Inventory\Models\ArticleImage;
+use App\Modules\Inventory\Models\ArticleLocationSetting;
 use App\Modules\Inventory\Models\ArticleUnitConversion;
 use App\Modules\Inventory\Models\BillOfMaterials;
 use App\Modules\Inventory\Models\BomRow;
@@ -41,6 +44,8 @@ use App\Modules\Inventory\Models\StockLot;
 use App\Modules\Inventory\Models\StockLotLevel;
 use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Inventory\Models\StockReceipt;
+use App\Modules\Inventory\Models\StockTransfer;
+use App\Modules\Inventory\Models\StockTransferLine;
 use App\Modules\Inventory\Models\StockValuation;
 use App\Modules\Inventory\Policies\InventoryPolicy;
 use App\Modules\Inventory\Policies\PurchaseOrderPolicy;
@@ -76,7 +81,7 @@ class InventoryServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/views', 'inventory');
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
-        foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockLot::class, StockLotLevel::class, StockReceipt::class, PickList::class, StockCount::class, StockValuation::class, ArticleImage::class, LabelTemplate::class, ScanOperation::class, BillOfMaterials::class, BomRow::class, ArticleUnitConversion::class, DemandForecast::class] as $model) {
+        foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockLot::class, StockLotLevel::class, StockReceipt::class, PickList::class, StockCount::class, StockValuation::class, ArticleImage::class, LabelTemplate::class, ScanOperation::class, BillOfMaterials::class, BomRow::class, ArticleUnitConversion::class, DemandForecast::class, StockTransfer::class, StockTransferLine::class, ArticleLocationSetting::class] as $model) {
             Gate::policy($model, InventoryPolicy::class);
         }
 
@@ -95,6 +100,8 @@ class InventoryServiceProvider extends ServiceProvider
         Livewire::component(LabelStudioPage::NAME, LabelStudioPage::class);
         Livewire::component(LabelPrintPanel::NAME, LabelPrintPanel::class);
         Livewire::component(UnitConversionsPanel::NAME, UnitConversionsPanel::class);
+        Livewire::component(ReorderPointsPanel::NAME, ReorderPointsPanel::class);
+        Livewire::component(StockTransfersPage::NAME, StockTransfersPage::class);
         Livewire::component(PurchaseOrdersPage::NAME, PurchaseOrdersPage::class);
         Livewire::component(PurchaseOrderEditor::NAME, PurchaseOrderEditor::class);
         Livewire::component(PurchaseOrderPage::NAME, PurchaseOrderPage::class);

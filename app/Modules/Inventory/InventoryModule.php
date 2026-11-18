@@ -152,6 +152,7 @@ final class InventoryModule implements IsNew, Module
                         ['label' => __('Prognos'), 'route' => 'inventory.forecast', 'active' => ['inventory.forecast']],
                     ] : []),
                     ['label' => __('Plocklistor'), 'route' => 'inventory.pickLists', 'active' => ['inventory.pickLists', 'inventory.pickLists.pdf']],
+                    ['label' => __('Flyttorder'), 'route' => 'inventory.transfers', 'active' => ['inventory.transfers', 'inventory.transfers.pdf']],
                     ['label' => __('Inventering'), 'route' => 'inventory.counts', 'active' => ['inventory.counts']],
                     ['label' => __('Batcher'), 'route' => 'inventory.lots', 'active' => ['inventory.lots']],
                     ['label' => __('Rapporter'), 'route' => 'inventory.reports', 'active' => ['inventory.reports']],

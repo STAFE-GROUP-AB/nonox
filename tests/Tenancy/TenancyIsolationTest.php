@@ -165,6 +165,7 @@ use App\Modules\Inbox\Models\InboxMailbox;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Models\InboxTemplate;
 use App\Modules\Inventory\Models\ArticleImage;
+use App\Modules\Inventory\Models\ArticleLocationSetting;
 use App\Modules\Inventory\Models\ArticleUnitConversion;
 use App\Modules\Inventory\Models\BillOfMaterials;
 use App\Modules\Inventory\Models\BomRow;
@@ -186,6 +187,8 @@ use App\Modules\Inventory\Models\StockLotLevel;
 use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Models\StockReceiptLine;
+use App\Modules\Inventory\Models\StockTransfer;
+use App\Modules\Inventory\Models\StockTransferLine;
 use App\Modules\Inventory\Models\StockValuation;
 use App\Modules\Kitchen\Models\ConsumptionCredit;
 use App\Modules\Kitchen\Models\ConsumptionRun;
@@ -526,6 +529,9 @@ const COMPANY_SCOPED_MODELS = [
     StockReceiptLine::class => 'inventoryReceiptLineAttributes',
     PickList::class => 'inventoryPickListAttributes',
     PickListLine::class => 'inventoryPickListLineAttributes',
+    StockTransfer::class => 'e13StockTransferAttributes',
+    StockTransferLine::class => 'e13StockTransferLineAttributes',
+    ArticleLocationSetting::class => 'e13ArticleLocationSettingAttributes',
     PurchaseOrder::class => 'purchaseOrderAttributes',
     PurchaseOrderRow::class => 'purchaseOrderRowAttributes',
     PurchaseOrderVersion::class => 'purchaseOrderVersionAttributes',
@@ -2354,6 +2360,27 @@ function inventoryMovementAttributes(): array
 function inventoryLevelAttributes(): array
 {
     return ['article_id' => Article::create(articleAttributes())->id, 'location_id' => StockLocation::create(inventoryLocationAttributes())->id, 'quantity_milli' => 1000];
+}
+
+function e13StockTransferAttributes(): array
+{
+    return [
+        'number' => random_int(1, 1_000_000),
+        'from_location_id' => StockLocation::create(inventoryLocationAttributes())->id,
+        'to_location_id' => StockLocation::create(inventoryLocationAttributes())->id,
+        'status' => 'DRAFT',
+        'note' => 'Hemlig flytt',
+    ];
+}
+
+function e13StockTransferLineAttributes(): array
+{
+    return ['stock_transfer_id' => StockTransfer::create(e13StockTransferAttributes())->id, 'article_id' => Article::create(articleAttributes())->id, 'quantity_milli' => 1000];
+}
+
+function e13ArticleLocationSettingAttributes(): array
+{
+    return ['article_id' => Article::create(articleAttributes())->id, 'warehouse_id' => StockLocation::create(inventoryLocationAttributes())->id, 'reorder_point_milli' => 1000];
 }
 
 function e12StockLotAttributes(): array

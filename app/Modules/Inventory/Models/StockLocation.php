@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Models;
 
+use App\Models\CostCenter;
 use App\Modules\Inventory\Domain\LocationType;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -27,6 +29,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?string $postal_code
  * @property ?string $city
  * @property bool $is_active
+ * @property ?int $cost_center_id the warehouse's unit (ADR-081 E13, owner decision 23)
+ * @property ?int $transit_from_id
+ * @property ?int $transit_to_id
  * @property ?CarbonInterface $created_at
  * @property ?CarbonInterface $updated_at
  */
@@ -47,6 +52,9 @@ class StockLocation extends Model
         'postal_code',
         'city',
         'is_active',
+        'cost_center_id',
+        'transit_from_id',
+        'transit_to_id',
     ];
 
     /** @return array<string, string> */
@@ -62,6 +70,23 @@ class StockLocation extends Model
     public function parent(): BelongsTo
     {
         return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    /**
+     * Places that hold goods you can count, pick and issue from: active and
+     * not the transit place of a transfer order (ADR-081 E13).
+     *
+     * @param  Builder<StockLocation>  $query
+     */
+    public function scopePhysical(Builder $query): void
+    {
+        $query->where('is_active', true)->where('type', '<>', LocationType::Transit->value);
+    }
+
+    /** @return BelongsTo<CostCenter, $this> */
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class);
     }
 
     /** @return HasMany<StockLocation, $this> */

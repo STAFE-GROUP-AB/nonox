@@ -13,6 +13,22 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-18: flyttorder och platsen På väg
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-18: transfer orders and the In transit location
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Ändrat
+- `GET /inventory/locations`: `type` kan nu också vara `TRANSIT`. Det är platsen för varor som är på väg mellan två lager, med `is_active` false; en flyttorder lägger varorna där tills de tas emot. Saldona i `GET /inventory/stock-levels` kan därför ha en post på en sådan plats. Artikelns totala saldo och värde är oförändrade.
+<!-- /lang -->
+<!-- lang:en -->
+### Changed
+- `GET /inventory/locations`: `type` can now also be `TRANSIT`. It is the place for goods on their way between two warehouses, with `is_active` false; a transfer order keeps the goods there until they are received. Balances in `GET /inventory/stock-levels` can therefore have an entry at such a location. The article's total balance and value are unchanged.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-18: batch och serienummer på inleveranser
 <!-- /lang -->
 <!-- lang:en -->
