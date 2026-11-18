@@ -223,6 +223,8 @@ lager/inleverans: { foretag: butik, rutt: inventory.receipts, klick: ['button[wi
 lager/inkopsorder: { foretag: butik, rutt: inventory.purchaseOrders.show, modell: { tabell: purchase_orders, dar: { status: PARTIALLY_RECEIVED } } }
 lager/inkopsorder-pa-fakturan: { foretag: butik, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { invoice_number: TH-9512 } }, del: '[data-purchase-order-match]' }
 lager/inkopsforslag: { foretag: butik, rutt: inventory.purchaseProposals }
+lager/prognos: { foretag: butik, rutt: inventory.forecast }
+lager/planeringsdata: { foretag: butik, rutt: invoicing.articles, klick: ['tbody tr:nth-child(2) button', 'text=Avancerad'], visa: '#article_planning_method' }
 lager/plocklista: { foretag: butik, rutt: inventory.pickLists, klick: ['text=Plocka'] }
 lager/inventering: { foretag: butik, rutt: inventory.counts, klick: ['text=Räkna'] }
 lager/lagervarde-vid-bokslut: { foretag: butik, rutt: inventory.reports, fraga: { rapport: bokslut } }

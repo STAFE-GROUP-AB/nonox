@@ -20,6 +20,7 @@ use App\Models\User;
 use App\Modules\Ai\Support\AiAnalysisException;
 use App\Modules\Inventory\Actions\ArticleImages;
 use App\Modules\Inventory\Actions\SuggestArticleDetails;
+use App\Modules\Inventory\Domain\PlanningMethod;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\Models\ArticleImage;
@@ -100,6 +101,9 @@ class Articles extends Component
     /** The stock fields, edited only while Lager is on. */
     private const array STOCK = ['is_stock_item', 'stock_class', 'reorder_point', 'reorder_quantity', 'default_location_id', 'net_realisable_value', 'net_realisable_value_note'];
 
+    /** The planning data (ADR-081 gap 5), edited only while Lager is on and with mrp:run. */
+    private const array PLANNING = ['lead_time_days', 'safety_stock', 'lot_minimum', 'lot_multiple', 'planning_method'];
+
     public function mount(): void
     {
         abort_unless($this->user()->can('viewAny', [Article::class, $this->company()]), 403);
@@ -117,7 +121,8 @@ class Articles extends Component
         $this->editingId = null;
         $this->form = [
             'number' => '', 'name' => '', 'unit' => 'st', 'price' => '', 'vat_rate' => '2500', 'account' => '',
-            ...array_fill_keys([...self::ADVANCED, ...self::STOCK], ''),
+            ...array_fill_keys([...self::ADVANCED, ...self::STOCK, ...self::PLANNING], ''),
+            'planning_method' => PlanningMethod::None->value,
             'vat_treatment' => Article::VAT_STANDARD,
             'is_stock_item' => false,
             'is_active' => '1',
@@ -169,6 +174,11 @@ class Articles extends Component
             'net_realisable_value' => $article->net_realisable_value_ore === null ? '' : Money::ofOre($article->net_realisable_value_ore)->format(withCurrency: false),
             'net_realisable_value_note' => (string) $article->net_realisable_value_note,
             'stock_class' => (string) $article->stock_class?->value,
+            'lead_time_days' => (string) $article->lead_time_days,
+            'safety_stock' => $article->safety_stock_milli === 0 ? '' : Quantity::decimal($article->safety_stock_milli),
+            'lot_minimum' => $article->lot_minimum_milli === null ? '' : Quantity::decimal($article->lot_minimum_milli),
+            'lot_multiple' => $article->lot_multiple_milli === null ? '' : Quantity::decimal($article->lot_multiple_milli),
+            'planning_method' => $article->planning_method->value,
             'stock_unit_id' => (string) $article->stock_unit_id,
             'purchase_unit_id' => (string) $article->purchase_unit_id,
             'sales_unit_id' => (string) $article->sales_unit_id,
@@ -343,7 +353,7 @@ class Articles extends Component
 
     public function save(SaveArticle $save, ModuleManager $modules): void
     {
-        $keys = ['number', 'name', 'unit', 'price', 'is_active', ...self::ADVANCED, 'properties', ...($modules->isEnabled(InventoryModule::KEY, $this->company()) ? self::STOCK : [])];
+        $keys = ['number', 'name', 'unit', 'price', 'is_active', ...self::ADVANCED, 'properties', ...($modules->isEnabled(InventoryModule::KEY, $this->company()) ? self::STOCK : []), ...($this->canRunPlanning($modules) ? self::PLANNING : [])];
         $input = array_intersect_key($this->form, array_flip($keys));
 
         if ($this->unitsTouched) {
@@ -412,6 +422,9 @@ class Articles extends Component
             'revenueAccounts' => Account::query()->whereBetween('number', [3000, 3999])->where('is_active', true)->orderBy('number')->get(['number', 'name']),
             'canManage' => $this->user()->can('create', [Article::class, $this->company()]),
             'inventory' => $inventory,
+            'planningView' => $inventory && $this->user()->hasTeamPermission($this->company(), InventoryModule::MRP_VIEW),
+            'planningRun' => $inventory && $this->user()->hasTeamPermission($this->company(), InventoryModule::MRP_RUN),
+            'planningMethods' => PlanningMethod::cases(),
             'units' => $this->showForm ? $this->unitChoices() : collect(),
             'derived' => $advanced && $this->editingId !== null
                 ? ArticleUnitConversion::query()->where('article_id', $this->editingId)->where('source', ArticleUnitConversion::DIMENSIONS)->orderBy('unit')->get()
@@ -424,6 +437,11 @@ class Articles extends Component
             'aiAvailable' => $inventory && $this->showForm && SuggestArticleDetails::availableFor($this->user(), $this->company()),
             'aiRows' => $this->aiSuggestion === null ? [] : ArticleSuggestion::rows($this->aiSuggestion, $this->form),
         ]);
+    }
+
+    private function canRunPlanning(ModuleManager $modules): bool
+    {
+        return $modules->isEnabled(InventoryModule::KEY, $this->company()) && $this->user()->hasTeamPermission($this->company(), InventoryModule::MRP_RUN);
     }
 
     /** @return Collection<int, Unit> the units offered: not archived, and the article's own even when archived */

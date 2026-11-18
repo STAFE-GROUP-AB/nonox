@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\Units\UnitCatalogue;
+use App\Modules\Inventory\Domain\PlanningMethod;
 use App\Modules\Inventory\Domain\StockClass;
 use App\Modules\Inventory\Models\ArticleImage;
 use App\Modules\Inventory\Models\StockLevel;
@@ -62,10 +63,21 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property ?int $material_length_um
  * @property ?int $material_width_um
  * @property ?int $material_thickness_um
+ * @property ?int $lead_time_days
+ * @property int $safety_stock_milli
+ * @property ?int $lot_minimum_milli
+ * @property ?int $lot_multiple_milli
+ * @property PlanningMethod $planning_method
  */
 class Article extends Model
 {
     use BelongsToCompany;
+
+    /** @var array<string, mixed> */
+    protected $attributes = [
+        'planning_method' => 'NONE',
+        'safety_stock_milli' => 0,
+    ];
 
     /** @var list<string> */
     protected $fillable = [
@@ -109,6 +121,12 @@ class Article extends Model
         'material_length_um',
         'material_width_um',
         'material_thickness_um',
+        // Planning data (ADR-081 gap 5).
+        'lead_time_days',
+        'safety_stock_milli',
+        'lot_minimum_milli',
+        'lot_multiple_milli',
+        'planning_method',
     ];
 
     /**
@@ -157,6 +175,11 @@ class Article extends Model
             'material_length_um' => 'integer',
             'material_width_um' => 'integer',
             'material_thickness_um' => 'integer',
+            'lead_time_days' => 'integer',
+            'safety_stock_milli' => 'integer',
+            'lot_minimum_milli' => 'integer',
+            'lot_multiple_milli' => 'integer',
+            'planning_method' => PlanningMethod::class,
         ];
     }
 

@@ -120,6 +120,7 @@ BEGIN
         ('deadline_calendar_feeds', 'SELECT, INSERT, UPDATE, DELETE'),
         ('deadline_reminders', 'SELECT, INSERT, UPDATE, DELETE'),
         ('deferred_tax_items', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('demand_forecasts', 'SELECT, INSERT, UPDATE, DELETE'),
         ('employees', 'SELECT, INSERT, UPDATE, DELETE'),
         ('employments', 'SELECT, INSERT, UPDATE, DELETE'),
         ('expenses', 'SELECT, INSERT, UPDATE, DELETE'),

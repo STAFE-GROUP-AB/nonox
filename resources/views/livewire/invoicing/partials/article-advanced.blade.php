@@ -112,6 +112,33 @@
             <x-ui.field for="article_nrv_note" :label="__('Varför')" error="net_realisable_value_note" class="sm:col-span-4">
                 <input id="article_nrv_note" type="text" class="{{ $input }} mt-1" wire:model="form.net_realisable_value_note" maxlength="255" placeholder="{{ __('Till exempel: förra årets modell, säljs på rea') }}">
             </x-ui.field>
+            @if($planningView)
+                <div class="grid gap-4 border-t border-stone-200 pt-4 sm:col-span-6 sm:grid-cols-6">
+                    <div class="sm:col-span-6">
+                        <p class="font-medium text-ink">{{ __('Planeringsdata') }}</p>
+                        <p class="text-sm text-gray-600">{{ __('Underlaget för behovsplaneringen. Mängderna anges i artikelns lagerenhet.') }}@unless($planningRun) {{ __('Du kan se uppgifterna men inte ändra dem.') }}@endunless</p>
+                    </div>
+                    <x-ui.field for="article_planning_method" :label="__('Planeringsmetod')" error="planning_method" class="sm:col-span-2" :hint="__('Ingen planering är det vanliga. Beställningspunkt följer fältet ovan. Behovsplanering räknar fram behov per vecka.')">
+                        <select id="article_planning_method" class="{{ $input }} mt-1" wire:model="form.planning_method" @disabled(! $planningRun)>
+                            @foreach($planningMethods as $method)
+                                <option value="{{ $method->value }}">{{ $method->label() }}</option>
+                            @endforeach
+                        </select>
+                    </x-ui.field>
+                    <x-ui.field for="article_lead_time" :label="__('Ledtid, dagar')" error="lead_time_days" class="sm:col-span-2" :hint="__('Dagar från beställning eller start till färdig vara i lager.')">
+                        <input id="article_lead_time" type="text" inputmode="numeric" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="form.lead_time_days" @disabled(! $planningRun)>
+                    </x-ui.field>
+                    <x-ui.field for="article_safety_stock" :label="__('Säkerhetslager')" error="safety_stock" class="sm:col-span-2" :hint="__('Saldot du vill ha kvar som buffert.')">
+                        <input id="article_safety_stock" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="form.safety_stock" @disabled(! $planningRun)>
+                    </x-ui.field>
+                    <x-ui.field for="article_lot_minimum" :label="__('Minsta parti')" error="lot_minimum" class="sm:col-span-3" :hint="__('Minsta mängd som beställs eller tillverkas åt gången. Tomt = ingen gräns.')">
+                        <input id="article_lot_minimum" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="form.lot_minimum" @disabled(! $planningRun)>
+                    </x-ui.field>
+                    <x-ui.field for="article_lot_multiple" :label="__('Partimultipel')" error="lot_multiple" class="sm:col-span-3" :hint="__('Beställs eller tillverkas i jämna multiplar av detta, till exempel 12 i en kartong. Tomt = valfri mängd.')">
+                        <input id="article_lot_multiple" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="form.lot_multiple" @disabled(! $planningRun)>
+                    </x-ui.field>
+                </div>
+            @endif
             @if($editingId && auth()->user()->hasTeamPermission(auth()->user()->currentCompany(), 'inventory:manage'))
                 <div class="sm:col-span-6">
                     <livewire:inventory.unit-conversions :article-id="$editingId" :key="'conversions-'.$editingId" />

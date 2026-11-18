@@ -11,12 +11,14 @@ use App\Models\Account;
 use App\Models\Article;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Inventory\Domain\PlanningMethod;
 use App\Modules\Inventory\Models\ArticleUnitConversion;
 use App\Modules\Inventory\Support\ArticleDetails;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Brick\Math\BigRational;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -42,6 +44,8 @@ class SaveArticle
         $article === null
             ? Gate::forUser($user)->authorize('create', [Article::class, $company])
             : Gate::forUser($user)->authorize('update', $article);
+
+        $this->guardPlanning($user, $company, $input, $article);
 
         $validated = Validator::make($input, [
             'number' => ['required', 'string', 'max:30', Rule::unique('articles', 'number')->where('company_id', $company->id)->ignore($article?->id)],
@@ -101,6 +105,35 @@ class SaveArticle
 
             return $article;
         }));
+    }
+
+    /**
+     * The planning data (ADR-081 gap 5) is changed only by someone who may run the planning.
+     * Sending a value back unchanged, as an API client does with the whole article, is no change.
+     *
+     * @param  array<string, mixed>  $input
+     */
+    private function guardPlanning(User $user, Company $company, array $input, ?Article $article): void
+    {
+        $sent = array_intersect_key($input, array_flip(ArticleDetails::PLANNING_KEYS));
+
+        if ($sent === [] || $user->hasTeamPermission($company, 'mrp:run')) {
+            return;
+        }
+
+        $current = [
+            'lead_time_days' => $article?->lead_time_days,
+            'safety_stock_milli' => $article?->safety_stock_milli ?? 0,
+            'lot_minimum_milli' => $article?->lot_minimum_milli,
+            'lot_multiple_milli' => $article?->lot_multiple_milli,
+            'planning_method' => ($article?->planning_method ?? PlanningMethod::None)->value,
+        ];
+
+        foreach (ArticleDetails::attributes($sent, $company, $article) as $column => $value) {
+            if ($current[$column] !== $value) {
+                throw new AuthorizationException;
+            }
+        }
     }
 
     /**

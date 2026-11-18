@@ -8,6 +8,7 @@ use App\Models\Article;
 use App\Models\Company;
 use App\Models\Supplier;
 use App\Modules\Inventory\Domain\Gtin;
+use App\Modules\Inventory\Domain\PlanningMethod;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Domain\StockClass;
 use App\Modules\Inventory\Models\StockLevel;
@@ -32,7 +33,11 @@ final class ArticleDetails
         'weight_grams', 'length_mm', 'width_mm', 'height_mm', 'purchase_price', 'vat_treatment',
         'default_supplier_id', 'supplier_article_number', 'is_stock_item', 'reorder_point', 'reorder_quantity',
         'default_location_id', 'net_realisable_value', 'net_realisable_value_note', 'stock_class',
+        'lead_time_days', 'safety_stock', 'lot_minimum', 'lot_multiple', 'planning_method',
     ];
+
+    /** The planning data (ADR-081 gap 5): changed only by someone who holds mrp:run. */
+    public const array PLANNING_KEYS = ['lead_time_days', 'safety_stock', 'lot_minimum', 'lot_multiple', 'planning_method'];
 
     /**
      * @param  array<string, mixed>  $input
@@ -92,7 +97,14 @@ final class ArticleDetails
             'net_realisable_value' => ['nullable', 'string'],
             'net_realisable_value_note' => ['nullable', 'string', 'max:255'],
             'stock_class' => ['nullable', Rule::enum(StockClass::class)],
+            'lead_time_days' => ['nullable', 'integer', 'between:0,365'],
+            'safety_stock' => ['nullable', 'string'],
+            'lot_minimum' => ['nullable', 'string'],
+            'lot_multiple' => ['nullable', 'string'],
+            'planning_method' => ['nullable', Rule::enum(PlanningMethod::class)],
         ], [
+            'lead_time_days.between' => __('Ledtiden ska vara mellan 0 och 365 dagar.'),
+            'lead_time_days.integer' => __('Ledtiden anges i hela dagar.'),
             'gtin.regex' => __('EAN/GTIN ska vara 8, 12, 13 eller 14 siffror.'),
             'gtin.unique' => __('EAN-koden används redan av en annan artikel.'),
             'sku.unique' => __('SKU:n används redan av en annan artikel.'),
@@ -141,6 +153,30 @@ final class ArticleDetails
             if (array_key_exists($key, $validated)) {
                 $attributes[$column] = self::quantity($validated[$key], $key);
             }
+        }
+
+        if (array_key_exists('lead_time_days', $validated)) {
+            $attributes['lead_time_days'] = $validated['lead_time_days'] === null ? null : (int) $validated['lead_time_days'];
+        }
+
+        if (array_key_exists('safety_stock', $validated)) {
+            $attributes['safety_stock_milli'] = self::quantity($validated['safety_stock'], 'safety_stock') ?? 0;
+        }
+
+        foreach (['lot_minimum' => 'lot_minimum_milli', 'lot_multiple' => 'lot_multiple_milli'] as $key => $column) {
+            if (array_key_exists($key, $validated)) {
+                $milli = self::quantity($validated[$key], $key);
+
+                if ($milli === 0) {
+                    throw ValidationException::withMessages([$key => __('Partistorleken ska vara större än noll, eller tom.')]);
+                }
+
+                $attributes[$column] = $milli;
+            }
+        }
+
+        if (array_key_exists('planning_method', $validated)) {
+            $attributes['planning_method'] = $validated['planning_method'] ?? PlanningMethod::None->value;
         }
 
         if (array_key_exists('stock_class', $validated)) {

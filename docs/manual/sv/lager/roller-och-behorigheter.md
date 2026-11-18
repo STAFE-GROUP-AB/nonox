@@ -39,6 +39,20 @@ Attestanter har ingen åtkomst till lagret. Att bokföra lagerförändringen vid
 
 Utan attestgräns skickar bokföraren alla ordrar. Med en **Attestgräns för inköpsorder** under **Lager → Inställningar** skickas en order över beloppet bara av ägaren, en administratör eller en attestant. Attestanten ser inköpsordrarna under **Beställningar** men inte lagret. Lagerpersonal tar emot varor från en inköpsorder under **Lager → Inleveranser** utan att se ordern.
 
+## Prognos och planeringsdata
+
+| Roll | Se prognosen och planeringsdata | Ändra och räkna fram ur historik |
+|---|---|---|
+| **Ägare** | Ja | Ja |
+| **Administratör** | Ja | Ja |
+| **Redovisningskonsult** | Ja | Nej |
+| **Bokförare** | Ja | Ja |
+| **Revisor** | Ja | Nej |
+| **Attestant** | Nej | Nej |
+| **Lagerpersonal** | Nej | Nej |
+
+Se [Prognos och planeringsdata](/manual/lager/prognos).
+
 ## Lagerpersonal
 
 Rollen passar den som arbetar på golvet. Hen kan:

@@ -36,6 +36,7 @@ Under **Lager → Översikt** ser du:
 
 - [Inköpsorder](/manual/lager/inkopsorder) – beställ från leverantörer, skicka ordern som PDF och stäm av fakturan.
 - [Inköpsförslag](/manual/lager/inkopsforslag) – vad som behöver beställas, utifrån beställningspunkter och öppna kundordrar.
+- [Prognos och planeringsdata](/manual/lager/prognos) – förväntad efterfrågan per artikel och vecka, ledtid, säkerhetslager och partistorlek.
 - [Inleverans](/manual/lager/inleverans) – varor in från leverantörer, allt på en gång eller i delar.
 - [Plocklista](/manual/lager/plocklista) – hämta varor till en order eller faktura.
 - [Inventering](/manual/lager/inventering) – räkna det som finns på hyllan.

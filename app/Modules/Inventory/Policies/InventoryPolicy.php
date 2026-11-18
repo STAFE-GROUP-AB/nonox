@@ -59,4 +59,16 @@ class InventoryPolicy
     {
         return $user->hasTeamPermission($company, 'inventory:manage');
     }
+
+    /** The demand forecast and the planning data (ADR-081 gap 5): see them. */
+    public function planView(User $user, Company $company): bool
+    {
+        return $user->hasTeamPermission($company, 'mrp:view') || $user->hasTeamPermission($company, 'mrp:run');
+    }
+
+    /** Edit forecasts and planning data, compute a forecast from history. */
+    public function planRun(User $user, Company $company): bool
+    {
+        return $user->hasTeamPermission($company, 'mrp:run');
+    }
 }
