@@ -180,6 +180,8 @@ use App\Modules\Inventory\Models\ScanOperation;
 use App\Modules\Inventory\Models\StockCount;
 use App\Modules\Inventory\Models\StockCountLine;
 use App\Modules\Inventory\Models\StockLevel;
+use App\Modules\Inventory\Models\StockLot;
+use App\Modules\Inventory\Models\StockLotLevel;
 use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Inventory\Models\StockReceipt;
@@ -518,6 +520,8 @@ const COMPANY_SCOPED_MODELS = [
     StockMovement::class => 'inventoryMovementAttributes',
     ScanOperation::class => 'inventoryScanOperationAttributes',
     StockLevel::class => 'inventoryLevelAttributes',
+    StockLot::class => 'e12StockLotAttributes',
+    StockLotLevel::class => 'e12StockLotLevelAttributes',
     StockReceipt::class => 'inventoryReceiptAttributes',
     StockReceiptLine::class => 'inventoryReceiptLineAttributes',
     PickList::class => 'inventoryPickListAttributes',
@@ -2350,6 +2354,18 @@ function inventoryMovementAttributes(): array
 function inventoryLevelAttributes(): array
 {
     return ['article_id' => Article::create(articleAttributes())->id, 'location_id' => StockLocation::create(inventoryLocationAttributes())->id, 'quantity_milli' => 1000];
+}
+
+function e12StockLotAttributes(): array
+{
+    return ['article_id' => Article::create(articleAttributes())->id, 'kind' => 'BATCH', 'code' => 'HEMLIG-'.random_int(1, 1_000_000), 'received_on' => '2026-11-18'];
+}
+
+function e12StockLotLevelAttributes(): array
+{
+    $lot = StockLot::create(e12StockLotAttributes());
+
+    return ['article_id' => $lot->article_id, 'location_id' => StockLocation::create(inventoryLocationAttributes())->id, 'lot_id' => $lot->id, 'quantity_milli' => 1000];
 }
 
 function inventoryReceiptLineAttributes(): array

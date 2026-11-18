@@ -94,7 +94,14 @@ final class WorkshopAnalysis
             return ['products' => [], 'overruns' => [], 'overruns_hidden' => 0];
         }
 
-        $operations = ProductionOrderOperation::query()->with('operation:id,name')->whereIn('production_order_id', $orders->pluck('id'))->get(['id', 'production_order_id', 'operation_id', 'planned_minutes']);
+        // In the orders' own order (finished first to last), so the series and the trend run forward in time.
+        $position = $orders->pluck('id')->flip();
+        $operations = ProductionOrderOperation::query()->with('operation:id,name')->whereIn('production_order_id', $orders->pluck('id'))
+            ->get(['id', 'production_order_id', 'operation_id', 'planned_minutes'])
+            ->sortBy([
+                fn (ProductionOrderOperation $a, ProductionOrderOperation $b): int => ($position[$a->production_order_id] ?? PHP_INT_MAX) <=> ($position[$b->production_order_id] ?? PHP_INT_MAX),
+                fn (ProductionOrderOperation $a, ProductionOrderOperation $b): int => $a->id <=> $b->id,
+            ])->values();
         $reported = ProductionLabourEntry::query()->whereIn('production_order_id', $orders->pluck('id'))
             ->whereIn('source', [LabourSource::Entered->value, LabourSource::Terminal->value])
             ->groupBy('production_order_operation_id')->selectRaw('production_order_operation_id, sum(minutes) as minutes')

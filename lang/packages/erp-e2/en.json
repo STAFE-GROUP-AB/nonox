@@ -40,7 +40,7 @@
     "Bara den som förberedde underlaget kan skicka det till attest igen.": "Only the person who prepared it can send it for approval again.",
     "vad flödet gäller": "what the flow applies to",
     "ordning": "order",
-    "steg": "steps",
+    "steg": "step",
     "antal som ska godkänna": "number who must approve",
     "Det sättet att välja attestant finns inte för :type.": "That way of choosing the approver does not exist for :type.",
     "Välj vilken behörighet som krävs.": "Choose which permission is required.",

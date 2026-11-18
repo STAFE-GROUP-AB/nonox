@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Process;
  */
 final class PdfEngineFixtures
 {
+    /** @var list<string> */
+    private static array $created = [];
+
     private static ?bool $realEngineReady = null;
 
     /** A fresh private directory for one test, removed by {@see cleanUp()}. */
@@ -22,13 +25,19 @@ final class PdfEngineFixtures
     {
         $directory = storage_path('framework/testing/pdf-engine/'.bin2hex(random_bytes(8)));
         File::ensureDirectoryExists($directory, 0700);
+        self::$created[] = $directory;
 
         return (string) realpath($directory);
     }
 
+    /** Removes only this process's directories: parallel test processes share storage/. */
     public static function cleanUp(): void
     {
-        File::deleteDirectory(storage_path('framework/testing/pdf-engine'));
+        foreach (self::$created as $directory) {
+            File::deleteDirectory($directory);
+        }
+
+        self::$created = [];
     }
 
     /**

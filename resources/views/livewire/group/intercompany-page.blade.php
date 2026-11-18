@@ -86,7 +86,7 @@
                     @endif
                 </x-ui.field>
                 <x-ui.field for="mark_org_number" :label="__('Organisationsnummer')" :hint="__('Förifyllt från registret.')" error="markOrgNumber">
-                    <input id="mark_org_number" type="text" class="{{ $input }} mt-1 tabular-nums" wire:model="markOrgNumber" maxlength="13" autocomplete="off" placeholder="556000-0000">
+                    <input id="mark_org_number" type="text" class="{{ $input }} mt-1 tabular-nums" wire:model="markOrgNumber" maxlength="13" autocomplete="off" placeholder="556123-4567">
                 </x-ui.field>
                 <div class="sm:pt-6">
                     <x-button wire:loading.attr="disabled">{{ __('Markera som koncernföretag') }}</x-button>
@@ -138,7 +138,7 @@
                     <input id="tag_to" type="date" class="{{ $input }} mt-1" wire:model.live="tagTo">
                 </x-ui.field>
                 <x-ui.field for="tag_org_number" :label="__('Koncernföretagets organisationsnummer')" error="tagOrgNumber">
-                    <input id="tag_org_number" type="text" list="intercompany-known-numbers" class="{{ $input }} mt-1 tabular-nums" wire:model.live.debounce.400ms="tagOrgNumber" maxlength="13" autocomplete="off" placeholder="556000-0000">
+                    <input id="tag_org_number" type="text" list="intercompany-known-numbers" class="{{ $input }} mt-1 tabular-nums" wire:model.live.debounce.400ms="tagOrgNumber" maxlength="13" autocomplete="off" placeholder="556123-4567">
                     <datalist id="intercompany-known-numbers">
                         @foreach($names as $number => $name)
                             <option value="{{ $number }}">{{ $name }}</option>

@@ -253,7 +253,7 @@ final class CustomerDirectory
         }
 
         foreach ($user->teams as $company) {
-            if (! $company instanceof Company || isset($rows[$company->id])) {
+            if (isset($rows[$company->id])) {
                 continue;
             }
 

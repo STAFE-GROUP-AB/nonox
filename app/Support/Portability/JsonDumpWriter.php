@@ -92,14 +92,20 @@ final class JsonDumpWriter
         'fiscal_years' => ['company_id', 'created_at', 'updated_at'],
         'voucher_number_counters' => ['id', 'company_id', 'created_at', 'updated_at'],
         'accounts' => ['company_id', 'created_at', 'updated_at'],
-        'cost_centers' => ['company_id', 'created_at', 'updated_at'],
-        'projects' => ['company_id', 'created_at', 'updated_at'],
+        // The approver who owns a dimension (ADR-081 E2) is a user id in this instance, not portable data.
+        'cost_centers' => ['company_id', 'created_at', 'updated_at', 'owner_user_id'],
+        // The project register's fields (ADR-081 E6) and its approver (E2) are not in the dump format (ADR-065) yet.
+        'projects' => [
+            'company_id', 'created_at', 'updated_at', 'owner_user_id', 'customer_id', 'manager_user_id', 'status',
+            'starts_on', 'ends_on', 'price_form', 'contract_sum_ore', 'estimated_cost_ore', 'default_cost_center_id',
+        ],
         'voucher_series' => ['company_id', 'created_at', 'updated_at'],
         'vouchers' => ['company_id', 'created_at', 'updated_at'],
         'voucher_rows' => ['voucher_id', 'company_id', 'created_at', 'updated_at'],
         'voucher_attachments' => ['voucher_id', 'company_id', 'created_at', 'updated_at'],
         // external_ref (ADR-076) is the number in the previous program; the dump format (ADR-065) does not carry it yet.
-        'customers' => ['company_id', 'created_at', 'updated_at', 'external_ref'],
+        // default_cost_center_id and default_project_id (ADR-081 E6) are not in the dump format yet either.
+        'customers' => ['company_id', 'created_at', 'updated_at', 'external_ref', 'default_cost_center_id', 'default_project_id'],
         'suppliers' => ['company_id', 'created_at', 'updated_at', 'external_ref'],
     ];
 

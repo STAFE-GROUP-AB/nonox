@@ -126,10 +126,10 @@ class SaveArticle
 
         $current = [
             'lead_time_days' => $article?->lead_time_days,
-            'safety_stock_milli' => $article?->safety_stock_milli ?? 0,
+            'safety_stock_milli' => $article->safety_stock_milli ?? 0,
             'lot_minimum_milli' => $article?->lot_minimum_milli,
             'lot_multiple_milli' => $article?->lot_multiple_milli,
-            'planning_method' => ($article?->planning_method ?? PlanningMethod::None)->value,
+            'planning_method' => ($article->planning_method ?? PlanningMethod::None)->value,
         ];
 
         foreach (ArticleDetails::attributes($sent, $company, $article) as $column => $value) {
