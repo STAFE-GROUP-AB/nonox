@@ -18,6 +18,8 @@ Schedule::command('demo:prune')->everyTenMinutes()->withoutOverlapping();
 Schedule::command('privacy:prune')->dailyAt('04:10')->withoutOverlapping();
 // Unsigned signing links a year after they closed, in every company (ADR-046, ADR-075 §7).
 Schedule::command('signing:prune')->dailyAt('04:15')->withoutOverlapping();
+// Work directories the PDF engine left behind when PHP died mid-call (ADR-046 amendment, S5): older than an hour.
+Schedule::command('signing:prune-engine-work')->hourlyAt(17)->withoutOverlapping();
 // The customer portal's invitations, inactive and disabled contacts, events and closed questions (ADR-075).
 Schedule::command('portal:prune')->dailyAt('04:20')->withoutOverlapping();
 Schedule::command('connect:prune')->dailyAt('04:25')->withoutOverlapping();

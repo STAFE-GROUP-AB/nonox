@@ -1,0 +1,13 @@
+# Direct dependencies of the NONOX PDF engine (ADR-046 amendment, S5).
+#
+# requirements.txt is the lock file: every package pinned to one version with its
+# SHA-256 hashes. Regenerate it only with a cooling period of two weeks, so no
+# release younger than that is picked up:
+#
+#   pip-compile --generate-hashes --strip-extras --no-header \
+#     --pip-args "--uploaded-prior-to=<UTC date two weeks ago>" \
+#     -o requirements.txt requirements.in
+#
+# and record every new version and its licence in README.md.
+pyHanko[opentype,image-support]==0.38.1
+pypdfium2==5.14.0

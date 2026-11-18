@@ -28,6 +28,7 @@ use App\Providers\DemoServiceProvider;
 use App\Providers\FortifyServiceProvider;
 use App\Providers\JetstreamServiceProvider;
 use App\Providers\OverviewServiceProvider;
+use App\Providers\PdfEngineServiceProvider;
 use App\Providers\SearchServiceProvider;
 use App\Providers\SigningServiceProvider;
 
@@ -42,6 +43,7 @@ return [
     PlanningServiceProvider::class,
     InventoryServiceProvider::class,
     SigningServiceProvider::class,
+    PdfEngineServiceProvider::class,
     CrmServiceProvider::class,
     PosServiceProvider::class,
     KitchenServiceProvider::class,

@@ -1149,7 +1149,9 @@ human-approved edit when S7 merges, as in ADR-081. API abilities map one to one
   pages (owner decision 22), not encrypted or password-protected, inspected by
   the engine. A PDF with JavaScript, launch actions or embedded files is
   refused with a plain message (rejected: stripping them, which rewrites the
-  bytes).
+  bytes). So is a PDF with actions that send data out or open another file
+  or medium (`/SubmitForm`, `/ImportData`, `/GoToR`, `/GoToE`) or with
+  `/RichMedia` (Lead decision in S5's review, 2026-11-18).
 - Stored on the private disk under a random name; served with
   `Content-Type: application/pdf`, `X-Content-Type-Options: nosniff`, a
   `Content-Disposition` with a sanitised name, and a `sandbox` CSP on the file
@@ -1455,3 +1457,53 @@ before the trust-service item in gap 5 is answered.
 - `docs/gdpr/registerforteckning.md` and `lagringstider.md` change in S3, S4,
   S16 and S18. The systemdokumentation changes in S1 (a quote with several
   signers becomes an order only when all have signed) and S2.
+
+### S5 as built (2026-11-18): the PDF engine
+
+- **Verified before use** (PyPI metadata and the installed wheels'
+  metadata): pyHanko 0.38.1 (MIT), pypdfium2 5.14.0 (Apache-2.0 or
+  BSD-3-Clause; PDFium BSD-3-Clause), and 23 transitive packages under MIT,
+  MIT-0, MIT-CMU, BSD-3-Clause, Apache-2.0, PSF-2.0 and MPL-2.0 (certifi), all
+  compatible with AGPL-3.0. The list, and every library call relied on, is in
+  `tools/pdf-engine/README.md`. Since pyHanko 0.37 its HTTP timestamp client
+  is built on aiohttp, not requests. The lock (`tools/pdf-engine/requirements.txt`)
+  pins every package with its SHA-256 hashes and was compiled with a two-week
+  cooling period (`pip --uploaded-prior-to`); installs use `--require-hashes
+  --only-binary=:all:`.
+- **FPDI confirmed:** the free FPDI parser throws
+  `CrossReferenceException::COMPRESSED_XREF` ("probably uses a compression
+  technique which is not supported by the free parser") on a cross-reference
+  stream (`src/PdfParser/CrossReference/CrossReference.php` in
+  setasign/FPDI, master, read 2026-11-18). The rejection stands.
+- **Contract:** `App\Domain\Signing\Pdf\PdfEngine` with the seven operations
+  named above, `isInstalled()` and `health()`; drivers `SidecarPdfEngine`,
+  `NullPdfEngine` (no helper: every operation throws "not installed") and
+  `FakePdfEngine` (tests). `nonox.signing.pdf_engine.driver` is `auto` by
+  default. The limits of decision 22 are constants in `PdfLimits`, enforced
+  in PHP before the helper starts and again in the helper.
+- **Process:** an argument list `[python, -I, script]` through
+  `Illuminate\Support\Facades\Process`, JSON on stdin and stdout, a private
+  `0700` work directory per call (inputs copied in, outputs copied out, then
+  removed), an emptied environment, a 60-second wall-clock timeout, and
+  `RLIMIT_AS`/`RLIMIT_CPU` set by the helper itself where the OS allows it.
+  Every write is checked to start with the input's exact bytes, by the
+  helper and again in PHP against the size and hash recorded when the input
+  was copied in. Inputs are checked and copied from one open handle; stdout
+  and stderr are capped while the helper runs (2 MB, 64 KB). Work
+  directories left behind by a dead PHP process are removed hourly
+  (`signing:prune-engine-work`). Timestamp URLs must be in
+  `nonox.signing.timestamp.urls`, and the helper follows no redirects. The
+  helper runs as the same OS user as PHP; an OS sandbox (bubblewrap,
+  Landlock) is a possible later step.
+- **Seal levels in S5:** B-B and B-T; B-LT and B-LTA are S11. The helper's
+  `validate` uses no trust roots and fetches nothing.
+- **Fonts:** Noto Sans 2.015 and Noto Sans CJK 2.004 (SIL OFL 1.1), fetched by
+  `scripts/fetch-signing-fonts.sh` with pinned SHA-256; the helper picks the
+  CJK font for text with Han, kana or Hangul. Per-script font runs inside one
+  text are S20's.
+- **Status:** `signing:engine-doctor` (exit 0 working, 1 failing, 2 not
+  installed) and a card in /hq → Integrationer, cached ten minutes; the
+  `<x-signing.requires-pdf-engine>` component shows "Kräver PDF-motorn" with
+  a link to the self-hosting guide. Install steps: `docs/juridik/egen-drift.md`;
+  the hosted service's runbook, every step awaiting the owner's approval:
+  `docs/drift/pdf-motorn.md`.

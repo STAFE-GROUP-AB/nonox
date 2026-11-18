@@ -19,3 +19,7 @@ yarn-error.log
 /.vscode
 .DS_Store
 docs/media/*.zip
+
+# The PDF engine's local Python environment (tools/pdf-engine/README.md); never committed.
+/tools/pdf-engine/.venv
+__pycache__/
