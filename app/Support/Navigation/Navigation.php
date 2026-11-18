@@ -207,6 +207,8 @@ final class Navigation
                     ['label' => __('Koncernstruktur'), 'route' => 'group.corporate', 'active' => ['group.corporate']],
                     // A shared group's consolidation and run log (ADR-081 E24); the page shows only groups the user sees.
                     ['label' => __('Konsolidering'), 'route' => 'group.consolidation', 'active' => ['group.consolidation']],
+                    // Elimination suggestions and the group ledger (ADR-081 E25); FULL access only, the page says so otherwise.
+                    ['label' => __('Elimineringar'), 'route' => 'group.eliminations', 'active' => ['group.eliminations']],
                     // Only for someone who may see the schedule in at least one company (ADR-037, gap 8).
                     ...(Memberships::of($user, active: true)->where('planning:view') === [] ? [] : [['label' => __('Schema över företag'), 'route' => 'companies.schedule', 'active' => ['companies.schedule']]]),
                 ],

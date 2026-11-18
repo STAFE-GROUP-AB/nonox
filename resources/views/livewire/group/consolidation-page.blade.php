@@ -14,7 +14,7 @@
     {{-- ADR-060 2.4 and S2-R14: every consolidated screen and print says what it is. --}}
     <div class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="note">
         <p class="font-semibold">{{ __('Intern koncernrapport, inte en koncernredovisning enligt ÅRL') }}</p>
-        <p class="mt-1">{{ __('Siffrorna är företagens egen bokföring summerad efter koncernens kontomappning. Inga elimineringar är gjorda ännu, och ingenting bokförs i något av företagen.') }}</p>
+        <p class="mt-1">{{ __('Siffrorna är företagens egen bokföring summerad efter koncernens kontomappning, med de elimineringar som är godkända i koncernjournalen för exakt samma period. Ingenting bokförs i något av företagen.') }}</p>
     </div>
 
     @if($groups->isEmpty())
@@ -165,6 +165,47 @@
                         @endif
                     </x-ui.card>
                 </div>
+
+                <x-ui.card>
+                    <h3 class="font-semibold text-gray-900">{{ __('Elimineringar') }}</h3>
+                    @if($view['eliminations'] === [])
+                        <p class="mt-1 text-sm text-gray-700">{{ __('Inga elimineringar är godkända för den här perioden. Siffrorna är företagens summor.') }}</p>
+                    @else
+                        <p class="mt-1 text-sm text-gray-600">{{ trans_choice('{1} En post i koncernjournalen är dragen från siffrorna.|[2,*] :count poster i koncernjournalen är dragna från siffrorna.', $view['eliminated_entries'], ['count' => $view['eliminated_entries']]) }}</p>
+                        <div class="mt-3 overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <caption class="sr-only">{{ __('Eliminerat per slag') }}</caption>
+                                <thead class="text-gray-600"><tr class="border-b border-gray-200">
+                                    <th scope="col" class="py-2 pr-4 text-left font-medium">{{ __('Slag') }}</th>
+                                    <th scope="col" class="{{ $th }}">{{ __('Eliminerat belopp') }}</th>
+                                </tr></thead>
+                                <tbody>
+                                    @foreach($view['eliminations'] as $elimination)
+                                        <tr class="border-b border-gray-100">
+                                            <td class="py-1.5 pr-4">{{ $elimination['label'] }}</td>
+                                            <td class="{{ $td }} py-1.5">
+                                                @if($elimination['amount'] === null)
+                                                    {{ trans_choice('{1} en post|[2,*] :count poster', $elimination['entries'], ['count' => $elimination['entries']]) }}
+                                                @else
+                                                    <x-ui.amount :money="$m($elimination['amount'])" />
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                    @if($view['level'] !== GroupAccessLevel::Full && collect($view['eliminations'])->contains(fn (array $elimination): bool => $elimination['amount'] === null))
+                        <p class="mt-3 text-xs text-gray-600">{{ __('För ett slag som bara gäller ett par av företagen visas antalet poster i stället för beloppet.') }}</p>
+                    @endif
+                    @if($view['skipped_entries'] > 0)
+                        <p class="mt-3 text-sm text-amber-800" role="status">{{ trans_choice('{1} En post i koncernjournalen för perioden är inte dragen, eftersom den gäller ett företag som inte ingår i körningen.|[2,*] :count poster i koncernjournalen för perioden är inte dragna, eftersom de gäller ett företag som inte ingår i körningen.', $view['skipped_entries'], ['count' => $view['skipped_entries']]) }}</p>
+                    @endif
+                    @if($view['level'] === GroupAccessLevel::Full)
+                        <p class="mt-3 text-sm print:hidden"><a href="{{ route('group.eliminations', ['koncern' => $current->id, 'fran' => $view['from'], 'till' => $view['to']]) }}" class="{{ $quiet }}" wire:navigate>{{ __('Förslag och koncernjournal för perioden') }}</a></p>
+                    @endif
+                </x-ui.card>
 
                 @if($view['level'] === GroupAccessLevel::Full && $view['companies'] !== [])
                     <x-ui.card class="print:hidden">

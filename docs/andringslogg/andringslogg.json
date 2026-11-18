@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-elimineringar-och-koncernjournal",
+      "datum": "2026-11-18T13:40:00+01:00",
+      "rubrik": "Elimineringar och koncernjournal",
+      "beskrivning": "Under Mina företag → Elimineringar ser du försäljning, fordringar, lån, ränta, utdelning, koncernbidrag och andelar mellan koncernens företag med båda sidorna och eventuell differens, utifrån koncernmarkeringarna. Ett förslag där sidorna stämmer godkänns in i en egen koncernjournal, som numreras i följd, inte kan ändras och rättas med återföringar, och konsolideringen av samma period drar då bort beloppen. Ingenting bokförs i företagens bokföring.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-18-analys",
       "datum": "2026-11-18T13:00:00+01:00",
       "rubrik": "Analys: egna frågor till siffrorna",

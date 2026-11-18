@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.145
+- Version: 0.146
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -1009,9 +1009,11 @@ körloggen.
   kontot på sitt eget nummer. Raden är medlemsföretagets egna data och
   ändras bara av den som är ägare eller administratör i alla företag i
   koncernen.
-- Beloppen summeras per koncernkonto i hela ören. Inga elimineringar görs
-  ännu (ADR-060 S2-1.5, paket E25); körningen anger att listan över godkända
-  elimineringar är tom. Balansräkningens rad "Årets resultat som ännu inte är
+- Beloppen summeras per koncernkonto i hela ören. Därefter dras de poster i
+  koncernjournalen som gäller exakt samma period (avsnitt 4.10c); körningen
+  anger varje sådan post med id, nummer och kontrollsumma, och de poster för
+  perioden som inte drogs för att de gäller ett företag som inte lästes.
+  Balansräkningens rad "Årets resultat som ännu inte är
   bokfört mot eget kapital" gör att sidorna går ihop, och skillnaden mot
   periodens resultat (före periodens början, före ett förvärv, efter en
   avyttring) visas.
@@ -1057,6 +1059,94 @@ körloggen.
   antal företag, antal utelämnade, preliminär) och `group_account_map.saved`
   och `.removed` i det företag vars konto mappas (koncernens id och
   kontonummer).
+
+### 4.10c Koncern: elimineringar och koncernjournal (ADR-060 tillägg 2.4 och 3.2, ADR-081 E25)
+
+Elimineringar av mellanhavanden mellan koncernens företag förs i en egen
+koncernjournal (Mina företag → Elimineringar). Koncernjournalen är intern
+rapportering, inte räkenskapsinformation för någon juridisk person, och
+skriver aldrig något i något företags bokföring: inga verifikationer, rader,
+nummer eller hashkedjor i företagen skapas eller ändras.
+
+- Förslag räknas fram och sparas inte. Sex par matchas ur
+  koncernmarkeringarna (avsnitt 4.10a): försäljning mot inköp, skuld mot
+  fordran, lån från mot lån till, ränteintäkt mot räntekostnad, utdelning mot
+  beslutad utdelning och mottaget mot lämnat koncernbidrag. För varje par av
+  företag X och Y ställs X:s markerade rader med motpart Y mot Y:s markerade
+  rader med motpart X. Konton 3000–8999 räknas för företagets dagar i
+  koncernen under perioden. Konton 1000–2999 föreslås med utgående balans på
+  periodens sista dag: alla markerade bokförda rader fram till den dagen, i
+  alla räkenskapsår, när företagets balans tas med. Det är samma företag,
+  dagar och räkenskapsår som konsolideringen läser
+  (`Consolidation::gather`), inom varje företag.
+- Ingående balanser har inga markeringar. Skiljer sig ett kontos ingående
+  balans i det lästa räkenskapsåret från summan av alla kontots bokförda rader
+  före det året (till exempel det första årets ingående balans från ett
+  tidigare program), och används kontot 1000–2999 av en sida, blir
+  förslaget "Kräver granskning: ingående balans utan koncernmarkering" och
+  kan inte godkännas; elimineringen görs då som en manuell post. Är båda
+  sidorna noll blir förslaget "Inget att eliminera".
+- Andelar mot eget kapital räknas ur balanserna: ägarens konton 1310–1318 mot
+  konto 2081 (aktiekapital) i det företag den äger. Förslaget kan godkännas
+  bara när ägaren äger exakt ett företag i koncernen, äger hela kapitalet,
+  har ägt det sedan företagets första räkenskapsår började, företagets
+  bokföring började i NONOX (det första året har inga ingående balanser) och
+  beloppen är lika; annars visas "Kräver förvärvsanalys (steg 2)". Ägaren, kapitalandelen
+  och förvärvsdagen läses ur innehavsregistret över företagsgränsen, i samma
+  läsning som förvärvs- och avyttringsdagarna, och visas bara för den som
+  ser alla företag.
+- Ett förslag kan godkännas bara när sidorna är lika stora. En differens
+  visas med båda sidorna och kan inte godkännas; en person kan i stället
+  göra en manuell post. Godkännandet är bundet till det förslag personen
+  såg: förslaget räknas om under koncernens radlås och nekas om dess
+  kontrollsumma har ändrats, och ett förslag som redan är godkänt för
+  perioden och inte återfört nekas.
+- Koncernjournalen (`group_entries`, `group_entry_rows`): koncern, nummer i
+  följd utan luckor per koncern (tilldelas under koncernens radlås), period
+  (från och till; postens datum är periodens sista dag), slag (eliminering,
+  justering, återföring), typ av par, ursprung (godkänt förslag, manuell
+  post, återföring), vilken post en återföring återför, förslagets nyckel,
+  motivering, förslagets indata, antal rader och belopp, vem som godkände
+  och när (med tidszon), föregående posts kontrollsumma och postens egen
+  kontrollsumma. Raderna anger det företag vars belopp de eliminerar,
+  företagets konto (tomt för manuella rader), koncernkontot och debet eller
+  kredit, aldrig båda.
+- Kontrollsumman är SHA-256 av föregående posts kontrollsumma följd av
+  postens innehåll som JSON med sorterade nycklar, så posterna bildar en
+  kedja som verifikationerna. "Kontrollera koncernjournalen"
+  (`GroupLedger::verify`) räknar om kedjan och kontrollerar nummerföljden och
+  att varje post balanserar.
+- Koncernjournalen kan inte ändras eller tas bort: modellerna nekar,
+  PostgreSQL-triggrar nekar `UPDATE` och `DELETE` på båda tabellerna, och
+  appens databasroll har bara `SELECT` och `INSERT`. En utlöst kontroll vid
+  commit (`DEFERRABLE INITIALLY DEFERRED`) kontrollerar att varje post har
+  exakt sitt antal rader och att debet, kredit och postens belopp är lika,
+  så att en rad varken kan fattas eller läggas till senare. En återföring
+  måste gälla en post i samma koncern och period som inte själv är en
+  återföring, och en post kan återföras bara en gång.
+- Ett fel rättas med en återföring: en ny post med samma rader på motsatt
+  sida, med motivering. Båda finns kvar.
+- En post gäller konsolideringar av exakt samma period, och bara när alla
+  företag på dess rader läses i körningen. Körningen visar eliminerat belopp
+  och antal poster per typ efter återföringar. Den som bara ser koncernens
+  summor ser beloppet bara för en typ vars poster gäller minst två par av
+  företag, annars bara antalet poster, och aldrig ett företag, konto eller en
+  rad. Regeln för den som bara ser summorna (minst två företag, alla med hela
+  perioden) gäller oförändrad.
+- Behörighet: förslag och koncernjournal visas bara för den som får se
+  rapporter i alla koncernens företag, och "Kontrollera koncernjournalen"
+  likaså. En posts rader visas, och posten kan återföras, bara när personen
+  får se varje företag på raderna; en post för ett företag som har lämnat
+  koncernen visas annars bara med sitt nummer. Att godkänna, göra manuella
+  poster och återföra kräver att man är ägare eller administratör i alla
+  företag i koncernen och moderföretaget, kontrollerat på nytt under
+  radlåset. Att högst ett ej återfört godkännande finns per koncern, period
+  och förslag, och att en återförings rader speglar den återförda postens,
+  säkras av appen under radlåset, inte av databasen.
+- Behandlingshistoriken: `group_entry.accepted`, `group_entry.recorded` och
+  `group_entry.reversed` i varje företag som posten har rader i (koncernens
+  och postens id, nummer, slag, typ, återförd post och antal rader; aldrig
+  motiveringen eller ett annat företags namn).
 
 ### 4.11 Inläsning av SIE4-filer
 
@@ -6404,3 +6494,4 @@ påverkar bokföringen och fakturan:
 | 0.143 | 2026-11-18 | Rullande prognos (avsnitt 4.12a, ADR-081 lucka 2, paket E5): prognoser som versioner av slaget `FORECAST` i `budget_versions` med brytmånad, utfall ur bokförda verifikationer till och med brytmånaden och tre regler för månaderna efter (budgeten, snittet av de senaste månaderna, samma månad i fjol med procentsats), egna belopp som markeras och behålls, och Rullande 12 månader över årsskiftet. Nya databaskontroller på `budget_versions`: brytmånad bara på prognoser, och alltid en månads sista dag. Prognosen bokförs aldrig, och ingen bokförd verifikation ändras. |
 | 0.144 | 2026-11-18 | Konsolidering och körlogg för koncerner (avsnitt 4.10b, ADR-060 tillägg 2.4, ADR-081 paket E24): koncernens bekräftade medlemmar läses var för sig inom sitt företag, ett dotterföretags intäkter och kostnader räknas från förvärvet till avyttringen och dess balans tas med om det är medlem periodens sista dag, kontona flyttas enligt kontomappningen (`group_account_maps`, inom samma kontoklass) och beloppen summeras. Varje körning sparas i `corporate_group_runs` med indata och resultat och deras SHA-256 (samma indata ger samma resultat); tabellen kan inte ändras eller tas bort. Inga elimineringar ännu. Ingenting skrivs i något företags bokföring och ingen verifikation ändras. |
 | 0.145 | 2026-11-18 | Hashkedja för signeringens händelser (avsnitt 5, ADR-046 tillägg 2026-11-18, paket S2): varje händelse i ett kuvert länkas till den förra med SHA-256, från dokumentets SHA-256, och en PostgreSQL-trigger nekar en händelse som inte följer löpnumret eller inte länkar. Kedjans sista hash sparas på kuvertet och i behandlingshistoriken när kuvertet avslutas. Kuvertet har en räknare (`next_sequence`, `last_hash`) som bara triggern flyttar, så ett löpnummer används aldrig två gånger, och en avslutad kedja tar inte emot fler händelser. Ny tabell `signing_document_versions` (kan inte ändras) och nya kolumner på `crm_signing_events` och `signing_envelopes`. Den nattliga `signing:verify` räknar om kedjorna och filernas kontrollsummor. Befintliga kuvert fick en första kedjehändelse; inga befintliga rader ändrades. Ingen bokföringsregel ändras. |
+| 0.146 | 2026-11-18 | Elimineringar och koncernjournal för koncerner (avsnitt 4.10b och 4.10c, ADR-060 tillägg 2.4 och 3.2, ADR-081 paket E25): förslag räknas ur koncernmarkeringarna (sex par; fordringar, skulder och lån som utgående balanser över alla år, och "Kräver granskning" när det första årets ingående balans har beloppet) och, för andelar mot aktiekapital i ett enda grundat helägt dotterföretag, ur balanserna, med båda sidor och differens. Ett förslag där sidorna stämmer godkänns, bundet till det förslag personen såg, in i `group_entries` och `group_entry_rows`: numrerade i följd per koncern, kedjade med SHA-256, balanserade enligt en kontroll vid commit och omöjliga att ändra eller ta bort (modell, triggrar, databasroll). Fel rättas med återföringar. Konsolideringen drar posterna för exakt samma period och anger dem med kontrollsumma i indata (motorversion 2). Ingenting skrivs i något företags bokföring och ingen verifikation ändras. |

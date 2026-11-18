@@ -145,6 +145,8 @@ BEGIN
         ('fortnox_connections', 'SELECT, INSERT, UPDATE, DELETE'),
         ('fortnox_imported_files', 'SELECT, INSERT, UPDATE, DELETE'),
         ('group_account_maps', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('group_entries', 'SELECT, INSERT'),
+        ('group_entry_rows', 'SELECT, INSERT'),
         ('imported_payslips', 'SELECT, INSERT, UPDATE, DELETE'),
         ('imported_vouchers', 'SELECT, INSERT'),
         ('inbox_allowed_senders', 'SELECT, INSERT, UPDATE, DELETE'),

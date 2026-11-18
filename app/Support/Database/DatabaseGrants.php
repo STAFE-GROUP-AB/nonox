@@ -179,6 +179,9 @@ final class DatabaseGrants
         'fortnox_imported_files' => GrantDecision::ReadWrite,
         // A member company's account mapped to another group account (ADR-081 E24): removed when the deviation ends.
         'group_account_maps' => GrantDecision::ReadWrite,
+        // The group ledger (ADR-081 E25): append-only, triggers refuse every change and deletion.
+        'group_entries' => GrantDecision::AppendOnly,
+        'group_entry_rows' => GrantDecision::AppendOnly,
         'imported_payslips' => GrantDecision::ReadWrite,
         'imported_vouchers' => GrantDecision::AppendOnly,
         'inbox_allowed_senders' => GrantDecision::ReadWrite,
