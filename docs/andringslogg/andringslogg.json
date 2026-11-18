@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-inkopsorder-attest",
+      "datum": "2026-11-18T11:00:00+01:00",
+      "rubrik": "Attest av inköpsorder och rader utan artikel",
+      "beskrivning": "Inköpsorder kan nu gå genom ett attestflöde under Inköp → Attestflöden, och en order kan ha rader utan artikel för tjänster och förbrukning som får ett konto och en bekräftad leverans i stället för en inleverans. Attestgränsen under Lager gäller som förut tills ni lägger upp ett eget flöde, men den som skapade en order över gränsen kan inte längre skicka den när företaget kräver att någon annan attesterar. Varje skickad version sparar vem som attesterade den.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-18-signering-fler-undertecknare",
       "datum": "2026-11-18T02:50:00+01:00",
       "rubrik": "Fler undertecknare på offerter och avtal",

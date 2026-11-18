@@ -16,7 +16,11 @@
         <x-ui.card :title="$type->label()" wire:key="type-{{ $type->value }}">
             @if($canManage)
                 <x-slot:cta>
-                    <x-button type="button" wire:click="create('{{ $type->value }}')">{{ $type === ApprovalSubjectType::SupplierInvoice ? __('Nytt flöde för leverantörsfakturor') : __('Nytt flöde för betalfiler') }}</x-button>
+                    <x-button type="button" wire:click="create('{{ $type->value }}')">{{ match ($type) {
+                        ApprovalSubjectType::SupplierInvoice => __('Nytt flöde för leverantörsfakturor'),
+                        ApprovalSubjectType::PurchaseOrder => __('Nytt flöde för inköpsorder'),
+                        default => __('Nytt flöde för betalfiler'),
+                    } }}</x-button>
                 </x-slot:cta>
             @endif
 
@@ -63,10 +67,14 @@
                 <li class="py-3">
                     <span class="font-medium text-gray-900">{{ __('Standardattest') }}</span>
                     <p class="mt-1 text-gray-700">
-                        {{ $type === ApprovalSubjectType::SupplierInvoice
-                            ? __('Gäller när inget flöde ovan gäller: en person med attesträtt för leverantörsfakturor attesterar fakturan.')
-                            : __('Gäller när inget flöde ovan gäller: en person med rätt att godkänna betalningar godkänner filen.') }}
-                        {{ $company->separate_supplier_approval ? __('Den som förberedde underlaget får inte godkänna det.') : __('Den som förberedde underlaget får också godkänna det.') }}
+                        {{ match ($type) {
+                            ApprovalSubjectType::SupplierInvoice => __('Gäller när inget flöde ovan gäller: en person med attesträtt för leverantörsfakturor attesterar fakturan.'),
+                            ApprovalSubjectType::PurchaseOrder => __('Gäller när inget flöde ovan gäller: en order över attestgränsen under Lager skickas av en person med rätt att skicka inköpsorder, och en order under gränsen av den som lägger den.'),
+                            default => __('Gäller när inget flöde ovan gäller: en person med rätt att godkänna betalningar godkänner filen.'),
+                        } }}
+                        {{ $type === ApprovalSubjectType::PurchaseOrder
+                            ? ($company->separate_supplier_approval ? __('Den som skapade ordern får inte skicka den över attestgränsen.') : __('Den som skapade ordern får också skicka den över attestgränsen.'))
+                            : ($company->separate_supplier_approval ? __('Den som förberedde underlaget får inte godkänna det.') : __('Den som förberedde underlaget får också godkänna det.')) }}
                     </p>
                 </li>
             </ol>
@@ -157,7 +165,7 @@
                             <x-ui.field for="step_{{ $index }}_max" :label="__('Belopp till och med')" error="steps.{{ $index }}.max_amount">
                                 <input id="step_{{ $index }}_max" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="form.steps.{{ $index }}.max_amount">
                             </x-ui.field>
-                            @if($formType === ApprovalSubjectType::SupplierInvoice)
+                            @if($formType !== ApprovalSubjectType::PaymentBatch)
                                 <x-ui.field for="step_{{ $index }}_cost_center" :label="__('Kostnadsställe')" error="steps.{{ $index }}.cost_center_id">
                                     <select id="step_{{ $index }}_cost_center" class="{{ $input }} mt-1" wire:model="form.steps.{{ $index }}.cost_center_id">
                                         <option value="">{{ __('Alla') }}</option>
@@ -182,6 +190,9 @@
                                         @endforeach
                                     </select>
                                 </x-ui.field>
+                                @if($formType === ApprovalSubjectType::PurchaseOrder)
+                                    <p class="text-sm text-gray-500 sm:col-span-2">{{ __('Villkor för kostnadsställe, projekt och konto gäller bara rader utan artikel. Rader med en lagerartikel har inget konto och uppfyller aldrig ett kontointervall.') }}</p>
+                                @endif
                                 <div class="grid grid-cols-2 gap-4">
                                     <x-ui.field for="step_{{ $index }}_account_from" :label="__('Konto från')" error="steps.{{ $index }}.account_from">
                                         <input id="step_{{ $index }}_account_from" type="text" inputmode="numeric" class="{{ $input }} mt-1 tabular-nums" wire:model="form.steps.{{ $index }}.account_from" maxlength="4">

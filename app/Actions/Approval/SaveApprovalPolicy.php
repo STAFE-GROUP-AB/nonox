@@ -15,6 +15,8 @@ use App\Models\CostCenter;
 use App\Models\Project;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Modules\Inventory\InventoryModule;
+use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
@@ -72,6 +74,10 @@ class SaveApprovalPolicy
         ])->validate();
 
         $type = ApprovalSubjectType::from($validated['subject_type']);
+
+        if ($type === ApprovalSubjectType::PurchaseOrder) {
+            app(ModuleManager::class)->ensureEnabled(InventoryModule::KEY, $company);
+        }
         $steps = [];
 
         foreach ($input['steps'] ?? [] as $index => $step) {

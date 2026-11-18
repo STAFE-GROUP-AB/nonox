@@ -409,7 +409,7 @@ it('validates policies and lets only approvals:manage save them', function () {
         ->and(fn () => $save($this->owner, ['account_from' => '99']))->toThrow(ValidationException::class)
         ->and(fn () => $save($this->owner, ['approver_kind' => 'DIMENSION_OWNER', 'approver_dimension' => 'COST_CENTER'], 'PAYMENT_BATCH'))->toThrow(ValidationException::class)
         ->and(fn () => $save($this->owner, ['account_from' => '4000'], 'PAYMENT_BATCH'))->toThrow(ValidationException::class)
-        ->and(fn () => app(SaveApprovalPolicy::class)($this->owner, $this->company, ['subject_type' => 'PURCHASE_ORDER', 'name' => 'x', 'priority' => 1, 'steps' => [['approver_kind' => 'PERMISSION', 'required_count' => 1]]]))->toThrow(ValidationException::class);
+        ->and(fn () => app(SaveApprovalPolicy::class)($this->owner, $this->company, ['subject_type' => 'PURCHASE_REQUISITION', 'name' => 'x', 'priority' => 1, 'steps' => [['approver_kind' => 'PERMISSION', 'required_count' => 1]]]))->toThrow(ValidationException::class);
 
     // A fresh company: Jetstream keeps the members it read on the instance.
     $admin = Bookkeeping::member($this->company, 'admin');

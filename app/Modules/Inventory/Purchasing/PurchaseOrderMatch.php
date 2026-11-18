@@ -63,6 +63,14 @@ final class PurchaseOrderMatch
         if ($orders->isNotEmpty()) {
             foreach ($orders as $order) {
                 foreach ($order->rows as $row) {
+                    if (! $row->isStock()) {
+                        if ($row->confirmed_at === null) {
+                            $flags[] = __(':order, :name: leveransen är inte bekräftad.', ['order' => $order->title(), 'name' => $row->description]);
+                        }
+
+                        continue;
+                    }
+
                     if ($row->received_milli !== $row->quantity_milli) {
                         $unit = $row->article?->stockUnitCode() ?? '';
                         $flags[] = __(':order, :name: beställt :ordered :unit, mottaget :received :unit.', [
@@ -93,6 +101,10 @@ final class PurchaseOrderMatch
     /** What has arrived on a row is worth its share of the row's value, half up. */
     public static function receivedValueOre(PurchaseOrderRow $row): int
     {
+        if (! $row->isStock()) {
+            return $row->confirmed_at === null ? 0 : $row->valueOre();
+        }
+
         if ($row->received_milli === 0) {
             return 0;
         }

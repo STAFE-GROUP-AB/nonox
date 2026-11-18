@@ -230,6 +230,8 @@ lager/lagerstallen: { foretag: butik, rutt: inventory.locations }
 lager/inleverans: { foretag: butik, rutt: inventory.receipts, klick: ['button[wire\:click^="openReceive"]'] }
 lager/inkopsorder: { foretag: butik, rutt: inventory.purchaseOrders.show, modell: { tabell: purchase_orders, dar: { status: PARTIALLY_RECEIVED } } }
 lager/inkopsorder-pa-fakturan: { foretag: butik, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { invoice_number: TH-9512 } }, del: '[data-purchase-order-match]' }
+lager/inkopsorder-attest: { foretag: butik, rutt: inventory.purchaseOrders.show, modell: { tabell: purchase_orders, dar: { notes: 'Inköp av hyllor och städning inför omläggningen' } } }
+lager/inkopsorder-utan-artikel: { foretag: butik, rutt: inventory.purchaseOrders.show, modell: { tabell: purchase_orders, dar: { notes: 'Skyltar och uppsättning till skyltfönstret' } } }
 lager/inkopsforslag: { foretag: butik, rutt: inventory.purchaseProposals }
 lager/prognos: { foretag: butik, rutt: inventory.forecast }
 lager/planeringsdata: { foretag: butik, rutt: invoicing.articles, klick: ['tbody tr:nth-child(2) button', 'text=Avancerad'], visa: '#article_planning_method' }

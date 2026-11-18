@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo\Extras;
 
+use App\Actions\Approval\SaveApprovalPolicy;
+use App\Actions\Jetstream\AddTeamMember;
 use App\Actions\Payables\RegisterSupplierInvoice;
 use App\Actions\Payables\SaveSupplierInvoice;
 use App\Models\Article;
 use App\Models\Supplier;
+use App\Models\User;
 use App\Modules\Inventory\Actions\Purchasing\CreatePurchaseOrdersFromProposal;
 use App\Modules\Inventory\Actions\Purchasing\MatchSupplierInvoice;
 use App\Modules\Inventory\Actions\Purchasing\SavePurchaseOrder;
@@ -27,6 +30,10 @@ use Database\Seeders\Demo\DemoExtra;
  * still shows the rest. Runs after InventoryExtras (file name
  * order), on its articles and suppliers. Orders are marked as printed, so
  * the demo never sends mail. Made-up quantities and prices.
+ *
+ * ADR-081 E10: an approval flow for orders from 10 000 kr, a draft from the
+ * bookkeeper that waits for the owner's approval, and a sent order with a
+ * service row whose delivery is not yet confirmed.
  */
 final class PurchaseOrdersExtras extends DemoExtra
 {
@@ -97,6 +104,69 @@ final class PurchaseOrdersExtras extends DemoExtra
             if ($lines !== []) {
                 app(CreatePurchaseOrdersFromProposal::class)($c->user, $c->company, $lines);
             }
+
+            $this->approvalAndServices($c, $wholesaler);
         }));
+    }
+
+    public const string DRAFT_NOTE = 'Inköp av hyllor och städning inför omläggningen';
+
+    public const string SENT_NOTE = 'Skyltar och uppsättning till skyltfönstret';
+
+    /** A flow for orders from 10 000 kr, an order waiting for it, and a sent order with a service row. */
+    private function approvalAndServices(DemoContext $c, Supplier $supplier): void
+    {
+        config(['mail.default' => 'log']);
+
+        $buyer = $this->member($c, ['name' => 'Elin Inköpare', 'email' => 'elin.inkopare@example.test'], 'bookkeeper');
+        $company = $c->company->fresh() ?? $c->company;
+        $article = fn (string $number): int => Article::query()->where('number', $number)->firstOrFail()->id;
+
+        app(SaveApprovalPolicy::class)($c->user, $company, [
+            'subject_type' => 'PURCHASE_ORDER',
+            'name' => 'Inköp från 10 000 kr',
+            'priority' => 10,
+            'is_active' => true,
+            'steps' => [
+                ['min_amount' => '10 000', 'approver_kind' => 'PERMISSION', 'approver_permission' => 'purchase-orders:send', 'required_count' => 1, 'exclude_preparer' => true],
+            ],
+        ]);
+
+        // 20 × 245 + 7 500 = 12 400 kr: over the flow's amount, so it waits for approval.
+        app(SavePurchaseOrder::class)($buyer, $company, [
+            'supplier_id' => $supplier->id,
+            'order_date' => $c->today->subDays(1)->toDateString(),
+            'our_reference' => $buyer->name,
+            'notes' => self::DRAFT_NOTE,
+            'rows' => [
+                ['article_id' => $article('L-303'), 'quantity' => '20', 'price' => '245', 'expected_on' => $c->today->addDays(10)->toDateString()],
+                ['description' => 'Städning av butiken, en gång', 'account' => '5060', 'quantity' => '1', 'price' => '7 500', 'expected_on' => $c->today->addDays(9)->toDateString()],
+            ],
+        ]);
+
+        // Below the amount, so it follows the default policy and goes out; the service row waits for a confirmation.
+        $sent = app(SavePurchaseOrder::class)($c->user, $company, [
+            'supplier_id' => $supplier->id,
+            'order_date' => $c->today->subDays(4)->toDateString(),
+            'our_reference' => $c->user->name,
+            'notes' => self::SENT_NOTE,
+            'rows' => [
+                ['article_id' => $article('L-202'), 'quantity' => '10', 'price' => '86', 'expected_on' => $c->today->addDays(3)->toDateString()],
+                ['description' => 'Uppsättning av skyltar', 'account' => '5460', 'quantity' => '1', 'price' => '1 200', 'expected_on' => $c->today->addDays(3)->toDateString()],
+            ],
+        ]);
+        app(SendPurchaseOrder::class)->printed($c->user, $company, $sent);
+    }
+
+    /** @param  array{name: string, email: string}  $person */
+    private function member(DemoContext $c, array $person, string $role): User
+    {
+        $user = User::query()->firstOrCreate(['email' => $person['email']], ['name' => $person['name'], 'email_verified_at' => now()]);
+
+        if (! $c->company->users()->whereKey($user->id)->exists()) {
+            app(AddTeamMember::class)->add($c->user, $c->company, $person['email'], $role);
+        }
+
+        return $user->fresh() ?? $user;
     }
 }

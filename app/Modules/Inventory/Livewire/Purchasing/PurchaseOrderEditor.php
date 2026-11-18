@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Livewire\Purchasing;
 
+use App\Domain\Accounting\AccountType;
 use App\Domain\Units\ArticleUnits;
 use App\Domain\Units\QuantityOutOfRange;
 use App\Domain\Units\QuantityRoundsToZero;
 use App\Domain\Units\UnitConverter;
 use App\Domain\Units\UnitDefaults;
+use App\Domain\Units\UnitRegister;
+use App\Models\Account;
 use App\Models\Article;
 use App\Models\Supplier;
 use App\Models\Unit;
@@ -32,7 +35,8 @@ use Livewire\Component;
  * address and rows. A row is typed in any unit the article converts to
  * (ADR-071 §12.2); the page shows what that is in the stock unit, and the
  * price is per the row's unit (the purchase price converted when left
- * empty).
+ * empty). A row can also be "utan artikel" (ADR-081 E10): a service or a
+ * consumable with a description, an account, a cost centre and a project.
  */
 class PurchaseOrderEditor extends Component
 {
@@ -51,7 +55,7 @@ class PurchaseOrderEditor extends Component
         abort_unless($this->canPurchase('manage'), 403);
 
         if ($orderId !== null) {
-            $order = PurchaseOrder::query()->with('rows')->findOrFail($orderId);
+            $order = PurchaseOrder::query()->with(['rows.account:id,number', 'rows.costCenter:id,code', 'rows.project:id,code'])->findOrFail($orderId);
             abort_unless($order->isDraft(), 404);
             $this->orderId = $order->id;
             $this->form = [
@@ -63,13 +67,18 @@ class PurchaseOrderEditor extends Component
                 'notes' => (string) $order->notes,
                 'rows' => $order->rows->map(fn (PurchaseOrderRow $row): array => [
                     'id' => $row->id,
+                    'free' => ! $row->isStock(),
+                    'description' => $row->isStock() ? '' : $row->description,
+                    'account' => (string) $row->account?->number,
+                    'cost_center' => (string) $row->costCenter?->code,
+                    'project' => (string) $row->project?->code,
                     'article_id' => (string) $row->article_id,
                     'quantity' => str_replace('.', ',', Quantity::decimal(Quantity::parse($row->entered_quantity))),
                     'unit_id' => (string) $row->unit_id,
                     'price' => Money::ofOre($row->price_ore)->format(withCurrency: false),
                     'expected_on' => (string) $row->expected_on?->toDateString(),
                     'supplier_article_number' => (string) $row->supplier_article_number,
-                    'received' => $row->received_milli > 0,
+                    'received' => $row->hasDelivery(),
                 ])->values()->all(),
             ];
 
@@ -91,6 +100,16 @@ class PurchaseOrderEditor extends Component
 
     public function updated(string $property, mixed $value): void
     {
+        if (preg_match('/^form\.rows\.(\d+)\.free$/', $property, $match) === 1) {
+            $index = (int) $match[1];
+            $this->form['rows'][$index]['article_id'] = '';
+            $this->form['rows'][$index]['unit_id'] = $value ? (string) UnitRegister::load()->default()->id : '';
+            $this->form['rows'][$index]['price'] = '';
+            $this->form['rows'][$index]['supplier_article_number'] = '';
+
+            return;
+        }
+
         if (preg_match('/^form\.rows\.(\d+)\.article_id$/', $property, $match) !== 1) {
             return;
         }
@@ -125,7 +144,11 @@ class PurchaseOrderEditor extends Component
                 'requested_delivery_on' => ($this->form['requested_delivery_on'] ?? '') ?: null,
                 'rows' => array_map(fn (array $row): array => [
                     'id' => ($row['id'] ?? null) ?: null,
-                    'article_id' => $row['article_id'],
+                    'article_id' => ($row['free'] ?? false) ? null : $row['article_id'],
+                    'description' => ($row['free'] ?? false) ? ($row['description'] ?? '') : null,
+                    'account' => ($row['free'] ?? false) ? ($row['account'] ?? '') : null,
+                    'cost_center' => ($row['free'] ?? false) ? ($row['cost_center'] ?? '') : null,
+                    'project' => ($row['free'] ?? false) ? ($row['project'] ?? '') : null,
                     'quantity' => $row['quantity'],
                     'unit_id' => ($row['unit_id'] ?? '') ?: null,
                     'price' => $row['price'] ?? '',
@@ -161,8 +184,10 @@ class PurchaseOrderEditor extends Component
         return view('inventory::livewire.purchasing.editor', [
             'suppliers' => Supplier::query()->where(fn ($query) => $query->whereNull('processing_restricted_at')->orWhere('id', (int) ($this->form['supplier_id'] ?? 0)))->orderBy('name')->get(['id', 'name']),
             'articles' => $articles,
+            'freeUnits' => $units->filter(fn (Unit $unit): bool => ! $unit->isArchived())->values(),
+            'accounts' => Account::query()->where('is_active', true)->whereIn('type', [AccountType::Asset->value, AccountType::Expense->value])->orderBy('number')->get(['id', 'number', 'name']),
             'rowHelp' => $this->rowHelp($chosen->keyBy('id')->all(), $units->keyBy('id')->all(), $conversions),
-            'existing' => $this->orderId === null ? null : PurchaseOrder::query()->find($this->orderId, ['id', 'number', 'version', 'sent_at']),
+            'existing' => $this->orderId === null ? null : PurchaseOrder::query()->find($this->orderId, ['id', 'number', 'version', 'sent_at', 'approval_request_id']),
         ]);
     }
 
@@ -232,6 +257,6 @@ class PurchaseOrderEditor extends Component
     /** @return array<string, mixed> */
     private static function blankRow(): array
     {
-        return ['id' => null, 'article_id' => '', 'quantity' => '', 'unit_id' => '', 'price' => '', 'expected_on' => '', 'supplier_article_number' => '', 'received' => false];
+        return ['id' => null, 'free' => false, 'description' => '', 'account' => '', 'cost_center' => '', 'project' => '', 'article_id' => '', 'quantity' => '', 'unit_id' => '', 'price' => '', 'expected_on' => '', 'supplier_article_number' => '', 'received' => false];
     }
 }

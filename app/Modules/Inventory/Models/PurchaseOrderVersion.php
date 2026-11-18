@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Models;
 
+use App\Models\User;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
 /**
@@ -24,6 +26,9 @@ use LogicException;
  * @property ?string $sent_to
  * @property ?int $sent_by
  * @property CarbonImmutable $sent_at
+ * @property ?int $approval_request_id
+ * @property ?int $approved_by
+ * @property ?CarbonImmutable $approved_at
  */
 class PurchaseOrderVersion extends Model
 {
@@ -44,6 +49,9 @@ class PurchaseOrderVersion extends Model
         'sent_to',
         'sent_by',
         'sent_at',
+        'approval_request_id',
+        'approved_by',
+        'approved_at',
     ];
 
     protected static function booted(): void
@@ -60,6 +68,13 @@ class PurchaseOrderVersion extends Model
             'snapshot' => 'array',
             'total_ore' => 'integer',
             'sent_at' => 'immutable_datetime',
+            'approved_at' => 'immutable_datetime',
         ];
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

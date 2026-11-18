@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Domain\Approval;
 
+use App\Models\Account;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceRow;
 use App\Models\SupplierPaymentBatch;
+use App\Modules\Inventory\Models\PurchaseOrder;
+use App\Modules\Inventory\Purchasing\PurchaseOrderApprovals;
 
 /**
  * What the approval engine knows about a subject: its id, its total in öre,
@@ -72,6 +75,32 @@ final readonly class SubjectFacts
             companyId: $batch->company_id,
             amountOre: $batch->total_ore->ore,
             preparerIds: self::people([$batch->created_by]),
+        );
+    }
+
+    /**
+     * A purchase order (ADR-081 E10): its total excluding VAT, its creator, the
+     * supplier, and the dimensions and accounts of its rows without an article.
+     * A change to the rows starts a new approval round, so the facts read for a
+     * request stay true for its life. One query for the accounts' numbers.
+     */
+    public static function forPurchaseOrder(PurchaseOrder $order): self
+    {
+        $order->loadMissing('rows');
+
+        $ids = fn (string $column): array => array_values(array_unique(array_map('intval', array_filter($order->rows->pluck($column)->all(), fn (mixed $id): bool => $id !== null))));
+        $accountIds = $ids('account_id');
+
+        return new self(
+            type: ApprovalSubjectType::PurchaseOrder,
+            subjectId: PurchaseOrderApprovals::subjectId($order),
+            companyId: $order->company_id,
+            amountOre: $order->totalOre(),
+            preparerIds: self::people([$order->created_by, $order->prepared_by]),
+            supplierId: $order->supplier_id,
+            costCenterIds: $ids('cost_center_id'),
+            projectIds: $ids('project_id'),
+            accountNumbers: $accountIds === [] ? [] : array_values(array_map('intval', Account::query()->whereKey($accountIds)->pluck('number')->all())),
         );
     }
 

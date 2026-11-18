@@ -1,4 +1,6 @@
 @php
+    use App\Modules\Inventory\Domain\PurchaseOrderApprovalMode;
+    use App\Modules\Inventory\Domain\PurchaseOrderStatus;
     use App\Modules\Inventory\Domain\Quantity;
     use App\Support\Money\Money;
 
@@ -34,10 +36,10 @@
                 @if($order->status->awaitsGoods() && $canManage)
                     <button type="button" wire:click="revise" wire:confirm="{{ __('Göra en ny version av ordern? Den skickade versionen sparas, och den nya måste skickas till leverantören igen.') }}" class="{{ $secondary }}">{{ __('Ny version') }}</button>
                 @endif
-                @if(($order->status->awaitsGoods() || ($order->isDraft() && $order->wasSent())) && $canReceive)
+                @if(($order->status->awaitsGoods() || ($order->isDraft() && $order->wasSent())) && $canReceive && $hasStockRows)
                     <button type="button" wire:click="receive" class="{{ $button }}">{{ __('Ta emot varor') }}</button>
                 @endif
-                @if($order->status->isOpen() && $canManage && $order->rows->sum('received_milli') === 0)
+                @if($order->status->isOpen() && $canManage && $order->rows->sum('received_milli') === 0 && $order->rows->whereNotNull('confirmed_at')->isEmpty())
                     <button type="button" wire:click="cancelOrder" wire:confirm="{{ __('Makulera inköpsordern? Numret finns kvar men ordern gäller inte längre. Har den skickats behöver du själv meddela leverantören.') }}" class="text-sm font-semibold text-gray-700 underline">{{ __('Makulera') }}</button>
                 @endif
             </div>
@@ -45,8 +47,50 @@
 
         @if($order->isDraft() && $needsApproval && ! $canSend)
             <p class="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{{ __('Ordern är över företagets attestgräns på :amount. En attestant eller administratör skickar den.', ['amount' => $kr((int) $approvalLimit)]) }}</p>
+        @elseif($order->isDraft() && $needsApproval && $order->created_by === auth()->id() && auth()->user()->currentCompany()?->separate_supplier_approval)
+            <p class="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{{ __('Du skapade ordern, som är över företagets attestgräns på :amount. Någon annan med rätt att skicka ordern behöver skicka den.', ['amount' => $kr((int) $approvalLimit)]) }}</p>
+        @elseif($order->isDraft() && $mode === PurchaseOrderApprovalMode::Policy && ! $order->isApproved())
+            <p class="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{{ __('Ordern följer ett attestflöde och kan skickas först när den är attesterad.') }}</p>
         @endif
+        <x-input-error for="order" class="mt-3" />
     </x-ui.card>
+
+    @if($approval)
+        @include('livewire.approval.partials.approval-flow', ['approval' => $approval, 'memberNames' => $memberNames, 'canResubmit' => $canResubmit])
+    @endif
+
+    @if($canApprove || $canReject)
+        <x-ui.card :title="__('Attestera')">
+            @if($canApprove)
+                <p class="text-sm text-gray-700">{{ __('Kontrollera leverantör, rader och belopp. När ordern är attesterad kan den skickas till leverantören.') }}</p>
+                @if($approval->eligibility->onBehalfOf)
+                    <p class="mt-2 text-sm text-gray-700">{{ __('Du godkänner på uppdrag av :name.', ['name' => $memberNames[$approval->eligibility->onBehalfOf] ?? __('tidigare medlem')]) }}</p>
+                @endif
+            @endif
+            <div class="mt-3 flex flex-wrap items-start gap-3">
+                @if($canApprove)
+                    <x-button type="button" wire:click="approve" wire:loading.attr="disabled">{{ $approval->stepCount() > 1 ? __('Godkänn steg :step av :steps', ['step' => $approval->currentStep(), 'steps' => $approval->stepCount()]) : __('Attestera ordern') }}</x-button>
+                @endif
+                @if($canReject)
+                    <span x-data="{ rejecting: false }" class="flex flex-col gap-2">
+                        <button type="button" class="text-sm text-gray-600 underline" x-show="! rejecting" x-on:click="rejecting = true">{{ __('Avvisa') }}</button>
+                        <span x-show="rejecting" x-cloak class="flex flex-col gap-2">
+                            <label for="po_reject_reason" class="text-sm font-medium text-gray-700">{{ __('Skäl (frivilligt)') }}</label>
+                            <textarea id="po_reject_reason" rows="2" maxlength="500" class="block w-full rounded-lg border-gray-300 shadow-xs focus:border-accent-500 focus:ring-accent-500" wire:model="rejectReason"></textarea>
+                            <span class="text-sm text-gray-500">{{ __('Skriv vad som är fel med ordern, inte uppgifter om personer.') }}</span>
+                            <span class="text-sm text-gray-700">{{ __('Ordern går tillbaka till den som skapade den, som kan ändra den eller skicka den till attest igen.') }}</span>
+                            <span class="flex items-center gap-3">
+                                <button type="button" class="text-sm font-medium text-accent-700 underline" wire:click="reject">{{ __('Ja, avvisa') }}</button>
+                                <button type="button" class="text-sm text-gray-600 underline" x-on:click="rejecting = false">{{ __('Avbryt') }}</button>
+                            </span>
+                        </span>
+                    </span>
+                @endif
+            </div>
+            <x-input-error for="approve" class="mt-2" />
+            <x-input-error for="reason" class="mt-2" />
+        </x-ui.card>
+    @endif
 
     @if($sending)
         <x-ui.card :title="__('Skicka inköpsordern')" :description="__('Så här ser ordern ut för leverantören. Kontrollera PDF:en och mottagaren innan du skickar.')">
@@ -85,18 +129,38 @@
                     @foreach($order->rows as $row)
                         @php($stockCode = $row->article ? $row->article->stockUnitCode() : '')
                         <tr wire:key="po-row-{{ $row->id }}">
-                            <td class="py-2 pr-4"><span class="tabular-nums">{{ $row->article?->number }}</span> {{ $row->description }}</td>
+                            <td class="py-2 pr-4">
+                                @if($row->isStock())
+                                    <span class="tabular-nums">{{ $row->article?->number }}</span> {{ $row->description }}
+                                @else
+                                    {{ $row->description }}
+                                    <span class="block text-gray-600">{{ __('Utan artikel · konto :account', ['account' => $row->account?->number]) }}@if($row->costCenter) · {{ $row->costCenter->code }}@endif @if($row->project) · {{ $row->project->code }}@endif</span>
+                                @endif
+                            </td>
                             <td class="py-2 pr-4">{{ $row->supplier_article_number }}</td>
                             <td class="py-2 pr-4 text-right tabular-nums">
                                 {{ Quantity::format(Quantity::parse($row->entered_quantity)) }} {{ $row->unit?->code }}
-                                @if($row->unit?->code !== $stockCode)
+                                @if($row->isStock() && $row->unit?->code !== $stockCode)
                                     <span class="block text-gray-600">{{ __('≈ :quantity :unit', ['quantity' => Quantity::format($row->quantity_milli), 'unit' => $stockCode]) }}</span>
                                 @endif
                             </td>
                             <td class="py-2 pr-4 text-right tabular-nums">{{ Money::ofOre($row->price_ore)->format(withCurrency: false) }}</td>
                             <td class="py-2 pr-4 text-right tabular-nums">{{ Money::ofOre($row->valueOre())->format(withCurrency: false) }}</td>
                             <td class="py-2 pr-4 tabular-nums">{{ $row->expected_on?->toDateString() }}</td>
-                            <td class="py-2 pr-4 text-right tabular-nums">{{ Quantity::format($row->received_milli) }} {{ $stockCode }}</td>
+                            <td class="py-2 pr-4 text-right tabular-nums">
+                                @if($row->isStock())
+                                    {{ Quantity::format($row->received_milli) }} {{ $stockCode }}
+                                @elseif($row->confirmed_at)
+                                    {{ __('Leverans bekräftad') }}
+                                    @if($canManage && ! $order->isDraft() && $order->status !== PurchaseOrderStatus::Cancelled)
+                                        <button type="button" wire:click="confirmDelivery({{ $row->id }}, false)" class="block text-sm text-gray-600 underline">{{ __('Ta bort bekräftelsen') }}</button>
+                                    @endif
+                                @elseif($canManage && ! $order->isDraft() && $order->status !== PurchaseOrderStatus::Cancelled)
+                                    <button type="button" wire:click="confirmDelivery({{ $row->id }})" class="text-sm font-semibold text-accent-700 underline">{{ __('Bekräfta leverans') }}</button>
+                                @else
+                                    –
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -125,7 +189,11 @@
                 <ul class="divide-y divide-stone-100 text-sm">
                     @foreach($order->versions as $version)
                         <li class="flex flex-wrap items-center justify-between gap-2 py-2" wire:key="po-version-{{ $version->id }}">
-                            <span>{{ __('Version :version', ['version' => $version->version]) }} · {{ $version->sent_at->toDateString() }} · {{ $version->method === 'EMAIL' ? $version->sent_to : __('utskriven') }}</span>
+                            <span>{{ __('Version :version', ['version' => $version->version]) }} · {{ $version->sent_at->toDateString() }} · {{ $version->method === 'EMAIL' ? $version->sent_to : __('utskriven') }}
+                                @if($version->approved_by)
+                                    <span class="block text-gray-600">{{ __('Attesterad av :name :date', ['name' => $version->approver?->name ?? __('tidigare medlem'), 'date' => $version->approved_at?->toDateString()]) }}</span>
+                                @endif
+                            </span>
                             <a href="{{ route('inventory.purchaseOrders.pdf', ['purchaseOrder' => $order->id, 'version' => $version->version]) }}" target="_blank" class="font-semibold text-accent-700 underline">{{ __('PDF') }}</a>
                         </li>
                     @endforeach

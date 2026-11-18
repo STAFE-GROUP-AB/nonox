@@ -8,9 +8,13 @@ use App\Domain\Units\ArticleUnits;
 use App\Domain\Units\QuantityOutOfRange;
 use App\Domain\Units\QuantityRoundsToZero;
 use App\Domain\Units\UnitConverter;
+use App\Domain\Units\UnitRegister;
+use App\Models\Account;
 use App\Models\Article;
 use App\Models\Company;
+use App\Models\CostCenter;
 use App\Models\NumberSeries;
+use App\Models\Project;
 use App\Models\Supplier;
 use App\Models\Unit;
 use App\Models\User;
@@ -22,6 +26,7 @@ use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\PurchaseOrderRow;
 use App\Modules\Inventory\Models\StockLocation;
+use App\Modules\Inventory\Purchasing\PurchaseOrderApprovals;
 use App\Modules\Inventory\Purchasing\PurchaseOrderReceipts;
 use App\Modules\Inventory\Purchasing\PurchaseQuantities;
 use App\Support\Audit\Audit;
@@ -41,6 +46,11 @@ use InvalidArgumentException;
  * converted when left empty) and an expected date. A row that goods have
  * already been received on stays, with at least what was received. Nothing
  * is booked.
+ *
+ * A row without an article is a service or a consumable (ADR-081 E10): it has
+ * a description, an account, an optional cost centre and project, a quantity
+ * and price in a unit of the company's own, and no stock. Saving an order
+ * again starts a new approval round (PurchaseOrderApprovals).
  */
 class SavePurchaseOrder
 {
@@ -52,7 +62,7 @@ class SavePurchaseOrder
     public array $warnings = [];
 
     /**
-     * @param  array<string, mixed>  $input  supplier_id, order_date, requested_delivery_on, our_reference, delivery_address, notes, rows: list<{id?, article_id, quantity, unit_id?, price?, expected_on?, supplier_article_number?, description?}>
+     * @param  array<string, mixed>  $input  supplier_id, order_date, requested_delivery_on, our_reference, delivery_address, notes, rows: list<{id?, article_id?, account?, cost_center?, project?, quantity, unit_id?, price?, expected_on?, supplier_article_number?, description?}>
      */
     public function __invoke(User $user, Company $company, array $input, ?PurchaseOrder $order = null, PurchaseOrderSource $source = PurchaseOrderSource::Manual): PurchaseOrder
     {
@@ -68,7 +78,10 @@ class SavePurchaseOrder
             'notes' => ['nullable', 'string', 'max:5000'],
             'rows' => ['required', 'array', 'min:1', 'max:'.self::MAX_ROWS],
             'rows.*.id' => ['nullable', 'integer'],
-            'rows.*.article_id' => ['required', 'integer'],
+            'rows.*.article_id' => ['nullable', 'integer'],
+            'rows.*.account' => ['nullable', 'string', 'max:10'],
+            'rows.*.cost_center' => ['nullable', 'string', 'max:50'],
+            'rows.*.project' => ['nullable', 'string', 'max:50'],
             'rows.*.quantity' => ['required'],
             'rows.*.unit_id' => ['nullable', 'integer'],
             'rows.*.price' => ['nullable'],
@@ -96,6 +109,9 @@ class SavePurchaseOrder
                 if (! $order->isDraft()) {
                     throw ValidationException::withMessages(['order' => __('Inköpsordern är skickad. Gör en ny version för att ändra den.')]);
                 }
+
+                // What was approved is not what is saved now: the order is approved again.
+                PurchaseOrderApprovals::startNewRound($order, $user);
             }
 
             $supplier = Supplier::query()->find((int) $validated['supplier_id'])
@@ -127,9 +143,10 @@ class SavePurchaseOrder
                     'status' => PurchaseOrderStatus::Draft,
                     'source' => $source,
                     'created_by' => $user->id,
+                    'prepared_by' => $user->id,
                 ]);
             } else {
-                $order->update($attributes);
+                $order->update([...$attributes, 'prepared_by' => $user->id]);
             }
 
             $kept = [];
@@ -181,8 +198,21 @@ class SavePurchaseOrder
         $unitIds = array_filter(array_map(fn (mixed $row): int => (int) ($row['unit_id'] ?? 0), $input));
         $units = Unit::query()->whereKey([...$unitIds, ...$articles->pluck('purchase_unit_id')->filter()->all(), ...$articles->pluck('stock_unit_id')->filter()->all()])->get()->keyBy('id');
         $rows = [];
+        $lookups = $this->lookups($input);
 
         foreach ($input as $index => $row) {
+            if ($this->isNonStock($row)) {
+                $current = null;
+
+                if (($row['id'] ?? null) !== null && $row['id'] !== '') {
+                    $current = $existing->get((int) $row['id']) ?? throw ValidationException::withMessages(["rows.{$index}.id" => __('Raden hör inte till inköpsordern.')]);
+                }
+
+                $rows[] = $this->nonStockRow($index, $row, $current, $lookups);
+
+                continue;
+            }
+
             $article = $articles->get((int) $row['article_id']) ?? throw ValidationException::withMessages(["rows.{$index}.article_id" => __('Artikeln finns inte.')]);
 
             if (! $article->is_stock_item) {
@@ -231,6 +261,10 @@ class SavePurchaseOrder
                 $this->warnings[] = __(':name: :entered :unit blir :stock :stockUnit i lagerenheten, en ändring på :percent %.', ['name' => $article->name, 'entered' => Quantity::format($entered), 'unit' => $unit->code, 'stock' => Quantity::format($conversion->stockMilli), 'stockUnit' => $stockCode, 'percent' => $conversion->changePercent]);
             }
 
+            if ($current !== null && $current->confirmed_at !== null) {
+                throw ValidationException::withMessages(["rows.{$index}.article_id" => __('Leveransen är bekräftad på raden, så den kan inte bli en lagerartikel.')]);
+            }
+
             if ($current !== null && $current->received_milli > 0) {
                 if ($current->article_id !== $article->id) {
                     throw ValidationException::withMessages(["rows.{$index}.article_id" => __('Varor har tagits emot på raden, så artikeln kan inte bytas.')]);
@@ -264,6 +298,9 @@ class SavePurchaseOrder
             $rows[] = [
                 'id' => $current?->id,
                 'article_id' => $article->id,
+                'account_id' => null,
+                'cost_center_id' => null,
+                'project_id' => null,
                 'supplier_article_number' => self::text($row['supplier_article_number'] ?? null) ?? $ownNumber,
                 'description' => self::text($row['description'] ?? null) ?? mb_substr($article->name, 0, 255),
                 'entered_quantity' => Quantity::decimal($entered),
@@ -277,6 +314,140 @@ class SavePurchaseOrder
         return $rows;
     }
 
+    /** A row with no article is a service or a consumable on an account. */
+    private function isNonStock(mixed $row): bool
+    {
+        return ! is_array($row) || ($row['article_id'] ?? '') === '' || (int) $row['article_id'] === 0;
+    }
+
+    /**
+     * The accounts, cost centres, projects and units the rows without an
+     * article name, looked up once for all rows.
+     *
+     * @param  list<mixed>  $input
+     * @return array{accounts: Collection<int, Account>, costCenters: Collection<string, CostCenter>, projects: Collection<string, Project>, units: Collection<int, Unit>, defaultUnit: ?Unit}
+     */
+    private function lookups(array $input): array
+    {
+        $loose = array_filter($input, fn (mixed $row): bool => $this->isNonStock($row));
+
+        if ($loose === []) {
+            return ['accounts' => collect(), 'costCenters' => collect(), 'projects' => collect(), 'units' => collect(), 'defaultUnit' => null];
+        }
+
+        $numbers = array_filter(array_map(fn (mixed $row): int => (int) ($row['account'] ?? 0), $loose));
+        $register = UnitRegister::load();
+
+        return [
+            'accounts' => Account::query()->whereIn('number', $numbers)->get()->keyBy('number'),
+            'costCenters' => CostCenter::query()->whereIn('code', array_filter(array_map(fn (mixed $row): string => trim((string) ($row['cost_center'] ?? '')), $loose)))->get()->keyBy('code'),
+            'projects' => Project::query()->whereIn('code', array_filter(array_map(fn (mixed $row): string => trim((string) ($row['project'] ?? '')), $loose)))->get()->keyBy('code'),
+            'units' => $register->all()->keyBy('id'),
+            'defaultUnit' => $register->default(),
+        ];
+    }
+
+    /**
+     * One row without an article: a description, an account (with the cost
+     * centre and project it requires), a quantity and a price in a unit of the
+     * company's own. No stock unit, so the quantity is kept as typed.
+     *
+     * @param  array<string, mixed>  $row
+     * @param  array{accounts: Collection<int, Account>, costCenters: Collection<string, CostCenter>, projects: Collection<string, Project>, units: Collection<int, Unit>, defaultUnit: ?Unit}  $lookups
+     * @return array<string, mixed>
+     */
+    private function nonStockRow(int $index, array $row, ?PurchaseOrderRow $current, array $lookups): array
+    {
+        $description = self::text($row['description'] ?? null)
+            ?? throw ValidationException::withMessages(["rows.{$index}.description" => __('Beskriv vad som beställs, eller välj en artikel.')]);
+
+        if ($current !== null && $current->article_id !== null && $current->received_milli > 0) {
+            throw ValidationException::withMessages(["rows.{$index}.article_id" => __('Varor har tagits emot på raden, så artikeln kan inte tas bort.')]);
+        }
+
+        $number = (int) ($row['account'] ?? 0);
+        $account = $number === 0 ? null : $lookups['accounts']->get($number);
+
+        if ($account !== null && ! (($account->number >= 4000 && $account->number <= 7999) || ($account->number >= 1000 && $account->number <= 1299))) {
+            throw ValidationException::withMessages(["rows.{$index}.account" => __('En rad utan artikel kan bara ha ett kostnadskonto (4000–7999) eller ett konto för anläggningstillgångar (1000–1299).')]);
+        }
+
+        if ($account === null || ! $account->is_active) {
+            throw ValidationException::withMessages(["rows.{$index}.account" => __('Ange ett konto som finns i kontoplanen. Rader utan artikel bokförs på det när fakturan kommer.')]);
+        }
+
+        $costCenterCode = trim((string) ($row['cost_center'] ?? ''));
+        $projectCode = trim((string) ($row['project'] ?? ''));
+        $costCenter = $costCenterCode === '' ? null : $lookups['costCenters']->get($costCenterCode);
+        $project = $projectCode === '' ? null : $lookups['projects']->get($projectCode);
+
+        if ($costCenterCode !== '' && ($costCenter === null || ! $costCenter->is_active)) {
+            throw ValidationException::withMessages(["rows.{$index}.cost_center" => __('Kostnadsstället :code finns inte eller är avstängt.', ['code' => $costCenterCode])]);
+        }
+
+        if ($projectCode !== '' && ($project === null || ! $project->is_active)) {
+            throw ValidationException::withMessages(["rows.{$index}.project" => __('Projektet :code finns inte eller är avstängt.', ['code' => $projectCode])]);
+        }
+
+        if ($account->requires_cost_center && $costCenter === null) {
+            throw ValidationException::withMessages(["rows.{$index}.cost_center" => __('Konto :number kräver ett kostnadsställe.', ['number' => $account->number])]);
+        }
+
+        if ($account->requires_project && $project === null) {
+            throw ValidationException::withMessages(["rows.{$index}.project" => __('Konto :number kräver ett projekt.', ['number' => $account->number])]);
+        }
+
+        $unitId = (int) (($row['unit_id'] ?? null) ?: $lookups['defaultUnit']?->id);
+        $unit = $lookups['units']->get($unitId) ?? throw ValidationException::withMessages(["rows.{$index}.unit_id" => __('Enheten finns inte.')]);
+
+        if ($unit->isArchived() && $current?->unit_id !== $unit->id) {
+            throw ValidationException::withMessages(["rows.{$index}.unit_id" => __('Enheten :unit är arkiverad. Välj en annan enhet.', ['unit' => $unit->code])]);
+        }
+
+        try {
+            $entered = Quantity::parse((string) ($row['quantity'] ?? ''));
+        } catch (InvalidArgumentException) {
+            throw ValidationException::withMessages(["rows.{$index}.quantity" => __('Antalet går inte att läsa. Skriv till exempel 10 eller 2,5.')]);
+        }
+
+        if ($entered <= 0) {
+            throw ValidationException::withMessages(["rows.{$index}.quantity" => __('Antalet måste vara större än noll.')]);
+        }
+
+        if (($row['price'] ?? null) === null || trim((string) $row['price']) === '') {
+            throw ValidationException::withMessages(["rows.{$index}.price" => __('Ange à-pris för en rad utan artikel.')]);
+        }
+
+        try {
+            $price = Money::parse((string) $row['price'])->ore;
+        } catch (InvalidArgumentException) {
+            throw ValidationException::withMessages(["rows.{$index}.price" => __('Beloppet går inte att läsa. Skriv till exempel 149,00.')]);
+        }
+
+        if ($price < 0) {
+            throw ValidationException::withMessages(["rows.{$index}.price" => __('Beloppet kan inte vara negativt.')]);
+        }
+
+        if ($current !== null && $current->confirmed_at !== null && ($current->quantity_milli !== $entered || $current->price_ore !== $price)) {
+            throw ValidationException::withMessages(["rows.{$index}.quantity" => __('Leveransen är bekräftad på raden, så antal och à-pris kan inte ändras. Ta bort bekräftelsen först, eller lägg till en ny rad.')]);
+        }
+
+        return [
+            'id' => $current?->id,
+            'article_id' => null,
+            'account_id' => $account->id,
+            'cost_center_id' => $costCenter?->id,
+            'project_id' => $project?->id,
+            'supplier_article_number' => self::text($row['supplier_article_number'] ?? null),
+            'description' => mb_substr($description, 0, 255),
+            'entered_quantity' => Quantity::decimal($entered),
+            'unit_id' => $unit->id,
+            'quantity_milli' => $entered,
+            'price_ore' => $price,
+            'expected_on' => ($row['expected_on'] ?? null) ?: null,
+        ];
+    }
+
     /**
      * A row goods have been received on stays on the order; a row that only
      * sits on an open goods receipt leaves it with the row.
@@ -286,8 +457,8 @@ class SavePurchaseOrder
     private function guardRemoval(array $rows): void
     {
         foreach ($rows as $row) {
-            if ($row->received_milli > 0) {
-                throw ValidationException::withMessages(['rows' => __('Varor har tagits emot på raden :name, så den kan inte tas bort.', ['name' => $row->description])]);
+            if ($row->hasDelivery()) {
+                throw ValidationException::withMessages(['rows' => __('Varor har tagits emot eller leveransen är bekräftad på raden :name, så den kan inte tas bort.', ['name' => $row->description])]);
             }
         }
 

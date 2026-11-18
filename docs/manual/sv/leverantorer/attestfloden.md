@@ -1,5 +1,5 @@
 ---
-beskrivning: Bestäm själv vem som attesterar leverantörsfakturor och godkänner betalfiler, i flera steg, från ett visst belopp eller per kostnadsställe, och välj ersättare.
+beskrivning: Bestäm själv vem som attesterar leverantörsfakturor, godkänner betalfiler och attesterar inköpsorder, i flera steg, från ett visst belopp eller per kostnadsställe, och välj ersättare.
 ordning: 45
 roller: [owner, admin]
 rutter: [approvals.policies]
@@ -15,7 +15,7 @@ Utan att du gör något attesteras en leverantörsfaktura av en person med rätt
 ## Så här lägger du upp ett attestflöde
 
 1. Gå till **Inköp → Attestflöden**.
-2. Klicka på **Nytt flöde för leverantörsfakturor** eller **Nytt flöde för betalfiler**.
+2. Klicka på **Nytt flöde för leverantörsfakturor**, **Nytt flöde för inköpsorder** eller **Nytt flöde för betalfiler**. Flödet för inköpsorder finns när Lager är påslaget.
 3. Skriv ett **Namn**, till exempel "Inköp från 20 000 kr", och en **Ordning**. Flöden prövas i ordning, lägst nummer först.
 4. Välj för steg 1 **Vem godkänner**: **Alla med en behörighet**, **Utvalda personer** eller **Ägaren av kostnadsstället eller projektet**.
 5. Ange **Antal som ska godkänna**. Två betyder att två olika personer måste godkänna steget.
@@ -29,7 +29,7 @@ Flödet syns direkt i listan med sina steg. Varje gång du sparar får flödet e
 - Ett flöde gäller en faktura eller betalfil när minst ett av stegen gäller den. Steg vars villkor inte stämmer hoppas över.
 - Gäller flera flöden används det med lägst **Ordning**.
 - Gäller inget flöde används standardattesten, precis som förut.
-- För leverantörsfakturor kan villkoren vara belopp, kostnadsställe, projekt, leverantör och kontointervall. För betalfiler kan villkoret bara vara ett belopp, eftersom en fil innehåller många fakturor.
+- För leverantörsfakturor och inköpsorder kan villkoren vara belopp, kostnadsställe, projekt, leverantör och kontointervall. På en inköpsorder är det raderna utan artikel som har konto, kostnadsställe och projekt. För betalfiler kan villkoret bara vara ett belopp, eftersom en fil innehåller många fakturor.
 - Beloppet är fakturans belopp att betala i kronor. En kreditnota prövas på sin storlek.
 
 ## Attestera i ett flöde
@@ -40,6 +40,8 @@ Samma person kan godkänna flera steg i samma flöde, till exempel både som kos
 
 ![En leverantörsfaktura i ett attestflöde i två steg, där första steget är godkänt.](/bilder/manual/leverantorer/attestflode-pa-fakturan.webp)
 
+En inköpsorder attesteras på ordern under **Lager → Inköpsorder**, och knappen heter **Attestera ordern**. Behörigheten som styr är rätten att skicka inköpsorder, det vill säga rollen **Ägare**, **Administratör** eller **Attestant**. Ordern kan skickas till leverantören först när sista steget är godkänt, och en ändrad order eller en ny version attesteras på nytt. Standardattesten för inköpsorder är attestgränsen under **Lager → Inställningar**. Se [Inköpsorder](/manual/lager/inkopsorder).
+
 Betalfiler fungerar på samma sätt under **Inköp → Betalfiler**: där står hur långt filen har kommit, och knappen **Godkänn betalningen** visas för den som får godkänna nästa steg.
 
 ### Avvisa
@@ -48,7 +50,7 @@ Stämmer något inte klickar du på **Avvisa**, skriver gärna ett skäl och kli
 
 ## Någon annan måste godkänna
 
-Kräver företaget att någon annan attesterar (se [Attest](/manual/leverantorer/attest)) gäller det i varje steg i varje flöde: den som registrerade fakturan eller skapade betalfilen kan aldrig godkänna den. Ett flöde kan inte stänga av kravet. Kryssrutan **Den som förberedde underlaget får inte godkänna** gör att kravet gäller i ett steg även om företaget har stängt av det.
+Kräver företaget att någon annan attesterar (se [Attest](/manual/leverantorer/attest)) gäller det i varje steg i varje flöde: den som registrerade fakturan, skapade betalfilen eller skapade inköpsordern kan aldrig godkänna den. Ett flöde kan inte stänga av kravet. Kryssrutan **Den som förberedde underlaget får inte godkänna** gör att kravet gäller i ett steg även om företaget har stängt av det.
 
 ## Vem kan vara attestant?
 
@@ -91,4 +93,5 @@ Den som inte längre är medlem i företaget kan inte godkänna. Ändra flödet 
 
 - [Attest](/manual/leverantorer/attest)
 - [Betalfiler till banken](/manual/leverantorer/betalfiler)
+- [Inköpsorder](/manual/lager/inkopsorder)
 - [Roller och behörigheter](/manual/kom-igang/roller-och-behorigheter)

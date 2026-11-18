@@ -147,7 +147,7 @@ class SaveReceipt
                 }
             }
 
-            $rows = $order->rows()->with('article:id,default_location_id,is_stock_item')->get()->filter(fn (PurchaseOrderRow $row): bool => $row->remainingMilli() > 0);
+            $rows = $order->rows()->with('article:id,default_location_id,is_stock_item')->get()->filter(fn (PurchaseOrderRow $row): bool => $row->isStock() && $row->remainingMilli() > 0);
 
             if ($rows->isEmpty()) {
                 throw ValidationException::withMessages(['purchase_order_id' => __('Allt på inköpsordern har redan tagits emot.')]);

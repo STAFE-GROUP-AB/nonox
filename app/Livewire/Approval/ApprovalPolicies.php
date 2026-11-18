@@ -20,6 +20,8 @@ use App\Models\CostCenter;
 use App\Models\Project;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Modules\Inventory\InventoryModule;
+use App\Modules\ModuleManager;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
@@ -59,7 +61,7 @@ class ApprovalPolicies extends Component
         $this->authorizeManage();
 
         $subject = ApprovalSubjectType::from($type);
-        abort_unless($subject->isWired(), 404);
+        abort_unless($subject->isWired() && $this->offers($subject), 404);
 
         $this->resetErrorBag();
         $this->editingId = 0;
@@ -176,7 +178,7 @@ class ApprovalPolicies extends Component
         return view('livewire.approval.approval-policies', [
             'company' => $company,
             'canManage' => $canManage,
-            'types' => ApprovalSubjectType::wired(),
+            'types' => array_values(array_filter(ApprovalSubjectType::wired(), fn (ApprovalSubjectType $type): bool => $this->offers($type))),
             'policies' => ApprovalPolicy::query()->with('steps')->orderBy('priority')->orderBy('id')->get()->groupBy(fn (ApprovalPolicy $policy): string => $policy->subject_type->value),
             'members' => $members,
             'memberNames' => $members->pluck('name', 'id')->all(),
@@ -259,5 +261,11 @@ class ApprovalPolicies extends Component
         $company = $this->user()->currentCompany();
 
         return $company;
+    }
+
+    /** Purchase orders belong to Lager (ADR-081 E10): their flows are offered while it is on for the company. */
+    private function offers(ApprovalSubjectType $type): bool
+    {
+        return $type !== ApprovalSubjectType::PurchaseOrder || app(ModuleManager::class)->isEnabled(InventoryModule::KEY, $this->company());
     }
 }

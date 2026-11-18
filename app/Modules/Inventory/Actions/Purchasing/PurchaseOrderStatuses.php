@@ -10,7 +10,7 @@ use App\Modules\Inventory\Models\PurchaseOrderRow;
 
 /**
  * The status a sent purchase order has from what its rows have received
- * (ADR-071 §2). A draft (also a sent order being changed into its next
+ * (ADR-071 §2); a row without an article counts when its delivery is confirmed (ADR-081 E10). A draft (also a sent order being changed into its next
  * version) and a cancelled order keep their status.
  */
 final class PurchaseOrderStatuses
@@ -23,8 +23,8 @@ final class PurchaseOrderStatuses
 
         $rows = $order->rows()->get();
         $status = match (true) {
-            $rows->every(fn (PurchaseOrderRow $row): bool => $row->received_milli >= $row->quantity_milli) => PurchaseOrderStatus::Received,
-            $rows->contains(fn (PurchaseOrderRow $row): bool => $row->received_milli > 0) => PurchaseOrderStatus::PartiallyReceived,
+            $rows->every(fn (PurchaseOrderRow $row): bool => $row->isFulfilled()) => PurchaseOrderStatus::Received,
+            $rows->contains(fn (PurchaseOrderRow $row): bool => $row->hasDelivery()) => PurchaseOrderStatus::PartiallyReceived,
             default => PurchaseOrderStatus::Sent,
         };
 
