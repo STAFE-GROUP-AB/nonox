@@ -49,7 +49,10 @@ class BuildArchivePackage implements ShouldQueue
 
         // A large year may take minutes, also when the queue runs in the request,
         // and a report PDF needs some 200 MB (ArchivePackageBuilder::$rowsPerPdf).
-        set_time_limit($this->timeout);
+        // Not in tests: set_time_limit would cap the whole test process.
+        if (! app()->runningUnitTests()) {
+            set_time_limit($this->timeout);
+        }
         self::ensureMemory(512 * 1024 * 1024);
 
         try {
