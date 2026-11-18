@@ -54,9 +54,15 @@
                                 </span>
                             @endif
                             @if($canManage)
+                                @if($kind === Dimension::Project)
+                                    <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="startDetails({{ $object->id }})">{{ __('Uppgifter') }}</button>
+                                @endif
                                 <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="startEditing({{ $object->id }})">{{ __('Byt namn') }}</button>
                                 <button type="button" class="text-sm text-gray-600 underline" wire:click="toggleActive({{ $object->id }})">{{ $object->is_active ? __('Inaktivera') : __('Aktivera') }}</button>
                             @endif
+                        @endif
+                        @if($kind === Dimension::Project)
+                            @include('livewire.accounting.partials.project-details', ['project' => $object])
                         @endif
                     </li>
                 @endforeach

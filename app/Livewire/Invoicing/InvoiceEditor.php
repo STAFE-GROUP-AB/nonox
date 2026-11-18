@@ -89,7 +89,7 @@ class InvoiceEditor extends Component
         if ($invoice instanceof Invoice) {
             abort_unless(Gate::allows('update', $invoice), 403);
 
-            $invoice->load('rows.account');
+            $invoice->load(['rows.account', 'rows.costCenter', 'rows.project']);
             $this->invoiceId = $invoice->id;
             $this->credit = $invoice->isCredit();
             $this->customerId = (string) $invoice->customer_id;

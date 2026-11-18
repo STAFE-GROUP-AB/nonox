@@ -30,6 +30,7 @@ enum CompanyRole: string
         'tasks:manage', 'tasks:view',
         'mileage:view', 'mileage:manage',
         'budgets:view', 'budgets:manage',
+        'projects:view', 'projects:manage',
     ];
 
     public function label(): string
@@ -72,6 +73,7 @@ enum CompanyRole: string
                 'tasks:manage', 'tasks:view',
                 'mileage:view', 'mileage:manage',
                 'budgets:view', 'budgets:manage',
+                'projects:view', 'projects:manage',
             ],
             self::Bookkeeper => [
                 'vouchers:create', 'vouchers:post', 'vouchers:correct', 'vouchers:view',
@@ -81,6 +83,7 @@ enum CompanyRole: string
                 'tasks:manage', 'tasks:view',
                 'mileage:view',
                 'budgets:view',
+                'projects:view',
             ],
             self::Approver => [
                 'supplier-invoices:approve', 'payments:approve',
@@ -93,6 +96,7 @@ enum CompanyRole: string
                 'tasks:view',
                 'mileage:view',
                 'budgets:view',
+                'projects:view',
             ],
             // Budgets, projects and analysis join when their packages add those permissions (ADR-081 E3, E6, E17).
             self::UnitManager => [

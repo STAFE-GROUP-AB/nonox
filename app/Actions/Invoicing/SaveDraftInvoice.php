@@ -70,7 +70,9 @@ class SaveDraftInvoice
      *                                       setting; an empty foreign_sale means a domestic sale),
      *                                       rows (list of article (number, optional), description,
      *                                       quantity, unit, price (kronor), discount (percent),
-     *                                       vat_rate, account (number, optional)),
+     *                                       vat_rate, account (number, optional), cost_center and
+     *                                       project (codes, optional: else the article's or the
+     *                                       customer's default)),
      *                                       currency (ISO 4217, optional: the draft's, otherwise SEK;
      *                                       prices are then in that currency) and exchange_rate
      *                                       (kronor per unit as typed, optional: Riksbanken's rate)
@@ -139,7 +141,9 @@ class SaveDraftInvoice
             // validate() keeps only fields with rules, so the rows are read from the input itself.
             /** @var list<array<string, mixed>> $rowInput */
             $rowInput = array_values(array_filter((array) $input['rows'], is_array(...)));
-            $rows = SalesRowInput::parse($rowInput, $draft?->isCredit() ?? false);
+            // A credit invoice keeps the rows it copies; the customer's default dimensions are for new sales (ADR-081 gap 6).
+            $isCredit = $draft?->isCredit() ?? false;
+            $rows = SalesRowInput::parse($rowInput, $isCredit, $isCredit ? null : $customer);
             $reverseCharge = isset($validated['reverse_charge'])
                 ? (bool) $validated['reverse_charge']
                 : ($draft !== null && $draft->exists ? $draft->reverse_charge : $customer->reverse_charge_construction);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\Units\UnitCatalogue;
+use App\Models\Concerns\HasDefaultDimensions;
 use App\Modules\Inventory\Domain\StockClass;
 use App\Modules\Inventory\Models\ArticleImage;
 use App\Modules\Inventory\Models\StockLevel;
@@ -66,6 +67,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Article extends Model
 {
     use BelongsToCompany;
+    use HasDefaultDimensions;
 
     /** @var list<string> */
     protected $fillable = [
@@ -108,6 +110,8 @@ class Article extends Model
         'sales_unit_id',
         'material_length_um',
         'material_width_um',
+        'default_cost_center_id',
+        'default_project_id',
         'material_thickness_um',
     ];
 

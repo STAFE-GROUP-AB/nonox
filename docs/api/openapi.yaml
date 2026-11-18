@@ -11809,6 +11809,16 @@ components:
         labour:
           type: boolean
           description: 'Labour cost (ROT/RUT).'
+        cost_center:
+          type:
+            - string
+            - 'null'
+          description: 'The code of the row''s cost centre; the invoice voucher books the row''s revenue on it.'
+        project:
+          type:
+            - string
+            - 'null'
+          description: 'The code of the row''s project; the invoice voucher books the row''s revenue on it.'
     InvoicePayment:
       type: object
       properties:
@@ -12154,6 +12164,16 @@ components:
             - 'null'
         labour:
           type: boolean
+        cost_center:
+          type:
+            - string
+            - 'null'
+          description: 'The code of a cost centre of the company (GET /cost-centers); null or an empty string for none. Left out: the article''s default, else the customer''s. An unknown code answers 422.'
+        project:
+          type:
+            - string
+            - 'null'
+          description: 'The code of a project of the company (GET /projects); null or an empty string for none. Left out: the article''s default, else the customer''s. An unknown code answers 422.'
     InvoiceInput:
       type: object
       required:

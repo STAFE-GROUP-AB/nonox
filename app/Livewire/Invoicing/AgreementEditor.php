@@ -54,6 +54,12 @@ class AgreementEditor extends Component
     /** "Gäller från" for a price change, a pause or an end, shown only with NONOX SaaS on (ADR-080 §3.1). Empty: today. */
     public string $effectiveFrom = '';
 
+    /** A recurring invoice's rows carry no cost centre or project; its invoices take the article's and the customer's defaults. */
+    protected function rowDimensionsEnabled(): bool
+    {
+        return false;
+    }
+
     public function mount(?RecurringInvoice $agreement = null): void
     {
         if ($agreement instanceof RecurringInvoice) {

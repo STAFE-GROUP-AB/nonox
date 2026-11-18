@@ -1,0 +1,21 @@
+{
+    "Uppgifterna för projekt :name är sparade.": "The details of project :name are saved.",
+    "prisform": "price form",
+    "Projektledaren måste vara medlem i företaget.": "The project manager must be a member of the company.",
+    "Beloppet går inte att läsa. Skriv till exempel 250 000 eller 250 000,00.": "The amount cannot be read. Write for example 250 000 or 250 000,00.",
+    "Projektet :code finns inte.": "Project :code does not exist.",
+    "Internt projekt": "Internal project",
+    "Projektledare": "Project manager",
+    "Ingen projektledare": "No project manager",
+    "Föreslås på rader med projektet.": "Suggested on rows with the project.",
+    "Inget kostnadsställe": "No cost centre",
+    "Inte angiven": "Not given",
+    "Kontraktssumma, kr": "Contract sum, SEK",
+    "Beräknad total kostnad, kr": "Estimated total cost, SEK",
+    "Spara uppgifter": "Save details",
+    "Projektledare: :name": "Project manager: :name",
+    "Kontraktssumma :amount": "Contract sum :amount",
+    "Kostnadsställe: :name": "Cost centre: :name",
+    "Kostnadsställe på nya rader": "Cost centre on new rows",
+    "Projekt på nya rader": "Project on new rows"
+}

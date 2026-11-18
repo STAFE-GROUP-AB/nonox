@@ -9,6 +9,7 @@ use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Privacy\EraseRegisterEntry;
 use App\Actions\Privacy\RestrictProcessing;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Livewire\Concerns\ChoosesDimensions;
 use App\Livewire\Concerns\LooksUpCompanies;
 use App\Livewire\Concerns\OpensFormFromLink;
 use App\Livewire\Concerns\ShowsToasts;
@@ -35,6 +36,7 @@ use Livewire\WithPagination;
  */
 class Customers extends Component
 {
+    use ChoosesDimensions;
     use LooksUpCompanies;
     use OpensFormFromLink;
     use ShowsToasts;
@@ -83,6 +85,8 @@ class Customers extends Component
         $this->form['country'] = 'SE';
         $this->form['currency'] = 'SEK';
         $this->form['invoice_delivery'] = 'EMAIL';
+        $this->form['default_cost_center'] = '';
+        $this->form['default_project'] = '';
         $this->reverseCharge = false;
         $this->foreignSale = '';
         $this->showForm = true;
@@ -92,11 +96,13 @@ class Customers extends Component
 
     public function edit(int $customerId): void
     {
-        $customer = Customer::query()->findOrFail($customerId);
+        $customer = Customer::query()->with(['defaultCostCenter:id,code', 'defaultProject:id,code'])->findOrFail($customerId);
 
         $this->editingId = $customer->id;
         $this->form = array_map(fn (mixed $value): string => (string) $value, $customer->only(self::FIELDS));
         $this->form['personal_number'] = (string) $customer->personal_number;
+        $this->form['default_cost_center'] = (string) $customer->defaultCostCenter?->code;
+        $this->form['default_project'] = (string) $customer->defaultProject?->code;
         $this->reverseCharge = $customer->reverse_charge_construction;
         $this->foreignSale = (string) $customer->foreign_sale?->value;
         $this->showForm = true;
@@ -221,6 +227,7 @@ class Customers extends Component
             'canManage' => $this->user()->can('create', [Customer::class, $this->company()]),
             'nextNumber' => NumberSeries::peek(NumberSeries::CUSTOMERS),
             'peppolOn' => app(ModuleManager::class)->isEnabled(PeppolModule::KEY, $this->company()),
+            'dimensionChoices' => $this->showForm ? $this->dimensionChoices() : null,
             'vatCheck' => $this->editingId === null ? null : VatNumberCheck::query()
                 ->where('customer_id', $this->editingId)->latest('checked_at')->latest('id')->first(),
         ]);

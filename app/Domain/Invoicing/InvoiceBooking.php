@@ -8,11 +8,15 @@ use App\Domain\Company\AccountingMethod;
 use App\Domain\Payables\SupplierInvoiceBooking;
 use App\Domain\Vat\OssRates;
 use App\Models\Account;
+use App\Models\CostCenter;
 use App\Models\Invoice;
 use App\Models\InvoiceRow;
+use App\Models\Project;
 use Brick\Math\BigDecimal;
+use Brick\Math\BigInteger;
 use Brick\Math\RoundingMode;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 
 /**
  * How invoices and payments are booked (AGENTS.md §7 Phase 2), as signed öre
@@ -38,6 +42,20 @@ use Illuminate\Support\Collection;
  * VAT and is booked like a sale in Sweden.
  *
  * A credit invoice has negative amounts, so the same rules reverse it.
+ *
+ * Cost centre and project (ADR-081 gap 6): the revenue of each row is booked
+ * on the row's cost centre and project, so the revenue rows of the voucher
+ * are grouped by account and dimensions instead of by account only; VAT,
+ * receivable, rounding, bank and exchange rows carry none (issueRows). Under
+ * kontantmetoden a payment first takes its share of each account exactly as
+ * before, then splits each revenue account's share over that account's
+ * dimensions in proportion to the rows, in whole öre by the largest
+ * remainder; the payment that settles the invoice gives each dimension what
+ * is left of it, as it does per account (paymentRows). An invoice without
+ * dimensions is booked exactly as before.
+ * TODO(legal-verify): the proportional split on kontantmetoden payment
+ * vouchers needs the same review as the supplier side (AUD-FAKT-3, ADR-081
+ * gap 6).
  *
  * An invoice in another currency is booked in kronor at its booking rate
  * (ADR-025). A payment settles its share of those kronor, and the
@@ -90,11 +108,7 @@ final class InvoiceBooking
         $sale = $invoice->bookedForeignSale();
 
         foreach ($rows as $row) {
-            $number = match (true) {
-                $invoice->reverse_charge => self::REVERSE_CHARGE_CONSTRUCTION,
-                $sale !== null => $sale->account(),
-                default => $row->account instanceof Account ? $row->account->number : 0,
-            };
+            $number = self::revenueAccount($invoice, $sale, $row);
             $lines[$number] = ($lines[$number] ?? 0) - $row->net_ore->ore;
         }
 
@@ -141,6 +155,311 @@ final class InvoiceBooking
             TaxReduction::RECEIVABLE => $invoice->tax_reduction_ore->ore + $repayable,
             TaxReduction::REPAYABLE => -$repayable,
         ]) + self::revenue($invoice, $rows);
+    }
+
+    /**
+     * As issue(), as voucher rows with the revenue on each row's cost centre
+     * and project (ADR-081 gap 6). Without dimensions these are exactly
+     * issue()'s lines, in the same order. Needs the rows' account, cost
+     * centre and project loaded.
+     *
+     * @param  Collection<int, InvoiceRow>  $rows
+     * @return list<array{account: int, amount: int, cost_center?: ?string, project?: ?string}>
+     */
+    public static function issueRows(Invoice $invoice, Collection $rows): array
+    {
+        $weights = self::weights(self::dimensionGroups($invoice, $rows));
+
+        // An account whose rows net to zero is not in issue(), but its dimensions still moved (they sum to zero).
+        return self::dimensionRows(self::issue($invoice, $rows), $weights, whole: $weights);
+    }
+
+    /**
+     * As payment(), as voucher rows. Under kontantmetoden each revenue
+     * account's share is split over its cost centres and projects in
+     * proportion to the rows, in whole öre by the largest remainder; the
+     * payment that settles the invoice takes what is left of each.
+     *
+     * @param  Collection<int, InvoiceRow>  $rows  with account, cost centre and project
+     * @return list<array{account: int, amount: int, cost_center?: ?string, project?: ?string}>
+     */
+    public static function paymentRows(Invoice $invoice, Collection $rows, int $amount, int $bankAccount, bool $cashMethod, ?int $received = null): array
+    {
+        $lines = self::payment($invoice, $rows, $amount, $bankAccount, $cashMethod, $received);
+
+        if (! $cashMethod) {
+            return self::dimensionRows($lines, []);
+        }
+
+        $groups = self::dimensionGroups($invoice, $rows);
+
+        if ($groups === []) {
+            return self::dimensionRows($lines, []);
+        }
+
+        $final = $amount === $invoice->remaining()->ore && self::cashRest($invoice, self::revenue($invoice, $rows), $amount) !== null;
+        $rest = $final ? self::groupRest($invoice, $groups) : null;
+
+        // The settling payment also books the dimensions of an account whose rows net to zero, in full (they sum to zero).
+        return self::dimensionRows($lines, self::weights($groups), $rest, whole: $rest);
+    }
+
+    /**
+     * The revenue of the rows per account and dimensions: account number =>
+     * key => amount (credit negative) and codes. Only accounts where some
+     * row has a cost centre or a project, unless $all.
+     *
+     * @param  Collection<int, InvoiceRow>  $rows
+     * @return array<int, array<string, array{amount: int, cost_center: ?string, project: ?string}>>
+     */
+    public static function dimensionGroups(Invoice $invoice, Collection $rows, bool $all = false): array
+    {
+        $sale = $invoice->bookedForeignSale();
+        $groups = [];
+        $dimensioned = [];
+
+        foreach ($rows as $row) {
+            $number = self::revenueAccount($invoice, $sale, $row);
+            $costCenter = $row->cost_center_id === null ? null : $row->getRelationValue('costCenter');
+            $project = $row->project_id === null ? null : $row->getRelationValue('project');
+            $costCenterCode = $costCenter instanceof CostCenter ? $costCenter->code : null;
+            $projectCode = $project instanceof Project ? $project->code : null;
+            $key = self::key($costCenterCode, $projectCode);
+
+            $groups[$number][$key] ??= ['amount' => 0, 'cost_center' => $costCenterCode, 'project' => $projectCode];
+            $groups[$number][$key]['amount'] -= $row->net_ore->ore;
+
+            if ($costCenterCode !== null || $projectCode !== null) {
+                $dimensioned[$number] = true;
+            }
+        }
+
+        return $all ? $groups : array_intersect_key($groups, $dimensioned);
+    }
+
+    /**
+     * Splits $total öre over the parts in proportion to their amounts, by
+     * the largest remainder: each part gets the floor of its exact share,
+     * and the öre left over go one each to the parts with the largest
+     * remainders (on a tie, the part that comes first). Deterministic, and
+     * the parts always sum to $total. The amounts may have either sign;
+     * their sum must not be zero. A negative total is split as its size
+     * and given its sign back.
+     *
+     * @template TKey of array-key
+     *
+     * @param  array<TKey, int>  $amounts
+     * @return array<TKey, int>
+     */
+    public static function largestRemainder(int $total, array $amounts): array
+    {
+        $sum = array_sum($amounts);
+
+        if ($sum === 0) {
+            throw new InvalidArgumentException('Nothing to split in proportion to.');
+        }
+
+        // A negative total is split as its size and given its sign back, so the extra öre go to the same parts.
+        if ($total < 0) {
+            return array_map(fn (int $part): int => -$part, self::largestRemainder(-$total, $amounts));
+        }
+
+        // The signs are folded so the divisor is positive; flooring then leaves between 0 and n-1 öre over.
+        $sign = $sum < 0 ? -1 : 1;
+        $divisor = BigInteger::of($sum * $sign);
+        $parts = [];
+        $remainders = [];
+        $order = 0;
+
+        foreach ($amounts as $key => $amount) {
+            $exact = BigInteger::of($total)->multipliedBy($amount * $sign);
+            $parts[$key] = $exact->dividedBy($divisor, RoundingMode::Floor)->toInt();
+            $remainders[] = ['key' => $key, 'remainder' => $exact->mod($divisor), 'order' => $order++];
+        }
+
+        $left = $total - array_sum($parts);
+
+        usort($remainders, fn (array $a, array $b): int => $b['remainder']->compareTo($a['remainder']) ?: ($a['order'] <=> $b['order']));
+
+        for ($i = 0; $i < $left; $i++) {
+            $parts[$remainders[$i]['key']]++;
+        }
+
+        return $parts;
+    }
+
+    /**
+     * Account lines as voucher rows, each account in $weights split over its
+     * dimensions (keys from dimensionGroups): by $rest when it adds up to the
+     * line (what is left of each, for the payment that settles the invoice),
+     * as the weights are when the line is their sum, or else in proportion
+     * to them by the largest remainder. An account in $whole that has no
+     * line and whose parts sum to zero gets those parts in full, so its
+     * dimensions are booked although the account nets to zero. Accounts
+     * without weights are one row without dimensions.
+     *
+     * @param  array<int, int>  $lines
+     * @param  array<int, array<string, int>>  $weights
+     * @param  array<int, array<string, int>>|null  $rest
+     * @param  array<int, array<string, int>>|null  $whole
+     * @return list<array{account: int, amount: int, cost_center?: ?string, project?: ?string}>
+     */
+    public static function dimensionRows(array $lines, array $weights, ?array $rest = null, ?array $whole = null): array
+    {
+        $result = [];
+
+        foreach ($lines as $account => $amount) {
+            $parts = array_filter($weights[$account] ?? []);
+
+            if ($parts === [] || array_sum($parts) === 0) {
+                $result[] = ['account' => $account, 'amount' => $amount];
+
+                continue;
+            }
+
+            $shares = match (true) {
+                $rest !== null && isset($rest[$account]) && array_sum($rest[$account]) === $amount => $rest[$account],
+                $amount === array_sum($parts) => $parts,
+                default => self::largestRemainder($amount, $parts),
+            };
+
+            foreach ($shares as $key => $share) {
+                $result[] = self::dimensionRow($account, $share, (string) $key);
+            }
+        }
+
+        foreach (array_diff_key($whole ?? [], $lines) as $account => $parts) {
+            if (array_sum($parts) !== 0) {
+                continue;
+            }
+
+            foreach ($parts as $key => $share) {
+                $result[] = self::dimensionRow($account, $share, (string) $key);
+            }
+        }
+
+        return array_values(array_filter($result, fn (array $row): bool => $row['amount'] !== 0));
+    }
+
+    /**
+     * The amounts of dimensionGroups as weights: account => key => öre.
+     *
+     * @param  array<int, array<string, array{amount: int, cost_center: ?string, project: ?string}>>  $groups
+     * @return array<int, array<string, int>>
+     */
+    public static function weights(array $groups): array
+    {
+        return array_map(fn (array $parts): array => array_map(fn (array $part): int => $part['amount'], $parts), $groups);
+    }
+
+    /**
+     * Weights added together, account and key by account and key.
+     *
+     * @param  array<int, array<string, int>>  ...$sets
+     * @return array<int, array<string, int>>
+     */
+    public static function addWeights(array ...$sets): array
+    {
+        $sum = [];
+
+        foreach ($sets as $set) {
+            foreach ($set as $account => $parts) {
+                foreach ($parts as $key => $amount) {
+                    $sum[$account][$key] = ($sum[$account][$key] ?? 0) + $amount;
+                }
+            }
+        }
+
+        return $sum;
+    }
+
+    /**
+     * The revenue of the rows per dimension over all accounts together:
+     * key => öre (credit negative); empty when no row has a dimension.
+     *
+     * @param  array<int, array<string, int>>  $weights
+     * @return array<string, int>
+     */
+    public static function dimensionTotals(array $weights): array
+    {
+        $totals = [];
+
+        foreach ($weights as $parts) {
+            foreach ($parts as $key => $amount) {
+                $totals[$key] = ($totals[$key] ?? 0) + $amount;
+            }
+        }
+
+        return array_filter($totals);
+    }
+
+    /** @return array{account: int, amount: int, cost_center: ?string, project: ?string} */
+    private static function dimensionRow(int $account, int $amount, string $key): array
+    {
+        [$costCenter, $project] = explode("\u{1F}", $key, 2) + [1 => ''];
+
+        return ['account' => $account, 'amount' => $amount, 'cost_center' => $costCenter === '' ? null : $costCenter, 'project' => $project === '' ? null : $project];
+    }
+
+    /**
+     * Kontantmetoden: what is left of each dimension of each account for the
+     * payment that settles the invoice: the rows, plus its issued credit
+     * invoices' rows (negative), less each earlier payment's share as
+     * paymentRows split it. It sums per account to what cashRest leaves, so
+     * the payments together book exactly the invoice's revenue per account
+     * and dimensions. A payment registered before dimensions existed is
+     * counted as if it had been split too.
+     *
+     * @param  array<int, array<string, array{amount: int, cost_center: ?string, project: ?string}>>  $groups
+     * @return array<int, array<string, int>>
+     */
+    private static function groupRest(Invoice $invoice, array $groups): array
+    {
+        $rest = array_map(fn (array $parts): array => array_map(fn (array $part): int => $part['amount'], $parts), $groups);
+        $credits = $invoice->creditInvoices()->whereNotNull('number')->with(['rows.account', 'rows.costCenter', 'rows.project'])->get();
+
+        foreach ($credits as $credit) {
+            foreach (array_intersect_key(self::dimensionGroups($credit, $credit->rows, all: true), $rest) as $account => $parts) {
+                foreach ($parts as $key => $part) {
+                    $rest[$account][$key] = ($rest[$account][$key] ?? 0) + $part['amount'];
+                }
+            }
+        }
+
+        $revenue = self::revenue($invoice, $invoice->rows);
+
+        foreach ($invoice->payments()->get() as $payment) {
+            $settled = $payment->amount_ore->ore - (int) $payment->exchange_difference_ore;
+
+            foreach (array_intersect_key(self::cashShare($revenue, $settled, $invoice->total_ore->ore), $groups) as $account => $share) {
+                $weights = array_filter(array_map(fn (array $part): int => $part['amount'], $groups[$account]));
+
+                if ($weights === [] || array_sum($weights) === 0) {
+                    continue;
+                }
+
+                foreach (self::largestRemainder($share, $weights) as $key => $part) {
+                    $rest[$account][$key] -= $part;
+                }
+            }
+        }
+
+        return $rest;
+    }
+
+    private static function key(?string $costCenter, ?string $project): string
+    {
+        return ($costCenter ?? '')."\u{1F}".($project ?? '');
+    }
+
+    /** The account a row's revenue is booked on. */
+    private static function revenueAccount(Invoice $invoice, ?ForeignSale $sale, InvoiceRow $row): int
+    {
+        return match (true) {
+            $invoice->reverse_charge => self::REVERSE_CHARGE_CONSTRUCTION,
+            $sale !== null => $sale->account(),
+            default => $row->account instanceof Account ? $row->account->number : 0,
+        };
     }
 
     /**
@@ -275,6 +594,41 @@ final class InvoiceBooking
         }
 
         return array_filter([self::RECEIVABLES => -$amount, self::CUSTOMER_LOSS => $amount - array_sum($vat)] + $vat);
+    }
+
+    /**
+     * As writeOff(), as voucher rows: the loss on 6351 is split over the
+     * cost centres and projects of the revenue it was (the invoice's rows
+     * and its credit invoices'), in proportion and in whole öre by the
+     * largest remainder, so an account that requires a dimension can take
+     * it (ADR-081 gap 6). Without dimensions, exactly writeOff().
+     *
+     * @param  Collection<int, InvoiceRow>  $rows  with account, cost centre and project
+     * @param  Collection<int, Invoice>  $credits  issued credit invoices, with the same relations
+     * @return list<array{account: int, amount: int, cost_center?: ?string, project?: ?string}>
+     */
+    public static function writeOffRows(Invoice $invoice, Collection $rows, Collection $credits, int $amount): array
+    {
+        $lines = self::writeOff($invoice, $rows, $credits, $amount);
+
+        if ($invoice->isImported()) {
+            return self::dimensionRows($lines, []);
+        }
+
+        $weights = self::weights(self::dimensionGroups($invoice, $rows, all: true));
+
+        foreach ($credits as $credit) {
+            $weights = self::addWeights($weights, self::weights(self::dimensionGroups($credit, $credit->rows, all: true)));
+        }
+
+        $totals = self::dimensionTotals($weights);
+        $dimensioned = array_filter(array_keys($totals), fn (string $key): bool => $key !== self::key(null, null));
+
+        if ($dimensioned === [] || array_sum($totals) === 0 || ! isset($lines[self::CUSTOMER_LOSS])) {
+            return self::dimensionRows($lines, []);
+        }
+
+        return self::dimensionRows($lines, [self::CUSTOMER_LOSS => $totals]);
     }
 
     /**

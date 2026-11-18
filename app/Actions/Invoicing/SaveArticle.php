@@ -6,6 +6,7 @@ namespace App\Actions\Invoicing;
 
 use App\Actions\Units\ResolveArticleUnits;
 use App\Domain\Invoicing\InvoiceCalculator;
+use App\Domain\Projects\DefaultDimensions;
 use App\Domain\Units\ArticleUnits;
 use App\Models\Account;
 use App\Models\Article;
@@ -34,7 +35,7 @@ class SaveArticle
     public const array DEFAULT_ACCOUNTS = [2500 => 3001, 1200 => 3002, 600 => 3003, 0 => 3004];
 
     /**
-     * @param  array<string, mixed>  $input  number, name, unit (or the stock, purchase and sales unit ids and material size, ADR-071 §12), price (kronor as written), vat_rate, account (number, optional), and any of the advanced fields in ArticleDetails::KEYS
+     * @param  array<string, mixed>  $input  number, name, unit (or the stock, purchase and sales unit ids and material size, ADR-071 §12), price (kronor as written), vat_rate, account (number, optional), default_cost_center and default_project (codes, optional), and any of the advanced fields in ArticleDetails::KEYS
      * @param  bool  $import  an importer: a unit text naming an archived unit is used instead of refused (ADR-071 §12.9)
      */
     public function __invoke(User $user, Company $company, array $input, ?Article $article = null, bool $import = false): Article
@@ -87,6 +88,8 @@ class SaveArticle
                 'is_active' => (bool) ($validated['is_active'] ?? $article->is_active ?? true),
                 ...(array_key_exists('external_ref', $validated) ? ['external_ref' => $validated['external_ref']] : []),
                 ...ArticleDetails::attributes($input, $company, $article),
+                // The cost centre and project new rows with the article get (ADR-081 gap 6).
+                ...DefaultDimensions::fromInput($input),
             ];
 
             if ($article === null) {

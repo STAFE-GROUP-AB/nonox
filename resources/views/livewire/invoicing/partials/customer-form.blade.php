@@ -52,6 +52,9 @@
                 @endforeach
             </select>
         </x-ui.field>
+        @if(isset($dimensionChoices))
+            @include('livewire.partials.default-dimensions', ['model' => 'form', 'values' => $form, 'idPrefix' => 'customer'])
+        @endif
         <label class="flex items-start gap-3 text-sm text-gray-800 sm:col-span-2">
             <input type="checkbox" class="mt-0.5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model="reverseCharge">
             <span>{{ __('Omvänd betalningsskyldighet för byggtjänster') }}<span class="block text-xs text-gray-500">{{ __('Kunden är ett byggföretag som själv redovisar momsen på byggtjänster ni säljer. Nya fakturor till kunden blir utan moms.') }}</span></span>

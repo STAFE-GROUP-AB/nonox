@@ -54,7 +54,7 @@ class SalesDocumentEditor extends Component
         if ($document instanceof SalesDocument) {
             abort_unless(Gate::allows('view', $document), 403);
 
-            $document->load(['rows.account', 'customer']);
+            $document->load(['rows.account', 'rows.costCenter', 'rows.project', 'customer']);
             $this->kind = $document->kind;
             $this->documentId = $document->id;
             $this->customerId = (string) $document->customer_id;
@@ -107,7 +107,7 @@ class SalesDocumentEditor extends Component
         }
 
         // The saved rows come back with their keys, so a row keeps what hangs on it (ADR-071 §4) at the next save.
-        $this->rows = $this->rowsFrom($document->load('rows.account')->rows);
+        $this->rows = $this->rowsFrom($document->load(['rows.account', 'rows.costCenter', 'rows.project'])->rows);
         $this->dispatch('sales-document-saved');
         $this->toast(__(':title är sparad.', ['title' => $document->title()]));
     }

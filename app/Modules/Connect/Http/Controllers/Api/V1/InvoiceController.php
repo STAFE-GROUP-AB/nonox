@@ -51,7 +51,7 @@ final class InvoiceController
 {
     use ActsAsCredential;
 
-    private const array RELATIONS = ['rows.account', 'rows.article', 'payments.account', 'customer', 'peppolTransmissions'];
+    private const array RELATIONS = ['rows.account', 'rows.article', 'rows.costCenter', 'rows.project', 'payments.account', 'customer', 'peppolTransmissions'];
 
     private const array FIELDS = ['customer_id', 'invoice_date', 'due_date', 'delivery_date', 'your_reference', 'our_reference', 'notes', 'reverse_charge', 'foreign_sale', 'tax_reduction', 'property_designation', 'invoice_currency'];
 
@@ -229,6 +229,8 @@ final class InvoiceController
                 'vat_rate' => $row['vat_rate'] ?? ($article === null ? 2500 : $article->vat_rate),
                 'account' => $row['account'] ?? null,
                 'labour' => (bool) ($row['labour'] ?? false),
+                // Cost centre and project by code (ADR-081 gap 6); left out, the article's or the customer's default.
+                ...array_intersect_key($row, array_flip(['cost_center', 'project'])),
             ];
         }, $rows, array_keys($rows));
 

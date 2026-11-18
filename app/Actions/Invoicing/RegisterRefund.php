@@ -47,7 +47,7 @@ class RegisterRefund
         return CurrentCompany::run($credit->company_id, fn (): InvoicePayment => DB::transaction(function () use ($user, $credit, $paidOn, $amount, $bankAccount, $foreignAmount): InvoicePayment {
             /** @var Invoice $credit */
             $credit = Invoice::query()->whereKey($credit->id)->lockForUpdate()->firstOrFail();
-            $credit->load('rows.account');
+            $credit->load(['rows.account', 'rows.costCenter', 'rows.project']);
             $company = Company::query()->findOrFail($credit->company_id);
             $left = -$credit->remaining()->ore;
 
@@ -88,13 +88,13 @@ class RegisterRefund
                 RegisterPayment::ensureExchangeAccount($difference > 0 ? InvoiceBooking::EXCHANGE_GAIN : InvoiceBooking::EXCHANGE_LOSS, $user, $company);
             }
 
-            $voucher = ($this->bookVoucher)(
+            $voucher = $this->bookVoucher->rows(
                 $user,
                 $company,
                 $paidOn,
                 __('Återbetalning :invoice, :customer', ['invoice' => $credit->title(), 'customer' => $credit->customer_snapshot['name'] ?? '']),
                 'C',
-                InvoiceBooking::payment($credit, $credit->rows, -$settled, $bankAccount, ! InvoiceBooking::bookedAtIssue($credit, $company->accounting_method), -$amount->ore),
+                InvoiceBooking::paymentRows($credit, $credit->rows, -$settled, $bankAccount, ! InvoiceBooking::bookedAtIssue($credit, $company->accounting_method), -$amount->ore),
                 VoucherSource::Payment,
                 $credit,
             );

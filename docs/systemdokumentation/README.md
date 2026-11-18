@@ -4,7 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.136
+- Version: 0.137
+- Version: 0.135
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -833,6 +834,17 @@ year").
 - Listorna över kostnadsställen och projekt visar intäkter, kostnader och
   resultat per objekt för innevarande räkenskapsår (bokförda rader på
   resultatkonton med objektet), för den som får se rapporter.
+- Projektregistret (ADR-081 lucka 6, paket E6): ett projekt har också kund,
+  projektledare (en medlem i företaget, kontrolleras när uppgifterna sparas
+  och visas), status (Planerat, Pågående, Avslutat, Stängt; befintliga
+  projekt blev Pågående), start- och slutdatum, prisform (fast pris,
+  löpande räkning, internt), kontraktssumma, beräknad total kostnad och ett
+  kostnadsställe som föreslås på rader med projektet. Uppgifterna styr inte
+  bokföringen; status hindrar ingen bokning, bara inaktivering döljer
+  projektet på nya rader. Ändringar skrivs som `project.updated` med
+  fältnamn, id, datum och belopp. Behörigheterna `projects:view` och
+  `projects:manage` (den som har `accounts:manage` har kvar sin rätt).
+- Kostnadsställe och projekt på fakturor, offerter och order: se avsnitt 5.
 
 ### 4.11 Inläsning av SIE4-filer
 
@@ -1110,6 +1122,46 @@ balances").
   betalningarna tillsammans bokför exakt fakturans intäkt och moms (ML
   7 kap. 16 §, 17 kap. 24 § p. 11; enligt granskning 2026-11-02,
   juristgranskning återstår (AUD-FAKT-3, #52)).
+- Kostnadsställe och projekt (ADR-081 lucka 6, paket E6, version 0.137):
+  rader på fakturor, offerter och order kan ha ett kostnadsställe och ett
+  projekt, angivna med kod och uppslagna inom företaget (ADR-009). En ny
+  rad får artikelns förval, annars kundens, fält för fält; har raden då ett
+  projekt men inget kostnadsställe får den projektets kostnadsställe. En
+  rad som anger ett värde, även inget, behåller det. Offert blir order och order blir faktura rad
+  för rad med samma objekt, och en kreditfaktura kopierar dem. En faktura
+  som skapats kan inte få andra objekt; databasen vägrar som för övriga
+  fält. Fakturans verifikation i serie B bokför varje rads intäkt på radens
+  kostnadsställe och projekt: intäktsraderna grupperas per konto och
+  objekt i stället för per konto. Utgående moms, 1510, 1513, 2890, 3740,
+  bank och kursdifferens får inga objekt. Med kontantmetoden tar en
+  betalning i serie C först sin andel per konto precis som förut och delar
+  sedan varje intäktskontos andel på kontots objekt i proportion till
+  raderna, i hela ören med största rest (varje del får golvet av sin exakta
+  andel och de ören som blir över går en i taget till de största resterna;
+  ett negativt belopp delas som sitt absoluta värde). Betalningen som
+  reglerar fakturan bokför det som återstår per konto och objekt efter
+  kreditfakturor och tidigare betalningar, så att betalningarna tillsammans
+  bokför exakt radernas intäkt per objekt (en betalning registrerad före
+  version 0.137 räknas som om den hade delats). Ett konto vars rader netto
+  är noll får sina objekt i sin helhet (de summerar till noll) i fakturans
+  verifikation och i betalningen som reglerar fakturan. Fakturor utan
+  objekt bokförs exakt som förut. Verifikationerna går genom samma
+  `PostVoucher`, så nummerserierna förblir obrutna och redan bokförda
+  verifikationer påverkas inte; ändringen gäller fakturor som bokförs från
+  och med version 0.137. Bokslutets obetalda kundfakturor enligt
+  kontantmetoden (avsnitt 5a5) delar varje intäktskontos öppna del på
+  radernas och kreditfakturornas objekt på samma sätt, som
+  leverantörssidan redan gör, så att ett konto som kräver kostnadsställe
+  eller projekt kan bokföras. Kundförlust: förlusten på 6351 delas på
+  intäktens objekt (fakturans och kreditfakturornas rader) i proportion,
+  i hela ören med största rest; moms och 1510 får inga objekt. En senare
+  återvinning delar varje rads andel på objekten i bortskrivningens
+  verifikation, och den sista återvinningen tar det som återstår per
+  objekt. Återkommande fakturors rader har inga egna objekt; fakturorna
+  de skapar får artikelns och kundens förval. SIE-exporten skriver
+  objekten på `#TRANS` som förut. TODO(legal-verify): fördelningen på
+  kontantmetodens betalningsverifikationer behöver samma granskning som
+  leverantörssidan (AUD-FAKT-3).
 - Företag som inte är momsregistrerade (momsredovisning "Inte
   momsregistrerad"): inställningarna sparar varför (`vat_exemption`: liten
   omsättning enligt ML 18 kap. 4 §, bara momsfri försäljning enligt 10 kap.,
@@ -5970,3 +6022,4 @@ påverkar bokföringen och fakturan:
 | 0.134 | 2026-11-17 | Pass på kostnadsställen till lönebokföringen (avsnitt 5b och 5i, ADR-037 lucka 7, paket P2): avdelningar och pass kan ha ett kostnadsställe, Skicka till lönen skriver en tidrapport per dag, löneart och kostnadsställe (Timlön och dagens övertid och mertid delas efter passens planerade minuter, OB efter den OB passen ger enligt avtalet, i hundradels timmar med största rest; veckans eller periodens övertid och mertid på anställningens), och lönekörningen för kostnadsstället till lönebeskedets rad. Lönens verifikation bokför den raden på dess kostnadsställe; övriga rader får anställningens kostnadsställe och projekt bara när inställningen Kostnadsställe och projekt från anställningen och lönearten säger det (inställningen lästes inte förut). Arbetsgivaravgifterna på 7510 fördelas per lönebesked i proportion till avgiftsunderlaget per kostnadsställe, i hela ören med största rest, så att verifikationen balanserar. Tid att attestera läser nu ett publicerat pass som ändrats till utkast med rätt klockslag. Nya nullbara kolumner `cost_center_id` på `planning_areas`, `planning_shifts`, `time_reports` och `payslip_lines`. Ingen bokförd verifikation ändras. |
 | 0.135 | 2026-11-18 | Behörighet per enhet (avsnitt 1.0, ADR-081 lucka 10, paket E1): en ägare eller administratör kan begränsa en bokförare, attestant, enhetschef eller modulroll till kostnadsställen och projekt (`membership_dimension_scopes`, `team_user.dimension_scoped`). Den begränsade ser och bokför bara verifikationer och leverantörsfakturor vars rader med dimension alla ligger inom begränsningen, och läser resultatrapport och huvudbok bara för ett av sina objekt; lönens verifikationer visas aldrig för hen; allt annat svarar 404. Ägare, administratör, redovisningskonsult och revisor kan aldrig begränsas. Ingen bokförd verifikation ändras. |
 | 0.136 | 2026-11-18 | Budget (avsnitt 4.12a, ADR-081 paket E3): nya tabeller `budget_versions` och `budget_lines` för budget per resultatkonto, månad, kostnadsställe och projekt. Budgeten bokförs aldrig och ingår inte i kontrollsummekedjan; en låst budget kan inte ändras (databastrigger) och en låst budget för ett stängt räkenskapsår kan inte tas bort. Ingen bokförd verifikation ändras. |
+| 0.137 | 2026-11-18 | Kostnadsställe och projekt på fakturor, offerter och order och ett projektregister (avsnitt 4.10 och 5, ADR-081 lucka 6, paket E6): nya nullbara kolumner `cost_center_id` och `project_id` på `invoice_rows` och `sales_document_rows`, `default_cost_center_id` och `default_project_id` på `articles` och `customers`, och projektets kund, projektledare, status, datum, prisform, kontraktssumma, beräknad kostnad och förvalda kostnadsställe på `projects`. Fakturans verifikation (serie B) bokför varje rads intäkt på radens kostnadsställe och projekt; med kontantmetoden delar betalningens verifikation (serie C) varje intäktskontos andel på objekten i proportion till raderna i hela ören med största rest, och betalningen som reglerar fakturan tar det som återstår per objekt. Moms, kundfordran, öresavrundning och bank får inga objekt. Bokslutets obetalda kundfakturor enligt kontantmetoden, kundförlust och återvinning delas på samma sätt per objekt, och ett konto vars rader netto är noll får sina objekt i sin helhet. Fakturor utan objekt bokförs som förut, och ingen bokförd verifikation ändras. |

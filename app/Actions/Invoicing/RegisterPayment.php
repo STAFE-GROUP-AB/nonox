@@ -48,7 +48,7 @@ class RegisterPayment
         return CurrentCompany::run($invoice->company_id, fn (): InvoicePayment => DB::transaction(function () use ($user, $invoice, $paidOn, $amount, $bankAccount, $foreignAmount): InvoicePayment {
             /** @var Invoice $invoice */
             $invoice = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
-            $invoice->load('rows.account');
+            $invoice->load(['rows.account', 'rows.costCenter', 'rows.project']);
             $company = Company::query()->findOrFail($invoice->company_id);
 
             if ($invoice->status === InvoiceStatus::WrittenOff) {
@@ -96,13 +96,13 @@ class RegisterPayment
                 self::ensureExchangeAccount($difference > 0 ? InvoiceBooking::EXCHANGE_GAIN : InvoiceBooking::EXCHANGE_LOSS, $user, $company);
             }
 
-            $voucher = ($this->bookVoucher)(
+            $voucher = $this->bookVoucher->rows(
                 $user,
                 $company,
                 $paidOn,
                 __('Inbetalning :invoice, :customer', ['invoice' => $invoice->title(), 'customer' => $invoice->customer_snapshot['name'] ?? '']).$invoice->bookingNote(),
                 'C',
-                InvoiceBooking::payment($invoice, $invoice->rows, $settled, $bankAccount, ! InvoiceBooking::bookedAtIssue($invoice, $company->accounting_method), $amount->ore),
+                InvoiceBooking::paymentRows($invoice, $invoice->rows, $settled, $bankAccount, ! InvoiceBooking::bookedAtIssue($invoice, $company->accounting_method), $amount->ore),
                 VoucherSource::Payment,
                 $invoice,
             );
@@ -178,41 +178,61 @@ class RegisterPayment
 
         $loss = [];
 
+        // The dimensions of each line (ADR-081 gap 6): the write-off voucher's rows, or the invoice's revenue rows.
+        $parts = [];
+
         if ($invoice->write_off_voucher_id !== null) {
-            foreach (Voucher::query()->with('rows.account')->findOrFail($invoice->write_off_voucher_id)->rows as $row) {
+            foreach (Voucher::query()->with(['rows.account', 'rows.costCenter', 'rows.project'])->findOrFail($invoice->write_off_voucher_id)->rows as $row) {
                 $number = $row->account instanceof Account ? $row->account->number : 0;
 
                 if ($number !== InvoiceBooking::RECEIVABLES) {
                     // Negated: the recovery credits what the write-off debited.
-                    $loss[$number] = ($loss[$number] ?? 0) - ($row->debit_ore->ore - $row->credit_ore->ore);
+                    $value = -($row->debit_ore->ore - $row->credit_ore->ore);
+                    $loss[$number] = ($loss[$number] ?? 0) + $value;
+                    $key = ($row->cost_center_id === null ? '' : (string) $row->costCenter?->code)."\u{1F}".($row->project_id === null ? '' : (string) $row->project?->code);
+                    $parts[$number][$key] = ($parts[$number][$key] ?? 0) + $value;
                 }
             }
+
+            // Only lines that carried a dimension are split.
+            $parts = array_filter($parts, fn (array $line): bool => array_keys($line) !== ["\u{1F}"]);
         } else {
             $loss = InvoiceBooking::revenue($invoice, $invoice->rows);
+            $parts = InvoiceBooking::weights(InvoiceBooking::dimensionGroups($invoice, $invoice->rows));
         }
 
         $base = $invoice->write_off_voucher_id !== null ? $invoice->written_off_ore->ore : $invoice->total_ore->ore;
         $lines = InvoiceBooking::cashShare($loss, $amount->ore, $base);
 
+        $rest = null;
+
         if ($amount->ore === $left && $invoice->write_off_voucher_id !== null) {
-            // The last recovery takes the rest of each line.
+            // The last recovery takes the rest of each line, and of each dimension of it.
             $lines = $loss;
+            $rest = $parts;
             $earlier = InvoicePayment::query()->where('invoice_id', $invoice->id)->where('recovery', true)->pluck('amount_ore');
 
             foreach ($earlier as $paid) {
                 foreach (InvoiceBooking::cashShare($loss, $paid instanceof Money ? $paid->ore : (int) $paid, $base) as $number => $share) {
                     $lines[$number] -= $share;
+                    $weights = array_filter($parts[$number] ?? []);
+
+                    if ($weights !== [] && array_sum($weights) !== 0) {
+                        foreach (InvoiceBooking::largestRemainder($share, $weights) as $key => $part) {
+                            $rest[$number][$key] -= $part;
+                        }
+                    }
                 }
             }
         }
 
-        $voucher = ($this->bookVoucher)(
+        $voucher = $this->bookVoucher->rows(
             $user,
             $company,
             $paidOn,
             __('Inbetalning efter kundförlust :invoice, :customer', ['invoice' => $invoice->title(), 'customer' => $invoice->customer_snapshot['name'] ?? '']).$invoice->bookingNote(),
             'C',
-            [$bankAccount => $amount->ore] + array_filter($lines),
+            [['account' => $bankAccount, 'amount' => $amount->ore], ...InvoiceBooking::dimensionRows(array_filter($lines), $parts, $rest)],
             VoucherSource::Payment,
             $invoice,
         );

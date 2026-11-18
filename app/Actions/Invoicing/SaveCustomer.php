@@ -6,6 +6,7 @@ namespace App\Actions\Invoicing;
 
 use App\Domain\Company\OrganisationNumber;
 use App\Domain\Invoicing\ForeignSale;
+use App\Domain\Projects\DefaultDimensions;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\NumberSeries;
@@ -26,7 +27,7 @@ use Illuminate\Validation\ValidationException;
 class SaveCustomer
 {
     /**
-     * @param  array<string, mixed>  $input
+     * @param  array<string, mixed>  $input  the customer's fields; default_cost_center and default_project (codes, optional)
      */
     public function __invoke(User $user, Company $company, array $input, ?Customer $customer = null): Customer
     {
@@ -116,7 +117,10 @@ class SaveCustomer
             $attributes['org_number'] = OrganisationNumber::tryFrom((string) $attributes['org_number'])?->formatted();
         }
 
-        return DB::transaction(fn (): Customer => CurrentCompany::run($company, function () use ($attributes, $customer, $company, $user): Customer {
+        return DB::transaction(fn (): Customer => CurrentCompany::run($company, function () use ($attributes, $input, $customer, $company, $user): Customer {
+            // The cost centre and project new rows for the customer get (ADR-081 gap 6), by code.
+            $attributes = [...$attributes, ...DefaultDimensions::fromInput($input)];
+
             if ($customer === null) {
                 $customer = Customer::create([...$attributes, 'number' => NumberSeries::take(NumberSeries::CUSTOMERS)]);
 

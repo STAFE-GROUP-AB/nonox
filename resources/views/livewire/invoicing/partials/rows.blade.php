@@ -4,6 +4,7 @@
     through the fields is never slowed down or overwritten by the server.
     The server calculates everything again when the document is saved.
     The unit is chosen from the company's unit register (ADR-071 §12.9).
+    Cost centre and project (ADR-081 gap 6) show when the company has any.
 --}}
 @php
     $cell = 'w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-md text-sm max-lg:min-h-11';
@@ -19,10 +20,17 @@
         'price' => $article->price_ore->ore,
         'vat_rate' => $article->vat_rate,
         'account' => $article->account?->number,
+        'cost_center' => (string) $article->defaultCostCenter?->code,
+        'project' => (string) $article->defaultProject?->code,
     ]]);
+    $dimensions = $rowDimensions ?? ['show' => false, 'costCenters' => [], 'projects' => [], 'customers' => []];
+    $dimensionData = [
+        'projectCostCenters' => collect($dimensions['projects'])->map(fn (array $project): string => $project['cost_center'])->all(),
+        'customers' => $dimensions['customers'],
+    ];
 @endphp
 
-<div x-data="salesRows($wire.entangle('rows'), @js($articleMap), @js($negative), {{ isset($reverseCharge) ? "() => \$wire.reverseCharge || (\$wire.foreignSale !== '' && \$wire.foreignSale !== 'EU_CONSUMER_OSS')" : 'false' }}, {{ isset($withCurrency) ? '() => $wire.currency' : "() => 'SEK'" }}, @js($vatRules ?? []), @js((string) $defaultUnitId))">
+<div x-data="salesRows($wire.entangle('rows'), @js($articleMap), @js($negative), {{ isset($reverseCharge) ? "() => \$wire.reverseCharge || (\$wire.foreignSale !== '' && \$wire.foreignSale !== 'EU_CONSUMER_OSS')" : 'false' }}, {{ isset($withCurrency) ? '() => $wire.currency' : "() => 'SEK'" }}, @js($vatRules ?? []), @js((string) $defaultUnitId), @js($dimensionData), {{ isset($withCustomer) ? '() => $wire.customerId' : "() => ''" }})">
     <datalist id="article-options">
         @foreach($articles as $article)
             <option value="{{ $article->number }}">{{ $article->name }}</option>
@@ -59,6 +67,29 @@
                             <td class="{{ $field }} col-span-6 sm:col-span-4 sm:pr-10 lg:min-w-56">
                                 <span class="{{ $label }}" aria-hidden="true">{{ __('Benämning') }}</span>
                                 <input type="text" class="{{ $cell }}" x-model="row.description" maxlength="255" :aria-label="'{{ __('Benämning, rad') }} ' + (index + 1)">
+                                @if($dimensions['show'])
+                                    {{-- Cost centre and project under the description, so the row keeps its columns (ADR-081 gap 6). --}}
+                                    <div class="mt-1 grid grid-cols-2 gap-2">
+                                        <label class="block">
+                                            <span class="sr-only">{{ __('Kostnadsställe') }}</span>
+                                            <select class="{{ $cell }} text-xs text-gray-700" x-model="row.cost_center" x-effect="row.cost_center; $nextTick(() => $el.title = $el.options[$el.selectedIndex]?.text ?? '')" :aria-label="'{{ __('Kostnadsställe, rad') }} ' + (index + 1)" data-row-cost-center>
+                                                <option value="">{{ __('Kostnadsställe') }}: {{ __('Inget') }}</option>
+                                                @foreach($dimensions['costCenters'] as $code => $costCenterLabel)
+                                                    <option value="{{ $code }}">{{ $costCenterLabel }}</option>
+                                                @endforeach
+                                            </select>
+                                        </label>
+                                        <label class="block">
+                                            <span class="sr-only">{{ __('Projekt') }}</span>
+                                            <select class="{{ $cell }} text-xs text-gray-700" x-model="row.project" x-on:change="fillProject(index)" x-effect="row.project; $nextTick(() => $el.title = $el.options[$el.selectedIndex]?.text ?? '')" :aria-label="'{{ __('Projekt, rad') }} ' + (index + 1)" data-row-project>
+                                                <option value="">{{ __('Projekt') }}: {{ __('Inget') }}</option>
+                                                @foreach($dimensions['projects'] as $code => $project)
+                                                    <option value="{{ $code }}">{{ $project['label'] }}</option>
+                                                @endforeach
+                                            </select>
+                                        </label>
+                                    </div>
+                                @endif
                             </td>
                             <td class="{{ $field }} col-span-3 sm:col-span-2">
                                 <span class="{{ $label }}" aria-hidden="true">{{ __('Antal') }}</span>
