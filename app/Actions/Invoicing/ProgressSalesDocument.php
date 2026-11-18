@@ -118,7 +118,7 @@ class ProgressSalesDocument
      */
     private function input(SalesDocument $document): array
     {
-        $document->load('rows.account');
+        $document->load(['rows.account', 'rows.costCenter', 'rows.project']);
 
         return [
             'customer_id' => $document->customer_id,

@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Models\Concerns;
 
 use App\Models\Account;
+use App\Models\CostCenter;
+use App\Models\Project;
 use App\Support\Money\Money;
 
 /**
  * A row of an invoice, quote or order, as input for another document of the
  * same kind (SalesRowInput), so a quote becomes an order and an order an
- * invoice row for row. Needs the account relation loaded.
+ * invoice row for row. Needs the account relation loaded, and on rows with
+ * a cost centre or project (HasRowDimensions) those relations too.
  *
  * @property string $description
  * @property string $quantity
@@ -23,9 +26,39 @@ use App\Support\Money\Money;
 trait SalesRowFields
 {
     /**
-     * @return array{description: string, quantity: string, unit: string, unit_id: string, price: string, discount: string, vat_rate: int, account: ?int, labour: bool, vat_exemption: ?string}
+     * @return array{description: string, quantity: string, unit: string, unit_id: string, price: string, discount: string, vat_rate: int, account: ?int, labour: bool, vat_exemption: ?string, cost_center?: string, project?: string}
      */
     public function asInput(): array
+    {
+        return [...$this->salesRowInput(), ...$this->dimensionInput()];
+    }
+
+    /**
+     * The row's cost centre and project by code ('' for none), so the next
+     * document keeps them as they are; nothing for rows without the columns
+     * (a recurring invoice row), which then take the defaults.
+     *
+     * @return array{cost_center?: string, project?: string}
+     */
+    private function dimensionInput(): array
+    {
+        if (! array_key_exists('cost_center_id', $this->getAttributes()) || ! array_key_exists('project_id', $this->getAttributes())) {
+            return [];
+        }
+
+        $costCenter = $this->getAttribute('cost_center_id') === null ? null : $this->getRelationValue('costCenter');
+        $project = $this->getAttribute('project_id') === null ? null : $this->getRelationValue('project');
+
+        return [
+            'cost_center' => $costCenter instanceof CostCenter ? $costCenter->code : '',
+            'project' => $project instanceof Project ? $project->code : '',
+        ];
+    }
+
+    /**
+     * @return array{description: string, quantity: string, unit: string, unit_id: string, price: string, discount: string, vat_rate: int, account: ?int, labour: bool, vat_exemption: ?string}
+     */
+    private function salesRowInput(): array
     {
         $account = $this->getRelation('account');
         // An invoice row in another currency is written, and so read back, in that currency.

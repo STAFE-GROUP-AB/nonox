@@ -60,7 +60,7 @@ class IssueInvoice
         return CurrentCompany::run($invoice->company_id, fn (): Invoice => DB::transaction(function () use ($user, $invoice): Invoice {
             /** @var Invoice $invoice */
             $invoice = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
-            $invoice->load(['rows.account']);
+            $invoice->load(['rows.account', 'rows.costCenter', 'rows.project']);
             $company = Company::query()->findOrFail($invoice->company_id);
             $customer = Customer::query()->findOrFail($invoice->customer_id);
 
@@ -132,7 +132,7 @@ class IssueInvoice
             ]);
 
             if (InvoiceBooking::bookedAtIssue($invoice, $company->accounting_method)) {
-                $voucher = ($this->bookVoucher)(
+                $voucher = $this->bookVoucher->rows(
                     $user,
                     $company,
                     $invoice->invoice_date,
@@ -140,7 +140,7 @@ class IssueInvoice
                         ? __(':title, :customer, :amount till kurs :rate', ['title' => $invoice->title(), 'customer' => $customer->name, 'amount' => $invoice->formatForeign((int) $invoice->foreign_total_minor), 'rate' => $invoice->bookingRate()?->format()])
                         : "{$invoice->title()}, {$customer->name}",
                     'B',
-                    InvoiceBooking::issue($invoice, $invoice->rows),
+                    InvoiceBooking::issueRows($invoice, $invoice->rows),
                     VoucherSource::Invoice,
                     $invoice,
                 );

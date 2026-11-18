@@ -54,6 +54,9 @@
                             @endforeach
                         </select>
                     </x-ui.field>
+                    @if($dimensionChoices !== null)
+                        @include('livewire.partials.default-dimensions', ['model' => 'form', 'values' => $form, 'idPrefix' => 'article', 'fieldClass' => 'sm:col-span-3'])
+                    @endif
                     @if($inventory && ! $camera)
                         @include('livewire.invoicing.partials.article-images', ['compact' => true])
                     @endif

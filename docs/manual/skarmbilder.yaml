@@ -127,12 +127,14 @@ flytta/flytta-lonen: { foretag: restaurang, rutt: payroll.migration }
 bokforing/utkast: { foretag: konsult, rutt: accounting.vouchers.edit, modell: { tabell: vouchers, dar: { status: DRAFT } } }
 bokforing/underlag: { foretag: konsult, rutt: accounting.vouchers.show, modell: { tabell: vouchers, dar: { description: 'Kontorsmaterial, Exempelbutiken (kort)' } } }
 bokforing/kostnadsstallen-och-projekt: { foretag: konsult, rutt: accounting.costCenters }
+bokforing/projektregistret: { foretag: konsult, rutt: accounting.projects, del: 'main' }
 bokforing/las-en-period: { foretag: konsult, rutt: vat.index }
 bokforing/rattelse: { foretag: konsult, rutt: accounting.vouchers.show, modell: { tabell: vouchers, dar: { source: CORRECTION } } }
 bokforing/anlaggningstillgang-fran-inkop: { foretag: konsult, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { description: 'Bärbar dator' } } }
 bokforing/kontroll-av-bokforingen: { foretag: konsult, rutt: accounting.vouchers.index }
 
 fakturering/utkast: { foretag: konsult, rutt: invoicing.invoices.edit, modell: { tabell: invoices, dar: { status: DRAFT } } }
+fakturering/kostnadsstalle-och-projekt-pa-fakturor: { foretag: konsult, rutt: invoicing.invoices.edit, modell: { tabell: invoices, dar: { your_reference: 'Systembyte, etapp 2' } }, visa: '[data-row-cards]' }
 fakturering/kreditfaktura: { foretag: konsult, rutt: invoicing.invoices.show, modell: { tabell: invoices, dar: { kind: CREDIT } } }
 fakturering/paminnelser: { foretag: konsult, rutt: invoicing.invoices.index, fraga: { visa: forfallna } }
 fakturering/offerter-och-order: { foretag: konsult, rutt: invoicing.quotes.show, modell: { tabell: sales_documents, dar: { kind: QUOTE, status: OPEN } } }

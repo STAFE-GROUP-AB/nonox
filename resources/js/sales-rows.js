@@ -9,13 +9,16 @@ import { formatOre } from './money.js';
 import { rowNet, totals } from './sales-math.js';
 import { ratePercent, salesRowVatWarnings } from './vat-rate-check.js';
 
-/** A new row, in the company's default unit (a unit of its register, by id). */
-function blankRow(unitId) {
-    return { article: '', description: '', quantity: '1', unit_id: unitId, price: '', discount: '', vat_rate: '2500', account: '' };
+/**
+ * A new row, in the company's default unit (a unit of its register, by id),
+ * with the customer's default cost centre and project (ADR-081 gap 6).
+ */
+function blankRow(unitId, defaults = {}) {
+    return { article: '', description: '', quantity: '1', unit_id: unitId, price: '', discount: '', vat_rate: '2500', account: '', cost_center: defaults.cost_center ?? '', project: defaults.project ?? '' };
 }
 
 document.addEventListener('alpine:init', () => {
-    window.Alpine.data('salesRows', (rows, articles, negative, vatFree = false, currency = () => 'SEK', vatRules = {}, defaultUnitId = '') => ({
+    window.Alpine.data('salesRows', (rows, articles, negative, vatFree = false, currency = () => 'SEK', vatRules = {}, defaultUnitId = '', dimensions = {}, customer = () => '') => ({
         // Sales accounts and the VAT rates they take (App\Domain\Vat\SalesVatRules, #62).
         vatRules,
         rows,
@@ -26,6 +29,10 @@ document.addEventListener('alpine:init', () => {
         // An invoice in another currency is written in it, and its total is not rounded to whole kronor.
         currency,
         defaultUnitId,
+        // Cost centres of projects and the customers' default dimensions, by code (ADR-081 gap 6).
+        projectCostCenters: dimensions.projectCostCenters ?? {},
+        customerDimensions: dimensions.customers ?? {},
+        customer,
 
         get currencyCode() {
             return String(this.currency() || 'SEK').toUpperCase();
@@ -33,7 +40,45 @@ document.addEventListener('alpine:init', () => {
 
         init() {
             if (this.rows.length === 0) {
-                this.rows.push(blankRow(this.defaultUnitId));
+                this.rows.push(blankRow(this.defaultUnitId, this.customerDefaults()));
+            }
+
+            // A newly chosen customer gives its dimensions to the rows that have none yet.
+            if (this.$wire && typeof this.$wire.$watch === 'function') {
+                this.$wire.$watch('customerId', () => this.applyCustomer());
+            }
+        },
+
+        /** The chosen customer's default cost centre and project. */
+        customerDefaults() {
+            return this.customerDimensions[String(this.customer() ?? '')] ?? {};
+        },
+
+        applyCustomer() {
+            const defaults = this.customerDefaults();
+
+            this.rows.forEach((row) => {
+                if (!row.cost_center && defaults.cost_center) {
+                    row.cost_center = defaults.cost_center;
+                }
+
+                if (!row.project && defaults.project) {
+                    row.project = defaults.project;
+                    this.fillProjectRow(row);
+                }
+            });
+        },
+
+        /** A project with a default cost centre fills the row's empty cost centre. */
+        fillProject(index) {
+            this.fillProjectRow(this.rows[index]);
+        },
+
+        fillProjectRow(row) {
+            const costCenter = this.projectCostCenters[row.project ?? ''];
+
+            if (!row.cost_center && costCenter) {
+                row.cost_center = costCenter;
             }
         },
 
@@ -71,7 +116,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         addRow() {
-            this.rows.push(blankRow(this.defaultUnitId));
+            this.rows.push(blankRow(this.defaultUnitId, this.customerDefaults()));
             this.$nextTick(() => this.$root.querySelectorAll('[data-row-article]')[this.rows.length - 1]?.focus());
         },
 
@@ -79,7 +124,7 @@ document.addEventListener('alpine:init', () => {
             this.rows.splice(index, 1);
 
             if (this.rows.length === 0) {
-                this.rows.push(blankRow(this.defaultUnitId));
+                this.rows.push(blankRow(this.defaultUnitId, this.customerDefaults()));
             }
         },
 
@@ -98,6 +143,17 @@ document.addEventListener('alpine:init', () => {
             row.price = this.currencyCode === 'SEK' ? formatOre(article.price) : row.price;
             row.vat_rate = String(article.vat_rate);
             row.account = '';
+
+            // The article's cost centre and project come before the customer's (ADR-081 gap 6).
+            if (article.cost_center) {
+                row.cost_center = article.cost_center;
+            }
+
+            if (article.project) {
+                row.project = article.project;
+            }
+
+            this.fillProjectRow(row);
 
             if (String(row.quantity ?? '').trim() === '') {
                 row.quantity = '1';

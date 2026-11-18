@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\HasRegisterUnit;
+use App\Models\Concerns\HasRowDimensions;
 use App\Models\Concerns\SalesRowFields;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
@@ -35,6 +36,7 @@ class SalesDocumentRow extends Model
 {
     use BelongsToCompany;
     use HasRegisterUnit;
+    use HasRowDimensions;
     use SalesRowFields {
         asInput as private rowFields;
     }
@@ -55,6 +57,8 @@ class SalesDocumentRow extends Model
         'net_ore',
         'position',
         'line_key',
+        'cost_center_id',
+        'project_id',
     ];
 
     /** @return array<string, string> */

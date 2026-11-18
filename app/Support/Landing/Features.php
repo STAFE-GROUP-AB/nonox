@@ -38,6 +38,7 @@ final class Features
         'ink4_return' => ['name' => 'Inkomstdeklaration 4 för handelsbolag', 'status' => self::LIVE, 'readme' => 'Inkomstdeklaration 4 för handelsbolag med INK4DU per delägare'],
         'invoices' => ['name' => 'Fakturor med OCR-nummer', 'status' => self::LIVE, 'readme' => 'Fakturor med OCR-nummer, PDF och utskick via e-post'],
         'quotes_orders' => ['name' => 'Offerter och order', 'status' => self::LIVE, 'readme' => 'Offerter och order som blir fakturor'],
+        'sales_dimensions' => ['name' => 'Kostnadsställe och projekt på fakturor', 'status' => self::LIVE, 'readme' => 'Kostnadsställe och projekt på fakturarader, offerter och order'],
         'recurring_invoices' => ['name' => 'Avtalsfakturering', 'status' => self::LIVE, 'readme' => 'avtalsfakturering varje månad, kvartal, halvår eller år'],
         'reminders_credit' => ['name' => 'Kreditfakturor och påminnelser', 'status' => self::LIVE, 'readme' => 'kreditfakturor och påminnelser'],
         'incoming_payments' => ['name' => 'Inbetalningar matchas på OCR', 'status' => self::LIVE, 'readme' => 'läses in och matchas på OCR-numret'],

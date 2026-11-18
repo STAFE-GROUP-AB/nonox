@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\Invoicing\ForeignSale;
+use App\Models\Concerns\HasDefaultDimensions;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
@@ -40,6 +41,7 @@ use Illuminate\Validation\ValidationException;
 class Customer extends Model
 {
     use BelongsToCompany;
+    use HasDefaultDimensions;
 
     /** @var list<string> */
     protected $fillable = [
@@ -64,6 +66,8 @@ class Customer extends Model
         'currency',
         'peppol_id',
         'invoice_delivery',
+        'default_cost_center_id',
+        'default_project_id',
     ];
 
     /** @var array<string, mixed> */

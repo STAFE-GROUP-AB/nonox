@@ -57,7 +57,7 @@ class WriteOffInvoice
         return CurrentCompany::run($invoice->company_id, fn (): Invoice => DB::transaction(function () use ($user, $invoice, $date, $reason): Invoice {
             /** @var Invoice $invoice */
             $invoice = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
-            $invoice->load(['rows.account', 'creditInvoices' => fn ($query) => $query->whereNotNull('number'), 'creditInvoices.rows.account']);
+            $invoice->load(['rows.account', 'rows.costCenter', 'rows.project', 'creditInvoices' => fn ($query) => $query->whereNotNull('number'), 'creditInvoices.rows.account', 'creditInvoices.rows.costCenter', 'creditInvoices.rows.project']);
             $company = Company::query()->findOrFail($invoice->company_id);
             $amount = $invoice->remaining()->ore;
 
@@ -77,13 +77,13 @@ class WriteOffInvoice
                     'type' => AccountType::Expense,
                 ]);
 
-                $voucher = ($this->bookVoucher)(
+                $voucher = $this->bookVoucher->rows(
                     $user,
                     $company,
                     $date,
                     __('Kundförlust :title, :customer', ['title' => $invoice->title(), 'customer' => $invoice->customer_snapshot['name'] ?? '']).$invoice->bookingNote(),
                     'B',
-                    InvoiceBooking::writeOff($invoice, $invoice->rows, $invoice->creditInvoices, $amount),
+                    InvoiceBooking::writeOffRows($invoice, $invoice->rows, $invoice->creditInvoices, $amount),
                     VoucherSource::Invoice,
                     $invoice,
                 );

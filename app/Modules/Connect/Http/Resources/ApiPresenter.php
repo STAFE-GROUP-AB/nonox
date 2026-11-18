@@ -371,6 +371,8 @@ final class ApiPresenter
                 'net_ore' => $row->net_ore->ore,
                 'net_minor' => $row->foreign_net_minor ?? $row->net_ore->ore,
                 'labour' => $row->is_labour,
+                'cost_center' => $row->cost_center_id === null ? null : $row->costCenter?->code,
+                'project' => $row->project_id === null ? null : $row->project?->code,
             ])->values()->all(),
             'payments' => $invoice->payments->map(fn (InvoicePayment $payment): array => self::invoicePayment($payment))->values()->all(),
             'created_at' => self::time($invoice->created_at),

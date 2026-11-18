@@ -53,7 +53,7 @@ class CreditInvoice
         Gate::forUser($user)->authorize('credit', $original);
 
         return CurrentCompany::run($original->company_id, function () use ($user, $original): Invoice {
-            $original->load('rows.account');
+            $original->load(['rows.account', 'rows.costCenter', 'rows.project']);
             $company = Company::query()->findOrFail($original->company_id);
 
             $draft = new Invoice(['created_by' => $user->id, 'kind' => Invoice::CREDIT, 'credits_invoice_id' => $original->id, 'customer_id' => $original->customer_id]);

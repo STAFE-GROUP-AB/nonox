@@ -8,6 +8,9 @@ use App\Domain\Units\UnitRegister;
 use App\Domain\Vat\SalesVatRules;
 use App\Models\Account;
 use App\Models\Article;
+use App\Models\CostCenter;
+use App\Models\Customer;
+use App\Models\Project;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
@@ -21,7 +24,10 @@ use Livewire\Component;
  * (resources/js/sales-rows.js); the rows reach the server when the document
  * is saved, and the server calculates everything again. A row's unit is
  * chosen from the company's unit register (ADR-071 §12.9); an archived
- * unit is offered only on the rows that already had it.
+ * unit is offered only on the rows that already had it. A row's cost
+ * centre and project (ADR-081 gap 6) are offered when the company has any;
+ * a new row takes the customer's defaults and an article row the article's,
+ * in the browser, and a project's default cost centre fills an empty one.
  *
  * @mixin Component
  */
@@ -42,7 +48,7 @@ trait EditsSalesRows
      */
     protected function rowArticles(): Collection
     {
-        return Article::query()->where('is_active', true)->with('account:id,number')->orderBy('number')->get(['number', 'name', 'unit', 'stock_unit_id', 'sales_unit_id', 'price_ore', 'vat_rate', 'account_id']);
+        return Article::query()->where('is_active', true)->with('account:id,number')->orderBy('number')->get(['number', 'name', 'unit', 'stock_unit_id', 'sales_unit_id', 'price_ore', 'vat_rate', 'account_id', 'default_cost_center_id', 'default_project_id']);
     }
 
     /**
@@ -51,11 +57,11 @@ trait EditsSalesRows
      * article's own unit is offered even when it has been archived, as on
      * the article itself.
      *
-     * @return array{articles: Collection<int, Article>, units: Collection<int, Unit>, defaultUnitId: int, canManageUnits: bool}
+     * @return array{articles: Collection<int, Article>, units: Collection<int, Unit>, defaultUnitId: int, canManageUnits: bool, rowDimensions: array{show: bool, costCenters: array<string, string>, projects: array<string, array{label: string, cost_center: string}>, customers: array<int, array{cost_center: string, project: string}>}}
      */
     protected function rowData(): array
     {
-        $articles = $this->rowArticles();
+        $articles = $this->rowArticles()->load(['defaultCostCenter:id,code', 'defaultProject:id,code']);
         $register = UnitRegister::load();
         $user = Auth::user();
         $company = $user instanceof User ? $user->currentCompany() : null;
@@ -65,6 +71,64 @@ trait EditsSalesRows
             'units' => $register->choices([...$this->keptUnitIds, ...self::articleUnitIds($articles)]),
             'defaultUnitId' => $register->default()->id,
             'canManageUnits' => $user instanceof User && $company !== null && $user->can('create', [Article::class, $company]),
+            'rowDimensions' => $this->rowDimensions(),
+        ];
+    }
+
+    /** Whether the document's rows carry a cost centre and project (a recurring invoice's do not). */
+    protected function rowDimensionsEnabled(): bool
+    {
+        return true;
+    }
+
+    /**
+     * The cost centres and projects the rows offer, by code: the active ones
+     * and any the rows already have; each project with its default cost
+     * centre; and the customers with default dimensions. Shown only when
+     * there is something to choose or the rows already use it. Four queries.
+     *
+     * @return array{show: bool, costCenters: array<string, string>, projects: array<string, array{label: string, cost_center: string}>, customers: array<int, array{cost_center: string, project: string}>}
+     */
+    protected function rowDimensions(): array
+    {
+        $none = ['show' => false, 'costCenters' => [], 'projects' => [], 'customers' => []];
+
+        if (! $this->rowDimensionsEnabled()) {
+            return $none;
+        }
+
+        $usedCostCenters = array_values(array_filter(array_map(fn (array $row): string => (string) ($row['cost_center'] ?? ''), $this->rows)));
+        $usedProjects = array_values(array_filter(array_map(fn (array $row): string => (string) ($row['project'] ?? ''), $this->rows)));
+
+        $costCenters = CostCenter::query()
+            ->where(fn ($query) => $query->where('is_active', true)->orWhereIn('code', $usedCostCenters))
+            ->orderBy('code')->get(['id', 'code', 'name', 'is_active']);
+        $projects = Project::query()
+            ->with('defaultCostCenter:id,code')
+            ->where(fn ($query) => $query->where('is_active', true)->orWhereIn('code', $usedProjects))
+            ->orderBy('code')->get(['id', 'code', 'name', 'is_active', 'default_cost_center_id']);
+
+        if ($costCenters->isEmpty() && $projects->isEmpty()) {
+            return $none;
+        }
+
+        $label = fn (CostCenter|Project $object): string => $object->is_active ? $object->label() : $object->label().' ('.__('inaktivt').')';
+
+        return [
+            'show' => true,
+            'costCenters' => $costCenters->mapWithKeys(fn (CostCenter $object): array => [$object->code => $label($object)])->all(),
+            'projects' => $projects->mapWithKeys(fn (Project $object): array => [$object->code => [
+                'label' => $label($object),
+                'cost_center' => (string) $object->defaultCostCenter?->code,
+            ]])->all(),
+            'customers' => Customer::query()
+                ->with(['defaultCostCenter:id,code', 'defaultProject:id,code'])
+                ->where(fn ($query) => $query->whereNotNull('default_cost_center_id')->orWhereNotNull('default_project_id'))
+                ->get(['id', 'default_cost_center_id', 'default_project_id'])
+                ->mapWithKeys(fn (Customer $customer): array => [$customer->id => [
+                    'cost_center' => (string) $customer->defaultCostCenter?->code,
+                    'project' => (string) $customer->defaultProject?->code,
+                ]])->all(),
         ];
     }
 
@@ -154,6 +218,6 @@ trait EditsSalesRows
     /** @return array<string, string> */
     private function blankRow(): array
     {
-        return ['article' => '', 'description' => '', 'quantity' => '1', 'unit_id' => (string) UnitRegister::load()->default()->id, 'price' => '', 'discount' => '', 'vat_rate' => '2500', 'account' => ''];
+        return ['article' => '', 'description' => '', 'quantity' => '1', 'unit_id' => (string) UnitRegister::load()->default()->id, 'price' => '', 'discount' => '', 'vat_rate' => '2500', 'account' => '', 'cost_center' => '', 'project' => ''];
     }
 }

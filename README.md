@@ -67,6 +67,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 ### Försäljning
 - Fakturor med OCR-nummer, PDF och utskick via e-post, bokförda automatiskt enligt fakturametoden eller kontantmetoden.
 - Offerter och order som blir fakturor utan att något skrivs två gånger, och avtalsfakturering varje månad, kvartal, halvår eller år.
+- Kostnadsställe och projekt på fakturarader, offerter och order, med förval från artikeln och kunden: intäkten bokförs på projektet, och med kontantmetoden delas betalningen på projekten i samma proportion som raderna. Projektregistret har kund, projektledare, status, datum, prisform, kontraktssumma och beräknad kostnad.
 - Inbetalningar och delbetalningar, kreditfakturor och påminnelser. En faktura kan krediteras helt eller delvis, även när den är betald; det kunden ska ha tillbaka står i kundreskontran tills återbetalningen är registrerad. Bankens fil med inbetalningar (ISO 20022 camt.054) läses in och matchas på OCR-numret.
 - Kundförluster: det obetalda på en faktura skrivs bort med minskad moms och fakturan stängs, så att kundreskontran stämmer mot 1510. Kund- och leverantörsreskontran kan tas fram för valfri dag och jämförs med 1510 och 2440.
 - ROT- och RUT-avdrag, omvänd betalningsskyldighet för byggtjänster, och fakturor till andra EU-länder och export med rätt konto, momsruta och fakturatext.

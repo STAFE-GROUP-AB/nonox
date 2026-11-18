@@ -54,7 +54,7 @@ final class OpenInvoices
                 'payments' => fn ($query) => $query->where('recovery', false)->whereDate('paid_on', '<=', $date),
                 'creditInvoices' => $credits,
                 'creditInvoices.payments' => fn ($query) => $query->whereDate('paid_on', '<=', $date),
-                ...($withRows ? ['rows.account', 'creditInvoices.rows.account'] : []),
+                ...($withRows ? ['rows.account', 'rows.costCenter', 'rows.project', 'creditInvoices.rows.account', 'creditInvoices.rows.costCenter', 'creditInvoices.rows.project'] : []),
             ])
             ->orderBy('number')
             ->get();

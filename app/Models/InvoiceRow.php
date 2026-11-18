@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\HasRegisterUnit;
+use App\Models\Concerns\HasRowDimensions;
 use App\Models\Concerns\SalesRowFields;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
@@ -37,6 +38,7 @@ class InvoiceRow extends Model
 {
     use BelongsToCompany;
     use HasRegisterUnit;
+    use HasRowDimensions;
     use SalesRowFields;
 
     /** @var list<string> */
@@ -59,6 +61,8 @@ class InvoiceRow extends Model
         'foreign_net_minor',
         'vat_exemption',
         'vat_exemption_text',
+        'cost_center_id',
+        'project_id',
     ];
 
     /** @return array<string, string> */

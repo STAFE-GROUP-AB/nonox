@@ -45,7 +45,7 @@ final class UnpaidInvoices
      * The unpaid invoices on the last day and the rows of the two vouchers.
      * Applies only under kontantmetoden.
      *
-     * @return array{applies: bool, customer: list<array{title: string, open: int}>, supplier: list<array{title: string, open: int}>, customerRows: list<array{account: int, amount: int}>, supplierRows: list<array{account: int, amount: int, cost_center?: ?string, project?: ?string}>}
+     * @return array{applies: bool, customer: list<array{title: string, open: int}>, supplier: list<array{title: string, open: int}>, customerRows: list<array{account: int, amount: int, cost_center?: ?string, project?: ?string}>, supplierRows: list<array{account: int, amount: int, cost_center?: ?string, project?: ?string}>}
      */
     public static function for(Company $company, FiscalYear $fiscalYear, bool $withRows = true): array
     {
@@ -92,9 +92,13 @@ final class UnpaidInvoices
 
     /**
      * The receivable and the open part of the revenue, VAT and rounding of a
-     * customer invoice and its credit invoices, as InvoiceBooking books them.
+     * customer invoice and its credit invoices, as InvoiceBooking books them;
+     * each revenue account's part split over the cost centres and projects of
+     * the rows in proportion, in whole öre by the largest remainder, as the
+     * supplier side carries them (ADR-081 gap 6), so an account that
+     * requires a dimension can be posted.
      *
-     * @return list<array{account: int, amount: int}>
+     * @return list<array{account: int, amount: int, cost_center?: ?string, project?: ?string}>
      */
     private static function customerLines(Invoice $invoice, int $open): array
     {
@@ -124,13 +128,20 @@ final class UnpaidInvoices
             }
         }
 
-        $rows = [['account' => InvoiceBooking::RECEIVABLES, 'amount' => $open]];
+        // Each revenue account's open part on the cost centres and projects of its rows and credit rows (ADR-081 gap 6).
+        $weights = $open < 0 ? [] : InvoiceBooking::weights(InvoiceBooking::dimensionGroups($invoice, $invoice->rows, all: true));
 
-        foreach ($lines as $account => $amount) {
-            $rows[] = ['account' => $account, 'amount' => $amount];
+        foreach ($invoice->creditInvoices as $credit) {
+            $weights = InvoiceBooking::addWeights($weights, InvoiceBooking::weights(InvoiceBooking::dimensionGroups($credit, $credit->rows, all: true)));
         }
 
-        return $rows;
+        // Only accounts where some row has a dimension are split; the rest stay one row each as before.
+        $weights = array_filter($weights, fn (array $parts): bool => array_keys(array_filter($parts)) !== ["\u{1F}"] && array_filter($parts) !== []);
+
+        return [
+            ['account' => InvoiceBooking::RECEIVABLES, 'amount' => $open],
+            ...InvoiceBooking::dimensionRows($lines, $weights, whole: $open === $base ? $weights : null),
+        ];
     }
 
     /**

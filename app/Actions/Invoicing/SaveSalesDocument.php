@@ -75,7 +75,7 @@ class SaveSalesDocument
 
             // validate() keeps only fields with rules, so the rows are read from the input itself.
             $inputRows = array_values(array_filter((array) $input['rows'], is_array(...)));
-            $rows = SalesRowInput::parse($inputRows);
+            $rows = SalesRowInput::parse($inputRows, customer: $customer);
             $lineKeys = self::lineKeys($inputRows);
             $totals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => $row['net_ore'], 'vat_rate' => $row['vat_rate']], $rows));
 

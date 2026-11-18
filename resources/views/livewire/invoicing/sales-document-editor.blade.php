@@ -74,7 +74,7 @@
             </div>
         </x-ui.card>
 
-        @include('livewire.invoicing.partials.rows', ['negative' => false])
+        @include('livewire.invoicing.partials.rows', ['negative' => false, 'withCustomer' => true])
 
         <x-ui.card>
             <x-ui.field for="document_notes" :label="__('Meddelande (frivilligt)')" error="notes">

@@ -13,6 +13,24 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-18: kostnadsställe och projekt på fakturarader
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-18: cost centre and project on invoice rows
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Tillagt
+- Fakturarader har de nya fälten `cost_center` och `project`, koderna för radens kostnadsställe och projekt. Fakturans verifikation bokför radens intäkt på dem.
+- En rad kan skickas med `cost_center` och `project`. Utelämnade får raden artikelns förval, annars kundens. En kod som företaget inte har svarar 422.
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+- Invoice rows have the new fields `cost_center` and `project`, the codes of the row's cost centre and project. The invoice voucher books the row's revenue on them.
+- A row can be sent with `cost_center` and `project`. Left out, the row gets the article's default, else the customer's. A code the company does not have answers 422.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-10: enhetslistan
 <!-- /lang -->
 <!-- lang:en -->

@@ -9,6 +9,7 @@ use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Units\UnitCatalogue;
 use App\Domain\Units\UnitFractions;
 use App\Domain\Vat\SalesVatRules;
+use App\Livewire\Concerns\ChoosesDimensions;
 use App\Livewire\Concerns\OpensFormFromLink;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
@@ -52,6 +53,7 @@ use Livewire\WithFileUploads;
  */
 class Articles extends Component
 {
+    use ChoosesDimensions;
     use OpensFormFromLink;
     use ShowsToasts;
     use WithFileUploads;
@@ -125,6 +127,7 @@ class Articles extends Component
             'stock_unit_id' => '', 'purchase_unit_id' => '', 'sales_unit_id' => '',
             'material_length' => '', 'material_width' => '', 'material_thickness' => '',
             'conversions' => [],
+            'default_cost_center' => '', 'default_project' => '',
         ];
         $this->tab = 'enkel';
         $this->reset('upload', 'pending', 'alts', 'aiSuggestion', 'aiChosen', 'camera', 'unitsTouched', 'dimensionsTouched', 'conversionsTouched');
@@ -134,7 +137,7 @@ class Articles extends Component
 
     public function edit(int $articleId): void
     {
-        $article = Article::query()->with('account')->findOrFail($articleId);
+        $article = Article::query()->with(['account', 'defaultCostCenter:id,code', 'defaultProject:id,code'])->findOrFail($articleId);
 
         $this->editingId = $article->id;
         $this->form = [
@@ -177,6 +180,8 @@ class Articles extends Component
             'material_thickness' => self::millimetres($article->material_thickness_um),
             'conversions' => ArticleUnitConversion::query()->where('article_id', $article->id)->where('source', ArticleUnitConversion::MANUAL)->orderBy('unit')->get()
                 ->map(fn (ArticleUnitConversion $row): array => ['unit' => $row->unit, 'per' => UnitFractions::format($row->fraction())])->all(),
+            'default_cost_center' => (string) $article->defaultCostCenter?->code,
+            'default_project' => (string) $article->defaultProject?->code,
         ];
         $this->reset('upload', 'pending', 'aiSuggestion', 'aiChosen', 'camera', 'unitsTouched', 'dimensionsTouched', 'conversionsTouched');
         $this->alts = ArticleImage::query()->where('article_id', $article->id)->pluck('alt', 'id')->map(fn (?string $alt): string => (string) $alt)->all();
@@ -360,6 +365,9 @@ class Articles extends Component
             $input['conversions'] = $this->form['conversions'] ?? [];
         }
 
+        // The default cost centre and project (ADR-081 gap 6), only when the form has them.
+        $input += array_intersect_key($this->form, array_flip(['default_cost_center', 'default_project']));
+
         foreach (['default_supplier_id', 'default_location_id', 'weight_grams', 'length_mm', 'width_mm', 'height_mm'] as $key) {
             if (array_key_exists($key, $input)) {
                 $input[$key] = ($input[$key] ?? '') === '' ? null : (int) $input[$key];
@@ -413,6 +421,7 @@ class Articles extends Component
             'canManage' => $this->user()->can('create', [Article::class, $this->company()]),
             'inventory' => $inventory,
             'units' => $this->showForm ? $this->unitChoices() : collect(),
+            'dimensionChoices' => $this->showForm ? $this->dimensionChoices() : null,
             'derived' => $advanced && $this->editingId !== null
                 ? ArticleUnitConversion::query()->where('article_id', $this->editingId)->where('source', ArticleUnitConversion::DIMENSIONS)->orderBy('unit')->get()
                 : collect(),

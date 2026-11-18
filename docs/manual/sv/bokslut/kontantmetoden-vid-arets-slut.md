@@ -34,7 +34,7 @@ Gör det här steget innan du bokför momsen för årets sista period, och innan
 
 Två verifikationer i serie A den sista dagen, och två omvända den första dagen i nästa år:
 
-- **Kundfakturor:** 1510 Kundfordringar i debet mot intäktskonton, utgående moms och öresavrundning i kredit – samma konton som med fakturametoden.
+- **Kundfakturor:** 1510 Kundfordringar i debet mot intäktskonton, utgående moms och öresavrundning i kredit – samma konton som med fakturametoden. Har fakturaraderna kostnadsställe eller projekt delas intäkten på dem i samma proportion som raderna, i hela ören. Se [Kostnadsställe och projekt på fakturor](/manual/fakturering/kostnadsstalle-och-projekt-pa-fakturor).
 - **Leverantörsfakturor:** kostnadskonton (med kostnadsställe och projekt) och ingående moms i debet mot 2440 Leverantörsskulder i kredit.
 
 Återföringen den första dagen i nästa år gör att betalningen sedan bokförs som vanligt med kontantmetoden. Intäkten, kostnaden och momsen bokförs alltså bara en gång: i det gamla året genom bokslutet, och i det nya året tar återföringen och betalningen ut varandra.
