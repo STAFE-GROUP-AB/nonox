@@ -138,6 +138,7 @@ final class InventoryModule implements IsNew, Module
                     ['label' => __('Inleveranser'), 'route' => 'inventory.receipts', 'active' => ['inventory.receipts']],
                     ['label' => __('Plocklistor'), 'route' => 'inventory.pickLists', 'active' => ['inventory.pickLists', 'inventory.pickLists.pdf']],
                     ['label' => __('Inventering'), 'route' => 'inventory.counts', 'active' => ['inventory.counts']],
+                    ['label' => __('Batcher'), 'route' => 'inventory.lots', 'active' => ['inventory.lots']],
                     ['label' => __('Rapporter'), 'route' => 'inventory.reports', 'active' => ['inventory.reports']],
                     ...($user->hasTeamPermission($company, 'inventory:settings') ? [['label' => __('Inställningar'), 'route' => 'inventory.settings', 'active' => ['inventory.settings', 'inventory.labels', 'inventory.labels.sample']]] : []),
                 ],

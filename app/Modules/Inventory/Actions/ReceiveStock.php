@@ -10,11 +10,13 @@ use App\Modules\Inventory\Actions\Concerns\GuardsInventory;
 use App\Modules\Inventory\Actions\Purchasing\PurchaseOrderStatuses;
 use App\Modules\Inventory\Domain\MovementType;
 use App\Modules\Inventory\Domain\Quantity;
+use App\Modules\Inventory\Domain\Tracking;
 use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\PurchaseOrderRow;
 use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Models\StockReceiptLine;
 use App\Modules\Inventory\Support\StockLedger;
+use App\Modules\Inventory\Support\StockLots;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +37,7 @@ class ReceiveStock
     public function __construct(private readonly StockLedger $ledger) {}
 
     /**
-     * @param  array<int|string, array{quantity?: mixed, location_id?: mixed}>  $receive  line id => what arrived; omitted lines receive nothing
+     * @param  array<int|string, array{quantity?: mixed, location_id?: mixed, lot_code?: mixed, expires_on?: mixed, serials?: mixed}>  $receive  line id => what arrived; omitted lines receive nothing
      */
     public function __invoke(User $user, Company $company, StockReceipt $receipt, array $receive, CarbonImmutable $date): StockReceipt
     {
@@ -48,7 +50,7 @@ class ReceiveStock
                 throw ValidationException::withMessages(['receipt' => __('Inleveransen är redan klar eller makulerad.')]);
             }
 
-            $lines = $receipt->lines()->get()->keyBy('id');
+            $lines = $receipt->lines()->with('article:id,number,unit,tracking,expiry_required')->get()->keyBy('id');
             $movements = [];
             $updates = [];
 
@@ -75,7 +77,13 @@ class ReceiveStock
                     throw ValidationException::withMessages(["receive.{$lineId}.location_id" => __('Välj var varorna ska ligga.')]);
                 }
 
-                $movements[] = ['article_id' => $line->article_id, 'location_id' => $locationId, 'quantity_milli' => $quantity, 'unit_cost_ore' => $line->unit_cost_ore];
+                $movement = ['article_id' => $line->article_id, 'location_id' => $locationId, 'quantity_milli' => $quantity, 'unit_cost_ore' => $line->unit_cost_ore];
+
+                if ($line->article?->tracking->isTracked()) {
+                    $movement = [...$movement, ...$this->lotFields($line, $row, $receipt)];
+                }
+
+                $movements[] = $movement;
                 $updates[] = [$line, $quantity, $locationId];
             }
 
@@ -97,6 +105,30 @@ class ReceiveStock
 
             return $receipt;
         }));
+    }
+
+    /**
+     * The batch or serial numbers of what arrived on a line of a tracked
+     * article (ADR-081 E12): a batch code and best-before date, or the serial
+     * numbers one per line. The lot remembers the supplier and the line.
+     *
+     * @param  array{quantity?: mixed, location_id?: mixed, lot_code?: mixed, expires_on?: mixed, serials?: mixed}  $row
+     * @return array{supplier_id: ?int, stock_receipt_line_id: int, expires_on?: string, lot_codes?: list<string>, lot_code?: string}
+     */
+    private function lotFields(StockReceiptLine $line, array $row, StockReceipt $receipt): array
+    {
+        $fields = ['supplier_id' => $receipt->supplier_id, 'stock_receipt_line_id' => $line->id];
+        $expires = trim((string) ($row['expires_on'] ?? ''));
+
+        if ($expires !== '') {
+            $fields['expires_on'] = $expires;
+        }
+
+        if ($line->article?->tracking === Tracking::Serial) {
+            return [...$fields, 'lot_codes' => StockLots::codes((string) ($row['serials'] ?? ''))];
+        }
+
+        return [...$fields, 'lot_code' => trim((string) ($row['lot_code'] ?? ''))];
     }
 
     /**
@@ -126,14 +158,18 @@ class ReceiveStock
         PurchaseOrderStatuses::refresh($order);
     }
 
-    /** Receives what remains on every line, at each line's location. */
-    public function all(User $user, Company $company, StockReceipt $receipt, CarbonImmutable $date): StockReceipt
+    /**
+     * Receives what remains on every line, at each line's location.
+     *
+     * @param  array<int, array{lot_code?: string, expires_on?: string, serials?: string}>  $lots  batch or serial numbers per line, by the line's order (a tracked article)
+     */
+    public function all(User $user, Company $company, StockReceipt $receipt, CarbonImmutable $date, array $lots = []): StockReceipt
     {
         $receive = [];
 
-        foreach ($receipt->lines()->get() as $line) {
+        foreach ($receipt->lines()->orderBy('position')->orderBy('id')->get()->values() as $index => $line) {
             if ($line->remainingMilli() > 0) {
-                $receive[$line->id] = ['quantity' => Quantity::decimal($line->remainingMilli())];
+                $receive[$line->id] = ['quantity' => Quantity::decimal($line->remainingMilli()), ...($lots[$index] ?? [])];
             }
         }
 

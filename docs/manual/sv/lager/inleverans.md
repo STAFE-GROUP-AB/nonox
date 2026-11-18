@@ -44,6 +44,10 @@ Kom bara en del står inleveransen som **Delvis inlevererad**. Resten tar du emo
 
 En inleverans där inget har tagits emot kan makuleras. Det som redan är mottaget ligger kvar i lagret; skicka tillbaka varor med en retur till leverantören under **Lager → Artiklar**.
 
+## Batch och serienummer
+
+Har artikeln spårning visas fält för **Batchnummer** och **Bäst före**, eller för **Serienummer**, på raden när du tar emot. Se [Batcher och serienummer](/manual/lager/batcher-och-serienummer).
+
 ## Läs också
 
 - [Leverantörsfakturor](/manual/leverantorer)

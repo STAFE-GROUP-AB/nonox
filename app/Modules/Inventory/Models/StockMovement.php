@@ -30,6 +30,7 @@ use LogicException;
  * @property ?string $source_type
  * @property ?string $source_id
  * @property ?string $transfer_group
+ * @property ?int $lot_id
  * @property ?string $reason
  * @property ?string $note
  * @property ?int $created_by
@@ -53,6 +54,7 @@ class StockMovement extends Model
         'source_type',
         'source_id',
         'transfer_group',
+        'lot_id',
         'reason',
         'note',
         'created_by',
@@ -91,6 +93,12 @@ class StockMovement extends Model
     public function location(): BelongsTo
     {
         return $this->belongsTo(StockLocation::class);
+    }
+
+    /** @return BelongsTo<StockLot, $this> */
+    public function lot(): BelongsTo
+    {
+        return $this->belongsTo(StockLot::class, 'lot_id');
     }
 
     /** @return BelongsTo<User, $this> */

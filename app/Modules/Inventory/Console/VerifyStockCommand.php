@@ -12,7 +12,7 @@ use App\Support\Tenancy\CompanyScope;
 use Illuminate\Console\Command;
 
 /**
- * Checks that every stock balance is the sum of its movements (ADR-039), for
+ * Checks that every stock balance is the sum of its movements (ADR-039), and that the batch and serial number balances of tracked articles add up (ADR-081 E12), for
  * one company or every company with Lager on. Reports differences and exits
  * with an error; it never changes anything.
  */
@@ -48,7 +48,14 @@ class VerifyStockCommand extends Command
                 $this->error("Article {$difference['article_id']} at location {$difference['location_id']}: balance {$difference['balance']}, movements {$difference['movements']}.");
             }
 
-            $failed += $differences === [] ? 0 : 1;
+            $lotDifferences = StockBalanceCheck::lotDifferences($company);
+
+            foreach ($lotDifferences as $difference) {
+                $where = $difference['lot_id'] === null ? 'lot balances' : "lot {$difference['lot_id']}";
+                $this->error("Article {$difference['article_id']} at location {$difference['location_id']}, {$where}: balance {$difference['balance']}, movements {$difference['movements']}.");
+            }
+
+            $failed += $differences === [] && $lotDifferences === [] ? 0 : 1;
         }
 
         if ($failed > 0) {

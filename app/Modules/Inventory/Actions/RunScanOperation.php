@@ -169,7 +169,7 @@ class RunScanOperation
                     'quantity' => (string) ($row['quantity'] ?? ''),
                 ], $rows),
             ]);
-            $receipt = $this->receiveStock->all($user, $company, $receipt, $date);
+            $receipt = $this->receiveStock->all($user, $company, $receipt, $date, array_map(fn (array $row): array => self::lotFields($row), $rows));
 
             return ['receipt_id' => $receipt->id, 'number' => $receipt->number, 'status' => $receipt->status];
         }
@@ -185,13 +185,17 @@ class RunScanOperation
                 ?? throw ValidationException::withMessages(["lines.{$index}.article_id" => __('Artikeln finns inte på inleverans :number.', ['number' => $receipt->number])]);
             $round = 0;
 
-            while (isset($rounds[$round][$line->id]) && ($rounds[$round][$line->id]['location_id'] ?? null) !== ($row['location_id'] ?? null)) {
+            $lot = self::lotFields($row);
+
+            // A line goes into a new round for another place or another batch; serial numbers are a round of their own.
+            while (isset($rounds[$round][$line->id]) && (($rounds[$round][$line->id]['location_id'] ?? null) !== ($row['location_id'] ?? null)
+                || array_intersect_key($rounds[$round][$line->id], $lot) !== $lot || isset($lot['serials']))) {
                 $round++;
             }
 
             $quantity = self::quantity($row['quantity'] ?? null, "lines.{$index}.quantity");
             $previous = isset($rounds[$round][$line->id]) ? Quantity::parse((string) $rounds[$round][$line->id]['quantity']) : 0;
-            $rounds[$round][$line->id] = ['quantity' => Quantity::decimal($previous + $quantity), 'location_id' => $row['location_id'] ?? null];
+            $rounds[$round][$line->id] = ['quantity' => Quantity::decimal($previous + $quantity), 'location_id' => $row['location_id'] ?? null, ...$lot];
         }
 
         foreach ($rounds as $receive) {
@@ -304,6 +308,24 @@ class RunScanOperation
         }
 
         return array_values(array_filter($lines, 'is_array'));
+    }
+
+    /**
+     * The batch code, best-before date and serial numbers of a received row (a tracked article); the ledger checks them as it does for the web form.
+     *
+     * @param  array<string, mixed>  $row
+     * @return array{lot_code?: string, expires_on?: string, serials?: string}
+     */
+    private static function lotFields(array $row): array
+    {
+        $serials = $row['serials'] ?? null;
+        $fields = [
+            'lot_code' => is_string($row['lot_code'] ?? null) ? trim($row['lot_code']) : '',
+            'expires_on' => is_string($row['expires_on'] ?? null) ? trim($row['expires_on']) : '',
+            'serials' => is_array($serials) ? implode("\n", array_filter($serials, 'is_string')) : (is_string($serials) ? $serials : ''),
+        ];
+
+        return array_filter($fields, fn (string $value): bool => $value !== '');
     }
 
     private static function quantity(mixed $value, string $field, bool $allowZero = false): int

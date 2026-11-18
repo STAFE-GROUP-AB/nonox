@@ -36,6 +36,10 @@ Då dras det plockade från lagret. En rad du inte har ändrat räknas som plock
 
 Finns det inte tillräckligt i lagret visar plocklistan en rad utan plats för det som saknas. Ta emot varorna först, eller skriv 0 på den raden.
 
+## Batch och serienummer
+
+För en artikel med spårning föreslår plocklistan den batch som går ut först, och batchen eller serienumret står på raden. Under **Plocka från** kan du välja en annan. Se [Batcher och serienummer](/manual/lager/batcher-och-serienummer).
+
 ## Makulera
 
 En plocklista som inte är klar kan makuleras. Inget dras då från lagret.

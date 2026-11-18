@@ -116,9 +116,11 @@ final class InventoryController
     {
         $body = ApiInput::body($request->json()->all());
         $lines = [];
+        $lots = [];
 
         foreach ((array) ($body['lines'] ?? []) as $index => $line) {
             $line = (array) $line;
+            $lots[] = self::lotFields($line, $index);
             $lines[] = [
                 'article_id' => $line['article_id'] ?? null,
                 'location_id' => $line['location_id'] ?? null,
@@ -133,7 +135,7 @@ final class InventoryController
             throw ValidationException::withMessages(['received_on' => __('Skriv datumet som ÅÅÅÅ-MM-DD.')]);
         }
 
-        $receipt = DB::transaction(function () use ($body, $lines, $save, $receive, $date): StockReceipt {
+        $receipt = DB::transaction(function () use ($body, $lines, $lots, $save, $receive, $date): StockReceipt {
             $receipt = $save($this->user(), $this->company(), [
                 'supplier_id' => $body['supplier_id'] ?? null,
                 'supplier_invoice_id' => $body['supplier_invoice_id'] ?? null,
@@ -144,13 +146,46 @@ final class InventoryController
             ]);
 
             if (($body['receive'] ?? false) === true) {
-                $receipt = $receive->all($this->user(), $this->company(), $receipt, CarbonImmutable::parse($date));
+                $receipt = $receive->all($this->user(), $this->company(), $receipt, CarbonImmutable::parse($date), $lots);
             }
 
             return $receipt;
         });
 
         return CursorList::one($this->receipt($receipt->refresh()->load('lines')), 201);
+    }
+
+    /**
+     * Batch code, best-before date and serial numbers of a line of a tracked article, checked like the web form (the ledger refuses a missing or wrong one).
+     *
+     * @param  array<string, mixed>  $line
+     * @return array{lot_code?: string, expires_on?: string, serials?: string}
+     */
+    private static function lotFields(array $line, int|string $index): array
+    {
+        $fields = [];
+
+        foreach (['lot_code', 'expires_on'] as $key) {
+            if (($line[$key] ?? null) === null) {
+                continue;
+            }
+
+            if (! is_string($line[$key])) {
+                throw ValidationException::withMessages(["lines.{$index}.{$key}" => __('Skriv det som text.')]);
+            }
+
+            $fields[$key] = $line[$key];
+        }
+
+        if (($line['serials'] ?? null) !== null) {
+            if (! is_array($line['serials']) || array_filter($line['serials'], fn (mixed $serial): bool => ! is_string($serial)) !== []) {
+                throw ValidationException::withMessages(["lines.{$index}.serials" => __('Ange serienumren som en lista med text.')]);
+            }
+
+            $fields['serials'] = implode("\n", $line['serials']);
+        }
+
+        return $fields;
     }
 
     /** @return array<string, mixed> */

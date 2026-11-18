@@ -72,6 +72,22 @@
                             <span>
                                 <span class="font-semibold tabular-nums">{{ $line->article?->number }}</span> {{ $line->article?->name }}
                                 <span class="block text-sm text-gray-600">{{ __('Plocka :quantity :unit', ['quantity' => $q($line->quantity_milli), 'unit' => $line->article?->stockUnitCode()]) }}@if($line->article?->gtin) · EAN {{ $line->article->gtin }}@endif</span>
+                                @if($line->lot)
+                                    <span class="block text-sm font-semibold text-ink">
+                                        {{ $line->lot->kind === 'SERIAL' ? __('Serienummer :code', ['code' => $line->lot->code]) : __('Batch :code', ['code' => $line->lot->code]) }}@if($line->lot->expires_on) · {{ __('bäst före :date', ['date' => $line->lot->expires_on->toDateString()]) }}@endif
+                                    </span>
+                                @endif
+                                @if($current->status === 'OPEN' && $canCount && $line->article?->tracking->isTracked() && $line->location_id)
+                                    <label class="mt-1 block text-sm">
+                                        <span class="text-gray-600">{{ __('Plocka från') }}</span>
+                                        <select wire:model.live="lotChoice.{{ $line->id }}" class="mt-1 block w-full max-w-xs rounded-lg border-gray-300 text-sm shadow-xs focus:border-accent-500 focus:ring-accent-500">
+                                            <option value="">{{ __('Första batch (bäst före först)') }}</option>
+                                            @foreach($lotOptions->get($line->article_id.':'.$line->location_id, collect()) as $option)
+                                                <option value="{{ $option->lot_id }}">{{ $option->lot?->code }}@if($option->lot?->expires_on) · {{ $option->lot->expires_on->toDateString() }}@endif · {{ $q($option->quantity_milli) }}</option>
+                                            @endforeach
+                                        </select>
+                                    </label>
+                                @endif
                             </span>
                         </span>
                         @if($current->status === 'OPEN' && $canCount)

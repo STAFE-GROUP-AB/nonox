@@ -14,6 +14,7 @@ use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Livewire\Concerns\InventoryPage;
 use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\PickListLine;
+use App\Modules\Inventory\Models\StockLotLevel;
 use Carbon\CarbonImmutable;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
@@ -48,6 +49,9 @@ class PickListsPage extends Component
     public array $picked = [];
 
     public string $date = '';
+
+    /** @var array<int|string, string> chosen lot id per line id (a tracked article, ADR-081 E12) */
+    public array $lotChoice = [];
 
     public function mount(): void
     {
@@ -109,8 +113,11 @@ class PickListsPage extends Component
         $this->open = $list->id;
         $this->picked = [];
 
+        $this->lotChoice = [];
+
         foreach ($list->lines as $line) {
             $this->picked[$line->id] = Quantity::decimal($line->picked_milli ?? $line->quantity_milli);
+            $this->lotChoice[$line->id] = (string) $line->lot_id;
         }
     }
 
@@ -123,6 +130,13 @@ class PickListsPage extends Component
     {
         $line = PickListLine::query()->where('pick_list_id', $this->open)->findOrFail((int) $lineId);
         $this->attempt(fn () => app(PickLists::class)->pick($this->user(), $this->company(), $line, (string) $value), __('Plockat antal är sparat.'), "picked.{$lineId}.");
+    }
+
+    /** Another batch or serial number than the suggested one for a line. */
+    public function updatedLotChoice(mixed $value, string $lineId): void
+    {
+        $line = PickListLine::query()->where('pick_list_id', $this->open)->findOrFail((int) $lineId);
+        $this->attempt(fn () => app(PickLists::class)->setLot($this->user(), $this->company(), $line, $value === '' || $value === null ? null : (int) $value), __('Batchen är ändrad.'), "lotChoice.{$lineId}.");
     }
 
     public function complete(PickLists $lists): void
@@ -153,11 +167,18 @@ class PickListsPage extends Component
     {
         $creating = $this->creating;
 
+        $current = $this->open === null ? null : PickList::query()->with(['lines.article:id,number,name,unit,gtin,stock_unit_id,tracking', 'lines.article.stockUnit:id,code', 'lines.article.mainImage', 'lines.location:id,full_code,name', 'lines.lot:id,code,expires_on,kind', 'customer:id,name'])->find($this->open);
+        $trackedIds = $current === null ? [] : $current->lines->filter(fn (PickListLine $line): bool => $line->article?->tracking->isTracked() === true)->pluck('article_id')->unique()->all();
+        $lotOptions = $trackedIds === [] || $current->status !== PickList::OPEN
+            ? collect()
+            : StockLotLevel::query()->whereIn('article_id', $trackedIds)->where('quantity_milli', '>', 0)->with('lot:id,code,expires_on')->get()->groupBy(fn (StockLotLevel $level): string => "{$level->article_id}:{$level->location_id}");
+
         return view('inventory::livewire.pick-lists', [
+            'lotOptions' => $lotOptions,
             'lists' => PickList::query()->withCount('lines')->with('customer:id,name')
                 ->when($this->status === 'oppna', fn ($query) => $query->where('status', PickList::OPEN))
                 ->latest('number')->paginate(25),
-            'current' => $this->open === null ? null : PickList::query()->with(['lines.article:id,number,name,unit,gtin,stock_unit_id', 'lines.article.stockUnit:id,code', 'lines.article.mainImage', 'lines.location:id,full_code,name', 'customer:id,name'])->find($this->open),
+            'current' => $current,
             'orders' => $creating === 'order' ? SalesDocument::query()->where('kind', SalesDocument::ORDER)->whereIn('status', [SalesDocumentStatus::Open->value, SalesDocumentStatus::Accepted->value])->with('customer:id,name')->latest('number')->limit(100)->get(['id', 'number', 'customer_id', 'document_date']) : collect(),
             'invoices' => $creating === 'invoice' ? Invoice::query()->whereNull('import_source')->whereIn('status', [InvoiceStatus::Draft->value, InvoiceStatus::Issued->value, InvoiceStatus::Paid->value])->with('customer:id,name')->latest('invoice_date')->limit(100)->get(['id', 'number', 'customer_id', 'invoice_date', 'status']) : collect(),
             'articles' => $creating === 'manual' ? Article::query()->where('is_stock_item', true)->orderBy('number')->get(['id', 'number', 'name', 'unit']) : collect(),

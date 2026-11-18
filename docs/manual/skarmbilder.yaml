@@ -232,6 +232,9 @@ lager/inkopsorder-pa-fakturan: { foretag: butik, rutt: payables.invoices.show, m
 lager/inkopsforslag: { foretag: butik, rutt: inventory.purchaseProposals }
 lager/plocklista: { foretag: butik, rutt: inventory.pickLists, klick: ['text=Plocka'] }
 lager/inventering: { foretag: butik, rutt: inventory.counts, klick: ['text=Räkna'] }
+lager/batcher-och-serienummer: { foretag: butik, rutt: inventory.lots }
+lager/spara-en-batch: { foretag: butik, rutt: inventory.lots, klick: ['tbody tr:first-child button'], text: Återkallningslista }
+lager/sparning-pa-artikeln: { foretag: butik, rutt: invoicing.articles, fraga: { redigera: '52' }, klick: ['text=Avancerad'], visa: '#article_tracking' }
 lager/lagervarde-vid-bokslut: { foretag: butik, rutt: inventory.reports, fraga: { rapport: bokslut } }
 lager/etiketter: { foretag: butik, rutt: inventory.articles, klick: ['text=Etikett'] }
 lager/etikettstudio: { foretag: butik, rutt: inventory.labels, klick: ['text=Ändra'] }

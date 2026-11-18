@@ -108,6 +108,20 @@
                                     @endforeach
                                 </select>
                             </x-ui.field>
+                            @if($line->article?->tracking->isTracked())
+                                @if($line->article->tracking === \App\Modules\Inventory\Domain\Tracking::Serial)
+                                    <x-ui.field for="receive-serials-{{ $line->id }}" :label="__('Serienummer (ett per rad)')" error="receive.{{ $line->id }}.serials" class="sm:col-span-8" :hint="__('Lika många serienummer som antalet som kom.')">
+                                        <textarea id="receive-serials-{{ $line->id }}" wire:model="receive.{{ $line->id }}.serials" rows="3" class="{{ $input }} tabular-nums"></textarea>
+                                    </x-ui.field>
+                                @else
+                                    <x-ui.field for="receive-lot-{{ $line->id }}" :label="__('Batchnummer')" error="receive.{{ $line->id }}.lot_code" class="sm:col-span-4">
+                                        <input id="receive-lot-{{ $line->id }}" wire:model="receive.{{ $line->id }}.lot_code" maxlength="60" class="{{ $input }}">
+                                    </x-ui.field>
+                                @endif
+                                <x-ui.field for="receive-expires-{{ $line->id }}" :label="$line->article->expiry_required ? __('Bäst före (krävs)') : __('Bäst före')" error="receive.{{ $line->id }}.expires_on" class="sm:col-span-4">
+                                    <input id="receive-expires-{{ $line->id }}" type="date" wire:model="receive.{{ $line->id }}.expires_on" class="{{ $input }}">
+                                </x-ui.field>
+                            @endif
                         </li>
                     @endforeach
                 </ul>

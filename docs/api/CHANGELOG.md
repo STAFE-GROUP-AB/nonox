@@ -13,6 +13,13 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-18: batch och serienummer på inleveranser
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-18: batch and serial numbers on receipts
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-18: attestflöden
 <!-- /lang -->
 <!-- lang:en -->
@@ -37,6 +44,14 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 
 <!-- lang:sv -->
 ### Tillagt
+- `POST /inventory/receipts`: raderna kan ha `lot_code` (batchnummer), `expires_on` (bäst före, ÅÅÅÅ-MM-DD) och `serials` (lista med serienummer). De behövs för en artikel som spåras per batch eller serienummer när inleveransen tas emot direkt med `receive: true`; samma kontroller som i appen ger 422 med fältet `lines.N.lot_code`, `lines.N.expires_on` eller `lines.N.lot_codes`.
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+- `POST /inventory/receipts`: lines can carry `lot_code` (batch number), `expires_on` (best before, YYYY-MM-DD) and `serials` (a list of serial numbers). They are needed for an article tracked by batch or serial number when the receipt is received at once with `receive: true`; the same checks as in the app answer 422 on `lines.N.lot_code`, `lines.N.expires_on` or `lines.N.lot_codes`.
+<!-- /lang -->
+
+<!-- lang:sv -->
 - Fakturarader har de nya fälten `cost_center` och `project`, koderna för radens kostnadsställe och projekt. Fakturans verifikation bokför radens intäkt på dem.
 - En rad kan skickas med `cost_center` och `project`. Utelämnade får raden artikelns förval, annars kundens. En kod som företaget inte har svarar 422.
 <!-- /lang -->

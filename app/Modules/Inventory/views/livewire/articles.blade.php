@@ -19,7 +19,7 @@
                     </select>
                 </x-ui.field>
                 <x-ui.field for="move-from" :label="($form['kind'] ?? '') === 'return_in' ? __('Till plats') : __('Från plats')" error="form.location_id" class="sm:col-span-2">
-                    <select id="move-from" wire:model="form.location_id" class="{{ $input }}">
+                    <select id="move-from" wire:model.live="form.location_id" class="{{ $input }}">
                         <option value="">{{ __('Välj plats') }}</option>
                         @foreach($locations as $location)
                             <option value="{{ $location->id }}">{{ $location->full_code }} {{ $location->name }}</option>
@@ -39,6 +39,31 @@
                 <x-ui.field for="move-quantity" :label="__('Antal')" error="form.quantity" class="sm:col-span-1">
                     <input id="move-quantity" wire:model="form.quantity" inputmode="decimal" class="{{ $input }} text-right tabular-nums" required>
                 </x-ui.field>
+                @if($movingArticle?->tracking->isTracked())
+                    @if(($form['kind'] ?? '') === 'return_in')
+                        @if($movingArticle->tracking === \App\Modules\Inventory\Domain\Tracking::Serial)
+                            <x-ui.field for="move-serials" :label="__('Serienummer (ett per rad)')" error="form.lot_codes" class="sm:col-span-3">
+                                <textarea id="move-serials" wire:model="form.serials" rows="3" class="{{ $input }} tabular-nums"></textarea>
+                            </x-ui.field>
+                        @else
+                            <x-ui.field for="move-lot-code" :label="__('Batchnummer')" error="form.lot_code" class="sm:col-span-3">
+                                <input id="move-lot-code" wire:model="form.lot_code" maxlength="60" class="{{ $input }}">
+                            </x-ui.field>
+                        @endif
+                        <x-ui.field for="move-expires" :label="__('Bäst före (om ny batch)')" error="form.expires_on" class="sm:col-span-3">
+                            <input id="move-expires" type="date" wire:model="form.expires_on" class="{{ $input }}">
+                        </x-ui.field>
+                    @else
+                        <x-ui.field for="move-lot" :label="__('Batch eller serienummer')" error="form.lot_id" class="sm:col-span-3">
+                            <select id="move-lot" wire:model="form.lot_id" class="{{ $input }}">
+                                <option value="">{{ __('Första batch (bäst före först)') }}</option>
+                                @foreach($lotOptions as $option)
+                                    <option value="{{ $option->lot_id }}">{{ $option->lot?->code }}@if($option->lot?->expires_on) · {{ $option->lot->expires_on->toDateString() }}@endif · {{ $q($option->quantity_milli) }}</option>
+                                @endforeach
+                            </select>
+                        </x-ui.field>
+                    @endif
+                @endif
                 <x-ui.field for="move-date" :label="__('Datum')" error="form.date" class="sm:col-span-2">
                     <input id="move-date" type="date" wire:model="form.date" class="{{ $input }}" required>
                 </x-ui.field>
@@ -139,6 +164,7 @@
                                             <span class="font-semibold tabular-nums">{{ $article->number }}</span> {{ $article->name }}
                                             @if($article->gtin)<span class="block text-xs text-gray-500 tabular-nums">EAN {{ $article->gtin }}</span>@endif
                                             @if(! $article->is_stock_item)<x-ui.badge>{{ __('Inte lagerförd') }}</x-ui.badge>@endif
+                                            @if($article->tracking->isTracked())<x-ui.badge>{{ $article->tracking->label() }}</x-ui.badge>@endif
                                             @if($canPrint && $article->labels_printed_at === null)<x-ui.badge>{{ __('Ej utskriven') }}</x-ui.badge>@endif
                                         </span>
                                     </span>

@@ -13,6 +13,7 @@ use App\Modules\Inventory\Livewire\InventorySettingsForm;
 use App\Modules\Inventory\Livewire\LabelPrintPanel;
 use App\Modules\Inventory\Livewire\LabelStudioPage;
 use App\Modules\Inventory\Livewire\LocationsPage;
+use App\Modules\Inventory\Livewire\LotsPage;
 use App\Modules\Inventory\Livewire\OverviewPage;
 use App\Modules\Inventory\Livewire\PickListsPage;
 use App\Modules\Inventory\Livewire\Purchasing\PurchaseOrderEditor;
@@ -34,6 +35,8 @@ use App\Modules\Inventory\Models\ScanOperation;
 use App\Modules\Inventory\Models\StockCount;
 use App\Modules\Inventory\Models\StockLevel;
 use App\Modules\Inventory\Models\StockLocation;
+use App\Modules\Inventory\Models\StockLot;
+use App\Modules\Inventory\Models\StockLotLevel;
 use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Models\StockValuation;
@@ -71,7 +74,7 @@ class InventoryServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/views', 'inventory');
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
-        foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockReceipt::class, PickList::class, StockCount::class, StockValuation::class, ArticleImage::class, LabelTemplate::class, ScanOperation::class, BillOfMaterials::class, BomRow::class, ArticleUnitConversion::class] as $model) {
+        foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockLot::class, StockLotLevel::class, StockReceipt::class, PickList::class, StockCount::class, StockValuation::class, ArticleImage::class, LabelTemplate::class, ScanOperation::class, BillOfMaterials::class, BomRow::class, ArticleUnitConversion::class] as $model) {
             Gate::policy($model, InventoryPolicy::class);
         }
 
@@ -84,6 +87,7 @@ class InventoryServiceProvider extends ServiceProvider
         Livewire::component('inventory.receipts', ReceiptsPage::class);
         Livewire::component('inventory.pick-lists', PickListsPage::class);
         Livewire::component('inventory.counts', CountsPage::class);
+        Livewire::component('inventory.lots', LotsPage::class);
         Livewire::component('inventory.reports', ReportsPage::class);
         Livewire::component(LabelStudioPage::NAME, LabelStudioPage::class);
         Livewire::component(LabelPrintPanel::NAME, LabelPrintPanel::class);

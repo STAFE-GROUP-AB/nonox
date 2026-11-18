@@ -32,7 +32,7 @@
             @foreach($list->lines as $line)
                 <tr>
                     <td class="loc">{{ $line->location?->full_code ?? '–' }}</td>
-                    <td>{{ $line->article?->number }} {{ $line->article?->name }}@if($line->article?->gtin)<br>EAN {{ $line->article->gtin }}@endif</td>
+                    <td>{{ $line->article?->number }} {{ $line->article?->name }}@if($line->article?->gtin)<br>EAN {{ $line->article->gtin }}@endif@if($line->lot)<br>{{ $line->lot->kind === 'SERIAL' ? __('Serienummer :code', ['code' => $line->lot->code]) : __('Batch :code', ['code' => $line->lot->code]) }}@if($line->lot->expires_on) · {{ __('bäst före :date', ['date' => $line->lot->expires_on->toDateString()]) }}@endif @endif</td>
                     <td class="num">{{ $q($line->quantity_milli) }} {{ $line->article?->stockUnitCode() }}</td>
                     <td><div class="box"></div></td>
                 </tr>

@@ -106,6 +106,22 @@
                     @endforeach
                 </select>
             </x-ui.field>
+            <x-ui.field for="article_tracking" :label="__('Spårning')" error="tracking" class="sm:col-span-2" :hint="__('Batch: varje inleverans får ett batchnummer, med bäst före-datum om du vill. Serienummer: varje enhet har ett eget nummer. Värderingen vid bokslutet är densamma, per artikel. Spårningen kan ändras först när saldot är noll.')">
+                <select id="article_tracking" class="{{ $input }} mt-1" wire:model.live="form.tracking">
+                    @foreach(\App\Modules\Inventory\Domain\Tracking::cases() as $tracking)
+                        <option value="{{ $tracking->value }}">{{ $tracking->label() }}</option>
+                    @endforeach
+                </select>
+            </x-ui.field>
+            @if(($form['tracking'] ?? 'NONE') !== 'NONE')
+                <label class="flex items-start gap-3 sm:col-span-4">
+                    <input type="checkbox" class="mt-1 rounded-sm border-stone-300 text-ink focus:ring-accent-500" wire:model="form.expiry_required">
+                    <span>
+                        <span class="block font-medium text-ink">{{ __('Kräv bäst före-datum') }}</span>
+                        <span class="block text-sm text-gray-600">{{ __('Varje ny batch måste ha ett bäst före-datum när den tas emot. Plocklistor föreslår den som går ut först.') }}</span>
+                    </span>
+                </label>
+            @endif
             <x-ui.field for="article_nrv" :label="__('Nettoförsäljningsvärde per st')" error="net_realisable_value" class="sm:col-span-2" :hint="__('Valfritt. Vad varan kan säljas för minus försäljningskostnader. Är det lägre än inköpspriset värderas lagret till det vid bokslutet.')">
                 <input id="article_nrv" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="form.net_realisable_value">
             </x-ui.field>

@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Modules\Inventory\InventoryModule;
+use App\Modules\Inventory\Models\StockLot;
 use App\Modules\Inventory\Models\StockReceipt;
+use App\Modules\Inventory\Support\StockBalanceCheck;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Tests\Support\Connect;
@@ -76,4 +78,30 @@ it('needs the scope, and answers 403 while Lager is off', function () {
 
     app(ModuleManager::class)->disable(InventoryModule::KEY, $this->company, $this->owner, confirmed: true);
     $this->withToken($view)->getJson('/api/v1/inventory/articles')->assertForbidden();
+});
+
+it('receives batch and serial numbers with the same checks as the app', function () {
+    $batch = Inventory::article($this->company, $this->owner, 'B-9', 'Mjölk', ['tracking' => 'BATCH']);
+    $serial = Inventory::article($this->company, $this->owner, 'S-9', 'Borr', ['tracking' => 'SERIAL']);
+    $key = Connect::apiKey($this->owner, $this->company, ['inventory:manage']);
+    $post = fn (array $lines, string $idem) => $this->withToken($key)->withHeader('Idempotency-Key', $idem)->postJson('/api/v1/inventory/receipts', ['receive' => true, 'received_on' => '2026-11-02', 'lines' => $lines]);
+    $bin = $this->places['bin1']->id;
+
+    $post([['article_id' => $batch->id, 'location_id' => $bin, 'quantity' => '3']], 'e12-1')->assertUnprocessable();
+    $post([['article_id' => $serial->id, 'location_id' => $bin, 'quantity' => '2', 'serials' => ['A-1']]], 'e12-2')->assertUnprocessable();
+    $post([['article_id' => $serial->id, 'location_id' => $bin, 'quantity' => '1', 'serials' => 'A-1']], 'e12-3')->assertUnprocessable();
+
+    CurrentCompany::set($this->company);
+    expect(StockLot::query()->count())->toBe(0);
+
+    $post([
+        ['article_id' => $batch->id, 'location_id' => $bin, 'quantity' => '3', 'lot_code' => 'API-1', 'expires_on' => '2027-07-01'],
+        ['article_id' => $serial->id, 'location_id' => $bin, 'quantity' => '2', 'serials' => ['A-1', 'A-2']],
+    ], 'e12-4')->assertCreated()->assertJsonPath('data.status', 'RECEIVED');
+
+    CurrentCompany::set($this->company);
+
+    expect(StockLot::query()->where('article_id', $batch->id)->sole()->expires_on->toDateString())->toBe('2027-07-01')
+        ->and(StockLot::query()->where('article_id', $serial->id)->count())->toBe(2)
+        ->and(StockBalanceCheck::lotDifferences($this->company))->toBe([]);
 });

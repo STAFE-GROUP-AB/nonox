@@ -100,7 +100,7 @@ class Articles extends Component
     private const array ADVANCED = ['sku', 'gtin', 'scanner_code', 'brand', 'model', 'description', 'colours', 'materials', 'weight_grams', 'length_mm', 'width_mm', 'height_mm', 'purchase_price', 'vat_treatment', 'default_supplier_id', 'supplier_article_number'];
 
     /** The stock fields, edited only while Lager is on. */
-    private const array STOCK = ['is_stock_item', 'stock_class', 'reorder_point', 'reorder_quantity', 'default_location_id', 'net_realisable_value', 'net_realisable_value_note'];
+    private const array STOCK = ['is_stock_item', 'tracking', 'expiry_required', 'stock_class', 'reorder_point', 'reorder_quantity', 'default_location_id', 'net_realisable_value', 'net_realisable_value_note'];
 
     public function mount(): void
     {
@@ -172,6 +172,8 @@ class Articles extends Component
             'net_realisable_value' => $article->net_realisable_value_ore === null ? '' : Money::ofOre($article->net_realisable_value_ore)->format(withCurrency: false),
             'net_realisable_value_note' => (string) $article->net_realisable_value_note,
             'stock_class' => (string) $article->stock_class?->value,
+            'tracking' => $article->tracking->value,
+            'expiry_required' => $article->expiry_required,
             'stock_unit_id' => (string) $article->stock_unit_id,
             'purchase_unit_id' => (string) $article->purchase_unit_id,
             'sales_unit_id' => (string) $article->sales_unit_id,
