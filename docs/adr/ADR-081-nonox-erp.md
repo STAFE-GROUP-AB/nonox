@@ -1,6 +1,6 @@
 # ADR-081: NONOX as ERP
 
-- Status: **Proposed**
+- Status: **Accepted** (owner 2026-11-18: "Ja" to all 24 recommended defaults and to the AGENTS.md §4 additions)
 - Date: 2026-11-18
 - Queue: item 26 in `docs/status/nummer-1.md` (`erp`)
 - Builds on: ADR-007 (vouchers), ADR-008 (SIE4), ADR-009 (cost centres and

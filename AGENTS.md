@@ -154,6 +154,7 @@ Defined in `JetstreamServiceProvider` via `Jetstream::role()`:
 | `bookkeeper` | Bokförare | Create/post vouchers, invoices, supplier invoices; no period lock or closing |
 | `approver` | Attestant | Approve supplier invoices and payments only |
 | `auditor` | Revisor | Read-only everything + export; cannot post |
+| `unit_manager` | Enhetschef | Reports, budgets, projects and analysis for the cost centres or projects the member is scoped to; approvals through the approval engine (ADR-081, owner-approved 2026-11-18) |
 
 Permission strings (use these exact keys):
 ```
@@ -165,7 +166,11 @@ supplier-invoices:create  supplier-invoices:approve  payments:create  payments:a
 vat:prepare  vat:submit
 reports:view  export:sie  export:archive  import:sie  import:fortnox
 api-tokens:manage  settings:manage  audit-log:view
+budgets:view  budgets:manage  projects:view  projects:manage
+analysis:view  analysis:share  approvals:manage
+documents:view  documents:manage  documents:hold  members:scope
 ```
+- Dimension scopes (ADR-081 E1): bookkeeper, approver, module roles and `unit_manager` can be limited to cost centres or projects; owner, admin, accountant and auditor can never be scoped. A scope leak is treated like a cross-tenant leak (§1.3).
 - All authorization goes through Policies that check **(a)** membership in the company **and (b)** permission via `$user->hasTeamPermission($company, 'perm')`.
 - Segregation of duties: a user may not approve a payment they created (configurable per company, default ON).
 

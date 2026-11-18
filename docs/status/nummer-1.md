@@ -43,6 +43,7 @@ Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanf�
 
 Ägarens beslut 2026-11-18:
 - NONOX som ERP (punkt 26) byggs med alla tio luckor, också de mindre kraven. Ordning: ADR-081 först, sedan paketen i den ordning ADR:n anger.
+- ADR-081 godkänd ("Ja"): alla 24 rekommenderade beslut gäller, och de nya behörigheterna och rollen Enhetschef (`unit_manager`) står i AGENTS.md §4. Koncernredovisningens steg 2 (E29–E31) väntar på redovisningskonsultens svar på H2 och H4.
 
 Ägarens beslut 2026-11-17:
 - Planering i toppklass (punkt 25) byggs nu, före juridikversion 1.9.
