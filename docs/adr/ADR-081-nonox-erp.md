@@ -961,6 +961,48 @@ Editing documents in the browser, e-signing (CRM signing exists), sharing
 links to outsiders (the customer portal exists), OCR of images, WebDAV or sync
 clients, records management for public authorities.
 
+### Implementation notes (E19, 2026-11-18)
+
+- **Personnel documents and the payroll administrator.** Only the module
+  role `payroll_admin` holds `payroll:view-sensitive`, and a module role
+  cannot carry a core permission (`ModuleRegistry::checkGrants`). So for a
+  `PERSONNEL` document the matching payroll permission stands in for the
+  documents one (`App\Domain\Documents\DocumentAccess`): `payroll:view` for
+  reading, `employees:manage` for uploading and editing, `payroll:manage` for
+  legal hold. `payroll:view-sensitive` is required either way, so owner,
+  admin and accountant (who lack it by default, PAYROLL_MODULE.md B.2) do
+  not see personnel documents, and the payroll administrator sees and files
+  only those.
+- **Vouchers are not a link type.** A räkenskapsinformation document becomes
+  underlag through `voucher_attachments` (`AttachToVoucher::linkStoredFile`,
+  same path and SHA-256); `document_links` allows customer, supplier,
+  project, fixed asset, employee (personnel documents, payroll on) and work
+  order (module on).
+- **Contracts** keep `contract_ends_on` and `contract_retention_years`
+  (0–30) on the document instead of a link to an agreement record; a
+  contract without an end date runs and cannot be deleted.
+- **Guards (after review).** The rule is the floor: a chosen keep-until date
+  (at most 30 years after the rule) can be lowered again down to the rule
+  (GDPR art. 5.1 e). For räkenskapsinformation (class `ACCOUNTING`, or a
+  contract with `is_accounting_record`) the trigger computes the floor from
+  the fiscal year and refuses anything lower, also across a change of class,
+  mark or year. A document that must be kept cannot be deleted: policy,
+  action, model event and the `documents_guard_retention` /
+  `document_versions_append_only` triggers, which use the database's
+  `current_date`. A legal hold has a reason key and must be lifted before a
+  delete. No class change into or out of `PERSONNEL`; a running contract
+  keeps its class. A personnel document's title is encrypted
+  (`title_encrypted`). With payroll off, the owner reaches personnel
+  documents (view, export, delete; not file new ones), logged as
+  `document.personnel_owner_access`.
+- **Registerutdrag** for customers, suppliers and employees lists the linked
+  documents (`App\Domain\Documents\DocumentExtract`) with file addresses for
+  those allowed to open them.
+- **Search text** is not extracted for personnel documents, so their content
+  never sits unencrypted in the database.
+- The list lives at `/dokument` and the document at `/dokument/{id}`; E20
+  extends the same list with the feature sources.
+
 ## Gap 10: permissions per cost centre or unit
 
 ### What exists

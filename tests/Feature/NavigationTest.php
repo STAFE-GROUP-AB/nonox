@@ -39,7 +39,7 @@ it('lists the sections in order and opens none on a page outside them', function
     $sections = navigationFor($this->owner, $this->company, 'profile.show');
 
     expect(array_map(fn (NavSection $section): string => $section->label, $sections))
-        ->toBe(['Översikt', 'Försäljning', 'Inköp', 'Register', 'Bokföring', 'Uppgifter'])
+        ->toBe(['Översikt', 'Försäljning', 'Inköp', 'Register', 'Bokföring', 'Dokument', 'Uppgifter'])
         ->and(collect($sections)->contains(fn (NavSection $section): bool => $section->active || $section->hasChildren()))->toBeFalse();
 });
 

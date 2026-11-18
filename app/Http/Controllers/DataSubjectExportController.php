@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Domain\Documents\DocumentExtract;
+use App\Domain\Documents\DocumentLinkType;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\IncomeTaxPartner;
@@ -48,7 +50,7 @@ class DataSubjectExportController
         ArchivedCompany::reading(fn () => Gate::authorize('update', $customer));
         $this->log($request, $customer, 'customer');
 
-        return $this->download(DataSubjectExport::customer($customer), 'registerutdrag-kund-'.$customer->number);
+        return $this->download([...DataSubjectExport::customer($customer), ...$this->documents($request, DocumentLinkType::Customer, $customer->id, $customer->company_id)], 'registerutdrag-kund-'.$customer->number);
     }
 
     public function supplier(Request $request, Supplier $supplier): JsonResponse
@@ -56,7 +58,7 @@ class DataSubjectExportController
         ArchivedCompany::reading(fn () => Gate::authorize('update', $supplier));
         $this->log($request, $supplier, 'supplier');
 
-        return $this->download(DataSubjectExport::supplier($supplier), 'registerutdrag-leverantor-'.$supplier->number);
+        return $this->download([...DataSubjectExport::supplier($supplier), ...$this->documents($request, DocumentLinkType::Supplier, $supplier->id, $supplier->company_id)], 'registerutdrag-leverantor-'.$supplier->number);
     }
 
     public function employee(Request $request, Employee $employee): JsonResponse
@@ -64,7 +66,7 @@ class DataSubjectExportController
         ArchivedCompany::reading(fn () => Gate::authorize('viewSensitive', $employee));
         $this->log($request, $employee, 'employee');
 
-        return $this->download(DataSubjectExport::employee($employee), 'registerutdrag-anstalld-'.$employee->employee_number);
+        return $this->download([...DataSubjectExport::employee($employee), ...$this->documents($request, DocumentLinkType::Employee, $employee->id, $employee->company_id)], 'registerutdrag-anstalld-'.$employee->employee_number);
     }
 
     /**
@@ -159,6 +161,20 @@ class DataSubjectExportController
         }
 
         return $this->download(DataSubjectExport::inboxSender($email), 'registerutdrag-inkorg');
+    }
+
+    /**
+     * The company documents linked to the subject (ADR-081 E19), as the
+     * requester may see them.
+     *
+     * @return array{dokument: list<array<string, mixed>>, dokument_utan_behorighet: int}
+     */
+    private function documents(Request $request, DocumentLinkType $type, int $id, int $companyId): array
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        return DocumentExtract::for($type, $id, $user, Company::query()->findOrFail($companyId));
     }
 
     private function log(Request $request, Customer|Supplier|Employee|Person|WorkshopPerson|IncomeTaxPartner|K10Owner $subject, string $kind): void

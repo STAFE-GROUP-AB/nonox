@@ -64,6 +64,7 @@ final class StoredFiles
         'work_order_photos' => 'path',
         'change_orders' => 'decided_document_path',
         'boardroom_minutes' => 'pdf_path',
+        'document_versions' => 'path',
     ];
 
     /**

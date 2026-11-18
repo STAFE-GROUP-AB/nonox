@@ -56,6 +56,14 @@
       "omrade": "Fakturering"
     },
     {
+      "id": "2026-11-18-dokumentarkiv",
+      "datum": "2026-11-18T01:55:00+01:00",
+      "rubrik": "Dokument: företagets avtal, försäkringar och tillstånd på ett ställe",
+      "beskrivning": "Under Dokument laddar du upp företagets egna dokument med versioner, taggar, kopplingar och sökning i rubrik, taggar och PDF-text, och filerna lagras krypterade med kontrollsumma. Varje dokument sparas som räkenskapsinformation, avtal, personal eller övrigt: räkenskapsinformation kan inte raderas förrän sju år efter utgången av det kalenderår då räkenskapsåret avslutades, en bevarandespärr stoppar all radering och personaldokument syns bara för den som får se känsliga löneuppgifter. Dokumenten för ett räkenskapsår kommer med i arkivpaketet.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-18-budget-per-konto-och-manad",
       "datum": "2026-11-18T01:50:00+01:00",
       "rubrik": "Budget per konto och månad",

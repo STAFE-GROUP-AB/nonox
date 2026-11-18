@@ -133,6 +133,7 @@ final class Features
         'fortnox_import' => ['name' => 'Direkt flytt från Fortnox', 'status' => self::LIVE, 'readme' => 'direkt flytt från Fortnox via deras API'],
         'import_registers' => ['name' => 'Läs in register, obetalda fakturor och underlag från annat program', 'status' => self::LIVE, 'readme' => 'obetalda fakturor och underlag med en fil'],
         'archive' => ['name' => 'Arkivpaket per räkenskapsår', 'status' => self::LIVE, 'readme' => 'Arkivpaket per räkenskapsår'],
+        'document_archive' => ['name' => 'Dokumentarkiv med lagringstid och bevarandespärr', 'status' => self::LIVE, 'readme' => 'Dokument: företagets avtal, försäkringar, tillstånd och policyer'],
         'business_guide' => ['name' => 'Företagsguiden med Min startplan', 'status' => self::LIVE, 'readme' => 'Företagsguiden: hur du startar och driver företaget'],
         'deadlines' => ['name' => 'Mina datum med kalenderlänk och påminnelser', 'status' => self::LIVE, 'readme' => 'Mina datum: företagets sista dagar för moms'],
         'vat_buffer' => ['name' => 'Momsbufferten: pengar som inte är dina', 'status' => self::LIVE, 'readme' => 'Momsbufferten: hur mycket av pengarna på banken'],

@@ -36,6 +36,7 @@ Paketet innehåller en mapp med företagets organisationsnummer och årets datum
 | `leverantorsfakturor/` | Leverantörsfakturorna med fakturadatum under året, som de laddades upp. |
 | `moms/` | Rutor och belopp för varje redovisad momsperiod och filen till Skatteverket. |
 | `lon/` | Lönebesked för attesterade lönekörningar med utbetalning under året, lönebesked från ett tidigare lönesystem och arbetsgivardeklarationerna. |
+| `dokument/` | Företagets egna [dokument](/manual/bokforing/dokument) som hör till räkenskapsåret, med alla versioner, och `Dokumentforteckning.csv` med varje versions kontrollsumma från uppladdningen och om filen stämmer med den. Personaldokument bara om den som skapar paketet får se dem. |
 | `behandlingshistorik/` | Allt som gjorts i företaget från årets första dag till dess paketet skapades, som CSV och JSON. |
 | `systemdokumentation/` | NONOX systemdokumentation i den version som gällde när paketet skapades. Under `versioner/` ligger de versioner som var i bruk under räkenskapsåret, och `versioner.txt` säger när varje version togs i bruk. |
 

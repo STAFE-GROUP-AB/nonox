@@ -25,6 +25,12 @@ aktiebok/, protokoll/  {!! __('Aktieboken vid årets slut, aktiebokens hela hist
 @if(($contents['attest'] ?? 0) > 0)
 attest/  {!! __('Attestflödenas historik för årets leverantörsfakturor och betalfiler: ärenden med det flöde de följde, varje beslut och ersättare (:count filer).', ['count' => $contents['attest']]) !!}
 @endif
+@if(($contents['dokument'] ?? 0) > 0)
+dokument/  {!! __('Företagets egna dokument som hör till räkenskapsåret, med alla versioner. Dokumentforteckning.csv visar varje versions kontrollsumma (SHA-256) från uppladdningen och om filen stämmer med den (:count filer).', ['count' => $contents['dokument']]) !!}
+@endif
+@if(($contents['dokument_personal_utelamnade'] ?? 0) > 0)
+{!! __(':count personaldokument togs inte med: den som skapade paketet får inte se dem.', ['count' => $contents['dokument_personal_utelamnade']]) !!}
+@endif
 behandlingshistorik/  {!! __('Allt som gjorts i företaget från årets första dag tills paketet skapades: vem, när och vad (:count filer).', ['count' => $contents['behandlingshistorik']]) !!}
 systemdokumentation/  {!! __('Hur systemet fungerar: versionen när paketet skapades och de versioner som var i bruk under året (:count filer).', ['count' => $contents['systemdokumentation']]) !!}
 manifest.json  {!! __('Förteckning över alla filer med storlek och SHA-256.') !!}

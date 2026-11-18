@@ -10,6 +10,9 @@ use App\Domain\Accounting\Reports\LedgerQuery;
 use App\Domain\Accounting\Reports\ReportTable;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Approval\ApprovalSubjectType;
+use App\Domain\Documents\DocumentAccess;
+use App\Domain\Documents\DocumentCategory;
+use App\Domain\Documents\RetentionClass;
 use App\Domain\Invoicing\InvoicePdf;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\IssuedInvoicePdf;
@@ -20,6 +23,8 @@ use App\Models\ApprovalDelegation;
 use App\Models\ApprovalRequest;
 use App\Models\AuditLog;
 use App\Models\Company;
+use App\Models\Document;
+use App\Models\DocumentVersion;
 use App\Models\FiscalYear;
 use App\Models\Invoice;
 use App\Models\SupplierInvoice;
@@ -94,6 +99,8 @@ final class ArchivePackageBuilder
                     'lon' => $user->hasTeamPermission($company, 'payroll:archive-view') ? $this->payroll($fiscalYear) : 0,
                     'aktiebok' => $this->boardroom($user, $company, $fiscalYear),
                     'attest' => $this->approvals($company, $fiscalYear),
+                    'dokument' => $this->documents($user, $company, $fiscalYear),
+                    'dokument_personal_utelamnade' => $this->hiddenPersonnelDocuments($user, $company, $fiscalYear),
                     'behandlingshistorik' => $this->auditLog($company, $fiscalYear),
                     'systemdokumentation' => $this->systemDocumentation($fiscalYear),
                 ];
@@ -422,6 +429,87 @@ final class ArchivePackageBuilder
         ]);
 
         return 3;
+    }
+
+    /**
+     * The company documents filed under the fiscal year (ADR-081 gap 9), every
+     * version, and a list with each version's SHA-256 as stored at upload. A
+     * version whose file no longer matches its checksum is still copied and
+     * marked in the list. Personnel documents only for someone who may see
+     * them (payroll:view-sensitive).
+     */
+    private function documents(User $user, Company $company, FiscalYear $fiscalYear): int
+    {
+        $documents = Document::query()
+            ->visibleTo($user, $company)
+            ->where('fiscal_year_id', $fiscalYear->id)
+            ->orderBy('id')
+            ->get()
+            ->keyBy('id');
+
+        $hidden = $this->hiddenPersonnelDocuments($user, $company, $fiscalYear);
+
+        if ($documents->isEmpty() && $hidden === 0) {
+            return 0;
+        }
+
+        $rows = [[__('Dokument-id'), __('Rubrik'), __('Kategori'), __('Sparas som'), __('Sparas till och med'), __('Bevarandespärr'), __('Version'), __('Fil i paketet'), __('Uppladdad'), __('SHA-256 vid uppladdningen'), __('Kontroll')]];
+        $count = 0;
+
+        DocumentVersion::query()
+            ->whereIn('document_id', $documents->keys())
+            ->orderBy('document_id')
+            ->orderBy('version')
+            ->each(function (DocumentVersion $version) use ($documents, &$rows, &$count): void {
+                $document = $documents->get($version->document_id);
+
+                if (! $document instanceof Document) {
+                    return;
+                }
+
+                $folder = 'dokument/'.self::safe("{$document->id} {$document->title}");
+                $before = $this->files;
+                $copied = $this->copy($version->path, "{$folder}/v{$version->version}-".self::safe($version->original_name));
+                $path = $copied ? (string) array_key_last(array_diff_key($this->files, $before)) : '';
+                $check = ! $copied ? __('Filen saknas') : (($this->files[$path]['sha256'] ?? '') === $version->sha256 ? __('Stämmer') : __('Stämmer inte'));
+
+                $rows[] = [
+                    (string) $document->id,
+                    $document->title,
+                    DocumentCategory::labelOf($document->category),
+                    $document->retention_class->label(),
+                    (string) $document->retain_until?->toDateString(),
+                    $document->legal_hold ? __('Ja') : __('Nej'),
+                    (string) $version->version,
+                    $path,
+                    $version->created_at->setTimezone('Europe/Stockholm')->format('Y-m-d H:i'),
+                    $version->sha256,
+                    $check,
+                ];
+                $count += $copied ? 1 : 0;
+            });
+
+        if ($hidden > 0) {
+            // The package says what it leaves out, so a reader does not take it for complete.
+            $rows[] = [__(':count personaldokument togs inte med: den som skapade paketet får inte se dem.', ['count' => $hidden])];
+        }
+
+        $this->csv('dokument/Dokumentforteckning.csv', $rows);
+
+        return $count + 1;
+    }
+
+    /** Personnel documents of the year that the package's maker may not see, and that are therefore left out. */
+    private function hiddenPersonnelDocuments(User $user, Company $company, FiscalYear $fiscalYear): int
+    {
+        if (DocumentAccess::allows($user, $company, 'documents:view', RetentionClass::Personnel)) {
+            return 0;
+        }
+
+        return Document::query()
+            ->where('fiscal_year_id', $fiscalYear->id)
+            ->where('retention_class', RetentionClass::Personnel->value)
+            ->count();
     }
 
     /**
