@@ -73,6 +73,13 @@
             @if($canApprove)
                 <p class="text-sm text-gray-700">{{ __('Kontrollera att varorna eller tjänsterna är levererade och att beloppet stämmer. Därefter kan fakturan betalas.') }}</p>
             @endif
+            @if($matchOpen > 0)
+                <p data-match-warning class="mt-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                    {{ $matchBlocks
+                        ? trans_choice('{1} En rad avviker från inköpsordern utanför toleranserna. Den behöver godkännas med ett skäl under Inköpsorder innan fakturan kan attesteras.|[2,*] :count rader avviker från inköpsordern utanför toleranserna. De behöver godkännas med ett skäl under Inköpsorder innan fakturan kan attesteras.', $matchOpen, ['count' => $matchOpen])
+                        : trans_choice('{1} En rad avviker från inköpsordern utanför toleranserna. Titta under Inköpsorder innan du attesterar.|[2,*] :count rader avviker från inköpsordern utanför toleranserna. Titta under Inköpsorder innan du attesterar.', $matchOpen, ['count' => $matchOpen]) }}
+                </p>
+            @endif
             @if($approval)
                 @if($canApprove && $approval->eligibility->onBehalfOf)
                     <p class="mt-2 text-sm text-gray-700">{{ __('Du godkänner på uppdrag av :name.', ['name' => $memberNames[$approval->eligibility->onBehalfOf] ?? __('tidigare medlem')]) }}</p>

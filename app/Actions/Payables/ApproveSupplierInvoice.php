@@ -15,6 +15,7 @@ use App\Events\SupplierInvoiceApproved;
 use App\Models\Company;
 use App\Models\SupplierInvoice;
 use App\Models\User;
+use App\Modules\Inventory\Purchasing\Matching\PurchaseMatchAttest;
 use App\Policies\SupplierInvoicePolicy;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
@@ -31,27 +32,37 @@ use Illuminate\Validation\ValidationException;
  * single attest it has always been. When a policy applies, the call records
  * the user's approval on the current step, and the invoice becomes approved
  * only with the last approval of the last step, exactly as below.
+ *
+ * Before each approval, an invoice matched with purchase orders is compared
+ * with them and their goods receipts again (ADR-081 E11, PurchaseMatchAttest):
+ * depending on the company's setting, deviations outside the tolerances block
+ * the approval until someone overrides them with a reason, or are recorded.
+ * $seenMatch is the token of the comparison the invoice page showed.
  */
 class ApproveSupplierInvoice
 {
-    public function __construct(private readonly ApprovalEngine $engine) {}
+    public function __construct(
+        private readonly ApprovalEngine $engine,
+        private readonly PurchaseMatchAttest $match,
+    ) {}
 
-    public function __invoke(User $user, SupplierInvoice $invoice): SupplierInvoice
+    public function __invoke(User $user, SupplierInvoice $invoice, ?string $seenMatch = null): SupplierInvoice
     {
         $custom = $this->engine->hasCustomFlow($invoice->company_id, ApprovalSubjectType::SupplierInvoice, $invoice->id, fn (): SubjectFacts => SubjectFacts::forSupplierInvoice($invoice));
 
         if ($custom) {
-            return $this->throughPolicy($user, $invoice);
+            return $this->throughPolicy($user, $invoice, $seenMatch);
         }
 
         $this->authorizeDefault($user, $invoice);
 
-        return CurrentCompany::run($invoice->company_id, fn (): SupplierInvoice => DB::transaction(function () use ($user, $invoice): SupplierInvoice {
+        return CurrentCompany::run($invoice->company_id, fn (): SupplierInvoice => DB::transaction(function () use ($user, $invoice, $seenMatch): SupplierInvoice {
             $invoice = $this->lockRegistered($invoice);
+            $this->match->check($user, $invoice, $seenMatch);
 
             // A policy created between the check and the lock decides after all.
             if ($this->engine->hasCustomFlow($invoice->company_id, ApprovalSubjectType::SupplierInvoice, $invoice->id, fn (): SubjectFacts => SubjectFacts::forSupplierInvoice($invoice))) {
-                return $this->decideLocked($user, $invoice);
+                return $this->decideLocked($user, $invoice, $seenMatch, matchChecked: true);
             }
 
             return $this->apply($user, $invoice);
@@ -68,13 +79,19 @@ class ApproveSupplierInvoice
         Gate::forUser($user)->authorize('approve', $invoice);
     }
 
-    private function throughPolicy(User $user, SupplierInvoice $invoice): SupplierInvoice
+    private function throughPolicy(User $user, SupplierInvoice $invoice, ?string $seenMatch): SupplierInvoice
     {
-        return CurrentCompany::run($invoice->company_id, fn (): SupplierInvoice => DB::transaction(fn (): SupplierInvoice => $this->decideLocked($user, $this->lockRegistered($invoice))));
+        return CurrentCompany::run($invoice->company_id, fn (): SupplierInvoice => DB::transaction(function () use ($user, $invoice, $seenMatch): SupplierInvoice {
+            return $this->decideLocked($user, $this->lockRegistered($invoice), $seenMatch, matchChecked: false);
+        }));
     }
 
-    /** The policy path for an invoice already locked inside the transaction. */
-    private function decideLocked(User $user, SupplierInvoice $invoice): SupplierInvoice
+    /**
+     * The policy path for an invoice already locked inside the transaction.
+     * The comparison with the purchase order is checked after the decision is
+     * authorised; a refusal there rolls the decision back with everything else.
+     */
+    private function decideLocked(User $user, SupplierInvoice $invoice, ?string $seenMatch, bool $matchChecked): SupplierInvoice
     {
         $context = ApprovalContext::load(Company::query()->findOrFail($invoice->company_id));
         $outcome = $this->engine->decide($context, $user, SubjectFacts::forSupplierInvoice($invoice), ApprovalDecisionKind::Approve);
@@ -82,7 +99,13 @@ class ApproveSupplierInvoice
         if ($outcome === DecisionOutcome::Default) {
             // The company's policy stopped applying between the check and the lock.
             $this->authorizeDefault($user, $invoice);
+        }
 
+        if (! $matchChecked) {
+            $this->match->check($user, $invoice, $seenMatch);
+        }
+
+        if ($outcome === DecisionOutcome::Default) {
             return $this->apply($user, $invoice);
         }
 

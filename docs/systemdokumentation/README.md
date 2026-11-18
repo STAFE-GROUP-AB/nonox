@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.148
+- Version: 0.149
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -2370,6 +2370,82 @@ och `ApproveDraft`.
 - **Att godkänna.** Sidan Inköp → Att godkänna listar de ärenden som väntar på
   personens beslut i det steg de står i, för alla underlag, med länk till
   underlagets sida där beslutet fattas. Sidan beslutar ingenting själv.
+
+### 5a1f. Avstämning mot inköpsorder per rad (ADR-081 lucka 3, paket E11)
+
+([ADR-081](../adr/ADR-081-nonox-erp.md), lucka 3 och tillägget "E11 as built".)
+Koden finns i `App\Modules\Inventory\Purchasing\Matching\ThreeWayMatch`,
+`MatchTolerances`, `PurchaseMatchAttest` och
+`App\Modules\Inventory\Actions\Purchasing\RecomputePurchaseMatch`,
+`AllocateSupplierInvoiceRows` och `OverridePurchaseMatch`. Gäller företag
+med modulen Lager och leverantörsfakturor som är kopplade till en
+inköpsorder (avsnitt 5j); kreditnotor stäms inte av.
+
+- **Fördelning.** Varje rad på en registrerad leverantörsfaktura kan
+  fördelas på en rad på en kopplad inköpsorder, med antalet fakturan tar
+  betalt för i orderradens enhet (`purchase_match_allocations`). En
+  fakturarad hör till högst en orderrad. Fördelningen kan bara ändras medan
+  fakturan väntar på attest, och en orderrad med fördelning eller sparat
+  resultat kan inte tas bort från ordern. Kopplingen till en order kan inte
+  tas bort medan fakturan har öppna eller godkända avvikelser, utom av den
+  som får attestera leverantörsfakturor.
+- **Jämförelsen per orderrad.** Beställt = radens antal och värde. Mottaget
+  = det inleveranserna har tagit emot, omräknat till radens enhet (lagrets
+  antal × radens antal ÷ lagrets antal på raden, avrundat halvt uppåt), och
+  för en rad utan artikel hela raden när leveransen är bekräftad. Fakturerat
+  tidigare = det andra registrerade fakturor (inte kreditnotor) har
+  fördelat på samma rad. Antalsavvikelsen = fakturerat antal − (mottaget −
+  fakturerat tidigare). Förväntat belopp = fakturerat antal × orderns
+  à-pris, avrundat halvt uppåt, och prisavvikelsen = fakturerat belopp −
+  förväntat belopp. Belopp är fakturaradernas belopp exklusive moms i
+  kronor, även för en faktura i utländsk valuta.
+- **Toleranser** (Lagers inställningar, ändras bara av den som får ändra
+  företagets attestregel, standard enligt ägarbeslut 11):
+  antal 0 %, pris 2 % och 50 kr. Raden ligger utanför när fakturan tar betalt
+  för fler än som finns kvar att fakturera plus antalsprocenten av det
+  mottagna, när beloppet överstiger det förväntade med mer än det största av
+  prisprocenten och kronbeloppet, när ingenting har tagits emot eller
+  bekräftats, eller när ordern är makulerad. En faktura som tar betalt för
+  mindre eller till lägre pris ligger inom. Fakturarader utan orderrad (frakt,
+  öresavrundning) ligger inom när de tillsammans är högst kronbeloppet,
+  annars "utan orderrad".
+- **Lagrat resultat.** Resultatet sparas per rad i `purchase_match_results`
+  med alla tal, toleranserna det bedömdes efter, skälen och en SHA-256 av
+  innehållet. Jämförelsen görs om när en order kopplas eller tas bort, när
+  fördelningen sparas, när fakturan öppnas och vid varje attest; en ny
+  uppsättning sparas bara när något har ändrats, och den gamla markeras som
+  ersatt (`superseded_at`). När fakturan har attesterats görs den inte om.
+  Resultat tas aldrig bort och kan inte ändras: en databastrigger tillåter
+  bara att ett resultat ersätts en gång och att en avvikelse godkänns en gång.
+- **Godkänd avvikelse.** Den som får attestera fakturan just nu (standardattesten,
+  eller beslut i det aktuella steget i ett eget attestflöde) kan godkänna
+  en rad utanför toleransen med ett skäl (högst 500 tecken), som sparas på
+  raden med person och tid. Godkännandet gäller det resultat personen såg:
+  har jämförelsen gjorts om sedan dess vägras det, och det följer med till en
+  ny uppsättning bara för en rad vars jämförelse är exakt densamma.
+- **Attesten.** Före varje attestbeslut, i standardattesten och i varje steg
+  i ett eget attestflöde (avsnitt 5a1d), görs jämförelsen om med fakturan
+  låst. Har resultatet avvikelser och är det inte det som visades på
+  fakturans sida vägras attesten tills sidan har laddats om. Med
+  företagsinställningen "Stoppa attesten vid avvikelser utanför
+  toleranserna" (av som standard, ägarbeslut 10) vägras attesten så länge en
+  avvikelse inte är godkänd; utan den genomförs attesten och
+  behandlingshistoriken får `inventory.purchase_match_attested_with_deviations`
+  med antalet öppna avvikelser. Kräver företaget att någon annan attesterar
+  får varken den som registrerade fakturan eller den som fördelade dess rader
+  godkänna en avvikelse eller attestera fakturan.
+- **Bokföring.** Ingen verifikation skapas eller ändras. Fakturan bokförs
+  som förut (avsnitt 5a), och attestens verkan är densamma.
+- **Behandlingshistorik.** `inventory.purchase_match_allocated` (antal
+  fördelade och borttagna rader), `inventory.purchase_match_computed` (antal
+  rader, öppna avvikelser och överförda godkännanden),
+  `inventory.purchase_match_overridden` (resultatets id och tidigare status,
+  utan skälet) och `inventory.purchase_match_attested_with_deviations`.
+- **Bevarande.** Fördelningar och resultat tas inte bort av systemet.
+  `TODO(legal-verify)`: om avstämningen och godkända avvikelser hör till
+  behandlingshistoriken enligt BFNAR 2013:2 och ska bevaras som
+  räkenskapsinformation; tills det är bekräftat bevaras de minst lika länge
+  som leverantörsfakturan. De tas ännu inte med i arkivpaketet.
 
 ## 5a2. Anläggningsregister
 
@@ -6596,3 +6672,4 @@ påverkar bokföringen och fakturan:
 | 0.146 | 2026-11-18 | Elimineringar och koncernjournal för koncerner (avsnitt 4.10b och 4.10c, ADR-060 tillägg 2.4 och 3.2, ADR-081 paket E25): förslag räknas ur koncernmarkeringarna (sex par; fordringar, skulder och lån som utgående balanser över alla år, och "Kräver granskning" när det första årets ingående balans har beloppet) och, för andelar mot aktiekapital i ett enda grundat helägt dotterföretag, ur balanserna, med båda sidor och differens. Ett förslag där sidorna stämmer godkänns, bundet till det förslag personen såg, in i `group_entries` och `group_entry_rows`: numrerade i följd per koncern, kedjade med SHA-256, balanserade enligt en kontroll vid commit och omöjliga att ändra eller ta bort (modell, triggrar, databasroll). Fel rättas med återföringar. Konsolideringen drar posterna för exakt samma period och anger dem med kontrollsumma i indata (motorversion 2). Ingenting skrivs i något företags bokföring och ingen verifikation ändras. |
 | 0.147 | 2026-11-18 | Alla dokument (avsnitt 4.5, ADR-081 lucka 9, paket E20): en gemensam lista över företagets dokument och funktionernas egna filer, med en adapter per källa som tillämpar källans egen behörighet och bara läser, utan kopior, ny lagring eller ändring av någon verifikation. Lönebesked och anställdas dokument kräver dessutom `payroll:view-sensitive`. |
 | 0.148 | 2026-11-18 | Attest av manuella verifikationer och kreditfakturor (avsnitt 4.2 och 5a1e, ADR-081 lucka 8, paket E21): med ett eget flöde förblir en verifikation som en person för in, eller en kundkreditfaktura, ett utkast utan nummer tills just den versionen är attesterad; numret tas vid bokföringen respektive utfärdandet, så serierna förblir obrutna, och `PostVoucher` är oförändrad. Attesten gäller utkastets version (SHA-256 över innehållet); alla som sparat utkastet räknas som förberedare, också för inköpsorder. Utan eget flöde ändras ingenting. Sidan Att godkänna listar väntande attester. |
+| 0.149 | 2026-11-18 | Avstämning mot inköpsorder per rad (avsnitt 5a1f, ADR-081 lucka 3, paket E11): leverantörsfakturans rader fördelas på inköpsorderns rader, och varje rad jämförs med det beställda, det mottagna och det andra fakturor redan tagit betalt för, mot företagets toleranser (antal 0 %, pris 2 % eller 50 kr). Resultatet sparas i `purchase_match_results`, som bara kan ersättas en gång och få en avvikelse godkänd en gång med skäl av den som får attestera; databasen vägrar annan ändring och borttagning. Före varje attest görs jämförelsen om; en avvikelse som inte är godkänd stoppar attesten om företaget har valt det, annars skrivs den i behandlingshistoriken. Ingen verifikation skapas eller ändras. |

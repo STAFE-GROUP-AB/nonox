@@ -36,6 +36,7 @@ Under **Lager → Översikt** ser du:
 
 - [Inköpsanmodan](/manual/lager/inkopsanmodan) – be om inköp, låt en attestant godkänna och gör det till en inköpsorder.
 - [Inköpsorder](/manual/lager/inkopsorder) – beställ från leverantörer, skicka ordern som PDF och stäm av fakturan.
+- [Avstämning mot inköpsorder](/manual/lager/avstamning-mot-inkopsorder) – stäm av leverantörsfakturan rad för rad mot ordern och inleveranserna, med toleranser.
 - [Inköpsförslag](/manual/lager/inkopsforslag) – vad som behöver beställas, utifrån beställningspunkter och öppna kundordrar.
 - [Prognos och planeringsdata](/manual/lager/prognos) – förväntad efterfrågan per artikel och vecka, ledtid, säkerhetslager och partistorlek.
 - [Behovsplanering](/manual/lager/behovsplanering) – vad som behöver köpas in eller tillverkas vecka för vecka, som förslag du gör till utkast.

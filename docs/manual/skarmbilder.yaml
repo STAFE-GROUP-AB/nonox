@@ -246,6 +246,8 @@ lager/inkopsorder-attest: { foretag: butik, rutt: inventory.purchaseOrders.show,
 lager/inkopsorder-utan-artikel: { foretag: butik, rutt: inventory.purchaseOrders.show, modell: { tabell: purchase_orders, dar: { notes: 'Skyltar och uppsättning till skyltfönstret' } } }
 lager/inkopsanmodan: { foretag: butik, rutt: inventory.requisitions.show, modell: { tabell: purchase_requisitions, dar: { reason: 'Fyller på inför höstkampanjen' } } }
 lager/inkopsanmodan-bestall: { foretag: butik, rutt: inventory.requisitions.convert }
+lager/avstamning-per-rad: { foretag: butik, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { invoice_number: IG-4410 } }, del: '[data-purchase-order-match]' }
+lager/avstamning-installningar: { foretag: butik, rutt: inventory.settings, del: '[data-match-tolerances]' }
 lager/inkopsforslag: { foretag: butik, rutt: inventory.purchaseProposals }
 lager/prognos: { foretag: butik, rutt: inventory.forecast }
 lager/behovsplanering: { foretag: butik, rutt: inventory.mrp, del: '[data-testid=mrp-planned]' }

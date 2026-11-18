@@ -46,6 +46,12 @@ final class InventorySettings
         // ADR-071 §1: purchase orders above this amount (öre, excluding VAT) are sent only by someone
         // holding purchase-orders:send (Attestant); null means no approval is required.
         'purchase_order_approval_above_ore' => null,
+        // ADR-081 E11, owner decisions 10 and 11: the three-way comparison's tolerances, and whether
+        // a supplier invoice outside them waits for an override (true) or is only flagged (false).
+        'match_quantity_tolerance_bp' => 0,
+        'match_price_tolerance_bp' => 200,
+        'match_absolute_tolerance_ore' => 5000,
+        'match_outside_blocks_attest' => false,
     ];
 
     /** Stock accounts offered: BAS 1400–1499. */

@@ -45,6 +45,32 @@
     <x-ui.field for="inventory-purchase-approval" :label="__('Attestgräns för inköpsorder')" error="settings.purchase_order_approval_above" class="sm:col-span-2" :hint="__('Inköpsorder över beloppet (exkl. moms) skickas bara av någon med rätt att skicka inköpsorder, till exempel en attestant. Tomt: alla som hanterar inköpsorder får skicka dem.')">
         <input id="inventory-purchase-approval" wire:model="settings.purchase_order_approval_above" inputmode="decimal" class="{{ $input }} w-40 text-right tabular-nums">
     </x-ui.field>
+    <fieldset data-match-tolerances class="space-y-3 sm:col-span-2">
+        <legend class="font-medium text-ink">{{ __('Avstämning mot inköpsorder') }}</legend>
+        <p class="text-sm text-gray-600">{{ __('När en leverantörsfaktura är kopplad till en inköpsorder jämförs varje rad med det som beställdes och det som har tagits emot. Fakturan får ta betalt för högst det mottagna antalet plus antalstoleransen, och priset får vara högst prisprocenten eller beloppet över orderpriset, det som är störst.') }}</p>
+        <div class="grid gap-3 sm:grid-cols-3">
+            <x-ui.field for="inventory-match-quantity" :label="__('Tolerans för antal (%)')" error="settings.match_quantity_tolerance">
+                <input id="inventory-match-quantity" wire:model="settings.match_quantity_tolerance" @disabled(! $canSetMatching) inputmode="decimal" class="{{ $input }} w-28 text-right tabular-nums">
+            </x-ui.field>
+            <x-ui.field for="inventory-match-price" :label="__('Tolerans för pris (%)')" error="settings.match_price_tolerance">
+                <input id="inventory-match-price" wire:model="settings.match_price_tolerance" @disabled(! $canSetMatching) inputmode="decimal" class="{{ $input }} w-28 text-right tabular-nums">
+            </x-ui.field>
+            <x-ui.field for="inventory-match-absolute" :label="__('Tolerans i kronor')" error="settings.match_absolute_tolerance">
+                <input id="inventory-match-absolute" wire:model="settings.match_absolute_tolerance" @disabled(! $canSetMatching) inputmode="decimal" class="{{ $input }} w-28 text-right tabular-nums">
+            </x-ui.field>
+        </div>
+        @unless($canSetMatching)
+            <p class="text-sm text-gray-600">{{ __('Bara ägare och administratörer kan ändra avstämningen, eftersom den styr attesten.') }}</p>
+        @endunless
+        <x-input-error for="settings.match_outside_blocks_attest" />
+        <label class="flex items-start gap-3">
+            <input type="checkbox" wire:model="settings.match_outside_blocks_attest" @disabled(! $canSetMatching) class="mt-1 rounded border-gray-300 text-accent-600 focus:ring-accent-500">
+            <span>
+                <span class="block font-medium text-ink">{{ __('Stoppa attesten vid avvikelser utanför toleranserna') }}</span>
+                <span class="block text-sm text-gray-600">{{ __('Fakturan kan då attesteras först när någon med rätt att attestera har godkänt avvikelsen med ett skäl. Utan bocken visas avvikelsen vid attesten men stoppar den inte.') }}</span>
+            </span>
+        </label>
+    </fieldset>
     <div class="sm:col-span-2">
         <x-button type="submit" wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
     </div>

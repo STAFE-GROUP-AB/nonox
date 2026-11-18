@@ -23,6 +23,8 @@ Fakturan får status **Attesterad, att betala** och visas under **Att betala**. 
 
 Det här är standardattesten. Har företaget ett eget attestflöde, till exempel två steg för stora inköp, visar fakturan kortet **Attestflöde** och fakturan blir attesterad först när alla steg är godkända. Läs [Attestflöden](/manual/leverantorer/attestfloden).
 
+Är fakturan kopplad till en inköpsorder och företaget använder Lager stäms den av rad för rad mot ordern och det som har tagits emot. Avviker en rad utanför toleranserna står det i kortet **Attestera**, och har företaget valt det måste avvikelsen godkännas med ett skäl innan fakturan kan attesteras. Läs [Avstämning mot inköpsorder](/manual/lager/avstamning-mot-inkopsorder).
+
 ## Vem får attestera?
 
 Rätten att attestera har rollerna **Ägare**, **Administratör** och **Attestant**. Attestanten är en roll för den som bara ska godkänna fakturor och betalningar, till exempel en ägare som inte sköter bokföringen själv. En redovisningskonsult eller bokförare kan registrera och betala fakturor men inte attestera dem. Läs mer om rollerna i [Roller och behörigheter](/manual/kom-igang/roller-och-behorigheter).

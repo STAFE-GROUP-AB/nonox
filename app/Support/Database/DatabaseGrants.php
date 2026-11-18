@@ -321,6 +321,8 @@ final class DatabaseGrants
         'production_work_patterns' => GrantDecision::ReadWrite,
         'production_workstation_operations' => GrantDecision::ReadWrite,
         'production_workstations' => GrantDecision::ReadWrite,
+        'purchase_match_allocations' => GrantDecision::ReadWrite,
+        'purchase_match_results' => GrantDecision::NoDelete,
         'purchase_order_invoices' => GrantDecision::ReadWrite,
         'purchase_order_rows' => GrantDecision::ReadWrite,
         'purchase_order_versions' => GrantDecision::AppendOnly,
