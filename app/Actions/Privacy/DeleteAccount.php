@@ -74,6 +74,10 @@ class DeleteAccount
             TeamInvitation::query()->whereRaw('lower(email) = ?', [$email])->delete();
             // The user's own filters and notices on Mina företag (ADR-028) are nobody else's.
             DB::table('saved_views')->where('user_id', $user->id)->delete();
+            // Saved reports of the analysis view (ADR-081 E18): the person's private ones go; the ones shared with the company stay, without an owner (nullOnDelete).
+            DB::table('report_definitions')->where('owner_user_id', $user->id)->where('visibility', 'PRIVATE')->delete();
+            // Also when the account is only pseudonymised (the row stays): the company's reports then have no owner either.
+            DB::table('report_definitions')->where('owner_user_id', $user->id)->update(['owner_user_id' => null]);
             // Passkeys (ADR-029) and the recently opened records in search (ADR-026) are the user's alone.
             DB::table('passkeys')->where('user_id', $user->id)->delete();
             DB::table('recent_items')->where('user_id', $user->id)->delete();

@@ -16,6 +16,7 @@ use App\Livewire\Company\CreateCompanyForm;
 use App\Livewire\Company\DimensionScopes;
 use App\Livewire\Company\MemberManager;
 use App\Livewire\Company\PasskeyPolicy;
+use App\Livewire\Overview\ReportTiles;
 use App\Livewire\Payables\SupplierInvoiceActions;
 use App\Livewire\Payables\SupplierInvoiceEditor;
 use App\Livewire\Payables\SupplierInvoiceList;
@@ -115,6 +116,7 @@ final class DimensionScopeRegistry
         ProjectList::class => ScopeDecision::Scoped,
         ProjectResult::class => ScopeDecision::Scoped,
         AnalysisPage::class => ScopeDecision::Scoped,
+        ReportTiles::class => ScopeDecision::Scoped,
         NavigationMenu::class => ScopeDecision::Neutral,
         // The passkey step of signing in (ADR-029): a limited member must be able to pass it too.
         PasskeyChallenge::class => ScopeDecision::Neutral,

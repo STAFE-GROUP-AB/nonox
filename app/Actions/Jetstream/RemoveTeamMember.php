@@ -36,6 +36,11 @@ class RemoveTeamMember implements RemovesTeamMembers
             // A scope belongs to the membership; with it gone the rows only take room (ADR-081 gap 10).
             CurrentCompany::run($team, fn () => MembershipDimensionScope::query()->where('user_id', $teamMember->id)->delete());
 
+            // The member's private saved reports in this company (ADR-081 E18); shared ones stay.
+            DB::table('report_definitions')->where('company_id', $team->id)->where('owner_user_id', $teamMember->id)->where('visibility', 'PRIVATE')->delete();
+            // Their company reports stay, without an owner (ADR-081 E18).
+            DB::table('report_definitions')->where('company_id', $team->id)->where('owner_user_id', $teamMember->id)->update(['owner_user_id' => null]);
+
             ($this->withdrawInvitations)($team, $teamMember, 'member_removed');
         });
 

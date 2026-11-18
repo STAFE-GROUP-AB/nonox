@@ -31,7 +31,7 @@ enum CompanyRole: string
         'mileage:view', 'mileage:manage',
         'budgets:view', 'budgets:manage',
         'projects:view', 'projects:manage',
-        'analysis:view',
+        'analysis:view', 'analysis:share',
         'approvals:manage',
         'documents:view', 'documents:manage', 'documents:hold',
     ];
@@ -77,7 +77,7 @@ enum CompanyRole: string
                 'mileage:view', 'mileage:manage',
                 'budgets:view', 'budgets:manage',
                 'projects:view', 'projects:manage',
-                'analysis:view',
+                'analysis:view', 'analysis:share',
                 'documents:view', 'documents:manage', 'documents:hold',
             ],
             self::Bookkeeper => [
@@ -104,7 +104,7 @@ enum CompanyRole: string
                 'mileage:view',
                 'budgets:view',
                 'projects:view',
-                'analysis:view',
+                'analysis:view', 'analysis:share',
                 'documents:view',
             ],
             // Project results with their budget (ADR-081 E7) and the analysis view (E17), both inside the member's own units.

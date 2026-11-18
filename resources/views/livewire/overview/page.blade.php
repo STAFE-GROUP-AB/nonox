@@ -68,6 +68,10 @@
             </section>
         @endif
 
+        @if($canSeeReportTiles)
+            <livewire:overview.report-tiles />
+        @endif
+
         <div class="grid gap-6 xl:grid-cols-2">
             <x-ui.card :title="__('Att göra')" class="min-w-0">
                 <x-slot:action>

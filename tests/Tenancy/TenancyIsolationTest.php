@@ -79,6 +79,7 @@ use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceRow;
 use App\Models\RegisterImport;
 use App\Models\RegisterImportPreset;
+use App\Models\ReportDefinition;
 use App\Models\SalesDocument;
 use App\Models\SalesDocumentRow;
 use App\Models\SieImport;
@@ -426,6 +427,7 @@ const COMPANY_SCOPED_MODELS = [
     AccrualPosting::class => 'accrualPostingAttributes',
     BudgetVersion::class => 'e3BudgetVersionAttributes',
     BudgetLine::class => 'e3BudgetLineAttributes',
+    ReportDefinition::class => 'e18ReportAttributes',
     FixedAssetDepreciation::class => 'fixedAssetDepreciationAttributes',
     FixedAssetAddition::class => 'fixedAssetAdditionAttributes',
     ApprovalPolicy::class => 'e2ApprovalPolicyAttributes',
@@ -2567,6 +2569,17 @@ function e3BudgetVersionAttributes(): array
         'fiscal_year_id' => FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31'])->id,
         'name' => 'Hemlig budget',
         'created_by' => User::factory()->create()->id,
+    ];
+}
+
+function e18ReportAttributes(): array
+{
+    return [
+        'owner_user_id' => User::factory()->create()->id,
+        'name' => 'Hemlig rapport',
+        'dataset' => 'ledger',
+        'definition' => ['dataset' => 'ledger', 'rows' => ['account'], 'measure' => 'credit'],
+        'visibility' => 'COMPANY',
     ];
 }
 
