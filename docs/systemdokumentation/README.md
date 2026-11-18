@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.141
+- Version: 0.142
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -866,6 +866,18 @@ year").
 - Filen skrivs i teckentabell 437 (PC8) med en kontrollsumma (`#KSUMMA`), så att
   den som läser filen kan se om den har ändrats eller skadats på vägen.
 - Varje export skrivs till behandlingshistoriken.
+- Budget (version 0.142, [ADR-081](../adr/ADR-081-nonox-erp.md) paket E4):
+  med rutan **Ta med budget**, som inte är förbockad och bara visas för ett
+  år med en budget som används i rapporterna, skrivs den budgeten som
+  `#PBUDGET 0` (SIE filformat utgåva 4C, "#PBUDGET Periodbudgetpost"):
+  period `ÅÅÅÅMM`, belopp med bokföringens tecken (kredit negativt), per konto
+  och månad först hela beloppet (`{}`) och sedan varje kostnadsställe
+  (`{1 "kod"}`) och projekt (`{6 "kod"}`) för sig. En budgetrad med både
+  kostnadsställe och projekt ingår i båda objektens belopp; formatet anger ett
+  objekt per post. Det kräver också behörigheten `budgets:view`. Utan rutan,
+  och alltid i arkivpaketet, API:t och SFTP-exporten, är filen oförändrad.
+  Budgeten är ingen bokföring och påverkar inga saldon i filen; exporten
+  skrivs i behandlingshistoriken med budgetens id och antal poster.
 
 ### 4.10 Kostnadsställen och projekt
 
@@ -993,6 +1005,29 @@ används av koncernens interna sammanställning (ADR-060 tillägg 2.4).
   antalet verifikationer, med filen. Stämmer något inte, rullas hela
   inläsningen tillbaka och skillnaderna visas.
 - Varje granskning och inläsning skrivs till behandlingshistoriken.
+- Budget (version 0.142, ADR-081 paket E4): har filen `#PBUDGET 0` blir
+  budgeten en ny budget för räkenskapsåret, i samma transaktion som
+  bokföringen. Per konto och månad läses hela beloppet (`{}`) och beloppen per
+  kostnadsställe (dimension 1) och projekt (dimension 6); det som inte ligger
+  på något objekt blir en rad utan objekt, så att kontots summa, varje
+  kostnadsställes och varje projekts belopp blir exakt filens. Andra år
+  (`årsnr` -1 och tidigare), konton utanför 3000–8998, andra dimensioner,
+  poster med mer än ett objekt och kvantiteter läses inte in och nämns i
+  rapporten; en fil av typ 2 läses utan objekt, som formatet föreskriver.
+  Konton och objekt som budgeten använder och som saknas skapas som för
+  verifikationerna. En budget som inte går att läsa säkert (en månad utanför
+  året, ett oläsligt belopp, samma konto och månad två gånger) läses inte in
+  alls, med en varning, men hindrar aldrig bokföringen. Budgeten bokförs
+  inte, ingår inte i avstämningen och ingår inte i kontrollsummekedjan.
+- Bara budgeten (version 0.142): under Budget kan budgeten i en SIE-fil av typ
+  2, 3 eller 4 läsas in utan bokföringen, i två steg (granska, läs in), med
+  behörigheten `budgets:manage`. Räkenskapsåret måste finnas här med samma
+  datum, och konton, kostnadsställen och projekt matchas mot företagets egna
+  på nummer och kod; saknas något läses ingenting in, eftersom en
+  budgetinläsning aldrig ändrar kontoplanen eller registren. Filen kontrolleras
+  igen när användaren bekräftar. Den nya budgeten används i rapporterna bara
+  om året inte redan har en som gör det. Inläsningen skrivs i
+  behandlingshistoriken (`budget.created`, med filens SHA-256 och antal rader).
 
 ### 4.12 Rapporter
 
@@ -1020,7 +1055,8 @@ används av koncernens interna sammanställning (ADR-060 tillägg 2.4).
   låst budget för ett stängt räkenskapsår kan inte tas bort. Att en budget
   skapas, sparas, låses, används eller tas bort skrivs i
   behandlingshistoriken (`budget.*`) med id och antal, aldrig namn.
-- Budgeten följer inte med i SIE-filen (`#PBUDGET` läses och skrivs inte).
+- Budgeten läses in ur SIE-filer som har `#PBUDGET` och skrivs till SIE-filen
+  bara med rutan Ta med budget (avsnitt 4.9 och 4.11, version 0.142).
 
 ### 4.13 Moms
 
@@ -6243,3 +6279,4 @@ påverkar bokföringen och fakturan:
 | 0.139 | 2026-11-18 | Dokumentarkivet (avsnitt 4.5 och 7a, ADR-081 lucka 9, paket E19): företagets egna dokument med versioner som inte kan ändras, krypterade filer med SHA-256, lagringsklasserna räkenskapsinformation (sju år enligt BFL 7 kap. 2 §), avtal (också som räkenskapsinformation), personal och övrigt, ett `retain_until` som aldrig går under regelns golv (triggern räknar golvet för räkenskapsinformation ur räkenskapsåret) och en bevarandespärr med skäl; radering vägras av policyn, modellen och en PostgreSQL-trigger. Räkenskapsinformation blir underlag till en verifikation genom `voucher_attachments` med samma fil, utan kopia. Arkivpaketet får `dokument/` med förteckning och kontrollsummor. Ingen verifikation skapas eller ändras. |
 | 0.140 | 2026-11-18 | Koncernmarkeringar (avsnitt 4.10a, ADR-060 tillägg 2.3, ADR-081 paket E23): kunder och leverantörer kan markeras som koncernföretag med det andra företagets organisationsnummer, och bokförda rader får en markering med koncernföretag, typ och källa i de nya tabellerna `intercompany_counterparties` och `intercompany_row_tags`, bredvid `voucher_rows`. Raderna på fakturor, betalningar och leverantörsfakturor till och från markerade kunder och leverantörer markeras efter kontointervall när en person bekräftar, också i rättelser av dem (vända rader får samma typ), och rader på ett konto under en period i bulk. En trigger nekar markeringar på utkast och på ett annat företags rader. Ingen verifikation, rad, numrering eller hashkedja ändras, och ingenting skrivs i ett annat företags bokföring. |
 | 0.141 | 2026-11-18 | Signering med flera undertecknare (avsnitt 5, ADR-046 tillägg 2026-11-18, paket S1): ett kuvert har ett dokument, upp till tio undertecknare i steg (samma steg signerar samtidigt) och upp till tio kopiemottagare. En offert blir order först när alla har signerat; ett avböjande eller ett tillbakadraget kuvert ger ingen order. Varje befintlig signeringsbegäran fick ett eget kuvert med samma status, utan att bevisen ändrades. Ingen bokföringsregel ändras. |
+| 0.142 | 2026-11-18 | SIE-budget (avsnitt 4.9, 4.11 och 4.12a, ADR-081 paket E4): `#PBUDGET 0` i en SIE-fil blir en ny budget när filen läses in, med hela beloppet, varje kostnadsställe och varje projekt per konto och månad exakt som i filen; en budget som inte går att läsa säkert läses inte in men hindrar aldrig bokföringen. Under Budget kan bara budgeten i en fil av typ 2, 3 eller 4 läsas in, i två steg, mot räkenskapsår, konton och objekt som redan finns. SIE-exporten skriver årets budget bara med rutan Ta med budget. Budgeten bokförs aldrig och ingår inte i avstämningen eller kontrollsummekedjan. Ingen verifikation ändras. |

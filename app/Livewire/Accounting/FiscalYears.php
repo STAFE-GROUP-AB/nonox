@@ -9,8 +9,10 @@ use App\Actions\Accounting\ChangeFirstFiscalYear;
 use App\Actions\Accounting\CreateArchivePackage;
 use App\Actions\Accounting\CreateNextFiscalYear;
 use App\Domain\Accounting\FiscalYearRules;
+use App\Domain\Budget\BudgetKind;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\ArchivePackage;
+use App\Models\BudgetVersion;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
@@ -120,7 +122,11 @@ class FiscalYears extends Component
         return view('livewire.accounting.fiscal-years', [
             'fiscalYears' => $fiscalYears,
             'canManage' => $this->user()->can('create', [FiscalYear::class, $this->company()]),
-            'canExport' => $this->user()->hasTeamPermission($this->company(), 'export:sie'),
+            'canExport' => $canExport = $this->user()->hasTeamPermission($this->company(), 'export:sie'),
+            // Years whose active budget can go into the SIE file ("Ta med budget", ADR-081 E4): one query.
+            'budgetYears' => $canExport && $this->user()->hasTeamPermission($this->company(), 'budgets:view')
+                ? BudgetVersion::query()->where('kind', BudgetKind::Budget->value)->where('is_active', true)->pluck('fiscal_year_id')->flip()->all()
+                : [],
             'canArchive' => $canArchive,
             'packages' => $packages,
             'building' => $packages->contains(fn (ArchivePackage $package): bool => $package->isBusy()),

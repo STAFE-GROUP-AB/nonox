@@ -27,6 +27,11 @@
                 @unless(($result['checked_closing'] ?? false) || ($result['checked_results'] ?? false))
                     <li>{{ __('Filen hade inga utgående balanser eller resultat att jämföra med, så bara antalet verifikationer är kontrollerat.') }}</li>
                 @endunless
+                @if($result['budget_version_id'] ?? null)
+                    <li>✓ {{ __('Filens budget är inläst som en ny budget med :count rader.', ['count' => $result['budget_lines'] ?? 0]) }} <a href="{{ route('accounting.budgets.show', ['budgetVersion' => $result['budget_version_id']]) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ __('Visa budgeten') }}</a></li>
+                @elseif($result['budget_refused'] ?? false)
+                    <li>{{ __('Filen har en budget, men du har inte behörighet att göra budgetar, så den lästes inte in.') }}</li>
+                @endif
             </ul>
             <div class="mt-5 flex flex-wrap gap-4">
                 <a href="{{ route('accounting.vouchers.index') }}" class="text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Visa verifikationerna') }}</a>
@@ -136,6 +141,18 @@
                     @endif
                 </dd>
             </div>
+            @if(($report['budget']['lines'] ?? 0) > 0 || ($report['budget']['skipped'] ?? false))
+                <div>
+                    <dt class="text-sm text-gray-500">{{ __('Budget') }}</dt>
+                    <dd class="text-gray-900">
+                        @if($report['budget']['skipped'] ?? false)
+                            {{ __('Läses inte in, se Bra att veta') }}
+                        @else
+                            {{ __(':lines rader på :accounts konton, blir en ny budget', ['lines' => $report['budget']['lines'], 'accounts' => $report['budget']['accounts']]) }}
+                        @endif
+                    </dd>
+                </div>
+            @endif
             <div>
                 <dt class="text-sm text-gray-500">{{ __('Kontrollsumma') }}</dt>
                 <dd class="text-gray-900">{{ match ($report['checksum'] ?? 'absent') {

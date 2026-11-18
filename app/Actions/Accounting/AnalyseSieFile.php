@@ -70,7 +70,7 @@ class AnalyseSieFile
         $path = Storage::disk(ImportSie::DISK)->putFileAs($directory, new File($absolute), Str::uuid()->toString().'.se');
         $sha256 = (string) hash_file('sha256', $absolute);
 
-        $plan = $this->analyser->analyse($company, $absolute, $sha256);
+        $plan = $this->analyser->analyse($company, $absolute, $sha256, budgets: $user->hasTeamPermission($company, 'budgets:manage'));
 
         return CurrentCompany::run($company, function () use ($company, $user, $originalName, $size, $path, $sha256, $plan, $auditPayload): SieImport {
             $import = SieImport::create([

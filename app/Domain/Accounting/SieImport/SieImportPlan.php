@@ -75,6 +75,20 @@ final class SieImportPlan
 
     public int $existingVouchers = 0;
 
+    /**
+     * The file's budget (#PBUDGET 0) as lines by account number and object
+     * code, read in as a new budget version (ADR-081 E4).
+     *
+     * @var list<array{account: int, period: string, cost_center: ?string, project: ?string, amount: int}>
+     */
+    public array $budgetLines = [];
+
+    /** The file has a budget, but it cannot be read reliably and is left out. */
+    public bool $budgetSkipped = false;
+
+    /** The file has a budget, but the user may not make budgets (budgets:manage). */
+    public bool $budgetRefused = false;
+
     public function block(string $message): void
     {
         $this->blockers[] = $message;
@@ -150,6 +164,11 @@ final class SieImportPlan
             'added_rows' => $this->addedRows,
             'removed_rows' => $this->removedRows,
             'existing_vouchers' => $this->existingVouchers,
+            'budget' => [
+                'lines' => count($this->budgetLines),
+                'accounts' => count(array_unique(array_column($this->budgetLines, 'account'))),
+                'skipped' => $this->budgetSkipped || $this->budgetRefused,
+            ],
         ];
     }
 }

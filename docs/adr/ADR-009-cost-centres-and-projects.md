@@ -38,7 +38,8 @@ promise that nothing is lost when leaving another program.
 - Not written or read: `#OIB`, `#OUB`, `#PSALDO`, `#PBUDGET`. Those are
   balances per object, which can be computed from the rows. Following the
   user's instruction, SIE support goes no further than the source program
-  needs.
+  needs. Amended by ADR-081 E4 (2026-11-18): `#PBUDGET` (budgets, not
+  balances) is read, and written when "Ta med budget" is ticked.
 - Permissions: anyone with `vouchers:view` sees the registers; `accounts:manage`
   changes them. Every change is audited (`dimension.created`,
   `dimension.updated`).

@@ -1,9 +1,9 @@
 ---
-beskrivning: Gör en budget per konto och månad, med kostnadsställe och projekt om du vill. Börja tomt, som i fjol eller med en kopia, och läs in från kalkylark.
+beskrivning: Gör en budget per konto och månad, med kostnadsställe och projekt om du vill. Börja tomt, som i fjol eller med en kopia, och läs in från kalkylark eller SIE-fil.
 ordning: 60
 roller: [owner, admin, accountant, bookkeeper, auditor]
 rutter: [accounting.budgets, accounting.budgets.show]
-sokord: [budget, budgetera, plan, prognos, månadsbudget, årsbudget, kalkylark, excel, csv, fjolåret, budgetversion]
+sokord: [budget, budgetera, plan, prognos, månadsbudget, årsbudget, kalkylark, excel, csv, fjolåret, budgetversion, sie, pbudget, sie-budget]
 ---
 
 # Budget
@@ -61,6 +61,37 @@ Tangentbordet fungerar som i verifikationen:
 
 Är något fel i filen läses ingenting in. Sidan listar då varje rad som behöver rättas, till exempel ett konto som inte finns i kontoplanen eller ett belopp som inte går att läsa.
 
+## Läs in budget från en SIE-fil
+
+Har du budgeten i ett annat program, ett budget- eller planeringsprogram eller ditt gamla bokföringsprogram, kan du läsa in den med en SIE-fil. Budgeten finns i filer av typ 2, 3 och 4, i poster som heter `#PBUDGET`. Bokföringen i filen läses inte in här; den läser du in under [Läs in SIE-fil](/manual/bokforing/sie).
+
+![Läs in budget från SIE-fil, längst ner på sidan Budget.](/bilder/manual/rapporter/budget-fran-sie.webp)
+
+1. Kontrollera att räkenskapsåret i filen finns under **Bokföring → Räkenskapsår**, med samma första och sista dag.
+2. Gå till **Bokföring → Budget**. Längst ner finns **Läs in budget från SIE-fil**.
+3. Välj filen under **SIE-fil** och välj **Granska filen**. Ingenting ändras än.
+4. Läs rapporten: **Räkenskapsår**, **Budgetrader** och **Budgeterat resultat**, och under **Bra att veta** det som inte följer med.
+5. Välj **Läs in budgeten**. Budgeten öppnas som en ny budget med namnet "Budget från SIE-fil".
+
+Den nya budgeten är ett utkast som du kan ändra. Den används i rapporterna bara om året inte redan har en budget som gör det; annars väljer du **Använd i rapporterna** själv.
+
+Står det **Budgeten kan inte läsas in som den är** finns en lista över det som behöver rättas. Vanligast är att ett konto, ett kostnadsställe eller ett projekt i filen inte finns här: lägg till det under [Kontoplan](/manual/bokforing/kontoplan) eller [Kostnadsställen och projekt](/manual/bokforing/kostnadsstallen-och-projekt) och välj **Välj en annan fil** för att granska filen igen. En inläsning av bara budgeten ändrar aldrig kontoplanen eller registren.
+
+Läser du in hela bokföringen med en SIE4-fil som har en budget följer budgeten med av sig själv, se [SIE-filer](/manual/bokforing/sie).
+
+Det här följer inte med, och rapporten säger det:
+
+- budget för andra räkenskapsår än filens – läs in varje år med sin egen fil,
+- budget på balanskonton och på konto 8999,
+- budget per andra dimensioner än kostnadsställen och projekt,
+- kvantiteter, bara beloppen läses in.
+
+En SIE-fil anger budgeten per kostnadsställe och per projekt var för sig, inte för en kombination av dem. Har en rad i budgeten både ett kostnadsställe och ett projekt kommer den därför tillbaka som en rad per kostnadsställe och en per projekt, med samma summor.
+
+### Ta med budgeten i SIE-filen
+
+Under **Bokföring → Räkenskapsår** finns rutan **Ta med budget** bredvid **Ladda ner SIE-fil** för ett år som har en budget som används i rapporterna. Bocka i den så följer den budgeten med i filen. Rutan är inte ibockad från början, så filen innehåller bara bokföringen om du inte väljer något annat.
+
 ## Lås en budget
 
 När budgeten är beslutad kan du välja **Lås budgeten**. En låst budget kan inte ändras: både NONOX och databasen vägrar ändringar i den. Den kan bara användas i rapporterna, kopieras eller tas bort: vill du ändra något gör du en ny budget som en **Kopia av en budget**.
@@ -79,7 +110,7 @@ En låst budget för ett räkenskapsår som är stängt går inte att ta bort. D
 
 - Budgeten gäller resultatkonton, 3000–8998. Balans- och likviditetsbudget finns inte ännu.
 - Belopp lagras i öre, så det du skriver blir exakt det som sparas.
-- Budgeten följer inte med i SIE-filen.
+- Budgeten kan läsas in från en SIE-fil och följa med i en, se Läs in budget från en SIE-fil ovan.
 
 ## Läs också
 

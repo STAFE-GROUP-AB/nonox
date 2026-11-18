@@ -43,6 +43,7 @@ Därefter visar rapporten vad som kommer att hända:
 - **Serier och nummer** – varje serie i filen, och om verifikationerna **behåller sina nummer** eller **får nya nummer från …** (då sparas filens nummer). En serie som inte finns här skapas.
 - **Konton som läggs till i kontoplanen** – konton som används i filen men saknas här. Konton som inte används läggs inte till.
 - **Kostnadsställen som läggs till** och **Projekt som läggs till** – från filens dimension 1 och 6.
+- **Budget** – om filen har en budget: hur många rader och konton. Den blir en ny budget, se [Budget](/manual/rapporter/budget). Går budgeten inte att läsa säkert står det **Läses inte in, se Bra att veta**; bokföringen läses in ändå.
 
 Under **Bra att veta** står sådant som inte hindrar inläsningen men som du bör känna till, till exempel att filen saknar kontrollsumma, att ett konto heter något annat här (namnet här behålls) eller att året redan har verifikationer så att samma affär kan bli bokförd två gånger.
 
@@ -83,6 +84,10 @@ Flyttar du hela bokföringen från ett annat program finns en guide steg för st
 
 Filen är en SIE4-fil för hela räkenskapsåret med kontoplanen, ingående och utgående balanser, resultat för året och året före, kostnadsställen och projekt samt alla bokförda verifikationer. Utkast är inte med, eftersom de inte är bokförda. Filen har en kontrollsumma, så att den som läser in den kan se att den är oförändrad. Varje nedladdning skrivs i behandlingshistoriken.
 
+Har året en budget som används i rapporterna finns rutan **Ta med budget** bredvid. Bocka i den och välj **Ladda ner SIE-fil**, så följer budgeten med per konto och månad, och per kostnadsställe och projekt. Rutan är inte ibockad från början.
+
+![Ladda ner SIE-fil med rutan Ta med budget.](/bilder/manual/bokforing/sie-ta-med-budget.webp)
+
 ## Vem får göra vad
 
 Ägare, administratörer och redovisningskonsulter kan läsa in SIE-filer. Samma roller och revisorer kan ladda ner dem.
@@ -90,7 +95,7 @@ Filen är en SIE4-fil för hela räkenskapsåret med kontoplanen, ingående och 
 ## Vanliga frågor
 
 **Mitt gamla program gör bara SIE typ 1, 2 eller 3.**
-De typerna innehåller inte verifikationerna, bara saldon. Leta efter "SIE4" eller "SIE typ 4" i exporten.
+De typerna innehåller inte verifikationerna, bara saldon. Leta efter "SIE4" eller "SIE typ 4" i exporten. En fil av typ 2 eller 3 kan däremot ha en budget, som du läser in under [Budget](/manual/rapporter/budget).
 
 **Rapporten varnar för att året redan har verifikationer.**
 Kontrollera att du inte har bokfört samma affärer här som finns i filen, annars blir de bokförda två gånger.

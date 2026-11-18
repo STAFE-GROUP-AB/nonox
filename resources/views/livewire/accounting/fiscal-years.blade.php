@@ -51,7 +51,15 @@
                                 <p class="text-sm text-gray-600 tabular-nums">{{ $fiscalYear->start_date->toDateString() }} – {{ $fiscalYear->end_date->toDateString() }} · {{ $fiscalYear->status->label() }}</p>
                             </div>
                             <div class="flex flex-wrap items-center gap-4">
-                                @if($canExport)
+                                @if($canExport && isset($budgetYears[$fiscalYear->id]))
+                                    <form method="GET" action="{{ route('accounting.fiscalYears.sie', $fiscalYear) }}" class="inline-flex flex-wrap items-center gap-3" data-sie-export>
+                                        <button type="submit" class="text-sm font-medium text-accent-600 hover:text-accent-700" title="{{ __('Hela bokföringen för året i SIE4-format, som alla svenska ekonomiprogram kan läsa.') }}">{{ __('Ladda ner SIE-fil') }}</button>
+                                        <label class="inline-flex items-center gap-1.5 text-sm text-gray-700" title="{{ __('Lägger till årets budget, den som används i rapporterna, i SIE-filen. Utan bocken innehåller filen bara bokföringen.') }}">
+                                            <input type="checkbox" name="budget" value="1" class="rounded border-stone-300 text-ink focus:ring-accent-500">
+                                            {{ __('Ta med budget') }}
+                                        </label>
+                                    </form>
+                                @elseif($canExport)
                                     <a href="{{ route('accounting.fiscalYears.sie', $fiscalYear) }}" class="text-sm font-medium text-accent-600 hover:text-accent-700" title="{{ __('Hela bokföringen för året i SIE4-format, som alla svenska ekonomiprogram kan läsa.') }}">{{ __('Ladda ner SIE-fil') }}</a>
                                 @endif
                                 @if($canArchive)

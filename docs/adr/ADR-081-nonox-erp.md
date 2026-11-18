@@ -1358,3 +1358,71 @@ Built on branch `feat/erp-e2-attestmotor`. Choices the gap 8 text left open:
 - **UI.** `/attestfloden` (`approvals.policies`, under Inköp): policies,
   dimension owners, substitutes. The approval card on the supplier invoice
   and the payment file list show the steps and decisions.
+
+## Addendum: E4 as built (SIE `#PBUDGET`)
+
+Built on branch `feat/erp-e4-sie-budget`. Source: *SIE filformat, utgåva 4C,
+2025-08-06* (SIE-gruppen), "#PBUDGET Periodbudgetpost" (p. 29), §4.5 (type 2
+carries period budgets), §5.17 (no budget, no records), §8.9–8.13 (objects and
+sub-dimensions) and the record summary (§6), read on 2026-11-18. It amends
+ADR-008 ("`#PSALDO`/`#PBUDGET` … not written") and ADR-009 ("Not written or
+read: … `#PBUDGET`") for `#PBUDGET` only; `#PSALDO`, `#OIB` and `#OUB` stay
+unread and unwritten.
+
+- **Syntax as read.** `#PBUDGET årsnr period konto {dimensionsnr objektnr}
+  saldo kvantitet`: the period's change, credit negative; `årsnr` 0 is the
+  year of `#RAR 0`; period `ÅÅÅÅMM`; the object specification is one
+  dimension and one object (balance records), not an object list as on
+  `#TRANS`; a type 2 file has none, and a type 2 reader ignores records that
+  have one; a type 3 file gives the account as a whole and each object
+  separately; the quantity is optional. A record without the `{}` field is
+  read as if it had an empty one.
+- **Mapping (`App\Domain\Budget\Sie\SieBudget`).** A file carries, per account
+  and month, the whole amount T, the amount per cost centre and per project.
+  Import writes one line per cost centre, one per project and one without
+  objects for T minus their sum; when the file has no `{}` record the objects
+  of one dimension are taken as the whole. Export sums the lines the same
+  three ways and writes `{}` whenever an object is written, also at zero. So
+  all three figures survive, and export → import → export is byte for byte
+  equal apart from the identification lines (golden file
+  `tests/Fixtures/sie/budget-export-2026.se`, round trip in
+  `tests/Feature/Budget/SieBudgetTest.php`). A line with both a cost centre
+  and a project is exported as its share of each, and comes back as separate
+  lines with the same totals: SIE cannot carry the combination.
+- **Left out, and said in the report:** other years (`årsnr` ≠ 0; each year
+  comes with its own file), accounts outside 3000–8998 (balance and
+  liquidity budgets are out of scope), dimensions other than 1 and 6, records
+  with more than one object, quantities.
+- **Refused** (the budget, never the bookkeeping): a period outside `#RAR 0`,
+  an unreadable period, account or amount, the same account, month and object
+  twice, an amount above `BudgetMonths::MAX_CELL_ORE`.
+- **In the full SIE import** (decision 5, "import always when present") the
+  budget is planned by `SieImportAnalyser` and written by `ImportSie` in its
+  transaction, after the reconciliation, as a draft version "Budget från
+  SIE-fil" (active only when the year has no active budget). Its accounts
+  and objects are created like the vouchers'. A refused budget is a warning:
+  the bookkeeping is read in without it. A user without `budgets:manage` gets
+  the bookkeeping only (no such role exists today; defensive).
+- **Budget only.** `/budget` has "Läs in budget från SIE-fil" (Livewire
+  `BudgetSieImport`, types 2, 3 and 4, up to 12 MB through Livewire's
+  temporary upload): "Granska filen" runs `SieBudgetAnalyser` and shows the
+  report, "Läs in budgeten" runs `ImportSieBudget`, which checks the file
+  again. The fiscal year must exist with the file's dates; accounts, cost
+  centres and projects must exist in the company (a budget import never
+  changes the chart or the registers). No table is added: the report lives in
+  the component. Permission `budgets:manage`; the component is not in
+  `DimensionScopeRegistry`, so a limited member is refused.
+- **Export.** `ExportSie(..., withBudget: true)` writes the active `BUDGET`
+  version's lines (through `BudgetScope`) after `#RES` and before `#VER`. The
+  page Räkenskapsår shows an unticked "Ta med budget" only for a year with an
+  active budget and a member with `export:sie` and `budgets:view`; the
+  controller checks `budgets:view` before streaming. The archive package, the
+  API and SFTP export are unchanged (no budget).
+- **Audit.** `budget.created` with `start: sie`, `source` (`sie_import` with
+  the import id, or `sie_file` with the file's SHA-256) and the line count;
+  `sie.exported` gets `budget_version_id` and `budget_records` when the box is
+  ticked; `sie.imported` gets `budget_version_id`. No names.
+- **Open legal items.** `TODO(legal-verify)`: that a combined cost centre and
+  project line may be exported as two single-object records (the format text
+  describes one object per balance record); whether a budget read in from a
+  file needs anything beyond E3's handling as non-räkenskapsinformation.

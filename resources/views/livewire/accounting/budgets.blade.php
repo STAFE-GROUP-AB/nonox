@@ -113,4 +113,8 @@
             </div>
         @endif
     </x-ui.card>
+
+    @if($canManage)
+        <livewire:accounting.budget-sie-import />
+    @endif
 </div>

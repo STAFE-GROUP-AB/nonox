@@ -56,6 +56,8 @@ programs' files. Section numbers below refer to it.
 - `#FNR` is left out. Our internal id means nothing to another program.
 - `#PSALDO`/`#PBUDGET` are optional in 4E and not written. Dimensions
   (`#DIM`, `#OBJEKT`, object lists) are written as described in ADR-009.
+  Amended by ADR-081 E4 (2026-11-18): `#PBUDGET` is read on import and
+  written with the opt-in "Ta med budget"; `#PSALDO` is still not written.
 - `#VER` regdatum is the posting date and sign is the name of the person who
   posted.
 - Permission `export:sie` (owner, admin, accountant, auditor). Every export is

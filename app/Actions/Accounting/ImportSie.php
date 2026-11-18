@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Accounting;
 
+use App\Actions\Budget\ImportSieBudget;
 use App\Domain\Accounting\Dimension;
 use App\Domain\Accounting\LedgerBalances;
 use App\Domain\Accounting\LedgerHash;
@@ -96,7 +97,7 @@ class ImportSie
             CreateNextFiscalYear::lock($company->id);
             Company::query()->whereKey($company->id)->lockForUpdate()->firstOrFail();
 
-            $plan = $this->analyser->analyse($company, $path, $import->sha256, $import->id);
+            $plan = $this->analyser->analyse($company, $path, $import->sha256, $import->id, $user->hasTeamPermission($company, 'budgets:manage'));
 
             if ($plan->blockers !== []) {
                 throw new SieImportRefused($plan->blockers);
@@ -116,6 +117,8 @@ class ImportSie
                 throw new SieImportRefused([__('Avstämningen mot filen stämmer inte, så ingenting har lästs in.')], $result);
             }
 
+            $result += $this->budget($import, $plan, $company, $user, $fiscalYear, $accounts);
+
             $import->forceFill([
                 'status' => SieImportStatus::Completed,
                 'fiscal_year_id' => $fiscalYear->id,
@@ -132,8 +135,40 @@ class ImportSie
                 'vouchers' => $imported,
                 'accounts_created' => array_keys($plan->accountsToCreate),
                 'opening_balances' => $plan->writeOpeningBalances ? count($plan->openingBalances) : 0,
+                'budget_version_id' => $result['budget_version_id'],
             ], $company, $user);
         }));
+    }
+
+    /**
+     * The file's budget (#PBUDGET 0) becomes a new budget version, when the
+     * file has one and the user may make budgets (ADR-081 E4). A budget is a
+     * plan next to the books: nothing here is posted or reconciled.
+     *
+     * @param  Collection<int, Account>  $accounts
+     * @return array{budget_version_id: ?int, budget_lines: int, budget_refused: bool}
+     */
+    private function budget(SieImport $import, SieImportPlan $plan, Company $company, User $user, FiscalYear $fiscalYear, Collection $accounts): array
+    {
+        // The analyser has already left the budget out (and its own accounts and objects) without budgets:manage.
+        if ($plan->budgetLines === [] || ! $user->hasTeamPermission($company, 'budgets:manage')) {
+            return ['budget_version_id' => null, 'budget_lines' => 0, 'budget_refused' => $plan->budgetRefused];
+        }
+
+        $lines = array_map(fn (array $line): array => [
+            'account_id' => (int) $accounts->get($line['account'])?->id,
+            'cost_center_id' => $line['cost_center'] === null ? null : ($this->objects[Dimension::CostCenter->value][$line['cost_center']] ?? null),
+            'project_id' => $line['project'] === null ? null : ($this->objects[Dimension::Project->value][$line['project']] ?? null),
+            'period' => "{$line['period']}-01",
+            'amount_ore' => $line['amount'],
+        ], $plan->budgetLines);
+
+        $version = ImportSieBudget::createVersion($user, $company, $fiscalYear, $lines, [
+            'source' => 'sie_import',
+            'sie_import_id' => $import->id,
+        ]);
+
+        return ['budget_version_id' => $version->id, 'budget_lines' => count($lines), 'budget_refused' => false];
     }
 
     private function fiscalYear(SieImportPlan $plan, Company $company, User $user): FiscalYear
