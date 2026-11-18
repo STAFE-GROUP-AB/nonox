@@ -169,6 +169,14 @@
       "kommentar": "Vi har inte bestämt oss ännu."
     },
     {
+      "id": "signering-toppklass",
+      "rubrik": "Signering med flera undertecknare, fält och förseglad PDF",
+      "beskrivning": "Vi bygger ut signeringen: flera undertecknare i ordning och kopiemottagare, fält i dokumentet, engångskod till undertecknaren, en förseglad PDF med tidsstämpel, en sida där vem som helst kan kontrollera ett dokument, mallar, påminnelser och signering av valfri PDF.",
+      "status": "Pågår",
+      "omrade": "CRM",
+      "uppdaterad": "2026-11-18"
+    },
+    {
       "id": "erp",
       "rubrik": "Koncern, budget, inköp och lager på djupet",
       "beskrivning": "Vi bygger det som gör NONOX till ett affärssystem för mindre koncerner och tillverkande företag: koncernredovisning med eliminering, budget och prognos per konto, kostnadsställe och projekt, inköp med anmodan och attest, batch- och serienummer och flera lagerställen, materialbehovsplanering, projektredovisning, en rapportbyggare, egna attestflöden, dokumenthantering och behörigheter per enhet.",
