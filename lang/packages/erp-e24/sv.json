@@ -1,0 +1,5 @@
+{
+    "{1} ett företag ingår|[2,*] :count företag ingår": "{1} ett företag ingår|[2,*] :count företag ingår",
+    "{1} Ett företag i koncernen ingår inte i siffrorna.|[2,*] :count företag i koncernen ingår inte i siffrorna.": "{1} Ett företag i koncernen ingår inte i siffrorna.|[2,*] :count företag i koncernen ingår inte i siffrorna.",
+    "{1} Ett dotterföretag ingår bara för en del av perioden.|[2,*] :count dotterföretag ingår bara för en del av perioden.": "{1} Ett dotterföretag ingår bara för en del av perioden.|[2,*] :count dotterföretag ingår bara för en del av perioden."
+}

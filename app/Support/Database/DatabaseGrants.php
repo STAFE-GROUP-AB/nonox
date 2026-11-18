@@ -110,6 +110,8 @@ final class DatabaseGrants
         'connect_webhooks' => GrantDecision::ReadWrite,
         'corporate_group_members' => GrantDecision::ReadWrite,
         'corporate_group_roles' => GrantDecision::ReadWrite,
+        // The consolidation run log (ADR-081 E24): append-only, a trigger refuses every change and deletion.
+        'corporate_group_runs' => GrantDecision::AppendOnly,
         'corporate_groups' => GrantDecision::NoDelete,
         'cost_centers' => GrantDecision::ReadWrite,
         'crm_account_person' => GrantDecision::ReadWrite,
@@ -175,6 +177,8 @@ final class DatabaseGrants
         'fixed_assets' => GrantDecision::ReadWrite,
         'fortnox_connections' => GrantDecision::ReadWrite,
         'fortnox_imported_files' => GrantDecision::ReadWrite,
+        // A member company's account mapped to another group account (ADR-081 E24): removed when the deviation ends.
+        'group_account_maps' => GrantDecision::ReadWrite,
         'imported_payslips' => GrantDecision::ReadWrite,
         'imported_vouchers' => GrantDecision::AppendOnly,
         'inbox_allowed_senders' => GrantDecision::ReadWrite,

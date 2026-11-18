@@ -492,6 +492,87 @@ Branch `spec/s2/group-model`. One migration set and one action set, no screen.
 - Tests: `tests/Feature/Group/IntercompanyTest.php` (behaviour, immutability with `ledger:verify`,
   query count) and `tests/Tenancy/IntercompanyTenancyTest.php`.
 
+**S2-1.4 as built (2026-11-18, ADR-081 E24).** Details the addendum left open, decided in the build:
+
+- Migration `2027_02_24_100000_create_group_consolidation_tables`. `group_account_maps` is
+  company-scoped (`company_id` = the member whose account is mapped, `BelongsToCompany`,
+  `GrantDecision::ReadWrite`), unique per company, group and account, with CHECKs for 1000–8999,
+  the same account class (first digit) and no identity rows. `corporate_group_runs` spans
+  companies like `corporate_groups` (no `company_id`), columns `period_from`/`period_to` (`from`
+  and `to` are SQL keywords), `run_by`, `inputs`/`inputs_hash`, `output`/`output_hash`,
+  `preliminary`, `created_at`; append-only by its own trigger, `GrantDecision::AppendOnly`, and
+  refused in the model.
+- The engine is `App\Domain\Group\Consolidation`; the action `App\Actions\Group\ConsolidateGroup`
+  stores the run and logs `corporate_group.consolidated` in the parent only (counts). Each company is
+  read inside `CurrentCompany::run()` with `LedgerQuery` (opening balances and movements), never with
+  a scope bypass, in a fixed number of queries per company. `CompanyScope::bypass` is used twice, each
+  with a comment, both on `company_holdings`: the acquisition and disposal dates of the holdings that
+  ground the memberships (the date cut), and whether the votes in one organisation number exceed
+  100 % on the last day (the S2-1.1 acceptance criterion; the run is refused until corrected). The
+  page reads the group's map rows across its members only for FULL access.
+- Accounts 1000–2999 are the balance sheet at `to`, 3000–8999 the income statement; 9xxx is never
+  consolidated. A subsidiary's income runs from `acquired_on` to the day before `disposed_on`; its
+  balance sheet is included when it is a member on `to`; a member with no day in the period, or whose
+  fiscal year does not cover both dates, is left out with a reason in the inputs. The parent without
+  such a year refuses the run. A member with another `base_currency` than the parent refuses it too.
+- The balance sheet keeps each account on its BAS side, as the company's own Balansrapport (a debit
+  2512 lowers the liabilities instead of becoming a tax receivable); the F-S2-a test states the
+  difference to the fixture's presentation. The result not yet booked to equity closes the two sides,
+  and `result_outside_period` (before `from`, before an acquisition, after a disposal) is shown.
+- Inputs per company: fiscal year id and status, `locked_until`, posted vouchers, the last posted
+  voucher's `hash`, hashes of the opening balances, the chart (id, number, name), the year's tag set
+  (computed in PostgreSQL, so no tag is loaded) and the map; the days read and whether the balance
+  sheet was taken; plus engine and label version, a hash of the BAS standard names (they name accounts the parent
+  lacks, so a new BAS file is a changed input) and an empty `group_entries` list for S2-1.5. Hashes
+  are SHA-256 over JSON with sorted keys, so a run read back from `jsonb` verifies
+  (`CorporateGroupRun::intact()`). The output holds consolidated figures and counts only, never a
+  company id. `ConsolidateGroup::check()` recomputes and compares.
+- The run reads in one `REPEATABLE READ, READ ONLY` transaction when none is open.
+- Access: FULL or CONSOLIDATED may run and read; CONSOLIDATED gets member names and counts, never
+  per-company days, reasons or figures (`ConsolidationView`); a member limited to dimensions in the
+  parent (ADR-081 gap 10) is treated as NONE. The account map is changed only by whoever
+  `administers()` the group, written and logged in the member company.
+- **Minimum for CONSOLIDATED (cold review P1-1 and its re-check).** A run is shown to CONSOLIDATED
+  access only when at least two companies contribute, none is left out (not a member in the period, or
+  no fiscal year covering its days) and none is cut: every member counts from `from` to `to` with its
+  balance sheet (`ConsolidateGroup::shownToConsolidated()`, read from the run's inputs). Otherwise a run
+  is one company's figures, or two runs can be subtracted into one company's: for example with A and B
+  disposed of on `to`, the run to `to` holds only P's balance sheet, and its difference to the run to
+  the day before is A's and B's account by account; the same with an acquisition and `from` after it.
+  For CONSOLIDATED access `ConsolidateGroup` refuses to compute such a run ("Den här körningen kan inte
+  visas för den som bara ser koncernens summor, eftersom den har färre än två företag eller något
+  företag har lämnats utanför eller bara ingår en del av perioden."), `check()` refuses it, and the page
+  withholds a stored one (FULL may have made it). FULL access keeps everything.
+- **Remaining inference risk, accepted with the role.** What remains is the difference between
+  periods in which every member is fully included: a CONSOLIDATED viewer can compare such runs, and in
+  particular a run before a disposal with one after it, whose difference is the disposed company's
+  balance sheet, as with any group report before and after a disposal. 2.2 accepted inference for a
+  viewer who also sees the parent's own reports (who can subtract the parent from a two-company group);
+  this addendum extends that acceptance to period and disposal differences (Lead decision 2026-11-18).
+  No exclusion of disposed companies is added. The rule above removes the cases where a run is one company's figures or where a
+  company drops in or out between two runs; it does not make sums over every member private. The grant
+  text should say: "Den som läser sammanställningen kan jämföra perioder, till exempel före och
+  efter att ett företag har sålts. En körning visas bara när minst två företag ingår, och alla företag
+  ingår under hela perioden med sin balansräkning." (to be
+  added to the role grant on Koncernstruktur, E22, at merge).
+- **`check()` reveals posting activity.** For a CONSOLIDATED viewer, "Kontrollera mot bokföringen" says
+  whether any member has posted, changed tags or the map, or locked a period since the run, without
+  saying which. Accepted: it is a yes/no over the whole group.
+- **Fiscal years.** A company's year must cover its own days in the period: the parent's from `from` to
+  `to`, a subsidiary's from `max(from, acquired_on)` to `to` (or to the day before the disposal when its
+  balance sheet is not taken). A subsidiary in its first, shorter year is read from that year.
+- **Account names in the output** come from the parent's chart, else the BAS 2026 standard name NONOX
+  ships (`database/data/bas/2026`), else the number only, never a subsidiary's free text.
+- **Netting across legal entities.** Amounts are summed per account over companies that are separate
+  taxpayers, so a debit 2512 in one company lowers another's tax liability and an overdraft lowers
+  another's bank. The page and the manual say so; stage 1 does not reclassify.
+- The run does not refresh intercompany tags (2.3 said it would): that write needs
+  `vouchers:create` in each company and is not the run's to make. The tag set is hashed instead, so
+  a later refresh shows as changed inputs.
+- Screen: Mina företag → Konsolidering (`/koncern/konsolidering`, route `group.consolidation`,
+  `App\Livewire\Group\ConsolidationPage`). Tests: `tests/Feature/Group/ConsolidationTest.php`,
+  `ConsolidationFixtureTest.php` (F-S2-a gross sums), `tests/Tenancy/ConsolidationTenancyTest.php`.
+
 #### 3.2 Remaining stage 1 packages
 
 - **S2-1.2 Koncern → Översikt** (screen): structure tree from holdings, capital/voting,

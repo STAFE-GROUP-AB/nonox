@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-konsolidering-och-korlogg",
+      "datum": "2026-11-18T10:30:00+01:00",
+      "rubrik": "Konsolidering av koncerner med körlogg",
+      "beskrivning": "Under Mina företag → Konsolidering räknar du fram en koncerns interna resultat- och balansräkning för en period, där ett dotterföretag räknas från förvärvet till avyttringen och konton kan mappas till andra koncernkonton. Varje körning sparas i en körlogg med kontrollsummor för indata och resultat, och Kontrollera mot bokföringen visar om siffrorna fortfarande stämmer. Inga elimineringar görs ännu, och ingenting skrivs i företagens bokföring.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-18-signering-fler-undertecknare",
       "datum": "2026-11-18T02:50:00+01:00",
       "rubrik": "Fler undertecknare på offerter och avtal",

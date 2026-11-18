@@ -29,6 +29,7 @@ use App\Models\CompanyGuideStep;
 use App\Models\CompanyHolding;
 use App\Models\CompanyModule;
 use App\Models\ConnectAddon;
+use App\Models\CorporateGroup;
 use App\Models\CostCenter;
 use App\Models\Customer;
 use App\Models\DeadlineCalendarFeed;
@@ -43,6 +44,7 @@ use App\Models\FixedAsset;
 use App\Models\FixedAssetAddition;
 use App\Models\FixedAssetDepreciation;
 use App\Models\FixedAssetProposal;
+use App\Models\GroupAccountMap;
 use App\Models\ImportedVoucher;
 use App\Models\IncomeTaxPartner;
 use App\Models\IncomeTaxReturn;
@@ -384,6 +386,7 @@ const COMPANY_SCOPED_MODELS = [
     CompanyAccountingPolicy::class => ['key' => 'leasing', 'value' => 'classify', 'applies_from' => '2026-01-01'],
     IntercompanyCounterparty::class => 'intercompanyCounterpartyAttributes',
     IntercompanyRowTag::class => 'intercompanyRowTagAttributes',
+    GroupAccountMap::class => 'groupAccountMapAttributes',
     CompanyHolding::class => ['held_org_number' => '556036-0793', 'held_name' => 'Hemligt Dotterbolag AB', 'capital_bp' => 10000, 'voting_bp' => 10000, 'control_basis' => 'VOTES', 'acquired_on' => '2024-01-01'],
     PriorYearSizeFigure::class => ['start_date' => '2024-01-01', 'end_date' => '2024-12-31', 'average_employees_fte' => '3.40', 'balance_sheet_total_ore' => 150_000_000, 'net_turnover_ore' => 300_000_000],
     ClosingCheck::class => 'closingCheckAttributes',
@@ -1005,6 +1008,14 @@ function voucherRowAttributes(): array
         'debit_ore' => 100,
         'credit_ore' => 0,
     ];
+}
+
+/** A deviation in the account map of the current company's own group (ADR-081 E24). */
+function groupAccountMapAttributes(): array
+{
+    $group = CorporateGroup::query()->firstOrCreate(['parent_company_id' => CurrentCompany::id()], ['name' => 'Hemlig koncern']);
+
+    return ['corporate_group_id' => $group->id, 'account_number' => 3011, 'group_account_number' => 3010];
 }
 
 /** A customer of the current company marked as a group company (ADR-060 addendum 2.3). */

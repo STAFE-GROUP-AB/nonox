@@ -71,6 +71,7 @@ rapporter/kontoanalys-och-huvudbok: { foretag: butik, rutt: accounting.reports, 
 rapporter/verifikationslista: { foretag: butik, rutt: accounting.reports, fraga: { rapport: verifikationer } }
 rapporter/budget: { foretag: konsult, rutt: accounting.budgets.show, modell: { tabell: budget_versions, dar: { is_active: true } } }
 rapporter/budget-mot-utfall: { foretag: konsult, rutt: accounting.budgets.report, fraga: { manad: '@first day of last month' } }
+rapporter/konsolidering: { foretag: konsult, rutt: group.consolidation, text: Konsultbolaget med dotterföretag }
 
 bokslut/checklistan: { foretag: konsult, rutt: accounting.closing }
 bokslut/periodiseringar: { foretag: konsult, rutt: accounting.accruals }

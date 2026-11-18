@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.141
+- Version: 0.142
 - Version: 0.135
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
@@ -961,6 +961,91 @@ används av koncernens interna sammanställning (ADR-060 tillägg 2.4).
   `intercompany_tags.removed`, `intercompany_tag.changed`,
   `intercompany_tag.removed`).
 - Ingenting skrivs i ett annat företags bokföring.
+
+### 4.10b Koncern: konsolidering och körlogg (ADR-060 tillägg 2.4, ADR-081 E24)
+
+Konsolideringen räknar fram en koncerns interna resultat- och balansräkning
+för en period (Mina företag → Konsolidering). Den är intern rapportering och
+märks "Intern koncernrapport, inte en koncernredovisning enligt ÅRL". Den
+skriver aldrig något i något företags bokföring: inga verifikationer, rader,
+nummer eller hashkedjor skapas eller ändras, och resultatet finns bara i
+körloggen.
+
+- Vilka företag som läses avgörs av samma regel som avgör vem som ser
+  koncernen (`GroupAccess::includedCompanyIds`): moderföretaget och de
+  bekräftade medlemmarna, utom de vars innehav avyttrades före periodens
+  början. Ett företag som bara har ett innehav men inte är bekräftad medlem
+  läses aldrig.
+- Varje företag läses inom sitt eget företag (`CurrentCompany::run`) med
+  samma läsning av bokförda verifikationer som rapporterna (`LedgerQuery`):
+  ingående balanser och bokförda verifikationer, aldrig utkast. Två
+  uppgifter läses över företagsgränsen, båda ur innehavsregistret och utan
+  att visas: förvärvs- och avyttringsdagen för det innehav som gör ett
+  företag till medlem, och om innehaven i ett och samma företag tillsammans
+  har mer än 100 % av rösterna.
+- Perioden måste ligga inom ett räkenskapsår i moderföretaget, annars nekas
+  körningen. Ett dotterföretags räkenskapsår måste omfatta de dagar det räknas
+  med (från förvärvet eller periodens början, till periodens slut eller dagen
+  före avyttringen), så ett första, kortare räkenskapsår går bra; annars tas
+  det inte med och står i körningen med skälet.
+- Ett dotterföretags intäkter och kostnader (konto 3000–8999) räknas från
+  förvärvsdagen till dagen före avyttringen, efter verifikationsdatum. Dess
+  balansräkning (konto 1000–2999) tas med per periodens sista dag om det då
+  är medlem. Konto 9000–9999 tas inte med.
+- Koncernens kontomappning (`group_account_maps`, en rad per avvikelse:
+  företag, konto, koncernkonto) flyttar ett företags konto till ett annat
+  koncernkonto inom samma kontoklass (första siffran). Utan rad hamnar
+  kontot på sitt eget nummer. Raden är medlemsföretagets egna data och
+  ändras bara av den som är ägare eller administratör i alla företag i
+  koncernen.
+- Beloppen summeras per koncernkonto i hela ören. Inga elimineringar görs
+  ännu (ADR-060 S2-1.5, paket E25); körningen anger att listan över godkända
+  elimineringar är tom. Balansräkningens rad "Årets resultat som ännu inte är
+  bokfört mot eget kapital" gör att sidorna går ihop, och skillnaden mot
+  periodens resultat (före periodens början, före ett förvärv, efter en
+  avyttring) visas.
+- Körningen nekas när ett företag har en annan redovisningsvaluta än
+  moderföretaget, och när innehaven i ett företag tillsammans har mer än
+  100 % av rösterna, tills innehaven har rättats.
+- Körloggen (`corporate_group_runs`): koncern, period, vem som körde och när,
+  indata, kontrollsumma (SHA-256) av indata, resultat, kontrollsumma av
+  resultatet och om körningen är preliminär. Indata är per företag
+  räkenskapsårets id och status, låst till och med, antal bokförda
+  verifikationer och kontrollsumman för den senast bokförda verifikationen i
+  hashkedjan, en kontrollsumma av de ingående balanserna, av kontoplanen, av
+  koncernmarkeringarna (avsnitt 4.10a) och av kontomappningen, dagarna som
+  räknades och om balansen togs med; därtill motorns och etikettens version
+  och en kontrollsumma av BAS-namnen som används för konton som saknas i
+  moderföretagets kontoplan.
+  Kontrollsummorna räknas på JSON med sorterade nycklar. Samma indata ger
+  alltid samma resultat; en senare bokförd verifikation, en ändrad markering
+  eller en ändrad mappning ger nya indata. Kontrollera mot bokföringen räknar
+  om indata och, om de är oförändrade, resultatet och jämför.
+- En körning är preliminär när något företag varken har stängt räkenskapsåret
+  eller låst perioden till och med periodens sista dag.
+- Körloggen kan inte ändras eller tas bort: modellen nekar, en
+  PostgreSQL-trigger nekar `UPDATE` och `DELETE`, och appens databasroll har
+  bara `SELECT` och `INSERT`. Läsningen sker i en `REPEATABLE READ`-ögonblicksbild
+  så att en verifikation som bokförs under körningen inte gör indata och
+  resultat olika.
+- Behörighet: den som får se rapporter i alla koncernens företag ser
+  körningen med vad den läste per företag. Den som har rollen att läsa
+  koncernens sammanställning och är medlem i moderföretaget ser bara de
+  konsoliderade siffrorna, företagens namn och antal, aldrig ett enskilt
+  företags siffror, dagar eller skäl, och bara körningar där minst två
+  företag ingår och alla ingår under hela perioden med sin balansräkning
+  (inget företag utelämnat, förvärvat eller avyttrat under perioden); andra
+  körningar räknas inte fram och visas inte för hen. Det som återstår är
+  skillnaden mellan perioder där alla företag ingår helt, till exempel
+  mellan en period före och en efter att ett dotterföretag har sålts, som
+  ger det sålda företagets balansräkning. Koncernkontonas namn tas från
+  moderföretagets kontoplan eller BAS, aldrig från ett dotterföretags. Alla andra får 404. En medlem som är
+  begränsad till kostnadsställen eller projekt i moderföretaget ser ingenting
+  av koncernen.
+- Behandlingshistoriken: `corporate_group.consolidated` i moderföretaget (id,
+  antal företag, antal utelämnade, preliminär) och `group_account_map.saved`
+  och `.removed` i det företag vars konto mappas (koncernens id och
+  kontonummer).
 
 ### 4.11 Inläsning av SIE4-filer
 
@@ -6244,3 +6329,4 @@ påverkar bokföringen och fakturan:
 | 0.139 | 2026-11-18 | Dokumentarkivet (avsnitt 4.5 och 7a, ADR-081 lucka 9, paket E19): företagets egna dokument med versioner som inte kan ändras, krypterade filer med SHA-256, lagringsklasserna räkenskapsinformation (sju år enligt BFL 7 kap. 2 §), avtal (också som räkenskapsinformation), personal och övrigt, ett `retain_until` som aldrig går under regelns golv (triggern räknar golvet för räkenskapsinformation ur räkenskapsåret) och en bevarandespärr med skäl; radering vägras av policyn, modellen och en PostgreSQL-trigger. Räkenskapsinformation blir underlag till en verifikation genom `voucher_attachments` med samma fil, utan kopia. Arkivpaketet får `dokument/` med förteckning och kontrollsummor. Ingen verifikation skapas eller ändras. |
 | 0.140 | 2026-11-18 | Koncernmarkeringar (avsnitt 4.10a, ADR-060 tillägg 2.3, ADR-081 paket E23): kunder och leverantörer kan markeras som koncernföretag med det andra företagets organisationsnummer, och bokförda rader får en markering med koncernföretag, typ och källa i de nya tabellerna `intercompany_counterparties` och `intercompany_row_tags`, bredvid `voucher_rows`. Raderna på fakturor, betalningar och leverantörsfakturor till och från markerade kunder och leverantörer markeras efter kontointervall när en person bekräftar, också i rättelser av dem (vända rader får samma typ), och rader på ett konto under en period i bulk. En trigger nekar markeringar på utkast och på ett annat företags rader. Ingen verifikation, rad, numrering eller hashkedja ändras, och ingenting skrivs i ett annat företags bokföring. |
 | 0.141 | 2026-11-18 | Signering med flera undertecknare (avsnitt 5, ADR-046 tillägg 2026-11-18, paket S1): ett kuvert har ett dokument, upp till tio undertecknare i steg (samma steg signerar samtidigt) och upp till tio kopiemottagare. En offert blir order först när alla har signerat; ett avböjande eller ett tillbakadraget kuvert ger ingen order. Varje befintlig signeringsbegäran fick ett eget kuvert med samma status, utan att bevisen ändrades. Ingen bokföringsregel ändras. |
+| 0.142 | 2026-11-18 | Konsolidering och körlogg för koncerner (avsnitt 4.10b, ADR-060 tillägg 2.4, ADR-081 paket E24): koncernens bekräftade medlemmar läses var för sig inom sitt företag, ett dotterföretags intäkter och kostnader räknas från förvärvet till avyttringen och dess balans tas med om det är medlem periodens sista dag, kontona flyttas enligt kontomappningen (`group_account_maps`, inom samma kontoklass) och beloppen summeras. Varje körning sparas i `corporate_group_runs` med indata och resultat och deras SHA-256 (samma indata ger samma resultat); tabellen kan inte ändras eller tas bort. Inga elimineringar ännu. Ingenting skrivs i något företags bokföring och ingen verifikation ändras. |

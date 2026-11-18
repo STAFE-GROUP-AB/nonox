@@ -205,6 +205,8 @@ Route::middleware([
     // The user's own groups of companies, for internal reporting (ADR-060); spans companies like Mina företag.
     Route::view('/koncern', 'group.overview')->name('group.overview');
     Route::get('/koncern/{group}/csv', GroupCsvController::class)->whereNumber('group')->name('group.csv');
+    // Consolidation of a shared group and its run log (ADR-081 E24, ADR-060 S2-1.4); spans companies, so GroupAccess decides what is shown.
+    Route::view('/koncern/konsolidering', 'group.consolidation')->name('group.consolidation');
     // Across every company the user belongs to (ADR-028).
     Route::view('/uppgifter', 'tasks.index')->name('tasks.index');
     Route::redirect('/mina-uppgifter', '/uppgifter');

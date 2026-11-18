@@ -103,6 +103,13 @@ class AppServiceProvider extends ServiceProvider
             $this->loadJsonTranslationsFrom($directory);
         }
 
+        // A provider that booted earlier may already have loaded a locale's JSON strings without the package
+        // files (Swedish, typically); empty the cache so the package files count, or a Swedish plural text in
+        // lang/packages/*/sv.json is missed and trans_choice falls back to the English one (ADR-081 E24).
+        if ($this->app->resolved('translator')) {
+            $this->app->make('translator')->setLoaded([]);
+        }
+
         // A bearer token counts only on the API (/api/*). Every page, modules'
         // included, needs a signed-in session, so a token can never stand in
         // for one or outlive its 12-hour limit (security review 2026-11-01).
