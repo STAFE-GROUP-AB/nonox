@@ -87,7 +87,7 @@ final class DimensionScopeRegistry
 
     /** Areas a limited member never reaches, whatever new pages they get. */
     public const array REFUSED_PATTERNS = [
-        'accounting.*', 'agreements.*', 'banking.*', 'boardroom.*', 'companies.*', 'connect.*', 'crm.*',
+        'accounting.*', 'agreements.*', 'approvals.*', 'budgets.*', 'documents.*', 'projects.*', 'banking.*', 'boardroom.*', 'companies.*', 'connect.*', 'crm.*',
         'dashboard.*', 'fortnox.*', 'group.*', 'guide.*', 'import.*', 'inbox.*', 'inventory.*', 'invoicing.*',
         'kitchen.*', 'manufacturing.*', 'mileage.*', 'notifications.*', 'passport.*', 'payables.*', 'payroll.*',
         'planning.*', 'portal.*', 'pos.*', 'privacy.*', 'saas.*', 'search', 'search.*', 'share-register.*',
