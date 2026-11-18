@@ -19,6 +19,8 @@ Du hittar rapporterna under **Bokföring → Rapporter**. Längst upp väljer du
 - [Saldobalansen](/manual/rapporter/saldobalans) – alla konton med ingående saldo, debet, kredit och utgående saldo. Rapporten som öppnas först.
 - [Kontoanalys och huvudbok](/manual/rapporter/kontoanalys-och-huvudbok) – varje rad på varje konto, eller på ett enda konto, med löpande saldo.
 - [Verifikationslistan](/manual/rapporter/verifikationslista) – alla verifikationer under perioden, rad för rad.
+- [Budget](/manual/rapporter/budget) – en plan per konto och månad, med kostnadsställe och projekt om du vill.
+- [Budget mot utfall](/manual/rapporter/budget-mot-utfall) – resultatet för månaden och hittills i år jämfört med budgeten.
 
 ## Att arbeta med rapporterna
 

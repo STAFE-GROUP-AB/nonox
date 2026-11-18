@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Accounting\AnnualReportController;
 use App\Http\Controllers\Accounting\ArchivePackageController;
+use App\Http\Controllers\Accounting\BudgetController;
 use App\Http\Controllers\Accounting\IncomeTaxSruController;
 use App\Http\Controllers\Accounting\K10Controller;
 use App\Http\Controllers\Accounting\ReportCsvController;
@@ -293,6 +294,11 @@ Route::middleware([
         Route::get('/anslutningar/skatteverket', [SkatteverketAuthController::class, 'start'])->middleware('throttle:skatteverket-sign-in')->name('skatteverket.signIn');
         Route::get('/anslutningar/skatteverket/klar', [SkatteverketAuthController::class, 'callback'])->middleware('throttle:skatteverket-sign-in')->name('skatteverket.callback');
         Route::get('/rapporter/csv', ReportCsvController::class)->name('accounting.reports.csv');
+        // Budgets (ADR-081 gap 2, E3).
+        Route::view('/budget', 'accounting.budgets')->name('accounting.budgets');
+        Route::view('/budget/utfall', 'accounting.budget-report')->name('accounting.budgets.report');
+        Route::get('/budget/{budgetVersion}', [BudgetController::class, 'show'])->whereNumber('budgetVersion')->name('accounting.budgets.show');
+        Route::get('/budget/{budgetVersion}/csv', [BudgetController::class, 'csv'])->whereNumber('budgetVersion')->name('accounting.budgets.csv');
         Route::view('/kostnadsstallen', 'accounting.dimensions', ['dimension' => 'kostnadsstallen'])->name('accounting.costCenters');
         Route::view('/projekt', 'accounting.dimensions', ['dimension' => 'projekt'])->name('accounting.projects');
         Route::view('/anlaggningar', 'accounting.fixed-assets')->name('accounting.fixedAssets');
