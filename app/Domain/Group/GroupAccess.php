@@ -179,14 +179,18 @@ final class GroupAccess
         return in_array($this->memberships->role($companyId), self::ADMIN_ROLES, true);
     }
 
-    /** @return Collection<int, CorporateGroup> the shared groups the user sees at all, by name */
-    /** Cheap check before corporateGroups(): whether any group mentions the user's companies or the user at all. */
+    /** Cheap check before corporateGroups(), in one query: whether any group mentions the user's companies or the user at all. */
     public function touchesAnyCorporateGroup(): bool
     {
-        return CorporateGroupMember::query()->whereIn('company_id', $this->memberships->ids())->exists()
-            || CorporateGroupRole::query()->where('user_id', $this->user->id)->exists();
+        return CorporateGroupMember::query()->whereIn('company_id', $this->memberships->ids())
+            ->toBase()
+            ->union(CorporateGroupRole::query()->where('user_id', $this->user->id)->select('id')->toBase())
+            ->select('id')
+            ->limit(1)
+            ->exists();
     }
 
+    /** @return Collection<int, CorporateGroup> the shared groups the user sees at all, by name */
     public function corporateGroups(): Collection
     {
         $companyIds = $this->memberships->ids();

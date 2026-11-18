@@ -5,7 +5,6 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
 - Version: 0.141
-- Version: 0.135
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,

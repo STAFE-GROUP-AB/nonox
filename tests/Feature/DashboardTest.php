@@ -86,9 +86,10 @@ it('uses a fixed number of queries', function () {
     // component for the role fingerprint (LivewireCompanyGuard), the getting started steps and one for the overview's own fingerprint.
     // Cold also includes one lookup of reported VAT periods for Nästa datum (DeadlineCompletion), whatever the history,
     // and Momsbufferten's fiscal-year lookup (it reads the balances only when a year has begun), and one lookup of the
-    // waiting-list entry that let the user in (PersonalChecklist, ADR-038 addendum).
-    expect($cold)->toBeLessThan(49)
-        ->and($warm)->toBeLessThan(17);
+    // waiting-list entry that let the user in (PersonalChecklist, ADR-038 addendum), and the menu's one check whether any shared
+    // group mentions the user's companies (ADR-081 E22).
+    expect($cold)->toBeLessThan(51)
+        ->and($warm)->toBeLessThan(18);
 });
 
 it('hides the getting started panel per user and company, and shows it again', function () {
