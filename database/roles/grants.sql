@@ -250,6 +250,8 @@ BEGIN
         ('pos_stock_pushes', 'SELECT, INSERT, UPDATE, DELETE'),
         ('pos_webhook_messages', 'SELECT, INSERT, UPDATE, DELETE'),
         ('prior_year_size_figures', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('project_billing_milestones', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('project_wip_snapshots', 'SELECT, INSERT'),
         ('projects', 'SELECT, INSERT, UPDATE, DELETE'),
         ('production_customer_date_changes', 'SELECT, INSERT, UPDATE, DELETE'),
         ('production_deviation_impacts', 'SELECT, INSERT, UPDATE, DELETE'),

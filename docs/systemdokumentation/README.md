@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.149
+- Version: 0.150
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -2878,6 +2878,105 @@ inköpsorder (avsnitt 5j); kreditnotor stäms inte av.
   villkoren när det valde K2 efter ändringen får tidsstämpeln direkt och
   frågas inte. Behörighet: att hantera räkenskapsår, som övriga åtgärder i
   bokslutet. TODO(legal-verify): att en bekräftelse per företag räcker.
+
+
+### 5a5.1 Pågående arbeten på projekt och faktureringsplan (version 0.150, ADR-081 lucka 6, paket E8)
+
+- **Metod för fastprisuppdrag.** Företaget har en metod för alla
+  fastprisuppdrag vid bokslutet (K2 6.15, K3 23.31): K2 huvudregeln, K2
+  alternativregeln, K3 successiv vinstavräkning, K3 färdigställandemetoden
+  eller inte vald. Den sparas på företaget (`teams.fixed_price_method`) och
+  gäller både arbetsorder (avsnitt 5m) och projekt. Ett företag som valt
+  metod under Arbetsorder → Inställningar före den här versionen behåller
+  den tills metoden sparas igen; den sparas sedan på företaget från båda
+  ställena. Metoden ändras bara av den som hanterar räkenskapsår, även från
+  Arbetsorder → Inställningar; bytet skrivs i behandlingshistoriken
+  (`company.fixed_price_method_changed`, bara metoderna). Byts metoden efter
+  ett stängt räkenskapsår varnar NONOX (K2 6.15), utan att stoppa.
+- **Pågående projekt (Bokslut → Pågående projekt).** För en balansdag räknas,
+  per projekt med prisform fast pris eller löpande räkning som inte har en
+  arbetsorder som räknas under Arbetsorder → Pågående arbeten samma dag
+  (skapad senast den dagen, inte makulerad och inte avslutad före den), så
+  att inget räknas två gånger eller faller bort; interna projekt och projekt
+  utan prisform tas inte med), kostnaderna som är bokförda på projektet till
+  och med balansdagen (bokförda rader på konto 4000–7999, debet minus
+  kredit, samma regel som för arbetsorder) och det fakturerade (nettot av
+  utfärdade kundfakturarader med projektet, med fakturadatum till och med
+  balansdagen; kreditfakturor dras av). Ett projekt utan kostnader och
+  fakturor visas inte.
+  - *Fast pris:* kontraktssumman och den beräknade totala kostnaden hämtas
+    ur projektregistret. Färdigställandegraden är kostnaderna genom den
+    beräknade totala kostnaden (0–100 %, avrundat nedåt till en hundradels
+    procent), den upparbetade intäkten är graden gånger kontraktssumman.
+    Huvudregeln (K2) och successiv vinstavräkning (K3) ger skillnaden mot
+    det fakturerade: debet 1620 mot intäktskontot när mer är upparbetat än
+    fakturerat, annars debet intäktskontot mot 2450. Alternativregeln (K2)
+    och färdigställandemetoden (K3) flyttar det fakturerade från
+    intäktskontot till 2450; kostnader som får tas upp som pågående arbete
+    (1470) blir ingen verifikation. Intäktskontot är det konto som har mest
+    fakturerat på projektet, annars 3001. Saknas kontraktssumma, metod eller
+    beräknad total kostnad, eller är regelverket K1, visas bara siffrorna.
+    När den beräknade totala kostnaden är högre än kontraktssumman varnar
+    NONOX för en befarad förlust (K2 6.19) utan att föreslå någon
+    verifikation.
+  - *Löpande räkning utan arbetsorder:* inget värde räknas fram (ägarbeslut
+    16); sidan visar "Kräver arbetsorder för upparbetat värde".
+  - "Skapa verifikationsutkast" kräver behörigheterna att se projekt och
+    att skapa verifikationer, och är inte tillgänglig för en medlem som är
+    begränsad till kostnadsställen eller projekt. Förslaget görs bara av de
+    siffror som visades: sidans fingeravtryck (SHA-256 av balansdagen,
+    metoden och varje projekts siffror och rader) jämförs med ett som räknas
+    om under radlås på projekten, och vid skillnad vägras det. Två **utkast**
+    skapas genom `SaveDraftVoucher` i serie A: justeringen på balansdagen
+    och återföringen dagen efter (nästa räkenskapsår måste finnas eller
+    kunna skapas), med projektet på varje rad. Ingenting bokförs förrän en
+    person med behörighet att bokföra gör det; utkasten kan också tas bort.
+    Finns justeringen eller återföringen från ett tidigare förslag för samma
+    balansdag kvar, som utkast eller bokförd, vägras ett nytt förslag. Görs
+    förslag för två balansdagar i samma år måste båda återföringarna
+    bokföras. Siffrorna per projekt,
+    metoden och utkastens id sparas i `project_wip_snapshots`, som databasen
+    inte låter ändra eller ta bort (utlösare); behandlingshistoriken får
+    `projects.wip_proposed` med datum, metod, antal projekt och återföringens
+    id.
+  - Bokslutets checklista har punkten "Pågående projekt är granskade" när
+    företaget har ett projekt till fast pris som ingen arbetsorder täcker på
+    årets sista dag. Den är en
+    påminnelse och stoppar inte bokslutet.
+- **Faktureringsplan per projekt** (projektets sida): delfaktureringar
+  (`project_billing_milestones`) med beskrivning, datum och antingen ett
+  belopp exklusive moms eller en andel av kontraktssumman (exakt ett av dem,
+  databaskontroll; andelarna i en plan högst 100 %), status Planerad, Klar
+  att fakturera eller Fakturerad. Planen hålls av den som hanterar
+  projektregistret. "Fakturera" (behörighet att skapa fakturor) på en
+  delfakturering som är klar skapar ett **fakturautkast** genom
+  `SaveDraftInvoice` till projektets kund med en rad: beskrivningen,
+  beloppet (andelen gånger kontraktssumman, avrundat till närmaste öre,
+  hälften uppåt), momssats 25 % (kunder och projekt har ingen förvald
+  momssats; personen uppmanas kontrollera den) och projektet på raden. Moms, omvänd
+  betalningsskyldighet och försäljning till utlandet följer kunden som på
+  varje utkast, och personen granskar utkastet innan fakturan skickas; först
+  när fakturan utfärdas bokförs intäkten på projektet (avsnitt 5,
+  dimensioner). Delfaktureringen kopplas till utkastet och kan sedan inte
+  ändras eller tas bort; tas utkastet bort blir den klar att fakturera igen.
+  Ändringar, borttagningar och fakturering görs bara på den version
+  personen såg (en kontrollsumma jämförs under radlås). Arbetsorder på
+  projektet behåller sina egna a conto-planer, som visas bredvid.
+  Behandlingshistoriken får `projects.milestone_created`, `_updated`,
+  `_deleted` och `_invoiced` med id:n, belopp, andel, datum och status, aldrig
+  beskrivningen. "Fakturerat ur planen" räknar bara utfärdade fakturor;
+  delfaktureringar med ett utkast visas som "Utkast". Medlemmar som är begränsade till kostnadsställen eller
+  projekt ser inte planen.
+- TODO(legal-verify): K2 (BFNAR 2016:10) punkt 6.13–6.24 och K3 kapitel 23
+  för pågående arbeten på projekt utan arbetsorder; kontona 1470, 1620 och
+  2450 och vilka förslag som gäller per regelverk (samma frågor som L12 och
+  L13 för arbetsorder); om alla kostnader på 4000–7999 är rätt underlag för
+  färdigställandegraden (nedlagda utgifter); hur pågående arbeten ska
+  hanteras av ett företag med kontantmetoden; och om en faktura för en
+  delfakturering före utfört arbete är en förskottsfaktura som behöver annan
+  text. Momsen på en sådan faktura uppstår när betalningen tas emot
+  (mervärdesskattelagen (2023:200) 7 kap. 7 §, läst på riksdagen.se
+  2026-11-18) och redovisas för den perioden (7 kap. 14 §).
 
 ## 5a6. Årsredovisning (K2)
 
@@ -5770,7 +5869,9 @@ regelbladet `docs/specs/rules/arbetsorder-och-ata.md`. Modulen `work_orders`
   bokslutets checklista är en påminnelse och stoppar inte bokslutet. NONOX
   varnar, utan att föreslå någon verifikation, när den beräknade totala
   kostnaden är högre än priset (befarad förlust, K2 6.19) och när metoden byts
-  efter ett stängt räkenskapsår (K2 6.15). TODO(legal-verify): L12 och L13.
+  efter ett stängt räkenskapsår (K2 6.15). Metoden är företagets och gäller
+  även projekt utan arbetsorder (avsnitt 5a5.1, från version 0.150).
+  TODO(legal-verify): L12 och L13.
 
 ## 5n. Aktiebok och styrelserum (modul)
 
@@ -6673,3 +6774,4 @@ påverkar bokföringen och fakturan:
 | 0.147 | 2026-11-18 | Alla dokument (avsnitt 4.5, ADR-081 lucka 9, paket E20): en gemensam lista över företagets dokument och funktionernas egna filer, med en adapter per källa som tillämpar källans egen behörighet och bara läser, utan kopior, ny lagring eller ändring av någon verifikation. Lönebesked och anställdas dokument kräver dessutom `payroll:view-sensitive`. |
 | 0.148 | 2026-11-18 | Attest av manuella verifikationer och kreditfakturor (avsnitt 4.2 och 5a1e, ADR-081 lucka 8, paket E21): med ett eget flöde förblir en verifikation som en person för in, eller en kundkreditfaktura, ett utkast utan nummer tills just den versionen är attesterad; numret tas vid bokföringen respektive utfärdandet, så serierna förblir obrutna, och `PostVoucher` är oförändrad. Attesten gäller utkastets version (SHA-256 över innehållet); alla som sparat utkastet räknas som förberedare, också för inköpsorder. Utan eget flöde ändras ingenting. Sidan Att godkänna listar väntande attester. |
 | 0.149 | 2026-11-18 | Avstämning mot inköpsorder per rad (avsnitt 5a1f, ADR-081 lucka 3, paket E11): leverantörsfakturans rader fördelas på inköpsorderns rader, och varje rad jämförs med det beställda, det mottagna och det andra fakturor redan tagit betalt för, mot företagets toleranser (antal 0 %, pris 2 % eller 50 kr). Resultatet sparas i `purchase_match_results`, som bara kan ersättas en gång och få en avvikelse godkänd en gång med skäl av den som får attestera; databasen vägrar annan ändring och borttagning. Före varje attest görs jämförelsen om; en avvikelse som inte är godkänd stoppar attesten om företaget har valt det, annars skrivs den i behandlingshistoriken. Ingen verifikation skapas eller ändras. |
+| 0.150 | 2026-11-18 | Pågående arbeten på projekt och faktureringsplan (avsnitt 5a5.1, ADR-081 lucka 6, paket E8): företagets metod för fastprisuppdrag sparas på företaget (`teams.fixed_price_method`) och gäller både arbetsorder och projekt. Bokslut → Pågående projekt räknar för projekt till fast pris utan arbetsorder färdigställandegrad, upparbetad intäkt och skillnad mot det fakturerade, och föreslår två verifikationsutkast (justering och återföring) bara ur de siffror som visades; siffrorna sparas i `project_wip_snapshots`, som inte kan ändras eller tas bort. Projekt på löpande räkning utan arbetsorder får inget värde. Faktureringsplan per projekt (`project_billing_milestones`) där en delfakturering blir ett fakturautkast med projektet på raden. Ingenting bokförs automatiskt och ingen bokförd verifikation ändras. |

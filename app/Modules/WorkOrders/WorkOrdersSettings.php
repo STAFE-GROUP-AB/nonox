@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\WorkOrders;
 
+use App\Domain\Projects\FixedPriceMethods;
 use App\Models\Company;
 use App\Modules\ModuleManager;
 use App\Modules\WorkOrders\Domain\FixedPriceMethod;
@@ -46,8 +47,9 @@ final class WorkOrdersSettings
         return (int) self::for($company)['material_markup_bp'];
     }
 
+    /** The company's method, shared with the projects (ADR-081 E8, FixedPriceMethods). */
     public static function fixedPriceMethod(Company $company): FixedPriceMethod
     {
-        return FixedPriceMethod::tryFrom((string) self::for($company)['fixed_price_method']) ?? FixedPriceMethod::NotSet;
+        return FixedPriceMethods::for($company);
     }
 }

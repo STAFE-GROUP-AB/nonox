@@ -149,6 +149,7 @@ bokforing/kontroll-av-bokforingen: { foretag: konsult, rutt: accounting.vouchers
 
 fakturering/utkast: { foretag: konsult, rutt: invoicing.invoices.edit, modell: { tabell: invoices, dar: { status: DRAFT } } }
 fakturering/kostnadsstalle-och-projekt-pa-fakturor: { foretag: konsult, rutt: invoicing.invoices.edit, modell: { tabell: invoices, dar: { your_reference: 'Systembyte, etapp 2' } }, visa: '[data-row-cards]' }
+fakturering/faktureringsplan-for-projekt: { foretag: konsult, rutt: projects.show, modell: { tabell: projects, dar: { code: 'P-101' } }, visa: '[data-billing-plan]', del: '[data-billing-plan]' }
 fakturering/kreditfaktura: { foretag: konsult, rutt: invoicing.invoices.show, modell: { tabell: invoices, dar: { kind: CREDIT } } }
 fakturering/paminnelser: { foretag: konsult, rutt: invoicing.invoices.index, fraga: { visa: forfallna } }
 fakturering/offerter-och-order: { foretag: konsult, rutt: invoicing.quotes.show, modell: { tabell: sales_documents, dar: { kind: QUOTE, status: OPEN } } }
@@ -354,6 +355,7 @@ fakturering/stripe-i-aterkommande-intakter: { foretag: konsult, rutt: saas.strip
 fakturering/stripe-i-aterkommande-intakter-kunder: { foretag: konsult, rutt: saas.stripe, text: Appstudion, visa: '#granska' }
 fakturering/betalningsplan: { foretag: hantverkare, rutt: workOrders.show, modell: { tabell: work_orders, dar: { title: 'Altan med trappa' } }, visa: 'text=Betalningsplan' }
 bokslut/pagaende-arbeten: { foretag: hantverkare, rutt: workOrders.ongoing }
+bokslut/pagaende-projekt: { foretag: konsult, rutt: accounting.projectWip, del: 'main' }
 
 # Körjournal (MileageExtras): the consultancy's car, and Adam Kvist in the joinery.
 bokforing/korjournal: { foretag: konsult, rutt: mileage.index }

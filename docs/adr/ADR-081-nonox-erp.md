@@ -1943,3 +1943,79 @@ decisions 10 and 11 apply.
 - **Archive package.** Not included yet; `TODO(legal-verify)` whether the
   results and overrides are behandlingshistorik to keep as
   räkenskapsinformation. Nothing is pruned.
+
+## Addendum: E8 as built (project WIP and billing plan)
+
+Built on branch `feat/erp-e8-projekt-pagaende`. Choices the gap 6 text left open:
+
+- **One method for fixed-price jobs.** K2 6.15 asks for one method for all
+  fixed-price jobs, so the method moved from the work order module's settings
+  to the company: nullable `teams.fixed_price_method` (check constraint on the
+  five values). `App\Domain\Projects\FixedPriceMethods::for()` reads it, else
+  the module setting, so nothing changes on deploy; `WorkOrdersSettings::
+  fixedPriceMethod()` delegates to it, and the Arbetsorder settings form also
+  saves the company value (`SetFixedPriceMethod`, `fiscal-years:manage` only,
+  since it is an accounting principle; a work order manager without it gets a
+  refusal when changing the method; audit `company.fixed_price_method_changed`).
+- **Generalised OngoingWork.** The fixed-price rule is extracted to the public
+  `OngoingWork::fixedPrice()` (degree from costs over the estimate, earned
+  revenue, adjustment on 1620/2450 or invoiced to 2450, K1 and "not set" give
+  figures only, loss advice); `projectCosts()` became public. Work orders call
+  it unchanged, except that a negative degree (credits above debits on the
+  cost accounts) is now clamped to 0.
+- **Project WIP** (`App\Domain\Projects\ProjectWip`, five queries): projects
+  with price form `FIXED` or `TIME_AND_MATERIAL`, except those with a work
+  order that the work order step counts on the same date
+  (`OngoingWork::countedOn`: created by the date, not cancelled, not closed
+  by it); those stay with Arbetsorder → Pågående arbeten, so nothing is
+  counted twice or missed. Contract sum and estimated total cost come from the
+  register; invoiced is the net of issued invoice rows with the project up to
+  the date (credits netted); the revenue account is the one most invoiced on
+  the project, else 3001. `TIME_AND_MATERIAL` shows "Kräver arbetsorder för
+  upparbetat värde" (owner decision 16). Lines without costs or invoices are
+  left out.
+- **Page.** Bokslut → Pågående projekt at `/bokslut/pagaende-projekt`
+  (`accounting.projectWip`), reached from the closing checklist item
+  `project_wip` (WARN, shown when a fixed-price project without a work order
+  exists) and the manual; no menu item. `ProjectPolicy::proposeWip`:
+  `projects:view` and `vouchers:create`, never a limited member.
+- **Drafts only, from what was seen.** `ProposeProjectWipVouchers` locks the
+  projects, recomputes and compares the page's `#[Locked]` fingerprint
+  (SHA-256 of date, method, figures and rows); a mismatch refuses. Two drafts
+  through `SaveDraftVoucher` (adjustment, reversal the next day) with the
+  project on every row; refused while either voucher (adjustment or
+  reversal) of an earlier proposal for the same date still exists, draft or
+  posted. `project_wip_snapshots` keeps each project's figures and
+  the draft ids, append-only (model events and a trigger; `AppendOnly` grant;
+  voucher ids without foreign keys so drafts can still be deleted). Audit
+  `projects.wip_proposed`.
+- **Billing plan.** `project_billing_milestones` (`ReadWrite`): amount or
+  share (CHECK exactly one, share 1–10000 bp, shares of a plan at most
+  100 %), status `PLANNED`/`READY`/`INVOICED`, `invoice_id` uuid with
+  `nullOnDelete`, so deleting the draft invoice frees the milestone
+  (`effectiveStatus()`). Kept with `projects:manage` or `accounts:manage`;
+  "Fakturera" needs `invoices:create` and a `READY` milestone, and makes one
+  draft invoice row (description, 1 × amount, the project) for the project's
+  customer through `SaveDraftInvoice`. Neither customers nor projects carry a
+  default VAT rate and a milestone has no article, so the rate is 25 % and the
+  toast asks the person to check it. "Fakturerat ur planen" counts issued
+  invoices only; milestones with a draft show as "Utkast". Edits, deletion and
+  invoicing compare the milestone's version token under the row lock. The
+  project page shows the plan and, with Arbetsorder on, the work orders'
+  a conto instalments read only. Limited members never see the plan
+  (`@can('viewBillingPlan')` on the page; the components are refused in
+  `DimensionScopeRegistry` by default).
+- **Legal items** (`TODO(legal-verify)`):
+  - K2 6.13–6.24 and K3 chapter 23 for projects without work orders (L12/L13
+    as for work orders).
+  - Cost base: whether all costs on 4000–7999 are the right base for the
+    degree of completion ("nedlagda utgifter").
+  - Kontantmetoden: how WIP applies to a company that books invoices on
+    payment.
+  - Advance-invoice VAT: a milestone invoiced before the work is done is an
+    advance invoice; its wording, and its VAT, which arises when the payment
+    is received (Mervärdesskattelag (2023:200) 7 kap. 7 §, read on
+    riksdagen.se 2026-11-18) and is reported for that period (7 kap. 14 §).
+- **Two balance dates in one year.** Each proposal is reversed the day after
+  its date; with two dates (for example a year end and a later correction)
+  both reversals must be posted, which the manual says.

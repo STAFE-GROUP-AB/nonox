@@ -298,6 +298,10 @@ final class DatabaseGrants
         'pos_stock_pushes' => GrantDecision::ReadWrite,
         'pos_webhook_messages' => GrantDecision::ReadWrite,
         'prior_year_size_figures' => GrantDecision::ReadWrite,
+        // A project's billing plan (ADR-081 E8): milestones are removed while not invoiced.
+        'project_billing_milestones' => GrantDecision::ReadWrite,
+        // What a person saw when WIP drafts were proposed (ADR-081 E8): append-only, a trigger refuses every change.
+        'project_wip_snapshots' => GrantDecision::AppendOnly,
         'projects' => GrantDecision::ReadWrite,
         // Production order issues and labour are ledgers for the work in progress (ADR-071 §8): never changed.
         // The planning calendar's tables (§13) are working data: runs are recomputed and pruned.

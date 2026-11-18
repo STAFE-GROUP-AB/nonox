@@ -31,6 +31,7 @@ final class Features
         'budget' => ['name' => 'Budget och rullande prognos per konto och månad, mot utfall', 'status' => self::LIVE, 'readme' => 'budget per resultatkonto och månad'],
         'project_results' => ['name' => 'Projektresultat mot budget och kalkyl', 'status' => self::LIVE, 'readme' => 'täckningsbidrag och marginal per projekt'],
         'analysis' => ['name' => 'Analys med pivot och drill-down', 'status' => self::LIVE, 'readme' => 'egna frågor till bokföringsrader, budget, kund- och leverantörsfakturor och sammanräknad lön'],
+        'project_wip' => ['name' => 'Pågående projekt och faktureringsplan', 'status' => self::LIVE, 'readme' => 'upparbetat men ej fakturerat och fakturerat i förskott på projekt'],
         'vat_return' => ['name' => 'Momsdeklaration som fil', 'status' => self::LIVE, 'readme' => 'Momsdeklaration med fil till Skatteverket'],
         'eu_reports' => ['name' => 'Periodisk sammanställning, OSS och VIES', 'status' => self::LIVE, 'readme' => 'periodisk sammanställning, underlag för OSS i kronor och euro'],
         'bank_reconciliation' => ['name' => 'Bankavstämning', 'status' => self::LIVE, 'readme' => 'Bankavstämning, periodiseringar, anläggningsregister'],

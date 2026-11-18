@@ -68,6 +68,10 @@ Vid **Ingående balanser stämmer med förra året** finns i stället fältet **
 > [!TIP]
 > Ta fram saldobalansen under **Bokföring → Rapporter** för årets sista dag när du stämmer av 1510, 2440 och 1630. Läs [Kontoanalys och huvudbok](/manual/rapporter/kontoanalys-och-huvudbok).
 
+## Påminnelser om pågående arbeten
+
+Har företaget projekt till fast pris utan arbetsorder visar checklistan punkten **Pågående projekt är granskade**, med en länk till [Pågående projekt](/manual/bokslut/pagaende-projekt). Har företaget modulen Arbetsorder visas på samma sätt **Pågående arbeten är granskade**, med en länk till [Pågående arbeten](/manual/bokslut/pagaende-arbeten). Punkterna är påminnelser och stoppar inte bokslutet.
+
 ## Kontantmetoden
 
 Bokför företaget enligt kontantmetoden är obetalda kund- och leverantörsfakturor inte bokförda på 1510 och 2440 under året. De bokförs i bokslutet, i ett eget steg. Gör det innan du bockar av **Kundfordringar stämmer** och **Leverantörsskulder stämmer**. Läs [Obetalda fakturor vid årets slut (kontantmetoden)](/manual/bokslut/kontantmetoden-vid-arets-slut).

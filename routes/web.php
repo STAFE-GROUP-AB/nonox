@@ -337,6 +337,8 @@ Route::middleware([
         Route::view('/bokslut/uppskjuten-skatt', 'accounting.deferred-tax')->name('accounting.closing.deferredTax');
         Route::view('/bokslut/overgang-till-k3', 'accounting.k3-transition')->name('accounting.closing.k3Transition');
         Route::view('/bokslut/regelverk', 'accounting.closing-framework')->name('accounting.closingFramework');
+        // Work in progress on projects without a work order at the balance sheet date (ADR-081 gap 6, E8).
+        Route::view('/bokslut/pagaende-projekt', 'projects.wip')->name('accounting.projectWip');
         Route::view('/arsredovisning', 'accounting.annual-report')->name('accounting.annualReport');
         Route::get('/arsredovisning/{fiscalYear}', [AnnualReportController::class, 'show'])->whereNumber('fiscalYear')->name('accounting.annualReport.show');
         Route::get('/arsredovisning/{fiscalYear}/pdf', [AnnualReportController::class, 'pdf'])->whereNumber('fiscalYear')->name('accounting.annualReport.pdf');

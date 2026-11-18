@@ -24,7 +24,7 @@ Har du arbetsorder som pågår när räkenskapsåret slutar ska bokföringen vis
 ## Vad förslaget bygger på
 
 - **Löpande räkning**: arbete och material som är registrerat men inte fakturerat på balansdagen föreslås som intäkt på 1620 Upparbetad men ej fakturerad intäkt. Det som är fakturerat utöver det som är gjort flyttas till 2420 Förskott från kunder.
-- **Fast pris**: ÄTA räknas in i uppdraget. Välj företagets metod under **Arbetsorder → Inställningar**:
+- **Fast pris**: ÄTA räknas in i uppdraget. Välj företagets metod under **Arbetsorder → Inställningar** eller under [Pågående projekt](/manual/bokslut/pagaende-projekt); den gäller både arbetsorder och projekt:
   - **K2 huvudregeln** och **K3 successiv vinstavräkning**: intäkten till dags dato är färdigställandegraden gånger priset. Skillnaden mot det fakturerade föreslås på 1620 eller 2450.
   - **K2 alternativregeln** och **K3 färdigställandemetoden**: det fakturerade flyttas till 2450 tills arbetet är klart. Kostnader som får tas upp som pågående arbete visas som en siffra.
   - Utan vald metod visas bara siffrorna.
@@ -34,3 +34,5 @@ Har du arbetsorder som pågår när räkenskapsåret slutar ska bokföringen vis
 > Kontona och vilka förslag som gäller för varje regelverk är inte slutligt kontrollerade av en revisor. Granska förslaget med din redovisningskonsult.
 
 I bokslutets checklista påminner punkten **Pågående arbeten är granskade** om steget. Den stoppar inte bokslutet.
+
+Projekt utan arbetsorder räknas under [Pågående projekt](/manual/bokslut/pagaende-projekt).

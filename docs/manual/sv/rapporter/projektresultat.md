@@ -82,11 +82,12 @@ Raderna visas med **Datum**, **Verifikation**, **Text** och **Belopp**, äldst f
 Intäkterna är det som är bokfört på intäktskonton med projektet. Med kontantmetoden bokförs intäkten först när kunden betalar. En faktura där projektet inte är valt på raderna räknas inte.
 
 **Räknas pågående arbeten?**
-Nej, sidan visar det som är bokfört. Upparbetat men inte fakturerat värde bokförs i bokslutet.
+Nej, sidan visar det som är bokfört. Upparbetat men inte fakturerat värde bokförs i bokslutet, se [Pågående projekt](/manual/bokslut/pagaende-projekt). Bokför du förslaget syns det här från balansdagen, och återföringen dagen efter.
 
 ## Läs också
 
 - [Kostnadsställen och projekt](/manual/bokforing/kostnadsstallen-och-projekt)
 - [Kostnadsställe och projekt på fakturor](/manual/fakturering/kostnadsstalle-och-projekt-pa-fakturor)
+- [Faktureringsplan för projekt](/manual/fakturering/faktureringsplan-for-projekt) – längre ner på projektets sida.
 - [Budget mot utfall](/manual/rapporter/budget-mot-utfall)
 - [Kontoanalys och huvudbok](/manual/rapporter/kontoanalys-och-huvudbok)
