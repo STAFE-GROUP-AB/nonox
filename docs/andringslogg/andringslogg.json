@@ -40,6 +40,14 @@
       "omrade": "Bokföring"
     },
     {
+      "id": "2026-11-18-budget-per-konto-och-manad",
+      "datum": "2026-11-18T01:50:00+01:00",
+      "rubrik": "Budget per konto och månad",
+      "beskrivning": "Under Bokföring → Budget gör du en budget per resultatkonto och månad, med kostnadsställe och projekt om du vill: tom, som i fjol eller som kopia, med förändring i procent, inklistring från kalkylark och CSV in och ut. Budget mot utfall jämför resultatet med budgeten för månaden och hittills i år, med avvikelse i kronor och procent och klickbara konton. Budgeten bokförs aldrig, och en låst budget kan inte ändras, bara kopieras eller tas bort (inte när räkenskapsåret är stängt).",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-18-planering-i-toppklass",
       "datum": "2026-11-18T00:55:00+01:00",
       "rubrik": "Planering i toppklass",

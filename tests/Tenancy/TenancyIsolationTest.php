@@ -14,6 +14,8 @@ use App\Models\Article;
 use App\Models\BankFileImport;
 use App\Models\BankReconciliation;
 use App\Models\BankTransaction;
+use App\Models\BudgetLine;
+use App\Models\BudgetVersion;
 use App\Models\ClientProfile;
 use App\Models\ClosingCheck;
 use App\Models\Company;
@@ -371,6 +373,8 @@ const COMPANY_SCOPED_MODELS = [
     FortnoxConnection::class => 'fortnoxConnectionAttributes',
     FortnoxImportedFile::class => ['file_id' => 'f-1', 'fortnox_year' => 1, 'voucher_series' => 'A', 'voucher_number' => 1],
     AccrualPosting::class => 'accrualPostingAttributes',
+    BudgetVersion::class => 'e3BudgetVersionAttributes',
+    BudgetLine::class => 'e3BudgetLineAttributes',
     FixedAssetDepreciation::class => 'fixedAssetDepreciationAttributes',
     FixedAssetAddition::class => 'fixedAssetAdditionAttributes',
     FixedAssetProposal::class => 'fixedAssetProposalAttributes',
@@ -2238,6 +2242,25 @@ function purchaseOrderInvoiceAttributes(): array
 function inventoryCountLineAttributes(): array
 {
     return ['stock_count_id' => StockCount::create(['number' => random_int(1, 1_000_000), 'status' => 'OPEN', 'counted_on' => '2026-12-31'])->id, 'article_id' => Article::create(articleAttributes())->id, 'location_id' => StockLocation::create(inventoryLocationAttributes())->id, 'system_milli' => 0];
+}
+
+function e3BudgetVersionAttributes(): array
+{
+    return [
+        'fiscal_year_id' => FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31'])->id,
+        'name' => 'Hemlig budget',
+        'created_by' => User::factory()->create()->id,
+    ];
+}
+
+function e3BudgetLineAttributes(): array
+{
+    return [
+        'budget_version_id' => BudgetVersion::create(e3BudgetVersionAttributes())->id,
+        'account_id' => Account::query()->firstOrCreate(['number' => 3001], ['name' => 'Försäljning', 'type' => 'REVENUE'])->id,
+        'period' => '2026-03-01',
+        'amount_ore' => -100,
+    ];
 }
 
 function counterAttributes(): array

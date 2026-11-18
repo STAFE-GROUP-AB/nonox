@@ -287,9 +287,12 @@ number and code inside the importing company (as today for `#TRANS`).
 
 ### Legal items
 
-- `TODO(legal-verify)`: whether a budget is räkenskapsinformation (BFL 5 kap.
-  6 §) or may be deleted freely. Proposed: not räkenskapsinformation; versions
-  are kept until deleted by a person, deletion is audited.
+- `TODO(legal-verify)`: whether a budget is räkenskapsinformation (BFL 1 kap.
+  2 § första stycket 6) or may be deleted freely. Proposed: not
+  räkenskapsinformation; versions are kept until deleted by a person, deletion
+  is audited. A budget used as a basis for an assessment in the annual report
+  (an impairment test, going concern under K3) should be kept by the user, so
+  E3 refuses to delete a LOCKED version whose fiscal year is closed.
 - `TODO(legal-verify)`: the SIE 4 specification's exact `#PBUDGET` syntax
   (year index, period `YYYYMM`, object list, sign) against the published SIE
   4B text before E4 ships.
@@ -410,7 +413,7 @@ both sides inside the company; ids from Livewire state are re-resolved.
 ### Legal items
 
 - `TODO(legal-verify)` (carried from ADR-071 M3): whether a sent purchase
-  order is räkenskapsinformation (BFL 5 kap. 6 §) — nothing is pruned until
+  order is räkenskapsinformation (BFL 1 kap. 2 § första stycket 6) — nothing is pruned until
   decided; the same question for approved requisitions.
 - `TODO(legal-verify)`: requisitions name the requesting employee and may hold
   free text; GDPR art. 5.1 c and retention in `lagringstider.md`.

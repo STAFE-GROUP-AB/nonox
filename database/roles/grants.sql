@@ -46,6 +46,8 @@ BEGIN
         ('boardroom_share_events', 'SELECT, INSERT'),
         ('boardroom_shareholders', 'SELECT, INSERT, UPDATE, DELETE'),
         ('bom_rows', 'SELECT, INSERT'),
+        ('budget_lines', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('budget_versions', 'SELECT, INSERT, UPDATE, DELETE'),
         ('change_order_contact_attempts', 'SELECT, INSERT'),
         ('change_order_on_site_codes', 'SELECT, INSERT, UPDATE'),
         ('change_orders', 'SELECT, INSERT, UPDATE'),

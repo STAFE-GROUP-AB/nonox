@@ -29,6 +29,7 @@ enum CompanyRole: string
         'api-tokens:manage', 'settings:manage', 'audit-log:view', 'modules:manage',
         'tasks:manage', 'tasks:view',
         'mileage:view', 'mileage:manage',
+        'budgets:view', 'budgets:manage',
     ];
 
     public function label(): string
@@ -70,6 +71,7 @@ enum CompanyRole: string
                 'audit-log:view',
                 'tasks:manage', 'tasks:view',
                 'mileage:view', 'mileage:manage',
+                'budgets:view', 'budgets:manage',
             ],
             self::Bookkeeper => [
                 'vouchers:create', 'vouchers:post', 'vouchers:correct', 'vouchers:view',
@@ -78,6 +80,7 @@ enum CompanyRole: string
                 'reports:view',
                 'tasks:manage', 'tasks:view',
                 'mileage:view',
+                'budgets:view',
             ],
             self::Approver => [
                 'supplier-invoices:approve', 'payments:approve',
@@ -89,6 +92,7 @@ enum CompanyRole: string
                 'export:sie', 'export:archive', 'audit-log:view',
                 'tasks:view',
                 'mileage:view',
+                'budgets:view',
             ],
             // Budgets, projects and analysis join when their packages add those permissions (ADR-081 E3, E6, E17).
             self::UnitManager => [

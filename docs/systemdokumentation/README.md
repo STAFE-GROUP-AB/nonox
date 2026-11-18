@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.135
+- Version: 0.136
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -877,6 +877,23 @@ year").
 - Varje konto i rapporterna och på en verifikation leder till huvudboken för
   just det kontot (kontoanalys) med samma år, period, kostnadsställe och
   projekt, och därifrån till verifikationerna och deras kontering.
+
+### 4.12a Budget
+
+- Budgetar per resultatkonto (3000–8998), månad och valfritt kostnadsställe
+  och projekt sparas i `budget_versions` och `budget_lines`
+  ([ADR-081](../adr/ADR-081-nonox-erp.md) lucka 2, paket E3). Beloppen är
+  heltal i öre med bokföringens tecken (debet positivt).
+- En budget bokförs aldrig: den skapar inga verifikationer, ändrar inga
+  bokförda rader och ingår inte i kontrollsummekedjan (avsnitt 4.7).
+  Rapporten Budget mot utfall läser bara bokförda verifikationer, som övriga
+  rapporter.
+- En låst budget kan inte ändras; en databastrigger vägrar ändringar av dess
+  rader och av versionen utom vilken budget som används i rapporterna. En
+  låst budget för ett stängt räkenskapsår kan inte tas bort. Att en budget
+  skapas, sparas, låses, används eller tas bort skrivs i
+  behandlingshistoriken (`budget.*`) med id och antal, aldrig namn.
+- Budgeten följer inte med i SIE-filen (`#PBUDGET` läses och skrivs inte).
 
 ### 4.13 Moms
 
@@ -5952,3 +5969,4 @@ påverkar bokföringen och fakturan:
 | 0.133 | 2026-11-16 | Återkommande intäkter (avsnitt 5p, ADR-080): modulen skapar inga verifikationer och ändrar ingen bokföring. Avtalens versioner (`saas_contract_versions`) och rättelser (`saas_corrections`) kan inte ändras, tas bort eller tömmas; stängda månader skrivs inte om och senare ändringar blir rättelserader i första öppna månaden; `saas:verify` räknar om stängda månader varje natt. Stripe läses bara, med en begränsad nyckel; produkter, priser, rabatter och prenumerationer sparas orörda med kontrollsumma i `stripe_objects` och raderas 90 dagar efter att kopplingen upphört. Inget bokförs ur Stripe. |
 | 0.134 | 2026-11-17 | Pass på kostnadsställen till lönebokföringen (avsnitt 5b och 5i, ADR-037 lucka 7, paket P2): avdelningar och pass kan ha ett kostnadsställe, Skicka till lönen skriver en tidrapport per dag, löneart och kostnadsställe (Timlön och dagens övertid och mertid delas efter passens planerade minuter, OB efter den OB passen ger enligt avtalet, i hundradels timmar med största rest; veckans eller periodens övertid och mertid på anställningens), och lönekörningen för kostnadsstället till lönebeskedets rad. Lönens verifikation bokför den raden på dess kostnadsställe; övriga rader får anställningens kostnadsställe och projekt bara när inställningen Kostnadsställe och projekt från anställningen och lönearten säger det (inställningen lästes inte förut). Arbetsgivaravgifterna på 7510 fördelas per lönebesked i proportion till avgiftsunderlaget per kostnadsställe, i hela ören med största rest, så att verifikationen balanserar. Tid att attestera läser nu ett publicerat pass som ändrats till utkast med rätt klockslag. Nya nullbara kolumner `cost_center_id` på `planning_areas`, `planning_shifts`, `time_reports` och `payslip_lines`. Ingen bokförd verifikation ändras. |
 | 0.135 | 2026-11-18 | Behörighet per enhet (avsnitt 1.0, ADR-081 lucka 10, paket E1): en ägare eller administratör kan begränsa en bokförare, attestant, enhetschef eller modulroll till kostnadsställen och projekt (`membership_dimension_scopes`, `team_user.dimension_scoped`). Den begränsade ser och bokför bara verifikationer och leverantörsfakturor vars rader med dimension alla ligger inom begränsningen, och läser resultatrapport och huvudbok bara för ett av sina objekt; lönens verifikationer visas aldrig för hen; allt annat svarar 404. Ägare, administratör, redovisningskonsult och revisor kan aldrig begränsas. Ingen bokförd verifikation ändras. |
+| 0.136 | 2026-11-18 | Budget (avsnitt 4.12a, ADR-081 paket E3): nya tabeller `budget_versions` och `budget_lines` för budget per resultatkonto, månad, kostnadsställe och projekt. Budgeten bokförs aldrig och ingår inte i kontrollsummekedjan; en låst budget kan inte ändras (databastrigger) och en låst budget för ett stängt räkenskapsår kan inte tas bort. Ingen bokförd verifikation ändras. |

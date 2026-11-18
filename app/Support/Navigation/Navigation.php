@@ -247,6 +247,8 @@ final class Navigation
             $can('import:registers') ? ['label' => __('Läs in register'), 'route' => 'import.registers.index', 'active' => ['import.registers.*'], 'group' => $ongoing] : null,
             $can('reports:view') ? ['label' => __('Rapporter'), 'route' => 'accounting.reports', 'group' => $reports] : null,
             $can('reports:view') ? ['label' => __('Reskontra'), 'route' => 'accounting.ledgers', 'group' => $reports] : null,
+            $can('budgets:view') ? ['label' => __('Budget'), 'route' => 'accounting.budgets', 'active' => ['accounting.budgets', 'accounting.budgets.show'], 'group' => $reports] : null,
+            $can('budgets:view') ? ['label' => __('Budget mot utfall'), 'route' => 'accounting.budgets.report', 'group' => $reports] : null,
             $can('vat:prepare') ? ['label' => __('Moms'), 'route' => 'vat.index', 'active' => ['vat.index', 'vat.file'], 'group' => $reports] : null,
             $can('vat:prepare') ? ['label' => __('EU-rapporter'), 'route' => 'vat.euReports', 'group' => $reports] : null,
             ['label' => __('Räkenskapsår'), 'route' => 'accounting.fiscalYears', 'group' => $closing],

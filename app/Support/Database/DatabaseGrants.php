@@ -69,6 +69,9 @@ final class DatabaseGrants
         'boardroom_shareholders' => GrantDecision::ReadWrite,
         // A saved structure version: rows change never and go only with their version (cascade, run as the owner).
         'bom_rows' => GrantDecision::AppendOnly,
+        // Budgets (ADR-081 E3): a plan, not räkenskapsinformation; a locked version's lines are guarded by a trigger.
+        'budget_lines' => GrantDecision::ReadWrite,
+        'budget_versions' => GrantDecision::ReadWrite,
         'change_order_contact_attempts' => GrantDecision::AppendOnly,
         'change_order_on_site_codes' => GrantDecision::NoDelete,
         'change_orders' => GrantDecision::NoDelete,
