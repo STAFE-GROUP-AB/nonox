@@ -1712,3 +1712,60 @@ before the trust-service item in gap 5 is answered.
   once; the first CJK certificate takes about two seconds longer.
 - **Not covered:** right-to-left scripts and Thai/Indic shaping (dompdf does
   no complex-script shaping); they are listed as out of scope above.
+
+### S9 as built (2026-11-18): deadline and reminders
+
+- Migration `database/migrations/2027_02_10_100000_add_signing_deadline_and_reminders.php`
+  (additive): `signing_envelopes.auto_reminders` (default false, so an
+  envelope that is already out is never reminded by a rule nobody switched
+  on), `reminder_interval_days` (1, 2, 3, 7 or null) and `expired_at`;
+  `crm_signing_requests.reminder_count` and `last_reminded_at`. Two triggers:
+  `signing_envelopes_protect_deadline` (the expiry time is set once and only
+  on an envelope that is out; an expired or finished envelope keeps its
+  deadline and reminder settings) and `crm_signing_requests_protect_reminders`
+  (reminders only grow; a signed or declined signer's trail is fixed). No new
+  table, so no new grant decision.
+- **Deadline:** `SigningDeadlines::resolve` (used by `SendForSigning` and by
+  `ChangeSigningDeadline`): 3–90 days from today, the end of that day in
+  Stockholm time, never after a quote's last valid day. A quote valid for fewer
+  than three more days may use its own last day, the earliest that can be
+  chosen. A change is allowed only while the envelope is out and not past its
+  deadline; one `DEADLINE_CHANGED` event with the old and the new time (with
+  offset), the envelope's and every open signer's expiry follow, and the
+  signers whose step is open are mailed the new date (no link; the next
+  reminder carries a fresh one).
+- **Reminders:** the action layer defaults to **off** (principle 9): only the
+  signing panel sends `auto_reminders` true, with its tick box on by default (every
+  3 days, owner decision 13); the API and the ÄTA flow never switch it on; `reminder_days` is 1, 2, 3 or 7, or
+  `single` for one reminder two days before the deadline. `signing:remind`
+  (hourly at :41, `SigningReminders::run`) reminds signers on an open step, at
+  most 10 per signer by rule, between 08:00 and 18:00 Stockholm time and never
+  at or after the deadline. "Påminn nu" is once an hour per signer and counts toward the same cap of 10
+  (after 10 it is refused with a message). Each reminder is one
+  transaction that locks the document, the signer's row and the envelope (the
+  order of every signing path), re-reads and re-checks under the locks, issues a
+  fresh token in `signing_link_tokens` (reason `REMINDER`; earlier links stay
+  valid until the deadline, so a mail that arrives late never locks a signer
+  out), stores `last_reminded_at`, records `REMINDER_SENT` in the chain and the
+  audit log (ids, kind and count only), and queues the mail after the commit.
+  Idempotent: the stored marker plus the row lock, and a cache lock per
+  company in the command. A reminder counts toward the `documents` mail quota
+  with `MailQuota::count` and is never refused, as decided for S1.
+- **Expiry:** the same run lets an envelope past its deadline expire: one
+  `EXPIRED` event on one open signer's row (not another if a signer's page
+  already recorded it; `SignAtLink::noteExpired` now also looks at the whole
+  envelope), `expired_at` set once, an audit entry `signing.expired`, and an
+  in-app notice to the sender. **Deviation:** the stored status stays `OUT`
+  (the derived status is `EXPIRED`, as in S1) and the chain is not closed with a
+  head, because a resend or a late withdrawal of an expired envelope must still
+  be able to append its own events; a stored `EXPIRED` status would have
+  touched `SignedDocuments`, the status check and every `isFinished` caller.
+- `DEADLINE_CHANGED` and `REMINDER_SENT` are not signer steps, so the
+  NONOX API's per-link `events` list is unchanged. Times are stored with their
+  offset on `SigningEnvelope`, `SigningRequest` and `SigningLinkToken`.
+- UI: Signering panel: **Påminnelser** with **Hur ofta** when sending,
+  **Påminn nu**, **Ändra sista dag** (**Spara ny sista dag**), a reminder note
+  and the count of reminders per signer. Manual: `docs/manual/sv/crm/signering.md`.
+- A reminder's token does not revoke earlier tokens (all stay valid to the deadline). `SigningReminderMail` carries the URL like `SigningRequestMail` does. `SigningRequest` already writes times with offset.
+- Open items: reminders by SMS and a deadline per signer stay out of scope;
+  a reminder for an envelope sent through the API waits for S19.

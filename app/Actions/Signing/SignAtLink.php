@@ -179,7 +179,17 @@ final class SignAtLink
                     return;
                 }
 
-                if (! SigningEvent::query()->where('signing_request_id', $locked->id)->where('event', SigningEventType::Expired->value)->exists()) {
+                // One expiry event per envelope (ADR-046 S9): signing:remind records it, or the first signer to open the expired link.
+                $recorded = SigningEvent::query()
+                    ->when(
+                        $locked->envelope_id === null,
+                        fn ($query) => $query->where('signing_request_id', $locked->id),
+                        fn ($query) => $query->whereIn('signing_request_id', SigningRequest::query()->where('envelope_id', $locked->envelope_id)->select('id')),
+                    )
+                    ->where('event', SigningEventType::Expired->value)
+                    ->exists();
+
+                if (! $recorded) {
                     $this->chain->record($locked, SigningEventType::Expired);
                 }
             }, self::ATTEMPTS);

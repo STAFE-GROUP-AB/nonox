@@ -9,6 +9,7 @@ use App\Domain\Signing\EnvelopeStatus;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SignedDocuments;
+use App\Domain\Signing\SigningDeadlines;
 use App\Domain\Signing\SigningEnvelopes;
 use App\Domain\Signing\SigningEventType;
 use App\Domain\Signing\SigningHost;
@@ -65,9 +66,9 @@ use Illuminate\Validation\ValidationException;
  */
 final class SendForSigning
 {
-    public const int DEFAULT_DAYS = 30;
+    public const int DEFAULT_DAYS = SigningDeadlines::DEFAULT_DAYS;
 
-    public const int MAX_DAYS = 90;
+    public const int MAX_DAYS = SigningDeadlines::MAX_DAYS;
 
     private const string ZONE = 'Europe/Stockholm';
 
@@ -92,25 +93,28 @@ final class SendForSigning
         $validated = Validator::make($input, [
             'email' => ['required', 'email', 'max:255'],
             'expires_on' => ['nullable', 'date_format:Y-m-d'],
+            'auto_reminders' => ['sometimes', 'boolean'],
+            'reminder_days' => ['nullable'],
             'create_invoice' => ['sometimes', 'boolean'],
             'deal_id' => ['nullable', 'integer'],
         ], [], ['email' => __('e-post'), 'expires_on' => __('sista dag att signera')])->validate();
 
         $today = CarbonImmutable::now(self::ZONE)->startOfDay();
         $expires = $this->expiry($document, $validated['expires_on'] ?? null, $today);
+        $reminders = $this->reminders($validated);
 
         MailQuota::take($company, 'documents');
 
         $token = SigningToken::generate();
 
-        $request = DB::transaction(fn (): SigningRequest => CurrentCompany::run($company, function () use ($user, $company, $document, $validated, $expires, $token): SigningRequest {
+        $request = DB::transaction(fn (): SigningRequest => CurrentCompany::run($company, function () use ($user, $company, $document, $validated, $expires, $token, $reminders): SigningRequest {
             $document = $this->lockOpenDocument($document);
             $dealId = $this->deal($document, $validated['deal_id'] ?? null);
 
             $this->revokeOpen($user, $company, $document);
 
             $file = $this->storePdf($company, $document);
-            $envelope = $this->envelopes->create($document, $file, $expires, $user->id);
+            $envelope = $this->envelopes->create($document, $file, $expires, $user->id, $reminders);
 
             $request = SigningRequest::create([
                 ...$this->types->attributesFor($document),
@@ -176,20 +180,21 @@ final class SendForSigning
             'name' => blank($copy['name'] ?? null) ? null : trim((string) $copy['name']),
         ])->values();
         $notify = (bool) ($validated['notify_copies'] ?? false) && $copies->isNotEmpty();
+        $reminders = $this->reminders($validated);
         $first = (int) $signers->min('step');
 
         foreach (range(1, $signers->where('step', $first)->count() + ($notify ? $copies->count() : 0)) as $ignored) {
             MailQuota::take($company, 'documents', 'signers');
         }
 
-        $result = DB::transaction(fn (): array => CurrentCompany::run($company, function () use ($user, $company, $document, $validated, $expires, $signers, $copies, $first): array {
+        $result = DB::transaction(fn (): array => CurrentCompany::run($company, function () use ($user, $company, $document, $validated, $expires, $signers, $copies, $first, $reminders): array {
             $document = $this->lockOpenDocument($document);
             $dealId = $this->deal($document, $validated['deal_id'] ?? null);
 
             $this->revokeOpen($user, $company, $document);
 
             $file = $this->storePdf($company, $document);
-            $envelope = $this->envelopes->create($document, $file, $expires, $user->id);
+            $envelope = $this->envelopes->create($document, $file, $expires, $user->id, $reminders);
             $envelope->forceFill(['current_step' => $first])->save();
             $opened = [];
 
@@ -302,6 +307,28 @@ final class SendForSigning
     }
 
     /**
+     * The reminder choice of a send: off unless the sender switched it on
+     * (ADR-046 principle 9; the signing panel's tick box is on by default,
+     * the API and the ÄTA flow never switch it on), every 1, 2, 3 or 7 days
+     * (default 3, owner decision 13) or once before the deadline.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array{auto: bool, interval: ?int}
+     */
+    private function reminders(array $validated): array
+    {
+        $auto = (bool) ($validated['auto_reminders'] ?? false);
+
+        if (! $auto) {
+            return ['auto' => false, 'interval' => null];
+        }
+
+        $given = $validated['reminder_days'] ?? null;
+
+        return ['auto' => true, 'interval' => array_key_exists('reminder_days', $validated) && $given !== null && $given !== '' ? SigningDeadlines::interval($given) : SigningDeadlines::DEFAULT_INTERVAL];
+    }
+
+    /**
      * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
@@ -316,6 +343,8 @@ final class SendForSigning
             'copies.*.name' => ['nullable', 'string', 'max:120', 'regex:/^[^\p{C}]*$/u'],
             'notify_copies' => ['sometimes', 'boolean'],
             'expires_on' => ['nullable', 'date_format:Y-m-d'],
+            'auto_reminders' => ['sometimes', 'boolean'],
+            'reminder_days' => ['nullable'],
             'create_invoice' => ['sometimes', 'boolean'],
             'deal_id' => ['nullable', 'integer'],
         ], [
@@ -385,31 +414,7 @@ final class SendForSigning
 
     private function expiry(Signable $document, mixed $given, CarbonImmutable $today): CarbonImmutable
     {
-        $latest = $today->addDays(self::MAX_DAYS);
-        $until = $document->signingValidUntil();
-
-        if (is_string($given) && $given !== '') {
-            $day = CarbonImmutable::parse($given, self::ZONE)->startOfDay();
-
-            if ($day->lessThan($today) || $day->greaterThan($latest)) {
-                throw ValidationException::withMessages(['expires_on' => __('Sista dag att signera ska vara idag eller inom :days dagar.', ['days' => self::MAX_DAYS])]);
-            }
-
-            // A quote cannot be signed after its last valid day.
-            if ($until !== null && $day->toDateString() > $until->toDateString()) {
-                throw ValidationException::withMessages(['expires_on' => __('Sista dag att signera kan inte vara efter offertens giltighetsdag (:date).', ['date' => $until->toDateString()])]);
-            }
-
-            return $day->endOfDay();
-        }
-
-        if ($until !== null && $until->greaterThanOrEqualTo($today->toDateString())) {
-            $day = CarbonImmutable::parse($until->toDateString(), self::ZONE);
-
-            return ($day->greaterThan($latest) ? $latest : $day)->endOfDay();
-        }
-
-        return $today->addDays(self::DEFAULT_DAYS)->endOfDay();
+        return SigningDeadlines::resolve($document, $given, $today);
     }
 
     /** The deal to win on signing: an open deal of the document's CRM account, only while CRM is on. */

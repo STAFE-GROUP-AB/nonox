@@ -43,6 +43,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?CarbonImmutable $voided_at
  * @property ?int $voided_by
  * @property ?CarbonImmutable $followed_up_at
+ * @property bool $auto_reminders whether signing:remind reminds the open signers (ADR-046 S9)
+ * @property ?int $reminder_interval_days 1, 2, 3 or 7; null means one reminder two days before the deadline
+ * @property ?CarbonImmutable $expired_at set once, when the deadline has passed and the expiry event is written
  * @property ?string $chain_head
  * @property ?int $chain_sequence
  * @property int $next_sequence the chain's next sequence number, kept by the event insert trigger (ADR-046 S2)
@@ -61,6 +64,9 @@ class SigningEnvelope extends Model
 
     public const int MAX_STEP = 10;
 
+    /** Times are written with their offset (ADR-046 S9): the deadline and the expiry are compared with the clock across the repeated autumn hour. */
+    protected $dateFormat = 'Y-m-d H:i:sP';
+
     /** @var list<string> */
     protected $fillable = [
         'company_id',
@@ -77,6 +83,8 @@ class SigningEnvelope extends Model
         'deadline_at',
         'created_by',
         'sent_at',
+        'auto_reminders',
+        'reminder_interval_days',
     ];
 
     /** @var array<string, mixed> */
@@ -92,6 +100,9 @@ class SigningEnvelope extends Model
             'status' => EnvelopeStatus::class,
             'current_step' => 'integer',
             'chain_sequence' => 'integer',
+            'auto_reminders' => 'boolean',
+            'reminder_interval_days' => 'integer',
+            'expired_at' => 'immutable_datetime',
             'next_sequence' => 'integer',
             'deadline_at' => 'immutable_datetime',
             'sent_at' => 'immutable_datetime',
