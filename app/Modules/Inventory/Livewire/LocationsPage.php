@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Livewire;
 
+use App\Models\CostCenter;
 use App\Modules\Inventory\Actions\SaveLocation;
 use App\Modules\Inventory\Domain\LocationType;
 use App\Modules\Inventory\Livewire\Concerns\InventoryPage;
@@ -50,14 +51,14 @@ class LocationsPage extends Component
         $next = $parent === null ? LocationType::Warehouse : (LocationType::cases()[min(3, $parent->type->depth() + 1)]);
 
         $this->editing = 0;
-        $this->form = ['type' => $next->value, 'parent_id' => $parent?->id, 'code' => '', 'name' => '', 'address_line1' => '', 'postal_code' => '', 'city' => '', 'is_active' => true];
+        $this->form = ['type' => $next->value, 'parent_id' => $parent?->id, 'code' => '', 'name' => '', 'address_line1' => '', 'postal_code' => '', 'city' => '', 'cost_center_id' => '', 'is_active' => true];
         $this->resetErrorBag();
     }
 
     public function edit(int $id): void
     {
         abort_unless($this->can('manage'), 403);
-        $location = StockLocation::query()->findOrFail($id);
+        $location = StockLocation::query()->where('type', '<>', LocationType::Transit->value)->findOrFail($id);
 
         $this->editing = $location->id;
         $this->form = [
@@ -68,6 +69,7 @@ class LocationsPage extends Component
             'address_line1' => (string) $location->address_line1,
             'postal_code' => (string) $location->postal_code,
             'city' => (string) $location->city,
+            'cost_center_id' => (string) $location->cost_center_id,
             'is_active' => $location->is_active,
         ];
         $this->resetErrorBag();
@@ -134,6 +136,8 @@ class LocationsPage extends Component
 
         $locations = StockLocation::query()
             ->withSum('levels as stock_milli', 'quantity_milli')
+            ->with('costCenter:id,code,name')
+            ->where('type', '<>', LocationType::Transit->value)
             ->when($this->show !== 'alla', fn ($query) => $query->where('is_active', true))
             ->when($term !== '', fn ($query) => $query->where(fn ($inner) => $inner->where('full_code', 'ilike', '%'.$term.'%')->orWhere('name', 'ilike', '%'.$term.'%')))
             ->orderBy('sort_key')
@@ -142,7 +146,8 @@ class LocationsPage extends Component
         return view('inventory::livewire.locations', [
             'locations' => $locations,
             'parents' => StockLocation::query()->where('is_active', true)->where('type', '<>', LocationType::Bin->value)->orderBy('sort_key')->get(['id', 'full_code', 'name', 'type']),
-            'types' => LocationType::cases(),
+            'types' => array_filter(LocationType::cases(), fn (LocationType $type): bool => $type !== LocationType::Transit),
+            'costCenters' => CostCenter::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name']),
             'canManage' => $this->can('manage'),
             'canPrint' => $this->can('printLabels'),
         ]);

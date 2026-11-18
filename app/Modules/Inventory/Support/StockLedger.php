@@ -7,6 +7,7 @@ namespace App\Modules\Inventory\Support;
 use App\Models\Article;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Inventory\Domain\LocationType;
 use App\Modules\Inventory\Domain\MovementType;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Domain\Tracking;
@@ -18,6 +19,7 @@ use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Inventory\Models\StockLot;
 use App\Modules\Inventory\Models\StockLotLevel;
 use App\Modules\Inventory\Models\StockMovement;
+use App\Modules\Inventory\Models\StockTransfer;
 use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
@@ -82,7 +84,13 @@ final class StockLedger
                     throw ValidationException::withMessages(["lines.{$index}.article_id" => __('Artikeln :number är inte lagerförd. Markera den som lagerförd först.', ['number' => $article->number])]);
                 }
 
-                if (! $location->is_active && $line['quantity_milli'] > 0) {
+                $transferStep = $type === MovementType::Transfer && $source instanceof StockTransfer;
+
+                if ($location->type === LocationType::Transit && ! $transferStep) {
+                    throw ValidationException::withMessages(["lines.{$index}.location_id" => __('Lagerstället för varor på väg används bara av flyttorder.')]);
+                }
+
+                if (! $location->is_active && $location->type !== LocationType::Transit && $line['quantity_milli'] > 0) {
                     throw ValidationException::withMessages(["lines.{$index}.location_id" => __('Lagerstället :code är inaktivt.', ['code' => $location->full_code])]);
                 }
 

@@ -2099,3 +2099,28 @@ Built on branch `feat/erp-e27-koncernleverans`. Choices gap 1 left open:
   Interest (8300–8499) and dividend (8010–8019) rows keep their number and get a
   "Kontrollera kontot hos motparten" warning (TODO(legal-verify) in
   `IntercompanyMirror::needsCheck`). `invoice_id` is a plain foreign key.
+
+## Addendum: E13 as built (transfer orders, reorder points per warehouse)
+
+- **Transit.** A transit place is a `stock_locations` row of type `TRANSIT`,
+  inactive, one per pair of warehouses (`transit_from_id`, `transit_to_id`).
+  Only movements of type `TRANSFER` with a `StockTransfer` as source may touch
+  it; `StockLedger` refuses everything else (scanner, API, counts, hand moves).
+  Counts, production issues, pickers and the scanner leave it out
+  (`StockLocation::scopePhysical()`). A location, or its warehouse, cannot be
+  deactivated while a sent order points at it.
+- **Valuation** is untouched: goods in transit stay in `stock_levels`, so the
+  article's total and value are the same all the way; a transfer carries no cost.
+- **Reorder points per warehouse** replace the article's own point in the
+  purchase proposal. Simplifications, also stated in the manual:
+  - A surplus in one warehouse is not netted against the shortfall of
+    another; a transfer order may be the better choice.
+  - Draft transfer orders are not counted; goods on their way to a warehouse
+    are.
+  - Open purchase orders are subtracted company-wide, because they carry no
+    warehouse.
+  - Reserved quantity counts as in the company-wide path
+    (`have - reserved + incoming`): the sum of the warehouses' shortfalls plus
+    what is reserved, minus what is incoming.
+- **Warehouse scope** is the `cost_center_id` mapping only; E1 refuses
+  `inventory.*` for limited members, so nothing is enforced yet.

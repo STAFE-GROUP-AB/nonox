@@ -38,6 +38,14 @@ Varje plats har en kort kod. NONOX bygger hela koden från platserna ovanför, t
 > [!TIP]
 > Skriv siffror med samma antal tecken, till exempel 01, 02 … 10. NONOX sorterar ändå 2 före 10, men koderna blir lättare att läsa på etiketterna.
 
+## Kostnadsställe för ett lager
+
+Har företaget kostnadsställen kan du knyta ett lager till ett. Välj det under **Kostnadsställe** när du lägger upp eller ändrar lagret. Lagret räknas då som en enhet genom sitt kostnadsställe. Det ändrar inget i saldon eller bokföring.
+
+## Platsen På väg
+
+När du skickar varor mellan två lager med en [flyttorder](/manual/lager/flyttorder) lägger NONOX dem på en plats som heter **På väg**, en för varje par av lager. Den syns inte i listan här och går inte att välja i formulär. Varorna på den räknas med i artikelns totala saldo och värde.
+
 ## Ändra och inaktivera
 
 - **Ändra** byter kod, namn eller adress. Byter du koden på en zon får alla hyllor och fack under den den nya koden.
@@ -48,5 +56,6 @@ En plats kan inte flyttas till en annan förälder. Lägg i stället upp en ny p
 ## Läs också
 
 - [Plocklista](/manual/lager/plocklista) – hur koderna styr vägen genom lagret.
+- [Flyttorder](/manual/lager/flyttorder) – flytta varor mellan två lager.
 - [Artiklar i lager](/manual/lager/artiklar) – standardplats per artikel.
 - [Skriv ut etiketter](/manual/lager/etiketter) – etiketter med platskoden för en plats eller en hel hylla.

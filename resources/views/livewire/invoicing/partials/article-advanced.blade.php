@@ -159,6 +159,9 @@
                 <div class="sm:col-span-6">
                     <livewire:inventory.unit-conversions :article-id="$editingId" :key="'conversions-'.$editingId" />
                 </div>
+                <div class="sm:col-span-6">
+                    <livewire:inventory.reorder-points :article-id="$editingId" :key="'reorder-points-'.$editingId" />
+                </div>
             @endif
         @endif
     </fieldset>

@@ -24,6 +24,8 @@ För varje lagerartikel räknar NONOX:
 
 En artikel med en **beställningspunkt** fylls på när det som finns och är på väg, minus det reserverade, ligger vid eller under punkten. Då föreslås beställningskvantiteten, eller det som behövs för att komma tillbaka till punkten om det är mer. Finns det också en brist föreslås det största av de två.
 
+Har artikeln en [beställningspunkt per lager](/manual/lager/artiklar#bestallningspunkt-per-lager) bedöms den i stället lager för lager. Varje lager som ligger vid eller under sin punkt, med det som är på väg dit i en flyttorder medräknat, bidrar med sin påfyllning, och summan minus det som redan är beställt hos leverantörer föreslås. Beställningspunkten för hela företaget används då inte för den artikeln. Behovet av ett lager kan lika gärna lösas med en [flyttorder](/manual/lager/flyttorder) från ett annat lager. Se **Lager under beställningspunkten** där. Ett överskott i ett lager räknas inte av mot ett annat lagers brist, och utkast till flyttorder räknas inte.
+
 Förslaget står i artikelns inköpsenhet och avrundas uppåt. Förpackningar, par, set och annat som räknas i hela enheter avrundas till hela enheter, så att du alltid beställer hela förpackningar. Beställningspunkten och beställningskvantiteten sätter du på artikeln under **Lager → Artiklar**.
 
 ## Så här gör du inköpsorder av förslaget

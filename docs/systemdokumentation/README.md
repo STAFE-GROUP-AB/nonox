@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.151
+- Version: 0.152
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -5589,6 +5589,17 @@ bokslutet (ADR-039). Modulen ändrar bokföringen bara i bokslutssteget nedan.
   med leverantörsfakturan som tidigare.
 - **Plocklista** görs från en order, en faktura eller för hand och sorteras
   efter plats. När den klarmarkeras dras det plockade från lagret.
+- **Flyttorder** (ADR-081 E13) flyttar varor mellan två lager. När den
+  skickas dras varorna från avsändarens plats och läggs på en plats av typen
+  `TRANSIT` (På väg), en per par av lager, som är inaktiv och inte syns i
+  listor; när de tas emot, helt eller i delar, läggs de på mottagarens plats.
+  Båda stegen är vanliga flyttrörelser (`TRANSFER`) i samma logg, med
+  flyttordern som källa och med batch eller serienummer. En flytt har ingen
+  kostnad, så artikelns totala saldo och värdet vid bokslutet är oförändrade
+  hela vägen och räknas som förut för hela företaget; det som är på väg ingår
+  i artikelns saldo. `php artisan inventory:verify` jämför också saldot på
+  platserna På väg med vad flyttorderns öppna rader har kvar att leverera.
+  Flyttordern bokför ingenting.
 - **Inventering** sparar systemets antal när den startar. Skillnaden mot det
   räknade förs in som inventeringsrörelser med orsak när inventeringen
   slutförs.
@@ -6884,3 +6895,4 @@ påverkar bokföringen och fakturan:
 | 0.149 | 2026-11-18 | Avstämning mot inköpsorder per rad (avsnitt 5a1f, ADR-081 lucka 3, paket E11): leverantörsfakturans rader fördelas på inköpsorderns rader, och varje rad jämförs med det beställda, det mottagna och det andra fakturor redan tagit betalt för, mot företagets toleranser (antal 0 %, pris 2 % eller 50 kr). Resultatet sparas i `purchase_match_results`, som bara kan ersättas en gång och få en avvikelse godkänd en gång med skäl av den som får attestera; databasen vägrar annan ändring och borttagning. Före varje attest görs jämförelsen om; en avvikelse som inte är godkänd stoppar attesten om företaget har valt det, annars skrivs den i behandlingshistoriken. Ingen verifikation skapas eller ändras. |
 | 0.150 | 2026-11-18 | Pågående arbeten på projekt och faktureringsplan (avsnitt 5a5.1, ADR-081 lucka 6, paket E8): företagets metod för fastprisuppdrag sparas på företaget (`teams.fixed_price_method`) och gäller både arbetsorder och projekt. Bokslut → Pågående projekt räknar för projekt till fast pris utan arbetsorder färdigställandegrad, upparbetad intäkt och skillnad mot det fakturerade, och föreslår två verifikationsutkast (justering och återföring) bara ur de siffror som visades; siffrorna sparas i `project_wip_snapshots`, som inte kan ändras eller tas bort. Projekt på löpande räkning utan arbetsorder får inget värde. Faktureringsplan per projekt (`project_billing_milestones`) där en delfakturering blir ett fakturautkast med projektet på raden. Ingenting bokförs automatiskt och ingen bokförd verifikation ändras. |
 | 0.151 | 2026-11-18 | Koncernfakturor och motsvarande utkast (avsnitt 4.10d, ADR-081 paket E27): en utfärdad kundfaktura till en kund som är markerad som koncernföretag kan levereras som e-faktura (Peppol BIS Billing 3.0 med PDF) till inkorgen i det NONOX-företag som har organisationsnumret, när båda är aktiva medlemmar i samma koncern och mottagaren har slagit på mottagning från avsändaren (`intercompany_receipt_settings`); varje försök sparas i `intercompany_deliveries`, som bara kan läggas till, och avsändaren får inget skäl när leveransen nekas. Från en bokförd verifikation kan den som får skapa verifikationer i båda företagen göra ett utkast med vända rader i koncernföretaget, byggt från dess kontoplan, med en rad i `intercompany_pairs` i varje företag. Ingenting bokförs i det andra företaget, och ingen verifikation, numrering eller hashkedja ändras. |
+| 0.152 | 2026-11-18 | Flyttorder mellan lager (avsnitt 5j, ADR-081 paket E13): varor flyttas mellan två lager via platsen På väg (`TRANSIT`) med vanliga flyttrörelser och med batch eller serienummer. Artikelns saldo och värdet vid bokslutet är oförändrade, ingen kostnad läggs på och ingenting bokförs. Platsen På väg kan bara röras av en flyttorder. |

@@ -15,10 +15,12 @@ use App\Modules\Inventory\Actions\Planning\GenerateDemandForecast;
 use App\Modules\Inventory\Actions\Planning\SaveDemandForecast;
 use App\Modules\Inventory\Actions\ReceiveStock;
 use App\Modules\Inventory\Actions\RecordMovement;
+use App\Modules\Inventory\Actions\ReorderPoints;
 use App\Modules\Inventory\Actions\SaveLocation;
 use App\Modules\Inventory\Actions\SaveReceipt;
 use App\Modules\Inventory\Actions\Shipments;
 use App\Modules\Inventory\Actions\StockCounts;
+use App\Modules\Inventory\Actions\StockTransfers;
 use App\Modules\Inventory\Domain\ForecastPeriodKind;
 use App\Modules\Inventory\Domain\Gtin;
 use App\Modules\Inventory\Domain\LocationType;
@@ -29,7 +31,9 @@ use App\Modules\Inventory\Models\PickListLine;
 use App\Modules\Inventory\Models\Shipment;
 use App\Modules\Inventory\Models\ShipmentPackage;
 use App\Modules\Inventory\Models\StockCountLine;
+use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Inventory\Models\StockReceipt;
+use App\Modules\Inventory\Models\StockTransfer;
 use App\Modules\Inventory\Support\ShipmentContents;
 use App\Modules\Manufacturing\Mrp\Actions\RunMrp;
 use App\Modules\ModuleManager;
@@ -53,6 +57,10 @@ use Illuminate\Http\UploadedFile;
  * use, so no code belongs to a real product. The pictures are drawn here.
  * Nothing is booked: Lager writes to the ledger only when the stock change
  * is booked at the year end.
+ *
+ * Transfer orders and reorder points per warehouse (ADR-081 E13): one order
+ * received, one still on its way, and reorder points for the shop and the
+ * back store.
  *
  * Planning (ADR-081 gap 5): planning data on some articles and a demand
  * forecast for the next 13 weeks.
@@ -166,6 +174,7 @@ final class InventoryExtras extends DemoExtra
         $this->shopFloor($context, 10);
         $this->shipments($context, $sent);
 
+        $this->transfers($context);
         $this->expectedReceipt($context);
         $this->openPickList($context);
         $this->todaysCount($context);
@@ -354,6 +363,36 @@ final class InventoryExtras extends DemoExtra
         }
 
         return app(ReceiveStock::class)($c->user, $c->company, $receipt, $receive, $date);
+    }
+
+    /**
+     * Transfer orders between the back store and the shop (ADR-081 E13): one
+     * received in the autumn, one sent a few days ago and still on its way,
+     * and a reorder point for the shop on the lantern, which it is below.
+     */
+    private function transfers(DemoContext $c): void
+    {
+        $transfers = app(StockTransfers::class);
+        $order = function (string $from, string $to, array $rows, string $note) use ($c, $transfers): StockTransfer {
+            return $transfers->save($c->user, $c->company, [
+                'from_location_id' => $this->locations[$from],
+                'to_location_id' => $this->locations[$to],
+                'note' => $note,
+                'lines' => array_map(fn (array $row): array => ['article_id' => $this->articles[$row[0]]->id, 'quantity' => (string) $row[1]], $rows),
+            ]);
+        };
+
+        $received = $transfers->send($c->user, $c->company, $order('HL-B-02-2', 'BU-02', [['T-304', 3]], 'Badtextil till butiken'), $this->day($c, 11, 3));
+        $transfers->receive($c->user, $c->company, $received, $received->lines()->pluck('quantity_milli', 'id')->map(fn (int $milli): string => Quantity::decimal($milli))->all(), $this->day($c, 11, 5));
+
+        $transfers->send($c->user, $c->company, $order('HL-A-02', 'BU-01', [['L-203', 6], ['L-201', 3]], 'Krukor och vaser till fönsterbordet'), $c->today->subDays(2));
+
+        $points = app(ReorderPoints::class);
+        $shop = StockLocation::query()->where('full_code', 'BU')->firstOrFail();
+        $store = StockLocation::query()->where('full_code', 'HL')->firstOrFail();
+        $points->save($c->user, $c->company, $this->articles['L-103'], $shop->id, '8', '12');
+        $points->save($c->user, $c->company, $this->articles['L-103'], $store->id, '6', '20');
+        $points->save($c->user, $c->company, $this->articles['L-101'], $shop->id, '6', '12');
     }
 
     /** What stands out in the shop is moved from the back store, a few times a year. */

@@ -152,6 +152,14 @@
       "omrade": "Bokföring"
     },
     {
+      "id": "2026-11-18-flyttorder-och-bestallningspunkt-per-lager",
+      "datum": "2026-11-18T11:05:00+01:00",
+      "rubrik": "Flyttorder mellan lager och beställningspunkt per lager",
+      "beskrivning": "Med en flyttorder flyttar du varor mellan två lager: de väntar på väg tills de tas emot, kan tas emot i delar, följer med sin batch eller sitt serienummer och räknas med i lagervärdet hela tiden. Varje artikel kan dessutom få en egen beställningspunkt per lager, som inköpsförslaget bedömer lager för lager, och ett lager kan knytas till ett kostnadsställe.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-18-projektresultat",
       "datum": "2026-11-18T11:00:00+01:00",
       "rubrik": "Projektresultat mot budget och kalkyl",

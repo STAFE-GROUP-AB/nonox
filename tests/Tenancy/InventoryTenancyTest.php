@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 use App\Modules\Connect\Models\ConnectWebhookDelivery;
 use App\Modules\Inventory\Actions\PickLists;
+use App\Modules\Inventory\Actions\ReorderPoints;
+use App\Modules\Inventory\Actions\SaveLocation;
 use App\Modules\Inventory\Actions\StockCounts;
+use App\Modules\Inventory\Actions\StockTransfers;
 use App\Modules\Inventory\Livewire\ArticlesPage;
 use App\Modules\Inventory\Livewire\LocationsPage;
 use App\Modules\Inventory\Livewire\PickListsPage;
+use App\Modules\Inventory\Livewire\ReorderPointsPanel;
 use App\Modules\Inventory\Livewire\ReportsPage;
+use App\Modules\Inventory\Livewire\StockTransfersPage;
 use App\Modules\Inventory\Models\ArticleImage;
+use App\Modules\Inventory\Models\ArticleLocationSetting;
 use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\PickListLine;
 use App\Modules\Inventory\Models\StockCount;
@@ -19,11 +25,14 @@ use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Models\StockReceiptLine;
+use App\Modules\Inventory\Models\StockTransfer;
+use App\Modules\Inventory\Models\StockTransferLine;
 use App\Modules\Inventory\Models\StockValuation;
 use App\Modules\Inventory\Support\StockValuationReport;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
@@ -54,7 +63,10 @@ beforeEach(function () {
         $count = app(StockCounts::class)->start($owner, $company, null, CarbonImmutable::parse('2026-06-01'));
         ArticleImage::create(['article_id' => $article->id, 'path' => "bilder/{$name}.webp", 'position' => 0, 'alt' => "{$name}bild"]);
         StockValuation::create(['valuation_date' => '2026-12-31', 'method' => 'FIFO', 'cost_value_ore' => 1, 'value_ore' => 1, 'stock_account' => 1460, 'change_account' => 4960, 'lines' => []]);
-        $this->{$side} = compact('owner', 'company', 'places', 'article', 'pick', 'count');
+        $shop = app(SaveLocation::class)($owner, $company, ['type' => 'WAREHOUSE', 'code' => 'BU', 'name' => 'Butiken']);
+        $transfer = app(StockTransfers::class)->save($owner, $company, ['from_location_id' => $places['bin1']->id, 'to_location_id' => $shop->id, 'lines' => [['article_id' => $article->id, 'quantity' => '1']]]);
+        app(ReorderPoints::class)->save($owner, $company, $article, $shop->id, '2', '');
+        $this->{$side} = compact('owner', 'company', 'places', 'article', 'pick', 'count', 'shop', 'transfer');
     }
 
     CurrentCompany::set($this->a['company']);
@@ -67,7 +79,27 @@ it('scopes every Lager model to the current company', function (string $model) {
 })->with([
     StockLocation::class, StockMovement::class, StockLevel::class, StockReceipt::class, StockReceiptLine::class,
     PickList::class, PickListLine::class, StockCount::class, StockCountLine::class, StockValuation::class, ArticleImage::class,
+    StockTransfer::class, StockTransferLine::class, ArticleLocationSetting::class,
 ]);
+
+it('answers 404 for the other company\'s transfer orders, their document and their reorder points', function () {
+    expect(StockTransfer::query()->find($this->b['transfer']->id))->toBeNull();
+
+    $this->get(route('inventory.transfers.pdf', $this->b['transfer']->id))->assertNotFound();
+    $this->get(route('inventory.transfers.pdf', $this->a['transfer']->id))->assertOk();
+
+    Livewire::test(StockTransfersPage::class)->call('send')->assertNotFound();
+    Livewire::test(StockTransfersPage::class)->set('open', $this->b['transfer']->id)->assertDontSee('Betavara');
+    Livewire::test(ReorderPointsPanel::class, ['articleId' => $this->b['article']->id])->assertNotFound();
+
+    $foreign = ArticleLocationSetting::query()->withoutGlobalScopes()->where('company_id', $this->b['company']->id)->sole();
+    Livewire::test(ReorderPointsPanel::class, ['articleId' => $this->a['article']->id])->call('remove', $foreign->id)->assertNotFound();
+
+    expect(fn () => app(StockTransfers::class)->send($this->a['owner'], $this->a['company'], $this->b['transfer'], CarbonImmutable::parse('2026-04-01')))->toThrow(ModelNotFoundException::class);
+
+    CurrentCompany::set($this->b['company']);
+    expect($this->b['transfer']->fresh()->status)->toBe('DRAFT');
+});
 
 it('answers 404 for the other company\'s records', function () {
     expect(StockLocation::query()->find($this->b['places']['bin1']->id))->toBeNull()

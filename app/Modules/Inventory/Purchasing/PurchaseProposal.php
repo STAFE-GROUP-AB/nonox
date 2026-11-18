@@ -8,8 +8,10 @@ use App\Models\Article;
 use App\Models\Company;
 use App\Models\Unit;
 use App\Modules\Inventory\Domain\PurchaseOrderStatus;
+use App\Modules\Inventory\Models\ArticleLocationSetting;
 use App\Modules\Inventory\Models\PurchaseOrderRow;
 use App\Modules\Inventory\Models\StockLevel;
+use App\Modules\Inventory\Support\WarehouseStock;
 use Brick\Math\BigRational;
 use Illuminate\Support\Facades\DB;
 
@@ -26,7 +28,11 @@ use Illuminate\Support\Facades\DB;
  * or below the point is ordered back above it: the reorder quantity, or what
  * brings it back to the point when that is more or no reorder quantity is
  * set. The proposal is the larger of that and the shortage, expressed in the
- * article's purchase unit and rounded up (whole packs). Runs inside the
+ * article's purchase unit and rounded up (whole packs). An article with
+ * reorder points per warehouse (ADR-081 E13) is judged warehouse by
+ * warehouse instead: each warehouse at or below its point (counting goods on
+ * their way to it) adds its refill, less what open purchase orders will
+ * bring. Runs inside the
  * company, in a fixed number of queries whatever the number of articles.
  */
 final class PurchaseProposal
@@ -46,11 +52,14 @@ final class PurchaseProposal
             }
         }
 
+        // A reorder point per warehouse (ADR-081 E13) replaces the article's own.
+        $settings = ArticleLocationSetting::query()->get()->groupBy('article_id');
+
         $articles = Article::query()
             ->with(['stockUnit', 'purchaseUnit', 'defaultSupplier:id,name'])
             ->where('is_stock_item', true)
             ->where('is_active', true)
-            ->where(fn ($query) => $query->whereNotNull('reorder_point_milli')->orWhereIn('id', array_keys($reserved)))
+            ->where(fn ($query) => $query->whereNotNull('reorder_point_milli')->orWhereIn('id', array_keys($reserved))->orWhereIn('id', $settings->keys()->all()))
             ->orderBy('number')
             ->get();
 
@@ -76,6 +85,7 @@ final class PurchaseProposal
             }
         }
 
+        $perWarehouse = WarehouseStock::forArticles(array_values(array_map(intval(...), $settings->keys()->all())));
         $conversions = PurchaseQuantities::conversions($ids);
         $lines = [];
 
@@ -85,8 +95,19 @@ final class PurchaseProposal
             $incoming = (int) ($coming->get($article->id)?->getAttribute('milli') ?? 0) + ($supplied[$article->id] ?? 0);
             $available = $have - $taken + $incoming;
             $short = max(0, $taken - $have - $incoming);
-            $below = $article->reorder_point_milli !== null && $available <= $article->reorder_point_milli;
-            $refill = $below ? max($article->reorder_quantity_milli ?? 0, $article->reorder_point_milli - $available) : 0;
+
+            $articleSettings = $settings->get($article->id);
+
+            if ($articleSettings !== null) {
+                $shortfall = WarehouseStock::shortfall($articleSettings, $perWarehouse[$article->id] ?? []);
+                $below = $shortfall['below'];
+                // Reserved goods will leave stock, as in the company-wide path ($have - $taken + $incoming).
+                $refill = $shortfall['below'] ? max(0, $shortfall['refill'] + $taken - $incoming) : 0;
+            } else {
+                $below = $article->reorder_point_milli !== null && $available <= $article->reorder_point_milli;
+                $refill = $below ? max($article->reorder_quantity_milli ?? 0, $article->reorder_point_milli - $available) : 0;
+            }
+
             $proposed = max($short, $refill);
 
             if ($proposed <= 0) {

@@ -55,7 +55,13 @@ class VerifyStockCommand extends Command
                 $this->error("Article {$difference['article_id']} at location {$difference['location_id']}, {$where}: balance {$difference['balance']}, movements {$difference['movements']}.");
             }
 
-            $failed += $differences === [] && $lotDifferences === [] ? 0 : 1;
+            $transitDifferences = StockBalanceCheck::transitDifferences($company);
+
+            foreach ($transitDifferences as $difference) {
+                $this->error("Article {$difference['article_id']} in transit location {$difference['location_id']}: balance {$difference['balance']}, open transfer order lines {$difference['movements']}.");
+            }
+
+            $failed += $differences === [] && $lotDifferences === [] && $transitDifferences === [] ? 0 : 1;
         }
 
         if ($failed > 0) {

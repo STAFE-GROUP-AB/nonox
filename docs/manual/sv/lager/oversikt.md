@@ -43,6 +43,7 @@ Under **Lager → Översikt** ser du:
 - [Inleverans](/manual/lager/inleverans) – varor in från leverantörer, allt på en gång eller i delar.
 - [Plocklista](/manual/lager/plocklista) – hämta varor till en order eller faktura.
 - [Packa och skicka](/manual/lager/packa-och-skicka) – lägg det plockade i kollin, skicka det och skriv ut följesedeln.
+- [Flyttorder](/manual/lager/flyttorder) – flytta varor mellan lager, med en stopp på väg.
 - [Inventering](/manual/lager/inventering) – räkna det som finns på hyllan.
 - [Skanna med mobilen](/manual/lager/skanna) – ta emot, plocka, flytta och inventera med telefonen, även utan nät.
 - [Lagervärde vid bokslut](/manual/lager/lagervarde-vid-bokslut) – underlaget för varulagret och lagerförändringen.

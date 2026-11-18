@@ -38,4 +38,29 @@ final class LocationTree
 
         return $ids;
     }
+
+    /**
+     * The warehouse (the root of the tree) each location belongs to, by id;
+     * a root, and a transit location, map to themselves. One query.
+     *
+     * @return array<int, int>
+     */
+    public static function warehouseIds(): array
+    {
+        $parents = StockLocation::query()->pluck('parent_id', 'id')->all();
+        $roots = [];
+
+        foreach ($parents as $id => $parent) {
+            $root = (int) $id;
+            $guard = 0;
+
+            while (($parents[$root] ?? null) !== null && $guard++ < 10) {
+                $root = (int) $parents[$root];
+            }
+
+            $roots[(int) $id] = $root;
+        }
+
+        return $roots;
+    }
 }

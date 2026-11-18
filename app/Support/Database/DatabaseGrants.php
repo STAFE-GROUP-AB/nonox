@@ -53,6 +53,7 @@ final class DatabaseGrants
         'approval_requests' => GrantDecision::NoDelete,
         'archive_packages' => GrantDecision::ReadWrite,
         'article_images' => GrantDecision::ReadWrite,
+        'article_location_settings' => GrantDecision::ReadWrite,
         'article_unit_conversions' => GrantDecision::ReadWrite,
         'articles' => GrantDecision::ReadWrite,
         'audit_logs' => GrantDecision::AppendOnly,
@@ -394,6 +395,8 @@ final class DatabaseGrants
         'stock_locations' => GrantDecision::ReadWrite,
         'stock_movements' => GrantDecision::AppendOnly,
         'stock_receipt_lines' => GrantDecision::ReadWrite,
+        'stock_transfer_lines' => GrantDecision::ReadWrite,
+        'stock_transfers' => GrantDecision::ReadWrite,
         'stock_receipts' => GrantDecision::ReadWrite,
         'stock_valuations' => GrantDecision::AppendOnly,
         // Stripe in NONOX Connect (ADR-080 step 2). The raw objects are never changed (trigger), only pruned after a disconnect.

@@ -13292,6 +13292,7 @@ components:
             - ZONE
             - SHELF
             - BIN
+            - TRANSIT
         code:
           type: string
         full_code:

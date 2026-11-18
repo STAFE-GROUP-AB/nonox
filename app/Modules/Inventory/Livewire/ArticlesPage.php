@@ -68,7 +68,7 @@ class ArticlesPage extends Component
     {
         abort_unless($this->can('count'), 403);
         $article = Article::query()->findOrFail($articleId);
-        $from = StockLevel::query()->where('article_id', $article->id)->where('quantity_milli', '>', 0)->value('location_id') ?? $article->default_location_id;
+        $from = StockLevel::query()->where('article_id', $article->id)->where('quantity_milli', '>', 0)->whereHas('location', fn ($place) => $place->physical())->value('location_id') ?? $article->default_location_id;
 
         $this->moving = $article->id;
         $this->form = ['kind' => $kind, 'location_id' => $from, 'to_location_id' => null, 'quantity' => '', 'date' => CarbonImmutable::today()->toDateString(), 'note' => '', 'lot_id' => '', 'lot_code' => '', 'expires_on' => '', 'serials' => ''];
