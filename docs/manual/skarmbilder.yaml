@@ -94,6 +94,7 @@ personalliggare/lokaler: { foretag: restaurang, rutt: staff-ledger.locations }
 personalliggare/kontrollbesok: { foretag: restaurang, rutt: staff-ledger.control-visit }
 
 byra/mina-foretag: { foretag: byra, rutt: companies.overview }
+rapporter/koncernstruktur: { foretag: konsult, rutt: group.corporate, del: 'main', text: Konsultbolaget Exempel Demo AB }
 
 installningar/foretagets-uppgifter: { foretag: konsult, rutt: teams.show, modell: company }
 

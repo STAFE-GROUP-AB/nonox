@@ -23,6 +23,10 @@
         <p class="mt-1">{{ __('Siffrorna är bara en sammanställning av företagens egen bokföring för ditt eget underlag. Det är ingen koncernredovisning enligt årsredovisningslagen: ingenting konsolideras, ingen bokföring ändras och elimineringarna är förslag som inte bokförs någonstans.') }}</p>
     </div>
 
+    <div class="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 print:hidden" role="note">
+        <p>{{ __('Det här är din egen lista. Den ersätts av en koncern som flera företag kan dela, med moderföretag, innehav och roller.') }} <a href="{{ route('group.corporate') }}" class="font-medium text-accent-600 hover:text-accent-700 focus:outline-hidden focus:underline">{{ __('Gå till Koncernstruktur och välj Gör om till koncern') }}</a></p>
+    </div>
+
     <div class="flex flex-wrap items-end gap-4 print:hidden">
         @if($groups->isNotEmpty())
             <x-ui.field for="group_select" :label="__('Koncern')" class="min-w-56">

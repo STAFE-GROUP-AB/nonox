@@ -204,6 +204,8 @@ Route::middleware([
     Route::view('/mina-foretag/schema', 'firm.chain-schedule')->name('companies.schedule');
     // The user's own groups of companies, for internal reporting (ADR-060); spans companies like Mina företag.
     Route::view('/koncern', 'group.overview')->name('group.overview');
+    // The shared group's structure, holdings and period status (ADR-081 E22, ADR-060 S2-1.2); spans companies, so GroupAccess decides what is shown.
+    Route::view('/koncern/struktur', 'group.corporate')->name('group.corporate');
     Route::get('/koncern/{group}/csv', GroupCsvController::class)->whereNumber('group')->name('group.csv');
     // Across every company the user belongs to (ADR-028).
     Route::view('/uppgifter', 'tasks.index')->name('tasks.index');

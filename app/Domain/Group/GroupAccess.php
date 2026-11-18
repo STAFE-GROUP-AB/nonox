@@ -147,6 +147,18 @@ final class GroupAccess
         return $this->memberships->has($companyId) && in_array($this->memberships->role($companyId), self::ADMIN_ROLES, true);
     }
 
+    /** @return SupportCollection<int, Company> every company the user is a member of, archived or not, read once */
+    public function companies(): SupportCollection
+    {
+        return $this->memberships->companies;
+    }
+
+    /** company:update in the company: what recording a holding in it needs (RecordHolding). */
+    public function mayUpdate(int $companyId): bool
+    {
+        return $this->memberships->may($companyId, 'company:update');
+    }
+
     /** A member of the company in any role. */
     public function isMember(int $companyId): bool
     {
@@ -168,6 +180,13 @@ final class GroupAccess
     }
 
     /** @return Collection<int, CorporateGroup> the shared groups the user sees at all, by name */
+    /** Cheap check before corporateGroups(): whether any group mentions the user's companies or the user at all. */
+    public function touchesAnyCorporateGroup(): bool
+    {
+        return CorporateGroupMember::query()->whereIn('company_id', $this->memberships->ids())->exists()
+            || CorporateGroupRole::query()->where('user_id', $this->user->id)->exists();
+    }
+
     public function corporateGroups(): Collection
     {
         $companyIds = $this->memberships->ids();
