@@ -169,6 +169,14 @@
       "kommentar": "Vi har inte bestämt oss ännu."
     },
     {
+      "id": "erp",
+      "rubrik": "Koncern, budget, inköp och lager på djupet",
+      "beskrivning": "Vi bygger det som gör NONOX till ett affärssystem för mindre koncerner och tillverkande företag: koncernredovisning med eliminering, budget och prognos per konto, kostnadsställe och projekt, inköp med anmodan och attest, batch- och serienummer och flera lagerställen, materialbehovsplanering, projektredovisning, en rapportbyggare, egna attestflöden, dokumenthantering och behörigheter per enhet.",
+      "status": "Pågår",
+      "omrade": "Övrigt",
+      "uppdaterad": "2026-11-18"
+    },
+    {
       "id": "planering-toppklass",
       "rubrik": "Planering: förslag till schema, bemanningsbehov och budget",
       "beskrivning": "Planering har redan schema, kostnad per pass, arbetstidsregler, byten, tillgänglighet och attest direkt till lönen. Nu bygger vi bemanningsbehov per timme från försäljningen och kassan, en budget per vecka som varnar, ett förslag till schema som följer reglerna, kompetenserna och önskemålen och fördelar passen rättvist, uppgifter i passen och meddelanden till personalen i schemat.",
