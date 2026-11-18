@@ -4,7 +4,7 @@ ordning: 27
 roller: [owner, admin, accountant, bookkeeper, sales]
 modul: crm
 rutter: [signing.file]
-sokord: [signera, signering, e-signatur, underskrift, namnteckning, digital signatur, elektronisk underskrift, godkänna offert, signeringsbevis, avtal]
+sokord: [signera, signering, e-signatur, underskrift, namnteckning, digital signatur, elektronisk underskrift, godkänna offert, signeringsbevis, avtal, engångskod, åtkomstkod, kontroll av undertecknaren, låst länk]
 ---
 
 # Signera offerter och avtal
@@ -26,6 +26,33 @@ Offerter kan signeras med eller utan modulen CRM. Avtal finns i CRM och kräver 
 7. Tryck på **Skicka för signering**.
 
 Mejlet går ut med företagets namn som avsändare, och svarar kunden går svaret till företagets e-postadress. Länken kan användas en gång. Skickar du igen slutar den tidigare länken att gälla.
+
+## Kontrollera den som signerar
+
+Länken i mejlet är det enda som behövs för att öppna dokumentet. Vidarebefordras mejlet kan alltså någon annan öppna det. Vill du minska den risken väljer du **Kontroll av undertecknaren** innan du skickar:
+
+- **Ingen kontroll, bara länken**: som förut. Det är förvalt för offerter och avtal.
+- **Kod till e-posten**: när undertecknaren öppnar länken trycker hen på **Skicka kod** och får en kod med sex siffror till sin e-post. Koden skrivs in under **Kod från e-posten** och gäller i 10 minuter. Först därefter visas dokumentet.
+- **Åtkomstkod som du lämnar själv**: du skriver en **Åtkomstkod** och ger den till undertecknaren på annat sätt, till exempel per telefon. Tryck på **Föreslå kod** för att få en slumpad kod med tio tecken som är lätt att läsa upp. En egen kod ska ha minst 6 tecken, eller minst 8 om den bara har siffror, och vanliga koder som 12345678 godtas inte. Använd inte personnummer, telefonnummer eller annat som någon kan ta reda på. NONOX skickar aldrig koden och sparar bara en hash av den, så du kan inte se den igen efteråt.
+
+Med **Fler undertecknare** väljer du kontroll för varje undertecknare för sig.
+
+![Signering med valet Kontroll av undertecknaren och en länk som väntar på en kod till e-posten.](/bilder/manual/crm/signering-kontroll.webp)
+
+Undertecknaren ser först en sida som bara visar ditt företags namn, inte dokumentet:
+
+![Sidan där undertecknaren ber om en kod innan dokumentet visas.](/bilder/manual/crm/signera-kod.webp)
+
+Så fungerar koderna:
+
+- En kod per e-post kan användas en gång. Den som trycker på **Skicka kod** två gånger inom en minut får inget nytt mejl; koden som redan skickats gäller. Högst tre koder i timmen.
+- Länken räknas som öppnad först när undertecknaren har klarat kontrollen.
+- Ett testföretag i NONOX skickar inga mejl, så där kan ingen kod per e-post skickas. Undertecknaren ser det på sidan; använd en åtkomstkod när du provar i ett testföretag.
+- Efter kontrollen kan undertecknaren läsa och signera i samma webbläsare i 30 minuter. Öppnas länken i en annan webbläsare behövs en ny kontroll.
+- Efter för många felaktiga försök låses länken: tio fel med koder per e-post, fem fel med åtkomstkoden. Undertecknaren ser att hen ska kontakta dig, och du får en notis. Under **Signering** står då att länken är låst. Tryck på **Lås upp** om du vet att det var undertecknaren själv som skrev fel; annars kan du skicka dokumentet på nytt.
+- Varje kod som skickas, varje lyckad och misslyckad kontroll och varje låsning och upplåsning blir en händelse i **Händelser**, i händelsekedjan, och står i signeringsbeviset. Själva koden sparas aldrig i klartext.
+
+Kontrollen minskar risken att någon annan använder en vidarebefordrad länk. Den gör inte underskriften säkrare än en **enkel elektronisk underskrift** och identifierar inte personen. På signeringsbeviset står vilken kontroll som användes och när undertecknaren klarade den.
 
 ![Signering på offerten, med länkar som har skickats, deras status och signeringsbeviset.](/bilder/manual/crm/signering.webp)
 
@@ -60,7 +87,7 @@ Avböjer kunden loggas det på kundens kort med skälet, och du får en notis. O
 
 ## Signeringsbeviset
 
-Signeringsbeviset är en PDF som visar vilket dokument som signerades, dess kontrollsumma (SHA-256), vem som signerade, när, hur (ritad namnteckning eller skrivet namn), från vilken IP-adress och webbläsare, och alla händelser: skickad, öppnad, signerad. Själva PDF:en som kunden såg ändras aldrig. Den som vill kontrollera att det är samma dokument räknar fram dess SHA-256 och jämför med beviset.
+Signeringsbeviset är en PDF som visar vilket dokument som signerades, dess kontrollsumma (SHA-256), vem som signerade, när, hur (ritad namnteckning eller skrivet namn), vilken kontroll av undertecknaren som användes, från vilken IP-adress och webbläsare, och alla händelser: skickad, öppnad, kod skickad, kontroll klarad, signerad. Själva PDF:en som kunden såg ändras aldrig. Den som vill kontrollera att det är samma dokument räknar fram dess SHA-256 och jämför med beviset.
 
 Under **Signering** på offerten eller avtalet hittar du **PDF:en som skickades**, **Signeringsbevis** och **Händelser** för varje länk.
 

@@ -349,7 +349,10 @@ final class SignAtLink
         }, self::ATTEMPTS));
     }
 
-    /** @throws SigningUnavailable */
+    /**
+     * @throws SigningUnavailable
+     * @throws ValidationException
+     */
     private function lockUsable(SigningRequest $request): SigningRequest
     {
         $locked = SigningRequest::query()->whereKey($request->id)->lockForUpdate()->firstOrFail();
@@ -357,6 +360,12 @@ final class SignAtLink
 
         if ($reason !== null) {
             throw new SigningUnavailable($reason);
+        }
+
+        // A signer the sender chose to check signs or declines only after a passed check (ADR-046 amendment, gap 3),
+        // whatever path calls this; the page also keeps the pass per browser (SignerPass).
+        if ($locked->verification->required() && ($locked->verified_at === null || $locked->locked_at !== null)) {
+            throw ValidationException::withMessages(['code' => __('Kontrollen behöver göras om innan du kan fortsätta.')]);
         }
 
         return $locked;

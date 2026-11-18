@@ -83,6 +83,7 @@ use App\Models\SigningEnvelope;
 use App\Models\SigningEvent as CrmSigningEvent;
 use App\Models\SigningLinkToken;
 use App\Models\SigningRequest as CrmSigningRequest;
+use App\Models\SigningVerificationCode;
 use App\Models\SkatteverketEvent;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
@@ -629,6 +630,7 @@ const COMPANY_SCOPED_MODELS = [
     SigningLinkToken::class => 'signingLinkTokenAttributes',
     SigningCopyRecipient::class => 'signingCopyRecipientAttributes',
     SigningDocumentVersion::class => 'signingDocumentVersionAttributes',
+    SigningVerificationCode::class => 'signingVerificationCodeAttributes',
     // The stored issued invoice PDF and the customer portal (ADR-075).
     InvoiceDocument::class => 'invoiceDocumentAttributes',
     PortalContact::class => 'portalContactAttributes',
@@ -2067,6 +2069,11 @@ function signingEnvelopeAttributes(): array
 function signingLinkTokenAttributes(): array
 {
     return ['signing_request_id' => CrmSigningRequest::create(crmSigningRequestAttributes())->id, 'token_hash' => hash('sha256', (string) random_int(0, PHP_INT_MAX)), 'issued_at' => now()];
+}
+
+function signingVerificationCodeAttributes(): array
+{
+    return ['signing_request_id' => CrmSigningRequest::create(crmSigningRequestAttributes())->id, 'code_mac' => str_repeat('0', 64), 'sent_at' => now(), 'expires_at' => now()->addMinutes(10), 'max_attempts' => 5];
 }
 
 function signingDocumentVersionAttributes(): array

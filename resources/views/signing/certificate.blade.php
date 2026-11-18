@@ -55,6 +55,9 @@
         @endif
         <tr><td class="muted">{{ $b('Signerad') }}</td><td>{{ $time($request->signed_at) }}</td></tr>
         <tr><td class="muted">{{ $b('Sätt') }}</td><td>{{ $request->signature_method === App\Models\SigningRequest::TYPED ? $b('Skrivet namn som underskrift') : $b('Ritad namnteckning') }}, {{ $b('med bekräftelsen') }} ”{{ $request->acceptance_text ?? App\Domain\Signing\SigningPdfs::acceptance($request) }}”</td></tr>
+        @if($request->verification->required())
+            <tr><td class="muted">{{ $b('Kontroll av undertecknaren') }}</td><td>{{ App\Domain\Signing\SigningPdfs::bilingualOf(fn () => $request->verification->evidence()) }}@if($request->verified_at), {{ $b('godkänd :time', ['time' => $time($request->verified_at)]) }}@endif</td></tr>
+        @endif
         <tr><td class="muted">{{ $b('IP-adress') }}</td><td>{{ $request->signer_ip }}</td></tr>
         <tr><td class="muted">{{ $b('Webbläsare') }}</td><td class="mono">{{ $request->signer_user_agent }}</td></tr>
     </table>
@@ -75,7 +78,7 @@
     </table>
 
     <div class="box">
-        <span class="muted">{!! $request->channel === 'PORTAL' ? App\Domain\Signing\SigningPdfs::bilingualBlock('En enkel elektronisk underskrift. Den godkända PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Godkännandet gjordes i företagets kundportal i NONOX av en kontakt som hade loggat in med en engångskod till e-postadressen ovan.') : App\Domain\Signing\SigningPdfs::bilingualBlock('En enkel elektronisk underskrift. Den signerade PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Signeringen gjordes i NONOX via en personlig länk som skickades till e-postadressen ovan.') !!}</span>
+        <span class="muted">{!! $request->channel === 'PORTAL' ? App\Domain\Signing\SigningPdfs::bilingualBlock('En enkel elektronisk underskrift. Den godkända PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Godkännandet gjordes i företagets kundportal i NONOX av en kontakt som hade loggat in med en engångskod till e-postadressen ovan.') : App\Domain\Signing\SigningPdfs::bilingualBlock('En enkel elektronisk underskrift. Den signerade PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Signeringen gjordes i NONOX via en personlig länk som skickades till e-postadressen ovan.') !!}@if($request->verification->required()){!! App\Domain\Signing\SigningPdfs::bilingualBlockOf(fn () => __('Innan dokumentet visades kontrollerades undertecknaren med :method. Kontrollen minskar risken att någon annan använt en vidarebefordrad länk; underskriften är fortfarande en enkel elektronisk underskrift.', ['method' => mb_strtolower($request->verification->evidence())])) !!}@endif</span>
     </div>
 </body>
 </html>

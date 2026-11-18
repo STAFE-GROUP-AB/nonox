@@ -13,6 +13,8 @@ use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SignedDocuments;
 use App\Domain\Signing\SigningDeadlines;
 use App\Domain\Signing\SigningStatus;
+use App\Domain\Signing\Verification\SignerCheck;
+use App\Domain\Signing\Verification\SignerChecks;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\AuditLog;
 use App\Models\Company;
@@ -48,6 +50,10 @@ use Throwable;
  * up to ten signers with a step each (the same step signs in parallel) and
  * up to ten copy recipients; a quote becomes an order only when everyone
  * has signed. "Dra tillbaka" withdraws such an envelope.
+ *
+ * "Kontroll av undertecknaren" (gap 3, S3): per signer, none, a code to the
+ * signer's e-mail, or an access code the sender gives another way. A signer
+ * locked out by failed checks shows as locked, with "Lås upp".
  */
 class SigningPanel extends Component
 {
@@ -72,13 +78,19 @@ class SigningPanel extends Component
     /** "Fler undertecknare": the envelope form with several signers and copy recipients (ADR-046 amendment, gap 1). */
     public bool $several = false;
 
-    /** @var list<array{email: string, step: int|string}> */
+    /** @var list<array{email: string, step: int|string, verification?: string, access_code?: string}> */
     public array $signers = [];
 
     /** @var list<array{email: string, name: string}> */
     public array $copies = [];
 
     public bool $notifyCopies = false;
+
+    /** The check before the document is shown (ADR-046 amendment, gap 3): NONE (the default for quotes and agreements), EMAIL_CODE or ACCESS_CODE. */
+    public string $verification = 'NONE';
+
+    /** The sender's access code; sent once with the form, stored hashed only, cleared after sending. */
+    public string $accessCode = '';
 
     /** Reminders on send (ADR-046 amendment, gap 9): on by default, every 3 days; 'single' is one reminder two days before the last day. */
     public bool $autoReminders = true;
@@ -115,8 +127,11 @@ class SigningPanel extends Component
             'reminder_days' => $this->reminderDays,
             'deal_id' => $this->dealId === '' ? null : (int) $this->dealId,
             'create_invoice' => $this->createInvoice,
+            'verification' => $this->verification,
+            'access_code' => $this->accessCode,
         ]);
 
+        $this->accessCode = '';
         $this->toast(__('Länken för signering är skickad till :email.', ['email' => $this->email]));
     }
 
@@ -127,7 +142,10 @@ class SigningPanel extends Component
         $this->several = true;
 
         if ($this->signers === []) {
-            $this->signers = [['email' => $this->email, 'step' => 1], ['email' => '', 'step' => 2]];
+            $this->signers = [
+                ['email' => $this->email, 'step' => 1, 'verification' => $this->verification, 'access_code' => ''],
+                ['email' => '', 'step' => 2, 'verification' => 'NONE', 'access_code' => ''],
+            ];
         }
     }
 
@@ -144,7 +162,7 @@ class SigningPanel extends Component
         }
 
         $last = $this->signers === [] ? 0 : (int) end($this->signers)['step'];
-        $this->signers[] = ['email' => '', 'step' => min(SigningEnvelope::MAX_STEP, max(1, $last + 1))];
+        $this->signers[] = ['email' => '', 'step' => min(SigningEnvelope::MAX_STEP, max(1, $last + 1)), 'verification' => 'NONE', 'access_code' => ''];
     }
 
     public function removeSigner(int $index): void
@@ -184,6 +202,33 @@ class SigningPanel extends Component
         $this->signers = [];
         $this->copies = [];
         $this->notifyCopies = false;
+    }
+
+    /** "Föreslå kod": a random access code of ten characters, easy to read out over the phone. */
+    public function suggestCode(): void
+    {
+        $this->resetErrorBag('access_code');
+        $this->accessCode = SignerChecks::suggestAccessCode();
+    }
+
+    /** "Föreslå kod" for one signer of "Fler undertecknare". */
+    public function suggestSignerCode(int $index): void
+    {
+        if (! isset($this->signers[$index])) {
+            return;
+        }
+
+        $this->resetErrorBag("signers.{$index}.access_code");
+        $this->signers[$index]['access_code'] = SignerChecks::suggestAccessCode();
+    }
+
+    /** "Lås upp": a signer locked out by failed checks may try again (ADR-046 amendment, gap 3). */
+    public function unlock(int $requestId, SignerChecks $checks): void
+    {
+        $request = $this->requests()->whereKey($requestId)->firstOrFail();
+        $checks->unlock($this->user(), $this->company(), $request);
+
+        $this->toast(__('Länken är upplåst. Undertecknaren kan försöka igen.'));
     }
 
     public function voidEnvelope(string $envelopeId, SendForSigning $send): void
@@ -254,6 +299,7 @@ class SigningPanel extends Component
             'maxSigners' => SigningEnvelope::MAX_SIGNERS,
             'maxCopies' => SigningEnvelope::MAX_COPIES,
             'maxStep' => SigningEnvelope::MAX_STEP,
+            'checks' => SignerCheck::choosable(),
             'intervals' => SigningDeadlines::INTERVALS,
             'minDays' => SigningDeadlines::MIN_DAYS,
             'maxDays' => SigningDeadlines::MAX_DAYS,

@@ -781,6 +781,97 @@ code or link.
 
 SMS codes (NONOX has no SMS; ADR-037 keeps SMS out too); identity questions.
 
+### As built in S3 (2026-11-18)
+
+- Migrations `database/migrations/2027_03_02_100000_create_signing_verification_codes.php`
+  (the request columns as specified, `signing_verification_codes` with a
+  `channel` LINK/ON_SITE and `max_attempts`, and two triggers) and
+  `app/Modules/WorkOrders/database/migrations/2027_03_02_100100_link_on_site_codes_to_verification_codes.php`.
+  `crm_signing_requests_protect_verification` keeps `verification` and
+  `access_code_hash` fixed from the insert and every check column fixed once
+  signed or declined; `signing_verification_codes_protect` lets a code row
+  change only its attempts (upwards) and `verified_at` (once). The existing
+  evidence triggers are untouched. A check constraint ties `access_code_hash`
+  to `ACCESS_CODE`; `PROVIDER` is allowed by the constraint but not offered.
+- Code: `app/Domain/Signing/Verification/` (`SignerCheck`, `SignerChecks`,
+  `SignerPass`, `CheckRefused`), `App\Models\SigningVerificationCode`,
+  `App\Mail\SigningCodeMail`, the check page `resources/views/signing/check.blade.php`,
+  routes `signing.code` (`POST /signera/{token}/kod`) and `signing.verify`
+  (`POST /signera/{token}/kontroll`) behind the limiter `signing-verify`
+  (10 a minute per link and 10 per IP address). The panel offers
+  "Kontroll av undertecknaren" per signer and "Lås upp".
+- **Limits chosen:** a code is valid 10 minutes, 5 attempts, used once, and
+  only the newest code of a signer counts; 3 codes an hour; a second "Skicka
+  kod" within 60 seconds reuses the code already sent (cache lock plus the
+  signer's row lock; no second mail). A signer is locked out after **10**
+  failed e-mail codes (two codes' worth) or **5** failed access codes. The
+  owner's general rule names "N failures"; these numbers are the builder's
+  default under the mandate.
+- **No code on GET.** The page asks the signer to press "Skicka kod", so a
+  mail program or link scanner that fetches the link sends nothing.
+- **The check page shows only the sender's name,** not the document's title.
+  The document, signing and declining are refused without a pass, in the
+  controller (per browser, `SignerPass`) and again in `SignAtLink` under the
+  row lock (`verified_at` set, not locked), whatever path calls it. A pass
+  lives in the session 30 minutes, bound to the request id and the token's
+  hash; the session id is regenerated when it is granted.
+- **Lock order:** document, signer row, code row, envelope (the chain), as
+  every signing path since S1. A failed attempt is counted and chained in its
+  own committed transaction; the error is thrown after.
+- **Events:** `CODE_SENT`, `VERIFIED`, `VERIFY_FAILED`, `LOCKED` as gap 4 lists
+  them, plus **`UNLOCKED`** (with the user id) for the sender's unlock, which
+  gap 4 did not list. Payloads hold the channel, the method, the code row's id
+  and counts; never a code, and no IP address or browser (as `OPENED`).
+  `SENT` carries the chosen method when it is not `NONE`. The API's per-link
+  `events` list keeps showing only the six signer steps
+  (`SigningEventType::isSignerStep` is now a whitelist), so the OpenAPI
+  contract is unchanged; the API still sends with `NONE` (S19 adds the field).
+- **`verified_at`** is the latest passed check (a new browser checks again),
+  frozen once the signer signs or declines. The certificate prints the method
+  and that time, and says the signature is still a simple electronic one; the
+  envelope summary names the method per signer.
+- **Lockout notice:** an in-app notice to the sender and the document's own
+  recipients, naming the document only (as the other signing notices), and an
+  audit entry `signing.locked`; the unlock writes `signing.unlocked`.
+- **The code mail** is sent at once after the commit, never queued (the code
+  must not sit in a queue table), and counted against the mail quota without
+  refusing. A send that fails tells the signer to try again in a minute.
+- **ÄTA on site:** a new on-site code is a `signing_verification_codes` row on
+  the `ON_SITE` channel with the same HMAC (`SignChangeOrder::codeHash` now
+  delegates to `SignerChecks::mac`), its `CODE_SENT`, `VERIFIED` and
+  `VERIFY_FAILED` events in the ÄTA envelope's chain, and the on-site row
+  points at it (`verification_code_id`) and mirrors the attempts. Behaviour is
+  unchanged: 15 minutes, 5 tries, no lock of the signer row, the link
+  forgotten after the fifth wrong code or expiry. Rows from before S3 are
+  checked against their own `code_hash`, as before. A code for a link that a
+  newer one replaced records no event (its envelope's chain is closed).
+- **Review round (2026-11-18):**
+  - **Weak access codes** are refused: digits only and shorter than 8, a short
+    list of common codes (case and spaces ignored), and anything over 72
+    bytes (`strlen`), since bcrypt reads only the first 72 bytes; a typed code
+    over 72 bytes is refused before `Hash::check` and not counted. The panel
+    has "Föreslå kod" (ten characters from an alphabet without 0/O and 1/l/I,
+    about 57 bits) and its hint advises against personal and phone numbers.
+  - `OPENED` is recorded only once the check has passed (the document is shown
+    then); the check page itself records nothing.
+  - An on-site `VERIFIED` names the method `ON_SITE`; `CODE_SENT` reads "En
+    engångskod skickades till undertecknarens e-post", true for both channels.
+  - A code whose mail fails after the commit is spent (its attempts set to the
+    maximum; the trigger allows attempts to grow), so the next "Skicka kod"
+    sends a new one instead of answering that one was just sent. A cache lock
+    that cannot be had answers "Koden kunde inte skickas just nu".
+  - **Test companies** (ADR-032) send no mail, so an e-mail code cannot reach
+    the signer. Chosen: the check page says so ("Det här är ett testföretag i
+    NONOX …") and "Skicka kod" refuses with the same text; the check is not
+    skipped, so a test company behaves like a real one. An access code works.
+  - **Known limits, accepted:** whoever holds a link can lock its signer out by
+    typing wrong codes on purpose (harassment, not a breach: nothing is shown,
+    the sender is told and can unlock or send a new link). The per-IP
+    throttle is shared by everyone behind one NAT address (an office or a
+    mobile carrier), so a busy office can hit it; the per-link throttle and
+    the counts in the database are what bound guessing. bcrypt's 72-byte limit
+    is handled by the cap above.
+
 ## Gap 4: a hash-chained audit trail
 
 ### What exists

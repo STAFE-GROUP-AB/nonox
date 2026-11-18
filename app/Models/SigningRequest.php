@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SigningStatus;
+use App\Domain\Signing\Verification\SignerCheck;
 use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\Deal;
 use App\Support\Tenancy\BelongsToCompany;
@@ -65,6 +66,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?CarbonImmutable $last_reminded_at
  * @property string $channel LINK (signed at /signera) or PORTAL (accepted by a signed-in customer portal contact)
  * @property ?int $portal_contact_id
+ * @property SignerCheck $verification the check before the document is shown (ADR-046 amendment, gap 3)
+ * @property ?string $access_code_hash Hash::make of the sender's access code; never shown or returned
+ * @property ?CarbonImmutable $verified_at the latest passed check
+ * @property int $verification_failures
+ * @property ?CarbonImmutable $locked_at locked out by failed checks; the sender can unlock
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
  */
@@ -109,6 +115,8 @@ class SigningRequest extends Model
         'sent_by',
         'channel',
         'portal_contact_id',
+        'verification',
+        'access_code_hash',
     ];
 
     /** @var array<string, mixed> */
@@ -116,11 +124,13 @@ class SigningRequest extends Model
         'status' => 'PENDING',
         'channel' => 'LINK',
         'step' => 1,
+        'verification' => 'NONE',
+        'verification_failures' => 0,
         'reminder_count' => 0,
     ];
 
     /** @var list<string> */
-    protected $hidden = ['token_hash', 'signature_image'];
+    protected $hidden = ['token_hash', 'signature_image', 'access_code_hash'];
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -136,6 +146,10 @@ class SigningRequest extends Model
             'declined_at' => 'immutable_datetime',
             'revoked_at' => 'immutable_datetime',
             'followed_up_at' => 'immutable_datetime',
+            'verification' => SignerCheck::class,
+            'verified_at' => 'immutable_datetime',
+            'locked_at' => 'immutable_datetime',
+            'verification_failures' => 'integer',
             'create_invoice' => 'boolean',
             'signature_image' => 'encrypted',
             'created_at' => 'immutable_datetime',

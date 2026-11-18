@@ -363,6 +363,8 @@ final class DatabaseGrants
         'signing_document_versions' => GrantDecision::AppendOnly,
         'signing_envelopes' => GrantDecision::ReadWrite,
         'signing_link_tokens' => GrantDecision::ReadWrite,
+        // Signer checks (ADR-046 S3): a code row only gains attempts and its verified_at (trigger); it goes with its signer row or company by cascade.
+        'signing_verification_codes' => GrantDecision::NoDelete,
         'skatteverket_events' => GrantDecision::ReadWrite,
         'skatteverket_tokens' => GrantDecision::ReadWrite,
         'staff_ledger_devices' => GrantDecision::ReadWrite,

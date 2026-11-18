@@ -59,7 +59,7 @@ final class SigningPdfs
     {
         $company = Company::query()->findOrFail($envelope->company_id);
         $signers = SigningRequest::query()->where('envelope_id', $envelope->id)->where('status', SigningStatus::Signed->value)->orderBy('step')->orderBy('signed_at')->orderBy('id')
-            ->get(['id', 'step', 'signer_name', 'signer_title', 'signed_at', 'signature_method']);
+            ->get(['id', 'step', 'signer_name', 'signer_title', 'signed_at', 'signature_method', 'verification']);
 
         return self::render(view('signing.summary', [
             'envelope' => $envelope,
@@ -170,6 +170,15 @@ final class SigningPdfs
     {
         $sv = self::inLocale('sv', fn (): string => __($key));
         $en = self::inLocale('en', fn (): string => __($key));
+
+        return $sv === $en ? '<p>'.e($sv).'</p>' : '<p>'.e($sv).'</p><p lang="en">'.e($en).'</p>';
+    }
+
+    /** What the closure returns in Swedish and in English, as two paragraphs, escaped: bilingualBlock for a text with replacements. */
+    public static function bilingualBlockOf(Closure $text): string
+    {
+        $sv = self::inLocale('sv', $text);
+        $en = self::inLocale('en', $text);
 
         return $sv === $en ? '<p>'.e($sv).'</p>' : '<p>'.e($sv).'</p><p lang="en">'.e($en).'</p>';
     }

@@ -24,6 +24,23 @@
                                 </select>
                             </x-ui.field>
                             <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="removeSigner({{ $index }})">{{ __('Ta bort') }}</button>
+                            <div class="grid gap-3 sm:col-span-3 sm:grid-cols-2">
+                                <x-ui.field for="signer-check-{{ $index }}" :label="__('Kontroll av undertecknaren')" error="signers.{{ $index }}.verification">
+                                    <select id="signer-check-{{ $index }}" class="{{ $input }} mt-1" wire:model.live="signers.{{ $index }}.verification">
+                                        @foreach($checks as $check)
+                                            <option value="{{ $check->value }}">{{ $check->label() }}</option>
+                                        @endforeach
+                                    </select>
+                                </x-ui.field>
+                                @if(($signer['verification'] ?? 'NONE') === 'ACCESS_CODE')
+                                    <x-ui.field for="signer-access-{{ $index }}" :label="__('Åtkomstkod')" error="signers.{{ $index }}.access_code" :hint="__('Minst 6 tecken, eller 8 om koden bara har siffror. Använd inte personnummer, telefonnummer eller annat som går att ta reda på. Lämna koden till undertecknaren på annat sätt, till exempel per telefon; NONOX skickar den aldrig.')">
+                                        <div class="mt-1 flex gap-2">
+                                            <input id="signer-access-{{ $index }}" type="text" class="{{ $input }}" wire:model="signers.{{ $index }}.access_code" autocomplete="off" maxlength="64" required>
+                                            <button type="button" class="min-h-11 shrink-0 rounded-lg px-3 text-sm font-medium ring-1 ring-gray-300 hover:bg-gray-50 sm:min-h-0" wire:click="suggestSignerCode({{ $index }})">{{ __('Föreslå kod') }}</button>
+                                        </div>
+                                    </x-ui.field>
+                                @endif
+                            </div>
                         </li>
                     @endforeach
                 </ol>
@@ -117,6 +134,21 @@
             <x-ui.field for="signing-expires" :label="__('Sista dag att signera (frivilligt)')" error="expires_on" :hint="$isQuote ? __('Annars offertens giltighetsdag, eller 30 dagar. Mellan :min och :max dagar fram.', ['min' => $minDays, 'max' => $maxDays]) : __('Annars 30 dagar. Mellan :min och :max dagar fram.', ['min' => $minDays, 'max' => $maxDays])">
                 <input id="signing-expires" type="date" class="{{ $input }} mt-1" wire:model="expiresOn">
             </x-ui.field>
+            <x-ui.field for="signing-check" :label="__('Kontroll av undertecknaren')" error="verification" :hint="__('En kod minskar risken att någon annan använder en vidarebefordrad länk. Underskriften blir fortfarande en enkel elektronisk underskrift.')">
+                <select id="signing-check" class="{{ $input }} mt-1" wire:model.live="verification">
+                    @foreach($checks as $check)
+                        <option value="{{ $check->value }}">{{ $check->label() }}</option>
+                    @endforeach
+                </select>
+            </x-ui.field>
+            @if($verification === 'ACCESS_CODE')
+                <x-ui.field for="signing-access-code" :label="__('Åtkomstkod')" error="access_code" :hint="__('Minst 6 tecken, eller 8 om koden bara har siffror. Använd inte personnummer, telefonnummer eller annat som går att ta reda på. Lämna koden till undertecknaren på annat sätt, till exempel per telefon; NONOX skickar den aldrig.')">
+                    <div class="mt-1 flex gap-2">
+                        <input id="signing-access-code" type="text" class="{{ $input }}" wire:model="accessCode" autocomplete="off" maxlength="64" required>
+                        <button type="button" class="min-h-11 shrink-0 rounded-lg px-3 text-sm font-medium ring-1 ring-gray-300 hover:bg-gray-50 sm:min-h-0" wire:click="suggestCode">{{ __('Föreslå kod') }}</button>
+                    </div>
+                </x-ui.field>
+            @endif
             @if($deals->isNotEmpty())
                 <x-ui.field for="signing-deal" :label="__('Affär som vinns vid signering')" error="deal_id">
                     <select id="signing-deal" class="{{ $input }} mt-1" wire:model="dealId">
@@ -236,6 +268,20 @@
                     @endif
                     @if($signing->declined_at)
                         <p class="mt-2 text-sm text-gray-900">{{ __('Avböjd :time', ['time' => $signing->declined_at->setTimezone($zone)->format('Y-m-d H:i')]) }}@if($signing->decline_reason): ”{{ $signing->decline_reason }}”@endif</p>
+                    @endif
+                    @if($signing->verification->required())
+                        @php($lockedOut = $signing->locked_at !== null && $status === App\Domain\Signing\SigningStatus::Pending)
+                        <p class="mt-2 text-sm {{ $lockedOut ? 'font-semibold text-red-700' : 'text-gray-700' }}" data-testid="signing-check-status">
+                            {{ __('Kontroll: :method', ['method' => $signing->verification->label()]) }}
+                            @if($lockedOut)
+                                · {{ __('låst :time efter för många felaktiga försök', ['time' => $signing->locked_at->setTimezone($zone)->format('Y-m-d H:i')]) }}
+                            @elseif($signing->verified_at)
+                                · {{ __('godkänd :time', ['time' => $signing->verified_at->setTimezone($zone)->format('Y-m-d H:i')]) }}
+                            @endif
+                            @if($lockedOut && $canSend)
+                                <button type="button" class="ms-2 min-h-11 font-normal text-gray-700 underline sm:min-h-0" wire:click="unlock({{ $signing->id }})" wire:confirm="{{ __('Lås upp länken? Undertecknaren får försöka igen. Gör det bara om du vet att det var undertecknaren som skrev fel.') }}">{{ __('Lås upp') }}</button>
+                            @endif
+                        </p>
                     @endif
                     <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                         <a href="{{ route('signing.file', ['signing' => $signing->id, 'file' => 'dokument']) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ __('PDF:en som skickades') }}</a>
