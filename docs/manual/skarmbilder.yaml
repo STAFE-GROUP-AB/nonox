@@ -75,6 +75,8 @@ rapporter/budget-mot-utfall: { foretag: konsult, rutt: accounting.budgets.report
 rapporter/budget-fran-sie: { foretag: konsult, rutt: accounting.budgets, visa: '[data-budget-sie-import]', text: Läs in budget från SIE-fil }
 rapporter/prognos: { foretag: konsult, rutt: accounting.budgets.show, modell: { tabell: budget_versions, dar: { kind: FORECAST, is_active: true } } }
 rapporter/rullande-12-manader: { foretag: konsult, rutt: accounting.budgets.rolling, fraga: { fran: '@first day of january this year' } }
+rapporter/projektresultat-lista: { foretag: konsult, rutt: projects.index }
+rapporter/projektresultat: { foretag: konsult, rutt: projects.show, modell: { tabell: projects, dar: { code: 'P-101' } }, fraga: { konto: '6550' }, visa: '[data-project-drill]' }
 
 bokslut/checklistan: { foretag: konsult, rutt: accounting.closing }
 bokslut/periodiseringar: { foretag: konsult, rutt: accounting.accruals }

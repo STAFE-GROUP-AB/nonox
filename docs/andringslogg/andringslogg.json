@@ -48,6 +48,14 @@
       "omrade": "Bokföring"
     },
     {
+      "id": "2026-11-18-projektresultat",
+      "datum": "2026-11-18T11:00:00+01:00",
+      "rubrik": "Projektresultat mot budget och kalkyl",
+      "beskrivning": "Under Bokföring → Projektresultat ser du intäkter, kostnader per grupp, täckningsbidrag och marginal för varje projekt, för hela projektet eller ett räkenskapsår och månad för månad. Resultatet jämförs med budgetens rader på projektet och med kontraktssumman och den beräknade kostnaden, och ett klick på ett konto visar raderna bakom beloppet. En enhetschef ser bara sina egna projekt, utan personalkostnader.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-18-signering-fler-undertecknare",
       "datum": "2026-11-18T02:50:00+01:00",
       "rubrik": "Fler undertecknare på offerter och avtal",

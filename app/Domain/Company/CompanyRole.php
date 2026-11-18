@@ -55,7 +55,7 @@ enum CompanyRole: string
             self::Bookkeeper => __('Bokför verifikationer och hanterar kund- och leverantörsfakturor. Kan inte låsa perioder eller göra bokslut.'),
             self::Approver => __('Attesterar leverantörsfakturor och betalningar.'),
             self::Auditor => __('Kan läsa och exportera allt, men inte bokföra något.'),
-            self::UnitManager => __('Ser rapporterna för de kostnadsställen och projekt hen är begränsad till, och inget annat.'),
+            self::UnitManager => __('Ser rapporterna och projektresultaten för de kostnadsställen och projekt hen är begränsad till, och inget annat.'),
         };
     }
 
@@ -103,9 +103,11 @@ enum CompanyRole: string
                 'projects:view',
                 'documents:view',
             ],
-            // Budgets, projects and analysis join when their packages add those permissions (ADR-081 E3, E6, E17).
+            // Project results with their budget (ADR-081 E7); analysis joins when E17 adds it.
             self::UnitManager => [
                 'reports:view',
+                'budgets:view',
+                'projects:view',
             ],
         };
     }

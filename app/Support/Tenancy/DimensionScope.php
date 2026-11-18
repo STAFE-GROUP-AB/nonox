@@ -74,6 +74,8 @@ final class DimensionScope
         'reports:view',
         'vouchers:view', 'vouchers:create', 'vouchers:post',
         'supplier-invoices:create', 'supplier-invoices:approve',
+        // The project results (ADR-081 E7) show only the member's own projects, without payroll; budgets only as those projects' lines there.
+        'projects:view', 'budgets:view',
     ];
 
     /**

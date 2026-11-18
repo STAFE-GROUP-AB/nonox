@@ -38,6 +38,7 @@ use App\Http\Controllers\MigrationGuideController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Payables\PaymentBatchFileController;
 use App\Http\Controllers\Payables\SupplierInvoiceController;
+use App\Http\Controllers\Projects\ProjectController;
 use App\Http\Controllers\RoadmapController;
 use App\Http\Controllers\RunMigrationsController;
 use App\Http\Controllers\Search\RecentItemController;
@@ -308,6 +309,9 @@ Route::middleware([
         Route::get('/budget/{budgetVersion}/csv', [BudgetController::class, 'csv'])->whereNumber('budgetVersion')->name('accounting.budgets.csv');
         Route::view('/kostnadsstallen', 'accounting.dimensions', ['dimension' => 'kostnadsstallen'])->name('accounting.costCenters');
         Route::view('/projekt', 'accounting.dimensions', ['dimension' => 'projekt'])->name('accounting.projects');
+        // Project results: P&L against budget and estimate, with drill-down (ADR-081 gap 6, E7).
+        Route::view('/projekt/resultat', 'projects.index')->name('projects.index');
+        Route::get('/projekt/{project}', ProjectController::class)->whereNumber('project')->name('projects.show');
         // Group companies among customers and suppliers, and intercompany row tags (ADR-060 addendum 2.3, ADR-081 E23).
         Route::view('/koncernmarkeringar', 'group.intercompany')->name('accounting.intercompany');
         Route::view('/anlaggningar', 'accounting.fixed-assets')->name('accounting.fixedAssets');

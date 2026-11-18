@@ -163,7 +163,7 @@ final class Navigation
             [
                 'label' => __('Bokföring'),
                 'route' => 'accounting.vouchers.index',
-                'patterns' => ['accounting.*', 'vat.*', 'mileage.*'],
+                'patterns' => ['accounting.*', 'vat.*', 'mileage.*', 'projects.*'],
                 'children' => fn (User $user, Company $company): array => $this->bookkeeping($can, $user, $company),
             ],
         ];
@@ -267,6 +267,7 @@ final class Navigation
             $can('reports:view') ? ['label' => __('Reskontra'), 'route' => 'accounting.ledgers', 'group' => $reports] : null,
             $can('budgets:view') ? ['label' => __('Budget'), 'route' => 'accounting.budgets', 'active' => ['accounting.budgets', 'accounting.budgets.show', 'accounting.budgets.rolling'], 'group' => $reports] : null,
             $can('budgets:view') ? ['label' => __('Budget mot utfall'), 'route' => 'accounting.budgets.report', 'group' => $reports] : null,
+            $can('projects:view') ? ['label' => __('Projektresultat'), 'route' => 'projects.index', 'active' => ['projects.index', 'projects.show'], 'group' => $reports] : null,
             $can('vat:prepare') ? ['label' => __('Moms'), 'route' => 'vat.index', 'active' => ['vat.index', 'vat.file'], 'group' => $reports] : null,
             $can('vat:prepare') ? ['label' => __('EU-rapporter'), 'route' => 'vat.euReports', 'group' => $reports] : null,
             ['label' => __('Räkenskapsår'), 'route' => 'accounting.fiscalYears', 'group' => $closing],

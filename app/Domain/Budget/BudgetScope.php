@@ -31,4 +31,22 @@ final class BudgetScope
     {
         return BudgetLine::query()->whereIn('budget_lines.budget_version_id', $versionIds);
     }
+
+    /**
+     * The lines of the active budget (kind BUDGET, not a forecast) of each of
+     * these fiscal years, for the project results (ADR-081 E7). The caller
+     * narrows them to the projects a member may see.
+     *
+     * @param  list<int>  $fiscalYearIds
+     * @return Builder<BudgetLine>
+     */
+    public static function activeBudgetLines(array $fiscalYearIds): Builder
+    {
+        return BudgetLine::query()
+            ->join('budget_versions', fn ($join) => $join->on('budget_versions.id', '=', 'budget_lines.budget_version_id')
+                ->on('budget_versions.company_id', '=', 'budget_lines.company_id'))
+            ->whereIn('budget_versions.fiscal_year_id', $fiscalYearIds)
+            ->where('budget_versions.kind', BudgetKind::Budget->value)
+            ->where('budget_versions.is_active', true);
+    }
 }

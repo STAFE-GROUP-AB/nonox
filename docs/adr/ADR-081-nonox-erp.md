@@ -1479,3 +1479,47 @@ left open:
   every budget page.
 - **Audit:** `budget.forecast_created` and `budget.forecast_saved` with ids,
   cut-off month, method codes and counts.
+
+## Addendum: E7 as built (project P&L)
+
+- **Pages.** `/projekt/resultat` (`projects.index`, Bokföring → Projektresultat)
+  lists every project's revenue, costs, contribution, margin and budgeted
+  contribution over its whole life; `/projekt/{id}` (`projects.show`) shows one
+  project for its whole life or one fiscal year (then also per month), the
+  register facts, the comparison with contract sum and estimated total cost
+  (whole life only), and a drill-down from an account to its posted rows (at
+  most 200, with a link to the account's Huvudbok on the project). The
+  register (`/projekt`) links each project to its page. Read only: no table,
+  no migration, no audit entry.
+- **Ledger.** `App\Domain\Projects\ProjectResults` reads the posted rows only
+  through `LedgerQuery::rows()`, one `LedgerQuery` per fiscal year, joined
+  with `UNION ALL` into one statement, so the life view costs one query
+  whatever the number of years. Amounts are in the income statement's sign.
+- **Groups.** By BAS class, a presentation choice: Intäkter 3000–3999,
+  Material och varor 4000–4399 and 4700–4999, Underentreprenader och externa
+  kostnader 4400–4699 (reverse charge and purchases from abroad) and
+  5000–6999, Personal 7000–7699. Täckningsbidrag is revenue minus those three
+  cost groups; Avskrivningar och finansiella poster 7700–8998 (financial
+  income 8000–8399 included, so revenue stays class 3 as in the income
+  statement) come below it and give Projektresultat. Margin is contribution
+  over revenue in basis points.
+- **Budget.** The lines with the project in the *active* `BUDGET` version of
+  each fiscal year (`BudgetScope::activeBudgetLines`); forecasts and inactive
+  versions are never read. Shown with `budgets:view`.
+- **Permissions and scope.** `projects:view` opens both pages
+  (`ProjectPolicy::viewResults`, `viewResult`). `projects:view` and
+  `budgets:view` join `DimensionScope::SCOPE_AWARE_PERMISSIONS`, and the role
+  `unit_manager` gets both. A limited member reaches only projects in their
+  own project scope (a cost-centre scope opens no project page); any other
+  project answers 404. Payroll vouchers and their corrections are left out
+  (`withoutPayroll`), and so is the whole personnel group 7000–7699, actuals
+  and budget, on the page, the drill-down and the list, whatever the
+  voucher's source (SIE import, manual voucher): on a one-person project it is
+  that person's pay (owner decision 17, cold review P1). The page says so.
+  `TODO(legal-verify)`: Resultatrapport and Huvudbok for a limited member (E1)
+  still show personnel accounts that were not booked by payroll. In the drill-down a voucher the member may not open
+  (`constrainVouchers`, one query) shows only the row's own text and its
+  number without a link. The budget pages and the project register stay
+  refused to limited members (`DimensionScopeRegistry`).
+- **Queries.** A fixed number per page and drill-down (one each for the ledger and the budget), whatever the
+  number of projects, years, accounts or rows (`ProjectResultTest`).

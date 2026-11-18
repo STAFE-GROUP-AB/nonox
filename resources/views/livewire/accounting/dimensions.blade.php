@@ -53,6 +53,9 @@
                                     <span class="font-semibold text-ink"><span class="block text-xs font-normal text-gray-500">{{ __('Resultat') }}</span>{{ App\Support\Money\Money::ofOre($result['income'] - $result['costs'])->format() }}</span>
                                 </span>
                             @endif
+                            @if($canSeeProjectResults && $kind === Dimension::Project)
+                                <a href="{{ route('projects.show', $object) }}" wire:navigate class="text-sm font-medium text-accent-600 hover:text-accent-700" aria-label="{{ __('Projektresultat för :project', ['project' => $object->label()]) }}">{{ __('Projektresultat') }}</a>
+                            @endif
                             @if($canManage)
                                 @if($kind === Dimension::Project)
                                     <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="startDetails({{ $object->id }})">{{ __('Uppgifter') }}</button>
