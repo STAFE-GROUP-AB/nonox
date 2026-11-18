@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-pdf-motorn-for-signering",
+      "datum": "2026-11-18T02:45:00+01:00",
+      "rubrik": "PDF-motor för signering",
+      "beskrivning": "NONOX har fått en valfri PDF-motor som kan läsa, visa, skriva i och försegla en befintlig PDF utan att ändra originalet, som grund för fält i PDF:en och försegling av signerade dokument. Den bygger på de öppna biblioteken pyHanko och pypdfium2 med låsta versioner, och den som kör NONOX själv installerar den enligt guiden för egen drift. Utan motorn fungerar signering som förut, och funktionerna som behöver den säger att de kräver PDF-motorn.",
+      "typ": "Nytt",
+      "omrade": "Avtal"
+    },
+    {
       "id": "2026-11-18-planering-i-toppklass",
       "datum": "2026-11-18T00:55:00+01:00",
       "rubrik": "Planering i toppklass",

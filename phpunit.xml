@@ -35,6 +35,8 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="NONOX_STORE_ISSUED_INVOICE_PDFS" value="false" force="true"/>
+        <!-- The PDF engine (ADR-046 S5) is off for the suite; its own tests build the engine they test. -->
+        <env name="NONOX_PDF_ENGINE" value="none" force="true"/>
         <env name="NONOX_BANKING_DRIVER" value="" force="true"/>
         <env name="ENABLE_BANKING_APPLICATION_ID" value="" force="true"/>
         <env name="ENABLE_BANKING_PRIVATE_KEY_PATH" value="" force="true"/>

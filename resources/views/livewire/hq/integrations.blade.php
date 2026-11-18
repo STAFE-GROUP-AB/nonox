@@ -52,4 +52,37 @@
             <p class="mt-4 text-sm text-gray-600">{{ __('Nödstopp: sätt :env=true i miljön (eller en lista med leverantörer) och läs om konfigurationen. Nycklarna ligger kvar. Ta bort värdet för att slå på igen.', ['env' => $values['pause_env']]) }}</p>
         </x-ui.card>
     @endforeach
+
+    <x-ui.card :title="__('PDF-motor för signering')">
+        <dl class="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+            <div><dt class="text-gray-500">{{ __('Läge') }}</dt>
+                <dd class="font-medium">
+                    @if($pdfEngine->usable())
+                        <x-ui.badge tone="success">{{ __('Fungerar') }}</x-ui.badge>
+                    @elseif($pdfEngine->installed)
+                        <x-ui.badge tone="accent">{{ __('Fungerar inte') }}</x-ui.badge>
+                    @else
+                        <x-ui.badge>{{ __('Inte installerad') }}</x-ui.badge>
+                    @endif
+                </dd>
+            </div>
+            <div><dt class="text-gray-500">{{ __('Kontrollerad') }}</dt><dd class="tabular-nums text-ink">{{ $pdfEngine->checkedAt ? \Carbon\CarbonImmutable::parse($pdfEngine->checkedAt)->setTimezone(config('app.timezone'))->format('Y-m-d H:i') : '–' }}</dd></div>
+            @foreach(['python' => 'Python', 'pyhanko' => 'pyHanko', 'pypdfium2' => 'pypdfium2'] as $key => $label)
+                <div><dt class="text-gray-500">{{ $label }}</dt><dd class="tabular-nums text-ink">{{ $pdfEngine->versions[$key] ?? '–' }}</dd></div>
+            @endforeach
+            <div><dt class="text-gray-500">{{ __('Typsnitt för kinesiska, japanska och koreanska') }}</dt><dd class="text-ink">{{ $pdfEngine->canStampCjk() ? __('Finns') : __('Saknas') }}</dd></div>
+        </dl>
+
+        @if($pdfEngine->problems !== [])
+            <ul class="mt-4 space-y-1 text-sm text-accent-700" role="status">
+                @foreach($pdfEngine->problems as $problem)
+                    <li>{{ $problem }}</li>
+                @endforeach
+            </ul>
+        @else
+            <p class="mt-4 text-sm text-green-800">{{ __('Inget behöver åtgärdas.') }}</p>
+        @endif
+
+        <p class="mt-4 text-sm text-gray-600">{{ __('Motorn är valfri. Utan den fungerar signering som förut, men fält i PDF:en och försegling kräver den. Kör php artisan signing:engine-doctor för ett fullständigt test.') }}</p>
+    </x-ui.card>
 </div>

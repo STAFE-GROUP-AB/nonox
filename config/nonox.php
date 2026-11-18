@@ -115,4 +115,32 @@ return [
     // The customer portal (ADR-075) can be turned on only where this is true, until a lawyer has answered L1, L2, L4 and L5.
     'customer_portal' => (bool) env('NONOX_CUSTOMER_PORTAL', false),
 
+    'signing' => [
+        /*
+         * The optional PDF engine (ADR-046, amendment 2026-11-18, S5): a Python
+         * helper with pyHanko and pypdfium2 in tools/pdf-engine. "auto" uses it
+         * when the Python below exists, "sidecar" always, "none" never. The
+         * helper script itself is not configurable. Install steps:
+         * docs/juridik/egen-drift.md (PDF-motorn) and tools/pdf-engine/README.md.
+         * The limits (20 MB, 100 pages) are constants in PdfLimits (owner decision 22).
+         */
+        'pdf_engine' => [
+            'driver' => env('NONOX_PDF_ENGINE', 'auto'),
+            'python' => env('NONOX_PDF_ENGINE_PYTHON', base_path('tools/pdf-engine/.venv/bin/python')),
+            'fonts_dir' => env('NONOX_PDF_ENGINE_FONTS', storage_path('app/pdf-engine-fonts')),
+            'work_dir' => env('NONOX_PDF_ENGINE_WORK_DIR', storage_path('app/pdf-engine-work')),
+            'timeout' => (int) env('NONOX_PDF_ENGINE_TIMEOUT', 60),
+            'memory_mb' => (int) env('NONOX_PDF_ENGINE_MEMORY_MB', 2048),
+        ],
+
+        /*
+         * RFC 3161 timestamp servers, tried in order (ADR-046 amendment, gap 5).
+         * Instance-level only: the engine refuses any other URL, and the helper
+         * does not follow redirects. Comma-separated in NONOX_SIGNING_TIMESTAMP_URLS.
+         */
+        'timestamp' => [
+            'urls' => array_values(array_filter(array_map('trim', explode(',', (string) env('NONOX_SIGNING_TIMESTAMP_URLS', ''))))),
+        ],
+    ],
+
 ];

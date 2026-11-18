@@ -102,6 +102,28 @@ jobs:
         id: taxonomy
         run: echo "dir=$(scripts/fetch-xbrl-taxonomy.sh)" >> "$GITHUB_OUTPUT"
 
+      # ADR-046 amendment 2026-11-18, S5: the optional PDF engine (pyHanko, pypdfium2), installed from the
+      # hash-locked requirements with wheels only, so PdfEngineRealTest runs instead of skipping.
+      - name: Cache pip downloads for the PDF engine
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/pip
+          key: pdf-engine-pip-${{ hashFiles('tools/pdf-engine/requirements.txt') }}
+
+      - name: Install the PDF engine (pinned, hash-checked)
+        run: |
+          python3 -m venv tools/pdf-engine/.venv
+          tools/pdf-engine/.venv/bin/pip install --quiet --require-hashes --only-binary=:all: -r tools/pdf-engine/requirements.txt
+
+      - name: Cache the PDF engine fonts (Noto, pinned)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: storage/app/pdf-engine-fonts
+          key: pdf-engine-fonts-${{ hashFiles('scripts/fetch-signing-fonts.sh') }}
+
+      - name: Fetch the PDF engine fonts (SHA-256 verified)
+        run: scripts/fetch-signing-fonts.sh storage/app/pdf-engine-fonts
+
       - name: iXBRL annual report against the XBRL taxonomy
         env:
           BOLAGSVERKET_TAXONOMY_DIR: ${{ steps.taxonomy.outputs.dir }}
