@@ -9,6 +9,7 @@ use App\Livewire\Accounting\VoucherActions;
 use App\Livewire\Accounting\VoucherAttachments;
 use App\Livewire\Accounting\VoucherEditor;
 use App\Livewire\Accounting\VoucherList;
+use App\Livewire\Analysis\AnalysisPage;
 use App\Livewire\Auth\PasskeyChallenge;
 use App\Livewire\Company\CompanyDetailsForm;
 use App\Livewire\Company\CreateCompanyForm;
@@ -63,6 +64,8 @@ final class DimensionScopeRegistry
         // Project results (ADR-081 E7): only the member's own projects, without payroll.
         'projects.index',
         'projects.show',
+        // The analysis view (ADR-081 E17): only the datasets that apply the scope are offered.
+        'analysis.index',
     ];
 
     /** Pages that hold nothing of the company's books. */
@@ -92,7 +95,7 @@ final class DimensionScopeRegistry
 
     /** Areas a limited member never reaches, whatever new pages they get. */
     public const array REFUSED_PATTERNS = [
-        'accounting.*', 'agreements.*', 'approvals.*', 'budgets.*', 'documents.*', 'projects.*', 'banking.*', 'boardroom.*', 'companies.*', 'connect.*', 'crm.*',
+        'accounting.*', 'agreements.*', 'analysis.*', 'approvals.*', 'budgets.*', 'documents.*', 'projects.*', 'banking.*', 'boardroom.*', 'companies.*', 'connect.*', 'crm.*',
         'dashboard.*', 'fortnox.*', 'group.*', 'guide.*', 'import.*', 'inbox.*', 'inventory.*', 'invoicing.*',
         'kitchen.*', 'manufacturing.*', 'mileage.*', 'notifications.*', 'passport.*', 'payables.*', 'payroll.*',
         'planning.*', 'portal.*', 'pos.*', 'privacy.*', 'saas.*', 'search', 'search.*', 'share-register.*',
@@ -111,6 +114,7 @@ final class DimensionScopeRegistry
         SupplierInvoiceActions::class => ScopeDecision::Scoped,
         ProjectList::class => ScopeDecision::Scoped,
         ProjectResult::class => ScopeDecision::Scoped,
+        AnalysisPage::class => ScopeDecision::Scoped,
         NavigationMenu::class => ScopeDecision::Neutral,
         // The passkey step of signing in (ADR-029): a limited member must be able to pass it too.
         PasskeyChallenge::class => ScopeDecision::Neutral,

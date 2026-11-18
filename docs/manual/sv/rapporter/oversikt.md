@@ -23,6 +23,7 @@ Du hittar rapporterna under **Bokföring → Rapporter**. Längst upp väljer du
 - [Budget mot utfall](/manual/rapporter/budget-mot-utfall) – resultatet för månaden och hittills i år jämfört med budgeten.
 - [Rullande prognos](/manual/rapporter/prognos) – utfallet hittills och en prognos för resten av året, och de kommande tolv månaderna över årsskiftet.
 - [Projektresultat](/manual/rapporter/projektresultat) – intäkter, kostnader och täckningsbidrag per projekt, mot budget och kalkyl, med raderna bakom varje konto.
+- [Analys](/manual/rapporter/analys) – egna frågor till bokföringsrader, budget, fakturor och lön: gruppera i rader och kolumner, jämför med förra året och klicka dig ner till posterna.
 
 ## Att arbeta med rapporterna
 

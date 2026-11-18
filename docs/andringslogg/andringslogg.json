@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-analys",
+      "datum": "2026-11-18T13:00:00+01:00",
+      "rubrik": "Analys: egna frågor till siffrorna",
+      "beskrivning": "Under Bokföring → Analys väljer du uppgifter som bokföringsrader, budget, fakturor eller sammanräknad lön, grupperar dem i rader och kolumner, jämför med förra året och klickar dig ner till posterna bakom ett belopp. En enhetschef ser bara rader på sina egna enheter, utan personalkostnader, och lön visas aldrig per person: små eller dominerade grupper döljs.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-18-inkopsanmodan",
       "datum": "2026-11-18T12:00:00+01:00",
       "rubrik": "Inköpsanmodan med attest",
