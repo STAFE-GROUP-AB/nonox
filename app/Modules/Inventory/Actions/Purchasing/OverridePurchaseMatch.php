@@ -41,6 +41,8 @@ class OverridePurchaseMatch
     {
         app(ModuleManager::class)->ensureEnabled(InventoryModule::KEY, $company);
         $invoice = CurrentCompany::run($company, fn (): SupplierInvoice => SupplierInvoice::query()->findOrFail($invoice->id));
+        // A result that is not on this invoice answers 404 before any permission check, so it reveals nothing.
+        CurrentCompany::run($company, fn () => PurchaseMatchResult::query()->where('supplier_invoice_id', $invoice->id)->whereKey($resultId)->firstOrFail());
         // The same right as the attest itself: the default attest, or deciding the current step of the company's own flow.
         Gate::forUser($user)->authorize('approve', $invoice);
 
