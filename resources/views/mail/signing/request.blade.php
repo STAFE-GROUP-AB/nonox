@@ -13,6 +13,11 @@
         <h1 style="margin: 0 0 16px; font-size: 22px;">{{ __(':title att signera', ['title' => $title]) }}</h1>
         <p>{{ __('Hej!') }}</p>
         <p>{{ __(':company har skickat :title till dig för signering. Öppna länken, läs igenom dokumentet och signera med din namnteckning. Du behöver inget konto.', ['company' => $companyName, 'title' => $title]) }}</p>
+        @if($request->verification === App\Domain\Signing\Verification\SignerCheck::EmailCode)
+            <p>{{ __('När du öppnar länken skickar vi först en kod med sex siffror till den här adressen, så att bara du kan öppna dokumentet.') }}</p>
+        @elseif($request->verification === App\Domain\Signing\Verification\SignerCheck::AccessCode)
+            <p>{{ __('Du behöver också en åtkomstkod som :company ger dig på annat sätt, till exempel per telefon. Koden skickas aldrig med e-post.', ['company' => $companyName]) }}</p>
+        @endif
         @if($request->isQuote() && $request->quote)
             <p>{{ __('Summa att betala: :amount.', ['amount' => $request->quote->total_ore->format()]) }}</p>
         @endif

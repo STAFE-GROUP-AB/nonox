@@ -7,6 +7,7 @@ namespace Database\Seeders\Demo\Extras;
 use App\Actions\Signing\SendForSigning;
 use App\Actions\Signing\SignAtLink;
 use App\Domain\Signing\SigningPdfs;
+use App\Domain\Signing\Verification\SignerChecks;
 use App\Models\SigningRequest;
 use App\Modules\Crm\Actions\CreateQuoteFromTemplate;
 use App\Modules\Crm\Actions\SaveAgreement;
@@ -31,12 +32,17 @@ use Throwable;
  * at the customers (one signed through the signing flow, one renewing soon,
  * one terminated) and a prospect's agreement out for signing, a quote made
  * from a template and signed with a drawn signature (it became an order),
- * and an open quote out for signing.
+ * and an open quote out for signing. Signer checks (ADR-046 S3): the quote
+ * with two signers checks one by access code and one by e-mail code, and
+ * one more open quote asks for an e-mail code before it is shown.
  *
  * Every name and address is made up; e-mail addresses end in .test.
  */
 final class CrmSigningExtras extends DemoExtra
 {
+    /** A made-up access code for the demo signer; never a real one. */
+    private const string ACCESS_CODE = 'exempelkod-1';
+
     public function industries(): array
     {
         return ['bokforing-for-konsulter'];
@@ -178,9 +184,10 @@ final class CrmSigningExtras extends DemoExtra
 
             $this->at(5, function () use ($c, $create, $templates, $customer, &$envelope): void {
                 $envelope = $this->guard($c, fn () => app(SendForSigning::class)->envelope($c->user, $c->company, $create($c->user, $c->company, $templates[0], (int) $customer->customer_id), [
+                    // Signer checks (ADR-046 amendment, gap 3): Karin types an access code given by phone, Olof gets a code by e-mail.
                     'signers' => [
-                        ['email' => 'karin.exempelsson@kunden-exempel.test', 'step' => 1],
-                        ['email' => 'olof.ordforande@kunden-exempel.test', 'step' => 2],
+                        ['email' => 'karin.exempelsson@kunden-exempel.test', 'step' => 1, 'verification' => 'ACCESS_CODE', 'access_code' => self::ACCESS_CODE],
+                        ['email' => 'olof.ordforande@kunden-exempel.test', 'step' => 2, 'verification' => 'EMAIL_CODE'],
                     ],
                     'copies' => [['email' => 'ekonomi@kunden-exempel.test', 'name' => 'Ekonomiavdelningen']],
                     'notify_copies' => true,
@@ -190,8 +197,18 @@ final class CrmSigningExtras extends DemoExtra
             $first = $envelope === null ? null : SigningRequest::query()->where('envelope_id', $envelope->id)->where('step', 1)->first();
 
             if ($first instanceof SigningRequest) {
-                $this->at(4, fn () => $this->guard($c, fn () => $this->signRequest(['request' => $first, 'url' => ''], 'Karin Exempelsson', 'VD', drawn: true)));
+                $this->at(4, fn () => $this->guard($c, function () use ($first): void {
+                    app(SignerChecks::class)->verify($first, self::ACCESS_CODE);
+                    $this->signRequest(['request' => $first->refresh(), 'url' => ''], 'Karin Exempelsson', 'VD', drawn: true);
+                }));
             }
+
+            // An open quote whose signer must type a code from the e-mail first (the check page's example). Made before
+            // the open quote below, so that one stays the newest link without a check.
+            $this->guard($c, function () use ($c, $create, $templates, $customer): void {
+                $quote = $create($c->user, $c->company, $templates[0], (int) $customer->customer_id);
+                app(SendForSigning::class)($c->user, $c->company, $quote, ['email' => 'karin.exempelsson@kunden-exempel.test', 'verification' => 'EMAIL_CODE']);
+            });
         }
 
         // A signed quote, three days ago: it became an order.

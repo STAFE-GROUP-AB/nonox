@@ -54,6 +54,9 @@
         @endif
         <tr><td class="muted">{{ __('Signerad') }}</td><td>{{ $time($request->signed_at) }}</td></tr>
         <tr><td class="muted">{{ __('Sätt') }}</td><td>{{ $request->signature_method === App\Models\SigningRequest::TYPED ? __('Skrivet namn som underskrift') : __('Ritad namnteckning') }}, {{ __('med bekräftelsen ”:text”', ['text' => $request->acceptance_text ?? App\Domain\Signing\SigningPdfs::acceptance($request)]) }}</td></tr>
+        @if($request->verification->required())
+            <tr><td class="muted">{{ __('Kontroll av undertecknaren') }}</td><td>{{ $request->verification->evidence() }}@if($request->verified_at), {{ __('godkänd :time', ['time' => $time($request->verified_at)]) }}@endif</td></tr>
+        @endif
         <tr><td class="muted">{{ __('IP-adress') }}</td><td>{{ $request->signer_ip }}</td></tr>
         <tr><td class="muted">{{ __('Webbläsare') }}</td><td class="mono">{{ $request->signer_user_agent }}</td></tr>
     </table>
@@ -74,7 +77,7 @@
     </table>
 
     <div class="box">
-        <span class="muted">{{ $request->channel === 'PORTAL' ? __('En enkel elektronisk underskrift. Den godkända PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Godkännandet gjordes i företagets kundportal i NONOX av en kontakt som hade loggat in med en engångskod till e-postadressen ovan.') : __('En enkel elektronisk underskrift. Den signerade PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Signeringen gjordes i NONOX via en personlig länk som skickades till e-postadressen ovan.') }}</span>
+        <span class="muted">{{ $request->channel === 'PORTAL' ? __('En enkel elektronisk underskrift. Den godkända PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Godkännandet gjordes i företagets kundportal i NONOX av en kontakt som hade loggat in med en engångskod till e-postadressen ovan.') : __('En enkel elektronisk underskrift. Den signerade PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Signeringen gjordes i NONOX via en personlig länk som skickades till e-postadressen ovan.') }}@if($request->verification->required()) {{ __('Innan dokumentet visades kontrollerades undertecknaren med :method. Kontrollen minskar risken att någon annan använt en vidarebefordrad länk; underskriften är fortfarande en enkel elektronisk underskrift.', ['method' => mb_strtolower($request->verification->evidence())]) }}@endif</span>
     </div>
 </body>
 </html>

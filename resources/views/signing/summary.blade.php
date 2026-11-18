@@ -51,7 +51,7 @@
                 <td>{{ $signer->step }}</td>
                 <td>{{ $signer->signer_name }}@if($signer->signer_title), {{ $signer->signer_title }}@endif</td>
                 <td>{{ $time($signer->signed_at) }}</td>
-                <td>{{ $signer->signature_method === App\Models\SigningRequest::TYPED ? __('Skrivet namn som underskrift') : __('Ritad namnteckning') }}</td>
+                <td>{{ $signer->signature_method === App\Models\SigningRequest::TYPED ? __('Skrivet namn som underskrift') : __('Ritad namnteckning') }}@if($signer->verification->required()) · {{ $signer->verification->evidence() }}@endif</td>
             </tr>
         @endforeach
     </table>

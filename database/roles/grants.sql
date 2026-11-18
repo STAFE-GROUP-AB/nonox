@@ -301,6 +301,7 @@ BEGIN
         ('signing_document_versions', 'SELECT, INSERT'),
         ('signing_envelopes', 'SELECT, INSERT, UPDATE, DELETE'),
         ('signing_link_tokens', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('signing_verification_codes', 'SELECT, INSERT, UPDATE'),
         ('skatteverket_events', 'SELECT, INSERT, UPDATE, DELETE'),
         ('skatteverket_tokens', 'SELECT, INSERT, UPDATE, DELETE'),
         ('staff_ledger_devices', 'SELECT, INSERT, UPDATE, DELETE'),

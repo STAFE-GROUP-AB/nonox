@@ -278,6 +278,8 @@ crm/signering: { foretag: konsult, rutt: invoicing.quotes.show, modell: signed_q
 crm/fler-undertecknare: { foretag: konsult, rutt: invoicing.quotes.show, modell: envelope_quote, del: '[data-testid=crm-signing-panel]' }
 crm/signera-offert: { foretag: konsult, rutt: signing.show, modell: signing_link, anvandare: gast, visa: '#signera' }
 crm/signera-offert-mobil: { foretag: konsult, rutt: signing.show, modell: signing_link, anvandare: gast, enhet: mobil }
+crm/signering-kontroll: { foretag: konsult, rutt: invoicing.quotes.show, modell: checked_quote, del: '[data-testid=crm-signing-panel]' }
+crm/signera-kod: { foretag: konsult, rutt: signing.show, modell: checked_signing_link, anvandare: gast, enhet: mobil, text: Bekräfta att det är du }
 crm/offertmallar: { foretag: konsult, rutt: crm.quoteTemplates, klick: ['text=Ändra'] }
 crm/avtal: { foretag: konsult, rutt: crm.agreements, fraga: { visa: alla } }
 crm/avtalets-kort: { foretag: konsult, rutt: crm.agreements.show, modell: { tabell: crm_agreements, dar: { title: 'Supportavtal 2026' } } }

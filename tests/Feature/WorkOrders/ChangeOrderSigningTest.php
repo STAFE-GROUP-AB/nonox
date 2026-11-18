@@ -13,7 +13,9 @@ declare(strict_types=1);
 use App\Domain\Signing\SigningPdfs;
 use App\Domain\Signing\SigningStatus;
 use App\Mail\SignedDocumentMail;
+use App\Models\SigningEvent;
 use App\Models\SigningRequest;
+use App\Models\SigningVerificationCode;
 use App\Modules\ModuleManager;
 use App\Modules\WorkOrders\Actions\CreateInvoiceBasis;
 use App\Modules\WorkOrders\Actions\SaveChangeOrder;
@@ -195,4 +197,36 @@ it('stops the code after five wrong tries and never lets the worker sign an unse
     }
 
     expect(fn () => app(SignChangeOrder::class)->verifyOnSite($worker, $this->company, $onSite, 'fel'))->toThrow(ValidationException::class, 'gäller inte längre');
+});
+
+it('keeps the on-site code on the shared signer check service with its events in the chain (ADR-046 S3)', function () {
+    $worker = Bookkeeping::member($this->company, 'field_worker');
+    WorkOrderAssignment::create(['work_order_id' => $this->workOrder->id, 'user_id' => $worker->id]);
+    app(SignChangeOrder::class)->send($this->owner, $this->company, $this->changeOrder);
+    $onSite = app(SignChangeOrder::class)->onSite($worker, $this->company, ChangeOrder::query()->findOrFail($this->changeOrder->id));
+
+    $code = null;
+    Mail::assertSent(OnSiteCodeMail::class, function (OnSiteCodeMail $mail) use (&$code): bool {
+        $code = $mail->code;
+
+        return true;
+    });
+
+    $row = SigningVerificationCode::query()->findOrFail($onSite->verification_code_id);
+    expect($row->channel)->toBe('ON_SITE')
+        ->and($row->code_mac)->toBe($onSite->code_hash)
+        ->and($row->code_mac)->toBe(SignChangeOrder::codeHash($onSite->signing_request_id, (string) $code))
+        ->and($row->max_attempts)->toBe(OnSiteCode::MAX_ATTEMPTS)
+        ->and($row->expires_at->equalTo($onSite->expires_at))->toBeTrue();
+
+    $wrong = $code === '000000' ? '111111' : '000000';
+    expect(fn () => app(SignChangeOrder::class)->verifyOnSite($worker, $this->company, $onSite, $wrong))->toThrow(ValidationException::class, 'Fel kod');
+    app(SignChangeOrder::class)->verifyOnSite($worker, $this->company, $onSite, (string) $code);
+
+    $events = SigningEvent::query()->where('signing_request_id', $onSite->signing_request_id)->orderBy('id')->pluck('event')->map(fn ($event): string => $event->value)->all();
+    expect($events)->toBe(['SENT', 'CODE_SENT', 'VERIFY_FAILED', 'VERIFIED'])
+        ->and($onSite->fresh()->attempts)->toBe(1)
+        ->and($row->fresh()->verified_at)->not->toBeNull()
+        // The link itself still opens without a code, as before: the on-site check does not change the link's own check.
+        ->and(SigningRequest::query()->findOrFail($onSite->signing_request_id)->verification->value)->toBe('NONE');
 });

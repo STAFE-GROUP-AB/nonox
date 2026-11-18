@@ -197,6 +197,18 @@ class SigningFollowUp
     }
 
     /**
+     * A signer was locked out by failed checks (ADR-046 amendment, gap 3):
+     * the sender (and the document's own recipients) are told, so they can
+     * unlock the link or send a new one. Must run inside the company.
+     */
+    public function locked(SigningRequest $request): void
+    {
+        $company = Company::query()->findOrFail($request->company_id);
+
+        $this->notify($company, $request, __(':title: en undertecknare låstes ute efter för många felaktiga koder. Under Signering ser du vem och kan låsa upp länken.', ['title' => SigningPdfs::title($request)]));
+    }
+
+    /**
      * The company's members (owner and team), by id.
      *
      * @return list<int>

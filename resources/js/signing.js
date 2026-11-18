@@ -162,3 +162,5 @@ function guardDecline(form) {
 
 document.querySelectorAll('[data-signing-form]').forEach(setUp);
 document.querySelectorAll('[data-decline-form]').forEach(guardDecline);
+// The signer check's forms (ADR-046 S3): "Skicka kod" and "Fortsätt" are sent once; the server also reuses a code sent within the minute.
+document.querySelectorAll('[data-once-form]').forEach(guardDecline);

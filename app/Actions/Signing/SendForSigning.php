@@ -13,6 +13,8 @@ use App\Domain\Signing\SigningEnvelopes;
 use App\Domain\Signing\SigningEventType;
 use App\Domain\Signing\SigningStatus;
 use App\Domain\Signing\SigningToken;
+use App\Domain\Signing\Verification\SignerCheck;
+use App\Domain\Signing\Verification\SignerChecks;
 use App\Mail\SigningEnvelopeMail;
 use App\Mail\SigningRequestMail;
 use App\Models\Company;
@@ -61,6 +63,10 @@ use Illuminate\Validation\ValidationException;
  * one with several signers ("Fler undertecknare"): up to ten signers with a
  * step each (the same step signs in parallel; only the first step's links
  * go out now) and up to ten copy recipients. void() withdraws an envelope.
+ *
+ * Each signer can be checked before the document is shown (gap 3, S3):
+ * verification NONE (the default, as before), EMAIL_CODE, or ACCESS_CODE
+ * with access_code, which is stored hashed only.
  */
 final class SendForSigning
 {
@@ -93,7 +99,13 @@ final class SendForSigning
             'expires_on' => ['nullable', 'date_format:Y-m-d'],
             'create_invoice' => ['sometimes', 'boolean'],
             'deal_id' => ['nullable', 'integer'],
-        ], [], ['email' => __('e-post'), 'expires_on' => __('sista dag att signera')])->validate();
+            'verification' => ['nullable', 'string', 'in:'.self::checkValues()],
+            'access_code' => ['nullable', 'string'],
+        ], [], ['email' => __('e-post'), 'expires_on' => __('sista dag att signera'), 'verification' => __('kontroll av undertecknaren')])->validate();
+
+        // Hashed before the transaction (bcrypt is slow on purpose); the plain code is never stored or logged.
+        $check = SignerCheck::from((string) ($validated['verification'] ?? SignerCheck::None->value));
+        $accessCode = $check === SignerCheck::AccessCode ? SignerChecks::hashAccessCode($input['access_code'] ?? null, 'access_code') : null;
 
         $today = CarbonImmutable::now(self::ZONE)->startOfDay();
         $expires = $this->expiry($document, $validated['expires_on'] ?? null, $today);
@@ -102,7 +114,7 @@ final class SendForSigning
 
         $token = SigningToken::generate();
 
-        $request = DB::transaction(fn (): SigningRequest => CurrentCompany::run($company, function () use ($user, $company, $document, $validated, $expires, $token): SigningRequest {
+        $request = DB::transaction(fn (): SigningRequest => CurrentCompany::run($company, function () use ($user, $company, $document, $validated, $expires, $token, $check, $accessCode): SigningRequest {
             $document = $this->lockOpenDocument($document);
             $dealId = $this->deal($document, $validated['deal_id'] ?? null);
 
@@ -124,10 +136,12 @@ final class SendForSigning
                 'content_hash' => $document->signingFingerprint(),
                 'create_invoice' => $document instanceof SalesDocument && (bool) ($validated['create_invoice'] ?? false),
                 'sent_by' => $user->id,
+                'verification' => $check->value,
+                'access_code_hash' => $accessCode,
             ]);
 
-            $this->chain->record($request, SigningEventType::Sent, $user->id);
-            Audit::record('crm.signing_sent', $request, ['signing_request_id' => $request->id, 'document_type' => $request->document_type, 'sales_document_id' => $request->sales_document_id, 'agreement_id' => $request->agreement_id, 'signable_id' => $request->signable_id, 'deal_id' => $dealId], $company, $user);
+            $this->chain->record($request, SigningEventType::Sent, $user->id, payload: $check->required() ? ['verification' => $check->value] : null);
+            Audit::record('crm.signing_sent', $request, ['signing_request_id' => $request->id, 'document_type' => $request->document_type, 'sales_document_id' => $request->sales_document_id, 'agreement_id' => $request->agreement_id, 'signable_id' => $request->signable_id, 'deal_id' => $dealId, 'verification' => $check->value], $company, $user);
 
             return $request;
         }), self::ATTEMPTS);
@@ -166,10 +180,17 @@ final class SendForSigning
 
         $signerInput = array_values(array_filter((array) $validated['signers'], is_array(...)));
         $copyInput = array_values(array_filter((array) ($validated['copies'] ?? []), is_array(...)));
-        $signers = collect($signerInput)->map(fn (array $signer): array => [
-            'email' => mb_strtolower(trim((string) $signer['email'])),
-            'step' => (int) $signer['step'],
-        ])->values();
+        $signers = collect($signerInput)->map(function (array $signer, int $index): array {
+            $check = SignerCheck::from((string) ($signer['verification'] ?? SignerCheck::None->value));
+
+            return [
+                'email' => mb_strtolower(trim((string) $signer['email'])),
+                'step' => (int) $signer['step'],
+                'verification' => $check->value,
+                // Hashed before the transaction; the plain code is never stored or logged.
+                'access_code_hash' => $check === SignerCheck::AccessCode ? SignerChecks::hashAccessCode($signer['access_code'] ?? null, "signers.{$index}.access_code") : null,
+            ];
+        })->values();
         $copies = collect($copyInput)->map(fn (array $copy): array => [
             'email' => mb_strtolower(trim((string) $copy['email'])),
             'name' => blank($copy['name'] ?? null) ? null : trim((string) $copy['name']),
@@ -208,6 +229,8 @@ final class SendForSigning
                     'content_hash' => $document->signingFingerprint(),
                     'create_invoice' => $document instanceof SalesDocument && (bool) ($validated['create_invoice'] ?? false),
                     'sent_by' => $user->id,
+                    'verification' => $signer['verification'],
+                    'access_code_hash' => $signer['access_code_hash'],
                 ]);
 
                 if ($signer['step'] === $first) {
@@ -292,6 +315,12 @@ final class SendForSigning
         }), self::ATTEMPTS);
     }
 
+    /** The signer checks a sender may choose (ADR-046 amendment, gap 3), for the in: rule. */
+    private static function checkValues(): string
+    {
+        return implode(',', array_map(fn (SignerCheck $check): string => $check->value, SignerCheck::choosable()));
+    }
+
     /** The document's module (when it has one) must be on in the company. */
     public static function moduleOn(Signable $document, Company|int $company): bool
     {
@@ -310,6 +339,8 @@ final class SendForSigning
             'signers' => ['required', 'array', 'min:2', 'max:'.SigningEnvelope::MAX_SIGNERS],
             'signers.*.email' => ['required', 'email', 'max:255'],
             'signers.*.step' => ['required', 'integer', 'min:1', 'max:'.SigningEnvelope::MAX_STEP],
+            'signers.*.verification' => ['nullable', 'string', 'in:'.self::checkValues()],
+            'signers.*.access_code' => ['nullable', 'string'],
             'copies' => ['nullable', 'array', 'max:'.SigningEnvelope::MAX_COPIES],
             'copies.*.email' => ['required', 'email', 'max:255'],
             'copies.*.name' => ['nullable', 'string', 'max:120', 'regex:/^[^\p{C}]*$/u'],
@@ -324,6 +355,7 @@ final class SendForSigning
         ], [
             'signers.*.email' => __('e-post'),
             'signers.*.step' => __('steg'),
+            'signers.*.verification' => __('kontroll av undertecknaren'),
             'copies.*.email' => __('e-post'),
             'copies.*.name' => __('namn'),
             'expires_on' => __('sista dag att signera'),

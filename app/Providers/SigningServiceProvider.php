@@ -53,11 +53,18 @@ class SigningServiceProvider extends ServiceProvider
 
         RateLimiter::for('crm-signing', fn (Request $request): Limit => Limit::perMinute(60)->by('crm-signing:'.$request->ip()));
         RateLimiter::for('crm-signing-submit', fn (Request $request): Limit => Limit::perMinute(10)->by('crm-signing-submit:'.$request->ip()));
+        // Signer checks (ADR-046 amendment, gap 3): ten tries a minute per signer link and per IP address, on top of the counts in the database.
+        RateLimiter::for('signing-verify', fn (Request $request): array => [
+            Limit::perMinute(10)->by('signer:'.hash('sha256', (string) $request->route('token'))),
+            Limit::perMinute(10)->by('ip:'.$request->ip()),
+        ]);
 
         Route::middleware(['web', 'throttle:crm-signing', WithoutAuditRequest::class])->group(function (): void {
             Route::get('/signera/{token}', [SigningPageController::class, 'show'])->where('token', '[^/]{1,100}')->name('signing.show');
             Route::get('/signera/{token}/dokument', [SigningPageController::class, 'document'])->where('token', SigningToken::PATTERN)->name('signing.document');
             Route::post('/signera/{token}', [SigningPageController::class, 'sign'])->where('token', SigningToken::PATTERN)->middleware('throttle:crm-signing-submit')->name('signing.sign');
+            Route::post('/signera/{token}/kod', [SigningPageController::class, 'sendCode'])->where('token', SigningToken::PATTERN)->middleware('throttle:signing-verify')->name('signing.code');
+            Route::post('/signera/{token}/kontroll', [SigningPageController::class, 'verify'])->where('token', SigningToken::PATTERN)->middleware('throttle:signing-verify')->name('signing.verify');
             Route::post('/signera/{token}/avboj', [SigningPageController::class, 'decline'])->where('token', SigningToken::PATTERN)->middleware('throttle:crm-signing-submit')->name('signing.decline');
         });
     }

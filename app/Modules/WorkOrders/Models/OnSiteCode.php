@@ -13,11 +13,13 @@ use Illuminate\Database\Eloquent\Model;
  * opens on the field worker's phone (ADR-074 O4). Only the code's hash is
  * stored; the signing link is kept encrypted until the code is verified
  * and then forgotten. Records who presented the page and on which device.
+ * Since ADR-046 S3 the code itself lives in signing_verification_codes.
  *
  * @property int $id
  * @property int $company_id
  * @property int $change_order_id
  * @property int $signing_request_id
+ * @property ?int $verification_code_id the code on the signer check service (ADR-046 S3); null for rows from before
  * @property string $code_hash
  * @property ?string $url
  * @property CarbonImmutable $expires_at
@@ -37,7 +39,7 @@ class OnSiteCode extends Model
     protected $table = 'change_order_on_site_codes';
 
     /** @var list<string> */
-    protected $fillable = ['company_id', 'change_order_id', 'signing_request_id', 'code_hash', 'url', 'expires_at', 'presented_by', 'presented_user_agent'];
+    protected $fillable = ['company_id', 'change_order_id', 'signing_request_id', 'verification_code_id', 'code_hash', 'url', 'expires_at', 'presented_by', 'presented_user_agent'];
 
     /** @var list<string> */
     protected $hidden = ['code_hash', 'url'];

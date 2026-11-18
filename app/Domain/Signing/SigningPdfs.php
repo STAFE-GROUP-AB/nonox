@@ -56,7 +56,7 @@ final class SigningPdfs
     {
         $company = Company::query()->findOrFail($envelope->company_id);
         $signers = SigningRequest::query()->where('envelope_id', $envelope->id)->where('status', SigningStatus::Signed->value)->orderBy('step')->orderBy('signed_at')->orderBy('id')
-            ->get(['id', 'step', 'signer_name', 'signer_title', 'signed_at', 'signature_method']);
+            ->get(['id', 'step', 'signer_name', 'signer_title', 'signed_at', 'signature_method', 'verification']);
 
         return self::render(view('signing.summary', [
             'envelope' => $envelope,

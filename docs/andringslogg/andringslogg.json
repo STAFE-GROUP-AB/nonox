@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-signering-kontroll",
+      "datum": "2026-11-18T15:00:00+01:00",
+      "rubrik": "Kontrollera den som signerar med en kod",
+      "beskrivning": "När du skickar för signering kan du välja att undertecknaren först ska skriva en engångskod som skickas till e-posten, eller en åtkomstkod som du lämnar själv, innan dokumentet visas. Koderna sparas bara som kontrollsummor, gäller en kort stund och låser länken efter för många felaktiga försök, och då får du en notis och kan låsa upp den. Kontrollen minskar risken att någon annan använder en vidarebefordrad länk; underskriften är fortfarande en enkel elektronisk underskrift.",
+      "typ": "Säkerhet",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-18-behovsplanering",
       "datum": "2026-11-18T11:25:00+01:00",
       "rubrik": "Behovsplanering vecka för vecka",
