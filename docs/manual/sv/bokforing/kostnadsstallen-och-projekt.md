@@ -37,6 +37,8 @@ På sidorna **Kostnadsställen** och **Projekt** visas **Intäkter**, **Kostnade
 
 Vill du se mer, välj kostnadsstället eller projektet som filter under **Bokföring → Rapporter**. Då visar resultatrapporten, huvudboken och de andra rapporterna bara de raderna. Se [Filter och jämförelser](/manual/rapporter/filter-och-jamforelse).
 
+För ett projekt väljer du **Projektresultat** på projektets rad. Då öppnas projektets sida med täckningsbidrag och marginal för hela projektet, jämfört med budgeten och med kontraktssumman och den beräknade kostnaden. Se [Projektresultat](/manual/rapporter/projektresultat).
+
 ## Projektregistret
 
 Ett projekt kan ha fler uppgifter än kod och namn. Välj **Uppgifter** på projektets rad under **Bokföring → Projekt** och fyll i det du vill följa upp:

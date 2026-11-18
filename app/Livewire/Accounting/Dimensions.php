@@ -153,6 +153,8 @@ class Dimensions extends Component
             'kind' => $this->kind(),
             'objects' => $objects,
             'canManage' => $canManage,
+            // The project's own result page (ADR-081 E7).
+            'canSeeProjectResults' => $isProject && $this->user()->can('viewResults', [Project::class, $this->company()]),
             'fiscalYear' => $canSeeResult ? $fiscalYear : null,
             'results' => $canSeeResult ? $this->results($fiscalYear) : collect(),
             // A project manager is shown only while still a member of the company (ADR-081 gap 6).

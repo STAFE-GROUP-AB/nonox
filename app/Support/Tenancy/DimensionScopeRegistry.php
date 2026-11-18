@@ -22,6 +22,8 @@ use App\Livewire\Profile\DeleteAccount;
 use App\Livewire\Profile\Passkeys;
 use App\Livewire\Profile\ProfileInformationForm;
 use App\Livewire\Profile\SignOutEverywhere;
+use App\Livewire\Projects\ProjectList;
+use App\Livewire\Projects\ProjectResult;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Connect\Http\Middleware\AuthenticateConnect;
@@ -58,6 +60,9 @@ final class DimensionScopeRegistry
         'payables.invoices.show',
         'payables.invoices.edit',
         'payables.invoices.file',
+        // Project results (ADR-081 E7): only the member's own projects, without payroll.
+        'projects.index',
+        'projects.show',
     ];
 
     /** Pages that hold nothing of the company's books. */
@@ -104,6 +109,8 @@ final class DimensionScopeRegistry
         SupplierInvoiceList::class => ScopeDecision::Scoped,
         SupplierInvoiceEditor::class => ScopeDecision::Scoped,
         SupplierInvoiceActions::class => ScopeDecision::Scoped,
+        ProjectList::class => ScopeDecision::Scoped,
+        ProjectResult::class => ScopeDecision::Scoped,
         NavigationMenu::class => ScopeDecision::Neutral,
         // The passkey step of signing in (ADR-029): a limited member must be able to pass it too.
         PasskeyChallenge::class => ScopeDecision::Neutral,

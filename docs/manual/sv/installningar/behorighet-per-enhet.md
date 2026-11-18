@@ -16,7 +16,7 @@ En begränsning gör aldrig att någon får göra mer än rollen tillåter, bara
 ## Vem som kan begränsas
 
 - **Bokförare**, **Attestant** och rollerna i modulerna kan begränsas. En begränsad person med en roll i en modul, till exempel Lagerpersonal eller Schemaläggare, når ingenting i modulen. Hen ser bara verifikationer, leverantörsfakturor och rapporter, och bara om rollen redan ger dem.
-- **Enhetschef** är en roll som alltid är begränsad. Hen ser rapporterna för sina kostnadsställen och projekt och inget annat. En enhetschef utan kostnadsställen eller projekt når ingenting.
+- **Enhetschef** är en roll som alltid är begränsad. Hen ser rapporterna för sina kostnadsställen och projekt, och projektresultatet med budget för sina projekt, och inget annat. En enhetschef utan kostnadsställen eller projekt når ingenting.
 - **Ägaren**, **Administratör**, **Redovisningskonsult** och **Revisor** kan aldrig begränsas. De ansvarar för hela bokföringen, och revisorn har rätt att se allt.
 
 Byter du en begränsad persons roll till Administratör, Redovisningskonsult eller Revisor tas begränsningen bort.
@@ -27,6 +27,7 @@ Byter du en begränsad persons roll till Administratör, Redovisningskonsult ell
 - **Lönens verifikationer** visas aldrig för en begränsad person, varken i listan, på verifikationens sida eller i rapporterna, inte heller rättelser av dem. Lönekostnaden för en liten enhet kan vara en enda persons lön.
 - **Leverantörsfakturor**: på samma sätt, efter fakturans rader. Leverantörsregistret är gemensamt för företaget, så den som registrerar en faktura ser och väljer bland alla leverantörer.
 - **Rapporter**: **Resultatrapport** och **Huvudbok**, alltid för ett av personens kostnadsställen eller projekt i taget. Rapporter för hela företaget, som **Saldobalans**, **Balansrapport** och rapporten **Verifikationslista**, visas inte. I huvudboken visas bara radens egen text för en verifikation som personen inte kan öppna, och verifikationens nummer utan länk.
+- **Projektresultat**: bara personens egna projekt, inte projekt som hör till ett kostnadsställe hen är begränsad till. Budgeten visas som budgetens rader med projektet. Personalkostnaderna på konto 7000–7699 visas inte alls, varken utfall eller budget, hur lönen än är bokförd. Se [Projektresultat](/manual/rapporter/projektresultat).
 - **Ny verifikation** och **Ny leverantörsfaktura**: varje rad med kostnadsställe eller projekt måste höra till personens enheter, och minst en rad måste ha ett av dem. Kontosaldot för hela företaget visas inte.
 
 Allt annat, till exempel moms, bokslut, SIE-filer, kundfakturor, betalfiler, sökningen, översikten, notiserna och kalenderlänken till Mina datum, är stängt. En sida eller ett underlag utanför personens enheter svarar som om det inte fanns. Det gäller också NONOX API: en API-nyckel som en begränsad person har skapat når ingenting.
