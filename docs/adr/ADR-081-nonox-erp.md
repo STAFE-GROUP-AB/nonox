@@ -1680,3 +1680,80 @@ Built on branch `feat/erp-e16-materialbehov`. Choices the gap 5 text left open:
 - **Database.** `mrp_runs` and `mrp_planned_orders` are `ReadWrite`; check
   constraints on horizon (1–52, Monday start), kind, exception, quantities
   and the converted pair.
+
+## Addendum: E17 as built (analysis view)
+
+- **Page.** `/analys` (`analysis.index`, Bokföring → Analys), Livewire
+  `App\Livewire\Analysis\AnalysisPage`. Read only: no table, no migration, no
+  audit entry. The choices are keys in the URL; `AnalysisDefinition::normalise`
+  keeps only what the dataset's catalogue names (up to two row dimensions, one
+  column dimension, one measure, two filters, whole months, at most 60) and
+  falls back to defaults for the rest, so nothing typed reaches SQL. Filter
+  values and drill keys are bound parameters. This is the schema E18 will
+  validate a saved `report_definitions.definition` against.
+- **Datasets** (`app/Domain/Analysis/Datasets`, interface `Dataset`): ledger
+  rows, budget lines (active budget only), customer invoices (one record per
+  invoice: net, VAT, total, open), invoice rows (article), supplier invoice
+  rows and aggregated payroll. Not yet: stock, purchase orders, production and
+  work orders; each is one more class. The ledger reads every posted voucher, CLOSING
+  ones included (depreciation, accruals, tax, the year's result), like
+  `LedgerQuery` and the Resultatrapport, so a period's result accounts equal the
+  report's (tested); drafts are left out. Every dataset checks its own permission in `allows()`
+  (`DatasetCatalogue::for`), so a saved report added later shows nothing to a
+  member who may not read it.
+- **Query.** One grouped query per view: the period and the comparison (the
+  same months a year earlier) are conditional aggregates (`FILTER`) in the same
+  statement; at most 10 000 cells (`too many cells` otherwise), `SET LOCAL
+  statement_timeout` 15 s, totals added up in PHP (every measure is a sum or a
+  count). The comparison is off when months are a grouping. A filter picker is
+  one query per chosen filter, a drill-down one query (at most 200 records).
+- **Permission.** New `analysis:view` for owner, admin, accountant, bookkeeper,
+  auditor and `unit_manager` (the approver has none). `analysis:share` belongs
+  to E18. `analysis:view` joins `DimensionScope::SCOPE_AWARE_PERMISSIONS`;
+  `analysis.index` and `AnalysisPage` are `Scoped` in `DimensionScopeRegistry`
+  (`analysis.*` otherwise refused). Customer invoices, invoice rows and payroll
+  are refused to a limited member in `allows()` as well (invoices:* and
+  payroll:* are not scope-aware).
+- **What changes for a limited member, and what does not (owner decision 17).**
+  Payroll vouchers and their corrections are still never shown, and E7's rule is
+  kept: the personnel accounts 7000–7699 are never read, in actuals, budget or
+  supplier invoice rows, whatever the voucher's source. The ADR's E17 text lifts
+  neither: aggregated pay is its own dataset behind `payroll:view`, which no
+  limited member holds, so aggregated pay stays closed to a unit manager.
+  `TODO(legal-verify)`: whether pay aggregated for a unit may be opened to its
+  manager at all, and under which information to staff (art. 13).
+- **Scope rule inside a dataset** (`DimensionedRowsDataset`). A row is read when
+  its cost centre or its project is the member's (the Resultatrapport's row
+  rule), after the voucher-level payroll exclusion; supplier invoice rows follow
+  the invoice rule of E1 (`DimensionScope::constrain`, every dimensioned row
+  inside). The scope is applied to the base query, before anything is grouped or
+  filtered, so no grouping, column, filter or period can add a row. A cost
+  centre or project outside the scope is shown as key −1 "Annan enhet", with
+  neither code nor name, and the filter picker lists only the member's own
+  units. A filter on another unit's id matches nothing. In the drill-down the
+  member sees the row's own text, the unit codes only when they are their own,
+  and no voucher link (as Huvudbok in E1). The voucher's own description is shown
+  only for a voucher that passes `constrainVouchers` (the whole voucher inside
+  the scope, no payroll), one extra query over at most 201 ids; otherwise only the
+  row's text (the Huvudbok rule).
+- **Budget widens E7.** A limited member reads budget lines on their own cost
+  centres too, not only on their projects as in E7, still without 7000–7699.
+  `TODO(legal-verify)`: as in E1, balance-sheet rows on their own units show up
+  in the ledger dataset.
+- **Payroll rule.** `PayrollDataset` groups first at the finest grain (pay
+  code × cost centre × month; the only dimensions it has), per person inside the
+  cell. A finest cell is hidden when fewer than `MIN_PEOPLE` (3) people have pay
+  in it (a zero amount does not count) or when one person accounts for more
+  than `DOMINANCE_PERCENT` (80 %) of it. Every total or regrouping that contains
+  a hidden cell is hidden too (`BOOL_OR` over the finest cells in the same
+  statement), so a hidden cell's figure cannot be had by subtracting one shown
+  figure from another. No person dimension, no drill-down, no count of people is
+  shown. Only approved, paid or posted runs, and only the lines that make up
+  the gross pay; the cost centre is the line's own, else the employment's.
+  Not prevented: comparing two periods or two cost centres can still show one
+  person's change in a cell of three or more, and "Dold" shows that a pay code
+  occurred. The dataset shows nothing beyond what `payroll:view` already sees
+  per person. `TODO(legal-verify)`: the numbers three and 80 %; a group of three
+  can still be informative in a uniform unit; difference over time within a
+  shown cell; that Dold reveals that a pay code occurred (art. 5.1 c).
+- **Not in E17:** saved and shared reports, export and overview tiles (E18).

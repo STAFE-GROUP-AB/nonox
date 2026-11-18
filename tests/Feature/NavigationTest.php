@@ -53,7 +53,7 @@ it('shows the pages of the open section only, grouped in Bokföring', function (
         ->and(array_map(fn (array $group): ?string => $group['label'], $open->first()->groups()))->toBe(['Löpande', 'Rapporter och moms', 'Bokslut', 'Inställningar'])
         ->and(pageLabels($open->first()))->toBe([
             'Verifikationer', 'Bankavstämning', 'Periodiseringar', 'Anläggningar', 'Läs in SIE-fil', 'Läs in register',
-            'Rapporter', 'Reskontra', 'Budget', 'Budget mot utfall', 'Projektresultat', 'Moms', 'EU-rapporter',
+            'Rapporter', 'Reskontra', 'Budget', 'Budget mot utfall', 'Projektresultat', 'Analys', 'Moms', 'EU-rapporter',
             'Räkenskapsår', 'Bokslut', 'Årsredovisning', 'Inkomstdeklaration',
             'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt', 'Koncernmarkeringar',
         ])
@@ -65,12 +65,12 @@ it('filters the pages of Bokföring by permission, as the page links did', funct
 
     expect(pageLabels(openSection($member, $this->company, 'accounting.vouchers.index')))->toBe($expected);
 })->with([
-    'bookkeeper' => ['bookkeeper', ['Verifikationer', 'Bankavstämning', 'Rapporter', 'Reskontra', 'Budget', 'Budget mot utfall', 'Projektresultat', 'Räkenskapsår', 'Årsredovisning', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt', 'Koncernmarkeringar']],
+    'bookkeeper' => ['bookkeeper', ['Verifikationer', 'Bankavstämning', 'Rapporter', 'Reskontra', 'Budget', 'Budget mot utfall', 'Projektresultat', 'Analys', 'Räkenskapsår', 'Årsredovisning', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt', 'Koncernmarkeringar']],
     'approver' => ['approver', ['Verifikationer', 'Räkenskapsår', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt', 'Koncernmarkeringar']],
-    'auditor' => ['auditor', ['Verifikationer', 'Rapporter', 'Reskontra', 'Budget', 'Budget mot utfall', 'Projektresultat', 'Räkenskapsår', 'Årsredovisning', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt', 'Koncernmarkeringar']],
+    'auditor' => ['auditor', ['Verifikationer', 'Rapporter', 'Reskontra', 'Budget', 'Budget mot utfall', 'Projektresultat', 'Analys', 'Räkenskapsår', 'Årsredovisning', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt', 'Koncernmarkeringar']],
     'accountant' => ['accountant', [
         'Verifikationer', 'Bankavstämning', 'Periodiseringar', 'Anläggningar', 'Läs in SIE-fil', 'Läs in register',
-        'Rapporter', 'Reskontra', 'Budget', 'Budget mot utfall', 'Projektresultat', 'Moms', 'EU-rapporter',
+        'Rapporter', 'Reskontra', 'Budget', 'Budget mot utfall', 'Projektresultat', 'Analys', 'Moms', 'EU-rapporter',
         'Räkenskapsår', 'Bokslut', 'Årsredovisning', 'Inkomstdeklaration',
         'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt', 'Koncernmarkeringar',
     ]],
@@ -91,7 +91,7 @@ it('lists the pages of Försäljning, Inköp and Register', function (string $ro
     'suppliers' => ['payables.suppliers', 'Register', ['Kunder', 'Artiklar', 'Leverantörer'], 'Leverantörer'],
     'EU reports' => ['vat.euReports', 'Bokföring', [
         'Verifikationer', 'Bankavstämning', 'Periodiseringar', 'Anläggningar', 'Läs in SIE-fil', 'Läs in register',
-        'Rapporter', 'Reskontra', 'Budget', 'Budget mot utfall', 'Projektresultat', 'Moms', 'EU-rapporter',
+        'Rapporter', 'Reskontra', 'Budget', 'Budget mot utfall', 'Projektresultat', 'Analys', 'Moms', 'EU-rapporter',
         'Räkenskapsår', 'Bokslut', 'Årsredovisning', 'Inkomstdeklaration',
         'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt', 'Koncernmarkeringar',
     ], 'EU-rapporter'],
