@@ -18,4 +18,12 @@ enum Channel: string
     case Peppol = 'PEPPOL';
     // A receipt photographed in NONOX by a signed-in person (Inkorg → Fota kvitto, ADR-072): the original is the photo itself.
     case Upload = 'UPLOAD';
+    // An invoice another company of the same group delivered through NONOX (ADR-081 E27): the original is its UBL file.
+    case GroupDelivery = 'GROUP_DELIVERY';
+
+    /** An e-invoice whose original is the UBL file itself, kept even when rejected (räkenskapsinformation). */
+    public function isEInvoice(): bool
+    {
+        return $this === self::Peppol || $this === self::GroupDelivery;
+    }
 }

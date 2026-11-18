@@ -291,6 +291,11 @@ class ApproveInboxMessage
             return;
         }
 
+        // An intra-group invoice (ADR-081 E27) has no mail either: its original is the UBL file, already linked above.
+        if ($message->channel === Channel::GroupDelivery) {
+            return;
+        }
+
         $this->attach->linkStoredFile($user, $voucher, $message->eml_path, mb_substr(FileName::clean(($message->subject ?: __('E-post')).'.eml'), 0, 255), 'message/rfc822', $message->eml_size, $message->eml_sha256);
     }
 

@@ -2019,3 +2019,83 @@ Built on branch `feat/erp-e8-projekt-pagaende`. Choices the gap 6 text left open
 - **Two balance dates in one year.** Each proposal is reversed the day after
   its date; with two dates (for example a year end and a later correction)
   both reversals must be posted, which the manual says.
+
+## Addendum: E27 as built (intra-group delivery and paired drafts)
+
+Built on branch `feat/erp-e27-koncernleverans`. Choices gap 1 left open:
+
+- **Migration** `2027_02_27_100000_create_intercompany_delivery_tables` (three
+  company-scoped tables, each with a trigger that refuses an invoice or voucher
+  of another company) and, in the inbox module,
+  `2027_02_27_100100_widen_inbox_message_channel` (`inbox_messages.channel`
+  varchar 10 → 20 for `GROUP_DELIVERY`; existing values unchanged).
+  `intercompany_deliveries` is `GrantDecision::AppendOnly` and refused in the
+  model; a partial unique index allows one `DELIVERED` row per invoice; a CHECK
+  ties `delivered_at` to `DELIVERED` and allows `corporate_group_id` only there,
+  so a refusal stores neither a group nor a reason. Pairs and receipt settings
+  are `ReadWrite`.
+- **Where delivery is offered.** Only for an issued (not imported) invoice to a
+  customer the sender has marked as a group company (E23); the recipient is the
+  marking's organisation number, which must equal the one on the invoice.
+  Offering the button reveals nothing: it depends on the sender's own marking.
+- **The group rule** is `App\Domain\Group\GroupCounterparts`: both companies
+  have a member row in one corporate group (the parent's row has no holding) and
+  every holding grounding a subsidiary's membership is acquired on or before
+  today and not disposed of on or before today. It reads holding dates through
+  `CompanyScope::bypass` (commented), and returns only yes/no and the group id.
+- **Refusal is uniform.** No company with the number, not in a shared active
+  group, no enabled receipt setting from the sender's number, inbox module off,
+  receiver archived or a test company: the same `REFUSED` row, the same audit
+  action and payload keys, the same Swedish toast
+  (`DeliverIntercompanyInvoice::refusedMessage()`). The tenancy test compares
+  the eight cases. The receiver is looked up only among
+  `GroupCounterparts::of($sender)` (by id and organisation number), so "no
+  company has the number" and "a company outside the group" run the same
+  queries. Cases among the sender's own group companies (inbox off, no
+  setting, archived, test company) may still differ slightly in time.
+- **The write into B** happens inside `CurrentCompany::run($b)` and inside
+  `Audit::withoutPerson()` (new, small: entries keep no signed-in user, IP or
+  user agent), so B's log gets no person from A. The inbox treats
+  `GROUP_DELIVERY` like `PEPPOL`: the UBL file is the original, it is read by the
+  Peppol reader, and a rejected or unhandled delivery is never pruned. The
+  sender's `delivered_by` stays in A only.
+- **Paired drafts** (`CreatePairedDraft`) are offered on the voucher page
+  (`PairedDraftPanel`, not rendered for a dimension-limited member) for posted
+  vouchers, to companies where the user holds `vouchers:create` (through
+  `Memberships`, which already refuses limited members and archived companies)
+  and shares an active group. Kinds are the ten without an invoice
+  (`IntercompanyMirror::PAIRED_KINDS`); the counterpart's kind is the mirror.
+  Account suggestions mirror 1320↔2360, 1560↔2460, 1660↔2860 and 8820↔8830
+  (ranges of ten; same TODO(legal-verify) as `IntercompanyKindRule`); everything
+  else keeps its number. Amounts always come from the posted voucher, never from
+  the form. The draft is saved through `SaveDraftVoucher` in B, which rebuilds
+  rows by number and code. B's pair row names A's voucher reference; A's row
+  starts without B's reference (a draft has no number) and a person enters it
+  (`SetPairReference`). While B's draft exists a second one for the same voucher
+  is refused; deleting the draft deletes B's pair row (cascade), and A's row is
+  reused.
+- **Screens.** The receipt setting, the delivery log and the pairs are a second
+  component on Bokföring → Koncernmarkeringar (`IntercompanyDeliveries`), so no
+  new route or menu entry; the delivery panel is on the invoice page under
+  Peppol. Systemdokumentation 4.10c, version 0.145.
+- **Cold review (2026-11-18).** The sender keeps its own copy: the delivered
+  file is stored at `koncern/{company}/utgaende/{delivery}.xml` (the row's id is
+  taken from the sequence first) with `xml_path` and `xml_sha256`, required by a
+  CHECK on DELIVERED rows (migration `2027_02_27_100200`), registered in
+  `StoredFiles` and copied into the sender's archive package under
+  `kundfakturor/koncernleveranser/`. Both memberships are read `FOR SHARE` and
+  B's receipt setting `FOR UPDATE` inside the delivery's transaction, after a
+  shared lock on the `corporate_groups` row (lock order group → members →
+  receipt setting, the same group-first order as `RemoveGroupMember`, so the two
+  cannot deadlock), and the group is checked again after the locks. Not locked:
+  a holding disposed of (`company_holdings.disposed_on`) at the same instant; a
+  delivery that commits just before the disposal stands, as an e-mailed invoice
+  would. Files written for an attempt that
+  does not commit are deleted. A paired draft takes its rows, their number and
+  amounts from `propose()`; the form only gives accounts, texts and codes. The
+  counterpart's reference carries the fiscal year (`A12 (2026)` for a calendar
+  year, the start and end dates for any other year,
+  `CreatePairedDraft::reference`), so the duplicate guard does not mix years.
+  Interest (8300–8499) and dividend (8010–8019) rows keep their number and get a
+  "Kontrollera kontot hos motparten" warning (TODO(legal-verify) in
+  `IntercompanyMirror::needsCheck`). `invoice_id` is a plain foreign key.

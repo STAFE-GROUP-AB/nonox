@@ -61,6 +61,8 @@ final class StoredFiles
         'staff_ledger_people' => 'photo_path',
         'workshop_people' => 'photo_path',
         'peppol_transmissions' => 'xml_path',
+        // The sender's copy of an intra-group invoice it delivered (ADR-081 E27).
+        'intercompany_deliveries' => 'xml_path',
         'work_order_photos' => 'path',
         'change_orders' => 'decided_document_path',
         'boardroom_minutes' => 'pdf_path',

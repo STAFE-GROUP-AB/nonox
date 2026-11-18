@@ -75,6 +75,10 @@
         <livewire:peppol.invoice-panel :invoice="$invoice" :key="'peppol-'.$invoice->id" />
     @endif
 
+    @if($groupDelivery)
+        <livewire:group.intercompany-delivery-panel :invoice-id="$invoice->id" :key="'group-delivery-'.$invoice->id" />
+    @endif
+
     @if($canRemind || $invoice->reminders->isNotEmpty())
         <x-ui.card :title="__('Påminnelser')">
             {{-- A customer's open dispute in the portal (ADR-075 §6), for everyone who sees the invoice. TODO(legal-verify): L8 --}}

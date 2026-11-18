@@ -13,6 +13,7 @@ use App\Domain\Approval\ApprovalSubjectType;
 use App\Domain\Documents\DocumentAccess;
 use App\Domain\Documents\DocumentCategory;
 use App\Domain\Documents\RetentionClass;
+use App\Domain\Group\IntercompanyDeliveryStatus;
 use App\Domain\Invoicing\InvoicePdf;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\IssuedInvoicePdf;
@@ -26,6 +27,7 @@ use App\Models\Company;
 use App\Models\Document;
 use App\Models\DocumentVersion;
 use App\Models\FiscalYear;
+use App\Models\IntercompanyDelivery;
 use App\Models\Invoice;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierPaymentBatch;
@@ -95,6 +97,7 @@ final class ArchivePackageBuilder
                     'rapporter' => $this->ledgerReports($company, $fiscalYear),
                     'underlag' => $this->voucherAttachments($fiscalYear),
                     'kundfakturor' => $this->customerInvoices($fiscalYear),
+                    'koncernleveranser' => $this->intercompanyDeliveries($fiscalYear),
                     'leverantorsfakturor' => $this->supplierInvoices($fiscalYear),
                     'moms' => $this->vatReturns($company, $fiscalYear),
                     'lon' => $user->hasTeamPermission($company, 'payroll:archive-view') ? $this->payroll($fiscalYear) : 0,
@@ -240,6 +243,34 @@ final class ArchivePackageBuilder
             ->each(function (Invoice $invoice) use (&$count): void {
                 $this->put('kundfakturor/'.self::safe(InvoicePdf::filename($invoice)), IssuedInvoicePdf::bytes($invoice));
                 $count++;
+            });
+
+        return $count;
+    }
+
+    /**
+     * The seller's copy of each invoice of the year delivered to another
+     * group company through NONOX (ADR-081 E27): the exact e-invoice file
+     * that left the company.
+     */
+    private function intercompanyDeliveries(FiscalYear $fiscalYear): int
+    {
+        $count = 0;
+
+        IntercompanyDelivery::query()
+            ->where('status', IntercompanyDeliveryStatus::Delivered->value)
+            ->whereNotNull('xml_path')
+            ->whereHas('invoice', fn ($query) => $query
+                ->whereDate('invoice_date', '>=', $fiscalYear->start_date->toDateString())
+                ->whereDate('invoice_date', '<=', $fiscalYear->end_date->toDateString()))
+            ->with('invoice')
+            ->orderBy('id')
+            ->each(function (IntercompanyDelivery $delivery) use (&$count): void {
+                $name = $delivery->invoice === null ? "leverans-{$delivery->id}" : pathinfo(InvoicePdf::filename($delivery->invoice), PATHINFO_FILENAME);
+
+                if ($this->copy((string) $delivery->xml_path, 'kundfakturor/koncernleveranser/'.self::safe("{$name}.xml"))) {
+                    $count++;
+                }
             });
 
         return $count;
