@@ -18,6 +18,7 @@ Allt i avsnittet finns i menyn under **Bokföring**.
 - [Kortkommandon och arbete i mobilen](/manual/bokforing/kortkommandon) – bokför utan att släppa tangentbordet, eller med tummen.
 - [Konteringsmallar](/manual/bokforing/konteringsmallar) – skriv ett belopp, så fylls raderna och momsen i.
 - [Utkast](/manual/bokforing/utkast) – spara en verifikation som inte är klar och fortsätt senare.
+- [Attest av verifikationer och kreditfakturor](/manual/bokforing/attest-av-verifikationer) – låt någon annan godkänna innan något bokförs.
 - [Underlag](/manual/bokforing/underlag) – kvitton och fakturor som PDF eller foto, och NONOX AI.
 - [Körjournal](/manual/bokforing/korjournal) – företagets bilar, mätarställningar och resor i egen bil för en enskild firma.
 - [Hitta och läsa verifikationer](/manual/bokforing/verifikationer) – listan, sökningen och en verifikation i detalj.

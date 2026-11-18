@@ -6,7 +6,7 @@ namespace App\Modules\Connect\Http\Controllers\Api\V1;
 
 use App\Actions\Accounting\CorrectVoucher;
 use App\Actions\Accounting\DeleteDraftVoucher;
-use App\Actions\Accounting\PostVoucher;
+use App\Actions\Accounting\PostManualVoucher;
 use App\Actions\Accounting\SaveDraftVoucher;
 use App\Models\Voucher;
 use App\Models\VoucherSeries;
@@ -99,7 +99,7 @@ final class VoucherController
         return response()->noContent();
     }
 
-    public function post(Voucher $voucher, PostVoucher $post): JsonResponse
+    public function post(Voucher $voucher, PostManualVoucher $post): JsonResponse
     {
         $posted = $post($this->credential()->user, $voucher);
 

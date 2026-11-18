@@ -291,3 +291,17 @@ already has a place for it, never in the audit log.
    the same list as bookkeeping items, or in a separate "Personal" tab with
    its own access rules? The design keeps the permission checks either way;
    the question is presentation and what an approver should see together.
+
+## Addendum 2026-11-18: the first source (ADR-081 E21)
+
+`App\Domain\Review\Contracts\ReviewSource` (key, label, items),
+`App\Domain\Review\ReviewItem`, `ReviewPreparer` and `ReviewSources` exist,
+with one source: `ApprovalRequestSource`, the approval engine's open requests
+(ADR-081 gap 8) that the person may decide on their current step, for every
+wired subject: supplier invoices, payment files, purchase orders and purchase
+requisitions (the last two while Lager is on), manual vouchers and credit
+invoices. The page
+"Att godkänna" at `/att-godkanna` lists them read-only with a link to the
+subject's own page (phase 1). The contract has no `approve`/`reject` yet; they
+come with phase 2, through each kind's own action. This ADR stays Proposed for
+the other sources.

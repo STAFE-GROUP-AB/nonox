@@ -1,5 +1,5 @@
 ---
-beskrivning: Bestäm själv vem som attesterar leverantörsfakturor, godkänner betalfiler och attesterar inköpsorder och inköpsanmodan, i flera steg, från ett belopp eller per kostnadsställe, och välj ersättare.
+beskrivning: Bestäm vem som attesterar leverantörsfakturor, betalfiler, inköpsorder, inköpsanmodan, verifikationer och kreditfakturor, i steg, från ett belopp eller per kostnadsställe.
 ordning: 45
 roller: [owner, admin]
 rutter: [approvals.policies]
@@ -15,7 +15,7 @@ Utan att du gör något attesteras en leverantörsfaktura av en person med rätt
 ## Så här lägger du upp ett attestflöde
 
 1. Gå till **Inköp → Attestflöden**.
-2. Klicka på **Nytt flöde för leverantörsfakturor**, **Nytt flöde för inköpsorder**, **Nytt flöde för inköpsanmodan** eller **Nytt flöde för betalfiler**. Flödena för inköpsorder och inköpsanmodan finns när Lager är påslaget.
+2. Klicka på **Nytt flöde för leverantörsfakturor**, **Nytt flöde för inköpsorder**, **Nytt flöde för inköpsanmodan**, **Nytt flöde för betalfiler**, **Nytt flöde för manuella verifikationer** eller **Nytt flöde för kreditfakturor**. Flödena för inköpsorder och inköpsanmodan finns när Lager är påslaget.
 3. Skriv ett **Namn**, till exempel "Inköp från 20 000 kr", och en **Ordning**. Flöden prövas i ordning, lägst nummer först.
 4. Välj för steg 1 **Vem godkänner**: **Alla med en behörighet**, **Utvalda personer** eller **Ägaren av kostnadsstället eller projektet**.
 5. Ange **Antal som ska godkänna**. Två betyder att två olika personer måste godkänna steget.
@@ -31,6 +31,7 @@ Flödet syns direkt i listan med sina steg. Varje gång du sparar får flödet e
 - Gäller inget flöde används standardattesten, precis som förut.
 - För leverantörsfakturor och inköpsorder kan villkoren vara belopp, kostnadsställe, projekt, leverantör och kontointervall. På en inköpsorder är det raderna utan artikel som har konto, kostnadsställe och projekt. För betalfiler kan villkoret bara vara ett belopp, eftersom en fil innehåller många fakturor.
 - Beloppet är fakturans belopp att betala i kronor. En kreditnota prövas på sin storlek.
+- För manuella verifikationer och kreditfakturor kan villkoren vara belopp, kostnadsställe, projekt och kontointervall, men inte leverantör. Utan ett sådant flöde behöver de ingen attest alls; se [Attest av verifikationer och kreditfakturor](/manual/bokforing/attest-av-verifikationer).
 
 ## Attestera i ett flöde
 
@@ -93,6 +94,8 @@ Den som inte längre är medlem i företaget kan inte godkänna. Ändra flödet 
 
 ## Läs också
 
+- [Att godkänna](/manual/leverantorer/att-godkanna)
+- [Attest av verifikationer och kreditfakturor](/manual/bokforing/attest-av-verifikationer)
 - [Attest](/manual/leverantorer/attest)
 - [Betalfiler till banken](/manual/leverantorer/betalfiler)
 - [Inköpsorder](/manual/lager/inkopsorder)

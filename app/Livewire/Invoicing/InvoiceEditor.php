@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Livewire\Invoicing;
 
+use App\Actions\Approval\SubmitForApproval;
 use App\Actions\Invoicing\IssueInvoice;
 use App\Actions\Invoicing\SaveDraftInvoice;
+use App\Domain\Approval\ApprovalRequired;
+use App\Domain\Approval\ApprovalSubjectType;
+use App\Domain\Approval\DraftApprovalStatus;
 use App\Domain\Invoicing\ForeignSale;
 use App\Domain\Invoicing\SalesRowInput;
 use App\Domain\Vat\OssThreshold;
@@ -177,6 +181,11 @@ class InvoiceEditor extends Component
     {
         $invoice = $this->persist($save);
 
+        // The approval card below follows the version just saved (ADR-081 E21).
+        if ($invoice->isCredit()) {
+            $this->dispatch('credit-draft-saved');
+        }
+
         if ($this->invoiceId === null) {
             Toast::flash(__('Utkastet är sparat.'));
             $this->redirectRoute('invoicing.invoices.edit', ['invoice' => $invoice->id]);
@@ -189,10 +198,35 @@ class InvoiceEditor extends Component
 
     public function issue(SaveDraftInvoice $save, IssueInvoice $issue): void
     {
-        $invoice = $issue($this->user(), $this->persist($save));
+        $draft = $this->persist($save);
+
+        try {
+            $invoice = $issue($this->user(), $draft);
+        } catch (ApprovalRequired $required) {
+            $this->sendToApproval($required, $draft);
+
+            return;
+        }
 
         Toast::flash(__(':title är skapad och bokförd. Skicka den till kunden här.', ['title' => $invoice->title()]));
         $this->redirectRoute('invoicing.invoices.show', ['invoice' => $invoice->id]);
+    }
+
+    /**
+     * A CREDIT_INVOICE policy of the company's own holds the credit draft
+     * (ADR-081 E21): Skapa sends it to approval instead, and it is issued by
+     * a person once that version is approved. No invoice number is taken.
+     */
+    private function sendToApproval(ApprovalRequired $required, Invoice $draft): void
+    {
+        if ($required->approvalStatus !== DraftApprovalStatus::Pending) {
+            app(SubmitForApproval::class)($this->user(), $this->company(), ApprovalSubjectType::CreditInvoice, $required->subjectId);
+        }
+
+        Toast::flash($required->approvalStatus === DraftApprovalStatus::Pending
+            ? __('Kreditfakturan väntar redan på attest. Du kan skapa den när den är attesterad.')
+            : __('Kreditfakturan är skickad till attest. Du kan skapa den när den är attesterad.'));
+        $this->redirectRoute('invoicing.invoices.edit', ['invoice' => $draft->id]);
     }
 
     public function render(): View

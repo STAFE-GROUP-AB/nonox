@@ -28,6 +28,9 @@ class RemoveAttachment
 
         CurrentCompany::run($voucher->company_id, function () use ($user, $voucher, $attachment): void {
             DB::transaction(function () use ($user, $voucher, $attachment): void {
+                // The voucher is locked, so a removal never slips in while a draft is approved or posted (ADR-081 E21).
+                $voucher = Voucher::query()->whereKey($voucher->id)->lockForUpdate()->firstOrFail();
+
                 $attachment->delete();
 
                 $deleted = StoredFiles::deleteUnreferenced([$attachment->file_path]);

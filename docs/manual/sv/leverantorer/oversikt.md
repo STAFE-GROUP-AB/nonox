@@ -24,6 +24,7 @@ En leverantörsfaktura går alltid samma väg i NONOX:
 - [Fota fakturan och låt NONOX AI läsa den](/manual/leverantorer/fota-och-las-fakturan) – snabbare registrering från mobilen.
 - [Attest](/manual/leverantorer/attest) – vem som får godkänna och varför det ska vara någon annan.
 - [Attestflöden](/manual/leverantorer/attestfloden) – egna flöden i flera steg, beloppsgränser och ersättare.
+- [Att godkänna](/manual/leverantorer/att-godkanna) – allt som väntar på din attest, på ett ställe.
 
 ## Betala
 

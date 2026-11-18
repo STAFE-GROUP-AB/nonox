@@ -1779,3 +1779,98 @@ Built on branch `feat/erp-e9-inkopsanmodan`, on top of the approval engine (E2) 
 - **Permissions are the source's own**: `vouchers:view`, `SupplierInvoicePolicy::canSeePayables`, `inbox:view`, `AgreementAi::availableFor`, `invoices:view` (quote requests) or `crm:view` (agreement requests), `customer-portal:view`, `meetings:view` read through `ArchivedCompany::reading` (as the controller does, so an archived company's minutes stay listed), the document policy and `DocumentAccess`. Deliberately stricter than the source pages: payslips and employee-linked NONOX Avtal documents also need `payroll:view-sensitive` (owner decision 21), and signing requests of a module's own type (an ATA) are not listed because they go through that module's `SigningHook`. An employee's own payslip (`self:payslips`) is not listed either.
 - **Encrypted titles** (personnel documents, NONOX Avtal file names) are decrypted in PHP after the page is read and are not searchable. The list fetches no names from the staff register, only the employee number; titles and file names are shown as they were saved in the source (the promise to the user, E20 review P2-1).
 - **Tests**: `tests/Feature/Documents/DocumentOverviewTest.php`, one test per adapter for a role that may not see it, another company, filters and a query-count test. No new table or column, so no grants, tenancy-registry or StoredFiles change.
+
+## Addendum: E21 as built (manual vouchers and credit invoices as approval subjects)
+
+Built on branch `feat/erp-e21-attestamnen`, on top of the approval engine (E2),
+the purchase order wiring (E10) and purchase requisitions (E9). Owner decision
+19 applies.
+
+- **Subjects.** `MANUAL_VOUCHER` and `CREDIT_INVOICE` (a customer credit
+  invoice). Base permissions `vouchers:post` and `invoices:credit`; prepare
+  permissions `vouchers:create` and `invoices:create`. Conditions: amount
+  (a voucher's debit total; a credit invoice's total including VAT, tested
+  without sign), cost centre, project, account range; no supplier.
+- **What a manual voucher is.** A draft with source `MANUAL`, no
+  `corrects_voucher_id` and no `source_type`: the voucher editor, the inbox
+  and the API. Not invoicing, payments, payroll, VAT, closing or SIE, and not
+  the tax account reconciliation (`BookTaxAccountTransaction` books with
+  source `MANUAL` but links the voucher to its `tax_account_postings` row; a
+  person confirms each transaction and the counter account there, and it is
+  the reconciliation's own booking, so it is left out rather than given a new
+  voucher source, which would need an enum change on `vouchers`).
+- **Corrections.** A correction that only reverses a posted voucher is always
+  allowed: it undoes something already posted, and approved where a policy
+  applied. A correction with re-booking rows is new bookkeeping, so
+  `CorrectVoucher` refuses it while a `MANUAL_VOUCHER` policy would hold
+  those rows as a manual voucher (`DraftApprovals::holdsRows`); the person
+  reverses the voucher and enters the re-booking as a manual draft that goes
+  to approval. The app's own correction is a reversal; the API's `rows`
+  answer 422 on `rows` in that case.
+- **The default policy is "no approval".** With no active policy of the
+  company's own for the type and no request on the draft, posting and issuing
+  are unchanged and write nothing new (`DraftApprovals::mayBeHeld`, two
+  `exists` queries). `ApprovalSubjectType::hasDefaultApproval()` is false for
+  both, so the policy page says so.
+- **`PostVoucher` is not changed.** `App\Actions\Accounting\PostManualVoucher`
+  is the caller used by the voucher editor, the API (`POST
+  /api/v1/vouchers/{id}/post`, which answers 422 while approval is missing)
+  and the inbox; it locks the voucher first (PostVoucher's own first lock),
+  checks the approval and then calls PostVoucher in the same transaction.
+  `IssueInvoice` checks a credit draft the same way before it takes the
+  invoice number. A waiting, rejected or deleted draft has no number, so
+  series and invoice numbers stay gapless.
+- **Locks.** `SaveDraftVoucher` and `SaveDraftInvoice` lock the draft row
+  first and refuse anything that is no longer a draft; `AttachToVoucher` and
+  `RemoveAttachment` lock the voucher. A save therefore never interleaves
+  with posting, issuing or a decision on the same draft.
+- **Approval is bound to a version.** The subject id is
+  `"{draft uuid}.{fingerprint}"`, the fingerprint a 24-hex SHA-256 read from
+  the database: for a voucher its date, text, series, source and rows (without
+  row ids) and its attachments' SHA-256; for a credit invoice every column but
+  id, company and timestamps, its rows and its ROT/RUT buyers
+  (`DraftFingerprint`). The editors' save-before-post keeps it; any change
+  gives a new subject. Open requests on other versions are withdrawn under the
+  draft's lock when a save changes the version, and when a version is sent,
+  decided, posted or issued, and when a voucher draft is deleted. The card
+  carries the version it showed (`#[Locked]`), and every action re-checks it
+  under the row lock. A version already approved cannot be rejected.
+  An additive index `approval_requests_subject_prefix` (company, type,
+  `subject_id text_pattern_ops`) serves the prefix lookups.
+- **Sending.** The editors' Bokför and Skapa send the draft to approval
+  (`SubmitForApproval`, a new `ApprovalEngine::submit()`) when a policy holds
+  it; the card offers Skicka till attest, Attestera, Avvisa and, for an
+  approved voucher, Bokför (with a confirmation). Approving
+  (`ApproveDraft`) never posts.
+- **Preparers.** The creator and everyone who saved the subject or changed a
+  voucher's attachments (`DraftEditors`, read from the audit log; new entries
+  `voucher.draft_saved` and `invoice.draft_saved` with a row count only). The
+  same rule now covers purchase orders (`inventory.purchase_order_saved` and
+  `_revised`, also in `SendPurchaseOrder`'s threshold mode) and purchase
+  requisitions (`inventory.purchase_requisition_saved`).
+  **Transition:** vouchers and invoices have no `updated_by` column, and draft
+  saves were not audited before this release. For a draft last changed before
+  the release, the creator, the attachment entries (`voucher.attachment_*`,
+  audited before) and everyone who saves it from now on count; an earlier
+  editor who neither created it nor touched its attachments cannot be seen.
+  Such drafts are few (manual drafts in waiting) and a policy is opt-in, so
+  this is accepted and noted here.
+- **Wiring check (requisitions and orders).** Purchase orders and purchase
+  requisitions go through the generic `RejectApproval`/`ResubmitApproval`
+  and the queue: the queue reads submitted requisitions (only while Lager is
+  on) with their rows in one batch (`SubjectFacts::forPurchaseRequisitions`)
+  and links to `inventory.requisitions.show`.
+- **ADR-067 source.** `App\Domain\Review\Contracts\ReviewSource`,
+  `ReviewItem`, `ReviewSources` and `Sources\ApprovalRequestSource`: the open
+  requests the person may decide on their current step, for every wired
+  subject, in a fixed number of queries. Page `/att-godkanna`
+  (`approvals.queue`, under Inköp), read-only with links (ADR-067 phase 1).
+  A draft saved after it was sent is listed as stale and read-only.
+- **Archive package.** Requests and decisions for the year's manual vouchers
+  (by fiscal year) and credit invoices (by invoice date) join `attest/`; the
+  requests are read first and only the drafts they name are looked up.
+- **Audit.** The inbox's failed automatic booking records a code
+  (`approval_required`, `validation`, `not_authorised`) and field names, never
+  the validation messages.
+- **Limited members (gap 10).** The card is not shown to a member limited to
+  cost centres or projects, and the queue page is refused for them.

@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Domain\Approval;
 
+use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Models\Invoice;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierPaymentBatch;
+use App\Models\Voucher;
 use App\Modules\Inventory\Domain\PurchaseRequisitionStatus;
 use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\Models\PurchaseOrder;
@@ -27,9 +30,11 @@ use InvalidArgumentException;
 final class ApprovalSubjects
 {
     /** Loads and locks the subject in the current company; another company's id throws ModelNotFoundException. */
-    public static function lock(ApprovalSubjectType $type, string $id): SupplierInvoice|SupplierPaymentBatch|PurchaseOrder|PurchaseRequisition
+    public static function lock(ApprovalSubjectType $type, string $id): SupplierInvoice|SupplierPaymentBatch|PurchaseOrder|PurchaseRequisition|Voucher|Invoice
     {
         return match ($type) {
+            ApprovalSubjectType::ManualVoucher => DraftApprovals::lockVoucher($id),
+            ApprovalSubjectType::CreditInvoice => DraftApprovals::lockCreditInvoice($id),
             ApprovalSubjectType::PurchaseOrder => self::lockPurchaseOrder($id),
             ApprovalSubjectType::PurchaseRequisition => self::lockPurchaseRequisition($id),
             ApprovalSubjectType::SupplierInvoice => SupplierInvoice::query()->whereKey($id)->lockForUpdate()->firstOrFail(),
@@ -43,6 +48,8 @@ final class ApprovalSubjects
             $subject instanceof SupplierInvoice => SubjectFacts::forSupplierInvoice($subject),
             $subject instanceof SupplierPaymentBatch => SubjectFacts::forPaymentBatch($subject),
             $subject instanceof PurchaseOrder => SubjectFacts::forPurchaseOrder($subject),
+            $subject instanceof Voucher => SubjectFacts::forManualVoucher($subject),
+            $subject instanceof Invoice => SubjectFacts::forCreditInvoice($subject),
             $subject instanceof PurchaseRequisition => SubjectFacts::forPurchaseRequisition($subject),
             default => throw new InvalidArgumentException('Not an approval subject.'),
         };
@@ -55,6 +62,8 @@ final class ApprovalSubjects
             $subject instanceof SupplierInvoice => $subject->status === SupplierInvoiceStatus::Registered,
             $subject instanceof SupplierPaymentBatch => $subject->isOpen() && ! $subject->isApproved(),
             $subject instanceof PurchaseOrder => $subject->isDraft() && ! $subject->isApproved(),
+            $subject instanceof Voucher => $subject->status === VoucherStatus::Draft,
+            $subject instanceof Invoice => $subject->isDraft(),
             $subject instanceof PurchaseRequisition => $subject->status === PurchaseRequisitionStatus::Submitted,
             default => false,
         };
@@ -66,6 +75,8 @@ final class ApprovalSubjects
         return match ($type) {
             ApprovalSubjectType::PaymentBatch => 'payments:create',
             ApprovalSubjectType::PurchaseOrder, ApprovalSubjectType::PurchaseRequisition => InventoryModule::PURCHASE_MANAGE,
+            ApprovalSubjectType::ManualVoucher => 'vouchers:create',
+            ApprovalSubjectType::CreditInvoice => 'invoices:create',
             default => 'supplier-invoices:create',
         };
     }

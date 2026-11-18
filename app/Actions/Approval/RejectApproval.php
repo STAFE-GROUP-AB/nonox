@@ -9,6 +9,8 @@ use App\Domain\Approval\ApprovalDecisionKind;
 use App\Domain\Approval\ApprovalEngine;
 use App\Domain\Approval\ApprovalSubjects;
 use App\Domain\Approval\ApprovalSubjectType;
+use App\Domain\Approval\DraftApprovals;
+use App\Domain\Approval\DraftApprovalStatus;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Inventory\Actions\Purchasing\RejectPurchaseRequisition;
@@ -45,7 +47,14 @@ class RejectApproval
                     throw ValidationException::withMessages(['approve' => __('Underlaget väntar inte på attest.')]);
                 }
 
-                $this->engine->decide(ApprovalContext::load($company), $user, ApprovalSubjects::facts($subject), ApprovalDecisionKind::Reject, $reason);
+                $facts = ApprovalSubjects::facts($subject);
+
+                // A draft version already approved (ADR-081 E21) is not reopened by a rejection; a changed draft is a new version.
+                if (! $type->hasDefaultApproval() && DraftApprovals::status($type, $company->id, $facts->subjectId, fn () => $facts) === DraftApprovalStatus::Approved) {
+                    throw ValidationException::withMessages(['approve' => __('Underlaget är redan attesterat.')]);
+                }
+
+                $this->engine->decide(ApprovalContext::load($company), $user, $facts, ApprovalDecisionKind::Reject, $reason);
             });
         });
     }

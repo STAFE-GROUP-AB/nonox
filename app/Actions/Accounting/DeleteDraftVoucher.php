@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Accounting;
 
+use App\Domain\Approval\ApprovalSubjectType;
+use App\Domain\Approval\DraftApprovals;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
@@ -23,8 +25,11 @@ class DeleteDraftVoucher
     {
         Gate::forUser($user)->authorize('delete', $draft);
 
-        CurrentCompany::run($draft->company_id, function () use ($draft): void {
-            DB::transaction(function () use ($draft): void {
+        CurrentCompany::run($draft->company_id, function () use ($user, $draft): void {
+            DB::transaction(function () use ($user, $draft): void {
+                // A draft that waited for approval takes its open request with it (ADR-081 E21).
+                DraftApprovals::withdrawOtherVersions(ApprovalSubjectType::ManualVoucher, $draft->company_id, $draft->id, null, $user);
+
                 $paths = VoucherAttachment::query()->where('voucher_id', $draft->id)->pluck('file_path')->all();
 
                 $draft->delete();

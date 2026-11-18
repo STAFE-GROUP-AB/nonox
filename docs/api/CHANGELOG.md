@@ -13,6 +13,24 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-18: attest av verifikationer och kreditfakturor
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-18: approval of vouchers and credit invoices
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Ändrat
+- `POST /vouchers/{voucher}/post` och `POST /invoices/{invoice}/issue`: har företaget lagt upp ett eget attestflöde för manuella verifikationer eller kreditfakturor (Inköp → Attestflöden) som gäller utkastet svarar anropet 422 (fältet `voucher` respektive `invoice`) tills just den versionen av utkastet är attesterad i NONOX. Utkastet får inget nummer medan det väntar. Företag utan sådant flöde märker ingen skillnad.
+- `POST /vouchers/{voucher}/correct`: med ett sådant flöde för manuella verifikationer som skulle gälla `rows` svarar en rättelse med `rows` 422 på fältet `rows`. En rättelse utan rader (bara vändning) fungerar som förut.
+<!-- /lang -->
+<!-- lang:en -->
+### Changed
+- `POST /vouchers/{voucher}/post` and `POST /invoices/{invoice}/issue`: when the company has an approval flow of its own for manual vouchers or credit invoices (Inköp → Attestflöden) that applies to the draft, the call answers 422 (field `voucher` or `invoice`) until that very version of the draft is approved in NONOX. The draft gets no number while it waits. Companies without such a flow see no difference.
+- `POST /vouchers/{voucher}/correct`: with such a flow for manual vouchers that would apply to the `rows`, a correction with `rows` answers 422 on the field `rows`. A correction without rows (a reversal only) works as before.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-18: batch och serienummer på inleveranser
 <!-- /lang -->
 <!-- lang:en -->

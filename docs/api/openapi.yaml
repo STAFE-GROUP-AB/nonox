@@ -1820,9 +1820,9 @@ paths:
       tags:
         - Verifikationer
       summary: 'Post a voucher'
-      description: 'Posts a draft (bokför): checks that it balances, that the date is in an open fiscal year and not in a locked period, assigns the next gapless number in its series and fiscal year, extends the hash chain and writes the audit log. Irreversible: a posted voucher is only ever corrected. Same Action as the app (PostVoucher). No body.'
+      description: 'Posts a draft (bokför): checks that it balances, that the date is in an open fiscal year and not in a locked period, assigns the next gapless number in its series and fiscal year, extends the hash chain and writes the audit log. Irreversible: a posted voucher is only ever corrected. When the company has an approval flow of its own for manual vouchers (Inköp → Attestflöden) that applies to the draft, that version of the draft must be approved in NONOX first: until then the call answers 422 on the field `voucher` and the draft stays a draft without a number. Same Action as the app (PostVoucher, through PostManualVoucher). No body.'
       x-sv-summary: 'Bokför en verifikation'
-      x-sv-description: 'Bokför ett utkast: kontrollerar balans, räkenskapsår och låsta perioder, ger nästa nummer i serien utan luckor och skriver behandlingshistorik. Går inte att ångra, bara rätta.'
+      x-sv-description: 'Bokför ett utkast: kontrollerar balans, räkenskapsår och låsta perioder, ger nästa nummer i serien utan luckor och skriver behandlingshistorik. Går inte att ångra, bara rätta. Har företaget ett eget attestflöde för manuella verifikationer som gäller utkastet svarar anropet 422 tills den versionen är attesterad i NONOX.'
       security:
         - oauth2:
             - 'vouchers:post'
@@ -1921,9 +1921,9 @@ paths:
       tags:
         - Verifikationer
       summary: 'Correct a posted voucher'
-      description: 'Creates and posts a correcting voucher (rättelseverifikation) that reverses the original and, if `rows` are given, books those instead. Both vouchers are linked. A voucher can be corrected once. Same Action as the app (CorrectVoucher).'
+      description: 'Creates and posts a correcting voucher (rättelseverifikation) that reverses the original and, if `rows` are given, books those instead. Both vouchers are linked. A voucher can be corrected once. When the company has an approval flow of its own for manual vouchers that would apply to the `rows`, a correction with rows answers 422 on `rows`: reverse the voucher without rows and post the re-booking as a new draft that goes to approval. Same Action as the app (CorrectVoucher).'
       x-sv-summary: 'Rätta en bokförd verifikation'
-      x-sv-description: 'Skapar och bokför en rättelseverifikation som vänder originalet och, om rows skickas, bokför dem i stället. Båda länkas till varandra. En verifikation kan rättas en gång.'
+      x-sv-description: 'Skapar och bokför en rättelseverifikation som vänder originalet och, om rows skickas, bokför dem i stället. Båda länkas till varandra. En verifikation kan rättas en gång. Gäller företagets attestflöde för manuella verifikationer raderna svarar en rättelse med rows 422; vänd då verifikationen utan rader och för in ombokningen som ett nytt utkast som attesteras.'
       security:
         - oauth2:
             - 'vouchers:correct'
@@ -4571,9 +4571,9 @@ paths:
       tags:
         - Kundfakturor
       summary: 'Issue (book) a draft invoice'
-      description: 'Makes the draft an invoice: the next gapless invoice number, an OCR reference, the customer frozen, and under fakturametoden a voucher in series B. Irreversible; a mistake is credited. Does not e-mail it (see /send). Books a voucher as the person behind the credential, so the credential also needs vouchers:create and vouchers:post. Same Action as the app (IssueInvoice).'
+      description: 'Makes the draft an invoice: the next gapless invoice number, an OCR reference, the customer frozen, and under fakturametoden a voucher in series B. Irreversible; a mistake is credited. Does not e-mail it (see /send). Books a voucher as the person behind the credential, so the credential also needs vouchers:create and vouchers:post. A credit invoice that the company''s own approval flow for credit invoices holds answers 422 on the field `invoice` until that version is approved in NONOX. Same Action as the app (IssueInvoice).'
       x-sv-summary: 'Skapa (bokför) fakturan'
-      x-sv-description: 'Ger utkastet nummer och OCR och bokför det i serie B. Går inte att ångra, bara kreditera. Bokför en verifikation, så nyckeln eller appen behöver även vouchers:create och vouchers:post.'
+      x-sv-description: 'Ger utkastet nummer och OCR och bokför det i serie B. Går inte att ångra, bara kreditera. Bokför en verifikation, så nyckeln eller appen behöver även vouchers:create och vouchers:post. En kreditfaktura som företagets eget attestflöde håller svarar 422 tills den versionen är attesterad i NONOX.'
       security:
         - oauth2:
             - 'invoices:send'

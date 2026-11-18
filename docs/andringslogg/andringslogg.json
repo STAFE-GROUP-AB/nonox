@@ -56,6 +56,14 @@
       "omrade": "Bokföring"
     },
     {
+      "id": "2026-11-18-attest-av-verifikationer-och-kreditfakturor",
+      "datum": "2026-11-18T13:40:00+01:00",
+      "rubrik": "Attest av verifikationer och kreditfakturor",
+      "beskrivning": "Under Inköp → Attestflöden kan ni nu kräva att någon annan godkänner verifikationer som förs in för hand och kreditfakturor, till exempel från ett visst belopp. Utkastet väntar utan nummer tills just den versionen är attesterad, så serierna förblir obrutna, och utan ett flöde ändras ingenting. Under Inköp → Att godkänna ser du allt som väntar på din attest på ett ställe.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-18-analys",
       "datum": "2026-11-18T13:00:00+01:00",
       "rubrik": "Analys: egna frågor till siffrorna",

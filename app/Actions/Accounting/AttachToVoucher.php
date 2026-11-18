@@ -76,7 +76,10 @@ class AttachToVoucher
 
         Storage::disk(self::DISK)->put($path, $contents);
 
-        return CurrentCompany::run($voucher->company_id, function () use ($user, $voucher, $file, $mime, $path, $contents): VoucherAttachment {
+        return CurrentCompany::run($voucher->company_id, fn (): VoucherAttachment => DB::transaction(function () use ($user, $voucher, $file, $mime, $path, $contents): VoucherAttachment {
+            // The voucher is locked, so an attachment never slips in while a draft is approved or posted (ADR-081 E21).
+            $voucher = Voucher::query()->whereKey($voucher->id)->lockForUpdate()->firstOrFail();
+
             $attachment = VoucherAttachment::create([
                 'voucher_id' => $voucher->id,
                 'file_path' => $path,
@@ -96,7 +99,7 @@ class AttachToVoucher
             ], $voucher->company_id, $user);
 
             return $attachment;
-        });
+        }));
     }
 
     /**
@@ -110,6 +113,7 @@ class AttachToVoucher
     public function linkStoredFile(User $user, Voucher $voucher, string $path, string $name, string $mime, int $size, string $sha256): VoucherAttachment
     {
         return CurrentCompany::run($voucher->company_id, fn (): VoucherAttachment => DB::transaction(function () use ($user, $voucher, $path, $name, $mime, $size, $sha256): VoucherAttachment {
+            $voucher = Voucher::query()->whereKey($voucher->id)->lockForUpdate()->firstOrFail();
             StoredFiles::lock($path);
 
             $attachment = VoucherAttachment::create([
