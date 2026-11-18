@@ -167,10 +167,11 @@ class ConsolidationPage extends Component implements SpansCompanies
                 : $runs->firstWhere('id', (int) $this->run);
 
             $selected = $selected === null ? null : CorporateGroupRun::query()->whereKey($selected->id)->first();
-            $runLevel = $selected === null ? GroupAccessLevel::None : ConsolidateGroup::level($access, $current, $selected->period_from);
-            // A run with one contributing company or a company left out is never shown to someone who sees only sums.
-            $withheld = $selected !== null && $runLevel === GroupAccessLevel::Consolidated && ! ConsolidateGroup::shownToConsolidated($selected->inputs);
-            $view = $runLevel->sees() && $selected !== null && ! $withheld ? ConsolidationView::present($selected, $runLevel) : null;
+            // Decided by the companies the run read, not the group's members today (ADR-081 E26 cold review, P1),
+            // and never a run someone who sees only sums could subtract into one company's figures (E24).
+            $runLevel = $selected === null ? GroupAccessLevel::None : ConsolidateGroup::runLevel($access, $current, $selected);
+            $withheld = $selected !== null && ! $runLevel->sees();
+            $view = $withheld || $selected === null ? null : ConsolidationView::present($selected, $runLevel);
 
             if ($level === GroupAccessLevel::Full) {
                 $administers = $access->administers($current);

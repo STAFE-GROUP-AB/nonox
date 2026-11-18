@@ -88,6 +88,11 @@ final class ConsolidateGroup
         $run = CorporateGroupRun::query()->where('corporate_group_id', $group->id)->findOrFail($runId);
         self::refuseTooFew(self::authorize($access, $group, $run->period_from), $run->inputs);
 
+        // A stored run is judged by the companies it read (E26, P1): one the user cannot see is not found.
+        if (! self::runLevel($access, $group, $run)->sees()) {
+            throw (new ModelNotFoundException)->setModel(CorporateGroupRun::class, [$run->id]);
+        }
+
         $result = self::snapshot(fn (): array => $this->consolidation->compute($access, $group, $run->period_from, $run->period_to));
         $inputsUnchanged = hash_equals($run->inputs_hash, Consolidation::hash($result['inputs']));
 
@@ -112,6 +117,33 @@ final class ConsolidateGroup
         }
 
         return $level;
+    }
+
+    /**
+     * What the user may see of one STORED run, decided by the companies the
+     * run read, not by the group's members today (cold review E26, P1). A
+     * company that has left the group since still has its figures in the
+     * run, so someone with reports:view in every current member but not in
+     * that company could subtract the others from the sum.
+     *
+     * FULL: reports:view, not limited to dimensions, in every company the
+     * run read. Otherwise CONSOLIDATED, only through the group role while
+     * still a member of the parent (not limited to dimensions there), and
+     * only for a run shownToConsolidated(). Otherwise NONE.
+     */
+    public static function runLevel(GroupAccess $access, CorporateGroup $group, CorporateGroupRun $run): GroupAccessLevel
+    {
+        $ids = array_map(fn (array $company): int => (int) $company['company_id'], $run->inputs['companies'] ?? []);
+
+        if ($ids !== [] && ! in_array(false, RecordGroupEntry::visibleCompanies($access, $ids), true)) {
+            return GroupAccessLevel::Full;
+        }
+
+        if ($access->readsSums($group) && ! DimensionScope::limits($access->user, $group->parent_company_id) && self::shownToConsolidated($run->inputs)) {
+            return GroupAccessLevel::Consolidated;
+        }
+
+        return GroupAccessLevel::None;
     }
 
     /**

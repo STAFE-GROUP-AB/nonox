@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Group;
 
+use App\Domain\Group\Consolidation;
 use App\Domain\Group\GroupAccess;
 use App\Domain\Group\GroupOverview;
 use App\Livewire\Group\GroupOverviewPage;
@@ -32,7 +33,7 @@ class GroupCsvController
 
         $report = $overview->build($access, $found, $year, $till);
         $rows = $this->rows($tab, $report);
-        $name = 'koncern_'.$tab.'_'.($report['till']?->toDateString() ?? 'tom').'.csv';
+        $name = 'intern-koncernrapport_'.$tab.'_'.($report['till']?->toDateString() ?? 'tom').'.csv';
 
         return response()->streamDownload(function () use ($rows): void {
             $out = fopen('php://output', 'wb');
@@ -61,7 +62,7 @@ class GroupCsvController
         $ids = array_column($report['companies'], 'id');
         $head = ['', ...array_column($report['companies'], 'name'), __('Summa')];
         $line = fn (string $label, array $amounts, int $sum): array => [$label, ...array_map(fn (int $id): string => $kr($amounts[$id] ?? 0), $ids), $kr($sum)];
-        $rows = [[__('Intern koncernöversikt, inte en koncernredovisning'), '']];
+        $rows = [[__(Consolidation::LABEL), '']];
 
         if ($tab === 'elimineringar') {
             $rows[] = [__('Förslag till elimineringar, ingenting är bokfört')];

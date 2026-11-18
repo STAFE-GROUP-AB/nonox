@@ -48,6 +48,7 @@ final class PagesProvider extends BaseSearchProvider
         'group.overview' => ['koncern', 'koncernöversikt', 'holding', 'dotterbolag'],
         'group.consolidation' => ['konsolidering', 'koncernrapport', 'körlogg', 'kontomappning'],
         'group.eliminations' => ['elimineringar', 'koncernjournal', 'koncernintern', 'återföring'],
+        'group.reports' => ['koncernrapport', 'koncernrapporter', 'koncernens resultaträkning', 'koncernens balansräkning', 'intern koncernrapport'],
         'accounting.intercompany' => ['koncernföretag', 'koncerninterna', 'koncernbidrag', 'motpart', 'eliminering'],
         'group.corporate' => ['koncern', 'koncernstruktur', 'moderföretag', 'dotterföretag', 'innehav', 'ägarandel'],
         'payroll.agi' => ['agi', 'arbetsgivardeklaration'],

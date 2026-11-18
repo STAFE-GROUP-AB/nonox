@@ -19,7 +19,7 @@ Koncernen är den som företagen har satt upp under **Koncernstruktur**: moderf�
 
 ## Vem som ser vad
 
-- Får du se rapporter i **alla** företag i koncernen ser du körningarna, vad varje körning läste per företag och kontomappningen.
+- Får du se rapporter i **alla** företag i koncernen ser du körningarna, vad varje körning läste per företag och kontomappningen. En äldre körning som läste ett företag som du inte får se rapporter i, till exempel ett som har lämnat koncernen sedan dess, visas inte för dig; sidan säger **Körningen visas inte**.
 - Har du fått rollen att läsa koncernens sammanställning, och är medlem i moderföretaget, ser du bara de konsoliderade siffrorna och vilka företag som ingår. Inga enskilda företags siffror. En körning visas bara när minst två företag ingår, och alla företag ingår under hela perioden med sin balansräkning; annars säger sidan **Körningen visas inte**. En period där ett dotterföretag förvärvas eller avyttras visas alltså inte för dig. Jämför du en period före en försäljning av ett dotterföretag med en period efter den, är skillnaden det sålda företagets balansräkning, som i alla koncernrapporter före och efter en försäljning. Du kan fortfarande jämföra perioder med varandra, och ser du också moderföretagets egna rapporter kan du räkna ut vad dotterföretagen står för. **Kontrollera mot bokföringen** visar också om något av företagen har bokfört sedan körningen, men inte vilket.
 - Alla andra ser inte koncernen alls. Saknar du rätt att se rapporter i ett av företagen visas den inte, och sidan säger **Du ser ingen koncern**.
 
@@ -52,7 +52,7 @@ En körning är **Preliminär** när minst ett av företagen inte har stängt r�
 
 ## Körloggen
 
-**Körlogg** listar de senaste körningarna med när de gjordes, perioden, vem som körde dem och en **Kontrollsumma**. Välj **Visa** för att se en äldre körning.
+**Körlogg** listar de senaste körningarna med när de gjordes, perioden, vem som körde dem och en **Kontrollsumma**. Välj **Visa** för att se en äldre körning. Under [Koncernrapporter](/manual/rapporter/koncernrapporter) visar du en körning med elimineringarna konto för konto och hämtar den som CSV eller PDF.
 
 Varje körning sparar vad den läste: per företag antalet bokförda verifikationer och kontrollsumman för den senast bokförda verifikationen, de ingående balanserna, kontoplanen, [koncernmarkeringarna](/manual/bokforing/koncernmarkeringar) och kontomappningen, och kontrollsumman för varje post i koncernjournalen som drogs. Samma indata ger alltid samma siffror. Körningar kan inte ändras eller tas bort.
 

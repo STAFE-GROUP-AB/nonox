@@ -11,7 +11,7 @@ sokord: [koncern, koncernöversikt, holdingbolag, dotterbolag, flera bolag, konc
 **Koncernöversikt** är för dig som äger flera företag, till exempel ett holdingbolag och några dotterbolag. Du samlar företagen i en egen **koncern** och ser deras resultat och balans bredvid varandra, med en summa längst till höger.
 
 > [!IMPORTANT]
-> Koncernöversikten är en **intern översikt för ditt eget underlag**. Den är ingen koncernredovisning enligt årsredovisningslagen. Ingenting konsolideras, ingenting bokförs och inget i företagens bokföring ändras. Sidan säger det överst, även när du skriver ut den.
+> Koncernöversikten är en **intern översikt för ditt eget underlag**. Den är ingen koncernredovisning enligt årsredovisningslagen. Ingenting konsolideras, ingenting bokförs och inget i företagens bokföring ändras. Sidan säger överst **Intern koncernrapport, inte en koncernredovisning enligt ÅRL**, även när du skriver ut den, och samma rad står först i CSV-filen.
 
 Du öppnar sidan under **Mina företag → Koncernöversikt** i sidomenyn, eller med **Koncernöversikt** i företagsmenyn. Menyvalet finns när du är med i fler än ett företag.
 
@@ -78,7 +78,7 @@ För varje par visas båda sidorna, **Kan elimineras** (det mindre beloppet) och
 
 ## Hämta och skriv ut
 
-- **Hämta som CSV** ger en fil som Excel öppnar direkt, med samma kolumner som på skärmen.
+- **Hämta som CSV** ger en fil som Excel öppnar direkt, med samma kolumner som på skärmen. Filnamnet börjar med `intern-koncernrapport`.
 - **Skriv ut** skriver ut sidan utan menyer och val. Varningen om att det är en intern översikt följer med.
 
 ## Bra att veta

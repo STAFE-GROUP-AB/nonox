@@ -58,6 +58,8 @@
                             <x-ui.badge tone="success">{{ __('Låsta perioder') }}</x-ui.badge>
                         @endif
                         <button type="button" class="{{ $quiet }} print:hidden" wire:click="check({{ $selected->id }})">{{ __('Kontrollera mot bokföringen') }}</button>
+                        {{-- The same run as group reports, with CSV and PDF (ADR-081 E26). --}}
+                        <a href="{{ route('group.reports', ['koncern' => $current->id, 'korning' => $selected->id]) }}" class="{{ $quiet }} print:hidden" wire:navigate>{{ __('Koncernrapporter') }}</a>
                         <button type="button" class="{{ $quiet }} print:hidden" x-on:click="window.print()">{{ __('Skriv ut') }}</button>
                     </div>
                 </div>
@@ -242,6 +244,7 @@
             <x-ui.card>
                 <x-ui.empty-state :title="__('Körningen visas inte')">
                     {{ __('Den här körningen kan inte visas för den som bara ser koncernens summor, eftersom den har färre än två företag eller något företag har lämnats utanför eller bara ingår en del av perioden.') }}
+                    {{ __('Den visas inte heller för den som inte får se rapporter i alla företag som körningen läste, till exempel ett företag som har lämnat koncernen sedan dess.') }}
                 </x-ui.empty-state>
             </x-ui.card>
         @elseif($current)

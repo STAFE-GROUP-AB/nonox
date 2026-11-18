@@ -216,6 +216,8 @@ final class Navigation
                     ['label' => __('Konsolidering'), 'route' => 'group.consolidation', 'active' => ['group.consolidation']],
                     // Elimination suggestions and the group ledger (ADR-081 E25); FULL access only, the page says so otherwise.
                     ['label' => __('Elimineringar'), 'route' => 'group.eliminations', 'active' => ['group.eliminations']],
+                    // The group reports of a stored run, with CSV and PDF (ADR-081 E26); the page shows only groups and runs the user sees.
+                    ['label' => __('Koncernrapporter'), 'route' => 'group.reports', 'active' => ['group.reports']],
                     // Only for someone who may see the schedule in at least one company (ADR-037, gap 8).
                     ...(Memberships::of($user, active: true)->where('planning:view') === [] ? [] : [['label' => __('Schema över företag'), 'route' => 'companies.schedule', 'active' => ['companies.schedule']]]),
                 ],
