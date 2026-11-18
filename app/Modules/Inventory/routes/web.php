@@ -26,6 +26,7 @@ Route::view('/lager/plocklistor', 'inventory::pick-lists')->name('inventory.pick
 Route::get('/lager/plocklistor/{pickList}/pdf', PickListPdfController::class)->whereNumber('pickList')->name('inventory.pickLists.pdf');
 Route::view('/lager/inventering', 'inventory::counts')->name('inventory.counts');
 Route::view('/lager/batcher', 'inventory::lots')->name('inventory.lots');
+Route::view('/lager/prognos', 'inventory::forecast')->name('inventory.forecast');
 Route::view('/lager/rapporter', 'inventory::reports')->name('inventory.reports');
 Route::view('/lager/installningar', 'inventory::settings')->name('inventory.settings');
 Route::view('/lager/installningar/etiketter', 'inventory::labels')->name('inventory.labels');

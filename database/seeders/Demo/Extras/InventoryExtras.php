@@ -10,11 +10,14 @@ use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Modules\Inventory\Actions\ArticleImages;
 use App\Modules\Inventory\Actions\PickLists;
+use App\Modules\Inventory\Actions\Planning\GenerateDemandForecast;
+use App\Modules\Inventory\Actions\Planning\SaveDemandForecast;
 use App\Modules\Inventory\Actions\ReceiveStock;
 use App\Modules\Inventory\Actions\RecordMovement;
 use App\Modules\Inventory\Actions\SaveLocation;
 use App\Modules\Inventory\Actions\SaveReceipt;
 use App\Modules\Inventory\Actions\StockCounts;
+use App\Modules\Inventory\Domain\ForecastPeriodKind;
 use App\Modules\Inventory\Domain\Gtin;
 use App\Modules\Inventory\Domain\LocationType;
 use App\Modules\Inventory\Domain\Quantity;
@@ -43,6 +46,9 @@ use Illuminate\Http\UploadedFile;
  * use, so no code belongs to a real product. The pictures are drawn here.
  * Nothing is booked: Lager writes to the ledger only when the stock change
  * is booked at the year end.
+ *
+ * Planning (ADR-081 gap 5): planning data on some articles and a demand
+ * forecast for the next 13 weeks.
  */
 final class InventoryExtras extends DemoExtra
 {
@@ -105,6 +111,18 @@ final class InventoryExtras extends DemoExtra
         return $number === 'L-101';
     }
 
+    /**
+     * Planning data (ADR-081 gap 5): number => planning method, lead time in days, safety stock,
+     * minimum lot, lot multiple (0 = none).
+     *
+     * @var array<string, array{method: string, lead: int, safety: int, minimum: int, multiple: int}>
+     */
+    private const array PLANNING = [
+        'L-101' => ['method' => 'MRP', 'lead' => 21, 'safety' => 6, 'minimum' => 0, 'multiple' => 12], 'L-102' => ['method' => 'MRP', 'lead' => 14, 'safety' => 20, 'minimum' => 60, 'multiple' => 12], 'L-103' => ['method' => 'REORDER_POINT', 'lead' => 14, 'safety' => 0, 'minimum' => 0, 'multiple' => 0],
+        'L-201' => ['method' => 'MRP', 'lead' => 21, 'safety' => 4, 'minimum' => 0, 'multiple' => 4], 'T-101' => ['method' => 'MRP', 'lead' => 28, 'safety' => 8, 'minimum' => 0, 'multiple' => 6], 'T-201' => ['method' => 'MRP', 'lead' => 35, 'safety' => 2, 'minimum' => 0, 'multiple' => 0],
+        'T-302' => ['method' => 'REORDER_POINT', 'lead' => 10, 'safety' => 0, 'minimum' => 0, 'multiple' => 2],
+    ];
+
     /** @var array<string, int> location ids by full code */
     private array $locations = [];
 
@@ -134,12 +152,53 @@ final class InventoryExtras extends DemoExtra
         $this->summerCount($context);
         $this->pickOrder($context, 7, [['T-304', 10], ['T-305', 20], ['T-302', 12], ['L-102', 40]]);
         $this->partialReceipt($context);
+        // The planning's history window is the last three complete months: some demand in each.
+        $this->pickOrder($context, 8, [['L-101', 6], ['L-102', 12], ['T-305', 8], ['T-302', 6]]);
+        $this->pickOrder($context, 9, [['L-101', 8], ['L-102', 14], ['T-101', 6], ['T-302', 8], ['T-201', 2]]);
         $this->pickOrder($context, 10, [['L-101', 12], ['L-201', 6], ['L-203', 14], ['T-301', 8]]);
         $this->shopFloor($context, 10);
 
         $this->expectedReceipt($context);
         $this->openPickList($context);
         $this->todaysCount($context);
+        $this->planning($context);
+    }
+
+    /**
+     * Planning data on the articles the shop reorders in cartons, and a
+     * demand forecast for the coming 13 weeks (ADR-081 gap 5): the
+     * Christmas range typed by hand, the rest computed from the last three
+     * months of picks.
+     */
+    private function planning(DemoContext $c): void
+    {
+        foreach (self::PLANNING as $number => $plan) {
+            $this->articles[$number]->update([
+                'planning_method' => $plan['method'],
+                'lead_time_days' => $plan['lead'],
+                'safety_stock_milli' => $plan['safety'] * 1000,
+                'lot_minimum_milli' => $plan['minimum'] > 0 ? $plan['minimum'] * 1000 : null,
+                'lot_multiple_milli' => $plan['multiple'] > 0 ? $plan['multiple'] * 1000 : null,
+            ]);
+        }
+
+        // The Christmas range: weeks from now, rising towards December.
+        $christmas = [
+            'L-101' => [10, 10, 12, 14, 18, 24, 30, 30, 20, 8, 6, 6, 6],
+            'L-102' => [20, 20, 24, 30, 36, 44, 50, 50, 30, 14, 12, 12, 12],
+            'L-103' => [3, 3, 4, 6, 8, 10, 12, 12, 8, 3, 2, 2, 2],
+            'T-201' => [2, 2, 3, 4, 5, 6, 6, 5, 4, 2, 2, 2, 2],
+        ];
+        $save = app(SaveDemandForecast::class);
+        $monday = $c->today->startOfWeek();
+
+        foreach ($christmas as $number => $weeks) {
+            foreach ($weeks as $index => $quantity) {
+                $save($c->user, $c->company, $this->articles[$number], ForecastPeriodKind::Week, $monday->addWeeks($index), (string) $quantity, $c->today);
+            }
+        }
+
+        app(GenerateDemandForecast::class)($c->user, $c->company, null, ForecastPeriodKind::Week, 13, 3, false, $c->today);
     }
 
     /**

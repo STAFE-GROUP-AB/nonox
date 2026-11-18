@@ -156,6 +156,8 @@ final class DatabaseGrants
         'deadline_calendar_feeds' => GrantDecision::ReadWrite,
         'deadline_reminders' => GrantDecision::ReadWrite,
         'deferred_tax_items' => GrantDecision::ReadWrite,
+        // The demand forecast per article (ADR-081 gap 5): typed, computed again and cleared, so read and write.
+        'demand_forecasts' => GrantDecision::ReadWrite,
         'employees' => GrantDecision::ReadWrite,
         'employments' => GrantDecision::ReadWrite,
         'expenses' => GrantDecision::ReadWrite,

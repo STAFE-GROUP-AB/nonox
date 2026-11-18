@@ -159,6 +159,7 @@ use App\Modules\Inventory\Models\ArticleImage;
 use App\Modules\Inventory\Models\ArticleUnitConversion;
 use App\Modules\Inventory\Models\BillOfMaterials;
 use App\Modules\Inventory\Models\BomRow;
+use App\Modules\Inventory\Models\DemandForecast;
 use App\Modules\Inventory\Models\LabelTemplate;
 use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\PickListLine;
@@ -530,6 +531,7 @@ const COMPANY_SCOPED_MODELS = [
     BillOfMaterials::class => 'structureAttributes',
     BomRow::class => 'structureRowAttributes',
     ArticleUnitConversion::class => 'unitConversionAttributes',
+    DemandForecast::class => 'demandForecastAttributes',
     Operation::class => ['name' => 'Hemligt arbetssteg', 'hourly_cost_ore' => 45_000],
     RowStructure::class => 'rowStructureAttributes',
     RowStructureLine::class => 'rowStructureLineAttributes',
@@ -2229,6 +2231,11 @@ function planningImpactAttributes(): array
 function unitConversionAttributes(): array
 {
     return ['article_id' => Article::create(articleAttributes())->id, 'unit' => 'cl', 'factor_milli' => 70_000];
+}
+
+function demandForecastAttributes(): array
+{
+    return ['article_id' => Article::create(articleAttributes())->id, 'period_kind' => 'WEEK', 'period_start' => '2026-11-16', 'quantity_milli' => 5000, 'source' => 'MANUAL'];
 }
 
 function kitchenWasteAttributes(): array

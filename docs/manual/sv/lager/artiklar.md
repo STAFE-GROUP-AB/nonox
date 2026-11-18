@@ -44,7 +44,8 @@ När Lager är påslaget finns de här fälten längst ned under Avancerad:
 2. Välj **Standardplats** – där artikeln oftast ligger. Inleveranser och plocklistor använder den när inget annat anges.
 3. Ange **Beställningspunkt** och **Beställ antal**. När saldot når beställningspunkten syns artikeln under **Behöver beställas** på översikten.
 4. Ange vid behov **Nettoförsäljningsvärde per st** med en förklaring. Det är vad varan kan säljas för minus försäljningskostnaderna. Är det lägre än inköpspriset värderas lagret till det vid bokslutet. Se [Lagervärde vid bokslut](/manual/lager/lagervarde-vid-bokslut).
-5. Klicka på **Spara**.
+5. Under **Planeringsdata** kan du ange planeringsmetod, ledtid, säkerhetslager och partistorlek. Se [Prognos och planeringsdata](/manual/lager/prognos).
+6. Klicka på **Spara**.
 
 En artikel som har varor i lager kan inte sluta vara lagerförd. Plocka, kassera eller inventera bort varorna först.
 
@@ -65,3 +66,4 @@ Från listan kan du också:
 - [Lagerställen](/manual/lager/lagerstallen)
 - [Skriv ut etiketter](/manual/lager/etiketter) – pris- och hyllkantsetiketter med streckkod.
 - [Inleverans](/manual/lager/inleverans)
+- [Prognos och planeringsdata](/manual/lager/prognos) – förväntad efterfrågan per vecka och planeringsdata på artikeln.

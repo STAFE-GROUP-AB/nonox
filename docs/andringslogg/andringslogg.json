@@ -72,6 +72,14 @@
       "omrade": "Lager"
     },
     {
+      "id": "2026-11-18-prognos-per-artikel",
+      "datum": "2026-11-18T01:30:00+01:00",
+      "rubrik": "Prognos och planeringsdata per artikel",
+      "beskrivning": "Under Lager → Prognos skriver du in förväntad efterfrågan per artikel och vecka eller månad, eller låter NONOX räkna fram den som ett genomsnitt av de senaste månadernas uttag. På artikeln anger du planeringsmetod, ledtid, säkerhetslager, minsta parti och partimultipel. Det är underlaget för den behovsplanering som kommer härnäst, och inget bokförs.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-18-planering-i-toppklass",
       "datum": "2026-11-18T00:55:00+01:00",
       "rubrik": "Planering i toppklass",

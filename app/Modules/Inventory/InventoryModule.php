@@ -29,6 +29,12 @@ use Carbon\CarbonImmutable;
  * proposal; purchase-orders:manage writes, cancels, matches and sends orders
  * up to the company's approval amount; purchase-orders:send sends any order,
  * also one above that amount.
+ *
+ * Behovsplanering (ADR-081 gap 5): mrp:view sees the demand forecast and the
+ * planning data on articles; mrp:run edits them, computes a forecast from
+ * history and (E16) runs the planning and converts planned orders. The
+ * permissions live here because planning works for trading companies with
+ * Lager alone, and the engine itself reads them from Tillverkning too.
  */
 final class InventoryModule implements IsNew, Module
 {
@@ -43,6 +49,12 @@ final class InventoryModule implements IsNew, Module
     public const string PURCHASE_SEND = 'purchase-orders:send';
 
     public const array PURCHASE_PERMISSIONS = [self::PURCHASE_VIEW, self::PURCHASE_MANAGE, self::PURCHASE_SEND];
+
+    public const string MRP_VIEW = 'mrp:view';
+
+    public const string MRP_RUN = 'mrp:run';
+
+    public const array MRP_PERMISSIONS = [self::MRP_VIEW, self::MRP_RUN];
 
     public const string ROLE = 'stock_clerk';
 
@@ -78,7 +90,7 @@ final class InventoryModule implements IsNew, Module
 
     public function permissions(): array
     {
-        return [...self::PERMISSIONS, ...self::PURCHASE_PERMISSIONS];
+        return [...self::PERMISSIONS, ...self::PURCHASE_PERMISSIONS, ...self::MRP_PERMISSIONS];
     }
 
     public function roles(): array
@@ -89,13 +101,13 @@ final class InventoryModule implements IsNew, Module
     public function rolePermissions(): array
     {
         return [
-            'owner' => [...self::PERMISSIONS, ...self::PURCHASE_PERMISSIONS],
-            'admin' => [...self::PERMISSIONS, ...self::PURCHASE_PERMISSIONS],
-            'accountant' => [...self::PERMISSIONS, self::PURCHASE_VIEW],
-            'bookkeeper' => ['inventory:view', 'inventory:count', 'inventory:manage', self::PURCHASE_VIEW, self::PURCHASE_MANAGE],
+            'owner' => [...self::PERMISSIONS, ...self::PURCHASE_PERMISSIONS, ...self::MRP_PERMISSIONS],
+            'admin' => [...self::PERMISSIONS, ...self::PURCHASE_PERMISSIONS, ...self::MRP_PERMISSIONS],
+            'accountant' => [...self::PERMISSIONS, self::PURCHASE_VIEW, self::MRP_VIEW],
+            'bookkeeper' => ['inventory:view', 'inventory:count', 'inventory:manage', self::PURCHASE_VIEW, self::PURCHASE_MANAGE, ...self::MRP_PERMISSIONS],
             // Attestant: sends the orders above the company's approval amount (ADR-071 §1), without seeing the stock.
             'approver' => [self::PURCHASE_VIEW, self::PURCHASE_SEND],
-            'auditor' => ['inventory:view', self::PURCHASE_VIEW],
+            'auditor' => ['inventory:view', self::PURCHASE_VIEW, self::MRP_VIEW],
             self::ROLE => ['inventory:view', 'inventory:count'],
         ];
     }
@@ -136,6 +148,9 @@ final class InventoryModule implements IsNew, Module
                     ['label' => __('Artiklar'), 'route' => 'inventory.articles', 'active' => ['inventory.articles']],
                     ['label' => __('Lagerställen'), 'route' => 'inventory.locations', 'active' => ['inventory.locations']],
                     ['label' => __('Inleveranser'), 'route' => 'inventory.receipts', 'active' => ['inventory.receipts']],
+                    ...($user->hasTeamPermission($company, self::MRP_VIEW) || $user->hasTeamPermission($company, self::MRP_RUN) ? [
+                        ['label' => __('Prognos'), 'route' => 'inventory.forecast', 'active' => ['inventory.forecast']],
+                    ] : []),
                     ['label' => __('Plocklistor'), 'route' => 'inventory.pickLists', 'active' => ['inventory.pickLists', 'inventory.pickLists.pdf']],
                     ['label' => __('Inventering'), 'route' => 'inventory.counts', 'active' => ['inventory.counts']],
                     ['label' => __('Batcher'), 'route' => 'inventory.lots', 'active' => ['inventory.lots']],
