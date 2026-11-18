@@ -64,6 +64,14 @@
       "omrade": "Lager"
     },
     {
+      "id": "2026-11-18-packa-och-skicka",
+      "datum": "2026-11-18T11:00:00+01:00",
+      "rubrik": "Packa och skicka i Lager",
+      "beskrivning": "Under Lager → Försändelser lägger du det som är plockat i kollin med vikt och mått, skriver in transportör och spårningsnummer och skriver ut en följesedel. Batch och serienummer följer med in i varje kolli, och en skickad försändelse räknas som levererad på ordern. NONOX är inte kopplat till någon transportör, så spårningsnumret skriver du själv.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-18-signering-fler-undertecknare",
       "datum": "2026-11-18T02:50:00+01:00",
       "rubrik": "Fler undertecknare på offerter och avtal",

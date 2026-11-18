@@ -243,6 +243,7 @@ lager/inkopsforslag: { foretag: butik, rutt: inventory.purchaseProposals }
 lager/prognos: { foretag: butik, rutt: inventory.forecast }
 lager/planeringsdata: { foretag: butik, rutt: invoicing.articles, klick: ['tbody tr:nth-child(2) button', 'text=Avancerad'], visa: '#article_planning_method' }
 lager/plocklista: { foretag: butik, rutt: inventory.pickLists, klick: ['text=Plocka'] }
+lager/forsandelser: { foretag: butik, rutt: inventory.shipments, fraga: { forsandelse: '2' } }
 lager/inventering: { foretag: butik, rutt: inventory.counts, klick: ['text=Räkna'] }
 lager/batcher-och-serienummer: { foretag: butik, rutt: inventory.lots }
 lager/spara-en-batch: { foretag: butik, rutt: inventory.lots, klick: ['tbody tr:first-child button'], text: Återkallningslista }

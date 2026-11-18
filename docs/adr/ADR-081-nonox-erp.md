@@ -519,6 +519,45 @@ Carrier integrations and label booking, wave picking and pick routes,
 cross-docking, consignment stock, transfers between companies (each company
 is its own ledger, ADR-039), valuation per batch.
 
+### As built (E14, 2026-11-18)
+
+- **Tables** (`2027_01_24_100000_create_shipments`): `shipments`,
+  `shipment_packages` (weight in grams, length/width/height in millimetres,
+  entered as kilograms and centimetres), `shipment_package_lines` (article,
+  `lot_id` null, quantity in thousandths, unique per package, article and
+  lot). Status `DRAFT`, `SHIPPED`, `CANCELLED`; a partial unique index allows
+  one live shipment per pick list. `shipped_at` is a timestamp; `ship_to` is
+  the customer's name and address copied when the shipment is sent.
+- **What may be packed** is read from the PICK movements of the pick list
+  (`ShipmentContents::picked`), per article and lot, not from the pick list
+  lines: a tracked article picked without a chosen lot is split over lots by
+  the ledger, so the movements are the truth. A shipment can only be sent when
+  everything picked is in a package and no package is empty.
+- **"Rows delivered"**: order rows are rewritten on every save and a pick
+  list is made per article, so delivery is computed, not stored on the rows:
+  `ShipmentContents::delivery` sums shipped package lines per article against
+  the order's rows and the shipment page shows "levererade av beställda".
+  The order's status is not changed.
+- **Permissions**: `inventory:count` for packing and sending (as for picking),
+  `inventory:view` for reading and the delivery note. No new permission
+  string. The delivery note (`inventory.shipments.deliveryNote`) has no prices.
+- **Retention and erasure** (review): `inventory:prune-shipments` runs nightly
+  (04:38). A shipped shipment keeps `ship_to`, `carrier` and `tracking_number`
+  to the end of the seventh calendar year after `shipped_at`, then they are
+  emptied (packages, lots and serials stay); a cancelled shipment is deleted
+  90 days after it was cancelled. `TODO(legal-verify)`: seven years assumes the
+  delivery note is räkenskapsinformation. `EraseRegisterEntry::customer`
+  counts a shipment as use (the customer is anonymised, never deleted) and
+  empties `ship_to` in the same transaction; `DataSubjectExport::customer`
+  has a `forsandelser` section. After erasure or pruning the delivery note
+  shows "Mottagare saknas"; only a draft reads the live customer.
+  `setTracking` needs a shipped shipment; `ship` refuses a date in the future
+  or before the goods were picked.
+- **Not built**: carrier integration, label booking, partial shipments of one
+  pick list (pack in several lists instead), editing a sent shipment except
+  carrier and tracking number, lot trace entries for shipments (the trace still
+  reaches the customer through the pick list).
+
 ## Gap 5: material requirements planning (MRP) from orders and forecasts
 
 ### What exists

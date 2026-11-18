@@ -337,6 +337,10 @@ final class DatabaseGrants
         'sales_documents' => GrantDecision::ReadWrite,
         'saved_views' => GrantDecision::ReadWrite,
         'sessions' => GrantDecision::ReadWrite,
+        // inventory:prune-shipments empties old recipient data and deletes cancelled shipments after 90 days.
+        'shipment_package_lines' => GrantDecision::ReadWrite,
+        'shipment_packages' => GrantDecision::ReadWrite,
+        'shipments' => GrantDecision::ReadWrite,
         'sick_pay_periods' => GrantDecision::ReadWrite,
         'sie_imports' => GrantDecision::ReadWrite,
         // Envelopes (ADR-046 S1): triggers keep a copy recipient's address, a token and a finished envelope fixed;

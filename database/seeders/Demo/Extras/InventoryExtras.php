@@ -6,6 +6,7 @@ namespace Database\Seeders\Demo\Extras;
 
 use App\Actions\Invoicing\SaveArticle;
 use App\Models\Article;
+use App\Models\Customer;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Modules\Inventory\Actions\ArticleImages;
@@ -16,15 +17,20 @@ use App\Modules\Inventory\Actions\ReceiveStock;
 use App\Modules\Inventory\Actions\RecordMovement;
 use App\Modules\Inventory\Actions\SaveLocation;
 use App\Modules\Inventory\Actions\SaveReceipt;
+use App\Modules\Inventory\Actions\Shipments;
 use App\Modules\Inventory\Actions\StockCounts;
 use App\Modules\Inventory\Domain\ForecastPeriodKind;
 use App\Modules\Inventory\Domain\Gtin;
 use App\Modules\Inventory\Domain\LocationType;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\InventoryModule;
+use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\PickListLine;
+use App\Modules\Inventory\Models\Shipment;
+use App\Modules\Inventory\Models\ShipmentPackage;
 use App\Modules\Inventory\Models\StockCountLine;
 use App\Modules\Inventory\Models\StockReceipt;
+use App\Modules\Inventory\Support\ShipmentContents;
 use App\Modules\ModuleManager;
 use Carbon\CarbonImmutable;
 use Database\Seeders\Demo\DemoContext;
@@ -155,8 +161,9 @@ final class InventoryExtras extends DemoExtra
         // The planning's history window is the last three complete months: some demand in each.
         $this->pickOrder($context, 8, [['L-101', 6], ['L-102', 12], ['T-305', 8], ['T-302', 6]]);
         $this->pickOrder($context, 9, [['L-101', 8], ['L-102', 14], ['T-101', 6], ['T-302', 8], ['T-201', 2]]);
-        $this->pickOrder($context, 10, [['L-101', 12], ['L-201', 6], ['L-203', 14], ['T-301', 8]]);
+        $sent = $this->pickOrder($context, 10, [['L-101', 12], ['L-201', 6], ['L-203', 14], ['T-301', 8]]);
         $this->shopFloor($context, 10);
+        $this->shipments($context, $sent);
 
         $this->expectedReceipt($context);
         $this->openPickList($context);
@@ -378,11 +385,46 @@ final class InventoryExtras extends DemoExtra
      *
      * @param  list<array{0: string, 1: int}>  $rows
      */
-    private function pickOrder(DemoContext $c, int $month, array $rows): void
+    private function pickOrder(DemoContext $c, int $month, array $rows): PickList
     {
         $pick = app(PickLists::class);
         $list = $pick->manual($c->user, $c->company, $this->rows($rows), 'Hotell Exempel AB, beställning '.$this->day($c, $month, 1)->format('Y-m'));
-        $pick->complete($c->user, $c->company, $list, $this->day($c, $month, 14));
+
+        return $pick->complete($c->user, $c->company, $list, $this->day($c, $month, 14));
+    }
+
+    /**
+     * Packing (ADR-081 E14): the hotel's October order went in two packages
+     * with a carrier and a tracking number; a second, smaller order is picked
+     * and half packed, waiting for the rest.
+     */
+    private function shipments(DemoContext $c, PickList $sent): void
+    {
+        $hotel = Customer::query()->where('name', 'Hotell Exempel AB')->first();
+        $shipments = app(Shipments::class);
+        $sent->update(['customer_id' => $hotel?->id]);
+
+        $shipment = $shipments->fromPickList($c->user, $c->company, $sent);
+        $first = $shipments->addPackage($c->user, $c->company, $shipment, ['weight' => '18,4', 'length' => '60', 'width' => '40', 'height' => '35']);
+        $this->packArticle($c, $first, $shipment, 'L-101');
+        $shipments->packRemaining($c->user, $c->company, $shipment);
+        $shipments->ship($c->user, $c->company, $shipment, 'PostNord', '00373500123456789', $this->day($c, 10, 15));
+
+        $later = $this->pickOrder($c, 10, [['L-101', 4], ['L-102', 6], ['T-302', 3]]);
+        $later->update(['customer_id' => $hotel?->id, 'source_label' => 'Hotell Exempel AB, tilläggsbeställning']);
+        $draft = $shipments->fromPickList($c->user, $c->company, $later);
+        $package = $shipments->addPackage($c->user, $c->company, $draft, ['weight' => '4,2', 'length' => '40', 'width' => '30', 'height' => '20']);
+        $this->packArticle($c, $package, $draft, 'L-101');
+    }
+
+    /** Puts everything still unpacked of one article in the package, batch by batch. */
+    private function packArticle(DemoContext $c, ShipmentPackage $package, Shipment $shipment, string $number): void
+    {
+        foreach (ShipmentContents::remaining($shipment) as $item) {
+            if ($item['article_id'] === $this->articles[$number]->id) {
+                app(Shipments::class)->pack($c->user, $c->company, $package, $item['article_id'], $item['lot_id'], Quantity::decimal($item['milli']));
+            }
+        }
     }
 
     /** Today's order from the hotel: three lines picked, one of them short. */

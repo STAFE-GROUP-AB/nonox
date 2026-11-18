@@ -24,6 +24,7 @@ use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\PurchaseOrderVersion;
+use App\Modules\Inventory\Models\Shipment;
 use App\Modules\Manufacturing\Models\WorkshopDevice;
 use App\Modules\Manufacturing\Models\WorkshopPerson;
 use App\Modules\Manufacturing\Models\WorkshopTimeEntry;
@@ -104,6 +105,26 @@ final class DataSubjectExport
             'kund' => [...$customer->only(['number', 'name', 'org_number', 'vat_number', 'email', 'phone', 'address_line1', 'address_line2', 'postal_code', 'city', 'country', 'peppol_id', 'invoice_delivery']), 'personal_number' => $customer->personal_number],
             'fakturor' => Invoice::query()->where('customer_id', $customer->id)->orderBy('invoice_date')->get()
                 ->map(fn (Invoice $invoice): array => ['nummer' => $invoice->number, 'nummer_i_tidigare_program' => $invoice->external_ref, 'datum' => $invoice->invoice_date->toDateString(), 'belopp_ore' => $invoice->total_ore->ore, 'status' => $invoice->status->value])->all(),
+            // Lager (ADR-081 E14): shipments to the customer with their packages, batches and serial numbers.
+            'forsandelser' => Shipment::query()->where('customer_id', $customer->id)->orderBy('number')
+                ->with(['packages.lines.article:id,number,name', 'packages.lines.lot:id,code,kind'])->get()
+                ->map(fn (Shipment $shipment): array => [
+                    'nummer' => $shipment->number,
+                    'status' => $shipment->status,
+                    'skickad' => $shipment->shipped_at?->toDateString(),
+                    'transportor' => $shipment->carrier,
+                    'sparningsnummer' => $shipment->tracking_number,
+                    'mottagare' => $shipment->ship_to,
+                    'kollin' => $shipment->packages->map(fn ($package): array => [
+                        'kolli' => $package->position,
+                        'vikt_gram' => $package->weight_grams,
+                        'innehall' => $package->lines->map(fn ($line): array => [
+                            'artikel' => $line->article?->number,
+                            'antal_tusendelar' => $line->quantity_milli,
+                            'batch_eller_serienummer' => $line->lot?->code,
+                        ])->all(),
+                    ])->all(),
+                ])->all(),
             // CRM (ADR-043): the customer's account and activities, when it has one.
             'crm' => CrmExport::forCustomer($customer),
             // Stripe in NONOX Connect (ADR-080 step 2): the Stripe customers linked to the customer.

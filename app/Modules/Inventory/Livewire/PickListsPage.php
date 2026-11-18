@@ -10,10 +10,12 @@ use App\Models\Article;
 use App\Models\Invoice;
 use App\Models\SalesDocument;
 use App\Modules\Inventory\Actions\PickLists;
+use App\Modules\Inventory\Actions\Shipments;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Livewire\Concerns\InventoryPage;
 use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\PickListLine;
+use App\Modules\Inventory\Models\Shipment;
 use App\Modules\Inventory\Models\StockLotLevel;
 use Carbon\CarbonImmutable;
 use Illuminate\View\View;
@@ -153,6 +155,20 @@ class PickListsPage extends Component
 
         if ($this->attempt(fn () => $lists->complete($this->user(), $this->company(), $list, CarbonImmutable::parse($this->date)), __('Plocklistan är klar och varorna är dragna från lagret.'), '')) {
             $this->close();
+        }
+    }
+
+    /** Packs a completed list: makes its shipment (or finds the one that exists) and goes to it. */
+    public function pack(int $id, Shipments $shipments): void
+    {
+        $shipment = null;
+
+        $made = $this->attempt(function () use ($id, $shipments, &$shipment): void {
+            $shipment = $shipments->fromPickList($this->user(), $this->company(), PickList::query()->findOrFail($id));
+        }, '', '');
+
+        if ($made && $shipment instanceof Shipment) {
+            $this->redirectRoute('inventory.shipments', ['forsandelse' => $shipment->id], navigate: true);
         }
     }
 
