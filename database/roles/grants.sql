@@ -269,6 +269,8 @@ BEGIN
         ('production_work_patterns', 'SELECT, INSERT, UPDATE, DELETE'),
         ('production_workstation_operations', 'SELECT, INSERT, UPDATE, DELETE'),
         ('production_workstations', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('purchase_match_allocations', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('purchase_match_results', 'SELECT, INSERT, UPDATE'),
         ('purchase_order_invoices', 'SELECT, INSERT, UPDATE, DELETE'),
         ('purchase_order_rows', 'SELECT, INSERT, UPDATE, DELETE'),
         ('purchase_order_versions', 'SELECT, INSERT'),

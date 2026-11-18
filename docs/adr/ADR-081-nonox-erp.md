@@ -1680,3 +1680,72 @@ Built on branch `feat/erp-e16-materialbehov`. Choices the gap 5 text left open:
 - **Database.** `mrp_runs` and `mrp_planned_orders` are `ReadWrite`; check
   constraints on horizon (1–52, Monday start), kind, exception, quantities
   and the converted pair.
+
+## Addendum: E11 as built (three-way matching per row)
+
+Built on branch `feat/erp-e11-trevagsmatchning`, on top of E2 and E10. Owner
+decisions 10 and 11 apply.
+
+- **Allocation is its own table.** Supplier invoice rows carry an account and
+  an amount but no quantity, and a registered invoice's rows never change, so
+  which order row an invoice row pays for, and the quantity charged in the
+  order row's unit, live in `purchase_match_allocations` (one order row per
+  invoice row, unique on the invoice row). Allocations change only while the
+  invoice is `REGISTERED`; an order row with an allocation or a stored result
+  cannot be removed from its order (`SavePurchaseOrder::guardRemoval`).
+  "Föreslå efter belopp" allocates a row only when its amount equals the
+  received (else the ordered) value of exactly one free order row.
+- **The comparison** (`ThreeWayMatch`, one result per order row with
+  allocations, one per unallocated invoice row): quantities in the order
+  row's unit (stock quantity × typed ÷ stock, half up; a row without an
+  article counts in full once confirmed); previously invoiced = allocations
+  of other non-credit invoices on the same row; quantity difference =
+  invoiced − (received − previously invoiced); expected = invoiced quantity ×
+  order price, half up. Only charging more is a deviation: quantity over
+  received + the quantity % of received, price over max(price % of expected,
+  absolute amount), nothing received or confirmed, or a cancelled order.
+  Unallocated rows pass together when their sum is at most the absolute
+  amount (freight, rounding), else `UNMATCHED`. Credit notes are not
+  compared, and supplier credit notes do not reduce "previously invoiced".
+- **Stored results.** `purchase_match_results` keeps every figure, the
+  tolerances used, reason codes and a SHA-256 of the content. A comparison is
+  stored only when its set of fingerprints differs from the current set; the
+  old set is superseded (`superseded_at`). A trigger refuses DELETE and every
+  UPDATE except superseding once and overriding an `OUTSIDE`/`UNMATCHED` row
+  once (`NoDelete` grant). `stock_receipt_line_id` is a plain number without
+  a foreign key, because an open receipt's lines are rebuilt. Comparisons stop
+  once the invoice leaves `REGISTERED`, so the results it was approved with
+  stay current.
+- **Override** needs the `approve` ability on the invoice (the default
+  attest, or deciding the current step of a company flow), a reason of 3–500 characters and the result id
+  the person saw; a superseded result refuses it. An override follows to a new
+  set only for a row whose fingerprint is unchanged.
+- **Attest hook.** `ApproveSupplierInvoice` calls
+  `PurchaseMatchAttest::check()` under the invoice lock before each decision,
+  on the default attest and (after the engine authorises the decision) on
+  each step of a company flow; a refusal rolls the decision back. The
+  invoice page carries a token of the comparison it showed
+  (`SupplierInvoiceActions::$matchSeen`, updated by the panel's
+  `purchase-match-updated` event); an approval of a comparison with open
+  deviations that is not the token is refused. Without a token (the API), the
+  check is that the stored set did not change in this call. With
+  `match_outside_blocks_attest` open deviations refuse; without it the
+  approval goes through and `inventory.purchase_match_attested_with_deviations`
+  records the count.
+- **Segregation.** While `separate_supplier_approval` is on, a user who
+  allocated a row of the invoice counts as its preparer: they can neither
+  approve it nor override a deviation (the registrar was already excluded).
+- **Settings.** The four `match_*` settings change only with the right to
+  change the attest rule (`update` on the company, as
+  `SetSupplierApprovalRule`); others see them disabled and a save that changes
+  them is refused.
+- **Unlinking** an order while the invoice has open or overridden deviations
+  needs `supplier-invoices:approve`.
+- **Known limits.** Supplier credit notes are not deducted from "previously
+  invoiced", which can only give false positives (a row flagged that a credit
+  note already settled), never let an over-charge through. Receiving goods is
+  not segregated from approving the invoice: the person who registers the
+  goods receipt may attest.
+- **Archive package.** Not included yet; `TODO(legal-verify)` whether the
+  results and overrides are behandlingshistorik to keep as
+  räkenskapsinformation. Nothing is pruned.

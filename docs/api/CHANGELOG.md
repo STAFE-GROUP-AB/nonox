@@ -13,6 +13,22 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-18: avstämning mot inköpsorder vid attest
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-18: purchase order match at approval
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Ändrat
+- `POST /supplier-invoices/{supplierInvoice}/approve`: är fakturan kopplad till en inköpsorder och företaget använder Lager stäms den av rad för rad mot ordern före attesten. Har företaget valt att avvikelser utanför toleranserna stoppar attesten svarar anropet 422 med fältet `approve` tills avvikelserna är godkända i appen. Den som fördelade fakturans rader får 422 när företaget kräver att någon annan attesterar. Fakturor utan inköpsorder märker ingen skillnad.
+<!-- /lang -->
+<!-- lang:en -->
+### Changed
+- `POST /supplier-invoices/{supplierInvoice}/approve`: an invoice linked to a purchase order in a company with Lager is matched row by row against the order before approval. When the company has chosen that deviations outside the tolerances stop the approval, the call answers 422 on the field `approve` until the deviations are accepted in the app. The person who allocated the invoice's rows gets 422 while the company requires someone else to approve. Invoices without a purchase order see no difference.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-18: batch och serienummer på inleveranser
 <!-- /lang -->
 <!-- lang:en -->

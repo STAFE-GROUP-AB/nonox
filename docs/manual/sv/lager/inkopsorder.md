@@ -93,7 +93,7 @@ I jämförelsen med leverantörsfakturan räknas en bekräftad rad utan artikel 
 
 När fakturan har registrerats öppnar du den under **Leverantörsfakturor**. Under **Koppla till inköpsorder** väljer du ordern och klickar på **Koppla**. NONOX visar vad som beställdes, vad som har tagits emot och vad som är fakturerat utan moms, och markerar skillnader i antal och pris. Ingenting attesteras automatiskt: du avgör om fakturan stämmer.
 
-Jämförelsen gäller hela ordern. Faktureras en order i flera delar, en faktura per leverans, visar varje faktura en skillnad mot ordern. Kontrollera då att delfakturorna tillsammans stämmer med det som har kommit.
+Jämförelsen överst gäller hela ordern. Under **Avstämning per rad** stämmer NONOX dessutom av varje fakturarad mot sin orderrad, med företagets toleranser och det som tidigare fakturor redan har tagit betalt för. Se [Avstämning mot inköpsorder](/manual/lager/avstamning-mot-inkopsorder).
 
 ![Leverantörsfakturan med den kopplade inköpsordern och jämförelsen mot det som har tagits emot.](/bilder/manual/lager/inkopsorder-pa-fakturan.webp)
 
@@ -106,4 +106,5 @@ En order där inga varor har tagits emot och ingen leverans är bekräftad kan m
 - [Inköpsförslag](/manual/lager/inkopsforslag) – låt NONOX föreslå vad som behöver beställas.
 - [Inleverans](/manual/lager/inleverans) – ta emot varor.
 - [Attestflöden](/manual/leverantorer/attestfloden) – lägg upp ett eget flöde för inköpsorder.
+- [Avstämning mot inköpsorder](/manual/lager/avstamning-mot-inkopsorder) – stäm av fakturan rad för rad med toleranser.
 - [Attest och betalning](/manual/leverantorer/attest) – leverantörsfakturan.

@@ -21,6 +21,11 @@ use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\SupplierInvoice;
 use App\Models\User;
+use App\Modules\Inventory\Actions\Purchasing\RecomputePurchaseMatch;
+use App\Modules\Inventory\Livewire\Purchasing\PurchaseOrderMatchPanel;
+use App\Modules\Inventory\Models\PurchaseMatchResult;
+use App\Modules\Inventory\Purchasing\Matching\MatchTolerances;
+use App\Modules\Inventory\Purchasing\Matching\PurchaseMatchAttest;
 use App\Policies\SupplierInvoicePolicy;
 use App\Support\Currency\ExchangeRate;
 use App\Support\Currency\RiksbankRates;
@@ -32,6 +37,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use InvalidArgumentException;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
@@ -62,11 +68,34 @@ class SupplierInvoiceActions extends Component
     /** Why the invoice is rejected in the company's own approval policy (ADR-081 gap 8), optional. */
     public string $rejectReason = '';
 
+    /**
+     * The comparison with the purchase order this page shows (ADR-081 E11):
+     * an approval is checked against it, so it is never given on figures
+     * nobody saw. Null when the invoice is not matched with an order.
+     */
+    #[Locked]
+    public ?string $matchSeen = null;
+
     public function mount(SupplierInvoice $invoice): void
     {
         $this->invoiceId = $invoice->id;
         $this->paidOn = now()->toDateString();
         $this->resetAmounts($invoice);
+        $this->matchSeen = app(PurchaseMatchAttest::class)->seen($this->company(), $invoice, $this->user());
+    }
+
+    /**
+     * The purchase order card below changed the comparison and now shows the
+     * stored one. The token is computed here, never taken from the browser.
+     */
+    #[On(PurchaseOrderMatchPanel::UPDATED_EVENT)]
+    public function matchUpdated(): void
+    {
+        $invoice = $this->invoice();
+
+        $this->matchSeen = PurchaseMatchAttest::applies($this->company(), $invoice)
+            ? PurchaseMatchAttest::token(RecomputePurchaseMatch::current($invoice))
+            : null;
     }
 
     public function updatedPaidOn(): void
@@ -81,7 +110,7 @@ class SupplierInvoiceActions extends Component
 
     public function approve(ApproveSupplierInvoice $approve): void
     {
-        $invoice = $approve($this->user(), $this->invoice());
+        $invoice = $approve($this->user(), $this->invoice(), $this->matchSeen);
 
         $this->toast($invoice->status === SupplierInvoiceStatus::Approved
             ? __(':title är attesterad och kan betalas.', ['title' => $invoice->title()])
@@ -149,6 +178,7 @@ class SupplierInvoiceActions extends Component
         $invoice = $this->invoice()->load(['payments.voucher.series', 'voucher.series', 'supplier', 'registeredBy:id,name', 'approvedBy:id,name', 'rows.account', 'rows.costCenter', 'rows.project']);
 
         $approval = $this->approval($invoice);
+        $matchApplies = $invoice->status === SupplierInvoiceStatus::Registered && PurchaseMatchAttest::applies($this->company(), $invoice);
 
         return view('livewire.payables.supplier-invoice-actions', [
             'invoice' => $invoice,
@@ -158,14 +188,17 @@ class SupplierInvoiceActions extends Component
                 && (in_array($this->user()->id, [$invoice->registered_by, $invoice->created_by], true) || $this->user()->hasTeamPermission($this->company(), ApprovalSubjects::preparePermission(ApprovalSubjectType::SupplierInvoice))),
             'canReject' => $approval instanceof ApprovalState && $invoice->status === SupplierInvoiceStatus::Registered && ! $approval->awaitingResubmission
                 && ($approval->canDecide() || $this->user()->hasTeamPermission($this->company(), 'approvals:manage')),
-            'canApprove' => $approval instanceof ApprovalState
+            // Whoever allocated the rows to a purchase order is its preparer under separate approval (ADR-081 E11).
+            'canApprove' => ! ($matchApplies && PurchaseMatchAttest::preparedBy($this->company(), $this->user(), $invoice)) && ($approval instanceof ApprovalState
                 ? $invoice->status === SupplierInvoiceStatus::Registered && $approval->canDecide()
-                : $this->user()->can('approve', $invoice),
+                : $this->user()->can('approve', $invoice)),
             'blockedBySegregation' => ! $approval instanceof ApprovalState
                 && $invoice->status === SupplierInvoiceStatus::Registered
                 && $this->user()->can('approveAny', [SupplierInvoice::class, $invoice])
                 && (new SupplierInvoicePolicy)->blockedBySegregation($this->user(), $invoice),
             'canPay' => $this->user()->can('pay', $invoice),
+            'matchOpen' => $matchApplies ? RecomputePurchaseMatch::current($invoice)->filter(fn (PurchaseMatchResult $result): bool => $result->isOpen())->count() : 0,
+            'matchBlocks' => $matchApplies && MatchTolerances::for($this->company())->blocksAttest,
             'buyerVat' => SupplierInvoiceBooking::buyerVat($invoice, $invoice->rows),
             'exchangePreview' => $this->exchangePreview($invoice),
             'offsetInvoices' => $invoice->isCredit()

@@ -23,6 +23,8 @@ use App\Modules\Inventory\Domain\LocationType;
 use App\Modules\Inventory\Domain\PurchaseOrderSource;
 use App\Modules\Inventory\Domain\PurchaseOrderStatus;
 use App\Modules\Inventory\Domain\Quantity;
+use App\Modules\Inventory\Models\PurchaseMatchAllocation;
+use App\Modules\Inventory\Models\PurchaseMatchResult;
 use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\PurchaseOrderRow;
 use App\Modules\Inventory\Models\StockLocation;
@@ -456,7 +458,17 @@ class SavePurchaseOrder
      */
     private function guardRemoval(array $rows): void
     {
+        // A row a supplier invoice has been matched against keeps the comparison readable (ADR-081 E11).
+        $ids = array_map(fn (PurchaseOrderRow $row): int => $row->id, array_values($rows));
+        $invoiced = PurchaseMatchAllocation::query()->whereIn('purchase_order_row_id', $ids)->pluck('purchase_order_row_id')
+            ->merge(PurchaseMatchResult::query()->whereIn('purchase_order_row_id', $ids)->pluck('purchase_order_row_id'))
+            ->map(fn (mixed $id): int => (int) $id)->all();
+
         foreach ($rows as $row) {
+            if (in_array($row->id, $invoiced, true)) {
+                throw ValidationException::withMessages(['rows' => __('Raden :name är avstämd mot en leverantörsfaktura, så den kan inte tas bort.', ['name' => $row->description])]);
+            }
+
             if ($row->hasDelivery()) {
                 throw ValidationException::withMessages(['rows' => __('Varor har tagits emot eller leveransen är bekräftad på raden :name, så den kan inte tas bort.', ['name' => $row->description])]);
             }

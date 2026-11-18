@@ -11,6 +11,7 @@ use App\Actions\Payables\SaveSupplierInvoice;
 use App\Models\Article;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Modules\Inventory\Actions\Purchasing\AllocateSupplierInvoiceRows;
 use App\Modules\Inventory\Actions\Purchasing\CreatePurchaseOrdersFromProposal;
 use App\Modules\Inventory\Actions\Purchasing\MatchSupplierInvoice;
 use App\Modules\Inventory\Actions\Purchasing\SavePurchaseOrder;
@@ -34,6 +35,12 @@ use Database\Seeders\Demo\DemoExtra;
  * ADR-081 E10: an approval flow for orders from 10 000 kr, a draft from the
  * bookkeeper that waits for the owner's approval, and a sent order with a
  * service row whose delivery is not yet confirmed.
+ *
+ * ADR-081 E11: the textile house's invoice has a row per order row and is
+ * allocated by amount, so every row is within the tolerances; the
+ * wholesaler's invoice for the mirrors that arrived charges 255 kr instead
+ * of 245 kr a piece and adds 49 kr freight, so the mirror row is outside the
+ * tolerances and the freight passes as a small row without an order row.
  */
 final class PurchaseOrdersExtras extends DemoExtra
 {
@@ -87,10 +94,33 @@ final class PurchaseOrdersExtras extends DemoExtra
                 'invoice_date' => $c->today->subDays(19)->toDateString(),
                 'total' => '3 217,50',
                 'vat' => '643,50',
-                'rows' => [['account' => '4010', 'amount' => '2 574,00', 'description' => 'Linneduk och pläd']],
+                'rows' => [
+                    ['account' => '4010', 'amount' => '1 230,00', 'description' => 'Linneduk'],
+                    ['account' => '4010', 'amount' => '1 344,00', 'description' => 'Pläd'],
+                ],
             ]);
             $invoice = app(RegisterSupplierInvoice::class)($c->user, $invoice);
             app(MatchSupplierInvoice::class)->link($c->user, $c->company, $received->refresh(), $invoice);
+            app(AllocateSupplierInvoiceRows::class)->suggest($c->user, $c->company, $invoice);
+
+            // Six mirrors arrived at 245 kr; the invoice charges 255 kr a piece and 49 kr freight.
+            $mirrors = app(SaveSupplierInvoice::class)($c->user, $c->company, [
+                'supplier_id' => $wholesaler->id,
+                'invoice_number' => self::SHELF_INVOICE,
+                'invoice_date' => $c->today->subDays(5)->toDateString(),
+                'total' => '1 973,75',
+                'vat' => '394,75',
+                'rows' => [
+                    ['account' => '4010', 'amount' => '1 530,00', 'description' => 'Spegel rund 50 cm, 6 st'],
+                    ['account' => '4010', 'amount' => '49,00', 'description' => 'Frakt'],
+                ],
+            ]);
+            $mirrors = app(RegisterSupplierInvoice::class)($c->user, $mirrors);
+            app(MatchSupplierInvoice::class)->link($c->user, $c->company, $partly->refresh(), $mirrors);
+            $mirrorRow = $partly->rows()->where('article_id', $article('L-303'))->firstOrFail();
+            app(AllocateSupplierInvoiceRows::class)->save($c->user, $c->company, $mirrors, [
+                $mirrors->rows()->orderBy('position')->firstOrFail()->id => ['order_row' => $mirrorRow->id, 'quantity' => '6'],
+            ]);
 
             $lines = [];
 
@@ -110,6 +140,8 @@ final class PurchaseOrdersExtras extends DemoExtra
     }
 
     public const string DRAFT_NOTE = 'Inköp av hyllor och städning inför omläggningen';
+
+    public const string SHELF_INVOICE = 'IG-4410';
 
     public const string SENT_NOTE = 'Skyltar och uppsättning till skyltfönstret';
 

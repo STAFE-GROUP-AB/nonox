@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-avstamning-mot-inkopsorder",
+      "datum": "2026-11-18T11:30:00+01:00",
+      "rubrik": "Leverantörsfakturan stäms av rad för rad mot inköpsordern",
+      "beskrivning": "På en leverantörsfaktura som är kopplad till en inköpsorder fördelar du fakturans rader på orderraderna, och NONOX jämför varje rad med det som beställdes och det som har tagits emot, mot toleranser som ni ställer in under Lager → Inställningar (från början 0 % i antal och 2 % eller 50 kr i pris). Avvikelser visas vid attesten, och vill ni kan de stoppa attesten tills någon med rätt att attestera har godkänt dem med ett skäl. Resultatet sparas och ingenting bokförs.",
+      "typ": "Nytt",
+      "omrade": "Leverantörer"
+    },
+    {
       "id": "2026-11-18-behovsplanering",
       "datum": "2026-11-18T11:25:00+01:00",
       "rubrik": "Behovsplanering vecka för vecka",

@@ -174,6 +174,8 @@ use App\Modules\Inventory\Models\DemandForecast;
 use App\Modules\Inventory\Models\LabelTemplate;
 use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\PickListLine;
+use App\Modules\Inventory\Models\PurchaseMatchAllocation;
+use App\Modules\Inventory\Models\PurchaseMatchResult;
 use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\PurchaseOrderInvoice;
 use App\Modules\Inventory\Models\PurchaseOrderRow;
@@ -541,6 +543,8 @@ const COMPANY_SCOPED_MODELS = [
     PurchaseOrderRow::class => 'purchaseOrderRowAttributes',
     PurchaseOrderVersion::class => 'purchaseOrderVersionAttributes',
     PurchaseOrderInvoice::class => 'purchaseOrderInvoiceAttributes',
+    PurchaseMatchAllocation::class => 'purchaseMatchAllocationAttributes',
+    PurchaseMatchResult::class => 'purchaseMatchResultAttributes',
     InvoiceTaxReductionBuyer::class => 'invoiceTaxReductionBuyerAttributes',
     WorkOrder::class => 'workOrderAttributes',
     WorkOrderLabourKind::class => 'workOrderLabourKindAttributes',
@@ -2443,6 +2447,16 @@ function purchaseOrderInvoiceAttributes(): array
     return ['purchase_order_id' => PurchaseOrder::create(purchaseOrderAttributes())->id, 'supplier_invoice_id' => SupplierInvoice::create(supplierInvoiceAttributes())->id];
 }
 
+function purchaseMatchAllocationAttributes(): array
+{
+    return ['supplier_invoice_id' => ($row = SupplierInvoiceRow::create(supplierInvoiceRowAttributes()))->supplier_invoice_id, 'supplier_invoice_row_id' => $row->id, 'purchase_order_row_id' => PurchaseOrderRow::create(purchaseOrderRowAttributes())->id, 'invoiced_milli' => 1000, 'allocated_by' => User::factory()->create()->id];
+}
+
+function purchaseMatchResultAttributes(): array
+{
+    return ['supplier_invoice_id' => SupplierInvoice::create(supplierInvoiceAttributes())->id, 'invoice_row_ids' => [], 'quantity_tolerance_bp' => 0, 'price_tolerance_bp' => 200, 'absolute_tolerance_ore' => 5000, 'status' => 'UNMATCHED', 'reasons' => ['NO_ORDER_ROW'], 'fingerprint' => str_repeat('a', 64), 'computed_at' => now()];
+}
+
 function inventoryCountLineAttributes(): array
 {
     return ['stock_count_id' => StockCount::create(['number' => random_int(1, 1_000_000), 'status' => 'OPEN', 'counted_on' => '2026-12-31'])->id, 'article_id' => Article::create(articleAttributes())->id, 'location_id' => StockLocation::create(inventoryLocationAttributes())->id, 'system_milli' => 0];
@@ -2486,7 +2500,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [WorkshopWaitingFlag::class, MrpRun::class, PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class, StripeObject::class, DocumentVersion::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [ApprovalRequest::class, ApprovalDecision::class, ApprovalDelegation::class, WorkshopTimeEntry::class, WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];
+const APPEND_ONLY = [ApprovalRequest::class, ApprovalDecision::class, ApprovalDelegation::class, WorkshopTimeEntry::class, WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class, PurchaseMatchResult::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];
