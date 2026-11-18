@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.134
-- Datum: 2026-11-17
+- Version: 0.135
+- Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -780,6 +780,72 @@ year").
 - Listorna över kostnadsställen och projekt visar intäkter, kostnader och
   resultat per objekt för innevarande räkenskapsår (bokförda rader på
   resultatkonton med objektet), för den som får se rapporter.
+
+### 4.10a Koncernmarkeringar (ADR-060 tillägg 2.3, ADR-081 E23)
+
+Markeringarna klassificerar bokförda rader som mellanhavanden inom en
+koncern. De är metadata bredvid bokföringen, inte räkenskapsinformation, och
+används av koncernens interna sammanställning (ADR-060 tillägg 2.4).
+
+- Två tabeller, båda företagets egna data (`company_id`):
+  `intercompany_counterparties` (en kund eller leverantör i företaget markerad
+  som koncernföretag, med det andra koncernföretagets organisationsnummer) och
+  `intercompany_row_tags` (en markering per verifikationsrad: koncernföretagets
+  organisationsnummer, typ och källa). Det andra koncernföretaget anges alltid
+  med organisationsnummer, aldrig med ett annat företags id i NONOX. Ett
+  personnummer och företagets eget organisationsnummer nekas.
+- Typerna är försäljning, inköp, fordran, skuld, lån till och från,
+  ränteintäkt och räntekostnad, utdelning från och beslutad utdelning till,
+  mottaget och lämnat koncernbidrag, andelar och eget kapital i dotterföretag.
+  Källan är `COUNTERPARTY` (från en markerad kund eller leverantör),
+  `ACCOUNT_MARK` (en person markerade i bulk med kontots markering i
+  koncernöversikten som typ) eller `MANUAL` (en person valde typen).
+- En markering är aldrig en kolumn i `voucher_rows`. Ingen verifikation, rad,
+  numrering, hashkedja eller trigger för verifikationer ändras, och
+  `ledger:verify` påverkas inte. En databastrigger nekar en markering på en
+  rad i ett utkast eller i ett annat företag, och en markering av en kund
+  eller leverantör i ett annat företag.
+- Uppdatera koncernmarkeringar visar först hur många rader som får en ny
+  markering, ändras eller får sin markering borttagen, och gör det först när
+  en person bekräftar. Regeln gäller bokförda verifikationer med källan
+  `INVOICE`, `PAYMENT` eller `SUPPLIER_INVOICE` vars faktura eller
+  leverantörsfaktura hör till en markerad kund eller leverantör. Kundsidan:
+  1500–1599 och 1660–1669 fordran, 3000–3999 utom 3740–3749
+  (öresavrundning) och 3960–3969 försäljning, 8300–8399 ränteintäkt. Leverantörssidan: 2400–2499 och 2860–2869 skuld,
+  4000–7999 utom 7960–7969 inköp, 8400–8499 räntekostnad. Andra rader (moms,
+  bank, kursdifferenser) markeras inte. Debet eller kredit ändrar inte typen.
+  Körningen är idempotent och ändrar bara markeringar med källan
+  `COUNTERPARTY`; en markering som en person har satt eller ändrat lämnas.
+- Rättelser följs: en bokförd verifikation med källan `CORRECTION` som rättar
+  en sådan verifikation (eller en rättelse av den) ingår. En vänd rad (samma
+  konto, debet och kredit omkastade) får samma typ och organisationsnummer
+  som raden den vänder, så att typen summerar till noll; en ny rad i
+  rättelsen får typen efter kontointervallen ovan.
+- Regeln fångar inte koncernintern försäljning av anläggningstillgångar
+  (12xx, 3970, 7970) eller förskott (1480, 2420). De markeras i bulk tills
+  koncernens sammanställning (ADR-060 S2-1.4 och S2-1.5) finns.
+- Bulkmarkering: alla bokförda rader på ett konto mellan två datum får samma
+  koncernföretag och typ, efter att en person har sett antal rader och
+  summorna. Rader som redan har en markering behåller den.
+- Behörighet: läsa kräver `vouchers:view`, ändra `vouchers:create` eller
+  `accounts:manage`. Markeringar kan ändras även i låsta perioder och stängda
+  år, eftersom de inte är en del av bokföringen. Varje ändring loggar då
+  `in_closed_year` och `in_locked_period` (för en rad ja eller nej, för en
+  körning eller bulkändring antalet rader), och sidan varnar med antalet
+  rader i stängda år och låsta perioder innan en person bekräftar.
+- Uppdateringen, bulkmarkeringen och bulkborttagningen tar ett lås per
+  företag (`pg_advisory_xact_lock`) först i transaktionen, så att två körningar
+  i samma företag inte kan blandas.
+- Varje borttagning frågar först och säger vad som händer. Före
+  bulkmarkeringen varnar sidan för bank-, moms- och kursdifferenskonton
+  (1900–1999, 2600–2699, 3960–3969, 7960–7969).
+- Varje ändring skrivs i behandlingshistoriken med id, fältnamn, typer och
+  antal, aldrig med namn eller organisationsnummer
+  (`intercompany_counterparty.marked`, `.updated`, `.unmarked`,
+  `intercompany_tags.refreshed`, `intercompany_tags.tagged`,
+  `intercompany_tags.removed`, `intercompany_tag.changed`,
+  `intercompany_tag.removed`).
+- Ingenting skrivs i ett annat företags bokföring.
 
 ### 4.11 Inläsning av SIE4-filer
 
@@ -5744,6 +5810,13 @@ påverkar bokföringen och fakturan:
   mot BAS.
 - En sammanläggning där överskjutande aktier inte blir hela nya aktier vägras.
 
+### Koncernmarkeringar (avsnitt 4.10a)
+
+- BAS-kontona och intervallen som regeln och förslagen bygger på (1320,
+  1560, 1660, 2360, 2460, 2860, 8010, 8820, 8830 och intervallen för
+  kund- och leverantörssidan) mot BAS 2026-kontoplanen; NONOX:s egna mallar
+  har bara 1310 och 8010 av dem.
+
 ### Uppskjuten skatt enligt K3 (avsnitt 5a6.5)
 
 - Att varje skattesats i `corporate-tax/rules.json` var beslutad före
@@ -5898,3 +5971,4 @@ påverkar bokföringen och fakturan:
 | 0.132 | 2026-11-11 | Tillverkningsorder (avsnitt 5o och 5j, ADR-071 §8 och tillägget As built (M4)): komponenter tas ur lagret som `PRODUCTION_ISSUE` till anskaffningsvärdet enligt företagets metod och färdiga produkter tas emot som `PRODUCTION_RECEIPT` till tillverkningskostnaden (material plus direkt arbete, omkostnader bara om företaget har valt det när ordern startar). Datum kan inte läggas i stängda år, låsta perioder, före orderns senaste händelse eller, för uttag, före en senare lagerrörelse på artikeln. Nya tabeller `production_orders`, `production_order_components`, `production_order_operations`, `production_order_issues` och `production_labour_entries` (de två sista kan inte ändras eller tas bort). Ingen verifikation per order; bokslutets lagervärdering tar med produkter i arbete på ett eget kontopar (1440/4940 från början) i samma verifikation. Öppna frågor om kostnader och konton i avsnitt 8. |
 | 0.133 | 2026-11-16 | Återkommande intäkter (avsnitt 5p, ADR-080): modulen skapar inga verifikationer och ändrar ingen bokföring. Avtalens versioner (`saas_contract_versions`) och rättelser (`saas_corrections`) kan inte ändras, tas bort eller tömmas; stängda månader skrivs inte om och senare ändringar blir rättelserader i första öppna månaden; `saas:verify` räknar om stängda månader varje natt. Stripe läses bara, med en begränsad nyckel; produkter, priser, rabatter och prenumerationer sparas orörda med kontrollsumma i `stripe_objects` och raderas 90 dagar efter att kopplingen upphört. Inget bokförs ur Stripe. |
 | 0.134 | 2026-11-17 | Pass på kostnadsställen till lönebokföringen (avsnitt 5b och 5i, ADR-037 lucka 7, paket P2): avdelningar och pass kan ha ett kostnadsställe, Skicka till lönen skriver en tidrapport per dag, löneart och kostnadsställe (Timlön och dagens övertid och mertid delas efter passens planerade minuter, OB efter den OB passen ger enligt avtalet, i hundradels timmar med största rest; veckans eller periodens övertid och mertid på anställningens), och lönekörningen för kostnadsstället till lönebeskedets rad. Lönens verifikation bokför den raden på dess kostnadsställe; övriga rader får anställningens kostnadsställe och projekt bara när inställningen Kostnadsställe och projekt från anställningen och lönearten säger det (inställningen lästes inte förut). Arbetsgivaravgifterna på 7510 fördelas per lönebesked i proportion till avgiftsunderlaget per kostnadsställe, i hela ören med största rest, så att verifikationen balanserar. Tid att attestera läser nu ett publicerat pass som ändrats till utkast med rätt klockslag. Nya nullbara kolumner `cost_center_id` på `planning_areas`, `planning_shifts`, `time_reports` och `payslip_lines`. Ingen bokförd verifikation ändras. |
+| 0.135 | 2026-11-18 | Koncernmarkeringar (avsnitt 4.10a, ADR-060 tillägg 2.3, ADR-081 paket E23): kunder och leverantörer kan markeras som koncernföretag med det andra företagets organisationsnummer, och bokförda rader får en markering med koncernföretag, typ och källa i de nya tabellerna `intercompany_counterparties` och `intercompany_row_tags`, bredvid `voucher_rows`. Raderna på fakturor, betalningar och leverantörsfakturor till och från markerade kunder och leverantörer markeras efter kontointervall när en person bekräftar, också i rättelser av dem (vända rader får samma typ), och rader på ett konto under en period i bulk. En trigger nekar markeringar på utkast och på ett annat företags rader. Ingen verifikation, rad, numrering eller hashkedja ändras, och ingenting skrivs i ett annat företags bokföring. |

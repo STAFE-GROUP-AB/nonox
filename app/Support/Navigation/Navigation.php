@@ -225,6 +225,7 @@ final class Navigation
             ['label' => __('Verifikationsserier'), 'route' => 'accounting.voucherSeries', 'group' => $settings],
             ['label' => __('Kostnadsställen'), 'route' => 'accounting.costCenters', 'group' => $settings],
             ['label' => __('Projekt'), 'route' => 'accounting.projects', 'group' => $settings],
+            $can('vouchers:view') ? ['label' => __('Koncernmarkeringar'), 'route' => 'accounting.intercompany', 'group' => $settings] : null,
         ];
 
         return array_values(array_filter($links));

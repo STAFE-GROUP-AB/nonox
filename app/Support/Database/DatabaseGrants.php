@@ -168,6 +168,9 @@ final class DatabaseGrants
         'income_tax_partners' => GrantDecision::ReadWrite,
         'income_tax_returns' => GrantDecision::ReadWrite,
         'instance_settings' => GrantDecision::NoDelete,
+        // ADR-060 addendum 2.3: markings and tags are metadata beside the ledger, changed and removed by people (each audited).
+        'intercompany_counterparties' => GrantDecision::ReadWrite,
+        'intercompany_row_tags' => GrantDecision::ReadWrite,
         'inventory_scan_operations' => GrantDecision::ReadWrite,
         // The stored PDF of an issued invoice: never changed, deleted only by the company cascade (trigger).
         'invoice_documents' => GrantDecision::AppendOnly,

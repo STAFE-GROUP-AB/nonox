@@ -127,6 +127,7 @@ flytta/flytta-lonen: { foretag: restaurang, rutt: payroll.migration }
 bokforing/utkast: { foretag: konsult, rutt: accounting.vouchers.edit, modell: { tabell: vouchers, dar: { status: DRAFT } } }
 bokforing/underlag: { foretag: konsult, rutt: accounting.vouchers.show, modell: { tabell: vouchers, dar: { description: 'Kontorsmaterial, Exempelbutiken (kort)' } } }
 bokforing/kostnadsstallen-och-projekt: { foretag: konsult, rutt: accounting.costCenters }
+bokforing/koncernmarkeringar: { foretag: konsult, rutt: accounting.intercompany, text: Konsultgruppen Holding Exempel AB }
 bokforing/las-en-period: { foretag: konsult, rutt: vat.index }
 bokforing/rattelse: { foretag: konsult, rutt: accounting.vouchers.show, modell: { tabell: vouchers, dar: { source: CORRECTION } } }
 bokforing/anlaggningstillgang-fran-inkop: { foretag: konsult, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { description: 'Bärbar dator' } } }

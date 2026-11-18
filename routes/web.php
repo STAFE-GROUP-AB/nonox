@@ -295,6 +295,8 @@ Route::middleware([
         Route::get('/rapporter/csv', ReportCsvController::class)->name('accounting.reports.csv');
         Route::view('/kostnadsstallen', 'accounting.dimensions', ['dimension' => 'kostnadsstallen'])->name('accounting.costCenters');
         Route::view('/projekt', 'accounting.dimensions', ['dimension' => 'projekt'])->name('accounting.projects');
+        // Group companies among customers and suppliers, and intercompany row tags (ADR-060 addendum 2.3, ADR-081 E23).
+        Route::view('/koncernmarkeringar', 'group.intercompany')->name('accounting.intercompany');
         Route::view('/anlaggningar', 'accounting.fixed-assets')->name('accounting.fixedAssets');
         Route::view('/periodiseringar', 'accounting.accruals')->name('accounting.accruals');
         Route::view('/korjournal', 'mileage.index')->name('mileage.index');

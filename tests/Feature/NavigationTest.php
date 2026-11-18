@@ -55,7 +55,7 @@ it('shows the pages of the open section only, grouped in Bokföring', function (
             'Verifikationer', 'Bankavstämning', 'Periodiseringar', 'Anläggningar', 'Läs in SIE-fil', 'Läs in register',
             'Rapporter', 'Reskontra', 'Moms', 'EU-rapporter',
             'Räkenskapsår', 'Bokslut', 'Årsredovisning', 'Inkomstdeklaration',
-            'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt',
+            'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt', 'Koncernmarkeringar',
         ])
         ->and($open->first()->current()?->label)->toBe('Rapporter');
 });
@@ -65,14 +65,14 @@ it('filters the pages of Bokföring by permission, as the page links did', funct
 
     expect(pageLabels(openSection($member, $this->company, 'accounting.vouchers.index')))->toBe($expected);
 })->with([
-    'bookkeeper' => ['bookkeeper', ['Verifikationer', 'Bankavstämning', 'Rapporter', 'Reskontra', 'Räkenskapsår', 'Årsredovisning', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt']],
-    'approver' => ['approver', ['Verifikationer', 'Räkenskapsår', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt']],
-    'auditor' => ['auditor', ['Verifikationer', 'Rapporter', 'Reskontra', 'Räkenskapsår', 'Årsredovisning', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt']],
+    'bookkeeper' => ['bookkeeper', ['Verifikationer', 'Bankavstämning', 'Rapporter', 'Reskontra', 'Räkenskapsår', 'Årsredovisning', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt', 'Koncernmarkeringar']],
+    'approver' => ['approver', ['Verifikationer', 'Räkenskapsår', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt', 'Koncernmarkeringar']],
+    'auditor' => ['auditor', ['Verifikationer', 'Rapporter', 'Reskontra', 'Räkenskapsår', 'Årsredovisning', 'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt', 'Koncernmarkeringar']],
     'accountant' => ['accountant', [
         'Verifikationer', 'Bankavstämning', 'Periodiseringar', 'Anläggningar', 'Läs in SIE-fil', 'Läs in register',
         'Rapporter', 'Reskontra', 'Moms', 'EU-rapporter',
         'Räkenskapsår', 'Bokslut', 'Årsredovisning', 'Inkomstdeklaration',
-        'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt',
+        'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt', 'Koncernmarkeringar',
     ]],
 ]);
 
@@ -93,7 +93,7 @@ it('lists the pages of Försäljning, Inköp and Register', function (string $ro
         'Verifikationer', 'Bankavstämning', 'Periodiseringar', 'Anläggningar', 'Läs in SIE-fil', 'Läs in register',
         'Rapporter', 'Reskontra', 'Moms', 'EU-rapporter',
         'Räkenskapsår', 'Bokslut', 'Årsredovisning', 'Inkomstdeklaration',
-        'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt',
+        'Kontoplan', 'Verifikationsserier', 'Kostnadsställen', 'Projekt', 'Koncernmarkeringar',
     ], 'EU-rapporter'],
 ]);
 

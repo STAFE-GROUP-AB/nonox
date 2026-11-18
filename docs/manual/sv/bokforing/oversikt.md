@@ -29,6 +29,7 @@ Allt i avsnittet finns i menyn under **Bokföring**.
 - [Kontoplan](/manual/bokforing/kontoplan) – BAS-kontona, nya konton och inaktiverade konton.
 - [Verifikationsserier](/manual/bokforing/verifikationsserier) – A, B, C och de andra serierna, och hur numreringen fungerar.
 - [Kostnadsställen och projekt](/manual/bokforing/kostnadsstallen-och-projekt) – dela upp bokföringen per restaurang, avdelning eller uppdrag.
+- [Koncernmarkeringar](/manual/bokforing/koncernmarkeringar) – kunder och leverantörer som är koncernföretag, och raderna som är mellanhavanden inom koncernen.
 
 ## Räkenskapsår, låsning och SIE
 
