@@ -48,7 +48,7 @@ Build a complete, open-source, self-hostable bookkeeping and finance system for 
 
 ### 1.4 Working rules for agents
 - Do not invent legal rules. If a regulation detail is uncertain, write `// TODO(legal-verify): <question>` and list it in the PR description.
-- Do not add packages without justification in the PR (licence must be AGPL-compatible: MIT, BSD, Apache-2.0, LGPL, GPL-3, AGPL-3).
+- Do not add packages without justification in the PR (licence must be AGPL-compatible: MIT, BSD, Apache-2.0, LGPL, GPL-3, AGPL-3; also PSF-2.0, MPL-2.0 and MIT-CMU/HPND for separately installed, unmodified dependencies such as the optional PDF engine's, owner-approved 2026-11-18).
 - Do not change anything in §1 without a human-approved ADR.
 
 ---
