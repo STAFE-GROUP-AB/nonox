@@ -92,6 +92,12 @@ class AppServiceProvider extends ServiceProvider
     {
         Model::preventLazyLoading(! $this->app->isProduction());
 
+        // Each ERP package keeps its translations in lang/packages/<package>/ (ADR-081 E0), so
+        // parallel branches do not collide in lang/en.json. lang/*.json is read last and wins.
+        foreach (glob(lang_path('packages/*'), GLOB_ONLYDIR) ?: [] as $directory) {
+            $this->loadJsonTranslationsFrom($directory);
+        }
+
         // A bearer token counts only on the API (/api/*). Every page, modules'
         // included, needs a signed-in session, so a token can never stand in
         // for one or outlive its 12-hour limit (security review 2026-11-01).

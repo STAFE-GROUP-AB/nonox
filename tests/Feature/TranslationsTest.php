@@ -46,8 +46,8 @@ it('finds texts to check', function () {
 });
 
 it('has a Swedish and an English version of every text', function () {
-    $swedish = json_decode((string) file_get_contents(lang_path('sv.json')), true);
-    $english = json_decode((string) file_get_contents(lang_path('en.json')), true);
+    $swedish = translationsFor('sv');
+    $english = translationsFor('en');
 
     $missing = array_values(array_filter(
         translationKeysInCode(),
@@ -60,7 +60,7 @@ it('has a Swedish and an English version of every text', function () {
 });
 
 it('has a Swedish entry for every plural text, or trans_choice shows the English one', function () {
-    $swedish = json_decode((string) file_get_contents(lang_path('sv.json')), true);
+    $swedish = translationsFor('sv');
     $missing = [];
     $files = new AppendIterator;
 
@@ -86,4 +86,56 @@ it('has a Swedish entry for every plural text, or trans_choice shows the English
     }
 
     expect($missing)->toBe([]);
+});
+
+/**
+ * lang/<locale>.json together with every package file lang/packages/<package>/<locale>.json (ADR-081 E0).
+ *
+ * @return array<string, string>
+ */
+function translationsFor(string $locale): array
+{
+    $merged = [];
+
+    foreach ([...(glob(lang_path("packages/*/{$locale}.json")) ?: []), lang_path("{$locale}.json")] as $file) {
+        if (is_file($file)) {
+            $merged = array_replace($merged, json_decode((string) file_get_contents($file), true, flags: JSON_THROW_ON_ERROR));
+        }
+    }
+
+    return $merged;
+}
+
+it('never gives one text two different translations across lang and the package files', function () {
+    $conflicts = [];
+
+    foreach (['en', 'sv'] as $locale) {
+        $seen = [];
+
+        foreach ([lang_path("{$locale}.json"), ...(glob(lang_path("packages/*/{$locale}.json")) ?: [])] as $file) {
+            if (! is_file($file)) {
+                continue;
+            }
+
+            foreach (json_decode((string) file_get_contents($file), true, flags: JSON_THROW_ON_ERROR) as $key => $value) {
+                if (isset($seen[$key]) && $seen[$key]['value'] !== $value) {
+                    $conflicts[] = "{$locale}: \"{$key}\" in {$seen[$key]['file']} and ".basename(dirname($file)).'/'.basename($file);
+                }
+
+                $seen[$key] ??= ['value' => $value, 'file' => basename(dirname($file)).'/'.basename($file)];
+            }
+        }
+    }
+
+    expect($conflicts)->toBe([]);
+});
+
+it('loads the package translation files at runtime', function () {
+    foreach (glob(lang_path('packages/*/en.json')) ?: [] as $file) {
+        foreach (array_slice(json_decode((string) file_get_contents($file), true, flags: JSON_THROW_ON_ERROR), 0, 3, true) as $key => $value) {
+            expect(__($key, [], 'en'))->toBe($value);
+        }
+    }
+
+    expect(app('translator')->getLoader()->jsonPaths())->toBe(array_values(glob(lang_path('packages/*'), GLOB_ONLYDIR) ?: []));
 });

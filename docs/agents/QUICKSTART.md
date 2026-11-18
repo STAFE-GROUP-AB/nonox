@@ -93,7 +93,7 @@ Tests enforce most of these, so a forgotten one turns the suite red.
 | When you … | Also update | Guarded by |
 |---|---|---|
 | ship anything a user can notice | a changelog entry: Swedish, ≤ 3 sentences, `typ` and `omrade` from `Changelog::TYPES/AREAS`, `datum` never in the future; the newest `feat`/`fix` commit must have an entry | `ChangelogTest` |
-| add a user-facing string | `lang/en.json` (append; never rewrite the file with a JSON tool — it collapses duplicate keys) | `TranslationsTest` |
+| add a user-facing string | `lang/en.json` (append; never rewrite the file with a JSON tool — it collapses duplicate keys). An ERP package (ADR-081) writes its strings to `lang/packages/<package>/en.json` instead (plural keys in `sv.json` there); `lang/*.json` wins on a duplicate, and two different values for one key fail the test | `TranslationsTest` |
 | change a screen | the manual article with the exact UI labels, `rutter`, screenshots | `ManualTest` |
 | launch a feature | `app/Support/Landing/Features.php` (live/soon), `LandingPage::INCLUDED`, the landing feature card with a real screenshot, README feature list | `LandingPageTest` |
 | launch a module | a row in `docs/migration/jamforelse.json` with `keys` (competitor values only from the vendor's own pages, else `unknown`); never only-NONOX rows without neutral ones; an `/alternativ-till-x` page compares only NONOX and x | `IndustryPagesTest` |
