@@ -144,6 +144,8 @@ moms/periodisk-sammanstallning: { foretag: konsult, rutt: vat.euReports }
 moms/importmoms: { foretag: butik, rutt: accounting.vouchers.create, klick: ['text=Importmoms från tullräkning'], del: '[data-import-vat]' }
 
 leverantorer/betalfiler: { foretag: konsult, rutt: payables.batches.index }
+leverantorer/attestfloden: { foretag: konsult, rutt: approvals.policies }
+leverantorer/attestflode-pa-fakturan: { foretag: konsult, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { invoice_number: ATT-2026-17 } }, visa: '[data-approval-flow]' }
 leverantorer/kreditnotor: { foretag: konsult, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { kind: CREDIT } } }
 leverantorer/utlandsk-valuta: { foretag: konsult, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { invoice_currency: EUR } } }
 

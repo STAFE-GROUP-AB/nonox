@@ -27,6 +27,7 @@ enum CompanyRole: string
         'api-tokens:manage', 'settings:manage', 'audit-log:view', 'modules:manage',
         'tasks:manage', 'tasks:view',
         'mileage:view', 'mileage:manage',
+        'approvals:manage',
     ];
 
     public function label(): string

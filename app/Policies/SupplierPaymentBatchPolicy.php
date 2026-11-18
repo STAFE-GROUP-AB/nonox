@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
+use App\Domain\Approval\ApprovalContext;
+use App\Domain\Approval\ApprovalEngine;
+use App\Domain\Approval\ApprovalSubjectType;
+use App\Domain\Approval\SubjectFacts;
 use App\Models\Company;
 use App\Models\SupplierPaymentBatch;
 use App\Models\User;
@@ -33,11 +37,31 @@ class SupplierPaymentBatchPolicy
         return $user->hasTeamPermission($company, 'payments:create');
     }
 
+    /**
+     * With the default policy: the payment approval permission, and not the
+     * person who made the file while the company requires separate
+     * approval. When a policy of the company's own applies (ADR-081 gap 8),
+     * whoever may decide its current step.
+     */
     public function approve(User $user, SupplierPaymentBatch $batch): bool
     {
-        return $batch->isOpen()
-            && ! $batch->isApproved()
-            && $this->approveAny($user, $batch)
+        if (! $batch->isOpen() || $batch->isApproved()) {
+            return false;
+        }
+
+        $engine = app(ApprovalEngine::class);
+
+        $company = $this->company($batch);
+
+        if ($company instanceof Company && $engine->hasCustomFlow($batch->company_id, ApprovalSubjectType::PaymentBatch, $batch->id, fn (): SubjectFacts => SubjectFacts::forPaymentBatch($batch))) {
+            $state = $engine->state(ApprovalContext::load($company), $user, SubjectFacts::forPaymentBatch($batch));
+
+            if ($state->custom) {
+                return $state->canDecide();
+            }
+        }
+
+        return $this->approveAny($user, $batch)
             && ! $this->blockedBySegregation($user, $batch);
     }
 

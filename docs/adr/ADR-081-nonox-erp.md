@@ -1197,3 +1197,57 @@ QUICKSTART §7 before merge.
   (`budgets:*`, `projects:*`, `analysis:*`, `approvals:manage`, `documents:*`,
   `members:scope`) are core permissions and go into AGENTS.md §4's list by a
   human-approved edit when E1–E3 merge.
+
+## Addendum: E2 as built (approval engine core)
+
+Built on branch `feat/erp-e2-attestmotor`. Choices the gap 8 text left open:
+
+- **The default policy is code, not rows.** A subject that no active policy of
+  the company's own applies to runs the existing single attest unchanged
+  (`DecisionOutcome::Default`): same checks, messages, audit entries and
+  triggers, and no `approval_requests` row. A company that never edits a policy
+  therefore writes nothing new. `tests/Feature/Approval/DefaultApprovalPolicyTest.php`
+  proves it per role, preparer and segregation setting, with no policy, an
+  inactive one and one whose steps do not apply.
+- **When a policy applies.** Policies carry no condition of their own: a policy
+  applies when at least one of its steps' conditions matches; steps that do not
+  match are skipped; only the matching steps are snapshotted, renumbered 1…n.
+- **Segregation is live and one-way.** `exclude_preparer` is
+  `step.exclude_preparer OR companies.separate_supplier_approval`, read at
+  decision time. Preparers are `registered_by`/`created_by` (invoice) and
+  `created_by` (payment file). A substitute who prepared the subject is out too.
+- **Approver checks.** `PERMISSION` steps use the decider's own
+  `hasTeamPermission` (so API scopes and archived companies apply);
+  allowed permissions are the subject's own and `approvals:manage`. `USERS`
+  and `DIMENSION_OWNER` approvers must be current members who themselves
+  hold the subject's own approval permission (checked when the policy or
+  owner is saved and again at decision time), so a policy only narrows who
+  approves. An owner step requires exactly one approval. The same person may
+  approve different steps of one request. A `DIMENSION_OWNER` step with no live owner on the subject's cost
+  centres/projects falls back to the subject's own permission. Payment files
+  allow `PERMISSION` and `USERS` only, with amount conditions only.
+- **Delegation** applies only to steps that name people (`USERS`,
+  `DIMENSION_OWNER` with an owner), never to `PERMISSION` steps, and the
+  substitute must hold the subject's own approval permission themselves
+  (checked when the delegation is added and at decision time), so a
+  substitute never gains a permission. Columns are `starts_on`/`ends_on`
+  (`from`/`to` are SQL keywords); a delegation is revoked (`revoked_at`), not
+  deleted (a trigger allows only that one change); at most one year.
+- **Rejection** closes the request (`REJECTED`) and leaves the subject as it
+  is; the preparer (or anyone with the subject's prepare permission) sends it
+  again, which opens a new request with the current policy (or the default as
+  a snapshot). Owners and administrators may reject at any step, so a request
+  whose named approver left is never stuck. The default policy has no
+  rejection, as before. A cancelled payment file withdraws its pending request.
+- **Archive package.** Requests (with the policy copy), decisions and
+  substitutes go into `attest/` per fiscal year as CSV, listed in the
+  manifest with SHA-256.
+- **`approver_dimension`** (`COST_CENTER`/`PROJECT`) is an added nullable
+  column on `approval_policy_steps`.
+- **Database.** `approval_decisions` append-only (trigger, `AppendOnly`
+  grant); `approval_requests` never deleted and unchangeable once finished, its
+  subject and snapshot frozen (trigger, `NoDelete`); one pending request per
+  subject (partial unique index); `approval_delegations` `NoDelete`.
+- **UI.** `/attestfloden` (`approvals.policies`, under Inköp): policies,
+  dimension owners, substitutes. The approval card on the supplier invoice
+  and the payment file list show the steps and decisions.

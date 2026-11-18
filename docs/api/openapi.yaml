@@ -5996,9 +5996,9 @@ paths:
       tags:
         - Leverantörsfakturor
       summary: 'Approve (attest) a supplier invoice'
-      description: 'Approves a registered invoice so it may be paid, and fires supplier_invoice.approved. Segregation of duties: while the company requires approval by someone else (the default), the person who created or registered the invoice gets 422, whichever app or key they use. Same Action as the app (ApproveSupplierInvoice).'
+      description: 'Approves a registered invoice so it may be paid, and fires supplier_invoice.approved. Segregation of duties: while the company requires approval by someone else (the default), the person who created or registered the invoice gets 422, whichever app or key they use. When the company has an approval flow of its own (Attestflöden) that applies to the invoice, the call records the caller''s approval of the current step: the invoice stays REGISTERED, and is approved and the event fired only with the last approval of the last step. A caller who is not an approver of the current step gets 403. Same Action as the app (ApproveSupplierInvoice).'
       x-sv-summary: 'Attestera leverantörsfakturan'
-      x-sv-description: 'Attesterar fakturan. Den som registrerade den kan inte attestera den när företaget kräver attest av någon annan.'
+      x-sv-description: 'Attesterar fakturan. Den som registrerade den kan inte attestera den när företaget kräver attest av någon annan. Har företaget ett eget attestflöde som gäller fakturan sparas anroparens godkännande av det aktuella steget, och fakturan blir attesterad först efter det sista steget.'
       security:
         - oauth2:
             - 'supplier-invoices:approve'

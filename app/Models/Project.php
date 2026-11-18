@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $code
  * @property string $name
  * @property bool $is_active
+ * @property ?int $owner_user_id who can approve for it (ADR-081 gap 8)
  * @property ?CarbonInterface $created_at
  * @property ?CarbonInterface $updated_at
  */

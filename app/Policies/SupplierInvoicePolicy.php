@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
+use App\Domain\Approval\ApprovalContext;
+use App\Domain\Approval\ApprovalEngine;
+use App\Domain\Approval\ApprovalSubjectType;
+use App\Domain\Approval\SubjectFacts;
 use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Models\Company;
 use App\Models\SupplierInvoice;
@@ -64,10 +68,31 @@ class SupplierInvoicePolicy
         return $this->update($user, $invoice);
     }
 
+    /**
+     * With the default policy: the attest permission, and not the person who
+     * registered the invoice while the company requires separate approval.
+     * When a policy of the company's own applies (ADR-081 gap 8), whoever
+     * may decide its current step.
+     */
     public function approve(User $user, SupplierInvoice $invoice): bool
     {
-        return $invoice->status === SupplierInvoiceStatus::Registered
-            && $this->can($user, $invoice, 'supplier-invoices:approve')
+        if ($invoice->status !== SupplierInvoiceStatus::Registered) {
+            return false;
+        }
+
+        $engine = app(ApprovalEngine::class);
+
+        $company = $this->company($invoice);
+
+        if ($company instanceof Company && $engine->hasCustomFlow($invoice->company_id, ApprovalSubjectType::SupplierInvoice, $invoice->id, fn (): SubjectFacts => SubjectFacts::forSupplierInvoice($invoice))) {
+            $state = $engine->state(ApprovalContext::load($company), $user, SubjectFacts::forSupplierInvoice($invoice));
+
+            if ($state->custom) {
+                return $state->canDecide();
+            }
+        }
+
+        return $this->can($user, $invoice, 'supplier-invoices:approve')
             && ! $this->blockedBySegregation($user, $invoice);
     }
 

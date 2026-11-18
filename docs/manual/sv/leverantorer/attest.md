@@ -21,6 +21,8 @@ Att [attestera](/manual/ordlista/ordlista#attest) en faktura är att intyga att 
 
 Fakturan får status **Attesterad, att betala** och visas under **Att betala**. Ditt namn står under **Attesterad av**.
 
+Det här är standardattesten. Har företaget ett eget attestflöde, till exempel två steg för stora inköp, visar fakturan kortet **Attestflöde** och fakturan blir attesterad först när alla steg är godkända. Läs [Attestflöden](/manual/leverantorer/attestfloden).
+
 ## Vem får attestera?
 
 Rätten att attestera har rollerna **Ägare**, **Administratör** och **Attestant**. Attestanten är en roll för den som bara ska godkänna fakturor och betalningar, till exempel en ägare som inte sköter bokföringen själv. En redovisningskonsult eller bokförare kan registrera och betala fakturor men inte attestera dem. Läs mer om rollerna i [Roller och behörigheter](/manual/kom-igang/roller-och-behorigheter).
@@ -60,6 +62,7 @@ Fakturor som väntar på attest syns under **Att göra** på översikten för de
 
 ## Läs också
 
+- [Attestflöden](/manual/leverantorer/attestfloden)
 - [Registrera en betalning](/manual/leverantorer/registrera-en-betalning)
 - [Betalfiler till banken](/manual/leverantorer/betalfiler)
 - [Bjud in en användare](/manual/kom-igang/bjud-in-en-anvandare)

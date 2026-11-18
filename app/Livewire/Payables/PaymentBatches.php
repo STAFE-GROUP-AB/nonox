@@ -4,13 +4,21 @@ declare(strict_types=1);
 
 namespace App\Livewire\Payables;
 
+use App\Actions\Approval\RejectApproval;
+use App\Actions\Approval\ResubmitApproval;
 use App\Actions\Payables\ApprovePaymentBatch;
 use App\Actions\Payables\CreatePaymentBatch;
 use App\Actions\Payables\SavePaymentBankSettings;
 use App\Actions\Payables\SettlePaymentBatch;
+use App\Domain\Approval\ApprovalContext;
+use App\Domain\Approval\ApprovalEngine;
+use App\Domain\Approval\ApprovalState;
+use App\Domain\Approval\ApprovalSubjectType;
+use App\Domain\Approval\SubjectFacts;
 use App\Domain\Payables\PaymentBatchStatus;
 use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Livewire\Concerns\ShowsToasts;
+use App\Models\ApprovalPolicy;
 use App\Models\Company;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierPaymentBatch;
@@ -19,6 +27,7 @@ use App\Models\User;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -95,7 +104,43 @@ class PaymentBatches extends Component
             return;
         }
 
-        $this->toast(__(':title är godkänd. Ladda ned den och läs in den i internetbanken.', ['title' => $batch->title()]));
+        $this->toast($batch->isApproved()
+            ? __(':title är godkänd. Ladda ned den och läs in den i internetbanken.', ['title' => $batch->title()])
+            : __('Ditt godkännande av :title är sparat. Filen väntar på nästa godkännande.', ['title' => $batch->title()]));
+    }
+
+    /** Why a file is rejected in the company's own approval policy (ADR-081 gap 8), optional. */
+    public string $rejectReason = '';
+
+    public function reject(string $batchId, RejectApproval $reject): void
+    {
+        $batch = SupplierPaymentBatch::query()->findOrFail($batchId);
+
+        try {
+            $reject($this->user(), $this->company(), ApprovalSubjectType::PaymentBatch, $batch->id, $this->rejectReason);
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        $this->rejectReason = '';
+        $this->toast(__(':title är avvisad och går tillbaka till den som skapade den.', ['title' => $batch->title()]));
+    }
+
+    public function resubmit(string $batchId, ResubmitApproval $resubmit): void
+    {
+        $batch = SupplierPaymentBatch::query()->findOrFail($batchId);
+
+        try {
+            $resubmit($this->user(), $this->company(), ApprovalSubjectType::PaymentBatch, $batch->id);
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        $this->toast(__(':title är skickad till godkännande igen.', ['title' => $batch->title()]));
     }
 
     public function confirm(string $batchId, SettlePaymentBatch $settle): void
@@ -133,19 +178,26 @@ class PaymentBatches extends Component
         $payable = $this->payable()->with('supplier:id,name')->orderBy('due_date')->orderBy('number')->get();
         $selectedTotal = $payable->whereIn('id', $this->selected)->sum(fn (SupplierInvoice $invoice): int => $invoice->remaining()->ore);
 
+        $batches = SupplierPaymentBatch::query()
+            ->with(['creator:id,name', 'approver:id,name'])
+            ->withCount([
+                'items as paid_count' => fn (Builder $query) => $query->whereNotNull('supplier_payment_id'),
+                'items as rejected_count' => fn (Builder $query) => $query->where('bank_status', SupplierPaymentBatchItem::REJECTED),
+            ])
+            ->orderByDesc('number')
+            ->limit(50)
+            ->get();
+        $approvals = $this->approvals($batches);
+
         return view('livewire.payables.payment-batches', [
             'company' => $this->company(),
             'payable' => $payable,
             'selectedTotal' => $selectedTotal,
-            'batches' => SupplierPaymentBatch::query()
-                ->with(['creator:id,name', 'approver:id,name'])
-                ->withCount([
-                    'items as paid_count' => fn (Builder $query) => $query->whereNotNull('supplier_payment_id'),
-                    'items as rejected_count' => fn (Builder $query) => $query->where('bank_status', SupplierPaymentBatchItem::REJECTED),
-                ])
-                ->orderByDesc('number')
-                ->limit(50)
-                ->get(),
+            'batches' => $batches,
+            'approvals' => $approvals,
+            'memberNames' => $approvals === [] ? [] : $this->company()->allUsers()->pluck('name', 'id')->all(),
+            'canResubmit' => $this->user()->hasTeamPermission($this->company(), 'payments:create'),
+            'canManageApprovals' => $this->user()->hasTeamPermission($this->company(), 'approvals:manage'),
             'foreignTotals' => $this->foreignTotals(),
             'canCreate' => $this->user()->can('create', [SupplierPaymentBatch::class, $this->company()]),
             // Checked once for the page rather than through the policy per batch, which would query the company each time.
@@ -154,6 +206,47 @@ class PaymentBatches extends Component
             'userId' => $this->user()->id,
             'canChangeBank' => $this->user()->can('update', $this->company()),
         ]);
+    }
+
+    /**
+     * Where each listed file stands in the company's own approval policy
+     * (ADR-081 gap 8), keyed by id; a file missing from the list follows the
+     * default policy. One query for the policy check and two for the
+     * history when the company has neither; the context's six otherwise,
+     * however many files are listed.
+     *
+     * @param  Collection<int, SupplierPaymentBatch>  $batches
+     * @return array<string, ApprovalState>
+     */
+    private function approvals(Collection $batches): array
+    {
+        $company = $this->company();
+        $engine = app(ApprovalEngine::class);
+        $histories = $engine->histories($company->id, ApprovalSubjectType::PaymentBatch, array_values($batches->pluck('id')->map(fn (mixed $id): string => (string) $id)->all()));
+        $hasPolicy = ApprovalPolicy::query()->where('subject_type', ApprovalSubjectType::PaymentBatch->value)->where('is_active', true)->exists();
+
+        if ($histories->isEmpty() && ! $hasPolicy) {
+            return [];
+        }
+
+        $context = ApprovalContext::load($company);
+        $states = [];
+
+        foreach ($batches as $batch) {
+            $history = $histories->get($batch->id, collect());
+
+            if ($history->isEmpty() && ! ($batch->isOpen() && ! $batch->isApproved())) {
+                continue;
+            }
+
+            $state = $engine->state($context, $this->user(), SubjectFacts::forPaymentBatch($batch), $history);
+
+            if ($state->custom) {
+                $states[$batch->id] = $state;
+            }
+        }
+
+        return $states;
     }
 
     /**

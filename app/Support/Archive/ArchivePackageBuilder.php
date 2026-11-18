@@ -9,16 +9,21 @@ use App\Actions\Accounting\ExportSie;
 use App\Domain\Accounting\Reports\LedgerQuery;
 use App\Domain\Accounting\Reports\ReportTable;
 use App\Domain\Accounting\VoucherStatus;
+use App\Domain\Approval\ApprovalSubjectType;
 use App\Domain\Invoicing\InvoicePdf;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\IssuedInvoicePdf;
 use App\Domain\Vat\EskdFile;
 use App\Domain\Vat\VatReturn;
+use App\Models\ApprovalDecision;
+use App\Models\ApprovalDelegation;
+use App\Models\ApprovalRequest;
 use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\Invoice;
 use App\Models\SupplierInvoice;
+use App\Models\SupplierPaymentBatch;
 use App\Models\User;
 use App\Models\VatReport;
 use App\Models\Voucher;
@@ -88,6 +93,7 @@ final class ArchivePackageBuilder
                     'moms' => $this->vatReturns($company, $fiscalYear),
                     'lon' => $user->hasTeamPermission($company, 'payroll:archive-view') ? $this->payroll($fiscalYear) : 0,
                     'aktiebok' => $this->boardroom($user, $company, $fiscalYear),
+                    'attest' => $this->approvals($company, $fiscalYear),
                     'behandlingshistorik' => $this->auditLog($company, $fiscalYear),
                     'systemdokumentation' => $this->systemDocumentation($fiscalYear),
                 ];
@@ -350,6 +356,72 @@ final class ArchivePackageBuilder
         }
 
         return $count;
+    }
+
+    /**
+     * The approval history (ADR-081 gap 8) of the year's supplier invoices
+     * (by invoice date) and payment files (by payment date): every request
+     * with the policy copy it followed, every decision, and the substitutes
+     * whose period touches the year. Empty when the company has no approval
+     * policy of its own. TODO(legal-verify): whether this is behandlingshistorik
+     * to keep as räkenskapsinformation (BFNAR 2013:2); it is kept here either way.
+     */
+    private function approvals(Company $company, FiscalYear $fiscalYear): int
+    {
+        $start = $fiscalYear->start_date->toDateString();
+        $end = $fiscalYear->end_date->toDateString();
+        $invoices = SupplierInvoice::query()->whereDate('invoice_date', '>=', $start)->whereDate('invoice_date', '<=', $end)->pluck('number', 'id');
+        $batches = SupplierPaymentBatch::query()->whereDate('execution_date', '>=', $start)->whereDate('execution_date', '<=', $end)->pluck('number', 'id');
+
+        $requests = ApprovalRequest::query()
+            ->where(fn ($query) => $query
+                ->where(fn ($invoice) => $invoice->where('subject_type', ApprovalSubjectType::SupplierInvoice->value)->whereIn('subject_id', $invoices->keys()->map(fn (mixed $id): string => (string) $id)->all()))
+                ->orWhere(fn ($batch) => $batch->where('subject_type', ApprovalSubjectType::PaymentBatch->value)->whereIn('subject_id', $batches->keys()->map(fn (mixed $id): string => (string) $id)->all())))
+            ->with(['decisions'])
+            ->orderBy('id')
+            ->get();
+        $delegations = ApprovalDelegation::query()->where('starts_on', '<=', $end)->where('ends_on', '>=', $start)->orderBy('id')->get();
+
+        if ($requests->isEmpty() && $delegations->isEmpty()) {
+            return 0;
+        }
+
+        $names = User::query()->whereIn('id', $company->users()->pluck('users.id')->push($company->user_id)
+            ->merge($requests->flatMap(fn (ApprovalRequest $request): array => $request->decisions->flatMap(fn (ApprovalDecision $decision): array => [$decision->user_id, $decision->on_behalf_of])->all()))
+            ->merge($delegations->flatMap(fn (ApprovalDelegation $delegation): array => [$delegation->user_id, $delegation->substitute_user_id, $delegation->created_by, $delegation->revoked_by]))
+            ->filter()->unique()->values())->pluck('name', 'id');
+        $name = fn (?int $id): string => $id === null ? '' : (string) ($names[$id] ?? $id);
+        $time = fn (?CarbonImmutable $at): string => $at?->setTimezone('Europe/Stockholm')->format('Y-m-d H:i:s') ?? '';
+        $subject = fn (ApprovalRequest $request): string => $request->subject_type === ApprovalSubjectType::PaymentBatch
+            ? __('Betalfil :number', ['number' => $batches[$request->subject_id] ?? ''])
+            : __('Leverantörsfaktura :number', ['number' => $invoices[$request->subject_id] ?? '']);
+
+        $this->csv('attest/Attestarenden.csv', [
+            [__('Ärende'), __('Avser'), __('Id'), __('Status'), __('Aktuellt steg'), __('Förberett av'), __('Startat'), __('Avslutat'), __('Flöde (kopia, JSON)')],
+            ...$requests->map(fn (ApprovalRequest $request): array => [
+                $request->id, $subject($request), $request->subject_id, $request->status->label(), $request->current_step,
+                $name($request->prepared_by), $time($request->created_at), $time($request->completed_at),
+                (string) json_encode($request->policy_snapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            ])->all(),
+        ]);
+
+        $this->csv('attest/Attestbeslut.csv', [
+            [__('Ärende'), __('Avser'), __('Steg'), __('Beslut'), __('Av'), __('På uppdrag av'), __('Tidpunkt'), __('Skäl')],
+            ...$requests->flatMap(fn (ApprovalRequest $request): array => $request->decisions->map(fn (ApprovalDecision $decision): array => [
+                $request->id, $subject($request), $decision->step, $decision->decision->label(),
+                $name($decision->user_id), $name($decision->on_behalf_of), $time($decision->decided_at), (string) $decision->reason,
+            ])->all())->all(),
+        ]);
+
+        $this->csv('attest/Ersattare.csv', [
+            [__('Ersatt'), __('Ersättare'), __('Från och med'), __('Till och med'), __('Lagt till av'), __('Återkallad'), __('Återkallad av')],
+            ...$delegations->map(fn (ApprovalDelegation $delegation): array => [
+                $name($delegation->user_id), $name($delegation->substitute_user_id), $delegation->starts_on->toDateString(), $delegation->ends_on->toDateString(),
+                $name($delegation->created_by), $time($delegation->revoked_at), $name($delegation->revoked_by),
+            ])->all(),
+        ]);
+
+        return 3;
     }
 
     /**

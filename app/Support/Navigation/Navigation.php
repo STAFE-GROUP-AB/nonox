@@ -129,10 +129,11 @@ final class Navigation
             [
                 'label' => __('Inköp'),
                 'route' => 'payables.invoices.index',
-                'patterns' => ['payables.invoices.*', 'payables.batches.*'],
+                'patterns' => ['payables.invoices.*', 'payables.batches.*', 'approvals.*'],
                 'children' => fn (User $user, Company $company): array => [
                     ['label' => __('Leverantörsfakturor'), 'route' => 'payables.invoices.index'],
                     ['label' => __('Betalfiler'), 'route' => 'payables.batches.index'],
+                    ['label' => __('Attestflöden'), 'route' => 'approvals.policies'],
                 ],
             ],
             // With CRM on, Kunder lives in the CRM section for those who see it (ADR-043); one way to /kunder.

@@ -4,12 +4,21 @@ declare(strict_types=1);
 
 namespace App\Livewire\Payables;
 
+use App\Actions\Approval\RejectApproval;
+use App\Actions\Approval\ResubmitApproval;
 use App\Actions\Payables\ApproveSupplierInvoice;
 use App\Actions\Payables\OffsetSupplierCredit;
 use App\Actions\Payables\PaySupplierInvoice;
+use App\Domain\Approval\ApprovalContext;
+use App\Domain\Approval\ApprovalEngine;
+use App\Domain\Approval\ApprovalState;
+use App\Domain\Approval\ApprovalSubjects;
+use App\Domain\Approval\ApprovalSubjectType;
+use App\Domain\Approval\SubjectFacts;
 use App\Domain\Payables\SupplierInvoiceBooking;
 use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Livewire\Concerns\ShowsToasts;
+use App\Models\Company;
 use App\Models\SupplierInvoice;
 use App\Models\User;
 use App\Policies\SupplierInvoicePolicy;
@@ -49,6 +58,9 @@ class SupplierInvoiceActions extends Component
 
     public string $offsetInvoiceId = '';
 
+    /** Why the invoice is rejected in the company's own approval policy (ADR-081 gap 8), optional. */
+    public string $rejectReason = '';
+
     public function mount(SupplierInvoice $invoice): void
     {
         $this->invoiceId = $invoice->id;
@@ -70,7 +82,24 @@ class SupplierInvoiceActions extends Component
     {
         $invoice = $approve($this->user(), $this->invoice());
 
-        $this->toast(__(':title är attesterad och kan betalas.', ['title' => $invoice->title()]));
+        $this->toast($invoice->status === SupplierInvoiceStatus::Approved
+            ? __(':title är attesterad och kan betalas.', ['title' => $invoice->title()])
+            : __('Ditt godkännande av :title är sparat. Fakturan väntar på nästa attest.', ['title' => $invoice->title()]));
+    }
+
+    public function reject(RejectApproval $reject): void
+    {
+        $reject($this->user(), $this->company(), ApprovalSubjectType::SupplierInvoice, $this->invoiceId, $this->rejectReason);
+
+        $this->rejectReason = '';
+        $this->toast(__(':title är avvisad och går tillbaka till den som registrerade den.', ['title' => $this->invoice()->title()]));
+    }
+
+    public function resubmit(ResubmitApproval $resubmit): void
+    {
+        $resubmit($this->user(), $this->company(), ApprovalSubjectType::SupplierInvoice, $this->invoiceId);
+
+        $this->toast(__(':title är skickad till attest igen.', ['title' => $this->invoice()->title()]));
     }
 
     public function pay(PaySupplierInvoice $pay): void
@@ -118,10 +147,21 @@ class SupplierInvoiceActions extends Component
     {
         $invoice = $this->invoice()->load(['payments.voucher.series', 'voucher.series', 'supplier', 'registeredBy:id,name', 'approvedBy:id,name', 'rows.account', 'rows.costCenter', 'rows.project']);
 
+        $approval = $this->approval($invoice);
+
         return view('livewire.payables.supplier-invoice-actions', [
             'invoice' => $invoice,
-            'canApprove' => $this->user()->can('approve', $invoice),
-            'blockedBySegregation' => $invoice->status === SupplierInvoiceStatus::Registered
+            'approval' => $approval,
+            'memberNames' => $approval instanceof ApprovalState ? $this->company()->allUsers()->pluck('name', 'id')->all() : [],
+            'canResubmit' => $approval?->awaitingResubmission === true && $invoice->status === SupplierInvoiceStatus::Registered
+                && (in_array($this->user()->id, [$invoice->registered_by, $invoice->created_by], true) || $this->user()->hasTeamPermission($this->company(), ApprovalSubjects::preparePermission(ApprovalSubjectType::SupplierInvoice))),
+            'canReject' => $approval instanceof ApprovalState && $invoice->status === SupplierInvoiceStatus::Registered && ! $approval->awaitingResubmission
+                && ($approval->canDecide() || $this->user()->hasTeamPermission($this->company(), 'approvals:manage')),
+            'canApprove' => $approval instanceof ApprovalState
+                ? $invoice->status === SupplierInvoiceStatus::Registered && $approval->canDecide()
+                : $this->user()->can('approve', $invoice),
+            'blockedBySegregation' => ! $approval instanceof ApprovalState
+                && $invoice->status === SupplierInvoiceStatus::Registered
                 && $this->user()->can('approveAny', [SupplierInvoice::class, $invoice])
                 && (new SupplierInvoicePolicy)->blockedBySegregation($this->user(), $invoice),
             'canPay' => $this->user()->can('pay', $invoice),
@@ -206,6 +246,39 @@ class SupplierInvoiceActions extends Component
 
         $this->amount = Money::ofOre($rate->toOre(abs($foreign)))->format(withCurrency: false);
         $this->rateDate = $rate->date.' · '.$rate->format();
+    }
+
+    /**
+     * Where the invoice stands in the company's own approval policy, or null
+     * when it follows the default policy (today's single attest).
+     */
+    private function approval(SupplierInvoice $invoice): ?ApprovalState
+    {
+        $engine = app(ApprovalEngine::class);
+        $facts = fn (): SubjectFacts => SubjectFacts::forSupplierInvoice($invoice);
+
+        if ($invoice->status === SupplierInvoiceStatus::Draft || ! $engine->hasCustomFlow($invoice->company_id, ApprovalSubjectType::SupplierInvoice, $invoice->id, $facts)) {
+            return null;
+        }
+
+        $history = $engine->histories($invoice->company_id, ApprovalSubjectType::SupplierInvoice, [$invoice->id])->get($invoice->id, collect());
+
+        // An invoice approved before the company had a policy of its own keeps its single attest.
+        if ($history->isEmpty() && $invoice->status !== SupplierInvoiceStatus::Registered) {
+            return null;
+        }
+
+        $state = $engine->state(ApprovalContext::load($this->company()), $this->user(), $facts(), $history);
+
+        return $state->custom ? $state : null;
+    }
+
+    private function company(): Company
+    {
+        /** @var Company $company */
+        $company = $this->user()->currentCompany();
+
+        return $company;
     }
 
     private function invoice(): SupplierInvoice

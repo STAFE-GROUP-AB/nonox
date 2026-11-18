@@ -23,6 +23,7 @@ En leverantörsfaktura går alltid samma väg i NONOX:
 - [Registrera en leverantörsfaktura](/manual/leverantorer/registrera-en-leverantorsfaktura) – fyll i, kontera och registrera.
 - [Fota fakturan och låt NONOX AI läsa den](/manual/leverantorer/fota-och-las-fakturan) – snabbare registrering från mobilen.
 - [Attest](/manual/leverantorer/attest) – vem som får godkänna och varför det ska vara någon annan.
+- [Attestflöden](/manual/leverantorer/attestfloden) – egna flöden i flera steg, beloppsgränser och ersättare.
 
 ## Betala
 
