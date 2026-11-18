@@ -49,5 +49,6 @@
     "Ta bort :company ur koncernen? Koncernens sammanställning räknas utan företaget.": "Remove :company from the group? The group's summary is calculated without the company.",
     "Ta bort rollen för :name? Personen ser inte längre koncernen.": "Remove the role for :name? The person no longer sees the group.",
     "Företag och ägande enligt de innehav ni själva har registrerat, med räkenskapsårens status i varje företag. NONOX prövar inte om de utgör en koncern.": "Companies and ownership according to the holdings you have recorded yourselves, with the status of the fiscal years in each company. NONOX does not assess whether they form a group.",
-    "Gå till Koncernstruktur och välj Gör om till koncern": "Go to Koncernstruktur and choose Turn into a group"
+    "Gå till Koncernstruktur och välj Gör om till koncern": "Go to Koncernstruktur and choose Turn into a group",
+    "Den som läser sammanställningen kan jämföra perioder, till exempel före och efter att ett företag har sålts. En körning visas bara när minst två företag ingår, och alla företag ingår under hela perioden med sin balansräkning.": "Whoever reads the summary can compare periods, for example before and after a company was sold. A run is shown only when at least two companies are included, and every company is included for the whole period with its balance sheet."
 }

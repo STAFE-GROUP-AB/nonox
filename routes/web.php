@@ -208,6 +208,8 @@ Route::middleware([
     // The shared group's structure, holdings and period status (ADR-081 E22, ADR-060 S2-1.2); spans companies, so GroupAccess decides what is shown.
     Route::view('/koncern/struktur', 'group.corporate')->name('group.corporate');
     Route::get('/koncern/{group}/csv', GroupCsvController::class)->whereNumber('group')->name('group.csv');
+    // Consolidation of a shared group and its run log (ADR-081 E24, ADR-060 S2-1.4); spans companies, so GroupAccess decides what is shown.
+    Route::view('/koncern/konsolidering', 'group.consolidation')->name('group.consolidation');
     // Across every company the user belongs to (ADR-028).
     Route::view('/uppgifter', 'tasks.index')->name('tasks.index');
     Route::redirect('/mina-uppgifter', '/uppgifter');

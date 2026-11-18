@@ -77,6 +77,7 @@ rapporter/prognos: { foretag: konsult, rutt: accounting.budgets.show, modell: { 
 rapporter/rullande-12-manader: { foretag: konsult, rutt: accounting.budgets.rolling, fraga: { fran: '@first day of january this year' } }
 rapporter/projektresultat-lista: { foretag: konsult, rutt: projects.index }
 rapporter/projektresultat: { foretag: konsult, rutt: projects.show, modell: { tabell: projects, dar: { code: 'P-101' } }, fraga: { konto: '6550' }, visa: '[data-project-drill]' }
+rapporter/konsolidering: { foretag: konsult, rutt: group.consolidation, text: Konsultbolaget med dotterföretag }
 
 bokslut/checklistan: { foretag: konsult, rutt: accounting.closing }
 bokslut/periodiseringar: { foretag: konsult, rutt: accounting.accruals }

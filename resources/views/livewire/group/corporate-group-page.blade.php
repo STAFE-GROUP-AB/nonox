@@ -209,7 +209,7 @@
 
                     <x-ui.card>
                         <h3 class="font-semibold text-gray-900">{{ __('Vem får läsa sammanställningen') }}</h3>
-                        <p class="mt-1 text-sm text-gray-600">{{ __('Rollen ger bara koncernens sammanställning, aldrig tillgång till något enskilt företag. Den som läser sammanställningen och även ser moderföretagets egna rapporter kan räkna ut dotterföretagens summor.') }}</p>
+                        <p class="mt-1 text-sm text-gray-600">{{ __('Rollen ger bara koncernens sammanställning, aldrig tillgång till något enskilt företag. Den som läser sammanställningen och även ser moderföretagets egna rapporter kan räkna ut dotterföretagens summor.') }} {{ __('Den som läser sammanställningen kan jämföra perioder, till exempel före och efter att ett företag har sålts. En körning visas bara när minst två företag ingår, och alla företag ingår under hela perioden med sin balansräkning.') }}</p>
                         @if($report['roles'] !== [])
                             <ul class="mt-3 divide-y divide-gray-100">
                                 @foreach($report['roles'] as $role)

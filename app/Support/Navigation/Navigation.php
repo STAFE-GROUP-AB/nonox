@@ -205,6 +205,8 @@ final class Navigation
                 'children' => fn (User $user, Company $company): array => [
                     ...($multiple ? [['label' => __('Koncernöversikt'), 'route' => 'group.overview', 'active' => ['group.overview']]] : []),
                     ['label' => __('Koncernstruktur'), 'route' => 'group.corporate', 'active' => ['group.corporate']],
+                    // A shared group's consolidation and run log (ADR-081 E24); the page shows only groups the user sees.
+                    ['label' => __('Konsolidering'), 'route' => 'group.consolidation', 'active' => ['group.consolidation']],
                     // Only for someone who may see the schedule in at least one company (ADR-037, gap 8).
                     ...(Memberships::of($user, active: true)->where('planning:view') === [] ? [] : [['label' => __('Schema över företag'), 'route' => 'companies.schedule', 'active' => ['companies.schedule']]]),
                 ],
