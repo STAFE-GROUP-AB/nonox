@@ -75,7 +75,7 @@ class SaveApprovalPolicy
 
         $type = ApprovalSubjectType::from($validated['subject_type']);
 
-        if ($type === ApprovalSubjectType::PurchaseOrder) {
+        if ($type === ApprovalSubjectType::PurchaseOrder || $type === ApprovalSubjectType::PurchaseRequisition) {
             app(ModuleManager::class)->ensureEnabled(InventoryModule::KEY, $company);
         }
         $steps = [];

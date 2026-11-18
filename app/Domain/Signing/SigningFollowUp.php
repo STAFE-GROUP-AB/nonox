@@ -209,6 +209,18 @@ class SigningFollowUp
     }
 
     /**
+     * Must run inside the company: the last day passed without every
+     * signature, so the sender is told (ADR-046 amendment, gap 9). The
+     * sentence names the document, not a signer.
+     */
+    public function expired(SigningRequest $request): void
+    {
+        $company = Company::query()->findOrFail($request->company_id);
+
+        $this->notify($company, $request, __('Sista dag för signeringen av :title har gått ut utan att alla har signerat.', ['title' => SigningPdfs::title($request)]));
+    }
+
+    /**
      * The company's members (owner and team), by id.
      *
      * @return list<int>

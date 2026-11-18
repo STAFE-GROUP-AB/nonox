@@ -207,6 +207,8 @@ final class Navigation
                     ['label' => __('Koncernstruktur'), 'route' => 'group.corporate', 'active' => ['group.corporate']],
                     // A shared group's consolidation and run log (ADR-081 E24); the page shows only groups the user sees.
                     ['label' => __('Konsolidering'), 'route' => 'group.consolidation', 'active' => ['group.consolidation']],
+                    // Elimination suggestions and the group ledger (ADR-081 E25); FULL access only, the page says so otherwise.
+                    ['label' => __('Elimineringar'), 'route' => 'group.eliminations', 'active' => ['group.eliminations']],
                     // Only for someone who may see the schedule in at least one company (ADR-037, gap 8).
                     ...(Memberships::of($user, active: true)->where('planning:view') === [] ? [] : [['label' => __('Schema över företag'), 'route' => 'companies.schedule', 'active' => ['companies.schedule']]]),
                 ],
@@ -270,6 +272,7 @@ final class Navigation
             $can('budgets:view') ? ['label' => __('Budget'), 'route' => 'accounting.budgets', 'active' => ['accounting.budgets', 'accounting.budgets.show', 'accounting.budgets.rolling'], 'group' => $reports] : null,
             $can('budgets:view') ? ['label' => __('Budget mot utfall'), 'route' => 'accounting.budgets.report', 'group' => $reports] : null,
             $can('projects:view') ? ['label' => __('Projektresultat'), 'route' => 'projects.index', 'active' => ['projects.index', 'projects.show'], 'group' => $reports] : null,
+            $can('analysis:view') ? ['label' => __('Analys'), 'route' => 'analysis.index', 'group' => $reports] : null,
             $can('vat:prepare') ? ['label' => __('Moms'), 'route' => 'vat.index', 'active' => ['vat.index', 'vat.file'], 'group' => $reports] : null,
             $can('vat:prepare') ? ['label' => __('EU-rapporter'), 'route' => 'vat.euReports', 'group' => $reports] : null,
             ['label' => __('Räkenskapsår'), 'route' => 'accounting.fiscalYears', 'group' => $closing],

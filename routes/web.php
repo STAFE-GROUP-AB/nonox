@@ -210,6 +210,8 @@ Route::middleware([
     Route::get('/koncern/{group}/csv', GroupCsvController::class)->whereNumber('group')->name('group.csv');
     // Consolidation of a shared group and its run log (ADR-081 E24, ADR-060 S2-1.4); spans companies, so GroupAccess decides what is shown.
     Route::view('/koncern/konsolidering', 'group.consolidation')->name('group.consolidation');
+    // Elimination suggestions and the group ledger (ADR-081 E25, ADR-060 S2-1.5); spans companies, so GroupAccess decides what is shown.
+    Route::view('/koncern/elimineringar', 'group.eliminations')->name('group.eliminations');
     // Across every company the user belongs to (ADR-028).
     Route::view('/uppgifter', 'tasks.index')->name('tasks.index');
     Route::redirect('/mina-uppgifter', '/uppgifter');
@@ -314,6 +316,8 @@ Route::middleware([
         // Project results: P&L against budget and estimate, with drill-down (ADR-081 gap 6, E7).
         Route::view('/projekt/resultat', 'projects.index')->name('projects.index');
         Route::get('/projekt/{project}', ProjectController::class)->whereNumber('project')->name('projects.show');
+        // The analysis view: datasets, pivot and drill-down (ADR-081 gap 7, E17).
+        Route::view('/analys', 'analysis.index')->name('analysis.index');
         // Group companies among customers and suppliers, and intercompany row tags (ADR-060 addendum 2.3, ADR-081 E23).
         Route::view('/koncernmarkeringar', 'group.intercompany')->name('accounting.intercompany');
         Route::view('/anlaggningar', 'accounting.fixed-assets')->name('accounting.fixedAssets');

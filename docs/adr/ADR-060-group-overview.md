@@ -573,6 +573,92 @@ Branch `spec/s2/group-model`. One migration set and one action set, no screen.
   `App\Livewire\Group\ConsolidationPage`). Tests: `tests/Feature/Group/ConsolidationTest.php`,
   `ConsolidationFixtureTest.php` (F-S2-a gross sums), `tests/Tenancy/ConsolidationTenancyTest.php`.
 
+**S2-1.5 as built (2026-11-18, ADR-081 E25).** Details the addendum left open, decided in the build:
+
+- Migration `2027_02_25_100000_create_group_entries_tables`. `group_entries` and `group_entry_rows`
+  span companies like `corporate_group_runs` (no `BelongsToCompany`; a row's `company_id` names the
+  member whose amount it eliminates), both `GrantDecision::AppendOnly`, refused in the models and by a
+  trigger on `UPDATE`/`DELETE`. Columns beyond 2.4: `period_from`/`period_to` (an entry applies to runs
+  of exactly that period; `entry_date` is the period's last day), `type` (`EliminationType`: the six
+  pairs, SHARES_EQUITY, OTHER), `origin` (SUGGESTION, MANUAL, REVERSAL), `suggestion_key`, `rows_count`
+  and `total_ore`, `previous_hash` and `hash` (SHA-256 of the previous hash and the canonical JSON of the
+  content, a chain per group like the voucher chain; `accepted_at` hashed with its offset), and
+  `account_number` on rows (the member's own account; null for manual rows). CHECKs: one-sided rows
+  that are not zero, accounts 1000–8999, `kind = REVERSAL` exactly when `reverses_id` and origin
+  REVERSAL, `suggestion_key` exactly for SUGGESTION. A deferred constraint trigger checks at commit that
+  each entry has exactly `rows_count` rows and that debit, credit and `total_ore` are equal, so no row can
+  be left out or added later; a trigger lets a reversal target only a non-reversal entry of the same group
+  and period, and `reverses_id` is unique (one reversal per entry).
+- Suggestions (`App\Domain\Group\EliminationSuggestions`) are computed, never stored. The six pairs come
+  from the tags: for companies X and Y, X's rows of the credit kind with counterparty Y against Y's rows
+  of the debit kind with counterparty X (sales/purchases, payable/receivable, loan payable/loan
+  receivable, interest income/expense, dividend income/dividend decided, group contribution
+  received/given). Income accounts count over the company's days in the group. Balance accounts are
+  **closing balances**: every tagged posted row up to `to`, in any fiscal year, when the company's balance
+  sheet is taken (cold review P1-1: summing only the year's movement eliminated −500 of an opening 1 500
+  receivable settled plus a new 1 000). The closing balance is the year's opening balance plus its rows, and
+  tags see only rows: when an account's opening balance in the year read differs from the sum of all its
+  posted rows before that year (a first year's opening balance from an earlier program, or one entered by
+  hand), a side using that balance account is "Kräver granskning: ingående balans utan
+  koncernmarkering" and cannot be accepted. The companies, days and years are the run's, through
+  `Consolidation::gather()` (extracted from `compute()`, no change in behaviour). Three queries per
+  company. A pair whose sides both net to zero is "Inget att eliminera".
+- **Shares against equity** is matched from the balances, not tags (shares are usually in the opening
+  balance): per holder, its 1310–1318 against 2081 of the members it holds. It can be accepted only when
+  the holder holds **exactly one** member of the group (several members cannot be split from one 131x
+  balance, P2-1), owns all of its capital, has held it since the member's first fiscal year started (it
+  founded it; a bought company's equity at acquisition is not its share capital), the member's books
+  **started in NONOX** (its first fiscal year has no opening balance at all; a company moved from another
+  program may have been bought long before, re-check P2-a), and the sides are equal. Otherwise "Kräver förvärvsanalys (steg 2)", and a person may enter a manual entry. F-S2-a's
+  E10 (one parent, two subsidiaries) is therefore a manual entry. The holder, its capital share and the
+  acquisition date are read in the existing `CompanyScope::bypass` over the grounding holdings; they reach
+  no run and are shown with FULL access only.
+- **Former members (P1-2).** An entry's rows are shown, and the entry can be reversed, only when the user
+  may see every company on its rows (`reports:view` via `Memberships`, not limited to dimensions). A
+  member that withdrew no longer counts for FULL access, but its entries stay; others see only "Post N
+  gäller ett företag som du inte har åtkomst till". "Kontrollera koncernjournalen" needs FULL access.
+- A mismatch cannot be accepted; a person makes a manual entry instead (with a required reason).
+  Acceptance is bound to the suggestion the person saw (`#[Locked]` fingerprints on the page,
+  recomputed and compared under the group's row lock), and a suggestion accepted for the period and not
+  reversed is refused. The page flags an accepted suggestion whose figures changed since.
+- Writes (`RecordGroupEntry::accept`, `manual`, `reverse`) need FULL access for the period and
+  `administers()`, re-checked with fresh memberships under `corporate_groups … FOR UPDATE`; the number
+  is the group's highest plus one under that lock. Audit `group_entry.accepted`, `.recorded`,
+  `.reversed` via `GroupAuditTrail` in every company the entry has rows in (ids, number, enums, row
+  count; never the reason).
+- The engine (version 2) applies the entries of exactly the run's period whose companies were all read,
+  lists them in `inputs.group_entries` as id, number and hash, and the others in
+  `inputs.group_entries_skipped`. The output gains `eliminations` (entry count, amount per type net of
+  reversals, entries per type and the number of distinct company pairs per type among standing entries).
+  A CONSOLIDATED viewer sees a type's amount only when its standing entries concern at least two pairs of
+  companies; otherwise only "N poster" (P2-2: with one pair the total is that pair's own intra-group
+  figure). E24's minimum for CONSOLIDATED is unchanged.
+- **Guarantees in the app only, not in the database:** one unreversed acceptance per (group, period,
+  suggestion key) is enforced under the group's row lock in `RecordGroupEntry`, not by a constraint; and
+  that a reversal's rows mirror the reversed entry's rows is done by the action, while the database checks
+  only that a reversal targets a non-reversal entry of the same group and period, once, and balances.
+- `GroupLedger::verify()` recomputes the chain, the numbering and the balance (button "Kontrollera
+  koncernjournalen").
+- F-S2-a: with the fixture's intercompany rows tagged, nine tag suggestions match (E7 and E8 are one pair,
+  E2 two) and shares/equity needs an acquisition analysis (two subsidiaries); with E10 entered manually,
+  all entries net to zero with the fixture's totals and the run equals the stage 1 statements (with E24's
+  note on the 2512 presentation).
+- Screen: Mina företag → Elimineringar (`/koncern/elimineringar`, route `group.eliminations`,
+  `App\Livewire\Group\EliminationsPage`): suggestions, manual entry, the group ledger with reversals. E26
+  adds Rapporter, CSV and PDF. Tests: `tests/Feature/Group/EliminationsTest.php`,
+  `EliminationsFixtureTest.php`, `tests/Tenancy/EliminationsTenancyTest.php`.
+- **Companies moved from another program** (re-check P2-b, documented, rule unchanged): their first NONOX
+  year opens with balances no tag can explain, so their intra-group receivables, payables and loans get
+  "Kräver granskning" and are eliminated by a manual entry. The manual says so.
+- Pairs per type count only standing entries whose rows span at least two companies, and type OTHER
+  (free manual adjustments) never shows an amount to a CONSOLIDATED viewer (re-check P3).
+- **Follow-up:** a later package should let a person mark the intra-group part of a first year's opening
+  balance (per account, counterparty and kind), so moved companies get matched suggestions instead of
+  "Kräver granskning".
+- Not handled (stage 2): internal profit, an elimination whose two sides use different treatments of a
+  group contribution (S2-R7's 6.6 second paragraph), and intra-group balances in a first year's opening
+  balance by suggestion.
+
 #### 3.2 Remaining stage 1 packages
 
 - **S2-1.2 Koncern → Översikt** (screen): structure tree from holdings, capital/voting,

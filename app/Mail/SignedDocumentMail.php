@@ -7,6 +7,7 @@ namespace App\Mail;
 use App\Domain\Signing\SigningPdfs;
 use App\Models\Company;
 use App\Models\SigningRequest;
+use App\Support\Branding\Brand;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Attachment;
@@ -50,6 +51,7 @@ class SignedDocumentMail extends Mailable
         return new Content(view: 'mail.signing.signed', with: [
             'request' => $this->request(),
             'companyName' => $company->legal_name ?: $company->name,
+            'color' => Brand::readable(Brand::for($company)->color),
             'title' => SigningPdfs::title($this->request()),
             'toSigner' => $this->toSigner,
         ]);

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Livewire\Signing;
 
+use App\Actions\Signing\ChangeSigningDeadline;
 use App\Actions\Signing\SendForSigning;
+use App\Actions\Signing\SigningReminders;
 use App\Console\Commands\VerifySigningChainsCommand;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SignedDocuments;
+use App\Domain\Signing\SigningDeadlines;
 use App\Domain\Signing\SigningStatus;
 use App\Domain\Signing\Verification\SignerCheck;
 use App\Domain\Signing\Verification\SignerChecks;
@@ -89,6 +92,16 @@ class SigningPanel extends Component
     /** The sender's access code; sent once with the form, stored hashed only, cleared after sending. */
     public string $accessCode = '';
 
+    /** Reminders on send (ADR-046 amendment, gap 9): on by default, every 3 days; 'single' is one reminder two days before the last day. */
+    public bool $autoReminders = true;
+
+    public string $reminderDays = '3';
+
+    /** The envelope whose last day is being changed, and the new day. */
+    public ?string $deadlineFor = null;
+
+    public string $newDeadline = '';
+
     public function mount(?string $quoteId = null, ?int $agreementId = null): void
     {
         $this->quoteId = $quoteId;
@@ -110,6 +123,8 @@ class SigningPanel extends Component
         $send($this->user(), $this->company(), $this->document(), [
             'email' => $this->email,
             'expires_on' => $this->expiresOn === '' ? null : $this->expiresOn,
+            'auto_reminders' => $this->autoReminders,
+            'reminder_days' => $this->reminderDays,
             'deal_id' => $this->dealId === '' ? null : (int) $this->dealId,
             'create_invoice' => $this->createInvoice,
             'verification' => $this->verification,
@@ -176,6 +191,8 @@ class SigningPanel extends Component
             'copies' => $this->copies,
             'notify_copies' => $this->notifyCopies,
             'expires_on' => $this->expiresOn === '' ? null : $this->expiresOn,
+            'auto_reminders' => $this->autoReminders,
+            'reminder_days' => $this->reminderDays,
             'deal_id' => $this->dealId === '' ? null : (int) $this->dealId,
             'create_invoice' => $this->createInvoice,
         ]);
@@ -222,6 +239,41 @@ class SigningPanel extends Component
         $this->toast(__('Dokumentet är tillbakadraget. Ingen kan längre signera det.'));
     }
 
+    /** "Påminn nu": a reminder with a fresh link to one open signer, at most once an hour. */
+    public function remindNow(int $requestId, SigningReminders $reminders): void
+    {
+        $request = $this->requests()->whereKey($requestId)->firstOrFail();
+        $reminders->manual($this->user(), $this->company(), $request);
+
+        $this->toast(__('Påminnelsen är skickad till :email.', ['email' => $request->email]));
+    }
+
+    public function editDeadline(string $envelopeId): void
+    {
+        $envelope = $this->envelopes()->whereKey($envelopeId)->firstOrFail();
+        $this->resetErrorBag();
+        $this->deadlineFor = $envelope->id;
+        $this->newDeadline = $envelope->deadline_at?->setTimezone(config('app.timezone'))->format('Y-m-d') ?? '';
+    }
+
+    public function cancelDeadline(): void
+    {
+        $this->resetErrorBag();
+        $this->deadlineFor = null;
+        $this->newDeadline = '';
+    }
+
+    public function changeDeadline(ChangeSigningDeadline $change): void
+    {
+        $this->resetErrorBag();
+        $envelope = $this->envelopes()->whereKey((string) $this->deadlineFor)->firstOrFail();
+        $envelope = $change($this->user(), $this->company(), $envelope, $this->newDeadline);
+
+        $this->deadlineFor = null;
+        $this->newDeadline = '';
+        $this->toast(__('Sista dag att signera är ändrad till :date. De som kan signera nu har fått ett mejl om det.', ['date' => $envelope->deadline_at?->setTimezone(config('app.timezone'))->format('Y-m-d')]));
+    }
+
     public function revoke(int $requestId, SendForSigning $send): void
     {
         $request = $this->requests()->whereKey($requestId)->firstOrFail();
@@ -248,6 +300,10 @@ class SigningPanel extends Component
             'maxCopies' => SigningEnvelope::MAX_COPIES,
             'maxStep' => SigningEnvelope::MAX_STEP,
             'checks' => SignerCheck::choosable(),
+            'intervals' => SigningDeadlines::INTERVALS,
+            'minDays' => SigningDeadlines::MIN_DAYS,
+            'maxDays' => SigningDeadlines::MAX_DAYS,
+            'maxReminders' => SigningDeadlines::MAX_REMINDERS,
             'canSend' => $this->canSend($document),
             'deals' => $this->openDeals($document),
             'open' => $document->signingIsOpen() && ! ($isQuote && SignedDocuments::isQuoteSigned($document->id)),

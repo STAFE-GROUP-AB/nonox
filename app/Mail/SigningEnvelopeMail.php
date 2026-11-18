@@ -9,6 +9,7 @@ use App\Domain\Signing\SigningStatus;
 use App\Models\Company;
 use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
+use App\Support\Branding\Brand;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Attachment;
@@ -82,6 +83,7 @@ class SigningEnvelopeMail extends Mailable
             'envelope' => $envelope,
             'title' => (string) $envelope->title,
             'companyName' => $company->legal_name ?: $company->name,
+            'color' => Brand::readable(Brand::for($company)->color),
             'signers' => $envelope->signers->count(),
             'toSigner' => $this->toSigner,
             'controller' => $this->controller($company),

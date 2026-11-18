@@ -380,7 +380,7 @@ it('never writes a voucher, and audits without names', function () {
     app(ManageBudgetVersion::class)->lock($this->owner, $forecast->refresh());
     app(ManageBudgetVersion::class)->delete($this->owner, $forecast->refresh());
 
-    $logs = AuditLog::query()->where('id', '>', $lastAudit)->get();
+    $logs = AuditLog::query()->where('id', '>', $lastAudit)->orderBy('id')->get();
 
     expect(Voucher::query()->count())->toBe($vouchers)
         ->and(VoucherRow::query()->count())->toBe($rows)

@@ -119,10 +119,12 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: storage/app/pdf-engine-fonts
-          key: pdf-engine-fonts-${{ hashFiles('scripts/fetch-signing-fonts.sh') }}
+          key: pdf-engine-fonts-${{ hashFiles('scripts/fetch-signing-fonts.sh', 'scripts/fetch-signing-cjk-font.sh') }}
 
       - name: Fetch the PDF engine fonts (SHA-256 verified)
-        run: scripts/fetch-signing-fonts.sh storage/app/pdf-engine-fonts
+        run: |
+          scripts/fetch-signing-fonts.sh storage/app/pdf-engine-fonts
+          scripts/fetch-signing-cjk-font.sh storage/app/pdf-engine-fonts
 
       - name: iXBRL annual report against the XBRL taxonomy
         env:

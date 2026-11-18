@@ -8,6 +8,7 @@ use App\Http\Middleware\NotForDemoGuests;
 use App\Http\Middleware\RemembersRecentItems;
 use App\Http\Middleware\RequirePasskey;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\SigningHostOnly;
 use App\Http\Middleware\UseDemoDatabase;
 use App\Modules\Connect\Support\Problem;
 use App\Modules\Http\Middleware\EnsureModuleEnabled;
@@ -42,6 +43,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(prepend: [
             // First: a guest's request switches to the demo database before the session starts (ADR-077).
             UseDemoDatabase::class,
+            // The instance's signing host reaches the signing pages only (ADR-046 S20).
+            SigningHostOnly::class,
         ], append: [
             SecurityHeaders::class,
             EndExpiredSessions::class,

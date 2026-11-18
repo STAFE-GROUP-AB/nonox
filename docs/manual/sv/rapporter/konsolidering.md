@@ -15,7 +15,7 @@ Koncernen är den som företagen har satt upp under **Koncernstruktur**: moderf�
 ![Konsolidering med en körning för helåret, resultat- och balansräkning och körloggen.](/bilder/manual/rapporter/konsolidering.webp)
 
 > [!IMPORTANT]
-> Sidan säger överst **Intern koncernrapport, inte en koncernredovisning enligt ÅRL**, och det gäller också när du skriver ut. Siffrorna är ett internt underlag. Konsolideringen bokför ingenting och ändrar ingenting i något av företagens bokföring. Elimineringar av mellanhavanden mellan företagen görs inte ännu, så samma belopp kan finnas med två gånger, till exempel en försäljning från ett företag i koncernen till ett annat.
+> Sidan säger överst **Intern koncernrapport, inte en koncernredovisning enligt ÅRL**, och det gäller också när du skriver ut. Siffrorna är ett internt underlag. Konsolideringen bokför ingenting och ändrar ingenting i något av företagens bokföring. Mellanhavanden mellan företagen dras bara bort när de är godkända som [elimineringar](/manual/rapporter/elimineringar) för exakt samma period; annars kan samma belopp finnas med två gånger, till exempel en försäljning från ett företag i koncernen till ett annat.
 
 ## Vem som ser vad
 
@@ -42,6 +42,8 @@ Körningen sparas och visas direkt under rubriken **Konsoliderat** med perioden.
 
 Under **Balansräkning** finns raden **Årets resultat som ännu inte är bokfört mot eget kapital**, så att tillgångar och eget kapital och skulder går ihop, precis som i företagens egna balansrapporter. Skiljer sig årets resultat i balansräkningen från periodens resultat i resultaträkningen säger sidan med hur mycket. Det beror på resultat före periodens början, ett dotterföretags resultat före förvärvet eller resultatet i ett dotterföretag som avyttrats under perioden.
 
+Under **Elimineringar** visar körningen hur mycket som är eliminerat per slag, till exempel **Försäljning och inköp**, efter återföringar. Den som bara ser koncernens summor ser beloppet bara för ett slag som gäller minst två par av företagen, annars antalet poster. Finns inga godkända elimineringar för perioden står det **Inga elimineringar är godkända för den här perioden. Siffrorna är företagens summor.** Får du se alla företag leder **Förslag och koncernjournal för perioden** till [Elimineringar](/manual/rapporter/elimineringar).
+
 Om du får se alla företag visar **Vad körningen läste** varje företag med **Resultat för** (dagarna som räknades), **Balans** (**ingår** eller **ingår inte**), antalet **Bokförda verifikationer** och **Status**.
 
 ## Preliminär eller låst
@@ -52,7 +54,7 @@ En körning är **Preliminär** när minst ett av företagen inte har stängt r�
 
 **Körlogg** listar de senaste körningarna med när de gjordes, perioden, vem som körde dem och en **Kontrollsumma**. Välj **Visa** för att se en äldre körning.
 
-Varje körning sparar vad den läste: per företag antalet bokförda verifikationer och kontrollsumman för den senast bokförda verifikationen, de ingående balanserna, kontoplanen, [koncernmarkeringarna](/manual/bokforing/koncernmarkeringar) och kontomappningen. Samma indata ger alltid samma siffror. Körningar kan inte ändras eller tas bort.
+Varje körning sparar vad den läste: per företag antalet bokförda verifikationer och kontrollsumman för den senast bokförda verifikationen, de ingående balanserna, kontoplanen, [koncernmarkeringarna](/manual/bokforing/koncernmarkeringar) och kontomappningen, och kontrollsumman för varje post i koncernjournalen som drogs. Samma indata ger alltid samma siffror. Körningar kan inte ändras eller tas bort.
 
 Välj **Kontrollera mot bokföringen** på en körning för att se om den fortfarande stämmer:
 
@@ -83,4 +85,4 @@ Mappningen gäller från nästa körning och ändrar ingenting i företagets bok
 - Ett koncernkonto får namnet från moderföretagets kontoplan, annars BAS-namnet. Finns kontot inte i någon av dem visas bara numret.
 
 - Konsolideringen läser varje företags bokföring för sig och skriver aldrig något i den. Den läser bara de företag som är bekräftade medlemmar i koncernen.
-- Det som gäller en riktig koncernredovisning, som förvärvsanalys, goodwill, minoritetsandelar och eliminering av internvinster, ingår inte. Kontrollera med din redovisningskonsult eller revisor om koncernen behöver en koncernredovisning.
+- Det som gäller en riktig koncernredovisning, som förvärvsanalys, goodwill, minoritetsandelar och eliminering av internvinster, ingår inte. Elimineringarna av mellanhavanden är bara de som någon har godkänt. Kontrollera med din redovisningskonsult eller revisor om koncernen behöver en koncernredovisning.

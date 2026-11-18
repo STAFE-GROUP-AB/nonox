@@ -20,8 +20,9 @@ final class ConsolidationView
 {
     /**
      * The keys: level, label, from, to, preliminary, income, result, balance,
-     * unbooked_result, result_outside_period, members, cut, excluded_count,
-     * companies (FULL only) and excluded (FULL only).
+     * unbooked_result, result_outside_period, eliminations (totals per type),
+     * eliminated_entries, skipped_entries (FULL only), members, cut,
+     * excluded_count, companies (FULL only) and excluded (FULL only).
      *
      * @return array<string, mixed>
      */
@@ -49,6 +50,10 @@ final class ConsolidationView
             'balance' => self::balance($output['balance'] ?? []),
             'unbooked_result' => (int) ($output['balance']['unbooked_result'] ?? 0),
             'result_outside_period' => (int) ($output['result_outside_period'] ?? 0),
+            // Elimination totals per type, net of reversals (ADR-060 2.2 lets a consolidated viewer see them; ADR-081 E25).
+            'eliminations' => self::eliminations($output['eliminations'] ?? [], $full),
+            'eliminated_entries' => (int) ($output['eliminations']['entries'] ?? 0),
+            'skipped_entries' => $full ? count($inputs['group_entries_skipped'] ?? []) : 0,
             // Member names may be shown to a consolidated viewer (2.2); which company is the parent is not a figure.
             'members' => array_map(fn (array $company): string => $name((int) $company['company_id']), $inputs['companies'] ?? []),
             'cut' => (int) ($output['companies']['cut'] ?? 0),
@@ -72,6 +77,40 @@ final class ConsolidationView
             ], $inputs['excluded'] ?? []) : [],
         ];
     }
+
+    /**
+     * Per type: the amount eliminated net of reversals, and the number of
+     * entries. Someone who sees only the group's sums gets the amount only
+     * for a type with standing entries between at least two pairs of
+     * companies; with one pair the amount is that pair's own figure, so
+     * only the number of entries is shown (cold review E25, P2-2).
+     *
+     * @param  array<string, mixed>  $eliminations  the run output's eliminations
+     * @return list<array{label: string, amount: ?int, entries: int}>
+     */
+    private static function eliminations(array $eliminations, bool $full): array
+    {
+        $amounts = $eliminations['by_type'] ?? [];
+        $pairs = $eliminations['pairs_by_type'] ?? [];
+        $rows = [];
+
+        foreach ($eliminations['entries_by_type'] ?? [] as $type => $entries) {
+            $amount = (int) ($amounts[$type] ?? 0);
+            // OTHER is free manual adjustments with no pair behind them: never an amount without FULL access (re-check P3).
+            $shown = $full || ($type !== EliminationType::Other->value && (int) ($pairs[$type] ?? 0) >= self::MINIMUM_PAIRS);
+
+            if ($shown && $amount === 0) {
+                continue;
+            }
+
+            $rows[] = ['label' => EliminationType::tryFrom((string) $type)?->label() ?? (string) $type, 'amount' => $shown ? $amount : null, 'entries' => (int) $entries];
+        }
+
+        return $rows;
+    }
+
+    /** A consolidated viewer sees a type's eliminated amount only with entries between at least this many pairs of companies. */
+    public const int MINIMUM_PAIRS = 2;
 
     /**
      * @param  list<array<string, mixed>>  $groups

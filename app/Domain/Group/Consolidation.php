@@ -14,11 +14,14 @@ use App\Models\CompanyHolding;
 use App\Models\CorporateGroup;
 use App\Models\FiscalYear;
 use App\Models\GroupAccountMap;
+use App\Models\GroupEntry;
+use App\Models\GroupEntryRow;
 use App\Models\IntercompanyRowTag;
 use App\Models\Voucher;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -29,9 +32,10 @@ use Illuminate\Validation\ValidationException;
  * cuts a subsidiary's income and expenses to the days it was a member, and
  * sums. It returns what it read (inputs) and what it gave (output); the same
  * inputs always give the same output. It never writes anything, and it never
- * writes into any company's books: stage 1 has no accepted eliminations yet
- * (S2-1.5 adds them to the inputs as group entry ids), so the output is the
- * gross sum after the account map.
+ * writes into any company's books. The group ledger entries of exactly the
+ * run's period (accepted eliminations, manual entries and reversals,
+ * S2-1.5, ADR-081 E25) are applied after the sum and named with their
+ * hashes in the inputs.
  *
  * The output holds consolidated figures only, never one company's: it is
  * what a CONSOLIDATED viewer sees. What was read per company stays in the
@@ -44,7 +48,7 @@ use Illuminate\Validation\ValidationException;
 final class Consolidation
 {
     /** Bumped when the engine's arithmetic changes, so an old run's hashes are not compared with a new engine's. */
-    public const int ENGINE_VERSION = 1;
+    public const int ENGINE_VERSION = 2;
 
     /** Bumped when the label below changes (ADR-060 2.4, S2-R14, H5). */
     public const int LABEL_VERSION = 1;
@@ -69,6 +73,45 @@ final class Consolidation
      * @throws ValidationException when the group cannot be consolidated for the period (blocked)
      */
     public function compute(GroupAccess $access, CorporateGroup $group, CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        ['read' => $read, 'excluded' => $excluded] = $this->gather($access, $group, $from, $to);
+        $readIds = array_map(fn (array $row): int => $row['company']->id, $read);
+
+        // The group ledger for exactly this period (ADR-081 E25). An entry applies only when every company it
+        // names was read: an elimination of a company that adds nothing to the run would distort the sums.
+        $entries = GroupEntry::query()
+            ->where('corporate_group_id', $group->id)
+            ->whereDate('period_from', $from->toDateString())
+            ->whereDate('period_to', $to->toDateString())
+            ->with('rows')
+            ->orderBy('number')
+            ->get();
+        $readable = fn (GroupEntry $entry): bool => $entry->rows->every(fn (GroupEntryRow $row): bool => in_array($row->company_id, $readIds, true));
+        $applied = $entries->filter($readable)->values();
+        $skipped = $entries->reject($readable)->values();
+
+        $inputs = $this->inputs($group, $from, $to, $read, $excluded, $applied, $skipped);
+        $output = $this->output($from, $to, $read, $applied);
+
+        return [
+            'inputs' => $inputs,
+            'output' => $output,
+            'preliminary' => (bool) $inputs['preliminary'],
+        ];
+    }
+
+    /**
+     * What the run reads, per company: the included companies (THE
+     * inclusion rule), each one's days in the group, and, inside the
+     * company, its fiscal year, balances, movements and the facts the
+     * inputs hash. Shared with the elimination suggestions (S2-1.5), so
+     * both always read the same companies, days and figures.
+     *
+     * @return array{parent: Company, read: list<array<string, mixed>>, excluded: list<array{company_id: int, reason: string}>}
+     *
+     * @throws ValidationException when the group cannot be consolidated for the period (blocked)
+     */
+    public function gather(GroupAccess $access, CorporateGroup $group, CarbonImmutable $from, CarbonImmutable $to): array
     {
         $ids = $access->includedCompanyIds($group, $from);
         sort($ids);
@@ -117,17 +160,17 @@ final class Consolidation
                 continue;
             }
 
-            $read[] = ['company' => $company, 'role' => $companyId === $parent->id ? 'parent' : 'subsidiary', ...$result];
+            $read[] = [
+                'company' => $company,
+                'role' => $companyId === $parent->id ? 'parent' : 'subsidiary',
+                'holder_company_id' => $holding['company_id'] ?? null,
+                'capital_bp' => $holding['capital_bp'] ?? null,
+                'acquired_on' => $holding['acquired_on'] ?? null,
+                ...$result,
+            ];
         }
 
-        $inputs = $this->inputs($group, $from, $to, $read, $excluded);
-        $output = $this->output($from, $to, $read);
-
-        return [
-            'inputs' => $inputs,
-            'output' => $output,
-            'preliminary' => (bool) $inputs['preliminary'],
-        ];
+        return ['parent' => $parent, 'read' => $read, 'excluded' => $excluded];
     }
 
     /**
@@ -205,10 +248,11 @@ final class Consolidation
 
     /**
      * The acquisition and disposal dates of the holdings that made the
-     * companies members, keyed by holding id.
+     * companies members, the holder and its share of the capital, keyed by
+     * holding id.
      *
      * @param  list<int>  $holdingIds
-     * @return array<int, array{acquired_on: CarbonImmutable, disposed_on: ?CarbonImmutable}>
+     * @return array<int, array{acquired_on: CarbonImmutable, disposed_on: ?CarbonImmutable, company_id: int, capital_bp: int}>
      */
     private function holdings(array $holdingIds): array
     {
@@ -217,16 +261,18 @@ final class Consolidation
         }
 
         // Across the members on purpose: only the two dates of the holdings that ground each membership are
-        // read, to cut each subsidiary's figures to the days it belonged to the group (ADR-060 2.4). Nothing
-        // else of a holding reaches the run or the page; the caller has already checked the user's group access.
+        // read, to cut each subsidiary's figures to the days it belonged to the group (ADR-060 2.4), plus the
+        // holder and its capital share, which decide whether shares and equity can be matched (S2-1.5, ADR-081
+        // E25; neither reaches the run, and the suggestions are shown with FULL access only). Nothing else of a
+        // holding is read; the caller has already checked the user's group access.
         $rows = CompanyScope::bypass(fn (): Collection => CompanyHolding::query()
             ->whereIn('id', $holdingIds)
-            ->get(['id', 'acquired_on', 'disposed_on']));
+            ->get(['id', 'company_id', 'capital_bp', 'acquired_on', 'disposed_on']));
 
         $dates = [];
 
         foreach ($rows as $row) {
-            $dates[$row->id] = ['acquired_on' => $row->acquired_on, 'disposed_on' => $row->disposed_on];
+            $dates[$row->id] = ['acquired_on' => $row->acquired_on, 'disposed_on' => $row->disposed_on, 'company_id' => (int) $row->company_id, 'capital_bp' => (int) $row->capital_bp];
         }
 
         return $dates;
@@ -265,7 +311,7 @@ final class Consolidation
      * ("active" = disposed_on empty or after the day), the balance sheet when
      * it is a member on the last day. Null when it belonged on none of them.
      *
-     * @param  ?array{acquired_on: CarbonImmutable, disposed_on: ?CarbonImmutable}  $holding
+     * @param  ?array{acquired_on: CarbonImmutable, disposed_on: ?CarbonImmutable, company_id: int, capital_bp: int}  $holding
      * @return ?array{from: ?CarbonImmutable, to: ?CarbonImmutable, balance: bool}
      */
     private function window(?array $holding, CarbonImmutable $from, CarbonImmutable $to): ?array
@@ -399,9 +445,11 @@ final class Consolidation
     /**
      * @param  list<array<string, mixed>>  $read
      * @param  list<array{company_id: int, reason: string}>  $excluded
+     * @param  EloquentCollection<int, GroupEntry>  $applied
+     * @param  EloquentCollection<int, GroupEntry>  $skipped
      * @return array<string, mixed>
      */
-    private function inputs(CorporateGroup $group, CarbonImmutable $from, CarbonImmutable $to, array $read, array $excluded): array
+    private function inputs(CorporateGroup $group, CarbonImmutable $from, CarbonImmutable $to, array $read, array $excluded, EloquentCollection $applied, EloquentCollection $skipped): array
     {
         $companies = array_map(fn (array $row): array => [
             'company_id' => $row['company']->id,
@@ -421,8 +469,11 @@ final class Consolidation
             'excluded' => $excluded,
             'tags_hash' => self::hash(array_map(fn (array $company): array => [$company['company_id'], $company['tags_hash']], $companies)),
             'map_hash' => self::hash(array_map(fn (array $company): array => [$company['company_id'], $company['map_hash']], $companies)),
-            // Accepted eliminations from the group ledger (S2-1.5, ADR-081 E25). None exist in stage 1 S2-1.4.
-            'group_entries' => [],
+            // The group ledger entries of exactly this period that the run applied, with their chained hashes
+            // (S2-1.5, ADR-081 E25): a new entry or a reversal is a changed input.
+            'group_entries' => $applied->map(fn (GroupEntry $entry): array => ['id' => $entry->id, 'number' => $entry->number, 'hash' => $entry->hash])->all(),
+            // Entries of this period that name a company the run did not read, and so were not applied.
+            'group_entries_skipped' => $skipped->map(fn (GroupEntry $entry): int => $entry->id)->all(),
             // The BAS standard names the output may use for accounts the parent lacks: a new BAS file is a changed input.
             'bas_names_hash' => self::hash(self::basNames()),
             'preliminary' => array_any($companies, fn (array $company): bool => $company['preliminary']),
@@ -431,12 +482,14 @@ final class Consolidation
 
     /**
      * The consolidated statements: the companies' amounts after the account
-     * map, summed per group account. Consolidated figures only.
+     * map, summed per group account, then the applied group ledger entries.
+     * Consolidated figures only.
      *
      * @param  list<array<string, mixed>>  $read
+     * @param  EloquentCollection<int, GroupEntry>  $entries
      * @return array<string, mixed>
      */
-    private function output(CarbonImmutable $from, CarbonImmutable $to, array $read): array
+    private function output(CarbonImmutable $from, CarbonImmutable $to, array $read, EloquentCollection $entries): array
     {
         $balances = [];
         $income = [];
@@ -453,6 +506,44 @@ final class Consolidation
             }
         }
 
+        // Accepted eliminations, manual entries and reversals (ADR-081 E25): each row on its group account, debit positive.
+        $eliminated = [];
+        $counts = [];
+        $pairs = [];
+        $reversed = $entries->pluck('reverses_id')->filter()->flip()->all();
+
+        foreach ($entries as $entry) {
+            $type = $entry->type->value;
+            $counts[$type] = ($counts[$type] ?? 0) + 1;
+
+            // Which companies a standing entry concerns: a type with a single pair would show that pair's amount
+            // to someone who sees only the group's sums (cold review E25, P2-2).
+            // An entry within one company is no pair between companies and is not counted (re-check P3).
+            $companies = $entry->rows->pluck('company_id')->unique()->sort();
+
+            if ($entry->kind !== GroupEntryKind::Reversal && ! isset($reversed[$entry->id]) && $companies->count() >= 2) {
+                $pairs[$type][$companies->implode(',')] = true;
+            }
+
+            foreach ($entry->rows as $row) {
+                $amount = $row->debit_ore - $row->credit_ore;
+
+                if ($row->group_account_number < self::FIRST_INCOME_ACCOUNT) {
+                    $balances[$row->group_account_number] = ($balances[$row->group_account_number] ?? 0) + $amount;
+                } else {
+                    $income[$row->group_account_number] = ($income[$row->group_account_number] ?? 0) + $amount;
+                }
+            }
+
+            // Per type, the amount eliminated net of reversals: what a consolidated viewer may see (ADR-060 2.2).
+            $sign = $entry->kind === GroupEntryKind::Reversal ? -1 : 1;
+            $eliminated[$entry->type->value] = ($eliminated[$entry->type->value] ?? 0) + $sign * $entry->total_ore;
+        }
+
+        ksort($eliminated);
+        ksort($counts);
+        $pairs = array_map(fn (array $set): int => count($set), $pairs);
+        ksort($pairs);
         ksort($balances);
         ksort($income);
 
@@ -476,6 +567,12 @@ final class Consolidation
             // The year's result in the balance sheet that the income statement above does not cover: before the
             // period started, or of a subsidiary before it was acquired (that part needs an acquisition analysis, stage 2).
             'result_outside_period' => $balance['unbooked_result'] - $statement['result'],
+            'eliminations' => [
+                'entries' => $entries->count(),
+                'by_type' => array_filter($eliminated, fn (int $amount): bool => $amount !== 0),
+                'entries_by_type' => $counts,
+                'pairs_by_type' => $pairs,
+            ],
             'companies' => [
                 'included' => count($read),
                 'with_balance' => count(array_filter($read, fn (array $row): bool => $row['window']['balance'])),

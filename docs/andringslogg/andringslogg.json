@@ -40,6 +40,38 @@
       "omrade": "Fakturering"
     },
     {
+      "id": "2026-11-18-signering-paminnelser",
+      "datum": "2026-11-18T14:50:00+01:00",
+      "rubrik": "Sista dag och påminnelser vid signering",
+      "beskrivning": "Sista dag att signera ligger nu mellan 3 och 90 dagar fram och kan ändras medan dokumentet är ute. NONOX påminner de som ska signera automatiskt, var 1:a, 2:a, 3:e eller 7:e dag på dagtid eller en gång före sista dag, och du kan skicka Påminn nu till en undertecknare. Påminnelser, ändrad sista dag och utgången noteras i signeringens händelsekedja.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
+      "id": "2026-11-18-elimineringar-och-koncernjournal",
+      "datum": "2026-11-18T13:40:00+01:00",
+      "rubrik": "Elimineringar och koncernjournal",
+      "beskrivning": "Under Mina företag → Elimineringar ser du försäljning, fordringar, lån, ränta, utdelning, koncernbidrag och andelar mellan koncernens företag med båda sidorna och eventuell differens, utifrån koncernmarkeringarna. Ett förslag där sidorna stämmer godkänns in i en egen koncernjournal, som numreras i följd, inte kan ändras och rättas med återföringar, och konsolideringen av samma period drar då bort beloppen. Ingenting bokförs i företagens bokföring.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
+      "id": "2026-11-18-analys",
+      "datum": "2026-11-18T13:00:00+01:00",
+      "rubrik": "Analys: egna frågor till siffrorna",
+      "beskrivning": "Under Bokföring → Analys väljer du uppgifter som bokföringsrader, budget, fakturor eller sammanräknad lön, grupperar dem i rader och kolumner, jämför med förra året och klickar dig ner till posterna bakom ett belopp. En enhetschef ser bara rader på sina egna enheter, utan personalkostnader, och lön visas aldrig per person: små eller dominerade grupper döljs.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
+      "id": "2026-11-18-inkopsanmodan",
+      "datum": "2026-11-18T12:00:00+01:00",
+      "rubrik": "Inköpsanmodan med attest",
+      "beskrivning": "Under Beställningar → Inköpsanmodan kan den som behöver något skriva en anmodan med artiklar eller egna beskrivningar, och en attestant godkänner eller avvisar den, antingen som standard eller i ett eget attestflöde. En inköpare lägger sedan de godkända raderna från flera anmodan på en inköpsorder till en leverantör, och varje rad visar vilken order den blev. Din attest gäller bara den version du har sett, så en anmodan som ändras medan du läser den attesteras inte omärkt.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-18-behovsplanering",
       "datum": "2026-11-18T11:25:00+01:00",
       "rubrik": "Behovsplanering vecka för vecka",
@@ -54,6 +86,14 @@
       "beskrivning": "Har en SIE-fil en budget blir den en ny budget när du läser in filen, och under Budget kan du läsa in bara budgeten ur en fil av typ 2, 3 eller 4. Bocka i Ta med budget när du laddar ner SIE-filen under Räkenskapsår, så följer årets budget med. Utan bocken är filen som förut.",
       "typ": "Nytt",
       "omrade": "Bokföring"
+    },
+    {
+      "id": "2026-11-18-signering-varumarke-sprak",
+      "datum": "2026-11-18T11:40:00+01:00",
+      "rubrik": "Signeringsbeviset på svenska och engelska, med företagets färg",
+      "beskrivning": "Signeringsbeviset och sammanställningen visar nu varje rubrik på svenska och engelska, och namn på grekiska, kyrilliska, kinesiska, japanska och koreanska skrivs ut rätt. De tre signeringsmejlen har företagets färg, och en installation kan ha en egen signeringsadress. Utan typsnittet för kinesiska, japanska och koreanska visas de tecknen som […] med en notis, aldrig som trasiga tecken.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
     },
     {
       "id": "2026-11-18-signering-hashkedja",

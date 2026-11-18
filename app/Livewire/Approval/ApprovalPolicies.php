@@ -263,9 +263,9 @@ class ApprovalPolicies extends Component
         return $company;
     }
 
-    /** Purchase orders belong to Lager (ADR-081 E10): their flows are offered while it is on for the company. */
+    /** Purchase orders and requisitions belong to Lager (ADR-081 E10, E9): their flows are offered while it is on for the company. */
     private function offers(ApprovalSubjectType $type): bool
     {
-        return $type !== ApprovalSubjectType::PurchaseOrder || app(ModuleManager::class)->isEnabled(InventoryModule::KEY, $this->company());
+        return ! in_array($type, [ApprovalSubjectType::PurchaseOrder, ApprovalSubjectType::PurchaseRequisition], true) || app(ModuleManager::class)->isEnabled(InventoryModule::KEY, $this->company());
     }
 }

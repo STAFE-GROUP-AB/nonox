@@ -29,6 +29,7 @@ use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Inventory\Purchasing\PurchaseOrderApprovals;
 use App\Modules\Inventory\Purchasing\PurchaseOrderReceipts;
 use App\Modules\Inventory\Purchasing\PurchaseQuantities;
+use App\Modules\Inventory\Purchasing\PurchaseRequisitionLinks;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
@@ -170,6 +171,8 @@ class SavePurchaseOrder
             if ($removed !== []) {
                 $this->guardRemoval($existing->only($removed)->all());
                 PurchaseOrderReceipts::releaseRows(array_values($removed));
+                // A row that came from a purchase requisition leaves it free to be converted again (E9).
+                PurchaseRequisitionLinks::release(array_values($removed));
                 PurchaseOrderRow::query()->whereKey($removed)->delete();
             }
 

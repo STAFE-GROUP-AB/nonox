@@ -1,0 +1,6 @@
+{
+    "{1} en post|[2,*] :count poster": "{1} en post|[2,*] :count poster",
+    "{0} Koncernjournalen är tom.|{1} Koncernjournalen stämmer: en post, utan luckor och med oförändrade kontrollsummor.|[2,*] Koncernjournalen stämmer: :count poster, utan luckor och med oförändrade kontrollsummor.": "{0} Koncernjournalen är tom.|{1} Koncernjournalen stämmer: en post, utan luckor och med oförändrade kontrollsummor.|[2,*] Koncernjournalen stämmer: :count poster, utan luckor och med oförändrade kontrollsummor.",
+    "{1} En post i koncernjournalen är dragen från siffrorna.|[2,*] :count poster i koncernjournalen är dragna från siffrorna.": "{1} En post i koncernjournalen är dragen från siffrorna.|[2,*] :count poster i koncernjournalen är dragna från siffrorna.",
+    "{1} En post i koncernjournalen för perioden är inte dragen, eftersom den gäller ett företag som inte ingår i körningen.|[2,*] :count poster i koncernjournalen för perioden är inte dragna, eftersom de gäller ett företag som inte ingår i körningen.": "{1} En post i koncernjournalen för perioden är inte dragen, eftersom den gäller ett företag som inte ingår i körningen.|[2,*] :count poster i koncernjournalen för perioden är inte dragna, eftersom de gäller ett företag som inte ingår i körningen."
+}

@@ -6,6 +6,7 @@ namespace Database\Seeders\Demo\Extras;
 
 use App\Actions\Signing\SendForSigning;
 use App\Actions\Signing\SignAtLink;
+use App\Actions\Signing\SigningReminders;
 use App\Domain\Signing\SigningPdfs;
 use App\Domain\Signing\Verification\SignerChecks;
 use App\Models\SigningRequest;
@@ -34,7 +35,9 @@ use Throwable;
  * from a template and signed with a drawn signature (it became an order),
  * and an open quote out for signing. Signer checks (ADR-046 S3): the quote
  * with two signers checks one by access code and one by e-mail code, and
- * one more open quote asks for an e-mail code before it is shown.
+ * one more open quote asks for an e-mail code before it is shown. The
+ * envelope with two signers has had one automatic reminder, for the
+ * manual's page on deadlines and reminders.
  *
  * Every name and address is made up; e-mail addresses end in .test.
  */
@@ -191,6 +194,7 @@ final class CrmSigningExtras extends DemoExtra
                     ],
                     'copies' => [['email' => 'ekonomi@kunden-exempel.test', 'name' => 'Ekonomiavdelningen']],
                     'notify_copies' => true,
+                    'auto_reminders' => true,
                 ]));
             });
 
@@ -202,6 +206,11 @@ final class CrmSigningExtras extends DemoExtra
                     $this->signRequest(['request' => $first->refresh(), 'url' => ''], 'Karin Exempelsson', 'VD', drawn: true);
                 }));
             }
+
+            // The second signer's link has been open three days, so the reminder rule fires yesterday afternoon (ADR-046 amendment, gap 9).
+            $this->at(1, function () use ($c): void {
+                $this->guard($c, fn () => app(SigningReminders::class)->run(CarbonImmutable::now()));
+            });
 
             // An open quote whose signer must type a code from the e-mail first (the check page's example). Made before
             // the open quote below, so that one stays the newest link without a check.

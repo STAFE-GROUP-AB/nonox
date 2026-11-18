@@ -11,7 +11,10 @@ namespace App\Domain\Signing;
  * existed before the chain; its payload names the earlier events),
  * COMPLETED and VOIDED. The signer checks of gap 3 (S3) add CODE_SENT,
  * VERIFIED, VERIFY_FAILED, LOCKED and UNLOCKED, with ids, enums and counts
- * in the payload only, never a code.
+ * in the payload only, never a code. DEADLINE_CHANGED and REMINDER_SENT (gap 9) are
+ * recorded on a still open signer's row; EXPIRED, once an envelope passes its
+ * deadline, is recorded on one open signer's row by signing:remind (or by
+ * the first signer who opens the expired link).
  */
 enum SigningEventType: string
 {
@@ -30,6 +33,8 @@ enum SigningEventType: string
     case VerifyFailed = 'VERIFY_FAILED';
     case Locked = 'LOCKED';
     case Unlocked = 'UNLOCKED';
+    case DeadlineChanged = 'DEADLINE_CHANGED';
+    case ReminderSent = 'REMINDER_SENT';
 
     /** A step of the signer's own link (the six of ADR-046), not an event of the envelope's chain. */
     public function isSignerStep(): bool
@@ -54,6 +59,8 @@ enum SigningEventType: string
             self::VerifyFailed => __('Fel kod angavs'),
             self::Locked => __('Länken låstes efter för många felaktiga försök'),
             self::Unlocked => __('Avsändaren låste upp länken'),
+            self::DeadlineChanged => __('Sista dag ändrades'),
+            self::ReminderSent => __('Påminnelse skickades'),
         };
     }
 }

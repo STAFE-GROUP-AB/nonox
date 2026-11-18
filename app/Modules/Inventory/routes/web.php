@@ -6,6 +6,7 @@ use App\Modules\Inventory\Http\ArticleImageController;
 use App\Modules\Inventory\Http\LabelPrintController;
 use App\Modules\Inventory\Http\PickListPdfController;
 use App\Modules\Inventory\Http\PurchaseOrderController;
+use App\Modules\Inventory\Http\PurchaseRequisitionController;
 use App\Modules\Inventory\Http\ScannerController;
 use App\Modules\Inventory\Http\ShipmentPdfController;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,12 @@ Route::get('/lager/inkopsorder/{purchaseOrder}', [PurchaseOrderController::class
 Route::get('/lager/inkopsorder/{purchaseOrder}/andra', [PurchaseOrderController::class, 'edit'])->whereNumber('purchaseOrder')->name('inventory.purchaseOrders.edit');
 Route::get('/lager/inkopsorder/{purchaseOrder}/pdf', [PurchaseOrderController::class, 'pdf'])->whereNumber('purchaseOrder')->name('inventory.purchaseOrders.pdf');
 Route::view('/lager/inkopsforslag', 'inventory::purchase-proposals')->name('inventory.purchaseProposals');
+// Inköpsanmodan (ADR-081 E9): asked for, approved, then turned into purchase order rows by a buyer.
+Route::view('/lager/inkopsanmodan', 'inventory::requisitions')->name('inventory.requisitions');
+Route::get('/lager/inkopsanmodan/ny', [PurchaseRequisitionController::class, 'create'])->name('inventory.requisitions.create');
+Route::get('/lager/inkopsanmodan/bestall', [PurchaseRequisitionController::class, 'convert'])->name('inventory.requisitions.convert');
+Route::get('/lager/inkopsanmodan/{requisition}', [PurchaseRequisitionController::class, 'show'])->whereNumber('requisition')->name('inventory.requisitions.show');
+Route::get('/lager/inkopsanmodan/{requisition}/andra', [PurchaseRequisitionController::class, 'edit'])->whereNumber('requisition')->name('inventory.requisitions.edit');
 Route::view('/lager/plocklistor', 'inventory::pick-lists')->name('inventory.pickLists');
 Route::get('/lager/plocklistor/{pickList}/pdf', PickListPdfController::class)->whereNumber('pickList')->name('inventory.pickLists.pdf');
 Route::view('/lager/forsandelser', 'inventory::shipments')->name('inventory.shipments');

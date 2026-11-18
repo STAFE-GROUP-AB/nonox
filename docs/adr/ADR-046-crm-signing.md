@@ -1744,3 +1744,119 @@ before the trust-service item in gap 5 is answered.
   a link to the self-hosting guide. Install steps: `docs/juridik/egen-drift.md`;
   the hosted service's runbook, every step awaiting the owner's approval:
   `docs/drift/pdf-motorn.md`.
+
+### S20 as built (2026-11-18): branding and scripts
+
+- **Brand is presentation only.** `Brand::for($company)` was already on the
+  signing page (logo, colour bar, button) and the certificate (ADR-030: the
+  client's own brand, never the firm's). S20 adds the colour bar to the
+  envelope and completion mails too (all three signing mails now carry it;
+  a logo is not put in mails, since inline images are unreliable in mail
+  programs). Nothing a brand sets reaches the evidence digest, the event
+  chain or the text of the certificate; a test compares the S2 evidence
+  digest, the chain head and the extracted certificate text with and without
+  a colour and a logo.
+- **Signing host.** `nonox.signing.host` (`NONOX_SIGNING_HOST`), a plain host
+  name; anything else is ignored. `SigningHost::link()` builds every signing
+  link from it (the scheme follows `APP_URL`). `SigningHostOnly`, first in the
+  web group, answers a request to that host with the signing pages (`/signera`,
+  assets, `/up`) and 404 for everything else, and forces the root URL so the
+  form posts back to the same host. The application's own address keeps
+  serving the signing pages, so links already sent keep working. No custom
+  domain per company (decision 18). The operator points DNS and a TLS
+  certificate for the host at the application; that is outside NONOX.
+- **Bilingual certificate (decision 19).** The certificate and the summary show
+  every label as "Svenska / English" (`SigningPdfs::bilingual`,
+  `bilingualOf`, `bilingualBlock`), independent of the viewer's locale; a text
+  that is the same in both (a name, a number) is shown once; the signer's
+  confirmation text is quoted once, as stored. English strings are in
+  `lang/packages/signing-s20/en.json` and the existing `lang/en.json`. The
+  signing page and the mails stay in Swedish; per-signer language of the page
+  and mails is not part of S20.
+- **CJK in dompdf.** Checked in the installed dompdf 3.1.6: a `font-family`
+  list is resolved once per text node (whether the family exists), not per
+  glyph, so there is no fallback. `PdfScripts::prepare()` therefore splits the
+  text nodes of the finished HTML (never tags, attributes, `style`, `title`)
+  into runs of Han, kana, Hangul and CJK punctuation, and wraps each in a span
+  with the CJK font; Latin, Greek and Cyrillic stay in DejaVu Sans, which
+  covers them (golden tests with Greek and Cyrillic names).
+- **The font, and why it is not the S5 file.** dompdf embeds fonts as
+  TrueType and cannot embed the CFF-based `NotoSansCJKsc-*.otf` that the PDF
+  engine uses (an embedded subset that poppler reports as invalid). S20 uses
+  Noto Sans CJK SC 2.004 **variable TrueType**, `NotoSansCJKsc-VF.ttf`
+  (36 144 788 bytes, SHA-256 `990c807e…561d21f`), SIL OFL 1.1, a pan-CJK file
+  with Han, kana and Hangul. It is fetched by
+  `scripts/fetch-signing-cjk-font.sh` (pinned, fails closed, runs only where
+  CJK names occur: the S5 script does not download it) into the same fonts
+  directory, and is never committed. dompdf draws a variable font at its
+  default instance, which in this file is the thinnest weight; CJK names
+  therefore look lighter than the Latin text around them. That is a known,
+  accepted limit: a static pan-CJK TrueType font under an open licence does
+  not exist in the Noto repositories.
+- **Degrading.** Without the file each CJK run is drawn as `[…]` and a
+  bilingual notice is added to the certificate: the stored name and the
+  checksums are unchanged and the notice says so. Broken glyphs never appear.
+  The application never downloads the font or runs the script itself (review
+  decision); an operator who needs CJK names runs the script by hand, and the
+  owner forbids installing anything on the hosted server.
+  dompdf copies the font into its own cache (`storage/app/pdf-font-cache`)
+  once; the first CJK certificate takes about two seconds longer.
+- **Not covered:** right-to-left scripts and Thai/Indic shaping (dompdf does
+  no complex-script shaping); they are listed as out of scope above.
+
+### S9 as built (2026-11-18): deadline and reminders
+
+- Migration `database/migrations/2027_02_10_100000_add_signing_deadline_and_reminders.php`
+  (additive): `signing_envelopes.auto_reminders` (default false, so an
+  envelope that is already out is never reminded by a rule nobody switched
+  on), `reminder_interval_days` (1, 2, 3, 7 or null) and `expired_at`;
+  `crm_signing_requests.reminder_count` and `last_reminded_at`. Two triggers:
+  `signing_envelopes_protect_deadline` (the expiry time is set once and only
+  on an envelope that is out; an expired or finished envelope keeps its
+  deadline and reminder settings) and `crm_signing_requests_protect_reminders`
+  (reminders only grow; a signed or declined signer's trail is fixed). No new
+  table, so no new grant decision.
+- **Deadline:** `SigningDeadlines::resolve` (used by `SendForSigning` and by
+  `ChangeSigningDeadline`): 3–90 days from today, the end of that day in
+  Stockholm time, never after a quote's last valid day. A quote valid for fewer
+  than three more days may use its own last day, the earliest that can be
+  chosen. A change is allowed only while the envelope is out and not past its
+  deadline; one `DEADLINE_CHANGED` event with the old and the new time (with
+  offset), the envelope's and every open signer's expiry follow, and the
+  signers whose step is open are mailed the new date (no link; the next
+  reminder carries a fresh one).
+- **Reminders:** the action layer defaults to **off** (principle 9): only the
+  signing panel sends `auto_reminders` true, with its tick box on by default (every
+  3 days, owner decision 13); the API and the ÄTA flow never switch it on; `reminder_days` is 1, 2, 3 or 7, or
+  `single` for one reminder two days before the deadline. `signing:remind`
+  (hourly at :41, `SigningReminders::run`) reminds signers on an open step, at
+  most 10 per signer by rule, between 08:00 and 18:00 Stockholm time and never
+  at or after the deadline. "Påminn nu" is once an hour per signer and counts toward the same cap of 10
+  (after 10 it is refused with a message). Each reminder is one
+  transaction that locks the document, the signer's row and the envelope (the
+  order of every signing path), re-reads and re-checks under the locks, issues a
+  fresh token in `signing_link_tokens` (reason `REMINDER`; earlier links stay
+  valid until the deadline, so a mail that arrives late never locks a signer
+  out), stores `last_reminded_at`, records `REMINDER_SENT` in the chain and the
+  audit log (ids, kind and count only), and queues the mail after the commit.
+  Idempotent: the stored marker plus the row lock, and a cache lock per
+  company in the command. A reminder counts toward the `documents` mail quota
+  with `MailQuota::count` and is never refused, as decided for S1.
+- **Expiry:** the same run lets an envelope past its deadline expire: one
+  `EXPIRED` event on one open signer's row (not another if a signer's page
+  already recorded it; `SignAtLink::noteExpired` now also looks at the whole
+  envelope), `expired_at` set once, an audit entry `signing.expired`, and an
+  in-app notice to the sender. **Deviation:** the stored status stays `OUT`
+  (the derived status is `EXPIRED`, as in S1) and the chain is not closed with a
+  head, because a resend or a late withdrawal of an expired envelope must still
+  be able to append its own events; a stored `EXPIRED` status would have
+  touched `SignedDocuments`, the status check and every `isFinished` caller.
+- `DEADLINE_CHANGED` and `REMINDER_SENT` are not signer steps, so the
+  NONOX API's per-link `events` list is unchanged. Times are stored with their
+  offset on `SigningEnvelope`, `SigningRequest` and `SigningLinkToken`.
+- UI: Signering panel: **Påminnelser** with **Hur ofta** when sending,
+  **Påminn nu**, **Ändra sista dag** (**Spara ny sista dag**), a reminder note
+  and the count of reminders per signer. Manual: `docs/manual/sv/crm/signering.md`.
+- A reminder's token does not revoke earlier tokens (all stay valid to the deadline). `SigningReminderMail` carries the URL like `SigningRequestMail` does. `SigningRequest` already writes times with offset.
+- Open items: reminders by SMS and a deadline per signer stay out of scope;
+  a reminder for an envelope sent through the API waits for S19.

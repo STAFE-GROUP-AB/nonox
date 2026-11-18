@@ -15,6 +15,8 @@ En inköpsorder är det du beställer från en leverantör. Du skriver ordern, s
 
 En inköpsorder bokför ingenting. Lagret ökar när varorna tas emot, och kostnaden bokförs som vanligt med leverantörsfakturan. Varorna bokförs alltså bara en gång.
 
+Behöver någon annan än du be om inköpet först kan det börja som en [inköpsanmodan](/manual/lager/inkopsanmodan), som du sedan gör till en order.
+
 ## Så här skriver du en inköpsorder
 
 1. Gå till **Beställningar → Inköpsorder** och klicka på **Ny inköpsorder**.
