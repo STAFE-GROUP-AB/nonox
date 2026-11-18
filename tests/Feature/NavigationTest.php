@@ -86,8 +86,8 @@ it('lists the pages of Försäljning, Inköp and Register', function (string $ro
     'a quote' => ['invoicing.quotes.show', 'Försäljning', ['Offerter', 'Order', 'Fakturor', 'Avtal', 'Inbetalningar'], 'Offerter'],
     'a new invoice' => ['invoicing.invoices.create', 'Försäljning', ['Offerter', 'Order', 'Fakturor', 'Avtal', 'Inbetalningar'], 'Fakturor'],
     'payments in' => ['invoicing.incomingPayments', 'Försäljning', ['Offerter', 'Order', 'Fakturor', 'Avtal', 'Inbetalningar'], 'Inbetalningar'],
-    'a supplier invoice' => ['payables.invoices.show', 'Inköp', ['Leverantörsfakturor', 'Betalfiler', 'Attestflöden'], 'Leverantörsfakturor'],
-    'payment files' => ['payables.batches.index', 'Inköp', ['Leverantörsfakturor', 'Betalfiler', 'Attestflöden'], 'Betalfiler'],
+    'a supplier invoice' => ['payables.invoices.show', 'Inköp', ['Leverantörsfakturor', 'Betalfiler', 'Att godkänna', 'Attestflöden'], 'Leverantörsfakturor'],
+    'payment files' => ['payables.batches.index', 'Inköp', ['Leverantörsfakturor', 'Betalfiler', 'Att godkänna', 'Attestflöden'], 'Betalfiler'],
     'suppliers' => ['payables.suppliers', 'Register', ['Kunder', 'Artiklar', 'Leverantörer'], 'Leverantörer'],
     'EU reports' => ['vat.euReports', 'Bokföring', [
         'Verifikationer', 'Bankavstämning', 'Periodiseringar', 'Anläggningar', 'Läs in SIE-fil', 'Läs in register',

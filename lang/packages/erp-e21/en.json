@@ -55,7 +55,7 @@
     "Verifikationen är redan bokförd och kan inte ändras.": "The voucher is already posted and cannot be changed.",
     "Verifikationen är skickad till attest.": "The voucher has been sent for approval.",
     "Verifikationen är skickad till attest. Du kan bokföra den när den är attesterad.": "The voucher has been sent for approval. You can post it once it is approved.",
-    "Verifikationsutkast": "Voucher draft",
+    "Verifikationsutkast": "Draft voucher",
     "Verifikationsutkast :date": "Voucher draft :date",
     "Väntar på dig": "Waiting for you",
     "Ändras utkastet behöver den nya versionen attesteras på nytt.": "If the draft changes, the new version needs a new approval.",
