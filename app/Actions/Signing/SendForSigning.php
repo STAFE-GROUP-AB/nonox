@@ -11,6 +11,7 @@ use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SignedDocuments;
 use App\Domain\Signing\SigningEnvelopes;
 use App\Domain\Signing\SigningEventType;
+use App\Domain\Signing\SigningHost;
 use App\Domain\Signing\SigningStatus;
 use App\Domain\Signing\SigningToken;
 use App\Mail\SigningEnvelopeMail;
@@ -132,7 +133,7 @@ final class SendForSigning
             return $request;
         }), self::ATTEMPTS);
 
-        $url = route('signing.show', ['token' => $token['token']]);
+        $url = SigningHost::link($token['token']);
 
         // A test company's mail never leaves NONOX (ADR-032). Queued after commit, so a rolled-back send mails nothing.
         if (! $company->isTestCompany()) {

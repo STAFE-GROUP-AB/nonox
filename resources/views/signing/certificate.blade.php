@@ -1,4 +1,5 @@
 @php
+    $b = fn (string $key, array $replace = []): string => App\Domain\Signing\SigningPdfs::bilingual($key, $replace);
     $zone = config('app.timezone');
     $time = fn ($value): string => $value === null ? '' : $value->setTimezone($zone)->format('Y-m-d H:i:s T');
 @endphp
@@ -6,7 +7,7 @@
 <html lang="sv">
 <head>
 <meta charset="utf-8">
-<title>{{ __('Signeringsbevis') }}</title>
+<title>{{ $b('Signeringsbevis') }}</title>
 <style>
     @page { margin: 18mm 16mm 22mm; }
     body { font-family: 'DejaVu Sans', sans-serif; font-size: 9pt; color: #1f2933; }
@@ -32,49 +33,49 @@
                 @include('invoicing.partials.brand-sender')
             </td>
             <td>
-                <h1>{{ __('Signeringsbevis') }}</h1>
+                <h1>{{ $b('Signeringsbevis') }}</h1>
                 <span class="muted">{{ $title }}</span>
             </td>
         </tr>
     </table>
 
-    <h2>{{ __('Dokumentet som signerades') }}</h2>
+    <h2>{{ $b('Dokumentet som signerades') }}</h2>
     <table class="meta">
-        <tr><td class="muted" style="width: 38%">{{ __('Dokument') }}</td><td>{{ $title }} ({{ $request->document_name }})</td></tr>
-        <tr><td class="muted">{{ __('Kontrollsumma (SHA-256)') }}</td><td class="mono">{{ $request->document_sha256 }}</td></tr>
-        <tr><td class="muted">{{ $request->channel === 'PORTAL' ? __('Inloggad som') : __('Skickades till') }}</td><td>{{ $request->email }}</td></tr>
-        <tr><td class="muted">{{ __('Avsändare') }}</td><td>{{ $company->legal_name ?: $company->name }}@if($company->org_number) ({{ $company->org_number }})@endif</td></tr>
+        <tr><td class="muted" style="width: 38%">{{ $b('Dokument') }}</td><td>{{ $title }} ({{ $request->document_name }})</td></tr>
+        <tr><td class="muted">{{ $b('Kontrollsumma (SHA-256)') }}</td><td class="mono">{{ $request->document_sha256 }}</td></tr>
+        <tr><td class="muted">{{ $request->channel === 'PORTAL' ? $b('Inloggad som') : $b('Skickades till') }}</td><td>{{ $request->email }}</td></tr>
+        <tr><td class="muted">{{ $b('Avsändare') }}</td><td>{{ $company->legal_name ?: $company->name }}@if($company->org_number) ({{ $company->org_number }})@endif</td></tr>
     </table>
 
-    <h2>{{ __('Underskrift') }}</h2>
+    <h2>{{ $b('Underskrift') }}</h2>
     <table class="meta">
-        <tr><td class="muted" style="width: 38%">{{ __('Namn') }}</td><td>{{ $request->signer_name }}</td></tr>
+        <tr><td class="muted" style="width: 38%">{{ $b('Namn') }}</td><td>{{ $request->signer_name }}</td></tr>
         @if($request->signer_title)
-            <tr><td class="muted">{{ __('Titel') }}</td><td>{{ $request->signer_title }}</td></tr>
+            <tr><td class="muted">{{ $b('Titel') }}</td><td>{{ $request->signer_title }}</td></tr>
         @endif
-        <tr><td class="muted">{{ __('Signerad') }}</td><td>{{ $time($request->signed_at) }}</td></tr>
-        <tr><td class="muted">{{ __('Sätt') }}</td><td>{{ $request->signature_method === App\Models\SigningRequest::TYPED ? __('Skrivet namn som underskrift') : __('Ritad namnteckning') }}, {{ __('med bekräftelsen ”:text”', ['text' => $request->acceptance_text ?? App\Domain\Signing\SigningPdfs::acceptance($request)]) }}</td></tr>
-        <tr><td class="muted">{{ __('IP-adress') }}</td><td>{{ $request->signer_ip }}</td></tr>
-        <tr><td class="muted">{{ __('Webbläsare') }}</td><td class="mono">{{ $request->signer_user_agent }}</td></tr>
+        <tr><td class="muted">{{ $b('Signerad') }}</td><td>{{ $time($request->signed_at) }}</td></tr>
+        <tr><td class="muted">{{ $b('Sätt') }}</td><td>{{ $request->signature_method === App\Models\SigningRequest::TYPED ? $b('Skrivet namn som underskrift') : $b('Ritad namnteckning') }}, {{ $b('med bekräftelsen') }} ”{{ $request->acceptance_text ?? App\Domain\Signing\SigningPdfs::acceptance($request) }}”</td></tr>
+        <tr><td class="muted">{{ $b('IP-adress') }}</td><td>{{ $request->signer_ip }}</td></tr>
+        <tr><td class="muted">{{ $b('Webbläsare') }}</td><td class="mono">{{ $request->signer_user_agent }}</td></tr>
     </table>
 
     <div class="signature">
         @if($request->signature_method === App\Models\SigningRequest::DRAWN && $request->signature_image)
-            <img src="data:image/png;base64,{{ $request->signature_image }}" alt="{{ __('Namnteckning') }}">
+            <img src="data:image/png;base64,{{ $request->signature_image }}" alt="{{ $b('Namnteckning') }}">
         @else
             <span class="typed">{{ $request->signer_name }}</span>
         @endif
     </div>
 
-    <h2>{{ __('Händelser') }}</h2>
+    <h2>{{ $b('Händelser') }}</h2>
     <table class="meta">
         @foreach($request->events as $event)
-            <tr><td class="muted" style="width: 38%">{{ $time($event->created_at) }}</td><td>{{ $event->event->label() }}</td></tr>
+            <tr><td class="muted" style="width: 38%">{{ $time($event->created_at) }}</td><td>{{ App\Domain\Signing\SigningPdfs::bilingualOf(fn () => $event->event->label()) }}</td></tr>
         @endforeach
     </table>
 
     <div class="box">
-        <span class="muted">{{ $request->channel === 'PORTAL' ? __('En enkel elektronisk underskrift. Den godkända PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Godkännandet gjordes i företagets kundportal i NONOX av en kontakt som hade loggat in med en engångskod till e-postadressen ovan.') : __('En enkel elektronisk underskrift. Den signerade PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Signeringen gjordes i NONOX via en personlig länk som skickades till e-postadressen ovan.') }}</span>
+        <span class="muted">{!! $request->channel === 'PORTAL' ? App\Domain\Signing\SigningPdfs::bilingualBlock('En enkel elektronisk underskrift. Den godkända PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Godkännandet gjordes i företagets kundportal i NONOX av en kontakt som hade loggat in med en engångskod till e-postadressen ovan.') : App\Domain\Signing\SigningPdfs::bilingualBlock('En enkel elektronisk underskrift. Den signerade PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Signeringen gjordes i NONOX via en personlig länk som skickades till e-postadressen ovan.') !!}</span>
     </div>
 </body>
 </html>

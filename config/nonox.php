@@ -134,6 +134,29 @@ return [
         ],
 
         /*
+         * The instance's signing host (ADR-046 amendment, decision 18, S20): a bare
+         * host name such as sign.example.org, pointed at this same application.
+         * Links in signing mails use it, and a request to it reaches the signing
+         * pages only. Empty keeps the application's own address. A custom domain
+         * per company does not exist (NONOX has no TLS automation).
+         */
+        'host' => env('NONOX_SIGNING_HOST', ''),
+
+        /*
+         * Fonts for the signing certificate (S20). dompdf's DejaVu Sans covers Latin,
+         * Greek and Cyrillic. Chinese, Japanese and Korean need Noto Sans CJK (SIL OFL
+         * 1.1), a 36 MB file fetched by scripts/fetch-signing-cjk-font.sh into the
+         * PDF engine's fonts directory, only on an installation that needs it. Without
+         * it the certificate shows such text as [...] with a notice, never as broken
+         * glyphs. The application never downloads or runs the script itself.
+         * dompdf_dir is dompdf's writable font cache for the file.
+         */
+        'fonts' => [
+            'cjk_file' => 'NotoSansCJKsc-VF.ttf',
+            'dompdf_dir' => env('NONOX_SIGNING_DOMPDF_FONTS', storage_path('app/pdf-font-cache')),
+        ],
+
+        /*
          * RFC 3161 timestamp servers, tried in order (ADR-046 amendment, gap 5).
          * Instance-level only: the engine refuses any other URL, and the helper
          * does not follow redirects. Comma-separated in NONOX_SIGNING_TIMESTAMP_URLS.

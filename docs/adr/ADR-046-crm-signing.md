@@ -1653,3 +1653,62 @@ before the trust-service item in gap 5 is answered.
   a link to the self-hosting guide. Install steps: `docs/juridik/egen-drift.md`;
   the hosted service's runbook, every step awaiting the owner's approval:
   `docs/drift/pdf-motorn.md`.
+
+### S20 as built (2026-11-18): branding and scripts
+
+- **Brand is presentation only.** `Brand::for($company)` was already on the
+  signing page (logo, colour bar, button) and the certificate (ADR-030: the
+  client's own brand, never the firm's). S20 adds the colour bar to the
+  envelope and completion mails too (all three signing mails now carry it;
+  a logo is not put in mails, since inline images are unreliable in mail
+  programs). Nothing a brand sets reaches the evidence digest, the event
+  chain or the text of the certificate; a test compares the S2 evidence
+  digest, the chain head and the extracted certificate text with and without
+  a colour and a logo.
+- **Signing host.** `nonox.signing.host` (`NONOX_SIGNING_HOST`), a plain host
+  name; anything else is ignored. `SigningHost::link()` builds every signing
+  link from it (the scheme follows `APP_URL`). `SigningHostOnly`, first in the
+  web group, answers a request to that host with the signing pages (`/signera`,
+  assets, `/up`) and 404 for everything else, and forces the root URL so the
+  form posts back to the same host. The application's own address keeps
+  serving the signing pages, so links already sent keep working. No custom
+  domain per company (decision 18). The operator points DNS and a TLS
+  certificate for the host at the application; that is outside NONOX.
+- **Bilingual certificate (decision 19).** The certificate and the summary show
+  every label as "Svenska / English" (`SigningPdfs::bilingual`,
+  `bilingualOf`, `bilingualBlock`), independent of the viewer's locale; a text
+  that is the same in both (a name, a number) is shown once; the signer's
+  confirmation text is quoted once, as stored. English strings are in
+  `lang/packages/signing-s20/en.json` and the existing `lang/en.json`. The
+  signing page and the mails stay in Swedish; per-signer language of the page
+  and mails is not part of S20.
+- **CJK in dompdf.** Checked in the installed dompdf 3.1.6: a `font-family`
+  list is resolved once per text node (whether the family exists), not per
+  glyph, so there is no fallback. `PdfScripts::prepare()` therefore splits the
+  text nodes of the finished HTML (never tags, attributes, `style`, `title`)
+  into runs of Han, kana, Hangul and CJK punctuation, and wraps each in a span
+  with the CJK font; Latin, Greek and Cyrillic stay in DejaVu Sans, which
+  covers them (golden tests with Greek and Cyrillic names).
+- **The font, and why it is not the S5 file.** dompdf embeds fonts as
+  TrueType and cannot embed the CFF-based `NotoSansCJKsc-*.otf` that the PDF
+  engine uses (an embedded subset that poppler reports as invalid). S20 uses
+  Noto Sans CJK SC 2.004 **variable TrueType**, `NotoSansCJKsc-VF.ttf`
+  (36 144 788 bytes, SHA-256 `990c807e…561d21f`), SIL OFL 1.1, a pan-CJK file
+  with Han, kana and Hangul. It is fetched by
+  `scripts/fetch-signing-cjk-font.sh` (pinned, fails closed, runs only where
+  CJK names occur: the S5 script does not download it) into the same fonts
+  directory, and is never committed. dompdf draws a variable font at its
+  default instance, which in this file is the thinnest weight; CJK names
+  therefore look lighter than the Latin text around them. That is a known,
+  accepted limit: a static pan-CJK TrueType font under an open licence does
+  not exist in the Noto repositories.
+- **Degrading.** Without the file each CJK run is drawn as `[…]` and a
+  bilingual notice is added to the certificate: the stored name and the
+  checksums are unchanged and the notice says so. Broken glyphs never appear.
+  The application never downloads the font or runs the script itself (review
+  decision); an operator who needs CJK names runs the script by hand, and the
+  owner forbids installing anything on the hosted server.
+  dompdf copies the font into its own cache (`storage/app/pdf-font-cache`)
+  once; the first CJK certificate takes about two seconds longer.
+- **Not covered:** right-to-left scripts and Thai/Indic shaping (dompdf does
+  no complex-script shaping); they are listed as out of scope above.
