@@ -108,6 +108,8 @@ it('loads the reference data with the same number of queries for one or many art
         return $count;
     };
 
+    // The first request also loads the user's memberships (the dimension scope check); measure warm requests.
+    $measure();
     $one = $measure();
 
     foreach (range(2, 8) as $number) {
