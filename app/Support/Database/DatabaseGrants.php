@@ -44,6 +44,13 @@ final class DatabaseGrants
         // A person's own wording of a K3 note (ADR-059 A.2.7): replaced and removed while the report is not adopted.
         'annual_report_note_overrides' => GrantDecision::ReadWrite,
         'annual_reports' => GrantDecision::ReadWrite,
+        // The approval engine (ADR-081 gap 8): decisions are append-only (trigger), requests and
+        // substitutes are never deleted (triggers refuse changes to a finished request and anything but revoking a substitute).
+        'approval_decisions' => GrantDecision::AppendOnly,
+        'approval_delegations' => GrantDecision::NoDelete,
+        'approval_policies' => GrantDecision::ReadWrite,
+        'approval_policy_steps' => GrantDecision::ReadWrite,
+        'approval_requests' => GrantDecision::NoDelete,
         'archive_packages' => GrantDecision::ReadWrite,
         'article_images' => GrantDecision::ReadWrite,
         'article_unit_conversions' => GrantDecision::ReadWrite,

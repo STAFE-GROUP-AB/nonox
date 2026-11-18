@@ -31,6 +31,7 @@ enum CompanyRole: string
         'mileage:view', 'mileage:manage',
         'budgets:view', 'budgets:manage',
         'projects:view', 'projects:manage',
+        'approvals:manage',
     ];
 
     public function label(): string

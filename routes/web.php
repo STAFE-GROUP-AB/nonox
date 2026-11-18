@@ -279,6 +279,8 @@ Route::middleware([
         Route::view('/leverantorsfakturor', 'payables.invoices.index')->name('payables.invoices.index');
         Route::view('/leverantorsfakturor/ny', 'payables.invoices.edit', ['invoice' => null])->name('payables.invoices.create');
         Route::view('/leverantorsfakturor/betalfiler', 'payables.batches')->name('payables.batches.index');
+        // Approval policies, dimension owners and substitutes (ADR-081 gap 8).
+        Route::view('/attestfloden', 'approvals.policies')->name('approvals.policies');
         Route::get('/leverantorsfakturor/betalfiler/{batch}', PaymentBatchFileController::class)->whereUuid('batch')->name('payables.batches.file');
         Route::get('/leverantorsfakturor/{supplierInvoice}', [SupplierInvoiceController::class, 'show'])->whereUuid('supplierInvoice')->name('payables.invoices.show');
         Route::get('/leverantorsfakturor/{supplierInvoice}/andra', [SupplierInvoiceController::class, 'edit'])->whereUuid('supplierInvoice')->name('payables.invoices.edit');

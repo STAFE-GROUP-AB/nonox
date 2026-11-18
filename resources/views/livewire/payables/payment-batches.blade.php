@@ -147,7 +147,59 @@
                         @if($batch->canBeDownloaded())
                             <a href="{{ route('payables.batches.file', $batch) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ __('Ladda ned fil') }}</a>
                         @endif
-                        @if($batch->isOpen() && ! $batch->isApproved() && $canApprove)
+                        @php($approval = $approvals[$batch->id] ?? null)
+                        @if($approval && $batch->isOpen() && ! $batch->isApproved())
+                            <span class="basis-full text-gray-700">
+                                @if($approval->awaitingResubmission)
+                                    <span class="block font-medium text-accent-700">{{ __('Avvisad i attestflödet :name.', ['name' => $approval->snapshot?->name]) }}</span>
+                                    @if($approval->rejectionReason())
+                                        <span class="block">{{ __('Skäl: :reason', ['reason' => $approval->rejectionReason()]) }}</span>
+                                    @endif
+                                    @if($canResubmit || $batch->created_by === $userId)
+                                        <button type="button" class="mt-1 font-medium text-accent-600 hover:text-accent-700" wire:click="resubmit('{{ $batch->id }}')">{{ __('Skicka till godkännande igen') }}</button>
+                                    @endif
+                                @else
+                                    <span class="block">{{ __('Attestflöde :name: steg :step av :steps, :given av :required godkända.', ['name' => $approval->snapshot?->name, 'step' => $approval->currentStep(), 'steps' => $approval->stepCount(), 'given' => $approval->approvalsAtStep(), 'required' => $approval->requiredAtStep()]) }}</span>
+                                    @if($approval->canDecide())
+                                        <span x-data="{ confirming: null }" class="mt-1 flex flex-wrap items-center gap-3">
+                                            <button type="button" class="font-medium text-accent-600 hover:text-accent-700" x-show="! confirming" x-on:click="confirming = 'approve'">{{ __('Godkänn betalningen') }}</button>
+                                            <button type="button" class="text-gray-600 underline" x-show="! confirming" x-on:click="confirming = 'reject'">{{ __('Avvisa') }}</button>
+                                            <span x-show="confirming === 'approve'" x-cloak class="flex flex-wrap items-center gap-2">
+                                                @if($approval->eligibility->onBehalfOf)
+                                                    <span>{{ __('Du godkänner på uppdrag av :name.', ['name' => $memberNames[$approval->eligibility->onBehalfOf] ?? __('tidigare medlem')]) }}</span>
+                                                @endif
+                                                <span>{{ __('Ditt godkännande gäller :count betalningar på sammanlagt :total med betaldag :date och går inte att ångra.', ['count' => $batch->payment_count, 'total' => $batch->total_ore->format(), 'date' => $batch->execution_date->toDateString()]) }}</span>
+                                                <x-button type="button" wire:click="approve('{{ $batch->id }}')" wire:loading.attr="disabled">{{ __('Ja, godkänn') }}</x-button>
+                                                <button type="button" class="text-gray-600 underline" x-on:click="confirming = null">{{ __('Avbryt') }}</button>
+                                            </span>
+                                            <span x-show="confirming === 'reject'" x-cloak class="flex flex-wrap items-center gap-2">
+                                                <label for="reject_reason_{{ $batch->id }}" class="sr-only">{{ __('Skäl (frivilligt)') }}</label>
+                                                <input id="reject_reason_{{ $batch->id }}" type="text" maxlength="500" placeholder="{{ __('Skäl (frivilligt)') }}" class="rounded-lg border-gray-300 shadow-xs focus:border-accent-500 focus:ring-accent-500" wire:model="rejectReason" aria-describedby="reject_reason_{{ $batch->id }}-hint">
+                                                <span id="reject_reason_{{ $batch->id }}-hint" class="basis-full text-sm text-gray-500">{{ __('Skriv vad som är fel med underlaget, inte uppgifter om personer.') }}</span>
+                                                <button type="button" class="font-medium text-accent-700 underline" wire:click="reject('{{ $batch->id }}')">{{ __('Ja, avvisa') }}</button>
+                                                <button type="button" class="text-gray-600 underline" x-on:click="confirming = null">{{ __('Avbryt') }}</button>
+                                            </span>
+                                        </span>
+                                    @else
+                                        @if(in_array($approval->eligibility->reason, ['preparer', 'already_decided'], true))
+                                            <span class="block text-gray-600">{{ $approval->eligibility->message() }}</span>
+                                        @endif
+                                        @if($canManageApprovals)
+                                            <span x-data="{ confirming: false }" class="mt-1 flex flex-wrap items-center gap-2">
+                                                <button type="button" class="text-gray-600 underline" x-show="! confirming" x-on:click="confirming = true">{{ __('Avvisa') }}</button>
+                                                <span x-show="confirming" x-cloak class="flex flex-wrap items-center gap-2">
+                                                    <label for="reject_reason_{{ $batch->id }}" class="sr-only">{{ __('Skäl (frivilligt)') }}</label>
+                                                    <input id="reject_reason_{{ $batch->id }}" type="text" maxlength="500" placeholder="{{ __('Skäl (frivilligt)') }}" class="rounded-lg border-gray-300 shadow-xs focus:border-accent-500 focus:ring-accent-500" wire:model="rejectReason" aria-describedby="reject_reason_{{ $batch->id }}-hint">
+                                                <span id="reject_reason_{{ $batch->id }}-hint" class="basis-full text-sm text-gray-500">{{ __('Skriv vad som är fel med underlaget, inte uppgifter om personer.') }}</span>
+                                                    <button type="button" class="font-medium text-accent-700 underline" wire:click="reject('{{ $batch->id }}')">{{ __('Ja, avvisa') }}</button>
+                                                    <button type="button" class="text-gray-600 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>
+                                                </span>
+                                            </span>
+                                        @endif
+                                    @endif
+                                @endif
+                            </span>
+                        @elseif(! $approval && $batch->isOpen() && ! $batch->isApproved() && $canApprove)
                             @if($separateApproval && $batch->created_by === $userId)
                                 <span class="text-gray-600">{{ __('Du skapade filen. Någon annan behöver godkänna den.') }}</span>
                             @else

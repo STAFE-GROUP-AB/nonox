@@ -9,6 +9,11 @@ use App\Models\Accrual;
 use App\Models\AccrualPosting;
 use App\Models\AnnualReport;
 use App\Models\AnnualReportNoteOverride;
+use App\Models\ApprovalDecision;
+use App\Models\ApprovalDelegation;
+use App\Models\ApprovalPolicy;
+use App\Models\ApprovalPolicyStep;
+use App\Models\ApprovalRequest;
 use App\Models\ArchivePackage;
 use App\Models\Article;
 use App\Models\BankFileImport;
@@ -377,6 +382,11 @@ const COMPANY_SCOPED_MODELS = [
     BudgetLine::class => 'e3BudgetLineAttributes',
     FixedAssetDepreciation::class => 'fixedAssetDepreciationAttributes',
     FixedAssetAddition::class => 'fixedAssetAdditionAttributes',
+    ApprovalPolicy::class => 'e2ApprovalPolicyAttributes',
+    ApprovalPolicyStep::class => 'e2ApprovalPolicyStepAttributes',
+    ApprovalRequest::class => 'e2ApprovalRequestAttributes',
+    ApprovalDecision::class => 'e2ApprovalDecisionAttributes',
+    ApprovalDelegation::class => 'e2ApprovalDelegationAttributes',
     FixedAssetProposal::class => 'fixedAssetProposalAttributes',
     NumberSeries::class => ['key' => 'invoices', 'next_number' => 1],
     Customer::class => ['number' => 1, 'name' => 'Hemlig kund AB', 'payment_terms_days' => 30],
@@ -1258,6 +1268,60 @@ function accrualAttributes(): array
         'result_account' => 6310,
         'start_month' => '2026-01',
         'months' => 12,
+        'created_by' => User::factory()->create()->id,
+    ];
+}
+
+/** @return array<string, mixed> */
+function e2ApprovalPolicyAttributes(): array
+{
+    return ['subject_type' => 'SUPPLIER_INVOICE', 'name' => 'Hemligt flöde', 'priority' => 10, 'created_by' => User::factory()->create()->id];
+}
+
+/** @return array<string, mixed> */
+function e2ApprovalPolicyStepAttributes(): array
+{
+    return [
+        'approval_policy_id' => ApprovalPolicy::create(e2ApprovalPolicyAttributes())->id,
+        'position' => 1,
+        'conditions' => [],
+        'approver_kind' => 'PERMISSION',
+        'approver_permission' => 'supplier-invoices:approve',
+        'required_count' => 1,
+        'exclude_preparer' => true,
+    ];
+}
+
+/** @return array<string, mixed> */
+function e2ApprovalRequestAttributes(): array
+{
+    return [
+        'subject_type' => 'SUPPLIER_INVOICE',
+        'subject_id' => (string) Str::uuid(),
+        'policy_snapshot' => ['policy_id' => null, 'name' => 'Hemligt', 'version' => 1, 'steps' => [['approver_kind' => 'PERMISSION', 'approver_permission' => 'supplier-invoices:approve', 'required_count' => 1]]],
+    ];
+}
+
+/** @return array<string, mixed> */
+function e2ApprovalDecisionAttributes(): array
+{
+    return [
+        'approval_request_id' => ApprovalRequest::create(e2ApprovalRequestAttributes())->id,
+        'step' => 1,
+        'user_id' => User::factory()->create()->id,
+        'decision' => 'APPROVE',
+        'decided_at' => now(),
+    ];
+}
+
+/** @return array<string, mixed> */
+function e2ApprovalDelegationAttributes(): array
+{
+    return [
+        'user_id' => User::factory()->create()->id,
+        'substitute_user_id' => User::factory()->create()->id,
+        'starts_on' => '2026-03-01',
+        'ends_on' => '2026-03-31',
         'created_by' => User::factory()->create()->id,
     ];
 }
@@ -2282,7 +2346,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [WorkshopWaitingFlag::class, PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class, StripeObject::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [WorkshopTimeEntry::class, WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];
+const APPEND_ONLY = [ApprovalRequest::class, ApprovalDecision::class, ApprovalDelegation::class, WorkshopTimeEntry::class, WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

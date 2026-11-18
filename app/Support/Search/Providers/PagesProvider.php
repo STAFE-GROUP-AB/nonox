@@ -40,6 +40,7 @@ final class PagesProvider extends BaseSearchProvider
         'invoicing.incomingPayments' => ['betalningar', 'bankfil', 'camt', 'bgmax'],
         'invoicing.agreements' => ['avtalsfakturering', 'återkommande', 'abonnemang'],
         'payables.batches.index' => ['betalningar', 'pain', 'bankgirot'],
+        'approvals.policies' => ['attest', 'godkännande', 'ersättare'],
         'invoicing.customers' => ['kundregister'],
         'payables.suppliers' => ['leverantörsregister'],
         'companies.overview' => ['byt företag', 'klienter'],

@@ -64,10 +64,43 @@
         </ul>
     </x-ui.card>
 
-    @if($canApprove)
+    @if($approval)
+        @include('livewire.approval.partials.approval-flow', ['approval' => $approval, 'memberNames' => $memberNames, 'canResubmit' => $canResubmit])
+    @endif
+
+    @if($canApprove || $canReject)
         <x-ui.card :title="__('Attestera')">
-            <p class="text-sm text-gray-700">{{ __('Kontrollera att varorna eller tjänsterna är levererade och att beloppet stämmer. Därefter kan fakturan betalas.') }}</p>
-            <x-button type="button" class="mt-3" wire:click="approve" wire:loading.attr="disabled">{{ __('Attestera fakturan') }}</x-button>
+            @if($canApprove)
+                <p class="text-sm text-gray-700">{{ __('Kontrollera att varorna eller tjänsterna är levererade och att beloppet stämmer. Därefter kan fakturan betalas.') }}</p>
+            @endif
+            @if($approval)
+                @if($canApprove && $approval->eligibility->onBehalfOf)
+                    <p class="mt-2 text-sm text-gray-700">{{ __('Du godkänner på uppdrag av :name.', ['name' => $memberNames[$approval->eligibility->onBehalfOf] ?? __('tidigare medlem')]) }}</p>
+                @endif
+                <div class="mt-3 flex flex-wrap items-start gap-3">
+                    @if($canApprove)
+                        <x-button type="button" wire:click="approve" wire:loading.attr="disabled">{{ $approval->stepCount() > 1 ? __('Godkänn steg :step av :steps', ['step' => $approval->currentStep(), 'steps' => $approval->stepCount()]) : __('Attestera fakturan') }}</x-button>
+                    @endif
+                    @if($canReject)
+                        <span x-data="{ rejecting: false }" class="flex flex-col gap-2">
+                            <button type="button" class="text-sm text-gray-600 underline" x-show="! rejecting" x-on:click="rejecting = true">{{ __('Avvisa') }}</button>
+                            <span x-show="rejecting" x-cloak class="flex flex-col gap-2">
+                                <label for="reject_reason" class="text-sm font-medium text-gray-700">{{ __('Skäl (frivilligt)') }}</label>
+                                <textarea id="reject_reason" rows="2" maxlength="500" class="block w-full rounded-lg border-gray-300 shadow-xs focus:border-accent-500 focus:ring-accent-500" wire:model="rejectReason" aria-describedby="reject_reason-hint"></textarea>
+                                <span id="reject_reason-hint" class="text-sm text-gray-500">{{ __('Skriv vad som är fel med underlaget, inte uppgifter om personer.') }}</span>
+                                <span class="text-sm text-gray-700">{{ __('Fakturan går tillbaka till den som registrerade den, som kan skicka den till attest igen.') }}</span>
+                                <span class="flex items-center gap-3">
+                                    <button type="button" class="text-sm font-medium text-accent-700 underline" wire:click="reject">{{ __('Ja, avvisa') }}</button>
+                                    <button type="button" class="text-sm text-gray-600 underline" x-on:click="rejecting = false">{{ __('Avbryt') }}</button>
+                                </span>
+                            </span>
+                        </span>
+                    @endif
+                </div>
+                <x-input-error for="reason" class="mt-2" />
+            @else
+                <x-button type="button" class="mt-3" wire:click="approve" wire:loading.attr="disabled">{{ __('Attestera fakturan') }}</x-button>
+            @endif
             <x-input-error for="approve" class="mt-2" />
         </x-ui.card>
     @elseif($blockedBySegregation)

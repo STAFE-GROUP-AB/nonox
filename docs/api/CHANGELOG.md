@@ -13,6 +13,22 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-18: attestflöden
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-18: approval flows
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Ändrat
+- `POST /supplier-invoices/{supplierInvoice}/approve`: har företaget lagt upp ett eget attestflöde (Inköp → Attestflöden) som gäller fakturan sparar anropet anroparens godkännande av det aktuella steget. Fakturan har kvar status `REGISTERED` tills det sista steget är godkänt, och först då skickas `supplier_invoice.approved`. Den som inte är attestant i steget får 403. Företag utan eget flöde märker ingen skillnad.
+<!-- /lang -->
+<!-- lang:en -->
+### Changed
+- `POST /supplier-invoices/{supplierInvoice}/approve`: when the company has an approval flow of its own (Inköp → Attestflöden) that applies to the invoice, the call records the caller's approval of the current step. The invoice keeps status `REGISTERED` until the last step is approved, and only then is `supplier_invoice.approved` sent. A caller who is not an approver of the step gets 403. Companies without a flow of their own see no difference.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-18: kostnadsställe och projekt på fakturarader
 <!-- /lang -->
 <!-- lang:en -->

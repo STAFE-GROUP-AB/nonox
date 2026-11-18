@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Payables;
 
+use App\Domain\Approval\ApprovalEngine;
+use App\Domain\Approval\SubjectFacts;
 use App\Domain\Payables\PaymentBatchStatus;
 use App\Domain\Payables\PaymentResponseStatus;
 use App\Models\PaymentResponse;
@@ -29,7 +31,7 @@ use Illuminate\Validation\ValidationException;
  */
 class SettlePaymentBatch
 {
-    public function __construct(private readonly PaySupplierInvoice $pay) {}
+    public function __construct(private readonly PaySupplierInvoice $pay, private readonly ApprovalEngine $approvals) {}
 
     public function confirm(User $user, SupplierPaymentBatch $batch): SupplierPaymentBatch
     {
@@ -110,6 +112,9 @@ class SettlePaymentBatch
             ])->save();
 
             Audit::record('payment_batch.cancelled', $batch, ['number' => $batch->number], $batch->company_id, $user);
+
+            // A file waiting in an approval policy of the company's own leaves its queue (ADR-081 gap 8).
+            $this->approvals->withdraw(SubjectFacts::forPaymentBatch($batch), $user);
 
             return $batch;
         }));

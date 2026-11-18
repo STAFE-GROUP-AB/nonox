@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.137
+- Version: 0.138
 - Version: 0.135
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
@@ -1601,6 +1601,9 @@ Peppol-operatör (accesspunkt); NONOX är inte själv en accesspunkt.
   Den som registrerade fakturan får inte attestera den, om inte företaget har
   stängt av kravet (för företag med en person). Ändringen av kravet skrivs
   till behandlingshistoriken.
+  Ett eget attestflöde kan kräva fler steg och andra attestanter innan
+  fakturan blir attesterad (avsnitt 5a1d); utan eget flöde gäller den här
+  enkla attesten oförändrad.
 - Varje sparat utkast, registrering, attest och betalning skrivs till
   behandlingshistoriken. Betalningar kan bara läggas till, aldrig ändras.
 - Leverantörsfakturor där köparen redovisar momsen (inköp från andra EU-länder,
@@ -1821,6 +1824,82 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   blocket.
 - **Leverantörsregistret** har land och betalningskod
   (`suppliers.payment_code`, tre siffror).
+
+### 5a1d. Attestflöden (ADR-081 lucka 8, paket E2)
+
+([ADR-081](../adr/ADR-081-nonox-erp.md), lucka 8 och tillägget "E2 as built".)
+Koden finns i `App\Domain\Approval\ApprovalEngine`, `ApprovalContext`,
+`PolicySnapshot`, `StepConditions`, `App\Actions\Approval\*`,
+`App\Actions\Payables\ApproveSupplierInvoice` och `ApprovePaymentBatch`.
+
+- **Standardattesten.** Ett företag utan eget attestflöde attesterar som
+  förut (avsnitt 5a): en person med `supplier-invoices:approve` attesterar en
+  leverantörsfaktura och en person med `payments:approve` godkänner en
+  betalfil, och den som registrerade fakturan eller skapade filen hålls
+  utanför så länge företaget kräver att någon annan attesterar. Ingen rad i
+  attestflödets tabeller skrivs då.
+- **Eget attestflöde.** Ägare och administratörer (`approvals:manage`) kan
+  lägga upp flöden per företag för leverantörsfakturor och betalfiler, med
+  steg i ordning. Ett steg har villkor (belopp, kostnadsställe, projekt,
+  leverantör, kontointervall; för betalfiler bara belopp), attestanter (alla
+  med en behörighet, utvalda personer eller ägaren av kostnadsstället eller
+  projektet), hur många olika personer som ska godkänna och om den som
+  förberedde underlaget hålls utanför. Ett flöde gäller när minst ett steg
+  gäller underlaget; det med lägst ordningsnummer används, och gäller inget
+  flöde används standardattesten.
+- **Kopia per attest.** När ett underlag går in i ett flöde sparas en kopia av
+  flödets gällande steg på attestärendet (`approval_requests.policy_snapshot`,
+  med flödets id och version). Att ändra eller ta bort flödet ändrar inte ett
+  pågående ärende. Ett avslutat ärende kan inte ändras, och inget ärende kan
+  tas bort; databasen vägrar.
+- **Beslut.** Varje godkännande och avvisning sparas med ärende, steg,
+  person, eventuell person som beslutet fattades på uppdrag av, tid och ett
+  frivilligt skäl (högst 500 tecken) i `approval_decisions`, som bara kan
+  läggas till: modellen och en databastrigger vägrar ändring och borttagning.
+  Behandlingshistoriken får `approval.requested`, `approval.decided` (steg,
+  beslut, utfall och på uppdrag av, utan skälet), `approval.withdrawn` och
+  `approval_policy.saved`/`.deleted`, `approval_delegation.added`/`.revoked`
+  och `dimension.owner_changed`.
+- **Verkan.** Fakturans status blir attesterad, och betalfilen godkänd, först
+  med det sista godkännandet i det sista steget, genom samma kod som
+  standardattesten. Det är den personen som står som attestant
+  (`approved_by`), och samma post i behandlingshistoriken
+  (`supplier_invoice.approved`, `payment_batch.approved`) och samma trigger
+  på betalfilen gäller. Ingen verifikation skapas eller ändras; fakturan är
+  redan bokförd när den registrerades (fakturametoden) eller bokförs vid
+  betalningen (kontantmetoden), som förut.
+- **Kontroll vid beslutet.** Medlemskap och roller läses när beslutet fattas:
+  den som har lämnat företaget eller förlorat rollen kan inte besluta. Den
+  som förberedde underlaget hålls utanför varje steg så länge företaget
+  kräver att någon annan attesterar; ett flöde kan inte stänga av det.
+  Samma person kan inte godkänna samma steg två gånger, men kan godkänna
+  flera olika steg i samma ärende; två olika personer krävs bara när ett
+  steg har antal 2 eller fler. Utvalda personer, ägare av kostnadsställen
+  och projekt och ersättare måste själva ha underlagets egen behörighet
+  (`supplier-invoices:approve` för fakturor, `payments:approve` för
+  betalfiler); det kontrolleras när flödet, ägaren eller ersättaren sparas
+  och igen vid beslutet. Ett ägarsteg kräver ett godkännande. Saknar fakturan
+  kostnadsställe eller projekt med en ägare som är medlem, godkänns ett
+  ägarsteg av den som har attesträtt.
+- **Avvisning.** En avvisning avslutar ärendet; fakturan eller filen är
+  oförändrad och går tillbaka till den som förberedde den, som kan skicka den
+  till attest igen (ett nytt ärende med flödet som det är då). Ägare och
+  administratörer kan avvisa i alla steg. En makulerad betalfil återkallar sitt
+  pågående ärende.
+- **Ersättare.** En medlem kan ange en ersättare för ett datumintervall (högst
+  ett år, `approval_delegations`); ägare och administratörer kan göra det åt
+  andra. Ersättaren kan besluta i steg som pekar ut medlemmen som person eller
+  ägare, och beslutet sparas med "på uppdrag av". Steg som gäller alla med en
+  behörighet kan inte lämnas över. En återkallad ersättning sparas med tid och
+  person; en databastrigger tillåter bara att den återkallas en gång och
+  vägrar annan ändring och borttagning.
+- **Bevarande.** Attestärenden och beslut tas aldrig bort av systemet.
+  `TODO(legal-verify)`: om besluten är en del av behandlingshistoriken enligt
+  BFNAR 2013:2 och ska bevaras som räkenskapsinformation; tills det är
+  bekräftat bevaras de minst lika länge som underlaget de gäller. Ärenden,
+  beslut och ersättare tas med i arkivpaketet per räkenskapsår
+  (`attest/Attestarenden.csv` med flödeskopian, `Attestbeslut.csv`,
+  `Ersattare.csv`, med SHA-256 i manifestet).
 
 ## 5a2. Anläggningsregister
 
@@ -6023,3 +6102,4 @@ påverkar bokföringen och fakturan:
 | 0.135 | 2026-11-18 | Behörighet per enhet (avsnitt 1.0, ADR-081 lucka 10, paket E1): en ägare eller administratör kan begränsa en bokförare, attestant, enhetschef eller modulroll till kostnadsställen och projekt (`membership_dimension_scopes`, `team_user.dimension_scoped`). Den begränsade ser och bokför bara verifikationer och leverantörsfakturor vars rader med dimension alla ligger inom begränsningen, och läser resultatrapport och huvudbok bara för ett av sina objekt; lönens verifikationer visas aldrig för hen; allt annat svarar 404. Ägare, administratör, redovisningskonsult och revisor kan aldrig begränsas. Ingen bokförd verifikation ändras. |
 | 0.136 | 2026-11-18 | Budget (avsnitt 4.12a, ADR-081 paket E3): nya tabeller `budget_versions` och `budget_lines` för budget per resultatkonto, månad, kostnadsställe och projekt. Budgeten bokförs aldrig och ingår inte i kontrollsummekedjan; en låst budget kan inte ändras (databastrigger) och en låst budget för ett stängt räkenskapsår kan inte tas bort. Ingen bokförd verifikation ändras. |
 | 0.137 | 2026-11-18 | Kostnadsställe och projekt på fakturor, offerter och order och ett projektregister (avsnitt 4.10 och 5, ADR-081 lucka 6, paket E6): nya nullbara kolumner `cost_center_id` och `project_id` på `invoice_rows` och `sales_document_rows`, `default_cost_center_id` och `default_project_id` på `articles` och `customers`, och projektets kund, projektledare, status, datum, prisform, kontraktssumma, beräknad kostnad och förvalda kostnadsställe på `projects`. Fakturans verifikation (serie B) bokför varje rads intäkt på radens kostnadsställe och projekt; med kontantmetoden delar betalningens verifikation (serie C) varje intäktskontos andel på objekten i proportion till raderna i hela ören med största rest, och betalningen som reglerar fakturan tar det som återstår per objekt. Moms, kundfordran, öresavrundning och bank får inga objekt. Bokslutets obetalda kundfakturor enligt kontantmetoden, kundförlust och återvinning delas på samma sätt per objekt, och ett konto vars rader netto är noll får sina objekt i sin helhet. Fakturor utan objekt bokförs som förut, och ingen bokförd verifikation ändras. |
+| 0.138 | 2026-11-18 | Attestflöden (avsnitt 5a1d, ADR-081 lucka 8, paket E2): egna flöden i steg för leverantörsfakturor och betalfiler med villkor, attestanter, antal och ersättare. Utan eget flöde attesterar företaget som förut och inga nya rader skrivs. Nya tabeller `approval_policies`, `approval_policy_steps`, `approval_requests` (kan inte tas bort, avslutade kan inte ändras), `approval_decisions` (kan inte ändras eller tas bort) och `approval_delegations`; kostnadsställen och projekt kan ha en ägare. Fakturan blir attesterad och filen godkänd först efter sista steget, med samma kod, behandlingshistorik och triggrar som förut. Ingen verifikation skapas eller ändras. |

@@ -34,6 +34,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?Money $contract_sum_ore
  * @property ?Money $estimated_cost_ore
  * @property ?int $default_cost_center_id
+ * @property ?int $owner_user_id who can approve for it (ADR-081 gap 8)
  * @property ?CarbonInterface $created_at
  * @property ?CarbonInterface $updated_at
  */
