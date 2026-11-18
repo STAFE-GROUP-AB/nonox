@@ -286,8 +286,9 @@ final class SignAtLink
 
             $this->mailOpenedStep($locked->company_id, $outcome['opened']);
 
-            if ($outcome['completed'] && $outcome['several'] && $outcome['envelope'] instanceof SigningEnvelope) {
-                SigningFollowUp::mailEnvelopeCopies($outcome['envelope']);
+            if ($outcome['completed'] && $outcome['envelope'] instanceof SigningEnvelope) {
+                // One signer with copy recipients (the wizard of ADR-046 S7): the copies go, the signer's own copy goes below.
+                SigningFollowUp::mailEnvelopeCopies($outcome['envelope'], toSigners: $outcome['several']);
             }
 
             return [$locked, $outcome['completed']];

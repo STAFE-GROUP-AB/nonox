@@ -156,7 +156,7 @@ class SigningFollowUp
      * the signature that triggers them is already saved. (The company's own
      * copy, with the full certificates, goes from the follow-up.)
      */
-    public static function mailEnvelopeCopies(SigningEnvelope $envelope): void
+    public static function mailEnvelopeCopies(SigningEnvelope $envelope, bool $toSigners = true): void
     {
         $company = Company::query()->find($envelope->company_id);
 
@@ -166,7 +166,7 @@ class SigningFollowUp
 
         $copies = SigningCopyRecipient::query()->where('envelope_id', $envelope->id)->whereNull('sent_copy_at')->get(['id', 'email']);
 
-        $signers = SigningRequest::query()->where('envelope_id', $envelope->id)->where('status', SigningStatus::Signed->value)->pluck('email');
+        $signers = $toSigners ? SigningRequest::query()->where('envelope_id', $envelope->id)->where('status', SigningStatus::Signed->value)->pluck('email') : collect();
 
         foreach ($copies as $copy) {
             Mail::to($copy->email)->queue((new SigningEnvelopeMail($envelope->id, $company->id, SigningEnvelopeMail::COPY))->afterCommit());
@@ -313,7 +313,11 @@ class SigningFollowUp
             return;
         }
 
-        $address = $company->email ?: $this->copyRecipient($company, $request)?->email;
+        // A confidential envelope's copy (with prices and every certificate) goes to its sender only, never to a shared company address (ADR-046 S7).
+        $confidential = $envelope instanceof SigningEnvelope
+            ? $envelope->confidential
+            : ($request->envelope_id !== null && SigningEnvelope::query()->whereKey($request->envelope_id)->value('confidential') === true);
+        $address = $confidential ? $this->copyRecipient($company, $request)?->email : ($company->email ?: $this->copyRecipient($company, $request)?->email);
 
         if (! is_string($address) || $address === '' || mb_strtolower($address) === $request->email) {
             return;

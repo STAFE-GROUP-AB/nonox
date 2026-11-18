@@ -374,6 +374,8 @@ final class DatabaseGrants
         'signing_copy_recipients' => GrantDecision::ReadWrite,
         // Evidence (ADR-046 S2): the trigger refuses UPDATE, and DELETE except the cascade from the envelope.
         'signing_document_versions' => GrantDecision::AppendOnly,
+        // A standalone document (ADR-046 S7): the app removes one that was never sent (a mistaken upload); the trigger refuses a sent one.
+        'signing_documents' => GrantDecision::ReadWrite,
         'signing_envelopes' => GrantDecision::ReadWrite,
         'signing_link_tokens' => GrantDecision::ReadWrite,
         // Signer checks (ADR-046 S3): a code row only gains attempts and its verified_at (trigger); it goes with its signer row or company by cascade.

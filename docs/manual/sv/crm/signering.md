@@ -141,6 +141,9 @@ Ska fler än en person skriva under, till exempel både VD och ordförande hos k
 4. Välj sista dag, påminnelser, affär och fakturautkast som för en undertecknare. Affären vinns och fakturautkastet görs först när alla har signerat.
 5. Tryck på **Skicka till undertecknarna**. **En undertecknare** tar dig tillbaka till det vanliga formuläret.
 
+> [!NOTE]
+> Är modulen Signering påslagen, och får du skicka där, öppnar **Fler undertecknare** i stället guiden under **Signering → Skicka dokument** för samma offert eller avtal, med samma val. Se [Skicka ett dokument för signering](/manual/signering/skicka-dokument).
+
 ![Signering med två undertecknare i tur och ordning och en kopiemottagare.](/bilder/manual/crm/fler-undertecknare.webp)
 
 Under **Signering** visas undertecknarna tillsammans, med vilket steg som är öppet och vem som har signerat. Varje undertecknare signerar på sin egen länk och får sin egen kopia med sitt signeringsbevis.

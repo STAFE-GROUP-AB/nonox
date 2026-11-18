@@ -169,7 +169,9 @@ api-tokens:manage  settings:manage  audit-log:view
 budgets:view  budgets:manage  projects:view  projects:manage
 analysis:view  analysis:share  approvals:manage
 documents:view  documents:manage  documents:hold  members:scope
+signing:view  signing:send  signing:manage
 ```
+- Module Signering (ADR-046 S7): `signing:view` is an archive permission and stays readable while the module is off; `signing:send` and `signing:manage` exist only while it is on. Confidential envelopes are visible only to the sender and holders of `signing:manage`.
 - Dimension scopes (ADR-081 E1): bookkeeper, approver, module roles and `unit_manager` can be limited to cost centres or projects; owner, admin, accountant and auditor can never be scoped. A scope leak is treated like a cross-tenant leak (§1.3).
 - All authorization goes through Policies that check **(a)** membership in the company **and (b)** permission via `$user->hasTeamPermission($company, 'perm')`.
 - Segregation of duties: a user may not approve a payment they created (configurable per company, default ON).

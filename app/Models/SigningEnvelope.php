@@ -45,6 +45,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?CarbonImmutable $followed_up_at
  * @property bool $auto_reminders whether signing:remind reminds the open signers (ADR-046 S9)
  * @property ?int $reminder_interval_days 1, 2, 3 or 7; null means one reminder two days before the deadline
+ * @property bool $confidential seen only by its sender and by signing:manage (ADR-046 S7); fixed from sending
  * @property ?CarbonImmutable $expired_at set once, when the deadline has passed and the expiry event is written
  * @property ?string $chain_head
  * @property ?int $chain_sequence
@@ -85,12 +86,14 @@ class SigningEnvelope extends Model
         'sent_at',
         'auto_reminders',
         'reminder_interval_days',
+        'confidential',
     ];
 
     /** @var array<string, mixed> */
     protected $attributes = [
         'status' => 'OUT',
         'current_step' => 1,
+        'confidential' => false,
     ];
 
     /** @return array<string, string> */
@@ -101,6 +104,7 @@ class SigningEnvelope extends Model
             'current_step' => 'integer',
             'chain_sequence' => 'integer',
             'auto_reminders' => 'boolean',
+            'confidential' => 'boolean',
             'reminder_interval_days' => 'integer',
             'expired_at' => 'immutable_datetime',
             'next_sequence' => 'integer',

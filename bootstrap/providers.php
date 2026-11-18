@@ -21,6 +21,7 @@ use App\Modules\Planning\PlanningServiceProvider;
 use App\Modules\Portal\PortalServiceProvider;
 use App\Modules\Pos\PosServiceProvider;
 use App\Modules\Saas\SaasServiceProvider;
+use App\Modules\Signing\SigningModuleServiceProvider;
 use App\Modules\StaffLedger\StaffLedgerServiceProvider;
 use App\Modules\WorkOrders\WorkOrdersServiceProvider;
 use App\Providers\AppServiceProvider;
@@ -43,6 +44,7 @@ return [
     PlanningServiceProvider::class,
     InventoryServiceProvider::class,
     SigningServiceProvider::class,
+    SigningModuleServiceProvider::class,
     PdfEngineServiceProvider::class,
     CrmServiceProvider::class,
     PosServiceProvider::class,

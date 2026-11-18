@@ -299,6 +299,11 @@ crm/signera-offert: { foretag: konsult, rutt: signing.show, modell: signing_link
 crm/signera-offert-mobil: { foretag: konsult, rutt: signing.show, modell: signing_link, anvandare: gast, enhet: mobil }
 crm/signering-kontroll: { foretag: konsult, rutt: invoicing.quotes.show, modell: checked_quote, del: '[data-testid=crm-signing-panel]' }
 crm/signera-kod: { foretag: konsult, rutt: signing.show, modell: checked_signing_link, anvandare: gast, enhet: mobil, text: Bekräfta att det är du }
+
+# Signering, the module (ADR-046 amendment, gap 10, package S7): the list, one envelope and the first step of the wizard.
+signering/alla-signeringar: { foretag: konsult, rutt: signing.envelopes, text: Hyresavtal kontorslokal }
+signering/signeringen: { foretag: konsult, rutt: signing.envelope, modell: { tabell: signing_envelopes, dar: { document_type: DOCUMENT, confidential: false, status: OUT } }, text: Hyresavtal kontorslokal }
+signering/skicka-dokument: { foretag: konsult, rutt: signing.new, text: Uppladdade dokument som inte är skickade }
 crm/offertmallar: { foretag: konsult, rutt: crm.quoteTemplates, klick: ['text=Ändra'] }
 crm/avtal: { foretag: konsult, rutt: crm.agreements, fraga: { visa: alla } }
 crm/avtalets-kort: { foretag: konsult, rutt: crm.agreements.show, modell: { tabell: crm_agreements, dar: { title: 'Supportavtal 2026' } } }

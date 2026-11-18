@@ -46,8 +46,9 @@ final class SigningEnvelopes
      *
      * @param  array{path: string, name: string, sha256: string}  $file
      * @param  array{auto: bool, interval: ?int}  $reminders  the sender's choice (ADR-046 S9); off when not given
+     * @param  bool  $confidential  seen only by its sender and by signing:manage (ADR-046 S7)
      */
-    public function create(Signable $document, array $file, ?CarbonImmutable $deadline, ?int $userId, array $reminders = ['auto' => false, 'interval' => null]): SigningEnvelope
+    public function create(Signable $document, array $file, ?CarbonImmutable $deadline, ?int $userId, array $reminders = ['auto' => false, 'interval' => null], bool $confidential = false): SigningEnvelope
     {
         $envelope = SigningEnvelope::create([
             ...$this->types->attributesFor($document),
@@ -59,6 +60,7 @@ final class SigningEnvelopes
             'deadline_at' => $deadline,
             'auto_reminders' => $reminders['auto'],
             'reminder_interval_days' => $reminders['auto'] ? $reminders['interval'] : null,
+            'confidential' => $confidential,
             'created_by' => $userId,
             'sent_at' => now(),
         ]);

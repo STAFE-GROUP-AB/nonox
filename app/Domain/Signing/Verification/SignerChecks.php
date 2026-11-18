@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Signing\Verification;
 
+use App\Actions\Signing\SendForSigning;
 use App\Actions\Signing\SignAtLink;
 use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\Signable;
@@ -14,6 +15,7 @@ use App\Domain\Signing\SigningStatus;
 use App\Domain\Signing\SigningUnavailable;
 use App\Mail\SigningCodeMail;
 use App\Models\Company;
+use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Models\SigningVerificationCode;
 use App\Models\User;
@@ -326,7 +328,7 @@ final class SignerChecks
     {
         $document = CurrentCompany::run($company, fn (): ?Signable => $request->document());
         abort_unless($document instanceof Signable && $request->company_id === $company->id, 404);
-        $document->authorizeSigning($user, revoke: true);
+        SendForSigning::authorizeAct($document, $user, CurrentCompany::run($company, fn (): ?\App\Models\SigningEnvelope => $request->envelope_id === null ? null : SigningEnvelope::query()->find($request->envelope_id)));
 
         CurrentCompany::run($company, fn () => DB::transaction(function () use ($user, $company, $request): void {
             $request->document(lock: true);

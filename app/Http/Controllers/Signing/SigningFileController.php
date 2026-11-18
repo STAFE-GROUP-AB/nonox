@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Signing;
 
 use App\Actions\Signing\SendForSigning;
+use App\Domain\Signing\EnvelopeStatus;
+use App\Domain\Signing\RestrictsEnvelopes;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SigningHook;
 use App\Domain\Signing\SigningHooks;
 use App\Domain\Signing\SigningPdfs;
 use App\Models\Company;
+use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
@@ -63,6 +66,15 @@ final class SigningFileController
         $document = app(SignableTypes::class)->documentFor($request);
         $user = auth()->user();
         $company = $user instanceof User ? $user->currentCompany() : null;
+
+        // A document with envelope rules of its own (a standalone document, ADR-046 S7) answers for itself, also while its module is off: signed ones are an archive.
+        if ($document instanceof RestrictsEnvelopes) {
+            $envelope = $request->envelope_id === null ? null : SigningEnvelope::query()->find($request->envelope_id);
+
+            return $envelope instanceof SigningEnvelope && $user instanceof User && $company instanceof Company && $company->id === $request->company_id
+                && $document->mayViewEnvelope($user, $company, $envelope)
+                && (SendForSigning::moduleOn($document, $company) || $envelope->status === EnvelopeStatus::Completed);
+        }
 
         return $document instanceof Signable
             && $user instanceof User

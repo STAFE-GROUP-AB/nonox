@@ -48,7 +48,7 @@ final class ChangeSigningDeadline
         $first = SigningRequest::query()->where('envelope_id', $envelope->id)->orderBy('step')->orderBy('id')->first();
         $document = $first?->document();
         abort_unless($document instanceof Signable, 404);
-        $document->authorizeSigning($user, revoke: true);
+        SendForSigning::authorizeAct($document, $user, $envelope);
 
         Validator::make(['expires_on' => $day], ['expires_on' => ['required', 'date_format:Y-m-d']], [], ['expires_on' => __('sista dag att signera')])->validate();
 

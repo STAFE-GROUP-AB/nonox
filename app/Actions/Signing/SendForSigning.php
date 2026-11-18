@@ -6,6 +6,7 @@ namespace App\Actions\Signing;
 
 use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\EnvelopeStatus;
+use App\Domain\Signing\RestrictsEnvelopes;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SignedDocuments;
@@ -35,6 +36,7 @@ use App\Support\Audit\Audit;
 use App\Support\MailQuota;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -166,19 +168,22 @@ final class SendForSigning
      * recipients. Only the first step's signers get their link now; a later
      * step gets its links when the step before is signed (SignAtLink).
      *
-     * Input: signers (2–10 of email and step 1–10, distinct addresses),
-     * copies (0–10 of email, name), notify_copies, expires_on,
+     * Input: signers (2–10 of email and step 1–10, distinct addresses; one
+     * is allowed when $minSigners is 1, as the send wizard of ADR-046 S7
+     * does), copies (0–10 of email, name), notify_copies, expires_on,
      * create_invoice, deal_id (as for one signer; every signer row carries
-     * them, and they apply once everyone has signed).
+     * them, and they apply once everyone has signed), confidential (only a
+     * document that restricts its envelopes, RestrictsEnvelopes).
      *
      * @param  array<string, mixed>  $input
      */
-    public function envelope(User $user, Company $company, Signable $document, array $input): SigningEnvelope
+    public function envelope(User $user, Company $company, Signable $document, array $input, int $minSigners = 2): SigningEnvelope
     {
         abort_unless($document->signingCompanyId() === $company->id && self::moduleOn($document, $company), 404);
         $document->authorizeSigning($user);
 
-        $validated = $this->validateEnvelope($input);
+        $validated = $this->validateEnvelope($input, $minSigners, $document instanceof RestrictsEnvelopes);
+        $confidential = (bool) ($validated['confidential'] ?? false);
 
         $today = CarbonImmutable::now(self::ZONE)->startOfDay();
         $expires = $this->expiry($document, $validated['expires_on'] ?? null, $today);
@@ -208,14 +213,14 @@ final class SendForSigning
             MailQuota::take($company, 'documents', 'signers');
         }
 
-        $result = DB::transaction(fn (): array => CurrentCompany::run($company, function () use ($user, $company, $document, $validated, $expires, $signers, $copies, $first, $reminders): array {
+        $result = DB::transaction(fn (): array => CurrentCompany::run($company, function () use ($user, $company, $document, $validated, $expires, $signers, $copies, $first, $reminders, $confidential): array {
             $document = $this->lockOpenDocument($document);
             $dealId = $this->deal($document, $validated['deal_id'] ?? null);
 
             $this->revokeOpen($user, $company, $document);
 
             $file = $this->storePdf($company, $document);
-            $envelope = $this->envelopes->create($document, $file, $expires, $user->id, $reminders);
+            $envelope = $this->envelopes->create($document, $file, $expires, $user->id, $reminders, $confidential);
             $envelope->forceFill(['current_step' => $first])->save();
             $opened = [];
 
@@ -248,7 +253,7 @@ final class SendForSigning
                 SigningCopyRecipient::create(['envelope_id' => $envelope->id, ...$copy]);
             }
 
-            Audit::record('crm.signing_envelope_sent', $envelope, ['envelope_id' => $envelope->id, 'document_type' => $envelope->document_type, 'sales_document_id' => $envelope->sales_document_id, 'agreement_id' => $envelope->agreement_id, 'signable_id' => $envelope->signable_id, 'deal_id' => $dealId, 'signers' => $signers->count(), 'steps' => $signers->pluck('step')->unique()->count(), 'copies' => $copies->count()], $company, $user);
+            Audit::record('crm.signing_envelope_sent', $envelope, ['envelope_id' => $envelope->id, 'document_type' => $envelope->document_type, 'sales_document_id' => $envelope->sales_document_id, 'agreement_id' => $envelope->agreement_id, 'signable_id' => $envelope->signable_id, 'deal_id' => $dealId, 'signers' => $signers->count(), 'steps' => $signers->pluck('step')->unique()->count(), 'copies' => $copies->count(), 'confidential' => $confidential], $company, $user);
 
             return ['envelope' => $envelope, 'opened' => $opened];
         }), self::ATTEMPTS);
@@ -278,7 +283,7 @@ final class SendForSigning
     {
         $document = $request->document();
         abort_unless($document instanceof Signable, 404);
-        $document->authorizeSigning($user, revoke: true);
+        self::authorizeAct($document, $user, $request->envelope_id === null ? null : SigningEnvelope::query()->find($request->envelope_id));
 
         return DB::transaction(fn (): SigningRequest => CurrentCompany::run($company, function () use ($user, $company, $request): SigningRequest {
             $request->document(lock: true);
@@ -304,7 +309,7 @@ final class SendForSigning
         $request = SigningRequest::query()->where('envelope_id', $envelope->id)->orderBy('step')->orderBy('id')->first();
         $document = $request?->document();
         abort_unless($document instanceof Signable, 404);
-        $document->authorizeSigning($user, revoke: true);
+        self::authorizeAct($document, $user, $envelope);
 
         return DB::transaction(fn (): SigningEnvelope => CurrentCompany::run($company, function () use ($user, $company, $envelope, $request): SigningEnvelope {
             $request->document(lock: true);
@@ -319,6 +324,24 @@ final class SendForSigning
 
             return $locked->refresh();
         }), self::ATTEMPTS);
+    }
+
+    /**
+     * May the user act on an envelope that is out (revoke a link, remind,
+     * change the last day, withdraw)? The document's own sending rights, and
+     * for a document that restricts its envelopes (ADR-046 S7) its rule for
+     * the envelope: one's own with the sending right, another's with the
+     * managing right.
+     *
+     * @throws AuthorizationException
+     */
+    public static function authorizeAct(Signable $document, User $user, ?SigningEnvelope $envelope): void
+    {
+        $document->authorizeSigning($user, revoke: true);
+
+        if ($envelope instanceof SigningEnvelope && $document instanceof RestrictsEnvelopes) {
+            $document->authorizeEnvelope($user, $envelope);
+        }
     }
 
     /** The signer checks a sender may choose (ADR-046 amendment, gap 3), for the in: rule. */
@@ -361,10 +384,10 @@ final class SendForSigning
      * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
-    private function validateEnvelope(array $input): array
+    private function validateEnvelope(array $input, int $minSigners = 2, bool $mayBeConfidential = false): array
     {
         $validated = Validator::make($input, [
-            'signers' => ['required', 'array', 'min:2', 'max:'.SigningEnvelope::MAX_SIGNERS],
+            'signers' => ['required', 'array', 'min:'.$minSigners, 'max:'.SigningEnvelope::MAX_SIGNERS],
             'signers.*.email' => ['required', 'email', 'max:255'],
             'signers.*.step' => ['required', 'integer', 'min:1', 'max:'.SigningEnvelope::MAX_STEP],
             'signers.*.verification' => ['nullable', 'string', 'in:'.self::checkValues()],
@@ -373,13 +396,15 @@ final class SendForSigning
             'copies.*.email' => ['required', 'email', 'max:255'],
             'copies.*.name' => ['nullable', 'string', 'max:120', 'regex:/^[^\p{C}]*$/u'],
             'notify_copies' => ['sometimes', 'boolean'],
+            'confidential' => ['sometimes', 'boolean', $mayBeConfidential ? 'nullable' : 'declined'],
             'expires_on' => ['nullable', 'date_format:Y-m-d'],
             'auto_reminders' => ['sometimes', 'boolean'],
             'reminder_days' => ['nullable'],
             'create_invoice' => ['sometimes', 'boolean'],
             'deal_id' => ['nullable', 'integer'],
         ], [
-            'signers.min' => __('Lägg till minst två undertecknare, eller skicka till en.'),
+            'signers.min' => $minSigners > 1 ? __('Lägg till minst två undertecknare, eller skicka till en.') : __('Lägg till minst en undertecknare.'),
+            'confidential.declined' => __('Bara dokument som laddats upp under Signering kan vara konfidentiella.'),
             'signers.max' => __('Högst :max undertecknare.', ['max' => SigningEnvelope::MAX_SIGNERS]),
             'copies.max' => __('Högst :max kopiemottagare.', ['max' => SigningEnvelope::MAX_COPIES]),
         ], [

@@ -11,7 +11,10 @@ use App\Models\SigningEnvelope;
 use App\Models\SigningEvent;
 use App\Models\SigningRequest;
 use App\Support\Audit\Audit;
+use App\Support\Files\StoredFiles;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -49,13 +52,46 @@ final class PruneSigningLinks
         }
 
         // An envelope left without signers (ADR-046 amendment, gap 1) goes with them; a completed one is evidence and stays (trigger).
-        SigningEnvelope::query()
+        $stale = SigningEnvelope::query()
             ->where('status', '!=', EnvelopeStatus::Completed->value)
             ->where('updated_at', '<', $cutoff)
             ->whereDoesntHave('signers')
-            ->delete();
+            ->get(['id', 'company_id', 'document_type', 'signable_id']);
+
+        if ($stale->isNotEmpty()) {
+            SigningEnvelope::query()->whereKey($stale->modelKeys())->delete();
+            $this->pruneStandaloneDocuments($stale);
+        }
 
         return $requests->count();
+    }
+
+    /**
+     * A standalone document (module Signering, ADR-046 S7) that was sent but
+     * never signed goes with its last envelope: the row and its file. One
+     * that was never sent stays until someone deletes it, and one with an
+     * envelope left (a signed one) stays with the signing evidence.
+     *
+     * @param  Collection<int, SigningEnvelope>  $envelopes  the envelopes just deleted
+     */
+    private function pruneStandaloneDocuments(Collection $envelopes): void
+    {
+        foreach ($envelopes->where('document_type', 'DOCUMENT')->whereNotNull('signable_id')->unique('signable_id') as $envelope) {
+            if (SigningEnvelope::query()->where('document_type', 'DOCUMENT')->where('signable_id', $envelope->signable_id)->exists()) {
+                continue;
+            }
+
+            DB::transaction(function () use ($envelope): void {
+                $path = DB::table('signing_documents')->where('company_id', $envelope->company_id)->where('id', $envelope->signable_id)->value('path');
+
+                if (! is_string($path)) {
+                    return;
+                }
+
+                DB::table('signing_documents')->where('company_id', $envelope->company_id)->where('id', $envelope->signable_id)->delete();
+                StoredFiles::deleteUnreferenced([$path]);
+            });
+        }
     }
 
     /**
