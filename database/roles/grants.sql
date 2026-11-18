@@ -291,6 +291,7 @@ BEGIN
         ('recurring_invoices', 'SELECT, INSERT, UPDATE, DELETE'),
         ('register_import_presets', 'SELECT, INSERT, UPDATE'),
         ('register_imports', 'SELECT, INSERT, UPDATE'),
+        ('report_definitions', 'SELECT, INSERT, UPDATE, DELETE'),
         ('saas_contract_versions', 'SELECT, INSERT'),
         ('saas_corrections', 'SELECT, INSERT'),
         ('saas_customer_months', 'SELECT, INSERT, UPDATE, DELETE'),

@@ -68,6 +68,7 @@ class OverviewPage extends Component
             'kpis' => $data['kpis'],
             'todos' => $data['todos'],
             'vouchers' => $data['vouchers'],
+            'canSeeReportTiles' => $user->hasTeamPermission($company, 'analysis:view'),
             'canSeeStatistics' => $user->hasTeamPermission($company, 'reports:view'),
             'moneyFigures' => $money['figures'],
             'moneyVat' => $money['vat'],

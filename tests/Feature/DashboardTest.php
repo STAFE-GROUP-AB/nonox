@@ -87,9 +87,10 @@ it('uses a fixed number of queries', function () {
     // Cold also includes one lookup of reported VAT periods for Nästa datum (DeadlineCompletion), whatever the history,
     // and Momsbufferten's fiscal-year lookup (it reads the balances only when a year has begun), and one lookup of the
     // waiting-list entry that let the user in (PersonalChecklist, ADR-038 addendum), and the menu's one check whether any shared
-    // group mentions the user's companies (ADR-081 E22).
-    expect($cold)->toBeLessThan(51)
-        ->and($warm)->toBeLessThan(18);
+    // group mentions the user's companies (ADR-081 E22), and the role fingerprint of the lazy report tiles component (ADR-081 E18):
+    // one, however many reports are pinned, as the tiles load in a request of their own.
+    expect($cold)->toBeLessThan(52)
+        ->and($warm)->toBeLessThan(19);
 });
 
 it('hides the getting started panel per user and company, and shows it again', function () {

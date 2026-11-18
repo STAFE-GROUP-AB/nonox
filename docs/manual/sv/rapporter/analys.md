@@ -50,6 +50,32 @@ Klicka på ett belopp för att se posterna bakom det: för bokföringsrader veri
 
 En tabell får högst 10 000 celler. Blir den större visas **För många celler**; välj färre rader eller kolumner, eller lägg på ett filter.
 
+## Spara en rapport och dela den
+
+Under tabellen finns **Sparade rapporter**. En sparad rapport kommer ihåg dina val, uppgifter, rader, kolumner, mått, filter, sortering och period, men inte siffrorna. När du eller någon annan öppnar den körs den på nytt, med den personens egen behörighet.
+
+![Sparade rapporter under analysen.](/bilder/manual/rapporter/sparade-rapporter.webp)
+
+1. Ställ in analysen som du vill ha den.
+2. Skriv ett namn under **Namn på rapporten**.
+3. Välj **Vem ser rapporten?**: **Bara jag** eller **Hela företaget**. **Hela företaget** syns bara för dig som har rätt att dela rapporter: ägare, administratör, redovisningskonsult och revisor.
+4. Kryssa i **Rullande period, de senaste månaderna fram till idag** om rapporten alltid ska visa de senaste månaderna; rutan är förkryssad bara när **Till månad** är innevarande månad. Lämnar du den tom behåller rapporten exakt de månader du valde.
+5. Klicka på **Spara som ny rapport**.
+
+Klicka på rapportens namn för att öppna den. När du har öppnat en av dina egna rapporter och ändrat något klickar du på **Uppdatera** med rapportens namn för att spara ändringen. Du kan spara högst 50 rapporter. **Radera** tar bort en rapport för alla som ser den, efter en fråga om du är säker. Bara du som sparade en rapport kan ändra den; du som får dela rapporter kan också radera en delad rapport och ta bort den från översikten.
+
+Att dela en rapport ger ingen mer insyn. Den som öppnar en delad rapport ser bara det hennes egen roll får se, och en kollega som är [begränsad till enheter](/manual/installningar/behorighet-per-enhet) får sina siffror avgränsade som vanligt. Saknar någon behörighet till rapportens uppgifter, till exempel lön eller kundfakturor, visas rapporten inte alls för den personen. Under **Vem ser rapporten?** står att namnet på en delad rapport syns för alla i företaget som kan använda Analys, så skriv inget i det som inte ska synas. Lämnar den som sparade en delad rapport företaget eller tas bort, finns den kvar utan ägare: den som får dela rapporter kan då ändra, visa på översikten och radera den. Privata rapporter raderas när personen lämnar företaget eller tar bort sitt konto. Visas bara de första 200 rapporterna står det under listan.
+
+## Hämta som CSV, Excel eller PDF
+
+Ovanför tabellen finns **Hämta som** med **CSV**, **Excel** och **PDF**. Filen innehåller det du ser på skärmen och inget mer: samma rader, kolumner, jämförelse och summor, och ett belopp som är **Dold** står som **Dold** också i filen. CSV-filen använder semikolon och decimalkomma och öppnas direkt i Excel. En PDF får högst 400 rader och 14 kolumner; för en större tabell får du ett meddelande om att välja CSV eller Excel. Varje nedladdning loggas, utan siffror.
+
+## Rapporter på översikten
+
+![En sparad rapport som ruta på översikten.](/bilder/manual/rapporter/rapportflikar.webp)
+
+Klicka på **Visa på översikten** vid en rapport så visas dess totalsumma som en ruta på [översikten](/manual/kom-igang/oversikten), högst fyra rutor. Rutan räknas ut när du öppnar översikten och visar din egen siffra: en kollega som är begränsad till enheter ser sin del, och är beloppet dolt står det **Dold**. En delad rapport visas på översikten för alla som får öppna den, och att visa en delad rapport där kräver samma rätt som att dela den. Klicka på rutan för att öppna rapporten. **Ta bort från översikten** tar bort rutan.
+
 ## Lön visas aldrig per person
 
 Uppgifterna **Lön, sammanräknad** finns bara för den som har behörighet till lön. De visar bruttolön per lönekod, kostnadsställe och månad, aldrig per person och utan drill-down.

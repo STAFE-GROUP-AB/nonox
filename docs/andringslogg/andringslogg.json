@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-sparade-rapporter",
+      "datum": "2026-11-18T16:00:00+01:00",
+      "rubrik": "Spara och dela rapporter i Analys",
+      "beskrivning": "Under Bokföring → Analys kan du spara en analys som en rapport, bara för dig eller delad med företaget, och hämta den som CSV, Excel eller PDF. Du kan visa en rapport som ruta på översikten. Den som öppnar en delad rapport ser bara det hens egen roll får se, och dolda lönebelopp står som Dold också i filerna.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-18-signering-kontroll",
       "datum": "2026-11-18T15:00:00+01:00",
       "rubrik": "Kontrollera den som signerar med en kod",

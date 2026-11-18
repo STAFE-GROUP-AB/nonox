@@ -97,7 +97,17 @@
             </div>
         </x-ui.card>
 
-        <x-ui.card :title="$dataset->label()" :description="__(':measure, :from till :to', ['measure' => $measure->label, 'from' => $definition->from->format('Y-m'), 'to' => $definition->to->format('Y-m')])">
+        <x-ui.card :title="$activeReport !== null ? $activeReport->name : $dataset->label()" :description="__(':measure, :from till :to', ['measure' => $measure->label, 'from' => $definition->from->format('Y-m'), 'to' => $definition->to->format('Y-m')])">
+            @if(! $result->tooLarge && $result->rows !== [])
+                <x-slot:action>
+                    <div class="flex flex-wrap items-center gap-3 text-sm" data-analysis-export>
+                        <span class="text-gray-600">{{ __('Hämta som') }}</span>
+                        <button type="button" wire:click="export('csv')" aria-label="{{ __('Hämta som :format', ['format' => 'CSV']) }}" wire:loading.attr="disabled" wire:target="export" class="font-medium text-accent-600 hover:text-accent-700 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500">CSV</button>
+                        <button type="button" wire:click="export('xlsx')" aria-label="{{ __('Hämta som :format', ['format' => 'Excel']) }}" wire:loading.attr="disabled" wire:target="export" class="font-medium text-accent-600 hover:text-accent-700 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500">Excel</button>
+                        <button type="button" wire:click="export('pdf')" aria-label="{{ __('Hämta som :format', ['format' => 'PDF']) }}" wire:loading.attr="disabled" wire:target="export" class="font-medium text-accent-600 hover:text-accent-700 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500">PDF</button>
+                    </div>
+                </x-slot:action>
+            @endif
             @if($result->tooLarge)
                 <x-ui.empty-state :title="__('För många celler')">
                     {{ __('Tabellen skulle få fler än :count celler. Välj färre rader eller kolumner, eller lägg på ett filter.', ['count' => number_format(App\Domain\Analysis\AnalysisRunner::CELL_CAP, 0, ',', "\u{00A0}")]) }}
@@ -246,6 +256,66 @@
                 @endif
                 @if($limited)
                     <p class="mt-3 text-sm text-gray-600" data-scope-note>{{ __('Du ser bara rader på dina egna kostnadsställen och projekt. Personalkostnader (konto 7000–7699) och lönebokföring visas inte, och andra enheter visas som Annan enhet.') }}</p>
+                @endif
+            @endif
+        </x-ui.card>
+
+        <x-ui.card :title="__('Sparade rapporter')" :description="__('En sparad rapport kommer ihåg dina val, inte siffrorna. När någon öppnar den körs den på nytt med deras egen behörighet.')" data-saved-reports>
+            <form wire:submit="saveReport" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <x-ui.field for="report_name" :label="__('Namn på rapporten')" error="reportName" class="lg:col-span-2">
+                    <input id="report_name" type="text" maxlength="80" class="{{ $input }} mt-1" wire:model="reportName" autocomplete="off">
+                </x-ui.field>
+                <x-ui.field for="report_visibility" :label="__('Vem ser rapporten?')" :hint="$canUpdateActive && ! $canShare && $activeReport->visibility === App\Domain\Analysis\Reports\ReportVisibility::Company ? __('Du kan inte längre dela rapporter. Uppdaterar du blir rapporten privat och försvinner från andras översikt.') : __('Namnet på en delad rapport syns för alla i företaget som kan använda Analys.')">
+                    <select id="report_visibility" class="{{ $input }} mt-1" wire:model="reportVisibility">
+                        <option value="PRIVATE">{{ App\Domain\Analysis\Reports\ReportVisibility::Private->label() }}</option>
+                        @if($canShare)
+                            <option value="COMPANY">{{ App\Domain\Analysis\Reports\ReportVisibility::Company->label() }}</option>
+                        @endif
+                    </select>
+                </x-ui.field>
+                <div class="flex items-end">
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" class="rounded border-stone-300 text-accent-600 focus:ring-accent-500" wire:model="reportRolling">
+                        {{ __('Rullande period, de senaste månaderna fram till idag') }}
+                    </label>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-4">
+                    <x-button type="submit">{{ __('Spara som ny rapport') }}</x-button>
+                    @if($canUpdateActive)
+                        <x-secondary-button type="button" wire:click="updateReport">{{ __('Uppdatera :name', ['name' => $activeReport->name]) }}</x-secondary-button>
+                    @endif
+                </div>
+            </form>
+
+            @if($reports->isEmpty())
+                <p class="mt-6 text-sm text-gray-600">{{ __('Du har inga sparade rapporter ännu. Ställ in en analys ovan och spara den med ett namn.') }}</p>
+            @else
+                <ul class="mt-6 divide-y divide-stone-100" data-report-list>
+                    @foreach($reports as $report)
+                        @php($mine = $report->owner_user_id === $userId)
+                        @php($isCompany = $report->visibility === App\Domain\Analysis\Reports\ReportVisibility::Company)
+                        @php($canPin = $mine ? (! $isCompany || $canShare) : ($isCompany && $canShare && ($report->pinned || $report->owner_user_id === null)))
+                        <li class="flex flex-wrap items-center justify-between gap-3 py-3" wire:key="report-{{ $report->id }}">
+                            <div class="min-w-0">
+                                <button type="button" wire:click="openReport({{ $report->id }})" class="font-semibold text-ink underline-offset-2 hover:underline">{{ $report->name }}</button>
+                                <span class="ms-2 text-xs text-gray-600">{{ $report->visibility->label() }}@if(! $mine), {{ __('delad med dig') }}@endif</span>
+                                @if($report->pinned)
+                                    <x-ui.badge tone="neutral" class="ms-2">{{ __('På översikten') }}</x-ui.badge>
+                                @endif
+                            </div>
+                            <div class="flex flex-wrap items-center gap-4 text-sm">
+                                @if($canPin)
+                                    <button type="button" wire:click="pinReport({{ $report->id }}, {{ $report->pinned ? 'false' : 'true' }})" class="font-medium text-accent-600 hover:text-accent-700">{{ $report->pinned ? __('Ta bort från översikten') : __('Visa på översikten') }}<span class="sr-only"> {{ $report->name }}</span></button>
+                                @endif
+                                @if($mine || ($report->visibility === App\Domain\Analysis\Reports\ReportVisibility::Company && $canShare))
+                                    <button type="button" wire:click="deleteReport({{ $report->id }})" wire:confirm="{{ __('Radera rapporten :name? Den försvinner för alla som kan se den. Bokföringen påverkas inte.', ['name' => $report->name]) }}" class="text-gray-600 underline">{{ __('Radera') }}<span class="sr-only"> {{ $report->name }}</span></button>
+                                @endif
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+                @if($listCut)
+                    <p class="mt-3 text-sm text-gray-600" data-report-list-cut>{{ __('Bara de första :count rapporterna visas. Radera några du inte behöver för att se fler.', ['count' => App\Domain\Analysis\Reports\SavedReports::LIST_LIMIT]) }}</p>
                 @endif
             @endif
         </x-ui.card>

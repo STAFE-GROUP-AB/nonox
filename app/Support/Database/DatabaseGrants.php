@@ -345,6 +345,8 @@ final class DatabaseGrants
         'recurring_invoices' => GrantDecision::ReadWrite,
         'register_import_presets' => GrantDecision::NoDelete,
         'register_imports' => GrantDecision::NoDelete,
+        // Saved reports of the analysis view (ADR-081 E18): choices only, no figures; changed and deleted by their owner.
+        'report_definitions' => GrantDecision::ReadWrite,
         // NONOX SaaS (ADR-080): versions and corrections are append-only (trigger); a closed month and its
         // customer rows are frozen by triggers; open months are recomputed, estimates replaced.
         'saas_contract_versions' => GrantDecision::AppendOnly,
