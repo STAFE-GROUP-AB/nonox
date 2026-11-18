@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo\Extras;
 
+use App\Actions\Accounting\AttachToVoucher;
 use App\Actions\Documents\AddDocumentVersion;
 use App\Actions\Documents\LinkDocument;
 use App\Actions\Documents\SetLegalHold;
 use App\Actions\Documents\StoreDocument;
+use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Documents\LegalHoldReason;
 use App\Models\Customer;
 use App\Models\Document;
 use App\Models\Supplier;
+use App\Models\Voucher;
 use App\Support\Tenancy\CurrentCompany;
 use Database\Seeders\Demo\DemoContext;
 use Database\Seeders\Demo\DemoExtra;
@@ -100,6 +103,13 @@ final class DocumentsExtras extends DemoExtra
             ], $this->pdf('Faktura-bredband.pdf', 'Faktura bredband', 'Årsavgift för fiberanslutning till kontoret, 12 månader.'));
 
             app(SetLegalHold::class)($c->user, $receipt, true, LegalHoldReason::TaxAudit);
+
+            // Underlag on two posted vouchers, so Alla dokument (E20) shows files from more than one source.
+            $vouchers = Voucher::query()->where('status', VoucherStatus::Posted)->orderBy('id')->limit(2)->get();
+
+            foreach ($vouchers as $index => $voucher) {
+                app(AttachToVoucher::class)($c->user, $voucher, $this->pdf('Kvitto-'.($index + 1).'.pdf', 'Kvitto '.($index + 1), 'Kvitto för en kostnad som bokförts, sparat som underlag.'));
+            }
         }));
     }
 

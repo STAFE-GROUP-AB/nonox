@@ -64,6 +64,14 @@
       "omrade": "Bokföring"
     },
     {
+      "id": "2026-11-18-alla-dokument",
+      "datum": "2026-11-18T12:30:00+01:00",
+      "rubrik": "Alla dokument på ett ställe",
+      "beskrivning": "Under Dokument → Alla dokument ser du företagets egna dokument tillsammans med filerna i övriga delar av NONOX: underlag på verifikationer, leverantörsfakturor, Inkorgen, dokument för NONOX Avtal, signerade dokument, kundportalen, protokoll och lönebesked. Varje källa visas bara för den som får öppna den i sin egen del, och ingen fil kopieras.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-18-inkopsanmodan",
       "datum": "2026-11-18T12:00:00+01:00",
       "rubrik": "Inköpsanmodan med attest",

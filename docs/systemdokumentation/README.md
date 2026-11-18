@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.146
+- Version: 0.147
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -826,6 +826,32 @@ year").
   BFNAR 2013:2 om form och läsbarhet för räkenskapsinformation som laddas upp
   här, och om den sparade PDF-texten är räkenskapsinformation (förslag:
   härledd data som raderas med filen).
+- **Alla dokument (ADR-081 lucka 9, paket E20).** Sidan Alla dokument
+  (`/dokument/alla`) är en läsmodell över dokumentarkivet och funktionernas
+  egna filer: underlag på verifikationer (`voucher_attachments`),
+  leverantörsfakturornas filer, bilagor i Inkorgen, dokument för NONOX Avtal,
+  PDF:er som skickats för signering och signeringsbevis, filer i
+  kundportalens trådar, godkända protokoll i Styrelserum och lönebesked.
+  Varje källa är en adapter (`App\Domain\Documents\Sources`) som läser
+  källans egen tabell och som visas bara för den som får öppna källan på
+  dess egen sida eller filväg: samma behörighet som där (verifikationer
+  `vouchers:view`, leverantörsfakturor `SupplierInvoicePolicy::canSeePayables`,
+  Inkorgen `inbox:view`, NONOX Avtal `AgreementAi::availableFor`, signering
+  `invoices:view` för offerter och `crm:view` för avtal, kundportalen
+  `customer-portal:view`, protokoll `meetings:view`, företagets dokument
+  `DocumentPolicy` och `DocumentAccess` per lagringsklass). Lönebesked och
+  anställdas dokument i NONOX Avtal kräver dessutom `payroll:view-sensitive`,
+  vilket källornas egna sidor inte kräver. En medlem som är begränsad till
+  kostnadsställen eller projekt får inte sidan, och verifikationer och
+  leverantörsfakturor visas aldrig för en sådan medlem. Ingen fil kopieras,
+  ingen ny lagring tillkommer och ingen verifikation skapas eller ändras:
+  raderna länkar till filen där den ligger. Källorna läses med en enda
+  UNION-fråga per sida, så antalet frågor beror inte på antalet dokument.
+  Varje adapter filtrerar på företaget. Titlar som lagras krypterade
+  (personaldokument och dokument för NONOX Avtal) dekrypteras först för den
+  som får se dem och går inte att söka i. Ingenting skrivs i
+  behandlingshistoriken för att en lista visas; filerna öppnas genom källans
+  egna filvägar, som gör sina egna kontroller och loggar som förut.
 
 ### 4.6 Konteringsmallar
 
@@ -6495,3 +6521,4 @@ påverkar bokföringen och fakturan:
 | 0.144 | 2026-11-18 | Konsolidering och körlogg för koncerner (avsnitt 4.10b, ADR-060 tillägg 2.4, ADR-081 paket E24): koncernens bekräftade medlemmar läses var för sig inom sitt företag, ett dotterföretags intäkter och kostnader räknas från förvärvet till avyttringen och dess balans tas med om det är medlem periodens sista dag, kontona flyttas enligt kontomappningen (`group_account_maps`, inom samma kontoklass) och beloppen summeras. Varje körning sparas i `corporate_group_runs` med indata och resultat och deras SHA-256 (samma indata ger samma resultat); tabellen kan inte ändras eller tas bort. Inga elimineringar ännu. Ingenting skrivs i något företags bokföring och ingen verifikation ändras. |
 | 0.145 | 2026-11-18 | Hashkedja för signeringens händelser (avsnitt 5, ADR-046 tillägg 2026-11-18, paket S2): varje händelse i ett kuvert länkas till den förra med SHA-256, från dokumentets SHA-256, och en PostgreSQL-trigger nekar en händelse som inte följer löpnumret eller inte länkar. Kedjans sista hash sparas på kuvertet och i behandlingshistoriken när kuvertet avslutas. Kuvertet har en räknare (`next_sequence`, `last_hash`) som bara triggern flyttar, så ett löpnummer används aldrig två gånger, och en avslutad kedja tar inte emot fler händelser. Ny tabell `signing_document_versions` (kan inte ändras) och nya kolumner på `crm_signing_events` och `signing_envelopes`. Den nattliga `signing:verify` räknar om kedjorna och filernas kontrollsummor. Befintliga kuvert fick en första kedjehändelse; inga befintliga rader ändrades. Ingen bokföringsregel ändras. |
 | 0.146 | 2026-11-18 | Elimineringar och koncernjournal för koncerner (avsnitt 4.10b och 4.10c, ADR-060 tillägg 2.4 och 3.2, ADR-081 paket E25): förslag räknas ur koncernmarkeringarna (sex par; fordringar, skulder och lån som utgående balanser över alla år, och "Kräver granskning" när det första årets ingående balans har beloppet) och, för andelar mot aktiekapital i ett enda grundat helägt dotterföretag, ur balanserna, med båda sidor och differens. Ett förslag där sidorna stämmer godkänns, bundet till det förslag personen såg, in i `group_entries` och `group_entry_rows`: numrerade i följd per koncern, kedjade med SHA-256, balanserade enligt en kontroll vid commit och omöjliga att ändra eller ta bort (modell, triggrar, databasroll). Fel rättas med återföringar. Konsolideringen drar posterna för exakt samma period och anger dem med kontrollsumma i indata (motorversion 2). Ingenting skrivs i något företags bokföring och ingen verifikation ändras. |
+| 0.147 | 2026-11-18 | Alla dokument (avsnitt 4.5, ADR-081 lucka 9, paket E20): en gemensam lista över företagets dokument och funktionernas egna filer, med en adapter per källa som tillämpar källans egen behörighet och bara läser, utan kopior, ny lagring eller ändring av någon verifikation. Lönebesked och anställdas dokument kräver dessutom `payroll:view-sensitive`. |

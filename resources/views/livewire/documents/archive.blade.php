@@ -4,6 +4,7 @@
     $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
 @endphp
 <div class="space-y-6">
+    <p class="text-sm text-gray-600">{{ __('Filer i övriga delar av NONOX, som underlag, leverantörsfakturor och protokoll, finns i') }} <a href="{{ route('documents.all') }}" class="font-medium text-accent-700 underline" wire:navigate>{{ __('Alla dokument') }}</a>.</p>
     @if($canManage)
         <div>
             @if(! $showForm)

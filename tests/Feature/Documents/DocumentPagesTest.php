@@ -80,7 +80,13 @@ it('hides the upload form from the auditor and the page from the approver', func
 
 it('shows Dokument in the navigation for those who may see it', function () {
     $this->get('/oversikt')->assertSee(route('documents.index'), false);
-    $this->actingAs(Bookkeeping::member($this->company, 'approver'))->get('/oversikt')->assertDontSee(route('documents.index'), false);
+
+    // The approver holds no documents permission, only source permissions: the list over every source, not the archive.
+    $this->actingAs(Bookkeeping::member($this->company, 'approver'))->get('/oversikt')
+        ->assertDontSee('href="'.route('documents.index').'"', false)
+        ->assertSee(route('documents.all'), false);
+
+    $this->actingAs(Bookkeeping::member($this->company, 'employee'))->get('/oversikt')->assertDontSee(route('documents.all'), false);
 });
 
 it('lists documents in a fixed number of queries', function () {

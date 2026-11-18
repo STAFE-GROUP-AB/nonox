@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Navigation;
 
 use App\Domain\Documents\DocumentAccess;
+use App\Domain\Documents\DocumentOverview;
 use App\Domain\Firm\Memberships;
 use App\Domain\Group\GroupAccess;
 use App\Domain\Mileage\MileageLog;
@@ -168,13 +169,18 @@ final class Navigation
             ],
         ];
 
-        // The company's document archive (ADR-081 gap 9).
-        if ($company !== null && DocumentAccess::allowsAny($user, $company, 'documents:view')) {
+        // The company's document archive and the list over every source's files (ADR-081 gap 9, E19 and E20).
+        if ($company !== null && DocumentOverview::allowed($user, $company) !== []) {
+            $archive = DocumentAccess::allowsAny($user, $company, 'documents:view');
+
             $sections[] = [
                 'label' => __('Dokument'),
-                'route' => 'documents.index',
+                'route' => $archive ? 'documents.index' : 'documents.all',
                 'patterns' => ['documents.*'],
-                'children' => fn (User $user, Company $company): array => [],
+                'children' => fn (User $user, Company $company): array => [
+                    ...($archive ? [['label' => __('Dokument'), 'route' => 'documents.index', 'active' => ['documents.index', 'documents.show']]] : []),
+                    ['label' => __('Alla dokument'), 'route' => 'documents.all'],
+                ],
             ];
         }
 
