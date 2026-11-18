@@ -1,7 +1,7 @@
 # ADR-046: CRM stage 3, signing, quote templates and the agreement register
 
 - Status: **Implemented, waiting for the owner's review** (2026-11-04)
-- Amendment 2026-11-18 "best in class": **Proposed** (see the end of this file)
+- Amendment 2026-11-18 "best in class": **Accepted** (owner 2026-11-18: all recommended defaults, except decision 16: no BankID driver for now; see the end of this file)
 - Builds on: ADR-043 (CRM, stage 3 of its plan), ADR-011 (quotes, orders,
   invoices, recurring invoices), ADR-002 (PDF), ADR-032 (API, webhooks),
   ADR-017 (modules), ADR-027 (Att göra)
@@ -1368,7 +1368,7 @@ package that depends on it merges.
 | 13 | Reminder default | Every 3 days, at most 10, during business hours | Useful without nagging |
 | 14 | Deadline default | 30 days (3–90), changeable while out | Today's default, with the reference's range |
 | 15 | Bulk send limit | 500 envelopes per run, within the mail quota | Protects deliverability and the queue |
-| 16 | BankID driver | Build it (S18); off in /hq until the operator's relying-party agreement is signed | The most-asked-for identity in Sweden; the agreement is the only blocker |
+| 16 | BankID driver | **Owner 2026-11-18: not now.** S18 is deferred; S17's provider framework is still built so BankID can be added later without rework | A simple electronic signature is legally valid for the documents NONOX signs (eIDAS art. 25(1)); BankID only adds evidential weight |
 | 17 | CSC API v2 driver | Build it generically (S17); no QTSP contracted yet | Opens qualified signatures without binding NONOX to one provider |
 | 18 | Custom domain per company | Not now; an instance-level signing host only | No TLS automation exists; self-hosters already have their own domain |
 | 19 | Certificate language | A bilingual Swedish/English certificate; page and mails in each signer's language (sv/en) | Foreign signers are common; one certificate for all |
@@ -1412,7 +1412,7 @@ cryptography, PDF signing, legal or security-critical logic. "Review":
 | S15 | Bulk send: CSV import with preview and validation, `signing_bulk_sends`, queued envelopes, quota | 8 | S14 | standard | technical + legal | module pages, queue job, mail quota |
 | S16 | Retention, register extract and erasure: classes and settings, `retention_until`, legal hold, pruning with the replaced delete trigger, `DataSubjectExport` and erasure, GDPR and DPA texts | 11 | S1, S2 | heavy | technical + legal | `PruneSigningLinks`, delete trigger, `DataSubjectExport`, `EraseRegisterEntry`, `docs/gdpr/*`, `docs/juridik/*` |
 | S17 | Provider framework and the CSC API v2 driver (+ fake): contract, registry, per-company encrypted configuration, SSRF checks, external signing through the engine | 12 | S3, S10 | heavy | technical + legal | new `app/Domain/Signing/Providers/*`, settings page, engine |
-| S18 | BankID driver: sign with QR code and same-device start, collect, encrypted evidence, masked personal number on the certificate; off in /hq until the agreement | 12 | S17 | heavy | technical + legal | `Providers/BankId/*`, signing page, certificate, `/hq` switch |
+| S18 | **Deferred (owner 2026-11-18).** BankID driver: sign with QR code and same-device start, collect, encrypted evidence, masked personal number on the certificate; off in /hq until the agreement | 12 | S17 | heavy | technical + legal | `Providers/BankId/*`, signing page, certificate, `/hq` switch |
 | S19 | API and webhooks: Connect endpoints for envelopes, recipients, fields, documents and templates; idempotency keys; `signing.recipient_signed`, `signing.completed`, `signing.declined`, `signing.expired`; OpenAPI and the API changelog | 1, 8, 10 | S7, S14 | standard | technical | `app/Modules/Connect/Http/Controllers/Api/V1/*`, `WebhookEvents`, `docs/api/openapi.yaml` |
 | S20 | Branding and scripts: `Brand` on the page, mails and certificate; the instance signing host; the bilingual certificate; CJK in dompdf (script runs if needed); golden tests for Greek, Cyrillic and CJK | 5 | S5 | standard | technical | `SigningPdfs`, `certificate.blade.php`, mail views, `config/nonox.php` |
 | S21 | Launch sweep: manual section `docs/manual/sv/signering/`, landing, `Features.php`, rows in `docs/migration/jamforelse.json`, README, a legal review of every public text, this amendment to "Accepted, implemented" | all | S1–S20 (S18 may launch later) | standard | technical + legal | public pages, `docs/migration`, this ADR |

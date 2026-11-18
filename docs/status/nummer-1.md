@@ -44,6 +44,7 @@ Arbetet tas i den här ordningen. Ingenting längre ner börjar innan det ovanf�
 
 Ägarens beslut 2026-11-18:
 - NONOX signering i toppklass (punkt 27) byggs: alla funktioner och idéer från referensen, utan att använda tjänsten eller kopiera kod.
+- Tillägget till ADR-046 godkänt: alla rekommenderade beslut gäller, också PDF-motorn i Python (frivillig vid egen drift). Undantag: BankID byggs inte nu (S18 skjuts upp); leverantörsramen (S17) byggs ändå. Försegling, långtidsvalidering och kontrollsidan (S10–S12) slås inte på i den driftade tjänsten förrän juristfrågan om betrodda tjänster enligt eIDAS är besvarad.
 - NONOX som ERP (punkt 26) byggs med alla tio luckor, också de mindre kraven. Ordning: ADR-081 först, sedan paketen i den ordning ADR:n anger.
 - ADR-081 godkänd ("Ja"): alla 24 rekommenderade beslut gäller, och de nya behörigheterna och rollen Enhetschef (`unit_manager`) står i AGENTS.md §4. Koncernredovisningens steg 2 (E29–E31) väntar på redovisningskonsultens svar på H2 och H4.
 
