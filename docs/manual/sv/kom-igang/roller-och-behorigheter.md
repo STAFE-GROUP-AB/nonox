@@ -1,7 +1,7 @@
 ---
-beskrivning: De sex rollerna i ett företag – ägare, administratör, redovisningskonsult, bokförare, attestant och revisor – vad var och en får göra, och regeln om att två personer ska vara inblandade i attest.
+beskrivning: Rollerna i ett företag – ägare, administratör, redovisningskonsult, bokförare, attestant, revisor och enhetschef – vad var och en får göra, och regeln om två personer i attesten.
 ordning: 50
-sokord: [roll, behörighet, rättigheter, åtkomst, ägare, administratör, redovisningskonsult, bokförare, attestant, revisor, löneadministratör, dualitet, fyraögonsprincipen]
+sokord: [roll, behörighet, rättigheter, åtkomst, ägare, administratör, redovisningskonsult, bokförare, attestant, revisor, enhetschef, löneadministratör, dualitet, fyraögonsprincipen, kostnadsställe, begränsa]
 ---
 
 # Roller och behörigheter
@@ -10,7 +10,7 @@ Varje person i ett företag har en roll. Rollen avgör vad personen ser och får
 
 ![Rollerna att välja mellan när du lägger till en person i företaget.](/bilder/manual/kom-igang/roller-och-behorigheter.webp)
 
-## De sex rollerna
+## De sju rollerna
 
 | Roll | Får göra |
 |---|---|
@@ -20,6 +20,7 @@ Varje person i ett företag har en roll. Rollen avgör vad personen ser och får
 | **Bokförare** | Bokför och rättar verifikationer, skriver och skickar kundfakturor, registrerar leverantörsfakturor och förbereder betalningar, och ser rapporterna. Kan inte låsa perioder, göra bokslut eller momsdeklarationen. |
 | **Attestant** | Attesterar leverantörsfakturor och godkänner betalfiler. Kan läsa fakturor och verifikationer, men inte bokföra. |
 | **Revisor** | Kan läsa allt och exportera SIE-filer och arkivpaket, men inte bokföra eller ändra något. Ser behandlingshistoriken. |
+| **Enhetschef** | Ser resultatrapporten och huvudboken för de kostnadsställen och projekt hen är begränsad till, och inget annat. Se [Behörighet per enhet](/manual/installningar/behorighet-per-enhet). |
 
 > [!NOTE]
 > Varje artikel i manualen säger överst vilka roller den gäller för. Saknar du en knapp som beskrivs, kontrollera din roll under **Inställningar för företaget** eller fråga en ägare eller administratör.
@@ -35,6 +36,10 @@ När företaget har slagit på en modul kan det finnas fler roller att välja me
 - **Schemaläggare** (modulen Planering) lägger och publicerar schemat men attesterar inte tid till lönen. Hen kan checka in och ut i mobilen som övrig personal. Se [Roller och behörigheter i Planering](/manual/planering/roller-och-behorigheter).
 
 Modulerna ger också de vanliga rollerna behörigheter. En redovisningskonsult kan till exempel bokföra lönekörningar, och en bokförare kan arbeta i inkorgen. Vem som får hantera en modul står i modulens eget avsnitt i manualen.
+
+## Begränsa till kostnadsställen och projekt
+
+En ägare eller administratör kan begränsa en bokförare, en attestant eller någon med en roll i en modul till vissa kostnadsställen och projekt, under fliken **Behörighet per enhet** bland företagets inställningar. Personen ser då bara verifikationer, leverantörsfakturor och rapporter för dem. En begränsning gör aldrig att någon får göra mer än rollen tillåter. Ägaren, administratören, redovisningskonsulten och revisorn kan aldrig begränsas. Se [Behörighet per enhet](/manual/installningar/behorighet-per-enhet).
 
 ## Två personer i attesten
 
@@ -72,4 +77,5 @@ Nej, men ägaren kan [överlåta ägarskapet](/manual/installningar/agarskap-och
 - [Bjud in en användare](/manual/kom-igang/bjud-in-en-anvandare)
 - [Attest](/manual/leverantorer/attest)
 - [Passkeys och inloggningar](/manual/installningar/passkeys-och-inloggningar)
+- [Behörighet per enhet](/manual/installningar/behorighet-per-enhet)
 - [Ordlista: Attest](/manual/ordlista/ordlista#attest)

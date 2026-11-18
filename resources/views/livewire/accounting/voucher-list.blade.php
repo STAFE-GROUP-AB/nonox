@@ -3,7 +3,8 @@
 @endphp
 
 <div class="space-y-6">
-    {{-- Result of the nightly integrity check (AGENTS.md §6.4). --}}
+    {{-- Result of the nightly integrity check (AGENTS.md §6.4). Not for a member limited to cost centres or projects: it covers the whole ledger. --}}
+    @if($canCheckLedger)
     <div @class([
         'flex flex-wrap items-center justify-between gap-3 rounded-xl border px-5 py-4 text-sm',
         'border-green-200 bg-green-50 text-green-900' => $lastCheck?->payload['ok'] ?? false,
@@ -28,6 +29,9 @@
         </div>
         <button type="button" class="font-semibold underline" wire:click="checkLedger" wire:loading.attr="disabled">{{ __('Kontrollera nu') }}</button>
     </div>
+    @else
+        <p class="rounded-xl border border-gray-200 bg-white px-5 py-4 text-sm text-gray-700" data-dimension-scope-notice>{{ __('Du ser verifikationerna för de kostnadsställen och projekt du är begränsad till.') }}</p>
+    @endif
 
     <x-ui.card>
         <x-slot:cta>

@@ -8,6 +8,7 @@ use App\Models\Account;
 use App\Models\FiscalYear;
 use App\Models\Voucher;
 use App\Models\VoucherRow;
+use App\Support\Tenancy\DimensionScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -192,9 +193,13 @@ final class LedgerReports
      * Every row of the period per account, with the running balance
      * (Huvudbok; for one account, Kontoanalys).
      *
-     * @return list<array{number: int, name: string, opening: int, closing: int, rows: list<array{date: string, voucher_id: string, reference: string, description: string, debit: int, credit: int, balance: int}>}>
+     * For a member limited to cost centres or projects (ADR-081 gap 10), a
+     * row whose voucher they may not open shows only the row's own text and
+     * no link (`linked` false): the voucher's description is not theirs.
+     *
+     * @return list<array{number: int, name: string, opening: int, closing: int, rows: list<array{date: string, voucher_id: string, reference: string, description: string, debit: int, credit: int, balance: int, linked: bool}>}>
      */
-    public function generalLedger(LedgerQuery $query, ?int $accountNumber = null): array
+    public function generalLedger(LedgerQuery $query, ?int $accountNumber = null, ?DimensionScope $scope = null): array
     {
         $opening = $query->openingBalances();
         $accounts = $this->accounts()->when($accountNumber !== null, fn (Collection $accounts) => $accounts->where('number', $accountNumber));
@@ -212,6 +217,14 @@ final class LedgerReports
             ])
             ->groupBy('account_id');
 
+        // One query: the vouchers among these that a limited member may open.
+        $visible = null;
+
+        if ($scope !== null && $scope->restricted) {
+            $ids = $rows->flatten(1)->map(fn (VoucherRow $row): string => (string) $row->getAttribute('voucher_id'))->unique()->values()->all();
+            $visible = $ids === [] ? [] : array_flip(array_map('strval', $scope->constrainVouchers(Voucher::query()->whereIn('vouchers.id', $ids))->pluck('vouchers.id')->all()));
+        }
+
         $ledger = [];
 
         foreach ($accounts as $account) {
@@ -223,11 +236,14 @@ final class LedgerReports
                 /** @var VoucherRow $row */
                 $balance += $row->debit_ore->ore - $row->credit_ore->ore;
 
+                $linked = $visible === null || isset($visible[(string) $row->getAttribute('voucher_id')]);
+
                 $lines[] = [
                     'date' => (string) $row->getAttribute('voucher_date'),
                     'voucher_id' => (string) $row->getAttribute('voucher_id'),
                     'reference' => $row->getAttribute('series_code').$row->getAttribute('number'),
-                    'description' => (string) ($row->getAttribute('row_text') ?: $row->getAttribute('voucher_text')),
+                    'description' => (string) ($linked ? ($row->getAttribute('row_text') ?: $row->getAttribute('voucher_text')) : $row->getAttribute('row_text')),
+                    'linked' => $linked,
                     'debit' => $row->debit_ore->ore,
                     'credit' => $row->credit_ore->ore,
                     'balance' => $balance,
@@ -279,7 +295,7 @@ final class LedgerReports
         $from = self::clamp($query->from->subYear(), $previous);
         $to = self::clamp($query->to->subYear(), $previous);
 
-        return new LedgerQuery($previous, $from, $to, $query->costCenterId, $query->projectId);
+        return new LedgerQuery($previous, $from, $to, $query->costCenterId, $query->projectId, withoutPayroll: $query->withoutPayroll);
     }
 
     private static function clamp(CarbonImmutable $date, FiscalYear $year): CarbonImmutable

@@ -34,6 +34,7 @@ use App\Modules\ModuleManager;
 use App\Support\Demo\DemoMode;
 use App\Support\Files\PrivateFile;
 use App\Support\Money\Money;
+use App\Support\Tenancy\DimensionScope;
 use App\Support\Toast;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -143,6 +144,9 @@ class VoucherEditor extends Component
         $this->voucherDate = now()->toDateString();
 
         if ($copyOf instanceof Voucher) {
+            // A copy shows the original's rows: only of a voucher the person may see (ADR-081 gap 10).
+            abort_unless(Gate::allows('view', $copyOf), 404);
+
             $this->fillFrom($copyOf);
             $this->voucherDate = now()->toDateString();
             $this->description = mb_substr(__('Kopia av :reference: :description', [
@@ -422,9 +426,11 @@ class VoucherEditor extends Component
 
     public function render(): View
     {
-        $costCenters = CostCenter::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']);
+        // A member limited to cost centres or projects chooses only among them (ADR-081 gap 10).
+        $scope = DimensionScope::for($this->user(), $this->company());
+        $costCenters = CostCenter::query()->where('is_active', true)->when($scope->restricted, fn ($query) => $query->whereIn('id', $scope->costCenterIds))->orderBy('code')->get(['code', 'name']);
         $accounts = Account::query()->where('is_active', true)->orderBy('number')->get(['number', 'name', 'type', 'vat_box']);
-        $projects = Project::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']);
+        $projects = Project::query()->where('is_active', true)->when($scope->restricted, fn ($query) => $query->whereIn('id', $scope->projectIds))->orderBy('code')->get(['code', 'name']);
 
         return view('livewire.accounting.voucher-editor', [
             'costCenters' => $costCenters,
@@ -494,7 +500,10 @@ class VoucherEditor extends Component
             ? null
             : FiscalYear::query()->whereDate('start_date', '<=', $date)->whereDate('end_date', '>=', $date)->first();
 
-        $this->balances = $fiscalYear === null ? null : AccountBalances::atDate($fiscalYear->id, $date)->all();
+        // An account's balance is the whole company's: not for a member limited to cost centres or projects (ADR-081 gap 10).
+        $this->balances = $fiscalYear === null || DimensionScope::for($this->user(), $this->company())->restricted
+            ? null
+            : AccountBalances::atDate($fiscalYear->id, $date)->all();
     }
 
     /**

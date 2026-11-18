@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Accounting\Reports;
 
+use App\Support\Tenancy\DimensionScope;
+
 /**
  * A ledger report as a table of rows with translated headings and amounts
  * as Swedish text (decimal comma), for the CSV download and the archive
@@ -25,7 +27,7 @@ final class ReportTable
     /**
      * @return list<list<string|int>>
      */
-    public function rows(string $report, LedgerQuery $query, ?int $account = null, bool $compare = false): array
+    public function rows(string $report, LedgerQuery $query, ?int $account = null, bool $compare = false, ?DimensionScope $scope = null): array
     {
         $kr = fn (int $ore): string => ($ore < 0 ? '-' : '').intdiv(abs($ore), 100).','.str_pad((string) (abs($ore) % 100), 2, '0', STR_PAD_LEFT);
 
@@ -64,7 +66,7 @@ final class ReportTable
             case 'huvudbok':
                 $rows = [[$this->label('Konto'), $this->label('Datum'), $this->label('Ver'), $this->label('Text'), $this->label('Debet'), $this->label('Kredit'), $this->label('Saldo')]];
 
-                foreach ($this->reports->generalLedger($query, $account) as $account) {
+                foreach ($this->reports->generalLedger($query, $account, $scope) as $account) {
                     $rows[] = [$account['number'], '', '', $this->label('Ingående saldo'), '', '', $kr($account['opening'])];
 
                     foreach ($account['rows'] as $row) {

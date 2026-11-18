@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Modules\ModuleRegistry;
 use App\Support\Tenancy\ArchivedCompany;
 use App\Support\Tenancy\CompanyScope;
+use App\Support\Tenancy\DimensionScope;
 use Illuminate\Support\Collection;
 use Laravel\Jetstream\Jetstream;
 
@@ -24,6 +25,9 @@ final class Memberships
     /** @var array<int, ?string> role per company, null for the owner */
     private array $roles = [];
 
+    /** @var array<int, bool> whether the membership is limited to cost centres or projects (ADR-081 gap 10) */
+    private array $limited = [];
+
     /** @var array<int, list<string>> enabled module keys per company */
     private array $modules = [];
 
@@ -31,7 +35,10 @@ final class Memberships
     private function __construct(public readonly User $user, public readonly Collection $companies)
     {
         foreach ($companies as $company) {
-            $this->roles[$company->id] = $user->ownsTeam($company) ? null : (string) $company->getRelationValue('membership')?->getAttribute('role');
+            $membership = $company->getRelationValue('membership');
+            $this->roles[$company->id] = $user->ownsTeam($company) ? null : (string) $membership?->getAttribute('role');
+            $this->limited[$company->id] = $this->roles[$company->id] !== null
+                && DimensionScope::limitsMembership($this->roles[$company->id], (bool) $membership?->getAttribute('dimension_scoped'));
         }
 
         $ids = $this->ids();
@@ -79,6 +86,12 @@ final class Memberships
 
         // An archived company can only be read (ADR-024), as in User::hasTeamPermission.
         if ($this->companies->firstWhere('id', $companyId)?->isArchived() && ! ArchivedCompany::allows($permission)) {
+            return false;
+        }
+
+        // A member limited to cost centres or projects (ADR-081 gap 10) reaches nothing through a page that
+        // spans companies: those pages show each company whole, and none of them applies a scope.
+        if ($this->limited[$companyId] ?? false) {
             return false;
         }
 

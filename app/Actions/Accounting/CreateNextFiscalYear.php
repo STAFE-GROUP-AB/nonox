@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Notifications\FiscalYearCreated;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
+use App\Support\Tenancy\DimensionScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -206,7 +207,8 @@ class CreateNextFiscalYear
             fn (string $role): bool => in_array('fiscal-years:manage', Jetstream::findRole($role)->permissions ?? [], true),
         ));
 
-        $ids = DB::table('team_user')->where('team_id', $company->id)->whereIn('role', $roles)->pluck('user_id')
+        // Not a member limited to cost centres or projects (ADR-081 gap 10).
+        $ids = DimensionScope::whereUnlimited(DB::table('team_user')->where('team_id', $company->id)->whereIn('role', $roles))->pluck('user_id')
             ->push($company->user_id)->map(fn (mixed $id): int => (int) $id)->unique()->values();
 
         $told = DB::table('notifications')

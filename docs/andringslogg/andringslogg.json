@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-behorighet-per-enhet",
+      "datum": "2026-11-18T01:55:00+01:00",
+      "rubrik": "Behörighet per enhet och rollen Enhetschef",
+      "beskrivning": "En ägare eller administratör kan begränsa en bokförare, attestant eller enhetschef till vissa kostnadsställen och projekt under Behörighet per enhet. Personen ser då bara verifikationer, leverantörsfakturor och rapporter för dem, och inga rapporter för hela företaget. Administratörer, redovisningskonsulter och revisorer kan aldrig begränsas.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-18-planering-i-toppklass",
       "datum": "2026-11-18T00:55:00+01:00",
       "rubrik": "Planering i toppklass",

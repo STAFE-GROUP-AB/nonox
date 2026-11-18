@@ -14,6 +14,7 @@ use App\Models\Voucher;
 use App\Models\VoucherAttachment;
 use App\Models\VoucherRow;
 use App\Support\Files\InlineFile;
+use App\Support\Tenancy\DimensionScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -52,14 +53,19 @@ class VoucherController
 
         $voucher->load(['rows.account', 'rows.costCenter', 'rows.project', 'series', 'corrects.series', 'correctedBy.series', 'attachments']);
 
+        // An account's balance is the whole company's: not for a member limited to cost centres or projects (ADR-081 gap 10).
+        $limited = DimensionScope::current()->restricted;
+
         return view('accounting.vouchers.show', [
             'voucher' => $voucher,
             'postedBy' => $voucher->posted_by ? User::query()->find($voucher->posted_by) : null,
             'acquiredAssets' => $voucher->isPosted() ? $voucher->acquiredAssets()->orderBy('number')->get(['id', 'number', 'name', 'acquisition_ore']) : collect(),
             'assetAdditions' => $voucher->isPosted() ? FixedAssetAddition::query()->where('voucher_id', $voucher->id)->with('asset:id,number,name')->orderBy('id')->get() : collect(),
-            'balances' => $voucher->isPosted()
-                ? AccountBalances::afterRows($voucher->fiscal_year_id, $voucher->rows)
-                : AccountBalances::afterDraftRows($voucher->rows, AccountBalances::atDate($voucher->fiscal_year_id, $voucher->voucher_date)),
+            'balances' => match (true) {
+                $limited => [],
+                $voucher->isPosted() => AccountBalances::afterRows($voucher->fiscal_year_id, $voucher->rows),
+                default => AccountBalances::afterDraftRows($voucher->rows, AccountBalances::atDate($voucher->fiscal_year_id, $voucher->voucher_date)),
+            },
             'showCostCenters' => $voucher->rows->contains(fn (VoucherRow $row): bool => $row->cost_center_id !== null) || CostCenter::query()->exists(),
             'showProjects' => $voucher->rows->contains(fn (VoucherRow $row): bool => $row->project_id !== null) || Project::query()->exists(),
         ]);

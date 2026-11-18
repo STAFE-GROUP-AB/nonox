@@ -16,6 +16,7 @@ use App\Policies\SupplierInvoicePolicy;
 use App\Support\Currency\ExchangeRate;
 use App\Support\Currency\RiksbankRates;
 use App\Support\Money\Money;
+use App\Support\Tenancy\DimensionScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -128,11 +129,12 @@ class SupplierInvoiceActions extends Component
             'buyerVat' => SupplierInvoiceBooking::buyerVat($invoice, $invoice->rows),
             'exchangePreview' => $this->exchangePreview($invoice),
             'offsetInvoices' => $invoice->isCredit()
-                ? SupplierInvoice::query()
+                // Only invoices inside a limited member's scope (ADR-081 gap 10).
+                ? DimensionScope::current()->constrain(SupplierInvoice::query()
                     ->where('supplier_id', $invoice->supplier_id)
                     ->where('kind', SupplierInvoice::INVOICE)
                     ->where('status', SupplierInvoiceStatus::Approved->value)
-                    ->orderBy('due_date')
+                    ->orderBy('due_date'), 'supplier_invoice_rows', 'supplier_invoice_id', 'supplier_invoices.id')
                     ->get()
                 : collect(),
         ]);

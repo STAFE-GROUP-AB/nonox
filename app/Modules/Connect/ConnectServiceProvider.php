@@ -9,6 +9,7 @@ use App\Events\InvoiceSent;
 use App\Events\QuoteSigned;
 use App\Events\SupplierInvoiceApproved;
 use App\Events\VoucherPosted;
+use App\Http\Middleware\EnforceDimensionScope;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Modules\Connect\Console\ConnectAppCommand;
 use App\Modules\Connect\Console\DeliverWebhooksCommand;
@@ -180,7 +181,7 @@ class ConnectServiceProvider extends ServiceProvider
 
         Route::prefix('api/v1')
             ->name('connect.api.')
-            ->middleware([ConnectJson::class, 'throttle:connect-ip', AuthenticateConnect::class, ConnectRateLimit::class, AuditApiWrites::class, SubstituteBindings::class])
+            ->middleware([ConnectJson::class, 'throttle:connect-ip', AuthenticateConnect::class, EnforceDimensionScope::class, ConnectRateLimit::class, AuditApiWrites::class, SubstituteBindings::class])
             ->group(__DIR__.'/routes/api.php');
 
         // The MCP server for AI assistants (ADR-063): the same credential, company binding and limits as /api/v1,
@@ -188,7 +189,7 @@ class ConnectServiceProvider extends ServiceProvider
         // The route exists only while nonox.mcp_enabled is on (owner decision 18); McpEnabled is a second guard.
         if (config('nonox.mcp_enabled')) {
             Route::post('api/mcp', McpEndpoint::class)
-                ->middleware([McpEnabled::class, LimitMcpBody::class, ConnectJson::class, 'throttle:connect-ip', AuthenticateConnect::class, ConnectRateLimit::class, McpGate::class, ValidateMcpHeaders::class])
+                ->middleware([McpEnabled::class, LimitMcpBody::class, ConnectJson::class, 'throttle:connect-ip', AuthenticateConnect::class, EnforceDimensionScope::class, ConnectRateLimit::class, McpGate::class, ValidateMcpHeaders::class])
                 ->name('connect.mcp');
         }
     }

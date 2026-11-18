@@ -10,6 +10,8 @@
             'uppgifter' => __('Uppgifter och personer'),
             'varumarke' => Gate::allows('update', $team) ? __('Varumärke') : null,
             'moduler' => auth()->user()->hasTeamPermission($team, 'modules:manage') ? __('Moduler') : null,
+            // Dimension scopes (ADR-081 gap 10): owner and admin.
+            'enheter' => auth()->user()->hasTeamPermission($team, 'members:scope') ? __('Behörighet per enhet') : null,
             'agarskap' => Gate::allows('transferOwnership', $team) ? __('Ägarskap och arkiv') : null,
         ]);
         $tab = array_key_exists((string) request('flik'), $tabs) ? (string) request('flik') : 'uppgifter';
@@ -30,6 +32,8 @@
 
         @if($tab === 'agarskap')
             <livewire:company.ownership-settings :company="$team" />
+        @elseif($tab === 'enheter')
+            <livewire:company.dimension-scopes :company="$team" />
         @elseif($tab === 'moduler')
             <livewire:modules.company-modules-tab :company="$team" />
         @elseif($tab === 'varumarke')

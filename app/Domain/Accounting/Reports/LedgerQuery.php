@@ -9,6 +9,7 @@ use App\Domain\Accounting\VoucherSource;
 use App\Domain\Accounting\VoucherStatus;
 use App\Models\FiscalYear;
 use App\Models\VoucherRow;
+use App\Support\Tenancy\DimensionScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -31,6 +32,8 @@ final class LedgerQuery
         public readonly ?int $costCenterId = null,
         public readonly ?int $projectId = null,
         public readonly bool $excludeVatSettlements = false,
+        // For a member limited to cost centres or projects: no payroll vouchers, nor their corrections (ADR-081 gap 10).
+        public readonly bool $withoutPayroll = false,
     ) {}
 
     public static function forYear(FiscalYear $fiscalYear): self
@@ -100,6 +103,7 @@ final class LedgerQuery
             ->whereBetween('vouchers.voucher_date', [($from ?? $this->from)->toDateString(), ($to ?? $this->to)->toDateString()])
             ->when($this->costCenterId !== null, fn (Builder $query) => $query->where('voucher_rows.cost_center_id', $this->costCenterId))
             ->when($this->projectId !== null, fn (Builder $query) => $query->where('voucher_rows.project_id', $this->projectId))
-            ->when($this->excludeVatSettlements, fn (Builder $query) => $query->where('vouchers.source', '<>', VoucherSource::Vat->value));
+            ->when($this->excludeVatSettlements, fn (Builder $query) => $query->where('vouchers.source', '<>', VoucherSource::Vat->value))
+            ->when($this->withoutPayroll, fn (Builder $query) => DimensionScope::withoutPayroll($query));
     }
 }

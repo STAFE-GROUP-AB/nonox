@@ -12,6 +12,7 @@ use App\Models\Voucher;
 use App\Models\VoucherRow;
 use App\Models\VoucherSeries;
 use App\Support\Tenancy\CurrentCompany;
+use App\Support\Tenancy\DimensionScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -86,6 +87,11 @@ class SaveDraftVoucher
             /** @var list<array<string, mixed>> $rowInput */
             $rowInput = array_values((array) $validated['rows']);
             $rows = ($this->normaliseRows)($rowInput);
+
+            // A member limited to cost centres or projects books only inside them, so the voucher stays theirs to see (ADR-081 gap 10).
+            if (! DimensionScope::for($user, $company)->allowsRows($rows)) {
+                throw ValidationException::withMessages(['rows' => __('Varje rad med kostnadsställe eller projekt måste höra till de enheter du når, och minst en rad måste ha ett av dem.')]);
+            }
 
             $voucher = $draft ?? new Voucher(['created_by' => $user->id]);
             $voucher->fill([

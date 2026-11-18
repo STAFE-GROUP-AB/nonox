@@ -3,6 +3,8 @@
     $navUser = auth()->user();
     $navCompany = $navUser?->currentCompany();
     $currentCompany = $navCompany;
+    // A member limited to cost centres or projects (ADR-081 gap 10): no search, notices, guide or cross-company links.
+    $navLimited = $navCompany !== null && App\Support\Tenancy\DimensionScope::limits($navUser, $navCompany);
     // A client of an accounting firm shows the firm's logo to its own people (ADR-030); the firm's consultants see the company as before.
     $navBrand = $navCompany === null ? null : App\Support\Branding\FirmBranding::forViewer($navUser, $navCompany);
     $firmBrand = $navBrand?->viaFirm() ? $navBrand : null;
@@ -41,8 +43,8 @@
             </span>
         </a>
         <div class="ml-auto flex shrink-0 items-center gap-1">
-            @if($currentCompany)
-                {{-- The spotlight (ADR-026), full screen on a phone. --}}
+            @if($currentCompany && ! $navLimited)
+                {{-- The spotlight (ADR-026), full screen on a phone. Not for a member limited to cost centres or projects (ADR-081 gap 10). --}}
                 <button type="button" x-on:click="window.dispatchEvent(new CustomEvent('spotlight-open'))" class="rounded-lg p-2.5 text-stone-300 hover:bg-white/10 hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500" aria-label="{{ __('Sök') }}" aria-haspopup="dialog">
                     <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
                 </button>
@@ -50,7 +52,9 @@
             {{-- The encrypted chat (ADR-045), on every page. --}}
             <x-secure-chat.trigger class="rounded-lg p-2.5 text-stone-300 hover:bg-white/10 hover:text-white" />
             @include('navigation.help', ['helpClass' => 'rounded-lg p-2.5 text-stone-300 hover:bg-white/10 hover:text-white', 'helpLabel' => false])
-            @include('navigation.bell', ['bellClass' => 'text-stone-300 hover:bg-white/10 hover:text-white'])
+            @unless($navLimited)
+                @include('navigation.bell', ['bellClass' => 'text-stone-300 hover:bg-white/10 hover:text-white'])
+            @endunless
             <button type="button" x-on:click="open = true" class="rounded-lg p-2.5 text-stone-300 hover:bg-white/10 hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500" aria-label="{{ __('Öppna menyn') }}">
                 <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>

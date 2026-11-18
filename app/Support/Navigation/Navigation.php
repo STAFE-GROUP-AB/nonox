@@ -13,6 +13,9 @@ use App\Modules\ModuleManager;
 use App\Modules\ModuleRegistry;
 use App\Support\Hq\HqAccess;
 use App\Support\Skatteverket\Skatteverket;
+use App\Support\Tenancy\DimensionScope;
+use App\Support\Tenancy\DimensionScopeRegistry;
+use App\Support\Tenancy\ScopeDecision;
 use Closure;
 use Illuminate\Support\Str;
 
@@ -190,7 +193,36 @@ final class Navigation
             ];
         }
 
-        return $sections;
+        return $company !== null && DimensionScope::limits($user, $company) ? $this->limitedSections($sections, $user, $company) : $sections;
+    }
+
+    /**
+     * A member limited to cost centres or projects (ADR-081 gap 10) sees only
+     * the pages DimensionScopeRegistry opens for them; a section whose own
+     * page is closed leads to its first open page, and a section with none
+     * is left out.
+     *
+     * @param  list<array{label: string, route: string, patterns: list<string>, children: Closure(User, Company): list<ChildLink>}>  $sections
+     * @return list<array{label: string, route: string, patterns: list<string>, children: Closure(User, Company): list<ChildLink>}>
+     */
+    private function limitedSections(array $sections, User $user, Company $company): array
+    {
+        $limited = [];
+
+        foreach ($sections as $section) {
+            $children = array_values(array_filter(($section['children'])($user, $company), fn (array $child): bool => DimensionScopeRegistry::opens($child['route'])));
+            $route = DimensionScopeRegistry::opens($section['route']) && DimensionScopeRegistry::route($section['route']) !== ScopeDecision::Landing
+                ? $section['route']
+                : ($children[0]['route'] ?? null);
+
+            if ($route === null) {
+                continue;
+            }
+
+            $limited[] = [...$section, 'route' => $route, 'children' => fn (User $user, Company $company): array => $children];
+        }
+
+        return $limited;
     }
 
     /**

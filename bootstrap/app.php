@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\EndExpiredSessions;
+use App\Http\Middleware\EnforceDimensionScope;
 use App\Http\Middleware\NotForDemoGuests;
 use App\Http\Middleware\RemembersRecentItems;
 use App\Http\Middleware\RequirePasskey;
@@ -46,6 +47,8 @@ return Application::configure(basePath: dirname(__DIR__))
             EndExpiredSessions::class,
             // After EndExpiredSessions: a session that has ended needs no passkey step (ADR-029).
             RequirePasskey::class,
+            // A member limited to cost centres or projects reaches only the pages that apply the scope (ADR-081 gap 10).
+            EnforceDimensionScope::class,
             RemembersRecentItems::class,
         ]);
     })

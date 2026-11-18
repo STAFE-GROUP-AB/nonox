@@ -7,6 +7,8 @@
 
         @php
             $layoutCompany = auth()->user()?->currentCompany();
+            // The spotlight searches the whole company: not for a member limited to cost centres or projects (ADR-081 gap 10).
+            $layoutSearch = $layoutCompany !== null && ! App\Support\Tenancy\DimensionScope::limits(auth()->user(), $layoutCompany);
             // Every page is named after its own heading (WCAG 2.4.2); a page may pass its own title.
             $pageTitle = isset($title) && trim((string) $title) !== ''
                 ? (string) $title
@@ -38,12 +40,12 @@
 
         @livewire('navigation-menu')
 
-        @if($layoutCompany)
+        @if($layoutSearch)
             <x-spotlight.dialog />
         @endif
 
         <div class="min-h-screen bg-paper lg:pl-72">
-            @if($layoutCompany)
+            @if($layoutSearch)
                 {{-- Desktop top bar: the spotlight search (ADR-026). On small screens it is an icon in the dark bar. --}}
                 <div data-sticky-bar class="sticky top-0 z-20 hidden items-center border-b border-stone-200/70 bg-paper/90 px-10 py-3 backdrop-blur lg:flex">
                     <x-spotlight.trigger />

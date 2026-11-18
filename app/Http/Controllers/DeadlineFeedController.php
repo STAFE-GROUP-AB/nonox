@@ -10,6 +10,7 @@ use App\Models\Company;
 use App\Models\DeadlineCalendarFeed;
 use App\Models\User;
 use App\Support\Tenancy\CompanyScope;
+use App\Support\Tenancy\DimensionScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -19,7 +20,8 @@ use Illuminate\Support\Facades\RateLimiter;
  * Mina datum behind a user's secret calendar link (ADR-051, stage 2): no
  * login, the token is the key, so calendar programs can subscribe. A
  * revoked or unknown token, an archived company, a company that has turned
- * the guide off, and a user who no longer belongs to the company all
+ * the guide off, a user who no longer belongs to the company and a member
+ * limited to cost centres or projects (ADR-081 gap 10) all
  * answer 404, the same answer for each. Only the token's own company is
  * read. Throttled, with a stricter limit for links that lead nowhere; never
  * indexed or cached by a shared cache.
@@ -36,7 +38,9 @@ final class DeadlineFeedController
         $user = $feed === null ? null : User::query()->find($feed->user_id);
 
         $valid = $feed instanceof DeadlineCalendarFeed && $company instanceof Company && $user instanceof User
-            && ! $company->isArchived() && $company->guide_enabled && $user->belongsToTeam($company);
+            && ! $company->isArchived() && $company->guide_enabled && $user->belongsToTeam($company)
+            // The company's own dates, whole: not for a member limited to cost centres or projects (ADR-081 gap 10).
+            && ! DimensionScope::limits($user, $company);
 
         if (! $valid) {
             $misses = 'guide-calendar-miss:'.hash_hmac('sha256', (string) $request->ip(), (string) config('app.key'));

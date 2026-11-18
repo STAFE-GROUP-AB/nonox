@@ -30,8 +30,10 @@
 
                     @if ($companies->count() > 1)
                         <div class="border-t border-gray-200"></div>
-                        <x-dropdown-link href="{{ route('companies.overview') }}">{{ __('Mina företag – vad som väntar') }}</x-dropdown-link>
-                        <x-dropdown-link href="{{ route('group.overview') }}">{{ __('Koncernöversikt') }}</x-dropdown-link>
+                        @unless($navLimited)
+                            <x-dropdown-link href="{{ route('companies.overview') }}">{{ __('Mina företag – vad som väntar') }}</x-dropdown-link>
+                            <x-dropdown-link href="{{ route('group.overview') }}">{{ __('Koncernöversikt') }}</x-dropdown-link>
+                        @endunless
                         <div class="block px-4 py-2 text-xs text-gray-400">{{ __('Byt företag') }}</div>
 
                         @if ($companies->count() > 5)
@@ -108,7 +110,9 @@
             </span>
             {{-- The encrypted chat (ADR-045). --}}
             <x-secure-chat.trigger class="rounded-lg p-2 text-stone-300 hover:bg-white/10 hover:text-white" />
-            @include('navigation.bell', ['bellClass' => 'text-stone-300 hover:bg-white/10 hover:text-white'])
+            @unless($navLimited)
+                @include('navigation.bell', ['bellClass' => 'text-stone-300 hover:bg-white/10 hover:text-white'])
+            @endunless
         </div>
         {{-- At least 24 px high, so each link is easy to hit (WCAG 2.5.8). --}}
         <div class="flex flex-wrap gap-x-4 gap-y-1 px-2 text-sm [&_a:not(.inline-flex)]:inline-block [&_a]:py-1 [&_button]:py-1">
@@ -123,7 +127,7 @@
             </form>
         </div>
         {{-- Företagsguiden's start plan (ADR-051), while the company shows the guide. --}}
-        @if($currentCompany?->guide_enabled)
+        @if($currentCompany?->guide_enabled && ! $navLimited)
             <a href="{{ route('guide.plan') }}" class="mx-2 flex items-center gap-1.5 rounded py-1 text-sm text-stone-300 hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500" data-guide-link>
                 <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2" /></svg>
                 <span>{{ __('Företagsguiden') }}</span>

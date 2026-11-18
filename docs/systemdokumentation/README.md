@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.134
-- Datum: 2026-11-17
+- Version: 0.135
+- Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -19,6 +19,59 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Användare loggar in med en engångskod via e-post, och vissa bekräftar
   dessutom med en passkey (avsnitt 5a9). Behörigheten styrs av roller per
   företag ([ADR-003](../adr/ADR-003-company-roles.md)).
+
+### 1.0 Behörighet per enhet (version 0.135, ADR-081 lucka 10)
+
+- En ägare eller administratör (behörigheten `members:scope`) kan begränsa en
+  medlem till vissa kostnadsställen och projekt (Företagsinställningar →
+  Behörighet per enhet). Begränsningen sparas per medlemskap i
+  `membership_dimension_scopes` (företag, användare, medlemskapets id,
+  dimension `COST_CENTER` eller `PROJECT`, objekt), och flaggan
+  `team_user.dimension_scoped` säger att medlemskapet är begränsat. En ny
+  begränsning ersätter den gamla helt. Lämnar personen företaget tas raderna
+  bort, och en ny inbjudan börjar utan begränsning: raderna hör till det
+  gamla medlemskapets id och väcks aldrig till liv.
+- Ägaren, administratören, redovisningskonsulten och revisorn kan aldrig
+  begränsas, inte heller om flaggan sätts på annat sätt. De ansvarar för hela
+  bokföringen, och revisorn har rätt till allt (ABL 9 kap. 3 §).
+  `TODO(legal-verify)`. Byts en begränsad medlems roll till en av dem tas
+  begränsningen bort. Rollen Enhetschef (`unit_manager`, behörigheten
+  `reports:view`) är alltid begränsad och når ingenting utan kostnadsställen
+  eller projekt.
+- En begränsning kan bara smalna av rollen. En begränsad medlem behåller bara
+  `reports:view`, `vouchers:view`, `vouchers:create`, `vouchers:post`,
+  `supplier-invoices:create` och `supplier-invoices:approve`; alla andra
+  behörigheter i rollen, också modulernas, är borta. Bara sidorna som
+  tillämpar begränsningen öppnas (`DimensionScopeRegistry`); alla andra
+  sidor, API-anrop och Livewire-komponenter svarar 404, som ett annat
+  företags data. En API-nyckel eller OAuth-token som en begränsad medlem har
+  skapat når därför ingenting.
+- En rad ligger inom begränsningen när dess kostnadsställe eller projekt är
+  ett av medlemmens. En verifikation eller leverantörsfaktura syns bara när
+  varje rad med kostnadsställe eller projekt ligger inom begränsningen och
+  minst en rad gör det; rader utan dimension (bank, moms, leverantörsskuld)
+  avgör inget, så en verifikation med en rad på medlemmens objekt visas i sin
+  helhet med alla rader. En begränsad medlem kan bara spara och bokföra verifikationer
+  och leverantörsfakturor som uppfyller samma regel, så det hen bokför
+  förblir synligt för hen. Rättelser, kontroll av huvudboken och kontosaldon
+  för hela företaget visas inte. Leverantörsregistret är gemensamt.
+- Lönens verifikationer (källa `PAYROLL`) och rättelser av dem visas aldrig
+  för en begränsad medlem: inte i verifikationslistan, inte på
+  verifikationens sida och inte som rader i rapporterna. En liten enhets
+  lönekostnad kan vara en persons lön. `TODO(legal-verify)`: när summerad
+  lön per kostnadsställe kan visas genom analysvyn (ADR-081 E17, celler med
+  färre än tre personer döljs) och om personalen då behöver information
+  enligt art. 13.
+- Rapporter: bara Resultatrapport och Huvudbok, alltid med ett av medlemmens
+  kostnadsställen eller projekt som filter. Rapporten räknar raderna för det
+  objektet, även när samma verifikation har rader på andra objekt.
+  I huvudboken visas för en verifikation som medlemmen inte kan öppna bara
+  radens egen text och numret utan länk. Saldobalans, balansrapport,
+  rapporten Verifikationslista, moms, SIE och arkivpaket visas inte.
+- Begränsningen ändrar inget i bokföringen: verifikationer, nummerserier och
+  kontrollsummor är desamma. Varje ändring skrivs i behandlingshistoriken
+  (`membership.dimension_scope_set`, `membership.dimension_scope_lifted`) med
+  användarens id, rollen och objektens id.
 
 ### 1.1 Överlåtelse och arkivering
 
@@ -5898,3 +5951,4 @@ påverkar bokföringen och fakturan:
 | 0.132 | 2026-11-11 | Tillverkningsorder (avsnitt 5o och 5j, ADR-071 §8 och tillägget As built (M4)): komponenter tas ur lagret som `PRODUCTION_ISSUE` till anskaffningsvärdet enligt företagets metod och färdiga produkter tas emot som `PRODUCTION_RECEIPT` till tillverkningskostnaden (material plus direkt arbete, omkostnader bara om företaget har valt det när ordern startar). Datum kan inte läggas i stängda år, låsta perioder, före orderns senaste händelse eller, för uttag, före en senare lagerrörelse på artikeln. Nya tabeller `production_orders`, `production_order_components`, `production_order_operations`, `production_order_issues` och `production_labour_entries` (de två sista kan inte ändras eller tas bort). Ingen verifikation per order; bokslutets lagervärdering tar med produkter i arbete på ett eget kontopar (1440/4940 från början) i samma verifikation. Öppna frågor om kostnader och konton i avsnitt 8. |
 | 0.133 | 2026-11-16 | Återkommande intäkter (avsnitt 5p, ADR-080): modulen skapar inga verifikationer och ändrar ingen bokföring. Avtalens versioner (`saas_contract_versions`) och rättelser (`saas_corrections`) kan inte ändras, tas bort eller tömmas; stängda månader skrivs inte om och senare ändringar blir rättelserader i första öppna månaden; `saas:verify` räknar om stängda månader varje natt. Stripe läses bara, med en begränsad nyckel; produkter, priser, rabatter och prenumerationer sparas orörda med kontrollsumma i `stripe_objects` och raderas 90 dagar efter att kopplingen upphört. Inget bokförs ur Stripe. |
 | 0.134 | 2026-11-17 | Pass på kostnadsställen till lönebokföringen (avsnitt 5b och 5i, ADR-037 lucka 7, paket P2): avdelningar och pass kan ha ett kostnadsställe, Skicka till lönen skriver en tidrapport per dag, löneart och kostnadsställe (Timlön och dagens övertid och mertid delas efter passens planerade minuter, OB efter den OB passen ger enligt avtalet, i hundradels timmar med största rest; veckans eller periodens övertid och mertid på anställningens), och lönekörningen för kostnadsstället till lönebeskedets rad. Lönens verifikation bokför den raden på dess kostnadsställe; övriga rader får anställningens kostnadsställe och projekt bara när inställningen Kostnadsställe och projekt från anställningen och lönearten säger det (inställningen lästes inte förut). Arbetsgivaravgifterna på 7510 fördelas per lönebesked i proportion till avgiftsunderlaget per kostnadsställe, i hela ören med största rest, så att verifikationen balanserar. Tid att attestera läser nu ett publicerat pass som ändrats till utkast med rätt klockslag. Nya nullbara kolumner `cost_center_id` på `planning_areas`, `planning_shifts`, `time_reports` och `payslip_lines`. Ingen bokförd verifikation ändras. |
+| 0.135 | 2026-11-18 | Behörighet per enhet (avsnitt 1.0, ADR-081 lucka 10, paket E1): en ägare eller administratör kan begränsa en bokförare, attestant, enhetschef eller modulroll till kostnadsställen och projekt (`membership_dimension_scopes`, `team_user.dimension_scoped`). Den begränsade ser och bokför bara verifikationer och leverantörsfakturor vars rader med dimension alla ligger inom begränsningen, och läser resultatrapport och huvudbok bara för ett av sina objekt; lönens verifikationer visas aldrig för hen; allt annat svarar 404. Ägare, administratör, redovisningskonsult och revisor kan aldrig begränsas. Ingen bokförd verifikation ändras. |
