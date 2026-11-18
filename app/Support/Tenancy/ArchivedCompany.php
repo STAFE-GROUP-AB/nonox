@@ -37,6 +37,7 @@ final class ArchivedCompany
         'staff-ledger:view', 'staff-ledger:view-sensitive',
         'inbox:view',
         'mileage:view',
+        'documents:view',
     ];
 
     public static function isArchived(Company|int|null $company): bool

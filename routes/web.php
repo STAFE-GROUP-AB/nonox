@@ -21,6 +21,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataSubjectExportController;
 use App\Http\Controllers\DemoController;
 use App\Http\Controllers\DeveloperPortalController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\FirmLogoController;
 use App\Http\Controllers\GettingStartedController;
 use App\Http\Controllers\Group\GroupCsvController;
@@ -298,6 +299,10 @@ Route::middleware([
         Route::view('/anlaggningar', 'accounting.fixed-assets')->name('accounting.fixedAssets');
         Route::view('/periodiseringar', 'accounting.accruals')->name('accounting.accruals');
         Route::view('/korjournal', 'mileage.index')->name('mileage.index');
+        // The company's document archive (ADR-081 gap 9, E19).
+        Route::view('/dokument', 'documents.index')->name('documents.index');
+        Route::get('/dokument/{document}', [DocumentController::class, 'show'])->whereNumber('document')->name('documents.show');
+        Route::get('/dokument/{document}/versioner/{version}', [DocumentController::class, 'file'])->whereNumber('document')->whereNumber('version')->name('documents.file');
         Route::view('/bankavstamning', 'accounting.bank-reconciliation')->name('accounting.bankReconciliation');
         Route::view('/skattekontot', 'accounting.tax-account')->name('accounting.taxAccount');
         Route::view('/bokslut', 'accounting.closing')->name('accounting.closing');

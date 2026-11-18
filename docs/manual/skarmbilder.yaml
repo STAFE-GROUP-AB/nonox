@@ -323,6 +323,10 @@ bokforing/korjournal: { foretag: konsult, rutt: mileage.index }
 lon/korjournal: { foretag: hantverkare, rutt: payroll.requests, visa: 'text=Utlägg och milersättning att godkänna' }
 personal/korjournal: { foretag: hantverkare, anvandare: adam.kvist@example.test, enhet: mobil, rutt: payroll.portal.mileage }
 
+# Dokument (DocumentsExtras, ADR-081 E19): the consultancy's lease, insurance, policy and a receipt on legal hold.
+bokforing/dokument: { foretag: konsult, rutt: documents.index }
+bokforing/dokument-sidan: { foretag: konsult, rutt: documents.show, modell: { tabell: documents, dar: { title: 'Hyresavtal kontor Storgatan' } } }
+
 # Kundportal (CustomerPortalExtras): seed and serve with NONOX_CUSTOMER_PORTAL=true.
 fakturering/kundportal: { foretag: konsult, rutt: portal.admin }
 fakturering/kundportal-fragor: { foretag: konsult, rutt: portal.admin.questions }

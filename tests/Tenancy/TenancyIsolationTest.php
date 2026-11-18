@@ -27,6 +27,10 @@ use App\Models\Customer;
 use App\Models\DeadlineCalendarFeed;
 use App\Models\DeadlineReminder;
 use App\Models\DeferredTaxItem;
+use App\Models\Document;
+use App\Models\DocumentLink;
+use App\Models\DocumentTag;
+use App\Models\DocumentVersion;
 use App\Models\FiscalYear;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetAddition;
@@ -331,6 +335,10 @@ const COMPANY_SCOPED_MODELS = [
     VehicleYearReading::class => 'vehicleYearReadingAttributes',
     VehicleTrip::class => 'vehicleTripAttributes',
     MileageRoute::class => 'mileageRouteAttributes',
+    Document::class => ['title' => 'Hemligt dokument', 'category' => 'OTHER', 'retention_class' => 'OTHER', 'contains_personal_data' => false],
+    DocumentVersion::class => 'e19DocumentVersionAttributes',
+    DocumentTag::class => 'e19DocumentTagAttributes',
+    DocumentLink::class => 'e19DocumentLinkAttributes',
     // Records that need other records of the same company get a closure.
     Voucher::class => 'voucherAttributes',
     VoucherRow::class => 'voucherRowAttributes',
@@ -1038,6 +1046,26 @@ function vehicleTripAttributes(): array
 function mileageRouteAttributes(): array
 {
     return ['user_id' => User::factory()->create()->id, 'label' => 'Hemlig väg', 'distance_hm' => 142];
+}
+
+function e19Document(): Document
+{
+    return Document::create(['title' => 'Hemligt dokument', 'category' => 'OTHER', 'retention_class' => 'OTHER', 'contains_personal_data' => false]);
+}
+
+function e19DocumentVersionAttributes(): array
+{
+    return ['document_id' => e19Document()->id, 'version' => 1, 'path' => 'dokument/hemlig.pdf', 'mime' => 'application/pdf', 'size' => 10, 'sha256' => str_repeat('a', 64), 'original_name' => 'hemlig.pdf'];
+}
+
+function e19DocumentTagAttributes(): array
+{
+    return ['document_id' => e19Document()->id, 'tag' => 'hemlig'];
+}
+
+function e19DocumentLinkAttributes(): array
+{
+    return ['document_id' => e19Document()->id, 'linkable_type' => 'customer', 'linkable_id' => 1];
 }
 
 function fixedAssetAttributes(): array
@@ -2248,7 +2276,7 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [WorkshopWaitingFlag::class, PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class, StripeObject::class];
+const NEVER_UPDATED = [WorkshopWaitingFlag::class, PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class, StripeObject::class, DocumentVersion::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
 const APPEND_ONLY = [WorkshopTimeEntry::class, WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];

@@ -146,6 +146,12 @@ final class DatabaseGrants
         'deadline_calendar_feeds' => GrantDecision::ReadWrite,
         'deadline_reminders' => GrantDecision::ReadWrite,
         'deferred_tax_items' => GrantDecision::ReadWrite,
+        // The document archive (ADR-081 E19): the trigger refuses deleting a kept document or moving its retention date earlier.
+        'document_links' => GrantDecision::ReadWrite,
+        'document_tags' => GrantDecision::ReadWrite,
+        // Versions are append-only: the trigger refuses every change, and removal outside a deletable document.
+        'document_versions' => GrantDecision::AppendAndPrune,
+        'documents' => GrantDecision::ReadWrite,
         'employees' => GrantDecision::ReadWrite,
         'employments' => GrantDecision::ReadWrite,
         'expenses' => GrantDecision::ReadWrite,

@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.134
-- Datum: 2026-11-17
+- Version: 0.135
+- Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -723,6 +723,56 @@ year").
   kan godkännas igen eller raderas. Det skrivs i behandlingshistoriken.
 - Den nattliga kontrollen (`ledger:verify`) rapporterar fortfarande varje
   underlag som saknas eller har ändrats.
+- **Dokumentarkivet (ADR-081 lucka 9, paket E19).** Under Dokument sparar
+  företaget egna dokument som inte hör till en funktion (avtal, försäkringar,
+  tillstånd, policyer) i tabellerna `documents`, `document_versions`,
+  `document_tags` och `document_links`. Filtypen bestäms av filens innehåll,
+  filen sparas krypterad på den privata disken under ett genererat namn och
+  får sin SHA-256 när den laddas upp; `document_versions.path` finns i
+  registret över filkolumner, så en fil som också är underlag raderas aldrig
+  med dokumentet. En ny version är en ny rad; tidigare versioner kan inte
+  ändras (modellen och en PostgreSQL-trigger). Varje dokument har en
+  lagringsklass: **räkenskapsinformation** (sparas till och med 31 december
+  sju år efter det kalenderår då räkenskapsåret avslutades, BFL 7 kap. 2 §,
+  och kräver räkenskapsåret), **avtal** (medan avtalet löper och valt antal
+  år efter slutdatum), **personal** (bara för den som har
+  `payroll:view-sensitive`) eller **övrigt** (raderas aldrig automatiskt).
+  Ett avtal kan markeras som räkenskapsinformation (`is_accounting_record`,
+  BFL 1 kap. 2 § första stycket 6); det kräver då ett räkenskapsår och får
+  samma golv som räkenskapsinformation. `retain_until` räknas fram ur regeln
+  och ett valt senare datum (högst 30 år efter regeln). Regelns datum är ett
+  golv: ett valt datum kan sänkas igen ner till regeln, men för
+  räkenskapsinformation räknar en PostgreSQL-trigger golvet ur räkenskapsårets
+  slutdatum och vägrar ett lägre datum, också när klass, markering eller
+  räkenskapsår ändras medan golvet gäller: så länge det gamla golvet gäller
+  måste det nya läget ha ett golv som är minst lika sent, så att golvet inte
+  kan kringgås i två steg (först klass, markering eller räkenskapsår, sedan
+  datumet). Samma kontroll görs i åtgärden, modellen och triggern. Ändringen loggas med datumet före
+  och efter. Ett dokument flyttas aldrig till eller från personalklassen, och
+  ett avtal som löper tills vidare byter inte klass. En bevarandespärr
+  (`documents:hold`, med skälet SKATTEREVISION, TVIST eller ANNAT) hindrar all
+  radering och måste hävas för sig innan dokumentet kan raderas. Spärren
+  skyddas på applikationsnivå (`documents:hold`, åtgärden och
+  behandlingshistoriken): triggern vägrar att radera ett dokument med spärr,
+  men den som har direkt SQL-åtkomst till databasen kan häva spärren med en
+  egen sats. Lagringstiden för räkenskapsinformation skyddas däremot av
+  triggern även mot direkt SQL. Rubriken på
+  ett personaldokument lagras krypterad (`title_encrypted`). Med modulen Lön
+  avstängd når ägaren personaldokumenten för att besvara en begäran, och
+  varje sådan åtkomst loggas (`document.personnel_owner_access`). Radering prövas på tre nivåer: policyn och åtgärden,
+  modellen och en trigger som vägrar `DELETE` på ett dokument eller en
+  version som ska sparas (utom när hela företaget tas bort). Ett dokument som
+  är räkenskapsinformation och underlag till en verifikation läggs till som
+  underlag genom `voucher_attachments` med samma fil och kontrollsumma, aldrig
+  en kopia; verifikationen ändras inte. Dokumentarkivet är ingen andra väg
+  till underlag. Texten i en PDF sparas i `document_versions.extracted_text`
+  för sökningen (inte för personaldokument) och raderas med versionen.
+  Uppladdning, ändring, koppling, spärr, radering och varje öppnad fil skrivs
+  i behandlingshistoriken med id, klass, antal och kontrollsumma, aldrig med
+  rubrik, taggar eller innehåll. TODO(legal-verify): BFL 7 kap. 1–2 §§ och
+  BFNAR 2013:2 om form och läsbarhet för räkenskapsinformation som laddas upp
+  här, och om den sparade PDF-texten är räkenskapsinformation (förslag:
+  härledd data som raderas med filen).
 
 ### 4.6 Konteringsmallar
 
@@ -5269,6 +5319,12 @@ rapport över avtalen och bokför ingenting.
     id-nummer bara som HMAC) så att kedjan kan räknas om utan NONOX, och de
     godkända protokollen från årets möten och årsstämman för året, som de
     sparades vid godkännandet.
+  - `dokument/` (dokumentarkivet, avsnitt 4.5): företagets egna dokument som
+    hör till räkenskapsåret med alla versioner, i en mapp per dokument, och
+    `Dokumentforteckning.csv` med varje versions SHA-256 från uppladdningen
+    och om filen i paketet stämmer med den. Personaldokument tas bara med när
+    den som skapar paketet får se dem; annars anger förteckningen och
+    `LASMIG.txt` hur många som inte togs med.
   - `systemdokumentation/`: den här dokumentationen i den version som gällde
     när paketet skapades, varje version som var i bruk under räkenskapsåret
     (`versioner/<version>-<kontrollsumma>.md`) och `versioner.txt` som anger
@@ -5898,3 +5954,4 @@ påverkar bokföringen och fakturan:
 | 0.132 | 2026-11-11 | Tillverkningsorder (avsnitt 5o och 5j, ADR-071 §8 och tillägget As built (M4)): komponenter tas ur lagret som `PRODUCTION_ISSUE` till anskaffningsvärdet enligt företagets metod och färdiga produkter tas emot som `PRODUCTION_RECEIPT` till tillverkningskostnaden (material plus direkt arbete, omkostnader bara om företaget har valt det när ordern startar). Datum kan inte läggas i stängda år, låsta perioder, före orderns senaste händelse eller, för uttag, före en senare lagerrörelse på artikeln. Nya tabeller `production_orders`, `production_order_components`, `production_order_operations`, `production_order_issues` och `production_labour_entries` (de två sista kan inte ändras eller tas bort). Ingen verifikation per order; bokslutets lagervärdering tar med produkter i arbete på ett eget kontopar (1440/4940 från början) i samma verifikation. Öppna frågor om kostnader och konton i avsnitt 8. |
 | 0.133 | 2026-11-16 | Återkommande intäkter (avsnitt 5p, ADR-080): modulen skapar inga verifikationer och ändrar ingen bokföring. Avtalens versioner (`saas_contract_versions`) och rättelser (`saas_corrections`) kan inte ändras, tas bort eller tömmas; stängda månader skrivs inte om och senare ändringar blir rättelserader i första öppna månaden; `saas:verify` räknar om stängda månader varje natt. Stripe läses bara, med en begränsad nyckel; produkter, priser, rabatter och prenumerationer sparas orörda med kontrollsumma i `stripe_objects` och raderas 90 dagar efter att kopplingen upphört. Inget bokförs ur Stripe. |
 | 0.134 | 2026-11-17 | Pass på kostnadsställen till lönebokföringen (avsnitt 5b och 5i, ADR-037 lucka 7, paket P2): avdelningar och pass kan ha ett kostnadsställe, Skicka till lönen skriver en tidrapport per dag, löneart och kostnadsställe (Timlön och dagens övertid och mertid delas efter passens planerade minuter, OB efter den OB passen ger enligt avtalet, i hundradels timmar med största rest; veckans eller periodens övertid och mertid på anställningens), och lönekörningen för kostnadsstället till lönebeskedets rad. Lönens verifikation bokför den raden på dess kostnadsställe; övriga rader får anställningens kostnadsställe och projekt bara när inställningen Kostnadsställe och projekt från anställningen och lönearten säger det (inställningen lästes inte förut). Arbetsgivaravgifterna på 7510 fördelas per lönebesked i proportion till avgiftsunderlaget per kostnadsställe, i hela ören med största rest, så att verifikationen balanserar. Tid att attestera läser nu ett publicerat pass som ändrats till utkast med rätt klockslag. Nya nullbara kolumner `cost_center_id` på `planning_areas`, `planning_shifts`, `time_reports` och `payslip_lines`. Ingen bokförd verifikation ändras. |
+| 0.135 | 2026-11-18 | Dokumentarkivet (avsnitt 4.5 och 7a, ADR-081 lucka 9, paket E19): företagets egna dokument med versioner som inte kan ändras, krypterade filer med SHA-256, lagringsklasserna räkenskapsinformation (sju år enligt BFL 7 kap. 2 §), avtal (också som räkenskapsinformation), personal och övrigt, ett `retain_until` som aldrig går under regelns golv (triggern räknar golvet för räkenskapsinformation ur räkenskapsåret) och en bevarandespärr med skäl; radering vägras av policyn, modellen och en PostgreSQL-trigger. Räkenskapsinformation blir underlag till en verifikation genom `voucher_attachments` med samma fil, utan kopia. Arkivpaketet får `dokument/` med förteckning och kontrollsummor. Ingen verifikation skapas eller ändras. |

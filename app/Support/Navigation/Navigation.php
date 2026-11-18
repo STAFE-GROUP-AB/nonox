@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support\Navigation;
 
+use App\Domain\Documents\DocumentAccess;
 use App\Domain\Firm\Memberships;
 use App\Domain\Mileage\MileageLog;
 use App\Models\Company;
@@ -161,6 +162,16 @@ final class Navigation
                 'children' => fn (User $user, Company $company): array => $this->bookkeeping($can, $user, $company),
             ],
         ];
+
+        // The company's document archive (ADR-081 gap 9).
+        if ($company !== null && DocumentAccess::allowsAny($user, $company, 'documents:view')) {
+            $sections[] = [
+                'label' => __('Dokument'),
+                'route' => 'documents.index',
+                'patterns' => ['documents.*'],
+                'children' => fn (User $user, Company $company): array => [],
+            ];
+        }
 
         // Tasks (ADR-028): the company's, the user's own in every company, and recurring ones.
         $sections[] = [

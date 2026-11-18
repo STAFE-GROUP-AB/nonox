@@ -27,6 +27,7 @@ enum CompanyRole: string
         'api-tokens:manage', 'settings:manage', 'audit-log:view', 'modules:manage',
         'tasks:manage', 'tasks:view',
         'mileage:view', 'mileage:manage',
+        'documents:view', 'documents:manage', 'documents:hold',
     ];
 
     public function label(): string
@@ -66,6 +67,7 @@ enum CompanyRole: string
                 'audit-log:view',
                 'tasks:manage', 'tasks:view',
                 'mileage:view', 'mileage:manage',
+                'documents:view', 'documents:manage', 'documents:hold',
             ],
             self::Bookkeeper => [
                 'vouchers:create', 'vouchers:post', 'vouchers:correct', 'vouchers:view',
@@ -74,6 +76,7 @@ enum CompanyRole: string
                 'reports:view',
                 'tasks:manage', 'tasks:view',
                 'mileage:view',
+                'documents:view', 'documents:manage',
             ],
             self::Approver => [
                 'supplier-invoices:approve', 'payments:approve',
@@ -85,6 +88,7 @@ enum CompanyRole: string
                 'export:sie', 'export:archive', 'audit-log:view',
                 'tasks:view',
                 'mileage:view',
+                'documents:view',
             ],
         };
     }
