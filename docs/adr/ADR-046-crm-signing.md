@@ -1,6 +1,7 @@
 # ADR-046: CRM stage 3, signing, quote templates and the agreement register
 
 - Status: **Implemented, waiting for the owner's review** (2026-11-04)
+- Amendment 2026-11-18 "best in class": **Proposed** (see the end of this file)
 - Builds on: ADR-043 (CRM, stage 3 of its plan), ADR-011 (quotes, orders,
   invoices, recurring invoices), ADR-002 (PDF), ADR-032 (API, webhooks),
   ADR-017 (modules), ADR-027 (Att göra)
@@ -337,3 +338,1120 @@ personal data.
   CRM account gets the long form when the customer register shows a legal
   person (an organisation number and no personal number).
 
+
+## Amendment 2026-11-18: best in class
+
+- Status: **Proposed** (2026-11-18). No feature code ships with this
+  amendment. It is built in the packages S1–S21 at the end, in the stated
+  waves, once the owner has answered the decisions below (or Lead has applied
+  the recommended defaults under the owner's mandate).
+- Queue: item 27 in `docs/status/nummer-1.md` (`signering-toppklass`).
+- Builds on: this ADR, ADR-075 §7 and its addendum "signing moved to core",
+  ADR-074 (ÄTA signing, on-site codes), ADR-002 (PDF), ADR-017 (modules),
+  ADR-019/ADR-030 (branding), ADR-020 (naming other programs), ADR-032/ADR-064
+  (API and Connect), ADR-034 and ADR-050 (pluggable drivers), ADR-043 (GDPR in
+  CRM), ADR-079 (database roles), ADR-081 E0 (per-package translation files).
+- Format: follows ADR-037's "Amendment 2026-11-17: best in class" and ADR-081.
+
+### Context
+
+The owner decided on 2026-11-18 that NONOX signing shall be as good as an
+open-source e-signing product that was used as a reference: every feature and
+idea that would make NONOX signing better, but not the service itself. No code
+or text is copied from it, and it is never named in the repository
+(AGENTS.md §1.1). This amendment describes functionality only, written from
+eIDAS, ETSI and IETF standards, Swedish law and NONOX's own code.
+
+The reference's feature list, as the owner reported it, maps to the twelve
+gaps in the queue item. NONOX also closes the three gaps the reference lists
+for itself: parallel signing (gap 1), bulk send (gap 8), and API and webhooks
+(S19).
+
+A survey of the code on `7f0b001d` (2026-11-18) found a solid single-signer
+engine in core. Each gap starts with what exists, by file path, so that no
+package rebuilds it.
+
+#### The engine as it stands (referred to by every gap)
+
+- **Domain** `app/Domain/Signing/`: `Signable` (the interface a document
+  implements), `SignableTypes` (registry: type → key column → finder),
+  `SigningHook`/`SigningHooks` (module follow-up), `ResolvesSigningParty`,
+  `SigningToken` (256-bit, base64url, SHA-256 at rest), `QuoteFingerprint`,
+  `SignatureImage` (PNG checks), `SigningStatus` (`PENDING`, `SIGNED`,
+  `DECLINED`, `REVOKED`, derived `EXPIRED`), `SigningEventType` (`SENT`,
+  `OPENED`, `SIGNED`, `DECLINED`, `EXPIRED`, `REVOKED`), `SigningPdfs`
+  (Signeringsbevis with dompdf, acceptance text and its HMAC),
+  `SignedDocuments`, `SigningFollowUp`, `SigningUnavailable`.
+- **Actions** `app/Actions/Signing/`: `SendForSigning` (one open link per
+  document, expiry at most 90 days), `SignAtLink` (row lock, hash binding,
+  fingerprint check, evidence), `SignInSession` (portal channel `PORTAL`,
+  ADR-075 §7), `PruneSigningLinks`, `RevokeQuoteLinksClosedWithCrm`.
+- **HTTP** `app/Http/Controllers/Signing/SigningPageController.php` (the public
+  page `/signera/{token}`, its own CSP, noindex, no-store, no-referrer) and
+  `SigningFileController.php` (`/kunder/signeringar/{id}/{fil}`);
+  `app/Providers/SigningServiceProvider.php` (registry, rate limiters
+  `crm-signing` 60/min and `crm-signing-submit` 10/min per IP, routes,
+  `WithoutAuditRequest`).
+- **Models** `app/Models/SigningRequest.php`, `SigningEvent.php` (the tables
+  keep the names `crm_signing_requests`, `crm_signing_events`).
+- **Jobs, mail, events:** `app/Jobs/FollowUpSigning.php`,
+  `app/Mail/SigningRequestMail.php`, `SignedDocumentMail.php`,
+  `app/Events/QuoteSigned.php`, `app/Notifications/SigningNotice.php`,
+  `app/Console/Commands/PruneSigningLinksCommand.php` (`signing:prune`).
+- **UI:** `app/Livewire/Signing/SigningPanel.php`
+  (`resources/views/livewire/signing/panel.blade.php`), the public views in
+  `resources/views/signing/` (`page`, `head`, `closed`, `certificate`), the
+  mails in `resources/views/mail/signing/`, the pad
+  `resources/js/signing.js` with its model `resources/js/signature-pad-core.js`.
+- **Hooks:** `app/Modules/Crm/Support/CrmSigningHook.php` (agreement type,
+  deal won, note, notices), `app/Modules/Crm/Support/SigningFiles.php`,
+  `app/Modules/WorkOrders/Support/WorkOrdersSigningHook.php` and
+  `app/Modules/WorkOrders/Actions/SignChangeOrder.php` (ÄTA by link, and on
+  site with a six-digit code to the customer's e-mail, five tries, fifteen
+  minutes).
+- **API and webhook:**
+  `app/Modules/Connect/Http/Controllers/Api/V1/CrmSigningController.php`,
+  webhook `quote.signed` (`app/Modules/Connect/Webhooks/WebhookEvents.php`).
+- **Migrations and triggers:**
+  `app/Modules/Crm/database/migrations/2026_11_25_130000_create_crm_signing_tables.php`
+  (`crm_signing_requests_protect`, `crm_signing_events_append_only`),
+  `2026_11_25_140000_harden_crm_signing_evidence.php` (`acceptance_text`,
+  wider protection), `2026_12_31_100300_delete_signing_events_only_with_their_request.php`,
+  `2026_12_31_100400_never_delete_signed_signing_requests.php`;
+  `database/migrations/2026_12_20_100000_add_signable_id_to_signing_requests.php`
+  (the generic key column); the portal migration
+  `app/Modules/Portal/database/migrations/2026_12_20_120000_create_customer_portal_tables.php`
+  (`channel`, `crm_signing_requests_protect_channel`); the ÄTA code table
+  `app/Modules/WorkOrders/database/migrations/2026_12_19_120000_create_change_order_on_site_codes_table.php`.
+- **Tests:** `tests/Feature/Crm/SigningTest.php` (26),
+  `tests/Feature/Crm/SigningApiTest.php` (5),
+  `tests/Feature/Signing/SigningCoreTest.php` (5),
+  `tests/Tenancy/CrmSigningTenancyTest.php` (5),
+  `tests/Feature/WorkOrders/ChangeOrderSigningTest.php` (8), the portal tests,
+  `tests/js/signature-pad.test.mjs`.
+- **Docs:** `docs/manual/sv/crm/signering.md`, `avtalsregister.md`,
+  `offertmallar.md`, `docs/manual/sv/fakturering/ata.md`,
+  `arbetsorder-pa-plats.md`, `kundportal.md`;
+  `docs/gdpr/registerforteckning.md` (the signing paragraph),
+  `docs/gdpr/lagringstider.md` (rows for signed and unsigned links).
+
+Already covered from the reference list: download before signing (the PDF
+link on the page), decline with a reason, signing links hashed at rest, rate
+limits, branding with name, logo and colour (`App\Support\Branding\Brand`),
+and an audit certificate with IP address and browser (without a check method,
+since there is none yet).
+
+### Principles that apply to every gap
+
+1. **Evidence is immutable.** Nothing that a signer did, saw or was shown is
+   ever updated. Every new evidence table gets a PostgreSQL trigger in the
+   style of `crm_signing_requests_protect`: updates refused once the row is
+   final, deletes refused before the retention date except by the company
+   cascade (`pg_trigger_depth() > 1` and the company row gone, as in
+   `2026_12_31_100400`). Erasure is deleting a whole envelope after its
+   retention, never editing part of it.
+2. **The original bytes survive.** The PDF that was shown is never rewritten.
+   Field values, the certificate and the seal are added as **incremental
+   updates**, so the first revision of the finished file is byte for byte the
+   PDF that was sent, and its SHA-256 (in the certificate) can still be
+   recomputed by anyone. The original is also kept as its own file. This keeps
+   the intent of this ADR's deviation "the signed PDF is never changed".
+3. **One engine, many documents.** Quotes, agreements, ÄTA, portal acceptance
+   and standalone PDFs all go through `app/Domain/Signing` and `Signable`. No
+   document type gets its own signing code. The existing single-signer flows
+   keep their behaviour and their tests unchanged unless a package says so.
+4. **Honest levels.** NONOX by itself gives a simple electronic signature
+   (eIDAS art. 3(10)) and an integrity seal. It never states "advanced" or
+   "qualified" unless a configured provider produced that signature, and then
+   it states the provider's claim, not its own.
+5. **Tenancy.** Every new company-scoped table has `company_id` → `teams`,
+   `BelongsToCompany`, indexes leading with `company_id`, a tenancy test
+   (another company's id → 404), and a decision in
+   `App\Support\Database\DatabaseGrants`. The only lookups across companies are
+   by a token hash (as today) and by a document hash on the public Verify page,
+   each inside `CompanyScope::bypass` with a comment naming this amendment.
+6. **Additive migrations only:** new tables, new nullable columns, new
+   indexes, and replaced trigger functions that only widen what may be set
+   once from null. No drops, no type changes. New tables use the `signing_`
+   prefix; the two existing tables keep their `crm_` names (renaming would
+   rewrite the triggers and every reference for nothing).
+7. **No N+1.** The envelope list, the envelope page, the signer page with
+   fields and the reminder run load in a fixed number of queries, proven by a
+   query-count test with one and with ten recipients and many fields.
+8. **Audit log** entries hold ids, enums and counts only, never names, e-mail
+   addresses, IP addresses, field values or document titles (QUICKSTART §6).
+   The public routes keep running inside `WithoutAuditRequest`.
+9. **A person decides what is sent.** Templates, bulk send and the API create
+   envelopes; nothing is sent by a rule except the reminders a sender switched
+   on.
+
+## Gap 1: several signers in a set order, copy recipients, parallel signing
+
+### What exists
+
+One `crm_signing_requests` row is one recipient with one link.
+`SendForSigning` revokes the earlier open link when a document is sent again,
+so a document has at most one signer. There are no copy recipients; the
+company's own copy goes to the company address in `SigningFollowUp`. The
+follow-up (`FollowUpSigning`, `SigningHook::signed`) runs when that one request
+is signed.
+
+### Scope
+
+- A new **envelope** holds one document, up to **10 signers** and up to **10
+  copy recipients**.
+- **Order:** each signer has a step number 1–10. Signers with the same step
+  sign **in parallel**; a step opens when every signer of the step before has
+  signed. "In order" is steps 1, 2, 3; "everyone at once" is everyone on step
+  1. This closes the reference's own gap "parallel signing".
+- A link (token) is issued and mailed only when the signer's step opens.
+- **Decline** by any signer ends the envelope (`DECLINED`): every open link is
+  revoked; the sender and the signers who already signed are told (without the
+  reason, which stays with the sender, as today).
+- **Void:** the sender (or `signing:manage`) can withdraw an envelope that is
+  out; open links answer 410 with "Dokumentet har dragits tillbaka".
+- **Completion:** when the last signer signs, the envelope is `COMPLETED`, the
+  document is sealed and sent to everyone (gap 5), and then the document
+  type's follow-up runs once (a quote becomes an order, CRM wins the deal, the
+  ÄTA is approved). A quote with two signers becomes an order only when both
+  have signed.
+- **Copy recipients** get no link. They get the sealed PDF and the certificate
+  at completion, and, if the sender ticks it, a notice at sending.
+- **One document per envelope**, as in the reference.
+- The existing flows keep their single-signer screens: `SigningPanel` sends a
+  one-signer envelope exactly as today; "Fler undertecknare" opens the send
+  wizard of gap 10 for the same document. The portal (`SignInSession`) and the
+  on-site ÄTA flow stay one-signer channels and create one-signer envelopes.
+
+### Data model
+
+- **`signing_envelopes`** (uuid, company-scoped): `document_type` and the
+  document key in the same columns the request uses today
+  (`sales_document_id`, `agreement_id`, `signable_id`), `title` (snapshot),
+  `status` (`DRAFT`, `OUT`, `COMPLETED`, `DECLINED`, `VOIDED`, `EXPIRED`),
+  `current_step`, `document_path`, `document_name`, `document_sha256`,
+  `content_hash` (the fingerprint), `page_count`, `deadline_at`,
+  `reminder_every_days` (null, 1, 2, 3, 7), `reminders_sent`,
+  `last_reminded_at`, `language` (`sv`, `en`), `confidential` (gap 10),
+  `template_id` (gap 8), `created_by`, `sent_at`, `completed_at`, `voided_at`,
+  `voided_by`, `chain_head` (gap 4), `sealed_path`, `sealed_sha256`,
+  `seal_level` (gap 5), `retention_until`, `retention_hold` (gap 11),
+  `followed_up_at`.
+- **`crm_signing_requests` becomes the signer row**: nullable `envelope_id`,
+  `step` (1–10, default 1), `role_key` (gap 8), `language`, `verification`
+  (gap 3), the consent columns (gap 7). Existing columns and evidence stay.
+  The protect trigger is replaced so that `envelope_id`, `step` and `role_key`
+  may be set once from null on a signed row (for the backfill) and never
+  changed after.
+- **Backfill** (in the S1 migration, inserting rows only): one envelope per
+  existing request, status derived from the request, `envelope_id` set. So
+  there is one code path, and existing links keep working.
+- **`signing_link_tokens`** (company-scoped): `signing_request_id`,
+  `token_hash` (unique), `issued_at`, `reason` (`SENT`, `REMINDER`,
+  `RESENT`), `revoked_at`. A reminder issues a new token and mails it while
+  the earlier one stays valid until the deadline, so no link is ever stored
+  readable. Rejected: keeping the link encrypted for reminders, as the ÄTA
+  on-site row does. Lookup checks this table and, for older rows, the
+  request's own `token_hash`. Revoking a signer revokes all its tokens.
+- **`signing_copy_recipients`** (company-scoped): `envelope_id`, `email`,
+  `name`, `language`, `notified_at`, `sent_copy_at`.
+- `SigningHook` gains `completed(Company, SigningEnvelope, ?User, ...)`; an
+  adapter calls the old `signed()` for one-signer envelopes, so CRM and
+  WorkOrders need no change in S1.
+- At most 10 signer rows and 10 copy rows per envelope: checked in the action
+  under the envelope's row lock, and by a trigger that counts rows.
+
+### Permissions
+
+Sending, reminding, changing the deadline and voiding an envelope need the
+document type's own sending rights (`Signable::authorizeSigning`): a quote
+`invoices:create` + `invoices:send`, an agreement `crm:manage`, an ÄTA the
+work-order permission, a standalone document `signing:send` (gap 10).
+Voiding someone else's envelope needs `signing:manage`.
+
+### Security
+
+- Step gating is enforced on the server: no token is issued for a signer whose
+  step is not open, and steps are fixed by trigger once the envelope is out.
+- Completion and the follow-up run under the envelope row lock (lock order:
+  envelope, then request, then document), idempotent through `followed_up_at`.
+
+### Legal items
+
+- `TODO(legal-verify)`: whether earlier signers must be told when a later
+  signer declines (default: yes, without the reason).
+
+### Out of scope
+
+Several documents per envelope; signers added after sending; delegating a
+signing step to another person; witnesses as a separate legal category (a
+witness is a signer with the role "Vittne").
+
+## Gap 2: fields in the PDF per signer
+
+### What exists
+
+None. A signer gives name, title, the drawn or typed signature and ticks the
+confirmation; nothing is placed in the PDF. The quote and agreement page show
+the PDF in an iframe on wide screens and as a link.
+
+### Scope
+
+- Field types: **signature, initials, date, name, text, number, checkbox,
+  dropdown, radio**. Each is assigned to one signer and has a page, a
+  rectangle, a label, **required or optional**, and type rules: text max
+  length (at most 500), number min, max and decimals, date (sv-SE
+  `ÅÅÅÅ-MM-DD`, filled with the signing date and not editable), dropdown and
+  radio options (at most 30, 100 characters each), a radio group key.
+- **Earlier signers' fields stay visible and locked:** after each signer, the
+  values are stamped into the PDF as a new incremental revision (principle
+  2); the next signer is shown that revision. Later signers' fields show as
+  empty outlines with the role name.
+- The signer page shows the pages as images with HTML inputs over the field
+  rectangles, plus a field list for keyboard and screen-reader users: each
+  field a labelled form control in reading order (WCAG 2.2 AA, 2.1.1, 1.3.1),
+  and "Nästa obligatoriska fält". Every field is validated on the server.
+- **Initials** use the same pad and typed alternative as the signature, sized
+  for a small box.
+- Quotes and agreements without placed fields keep today's page (the form
+  below the document). A standalone document needs at least one signature
+  field per signer.
+- The field editor (for the sender, gaps 8 and 10): drag fields onto the
+  rendered pages, assign them to a signer or role, set required and options;
+  the keyboard alternative is a form with page number and position presets.
+
+### Data model
+
+- **`signing_fields`** (company-scoped): `envelope_id` or `template_id`,
+  `signing_request_id` (or `role_key` on a template), `type`, `page`, `x`,
+  `y`, `width`, `height` (integers in 1/100 PDF points from the lower left of
+  the page's crop box, after rotation), `label`, `required`, `options` (jsonb),
+  `group_key`, `rules` (jsonb), `position`. Frozen when the envelope goes out
+  (the trigger refuses updates once the envelope is not `DRAFT`).
+- **`signing_field_values`** (company-scoped): `field_id`,
+  `signing_request_id`, `value` (text, at most 500 characters), `image`
+  (encrypted PNG for signature and initials), `filled_at`. Written once, in
+  the transaction that signs; the trigger refuses every update and refuses
+  delete except with the envelope at retention (principle 1). Values are part
+  of the signer's evidence and of the hash chain (gap 4).
+- **`signing_document_versions`** (company-scoped, append-only):
+  `envelope_id`, `kind` (`ORIGINAL`, `AFTER_SIGNER`, `SEALED`,
+  `TIMESTAMPED`), `signing_request_id` (for `AFTER_SIGNER`), `path`, `sha256`
+  (indexed), `bytes`, `created_at`. Every file a signer was shown or received
+  is here, so every one of them can be verified (gap 6).
+
+### Security
+
+- Values are validated against the field's type and rules on the server; a
+  dropdown or radio value must be one of the options; control characters are
+  refused; everything is escaped where shown (page, PDF stamp, mail).
+- A signer may post values only for fields assigned to them; others are
+  ignored and recorded as an event `FIELD_REJECTED` (ids only).
+- Page images are rendered on the server by the engine (gap 5) and served from
+  the same origin behind the token, `Cache-Control: no-store`. The public
+  page keeps `script-src 'self'` with no inline script and needs no PDF
+  viewer, so its CSP is not widened. Rejected: PDF.js on the public page,
+  which needs a worker and, in current versions, `wasm-unsafe-eval`.
+- The editor (internal pages) may use PDF.js (Apache-2.0), bundled by Vite and
+  loaded from NONOX only, with `worker-src 'self'`.
+
+### Legal items
+
+- `TODO(legal-verify)`: whether initials on each page add evidential value in
+  Swedish practice, or should be described only as a convenience.
+
+### Out of scope
+
+Formulas between fields, conditional fields, fields added by the signer,
+fields the sender fills in for a signer, AcroForm fields that stay
+interactive in the final PDF (values are flattened).
+
+## Gap 3: checking the signer (access code or e-mail code)
+
+### What exists
+
+The link proves control of the mailbox only (this ADR, Consequences). The ÄTA
+on-site flow already sends a six-digit code to the customer's e-mail
+(`change_order_on_site_codes`: code hash, five tries, fifteen minutes;
+`SignChangeOrder::verifyOnSite`). The portal identifies a contact by its own
+e-mail code session.
+
+### Scope
+
+Per signer, the sender chooses a check (`verification`):
+
+- **`NONE`**: the link alone. Today's behaviour; the default for quotes and
+  agreements (owner decision 9).
+- **`EMAIL_CODE`**: before the document is shown, a six-digit code goes to the
+  signer's address. It protects against a forwarded or leaked link. The
+  default for standalone documents.
+- **`ACCESS_CODE`**: the sender types a code of at least 6 characters and
+  gives it to the signer another way (phone, in person). NONOX never mails it,
+  and the screen says so.
+- **`PROVIDER`**: a pluggable provider (BankID, a CSC API v2 service), gap 12.
+
+The check is recorded on the request (method, time), as an event in the
+chain, and on the certificate per signer. A signer locked out by failed
+attempts sees "Kontakta avsändaren"; the sender is told and can send a new
+code or link.
+
+### Data model
+
+- **`signing_verification_codes`** (company-scoped): `signing_request_id`,
+  `code_mac` (HMAC-SHA256 with the app key over the request id and the code;
+  a plain SHA-256 of six digits is reversed by brute force from a database
+  copy), `expires_at`, `attempts`, `verified_at`, `sent_at`.
+- On `crm_signing_requests`: `verification` (the enum above),
+  `access_code_hash` (`Hash::make`, since a sender's code has low entropy),
+  `verified_at`, `verification_failures`, `locked_at`. Protected by the
+  trigger once signed.
+- The ÄTA on-site flow moves onto the same service in S3 without behaviour
+  change; its own table stays for its existing rows and evidence.
+
+### Security
+
+- Code: six digits from `random_int`, valid 10 minutes, 5 attempts per code,
+  at most 3 codes an hour per signer, a new code only after 60 seconds. The
+  send runs behind a cache lock and reuses a still-valid code inside the
+  cooldown, so a double click never sends two mails (the owner's standing rule
+  for login codes); the button is disabled in the browser while sending.
+- Access code: 5 failed attempts lock the signer; compared with
+  `Hash::check`; never logged, shown again or returned by the API.
+- A passed check lives in the session for 30 minutes, bound to the request id
+  and the token hash; a new browser needs a new check.
+- Throttles: per IP (as today) and per signer (`signing-verify`, 10 a minute);
+  `hash_equals` on every comparison.
+
+### Legal items
+
+- `TODO(legal-verify)`: that an e-mail code or an access code does not change
+  the classification (it does not make the signature advanced under art. 26);
+  the manual says only that it reduces the risk of a forwarded link.
+
+### Out of scope
+
+SMS codes (NONOX has no SMS; ADR-037 keeps SMS out too); identity questions.
+
+## Gap 4: a hash-chained audit trail
+
+### What exists
+
+`crm_signing_events` is append-only by trigger
+(`crm_signing_events_append_only`) and deletable only with its request
+(`2026_12_31_100300`). There is no hash chain; the voucher chain
+(`App\Domain\Accounting\LedgerHash`, ADR-007) and the dump chain
+(`App\Support\Portability\DumpChainVerifier`) show the pattern.
+
+### Scope
+
+- Every event of an envelope is chained: `hash = sha256(previous_hash ||
+  canonical_json(event))`. The first event's `previous_hash` is the original
+  document's SHA-256, so the chain is bound to the document.
+- New event types: `CREATED`, `STEP_OPENED`, `CODE_SENT`, `VERIFIED`,
+  `VERIFY_FAILED`, `LOCKED`, `CONSENTED`, `DOWNLOADED`, `FIELDS_FILLED`,
+  `FIELD_REJECTED`, `REMINDED`, `DEADLINE_CHANGED`, `VOIDED`, `COMPLETED`,
+  `SEALED`, `TIMESTAMPED`, `COPY_SENT`, `CHAIN_STARTED`.
+- The chain head is stored on the envelope at completion, printed on the
+  certificate, embedded in the sealed PDF (gap 5) and written to the audit log
+  (`signing.completed` with ids and the head hash), which is itself
+  append-only. Deleting a whole envelope is therefore visible in the audit log.
+- `php artisan signing:verify {company?}` recomputes every chain, every file
+  hash in `signing_document_versions` against the stored bytes, and that every
+  completed envelope has its audit entry. It runs nightly like `ledger:verify`;
+  the result shows on the envelope page and in Inställningar → Signering.
+
+### Data model
+
+New nullable columns on `crm_signing_events`: `envelope_id`, `sequence`,
+`previous_hash`, `hash`, `payload` (jsonb: ids, enums, field ids and the
+hashes of field values, never the values). Unique (`envelope_id`,
+`sequence`). Older events have no hash; a backfilled envelope's first new
+event is `CHAIN_STARTED`, which names the count of earlier events. The event
+trigger stays append-only; inserting an event takes the envelope's row lock, so
+`sequence` has no gaps.
+
+### Security
+
+The canonical JSON (sorted keys, UTC timestamps with microseconds, no floats)
+lives in one class with golden tests. A test changes a stored event by raw SQL
+in the test database, with the trigger disabled, and proves that
+`signing:verify` reports the break.
+
+### Out of scope
+
+Anchoring chain heads outside NONOX (for example a public transparency log).
+The timestamp of gap 5 already gives an independent time.
+
+## Gap 5: the finished PDF sealed with PAdES and a timestamp, mailed to everyone
+
+### What exists
+
+`SigningPdfs::certificate` renders the Signeringsbevis with dompdf;
+`SignedDocumentMail` sends the unchanged PDF and the certificate as two files
+to the signer and the company. Nothing is sealed or timestamped. This ADR's
+first round rejected merging pages for lack of a PDF library.
+
+### Scope
+
+- At completion, the **finished file** is the last revision (original plus
+  stamped fields) with the certificate pages appended, as incremental updates,
+  and then **sealed** with a PAdES signature (ETSI EN 319 142-1, baseline
+  profiles) by a seal certificate, as a further incremental update. The
+  certificate is also kept as its own PDF, as today.
+- **Levels** (`seal_level`): `B_B` (signature only), `B_T` (plus a signature
+  timestamp from an RFC 3161 server), `B_LT` (plus a DSS dictionary with the
+  certificates and revocation data), `B_LTA` (plus a document timestamp over
+  the DSS). The level reached depends on the configuration; without a
+  timestamp server the seal is `B_B`. The screen and the certificate state the
+  level reached, never a higher one.
+- **Seal certificate:** by default an instance **self-signed** seal created by
+  `php artisan signing:seal-certificate` (the key outside the web root, its
+  path in config); or the **company's own** certificate, uploaded as PKCS#12
+  under Inställningar → Signering (`signing:settings`). The manual says
+  plainly that PDF readers show a self-signed seal as of unknown validity and
+  that the Verify page (gap 6) is the check that needs no trust list.
+- **Long-term validation:** a nightly `signing:timestamp` adds a new document
+  timestamp to `B_LTA` files when the last timestamp's TSA certificate is
+  within 12 months of expiry, for files still within retention. Each new file
+  is a new row in `signing_document_versions`, so earlier copies still verify.
+- **The sealed PDF is mailed to everyone:** every signer, every copy
+  recipient and the company (as today: the company's address, else the
+  sender's), each in their language, with the certificate. A file above 15 MB
+  goes as a link instead (its own token, valid 30 days, hashed at rest).
+- **Scripts:** stamped text, the certificate and the mails render Latin,
+  Greek, Cyrillic and CJK correctly. Fonts: Noto Sans and Noto Sans CJK (SIL
+  Open Font License 1.1, which allows embedding and redistribution), fetched by
+  a script with pinned SHA-256 (like `scripts/fetch-xbrl-taxonomy.sh`) instead
+  of being committed, and subset when embedded. Golden tests with Greek,
+  Cyrillic, Chinese, Japanese and Korean names.
+- dompdf's `DejaVu Sans` covers Latin, Greek and Cyrillic, not CJK. S20 checks
+  in the installed dompdf 3.1.6 source whether a font-family list falls back
+  per glyph; if it does not, the certificate template splits text into script
+  runs and sets the font per run.
+
+### The PDF library choice
+
+What is installed (read in `composer.json`, `composer.lock` and `vendor/`):
+
+| Library | Licence | In NONOX | Can it do the job? |
+|---|---|---|---|
+| `dompdf/dompdf` 3.1.6 | LGPL-2.1 | direct (ADR-002) | Renders HTML to new PDFs (quotes, certificate). Cannot open, stamp or sign an existing PDF. Stays for what it does. |
+| `smalot/pdfparser` 2.13.1 | LGPL-3.0 | direct | Reads text and metadata, cannot write. Useful for a text alternative of a standalone PDF and for upload checks. |
+| `phpseclib/phpseclib` 4.0.2 | MIT | indirect (required by `laravel/passport`) | Has `File\CMS\SignedData` with `addESSSigner` (ESS signing-certificate-v2), signed and unsigned attributes, and ASN.1 maps for `TimeStampToken` and `TSTInfo` (read in `vendor/phpseclib/phpseclib/phpseclib/File/`). It could build the CMS a PAdES signature needs, but it has no PDF writer. Not relied on; kept as the fallback for a pure-PHP CMS step, and then required directly. |
+| Browsershot | MIT | not installed | ADR-002 chose not to need Chrome on the server. It makes new PDFs only; no help here. |
+
+Candidates for overlay, flattening and signing an existing PDF:
+
+| Candidate | Licence | Verdict |
+|---|---|---|
+| **pyHanko** (Python) | MIT | **Chosen.** Writes incremental updates only (the original revision survives), stamps text and images, signs PAdES B-B to B-LTA, has an RFC 3161 client, DSS and document timestamps, external ("interrupted") signing for remote providers, and a validator for self-tests. |
+| **pypdfium2** (Python binding of PDFium) | Apache-2.0 / BSD-3-Clause | **Chosen** for page geometry and the page images of the signer page and the editor. |
+| fontTools, uharfbuzz (used by pyHanko for subsetting and shaping) | MIT, Apache-2.0 | With pyHanko, for CJK. |
+| PDF.js | Apache-2.0 | **Chosen** for the internal field editor only. |
+| Apache PDFBox (Java) | Apache-2.0 | Good, but needs a JVM on every server; rejected as the default. |
+| EU DSS (Java, the European Commission's library) | LGPL-2.1 | The reference for PAdES validation, but needs a JVM. Optional in CI as a second validator of the golden files, never at runtime. |
+| setasign FPDI + TCPDF | MIT + LGPL-3.0 | Rejected: importing pages rewrites the document (the original bytes are lost); the free FPDI parser does not read PDF 1.5 compressed cross-reference streams according to its vendor (S5 confirms in its repository); TCPDF signs a PKCS#7 without the PAdES baseline attributes or LTV. |
+| tecnickcom tc-lib-pdf | LGPL-3.0 | Rejected: no mature import together with PAdES LTV. |
+| mPDF | GPL-2.0-only | Excluded: GPL-2.0-only cannot be combined with AGPL-3.0. |
+| A PDF incremental writer written in PHP | AGPL (own) | Rejected for now: real uploads use cross-reference streams, object streams and odd structures; a writer that strict validators accept is a project of its own. |
+
+**Decision (owner decision 3):** a **PDF engine** behind an interface
+`App\Domain\Signing\Pdf\PdfEngine` (`inspect`, `renderPages`, `stamp`,
+`appendPages`, `seal`, `timestamp`, `validate`). The implementation
+`SidecarPdfEngine` calls a small NONOX-owned Python program in
+`tools/pdf-engine/` (AGPL, built on pyHanko and pypdfium2, pinned versions with
+hashes in a lock file) through `Illuminate\Support\Facades\Process`, with a
+timeout, a memory limit and no shell. A `FakePdfEngine` serves the test suite.
+`php artisan signing:engine-doctor` checks an installation.
+
+Relied on: the installed PHP packages as read above. For the Python and Java
+libraries the architect relied on their published documentation; S5 verifies
+the current versions, licences and the named capabilities in each project's
+own repository before adding them, and records that in its PR.
+
+**Without the engine** (a self-hoster who does not install Python), signing
+works as today (the unchanged PDF and the certificate) plus every gap that
+needs no PDF work (several signers, checks, the chain, consent, reminders,
+templates without fields, the Verify page against the original's hash). The
+screens that need the engine (fields, sealing) say "Kräver PDF-motorn" and link
+to the self-hosting guide. ADR-002's promise (pure PHP for invoices) holds.
+
+### Timestamp server
+
+- RFC 3161 Time-Stamp Protocol over HTTP(S) POST
+  (`application/timestamp-query`), a SHA-256 message imprint, a nonce, and
+  `certReq` true. Configuration only, nothing hard-coded:
+  `signing.timestamp.urls` (an ordered list; the first that answers wins),
+  optional basic-auth credentials and client certificate, `policy_oid`,
+  `timeout`. Instance-level only (`config/nonox.php` from env), never per
+  company, so no company can point the server at an internal address (SSRF).
+- If no server answers, the queue retries sealing for up to 24 hours and the
+  envelope shows "Förseglas". After that it is sealed at the level reached and
+  the sender is told.
+- Candidates, best first:
+  1. **A qualified time-stamp service on the EU trust list** (eIDAS art. 42).
+     A qualified electronic time stamp carries the presumption of accurate time
+     and integrity (art. 41(2)). Needs a contract; the best evidence.
+  2. **A free public time-stamp service of a large certificate authority**
+     (those used for code signing): widely trusted by PDF readers, good uptime,
+     no contract, not qualified. `TODO(legal-verify)`: their terms of use for
+     document timestamps at volume.
+  3. **A free community service** without an SLA: development and tests only.
+  The recommended production setup is option 1 as soon as a contract exists,
+  with option 2 as the interim and as the fallback URL. A timestamp request
+  carries only a hash, so no personal data leaves NONOX.
+
+### Data model
+
+- **`signing_seal_certificates`** (company-scoped, for companies' own
+  certificates; the instance seal is a key file named in config, not a row):
+  `subject`, `issuer`, `serial`, `not_before`, `not_after`,
+  `fingerprint_sha256`, `pkcs12` (encrypted cast), `password` (encrypted cast),
+  `uploaded_by`, `retired_at`. Never returned by a screen or the API after
+  upload; replaced, never edited.
+- On the envelope: `seal_level`, `sealed_path`, `sealed_sha256`,
+  `seal_certificate_fingerprint`, `sealed_at`, `last_timestamp_at`.
+
+### Security
+
+- Seal keys: the PKCS#12 and its password are decrypted only in the job and
+  handed to the engine on standard input, never written to a readable file or
+  logged; the instance key file is `0600` outside the web root. Expiry within
+  60 days raises a to-do for `signing:settings`.
+- The engine runs as a subprocess with a 60-second timeout and a memory limit,
+  without network access except to the configured timestamp servers and the
+  revocation addresses in the certificates (documented for self-hosters).
+- Page rendering caps the pixels per page and the pages per document (gap 10).
+
+### Legal items
+
+- `TODO(legal-verify)`: **trust service.** eIDAS art. 3(16) counts the
+  creation, verification and validation of electronic seals and time stamps,
+  and the preservation of seals, as trust services. Whether NONOX sealing
+  customers' documents and re-timestamping them makes the operator a
+  (non-qualified) trust service provider with duties under art. 19 (security,
+  breach notification) and supervision by PTS. **This gates S10, S11 and S12
+  on the hosted service.**
+- `TODO(legal-verify)`: a company's own seal certificate attests the company's
+  origin and the document's integrity, not the signer's will. The certificate
+  and the manual must not present it as the signer's signature.
+
+## Gap 6: a public Verify page
+
+### What exists
+
+None. Anyone can recompute the SHA-256 on the certificate, but there is no page
+to check it against.
+
+### Scope
+
+- `/kontrollera` (Swedish URL, AGENTS.md §11.4): the visitor chooses a PDF; the
+  browser computes its SHA-256 with Web Crypto (`crypto.subtle.digest`) and
+  posts **only the 64 hex characters**. The file never leaves the device, and
+  the page says so in Swedish and English.
+- The answer is found or not found. Found shows the company's name, the
+  document title, which version it is (original, after signer n, sealed,
+  re-timestamped), the completion time, the number of signers and their check
+  methods, the seal level, and whether the chain verified at the last nightly
+  run. No names, e-mail addresses or IP addresses (owner decision 11).
+- The certificate carries a QR code (`bacon/bacon-qr-code`, already
+  installed) and a short link to `/kontrollera` with the hash in the fragment
+  (`#sha256=…`), which the page reads in the browser; it never travels in a
+  URL to the server.
+- It answers for completed, declined and voided envelopes (each state
+  stated), for archived companies and with the module off: evidence must stay
+  checkable. A deleted envelope (past retention) is "not found".
+
+### Security
+
+- Lookup inside `CompanyScope::bypass` (with a comment naming this amendment)
+  on the indexed `signing_document_versions.sha256`: one query, the same
+  response time for found and not found within noise.
+- Throttle `signing-verify-page`: 20 checks a minute per IP. The body must be
+  exactly 64 lowercase hex characters; nothing else is accepted. No hash is
+  logged together with an IP address.
+- CSP as on the signing page (`script-src 'self'`, no inline script,
+  `connect-src 'self'`, `frame-ancestors 'none'`). A test asserts that the
+  form's file input has no `name` and that the POST body holds only the hash.
+
+### Legal items
+
+- `TODO(legal-verify)`: whether the page is "validation" in the sense of eIDAS
+  art. 3(16)(a). It checks only that a file is byte-identical to one NONOX
+  kept; the wording is "kontrollera att filen är oförändrad", never "validera
+  underskriften".
+
+## Gap 7: versioned consent to electronic records
+
+### What exists
+
+The page shows what is kept and who is responsible (art. 13/14, review round
+2026-11-04), and the exact confirmation the signer ticks is stored
+(`acceptance_text` with an HMAC). There is no separate consent to doing the
+transaction electronically.
+
+### Scope
+
+- A short text "Samtycke till elektroniska handlingar", versioned like the
+  legal pages: `docs/juridik/elektroniska-handlingar.md` with a version and an
+  effective date, a constant in one class (as `LegalPageController::VERSION`),
+  in Swedish and English.
+- Shown once per signer and envelope before the document, as one checkbox
+  "Jag godkänner att handlingen skrivs under elektroniskt". Declining it ends
+  with "Kontakta avsändaren om du vill skriva under på annat sätt" and tells
+  the sender.
+- Stored on the request: `consent_version`, `consent_text_sha256`,
+  `consent_at`; event `CONSENTED` in the chain; printed on the certificate.
+
+### Legal items
+
+- `TODO(legal-verify)`: Swedish law has no general consent requirement for
+  electronic signatures. Whether the step is useful evidence, and whether
+  consumer contracts at a distance (lag (2005:59) om distansavtal och avtal
+  utanför affärslokaler) need more about a durable medium.
+
+## Gap 8: templates with roles, and bulk send
+
+### What exists
+
+Quote templates (`crm_quote_templates`, `SaveQuoteTemplate`,
+`CreateQuoteFromTemplate`, `/kunder/offertmallar`) build quotes, not signing
+setups. Agreement templates were left open in this ADR's Consequences.
+
+### Scope
+
+- A **signing template** holds a PDF (standalone) or a document type (quote,
+  agreement), **roles** instead of names ("Kund", "Säljare", "Vittne"), each
+  role's step, check and fields (gap 2), and defaults for deadline, reminders,
+  copy recipients, language and confidentiality.
+- Sending from a template maps each role to a person (name, e-mail; for the
+  company's own role a member is suggested); the fields follow their role.
+- A template's PDF and fields can change; an envelope copies them when it goes
+  out, so earlier envelopes are unaffected. A used template is archived, never
+  deleted.
+- **Bulk send** (the reference's own gap): one template and a CSV with one row
+  per envelope (columns per role: `Kund namn`, `Kund e-post`, …); a preview of
+  the first rows and every row's validation; then up to 500 envelopes queued,
+  each with its own trail, within the company's mail quota.
+
+### Data model
+
+`signing_templates` (company-scoped: name, `document_type`, PDF path and
+SHA-256, page count, defaults, `archived_at`, `created_by`),
+`signing_template_roles` (`template_id`, `key`, `label`, `step`,
+`verification`), the fields in `signing_fields` with `template_id` and
+`role_key`; `signing_bulk_sends` (company-scoped: template, status, counts,
+`created_by`; the uploaded CSV is deleted when the run finishes).
+
+### Out of scope
+
+Sharing templates between companies or from the firm workspace (ADR-028), a
+later step; a public template gallery.
+
+## Gap 9: deadline and reminders
+
+### What exists
+
+Expiry at the end of a chosen day, else the quote's last valid day, else 30
+days, never more than 90 (`SendForSigning`). No reminders; "a second reminder
+closer to the deadline" is an open item in this ADR's Consequences.
+
+### Scope
+
+- A deadline of **3–90 days** from sending (default 30, owner decision 14),
+  never after a quote's validity date. **Changeable while out** by the sender,
+  shorter or longer within the same bounds counted from today; event
+  `DEADLINE_CHANGED`; the open signers are told the new date.
+- **Automatic reminders every 1, 2, 3 or 7 days** (default 3, owner decision
+  13) to signers whose step is open, stopping at the deadline, at most 10 per
+  signer; without an interval, one reminder two days before the deadline.
+  `signing:remind` runs hourly, sends only between 08 and 18 Stockholm time,
+  and is idempotent through `last_reminded_at` under the row lock.
+- **Manual reminder** ("Påminn nu") per signer, at most once an hour.
+- A reminder mails a fresh token (gap 1, `signing_link_tokens`).
+- At the deadline the envelope becomes `EXPIRED` (one event), open links answer
+  410, and the sender is told.
+
+### Out of scope
+
+Reminders by SMS; a deadline per signer.
+
+## Gap 10: standalone documents, any PDF, as a module
+
+### What exists
+
+Only registered types can be signed: the quote (core), the agreement (CRM; an
+uploaded PDF or one generated from its fields), the ÄTA (WorkOrders). The
+generic key column `signable_id` (2026-12-20 migration) is ready for a new
+type. There is no list of all signings.
+
+### Scope
+
+- **The engine stays in core** (ADR-075 §7): envelopes, several signers,
+  checks, the chain, consent, reminders, sealing, the Verify page and retention
+  apply to every document type, with or without any module. The engine's
+  settings (retention, seal certificate, reminders, defaults, providers) live
+  under Inställningar → Signering (`signing:settings`).
+- **A new module `signing`, "Signering"** (marketed as NONOX Signering,
+  `app/Modules/Signing`, ADR-017) adds what a company wants for its own
+  documents, with or without CRM:
+  - **Standalone documents** (`Signable` type `DOCUMENT`, key in
+    `signable_id`): upload any PDF, give it a title, optionally link it to a
+    customer or supplier (read only with that register's view permission).
+  - The **envelope list** `/signering` (filters in the query string: out,
+    completed, declined, expired, voided; search on title), the envelope page
+    `/signering/{id}` with the timeline, each signer's status, the files,
+    remind, change deadline and void, and the send wizard `/signering/ny`
+    (document → signers and steps → checks → fields → deadline and reminders →
+    review → send).
+  - Templates and bulk send (gap 8) and the field editor (gap 2).
+  - **Confidential envelopes** (owner decision 20): visible only to the sender
+    and `signing:manage`, for employment contracts and similar.
+- With the module off, open links of standalone envelopes answer as any link
+  whose module is off; completed ones stay readable with `signing:view` as an
+  archive permission; the Verify page keeps answering.
+- The CRM, quote, agreement, ÄTA and portal hooks keep working unchanged. The
+  envelope list shows their envelopes too, each only to users who may view the
+  underlying document.
+
+### Data model
+
+`signing_documents` (company-scoped): `title`, `path`, `name`, `sha256`,
+`bytes`, `page_count`, `customer_id`, `supplier_id` (both nullable),
+`uploaded_by`, `archived_at`. Registered in `SignableTypes` with
+`GENERIC_COLUMN`. Its fingerprint is the file's SHA-256: the file never
+changes; a new file is a new document.
+
+### Permissions
+
+In the style of AGENTS.md §4. The module's permissions exist only while it is
+on (ADR-017); `signing:settings` and `signing:privacy` are core, since they
+govern the core engine.
+
+| Permission | What it allows | owner | admin | accountant | bookkeeper | approver | auditor | sales (CRM) |
+|---|---|---|---|---|---|---|---|---|
+| `signing:view` (module) | the envelope list for standalone documents, their files and certificates | ✓ | ✓ | ✓ | ✓ | | ✓ | ✓ |
+| `signing:send` (module) | upload, send, remind, change deadline, void one's own | ✓ | ✓ | ✓ | ✓ | | | ✓ |
+| `signing:manage` (module) | templates, bulk send, void anyone's, see confidential envelopes | ✓ | ✓ | ✓ | | | | |
+| `signing:settings` (core) | retention, seal certificate, providers, defaults | ✓ | ✓ | | | | | |
+| `signing:privacy` (core) | a signer's register extract and erasure | ✓ | ✓ | | | | | |
+
+The `approver` gets nothing; the `field_worker` (ADR-074) keeps only its
+on-site flow. Envelopes of other types follow their document's permissions
+(`invoices:view` for quotes, `crm:view` for agreements, the work-order
+permission for ÄTA). The new strings go into AGENTS.md §4's list by a
+human-approved edit when S7 merges, as in ADR-081. API abilities map one to one
+(`signing:view`, `signing:send`).
+
+### Security (uploads)
+
+- PDF only: the `%PDF-` header, MIME `application/pdf`, at most 20 MB and 100
+  pages (owner decision 22), not encrypted or password-protected, inspected by
+  the engine. A PDF with JavaScript, launch actions or embedded files is
+  refused with a plain message (rejected: stripping them, which rewrites the
+  bytes).
+- Stored on the private disk under a random name; served with
+  `Content-Type: application/pdf`, `X-Content-Type-Options: nosniff`, a
+  `Content-Disposition` with a sanitised name, and a `sandbox` CSP on the file
+  response shown in the iframe.
+- Tenancy: every route answers 404 for another company's envelope, document,
+  template or bulk send (tenancy suite).
+
+## Gap 11: retention, a signer's register extract and erasure
+
+### What exists
+
+Signed requests are never deleted (trigger); unsigned links are deleted with
+their PDF a year after they closed (`signing:prune`, `crm:agreements`). Signed
+quotes and agreements follow their record (BFL where they are
+räkenskapsinformation). `EraseRegisterEntry` keeps a customer with a signed
+agreement. The register extracts do not list a signer's evidence (an open item
+in Consequences).
+
+### Scope
+
+- **Retention per company and class** (Inställningar → Signering):
+  - documents that are räkenskapsinformation (a signed quote that became an
+    order or invoice; an agreement of importance to a business event): 7 years
+    after the end of the calendar year in which the fiscal year ended (BFL 7
+    kap. 2 §), not shortenable;
+  - other signed documents (standalone, agreements that are not
+    räkenskapsinformation): by default 10 years after completion, settable
+    from 7 to 25 years (owner decision 12);
+  - unsigned (declined, voided, expired): 12 months after closing, as today.
+  - `retention_until` is set at completion and shown on the envelope page.
+- `signing:prune` deletes envelopes past `retention_until` with their files,
+  versions, fields, values and events. The delete trigger is replaced to allow
+  deleting a signed envelope only once `retention_until` has passed. A legal
+  hold (`retention_hold`, `signing:settings`) stops pruning.
+- **Register extract** for a signer (`signing:privacy`): search by exact
+  e-mail address across the company's envelopes; the result as JSON with the
+  PDFs and certificates the person signed, through the existing
+  `App\Support\Privacy\DataSubjectExport`.
+- **Erasure:** an envelope still out is voided and deleted; an unsigned one is
+  deleted; a signed one within retention is refused with the legal basis
+  stated (art. 17(3)(b) for räkenskapsinformation, art. 17(3)(e) for the
+  evidence of a contract), and the refusal is recorded. Never a partial edit.
+- Personal numbers from a provider (gap 12) use the `encrypted` cast, are shown
+  masked, never reach the audit log, and are deleted with the envelope.
+
+### GDPR
+
+- The company is the controller for signer data; NONOX is its processor. The
+  DPA, `docs/gdpr/registerforteckning.md` (the signing paragraph widened from
+  CRM to every document type, the checks, the consent, the provider data),
+  `docs/gdpr/lagringstider.md` (the classes above) and the privacy policy are
+  updated in S16, with one `LegalPageController` bump at the merge.
+- Legal basis: a contract or steps before one (art. 6(1)(b)) where the signer
+  is the party; legitimate interest (art. 6(1)(f)) in evidence where the signer
+  acts for a company; legal obligation (art. 6(1)(c), BFL) for
+  räkenskapsinformation. A standalone document can hold anything (an
+  employment contract): the company chooses the purpose, and the manual tells
+  it to use confidential envelopes and to keep special categories out of
+  field values.
+- Sub-processors: a timestamp server receives only a hash (no personal data);
+  a signing provider (gap 12) receives the signer's identity data and is named
+  in `docs/juridik/underbitraden.md` before it is switched on.
+
+### Legal items
+
+- `TODO(legal-verify)`: the 10-year default (the general limitation period in
+  preskriptionslagen (1981:130) 2 §) against art. 5(1)(e).
+- `TODO(legal-verify)`: whether a BankID signing provider is a processor or an
+  independent controller.
+
+## Gap 12: advanced and qualified signatures through a pluggable provider
+
+### What exists
+
+None. The manual advises BankID signing outside NONOX where identity matters.
+The driver pattern exists: `App\Modules\Banking\Contracts\BankDataProvider`
+(ADR-034, keys `enable_banking` and `fake`) and
+`App\Modules\Peppol\Contracts\PeppolAccessPoint` (ADR-050).
+
+### Scope
+
+- A contract `App\Domain\Signing\Providers\SignatureProvider` with `key()`,
+  `claimedLevel()` (`SES`, `AES`, `QES`, as the provider states it under its
+  agreement and the EU trust list), `start()` (a redirect, or a QR and
+  autostart session), `collect()`, `evidence()`, and a registry like the
+  banking one. Drivers:
+  - **`fake`** for tests.
+  - **`csc`**: a remote signing service with the Cloud Signature Consortium
+    API v2 (OAuth2 credential authorisation, `credentials/info`,
+    `signatures/signHash`). NONOX computes the PAdES signature's digest with the
+    engine's external signing, the signer authorises it at the provider, and
+    the returned signature and certificate chain become **the signer's own
+    PAdES signature** in their revision. With a qualified certificate on a
+    qualified device at a QTSP, that is a qualified electronic signature.
+  - **`bankid`**: Swedish BankID (the relying-party API's sign call, with the
+    title and a short hash as visible data and the revision's SHA-256 as
+    non-visible data), an animated QR code (`bacon/bacon-qr-code`) and
+    same-device start. The completion data (BankID's signature and the OCSP
+    response) is stored encrypted as evidence; the name and the masked personal
+    number appear on the certificate; the NONOX seal then covers the document.
+    BankID's signature is over BankID's own data, not a PAdES signature in the
+    PDF; how that is classified is a legal item.
+- A provider is configured per company (`signing:settings`) with its
+  credentials encrypted. A company-supplied base URL passes the same address
+  checks as webhooks (`App\Modules\Connect\Webhooks\WebhookAddress`,
+  `UnsafeWebhookAddress`) against SSRF. Provider costs are charged through
+  NONOX Connect at cost plus 10 % (the owner's Connect pricing).
+- The agreements with BankID (through a bank or a reseller) and with a QTSP
+  are signed by the operator company, like the other external agreements; the
+  driver is built and stays switched off in `/hq` until then.
+- A later candidate, not built: the EU Digital Identity Wallet under the eIDAS
+  amendment (EU) 2024/1183, through the same contract.
+
+### Legal level (eIDAS and its Swedish complement)
+
+- **What NONOX can claim by itself:** a **simple electronic signature** (eIDAS
+  art. 3(10)) with integrity evidence. Art. 25(1): it may not be denied legal
+  effect or admissibility as evidence solely because it is electronic or not
+  advanced or qualified. With the seal, the document's integrity since
+  completion is protected by an electronic seal of the operator or of the
+  company (art. 3(24)–(27)), which is not the signer's signature.
+- **What needs a provider:** an **advanced electronic signature** (art. 26:
+  uniquely linked to the signer, capable of identifying them, created with
+  data under their sole control, linked so that any later change is
+  detectable) needs an identity and a key the signer controls. A **qualified
+  electronic signature** (art. 3(12); art. 25(2): the equivalent of a
+  handwritten signature) needs a qualified certificate and a qualified
+  signature creation device from a QTSP. An e-mail code or an access code
+  meets neither.
+- **Sweden:** lag (2016:561) med kompletterande bestämmelser till EU:s
+  förordning om elektronisk identifiering och betrodda tjänster, and förordning
+  (2016:576); PTS supervises trust service providers. `TODO(legal-verify)`:
+  confirm both citations and whether either adds anything for NONOX.
+- `TODO(legal-verify)`: whether a BankID signature as described (BankID's
+  signature over the document hash, plus the NONOX seal) is an advanced
+  electronic signature of the document.
+- `TODO(legal-verify)`: which documents have form requirements that no NONOX
+  signature meets (for example jordabalken 4 kap. 1 § for a property purchase,
+  which the manual already names, and ärvdabalken 10 kap. 1 § for a will), and
+  whether some require a qualified signature. The standalone upload shows a
+  short warning with the list.
+- `TODO(legal-verify)`: whether the signing page for consumers falls under lag
+  (2023:254) om vissa produkters och tjänsters tillgänglighet (the European
+  Accessibility Act); NONOX targets WCAG 2.2 AA in any case.
+
+## Marketing: what may and may not be claimed
+
+May be said, once built and true on the hosted service:
+
+- "Enkel elektronisk underskrift enligt eIDAS, med kontroll med kod per e-post
+  eller åtkomstkod."
+- "Flera undertecknare i ordning eller samtidigt, fält i PDF:en, mallar med
+  roller, påminnelser och massutskick."
+- "Den färdiga PDF:en förseglas (PAdES) och tidsstämplas", only at the level
+  actually configured; "långtidsvalidering" only when B-LTA is produced.
+- "Kontrollera ett dokument utan att ladda upp det: bara filens kontrollsumma
+  skickas."
+- "Behandlingshistorik med hashkedja", "öppen källkod (AGPL)", and "drivs i
+  EU/EES" as the legal pages already say.
+- "Avancerad eller kvalificerad underskrift med BankID eller en kvalificerad
+  tjänst", only for a provider that is switched on, with the provider's own
+  claim, and never before the legal items above are answered.
+
+Must not be said:
+
+- "Juridiskt bindande" without qualification, "rättssäker", "lika säker som
+  BankID", "ersätter BankID", "100 % säker", "eIDAS-certifierad", "godkänd
+  av" an authority, "avancerad" or "kvalificerad" for NONOX's own signing, or
+  "betrodd tjänst"/"tillitstjänst" before the trust-service item is answered.
+- The reference product's name, or "som X" or "ett alternativ till X" for it
+  (AGENTS.md §1.1). Comparison rows in `docs/migration/jamforelse.json` name
+  only programs NONOX may name under ADR-020, with values from the vendor's
+  own pages, else `unknown`.
+- Marknadsföringslagen (2008:486) 10 § applies to every claim; the launch
+  sweep (S21) gets a legal review of every public text.
+
+## What stays out
+
+Several documents in one envelope; delegating or reassigning a signing step;
+SMS; custom domains per company (owner decision 18: NONOX has no TLS
+automation today; an instance-level signing host is supported instead);
+hardware security modules and PKCS#11 for seal keys (a provider can cover
+that); payments on the signing page; video identification; in-person signing
+on a member's device for standalone documents (the ÄTA on-site flow stays);
+right-to-left scripts; signing in the scanner app.
+
+## Translations
+
+Per ADR-081 E0, each package writes its English strings to
+`lang/packages/<package-key>/en.json` (for example
+`lang/packages/s01-envelopes/en.json`); Swedish is the source language. E0 is
+not merged on `7f0b001d` (`lang/packages/` does not exist), so S1 depends on
+E0. If E0 has not merged when S1 starts, Lead builds E0 first as ADR-081
+specifies it, not a second copy of it.
+
+## Owner decisions (answer in one go)
+
+Until the owner answers, Lead builds on the recommended default under the
+owner's mandate of 2026-11-18. The owner may overturn any default before the
+package that depends on it merges.
+
+| # | Question | Recommended default | Reason |
+|---|---|---|---|
+| 1 | Engine in core, plus a new module "Signering" (`signing`) for standalone PDFs, templates and bulk send? | Yes | Quotes and ÄTA keep working without modules (ADR-075 §7); companies without CRM get standalone signing |
+| 2 | Price of the module | Included like the other modules; provider fees (BankID, QES) through NONOX Connect at cost + 10 % | As every module; only third-party costs are charged |
+| 3 | PDF engine: a Python sidecar with pyHanko and pypdfium2 | Yes, optional for self-hosters | The only AGPL-compatible way found to stamp and seal any PDF with PAdES up to B-LTA while keeping the original bytes |
+| 4 | What works without the engine? | Today's signing plus every gap that needs no PDF work; fields and seal say "Kräver PDF-motorn" | Honest, and keeps ADR-002's pure-PHP base |
+| 5 | Seal certificate on nonox.app | Self-signed instance seal at launch; an organisation seal certificate (ideally qualified) for the operator company later; companies may upload their own | Works now; a trusted seal costs money and waits for the trust-service answer |
+| 6 | Timestamp server on nonox.app | A public CA time-stamp service as interim (after a terms check); a qualified one from the EU trust list once contracted; both as config URLs | The best evidence with a contract, no blocker without one |
+| 7 | Limits | 10 signers and 10 copy recipients per envelope | Matches the reference and keeps the screens simple |
+| 8 | Parallel signing | Yes: signers with the same step number sign at the same time | Closes the reference's own gap at almost no cost |
+| 9 | Default signer check | Quotes and agreements: none (as today); standalone documents: e-mail code | No change to existing flows; standalone documents travel further |
+| 10 | Consent step | Yes: one short versioned text per signer and envelope | Cheap evidence, versioned like the legal pages |
+| 11 | What the Verify page shows | Company, title, version, completion time, number of signers, check methods, seal level; no names or addresses | Enough to trust the file, nothing more |
+| 12 | Retention of signed documents that are not räkenskapsinformation | 10 years after completion, settable 7–25 | The general limitation period; the BFL classes stay at 7 years from year-end |
+| 13 | Reminder default | Every 3 days, at most 10, during business hours | Useful without nagging |
+| 14 | Deadline default | 30 days (3–90), changeable while out | Today's default, with the reference's range |
+| 15 | Bulk send limit | 500 envelopes per run, within the mail quota | Protects deliverability and the queue |
+| 16 | BankID driver | Build it (S18); off in /hq until the operator's relying-party agreement is signed | The most-asked-for identity in Sweden; the agreement is the only blocker |
+| 17 | CSC API v2 driver | Build it generically (S17); no QTSP contracted yet | Opens qualified signatures without binding NONOX to one provider |
+| 18 | Custom domain per company | Not now; an instance-level signing host only | No TLS automation exists; self-hosters already have their own domain |
+| 19 | Certificate language | A bilingual Swedish/English certificate; page and mails in each signer's language (sv/en) | Foreign signers are common; one certificate for all |
+| 20 | Confidential envelopes | Yes, visible only to the sender and `signing:manage` | Employment contracts and similar |
+| 21 | Quotes with several signers | Opt-in through "Fler undertecknare"; the order is made when all have signed | No change for today's one-signer quotes |
+| 22 | Upload limits | 20 MB and 100 pages per PDF | Keeps rendering and mail sizes sane |
+| 23 | API and webhooks now | Yes (S19): envelopes, recipients, fields, send, remind, void, files; `signing.*` webhooks | The reference's third gap; the same Actions as the UI |
+| 24 | Order of build | The waves below; the engine (S1–S4) before the PDF work (S5–S11) | The most value with the fewest dependencies first |
+
+## Build packages
+
+Each package ships alone: migration(s), actions, policy, tests (feature,
+tenancy, immutability of the evidence, query count), Livewire UI, the manual
+article(s) with real screenshots from demo data, a changelog entry, its own
+translation file (`lang/packages/<key>/en.json`), `Features.php` and the
+landing card when user-visible, README, `docs/systemdokumentation/README.md`
+where the quote-to-order flow or the evidence changes, OpenAPI when the API
+changes, `docs/gdpr/*` where personal data changes, and demo data. Sized for
+one builder agent each.
+
+"Model": **standard** for ordinary CRUD and UI work, **heavy** for evidence,
+cryptography, PDF signing, legal or security-critical logic. "Review":
+**technical**, or **technical + legal** where law applies.
+
+| # | Package | Gap | Depends on | Model | Review | Main files (conflict surface) |
+|---|---|---|---|---|---|---|
+| S1 | Envelopes: `signing_envelopes`, signer columns and backfill, steps (in order and parallel), copy recipients, `signing_link_tokens`, decline ends the envelope, void, completion, envelope-aware hooks with the one-signer adapter | 1 | ADR-081 E0 | heavy | technical + legal | `SendForSigning`, `SignAtLink`, `SignInSession`, `SigningFollowUp`, `SigningHook(s)`, `SigningRequest`, protect triggers, `SigningPageController`, CRM and WorkOrders hooks (adapter only) |
+| S2 | Hash chain: event columns, canonical JSON, chained inserts, `signing_document_versions`, nightly `signing:verify`, audit entry with the head | 4 | S1 | heavy | technical + legal | `SigningEvent`, new `app/Domain/Signing/Chain/*`, scheduler, envelope page status |
+| S3 | Signer checks: e-mail code and access code, `signing_verification_codes`, throttles, lockout and notice; the ÄTA on-site code moved onto the service | 3 | S1 | heavy | technical | `SigningPageController`, new verification actions, `SignChangeOrder` |
+| S4 | Consent to electronic records: text and version, the step on the page, evidence columns, certificate line | 7 | S1, S2 | standard | technical + legal | `docs/juridik/elektroniska-handlingar.md`, signing page, `certificate.blade.php` |
+| S5 | PDF engine: `PdfEngine` contract, `tools/pdf-engine/` (pyHanko, pypdfium2, pinned), `SidecarPdfEngine`, `FakePdfEngine`, `signing:engine-doctor`, font fetch script (Noto incl. CJK), CI install, self-hosting guide | 5 | — | heavy | technical | new `app/Domain/Signing/Pdf/*`, `tools/pdf-engine/`, `scripts/`, CI workflow, `docs/juridik/egen-drift.md` |
+| S6 | Fields core: `signing_fields`, `signing_field_values` with triggers, signer page with page images and fields, validation per type, initials, a stamped revision per signer, earlier signers' values visible and locked | 2 | S1, S2, S5 | heavy | technical | signing page and `signing.js`, `SignAtLink`, new field actions |
+| S7 | Module "Signering": `SigningModule`, permissions, `signing_documents` and the `DOCUMENT` type, upload checks, the `/signering` list and envelope page, send wizard (without the field step), confidential envelopes | 10 | S1, S3 | standard | technical + legal | new `app/Modules/Signing/*`, module registry, `SigningPanel` ("Fler undertecknare") |
+| S8 | Field editor: PDF.js on internal pages, drag and keyboard placement, the wizard's field step | 2 | S6, S7 | standard | technical | `app/Modules/Signing/Livewire/*`, `resources/js/signing-editor.js`, Vite config |
+| S9 | Deadline and reminders: 3–90 days, change while out, automatic and manual reminders, `signing:remind`, expiry event | 9 | S1 | standard | technical | new reminder action and command, envelope page, mails |
+| S10 | PAdES seal: certificate pages appended, seal B-B/B-T, RFC 3161 configuration, the instance self-signed seal command, company PKCS#12 upload, expiry to-do | 5 | S2, S5, S6 | heavy | technical + legal | `app/Domain/Signing/Pdf/*`, `signing_seal_certificates`, settings page, `config/nonox.php` |
+| S11 | Long-term validation: DSS (B-LT), document timestamp (B-LTA), nightly `signing:timestamp` | 5 | S10 | heavy | technical + legal | engine, scheduler, `signing_document_versions` |
+| S12 | Verify page `/kontrollera`: Web Crypto hash, lookup, throttles, CSP, QR code and link on the certificate | 6 | S2 (S10 for sealed versions) | standard | technical + legal | new controller and view, `resources/js/verify.js`, `certificate.blade.php` |
+| S13 | Completion mail to everyone: signers, copy recipients and company, per language, a link with its own token for large files | 5 | S1 (S10 for sealed files) | standard | technical | `SignedDocumentMail`, `SigningFollowUp`, mail views |
+| S14 | Templates with roles: `signing_templates`, roles, fields per role, send from a template, quote and agreement templates for signing | 8 | S7, S8 | standard | technical | module pages, `signing_fields` (template side) |
+| S15 | Bulk send: CSV import with preview and validation, `signing_bulk_sends`, queued envelopes, quota | 8 | S14 | standard | technical + legal | module pages, queue job, mail quota |
+| S16 | Retention, register extract and erasure: classes and settings, `retention_until`, legal hold, pruning with the replaced delete trigger, `DataSubjectExport` and erasure, GDPR and DPA texts | 11 | S1, S2 | heavy | technical + legal | `PruneSigningLinks`, delete trigger, `DataSubjectExport`, `EraseRegisterEntry`, `docs/gdpr/*`, `docs/juridik/*` |
+| S17 | Provider framework and the CSC API v2 driver (+ fake): contract, registry, per-company encrypted configuration, SSRF checks, external signing through the engine | 12 | S3, S10 | heavy | technical + legal | new `app/Domain/Signing/Providers/*`, settings page, engine |
+| S18 | BankID driver: sign with QR code and same-device start, collect, encrypted evidence, masked personal number on the certificate; off in /hq until the agreement | 12 | S17 | heavy | technical + legal | `Providers/BankId/*`, signing page, certificate, `/hq` switch |
+| S19 | API and webhooks: Connect endpoints for envelopes, recipients, fields, documents and templates; idempotency keys; `signing.recipient_signed`, `signing.completed`, `signing.declined`, `signing.expired`; OpenAPI and the API changelog | 1, 8, 10 | S7, S14 | standard | technical | `app/Modules/Connect/Http/Controllers/Api/V1/*`, `WebhookEvents`, `docs/api/openapi.yaml` |
+| S20 | Branding and scripts: `Brand` on the page, mails and certificate; the instance signing host; the bilingual certificate; CJK in dompdf (script runs if needed); golden tests for Greek, Cyrillic and CJK | 5 | S5 | standard | technical | `SigningPdfs`, `certificate.blade.php`, mail views, `config/nonox.php` |
+| S21 | Launch sweep: manual section `docs/manual/sv/signering/`, landing, `Features.php`, rows in `docs/migration/jamforelse.json`, README, a legal review of every public text, this amendment to "Accepted, implemented" | all | S1–S20 (S18 may launch later) | standard | technical + legal | public pages, `docs/migration`, this ADR |
+
+**Parallel waves** (different files; the shared hotspots `andringslogg.json`
+and `Features.php` are merged by keeping both sides, newest changelog entry
+first; translations do not conflict after E0):
+
+- **Wave 0:** ADR-081 E0, if not merged.
+- **Wave A:** S1 and S5 in parallel (S5 touches no signing code).
+- **Wave B:** S2, S3, S9 (after S1) and S20 (after S5) in parallel. S2 and S3
+  both add events and touch `SigningPageController`: merge S2 first; S3
+  rebases.
+- **Wave C:** S4 (after S2), S6 (after S2, S5), S7 (after S3), S13 and S16
+  (after S2). S4 and S6 both edit the signing page: S4 first. S7 and S16 both
+  touch the settings page: S7 first.
+- **Wave D:** S8 (after S6, S7), S10 (after S6), S12 (after S2; its sealed
+  versions after S10).
+- **Wave E:** S11 (after S10), S14 (after S8), S17 (after S10).
+- **Wave F:** S15 (after S14), S18 (after S17), S19 (after S14).
+- **Wave G:** S21.
+
+Packages that change evidence, cryptography or the legal level (S1, S2, S4,
+S10, S11, S12, S16, S17, S18) get the independent legal and security review of
+QUICKSTART §7 before merge. S10–S12 are not switched on for the hosted service
+before the trust-service item in gap 5 is answered.
+
+### Consequences
+
+- This ADR's open items are closed by S19 (revoking over the API), S9 (a
+  reminder near the deadline), S14 (agreement templates) and S16 (register
+  extracts list a signer's evidence).
+- This ADR's deviation "the signed PDF is never changed" is refined: the
+  original bytes stay as their own file and as the first revision of the
+  finished file, and the stamped and sealed versions are added beside them.
+- New dependencies outside Composer: Python 3 with the engine's pinned
+  requirements (optional per installation) and the Noto fonts fetched by
+  script. Both are documented in the self-hosting guide; their licences (MIT,
+  Apache-2.0, BSD-3-Clause, SIL OFL 1.1) are justified in S5's PR.
+- `docs/gdpr/registerforteckning.md` and `lagringstider.md` change in S3, S4,
+  S16 and S18. The systemdokumentation changes in S1 (a quote with several
+  signers becomes an order only when all have signed) and S2.
