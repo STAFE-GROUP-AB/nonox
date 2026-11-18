@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-koncernstruktur",
+      "datum": "2026-11-18T01:20:00+01:00",
+      "rubrik": "Koncernstruktur för koncerner som flera företag delar",
+      "beskrivning": "Under Mina företag → Koncernstruktur ser du moderföretag, dotterföretag och vem som äger vad, med andel av kapital och röster, förvärvs- och avyttringsdag och räkenskapsårens status i varje företag. Du skapar koncernen, registrerar innehaven, lägger till företag, gör om en tidigare lista till koncern och ger rollen att läsa sammanställningen. Koncernen syns bara för den som får se rapporter i alla dess företag, och ingenting i bokföringen ändras.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-18-planering-i-toppklass",
       "datum": "2026-11-18T00:55:00+01:00",
       "rubrik": "Planering i toppklass",

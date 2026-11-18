@@ -44,6 +44,7 @@ final class PagesProvider extends BaseSearchProvider
         'payables.suppliers' => ['leverantörsregister'],
         'companies.overview' => ['byt företag', 'klienter'],
         'group.overview' => ['koncern', 'koncernöversikt', 'holding', 'dotterbolag'],
+        'group.corporate' => ['koncern', 'koncernstruktur', 'moderföretag', 'dotterföretag', 'innehav', 'ägarandel'],
         'payroll.agi' => ['agi', 'arbetsgivardeklaration'],
         'payroll.runs.index' => ['lön', 'löner'],
     ];

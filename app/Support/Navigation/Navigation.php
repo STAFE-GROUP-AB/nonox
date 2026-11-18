@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Navigation;
 
 use App\Domain\Firm\Memberships;
+use App\Domain\Group\GroupAccess;
 use App\Domain\Mileage\MileageLog;
 use App\Models\Company;
 use App\Models\User;
@@ -177,13 +178,18 @@ final class Navigation
             $sections[] = $item;
         }
 
-        if ($user->companies()->count() > 1) {
+        // Someone in a single company can still see a shared group, with the group role in the parent (ADR-081 E22).
+        $multiple = $user->companies()->count() > 1;
+
+        // The cheap existence check first, so most single-company users pay no group query beyond it.
+        if ($multiple || (GroupAccess::for($user)->touchesAnyCorporateGroup() && GroupAccess::for($user)->corporateGroups()->isNotEmpty())) {
             $sections[] = [
                 'label' => __('Mina företag'),
-                'route' => 'companies.overview',
+                'route' => $multiple ? 'companies.overview' : 'group.corporate',
                 'patterns' => ['companies.overview', 'companies.schedule', 'group.*'],
                 'children' => fn (User $user, Company $company): array => [
-                    ['label' => __('Koncernöversikt'), 'route' => 'group.overview', 'active' => ['group.overview']],
+                    ...($multiple ? [['label' => __('Koncernöversikt'), 'route' => 'group.overview', 'active' => ['group.overview']]] : []),
+                    ['label' => __('Koncernstruktur'), 'route' => 'group.corporate', 'active' => ['group.corporate']],
                     // Only for someone who may see the schedule in at least one company (ADR-037, gap 8).
                     ...(Memberships::of($user, active: true)->where('planning:view') === [] ? [] : [['label' => __('Schema över företag'), 'route' => 'companies.schedule', 'active' => ['companies.schedule']]]),
                 ],

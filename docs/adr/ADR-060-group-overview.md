@@ -535,3 +535,14 @@ the voucher triggers or `Audit` (calls only). The Lead is asked to add these S2 
 `tests/Tenancy/CorporateGroupTenancyTest.php`, `tests/Tenancy/IntercompanyTenancyTest.php`.
 Shared files touched for routes and translations (`routes/web.php`, `lang/en.json`) get
 append-only edits.
+
+### Addendum 2026-11-18 (ADR-081 E22): what the consolidated viewer sees
+
+§2.2 says a CONSOLIDATED viewer never sees the control basis. E22 adds one
+derived fact to that viewer's payload: whether a holding gives control at all
+(`no_control`, shown as "Inte dotterföretag genom detta innehav"). Without
+it the viewer would read every holding in the tree as a subsidiary. The basis
+itself (votes, agreement, board majority) stays hidden, and the tests check
+that only the boolean is sent. The screen also states that NONOX does not
+assess whether the companies form a group under ABL or ÅRL; the structure is
+the holdings the companies have recorded themselves.

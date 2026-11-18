@@ -91,4 +91,5 @@ För varje par visas båda sidorna, **Kan elimineras** (det mindre beloppet) och
 
 - [Resultatrapporten](/manual/rapporter/resultatrapport)
 - [Balansrapporten](/manual/rapporter/balansrapport)
+- [Koncernstruktur](/manual/rapporter/koncernstruktur): en koncern som flera företag delar, med moderföretag och ägande
 - [Mina företag](/manual/byra/mina-foretag)
