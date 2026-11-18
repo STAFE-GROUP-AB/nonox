@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Accounting;
 
 use App\Actions\Accounting\ExportSie;
+use App\Models\BudgetVersion;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
@@ -25,14 +26,21 @@ class SieExportController
         $user = $request->user();
         $company = Company::query()->findOrFail($fiscalYear->company_id);
 
-        return response()->streamDownload(function () use ($exportSie, $user, $fiscalYear): void {
+        // "Ta med budget" (ADR-081 E4): off unless asked for, and only for someone who may see budgets.
+        $withBudget = $request->boolean('budget');
+
+        if ($withBudget) {
+            Gate::authorize('viewAny', [BudgetVersion::class, $company]);
+        }
+
+        return response()->streamDownload(function () use ($exportSie, $user, $fiscalYear, $withBudget): void {
             $output = fopen('php://output', 'wb');
 
             if ($output === false) {
                 return;
             }
 
-            $exportSie($user, $fiscalYear, $output);
+            $exportSie($user, $fiscalYear, $output, $withBudget);
             fclose($output);
         }, ExportSie::filename($company, $fiscalYear), [
             'Content-Type' => 'text/plain; charset=IBM437',

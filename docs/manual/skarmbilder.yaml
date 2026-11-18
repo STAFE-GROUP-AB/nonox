@@ -43,6 +43,7 @@ bokforing/kontoplan: { foretag: cafe, rutt: accounting.accounts }
 bokforing/verifikationsserier: { foretag: cafe, rutt: accounting.voucherSeries }
 bokforing/rakenskapsar: { foretag: cafe, rutt: accounting.fiscalYears }
 bokforing/sie: { foretag: cafe, rutt: accounting.sieImports.index }
+bokforing/sie-ta-med-budget: { foretag: konsult, rutt: accounting.fiscalYears, visa: '[data-sie-export]', text: Ta med budget }
 bokforing/inaktuella-ingaende-balanser: { foretag: frisor, rutt: accounting.fiscalYears, del: '[data-stale-opening-balances]', klick: ['text=Visa skillnaden per konto'] }
 
 fakturering/skapa-en-faktura: { foretag: konsult, rutt: invoicing.invoices.create }
@@ -71,6 +72,7 @@ rapporter/kontoanalys-och-huvudbok: { foretag: butik, rutt: accounting.reports, 
 rapporter/verifikationslista: { foretag: butik, rutt: accounting.reports, fraga: { rapport: verifikationer } }
 rapporter/budget: { foretag: konsult, rutt: accounting.budgets.show, modell: { tabell: budget_versions, dar: { is_active: true } } }
 rapporter/budget-mot-utfall: { foretag: konsult, rutt: accounting.budgets.report, fraga: { manad: '@first day of last month' } }
+rapporter/budget-fran-sie: { foretag: konsult, rutt: accounting.budgets, visa: '[data-budget-sie-import]', text: Läs in budget från SIE-fil }
 
 bokslut/checklistan: { foretag: konsult, rutt: accounting.closing }
 bokslut/periodiseringar: { foretag: konsult, rutt: accounting.accruals }

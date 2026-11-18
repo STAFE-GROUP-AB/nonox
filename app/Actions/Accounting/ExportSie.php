@@ -8,9 +8,13 @@ use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\Dimension;
 use App\Domain\Accounting\LedgerBalances;
 use App\Domain\Accounting\VoucherStatus;
+use App\Domain\Budget\BudgetKind;
+use App\Domain\Budget\BudgetScope;
+use App\Domain\Budget\Sie\SieBudget;
 use App\Domain\Company\LegalForm;
 use App\Domain\Company\OrganisationNumber;
 use App\Models\Account;
+use App\Models\BudgetVersion;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
@@ -43,12 +47,17 @@ class ExportSie
 
     /**
      * @param  resource  $stream
+     * @param  bool  $withBudget  the box "Ta med budget": also the year's active budget as #PBUDGET (ADR-081 E4, owner decision 5)
      */
-    public function __invoke(User $user, FiscalYear $fiscalYear, $stream): void
+    public function __invoke(User $user, FiscalYear $fiscalYear, $stream, bool $withBudget = false): void
     {
         Gate::forUser($user)->authorize('exportSie', $fiscalYear);
 
-        CurrentCompany::run($fiscalYear->company_id, function () use ($user, $fiscalYear, $stream): void {
+        if ($withBudget) {
+            Gate::forUser($user)->authorize('viewAny', [BudgetVersion::class, Company::query()->findOrFail($fiscalYear->company_id)]);
+        }
+
+        CurrentCompany::run($fiscalYear->company_id, function () use ($user, $fiscalYear, $stream, $withBudget): void {
             $company = Company::query()->findOrFail($fiscalYear->company_id);
             $previous = FiscalYear::query()->whereDate('end_date', $fiscalYear->start_date->subDay())->first();
             $accounts = Account::query()->orderBy('number')->get();
@@ -61,6 +70,7 @@ class ExportSie
             $this->chartOfAccounts($writer, $accounts);
             $this->dimensions($writer);
             $this->balances($writer, $accounts, $fiscalYear, $previous);
+            $budget = $withBudget ? $this->budget($writer, $accounts, $fiscalYear) : null;
             $vouchers = $this->vouchers($writer, $accounts, $fiscalYear);
 
             $writer->finish();
@@ -68,6 +78,7 @@ class ExportSie
             Audit::record('sie.exported', $fiscalYear, [
                 'fiscal_year' => $fiscalYear->label(),
                 'vouchers' => $vouchers,
+                ...($budget === null ? [] : ['budget_version_id' => $budget['version_id'], 'budget_records' => $budget['records']]),
             ], $company->id, $user);
         });
     }
@@ -248,6 +259,61 @@ class ExportSie
                 }
             }
         }
+    }
+
+    /**
+     * The year's active budget as #PBUDGET 0 (SIE 4C, "#PBUDGET
+     * Periodbudgetpost", optional in 4E): per account and month the whole
+     * amount ({}), then each cost centre and project. See SieBudget for how
+     * lines with objects map to records. Nothing is written when the year
+     * has no active budget.
+     *
+     * TODO(legal-verify): SIE 4C writes the object specification of a balance record as one dimension and one object; a
+     * line with both a cost centre and a project is therefore written as its share of each, not as the combination.
+     *
+     * @param  Collection<int, Account>  $accounts
+     * @return array{version_id: ?int, records: int}
+     */
+    private function budget(SieWriter $writer, Collection $accounts, FiscalYear $fiscalYear): array
+    {
+        $version = BudgetVersion::query()
+            ->where('fiscal_year_id', $fiscalYear->id)
+            ->where('kind', BudgetKind::Budget->value)
+            ->where('is_active', true)
+            ->first();
+
+        if (! $version instanceof BudgetVersion) {
+            return ['version_id' => null, 'records' => 0];
+        }
+
+        $numbers = $accounts->pluck('number', 'id');
+        $costCenters = $this->objectCodes[Dimension::CostCenter->column()] ?? [];
+        $projects = $this->objectCodes[Dimension::Project->column()] ?? [];
+
+        $lines = BudgetScope::lines($version->id)
+            ->toBase()
+            ->get(['account_id', 'cost_center_id', 'project_id', 'period', 'amount_ore'])
+            ->map(fn (object $line): array => [
+                'account' => (int) $numbers[(int) $line->account_id],
+                'period' => substr((string) $line->period, 0, 7),
+                'cost_center' => $line->cost_center_id === null ? null : (string) $costCenters[(int) $line->cost_center_id],
+                'project' => $line->project_id === null ? null : (string) $projects[(int) $line->project_id],
+                'amount' => (int) $line->amount_ore,
+            ]);
+
+        $records = SieBudget::recordsFor($lines);
+
+        foreach ($records as $record) {
+            $writer->record('#PBUDGET', [
+                0,
+                str_replace('-', '', $record['period']),
+                $record['account'],
+                $record['dimension'] === null ? [] : [$record['dimension'], new SieText((string) $record['code'])],
+                SieAmount::format($record['amount']),
+            ]);
+        }
+
+        return ['version_id' => $version->id, 'records' => count($records)];
     }
 
     /**

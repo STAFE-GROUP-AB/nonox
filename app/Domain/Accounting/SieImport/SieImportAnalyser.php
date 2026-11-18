@@ -9,6 +9,7 @@ use App\Domain\Accounting\Dimension;
 use App\Domain\Accounting\FiscalYearRules;
 use App\Domain\Accounting\FiscalYearStatus;
 use App\Domain\Accounting\VoucherStatus;
+use App\Domain\Budget\Sie\SieBudget;
 use App\Domain\Company\OrganisationNumber;
 use App\Models\Account;
 use App\Models\Company;
@@ -65,9 +66,17 @@ final class SieImportAnalyser
 
     private ?string $earliestDate = null;
 
-    public function analyse(Company $company, string $path, ?string $sha256 = null, ?int $ignoreImportId = null): SieImportPlan
+    private SieBudget $budget;
+
+    private bool $budgets = true;
+
+    /**
+     * @param  bool  $budgets  whether the user may make budgets (budgets:manage); without it the file's budget is left out
+     */
+    public function analyse(Company $company, string $path, ?string $sha256 = null, ?int $ignoreImportId = null, bool $budgets = true): SieImportPlan
     {
-        return CurrentCompany::run($company, function () use ($company, $path, $sha256, $ignoreImportId): SieImportPlan {
+        return CurrentCompany::run($company, function () use ($company, $path, $sha256, $ignoreImportId, $budgets): SieImportPlan {
+            $this->budgets = $budgets;
             $this->reset();
 
             $defaultSeries = (string) (VoucherSeries::query()->where('is_default', true)->value('code') ?? 'A');
@@ -78,6 +87,7 @@ final class SieImportAnalyser
             }
 
             $this->checkFile($reader, $company, $sha256, $ignoreImportId);
+            $this->planBudget();
             $fiscalYear = $this->planFiscalYear($company);
             $this->planAccounts();
             $this->planDimensions();
@@ -103,11 +113,13 @@ final class SieImportAnalyser
         $this->otherDimensions = [];
         $this->rowsWithOtherObjects = 0;
         $this->earliestDate = null;
+        $this->budget = new SieBudget;
     }
 
     private function read(SieRecord $record, string $defaultSeries): void
     {
         $number = (int) $record->field(0);
+        $this->budget->read($record);
 
         match ($record->label) {
             '#SIETYP' => $this->sieType = $record->field(0),
@@ -327,6 +339,58 @@ final class SieImportAnalyser
                 'dimensions' => implode(', ', array_keys($this->otherDimensions)),
                 'count' => $this->rowsWithOtherObjects,
             ]));
+        }
+    }
+
+    /**
+     * The file's budget (#PBUDGET, ADR-081 E4) is read in whenever the file
+     * has one, as a new budget version. A budget that cannot be read reliably
+     * is left out with a warning; it never stops the bookkeeping. Its
+     * accounts, cost centres and projects are created like the vouchers'.
+     */
+    private function planBudget(): void
+    {
+        if (! $this->budget->present()) {
+            if ($this->budget->otherYears() > 0) {
+                $this->plan->warn(__(':count budgetposter gäller andra räkenskapsår än filens och läses inte in. Läs in budgeten för ett annat år med det årets fil.', ['count' => $this->budget->otherYears()]));
+            }
+
+            return;
+        }
+
+        // Without budgets:manage the budget is left out, and with it the accounts and objects only it uses.
+        if (! $this->budgets) {
+            $this->plan->budgetRefused = true;
+            $this->plan->warn(__('Filen har en budget, men du har inte behörighet att göra budgetar, så den läses inte in.'));
+
+            return;
+        }
+
+        $problems = $this->budget->problems();
+
+        if ($problems !== []) {
+            $this->plan->budgetSkipped = true;
+            $this->plan->warn(__('Budgeten i filen (#PBUDGET) läses inte in, men bokföringen gör det: :problems', ['problems' => implode(' ', $problems)]));
+
+            return;
+        }
+
+        foreach ($this->budget->notes() as $note) {
+            $this->plan->warn($note);
+        }
+
+        $this->plan->budgetLines = $this->budget->lines();
+
+        foreach ($this->plan->budgetLines as $line) {
+            $this->usedAccounts[$line['account']] = true;
+
+            if ($line['cost_center'] !== null) {
+                $this->objects[Dimension::CostCenter->value][$line['cost_center']] ??= null;
+            }
+
+            if ($line['project'] !== null) {
+                $this->objects[Dimension::Project->value][$line['project']] ??= null;
+            }
         }
     }
 
