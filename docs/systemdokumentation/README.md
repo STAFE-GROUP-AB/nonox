@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.140
+- Version: 0.141
 - Version: 0.135
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
@@ -1377,6 +1377,15 @@ balances").
   eller skapad och skickad direkt. Fakturan bokförs som alla andra fakturor.
 - Offerter och order kan bli order respektive fakturautkast med samma rader.
   De bokförs inte; det gör först fakturan.
+- En offert som skickas för signering till flera undertecknare (ett kuvert,
+  [ADR-046](../adr/ADR-046-crm-signing.md) tillägg 2026-11-18, lucka 1) blir
+  order först när alla undertecknare har signerat, en gång, genom samma
+  uppföljning som med en undertecknare. Så länge någon undertecknare återstår
+  kan offerten inte ändras. Avböjer någon, eller dras kuvertet tillbaka, blir
+  ingen order och offerten kan ändras och skickas igen. Varje undertecknares
+  bevis (dokumentets SHA-256, namn, tid, IP-adress, webbläsare) ändras aldrig,
+  och ett slutfört kuvert ändras eller tas aldrig bort (databasutlösare). Med
+  en undertecknare är flödet oförändrat.
 - Varje skapad, skickad och betald faktura, offert och order skrivs till
   behandlingshistoriken.
 
@@ -6234,3 +6243,4 @@ påverkar bokföringen och fakturan:
 | 0.138 | 2026-11-18 | Attestflöden (avsnitt 5a1d, ADR-081 lucka 8, paket E2): egna flöden i steg för leverantörsfakturor och betalfiler med villkor, attestanter, antal och ersättare. Utan eget flöde attesterar företaget som förut och inga nya rader skrivs. Nya tabeller `approval_policies`, `approval_policy_steps`, `approval_requests` (kan inte tas bort, avslutade kan inte ändras), `approval_decisions` (kan inte ändras eller tas bort) och `approval_delegations`; kostnadsställen och projekt kan ha en ägare. Fakturan blir attesterad och filen godkänd först efter sista steget, med samma kod, behandlingshistorik och triggrar som förut. Ingen verifikation skapas eller ändras. |
 | 0.139 | 2026-11-18 | Dokumentarkivet (avsnitt 4.5 och 7a, ADR-081 lucka 9, paket E19): företagets egna dokument med versioner som inte kan ändras, krypterade filer med SHA-256, lagringsklasserna räkenskapsinformation (sju år enligt BFL 7 kap. 2 §), avtal (också som räkenskapsinformation), personal och övrigt, ett `retain_until` som aldrig går under regelns golv (triggern räknar golvet för räkenskapsinformation ur räkenskapsåret) och en bevarandespärr med skäl; radering vägras av policyn, modellen och en PostgreSQL-trigger. Räkenskapsinformation blir underlag till en verifikation genom `voucher_attachments` med samma fil, utan kopia. Arkivpaketet får `dokument/` med förteckning och kontrollsummor. Ingen verifikation skapas eller ändras. |
 | 0.140 | 2026-11-18 | Koncernmarkeringar (avsnitt 4.10a, ADR-060 tillägg 2.3, ADR-081 paket E23): kunder och leverantörer kan markeras som koncernföretag med det andra företagets organisationsnummer, och bokförda rader får en markering med koncernföretag, typ och källa i de nya tabellerna `intercompany_counterparties` och `intercompany_row_tags`, bredvid `voucher_rows`. Raderna på fakturor, betalningar och leverantörsfakturor till och från markerade kunder och leverantörer markeras efter kontointervall när en person bekräftar, också i rättelser av dem (vända rader får samma typ), och rader på ett konto under en period i bulk. En trigger nekar markeringar på utkast och på ett annat företags rader. Ingen verifikation, rad, numrering eller hashkedja ändras, och ingenting skrivs i ett annat företags bokföring. |
+| 0.141 | 2026-11-18 | Signering med flera undertecknare (avsnitt 5, ADR-046 tillägg 2026-11-18, paket S1): ett kuvert har ett dokument, upp till tio undertecknare i steg (samma steg signerar samtidigt) och upp till tio kopiemottagare. En offert blir order först när alla har signerat; ett avböjande eller ett tillbakadraget kuvert ger ingen order. Varje befintlig signeringsbegäran fick ett eget kuvert med samma status, utan att bevisen ändrades. Ingen bokföringsregel ändras. |

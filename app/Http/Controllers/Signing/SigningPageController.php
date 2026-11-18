@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Signing;
 use App\Actions\Signing\SignAtLink;
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Signing\Signable;
+use App\Domain\Signing\SigningEnvelopes;
 use App\Domain\Signing\SigningPdfs;
 use App\Domain\Signing\SigningUnavailable;
 use App\Models\Company;
@@ -155,6 +156,8 @@ final class SigningPageController
                 'controller' => ($company->legal_name ?: $company->name).($contact === '' ? '' : " ({$contact})"),
                 'quote' => $quote,
                 'agreement' => $request->agreement,
+                // Several signers: the page says who else gets the names and times (ADR-046 S1).
+                'several' => SigningEnvelopes::hasSeveralSigners($request->envelope_id),
                 'vat' => $quote instanceof SalesDocument ? InvoiceCalculator::totals($quote->rows->map(fn ($row): array => ['net' => $row->net_ore->ore, 'vat_rate' => $row->vat_rate])->all()) : null,
             ]), page: true);
         });

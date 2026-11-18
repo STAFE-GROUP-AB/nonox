@@ -71,6 +71,27 @@ Sista dag att signera kan inte vara efter offertens giltighetsdag. En offert som
 
 Tryck på **Återkalla** vid länken under **Signering**. Kunden ser då att länken är återkallad.
 
+## Fler undertecknare
+
+Ska fler än en person skriva under, till exempel både VD och ordförande hos kunden, trycker du på **Fler undertecknare** under **Signering**. Det fungerar för offerter och avtal.
+
+1. Under **Undertecknare**, skriv **E-post** för var och en och välj **Steg**. Tryck på **Lägg till undertecknare** för fler. Högst 10 undertecknare.
+2. Välj steg så här:
+   - **I tur och ordning**: ge undertecknarna steg 1, 2, 3 och så vidare. Den i steg 2 får sin länk först när den i steg 1 har signerat.
+   - **Samtidigt**: ge dem samma steg. Alla i steget får sin länk på en gång, och nästa steg får sin länk när alla i steget före har signerat.
+3. Vill du att någon ska få en kopia utan att signera, till exempel kundens ekonomiavdelning eller din revisor, tryck på **Lägg till kopiemottagare**. Högst 10. Bocka i **Meddela kopiemottagarna redan nu att dokumentet är skickat** om de ska få veta det direkt.
+4. Välj sista dag, affär och fakturautkast som för en undertecknare. Affären vinns och fakturautkastet görs först när alla har signerat.
+5. Tryck på **Skicka till undertecknarna**. **En undertecknare** tar dig tillbaka till det vanliga formuläret.
+
+![Signering med två undertecknare i tur och ordning och en kopiemottagare.](/bilder/manual/crm/fler-undertecknare.webp)
+
+Under **Signering** visas undertecknarna tillsammans, med vilket steg som är öppet och vem som har signerat. Varje undertecknare signerar på sin egen länk och får sin egen kopia med sitt signeringsbevis.
+
+- **När alla har signerat** blir offerten en order, eller avtalet signerat, precis som med en undertecknare. Undertecknarna och kopiemottagarna får dokumentet och en sammanställning med vem som signerade och när. Företaget får dokumentet med det fullständiga signeringsbeviset för varje undertecknare. IP-adress, webbläsare, e-postadress och namnteckning står bara i det fullständiga beviset.
+- **Medan någon återstår** går offerten inte att ändra eller skicka igen, så att alla signerar samma dokument. Har sista dag att signera passerat utan att alla har signerat kan offerten ändras och skickas på nytt. Offerten kan inte heller godkännas i kundportalen medan den väntar på flera.
+- **Om någon avböjer** avslutas signeringen för alla. De som inte har signerat ser att en annan undertecknare har avböjt, och de som redan har signerat får ett mejl om att dokumentet inte blir giltigt. Skälet ser bara du. Offerten är öppen igen och kan ändras och skickas på nytt.
+- **Dra tillbaka** avslutar signeringen för alla, till exempel om något i offerten måste ändras. Alla länkar slutar gälla, och den som öppnar en ser att dokumentet har dragits tillbaka.
+
 ## Avtal
 
 Ett avtal i avtalsregistret skickas för signering på samma sätt, från avtalets sida. Se [Avtalsregister](/manual/crm/avtalsregister). Är avtalet signerat går villkoren inte längre att ändra.

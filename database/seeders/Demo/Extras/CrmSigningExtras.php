@@ -170,6 +170,30 @@ final class CrmSigningExtras extends DemoExtra
         $customer = Account::query()->where('name', 'Kunden Exempel AB')->first();
         $create = app(CreateQuoteFromTemplate::class);
 
+        // A quote with two signers in order and a copy recipient (ADR-046 amendment, gap 1): sent five days ago, the
+        // first signer signed four days ago, and the second signer's link is out. Made first, so the newer single
+        // links below stay the examples for the other pages.
+        if ($customer instanceof Account && $customer->customer_id !== null && isset($templates[0])) {
+            $envelope = null;
+
+            $this->at(5, function () use ($c, $create, $templates, $customer, &$envelope): void {
+                $envelope = $this->guard($c, fn () => app(SendForSigning::class)->envelope($c->user, $c->company, $create($c->user, $c->company, $templates[0], (int) $customer->customer_id), [
+                    'signers' => [
+                        ['email' => 'karin.exempelsson@kunden-exempel.test', 'step' => 1],
+                        ['email' => 'olof.ordforande@kunden-exempel.test', 'step' => 2],
+                    ],
+                    'copies' => [['email' => 'ekonomi@kunden-exempel.test', 'name' => 'Ekonomiavdelningen']],
+                    'notify_copies' => true,
+                ]));
+            });
+
+            $first = $envelope === null ? null : SigningRequest::query()->where('envelope_id', $envelope->id)->where('step', 1)->first();
+
+            if ($first instanceof SigningRequest) {
+                $this->at(4, fn () => $this->guard($c, fn () => $this->signRequest(['request' => $first, 'url' => ''], 'Karin Exempelsson', 'VD', drawn: true)));
+            }
+        }
+
         // A signed quote, three days ago: it became an order.
         if ($software instanceof Account && $software->customer_id !== null && isset($templates[1])) {
             $this->at(3, fn () => $this->guard($c, function () use ($c, $create, $templates, $software): void {

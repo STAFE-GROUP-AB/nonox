@@ -13,6 +13,7 @@ use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\SalesDocument;
+use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Models\User;
 use App\Modules\Crm\CrmModule;
@@ -36,6 +37,11 @@ use Throwable;
  * on, an invoice draft too), and every link sent for the document with its
  * status, its trail of events, the signed documents and Återkalla for an
  * open one. A quote's panel works whether or not CRM is on.
+ *
+ * "Fler undertecknare" (ADR-046 amendment, gap 1) sends an envelope instead:
+ * up to ten signers with a step each (the same step signs in parallel) and
+ * up to ten copy recipients; a quote becomes an order only when everyone
+ * has signed. "Dra tillbaka" withdraws such an envelope.
  */
 class SigningPanel extends Component
 {
@@ -56,6 +62,17 @@ class SigningPanel extends Component
     public string $dealId = '';
 
     public bool $createInvoice = false;
+
+    /** "Fler undertecknare": the envelope form with several signers and copy recipients (ADR-046 amendment, gap 1). */
+    public bool $several = false;
+
+    /** @var list<array{email: string, step: int|string}> */
+    public array $signers = [];
+
+    /** @var list<array{email: string, name: string}> */
+    public array $copies = [];
+
+    public bool $notifyCopies = false;
 
     public function mount(?string $quoteId = null, ?int $agreementId = null): void
     {
@@ -85,6 +102,78 @@ class SigningPanel extends Component
         $this->toast(__('Länken för signering är skickad till :email.', ['email' => $this->email]));
     }
 
+    /** Opens the form for several signers, with the single address as the first signer. */
+    public function severalSigners(): void
+    {
+        $this->resetErrorBag();
+        $this->several = true;
+
+        if ($this->signers === []) {
+            $this->signers = [['email' => $this->email, 'step' => 1], ['email' => '', 'step' => 2]];
+        }
+    }
+
+    public function oneSigner(): void
+    {
+        $this->resetErrorBag();
+        $this->several = false;
+    }
+
+    public function addSigner(): void
+    {
+        if (count($this->signers) >= SigningEnvelope::MAX_SIGNERS) {
+            return;
+        }
+
+        $last = $this->signers === [] ? 0 : (int) end($this->signers)['step'];
+        $this->signers[] = ['email' => '', 'step' => min(SigningEnvelope::MAX_STEP, max(1, $last + 1))];
+    }
+
+    public function removeSigner(int $index): void
+    {
+        $this->signers = array_values(array_filter($this->signers, fn (int $key): bool => $key !== $index, ARRAY_FILTER_USE_KEY));
+    }
+
+    public function addCopy(): void
+    {
+        if (count($this->copies) < SigningEnvelope::MAX_COPIES) {
+            $this->copies[] = ['email' => '', 'name' => ''];
+        }
+    }
+
+    public function removeCopy(int $index): void
+    {
+        $this->copies = array_values(array_filter($this->copies, fn (int $key): bool => $key !== $index, ARRAY_FILTER_USE_KEY));
+    }
+
+    public function sendSeveral(SendForSigning $send): void
+    {
+        $this->resetErrorBag();
+
+        $send->envelope($this->user(), $this->company(), $this->document(), [
+            'signers' => $this->signers,
+            'copies' => $this->copies,
+            'notify_copies' => $this->notifyCopies,
+            'expires_on' => $this->expiresOn === '' ? null : $this->expiresOn,
+            'deal_id' => $this->dealId === '' ? null : (int) $this->dealId,
+            'create_invoice' => $this->createInvoice,
+        ]);
+
+        $this->several = false;
+        $this->toast(__('Dokumentet är skickat för signering. Undertecknarna i första steget har fått sin länk; :count undertecknare totalt.', ['count' => count($this->signers)]));
+        $this->signers = [];
+        $this->copies = [];
+        $this->notifyCopies = false;
+    }
+
+    public function voidEnvelope(string $envelopeId, SendForSigning $send): void
+    {
+        $envelope = $this->envelopes()->whereKey($envelopeId)->firstOrFail();
+        $send->void($this->user(), $this->company(), $envelope);
+
+        $this->toast(__('Dokumentet är tillbakadraget. Ingen kan längre signera det.'));
+    }
+
     public function revoke(int $requestId, SendForSigning $send): void
     {
         $request = $this->requests()->whereKey($requestId)->firstOrFail();
@@ -102,7 +191,14 @@ class SigningPanel extends Component
         return view('livewire.signing.panel', [
             'isQuote' => $isQuote,
             'crm' => app(ModuleManager::class)->isEnabled(CrmModule::KEY, $this->company()),
-            'requests' => $this->requests()->with(['events', 'sender:id,name'])->latest('id')->limit(10)->get(),
+            // Newest first; an envelope's signers together, in their order (step, then as added).
+            'requests' => $this->requests()->with(['events', 'sender:id,name', 'envelope' => fn ($query) => $query->withCount('signers')->with('copies')])->latest('id')->limit(30)->get()
+                ->groupBy(fn (SigningRequest $request): string => $request->envelope_id ?? "request-{$request->id}")
+                ->flatMap(fn (Collection $group): Collection => $group->sortBy([['step', 'asc'], ['id', 'asc']])->values())
+                ->values(),
+            'maxSigners' => SigningEnvelope::MAX_SIGNERS,
+            'maxCopies' => SigningEnvelope::MAX_COPIES,
+            'maxStep' => SigningEnvelope::MAX_STEP,
             'canSend' => $this->canSend($document),
             'deals' => $this->openDeals($document),
             'open' => $document->signingIsOpen() && ! ($isQuote && SignedDocuments::isQuoteSigned($document->id)),
@@ -128,6 +224,16 @@ class SigningPanel extends Component
         $document = $this->document();
 
         return SigningRequest::query()
+            ->where('document_type', $document->signingType())
+            ->where(app(SignableTypes::class)->column($document->signingType()), $document->signingKey());
+    }
+
+    /** @return Builder<SigningEnvelope> */
+    private function envelopes(): Builder
+    {
+        $document = $this->document();
+
+        return SigningEnvelope::query()
             ->where('document_type', $document->signingType())
             ->where(app(SignableTypes::class)->column($document->signingType()), $document->signingKey());
     }

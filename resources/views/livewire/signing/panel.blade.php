@@ -4,7 +4,95 @@
 @endphp
 
 <x-ui.card :title="__('Signering')" :description="$isQuote ? ($crm ? __('Skicka offerten för signering med namnteckning. När kunden har signerat blir offerten en order, och affären vinns.') : __('Skicka offerten för signering med namnteckning. När kunden har signerat blir offerten en order.')) : __('Skicka avtalet för signering med namnteckning. Kunden behöver inget konto.')" data-testid="crm-signing-panel">
-    @if($canSend && $open)
+    @if($canSend && $open && $several)
+        <form wire:submit="sendSeveral" class="mt-4 space-y-6" data-testid="signing-several-form">
+            <fieldset>
+                <legend class="text-sm font-semibold text-gray-900">{{ __('Undertecknare') }}</legend>
+                <p class="mt-1 text-sm text-gray-600">{{ __('Undertecknare med samma steg signerar samtidigt. Nästa steg får sin länk först när alla i steget före har signerat. Högst :count undertecknare.', ['count' => $maxSigners]) }}</p>
+                <x-input-error for="signers" class="mt-2" />
+                <ol class="mt-3 space-y-3">
+                    @foreach($signers as $index => $signer)
+                        <li wire:key="signer-{{ $index }}" class="grid gap-3 rounded-lg border border-gray-200 p-3 sm:grid-cols-[1fr_7rem_auto] sm:items-end">
+                            <x-ui.field for="signer-email-{{ $index }}" :label="__('E-post')" error="signers.{{ $index }}.email">
+                                <input id="signer-email-{{ $index }}" type="email" class="{{ $input }} mt-1" wire:model="signers.{{ $index }}.email" autocomplete="off" required>
+                            </x-ui.field>
+                            <x-ui.field for="signer-step-{{ $index }}" :label="__('Steg')" error="signers.{{ $index }}.step">
+                                <select id="signer-step-{{ $index }}" class="{{ $input }} mt-1" wire:model="signers.{{ $index }}.step">
+                                    @for($step = 1; $step <= $maxStep; $step++)
+                                        <option value="{{ $step }}">{{ $step }}</option>
+                                    @endfor
+                                </select>
+                            </x-ui.field>
+                            <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="removeSigner({{ $index }})">{{ __('Ta bort') }}</button>
+                        </li>
+                    @endforeach
+                </ol>
+                @if(count($signers) < $maxSigners)
+                    <button type="button" class="mt-3 min-h-11 text-sm font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="addSigner">{{ __('Lägg till undertecknare') }}</button>
+                @endif
+            </fieldset>
+
+            <fieldset>
+                <legend class="text-sm font-semibold text-gray-900">{{ __('Kopiemottagare') }}</legend>
+                <p class="mt-1 text-sm text-gray-600">{{ __('Kopiemottagare signerar inte. De får dokumentet och signeringsbevisen när alla har signerat. Högst :count.', ['count' => $maxCopies]) }}</p>
+                <x-input-error for="copies" class="mt-2" />
+                @if($copies !== [])
+                    <ul class="mt-3 space-y-3">
+                        @foreach($copies as $index => $copy)
+                            <li wire:key="copy-{{ $index }}" class="grid gap-3 rounded-lg border border-gray-200 p-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                                <x-ui.field for="copy-email-{{ $index }}" :label="__('E-post')" error="copies.{{ $index }}.email">
+                                    <input id="copy-email-{{ $index }}" type="email" class="{{ $input }} mt-1" wire:model="copies.{{ $index }}.email" autocomplete="off" required>
+                                </x-ui.field>
+                                <x-ui.field for="copy-name-{{ $index }}" :label="__('Namn (frivilligt)')" error="copies.{{ $index }}.name">
+                                    <input id="copy-name-{{ $index }}" type="text" class="{{ $input }} mt-1" wire:model="copies.{{ $index }}.name" maxlength="120" autocomplete="off">
+                                </x-ui.field>
+                                <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="removeCopy({{ $index }})">{{ __('Ta bort') }}</button>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+                @if(count($copies) < $maxCopies)
+                    <button type="button" class="mt-3 min-h-11 text-sm font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="addCopy">{{ __('Lägg till kopiemottagare') }}</button>
+                @endif
+                @if($copies !== [])
+                    <label class="mt-3 flex items-start gap-3 text-sm">
+                        <input type="checkbox" class="mt-0.5 size-5 rounded border-gray-300 text-accent-600" wire:model="notifyCopies">
+                        <span>{{ __('Meddela kopiemottagarna redan nu att dokumentet är skickat') }}</span>
+                    </label>
+                @endif
+            </fieldset>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <x-ui.field for="signing-expires-several" :label="__('Sista dag att signera (frivilligt)')" error="expires_on" :hint="$isQuote ? __('Annars offertens giltighetsdag, eller 30 dagar. Högst 90 dagar.') : __('Annars 30 dagar. Högst 90 dagar.')">
+                    <input id="signing-expires-several" type="date" class="{{ $input }} mt-1" wire:model="expiresOn">
+                </x-ui.field>
+                @if($deals->isNotEmpty())
+                    <x-ui.field for="signing-deal-several" :label="__('Affär som vinns när alla har signerat')" error="deal_id">
+                        <select id="signing-deal-several" class="{{ $input }} mt-1" wire:model="dealId">
+                            <option value="">{{ __('Ingen') }}</option>
+                            @foreach($deals as $deal)
+                                <option value="{{ $deal->id }}">{{ $deal->title }}</option>
+                            @endforeach
+                        </select>
+                    </x-ui.field>
+                @endif
+                @if($canInvoice)
+                    <label class="flex items-start gap-3 self-end text-sm">
+                        <input type="checkbox" class="mt-0.5 size-5 rounded border-gray-300 text-accent-600" wire:model="createInvoice">
+                        <span>{{ __('Gör också ett fakturautkast när alla har signerat') }}</span>
+                    </label>
+                @endif
+            </div>
+            <x-input-error for="document" />
+            <div>
+                <div class="flex flex-wrap items-center gap-4">
+                    <x-button wire:loading.attr="disabled">{{ __('Skicka till undertecknarna') }}</x-button>
+                    <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="oneSigner">{{ __('En undertecknare') }}</button>
+                </div>
+                <p class="mt-2 text-sm text-gray-600">{{ $isQuote ? __('Offerten blir en order först när alla har signerat. Om någon avböjer avslutas signeringen för alla. En tidigare länk för samma dokument slutar gälla.') : __('Avtalet är signerat först när alla har signerat. Om någon avböjer avslutas signeringen för alla. En tidigare länk för samma dokument slutar gälla.') }}</p>
+            </div>
+        </form>
+    @elseif($canSend && $open)
         <form wire:submit="send" class="mt-4 grid gap-4 sm:grid-cols-2">
             <x-ui.field for="signing-email" :label="__('E-post till den som ska signera')" error="email">
                 <input id="signing-email" type="email" class="{{ $input }} mt-1" wire:model="email" autocomplete="off" required>
@@ -30,7 +118,10 @@
             @endif
             <x-input-error for="document" class="sm:col-span-2" />
             <div class="sm:col-span-2">
-                <x-button wire:loading.attr="disabled">{{ __('Skicka för signering') }}</x-button>
+                <div class="flex flex-wrap items-center gap-4">
+                    <x-button wire:loading.attr="disabled">{{ __('Skicka för signering') }}</x-button>
+                    <button type="button" class="min-h-11 text-sm font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="severalSigners">{{ __('Fler undertecknare') }}</button>
+                </div>
                 <p class="mt-2 text-sm text-gray-600">{{ __('Ett mejl med en personlig länk går till adressen. Länken kan användas en gång. En tidigare länk för samma dokument slutar gälla.') }}</p>
             </div>
         </form>
@@ -42,15 +133,30 @@
         <ul class="mt-6 divide-y divide-gray-100 border-t border-gray-100" data-testid="crm-signing-requests">
             @foreach($requests as $signing)
                 @php($status = $signing->effectiveStatus())
+                @php($envelope = $signing->envelope)
+                @php($inEnvelope = $envelope !== null && $envelope->signers_count > 1)
+                @if($inEnvelope && ($loop->first || $requests[$loop->index - 1]->envelope_id !== $signing->envelope_id))
+                    @php($envelopeStatus = $envelope->effectiveStatus())
+                    <li wire:key="envelope-{{ $envelope->id }}" class="flex flex-wrap items-center gap-3 pt-4" data-testid="signing-envelope">
+                        <x-ui.badge :tone="$envelopeStatus->tone()">{{ $envelopeStatus->label() }}</x-ui.badge>
+                        <span class="text-sm font-medium text-gray-900">{{ __(':count undertecknare', ['count' => $envelope->signers_count]) }}@if($envelopeStatus === App\Domain\Signing\EnvelopeStatus::Out) · {{ __('steg :step är öppet', ['step' => $envelope->current_step]) }}@endif</span>
+                        @if($envelope->copies->isNotEmpty())
+                            <span class="text-sm text-gray-700">{{ __('Kopia till :emails', ['emails' => $envelope->copies->pluck('email')->implode(', ')]) }}</span>
+                        @endif
+                        @if($envelope->status === App\Domain\Signing\EnvelopeStatus::Out && $canSend)
+                            <button type="button" class="ms-auto min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="voidEnvelope('{{ $envelope->id }}')" wire:confirm="{{ __('Dra tillbaka dokumentet? Alla länkar slutar gälla, och de som inte har signerat ser att dokumentet är tillbakadraget.') }}">{{ __('Dra tillbaka') }}</button>
+                        @endif
+                    </li>
+                @endif
                 <li wire:key="signing-{{ $signing->id }}" class="py-4">
                     <div class="flex flex-wrap items-center gap-3">
                         <x-ui.badge :tone="$status->tone()">{{ $status->label() }}</x-ui.badge>
-                        <span class="text-sm text-gray-700">{{ __('till :email', ['email' => $signing->email]) }} · {{ __('gäller till :date', ['date' => $signing->expires_at->setTimezone($zone)->format('Y-m-d')]) }}</span>
-                        @if($status === App\Domain\Signing\SigningStatus::Pending && $canSend)
+                        <span class="text-sm text-gray-700">@if($inEnvelope){{ __('steg :step', ['step' => $signing->step]) }} · @endif{{ __('till :email', ['email' => $signing->email]) }} · {{ __('gäller till :date', ['date' => $signing->expires_at->setTimezone($zone)->format('Y-m-d')]) }}</span>
+                        @if($status === App\Domain\Signing\SigningStatus::Pending && $canSend && ! $inEnvelope)
                             <button type="button" class="ms-auto min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="revoke({{ $signing->id }})" wire:confirm="{{ __('Återkalla länken? Den går inte längre att använda, och kunden ser att den är återkallad.') }}">{{ __('Återkalla') }}</button>
                         @endif
                     </div>
-                    @if($signing->signed_at && $isQuote && $signing->order_id === null)
+                    @if($signing->signed_at && $isQuote && $signing->order_id === null && ! $inEnvelope)
                         <p class="mt-2 text-sm font-semibold text-accent-700">{{ __('Signerad – ordern är inte skapad') }}</p>
                     @endif
                     @if($signing->signed_at)

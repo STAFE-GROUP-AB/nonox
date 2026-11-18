@@ -27,6 +27,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * @property int $id
  * @property int $company_id
+ * @property ?string $envelope_id the envelope this signer belongs to (ADR-046 amendment, gap 1)
+ * @property int $step 1–10; signers on the same step sign in parallel
  * @property string $document_type
  * @property ?string $sales_document_id
  * @property ?int $agreement_id
@@ -84,6 +86,8 @@ class SigningRequest extends Model
     /** @var list<string> */
     protected $fillable = [
         'company_id',
+        'envelope_id',
+        'step',
         'document_type',
         'sales_document_id',
         'agreement_id',
@@ -106,6 +110,7 @@ class SigningRequest extends Model
     protected $attributes = [
         'status' => 'PENDING',
         'channel' => 'LINK',
+        'step' => 1,
     ];
 
     /** @var list<string> */
@@ -116,6 +121,7 @@ class SigningRequest extends Model
     {
         return [
             'status' => SigningStatus::class,
+            'step' => 'integer',
             'expires_at' => 'immutable_datetime',
             'opened_at' => 'immutable_datetime',
             'signed_at' => 'immutable_datetime',
@@ -165,6 +171,12 @@ class SigningRequest extends Model
     public function agreement(): BelongsTo
     {
         return $this->belongsTo(Agreement::class);
+    }
+
+    /** @return BelongsTo<SigningEnvelope, $this> */
+    public function envelope(): BelongsTo
+    {
+        return $this->belongsTo(SigningEnvelope::class, 'envelope_id');
     }
 
     /** @return BelongsTo<Deal, $this> */

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions\Signing;
 
+use App\Domain\Signing\EnvelopeStatus;
 use App\Domain\Signing\SigningStatus;
+use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
@@ -35,6 +37,13 @@ final class PruneSigningLinks
             Storage::disk(SigningRequest::DISK)->delete($request->document_path);
             $request->delete();
         }
+
+        // An envelope left without signers (ADR-046 amendment, gap 1) goes with them; a completed one is evidence and stays (trigger).
+        SigningEnvelope::query()
+            ->where('status', '!=', EnvelopeStatus::Completed->value)
+            ->where('updated_at', '<', $cutoff)
+            ->whereDoesntHave('signers')
+            ->delete();
 
         return $requests->count();
     }

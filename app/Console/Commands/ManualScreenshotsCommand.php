@@ -11,6 +11,7 @@ use App\Domain\Signing\SigningStatus;
 use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\SalesDocument;
+use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Models\SupplierInvoice;
 use App\Models\User;
@@ -307,6 +308,8 @@ class ManualScreenshotsCommand extends Command
             // CRM signing (ADR-046): a quote that was signed, and a fresh link to the public page of the newest open quote out for signing.
             'signed_quote' => SigningRequest::query()->whereNotNull('sales_document_id')->where('status', SigningStatus::Signed->value)->latest('id')->value('sales_document_id'),
             'signing_link' => $this->signingLink($company),
+            // A quote out to several signers in order (ADR-046 amendment, gap 1).
+            'envelope_quote' => SigningEnvelope::query()->whereNotNull('sales_document_id')->has('signers', '>', 1)->latest('created_at')->value('sales_document_id'),
             // The customer portal's address of the company (ADR-075).
             'portal_key' => PortalSettings::current()->portal_key,
             default => null,

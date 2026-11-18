@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Actions\Signing;
 
+use App\Domain\Signing\EnvelopeStatus;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignatureImage;
+use App\Domain\Signing\SigningEnvelopes;
 use App\Domain\Signing\SigningEventType;
 use App\Domain\Signing\SigningFollowUp;
 use App\Domain\Signing\SigningPdfs;
@@ -14,15 +16,21 @@ use App\Domain\Signing\SigningToken;
 use App\Domain\Signing\SigningUnavailable;
 use App\Events\QuoteSigned;
 use App\Jobs\FollowUpSigning;
+use App\Mail\SigningEnvelopeMail;
+use App\Mail\SigningRequestMail;
 use App\Models\Company;
+use App\Models\SigningEnvelope;
 use App\Models\SigningEvent;
+use App\Models\SigningLinkToken;
 use App\Models\SigningRequest;
 use App\Support\Audit\Audit;
+use App\Support\MailQuota;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -40,11 +48,19 @@ use Throwable;
  * page showed, and it must equal the one stored when the link was sent and
  * the stored file's own hash. A quote that changed after it was sent cannot
  * be signed (QuoteFingerprint): the link is revoked instead.
+ *
+ * In an envelope with several signers (ADR-046 amendment, gap 1) a
+ * signature completes the envelope or opens the next step, whose links are
+ * mailed after commit; only a completed envelope marks the document signed
+ * and runs the follow-up, so a quote becomes an order when everyone has
+ * signed. A decline ends the envelope for everyone.
  */
 final class SignAtLink
 {
     /** Retries of a signing transaction that meets a deadlock. */
     public const int ATTEMPTS = 3;
+
+    public function __construct(private readonly SigningEnvelopes $envelopes) {}
 
     /** The request behind a token, in any company, or null. */
     public function find(string $token): ?SigningRequest
@@ -58,7 +74,21 @@ final class SignAtLink
         // The token is the only key on this public page: the lookup crosses companies by its hash, and nothing else is matched.
         $request = CompanyScope::bypass(fn (): ?SigningRequest => SigningRequest::query()->where('token_hash', $hash)->first());
 
-        return $request instanceof SigningRequest && hash_equals($request->token_hash, $hash) ? $request : null;
+        if ($request instanceof SigningRequest && hash_equals($request->token_hash, $hash)) {
+            return $request;
+        }
+
+        // A signer in an envelope with several signers holds a link from signing_link_tokens (ADR-046 S1), matched the same way.
+        $link = CompanyScope::bypass(fn (): ?SigningLinkToken => SigningLinkToken::query()->where('token_hash', $hash)->first());
+
+        if (! $link instanceof SigningLinkToken || ! hash_equals($link->token_hash, $hash)) {
+            return null;
+        }
+
+        $request = CompanyScope::bypass(fn (): ?SigningRequest => SigningRequest::query()->whereKey($link->signing_request_id)->where('company_id', $link->company_id)->first());
+
+        // A token revoked while its signer is still pending (a newer link was sent) no longer opens anything.
+        return $request instanceof SigningRequest && ($link->revoked_at === null || $request->status !== SigningStatus::Pending) ? $request : null;
     }
 
     /**
@@ -84,8 +114,31 @@ final class SignAtLink
             SigningStatus::Pending => null,
             SigningStatus::Signed => SigningUnavailable::SIGNED,
             SigningStatus::Declined => SigningUnavailable::DECLINED,
-            SigningStatus::Revoked => SigningUnavailable::REVOKED,
+            SigningStatus::Revoked => $this->revokedReason($request),
             SigningStatus::Expired => SigningUnavailable::EXPIRED,
+        };
+    }
+
+    /** A revoked link in an envelope with several signers says why: withdrawn by the sender, or declined by another signer. */
+    private function revokedReason(SigningRequest $request): string
+    {
+        if ($request->envelope_id === null) {
+            return SigningUnavailable::REVOKED;
+        }
+
+        // Read across companies like the token lookup: the public page runs outside any company, matched on the request's own envelope and company.
+        $signers = CompanyScope::bypass(fn (): int => SigningRequest::query()->where('envelope_id', $request->envelope_id)->where('company_id', $request->company_id)->count());
+
+        if ($signers < 2) {
+            return SigningUnavailable::REVOKED;
+        }
+
+        $status = CompanyScope::bypass(fn (): mixed => SigningEnvelope::query()->whereKey($request->envelope_id)->where('company_id', $request->company_id)->value('status'));
+
+        return match ($status) {
+            EnvelopeStatus::Voided => SigningUnavailable::VOIDED,
+            EnvelopeStatus::Declined => SigningUnavailable::ENVELOPE_DECLINED,
+            default => SigningUnavailable::REVOKED,
         };
     }
 
@@ -158,7 +211,8 @@ final class SignAtLink
             throw ValidationException::withMessages(['typed_signature' => __('Skriv ditt namn exakt som i namnfältet för att skriva under.')]);
         }
 
-        $signed = CurrentCompany::run($request->company_id, fn (): SigningRequest => DB::transaction(function () use ($request, $validated, $name, $image, $ip, $userAgent): SigningRequest {
+        // The signed request, and whether it completed its envelope.
+        $result = CurrentCompany::run($request->company_id, fn (): array => DB::transaction(function () use ($request, $validated, $name, $image, $ip, $userAgent): array {
             // The document first, then the request: the order every signing path takes (SignInSession, SendForSigning).
             $request->document(lock: true);
             $locked = $this->lockUsable($request);
@@ -204,20 +258,38 @@ final class SignAtLink
             Storage::disk(SigningRequest::DISK)->put($path, $certificate);
             $locked->forceFill(['signed_document_path' => $path, 'signed_document_sha256' => hash('sha256', $certificate)])->save();
 
-            $locked->document()?->markSigned($locked->signed_at ?? CarbonImmutable::now(), $locked->document_sha256);
+            // The envelope: complete, or open the next step. The document is signed only when everyone has signed.
+            $outcome = $this->envelopes->signed($locked);
+
+            if ($outcome['completed']) {
+                $locked->document()?->markSigned($locked->signed_at ?? CarbonImmutable::now(), $locked->document_sha256);
+            }
 
             Audit::record('crm.signing_signed', $locked, ['signing_request_id' => $locked->id, 'document_type' => $locked->document_type, 'sales_document_id' => $locked->sales_document_id, 'agreement_id' => $locked->agreement_id, 'method' => $locked->signature_method], $locked->company_id);
 
-            if ($locked->isQuote()) {
+            if ($outcome['completed'] && $locked->isQuote()) {
                 event(new QuoteSigned($locked->company_id, $locked->id));
             }
 
-            return $locked;
+            $this->mailOpenedStep($locked->company_id, $outcome['opened']);
+
+            if ($outcome['completed'] && $outcome['several'] && $outcome['envelope'] instanceof SigningEnvelope) {
+                SigningFollowUp::mailEnvelopeCopies($outcome['envelope']);
+            }
+
+            return [$locked, $outcome['completed']];
         }, self::ATTEMPTS));
+
+        [$signed, $completed] = $result;
 
         // The signature is saved. The signer's copy goes whatever happens to the order, and with a sync queue a failing
         // follow-up must never turn the signer's success into an error page: it is reported and retried by hand.
         CurrentCompany::run($signed->company_id, fn () => SigningFollowUp::mailSignerCopy($signed));
+
+        // An envelope still waiting for other signers has no follow-up yet.
+        if (! $completed) {
+            return $signed;
+        }
 
         try {
             FollowUpSigning::dispatch($signed->company_id, $signed->id)->afterCommit();
@@ -257,6 +329,10 @@ final class SignAtLink
             ]);
 
             Audit::record('crm.signing_declined', $locked, ['signing_request_id' => $locked->id, 'document_type' => $locked->document_type, 'reason_given' => ! blank($reason)], $locked->company_id);
+
+            // The envelope ends for everyone; those who already signed are told, without the reason.
+            // TODO(legal-verify): ADR-046 gap 1 — whether earlier signers must be told when a later signer declines (default: yes, without the reason).
+            $this->mailDeclinedToSigned($locked, $this->envelopes->declined($locked));
             app(SigningFollowUp::class)->declined($locked);
 
             return $locked;
@@ -300,6 +376,8 @@ final class SignAtLink
     {
         CurrentCompany::run($request->company_id, function () use ($request): void {
             DB::transaction(function () use ($request): void {
+                // The document first, then the request and its envelope: the order every signing path takes.
+                $request->document(lock: true);
                 $locked = SigningRequest::query()->whereKey($request->id)->where('status', SigningStatus::Pending->value)->lockForUpdate()->first();
 
                 if (! $locked instanceof SigningRequest) {
@@ -309,7 +387,51 @@ final class SignAtLink
                 $locked->forceFill(['status' => SigningStatus::Revoked, 'revoked_at' => CarbonImmutable::now()])->save();
                 SigningEvent::create(['signing_request_id' => $locked->id, 'event' => SigningEventType::Revoked]);
                 Audit::record('crm.signing_revoked', $locked, ['signing_request_id' => $locked->id, 'reason' => 'DOCUMENT_CHANGED'], $locked->company_id);
-            });
+                $this->envelopes->revoked($locked, null, 'DOCUMENT_CHANGED');
+            }, self::ATTEMPTS);
         });
+    }
+
+    /**
+     * The links of a step that just opened, mailed after commit.
+     *
+     * @param  list<array{request_id: int, email: string, url: string}>  $opened
+     */
+    private function mailOpenedStep(int $companyId, array $opened): void
+    {
+        if ($opened === []) {
+            return;
+        }
+
+        $company = Company::query()->find($companyId);
+
+        if (! $company instanceof Company || $company->isTestCompany()) {
+            return;
+        }
+
+        foreach ($opened as $link) {
+            Mail::to($link['email'])->queue((new SigningRequestMail($link['request_id'], $companyId, $link['url']))->afterCommit());
+        }
+
+        // Counted against the hour's quota, never refused: the signature that opened the step is already saved.
+        MailQuota::count($company, 'documents', count($opened));
+    }
+
+    /** @param  list<int>  $signedIds */
+    private function mailDeclinedToSigned(SigningRequest $declined, array $signedIds): void
+    {
+        if ($signedIds === [] || $declined->envelope_id === null) {
+            return;
+        }
+
+        $company = Company::query()->find($declined->company_id);
+
+        if (! $company instanceof Company || $company->isTestCompany()) {
+            return;
+        }
+
+        foreach (SigningRequest::query()->whereKey($signedIds)->pluck('email') as $email) {
+            Mail::to((string) $email)->queue((new SigningEnvelopeMail($declined->envelope_id, $company->id, SigningEnvelopeMail::DECLINED))->afterCommit());
+        }
     }
 }
