@@ -108,6 +108,9 @@ it('loads the reference data with the same number of queries for one or many art
         return $count;
     };
 
+    // One pick list before the first measurement too, so both read its lines (one query, not one per list).
+    app(PickLists::class)->manual($this->owner, $this->company, [['article_id' => $this->article->id, 'quantity' => '1']]);
+
     // The first request also loads the user's memberships (the dimension scope check); measure warm requests.
     $measure();
     $one = $measure();
