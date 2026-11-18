@@ -61,7 +61,7 @@ Alla perioder i visningen får samma värde. En artikel som inte har något utta
 
 ![Planeringsdata på artikelns flik Avancerad: planeringsmetod, ledtid, säkerhetslager, minsta parti och partimultipel.](/bilder/manual/lager/planeringsdata.webp)
 
-Mängderna står i artikelns lagerenhet. Planeringsdata ändrar inget i inköpsförslaget i dag: [Inköpsförslag](/manual/lager/inkopsforslag) räknar som förut med beställningspunkt och beställ antal.
+Mängderna står i artikelns lagerenhet. Planeringsdata ändrar inget i inköpsförslaget: [Inköpsförslag](/manual/lager/inkopsforslag) räknar som förut med beställningspunkt och beställ antal. Artiklar med planeringsmetoden **Behovsplanering (MRP)** planeras vecka för vecka under [Behovsplanering](/manual/lager/behovsplanering).
 
 ## Vem får göra vad
 
@@ -88,5 +88,6 @@ Ingenting. Prognosen och planeringsdata är inte bokföring och skapar inga veri
 ## Läs också
 
 - [Artiklar i lager](/manual/lager/artiklar)
+- [Behovsplanering](/manual/lager/behovsplanering)
 - [Inköpsförslag](/manual/lager/inkopsforslag)
 - [Roller och behörigheter](/manual/lager/roller-och-behorigheter)

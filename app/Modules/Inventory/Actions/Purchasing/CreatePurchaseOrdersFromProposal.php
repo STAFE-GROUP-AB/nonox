@@ -27,10 +27,14 @@ class CreatePurchaseOrdersFromProposal
     public function __construct(private readonly SavePurchaseOrder $save) {}
 
     /**
-     * @param  list<array{article_id: mixed, quantity: mixed, unit_id?: mixed, supplier_id?: mixed}>  $lines
+     * Behovsplanering (ADR-081 gap 5) uses the same path for its planned
+     * orders, with the date each is needed as the row's expected date and
+     * the source MRP.
+     *
+     * @param  list<array{article_id: mixed, quantity: mixed, unit_id?: mixed, supplier_id?: mixed, expected_on?: ?string}>  $lines
      * @return list<PurchaseOrder>
      */
-    public function __invoke(User $user, Company $company, array $lines): array
+    public function __invoke(User $user, Company $company, array $lines, PurchaseOrderSource $source = PurchaseOrderSource::Proposal): array
     {
         $this->guard($user, $company, 'manage');
 
@@ -38,7 +42,7 @@ class CreatePurchaseOrdersFromProposal
             throw ValidationException::withMessages(['lines' => __('Välj minst en artikel att beställa.')]);
         }
 
-        return CurrentCompany::run($company, fn (): array => DB::transaction(function () use ($user, $company, $lines): array {
+        return CurrentCompany::run($company, fn (): array => DB::transaction(function () use ($user, $company, $lines, $source): array {
             $articles = Article::query()->whereKey(array_map(fn (array $line): int => (int) $line['article_id'], $lines))->get(['id', 'number', 'name', 'default_supplier_id'])->keyBy('id');
             $perSupplier = [];
 
@@ -50,13 +54,19 @@ class CreatePurchaseOrdersFromProposal
                     throw ValidationException::withMessages(["lines.{$index}.supplier_id" => __('Välj leverantör för :number :name.', ['number' => $article->number, 'name' => $article->name])]);
                 }
 
-                $perSupplier[$supplierId][] = ['article_id' => $article->id, 'quantity' => $line['quantity'], 'unit_id' => $line['unit_id'] ?? null];
+                $row = ['article_id' => $article->id, 'quantity' => $line['quantity'], 'unit_id' => $line['unit_id'] ?? null];
+
+                if (($line['expected_on'] ?? null) !== null) {
+                    $row['expected_on'] = $line['expected_on'];
+                }
+
+                $perSupplier[$supplierId][] = $row;
             }
 
             $orders = [];
 
             foreach ($perSupplier as $supplierId => $rows) {
-                $orders[] = ($this->save)($user, $company, ['supplier_id' => $supplierId, 'rows' => $rows], null, PurchaseOrderSource::Proposal);
+                $orders[] = ($this->save)($user, $company, ['supplier_id' => $supplierId, 'rows' => $rows], null, $source);
             }
 
             return $orders;

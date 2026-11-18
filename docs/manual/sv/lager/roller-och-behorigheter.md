@@ -53,6 +53,10 @@ Utan attestgräns skickar bokföraren alla ordrar. Med en **Attestgräns för in
 
 Se [Prognos och planeringsdata](/manual/lager/prognos).
 
+## Behovsplanering
+
+Samma roller som ändrar prognosen kör behovsplaneringen och skapar utkast av förslagen, och samma roller som ser prognosen ser behovsplaneringen. För att skapa utkast krävs också rätt att hantera inköpsorder respektive tillverkningsorder, så en bokförare kan göra inköp men inte tillverkning av förslagen. Se [Behovsplanering](/manual/lager/behovsplanering).
+
 ## Lagerpersonal
 
 Rollen passar den som arbetar på golvet. Hen kan:

@@ -150,6 +150,7 @@ final class InventoryModule implements IsNew, Module
                     ['label' => __('Inleveranser'), 'route' => 'inventory.receipts', 'active' => ['inventory.receipts']],
                     ...($user->hasTeamPermission($company, self::MRP_VIEW) || $user->hasTeamPermission($company, self::MRP_RUN) ? [
                         ['label' => __('Prognos'), 'route' => 'inventory.forecast', 'active' => ['inventory.forecast']],
+                        ['label' => __('Behovsplanering'), 'route' => 'inventory.mrp', 'active' => ['inventory.mrp']],
                     ] : []),
                     ['label' => __('Plocklistor'), 'route' => 'inventory.pickLists', 'active' => ['inventory.pickLists', 'inventory.pickLists.pdf']],
                     ['label' => __('Försändelser'), 'route' => 'inventory.shipments', 'active' => ['inventory.shipments', 'inventory.shipments.deliveryNote']],

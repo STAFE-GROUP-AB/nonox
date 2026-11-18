@@ -241,6 +241,7 @@ lager/inkopsorder-attest: { foretag: butik, rutt: inventory.purchaseOrders.show,
 lager/inkopsorder-utan-artikel: { foretag: butik, rutt: inventory.purchaseOrders.show, modell: { tabell: purchase_orders, dar: { notes: 'Skyltar och uppsättning till skyltfönstret' } } }
 lager/inkopsforslag: { foretag: butik, rutt: inventory.purchaseProposals }
 lager/prognos: { foretag: butik, rutt: inventory.forecast }
+lager/behovsplanering: { foretag: butik, rutt: inventory.mrp, del: '[data-testid=mrp-planned]' }
 lager/planeringsdata: { foretag: butik, rutt: invoicing.articles, klick: ['tbody tr:nth-child(2) button', 'text=Avancerad'], visa: '#article_planning_method' }
 lager/plocklista: { foretag: butik, rutt: inventory.pickLists, klick: ['text=Plocka'] }
 lager/forsandelser: { foretag: butik, rutt: inventory.shipments, fraga: { forsandelse: '2' } }

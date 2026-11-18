@@ -36,13 +36,36 @@ final class OpenCustomerOrderDemand implements PurchaseDemandSource
 
     public function reserved(Company $company): array
     {
+        $reserved = [];
+
+        foreach ($this->lines($company) as $line) {
+            $reserved[$line['article_id']] = ($reserved[$line['article_id']] ?? 0) + $line['milli'];
+        }
+
+        return $reserved;
+    }
+
+    /**
+     * What each open order still needs of each stock article, with the date
+     * it is wanted: the delivery date confirmed to the customer, else the
+     * order's delivery date, else the order's date. Behovsplanering (ADR-081
+     * gap 5) places these in weeks; the purchase proposal adds them up.
+     * Lines that need nothing are left out. A fixed number of queries.
+     *
+     * @return list<array{sales_document_id: string, number: int, date: string, article_id: int, milli: int}>
+     */
+    public function lines(Company $company): array
+    {
         $rows = SalesDocumentRow::query()
             ->join('sales_documents', 'sales_documents.id', '=', 'sales_document_rows.sales_document_id')
             ->join('articles', 'articles.id', '=', 'sales_document_rows.article_id')
             ->where('sales_documents.kind', SalesDocument::ORDER)
             ->where('sales_documents.status', SalesDocumentStatus::Open->value)
             ->where('articles.is_stock_item', true)
-            ->get(['sales_document_rows.sales_document_id', 'sales_document_rows.article_id', 'sales_document_rows.quantity', 'sales_document_rows.unit']);
+            ->get([
+                'sales_document_rows.sales_document_id', 'sales_document_rows.article_id', 'sales_document_rows.quantity', 'sales_document_rows.unit',
+                'sales_documents.number as document_number', 'sales_documents.document_date as document_on', 'sales_documents.until_date as until_on', 'sales_documents.confirmed_delivery_on as confirmed_on',
+            ]);
 
         if ($rows->isEmpty()) {
             return [];
@@ -51,6 +74,7 @@ final class OpenCustomerOrderDemand implements PurchaseDemandSource
         $articles = Article::query()->with('stockUnit:id,code')->whereKey($rows->pluck('article_id')->unique()->all())->get(['id', 'unit', 'stock_unit_id'])->keyBy('id');
         $conversions = PurchaseQuantities::conversions($articles->keys()->all());
         $wanted = [];
+        $orders = [];
 
         foreach ($rows as $row) {
             $article = $articles->get((int) $row->article_id);
@@ -59,8 +83,13 @@ final class OpenCustomerOrderDemand implements PurchaseDemandSource
                 continue;
             }
 
+            $document = (string) $row->sales_document_id;
             $milli = self::stockMilli($article, (string) $row->quantity, (string) $row->unit, $conversions[$article->id] ?? []);
-            $wanted[(string) $row->sales_document_id][$article->id] = ($wanted[(string) $row->sales_document_id][$article->id] ?? 0) + $milli;
+            $wanted[$document][$article->id] = ($wanted[$document][$article->id] ?? 0) + $milli;
+            $orders[$document] ??= [
+                'number' => (int) $row->getAttribute('document_number'),
+                'date' => substr((string) ($row->getAttribute('confirmed_on') ?? $row->getAttribute('until_on') ?? $row->getAttribute('document_on')), 0, 10),
+            ];
         }
 
         $picked = PickListLine::query()
@@ -79,15 +108,19 @@ final class OpenCustomerOrderDemand implements PurchaseDemandSource
             }
         }
 
-        $reserved = [];
+        $lines = [];
 
-        foreach ($wanted as $perArticle) {
+        foreach ($wanted as $document => $perArticle) {
             foreach ($perArticle as $articleId => $milli) {
-                $reserved[$articleId] = ($reserved[$articleId] ?? 0) + max(0, $milli);
+                if ($milli <= 0) {
+                    continue;
+                }
+
+                $lines[] = ['sales_document_id' => (string) $document, 'number' => $orders[$document]['number'], 'date' => $orders[$document]['date'], 'article_id' => (int) $articleId, 'milli' => $milli];
             }
         }
 
-        return array_filter($reserved, fn (int $milli): bool => $milli > 0);
+        return $lines;
     }
 
     /** @param  array<string, BigRational>  $conversions */

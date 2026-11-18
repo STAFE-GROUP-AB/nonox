@@ -221,6 +221,9 @@ final class DatabaseGrants
         'migrations' => GrantDecision::ReadOnly,
         'mileage_routes' => GrantDecision::ReadWrite,
         'month_close_checks' => GrantDecision::ReadWrite,
+        // Behovsplanering (ADR-081 gap 5): planned orders are marked when converted, and runs go with them after 30 days.
+        'mrp_planned_orders' => GrantDecision::ReadWrite,
+        'mrp_runs' => GrantDecision::ReadWrite,
         'notifications' => GrantDecision::ReadWrite,
         'number_series' => GrantDecision::ReadWrite,
         'oauth_access_tokens' => GrantDecision::ReadWrite,

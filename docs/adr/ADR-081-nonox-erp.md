@@ -1619,3 +1619,64 @@ Built on branch `feat/erp-e10-inkopsorder-attest`, on top of the approval engine
   (E9). Purchase order approvals are not in the archive package's `attest/` CSVs:
   whether an order is räkenskapsinformation is the open TODO(legal-verify) of
   ADR-071; the rows stay in the database and nothing is pruned.
+
+## Addendum: E16 as built (MRP engine)
+
+Built on branch `feat/erp-e16-materialbehov`. Choices the gap 5 text left open:
+
+- **Where it lives.** The engine, snapshot, actions, models and page are in
+  `app/Modules/Manufacturing/Mrp`; the page is reached under Lager at
+  `/lager/behovsplanering` (`inventory.mrp`, behind `module:inventory`) and
+  guarded by E15's `mrp:view`/`mrp:run` (`InventoryPolicy::planView`/`planRun`),
+  so a trading company with Lager alone plans too. The tables' migration is in
+  the Manufacturing module, whose migrations always load.
+- **What is planned.** Active stocked articles with planning method `MRP`
+  only. An article is `PRODUCTION` when Tillverkning is on and it has a bill
+  of materials valid today (the version `SaveProductionOrder` would copy);
+  otherwise `PURCHASE`. A component that is not `MRP` gets no planned orders
+  (the purchase proposal still covers it once a production order exists).
+- **Inputs.** Customer orders come from `OpenCustomerOrderDemand::lines()`
+  (new, dated; `reserved()` now sums it, unchanged behaviour), dated by
+  `confirmed_delivery_on`, else `until_date`, else `document_date`. Purchase
+  receipts: draft, sent and partly received rows, dated by `expected_on`, else
+  `requested_delivery_on`, else order date + lead time. Production orders:
+  **draft, released and started** (drafts count, as in the purchase proposal,
+  so a converted planned order is not proposed again); finish from the latest
+  production plan forecast, else `due_on`, else start + lead time; component
+  need (`required − issued`) on the forecast start, else `planned_start_on`,
+  else `due_on − lead time`, else today.
+- **Netting.** Forecast consumption per owner decision 14 counts customer
+  orders only; dependent demand is added on top. Supply is used on demand
+  oldest first (this gives the pegging). A shortfall against demand or the
+  safety stock first pulls forward only the needed part of the next later
+  receipts (advice `MOVE_IN` with the moved quantity and the order's full
+  quantity as `order_milli`, i.e. split the order; the rest stays on its
+  date), then a planned order covers up to the safety stock, at
+  least the minimum lot, rounded up to the multiple. Due on the bucket's
+  Monday (today in the first bucket); release = due − lead time in calendar
+  days; a past release is set to today and marked `LATE`, one within seven
+  days `RELEASE_NOW`. `EXCESS` is computed latest receipt first, on the
+  unmoved remainder, against the projected stock above safety stock
+  **without this run's planned orders**, so a receipt is never called excess
+  while a planned order covers the same need (cold review P2). The pegging
+  lists at most 50 entries. On-hand stock is the whole balance, including
+  expired or blocked lots, as in the purchase proposal. Planned orders are
+  inserted in chunks of 500 (one query per chunk).
+- **Purchase proposal alongside.** The purchase proposal still lists
+  MRP-planned articles (reorder point, open customer orders). Drafts converted
+  from planned orders count as incoming in both, so nothing is counted twice.
+- **Advice on existing orders** (`MOVE_IN`, `EXCESS`) is stored as `messages`
+  jsonb on `mrp_runs`, not as planned orders, since it concerns existing
+  orders; planned orders carry `RELEASE_NOW`/`LATE` in `exception`.
+- **Conversion.** Only planned orders of the company's latest run, once each.
+  Purchases go through `CreatePurchaseOrdersFromProposal`, which gained an
+  optional `expected_on` per line and a source parameter (new
+  `PurchaseOrderSource::Mrp`); production through `SaveProductionOrder::create`.
+  The expected or due date is the need date, or release + lead time when that
+  is later (a late order). Both inner actions check their own permissions.
+- **Retention.** Runs older than 30 days are deleted with their planned
+  orders by each run and nightly by `mrp:prune` (03:10). Nothing here is
+  räkenskapsinformation; the drafts made are ordinary orders and stay.
+- **Database.** `mrp_runs` and `mrp_planned_orders` are `ReadWrite`; check
+  constraints on horizon (1–52, Monday start), kind, exception, quantities
+  and the converted pair.

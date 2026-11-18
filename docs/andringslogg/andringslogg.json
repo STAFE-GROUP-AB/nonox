@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-behovsplanering",
+      "datum": "2026-11-18T11:25:00+01:00",
+      "rubrik": "Behovsplanering vecka för vecka",
+      "beskrivning": "Under Lager → Behovsplanering räknar NONOX ut vad som behöver köpas in eller tillverkas de kommande 13 veckorna, högst 52, utifrån det största av prognos och kundordrar, stycklistor, lager och det som redan är beställt. Varje förslag visar vilka behov det täcker och om det ska släppas nu eller redan är försenat, och befintliga order får råd om att flyttas fram eller om överskott. Du väljer själv vilka förslag som blir utkast till inköps- eller tillverkningsorder.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-18-budget-i-sie-filer",
       "datum": "2026-11-18T11:20:00+01:00",
       "rubrik": "Budgeten följer med i SIE-filer",
