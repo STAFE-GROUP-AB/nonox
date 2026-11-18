@@ -18,6 +18,7 @@ use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\User;
 use App\Modules\Inventory\Models\PurchaseOrder;
+use App\Modules\Inventory\Models\Shipment;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
@@ -56,6 +57,8 @@ class EraseRegisterEntry
             $used = Invoice::query()->where('customer_id', $customer->id)->exists()
                 || SalesDocument::query()->where('customer_id', $customer->id)->exists()
                 || RecurringInvoice::query()->where('customer_id', $customer->id)->exists()
+                // A shipment's delivery note is kept with its packages (ADR-081 E14), its recipient copy is erased below.
+                || Shipment::query()->where('customer_id', $customer->id)->exists()
                 // A signed agreement and its evidence are kept as proof of the contract (CRM, ADR-046; art. 17.3 e).
                 || SignedDocuments::customerHasSignedAgreement($customer->id);
 
@@ -65,6 +68,8 @@ class EraseRegisterEntry
 
                 return 'deleted';
             }
+
+            Shipment::query()->where('customer_id', $customer->id)->update(['ship_to' => null]);
 
             $keepPersonalNumber = Invoice::query()->where('customer_id', $customer->id)->whereNotNull('tax_reduction')->exists();
 

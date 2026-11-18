@@ -40,6 +40,10 @@ Finns det inte tillräckligt i lagret visar plocklistan en rad utan plats för d
 
 För en artikel med spårning föreslår plocklistan den batch som går ut först, och batchen eller serienumret står på raden. Under **Plocka från** kan du välja en annan. Se [Batcher och serienummer](/manual/lager/batcher-och-serienummer).
 
+## Packa det som är plockat
+
+Är plocklistan klar klickar du på **Packa** för att lägga varorna i kollin och skriva ut en följesedel. Se [Packa och skicka](/manual/lager/packa-och-skicka).
+
 ## Makulera
 
 En plocklista som inte är klar kan makuleras. Inget dras då från lagret.

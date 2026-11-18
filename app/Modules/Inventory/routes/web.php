@@ -7,6 +7,7 @@ use App\Modules\Inventory\Http\LabelPrintController;
 use App\Modules\Inventory\Http\PickListPdfController;
 use App\Modules\Inventory\Http\PurchaseOrderController;
 use App\Modules\Inventory\Http\ScannerController;
+use App\Modules\Inventory\Http\ShipmentPdfController;
 use Illuminate\Support\Facades\Route;
 
 // Behind module:inventory: 404 while the module is off.
@@ -24,6 +25,8 @@ Route::get('/lager/inkopsorder/{purchaseOrder}/pdf', [PurchaseOrderController::c
 Route::view('/lager/inkopsforslag', 'inventory::purchase-proposals')->name('inventory.purchaseProposals');
 Route::view('/lager/plocklistor', 'inventory::pick-lists')->name('inventory.pickLists');
 Route::get('/lager/plocklistor/{pickList}/pdf', PickListPdfController::class)->whereNumber('pickList')->name('inventory.pickLists.pdf');
+Route::view('/lager/forsandelser', 'inventory::shipments')->name('inventory.shipments');
+Route::get('/lager/forsandelser/{shipment}/foljesedel', ShipmentPdfController::class)->whereNumber('shipment')->name('inventory.shipments.deliveryNote');
 Route::view('/lager/inventering', 'inventory::counts')->name('inventory.counts');
 Route::view('/lager/batcher', 'inventory::lots')->name('inventory.lots');
 Route::view('/lager/prognos', 'inventory::forecast')->name('inventory.forecast');

@@ -58,6 +58,9 @@
             <x-slot:action>
                 <span class="flex gap-3 text-sm font-semibold">
                     <a href="{{ route('inventory.pickLists.pdf', $current->id) }}" class="text-accent-700 underline" target="_blank" rel="noopener">{{ __('Skriv ut (PDF)') }}</a>
+                    @if($current->status === 'COMPLETED' && $canCount)
+                        <button type="button" wire:click="pack({{ $current->id }})" class="text-accent-700 underline">{{ __('Packa') }}</button>
+                    @endif
                     <button type="button" wire:click="close" class="text-gray-700 underline">{{ __('Stäng') }}</button>
                 </span>
             </x-slot:action>
@@ -145,7 +148,12 @@
                             <x-ui.badge :tone="$list->status === 'COMPLETED' ? 'success' : ($list->status === 'OPEN' ? 'accent' : 'neutral')">{{ $list->statusLabel() }}</x-ui.badge>
                             <span class="block text-sm text-gray-500">{{ __('Rader: :count', ['count' => $list->lines_count]) }} · {{ $list->created_at->toDateString() }}</span>
                         </span>
-                        <button type="button" wire:click="show({{ $list->id }})" class="text-sm font-semibold text-accent-700 underline">{{ $list->status === 'OPEN' ? __('Plocka') : __('Visa') }}</button>
+                        <span class="flex gap-3">
+                            @if($list->status === 'COMPLETED' && $canCount)
+                                <button type="button" wire:click="pack({{ $list->id }})" class="text-sm font-semibold text-accent-700 underline">{{ __('Packa') }}</button>
+                            @endif
+                            <button type="button" wire:click="show({{ $list->id }})" class="text-sm font-semibold text-accent-700 underline">{{ $list->status === 'OPEN' ? __('Plocka') : __('Visa') }}</button>
+                        </span>
                     </li>
                 @endforeach
             </ul>

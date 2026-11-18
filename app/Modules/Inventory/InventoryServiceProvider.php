@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Inventory;
 
 use App\Http\Middleware\EnsureUserHasCompany;
+use App\Modules\Inventory\Console\PruneShipmentsCommand;
 use App\Modules\Inventory\Console\VerifyStockCommand;
 use App\Modules\Inventory\Http\ScannerController;
 use App\Modules\Inventory\Livewire\ArticlesPage;
@@ -24,6 +25,7 @@ use App\Modules\Inventory\Livewire\Purchasing\PurchaseOrdersPage;
 use App\Modules\Inventory\Livewire\Purchasing\PurchaseProposalsPage;
 use App\Modules\Inventory\Livewire\ReceiptsPage;
 use App\Modules\Inventory\Livewire\ReportsPage;
+use App\Modules\Inventory\Livewire\ShipmentsPage;
 use App\Modules\Inventory\Livewire\UnitConversionsPanel;
 use App\Modules\Inventory\Models\ArticleImage;
 use App\Modules\Inventory\Models\ArticleUnitConversion;
@@ -34,6 +36,7 @@ use App\Modules\Inventory\Models\LabelTemplate;
 use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\ScanOperation;
+use App\Modules\Inventory\Models\Shipment;
 use App\Modules\Inventory\Models\StockCount;
 use App\Modules\Inventory\Models\StockLevel;
 use App\Modules\Inventory\Models\StockLocation;
@@ -76,7 +79,7 @@ class InventoryServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/views', 'inventory');
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
-        foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockLot::class, StockLotLevel::class, StockReceipt::class, PickList::class, StockCount::class, StockValuation::class, ArticleImage::class, LabelTemplate::class, ScanOperation::class, BillOfMaterials::class, BomRow::class, ArticleUnitConversion::class, DemandForecast::class] as $model) {
+        foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockLot::class, StockLotLevel::class, StockReceipt::class, PickList::class, Shipment::class, StockCount::class, StockValuation::class, ArticleImage::class, LabelTemplate::class, ScanOperation::class, BillOfMaterials::class, BomRow::class, ArticleUnitConversion::class, DemandForecast::class] as $model) {
             Gate::policy($model, InventoryPolicy::class);
         }
 
@@ -88,6 +91,7 @@ class InventoryServiceProvider extends ServiceProvider
         Livewire::component('inventory.locations', LocationsPage::class);
         Livewire::component('inventory.receipts', ReceiptsPage::class);
         Livewire::component('inventory.pick-lists', PickListsPage::class);
+        Livewire::component('inventory.shipments', ShipmentsPage::class);
         Livewire::component('inventory.counts', CountsPage::class);
         Livewire::component('inventory.lots', LotsPage::class);
         Livewire::component('inventory.reports', ReportsPage::class);
@@ -102,7 +106,7 @@ class InventoryServiceProvider extends ServiceProvider
         Livewire::component(PurchaseOrderMatchPanel::NAME, PurchaseOrderMatchPanel::class);
 
         if ($this->app->runningInConsole()) {
-            $this->commands([VerifyStockCommand::class]);
+            $this->commands([VerifyStockCommand::class, PruneShipmentsCommand::class]);
         }
 
         Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.InventoryModule::KEY])

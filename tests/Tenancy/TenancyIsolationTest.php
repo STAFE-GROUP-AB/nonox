@@ -177,6 +177,9 @@ use App\Modules\Inventory\Models\PurchaseOrderInvoice;
 use App\Modules\Inventory\Models\PurchaseOrderRow;
 use App\Modules\Inventory\Models\PurchaseOrderVersion;
 use App\Modules\Inventory\Models\ScanOperation;
+use App\Modules\Inventory\Models\Shipment;
+use App\Modules\Inventory\Models\ShipmentPackage;
+use App\Modules\Inventory\Models\ShipmentPackageLine;
 use App\Modules\Inventory\Models\StockCount;
 use App\Modules\Inventory\Models\StockCountLine;
 use App\Modules\Inventory\Models\StockLevel;
@@ -526,6 +529,9 @@ const COMPANY_SCOPED_MODELS = [
     StockReceiptLine::class => 'inventoryReceiptLineAttributes',
     PickList::class => 'inventoryPickListAttributes',
     PickListLine::class => 'inventoryPickListLineAttributes',
+    Shipment::class => 'e14ShipmentAttributes',
+    ShipmentPackage::class => 'e14ShipmentPackageAttributes',
+    ShipmentPackageLine::class => 'e14ShipmentPackageLineAttributes',
     PurchaseOrder::class => 'purchaseOrderAttributes',
     PurchaseOrderRow::class => 'purchaseOrderRowAttributes',
     PurchaseOrderVersion::class => 'purchaseOrderVersionAttributes',
@@ -2371,6 +2377,21 @@ function e12StockLotLevelAttributes(): array
 function inventoryReceiptLineAttributes(): array
 {
     return ['stock_receipt_id' => StockReceipt::create(['number' => random_int(1, 1_000_000), 'status' => 'OPEN'])->id, 'article_id' => Article::create(articleAttributes())->id, 'ordered_milli' => 1000, 'unit_cost_ore' => 100];
+}
+
+function e14ShipmentAttributes(): array
+{
+    return ['number' => random_int(1, 1_000_000), 'pick_list_id' => PickList::create(['number' => random_int(1, 1_000_000), 'status' => 'COMPLETED'])->id, 'status' => 'DRAFT', 'carrier' => 'Hemlig transportör'];
+}
+
+function e14ShipmentPackageAttributes(): array
+{
+    return ['shipment_id' => Shipment::create(e14ShipmentAttributes())->id, 'position' => 1, 'weight_grams' => 1500];
+}
+
+function e14ShipmentPackageLineAttributes(): array
+{
+    return ['shipment_package_id' => ShipmentPackage::create(e14ShipmentPackageAttributes())->id, 'article_id' => Article::create(articleAttributes())->id, 'quantity_milli' => 1000];
 }
 
 function inventoryPickListLineAttributes(): array
