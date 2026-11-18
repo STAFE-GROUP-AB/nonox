@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.134
-- Datum: 2026-11-17
+- Version: 0.135
+- Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -1139,6 +1139,15 @@ balances").
   eller skapad och skickad direkt. Fakturan bokförs som alla andra fakturor.
 - Offerter och order kan bli order respektive fakturautkast med samma rader.
   De bokförs inte; det gör först fakturan.
+- En offert som skickas för signering till flera undertecknare (ett kuvert,
+  [ADR-046](../adr/ADR-046-crm-signing.md) tillägg 2026-11-18, lucka 1) blir
+  order först när alla undertecknare har signerat, en gång, genom samma
+  uppföljning som med en undertecknare. Så länge någon undertecknare återstår
+  kan offerten inte ändras. Avböjer någon, eller dras kuvertet tillbaka, blir
+  ingen order och offerten kan ändras och skickas igen. Varje undertecknares
+  bevis (dokumentets SHA-256, namn, tid, IP-adress, webbläsare) ändras aldrig,
+  och ett slutfört kuvert ändras eller tas aldrig bort (databasutlösare). Med
+  en undertecknare är flödet oförändrat.
 - Varje skapad, skickad och betald faktura, offert och order skrivs till
   behandlingshistoriken.
 
@@ -5898,3 +5907,4 @@ påverkar bokföringen och fakturan:
 | 0.132 | 2026-11-11 | Tillverkningsorder (avsnitt 5o och 5j, ADR-071 §8 och tillägget As built (M4)): komponenter tas ur lagret som `PRODUCTION_ISSUE` till anskaffningsvärdet enligt företagets metod och färdiga produkter tas emot som `PRODUCTION_RECEIPT` till tillverkningskostnaden (material plus direkt arbete, omkostnader bara om företaget har valt det när ordern startar). Datum kan inte läggas i stängda år, låsta perioder, före orderns senaste händelse eller, för uttag, före en senare lagerrörelse på artikeln. Nya tabeller `production_orders`, `production_order_components`, `production_order_operations`, `production_order_issues` och `production_labour_entries` (de två sista kan inte ändras eller tas bort). Ingen verifikation per order; bokslutets lagervärdering tar med produkter i arbete på ett eget kontopar (1440/4940 från början) i samma verifikation. Öppna frågor om kostnader och konton i avsnitt 8. |
 | 0.133 | 2026-11-16 | Återkommande intäkter (avsnitt 5p, ADR-080): modulen skapar inga verifikationer och ändrar ingen bokföring. Avtalens versioner (`saas_contract_versions`) och rättelser (`saas_corrections`) kan inte ändras, tas bort eller tömmas; stängda månader skrivs inte om och senare ändringar blir rättelserader i första öppna månaden; `saas:verify` räknar om stängda månader varje natt. Stripe läses bara, med en begränsad nyckel; produkter, priser, rabatter och prenumerationer sparas orörda med kontrollsumma i `stripe_objects` och raderas 90 dagar efter att kopplingen upphört. Inget bokförs ur Stripe. |
 | 0.134 | 2026-11-17 | Pass på kostnadsställen till lönebokföringen (avsnitt 5b och 5i, ADR-037 lucka 7, paket P2): avdelningar och pass kan ha ett kostnadsställe, Skicka till lönen skriver en tidrapport per dag, löneart och kostnadsställe (Timlön och dagens övertid och mertid delas efter passens planerade minuter, OB efter den OB passen ger enligt avtalet, i hundradels timmar med största rest; veckans eller periodens övertid och mertid på anställningens), och lönekörningen för kostnadsstället till lönebeskedets rad. Lönens verifikation bokför den raden på dess kostnadsställe; övriga rader får anställningens kostnadsställe och projekt bara när inställningen Kostnadsställe och projekt från anställningen och lönearten säger det (inställningen lästes inte förut). Arbetsgivaravgifterna på 7510 fördelas per lönebesked i proportion till avgiftsunderlaget per kostnadsställe, i hela ören med största rest, så att verifikationen balanserar. Tid att attestera läser nu ett publicerat pass som ändrats till utkast med rätt klockslag. Nya nullbara kolumner `cost_center_id` på `planning_areas`, `planning_shifts`, `time_reports` och `payslip_lines`. Ingen bokförd verifikation ändras. |
+| 0.135 | 2026-11-18 | Signering med flera undertecknare (avsnitt 5, ADR-046 tillägg 2026-11-18, paket S1): ett kuvert har ett dokument, upp till tio undertecknare i steg (samma steg signerar samtidigt) och upp till tio kopiemottagare. En offert blir order först när alla har signerat; ett avböjande eller ett tillbakadraget kuvert ger ingen order. Varje befintlig signeringsbegäran fick ett eget kuvert med samma status, utan att bevisen ändrades. Ingen bokföringsregel ändras. |

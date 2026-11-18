@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Signing;
 
 use App\Models\Company;
+use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Support\Branding\Brand;
 use Dompdf\Dompdf;
@@ -40,6 +41,29 @@ final class SigningPdfs
             'company' => $company,
             'brand' => Brand::for($company),
             'title' => self::title($request),
+        ])->render());
+    }
+
+    /**
+     * The summary of a completed envelope with several signers (ADR-046
+     * amendment, gap 1), for the copy recipients and the other signers: the
+     * document, its SHA-256, and each signer's name, title, time and method.
+     * Never the e-mail addresses, IP addresses, browsers or drawn signatures
+     * (data minimisation, GDPR art. 5.1 c): those stay in each signer's full
+     * certificate, which only the company and that signer get.
+     */
+    public static function envelopeSummary(SigningEnvelope $envelope): string
+    {
+        $company = Company::query()->findOrFail($envelope->company_id);
+        $signers = SigningRequest::query()->where('envelope_id', $envelope->id)->where('status', SigningStatus::Signed->value)->orderBy('step')->orderBy('signed_at')->orderBy('id')
+            ->get(['id', 'step', 'signer_name', 'signer_title', 'signed_at', 'signature_method']);
+
+        return self::render(view('signing.summary', [
+            'envelope' => $envelope,
+            'signers' => $signers,
+            'company' => $company,
+            'brand' => Brand::for($company),
+            'title' => (string) $envelope->title,
         ])->render());
     }
 

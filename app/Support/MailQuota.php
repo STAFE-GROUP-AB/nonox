@@ -29,4 +29,19 @@ final class MailQuota
 
         RateLimiter::hit($key, 3600);
     }
+
+    /**
+     * Counts mails that are sent because of someone else's act and must not
+     * be refused, such as the next signers' links and the copies when a
+     * signer signs (ADR-046 S1): they use up the hour's quota so that the
+     * company's own sends are held back, but the act itself always succeeds.
+     */
+    public static function count(Company $company, string $kind, int $mails): void
+    {
+        $key = "mail-quota:{$kind}:{$company->id}";
+
+        for ($i = 0; $i < $mails; $i++) {
+            RateLimiter::hit($key, 3600);
+        }
+    }
 }

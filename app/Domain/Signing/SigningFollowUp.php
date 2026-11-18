@@ -6,12 +6,16 @@ namespace App\Domain\Signing;
 
 use App\Actions\Invoicing\ProgressSalesDocument;
 use App\Mail\SignedDocumentMail;
+use App\Mail\SigningEnvelopeMail;
 use App\Models\Company;
 use App\Models\SalesDocument;
+use App\Models\SigningCopyRecipient;
+use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Models\User;
 use App\Notifications\SigningNotice;
 use App\Support\Audit\Audit;
+use App\Support\MailQuota;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -35,6 +39,14 @@ use Illuminate\Validation\ValidationException;
  *
  * Declined: the hooks' notes and a notice; the document stays open for the
  * seller to decide.
+ *
+ * An envelope with several signers (ADR-046 amendment, gap 1) is followed
+ * up once, when it is COMPLETED, through the request of the signer who
+ * completed it (every signer row carries the same document, deal and
+ * invoice choice). A hook that implements SigningEnvelopeHook is called
+ * with the envelope; any other hook gets SigningHook::signed() as before
+ * (the one-signer adapter). The company's copy then carries every signer's
+ * certificate (SigningEnvelopeMail).
  */
 class SigningFollowUp
 {
@@ -58,6 +70,15 @@ class SigningFollowUp
                 return;
             }
 
+            // Locked before its status and follow-up time are read, so two runs never both follow it up.
+            $envelope = $request->envelope_id === null ? null : SigningEnvelope::query()->whereKey($request->envelope_id)->lockForUpdate()->first();
+            $several = $envelope instanceof SigningEnvelope && SigningEnvelopes::hasSeveralSigners($envelope->id);
+
+            // Several signers: the follow-up runs once, when everyone has signed.
+            if ($several && ($envelope->status !== EnvelopeStatus::Completed || $envelope->followed_up_at !== null)) {
+                return;
+            }
+
             $actor = $this->actor($company, $request);
             $orderId = null;
             $invoiceId = null;
@@ -69,21 +90,28 @@ class SigningFollowUp
             }
 
             foreach ($this->hooks->all() as $hook) {
-                $skipped = [...$skipped, ...$hook->signed($company, $request, $actor, $orderId, $invoiceId)];
+                $skipped = [...$skipped, ...($several && $hook instanceof SigningEnvelopeHook
+                    ? $hook->completed($company, $envelope, $request, $actor, $orderId, $invoiceId)
+                    : $hook->signed($company, $request, $actor, $orderId, $invoiceId))];
             }
 
             $request->forceFill(['order_id' => $orderId, 'invoice_id' => $invoiceId, 'followed_up_at' => now()])->save();
+
+            if ($envelope instanceof SigningEnvelope && $envelope->followed_up_at === null) {
+                $envelope->forceFill(['followed_up_at' => now()])->save();
+            }
 
             Audit::record('crm.signing_followed_up', $request, array_filter(['signing_request_id' => $request->id, 'order_id' => $orderId, 'invoice_id' => $invoiceId, 'skipped' => $skipped === [] ? null : $skipped]), $company, $actor);
 
             $this->notify($company, $request, match (true) {
                 in_array(self::CHANGED_AFTER_SIGNING, $skipped, true) => __(':title ändrades efter att den signerades. Ordern skapades inte; kontrollera offerten mot den signerade PDF:en.', ['title' => $title]),
+                $skipped === [] && $several => $request->isQuote() ? __(':title är signerad av alla undertecknare.', ['title' => $title]) : __('Avtalet ”:title” är signerat av alla undertecknare.', ['title' => $title]),
                 $skipped === [] => $request->isQuote() ? __(':title är signerad av kunden.', ['title' => $title]) : __('Avtalet ”:title” är signerat.', ['title' => $title]),
                 default => __(':title är signerad, men allt kunde inte göras automatiskt. Öppna offerten och gör order eller faktura för hand.', ['title' => $title]),
             });
 
             // The signer's copy went from SignAtLink when the signature was saved; the company's goes here.
-            $this->mailCompanyCopy($company, $request);
+            $this->mailCompanyCopy($company, $request, $several ? $envelope : null);
         });
     }
 
@@ -117,6 +145,42 @@ class SigningFollowUp
         }
 
         Mail::to($request->email)->queue((new SignedDocumentMail($request->id, $company->id, true))->afterCommit());
+    }
+
+    /**
+     * The copies when an envelope with several signers is completed: each
+     * copy recipient and each signer gets the document and the summary of
+     * the signing (never another signer's full certificate), queued after
+     * commit. Must run inside the company, in the signing transaction. The
+     * mails count against the company's mail quota but are never refused:
+     * the signature that triggers them is already saved. (The company's own
+     * copy, with the full certificates, goes from the follow-up.)
+     */
+    public static function mailEnvelopeCopies(SigningEnvelope $envelope): void
+    {
+        $company = Company::query()->find($envelope->company_id);
+
+        if (! $company instanceof Company || $company->isTestCompany()) {
+            return;
+        }
+
+        $copies = SigningCopyRecipient::query()->where('envelope_id', $envelope->id)->whereNull('sent_copy_at')->get(['id', 'email']);
+
+        $signers = SigningRequest::query()->where('envelope_id', $envelope->id)->where('status', SigningStatus::Signed->value)->pluck('email');
+
+        foreach ($copies as $copy) {
+            Mail::to($copy->email)->queue((new SigningEnvelopeMail($envelope->id, $company->id, SigningEnvelopeMail::COPY))->afterCommit());
+        }
+
+        foreach ($signers as $email) {
+            Mail::to((string) $email)->queue((new SigningEnvelopeMail($envelope->id, $company->id, SigningEnvelopeMail::COPY, toSigner: true))->afterCommit());
+        }
+
+        MailQuota::count($company, 'documents', $copies->count() + $signers->count());
+
+        if ($copies->isNotEmpty()) {
+            SigningCopyRecipient::query()->whereKey($copies->modelKeys())->update(['sent_copy_at' => now()]);
+        }
     }
 
     /** Must run inside the company, in the decline's transaction. */
@@ -219,7 +283,7 @@ class SigningFollowUp
     }
 
     /** The signed PDF and the certificate to the company (its address, else the sender's), unless that is the signer's own. */
-    private function mailCompanyCopy(Company $company, SigningRequest $request): void
+    private function mailCompanyCopy(Company $company, SigningRequest $request, ?SigningEnvelope $envelope = null): void
     {
         if ($company->isTestCompany()) {
             return;
@@ -231,7 +295,12 @@ class SigningFollowUp
             return;
         }
 
-        Mail::to(mb_strtolower($address))->queue((new SignedDocumentMail($request->id, $company->id, false))->afterCommit());
+        // With several signers the company's copy carries every signer's certificate.
+        $mail = $envelope instanceof SigningEnvelope
+            ? new SigningEnvelopeMail($envelope->id, $company->id, SigningEnvelopeMail::COMPANY)
+            : new SignedDocumentMail($request->id, $company->id, false);
+
+        Mail::to(mb_strtolower($address))->queue($mail->afterCommit());
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Signing;
 
+use App\Domain\Signing\SigningEnvelopes;
 use App\Domain\Signing\SigningEventType;
 use App\Domain\Signing\SigningStatus;
 use App\Models\CompanyModule;
@@ -43,6 +44,8 @@ final class RevokeQuoteLinksClosedWithCrm
 
         foreach ($requests as $request) {
             CurrentCompany::run((int) $request->company_id, fn () => DB::transaction(function () use ($request, $now): void {
+                // The document first, then the link and its envelope: the order every signing path takes.
+                SigningRequest::query()->whereKey($request->id)->first()?->document(lock: true);
                 $locked = SigningRequest::query()->whereKey($request->id)->lockForUpdate()->first();
 
                 if ($locked === null || $locked->status !== SigningStatus::Pending) {
@@ -52,7 +55,8 @@ final class RevokeQuoteLinksClosedWithCrm
                 $locked->forceFill(['status' => SigningStatus::Revoked, 'revoked_at' => $now])->save();
                 SigningEvent::create(['signing_request_id' => $locked->id, 'event' => SigningEventType::Revoked]);
                 Audit::record('crm.signing_revoked', $locked, ['signing_request_id' => $locked->id, 'reason' => 'closed_without_crm'], $locked->company_id);
-            }));
+                app(SigningEnvelopes::class)->revoked($locked, null, 'closed_without_crm');
+            }, SignAtLink::ATTEMPTS));
         }
 
         return $requests->count();

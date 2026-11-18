@@ -7,6 +7,7 @@ namespace App\Actions\Signing;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SignedDocuments;
+use App\Domain\Signing\SigningEnvelopes;
 use App\Domain\Signing\SigningEventType;
 use App\Domain\Signing\SigningFollowUp;
 use App\Domain\Signing\SigningPdfs;
@@ -42,6 +43,10 @@ use Throwable;
  * revoked when it is accepted here; a document signed at a link can no
  * longer be accepted here.
  *
+ * The portal stays a one-signer channel (ADR-046 amendment, gap 1): each
+ * acceptance or decline is a one-signer envelope, and the links it revokes
+ * withdraw their envelopes.
+ *
  * TODO(legal-verify): L7 — the evidential value of acceptance in a signed-in
  * session compared with the link (eIDAS art. 25(1), freedom of form).
  */
@@ -51,7 +56,10 @@ final class SignInSession
 
     private const int ATTEMPTS = SignAtLink::ATTEMPTS;
 
-    public function __construct(private readonly SignableTypes $types) {}
+    public function __construct(
+        private readonly SignableTypes $types,
+        private readonly SigningEnvelopes $envelopes,
+    ) {}
 
     /**
      * @param  array{email: string, name: string, contact_id: ?int, ip: ?string, user_agent: ?string}  $signer
@@ -81,6 +89,7 @@ final class SignInSession
             $path = dirname($request->document_path).'/'.pathinfo($request->document_path, PATHINFO_FILENAME).'-signeringsbevis.pdf';
             Storage::disk(SigningRequest::DISK)->put($path, $certificate);
             $request->forceFill(['signed_document_path' => $path, 'signed_document_sha256' => hash('sha256', $certificate)])->save();
+            $this->envelopes->signed($request);
 
             $locked->markSigned($request->signed_at ?? CarbonImmutable::now(), $request->document_sha256);
 
@@ -120,6 +129,7 @@ final class SignInSession
 
             $request->forceFill(['status' => SigningStatus::Declined, 'declined_at' => now(), 'decline_reason' => blank($reason) ? null : trim((string) $reason)])->save();
             SigningEvent::create(['signing_request_id' => $request->id, 'event' => SigningEventType::Declined]);
+            $this->envelopes->declined($request);
 
             Audit::record('crm.signing_declined', $request, ['signing_request_id' => $request->id, 'document_type' => $request->document_type, 'channel' => self::PORTAL, 'reason_given' => ! blank($reason)], $request->company_id);
             app(SigningFollowUp::class)->declined($request);
@@ -139,6 +149,11 @@ final class SignInSession
     {
         $locked = $this->types->documentFor(new SigningRequest($this->types->attributesFor($document)), lock: true);
 
+        // An envelope with several signers that is still out is not overtaken by one person in the portal (ADR-046 S1).
+        if ($locked instanceof Signable && SignedDocuments::awaitsSeveralSigners($locked, $this->types)) {
+            throw ValidationException::withMessages(['document' => __('Offerten väntar på signering av flera.')]);
+        }
+
         if (! $locked instanceof Signable || ! $locked->signingIsOpen() || ($locked instanceof SalesDocument && SignedDocuments::isQuoteSigned($locked->id))) {
             throw ValidationException::withMessages(['document' => __('Dokumentet går inte längre att godkänna. Det kan redan vara godkänt, avböjt eller stängt.')]);
         }
@@ -154,10 +169,18 @@ final class SignInSession
             ->lockForUpdate()
             ->get();
 
+        $done = [];
+
         foreach ($open as $link) {
+            // Revoking one link withdraws its envelope and that envelope's other links: never twice.
+            if (in_array($link->id, $done, true)) {
+                continue;
+            }
+
             $link->forceFill(['status' => SigningStatus::Revoked, 'revoked_at' => now()])->save();
             SigningEvent::create(['signing_request_id' => $link->id, 'event' => SigningEventType::Revoked]);
             Audit::record('crm.signing_revoked', $link, ['signing_request_id' => $link->id, 'reason' => 'ACCEPTED_IN_PORTAL'], $link->company_id);
+            $done = [...$done, $link->id, ...$this->envelopes->revoked($link, null, 'ACCEPTED_IN_PORTAL')];
         }
 
         return $locked;
@@ -170,8 +193,11 @@ final class SignInSession
         $path = "crm-signing/{$document->signingCompanyId()}/".Str::uuid()->toString().'.pdf';
         Storage::disk(SigningRequest::DISK)->put($path, $pdf['bytes']);
 
+        $envelope = $this->envelopes->create($document, ['path' => $path, 'name' => $pdf['name'], 'sha256' => hash('sha256', $pdf['bytes'])], now()->toImmutable(), null);
+
         $request = SigningRequest::create([
             ...$this->types->attributesFor($document),
+            'envelope_id' => $envelope->id,
             // No link: an unguessable token is stored only to fill the column; nobody ever holds it.
             'token_hash' => SigningToken::generate()['hash'],
             'email' => mb_strtolower($signer['email']),

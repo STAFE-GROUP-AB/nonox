@@ -587,6 +587,55 @@ Several documents per envelope; signers added after sending; delegating a
 signing step to another person; witnesses as a separate legal category (a
 witness is a signer with the role "Vittne").
 
+### As built in S1 (2026-11-18)
+
+- Migration `database/migrations/2027_01_25_100000_create_signing_envelopes.php`:
+  `signing_envelopes`, `signing_link_tokens`, `signing_copy_recipients`, and
+  `envelope_id` + `step` on `crm_signing_requests`. Only the columns S1 uses;
+  the later gaps add theirs. Backfill as specified (verified on a copy with a
+  signed, a declined, a revoked and a pending request: every existing column,
+  `updated_at` included, unchanged).
+- **Deviation: the protect trigger is not replaced.** The existing evidence
+  triggers stay exactly as they are; a new trigger
+  `crm_signing_requests_protect_envelope` lets `envelope_id` be set once from
+  null and keeps `step` fixed. `role_key` comes with gap 8. Counting triggers
+  hold the ten-signer and ten-copy limits; `signing_envelopes_protect` keeps
+  the document fixed and a finished envelope fixed except `followed_up_at`
+  (once); a completed envelope is never deleted except by the company
+  cascade.
+- **Deviation: lock order.** Every path takes the document's row first (as
+  signing always has), then the signer's request, then the envelope and its
+  other signer rows, rather than "envelope, request, document": changing the
+  order of the existing one-signer paths would risk deadlocks between old and
+  new paths. Since every path holds the document first, two parallel signers
+  of one envelope sign one after the other.
+- A one-signer envelope keeps its token on the request, as before, and writes
+  no new audit entries; tokens for envelopes with several signers live in
+  `signing_link_tokens` (the request's own `token_hash` then holds an
+  unguessable value nobody holds, as the portal already does).
+- The panel's "Fler undertecknare" asks for an e-mail address and a step per
+  signer; a signer's name is still what the signer types when signing.
+  Several signers are offered for quotes and agreements; the portal and ÄTA
+  stay one-signer channels and make one-signer envelopes.
+- `signing:manage` does not exist yet (gap 10, S7): in S1 withdrawing an
+  envelope needs the document's own sending rights, as revoking a link did.
+- Quotes: while an envelope with several signers is out and someone has
+  signed, the quote cannot be changed (`SignedDocuments::isQuoteSigned`); a
+  declined or withdrawn envelope, or one past its last day, frees it again.
+  The customer portal refuses acceptance while such an envelope is out.
+- Review round (2026-11-18): copy recipients and the other signers get the
+  document and a **summary** (`SigningPdfs::envelopeSummary`: names,
+  titles, times, methods, the SHA-256), never another signer's e-mail, IP
+  address, browser or drawn signature (GDPR art. 5.1 c); the company gets the
+  full certificates, and each signer their own. The signing page says so, and
+  the NOTICE and COPY mails carry a short art. 14 text
+  (`TODO(legal-verify)`). Every signer gets the COPY at completion. The
+  revocation paths lock the document first. Triggers also refuse a return to
+  DRAFT, a COMPLETED envelope with an unsigned signer, deleting a completed
+  envelope's copy recipients, and changing `created_by` on a finished
+  envelope other than to null. The next step's links and the copies count
+  against the mail quota without ever refusing (`MailQuota::count`).
+
 ## Gap 2: fields in the PDF per signer
 
 ### What exists

@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-signering-fler-undertecknare",
+      "datum": "2026-11-18T02:50:00+01:00",
+      "rubrik": "Fler undertecknare på offerter och avtal",
+      "beskrivning": "Med Fler undertecknare skickar du en offert eller ett avtal till upp till tio personer som signerar i tur och ordning eller samtidigt, och till upp till tio kopiemottagare som får dokumentet med alla signeringsbevis. En offert blir en order först när alla har signerat, och avböjer någon avslutas signeringen för alla. Med en undertecknare fungerar signeringen som förut.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-18-planering-i-toppklass",
       "datum": "2026-11-18T00:55:00+01:00",
       "rubrik": "Planering i toppklass",
