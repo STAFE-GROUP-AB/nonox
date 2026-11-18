@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.144
+- Version: 0.145
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -826,6 +826,32 @@ year").
   BFNAR 2013:2 om form och läsbarhet för räkenskapsinformation som laddas upp
   här, och om den sparade PDF-texten är räkenskapsinformation (förslag:
   härledd data som raderas med filen).
+- **Alla dokument (ADR-081 lucka 9, paket E20).** Sidan Alla dokument
+  (`/dokument/alla`) är en läsmodell över dokumentarkivet och funktionernas
+  egna filer: underlag på verifikationer (`voucher_attachments`),
+  leverantörsfakturornas filer, bilagor i Inkorgen, dokument för NONOX Avtal,
+  PDF:er som skickats för signering och signeringsbevis, filer i
+  kundportalens trådar, godkända protokoll i Styrelserum och lönebesked.
+  Varje källa är en adapter (`App\Domain\Documents\Sources`) som läser
+  källans egen tabell och som visas bara för den som får öppna källan på
+  dess egen sida eller filväg: samma behörighet som där (verifikationer
+  `vouchers:view`, leverantörsfakturor `SupplierInvoicePolicy::canSeePayables`,
+  Inkorgen `inbox:view`, NONOX Avtal `AgreementAi::availableFor`, signering
+  `invoices:view` för offerter och `crm:view` för avtal, kundportalen
+  `customer-portal:view`, protokoll `meetings:view`, företagets dokument
+  `DocumentPolicy` och `DocumentAccess` per lagringsklass). Lönebesked och
+  anställdas dokument i NONOX Avtal kräver dessutom `payroll:view-sensitive`,
+  vilket källornas egna sidor inte kräver. En medlem som är begränsad till
+  kostnadsställen eller projekt får inte sidan, och verifikationer och
+  leverantörsfakturor visas aldrig för en sådan medlem. Ingen fil kopieras,
+  ingen ny lagring tillkommer och ingen verifikation skapas eller ändras:
+  raderna länkar till filen där den ligger. Källorna läses med en enda
+  UNION-fråga per sida, så antalet frågor beror inte på antalet dokument.
+  Varje adapter filtrerar på företaget. Titlar som lagras krypterade
+  (personaldokument och dokument för NONOX Avtal) dekrypteras först för den
+  som får se dem och går inte att söka i. Ingenting skrivs i
+  behandlingshistoriken för att en lista visas; filerna öppnas genom källans
+  egna filvägar, som gör sina egna kontroller och loggar som förut.
 
 ### 4.6 Konteringsmallar
 
@@ -6385,3 +6411,4 @@ påverkar bokföringen och fakturan:
 | 0.142 | 2026-11-18 | SIE-budget (avsnitt 4.9, 4.11 och 4.12a, ADR-081 paket E4): `#PBUDGET 0` i en SIE-fil blir en ny budget när filen läses in, med hela beloppet, varje kostnadsställe och varje projekt per konto och månad exakt som i filen; en budget som inte går att läsa säkert läses inte in men hindrar aldrig bokföringen. Under Budget kan bara budgeten i en fil av typ 2, 3 eller 4 läsas in, i två steg, mot räkenskapsår, konton och objekt som redan finns. SIE-exporten skriver årets budget bara med rutan Ta med budget. Budgeten bokförs aldrig och ingår inte i avstämningen eller kontrollsummekedjan. Ingen verifikation ändras. |
 | 0.143 | 2026-11-18 | Rullande prognos (avsnitt 4.12a, ADR-081 lucka 2, paket E5): prognoser som versioner av slaget `FORECAST` i `budget_versions` med brytmånad, utfall ur bokförda verifikationer till och med brytmånaden och tre regler för månaderna efter (budgeten, snittet av de senaste månaderna, samma månad i fjol med procentsats), egna belopp som markeras och behålls, och Rullande 12 månader över årsskiftet. Nya databaskontroller på `budget_versions`: brytmånad bara på prognoser, och alltid en månads sista dag. Prognosen bokförs aldrig, och ingen bokförd verifikation ändras. |
 | 0.144 | 2026-11-18 | Konsolidering och körlogg för koncerner (avsnitt 4.10b, ADR-060 tillägg 2.4, ADR-081 paket E24): koncernens bekräftade medlemmar läses var för sig inom sitt företag, ett dotterföretags intäkter och kostnader räknas från förvärvet till avyttringen och dess balans tas med om det är medlem periodens sista dag, kontona flyttas enligt kontomappningen (`group_account_maps`, inom samma kontoklass) och beloppen summeras. Varje körning sparas i `corporate_group_runs` med indata och resultat och deras SHA-256 (samma indata ger samma resultat); tabellen kan inte ändras eller tas bort. Inga elimineringar ännu. Ingenting skrivs i något företags bokföring och ingen verifikation ändras. |
+| 0.145 | 2026-11-18 | Alla dokument (avsnitt 4.5, ADR-081 lucka 9, paket E20): en gemensam lista över företagets dokument och funktionernas egna filer, med en adapter per källa som tillämpar källans egen behörighet och bara läser, utan kopior, ny lagring eller ändring av någon verifikation. Lönebesked och anställdas dokument kräver dessutom `payroll:view-sensitive`. |

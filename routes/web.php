@@ -321,6 +321,8 @@ Route::middleware([
         Route::view('/korjournal', 'mileage.index')->name('mileage.index');
         // The company's document archive (ADR-081 gap 9, E19).
         Route::view('/dokument', 'documents.index')->name('documents.index');
+        // One list over the company's documents and every feature's files, each source by its own permission (E20).
+        Route::view('/dokument/alla', 'documents.all')->name('documents.all');
         Route::get('/dokument/{document}', [DocumentController::class, 'show'])->whereNumber('document')->name('documents.show');
         Route::get('/dokument/{document}/versioner/{version}', [DocumentController::class, 'file'])->whereNumber('document')->whereNumber('version')->name('documents.file');
         Route::view('/bankavstamning', 'accounting.bank-reconciliation')->name('accounting.bankReconciliation');

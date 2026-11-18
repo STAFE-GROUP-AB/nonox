@@ -2,7 +2,7 @@
 beskrivning: Företagets avtal, försäkringar, tillstånd och policyer med versioner, taggar, kopplingar, lagringstid och bevarandespärr. Filerna lagras krypterade.
 ordning: 78
 roller: [owner, admin, accountant, bookkeeper, auditor, payroll_admin]
-rutter: [documents.index, documents.show]
+rutter: [documents.index, documents.show, documents.all]
 sokord: [dokument, dokumentarkiv, avtal, försäkring, tillstånd, policy, lagringstid, bevarandespärr, gallring, versioner, personaldokument, räkenskapsinformation]
 ---
 
@@ -68,6 +68,32 @@ En **bevarandespärr** hindrar att ett dokument raderas, oavsett lagringstid, ti
 | Löneadministratör (modulen Lön) | Bara personaldokument | Bara personaldokument | Bara personaldokument |
 
 Personaldokument kräver dessutom behörigheten att se känsliga löneuppgifter, som löneadministratören har. Den som inte har den ser inte att dokumenten finns. Är modulen Lön avstängd kan ägaren se, ladda ner och radera personaldokumenten, till exempel för att svara på en begäran om registerutdrag eller radering; varje gång skrivs i behandlingshistoriken.
+
+## Alla dokument
+
+Under **Alla dokument** (länken överst på sidan Dokument) ser du företagets egna dokument och filerna i övriga delar av NONOX i en lista, nyast först: underlag på verifikationer, leverantörsfakturor, bilagor i Inkorgen, dokument för NONOX Avtal, PDF:er som skickats för signering och signeringsbevis, filer i kundportalen, godkända protokoll från Styrelserum och lönebesked. Ingen fil kopieras: rubriken öppnar filen där den ligger, och **Hör till** visar vad den hör till, till exempel verifikationen eller leverantörsfakturan.
+
+![Alla dokument, med företagets egna dokument och filerna i övriga delar av NONOX.](/bilder/manual/bokforing/dokument-alla.webp)
+
+Välj **Källa** för att bara se en del, och sök under **Sök i rubriken**. Både sökningen och filtret står kvar i adressen. Sökningen läser inte krypterade rubriker, som personaldokument och dokument för NONOX Avtal.
+
+Varje källa visas bara för den som får öppna den i sin egen del, med samma behörighet som där:
+
+| Källa | Vem ser den |
+|---|---|
+| Företagets dokument | Den som får se dokument; personaldokument kräver dessutom behörigheten att se känsliga löneuppgifter |
+| Underlag på verifikationer | Den som får se verifikationer |
+| Leverantörsfakturor | Den som får se leverantörsfakturor |
+| Inkorgen | Den som får se Inkorgen |
+| Kollektivavtal (NONOX Avtal) | Den som får hantera avtal och använda NONOX AI; dokument om en anställd kräver dessutom behörigheten att se känsliga löneuppgifter |
+| Signering | Den som får se fakturering (för offerter) eller CRM (för avtal) |
+| Kundportalen | Den som får se kundportalen |
+| Styrelserum, protokoll | Den som får se möten i Styrelserum |
+| Lönebesked | Den som får se lönebesked och dessutom känsliga löneuppgifter |
+
+Ägare, redovisningskonsulter och revisorer ser lönebesked i lönearkivet, inte här: här visas de bara för den som får se känsliga löneuppgifter, till exempel löneadministratören.
+
+En medlem som är begränsad till vissa kostnadsställen eller projekt ser inte sidan alls. Den som inte får se någon källa får ett meddelande om att sidan inte är tillgänglig för dem.
 
 ## Registerutdrag
 
