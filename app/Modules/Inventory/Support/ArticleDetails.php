@@ -10,6 +10,7 @@ use App\Models\Supplier;
 use App\Modules\Inventory\Domain\Gtin;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Domain\StockClass;
+use App\Modules\Inventory\Domain\Tracking;
 use App\Modules\Inventory\Models\StockLevel;
 use App\Modules\Inventory\Models\StockLocation;
 use App\Support\Money\Money;
@@ -31,7 +32,7 @@ final class ArticleDetails
         'sku', 'gtin', 'scanner_code', 'brand', 'model', 'description', 'properties', 'colours', 'materials',
         'weight_grams', 'length_mm', 'width_mm', 'height_mm', 'purchase_price', 'vat_treatment',
         'default_supplier_id', 'supplier_article_number', 'is_stock_item', 'reorder_point', 'reorder_quantity',
-        'default_location_id', 'net_realisable_value', 'net_realisable_value_note', 'stock_class',
+        'default_location_id', 'net_realisable_value', 'net_realisable_value_note', 'stock_class', 'tracking', 'expiry_required',
     ];
 
     /**
@@ -92,6 +93,8 @@ final class ArticleDetails
             'net_realisable_value' => ['nullable', 'string'],
             'net_realisable_value_note' => ['nullable', 'string', 'max:255'],
             'stock_class' => ['nullable', Rule::enum(StockClass::class)],
+            'tracking' => ['nullable', Rule::enum(Tracking::class)],
+            'expiry_required' => ['nullable', 'boolean'],
         ], [
             'gtin.regex' => __('EAN/GTIN ska vara 8, 12, 13 eller 14 siffror.'),
             'gtin.unique' => __('EAN-koden används redan av en annan artikel.'),
@@ -179,6 +182,23 @@ final class ArticleDetails
             }
 
             $attributes['is_stock_item'] = $stocked;
+        }
+
+        if (array_key_exists('tracking', $validated) || array_key_exists('expiry_required', $validated)) {
+            $current = $article instanceof Article ? $article->tracking->value : Tracking::None->value;
+            $tracking = Tracking::from((string) ($validated['tracking'] ?? $current));
+            $stocked = array_key_exists('is_stock_item', $attributes) ? (bool) $attributes['is_stock_item'] : ($article instanceof Article && $article->is_stock_item);
+
+            if ($tracking->isTracked() && ! $stocked) {
+                throw ValidationException::withMessages(['tracking' => __('Bara lagerförda artiklar kan spåras med batch eller serienummer.')]);
+            }
+
+            if ($article !== null && $tracking !== $article->tracking && StockLevel::query()->where('article_id', $article->id)->where('quantity_milli', '<>', 0)->exists()) {
+                throw ValidationException::withMessages(['tracking' => __('Artikeln har varor i lager. Inventera ner den till noll innan spårningen ändras, så att varje enhet får sitt batch eller serienummer när den tas emot.')]);
+            }
+
+            $attributes['tracking'] = $tracking->value;
+            $attributes['expiry_required'] = $tracking->isTracked() && (bool) ($validated['expiry_required'] ?? ($article instanceof Article && $article->expiry_required));
         }
 
         return $attributes;

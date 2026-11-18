@@ -34,6 +34,10 @@ Skillnaderna förs in i lagret som inventeringsrörelser. Rader du inte har räk
 > [!IMPORTANT]
 > Undvik att ta emot eller plocka varor på platserna medan du räknar. Skillnaden räknas mot systemets antal när inventeringen startade.
 
+## Batch och serienummer
+
+En artikel med spårning räknas per batch eller serienummer, med en rad för varje. Se [Batcher och serienummer](/manual/lager/batcher-och-serienummer).
+
 ## Läs också
 
 - [Lagervärde vid bokslut](/manual/lager/lagervarde-vid-bokslut)

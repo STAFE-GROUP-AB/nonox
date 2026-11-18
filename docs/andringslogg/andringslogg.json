@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-batch-och-serienummer",
+      "datum": "2026-11-18T01:40:00+01:00",
+      "rubrik": "Batch och serienummer i Lager",
+      "beskrivning": "Lagerförda artiklar kan nu följas per batch med bäst före-datum eller per serienummer. Plocklistor föreslår den batch som går ut först, en batch kan spåras från leverantören till de kunder som har fått den, och lagervärdet vid bokslutet räknas som förut per artikel. NONOX visar vad lagret vet men intygar inte att företaget uppfyller kraven på spårbarhet.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-18-planering-i-toppklass",
       "datum": "2026-11-18T00:55:00+01:00",
       "rubrik": "Planering i toppklass",

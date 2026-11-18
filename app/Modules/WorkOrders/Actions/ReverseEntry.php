@@ -84,6 +84,7 @@ class ReverseEntry
                     'location_id' => $entry->stock_location_id,
                     'quantity_milli' => $entry->quantity_milli,
                     'unit_cost_ore' => $entry->unit_cost_ore,
+                    'lots_from' => $entry,
                 ]], CarbonImmutable::today(), $reversal, __('Arbetsorder :number', ['number' => $workOrder->number]));
             }
 

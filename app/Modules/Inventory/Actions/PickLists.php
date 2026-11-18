@@ -18,6 +18,8 @@ use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\PickListLine;
 use App\Modules\Inventory\Models\StockLevel;
 use App\Modules\Inventory\Models\StockLocation;
+use App\Modules\Inventory\Models\StockLot;
+use App\Modules\Inventory\Models\StockLotLevel;
 use App\Modules\Inventory\Support\StockLedger;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
@@ -131,6 +133,37 @@ class PickLists
     }
 
     /**
+     * Picks another batch or serial number for a line than the one suggested
+     * (FEFO): one that is in stock at the line's location (ADR-081 E12).
+     */
+    public function setLot(User $user, Company $company, PickListLine $line, ?int $lotId): PickListLine
+    {
+        $this->guard($user, $company, 'count');
+
+        if (PickList::query()->whereKey($line->pick_list_id)->value('status') !== PickList::OPEN) {
+            throw ValidationException::withMessages(['lot_id' => __('Plocklistan är redan klar.')]);
+        }
+
+        return CurrentCompany::run($company, function () use ($line, $lotId): PickListLine {
+            if ($lotId === null) {
+                $line->update(['lot_id' => null]);
+
+                return $line;
+            }
+
+            $level = StockLotLevel::query()->where('lot_id', $lotId)->where('article_id', $line->article_id)->where('location_id', $line->location_id)->where('quantity_milli', '>', 0)->first();
+
+            if (! $level instanceof StockLotLevel) {
+                throw ValidationException::withMessages(['lot_id' => __('Den batchen eller det serienumret finns inte på platsen.')]);
+            }
+
+            $line->update(['lot_id' => $lotId]);
+
+            return $line;
+        });
+    }
+
+    /**
      * Posts a PICK movement for every picked line and closes the list. Lines
      * not marked are counted as picked in full, so a list picked without
      * changes is one click.
@@ -160,7 +193,7 @@ class PickLists
                 }
 
                 $line->update(['picked_milli' => $picked]);
-                $movements[] = ['article_id' => $line->article_id, 'location_id' => $line->location_id, 'quantity_milli' => -$picked];
+                $movements[] = ['article_id' => $line->article_id, 'location_id' => $line->location_id, 'quantity_milli' => -$picked, 'lot_id' => $line->lot_id];
             }
 
             if ($movements !== []) {
@@ -204,6 +237,10 @@ class PickLists
         $levels = StockLevel::query()->whereIn('article_id', $articles->keys())->where('quantity_milli', '>', 0)
             ->with('location:id,full_code,sort_key,is_active')->get()->groupBy('article_id');
 
+        $trackedIds = $articles->filter(fn (Article $article): bool => $article->tracking->isTracked())->keys()->all();
+        $lotLevels = $trackedIds === []
+            ? collect()
+            : StockLotLevel::query()->whereIn('article_id', $trackedIds)->where('quantity_milli', '>', 0)->with(['lot', 'location:id,full_code,sort_key,is_active'])->get()->groupBy('article_id');
         $lines = [];
 
         foreach ($wanted as $articleId => $quantity) {
@@ -213,7 +250,9 @@ class PickLists
                 continue;
             }
 
-            array_push($lines, ...self::allocate($article, $quantity, $levels->get($articleId, collect())));
+            array_push($lines, ...($article->tracking->isTracked()
+                ? self::allocateLots($article, $quantity, $lotLevels->get($articleId, collect()))
+                : self::allocate($article, $quantity, $levels->get($articleId, collect()))));
         }
 
         usort($lines, fn (array $a, array $b): int => [$a['sort'] === null, $a['sort'], $a['article_id']] <=> [$b['sort'] === null, $b['sort'], $b['article_id']]);
@@ -231,7 +270,7 @@ class PickLists
             ]);
 
             foreach ($lines as $position => $line) {
-                PickListLine::create(['pick_list_id' => $list->id, 'article_id' => $line['article_id'], 'location_id' => $line['location_id'], 'quantity_milli' => $line['quantity_milli'], 'position' => $position]);
+                PickListLine::create(['pick_list_id' => $list->id, 'article_id' => $line['article_id'], 'location_id' => $line['location_id'], 'lot_id' => $line['lot_id'] ?? null, 'quantity_milli' => $line['quantity_milli'], 'position' => $position]);
             }
 
             Audit::record('inventory.pick_list_created', $list, ['number' => $list->number, 'source' => $label, 'lines' => count($lines)], $company, $user);
@@ -267,6 +306,44 @@ class PickLists
         if ($quantity > 0) {
             $fallback = $article->default_location_id === null ? null : StockLocation::query()->find($article->default_location_id);
             $lines[] = ['article_id' => $article->id, 'location_id' => $fallback?->id, 'quantity_milli' => $quantity, 'sort' => $fallback?->sort_key];
+        }
+
+        return $lines;
+    }
+
+    /**
+     * A tracked article is taken lot by lot in FEFO order (earliest best-before
+     * first, expired last, then oldest received), a line per lot and location;
+     * a serial number is a line of its own. What no lot has is a line without
+     * a lot, so the picker sees it is missing (ADR-081 E12).
+     *
+     * @param  Collection<int, StockLotLevel>  $levels
+     * @return list<array{article_id: int, location_id: ?int, lot_id: ?int, quantity_milli: int, sort: ?string}>
+     */
+    private static function allocateLots(Article $article, int $quantity, Collection $levels): array
+    {
+        $today = CarbonImmutable::today()->toDateString();
+        $levels = $levels->filter(fn (StockLotLevel $level): bool => $level->location instanceof StockLocation && $level->location->is_active && $level->lot instanceof StockLot)
+            ->sortBy(function (StockLotLevel $level) use ($today, $article): string {
+                $expires = $level->lot?->expires_on?->toDateString();
+
+                return sprintf('%d|%d|%s|%s|%d|%s|%012d', $expires !== null && $expires < $today ? 1 : 0, $expires === null ? 1 : 0, $expires ?? '9999-12-31', $level->lot?->received_on->toDateString(), $level->location_id === $article->default_location_id ? 0 : 1, $level->location?->sort_key, $level->lot_id);
+            });
+        $lines = [];
+
+        foreach ($levels as $level) {
+            if ($quantity <= 0) {
+                break;
+            }
+
+            $take = min($quantity, $level->quantity_milli);
+            $lines[] = ['article_id' => $article->id, 'location_id' => $level->location_id, 'lot_id' => $level->lot_id, 'quantity_milli' => $take, 'sort' => $level->location?->sort_key];
+            $quantity -= $take;
+        }
+
+        if ($quantity > 0) {
+            $fallback = $article->default_location_id === null ? null : StockLocation::query()->find($article->default_location_id);
+            $lines[] = ['article_id' => $article->id, 'location_id' => $fallback?->id, 'lot_id' => null, 'quantity_milli' => $quantity, 'sort' => $fallback?->sort_key];
         }
 
         return $lines;

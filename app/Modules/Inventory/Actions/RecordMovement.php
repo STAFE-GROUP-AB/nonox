@@ -11,6 +11,7 @@ use App\Modules\Inventory\Domain\MovementType;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Inventory\Support\StockLedger;
+use App\Modules\Inventory\Support\StockLots;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -30,7 +31,7 @@ class RecordMovement
     public function __construct(private readonly StockLedger $ledger) {}
 
     /**
-     * @param  array<string, mixed>  $input  kind, article_id, location_id, to_location_id (transfer), quantity, date, note
+     * @param  array<string, mixed>  $input  kind, article_id, location_id, to_location_id (transfer), quantity, date, note, lot_id, lot_code, expires_on, serials (a tracked article)
      * @return list<StockMovement>
      */
     public function __invoke(User $user, Company $company, array $input): array
@@ -45,6 +46,10 @@ class RecordMovement
             'quantity' => ['required'],
             'date' => ['required', 'date_format:Y-m-d'],
             'note' => ['nullable', 'string', 'max:255'],
+            'lot_id' => ['nullable', 'integer'],
+            'lot_code' => ['nullable', 'string', 'max:60'],
+            'expires_on' => ['nullable', 'date_format:Y-m-d'],
+            'serials' => ['nullable', 'string', 'max:5000'],
         ], [
             'to_location_id.required_if' => __('Välj vart varorna flyttas.'),
         ], [
@@ -66,12 +71,26 @@ class RecordMovement
         $date = CarbonImmutable::parse((string) $validated['date']);
         $note = $validated['note'] ?? null;
         $line = ['article_id' => (int) $validated['article_id'], 'location_id' => (int) $validated['location_id']];
+        $lotId = ($validated['lot_id'] ?? null) === null || $validated['lot_id'] === '' ? null : (int) $validated['lot_id'];
+
+        // A tracked article's goods come back under a batch or serial numbers (ADR-081 E12); what goes out is taken by FEFO unless a lot is named.
+        $incoming = $validated['kind'] === 'return_in';
+        $lot = ['lot_id' => $lotId];
+
+        if ($incoming && $lotId === null) {
+            $serials = StockLots::codes((string) ($validated['serials'] ?? ''));
+            $lot = $serials !== []
+                ? ['lot_codes' => $serials]
+                : ['lot_code' => trim((string) ($validated['lot_code'] ?? '')) ?: null, 'expires_on' => ($validated['expires_on'] ?? null) ?: null];
+        }
+
+        $lot = array_filter($lot, fn (mixed $value): bool => $value !== null);
 
         return match ($validated['kind']) {
-            'transfer' => $this->ledger->transfer($company, $user, $line['article_id'], $line['location_id'], (int) $validated['to_location_id'], $quantity, $date, $note),
-            'scrap' => $this->ledger->post($company, $user, MovementType::Scrap, [[...$line, 'quantity_milli' => -$quantity]], $date, null, $note),
-            'return_in' => $this->ledger->post($company, $user, MovementType::Return, [[...$line, 'quantity_milli' => $quantity]], $date, null, $note),
-            default => $this->ledger->post($company, $user, MovementType::Return, [[...$line, 'quantity_milli' => -$quantity]], $date, null, $note),
+            'transfer' => $this->ledger->transfer($company, $user, $line['article_id'], $line['location_id'], (int) $validated['to_location_id'], $quantity, $date, $note, $lotId),
+            'scrap' => $this->ledger->post($company, $user, MovementType::Scrap, [[...$line, ...$lot, 'quantity_milli' => -$quantity]], $date, null, $note),
+            'return_in' => $this->ledger->post($company, $user, MovementType::Return, [[...$line, ...$lot, 'quantity_milli' => $quantity]], $date, null, $note),
+            default => $this->ledger->post($company, $user, MovementType::Return, [[...$line, ...$lot, 'quantity_milli' => -$quantity]], $date, null, $note),
         };
     }
 }

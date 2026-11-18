@@ -288,6 +288,8 @@ BEGIN
         ('stock_count_lines', 'SELECT, INSERT, UPDATE, DELETE'),
         ('stock_counts', 'SELECT, INSERT, UPDATE, DELETE'),
         ('stock_levels', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('stock_lot_levels', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('stock_lots', 'SELECT, INSERT, UPDATE, DELETE'),
         ('stock_locations', 'SELECT, INSERT, UPDATE, DELETE'),
         ('stock_movements', 'SELECT, INSERT'),
         ('stock_receipt_lines', 'SELECT, INSERT, UPDATE, DELETE'),

@@ -9,6 +9,7 @@ use App\Modules\Inventory\Actions\RecordMovement;
 use App\Modules\Inventory\Livewire\Concerns\InventoryPage;
 use App\Modules\Inventory\Models\StockLevel;
 use App\Modules\Inventory\Models\StockLocation;
+use App\Modules\Inventory\Support\StockLots;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\View\View;
@@ -70,7 +71,7 @@ class ArticlesPage extends Component
         $from = StockLevel::query()->where('article_id', $article->id)->where('quantity_milli', '>', 0)->value('location_id') ?? $article->default_location_id;
 
         $this->moving = $article->id;
-        $this->form = ['kind' => $kind, 'location_id' => $from, 'to_location_id' => null, 'quantity' => '', 'date' => CarbonImmutable::today()->toDateString(), 'note' => ''];
+        $this->form = ['kind' => $kind, 'location_id' => $from, 'to_location_id' => null, 'quantity' => '', 'date' => CarbonImmutable::today()->toDateString(), 'note' => '', 'lot_id' => '', 'lot_code' => '', 'expires_on' => '', 'serials' => ''];
         $this->resetErrorBag();
     }
 
@@ -146,7 +147,14 @@ class ArticlesPage extends Component
             ->orderBy('number')
             ->paginate(50);
 
+        $movingArticle = $this->moving === null ? null : Article::query()->find($this->moving, ['id', 'number', 'tracking', 'expiry_required']);
+        $lotOptions = $movingArticle?->tracking->isTracked()
+            ? StockLots::available($movingArticle->id, ($this->form['location_id'] ?? '') === '' ? null : (int) $this->form['location_id'])
+            : collect();
+
         return view('inventory::livewire.articles', [
+            'movingArticle' => $movingArticle,
+            'lotOptions' => $lotOptions,
             'articles' => $articles,
             'warehouses' => StockLocation::query()->where('type', 'WAREHOUSE')->orderBy('sort_key')->get(['id', 'full_code', 'name']),
             'locations' => StockLocation::query()->where('is_active', true)->orderBy('sort_key')->get(['id', 'full_code', 'name']),

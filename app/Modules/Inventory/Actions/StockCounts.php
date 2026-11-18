@@ -15,8 +15,11 @@ use App\Modules\Inventory\Models\StockCount;
 use App\Modules\Inventory\Models\StockCountLine;
 use App\Modules\Inventory\Models\StockLevel;
 use App\Modules\Inventory\Models\StockLocation;
+use App\Modules\Inventory\Models\StockLot;
+use App\Modules\Inventory\Models\StockLotLevel;
 use App\Modules\Inventory\Support\LocationTree;
 use App\Modules\Inventory\Support\StockLedger;
+use App\Modules\Inventory\Support\StockLots;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -58,24 +61,39 @@ class StockCounts
 
             $levels = StockLevel::query()->when($ids !== null, fn ($query) => $query->whereIn('location_id', $ids))
                 ->where('quantity_milli', '<>', 0)->get(['article_id', 'location_id', 'quantity_milli']);
+            // A tracked article is counted per batch or serial number (ADR-081 E12).
+            $lotLevels = StockLotLevel::query()->when($ids !== null, fn ($query) => $query->whereIn('location_id', $ids))
+                ->where('quantity_milli', '>', 0)->get(['article_id', 'location_id', 'lot_id', 'quantity_milli']);
+            $perLot = $lotLevels->mapWithKeys(fn (StockLotLevel $level): array => ["{$level->article_id}:{$level->location_id}" => true]);
 
             foreach ($levels as $level) {
-                StockCountLine::create(['stock_count_id' => $count->id, 'article_id' => $level->article_id, 'location_id' => $level->location_id, 'system_milli' => $level->quantity_milli]);
+                if (! isset($perLot["{$level->article_id}:{$level->location_id}"])) {
+                    StockCountLine::create(['stock_count_id' => $count->id, 'article_id' => $level->article_id, 'location_id' => $level->location_id, 'system_milli' => $level->quantity_milli]);
+                }
             }
 
-            Audit::record('inventory.count_started', $count, ['number' => $count->number, 'location' => $location?->full_code, 'lines' => $levels->count()], $company, $user);
+            foreach ($lotLevels as $level) {
+                StockCountLine::create(['stock_count_id' => $count->id, 'article_id' => $level->article_id, 'location_id' => $level->location_id, 'lot_id' => $level->lot_id, 'system_milli' => $level->quantity_milli]);
+            }
+
+            Audit::record('inventory.count_started', $count, ['number' => $count->number, 'location' => $location?->full_code, 'lines' => $levels->count() + $lotLevels->count()], $company, $user);
 
             return $count;
         }));
     }
 
-    /** An article found on a shelf where the system has none: a line with system quantity zero. */
-    public function addLine(User $user, Company $company, StockCount $count, int $articleId, int $locationId): StockCountLine
+    /**
+     * An article found on a shelf where the system has none: a line with
+     * system quantity zero. A tracked article is found with a batch or serial
+     * number: an existing lot ($lotId) or a code, which makes the lot when it
+     * is new (ADR-081 E12).
+     */
+    public function addLine(User $user, Company $company, StockCount $count, int $articleId, int $locationId, ?int $lotId = null, ?string $lotCode = null, ?string $expiresOn = null): StockCountLine
     {
         $this->guard($user, $company, 'count');
         $this->ensureOpen($count);
 
-        return CurrentCompany::run($company, function () use ($count, $articleId, $locationId): StockCountLine {
+        return CurrentCompany::run($company, function () use ($company, $count, $articleId, $locationId, $lotId, $lotCode, $expiresOn): StockCountLine {
             $article = Article::query()->whereKey($articleId)->where('is_stock_item', true)->first() ?? throw ValidationException::withMessages(['article_id' => __('Välj en lagerförd artikel.')]);
             $location = StockLocation::query()->whereKey($locationId)->where('is_active', true)->first() ?? throw ValidationException::withMessages(['location_id' => __('Lagerstället finns inte eller är inaktivt.')]);
 
@@ -83,15 +101,28 @@ class StockCounts
                 throw ValidationException::withMessages(['location_id' => __('Platsen ingår inte i den här inventeringen.')]);
             }
 
-            $existing = StockCountLine::query()->where('stock_count_id', $count->id)->where('article_id', $article->id)->where('location_id', $location->id)->first();
+            $lot = null;
+
+            if ($article->tracking->isTracked()) {
+                $lot = $lotId !== null
+                    ? (StockLot::query()->whereKey($lotId)->where('article_id', $article->id)->first() ?? throw ValidationException::withMessages(['lot_id' => __('Batchen eller serienumret hör inte till artikeln.')]))
+                    : StockLots::findOrCreate($company->id, $article, (string) $lotCode, $expiresOn, null, null, $count->counted_on, 'extra');
+            } elseif ($lotId !== null || ($lotCode !== null && $lotCode !== '')) {
+                throw ValidationException::withMessages(['lot_code' => __('Artikeln :number spåras inte med batch eller serienummer.', ['number' => $article->number])]);
+            }
+
+            $existing = StockCountLine::query()->where('stock_count_id', $count->id)->where('article_id', $article->id)->where('location_id', $location->id)
+                ->when($lot === null, fn ($query) => $query->whereNull('lot_id'), fn ($query) => $query->where('lot_id', $lot?->id))->first();
 
             if ($existing instanceof StockCountLine) {
                 return $existing;
             }
 
-            $system = (int) StockLevel::query()->where('article_id', $article->id)->where('location_id', $location->id)->value('quantity_milli');
+            $system = $lot instanceof StockLot
+                ? (int) StockLotLevel::query()->where('lot_id', $lot->id)->where('location_id', $location->id)->value('quantity_milli')
+                : (int) StockLevel::query()->where('article_id', $article->id)->where('location_id', $location->id)->value('quantity_milli');
 
-            return StockCountLine::create(['stock_count_id' => $count->id, 'article_id' => $article->id, 'location_id' => $location->id, 'system_milli' => $system]);
+            return StockCountLine::create(['stock_count_id' => $count->id, 'article_id' => $article->id, 'location_id' => $location->id, 'lot_id' => $lot?->id, 'system_milli' => $system]);
         });
     }
 
@@ -142,7 +173,7 @@ class StockCounts
                     throw ValidationException::withMessages(['reason' => __('Ange en orsak till skillnaden för :number.', ['number' => $line->article?->number])]);
                 }
 
-                $movements[] = ['article_id' => $line->article_id, 'location_id' => $line->location_id, 'quantity_milli' => $difference, 'reason' => $line->reason];
+                $movements[] = ['article_id' => $line->article_id, 'location_id' => $line->location_id, 'quantity_milli' => $difference, 'reason' => $line->reason, 'lot_id' => $line->lot_id];
             }
 
             if ($movements !== []) {

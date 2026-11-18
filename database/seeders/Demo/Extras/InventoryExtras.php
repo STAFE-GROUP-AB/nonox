@@ -17,6 +17,7 @@ use App\Modules\Inventory\Actions\SaveReceipt;
 use App\Modules\Inventory\Actions\StockCounts;
 use App\Modules\Inventory\Domain\Gtin;
 use App\Modules\Inventory\Domain\LocationType;
+use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\Models\PickListLine;
 use App\Modules\Inventory\Models\StockCountLine;
@@ -97,6 +98,12 @@ final class InventoryExtras extends DemoExtra
         ['T-304', 'Badlakan bomull 70 × 140', '239,20', '84', 'HL-B-02-2', 6, 16, 'towel', 'e7ddd0', 't', 20],
         ['T-305', 'Handduk bomull 50 × 70', '119,20', '39', 'HL-B-02-2', 10, 24, 'towel', '9fb4a6', 't', 30],
     ];
+
+    /** The scented candle is the one article tracked by batch in the demo. */
+    private static function isTracked(string $number): bool
+    {
+        return $number === 'L-101';
+    }
 
     /** @var array<string, int> location ids by full code */
     private array $locations = [];
@@ -197,6 +204,8 @@ final class InventoryExtras extends DemoExtra
                 'default_supplier_id' => $suppliers[$supplier]->id,
                 'supplier_article_number' => mb_strtoupper($supplier).'-'.(4100 + $index * 7),
                 'is_stock_item' => true,
+                // The scented candle is followed by batch, with a best-before date (ADR-081 E12).
+                ...(self::isTracked($number) ? ['tracking' => 'BATCH'] : []),
                 'reorder_point' => (string) $reorderPoint,
                 'reorder_quantity' => (string) $reorderQuantity,
                 'default_location_id' => $this->locations[$location],
@@ -260,7 +269,22 @@ final class InventoryExtras extends DemoExtra
             'lines' => array_map(fn (array $row): array => ['article_id' => $this->articles[$row[0]]->id, 'quantity' => (string) $row[1], 'unit_cost' => $row[2]], $rows),
         ]);
 
-        return $receiveAll ? app(ReceiveStock::class)->all($c->user, $c->company, $receipt, $date) : $receipt;
+        if (! $receiveAll) {
+            return $receipt;
+        }
+
+        // A tracked article arrives under a batch number of the delivery month, good for three years.
+        $receive = [];
+
+        foreach ($receipt->lines()->get() as $line) {
+            $receive[$line->id] = ['quantity' => Quantity::decimal($line->remainingMilli())];
+
+            if ($line->article_id === $this->articles['L-101']->id) {
+                $receive[$line->id] += ['lot_code' => 'DL-'.$date->format('ym'), 'expires_on' => $date->addYears(3)->toDateString()];
+            }
+        }
+
+        return app(ReceiveStock::class)($c->user, $c->company, $receipt, $receive, $date);
     }
 
     /** What stands out in the shop is moved from the back store, a few times a year. */

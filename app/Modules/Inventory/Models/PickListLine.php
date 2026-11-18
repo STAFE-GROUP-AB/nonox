@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?int $location_id
  * @property int $quantity_milli
  * @property ?int $picked_milli
+ * @property ?int $lot_id
  * @property int $position
  * @property ?string $short_reason
  */
@@ -34,6 +35,7 @@ class PickListLine extends Model
         'picked_milli',
         'position',
         'short_reason',
+        'lot_id',
     ];
 
     /** Why less than asked was picked (the scanning app, ADR-040). */
@@ -70,6 +72,12 @@ class PickListLine extends Model
     public function article(): BelongsTo
     {
         return $this->belongsTo(Article::class);
+    }
+
+    /** @return BelongsTo<StockLot, $this> */
+    public function lot(): BelongsTo
+    {
+        return $this->belongsTo(StockLot::class, 'lot_id');
     }
 
     /** @return BelongsTo<StockLocation, $this> */

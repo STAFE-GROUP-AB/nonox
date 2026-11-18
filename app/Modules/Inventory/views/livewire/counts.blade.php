@@ -44,6 +44,7 @@
                             <span class="sm:col-span-5">
                                 <span class="font-bold tabular-nums">{{ $line->location?->full_code }}</span>
                                 <span class="block"><span class="font-semibold tabular-nums">{{ $line->article?->number }}</span> {{ $line->article?->name }}</span>
+                                @if($line->lot)<span class="block text-sm font-semibold text-ink">{{ $line->lot->kind === 'SERIAL' ? __('Serienummer :code', ['code' => $line->lot->code]) : __('Batch :code', ['code' => $line->lot->code]) }}@if($line->lot->expires_on) · {{ __('bäst före :date', ['date' => $line->lot->expires_on->toDateString()]) }}@endif</span>@endif
                                 <span class="block text-sm text-gray-600">{{ __('Systemet: :quantity :unit', ['quantity' => $q($line->system_milli), 'unit' => $line->article?->stockUnitCode()]) }}
                                     @if($difference !== null && $difference !== 0)<span class="font-semibold text-accent-700"> · {{ __('Skillnad :difference', ['difference' => ($difference > 0 ? '+' : '').$q($difference)]) }}</span>@endif
                                 </span>
@@ -71,7 +72,7 @@
             @if($current->status === 'OPEN' && $canCount)
                 <form wire:submit="addLine" class="mt-6 grid gap-3 border-t border-stone-200 pt-4 sm:grid-cols-12 sm:items-end">
                     <x-ui.field for="extra-article" :label="__('Hittat något mer?')" error="extra.article_id" class="sm:col-span-5">
-                        <select id="extra-article" wire:model="extra.article_id" class="{{ $input }}">
+                        <select id="extra-article" wire:model.live="extra.article_id" class="{{ $input }}">
                             <option value="">{{ __('Välj artikel') }}</option>
                             @foreach($articles as $article)
                                 <option value="{{ $article->id }}">{{ $article->number }} {{ $article->name }}</option>
@@ -86,6 +87,14 @@
                             @endforeach
                         </select>
                     </x-ui.field>
+                    @if($articles->firstWhere('id', (int) ($extra['article_id'] ?? 0))?->tracking->isTracked())
+                        <x-ui.field for="extra-lot" :label="__('Batch eller serienummer')" error="extra.lot_code" class="sm:col-span-5">
+                            <input id="extra-lot" wire:model="extra.lot_code" maxlength="60" class="{{ $input }}">
+                        </x-ui.field>
+                        <x-ui.field for="extra-expires" :label="__('Bäst före (om ny batch)')" error="extra.expires_on" class="sm:col-span-4">
+                            <input id="extra-expires" type="date" wire:model="extra.expires_on" class="{{ $input }}">
+                        </x-ui.field>
+                    @endif
                     <div class="sm:col-span-3"><x-secondary-button type="submit">{{ __('Lägg till rad') }}</x-secondary-button></div>
                 </form>
                 <div class="mt-6 flex flex-wrap items-center gap-4">

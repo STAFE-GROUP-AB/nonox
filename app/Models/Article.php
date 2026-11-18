@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Domain\Units\UnitCatalogue;
 use App\Modules\Inventory\Domain\StockClass;
+use App\Modules\Inventory\Domain\Tracking;
 use App\Modules\Inventory\Models\ArticleImage;
 use App\Modules\Inventory\Models\StockLevel;
 use App\Modules\Inventory\Models\StockLocation;
@@ -54,6 +55,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property ?int $net_realisable_value_ore
  * @property ?string $net_realisable_value_note
  * @property ?StockClass $stock_class
+ * @property Tracking $tracking
+ * @property bool $expiry_required
  * @property ?CarbonInterface $labels_printed_at
  * @property int $labels_printed_count
  * @property ?int $stock_unit_id
@@ -103,6 +106,8 @@ class Article extends Model
         'net_realisable_value_ore',
         'net_realisable_value_note',
         'stock_class',
+        'tracking',
+        'expiry_required',
         'stock_unit_id',
         'purchase_unit_id',
         'sales_unit_id',
@@ -152,6 +157,8 @@ class Article extends Model
             'reorder_quantity_milli' => 'integer',
             'net_realisable_value_ore' => 'integer',
             'stock_class' => StockClass::class,
+            'tracking' => Tracking::class,
+            'expiry_required' => 'boolean',
             'labels_printed_at' => 'datetime',
             'labels_printed_count' => 'integer',
             'material_length_um' => 'integer',

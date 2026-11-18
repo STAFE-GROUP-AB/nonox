@@ -330,6 +330,8 @@ final class DatabaseGrants
         'stock_count_lines' => GrantDecision::ReadWrite,
         'stock_counts' => GrantDecision::ReadWrite,
         'stock_levels' => GrantDecision::ReadWrite,
+        'stock_lot_levels' => GrantDecision::ReadWrite,
+        'stock_lots' => GrantDecision::ReadWrite,
         'stock_locations' => GrantDecision::ReadWrite,
         'stock_movements' => GrantDecision::AppendOnly,
         'stock_receipt_lines' => GrantDecision::ReadWrite,

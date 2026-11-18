@@ -46,7 +46,7 @@ class ReceiptsPage extends Component
 
     public ?int $receiving = null;
 
-    /** @var array<int|string, array{quantity: string, location_id: mixed}> */
+    /** @var array<int|string, array{quantity: string, location_id: mixed, lot_code?: string, expires_on?: string, serials?: string}> */
     public array $receive = [];
 
     public string $receiveDate = '';
@@ -165,7 +165,7 @@ class ReceiptsPage extends Component
         $this->receive = [];
 
         foreach ($receipt->lines as $line) {
-            $this->receive[$line->id] = ['quantity' => $line->remainingMilli() > 0 ? Quantity::decimal($line->remainingMilli()) : '0', 'location_id' => $line->location_id];
+            $this->receive[$line->id] = ['quantity' => $line->remainingMilli() > 0 ? Quantity::decimal($line->remainingMilli()) : '0', 'location_id' => $line->location_id, 'lot_code' => '', 'expires_on' => '', 'serials' => ''];
         }
     }
 
@@ -229,7 +229,7 @@ class ReceiptsPage extends Component
             ->latest('number')
             ->paginate(25);
 
-        $receiving = $this->receiving === null ? null : StockReceipt::query()->with(['lines.article:id,number,name,unit,stock_unit_id', 'lines.article.stockUnit:id,code', 'supplier:id,name'])->find($this->receiving);
+        $receiving = $this->receiving === null ? null : StockReceipt::query()->with(['lines.article:id,number,name,unit,stock_unit_id,tracking,expiry_required', 'lines.article.stockUnit:id,code', 'supplier:id,name'])->find($this->receiving);
 
         return view('inventory::livewire.receipts', [
             'receipts' => $receipts,

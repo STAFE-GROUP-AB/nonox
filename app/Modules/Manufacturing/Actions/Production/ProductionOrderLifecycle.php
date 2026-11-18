@@ -10,7 +10,9 @@ use App\Models\FiscalYear;
 use App\Models\User;
 use App\Modules\Inventory\Domain\MovementType;
 use App\Modules\Inventory\Domain\Quantity;
+use App\Modules\Inventory\Domain\Tracking;
 use App\Modules\Inventory\Support\StockLedger;
+use App\Modules\Inventory\Support\StockLots;
 use App\Modules\Manufacturing\Actions\Concerns\GuardsManufacturing;
 use App\Modules\Manufacturing\Domain\LabourSource;
 use App\Modules\Manufacturing\Domain\ProductionOrderStatus;
@@ -167,6 +169,7 @@ class ProductionOrderLifecycle
                 'location_id' => $order->location_id,
                 'quantity_milli' => $produced,
                 'unit_cost_ore' => $unitCost,
+                ...$this->finishedLots($order, $produced, $input),
             ]], $day, $order, $order->reference());
 
             $order->forceFill([
@@ -194,6 +197,35 @@ class ProductionOrderLifecycle
 
             return $order;
         });
+    }
+
+    /**
+     * The batch or serial numbers of finished goods of a tracked article
+     * (ADR-081 E12): a batch is named after the order (or the code given),
+     * serial numbers are the order's reference and a running number unless
+     * a list is given. An article that requires a best-before date needs one.
+     *
+     * @param  array<string, mixed>  $input  lot_code, serials, expires_on
+     * @return array{lot_code?: string, lot_codes?: list<string>, expires_on?: ?string}
+     */
+    private function finishedLots(ProductionOrder $order, int $produced, array $input): array
+    {
+        $article = Article::query()->find($order->article_id);
+
+        if (! $article instanceof Article || ! $article->tracking->isTracked()) {
+            return [];
+        }
+
+        $expires = trim((string) ($input['expires_on'] ?? '')) ?: null;
+        $reference = mb_substr(preg_replace('/\s+/', '', $order->reference()) ?? '', 0, 50);
+
+        if ($article->tracking === Tracking::Batch) {
+            return ['lot_code' => trim((string) ($input['lot_code'] ?? '')) ?: $reference, 'expires_on' => $expires];
+        }
+
+        $given = StockLots::codes((string) ($input['serials'] ?? ''));
+
+        return ['lot_codes' => $given !== [] ? $given : array_map(fn (int $number): string => sprintf('%s-%03d', $reference, $number), range(1, max(1, intdiv($produced, 1000)))), 'expires_on' => $expires];
     }
 
     /** Cancels an open order on $date; what it took out of stock goes back. A started order needs a reason. */

@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $system_milli
  * @property ?int $counted_milli
  * @property ?string $reason
+ * @property ?int $lot_id
  */
 class StockCountLine extends Model
 {
@@ -32,6 +33,7 @@ class StockCountLine extends Model
         'system_milli',
         'counted_milli',
         'reason',
+        'lot_id',
     ];
 
     /** @return array<string, string> */
@@ -58,6 +60,12 @@ class StockCountLine extends Model
     public function article(): BelongsTo
     {
         return $this->belongsTo(Article::class);
+    }
+
+    /** @return BelongsTo<StockLot, $this> */
+    public function lot(): BelongsTo
+    {
+        return $this->belongsTo(StockLot::class, 'lot_id');
     }
 
     /** @return BelongsTo<StockLocation, $this> */

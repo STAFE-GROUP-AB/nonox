@@ -13366,6 +13366,21 @@ components:
                 type:
                   - integer
                   - 'null'
+              lot_code:
+                type: string
+                maxLength: 60
+                description: 'Batch number, for an article tracked by batch. Needed with "receive": true; the batch is made when it is new.'
+              expires_on:
+                type: string
+                format: date
+                description: 'Best-before date of a new batch; needed when the article requires one.'
+              serials:
+                type: array
+                maxItems: 500
+                items:
+                  type: string
+                  maxLength: 60
+                description: 'Serial numbers, for an article tracked by serial number: as many as the quantity, each one unit. Needed with "receive": true.'
     StockReceipt:
       type: object
       properties:

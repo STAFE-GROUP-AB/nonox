@@ -173,6 +173,7 @@ class RegisterWaste
                 'article_id' => $movement->article_id,
                 'location_id' => $movement->location_id,
                 'quantity_milli' => -$movement->quantity_milli,
+                'lot_id' => $movement->lot_id,
                 'unit_cost_ore' => $costs->of($movement->article_id)['ore'],
                 'reason' => 'RATTELSE_SVINN',
             ])->all()), $today, $correction, __('Rättelse av svinn'));
