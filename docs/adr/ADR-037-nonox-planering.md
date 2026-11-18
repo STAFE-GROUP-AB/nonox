@@ -70,8 +70,27 @@ Detaljhandeln); their hourly pay is unchanged. Enligt AI-utredning
 
 ## Amendment 2026-11-17: best in class
 
-Status: **Accepted (design)**. No feature code ships with this amendment; it
-is built in the packages P1–P10 at the end, in that dependency order.
+Status: **Accepted, implemented** (2026-11-18). The design was accepted on
+2026-11-17 and built in the packages P1–P10 at the end, in that dependency
+order.
+
+**Launched.** All nine feature packages are merged and live; P10 added the
+comparison rows, the landing cards, the industry pages, the changelog entry
+and this status. Feature commits (merge commit in brackets):
+
+- P1 absence in the schedule: `7aadccd8`, `655a8933`, `79d9d90e` (`cbc4a368`); `8dd22069` (directly on integration/batch2, in via `df107529`)
+- P2 cost centres: `2bf2809d` (`edf6b96b`)
+- P3 tasks in shifts: `69dca134`, `0029362e`, `4357d520` (`1ea88e12`)
+- P4 messages to staff: `863fe6a6` (`203e75bf`)
+- P5 staffing demand: `4d1927d9`, `4a534a6b` (`26423491`)
+- P6 staff-cost budget: `92716bbb` (`0026b450`)
+- P7 schedule proposals v1: `69d7e588`, `e0233e41`, `520365d2` (`df107529`)
+- P8 proposals from the demand gap: `aec73ae9` (`cbe2697e`)
+- P9 chain view: `d5931c9b`, `520cbfd9` (`44109a56`)
+
+The `TODO(legal-verify)` items under "Legal items" and in gap 8 stay open
+until a lawyer has reviewed them; the public texts call forecasts and costs
+estimates and say that a person decides.
 
 ### Context
 
