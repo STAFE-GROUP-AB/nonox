@@ -8,15 +8,22 @@ use App\Support\Auth\PasskeySession;
 use App\Support\Currency\EuroReferenceRates;
 use Illuminate\Contracts\Auth\Authenticatable as UserContract;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\ParallelTesting;
 use Tests\Support\FakeEuroRates;
 
 abstract class TestCase extends BaseTestCase
 {
     private static bool $incomeTaxDataWritten = false;
 
+    private static bool $demoDatabaseReady = false;
+
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->useParallelDemoDatabase();
 
         // No test fetches the ECB's rates; a test sets the ones it needs (FakeEuroRates::set).
         $this->app->instance(EuroReferenceRates::class, new FakeEuroRates);
@@ -30,9 +37,45 @@ abstract class TestCase extends BaseTestCase
         config(['nonox.income_tax_data_path' => $this->incomeTaxDataVerifiedFor(2026)]);
     }
 
+    /**
+     * Under `pest --parallel` the framework gives every process its own main database
+     * (<DB_DATABASE>_test_<token>) and migrates it. The demo database (ADR-077) must be
+     * exactly "<main database>_demo" (DemoDatabase), so each process gets its own one too:
+     * it is created and migrated once per process and only ever the per-process name.
+     */
+    private function useParallelDemoDatabase(): void
+    {
+        if (ParallelTesting::token() === false) {
+            return;
+        }
+
+        $demo = config('database.connections.pgsql.database').'_demo';
+
+        config(['database.connections.demo.database' => $demo]);
+
+        if (self::$demoDatabaseReady) {
+            return;
+        }
+
+        $admin = config('database.connections.demo');
+        $admin['database'] = 'postgres';
+        $connection = DB::connectUsing('demo_parallel_admin', $admin);
+
+        if ($connection->scalar('select 1 from pg_database where datname = ?', [$demo]) === null) {
+            $connection->statement('create database "'.str_replace('"', '', $demo).'"');
+        }
+
+        $connection->disconnect();
+        DB::purge('demo');
+
+        Artisan::call('migrate', ['--database' => 'demo', '--force' => true]);
+
+        self::$demoDatabaseReady = true;
+    }
+
     private function incomeTaxDataVerifiedFor(int $year): string
     {
-        $directory = storage_path('framework/testing/income-tax');
+        $directory = storage_path('framework/testing/income-tax'.(ParallelTesting::token() === false ? '' : '-'.ParallelTesting::token()));
 
         if (self::$incomeTaxDataWritten) {
             return $directory;

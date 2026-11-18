@@ -110,7 +110,11 @@ jobs:
       - name: Pest
         env:
           BOLAGSVERKET_TAXONOMY_DIR: ${{ steps.taxonomy.outputs.dir }}
-        run: vendor/bin/pest
+        run: php -d memory_limit=1G vendor/bin/pest --parallel --processes=4 --passthru-php="-d memory_limit=1G" --exclude-group=sequential
+
+      # PostgreSQL roles are cluster-wide and the demo tests share files under storage/: these run alone, after the parallel step.
+      - name: Pest (database roles and demo tests, sequential)
+        run: php -d memory_limit=1G vendor/bin/pest --group=sequential
 
       # ADR-059 A.5 (S1-P14): the K3 annual report of 50 000 vouchers in under 3 s. tests/Performance
       # is in no test suite, so the step above never runs it; it runs on main only.

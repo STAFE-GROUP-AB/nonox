@@ -17,6 +17,23 @@ pest()->extend(TestCase::class)
     ->in('Feature', 'Unit', 'Tenancy', 'Performance');
 
 /*
+ * Parallel runs (`pest --parallel --exclude-group=sequential`, QUICKSTART §1.3) cannot run these files concurrently:
+ *  - the database-roles tests create and alter PostgreSQL roles, which are cluster-wide;
+ *  - the demo tests share files under storage/ between processes (framework/demo-draining, demo-built-at,
+ *    app/demo-private, app/demo-uploads) and rebuild or drop the demo schema.
+ * They run in their own step, `pest --group=sequential`. Pest accepts one --group / --exclude-group value only,
+ * so every such file is in the single group "sequential"; a new roles test file must be added to the list.
+ */
+pest()->group('sequential')->in(
+    'Feature/Demo',
+    'Feature/DemoRebuild',
+    'Feature/Ai/VoucherInterpretHintTest.php',
+    'Feature/Security/DatabaseRolesTest.php',
+    'Feature/Security/DatabaseGrantsTest.php',
+    'Feature/Security/DoctorCommandTest.php',
+);
+
+/*
  * Tests of the demo database (ADR-077) work in a transaction on the demo
  * connection too, rolled back afterwards, like every test does on the main one.
  * The rebuild tests are in Feature/DemoRebuild and do not: they drop the demo
