@@ -240,6 +240,8 @@ lager/inkopsorder: { foretag: butik, rutt: inventory.purchaseOrders.show, modell
 lager/inkopsorder-pa-fakturan: { foretag: butik, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { invoice_number: TH-9512 } }, del: '[data-purchase-order-match]' }
 lager/inkopsorder-attest: { foretag: butik, rutt: inventory.purchaseOrders.show, modell: { tabell: purchase_orders, dar: { notes: 'Inköp av hyllor och städning inför omläggningen' } } }
 lager/inkopsorder-utan-artikel: { foretag: butik, rutt: inventory.purchaseOrders.show, modell: { tabell: purchase_orders, dar: { notes: 'Skyltar och uppsättning till skyltfönstret' } } }
+lager/inkopsanmodan: { foretag: butik, rutt: inventory.requisitions.show, modell: { tabell: purchase_requisitions, dar: { reason: 'Fyller på inför höstkampanjen' } } }
+lager/inkopsanmodan-bestall: { foretag: butik, rutt: inventory.requisitions.convert }
 lager/inkopsforslag: { foretag: butik, rutt: inventory.purchaseProposals }
 lager/prognos: { foretag: butik, rutt: inventory.forecast }
 lager/behovsplanering: { foretag: butik, rutt: inventory.mrp, del: '[data-testid=mrp-planned]' }

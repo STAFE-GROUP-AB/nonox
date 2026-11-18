@@ -30,6 +30,12 @@ use Carbon\CarbonImmutable;
  * up to the company's approval amount; purchase-orders:send sends any order,
  * also one above that amount.
  *
+ * Inköpsanmodan (ADR-081 gap 3, E9): purchase-requisitions:create asks for
+ * goods or services and sees the user's own requests; purchase-requisitions:view
+ * sees everyone's. Approving goes through the approval engine and needs
+ * purchase-orders:send; turning approved rows into an order needs
+ * purchase-orders:manage.
+ *
  * Behovsplanering (ADR-081 gap 5): mrp:view sees the demand forecast and the
  * planning data on articles; mrp:run edits them, computes a forecast from
  * history and (E16) runs the planning and converts planned orders. The
@@ -49,6 +55,12 @@ final class InventoryModule implements IsNew, Module
     public const string PURCHASE_SEND = 'purchase-orders:send';
 
     public const array PURCHASE_PERMISSIONS = [self::PURCHASE_VIEW, self::PURCHASE_MANAGE, self::PURCHASE_SEND];
+
+    public const string REQUISITION_CREATE = 'purchase-requisitions:create';
+
+    public const string REQUISITION_VIEW = 'purchase-requisitions:view';
+
+    public const array REQUISITION_PERMISSIONS = [self::REQUISITION_CREATE, self::REQUISITION_VIEW];
 
     public const string MRP_VIEW = 'mrp:view';
 
@@ -90,7 +102,7 @@ final class InventoryModule implements IsNew, Module
 
     public function permissions(): array
     {
-        return [...self::PERMISSIONS, ...self::PURCHASE_PERMISSIONS, ...self::MRP_PERMISSIONS];
+        return [...self::PERMISSIONS, ...self::PURCHASE_PERMISSIONS, ...self::REQUISITION_PERMISSIONS, ...self::MRP_PERMISSIONS];
     }
 
     public function roles(): array
@@ -101,14 +113,14 @@ final class InventoryModule implements IsNew, Module
     public function rolePermissions(): array
     {
         return [
-            'owner' => [...self::PERMISSIONS, ...self::PURCHASE_PERMISSIONS, ...self::MRP_PERMISSIONS],
-            'admin' => [...self::PERMISSIONS, ...self::PURCHASE_PERMISSIONS, ...self::MRP_PERMISSIONS],
-            'accountant' => [...self::PERMISSIONS, self::PURCHASE_VIEW, self::MRP_VIEW],
-            'bookkeeper' => ['inventory:view', 'inventory:count', 'inventory:manage', self::PURCHASE_VIEW, self::PURCHASE_MANAGE, ...self::MRP_PERMISSIONS],
+            'owner' => [...self::PERMISSIONS, ...self::PURCHASE_PERMISSIONS, ...self::REQUISITION_PERMISSIONS, ...self::MRP_PERMISSIONS],
+            'admin' => [...self::PERMISSIONS, ...self::PURCHASE_PERMISSIONS, ...self::REQUISITION_PERMISSIONS, ...self::MRP_PERMISSIONS],
+            'accountant' => [...self::PERMISSIONS, self::PURCHASE_VIEW, self::REQUISITION_VIEW, self::MRP_VIEW],
+            'bookkeeper' => ['inventory:view', 'inventory:count', 'inventory:manage', self::PURCHASE_VIEW, self::PURCHASE_MANAGE, ...self::REQUISITION_PERMISSIONS, ...self::MRP_PERMISSIONS],
             // Attestant: sends the orders above the company's approval amount (ADR-071 §1), without seeing the stock.
-            'approver' => [self::PURCHASE_VIEW, self::PURCHASE_SEND],
-            'auditor' => ['inventory:view', self::PURCHASE_VIEW, self::MRP_VIEW],
-            self::ROLE => ['inventory:view', 'inventory:count'],
+            'approver' => [self::PURCHASE_VIEW, self::PURCHASE_SEND, self::REQUISITION_VIEW],
+            'auditor' => ['inventory:view', self::PURCHASE_VIEW, self::REQUISITION_VIEW, self::MRP_VIEW],
+            self::ROLE => ['inventory:view', 'inventory:count', self::REQUISITION_CREATE],
         ];
     }
 
@@ -131,10 +143,13 @@ final class InventoryModule implements IsNew, Module
                 'label' => __('Beställningar'),
                 'route' => 'inventory.purchaseOrders',
                 'permission' => self::PURCHASE_VIEW,
-                'active' => ['inventory.purchaseOrders', 'inventory.purchaseOrders.*', 'inventory.purchaseProposals'],
+                'active' => ['inventory.purchaseOrders', 'inventory.purchaseOrders.*', 'inventory.purchaseProposals', 'inventory.requisitions', 'inventory.requisitions.*'],
                 'children' => fn (User $user, Company $company): array => [
                     ['label' => __('Inköpsorder'), 'route' => 'inventory.purchaseOrders', 'active' => ['inventory.purchaseOrders', 'inventory.purchaseOrders.*']],
                     ['label' => __('Inköpsförslag'), 'route' => 'inventory.purchaseProposals', 'active' => ['inventory.purchaseProposals']],
+                    ...($user->hasTeamPermission($company, self::REQUISITION_CREATE) || $user->hasTeamPermission($company, self::REQUISITION_VIEW) ? [
+                        ['label' => __('Inköpsanmodan'), 'route' => 'inventory.requisitions', 'active' => ['inventory.requisitions', 'inventory.requisitions.*']],
+                    ] : []),
                 ],
             ],
             [
@@ -151,6 +166,10 @@ final class InventoryModule implements IsNew, Module
                     ...($user->hasTeamPermission($company, self::MRP_VIEW) || $user->hasTeamPermission($company, self::MRP_RUN) ? [
                         ['label' => __('Prognos'), 'route' => 'inventory.forecast', 'active' => ['inventory.forecast']],
                         ['label' => __('Behovsplanering'), 'route' => 'inventory.mrp', 'active' => ['inventory.mrp']],
+                    ] : []),
+                    // Someone who may only ask for goods does not see Beställningar; the requisitions are here for them (E9).
+                    ...($user->hasTeamPermission($company, self::REQUISITION_CREATE) && ! $user->hasTeamPermission($company, self::PURCHASE_VIEW) ? [
+                        ['label' => __('Inköpsanmodan'), 'route' => 'inventory.requisitions', 'active' => ['inventory.requisitions', 'inventory.requisitions.*']],
                     ] : []),
                     ['label' => __('Plocklistor'), 'route' => 'inventory.pickLists', 'active' => ['inventory.pickLists', 'inventory.pickLists.pdf']],
                     ['label' => __('Försändelser'), 'route' => 'inventory.shipments', 'active' => ['inventory.shipments', 'inventory.shipments.deliveryNote']],

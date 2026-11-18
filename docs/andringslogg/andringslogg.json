@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-inkopsanmodan",
+      "datum": "2026-11-18T12:00:00+01:00",
+      "rubrik": "Inköpsanmodan med attest",
+      "beskrivning": "Under Beställningar → Inköpsanmodan kan den som behöver något skriva en anmodan med artiklar eller egna beskrivningar, och en attestant godkänner eller avvisar den, antingen som standard eller i ett eget attestflöde. En inköpare lägger sedan de godkända raderna från flera anmodan på en inköpsorder till en leverantör, och varje rad visar vilken order den blev. Din attest gäller bara den version du har sett, så en anmodan som ändras medan du läser den attesteras inte omärkt.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-18-behovsplanering",
       "datum": "2026-11-18T11:25:00+01:00",
       "rubrik": "Behovsplanering vecka för vecka",

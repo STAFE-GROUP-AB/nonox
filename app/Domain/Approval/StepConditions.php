@@ -107,11 +107,13 @@ final readonly class StepConditions
     {
         $amount = abs($facts->amountOre);
 
-        if ($this->minOre !== null && $amount < $this->minOre) {
+        // A subject whose amount is only partly known (a requisition with unpriced rows, E9) may cost more than
+        // it shows: a lower bound counts as met and an upper bound as not met, so it never slips past a limit.
+        if ($this->minOre !== null && $amount < $this->minOre && ! $facts->amountIncomplete) {
             return false;
         }
 
-        if ($this->maxOre !== null && $amount > $this->maxOre) {
+        if ($this->maxOre !== null && ($amount > $this->maxOre || $facts->amountIncomplete)) {
             return false;
         }
 

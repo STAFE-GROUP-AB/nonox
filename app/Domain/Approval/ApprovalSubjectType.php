@@ -6,8 +6,8 @@ namespace App\Domain\Approval;
 
 /**
  * What an approval policy applies to (ADR-081 gap 8). Supplier invoices and
- * payment files are wired in E2 and purchase orders in E10; purchase
- * requisitions are wired by their own package (E9) and cannot be chosen until then.
+ * payment files are wired in E2, purchase orders in E10 and purchase
+ * requisitions in E9.
  */
 enum ApprovalSubjectType: string
 {
@@ -35,21 +35,21 @@ enum ApprovalSubjectType: string
     /** @return list<self> */
     public static function wired(): array
     {
-        return [self::SupplierInvoice, self::PaymentBatch, self::PurchaseOrder];
+        return [self::SupplierInvoice, self::PaymentBatch, self::PurchaseRequisition, self::PurchaseOrder];
     }
 
     /**
      * The permission the subject's approval needs today, and so the one the
      * default policy names. A purchase order is approved by whoever may send
-     * it (purchase-orders:send, the approver role); a requisition gets its own
-     * when it is wired (E9).
+     * it (purchase-orders:send, the approver role), and so is a requisition: those
+     * who may send orders may also approve what is asked for (E9).
      */
     public function basePermission(): string
     {
         return match ($this) {
             self::PaymentBatch => 'payments:approve',
-            self::PurchaseOrder => 'purchase-orders:send',
-            self::SupplierInvoice, self::PurchaseRequisition => 'supplier-invoices:approve',
+            self::PurchaseOrder, self::PurchaseRequisition => 'purchase-orders:send',
+            self::SupplierInvoice => 'supplier-invoices:approve',
         };
     }
 

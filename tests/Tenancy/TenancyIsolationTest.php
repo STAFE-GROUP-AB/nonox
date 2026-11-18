@@ -178,6 +178,8 @@ use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\PurchaseOrderInvoice;
 use App\Modules\Inventory\Models\PurchaseOrderRow;
 use App\Modules\Inventory\Models\PurchaseOrderVersion;
+use App\Modules\Inventory\Models\PurchaseRequisition;
+use App\Modules\Inventory\Models\PurchaseRequisitionRow;
 use App\Modules\Inventory\Models\ScanOperation;
 use App\Modules\Inventory\Models\Shipment;
 use App\Modules\Inventory\Models\ShipmentPackage;
@@ -541,6 +543,8 @@ const COMPANY_SCOPED_MODELS = [
     PurchaseOrderRow::class => 'purchaseOrderRowAttributes',
     PurchaseOrderVersion::class => 'purchaseOrderVersionAttributes',
     PurchaseOrderInvoice::class => 'purchaseOrderInvoiceAttributes',
+    PurchaseRequisition::class => 'e9PurchaseRequisitionAttributes',
+    PurchaseRequisitionRow::class => 'e9PurchaseRequisitionRowAttributes',
     InvoiceTaxReductionBuyer::class => 'invoiceTaxReductionBuyerAttributes',
     WorkOrder::class => 'workOrderAttributes',
     WorkOrderLabourKind::class => 'workOrderLabourKindAttributes',
@@ -2424,6 +2428,18 @@ function inventoryPickListLineAttributes(): array
 function purchaseOrderAttributes(): array
 {
     return ['number' => random_int(1, 1_000_000), 'supplier_id' => Supplier::query()->firstOrCreate(['number' => 1], ['name' => 'Hemlig leverantör AB'])->id, 'order_date' => '2026-03-01', 'delivery_address' => 'Hemlig gata 1'];
+}
+
+function e9PurchaseRequisitionAttributes(): array
+{
+    return ['number' => random_int(1, 1_000_000), 'requested_by' => User::factory()->create()->id, 'reason' => 'Hemligt skäl'];
+}
+
+function e9PurchaseRequisitionRowAttributes(): array
+{
+    $unit = Unit::query()->firstOrCreate(['code' => 'st'], ['name' => 'styck', 'dimension' => 'COUNT']);
+
+    return ['purchase_requisition_id' => PurchaseRequisition::create(e9PurchaseRequisitionAttributes())->id, 'description' => 'Hemlig vara', 'quantity_milli' => 1000, 'unit_id' => $unit->id];
 }
 
 function purchaseOrderRowAttributes(): array
