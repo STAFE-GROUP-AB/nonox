@@ -37,14 +37,48 @@ final class DatabaseRolesHarness
         // the test processes on one test database only; processes on different databases of the same
         // cluster can deadlock on the roles themselves. Test-only: rerun.
         DB::statement('select pg_advisory_xact_lock(790079)');
+        self::lockEveryTable();
         DB::unprepared((string) file_get_contents(base_path('database/roles/roles.sql')));
 
-        // A database already switched over needs no ownership transfer, and skipping it avoids locking every table.
+        // A database already switched over needs no ownership transfer.
         if (! self::ownerOwnsEverything()) {
             DB::unprepared((string) file_get_contents(base_path('database/roles/transfer-ownership.sql')));
         }
 
         DatabaseGrants::apply(DB::connection());
+    }
+
+    /**
+     * Takes the ACCESS EXCLUSIVE lock that ALTER ... OWNER needs on every table, before the transaction
+     * changes a single pg_class row.
+     *
+     * The suite leaves many dead rows, so autovacuum is often busy on a table here. VACUUM ends with an
+     * in-place update of the table's pg_class row, and PostgreSQL (17.1+, 18) then waits for any open
+     * transaction that has updated that row; the GRANT/REVOKE ON ALL TABLES of roles.sql and every
+     * ALTER TABLE ... OWNER do. Autovacuum then held SHARE UPDATE EXCLUSIVE on a table while it waited for
+     * the test transaction, which in turn waited for that table: a deadlock (seen on users, voucher_rows
+     * and units). Locking first leaves autovacuum nothing of ours to wait for: the lock request only waits
+     * until PostgreSQL cancels the autovacuum in its way (after deadlock_timeout).
+     */
+    private static function lockEveryTable(): void
+    {
+        DB::unprepared(<<<'SQL'
+            DO $lock$
+            DECLARE
+                tables text;
+            BEGIN
+                SELECT string_agg(c.oid::regclass::text, ', ' ORDER BY c.relname) INTO tables
+                FROM pg_class c
+                WHERE c.relnamespace = current_schema()::regnamespace
+                  AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
+                  AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_class'::regclass AND d.objid = c.oid AND d.deptype = 'e');
+
+                IF tables IS NOT NULL THEN
+                    EXECUTE 'LOCK TABLE ' || tables || ' IN ACCESS EXCLUSIVE MODE';
+                END IF;
+            END
+            $lock$;
+            SQL);
     }
 
     private static function ownerOwnsEverything(): bool
