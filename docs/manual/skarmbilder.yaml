@@ -73,6 +73,8 @@ rapporter/verifikationslista: { foretag: butik, rutt: accounting.reports, fraga:
 rapporter/budget: { foretag: konsult, rutt: accounting.budgets.show, modell: { tabell: budget_versions, dar: { is_active: true } } }
 rapporter/budget-mot-utfall: { foretag: konsult, rutt: accounting.budgets.report, fraga: { manad: '@first day of last month' } }
 rapporter/budget-fran-sie: { foretag: konsult, rutt: accounting.budgets, visa: '[data-budget-sie-import]', text: Läs in budget från SIE-fil }
+rapporter/prognos: { foretag: konsult, rutt: accounting.budgets.show, modell: { tabell: budget_versions, dar: { kind: FORECAST, is_active: true } } }
+rapporter/rullande-12-manader: { foretag: konsult, rutt: accounting.budgets.rolling, fraga: { fran: '@first day of january this year' } }
 
 bokslut/checklistan: { foretag: konsult, rutt: accounting.closing }
 bokslut/periodiseringar: { foretag: konsult, rutt: accounting.accruals }

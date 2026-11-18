@@ -28,7 +28,7 @@ final class Features
         'templates' => ['name' => 'Konteringsmallar', 'status' => self::LIVE, 'readme' => 'konteringsmallar och underlag'],
         'reports' => ['name' => 'Rapporter per period och kostnadsställe', 'status' => self::LIVE, 'readme' => 'huvudbok, kontoanalys och verifikationslista per period och kostnadsställe'],
         'cost_centres' => ['name' => 'Kostnadsställen och projekt', 'status' => self::LIVE, 'readme' => 'kostnadsställen och projekt'],
-        'budget' => ['name' => 'Budget per konto och månad, mot utfall', 'status' => self::LIVE, 'readme' => 'budget per resultatkonto och månad'],
+        'budget' => ['name' => 'Budget och rullande prognos per konto och månad, mot utfall', 'status' => self::LIVE, 'readme' => 'budget per resultatkonto och månad'],
         'vat_return' => ['name' => 'Momsdeklaration som fil', 'status' => self::LIVE, 'readme' => 'Momsdeklaration med fil till Skatteverket'],
         'eu_reports' => ['name' => 'Periodisk sammanställning, OSS och VIES', 'status' => self::LIVE, 'readme' => 'periodisk sammanställning, underlag för OSS i kronor och euro'],
         'bank_reconciliation' => ['name' => 'Bankavstämning', 'status' => self::LIVE, 'readme' => 'Bankavstämning, periodiseringar, anläggningsregister'],

@@ -46,5 +46,6 @@ Klicka på ett konto. Då öppnas [kontoanalysen](/manual/rapporter/kontoanalys-
 ## Läs också
 
 - [Budget](/manual/rapporter/budget)
+- [Rullande prognos](/manual/rapporter/prognos)
 - [Resultatrapporten](/manual/rapporter/resultatrapport)
 - [Filter och jämförelser](/manual/rapporter/filter-och-jamforelse)

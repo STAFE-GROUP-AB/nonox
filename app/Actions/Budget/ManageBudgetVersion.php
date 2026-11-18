@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Budget;
 
 use App\Domain\Accounting\FiscalYearStatus;
+use App\Domain\Budget\BudgetKind;
 use App\Domain\Budget\BudgetStatus;
 use App\Models\BudgetVersion;
 use App\Models\FiscalYear;
@@ -71,7 +72,9 @@ class ManageBudgetVersion
             $closed = FiscalYear::query()->whereKey($version->fiscal_year_id)->lockForUpdate()->value('status') === FiscalYearStatus::Closed;
 
             if ($version->isLocked() && $closed) {
-                throw ValidationException::withMessages(['version' => __('En låst budget för ett stängt räkenskapsår kan inte tas bort. Den kan ha legat till grund för bedömningar i årsredovisningen och ska sparas.')]);
+                throw ValidationException::withMessages(['version' => $version->kind === BudgetKind::Forecast
+                    ? __('En låst prognos för ett stängt räkenskapsår kan inte tas bort. Den kan ha legat till grund för bedömningar i årsredovisningen och ska sparas.')
+                    : __('En låst budget för ett stängt räkenskapsår kan inte tas bort. Den kan ha legat till grund för bedömningar i årsredovisningen och ska sparas.')]);
             }
 
             $lines = $version->lines()->count();

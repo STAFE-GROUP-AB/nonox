@@ -20,4 +20,15 @@ final class BudgetScope
     {
         return BudgetLine::query()->where('budget_lines.budget_version_id', $versionId);
     }
+
+    /**
+     * The lines of several versions at once (Rullande 12 månader reads two).
+     *
+     * @param  list<int>  $versionIds
+     * @return Builder<BudgetLine>
+     */
+    public static function linesOf(array $versionIds): Builder
+    {
+        return BudgetLine::query()->whereIn('budget_lines.budget_version_id', $versionIds);
+    }
 }

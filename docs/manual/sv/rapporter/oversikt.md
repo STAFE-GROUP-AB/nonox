@@ -21,6 +21,7 @@ Du hittar rapporterna under **Bokföring → Rapporter**. Längst upp väljer du
 - [Verifikationslistan](/manual/rapporter/verifikationslista) – alla verifikationer under perioden, rad för rad.
 - [Budget](/manual/rapporter/budget) – en plan per konto och månad, med kostnadsställe och projekt om du vill.
 - [Budget mot utfall](/manual/rapporter/budget-mot-utfall) – resultatet för månaden och hittills i år jämfört med budgeten.
+- [Rullande prognos](/manual/rapporter/prognos) – utfallet hittills och en prognos för resten av året, och de kommande tolv månaderna över årsskiftet.
 
 ## Att arbeta med rapporterna
 

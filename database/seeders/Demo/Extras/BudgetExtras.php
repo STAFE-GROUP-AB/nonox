@@ -5,10 +5,17 @@ declare(strict_types=1);
 namespace Database\Seeders\Demo\Extras;
 
 use App\Actions\Budget\CreateBudgetVersion;
+use App\Actions\Budget\CreateForecast;
+use App\Actions\Budget\ForecastInput;
 use App\Actions\Budget\ManageBudgetVersion;
 use App\Actions\Budget\SaveBudgetLines;
+use App\Actions\Budget\SaveForecast;
 use App\Domain\Budget\BudgetActuals;
 use App\Domain\Budget\BudgetMonths;
+use App\Domain\Budget\BudgetScope;
+use App\Domain\Budget\ForecastEngine;
+use App\Domain\Budget\ForecastMethod;
+use App\Models\BudgetVersion;
 use App\Support\Tenancy\CurrentCompany;
 use Database\Seeders\Demo\DemoContext;
 use Database\Seeders\Demo\DemoExtra;
@@ -17,7 +24,9 @@ use Database\Seeders\Demo\DemoExtra;
  * Budgets (ADR-081 E3) for the manual's budget pages, in the consultancy: a
  * first proposal made from the year's own figures, locked, and the budget the
  * reports use, a copy of it plus 3 %. Each account's budget differs a little
- * from its outcome, so Budget mot utfall shows variances both ways.
+ * from its outcome, so Budget mot utfall shows variances both ways. And a
+ * rolling forecast (E5) from the last ended month with the default methods,
+ * one month of it typed by hand, for the forecast pages.
  */
 final class BudgetExtras extends DemoExtra
 {
@@ -49,7 +58,51 @@ final class BudgetExtras extends DemoExtra
             ]);
 
             app(ManageBudgetVersion::class)->activate($c->user, $budget);
+
+            $this->forecast($c);
         }));
+    }
+
+    /** The default forecast (owner decision 7) and an expected extra cost typed into its last month. */
+    private function forecast(DemoContext $c): void
+    {
+        $cutoff = ForecastInput::defaultCutoff($c->fiscalYear);
+
+        if ($cutoff === null) {
+            return;
+        }
+
+        $methods = ['revenue_method' => ForecastMethod::Budget->value, 'cost_method' => ForecastMethod::Average->value, 'average_months' => 3, 'growth' => ''];
+        $forecast = app(CreateForecast::class)($c->user, $c->company, [
+            'fiscal_year_id' => $c->fiscalYear->id,
+            'name' => __('Prognos :month', ['month' => ForecastInput::monthName($cutoff)]),
+            'cutoff' => $cutoff,
+            ...$methods,
+        ]);
+
+        $months = BudgetMonths::of($c->fiscalYear);
+        $last = $months[count($months) - 1];
+
+        if ($last <= $cutoff) {
+            return;
+        }
+
+        // The largest cost of the last month, plus 25 000 kr: a known one-off the averages cannot see.
+        $line = BudgetScope::lines($forecast->id)
+            ->join('accounts', 'accounts.id', '=', 'budget_lines.account_id')
+            ->where('accounts.number', '>=', 4000)
+            ->whereDate('budget_lines.period', "{$last}-01")
+            ->orderByDesc('budget_lines.amount_ore')
+            ->first(['budget_lines.account_id', 'budget_lines.cost_center_id', 'budget_lines.project_id', 'budget_lines.amount_ore']);
+
+        if ($line === null) {
+            return;
+        }
+
+        app(SaveForecast::class)($c->user, BudgetVersion::query()->findOrFail($forecast->id), [
+            ...$methods,
+            'overrides' => [ForecastEngine::key($line->account_id, $line->cost_center_id, $line->project_id) => [$last => $line->amount_ore->ore + 25_000_00]],
+        ]);
     }
 
     /**
