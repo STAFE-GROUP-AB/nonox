@@ -220,6 +220,8 @@ use App\Modules\Manufacturing\Models\WorkshopPerson;
 use App\Modules\Manufacturing\Models\WorkshopTimeEntry;
 use App\Modules\Manufacturing\Models\WorkshopWaitingFlag;
 use App\Modules\Manufacturing\Models\Workstation;
+use App\Modules\Manufacturing\Mrp\Models\MrpPlannedOrder;
+use App\Modules\Manufacturing\Mrp\Models\MrpRun;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\AgiSubmission;
@@ -551,6 +553,8 @@ const COMPANY_SCOPED_MODELS = [
     BomRow::class => 'structureRowAttributes',
     ArticleUnitConversion::class => 'unitConversionAttributes',
     DemandForecast::class => 'demandForecastAttributes',
+    MrpRun::class => ['starts_on' => '2026-11-16', 'horizon_weeks' => 13, 'inputs_hash' => 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'engine_version' => '1'],
+    MrpPlannedOrder::class => 'e16PlannedOrderAttributes',
     Operation::class => ['name' => 'Hemligt arbetssteg', 'hourly_cost_ore' => 45_000],
     RowStructure::class => 'rowStructureAttributes',
     RowStructureLine::class => 'rowStructureLineAttributes',
@@ -2316,6 +2320,13 @@ function demandForecastAttributes(): array
     return ['article_id' => Article::create(articleAttributes())->id, 'period_kind' => 'WEEK', 'period_start' => '2026-11-16', 'quantity_milli' => 5000, 'source' => 'MANUAL'];
 }
 
+function e16PlannedOrderAttributes(): array
+{
+    $run = MrpRun::create(['starts_on' => '2026-11-16', 'horizon_weeks' => 13, 'inputs_hash' => str_repeat('a', 64), 'engine_version' => '1']);
+
+    return ['mrp_run_id' => $run->id, 'article_id' => Article::create(articleAttributes())->id, 'kind' => 'PURCHASE', 'quantity_milli' => 5000, 'release_on' => '2026-11-18', 'due_on' => '2026-11-23'];
+}
+
 function kitchenWasteAttributes(): array
 {
     return ['registered_on' => '2026-03-01', 'kind' => 'INGREDIENT', 'article_id' => Article::create(articleAttributes())->id, 'quantity_milli' => 1000, 'location_id' => StockLocation::create(inventoryLocationAttributes())->id, 'reason' => 'UTGANGET'];
@@ -2440,7 +2451,7 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [WorkshopWaitingFlag::class, PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class, StripeObject::class, DocumentVersion::class];
+const NEVER_UPDATED = [WorkshopWaitingFlag::class, MrpRun::class, PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class, StripeObject::class, DocumentVersion::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
 const APPEND_ONLY = [ApprovalRequest::class, ApprovalDecision::class, ApprovalDelegation::class, WorkshopTimeEntry::class, WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];

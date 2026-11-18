@@ -27,6 +27,8 @@ Route::get('/lager/plocklistor/{pickList}/pdf', PickListPdfController::class)->w
 Route::view('/lager/inventering', 'inventory::counts')->name('inventory.counts');
 Route::view('/lager/batcher', 'inventory::lots')->name('inventory.lots');
 Route::view('/lager/prognos', 'inventory::forecast')->name('inventory.forecast');
+// Behovsplanering (ADR-081 gap 5): the engine lives with Tillverkning but plans trading companies with Lager alone too.
+Route::view('/lager/behovsplanering', 'manufacturing::mrp')->name('inventory.mrp');
 Route::view('/lager/rapporter', 'inventory::reports')->name('inventory.reports');
 Route::view('/lager/installningar', 'inventory::settings')->name('inventory.settings');
 Route::view('/lager/installningar/etiketter', 'inventory::labels')->name('inventory.labels');

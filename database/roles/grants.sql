@@ -181,6 +181,8 @@ BEGIN
         ('migrations', 'SELECT'),
         ('mileage_routes', 'SELECT, INSERT, UPDATE, DELETE'),
         ('month_close_checks', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('mrp_planned_orders', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('mrp_runs', 'SELECT, INSERT, UPDATE, DELETE'),
         ('notifications', 'SELECT, INSERT, UPDATE, DELETE'),
         ('number_series', 'SELECT, INSERT, UPDATE, DELETE'),
         ('oauth_access_tokens', 'SELECT, INSERT, UPDATE, DELETE'),

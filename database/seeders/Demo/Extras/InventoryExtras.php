@@ -25,6 +25,7 @@ use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\Models\PickListLine;
 use App\Modules\Inventory\Models\StockCountLine;
 use App\Modules\Inventory\Models\StockReceipt;
+use App\Modules\Manufacturing\Mrp\Actions\RunMrp;
 use App\Modules\ModuleManager;
 use Carbon\CarbonImmutable;
 use Database\Seeders\Demo\DemoContext;
@@ -162,6 +163,8 @@ final class InventoryExtras extends DemoExtra
         $this->openPickList($context);
         $this->todaysCount($context);
         $this->planning($context);
+        // Behovsplanering (ADR-081 gap 5, E16): one run over the forecast, so the page shows planned orders and advice.
+        app(RunMrp::class)($context->user, $context->company, 13, $context->today);
     }
 
     /**

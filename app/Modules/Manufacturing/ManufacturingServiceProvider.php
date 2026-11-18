@@ -46,6 +46,8 @@ use App\Modules\Manufacturing\Models\WorkshopDevice;
 use App\Modules\Manufacturing\Models\WorkshopPerson;
 use App\Modules\Manufacturing\Models\WorkshopTimeEntry;
 use App\Modules\Manufacturing\Models\Workstation;
+use App\Modules\Manufacturing\Mrp\Console\PruneMrpRunsCommand;
+use App\Modules\Manufacturing\Mrp\Livewire\MrpPage;
 use App\Modules\Manufacturing\Planning\Engine\Clock;
 use App\Modules\Manufacturing\Planning\PlanningSettings;
 use App\Modules\Manufacturing\Planning\PlanSnapshot;
@@ -104,6 +106,8 @@ class ManufacturingServiceProvider extends ServiceProvider
         Livewire::component('manufacturing.terminal-admin', TerminalAdminPage::class);
         Livewire::component('manufacturing.wall-screen-admin', WallScreenAdminPage::class);
         Livewire::component('manufacturing.analysis', AnalysisPage::class);
+        // Behovsplanering (ADR-081 gap 5) is reached under Lager (/lager/behovsplanering), so it works with Lager alone.
+        Livewire::component(MrpPage::NAME, MrpPage::class);
 
         RateLimiter::for('workshop-terminal', fn (Request $request): Limit => Limit::perMinute(120)->by('workshop:'.$request->ip()));
         RateLimiter::for('workshop-pairing', fn (Request $request): Limit => Limit::perMinute(10)->by('workshop-pair:'.$request->ip()));
@@ -134,12 +138,14 @@ class ManufacturingServiceProvider extends ServiceProvider
         $this->planningHooks();
 
         if ($this->app->runningInConsole()) {
-            $this->commands([PlanProductionCommand::class]);
+            $this->commands([PlanProductionCommand::class, PruneMrpRunsCommand::class]);
         }
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             // The nightly plan (ADR-071 §13.4), after midnight so "today" is the new day.
             $schedule->command('manufacturing:plan')->dailyAt('02:35')->withoutOverlapping();
+            // Planning runs are kept 30 days (ADR-081 gap 5).
+            $schedule->command('mrp:prune')->dailyAt('03:10')->withoutOverlapping();
         });
 
         Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.ManufacturingModule::KEY])
