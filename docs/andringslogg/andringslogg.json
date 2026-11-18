@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-18-koncernfakturor",
+      "datum": "2026-11-18T13:40:00+01:00",
+      "rubrik": "Koncernfakturor direkt till inkorgen och motsvarande utkast",
+      "beskrivning": "En faktura till ett annat koncernföretag som använder NONOX kan levereras direkt till dess inkorg som en e-faktura, när mottagaren har valt att ta emot koncernfakturor från er under Bokföring → Koncernmarkeringar. Från en bokförd verifikation för ett lån, en ränta eller ett koncernbidrag gör Skapa motsvarande utkast ett utkast med debet och kredit omvända i koncernföretaget, för den som får skapa verifikationer i båda. Ingenting bokförs i det andra företaget förrän någon där bokför det.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-18-behovsplanering",
       "datum": "2026-11-18T11:25:00+01:00",
       "rubrik": "Behovsplanering vecka för vecka",

@@ -30,6 +30,7 @@ Allt i avsnittet finns i menyn under **Bokföring**.
 - [Verifikationsserier](/manual/bokforing/verifikationsserier) – A, B, C och de andra serierna, och hur numreringen fungerar.
 - [Kostnadsställen och projekt](/manual/bokforing/kostnadsstallen-och-projekt) – dela upp bokföringen per restaurang, avdelning eller uppdrag.
 - [Koncernmarkeringar](/manual/bokforing/koncernmarkeringar) – kunder och leverantörer som är koncernföretag, och raderna som är mellanhavanden inom koncernen.
+- [Koncernfakturor och motsvarande utkast](/manual/bokforing/koncernfakturor) – leverera en faktura till ett annat koncernföretags inkorg, och gör ett utkast hos motparten för lån, ränta och koncernbidrag.
 
 ## Räkenskapsår, låsning och SIE
 

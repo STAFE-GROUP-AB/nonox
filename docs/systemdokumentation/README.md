@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.144
+- Version: 0.145
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -1057,6 +1057,99 @@ körloggen.
   antal företag, antal utelämnade, preliminär) och `group_account_map.saved`
   och `.removed` i det företag vars konto mappas (koncernens id och
   kontonummer).
+
+### 4.10c Koncern: leverans av koncernfakturor och motsvarande utkast (version 0.145, ADR-081 E27)
+
+Två sätt att slippa skriva samma mellanhavande två gånger mellan företag i
+samma koncern. Inget av dem bokför något i det andra företaget, och ingen
+verifikation, rad, numrering eller hashkedja ändras.
+
+**Leverans av en koncernfaktura.** En utfärdad kundfaktura till en kund som
+företaget har markerat som koncernföretag (avsnitt 4.10a) kan levereras till
+inkorgen i det NONOX-företag som har det organisationsnumret (ADR-023).
+
+- Det är den enda skrivningen i ett annat företag i ADR-081. Den sker bara när,
+  samma dag: mottagaren finns i installationen med det markerade
+  organisationsnumret; båda är bekräftade medlemmar i samma koncern och det
+  innehav som gör ett dotterföretag till medlem är förvärvat och inte
+  avyttrat; mottagarens ägare eller administratör har slagit på mottagning
+  från avsändarens organisationsnummer (`intercompany_receipt_settings`); och
+  mottagaren har inkorgen påslagen och är varken arkiverad eller ett
+  testföretag. Organisationsnumret på fakturan måste stämma med markeringen.
+- Fakturan skrivs som en e-faktura enligt Peppol BIS Billing 3.0 med PDF:en
+  inbäddad, samma fil som vid sändning via Peppol (ADR-050), och kontrolleras
+  mot de Peppol-regler NONOX känner till. Filen sparas byte för byte med sin
+  SHA-256 på den krypterade privata disken som original för ett
+  inkorgsmeddelande med kanalen `GROUP_DELIVERY` i mottagarens företag
+  (`inbox_messages`, `inbox_attachments`), skrivet inom mottagarens företag
+  (`CurrentCompany::run`). Den tolkas sedan som en e-faktura via Peppol, och
+  mottagarens egna användare registrerar och attesterar den som en
+  leverantörsfaktura; fakturan blir underlag till den verifikationen. NONOX
+  bokför ingenting hos mottagaren åt avsändaren; bara en mall som
+  mottagarens egna användare har slagit på automatisk bokföring för (avsnittet
+  om inkorgen) kan bokföra den där.
+- Mottagaren söks bara bland företag som är aktiva medlemmar i samma koncern
+  som avsändaren. Inom leveransens transaktion låses båda medlemskapen
+  (delat lås) och mottagarens inställning (uppdateringslås), och koncernen
+  kontrolleras igen efter låsen, så en medlem som tas bort eller en mottagning
+  som stängs av samtidigt antingen hinner före leveransen (som då nekas) eller
+  sker efter den.
+- Hos avsändaren påverkas inte bokföringen: fakturan bokfördes när den
+  utfärdades. En faktura levereras högst en gång (unikt index). Varje försök
+  sparas i `intercompany_deliveries` med fakturan, mottagarens
+  organisationsnummer, status `DELIVERED` eller `REFUSED`, koncernens id vid
+  leverans, tid och användare. En levererad faktura sparas dessutom hos
+  avsändaren som exakt den e-fakturafil som lämnade företaget
+  (`koncern/{företag}/utgaende/{leverans}.xml` på den krypterade privata
+  disken) med sin SHA-256 (`xml_path`, `xml_sha256`, krävs av en CHECK för
+  levererade rader), och den filen följer med i avsändarens arkivpaket under
+  `kundfakturor/koncernleveranser/`. Filerna tas bort igen om leveransen inte
+  sparas. Raderna läggs bara till: modellen nekar
+  ändring och borttagning, och appens databasroll har bara `SELECT` och
+  `INSERT`. Avsändaren sparar inget id hos mottagaren och får inget skäl när
+  en leverans nekas, så att den inte lär sig något om mottagaren utöver
+  "levererad".
+- Ett levererat inkorgsmeddelande rensas inte bort även om det avvisas, som
+  en e-faktura via Peppol (avsnitt om inkorgen).
+- Behandlingshistoriken: `invoice.group_delivered` och
+  `invoice.group_delivery_refused` hos avsändaren (fakturans id och nummer,
+  leveransens id, status); `inbox.received` och de följande inkorgsposterna
+  hos mottagaren utan användare, IP-adress eller webbläsare från avsändarens
+  sida; `intercompany.receipt_enabled` och `.receipt_disabled` hos mottagaren
+  (inställningens id, påslagen eller inte).
+
+**Motsvarande utkast.** Från en bokförd verifikation för ett mellanhavande
+utan faktura (lån, ränta, koncernbidrag, beslutad utdelning, kortfristig
+fordran eller skuld) kan en användare med behörigheten att skapa
+verifikationer i båda företagen göra ett utkast i ett koncernföretag.
+
+- Förslaget vänder debet och kredit. Konton i intervallen 1320–1329,
+  1560–1569, 1660–1669 och 8820–8829 föreslås som motsvarande konto i
+  2360–2369, 2460–2469, 2860–2869 och 8830–8839 (och tvärtom); andra konton
+  får samma nummer; för ränte- och utdelningskonton (8300–8499, 8010–8019),
+  som inte har något givet motkonto, varnar formuläret i stället. Användaren
+  ändrar konton, radtexter, kostnadsställen och projekt; raderna, deras antal
+  och beloppen tas alltid från den bokförda verifikationen, oavsett vad
+  formuläret skickar.
+- Utkastet sparas i det andra företaget med samma funktion som ett manuellt
+  utkast (`SaveDraftVoucher`, inom det företaget), så varje rad byggs från
+  det företagets kontoplan efter kontonummer och dess kostnadsställen och
+  projekt efter kod; saknas något nekas utkastet. Inget id från det första
+  företaget följer med. Utkastet bokförs bara av någon i det företaget, med
+  dess vanliga regler för räkenskapsår, låsta perioder och numrering.
+- Varje företag får en egen rad i `intercompany_pairs`: den egna
+  verifikationen, motpartens organisationsnummer, typ av mellanhavande och
+  motpartens verifikation som text (serie och nummer). I det mottagande
+  företaget står det första företagets bokförda verifikation med
+  räkenskapsåret, till exempel "A12 (2026)" för ett kalenderår och med
+  start- och slutdatum för andra år, eftersom numreringen börjar om
+  varje år; ett andra utkast för samma verifikation nekas medan det första
+  finns; i det första
+  företaget fyller en person i motpartens nummer när utkastet är bokfört. Tas utkastet bort försvinner
+  dess rad, och ett nytt utkast kan göras.
+- Behandlingshistoriken: `intercompany.pair_created` i det första företaget
+  och `intercompany.paired_draft_created` i det andra (parets id, typ, antal
+  rader), `intercompany.pair_reference_set` (parets id).
 
 ### 4.11 Inläsning av SIE4-filer
 
@@ -6221,6 +6314,21 @@ påverkar bokföringen och fakturan:
   kund- och leverantörssidan) mot BAS 2026-kontoplanen; NONOX:s egna mallar
   har bara 1310 och 8010 av dem.
 
+### Koncernfakturor och motsvarande utkast (avsnitt 4.10c)
+
+- Om en faktura som levereras mellan två företag i NONOX är "mottagen" enligt
+  BFL 5 kap. 7 § och bevaras i den form den togs emot hos båda parter, och om
+  den är en elektronisk faktura enligt mervärdesskattelagen (2023:200) 17 kap.
+  när den aldrig lämnar NONOX.
+- Koncernbidrag (IL 35 kap.) bokförs av varje företags egna användare; NONOX
+  föreslår bara motsvarande utkast och ger inga skatteråd.
+- De föreslagna motkontona (1320/2360, 1560/2460, 1660/2860, 8820/8830) mot
+  BAS 2026-kontoplanen, och om fasta motkonton för ränta och utdelning (till
+  exempel 831x/841x, 8010/2898) kan föreslås.
+- Säljarens kopia: att den sparade e-fakturafilen hos avsändaren uppfyller
+  kravet att bevara en kopia av den utfärdade fakturan (BFL 7 kap. 1 §,
+  mervärdesskattelagen 17 kap.) när fakturan levereras inom NONOX.
+
 ### Uppskjuten skatt enligt K3 (avsnitt 5a6.5)
 
 - Att varje skattesats i `corporate-tax/rules.json` var beslutad före
@@ -6385,3 +6493,4 @@ påverkar bokföringen och fakturan:
 | 0.142 | 2026-11-18 | SIE-budget (avsnitt 4.9, 4.11 och 4.12a, ADR-081 paket E4): `#PBUDGET 0` i en SIE-fil blir en ny budget när filen läses in, med hela beloppet, varje kostnadsställe och varje projekt per konto och månad exakt som i filen; en budget som inte går att läsa säkert läses inte in men hindrar aldrig bokföringen. Under Budget kan bara budgeten i en fil av typ 2, 3 eller 4 läsas in, i två steg, mot räkenskapsår, konton och objekt som redan finns. SIE-exporten skriver årets budget bara med rutan Ta med budget. Budgeten bokförs aldrig och ingår inte i avstämningen eller kontrollsummekedjan. Ingen verifikation ändras. |
 | 0.143 | 2026-11-18 | Rullande prognos (avsnitt 4.12a, ADR-081 lucka 2, paket E5): prognoser som versioner av slaget `FORECAST` i `budget_versions` med brytmånad, utfall ur bokförda verifikationer till och med brytmånaden och tre regler för månaderna efter (budgeten, snittet av de senaste månaderna, samma månad i fjol med procentsats), egna belopp som markeras och behålls, och Rullande 12 månader över årsskiftet. Nya databaskontroller på `budget_versions`: brytmånad bara på prognoser, och alltid en månads sista dag. Prognosen bokförs aldrig, och ingen bokförd verifikation ändras. |
 | 0.144 | 2026-11-18 | Konsolidering och körlogg för koncerner (avsnitt 4.10b, ADR-060 tillägg 2.4, ADR-081 paket E24): koncernens bekräftade medlemmar läses var för sig inom sitt företag, ett dotterföretags intäkter och kostnader räknas från förvärvet till avyttringen och dess balans tas med om det är medlem periodens sista dag, kontona flyttas enligt kontomappningen (`group_account_maps`, inom samma kontoklass) och beloppen summeras. Varje körning sparas i `corporate_group_runs` med indata och resultat och deras SHA-256 (samma indata ger samma resultat); tabellen kan inte ändras eller tas bort. Inga elimineringar ännu. Ingenting skrivs i något företags bokföring och ingen verifikation ändras. |
+| 0.145 | 2026-11-18 | Koncernfakturor och motsvarande utkast (avsnitt 4.10c, ADR-081 paket E27): en utfärdad kundfaktura till en kund som är markerad som koncernföretag kan levereras som e-faktura (Peppol BIS Billing 3.0 med PDF) till inkorgen i det NONOX-företag som har organisationsnumret, när båda är aktiva medlemmar i samma koncern och mottagaren har slagit på mottagning från avsändaren (`intercompany_receipt_settings`); varje försök sparas i `intercompany_deliveries`, som bara kan läggas till, och avsändaren får inget skäl när leveransen nekas. Från en bokförd verifikation kan den som får skapa verifikationer i båda företagen göra ett utkast med vända rader i koncernföretaget, byggt från dess kontoplan, med en rad i `intercompany_pairs` i varje företag. Ingenting bokförs i det andra företaget, och ingen verifikation, numrering eller hashkedja ändras. |

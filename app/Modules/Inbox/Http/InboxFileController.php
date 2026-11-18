@@ -30,6 +30,8 @@ class InboxFileController
         // A Peppol e-invoice's original is the UBL file itself (ADR-050).
         $name = match ($found->channel) {
             Channel::Peppol => 'e-faktura.xml',
+            // An intra-group invoice delivered through NONOX (ADR-081 E27): the UBL file as well.
+            Channel::GroupDelivery => 'koncernfaktura.xml',
             // A photographed receipt's original is the file itself (ADR-072).
             Channel::Upload => 'kvitto.'.pathinfo($found->eml_path, PATHINFO_EXTENSION),
             default => 'meddelande.eml',

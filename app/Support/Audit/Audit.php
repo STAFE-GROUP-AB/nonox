@@ -48,6 +48,33 @@ final class Audit
         }
     }
 
+    /** True inside withoutPerson(): entries keep no signed-in user either. */
+    private static bool $withoutUser = false;
+
+    /**
+     * Writes the entries of the callback without the signed-in user, IP
+     * address or user agent (unless a user is passed explicitly): for what
+     * one company's action writes into another company's log, such as an
+     * intra-group invoice delivered into the receiver's inbox (ADR-081 E27),
+     * where the sender's person is not the receiver's to keep.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function withoutPerson(callable $callback): mixed
+    {
+        $before = self::$withoutUser;
+        self::$withoutUser = true;
+
+        try {
+            return self::withoutRequest($callback);
+        } finally {
+            self::$withoutUser = $before;
+        }
+    }
+
     /** The request whose IP address and user agent an entry keeps, or null. */
     private static function request(): ?Request
     {
@@ -92,7 +119,7 @@ final class Audit
 
         return AuditLog::create([
             'company_id' => $companyId,
-            'user_id' => $user->id ?? Auth::id(),
+            'user_id' => $user->id ?? (self::$withoutUser ? null : Auth::id()),
             'action' => $action,
             'subject_type' => $subject?->getMorphClass(),
             'subject_id' => $subject === null ? null : (string) $subject->getKey(),

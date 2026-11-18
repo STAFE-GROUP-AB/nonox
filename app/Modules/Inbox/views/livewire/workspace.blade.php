@@ -103,6 +103,8 @@
                 <p class="text-sm text-gray-600">{{ __('Från :sender till :recipient, :time', ['sender' => $message->senderLabel(), 'recipient' => $message->recipient, 'time' => $message->received_at->timezone('Europe/Stockholm')->format('Y-m-d H:i')]) }}</p>
                 @if($message->channel === App\Modules\Inbox\Domain\Channel::Peppol)
                     <p class="mt-1 text-xs text-gray-500">{{ __('E-faktura via Peppol') }} · <a class="underline" href="{{ route('inbox.original', ['message' => $message->id]) }}">{{ __('Ladda ner originalet (.xml)') }}</a></p>
+                @elseif($message->channel === App\Modules\Inbox\Domain\Channel::GroupDelivery)
+                    <p class="mt-1 text-xs text-gray-500" data-group-delivery>{{ __('Koncernfaktura levererad i NONOX av ett annat företag i koncernen') }} · <a class="underline" href="{{ route('inbox.original', ['message' => $message->id]) }}">{{ __('Ladda ner originalet (.xml)') }}</a></p>
                 @else
                     <p class="mt-1 text-xs text-gray-500">SPF {{ $message->auth['spf'] ?? '–' }} · DKIM {{ $message->auth['dkim'] ?? '–' }} · DMARC {{ $message->auth['dmarc'] ?? '–' }} · <a class="underline" href="{{ route('inbox.original', ['message' => $message->id]) }}">{{ __('Ladda ner originalet (.eml)') }}</a></p>
                 @endif

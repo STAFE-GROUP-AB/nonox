@@ -140,6 +140,10 @@ bokforing/underlag: { foretag: konsult, rutt: accounting.vouchers.show, modell: 
 bokforing/kostnadsstallen-och-projekt: { foretag: konsult, rutt: accounting.costCenters }
 bokforing/projektregistret: { foretag: konsult, rutt: accounting.projects, del: 'main' }
 bokforing/koncernmarkeringar: { foretag: konsult, rutt: accounting.intercompany, text: Konsultgruppen Holding Exempel AB }
+bokforing/koncernfakturor: { foretag: konsult, rutt: accounting.intercompany, del: '[data-intercompany-deliveries]', text: Levererade koncernfakturor }
+bokforing/ta-emot-koncernfakturor: { foretag: cafe, rutt: accounting.intercompany, del: '[data-receipt-settings]', text: Ta emot koncernfakturor }
+bokforing/motsvarande-utkast: { foretag: konsult, rutt: accounting.vouchers.show, modell: { tabell: vouchers, dar: { description: 'Lån till Café Hörnet Demo AB' } }, klick: ['text=Skapa motsvarande utkast'], del: '[data-paired-draft]', text: Konto hos motparten }
+fakturering/leverera-till-koncernforetag: { foretag: konsult, rutt: invoicing.invoices.show, modell: { tabell: invoices, dar: { your_reference: 'Administration inom koncernen' } }, del: '[data-intercompany-delivery]', text: Leverera till koncernföretaget }
 bokforing/las-en-period: { foretag: konsult, rutt: vat.index }
 bokforing/rattelse: { foretag: konsult, rutt: accounting.vouchers.show, modell: { tabell: vouchers, dar: { source: CORRECTION } } }
 bokforing/anlaggningstillgang-fran-inkop: { foretag: konsult, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { description: 'Bärbar dator' } } }

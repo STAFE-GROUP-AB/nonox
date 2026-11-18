@@ -49,6 +49,9 @@ use App\Models\ImportedVoucher;
 use App\Models\IncomeTaxPartner;
 use App\Models\IncomeTaxReturn;
 use App\Models\IntercompanyCounterparty;
+use App\Models\IntercompanyDelivery;
+use App\Models\IntercompanyPair;
+use App\Models\IntercompanyReceiptSetting;
 use App\Models\IntercompanyRowTag;
 use App\Models\Invoice;
 use App\Models\InvoiceDocument;
@@ -391,6 +394,10 @@ const COMPANY_SCOPED_MODELS = [
     CompanyAccountingPolicy::class => ['key' => 'leasing', 'value' => 'classify', 'applies_from' => '2026-01-01'],
     IntercompanyCounterparty::class => 'intercompanyCounterpartyAttributes',
     IntercompanyRowTag::class => 'intercompanyRowTagAttributes',
+    // Intra-group delivery and paired drafts (ADR-081 E27).
+    IntercompanyReceiptSetting::class => ['sender_org_number' => '556036-0793', 'enabled' => true],
+    IntercompanyDelivery::class => 'intercompanyDeliveryAttributes',
+    IntercompanyPair::class => 'intercompanyPairAttributes',
     GroupAccountMap::class => 'groupAccountMapAttributes',
     CompanyHolding::class => ['held_org_number' => '556036-0793', 'held_name' => 'Hemligt Dotterbolag AB', 'capital_bp' => 10000, 'voting_bp' => 10000, 'control_basis' => 'VOTES', 'acquired_on' => '2024-01-01'],
     PriorYearSizeFigure::class => ['start_date' => '2024-01-01', 'end_date' => '2024-12-31', 'average_employees_fte' => '3.40', 'balance_sheet_total_ore' => 150_000_000, 'net_turnover_ore' => 300_000_000],
@@ -1047,6 +1054,18 @@ function intercompanyRowTagAttributes(): array
     $voucher->forceFill(['status' => 'POSTED', 'number' => (int) Voucher::query()->max('number') + 1, 'posted_at' => now(), 'hash' => str_repeat('0', 64)])->save();
 
     return ['voucher_row_id' => $row->id, 'counterparty_org_number' => '556036-0793', 'kind' => 'SALES', 'source' => 'MANUAL'];
+}
+
+/** A refused delivery of an invoice of the current company; the trigger refuses another company's invoice. */
+function intercompanyDeliveryAttributes(): array
+{
+    return ['invoice_id' => Invoice::create(invoiceAttributes())->id, 'recipient_org_number' => '556036-0793', 'status' => 'REFUSED'];
+}
+
+/** A pair on a voucher of the current company; the trigger refuses another company's voucher. */
+function intercompanyPairAttributes(): array
+{
+    return ['voucher_id' => Voucher::create(voucherAttributes())->id, 'counterparty_org_number' => '556036-0793', 'kind' => 'LOAN_RECEIVABLE'];
 }
 
 function openingBalanceAttributes(): array

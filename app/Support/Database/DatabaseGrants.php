@@ -192,6 +192,10 @@ final class DatabaseGrants
         'instance_settings' => GrantDecision::NoDelete,
         // ADR-060 addendum 2.3: markings and tags are metadata beside the ledger, changed and removed by people (each audited).
         'intercompany_counterparties' => GrantDecision::ReadWrite,
+        // Intra-group deliveries are only ever added (ADR-081 E27); pairs and receipt settings change.
+        'intercompany_deliveries' => GrantDecision::AppendOnly,
+        'intercompany_pairs' => GrantDecision::ReadWrite,
+        'intercompany_receipt_settings' => GrantDecision::ReadWrite,
         'intercompany_row_tags' => GrantDecision::ReadWrite,
         'inventory_scan_operations' => GrantDecision::ReadWrite,
         // The stored PDF of an issued invoice: never changed, deleted only by the company cascade (trigger).

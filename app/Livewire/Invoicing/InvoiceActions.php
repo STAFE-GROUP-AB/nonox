@@ -16,6 +16,7 @@ use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\TaxReduction;
 use App\Livewire\Concerns\ShowsToasts;
+use App\Models\IntercompanyCounterparty;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Modules\ModuleManager;
@@ -228,6 +229,8 @@ class InvoiceActions extends Component
             'invoice' => $invoice,
             'canSend' => $this->user()->can('send', $invoice),
             'peppolOn' => app(ModuleManager::class)->isEnabled(PeppolModule::KEY, $invoice->company_id),
+            // Intra-group delivery (ADR-081 E27): offered for an issued invoice to a customer marked as a group company.
+            'groupDelivery' => ! $invoice->isDraft() && ! $invoice->isImported() && IntercompanyCounterparty::query()->where('customer_id', $invoice->customer_id)->exists(),
             'canPay' => $this->user()->can('registerPayment', $invoice),
             'canTaxPay' => $this->user()->can('registerTaxReductionPayment', $invoice),
             'canTaxRepay' => $this->user()->can('registerTaxReductionRepayment', $invoice),

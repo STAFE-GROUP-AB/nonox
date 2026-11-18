@@ -131,6 +131,11 @@
         </x-ui.card>
 
         <livewire:accounting.voucher-actions :voucher="$voucher" />
+
+        {{-- Paired intra-group drafts (ADR-081 E27): spans companies, so never for a member limited to cost centres or projects. --}}
+        @unless(App\Support\Tenancy\DimensionScope::current()->restricted)
+            <livewire:group.paired-draft-panel :voucher-id="$voucher->id" :key="'paired-'.$voucher->id" />
+        @endunless
         </div>
 
         <livewire:accounting.voucher-attachments :voucher="$voucher" />

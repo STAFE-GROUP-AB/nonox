@@ -85,6 +85,10 @@ Typerna är:
 
 Under **Markerade rader per koncernföretag** ser du antal rader och summorna i debet och kredit per koncernföretag och typ. Under **Markerade rader** finns varje rad med verifikation, datum, konto och belopp. Du filtrerar på **Koncernföretag** och **Typ**, byter typ på en rad i listan eller tar bort markeringen med **Ta bort**. I kolumnen **Markerad** står om markeringen kom **Från kund eller leverantör**, **Från kontots markering** eller **Manuellt**.
 
+## Koncernfakturor och motsvarande utkast
+
+Längre ned på sidan finns **Ta emot koncernfakturor**, **Levererade koncernfakturor** och **Motsvarande utkast**: vilka koncernföretag som får leverera fakturor till företagets inkorg, fakturor företaget har levererat till andra koncernföretag, och verifikationer som har ett motsvarande utkast hos ett koncernföretag. Läs [Koncernfakturor och motsvarande utkast](/manual/bokforing/koncernfakturor).
+
 ## Bra att veta
 
 - Alla som ser verifikationer ser sidan. Ägare, administratörer, redovisningskonsulter och bokförare kan ändra markeringarna. Revisorer och attestanter kan bara läsa.
@@ -96,5 +100,6 @@ Under **Markerade rader per koncernföretag** ser du antal rader och summorna i 
 ## Läs också
 
 - [Koncernöversikt](/manual/rapporter/koncernoversikt)
+- [Koncernfakturor och motsvarande utkast](/manual/bokforing/koncernfakturor)
 - [Kontoplan](/manual/bokforing/kontoplan)
 - [Behandlingshistorik](/manual/bokforing/behandlingshistorik)
