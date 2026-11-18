@@ -11,6 +11,7 @@ use App\Domain\Approval\ApprovalSubjects;
 use App\Domain\Approval\ApprovalSubjectType;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Inventory\Actions\Purchasing\RejectPurchaseRequisition;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -29,6 +30,13 @@ class RejectApproval
 
     public function __invoke(User $user, Company $company, ApprovalSubjectType $type, string $subjectId, ?string $reason = null): void
     {
+        // A requisition's own status says it was rejected, in the default flow too (ADR-081 E9).
+        if ($type === ApprovalSubjectType::PurchaseRequisition) {
+            app(RejectPurchaseRequisition::class)($user, $company, $subjectId, $reason);
+
+            return;
+        }
+
         CurrentCompany::run($company, function () use ($user, $company, $type, $subjectId, $reason): void {
             DB::transaction(function () use ($user, $company, $type, $subjectId, $reason): void {
                 $subject = ApprovalSubjects::lock($type, $subjectId);

@@ -322,6 +322,9 @@ final class DatabaseGrants
         'purchase_order_rows' => GrantDecision::ReadWrite,
         'purchase_order_versions' => GrantDecision::AppendOnly,
         'purchase_orders' => GrantDecision::ReadWrite,
+        // A requisition is changed while a draft and never deleted; its rows are replaced when it is saved again (E9).
+        'purchase_requisition_rows' => GrantDecision::ReadWrite,
+        'purchase_requisitions' => GrantDecision::NoDelete,
         'recent_items' => GrantDecision::ReadWrite,
         'recurring_inputs' => GrantDecision::ReadWrite,
         'recurring_invoice_rows' => GrantDecision::ReadWrite,

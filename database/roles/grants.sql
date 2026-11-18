@@ -273,6 +273,8 @@ BEGIN
         ('purchase_order_rows', 'SELECT, INSERT, UPDATE, DELETE'),
         ('purchase_order_versions', 'SELECT, INSERT'),
         ('purchase_orders', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('purchase_requisition_rows', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('purchase_requisitions', 'SELECT, INSERT, UPDATE'),
         ('recent_items', 'SELECT, INSERT, UPDATE, DELETE'),
         ('recurring_inputs', 'SELECT, INSERT, UPDATE, DELETE'),
         ('recurring_invoice_rows', 'SELECT, INSERT, UPDATE, DELETE'),

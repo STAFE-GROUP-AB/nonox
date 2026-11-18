@@ -10,6 +10,7 @@ use App\Domain\Approval\ApprovalSubjects;
 use App\Domain\Approval\ApprovalSubjectType;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Inventory\Actions\Purchasing\ResubmitPurchaseRequisition;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +27,12 @@ class ResubmitApproval
 
     public function __invoke(User $user, Company $company, ApprovalSubjectType $type, string $subjectId): void
     {
+        if ($type === ApprovalSubjectType::PurchaseRequisition) {
+            app(ResubmitPurchaseRequisition::class)($user, $company, $subjectId);
+
+            return;
+        }
+
         CurrentCompany::run($company, function () use ($user, $company, $type, $subjectId): void {
             DB::transaction(function () use ($user, $company, $type, $subjectId): void {
                 $subject = ApprovalSubjects::lock($type, $subjectId);

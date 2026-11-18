@@ -23,6 +23,10 @@ use App\Modules\Inventory\Livewire\Purchasing\PurchaseOrderMatchPanel;
 use App\Modules\Inventory\Livewire\Purchasing\PurchaseOrderPage;
 use App\Modules\Inventory\Livewire\Purchasing\PurchaseOrdersPage;
 use App\Modules\Inventory\Livewire\Purchasing\PurchaseProposalsPage;
+use App\Modules\Inventory\Livewire\Purchasing\RequisitionConvertPage;
+use App\Modules\Inventory\Livewire\Purchasing\RequisitionEditor;
+use App\Modules\Inventory\Livewire\Purchasing\RequisitionPage;
+use App\Modules\Inventory\Livewire\Purchasing\RequisitionsPage;
 use App\Modules\Inventory\Livewire\ReceiptsPage;
 use App\Modules\Inventory\Livewire\ReportsPage;
 use App\Modules\Inventory\Livewire\ShipmentsPage;
@@ -35,6 +39,7 @@ use App\Modules\Inventory\Models\DemandForecast;
 use App\Modules\Inventory\Models\LabelTemplate;
 use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\PurchaseOrder;
+use App\Modules\Inventory\Models\PurchaseRequisition;
 use App\Modules\Inventory\Models\ScanOperation;
 use App\Modules\Inventory\Models\Shipment;
 use App\Modules\Inventory\Models\StockCount;
@@ -47,6 +52,7 @@ use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Models\StockValuation;
 use App\Modules\Inventory\Policies\InventoryPolicy;
 use App\Modules\Inventory\Policies\PurchaseOrderPolicy;
+use App\Modules\Inventory\Policies\PurchaseRequisitionPolicy;
 use App\Modules\Inventory\Purchasing\PurchaseDemandSources;
 use App\Modules\Inventory\Scanner\ScannerExtensions;
 use App\Modules\Inventory\Support\StockValuationAdditions;
@@ -84,6 +90,7 @@ class InventoryServiceProvider extends ServiceProvider
         }
 
         Gate::policy(PurchaseOrder::class, PurchaseOrderPolicy::class);
+        Gate::policy(PurchaseRequisition::class, PurchaseRequisitionPolicy::class);
 
         Livewire::component(InventorySettingsForm::NAME, InventorySettingsForm::class);
         Livewire::component('inventory.overview', OverviewPage::class);
@@ -104,6 +111,10 @@ class InventoryServiceProvider extends ServiceProvider
         Livewire::component(PurchaseOrderPage::NAME, PurchaseOrderPage::class);
         Livewire::component(PurchaseProposalsPage::NAME, PurchaseProposalsPage::class);
         Livewire::component(PurchaseOrderMatchPanel::NAME, PurchaseOrderMatchPanel::class);
+        Livewire::component(RequisitionsPage::NAME, RequisitionsPage::class);
+        Livewire::component(RequisitionEditor::NAME, RequisitionEditor::class);
+        Livewire::component(RequisitionPage::NAME, RequisitionPage::class);
+        Livewire::component(RequisitionConvertPage::NAME, RequisitionConvertPage::class);
 
         if ($this->app->runningInConsole()) {
             $this->commands([VerifyStockCommand::class, PruneShipmentsCommand::class]);

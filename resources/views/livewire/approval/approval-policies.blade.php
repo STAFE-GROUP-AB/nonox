@@ -19,6 +19,7 @@
                     <x-button type="button" wire:click="create('{{ $type->value }}')">{{ match ($type) {
                         ApprovalSubjectType::SupplierInvoice => __('Nytt flöde för leverantörsfakturor'),
                         ApprovalSubjectType::PurchaseOrder => __('Nytt flöde för inköpsorder'),
+                        ApprovalSubjectType::PurchaseRequisition => __('Nytt flöde för inköpsanmodan'),
                         default => __('Nytt flöde för betalfiler'),
                     } }}</x-button>
                 </x-slot:cta>
@@ -70,6 +71,7 @@
                         {{ match ($type) {
                             ApprovalSubjectType::SupplierInvoice => __('Gäller när inget flöde ovan gäller: en person med attesträtt för leverantörsfakturor attesterar fakturan.'),
                             ApprovalSubjectType::PurchaseOrder => __('Gäller när inget flöde ovan gäller: en order över attestgränsen under Lager skickas av en person med rätt att skicka inköpsorder, och en order under gränsen av den som lägger den.'),
+                            ApprovalSubjectType::PurchaseRequisition => __('Gäller när inget flöde ovan gäller: en person med rätt att skicka inköpsorder attesterar anmodan.'),
                             default => __('Gäller när inget flöde ovan gäller: en person med rätt att godkänna betalningar godkänner filen.'),
                         } }}
                         {{ $type === ApprovalSubjectType::PurchaseOrder
@@ -192,6 +194,9 @@
                                 </x-ui.field>
                                 @if($formType === ApprovalSubjectType::PurchaseOrder)
                                     <p class="text-sm text-gray-500 sm:col-span-2">{{ __('Villkor för kostnadsställe, projekt och konto gäller bara rader utan artikel. Rader med en lagerartikel har inget konto och uppfyller aldrig ett kontointervall.') }}</p>
+                                @endif
+                                @if($formType === ApprovalSubjectType::PurchaseRequisition)
+                                    <p class="text-sm text-gray-500 sm:col-span-2">{{ __('Beloppet är den uppskattade summan exkl. moms. Har någon rad inget pris vet ingen vad anmodan kostar, så en nedre gräns (Belopp från och med) anses uppnådd och en övre gräns (Belopp till och med) anses inte uppfylld. Leverantörsvillkoret gäller bara när alla rader har samma leverantör.') }}</p>
                                 @endif
                                 <div class="grid grid-cols-2 gap-4">
                                     <x-ui.field for="step_{{ $index }}_account_from" :label="__('Konto från')" error="steps.{{ $index }}.account_from">

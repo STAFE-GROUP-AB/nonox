@@ -9,7 +9,9 @@ use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceRow;
 use App\Models\SupplierPaymentBatch;
 use App\Modules\Inventory\Models\PurchaseOrder;
+use App\Modules\Inventory\Models\PurchaseRequisition;
 use App\Modules\Inventory\Purchasing\PurchaseOrderApprovals;
+use App\Modules\Inventory\Purchasing\PurchaseRequisitionApprovals;
 
 /**
  * What the approval engine knows about a subject: its id, its total in öre,
@@ -35,6 +37,7 @@ final readonly class SubjectFacts
         public array $costCenterIds = [],
         public array $projectIds = [],
         public array $accountNumbers = [],
+        public bool $amountIncomplete = false,
     ) {}
 
     /** The person a rejection returns the subject to: the first preparer. */
@@ -98,6 +101,36 @@ final readonly class SubjectFacts
             amountOre: $order->totalOre(),
             preparerIds: self::people([$order->created_by, $order->prepared_by]),
             supplierId: $order->supplier_id,
+            costCenterIds: $ids('cost_center_id'),
+            projectIds: $ids('project_id'),
+            accountNumbers: $accountIds === [] ? [] : array_values(array_map('intval', Account::query()->whereKey($accountIds)->pluck('number')->all())),
+        );
+    }
+
+    /**
+     * A purchase requisition (ADR-081 E9): the requester's estimate excluding VAT
+     * (rows without a price count as nothing), who wrote and last changed it, the
+     * supplier when every row names the same one, and the dimensions and accounts
+     * of its rows. A requisition that is saved again starts a new approval round,
+     * so the facts read for a request stay true for its life. One query for the
+     * accounts' numbers.
+     */
+    public static function forPurchaseRequisition(PurchaseRequisition $requisition): self
+    {
+        $requisition->loadMissing('rows');
+
+        $ids = fn (string $column): array => array_values(array_unique(array_map('intval', array_filter($requisition->rows->pluck($column)->all(), fn (mixed $id): bool => $id !== null))));
+        $accountIds = $ids('account_id');
+        $suppliers = $requisition->rows->pluck('supplier_id')->unique()->values()->all();
+
+        return new self(
+            type: ApprovalSubjectType::PurchaseRequisition,
+            subjectId: PurchaseRequisitionApprovals::subjectId($requisition),
+            companyId: $requisition->company_id,
+            amountOre: $requisition->estimatedOre(),
+            amountIncomplete: $requisition->hasUnpricedRows(),
+            preparerIds: self::people([$requisition->requested_by, $requisition->prepared_by]),
+            supplierId: count($suppliers) === 1 && $suppliers[0] !== null ? (int) $suppliers[0] : null,
             costCenterIds: $ids('cost_center_id'),
             projectIds: $ids('project_id'),
             accountNumbers: $accountIds === [] ? [] : array_values(array_map('intval', Account::query()->whereKey($accountIds)->pluck('number')->all())),
