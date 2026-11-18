@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Actions\Purchasing;
 
+use App\Domain\Approval\DraftEditors;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Inventory\Domain\PurchaseOrderApprovalMode;
@@ -140,7 +141,7 @@ class SendPurchaseOrder
                     throw new AuthorizationException(__('Ordern är över företagets attestgräns. Någon med rätt att skicka inköpsorder behöver skicka den.'));
                 }
 
-                if ($company->separate_supplier_approval && in_array($user->id, array_filter([$order->created_by, $order->prepared_by]), true)) {
+                if ($company->separate_supplier_approval && in_array($user->id, [$order->created_by, $order->prepared_by, ...(DraftEditors::of($order->company_id, $order->getMorphClass(), [(string) $order->id], DraftEditors::PURCHASE_ORDER_ACTIONS)[(string) $order->id] ?? [])], true)) {
                     throw ValidationException::withMessages(['order' => __('Du skapade eller ändrade ordern och kan därför inte skicka den när den är över företagets attestgräns. Någon annan med rätt att skicka ordern behöver göra det. Är ni bara en person i företaget kan en ägare stänga av kravet under Leverantörsfakturor.')]);
                 }
 

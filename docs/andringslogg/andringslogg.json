@@ -40,6 +40,22 @@
       "omrade": "Bokföring"
     },
     {
+      "id": "2026-11-18-analys",
+      "datum": "2026-11-18T13:00:00+01:00",
+      "rubrik": "Analys: egna frågor till siffrorna",
+      "beskrivning": "Under Bokföring → Analys väljer du uppgifter som bokföringsrader, budget, fakturor eller sammanräknad lön, grupperar dem i rader och kolumner, jämför med förra året och klickar dig ner till posterna bakom ett belopp. En enhetschef ser bara rader på sina egna enheter, utan personalkostnader, och lön visas aldrig per person: små eller dominerade grupper döljs.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
+      "id": "2026-11-18-inkopsanmodan",
+      "datum": "2026-11-18T12:00:00+01:00",
+      "rubrik": "Inköpsanmodan med attest",
+      "beskrivning": "Under Beställningar → Inköpsanmodan kan den som behöver något skriva en anmodan med artiklar eller egna beskrivningar, och en attestant godkänner eller avvisar den, antingen som standard eller i ett eget attestflöde. En inköpare lägger sedan de godkända raderna från flera anmodan på en inköpsorder till en leverantör, och varje rad visar vilken order den blev. Din attest gäller bara den version du har sett, så en anmodan som ändras medan du läser den attesteras inte omärkt.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-18-behovsplanering",
       "datum": "2026-11-18T11:25:00+01:00",
       "rubrik": "Behovsplanering vecka för vecka",
@@ -54,6 +70,14 @@
       "beskrivning": "Har en SIE-fil en budget blir den en ny budget när du läser in filen, och under Budget kan du läsa in bara budgeten ur en fil av typ 2, 3 eller 4. Bocka i Ta med budget när du laddar ner SIE-filen under Räkenskapsår, så följer årets budget med. Utan bocken är filen som förut.",
       "typ": "Nytt",
       "omrade": "Bokföring"
+    },
+    {
+      "id": "2026-11-18-signering-hashkedja",
+      "datum": "2026-11-18T11:20:00+01:00",
+      "rubrik": "Signeringens händelser i en hashkedja",
+      "beskrivning": "Varje händelse i en signering länkas nu till den förra med en kontrollsumma, med början i dokumentets egen kontrollsumma, och den sista länken sparas i behandlingshistoriken när signeringen är klar, avböjd eller tillbakadragen. Varje natt räknas alla kedjor och dokument om, och signeringspanelen visar om de var oförändrade vid senaste kontrollen. Signeringar som redan fanns fick en första länk som täcker deras tidigare händelser, utan att något av det befintliga ändrades.",
+      "typ": "Säkerhet",
+      "omrade": "Fakturering"
     },
     {
       "id": "2026-11-18-rullande-prognos",

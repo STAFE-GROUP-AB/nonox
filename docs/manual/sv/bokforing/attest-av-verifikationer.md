@@ -13,7 +13,8 @@ Vill ni att någon annan ska godkänna en verifikation innan den bokförs, eller
 
 ## Vad som omfattas
 
-- **Manuella verifikationer** är verifikationer som någon för in: under **Bokföring → Verifikationer**, från inkorgen eller via API:t. Verifikationer som faktureringen, betalningar, lönen, momsen eller bokslutet bokför omfattas inte.
+- **Manuella verifikationer** är verifikationer som någon för in: under **Bokföring → Verifikationer**, från inkorgen eller via API:t. Verifikationer som faktureringen, betalningar, lönen, momsen, bokslutet eller avstämningen av skattekontot bokför omfattas inte.
+- **Rättelser:** att rätta en verifikation genom att vända den går alltid, eftersom den redan är bokförd. Vill du boka om med nya rader gör du det som en ny verifikation, som då skickas till attest.
 - **Kreditfakturor** är kreditfakturor till kunder.
 - Villkoren kan vara belopp, kostnadsställe, projekt och kontointervall. För en verifikation är beloppet summan av debet. För en kreditfaktura är det summan med moms, utan minustecken.
 - Den som godkänner måste själv ha rätt att bokföra (för verifikationer) eller att kreditera (för kreditfakturor), eller vara ägare eller administratör. Rollen **Attestant** räcker inte.

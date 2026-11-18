@@ -297,7 +297,10 @@ already has a place for it, never in the audit log.
 `App\Domain\Review\Contracts\ReviewSource` (key, label, items),
 `App\Domain\Review\ReviewItem`, `ReviewPreparer` and `ReviewSources` exist,
 with one source: `ApprovalRequestSource`, the approval engine's open requests
-(ADR-081 gap 8) that the person may decide on their current step. The page
+(ADR-081 gap 8) that the person may decide on their current step, for every
+wired subject: supplier invoices, payment files, purchase orders and purchase
+requisitions (the last two while Lager is on), manual vouchers and credit
+invoices. The page
 "Att godkänna" at `/att-godkanna` lists them read-only with a link to the
 subject's own page (phase 1). The contract has no `approve`/`reject` yet; they
 come with phase 2, through each kind's own action. This ADR stays Proposed for

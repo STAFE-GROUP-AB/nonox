@@ -1921,9 +1921,9 @@ paths:
       tags:
         - Verifikationer
       summary: 'Correct a posted voucher'
-      description: 'Creates and posts a correcting voucher (rättelseverifikation) that reverses the original and, if `rows` are given, books those instead. Both vouchers are linked. A voucher can be corrected once. Same Action as the app (CorrectVoucher).'
+      description: 'Creates and posts a correcting voucher (rättelseverifikation) that reverses the original and, if `rows` are given, books those instead. Both vouchers are linked. A voucher can be corrected once. When the company has an approval flow of its own for manual vouchers that would apply to the `rows`, a correction with rows answers 422 on `rows`: reverse the voucher without rows and post the re-booking as a new draft that goes to approval. Same Action as the app (CorrectVoucher).'
       x-sv-summary: 'Rätta en bokförd verifikation'
-      x-sv-description: 'Skapar och bokför en rättelseverifikation som vänder originalet och, om rows skickas, bokför dem i stället. Båda länkas till varandra. En verifikation kan rättas en gång.'
+      x-sv-description: 'Skapar och bokför en rättelseverifikation som vänder originalet och, om rows skickas, bokför dem i stället. Båda länkas till varandra. En verifikation kan rättas en gång. Gäller företagets attestflöde för manuella verifikationer raderna svarar en rättelse med rows 422; vänd då verifikationen utan rader och för in ombokningen som ett nytt utkast som attesteras.'
       security:
         - oauth2:
             - 'vouchers:correct'

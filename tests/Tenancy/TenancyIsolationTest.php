@@ -78,6 +78,7 @@ use App\Models\SalesDocument;
 use App\Models\SalesDocumentRow;
 use App\Models\SieImport;
 use App\Models\SigningCopyRecipient;
+use App\Models\SigningDocumentVersion;
 use App\Models\SigningEnvelope;
 use App\Models\SigningEvent as CrmSigningEvent;
 use App\Models\SigningLinkToken;
@@ -178,6 +179,8 @@ use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\PurchaseOrderInvoice;
 use App\Modules\Inventory\Models\PurchaseOrderRow;
 use App\Modules\Inventory\Models\PurchaseOrderVersion;
+use App\Modules\Inventory\Models\PurchaseRequisition;
+use App\Modules\Inventory\Models\PurchaseRequisitionRow;
 use App\Modules\Inventory\Models\ScanOperation;
 use App\Modules\Inventory\Models\Shipment;
 use App\Modules\Inventory\Models\ShipmentPackage;
@@ -541,6 +544,8 @@ const COMPANY_SCOPED_MODELS = [
     PurchaseOrderRow::class => 'purchaseOrderRowAttributes',
     PurchaseOrderVersion::class => 'purchaseOrderVersionAttributes',
     PurchaseOrderInvoice::class => 'purchaseOrderInvoiceAttributes',
+    PurchaseRequisition::class => 'e9PurchaseRequisitionAttributes',
+    PurchaseRequisitionRow::class => 'e9PurchaseRequisitionRowAttributes',
     InvoiceTaxReductionBuyer::class => 'invoiceTaxReductionBuyerAttributes',
     WorkOrder::class => 'workOrderAttributes',
     WorkOrderLabourKind::class => 'workOrderLabourKindAttributes',
@@ -623,6 +628,7 @@ const COMPANY_SCOPED_MODELS = [
     SigningEnvelope::class => 'signingEnvelopeAttributes',
     SigningLinkToken::class => 'signingLinkTokenAttributes',
     SigningCopyRecipient::class => 'signingCopyRecipientAttributes',
+    SigningDocumentVersion::class => 'signingDocumentVersionAttributes',
     // The stored issued invoice PDF and the customer portal (ADR-075).
     InvoiceDocument::class => 'invoiceDocumentAttributes',
     PortalContact::class => 'portalContactAttributes',
@@ -2063,6 +2069,11 @@ function signingLinkTokenAttributes(): array
     return ['signing_request_id' => CrmSigningRequest::create(crmSigningRequestAttributes())->id, 'token_hash' => hash('sha256', (string) random_int(0, PHP_INT_MAX)), 'issued_at' => now()];
 }
 
+function signingDocumentVersionAttributes(): array
+{
+    return ['envelope_id' => SigningEnvelope::create(signingEnvelopeAttributes())->id, 'kind' => 'ORIGINAL', 'path' => 'crm-signing/hemlig.pdf', 'sha256' => str_repeat('0', 64)];
+}
+
 function signingCopyRecipientAttributes(): array
 {
     return ['envelope_id' => SigningEnvelope::create(signingEnvelopeAttributes())->id, 'email' => 'hemlig-kopia@exempel.se'];
@@ -2426,6 +2437,18 @@ function purchaseOrderAttributes(): array
     return ['number' => random_int(1, 1_000_000), 'supplier_id' => Supplier::query()->firstOrCreate(['number' => 1], ['name' => 'Hemlig leverantör AB'])->id, 'order_date' => '2026-03-01', 'delivery_address' => 'Hemlig gata 1'];
 }
 
+function e9PurchaseRequisitionAttributes(): array
+{
+    return ['number' => random_int(1, 1_000_000), 'requested_by' => User::factory()->create()->id, 'reason' => 'Hemligt skäl'];
+}
+
+function e9PurchaseRequisitionRowAttributes(): array
+{
+    $unit = Unit::query()->firstOrCreate(['code' => 'st'], ['name' => 'styck', 'dimension' => 'COUNT']);
+
+    return ['purchase_requisition_id' => PurchaseRequisition::create(e9PurchaseRequisitionAttributes())->id, 'description' => 'Hemlig vara', 'quantity_milli' => 1000, 'unit_id' => $unit->id];
+}
+
 function purchaseOrderRowAttributes(): array
 {
     $unit = Unit::query()->firstOrCreate(['code' => 'st'], ['name' => 'styck', 'dimension' => 'COUNT']);
@@ -2483,10 +2506,10 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [WorkshopWaitingFlag::class, MrpRun::class, PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class, StripeObject::class, DocumentVersion::class];
+const NEVER_UPDATED = [WorkshopWaitingFlag::class, MrpRun::class, PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class, StripeObject::class, DocumentVersion::class, SigningDocumentVersion::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [ApprovalRequest::class, ApprovalDecision::class, ApprovalDelegation::class, WorkshopTimeEntry::class, WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];
+const APPEND_ONLY = [ApprovalRequest::class, ApprovalDecision::class, ApprovalDelegation::class, WorkshopTimeEntry::class, WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, SigningDocumentVersion::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

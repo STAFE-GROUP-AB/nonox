@@ -20,7 +20,7 @@ Varje person i ett företag har en roll. Rollen avgör vad personen ser och får
 | **Bokförare** | Bokför och rättar verifikationer, skriver och skickar kundfakturor, registrerar leverantörsfakturor och förbereder betalningar, och ser rapporterna. Kan inte låsa perioder, göra bokslut eller momsdeklarationen. |
 | **Attestant** | Attesterar leverantörsfakturor och godkänner betalfiler. Kan läsa fakturor och verifikationer, men inte bokföra. |
 | **Revisor** | Kan läsa allt och exportera SIE-filer och arkivpaket, men inte bokföra eller ändra något. Ser behandlingshistoriken. |
-| **Enhetschef** | Ser resultatrapporten och huvudboken för de kostnadsställen och projekt hen är begränsad till, och projektresultatet med budget för sina projekt, och inget annat. Se [Behörighet per enhet](/manual/installningar/behorighet-per-enhet). |
+| **Enhetschef** | Ser resultatrapporten och huvudboken för de kostnadsställen och projekt hen är begränsad till, projektresultatet med budget för sina projekt och analysen av raderna på sina enheter, och inget annat. Se [Behörighet per enhet](/manual/installningar/behorighet-per-enhet). |
 
 > [!NOTE]
 > Varje artikel i manualen säger överst vilka roller den gäller för. Saknar du en knapp som beskrivs, kontrollera din roll under **Inställningar för företaget** eller fråga en ägare eller administratör.

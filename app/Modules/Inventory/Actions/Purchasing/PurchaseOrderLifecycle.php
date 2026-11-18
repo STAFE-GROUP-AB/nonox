@@ -14,6 +14,7 @@ use App\Modules\Inventory\Models\PurchaseOrder;
 use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Purchasing\PurchaseOrderApprovals;
 use App\Modules\Inventory\Purchasing\PurchaseOrderReceipts;
+use App\Modules\Inventory\Purchasing\PurchaseRequisitionLinks;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
@@ -79,6 +80,8 @@ class PurchaseOrderLifecycle
             }
 
             $order->update(['status' => PurchaseOrderStatus::Cancelled]);
+            // What was converted from purchase requisitions can be ordered again (E9).
+            PurchaseRequisitionLinks::releaseOrder($order->id);
             Audit::record('inventory.purchase_order_cancelled', $order, ['number' => $order->number, 'version' => $order->version], $company, $user);
 
             return $order;

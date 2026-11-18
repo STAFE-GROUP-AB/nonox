@@ -7,7 +7,9 @@ namespace App\Domain\Approval;
 use App\Domain\Accounting\VoucherSource;
 use App\Models\ApprovalPolicy;
 use App\Models\ApprovalRequest;
+use App\Models\CostCenter;
 use App\Models\Invoice;
+use App\Models\Project;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Support\Audit\Audit;
@@ -44,10 +46,20 @@ final class DraftApprovals
         return DraftFingerprint::subjectId($invoice->id, DraftFingerprint::invoices($invoice->company_id, [$invoice->id])[$invoice->id] ?? '');
     }
 
-    /** Whether a voucher is one a MANUAL_VOUCHER policy can hold: a draft entered by a person. */
+    /**
+     * Whether a voucher is one a MANUAL_VOUCHER policy can hold: a draft a
+     * person entered (source MANUAL) that no other record booked. A voucher
+     * booked from a confirmed tax account transaction (source MANUAL, linked
+     * to its tax_account_postings row through source_type) is the
+     * reconciliation's own booking and is not held, like the other system
+     * bookings; a correction is held only for its re-booking rows
+     * (CorrectVoucher).
+     */
     public static function isManualVoucher(Voucher $voucher): bool
     {
-        return $voucher->source === VoucherSource::Manual && $voucher->corrects_voucher_id === null;
+        return $voucher->source === VoucherSource::Manual
+            && $voucher->corrects_voucher_id === null
+            && $voucher->source_type === null;
     }
 
     /**
@@ -94,13 +106,53 @@ final class DraftApprovals
     /**
      * Whether an approval can hold the draft at all: the company has an
      * active policy for the type, or some version of the draft has a
-     * request. False for every company that never added such a policy, so
-     * posting and issuing cost one query more than before and nothing else.
+     * request. Two `exists` queries (the second only when there is no
+     * policy); false for every company that never added such a policy, so
+     * posting and issuing then cost those queries and nothing else.
      */
     public static function mayBeHeld(ApprovalSubjectType $type, int $companyId, string $draftId): bool
     {
         return ApprovalPolicy::query()->where('company_id', $companyId)->where('subject_type', $type->value)->where('is_active', true)->exists()
             || ApprovalRequest::query()->where('company_id', $companyId)->where('subject_type', $type->value)->where('subject_id', 'like', "{$draftId}.%")->exists();
+    }
+
+    /**
+     * Whether a policy of the company's own for manual vouchers would hold
+     * these rows (account number, debit_ore, credit_ore, cost_center and
+     * project codes), as if they were entered as a manual voucher. One query
+     * when the company has no such policy.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     */
+    public static function holdsRows(int $companyId, array $rows): bool
+    {
+        $policies = ApprovalPolicy::query()
+            ->where('company_id', $companyId)
+            ->where('subject_type', ApprovalSubjectType::ManualVoucher->value)
+            ->where('is_active', true)
+            ->with('steps')
+            ->get();
+
+        if ($policies->isEmpty()) {
+            return false;
+        }
+
+        $codes = fn (string $key): array => array_values(array_unique(array_filter(array_map(fn (array $row): string => trim((string) ($row[$key] ?? '')), $rows))));
+        $costCenters = $codes('cost_center') === [] ? [] : array_map('intval', CostCenter::query()->whereIn('code', $codes('cost_center'))->pluck('id')->all());
+        $projects = $codes('project') === [] ? [] : array_map('intval', Project::query()->whereIn('code', $codes('project'))->pluck('id')->all());
+
+        $facts = new SubjectFacts(
+            type: ApprovalSubjectType::ManualVoucher,
+            subjectId: '',
+            companyId: $companyId,
+            amountOre: array_sum(array_map(fn (array $row): int => (int) ($row['debit_ore'] ?? 0), $rows)),
+            preparerIds: [],
+            costCenterIds: array_values($costCenters),
+            projectIds: array_values($projects),
+            accountNumbers: array_values(array_unique(array_map(fn (array $row): int => (int) ($row['account'] ?? 0), $rows))),
+        );
+
+        return $policies->contains(fn (ApprovalPolicy $policy): bool => PolicySnapshot::of($policy, $facts) instanceof PolicySnapshot);
     }
 
     /**

@@ -7,6 +7,7 @@ namespace App\Actions\Accounting;
 use App\Actions\AnnualReport\VoidK3Transition;
 use App\Actions\Assets\FixedAssets;
 use App\Domain\Accounting\VoucherSource;
+use App\Domain\Approval\DraftApprovals;
 use App\Models\Company;
 use App\Models\User;
 use App\Models\Voucher;
@@ -23,6 +24,12 @@ use Illuminate\Validation\ValidationException;
  * new voucher that reverses the original, optionally re-books it with new rows,
  * and is linked to it in both directions. The original is never changed
  * except for that link.
+ *
+ * A pure reversal is always allowed: it only undoes something already
+ * posted (and approved, where a policy applied). Re-booking rows are new
+ * bookkeeping, so they are refused while a MANUAL_VOUCHER policy of the
+ * company's own would hold them as a manual voucher (ADR-081 E21); the
+ * re-booking is then entered as a manual draft and sent to approval.
  */
 class CorrectVoucher
 {
@@ -42,6 +49,11 @@ class CorrectVoucher
 
         if (trim($reason) === '') {
             throw ValidationException::withMessages(['reason' => __('Skriv varför verifikationen rättas.')]);
+        }
+
+        // A re-booking is new bookkeeping: a MANUAL_VOUCHER policy that would hold it is not bypassed through a correction (ADR-081 E21).
+        if ($rebookRows !== [] && CurrentCompany::run($original->company_id, fn (): bool => DraftApprovals::holdsRows($original->company_id, $rebookRows))) {
+            throw ValidationException::withMessages(['rows' => __('Företagets attestflöde gäller ombokningen. Rätta verifikationen utan nya rader, så att den bara vänds, och för in ombokningen som en ny verifikation som skickas till attest.')]);
         }
 
         return CurrentCompany::run($original->company_id, fn (): Voucher => DB::transaction(function () use ($user, $original, $reason, $date, $rebookRows): Voucher {

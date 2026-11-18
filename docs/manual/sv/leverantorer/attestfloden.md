@@ -1,5 +1,5 @@
 ---
-beskrivning: Bestäm vem som attesterar leverantörsfakturor, betalfiler, inköpsorder, verifikationer och kreditfakturor, i flera steg, från ett belopp eller per kostnadsställe, och välj ersättare.
+beskrivning: Bestäm vem som attesterar leverantörsfakturor, betalfiler, inköpsorder, inköpsanmodan, verifikationer och kreditfakturor, i steg, från ett belopp eller per kostnadsställe.
 ordning: 45
 roller: [owner, admin]
 rutter: [approvals.policies]
@@ -15,7 +15,7 @@ Utan att du gör något attesteras en leverantörsfaktura av en person med rätt
 ## Så här lägger du upp ett attestflöde
 
 1. Gå till **Inköp → Attestflöden**.
-2. Klicka på **Nytt flöde för leverantörsfakturor**, **Nytt flöde för inköpsorder**, **Nytt flöde för betalfiler**, **Nytt flöde för manuella verifikationer** eller **Nytt flöde för kreditfakturor**. Flödet för inköpsorder finns när Lager är påslaget.
+2. Klicka på **Nytt flöde för leverantörsfakturor**, **Nytt flöde för inköpsorder**, **Nytt flöde för inköpsanmodan**, **Nytt flöde för betalfiler**, **Nytt flöde för manuella verifikationer** eller **Nytt flöde för kreditfakturor**. Flödena för inköpsorder och inköpsanmodan finns när Lager är påslaget.
 3. Skriv ett **Namn**, till exempel "Inköp från 20 000 kr", och en **Ordning**. Flöden prövas i ordning, lägst nummer först.
 4. Välj för steg 1 **Vem godkänner**: **Alla med en behörighet**, **Utvalda personer** eller **Ägaren av kostnadsstället eller projektet**.
 5. Ange **Antal som ska godkänna**. Två betyder att två olika personer måste godkänna steget.
@@ -42,6 +42,8 @@ Samma person kan godkänna flera steg i samma flöde, till exempel både som kos
 ![En leverantörsfaktura i ett attestflöde i två steg, där första steget är godkänt.](/bilder/manual/leverantorer/attestflode-pa-fakturan.webp)
 
 En inköpsorder attesteras på ordern under **Lager → Inköpsorder**, och knappen heter **Attestera ordern**. Behörigheten som styr är rätten att skicka inköpsorder, det vill säga rollen **Ägare**, **Administratör** eller **Attestant**. Ordern kan skickas till leverantören först när sista steget är godkänt, och en ändrad order eller en ny version attesteras på nytt. Standardattesten för inköpsorder är attestgränsen under **Lager → Inställningar**. Se [Inköpsorder](/manual/lager/inkopsorder).
+
+En inköpsanmodan attesteras på anmodan under **Beställningar → Inköpsanmodan**, och knappen heter **Attestera anmodan**. Behörigheten som styr är densamma som för inköpsorder, och beloppet i villkoren är den uppskattade summan exkl. moms. Saknar någon rad pris anses en nedre beloppsgräns uppnådd och en övre inte uppfylld, så anmodan går till attest i flödet. Villkoret för leverantör gäller bara när alla rader har samma leverantör. Utan eget flöde attesterar en person med rätt att skicka inköpsorder. Se [Inköpsanmodan](/manual/lager/inkopsanmodan).
 
 Betalfiler fungerar på samma sätt under **Inköp → Betalfiler**: där står hur långt filen har kommit, och knappen **Godkänn betalningen** visas för den som får godkänna nästa steg.
 

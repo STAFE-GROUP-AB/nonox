@@ -19,6 +19,7 @@
                     <x-button type="button" wire:click="create('{{ $type->value }}')">{{ match ($type) {
                         ApprovalSubjectType::SupplierInvoice => __('Nytt flöde för leverantörsfakturor'),
                         ApprovalSubjectType::PurchaseOrder => __('Nytt flöde för inköpsorder'),
+                        ApprovalSubjectType::PurchaseRequisition => __('Nytt flöde för inköpsanmodan'),
                         ApprovalSubjectType::ManualVoucher => __('Nytt flöde för manuella verifikationer'),
                         ApprovalSubjectType::CreditInvoice => __('Nytt flöde för kreditfakturor'),
                         default => __('Nytt flöde för betalfiler'),
@@ -72,6 +73,7 @@
                         {{ match ($type) {
                             ApprovalSubjectType::SupplierInvoice => __('Gäller när inget flöde ovan gäller: en person med attesträtt för leverantörsfakturor attesterar fakturan.'),
                             ApprovalSubjectType::PurchaseOrder => __('Gäller när inget flöde ovan gäller: en order över attestgränsen under Lager skickas av en person med rätt att skicka inköpsorder, och en order under gränsen av den som lägger den.'),
+                            ApprovalSubjectType::PurchaseRequisition => __('Gäller när inget flöde ovan gäller: en person med rätt att skicka inköpsorder attesterar anmodan.'),
                             ApprovalSubjectType::ManualVoucher => __('Gäller när inget flöde ovan gäller: verifikationen behöver ingen attest och bokförs direkt av den som har rätt att bokföra. Med ett flöde förblir verifikationen ett utkast utan nummer tills den är attesterad, och får sitt nummer först när den bokförs.'),
                             ApprovalSubjectType::CreditInvoice => __('Gäller när inget flöde ovan gäller: kreditfakturan behöver ingen attest och skapas direkt av den som har rätt att kreditera. Med ett flöde förblir kreditfakturan ett utkast utan nummer tills den är attesterad.'),
                             default => __('Gäller när inget flöde ovan gäller: en person med rätt att godkänna betalningar godkänner filen.'),
@@ -199,12 +201,15 @@
                                     </x-ui.field>
                                 @endif
                                 @if($formType === ApprovalSubjectType::ManualVoucher)
-                                    <p class="text-sm text-gray-500 sm:col-span-2">{{ __('Beloppet är verifikationens summa debet. Flödet gäller verifikationer som någon för in för hand, i verifikationsregistreringen, inkorgen eller API:t, inte de som faktureringen, lönen eller momsen bokför.') }}</p>
+                                    <p class="text-sm text-gray-500 sm:col-span-2">{{ __('Beloppet är verifikationens summa debet. Flödet gäller verifikationer som någon för in för hand, i verifikationsregistreringen, inkorgen eller API:t, och en rättelse som bokar om. Det gäller inte de som faktureringen, lönen, momsen eller skattekontot bokför, eller en rättelse som bara vänder en verifikation.') }}</p>
                                 @elseif($formType === ApprovalSubjectType::CreditInvoice)
                                     <p class="text-sm text-gray-500 sm:col-span-2">{{ __('Beloppet är kreditfakturans summa med moms, utan minustecken.') }}</p>
                                 @endif
                                 @if($formType === ApprovalSubjectType::PurchaseOrder)
                                     <p class="text-sm text-gray-500 sm:col-span-2">{{ __('Villkor för kostnadsställe, projekt och konto gäller bara rader utan artikel. Rader med en lagerartikel har inget konto och uppfyller aldrig ett kontointervall.') }}</p>
+                                @endif
+                                @if($formType === ApprovalSubjectType::PurchaseRequisition)
+                                    <p class="text-sm text-gray-500 sm:col-span-2">{{ __('Beloppet är den uppskattade summan exkl. moms. Har någon rad inget pris vet ingen vad anmodan kostar, så en nedre gräns (Belopp från och med) anses uppnådd och en övre gräns (Belopp till och med) anses inte uppfylld. Leverantörsvillkoret gäller bara när alla rader har samma leverantör.') }}</p>
                                 @endif
                                 <div class="grid grid-cols-2 gap-4">
                                     <x-ui.field for="step_{{ $index }}_account_from" :label="__('Konto från')" error="steps.{{ $index }}.account_from">

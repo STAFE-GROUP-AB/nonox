@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Invoicing;
 
+use App\Domain\Approval\ApprovalSubjectType;
+use App\Domain\Approval\DraftApprovals;
 use App\Domain\Invoicing\ForeignSale;
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Invoicing\SalesRowInput;
@@ -129,6 +131,15 @@ class SaveDraftInvoice
         [$currency, $bookingRate] = $this->currency($validated, $draft, $original);
 
         return DB::transaction(fn (): Invoice => CurrentCompany::run($company, function () use ($validated, $input, $user, $company, $draft, $original, $currency, $bookingRate): Invoice {
+            // The draft is locked first, so a save never interleaves with its issue or approval (ADR-081 E21).
+            if ($draft !== null && $draft->exists) {
+                $draft = Invoice::query()->whereKey($draft->id)->lockForUpdate()->firstOrFail();
+
+                if (! $draft->isDraft()) {
+                    throw ValidationException::withMessages(['invoice' => __('Fakturan är redan skapad och kan inte ändras.')]);
+                }
+            }
+
             $customer = Customer::query()->find((int) $validated['customer_id'])
                 ?? throw ValidationException::withMessages(['customer_id' => __('Välj en kund.')]);
 
@@ -288,6 +299,11 @@ class SaveDraftInvoice
             // Everyone who saves a credit draft counts as one of its preparers in an approval (ADR-081 E21, DraftEditors).
             if ($draft !== null && $invoice->isCredit()) {
                 Audit::record('invoice.draft_saved', $invoice, ['rows' => count($rows)], $company, $user);
+
+                // A request open on another version of the credit draft is over.
+                if (DraftApprovals::mayBeHeld(ApprovalSubjectType::CreditInvoice, $company->id, $invoice->id)) {
+                    DraftApprovals::withdrawOtherVersions(ApprovalSubjectType::CreditInvoice, $company->id, $invoice->id, DraftApprovals::invoiceSubjectId($invoice), $user);
+                }
             }
 
             return $invoice->load('rows', 'taxReductionBuyers');

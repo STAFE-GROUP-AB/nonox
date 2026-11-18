@@ -11,7 +11,9 @@ use App\Models\SupplierInvoiceRow;
 use App\Models\SupplierPaymentBatch;
 use App\Models\Voucher;
 use App\Modules\Inventory\Models\PurchaseOrder;
+use App\Modules\Inventory\Models\PurchaseRequisition;
 use App\Modules\Inventory\Purchasing\PurchaseOrderApprovals;
+use App\Modules\Inventory\Purchasing\PurchaseRequisitionApprovals;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -39,6 +41,7 @@ final readonly class SubjectFacts
         public array $costCenterIds = [],
         public array $projectIds = [],
         public array $accountNumbers = [],
+        public bool $amountIncomplete = false,
     ) {}
 
     /** The person a rejection returns the subject to: the first preparer. */
@@ -103,6 +106,37 @@ final readonly class SubjectFacts
             // Everyone who has saved the order, not only its creator and last editor (ADR-081 E21 wiring check).
             preparerIds: self::people([$order->created_by, $order->prepared_by, ...(DraftEditors::of($order->company_id, $order->getMorphClass(), [(string) $order->id], DraftEditors::PURCHASE_ORDER_ACTIONS)[(string) $order->id] ?? [])]),
             supplierId: $order->supplier_id,
+            costCenterIds: $ids('cost_center_id'),
+            projectIds: $ids('project_id'),
+            accountNumbers: $accountIds === [] ? [] : array_values(array_map('intval', Account::query()->whereKey($accountIds)->pluck('number')->all())),
+        );
+    }
+
+    /**
+     * A purchase requisition (ADR-081 E9): the requester's estimate excluding VAT
+     * (rows without a price count as nothing), who wrote and last changed it, the
+     * supplier when every row names the same one, and the dimensions and accounts
+     * of its rows. A requisition that is saved again starts a new approval round,
+     * so the facts read for a request stay true for its life. One query for the
+     * accounts' numbers and one for the people who saved it.
+     */
+    public static function forPurchaseRequisition(PurchaseRequisition $requisition): self
+    {
+        $requisition->loadMissing('rows');
+
+        $ids = fn (string $column): array => array_values(array_unique(array_map('intval', array_filter($requisition->rows->pluck($column)->all(), fn (mixed $id): bool => $id !== null))));
+        $accountIds = $ids('account_id');
+        $suppliers = $requisition->rows->pluck('supplier_id')->unique()->values()->all();
+
+        return new self(
+            type: ApprovalSubjectType::PurchaseRequisition,
+            subjectId: PurchaseRequisitionApprovals::subjectId($requisition),
+            companyId: $requisition->company_id,
+            amountOre: $requisition->estimatedOre(),
+            amountIncomplete: $requisition->hasUnpricedRows(),
+            // Everyone who has saved it counts as a preparer (ADR-081 E21).
+            preparerIds: self::people([$requisition->requested_by, $requisition->prepared_by, ...(DraftEditors::of($requisition->company_id, $requisition->getMorphClass(), [(string) $requisition->id], DraftEditors::REQUISITION_ACTIONS)[(string) $requisition->id] ?? [])]),
+            supplierId: count($suppliers) === 1 && $suppliers[0] !== null ? (int) $suppliers[0] : null,
             costCenterIds: $ids('cost_center_id'),
             projectIds: $ids('project_id'),
             accountNumbers: $accountIds === [] ? [] : array_values(array_map('intval', Account::query()->whereKey($accountIds)->pluck('number')->all())),
@@ -181,6 +215,46 @@ final readonly class SubjectFacts
                 costCenterIds: self::distinct($order->rows->toBase(), 'cost_center_id'),
                 projectIds: self::distinct($order->rows->toBase(), 'project_id'),
                 accountNumbers: array_values(array_unique(array_map(fn (mixed $id): int => $numbers[(int) $id] ?? 0, $order->rows->pluck('account_id')->filter()->all()))),
+            );
+        }
+
+        return $facts;
+    }
+
+    /**
+     * As forPurchaseRequisition for many requisitions with their rows loaded,
+     * in two queries (the approval queue).
+     *
+     * @param  Collection<int, PurchaseRequisition>  $requisitions
+     * @return array<string, self> subject id ("{id}.{round}") => facts
+     */
+    public static function forPurchaseRequisitions(int $companyId, Collection $requisitions): array
+    {
+        if ($requisitions->isEmpty()) {
+            return [];
+        }
+
+        $accountIds = $requisitions->flatMap(fn (PurchaseRequisition $requisition): array => $requisition->rows->pluck('account_id')->filter()->all())->unique()->values()->all();
+        $numbers = $accountIds === [] ? [] : array_map('intval', Account::query()->whereKey($accountIds)->pluck('number', 'id')->all());
+        $editors = DraftEditors::of($companyId, (new PurchaseRequisition)->getMorphClass(), $requisitions->map(fn (PurchaseRequisition $requisition): string => (string) $requisition->id)->all(), DraftEditors::REQUISITION_ACTIONS);
+
+        $facts = [];
+
+        foreach ($requisitions as $requisition) {
+            $subjectId = PurchaseRequisitionApprovals::subjectId($requisition);
+            $suppliers = $requisition->rows->pluck('supplier_id')->unique()->values()->all();
+
+            $facts[$subjectId] = new self(
+                type: ApprovalSubjectType::PurchaseRequisition,
+                subjectId: $subjectId,
+                companyId: $requisition->company_id,
+                amountOre: $requisition->estimatedOre(),
+                preparerIds: self::people([$requisition->requested_by, $requisition->prepared_by, ...($editors[(string) $requisition->id] ?? [])]),
+                supplierId: count($suppliers) === 1 && $suppliers[0] !== null ? (int) $suppliers[0] : null,
+                costCenterIds: self::distinct($requisition->rows->toBase(), 'cost_center_id'),
+                projectIds: self::distinct($requisition->rows->toBase(), 'project_id'),
+                accountNumbers: array_values(array_unique(array_map(fn (mixed $id): int => $numbers[(int) $id] ?? 0, $requisition->rows->pluck('account_id')->filter()->all()))),
+                amountIncomplete: $requisition->hasUnpricedRows(),
             );
         }
 

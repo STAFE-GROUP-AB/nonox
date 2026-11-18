@@ -21,8 +21,10 @@ use App\Models\SupplierInvoice;
 use App\Models\SupplierPaymentBatch;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Modules\Inventory\Domain\PurchaseRequisitionStatus;
 use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\Models\PurchaseOrder;
+use App\Modules\Inventory\Models\PurchaseRequisition;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Database\Eloquent\Model;
@@ -42,9 +44,8 @@ use Illuminate\Database\Eloquent\Model;
  * longer waits, is left out.
  *
  * Fixed queries: the requests and their decisions, the approval context, and
- * one batch per subject type that has requests. Purchase orders are read only
- * while Lager is on. Purchase requisitions (E9) are not wired yet; their
- * requests are left out until that package adds its loader here.
+ * one batch per subject type that has requests. Purchase orders and purchase
+ * requisitions (E9) are read only while Lager is on.
  */
 final class ApprovalRequestSource implements ReviewSource
 {
@@ -143,8 +144,7 @@ final class ApprovalRequestSource implements ReviewSource
             ApprovalSubjectType::PurchaseOrder => $this->purchaseOrders($company, $subjectIds),
             ApprovalSubjectType::ManualVoucher => $this->drafts($company, $subjectIds, Voucher::class),
             ApprovalSubjectType::CreditInvoice => $this->drafts($company, $subjectIds, Invoice::class),
-            // Hook for E9: purchase requisitions get their loader here when they are wired.
-            ApprovalSubjectType::PurchaseRequisition => [],
+            ApprovalSubjectType::PurchaseRequisition => $this->requisitions($company, $subjectIds),
         };
     }
 
@@ -213,6 +213,33 @@ final class ApprovalRequestSource implements ReviewSource
     }
 
     /**
+     * Submitted requisitions on the round their request names (ADR-081 E9).
+     *
+     * @param  list<string>  $subjectIds
+     * @return array<string, array{subject: Model, facts: SubjectFacts, stale: bool}>
+     */
+    private function requisitions(Company $company, array $subjectIds): array
+    {
+        if (! $this->modules->isEnabled(InventoryModule::KEY, $company)) {
+            return [];
+        }
+
+        $ids = array_values(array_unique(array_map(fn (string $id): int => (int) strtok($id, '.'), $subjectIds)));
+        $requisitions = PurchaseRequisition::query()->whereKey($ids)->where('status', PurchaseRequisitionStatus::Submitted->value)->with('rows')->get();
+        $entries = [];
+
+        foreach (SubjectFacts::forPurchaseRequisitions($company->id, $requisitions) as $subjectId => $facts) {
+            $requisition = $requisitions->first(fn (PurchaseRequisition $requisition): bool => $requisition->id === (int) strtok($subjectId, '.'));
+
+            if ($requisition instanceof PurchaseRequisition && in_array($subjectId, $subjectIds, true)) {
+                $entries[$subjectId] = ['subject' => $requisition, 'facts' => $facts, 'stale' => false];
+            }
+        }
+
+        return $entries;
+    }
+
+    /**
      * Manual voucher and credit invoice drafts. The request names the
      * version it was sent for; a draft saved since is listed as stale under
      * its request's subject id.
@@ -266,13 +293,14 @@ final class ApprovalRequestSource implements ReviewSource
             $subject instanceof SupplierInvoice => __('Leverantörsfaktura :number', ['number' => $subject->number]),
             $subject instanceof SupplierPaymentBatch => __('Betalfil :number', ['number' => $subject->number]),
             $subject instanceof PurchaseOrder => __('Inköpsorder :number', ['number' => $subject->number]),
+            $subject instanceof PurchaseRequisition => __('Inköpsanmodan :number', ['number' => $subject->number]),
             $subject instanceof Voucher => __('Verifikationsutkast :date', ['date' => $subject->voucher_date->toDateString()]),
             $subject instanceof Invoice => __('Kreditfaktura, utkast :date', ['date' => $subject->invoice_date->toDateString()]),
             default => $type->label(),
         };
     }
 
-    private function url(ApprovalSubjectType $type, Model $subject): ?string
+    private function url(ApprovalSubjectType $type, Model $subject): string
     {
         return match ($type) {
             ApprovalSubjectType::SupplierInvoice => route('payables.invoices.show', ['supplierInvoice' => $subject->getKey()]),
@@ -280,8 +308,7 @@ final class ApprovalRequestSource implements ReviewSource
             ApprovalSubjectType::PurchaseOrder => route('inventory.purchaseOrders.show', ['purchaseOrder' => $subject->getKey()]),
             ApprovalSubjectType::ManualVoucher => route('accounting.vouchers.show', ['voucher' => $subject->getKey()]),
             ApprovalSubjectType::CreditInvoice => route('invoicing.invoices.edit', ['invoice' => $subject->getKey()]),
-            // Hook for E9: the requisition's page.
-            ApprovalSubjectType::PurchaseRequisition => null,
+            ApprovalSubjectType::PurchaseRequisition => route('inventory.requisitions.show', ['requisition' => $subject->getKey()]),
         };
     }
 }

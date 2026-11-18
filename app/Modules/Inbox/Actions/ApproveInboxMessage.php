@@ -100,7 +100,13 @@ class ApproveInboxMessage
         } catch (ValidationException|AuthorizationException $exception) {
             Audit::record('inbox.auto_book_failed', $message, [
                 'template_id' => $template->id,
-                'reason' => $exception instanceof ValidationException ? $exception->errors() : 'not_authorised',
+                // Codes and field names only, never the messages (they can quote the underlag).
+                'reason' => match (true) {
+                    $exception instanceof ApprovalRequired => 'approval_required',
+                    $exception instanceof ValidationException => 'validation',
+                    default => 'not_authorised',
+                },
+                'fields' => $exception instanceof ValidationException ? array_keys($exception->errors()) : [],
             ], $company);
         }
     }
@@ -193,7 +199,7 @@ class ApproveInboxMessage
                     ($this->postVoucher)($user, $draft);
                 } catch (ApprovalRequired) {
                     // The company's own MANUAL_VOUCHER policy holds it (ADR-081 E21): a draft is made and sent to approval from the voucher.
-                    throw ValidationException::withMessages(['proposal' => __('Verifikationen ska attesteras innan den bokförs. Skapa ett utkast i stället och skicka det till attest från verifikationen.')]);
+                    throw ApprovalRequired::withMessages(['proposal' => __('Verifikationen ska attesteras innan den bokförs. Skapa ett utkast i stället och skicka det till attest från verifikationen.')]);
                 }
             }
 

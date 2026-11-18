@@ -10,9 +10,12 @@ use App\Models\Invoice;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierPaymentBatch;
 use App\Models\Voucher;
+use App\Modules\Inventory\Domain\PurchaseRequisitionStatus;
 use App\Modules\Inventory\InventoryModule;
 use App\Modules\Inventory\Models\PurchaseOrder;
+use App\Modules\Inventory\Models\PurchaseRequisition;
 use App\Modules\Inventory\Purchasing\PurchaseOrderApprovals;
+use App\Modules\Inventory\Purchasing\PurchaseRequisitionApprovals;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Database\Eloquent\Model;
@@ -23,24 +26,19 @@ use InvalidArgumentException;
  * The subjects wired to the engine: how each is loaded (inside the current
  * company, so another company's id is not found), locked, described and
  * whether it still waits for approval.
- *
- * Hook for purchase requisitions (E9): add an arm to lock(), facts(),
- * awaiting() and preparePermission() here, list the type in
- * ApprovalSubjectType::wired(), and give ApprovalQueueSource its page and
- * batch loader. Until then a requisition is refused here and never listed.
  */
 final class ApprovalSubjects
 {
     /** Loads and locks the subject in the current company; another company's id throws ModelNotFoundException. */
-    public static function lock(ApprovalSubjectType $type, string $id): SupplierInvoice|SupplierPaymentBatch|PurchaseOrder|Voucher|Invoice
+    public static function lock(ApprovalSubjectType $type, string $id): SupplierInvoice|SupplierPaymentBatch|PurchaseOrder|PurchaseRequisition|Voucher|Invoice
     {
         return match ($type) {
             ApprovalSubjectType::ManualVoucher => DraftApprovals::lockVoucher($id),
             ApprovalSubjectType::CreditInvoice => DraftApprovals::lockCreditInvoice($id),
             ApprovalSubjectType::PurchaseOrder => self::lockPurchaseOrder($id),
+            ApprovalSubjectType::PurchaseRequisition => self::lockPurchaseRequisition($id),
             ApprovalSubjectType::SupplierInvoice => SupplierInvoice::query()->whereKey($id)->lockForUpdate()->firstOrFail(),
             ApprovalSubjectType::PaymentBatch => SupplierPaymentBatch::query()->whereKey($id)->lockForUpdate()->firstOrFail(),
-            default => throw new InvalidArgumentException("{$type->value} is not wired to the approval engine yet."),
         };
     }
 
@@ -52,6 +50,7 @@ final class ApprovalSubjects
             $subject instanceof PurchaseOrder => SubjectFacts::forPurchaseOrder($subject),
             $subject instanceof Voucher => SubjectFacts::forManualVoucher($subject),
             $subject instanceof Invoice => SubjectFacts::forCreditInvoice($subject),
+            $subject instanceof PurchaseRequisition => SubjectFacts::forPurchaseRequisition($subject),
             default => throw new InvalidArgumentException('Not an approval subject.'),
         };
     }
@@ -65,6 +64,7 @@ final class ApprovalSubjects
             $subject instanceof PurchaseOrder => $subject->isDraft() && ! $subject->isApproved(),
             $subject instanceof Voucher => $subject->status === VoucherStatus::Draft,
             $subject instanceof Invoice => $subject->isDraft(),
+            $subject instanceof PurchaseRequisition => $subject->status === PurchaseRequisitionStatus::Submitted,
             default => false,
         };
     }
@@ -74,7 +74,7 @@ final class ApprovalSubjects
     {
         return match ($type) {
             ApprovalSubjectType::PaymentBatch => 'payments:create',
-            ApprovalSubjectType::PurchaseOrder => InventoryModule::PURCHASE_MANAGE,
+            ApprovalSubjectType::PurchaseOrder, ApprovalSubjectType::PurchaseRequisition => InventoryModule::PURCHASE_MANAGE,
             ApprovalSubjectType::ManualVoucher => 'vouchers:create',
             ApprovalSubjectType::CreditInvoice => 'invoices:create',
             default => 'supplier-invoices:create',
@@ -89,5 +89,15 @@ final class ApprovalSubjects
         }
 
         return PurchaseOrderApprovals::lock($id);
+    }
+
+    /** Purchase requisitions belong to Lager too: with it off, none is found. */
+    private static function lockPurchaseRequisition(string $id): PurchaseRequisition
+    {
+        if (! app(ModuleManager::class)->isEnabled(InventoryModule::KEY, CurrentCompany::id())) {
+            throw new ModelNotFoundException;
+        }
+
+        return PurchaseRequisitionApprovals::lock($id);
     }
 }

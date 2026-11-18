@@ -1681,21 +1681,127 @@ Built on branch `feat/erp-e16-materialbehov`. Choices the gap 5 text left open:
   constraints on horizon (1–52, Monday start), kind, exception, quantities
   and the converted pair.
 
+## Addendum: E9 as built (purchase requisitions)
+
+Built on branch `feat/erp-e9-inkopsanmodan`, on top of the approval engine (E2) and the purchase order approval (E10). Owner decisions 8 and 9 carry over.
+
+- **Tables.** `purchase_requisitions` and `purchase_requisition_rows`, both company-scoped (`BelongsToCompany`, tenancy test, `ReadWrite` grants: a draft's rows are replaced when it is saved again, a requisition is never deleted). Number series `purchase_requisitions`. The row keeps the quantity as typed in the row's own unit (thousandths), an estimated price per that unit (null when unknown), optional account, cost centre, project and supplier, and `purchase_order_row_id` (set on conversion, `nullOnDelete`). `purchase_requisitions` carries the status, `requested_by`, `prepared_by` (whoever saved it last), an approval round, `approval_request_id`, who approved and who rejected with an optional reason (≤ 500, free text, never in the audit log), and `cancelled_at`.
+- **Subject and rounds.** The engine subject is `PURCHASE_REQUISITION` with the subject id `"{id}.{approval_round}"`, as for purchase orders. The round is raised when a requisition is saved again and when it is taken back, so an approval or rejection is always bound to the version the decider saw: the page holds a `#[Locked]` `seenSubject`, the action locks the row and refuses a stale round. Only a draft or rejected requisition can be saved; a submitted one is taken back first ("Ta tillbaka"), which withdraws any open request. Preparers for segregation of duties are `requested_by` and `prepared_by`, so a buyer or administrator who edits someone else's draft cannot approve it while `separate_supplier_approval` is on.
+- **Default flow is code, not rows.** With no policy of the company's own a requisition writes no request rows: one person who may send purchase orders approves it (`purchase-orders:send`, the approver role, administrators, owners), never a preparer while separate approval is on. This permission is also the subject's base permission for policy steps, so a policy only narrows who approves. Unlike an order, a requisition has its own status, so a rejection (`REJECTED`, with reason) works in the default flow too, and the requester sees it in the list. The generic `RejectApproval` and `ResubmitApproval` delegate to `RejectPurchaseRequisition` and `ResubmitPurchaseRequisition` for this subject. A rejection in a policy flow is the engine's decision on the current step (owners and administrators may always reject); resubmitting after such a rejection opens a new request with the policy as it is now.
+- **Policy conditions.** The amount is the requester's estimate excluding VAT (rows without a price count as nothing); the supplier condition applies only when every row names the same supplier; dimensions and accounts come from the rows. The policy page offers "Nytt flöde för inköpsanmodan" while Lager is on.
+- **Conversion.** `ConvertPurchaseRequisitions`: a buyer (`purchase-orders:manage`) picks a supplier and approved, not yet ordered rows (rows naming another supplier are refused) and gets one draft order, `PurchaseOrderSource::Requisition`, through `SavePurchaseOrder`, so every order rule (units, accounts, dimensions, restricted suppliers) applies unchanged. A stock article keeps its article and an empty price takes the article's purchase price; anything else becomes a row without an article on the requisition row's account, and the buyer may fill in the account and price the requester left out (account is required on a requisition row that is not a stock article, so this is only an override). Requisitions and rows are locked in id order. A requisition becomes `CONVERTED` when all its rows are ordered; some rows leave it `APPROVED`. If an order row is removed from the draft order, or the order is cancelled, the link is released and a converted requisition goes back to `APPROVED` (`PurchaseRequisitionLinks`). The order is then approved and sent as any order (E10); the requisition's approval does not replace it.
+- **Permissions.** New `purchase-requisitions:create` (own requisitions, always visible to the requester) and `purchase-requisitions:view` (everyone's): owner and administrator both, accountant, approver and auditor view, bookkeeper both. Changing, sending, taking back and cancelling: the requester, or a buyer. No new approval permission.
+- **Not done here.** Requisitions are not in the archive package, the approval queue (E21) or the data subject extract by person; whether a requisition is räkenskapsinformation is the open `TODO(legal-verify)` of this gap (nothing is pruned). Requisitions are not offered over the API.
+- **Decisions confirmed by the Lead.** Approving a requisition needs `purchase-orders:send` (no new approval permission). Buyers (`purchase-orders:manage`) may edit, take back and cancel any requisition; an edit makes them its preparer (`prepared_by`), so they cannot approve it while separate approval is on.
+- **Cold review changes.** (1) An amount condition on a requisition with an unpriced row treats the amount as incomplete (`SubjectFacts::amountIncomplete`): a lower bound counts as met, an upper bound as not met, so it never slips under a limit; the default flow is unchanged. (2) `stock_clerk` may write requisitions (`purchase-requisitions:create`) and finds them under Lager. (3) Cancelling a purchase order releases its requisition rows also after it was sent (a sent order can only be cancelled when nothing has been received or confirmed). (4) `purchase_requisitions` has the `NoDelete` grant. (5) The segregation notice on the page says where the owner switches the requirement off (Inköp → Leverantörsfakturor, Attest).
+
+## Addendum: E17 as built (analysis view)
+
+- **Page.** `/analys` (`analysis.index`, Bokföring → Analys), Livewire
+  `App\Livewire\Analysis\AnalysisPage`. Read only: no table, no migration, no
+  audit entry. The choices are keys in the URL; `AnalysisDefinition::normalise`
+  keeps only what the dataset's catalogue names (up to two row dimensions, one
+  column dimension, one measure, two filters, whole months, at most 60) and
+  falls back to defaults for the rest, so nothing typed reaches SQL. Filter
+  values and drill keys are bound parameters. This is the schema E18 will
+  validate a saved `report_definitions.definition` against.
+- **Datasets** (`app/Domain/Analysis/Datasets`, interface `Dataset`): ledger
+  rows, budget lines (active budget only), customer invoices (one record per
+  invoice: net, VAT, total, open), invoice rows (article), supplier invoice
+  rows and aggregated payroll. Not yet: stock, purchase orders, production and
+  work orders; each is one more class. The ledger reads every posted voucher, CLOSING
+  ones included (depreciation, accruals, tax, the year's result), like
+  `LedgerQuery` and the Resultatrapport, so a period's result accounts equal the
+  report's (tested); drafts are left out. Every dataset checks its own permission in `allows()`
+  (`DatasetCatalogue::for`), so a saved report added later shows nothing to a
+  member who may not read it.
+- **Query.** One grouped query per view: the period and the comparison (the
+  same months a year earlier) are conditional aggregates (`FILTER`) in the same
+  statement; at most 10 000 cells (`too many cells` otherwise), `SET LOCAL
+  statement_timeout` 15 s, totals added up in PHP (every measure is a sum or a
+  count). The comparison is off when months are a grouping. A filter picker is
+  one query per chosen filter, a drill-down one query (at most 200 records).
+- **Permission.** New `analysis:view` for owner, admin, accountant, bookkeeper,
+  auditor and `unit_manager` (the approver has none). `analysis:share` belongs
+  to E18. `analysis:view` joins `DimensionScope::SCOPE_AWARE_PERMISSIONS`;
+  `analysis.index` and `AnalysisPage` are `Scoped` in `DimensionScopeRegistry`
+  (`analysis.*` otherwise refused). Customer invoices, invoice rows and payroll
+  are refused to a limited member in `allows()` as well (invoices:* and
+  payroll:* are not scope-aware).
+- **What changes for a limited member, and what does not (owner decision 17).**
+  Payroll vouchers and their corrections are still never shown, and E7's rule is
+  kept: the personnel accounts 7000–7699 are never read, in actuals, budget or
+  supplier invoice rows, whatever the voucher's source. The ADR's E17 text lifts
+  neither: aggregated pay is its own dataset behind `payroll:view`, which no
+  limited member holds, so aggregated pay stays closed to a unit manager.
+  `TODO(legal-verify)`: whether pay aggregated for a unit may be opened to its
+  manager at all, and under which information to staff (art. 13).
+- **Scope rule inside a dataset** (`DimensionedRowsDataset`). A row is read when
+  its cost centre or its project is the member's (the Resultatrapport's row
+  rule), after the voucher-level payroll exclusion; supplier invoice rows follow
+  the invoice rule of E1 (`DimensionScope::constrain`, every dimensioned row
+  inside). The scope is applied to the base query, before anything is grouped or
+  filtered, so no grouping, column, filter or period can add a row. A cost
+  centre or project outside the scope is shown as key −1 "Annan enhet", with
+  neither code nor name, and the filter picker lists only the member's own
+  units. A filter on another unit's id matches nothing. In the drill-down the
+  member sees the row's own text, the unit codes only when they are their own,
+  and no voucher link (as Huvudbok in E1). The voucher's own description is shown
+  only for a voucher that passes `constrainVouchers` (the whole voucher inside
+  the scope, no payroll), one extra query over at most 201 ids; otherwise only the
+  row's text (the Huvudbok rule).
+- **Budget widens E7.** A limited member reads budget lines on their own cost
+  centres too, not only on their projects as in E7, still without 7000–7699.
+  `TODO(legal-verify)`: as in E1, balance-sheet rows on their own units show up
+  in the ledger dataset.
+- **Payroll rule.** `PayrollDataset` groups first at the finest grain (pay
+  code × cost centre × month; the only dimensions it has), per person inside the
+  cell. A finest cell is hidden when fewer than `MIN_PEOPLE` (3) people have pay
+  in it (a zero amount does not count) or when one person accounts for more
+  than `DOMINANCE_PERCENT` (80 %) of it. Every total or regrouping that contains
+  a hidden cell is hidden too (`BOOL_OR` over the finest cells in the same
+  statement), so a hidden cell's figure cannot be had by subtracting one shown
+  figure from another. No person dimension, no drill-down, no count of people is
+  shown. Only approved, paid or posted runs, and only the lines that make up
+  the gross pay; the cost centre is the line's own, else the employment's.
+  Not prevented: comparing two periods or two cost centres can still show one
+  person's change in a cell of three or more, and "Dold" shows that a pay code
+  occurred. The dataset shows nothing beyond what `payroll:view` already sees
+  per person. `TODO(legal-verify)`: the numbers three and 80 %; a group of three
+  can still be informative in a uniform unit; difference over time within a
+  shown cell; that Dold reveals that a pay code occurred (art. 5.1 c).
+- **Not in E17:** saved and shared reports, export and overview tiles (E18).
+
 ## Addendum: E21 as built (manual vouchers and credit invoices as approval subjects)
 
-Built on branch `feat/erp-e21-attestamnen`, on top of the approval engine (E2)
-and the purchase order wiring (E10). Owner decision 19 applies.
+Built on branch `feat/erp-e21-attestamnen`, on top of the approval engine (E2),
+the purchase order wiring (E10) and purchase requisitions (E9). Owner decision
+19 applies.
 
-- **Subjects.** `MANUAL_VOUCHER` (a voucher a person enters, source `MANUAL`:
-  the voucher editor, the inbox and the API; not invoicing, payments, payroll,
-  VAT, closing, SIE or corrections) and `CREDIT_INVOICE` (a customer credit
+- **Subjects.** `MANUAL_VOUCHER` and `CREDIT_INVOICE` (a customer credit
   invoice). Base permissions `vouchers:post` and `invoices:credit`; prepare
   permissions `vouchers:create` and `invoices:create`. Conditions: amount
   (a voucher's debit total; a credit invoice's total including VAT, tested
   without sign), cost centre, project, account range; no supplier.
+- **What a manual voucher is.** A draft with source `MANUAL`, no
+  `corrects_voucher_id` and no `source_type`: the voucher editor, the inbox
+  and the API. Not invoicing, payments, payroll, VAT, closing or SIE, and not
+  the tax account reconciliation (`BookTaxAccountTransaction` books with
+  source `MANUAL` but links the voucher to its `tax_account_postings` row; a
+  person confirms each transaction and the counter account there, and it is
+  the reconciliation's own booking, so it is left out rather than given a new
+  voucher source, which would need an enum change on `vouchers`).
+- **Corrections.** A correction that only reverses a posted voucher is always
+  allowed: it undoes something already posted, and approved where a policy
+  applied. A correction with re-booking rows is new bookkeeping, so
+  `CorrectVoucher` refuses it while a `MANUAL_VOUCHER` policy would hold
+  those rows as a manual voucher (`DraftApprovals::holdsRows`); the person
+  reverses the voucher and enters the re-booking as a manual draft that goes
+  to approval. The app's own correction is a reversal; the API's `rows`
+  answer 422 on `rows` in that case.
 - **The default policy is "no approval".** With no active policy of the
   company's own for the type and no request on the draft, posting and issuing
-  are unchanged and write nothing new (`DraftApprovals::mayBeHeld`, one or two
+  are unchanged and write nothing new (`DraftApprovals::mayBeHeld`, two
   `exists` queries). `ApprovalSubjectType::hasDefaultApproval()` is false for
   both, so the policy page says so.
 - **`PostVoucher` is not changed.** `App\Actions\Accounting\PostManualVoucher`
@@ -1706,31 +1812,46 @@ and the purchase order wiring (E10). Owner decision 19 applies.
   `IssueInvoice` checks a credit draft the same way before it takes the
   invoice number. A waiting, rejected or deleted draft has no number, so
   series and invoice numbers stay gapless.
-- **Approval is bound to a version, without a new column.** The subject id is
-  `"{draft uuid}.{fingerprint}"`, the fingerprint a 24-hex SHA-256 over the
-  draft's own columns and rows (and, for a voucher, its attachments' SHA-256),
-  read from the database without row ids, so the editors' save-before-post
-  keeps it and any change gives a new subject (`DraftFingerprint`). Pending
-  requests on other versions are withdrawn when a version is sent, decided,
-  posted or issued, and when a voucher draft is deleted. The card on the
-  voucher page and in the credit invoice editor carries the version it showed
-  (`#[Locked]`), and every action re-checks it under the draft's row lock.
+- **Locks.** `SaveDraftVoucher` and `SaveDraftInvoice` lock the draft row
+  first and refuse anything that is no longer a draft; `AttachToVoucher` and
+  `RemoveAttachment` lock the voucher. A save therefore never interleaves
+  with posting, issuing or a decision on the same draft.
+- **Approval is bound to a version.** The subject id is
+  `"{draft uuid}.{fingerprint}"`, the fingerprint a 24-hex SHA-256 read from
+  the database: for a voucher its date, text, series, source and rows (without
+  row ids) and its attachments' SHA-256; for a credit invoice every column but
+  id, company and timestamps, its rows and its ROT/RUT buyers
+  (`DraftFingerprint`). The editors' save-before-post keeps it; any change
+  gives a new subject. Open requests on other versions are withdrawn under the
+  draft's lock when a save changes the version, and when a version is sent,
+  decided, posted or issued, and when a voucher draft is deleted. The card
+  carries the version it showed (`#[Locked]`), and every action re-checks it
+  under the row lock. A version already approved cannot be rejected.
+  An additive index `approval_requests_subject_prefix` (company, type,
+  `subject_id text_pattern_ops`) serves the prefix lookups.
 - **Sending.** The editors' Bokför and Skapa send the draft to approval
   (`SubmitForApproval`, a new `ApprovalEngine::submit()`) when a policy holds
   it; the card offers Skicka till attest, Attestera, Avvisa and, for an
   approved voucher, Bokför (with a confirmation). Approving
   (`ApproveDraft`) never posts.
-- **Preparers.** The creator and everyone who saved the draft or changed its
-  attachments (`DraftEditors`, read from the audit log; new entries
-  `voucher.draft_saved` and `invoice.draft_saved` with a row count only).
-- **Wiring check (requisitions and orders).** Purchase orders go through the
-  generic `RejectApproval`/`ResubmitApproval` and the queue correctly. One
-  gap was closed: the order's preparers were only `created_by` and
-  `prepared_by` (last editor); they now include everyone who saved the order
-  (`inventory.purchase_order_saved`/`_revised`). The threshold mode of
-  `SendPurchaseOrder` still checks creator and last editor only. Requisitions
-  (E9) have a marked hook in `ApprovalSubjects` and in
-  `ApprovalRequestSource` (loader and page) and are refused until wired.
+- **Preparers.** The creator and everyone who saved the subject or changed a
+  voucher's attachments (`DraftEditors`, read from the audit log; new entries
+  `voucher.draft_saved` and `invoice.draft_saved` with a row count only). The
+  same rule now covers purchase orders (`inventory.purchase_order_saved` and
+  `_revised`, also in `SendPurchaseOrder`'s threshold mode) and purchase
+  requisitions (`inventory.purchase_requisition_saved`).
+  **Transition:** vouchers and invoices have no `updated_by` column, and draft
+  saves were not audited before this release. For a draft last changed before
+  the release, the creator, the attachment entries (`voucher.attachment_*`,
+  audited before) and everyone who saves it from now on count; an earlier
+  editor who neither created it nor touched its attachments cannot be seen.
+  Such drafts are few (manual drafts in waiting) and a policy is opt-in, so
+  this is accepted and noted here.
+- **Wiring check (requisitions and orders).** Purchase orders and purchase
+  requisitions go through the generic `RejectApproval`/`ResubmitApproval`
+  and the queue: the queue reads submitted requisitions (only while Lager is
+  on) with their rows in one batch (`SubjectFacts::forPurchaseRequisitions`)
+  and links to `inventory.requisitions.show`.
 - **ADR-067 source.** `App\Domain\Review\Contracts\ReviewSource`,
   `ReviewItem`, `ReviewSources` and `Sources\ApprovalRequestSource`: the open
   requests the person may decide on their current step, for every wired
@@ -1738,7 +1859,10 @@ and the purchase order wiring (E10). Owner decision 19 applies.
   (`approvals.queue`, under Inköp), read-only with links (ADR-067 phase 1).
   A draft saved after it was sent is listed as stale and read-only.
 - **Archive package.** Requests and decisions for the year's manual vouchers
-  (by fiscal year) and credit invoices (by invoice date) join `attest/`.
-- **No migration.** No table or column was added.
+  (by fiscal year) and credit invoices (by invoice date) join `attest/`; the
+  requests are read first and only the drafts they name are looked up.
+- **Audit.** The inbox's failed automatic booking records a code
+  (`approval_required`, `validation`, `not_authorised`) and field names, never
+  the validation messages.
 - **Limited members (gap 10).** The card is not shown to a member limited to
   cost centres or projects, and the queue page is refused for them.

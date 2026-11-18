@@ -106,10 +106,12 @@ it('marks a draft saved after it was sent as stale and read-only', function () {
     $voucher = e21qVoucher($this->bookkeeper, $this->company);
     app(SubmitForApproval::class)($this->bookkeeper, $this->company, ApprovalSubjectType::ManualVoucher, DraftApprovals::voucherSubjectId($voucher));
 
-    app(SaveDraftVoucher::class)($this->bookkeeper, $this->company, [
-        'voucher_date' => '2026-03-05', 'description' => 'Representation', 'series' => 'A',
-        'rows' => [['account' => 6071, 'debit_ore' => 120000], ['account' => 1930, 'credit_ore' => 120000]],
-    ], $voucher->fresh());
+    // A changed attachment changes the version without a save (a save withdraws the old request itself).
+    DB::table('voucher_attachments')->insert([
+        'voucher_id' => $voucher->id, 'company_id' => $this->company->id, 'file_path' => 'underlag/test.pdf', 'original_name' => 'kvitto.pdf',
+        'mime' => 'application/pdf', 'size' => 10, 'sha256' => str_repeat('b', 64), 'uploaded_by' => $this->bookkeeper->id,
+        'created_at' => now(), 'updated_at' => now(),
+    ]);
 
     $items = app(ReviewSources::class)->items($this->accountant, $this->company);
 

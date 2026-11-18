@@ -11,13 +11,19 @@ use App\Actions\Payables\SaveSupplierInvoice;
 use App\Models\Article;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Modules\Inventory\Actions\Purchasing\ApprovePurchaseRequisition;
+use App\Modules\Inventory\Actions\Purchasing\ConvertPurchaseRequisitions;
 use App\Modules\Inventory\Actions\Purchasing\CreatePurchaseOrdersFromProposal;
 use App\Modules\Inventory\Actions\Purchasing\MatchSupplierInvoice;
+use App\Modules\Inventory\Actions\Purchasing\PurchaseRequisitionLifecycle;
+use App\Modules\Inventory\Actions\Purchasing\RejectPurchaseRequisition;
 use App\Modules\Inventory\Actions\Purchasing\SavePurchaseOrder;
+use App\Modules\Inventory\Actions\Purchasing\SavePurchaseRequisition;
 use App\Modules\Inventory\Actions\Purchasing\SendPurchaseOrder;
 use App\Modules\Inventory\Actions\ReceiveStock;
 use App\Modules\Inventory\Actions\SaveReceipt;
 use App\Modules\Inventory\Purchasing\PurchaseProposal;
+use App\Modules\Inventory\Purchasing\PurchaseRequisitionApprovals;
 use App\Support\Tenancy\CurrentCompany;
 use Database\Seeders\Demo\DemoContext;
 use Database\Seeders\Demo\DemoExtra;
@@ -34,6 +40,10 @@ use Database\Seeders\Demo\DemoExtra;
  * ADR-081 E10: an approval flow for orders from 10 000 kr, a draft from the
  * bookkeeper that waits for the owner's approval, and a sent order with a
  * service row whose delivery is not yet confirmed.
+ *
+ * ADR-081 E9: purchase requisitions from the bookkeeper: one waiting for
+ * approval, one approved and waiting for a buyer, one rejected, and one
+ * approved and already turned into a draft order.
  */
 final class PurchaseOrdersExtras extends DemoExtra
 {
@@ -105,7 +115,8 @@ final class PurchaseOrdersExtras extends DemoExtra
                 app(CreatePurchaseOrdersFromProposal::class)($c->user, $c->company, $lines);
             }
 
-            $this->approvalAndServices($c, $wholesaler);
+            $buyer = $this->approvalAndServices($c, $wholesaler);
+            $this->requisitions($c, $wholesaler, $buyer);
         }));
     }
 
@@ -114,7 +125,7 @@ final class PurchaseOrdersExtras extends DemoExtra
     public const string SENT_NOTE = 'Skyltar och uppsättning till skyltfönstret';
 
     /** A flow for orders from 10 000 kr, an order waiting for it, and a sent order with a service row. */
-    private function approvalAndServices(DemoContext $c, Supplier $supplier): void
+    private function approvalAndServices(DemoContext $c, Supplier $supplier): User
     {
         config(['mail.default' => 'log']);
 
@@ -156,6 +167,64 @@ final class PurchaseOrdersExtras extends DemoExtra
             ],
         ]);
         app(SendPurchaseOrder::class)->printed($c->user, $company, $sent);
+
+        return $buyer;
+    }
+
+    public const string WAITING_REASON = 'Fyller på inför höstkampanjen';
+
+    public const string APPROVED_REASON = 'Skyltfönstret och hyllorna behöver nytt material';
+
+    /** Purchase requisitions in the four states a requester and a buyer meet (ADR-081 E9). */
+    private function requisitions(DemoContext $c, Supplier $supplier, User $requester): void
+    {
+        $company = $c->company->fresh() ?? $c->company;
+        $article = fn (string $number): int => Article::query()->where('number', $number)->firstOrFail()->id;
+        $save = app(SavePurchaseRequisition::class);
+        $lifecycle = app(PurchaseRequisitionLifecycle::class);
+        $approve = app(ApprovePurchaseRequisition::class);
+        $subject = fn ($requisition): string => PurchaseRequisitionApprovals::subjectId($requisition->fresh());
+
+        // Waiting for approval: the owner sees an Attestera card, the requester does not.
+        $waiting = $save($requester, $company, [
+            'needed_by' => $c->today->addDays(14)->toDateString(),
+            'reason' => self::WAITING_REASON,
+            'rows' => [
+                ['article_id' => $article('L-303'), 'quantity' => '12', 'price' => '245', 'supplier_id' => $supplier->id],
+                ['description' => 'Skyltmaterial till skyltfönstret', 'account' => '5460', 'quantity' => '1', 'price' => '2 400'],
+            ],
+        ]);
+        $lifecycle->submit($requester, $company, $waiting);
+
+        // Approved and waiting for a buyer to order it.
+        $approved = $save($requester, $company, [
+            'needed_by' => $c->today->addDays(21)->toDateString(),
+            'reason' => self::APPROVED_REASON,
+            'rows' => [
+                ['article_id' => $article('L-202'), 'quantity' => '20', 'price' => '86', 'supplier_id' => $supplier->id],
+                ['description' => 'Städning av butiken, en gång', 'account' => '5060', 'quantity' => '1', 'price' => '3 500'],
+            ],
+        ]);
+        $lifecycle->submit($requester, $company, $approved);
+        $approve($c->user, $company, $subject($approved));
+
+        $rejected = $save($requester, $company, [
+            'needed_by' => $c->today->addDays(7)->toDateString(),
+            'reason' => 'Ny kaffemaskin till personalrummet',
+            'rows' => [['description' => 'Kaffemaskin', 'account' => '5460', 'quantity' => '1', 'price' => '14 900']],
+        ]);
+        $lifecycle->submit($requester, $company, $rejected);
+        app(RejectPurchaseRequisition::class)($c->user, $company, $subject($rejected), 'Vänta till nästa budgetår.');
+
+        // Approved and already turned into a draft order.
+        $ordered = $save($requester, $company, [
+            'needed_by' => $c->today->addDays(10)->toDateString(),
+            'reason' => 'Fler hyllfästen till lagret',
+            'rows' => [['article_id' => $article('L-304'), 'quantity' => '6', 'price' => '128']],
+        ]);
+        $lifecycle->submit($requester, $company, $ordered);
+        $approve($c->user, $company, $subject($ordered));
+        app(ConvertPurchaseRequisitions::class)($requester, $company, $ordered->rows()->pluck('id')->all(), $supplier->id);
     }
 
     /** @param  array{name: string, email: string}  $person */

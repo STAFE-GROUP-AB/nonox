@@ -26,6 +26,9 @@ final class DraftEditors
     /** Saving a purchase order and opening its next version (ADR-081 E10). */
     public const array PURCHASE_ORDER_ACTIONS = ['inventory.purchase_order_saved', 'inventory.purchase_order_revised'];
 
+    /** Saving a purchase requisition (ADR-081 E9). */
+    public const array REQUISITION_ACTIONS = ['inventory.purchase_requisition_saved'];
+
     /**
      * @param  array<int, string>  $subjectIds
      * @param  list<string>  $actions

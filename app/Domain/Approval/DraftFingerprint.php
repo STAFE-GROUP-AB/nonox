@@ -27,13 +27,8 @@ final class DraftFingerprint
 {
     public const int LENGTH = 24;
 
-    /** The invoice columns that make up a credit invoice's content. */
-    private const array INVOICE_COLUMNS = [
-        'customer_id', 'kind', 'credits_invoice_id', 'invoice_date', 'due_date', 'delivery_date',
-        'your_reference', 'our_reference', 'notes', 'net_ore', 'vat_ore', 'rounding_ore', 'total_ore',
-        'reverse_charge', 'tax_reduction', 'tax_reduction_ore', 'property_designation', 'foreign_sale',
-        'invoice_currency', 'exchange_rate_micros', 'foreign_total_minor', 'labour_hours_milli', 'work_description',
-    ];
+    /** Invoice columns that are not content: every other column of the draft is hashed. */
+    private const array INVOICE_SKIP = ['id', 'company_id', 'created_at', 'updated_at'];
 
     private const array VOUCHER_COLUMNS = ['series_id', 'voucher_date', 'description', 'source', 'corrects_voucher_id'];
 
@@ -71,7 +66,8 @@ final class DraftFingerprint
     }
 
     /**
-     * Two queries: the invoices and their rows.
+     * Three queries: the invoices (every column but the skip-list), their
+     * rows and their ROT/RUT buyers.
      *
      * @param  list<string>  $ids
      * @return array<string, string> invoice id => fingerprint (missing ids are left out)
@@ -82,8 +78,9 @@ final class DraftFingerprint
             return [];
         }
 
-        $headers = DB::table('invoices')->where('company_id', $companyId)->whereIn('id', $ids)->get(['id', ...self::INVOICE_COLUMNS]);
+        $headers = DB::table('invoices')->where('company_id', $companyId)->whereIn('id', $ids)->get();
         $rows = DB::table('invoice_rows')->where('company_id', $companyId)->whereIn('invoice_id', $ids)->orderBy('position')->orderBy('id')->get()->groupBy('invoice_id');
+        $buyers = DB::table('invoice_tax_reduction_buyers')->where('company_id', $companyId)->whereIn('invoice_id', $ids)->orderBy('customer_id')->orderBy('id')->get()->groupBy('invoice_id');
 
         $result = [];
 
@@ -91,8 +88,9 @@ final class DraftFingerprint
             $id = (string) $header->id;
 
             $result[$id] = self::hash([
-                'header' => array_diff_key((array) $header, ['id' => true]),
+                'header' => array_diff_key((array) $header, array_flip(self::INVOICE_SKIP)),
                 'rows' => self::rows($rows->get($id, collect())->all()),
+                'buyers' => self::rows($buyers->get($id, collect())->all()),
             ]);
         }
 

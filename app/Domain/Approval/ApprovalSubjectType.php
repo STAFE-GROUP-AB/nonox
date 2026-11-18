@@ -6,9 +6,8 @@ namespace App\Domain\Approval;
 
 /**
  * What an approval policy applies to (ADR-081 gap 8). Supplier invoices and
- * payment files are wired in E2, purchase orders in E10, and manual vouchers
- * and credit invoices in E21; purchase requisitions are wired by their own
- * package (E9) and cannot be chosen until then.
+ * payment files are wired in E2, purchase orders in E10, purchase
+ * requisitions in E9, and manual vouchers and credit invoices in E21.
  *
  * Manual vouchers and credit invoices have no approval today: their default
  * policy is "none" (owner decision 19), so a company that never adds a policy
@@ -46,24 +45,25 @@ enum ApprovalSubjectType: string
     /** @return list<self> */
     public static function wired(): array
     {
-        return [self::SupplierInvoice, self::PaymentBatch, self::PurchaseOrder, self::ManualVoucher, self::CreditInvoice];
+        return [self::SupplierInvoice, self::PaymentBatch, self::PurchaseRequisition, self::PurchaseOrder, self::ManualVoucher, self::CreditInvoice];
     }
 
     /**
      * The permission the subject's approval needs today, and so the one the
      * default policy names. A purchase order is approved by whoever may send
-     * it (purchase-orders:send, the approver role); a manual voucher by whoever
-     * may post it and a credit invoice by whoever may credit; a requisition
-     * gets its own when it is wired (E9).
+     * it (purchase-orders:send, the approver role), and so is a requisition: those
+     * who may send orders may also approve what is asked for (E9). A manual
+     * voucher is approved by whoever may post it and a credit invoice by
+     * whoever may credit (E21).
      */
     public function basePermission(): string
     {
         return match ($this) {
             self::PaymentBatch => 'payments:approve',
-            self::PurchaseOrder => 'purchase-orders:send',
+            self::PurchaseOrder, self::PurchaseRequisition => 'purchase-orders:send',
             self::ManualVoucher => 'vouchers:post',
             self::CreditInvoice => 'invoices:credit',
-            self::SupplierInvoice, self::PurchaseRequisition => 'supplier-invoices:approve',
+            self::SupplierInvoice => 'supplier-invoices:approve',
         };
     }
 

@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.145
+- Version: 0.146
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -1528,6 +1528,24 @@ balances").
   bevis (dokumentets SHA-256, namn, tid, IP-adress, webbläsare) ändras aldrig,
   och ett slutfört kuvert ändras eller tas aldrig bort (databasutlösare). Med
   en undertecknare är flödet oförändrat.
+- Signeringens händelser är en hashkedja per kuvert (version 0.145,
+  [ADR-046](../adr/ADR-046-crm-signing.md) tillägg 2026-11-18, lucka 4, paket
+  S2): varje händelse (skickad, öppnad, signerad, avböjd, återkallad, utgången,
+  klar, avbruten) får ett löpnummer i kuvertet och hashen sha256(föregående
+  hash || kanonisk JSON av händelsen), och den första händelsens föregående
+  hash är SHA-256 för dokumentet som skickades. Signerad och avböjd bär en
+  hash av undertecknarens bevis (namn, tid, metod, signaturbild, IP-adress,
+  webbläsare, godkännandetext), aldrig värdena. När kuvertet är klart, avböjt
+  eller tillbakadraget sparas kedjans sista hash på kuvertet (en gång) och i
+  behandlingshistoriken (`signing.completed`, `signing.declined`,
+  `signing.voided`). Varje dokument som skickats sparas i
+  `signing_document_versions` med sin SHA-256. `php artisan signing:verify`
+  räknar om varje kedja, jämför bevisen och filernas kontrollsummor och kollar
+  behandlingshistoriken; den körs varje natt och resultatet
+  (`signing.verified`) visas i signeringspanelen. Kuvert från före kedjan fick
+  en första händelse `CHAIN_STARTED` med antal och en sammanfattande hash av de
+  tidigare händelserna per undertecknare; ingen befintlig rad ändrades.
+  Signeringen bokför ingenting och ingen bokföringsregel ändras.
 - Varje skapad, skickad och betald faktura, offert och order skrivs till
   behandlingshistoriken.
 
@@ -2183,7 +2201,15 @@ och `ApproveDraft`.
 - **Vad flödet gäller.** "Manuella verifikationer" är verifikationer som en
   person för in: i verifikationsregistreringen, från inkorgen och över API:t
   (källa `MANUAL`). Verifikationer som faktureringen, betalningar, lönen,
-  momsen, bokslutet, SIE-inläsningen eller en rättelse skapar omfattas inte.
+  momsen, bokslutet, SIE-inläsningen eller avstämningen av skattekontot
+  skapar omfattas inte; skattekontots verifikation är kopplad till sin
+  transaktion, som en person har bekräftat.
+- **Rättelser.** En rättelse som bara vänder en bokförd verifikation tillåts
+  alltid, eftersom den bara upphäver något som redan är bokfört (och
+  attesterat, om ett flöde gällde). En rättelse med nya rader (ombokning) är
+  ny bokföring: den vägras så länge ett flöde för manuella verifikationer
+  skulle gälla raderna. Då vänds verifikationen, och ombokningen förs in som
+  en ny verifikation som skickas till attest.
   "Kreditfakturor" är kundkreditfakturor. Villkoren kan vara belopp
   (verifikationens summa debet; kreditfakturans summa med moms utan tecken),
   kostnadsställe, projekt och kontointervall. Attestant är den som har
@@ -2200,8 +2226,11 @@ och `ApproveDraft`.
 - **Attesten gäller en version.** Attestärendet gäller utkastet så som det
   såg ut: ärendets id för underlaget är utkastets id och en SHA-256 över
   datum, text, serie, källa, rader (konto, belopp, kostnadsställe, projekt,
-  radtext, antal) och underlagens SHA-256, respektive kreditfakturans kund,
-  datum, belopp, valuta, texter och rader. Sparas utkastet med samma innehåll
+  radtext, antal) och underlagens SHA-256, respektive alla kreditfakturans
+  uppgifter utom id och tidsstämplar, dess rader och dess köpare för ROT och
+  RUT. Utkastet låses när det sparas, när underlag läggs till eller tas bort,
+  när det attesteras och när det bokförs eller utfärdas, så inget av det kan
+  ske samtidigt. En version som redan är attesterad kan inte avvisas. Sparas utkastet med samma innehåll
   är det samma version; ändras något behöver den nya versionen attesteras, och
   ett pågående ärende på en tidigare version återkallas när den nya skickas
   till attest, när utkastet bokförs eller när det tas bort. Ett beslut prövas
@@ -2212,7 +2241,11 @@ och `ApproveDraft`.
   hålls utanför när steget eller företaget kräver att någon annan attesterar.
   Det läses ur behandlingshistoriken, som för det får posterna
   `voucher.draft_saved` och `invoice.draft_saved` (antal rader, inga texter).
-  Samma regel gäller nu inköpsorder: alla som har sparat ordern räknas.
+  Samma regel gäller nu inköpsorder och inköpsanmodan: alla som har sparat
+  dem räknas. För utkast som senast ändrades före den här versionen syns
+  bara den som skapade utkastet, den som ändrade dess underlag och den som
+  sparar det härefter; tidigare ändringar sparades inte i
+  behandlingshistoriken.
 - **Behandlingshistorik.** Utöver attestflödets poster (avsnitt 5a1d)
   skrivs `voucher.posted_after_approval` och `invoice.issued_after_approval`
   med verifikationens referens respektive fakturanumret och attestärendets
@@ -6443,4 +6476,5 @@ påverkar bokföringen och fakturan:
 | 0.142 | 2026-11-18 | SIE-budget (avsnitt 4.9, 4.11 och 4.12a, ADR-081 paket E4): `#PBUDGET 0` i en SIE-fil blir en ny budget när filen läses in, med hela beloppet, varje kostnadsställe och varje projekt per konto och månad exakt som i filen; en budget som inte går att läsa säkert läses inte in men hindrar aldrig bokföringen. Under Budget kan bara budgeten i en fil av typ 2, 3 eller 4 läsas in, i två steg, mot räkenskapsår, konton och objekt som redan finns. SIE-exporten skriver årets budget bara med rutan Ta med budget. Budgeten bokförs aldrig och ingår inte i avstämningen eller kontrollsummekedjan. Ingen verifikation ändras. |
 | 0.143 | 2026-11-18 | Rullande prognos (avsnitt 4.12a, ADR-081 lucka 2, paket E5): prognoser som versioner av slaget `FORECAST` i `budget_versions` med brytmånad, utfall ur bokförda verifikationer till och med brytmånaden och tre regler för månaderna efter (budgeten, snittet av de senaste månaderna, samma månad i fjol med procentsats), egna belopp som markeras och behålls, och Rullande 12 månader över årsskiftet. Nya databaskontroller på `budget_versions`: brytmånad bara på prognoser, och alltid en månads sista dag. Prognosen bokförs aldrig, och ingen bokförd verifikation ändras. |
 | 0.144 | 2026-11-18 | Konsolidering och körlogg för koncerner (avsnitt 4.10b, ADR-060 tillägg 2.4, ADR-081 paket E24): koncernens bekräftade medlemmar läses var för sig inom sitt företag, ett dotterföretags intäkter och kostnader räknas från förvärvet till avyttringen och dess balans tas med om det är medlem periodens sista dag, kontona flyttas enligt kontomappningen (`group_account_maps`, inom samma kontoklass) och beloppen summeras. Varje körning sparas i `corporate_group_runs` med indata och resultat och deras SHA-256 (samma indata ger samma resultat); tabellen kan inte ändras eller tas bort. Inga elimineringar ännu. Ingenting skrivs i något företags bokföring och ingen verifikation ändras. |
-| 0.145 | 2026-11-18 | Attest av manuella verifikationer och kreditfakturor (avsnitt 4.2 och 5a1e, ADR-081 lucka 8, paket E21): med ett eget flöde förblir en verifikation som en person för in, eller en kundkreditfaktura, ett utkast utan nummer tills just den versionen är attesterad; numret tas vid bokföringen respektive utfärdandet, så serierna förblir obrutna, och `PostVoucher` är oförändrad. Attesten gäller utkastets version (SHA-256 över innehållet); alla som sparat utkastet räknas som förberedare, också för inköpsorder. Utan eget flöde ändras ingenting. Sidan Att godkänna listar väntande attester. |
+| 0.145 | 2026-11-18 | Hashkedja för signeringens händelser (avsnitt 5, ADR-046 tillägg 2026-11-18, paket S2): varje händelse i ett kuvert länkas till den förra med SHA-256, från dokumentets SHA-256, och en PostgreSQL-trigger nekar en händelse som inte följer löpnumret eller inte länkar. Kedjans sista hash sparas på kuvertet och i behandlingshistoriken när kuvertet avslutas. Kuvertet har en räknare (`next_sequence`, `last_hash`) som bara triggern flyttar, så ett löpnummer används aldrig två gånger, och en avslutad kedja tar inte emot fler händelser. Ny tabell `signing_document_versions` (kan inte ändras) och nya kolumner på `crm_signing_events` och `signing_envelopes`. Den nattliga `signing:verify` räknar om kedjorna och filernas kontrollsummor. Befintliga kuvert fick en första kedjehändelse; inga befintliga rader ändrades. Ingen bokföringsregel ändras. |
+| 0.146 | 2026-11-18 | Attest av manuella verifikationer och kreditfakturor (avsnitt 4.2 och 5a1e, ADR-081 lucka 8, paket E21): med ett eget flöde förblir en verifikation som en person för in, eller en kundkreditfaktura, ett utkast utan nummer tills just den versionen är attesterad; numret tas vid bokföringen respektive utfärdandet, så serierna förblir obrutna, och `PostVoucher` är oförändrad. Attesten gäller utkastets version (SHA-256 över innehållet); alla som sparat utkastet räknas som förberedare, också för inköpsorder. Utan eget flöde ändras ingenting. Sidan Att godkänna listar väntande attester. |

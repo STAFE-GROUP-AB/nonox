@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Actions\Accounting;
 
 use App\Actions\Assets\AssetProposals;
+use App\Domain\Accounting\VoucherStatus;
+use App\Domain\Approval\ApprovalSubjectType;
 use App\Domain\Approval\DraftApprovals;
 use App\Models\Company;
 use App\Models\FiscalYear;
@@ -69,6 +71,15 @@ class SaveDraftVoucher
         ])->validate();
 
         return CurrentCompany::run($company, fn (): Voucher => DB::transaction(function () use ($validated, $user, $company, $input, $draft): Voucher {
+            // The draft is locked first, so a save never interleaves with its posting or approval (ADR-081 E21).
+            if ($draft !== null) {
+                $draft = Voucher::query()->whereKey($draft->id)->lockForUpdate()->firstOrFail();
+
+                if ($draft->status !== VoucherStatus::Draft) {
+                    throw ValidationException::withMessages(['voucher' => __('Verifikationen är redan bokförd och kan inte ändras.')]);
+                }
+            }
+
             $date = CarbonImmutable::createFromFormat('Y-m-d', (string) $validated['voucher_date'])?->startOfDay()
                 ?? throw ValidationException::withMessages(['voucher_date' => __('Datumet ska skrivas som ÅÅÅÅ-MM-DD.')]);
 
@@ -116,6 +127,11 @@ class SaveDraftVoucher
             // Everyone who saves a manual draft again counts as one of its preparers in an approval (ADR-081 E21, DraftEditors).
             if ($draft !== null && DraftApprovals::isManualVoucher($voucher)) {
                 Audit::record('voucher.draft_saved', $voucher, ['rows' => count($rows)], $company, $user);
+
+                // A request open on another version of the draft is over: that version no longer exists.
+                if (DraftApprovals::mayBeHeld(ApprovalSubjectType::ManualVoucher, $company->id, $voucher->id)) {
+                    DraftApprovals::withdrawOtherVersions(ApprovalSubjectType::ManualVoucher, $company->id, $voucher->id, DraftApprovals::voucherSubjectId($voucher), $user);
+                }
             }
 
             return $voucher->load('rows');

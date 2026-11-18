@@ -8,7 +8,6 @@ use App\Actions\Accounting\AttachToVoucher;
 use App\Actions\Accounting\ExportSie;
 use App\Domain\Accounting\Reports\LedgerQuery;
 use App\Domain\Accounting\Reports\ReportTable;
-use App\Domain\Accounting\VoucherSource;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Approval\ApprovalSubjectType;
 use App\Domain\Documents\DocumentAccess;
@@ -392,16 +391,21 @@ final class ArchivePackageBuilder
             ->get();
 
         // Manual vouchers of the year and credit invoices dated in it (ADR-081 E21): a request names "{id}.{version}".
-        $vouchers = Voucher::query()->where('fiscal_year_id', $fiscalYear->id)->where('source', VoucherSource::Manual->value)->get(['id', 'number', 'series_id', 'status'])->keyBy('id');
-        $credits = Invoice::query()->where('kind', Invoice::CREDIT)->whereDate('invoice_date', '>=', $start)->whereDate('invoice_date', '<=', $end)->pluck('number', 'id');
-        $drafts = ApprovalRequest::query()
+        // The requests are read first, and only the drafts they name are looked up.
+        $draftRequests = ApprovalRequest::query()
             ->whereIn('subject_type', [ApprovalSubjectType::ManualVoucher->value, ApprovalSubjectType::CreditInvoice->value])
             ->with(['decisions'])
             ->orderBy('id')
-            ->get()
-            ->filter(fn (ApprovalRequest $request): bool => $request->subject_type === ApprovalSubjectType::ManualVoucher
-                ? $vouchers->has((string) strtok($request->subject_id, '.'))
-                : $credits->has((string) strtok($request->subject_id, '.')));
+            ->get();
+        $named = fn (ApprovalSubjectType $type): array => $draftRequests->filter(fn (ApprovalRequest $request): bool => $request->subject_type === $type)
+            ->map(fn (ApprovalRequest $request): string => (string) strtok($request->subject_id, '.'))->unique()->values()->all();
+        $voucherIds = $named(ApprovalSubjectType::ManualVoucher);
+        $creditIds = $named(ApprovalSubjectType::CreditInvoice);
+        $vouchers = $voucherIds === [] ? collect() : Voucher::query()->whereKey($voucherIds)->where('fiscal_year_id', $fiscalYear->id)->get(['id', 'number', 'series_id', 'status'])->keyBy('id');
+        $credits = $creditIds === [] ? collect() : Invoice::query()->whereKey($creditIds)->whereDate('invoice_date', '>=', $start)->whereDate('invoice_date', '<=', $end)->pluck('number', 'id');
+        $drafts = $draftRequests->filter(fn (ApprovalRequest $request): bool => $request->subject_type === ApprovalSubjectType::ManualVoucher
+            ? $vouchers->has((string) strtok($request->subject_id, '.'))
+            : $credits->has((string) strtok($request->subject_id, '.')));
         $requests = $requests->merge($drafts)->sortBy('id')->values();
         $seriesCodes = $vouchers->isEmpty() ? collect() : VoucherSeries::query()->pluck('code', 'id');
 
