@@ -37,6 +37,7 @@ use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 use Tests\Support\PdfEngineFixtures;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * The download links of the completion mail (ADR-046 S13), second part:
@@ -82,6 +83,8 @@ function s13bSign(string $email, string $name = 'Anna Andersson'): SigningReques
     $links = app(SignAtLink::class);
     $request = $links->find(basename((string) parse_url((string) $url, PHP_URL_PATH)));
     expect($request)->toBeInstanceOf(SigningRequest::class);
+
+    SigningConsentFixture::give($request);
 
     return $links->sign($request, ['name' => $name, 'accept' => '1', 'method' => 'DRAWN', 'signature' => s13bPng(), 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request)], '203.0.113.7', 'Pest');
 }

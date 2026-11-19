@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\Bookkeeping;
 use Tests\Support\PdfEngineFixtures;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * The completion mail to everyone (ADR-046 amendment 2026-11-18, gap 5,
@@ -84,6 +85,8 @@ function s13Sign(string $email, string $name = 'Anna Andersson'): SigningRequest
     $links = app(SignAtLink::class);
     $request = $links->find(basename((string) parse_url((string) $url, PHP_URL_PATH)));
     expect($request)->toBeInstanceOf(SigningRequest::class);
+
+    SigningConsentFixture::give($request);
 
     return $links->sign($request, ['name' => $name, 'accept' => '1', 'method' => 'DRAWN', 'signature' => s13Png(), 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request)], '203.0.113.7', 'Pest');
 }

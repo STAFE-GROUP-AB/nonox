@@ -55,6 +55,7 @@ use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
 use Tests\Support\PdfEngineFixtures;
+use Tests\Support\SigningConsentFixture;
 use Tests\Support\WorkOrders;
 
 /*
@@ -106,6 +107,8 @@ function s16Sign(string $email, string $name = 'Anna Andersson'): SigningRequest
     $links = app(SignAtLink::class);
     $request = $links->find(s16Token($email));
     expect($request)->toBeInstanceOf(SigningRequest::class);
+
+    SigningConsentFixture::give($request);
 
     return $links->sign($request, ['name' => $name, 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => $name, 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request)], '203.0.113.7', 'Pest');
 }
