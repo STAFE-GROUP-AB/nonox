@@ -255,7 +255,7 @@ it('exports what the screen shows as CSV, XLSX and PDF, and writes an audit entr
 
     expect(base64_decode((string) data_get($pdf->effects, 'download.content')))->toStartWith('%PDF');
 
-    $audit = AuditLog::query()->where('action', 'analysis.exported')->get();
+    $audit = AuditLog::query()->where('action', 'analysis.exported')->orderBy('id')->get();
 
     expect($audit)->toHaveCount(3)
         ->and($audit->pluck('payload.format')->all())->toBe(['csv', 'xlsx', 'pdf'])
