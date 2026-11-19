@@ -48,6 +48,14 @@
       "omrade": "Fakturering"
     },
     {
+      "id": "2026-11-19-signering-faltredigerare",
+      "datum": "2026-11-19T09:30:00+01:00",
+      "rubrik": "Placera fält i PDF:en när du skickar för signering",
+      "beskrivning": "I guiden Skicka dokument finns ett nytt steg, Fält i dokumentet, där du ser dokumentets sidor och placerar underskrift, datum, namn och andra fält för varje undertecknare. Du drar fälten med musen, flyttar dem med piltangenterna eller skriver in plats och storlek i millimeter, så allt går också utan mus. Fälten kräver PDF-motorn, och när du placerar fält behöver varje undertecknare minst ett underskriftsfält.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-19-jamforelse-vitec-pyramid",
       "datum": "2026-11-19T09:20:00+01:00",
       "rubrik": "Vitec Pyramid i jämförelsen, med sidan Alternativ till Vitec Pyramid",

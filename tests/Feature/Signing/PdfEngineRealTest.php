@@ -288,3 +288,30 @@ it('treats a helper that dies without an answer as crashed and keeps its output 
             ->and($e->getMessage())->not->toContain('secret document');
     });
 });
+
+it('stamps from the crop box: a stamp at (0, 0) on a cropped page lands in its visible lower left corner (ADR-046 S8)', function () {
+    $engine = s5RealEngine($this);
+
+    if (! s5Fonts()) {
+        $this->markTestSkipped('The fonts are not fetched (scripts/fetch-signing-fonts.sh).');
+    }
+
+    $path = PdfEngineFixtures::write($this->pdfDir, 'cropped.pdf', PdfEngineFixtures::pdf(1, pageExtra: '/CropBox [50 50 400 600]'));
+    $output = $this->pdfDir.'/cropped-stamped.pdf';
+    $out = $this->pdfDir.'/pages';
+    mkdir($out);
+
+    $engine->stamp($path, $output, [new StampText(1, 0, 0, 'MMMM', 12, boxWidth: 40, boxHeight: 16)]);
+    $page = $engine->renderPages($output, $out, [1], scale: 1.0)[0];
+    $image = imagecreatefrompng($page->path);
+    $dark = 0;
+
+    // The rendered page is the crop box (350 x 550 points): the stamp's 40 x 16 box is in its lower left corner.
+    for ($x = 0; $x < 45; $x++) {
+        for ($y = $page->heightPx - 20; $y < $page->heightPx; $y++) {
+            $dark += (imagecolorat($image, $x, $y) & 0xFF) < 128 ? 1 : 0;
+        }
+    }
+
+    expect($page->widthPt)->toBe(350.0)->and($page->heightPt)->toBe(550.0)->and($dark)->toBeGreaterThan(10);
+});

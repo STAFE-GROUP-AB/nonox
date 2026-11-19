@@ -144,6 +144,10 @@
     @endif
 
     @if($step === 3)
+        @include('signing-module::livewire.wizard-fields')
+    @endif
+
+    @if($step === 4)
         <x-ui.card :title="__('Kontroller')" :description="__('En kod minskar risken att någon annan använder en vidarebefordrad länk. Underskriften blir fortfarande en enkel elektronisk underskrift.')">
             <ul class="mt-4 space-y-3">
                 @foreach($signers as $index => $signer)
@@ -174,7 +178,7 @@
         </x-ui.card>
     @endif
 
-    @if($step === 4)
+    @if($step === 5)
         <x-ui.card :title="__('Tid och påminnelser')">
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
                 <x-ui.field for="wizard-expires" :label="__('Sista dag att signera (frivilligt)')" error="expires_on" :hint="$isQuote ? __('Annars offertens giltighetsdag, eller 30 dagar. Mellan :min och :max dagar fram.', ['min' => $minDays, 'max' => $maxDays]) : __('Annars 30 dagar. Mellan :min och :max dagar fram.', ['min' => $minDays, 'max' => $maxDays])">
@@ -231,7 +235,7 @@
         </x-ui.card>
     @endif
 
-    @if($step === 5)
+    @if($step === 6)
         <x-ui.card :title="__('Granska och skicka')" :description="__('Kontrollera uppgifterna. När du har skickat går de som är i första steget en länk till sin e-post, och dokumentet kan inte ändras.')">
             <dl class="mt-4 space-y-3 text-sm" data-testid="signing-wizard-review">
                 <div>
@@ -247,6 +251,10 @@
                             @endforeach
                         </ol>
                     </dd>
+                </div>
+                <div data-testid="signing-wizard-review-fields">
+                    <dt class="font-semibold text-gray-900">{{ __('Fält i dokumentet') }}</dt>
+                    <dd class="text-gray-700">{{ $fields === [] ? __('Inga fält: undertecknarna skriver under på sidan under dokumentet.') : __(':count fält på :signers undertecknare.', ['count' => count($fields), 'signers' => collect($fields)->pluck('signer')->unique()->count()]) }}</dd>
                 </div>
                 @if($copies !== [])
                     <div>

@@ -250,9 +250,10 @@ it('walks the wizard from a stored document to a one-signer envelope with an e-m
         ->assertSet('step', 2)
         ->assertSet('signers.0.verification', 'EMAIL_CODE')
         ->set('signers.0.email', 'Eva@Example.test')
-        ->call('next')->assertSet('step', 3)->assertSee('Kod till e-posten')
-        ->call('next')->assertSet('step', 4)->assertSee('Konfidentiellt')
-        ->call('next')->assertSet('step', 5)->assertSee('Hyresavtal')->assertSee('Eva@Example.test')
+        ->call('next')->assertSet('step', 3)->assertSee('Fält i dokumentet')
+        ->call('next')->assertSet('step', 4)->assertSee('Kod till e-posten')
+        ->call('next')->assertSet('step', 5)->assertSee('Konfidentiellt')
+        ->call('next')->assertSet('step', 6)->assertSee('Hyresavtal')->assertSee('Eva@Example.test')
         ->call('send')->assertHasNoErrors();
 
     $envelope = SigningEnvelope::query()->sole();
@@ -275,8 +276,8 @@ it('refuses to go on from the signer step without an address, and opens the step
         ->call('next')->assertHasErrors('signers.0.email')->assertSet('step', 2)
         ->set('signers.0.email', 'eva@example.test')
         ->set('signers.0.verification', 'ACCESS_CODE')->set('signers.0.access_code', '123')
-        ->call('next')->call('next')->call('next')->assertSet('step', 5)
-        ->call('send')->assertHasErrors()->assertSet('step', 3);
+        ->call('next')->call('next')->call('next')->call('next')->assertSet('step', 6)
+        ->call('send')->assertHasErrors()->assertSet('step', 4);
 
     expect(SigningEnvelope::query()->count())->toBe(0);
 });

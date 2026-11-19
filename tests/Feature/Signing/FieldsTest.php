@@ -30,6 +30,7 @@ use App\Models\SigningFieldValue;
 use App\Models\SigningRequest;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Mail\Attachment;
 use Illuminate\Support\Facades\Cache;
@@ -73,6 +74,32 @@ function s6Field(int $signer, string $type, string $label, array $extra = []): a
     return ['signer' => $signer, 'type' => $type, 'page' => 1, 'x' => 5000, 'y' => 5000 + $offset, 'width' => 20000, 'height' => 2000, 'label' => $label, ...$extra];
 }
 
+/**
+ * The fields with a signature field added, last, for every signer who has none: SigningFields::validate requires one
+ * per signer as soon as any field is placed (ADR-046 S8). Added last so position-based lookups in the tests hold.
+ *
+ * @param  list<array<string, mixed>>  $fields
+ * @return list<array<string, mixed>>
+ */
+function s6WithSignatures(array $fields, int $signers = 1): array
+{
+    foreach (range(0, $signers - 1) as $signer) {
+        $has = collect($fields)->contains(fn (array $field): bool => $field['signer'] === $signer && $field['type'] === 'SIGNATURE');
+
+        if (! $has && $fields !== []) {
+            $fields[] = ['signer' => $signer, 'type' => 'SIGNATURE', 'page' => 1, 'x' => 30000, 'y' => 1000 + $signer * 5000, 'width' => 20000, 'height' => 4000, 'label' => "Auto-underskrift {$signer}", 'required' => false];
+        }
+    }
+
+    return $fields;
+}
+
+/** The stored values, without those of the signature fields that s6WithSignatures() added. */
+function s6Values(): Builder
+{
+    return SigningFieldValue::query()->whereNotIn('field_id', SigningField::query()->where('label', 'like', 'Auto-underskrift%')->select('id'));
+}
+
 /** @return array<string, mixed> */
 function s6SignInput(SigningRequest $request, array $extra = [], string $name = 'Anna Andersson'): array
 {
@@ -101,7 +128,7 @@ function s6LinkFor(string $email): ?string
 /** @return array{request: SigningRequest, token: string} */
 function s6SendOne(object $test, array $fields): array
 {
-    $sent = app(SendForSigning::class)($test->owner, $test->company, $test->quote, ['email' => 'anna@kontorshuset.test', 'fields' => $fields]);
+    $sent = app(SendForSigning::class)($test->owner, $test->company, $test->quote, ['email' => 'anna@kontorshuset.test', 'fields' => s6WithSignatures($fields)]);
 
     return ['request' => $sent['request'], 'token' => basename((string) parse_url($sent['url'], PHP_URL_PATH))];
 }
@@ -110,7 +137,7 @@ function s6SendTwo(object $test, array $fields, int $secondStep = 2): SigningEnv
 {
     return app(SendForSigning::class)->envelope($test->owner, $test->company, $test->quote, [
         'signers' => [['email' => 'anna@kontorshuset.test', 'step' => 1], ['email' => 'bo@kontorshuset.test', 'step' => $secondStep]],
-        'fields' => $fields,
+        'fields' => s6WithSignatures($fields, 2),
     ]);
 }
 
@@ -216,7 +243,7 @@ it('keeps the page as it was for an envelope without fields, and serves no page 
 });
 
 it('asks for the check before showing page images of a checked signer', function () {
-    $sent = app(SendForSigning::class)($this->owner, $this->company, $this->quote, ['email' => 'anna@kontorshuset.test', 'verification' => 'EMAIL_CODE', 'fields' => [s6Field(0, 'TEXT', 'Er referens')]]);
+    $sent = app(SendForSigning::class)($this->owner, $this->company, $this->quote, ['email' => 'anna@kontorshuset.test', 'verification' => 'EMAIL_CODE', 'fields' => s6WithSignatures([s6Field(0, 'TEXT', 'Er referens')])]);
     $token = basename((string) parse_url($sent['url'], PHP_URL_PATH));
 
     $this->get(route('signing.page', ['token' => $token, 'page' => 1]))->assertNotFound();
@@ -293,7 +320,7 @@ it('writes the values, stamps a new revision and chains the value hashes, never 
 
 it('refuses values that break their field\'s rules, on the server', function (array $definition, mixed $value, string $message) {
     ['token' => $token, 'request' => $request] = s6SendOne($this, [$definition]);
-    $field = SigningField::query()->where('envelope_id', $request->envelope_id)->sole();
+    $field = SigningField::query()->where('envelope_id', $request->envelope_id)->where('label', 'not like', 'Auto-underskrift%')->sole();
 
     try {
         s6Sign($token, ['fields' => [$field->id => $value]]);
@@ -353,7 +380,7 @@ it('takes drawn or typed initials, sized for a small box, and requires them when
 
     s6Sign($token, ['initials' => s6Png(120, 60)]);
 
-    $values = SigningFieldValue::query()->get();
+    $values = s6Values()->get();
     expect($values)->toHaveCount(2)
         ->and($values->every(fn (SigningFieldValue $value): bool => $value->image !== null && $value->value === null))->toBeTrue()
         ->and($request->refresh()->status)->toBe(SigningStatus::Signed);
@@ -364,7 +391,7 @@ it('stamps typed initials as text', function () {
 
     s6Sign($token, ['initials_method' => 'TYPED', 'typed_initials' => 'A.A.']);
 
-    expect(SigningFieldValue::query()->sole()->value)->toBe('A.A.');
+    expect(s6Values()->sole()->value)->toBe('A.A.');
 });
 
 it('never lets one signer write another signer\'s fields', function () {
@@ -476,13 +503,13 @@ it('saves nothing and leaves no file when the engine cannot stamp', function () 
 
 it('posts the fields through the public page and shows each refused value next to its field', function () {
     ['token' => $token, 'request' => $request] = s6SendOne($this, [s6Field(0, 'TEXT', 'Er referens', ['required' => true])]);
-    $field = SigningField::query()->sole();
+    $field = SigningField::query()->where('label', 'not like', 'Auto-underskrift%')->sole();
 
     $this->post("/signera/{$token}", s6SignInput($request, ['fields' => [$field->id => '']]))->assertRedirect("/signera/{$token}");
     $this->get("/signera/{$token}")->assertSee('Fyll i ”Er referens”.')->assertSee('id="fel-'.$field->id.'"', false);
 
     $this->post("/signera/{$token}", s6SignInput($request, ['fields' => [$field->id => 'PO-1']]))->assertOk();
-    expect(SigningFieldValue::query()->sole()->value)->toBe('PO-1');
+    expect(s6Values()->sole()->value)->toBe('PO-1');
 });
 
 it('runs a fixed number of queries on the signer page, whatever the number of signers and fields', function () {
@@ -504,7 +531,7 @@ it('runs a fixed number of queries on the signer page, whatever the number of si
 
         $envelope = app(SendForSigning::class)->envelope($this->owner, $this->company, $this->quote, [
             'signers' => array_map(fn (int $index): array => ['email' => "signer{$index}@kontorshuset.test", 'step' => 1], range(1, $signers)),
-            'fields' => $definitions,
+            'fields' => s6WithSignatures($definitions, $signers),
         ]);
         $token = (string) s6LinkFor('signer1@kontorshuset.test');
         expect(SigningRequest::query()->where('envelope_id', $envelope->id)->count())->toBe($signers);
@@ -559,7 +586,7 @@ it('refuses a dropdown option that does not fit its box when the field is placed
 
 it('refuses emoji and bidirectional overrides, and keeps a zero-width joiner the scripts need', function () {
     ['token' => $token, 'request' => $request] = s6SendOne($this, [[...s6Field(0, 'TEXT', 'Hälsning'), 'width' => 30000]]);
-    $field = SigningField::query()->where('envelope_id', $request->envelope_id)->sole();
+    $field = SigningField::query()->where('envelope_id', $request->envelope_id)->where('label', 'not like', 'Auto-underskrift%')->sole();
 
     expect(fn () => s6Sign($token, ['fields' => [$field->id => "abc\u{202E}def"]]))->toThrow(ValidationException::class)
         ->and(fn () => s6Sign($token, ['fields' => [$field->id => "abc\u{2066}def"]]))->toThrow(ValidationException::class);
@@ -572,7 +599,7 @@ it('refuses emoji and bidirectional overrides, and keeps a zero-width joiner the
     }
 
     s6Sign($token, ['fields' => [$field->id => "क्\u{200D}ष"]]);
-    expect(SigningFieldValue::query()->sole()->value)->toBe("क्\u{200D}ष");
+    expect(s6Values()->sole()->value)->toBe("क्\u{200D}ष");
 });
 
 it('requires boxes wide enough for what NONOX fills in, and then never refuses a date, a name or a typed signature', function () {
@@ -599,7 +626,7 @@ it('takes typed initials when nothing was drawn, as on a page without JavaScript
 
     s6Sign($token, ['initials_method' => 'DRAWN', 'initials' => '', 'typed_initials' => 'AA']);
 
-    expect(SigningFieldValue::query()->sole()->value)->toBe('AA');
+    expect(s6Values()->sole()->value)->toBe('AA');
 });
 
 it('checks the fields against the pages before taking any mail quota', function () {
@@ -607,16 +634,17 @@ it('checks the fields against the pages before taking any mail quota', function 
         ->and(RateLimiter::attempts("mail-quota:documents:{$this->company->id}"))->toBe(0);
 });
 
-it('mails a signer who stamped nothing the version they signed, not a later one', function () {
+it('mails a signer the version they signed, not a later one', function () {
     $envelope = s6SendTwo($this, [s6Field(0, 'TEXT', 'Annas referens'), s6Field(1, 'TEXT', 'Bos referens')]);
     [, $bosField] = SigningField::query()->where('envelope_id', $envelope->id)->orderBy('position')->get()->all();
-    $original = SigningDocumentVersion::query()->where('envelope_id', $envelope->id)->where('kind', 'ORIGINAL')->sole();
 
     $anna = s6Sign((string) s6LinkFor('anna@kontorshuset.test'));
     s6Sign((string) s6LinkFor('bo@kontorshuset.test'), ['fields' => [$bosField->id => 'B-2']], 'Bo Berg');
 
-    expect(SignerFields::shownVersion($anna->refresh())?->sha256)->toBe($original->sha256)
-        ->and(SigningDocumentVersion::query()->where('kind', 'AFTER_SIGNER')->count())->toBe(1);
+    $annas = SigningDocumentVersion::query()->where('kind', 'AFTER_SIGNER')->where('signing_request_id', $anna->id)->sole();
+
+    expect(SignerFields::shownVersion($anna->refresh())?->sha256)->toBe($annas->sha256)
+        ->and(SigningDocumentVersion::query()->where('kind', 'AFTER_SIGNER')->count())->toBe(2);
 });
 
 it('puts the render job back while another worker holds the lock', function () {
@@ -709,7 +737,7 @@ it('leaves a version alone while another worker holds its render lock', function
 
 it('refuses to stamp onto a shown version whose file changed', function () {
     ['token' => $token, 'request' => $request] = s6SendOne($this, [s6Field(0, 'TEXT', 'Er referens')]);
-    $field = SigningField::query()->sole();
+    $field = SigningField::query()->where('label', 'not like', 'Auto-underskrift%')->sole();
     $version = SigningDocumentVersion::query()->where('envelope_id', $request->envelope_id)->sole();
     $links = app(SignAtLink::class);
 

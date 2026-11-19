@@ -61,7 +61,7 @@ use Symfony\Component\Yaml\Yaml;
  * demo.enabled and stripe.enabled on in the demo database (instance_settings)
  * for the "try without registering" and Stripe images.
  *
- * @phpstan-type Shot array{foretag: string, rutt: string, modell?: string|array{tabell: string, dar?: array<string, scalar>}, fraga?: array<string, string>, enhet?: string, del?: string, klick?: list<string>, fyll?: array<string, string>, visa?: string, anvandare?: string, text?: string}
+ * @phpstan-type Shot array{foretag: string, rutt: string, modell?: string|array{tabell: string, dar?: array<string, scalar>}, fraga?: array<string, string|array{tabell: string, dar?: array<string, scalar>}>, enhet?: string, del?: string, klick?: list<string>, fyll?: array<string, string>, visa?: string, anvandare?: string, text?: string}
  */
 class ManualScreenshotsCommand extends Command
 {
@@ -282,8 +282,12 @@ class ManualScreenshotsCommand extends Command
             return $url;
         }
 
-        // A value starting with @ is a date relative to today, the way the demo dates its data: '@monday this week -1 week'.
-        $query = array_map(fn (string $value): string => str_starts_with($value, '@') ? CarbonImmutable::today()->modify(substr($value, 1))->toDateString() : $value, $shot['fraga']);
+        // A value starting with @ is a date relative to today, the way the demo dates its data: '@monday this week -1 week'. A value that is a table and conditions ({ tabell, dar }) is the id of the newest matching row, as for `modell` (the editor's `dokument`).
+        $query = array_map(fn (string|array $value): string => match (true) {
+            is_array($value) => (string) $this->model($value, $company),
+            str_starts_with($value, '@') => CarbonImmutable::today()->modify(substr($value, 1))->toDateString(),
+            default => $value,
+        }, $shot['fraga']);
 
         return $url.'?'.http_build_query($query);
     }

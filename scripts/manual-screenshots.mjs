@@ -209,6 +209,13 @@ try {
         }
 
         if (shot.selector) {
+            // A fixed bar (the search field at the bottom) would be stitched into the middle of a tall clip.
+            await send('Runtime.evaluate', {
+                expression: `(() => { const target = document.querySelector(${JSON.stringify(shot.selector)}); document.querySelectorAll('body *').forEach((el) => { if (['fixed', 'sticky'].includes(getComputedStyle(el).position) && !(target && (target.contains(el) || el.contains(target)))) { el.style.visibility = 'hidden'; } }); })()`,
+            }, sessionId);
+        }
+
+        if (shot.selector) {
             const { result: box } = await send('Runtime.evaluate', {
                 expression: `JSON.stringify((() => { const b = document.querySelector(${JSON.stringify(shot.selector)})?.getBoundingClientRect(); return b ? { x: b.x, y: b.y + window.scrollY, width: b.width, height: b.height } : null; })())`,
                 returnByValue: true,

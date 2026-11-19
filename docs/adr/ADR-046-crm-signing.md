@@ -2372,3 +2372,90 @@ before the trust-service item in gap 5 is answered.
   production: `select retention_class, count(*) from signing_envelopes where
   retention_until < (now() at time zone 'Europe/Stockholm')::date and not
   retention_hold group by 1;` and confirm the numbers with the owner.
+
+### S8 as built (2026-11-19): the field editor
+
+- **Where the fields live while they are placed.** In the send wizard's own
+  state (`SendWizard::$fields`), not in `signing_fields`. A field is written
+  only inside `SendForSigning`'s transaction, as S6 built it, so the editor
+  never edits rows of a `DRAFT` envelope and **the question S6 left open about
+  the `NoDelete` grant of `signing_fields` does not arise**: no grant or
+  trigger changed. A sender who wants other fields after sending withdraws the
+  signing and sends again.
+- **The coordinate origin (the question S6 left for S8).** A field's `x` and
+  `y` are 1/100 PDF points from the lower left corner of the page's **crop
+  box**, as the page is shown by PDF.js (`page.view`), by pdfium (the engine's
+  `inspect`, which gives `page_sizes`) and by the signer's page images. The
+  editor works in that frame and never in PDF user space. PDF draws in user
+  space, whose origin is the media box's, so the helper's `stamp` now adds the
+  page's crop-box origin to every stamp (`page_origin` in
+  `tools/pdf-engine/nonox_pdf_engine.py`: `/CropBox` and `/MediaBox`, searched
+  up the page tree, the larger corner). Pages whose crop box starts at (0, 0),
+  which is nearly every page, are unchanged. **Not exercised**: no engine is
+  installed here, so `page_origin` has no real test; `tools/pdf-engine/README.md`
+  says what the next installation must add (a page with
+  `/CropBox [50 50 400 600]`; written into the engine self-test as `crop_origin`
+  and into `PdfEngineRealTest`, never run). `page_origin` catches only
+  `KeyError`, `TypeError` and `ValueError` and warns on stderr. Pages with `/Rotate` stay refused, as S6 decided.
+- **The wizard has six steps**: Dokument, Undertecknare, **Fält i dokumentet**
+  (new, optional), Kontroller, Tid och påminnelser, Granska och skicka. The
+  page sizes are measured once, by the engine, when the step is opened
+  (`PdfEngine::inspect`, in the company's context) and kept in a locked
+  property in 1/100 points (`round(points × 100)`, the same rounding
+  `SigningFields::place` uses). Without the engine the step says "Fält i
+  dokumentet kräver PDF-motorn" and the document is sent without fields.
+- **One validation.** Whatever the editor produces is clamped by
+  `FieldLayout::clamp` (inside the page, at most the stamp's bounds, at least
+  5 × 5 points, and at least as wide as the type needs: a date holds
+  `0000-00-00`, a name or signature 30 characters, initials `MM`, all at 6
+  points, from `TextFit`), and the wizard runs `SigningFields::validate` and
+  `checkGeometry` when the sender leaves the step, so the errors appear there
+  and not at the send. A test places every field type at every preset and
+  validates the result. **A rule moved into the domain**: when any field is
+  placed, every signer needs at least one `SIGNATURE` field (gap 2). It is
+  checked in `SigningFields::validate`, so the wizard and `SendForSigning` both
+  refuse it ("Undertecknare N saknar det"); S6's tests add a signature field,
+  last, for each signer who had none (`s6WithSignatures`).
+- **Three ways to place a field, none needing the others.** The pointer (drag a
+  box, drag its lower right corner, drop a type from the palette on a page:
+  `signing-editor.js`, geometry in `signing-editor-core.js` with Node tests);
+  the keyboard (a box is a `<button>`: arrows move it 1 mm, Shift 10 mm, Alt
+  with an arrow resizes, Delete removes it); and a form (type, signer, page and
+  a position preset of nine; then the selected field's left, top, width and
+  height in millimetres from the upper left, and move buttons). Every path ends
+  in the same Livewire methods (`addField`, `addFieldAt`, `moveField`, `nudge`,
+  `applyGeometry`, `removeField`), which clamp (a resize holds the upper left corner: `resizeBox` in JS, `FieldLayout::resize` in PHP), so a tampered request cannot
+  place anything the validation would refuse. A polite live region says where a
+  field ended up (WCAG 2.2: 2.1.1, 2.5.7 dragging alternative, 4.1.3 status
+  messages; 1.4.1: the signer's number is written in each box and not only a
+  colour). The boxes are drawn by Livewire as percent of the page, so the page
+  runs a fixed number of queries (a query-count test with 1 and 20 fields).
+- **PDF.js.** `pdfjs-dist` **5.7.284**, Apache-2.0 (checked in the package's
+  `package.json`), pinned exactly in `package.json` as a dev dependency, the
+  `legacy` build, loaded by a dynamic `import()` only when a page with the
+  editor is on screen and bundled by Vite with its worker as a hashed asset
+  (`?url`); no CDN. The page's existing policy already has `worker-src 'self'`
+  and `script-src 'self' 'unsafe-inline' 'unsafe-eval'`, so nothing is widened;
+  the public signing page is untouched. `getDocument` is called with
+  `isEvalSupported: false` and `enableScripting: false`. **Not bundled**: PDF.js's
+  `cmaps`, `standard_fonts` and `wasm` directories, so a PDF that relies on
+  non-embedded standard fonts or CJK character maps, or has JPEG 2000 images,
+  may preview with a fallback font or without that image. The preview is only
+  a guide for placing boxes; the signer sees the engine's page images.
+- **The file the editor shows.** `GET /signering/ny/dokument?typ=&dokument=`
+  (`signing.new.pdf`, behind `module:signing`, `throttle:60,1`) returns the
+  chosen document's bytes with `InlineFile` headers and `Cache-Control:
+  private, no-store`. `ChosenDocument::resolve` is the one place the wizard and
+  this route find and authorise a document (a quote needs `invoices:view`, an
+  agreement CRM, an upload is its uploader's or `signing:manage`'s), and the
+  route also calls `authorizeSigning` and needs `signing:send`. Another
+  company's document, a member who may not send it and a bad key are all 404.
+- **Screenshots.** `manual:screenshots` gained a `fraga` value that is a table
+  and conditions (the id of the newest matching row, as `modell`), for the
+  editor's `dokument`. The pages are measured by the PDF engine, so the images
+  were taken against a served copy of the app with the test suite's engine
+  bound in a router script outside the repository; the real engine is not
+  involved in the picture.
+- **Open.** `TODO(legal-verify)` (S6): whether initials add evidential value.
+  Fields on a rotated page, the engine's `page_origin` test and the PDF.js
+  fonts and wasm above are left as described.

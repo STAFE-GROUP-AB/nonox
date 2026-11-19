@@ -41,12 +41,12 @@ final class PdfEngineFixtures
     }
 
     /**
-     * A PDF with $pages A4 pages. $catalogExtra is added to the catalogue and
+     * A PDF with $pages A4 pages. $catalogExtra is added to the catalogue, $pageExtra to each page and
      * $objects are added as numbered objects from 90 upwards.
      *
      * @param  list<string>  $objects
      */
-    public static function pdf(int $pages = 1, string $catalogExtra = '', array $objects = []): string
+    public static function pdf(int $pages = 1, string $catalogExtra = '', array $objects = [], string $pageExtra = ''): string
     {
         $bodies = [];
         $kids = [];
@@ -56,7 +56,7 @@ final class PdfEngineFixtures
             $contentNumber = $pageNumber + 1;
             $kids[] = "{$pageNumber} 0 R";
             $stream = 'BT /F1 12 Tf 72 720 Td (Sida '.($page + 1).') Tj ET';
-            $bodies[$pageNumber] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents {$contentNumber} 0 R >>";
+            $bodies[$pageNumber] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] {$pageExtra} /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents {$contentNumber} 0 R >>";
             $bodies[$contentNumber] = '<< /Length '.strlen($stream)." >>\nstream\n{$stream}\nendstream";
         }
 
