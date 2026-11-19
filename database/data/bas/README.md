@@ -13,8 +13,14 @@ Only commonly used accounts are included. Users add the rest themselves.
 
 **TODO(legal-verify):**
 
-1. Check the BAS licence terms before shipping the complete BAS kontoplan in
-   this open-source repository.
+1. ~~Check the BAS licence terms~~ Answered by BAS-kontogruppen by e-mail
+   on 2026-11-19: BAS account numbers and account names are free to use (they
+   are published as XLS and PDF on bas.se). Their conditions: use the latest
+   BAS version, and state that the accounts come from the BAS kontoplan
+   (BAS-kontogruppen, bas.se). This covers the numbers and names only. The paid
+   machine-readable JSON file and the paid Bokföringsboken/Bokslutsboken files
+   are licensed separately and must never be committed here. A lawyer should
+   still confirm the wording before release.
 2. Check every number and name here against the official BAS 2026 chart. They
    were written from general knowledge of BAS, not copied from the published
    chart.

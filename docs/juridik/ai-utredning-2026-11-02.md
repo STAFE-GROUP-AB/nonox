@@ -193,6 +193,7 @@ Förkortning: ML = mervärdesskattelag (2023:200), https://www.riksdagen.se/sv/d
 - **Grund:** https://www.bas.se/wp-content/uploads/2026/04/Allmanna-Villkor-2026.pdf
 - **Säkerhet:** Medel.
 - **Konsekvens:** Lägg inte hela BAS-listan eller ett väsentligt utdrag i förrådet utan skriftligt medgivande från BAS-kontogruppen. Begränsa mallarna till de konton systemet själv behöver, eller be om tillstånd. **Jurist: ja.**
+- **Svar från BAS-kontogruppen (e-post 2026-11-19):** kontonummer och kontonamn är fria att använda. Villkor: senaste BAS-versionen och en hänvisning till att det är BAS kontoplan. Svaret gäller inte den betalda maskinläsbara filen eller de betalda filerna av Bokföringsboken och Bokslutsboken; de läggs aldrig i förrådet. En jurist bör ändå läsa formuleringen innan release.
 
 ## 4. Lön, skatt och AGI
 
