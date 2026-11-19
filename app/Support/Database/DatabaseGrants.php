@@ -373,6 +373,10 @@ final class DatabaseGrants
         // Evidence (ADR-046 S2): the trigger refuses UPDATE, and DELETE except the cascade from the envelope.
         'signing_document_versions' => GrantDecision::AppendOnly,
         'signing_envelopes' => GrantDecision::ReadWrite,
+        // Fields in the PDF (ADR-046 S6): placed before the envelope's first event and frozen after (trigger); the
+        // values are evidence, written once and removed only by the cascade from their envelope, signer row or company.
+        'signing_field_values' => GrantDecision::AppendOnly,
+        'signing_fields' => GrantDecision::NoDelete,
         'signing_link_tokens' => GrantDecision::ReadWrite,
         // Signer checks (ADR-046 S3): a code row only gains attempts and its verified_at (trigger); it goes with its signer row or company by cascade.
         'signing_verification_codes' => GrantDecision::NoDelete,

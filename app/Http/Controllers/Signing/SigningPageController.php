@@ -6,6 +6,9 @@ namespace App\Http\Controllers\Signing;
 
 use App\Actions\Signing\SignAtLink;
 use App\Domain\Invoicing\InvoiceCalculator;
+use App\Domain\Signing\Fields\PageImages;
+use App\Domain\Signing\Fields\SignerFields;
+use App\Domain\Signing\Fields\SigningFields;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SigningEnvelopes;
 use App\Domain\Signing\SigningPdfs;
@@ -16,6 +19,8 @@ use App\Domain\Signing\Verification\SignerChecks;
 use App\Domain\Signing\Verification\SignerPass;
 use App\Models\Company;
 use App\Models\SalesDocument;
+use App\Models\SigningDocumentVersion;
+use App\Models\SigningField;
 use App\Models\SigningRequest;
 use App\Models\SigningVerificationCode;
 use App\Support\Branding\Brand;
@@ -40,12 +45,18 @@ use Symfony\Component\HttpFoundation\Response;
  * check page first: an e-mail code they ask for, or the access code the
  * sender gave them. Until the check has passed in this browser
  * (SignerPass), the document, signing and declining are refused.
+ *
+ * An envelope with fields (gap 2, S6) shows the document's pages as images
+ * rendered on the server (/signera/{token}/sida/{n}, same origin, behind the
+ * token and the check), with the signer's fields over them and as a list of
+ * labelled controls; no PDF viewer, so the CSP stays as it is.
  */
 final class SigningPageController
 {
     public function __construct(
         private readonly SignAtLink $links,
         private readonly SignerChecks $checks,
+        private readonly PageImages $images,
     ) {}
 
     public function show(string $token): Response
@@ -150,13 +161,46 @@ final class SigningPageController
             return redirect()->route('signing.show', ['token' => $token]);
         }
 
-        $bytes = Storage::disk(SigningRequest::DISK)->get($request->document_path);
+        // With fields (ADR-046 S6) the signer is shown the latest revision, with earlier signers' values; once signed, their own.
+        $path = CurrentCompany::run($request->company_id, fn (): string => $this->hasFields($request) ? (SignerFields::shownVersion($request)->path ?? $request->document_path) : $request->document_path);
+        $bytes = Storage::disk(SigningRequest::DISK)->get($path);
         abort_unless(is_string($bytes), 404);
 
         return $this->private(response($bytes, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="'.$request->document_name.'"',
         ]));
+    }
+
+    /** One page of the version the signer is shown, as a PNG (ADR-046 S6): only for an envelope with fields, only after the check. */
+    public function pageImage(string $token, int $page): Response
+    {
+        $request = $this->links->find($token);
+
+        if (! $request instanceof SigningRequest || $this->links->unavailable($request) !== null || ! SignerPass::has(session()->driver(), $request, $token)) {
+            abort(404);
+        }
+
+        $bytes = CurrentCompany::run($request->company_id, function () use ($request, $page): ?string {
+            $version = $this->hasFields($request) ? SigningFields::latestVersion((string) $request->envelope_id) : null;
+
+            if (! $version instanceof SigningDocumentVersion) {
+                return null;
+            }
+
+            // Only images the queued render has made; the request never starts the engine.
+            $pages = $this->images->pages($version) ?? [];
+
+            return in_array($page, array_column($pages, 'page'), true) ? $this->images->image($version, $page) : null;
+        });
+
+        abort_unless(is_string($bytes), 404);
+
+        $response = $this->private(response($bytes, 200, ['Content-Type' => 'image/png']));
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('Content-Security-Policy', "default-src 'none'");
+
+        return $response;
     }
 
     public function sign(Request $http, string $token): Response|RedirectResponse
@@ -172,7 +216,7 @@ final class SigningPageController
         }
 
         try {
-            $this->links->sign($request, $http->only(['name', 'title', 'accept', 'method', 'signature', 'typed_signature', 'document_sha256', 'acceptance_text', 'acceptance_mac']), $http->ip(), $http->userAgent());
+            $this->links->sign($request, $http->only(['name', 'title', 'accept', 'method', 'signature', 'typed_signature', 'document_sha256', 'acceptance_text', 'acceptance_mac', 'fields', 'radio', 'initials_method', 'initials', 'typed_initials', 'revision_sha256']), $http->ip(), $http->userAgent());
         } catch (SigningUnavailable $unavailable) {
             if ($unavailable->reason === SigningUnavailable::CHANGED) {
                 $this->links->revokeStale($request);
@@ -180,10 +224,10 @@ final class SigningPageController
 
             return $this->unavailable($unavailable->reason, 410, $request);
         } catch (ValidationException $exception) {
-            // The drawn signature is not sent back into the form; the signer draws it again.
+            // The drawn signature and initials are not sent back into the form; the signer draws them again.
             return redirect()->route('signing.show', ['token' => $token])
                 ->withErrors($exception->errors())
-                ->withInput($http->except(['signature', '_token']));
+                ->withInput($http->except(['signature', 'initials', '_token']));
         }
 
         return $this->unavailable(SigningUnavailable::SIGNED, 200, $request->refresh(), signedNow: true);
@@ -292,9 +336,16 @@ final class SigningPageController
                 'agreement' => $request->agreement,
                 // Several signers: the page says who else gets the names and times (ADR-046 S1).
                 'several' => SigningEnvelopes::hasSeveralSigners($request->envelope_id),
+                // Fields in the PDF (ADR-046 S6): null for an envelope without fields, whose page is as it always was.
+                'fields' => SignerFields::for($request, $this->images),
                 'vat' => $quote instanceof SalesDocument ? InvoiceCalculator::totals($quote->rows->map(fn ($row): array => ['net' => $row->net_ore->ore, 'vat_rate' => $row->vat_rate])->all()) : null,
             ]), page: true);
         });
+    }
+
+    private function hasFields(SigningRequest $request): bool
+    {
+        return $request->envelope_id !== null && SigningField::query()->where('envelope_id', $request->envelope_id)->exists();
     }
 
     private function unavailable(string $reason, int $status, ?SigningRequest $request = null, bool $signedNow = false, bool $declinedNow = false): Response

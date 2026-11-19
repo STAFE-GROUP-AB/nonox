@@ -71,6 +71,23 @@ Den som inte vill godkänna kan i stället trycka på **Vill du inte godkänna? 
 
 ![Signeringssidan i mobilen.](/bilder/manual/crm/signera-offert-mobil.webp)
 
+### När dokumentet har fält
+
+Ett dokument kan ha fält som en viss undertecknare ska fylla i: **Underskrift**, **Initialer**, **Datum**, **Namn**, **Text**, **Tal**, **Kryssruta**, **Lista** och **Alternativ**. Fälten placeras i PDF:en innan den skickas och kan inte ändras efteråt. Fält kräver PDF-motorn; utan den står "Kräver PDF-motorn". Själva platserna för fälten bestäms när dokumentet skickas; verktyget för att dra ut fält på sidorna kommer i en senare version.
+
+Den som signerar ser då dokumentets sidor som bilder i stället för PDF:en i en ruta. De egna fälten är markerade på sidan, och under varje sida står samma fält som vanliga formulärfält i läsordning, så att de går att fylla i med tangentbordet och läsas av en skärmläsare. **Nästa obligatoriska fält** hoppar till nästa obligatoriska fält som fortfarande är tomt. Ett klick på en markering på sidan flyttar till fältet.
+
+- **Datum** fylls i med dagens datum när personen signerar, och **Namn** med namnet hen skriver. De går inte att skriva i.
+- **Underskrift** får samma namnteckning som personen ritar eller skriver längst ned.
+- **Initialer** ritas i en mindre ruta under **Dina initialer**, eller skrivs med **Skriv mina initialer** (högst tio bokstäver). Samma initialer sätts i alla initialfält.
+- **Text** har en högsta längd, **Tal** kan ha ett minsta och ett största värde och ett antal decimaler (decimalkomma går bra), **Lista** och **Alternativ** tar bara de val som finns.
+
+Allt kontrolleras igen av NONOX när personen trycker på **Signera**, och det som inte stämmer visas vid fältet. Texten skrivs alltid inom fältets ruta, med mindre teckenstorlek om den är lång; får den inte plats ens då står "Texten får inte plats i fältet". Datum, namn och underskrift fylls alltid i, och ett långt namn skrivs med mindre text. Emoji går inte att skriva i fälten, eftersom de inte kan skrivas in i PDF:en. Ingen kan fylla i någon annans fält: värden för andra fält tas inte emot, och när signeringen går igenom loggas det i händelserna.
+
+Sidorna görs om till bilder strax efter att dokumentet har skickats. Öppnar någon länken innan det är klart står "Sidorna kan inte visas som bilder just nu"; fälten listas ändå under varje sida och PDF:en går att öppna.
+
+När en undertecknare har signerat stämplas värdena in i PDF:en som en ny version, utan att något i den tidigare versionen ändras. Nästa undertecknare ser den versionen, med de tidigare undertecknarnas uppgifter i dokumentet och listade under sidan som **ifyllt av Undertecknare 1**. Fält som någon senare ska fylla i syns som streckade rutor med **Undertecknare 2** och så vidare, utan namn eller e-postadress. Signerar två personer i samma steg samtidigt får den som kommer sist ladda om sidan och läsa dokumentet igen. Den färdiga PDF:en som alla får med e-post, och som du öppnar under **Signering**, är versionen med allas uppgifter.
+
 ## När kunden har signerat
 
 - Offerten blir en **order**, precis som när du trycker på **Kunden tackade ja – gör order**, och ett fakturautkast om du valde det.

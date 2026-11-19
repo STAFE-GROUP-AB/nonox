@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Domain\Signing\Chain;
 
+use App\Domain\Signing\Fields\FieldStamper;
 use App\Domain\Signing\SigningEventType;
 use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\SigningDocumentVersion;
 use App\Models\SigningEnvelope;
 use App\Models\SigningEvent;
+use App\Models\SigningFieldValue;
 use App\Models\SigningRequest;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\Storage;
@@ -33,7 +35,9 @@ use Throwable;
  *   log holds that head; an envelope with a head or a moved counter but no
  *   chain left is reported, also when it has no signer rows;
  * - every file in signing_document_versions of an envelope that still has
- *   signers, and every signer's Signeringsbevis, still has its SHA-256.
+ *   signers, and every signer's Signeringsbevis, still has its SHA-256;
+ * - every field value a signer filled in (ADR-046 S6) still has the hash its
+ *   FIELDS_FILLED event names, and no stored value is missing from one.
  *
  * A fixed number of queries per company (the signer rows with the drawn
  * signature in chunks), whatever the number of envelopes; the files are read
@@ -43,7 +47,7 @@ use Throwable;
 final class ChainVerifier
 {
     /** The problem codes. */
-    public const array CODES = ['NO_CHAIN', 'GAP', 'LINK', 'HASH', 'COUNTER', 'AFTER_HEAD', 'EVIDENCE', 'PRIOR', 'UNCHAINED', 'HEAD', 'AUDIT', 'FILE_MISSING', 'FILE_CHANGED'];
+    public const array CODES = ['NO_CHAIN', 'GAP', 'LINK', 'HASH', 'COUNTER', 'AFTER_HEAD', 'EVIDENCE', 'PRIOR', 'UNCHAINED', 'HEAD', 'AUDIT', 'FILE_MISSING', 'FILE_CHANGED', 'FIELDS'];
 
     /** The signer row columns the checks read; the drawn signature only in the evidence pass. */
     private const array REQUEST_COLUMNS = ['id', 'envelope_id', 'status', 'signed_document_path', 'signed_document_sha256'];
@@ -51,12 +55,16 @@ final class ChainVerifier
     /** @var list<array<string, int|string|null>> */
     private array $problems = [];
 
+    /** @var array<int, array{envelope_id: string, sequence: int, hash: string}> field id => the hash its FIELDS_FILLED event names */
+    private array $fieldHashes = [];
+
     /**
      * @return array{ok: bool, envelopes: int, events: int, files: int, problems: list<array<string, int|string|null>>}
      */
     public function verify(Company $company): array
     {
         $this->problems = [];
+        $this->fieldHashes = [];
 
         return CurrentCompany::run($company, function () use ($company): array {
             $envelopes = SigningEnvelope::query()->orderBy('id')->get(['id', 'company_id', 'status', 'document_sha256', 'chain_head', 'chain_sequence', 'next_sequence', 'last_hash'])->keyBy('id');
@@ -95,6 +103,7 @@ final class ChainVerifier
             }
 
             $this->checkEvidence($evidence);
+            $this->checkFieldValues();
             $files = $this->checkFiles($requests, $signers);
 
             return ['ok' => $this->problems === [], 'envelopes' => $envelopes->count(), 'events' => $events, 'files' => $files, 'problems' => $this->problems];
@@ -164,6 +173,14 @@ final class ChainVerifier
                 $evidence[(int) $event->signing_request_id] = ['envelope_id' => $envelope->id, 'sequence' => $sequence, 'digest' => $digest];
             }
 
+            if ($event->event === SigningEventType::FieldsFilled) {
+                foreach ((array) ($event->payload['values'] ?? []) as $named) {
+                    if (is_array($named) && isset($named['field_id'], $named['hash'])) {
+                        $this->fieldHashes[(int) $named['field_id']] = ['envelope_id' => $envelope->id, 'sequence' => $sequence, 'hash' => (string) $named['hash']];
+                    }
+                }
+            }
+
             if ($event->event === SigningEventType::ChainStarted) {
                 $started = true;
                 $this->checkPrior($envelope, $event, $signerIds, $legacy, $prunedRequests);
@@ -213,6 +230,35 @@ final class ChainVerifier
                 $this->problems[] = ['envelope_id' => $expected['envelope_id'], 'code' => 'EVIDENCE', 'sequence' => $expected['sequence']];
             }
         });
+    }
+
+    /**
+     * The field values against the hashes their FIELDS_FILLED events name, in chunks (the drawn images are decrypted here only).
+     */
+    private function checkFieldValues(): void
+    {
+        $seen = [];
+
+        SigningFieldValue::query()->lazyById(200)->each(function (SigningFieldValue $value) use (&$seen): void {
+            $named = $this->fieldHashes[$value->field_id] ?? null;
+            $seen[$value->field_id] = true;
+
+            try {
+                $current = FieldStamper::hashOf($value);
+            } catch (Throwable) {
+                // An image that can no longer be decrypted (the app key is gone) is a changed value.
+                $current = null;
+            }
+
+            if ($named === null || $current === null || ! hash_equals($named['hash'], $current)) {
+                $this->problems[] = ['envelope_id' => $named['envelope_id'] ?? null, 'code' => 'FIELDS', 'sequence' => $named['sequence'] ?? null, 'field_id' => $value->field_id];
+            }
+        });
+
+        foreach (array_diff_key($this->fieldHashes, $seen) as $fieldId => $named) {
+            // A value the chain names that is gone: values go only with their envelope, and then so does the chain.
+            $this->problems[] = ['envelope_id' => $named['envelope_id'], 'code' => 'FIELDS', 'sequence' => $named['sequence'], 'field_id' => $fieldId];
+        }
     }
 
     /**

@@ -35,6 +35,9 @@ enum SigningEventType: string
     case Unlocked = 'UNLOCKED';
     case DeadlineChanged = 'DEADLINE_CHANGED';
     case ReminderSent = 'REMINDER_SENT';
+    /** Fields (gap 2, S6): what a signer filled in (field ids and value hashes, never values), and ids posted for fields that were not theirs. */
+    case FieldsFilled = 'FIELDS_FILLED';
+    case FieldRejected = 'FIELD_REJECTED';
 
     /** A step of the signer's own link (the six of ADR-046), not an event of the envelope's chain. */
     public function isSignerStep(): bool
@@ -61,6 +64,8 @@ enum SigningEventType: string
             self::Unlocked => __('Avsändaren låste upp länken'),
             self::DeadlineChanged => __('Sista dag ändrades'),
             self::ReminderSent => __('Påminnelse skickades'),
+            self::FieldsFilled => __('Undertecknaren fyllde i sina fält'),
+            self::FieldRejected => __('Värden för fält som hör till någon annan togs inte emot'),
         };
     }
 }

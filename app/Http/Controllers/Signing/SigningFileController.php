@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Signing;
 
 use App\Actions\Signing\SendForSigning;
+use App\Domain\Signing\Fields\SigningFields;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SigningHook;
 use App\Domain\Signing\SigningHooks;
 use App\Domain\Signing\SigningPdfs;
 use App\Models\Company;
+use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
@@ -28,10 +30,11 @@ final class SigningFileController
 {
     public function __invoke(int $signing, string $file): Response
     {
-        $request = SigningRequest::query()->with(['quote', 'agreement'])->findOrFail($signing);
+        $request = SigningRequest::query()->with(['quote', 'agreement', 'envelope'])->findOrFail($signing);
         abort_unless($this->allowed($request), 404);
 
-        $path = $file === 'signeringsbevis' ? $request->signed_document_path : $request->document_path;
+        // With fields (ADR-046 S6) the document is the finished version, with every signer's values.
+        $path = $file === 'signeringsbevis' ? $request->signed_document_path : ($request->envelope instanceof SigningEnvelope ? SigningFields::finalVersion($request->envelope) : $request->document_path);
         $name = $file === 'signeringsbevis' ? SigningPdfs::certificateFilename($request) : $request->document_name;
         abort_if($path === null, 404);
 

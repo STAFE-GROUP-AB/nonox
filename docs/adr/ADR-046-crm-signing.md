@@ -1860,3 +1860,165 @@ before the trust-service item in gap 5 is answered.
 - A reminder's token does not revoke earlier tokens (all stay valid to the deadline). `SigningReminderMail` carries the URL like `SigningRequestMail` does. `SigningRequest` already writes times with offset.
 - Open items: reminders by SMS and a deadline per signer stay out of scope;
   a reminder for an envelope sent through the API waits for S19.
+
+### S6 as built (2026-11-18): fields core
+
+- Migration `database/migrations/2027_03_09_100000_create_signing_fields.php`:
+  `signing_fields` and `signing_field_values` as gap 2 specifies, with two
+  additions on the field: `page_width` and `page_height` (1/100 PDF points,
+  from the engine's `inspect` at sending), so a field's box over the page
+  image needs no other row; a check constraint keeps every rectangle inside
+  its page. `template_id` and `role_key` come with S14. Grants:
+  `signing_fields` NoDelete, `signing_field_values` AppendOnly.
+- **When fields are placed.** The envelope is created `OUT` (S1), so "frozen
+  once not `DRAFT`" became: the insert trigger allows a field while the
+  envelope is `DRAFT`, or `OUT` while no link token
+  (`signing_link_tokens`) and no event (`crm_signing_events`) exists for any
+  of its signer rows, so no signer can have been shown the document.
+  `SendForSigning` takes an optional `fields` list
+  (`SigningFields::validate`/`measure`/`place`), with the signer named by
+  index (0 for one signer; the index in `signers`, kept in input order), and
+  creates every signer row and places the fields before any link is issued.
+  The PDF is made and measured by the engine (`measure`, inside the company's
+  context) before the mail quota is taken and outside the transaction, and
+  every field is checked against the pages there (`checkGeometry`: the page
+  exists, is not rotated, holds the whole box), so a refused send costs no
+  quota; the transaction stores those same bytes only if the locked
+  document's fingerprint is unchanged. Updates are refused unless the
+  envelope is `DRAFT`; deletes unless `DRAFT` or by the cascade. **The
+  `DRAFT` delete branch is unreachable under the NoDelete grant**: S8, which
+  edits fields of a draft, must either change the grant of `signing_fields`
+  to ReadWrite or delete through a `SECURITY DEFINER` function. A field's
+  signer row must be of the same envelope and company (trigger). The field
+  editor (S8) and the wizard (S7) call the same action.
+- **Values.** Written in `SignAtLink::sign`'s transaction, after the
+  existing checks and before the signer row turns `SIGNED`
+  (`FillSigningFields`): the trigger accepts a value only for the field's own
+  signer while that signer is `PENDING`, and never an update; deletes only by
+  the cascade. A date is the signing date in Stockholm time and a name the
+  name the signer gives (neither can be typed); a signature field takes the
+  drawn signature or the typed name; initials take a drawn image (the same
+  PNG checks as the signature) or typed initials (1–10 letters; typed
+  initials also count when nothing was drawn, as on a page without
+  JavaScript); a text has
+  `max_length` ≤ 500 and no control or format characters (the bidirectional
+  overrides and isolates U+202A–202E and U+2066–2069 among them; the
+  zero-width joiner U+200D, which some scripts need, is allowed). **Emoji are
+  refused** in every stamped value ("Emoji och liknande symboler kan inte
+  skrivas i dokumentet."): Noto Sans and Noto Sans CJK have no emoji glyphs,
+  so they would print as empty boxes. A number has `decimals`
+  (0–6) and `min`/`max` as exact decimal strings (compared with bcmath, a
+  decimal comma accepted, stored with a point); a checkbox is `1` or absent;
+  a dropdown value must be an option. **A radio field is one button**: its
+  single option is its value and buttons with the same `group_key` are one
+  choice (at most 30, one signer); the signer posts `radio[group] = field id`.
+  Only filled-in values are stored, so an unticked box has no row.
+- **Text fits its box.** A value is stamped inside its field's rectangle:
+  the text stamp carries the box (`StampText` `boxWidth`/`boxHeight`, the
+  helper's `box`), the engine draws it as a form XObject whose BBox is the box
+  (PDF clips a form XObject to its BBox) and shrinks it to fit
+  (`InnerScaling.SHRINK_TO_FIT`), and NONOX picks the font size so it fits,
+  down to 6 points (`TextFit`, a conservative per-character width estimate).
+  A text, number or dropdown value wider than the box at 6 points is refused
+  with "Texten får inte plats i fältet"; placing a text field caps
+  `max_length` at what fits at 6 points, and a dropdown option that does not
+  fit is refused when the field is placed. What NONOX fills in (a date, a
+  name, a typed signature or typed initials) is never refused at signing,
+  since the signer could not change it: instead the box is checked when it
+  is placed (a date box must hold `0000-00-00` at 6 points, a name or
+  signature box at least 30 ordinary characters, an initials box `MM`), and
+  a longer name is shrunk to 6 points and clipped. Boxes are at most 2 000
+  points wide and high and positions at most 10 000 points, the stamp's own
+  bounds, so an oversized field is a validation error. The `box` keyword and
+  `SHRINK_TO_FIT` are not yet verified against an installed pyHanko (no
+  engine may be installed here); `tools/pdf-engine/README.md` says so.
+- **Rejected values.** Anything posted for a field that is not the signer's
+  own is ignored and recorded as `FIELD_REJECTED` with the envelope's field
+  ids posted (at most 50) and a count of other keys. The event is part of the
+  signing transaction, so it is kept only when the signing goes through, not
+  for an attempt that is refused. Tests prove a signer can never write
+  another signer's field (action and trigger).
+- **The revision per signer.** `FieldStamper` stamps the values through
+  `PdfEngine::stamp` onto the latest version. It reads the shown version's
+  bytes once, refuses the signing (the link answers as gone) when they no
+  longer have the version's SHA-256, and checks that the new file starts with
+  those exact bytes. **A byte prefix proves that the earlier revision can be
+  recovered from the new file, not that its pages look the same**: an
+  incremental update can draw over or hide content, which is why the stamp
+  only adds content inside the fields' boxes and why each version is kept and
+  hashed on its own. The file is a new
+  `signing_document_versions` row `AFTER_SIGNER` with the signer's id. A
+  signer who filled in nothing stampable adds no version; their own copy is
+  then the version their `FIELDS_FILLED` event names (`version_sha256`), not
+  whatever is latest when the mail is built. The signer must
+  have been shown the latest version (`revision_sha256`, checked under the
+  locks); a parallel signer who signed in between makes the page ask for a
+  reload. A file written by a transaction that rolls back is removed
+  (`DB::afterRollBack`, read in the installed framework's
+  `ManagesTransactions` and `DatabaseTransactionsManager`). The
+  signer row's `document_sha256` (their evidence) stays the original's.
+- **Chain.** `FIELDS_FILLED` (before `SIGNED`) carries each value's hash
+  (`FieldStamper::valueHash`: field id, value, the image's SHA-256, the time
+  to the second), the shown version's and the new version's SHA-256; never a
+  value. The S2 evidence digest of `SIGNED` is unchanged. `signing:verify`
+  gains the code `FIELDS`: every stored value against its named hash, and
+  every named value present.
+- **The signer page.** With fields, the iframe gives way to the pages as PNG
+  images (`/signera/{token}/sida/{n}`, route `signing.page`, only after the
+  check, `no-store`, `nosniff`, its own `default-src 'none'`), rendered once
+  per version by `PdfEngine::renderPages` in a queued job
+  (`RenderSigningPages`, with `company_id`, dispatched after commit when an
+  envelope with fields is sent and after each `AFTER_SIGNER` stamp; timeout
+  300 seconds, a lock per company and version that lives 600 seconds and is
+  tried with `get()`, never waited for, and a job that finds it taken is put
+  back for 30 seconds) and kept on the private disk under
+  `crm-signing/{company}/sidor/{sha256}/` with a manifest. A request only
+  reads the manifest: until it exists the page says "Sidorna kan inte visas
+  som bilder just nu" and lists the fields, and asks for the render again at
+  most every five minutes. The page's CSP is unchanged. Page images have their own limiter `signing-pages` (300 a minute
+  per link, 600 per IP address), since up to 100 pages load as the signer
+  scrolls. **Deviation:** the boxes over the image are `<label>`s (hidden from
+  assistive technology) that move focus to the field's control; the controls
+  themselves are the list under each page, in reading order, joined to the
+  form with `form="signera-formular"`, so keyboard and screen-reader users use
+  one set of controls and the page works without JavaScript. "Nästa
+  obligatoriska fält" is a link to the first required field, and with
+  JavaScript moves to the next empty one (`resources/js/signing-fields-core.js`,
+  Node tests). Earlier signers' values are in the image and listed as
+  "ifyllt av Undertecknare 1"; later signers' fields are dashed boxes named
+  by number only (roles come with S14). The PDF link serves the version the
+  signer is shown (their own `AFTER_SIGNER` once signed). The finished
+  document that goes to the parties is the version with every signer's
+  values: `SigningFields::finalVersion` (the last `AFTER_SIGNER`, else the
+  PDF that was sent) in `SigningEnvelopeMail` and the company's file link
+  (`SigningFileController`), and `SignerFields::shownVersion` in a signer's
+  own `SignedDocumentMail`. Envelopes without
+  fields keep today's page exactly; the page runs a fixed number of queries
+  (test with 2 signers × 1 field and 10 × 12).
+- **Limits chosen:** 200 fields per envelope, boxes at least 5 × 5 points.
+  Fields are refused on a rotated page (`/Rotate` ≠ 0); the crop box's origin
+  is taken as the page's lower left corner. Both are left for S8 with the
+  engine's geometry. The prune deletes the rows first and the files after
+  the commit, and removes a version's page images only when no version of
+  another envelope is the same file: those of the original with its PDF, and
+  the `AFTER_SIGNER` files and images of an envelope that is pruned. In
+  practice an envelope with an `AFTER_SIGNER` version has a signed signer and
+  is never pruned today, so its values, versions and images stay until
+  S16's retention, also when the envelope never completed (row in
+  `docs/gdpr/lagringstider.md`).
+- **Defect found and fixed:** every signer of an envelope shares the
+  document's path, so the second signer's Signeringsbevis was written to the
+  first one's file name and overwrote it (S1). `signing:verify` reported
+  `FILE_CHANGED`. A certificate whose name is taken now gets the signer row's
+  id in its name (a test signs with two signers and finds two certificate
+  paths and a clean `signing:verify`). **Operator note:** an envelope with
+  several signers that was signed before this fix has lost every certificate
+  but the last signer's; `signing:verify` reports `FILE_CHANGED` for it. The
+  evidence itself (the signer rows and the chain) is intact, and each lost
+  certificate can be made again from it (`SigningPdfs::certificate`); the
+  stored `signed_document_sha256` will not match the new file, so record the
+  re-creation in the behandlingshistorik rather than changing the row.
+- No screenshot of the field page: the PDF engine is not installed on the
+  machine that takes the manual's images, and the owner forbids installing it;
+  with the test engine the pages would be blank. The manual describes the page
+  in text (`docs/manual/sv/crm/signering.md`, "När dokumentet har fält").

@@ -24,6 +24,9 @@ final class FakePdfEngine implements PdfEngine
 
     public ?PdfEngineException $failNext = null;
 
+    /** @var list<array<string, mixed>> every item stamped, as the helper's protocol describes it */
+    public array $stamped = [];
+
     public bool $installed = true;
 
     public static function install(): self
@@ -125,7 +128,13 @@ final class FakePdfEngine implements PdfEngine
             throw new InvalidArgumentException('Stamp at least one item.');
         }
 
-        return $this->append('stamp', $pdfPath, $outputPath, (string) count($items));
+        $file = $this->append('stamp', $pdfPath, $outputPath, (string) count($items));
+
+        foreach ($items as $item) {
+            $this->stamped[] = $item->toRequest();
+        }
+
+        return $file;
     }
 
     public function appendPages(string $pdfPath, string $appendixPath, string $outputPath): PdfFileResult

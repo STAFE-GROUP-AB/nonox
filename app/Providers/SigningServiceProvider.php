@@ -59,6 +59,17 @@ class SigningServiceProvider extends ServiceProvider
             Limit::perMinute(10)->by('ip:'.$request->ip()),
         ]);
 
+        // The page images of a document with fields (ADR-046 S6): up to 100 pages are fetched as the signer scrolls,
+        // so they have their own, wider limit per link and per IP address instead of the page's 60 a minute.
+        RateLimiter::for('signing-pages', fn (Request $request): array => [
+            Limit::perMinute(300)->by('signer-pages:'.hash('sha256', (string) $request->route('token'))),
+            Limit::perMinute(600)->by('pages-ip:'.$request->ip()),
+        ]);
+
+        Route::middleware(['web', 'throttle:signing-pages', WithoutAuditRequest::class])->group(function (): void {
+            Route::get('/signera/{token}/sida/{page}', [SigningPageController::class, 'pageImage'])->where('token', SigningToken::PATTERN)->where('page', '[1-9][0-9]{0,2}')->name('signing.page');
+        });
+
         Route::middleware(['web', 'throttle:crm-signing', WithoutAuditRequest::class])->group(function (): void {
             Route::get('/signera/{token}', [SigningPageController::class, 'show'])->where('token', '[^/]{1,100}')->name('signing.show');
             Route::get('/signera/{token}/dokument', [SigningPageController::class, 'document'])->where('token', SigningToken::PATTERN)->name('signing.document');

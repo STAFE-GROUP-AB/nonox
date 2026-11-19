@@ -10,6 +10,10 @@ use InvalidArgumentException;
  * A line of text stamped onto a page. The font is "auto" (Noto Sans, or Noto
  * Sans CJK when the text holds Chinese, Japanese or Korean), or one of
  * "sans", "sans-bold", "cjk", "cjk-bold".
+ *
+ * With a box (a field's rectangle, ADR-046 S6) the text is drawn inside it:
+ * (x, y) is then the box's lower left corner, the text is centred
+ * vertically, shrunk to fit its width, and clipped to the box.
  */
 final readonly class StampText implements StampItem
 {
@@ -22,6 +26,8 @@ final readonly class StampText implements StampItem
         public string $text,
         public int $fontSize = 10,
         public string $font = 'auto',
+        public ?float $boxWidth = null,
+        public ?float $boxHeight = null,
     ) {
         if ($pageNumber < 1 || $pageNumber > PdfLimits::MAX_PAGES) {
             throw new InvalidArgumentException('The page must be between 1 and the page limit.');
@@ -42,6 +48,10 @@ final readonly class StampText implements StampItem
         if (abs($x) > 10000 || abs($y) > 10000) {
             throw new InvalidArgumentException('The position is outside any page.');
         }
+
+        if (($boxWidth === null) !== ($boxHeight === null) || ($boxWidth !== null && ($boxWidth < 1 || $boxWidth > 2000 || $boxHeight < 1 || $boxHeight > 2000))) {
+            throw new InvalidArgumentException('A text box must be 1 to 2000 points wide and high.');
+        }
     }
 
     public function page(): int
@@ -59,6 +69,7 @@ final readonly class StampText implements StampItem
             'text' => $this->text,
             'font_size' => $this->fontSize,
             'font' => $this->font,
+            ...($this->boxWidth === null ? [] : ['box' => ['width' => $this->boxWidth, 'height' => $this->boxHeight]]),
         ];
     }
 }

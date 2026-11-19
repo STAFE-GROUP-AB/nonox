@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
+use App\Domain\Signing\Fields\SignerFields;
 use App\Domain\Signing\SigningPdfs;
 use App\Models\Company;
 use App\Models\SigningRequest;
@@ -63,7 +64,9 @@ class SignedDocumentMail extends Mailable
         $request = $this->request();
         $disk = Storage::disk(SigningRequest::DISK);
 
-        $attachments = [Attachment::fromData(fn (): string => (string) $disk->get($request->document_path), $request->document_name)->withMime('application/pdf')];
+        // With fields (ADR-046 S6) the signer's copy is the version with their values.
+        $document = CurrentCompany::run($this->companyId, fn (): string => SignerFields::shownVersion($request)->path ?? $request->document_path);
+        $attachments = [Attachment::fromData(fn (): string => (string) $disk->get($document), $request->document_name)->withMime('application/pdf')];
 
         if ($request->signed_document_path !== null) {
             $certificate = $request->signed_document_path;

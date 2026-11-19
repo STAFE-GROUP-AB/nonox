@@ -6,6 +6,7 @@ namespace App\Actions\Signing;
 
 use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\EnvelopeStatus;
+use App\Domain\Signing\Fields\SigningFields;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SignedDocuments;
@@ -69,6 +70,11 @@ use Illuminate\Validation\ValidationException;
  * Each signer can be checked before the document is shown (gap 3, S3):
  * verification NONE (the default, as before), EMAIL_CODE, or ACCESS_CODE
  * with access_code, which is stored hashed only.
+ *
+ * Fields in the PDF (gap 2, S6): an optional `fields` list (SigningFields)
+ * places fields for the signers before the envelope's first event, after
+ * which they are frozen. A field names its signer by index: 0 for the one
+ * signer of __invoke, the index in `signers` for envelope().
  */
 final class SendForSigning
 {
@@ -85,6 +91,7 @@ final class SendForSigning
         private readonly SignableTypes $types,
         private readonly SigningEnvelopes $envelopes,
         private readonly SigningChain $chain,
+        private readonly SigningFields $fields,
     ) {}
 
     /**
@@ -114,18 +121,21 @@ final class SendForSigning
         $today = CarbonImmutable::now(self::ZONE)->startOfDay();
         $expires = $this->expiry($document, $validated['expires_on'] ?? null, $today);
         $reminders = $this->reminders($validated);
+        $fields = SigningFields::validate(is_array($input['fields'] ?? null) ? $input['fields'] : [], 1);
+        // Fields need the page sizes: the PDF is made and measured now, before the quota and the transaction.
+        $measured = $fields === [] ? null : CurrentCompany::run($company, fn (): array => $this->fields->measure($document, $fields));
 
         MailQuota::take($company, 'documents');
 
         $token = SigningToken::generate();
 
-        $request = DB::transaction(fn (): SigningRequest => CurrentCompany::run($company, function () use ($user, $company, $document, $validated, $expires, $token, $reminders, $check, $accessCode): SigningRequest {
+        $request = DB::transaction(fn (): SigningRequest => CurrentCompany::run($company, function () use ($user, $company, $document, $validated, $expires, $token, $reminders, $check, $accessCode, $fields, $measured): SigningRequest {
             $document = $this->lockOpenDocument($document);
             $dealId = $this->deal($document, $validated['deal_id'] ?? null);
 
             $this->revokeOpen($user, $company, $document);
 
-            $file = $this->storePdf($company, $document);
+            $file = $this->storePdf($company, $document, $measured);
             $envelope = $this->envelopes->create($document, $file, $expires, $user->id, $reminders);
 
             $request = SigningRequest::create([
@@ -144,6 +154,9 @@ final class SendForSigning
                 'verification' => $check->value,
                 'access_code_hash' => $accessCode,
             ]);
+
+            // Fields are placed before the envelope's first event; the trigger freezes them from then on.
+            $this->fields->place($envelope, [$request], $fields, $measured);
 
             $this->chain->record($request, SigningEventType::Sent, $user->id, payload: $check->required() ? ['verification' => $check->value] : null);
             Audit::record('crm.signing_sent', $request, ['signing_request_id' => $request->id, 'document_type' => $request->document_type, 'sales_document_id' => $request->sales_document_id, 'agreement_id' => $request->agreement_id, 'signable_id' => $request->signable_id, 'deal_id' => $dealId, 'verification' => $check->value], $company, $user);
@@ -203,21 +216,24 @@ final class SendForSigning
         $notify = (bool) ($validated['notify_copies'] ?? false) && $copies->isNotEmpty();
         $reminders = $this->reminders($validated);
         $first = (int) $signers->min('step');
+        $fields = SigningFields::validate(is_array($input['fields'] ?? null) ? $input['fields'] : [], $signers->count());
+        $measured = $fields === [] ? null : CurrentCompany::run($company, fn (): array => $this->fields->measure($document, $fields));
 
         foreach (range(1, $signers->where('step', $first)->count() + ($notify ? $copies->count() : 0)) as $ignored) {
             MailQuota::take($company, 'documents', 'signers');
         }
 
-        $result = DB::transaction(fn (): array => CurrentCompany::run($company, function () use ($user, $company, $document, $validated, $expires, $signers, $copies, $first, $reminders): array {
+        $result = DB::transaction(fn (): array => CurrentCompany::run($company, function () use ($user, $company, $document, $validated, $expires, $signers, $copies, $first, $reminders, $fields, $measured): array {
             $document = $this->lockOpenDocument($document);
             $dealId = $this->deal($document, $validated['deal_id'] ?? null);
 
             $this->revokeOpen($user, $company, $document);
 
-            $file = $this->storePdf($company, $document);
+            $file = $this->storePdf($company, $document, $measured);
             $envelope = $this->envelopes->create($document, $file, $expires, $user->id, $reminders);
             $envelope->forceFill(['current_step' => $first])->save();
             $opened = [];
+            $created = [];
 
             foreach ($signers as $signer) {
                 $request = SigningRequest::create([
@@ -239,7 +255,14 @@ final class SendForSigning
                     'access_code_hash' => $signer['access_code_hash'],
                 ]);
 
-                if ($signer['step'] === $first) {
+                $created[] = $request;
+            }
+
+            // Fields are placed before the envelope's first event (the first link); the trigger freezes them from then on.
+            $this->fields->place($envelope, $created, $fields, $measured);
+
+            foreach ($created as $request) {
+                if ($request->step === $first) {
                     $opened[] = ['request_id' => $request->id, 'email' => $request->email, 'url' => $this->envelopes->issue($request, $user->id)];
                 }
             }
@@ -378,6 +401,7 @@ final class SendForSigning
             'reminder_days' => ['nullable'],
             'create_invoice' => ['sometimes', 'boolean'],
             'deal_id' => ['nullable', 'integer'],
+            'fields' => ['nullable', 'array'],
         ], [
             'signers.min' => __('Lägg till minst två undertecknare, eller skicka till en.'),
             'signers.max' => __('Högst :max undertecknare.', ['max' => SigningEnvelope::MAX_SIGNERS]),
@@ -434,10 +458,22 @@ final class SendForSigning
         return $document;
     }
 
-    /** @return array{path: string, name: string, sha256: string} */
-    private function storePdf(Company $company, Signable $document): array
+    /**
+     * The PDF that is sent, stored once. With fields (ADR-046 S6) it is the PDF already measured before the
+     * transaction, as long as the document (now locked) is still what was measured.
+     *
+     * @param  ?array{bytes: string, name: string, sha256: string, fingerprint: string}  $measured
+     * @return array{path: string, name: string, sha256: string}
+     *
+     * @throws ValidationException
+     */
+    private function storePdf(Company $company, Signable $document, ?array $measured = null): array
     {
-        $pdf = $document->signingDocument();
+        if ($measured !== null && ! hash_equals($measured['fingerprint'], $document->signingFingerprint())) {
+            throw ValidationException::withMessages(['fields' => __('Dokumentet ändrades medan det skickades. Försök igen.')]);
+        }
+
+        $pdf = $measured ?? $document->signingDocument();
         $path = "crm-signing/{$company->id}/".Str::uuid()->toString().'.pdf';
         Storage::disk(SigningRequest::DISK)->put($path, $pdf['bytes']);
 
