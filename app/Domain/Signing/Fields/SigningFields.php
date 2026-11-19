@@ -201,6 +201,16 @@ final class SigningFields
             }
         }
 
+        // Once any field is placed, every signer gets a signature field: nobody is sent a page they cannot sign on
+        // (gap 2: a standalone document needs at least one signature field per signer).
+        for ($signer = 0; $signer < $signers; $signer++) {
+            $hasSignature = array_filter($clean, fn (array $field): bool => $field['signer'] === $signer && $field['type'] === FieldType::Signature) !== [];
+
+            if (! $hasSignature) {
+                throw ValidationException::withMessages(['fields' => __('Varje undertecknare behöver minst ett underskriftsfält. Undertecknare :number saknar det.', ['number' => $signer + 1])]);
+            }
+        }
+
         return $clean;
     }
 

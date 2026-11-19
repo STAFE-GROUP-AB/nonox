@@ -150,6 +150,18 @@ before use, and exercised by `PdfEngineRealTest`:
   `PdfEngineRealTest`**: the S6 builder had no engine installation (and may not
   install one); the next installation must confirm the `box` keyword of
   `TextStamp` and `InnerScaling.SHRINK_TO_FIT` in pyHanko 0.38.1 and add a real test.
+- Since ADR-046 S8, `op_stamp` adds the page's crop-box origin to every stamp's x and y
+  (`page_origin`: `/CropBox` and `/MediaBox`, searched up the page tree through
+  `writer.find_page_for_modification(index)` and `/Parent`, the larger corner of the two;
+  (0, 0) with a warning on stderr when a box is missing or malformed; only KeyError, TypeError and
+  ValueError are caught). Fields are measured from the page as the field editor and the
+  page images show it, the crop box, and PDF draws in user space, whose origin is the media box's.
+  Pages whose crop box starts at (0, 0), which is nearly every page, are unchanged. **Not exercised
+  here**: no engine installation was available. The self-test (`crop_origin`: a page with
+  `/CropBox [50 50 400 600]` gives the origin (50, 50) and a stamp at (0, 0) is made) and
+  `PdfEngineRealTest` ("stamps from the crop box": renders the stamped page and looks for ink in its
+  lower left corner) were written but have never been run; the next installation must run them and
+  confirm `writer.root['/Pages']['/Kids'][0]` in the self-test's page builder.
 - `pyhanko.sign.signers.SimpleSigner.load_pkcs12_data(bytes, other_certs, passphrase)`,
   `PdfSignatureMetadata(field_name, md_algorithm, subfilter=fields.SigSeedSubFilter.PADES, reason, location)`,
   `signers.sign_pdf(writer, meta, signer=, timestamper=, output=)`,

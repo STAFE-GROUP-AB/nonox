@@ -53,8 +53,8 @@ beforeEach(function () {
         $envelope = app(SendForSigning::class)->envelope($owner, $company, $quote, [
             'signers' => [['email' => "first@{$side}.test", 'step' => 1], ['email' => "second@{$side}.test", 'step' => 1]],
             'fields' => [
-                ['signer' => 0, 'type' => 'TEXT', 'page' => 1, 'x' => 5000, 'y' => 5000, 'width' => 20000, 'height' => 2000, 'label' => "{$name}fält"],
-                ['signer' => 1, 'type' => 'TEXT', 'page' => 1, 'x' => 5000, 'y' => 9000, 'width' => 20000, 'height' => 2000, 'label' => "{$name}fält två"],
+                ['signer' => 0, 'type' => 'SIGNATURE', 'page' => 1, 'x' => 5000, 'y' => 5000, 'width' => 20000, 'height' => 2000, 'label' => "{$name}fält"],
+                ['signer' => 1, 'type' => 'SIGNATURE', 'page' => 1, 'x' => 5000, 'y' => 9000, 'width' => 20000, 'height' => 2000, 'label' => "{$name}fält två"],
             ],
         ]);
         $this->{$side} = compact('owner', 'company', 'quote', 'envelope');

@@ -421,6 +421,41 @@ def page_count_of(writer):
     return int(writer.root['/Pages']['/Count'])
 
 
+def page_origin(writer, index):
+    """The lower left corner of a page's visible area (the crop box inside the media box), in user space.
+
+    A stamp's x and y are measured from the page as it is shown, which is the crop box (the field editor, ADR-046 S8,
+    and the signer's page images both show the crop box), but PDF draws in user space, whose origin is the media box's.
+    Boxes are inherited down the page tree, so the page's ancestors are searched. A page whose boxes are missing or
+    malformed is taken to start at (0, 0), as before, and a warning goes to stderr so the operator can see it.
+    Only the errors that reading a box can raise are caught: anything else is a bug and must be seen.
+    """
+    try:
+        page_ref, _resources = writer.find_page_for_modification(index)
+        corners = {}
+        for key in ('/CropBox', '/MediaBox'):
+            node = page_ref.get_object()
+            for _ in range(32):
+                if key in node:
+                    box = [float(value) for value in node[key]]
+                    if len(box) != 4:
+                        raise ValueError(f'{key} does not have four numbers')
+                    corners[key] = (min(box[0], box[2]), min(box[1], box[3]))
+                    break
+                if '/Parent' not in node:
+                    break
+                node = node['/Parent']
+    except (KeyError, TypeError, ValueError) as error:
+        sys.stderr.write(f'warning: the boxes of page {index + 1} could not be read ({error}); stamping from (0, 0)\n')
+        return 0.0, 0.0
+
+    crop = corners.get('/CropBox')
+    media = corners.get('/MediaBox')
+    if crop and media:
+        return max(crop[0], media[0]), max(crop[1], media[1])
+    return crop or media or (0.0, 0.0)
+
+
 def op_stamp(request):
     base = work_dir(request)
     caps = limits(request)
@@ -451,6 +486,7 @@ def op_stamp(request):
             raise EngineError('invalid_request', 'a stamp names a page outside the document')
         x = number_param(item, 'x', -10000, 10000)
         y = number_param(item, 'y', -10000, 10000)
+        origin = page_origin(writer, page - 1)
         kind = item.get('type')
 
         if kind == 'text':
@@ -487,7 +523,7 @@ def op_stamp(request):
                     inner_content_scaling=layout.InnerScaling.NO_SCALING if constraints is None else layout.InnerScaling.SHRINK_TO_FIT,
                 ),
             )
-            TextStamp(writer=writer, style=style, text_params={'value': text}, box=constraints).apply(page - 1, x, y)
+            TextStamp(writer=writer, style=style, text_params={'value': text}, box=constraints).apply(page - 1, x + origin[0], y + origin[1])
         elif kind == 'image':
             image_path = inside(base, item.get('path'), True)
             width = int(round(number_param(item, 'width', 1, 2000)))
@@ -512,7 +548,7 @@ def op_stamp(request):
                     margins=layout.Margins.uniform(0),
                 ),
             )
-            StaticContentStamp(writer=writer, style=style, box=layout.BoxConstraints(width=width, height=height)).apply(page - 1, x, y)
+            StaticContentStamp(writer=writer, style=style, box=layout.BoxConstraints(width=width, height=height)).apply(page - 1, x + origin[0], y + origin[1])
         else:
             raise EngineError('invalid_request', 'a stamp type must be text or image')
 
@@ -802,10 +838,21 @@ def op_selftest(request):
         with open(path, 'wb') as handle:
             writer.write(handle)
 
+    def cropped(path):
+        writer = PdfFileWriter()
+        stream = writer.add_object(generic.StreamObject(stream_data=b'0.9 g 100 100 100 100 re f'))
+        writer.insert_page(PageObject(contents=stream, media_box=[0, 0, 595.28, 841.89]))
+        page = writer.root['/Pages']['/Kids'][0].get_object()
+        page['/CropBox'] = generic.ArrayObject([generic.NumberObject(value) for value in (50, 50, 400, 600)])
+        with open(path, 'wb') as handle:
+            writer.write(handle)
+
     original = inside(base, 'selftest-original.pdf', False)
     appendix = inside(base, 'selftest-appendix.pdf', False)
     blank(original)
     blank(appendix)
+    cropped_path = inside(base, 'selftest-cropped.pdf', False)
+    cropped(cropped_path)
 
     key = ec.generate_private_key(ec.SECP256R1())
     name = cx509.Name([cx509.NameAttribute(NameOID.COMMON_NAME, 'NONOX engine self-test')])
@@ -829,6 +876,17 @@ def op_selftest(request):
 
     checks['inspect'] = op_inspect({**common, 'input': original})['pages'] == 1
     checks['render'] = len(op_render_pages({**common, 'input': original, 'output_prefix': 'selftest', 'scale': 0.5})['pages']) == 1
+
+    # ADR-046 S8: fields are measured from the crop box, so a stamp at (0, 0) on a page cropped to
+    # [50 50 400 600] is drawn at (50, 50) in user space, inside the visible area.
+    with open(cropped_path, 'rb') as handle:
+        origin = page_origin(writer_for(handle.read()), 0)
+    checks['crop_origin'] = origin == (50.0, 50.0)
+    if fonts(request).get('sans'):
+        cropped_stamped = inside(base, 'selftest-cropped-stamped.pdf', False)
+        op_stamp({**common, 'input': cropped_path, 'output': cropped_stamped, 'items': [
+            {'type': 'text', 'page': 1, 'x': 0, 'y': 0, 'text': 'X', 'font_size': 10, 'box': {'width': 20, 'height': 14}},
+        ]})
 
     stamped = inside(base, 'selftest-stamped.pdf', False)
     if fonts(request).get('sans'):

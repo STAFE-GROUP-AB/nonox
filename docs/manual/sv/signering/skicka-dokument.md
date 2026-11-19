@@ -9,7 +9,7 @@ sokord: [ladda upp pdf, skicka för signering, guide, undertecknare, i ordning, 
 
 # Skicka ett dokument för signering
 
-Här laddar du upp en PDF och skickar den till de som ska signera. Guiden har fem steg: **Dokument**, **Undertecknare**, **Kontroller**, **Tid och påminnelser** och **Granska och skicka**. Du kommer också hit från **Fler undertecknare** på en offert eller ett avtal. Då är dokumentet redan valt och guiden börjar vid steg 2.
+Här laddar du upp en PDF och skickar den till de som ska signera. Guiden har sex steg: **Dokument**, **Undertecknare**, **Fält i dokumentet**, **Kontroller**, **Tid och påminnelser** och **Granska och skicka**. Du kommer också hit från **Fler undertecknare** på en offert eller ett avtal. Då är dokumentet redan valt och guiden börjar vid steg 2.
 
 ![Första steget i guiden, där du laddar upp en PDF.](/bilder/manual/signering/skicka-dokument.webp)
 
@@ -19,9 +19,10 @@ Här laddar du upp en PDF och skickar den till de som ska signera. Guiden har fe
 2. Välj **PDF-fil**, skriv gärna en **Rubrik (frivilligt)** och välj vid behov vilken kund eller leverantör dokumentet hör till. Tryck på **Ladda upp och fortsätt**.
 3. Under **Undertecknare** skriver du **E-post** för var och en och väljer **Steg**. Tryck på **Alla samtidigt** om alla ska signera på en gång, eller **I ordning** om de ska signera en i taget i den ordning de står. Tryck på **Lägg till undertecknare** för fler. Högst 10.
 4. Vill du att någon ska få en kopia utan att signera, tryck på **Lägg till kopiemottagare**. Högst 10.
-5. Tryck på **Nästa**. Under **Kontroller** väljer du **Kontroll av undertecknaren** för varje undertecknare.
-6. Tryck på **Nästa**. Under **Tid och påminnelser** väljer du **Sista dag att signera (frivilligt)** och om NONOX ska påminna automatiskt. Här kan du också välja **Konfidentiellt**.
-7. Tryck på **Nästa**, kontrollera uppgifterna och tryck på **Skicka för signering**.
+5. Tryck på **Nästa**. Under **Fält i dokumentet** kan du placera fält i PDF:en, till exempel var någon ska skriva under. Steget är frivilligt, tryck på **Nästa** om du inte vill ha några. Se [Fält i dokumentet](/manual/signering/falt-i-dokumentet).
+6. Tryck på **Nästa**. Under **Kontroller** väljer du **Kontroll av undertecknaren** för varje undertecknare.
+7. Tryck på **Nästa**. Under **Tid och påminnelser** väljer du **Sista dag att signera (frivilligt)** och om NONOX ska påminna automatiskt. Här kan du också välja **Konfidentiellt**.
+8. Tryck på **Nästa**, kontrollera uppgifterna och tryck på **Skicka för signering**.
 
 Du kommer till sidan för signeringen, och de som är i första steget får sin länk i ett mejl.
 
@@ -60,6 +61,7 @@ Revisorn ser inte konfidentiella signeringar. Den som hanterar signering visar d
 
 ## Läs också
 
+- [Fält i dokumentet](/manual/signering/falt-i-dokumentet)
 - [Alla signeringar](/manual/signering/alla-signeringar)
 - [Signera offerter och avtal](/manual/crm/signering)
 - [Signering](/manual/signering/oversikt)
