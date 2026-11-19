@@ -113,12 +113,18 @@
                 @if($copies !== [])
                     <ul class="mt-3 space-y-3">
                         @foreach($copies as $index => $copy)
-                            <li wire:key="wizard-copy-{{ $index }}" class="grid gap-3 rounded-lg border border-gray-200 p-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                            <li wire:key="wizard-copy-{{ $index }}" class="grid gap-3 rounded-lg border border-gray-200 p-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
                                 <x-ui.field for="wizard-copy-email-{{ $index }}" :label="__('E-post')" error="copies.{{ $index }}.email">
                                     <input id="wizard-copy-email-{{ $index }}" type="email" class="{{ $input }} mt-1" wire:model="copies.{{ $index }}.email" autocomplete="off" required>
                                 </x-ui.field>
                                 <x-ui.field for="wizard-copy-name-{{ $index }}" :label="__('Namn (frivilligt)')" error="copies.{{ $index }}.name">
                                     <input id="wizard-copy-name-{{ $index }}" type="text" class="{{ $input }} mt-1" wire:model="copies.{{ $index }}.name" maxlength="120" autocomplete="off">
+                                </x-ui.field>
+                                <x-ui.field for="wizard-copy-language-{{ $index }}" :label="__('Språk i mejlet')" error="copies.{{ $index }}.language">
+                                    <select id="wizard-copy-language-{{ $index }}" class="{{ $input }} mt-1" wire:model="copies.{{ $index }}.language">
+                                        <option value="sv">{{ __('Svenska') }}</option>
+                                        <option value="en">{{ __('Engelska') }}</option>
+                                    </select>
                                 </x-ui.field>
                                 <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="removeCopy({{ $index }})">{{ __('Ta bort') }}</button>
                             </li>
@@ -154,6 +160,12 @@
                                 @foreach($checks as $check)
                                     <option value="{{ $check->value }}">{{ $check->label() }}</option>
                                 @endforeach
+                            </select>
+                        </x-ui.field>
+                        <x-ui.field for="wizard-language-{{ $index }}" :label="__('Språk i kopian efter signering')" error="signers.{{ $index }}.language">
+                            <select id="wizard-language-{{ $index }}" class="{{ $input }} mt-1" wire:model="signers.{{ $index }}.language">
+                                <option value="sv">{{ __('Svenska') }}</option>
+                                <option value="en">{{ __('Engelska') }}</option>
                             </select>
                         </x-ui.field>
                         @if(($signer['verification'] ?? 'NONE') === 'ACCESS_CODE')

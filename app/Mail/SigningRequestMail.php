@@ -10,6 +10,7 @@ use App\Models\SigningRequest;
 use App\Support\Branding\Brand;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
@@ -21,7 +22,7 @@ use Illuminate\Mail\Mailables\Envelope;
  * address), with its colour on the button. Carries ids only, so the queued
  * job holds no document; it reads them inside the company when sent.
  */
-class SigningRequestMail extends Mailable
+class SigningRequestMail extends Mailable implements ShouldBeEncrypted
 {
     use Queueable;
 

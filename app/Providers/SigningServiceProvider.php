@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SigningHooks;
 use App\Domain\Signing\SigningToken;
+use App\Http\Controllers\Signing\SigningCopyController;
 use App\Http\Controllers\Signing\SigningPageController;
 use App\Http\Middleware\WithoutAuditRequest;
 use App\Livewire\Signing\SigningPanel;
@@ -68,6 +69,12 @@ class SigningServiceProvider extends ServiceProvider
 
         Route::middleware(['web', 'throttle:signing-pages', WithoutAuditRequest::class])->group(function (): void {
             Route::get('/signera/{token}/sida/{page}', [SigningPageController::class, 'pageImage'])->where('token', SigningToken::PATTERN)->where('page', '[1-9][0-9]{0,2}')->name('signing.page');
+        });
+
+        // The finished files of a signing when they were too large to attach (ADR-046 S13): its own token, valid 30 days.
+        Route::middleware(['web', 'throttle:crm-signing', WithoutAuditRequest::class])->group(function (): void {
+            Route::get('/signera/kopia/{token}', [SigningCopyController::class, 'show'])->where('token', '[^/]{1,100}')->name('signing.copy');
+            Route::get('/signera/kopia/{token}/{file}', [SigningCopyController::class, 'file'])->where('token', '[^/]{1,100}')->whereNumber('file')->name('signing.copy.file');
         });
 
         Route::middleware(['web', 'throttle:crm-signing', WithoutAuditRequest::class])->group(function (): void {

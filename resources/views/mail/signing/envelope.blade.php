@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="sv">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -38,6 +38,11 @@
                 <p>{{ __('Ditt eget signeringsbevis fick du i ett tidigare mejl när du signerade.') }}</p>
             @endif
             <p>{{ __('Spara filerna tillsammans.') }}</p>
+        @endif
+        @if($downloadUrl)
+            <p>{{ __('Filerna är för stora för att bifogas mejlet. Ladda ner dem här:') }}</p>
+            <p style="margin: 16px 0;"><a href="{{ $downloadUrl }}" style="display: inline-block; background: {{ $color }}; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 8px; font-weight: 600;">{{ __('Ladda ner filerna') }}</a></p>
+            <p style="font-size: 13px; color: #616e7c;">{{ __('Länken är personlig och fungerar till och med :date.', ['date' => $expires?->format('Y-m-d')]) }}</p>
         @endif
         @if(in_array($kind, [App\Mail\SigningEnvelopeMail::NOTICE, App\Mail\SigningEnvelopeMail::COPY], true))
             {{-- TODO(legal-verify): ADR-046 gap 1 — whether this short art. 14 information is enough for copy recipients, and that the company as controller gives it. --}}

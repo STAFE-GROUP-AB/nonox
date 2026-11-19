@@ -377,6 +377,10 @@ final class DatabaseGrants
         // A standalone document (ADR-046 S7): the app removes one that was never sent (a mistaken upload); the trigger refuses a sent one.
         'signing_documents' => GrantDecision::ReadWrite,
         'signing_envelopes' => GrantDecision::ReadWrite,
+        // Links to the finished files (ADR-046 S13): written when a signing completes, the download counter and the closing time change (trigger), the prune deletes.
+        'signing_download_links' => GrantDecision::ReadWrite,
+        // One row per download, never changed (trigger); it goes with its link by cascade.
+        'signing_download_events' => GrantDecision::AppendOnly,
         // Fields in the PDF (ADR-046 S6): placed before the envelope's first event and frozen after (trigger); the
         // values are evidence, written once and removed only by the cascade from their envelope, signer row or company.
         'signing_field_values' => GrantDecision::AppendOnly,

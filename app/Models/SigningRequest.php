@@ -69,6 +69,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property SignerCheck $verification the check before the document is shown (ADR-046 amendment, gap 3)
  * @property ?string $access_code_hash Hash::make of the sender's access code; never shown or returned
  * @property ?CarbonImmutable $verified_at the latest passed check
+ * @property string $language sv or en: the language of the signer's mails (ADR-046 S13)
  * @property int $verification_failures
  * @property ?CarbonImmutable $locked_at locked out by failed checks; the sender can unlock
  * @property ?CarbonImmutable $created_at
@@ -116,6 +117,7 @@ class SigningRequest extends Model
         'channel',
         'portal_contact_id',
         'verification',
+        'language',
         'access_code_hash',
     ];
 
@@ -125,6 +127,7 @@ class SigningRequest extends Model
         'channel' => 'LINK',
         'step' => 1,
         'verification' => 'NONE',
+        'language' => 'sv',
         'verification_failures' => 0,
         'reminder_count' => 0,
     ];

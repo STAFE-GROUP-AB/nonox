@@ -9,6 +9,7 @@ use App\Domain\Signing\EnvelopeStatus;
 use App\Domain\Signing\Fields\PageImages;
 use App\Domain\Signing\SigningStatus;
 use App\Models\SigningDocumentVersion;
+use App\Models\SigningDownloadLink;
 use App\Models\SigningEnvelope;
 use App\Models\SigningEvent;
 use App\Models\SigningRequest;
@@ -35,6 +36,10 @@ final class PruneSigningLinks
     public function __invoke(CarbonImmutable $today): int
     {
         $cutoff = $today->subMonthsNoOverflow(self::AFTER_MONTHS);
+
+        // A download link (ADR-046 S13) works 14 days (7 for some); the row stays another 30 so that an old link says "expired", then goes with its recipient's address.
+        SigningDownloadLink::query()->where('expires_at', '<', $today->subDays(SigningDownloadLink::PRUNE_AFTER_DAYS))->delete();
+
         $requests = SigningRequest::query()
             ->where(fn ($query) => $query
                 ->where(fn ($q) => $q->where('status', SigningStatus::Pending->value)->where('expires_at', '<', $cutoff))

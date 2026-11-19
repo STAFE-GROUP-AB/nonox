@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="sv">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,6 +16,11 @@
             <p>{{ __(':name signerade :title :time.', ['name' => (string) $request->signer_name, 'title' => $title, 'time' => $request->signed_at?->setTimezone(config('app.timezone'))->format('Y-m-d H:i')]) }}</p>
         @endif
         <p>{{ __('Signeringsbeviset visar vem som signerade, när och dokumentets kontrollsumma (SHA-256): :hash', ['hash' => $request->document_sha256]) }}</p>
+        @if($downloadUrl)
+            <p>{{ __('Filerna är för stora för att bifogas mejlet. Ladda ner dem här:') }}</p>
+            <p style="margin: 16px 0;"><a href="{{ $downloadUrl }}" style="display: inline-block; background: {{ $color }}; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 8px; font-weight: 600;">{{ __('Ladda ner filerna') }}</a></p>
+            <p style="font-size: 13px; color: #616e7c;">{{ __('Länken är personlig och fungerar till och med :date.', ['date' => $expires?->format('Y-m-d')]) }}</p>
+        @endif
         <p>{{ __('Spara båda filerna tillsammans.') }}</p>
         <p>{{ __('Med vänliga hälsningar') }}<br>{{ $companyName }}</p>
         <p style="font-size: 12px; color: #616e7c; border-top: 1px solid #e4e7eb; padding-top: 12px;">{{ __('Mejlet skickades av :company genom NONOX.', ['company' => $companyName]) }}</p>

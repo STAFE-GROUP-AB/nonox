@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Signing;
 
 use App\Domain\Signing\Chain\SigningChain;
+use App\Domain\Signing\CompletionLinks;
 use App\Domain\Signing\EnvelopeStatus;
 use App\Domain\Signing\Fields\SigningFields;
 use App\Domain\Signing\RestrictsEnvelopes;
@@ -114,6 +115,7 @@ final class SendForSigning
             'deal_id' => ['nullable', 'integer'],
             'verification' => ['nullable', 'string', 'in:'.self::checkValues()],
             'access_code' => ['nullable', 'string'],
+            'language' => ['nullable', 'string', 'in:sv,en'],
         ], [], ['email' => __('e-post'), 'expires_on' => __('sista dag att signera'), 'verification' => __('kontroll av undertecknaren')])->validate();
 
         // Hashed before the transaction (bcrypt is slow on purpose); the plain code is never stored or logged.
@@ -155,6 +157,7 @@ final class SendForSigning
                 'sent_by' => $user->id,
                 'verification' => $check->value,
                 'access_code_hash' => $accessCode,
+                'language' => (string) ($validated['language'] ?? 'sv'),
             ]);
 
             // Fields are placed before the envelope's first event; the trigger freezes them from then on.
@@ -210,6 +213,7 @@ final class SendForSigning
                 'email' => mb_strtolower(trim((string) $signer['email'])),
                 'step' => (int) $signer['step'],
                 'verification' => $check->value,
+                'language' => (string) ($signer['language'] ?? 'sv') === 'en' ? 'en' : 'sv',
                 // Hashed before the transaction; the plain code is never stored or logged.
                 'access_code_hash' => $check === SignerCheck::AccessCode ? SignerChecks::hashAccessCode($signer['access_code'] ?? null, "signers.{$index}.access_code") : null,
             ];
@@ -217,6 +221,7 @@ final class SendForSigning
         $copies = collect($copyInput)->map(fn (array $copy): array => [
             'email' => mb_strtolower(trim((string) $copy['email'])),
             'name' => blank($copy['name'] ?? null) ? null : trim((string) $copy['name']),
+            'language' => (string) ($copy['language'] ?? 'sv') === 'en' ? 'en' : 'sv',
         ])->values();
         $notify = (bool) ($validated['notify_copies'] ?? false) && $copies->isNotEmpty();
         $reminders = $this->reminders($validated);
@@ -257,6 +262,7 @@ final class SendForSigning
                     'create_invoice' => $document instanceof SalesDocument && (bool) ($validated['create_invoice'] ?? false),
                     'sent_by' => $user->id,
                     'verification' => $signer['verification'],
+                    'language' => $signer['language'],
                     'access_code_hash' => $signer['access_code_hash'],
                 ]);
 
@@ -292,7 +298,7 @@ final class SendForSigning
 
             if ($notify) {
                 foreach ($copies as $copy) {
-                    Mail::to($copy['email'])->queue(new SigningEnvelopeMail($envelope->id, $company->id, SigningEnvelopeMail::NOTICE));
+                    Mail::to($copy['email'])->queue(new SigningEnvelopeMail($envelope->id, $company->id, SigningEnvelopeMail::NOTICE, language: $copy['language']));
                 }
 
                 CurrentCompany::run($company, fn () => SigningCopyRecipient::query()->where('envelope_id', $envelope->id)->whereNull('notified_at')->update(['notified_at' => now()]));
@@ -344,6 +350,8 @@ final class SendForSigning
             }
 
             $this->revokeRequest($user, $company, $pending, 'ENVELOPE_VOIDED');
+            // Nothing is out to download from a withdrawn envelope (ADR-046 S13).
+            CompletionLinks::close($locked);
 
             return $locked->refresh();
         }), self::ATTEMPTS);
@@ -415,9 +423,11 @@ final class SendForSigning
             'signers.*.step' => ['required', 'integer', 'min:1', 'max:'.SigningEnvelope::MAX_STEP],
             'signers.*.verification' => ['nullable', 'string', 'in:'.self::checkValues()],
             'signers.*.access_code' => ['nullable', 'string'],
+            'signers.*.language' => ['nullable', 'string', 'in:sv,en'],
             'copies' => ['nullable', 'array', 'max:'.SigningEnvelope::MAX_COPIES],
             'copies.*.email' => ['required', 'email', 'max:255'],
             'copies.*.name' => ['nullable', 'string', 'max:120', 'regex:/^[^\p{C}]*$/u'],
+            'copies.*.language' => ['nullable', 'string', 'in:sv,en'],
             'notify_copies' => ['sometimes', 'boolean'],
             'confidential' => ['sometimes', 'boolean', $mayBeConfidential ? 'nullable' : 'declined'],
             'expires_on' => ['nullable', 'date_format:Y-m-d'],

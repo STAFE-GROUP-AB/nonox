@@ -4,7 +4,7 @@ ordning: 10
 roller: [owner, admin, accountant, bookkeeper, sales]
 modul: signing
 rutter: [signing.new]
-sokord: [ladda upp pdf, skicka för signering, guide, undertecknare, i ordning, samtidigt, kopiemottagare, åtkomstkod, konfidentiell, anställningsavtal]
+sokord: [ladda upp pdf, skicka för signering, guide, undertecknare, i ordning, samtidigt, kopiemottagare, åtkomstkod, konfidentiell, anställningsavtal, språk, engelska, kopia efter signering, stora filer, ladda ner filerna]
 ---
 
 # Skicka ett dokument för signering
@@ -18,12 +18,22 @@ Här laddar du upp en PDF och skickar den till de som ska signera. Guiden har fe
 1. Öppna **Signering → Skicka dokument**.
 2. Välj **PDF-fil**, skriv gärna en **Rubrik (frivilligt)** och välj vid behov vilken kund eller leverantör dokumentet hör till. Tryck på **Ladda upp och fortsätt**.
 3. Under **Undertecknare** skriver du **E-post** för var och en och väljer **Steg**. Tryck på **Alla samtidigt** om alla ska signera på en gång, eller **I ordning** om de ska signera en i taget i den ordning de står. Tryck på **Lägg till undertecknare** för fler. Högst 10.
-4. Vill du att någon ska få en kopia utan att signera, tryck på **Lägg till kopiemottagare**. Högst 10.
-5. Tryck på **Nästa**. Under **Kontroller** väljer du **Kontroll av undertecknaren** för varje undertecknare.
+4. Vill du att någon ska få en kopia utan att signera, tryck på **Lägg till kopiemottagare**. Högst 10. Välj **Språk i mejlet** för var och en, **Svenska** eller **Engelska**.
+5. Tryck på **Nästa**. Under **Kontroller** väljer du **Kontroll av undertecknaren** och **Språk i kopian efter signering** för varje undertecknare.
 6. Tryck på **Nästa**. Under **Tid och påminnelser** väljer du **Sista dag att signera (frivilligt)** och om NONOX ska påminna automatiskt. Här kan du också välja **Konfidentiellt**.
 7. Tryck på **Nästa**, kontrollera uppgifterna och tryck på **Skicka för signering**.
 
 Du kommer till sidan för signeringen, och de som är i första steget får sin länk i ett mejl.
+
+## Kopian när alla har signerat
+
+När alla har signerat får alla en kopia i ett mejl: varje undertecknare, varje kopiemottagare och företaget. Mejlen skrivs på det språk du valde för var och en, svenska om du inte valde. Företagets egen kopia är alltid på svenska.
+
+- **Undertecknare och kopiemottagare** får den färdiga versionen av dokumentet, med allas ifyllda fält om dokumentet har fält, och en sammanställning av signeringen. De får aldrig någon annans fullständiga signeringsbevis. Undertecknaren fick sitt eget bevis när hen signerade.
+- **Företaget** får den färdiga versionen och ett fullständigt signeringsbevis per undertecknare. Har du gjort signeringen konfidentiell går företagets kopia bara till dig som skickade den.
+- **Stora filer** skickas inte som bilagor. Är filerna tillsammans större än 15 MB får mottagaren en knapp, **Ladda ner filerna**, i mejlet. Länken är personlig, fungerar i 14 dagar (7 dagar för företagets länk och för en konfidentiell signering) och ger bara de filer som mottagaren ska ha. Länken fungerar tills du stänger den, och den som har mejlet kan öppna den, så skicka inte vidare mejlet. På signeringens sida finns **Länkar till filerna**. Där ser du för varje mottagare om länken är öppen, stängd eller utgången och hur många gånger filerna har hämtats och senast när. Tryck på **Skicka ny länk** för att ge en mottagare en ny länk, och den gamla stängs. Tryck på **Stäng länkarna** om ett mejl har gått till fel person, så slutar alla länkar att fungera. Det kräver samma behörighet som att dra tillbaka en signering.
+
+Språket gäller kopian efter signering och mejlet om att en kopia är på väg. Signeringssidan och mejlet med länken att signera är på svenska.
 
 ## Vilken PDF som godtas
 

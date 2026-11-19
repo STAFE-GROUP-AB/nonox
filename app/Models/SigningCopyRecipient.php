@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $envelope_id
  * @property string $email
  * @property ?string $name
+ * @property string $language sv or en: the language of the copy mail (S13)
  * @property ?CarbonImmutable $notified_at
  * @property ?CarbonImmutable $sent_copy_at
  */
@@ -33,6 +34,7 @@ class SigningCopyRecipient extends Model
         'envelope_id',
         'email',
         'name',
+        'language',
     ];
 
     /** @return array<string, string> */
