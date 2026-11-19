@@ -50,6 +50,7 @@ use App\Modules\Planning\Models\ShiftTask;
 use App\Modules\Saas\Domain\SourceType;
 use App\Modules\Saas\Models\SaasContractVersion;
 use App\Modules\Saas\Stripe\Models\StripeCustomerLink;
+use App\Modules\Signing\Models\SigningTemplate;
 use App\Modules\StaffLedger\Models\Entry;
 use App\Modules\StaffLedger\Models\Location;
 use App\Modules\StaffLedger\Models\Person;
@@ -493,6 +494,12 @@ final class DataSubjectExport
         return [
             'utdrag' => self::meta('Undertecknare och kopiemottagare i signering'),
             'e_post' => $email,
+            'mallar_som_kopiemottagare' => array_values(SignerRecords::templates($email)->map(fn (SigningTemplate $template): array => [
+                'mall' => $template->id,
+                'namn' => $template->name,
+                'e_post' => $email,
+                'namn_pa_kopiemottagaren' => collect((array) $template->copies)->first(fn (array $copy): bool => SignerRecords::normalise((string) $copy['email']) === $email)['name'] ?? null,
+            ])->all()),
             'signeringar' => array_values($data['envelopes']->map(function (SigningEnvelope $envelope) use ($data, $files): array {
                 $signers = $data['signers']->where('envelope_id', $envelope->id);
                 $copies = $data['copies']->where('envelope_id', $envelope->id);

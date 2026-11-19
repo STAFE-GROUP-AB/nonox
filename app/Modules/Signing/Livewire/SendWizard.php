@@ -27,13 +27,18 @@ use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\Deal;
 use App\Modules\ModuleManager;
 use App\Modules\Signing\Actions\DeleteSigningDocument;
+use App\Modules\Signing\Actions\ManageSigningTemplates;
 use App\Modules\Signing\Models\SigningDocument;
+use App\Modules\Signing\Models\SigningTemplate;
 use App\Modules\Signing\SigningModule;
 use App\Modules\Signing\Support\ChosenDocument;
 use App\Modules\Signing\Support\FieldLayout;
+use App\Modules\Signing\Support\TemplateWizardState;
 use App\Modules\StaffLedger\Livewire\Concerns\InCurrentCompany;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\Toast;
+use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -79,8 +84,27 @@ class SendWizard extends Component
     #[Locked]
     public ?string $documentId = null;
 
-    /** @var list<array{email: string, step: int|string, verification: string, access_code: string, language: string}> */
+    /**
+     * `role` is the signer's role name (S14: "Kund"), `role_key` the key of the template role the row came from.
+     *
+     * @var list<array{email: string, step: int|string, verification: string, access_code: string, language: string, role?: string, role_key?: string}>
+     */
     public array $signers = [];
+
+    /** The template the signers, fields and defaults came from (ADR-046 S14), remembered on the envelope. */
+    #[Locked]
+    public ?string $templateId = null;
+
+    /** Whether the template's fields were applied: the document is the template's own file (same SHA-256). Only then may "Uppdatera mallen" change the fields. */
+    #[Locked]
+    public bool $templateFieldsApplied = false;
+
+    /** @var list<int> the signers whose role is the company's own: a member is suggested */
+    #[Locked]
+    public array $internalSigners = [];
+
+    /** The name typed for "Spara som mall". */
+    public string $templateName = '';
 
     /** @var list<array{email: string, name: string, language: string}> */
     public array $copies = [];
@@ -139,7 +163,7 @@ class SendWizard extends Component
     /** Said to assistive technology after an action (a polite live region). */
     public string $announce = '';
 
-    public function mount(?string $type = null, ?string $documentId = null): void
+    public function mount(?string $type = null, ?string $documentId = null, ?string $template = null): void
     {
         abort_unless($this->allowed(SigningModule::SEND), 404);
 
@@ -160,6 +184,10 @@ class SendWizard extends Component
         $deals = $this->deals($document);
         $this->dealId = $deals->count() === 1 ? (string) $deals->first()?->id : '';
         $this->step = 2;
+
+        if ($template !== null) {
+            $this->useTemplate($template);
+        }
     }
 
     public function next(): void
@@ -180,7 +208,8 @@ class SendWizard extends Component
                 'copies.*.name' => ['nullable', 'string', 'max:120'],
                 'copies.*.language' => ['in:sv,en'],
                 'signers.*.language' => ['in:sv,en'],
-            ], [], ['signers.*.email' => __('e-post'), 'signers.*.step' => __('steg'), 'copies.*.email' => __('e-post'), 'copies.*.name' => __('namn')]);
+                'signers.*.role' => ['nullable', 'string', 'max:60', 'regex:/^[^\\p{C}]*$/u'],
+            ], [], ['signers.*.email' => __('e-post'), 'signers.*.role' => __('roll'), 'signers.*.step' => __('steg'), 'copies.*.email' => __('e-post'), 'copies.*.name' => __('namn')]);
         }
 
         if ($this->step === 3 && ! $this->fieldsAreValid()) {
@@ -217,6 +246,8 @@ class SendWizard extends Component
         }
 
         $this->signers = array_values(array_filter($this->signers, fn (int $key): bool => $key !== $index, ARRAY_FILTER_USE_KEY));
+
+        $this->internalSigners = array_values(array_map(fn (int $marked): int => $marked > $index ? $marked - 1 : $marked, array_filter($this->internalSigners, fn (int $marked): bool => $marked !== $index)));
 
         // The removed signer's fields go with them and the later signers' fields keep their signer.
         $this->fields = array_values(array_map(function (array $field) use ($index): array {
@@ -276,6 +307,181 @@ class SendWizard extends Component
         $this->toast(__('Dokumentet är borttaget.'));
     }
 
+    /**
+     * "Använd mall" on a chosen document (ADR-046 S14): one signer row per role with its step and check, the
+     * template's defaults and, when the document is the template's own file, its fields. The addresses stay
+     * empty (a template names roles, not people); the sender fills them in. Nothing is sent from here.
+     */
+    public function useTemplate(string $id): void
+    {
+        abort_unless($this->allowed(SigningModule::SEND) && $this->type !== null, 404);
+
+        if ($id === '') {
+            return;
+        }
+
+        abort_unless(Str::isUuid($id), 404);
+
+        $template = SigningTemplate::query()->visibleTo($this->user(), $this->company())->whereNull('archived_at')->findOrFail($id);
+        abort_unless($template->document_type === $this->type, 404);
+
+        $document = $this->document();
+        $same = $document instanceof SigningDocument && $template->hasFile() && hash_equals((string) $template->sha256, $document->sha256);
+        $state = TemplateWizardState::for($template, $same, $document instanceof RestrictsEnvelopes);
+
+        if ($state['signers'] === []) {
+            return;
+        }
+
+        $this->resetErrorBag();
+        $this->templateId = $template->id;
+        $this->templateFieldsApplied = $same;
+        $this->signers = $state['signers'];
+        $this->internalSigners = $state['internal'];
+        $this->fields = $state['fields'];
+        $this->selected = null;
+        $this->copies = $state['copies'];
+        $this->notifyCopies = false;
+        $this->expiresOn = $state['expiresOn'];
+        $this->autoReminders = $state['autoReminders'];
+        $this->reminderDays = $state['reminderDays'];
+        $this->confidential = $state['confidential'];
+        $this->new['signer'] = 0;
+
+        if (! $document instanceof SigningDocument && ! in_array(0, $state['internal'], true)) {
+            $this->signers[0]['email'] = $this->defaultEmail($document);
+        }
+
+        $this->announce = __('Mallen ”:name” är använd. Fyll i vem som tar varje roll.', ['name' => $template->name]);
+    }
+
+    /** "Utan mall": the signers and the fields stay as they are, but the envelope no longer remembers the template. */
+    public function clearTemplate(): void
+    {
+        $this->templateId = null;
+        $this->templateFieldsApplied = false;
+        $this->internalSigners = [];
+    }
+
+    /** A member suggested for the company's own role: their address fills the row. */
+    public function suggestMember(int $index, string $userId): void
+    {
+        abort_unless($this->allowed(SigningModule::SEND), 404);
+
+        if (! isset($this->signers[$index]) || ! in_array($index, $this->internalSigners, true) || ! ctype_digit($userId)) {
+            return;
+        }
+
+        $member = $this->company()->allUsers()->firstWhere('id', (int) $userId);
+
+        if ($member !== null) {
+            $this->signers[$index]['email'] = (string) $member->email;
+            $this->resetErrorBag("signers.{$index}.email");
+        }
+    }
+
+    /** Step 1: a new document from a template's PDF, and on to the signers with the template applied. */
+    public function startFromTemplate(string $id, ManageSigningTemplates $templates): void
+    {
+        abort_unless($this->allowed(SigningModule::SEND) && $this->type === null && Str::isUuid($id), 404);
+
+        $template = SigningTemplate::query()->visibleTo($this->user(), $this->company())->whereNull('archived_at')->where('document_type', SigningTemplate::DOCUMENT)->findOrFail($id);
+
+        try {
+            $document = $templates->start($this->user(), $this->company(), $template);
+        } catch (ValidationException $exception) {
+            $this->setErrorBag($exception->errors());
+
+            return;
+        }
+
+        Toast::flash(__('Dokumentet är skapat från mallen. Fyll i vem som tar varje roll.'));
+
+        $this->redirectRoute('signing.new', ['typ' => SigningDocument::SIGNING_TYPE, 'dokument' => $document->id, 'mall' => $template->id]);
+    }
+
+    /**
+     * "Spara som mall" / "Uppdatera mallen": the roles are the signers (their role names, steps and checks), the
+     * fields and the defaults are what the wizard holds now. No address is kept except the copy recipients' (a
+     * template's defaults). A template is its creator's to change, or signing:manage's.
+     */
+    public function saveAsTemplate(ManageSigningTemplates $templates): void
+    {
+        $this->storeTemplate($templates, false);
+    }
+
+    /** "Uppdatera mallen": the template the wizard came from takes the roles, the fields and the defaults as they are now. */
+    public function updateTemplate(ManageSigningTemplates $templates): void
+    {
+        $this->storeTemplate($templates, true);
+    }
+
+    private function storeTemplate(ManageSigningTemplates $templates, bool $replace): void
+    {
+        abort_unless($this->allowed(SigningModule::SEND) && $this->type !== null, 404);
+        $this->resetErrorBag();
+        $document = $this->document();
+        $standalone = $document instanceof SigningDocument;
+        $roles = [];
+
+        foreach ($this->signers as $index => $signer) {
+            $label = trim((string) ($signer['role'] ?? ''));
+            $roles[] = [
+                'key' => $replace ? ($signer['role_key'] ?? null) : null,
+                'label' => $label === '' ? __('Undertecknare :number', ['number' => $index + 1]) : $label,
+                'step' => (int) $signer['step'],
+                'verification' => (string) $signer['verification'],
+                'internal' => in_array($index, $this->internalSigners, true),
+            ];
+        }
+
+        $days = null;
+
+        if ($this->expiresOn !== '') {
+            $zone = (string) config('app.timezone');
+            $left = (int) CarbonImmutable::now($zone)->startOfDay()->diffInDays(CarbonImmutable::parse($this->expiresOn, $zone)->startOfDay(), false);
+            $days = $left >= SigningDeadlines::MIN_DAYS && $left <= SigningDeadlines::MAX_DAYS ? $left : null;
+        }
+
+        $input = [
+            'name' => trim($this->templateName) !== '' || ! $replace || $this->templateId === null ? trim($this->templateName) : (string) SigningTemplate::query()->whereKey($this->templateId)->value('name'),
+            'document_type' => $this->type,
+            'roles' => $roles,
+            'deadline_days' => $days,
+            'auto_reminders' => $this->autoReminders,
+            'reminder_days' => $this->reminderDays === 'single' ? null : (int) $this->reminderDays,
+            'language' => (string) ($this->signers[0]['language'] ?? 'sv'),
+            'confidential' => $standalone && $this->confidential,
+            'copies' => array_map(fn (array $copy): array => ['email' => $copy['email'], 'name' => $copy['name'], 'language' => $copy['language']], $this->copies),
+            ...($document instanceof SigningDocument && (! $replace || $this->templateFieldsApplied) ? ['fields' => $this->definitions(), 'document_sha256' => $document->sha256] : []),
+        ];
+
+        try {
+            if ($replace) {
+                abort_unless($this->templateId !== null, 404);
+                $template = $templates->update($this->user(), $this->company(), SigningTemplate::query()->findOrFail($this->templateId), $input);
+            } else {
+                $template = $templates->create($this->user(), $this->company(), $input, $document instanceof SigningDocument ? $document : null);
+            }
+        } catch (ValidationException $exception) {
+            $this->setErrorBag(collect($exception->errors())->mapWithKeys(fn (array $messages, string $key): array => [match (true) {
+                $key === 'name' => 'templateName',
+                str_starts_with($key, 'roles') => 'templateRoles',
+                default => $key,
+            } => $messages])->all());
+
+            return;
+        } catch (AuthorizationException) {
+            $this->addError('templateName', __('Du får inte ändra den mallen.'));
+
+            return;
+        }
+
+        $this->templateId = $template->id;
+        $this->templateName = '';
+        $this->toast($replace ? __('Mallen är uppdaterad.') : __('Mallen är sparad.'));
+    }
+
     public function send(SendForSigning $send): void
     {
         $this->resetErrorBag();
@@ -293,6 +499,7 @@ class SendWizard extends Component
                 'deal_id' => $this->dealId === '' ? null : (int) $this->dealId,
                 'create_invoice' => $document instanceof SalesDocument && $this->createInvoice,
                 'fields' => $this->definitions(),
+                'template_id' => $this->templateId,
             ], minSigners: 1);
         } catch (ValidationException $exception) {
             $this->step = $this->stepOf(array_keys($exception->errors()));
@@ -720,6 +927,11 @@ class SendWizard extends Component
 
         return view('signing-module::livewire.wizard', [
             'document' => $document,
+            'templates' => $this->templates(),
+            'members' => $this->internalSigners === [] ? collect() : $this->company()->allUsers()->sortBy('name')->values(),
+            'canUpdateTemplate' => $this->templateId !== null && (! $document instanceof SigningDocument || $this->templateFieldsApplied),
+            'activeTemplate' => $this->templateId === null ? null : SigningTemplate::query()->find($this->templateId, ['id', 'name', 'created_by']),
+            'standaloneDocument' => $document instanceof SigningDocument,
             'steps' => self::STEPS,
             'isQuote' => $document instanceof SalesDocument,
             'standalone' => $document instanceof RestrictsEnvelopes || $first,
@@ -743,6 +955,28 @@ class SendWizard extends Component
             'presets' => FieldLayout::PRESETS,
             'maxFields' => SigningFields::MAX_FIELDS,
         ]);
+    }
+
+    /**
+     * The templates to pick from: with no document chosen, the templates with a file (a new document is made from
+     * one); with a document, the templates of its type. At most fifty, one query.
+     *
+     * @return Collection<int, SigningTemplate>
+     */
+    private function templates(): Collection
+    {
+        if ($this->step !== 1 && ! ($this->step === 2 && $this->type !== null)) {
+            return collect();
+        }
+
+        return SigningTemplate::query()
+            ->visibleTo($this->user(), $this->company())
+            ->whereNull('archived_at')
+            ->where('document_type', $this->type ?? SigningTemplate::DOCUMENT)
+            ->withCount('roles')
+            ->orderBy('name')
+            ->limit(50)
+            ->get(['id', 'name', 'page_count']);
     }
 
     /** The chosen document, in the company; a quote needs invoices:view, an agreement CRM, a standalone document nothing more. */

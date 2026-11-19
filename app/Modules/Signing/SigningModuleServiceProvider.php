@@ -10,6 +10,8 @@ use App\Modules\ModuleRegistry;
 use App\Modules\Signing\Livewire\EnvelopePage;
 use App\Modules\Signing\Livewire\EnvelopesPage;
 use App\Modules\Signing\Livewire\SendWizard;
+use App\Modules\Signing\Livewire\TemplatePage;
+use App\Modules\Signing\Livewire\TemplatesPage;
 use App\Modules\Signing\Models\SigningDocument;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -49,6 +51,8 @@ class SigningModuleServiceProvider extends ServiceProvider
         Livewire::component('signing.envelopes', EnvelopesPage::class);
         Livewire::component('signing.envelope', EnvelopePage::class);
         Livewire::component('signing.wizard', SendWizard::class);
+        Livewire::component('signing.templates', TemplatesPage::class);
+        Livewire::component('signing.template', TemplatePage::class);
 
         Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.SigningModule::KEY])
             ->group(__DIR__.'/routes/web.php');

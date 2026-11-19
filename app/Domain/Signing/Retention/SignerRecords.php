@@ -9,6 +9,7 @@ use App\Domain\Signing\EnvelopeStatus;
 use App\Models\SigningCopyRecipient;
 use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
+use App\Modules\Signing\Models\SigningTemplate;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +26,22 @@ final class SignerRecords
     public static function normalise(string $email): string
     {
         return mb_strtolower(trim($email));
+    }
+
+    /**
+     * The signing templates that list the address as a default copy recipient (ADR-046 S14), in the current
+     * company. A template is not an envelope: it has no retention, so it is always erasable (the entry is
+     * removed from the template).
+     *
+     * @return Collection<int, SigningTemplate>
+     */
+    public static function templates(string $email): Collection
+    {
+        return SigningTemplate::query()
+            ->whereRaw("exists (select 1 from jsonb_array_elements(coalesce(copies, '[]'::jsonb)) as copy where lower(copy->>'email') = ?)", [self::normalise($email)])
+            ->orderBy('name')
+            ->orderBy('id')
+            ->get();
     }
 
     /**

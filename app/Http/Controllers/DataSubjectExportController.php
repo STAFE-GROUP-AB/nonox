@@ -200,6 +200,7 @@ class DataSubjectExportController
             'subject' => 'signer',
             'subject_hash' => EraseSigner::hash($email),
             'envelopes' => count($data['signeringar']),
+            'templates' => count($data['mallar_som_kopiemottagare']),
             'files' => count($files),
         ], $company, $user);
 

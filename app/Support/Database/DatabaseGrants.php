@@ -386,7 +386,11 @@ final class DatabaseGrants
         // Fields in the PDF (ADR-046 S6): placed before the envelope's first event and frozen after (trigger); the
         // values are evidence, written once and removed only by the cascade from their envelope, signer row or company.
         'signing_field_values' => GrantDecision::AppendOnly,
-        'signing_fields' => GrantDecision::NoDelete,
+        // A template's fields (ADR-046 S14) are replaced by the app, so DELETE is granted; the trigger still refuses to remove an envelope's field once it is out.
+        'signing_fields' => GrantDecision::ReadWrite,
+        // Templates with roles (ADR-046 S14): a used template is archived by the action, never deleted; an unused one may be.
+        'signing_template_roles' => GrantDecision::ReadWrite,
+        'signing_templates' => GrantDecision::ReadWrite,
         'signing_link_tokens' => GrantDecision::ReadWrite,
         // Signer checks (ADR-046 S3): a code row only gains attempts and its verified_at (trigger); it goes with its signer row or company by cascade.
         'signing_verification_codes' => GrantDecision::NoDelete,

@@ -23,8 +23,10 @@ use LogicException;
  *
  * @property int $id
  * @property int $company_id
- * @property string $envelope_id
- * @property int $signing_request_id
+ * @property ?string $envelope_id null on a template's field (ADR-046 S14)
+ * @property ?int $signing_request_id
+ * @property ?string $template_id
+ * @property ?string $role_key
  * @property FieldType $type
  * @property int $page
  * @property int $x
@@ -55,6 +57,8 @@ class SigningField extends Model
         'company_id',
         'envelope_id',
         'signing_request_id',
+        'template_id',
+        'role_key',
         'type',
         'page',
         'x',

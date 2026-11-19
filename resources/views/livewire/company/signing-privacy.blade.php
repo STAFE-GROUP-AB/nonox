@@ -12,9 +12,10 @@
 
     @if($searched !== null)
         <div class="mt-5" data-testid="signing-privacy-results">
-            @if($records === [])
+            @if($records === [] && $templates->isEmpty())
                 <p class="text-sm text-gray-700">{{ __('Inga signeringar i företaget har gått till :email.', ['email' => $searched]) }}</p>
             @else
+                @if($records !== [])
                 <div class="overflow-x-auto">
                     <table class="w-full min-w-[36rem] text-sm">
                         <thead>
@@ -49,6 +50,18 @@
                         </tbody>
                     </table>
                 </div>
+                @endif
+
+                @if($templates->isNotEmpty())
+                    <div class="mt-4 text-sm text-gray-700" data-testid="signing-privacy-templates">
+                        <p class="font-medium text-gray-900">{{ __('Förvald kopiemottagare i mallar') }}</p>
+                        <ul class="mt-1 list-inside list-disc">
+                            @foreach($templates as $template)
+                                <li wire:key="template-{{ $template->id }}">{{ $template->name }}. {{ __('Adressen tas bort ur mallen vid radering.') }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
 
                 <div class="mt-5 flex flex-wrap items-center gap-4">
                     <form method="POST" action="{{ route('privacy.export.signer') }}">
