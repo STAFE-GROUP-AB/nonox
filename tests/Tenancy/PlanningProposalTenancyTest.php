@@ -36,7 +36,7 @@ it('never shows another company\'s proposal, items, staff or open shifts', funct
     app(ModuleManager::class)->enable('payroll', $companyB, $ownerB);
     app(ModuleManager::class)->enable('planning', $companyB, $ownerB);
 
-    $annaB = Planning::employee($ownerB, $companyB, 'Anna', '900615123');
+    $annaB = Planning::employee($ownerB, $companyB, 'Annaliisa Tvärström', '900615123');
     Planning::shift($ownerB, $companyB, ['employee_id' => null, 'date' => '2026-11-24', 'start' => '09:00', 'end' => '17:00', 'break_minutes' => 30]);
     $proposalB = CurrentCompany::run($companyB, fn (): Proposal => app(MakeProposal::class)($ownerB, $companyB, ['from' => '2026-11-23', 'to' => '2026-11-29']));
 
@@ -54,7 +54,7 @@ it('never shows another company\'s proposal, items, staff or open shifts', funct
         ->and(ProposalItem::query()->find($itemB->id))->toBeNull();
 
     $this->actingAs($ownerA)->get(route('planning.proposals', ['forslag' => $proposalB->id]))->assertNotFound();
-    $this->actingAs($ownerA)->get(route('planning.proposals'))->assertOk()->assertDontSee('Anna');
+    $this->actingAs($ownerA)->get(route('planning.proposals'))->assertOk()->assertDontSee('Tvärström');
 });
 
 it('makes new shifts only from the company\'s own demand, areas and budget', function () {
