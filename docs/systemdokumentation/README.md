@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.154
+- Version: 0.155
 - Datum: 2026-11-19
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -1789,6 +1789,54 @@ balances").
   Signering vid länken kräver samtycket. Vill undertecknaren inte skriva under
   elektroniskt sparas `CONSENT_REFUSED` och avsändaren får veta det; länken
   ändras inte. `signing:verify` jämför varje samtycke med sin händelse.
+- Bevarande och gallring av signeringar (version 0.155,
+  [ADR-046](../adr/ADR-046-crm-signing.md) tillägg 2026-11-18, lucka 11, paket
+  S16). När ett kuvert blir klart, avböjs, dras tillbaka eller går ut får det
+  en bevarandeklass och en sista dag (`signing_envelopes.retention_class`,
+  `retention_until`, ett datum i svensk tid). **Räkenskapsinformation**
+  (signerade offerter, avtal och ÄTA): till och med 31 december sju år efter
+  utgången av det räkenskapsår då affärshändelsen bokfördes (BFL 5 kap. 7 §
+  och 7 kap. 2 §), och minst lika länge som företagets tid för andra
+  signerade dokument. Vid signeringen räknas golvet ur räkenskapsåret då
+  kuvertet blev klart. Fakturor som räknas: offertens egen faktura och dess
+  orders, fakturorna från en arbetsorder som gjorts från offerten eller en
+  av dess order (`work_orders.sales_document_id`, `work_order_invoices`),
+  avtalets återkommande fakturor och ÄTA:ts arbetsorderfakturor. När en
+  verifikation bokförs för en sådan faktura, en betalning av den, en
+  kreditfaktura av den (`credits_invoice_id`) eller en kundförlust
+  (`write_off_voucher_id`) flyttas datumet till 31 december sju år efter det
+  räkenskapsår där det senaste av fakturadatum, verifikationsdatum, betaldag,
+  kreditfakturans datum och kundförlustens datum ligger, och gallringen gör
+  samma kontroll igen för hela sin omgång (ett fast antal frågor) innan den
+  tar bort något. Saknas räkenskapsåret i bokföringen räknas
+  golvet ur företagets första månad, ett år senare för säkerhets skull (BFL
+  3 kap. 3 §). **Andra signerade dokument** (egna dokument): företagets val,
+  7–25 år efter signeringen (`teams.signing_retention_years`, förvalt 10); ett
+  sådant dokument kan markeras som räkenskapsinformation, aldrig tvärtom.
+  **Inte signerade** (även när någon hann signera): 12 månader efter att
+  kuvertet stängdes. Ett signerat avtal gallras inte medan det gäller, och
+  tiden räknas då från slutdagen eller uppsägningen. Klassen flyttas bara
+  uppåt och datumet bara senare, och för räkenskapsinformation vägrar en
+  PostgreSQL-trigger ett datum före golvet ur `fiscal_years`; ett nytt kuvert
+  kan inte skapas med ett datum. Den nattliga `signing:prune` tar bort ett
+  helt kuvert vars datum har passerat (raderna med kaskad, filerna efter
+  commit och bara när ingen annan rad pekar på dem) och skriver
+  `signing.envelope_deleted` med id, klass, datum, antal undertecknare och
+  kedjans sista hash. Databasens radering av ett kuvert prövar själv det
+  stämplade datumet, golvet ur räkenskapsåret då kuvertet blev klart och
+  bevarandespärren; senare bokföringar och ett avtal som löper känner den inte
+  till, så det är gallringen och raderingen på begäran som prövar dem innan de
+  tar bort ett kuvert direkt. Ett signerat kuvert går aldrig med kaskaden när
+  offerten, avtalet eller ÄTA:t det skickades för tas bort: både kuvertet och
+  de signerade undertecknarraderna vägrar det. En **bevarandespärr**
+  (`signing_envelopes.retention_hold` med skälet SKATTEREVISION, TVIST eller
+  ANNAT, `signing:settings`, under Inställningar för företaget → Signering)
+  stoppar all gallring och radering; den skyddas på applikationsnivå och av
+  triggern som vägrar `DELETE`, men den som har direkt SQL-åtkomst kan häva
+  spärren med en egen sats. Radering på begäran av en undertecknare
+  (`signing:privacy`) rör aldrig ett signerat kuvert inom sin tid och ändrar
+  aldrig någons bevis delvis. Ingen verifikation, inget underlag i
+  `voucher_attachments` och ingen fil som en verifikation pekar på raderas.
   Signeringen bokför ingenting och ingen bokföringsregel ändras.
 - Varje skapad, skickad och betald faktura, offert och order skrivs till
   behandlingshistoriken.
@@ -6933,3 +6981,4 @@ påverkar bokföringen och fakturan:
 | 0.152 | 2026-11-18 | Flyttorder mellan lager (avsnitt 5j, ADR-081 paket E13): varor flyttas mellan två lager via platsen På väg (`TRANSIT`) med vanliga flyttrörelser och med batch eller serienummer. Artikelns saldo och värdet vid bokslutet är oförändrade, ingen kostnad läggs på och ingenting bokförs. Platsen På väg kan bara röras av en flyttorder. |
 | 0.153 | 2026-11-18 | Fält i PDF:en vid signering (ADR-046 tillägg, lucka 2, paket S6): fält per undertecknare som låses när kuvertet skickas, värden som kontrolleras på servern, sparas en gång och stämplas in som en ny inkrementell revision per undertecknare (`signing_document_versions`, `AFTER_SIGNER`), och händelsen `FIELDS_FILLED` med värdenas hashar i kuvertets hashkedja. Ingenting bokförs och ingen verifikation, numrering eller hashkedja för bokföringen ändras. |
 | 0.154 | 2026-11-19 | Samtycke till elektroniska handlingar vid signering (ADR-046 tillägg, lucka 7, paket S4): en versionerad text som varje undertecknare godkänner innan dokumentet visas, med version, textens SHA-256 och tid på undertecknarens rad (låsta av en databasutlösare), händelsen `CONSENTED` i kuvertets hashkedja och samtycket i bevishashen. Ingenting bokförs och ingen verifikation, numrering eller hashkedja för bokföringen ändras. |
+| 0.155 | 2026-11-19 | Bevarande och gallring av signeringar (avsnitt 5, ADR-046 tillägg 2026-11-18, lucka 11, paket S16): klasserna räkenskapsinformation (till och med 31 december sju år efter räkenskapsåret då affärshändelsen bokfördes, och minst företagets tid; datumet flyttas senare när en faktura, betalning, kreditfaktura eller kundförlust från offerten (också via dess arbetsorder), avtalet eller ÄTA:t bokförs i ett senare år), andra signerade dokument (7–25 år, förvalt 10) och inte signerade (12 månader); ett signerat avtal gallras inte medan det gäller. Triggrar vägrar ett tidigare datum, en lägre klass, ett datum under golvet och radering före datumet eller med bevarandespärr. `signing:prune` tar bort hela kuvert efter datumet och loggar `signing.envelope_deleted`. Ingen verifikation, inget underlag och ingen bokföringsregel ändras. |

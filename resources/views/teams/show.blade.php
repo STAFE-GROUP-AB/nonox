@@ -12,6 +12,8 @@
             'moduler' => auth()->user()->hasTeamPermission($team, 'modules:manage') ? __('Moduler') : null,
             // Dimension scopes (ADR-081 gap 10): owner and admin.
             'enheter' => auth()->user()->hasTeamPermission($team, 'members:scope') ? __('Behörighet per enhet') : null,
+            // The signing engine's retention and a signer's register extract and erasure (ADR-046 gap 11): owner and admin.
+            'signering' => auth()->user()->hasTeamPermission($team, 'signing:settings') || auth()->user()->hasTeamPermission($team, 'signing:privacy') ? __('Signering') : null,
             'agarskap' => Gate::allows('transferOwnership', $team) ? __('Ägarskap och arkiv') : null,
         ]);
         $tab = array_key_exists((string) request('flik'), $tabs) ? (string) request('flik') : 'uppgifter';
@@ -30,7 +32,14 @@
             </nav>
         @endif
 
-        @if($tab === 'agarskap')
+        @if($tab === 'signering')
+            @if(auth()->user()->hasTeamPermission($team, 'signing:settings'))
+                <livewire:company.signing-retention-settings :company="$team" />
+            @endif
+            @if(auth()->user()->hasTeamPermission($team, 'signing:privacy'))
+                <livewire:company.signing-privacy :company="$team" />
+            @endif
+        @elseif($tab === 'agarskap')
             <livewire:company.ownership-settings :company="$team" />
         @elseif($tab === 'enheter')
             <livewire:company.dimension-scopes :company="$team" />

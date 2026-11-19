@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Modules\Signing\Livewire;
 
 use App\Actions\Signing\ChangeSigningDeadline;
+use App\Actions\Signing\ManageSigningRetention;
 use App\Actions\Signing\SendForSigning;
 use App\Actions\Signing\SigningReminders;
+use App\Domain\Documents\LegalHoldReason;
 use App\Domain\Signing\EnvelopeStatus;
+use App\Domain\Signing\Retention\SigningRetention;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SigningDeadlines;
@@ -35,7 +38,8 @@ use Throwable;
  * Signering → one envelope (ADR-046 amendment, gap 10, package S7): who has
  * signed and who is next, every signer's check, the files, the event
  * timeline, and, while the envelope is out and the member may act on it,
- * Påminn nu, Ändra sista dag and Dra tillbaka. The actions are the engine's
+ * Påminn nu, Ändra sista dag and Dra tillbaka; with signing:settings the
+ * legal hold and the class of a standalone document (ADR-046 S16). The actions are the engine's
  * own (SigningReminders, ChangeSigningDeadline, SendForSigning::void), so a
  * document's own sending rules apply. An envelope the member may not see
  * answers 404, as another company's does.
@@ -50,6 +54,9 @@ class EnvelopePage extends Component
 
     /** The new last day while it is being changed; null when the form is closed. */
     public ?string $newDeadline = null;
+
+    /** The reason key chosen for a legal hold (ADR-046 S16). */
+    public string $holdReason = '';
 
     public function mount(string $envelopeId): void
     {
@@ -107,6 +114,30 @@ class EnvelopePage extends Component
         $this->toast(__('Dokumentet är tillbakadraget. Ingen kan längre signera det.'));
     }
 
+    /** "Sätt bevarandespärr" (ADR-046 S16): signing:settings, with a reason key. */
+    public function setHold(ManageSigningRetention $manage): void
+    {
+        $this->resetErrorBag();
+        $manage->hold($this->user(), $this->company(), $this->envelope(), true, LegalHoldReason::tryFrom($this->holdReason));
+        $this->holdReason = '';
+
+        $this->toast(__('Signeringen har bevarandespärr. Den gallras inte och kan inte raderas förrän spärren hävs.'));
+    }
+
+    public function liftHold(ManageSigningRetention $manage): void
+    {
+        $manage->hold($this->user(), $this->company(), $this->envelope(), false);
+
+        $this->toast(__('Bevarandespärren är hävd.'));
+    }
+
+    public function markAccounting(ManageSigningRetention $manage): void
+    {
+        $envelope = $manage->markAccounting($this->user(), $this->company(), $this->envelope());
+
+        $this->toast(__('Dokumentet är markerat som räkenskapsinformation och sparas till och med :date.', ['date' => $envelope->retention_until?->toDateString()]));
+    }
+
     public function render(): View
     {
         $envelope = $this->envelope();
@@ -135,6 +166,10 @@ class EnvelopePage extends Component
             'minDays' => SigningDeadlines::MIN_DAYS,
             'maxDays' => SigningDeadlines::MAX_DAYS,
             'user' => $user,
+            'canRetain' => $user->hasTeamPermission($company, 'signing:settings'),
+            // An agreement that still runs keeps its evidence while it runs (ADR-046 S16 review).
+            'running' => $envelope->status === EnvelopeStatus::Completed && SigningRetention::agreementState($envelope)['running'],
+            'years' => SigningRetention::years($envelope->company_id),
         ]);
     }
 

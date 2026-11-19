@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-19-signering-gallring",
+      "datum": "2026-11-19T14:30:00+01:00",
+      "rubrik": "Bevarandetid, bevarandespärr och radering för signeringar",
+      "beskrivning": "Signerade offerter, avtal och ÄTA sparas som räkenskapsinformation, andra signerade dokument i 7 till 25 år efter företagets val, och osignerade i tolv månader, och därefter gallras hela signeringen. Under Inställningar → Signering kan du sätta bevarandespärr, hämta ett registerutdrag för en undertecknare och radera det som inte måste sparas. Det som måste sparas står kvar med lagrummet, och avslaget loggas.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-19-signering-samtycke",
       "datum": "2026-11-19T12:30:00+01:00",
       "rubrik": "Samtycke till elektroniska handlingar vid signering",

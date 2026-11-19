@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Privacy;
 
 use App\Domain\IncomeTax\IncomeTaxForms;
+use App\Domain\Signing\Retention\SignerRecords;
 use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\CostCenter;
@@ -15,6 +16,13 @@ use App\Models\Invoice;
 use App\Models\K10Owner;
 use App\Models\MileageRoute;
 use App\Models\Project;
+use App\Models\SigningCopyRecipient;
+use App\Models\SigningDocumentVersion;
+use App\Models\SigningEnvelope;
+use App\Models\SigningEvent;
+use App\Models\SigningField;
+use App\Models\SigningFieldValue;
+use App\Models\SigningRequest;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\User;
@@ -48,6 +56,7 @@ use App\Modules\StaffLedger\Models\Person;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\Tenancy\DimensionScope;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -460,6 +469,153 @@ final class DataSubjectExport
             ])
             ->values()
             ->all());
+    }
+
+    /**
+     * What the current company's signing holds about one e-mail address
+     * (ADR-046 amendment, gap 11): for each envelope where the address is a
+     * signer, the evidence of that signer (name, title, method, check, times,
+     * IP address, browser, the confirmation text, the decline reason, the
+     * field values and the events), and where it is a copy recipient, when
+     * the copy went out. Other signers' data is left out (art. 15.4). The
+     * files (the document, the version with the signer's values, the
+     * Signeringsbevis and a drawn signature) are named under "filer" and
+     * travel beside the JSON (signerFiles).
+     *
+     * @return array<string, mixed>
+     */
+    public static function signer(string $email): array
+    {
+        $email = SignerRecords::normalise($email);
+        $data = self::signerData($email);
+        $files = self::signerFileMap($data['signers'], $data['versions'], $data['values']);
+
+        return [
+            'utdrag' => self::meta('Undertecknare och kopiemottagare i signering'),
+            'e_post' => $email,
+            'signeringar' => array_values($data['envelopes']->map(function (SigningEnvelope $envelope) use ($data, $files): array {
+                $signers = $data['signers']->where('envelope_id', $envelope->id);
+                $copies = $data['copies']->where('envelope_id', $envelope->id);
+
+                return [
+                    'signering' => $envelope->id,
+                    'dokument' => $envelope->title,
+                    'typ' => SignerRecords::typeLabel($envelope->document_type),
+                    'status' => $envelope->effectiveStatus()->value,
+                    'skickad' => $envelope->sent_at?->toIso8601String(),
+                    'klar' => $envelope->completed_at?->toIso8601String(),
+                    'bevarandeklass' => $envelope->retention_class,
+                    'sparas_till_och_med' => $envelope->retention_until?->toDateString(),
+                    'som_undertecknare' => array_values($signers->map(fn (SigningRequest $signer): array => [
+                        'steg' => $signer->step,
+                        'status' => $signer->status->value,
+                        'e_post' => $signer->email,
+                        'namn' => $signer->signer_name,
+                        'titel' => $signer->signer_title,
+                        'satt_att_signera' => $signer->signature_method,
+                        'kontroll' => $signer->verification->value,
+                        'oppnad' => $signer->opened_at?->toIso8601String(),
+                        'kontrollerad' => $signer->verified_at?->toIso8601String(),
+                        'signerad' => $signer->signed_at?->toIso8601String(),
+                        'avbojd' => $signer->declined_at?->toIso8601String(),
+                        'skal_att_avboja' => $signer->decline_reason,
+                        'ip_adress' => $signer->signer_ip,
+                        'webblasare' => $signer->signer_user_agent,
+                        'godkannandetext' => $signer->acceptance_text,
+                        'dokumentets_kontrollsumma' => $signer->document_sha256,
+                        'faltvarden' => array_values($data['values']->where('signing_request_id', $signer->id)->map(fn (SigningFieldValue $value): array => [
+                            'falt' => $data['fields']->get($value->field_id)?->label,
+                            'typ' => $data['fields']->get($value->field_id)?->type->value,
+                            'varde' => $value->value,
+                            'bild' => $value->image === null ? null : "filer/{$signer->envelope_id}/{$signer->id}-falt-{$value->field_id}.png",
+                            'ifyllt' => $value->filled_at->toIso8601String(),
+                        ])->all()),
+                        'handelser' => array_values($data['events']->where('signing_request_id', $signer->id)->map(fn (SigningEvent $event): array => [
+                            'handelse' => $event->event->value,
+                            'tid' => $event->created_at->toIso8601String(),
+                        ])->all()),
+                        'filer' => array_keys(array_filter($files, fn (array $file): bool => $file['signer'] === $signer->id)),
+                    ])->all()),
+                    'som_kopiemottagare' => array_values($copies->map(fn (SigningCopyRecipient $copy): array => [
+                        'e_post' => $copy->email,
+                        'namn' => $copy->name,
+                        'aviserad' => $copy->notified_at?->toIso8601String(),
+                        'kopia_skickad' => $copy->sent_copy_at?->toIso8601String(),
+                    ])->all()),
+                ];
+            })->all()),
+        ];
+    }
+
+    /**
+     * The files of the signer extract: the path in the ZIP => the bytes'
+     * source, a stored path on the signing disk or an inline PNG.
+     *
+     * @return array<string, array{signer: int, path?: string, png?: string}>
+     */
+    public static function signerFiles(string $email): array
+    {
+        $data = self::signerData(SignerRecords::normalise($email));
+
+        return self::signerFileMap($data['signers'], $data['versions'], $data['values']);
+    }
+
+    /**
+     * Every row the signer extract reads, in a fixed number of queries.
+     *
+     * @return array{envelopes: Collection<int, SigningEnvelope>, signers: Collection<int, SigningRequest>, copies: Collection<int, SigningCopyRecipient>, events: Collection<int, SigningEvent>, fields: Collection<int, SigningField>, values: Collection<int, SigningFieldValue>, versions: Collection<int, SigningDocumentVersion>}
+     */
+    private static function signerData(string $email): array
+    {
+        $signers = SigningRequest::query()->whereRaw('lower(email) = ?', [$email])->whereNotNull('envelope_id')->orderBy('id')->get()->toBase();
+        $copies = SigningCopyRecipient::query()->whereRaw('lower(email) = ?', [$email])->orderBy('id')->get()->toBase();
+        $ids = array_values(array_unique([...$signers->pluck('envelope_id')->all(), ...$copies->pluck('envelope_id')->all()]));
+        $requestIds = $signers->pluck('id')->all();
+        $values = $requestIds === [] ? collect() : SigningFieldValue::query()->whereIn('signing_request_id', $requestIds)->orderBy('id')->get()->toBase();
+
+        return [
+            'envelopes' => $ids === [] ? collect() : SigningEnvelope::query()->whereIn('id', $ids)->orderBy('created_at')->orderBy('id')->get()->toBase(),
+            'signers' => $signers,
+            'copies' => $copies,
+            'events' => $requestIds === [] ? collect() : SigningEvent::query()->whereIn('signing_request_id', $requestIds)->whereIn('event', ['SENT', 'OPENED', 'SIGNED', 'DECLINED', 'EXPIRED', 'REVOKED'])->orderBy('created_at')->orderBy('id')->get(['id', 'signing_request_id', 'event', 'created_at'])->toBase(),
+            'fields' => $values->isEmpty() ? collect() : SigningField::query()->whereIn('id', $values->pluck('field_id')->all())->get(['id', 'type', 'label'])->keyBy('id')->toBase(),
+            'values' => $values,
+            'versions' => $requestIds === [] ? collect() : SigningDocumentVersion::query()->whereIn('signing_request_id', $requestIds)->where('kind', SigningDocumentVersion::AFTER_SIGNER)->get(['id', 'signing_request_id', 'path'])->toBase(),
+        ];
+    }
+
+    /**
+     * @param  Collection<int, SigningRequest>  $signers
+     * @param  Collection<int, SigningDocumentVersion>  $versions
+     * @param  Collection<int, SigningFieldValue>  $values
+     * @return array<string, array{signer: int, path?: string, png?: string}>
+     */
+    private static function signerFileMap(Collection $signers, Collection $versions, Collection $values): array
+    {
+        $files = [];
+
+        foreach ($signers as $signer) {
+            $folder = "filer/{$signer->envelope_id}";
+            $files["{$folder}/{$signer->id}-dokument.pdf"] = ['signer' => $signer->id, 'path' => $signer->document_path];
+
+            foreach ($versions->where('signing_request_id', $signer->id) as $version) {
+                $files["{$folder}/{$signer->id}-dokument-med-dina-uppgifter.pdf"] = ['signer' => $signer->id, 'path' => $version->path];
+            }
+
+            if ($signer->signed_document_path !== null) {
+                $files["{$folder}/{$signer->id}-signeringsbevis.pdf"] = ['signer' => $signer->id, 'path' => $signer->signed_document_path];
+            }
+
+            if ($signer->signature_image !== null) {
+                $files["{$folder}/{$signer->id}-namnteckning.png"] = ['signer' => $signer->id, 'png' => $signer->signature_image];
+            }
+
+            foreach ($values->where('signing_request_id', $signer->id)->whereNotNull('image') as $value) {
+                $files["{$folder}/{$signer->id}-falt-{$value->field_id}.png"] = ['signer' => $signer->id, 'png' => (string) $value->image];
+            }
+        }
+
+        return $files;
     }
 
     /** @return ?array{kostnadsstallen: list<string>, projekt: list<string>} */

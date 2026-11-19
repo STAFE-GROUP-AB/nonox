@@ -43,4 +43,5 @@ Då kan inga nya dokument skickas, och öppna länkar för egna dokument slutar 
 
 - [Skicka ett dokument för signering](/manual/signering/skicka-dokument)
 - [Alla signeringar](/manual/signering/alla-signeringar)
+- [Bevarande och radering av signeringar](/manual/signering/bevarande-och-radering)
 - [Signera offerter och avtal](/manual/crm/signering)

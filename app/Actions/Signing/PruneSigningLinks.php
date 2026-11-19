@@ -7,6 +7,8 @@ namespace App\Actions\Signing;
 use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\EnvelopeStatus;
 use App\Domain\Signing\Fields\PageImages;
+use App\Domain\Signing\Retention\EnvelopeDeletion;
+use App\Domain\Signing\Retention\SigningRetention;
 use App\Domain\Signing\SigningStatus;
 use App\Models\SigningDocumentVersion;
 use App\Models\SigningEnvelope;
@@ -14,7 +16,9 @@ use App\Models\SigningEvent;
 use App\Models\SigningRequest;
 use App\Support\Audit\Audit;
 use App\Support\Files\StoredFiles;
+use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -22,20 +26,49 @@ use Illuminate\Support\Facades\Storage;
 /**
  * Signing links that were never signed (ADR-046): expired, declined or
  * revoked more than a year ago, they and their PDFs are deleted, with the
- * signer's e-mail address and any decline reason. A signed link is
- * evidence and stays. A pruned signer of an envelope that stays leaves the
- * hashes of its chain links in the audit log (ADR-046 amendment, gap 4). Runs inside one company: from crm:agreements while
- * CRM is on, and from signing:prune for every company, since quotes are
- * signed with CRM off too (ADR-075 §7).
+ * signer's e-mail address and any decline reason. A pruned signer of an
+ * envelope that stays leaves the hashes of its chain links in the audit log
+ * (ADR-046 amendment, gap 4).
+ *
+ * Retention (ADR-046 amendment, gap 11, package S16): a whole envelope whose
+ * retention date has passed is deleted with everything in it
+ * (EnvelopeDeletion), a signed one included; an envelope on legal hold is
+ * never touched. A standalone document that was uploaded but never sent is
+ * deleted UNSENT_DAYS after the upload.
+ *
+ * Runs inside one company: from crm:agreements while CRM is on, and from
+ * signing:prune for every company, since quotes are signed with CRM off too
+ * (ADR-075 §7).
  */
 final class PruneSigningLinks
 {
     public const int AFTER_MONTHS = 12;
 
+    /** @return int the unsigned links pruned */
     public function __invoke(CarbonImmutable $today): int
     {
+        return $this->run($today)['links'];
+    }
+
+    /**
+     * @return array{links: int, envelopes: int, documents: int} the unsigned links, the whole envelopes past their
+     *                                                           retention and the never-sent documents deleted
+     */
+    public function run(CarbonImmutable $today): array
+    {
         $cutoff = $today->subMonthsNoOverflow(self::AFTER_MONTHS);
+        $companyId = CurrentCompany::id();
+
+        // An envelope an older worker finished during a deploy gets its retention first (ADR-046 S16).
+        if ($companyId !== null) {
+            SigningRetention::backfill($companyId);
+        }
+
+        $envelopes = $this->pruneExpiredRetention($today);
+        // A held envelope (bevarandespärr) keeps every row; the database refuses it too.
+        $held = SigningEnvelope::query()->where('retention_hold', true)->select('id');
         $requests = SigningRequest::query()
+            ->where(fn ($query) => $query->whereNull('envelope_id')->orWhereNotIn('envelope_id', $held))
             ->where(fn ($query) => $query
                 ->where(fn ($q) => $q->where('status', SigningStatus::Pending->value)->where('expires_at', '<', $cutoff))
                 ->orWhere(fn ($q) => $q->where('status', SigningStatus::Declined->value)->where('declined_at', '<', $cutoff))
@@ -67,6 +100,7 @@ final class PruneSigningLinks
         // An envelope left without signers (ADR-046 amendment, gap 1) goes with them; a completed one is evidence and stays (trigger).
         $stale = SigningEnvelope::query()
             ->where('status', '!=', EnvelopeStatus::Completed->value)
+            ->where('retention_hold', false)
             ->where('updated_at', '<', $cutoff)
             ->whereDoesntHave('signers')
             ->get(['id', 'company_id', 'document_type', 'signable_id']);
@@ -99,7 +133,78 @@ final class PruneSigningLinks
             });
         }
 
-        return $requests->count();
+        return ['links' => $requests->count(), 'envelopes' => $envelopes, 'documents' => $this->pruneUnsentDocuments($today)];
+    }
+
+    /**
+     * Every envelope whose retention date has passed and that is not held,
+     * deleted whole (ADR-046 S16). One envelope that the database refuses
+     * (its own clock decides the date) is reported and left for the next
+     * night, so it never stops the others.
+     */
+    private function pruneExpiredRetention(CarbonImmutable $today): int
+    {
+        $deleted = 0;
+        $due = SigningEnvelope::query()
+            ->where('retention_hold', false)
+            ->whereNotNull('retention_until')
+            ->where('retention_until', '<', $today->setTimezone(SigningRetention::ZONE)->toDateString())
+            ->orderBy('retention_until')
+            ->get();
+
+        // What they are linked to may keep them longer: a booking in a later fiscal year, an agreement that still runs
+        // or ended later (review 2026-11-19). Computed for the whole batch in a fixed number of queries; a date that
+        // must move later is written and the envelope stays.
+        $requiredDates = SigningRetention::requiredForMany($due, $today);
+
+        foreach ($due as $envelope) {
+            $required = SigningRetention::refresh($envelope, $today, $requiredDates[$envelope->id] ?? null, computed: true);
+
+            if ($required === null || ! $required->lessThan($today->setTimezone(SigningRetention::ZONE)->startOfDay())) {
+                continue;
+            }
+
+            try {
+                EnvelopeDeletion::delete($envelope, EnvelopeDeletion::RETENTION);
+                $deleted++;
+            } catch (QueryException $exception) {
+                report($exception);
+            }
+        }
+
+        return $deleted;
+    }
+
+    /**
+     * A standalone document (module Signering, ADR-046 S7) uploaded more than
+     * UNSENT_DAYS ago and never sent is deleted with its file (GDPR art.
+     * 5.1 e). TODO(legal-verify): the 90 days (proposed in S7).
+     */
+    private function pruneUnsentDocuments(CarbonImmutable $today): int
+    {
+        $companyId = CurrentCompany::id();
+
+        if ($companyId === null) {
+            return 0;
+        }
+
+        $old = DB::table('signing_documents')
+            ->where('company_id', $companyId)
+            ->where('created_at', '<', $today->subDays(SigningRetention::UNSENT_DAYS))
+            ->whereNotExists(fn ($query) => $query->select(DB::raw(1))->from('signing_envelopes')
+                ->where('signing_envelopes.company_id', $companyId)
+                ->where('signing_envelopes.document_type', 'DOCUMENT')
+                ->whereRaw('signing_envelopes.signable_id = signing_documents.id::text'))
+            ->get(['id', 'path']);
+
+        foreach ($old as $document) {
+            DB::transaction(function () use ($companyId, $document): void {
+                DB::table('signing_documents')->where('company_id', $companyId)->where('id', $document->id)->delete();
+                StoredFiles::deleteUnreferenced([(string) $document->path]);
+            });
+        }
+
+        return $old->count();
     }
 
     /** Whether a version of another envelope is the same file, so its page images are still needed. */

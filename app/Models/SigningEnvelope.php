@@ -51,6 +51,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?int $chain_sequence
  * @property int $next_sequence the chain's next sequence number, kept by the event insert trigger (ADR-046 S2)
  * @property ?string $last_hash the chain's last hash, kept by the same trigger
+ * @property ?string $retention_class ACCOUNTING, OTHER or UNSIGNED, set when it finishes or expires (ADR-046 S16)
+ * @property ?CarbonImmutable $retention_until the last day it is kept (a Stockholm date); only moves later
+ * @property bool $retention_hold legal hold (bevarandespärr): never deleted while set
+ * @property ?string $retention_hold_reason SKATTEREVISION, TVIST or ANNAT
+ * @property ?CarbonImmutable $retention_hold_at
+ * @property ?int $retention_hold_by
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
  */
@@ -94,6 +100,7 @@ class SigningEnvelope extends Model
         'status' => 'OUT',
         'current_step' => 1,
         'confidential' => false,
+        'retention_hold' => false,
     ];
 
     /** @return array<string, string> */
@@ -105,6 +112,9 @@ class SigningEnvelope extends Model
             'chain_sequence' => 'integer',
             'auto_reminders' => 'boolean',
             'confidential' => 'boolean',
+            'retention_until' => 'immutable_date',
+            'retention_hold' => 'boolean',
+            'retention_hold_at' => 'immutable_datetime',
             'reminder_interval_days' => 'integer',
             'expired_at' => 'immutable_datetime',
             'next_sequence' => 'integer',

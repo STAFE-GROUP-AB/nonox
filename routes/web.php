@@ -242,6 +242,9 @@ Route::middleware([
         Route::get('/registerutdrag/delagare/{incomeTaxPartner}', [DataSubjectExportController::class, 'incomeTaxPartner'])->whereNumber('incomeTaxPartner')->name('privacy.export.incomeTaxPartner');
         Route::get('/registerutdrag/k10-agare/{k10Owner}', [DataSubjectExportController::class, 'k10Owner'])->whereNumber('k10Owner')->name('privacy.export.k10Owner');
         Route::get('/registerutdrag/inkorg', [DataSubjectExportController::class, 'inboxSender'])->name('privacy.export.inboxSender');
+        // A signer's extract (ADR-046 S16): the address is posted, never put in the URL. Not /registerutdrag/signering:
+        // a POST path that starts with "register" reads as self-registration (PublicSignupTest).
+        Route::post('/signering/registerutdrag', [DataSubjectExportController::class, 'signer'])->name('privacy.export.signer');
         Route::put('/oversikt/kom-igang', [GettingStartedController::class, 'update'])->name('dashboard.gettingStarted');
         Route::post('/sok', SearchController::class)->middleware('throttle:search')->name('search');
         Route::post('/sok/senaste', RecentItemController::class)->middleware('throttle:search')->name('search.recent');

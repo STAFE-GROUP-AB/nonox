@@ -6,6 +6,7 @@ namespace App\Actions\Signing;
 
 use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\EnvelopeStatus;
+use App\Domain\Signing\Retention\SigningRetention;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SigningDeadlines;
 use App\Domain\Signing\SigningEventType;
@@ -314,7 +315,8 @@ final class SigningReminders
                 $this->chain->record($anchor, SigningEventType::Expired, payload: ['signers' => $pending->count()]);
             }
 
-            $envelope->forceFill(['expired_at' => $now])->save();
+            // The retention clock starts at expiry (ADR-046 S16): twelve months, as for a declined or withdrawn envelope.
+            $envelope->forceFill(['expired_at' => $now, ...SigningRetention::stamp($envelope, completed: false, at: $now)])->save();
             Audit::record('signing.expired', $envelope, ['envelope_id' => $envelope->id, 'signers' => $pending->count()], $envelope->company_id);
             $this->followUp->expired($anchor ?? $first);
 
