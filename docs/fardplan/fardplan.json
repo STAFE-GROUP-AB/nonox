@@ -281,6 +281,15 @@
       "kommentar": "Vi har inte bestämt om det blir en egen modul eller en koppling till befintliga bokningssystem."
     },
     {
+      "id": "shopify",
+      "rubrik": "Koppling till Shopify",
+      "beskrivning": "Ordrar, returer och utbetalningar från Shopify Payments kommer in i bokföringen som dagliga verifikationsutkast, på samma sätt som försäljningen från kassasystemen Zettle och Onslip. I ett senare steg kopplas artiklar och lager åt båda hållen.",
+      "status": "Önskemål",
+      "omrade": "Connect/API",
+      "uppdaterad": "2026-11-19",
+      "kommentar": "Kopplingen byggs i så fall i kassamodulen, bredvid Zettle och Onslip. Vi har inte bestämt när."
+    },
+    {
       "id": "uppfoljning-per-person-verkstad",
       "rubrik": "Uppföljning per person i verkstaden",
       "beskrivning": "Minuter per produkt och arbetssteg per person mot medianen. Det är övervakning av anställda och byggs inte förrän en jurist har bedömt vad som krävs: berättigat intresse och information till personalen enligt dataskyddsförordningen, och förhandling enligt medbestämmandelagen.",
