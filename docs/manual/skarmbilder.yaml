@@ -304,6 +304,9 @@ crm/signera-kod: { foretag: konsult, rutt: signing.show, modell: checked_signing
 signering/alla-signeringar: { foretag: konsult, rutt: signing.envelopes, text: Hyresavtal kontorslokal }
 signering/signeringen: { foretag: konsult, rutt: signing.envelope, modell: { tabell: signing_envelopes, dar: { document_type: DOCUMENT, confidential: false, status: OUT } }, text: Hyresavtal kontorslokal }
 signering/skicka-dokument: { foretag: konsult, rutt: signing.new, text: Uppladdade dokument som inte är skickade }
+# Retention, legal hold, a signer's register extract and erasure (ADR-046 amendment, gap 11, package S16).
+signering/bevarande: { foretag: konsult, rutt: teams.show, modell: company, fraga: { flik: signering }, del: '[data-testid=signing-retention-settings]', text: Bevarande av signeringar }
+signering/registerutdrag: { foretag: konsult, rutt: teams.show, modell: company, fraga: { flik: signering }, fyll: { '#signing-privacy-email': 'karin.exempelsson@kunden-exempel.test' }, klick: ['[data-testid=signing-privacy] button[type=submit]'], del: '[data-testid=signing-privacy]', text: Hämta registerutdrag }
 crm/offertmallar: { foretag: konsult, rutt: crm.quoteTemplates, klick: ['text=Ändra'] }
 crm/avtal: { foretag: konsult, rutt: crm.agreements, fraga: { visa: alla } }
 crm/avtalets-kort: { foretag: konsult, rutt: crm.agreements.show, modell: { tabell: crm_agreements, dar: { title: 'Supportavtal 2026' } } }

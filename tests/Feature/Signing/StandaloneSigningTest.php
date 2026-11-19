@@ -618,12 +618,13 @@ it('lets only those who may act unlock a locked-out signer, and never the holder
 it('deletes a document that was sent but never signed with its last envelope when the links are pruned, and keeps signed and unsent ones', function () {
     $never = s7Store($this->owner, $this->company, 'Aldrig signerat');
     $signed = s7Store($this->owner, $this->company, 'Signerat');
-    $unsent = s7Store($this->owner, $this->company, 'Osänt');
     s7Send($this->owner, $this->company, $never, [['email' => 'a@example.test', 'step' => 1, 'verification' => 'NONE']]);
     s7Send($this->owner, $this->company, $signed, [['email' => 'b@example.test', 'step' => 1, 'verification' => 'NONE']]);
     s7Sign(s7TokenFor('b@example.test'));
 
     $this->travelTo(CarbonImmutable::parse('2027-09-01 10:00:00'));
+    // A recent upload: one that was never sent goes after 90 days (ADR-046 S16, SigningRetentionTest).
+    $unsent = s7Store($this->owner, $this->company, 'Osänt');
     app(PruneSigningLinks::class)(CarbonImmutable::now());
 
     expect(SigningDocument::query()->whereKey($never->id)->exists())->toBeFalse()

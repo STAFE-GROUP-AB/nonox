@@ -10,6 +10,7 @@ use App\Domain\Closing\DeferredTax\BuildingCarryingAmounts;
 use App\Domain\Closing\DeferredTax\NoBuildingCarryingAmounts;
 use App\Domain\Deadlines\CompanyDeadlines;
 use App\Domain\Overview\TodoProviders;
+use App\Domain\Signing\Retention\ExtendRetentionOnBooking;
 use App\Events\UserAccountDeleting;
 use App\Events\VoucherPosted;
 use App\Http\Middleware\SecurityHeaders;
@@ -142,6 +143,8 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(TeamMemberRemoved::class, [ForgetUserDeadlines::class, 'memberRemoved']);
         // The körjournal: an enskild firma owner's trips are booked once the draft voucher is posted (ADR-072 §7).
         Event::listen(VoucherPosted::class, fn (VoucherPosted $event) => BookOwnerMileage::markBooked($event->companyId, $event->voucherId));
+        // A booking from a signed quote, agreement or ÄTA moves the envelope's retention later (ADR-046 S16).
+        Event::listen(VoucherPosted::class, ExtendRetentionOnBooking::class);
         Event::listen(UserAccountDeleting::class, [ForgetUserDeadlines::class, 'accountDeleting']);
         // Mina datum's calendar link (ADR-051, stage 2): per address and link, like the CRM's; unknown links have a stricter limit of their own.
         // Signing in with Skatteverket (ADR-054): a person starts it by hand.

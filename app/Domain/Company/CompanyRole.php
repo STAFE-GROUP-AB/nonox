@@ -34,6 +34,8 @@ enum CompanyRole: string
         'analysis:view', 'analysis:share',
         'approvals:manage',
         'documents:view', 'documents:manage', 'documents:hold',
+        // The signing engine's retention, legal hold, register extract and erasure (ADR-046 gap 11): core, owner and admin.
+        'signing:settings', 'signing:privacy',
     ];
 
     public function label(): string

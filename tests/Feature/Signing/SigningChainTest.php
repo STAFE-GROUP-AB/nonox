@@ -384,22 +384,27 @@ it('starts the chain itself when an envelope from before it gets its next event'
         ->and(s2Verify($this->company)['ok'])->toBeTrue();
 });
 
-it('keeps a pruned signer\'s links in the audit log, so the chain of the envelope that stays still verifies', function () {
+it('prunes a declined envelope where one signer had signed whole after twelve months, keeping its head in the audit log', function () {
     // The database's own clock decides the prune period (trigger): the decline is made more than a year before it.
+    // Since ADR-046 S16 the whole envelope goes (no agreement came about), with the signed row, instead of only the
+    // declined signer; the chain's head stays in the audit log with the deletion.
     $this->travelTo(CarbonImmutable::now()->subMonths(13));
     app(SendForSigning::class)->envelope($this->owner, $this->company, $this->quote, ['signers' => [['email' => 'a@kontorshuset.test', 'step' => 1], ['email' => 'b@kontorshuset.test', 'step' => 1]]]);
-    s2SignAt((string) s2LinkFor('a@kontorshuset.test'));
+    $signed = s2SignAt((string) s2LinkFor('a@kontorshuset.test'));
     $links = app(SignAtLink::class);
     $declined = $links->decline($links->find((string) s2LinkFor('b@kontorshuset.test')), null);
     $envelope = SigningEnvelope::query()->sole();
+    $head = $envelope->chain_head;
 
     $this->travelBack();
-    $pruned = app(PruneSigningLinks::class)(CarbonImmutable::now());
+    $result = app(PruneSigningLinks::class)->run(CarbonImmutable::now());
 
-    expect($pruned)->toBe(1)
-        ->and(SigningRequest::query()->whereKey($declined->id)->exists())->toBeFalse()
-        ->and(Storage::disk('local')->exists($envelope->document_path))->toBeTrue()
-        ->and(AuditLog::forCompany($this->company)->where('action', SigningChain::PRUNED)->sole()->payload['links'])->toHaveCount(2)
+    expect($result['envelopes'])->toBe(1)
+        ->and(SigningRequest::query()->whereKey([$declined->id, $signed->id])->exists())->toBeFalse()
+        ->and(SigningEnvelope::query()->whereKey($envelope->id)->exists())->toBeFalse()
+        ->and(Storage::disk('local')->exists($envelope->document_path))->toBeFalse()
+        ->and($head)->not->toBeNull()
+        ->and(AuditLog::forCompany($this->company)->where('action', 'signing.envelope_deleted')->sole()->payload['chain_head'])->toBe($head)
         ->and(s2Verify($this->company)['ok'])->toBeTrue();
 });
 

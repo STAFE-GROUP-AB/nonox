@@ -2095,3 +2095,197 @@ before the trust-service item in gap 5 is answered.
   machine that takes the manual's images, and the owner forbids installing it;
   with the test engine the pages would be blank. The manual describes the page
   in text (`docs/manual/sv/crm/signering.md`, "När dokumentet har fält").
+
+### S16 as built (2026-11-19): retention, register extract and erasure
+
+- **Migration** `database/migrations/2027_03_16_100000_add_signing_retention.php`:
+  `teams.signing_retention_years` (7–25, default 10, check);
+  `signing_envelopes.retention_class` (`ACCOUNTING`, `OTHER`, `UNSIGNED`),
+  `retention_until` (a date: the last day kept, Stockholm), `retention_hold`
+  with `retention_hold_reason` (the document archive's keys `SKATTEREVISION`,
+  `TVIST`, `ANNAT`), `retention_hold_at`, `retention_hold_by`. Checks: class and
+  date go together, only on a finished or expired envelope, a signed class only
+  on a completed one, a hold always with a reason. A new trigger
+  `signing_envelopes_protect_retention`: the class only moves up
+  (`UNSIGNED` → `OTHER` → `ACCOUNTING`), the date only later, and an
+  `ACCOUNTING` envelope never below the BFL floor computed from `fiscal_years`
+  (`signing_envelopes_accounting_floor`). The backfill (inside the migration,
+  through `SigningRetention::backfill`, two columns only, `updated_at` kept)
+  dates every envelope that was already finished or expired.
+- **Classes** (`App\Domain\Signing\Retention\SigningRetention`), stamped in the
+  same update that finishes or expires the envelope (`SigningEnvelopes::signed`,
+  `declined`, `revoked`, `SigningReminders` expiry):
+  - `ACCOUNTING` for a completed quote, agreement or ÄTA (any type but the
+    module's `DOCUMENT`): the later of 31 December seven years after the end
+    of the fiscal year it was completed in and completion + the company's
+    years. **Deviation:** gap 11 gives räkenskapsinformation the BFL period
+    alone; a signed quote or agreement is also the evidence of a contract,
+    so it gets at least the period of other signed documents. When the fiscal
+    year is not yet in the books the floor is derived from the company's first
+    month, one year later to be safe (a first or changed year may run 18
+    months, BFL 3 kap. 3 §).
+  - `OTHER` for a completed standalone document: completion + the company's
+    years. A member with `signing:settings` can move it to `ACCOUNTING` on the
+    envelope page ("Markera som räkenskapsinformation"), never back.
+  - `UNSIGNED` for declined, voided and expired envelopes: twelve months after
+    closing, **also when a signer had already signed** (no agreement came
+    about). This resolves the S6 row in `docs/gdpr/lagringstider.md`: such an
+    envelope, with its values, versions and images, goes whole after twelve
+    months.
+  - A changed number of years applies to envelopes finished from then on; a
+    stamped date never moves earlier.
+- **Delete triggers replaced** (functions only, same trigger names):
+  `signing_envelopes_protect_delete` is the gate for the whole envelope: a
+  held envelope never goes; one past its `retention_until` (by the database's
+  own Stockholm date) goes; a completed one, or one with a signed signer,
+  is refused before its date; one with a decline younger than twelve months
+  only as an erasure (`set_config('nonox.signing_erasure', <envelope id>,
+  true)`). `crm_signing_requests_protect_delete` and
+  `signing_copy_recipients_protect_delete` accept the cascade once the
+  envelope row is gone (as the S2 version and S6 field triggers already did),
+  keep their old rules for a direct delete, and a signer row of a held
+  envelope is never deleted on its own. The company cascade is unchanged.
+- **Defect found and fixed:** `change_order_on_site_codes.signing_request_id`
+  had no delete rule, so an ÄTA signer row with an on-site record could never
+  be deleted, not even an unsigned one by the existing prune. Migration
+  `app/Modules/WorkOrders/database/migrations/2027_03_16_100100_delete_on_site_codes_with_their_signer.php`
+  changes only the delete rule to `CASCADE`, in one statement.
+- **Pruning** (`PruneSigningLinks::run`, `signing:prune`): first the backfill
+  for envelopes an older worker finished during a deploy, then every envelope
+  past its date and not held is deleted whole through
+  `App\Domain\Signing\Retention\EnvelopeDeletion` (rows by the cascade, files
+  after the commit when no remaining signing row or stored-file reference
+  names them, page images when no other version has the file, the standalone
+  document with its last envelope; audit `signing.envelope_deleted` with ids,
+  reason, class, date, signer count and chain head). One envelope the
+  database refuses is reported and left for the next night. The unsigned-link
+  prune skips held envelopes. **S7's open item:** an uploaded document never
+  sent is deleted 90 days after the upload (`TODO(legal-verify)`). The command
+  now visits every company with links, envelopes or documents.
+- **Permissions:** `signing:settings` and `signing:privacy` are core
+  (`CompanyRole::PERMISSIONS`): owner and admin. They must still be added to
+  AGENTS.md §4 by a human-approved edit, with S7's three.
+- **Inställningar → Signering** is a tab on the company settings page
+  (`teams.show?flik=signering`): `App\Livewire\Company\SigningRetentionSettings`
+  (the years, the count and first prune date per class, the held envelopes)
+  and `App\Livewire\Company\SigningPrivacy` (search, extract, erasure). The
+  envelope page (module) shows the class and date and, with
+  `signing:settings`, sets and lifts the hold (`ManageSigningRetention`).
+  **Deviation:** the hold has a reason key, as the document archive's hold.
+- **Register extract** (`signing:privacy`): `SignerRecords::find` matches the
+  exact address (case-insensitive, trimmed) as signer or copy recipient in the
+  company. `DataSubjectExport::signer`/`signerFiles` and the POST route
+  `privacy.export.signer` (`/signering/registerutdrag`, the address posted,
+  never in a URL; another company's id answers 404) give a ZIP
+  (`SignerExtractZip`) with `registerutdrag.json` (per envelope the signer's
+  own evidence, field values, events and the copy times) and the document,
+  the version with their values, their Signeringsbevis and a drawn signature
+  or initials. Other signers' data is left out (art. 15.4). A fixed number of
+  queries (test with 1 and 10 envelopes).
+- **Erasure** (`App\Actions\Signing\EraseSigner`): per envelope, under the
+  document's lock first: no one signed → only the person goes (see the
+  review round below; the whole envelope when the person is every signer or
+  its date has passed); signed within retention → refused with art. 17.3 b
+  (`ACCOUNTING`) or 17.3 e (otherwise, and for an envelope out with a signer
+  who signed); held → refused (17.3 b for a tax audit, else 17.3 e). Every
+  refusal is `signing.erasure_refused` (envelope id, reason, article, class,
+  date); the summary is `privacy.erased` with a keyed hash of the address
+  (HMAC with the app key, the inbox extract's pattern), never the address.
+- **Changed behaviour, S2 test updated:** a declined envelope where one signer
+  had signed used to lose only the declined signer after twelve months (its
+  links kept in `signing.events_pruned`); it now goes whole on the same day,
+  and `signing.envelope_deleted` keeps the chain head. The per-signer prune
+  (`keepChainLinks`) remains for an envelope out whose expiry
+  `signing:remind` has not yet stamped. S7's test of a never-sent upload now
+  uploads it shortly before the prune.
+- **Not built here:** personal numbers from a signing provider (gap 12) do not
+  exist yet; S17/S18 must store them with the `encrypted` cast, mask them and
+  let `EnvelopeDeletion` take them with the envelope.
+- **Legal texts:** `docs/gdpr/registerforteckning.md` and
+  `docs/gdpr/lagringstider.md` are updated. The wording for the DPA and the
+  privacy policy is collected in `docs/juridik/utkast-1.9-signering.md` for
+  legal version 1.9; `LegalPageController` is not bumped here.
+- `TODO(legal-verify)`: the 10-year default; whether every signed CRM
+  agreement is räkenskapsinformation; twelve months for a partly signed
+  envelope; 90 days for never-sent uploads; the BankID provider's role.
+- **Systemdokumentation:** version 0.154 (section 5, "Bevarande och gallring
+  av signeringar"): the classes, how the floor is computed and moved, the
+  triggers that guard deletion, the legal hold and what
+  `signing.envelope_deleted` records. S16 deletes documents the system itself
+  classes as räkenskapsinformation, which is archive behaviour under BFNAR
+  2013:2 (AGENTS.md §10), as the document archive's retention already is.
+
+#### S16 review round (2026-11-19)
+
+- **P1, the BFL floor follows the business event.** The floor was taken from
+  the fiscal year the envelope was completed in; BFL 5 kap. 7 § and 7 kap. 2 §
+  tie it to the fiscal year of the business event. `SigningRetention::
+  requiredUntil` now also takes 31 December seven years after the fiscal year
+  of the latest booking from the document: an invoice of the quote or its
+  order (`sales_documents.invoice_id`, `from_quote_id`, the signer row's
+  `invoice_id`), the agreement's recurring invoice, the ÄTA's work order
+  invoice (`work_order_invoices.change_order_ids`), counting the invoice date,
+  its voucher's date and payment days (`invoice_payments.paid_on`, to be safe
+  under kontantmetoden, `TODO(legal-verify)`). `ExtendRetentionOnBooking`
+  (listener on `VoucherPosted`) moves `retention_until` later when such a
+  voucher is posted (audit `signing.retention_extended`), and the prune runs
+  the same check before deleting. Test: 7-year setting, quote signed
+  2026-12-20, invoiced 2027-01-15 → kept until 2034-12-31.
+- **P2-1, running agreements.** An agreement envelope is never pruned while
+  its `crm_agreements` row runs (not terminated, and no end date, an end date
+  ahead, or auto-renewal); once ended, the company's years count from the end
+  date or termination. The envelope page says so; an erasure is refused with
+  `RUNNING` (art. 17.3 e).
+- **P2-2, legal hold in core.** Inställningar → Signering searches signings by
+  title (not confidential ones, which are held from their own page), sets a
+  hold with a reason and lifts any hold, gated only by `signing:settings`, so
+  it works for quotes, agreements and ÄTA with the module off and for a hold
+  set while the module was on. `signing:settings` stays owner and admin; giving
+  the hold to the accountant (as `documents:hold`) would need its own
+  permission and is left to the owner.
+- **P2-3, one person's erasure.** In an envelope nobody signed only the
+  person's own signer and copy-recipient rows go
+  (`EnvelopeDeletion::deleteSigner`, its chain links first to
+  `signing.events_pruned`); an envelope still out is first withdrawn as Dra
+  tillbaka does (reason `ERASURE`, anchored on another person's open row so
+  the closing event stays with a kept row), so the other signers' links
+  answer that it is withdrawn and the sender sees it. The others' rows stay
+  and are pruned with the envelope. The whole envelope goes only when the
+  person is every signer or its date has passed. `signing.subject_erased` is
+  written on the envelope and on the document it was sent for. A recent
+  decline of the person's own row is deleted with the transaction-local
+  setting `nonox.signing_erasure = 'request:<id>'`.
+- **P3.** A new envelope cannot be inserted with a retention date or hold
+  (trigger), and the delete gate checks the BFL floor itself
+  (`2027_03_16_100200_harden_signing_retention_gate.php`); file deletion takes
+  `StoredFiles::lock` per path; a completed envelope without a date gets its
+  own refusal text; the migration's call to `SigningRetention::backfill` is
+  kept on purpose and commented; the extract route is
+  `/signering/registerutdrag` (a POST path that starts with "register" reads
+  as self-registration in `PublicSignupTest`); the period field is a string
+  validated as 7–25, never a type error.
+- **Second round (re-check).** The bookings now also follow a quote
+  invoiced through a work order made from it or from one of its orders
+  (`work_orders.sales_document_id` → `work_order_invoices`) and the signer
+  rows' `order_id`; credit notes of the found invoices (`credits_invoice_id`,
+  their date and voucher) and write-offs (`write_off_voucher_id`,
+  `written_off_on`) count as later business events (`TODO(legal-verify)`, the
+  safe default, as for payments under kontantmetoden). The listener maps a
+  voucher on any of these back to the envelope. The rule is computed for a
+  whole batch in a fixed number of queries (`SigningRetention::
+  requiredForMany`, `linkedInvoices`, `latestBookings`), and the prune uses
+  it (query-count test with one and ten running agreements). The database
+  gate knows only the completion-year floor; migration
+  `2027_03_16_100300_signed_envelopes_never_go_with_their_document.php`
+  makes a signed envelope refuse the cascade from deleting its quote,
+  agreement or ÄTA, so only the prune and the erasure, which check bookings
+  and the agreement first, delete one (the signed signer rows already refused
+  that cascade). A confidential signing can be held from core settings by
+  its sender (or `signing:manage`), also with the module off; to others it is
+  not searched, its title is hidden in the hold list and its id answers 404.
+- **Deploy note (P3-5):** the backfill dates old declined, voided and expired
+  envelopes in the past, so the first `signing:prune` deletes them whole,
+  partly signed ones included. Before the first nightly run, count on
+  production: `select retention_class, count(*) from signing_envelopes where
+  retention_until < (now() at time zone 'Europe/Stockholm')::date and not
+  retention_hold group by 1;` and confirm the numbers with the owner.

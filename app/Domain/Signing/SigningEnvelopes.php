@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Signing;
 
 use App\Domain\Signing\Chain\SigningChain;
+use App\Domain\Signing\Retention\SigningRetention;
 use App\Models\SigningDocumentVersion;
 use App\Models\SigningEnvelope;
 use App\Models\SigningLinkToken;
@@ -125,7 +126,7 @@ final class SigningEnvelopes
         $pending = $signers->filter(fn (SigningRequest $row): bool => $row->status === SigningStatus::Pending);
 
         if ($pending->isEmpty()) {
-            $envelope->forceFill(['status' => EnvelopeStatus::Completed, 'completed_at' => now()])->save();
+            $envelope->forceFill(['status' => EnvelopeStatus::Completed, 'completed_at' => now(), ...SigningRetention::stamp($envelope, completed: true)])->save();
 
             if ($several) {
                 Audit::record('crm.signing_envelope_completed', $envelope, ['envelope_id' => $envelope->id, 'signers' => $signers->count()], $envelope->company_id);
@@ -169,7 +170,7 @@ final class SigningEnvelopes
             return [];
         }
 
-        $envelope->forceFill(['status' => EnvelopeStatus::Declined, 'declined_at' => now()])->save();
+        $envelope->forceFill(['status' => EnvelopeStatus::Declined, 'declined_at' => now(), ...SigningRetention::stamp($envelope, completed: false)])->save();
         $signers = $this->signers($envelope);
 
         if ($signers->count() < 2) {
@@ -209,7 +210,7 @@ final class SigningEnvelopes
             return [];
         }
 
-        $envelope->forceFill(['status' => EnvelopeStatus::Voided, 'voided_at' => now(), 'voided_by' => $userId])->save();
+        $envelope->forceFill(['status' => EnvelopeStatus::Voided, 'voided_at' => now(), 'voided_by' => $userId, ...SigningRetention::stamp($envelope, completed: false)])->save();
         $signers = $this->signers($envelope);
 
         if ($signers->count() < 2) {

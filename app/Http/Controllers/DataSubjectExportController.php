@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\Signing\EraseSigner;
 use App\Domain\Documents\DocumentExtract;
 use App\Domain\Documents\DocumentLinkType;
+use App\Domain\Signing\Retention\SignerRecords;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\IncomeTaxPartner;
@@ -19,11 +21,14 @@ use App\Modules\StaffLedger\Models\Person;
 use App\Support\Audit\Audit;
 use App\Support\Csv;
 use App\Support\Privacy\DataSubjectExport;
+use App\Support\Privacy\SignerExtractZip;
 use App\Support\Tenancy\ArchivedCompany;
+use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -161,6 +166,48 @@ class DataSubjectExportController
         }
 
         return $this->download(DataSubjectExport::inboxSender($email), 'registerutdrag-inkorg');
+    }
+
+    /**
+     * Everything a company's signing holds about one exact e-mail address
+     * (ADR-046 amendment, gap 11): a ZIP with the extract as JSON and the
+     * files the person signed (the document, the version with their values,
+     * the Signeringsbevis and a drawn signature). For the company posted in
+     * foretag (the settings page's company), else the current one; a company
+     * the user is not in answers 404. Needs signing:privacy; also in an
+     * archived company, for as long as the data is kept. The address is
+     * posted, never put in a URL, and the audit entry holds a keyed hash of it.
+     */
+    public function signer(Request $request): BinaryFileResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        /** @var array{e_post: string, foretag?: ?int} $input */
+        $input = $request->validate([
+            'e_post' => ['required', 'email', 'max:255'],
+            'foretag' => ['nullable', 'integer'],
+        ]);
+        $company = isset($input['foretag']) ? Company::query()->find($input['foretag']) : $user->currentCompany();
+
+        abort_unless($company instanceof Company && $user->belongsToTeam($company), 404);
+        abort_unless(ArchivedCompany::reading(fn (): bool => $user->hasTeamPermission($company, 'signing:privacy')), 403);
+
+        $email = SignerRecords::normalise($input['e_post']);
+        [$data, $files] = CurrentCompany::run($company, fn (): array => [DataSubjectExport::signer($email), DataSubjectExport::signerFiles($email)]);
+
+        Audit::record('privacy.exported', null, [
+            'subject' => 'signer',
+            'subject_hash' => EraseSigner::hash($email),
+            'envelopes' => count($data['signeringar']),
+            'files' => count($files),
+        ], $company, $user);
+
+        return response()->download(SignerExtractZip::build($data, $files), 'registerutdrag-signering.zip', [
+            'Content-Type' => 'application/zip',
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ])->deleteFileAfterSend();
     }
 
     /**
