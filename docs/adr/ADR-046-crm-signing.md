@@ -2291,7 +2291,7 @@ before the trust-service item in gap 5 is answered.
 - `TODO(legal-verify)`: the 10-year default; whether every signed CRM
   agreement is räkenskapsinformation; twelve months for a partly signed
   envelope; 90 days for never-sent uploads; the BankID provider's role.
-- **Systemdokumentation:** version 0.154 (section 5, "Bevarande och gallring
+- **Systemdokumentation:** version 0.155 (section 5, "Bevarande och gallring
   av signeringar"): the classes, how the floor is computed and moved, the
   triggers that guard deletion, the legal hold and what
   `signing.envelope_deleted` records. S16 deletes documents the system itself
