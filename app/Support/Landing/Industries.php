@@ -105,7 +105,7 @@ final class Industries
      * example company, all computed from the data files.
      *
      * @param  Industry  $industry
-     * @return array{employees: int, label: string, text: string, nonox: ?int, quotes: list<array{slug: string, name: string, plan: string, per_year: ?int, formula: string, price_note: string, source: ?string, verified: bool, comparable: bool}>, saving_from: ?int, saving_to: ?int, fetched_at: string, note: string}
+     * @return array{employees: int, label: string, text: string, nonox: ?int, quotes: list<array{slug: string, name: string, plan: string, per_year: ?int, formula: string, price_note: string, source: ?string, verified: bool, comparable: bool, scenario_price: bool}>, saving_from: ?int, saving_to: ?int, fetched_at: string, note: string}
      */
     public static function pricing(array $industry): array
     {

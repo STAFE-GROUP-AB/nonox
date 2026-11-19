@@ -14,10 +14,13 @@ namespace App\Support\Landing;
  * a fee per employee, from the same source and the same fetch, so the
  * industry pages (docs/branscher) can show the price for their own number
  * of employees without a single figure that is not in the data file.
+ * A program whose price_model sets scenario_price to false cannot do the
+ * scenario at all (for example it has no payroll): its list price stays in
+ * the data file, but no scenario sum is computed or shown for it.
  *
- * @phpstan-type PriceModel array{base_per_month: int, per_employee_per_month: ?int, included_employees: int, comparable?: bool}
+ * @phpstan-type PriceModel array{base_per_month: int, per_employee_per_month: ?int, included_employees: int, comparable?: bool, scenario_price?: bool}
  * @phpstan-type Program array{slug: string, name: string, plan: string, per_year: int, per_month?: int, price_note: string, source: ?string, fetched_at?: string, verified: bool, price_model?: PriceModel}
- * @phpstan-type Quote array{slug: string, name: string, plan: string, per_year: ?int, formula: string, price_note: string, source: ?string, verified: bool, comparable: bool}
+ * @phpstan-type Quote array{slug: string, name: string, plan: string, per_year: ?int, formula: string, price_note: string, source: ?string, verified: bool, comparable: bool, scenario_price: bool}
  */
 final class Comparison
 {
@@ -75,6 +78,10 @@ final class Comparison
     {
         $model = $program['price_model'] ?? null;
 
+        if (! self::hasScenarioPrice($program)) {
+            return null;
+        }
+
         if ($model === null) {
             return $employees === self::data()['scenario_employees'] ? $program['per_year'] : null;
         }
@@ -84,6 +91,17 @@ final class Comparison
         }
 
         return 12 * ($model['base_per_month'] + self::paidEmployees($model, $employees) * $model['per_employee_per_month']);
+    }
+
+    /**
+     * False when the program cannot do the scenario (no payroll, say), so
+     * no scenario price is shown for it, only its price note.
+     *
+     * @param  Program  $program
+     */
+    public static function hasScenarioPrice(array $program): bool
+    {
+        return ($program['price_model']['scenario_price'] ?? true) !== false;
     }
 
     /**
@@ -111,6 +129,7 @@ final class Comparison
                 'source' => $program['source'],
                 'verified' => $program['verified'],
                 'comparable' => $program['price_model']['comparable'] ?? true,
+                'scenario_price' => self::hasScenarioPrice($program),
             ];
         }
 
@@ -121,6 +140,10 @@ final class Comparison
     private static function formula(array $program, int $employees): string
     {
         $model = $program['price_model'] ?? null;
+
+        if (! self::hasScenarioPrice($program)) {
+            return 'Ingen scenariosumma: scenariot kräver tjänster som paketet inte har. Se prisnotisen.';
+        }
 
         if ($model === null || $model['per_employee_per_month'] === null) {
             return $employees === self::data()['scenario_employees']

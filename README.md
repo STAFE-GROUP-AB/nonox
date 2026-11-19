@@ -63,6 +63,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - **Månadsstängning:** en rad per klient med bankavstämning, leverantörs- och kundfakturor, moms, lön och AGI, periodiseringar och rapport, som fylls i från bokföringen där det går.
 - **Uppgifter** (`/uppgifter`): delegera mellan byrån och kundens användare åt båda hållen, med kommentarer, checklistor, återkommande uppgifter (till exempel moms varje månad), notiser och ett valfritt dagligt mejl.
 - **Koncernöversikt** (`/koncern`, ADR-060): för ägare av holding- och dotterbolag. Egna koncerner av de företag där du får se rapporter, med resultat och balans per företag bredvid varandra och en summakolumn, en ägarandel som bara visas, och förslag på koncerninterna elimineringar av markerade konton. Ett internt underlag och ingen koncernredovisning enligt ÅRL: ingenting bokförs, och ett företag försvinner ur vyn direkt när du tappar behörigheten till det.
+- Koncernsammanställning: ett internt underlag med elimineringar och koncernrapporter som CSV och PDF, från en sparad körning. Det är ingen koncernredovisning enligt ÅRL, och ingenting bokförs.
 
 ### Försäljning
 - Fakturor med OCR-nummer, PDF och utskick via e-post, bokförda automatiskt enligt fakturametoden eller kontantmetoden.
@@ -150,6 +151,9 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Lagervärde vid bokslut enligt FIFO eller vägt genomsnittspris med lägsta värdets princip, och lagerförändringen bokförd med ett klick per lagerslag: råvaror mot 1410/4910 och handelsvaror mot 1460/4960. Ett K2-företag kan välja 97-procentsregeln. Rollen Lagerpersonal ser saldon men inga priser.
 - Bilder på artiklarna, tagna direkt med mobilens kamera, med huvudbild i listorna, på plocklistan och i API:t. Med NONOX AI föreslås benämning, beskrivning, varumärke, egenskaper och EAN-kod från bilderna, och du bockar i vad som ska användas. Snabbregistrera en ny vara med kameran.
 - Etiketter med pris, EAN-streckkod eller QR-kod för artiklar och platskod för hyllor och fack, på A4-etikettark eller i etikettskrivare. Etikettstudion visar etiketten i skala medan du ändrar mallen och varnar för det som inte får plats. Utskrift från artikellistan, en inleverans eller ett helt hyllträd, och filtret Ej utskrivna.
+- Batch och serienummer: följ en artikel per batch med bäst före-datum eller per serienummer, plocka det som går ut först och spåra en batch från leverantören till de kunder som har fått den.
+- Flyttorder mellan lager: varorna är på väg tills de tas emot, kan tas emot i delar och räknas med i lagervärdet hela tiden.
+- Behovsplanering: NONOX räknar vecka för vecka ut vad som behöver köpas in eller tillverkas, utifrån prognos, kundordrar, stycklistor, lager och det som redan är beställt, och gör förslagen till utkast. Den beställer, släpper och bokför ingenting.
 - Skanna med mobilen: ta emot, plocka, flytta, inventera och slå upp varor med telefonens kamera, en Bluetooth-skanner eller en handskanner. Fel vara vid plock ger rött blink, ljud och vibration. Fungerar utan nät: allt sparas i telefonen och skickas en gång när det finns nät.
 - Kassakopplingar (modul, ADR-042) för Zettle och Onslip 360: varje köp sparas en gång och dras från lagret, rader utan artikel väntar på att kopplas, lagerändringar skickas till Zettle som ändringar, artiklarna läggs upp i kassan och varje dag blir ett verifikationsutkast i serie K. Kräver att den som driftar registrerar en egen app hos kassaleverantören (se `.env.example`); öppnas på webbplatsen när det är gjort.
 
@@ -200,6 +204,9 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Mejl loggas på rätt kund: skicka en hemlig kopia eller vidarebefordra till företagets CRM-adress (inkorgens adress med +crm), så hamnar mejlet på kunden och personen med samma e-postadress. Hela texten sparas krypterad; ett kort utdrag visas på tidslinjen. Det som inte matchar väntar under Ej kopplade. Mejlmallar med fält för namn och företag skickas direkt från kundkortet och loggas.
 - Utskick till segment: sparade filter efter status, taggar, ort, roll och rättslig grund som räknas fram när utskicket skickas (sidan Segment förklarar det med exempel), text i Markdown med företagets färg, postadress och avregistrering med ett klick i varje mejl. NONOX visar hur många som får utskicket och varför de andra inte får det (Kontakta inte, avregistrerad, privatperson utan samtycke till e-postreklam). Klick räknas per länk; NONOX vet inte vem som klickade, och öppningar mäts inte. Utskicken pausas automatiskt vid för många klagomål eller studsar.
 - Webbformulär som skapar leads: ett formulär på er webbplats, utan kakor och utan skript från andra, som skapar ett prospekt, en kontaktperson och en uppgift att följa upp, med en frivillig ruta för nyhetsbrev som ger ett daterat samtycke.
+
+### Signering (modul)
+- Signering av egna PDF-dokument: flera undertecknare i vald ordning, kontroll av undertecknaren, kopiemottagare, påminnelser och en lista över alla signeringar. En enkel elektronisk underskrift, inte BankID.
 
 ### Inkorg (modul)
 - En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem. Avsändaren kontrolleras (SPF, DKIM, DMARC), farliga bilagor spärras och alla bilagor virussöks innan något läses. Skräppost från okända avsändare sparas aldrig.

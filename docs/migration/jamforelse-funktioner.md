@@ -57,3 +57,62 @@ Accounted lades till 2026-11-06. Värdena gäller planen Auto och kommer från l
 | Lager, streckkodsskanning, CRM, schema, personalliggare, mobilapp, flera bolag under en inloggning | Anges ej |
 
 Accounted skriver om deklarationerna i sina vanliga frågor: "Deklarationen byggs ur bokföringen och signeras med BankID i appen." (accounted.se/faq). NONOX lämnar i dag momsdeklarationen som fil; att lämna den direkt till Skatteverket är byggt men provas bara av pilotanvändare i Skatteverkets testtjänst. Därför finns ingen rad som påstår att NONOX gör samma sak.
+
+## Vitec Pyramid (tillagd 2026-11-19)
+
+Vitec Pyramid lades till 2026-11-19. Vitec har två webbplatser: vitec-pyramid.com (Business Studio, som är SaaS, och Pyramid Hybrid Cloud, som installeras på kundens egen hårdvara; båda har samma modulkatalog) och novaoffice.se (Pyramid Nova Office, småföretagsprodukten). Bara Nova Office har ett publicerat pris, så det är paketet som jämförs i `jamforelse.json`. Moduler som Vitec bara säljer i Business Studio eller Hybrid Cloud, och som inte står på Novas egna sidor, visas därför som "Anges ej" för jämförelsen. Förkortningar: **BS** = `https://www.vitec-pyramid.com/vara-paket-och-moduler-start/vara-moduler-business-studio`, med undersidorna `/baspaket/<modul>/`, `/foretagspaket/<paket>/` och `/tillvalsmoduler/<modul>/`; **NO** = `https://novaoffice.se/om-pyramid-nova-office/` (även `/basfunktioner/` och `/tillvalsfunktioner/`); **ORDER** = `https://portal.novaoffice.se/Order`. Alla sidor lästes 2026-11-19.
+
+### Pris
+
+| Paket | Källa | Värde |
+|---|---|---|
+| Nova Office | ORDER och novaoffice.se | "399 kr/användare", "Pris exkl. moms"; "399 kr/månad", "Ingen bindningstid", "Fri support". Fler än fem användare: "Begär offert av våra samarbetspartners" |
+| Business Studio | vitec-pyramid.com/business-studio/ och BS | Inget pris: bara "Bli kontaktad", "Skicka in en förfrågan" och "betalar bara för det du behöver" |
+| Pyramid Hybrid Cloud | vitec-pyramid.com/pyramid-hybrid-cloud/ | Inget pris: bara "Bli kontaktad" |
+
+Inget uppskattat pris för Business Studio publiceras någonstans (beslut av ägaren). Priset jämförs inte med scenariot (`scenario_price: false` i `jamforelse.json`), eftersom scenariot kräver lön och Pyramid inte har någon lönemodul, och eftersom Pyramid prissätter per användare och inte per anställd.
+
+### Raderna i tabellen (paketet Nova Office)
+
+| Rad | Värde | Källa och citat |
+|---|---|---|
+| Bokföring | Ingår | BS/baspaket/redovisning; NO/basfunktioner "Redovisning", "Verifikationer", "Momshantering" |
+| Fakturering | Ingår | BS/baspaket/fakturering; NO/basfunktioner "Fakturering", "Offerter" finns i CRM/Säljstöd (BS/baspaket/crm-saljstod, fliken "Offerter") |
+| Lön för fem anställda | Finns inte | Ingen lönemodul på någon av Vitecs sidor (baspaket, företagspaket, tillval, Novas bas och tillval). Vitecs egen text pekar på externa löneprogram: "Pyramid kan dessutom läsa in verifikat från de vanligaste löneprogrammen." (BS/baspaket/redovisning); "Löne- och faktureringsunderlag tas fram via Pyramid Tidrapportering" (BS/tillvalsmoduler/tidrapportering); "Tidrapportering – för att koppla samman mobil arbetsorder med löneprogram." (BS/tillvalsmoduler/mobil-arbetsorder) |
+| Leverantörsfakturor med attest | Ingår | NO/basfunktioner "Attesthantering", "Fakturaattest"; BS/tillvalsmoduler/e-faktura-leverantor (ingår i baspaketet) |
+| ROT- och RUT-avdrag | Ingår | BS/baspaket/fakturering "Rot/rut/grön teknik"; NO/basfunktioner "Rot/rut" |
+| Lager med lagerställen | Tillval | NO/tillvalsfunktioner "Flerlager" +99 kr och "Lagerplats/Batch" +99 kr (ORDER) |
+| Inköpsorder och inköpsförslag | Tillval | NO/tillvalsfunktioner "Handelspaketet" +99 kr per användare (ORDER); BS/foretagspaket/handelspaket-business-studio nämner "inköpsanmodan" och "behovsanalys" |
+| Bankkoppling | Ingår | NO/basfunktioner "Utbetalning - Bankkoppling". Gäller bara leverantörsbetalningar: BS/tillvalsmoduler/bankkoppling beskriver den som "leverantörsbetalningar via en direktintegration till banken" och "Automatisk och effektiv hantering av leverantörsbetalningar". Ingen sida nämner inläsning av kontotransaktioner, så raden betyder inte samma sak som hos de andra programmen |
+| Mobilapp | Ingår | NO/basfunktioner "App för telefon"; BS/tillvalsmoduler/phone-edition (appar för iOS och Android, "Pyramid Phone") |
+| Alla moduler ingår i priset | Finns inte | BS: "betalar bara för det du behöver"; Nova Office har betalda tillval (ORDER) |
+| Öppen källkod | Finns inte | novaoffice.se: "Copyright © 2026 Vitec Pyramid ERP AB. Alla rättigheter reserverade." |
+| Arbetsorder med tid, material och ÄTA | Anges ej | Nova har "Arbetsorder" +79 kr per användare, men ÄTA nämns bara för Business Studios Entreprenadpaket (BS/foretagspaket/entreprenadpaket-business-studio), inte för Nova |
+| Tillverkning, Öppet API, Tolkning av kvitton och fakturor | Anges ej | Finns som tillval i Business Studio (foretagspaket/tillverkningspaket-business-studio, tillvalsmoduler/api-connector, tillvalsmoduler/automatiserad-fakturahantering "AI-tolkning av PDF-fakturor"), men inte på Novas sidor |
+| CRM med säljtratt och nyckeltal ur bokföringen | Anges ej | BS/baspaket/crm-saljstod ("Kundvård, säljstöd och verksamhetsstöd") nämner offerter, aktiviteter och kundcentral med "offerter, order/projekt, reskontra, köphistorik", men ingen säljtratt och inga nyckeltal ur bokföringen |
+| Inkorg för leverantörsfakturor och kvitton | Anges ej | BS/tillvalsmoduler/e-faktura-leverantor: "Fakturor kan skannas till Pyramids inkorg". Kvitton och inläsning via e-post anges inte |
+| Kör på egen server | Anges ej | Business Studio är SaaS och Nova är molnbaserat ("Molnbaserat" i NO/basfunktioner), men Pyramid Hybrid Cloud installeras på kundens egen hårdvara ("Med systemet installerat på egen hårdvara", vitec-pyramid.com/pyramid-hybrid-cloud/). Det är licensierad programvara, inte fri egen drift, och gäller inte det jämförda paketet |
+| Alla övriga rader (Personalliggare, bokslut och årsredovisning, SRU-deklarationerna, streckkodsskanning utan nät, recept och svinn, körjournal, K3, MRR/ARR, schema och personalplanering, personalliggare i surfplatteapp, aktiebok, flera bolag under en inloggning) | Anges ej | Står inte på Vitecs sidor. Bokslut: bara "bokslutssimulering" med preliminära verifikationer nämns (BS/baspaket/redovisning). Flera bolag: BS/tillvalsmoduler/koncernredovisning ("obegränsade antalet företag") nämner inte en gemensam inloggning |
+
+### Nya rader
+
+| Rad | Pyramid | Källa |
+|---|---|---|
+| Batch- och serienummerspårning | Tillval | NO/tillvalsfunktioner "Lagerplats/Batch" +99 kr och "Serienummer/Serviceorder" +199 kr; BS/tillvalsmoduler/lagerplatser-batch, serienummer-serviceorder |
+| Flytt mellan lager | Tillval | NO/tillvalsfunktioner "Flerlager" +99 kr; BS/tillvalsmoduler/flerlager ("lageromföringar") |
+| Behovsplanering (MRP) vecka för vecka | Anges ej | Materialplanering och MPS finns i Business Studios Tillverkningspaket (BS/foretagspaket/tillverkningspaket-business-studio, tillvalsmoduler/mps), men Nova erbjuder inget tillverkningspaket |
+| Koncernsammanställning (internt underlag) | Anges ej | BS/tillvalsmoduler/koncernredovisning finns i Business Studio men inte på Novas sidor. Kleer: tillägg, se avsnittet om flera bolag ovan (kleer.se/ekonomisystem/koncerngemensamma-projekt) |
+| Anläggningsregister med avskrivningar | Tillval | NO/tillvalsfunktioner "Inventarie" +99 kr; BS/tillvalsmoduler/inventarie |
+| Projekt med resultat och uppföljning | Tillval | NO/tillvalsfunktioner "Projektpaketet" +99 kr per användare; BS/foretagspaket/projektpaket-business-studio |
+| Tidrapportering | Tillval | NO/tillvalsfunktioner "Tidrapportering" +79 kr, plus 19 kr per extra användare; BS/tillvalsmoduler/tidrapportering |
+| Fakturering i utländsk valuta | Tillval | NO/tillvalsfunktioner "Valutaorder" +79 kr; BS/tillvalsmoduler/valutaorder (även Intrastat vid export, som NONOX inte har) |
+| Elektronisk signering (enkel elektronisk underskrift) | Anges ej | BS/tillvalsmoduler/e-signering-scrive (tjänsten levereras av Scrive) finns i Business Studio men inte på Novas sidor. NONOX signering är en enkel elektronisk underskrift, inte BankID |
+| Variantartiklar | Tillval (NONOX: Finns inte) | NO/tillvalsfunktioner "Variantartiklar" +99 kr; BS/tillvalsmoduler/variantartiklar |
+| Prislistor per kund | Ingår (NONOX: Finns inte) | NO/basfunktioner "Prislistor", "Kundavtal", "Prishantering - flera nivåer" |
+| Kassasystem | Anges ej (NONOX: Finns inte) | BS/tillvalsmoduler/kassa-och-betalkort och BS/foretagspaket/butikspaket-business-studio finns i Business Studio men inte på Novas sidor. NONOX har ingen egen kassa; kopplingarna till Zettle och Onslip är byggda men inte i drift |
+| EDI-order | Anges ej (NONOX: Finns inte) | BS/tillvalsmoduler/edi-order, inte på Novas sidor |
+| E-handel | Anges ej (NONOX: Finns inte) | BS/tillvalsmoduler/e-handel, inte på Novas sidor. NONOX har bara API:t |
+
+För de andra leverantörerna är alla nya rader "Anges ej", utom Kleers koncernsammanställning (tillägg, redan belagt ovan). Kleer är det enda andra programmet som har fått ett värde, eftersom inga av de andra leverantörernas sidor har lästs för de nya raderna.
+
+Bankkopplingens omfattning: för Pyramid gäller bara utbetalningar till leverantörer. Vitec skriver inte att kontotransaktioner läses in.

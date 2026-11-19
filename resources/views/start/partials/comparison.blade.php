@@ -53,7 +53,11 @@
         <th scope="row" class="cmp-feature-col">Pris per år, fem anställda</th>
         @foreach($programs as $program)
           <td @class(['cmp-nonox' => $program['slug'] === 'nonox'])>
-            <span class="cmp-price">{{ $kr($program['per_year']) }}</span>
+            @if(App\Support\Landing\Comparison::hasScenarioPrice($program))
+              <span class="cmp-price">{{ $kr($program['per_year']) }}</span>
+            @else
+              <span class="cmp-unknown">Går inte att jämföra</span>
+            @endif
             @unless($program['verified'])<span class="cmp-note">ej verifierat</span>@endunless
           </td>
         @endforeach

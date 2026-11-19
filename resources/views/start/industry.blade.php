@@ -185,7 +185,7 @@
             <tr>
               <th scope="row">{{ $quote['name'] }}@unless($quote['verified'])<span class="in-flag">ej verifierat</span>@endunless @unless($quote['comparable'])<span class="in-flag">inte direkt jämförbart</span>@endunless<small>{{ $quote['plan'] }}</small></th>
               <td>{{ $quote['formula'] }}</td>
-              <td class="num" data-price="{{ $quote['slug'] }}">{{ $quote['per_year'] !== null ? $kr($quote['per_year']) : 'Anges ej' }}</td>
+              <td class="num" data-price="{{ $quote['slug'] }}">{{ $quote['per_year'] !== null ? $kr($quote['per_year']) : ($quote['scenario_price'] ? 'Anges ej' : 'Går inte att jämföra') }}</td>
             </tr>
           @endforeach
         </tbody>

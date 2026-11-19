@@ -142,7 +142,7 @@ it('shows prices computed from the comparison data, with the fetch time and the 
         $expected = $model['per_employee_per_month'] === null
             ? ($employees === $data['scenario_employees'] ? 12 * $model['base_per_month'] : null)
             : 12 * ($model['base_per_month'] + max(0, $employees - $model['included_employees']) * $model['per_employee_per_month']);
-        $shown = $expected === null ? 'Anges ej' : LandingPage::kronor($expected);
+        $shown = ($model['scenario_price'] ?? true) === false ? 'Går inte att jämföra' : ($expected === null ? 'Anges ej' : LandingPage::kronor($expected));
 
         expect($html)->toMatch('#data-price="'.$program['slug'].'">'.preg_quote($shown, '#').'<#u');
 
@@ -166,7 +166,7 @@ it('splits every list price into parts that add up to the fetched price', functi
         $perMonth = $model['base_per_month'] + max(0, $data['scenario_employees'] - $model['included_employees']) * ($model['per_employee_per_month'] ?? 0);
 
         expect(12 * $perMonth)->toBe($program['per_year'], "{$program['slug']}: the price model does not add up to per_year")
-            ->and(Comparison::perYearFor($program, $data['scenario_employees']))->toBe($program['per_year']);
+            ->and(Comparison::perYearFor($program, $data['scenario_employees']))->toBe(($model['scenario_price'] ?? true) === false ? null : $program['per_year']);
     }
 });
 
@@ -176,6 +176,18 @@ it('does not compute a price that the source does not give', function () {
     expect($visma['price_model']['per_employee_per_month'])->toBeNull()
         ->and(Comparison::perYearFor($visma, 5))->toBe($visma['per_year'])
         ->and(Comparison::perYearFor($visma, 3))->toBeNull();
+});
+
+it('shows no scenario price for a program that cannot do the scenario, only its note', function () {
+    $pyramid = Comparison::program('pyramid');
+
+    expect(Comparison::hasScenarioPrice($pyramid))->toBeFalse()
+        ->and(Comparison::perYearFor($pyramid, 5))->toBeNull()
+        ->and(Comparison::hasScenarioPrice(Comparison::program('fortnox')))->toBeTrue();
+
+    $page = $this->get(route('alternative', 'pyramid'))->assertOk()->assertSee('Går inte att jämföra')->assertDontSee('Du sparar');
+
+    expect($page->getContent())->toContain('Business Studio och Hybrid Cloud: offert, inget publicerat pris');
 });
 
 it('counts a saving only against verified, comparable prices', function () {

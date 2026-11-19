@@ -44,8 +44,13 @@
     <div class="al-prices">
       <div class="al-price" style="background:var(--card);border:1px solid var(--line)">
         <span style="font-size:14px;font-weight:600;color:var(--muted)">{{ $other['name'] }}, fem anställda</span>
-        <b style="color:var(--muted)">{{ $kr($other['per_year']) }}<span style="font-size:15px;font-weight:600;letter-spacing:0">/år</span></b>
-        <span style="font-size:13px;color:var(--muted)">{{ $other['plan'] }}@unless($other['verified']) · ej verifierat hos leverantören @endunless</span>
+        @if($scenarioPrice)
+          <b style="color:var(--muted)">{{ $kr($other['per_year']) }}<span style="font-size:15px;font-weight:600;letter-spacing:0">/år</span></b>
+          <span style="font-size:13px;color:var(--muted)">{{ $other['plan'] }}@unless($other['verified']) · ej verifierat hos leverantören @endunless</span>
+        @else
+          <b style="color:var(--muted)">Går inte att jämföra</b>
+          <span style="font-size:13px;color:var(--muted)">{{ $other['plan'] }}. {{ $other['price_note'] }}@unless($other['verified']) · ej verifierat hos leverantören @endunless</span>
+        @endif
       </div>
       <div class="al-price" style="background:var(--accl)">
         <span style="font-size:14px;font-weight:600">NONOX, fem anställda</span>
