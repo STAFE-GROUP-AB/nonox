@@ -16,4 +16,15 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
+    build: {
+        rolldownOptions: {
+            output: {
+                // PDF.js's worker is an .mjs file; nginx's default mime.types has no .mjs, so it would be
+                // served as application/octet-stream with nosniff and the module worker would not load.
+                assetFileNames: (asset) => (asset.names ?? []).some((name) => name.endsWith('.mjs'))
+                    ? 'assets/[name]-[hash].js'
+                    : 'assets/[name]-[hash][extname]',
+            },
+        },
+    },
 });
