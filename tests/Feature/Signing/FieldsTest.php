@@ -41,6 +41,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * Fields in the PDF per signer (ADR-046 amendment 2026-11-18, gap 2,
@@ -75,6 +76,8 @@ function s6Field(int $signer, string $type, string $label, array $extra = []): a
 /** @return array<string, mixed> */
 function s6SignInput(SigningRequest $request, array $extra = [], string $name = 'Anna Andersson'): array
 {
+    SigningConsentFixture::give($request);
+
     $version = SigningDocumentVersion::query()->where('envelope_id', $request->envelope_id)->whereIn('kind', ['ORIGINAL', 'AFTER_SIGNER'])->orderByDesc('id')->first();
 
     return ['name' => $name, 'accept' => '1', 'method' => 'DRAWN', 'signature' => s6Png(), 'document_sha256' => $request->document_sha256, 'revision_sha256' => $version?->sha256, ...SigningPdfs::acceptanceFields($request), ...$extra];
@@ -175,6 +178,7 @@ it('refuses fields outside the page, on a page that does not exist, and without 
 it('shows the pages as images with the signer\'s fields, behind the token, without widening the CSP', function () {
     ['token' => $token, 'request' => $request] = s6SendOne($this, [s6Field(0, 'TEXT', 'Er referens', ['required' => true]), s6Field(0, 'DATE', 'Datum')]);
 
+    SigningConsentFixture::token($token);
     $page = $this->get("/signera/{$token}")->assertOk()
         ->assertSee(route('signing.page', ['token' => $token, 'page' => 1]), false)
         ->assertSee('id="falt-', false)
@@ -205,6 +209,7 @@ it('keeps the page as it was for an envelope without fields, and serves no page 
     $sent = app(SendForSigning::class)($this->owner, $this->company, $this->quote, ['email' => 'anna@kontorshuset.test']);
     $token = basename((string) parse_url($sent['url'], PHP_URL_PATH));
 
+    SigningConsentFixture::token($token);
     $this->get("/signera/{$token}")->assertOk()->assertSee('<iframe', false)->assertDontSee('revision_sha256');
     $this->get(route('signing.page', ['token' => $token, 'page' => 1]))->assertNotFound();
     expect($this->engine->operations())->not->toContain('render_pages');
@@ -403,11 +408,13 @@ it('shows a later signer the revision with the earlier signer\'s values, visible
     [$annasField, $bosField] = SigningField::query()->where('envelope_id', $envelope->id)->orderBy('position')->get()->all();
 
     $annaToken = (string) s6LinkFor('anna@kontorshuset.test');
+    SigningConsentFixture::token($annaToken);
     $this->get("/signera/{$annaToken}")->assertOk()->assertSee('Undertecknare 2');
     s6Sign($annaToken, ['fields' => [$annasField->id => 'A-1']]);
 
     $afterAnna = SigningDocumentVersion::query()->where('kind', 'AFTER_SIGNER')->sole();
     $boToken = (string) s6LinkFor('bo@kontorshuset.test');
+    SigningConsentFixture::token($boToken);
 
     $this->get("/signera/{$boToken}")->assertOk()
         ->assertSee('ifyllt av Undertecknare 1: A-1')
@@ -672,6 +679,7 @@ it('renders the page images in the background, and the page never starts the eng
 
     Queue::assertPushed(RenderSigningPages::class, fn (RenderSigningPages $job): bool => $job->companyId === $this->company->id);
 
+    SigningConsentFixture::token($token);
     $this->get("/signera/{$token}")->assertOk()->assertSee('Sidorna kan inte visas som bilder just nu');
     $this->get(route('signing.page', ['token' => $token, 'page' => 1]))->assertNotFound();
     expect($this->engine->operations())->not->toContain('render_pages');

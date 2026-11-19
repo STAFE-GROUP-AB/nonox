@@ -1247,6 +1247,89 @@ transaction electronically.
   consumer contracts at a distance (lag (2005:59) om distansavtal och avtal
   utanför affärslokaler) need more about a durable medium.
 
+### As built in S4 (2026-11-19)
+
+- **Text and version.** `App\Domain\Signing\SigningConsent`: `VERSION` 1.0,
+  `EFFECTIVE` 2026-11-19, the text in Swedish and English (two paragraphs and
+  the checkbox statement "Jag godkänner att handlingen skrivs under
+  elektroniskt."). The same words, version and date stand in
+  `docs/juridik/elektroniska-handlingar.md`, marked as a draft that a lawyer
+  must check before use; a test compares the file with the class. The SHA-256
+  is of the text exactly as shown: the paragraphs and the statement joined
+  with blank lines, in the page's language. The text is not passed through
+  `__()`, so a translation file can never change what was hashed. A new
+  wording is a new version; earlier ones stay in the file's history.
+- **Migration** `database/migrations/2027_03_10_100000_add_signing_consent.php`:
+  `consent_version`, `consent_text_sha256` and `consent_at` on
+  `crm_signing_requests` (nullable, set together: check constraint), and the
+  trigger `crm_signing_requests_protect_consent`, which lets them be set once
+  from null while the signer is `PENDING` and never changed or cleared after.
+  The existing evidence triggers are untouched; no new table.
+- **The page.** After any check (S3) and before the document:
+  `resources/views/signing/consent.blade.php`, routes `signing.consent`
+  (`POST /signera/{token}/samtycke`) and `signing.consentRefuse`
+  (`POST /signera/{token}/samtycke/avboj`), both behind `crm-signing-submit`
+  and the signer's check pass. Until the consent is given, the page shows the
+  consent step only, the PDF link redirects to it and the page images answer
+  404. `OPENED` is recorded only once the document is shown, after the
+  consent.
+- **Action** `App\Actions\Signing\RecordSigningConsent`: `give()` checks that
+  the posted version and text hash are the current text in Swedish or English
+  ("Texten om elektroniska handlingar har ändrats …" otherwise), locks the
+  document and then the signer row (`SignAtLink::lockUsable`, now public), and
+  stores the three columns once; a second submit changes nothing.
+  `SignAtLink::sign` refuses a signer without consent, whatever path calls it.
+  Declining the document does not require the consent (a refusal is never
+  blocked); the page offers it only after the consent anyway.
+- **Refusing.** "Jag vill inte skriva under elektroniskt" shows "Kontakta
+  avsändaren om du vill skriva under på annat sätt" and notifies the sender
+  and the document's own recipients (`SigningFollowUp::consentRefused`, the
+  document named, never the signer). **Choice:** the link is not declined or
+  closed. The signer can come back and accept while it is valid, and the
+  sender decides whether to withdraw the envelope; a refusal is recorded and
+  notified once per signer.
+- **Chain and evidence (S2).** `CONSENTED` (payload: `version`,
+  `text_sha256`) and `CONSENT_REFUSED` (payload: `version`) on the signer's
+  row, in the envelope's chain, without IP address or browser. Neither is a
+  signer step, so the API's per-link `events` list and `docs/api/openapi.yaml`
+  are unchanged. The evidence digest of `SIGNED` and `DECLINED` includes the
+  three consent columns **only where a consent was given**, so every row
+  signed before S4 keeps the digest it has (test). `signing:verify` gains the
+  code `CONSENT`: every signer row's consent must be the one its `CONSENTED`
+  event names, and a consent without its event is reported.
+- **Certificate.** Two bilingual rows under **Underskrift**: "Samtycke till
+  elektroniska handlingar: Version 1.0, godkänt <time>" and the text's
+  SHA-256.
+- **Audit log:** `signing.consented` and `signing.consent_refused` with the
+  signing request id, the envelope id and the version only.
+- **Not covered:** acceptance in the customer portal (`SignInSession`,
+  channel `PORTAL`, ADR-075 §7) has no consent step. A signed-in contact who
+  clicks to accept in the portal agrees to the electronic form by that very
+  act (consent by conduct); Swedish contract law has no general form
+  requirement (formfrihet), and a simple electronic signature may not be
+  denied legal effect for being electronic (eIDAS art. 25(1)), so no prior
+  consent is needed for it to bind. An ÄTA signed on site (ADR-074) opens the
+  same signing page and gets the step. `TODO(legal-verify)`: whether portal
+  acceptance should still show the step, besides the two questions above.
+- **Reminders (review round 2026-11-19):** a signer with `CONSENT_REFUSED`
+  and no consent gets no reminder: `signing:remind` reads it with the
+  candidates (`withExists`, one query however many signers) and the send
+  checks it again under the signer's lock; a manual reminder is refused with
+  "Undertecknaren vill inte skriva under elektroniskt.". Once the signer
+  accepts, reminders are due again.
+- **Review round fixes (2026-11-19):** pressing "Jag vill inte skriva under
+  elektroniskt" after the consent was given (another tab) records nothing and
+  goes to the document. The posted text hash must be the hash of the text in
+  the page's own language (the request locale), not either language. The
+  consent page carries the short privacy line of the document page
+  (controller, purpose art. 6.1 f, retention, rights), and a test company's
+  page says that no copy is mailed. The consent is about the form of the
+  document, not a GDPR consent (art. 6.1 a); art. 7.3 does not apply.
+- **Demo data and screenshots.** The demo seeders give the consent before
+  they sign. `manual:screenshots` gives it for the document page's link and
+  takes the consent page (`crm/signera-samtycke`) from the newest open
+  agreement, so the two links never revoke each other.
+
 ## Gap 8: templates with roles, and bulk send
 
 ### What exists

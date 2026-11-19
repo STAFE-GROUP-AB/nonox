@@ -140,14 +140,16 @@ final class SigningReminders
             ->with(['signers' => fn ($query) => $query
                 ->where('status', SigningStatus::Pending->value)
                 ->where('channel', 'LINK')
-                ->withMax('linkTokens as opened_since', 'issued_at')])
+                ->withMax('linkTokens as opened_since', 'issued_at')
+                // A signer who will not sign electronically (ADR-046 S4) gets no reminders; read in the same query, not per signer.
+                ->withExists(['events as consent_refused' => fn ($events) => $events->where('event', SigningEventType::ConsentRefused->value)])])
             ->orderBy('deadline_at')
             ->get();
         $due = [];
 
         foreach ($envelopes as $envelope) {
             foreach ($envelope->signers as $signer) {
-                if ($signer->step > $envelope->current_step) {
+                if ($signer->step > $envelope->current_step || self::refusedConsent($signer)) {
                     continue;
                 }
 
@@ -231,6 +233,10 @@ final class SigningReminders
             return __('Undertecknarens steg har inte öppnats än. Hen får sin länk när steget före är signerat.');
         }
 
+        if (self::refusedConsent($signer)) {
+            return __('Undertecknaren vill inte skriva under elektroniskt.');
+        }
+
         if ($kind === self::MANUAL && $signer->reminder_count >= SigningDeadlines::MAX_REMINDERS) {
             return (string) __('Undertecknaren har redan fått :count påminnelser, så fler skickas inte.', ['count' => SigningDeadlines::MAX_REMINDERS]);
         }
@@ -244,6 +250,24 @@ final class SigningReminders
         $openSince = self::openSince($envelope, $signer);
 
         return $envelope->auto_reminders && SigningDeadlines::reminderDue($envelope, $signer, $openSince, $now) ? null : (string) __('Ingen påminnelse är aktuell.');
+    }
+
+    /**
+     * The signer said they will not sign electronically and has not accepted
+     * since (ADR-046 S4): no reminder, automatic or manual. Reads the
+     * preloaded consent_refused where the list loaded it, else asks.
+     */
+    public static function refusedConsent(SigningRequest $signer): bool
+    {
+        if ($signer->consent_at !== null) {
+            return false;
+        }
+
+        if (array_key_exists('consent_refused', $signer->getAttributes())) {
+            return (bool) $signer->getAttribute('consent_refused');
+        }
+
+        return SigningEvent::query()->where('signing_request_id', $signer->id)->where('event', SigningEventType::ConsentRefused->value)->exists();
     }
 
     /** Re-reads a refused manual reminder to say why (the transaction above rolled back with nothing changed). */

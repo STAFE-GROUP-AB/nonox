@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.153
-- Datum: 2026-11-18
+- Version: 0.154
+- Datum: 2026-11-19
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -1775,6 +1775,20 @@ balances").
   färdiga PDF:en som skickas till parterna och visas för företaget är
   versionen med alla undertecknares värden. Text stämplas alltid inom fältets
   ruta; ett värde som inte får plats nekas.
+  Signeringen bokför ingenting och ingen bokföringsregel ändras.
+- Samtycke till elektroniska handlingar (version 0.154,
+  [ADR-046](../adr/ADR-046-crm-signing.md) tillägg 2026-11-18, lucka 7, paket
+  S4): innan dokumentet visas via en signeringslänk godkänner varje
+  undertecknare en gång en kort, versionerad text
+  (`docs/juridik/elektroniska-handlingar.md`, `SigningConsent::VERSION`).
+  Versionen, SHA-256 för exakt den text som visades och tidpunkten sparas på
+  undertecknarens rad, en gång och bara medan undertecknaren inte har
+  signerat eller avböjt (databasutlösare). Händelsen `CONSENTED` i kuvertets
+  hashkedja bär version och textens hash, och samtycket ingår i bevishashen för
+  signerad och avböjd (rader utan samtycke behåller sin tidigare hash).
+  Signering vid länken kräver samtycket. Vill undertecknaren inte skriva under
+  elektroniskt sparas `CONSENT_REFUSED` och avsändaren får veta det; länken
+  ändras inte. `signing:verify` jämför varje samtycke med sin händelse.
   Signeringen bokför ingenting och ingen bokföringsregel ändras.
 - Varje skapad, skickad och betald faktura, offert och order skrivs till
   behandlingshistoriken.
@@ -6918,3 +6932,4 @@ påverkar bokföringen och fakturan:
 | 0.151 | 2026-11-18 | Koncernfakturor och motsvarande utkast (avsnitt 4.10d, ADR-081 paket E27): en utfärdad kundfaktura till en kund som är markerad som koncernföretag kan levereras som e-faktura (Peppol BIS Billing 3.0 med PDF) till inkorgen i det NONOX-företag som har organisationsnumret, när båda är aktiva medlemmar i samma koncern och mottagaren har slagit på mottagning från avsändaren (`intercompany_receipt_settings`); varje försök sparas i `intercompany_deliveries`, som bara kan läggas till, och avsändaren får inget skäl när leveransen nekas. Från en bokförd verifikation kan den som får skapa verifikationer i båda företagen göra ett utkast med vända rader i koncernföretaget, byggt från dess kontoplan, med en rad i `intercompany_pairs` i varje företag. Ingenting bokförs i det andra företaget, och ingen verifikation, numrering eller hashkedja ändras. |
 | 0.152 | 2026-11-18 | Flyttorder mellan lager (avsnitt 5j, ADR-081 paket E13): varor flyttas mellan två lager via platsen På väg (`TRANSIT`) med vanliga flyttrörelser och med batch eller serienummer. Artikelns saldo och värdet vid bokslutet är oförändrade, ingen kostnad läggs på och ingenting bokförs. Platsen På väg kan bara röras av en flyttorder. |
 | 0.153 | 2026-11-18 | Fält i PDF:en vid signering (ADR-046 tillägg, lucka 2, paket S6): fält per undertecknare som låses när kuvertet skickas, värden som kontrolleras på servern, sparas en gång och stämplas in som en ny inkrementell revision per undertecknare (`signing_document_versions`, `AFTER_SIGNER`), och händelsen `FIELDS_FILLED` med värdenas hashar i kuvertets hashkedja. Ingenting bokförs och ingen verifikation, numrering eller hashkedja för bokföringen ändras. |
+| 0.154 | 2026-11-19 | Samtycke till elektroniska handlingar vid signering (ADR-046 tillägg, lucka 7, paket S4): en versionerad text som varje undertecknare godkänner innan dokumentet visas, med version, textens SHA-256 och tid på undertecknarens rad (låsta av en databasutlösare), händelsen `CONSENTED` i kuvertets hashkedja och samtycket i bevishashen. Ingenting bokförs och ingen verifikation, numrering eller hashkedja för bokföringen ändras. |

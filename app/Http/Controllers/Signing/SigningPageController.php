@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Signing;
 
+use App\Actions\Signing\RecordSigningConsent;
 use App\Actions\Signing\SignAtLink;
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Signing\Fields\PageImages;
 use App\Domain\Signing\Fields\SignerFields;
 use App\Domain\Signing\Fields\SigningFields;
 use App\Domain\Signing\Signable;
+use App\Domain\Signing\SigningConsent;
 use App\Domain\Signing\SigningEnvelopes;
 use App\Domain\Signing\SigningPdfs;
 use App\Domain\Signing\SigningUnavailable;
@@ -50,6 +52,11 @@ use Symfony\Component\HttpFoundation\Response;
  * rendered on the server (/signera/{token}/sida/{n}, same origin, behind the
  * token and the check), with the signer's fields over them and as a list of
  * labelled controls; no PDF viewer, so the CSP stays as it is.
+ *
+ * After any check and before the document, each signer accepts the consent
+ * to electronic records once (gap 7, S4): until then the page, the PDF and
+ * the page images are not shown. A signer who will not sign electronically
+ * is told to contact the sender, and the sender is told.
  */
 final class SigningPageController
 {
@@ -57,6 +64,7 @@ final class SigningPageController
         private readonly SignAtLink $links,
         private readonly SignerChecks $checks,
         private readonly PageImages $images,
+        private readonly RecordSigningConsent $consents,
     ) {}
 
     public function show(string $token): Response
@@ -85,6 +93,11 @@ final class SigningPageController
         // With a check, the link counts as opened only once the check has passed: the document is shown then, not before.
         if (! SignerPass::has(session()->driver(), $request, $token)) {
             return $this->check($request, $token);
+        }
+
+        // The consent to electronic records comes before the document (ADR-046 S4); opening is recorded only after it.
+        if ($request->consent_at === null) {
+            return $this->consent($request, $token);
         }
 
         $this->links->open($request);
@@ -152,12 +165,15 @@ final class SigningPageController
     {
         $request = $this->links->find($token);
 
-        if (! $request instanceof SigningRequest || ! in_array($this->links->unavailable($request), [null, SigningUnavailable::SIGNED], true)) {
+        $reason = $request instanceof SigningRequest ? $this->links->unavailable($request) : SigningUnavailable::GONE;
+
+        if (! $request instanceof SigningRequest || ! in_array($reason, [null, SigningUnavailable::SIGNED], true)) {
             return $this->unavailable(SigningUnavailable::GONE, 404);
         }
 
         // A checked signer's PDF only after the check in this browser, also once signed: a forwarded link shows nothing.
-        if (! SignerPass::has(session()->driver(), $request, $token)) {
+        // An open link shows it only after the consent (ADR-046 S4); a signer who signed before the consent existed keeps their PDF.
+        if (! SignerPass::has(session()->driver(), $request, $token) || ($reason === null && $request->consent_at === null)) {
             return redirect()->route('signing.show', ['token' => $token]);
         }
 
@@ -177,7 +193,7 @@ final class SigningPageController
     {
         $request = $this->links->find($token);
 
-        if (! $request instanceof SigningRequest || $this->links->unavailable($request) !== null || ! SignerPass::has(session()->driver(), $request, $token)) {
+        if (! $request instanceof SigningRequest || $this->links->unavailable($request) !== null || ! SignerPass::has(session()->driver(), $request, $token) || $request->consent_at === null) {
             abort(404);
         }
 
@@ -201,6 +217,66 @@ final class SigningPageController
         $response->headers->set('Content-Security-Policy', "default-src 'none'");
 
         return $response;
+    }
+
+    /** "Jag godkänner att handlingen skrivs under elektroniskt": stored once, then the document is shown (ADR-046 S4). */
+    public function giveConsent(Request $http, string $token): Response|RedirectResponse
+    {
+        $request = $this->links->find($token);
+
+        if (! $request instanceof SigningRequest) {
+            return $this->unavailable(SigningUnavailable::GONE, 404);
+        }
+
+        if (! SignerPass::has($http->session(), $request, $token)) {
+            return $this->checkExpired($request, $token);
+        }
+
+        try {
+            $this->consents->give($request, $http->only(['consent', 'consent_version', 'consent_text_sha256']));
+        } catch (SigningUnavailable $unavailable) {
+            return $this->unavailable($unavailable->reason, 410, $request);
+        } catch (ValidationException $exception) {
+            return redirect()->route('signing.show', ['token' => $token])->withErrors($exception->errors());
+        }
+
+        return redirect()->route('signing.show', ['token' => $token]);
+    }
+
+    /** The signer will not sign electronically: told to contact the sender, and the sender is told (ADR-046 S4). */
+    public function refuseConsent(Request $http, string $token): Response|RedirectResponse
+    {
+        $request = $this->links->find($token);
+
+        if (! $request instanceof SigningRequest) {
+            return $this->unavailable(SigningUnavailable::GONE, 404);
+        }
+
+        if (! SignerPass::has($http->session(), $request, $token)) {
+            return $this->checkExpired($request, $token);
+        }
+
+        try {
+            $answered = $this->consents->refuse($request);
+        } catch (SigningUnavailable $unavailable) {
+            return $this->unavailable($unavailable->reason, 410, $request);
+        } catch (ValidationException $exception) {
+            return redirect()->route('signing.show', ['token' => $token])->withErrors($exception->errors());
+        }
+
+        // Accepted already (another tab, a double click): nothing was refused and the sender was told nothing.
+        if ($answered->consent_at !== null) {
+            return redirect()->route('signing.show', ['token' => $token]);
+        }
+
+        return CurrentCompany::run($request->company_id, function () use ($request, $token): Response {
+            $company = Company::query()->findOrFail($request->company_id);
+
+            return $this->private(response()->view('signing.consent', [
+                ...$this->consentData($request, $token, $company),
+                'refused' => true,
+            ]), page: true);
+        });
     }
 
     public function sign(Request $http, string $token): Response|RedirectResponse
@@ -293,6 +369,41 @@ final class SigningPageController
                     ->whereNull('verified_at')->where('expires_at', '>', now())->whereColumn('attempts', '<', 'max_attempts')->exists(),
             ]), page: true);
         });
+    }
+
+    /** The consent to electronic records, shown after any check and before the document (ADR-046 S4). */
+    private function consent(SigningRequest $request, string $token): Response
+    {
+        return CurrentCompany::run($request->company_id, function () use ($request, $token): Response {
+            $company = Company::query()->findOrFail($request->company_id);
+
+            return $this->private(response()->view('signing.consent', [
+                ...$this->consentData($request, $token, $company),
+                'refused' => false,
+            ]), page: true);
+        });
+    }
+
+    /** @return array<string, mixed> */
+    private function consentData(SigningRequest $request, string $token, Company $company): array
+    {
+        $contact = implode(', ', array_filter([$company->org_number ? (string) __('org.nr :number', ['number' => $company->org_number]) : null, $company->email ?: null]));
+
+        return [
+            // Who is responsible for the answer and why it is kept, as on the document page (art. 13).
+            'controller' => ($company->legal_name ?: $company->name).($contact === '' ? '' : " ({$contact})"),
+            // A test company sends no mail (ADR-032): the page says the copy the text promises does not come.
+            'testCompany' => $company->isTestCompany(),
+            'request' => $request,
+            'token' => $token,
+            'companyName' => $company->legal_name ?: $company->name,
+            'brand' => Brand::for($company),
+            'color' => Brand::readable(Brand::for($company)->color),
+            'title' => SigningPdfs::title($request),
+            'consentText' => SigningConsent::text(),
+            'consentVersion' => SigningConsent::VERSION,
+            'consentSha256' => SigningConsent::sha256(),
+        ];
     }
 
     /** a•••@example.se: enough for the signer to recognise the address, not to learn it. */

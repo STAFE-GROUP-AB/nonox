@@ -36,6 +36,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * CRM stage 3 (ADR-046): a quote sent for signing with a signature pad. The
@@ -87,6 +88,8 @@ function sendQuote(object $test, array $extra = []): array
 
 function signInput(SigningRequest $request, array $extra = []): array
 {
+    SigningConsentFixture::give($request);
+
     return ['name' => 'Anna Andersson', 'title' => 'Inköpschef', 'accept' => '1', 'method' => 'DRAWN', 'signature' => signaturePng(), 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request), ...$extra];
 }
 
@@ -113,6 +116,7 @@ it('shows the public page without login, never indexed, never framed and without
     [$request, $token] = sendQuote($this);
     auth()->logout();
 
+    SigningConsentFixture::token($token);
     $response = $this->get("/signera/{$token}");
 
     $response->assertOk()
@@ -177,7 +181,7 @@ it('signs: evidence kept, a certificate made, the quote becomes an order, the de
         ->and($this->deal->order_id)->toBe($order->id)
         ->and(Activity::query()->where('account_id', $this->account->id)->where('subject', 'Offert '.$this->quote->number.' signerades')->whereNotNull('done_at')->exists())->toBeTrue()
         ->and($this->owner->notifications()->where('type', SigningNotice::class)->count())->toBe(1)
-        ->and(SigningEvent::query()->where('signing_request_id', $request->id)->pluck('event')->map->value->all())->toBe(['SENT', 'SIGNED', 'COMPLETED']);
+        ->and(SigningEvent::query()->where('signing_request_id', $request->id)->pluck('event')->map->value->all())->toBe(['SENT', 'CONSENTED', 'SIGNED', 'COMPLETED']);
 
     Mail::assertQueued(SignedDocumentMail::class, 2);
     Mail::assertQueued(SignedDocumentMail::class, fn (SignedDocumentMail $mail): bool => $mail->hasTo('anna@kontorshuset.test') && $mail->toSigner);
@@ -472,5 +476,6 @@ it('leaves out the organisation number and e-mail in the information when the co
     $this->company->forceFill(['org_number' => '', 'email' => null])->save();
     [, $token] = sendQuote($this);
 
+    SigningConsentFixture::token($token);
     $this->get("/signera/{$token}")->assertOk()->assertDontSee('org.nr')->assertSee('Personuppgiftsansvarig är '.($this->company->legal_name ?: $this->company->name).'.');
 });

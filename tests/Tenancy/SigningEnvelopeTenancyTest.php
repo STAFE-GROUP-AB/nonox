@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * AGENTS.md §13.2 for envelopes (ADR-046 amendment, gap 1, S1): company A
@@ -72,5 +73,6 @@ it('opens a link from B\'s envelope with B\'s document only, whoever is signed i
         return true;
     });
 
+    SigningConsentFixture::token(basename((string) parse_url((string) $url, PHP_URL_PATH)));
     $this->get((string) parse_url((string) $url, PHP_URL_PATH))->assertOk()->assertSee('Betatjänst')->assertDontSee('Alfa');
 });

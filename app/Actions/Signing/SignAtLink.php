@@ -239,6 +239,11 @@ final class SignAtLink
             $request->document(lock: true);
             $locked = $this->lockUsable($request);
 
+            // The signer accepted the consent to electronic records before the document was shown (ADR-046 S4), whatever path calls this.
+            if ($locked->consent_at === null) {
+                throw ValidationException::withMessages(['consent' => __('Godkänn först att handlingen skrivs under elektroniskt. Ladda om sidan.')]);
+            }
+
             // The confirmation stored is the one the page showed; its MAC proves the page made it.
             if (! hash_equals(SigningPdfs::acceptanceMac($locked, (string) $validated['acceptance_text']), (string) $validated['acceptance_mac'])) {
                 throw ValidationException::withMessages(['accept' => __('Sidan är för gammal. Ladda om den och signera igen.')]);
@@ -365,10 +370,13 @@ final class SignAtLink
     }
 
     /**
+     * The signer row, locked, when its link can still be used and its check
+     * (if any) has passed. The caller holds the document's lock already.
+     *
      * @throws SigningUnavailable
      * @throws ValidationException
      */
-    private function lockUsable(SigningRequest $request): SigningRequest
+    public function lockUsable(SigningRequest $request): SigningRequest
     {
         $locked = SigningRequest::query()->whereKey($request->id)->lockForUpdate()->firstOrFail();
         $reason = $this->unavailable($locked);

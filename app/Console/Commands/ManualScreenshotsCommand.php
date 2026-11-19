@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Actions\Signing\RecordSigningConsent;
 use App\Actions\Signing\SendForSigning;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Domain\Signing\Signable;
+use App\Domain\Signing\SigningConsent;
 use App\Domain\Signing\SigningStatus;
 use App\Domain\Signing\Verification\SignerCheck;
 use App\Models\Company;
 use App\Models\Invoice;
-use App\Models\SalesDocument;
 use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Models\SupplierInvoice;
@@ -308,7 +310,10 @@ class ManualScreenshotsCommand extends Command
             'supplier_invoice_to_approve' => SupplierInvoice::query()->whereNull('approved_at')->where('status', '!=', 'DRAFT')->latest('invoice_date')->value('id'),
             // CRM signing (ADR-046): a quote that was signed, and a fresh link to the public page of the newest open quote out for signing.
             'signed_quote' => SigningRequest::query()->whereNotNull('sales_document_id')->where('status', SigningStatus::Signed->value)->latest('id')->value('sales_document_id'),
-            'signing_link' => $this->signingLink($company),
+            // The document page: the consent to electronic records (ADR-046 S4) is given first, as the signer would.
+            'signing_link' => $this->signingLink($company, consented: true),
+            // The consent page itself (ADR-046 S4): a fresh link to the newest open agreement, so it is not the quote's link above.
+            'consent_signing_link' => $this->signingLink($company, agreement: true),
             // The check page before the document (ADR-046 amendment, gap 3): a fresh link to the open quote whose signer gets an e-mail code.
             'checked_signing_link' => $this->signingLink($company, SignerCheck::EmailCode),
             'checked_quote' => SigningRequest::query()->whereNotNull('sales_document_id')->where('status', SigningStatus::Pending->value)->where('verification', SignerCheck::EmailCode->value)->whereNull('signed_at')->latest('id')->value('sales_document_id'),
@@ -324,25 +329,31 @@ class ManualScreenshotsCommand extends Command
      * Only the hash of a signing link's token is stored, so the public page
      * is reached through a new link for the newest open quote that is out
      * for signing; the old link for it is revoked, as by "Skicka igen".
+     * With $agreement the newest open agreement instead; with $consented the
+     * signer has accepted the consent to electronic records (ADR-046 S4).
      */
-    private function signingLink(Company $company, SignerCheck $check = SignerCheck::None): ?string
+    private function signingLink(Company $company, SignerCheck $check = SignerCheck::None, bool $agreement = false, bool $consented = false): ?string
     {
-        $key = "{$company->id}:{$check->value}";
+        $key = "{$company->id}:{$check->value}:".($agreement ? 'agreement' : 'quote');
 
         // One link per company, check and run: a second one would revoke the first before its picture is taken.
         if (array_key_exists($key, $this->signingLinks)) {
             return $this->signingLinks[$key];
         }
 
-        $request = SigningRequest::query()->whereNotNull('sales_document_id')->where('status', SigningStatus::Pending->value)->where('verification', $check->value)->latest('id')->first();
-        $quote = $request?->quote;
+        $request = SigningRequest::query()->whereNotNull($agreement ? 'agreement_id' : 'sales_document_id')->where('status', SigningStatus::Pending->value)->where('verification', $check->value)->latest('id')->first();
+        $document = $agreement ? $request?->agreement : $request?->quote;
         $owner = User::query()->find($company->user_id);
 
-        if ($request === null || ! $quote instanceof SalesDocument || ! $owner instanceof User) {
+        if ($request === null || ! $document instanceof Signable || ! $owner instanceof User) {
             return null;
         }
 
-        $sent = app(SendForSigning::class)($owner, $company, $quote, ['email' => $request->email, 'deal_id' => $request->deal_id, 'verification' => $check->value]);
+        $sent = app(SendForSigning::class)($owner, $company, $document, ['email' => $request->email, 'deal_id' => $request->deal_id, 'verification' => $check->value]);
+
+        if ($consented) {
+            app(RecordSigningConsent::class)->give($sent['request'], SigningConsent::accepted());
+        }
 
         return $this->signingLinks[$key] = basename((string) parse_url($sent['url'], PHP_URL_PATH));
     }

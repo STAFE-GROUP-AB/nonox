@@ -76,6 +76,8 @@ class SigningServiceProvider extends ServiceProvider
             Route::post('/signera/{token}', [SigningPageController::class, 'sign'])->where('token', SigningToken::PATTERN)->middleware('throttle:crm-signing-submit')->name('signing.sign');
             Route::post('/signera/{token}/kod', [SigningPageController::class, 'sendCode'])->where('token', SigningToken::PATTERN)->middleware('throttle:signing-verify')->name('signing.code');
             Route::post('/signera/{token}/kontroll', [SigningPageController::class, 'verify'])->where('token', SigningToken::PATTERN)->middleware('throttle:signing-verify')->name('signing.verify');
+            Route::post('/signera/{token}/samtycke', [SigningPageController::class, 'giveConsent'])->where('token', SigningToken::PATTERN)->middleware('throttle:crm-signing-submit')->name('signing.consent');
+            Route::post('/signera/{token}/samtycke/avboj', [SigningPageController::class, 'refuseConsent'])->where('token', SigningToken::PATTERN)->middleware('throttle:crm-signing-submit')->name('signing.consentRefuse');
             Route::post('/signera/{token}/avboj', [SigningPageController::class, 'decline'])->where('token', SigningToken::PATTERN)->middleware('throttle:crm-signing-submit')->name('signing.decline');
         });
     }

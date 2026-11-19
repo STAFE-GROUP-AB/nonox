@@ -71,6 +71,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?CarbonImmutable $verified_at the latest passed check
  * @property int $verification_failures
  * @property ?CarbonImmutable $locked_at locked out by failed checks; the sender can unlock
+ * @property ?string $consent_version the version of the consent to electronic records the signer accepted (ADR-046 amendment, gap 7)
+ * @property ?string $consent_text_sha256 SHA-256 of the consent text exactly as shown
+ * @property ?CarbonImmutable $consent_at when the signer accepted it; set once, while pending (trigger)
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
  */
@@ -149,6 +152,7 @@ class SigningRequest extends Model
             'verification' => SignerCheck::class,
             'verified_at' => 'immutable_datetime',
             'locked_at' => 'immutable_datetime',
+            'consent_at' => 'immutable_datetime',
             'verification_failures' => 'integer',
             'create_invoice' => 'boolean',
             'signature_image' => 'encrypted',

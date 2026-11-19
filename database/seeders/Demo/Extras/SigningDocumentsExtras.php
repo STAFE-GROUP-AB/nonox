@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo\Extras;
 
+use App\Actions\Signing\RecordSigningConsent;
 use App\Actions\Signing\SendForSigning;
 use App\Actions\Signing\SignAtLink;
+use App\Domain\Signing\SigningConsent;
 use App\Domain\Signing\SigningPdfs;
 use App\Models\SigningRequest;
 use App\Modules\ModuleManager;
@@ -91,6 +93,9 @@ final class SigningDocumentsExtras extends DemoExtra
     {
         $request = SigningRequest::query()->where('envelope_id', $envelopeId)->firstOrFail();
         $links = app(SignAtLink::class);
+
+        // The signer accepts the consent to electronic records first, as on the page (ADR-046 S4).
+        app(RecordSigningConsent::class)->give($request, SigningConsent::accepted());
 
         // A one-signer envelope keeps its link in signing_link_tokens; find the signer through the request itself.
         $links->sign($request, [

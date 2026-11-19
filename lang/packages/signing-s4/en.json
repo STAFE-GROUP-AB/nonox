@@ -1,0 +1,21 @@
+{
+    ":company vill att du skriver under :title.": ":company would like you to sign :title.",
+    ":title: en undertecknare vill inte skriva under elektroniskt. Kontakta undertecknaren om ett annat sätt att skriva under. Under Signering ser du vem.": ":title: a signer does not want to sign electronically. Contact the signer about another way to sign. Under Signing you can see who.",
+    "Det här är ett testföretag i NONOX. Testföretag skickar inga mejl, så ingen kopia skickas med e-post.": "This is a test company in NONOX. Test companies send no e-mail, so no copy is sent by e-mail.",
+    "Du har inte skrivit under": "You have not signed",
+    "Personuppgiftsansvarig är :controller. Svaret behandlas för att kunna visa hur handlingen skrevs under (artikel 6.1 f i dataskyddsförordningen) och sparas lika länge som beviset om signeringen. NONOX behandlar det för :company:s räkning. Du har rätt att begära tillgång och att klaga hos Integritetsskyddsmyndigheten (IMY).": "The controller is :controller. The answer is processed to be able to show how the document was signed (Article 6(1)(f) of the General Data Protection Regulation) and is kept as long as the evidence of the signing. NONOX processes it on behalf of :company. You have the right to request access and to complain to the Swedish Authority for Privacy Protection (IMY).",
+    "Fortsätt till dokumentet": "Continue to the document",
+    "Godkänn först att handlingen skrivs under elektroniskt. Ladda om sidan.": "First agree that the document is signed electronically. Reload the page.",
+    "Jag vill inte skriva under elektroniskt": "I do not want to sign electronically",
+    "Kontakta avsändaren om du vill skriva under på annat sätt. Vi har meddelat :company att du inte vill skriva under elektroniskt.": "Contact the sender if you want to sign in another way. We have told :company that you do not want to sign electronically.",
+    "Kryssa i rutan för att skriva under elektroniskt, eller kontakta avsändaren om du vill skriva under på annat sätt.": "Tick the box to sign electronically, or contact the sender if you want to sign in another way.",
+    "Samtycke till elektroniska handlingar": "Consent to electronic records",
+    "Samtyckestextens kontrollsumma (SHA-256)": "Checksum of the consent text (SHA-256)",
+    "Texten om elektroniska handlingar har ändrats sedan sidan öppnades. Ladda om sidan och läs den igen.": "The text about electronic records has changed since the page was opened. Reload the page and read it again.",
+    "Undertecknaren godkände att handlingen skrivs under elektroniskt": "The signer agreed that the document is signed electronically",
+    "Undertecknaren vill inte skriva under elektroniskt": "The signer does not want to sign electronically",
+    "Undertecknaren vill inte skriva under elektroniskt.": "The signer does not want to sign electronically.",
+    "Version :version, godkänt :time": "Version :version, accepted :time",
+    "Version :version. Ditt svar sparas med tidpunkten och textens kontrollsumma som en del av beviset för signeringen.": "Version :version. Your answer is kept with the time and the text's checksum as part of the evidence of the signing.",
+    "Ändrar du dig kan du öppna länken igen så länge den gäller.": "If you change your mind, you can open the link again while it is valid."
+}

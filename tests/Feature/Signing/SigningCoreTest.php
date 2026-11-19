@@ -26,6 +26,7 @@ use Livewire\Livewire;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * Signing at a link is core (ADR-075 §7): any Signable document can be
@@ -51,6 +52,8 @@ beforeEach(function () {
 
 function coreSignInput(SigningRequest $request): array
 {
+    SigningConsentFixture::give($request);
+
     return ['name' => 'Anna Andersson', 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => 'Anna Andersson', 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request)];
 }
 
@@ -181,6 +184,7 @@ it('signs a document type that a module registers, kept by its key in signable_i
         ->and($sent['request']->sales_document_id)->toBeNull()
         ->and($sent['request']->document_sha256)->toBe(hash('sha256', "%PDF-1.4\n%arbetsorder\n"));
 
+    SigningConsentFixture::token($token);
     $this->get("/signera/{$token}")->assertOk()->assertSee('Arbetsorder 17')->assertSee('Jag har läst och godkänner arbetsordern.');
     $this->post("/signera/{$token}", coreSignInput($sent['request']))->assertOk();
 

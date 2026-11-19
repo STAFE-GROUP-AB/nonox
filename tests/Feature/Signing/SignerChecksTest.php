@@ -41,6 +41,7 @@ use Livewire\Livewire;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * Signer checks (ADR-046 amendment 2026-11-18, gap 3, package S3): an
@@ -65,6 +66,8 @@ function s3Png(): string
 /** @return array<string, mixed> */
 function s3SignInput(SigningRequest $request): array
 {
+    SigningConsentFixture::give($request);
+
     return ['name' => 'Anna Andersson', 'accept' => '1', 'method' => 'DRAWN', 'signature' => s3Png(), 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request)];
 }
 
@@ -123,6 +126,7 @@ it('keeps the link alone as the default for quotes, exactly as before', function
     expect($sent['request']->verification)->toBe(SignerCheck::None);
 
     auth()->logout();
+    SigningConsentFixture::token($sent['token']);
     $this->get("/signera/{$sent['token']}")->assertOk()->assertSee('Offert')->assertDontSee('Bekräfta att det är du');
     $this->get("/signera/{$sent['token']}/dokument")->assertOk();
 });
@@ -167,6 +171,7 @@ it('mails a six-digit code once, stores only its HMAC, and lets the signer sign 
     $this->post("/signera/{$sent['token']}/kontroll", ['code' => $wrong])->assertSessionHasErrors(['code' => 'Koden stämmer inte. Försök kvar: 4.']);
     $this->post("/signera/{$sent['token']}/kontroll", ['code' => substr($code, 0, 3).' '.substr($code, 3)])->assertRedirect("/signera/{$sent['token']}");
 
+    $this->post("/signera/{$sent['token']}/samtycke", SigningConsentFixture::input())->assertRedirect("/signera/{$sent['token']}");
     $this->get("/signera/{$sent['token']}")->assertOk()->assertSee('Konsulttimme');
     $this->get("/signera/{$sent['token']}/dokument")->assertOk();
     $this->post("/signera/{$sent['token']}", s3SignInput($request->refresh()))->assertOk();
@@ -176,7 +181,7 @@ it('mails a six-digit code once, stores only its HMAC, and lets the signer sign 
     expect($request->status)->toBe(SigningStatus::Signed)
         ->and($request->verified_at)->not->toBeNull()
         ->and($request->verification_failures)->toBe(1)
-        ->and(s3Events($request))->toBe(['SENT', 'CODE_SENT', 'VERIFY_FAILED', 'VERIFIED', 'OPENED', 'SIGNED', 'COMPLETED']);
+        ->and(s3Events($request))->toBe(['SENT', 'CODE_SENT', 'VERIFY_FAILED', 'VERIFIED', 'CONSENTED', 'OPENED', 'SIGNED', 'COMPLETED']);
 
     $failed = SigningEvent::query()->where('signing_request_id', $request->id)->where('event', 'VERIFY_FAILED')->sole();
     expect($failed->payload)->toEqual(['channel' => 'LINK', 'method' => 'EMAIL_CODE', 'code_id' => $row->id, 'failures' => 1])
@@ -227,6 +232,7 @@ it('stores the access code hashed only, never mails it, and refuses one shorter 
     $this->post("/signera/{$sent['token']}/kod")->assertSessionHasErrors('code');
     Mail::assertNotSent(SigningCodeMail::class);
     $this->post("/signera/{$sent['token']}/kontroll", ['code' => 'blå-hund-42'])->assertRedirect("/signera/{$sent['token']}");
+    $this->post("/signera/{$sent['token']}/samtycke", SigningConsentFixture::input())->assertRedirect("/signera/{$sent['token']}");
     $this->get("/signera/{$sent['token']}")->assertSee('Konsulttimme');
 });
 
@@ -300,6 +306,7 @@ it('binds a passed check to the browser session and the token for thirty minutes
     auth()->logout();
 
     $this->post("/signera/{$sent['token']}/kontroll", ['code' => 'rätt-kod-123']);
+    $this->post("/signera/{$sent['token']}/samtycke", SigningConsentFixture::input())->assertRedirect("/signera/{$sent['token']}");
     $this->get("/signera/{$sent['token']}")->assertSee('Konsulttimme');
 
     $this->travel(31)->minutes();
@@ -467,9 +474,10 @@ it('records OPENED only after a passed check', function () {
         ->and($sent['request']->refresh()->opened_at)->toBeNull();
 
     $this->post("/signera/{$sent['token']}/kontroll", ['code' => 'rätt-kod-123']);
+    $this->post("/signera/{$sent['token']}/samtycke", SigningConsentFixture::input())->assertRedirect("/signera/{$sent['token']}");
     $this->get("/signera/{$sent['token']}")->assertSee('Konsulttimme');
     CurrentCompany::set($this->company);
-    expect(s3Events($sent['request']))->toBe(['SENT', 'VERIFIED', 'OPENED']);
+    expect(s3Events($sent['request']))->toBe(['SENT', 'VERIFIED', 'CONSENTED', 'OPENED']);
 });
 
 it('spends a code whose mail failed, so the next click sends a new one', function () {

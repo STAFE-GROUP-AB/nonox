@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Storage;
 use Smalot\PdfParser\Parser;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * Branding and scripts of the signing certificate (ADR-046 amendment
@@ -36,6 +37,8 @@ function s20Signed(object $test, string $name): SigningRequest
     $links = app(SignAtLink::class);
     $request = $links->find(basename((string) parse_url($sent['url'], PHP_URL_PATH)));
     expect($request)->toBeInstanceOf(SigningRequest::class);
+
+    SigningConsentFixture::give($request);
 
     return $links->sign($request, ['name' => $name, 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => $name, 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request)], '203.0.113.7', 'Pest');
 }

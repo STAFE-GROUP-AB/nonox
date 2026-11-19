@@ -37,7 +37,9 @@ use Throwable;
  * - every file in signing_document_versions of an envelope that still has
  *   signers, and every signer's Signeringsbevis, still has its SHA-256;
  * - every field value a signer filled in (ADR-046 S6) still has the hash its
- *   FIELDS_FILLED event names, and no stored value is missing from one.
+ *   FIELDS_FILLED event names, and no stored value is missing from one;
+ * - every signer row's consent to electronic records (S4) is the one its
+ *   CONSENTED event names, and no consent is missing its event.
  *
  * A fixed number of queries per company (the signer rows with the drawn
  * signature in chunks), whatever the number of envelopes; the files are read
@@ -47,16 +49,19 @@ use Throwable;
 final class ChainVerifier
 {
     /** The problem codes. */
-    public const array CODES = ['NO_CHAIN', 'GAP', 'LINK', 'HASH', 'COUNTER', 'AFTER_HEAD', 'EVIDENCE', 'PRIOR', 'UNCHAINED', 'HEAD', 'AUDIT', 'FILE_MISSING', 'FILE_CHANGED', 'FIELDS'];
+    public const array CODES = ['NO_CHAIN', 'GAP', 'LINK', 'HASH', 'COUNTER', 'AFTER_HEAD', 'EVIDENCE', 'PRIOR', 'UNCHAINED', 'HEAD', 'AUDIT', 'FILE_MISSING', 'FILE_CHANGED', 'FIELDS', 'CONSENT'];
 
     /** The signer row columns the checks read; the drawn signature only in the evidence pass. */
-    private const array REQUEST_COLUMNS = ['id', 'envelope_id', 'status', 'signed_document_path', 'signed_document_sha256'];
+    private const array REQUEST_COLUMNS = ['id', 'envelope_id', 'status', 'signed_document_path', 'signed_document_sha256', 'consent_version', 'consent_text_sha256', 'consent_at'];
 
     /** @var list<array<string, int|string|null>> */
     private array $problems = [];
 
     /** @var array<int, array{envelope_id: string, sequence: int, hash: string}> field id => the hash its FIELDS_FILLED event names */
     private array $fieldHashes = [];
+
+    /** @var array<int, array{envelope_id: string, sequence: int, version: ?string, text_sha256: ?string}> signer row id => what its CONSENTED event names */
+    private array $consents = [];
 
     /**
      * @return array{ok: bool, envelopes: int, events: int, files: int, problems: list<array<string, int|string|null>>}
@@ -65,6 +70,7 @@ final class ChainVerifier
     {
         $this->problems = [];
         $this->fieldHashes = [];
+        $this->consents = [];
 
         return CurrentCompany::run($company, function () use ($company): array {
             $envelopes = SigningEnvelope::query()->orderBy('id')->get(['id', 'company_id', 'status', 'document_sha256', 'chain_head', 'chain_sequence', 'next_sequence', 'last_hash'])->keyBy('id');
@@ -104,6 +110,7 @@ final class ChainVerifier
 
             $this->checkEvidence($evidence);
             $this->checkFieldValues();
+            $this->checkConsents($requests);
             $files = $this->checkFiles($requests, $signers);
 
             return ['ok' => $this->problems === [], 'envelopes' => $envelopes->count(), 'events' => $events, 'files' => $files, 'problems' => $this->problems];
@@ -179,6 +186,15 @@ final class ChainVerifier
                         $this->fieldHashes[(int) $named['field_id']] = ['envelope_id' => $envelope->id, 'sequence' => $sequence, 'hash' => (string) $named['hash']];
                     }
                 }
+            }
+
+            if ($event->event === SigningEventType::Consented) {
+                $this->consents[(int) $event->signing_request_id] = [
+                    'envelope_id' => $envelope->id,
+                    'sequence' => $sequence,
+                    'version' => isset($event->payload['version']) ? (string) $event->payload['version'] : null,
+                    'text_sha256' => isset($event->payload['text_sha256']) ? (string) $event->payload['text_sha256'] : null,
+                ];
             }
 
             if ($event->event === SigningEventType::ChainStarted) {
@@ -258,6 +274,28 @@ final class ChainVerifier
         foreach (array_diff_key($this->fieldHashes, $seen) as $fieldId => $named) {
             // A value the chain names that is gone: values go only with their envelope, and then so does the chain.
             $this->problems[] = ['envelope_id' => $named['envelope_id'], 'code' => 'FIELDS', 'sequence' => $named['sequence'], 'field_id' => $fieldId];
+        }
+    }
+
+    /**
+     * The consent to electronic records on every signer row (ADR-046 S4)
+     * against the CONSENTED event that names it: a row with a consent and no
+     * event, or an event whose version or text hash differs from the row.
+     *
+     * @param  iterable<SigningRequest>  $requests
+     */
+    private function checkConsents(iterable $requests): void
+    {
+        foreach ($requests as $request) {
+            $named = $this->consents[$request->id] ?? null;
+
+            if ($named === null && $request->consent_at === null) {
+                continue;
+            }
+
+            if ($named === null || $named['version'] !== $request->consent_version || $named['text_sha256'] !== $request->consent_text_sha256) {
+                $this->problems[] = ['envelope_id' => $named['envelope_id'] ?? (string) $request->envelope_id, 'code' => 'CONSENT', 'sequence' => $named['sequence'] ?? null, 'signing_request_id' => $request->id];
+            }
         }
     }
 

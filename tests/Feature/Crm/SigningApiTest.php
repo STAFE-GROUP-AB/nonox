@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Storage;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Connect;
 use Tests\Support\Crm;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * CRM stage 3 over the API (ADR-046, ADR-032): send a quote or an agreement
@@ -92,6 +93,7 @@ it('sends quote.signed to the company\'s webhooks with ids and the hash, never t
         return true;
     });
 
+    SigningConsentFixture::token($token);
     $this->post("/signera/{$token}", ['name' => 'Anna Andersson', 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => 'Anna Andersson', 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request)])->assertOk();
 
     $delivery = CompanyScope::bypass(fn () => ConnectWebhookDelivery::query()->where('event_type', 'quote.signed')->sole());

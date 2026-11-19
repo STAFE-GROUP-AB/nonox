@@ -299,6 +299,7 @@ crm/signera-offert: { foretag: konsult, rutt: signing.show, modell: signing_link
 crm/signera-offert-mobil: { foretag: konsult, rutt: signing.show, modell: signing_link, anvandare: gast, enhet: mobil }
 crm/signering-kontroll: { foretag: konsult, rutt: invoicing.quotes.show, modell: checked_quote, del: '[data-testid=crm-signing-panel]' }
 crm/signera-kod: { foretag: konsult, rutt: signing.show, modell: checked_signing_link, anvandare: gast, enhet: mobil, text: Bekräfta att det är du }
+crm/signera-samtycke: { foretag: konsult, rutt: signing.show, modell: consent_signing_link, anvandare: gast, enhet: mobil, text: Samtycke till elektroniska handlingar }
 
 # Signering, the module (ADR-046 amendment, gap 10, package S7): the list, one envelope and the first step of the wizard.
 signering/alla-signeringar: { foretag: konsult, rutt: signing.envelopes, text: Hyresavtal kontorslokal }

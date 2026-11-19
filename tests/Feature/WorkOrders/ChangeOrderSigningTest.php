@@ -37,6 +37,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
+use Tests\Support\SigningConsentFixture;
 use Tests\Support\WorkOrders;
 
 beforeEach(function () {
@@ -52,6 +53,8 @@ beforeEach(function () {
 
 function ataSignInput(SigningRequest $request): array
 {
+    SigningConsentFixture::give($request);
+
     return ['name' => 'Eva Exempelsson', 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => 'Eva Exempelsson', 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request)];
 }
 

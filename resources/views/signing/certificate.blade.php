@@ -58,6 +58,10 @@
         @if($request->verification->required())
             <tr><td class="muted">{{ $b('Kontroll av undertecknaren') }}</td><td>{{ App\Domain\Signing\SigningPdfs::bilingualOf(fn () => $request->verification->evidence()) }}@if($request->verified_at), {{ $b('godkänd :time', ['time' => $time($request->verified_at)]) }}@endif</td></tr>
         @endif
+        @if($request->consent_at)
+            <tr><td class="muted">{{ $b('Samtycke till elektroniska handlingar') }}</td><td>{{ $b('Version :version, godkänt :time', ['version' => (string) $request->consent_version, 'time' => $time($request->consent_at)]) }}</td></tr>
+            <tr><td class="muted">{{ $b('Samtyckestextens kontrollsumma (SHA-256)') }}</td><td class="mono">{{ $request->consent_text_sha256 }}</td></tr>
+        @endif
         <tr><td class="muted">{{ $b('IP-adress') }}</td><td>{{ $request->signer_ip }}</td></tr>
         <tr><td class="muted">{{ $b('Webbläsare') }}</td><td class="mono">{{ $request->signer_user_agent }}</td></tr>
     </table>

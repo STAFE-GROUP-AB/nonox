@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\Support\Connect;
 use Tests\Support\Crm;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * AGENTS.md §13.2 for CRM stage 3 (ADR-046): company A never sees B's
@@ -84,6 +85,8 @@ it('answers 404 for B\'s records on the pages and in the components', function (
 });
 
 it('shows a public link\'s own company only, whichever company is signed in', function () {
+    SigningConsentFixture::token($this->b['token']);
+    SigningConsentFixture::token($this->a['token']);
     $this->get("/signera/{$this->b['token']}")->assertOk()->assertSee('Betatjänst')->assertSee('Beta Kund AB')->assertDontSee('Alfa');
     $this->get("/signera/{$this->a['token']}")->assertOk()->assertSee('Alfatjänst')->assertDontSee('Beta');
 });

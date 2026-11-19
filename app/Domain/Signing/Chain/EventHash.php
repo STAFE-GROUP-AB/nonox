@@ -80,13 +80,14 @@ final class EventHash
 
     /**
      * The digest of a signer's act as the signing request stores it (signed
-     * or declined): every evidence column, the drawn signature included. It
+     * or declined): every evidence column, the drawn signature included, and
+     * the consent to electronic records when there is one (S4). It
      * is put in the SIGNED or DECLINED event's payload, so the chain also
      * covers the request row; the values themselves stay on the row.
      */
     public static function evidenceOf(SigningRequest $request): string
     {
-        return hash('sha256', CanonicalJson::encode([
+        $evidence = [
             'acceptance_text' => $request->acceptance_text,
             'content_hash' => $request->content_hash,
             'decline_reason' => $request->decline_reason,
@@ -101,6 +102,15 @@ final class EventHash
             'signer_title' => $request->signer_title,
             'signer_user_agent' => $request->signer_user_agent,
             'status' => $request->status->value,
-        ]));
+        ];
+
+        // The consent to electronic records (ADR-046 S4) only where one was given: a row signed before S4 keeps the digest it had.
+        if ($request->consent_at !== null) {
+            $evidence['consent_at'] = CanonicalJson::seconds($request->consent_at);
+            $evidence['consent_text_sha256'] = $request->consent_text_sha256;
+            $evidence['consent_version'] = $request->consent_version;
+        }
+
+        return hash('sha256', CanonicalJson::encode($evidence));
     }
 }

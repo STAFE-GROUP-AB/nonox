@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * AGENTS.md §13.2 for fields in the PDF (ADR-046 amendment, gap 2, S6):
@@ -73,6 +74,7 @@ it('never shows B\'s fields or values through Eloquent', function () {
 it('opens a link from B\'s envelope with B\'s fields and pages only, whoever is signed in', function () {
     $path = s6TenancyLink('first@b.test');
 
+    SigningConsentFixture::token(basename($path));
     $this->get($path)->assertOk()->assertSee('Betafält')->assertDontSee('Alfafält');
     $this->get("{$path}/sida/1")->assertOk();
 });

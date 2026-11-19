@@ -28,6 +28,7 @@ use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * The agreement register (ADR-046): agreements per account with term,
@@ -162,6 +163,7 @@ it('signs an agreement through the same flow and then locks its terms', function
     $sent = app(SendForSigning::class)($this->owner, $this->company, $agreement, ['email' => 'anna@kontorshuset.test']);
     $token = basename((string) parse_url($sent['url'], PHP_URL_PATH));
 
+    SigningConsentFixture::token($token);
     $this->get("/signera/{$token}")->assertOk()->assertSee('Serviceavtal kaffemaskiner')->assertSee('Leverantören servar')->assertSee('Jag har läst och godkänner avtalet och har rätt att ingå det för Kontorshuset AB.');
     $this->post("/signera/{$token}", ['name' => 'Anna Andersson', 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => 'Anna Andersson', 'document_sha256' => $sent['request']->document_sha256, ...SigningPdfs::acceptanceFields($sent['request'])])->assertOk();
     CurrentCompany::set($this->company);

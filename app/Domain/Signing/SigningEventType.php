@@ -14,7 +14,8 @@ namespace App\Domain\Signing;
  * in the payload only, never a code. DEADLINE_CHANGED and REMINDER_SENT (gap 9) are
  * recorded on a still open signer's row; EXPIRED, once an envelope passes its
  * deadline, is recorded on one open signer's row by signing:remind (or by
- * the first signer who opens the expired link).
+ * the first signer who opens the expired link). The consent to electronic
+ * records (gap 7, S4) adds CONSENTED and CONSENT_REFUSED.
  */
 enum SigningEventType: string
 {
@@ -38,6 +39,9 @@ enum SigningEventType: string
     /** Fields (gap 2, S6): what a signer filled in (field ids and value hashes, never values), and ids posted for fields that were not theirs. */
     case FieldsFilled = 'FIELDS_FILLED';
     case FieldRejected = 'FIELD_REJECTED';
+    /** Consent to electronic records (gap 7, S4): accepted (version and the text's SHA-256), or refused (version only). */
+    case Consented = 'CONSENTED';
+    case ConsentRefused = 'CONSENT_REFUSED';
 
     /** A step of the signer's own link (the six of ADR-046), not an event of the envelope's chain. */
     public function isSignerStep(): bool
@@ -66,6 +70,8 @@ enum SigningEventType: string
             self::ReminderSent => __('Påminnelse skickades'),
             self::FieldsFilled => __('Undertecknaren fyllde i sina fält'),
             self::FieldRejected => __('Värden för fält som hör till någon annan togs inte emot'),
+            self::Consented => __('Undertecknaren godkände att handlingen skrivs under elektroniskt'),
+            self::ConsentRefused => __('Undertecknaren vill inte skriva under elektroniskt'),
         };
     }
 }

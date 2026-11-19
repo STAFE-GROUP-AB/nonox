@@ -47,6 +47,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
 use Tests\Support\PdfEngineFixtures;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * The module "Signering" (ADR-046 amendment 2026-11-18, gap 10, package S7):
@@ -98,6 +99,8 @@ function s7Sign(string $token, string $name = 'Anna Andersson'): SigningRequest
     $links = app(SignAtLink::class);
     $request = $links->find($token);
     expect($request)->toBeInstanceOf(SigningRequest::class);
+
+    SigningConsentFixture::give($request);
 
     return $links->sign($request, ['name' => $name, 'accept' => '1', 'method' => 'DRAWN', 'signature' => s7Png(), 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request)], '203.0.113.7', 'Pest');
 }

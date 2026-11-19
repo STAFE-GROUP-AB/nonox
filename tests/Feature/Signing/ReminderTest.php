@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Invoicing\SaveSalesDocument;
 use App\Actions\Signing\ChangeSigningDeadline;
+use App\Actions\Signing\RecordSigningConsent;
 use App\Actions\Signing\SendForSigning;
 use App\Actions\Signing\SignAtLink;
 use App\Actions\Signing\SigningReminders;
@@ -34,6 +35,7 @@ use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * Deadline and reminders (ADR-046 amendment 2026-11-18, gap 9, package S9):
@@ -273,6 +275,7 @@ it('reminds only the signers whose step is open, and not those who have signed',
 
         return true;
     });
+    SigningConsentFixture::give($first);
     $links->sign($first->refresh(), ['name' => 'Anna Andersson', 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => 'Anna Andersson', 'document_sha256' => $first->document_sha256, ...SigningPdfs::acceptanceFields($first)], '203.0.113.7', 'Pest');
 
     // Step 2 opened when step 1 signed; it is reminded three days after its own link was issued, step 1 never again.
@@ -468,6 +471,7 @@ it('lets a link opened after the deadline record the expiry itself, and the comm
 it('never reminds a signed, declined or withdrawn envelope, and never expires one that has finished', function () {
     $signed = s9SendOne($this, ['expires_on' => '2026-06-20']);
     $request = SigningRequest::query()->where('envelope_id', $signed->id)->sole();
+    SigningConsentFixture::give($request);
     app(SignAtLink::class)->sign($request, ['name' => 'Anna Andersson', 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => 'Anna Andersson', 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request)], '203.0.113.7', 'Pest');
 
     $this->quote = s9Quote($this, 'Tillbakadragen');
@@ -505,6 +509,7 @@ it('stops the database from taking reminders back or changing a finished or expi
 it('sets the reminder trail of a signed signer fixed', function () {
     $envelope = s9SendOne($this);
     $request = SigningRequest::query()->where('envelope_id', $envelope->id)->sole();
+    SigningConsentFixture::give($request);
     app(SignAtLink::class)->sign($request, ['name' => 'Anna Andersson', 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => 'Anna Andersson', 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request)], '203.0.113.7', 'Pest');
 
     expect(fn () => DB::transaction(fn () => DB::table('crm_signing_requests')->where('id', $request->id)->update(['reminder_count' => 1, 'last_reminded_at' => now()])))->toThrow(QueryException::class, 'cannot be reminded');
@@ -572,4 +577,36 @@ it('schedules signing:remind hourly', function () {
 
     expect($events)->toHaveCount(1)
         ->and($events->first()->expression)->toBe('41 * * * *');
+});
+
+it('reminds no signer who will not sign electronically, automatically or by hand, until they accept (ADR-046 S4)', function () {
+    $envelope = s9SendOne($this);
+    $request = SigningRequest::query()->where('envelope_id', $envelope->id)->sole();
+    app(RecordSigningConsent::class)->refuse($request);
+
+    $this->travelTo(CarbonImmutable::parse('2026-06-18 10:30:00'));
+    s9Remind($this);
+    Mail::assertNotQueued(SigningReminderMail::class);
+
+    expect(fn () => app(SigningReminders::class)->manual($this->owner, $this->company, $request->refresh()))
+        ->toThrow(ValidationException::class, 'Undertecknaren vill inte skriva under elektroniskt.');
+
+    // Changing one's mind: once accepted, the reminders are due again.
+    app(RecordSigningConsent::class)->give($request, SigningConsentFixture::input());
+    s9Remind($this);
+    Mail::assertQueued(SigningReminderMail::class, 1);
+});
+
+it('reads the refused consents of all candidates in one query, however many signers (ADR-046 S4)', function () {
+    s9SendMany($this, array_map(fn (int $i): array => ['email' => "s{$i}@kontorshuset.test", 'step' => 1], range(1, 10)));
+    $this->travelTo(CarbonImmutable::parse('2026-06-18 10:30:00'));
+
+    DB::enableQueryLog();
+    app(SigningReminders::class)->run(CarbonImmutable::now());
+    // The candidate list reads it with the signers (withExists); each send checks it again under the signer's lock, as it does the status.
+    $listed = collect(DB::getQueryLog())->filter(fn (array $query): bool => str_contains($query['query'], 'consent_refused'))->count();
+    DB::disableQueryLog();
+
+    expect($listed)->toBe(1);
+    Mail::assertQueued(SigningReminderMail::class, 10);
 });

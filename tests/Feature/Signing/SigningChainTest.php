@@ -35,6 +35,7 @@ use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * The hash-chained audit trail of a signing envelope (ADR-046 amendment
@@ -54,6 +55,8 @@ function s2SignAt(string $token, string $name = 'Anna Andersson'): SigningReques
     $links = app(SignAtLink::class);
     $request = $links->find($token);
     expect($request)->toBeInstanceOf(SigningRequest::class);
+
+    SigningConsentFixture::give($request);
 
     return $links->sign($request, ['name' => $name, 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => $name, 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request)], '203.0.113.7', 'Pest');
 }
@@ -187,32 +190,33 @@ it('hashes an event as sha256(previous hash || canonical JSON), golden', functio
 it('chains one signer\'s events from the document hash and keeps the head on the envelope and in the audit log', function () {
     $sent = app(SendForSigning::class)($this->owner, $this->company, $this->quote, ['email' => 'anna@kontorshuset.test']);
     $links = app(SignAtLink::class);
+    SigningConsentFixture::token(s2Token($sent['url']));
     $links->open($links->find(s2Token($sent['url'])));
     $signed = s2SignAt(s2Token($sent['url']));
     $envelope = SigningEnvelope::query()->sole();
     $chain = s2Chain($envelope);
 
-    expect(array_map(fn (SigningEvent $event): string => $event->event->value, $chain))->toBe(['SENT', 'OPENED', 'SIGNED', 'COMPLETED'])
-        ->and(array_map(fn (SigningEvent $event): int => $event->sequence, $chain))->toBe([1, 2, 3, 4])
+    expect(array_map(fn (SigningEvent $event): string => $event->event->value, $chain))->toBe(['SENT', 'CONSENTED', 'OPENED', 'SIGNED', 'COMPLETED'])
+        ->and(array_map(fn (SigningEvent $event): int => $event->sequence, $chain))->toBe([1, 2, 3, 4, 5])
         ->and($chain[0]->previous_hash)->toBe($envelope->document_sha256)
         ->and($chain[1]->previous_hash)->toBe($chain[0]->hash)
-        ->and($chain[3]->previous_hash)->toBe($chain[2]->hash)
-        ->and(array_map(fn (SigningEvent $event): bool => EventHash::ofEvent($event) === $event->hash, $chain))->toBe([true, true, true, true])
-        ->and($chain[2]->payload)->toBe(['evidence' => EventHash::evidenceOf($signed->refresh())])
-        ->and($chain[2]->ip)->toBe('203.0.113.7')
-        ->and($chain[3]->payload)->toBe(['signers' => 1])
+        ->and($chain[4]->previous_hash)->toBe($chain[3]->hash)
+        ->and(array_map(fn (SigningEvent $event): bool => EventHash::ofEvent($event) === $event->hash, $chain))->toBe([true, true, true, true, true])
+        ->and($chain[3]->payload)->toBe(['evidence' => EventHash::evidenceOf($signed->refresh())])
+        ->and($chain[3]->ip)->toBe('203.0.113.7')
+        ->and($chain[4]->payload)->toBe(['signers' => 1])
         ->and($envelope->status)->toBe(EnvelopeStatus::Completed)
-        ->and($envelope->chain_head)->toBe($chain[3]->hash)
-        ->and($envelope->chain_sequence)->toBe(4)
+        ->and($envelope->chain_head)->toBe($chain[4]->hash)
+        ->and($envelope->chain_sequence)->toBe(5)
         ->and(AuditLog::forCompany($this->company)->where('action', 'signing.completed')->sole()->payload)->toEqual([
             'envelope_id' => $envelope->id,
             'status' => 'COMPLETED',
-            'chain_sequence' => 4,
-            'chain_head' => $chain[3]->hash,
+            'chain_sequence' => 5,
+            'chain_head' => $chain[4]->hash,
         ])
         ->and(SigningDocumentVersion::query()->sole()->only(['envelope_id', 'kind', 'path', 'sha256']))->toBe(['envelope_id' => $envelope->id, 'kind' => 'ORIGINAL', 'path' => $envelope->document_path, 'sha256' => $envelope->document_sha256])
         ->and(SigningDocumentVersion::query()->sole()->bytes)->toBe(strlen((string) Storage::disk('local')->get($envelope->document_path)))
-        ->and(s2Verify($this->company))->toMatchArray(['ok' => true, 'envelopes' => 1, 'events' => 4, 'files' => 2, 'problems' => []]);
+        ->and(s2Verify($this->company))->toMatchArray(['ok' => true, 'envelopes' => 1, 'events' => 5, 'files' => 2, 'problems' => []]);
 });
 
 it('chains every signer of an envelope in one sequence and closes it on a decline', function () {
@@ -224,13 +228,13 @@ it('chains every signer of an envelope in one sequence and closes it on a declin
     $chain = s2Chain($envelope);
 
     // The third signer's step never opened; the decline revokes that row too.
-    expect(array_map(fn (SigningEvent $event): string => $event->event->value, $chain))->toBe(['SENT', 'SENT', 'SIGNED', 'DECLINED', 'REVOKED'])
-        ->and(array_map(fn (SigningEvent $event): int => $event->sequence, $chain))->toBe([1, 2, 3, 4, 5])
-        ->and($chain[3]->payload)->toHaveKey('evidence')
-        ->and(json_encode($chain[3]->payload))->not->toContain('Fel pris')
+    expect(array_map(fn (SigningEvent $event): string => $event->event->value, $chain))->toBe(['SENT', 'SENT', 'CONSENTED', 'SIGNED', 'DECLINED', 'REVOKED'])
+        ->and(array_map(fn (SigningEvent $event): int => $event->sequence, $chain))->toBe([1, 2, 3, 4, 5, 6])
+        ->and($chain[4]->payload)->toHaveKey('evidence')
+        ->and(json_encode($chain[4]->payload))->not->toContain('Fel pris')
         ->and($envelope->status)->toBe(EnvelopeStatus::Declined)
-        ->and($envelope->chain_head)->toBe($chain[4]->hash)
-        ->and(AuditLog::forCompany($this->company)->where('action', 'signing.declined')->sole()->payload['chain_head'])->toBe($chain[4]->hash)
+        ->and($envelope->chain_head)->toBe($chain[5]->hash)
+        ->and(AuditLog::forCompany($this->company)->where('action', 'signing.declined')->sole()->payload['chain_head'])->toBe($chain[5]->hash)
         ->and(s2Verify($this->company)['ok'])->toBeTrue();
 });
 

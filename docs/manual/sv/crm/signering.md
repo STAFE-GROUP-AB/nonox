@@ -4,7 +4,7 @@ ordning: 27
 roller: [owner, admin, accountant, bookkeeper, sales]
 modul: crm
 rutter: [signing.file]
-sokord: [signera, signering, e-signatur, underskrift, namnteckning, digital signatur, elektronisk underskrift, godkänna offert, signeringsbevis, avtal, engångskod, åtkomstkod, kontroll av undertecknaren, låst länk]
+sokord: [signera, signering, e-signatur, underskrift, namnteckning, digital signatur, elektronisk underskrift, godkänna offert, signeringsbevis, avtal, engångskod, åtkomstkod, kontroll av undertecknaren, låst länk, samtycke, elektroniska handlingar]
 ---
 
 # Signera offerter och avtal
@@ -58,6 +58,21 @@ Kontrollen minskar risken att någon annan använder en vidarebefordrad länk. D
 
 ## Det här ser kunden
 
+### Samtycke till elektroniska handlingar
+
+Innan dokumentet visas, och efter en eventuell kontroll, ser den som ska signera en kort text om att handlingen skickas, visas och skrivs under elektroniskt, att hen får en kopia med e-post och att hen kan kontakta dig för att skriva under på annat sätt. Texten visas en gång per undertecknare och dokument.
+
+![Sidan där undertecknaren godkänner att handlingen skrivs under elektroniskt.](/bilder/manual/crm/signera-samtycke.webp)
+
+- Undertecknaren kryssar i **Jag godkänner att handlingen skrivs under elektroniskt.** och trycker på **Fortsätt till dokumentet**. Först då visas dokumentet och länken räknas som öppnad.
+- Textens version, en kontrollsumma (SHA-256) av exakt den text som visades och tidpunkten sparas som en del av beviset. Det blir händelsen **Undertecknaren godkände att handlingen skrivs under elektroniskt** i **Händelser** och i händelsekedjan, och står i signeringsbeviset under **Samtycke till elektroniska handlingar**.
+- Trycker undertecknaren i stället på **Jag vill inte skriva under elektroniskt** står det "Kontakta avsändaren om du vill skriva under på annat sätt", och du får en notis. Länken gäller fortfarande: undertecknaren kan öppna den igen och godkänna, eller så avbryter du signeringen och skriver under på annat sätt. Till en sådan undertecknare skickas inga påminnelser, varken automatiska eller med **Påminn nu**, förrän hen har godkänt.
+- I ett testföretag skickas inga mejl, så den som signerar får ingen kopia med e-post. Sidan säger det.
+
+Texten är versionerad och står i sin helhet, på svenska och engelska, i NONOX dokumentation (`docs/juridik/elektroniska-handlingar.md`). Den är ännu inte granskad av jurist.
+
+### Dokumentet och underskriften
+
 Kunden ser offertens rader, momsen, summan att betala, giltighetstiden och villkoren, och kan öppna PDF:en. Längst ned skriver kunden sitt namn och, om hen vill, sin titel, och väljer hur hen vill skriva under:
 
 - **Rita namnteckningen** i rutan. **Ångra senaste draget** och **Rensa** finns om det blir fel.
@@ -104,7 +119,7 @@ Avböjer kunden loggas det på kundens kort med skälet, och du får en notis. O
 
 ## Signeringsbeviset
 
-Signeringsbeviset är en PDF som visar vilket dokument som signerades, dess kontrollsumma (SHA-256), vem som signerade, när, hur (ritad namnteckning eller skrivet namn), vilken kontroll av undertecknaren som användes, från vilken IP-adress och webbläsare, och alla händelser: skickad, öppnad, kod skickad, kontroll klarad, signerad. Själva PDF:en som kunden såg ändras aldrig. Den som vill kontrollera att det är samma dokument räknar fram dess SHA-256 och jämför med beviset.
+Signeringsbeviset är en PDF som visar vilket dokument som signerades, dess kontrollsumma (SHA-256), vem som signerade, när, hur (ritad namnteckning eller skrivet namn), vilken kontroll av undertecknaren som användes, vilken version av samtycket till elektroniska handlingar undertecknaren godkände och när, från vilken IP-adress och webbläsare, och alla händelser: skickad, kod skickad, kontroll klarad, samtycke, öppnad, signerad. Själva PDF:en som kunden såg ändras aldrig. Den som vill kontrollera att det är samma dokument räknar fram dess SHA-256 och jämför med beviset.
 
 Under **Signering** på offerten eller avtalet hittar du **PDF:en som skickades**, **Signeringsbevis** och **Händelser** för varje länk.
 
@@ -181,10 +196,10 @@ Ett avtal i avtalsregistret skickas för signering på samma sätt, från avtale
 
 ## Bra att veta
 
-- **Personuppgifter.** Ditt företag är ansvarigt för uppgifterna om den som signerar: namn, titel, namnteckning, tidpunkt, IP-adress, webbläsare och e-postadressen. Sidan säger det till den som signerar. Namnteckningen lagras krypterad.
+- **Personuppgifter.** Ditt företag är ansvarigt för uppgifterna om den som signerar: namn, titel, namnteckning, tidpunkt, IP-adress, webbläsare, e-postadressen och när samtycket till elektroniska handlingar gavs. Sidan säger det till den som signerar. Namnteckningen lagras krypterad.
 - **Hur länge.** Signerade offerter och avtal med bevis sparas som det de hör till: blir offerten en order eller faktura är den räkenskapsinformation och sparas i sju år. Länkar som aldrig signerades tas bort ett år efter att de stängdes. Se [GDPR i CRM](/manual/crm/gdpr-i-crm).
 - **Bevisvärdet** av en enkel elektronisk underskrift är inte prövat för varje slags avtal. Är du osäker, fråga din jurist.
-- **Avtal med formkrav.** Vissa avtal måste skrivas under på papper, till exempel köp av fast egendom (jordabalken 4 kap. 1 §). Sådana avtal signeras inte här.
+- **Avtal med formkrav.** En enkel elektronisk underskrift duger inte för handlingar som enligt lag ska skrivas under på papper eller med en särskild form, till exempel köp av fast egendom (jordabalken 4 kap. 1 §), gåvobrev för fast egendom (jordabalken 4 kap. 29 §), testamente och äktenskapsförord. Sådana handlingar signeras inte här.
 - **API.** Offerter kan skickas för signering och statusen läsas genom API:t, och webhooken `quote.signed` talar om när en offert har signerats. Se [utvecklarsidorna](/utvecklare).
 
 ## Läs också

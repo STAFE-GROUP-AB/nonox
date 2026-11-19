@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-19-signering-samtycke",
+      "datum": "2026-11-19T12:30:00+01:00",
+      "rubrik": "Samtycke till elektroniska handlingar vid signering",
+      "beskrivning": "Innan dokumentet visas godkänner den som ska signera en kort, versionerad text om att handlingen skrivs under elektroniskt, eller väljer att kontakta avsändaren för att skriva under på annat sätt. Versionen, textens kontrollsumma och tidpunkten sparas som en del av beviset och står på signeringsbeviset. Avsändaren får en notis om någon inte vill skriva under elektroniskt.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-19-jamforelse-vitec-pyramid",
       "datum": "2026-11-19T09:20:00+01:00",
       "rubrik": "Vitec Pyramid i jämförelsen, med sidan Alternativ till Vitec Pyramid",

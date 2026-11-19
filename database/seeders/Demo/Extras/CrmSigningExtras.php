@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo\Extras;
 
+use App\Actions\Signing\RecordSigningConsent;
 use App\Actions\Signing\SendForSigning;
 use App\Actions\Signing\SignAtLink;
 use App\Actions\Signing\SigningReminders;
+use App\Domain\Signing\SigningConsent;
 use App\Domain\Signing\SigningPdfs;
 use App\Domain\Signing\Verification\SignerChecks;
 use App\Models\SigningRequest;
@@ -252,6 +254,9 @@ final class CrmSigningExtras extends DemoExtra
     {
         $links = app(SignAtLink::class);
         $request = $links->find(basename((string) parse_url($sent['url'], PHP_URL_PATH))) ?? $sent['request'];
+
+        // The signer accepts the consent to electronic records first, as on the page (ADR-046 S4).
+        app(RecordSigningConsent::class)->give($request, SigningConsent::accepted());
 
         $links->sign($request, [
             'name' => $name,

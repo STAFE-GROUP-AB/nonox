@@ -209,6 +209,18 @@ class SigningFollowUp
     }
 
     /**
+     * A signer refused the consent to electronic records (ADR-046 amendment,
+     * gap 7): the sender (and the document's own recipients) are told, so
+     * they can agree another way to sign. Must run inside the company.
+     */
+    public function consentRefused(SigningRequest $request): void
+    {
+        $company = Company::query()->findOrFail($request->company_id);
+
+        $this->notify($company, $request, __(':title: en undertecknare vill inte skriva under elektroniskt. Kontakta undertecknaren om ett annat sätt att skriva under. Under Signering ser du vem.', ['title' => SigningPdfs::title($request)]));
+    }
+
+    /**
      * Must run inside the company: the last day passed without every
      * signature, so the sender is told (ADR-046 amendment, gap 9). The
      * sentence names the document, not a signer.

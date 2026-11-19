@@ -35,6 +35,7 @@ use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * Envelopes (ADR-046 amendment 2026-11-18, gap 1, package S1): several
@@ -60,6 +61,8 @@ function s1Png(): string
 /** @return array<string, mixed> */
 function s1SignInput(SigningRequest $request, string $name = 'Anna Andersson'): array
 {
+    SigningConsentFixture::give($request);
+
     return ['name' => $name, 'accept' => '1', 'method' => 'DRAWN', 'signature' => s1Png(), 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request)];
 }
 
@@ -241,6 +244,7 @@ it('tells a signer on the page that the others get the names and times when seve
     s1Send($this, [['email' => 'anna@kontorshuset.test', 'step' => 1], ['email' => 'bo@kontorshuset.test', 'step' => 2]]);
     auth()->logout();
 
+    SigningConsentFixture::token(s1LinkFor('anna@kontorshuset.test'));
     $this->get('/signera/'.s1LinkFor('anna@kontorshuset.test'))->assertOk()->assertSee('Fler än du signerar dokumentet');
 });
 

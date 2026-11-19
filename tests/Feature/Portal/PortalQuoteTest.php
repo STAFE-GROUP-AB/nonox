@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Portal;
+use Tests\Support\SigningConsentFixture;
 
 /*
  * Accepting quotes in the portal (ADR-075 §7) through the shared signing
@@ -110,6 +111,7 @@ it('revokes an open signing link when the quote is accepted in the portal, and t
 it('cannot accept in the portal what was signed at a link', function () {
     $sent = CurrentCompany::run($this->company, fn () => app(SendForSigning::class)($this->owner, $this->company, $this->quote, ['email' => 'anna@kontorshuset.test']));
     $token = basename((string) parse_url($sent['url'], PHP_URL_PATH));
+    SigningConsentFixture::token($token);
     $this->post("/signera/{$token}", ['name' => 'Anna Andersson', 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => 'Anna Andersson', 'document_sha256' => $sent['request']->document_sha256, ...CurrentCompany::run($this->company, fn () => SigningPdfs::acceptanceFields($sent['request']))])->assertOk();
 
     Portal::signIn($this, $this->contact);
