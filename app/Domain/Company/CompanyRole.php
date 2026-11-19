@@ -36,6 +36,8 @@ enum CompanyRole: string
         'documents:view', 'documents:manage', 'documents:hold',
         // The signing engine's retention, legal hold, register extract and erasure (ADR-046 gap 11): core, owner and admin.
         'signing:settings', 'signing:privacy',
+        // Setting and lifting a legal hold on a signing: owner, admin and accountant, as documents:hold (owner decision 2026-11-19).
+        'signing:hold',
     ];
 
     public function label(): string
@@ -81,6 +83,7 @@ enum CompanyRole: string
                 'projects:view', 'projects:manage',
                 'analysis:view', 'analysis:share',
                 'documents:view', 'documents:manage', 'documents:hold',
+                'signing:hold',
             ],
             self::Bookkeeper => [
                 'vouchers:create', 'vouchers:post', 'vouchers:correct', 'vouchers:view',

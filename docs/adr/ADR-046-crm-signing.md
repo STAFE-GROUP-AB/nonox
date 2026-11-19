@@ -1455,6 +1455,7 @@ govern the core engine.
 | `signing:manage` (module) | templates, bulk send, void anyone's, see confidential envelopes | ✓ | ✓ | ✓ | | | | |
 | `signing:settings` (core) | retention, seal certificate, providers, defaults | ✓ | ✓ | | | | | |
 | `signing:privacy` (core) | a signer's register extract and erasure | ✓ | ✓ | | | | | |
+| `signing:hold` (core) | set and lift a legal hold (bevarandespärr) on a signing | ✓ | ✓ | ✓ | | | | |
 
 The `approver` gets nothing; the `field_worker` (ADR-074) keeps only its
 on-site flow. Envelopes of other types follow their document's permissions
@@ -2537,7 +2538,7 @@ before the trust-service item in gap 5 is answered.
     for å, ä and ö besides the real name.
   - **A request without an envelope** keeps attachments; none exist after the
     S1 backfill, so there is nothing to handle.
-  - **No e-mail code before the download (decision, not built).** The review
+  - **No e-mail code before the download (decision, not built; superseded 2026-11-19, see "S13 and S16 amendment, owner decisions 2026-11-19" below).** The review
     suggested reusing the S3 code service for confidential and standalone
     envelopes. It does not fit without a new design: the codes, their
     attempt counters, the lock, the cache lock and the hash-chain events are
@@ -2563,3 +2564,95 @@ before the trust-service item in gap 5 is answered.
   that anyone holding the mail can open is acceptable for a document with
   personal data (the alternative, a check in the page, would need the
   recipient's address to receive a code).
+
+### S13 and S16 amendment, owner decisions 2026-11-19 (queue item 30)
+
+**Legal hold is its own permission, `signing:hold`.** The owner decided that
+the accountant may set and lift a legal hold on a signing, as for documents
+(`documents:hold`), while the retention periods and the register extract stay
+with owner and admin. `signing:hold` is a core permission in
+`CompanyRole::PERMISSIONS`: the owner and the admin get it as before, and the
+accountant's list names it. It replaces `signing:settings` for exactly three
+things: `ManageSigningRetention::hold`, the hold buttons on the envelope page
+and the hold controls in Inställningar → Signering. Everything else is
+unchanged: the retention period per class, "Markera som räkenskapsinformation"
+and any change of class stay `signing:settings`; the register extract and the
+erasure stay `signing:privacy`. The Signering tab shows to a holder of
+`signing:hold`; there the retention period and the class table are shown only
+with `signing:settings`, the hold list and search with `signing:hold`. The
+audit entries `signing.retention_hold_set` and `signing.retention_hold_lifted`
+are unchanged in form. The P2-2 note above that left the accountant's hold "to
+the owner" is thereby decided.
+
+**An e-mail code before the files of a confidential envelope.** This replaces
+the "No e-mail code before the download" decision of S13. The risk was a
+forwarded or leaked mail: the link alone opens the files. For a confidential
+envelope the link page now asks for a code sent to the link's own address
+(`SigningDownloadLink.email`), the address the sender chose, and gives the
+files only after a right code. The review found that the S3 tables are keyed
+to a signer row; instead of bending them there is a small table of its own,
+`signing_download_codes`, keyed to the link (this is the separate design the
+earlier decision left open). A link of an envelope that is not confidential is
+unchanged.
+
+- **Flow:** `GET /signera/kopia/{token}` shows the code page instead of the file
+  list when `DownloadCodes::required()` (the envelope is confidential) and this
+  browser session is not unlocked. "Skicka kod" is
+  `POST /signera/kopia/{token}/kod`, the code is typed at
+  `POST /signera/kopia/{token}/kontroll`. The file route redirects to the page
+  without a record while locked. The page shows the address masked
+  (`e***@example.se`), so a holder of only the link learns no more than the
+  first letter and the domain.
+- **Code:** six digits from `random_int`, valid **10 minutes**, **5 tries**
+  each, used once; only the newest code counts. Stored as
+  HMAC-SHA256 keyed with the app key over the link id and the code
+  (`code_mac`), never the code itself; compared with `hash_equals`. A trigger
+  keeps a row fixed except its attempts (upwards only) and `verified_at` (once).
+- **Double send:** the send button has `data-once-form` (disabled while the form
+  is sent); on the server `DownloadCodes::send` runs behind
+  `Cache::lock("signing-download-code:{id}")` and reuses a still-valid code sent
+  within **60 seconds**, so at most one mail goes out. At most **3 codes an
+  hour** per link. A mail that fails to send removes its code row, so the next
+  click sends a new one.
+- **Rate limits and lock:** the two POST routes use the `signing-verify`
+  limiter (10 a minute per link and per IP address). **Ten wrong tries over all
+  of a link's codes** close the code step for good: no new code is sent and no
+  code is accepted; the page says to ask the sender for a new link (the sender
+  closes the link and sends a recipient a new one, as before). The counter is
+  the sum of the codes' attempts, so a new code does not reset it.
+- **Unlock:** a right code stores an expiry timestamp in the browser's session
+  (`signing.download-unlocked.{link id}`) for **30 minutes**
+  (`DownloadCodes::UNLOCK_MINUTES`) and the session id is regenerated. Nothing
+  about the browser is stored in the database. The 30 minutes bound how long a
+  shared or left-open browser can download after the code; they are short
+  against the 7 days the link of a confidential envelope lives.
+- **Pruning:** `PruneSigningLinks` deletes the codes of a link the day it
+  expires; the rest go with the link row (cascade) 30 days later.
+- **Mail:** `SigningDownloadCodeMail`, in the company's name and in the
+  language of the link (Swedish or English, `Mailable::locale`), the same
+  layout as the signer's code mail (S3), sent at once and not queued so a code
+  never waits in a queue table. Counted in the company's document mail quota,
+  never refused. A test company sends nothing and the page says so.
+- **Events:** like the download events there is no address, IP address or
+  browser in them: the audit log gets `signing.download_code_sent`,
+  `signing.download_code_failed` (with the attempt count) and
+  `signing.download_code_verified` with the link id and the envelope id only;
+  a code whose mail could not be sent is `signing.download_code_not_sent`.
+  A download after the code is a `signing_download_events` row as before.
+- **Level:** the code does not change anything about the signatures; it
+  controls who can download the finished files.
+- **Tests:** `tests/Feature/Signing/DownloadCodeTest.php`; the hold tests in
+  `tests/Feature/Signing/SigningRetentionTest.php`.
+- **Accepted consequence:** someone holding only the link can use up the ten
+  tries and lock the real recipient out of the code step. The remedy is the
+  sender's "Skicka ny länk", which closes the old link and gives a new one with
+  fresh counters.
+- **Audit:** `signing.download_code_sent` is written only after the mail went
+  out; a failed send writes `signing.download_code_not_sent`. The code page
+  shows no title before the unlock (data minimisation); the code mail may.
+- `TODO(legal-verify)`: whether a code to the link's own address is enough
+  protection for a confidential document with personal data (it protects
+  against a forwarded mail, not against someone who also reads the recipient's
+  mailbox); that a confidential envelope whose files are under the mail limit
+  still goes as attachments, so the code protects only the link path; `docs/gdpr/registerforteckning.md` and `lagringstider.md` list the
+  stored codes.

@@ -1,0 +1,10 @@
+{
+    "Din kod för att ladda ner :title": "Your code to download :title",
+    "Skriv in koden på sidan där du ska ladda ner filerna från :title.": "Enter the code on the page where you download the files from :title.",
+    "Skriv in en kod för att ladda ner filerna": "Enter a code to download the files",
+    "Det här är en konfidentiell signering. Vi skickar en kod till :email, och med den öppnar du filerna.": "This is a confidential signing. We send a code to :email, and with it you open the files.",
+    "För många felaktiga försök. Be avsändaren skicka en ny länk.": "Too many wrong tries. Ask the sender for a new link.",
+    "Det här är ett testföretag i NONOX. Testföretag skickar inga mejl, så ingen kod kan skickas.": "This is a test company in NONOX. Test companies send no e-mail, so no code can be sent.",
+    "Koden gäller i :minutes minuter och kan användas en gång.": "The code is valid for :minutes minutes and can be used once.",
+    "Vi har skickat en kod till :email.": "We have sent a code to :email."
+}

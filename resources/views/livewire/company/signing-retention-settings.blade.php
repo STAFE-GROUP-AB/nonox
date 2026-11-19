@@ -3,6 +3,7 @@
 @endphp
 
 <x-ui.card :title="__('Bevarande av signeringar')" :description="__('Hur länge signerade och osignerade dokument sparas innan de gallras. Gallringen körs varje natt och tar bort hela signeringen med dokument, signeringsbevis och händelser.')" data-testid="signing-retention-settings">
+    @if($canSettings)
     <ul class="space-y-2 text-sm text-gray-700">
         <li><span class="font-medium text-gray-900">{{ __('Räkenskapsinformation') }}</span> – {{ __('signerade offerter, avtal och ÄTA. Sparas minst till och med 31 december sju år efter slutet av det räkenskapsår då affärshändelsen bokfördes (bokföringslagen 7 kap. 2 §), och minst lika länge som andra signerade dokument. Ett avtal gallras inte medan det gäller. Tiden kan inte kortas.') }}</li>
         <li><span class="font-medium text-gray-900">{{ __('Andra signerade dokument') }}</span> – {{ __('egna dokument som har signerats. Sparas så många år efter signeringen som du väljer nedan.') }}</li>
@@ -38,8 +39,10 @@
             </tbody>
         </table>
     </div>
+    @endif
 
 
+    @if($canHold)
     <h3 class="mt-6 text-base font-semibold text-gray-900">{{ __('Bevarandespärrar') }}</h3>
     <p class="mt-1 text-sm text-gray-600">{{ __('En signering med bevarandespärr gallras inte och kan inte raderas, till exempel under en skatterevision eller en tvist. Sök fram signeringen här, välj skäl och sätt spärren. Det fungerar för offerter, avtal och ÄTA även utan modulen Signering.') }}</p>
 
@@ -94,5 +97,6 @@
                 @endforeach
             </ul>
         @endif
+    @endif
     @endif
 </x-ui.card>

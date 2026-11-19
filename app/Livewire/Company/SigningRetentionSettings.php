@@ -51,7 +51,7 @@ class SigningRetentionSettings extends Component
 
     public function mount(Company $company): void
     {
-        abort_unless($this->user()->hasTeamPermission($company, 'signing:settings'), 403);
+        abort_unless($this->user()->hasTeamPermission($company, 'signing:settings') || $this->user()->hasTeamPermission($company, 'signing:hold'), 403);
 
         $this->companyId = $company->id;
         $this->years = (string) SigningRetention::years($company->id);
@@ -60,6 +60,7 @@ class SigningRetentionSettings extends Component
     public function save(ManageSigningRetention $manage): void
     {
         $this->resetErrorBag();
+        abort_unless($this->user()->hasTeamPermission($this->company(), 'signing:settings'), 403);
         $this->validate(['years' => ['required', 'integer', 'between:'.SigningRetention::MIN_YEARS.','.SigningRetention::MAX_YEARS]], attributes: ['years' => __('bevarandetid')]);
         $manage->saveYears($this->user(), $this->company(), (int) $this->years);
 
@@ -127,6 +128,8 @@ class SigningRetentionSettings extends Component
             'unsignedMonths' => SigningRetention::UNSIGNED_MONTHS,
             'unsentDays' => SigningRetention::UNSENT_DAYS,
             'zone' => config('app.timezone'),
+            'canSettings' => $this->user()->hasTeamPermission($company, 'signing:settings'),
+            'canHold' => $this->user()->hasTeamPermission($company, 'signing:hold'),
             'seesConfidential' => $seesConfidential,
             'userId' => $userId,
         ]);
@@ -153,7 +156,7 @@ class SigningRetentionSettings extends Component
     private function company(): Company
     {
         $company = Company::query()->findOrFail($this->companyId);
-        abort_unless($this->user()->hasTeamPermission($company, 'signing:settings'), 403);
+        abort_unless($this->user()->hasTeamPermission($company, 'signing:settings') || $this->user()->hasTeamPermission($company, 'signing:hold'), 403);
 
         return $company;
     }

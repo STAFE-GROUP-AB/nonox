@@ -131,12 +131,18 @@ beforeEach(function () {
     app(ModuleManager::class)->enable(SigningModule::KEY, $this->company, $this->owner);
 });
 
-it('gives signing:settings and signing:privacy to the owner and the admin only', function () {
+it('gives signing:settings and signing:privacy to the owner and the admin only, and signing:hold also to the accountant', function () {
     foreach (['owner' => true, 'admin' => true, 'accountant' => false, 'bookkeeper' => false, 'auditor' => false, 'approver' => false] as $role => $expected) {
         $user = $role === 'owner' ? $this->owner : Bookkeeping::member($this->company, $role);
         $company = Company::query()->findOrFail($this->company->id);
 
         expect([$user->hasTeamPermission($company, 'signing:settings'), $user->hasTeamPermission($company, 'signing:privacy')])->toBe([$expected, $expected], $role);
+    }
+
+    foreach (['owner' => true, 'admin' => true, 'accountant' => true, 'bookkeeper' => false, 'auditor' => false, 'approver' => false] as $role => $expected) {
+        $user = $role === 'owner' ? $this->owner : Bookkeeping::member($this->company, $role);
+
+        expect($user->hasTeamPermission(Company::query()->findOrFail($this->company->id), 'signing:hold'))->toBe($expected, $role);
     }
 });
 
@@ -441,7 +447,7 @@ it('shows the Signering tab with retention and privacy to the owner, saves the p
     expect(SigningEnvelope::query()->count())->toBe(0);
 });
 
-it('sets and lifts a legal hold from the envelope page with signing:settings only', function () {
+it('sets and lifts a legal hold from the envelope page with signing:hold only', function () {
     $envelope = s16Send($this->owner, $this->company, s16Store($this->owner, $this->company), ['eva@example.test']);
     s16Sign('eva@example.test');
 
@@ -452,9 +458,21 @@ it('sets and lifts a legal hold from the envelope page with signing:settings onl
         ->assertSee('Bevarandespärr: Tvist');
     expect($envelope->refresh()->retention_hold)->toBeTrue();
 
-    $this->actingAs(Bookkeeping::member($this->company, 'accountant'));
+    $this->actingAs(Bookkeeping::member($this->company, 'bookkeeper'));
     Livewire::test(EnvelopePage::class, ['envelopeId' => $envelope->id])->assertDontSee('Häv bevarandespärr')->call('liftHold')->assertForbidden();
     expect($envelope->refresh()->retention_hold)->toBeTrue();
+
+    $this->actingAs(Bookkeeping::member($this->company, 'auditor'));
+    Livewire::test(EnvelopePage::class, ['envelopeId' => $envelope->id])->call('liftHold')->assertForbidden();
+    expect($envelope->refresh()->retention_hold)->toBeTrue();
+
+    // The accountant may lift it (and sets it again), but cannot mark the document as räkenskapsinformation: that stays signing:settings.
+    $this->actingAs(Bookkeeping::member($this->company, 'accountant'));
+    Livewire::test(EnvelopePage::class, ['envelopeId' => $envelope->id])->assertSee('Häv bevarandespärr')->assertDontSee('Markera som räkenskapsinformation')->call('markAccounting')->assertForbidden();
+    Livewire::test(EnvelopePage::class, ['envelopeId' => $envelope->id])->call('liftHold')->assertHasNoErrors();
+    expect($envelope->refresh()->retention_hold)->toBeFalse();
+    Livewire::test(EnvelopePage::class, ['envelopeId' => $envelope->id])->set('holdReason', 'SKATTEREVISION')->call('setHold')->assertHasNoErrors();
+    expect($envelope->refresh()->retention_hold)->toBeTrue()->and($envelope->retention_hold_reason)->toBe('SKATTEREVISION');
 });
 
 it('runs a fixed number of queries for the search and the extract, whatever the number of envelopes', function () {
@@ -546,7 +564,7 @@ it('never prunes the evidence of an agreement while it runs, and counts the year
         ->and($envelope->refresh()->retention_until?->toDateString())->toBe('2030-06-30');
 });
 
-it('sets and lifts a legal hold from the core settings with the module off, with signing:settings only', function () {
+it('sets and lifts a legal hold from the core settings with the module off, with signing:hold only', function () {
     $quote = s16Quote($this->owner, $this->company, '2026-06-15');
     app(SendForSigning::class)($this->owner, $this->company, $quote, ['email' => 'anna@kontorshuset.test']);
     s16Sign('anna@kontorshuset.test');
@@ -563,8 +581,28 @@ it('sets and lifts a legal hold from the core settings with the module off, with
     Livewire::test(SigningRetentionSettings::class, ['company' => $this->company])->call('liftHold', $envelope->id)->assertHasNoErrors();
     expect($envelope->refresh()->retention_hold)->toBeFalse();
 
+    foreach (['bookkeeper', 'auditor'] as $role) {
+        $this->actingAs(Bookkeeping::member($this->company, $role));
+        Livewire::test(SigningRetentionSettings::class, ['company' => Company::query()->findOrFail($this->company->id)])->assertForbidden();
+    }
+
+    // The accountant sees the hold controls but not the retention period, and cannot change the period.
     $this->actingAs(Bookkeeping::member($this->company, 'accountant'));
-    Livewire::test(SigningRetentionSettings::class, ['company' => $this->company])->assertForbidden();
+    Livewire::test(SigningRetentionSettings::class, ['company' => Company::query()->findOrFail($this->company->id)])
+        ->assertSee('Bevarandespärrar')->assertDontSee('Spara bevarandetid')
+        ->set('holdSearch', (string) $envelope->title)->call('searchHolds')
+        ->set('holdReason', 'TVIST')->call('setHold', $envelope->id)->assertHasNoErrors()
+        ->call('liftHold', $envelope->id)->assertHasNoErrors()
+        ->set('years', '12')->call('save')->assertForbidden();
+    expect($envelope->refresh()->retention_hold)->toBeFalse();
+});
+
+it('shows the Signering tab of the company settings to a holder of signing:hold', function () {
+    $this->actingAs(Bookkeeping::member($this->company, 'accountant'));
+    $this->get(route('teams.show', ['company' => $this->company->id, 'flik' => 'signering']))->assertOk()->assertSee('Bevarandespärrar')->assertDontSee('Spara bevarandetid');
+
+    $this->actingAs(Bookkeeping::member($this->company, 'bookkeeper'));
+    $this->get(route('teams.show', ['company' => $this->company->id, 'flik' => 'signering']))->assertOk()->assertDontSee('Bevarandespärrar');
 });
 
 it('erases one person without wiping the other people\'s signing', function () {

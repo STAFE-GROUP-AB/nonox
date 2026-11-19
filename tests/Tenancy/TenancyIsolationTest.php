@@ -85,6 +85,7 @@ use App\Models\SalesDocumentRow;
 use App\Models\SieImport;
 use App\Models\SigningCopyRecipient;
 use App\Models\SigningDocumentVersion;
+use App\Models\SigningDownloadCode;
 use App\Models\SigningDownloadEvent;
 use App\Models\SigningDownloadLink;
 use App\Models\SigningEnvelope;
@@ -660,6 +661,7 @@ const COMPANY_SCOPED_MODELS = [
     // The link to the finished files of a signing (ADR-046 S13).
     SigningDownloadLink::class => 'signingDownloadLinkAttributes',
     SigningDownloadEvent::class => 'signingDownloadEventAttributes',
+    SigningDownloadCode::class => 'signingDownloadCodeAttributes',
     SigningDocumentVersion::class => 'signingDocumentVersionAttributes',
     // A standalone document uploaded for signing (ADR-046 S7).
     SigningDocument::class => ['title' => 'Hemligt avtal', 'path' => 'signing-documents/hemligt.pdf', 'name' => 'Hemligt.pdf', 'sha256' => '0000000000000000000000000000000000000000000000000000000000000000', 'bytes' => 100, 'page_count' => 1],
@@ -2171,6 +2173,11 @@ function signingCopyRecipientAttributes(): array
 function signingDownloadLinkAttributes(): array
 {
     return ['envelope_id' => SigningEnvelope::create(signingEnvelopeAttributes())->id, 'kind' => 'COPY', 'email' => 'hemlig-lank@exempel.se', 'language' => 'sv', 'token_hash' => hash('sha256', (string) fake()->uuid()), 'expires_at' => now()->addDays(30)];
+}
+
+function signingDownloadCodeAttributes(): array
+{
+    return ['download_link_id' => SigningDownloadLink::create(signingDownloadLinkAttributes() + ['company_id' => CurrentCompany::id()])->id, 'code_mac' => hash('sha256', (string) fake()->uuid()), 'sent_at' => now(), 'expires_at' => now()->addMinutes(10), 'max_attempts' => 5];
 }
 
 function signingDownloadEventAttributes(): array

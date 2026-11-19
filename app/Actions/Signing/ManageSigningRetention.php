@@ -20,7 +20,7 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * The retention settings of the signing engine (ADR-046 amendment, gap 11,
- * package S16), all under signing:settings:
+ * package S16), under signing:settings, except the legal hold, which is signing:hold (owner decision 2026-11-19, as documents:hold):
  *
  * - the company's period for signed documents that are not
  *   räkenskapsinformation, 7–25 years (owner decision 12); it applies to
@@ -54,7 +54,7 @@ class ManageSigningRetention
 
     public function hold(User $user, Company $company, SigningEnvelope $envelope, bool $hold, ?LegalHoldReason $reason = null): SigningEnvelope
     {
-        $this->authorize($user, $company);
+        $this->authorize($user, $company, 'signing:hold');
 
         if ($hold && ! $reason instanceof LegalHoldReason) {
             throw ValidationException::withMessages(['holdReason' => __('Välj varför signeringen ska ha bevarandespärr.')]);
@@ -114,9 +114,9 @@ class ManageSigningRetention
     }
 
     /** @throws AuthorizationException */
-    private function authorize(User $user, Company $company): void
+    private function authorize(User $user, Company $company, string $permission = 'signing:settings'): void
     {
-        if (! $user->hasTeamPermission($company, 'signing:settings')) {
+        if (! $user->hasTeamPermission($company, $permission)) {
             throw new AuthorizationException;
         }
     }
