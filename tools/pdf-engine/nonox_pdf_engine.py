@@ -464,6 +464,17 @@ def op_stamp(request):
             font_path = available.get(font_key)
             if font_path is None:
                 raise EngineError('font_missing', f'the font {font_key} is not installed')
+            # A field's box (ADR-046 S6): the stamp is a form XObject whose BBox is the box, so nothing is drawn
+            # outside it (PDF clips a form XObject to its BBox), and text wider than the box is shrunk to fit.
+            box = item.get('box')
+            constraints = None
+            if box is not None:
+                if not isinstance(box, dict):
+                    raise EngineError('invalid_request', 'a text box must be an object')
+                constraints = layout.BoxConstraints(
+                    width=number_param(box, 'width', 1, 2000),
+                    height=number_param(box, 'height', 1, 2000),
+                )
             style = TextStampStyle(
                 border_width=0,
                 background=None,
@@ -471,11 +482,12 @@ def op_stamp(request):
                 text_box_style=TextBoxStyle(font=GlyphAccumulatorFactory(font_path, font_size=size), font_size=size, border_width=0),
                 inner_content_layout=layout.SimpleBoxLayoutRule(
                     x_align=layout.AxisAlignment.ALIGN_MIN,
-                    y_align=layout.AxisAlignment.ALIGN_MIN,
+                    y_align=layout.AxisAlignment.ALIGN_MIN if constraints is None else layout.AxisAlignment.ALIGN_MID,
                     margins=layout.Margins.uniform(0),
+                    inner_content_scaling=layout.InnerScaling.NO_SCALING if constraints is None else layout.InnerScaling.SHRINK_TO_FIT,
                 ),
             )
-            TextStamp(writer=writer, style=style, text_params={'value': text}).apply(page - 1, x, y)
+            TextStamp(writer=writer, style=style, text_params={'value': text}, box=constraints).apply(page - 1, x, y)
         elif kind == 'image':
             image_path = inside(base, item.get('path'), True)
             width = int(round(number_param(item, 'width', 1, 2000)))
@@ -820,7 +832,11 @@ def op_selftest(request):
 
     stamped = inside(base, 'selftest-stamped.pdf', False)
     if fonts(request).get('sans'):
-        items = [{'type': 'text', 'page': 1, 'x': 60, 'y': 700, 'text': 'Åsa Ελένη Дарья', 'font_size': 10}]
+        items = [
+            {'type': 'text', 'page': 1, 'x': 60, 'y': 700, 'text': 'Åsa Ελένη Дарья', 'font_size': 10},
+            # A field's box (ADR-046 S6): far too wide text, shrunk to fit and clipped to the box.
+            {'type': 'text', 'page': 1, 'x': 60, 'y': 660, 'text': 'Västerhaninge sjöstad och omnejd', 'font_size': 11, 'box': {'width': 40, 'height': 14}},
+        ]
         if fonts(request).get('cjk'):
             items.append({'type': 'text', 'page': 1, 'x': 60, 'y': 680, 'text': '李明 さくら 김민준', 'font_size': 10})
         op_stamp({**common, 'input': original, 'output': stamped, 'items': items})

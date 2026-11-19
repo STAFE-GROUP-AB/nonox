@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
+use App\Domain\Signing\Fields\SigningFields;
 use App\Domain\Signing\SigningPdfs;
 use App\Domain\Signing\SigningStatus;
 use App\Models\Company;
@@ -99,7 +100,8 @@ class SigningEnvelopeMail extends Mailable
 
         $envelope = $this->signingEnvelope();
         $disk = Storage::disk(SigningRequest::DISK);
-        $document = $envelope->document_path;
+        // With fields (ADR-046 S6) the finished document is the version with every signer's values.
+        $document = CurrentCompany::run($this->companyId, fn (): string => SigningFields::finalVersion($envelope));
         $attachments = [Attachment::fromData(fn (): string => (string) $disk->get($document), $envelope->document_name)->withMime('application/pdf')];
 
         // Copy recipients and the other signers get the summary only; the full certificates go to the company.

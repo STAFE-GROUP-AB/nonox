@@ -118,9 +118,16 @@
                 @endif
             @endif
 
-            <iframe src="{{ route('signing.document', ['token' => $token]) }}" title="{{ __('Dokumentet som PDF') }}" class="mt-6 hidden h-[36rem] w-full rounded-lg ring-1 ring-stone-200 md:block"></iframe>
+            @if($fields ?? null)
+                @include('signing.fields', ['fields' => $fields])
+            @else
+                <iframe src="{{ route('signing.document', ['token' => $token]) }}" title="{{ __('Dokumentet som PDF') }}" class="mt-6 hidden h-[36rem] w-full rounded-lg ring-1 ring-stone-200 md:block"></iframe>
+            @endif
 
             <p class="mt-4 break-all text-xs text-gray-600">{{ __('Kontrollsumma för PDF:en (SHA-256): :hash', ['hash' => $request->document_sha256]) }}</p>
+            @if(($fields ?? null) && $fields->version->sha256 !== $request->document_sha256)
+                <p class="mt-1 break-all text-xs text-gray-600">{{ __('Kontrollsumma för versionen med tidigare undertecknares uppgifter (SHA-256): :hash', ['hash' => $fields->version->sha256]) }}</p>
+            @endif
         </section>
 
         <section id="signera" aria-labelledby="signera-rubrik" class="mt-6 rounded-2xl bg-white p-5 shadow-xs ring-1 ring-stone-200 sm:p-6">
@@ -137,7 +144,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('signing.sign', ['token' => $token]) }}" class="mt-4 space-y-5" data-signing-form
+            <form id="signera-formular" method="POST" action="{{ route('signing.sign', ['token' => $token]) }}" class="mt-4 space-y-5" data-signing-form
                 data-empty-text="{{ __('Rita din namnteckning i rutan, eller välj att skriva ditt namn.') }}"
                 data-typed-text="{{ __('Skriv ditt namn exakt som i namnfältet för att skriva under.') }}"
                 data-drawn-text="{{ __('Namnteckningen är ritad.') }}"
@@ -147,6 +154,9 @@
                 <input type="hidden" name="acceptance_text" value="{{ $acceptance }}">
                 <input type="hidden" name="acceptance_mac" value="{{ $acceptanceMac }}">
                 <input type="hidden" name="signature" value="" data-signature-input>
+                @if($fields ?? null)
+                    <input type="hidden" name="revision_sha256" value="{{ $fields->version->sha256 }}">
+                @endif
 
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
@@ -184,6 +194,32 @@
                 </div>
 
                 <p class="text-sm font-medium text-red-700" data-signature-error role="alert" hidden></p>
+
+                @if(($fields ?? null) && $fields->needsInitials())
+                    <fieldset data-initials data-initials-empty-text="{{ __('Rita dina initialer i rutan, eller välj att skriva dem.') }}" data-initials-required="{{ $fields->initialsRequired() ? '1' : '0' }}">
+                        <legend class="text-sm font-medium">{{ __('Dina initialer') }}</legend>
+                        <input type="hidden" name="initials" value="" data-initials-input>
+                        <div class="mt-2 flex flex-wrap gap-4 text-sm">
+                            <label class="inline-flex min-h-11 items-center gap-2"><input type="radio" name="initials_method" value="DRAWN" @checked(old('initials_method', 'DRAWN') === 'DRAWN')> {{ __('Rita initialerna') }}</label>
+                            <label class="inline-flex min-h-11 items-center gap-2"><input type="radio" name="initials_method" value="TYPED" @checked(old('initials_method') === 'TYPED')> {{ __('Skriv mina initialer') }}</label>
+                        </div>
+                        <div data-initials-panel="DRAWN" class="mt-2">
+                            <p id="initials-help" class="text-sm text-gray-600">{{ __('Rita dina initialer i rutan. De sätts i varje initialfält i dokumentet.') }}</p>
+                            <canvas width="600" height="300" data-initials-canvas tabindex="-1" role="img" aria-label="{{ __('Ruta för initialer') }}" aria-describedby="initials-help"
+                                class="mt-2 block aspect-[2/1] w-full max-w-xs touch-none rounded-lg bg-white ring-2 ring-gray-300 ring-offset-1"></canvas>
+                            <button type="button" data-initials-clear class="mt-2 min-h-11 rounded-lg px-3 text-sm font-semibold ring-1 ring-gray-300 hover:bg-gray-50">{{ __('Rensa initialerna') }}</button>
+                        </div>
+                        {{-- Shown without JavaScript (the pad needs it); signing.js hides the panel that is not chosen. --}}
+                        <div data-initials-panel="TYPED" class="mt-2">
+                            <label for="typed-initials" class="text-sm font-medium">{{ __('Skriv dina initialer') }}</label>
+                            <input id="typed-initials" name="typed_initials" type="text" maxlength="10" value="{{ old('typed_initials') }}" class="{{ $input }} max-w-xs font-serif text-xl italic" autocomplete="off" @error('initials') aria-invalid="true" aria-describedby="fel-initialer" @enderror>
+                        </div>
+                        <p class="mt-1 text-sm font-medium text-red-700" data-initials-error role="alert" hidden></p>
+                        @error('initials')
+                            <p id="fel-initialer" class="mt-1 text-sm font-medium text-red-700">{{ $message }}</p>
+                        @enderror
+                    </fieldset>
+                @endif
 
                 <label class="flex items-start gap-3 text-sm">
                     <input type="checkbox" name="accept" value="1" required class="mt-0.5 size-5 rounded border-gray-400" @checked(old('accept'))>

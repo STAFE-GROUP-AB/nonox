@@ -40,6 +40,14 @@
       "omrade": "Webbplats"
     },
     {
+      "id": "2026-11-18-signering-falt",
+      "datum": "2026-11-18T23:15:00+01:00",
+      "rubrik": "Fält i dokumentet vid signering",
+      "beskrivning": "Ett dokument som skickas för signering kan ha fält som varje undertecknare fyller i, som text, tal, kryssrutor, datum och initialer, och sidorna visas då som bilder med fälten markerade. Varje värde kontrolleras av NONOX och stämplas in i PDF:en som en ny version, så nästa undertecknare ser de tidigare uppgifterna låsta. Fälten kräver PDF-motorn, och verktyget för att placera dem kommer i en senare version.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-18-koncernrapporter",
       "datum": "2026-11-18T22:30:00+01:00",
       "rubrik": "Koncernrapporter som CSV och PDF",

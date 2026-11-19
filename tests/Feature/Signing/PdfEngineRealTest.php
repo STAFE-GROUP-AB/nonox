@@ -155,6 +155,29 @@ it('stamps text in several scripts and an image as an incremental update that ke
         ->and($engine->inspect($output)->pages)->toBe(2);
 });
 
+it('stamps text inside a field box, shrunk to fit and clipped there (ADR-046 S6)', function () {
+    $engine = s5RealEngine($this);
+
+    if (! s5Fonts()) {
+        $this->markTestSkipped('The fonts are not fetched (scripts/fetch-signing-fonts.sh).');
+    }
+
+    $original = PdfEngineFixtures::pdf(1);
+    $path = PdfEngineFixtures::write($this->pdfDir, 'plain.pdf', $original);
+    $output = $this->pdfDir.'/boxed.pdf';
+
+    // Far wider than its 40-point box at 11 points: the engine must shrink it and clip it, not fail.
+    $result = $engine->stamp($path, $output, [
+        new StampText(1, 72, 700, 'Västerhaninge sjöstad och omnejd', 11, boxWidth: 40, boxHeight: 14),
+    ]);
+    $written = (string) file_get_contents($output);
+
+    expect(str_starts_with($written, $original))->toBeTrue()
+        ->and($result->sha256)->toBe(hash('sha256', $written))
+        ->and($engine->inspect($output)->revisions)->toBe(2)
+        ->and(substr($written, strlen($original)))->toContain('/BBox');
+});
+
 it('says which font is missing instead of stamping in the wrong one', function () {
     $engine = new SidecarPdfEngine(PdfEngineFixtures::python(), base_path('tools/pdf-engine/nonox_pdf_engine.py'), $this->pdfDir.'/no-fonts', $this->workRoot);
 

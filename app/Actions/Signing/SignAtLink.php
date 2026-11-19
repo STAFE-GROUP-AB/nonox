@@ -6,6 +6,7 @@ namespace App\Actions\Signing;
 
 use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\EnvelopeStatus;
+use App\Domain\Signing\Fields\FillSigningFields;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignatureImage;
 use App\Domain\Signing\SigningEnvelopes;
@@ -64,6 +65,7 @@ final class SignAtLink
     public function __construct(
         private readonly SigningEnvelopes $envelopes,
         private readonly SigningChain $chain,
+        private readonly FillSigningFields $fields,
     ) {}
 
     /** The request behind a token, in any company, or null. */
@@ -197,7 +199,9 @@ final class SignAtLink
     }
 
     /**
-     * @param  array<string, mixed>  $input  name, title, accept, method (DRAWN|TYPED), signature (PNG data URL), typed_signature, document_sha256
+     * @param  array<string, mixed>  $input  name, title, accept, method (DRAWN|TYPED), signature (PNG data URL), typed_signature, document_sha256;
+     *                                       for an envelope with fields (ADR-046 S6) also fields (id => value), radio (group => id),
+     *                                       initials_method, initials, typed_initials and revision_sha256 (the version shown)
      *
      * @throws SigningUnavailable when the link cannot be used (any more)
      * @throws ValidationException
@@ -230,7 +234,7 @@ final class SignAtLink
         }
 
         // The signed request, and whether it completed its envelope.
-        $result = CurrentCompany::run($request->company_id, fn (): array => DB::transaction(function () use ($request, $validated, $name, $image, $ip, $userAgent): array {
+        $result = CurrentCompany::run($request->company_id, fn (): array => DB::transaction(function () use ($request, $input, $validated, $name, $image, $ip, $userAgent): array {
             // The document first, then the request: the order every signing path takes (SignInSession, SendForSigning).
             $request->document(lock: true);
             $locked = $this->lockUsable($request);
@@ -252,6 +256,9 @@ final class SignAtLink
 
             $this->checkDocument($locked);
 
+            // The signer's fields (ADR-046 S6), while the row is still pending: checked, stamped as a new revision, stored and chained.
+            ($this->fields)($locked, $input, $name, ['method' => (string) $validated['method'], 'image' => $image]);
+
             $locked->forceFill([
                 'status' => SigningStatus::Signed,
                 'acceptance_text' => (string) $validated['acceptance_text'],
@@ -268,6 +275,13 @@ final class SignAtLink
 
             $certificate = SigningPdfs::certificate($locked->refresh());
             $path = dirname($locked->document_path).'/'.pathinfo($locked->document_path, PATHINFO_FILENAME).'-signeringsbevis.pdf';
+
+            // Every signer of an envelope shares the document's path: a second signer's certificate gets a name of its
+            // own instead of overwriting the first one's (found in ADR-046 S6; signing:verify reported FILE_CHANGED).
+            if (Storage::disk(SigningRequest::DISK)->exists($path)) {
+                $path = dirname($locked->document_path).'/'.pathinfo($locked->document_path, PATHINFO_FILENAME)."-{$locked->id}-signeringsbevis.pdf";
+            }
+
             Storage::disk(SigningRequest::DISK)->put($path, $certificate);
             $locked->forceFill(['signed_document_path' => $path, 'signed_document_sha256' => hash('sha256', $certificate)])->save();
 

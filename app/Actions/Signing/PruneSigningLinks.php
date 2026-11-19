@@ -6,7 +6,9 @@ namespace App\Actions\Signing;
 
 use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\EnvelopeStatus;
+use App\Domain\Signing\Fields\PageImages;
 use App\Domain\Signing\SigningStatus;
+use App\Models\SigningDocumentVersion;
 use App\Models\SigningEnvelope;
 use App\Models\SigningEvent;
 use App\Models\SigningRequest;
@@ -38,17 +40,28 @@ final class PruneSigningLinks
                 ->where(fn ($q) => $q->where('status', SigningStatus::Pending->value)->where('expires_at', '<', $cutoff))
                 ->orWhere(fn ($q) => $q->where('status', SigningStatus::Declined->value)->where('declined_at', '<', $cutoff))
                 ->orWhere(fn ($q) => $q->where('status', SigningStatus::Revoked->value)->where('revoked_at', '<', $cutoff)))
-            ->get(['id', 'company_id', 'envelope_id', 'document_path']);
+            ->get(['id', 'company_id', 'envelope_id', 'document_path', 'document_sha256']);
 
         foreach ($requests as $request) {
             $this->keepChainLinks($request);
 
             // The PDF is shared by every signer of an envelope (ADR-046 S1): it goes with the last row that uses it.
-            if (! SigningRequest::query()->where('document_path', $request->document_path)->whereKeyNot($request->id)->exists()) {
-                Storage::disk(SigningRequest::DISK)->delete($request->document_path);
-            }
+            $last = ! SigningRequest::query()->where('document_path', $request->document_path)->whereKeyNot($request->id)->exists();
+            // The page images rendered for a document with fields (ADR-046 S6) go with it, unless another envelope's version is the same file.
+            $images = $last && ! $this->imagesShared($request->document_sha256, $request->envelope_id);
 
+            // The row first; its files only once that is committed, so a failed delete never leaves a row without its file.
             $request->delete();
+
+            DB::afterCommit(function () use ($request, $last, $images): void {
+                if ($last) {
+                    Storage::disk(SigningRequest::DISK)->delete($request->document_path);
+                }
+
+                if ($images) {
+                    Storage::disk(SigningRequest::DISK)->deleteDirectory(PageImages::directory($request->company_id, $request->document_sha256));
+                }
+            });
         }
 
         // An envelope left without signers (ADR-046 amendment, gap 1) goes with them; a completed one is evidence and stays (trigger).
@@ -59,11 +72,40 @@ final class PruneSigningLinks
             ->get(['id', 'company_id', 'document_type', 'signable_id']);
 
         if ($stale->isNotEmpty()) {
+            // Its stamped versions' files and every version's page images (ADR-046 S6) go with it: the rows cascade
+            // first, the files after the commit.
+            $files = [];
+            $directories = [];
+
+            foreach (SigningDocumentVersion::query()->whereIn('envelope_id', $stale->modelKeys())->get(['id', 'company_id', 'envelope_id', 'kind', 'path', 'sha256']) as $version) {
+                if ($version->kind === SigningDocumentVersion::AFTER_SIGNER) {
+                    $files[] = $version->path;
+                }
+
+                if (! $this->imagesShared($version->sha256, $version->envelope_id)) {
+                    $directories[] = PageImages::directory($version->company_id, $version->sha256);
+                }
+            }
+
             SigningEnvelope::query()->whereKey($stale->modelKeys())->delete();
             $this->pruneStandaloneDocuments($stale);
+
+            DB::afterCommit(function () use ($files, $directories): void {
+                Storage::disk(SigningRequest::DISK)->delete($files);
+
+                foreach (array_unique($directories) as $directory) {
+                    Storage::disk(SigningRequest::DISK)->deleteDirectory($directory);
+                }
+            });
         }
 
         return $requests->count();
+    }
+
+    /** Whether a version of another envelope is the same file, so its page images are still needed. */
+    private function imagesShared(string $sha256, ?string $envelopeId): bool
+    {
+        return SigningDocumentVersion::query()->where('sha256', $sha256)->when($envelopeId !== null, fn ($query) => $query->where('envelope_id', '!=', $envelopeId))->exists();
     }
 
     /**

@@ -314,6 +314,8 @@ BEGIN
         ('signing_document_versions', 'SELECT, INSERT'),
         ('signing_documents', 'SELECT, INSERT, UPDATE, DELETE'),
         ('signing_envelopes', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('signing_field_values', 'SELECT, INSERT'),
+        ('signing_fields', 'SELECT, INSERT, UPDATE'),
         ('signing_link_tokens', 'SELECT, INSERT, UPDATE, DELETE'),
         ('signing_verification_codes', 'SELECT, INSERT, UPDATE'),
         ('skatteverket_events', 'SELECT, INSERT, UPDATE, DELETE'),

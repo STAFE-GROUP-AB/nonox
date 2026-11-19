@@ -142,6 +142,14 @@ before use, and exercised by `PdfEngineRealTest`:
   which writes through `IncrementalPdfFileWriter`); `pdf_utils.text.TextBoxStyle`,
   `pdf_utils.font.opentype.GlyphAccumulatorFactory(font_file, font_size)`,
   `pdf_utils.images.PdfImage`, `pdf_utils.layout`.
+- Since ADR-046 S6, a text stamp may carry a `box` (`width`, `height` in points):
+  `TextStamp(writer, style, text_params, box=layout.BoxConstraints(width, height))`
+  with `SimpleBoxLayoutRule(..., inner_content_scaling=layout.InnerScaling.SHRINK_TO_FIT)`.
+  The stamp is a form XObject whose BBox is the box, and PDF clips a form XObject
+  to its BBox. **Not yet read in the installed sources or exercised by
+  `PdfEngineRealTest`**: the S6 builder had no engine installation (and may not
+  install one); the next installation must confirm the `box` keyword of
+  `TextStamp` and `InnerScaling.SHRINK_TO_FIT` in pyHanko 0.38.1 and add a real test.
 - `pyhanko.sign.signers.SimpleSigner.load_pkcs12_data(bytes, other_certs, passphrase)`,
   `PdfSignatureMetadata(field_name, md_algorithm, subfilter=fields.SigSeedSubFilter.PADES, reason, location)`,
   `signers.sign_pdf(writer, meta, signer=, timestamper=, output=)`,

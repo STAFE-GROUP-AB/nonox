@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.152
+- Version: 0.153
 - Datum: 2026-11-18
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -1754,6 +1754,27 @@ balances").
   (`signing.verified`) visas i signeringspanelen. Kuvert från före kedjan fick
   en första händelse `CHAIN_STARTED` med antal och en sammanfattande hash av de
   tidigare händelserna per undertecknare; ingen befintlig rad ändrades.
+  Signeringen bokför ingenting och ingen bokföringsregel ändras.
+- Fält i PDF:en per undertecknare (version 0.153,
+  [ADR-046](../adr/ADR-046-crm-signing.md) tillägg 2026-11-18, lucka 2, paket
+  S6): ett kuvert kan ha fält (underskrift, initialer, datum, namn, text, tal,
+  kryssruta, lista, alternativ) som var och en hör till en undertecknare.
+  Fälten placeras när kuvertet skickas, före kedjans första händelse, och kan
+  sedan inte ändras (databasutlösare). Värdena kontrolleras på servern mot
+  fältets typ och regler, sparas en gång i `signing_field_values` i samma
+  transaktion som signerar och kan aldrig ändras; ritade underskrifter och
+  initialer sparas krypterade. Värdena stämplas in i dokumentet som en ny
+  inkrementell revision, så att den revision undertecknaren såg är de första
+  byten i den nya filen; den nya filen sparas i `signing_document_versions`
+  (`AFTER_SIGNER`) med sin SHA-256 och visas för nästa undertecknare. Händelsen
+  `FIELDS_FILLED` i kedjan bär varje värdes hash och de två versionernas
+  SHA-256, aldrig värdena; `signing:verify` räknar om värdenas hashar. Värden
+  för fält som hör till någon annan tas inte emot och loggas som
+  `FIELD_REJECTED` med fältens id. Undertecknarens eget bevis
+  (`document_sha256`) gäller fortfarande dokumentet som skickades. Den
+  färdiga PDF:en som skickas till parterna och visas för företaget är
+  versionen med alla undertecknares värden. Text stämplas alltid inom fältets
+  ruta; ett värde som inte får plats nekas.
   Signeringen bokför ingenting och ingen bokföringsregel ändras.
 - Varje skapad, skickad och betald faktura, offert och order skrivs till
   behandlingshistoriken.
@@ -6896,3 +6917,4 @@ påverkar bokföringen och fakturan:
 | 0.150 | 2026-11-18 | Pågående arbeten på projekt och faktureringsplan (avsnitt 5a5.1, ADR-081 lucka 6, paket E8): företagets metod för fastprisuppdrag sparas på företaget (`teams.fixed_price_method`) och gäller både arbetsorder och projekt. Bokslut → Pågående projekt räknar för projekt till fast pris utan arbetsorder färdigställandegrad, upparbetad intäkt och skillnad mot det fakturerade, och föreslår två verifikationsutkast (justering och återföring) bara ur de siffror som visades; siffrorna sparas i `project_wip_snapshots`, som inte kan ändras eller tas bort. Projekt på löpande räkning utan arbetsorder får inget värde. Faktureringsplan per projekt (`project_billing_milestones`) där en delfakturering blir ett fakturautkast med projektet på raden. Ingenting bokförs automatiskt och ingen bokförd verifikation ändras. |
 | 0.151 | 2026-11-18 | Koncernfakturor och motsvarande utkast (avsnitt 4.10d, ADR-081 paket E27): en utfärdad kundfaktura till en kund som är markerad som koncernföretag kan levereras som e-faktura (Peppol BIS Billing 3.0 med PDF) till inkorgen i det NONOX-företag som har organisationsnumret, när båda är aktiva medlemmar i samma koncern och mottagaren har slagit på mottagning från avsändaren (`intercompany_receipt_settings`); varje försök sparas i `intercompany_deliveries`, som bara kan läggas till, och avsändaren får inget skäl när leveransen nekas. Från en bokförd verifikation kan den som får skapa verifikationer i båda företagen göra ett utkast med vända rader i koncernföretaget, byggt från dess kontoplan, med en rad i `intercompany_pairs` i varje företag. Ingenting bokförs i det andra företaget, och ingen verifikation, numrering eller hashkedja ändras. |
 | 0.152 | 2026-11-18 | Flyttorder mellan lager (avsnitt 5j, ADR-081 paket E13): varor flyttas mellan två lager via platsen På väg (`TRANSIT`) med vanliga flyttrörelser och med batch eller serienummer. Artikelns saldo och värdet vid bokslutet är oförändrade, ingen kostnad läggs på och ingenting bokförs. Platsen På väg kan bara röras av en flyttorder. |
+| 0.153 | 2026-11-18 | Fält i PDF:en vid signering (ADR-046 tillägg, lucka 2, paket S6): fält per undertecknare som låses när kuvertet skickas, värden som kontrolleras på servern, sparas en gång och stämplas in som en ny inkrementell revision per undertecknare (`signing_document_versions`, `AFTER_SIGNER`), och händelsen `FIELDS_FILLED` med värdenas hashar i kuvertets hashkedja. Ingenting bokförs och ingen verifikation, numrering eller hashkedja för bokföringen ändras. |
