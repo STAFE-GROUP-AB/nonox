@@ -33,6 +33,7 @@
     </thead>
     <tbody>
       @foreach($comparison['features'] as $feature)
+        @continue(! App\Support\Landing\Comparison::rowShownFor($feature, $highlight ?? null))
         <tr>
           <th scope="row" class="cmp-feature-col">{{ $feature['name'] }}@if($feature['name'] === 'Alla moduler ingår i priset')<sup>*</sup>@endif</th>
           @foreach($programs as $program)
@@ -42,6 +43,8 @@
                 <span class="cmp-cell" title="{{ $comparison['legend'][$value] }}">{!! $icon[$value] !!}<span class="cmp-sr">{{ $comparison['legend'][$value] }}</span>@if($value === 'per')<span class="cmp-note">avgift</span>@elseif($value === 'web')<span class="cmp-note">webbapp</span>@elseif($value === 'self_hosted')<span class="cmp-note">egen drift</span>@elseif($value === 'own_key')<span class="cmp-note">egen AI-nyckel</span>@endif</span>
               @elseif($value === 'addon')
                 <span class="cmp-pill">Tillval</span>
+              @elseif($value === 'larger_plan')
+                <span class="cmp-pill" title="{{ $comparison['legend']['larger_plan'] }}">Större paket</span>
               @else
                 <span class="cmp-unknown" title="{{ $comparison['legend']['unknown'] }}">Anges ej</span>
               @endif
@@ -70,6 +73,7 @@
   <span>{!! $icon['yes'] !!} Ingår</span>
   <span>{!! $icon['per'] !!} Ingår, med avgift per anställd eller lönebesked</span>
   <span><span class="cmp-pill">Tillval</span> Kostar extra</span>
+  <span><span class="cmp-pill">Större paket</span> Finns i leverantörens större paket, pris på offert</span>
   <span>{!! $icon['web'] !!}<span class="cmp-note">webbapp</span> Installeras från webbläsaren (PWA), inte från App Store eller Google Play</span>
   <span>{!! $icon['no'] !!} Finns inte</span>
   <span>{!! $icon['self_hosted'] !!}<span class="cmp-note">egen drift</span> Bara när du kör NONOX själv, med eget avtal med en leverantör av öppen bankdata. Erbjuds inte på nonox.app än</span>
@@ -84,5 +88,5 @@
       <li><strong>{{ $program['name'] }}:</strong> {{ $program['plan'] }}. {{ $program['price_note'] }}@if($program['source']) <a href="{{ $program['source'] }}" rel="nofollow noopener" target="_blank">Källa</a>@endif</li>
     @endforeach
   </ul>
-  <p>Funktionerna gäller det jämförda paketet enligt prissidan och leverantörens egna produktsidor. Står en funktion inte där skriver vi "Anges ej", även om den kan finnas i ett annat paket. Raden om bokslut och årsredovisning gäller årsredovisning enligt K2. För ett mindre aktiebolag vars räkenskapsår följer K3 tar NONOX fram en förhandsversion (beta) av årsredovisningen. Den är inte granskad av en auktoriserad redovisningskonsult, och en redovisningskonsult ska granska den innan den skrivs under.@isset($comparison['features_checked_at']) Raderna för lager, streckkodsskanning, CRM, API, bankkoppling, schema, inkorg och tolkning kontrollerades {{ \Illuminate\Support\Str::of($comparison['features_checked_at'])->replace(' ', ' kl. ') }}.@endisset</p>
+  <p>Funktionerna gäller det jämförda paketet enligt prissidan och leverantörens egna produktsidor. Står en funktion inte där skriver vi "Anges ej", även om den kan finnas i ett annat paket. Raden om bokslut och årsredovisning gäller årsredovisning enligt K2. För ett mindre aktiebolag vars räkenskapsår följer K3 tar NONOX fram en förhandsversion (beta) av årsredovisningen. Den är inte granskad av en auktoriserad redovisningskonsult, och en redovisningskonsult ska granska den innan den skrivs under.@isset($comparison['features_checked_at']) Raderna för lager, streckkodsskanning, CRM, API, bankkoppling, schema, inkorg och tolkning kontrollerades {{ \Illuminate\Support\Str::of($comparison['features_checked_at'])->replace(' ', ' kl. ') }} för de leverantörer som då fanns i jämförelsen.@endisset @foreach($programs as $program)@isset($program['features_checked_at']) Funktionsraderna för {{ $program['name'] }} kontrollerades {{ $program['features_checked_at'] }} mot leverantörens egna sidor.@endisset @endforeach Rader som bara visas på en sida med ett enskilt program är kontrollerade hos de leverantörer sidan gäller; för andra leverantörer har vi inte läst raden och visar den inte.</p>
 </details>

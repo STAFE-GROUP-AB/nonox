@@ -19,7 +19,7 @@ namespace App\Support\Landing;
  * the data file, but no scenario sum is computed or shown for it.
  *
  * @phpstan-type PriceModel array{base_per_month: int, per_employee_per_month: ?int, included_employees: int, comparable?: bool, scenario_price?: bool}
- * @phpstan-type Program array{slug: string, name: string, plan: string, per_year: int, per_month?: int, price_note: string, source: ?string, fetched_at?: string, verified: bool, price_model?: PriceModel}
+ * @phpstan-type Program array{slug: string, name: string, plan: string, per_year: int, per_month?: int, price_note: string, source: ?string, fetched_at?: string, features_checked_at?: string, verified: bool, price_model?: PriceModel}
  * @phpstan-type Quote array{slug: string, name: string, plan: string, per_year: ?int, formula: string, price_note: string, source: ?string, verified: bool, comparable: bool, scenario_price: bool}
  */
 final class Comparison
@@ -34,12 +34,12 @@ final class Comparison
      *     programs: list<Program>,
      *     price_model_note: string,
      *     legend: array<string, string>,
-     *     features: list<array{name: string, keys: list<string>, values: array<string, string>}>
+     *     features: list<array{name: string, keys: list<string>, values: array<string, string>, checked_for?: list<string>}>
      * }
      */
     public static function data(): array
     {
-        /** @var array{fetched_at: string, features_checked_at?: string, timezone: string, scenario_employees: int, scenario: string, programs: list<Program>, price_model_note: string, legend: array<string, string>, features: list<array{name: string, keys: list<string>, values: array<string, string>}>} $data */
+        /** @var array{fetched_at: string, features_checked_at?: string, timezone: string, scenario_employees: int, scenario: string, programs: list<Program>, price_model_note: string, legend: array<string, string>, features: list<array{name: string, keys: list<string>, values: array<string, string>, checked_for?: list<string>}>} $data */
         $data = json_decode((string) file_get_contents(base_path('docs/migration/jamforelse.json')), true, flags: JSON_THROW_ON_ERROR);
 
         return $data;
@@ -91,6 +91,23 @@ final class Comparison
         }
 
         return 12 * ($model['base_per_month'] + self::paidEmployees($model, $employees) * $model['per_employee_per_month']);
+    }
+
+    /**
+     * Whether a feature row is shown for this page. A row with checked_for
+     * was read only on those vendors' pages, so it is shown only on the
+     * "alternativ till" page of one of them (and never on the start page or
+     * the industry pages, where $highlight is null).
+     *
+     * @param  array{checked_for?: list<string>}  $row
+     */
+    public static function rowShownFor(array $row, ?string $highlight): bool
+    {
+        if (! isset($row['checked_for'])) {
+            return true;
+        }
+
+        return $highlight !== null && in_array($highlight, $row['checked_for'], true);
     }
 
     /**

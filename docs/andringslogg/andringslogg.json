@@ -35,7 +35,7 @@
       "id": "2026-11-19-jamforelse-vitec-pyramid",
       "datum": "2026-11-19T09:20:00+01:00",
       "rubrik": "Vitec Pyramid i jämförelsen, med sidan Alternativ till Vitec Pyramid",
-      "beskrivning": "Jämförelsen har fått Vitec Pyramid (paketet Nova Office, 399 kr per användare och månad) och sidan Alternativ till Vitec Pyramid, med källor från Vitecs egna sidor. Pyramid har ingen lönemodul, så priset jämförs inte med scenariot med fem anställda, och Business Studio har inget publicerat pris. Tabellen har också fått fjorton nya funktionsrader, bland annat batch och serienummer, flytt mellan lager, koncernsammanställning och signering.",
+      "beskrivning": "Jämförelsen har fått Vitec Pyramid (paketet Nova Office, 399 kr per användare och månad) och sidan Alternativ till Vitec Pyramid, med källor från Vitecs egna sidor. Vitecs modulkatalog har ingen lönemodul, så priset jämförs inte med scenariot med fem anställda, och Business Studio har inget publicerat pris. Fjorton nya funktionsrader visas bara på alternativsidor för de leverantörer vars sidor vi har läst för raden.",
       "typ": "Nytt",
       "omrade": "Webbplats"
     },

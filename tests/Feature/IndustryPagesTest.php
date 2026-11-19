@@ -323,3 +323,15 @@ it('compares only NONOX and the named program on an alternative page', function 
         }
     }
 });
+
+it('shows a row with checked_for only on the alternative page of a vendor it was read for', function () {
+    $row = collect(Comparison::data()['features'])->firstWhere('name', 'Anläggningsregister med avskrivningar');
+
+    expect($row['checked_for'])->toContain('pyramid')->toContain('fortnox')
+        ->and($row['values']['fortnox'])->toBe('addon');
+
+    $this->get('/')->assertOk()->assertSee('Ditt system.')->assertDontSee('Anläggningsregister med avskrivningar');
+    $this->get(route('alternative', 'pyramid'))->assertOk()->assertSee('Anläggningsregister med avskrivningar')->assertSee('Större paket');
+    $this->get(route('alternative', 'fortnox'))->assertOk()->assertSee('Anläggningsregister med avskrivningar');
+    $this->get(route('alternative', 'visma'))->assertOk()->assertDontSee('Anläggningsregister med avskrivningar');
+});

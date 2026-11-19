@@ -53,7 +53,7 @@ class IndustryController
             'industry' => $page,
             'pricing' => Industries::pricing($page),
             'features' => array_combine(Industries::featureKeys($page), array_map(fn (string $key): array => Features::get($key), Industries::featureKeys($page))),
-            'comparisonRows' => array_values(array_filter($comparison['features'], fn (array $row): bool => in_array($row['name'], $page['comparison_features'], true))),
+            'comparisonRows' => array_values(array_filter($comparison['features'], fn (array $row): bool => Comparison::rowShownFor($row, null) && in_array($row['name'], $page['comparison_features'], true))),
             'comparisonPrograms' => $comparison['programs'],
             'comparisonLegend' => $comparison['legend'],
             'related' => array_values(array_filter(array_map(fn (string $slug): ?array => Industries::find($slug), $page['related']))),
