@@ -72,12 +72,45 @@
                         </ul>
                     </div>
                 @endif
+
+                @if($templates->isNotEmpty())
+                    <div class="mt-6 border-t border-gray-100 pt-4" data-testid="signing-wizard-templates">
+                        <h3 class="text-sm font-semibold text-gray-900">{{ __('Börja från en mall') }}</h3>
+                        <p class="mt-1 text-sm text-gray-600">{{ __('En mall har dokumentet, rollerna och fälten färdiga. Du väljer bara vem som tar varje roll.') }}</p>
+                        <x-input-error for="template" class="mt-2" />
+                        <ul class="mt-2 divide-y divide-gray-100 text-sm">
+                            @foreach($templates as $template)
+                                <li wire:key="wizard-template-{{ $template->id }}" class="flex flex-wrap items-center gap-3 py-2">
+                                    <span class="font-medium text-gray-900">{{ $template->name }}</span>
+                                    <span class="text-gray-600">{{ trans_choice('{1} :count sida|[2,*] :count sidor', $template->page_count, ['count' => $template->page_count]) }} · {{ trans_choice('{1} :count roll|[2,*] :count roller', $template->roles_count, ['count' => $template->roles_count]) }}</span>
+                                    <button type="button" class="ms-auto min-h-11 text-sm font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="startFromTemplate('{{ $template->id }}')">{{ __('Använd mallen') }}</button>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             @endif
         </x-ui.card>
     @endif
 
     @if($step === 2)
         <x-ui.card :title="__('Undertecknare och steg')" :description="__('Undertecknare med samma steg signerar samtidigt. Nästa steg får sin länk först när alla i steget före har signerat. Högst :count undertecknare.', ['count' => $maxSigners])">
+            @if($templates->isNotEmpty() || $activeTemplate !== null)
+                <div class="mt-4 rounded-lg border border-gray-200 p-3" data-testid="signing-wizard-template-picker">
+                    @if($activeTemplate !== null)
+                        <p class="text-sm text-gray-900">{{ __('Mall: :name. Rollerna, stegen, kontrollerna och fälten kommer från mallen.', ['name' => $activeTemplate->name]) }}</p>
+                        <button type="button" class="mt-2 min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="clearTemplate">{{ __('Skicka utan mall') }}</button>
+                    @else
+                        <label for="wizard-template" class="text-sm font-semibold text-gray-900">{{ __('Använd en mall') }}</label>
+                        <select id="wizard-template" class="{{ $input }} mt-1 sm:max-w-sm" wire:change="useTemplate($event.target.value)">
+                            <option value="">{{ __('Ingen mall') }}</option>
+                            @foreach($templates as $template)
+                                <option value="{{ $template->id }}">{{ $template->name }}</option>
+                            @endforeach
+                        </select>
+                    @endif
+                </div>
+            @endif
             <div class="mt-4 flex flex-wrap gap-3 text-sm">
                 <button type="button" class="min-h-11 rounded-xl bg-white px-4 font-medium ring-1 ring-stone-200 hover:bg-gray-50 sm:min-h-0 sm:py-2" wire:click="allAtOnce">{{ __('Alla samtidigt') }}</button>
                 <button type="button" class="min-h-11 rounded-xl bg-white px-4 font-medium ring-1 ring-stone-200 hover:bg-gray-50 sm:min-h-0 sm:py-2" wire:click="inOrder">{{ __('I ordning') }}</button>
@@ -86,6 +119,19 @@
             <ol class="mt-3 space-y-3">
                 @foreach($signers as $index => $signer)
                     <li wire:key="wizard-signer-{{ $index }}" class="grid gap-3 rounded-lg border border-gray-200 p-3 sm:grid-cols-[1fr_7rem_auto] sm:items-end">
+                        <x-ui.field for="wizard-signer-role-{{ $index }}" :label="__('Roll (frivilligt)')" error="signers.{{ $index }}.role" class="sm:col-span-3" :hint="$activeTemplate === null ? __('Till exempel Kund eller Säljare. Rollen sparas om du sparar uppsättningen som mall.') : null">
+                            <input id="wizard-signer-role-{{ $index }}" type="text" class="{{ $input }} mt-1 sm:max-w-xs" wire:model="signers.{{ $index }}.role" maxlength="60" autocomplete="off">
+                        </x-ui.field>
+                        @if(in_array($index, $internalSigners, true) && $members->isNotEmpty())
+                            <x-ui.field for="wizard-signer-member-{{ $index }}" :label="__('Föreslå en medlem')" class="sm:col-span-3" :hint="__('Rollen är företagets egen. Välj en medlem så fylls adressen i.')">
+                                <select id="wizard-signer-member-{{ $index }}" class="{{ $input }} mt-1 sm:max-w-xs" wire:change="suggestMember({{ $index }}, $event.target.value)">
+                                    <option value="">{{ __('Välj medlem') }}</option>
+                                    @foreach($members as $member)
+                                        <option value="{{ $member->id }}">{{ $member->name }}</option>
+                                    @endforeach
+                                </select>
+                            </x-ui.field>
+                        @endif
                         <x-ui.field for="wizard-signer-email-{{ $index }}" :label="__('E-post')" error="signers.{{ $index }}.email">
                             <input id="wizard-signer-email-{{ $index }}" type="email" class="{{ $input }} mt-1" wire:model="signers.{{ $index }}.email" autocomplete="off" required>
                         </x-ui.field>
@@ -295,6 +341,19 @@
                 <x-button type="button" wire:click="send" wire:loading.attr="disabled">{{ __('Skicka för signering') }}</x-button>
                 <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="back">{{ __('Tillbaka') }}</button>
             </div>
+        </x-ui.card>
+
+        <x-ui.card :title="__('Spara som mall')" :description="$standaloneDocument ? __('Mallen sparar PDF-filen, rollerna (namn, steg och kontroll), fälten och inställningarna ovan, men inga e-postadresser till undertecknarna. Nästa gång väljer du bara vem som tar varje roll.') : __('Mallen sparar rollerna (namn, steg och kontroll) och inställningarna ovan, men inga e-postadresser till undertecknarna. Dokumentet görs när du skickar.')" data-testid="signing-wizard-save-template">
+            <div class="mt-4 flex flex-wrap items-end gap-3">
+                <x-ui.field for="wizard-template-name" :label="__('Mallens namn')" error="templateName" class="min-w-0 flex-1 sm:max-w-sm">
+                    <input id="wizard-template-name" type="text" class="{{ $input }} mt-1" wire:model="templateName" maxlength="120" autocomplete="off">
+                </x-ui.field>
+                <x-button type="button" wire:click="saveAsTemplate">{{ __('Spara som ny mall') }}</x-button>
+                @if($activeTemplate !== null && $canUpdateTemplate)
+                    <button type="button" class="min-h-11 rounded-xl bg-white px-4 text-sm font-medium ring-1 ring-stone-200 hover:bg-gray-50 sm:min-h-0 sm:py-2" wire:click="updateTemplate" wire:confirm="{{ __('Uppdatera mallen ”:name” med de här rollerna, fälten och inställningarna? Signeringar som redan är skickade ändras inte.', ['name' => $activeTemplate->name]) }}">{{ __('Uppdatera mallen') }}</button>
+                @endif
+            </div>
+            <x-input-error for="templateRoles" class="mt-2" />
         </x-ui.card>
     @endif
 </div>

@@ -241,7 +241,15 @@ final class SendForSigning
 
             $file = $this->storePdf($company, $document, $measured);
             $envelope = $this->envelopes->create($document, $file, $expires, $user->id, $reminders, $confidential);
-            $envelope->forceFill(['current_step' => $first])->save();
+            // The template the envelope was set up from (ADR-046 S14), remembered by id; a template of another company, of another document type or a confidential one the sender may not see (the same rule as SigningTemplate::visibleTo) is ignored.
+            $templateId = blank($validated['template_id'] ?? null) ? null : DB::table('signing_templates')
+                ->where('id', $validated['template_id'])
+                ->where('company_id', $company->id)
+                ->where('document_type', $document->signingType())
+                ->when(! $user->hasTeamPermission($company, 'signing:manage'), fn ($query) => $query->where(fn ($visible) => $visible->where('confidential', false)->orWhere('created_by', $user->id)))
+                ->sharedLock()
+                ->value('id');
+            $envelope->forceFill(['current_step' => $first, 'template_id' => $templateId])->save();
             $opened = [];
             $created = [];
 
@@ -436,6 +444,7 @@ final class SendForSigning
             'create_invoice' => ['sometimes', 'boolean'],
             'deal_id' => ['nullable', 'integer'],
             'fields' => ['nullable', 'array'],
+            'template_id' => ['nullable', 'uuid'],
         ], [
             'signers.min' => $minSigners > 1 ? __('Lägg till minst två undertecknare, eller skicka till en.') : __('Lägg till minst en undertecknare.'),
             'confidential.declined' => __('Bara dokument som laddats upp under Signering kan vara konfidentiella.'),

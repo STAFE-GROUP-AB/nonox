@@ -90,15 +90,36 @@ class EraseSigner
                 $refused[] = $outcome;
             }
 
+            $templates = $this->eraseFromTemplates($user, $company, $email);
+
             Audit::record('privacy.erased', null, [
                 'subject' => 'signer',
                 'subject_hash' => self::hash($email),
                 'envelopes_deleted' => $deleted,
                 'envelopes_kept' => count($refused),
+                'templates_cleaned' => $templates,
             ], $company, $user);
 
             return ['deleted' => $deleted, 'refused' => $refused];
         });
+    }
+
+    /**
+     * Removes the address from the default copy recipients of the company's signing templates (ADR-046 S14).
+     * A template has no retention, so nothing is refused. The audit entry holds the template's id only.
+     */
+    private function eraseFromTemplates(User $user, Company $company, string $email): int
+    {
+        $cleaned = 0;
+
+        foreach (SignerRecords::templates($email) as $template) {
+            $kept = array_values(array_filter((array) $template->copies, fn (array $copy): bool => SignerRecords::normalise((string) $copy['email']) !== $email));
+            $template->forceFill(['copies' => $kept])->save();
+            Audit::record('signing.template_copy_erased', $template, ['signing_template_id' => $template->id, 'copies_left' => count($kept)], $company, $user);
+            $cleaned++;
+        }
+
+        return $cleaned;
     }
 
     /** The keyed hash of an address, so the audit log never keeps the address itself. */

@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-19-signering-mallar",
+      "datum": "2026-11-19T15:00:00+01:00",
+      "rubrik": "Mallar för signering med roller",
+      "beskrivning": "Spara en signering som mall: PDF-filen, rollerna (till exempel Kund och Säljare) med steg och kontroll, fälten för varje roll och inställningarna för sista dag, påminnelser, kopior och språk. Nästa gång väljer du mallen under Signering → Mallar eller i guiden och anger bara vem som tar varje roll. Det finns också mallar för offerter och avtal, med roller och inställningar.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-19-signering-gallring",
       "datum": "2026-11-19T14:30:00+01:00",
       "rubrik": "Bevarandetid, bevarandespärr och radering för signeringar",

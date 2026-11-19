@@ -11,7 +11,9 @@ use App\Domain\Signing\SigningConsent;
 use App\Domain\Signing\SigningPdfs;
 use App\Models\SigningRequest;
 use App\Modules\ModuleManager;
+use App\Modules\Signing\Actions\ManageSigningTemplates;
 use App\Modules\Signing\Models\SigningDocument;
+use App\Modules\Signing\Models\SigningTemplate;
 use App\Modules\Signing\SigningModule;
 use App\Support\Tenancy\CurrentCompany;
 use Database\Seeders\Demo\DemoContext;
@@ -48,7 +50,9 @@ final class SigningDocumentsExtras extends DemoExtra
                 $employment = $this->document($c, 'Anställningsavtal, Eva Exempelsson', 'Anställningsavtal', 'Anställningen gäller tillsvidare med sex månaders provanställning och tre månaders ömsesidig uppsägning.');
 
                 // Uploaded and not sent yet: shown under "Uppladdade dokument som inte är skickade" in the wizard's first step.
-                $this->document($c, 'Samarbetsavtal, utkast', 'Samarbetsavtal', 'Parterna samarbetar kring utveckling av en gemensam tjänst.');
+                $draft = $this->document($c, 'Samarbetsavtal, utkast', 'Samarbetsavtal', 'Parterna samarbetar kring utveckling av en gemensam tjänst.');
+
+                $this->templates($c, $draft);
 
                 $send = app(SendForSigning::class);
 
@@ -63,6 +67,37 @@ final class SigningDocumentsExtras extends DemoExtra
                 $send->envelope($c->user, $c->company, $employment, ['signers' => [['email' => 'eva.exempelsson@example.test', 'step' => 1, 'verification' => 'EMAIL_CODE']], 'confidential' => true], minSigners: 1);
             });
         });
+    }
+
+    /** Two templates (ADR-046 S14): one for the draft's kind of document, with two roles, and one for quotes. Roles and settings only, so the demo needs no PDF engine. */
+    private function templates(DemoContext $c, SigningDocument $draft): void
+    {
+        $templates = app(ManageSigningTemplates::class);
+
+        $templates->create($c->user, $c->company, [
+            'name' => 'Samarbetsavtal med två parter',
+            'document_type' => SigningTemplate::DOCUMENT,
+            'roles' => [
+                ['label' => 'Kund', 'step' => 1, 'verification' => 'EMAIL_CODE'],
+                ['label' => 'Säljare', 'step' => 2, 'verification' => 'NONE', 'internal' => true],
+            ],
+            'deadline_days' => 14,
+            'auto_reminders' => true,
+            'reminder_days' => 3,
+            'copies' => [['email' => 'avtal@exempelbolaget.test', 'name' => 'Avtalsarkivet', 'language' => 'sv']],
+        ], $draft);
+
+        $templates->create($c->user, $c->company, [
+            'name' => 'Standardoffert med motpart',
+            'document_type' => SigningTemplate::QUOTE,
+            'roles' => [
+                ['label' => 'Kund', 'step' => 1, 'verification' => 'NONE'],
+                ['label' => 'Säljare', 'step' => 2, 'verification' => 'NONE', 'internal' => true],
+            ],
+            'deadline_days' => 30,
+            'auto_reminders' => true,
+            'reminder_days' => 7,
+        ]);
     }
 
     private function document(DemoContext $c, string $title, string $heading, string $text): SigningDocument

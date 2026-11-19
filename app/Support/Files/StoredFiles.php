@@ -69,6 +69,8 @@ final class StoredFiles
         'document_versions' => 'path',
         // A standalone document uploaded for signing (ADR-046 S7).
         'signing_documents' => 'path',
+        // The PDF of a signing template (ADR-046 S14).
+        'signing_templates' => 'path',
     ];
 
     /**

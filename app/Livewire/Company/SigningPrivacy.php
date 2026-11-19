@@ -77,6 +77,7 @@ class SigningPrivacy extends Component
 
         return view('livewire.company.signing-privacy', [
             'records' => $this->searched === null ? [] : CurrentCompany::run($company, fn (): array => SignerRecords::find($this->searched)),
+            'templates' => $this->searched === null ? collect() : CurrentCompany::run($company, fn () => SignerRecords::templates($this->searched)),
             'refusedReasons' => collect($this->refused)->pluck('reason', 'envelope_id')->all(),
             'zone' => config('app.timezone'),
         ]);

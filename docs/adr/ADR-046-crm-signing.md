@@ -2563,3 +2563,75 @@ before the trust-service item in gap 5 is answered.
   that anyone holding the mail can open is acceptable for a document with
   personal data (the alternative, a check in the page, would need the
   recipient's address to receive a code).
+
+### S14 as built (2026-11-19): templates with roles
+
+- Migration `database/migrations/2027_03_20_100000_create_signing_templates.php`:
+  `signing_templates` (uuid; type `DOCUMENT`, `QUOTE` or `AGREEMENT`; the PDF
+  as a copy of its own with SHA-256 for `DOCUMENT` only; defaults `deadline_days`,
+  `auto_reminders`, `reminder_days` (null is the single reminder), `language`,
+  `confidential`, `copies` jsonb; `archived_at`), `signing_template_roles`
+  (`key`, `label`, `step`, `verification`, `internal`, `position`), and on
+  `signing_fields` the template side: `template_id` + `role_key` (composite FK
+  to the role, cascade) instead of `envelope_id` + `signing_request_id`, which
+  became nullable; a check constraint makes it exactly one side. The S6
+  trigger rules are kept for envelope fields; a template's fields change
+  freely. `signing_envelopes.template_id` (no foreign key, so that deleting a
+  company or template never touches a finished envelope).
+- **Deviation:** `signing_fields` is now `ReadWrite` instead of `NoDelete`,
+  because the app replaces a template's fields; the delete trigger still
+  refuses removing an envelope's field once the envelope is out.
+- **Simplest options taken.** A template of a `DOCUMENT` is saved from the send
+  wizard ("Spara som mall", one role per signer, the fields follow their
+  signer); `QUOTE` and `AGREEMENT` templates have roles and defaults only and
+  are made on `/signering/mallar/ny`. Using a template makes an ordinary
+  unsent `SigningDocument` copy and opens the wizard with the roles, steps,
+  checks, defaults and fields applied; addresses stay empty. A template's
+  fields apply only to a document with the same SHA-256 (the file is the
+  template's own); another document gets roles and defaults. The company's own
+  role (`internal`) is suggested a member. The PDF never changes (trigger); a
+  new file is a new template, and fields, roles and defaults are changed by
+  opening the template in the wizard ("Ändra fält", "Uppdatera mallen") or on
+  its form. A template with envelopes is archived, never deleted.
+- **Permissions:** `signing:send` lists, uses and creates; the creator changes,
+  archives and removes their own; `signing:manage` everyone's. Audit entries hold
+  ids and counts only.
+- **Copy recipients in a template** are addresses chosen by the sender as
+  defaults; `TODO(legal-verify)`: list them in `docs/gdpr/registerforteckning.md`
+  with the other signing rows.
+- **Tests:** `tests/Feature/Signing/TemplatesTest.php`,
+  `tests/Tenancy/SigningTemplatesTenancyTest.php`. Bulk send (S15) builds on
+  `template_id` and the roles.
+
+#### S14 review fixes (2026-11-20)
+
+- **Sharing.** A non-confidential `DOCUMENT` template is deliberately shared with
+  every signing:send holder in the company, and so is its PDF (a copy is made
+  into the sender's own unsent document when it is used). A confidential
+  template is seen and used only by its creator and signing:manage (404 for
+  others) in the list, the wizard picker, `useTemplate`, `startFromTemplate` and
+  `ManageSigningTemplates::start` (`SigningTemplate::scopeVisibleTo`).
+- **Fields follow the file.** "Uppdatera mallen" changes the template's fields only
+  when they were applied from the template (the wizard's locked
+  `templateFieldsApplied`, SHA-256 match); the update refuses `fields` server-side
+  unless the document's SHA-256 equals the template's. Otherwise only roles and
+  defaults are updated, and the button is hidden for a different PDF.
+- **GDPR.** Default copy recipients of a template are personal data: they are in
+  the register extract (`mallar_som_kopiemottagare`), removed by `EraseSigner`
+  (audit `signing.template_copy_erased`, template id only), and in
+  `registerforteckning.md` and `lagringstider.md`.
+- **Database.** `signing_envelopes.template_id` is set once and fixed, and must
+  be a template of the same company (trigger); a template's `bytes` and
+  `file_name` are frozen with its file. The 200-template limit counts active
+  (not archived) templates.
+- **Deviation for S15.** `crm_signing_requests.role_key` (listed in the data
+  model above) is not added in S14: the role is a template concept and the
+  signer row copies only its step and check. Bulk send adds the column if it needs
+  to know the role of a signer after sending.
+- **Race and API.** The same-company check of `signing_envelopes_template_protect`
+  runs only when `template_id` is set, never on later updates, so a template deleted
+  after the send cannot freeze the envelope; the send reads the template with a
+  shared lock to serialise against the delete's `FOR UPDATE`. `SendForSigning` now
+  applies the `visibleTo` rule (confidential: creator or `signing:manage`) before it
+  remembers a `template_id`, so S19 (the API) gets it for free but must still reject a
+  template id the caller may not see with a 404 instead of silently ignoring it.
