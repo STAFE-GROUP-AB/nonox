@@ -157,6 +157,13 @@ final class DemoDatabase
                 return false;
             }
 
+            // One DROP SCHEMA … CASCADE locks every table, index and sequence at once and outgrows PostgreSQL's default lock
+            // table (max_locks_per_transaction 64) now that the schema has a few hundred tables. Dropping the tables one
+            // statement at a time keeps each lock set small; the schema is then dropped with what little is left.
+            foreach ($demo->select("select tablename from pg_tables where schemaname = 'public'") as $table) {
+                $demo->statement('DROP TABLE IF EXISTS public."'.str_replace('"', '""', $table->tablename).'" CASCADE');
+            }
+
             $demo->unprepared('DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;');
 
             $code = Artisan::call('migrate', ['--database' => DemoMode::CONNECTION, '--force' => true]);
