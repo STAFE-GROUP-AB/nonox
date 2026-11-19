@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-19-signering-rubriker",
+      "datum": "2026-11-19T23:30:00+01:00",
+      "rubrik": "Rättare svenska i mejlen efter signering",
+      "beskrivning": "Rubrikerna i mejlen och på nedladdningssidan efter signering lyder nu \"Dokumentet är signerat\" och \"Alla har signerat\" följt av dokumentets namn, så att böjningen blir rätt oavsett om det är en offert eller ett avtal.",
+      "typ": "Rättat",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-19-signering-gallring",
       "datum": "2026-11-19T14:30:00+01:00",
       "rubrik": "Bevarandetid, bevarandespärr och radering för signeringar",

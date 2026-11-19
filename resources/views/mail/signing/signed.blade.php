@@ -6,10 +6,10 @@
 <title>{{ $title }}</title>
 </head>
 <body style="margin: 0; padding: 24px 16px; background: #f5f5f4; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; color: #1f2933; line-height: 1.5;">
-    <div style="display: none; max-height: 0; overflow: hidden;">{{ __(':title är signerad. Här är din kopia med signeringsbeviset.', ['title' => $title]) }}</div>
+    <div style="display: none; max-height: 0; overflow: hidden;">{{ __('Dokumentet är signerat: :title. Här är din kopia med signeringsbeviset.', ['title' => $title]) }}</div>
     <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 28px; border-top: 6px solid {{ $color }};">
         <p style="margin: 0 0 4px; font-size: 13px; color: #616e7c;">{{ $companyName }}</p>
-        <h1 style="margin: 0 0 16px; font-size: 22px;">{{ __(':title är signerad', ['title' => $title]) }}</h1>
+        <h1 style="margin: 0 0 16px; font-size: 22px;">{{ __('Dokumentet är signerat: :title', ['title' => $title]) }}</h1>
         @if($toSigner)
             <p>{{ __('Tack! Här är din kopia av dokumentet du signerade och signeringsbeviset.') }}</p>
         @else

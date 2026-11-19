@@ -12,7 +12,7 @@
         @elseif($kind === App\Mail\SigningEnvelopeMail::DECLINED)
             {{ __(':title avböjdes och blir inte giltigt.', ['title' => $title]) }}
         @else
-            {{ __(':title är signerat av alla. Här är dokumentet med signeringsbevisen.', ['title' => $title]) }}
+            {{ __('Alla har signerat: :title. Här är dokumentet med signeringsbevisen.', ['title' => $title]) }}
         @endif
     </div>
     <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 28px; border-top: 6px solid {{ $color }};">
@@ -26,12 +26,12 @@
             <p>{{ __('Du har signerat dokumentet, men en annan undertecknare avböjde det. Dokumentet blir därför inte giltigt, och ingen fler kan signera det.') }}</p>
             <p>{{ __('Kontakta :company om du har frågor.', ['company' => $companyName]) }}</p>
         @elseif($kind === App\Mail\SigningEnvelopeMail::COMPANY)
-            <h1 style="margin: 0 0 16px; font-size: 22px;">{{ __(':title är signerat av alla', ['title' => $title]) }}</h1>
+            <h1 style="margin: 0 0 16px; font-size: 22px;">{{ __('Alla har signerat: :title', ['title' => $title]) }}</h1>
             <p>{{ __('Alla :count undertecknare har signerat. Här är dokumentet som skickades och ett signeringsbevis per undertecknare.', ['count' => $signers]) }}</p>
             <p>{{ __('Signeringsbevisen visar vem som signerade, när och dokumentets kontrollsumma (SHA-256): :hash', ['hash' => $envelope->document_sha256]) }}</p>
             <p>{{ __('Spara filerna tillsammans.') }}</p>
         @else
-            <h1 style="margin: 0 0 16px; font-size: 22px;">{{ __(':title är signerat av alla', ['title' => $title]) }}</h1>
+            <h1 style="margin: 0 0 16px; font-size: 22px;">{{ __('Alla har signerat: :title', ['title' => $title]) }}</h1>
             <p>{{ __('Alla :count undertecknare har signerat. Här är dokumentet som skickades och en sammanställning med vem som signerade och när.', ['count' => $signers]) }}</p>
             <p>{{ __('Dokumentets kontrollsumma (SHA-256): :hash', ['hash' => $envelope->document_sha256]) }}</p>
             @if($toSigner)

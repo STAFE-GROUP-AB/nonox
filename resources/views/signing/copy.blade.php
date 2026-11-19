@@ -10,7 +10,7 @@
                 <p class="text-sm font-semibold text-gray-700">{{ $companyName }}</p>
             @endif
             @if($state === 'files')
-                <h1 class="mt-2 text-2xl font-bold tracking-tight">{{ __(':title är signerat', ['title' => $title]) }}</h1>
+                <h1 class="mt-2 text-2xl font-bold tracking-tight">{{ __('Dokumentet är signerat: :title', ['title' => $title]) }}</h1>
                 <p class="mt-3 text-gray-700">{{ __('Filerna var för stora för att skickas med mejlet. Ladda ner dem här och spara dem tillsammans.') }}</p>
                 <ul class="mt-5 divide-y divide-stone-200 rounded-xl ring-1 ring-stone-200">
                     @foreach($files as $index => $file)

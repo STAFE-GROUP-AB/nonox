@@ -156,10 +156,10 @@ it('mails the copy in each recipient\'s language: English where chosen, Swedish 
 
     $copyEn = collect(s13Mails('revisor@example.test'))->sole();
     $copySv = collect(s13Mails('chef@example.test'))->sole();
-    expect($copyEn->render())->toContain('<html lang="en">')->toContain('signed by everyone')
+    expect($copyEn->render())->toContain('<html lang="en">')->toContain('Everyone has signed')
         ->and(s13Subject($copyEn))->toBe('Signed by everyone: '.$envelope->title)
         ->and($copySv->locale)->toBe('sv')
-        ->and($copySv->render())->toContain('<html lang="sv">')->toContain('signerat av alla')
+        ->and($copySv->render())->toContain('<html lang="sv">')->toContain('Alla har signerat')->not->toContain('är signerad')
         ->and(s13Subject($copySv))->toBe('Signerat av alla: '.$envelope->title);
 
     // The company's copy stays in Swedish, and the other signer's copy is in their own language.
