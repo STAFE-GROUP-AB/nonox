@@ -472,8 +472,8 @@ final class SignAtLink
             return;
         }
 
-        foreach (SigningRequest::query()->whereKey($signedIds)->pluck('email') as $email) {
-            Mail::to((string) $email)->queue((new SigningEnvelopeMail($declined->envelope_id, $company->id, SigningEnvelopeMail::DECLINED))->afterCommit());
+        foreach (SigningRequest::query()->whereKey($signedIds)->get(['id', 'email', 'language']) as $signer) {
+            Mail::to($signer->email)->queue((new SigningEnvelopeMail($declined->envelope_id, $company->id, SigningEnvelopeMail::DECLINED, language: $signer->language))->afterCommit());
         }
     }
 }

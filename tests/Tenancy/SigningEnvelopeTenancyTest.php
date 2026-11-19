@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 use App\Actions\Invoicing\SaveSalesDocument;
 use App\Actions\Signing\SendForSigning;
+use App\Domain\Signing\SigningToken;
 use App\Livewire\Signing\SigningPanel;
 use App\Mail\SigningRequestMail;
 use App\Models\SalesDocument;
 use App\Models\SigningCopyRecipient;
+use App\Models\SigningDownloadLink;
 use App\Models\SigningEnvelope;
 use App\Models\SigningLinkToken;
 use App\Support\Tenancy\CurrentCompany;
@@ -75,4 +77,30 @@ it('opens a link from B\'s envelope with B\'s document only, whoever is signed i
 
     SigningConsentFixture::token(basename((string) parse_url((string) $url, PHP_URL_PATH)));
     $this->get((string) parse_url((string) $url, PHP_URL_PATH))->assertOk()->assertSee('Betatjänst')->assertDontSee('Alfa');
+});
+
+it('never shows B\'s download links (S13) through Eloquent, and a link opens its own company\'s files only, found by its token alone', function () {
+    $tokens = [];
+
+    foreach (['a', 'b'] as $side) {
+        $company = $this->{$side}['company'];
+        $envelope = $this->{$side}['envelope'];
+        CurrentCompany::set($company);
+        $token = SigningToken::generate();
+        $tokens[$side] = $token['token'];
+        SigningDownloadLink::create(['company_id' => $company->id, 'envelope_id' => $envelope->id, 'kind' => SigningDownloadLink::COPY, 'email' => "copy@{$side}.test", 'language' => 'sv', 'token_hash' => $token['hash'], 'expires_at' => now()->addDays(30)]);
+    }
+
+    CurrentCompany::set($this->a['company']);
+    expect(SigningDownloadLink::query()->pluck('email')->all())->toBe(['copy@a.test']);
+
+    // Signed in as A, B's token still opens B's files and nobody else's.
+    foreach (['a' => 'b', 'b' => 'a'] as $own => $other) {
+        $page = $this->get(route('signing.copy', ['token' => $tokens[$own]]))->assertOk();
+        $page->assertSee(e($this->{$own}['envelope']->title), false)->assertSee($this->{$own}['envelope']->document_name);
+
+        if ($this->{$own}['envelope']->title !== $this->{$other}['envelope']->title) {
+            $page->assertDontSee(e($this->{$other}['envelope']->title), false);
+        }
+    }
 });

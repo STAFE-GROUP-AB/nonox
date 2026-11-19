@@ -11,6 +11,7 @@ use App\Domain\Signing\Retention\EnvelopeDeletion;
 use App\Domain\Signing\Retention\SigningRetention;
 use App\Domain\Signing\SigningStatus;
 use App\Models\SigningDocumentVersion;
+use App\Models\SigningDownloadLink;
 use App\Models\SigningEnvelope;
 use App\Models\SigningEvent;
 use App\Models\SigningRequest;
@@ -67,6 +68,10 @@ final class PruneSigningLinks
         $envelopes = $this->pruneExpiredRetention($today);
         // A held envelope (bevarandespärr) keeps every row; the database refuses it too.
         $held = SigningEnvelope::query()->where('retention_hold', true)->select('id');
+
+        // A download link (ADR-046 S13) works 14 days (7 for some); the row stays another 30 so that an old link says "expired", then goes with its recipient's address.
+        SigningDownloadLink::query()->where('expires_at', '<', $today->subDays(SigningDownloadLink::PRUNE_AFTER_DAYS))->delete();
+
         $requests = SigningRequest::query()
             ->where(fn ($query) => $query->whereNull('envelope_id')->orWhereNotIn('envelope_id', $held))
             ->where(fn ($query) => $query

@@ -10,6 +10,7 @@ use App\Models\SigningRequest;
 use App\Support\Branding\Brand;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
@@ -20,7 +21,7 @@ use Illuminate\Mail\Mailables\Envelope;
  * amendment, gap 9). No link: the signer's earlier mail still holds one, and
  * a new link comes with the next reminder. Carries ids only.
  */
-class SigningDeadlineMail extends Mailable
+class SigningDeadlineMail extends Mailable implements ShouldBeEncrypted
 {
     use Queueable;
 

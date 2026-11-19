@@ -6,6 +6,7 @@ namespace App\Modules\Signing\Livewire;
 
 use App\Actions\Signing\ChangeSigningDeadline;
 use App\Actions\Signing\ManageSigningRetention;
+use App\Actions\Signing\ManageDownloadLinks;
 use App\Actions\Signing\SendForSigning;
 use App\Actions\Signing\SigningReminders;
 use App\Domain\Documents\LegalHoldReason;
@@ -18,6 +19,7 @@ use App\Domain\Signing\Verification\SignerChecks;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Customer;
 use App\Models\SigningCopyRecipient;
+use App\Models\SigningDownloadLink;
 use App\Models\SigningEnvelope;
 use App\Models\SigningEvent;
 use App\Models\SigningRequest;
@@ -138,6 +140,24 @@ class EnvelopePage extends Component
         $this->toast(__('Dokumentet är markerat som räkenskapsinformation och sparas till och med :date.', ['date' => $envelope->retention_until?->toDateString()]));
     }
 
+    /** "Stäng länkarna": the download links of a completed envelope stop working (ADR-046 S13). */
+    public function closeLinks(ManageDownloadLinks $links): void
+    {
+        $closed = $links->close($this->user(), $this->company(), $this->envelope());
+
+        $this->toast(trans_choice('{0} Det fanns inga öppna länkar.|{1} :count länk är stängd.|[2,*] :count länkar är stängda.', $closed, ['count' => $closed]));
+    }
+
+    /** "Skicka ny länk": the recipient gets a new link, the old one is closed. */
+    public function resendLink(int $linkId, ManageDownloadLinks $links): void
+    {
+        $envelope = $this->envelope();
+        $link = SigningDownloadLink::query()->where('envelope_id', $envelope->id)->findOrFail($linkId);
+        $links->resend($this->user(), $this->company(), $envelope, $link);
+
+        $this->toast(__('En ny länk är skickad till :email.', ['email' => $link->email]));
+    }
+
     public function render(): View
     {
         $envelope = $this->envelope();
@@ -162,6 +182,8 @@ class EnvelopePage extends Component
             'canAct' => $moduleOn && $status !== EnvelopeStatus::Voided && ! $envelope->status->isFinished() && $document instanceof Signable && $this->mayAct($document, $envelope),
             'link' => $this->underlying($envelope, $document),
             'register' => $this->register($document),
+            'downloadLinks' => SigningDownloadLink::query()->where('envelope_id', $envelope->id)->withMax('events', 'downloaded_at')->orderBy('id')->get(),
+            'mayManageLinks' => $moduleOn && $document instanceof Signable && $this->mayAct($document, $envelope),
             'zone' => config('app.timezone'),
             'minDays' => SigningDeadlines::MIN_DAYS,
             'maxDays' => SigningDeadlines::MAX_DAYS,

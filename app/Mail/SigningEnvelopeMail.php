@@ -4,21 +4,20 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
-use App\Domain\Signing\Fields\SigningFields;
-use App\Domain\Signing\SigningPdfs;
-use App\Domain\Signing\SigningStatus;
+use App\Domain\Signing\CompletionFiles;
+use App\Domain\Signing\CompletionLinks;
 use App\Models\Company;
 use App\Models\SigningEnvelope;
-use App\Models\SigningRequest;
 use App\Support\Branding\Brand;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Mail\Attachment;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * The mails of an envelope with several signers (ADR-046 amendment, gap 1),
@@ -38,7 +37,7 @@ use Illuminate\Support\Facades\Storage;
  *
  * Carries ids only and reads the envelope inside the company when sent.
  */
-class SigningEnvelopeMail extends Mailable
+class SigningEnvelopeMail extends Mailable implements ShouldBeEncrypted
 {
     use Queueable;
 
@@ -55,7 +54,11 @@ class SigningEnvelopeMail extends Mailable
         public readonly int $companyId,
         public readonly string $kind,
         public readonly bool $toSigner = false,
-    ) {}
+        public readonly string $language = 'sv',
+        public readonly ?string $downloadToken = null,
+    ) {
+        $this->locale($language === 'en' ? 'en' : 'sv');
+    }
 
     public function envelope(): Envelope
     {
@@ -88,40 +91,25 @@ class SigningEnvelopeMail extends Mailable
             'signers' => $envelope->signers->count(),
             'toSigner' => $this->toSigner,
             'controller' => $this->controller($company),
+            'downloadUrl' => $this->downloadToken === null ? null : CompletionLinks::url($this->downloadToken),
+            'expires' => $this->downloadToken === null ? null : CurrentCompany::run($this->companyId, fn (): ?CarbonImmutable => CompletionLinks::find($this->downloadToken)?->expires_at->setTimezone(config('app.timezone'))),
         ]);
     }
 
     /** @return list<Attachment> */
     public function attachments(): array
     {
-        if (! in_array($this->kind, [self::COPY, self::COMPANY], true)) {
+        if (! in_array($this->kind, [self::COPY, self::COMPANY], true) || $this->downloadToken !== null) {
             return [];
         }
 
         $envelope = $this->signingEnvelope();
-        $disk = Storage::disk(SigningRequest::DISK);
-        // With fields (ADR-046 S6) the finished document is the version with every signer's values.
-        $document = CurrentCompany::run($this->companyId, fn (): string => SigningFields::finalVersion($envelope));
-        $attachments = [Attachment::fromData(fn (): string => (string) $disk->get($document), $envelope->document_name)->withMime('application/pdf')];
+        $companyId = $this->companyId;
+        // With fields (ADR-046 S6) the finished document is the version with every signer's values; copy recipients and the
+        // other signers get the summary only, the full certificates go to the company (CompletionFiles).
+        $files = CurrentCompany::run($companyId, fn (): array => CompletionFiles::forEnvelope($envelope, $this->kind));
 
-        // Copy recipients and the other signers get the summary only; the full certificates go to the company.
-        if ($this->kind === self::COPY) {
-            $companyId = $this->companyId;
-            $attachments[] = Attachment::fromData(fn (): string => CurrentCompany::run($companyId, fn (): string => SigningPdfs::envelopeSummary($envelope)), __('Sammanstallning-av-signeringen.pdf'))->withMime('application/pdf');
-
-            return $attachments;
-        }
-
-        foreach ($envelope->signers as $position => $signer) {
-            if ($signer->status !== SigningStatus::Signed || $signer->signed_document_path === null) {
-                continue;
-            }
-
-            $certificate = $signer->signed_document_path;
-            $attachments[] = Attachment::fromData(fn (): string => (string) $disk->get($certificate), __('Signeringsbevis-:number.pdf', ['number' => $position + 1]))->withMime('application/pdf');
-        }
-
-        return $attachments;
+        return array_map(fn (array $file): Attachment => Attachment::fromData(fn (): string => CurrentCompany::run($companyId, fn (): string => CompletionFiles::bytes($file)), $file['name'])->withMime('application/pdf'), $files);
     }
 
     /** The controller as the signing page names it: the company, with its organisation number and e-mail when it has them. */

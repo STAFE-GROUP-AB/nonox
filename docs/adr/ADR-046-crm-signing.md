@@ -2459,3 +2459,107 @@ before the trust-service item in gap 5 is answered.
 - **Open.** `TODO(legal-verify)` (S6): whether initials add evidential value.
   Fields on a rotated page, the engine's `page_origin` test and the PDF.js
   fonts and wasm above are left as described.
+
+### S13 as built (2026-11-19): the completion mail to everyone
+
+- **Language per recipient (decision 19, mails only).** New column `language`
+  (`sv`, `en`, default `sv`, a check constraint) on `crm_signing_requests` and
+  `signing_copy_recipients` (migration
+  `2027_03_12_100000_add_language_and_download_links_to_signing.php`; adding a
+  column fires none of the evidence triggers). `SendForSigning` takes
+  `signers.*.language` and `copies.*.language` (and `language` for one signer),
+  and the send wizard has the selects "Språk i kopian efter signering" and
+  "Språk i mejlet". The completion mails (`SignedDocumentMail`,
+  `SigningEnvelopeMail` COPY, NOTICE and DECLINED) set the mailable's locale, so
+  the subject, body, attachment names and `<html lang>` follow it; the English
+  strings are in `lang/packages/signing-s13/en.json` and the existing files. The
+  company's own copy is always Swedish. **Not done:** the mail with the link to
+  sign, the reminders, the code mail and the signing page stay Swedish, as S20
+  said; a recipient who chose English therefore signs in Swedish and gets the
+  copy in English. A later package can carry the language to them.
+- **One list of files.** `CompletionFiles` names what each kind gets (SIGNER:
+  the version the signer was shown, with their own values, and their
+  certificate; COPY: `SigningFields::finalVersion` and the summary; COMPANY:
+  `finalVersion` and every signer's certificate). The mail attachments and the
+  download page use it, so they cannot differ. When S10 seals the file, the
+  sealed version becomes `finalVersion`'s answer in one place.
+- **Large files.** When the stored files of a mail are above 15 MB
+  (`CompletionFiles::MAIL_LIMIT_BYTES`; `nonox.signing.mail_attachment_limit_bytes`
+  lets tests lower it) the mail has no attachments and a button to
+  `/signera/kopia/{token}` (`SigningHost::copyLink`, so on the signing host
+  when there is one). The token is 256 bits (`SigningToken`), valid 14 days (see the review round below),
+  and only its SHA-256 is stored in the new table `signing_download_links`
+  (company-scoped; kind SIGNER, COPY or COMPANY; recipient address; language;
+  a trigger lets only the download counter change). The page
+  (`SigningCopyController`) lists the files of its kind with sizes, streams
+  each with `Content-Disposition: attachment`, is private (no-store,
+  noindex, no Referer, a strict CSP) and is in the recipient's language; an
+  unknown token is a 404 that says nothing, an expired one a 410. The link is
+  per recipient, so a forwarded mail forwards the files (as an attachment
+  would); the token gives no other file. `signing:prune` deletes a link 30 days
+  after it expired. The migrations are
+  `2027_03_12_100000_add_language_and_download_links_to_signing.php` and
+  `2027_03_12_100100_add_revocation_and_download_events_to_signing.php`.
+- **Review round (2026-11-19), changes to the above.**
+  - **Validity is 14 days, 7 for the company's link and for any link of a
+    confidential envelope** (`SigningDownloadLink::validDays`), not 30: a link
+    that outlives the mail it came in is a bearer secret, and a short life
+    limits an unnoticed disclosure (art. 32).
+  - **The sender can close it.** `signing_download_links.revoked_at` (set once
+    from NULL by the trigger), the action `ManageDownloadLinks` and the envelope
+    page's card "Länkar till filerna": **Stäng länkarna** (all open links of the
+    envelope) and **Skicka ny länk** (a new link to the same recipient and mail
+    kind; the old one is closed). They are gated like withdrawing
+    (`SendForSigning::authorizeAct`, so a confidential envelope's own rule
+    applies). Withdrawing an envelope closes its links too (there are none
+    before completion, so this is a guard). A closed link answers 410. The
+    audit entries (`signing.download_links_closed`,
+    `signing.download_link_resent`) carry ids and counts, no address. This
+    replaces the manual's "ask the sender to send the files again".
+  - **Each download is a row** in `signing_download_events` (link id, file
+    number, time; no IP address or browser; append-only by trigger and grant),
+    besides the counter, so the controller can see access during an incident.
+    The envelope page shows the count and the last time.
+  - **The trigger guards every column** but the counter (which only grows) and
+    `revoked_at`.
+  - **The queued mails are `ShouldBeEncrypted`** (`SignedDocumentMail`,
+    `SigningEnvelopeMail`, and the other signing mails that carry a link:
+    `SigningRequestMail`, `SigningReminderMail`, `SigningDeadlineMail`), so the
+    plain token is not readable in `jobs` or `failed_jobs`.
+  - **Grants:** `signing_download_links` is `ReadWrite` (insert at completion,
+    counter and closing by update, delete by the prune) and
+    `signing_download_events` is `AppendOnly` (`DatabaseGrants`,
+    `database/roles/grants.sql`). Without them an envelope above 15 MB would
+    fail its last signature under the database roles of ADR-079.
+  - **Sizes are measured once per completion**, not per recipient (the storage
+    HEAD calls ran inside the signing transaction).
+  - **Download:** streamed, with `streamDownload`, which gives an ASCII fallback
+    for å, ä and ö besides the real name.
+  - **A request without an envelope** keeps attachments; none exist after the
+    S1 backfill, so there is nothing to handle.
+  - **No e-mail code before the download (decision, not built).** The review
+    suggested reusing the S3 code service for confidential and standalone
+    envelopes. It does not fit without a new design: the codes, their
+    attempt counters, the lock, the cache lock and the hash-chain events are
+    keyed to a pending signer row (`signing_request_id`), and a copy recipient
+    or the company's address has none. Reusing it would mean a second code table
+    and its own counters and throttles, or turning those recipients into signer
+    rows, which would change the evidence. The remaining risk, a forwarded mail,
+    is limited by 7 days for confidential envelopes, closing, per-download
+    records and encrypted queue payloads, and is listed as
+    `TODO(legal-verify)` in `docs/gdpr/registerforteckning.md`. A later package
+    can add a code to the link's own address as a separate, small table if the
+    risk assessment asks for it.
+- **Unchanged:** the one-signer path (the signer's copy from `SignAtLink`, the
+  company's from the follow-up), a confidential envelope's company copy to its
+  sender only (also as a link: no link row is made for the shared company
+  address), the mail quota counting, and the "never another signer's full
+  certificate" rule for COPY.
+- **Tests:** `tests/Feature/Signing/CompletionMailTest.php` (language, limit,
+  link, expiry, hashing at rest, trigger, confidential, final version) and the
+  tenancy test in `tests/Tenancy/SigningEnvelopeTenancyTest.php`.
+- `TODO(legal-verify)`: the GDPR rows (`docs/gdpr/lagringstider.md`,
+  `registerforteckning.md`) for the language and the link rows; whether a link
+  that anyone holding the mail can open is acceptable for a document with
+  personal data (the alternative, a check in the page, would need the
+  recipient's address to receive a code).

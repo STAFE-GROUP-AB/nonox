@@ -79,10 +79,10 @@ class SendWizard extends Component
     #[Locked]
     public ?string $documentId = null;
 
-    /** @var list<array{email: string, step: int|string, verification: string, access_code: string}> */
+    /** @var list<array{email: string, step: int|string, verification: string, access_code: string, language: string}> */
     public array $signers = [];
 
-    /** @var list<array{email: string, name: string}> */
+    /** @var list<array{email: string, name: string, language: string}> */
     public array $copies = [];
 
     public bool $notifyCopies = false;
@@ -156,7 +156,7 @@ class SendWizard extends Component
         abort_unless($document->signingIsOpen(), 404);
 
         $standalone = $document instanceof RestrictsEnvelopes;
-        $this->signers = [['email' => $this->defaultEmail($document), 'step' => 1, 'verification' => $standalone ? SignerCheck::EmailCode->value : SignerCheck::None->value, 'access_code' => '']];
+        $this->signers = [['email' => $this->defaultEmail($document), 'step' => 1, 'verification' => $standalone ? SignerCheck::EmailCode->value : SignerCheck::None->value, 'access_code' => '', 'language' => 'sv']];
         $deals = $this->deals($document);
         $this->dealId = $deals->count() === 1 ? (string) $deals->first()?->id : '';
         $this->step = 2;
@@ -178,6 +178,8 @@ class SendWizard extends Component
                 'copies' => ['array', 'max:'.SigningEnvelope::MAX_COPIES],
                 'copies.*.email' => ['required', 'email', 'max:255'],
                 'copies.*.name' => ['nullable', 'string', 'max:120'],
+                'copies.*.language' => ['in:sv,en'],
+                'signers.*.language' => ['in:sv,en'],
             ], [], ['signers.*.email' => __('e-post'), 'signers.*.step' => __('steg'), 'copies.*.email' => __('e-post'), 'copies.*.name' => __('namn')]);
         }
 
@@ -205,7 +207,7 @@ class SendWizard extends Component
         }
 
         $last = $this->signers === [] ? 0 : (int) end($this->signers)['step'];
-        $this->signers[] = ['email' => '', 'step' => min(SigningEnvelope::MAX_STEP, max(1, $last + 1)), 'verification' => $this->defaultCheck(), 'access_code' => ''];
+        $this->signers[] = ['email' => '', 'step' => min(SigningEnvelope::MAX_STEP, max(1, $last + 1)), 'verification' => $this->defaultCheck(), 'access_code' => '', 'language' => 'sv'];
     }
 
     public function removeSigner(int $index): void
@@ -245,7 +247,7 @@ class SendWizard extends Component
     public function addCopy(): void
     {
         if (count($this->copies) < SigningEnvelope::MAX_COPIES) {
-            $this->copies[] = ['email' => '', 'name' => ''];
+            $this->copies[] = ['email' => '', 'name' => '', 'language' => 'sv'];
         }
     }
 

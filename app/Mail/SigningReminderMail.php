@@ -10,6 +10,7 @@ use App\Models\SigningRequest;
 use App\Support\Branding\Brand;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
@@ -21,7 +22,7 @@ use Illuminate\Mail\Mailables\Envelope;
  * nu"), in the company's name like the first mail. It names the document
  * and the last day, never another signer. Carries ids only.
  */
-class SigningReminderMail extends Mailable
+class SigningReminderMail extends Mailable implements ShouldBeEncrypted
 {
     use Queueable;
 

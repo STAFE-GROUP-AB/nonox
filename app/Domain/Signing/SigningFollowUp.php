@@ -10,12 +10,14 @@ use App\Mail\SigningEnvelopeMail;
 use App\Models\Company;
 use App\Models\SalesDocument;
 use App\Models\SigningCopyRecipient;
+use App\Models\SigningDownloadLink;
 use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Models\User;
 use App\Notifications\SigningNotice;
 use App\Support\Audit\Audit;
 use App\Support\MailQuota;
+use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -144,7 +146,23 @@ class SigningFollowUp
             return;
         }
 
-        Mail::to($request->email)->queue((new SignedDocumentMail($request->id, $company->id, true))->afterCommit());
+        $language = self::language($request->language);
+        $token = $request->envelope_id === null ? null : CurrentCompany::run($company, function () use ($request, $language): ?string {
+            $envelope = SigningEnvelope::query()->find($request->envelope_id);
+
+            // A request without an envelope (none exist after the S1 backfill) keeps attachments.
+            return $envelope instanceof SigningEnvelope
+                ? CompletionLinks::issueIf(CompletionFiles::tooLargeForMail(CompletionFiles::forSigner($request)), $envelope, SigningDownloadLink::SIGNER, $request->email, $language, $request)
+                : null;
+        });
+
+        Mail::to($request->email)->queue((new SignedDocumentMail($request->id, $company->id, true, $language, $token))->afterCommit());
+    }
+
+    /** A recipient's language for their mails: sv or en, Swedish for anything else. */
+    public static function language(?string $language): string
+    {
+        return $language === 'en' ? 'en' : 'sv';
     }
 
     /**
@@ -164,16 +182,23 @@ class SigningFollowUp
             return;
         }
 
-        $copies = SigningCopyRecipient::query()->where('envelope_id', $envelope->id)->whereNull('sent_copy_at')->get(['id', 'email']);
+        $copies = SigningCopyRecipient::query()->where('envelope_id', $envelope->id)->whereNull('sent_copy_at')->get(['id', 'email', 'language']);
 
-        $signers = $toSigners ? SigningRequest::query()->where('envelope_id', $envelope->id)->where('status', SigningStatus::Signed->value)->pluck('email') : collect();
+        $signers = $toSigners ? SigningRequest::query()->where('envelope_id', $envelope->id)->where('status', SigningStatus::Signed->value)->get(['id', 'email', 'language']) : collect();
+
+        // The finished files are the same for everyone with a copy: their size is measured once, and decides attachments or links (S13).
+        $tooLarge = CompletionFiles::tooLargeForMail(CompletionFiles::forEnvelope($envelope, SigningDownloadLink::COPY));
 
         foreach ($copies as $copy) {
-            Mail::to($copy->email)->queue((new SigningEnvelopeMail($envelope->id, $company->id, SigningEnvelopeMail::COPY))->afterCommit());
+            $language = self::language($copy->language);
+            $token = CompletionLinks::issueIf($tooLarge, $envelope, SigningDownloadLink::COPY, $copy->email, $language);
+            Mail::to($copy->email)->queue((new SigningEnvelopeMail($envelope->id, $company->id, SigningEnvelopeMail::COPY, language: $language, downloadToken: $token))->afterCommit());
         }
 
-        foreach ($signers as $email) {
-            Mail::to((string) $email)->queue((new SigningEnvelopeMail($envelope->id, $company->id, SigningEnvelopeMail::COPY, toSigner: true))->afterCommit());
+        foreach ($signers as $signer) {
+            $language = self::language($signer->language);
+            $token = CompletionLinks::issueIf($tooLarge, $envelope, SigningDownloadLink::COPY, $signer->email, $language, $signer);
+            Mail::to($signer->email)->queue((new SigningEnvelopeMail($envelope->id, $company->id, SigningEnvelopeMail::COPY, toSigner: true, language: $language, downloadToken: $token))->afterCommit());
         }
 
         MailQuota::count($company, 'documents', $copies->count() + $signers->count());
@@ -335,12 +360,28 @@ class SigningFollowUp
             return;
         }
 
-        // With several signers the company's copy carries every signer's certificate.
+        // With several signers the company's copy carries every signer's certificate; it is in Swedish, the company's own language.
         $mail = $envelope instanceof SigningEnvelope
-            ? new SigningEnvelopeMail($envelope->id, $company->id, SigningEnvelopeMail::COMPANY)
-            : new SignedDocumentMail($request->id, $company->id, false);
+            ? new SigningEnvelopeMail($envelope->id, $company->id, SigningEnvelopeMail::COMPANY, downloadToken: $this->companyToken($company, $envelope, $address))
+            : new SignedDocumentMail($request->id, $company->id, false, downloadToken: $this->companyToken($company, null, $address, $request));
 
         Mail::to(mb_strtolower($address))->queue($mail->afterCommit());
+    }
+
+    /** A link for the company's copy when its files are above the mail limit (S13), else null. */
+    private function companyToken(Company $company, ?SigningEnvelope $envelope, string $address, ?SigningRequest $request = null): ?string
+    {
+        $envelope ??= $request?->envelope_id === null ? null : SigningEnvelope::query()->find($request->envelope_id);
+
+        if (! $envelope instanceof SigningEnvelope) {
+            return null;
+        }
+
+        $files = $request instanceof SigningRequest && $envelope->signers()->count() < 2
+            ? CompletionFiles::forSigner($request)
+            : CompletionFiles::forEnvelope($envelope, SigningDownloadLink::COMPANY);
+
+        return CompletionLinks::issueIf(CompletionFiles::tooLargeForMail($files), $envelope, SigningDownloadLink::COMPANY, $address, 'sv', $request);
     }
 
     /**

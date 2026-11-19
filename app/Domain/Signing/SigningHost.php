@@ -50,6 +50,15 @@ final class SigningHost
         return $root === null ? url($path) : $root.$path;
     }
 
+    /** The link to the finished files when they are too large to attach (S13), on the signing host when there is one. */
+    public static function copyLink(string $token): string
+    {
+        $path = route('signing.copy', ['token' => $token], false);
+        $root = self::root();
+
+        return $root === null ? url($path) : $root.$path;
+    }
+
     /** Paths a request to the signing host may reach: the signing pages and what they load. */
     public static function allows(string $path): bool
     {

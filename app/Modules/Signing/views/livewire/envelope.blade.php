@@ -152,6 +152,49 @@
         @endif
     </x-ui.card>
 
+    @if($downloadLinks->isNotEmpty())
+        <x-ui.card :title="__('Länkar till filerna')">
+            <p class="mt-1 text-sm text-gray-700">{{ __('Filerna var för stora för mejlet, så mottagarna fick en personlig länk. Länken fungerar i 14 dagar, i 7 dagar för företagets länk och för en konfidentiell signering.') }}</p>
+            <div class="mt-3 overflow-x-auto">
+                <table class="min-w-full text-sm" data-testid="signing-download-links">
+                    <thead class="text-left text-gray-600">
+                        <tr>
+                            <th class="py-2 pr-4 font-medium">{{ __('Mottagare') }}</th>
+                            <th class="py-2 pr-4 font-medium">{{ __('Status') }}</th>
+                            <th class="py-2 pr-4 font-medium">{{ __('Nedladdningar') }}</th>
+                            <th class="py-2 font-medium"><span class="sr-only">{{ __('Åtgärd') }}</span></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach($downloadLinks as $downloadLink)
+                            <tr wire:key="download-link-{{ $downloadLink->id }}">
+                                <td class="py-2 pr-4">{{ $downloadLink->email }}</td>
+                                <td class="py-2 pr-4">
+                                    @if($downloadLink->isRevoked())
+                                        {{ __('Stängd') }}
+                                    @elseif($downloadLink->isExpired())
+                                        {{ __('Utgången :date', ['date' => $downloadLink->expires_at->setTimezone($zone)->format('Y-m-d')]) }}
+                                    @else
+                                        {{ __('Öppen till :date', ['date' => $downloadLink->expires_at->setTimezone($zone)->format('Y-m-d')]) }}
+                                    @endif
+                                </td>
+                                <td class="py-2 pr-4 tabular-nums">{{ $downloadLink->downloads }}@if($downloadLink->events_max_downloaded_at) · {{ __('senast :time', ['time' => \Carbon\CarbonImmutable::parse($downloadLink->events_max_downloaded_at)->setTimezone($zone)->format('Y-m-d H:i')]) }}@endif</td>
+                                <td class="py-2 text-right">
+                                    @if($mayManageLinks)
+                                        <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="resendLink({{ $downloadLink->id }})">{{ __('Skicka ny länk') }}</button>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @if($mayManageLinks)
+                <button type="button" class="mt-3 min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="closeLinks" wire:confirm="{{ __('Stänga alla länkar? Ingen kan då ladda ner filerna med sin gamla länk. Du kan skicka en ny länk till var och en.') }}">{{ __('Stäng länkarna') }}</button>
+            @endif
+        </x-ui.card>
+    @endif
+
     <x-ui.card :title="__('Händelser')">
         <ol class="mt-3 space-y-1 text-sm" data-testid="signing-timeline">
             @forelse($events as $event)

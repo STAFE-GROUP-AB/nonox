@@ -48,6 +48,14 @@
       "omrade": "Fakturering"
     },
     {
+      "id": "2026-11-19-signering-slutmejl",
+      "datum": "2026-11-19T12:00:00+01:00",
+      "rubrik": "Kopian efter signering till alla, på rätt språk",
+      "beskrivning": "När alla har signerat får varje undertecknare, varje kopiemottagare och företaget en kopia med den färdiga versionen av dokumentet, och du väljer svenska eller engelska för var och en i guiden. Är filerna större än 15 MB får mottagaren en personlig länk som fungerar i 14 dagar i stället för bilagor, och avsändaren kan skicka en ny länk eller stänga länkarna. En konfidentiell signerings kopia till företaget går fortfarande bara till den som skickade den.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-19-signering-faltredigerare",
       "datum": "2026-11-19T09:30:00+01:00",
       "rubrik": "Placera fält i PDF:en när du skickar för signering",
