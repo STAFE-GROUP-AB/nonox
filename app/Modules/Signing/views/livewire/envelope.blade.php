@@ -128,11 +128,11 @@
             <p class="mt-2 text-sm font-semibold text-gray-900" data-testid="signing-hold-set">{{ __('Bevarandespärr: :reason, sedan :date. Signeringen gallras inte och kan inte raderas.', ['reason' => App\Domain\Documents\LegalHoldReason::tryFrom((string) $envelope->retention_hold_reason)?->label() ?? '', 'date' => $envelope->retention_hold_at?->setTimezone($zone)->format('Y-m-d')]) }}</p>
         @endif
 
-        @if($canRetain)
+        @if($canRetain || $canHold)
             <div class="mt-4 flex flex-wrap items-end gap-4">
-                @if($envelope->retention_hold)
+                @if($canHold && $envelope->retention_hold)
                     <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="liftHold" wire:confirm="{{ __('Häva bevarandespärren? Signeringen gallras igen när bevarandetiden har gått ut.') }}">{{ __('Häv bevarandespärr') }}</button>
-                @else
+                @elseif($canHold)
                     <form wire:submit="setHold" class="flex flex-wrap items-end gap-3" data-testid="signing-hold-form">
                         <x-ui.field for="envelope-hold-reason" :label="__('Skäl för bevarandespärr')" error="holdReason">
                             <select id="envelope-hold-reason" class="{{ $input }} mt-1" wire:model="holdReason" required>
@@ -145,7 +145,7 @@
                         <x-secondary-button type="submit">{{ __('Sätt bevarandespärr') }}</x-secondary-button>
                     </form>
                 @endif
-                @if($envelope->retention_class === App\Domain\Signing\Retention\SigningRetentionClass::Other->value)
+                @if($canRetain && $envelope->retention_class === App\Domain\Signing\Retention\SigningRetentionClass::Other->value)
                     <button type="button" class="min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="markAccounting" wire:confirm="{{ __('Markera dokumentet som räkenskapsinformation? Det sparas då minst till och med 31 december sju år efter räkenskapsårets slut. Det går inte att ångra.') }}" data-testid="signing-mark-accounting">{{ __('Markera som räkenskapsinformation') }}</button>
                 @endif
             </div>

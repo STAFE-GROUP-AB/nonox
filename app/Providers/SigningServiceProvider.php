@@ -75,6 +75,8 @@ class SigningServiceProvider extends ServiceProvider
         Route::middleware(['web', 'throttle:crm-signing', WithoutAuditRequest::class])->group(function (): void {
             Route::get('/signera/kopia/{token}', [SigningCopyController::class, 'show'])->where('token', '[^/]{1,100}')->name('signing.copy');
             Route::get('/signera/kopia/{token}/{file}', [SigningCopyController::class, 'file'])->where('token', '[^/]{1,100}')->whereNumber('file')->name('signing.copy.file');
+            Route::post('/signera/kopia/{token}/kod', [SigningCopyController::class, 'sendCode'])->where('token', '[^/]{1,100}')->middleware('throttle:signing-verify')->name('signing.copy.code');
+            Route::post('/signera/kopia/{token}/kontroll', [SigningCopyController::class, 'verify'])->where('token', '[^/]{1,100}')->middleware('throttle:signing-verify')->name('signing.copy.verify');
         });
 
         Route::middleware(['web', 'throttle:crm-signing', WithoutAuditRequest::class])->group(function (): void {

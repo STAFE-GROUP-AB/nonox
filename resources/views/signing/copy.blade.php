@@ -21,6 +21,8 @@
                     @endforeach
                 </ul>
                 <p class="mt-4 text-sm text-gray-600">{{ __('Länken fungerar till och med :date.', ['date' => $expires->format('Y-m-d')]) }}</p>
+            @elseif($state === 'code')
+                @include('signing.copy-code')
             @elseif($state === 'expired')
                 <h1 class="mt-2 text-2xl font-bold tracking-tight">{{ __('Länken har gått ut') }}</h1>
                 <p class="mt-3 text-gray-700">{{ __('Be avsändaren skicka en ny länk.') }}</p>

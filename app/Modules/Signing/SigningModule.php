@@ -30,8 +30,8 @@ use Carbon\CarbonImmutable;
  * and withdraws one's own envelopes; signing:manage does the same for
  * everyone's envelopes and sees confidential ones. The approver gets
  * nothing, and the field worker keeps only the on-site flow (ADR-074).
- * The core permissions signing:settings (retention and legal hold) and
- * signing:privacy (a signer's register extract and erasure) belong to the
+ * The core permissions signing:settings (retention), signing:hold (legal
+ * hold, also the accountant) and signing:privacy (a signer's register extract and erasure) belong to the
  * engine (ADR-046 gap 11, package S16) and live in CompanyRole.
  */
 final class SigningModule implements IsNew, Module

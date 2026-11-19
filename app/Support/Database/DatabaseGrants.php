@@ -379,6 +379,8 @@ final class DatabaseGrants
         'signing_envelopes' => GrantDecision::ReadWrite,
         // Links to the finished files (ADR-046 S13): written when a signing completes, the download counter and the closing time change (trigger), the prune deletes.
         'signing_download_links' => GrantDecision::ReadWrite,
+        // The e-mail code before a confidential envelope's files (ADR-046 S13): only the attempts and verified_at change (trigger); the prune deletes expired codes.
+        'signing_download_codes' => GrantDecision::ReadWrite,
         // One row per download, never changed (trigger); it goes with its link by cascade.
         'signing_download_events' => GrantDecision::AppendOnly,
         // Fields in the PDF (ADR-046 S6): placed before the envelope's first event and frozen after (trigger); the

@@ -315,6 +315,7 @@ BEGIN
         ('signing_documents', 'SELECT, INSERT, UPDATE, DELETE'),
         ('signing_envelopes', 'SELECT, INSERT, UPDATE, DELETE'),
         ('signing_download_links', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('signing_download_codes', 'SELECT, INSERT, UPDATE, DELETE'),
         ('signing_download_events', 'SELECT, INSERT'),
         ('signing_field_values', 'SELECT, INSERT'),
         ('signing_fields', 'SELECT, INSERT, UPDATE'),

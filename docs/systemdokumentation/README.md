@@ -1830,7 +1830,7 @@ balances").
   offerten, avtalet eller ÄTA:t det skickades för tas bort: både kuvertet och
   de signerade undertecknarraderna vägrar det. En **bevarandespärr**
   (`signing_envelopes.retention_hold` med skälet SKATTEREVISION, TVIST eller
-  ANNAT, `signing:settings`, under Inställningar för företaget → Signering)
+  ANNAT, `signing:hold`, under Inställningar för företaget → Signering)
   stoppar all gallring och radering; den skyddas på applikationsnivå och av
   triggern som vägrar `DELETE`, men den som har direkt SQL-åtkomst kan häva
   spärren med en egen sats. Radering på begäran av en undertecknare

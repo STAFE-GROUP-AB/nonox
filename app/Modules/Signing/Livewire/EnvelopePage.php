@@ -116,7 +116,7 @@ class EnvelopePage extends Component
         $this->toast(__('Dokumentet är tillbakadraget. Ingen kan längre signera det.'));
     }
 
-    /** "Sätt bevarandespärr" (ADR-046 S16): signing:settings, with a reason key. */
+    /** "Sätt bevarandespärr" (ADR-046 S16): signing:hold, with a reason key. */
     public function setHold(ManageSigningRetention $manage): void
     {
         $this->resetErrorBag();
@@ -189,6 +189,7 @@ class EnvelopePage extends Component
             'maxDays' => SigningDeadlines::MAX_DAYS,
             'user' => $user,
             'canRetain' => $user->hasTeamPermission($company, 'signing:settings'),
+            'canHold' => $user->hasTeamPermission($company, 'signing:hold'),
             // An agreement that still runs keeps its evidence while it runs (ADR-046 S16 review).
             'running' => $envelope->status === EnvelopeStatus::Completed && SigningRetention::agreementState($envelope)['running'],
             'years' => SigningRetention::years($envelope->company_id),

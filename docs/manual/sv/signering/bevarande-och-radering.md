@@ -7,7 +7,7 @@ sokord: [bevarandetid, gallring, gallra, bevarandespärr, radera, radering, regi
 
 # Bevarande och radering av signeringar
 
-Allt som skickas för signering, offerter, avtal, ÄTA och egna dokument, sparas så länge det behövs och gallras sedan automatiskt. Under **Inställningar för företaget → Signering** väljer du hur länge signerade dokument sparas, ser vilka signeringar som har bevarandespärr, tar ut ett registerutdrag för en undertecknare och raderar det som inte måste sparas. Fliken finns för ägare och administratörer, med eller utan modulen Signering.
+Allt som skickas för signering, offerter, avtal, ÄTA och egna dokument, sparas så länge det behövs och gallras sedan automatiskt. Under **Inställningar för företaget → Signering** väljer du hur länge signerade dokument sparas, ser vilka signeringar som har bevarandespärr, tar ut ett registerutdrag för en undertecknare och raderar det som inte måste sparas. Fliken finns för ägare och administratörer, med eller utan modulen Signering. Redovisningskonsulten ser samma flik, men bara bevarandespärrarna.
 
 ![Bevarande av signeringar under Inställningar för företaget → Signering.](/bilder/manual/signering/bevarande.webp)
 
@@ -50,6 +50,8 @@ Den nya tiden gäller dokument som signeras från och med nu. Ett datum som reda
 En signering med bevarandespärr gallras inte och kan inte raderas, till exempel under en skatterevision eller en tvist. Det fungerar för offerter, avtal och ÄTA även utan modulen Signering.
 
 ## Så här sätter du en bevarandespärr
+
+Bevarandespärr kan sättas och hävas av ägare, administratörer och redovisningskonsulter. Bevarandetiderna och registerutdraget ändrar bara ägare och administratörer.
 
 1. Öppna **Inställningar för företaget** och välj fliken **Signering**.
 2. Skriv en del av rubriken under **Sök signering att spärra**, till exempel offertens nummer, och tryck på **Sök**.

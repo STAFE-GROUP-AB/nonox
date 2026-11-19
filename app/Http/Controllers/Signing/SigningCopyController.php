@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Signing;
 
 use App\Domain\Signing\CompletionFiles;
 use App\Domain\Signing\CompletionLinks;
+use App\Domain\Signing\DownloadCodes;
+use App\Domain\Signing\Verification\CheckRefused;
 use App\Models\Company;
 use App\Models\SigningDownloadEvent;
 use App\Models\SigningDownloadLink;
@@ -13,9 +15,12 @@ use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Support\Branding\Brand;
 use App\Support\Tenancy\CurrentCompany;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Vite;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -28,7 +33,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 final class SigningCopyController
 {
-    public function show(string $token): Response
+    public function show(Request $request, string $token): Response
     {
         $resolved = $this->resolve($token);
 
@@ -38,6 +43,11 @@ final class SigningCopyController
 
         [$link, $files] = $resolved;
         $company = Company::query()->find($link->company_id);
+
+        // The files of a confidential envelope are held behind an e-mail code to the link's own address (ADR-046 S13 amendment).
+        if (DownloadCodes::required($link) && ! DownloadCodes::unlocked($request->session(), $link)) {
+            return $this->codePage($link, $company, $token);
+        }
 
         return $this->private(response()->view('signing.copy', [
             'state' => 'files',
@@ -50,7 +60,60 @@ final class SigningCopyController
         ]));
     }
 
-    public function file(string $token, int $file): Response
+    /** "Skicka kod": the code to the link's own address, or the one sent a minute ago is reused. */
+    public function sendCode(Request $request, string $token, DownloadCodes $codes): Response
+    {
+        $resolved = $this->resolve($token);
+
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        [$link] = $resolved;
+
+        if (! DownloadCodes::required($link) || DownloadCodes::unlocked($request->session(), $link)) {
+            return $this->redirectToPage($token);
+        }
+
+        try {
+            $codes->send($link);
+        } catch (CheckRefused $refused) {
+            return $this->redirectToPage($token)->withErrors(['code' => $this->refusal($refused)]);
+        }
+
+        return $this->redirectToPage($token)->with('signing-download-code', __('Vi har skickat en kod till :email.', ['email' => $this->masked($link->email)]));
+    }
+
+    /** The recipient types the code; a right one opens the downloads for this browser session for thirty minutes. */
+    public function verify(Request $request, string $token, DownloadCodes $codes): Response
+    {
+        $resolved = $this->resolve($token);
+
+        if ($resolved instanceof Response) {
+            return $resolved;
+        }
+
+        [$link] = $resolved;
+
+        if (! DownloadCodes::required($link) || DownloadCodes::unlocked($request->session(), $link)) {
+            return $this->redirectToPage($token);
+        }
+
+        try {
+            $codes->verify($link, $request->input('code'));
+        } catch (ValidationException $invalid) {
+            return $this->redirectToPage($token)->withErrors($invalid->errors());
+        } catch (CheckRefused $refused) {
+            return $this->redirectToPage($token)->withErrors(['code' => $this->refusal($refused)]);
+        }
+
+        $request->session()->regenerate();
+        DownloadCodes::grant($request->session(), $link);
+
+        return $this->redirectToPage($token);
+    }
+
+    public function file(Request $request, string $token, int $file): Response
     {
         $resolved = $this->resolve($token);
 
@@ -59,6 +122,11 @@ final class SigningCopyController
         }
 
         [$link, $files] = $resolved;
+
+        if (DownloadCodes::required($link) && ! DownloadCodes::unlocked($request->session(), $link)) {
+            return $this->redirectToPage($token);
+        }
+
         abort_unless(isset($files[$file - 1]), 404);
 
         $entry = $files[$file - 1];
@@ -124,6 +192,41 @@ final class SigningCopyController
         return $files === [] ? $this->closed('gone', 404) : [$link, $files];
     }
 
+    private function redirectToPage(string $token): RedirectResponse
+    {
+        return $this->private(redirect()->route('signing.copy', ['token' => $token]));
+    }
+
+    private function refusal(CheckRefused $refused): string
+    {
+        return $refused->reason === CheckRefused::LOCKED
+            ? __('För många felaktiga försök. Be avsändaren skicka en ny länk.')
+            : $refused->text();
+    }
+
+    /** The address as it is shown on the page: the first letter and the domain, so the page never gives it away to someone with only the link. */
+    private function masked(string $email): string
+    {
+        [$local, $domain] = array_pad(explode('@', $email, 2), 2, '');
+
+        return mb_substr($local, 0, 1).'***@'.$domain;
+    }
+
+    private function codePage(SigningDownloadLink $link, ?Company $company, string $token): Response
+    {
+        return $this->private(response()->view('signing.copy', [
+            'state' => 'code',
+            'companyName' => $company instanceof Company ? ($company->legal_name ?: $company->name) : null,
+            'color' => $company instanceof Company ? Brand::readable(Brand::for($company)->color) : '#1d4ed8',
+            'token' => $token,
+            'maskedEmail' => $this->masked($link->email),
+            'codeSent' => DownloadCodes::hasOpenCode($link),
+            'locked' => DownloadCodes::isLocked($link),
+            'testCompany' => $company?->isTestCompany() === true,
+            'minutes' => DownloadCodes::CODE_MINUTES,
+        ]));
+    }
+
     private function size(int $companyId, string $path): int
     {
         return CurrentCompany::run($companyId, fn (): int => CompletionFiles::storedBytes([['name' => '', 'path' => $path, 'make' => null]]));
@@ -141,6 +244,12 @@ final class SigningCopyController
         ], $status));
     }
 
+    /**
+     * @template TResponse of Response
+     *
+     * @param  TResponse  $response
+     * @return TResponse
+     */
     private function private(Response $response): Response
     {
         $response->headers->set('X-Robots-Tag', 'noindex, nofollow, noarchive');

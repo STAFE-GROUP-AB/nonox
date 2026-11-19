@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-20-signering-spar-och-kod",
+      "datum": "2026-11-20T00:45:00+01:00",
+      "rubrik": "Bevarandespärr för redovisningskonsulten och kod före konfidentiella nedladdningar",
+      "beskrivning": "Redovisningskonsulten kan nu sätta och häva bevarandespärr på en signering, med en egen behörighet, medan bevarandetiderna och registerutdraget stannar hos ägare och administratörer. Filerna i en konfidentiell signering öppnas via nedladdningslänken först när mottagaren har skrivit in en kod som skickas till mottagarens egen adress.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-19-signering-rubriker",
       "datum": "2026-11-19T23:30:00+01:00",
       "rubrik": "Rättare svenska i mejlen efter signering",
