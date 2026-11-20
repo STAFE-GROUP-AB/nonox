@@ -171,7 +171,11 @@ companies and is cheap to compute (one query for the base, one for the list).
 that `ArticleUnits` can convert), `min_quantity_milli` (0 = from the first
 unit; several rows = a quantity ladder), `price_minor` (in the list's
 currency; incl. VAT when the list says so) **or** `discount_bp` against the
-base price (exactly one of them, check constraint), `valid_from`, `valid_to`.
+currency's ordinary price — the currency's default list, else the base price
+(converted for another currency) — because "10 % off" means off what other
+customers pay (exactly one of them, check constraint), `valid_from`, `valid_to`.
+A derived list instead starts from whatever its `based_on_list_id` names (the
+base price when null), not the default list.
 Unique on `(company_id, price_list_id, article_id, unit_id_or_0,
 min_quantity_milli, valid_from)`; a check constraint `valid_to >= valid_from`;
 an exclusion check in the action (not a DB exclusion constraint, to keep
@@ -268,8 +272,8 @@ Within a list or agreement:
   is skipped and listed in `considered`.
 - **Discount vs net price on the row:** an item with `price_minor` gives the
   row `unit_price = price_minor`, `discount_bp = 0`. An item with
-  `discount_bp` gives the row the price it discounts (base or the named list)
-  as `unit_price` and the percent as `discount_bp`, so the invoice shows the
+  `discount_bp` gives the row the price it discounts (the currency's ordinary
+  price, see §2, or the agreement item's named list) as `unit_price` and the percent as `discount_bp`, so the invoice shows the
   ordinary price and the discount (transparent for the customer, and
   `InvoiceCalculator` is unchanged).
 - **No stacking:** one price source per row; discounts never multiply.
@@ -296,6 +300,19 @@ Settled while building P2 (Lead, 2026-11-20):
 - **Derived lists and currency:** a derived list takes its source only in the
   same currency; a non-SEK list derived from the base price starts from the
   converted base price.
+- **What a discount discounts** (review of P2): a discount item, in a list or
+  an agreement, discounts the currency's ordinary price (its default list,
+  else the base or converted base price); a discount item in the default list
+  itself discounts the base price. A derived list follows its `based_on`
+  source. Riksbanken's rate is fetched only when a row needs the converted
+  base price.
+- **Derived chains** are followed for at most five lists; a loop or a longer
+  chain prices nothing from those lists and is listed in `considered`.
+- **Manual price on an unknown article:** a row whose article is not the
+  company's (unknown, or another company's) gets no price and the warning
+  `unknown_article`, even when it carries a manual price.
+- **The document date** is read as a day in `Europe/Stockholm`, also when a
+  moment in UTC is passed.
 
 **Batch design (no N+1).** `resolveMany()` loads, for the whole request list,
 in a fixed number of queries regardless of N: (1) the customer with group, list

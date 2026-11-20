@@ -1,0 +1,30 @@
+{
+    "description": "Within an agreement the most specific target wins before the highest step: an article item from 10 st beats an all-articles item from 20 st; below the article's step the all-articles items apply, highest step reached first.",
+    "articles": {
+        "A1": {"price_ore": 10000},
+        "A2": {"price_ore": 8000}
+    },
+    "customer": {},
+    "agreements": {
+        "PA1": {"valid_from": "2026-01-01", "items": [
+            {"article": "A1", "min_quantity_milli": 10000, "price_minor": 7000},
+            {"min_quantity_milli": 20000, "price_minor": 1000},
+            {"discount_bp": 500}
+        ]}
+    },
+    "cases": [
+        {
+            "context": {"date": "2026-03-15"},
+            "rows": [
+                {"key": "artikel-fore-hogre-steg", "article": "A1", "quantity_milli": 25000,
+                 "expected": {"unit_price_minor": 7000, "discount_bp": 0, "source": "AGREEMENT", "agreement": "PA1", "item": "PA1#0", "tier_min_milli": 10000, "warnings": []}},
+                {"key": "under-artikelns-steg", "article": "A1", "quantity_milli": 5000,
+                 "expected": {"unit_price_minor": 10000, "discount_bp": 500, "source": "AGREEMENT", "agreement": "PA1", "item": "PA1#2", "tier_min_milli": 0, "base_minor": 10000,
+                              "considered": [{"source": "BASE", "unit_price_minor": 10000, "discount_bp": 0, "reason": "agreement_wins"}],
+                              "warnings": []}},
+                {"key": "alla-artiklar-hogsta-steg", "article": "A2", "quantity_milli": 25000,
+                 "expected": {"unit_price_minor": 1000, "discount_bp": 0, "source": "AGREEMENT", "agreement": "PA1", "item": "PA1#1", "tier_min_milli": 20000, "warnings": []}}
+            ]
+        }
+    ]
+}

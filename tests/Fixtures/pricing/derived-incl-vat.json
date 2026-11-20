@@ -1,30 +1,105 @@
 {
     "description": "A consumer list including VAT derived from a reseller list that is itself derived from the base price; explicit items override the rule; the row gets the price excluding VAT and keeps the gross price.",
     "articles": {
-        "A1": {"price_ore": 10000, "vat_rate": 2500},
-        "A2": {"price_ore": 12345, "vat_rate": 1200},
-        "A3": {"price_ore": 4000, "vat_rate": 600}
+        "A1": {
+            "price_ore": 10000,
+            "vat_rate": 2500
+        },
+        "A2": {
+            "price_ore": 12345,
+            "vat_rate": 1200
+        },
+        "A3": {
+            "price_ore": 4000,
+            "vat_rate": 600
+        }
     },
     "lists": {
-        "ATER": {"derived_percent_bp": -1200, "rounding": "WHOLE", "items": [
-            {"article": "A2", "price_minor": 9900}
-        ]},
-        "KONS": {"prices_include_vat": true, "based_on": "ATER", "derived_percent_bp": 0, "rounding": "ENDS_IN_9", "items": [
-            {"article": "A3", "price_minor": 5000}
-        ]}
+        "ATER": {
+            "derived_percent_bp": -1200,
+            "rounding": "WHOLE",
+            "items": [
+                {
+                    "article": "A2",
+                    "price_minor": 9900
+                }
+            ]
+        },
+        "KONS": {
+            "prices_include_vat": true,
+            "based_on": "ATER",
+            "derived_percent_bp": 0,
+            "rounding": "ENDS_IN_9",
+            "items": [
+                {
+                    "article": "A3",
+                    "price_minor": 5000
+                }
+            ]
+        }
     },
-    "groups": {"G1": {"list": "ATER"}},
-    "customer": {"group": "G1", "list": "KONS"},
+    "groups": {
+        "G1": {
+            "list": "ATER"
+        }
+    },
+    "customer": {
+        "group": "G1",
+        "list": "KONS"
+    },
     "cases": [
         {
-            "context": {"date": "2026-03-15"},
+            "context": {
+                "date": "2026-03-15"
+            },
             "rows": [
-                {"key": "harlett", "article": "A1", "quantity_milli": 1000,
-                 "expected": {"unit_price_minor": 9520, "discount_bp": 0, "source": "CUSTOMER_LIST", "list": "KONS", "tier_min_milli": 0, "gross_minor": 11900, "derived": true, "warnings": []}},
-                {"key": "harlett-fran-post", "article": "A2", "quantity_milli": 1000,
-                 "expected": {"unit_price_minor": 10625, "discount_bp": 0, "source": "CUSTOMER_LIST", "list": "KONS", "tier_min_milli": 0, "gross_minor": 11900, "derived": true, "warnings": []}},
-                {"key": "egen-post-inkl-moms", "article": "A3", "quantity_milli": 1000,
-                 "expected": {"unit_price_minor": 4717, "discount_bp": 0, "source": "CUSTOMER_LIST", "list": "KONS", "item": "KONS#0", "tier_min_milli": 0, "gross_minor": 5000, "warnings": []}}
+                {
+                    "key": "harlett",
+                    "article": "A1",
+                    "quantity_milli": 1000,
+                    "expected": {
+                        "unit_price_minor": 9520,
+                        "discount_bp": 0,
+                        "source": "CUSTOMER_LIST",
+                        "list": "KONS",
+                        "tier_min_milli": 0,
+                        "base_minor": 8800,
+                        "gross_minor": 11900,
+                        "derived": true,
+                        "warnings": []
+                    }
+                },
+                {
+                    "key": "harlett-fran-post",
+                    "article": "A2",
+                    "quantity_milli": 1000,
+                    "expected": {
+                        "unit_price_minor": 10625,
+                        "discount_bp": 0,
+                        "source": "CUSTOMER_LIST",
+                        "list": "KONS",
+                        "tier_min_milli": 0,
+                        "base_minor": 9900,
+                        "gross_minor": 11900,
+                        "derived": true,
+                        "warnings": []
+                    }
+                },
+                {
+                    "key": "egen-post-inkl-moms",
+                    "article": "A3",
+                    "quantity_milli": 1000,
+                    "expected": {
+                        "unit_price_minor": 4717,
+                        "discount_bp": 0,
+                        "source": "CUSTOMER_LIST",
+                        "list": "KONS",
+                        "item": "KONS#0",
+                        "tier_min_milli": 0,
+                        "gross_minor": 5000,
+                        "warnings": []
+                    }
+                }
             ]
         }
     ]

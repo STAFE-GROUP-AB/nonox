@@ -2,15 +2,19 @@
     "description": "A EUR document: the currency's default list, else the base price converted at Riksbanken's rate and rounded by the default list's rule, with a warning.",
     "articles": {
         "A1": {"price_ore": 10000},
-        "A2": {"price_ore": 23456}
+        "A2": {"price_ore": 23456},
+        "A3": {"price_ore": 23456}
     },
     "lists": {
         "EURO": {"currency": "EUR", "default": true, "rounding": "WHOLE", "items": [
             {"article": "A1", "price_minor": 900}
+        ]},
+        "KUND": {"currency": "EUR", "items": [
+            {"article": "A3", "discount_bp": 1000}
         ]}
     },
     "rate": {"currency": "EUR", "date": "2026-03-13", "micros": 11500000},
-    "customer": {},
+    "customer": {"list": "KUND"},
     "cases": [
         {
             "context": {"date": "2026-03-15", "currency": "EUR"},
@@ -18,7 +22,11 @@
                 {"key": "eurolistan", "article": "A1", "quantity_milli": 1000,
                  "expected": {"unit_price_minor": 900, "discount_bp": 0, "source": "CURRENCY_LIST", "list": "EURO", "item": "EURO#0", "tier_min_milli": 0, "warnings": []}},
                 {"key": "omraknat", "article": "A2", "quantity_milli": 1000,
-                 "expected": {"unit_price_minor": 2000, "discount_bp": 0, "source": "CONVERTED", "rate_micros": 11500000, "warnings": ["converted_currency"]}}
+                 "expected": {"unit_price_minor": 2000, "discount_bp": 0, "source": "CONVERTED", "rate_micros": 11500000, "warnings": ["converted_currency"]}},
+                {"key": "rabatt-pa-omraknat", "article": "A3", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 2000, "discount_bp": 1000, "source": "CUSTOMER_LIST", "list": "KUND", "item": "KUND#0", "tier_min_milli": 0, "base_minor": 2000, "rate_micros": 11500000,
+                              "considered": [{"source": "CONVERTED", "unit_price_minor": 2000, "discount_bp": 0, "reason": "customer_list_wins"}],
+                              "warnings": ["converted_currency"]}}
             ]
         }
     ]

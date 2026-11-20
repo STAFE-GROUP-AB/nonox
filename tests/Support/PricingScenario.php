@@ -219,10 +219,33 @@ final class PricingScenario
             'agreement' => isset($explanation['agreement_id']) ? array_search($explanation['agreement_id'], $this->agreements, true) : null,
             'item' => isset($explanation['item_id']) ? $this->itemName((int) $explanation['item_id'], $explanation) : null,
             'tier_min_milli' => $explanation['tier_min_milli'] ?? null,
+            'base_minor' => $explanation['base_minor'] ?? null,
             'gross_minor' => $price->grossUnitPriceMinor,
             'derived' => $explanation['derived'] ?? null,
             'rate_micros' => $explanation['rate_micros'] ?? null,
+            'folded_discount_bp' => $explanation['folded_discount_bp'] ?? null,
+            'manual_discount_bp' => $explanation['manual_discount_bp'] ?? null,
+            'considered' => $price->considered === [] ? null : array_map(fn (array $entry): array => $this->describeEntry($entry), $price->considered),
             'warnings' => $price->warnings,
+        ], fn (mixed $value): bool => $value !== null);
+    }
+
+    /**
+     * A considered candidate in the fixture's names.
+     *
+     * @param  array<string, int|string|bool|null>  $entry
+     * @return array<string, mixed>
+     */
+    private function describeEntry(array $entry): array
+    {
+        return array_filter([
+            'source' => $entry['source'] ?? null,
+            'list' => isset($entry['list_id']) ? (array_search($entry['list_id'], $this->lists, true) ?: 'foreign') : null,
+            'agreement' => isset($entry['agreement_id']) ? array_search($entry['agreement_id'], $this->agreements, true) : null,
+            'item' => isset($entry['item_id']) ? $this->itemName((int) $entry['item_id'], $entry) : null,
+            'unit_price_minor' => $entry['unit_price_minor'] ?? null,
+            'discount_bp' => $entry['discount_bp'] ?? null,
+            'reason' => $entry['reason'] ?? null,
         ], fn (mixed $value): bool => $value !== null);
     }
 

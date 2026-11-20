@@ -58,8 +58,15 @@ final class PriceBook
     /** @var list<array<string, int|string|bool|null>> */
     private array $considered = [];
 
-    /** The current row's base price in the document's currency, what a list derived from the base price starts from. */
+    /** The current row's base price in the document's currency, worked out only when something needs it (a rate may be fetched). */
     private ?PriceCandidate $raw = null;
+
+    private bool $rawDone = false;
+
+    /** The current row's ordinary price in the document's currency (steps 5 and 6), worked out only when needed. */
+    private ?PriceCandidate $reference = null;
+
+    private bool $referenceDone = false;
 
     /**
      * @param  array<int, Article>  $articles
@@ -133,8 +140,9 @@ final class PriceBook
 
         $row = new PricedRow($article, $rowUnit, max(0, $request->quantityMilli));
 
-        $this->raw = $this->rawBase($row);
-        $reference = $this->currencyPrice($row, $this->raw);
+        $this->rawDone = false;
+        $this->referenceDone = false;
+        $reference = fn (): ?PriceCandidate => $this->reference($row);
         $agreement = $this->agreementPrice($row, $reference);
         $customerList = $this->customerListPrice($row, $reference);
         $campaign = $this->bestCampaign($row, $reference);
@@ -151,12 +159,16 @@ final class PriceBook
         return $this->result($request, $winner);
     }
 
-    private function choose(?PriceCandidate $agreement, ?PriceCandidate $customerList, ?PriceCandidate $campaign, ?PriceCandidate $reference): ?PriceCandidate
+    /** @param  \Closure(): ?PriceCandidate  $reference */
+    private function choose(?PriceCandidate $agreement, ?PriceCandidate $customerList, ?PriceCandidate $campaign, \Closure $reference): ?PriceCandidate
     {
+        // The ordinary price is listed as a loser only when it was worked out anyway; it is never fetched just to be listed.
+        $ordinary = $this->referenceDone ? $this->reference : null;
+
         if ($agreement !== null) {
             $allowsCampaigns = $this->agreementAllowsCampaigns($agreement->agreementId);
 
-            foreach ([$customerList, $reference] as $other) {
+            foreach ([$customerList, $ordinary] as $other) {
                 if ($other !== null) {
                     $this->considered[] = $other->considered('agreement_wins');
                 }
@@ -175,10 +187,10 @@ final class PriceBook
             return $agreement;
         }
 
-        $normal = $customerList ?? $reference;
+        $normal = $customerList ?? $reference();
 
-        if ($customerList !== null && $reference !== null) {
-            $this->considered[] = $reference->considered('customer_list_wins');
+        if ($customerList !== null && $ordinary !== null) {
+            $this->considered[] = $ordinary->considered('customer_list_wins');
         }
 
         if ($campaign !== null && ($normal === null || $campaign->isLowerThan($normal))) {
@@ -275,18 +287,45 @@ final class PriceBook
         return new PriceCandidate(PriceSource::Converted, $foreign, converted: true);
     }
 
+    private function raw(PricedRow $row): ?PriceCandidate
+    {
+        if (! $this->rawDone) {
+            $this->rawDone = true;
+            $this->raw = $this->rawBase($row);
+        }
+
+        return $this->raw;
+    }
+
+    /**
+     * What a discount item discounts: the currency's ordinary price, i.e.
+     * what other customers pay (ADR-082 §2 and §5).
+     */
+    private function reference(PricedRow $row): ?PriceCandidate
+    {
+        if (! $this->referenceDone) {
+            $this->referenceDone = true;
+            $this->reference = $this->currencyPrice($row);
+        }
+
+        return $this->reference;
+    }
+
     /** Steps 5 and 6: the currency's default list, else the base price (converted for another currency). */
-    private function currencyPrice(PricedRow $row, ?PriceCandidate $raw): ?PriceCandidate
+    private function currencyPrice(PricedRow $row): ?PriceCandidate
     {
         $default = $this->defaultList();
 
         if ($default !== null) {
-            $listed = $this->listPrice($default, $row, $raw);
+            // A discount item in the default list itself discounts the base price.
+            $listed = $this->listPrice($default, $row, fn (): ?PriceCandidate => $this->raw($row));
 
             if ($listed !== null) {
                 return $listed->with(['source' => PriceSource::CurrencyList]);
             }
         }
+
+        $raw = $this->raw($row);
 
         if ($raw === null || $raw->source !== PriceSource::Converted) {
             return $raw;
@@ -309,7 +348,8 @@ final class PriceBook
     }
 
     /** Step 2: the customer's price agreement valid on the date in the document's currency. */
-    private function agreementPrice(PricedRow $row, ?PriceCandidate $reference): ?PriceCandidate
+    /** @param  \Closure(): ?PriceCandidate  $reference */
+    private function agreementPrice(PricedRow $row, \Closure $reference): ?PriceCandidate
     {
         foreach ($this->agreements as $agreement) {
             if ($agreement->currency !== $this->context->currency) {
@@ -351,7 +391,8 @@ final class PriceBook
     }
 
     /** Step 3: the customer's own list, else its price group's list. */
-    private function customerListPrice(PricedRow $row, ?PriceCandidate $reference): ?PriceCandidate
+    /** @param  \Closure(): ?PriceCandidate  $reference */
+    private function customerListPrice(PricedRow $row, \Closure $reference): ?PriceCandidate
     {
         foreach ([$this->customer?->price_list_id, $this->group?->price_list_id] as $listId) {
             if ($listId === null) {
@@ -383,7 +424,8 @@ final class PriceBook
     }
 
     /** Step 4: the lowest campaign for everyone, the customer's group or the channel. */
-    private function bestCampaign(PricedRow $row, ?PriceCandidate $reference): ?PriceCandidate
+    /** @param  \Closure(): ?PriceCandidate  $reference */
+    private function bestCampaign(PricedRow $row, \Closure $reference): ?PriceCandidate
     {
         $best = null;
 
@@ -447,29 +489,34 @@ final class PriceBook
 
     /**
      * A list's price for the row: its best matching item, else its derived
-     * rule, else nothing. $reference is what a discount item discounts and
-     * what a list derived from the base price starts from.
+     * rule, else nothing. $reference gives what a discount item discounts;
+     * a list derived from the base price starts from the article's base price
+     * and one derived from another list from that list's price.
      *
-     * @param  list<int>  $path  the derived lists already on the way here; a loop (A based on B based on A) prices nothing
+     * @param  \Closure(): ?PriceCandidate  $reference
+     * @param  list<int>  $path  the derived lists already on the way here: a loop (A based on B based on A)
+     *                           prices nothing, and a chain is followed for at most MAX_DERIVED_DEPTH lists
      */
-    private function listPrice(PriceList $list, PricedRow $row, ?PriceCandidate $reference, array $path = []): ?PriceCandidate
+    private function listPrice(PriceList $list, PricedRow $row, \Closure $reference, array $path = []): ?PriceCandidate
     {
         if ($list->currency !== $this->context->currency) {
             return null;
         }
 
-        if (in_array($list->id, $path, true) || count($path) > self::MAX_DERIVED_DEPTH) {
-            $this->considered[] = ['source' => PriceSource::CustomerList->value, 'list_id' => $list->id, 'reason' => 'derived_loop'];
+        $source = $this->listSource($list);
+
+        if (in_array($list->id, $path, true) || count($path) >= self::MAX_DERIVED_DEPTH) {
+            $this->considered[] = ['source' => $source->value, 'list_id' => $list->id, 'reason' => in_array($list->id, $path, true) ? 'derived_loop' : 'derived_too_deep'];
 
             return null;
         }
 
         /** @var Collection<int, PriceListItem> $items */
         $items = $this->items["{$list->id}:{$row->article->id}"] ?? collect();
-        $eligible = $this->ladder($row, $items->all(), fn (): int => 0, fn (PriceListItem $item): string => $item->valid_from?->toDateString() ?? '', PriceSource::CustomerList, $list->id, null);
+        $eligible = $this->ladder($row, $items->all(), fn (): int => 0, fn (PriceListItem $item): string => $item->valid_from?->toDateString() ?? '', $source, $list->id, null);
 
         foreach ($eligible as $item) {
-            $candidate = $this->itemPrice($row, $item, PriceSource::CustomerList, $reference, $list->prices_include_vat, $list->id, null);
+            $candidate = $this->itemPrice($row, $item, $source, $reference, $list->prices_include_vat, $list->id, null);
 
             if ($candidate !== null) {
                 return $candidate;
@@ -480,24 +527,24 @@ final class PriceBook
             return null;
         }
 
-        $source = $list->based_on_list_id === null
-            ? $this->raw
+        $basis = $list->based_on_list_id === null
+            ? $this->raw($row)
             : (isset($this->lists[$list->based_on_list_id]) ? $this->listPrice($this->lists[$list->based_on_list_id], $row, $reference, [...$path, $list->id]) : null);
 
-        if ($source === null) {
+        if ($basis === null) {
             return null;
         }
 
         $vat = $row->article->vat_rate;
-        $sourceNet = $source->effectiveMinor();
+        $sourceNet = $basis->effectiveMinor();
         $value = $list->prices_include_vat
-            ? ($source->includesVat && $source->discountBp === 0 && $source->grossMinor !== null ? $source->grossMinor : $this->toGross($sourceNet, $vat))
+            ? ($basis->includesVat && $basis->discountBp === 0 && $basis->grossMinor !== null ? $basis->grossMinor : $this->toGross($sourceNet, $vat))
             : $sourceNet;
 
         $derived = max(0, $list->rounding_rule->apply(max(0, PriceCandidate::scale($value, 10000 + $list->derived_percent_bp, 10000))));
 
         return new PriceCandidate(
-            source: PriceSource::CustomerList,
+            source: $source,
             unitPriceMinor: $list->prices_include_vat ? $this->toNet($derived, $vat) : $derived,
             includesVat: $list->prices_include_vat,
             grossMinor: $list->prices_include_vat ? $derived : null,
@@ -505,8 +552,18 @@ final class PriceBook
             tierMinMilli: 0,
             baseMinor: $sourceNet,
             derived: true,
-            converted: $source->converted,
+            converted: $basis->converted,
         );
+    }
+
+    /** What a list's price is called in an explanation: a campaign, the currency's default list, or a customer's list. */
+    private function listSource(PriceList $list): PriceSource
+    {
+        if ($list->kind === PriceListKind::Campaign) {
+            return PriceSource::Campaign;
+        }
+
+        return $list->is_default_for_currency ? PriceSource::CurrencyList : PriceSource::CustomerList;
     }
 
     /**
@@ -554,7 +611,8 @@ final class PriceBook
         return array_map(fn (array $entry) => $entry[0], $ranked);
     }
 
-    private function itemPrice(PricedRow $row, PriceListItem|PriceAgreementItem $item, PriceSource $source, ?PriceCandidate $reference, bool $includesVat, ?int $listId, ?int $agreementId): ?PriceCandidate
+    /** @param  \Closure(): ?PriceCandidate  $reference */
+    private function itemPrice(PricedRow $row, PriceListItem|PriceAgreementItem $item, PriceSource $source, \Closure $reference, bool $includesVat, ?int $listId, ?int $agreementId): ?PriceCandidate
     {
         if ($item->price_minor !== null) {
             $unit = $item->unit_id === null ? $this->salesUnit($row->article) : (string) $this->units[$item->unit_id];
@@ -579,11 +637,11 @@ final class PriceBook
             );
         }
 
-        $base = $reference;
-
         if ($item instanceof PriceAgreementItem && $item->base_price_list_id !== null) {
             $list = $this->lists[$item->base_price_list_id] ?? null;
             $base = $list === null ? null : $this->listPrice($list, $row, $reference);
+        } else {
+            $base = $reference();
         }
 
         if ($base === null) {

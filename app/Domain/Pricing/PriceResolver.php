@@ -64,6 +64,12 @@ final class PriceResolver
             return [];
         }
 
+        $keys = array_map(fn (PriceRequest $request): string => $request->key, $requests);
+
+        if (count(array_unique($keys)) !== count($keys)) {
+            throw new InvalidArgumentException('Every row to price needs its own key.');
+        }
+
         $book = $this->load($context, $requests);
         $resolved = [];
 
@@ -200,11 +206,13 @@ final class PriceResolver
 
         $result = [];
 
+        // A chain is followed for at most MAX_DERIVED_DEPTH lists, as PriceBook prices it; a list reached
+        // again with more of the chain left is followed again, and a loop ends when the chain runs out.
         foreach ($wanted as $id) {
-            $depth = 0;
+            $remaining = PriceBook::MAX_DERIVED_DEPTH;
 
-            while ($id !== null && $lists->has($id) && ! isset($result[$id]) && $depth++ < PriceBook::MAX_DERIVED_DEPTH) {
-                $result[$id] = true;
+            while ($id !== null && $lists->has($id) && $remaining > 0 && ($result[$id] ?? 0) < $remaining) {
+                $result[$id] = $remaining--;
                 $id = $lists->get($id)?->based_on_list_id;
             }
         }

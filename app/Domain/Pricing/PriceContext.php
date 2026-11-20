@@ -34,6 +34,8 @@ final readonly class PriceContext
         }
 
         $this->currency = $currency;
-        $this->date = (is_string($date) ? CarbonImmutable::parse($date) : $date)->startOfDay();
+        // The accounting day in Sweden: a moment given in UTC (23:30 on the 31st) is the 1st in Stockholm.
+        $timezone = (string) config('app.timezone');
+        $this->date = (is_string($date) ? CarbonImmutable::parse($date, $timezone) : $date)->setTimezone($timezone)->startOfDay();
     }
 }

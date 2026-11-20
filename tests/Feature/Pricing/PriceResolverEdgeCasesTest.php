@@ -291,3 +291,83 @@ it('validates its inputs', function () {
         ->and(fn () => new PriceRequest('r', 1, manualDiscountBp: 10001))->toThrow(InvalidArgumentException::class)
         ->and((new PriceContext(1, '2026-03-15', 'eur'))->currency)->toBe('EUR');
 });
+
+it('fetches no exchange rate for a document the currency list prices in full', function () {
+    $scenario = p2Scenario([
+        'articles' => ['A1' => ['price_ore' => 10000], 'A2' => ['price_ore' => 20000]],
+        'lists' => [
+            'EURO' => ['currency' => 'EUR', 'default' => true, 'items' => [['article' => 'A1', 'price_minor' => 900], ['article' => 'A2', 'price_minor' => 1800]]],
+            'KUND' => ['currency' => 'EUR', 'items' => [['article' => 'A2', 'discount_bp' => 1000]]],
+        ],
+        'customer' => ['list' => 'KUND'],
+        'rate' => ['currency' => 'EUR', 'date' => '2026-03-13', 'micros' => 11_000_000],
+    ]);
+
+    $prices = $scenario->resolve(['date' => '2026-03-15', 'currency' => 'EUR'], [
+        $scenario->request(['key' => 'a', 'article' => 'A1']),
+        $scenario->request(['key' => 'b', 'article' => 'A2']),
+    ]);
+
+    expect([$prices['a']->unitPriceMinor, $prices['b']->unitPriceMinor, $prices['b']->discountBp])->toBe([900, 1800, 1000])
+        ->and(app(RiksbankRates::class)->calls)->toBe(0);
+});
+
+it('follows a chain of derived lists for at most five lists', function (int $length, int $expected, PriceSource $source) {
+    $lists = [];
+
+    foreach (range(1, $length) as $i) {
+        $lists["L{$i}"] = ['derived_percent_bp' => -1000, ...($i < $length ? ['based_on' => 'L'.($i + 1)] : [])];
+    }
+
+    $scenario = p2Scenario(['lists' => $lists, 'customer' => ['list' => 'L1']]);
+    $price = p2One($scenario, ['date' => '2026-03-15']);
+
+    expect($price->unitPriceMinor)->toBe($expected)
+        ->and($price->source)->toBe($source);
+
+    if ($length > PriceBook::MAX_DERIVED_DEPTH) {
+        expect($price->considered)->toContain(['source' => 'CUSTOMER_LIST', 'list_id' => $scenario->lists['L6'], 'reason' => 'derived_too_deep']);
+    }
+})->with([
+    // 100 kr less 10 % five times: 59,049 → 59,05 kr.
+    'five lists' => [5, 5905, PriceSource::CustomerList],
+    'six lists' => [6, 10000, PriceSource::Base],
+]);
+
+it('names a loop by the role of the list it was found in', function () {
+    $scenario = p2Scenario([
+        'lists' => [
+            'K' => ['kind' => 'CAMPAIGN', 'valid_from' => '2026-03-01', 'valid_to' => '2026-03-31', 'derived_percent_bp' => -1000, 'based_on' => 'X'],
+            'X' => ['kind' => 'CAMPAIGN', 'valid_from' => '2026-03-01', 'valid_to' => '2026-03-31', 'derived_percent_bp' => -1000, 'based_on' => 'K'],
+        ],
+    ]);
+
+    $price = p2One($scenario, ['date' => '2026-03-15']);
+
+    expect($price->source)->toBe(PriceSource::Base)
+        ->and(collect($price->considered)->where('reason', 'derived_loop')->pluck('source')->unique()->values()->all())->toBe(['CAMPAIGN']);
+});
+
+it('reads the document date as a Swedish day, also when given in UTC', function () {
+    $scenario = p2Scenario([
+        'lists' => ['MAJ' => ['kind' => 'CAMPAIGN', 'valid_from' => '2026-05-01', 'valid_to' => '2026-05-31', 'items' => [['article' => 'A1', 'price_minor' => 5000]]]],
+    ]);
+    $price = fn (CarbonImmutable|string $date) => app(PriceResolver::class)
+        ->resolve(new PriceContext((int) $scenario->company->id, $date), new PriceRequest('r', $scenario->articles['A1']))->unitPriceMinor;
+
+    // 23:00 UTC on 31 May is 01:00 on 1 June in Stockholm: the campaign has ended.
+    expect($price(CarbonImmutable::parse('2026-05-31 23:00:00', 'UTC')))->toBe(10000)
+        ->and($price('2026-05-31T23:00:00Z'))->toBe(10000)
+        ->and($price(CarbonImmutable::parse('2026-05-31 21:00:00', 'UTC')))->toBe(5000)
+        ->and($price('2026-05-31'))->toBe(5000)
+        ->and((new PriceContext(1, CarbonImmutable::parse('2026-05-31 23:00:00', 'UTC')))->date->toDateString())->toBe('2026-06-01');
+});
+
+it('refuses two rows with the same key', function () {
+    $scenario = p2Scenario([]);
+
+    expect(fn () => app(PriceResolver::class)->resolveMany($scenario->context(['date' => '2026-03-15']), [
+        new PriceRequest('r', $scenario->articles['A1']),
+        new PriceRequest('r', $scenario->articles['A1'], 2000),
+    ]))->toThrow(InvalidArgumentException::class);
+});

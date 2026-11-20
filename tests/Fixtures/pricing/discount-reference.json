@@ -1,0 +1,46 @@
+{
+    "description": "What a discount item discounts and what a derived list starts from: a discount item takes the currency's ordinary price (the SEK default list, 90 kr), not the article's base price (100 kr); a list derived from the base price starts from the base price (200 kr − 20 % = 160 kr), not the default list (150 kr).",
+    "articles": {
+        "A1": {"price_ore": 10000},
+        "A2": {"price_ore": 20000}
+    },
+    "lists": {
+        "BAS": {"default": true, "items": [
+            {"article": "A1", "price_minor": 9000},
+            {"article": "A2", "price_minor": 15000}
+        ]},
+        "ATER": {"items": [
+            {"article": "A1", "discount_bp": 1000}
+        ]},
+        "DER": {"derived_percent_bp": -2000}
+    },
+    "groups": {"G1": {"list": "DER"}},
+    "customer": {"group": "G1", "list": "ATER"},
+    "cases": [
+        {
+            "context": {"date": "2026-03-15", "no_customer": true},
+            "rows": [
+                {"key": "ordinarie-a1", "article": "A1", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 9000, "discount_bp": 0, "source": "CURRENCY_LIST", "list": "BAS", "item": "BAS#0", "tier_min_milli": 0, "warnings": []}},
+                {"key": "ordinarie-a2", "article": "A2", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 15000, "discount_bp": 0, "source": "CURRENCY_LIST", "list": "BAS", "item": "BAS#1", "tier_min_milli": 0, "warnings": []}}
+            ]
+        },
+        {
+            "context": {"date": "2026-03-15"},
+            "rows": [
+                {"key": "rabatt-pa-ordinarie", "article": "A1", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 9000, "discount_bp": 1000, "source": "CUSTOMER_LIST", "list": "ATER", "item": "ATER#0", "tier_min_milli": 0, "base_minor": 9000,
+                              "considered": [{"source": "CURRENCY_LIST", "list": "BAS", "item": "BAS#0", "unit_price_minor": 9000, "discount_bp": 0, "reason": "customer_list_wins"}],
+                              "warnings": []}},
+                {"key": "harlett-fran-grundpris", "article": "A2", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 16000, "discount_bp": 0, "source": "CUSTOMER_LIST", "list": "DER", "tier_min_milli": 0, "base_minor": 20000, "derived": true, "warnings": []}},
+                {"key": "manuell-rabatt-ovanpa", "article": "A1", "quantity_milli": 1000, "manual_discount_bp": 500,
+                 "expected": {"unit_price_minor": 8100, "discount_bp": 500, "source": "CUSTOMER_LIST", "list": "ATER", "item": "ATER#0", "tier_min_milli": 0, "base_minor": 9000,
+                              "folded_discount_bp": 1000, "manual_discount_bp": 500,
+                              "considered": [{"source": "CURRENCY_LIST", "list": "BAS", "item": "BAS#0", "unit_price_minor": 9000, "discount_bp": 0, "reason": "customer_list_wins"}],
+                              "warnings": []}}
+            ]
+        }
+    ]
+}
