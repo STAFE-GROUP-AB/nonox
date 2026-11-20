@@ -115,7 +115,7 @@ it('reads only rows on the member\'s own units, by their own part of a voucher',
 
     expect(e17ByRow($page))->toBe([
         '3001 Försäljning inom Sverige, 25 % moms' => -50_000,
-        '4010 Inköp material och varor' => 120_000,
+        '4010 Inköp av handelsvaror i Sverige' => 120_000,
         '5010 Lokalhyra' => 30_000,
     ]);
 });

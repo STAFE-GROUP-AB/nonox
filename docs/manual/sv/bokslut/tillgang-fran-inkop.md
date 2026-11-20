@@ -9,12 +9,12 @@ sokord: [skapa tillgång, lägg till i befintlig tillgång, flera fakturor, ink�
 
 Köper du en dator eller en maskin behöver du inte först bokföra inköpet och sedan lägga in tillgången i registret för sig. När en rad i en verifikation eller en leverantörsfaktura bokförs på ett anskaffningskonto erbjuder NONOX att skapa tillgången samtidigt. Den skapas i samma ögonblick som inköpet bokförs och länkas till verifikationen.
 
-![En leverantörsfaktura vars rad på konto 1250 blev en anläggningstillgång.](/bilder/manual/bokforing/anlaggningstillgang-fran-inkop.webp)
+![En leverantörsfaktura vars rad på ett anskaffningskonto blev en anläggningstillgång.](/bilder/manual/bokforing/anlaggningstillgang-fran-inkop.webp)
 
 ## Så här gör du
 
 1. Registrera leverantörsfakturan eller skriv verifikationen som vanligt.
-2. Kontera inköpet på ett anskaffningskonto, till exempel 1220 Inventarier och verktyg eller 1250 Datorer.
+2. Kontera inköpet på ett anskaffningskonto, till exempel 1220 Inventarier, verktyg och installationer eller 1224 Datorer (ej för produktion).
 3. Under raderna visas **Anläggningstillgångar**: *Raden bokförs på ett anskaffningskonto. Lägg in inköpet i anläggningsregistret …*
 4. Klicka på **Skapa anläggningstillgång**.
 5. Kontrollera uppgifterna:
@@ -47,7 +47,7 @@ Tillgångens anskaffningsvärde ökar med radens belopp utan moms när inköpet 
 
 ## Vilka konton räknas som anskaffningskonton?
 
-Utan eget val gäller registrets tillgångskonton: 1210, 1220, 1240 och 1250. Byggnader (1110) och mark (1130) är inte med; lägg till dem i fältet om företaget vill. Kontona för ackumulerade avskrivningar räknas inte, eftersom en debet där är en försäljning eller utrangering.
+Utan eget val gäller registrets tillgångskonton: 1210, 1220, 1224 och 1226 (och 1240 och 1250 för tillgångar som lades upp före BAS 2026-rättelsen). Byggnader (1110) och mark (1130) är inte med; lägg till dem i fältet om företaget vill. Kontona för ackumulerade avskrivningar räknas inte, eftersom en debet där är en försäljning eller utrangering.
 
 ### Så här väljer du egna konton
 

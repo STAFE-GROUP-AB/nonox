@@ -103,7 +103,7 @@ class K3DemoSeeder extends Seeder
 
     private function accounts(): void
     {
-        foreach ([1110 => 'Byggnader', 1119 => 'Ackumulerade avskrivningar på byggnader', 1130 => 'Mark', 1220 => 'Inventarier och verktyg', 1229 => 'Ackumulerade avskrivningar på inventarier och verktyg', 1370 => 'Uppskjuten skattefordran', 2091 => 'Balanserad vinst eller förlust', 2099 => 'Årets resultat', 2240 => 'Avsättningar för uppskjutna skatter', 2350 => 'Andra långfristiga skulder till kreditinstitut', 2512 => 'Beräknad inkomstskatt', 7820 => 'Avskrivningar på byggnader och markanläggningar', 7832 => 'Avskrivningar på inventarier och verktyg', 8910 => 'Skatt som belastar årets resultat', 8999 => 'Årets resultat'] as $number => $name) {
+        foreach ([1110 => 'Byggnader', 1119 => 'Ackumulerade avskrivningar på byggnader', 1130 => 'Mark', 1220 => 'Inventarier, verktyg och installationer', 1229 => 'Ackumulerade avskrivningar på inventarier, verktyg och installationer', 1370 => 'Uppskjuten skattefordran', 2091 => 'Balanserad vinst eller förlust', 2099 => 'Årets resultat', 2240 => 'Avsättningar för uppskjutna skatter', 2350 => 'Andra långfristiga skulder till kreditinstitut', 2512 => 'Beräknad inkomstskatt', 7820 => 'Avskrivningar på byggnader och markanläggningar', 7832 => 'Avskrivningar på inventarier, verktyg och installationer', 8910 => 'Skatt som belastar årets resultat', 8999 => 'Årets resultat'] as $number => $name) {
             Account::query()->firstOrCreate(['number' => $number], ['name' => $name, 'type' => AccountType::forNumber($number), 'is_active' => true]);
         }
     }

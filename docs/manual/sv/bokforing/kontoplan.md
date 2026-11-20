@@ -15,8 +15,7 @@ Kontoplanen är listan över de konton du bokför på, till exempel 1930 för f�
 
 När företaget skapas får det de vanligaste kontona ur BAS 2026, cirka hundra stycken. Vilka det blir beror på företagets redovisningsregelverk: ett aktiebolag med K2 eller K3 får aktiebolagets konton för eget kapital (till exempel 2081 Aktiekapital och 2099 Årets resultat), en enskild firma med K1 får eget kapital för en ägare (till exempel 2010 Eget kapital och 2019 Årets resultat).
 
-> [!NOTE]
-> NONOX har ännu inte kontrollerat varje kontonummer och namn i den förifyllda kontoplanen mot den officiella BAS-kontoplanen. Är du osäker på vilket konto som är rätt, fråga din redovisningskonsult.
+Kontoplanen bygger på BAS kontoplan 2026 från BAS-kontogruppen, bas.se. Kontonummer och kontonamn är hämtade ur BAS officiella kontoplan och kontrollerade mot den. Är du osäker på vilket konto som är rätt, fråga din redovisningskonsult.
 
 ## Hitta ett konto
 

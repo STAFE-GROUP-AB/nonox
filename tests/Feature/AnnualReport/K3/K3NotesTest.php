@@ -197,7 +197,7 @@ it('S1-R8.1 row 4 gives each fixed asset item its movements, method and useful l
         ->and($note->data['depreciation']['charge'])->toBe(1_200_000)
         ->and($note->data['book_value'])->toBe(4_800_000)
         ->and($note->data['method'])->toBe('linear')
-        ->and($note->data['lives'])->toBe([['category' => 'EQUIPMENT', 'label' => 'Inventarier och verktyg', 'years' => '5']])
+        ->and($note->data['lives'])->toBe([['category' => 'EQUIPMENT', 'label' => 'Inventarier, verktyg och installationer', 'years' => '5']])
         ->and(implode(' ', $note->generatedText))->toContain('5 år')
         ->and($note->missing)->toBe([]);
 });
@@ -223,7 +223,7 @@ it('S1-R8.1 row 4 reads only the register assets held during the year', function
     $old = $save('Såld före året', '2024-01-10', '36');
     $old->forceFill(['status' => FixedAsset::DISPOSED, 'disposed_on' => '2025-06-30'])->save();
 
-    expect(k3NotesFor($this)->note('fixed_assets.equipment')->data['lives'])->toBe([['category' => 'EQUIPMENT', 'label' => 'Inventarier och verktyg', 'years' => '5']]);
+    expect(k3NotesFor($this)->note('fixed_assets.equipment')->data['lives'])->toBe([['category' => 'EQUIPMENT', 'label' => 'Inventarier, verktyg och installationer', 'years' => '5']]);
 });
 
 it('S1-R8.1 row 4 never asks for the useful life of construction in progress or advances', function () {

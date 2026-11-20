@@ -47,7 +47,7 @@ Butiken Linden köper tröjor från en grossist i ett annat EU-land för 10 000 
 |---|---:|---:|---|
 | 4515 Inköp av råvaror och material från annat EU-land, 25 % | 10 000 | | 20 |
 | 2645 Beräknad ingående moms på förvärv från utlandet | 2 500 | | 48 |
-| 2614 Utgående moms omvänd skattskyldighet, 25 % | | 2 500 | 30 |
+| 2614 Utgående moms omvänd betalskyldighet, 25 % | | 2 500 | 30 |
 | 2440 Leverantörsskulder | | 10 000 | |
 
 Den utgående och den ingående momsen tar ut varandra, så du betalar inget extra. Men båda ska synas.

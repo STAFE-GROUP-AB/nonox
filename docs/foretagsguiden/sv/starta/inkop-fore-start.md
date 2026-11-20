@@ -95,12 +95,12 @@ När bolaget betalar tillbaka till Sara:
 | Konto | Debet | Kredit |
 |---|---:|---:|
 | 2893 Skulder till närstående personer, kortfristig del | 12 500,00 | |
-| 1930 Företagskonto/checkkonto/affärskonto | | 12 500,00 |
+| 1930 Företagskonto | | 12 500,00 |
 
 **Om momsen inte får dras av**, till exempel för att företaget inte är momsregistrerat, bokförs hela beloppet, 12 500 kronor, som kostnad, och raden för ingående moms utgår.
 
 > [!NOTE]
-> Kontona är exempel ur BAS-kontoplanen. En dyrare dator som ska användas i flera år kan i stället vara en anläggningstillgång som skrivs av, till exempel på konto 1250 Datorer. Skattereglernas gräns är ett halvt prisbasbelopp (inkomstskattelagen 18 kap. 4 §). Ett företag som gör sin årsredovisning enligt K2 har en motsvarande gräns i bokföringen: enligt BFNAR 2016:10 punkt 10.5 får en inventarie redovisas som kostnad när anskaffningsvärdet är lägre än ett halvt prisbasbelopp, räknat med den moms som företaget inte får dra av (skattereglerna räknar beloppet utan moms). Hör flera saker ihop, till exempel ett bord med stolar, räknas de tillsammans. Enligt punkt 10.6 får också en inventarie som kan antas hålla i högst tre år redovisas som kostnad. Tillämpar företaget K3, fråga din redovisningskonsult. Hur du lägger in en anläggningstillgång i NONOX står i [Skapa en anläggningstillgång från ett inköp](/manual/bokforing/anlaggningstillgang-fran-inkop).
+> Kontona är exempel ur BAS-kontoplanen. En dyrare dator som ska användas i flera år kan i stället vara en anläggningstillgång som skrivs av, till exempel på konto 1224 Datorer (ej för produktion). Skattereglernas gräns är ett halvt prisbasbelopp (inkomstskattelagen 18 kap. 4 §). Ett företag som gör sin årsredovisning enligt K2 har en motsvarande gräns i bokföringen: enligt BFNAR 2016:10 punkt 10.5 får en inventarie redovisas som kostnad när anskaffningsvärdet är lägre än ett halvt prisbasbelopp, räknat med den moms som företaget inte får dra av (skattereglerna räknar beloppet utan moms). Hör flera saker ihop, till exempel ett bord med stolar, räknas de tillsammans. Enligt punkt 10.6 får också en inventarie som kan antas hålla i högst tre år redovisas som kostnad. Tillämpar företaget K3, fråga din redovisningskonsult. Hur du lägger in en anläggningstillgång i NONOX står i [Skapa en anläggningstillgång från ett inköp](/manual/bokforing/anlaggningstillgang-fran-inkop).
 
 ## Så här gör du i NONOX
 

@@ -79,7 +79,7 @@ final class PayCodeCatalog
      */
     public const array ACCOUNTS = [
         1680 => 'Andra kortfristiga fordringar',
-        1930 => 'Företagskonto/checkkonto/affärskonto',
+        1930 => 'Företagskonto',
         2710 => 'Personalskatt',
         2514 => 'Beräknad särskild löneskatt på pensionskostnader',
         2730 => 'Lagstadgade sociala avgifter och särskild löneskatt',
@@ -100,8 +100,8 @@ final class PayCodeCatalog
         7410 => 'Pensionsförsäkringspremier',
         7210 => 'Löner till tjänstemän',
         7281 => 'Sjuklöner till tjänstemän',
-        7510 => 'Arbetsgivaravgifter',
-        7519 => 'Sociala avgifter för semester- och löneskulder',
+        7510 => 'Arbetsgivaravgifter 31,42 %',
+        7519 => 'Arbetsgivaravgifter för semester- och löneskulder',
         7530 => 'Särskild löneskatt',
         // TODO(legal-verify): BAS 2026 name of 7570, checked against the BAS chart before release.
         7570 => 'Premier för arbetsmarknadsförsäkringar',

@@ -119,7 +119,7 @@ it('copies a posted voucher into a new draft', function () {
 
     Livewire::test(VoucherEditor::class, ['copyOf' => $original])
         ->assertSet('description', 'Kopia av A1: Försäljning')
-        ->assertSet('rows.0.account', '1930 Företagskonto/checkkonto/affärskonto')
+        ->assertSet('rows.0.account', '1930 Företagskonto')
         ->assertSet('rows.0.debit', '500,00');
 });
 

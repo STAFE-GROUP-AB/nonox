@@ -31,7 +31,7 @@ Annars bokför du betalningen när kunden betalar som en verifikation mot 1510:
 
 | Konto | Debet | Kredit |
 |---|---|---|
-| 1930 Företagskonto/checkkonto/affärskonto | belopp | |
+| 1930 Företagskonto | belopp | |
 | 1510 Kundfordringar | | belopp |
 
 Se [Bokför en verifikation](/manual/bokforing/bokfor-en-verifikation). Har du inte läst in fakturan finns den inte som faktura i NONOX, så betalningen kan inte matchas mot den automatiskt; bokför den för hand.
@@ -45,7 +45,7 @@ På samma sätt ligger obetalda leverantörsfakturor som saldo på **2440 Levera
 | Konto | Debet | Kredit |
 |---|---|---|
 | 2440 Leverantörsskulder | belopp | |
-| 1930 Företagskonto/checkkonto/affärskonto | | belopp |
+| 1930 Företagskonto | | belopp |
 
 Nya leverantörsfakturor registrerar du i NONOX. Se [Registrera en leverantörsfaktura](/manual/leverantorer/registrera-en-leverantorsfaktura).
 

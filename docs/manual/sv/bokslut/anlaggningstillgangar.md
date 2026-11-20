@@ -16,7 +16,7 @@ Registret finns under **Bokföring → Anläggningar**.
 
 ## Så fungerar det
 
-- **Inköpet** bokförs som vanligt när tillgången köps, på ett tillgångskonto som 1220 Inventarier och verktyg. Det kan du göra med en leverantörsfaktura eller en verifikation – och då kan tillgången skapas i registret samtidigt. Läs [Anläggningstillgång direkt från inköpet](/manual/bokslut/tillgang-fran-inkop).
+- **Inköpet** bokförs som vanligt när tillgången köps, på ett tillgångskonto som 1220 Inventarier, verktyg och installationer. Det kan du göra med en leverantörsfaktura eller en verifikation – och då kan tillgången skapas i registret samtidigt. Läs [Anläggningstillgång direkt från inköpet](/manual/bokslut/tillgang-fran-inkop).
 - **Registret** bokför avskrivningarna, en gång i månaden.
 - **Försäljning eller utrangering** bokförs också från registret. Läs [Sälja eller utrangera en tillgång](/manual/bokslut/salja-eller-utrangera).
 
@@ -24,7 +24,7 @@ Registret finns under **Bokföring → Anläggningar**.
 
 1. Gå till **Bokföring → Anläggningar** och klicka på **Ny tillgång**.
 2. Skriv **Benämning**, till exempel "Espressomaskin".
-3. Välj **Slag**: **Inventarier och verktyg**, **Datorer**, **Maskiner och andra tekniska anläggningar**, **Bilar och andra transportmedel**, **Byggnader** eller **Mark**. Kontona och en nyttjandeperiod fylls i efter slaget. Mark skrivs aldrig av, så för mark behövs ingen nyttjandeperiod och inga avskrivningskonton.
+3. Välj **Slag**: **Inventarier, verktyg och installationer**, **Datorer**, **Maskiner och andra tekniska anläggningar**, **Bilar och transportmedel**, **Byggnader** eller **Mark**. Kontona och en nyttjandeperiod fylls i efter slaget. Mark skrivs aldrig av, så för mark behövs ingen nyttjandeperiod och inga avskrivningskonton.
 4. Fyll i **Anskaffningsdag** och **Anskaffningsvärde, kr** – priset utan moms.
 5. Fyll i **Restvärde, kr** – det tillgången väntas vara värd när den är avskriven. Oftast 0.
 6. Fyll i **Nyttjandeperiod, månader** – hur länge den ska skrivas av – och **Första avskrivningsmånad**.
@@ -38,14 +38,14 @@ Nyttjandeperioden är företagets egen bedömning av hur länge tillgången anv�
 
 | Slag | Tillgång | Ackumulerade avskrivningar | Avskrivning |
 |---|---|---|---|
-| Inventarier och verktyg | 1220 | 1229 | 7832 |
-| Datorer | 1250 | 1259 | 7835 |
+| Inventarier, verktyg och installationer | 1220 | 1229 | 7832 |
+| Datorer | 1224 | 1229 | 7832 |
 | Maskiner och andra tekniska anläggningar | 1210 | 1219 | 7831 |
-| Bilar och andra transportmedel | 1240 | 1249 | 7834 |
+| Bilar och transportmedel | 1226 | 1229 | 7832 |
 | Byggnader | 1110 | 1119 | 7820 |
 | Mark | 1130 | – | – |
 
-Kontona kan ändras per tillgång. Saknas något i kontoplanen visar registret vilka och knappen **Lägg till kontona**. Kontona för byggnader och mark föreslås först när registret har en byggnad eller mark.
+Kontona är de som BAS 2026 anger för slaget och sparas på varje tillgång när den läggs upp. En tillgång som lades upp tidigare behåller sina konton (datorer på 1250/1259/7835 och bilar på 1240/1249/7834), så avskrivningen fortsätter bokföras där den började. Kontona kan ändras per tillgång. Saknas något i kontoplanen visar registret vilka och knappen **Lägg till kontona**. Kontona för byggnader och mark föreslås först när registret har en byggnad eller mark.
 
 ## En tillgång av flera inköp
 

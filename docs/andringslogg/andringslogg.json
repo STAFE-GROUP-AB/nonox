@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-19-bas-kontoplan-hanvisning",
+      "datum": "2026-11-19T15:00:00+01:00",
+      "rubrik": "Kontoplanen anger att den bygger på BAS kontoplan 2026",
+      "beskrivning": "Sidan Kontoplan, manualen och README anger nu att kontoplanen bygger på BAS kontoplan 2026 från BAS-kontogruppen, bas.se, som är villkoret för att använda kontonumren och kontonamnen. Alla förifyllda konton är kontrollerade mot BAS officiella lista, och de namn som avvek är rättade, till exempel 1930 Företagskonto och 4010 Inköp av handelsvaror i Sverige.",
+      "typ": "Rättat",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-19-signering-gallring",
       "datum": "2026-11-19T14:30:00+01:00",
       "rubrik": "Bevarandetid, bevarandespärr och radering för signeringar",

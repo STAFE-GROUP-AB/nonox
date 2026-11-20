@@ -161,6 +161,9 @@ class ChartOfAccounts extends Component
             'accounts' => $this->accounts(),
             'classes' => AccountClass::all(),
             'canManage' => $this->user()->can('create', [Account::class, $company]),
+            'basNotice' => __('Kontoplanen bygger på :version från BAS-kontogruppen, bas.se.', [
+                'version' => 'BAS kontoplan '.(preg_replace('/^BAS\s*/', '', (string) $company->bas_version) ?: '2026'),
+            ]),
             'boxOptions' => array_combine(VatBoxes::ACCOUNT_BOXES, array_map(fn (int $box): string => sprintf('%02d', $box).' '.__(VatBoxes::BOXES[$box]['label']), VatBoxes::ACCOUNT_BOXES)),
         ]);
     }

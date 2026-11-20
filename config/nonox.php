@@ -22,6 +22,12 @@ return [
     'hq_admins' => $hqAdmins,
 
     /*
+     | Where the BAS chart templates live: one folder per year with k1.json,
+     | k2.json, k3.json and previous-names.json. Only tests change it.
+     */
+    'bas_path' => database_path('data/bas'),
+
+    /*
      | The MCP server for AI assistants (POST /api/mcp). Off by default and 404
      | while off: it opens only when the privacy policy names AI providers as
      | recipients (owner decision 18).

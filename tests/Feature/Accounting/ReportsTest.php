@@ -185,7 +185,7 @@ it('downloads the report for Excel', function () {
 
     expect($response->headers->get('Content-Type'))->toBe('text/csv; charset=UTF-8')
         ->and($csv)->toStartWith("\xEF\xBB\xBFKonto;Namn;Ingående;Debet;Kredit;Utgående")
-        ->and($csv)->toContain('1930;Företagskonto/checkkonto/affärskonto;50000,00;1680,00;400,00;51280,00')
+        ->and($csv)->toContain('1930;Företagskonto;50000,00;1680,00;400,00;51280,00')
         ->and($csv)->toContain('3002;"Försäljning inom Sverige, 12 % moms";0,00;0,00;1500,00;-1500,00');
 });
 

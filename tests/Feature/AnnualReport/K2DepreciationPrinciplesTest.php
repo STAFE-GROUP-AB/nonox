@@ -36,7 +36,7 @@ it('does not print land in the K2 principles note, nor "0 år"', function () {
 
     $principles = AnnualReportDocument::data($this->company, $this->year, $report)['depreciation'];
 
-    expect($principles)->toBe(['Inventarier och verktyg: 3 år', 'Byggnader: 50 år'])
+    expect($principles)->toBe(['Inventarier, verktyg och installationer: 3 år', 'Byggnader: 50 år'])
         ->and(implode(' ', $principles))->not->toContain('Mark')->not->toMatch('/(?<![0-9])0 år/');
 });
 

@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.155
+- Version: 0.156
 - Datum: 2026-11-19
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -438,6 +438,15 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   kostnad.
 - Ett kontonummer ändras aldrig. Konton kan byta namn och inaktiveras, men tas
   aldrig bort.
+- Kontoplanen bygger på BAS kontoplan 2026 från BAS-kontogruppen, bas.se, och
+  det anges på sidan Kontoplan. Mallarnas nummer och namn är kontrollerade mot
+  BAS officiella lista. Vid en ny BAS-version byter `bas:upgrade <år>`
+  kontonamn bara där namnet fortfarande är mallens gamla namn (egna namn
+  lämnas), lägger inte till några konton, sätter företagets `bas_version`,
+  loggar `account.updated` och `company.bas_upgraded` och rör aldrig
+  verifikationer, rader, balanser eller hashkedjan. `bas:upgrade 2026 --fix-names`
+  rättar en gång namn som NONOX sått före kontrollen mot BAS (lista i
+  `previous-names.json`) och lämnar egna namn.
 - Varje tillagt eller ändrat konto loggas i behandlingshistoriken med värdet före
   och efter.
 - Ett inköpskonto (4000–4899) kan markeras som handelsvaror. Det sparas som
@@ -6982,3 +6991,4 @@ påverkar bokföringen och fakturan:
 | 0.153 | 2026-11-18 | Fält i PDF:en vid signering (ADR-046 tillägg, lucka 2, paket S6): fält per undertecknare som låses när kuvertet skickas, värden som kontrolleras på servern, sparas en gång och stämplas in som en ny inkrementell revision per undertecknare (`signing_document_versions`, `AFTER_SIGNER`), och händelsen `FIELDS_FILLED` med värdenas hashar i kuvertets hashkedja. Ingenting bokförs och ingen verifikation, numrering eller hashkedja för bokföringen ändras. |
 | 0.154 | 2026-11-19 | Samtycke till elektroniska handlingar vid signering (ADR-046 tillägg, lucka 7, paket S4): en versionerad text som varje undertecknare godkänner innan dokumentet visas, med version, textens SHA-256 och tid på undertecknarens rad (låsta av en databasutlösare), händelsen `CONSENTED` i kuvertets hashkedja och samtycket i bevishashen. Ingenting bokförs och ingen verifikation, numrering eller hashkedja för bokföringen ändras. |
 | 0.155 | 2026-11-19 | Bevarande och gallring av signeringar (avsnitt 5, ADR-046 tillägg 2026-11-18, lucka 11, paket S16): klasserna räkenskapsinformation (till och med 31 december sju år efter räkenskapsåret då affärshändelsen bokfördes, och minst företagets tid; datumet flyttas senare när en faktura, betalning, kreditfaktura eller kundförlust från offerten (också via dess arbetsorder), avtalet eller ÄTA:t bokförs i ett senare år), andra signerade dokument (7–25 år, förvalt 10) och inte signerade (12 månader); ett signerat avtal gallras inte medan det gäller. Triggrar vägrar ett tidigare datum, en lägre klass, ett datum under golvet och radering före datumet eller med bevarandespärr. `signing:prune` tar bort hela kuvert efter datumet och loggar `signing.envelope_deleted`. Ingen verifikation, inget underlag och ingen bokföringsregel ändras. |
+| 0.156 | 2026-11-19 | Kontoplanens hänvisning till BAS och årsrutinen (avsnitt 2): mallarna kontrollerade mot BAS officiella lista (49 namn rättade), och `bas:upgrade` flyttar företag till en ny BAS-version utan att skriva över egna kontonamn; `--fix-names` rättar en gång äldre företags namn som NONOX själv har sått (`previous-names.json`). Anläggningsregistret föreslår för nya tillgångar BAS 2026:s konton (datorer 1224, bilar 1226, båda med 1229 och 7832); sparade tillgångar byter aldrig konto. Bara `accounts.name` och `teams.bas_version` ändras; ingen verifikation, numrering eller hashkedja ändras. |

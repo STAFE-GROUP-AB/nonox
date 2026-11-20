@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Accounting;
 
+use App\Actions\Assets\AssetProposals;
 use App\Actions\Assets\FixedAssets;
 use App\Domain\Assets\AcquisitionAccounts;
 use App\Domain\Assets\AssetCategory;
@@ -126,6 +127,34 @@ class FixedAssetsPage extends Component
         $this->form['accumulated_account'] = (string) $accounts['accumulated'];
         $this->form['expense_account'] = (string) $accounts['expense'];
         $this->form['life_months'] = (string) $category->suggestedLifeMonths();
+    }
+
+    /**
+     * A legacy asset account typed by hand (1240, 1250) brings its own
+     * accumulated and expense accounts, so the cost and its depreciation stay on
+     * one K3 line. Only for a new asset: an existing one never changes accounts.
+     */
+    public function updatedFormAssetAccount(string $value): void
+    {
+        if ($this->editing !== null || ! ctype_digit(trim($value))) {
+            return;
+        }
+
+        $account = (int) trim($value);
+
+        if (! isset(AssetCategory::LEGACY_COMPANIONS[$account])) {
+            return;
+        }
+
+        $accounts = (AssetCategory::tryFrom((string) ($this->form['category'] ?? '')) ?? AssetCategory::Equipment)->accountsFor($account);
+        $company = $this->company();
+
+        if ($this->user()->hasTeamPermission($company, 'accounts:manage')) {
+            AssetProposals::ensureLegacyCompanions($company, $accounts, $this->user());
+        }
+
+        $this->form['accumulated_account'] = (string) $accounts['accumulated'];
+        $this->form['expense_account'] = (string) $accounts['expense'];
     }
 
     public function edit(int $assetId): void

@@ -51,7 +51,7 @@ Exempelbolaget AB betalar en reparation på 1 250 kr inklusive 25 % moms med fö
 |---|---:|---:|
 | *(välj kostnadskonto)* | 1 000,00 | |
 | 2641 Debiterad ingående moms | 250,00 | |
-| 1930 Företagskonto/checkkonto/affärskonto | | 1 250,00 |
+| 1930 Företagskonto | | 1 250,00 |
 
 Skriv till exempel "5" eller "reparation" i det tomma kontofältet och välj kontot som passar.
 

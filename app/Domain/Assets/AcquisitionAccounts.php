@@ -26,7 +26,9 @@ final readonly class AcquisitionAccounts
     {
         $categories = array_filter(AssetCategory::cases(), fn (AssetCategory $category): bool => $category->isPurchaseDefault());
 
-        return new self(array_values(array_map(fn (AssetCategory $category): array => [$category->accounts()['asset'], $category->accounts()['asset']], $categories)));
+        $accounts = array_map(fn (AssetCategory $category): int => $category->accounts()['asset'], $categories);
+
+        return new self(array_map(fn (int $account): array => [$account, $account], array_values(array_unique([...$accounts, ...AssetCategory::LEGACY_ASSET_ACCOUNTS]))));
     }
 
     public static function for(Company $company): self
@@ -99,6 +101,13 @@ final readonly class AcquisitionAccounts
             if ($category->accounts()['asset'] === $account) {
                 return $category;
             }
+        }
+
+        // Accounts NONOX proposed before the BAS 2026 correction keep their category.
+        $legacy = [124 => AssetCategory::Vehicles, 125 => AssetCategory::Computers][intdiv($account, 10)] ?? null;
+
+        if ($legacy !== null) {
+            return $legacy;
         }
 
         foreach (AssetCategory::cases() as $category) {

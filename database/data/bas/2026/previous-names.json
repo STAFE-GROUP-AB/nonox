@@ -1,0 +1,59 @@
+{
+  "description": "Account names NONOX seeded for BAS 2026 before they were checked against BAS's official list (2026-11-19). bas:upgrade treats a company's name as still the template's when it equals one of these, so it is renamed to the official name; any other name is the user's own and is left alone. `official` lists accounts that are not in the templates but that NONOX itself creates (payroll, fixed-asset register), with their official BAS 2026 name.",
+  "official": {
+    "7519": "Arbetsgivaravgifter för semester- och löneskulder"
+  },
+  "names": {
+    "1220": [
+      "Inventarier och verktyg"
+    ],
+    "1229": [
+      "Ackumulerade avskrivningar på inventarier och verktyg"
+    ],
+    "1350": [
+      "Andelar och värdepapper i andra företag"
+    ],
+    "1930": [
+      "Företagskonto/checkkonto/affärskonto"
+    ],
+    "2019": [
+      "Årets resultat"
+    ],
+    "2614": [
+      "Utgående moms omvänd skattskyldighet, 25 %"
+    ],
+    "2624": [
+      "Utgående moms omvänd skattskyldighet, 12 %"
+    ],
+    "2634": [
+      "Utgående moms omvänd skattskyldighet, 6 %"
+    ],
+    "3990": [
+      "Övriga ersättningar och intäkter"
+    ],
+    "4010": [
+      "Inköp material och varor"
+    ],
+    "5611": [
+      "Drivmedel för personbilar"
+    ],
+    "5800": [
+      "Resekostnader"
+    ],
+    "6250": [
+      "Postbefordran"
+    ],
+    "6970": [
+      "Tidningar, tidskrifter och facklitteratur"
+    ],
+    "7510": [
+      "Arbetsgivaravgifter"
+    ],
+    "7519": [
+      "Sociala avgifter för semester- och löneskulder"
+    ],
+    "7832": [
+      "Avskrivningar på inventarier och verktyg"
+    ]
+  }
+}

@@ -99,14 +99,14 @@ it('filters on a dimension and groups on two levels', function () {
     $page = e17Page(['rows' => ['account', 'cost_center'], 'metric' => 'debit', 'filterDimension1' => 'cost_center', 'filterValues1' => [(string) $south]]);
     $result = $page->viewData('result');
 
-    expect(array_column($result->rows, 'label'))->toBe(['3001 Försäljning inom Sverige, 25 % moms / 20 Butik Syd', '4010 Inköp material och varor / 20 Butik Syd', '5010 Lokalhyra / 20 Butik Syd'])
+    expect(array_column($result->rows, 'label'))->toBe(['3001 Försäljning inom Sverige, 25 % moms / 20 Butik Syd', '4010 Inköp av handelsvaror i Sverige / 20 Butik Syd', '5010 Lokalhyra / 20 Butik Syd'])
         ->and($result->grandTotal['v'])->toBe(50_000);
 });
 
 it('compares with the same months a year earlier', function () {
     $page = e17Page(['rows' => ['account'], 'metric' => 'debit', 'compare' => true, 'from' => '2027-03', 'to' => '2027-03']);
     $result = $page->viewData('result');
-    $row = collect($result->rows)->firstWhere('label', '1930 Företagskonto/checkkonto/affärskonto');
+    $row = collect($result->rows)->firstWhere('label', '1930 Företagskonto');
 
     expect($result->compared)->toBeTrue()
         ->and($result->cells[$row['key']]['']['v'])->toBe(0)
