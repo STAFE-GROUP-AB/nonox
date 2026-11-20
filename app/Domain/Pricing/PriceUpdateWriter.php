@@ -118,7 +118,7 @@ final class PriceUpdateWriter
         $now = CarbonImmutable::now();
 
         foreach ($lines->chunk(self::CHUNK) as $chunk) {
-            $current = Article::query()->whereKey($chunk->pluck('article_id')->all())->lockForUpdate()->toBase()->pluck('price_ore', 'id');
+            $current = Article::query()->whereKey($chunk->pluck('article_id')->all())->orderBy('id')->lockForUpdate()->toBase()->pluck('price_ore', 'id');
             $writes = [];
             $history = [];
 

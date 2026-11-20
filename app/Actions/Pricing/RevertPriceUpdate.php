@@ -158,7 +158,7 @@ class RevertPriceUpdate
         $kept = 0;
 
         foreach ($lines->chunk(1000) as $chunk) {
-            $current = Article::query()->whereKey($chunk->pluck('article_id')->all())->lockForUpdate()->toBase()->pluck('price_ore', 'id');
+            $current = Article::query()->whereKey($chunk->pluck('article_id')->all())->orderBy('id')->lockForUpdate()->toBase()->pluck('price_ore', 'id');
             $writes = [];
             $history = [];
 
