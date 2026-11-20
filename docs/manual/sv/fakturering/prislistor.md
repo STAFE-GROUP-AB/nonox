@@ -18,7 +18,7 @@ Prislistorna finns under **Register → Prislistor**. Du som bara ska se prisern
 
 1. Gå till **Register → Prislistor** och tryck på **Ny prislista**.
 2. Skriv en **Kod**, till exempel *BYGG*, och ett **Namn**, till exempel *Byggföretag*. Koden är kort och kan inte användas två gånger.
-3. Välj **Typ**: **Prislista** för en vanlig lista, **Kampanj** för ett pris som gäller en tid, eller **Kanalprislista** för kassan eller kundportalen. Att kassan och kundportalen använder kanallistorna kommer i ett senare steg.
+3. Välj **Typ**: **Prislista** för en vanlig lista, **Kampanj** för ett pris som gäller en tid, eller **Kanalprislista** för kassan eller kundportalen. Kassan använder den kanallista du väljer vid kopplingen under **Kassa** (se [Kassa: Zettle](/manual/lager/kassa-zettle)), och etiketterna visar kassans pris. Att kundportalen använder kanallistorna kommer i ett senare steg.
 4. Välj **Valuta** och om **Priserna anges** exklusive eller inklusive moms.
 5. Fyll i **Gäller från** och **Gäller till och med** om listan bara ska gälla en tid. För en kampanj måste du fylla i båda.
 6. Tryck på **Spara**. Öppna sedan listan genom att trycka på dess namn, så kan du lägga in priserna.

@@ -69,6 +69,12 @@ class RecurringInvoiceRow extends Model
         ];
     }
 
+    /** @return BelongsTo<Article, $this> */
+    public function article(): BelongsTo
+    {
+        return $this->belongsTo(Article::class);
+    }
+
     /** @return BelongsTo<Account, $this> */
     public function account(): BelongsTo
     {

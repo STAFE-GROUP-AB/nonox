@@ -390,18 +390,22 @@ final class PriceBook
         return false;
     }
 
-    /** Step 3: the customer's own list, else its price group's list. */
+    /** Step 3: the customer's own list, else its price group's list, else the CHANNEL list a till or label names. */
     /** @param  \Closure(): ?PriceCandidate  $reference */
     private function customerListPrice(PricedRow $row, \Closure $reference): ?PriceCandidate
     {
-        foreach ([$this->customer?->price_list_id, $this->group?->price_list_id] as $listId) {
+        foreach (['customer' => $this->customer?->price_list_id, 'group' => $this->group?->price_list_id, 'channel' => $this->context->channelListId] as $owner => $listId) {
             if ($listId === null) {
                 continue;
             }
 
             $list = $this->lists[$listId] ?? null;
 
-            if ($list === null || $list->kind === PriceListKind::Campaign) {
+            // The list a till names must be a CHANNEL list of the document's channel; the customer's lists are never campaigns.
+            $notChannelList = $owner === 'channel' && $list !== null
+                && ($list->kind !== PriceListKind::Channel || ($list->channel !== null && $list->channel !== $this->context->channel));
+
+            if ($list === null || $list->kind === PriceListKind::Campaign || $notChannelList) {
                 $this->considered[] = ['source' => PriceSource::CustomerList->value, 'list_id' => $listId, 'reason' => 'not_valid'];
 
                 continue;

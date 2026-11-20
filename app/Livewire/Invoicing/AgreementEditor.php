@@ -45,6 +45,9 @@ class AgreementEditor extends Component
 
     public bool $sendAutomatically = false;
 
+    /** "Fast pris" (FIXED) or "Följ prislistan" (FOLLOW_PRICES), ADR-082 decision 9. */
+    public string $priceMode = 'FIXED';
+
     public string $yourReference = '';
 
     public string $ourReference = '';
@@ -65,7 +68,7 @@ class AgreementEditor extends Component
         if ($agreement instanceof RecurringInvoice) {
             abort_unless(Gate::allows('view', $agreement), 403);
 
-            $agreement->load('rows.account');
+            $agreement->load(['rows.account', 'rows.article']);
             $this->agreementId = $agreement->id;
             $this->customerId = (string) $agreement->customer_id;
             $this->name = $agreement->name;
@@ -73,6 +76,7 @@ class AgreementEditor extends Component
             $this->nextInvoiceDate = $agreement->next_invoice_date->toDateString();
             $this->endDate = (string) $agreement->end_date?->toDateString();
             $this->sendAutomatically = $agreement->send_automatically;
+            $this->priceMode = $agreement->price_mode->value;
             $this->yourReference = (string) $agreement->your_reference;
             $this->ourReference = (string) $agreement->our_reference;
             $this->notes = (string) $agreement->notes;
@@ -98,6 +102,7 @@ class AgreementEditor extends Component
             'next_invoice_date' => $this->nextInvoiceDate,
             'end_date' => $this->endDate === '' ? null : $this->endDate,
             'send_automatically' => $this->sendAutomatically,
+            'price_mode' => $this->priceMode,
             'your_reference' => $this->yourReference,
             'our_reference' => $this->ourReference,
             'notes' => $this->notes,

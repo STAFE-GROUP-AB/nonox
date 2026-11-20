@@ -12,6 +12,7 @@ use App\Modules\ModuleRegistry;
 use App\Modules\Pos\Actions\QueueStockPushes;
 use App\Modules\Pos\Console\DailyDraftsCommand;
 use App\Modules\Pos\Console\ReconcileSalesCommand;
+use App\Modules\Pos\Console\SyncChannelsCommand;
 use App\Modules\Pos\Domain\ConnectionStatus;
 use App\Modules\Pos\Http\ZettleWebhookController;
 use App\Modules\Pos\Jobs\SyncProductsJob;
@@ -49,12 +50,13 @@ class PosServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([ReconcileSalesCommand::class, DailyDraftsCommand::class]);
+            $this->commands([ReconcileSalesCommand::class, DailyDraftsCommand::class, SyncChannelsCommand::class]);
         }
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('pos:reconcile-sales')->hourlyAt(23)->withoutOverlapping();
             $schedule->command('pos:reconcile-sales', ['--since' => now('Europe/Stockholm')->subDays(7)->toDateString()])->dailyAt('03:40')->withoutOverlapping();
+            $schedule->command('pricing:sync-channels')->dailyAt('00:05')->timezone('Europe/Stockholm')->withoutOverlapping();
             $schedule->command('pos:daily-drafts')->dailyAt('05:20')->withoutOverlapping();
         });
 

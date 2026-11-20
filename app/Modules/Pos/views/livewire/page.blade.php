@@ -89,6 +89,14 @@
                                         @endforeach
                                     </select>
                                 </x-ui.field>
+                                <x-ui.field for="pos-price-list-{{ $live->id }}" :label="__('Prislista för kassan')" error="form.price_list_id" :hint="__('Kassans pris är det lägsta av prislistan och kampanjer för kassan. Saknas ett pris i listan används artikelns grundpris. Priserna skickas varje natt, eller direkt med Skicka artiklar nu.')">
+                                    <select id="pos-price-list-{{ $live->id }}" wire:model="form.price_list_id" class="{{ $input }} mt-1">
+                                        <option value="">{{ __('Ingen kanalprislista') }}</option>
+                                        @foreach($priceLists as $priceList)
+                                            <option value="{{ $priceList->id }}">{{ $priceList->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </x-ui.field>
                                 @if($provider->value === 'onslip')
                                     <div class="space-y-2">
                                         <p class="text-sm font-medium text-gray-700">{{ __('Varugrupp per momssats') }}</p>

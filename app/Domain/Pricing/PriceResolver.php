@@ -136,7 +136,7 @@ final class PriceResolver
             ->groupBy('price_list_id')
             ->map(fn ($rows): array => $rows->pluck('customer_price_group_id')->map(intval(...))->all());
 
-        $listIds = $this->relevantLists($lists, $customer, $group, $context->currency, $campaignIds, $agreementItems->flatten(1)->pluck('base_price_list_id')->filter()->all());
+        $listIds = $this->relevantLists($lists, $customer, $group, $context->currency, $campaignIds, [...$agreementItems->flatten(1)->pluck('base_price_list_id')->filter()->all(), ...($context->channelListId === null ? [] : [$context->channelListId])]);
 
         $items = $listIds === [] || $articles->isEmpty() ? collect() : PriceListItem::query()
             ->whereIn('price_list_id', $listIds)

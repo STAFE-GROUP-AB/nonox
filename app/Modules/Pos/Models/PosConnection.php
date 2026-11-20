@@ -106,6 +106,14 @@ class PosConnection extends Model
         return ($this->settings['sync_direction'] ?? self::ONE_WAY) === self::TWO_WAY ? self::TWO_WAY : self::ONE_WAY;
     }
 
+    /** The CHANNEL price list (ADR-082) this till's prices come from, when one is chosen under Kassa. */
+    public function priceListId(): ?int
+    {
+        $id = $this->settings['price_list_id'] ?? null;
+
+        return is_numeric($id) && (int) $id > 0 ? (int) $id : null;
+    }
+
     /** Whether articles are sent to the till at all. */
     public function pushesProducts(): bool
     {

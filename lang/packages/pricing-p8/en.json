@@ -1,0 +1,13 @@
+{
+    "Priser på fakturorna": "Prices on the invoices",
+    "Fast pris": "Fixed price",
+    "Fakturorna får de priser som står på raderna här, tills du ändrar dem.": "The invoices get the prices on the rows here, until you change them.",
+    "Följ prislistan": "Follow the price list",
+    "Varje faktura prissätter artikelraderna på fakturadatumet, med kundens prisavtal och prislistor. Raderna här visar priserna från senaste fakturan. Rader utan artikel behåller sitt pris.": "Each invoice prices the article rows on the invoice date, with the customer's price agreement and price lists. The rows here show the prices from the latest invoice. Rows without an article keep their price.",
+    "Prislista för kassan": "Price list for the till",
+    "Ingen kanalprislista": "No channel price list",
+    "Kassans pris är det lägsta av prislistan och kampanjer för kassan. Saknas ett pris i listan används artikelns grundpris. Priserna skickas varje natt, eller direkt med Skicka artiklar nu.": "The till's price is the lowest of the price list and the campaigns for the till. If the list has no price, the article's base price is used. Prices are sent every night, or at once with Skicka artiklar nu.",
+    "Välj en kanalprislista för kassan i kronor.": "Choose a channel price list for the till, in kronor.",
+    "prislista": "price list",
+    "Priserna kunde inte skickas till kassan. NONOX försöker igen nästa natt.": "The prices could not be sent to the till. NONOX will try again tomorrow night."
+}

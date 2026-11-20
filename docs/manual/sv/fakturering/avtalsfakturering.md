@@ -24,9 +24,21 @@ Avtalen finns under **Försäljning → Avtal**.
 6. Välj **Sista dag (frivilligt)** om avtalet tar slut ett visst datum. Tomt betyder tills vidare.
 7. Fyll i **Er referens** om kunden vill ha det på fakturan.
 8. Bestäm om fakturorna ska skickas av sig själva. Bocka i **Skapa, bokför och skicka fakturan automatiskt** om de ska det. Då måste kunden ha en e-postadress.
-9. Fyll i raderna. De faktureras likadant varje gång, och priserna är utan moms.
-10. Skriv ett **Meddelande på fakturorna (frivilligt)** om du vill.
-11. Tryck på **Spara avtalet**. Du ser när den första fakturan skapas.
+9. Välj under **Priser på fakturorna** om priserna ska vara **Fast pris** eller **Följ prislistan**. Skillnaden förklaras i avsnittet *Fast pris eller Följ prislistan* nedan.
+10. Fyll i raderna. Med **Fast pris** faktureras de likadant varje gång, och priserna är utan moms.
+11. Skriv ett **Meddelande på fakturorna (frivilligt)** om du vill.
+12. Tryck på **Spara avtalet**. Du ser när den första fakturan skapas.
+
+## Fast pris eller Följ prislistan
+
+Under **Priser på fakturorna** väljer du hur fakturornas priser bestäms:
+
+- **Fast pris** – varje faktura får de priser som står på avtalets rader, tills du ändrar dem. Så fungerade avtal innan prislistorna kom, och det är det som är valt från början.
+- **Följ prislistan** – varje faktura prissätter avtalets artikelrader på fakturadatumet för just den kunden, med kundens prisavtal, prislistor och kampanjer, och lägger priset på fakturaraden tillsammans med var priset kommer ifrån. En prishöjning i prislistan når därför avtalet av sig själv vid nästa faktura, och en faktura som redan är skapad ändras aldrig.
+
+Med **Följ prislistan** visar avtalets egna rader priserna från den senaste fakturan, så du ser vad nästa faktura sannolikt kostar. Rader utan artikel, alltså fria rader, behåller sitt pris. Saknas ett pris för en artikel får fakturaraden artikelns grundpris. Spara avtalet med artikelnumret på raden, annars finns inget att prissätta efter.
+
+Läs mer om hur priset väljs i [Priser på raderna](/manual/fakturering/priser-pa-raderna).
 
 ## Vad som händer på fakturadagen
 
@@ -65,6 +77,9 @@ Fakturorna från ett avtal är vanliga fakturor. De bokförs när de skapas, i s
 
 **Om jag ändrar priset på avtalet, ändras redan skickade fakturor?**
 Nej. Ändringen gäller nästa faktura.
+
+**Hur får avtalet en prishöjning?**
+Ändra raderna för hand, eller välj **Följ prislistan** och lägg in det nya priset i prislistan med ett startdatum. Fakturor som skapas från det datumet får det nya priset.
 
 **Kunden ska ha 25 % rabatt i tre månader.**
 Lägg in rabatten på raden och ändra tillbaka när perioden är slut, eller ändra fakturautkastet de månader det gäller.

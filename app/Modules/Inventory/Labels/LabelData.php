@@ -46,8 +46,11 @@ final readonly class LabelData
         public ?string $barcodeProblem = null,
     ) {}
 
-    /** @param  list<string>  $propertyKeys */
-    public static function forArticle(Article $article, bool $withPrices, array $propertyKeys = []): self
+    /**
+     * @param  list<string>  $propertyKeys
+     * @param  ?int  $grossOre  the price including VAT from the price engine (LabelPrices); null keeps the base price
+     */
+    public static function forArticle(Article $article, bool $withPrices, array $propertyKeys = [], ?int $grossOre = null): self
     {
         $gtin = Barcodes::forGtin($article->gtin);
         $fallback = trim((string) $article->scanner_code) !== '' ? trim((string) $article->scanner_code) : self::ARTICLE_PREFIX.$article->number;
@@ -68,7 +71,8 @@ final readonly class LabelData
         $price = null;
 
         if ($withPrices) {
-            $price = $article->price_ore->plus($article->price_ore->percent($article->vat_rate));
+            // The price the price engine gives the POS channel today (LabelPrices), else the base price plus VAT.
+            $price = $grossOre !== null ? Money::ofOre($grossOre) : $article->price_ore->plus($article->price_ore->percent($article->vat_rate));
         }
 
         $wanted = array_flip($propertyKeys);

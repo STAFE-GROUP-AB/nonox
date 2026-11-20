@@ -7,6 +7,7 @@ namespace App\Actions\Invoicing;
 use App\Domain\Invoicing\AgreementStatus;
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Invoicing\SalesRowInput;
+use App\Domain\Pricing\RecurringPriceMode;
 use App\Events\RecurringInvoiceChanged;
 use App\Models\Company;
 use App\Models\Customer;
@@ -34,7 +35,7 @@ use Illuminate\Validation\ValidationException;
 class SaveRecurringInvoice
 {
     /**
-     * @param  array<string, mixed>  $input  customer_id, name, interval_months, next_invoice_date, end_date, send_automatically, your_reference, our_reference, notes, rows,
+     * @param  array<string, mixed>  $input  customer_id, name, interval_months, next_invoice_date, end_date, send_automatically, price_mode (FIXED or FOLLOW_PRICES, ADR-082 decision 9; empty keeps the agreement's), your_reference, our_reference, notes, rows,
      *                                       effective_from (optional "Gäller från" for NONOX SaaS, ADR-080; passed on in the event only)
      */
     public function __invoke(User $user, Company $company, array $input, ?RecurringInvoice $agreement = null): RecurringInvoice
@@ -53,6 +54,7 @@ class SaveRecurringInvoice
             'your_reference' => ['nullable', 'string', 'max:255'],
             'our_reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'price_mode' => ['nullable', Rule::enum(RecurringPriceMode::class)],
             // "Gäller från" within a sane horizon (ADR-080 review 3): at most ten years back and two years ahead.
             'effective_from' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:'.CarbonImmutable::today()->subYears(10)->toDateString(), 'before_or_equal:'.CarbonImmutable::today()->addYears(2)->toDateString()],
             'rows' => ['required', 'array', 'min:1'],
@@ -105,6 +107,7 @@ class SaveRecurringInvoice
                 'your_reference' => $validated['your_reference'] ?? null,
                 'our_reference' => $validated['our_reference'] ?? null,
                 'notes' => $validated['notes'] ?? null,
+                'price_mode' => $validated['price_mode'] ?? ($isNew ? RecurringPriceMode::Fixed->value : $agreement->price_mode->value),
             ])->forceFill([
                 'net_ore' => $totals['net'],
                 'total_ore' => $totals['total'],
@@ -132,6 +135,7 @@ class SaveRecurringInvoice
                 'interval_months' => $agreement->interval_months,
                 'next_invoice_date' => $next->toDateString(),
                 'total_ore' => $totals['total'],
+                'price_mode' => $agreement->price_mode->value,
             ], $company, $user);
 
             Event::dispatch(new RecurringInvoiceChanged($company->id, $agreement->id, $user->id, $isNew, $validated['effective_from'] ?? null));

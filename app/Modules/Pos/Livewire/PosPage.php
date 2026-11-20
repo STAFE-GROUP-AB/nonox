@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\Pos\Livewire;
 
+use App\Domain\Pricing\PriceChannel;
+use App\Domain\Pricing\PriceListKind;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Article;
+use App\Models\PriceList;
 use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Pos\Actions\ConnectPos;
 use App\Modules\Pos\Actions\CreateDailyDraft;
@@ -113,6 +116,7 @@ class PosPage extends Component
             'push_products' => $connection->pushesProducts(),
             'push_stock' => $connection->pushesStock(),
             'location_id' => $connection->location_id === null ? '' : (string) $connection->location_id,
+            'price_list_id' => (string) $connection->priceListId(),
             'product_groups' => array_map('strval', (array) ($connection->settings['product_groups'] ?? [])),
         ];
     }
@@ -132,7 +136,11 @@ class PosPage extends Component
     public function saveSettings(SavePosConnectionSettings $save): void
     {
         $connection = PosConnection::query()->findOrFail((int) $this->editing);
-        $input = [...$this->form, 'location_id' => ($this->form['location_id'] ?? '') === '' ? null : (int) $this->form['location_id']];
+        $input = [
+            ...$this->form,
+            'location_id' => ($this->form['location_id'] ?? '') === '' ? null : (int) $this->form['location_id'],
+            'price_list_id' => ($this->form['price_list_id'] ?? '') === '' ? null : (int) $this->form['price_list_id'],
+        ];
 
         try {
             $save($this->user(), $this->company(), $connection, $input);
@@ -256,6 +264,7 @@ class PosPage extends Component
                 ->select('business_date', DB::raw('count(*) as sales'), DB::raw('sum(total_ore) as total_ore'))
                 ->groupBy('business_date')->orderByDesc('business_date')->limit(31)->get(),
             'locations' => $this->editing === null ? collect() : StockLocation::query()->where('is_active', true)->orderBy('sort_key')->get(['id', 'full_code', 'name']),
+            'priceLists' => $this->editing === null ? collect() : PriceList::query()->where('kind', PriceListKind::Channel->value)->where('channel', PriceChannel::Pos->value)->where('currency', 'SEK')->whereNull('archived_at')->orderBy('name')->get(['id', 'name']),
             'canManage' => $user->hasTeamPermission($company, 'settings:manage'),
             'canLink' => $user->hasTeamPermission($company, 'inventory:manage'),
             'canDraft' => $user->hasTeamPermission($company, 'vouchers:create'),

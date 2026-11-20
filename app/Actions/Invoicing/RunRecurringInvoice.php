@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Actions\Invoicing;
 
 use App\Domain\Invoicing\AgreementStatus;
+use App\Domain\Invoicing\InvoiceCalculator;
+use App\Domain\Pricing\PriceChannel;
+use App\Domain\Pricing\RecurringPriceMode;
 use App\Events\RecurringInvoiceStatusChanged;
 use App\Models\Company;
 use App\Models\Customer;
@@ -18,6 +21,7 @@ use App\Modules\Peppol\PeppolModule;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -28,7 +32,10 @@ use Illuminate\Validation\ValidationException;
  * Makes the agreement's next invoice, dated on its next invoice date, and
  * moves that date one interval on. The invoice is a draft to check, or, if
  * the agreement says so, issued (booked) and emailed to the customer. Past
- * the end date the agreement ends.
+ * the end date the agreement ends. An agreement that follows the price lists
+ * (price_mode FOLLOW_PRICES, "Följ prislistan") prices its article rows for
+ * the customer on the run date through the price engine, channel RECURRING,
+ * and stores the source and explanation on the invoice rows.
  */
 class RunRecurringInvoice
 {
@@ -54,15 +61,22 @@ class RunRecurringInvoice
             }
 
             $date = $agreement->next_invoice_date;
+            $follows = $agreement->price_mode === RecurringPriceMode::FollowPrices;
+            $agreementRows = $agreement->rows()->with($follows ? ['account', 'article'] : ['account'])->get();
             $invoice = ($this->saveDraft)($user, $company, [
                 'customer_id' => $agreement->customer_id,
                 'invoice_date' => $date->toDateString(),
                 'your_reference' => $agreement->your_reference,
                 'our_reference' => $agreement->our_reference,
                 'notes' => $agreement->notes,
-                'rows' => $agreement->rows()->with('account')->get()->map(fn (RecurringInvoiceRow $row): array => $row->asInput())->all(),
+                'rows' => $agreementRows->map(fn (RecurringInvoiceRow $row): array => $follows ? self::followingRow($row) : $row->asInput())->all(),
+                ...($follows ? ['price_channel' => PriceChannel::Recurring->value] : []),
             ]);
             $invoice->forceFill(['recurring_invoice_id' => $agreement->id])->save();
+
+            if ($follows) {
+                $this->showLastRun($agreement, $agreementRows, $invoice);
+            }
 
             $next = $agreement->dateAfter($date);
             $ended = $agreement->end_date !== null && $next->greaterThan($agreement->end_date);
@@ -106,6 +120,55 @@ class RunRecurringInvoice
         }
 
         return $invoice;
+    }
+
+    /**
+     * A row that follows the price lists (ADR-082 §6, decision 9): an article
+     * row is priced on the run date, so it gives no price and no source of
+     * its own; a free row keeps the price it was written with.
+     *
+     * @return array<string, mixed>
+     */
+    private static function followingRow(RecurringInvoiceRow $row): array
+    {
+        $input = $row->asInput();
+
+        if ($row->article_id === null || ! isset($input['article'])) {
+            return $input;
+        }
+
+        return [...array_diff_key($input, ['price_source' => true]), 'price' => ''];
+    }
+
+    /**
+     * The agreement's own rows then only show the prices of the last run: the
+     * rows the run priced from the price lists copy the invoice's prices, and
+     * the agreement's totals follow.
+     *
+     * @param  Collection<int, RecurringInvoiceRow>  $rows
+     */
+    private function showLastRun(RecurringInvoice $agreement, Collection $rows, Invoice $invoice): void
+    {
+        $invoiceRows = $invoice->rows()->orderBy('position')->get()->values();
+
+        foreach ($rows->values() as $index => $row) {
+            $made = $invoiceRows->get($index);
+
+            if ($row->article_id === null || $made === null) {
+                continue;
+            }
+
+            $row->forceFill([
+                'unit_price_ore' => $made->unit_price_ore,
+                'discount_bp' => $made->discount_bp,
+                'net_ore' => $made->net_ore,
+                'price_source' => $made->price_source,
+                'price_explanation' => $made->price_explanation,
+            ])->save();
+        }
+
+        $totals = InvoiceCalculator::totals($rows->map(fn (RecurringInvoiceRow $row): array => ['net' => $row->net_ore->ore, 'vat_rate' => $row->vat_rate])->all());
+        $agreement->forceFill(['net_ore' => $totals['net'], 'total_ore' => $totals['total']]);
     }
 
     /**

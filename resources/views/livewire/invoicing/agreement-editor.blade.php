@@ -85,6 +85,26 @@
                 </label>
                 <x-input-error for="send_automatically" class="mt-1" />
             </div>
+            <fieldset class="sm:col-span-2 lg:col-span-4">
+                <legend class="text-sm font-medium text-gray-900">{{ __('Priser på fakturorna') }}</legend>
+                <div class="mt-2 space-y-2 text-sm">
+                    <label class="flex items-start gap-3">
+                        <input type="radio" name="price_mode" value="FIXED" class="mt-0.5 border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="priceMode" @disabled(! $editable)>
+                        <span>
+                            <span class="font-medium text-gray-900">{{ __('Fast pris') }}</span>
+                            <span class="block text-gray-600">{{ __('Fakturorna får de priser som står på raderna här, tills du ändrar dem.') }}</span>
+                        </span>
+                    </label>
+                    <label class="flex items-start gap-3">
+                        <input type="radio" name="price_mode" value="FOLLOW_PRICES" class="mt-0.5 border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="priceMode" @disabled(! $editable)>
+                        <span>
+                            <span class="font-medium text-gray-900">{{ __('Följ prislistan') }}</span>
+                            <span class="block text-gray-600">{{ __('Varje faktura prissätter artikelraderna på fakturadatumet, med kundens prisavtal och prislistor. Raderna här visar priserna från senaste fakturan. Rader utan artikel behåller sitt pris.') }}</span>
+                        </span>
+                    </label>
+                </div>
+                <x-input-error for="price_mode" class="mt-1" />
+            </fieldset>
         </div>
     </x-ui.card>
 

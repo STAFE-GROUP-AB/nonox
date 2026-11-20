@@ -21,7 +21,8 @@ use Illuminate\Validation\ValidationException;
  * "Ny offert från mall" (ADR-046): a new open quote for a customer through
  * the invoicing core's SaveSalesDocument, dated today and valid for the
  * template's number of days. Article rows take the article's name, unit,
- * price and VAT rate of today (the template keeps no price for them); an
+ * the price the price engine gives the customer today (agreement, price list,
+ * campaign or base price, ADR-082 §10) and VAT rate (the template keeps no price for them); an
  * article archived since then is refused, so no quote is made at an old
  * price. The template's introduction and terms become the quote's message.
  */
@@ -93,7 +94,8 @@ final class CreateQuoteFromTemplate
             // Without a unit of its own the row takes the article's sales unit (SalesRowInput).
             'unit_id' => (string) $row->unit_id,
             'unit' => (string) $row->unit,
-            'price' => $article->price_ore->format(withCurrency: false),
+            // No price: the price engine prices the row for this customer on the quote date (ADR-082 §10).
+            'price' => '',
             'discount' => $discount,
             'vat_rate' => $article->vat_rate,
         ];

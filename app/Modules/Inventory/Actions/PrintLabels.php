@@ -11,6 +11,7 @@ use App\Modules\Inventory\Actions\Concerns\GuardsInventory;
 use App\Modules\Inventory\Labels\LabelData;
 use App\Modules\Inventory\Labels\LabelElement;
 use App\Modules\Inventory\Labels\LabelKind;
+use App\Modules\Inventory\Labels\LabelPrices;
 use App\Modules\Inventory\Labels\LabelRenderer;
 use App\Modules\Inventory\Models\LabelTemplate;
 use App\Modules\Inventory\Models\StockLocation;
@@ -56,11 +57,12 @@ class PrintLabels
 
             $withPrices = Gate::forUser($user)->allows('printPrices', [StockMovement::class, $company]);
             $labels = [];
+            $prices = $withPrices ? LabelPrices::gross($articles) : [];
 
             foreach ($counts as $id => $count) {
                 /** @var Article $article */
                 $article = $articles[$id];
-                $data = LabelData::forArticle($article, $withPrices, $template->property_keys ?? []);
+                $data = LabelData::forArticle($article, $withPrices, $template->property_keys ?? [], $prices[$id] ?? null);
                 array_push($labels, ...array_fill(0, $count, $data));
             }
 

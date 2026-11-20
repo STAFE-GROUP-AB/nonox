@@ -14,6 +14,7 @@ use App\Modules\Inventory\Labels\LabelKind;
 use App\Modules\Inventory\Labels\LabelLayout;
 use App\Modules\Inventory\Labels\LabelLayoutEngine;
 use App\Modules\Inventory\Labels\LabelMedia;
+use App\Modules\Inventory\Labels\LabelPrices;
 use App\Modules\Inventory\Labels\LabelSheets;
 use App\Modules\Inventory\Livewire\Concerns\InventoryPage;
 use App\Modules\Inventory\Models\LabelTemplate;
@@ -216,7 +217,7 @@ class LabelStudioPage extends Component
 
         $article = Article::query()->where('is_active', true)->where('is_stock_item', true)->orderBy('number')->first();
 
-        return $article === null ? LabelData::sample(LabelKind::Article) : LabelData::forArticle($article, $this->can('printPrices'), $template->property_keys ?? []);
+        return $article === null ? LabelData::sample(LabelKind::Article) : LabelData::forArticle($article, $this->can('printPrices'), $template->property_keys ?? [], $this->can('printPrices') ? (LabelPrices::gross([$article])[$article->id] ?? null) : null);
     }
 
     /**
