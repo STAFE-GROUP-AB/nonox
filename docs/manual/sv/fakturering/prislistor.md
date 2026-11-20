@@ -50,6 +50,8 @@ Tryck på namnet på listan, eller på **Priser**, för att öppna den. Tryck p�
 
 Två priser för samma artikel, enhet och antal får inte gälla samma dag. Försöker du spara ett som överlappar får du veta vilket pris det krockar med.
 
+**Många priser på en gång.** Ska alla priser i en lista upp med 4 % från nyår använder du [Prisuppdatering](/manual/fakturering/prisuppdatering), som visar varje nytt pris innan något sparas. Under **Exportera:** i listan laddar du ner priserna som **CSV** eller **Excel**, i samma format som prisuppdateringen läser in.
+
 ### Ta bort och avsluta priser
 
 Det finns ingen knapp som tar bort ett pris som har använts, eftersom du ska kunna se vad det kostade. I stället gäller:

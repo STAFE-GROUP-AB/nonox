@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders\Demo\Extras;
 
 use App\Actions\Pricing\AssignCustomerPrices;
+use App\Actions\Pricing\PlanPriceUpdate;
 use App\Actions\Pricing\SaveCustomerPriceGroup;
 use App\Actions\Pricing\SavePriceList;
 use App\Actions\Pricing\SavePriceListItem;
@@ -21,8 +22,8 @@ use Database\Seeders\Demo\DemoExtra;
  * pages: the joinery's price list for building companies that follows the
  * base price minus a percentage, a flat list for housing associations with a
  * quantity ladder and a coming price rise, a summer campaign and a list in
- * euro. Made-up articles, customers and prices; everything goes through the
- * price Actions.
+ * euro, and a price update of 4 % waiting in preview (P6). Made-up
+ * articles, customers and prices; everything goes through the price Actions.
  */
 final class PricesExtras extends DemoExtra
 {
@@ -87,6 +88,13 @@ final class PricesExtras extends DemoExtra
                     $assign($c->user, $c->company, $customer, $groupId, null);
                 }
             }
+
+            // A price update waiting in preview (ADR-082 P6): 4 % from next January on the base prices and two
+            // lists, rounded to whole kronor. Nothing is written, so the other price pages stay as they are.
+            app(PlanPriceUpdate::class)($c->user, $c->company, [
+                'kind' => 'PERCENT', 'percent' => '4', 'base' => true, 'list_ids' => [$building->id, $associations->id],
+                'articles' => 'all', 'rounding' => 'WHOLE', 'effective_date' => $nextJanuary->toDateString(),
+            ]);
         }));
     }
 }

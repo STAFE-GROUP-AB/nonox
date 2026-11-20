@@ -261,6 +261,7 @@ BEGIN
         ('price_list_price_group', 'SELECT, INSERT, UPDATE, DELETE'),
         ('price_lists', 'SELECT, INSERT, UPDATE, DELETE'),
         ('price_update_runs', 'SELECT, INSERT, UPDATE'),
+        ('price_update_run_lines', 'SELECT, INSERT, UPDATE, DELETE'),
         ('prior_year_size_figures', 'SELECT, INSERT, UPDATE, DELETE'),
         ('project_billing_milestones', 'SELECT, INSERT, UPDATE, DELETE'),
         ('project_wip_snapshots', 'SELECT, INSERT'),

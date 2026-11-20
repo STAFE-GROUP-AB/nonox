@@ -56,6 +56,8 @@ fakturering/prislista-priser: { foretag: hantverkare, rutt: pricing.lists.show, 
 fakturering/prislistor-kundgrupper: { foretag: hantverkare, rutt: pricing.groups }
 fakturering/prislistor-kund: { foretag: hantverkare, rutt: invoicing.customers, klick: ['ul li:nth-child(3) button', 'text=Priser'] }
 fakturering/prislistor-artikel: { foretag: hantverkare, rutt: invoicing.articles, klick: ['tbody tr:nth-child(1) button', 'text=Priser'] }
+fakturering/prisuppdatering: { foretag: hantverkare, rutt: pricing.updates }
+fakturering/prisuppdatering-forhandsgranskning: { foretag: hantverkare, rutt: pricing.updates.show, modell: { tabell: price_update_runs, dar: { status: PREVIEW } } }
 fakturering/enheter: { foretag: hantverkare, rutt: invoicing.units }
 fakturering/enheter-pa-artikeln: { foretag: hantverkare, rutt: invoicing.articles, klick: ['tbody tr:nth-child(3) button', 'text=Avancerad'], visa: '#article_stock_unit' }
 fakturering/rot-och-rut: { foretag: hantverkare, rutt: invoicing.invoices.show, modell: rot_invoice }

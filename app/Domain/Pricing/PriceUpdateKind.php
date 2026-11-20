@@ -16,4 +16,15 @@ enum PriceUpdateKind: string
     case Margin = 'MARGIN';
     case File = 'FILE';
     case Index = 'INDEX';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Percent => __('Procent'),
+            self::Amount => __('Fast belopp'),
+            self::Margin => __('Påslag på kostnad'),
+            self::File => __('Från fil'),
+            self::Index => __('Indexuppräkning'),
+        };
+    }
 }

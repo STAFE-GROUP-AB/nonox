@@ -437,6 +437,40 @@ and pruned with the run's retention (decision 10).
 (old and new) typed by the user and applies the ratio; NONOX does not fetch
 index figures in v1. Decision 11.
 
+**As built (P6), 2026-11-20** (these settle details the text above leaves open):
+
+- The preview and the diff are rows of `price_update_run_lines` (additive
+  table: target BASE or LIST, list, article, unit, step, the item in force,
+  old/new minor or discount, unrounded amount, purchase-price cost, dates,
+  status, refusal code, flags). The diff stays when the file is pruned and is
+  downloadable as CSV; no separate CSV is stored.
+- Kinds built: percent, fixed amount (SEK targets only; other currencies are
+  refused per line), index and file. "Margin over cost" (`MARGIN`) waits for
+  P7's costing. Selection: all active articles, a number range (numeric when
+  both bounds are digits), a search, or chosen articles; supplier, article
+  group and stock class filters are not built.
+- A list item in force on the date is never edited: it ends the day before and
+  a new item (carrying `price_update_run_id`) starts on the date and keeps the
+  old item's end. Refused, with the reason shown: discount items (they follow
+  the ordinary price already), an item starting the same day, and in a file a
+  key with only a later item. The "below cost" flag compares with the purchase
+  price only where no unit or currency conversion is needed.
+- Apply re-checks every line under row locks; a price changed since the
+  preview is SKIPPED (`CHANGED_SINCE`), never overwritten. Base prices dated
+  today are written at once with a PRICE_UPDATE history row; later ones by
+  `pricing:apply-scheduled` (nightly, per company, idempotent).
+- Revert (until and including the effective date, the earliest line date for
+  a file) archives the run's items, gives the ended items back their end when
+  nothing else took the period, and sets base prices back with a new history
+  row; it never deletes and never overwrites a price changed by someone else.
+- A file row may carry its own "Gäller från" (today or later); a file holds
+  at most 10 000 rows and 20 MB and is read through the register importer's
+  streaming reader. Export writes running and coming items in the same
+  columns, guarding text against formulas.
+- Retention (decision 10): `pricing:prune-updates` deletes a run's file two
+  years after it was applied and clears an unapplied preview's lines and file
+  after seven days; the run rows stay (`price_update_runs` has no DELETE grant).
+
 ### 9. Margin and floor warnings
 
 - Cost per unit = the costing price used by ADR-071 §6 (`ManufacturingBook`
