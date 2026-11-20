@@ -1,6 +1,6 @@
 # ADR-082: Price lists and customer price agreements
 
-- Status: **Proposed** (waiting for the owner's answer to "Decisions for the owner")
+- Status: **Accepted** (owner 2026-11-20: "ja till alla" — all 17 recommended defaults, including the AGENTS.md §4 permission additions)
 - Date: 2026-11-20
 - Queue: item 28 in `docs/status/nummer-1.md` (`prislistor-kundavtal`)
 - Builds on: ADR-006 (Money and audit log), ADR-011 (invoicing, quotes and
