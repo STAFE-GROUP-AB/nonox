@@ -89,6 +89,7 @@ final class SignInSession
             $certificate = SigningPdfs::certificate($request->refresh());
             $path = dirname($request->document_path).'/'.pathinfo($request->document_path, PATHINFO_FILENAME).'-signeringsbevis.pdf';
             Storage::disk(SigningRequest::DISK)->put($path, $certificate);
+            DB::afterRollBack(fn () => Storage::disk(SigningRequest::DISK)->delete($path));
             $request->forceFill(['signed_document_path' => $path, 'signed_document_sha256' => hash('sha256', $certificate)])->save();
             $this->envelopes->signed($request);
 
@@ -163,6 +164,9 @@ final class SignInSession
             throw ValidationException::withMessages(['document' => __('Dokumentet har ändrats sedan sidan öppnades. Ladda om sidan och läs det igen.')]);
         }
 
+        // The document's own last check, before any file is written (ADR-082 P5 review).
+        $locked->assertSignable();
+
         $open = SigningRequest::query()
             ->where('document_type', $locked->signingType())
             ->where($this->types->column($locked->signingType()), $locked->signingKey())
@@ -193,6 +197,7 @@ final class SignInSession
         $pdf = $document->signingDocument();
         $path = "crm-signing/{$document->signingCompanyId()}/".Str::uuid()->toString().'.pdf';
         Storage::disk(SigningRequest::DISK)->put($path, $pdf['bytes']);
+        DB::afterRollBack(fn () => Storage::disk(SigningRequest::DISK)->delete($path));
 
         $envelope = $this->envelopes->create($document, ['path' => $path, 'name' => $pdf['name'], 'sha256' => hash('sha256', $pdf['bytes'])], now()->toImmutable(), null);
 

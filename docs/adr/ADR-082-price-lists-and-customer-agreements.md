@@ -285,6 +285,19 @@ cycle:
   date and sends it again.
 - A draft that was ever sent for signing cannot be deleted, so no signing
   request points at a deleted row.
+- The pre-sign check runs before anything is written: `Signable` has
+  `assertSignable()` (a no-op for quotes, CRM agreements, ÄTA and documents),
+  which `SignAtLink` and `SignInSession` call with the document locked,
+  before fields and the certificate are stored; files written in a signing
+  that rolls back are deleted (`DB::afterRollBack`), as the field stamper
+  already did.
+- While a new version is out for signing (AWAITING_SIGNATURE), its end date
+  does not follow a linked CRM agreement; `pricing:expire` follows only
+  drafts and active agreements, so the version picks the CRM end date up
+  again once it is active (or taken back to draft).
+- Erasure of a customer: price agreements that were sent or applied keep the
+  customer anonymised and get a neutral title and reason; a never-sent draft
+  is deleted with the customer.
 - GDPR: the manual-activation reason is in the customer's register extract
   (`prisavtal`) and is replaced by a fixed text when the customer is erased
   (the agreement is kept; a customer with a price agreement is anonymised,

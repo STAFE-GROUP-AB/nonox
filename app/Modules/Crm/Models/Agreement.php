@@ -278,6 +278,9 @@ class Agreement extends Model implements Signable
         Gate::forUser($user)->authorize('update', $this);
     }
 
+    /** No check of its own before a signature (Signable). */
+    public function assertSignable(): void {}
+
     public function markSigned(CarbonImmutable $signedAt, string $documentSha256): void
     {
         self::query()->whereKey($this->id)->update(['signed_at' => $signedAt, 'document_sha256' => $documentSha256]);

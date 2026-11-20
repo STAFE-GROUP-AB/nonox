@@ -229,6 +229,9 @@ class ChangeOrder extends Model implements Signable
         abort_unless(! $revoke && $this->status === ChangeOrderStatus::Sent && Gate::forUser($user)->allows('report', $workOrder), 403);
     }
 
+    /** No check of its own before a signature (Signable). */
+    public function assertSignable(): void {}
+
     /**
      * Signed at the link: APPROVED, with who signed (the signing request)
      * and whether the page was presented on site after a code (O4).

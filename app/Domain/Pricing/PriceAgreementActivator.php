@@ -146,8 +146,13 @@ final class PriceAgreementActivator
             ->first();
     }
 
-    /** @throws ValidationException */
-    private function recheck(PriceAgreement $agreement, PriceAgreementActivation $how, CarbonImmutable $today): void
+    /**
+     * The checks a signature and an activation must pass under the row lock;
+     * also the signable's own pre-sign check (PriceAgreement::assertSignable).
+     *
+     * @throws ValidationException
+     */
+    public function recheck(PriceAgreement $agreement, PriceAgreementActivation $how, CarbonImmutable $today): void
     {
         $signed = $how === PriceAgreementActivation::Signed;
         $refuse = fn (string $seller, string $signer) => throw ValidationException::withMessages(['document' => $signed ? $signer : $seller]);

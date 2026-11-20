@@ -175,6 +175,9 @@ class SigningDocument extends Model implements RestrictsEnvelopes, Signable
         }
     }
 
+    /** No check of its own before a signature (Signable). */
+    public function assertSignable(): void {}
+
     /** Nothing in the document changes when it is signed; the envelope and the signer's evidence hold the result. */
     public function markSigned(CarbonImmutable $signedAt, string $documentSha256): void {}
 

@@ -288,6 +288,8 @@ final class SignAtLink
             }
 
             Storage::disk(SigningRequest::DISK)->put($path, $certificate);
+            // A later refusal (the document's markSigned) rolls the signature back: the certificate goes with it.
+            DB::afterRollBack(fn () => Storage::disk(SigningRequest::DISK)->delete($path));
             $locked->forceFill(['signed_document_path' => $path, 'signed_document_sha256' => hash('sha256', $certificate)])->save();
 
             // The envelope: complete, or open the next step. The document is signed only when everyone has signed.
@@ -406,6 +408,9 @@ final class SignAtLink
         $document = $request->document(lock: true);
 
         if ($document instanceof Signable && $document->signingIsOpen() && hash_equals((string) $request->content_hash, $document->signingFingerprint())) {
+            // The document's own last check, before the fields or the certificate are written (ADR-082 P5 review).
+            $document->assertSignable();
+
             return;
         }
 

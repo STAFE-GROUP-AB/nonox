@@ -11,6 +11,7 @@ use App\Actions\Pricing\SavePriceAgreement;
 use App\Actions\Pricing\SavePriceAgreementItem;
 use App\Actions\Pricing\SendPriceAgreementForSigning;
 use App\Actions\Privacy\EraseRegisterEntry;
+use App\Actions\Signing\SignInSession;
 use App\Domain\Pricing\PriceAgreementStatus;
 use App\Domain\Pricing\PriceContext;
 use App\Domain\Pricing\PriceRequest;
@@ -19,6 +20,7 @@ use App\Domain\Signing\SigningPdfs;
 use App\Domain\Signing\SigningStatus;
 use App\Models\Customer;
 use App\Models\PriceAgreement;
+use App\Models\SigningRequest;
 use App\Support\Privacy\DataSubjectExport;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -175,4 +177,51 @@ it('puts the manual-activation reason in the customer\'s register extract and re
     expect($a->activation_reason)->toBe(PriceAgreement::ERASED_REASON)
         ->and($a->status)->toBe(PriceAgreementStatus::Active)
         ->and(Customer::query()->findOrFail($this->customer->id)->email)->toBeNull();
+});
+
+it('writes no file when a signature at the link is refused by the agreement\'s own check', function () {
+    $a = rvAgreement([], '90');
+    $sent = app(SendPriceAgreementForSigning::class)($this->owner, $this->company, $a, ['email' => 'inkop@example.com']);
+    $b = rvAgreement(['valid_from' => '2026-07-01'], '80');
+    DB::table('price_agreements')->where('id', $b->id)->update(['status' => 'ACTIVE']);
+    $before = Storage::disk('local')->allFiles();
+
+    rvSign($sent)->assertSessionHasErrors('document');
+
+    expect(Storage::disk('local')->allFiles())->toBe($before)
+        ->and(collect(Storage::disk('local')->allFiles())->filter(fn (string $path): bool => str_contains($path, 'signeringsbevis'))->all())->toBe([])
+        ->and($sent['request']->refresh()->signed_document_path)->toBeNull();
+});
+
+it('writes no file when a signature in a session is refused by the agreement\'s own check', function () {
+    $a = rvAgreement([], '90');
+    app(SendPriceAgreementForSigning::class)($this->owner, $this->company, $a, ['email' => 'inkop@example.com']);
+    $b = rvAgreement(['valid_from' => '2026-07-01'], '80');
+    DB::table('price_agreements')->where('id', $b->id)->update(['status' => 'ACTIVE']);
+    $before = Storage::disk('local')->allFiles();
+    $requests = SigningRequest::query()->count();
+    $locked = $a->fresh();
+
+    expect(fn () => app(SignInSession::class)->accept($locked, ['email' => 'inkop@example.com', 'name' => 'Eva E', 'contact_id' => null, 'ip' => '203.0.113.7', 'user_agent' => 'Pest'], 'Jag godkänner.', $locked->signingFingerprint()))
+        ->toThrow(ValidationException::class, 'ett annat avtal för samma period');
+
+    expect(Storage::disk('local')->allFiles())->toBe($before)
+        ->and(SigningRequest::query()->count())->toBe($requests)
+        ->and($a->fresh()->status)->toBe(PriceAgreementStatus::AwaitingSignature);
+});
+
+it('deletes a never-sent draft with an erased customer, and anonymises one whose agreement was sent', function () {
+    rvAgreement(['title' => 'Avtal med Eva Exempelsson']);
+
+    expect(app(EraseRegisterEntry::class)->customer($this->owner, $this->company, Customer::query()->findOrFail($this->customer->id)))->toBe('deleted')
+        ->and(PriceAgreement::query()->where('customer_id', $this->customer->id)->exists())->toBeFalse();
+
+    $other = Crm::customer($this->company, $this->owner, 'Annan AB', ['email' => 'annan@example.com']);
+    $sentDraft = app(SavePriceAgreement::class)($this->owner, $this->company, ['customer_id' => $other->id, 'title' => 'Avtal med Eva Exempelsson', 'currency' => 'SEK', 'valid_from' => '2026-06-01']);
+    app(SavePriceAgreementItem::class)($this->owner, $this->company, $sentDraft, ['target' => 'article', 'article_id' => $this->article->id, 'mode' => 'price', 'price' => '90']);
+    app(SendPriceAgreementForSigning::class)($this->owner, $this->company, $sentDraft, ['email' => 'annan@example.com']);
+    app(ReopenPriceAgreement::class)($this->owner, $this->company, $sentDraft);
+
+    expect(app(EraseRegisterEntry::class)->customer($this->owner, $this->company, Customer::query()->findOrFail($other->id)))->toBe('anonymised')
+        ->and($sentDraft->fresh()->title)->toBe(PriceAgreement::ERASED_TITLE);
 });

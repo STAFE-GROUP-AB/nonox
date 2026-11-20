@@ -7,6 +7,7 @@ namespace App\Domain\Signing;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Validation\ValidationException;
 
 /**
  * A document that can be sent for signing with a link (ADR-046, ADR-075
@@ -62,6 +63,16 @@ interface Signable
      * @throws AuthorizationException
      */
     public function authorizeSigning(User $user, bool $revoke = false): void;
+
+    /**
+     * The document's own last check before a signature is recorded, called
+     * with the document locked and before anything (fields, certificate) is
+     * written, so a refusal leaves no file behind. Most documents have none;
+     * a price agreement checks its period and overlap (ADR-082 P5).
+     *
+     * @throws ValidationException with a message for the signer
+     */
+    public function assertSignable(): void;
 
     /** Called inside the signing transaction, with the document locked, once it is signed. */
     public function markSigned(CarbonImmutable $signedAt, string $documentSha256): void;

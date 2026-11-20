@@ -229,6 +229,9 @@ class SalesDocument extends Model implements Signable
         abort_unless($user->hasTeamPermission(Company::query()->findOrFail($this->company_id), 'invoices:create'), 403);
     }
 
+    /** No check of its own before a signature (Signable). */
+    public function assertSignable(): void {}
+
     /** A signed quote becomes an order in the follow-up (SigningFollowUp), not here. */
     public function markSigned(CarbonImmutable $signedAt, string $documentSha256): void {}
 }

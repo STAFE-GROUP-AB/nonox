@@ -169,6 +169,8 @@ it('signs a document type that a module registers, kept by its key in signable_i
 
         public function authorizeSigning(User $user, bool $revoke = false): void {}
 
+        public function assertSignable(): void {}
+
         public function markSigned(CarbonImmutable $signedAt, string $documentSha256): void
         {
             $this->signed = $signedAt;

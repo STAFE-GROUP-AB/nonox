@@ -65,6 +65,9 @@ class PriceAgreement extends Model implements Signable
     /** What replaces the reason of a manual activation when the customer is erased (GDPR art. 17): no personal data. */
     public const string ERASED_REASON = 'Skälet är borttaget när kundens uppgifter raderades.';
 
+    /** What replaces the title when the customer is erased: a title is free text and may name a person. */
+    public const string ERASED_TITLE = 'Prisavtal med anonymiserad kund';
+
     /** What may still be written once the agreement has left DRAFT: its life cycle, never its terms. */
     private const array LIFE_CYCLE = [
         'status', 'valid_to', 'terminated_on', 'signed_at', 'document_sha256',
@@ -250,6 +253,12 @@ class PriceAgreement extends Model implements Signable
     public function authorizeSigning(User $user, bool $revoke = false): void
     {
         Gate::forUser($user)->authorize('update', $this);
+    }
+
+    /** Its period has not passed, a version does not start in the past, and no other agreement overlaps (PriceAgreementActivator). */
+    public function assertSignable(): void
+    {
+        app(PriceAgreementActivator::class)->recheck($this, PriceAgreementActivation::Signed, CarbonImmutable::today());
     }
 
     /** Signed at the link: the agreement becomes active (and supersedes the version it changes). */

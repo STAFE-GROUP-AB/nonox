@@ -7,6 +7,7 @@ namespace App\Actions\Privacy;
 use App\Domain\Invoicing\AgreementStatus;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Domain\Pricing\PriceAgreementStatus;
 use App\Domain\Signing\SignedDocuments;
 use App\Events\CustomerAnonymised;
 use App\Models\Company;
@@ -62,10 +63,18 @@ class EraseRegisterEntry
                 || Shipment::query()->where('customer_id', $customer->id)->exists()
                 // A signed agreement and its evidence are kept as proof of the contract (CRM, ADR-046; art. 17.3 e).
                 || SignedDocuments::customerHasSignedAgreement($customer->id)
-                // A price agreement documents which prices the customer had (ADR-082 P5); its free-text reason is blanked below.
-                || PriceAgreement::query()->where('customer_id', $customer->id)->exists();
+                // A price agreement that was sent or applied documents which prices the customer had (ADR-082 P5); its
+                // free text is replaced below. A draft never sent is nothing but a draft and goes with the customer.
+                || PriceAgreement::query()->where('customer_id', $customer->id)
+                    ->where(fn ($query) => $query->where('status', '<>', PriceAgreementStatus::Draft->value)
+                        ->orWhereExists(fn ($sent) => $sent->from('crm_signing_requests')->where('document_type', PriceAgreement::SIGNING_TYPE)->whereColumn('signable_id', DB::raw('price_agreements.id::text'))))
+                    ->exists();
 
             if (! $used) {
+                PriceAgreement::query()->where('customer_id', $customer->id)->get()->each(function (PriceAgreement $draft): void {
+                    $draft->items()->get()->each->delete();
+                    $draft->delete();
+                });
                 $customer->delete();
                 Audit::record('privacy.erased', null, ['subject' => 'customer', 'number' => $customer->number, 'mode' => 'deleted'], $company, $user);
 
@@ -76,6 +85,8 @@ class EraseRegisterEntry
             // The reason typed when a price agreement was activated by hand may name a person: it is replaced by a fixed
             // text (a manual activation must keep a reason, database check); the agreement and who activated it are kept.
             PriceAgreement::query()->where('customer_id', $customer->id)->whereNotNull('activation_reason')->update(['activation_reason' => PriceAgreement::ERASED_REASON]);
+            // The title is free text too and may name a person; the number, period and prices stay.
+            PriceAgreement::query()->where('customer_id', $customer->id)->update(['title' => PriceAgreement::ERASED_TITLE]);
 
             $keepPersonalNumber = Invoice::query()->where('customer_id', $customer->id)->whereNotNull('tax_reduction')->exists();
 
