@@ -7,6 +7,7 @@ namespace App\Actions\Invoicing;
 use App\Domain\Invoicing\AgreementStatus;
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Pricing\PriceChannel;
+use App\Domain\Pricing\PriceSource;
 use App\Domain\Pricing\RecurringPriceMode;
 use App\Events\RecurringInvoiceStatusChanged;
 use App\Models\Company;
@@ -74,6 +75,9 @@ class RunRecurringInvoice
             ]);
             $invoice->forceFill(['recurring_invoice_id' => $agreement->id])->save();
 
+            // A followed article that comes out at 0 kr is not sent by itself: the draft waits for a person (audited).
+            $held = $follows && $invoice->rows()->whereNotNull('article_id')->where('unit_price_ore', 0)->exists();
+
             if ($follows) {
                 $this->showLastRun($agreement, $agreementRows, $invoice);
             }
@@ -89,7 +93,11 @@ class RunRecurringInvoice
                 Event::dispatch(new RecurringInvoiceStatusChanged($company->id, $agreement->id, $user->id, AgreementStatus::Ended->value));
             }
 
-            if ($agreement->send_automatically) {
+            if ($held) {
+                Audit::record('agreement.held_as_draft', $agreement, ['number' => $agreement->number, 'invoice_id' => $invoice->id, 'reason' => 'zero_price', 'send_automatically' => $agreement->send_automatically], $company, $user);
+            }
+
+            if ($agreement->send_automatically && ! $held) {
                 $invoice = ($this->issue)($user, $invoice);
             }
 
@@ -104,7 +112,7 @@ class RunRecurringInvoice
             return $invoice;
         }));
 
-        if ($agreement->send_automatically) {
+        if ($agreement->send_automatically && ! $invoice->isDraft()) {
             CurrentCompany::run($agreement->company_id, function () use ($user, $agreement, $invoice): void {
                 $customer = Customer::query()->findOrFail($agreement->customer_id);
 
@@ -133,7 +141,8 @@ class RunRecurringInvoice
     {
         $input = $row->asInput();
 
-        if ($row->article_id === null || ! isset($input['article'])) {
+        // A price typed on the agreement's row stays (it is marked MANUAL), as does a free row.
+        if ($row->article_id === null || ! isset($input['article']) || $row->price_source === PriceSource::Manual) {
             return $input;
         }
 
@@ -154,7 +163,7 @@ class RunRecurringInvoice
         foreach ($rows->values() as $index => $row) {
             $made = $invoiceRows->get($index);
 
-            if ($row->article_id === null || $made === null) {
+            if ($row->article_id === null || $made === null || $row->price_source === PriceSource::Manual) {
                 continue;
             }
 

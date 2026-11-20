@@ -13,6 +13,7 @@ use App\Domain\Pricing\PriceSource;
 use App\Domain\Pricing\RecurringPriceMode;
 use App\Livewire\Invoicing\AgreementEditor;
 use App\Models\Article;
+use App\Models\AuditLog;
 use App\Models\Customer;
 use App\Models\InvoiceRow;
 use App\Models\PriceListItem;
@@ -24,6 +25,7 @@ use App\Modules\Inventory\Labels\LabelPrices;
 use App\Modules\Pos\Actions\SavePosConnectionSettings;
 use App\Modules\Pos\Actions\SyncProducts;
 use App\Modules\Pos\Models\PosProductLink;
+use App\Modules\WorkOrders\Actions\CreateInvoiceBasis;
 use App\Modules\WorkOrders\Actions\RecordMaterial;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
@@ -433,4 +435,51 @@ it('lets the agreement editor choose "Följ prislistan" and keeps the article on
 
     // Saving again from the editor keeps the article, so the next run can still price it.
     expect($agreement->fresh()->rows()->sole()->article_id)->not->toBeNull();
+});
+
+it('keeps a followed agreement\'s invoice as a draft, audited, when an article comes out at 0 kr', function () {
+    $world = vipWorld($this);
+    $customer = $world->customer->forceFill(['email' => 'kund@example.test'])->save() ? $world->customer : $world->customer;
+    $agreement = app(SaveRecurringInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $customer->id, 'name' => 'Auto', 'interval_months' => 1, 'next_invoice_date' => '2026-06-15',
+        'price_mode' => 'FOLLOW_PRICES', 'send_automatically' => true,
+        'rows' => [['article' => 'A1', 'description' => 'Artikel A1', 'quantity' => '1', 'price' => '', 'vat_rate' => 2500], ['description' => 'Fri', 'quantity' => '1', 'price' => '100,00', 'vat_rate' => 2500]],
+    ]);
+    Article::query()->where('number', 'A1')->update(['price_ore' => 0]);
+    PriceListItem::query()->whereKey($world->items['VIP#0'])->delete();
+
+    $invoice = app(RunRecurringInvoice::class)($this->owner, $agreement, CarbonImmutable::today());
+
+    expect($invoice->isDraft())->toBeTrue()
+        ->and($agreement->fresh()->next_invoice_date->toDateString())->toBe('2026-07-15')
+        ->and(AuditLog::query()->where('action', 'agreement.held_as_draft')->exists())->toBeTrue();
+});
+
+it('keeps a price typed on a followed agreement\'s article row, as MANUAL, through saves and runs', function () {
+    $world = vipWorld($this);
+    $agreement = agreementFor($this, $world->customer, [articleRow('A1', '1', '95,00'), articleRow('A2', '1', '50,00')], 'FOLLOW_PRICES');
+    $rows = $agreement->rows()->get();
+
+    expect($rows[0]->price_source)->toBe(PriceSource::Manual)
+        ->and($rows[1]->price_source)->toBeNull();
+
+    $invoice = app(RunRecurringInvoice::class)($this->owner, $agreement, CarbonImmutable::today());
+    $made = $invoice->rows()->orderBy('position')->get();
+
+    expect($made[0]->unit_price_ore->ore)->toBe(9500)
+        ->and($made[0]->price_source)->toBe(PriceSource::Manual)
+        ->and($made[1]->unit_price_ore->ore)->toBe(4000)
+        ->and($agreement->fresh()->rows()->get()[0]->unit_price_ore->ore)->toBe(9500);
+});
+
+it('carries a work-order material price and its source onto the invoice row', function () {
+    WorkOrders::enable($this->company, $this->owner);
+    $world = vipWorld($this);
+    $workOrder = WorkOrders::workOrder($this->company, $this->owner, $world->customer);
+    app(RecordMaterial::class)($this->owner, $this->company, $workOrder, ['source' => 'FREE', 'article_id' => Article::query()->where('number', 'A1')->value('id'), 'quantity' => '2', 'work_date' => '2026-06-15']);
+
+    $invoice = app(CreateInvoiceBasis::class)($this->owner, $this->company, $workOrder, CarbonImmutable::parse('2026-06-15'), CarbonImmutable::parse('2026-06-15'));
+    $row = $invoice->rows()->where('description', '!=', '')->get()->first(fn ($r) => $r->article_id !== null);
+
+    expect($row?->unit_price_ore->ore)->toBe(8000)->and($row?->price_source)->toBe(PriceSource::CustomerList);
 });

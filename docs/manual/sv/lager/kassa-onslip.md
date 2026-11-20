@@ -18,7 +18,7 @@ Med modulen **Kassakopplingar** kopplar du Onslip 360 till NONOX. Modulen kräve
 
 - **Kvittona hämtas in** varje timme, och en gång per natt för den senaste veckan. Du kan också välja **Hämta försäljning nu**. Varje kvitto sparas en gång.
 - **Varorna dras från lagret**, precis som för Zettle.
-- **Artiklarna läggs upp i Onslip**, i den varugrupp som hör till artikelns momssats, med kassans pris enligt [prislistorna](/manual/fakturering/prislistor). Under **Inställningar** vid kassan väljer du **Prislista för kassan** på samma sätt som för [Zettle](/manual/lager/kassa-zettle).
+- **Artiklarna läggs upp i Onslip**, i den varugrupp som hör till artikelns momssats, med kassans pris enligt [prislistorna](/manual/fakturering/prislistor). Under **Inställningar** vid kassan väljer du **Prislista för kassan** på samma sätt som för [Zettle](/manual/lager/kassa-zettle). Läs även avsnittet *Priser och lagen om prisinformation* på Zettle-sidan.
 - **Varje dag blir ett verifikationsutkast** i serie K.
 
 Onslip har inget öppet lager-API. NONOX skickar därför inget lagersaldo till Onslip. Saldot i NONOX ändras av försäljningen, och det är NONOX som gäller när du inventerar.

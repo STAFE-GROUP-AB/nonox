@@ -34,9 +34,9 @@ Avtalen finns under **Försäljning → Avtal**.
 Under **Priser på fakturorna** väljer du hur fakturornas priser bestäms:
 
 - **Fast pris** – varje faktura får de priser som står på avtalets rader, tills du ändrar dem. Så fungerade avtal innan prislistorna kom, och det är det som är valt från början.
-- **Följ prislistan** – varje faktura prissätter avtalets artikelrader på fakturadatumet för just den kunden, med kundens prisavtal, prislistor och kampanjer, och lägger priset på fakturaraden tillsammans med var priset kommer ifrån. En prishöjning i prislistan når därför avtalet av sig själv vid nästa faktura, och en faktura som redan är skapad ändras aldrig.
+- **Följ prislistan** – varje faktura prissätter avtalets artikelrader på fakturadatumet för just den kunden, med kundens prisavtal, prislistor och kampanjer, och lägger priset på fakturaraden tillsammans med var priset kommer ifrån. En ändring i prislistan når därför avtalet av sig själv vid nästa faktura, och en faktura som redan är skapad ändras aldrig. NONOX ändrar bara priserna; om kunden behöver godkänna ändringen avgörs av ert avtal.
 
-Med **Följ prislistan** visar avtalets egna rader priserna från den senaste fakturan, så du ser vad nästa faktura sannolikt kostar. Rader utan artikel, alltså fria rader, behåller sitt pris. Saknas ett pris för en artikel får fakturaraden artikelns grundpris. Spara avtalet med artikelnumret på raden, annars finns inget att prissätta efter.
+Med **Följ prislistan** visar avtalets egna rader priserna från den senaste fakturan, så du ser vad nästa faktura sannolikt kostar. Rader utan artikel, alltså fria rader, behåller sitt pris. Lämna **À-pris** tomt, eller skriv artikelns grundpris, på en artikelrad som ska följa listan. Skriver du ett annat pris på raden är det ditt eget pris: raden behåller det och följer inte listan. Saknas pris helt, eller går radens enhet inte att räkna om för artikeln, skapas ingen faktura och avtalet försöks igen nästa dag. Blir priset 0 kr på en artikelrad blir fakturan ett utkast även om utskick är på, så att ingen faktura på 0 kr skickas av sig själv. Kontrollera utkastet under **Försäljning → Fakturor**.
 
 Läs mer om hur priset väljs i [Priser på raderna](/manual/fakturering/priser-pa-raderna).
 
@@ -79,7 +79,7 @@ Fakturorna från ett avtal är vanliga fakturor. De bokförs när de skapas, i s
 Nej. Ändringen gäller nästa faktura.
 
 **Hur får avtalet en prishöjning?**
-Ändra raderna för hand, eller välj **Följ prislistan** och lägg in det nya priset i prislistan med ett startdatum. Fakturor som skapas från det datumet får det nya priset.
+Ändra raderna för hand, eller välj **Följ prislistan** och lägg in det nya priset i prislistan med ett startdatum. Fakturor som skapas från det datumet får det nya priset i NONOX. Om ni får höja priset och om kunden behöver godkänna ändringen avgörs av ert avtal med kunden.
 
 **Kunden ska ha 25 % rabatt i tre månader.**
 Lägg in rabatten på raden och ändra tillbaka när perioden är slut, eller ändra fakturautkastet de månader det gäller.

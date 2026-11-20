@@ -35,7 +35,7 @@
       "id": "2026-11-20-priser-i-avtal-kassa-etiketter-arbetsorder",
       "datum": "2026-11-20T18:40:00+01:00",
       "rubrik": "Prislistorna i avtal, offertmallar, arbetsorder, kassa och etiketter",
-      "beskrivning": "Ett avtal kan nu följa prislistan, så att varje faktura prissätter artikelraderna för kunden på fakturadatumet, och en offert från en mall och material på en arbetsorder får kundens pris. Kassan kan få en egen kanalprislista och kampanjer, som skickas varje natt, och prisetiketterna visar samma pris som kassan. Priset före en kampanj visas inte, och det är inte utrett i NONOX än om kampanjpriser till konsumenter kräver det.",
+      "beskrivning": "Ett avtal kan nu följa prislistan, så att varje faktura prissätter artikelraderna för kunden på fakturadatumet, och en offert från en mall och material på en arbetsorder får kundens pris. Kassan kan få en egen kanalprislista och kampanjer, som skickas varje natt, och prisetiketterna visar samma pris som kassan, men priset före en kampanj visas inte. Säljer ni till konsumenter och visar ett kampanjpris som en prissänkning ansvarar ni själva för att ange det tidigare priset enligt reglerna om prisinformation.",
       "typ": "Nytt",
       "omrade": "Fakturering"
     },

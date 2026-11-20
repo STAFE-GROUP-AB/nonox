@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\Pos\Console;
 
+use App\Models\Company;
 use App\Modules\ModuleManager;
 use App\Modules\Pos\Actions\SyncProducts;
 use App\Modules\Pos\Domain\ConnectionStatus;
 use App\Modules\Pos\Models\PosConnection;
 use App\Modules\Pos\PosModule;
 use App\Modules\Pos\Support\PosApiFailed;
+use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\ConnectionException;
@@ -36,8 +38,11 @@ class SyncChannelsCommand extends Command
         $companies = $this->option('company') !== null ? [(int) $this->option('company')] : $modules->companiesWith(PosModule::KEY);
         $sent = 0;
 
+        // An archived company is read-only (ADR-024): its tills wait until it is taken out of the archive.
+        $archived = CompanyScope::bypass(fn (): array => Company::query()->whereIn('id', $companies)->whereNotNull('archived_at')->pluck('id')->map(intval(...))->all());
+
         foreach ($companies as $companyId) {
-            if (! $modules->isEnabled(PosModule::KEY, $companyId)) {
+            if (in_array((int) $companyId, $archived, true) || ! $modules->isEnabled(PosModule::KEY, $companyId)) {
                 continue;
             }
 
@@ -55,7 +60,8 @@ class SyncChannelsCommand extends Command
                         $result = $sync($connection);
                         $sent += $result['sent'];
 
-                        if (! $result['more']) {
+                        // A round that sent nothing new (permanent failures) would only repeat itself.
+                        if (! $result['more'] || $result['sent'] === 0) {
                             break;
                         }
                     }

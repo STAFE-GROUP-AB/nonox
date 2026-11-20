@@ -58,7 +58,11 @@ När du slår på Lager får du två mallar att börja med:
 | Företagets logotyp | Logotypen från företagets utseende | Samma |
 | Egen text | Samma text på varje etikett | Samma |
 
-Priset på etiketten är kassans pris i dag: kanalprislistan du valt vid kopplingen under **Kassa**, eller en kampanj för kassan om den är lägre, annars artikelns grundpris. Bara den som får skriva ut priser ser det. Etiketten visar inte det tidigare lägsta priset under de senaste 30 dagarna vid en kampanj, och det är inte utrett i NONOX än om en prisetikett med kampanjpris kräver det.
+Priset på etiketten är kassans pris i dag: kanalprislistan du valt vid kopplingen under **Kassa**, eller en kampanj som gäller kassan om den är lägre, alltså kampanjer för kassan och kampanjer utan vald kanal. Saknas ett pris används företagets standardprislista, annars artikelns grundpris. Har företaget flera kassor används prislistan från den första aktiva kassan som har en vald prislista. Bara den som får skriva ut priser ser det.
+
+En utskriven etikett ändras inte av sig själv. Skriv ut nya etiketter när en kampanj börjar eller slutar och när en prislista ändras, så att hyllan visar samma pris som kassan.
+
+Etiketten visar inte det tidigare lägsta priset under de senaste 30 dagarna vid en kampanj. Säljer ni till konsumenter och visar kampanjpriset som en prissänkning behöver ni själva se till att reglerna om prisinformation följs. Det är inte utrett i NONOX än.
 
 Jämförpriset räknas fram om artikeln säljs per kilo, liter eller meter, eller om den har en vikt. Annars visas det inte.
 

@@ -99,7 +99,7 @@
                         <input type="radio" name="price_mode" value="FOLLOW_PRICES" class="mt-0.5 border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="priceMode" @disabled(! $editable)>
                         <span>
                             <span class="font-medium text-gray-900">{{ __('Följ prislistan') }}</span>
-                            <span class="block text-gray-600">{{ __('Varje faktura prissätter artikelraderna på fakturadatumet, med kundens prisavtal och prislistor. Raderna här visar priserna från senaste fakturan. Rader utan artikel behåller sitt pris.') }}</span>
+                            <span class="block text-gray-600">{{ __('Varje faktura prissätter artikelraderna på fakturadatumet, med kundens prisavtal och prislistor. Raderna här visar priserna från senaste fakturan. Rader utan artikel behåller sitt pris. Om kunden behöver godkänna en prisändring avgörs av ert avtal.') }}</span>
                         </span>
                     </label>
                 </div>

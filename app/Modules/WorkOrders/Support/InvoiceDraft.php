@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\WorkOrders\Support;
 
 use App\Domain\Invoicing\TaxReduction;
+use App\Domain\Pricing\RowPriceSnapshot;
 use App\Domain\Units\UnitCatalogue;
 use App\Models\Article;
 use App\Models\Invoice;
@@ -36,6 +37,9 @@ final class InvoiceDraft
 
     /** @var list<array<string, mixed>> */
     private array $rows = [];
+
+    /** @var list<RowPriceSnapshot> */
+    private array $snapshots = [];
 
     /** @var list<string> */
     private array $timeIds = [];
@@ -148,6 +152,11 @@ final class InvoiceDraft
             /** @var MaterialEntry $first */
             $first = $group->first();
             $this->row($prefix.$first->description, self::decimal((int) $group->sum('quantity_milli')), $first->unit, $first->unit_price_ore, $first->vat_rate, false, $first->article_id === null ? null : $articles->get($first->article_id), $first->unit_id);
+
+            // The price the entry was given (ADR-082 §10) goes on to the invoice row, so it is neither re-priced nor marked manual.
+            if ($first->article_id !== null && $first->price_source !== null) {
+                $this->snapshots[] = new RowPriceSnapshot('SEK', $first->article_id, $first->unit_id, (int) $group->sum('quantity_milli'), $first->unit_price_ore, 0, $first->price_source, $first->price_explanation ?? ['source' => $first->price_source->value]);
+            }
         }
 
         $this->consume($time, $material, $eligible);
@@ -237,6 +246,16 @@ final class InvoiceDraft
     public function timeIds(): array
     {
         return $this->timeIds;
+    }
+
+    /**
+     * The prices material entries were given, for SaveDraftInvoice's $carried.
+     *
+     * @return list<RowPriceSnapshot>
+     */
+    public function snapshots(): array
+    {
+        return $this->snapshots;
     }
 
     /** @return list<string> */

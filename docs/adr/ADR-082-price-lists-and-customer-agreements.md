@@ -672,6 +672,14 @@ and `lagringstider.md` get a line in P4.
 - **P-L5 Signed price agreement as an agreement.** That an e-signed price
   agreement through NONOX signering is valid as written agreement between
   companies (same assessment as ADR-046; no new question expected).
+- **P-L7 Price changes in running subscriptions (P8).** TODO(legal-verify):
+  unilateral price-change clauses in consumer subscriptions (avtalsvillkorslagen,
+  duty to give notice); "Följ prislistan" changes the price of the next invoice
+  without any notice, and the manual says only that the customer's approval is
+  decided by the company's agreement.
+- **P-L2 (P8 detail).** TODO(legal-verify): the exact section (7 a § prisinformationslagen?)
+  and its exceptions for announcing a price reduction to consumers; the manual
+  tells the company it is responsible for stating the earlier price.
 - **P-L6 Index clauses.** No legal rule is assumed for how an index clause is
   applied; the user supplies the figures and the clause text.
 
