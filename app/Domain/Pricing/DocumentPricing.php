@@ -111,14 +111,17 @@ final class DocumentPricing
 
         $explanation = self::explanation($price);
         $unit = $price->unitPriceMinor;
+        $consumer = $price->includesVat && $price->grossUnitPriceMinor !== null && $vatBp !== null && $price->source !== PriceSource::Manual;
 
-        if ($price->includesVat && $price->grossUnitPriceMinor !== null && $vatBp !== null && $price->discountBp === 0 && $price->source !== PriceSource::Manual) {
-            $unit = self::consumerNet($price->grossUnitPriceMinor, $vatBp);
+        if ($consumer) {
+            // From a gross price both steps round down: the discounted gross price, then the net price (P-L1).
+            $gross = BigRational::of((int) $price->grossUnitPriceMinor)->multipliedBy(10000 - $price->discountBp)->dividedBy(10000)->toScale(0, RoundingMode::Floor)->toInt();
+            $unit = self::consumerNet($gross, (int) $vatBp);
             $explanation['net_rounded_down'] = true;
         }
 
         if ($price->discountBp > 0 && $price->source !== PriceSource::Manual) {
-            $unit = PriceCandidate::scale($unit, 10000 - $price->discountBp, 10000);
+            $unit = $consumer ? $unit : PriceCandidate::scale($unit, 10000 - $price->discountBp, 10000);
             $explanation['folded_discount_bp'] = $price->discountBp;
         }
 

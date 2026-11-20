@@ -668,6 +668,9 @@ final class PriceBook
             tierMinMilli: $item->min_quantity_milli,
             baseMinor: $baseMinor,
             converted: $base->converted,
+            // A discount on a price including VAT keeps that gross price, so the row can be worked out from it without rounding up (P-L1, ADR-082 P3).
+            includesVat: $base->includesVat && $base->discountBp === 0 && $base->grossMinor !== null,
+            grossMinor: $base->includesVat && $base->discountBp === 0 ? $base->grossMinor : null,
         );
     }
 
