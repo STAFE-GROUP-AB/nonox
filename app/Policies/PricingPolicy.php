@@ -26,7 +26,7 @@ abstract class PricingPolicy
 
     public function view(User $user, Model $record): bool
     {
-        $company = $this->company($record);
+        $company = $this->company($user, $record);
 
         return $company instanceof Company && $user->hasTeamPermission($company, 'prices:view');
     }
@@ -38,13 +38,28 @@ abstract class PricingPolicy
 
     public function update(User $user, Model $record): bool
     {
-        $company = $this->company($record);
+        $company = $this->company($user, $record);
 
         return $company instanceof Company && $user->hasTeamPermission($company, $this->managePermission());
     }
 
-    private function company(Model $record): ?Company
+    /**
+     * The record's company. In the user's current company (every list page)
+     * that is the user's already loaded current team, so checking a whole
+     * list costs no query per row; only a record elsewhere is looked up.
+     */
+    private function company(User $user, Model $record): ?Company
     {
-        return Company::query()->find((int) $record->getAttribute('company_id'));
+        $companyId = (int) $record->getAttribute('company_id');
+
+        if ($user->current_team_id !== null && (int) $user->current_team_id === $companyId) {
+            $current = $user->currentTeam;
+
+            if ($current instanceof Company) {
+                return $current;
+            }
+        }
+
+        return Company::query()->find($companyId);
     }
 }

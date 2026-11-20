@@ -14,7 +14,9 @@ use Brick\Math\RoundingMode;
  *
  * - None: to the minor unit, i.e. unchanged.
  * - Whole, Half, Tens: to the nearest 1,00, 0,50 or 10,00 with HalfUp
- *   (a half goes away from zero).
+ *   (a half goes away from zero), except that a price above zero never
+ *   rounds to zero: it becomes one step instead (0,49 → 1,00 with Whole,
+ *   4,99 → 10,00 with Tens; ADR-082 §7, Lead decision 2026-11-20).
  * - TenOre9 and EndsIn9: to the nearest ending at or above, never below:
  *   x,90 for TenOre9 (12,91 → 13,90) and whole units ending in 9 for EndsIn9
  *   (141,00 → 149,00; 149,01 → 159,00).
@@ -64,9 +66,12 @@ enum PriceRounding: string
         };
     }
 
+    /** The nearest multiple of $step, but never zero for a size above zero: a price does not round away. */
     private static function nearest(BigInteger $size, int $step): BigInteger
     {
-        return $size->dividedBy($step, RoundingMode::HalfUp)->multipliedBy($step);
+        $rounded = $size->dividedBy($step, RoundingMode::HalfUp)->multipliedBy($step);
+
+        return $rounded->isZero() ? BigInteger::of($step) : $rounded;
     }
 
     /** The smallest amount >= $size that leaves $ending when divided by $step. */

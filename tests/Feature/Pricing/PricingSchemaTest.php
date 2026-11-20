@@ -238,6 +238,13 @@ it('stores the row price explanation as structured data', function () {
         ->and($row->getAttributes()['price_explanation'])->toBe('{"source":"AGREEMENT","agreement_id":3,"tier_min_milli":10000}');
 });
 
+it('indexes the customers of a price group and of a price list', function () {
+    $indexes = collect(DB::select("select indexdef from pg_indexes where tablename = 'customers'"))->pluck('indexdef')->implode("\n");
+
+    expect($indexes)->toContain('(company_id, price_group_id)')
+        ->and($indexes)->toContain('(company_id, price_list_id)');
+});
+
 it('refers a customer only to price groups and lists that exist', function () {
     p1Refused(fn () => DB::table('customers')->where('id', $this->customer->id)->update(['price_list_id' => 999_999_999]));
     p1Refused(fn () => DB::table('customers')->where('id', $this->customer->id)->update(['price_group_id' => 999_999_999]));

@@ -89,6 +89,17 @@ it('marks a change made through the API as API', function () {
         ->toBe([[null, 10_000, PriceChangeSource::Api], [10_000, 12_500, PriceChangeSource::Api]]);
 });
 
+it('records the price in the database as the old price, not the one a stale form still holds', function () {
+    $article = p1Article($this);
+    $stale = Article::query()->findOrFail($article->id);
+
+    p1Article($this, ['price' => '159'], $article);
+    p1Article($this, ['price' => '169'], $stale);
+
+    expect($article->priceHistory()->get()->map(fn (ArticlePriceHistory $entry): array => [$entry->old_price_ore, $entry->new_price_ore])->all())
+        ->toBe([[null, 14_900], [14_900, 15_900], [15_900, 16_900]]);
+});
+
 it('keeps no names or free text in the history', function () {
     expect(Schema::getColumnListing('article_price_history'))->toEqualCanonicalizing([
         'id', 'company_id', 'article_id', 'old_price_ore', 'new_price_ore', 'valid_from', 'source', 'price_update_run_id', 'changed_by', 'created_at',

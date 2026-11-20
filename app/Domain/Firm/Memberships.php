@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Firm;
 
+use App\Domain\Company\CompanyRole;
 use App\Models\Company;
 use App\Models\CompanyModule;
 use App\Models\User;
@@ -105,6 +106,15 @@ final class Memberships
 
         if ($role === null) {
             return $module === null || in_array($permission, app(ModuleRegistry::class)->rolePermissionsOf($module)['owner'] ?? [], true);
+        }
+
+        // A core permission core gives a module role holds only while that module is on (CompanyRole::MODULE_ROLE_PERMISSIONS).
+        if ($module === null && in_array($permission, CompanyRole::MODULE_ROLE_PERMISSIONS[$role] ?? [], true)) {
+            $roleModule = app(ModuleRegistry::class)->moduleForRole($role);
+
+            if ($roleModule === null || ! $this->enabled($companyId, $roleModule->key())) {
+                return false;
+            }
         }
 
         $permissions = isset(Jetstream::$roles[$role]) ? Jetstream::$roles[$role]->permissions : [];

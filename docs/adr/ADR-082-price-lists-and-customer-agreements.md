@@ -333,7 +333,10 @@ integer arithmetic on minor units with HalfUp to the nearest step, except the
 "ends in" rules, which take the nearest ending at or above (documented in the
 method, unit-tested with edge cases incl. 0, 1 öre, negative and very large
 values). Applied on derived lists, on percent updates and on currency
-conversion; never on a typed price.
+conversion; never on a typed price. A price above zero never rounds to zero:
+where WHOLE, HALF or TENS would give 0, the result is one step instead
+(0,49 kr → 1 kr with WHOLE, 4,99 kr → 10 kr with TENS); Lead decision
+2026-11-20, review finding.
 
 ### 8. Mass price update (Prisuppdatering)
 
@@ -413,6 +416,11 @@ index figures in v1. Decision 11.
   group and a searchable "this customer's price for every article today".
 - Lowest price in the last 30 days per article and channel is computable from
   history for consumer campaigns (P-L2).
+- Known gap (review finding 2026-11-20): `article_price_history` starts with
+  P1 and is not backfilled. An article that existed before has no first
+  history row, so the history answers "what did the base price cost on a
+  date" only from the article's first price change after P1 (whose
+  `old_price_ore` is the price it had until then).
 
 ## Data model (all additive)
 

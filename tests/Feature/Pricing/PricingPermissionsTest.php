@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Domain\Company\CompanyOverview;
 use App\Domain\Company\CompanyRole;
+use App\Domain\Firm\Memberships;
 use App\Models\CustomerPriceGroup;
 use App\Models\PriceAgreement;
 use App\Models\PriceList;
@@ -10,6 +12,8 @@ use App\Models\User;
 use App\Modules\Crm\CrmModule;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Laravel\Jetstream\Jetstream;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
@@ -134,4 +138,55 @@ it('gives nothing to someone outside the company, even an owner of another compa
 
     expect($outsider->can('create', [PriceList::class, $this->company]))->toBeFalse()
         ->and($outsider->hasTeamPermission($this->company, 'prices:view'))->toBeFalse();
+});
+
+it('applies the seller\'s CRM rule on the pages that span companies too (Memberships)', function () {
+    $seller = Bookkeeping::member($this->company, CrmModule::ROLE);
+
+    expect(Memberships::of($seller)->may($this->company->id, 'prices:view'))->toBeFalse()
+        ->and(Memberships::of($seller)->may($this->company->id, 'price-agreements:manage'))->toBeFalse();
+
+    Crm::enable($this->company, $this->owner);
+
+    expect(Memberships::of($seller->fresh())->may($this->company->id, 'prices:view'))->toBeTrue()
+        ->and(Memberships::of($seller->fresh())->may($this->company->id, 'price-lists:manage'))->toBeFalse();
+});
+
+it('applies the seller\'s CRM rule in Mina företag (CompanyOverview)', function () {
+    $id = $this->company->id;
+    // may() reads the memberships prepare() loads; set them as it would for a seller.
+    $may = fn (bool $crm): bool => Closure::bind(function () use ($crm, $id): bool {
+        $this->roles = [$id => CrmModule::ROLE];
+        $this->limited = [];
+        $this->modules = [$id => $crm ? [CrmModule::KEY] : []];
+
+        return $this->may($id, 'prices:view');
+    }, app(CompanyOverview::class), CompanyOverview::class)();
+
+    expect($may(false))->toBeFalse()
+        ->and($may(true))->toBeTrue();
+});
+
+it('checks a whole list of price records without a query per record', function () {
+    $admin = Bookkeeping::member($this->company, 'admin');
+    CurrentCompany::set($this->company);
+    $lists = collect(range(1, 20))->map(fn (int $n): PriceList => PriceList::create(['code' => "L{$n}", 'name' => "Lista {$n}", 'created_by' => $this->owner->id]));
+
+    $count = function (Collection $records) use ($admin): int {
+        $user = $admin->fresh();
+        $user->can('view', $records->first());
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        foreach ($records as $record) {
+            $user->can('view', $record);
+            $user->can('update', $record);
+        }
+
+        DB::disableQueryLog();
+
+        return count(DB::getQueryLog());
+    };
+
+    expect($count($lists->take(1)))->toBe($count($lists));
 });

@@ -102,7 +102,10 @@ class SaveArticle
                 ...DefaultDimensions::fromInput($input),
             ];
 
-            $oldPrice = $article?->price_ore->ore;
+            // Read under a row lock, so two edits at once each record the price the other left behind.
+            $oldPrice = $article === null
+                ? null
+                : (int) Article::query()->whereKey($article->id)->lockForUpdate()->toBase()->value('price_ore');
 
             if ($article === null) {
                 $article = Article::create($attributes);

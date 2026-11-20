@@ -23,20 +23,21 @@ it('rounds with each rule', function (PriceRounding $rule, int $minor, int $expe
     'whole: a half goes up' => [PriceRounding::Whole, 12_350, 12_400],
     'whole: up above a half' => [PriceRounding::Whole, 12_351, 12_400],
     'whole: already whole' => [PriceRounding::Whole, 12_300, 12_300],
-    'whole: 1 öre' => [PriceRounding::Whole, 1, 0],
-    'whole: 49 öre' => [PriceRounding::Whole, 49, 0],
+    'whole: 1 öre never rounds to zero' => [PriceRounding::Whole, 1, 100],
+    'whole: 49 öre never rounds to zero' => [PriceRounding::Whole, 49, 100],
     'whole: 50 öre' => [PriceRounding::Whole, 50, 100],
 
     'half: down below a quarter' => [PriceRounding::Half, 12_324, 12_300],
     'half: a quarter goes up' => [PriceRounding::Half, 12_325, 12_350],
     'half: up to the next krona' => [PriceRounding::Half, 12_375, 12_400],
     'half: 74 öre' => [PriceRounding::Half, 12_374, 12_350],
-    'half: 1 öre' => [PriceRounding::Half, 1, 0],
+    'half: 1 öre never rounds to zero' => [PriceRounding::Half, 1, 50],
+    'half: 24 öre never rounds to zero' => [PriceRounding::Half, 24, 50],
 
     'tens: down below 5 kr' => [PriceRounding::Tens, 144_499, 144_000],
     'tens: 5 kr goes up' => [PriceRounding::Tens, 144_500, 145_000],
-    'tens: 1 öre' => [PriceRounding::Tens, 1, 0],
-    'tens: 4,99 kr' => [PriceRounding::Tens, 499, 0],
+    'tens: 1 öre never rounds to zero' => [PriceRounding::Tens, 1, 1_000],
+    'tens: 4,99 kr never rounds to zero' => [PriceRounding::Tens, 499, 1_000],
     'tens: 5,00 kr' => [PriceRounding::Tens, 500, 1_000],
 
     'ten öre 9: already ,90' => [PriceRounding::TenOre9, 12_390, 12_390],
@@ -77,9 +78,9 @@ it('never moves a price by more than one step', function (PriceRounding $rule, i
     }
 })->with([
     [PriceRounding::None, 0],
-    [PriceRounding::Whole, 50],
-    [PriceRounding::Half, 25],
-    [PriceRounding::Tens, 500],
+    [PriceRounding::Whole, 100],
+    [PriceRounding::Half, 50],
+    [PriceRounding::Tens, 1_000],
     [PriceRounding::TenOre9, 100],
     [PriceRounding::EndsIn9, 1_000],
 ]);
@@ -102,3 +103,10 @@ it('handles very large amounts exactly, and refuses a result outside the integer
 it('has a Swedish label for every rule', function (PriceRounding $rule) {
     expect($rule->label())->not->toBe('');
 })->with(PriceRounding::cases());
+
+it('never rounds a price above zero to zero, nor one below zero (Lead decision 2026-11-20)', function (PriceRounding $rule) {
+    foreach ([1, 24, 49, 499] as $minor) {
+        expect($rule->apply($minor))->toBeGreaterThan(0, "{$rule->value} {$minor}")
+            ->and($rule->apply(-$minor))->toBeLessThan(0, "{$rule->value} -{$minor}");
+    }
+})->with([PriceRounding::Whole, PriceRounding::Half, PriceRounding::Tens, PriceRounding::TenOre9, PriceRounding::EndsIn9]);
