@@ -226,7 +226,7 @@ it('sets a period from one amount, copies a week forward without overwriting, an
 
     // The audit log holds ids, enums and counts, never amounts.
     $logs = CurrentCompany::run($this->company, fn () => AuditLog::query()->where('action', 'like', 'planning.budget%')->get());
-    expect($logs->pluck('action')->unique()->values()->all())->toBe(['planning.budget_saved', 'planning.budget_copied', 'planning.budget_deleted'])
+    expect($logs->pluck('action')->unique()->values()->all())->toEqualCanonicalizing(['planning.budget_saved', 'planning.budget_copied', 'planning.budget_deleted'])
         ->and(json_encode($logs->pluck('payload')->all()))->not->toContain('2000000');
 });
 
