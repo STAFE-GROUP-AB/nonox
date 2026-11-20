@@ -6,13 +6,15 @@ namespace Database\Seeders\Demo\Extras;
 
 use App\Actions\Invoicing\SaveDraftInvoice;
 use App\Actions\Invoicing\SaveSalesDocument;
-use App\Domain\Pricing\PriceAgreementStatus;
+use App\Domain\Pricing\PriceAgreementActivation;
+use App\Domain\Pricing\PriceAgreementActivator;
 use App\Models\Article;
 use App\Models\Customer;
 use App\Models\PriceAgreement;
 use App\Models\PriceAgreementItem;
 use App\Models\SalesDocument;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Database\Seeders\Demo\DemoContext;
 use Database\Seeders\Demo\DemoExtra;
 
@@ -48,20 +50,12 @@ final class PricingEditorsExtras extends DemoExtra
                 return;
             }
 
-            $agreement = PriceAgreement::create([
-                'number' => (int) PriceAgreement::query()->max('number') + 1,
-                'customer_id' => $customer->id,
-                'title' => 'Ramavtal bokföring och lön',
-                'currency' => 'SEK',
-                'valid_from' => $c->today->startOfYear()->toDateString(),
-                'status' => PriceAgreementStatus::Active,
-                'created_by' => $c->user->id,
+            $agreement = $this->agreement($c, $customer->id, $c->today->startOfYear(), [
+                ['article_id' => $articles['LB'], 'min_quantity_milli' => 0, 'price_minor' => 490_000],
+                ['article_id' => $articles['LON'], 'min_quantity_milli' => 0, 'price_minor' => 27_500],
+                ['article_id' => $articles['LON'], 'min_quantity_milli' => 5_000, 'price_minor' => 24_500],
+                ['article_id' => $articles['TIM'], 'min_quantity_milli' => 0, 'discount_bp' => 1_000],
             ]);
-
-            $monthly = PriceAgreementItem::create(['price_agreement_id' => $agreement->id, 'article_id' => $articles['LB'], 'min_quantity_milli' => 0, 'price_minor' => 490_000]);
-            PriceAgreementItem::create(['price_agreement_id' => $agreement->id, 'article_id' => $articles['LON'], 'min_quantity_milli' => 0, 'price_minor' => 27_500]);
-            PriceAgreementItem::create(['price_agreement_id' => $agreement->id, 'article_id' => $articles['LON'], 'min_quantity_milli' => 5_000, 'price_minor' => 24_500]);
-            PriceAgreementItem::create(['price_agreement_id' => $agreement->id, 'article_id' => $articles['TIM'], 'min_quantity_milli' => 0, 'discount_bp' => 1_000]);
 
             $rows = [
                 ['article' => 'LB', 'description' => 'Löpande bokföring, månadsarvode', 'quantity' => '1', 'vat_rate' => 2500],
@@ -85,8 +79,43 @@ final class PricingEditorsExtras extends DemoExtra
                 'rows' => array_slice($rows, 1, 2),
             ]);
 
-            // The agreed fee goes up after the draft was written: the draft keeps its price until "Uppdatera priser".
-            $monthly->forceFill(['price_minor' => 510_000])->save();
+            // The agreed fee goes up after the draft was written, as a new version from today (an active
+            // agreement's terms never change, ADR-082 P5): the draft keeps its price until "Uppdatera priser".
+            if ($c->today->greaterThan($agreement->valid_from)) {
+                $this->agreement($c, $customer->id, $c->today, [
+                    ['article_id' => $articles['LB'], 'min_quantity_milli' => 0, 'price_minor' => 510_000],
+                    ['article_id' => $articles['LON'], 'min_quantity_milli' => 0, 'price_minor' => 27_500],
+                    ['article_id' => $articles['LON'], 'min_quantity_milli' => 5_000, 'price_minor' => 24_500],
+                    ['article_id' => $articles['TIM'], 'min_quantity_milli' => 0, 'discount_bp' => 1_000],
+                ], $agreement);
+            }
         }));
+    }
+
+    /**
+     * An active, made-up agreement: a draft with its terms, then activated as
+     * the price agreement screens do (by hand, with the reason a demo has).
+     *
+     * @param  list<array<string, int>>  $items
+     */
+    private function agreement(DemoContext $c, int $customerId, CarbonImmutable $from, array $items, ?PriceAgreement $supersedes = null): PriceAgreement
+    {
+        $agreement = PriceAgreement::create([
+            'number' => (int) PriceAgreement::query()->max('number') + 1,
+            'customer_id' => $customerId,
+            'title' => 'Ramavtal bokföring och lön',
+            'currency' => 'SEK',
+            'valid_from' => $from->toDateString(),
+            'supersedes_id' => $supersedes?->id,
+            'created_by' => $c->user->id,
+        ]);
+
+        foreach ($items as $item) {
+            PriceAgreementItem::create(['price_agreement_id' => $agreement->id, ...$item]);
+        }
+
+        app(PriceAgreementActivator::class)->activate($agreement, PriceAgreementActivation::Manual, $from->setTime(9, 0), null, $c->user, 'Påhittat demoavtal, godkänt på papper.');
+
+        return $agreement;
     }
 }

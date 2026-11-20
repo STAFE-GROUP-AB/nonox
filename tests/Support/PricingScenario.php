@@ -141,7 +141,7 @@ final class PricingScenario
                     'currency' => $agreement['currency'] ?? 'SEK',
                     'valid_from' => $agreement['valid_from'],
                     'valid_to' => $agreement['valid_to'] ?? null,
-                    'status' => $agreement['status'] ?? 'ACTIVE',
+                    'status' => 'DRAFT',
                     'allow_campaigns' => $agreement['allow_campaigns'] ?? false,
                     'terminated_on' => $agreement['terminated_on'] ?? null,
                     'created_by' => $owner->id,
@@ -156,6 +156,9 @@ final class PricingScenario
                         'base_price_list_id' => isset($item['base_list']) ? $scenario->lists[$item['base_list']] : null,
                     ])->id;
                 }
+
+                // A draft's terms are added first; once it has left draft they are frozen (ADR-082 P5).
+                PriceAgreement::query()->whereKey($scenario->agreements[$code])->update(['status' => $agreement['status'] ?? 'ACTIVE']);
             }
         }
 

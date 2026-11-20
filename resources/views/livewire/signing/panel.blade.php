@@ -3,7 +3,7 @@
     $zone = config('app.timezone');
 @endphp
 
-<x-ui.card :title="__('Signering')" :description="$isQuote ? ($crm ? __('Skicka offerten för signering med namnteckning. När kunden har signerat blir offerten en order, och affären vinns.') : __('Skicka offerten för signering med namnteckning. När kunden har signerat blir offerten en order.')) : __('Skicka avtalet för signering med namnteckning. Kunden behöver inget konto.')" data-testid="crm-signing-panel">
+<x-ui.card :title="__('Signering')" :description="$isQuote ? ($crm ? __('Skicka offerten för signering med namnteckning. När kunden har signerat blir offerten en order, och affären vinns.') : __('Skicka offerten för signering med namnteckning. När kunden har signerat blir offerten en order.')) : ($isPriceAgreement ? __('Skicka prisavtalet för signering med namnteckning. När kunden har signerat blir avtalet aktivt. Kunden behöver inget konto.') : __('Skicka avtalet för signering med namnteckning. Kunden behöver inget konto.'))" data-testid="crm-signing-panel">
     @if($canSend && $open && $several)
         <form wire:submit="sendSeveral" class="mt-4 space-y-6" data-testid="signing-several-form">
             <fieldset>
@@ -196,7 +196,7 @@
             </div>
         </form>
     @elseif(! $open && $requests->isEmpty())
-        <p class="mt-4 text-sm text-gray-600">{{ $isQuote ? __('Offerten är inte öppen och kan inte skickas för signering.') : __('Avtalet är signerat.') }}</p>
+        <p class="mt-4 text-sm text-gray-600">{{ $isQuote ? __('Offerten är inte öppen och kan inte skickas för signering.') : ($isPriceAgreement ? __('Prisavtalet är inte ett utkast och kan inte skickas för signering.') : __('Avtalet är signerat.')) }}</p>
     @endif
 
     @if($requests->isNotEmpty())

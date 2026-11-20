@@ -150,7 +150,8 @@ final class Navigation
                 'patterns' => ['invoicing.articles*', 'pricing.*', 'payables.suppliers*'],
                 'children' => fn (User $user, Company $company): array => [
                     ['label' => __('Artiklar'), 'route' => 'invoicing.articles'],
-                    ...($can('prices:view') ? [['label' => __('Prislistor'), 'route' => 'pricing.lists', 'active' => ['pricing.*']]] : []),
+                    ...($can('prices:view') ? [['label' => __('Prislistor'), 'route' => 'pricing.lists', 'active' => ['pricing.lists*', 'pricing.groups*']]] : []),
+                    ...($can('prices:view') ? [['label' => __('Prisavtal'), 'route' => 'pricing.agreements', 'active' => ['pricing.agreements*']]] : []),
                     ['label' => __('Leverantörer'), 'route' => 'payables.suppliers'],
                 ],
             ] : [
@@ -160,7 +161,8 @@ final class Navigation
                 'children' => fn (User $user, Company $company): array => [
                     ['label' => __('Kunder'), 'route' => 'invoicing.customers'],
                     ['label' => __('Artiklar'), 'route' => 'invoicing.articles'],
-                    ...($can('prices:view') ? [['label' => __('Prislistor'), 'route' => 'pricing.lists', 'active' => ['pricing.*']]] : []),
+                    ...($can('prices:view') ? [['label' => __('Prislistor'), 'route' => 'pricing.lists', 'active' => ['pricing.lists*', 'pricing.groups*']]] : []),
+                    ...($can('prices:view') ? [['label' => __('Prisavtal'), 'route' => 'pricing.agreements', 'active' => ['pricing.agreements*']]] : []),
                     ['label' => __('Leverantörer'), 'route' => 'payables.suppliers'],
                 ],
             ],

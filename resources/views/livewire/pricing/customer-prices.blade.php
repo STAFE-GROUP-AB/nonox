@@ -39,6 +39,27 @@
         </form>
     </x-ui.card>
 
+    <x-ui.card :title="__('Prisavtal')" :description="__('Ett aktivt prisavtal går före kundens prislista. Avtal som väntar på underskrift eller är utkast gäller inte ännu.')" data-customer-price-agreements>
+        @if($agreements->isEmpty())
+            <p class="text-sm text-gray-600">{{ __('Kunden har inget prisavtal som gäller eller är på väg.') }}</p>
+        @else
+            <ul class="divide-y divide-gray-100 text-sm">
+                @foreach($agreements as $priceAgreement)
+                    <li class="flex flex-wrap items-center justify-between gap-3 py-2" wire:key="customer-agreement-{{ $priceAgreement->id }}">
+                        <a href="{{ route('pricing.agreements.show', $priceAgreement->id) }}" class="font-medium text-accent-700 hover:underline">{{ $priceAgreement->reference() }} · {{ $priceAgreement->title }}</a>
+                        <span class="flex items-center gap-2">
+                            <span class="tabular-nums text-gray-600">{{ $priceAgreement->valid_from->toDateString() }} – {{ $priceAgreement->lastDay()?->toDateString() ?? __('tills vidare') }} {{ $priceAgreement->currency }}</span>
+                            <x-ui.badge :tone="$priceAgreement->status->tone()">{{ $priceAgreement->status->label() }}</x-ui.badge>
+                        </span>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+        @if($canManageAgreements)
+            <p class="mt-4 text-sm"><a href="{{ route('pricing.agreements', ['ny' => 1, 'kund' => $customer->id]) }}" class="font-medium text-accent-700 underline">{{ __('Nytt prisavtal för kunden') }}</a></p>
+        @endif
+    </x-ui.card>
+
     <x-ui.card :title="__('Kundens pris idag')" :description="__('Så här prissätts en vara i :currency till kunden i dag, vid antal 1. Fakturor, offerter och order får samma pris när artikeln väljs.', ['currency' => $currency])">
         <input type="search" class="{{ $input }} max-w-xs" wire:model.live.debounce.300ms="search" placeholder="{{ __('Sök artikel') }}" aria-label="{{ __('Sök artikel') }}">
 

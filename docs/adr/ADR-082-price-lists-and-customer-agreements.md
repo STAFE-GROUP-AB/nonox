@@ -225,6 +225,44 @@ cycle:
 - **Several agreements** for one customer may be ACTIVE only if their
   validity does not overlap; enforced in the action.
 
+**As built (P5), 2026-11-20:**
+
+- **Freezing.** An agreement's terms (head and items) change only while it is
+  a DRAFT: model events on `PriceAgreement` and `PriceAgreementItem`, the
+  policy (`changeTerms`, `delete`) and the actions. Once it has left DRAFT
+  only its life-cycle fields are written (status, `valid_to`,
+  `terminated_on`, signature and activation fields). Deleting is tightened
+  in the database too: a trigger refuses deleting an agreement that is not a
+  DRAFT, and the items of such an agreement (the company cascade is
+  unchanged), while the grants stay ReadWrite so drafts can be deleted.
+- **Sending** (`SendPriceAgreementForSigning`) checks as for activation (at
+  least one term, end not passed, no overlap, a version starts after the one
+  it changes), makes the draft AWAITING_SIGNATURE and sends through the
+  signing engine in one transaction. "Tillbaka till utkast" revokes every
+  open link first. Signing type `PRICE`; see the cross-reference in ADR-046.
+- **Manual activation** ("Aktivera utan signering") needs a reason, stored
+  on the agreement (`activation_method` MANUAL, `activation_reason`,
+  `activated_by`, `activated_at`; additive columns), never in the audit log.
+- **Versions.** "Ändra avtal" copies an ACTIVE or TERMINATED agreement into
+  one open DRAFT with a new number, starting tomorrow; on activation the old
+  one is SUPERSEDED with `valid_to` the day before.
+- **Termination** sets TERMINATED and `terminated_on` (not in the past, not
+  after `valid_to`); `pricing:expire` (daily 06:05, after `crm:agreements`)
+  sets ENDED when an ACTIVE agreement's `valid_to` has passed, and lets a
+  DRAFT or ACTIVE agreement linked to the CRM register follow that
+  agreement's `end_date` unless that would overlap. Archived companies are
+  skipped.
+- **Overview.** `PriceAgreementTodos` (core) reminds 30 days before
+  `valid_to`, for `price-agreements:manage`, leaving out agreements linked to
+  the CRM register while CRM is on and those with a new version on the way.
+- Items: one article or all articles (all articles take a discount only); a
+  discount is on the ordinary price or a named non-campaign list in the
+  agreement's currency; the same target, unit and step only once. The
+  resolver (P2) is unchanged.
+- `TODO(legal-verify)`: P-L5 (the simple electronic signature for a price
+  agreement between companies) and P-L6 (no index clause is modelled; a new
+  version is the way to apply one).
+
 ### 5. Price resolution order (the resolver)
 
 `App\Domain\Pricing\PriceResolver` takes a `PriceContext` (company, customer

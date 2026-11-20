@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-20-prisavtal",
+      "datum": "2026-11-20T18:55:00+01:00",
+      "rubrik": "Prisavtal med kunder",
+      "beskrivning": "Under Register → Prisavtal gör du ett avtal om en kunds priser för en period: fasta priser per artikel, mängdpriser och rabatter på ordinarie pris eller på en prislista. Avtalet skickas för signering med namnteckning eller aktiveras för hand med ett skäl, och när det är aktivt får kundens fakturor, offerter och order avtalets priser. Ett aktivt avtal ändras med en ny version, och Översikt påminner 30 dagar innan ett avtal löper ut.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-20-priser-pa-fakturor-offerter-order",
       "datum": "2026-11-20T15:30:00+01:00",
       "rubrik": "Kundens pris på fakturor, offerter och order",

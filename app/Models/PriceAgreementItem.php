@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Pricing\PriceAgreementStatus;
 use App\Support\Tenancy\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
 
 /**
  * One term of a price agreement (ADR-082 §4): for one article (or, once
@@ -14,6 +16,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * unit; a fixed price, a discount on the base price, or a discount on
  * another list ("the reseller list minus 3 %"). The database checks that
  * exactly one target and exactly one of price and discount is given.
+ *
+ * Only a draft agreement's terms may be added, changed or removed (P5):
+ * once sent, signed or activated they are frozen, here and by the policy;
+ * deleting them is also refused by a database trigger.
  *
  * @property int $id
  * @property int $company_id
@@ -41,6 +47,21 @@ class PriceAgreementItem extends Model
     /** @var array<string, mixed> */
     protected $attributes = ['applies_to_all' => false, 'min_quantity_milli' => 0];
 
+    protected static function booted(): void
+    {
+        $refuseUnlessDraft = function (self $item): void {
+            $status = PriceAgreement::query()->whereKey($item->getOriginal('price_agreement_id') ?? $item->price_agreement_id)->toBase()->value('status');
+
+            if ($status !== null && $status !== PriceAgreementStatus::Draft->value) {
+                throw new LogicException('The terms of a price agreement that has left draft cannot change; make a new version.');
+            }
+        };
+
+        static::creating($refuseUnlessDraft);
+        static::updating($refuseUnlessDraft);
+        static::deleting($refuseUnlessDraft);
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {
@@ -63,6 +84,12 @@ class PriceAgreementItem extends Model
     public function article(): BelongsTo
     {
         return $this->belongsTo(Article::class);
+    }
+
+    /** @return BelongsTo<Unit, $this> */
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class);
     }
 
     /** @return BelongsTo<PriceList, $this> */

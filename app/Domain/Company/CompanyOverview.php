@@ -79,6 +79,8 @@ final class CompanyOverview
         'signing' => 'signing.envelopes',
         // ÄTA signed at a link (ADR-074 §4).
         'work-orders' => 'workOrders.index',
+        // A customer price agreement signed at a link (ADR-082 P5).
+        'price-agreements' => 'pricing.agreements',
         // Web form submissions held for review (ADR-048).
         'crm-forms' => 'crm.forms',
         // Questions and disputes from the customer portal (ADR-075).

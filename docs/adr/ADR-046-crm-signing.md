@@ -2728,3 +2728,22 @@ unchanged.
   applies the `visibleTo` rule (confidential: creator or `signing:manage`) before it
   remembers a `template_id`, so S19 (the API) gets it for free but must still reject a
   template id the caller may not see with a 404 instead of silently ignoring it.
+
+### Cross-reference (2026-11-20): customer price agreements (ADR-082 P5)
+
+A customer price agreement ("Prisavtal", `App\Models\PriceAgreement`) is a
+fourth core `Signable`, registered in `SigningServiceProvider` as type `PRICE`
+in the generic `signable_id` column, with no module (signing works whether or
+not CRM is on). It is sent from the shared signing panel
+(`SigningPanel` with `priceAgreementId`) through
+`SendPriceAgreementForSigning`, which first makes the draft
+`AWAITING_SIGNATURE` (its terms freeze) and then calls `SendForSigning` in the
+same transaction. The document is `PriceAgreementPdf`; the fingerprint is the
+SHA-256 of its HTML, so a draft changed after sending cannot be signed.
+`markSigned` activates the agreement (`PriceAgreementActivator`), which
+supersedes the version it changes. Notices open at the destination
+`price-agreements`. The send wizard of the Signering module is not offered for
+this type. The signature is the same simple electronic signature as for every
+other document here; whether that is enough for a price agreement between
+companies is ADR-082's legal item P-L5 (`TODO(legal-verify)`). Retention
+follows this ADR's rules; a price agreement adds no retention class of its own.

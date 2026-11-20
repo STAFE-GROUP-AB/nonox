@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Signing;
 
+use App\Actions\Pricing\SendPriceAgreementForSigning;
 use App\Actions\Signing\ChangeSigningDeadline;
 use App\Actions\Signing\SendForSigning;
 use App\Actions\Signing\SigningReminders;
@@ -19,6 +20,7 @@ use App\Livewire\Concerns\ShowsToasts;
 use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\Customer;
+use App\Models\PriceAgreement;
 use App\Models\SalesDocument;
 use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
@@ -67,6 +69,10 @@ class SigningPanel extends Component
     #[Locked]
     public ?int $agreementId = null;
 
+    /** A customer price agreement (ADR-082 P5): sent through SendPriceAgreementForSigning, which freezes the draft first. */
+    #[Locked]
+    public ?int $priceAgreementId = null;
+
     public string $email = '';
 
     public string $expiresOn = '';
@@ -102,16 +108,19 @@ class SigningPanel extends Component
 
     public string $newDeadline = '';
 
-    public function mount(?string $quoteId = null, ?int $agreementId = null): void
+    public function mount(?string $quoteId = null, ?int $agreementId = null, ?int $priceAgreementId = null): void
     {
         $this->quoteId = $quoteId;
         $this->agreementId = $agreementId;
+        $this->priceAgreementId = $priceAgreementId;
         $document = $this->document();
         abort_unless(Gate::allows('view', $document), 403);
 
-        $this->email = (string) ($document instanceof SalesDocument
-            ? ($document->sent_to ?? Customer::query()->whereKey($document->customer_id)->value('email'))
-            : Account::query()->whereKey($document->account_id)->value('email'));
+        $this->email = (string) match (true) {
+            $document instanceof SalesDocument => $document->sent_to ?? Customer::query()->whereKey($document->customer_id)->value('email'),
+            $document instanceof PriceAgreement => Customer::query()->whereKey($document->customer_id)->value('email'),
+            default => Account::query()->whereKey($document->account_id)->value('email'),
+        };
         $deals = $this->openDeals($document);
         $this->dealId = $deals->count() === 1 ? (string) $deals->first()?->id : '';
     }
@@ -119,8 +128,8 @@ class SigningPanel extends Component
     public function send(SendForSigning $send): void
     {
         $this->resetErrorBag();
-
-        $send($this->user(), $this->company(), $this->document(), [
+        $document = $this->document();
+        $input = [
             'email' => $this->email,
             'expires_on' => $this->expiresOn === '' ? null : $this->expiresOn,
             'auto_reminders' => $this->autoReminders,
@@ -129,8 +138,13 @@ class SigningPanel extends Component
             'create_invoice' => $this->createInvoice,
             'verification' => $this->verification,
             'access_code' => $this->accessCode,
-        ]);
+        ];
 
+        $document instanceof PriceAgreement
+            ? app(SendPriceAgreementForSigning::class)($this->user(), $this->company(), $document, $input)
+            : $send($this->user(), $this->company(), $document, $input);
+
+        $this->changed($document);
         $this->accessCode = '';
         $this->toast(__('Länken för signering är skickad till :email.', ['email' => $this->email]));
     }
@@ -185,8 +199,8 @@ class SigningPanel extends Component
     public function sendSeveral(SendForSigning $send): void
     {
         $this->resetErrorBag();
-
-        $send->envelope($this->user(), $this->company(), $this->document(), [
+        $document = $this->document();
+        $input = [
             'signers' => $this->signers,
             'copies' => $this->copies,
             'notify_copies' => $this->notifyCopies,
@@ -195,8 +209,13 @@ class SigningPanel extends Component
             'reminder_days' => $this->reminderDays,
             'deal_id' => $this->dealId === '' ? null : (int) $this->dealId,
             'create_invoice' => $this->createInvoice,
-        ]);
+        ];
 
+        $document instanceof PriceAgreement
+            ? app(SendPriceAgreementForSigning::class)->envelope($this->user(), $this->company(), $document, $input)
+            : $send->envelope($this->user(), $this->company(), $document, $input);
+
+        $this->changed($document);
         $this->several = false;
         $this->toast(__('Dokumentet är skickat för signering. Undertecknarna i första steget har fått sin länk; :count undertecknare totalt.', ['count' => count($this->signers)]));
         $this->signers = [];
@@ -290,6 +309,7 @@ class SigningPanel extends Component
 
         return view('livewire.signing.panel', [
             'isQuote' => $isQuote,
+            'isPriceAgreement' => $document instanceof PriceAgreement,
             'crm' => app(ModuleManager::class)->isEnabled(CrmModule::KEY, $this->company()),
             // Newest first; an envelope's signers together, in their order (step, then as added).
             'requests' => $this->requests()->with(['events', 'sender:id,name', 'envelope' => fn ($query) => $query->withCount('signers')->with('copies')])->latest('id')->limit(30)->get()
@@ -307,18 +327,20 @@ class SigningPanel extends Component
             'canSend' => $this->canSend($document),
             'wizardUrl' => $this->wizardUrl($document),
             'deals' => $this->openDeals($document),
-            'open' => $document->signingIsOpen() && ! ($isQuote && SignedDocuments::isQuoteSigned($document->id)),
+            'open' => $this->isOpen($document),
             'canInvoice' => $isQuote && $user->hasTeamPermission($this->company(), 'invoices:create'),
             'now' => now(),
             'chainCheck' => $this->chainCheck(),
         ]);
     }
 
-    private function document(): SalesDocument|Agreement
+    private function document(): SalesDocument|Agreement|PriceAgreement
     {
-        $document = $this->quoteId !== null
-            ? SalesDocument::query()->where('kind', SalesDocument::QUOTE)->findOrFail($this->quoteId)
-            : Agreement::query()->findOrFail((int) $this->agreementId);
+        $document = match (true) {
+            $this->quoteId !== null => SalesDocument::query()->where('kind', SalesDocument::QUOTE)->findOrFail($this->quoteId),
+            $this->priceAgreementId !== null => PriceAgreement::query()->findOrFail($this->priceAgreementId),
+            default => Agreement::query()->findOrFail((int) $this->agreementId),
+        };
 
         abort_unless(SendForSigning::moduleOn($document, $this->company()), 404);
 
@@ -346,9 +368,9 @@ class SigningPanel extends Component
     }
 
     /** @return Collection<int, Deal> */
-    private function openDeals(SalesDocument|Agreement $document): Collection
+    private function openDeals(SalesDocument|Agreement|PriceAgreement $document): Collection
     {
-        if (! app(ModuleManager::class)->isEnabled(CrmModule::KEY, $this->company())) {
+        if ($document instanceof PriceAgreement || ! app(ModuleManager::class)->isEnabled(CrmModule::KEY, $this->company())) {
             return collect();
         }
 
@@ -370,7 +392,8 @@ class SigningPanel extends Component
     {
         $company = $this->company();
 
-        if (! app(ModuleManager::class)->isEnabled('signing', $company) || ! $this->user()->hasTeamPermission($company, 'signing:send')) {
+        // The send wizard knows quotes and agreements in the register; a price agreement keeps the panel's own form.
+        if ($document instanceof PriceAgreement || ! app(ModuleManager::class)->isEnabled('signing', $company) || ! $this->user()->hasTeamPermission($company, 'signing:send')) {
             return null;
         }
 
@@ -385,7 +408,29 @@ class SigningPanel extends Component
             return false;
         }
 
-        return $document->signingIsOpen();
+        return $this->isOpen($document);
+    }
+
+    /**
+     * Whether the document can be sent: an open quote not yet signed, an
+     * agreement not yet signed, or a price agreement still a draft or
+     * awaiting its signature (sending freezes the draft).
+     */
+    private function isOpen(Signable $document): bool
+    {
+        if ($document instanceof PriceAgreement) {
+            return $document->status->isDraft() || $document->signingIsOpen();
+        }
+
+        return $document->signingIsOpen() && ! ($document instanceof SalesDocument && SignedDocuments::isQuoteSigned($document->id));
+    }
+
+    /** Tells the price agreement's page that its status has changed. */
+    private function changed(Signable $document): void
+    {
+        if ($document instanceof PriceAgreement) {
+            $this->dispatch('price-agreement-changed');
+        }
     }
 
     /**

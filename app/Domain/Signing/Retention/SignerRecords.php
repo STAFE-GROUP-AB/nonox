@@ -99,6 +99,7 @@ final class SignerRecords
             SigningRequest::QUOTE => __('Offert'),
             SigningRequest::AGREEMENT => __('Avtal'),
             'ATA' => __('ÄTA'),
+            'PRICE' => __('Prisavtal'),
             'DOCUMENT' => __('Dokument'),
             default => $type,
         };

@@ -11,6 +11,7 @@ use App\Http\Controllers\Signing\SigningCopyController;
 use App\Http\Controllers\Signing\SigningPageController;
 use App\Http\Middleware\WithoutAuditRequest;
 use App\Livewire\Signing\SigningPanel;
+use App\Models\PriceAgreement;
 use App\Models\SalesDocument;
 use App\Models\SigningRequest;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -38,6 +39,16 @@ class SigningServiceProvider extends ServiceProvider
             $types = new SignableTypes;
             $types->register(SigningRequest::QUOTE, 'sales_document_id', function (string $key, bool $lock): ?SalesDocument {
                 $query = SalesDocument::query()->where('kind', SalesDocument::QUOTE)->whereKey($key);
+
+                return ($lock ? $query->lockForUpdate() : $query)->first();
+            });
+            // Customer price agreements (ADR-082 P5): core, like the quote; keyed by id in the generic column.
+            $types->register(PriceAgreement::SIGNING_TYPE, SignableTypes::GENERIC_COLUMN, function (string $key, bool $lock): ?PriceAgreement {
+                if (! ctype_digit($key)) {
+                    return null;
+                }
+
+                $query = PriceAgreement::query()->whereKey((int) $key);
 
                 return ($lock ? $query->lockForUpdate() : $query)->first();
             });

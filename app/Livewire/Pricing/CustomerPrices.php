@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Pricing;
 
 use App\Actions\Pricing\AssignCustomerPrices;
+use App\Domain\Pricing\PriceAgreementStatus;
 use App\Domain\Pricing\PriceContext;
 use App\Domain\Pricing\PriceListKind;
 use App\Domain\Pricing\PriceRequest;
@@ -14,6 +15,7 @@ use App\Models\Article;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\CustomerPriceGroup;
+use App\Models\PriceAgreement;
 use App\Models\PriceList;
 use App\Models\PriceListItem;
 use App\Models\User;
@@ -108,6 +110,16 @@ class CustomerPrices extends Component
             'lists' => PriceList::query()->where('kind', PriceListKind::Standard->value)->where(fn ($query) => $query->where('currency', $customer->currency)->orWhere('id', $customer->price_list_id))->where(fn ($query) => $query->whereNull('archived_at')->orWhere('id', $customer->price_list_id))->orderBy('code')->get(['id', 'code', 'name', 'currency']),
             'canManage' => $this->user()->can('create', [PriceList::class, $this->company()]),
             'currency' => $context->currency,
+            // The customer's price agreements that apply now or are on their way (ADR-082 P5).
+            'agreements' => PriceAgreement::query()
+                ->where('customer_id', $customer->id)
+                ->where(fn ($query) => $query
+                    ->whereIn('status', [PriceAgreementStatus::Draft->value, PriceAgreementStatus::AwaitingSignature->value, PriceAgreementStatus::Active->value])
+                    ->orWhere(fn ($ending) => $ending->where('status', PriceAgreementStatus::Terminated->value)->where('terminated_on', '>=', CarbonImmutable::today()->toDateString())))
+                ->orderBy('valid_from')
+                ->orderBy('number')
+                ->get(),
+            'canManageAgreements' => $this->user()->can('create', [PriceAgreement::class, $this->company()]),
         ]);
     }
 

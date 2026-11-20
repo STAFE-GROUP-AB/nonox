@@ -88,8 +88,9 @@ it('uses a fixed number of queries', function () {
     // and Momsbufferten's fiscal-year lookup (it reads the balances only when a year has begun), and one lookup of the
     // waiting-list entry that let the user in (PersonalChecklist, ADR-038 addendum), and the menu's one check whether any shared
     // group mentions the user's companies (ADR-081 E22), and the role fingerprint of the lazy report tiles component (ADR-081 E18):
-    // one, however many reports are pinned, as the tiles load in a request of their own.
-    expect($cold)->toBeLessThan(53)
+    // one, however many reports are pinned, as the tiles load in a request of their own; and one for price agreements that run out
+    // within 30 days (PriceAgreementTodos, ADR-082 P5), whatever their number.
+    expect($cold)->toBeLessThan(54)
         ->and($warm)->toBeLessThan(20);
 });
 

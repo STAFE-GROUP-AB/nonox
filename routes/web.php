@@ -39,6 +39,7 @@ use App\Http\Controllers\MigrationGuideController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Payables\PaymentBatchFileController;
 use App\Http\Controllers\Payables\SupplierInvoiceController;
+use App\Http\Controllers\Pricing\PriceAgreementPdfController;
 use App\Http\Controllers\Projects\ProjectController;
 use App\Http\Controllers\RoadmapController;
 use App\Http\Controllers\RunMigrationsController;
@@ -57,6 +58,7 @@ use App\Http\Controllers\WaitlistController;
 use App\Http\Controllers\WaitlistUnsubscribeController;
 use App\Http\Middleware\EnsureHqAdmin;
 use App\Http\Middleware\EnsureUserHasCompany;
+use App\Models\PriceAgreement;
 use App\Models\PriceList;
 use App\Models\SalesDocument;
 use App\Support\Developer\Guides;
@@ -310,6 +312,10 @@ Route::middleware([
         Route::view('/prislistor', 'pricing.lists')->name('pricing.lists');
         Route::view('/prislistor/grupper', 'pricing.groups')->name('pricing.groups');
         Route::get('/prislistor/{priceList}', fn (PriceList $priceList) => view('pricing.list', ['priceList' => $priceList]))->whereNumber('priceList')->name('pricing.lists.show');
+        // Customer price agreements (ADR-082 P5); bound within the company, so another company's agreement is a 404.
+        Route::view('/prisavtal', 'pricing.agreements')->name('pricing.agreements');
+        Route::get('/prisavtal/{priceAgreement}', fn (PriceAgreement $priceAgreement) => view('pricing.agreement', ['priceAgreement' => $priceAgreement]))->whereNumber('priceAgreement')->name('pricing.agreements.show');
+        Route::get('/prisavtal/{priceAgreement}/pdf', PriceAgreementPdfController::class)->whereNumber('priceAgreement')->name('pricing.agreements.pdf');
 
         Route::view('/rapporter', 'accounting.reports')->name('accounting.reports');
         Route::view('/reskontra', 'accounting.ledgers')->name('accounting.ledgers');
