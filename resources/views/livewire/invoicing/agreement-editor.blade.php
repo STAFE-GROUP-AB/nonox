@@ -103,6 +103,9 @@
                         </span>
                     </label>
                 </div>
+                @if($agreement !== null && $priceMode === 'FOLLOW_PRICES' && $agreement->price_mode->value !== 'FOLLOW_PRICES')
+                    <p class="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status" data-price-mode-notice>{{ __('Du byter till Följ prislistan. Rader du låter vara, och rader där du tömmer À-pris, följer prislistan från nästa faktura. Rader där du skriver ett nytt pris i den här ändringen behåller det priset.') }}</p>
+                @endif
                 <x-input-error for="price_mode" class="mt-1" />
             </fieldset>
         </div>

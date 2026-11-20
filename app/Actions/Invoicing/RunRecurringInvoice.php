@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace App\Actions\Invoicing;
 
+use App\Actions\Tasks\SaveTask;
 use App\Domain\Invoicing\AgreementStatus;
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Pricing\PriceChannel;
 use App\Domain\Pricing\PriceSource;
 use App\Domain\Pricing\RecurringPriceMode;
+use App\Domain\Tasks\TaskPriority;
+use App\Domain\Tasks\TaskType;
 use App\Events\RecurringInvoiceStatusChanged;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceRow;
+use App\Models\Task;
 use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Peppol\Actions\SendInvoiceViaPeppol;
@@ -22,6 +26,7 @@ use App\Modules\Peppol\PeppolModule;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -75,8 +80,8 @@ class RunRecurringInvoice
             ]);
             $invoice->forceFill(['recurring_invoice_id' => $agreement->id])->save();
 
-            // A followed article that comes out at 0 kr is not sent by itself: the draft waits for a person (audited).
-            $held = $follows && $invoice->rows()->whereNotNull('article_id')->where('unit_price_ore', 0)->exists();
+            // A followed article row that comes out at 0 kr (no price, or a 100 % discount) is not sent by itself: the draft waits for a person (audited).
+            $held = $follows && $invoice->rows()->whereNotNull('article_id')->where('net_ore', 0)->exists();
 
             if ($follows) {
                 $this->showLastRun($agreement, $agreementRows, $invoice);
@@ -95,6 +100,10 @@ class RunRecurringInvoice
 
             if ($held) {
                 Audit::record('agreement.held_as_draft', $agreement, ['number' => $agreement->number, 'invoice_id' => $invoice->id, 'reason' => 'zero_price', 'send_automatically' => $agreement->send_automatically], $company, $user);
+
+                if ($agreement->send_automatically) {
+                    $this->warn($user, $company, $agreement, $invoice);
+                }
             }
 
             if ($agreement->send_automatically && ! $held) {
@@ -128,6 +137,33 @@ class RunRecurringInvoice
         }
 
         return $invoice;
+    }
+
+    /**
+     * The held draft shows up under "Att göra" on the Översikt as a task for the
+     * person who made the agreement (ADR-028), once per draft. Without the right
+     * to make tasks the draft and the audit entry remain.
+     */
+    private function warn(User $user, Company $company, RecurringInvoice $agreement, Invoice $invoice): void
+    {
+        $exists = Task::query()->where('subject_type', 'invoice')->where('subject_id', (string) $invoice->id)->open()->exists();
+
+        if ($exists) {
+            return;
+        }
+
+        try {
+            app(SaveTask::class)($user, $company, [
+                'title' => __('Kontrollera fakturautkastet från avtal :number: en rad blev 0 kr', ['number' => $agreement->number]),
+                'type' => TaskType::Invoices->value,
+                'priority' => TaskPriority::High->value,
+                'assignee_id' => $user->id,
+                'subject_type' => 'invoice',
+                'subject_id' => (string) $invoice->id,
+            ]);
+        } catch (AuthorizationException) {
+            // The audit entry and the draft itself remain.
+        }
     }
 
     /**

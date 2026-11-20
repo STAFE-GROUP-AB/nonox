@@ -45,6 +45,7 @@ class RunAgreementsCommand extends Command
 
         $made = 0;
         $failed = 0;
+        $held = 0;
 
         foreach ($agreements as $agreement) {
             $this->line("Avtal {$agreement->number} (företag {$agreement->company_id})...");
@@ -65,6 +66,11 @@ class RunAgreementsCommand extends Command
                     $invoice = $run($creator, $current, $today);
                     $made++;
                     $this->info("  Faktura skapad för {$invoice->invoice_date->toDateString()}.");
+
+                    if ($current->send_automatically && $invoice->isDraft()) {
+                        $held++;
+                        $this->warn('  Fakturan sparades som utkast, inte skickad: en artikelrad blev 0 kr. Kontrollera utkastet.');
+                    }
                 } catch (Throwable $exception) {
                     $failed++;
                     $this->error("  Kunde inte fakturera: {$exception->getMessage()}");
@@ -74,7 +80,7 @@ class RunAgreementsCommand extends Command
             }
         }
 
-        $this->comment("{$made} fakturor skapade, {$failed} avtal kunde inte faktureras.");
+        $this->comment("{$made} fakturor skapade, {$held} hölls som utkast, {$failed} avtal kunde inte faktureras.");
 
         return $failed === 0 ? self::SUCCESS : self::FAILURE;
     }

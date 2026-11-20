@@ -18,6 +18,7 @@ use App\Models\Customer;
 use App\Models\InvoiceRow;
 use App\Models\PriceListItem;
 use App\Models\RecurringInvoice;
+use App\Models\Task;
 use App\Modules\Crm\Actions\CreateQuoteFromTemplate;
 use App\Modules\Crm\Actions\SaveQuoteTemplate;
 use App\Modules\Inventory\Labels\LabelData;
@@ -482,4 +483,92 @@ it('carries a work-order material price and its source onto the invoice row', fu
     $row = $invoice->rows()->where('description', '!=', '')->get()->first(fn ($r) => $r->article_id !== null);
 
     expect($row?->unit_price_ore->ore)->toBe(8000)->and($row?->price_source)->toBe(PriceSource::CustomerList);
+});
+
+it('keeps a following row that has not run yet as following when the agreement is saved again', function () {
+    $world = vipWorld($this);
+    $agreement = agreementFor($this, $world->customer, [articleRow('A2', '1', '50,00')], 'FOLLOW_PRICES');
+    Article::query()->where('number', 'A2')->update(['price_ore' => 5500]);
+
+    $saved = app(SaveRecurringInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $world->customer->id, 'name' => 'Bara nytt namn', 'interval_months' => 1, 'next_invoice_date' => '2026-06-15',
+        'rows' => [articleRow('A2', '1', '50,00')],
+    ], $agreement);
+
+    expect($saved->rows()->sole()->price_source)->toBeNull();
+
+    // A list price that turns up later is then shown after a run and kept through another save.
+    $invoice = app(RunRecurringInvoice::class)($this->owner, $saved->fresh(), CarbonImmutable::today());
+    $row = $saved->fresh()->rows()->sole();
+
+    expect($invoice->rows()->sole()->unit_price_ore->ore)->toBe(4000)
+        ->and($row->price_source)->toBe(PriceSource::CustomerList);
+
+    $again = app(SaveRecurringInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $world->customer->id, 'name' => 'Igen', 'interval_months' => 1, 'next_invoice_date' => '2026-07-15',
+        'rows' => [[...articleRow('A2', '1', '40,00'), 'price_source' => 'CUSTOMER_LIST']],
+    ], $saved->fresh());
+
+    expect($again->rows()->sole()->price_source)->toBe(PriceSource::CustomerList);
+});
+
+it('makes the unchanged rows follow when an agreement is switched from fixed prices', function () {
+    $world = vipWorld($this);
+    Article::query()->where('number', 'A1')->update(['price_ore' => 12000]);
+    $agreement = agreementFor($this, $world->customer, [articleRow('A1', '1', '100,00')], 'FIXED');
+
+    $switched = app(SaveRecurringInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $world->customer->id, 'name' => 'Byter', 'interval_months' => 1, 'next_invoice_date' => '2026-06-15',
+        'price_mode' => 'FOLLOW_PRICES', 'rows' => [articleRow('A1', '1', '100,00')],
+    ], $agreement);
+    $invoice = app(RunRecurringInvoice::class)($this->owner, $switched->fresh(), CarbonImmutable::today());
+
+    expect($invoice->rows()->sole()->unit_price_ore->ore)->toBe(8000);
+
+    // A row whose price is changed in the same edit keeps the typed price.
+    $fixed = agreementFor($this, $world->customer, [articleRow('A1', '1', '100,00')], 'FIXED');
+    $typed = app(SaveRecurringInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $world->customer->id, 'name' => 'Byter med pris', 'interval_months' => 1, 'next_invoice_date' => '2026-06-15',
+        'price_mode' => 'FOLLOW_PRICES', 'rows' => [articleRow('A1', '1', '95,00')],
+    ], $fixed);
+
+    expect($typed->rows()->sole()->price_source)->toBe(PriceSource::Manual);
+
+    Livewire::test(AgreementEditor::class, ['agreement' => agreementFor($this, $world->customer, [articleRow('A1', '1', '100,00')], 'FIXED')])
+        ->set('priceMode', 'FOLLOW_PRICES')
+        ->assertSee('Du byter till Följ prislistan');
+});
+
+it('makes a held draft visible as a task, once, also for a 100 % discount', function () {
+    $world = vipWorld($this);
+    $customer = $world->customer;
+    $customer->forceFill(['email' => 'kund@example.test'])->save();
+    $agreement = app(SaveRecurringInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $customer->id, 'name' => 'Rabatt', 'interval_months' => 1, 'next_invoice_date' => '2026-06-15',
+        'price_mode' => 'FOLLOW_PRICES', 'send_automatically' => true,
+        'rows' => [['article' => 'A1', 'description' => 'Artikel A1', 'quantity' => '1', 'price' => '', 'discount' => '100', 'vat_rate' => 2500]],
+    ]);
+
+    $invoice = app(RunRecurringInvoice::class)($this->owner, $agreement, CarbonImmutable::today());
+    $task = Task::query()->where('subject_type', 'invoice')->sole();
+
+    expect($invoice->isDraft())->toBeTrue()
+        ->and($task->subject_id)->toBe((string) $invoice->id)
+        ->and($task->assignee_id)->toBe($this->owner->id)
+        ->and($task->title)->toContain((string) $agreement->number);
+});
+
+it('warns in the daily run for every draft held back, and counts it', function () {
+    $world = vipWorld($this);
+    $world->customer->forceFill(['email' => 'kund@example.test'])->save();
+    app(SaveRecurringInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $world->customer->id, 'name' => 'Noll', 'interval_months' => 1, 'next_invoice_date' => '2026-06-15',
+        'price_mode' => 'FOLLOW_PRICES', 'send_automatically' => true,
+        'rows' => [['article' => 'A1', 'description' => 'Artikel A1', 'quantity' => '1', 'price' => '', 'discount' => '100', 'vat_rate' => 2500]],
+    ]);
+
+    $this->artisan('invoices:run-agreements')
+        ->expectsOutputToContain('en artikelrad blev 0 kr')
+        ->expectsOutputToContain('1 hölls som utkast')
+        ->assertSuccessful();
 });

@@ -153,7 +153,9 @@ class SaveRecurringInvoice
      * price a person typed is MANUAL and is never re-priced by a run. A
      * price equal to the article's base price, or left empty, is not typed
      * by hand and follows the lists; a price equal to a stored row's keeps
-     * that row's source (the last run's price shown on the agreement).
+     * that row's source, none included (a row that has not run yet, or one saved
+     * while the agreement had fixed prices, so switching to FOLLOW_PRICES makes
+     * the unchanged rows follow), and a changed price is MANUAL.
      *
      * @param  list<array<string, mixed>>  $rows  parsed rows
      * @param  list<array<string, mixed>>  $input  the rows as sent, in the same order
@@ -177,10 +179,10 @@ class SaveRecurringInvoice
 
             $price = (int) $row['unit_price_ore'];
             $typedManual = ($input[$index]['price_source'] ?? '') === PriceSource::Manual->value;
-            $same = $stored->first(fn (RecurringInvoiceRow $old): bool => $old->article_id === $row['article_id'] && $old->unit_price_ore->ore === $price && $old->price_source !== null);
+            $same = $stored->first(fn (RecurringInvoiceRow $old): bool => $old->article_id === $row['article_id'] && $old->unit_price_ore->ore === $price);
 
             if ($same !== null && ($same->price_source === PriceSource::Manual || ! $typedManual)) {
-                $rows[$index] = [...$row, 'price_source' => $same->price_source->value, 'price_explanation' => $same->price_explanation];
+                $rows[$index] = [...$row, 'price_source' => $same->price_source?->value, 'price_explanation' => $same->price_explanation];
 
                 continue;
             }
