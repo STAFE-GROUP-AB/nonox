@@ -15,7 +15,7 @@
             @foreach($documents as $document)
                 <li class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                     <a href="{{ route('portal.quotes.show', ['portalKey' => $key, 'document' => $document->id]) }}" class="font-semibold underline underline-offset-2">{{ $document->title() }}</a>
-                    <span class="text-sm text-gray-700 tabular-nums">{{ $document->document_date->toDateString() }} · {{ $document->total_ore->format() }} · {{ $document->status->label() }}</span>
+                    <span class="text-sm text-gray-700 tabular-nums">{{ $document->document_date->toDateString() }} · {{ App\Support\Money\Money::ofOre($document->total_ore->ore, $document->currency)->format() }} · {{ $document->status->label() }}</span>
                 </li>
             @endforeach
         </ul>

@@ -101,7 +101,7 @@ För en kund väljer NONOX priset i den här ordningen, och det första som pass
 Saknas priset i kundens valuta räknas grundpriset om med Riksbankens kurs för dagen, och raden får en varning om att priset är omräknat.
 
 > [!NOTE]
-> I den här versionen visar kundens och artikelns flik Priser vad listorna ger. Att fakturor och offerter fyller i priset ur listorna kommer i nästa steg, och ett pris på en faktura som redan är utfärdad ändras aldrig av att en prislista ändras.
+> Fakturor, offerter och order fyller i kundens pris ur listorna när du väljer en artikel, och visar varifrån priset kommer. Läs [Priser på fakturor, offerter och order](/manual/fakturering/priser-pa-raderna). Ett pris på en faktura som redan är utfärdad ändras aldrig av att en prislista ändras.
 
 ## Bra att veta
 

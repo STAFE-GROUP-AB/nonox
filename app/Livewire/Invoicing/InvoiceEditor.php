@@ -7,11 +7,13 @@ namespace App\Livewire\Invoicing;
 use App\Actions\Approval\SubmitForApproval;
 use App\Actions\Invoicing\IssueInvoice;
 use App\Actions\Invoicing\SaveDraftInvoice;
+use App\Actions\Invoicing\SaveSalesDocument;
 use App\Domain\Approval\ApprovalRequired;
 use App\Domain\Approval\ApprovalSubjectType;
 use App\Domain\Approval\DraftApprovalStatus;
 use App\Domain\Invoicing\ForeignSale;
 use App\Domain\Invoicing\SalesRowInput;
+use App\Domain\Pricing\PriceContext;
 use App\Domain\Vat\OssThreshold;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Livewire\Invoicing\Concerns\EditsSalesRows;
@@ -77,7 +79,7 @@ class InvoiceEditor extends Component
     public string $workDescription = '';
 
     /** The currencies offered in the form; Riksbanken publishes rates for all of them. Another code can be typed. */
-    public const array CURRENCIES = ['SEK', 'EUR', 'USD', 'GBP', 'NOK', 'DKK', 'CHF'];
+    public const array CURRENCIES = SaveSalesDocument::CURRENCIES;
 
     /** ISO 4217. In another currency the prices are written in it and booked in kronor at $exchangeRate. */
     public string $currency = 'SEK';
@@ -93,7 +95,7 @@ class InvoiceEditor extends Component
         if ($invoice instanceof Invoice) {
             abort_unless(Gate::allows('update', $invoice), 403);
 
-            $invoice->load(['rows.account', 'rows.costCenter', 'rows.project']);
+            $invoice->load(['rows.account', 'rows.costCenter', 'rows.project', 'rows.article:id,number']);
             $this->invoiceId = $invoice->id;
             $this->credit = $invoice->isCredit();
             $this->customerId = (string) $invoice->customer_id;
@@ -193,7 +195,15 @@ class InvoiceEditor extends Component
             return;
         }
 
+        // The rows come back as saved: with the prices and sources the server decided (ADR-082 P3).
+        $this->rows = $this->rowsFrom($invoice->load(['rows.account', 'rows.costCenter', 'rows.project', 'rows.article:id,number'])->rows);
         $this->toast(__('Utkastet är sparat.'));
+    }
+
+    /** Article rows are priced for the customer on the invoice date in the invoice's currency; a credit invoice is not priced. */
+    protected function pricingContext(): ?PriceContext
+    {
+        return $this->credit ? null : $this->makePricingContext($this->customerId, $this->invoiceDate, $this->currency);
     }
 
     public function issue(SaveDraftInvoice $save, IssueInvoice $issue): void

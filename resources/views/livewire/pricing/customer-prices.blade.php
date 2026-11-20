@@ -39,7 +39,7 @@
         </form>
     </x-ui.card>
 
-    <x-ui.card :title="__('Kundens pris idag')" :description="__('Så här prissätts en vara i :currency till kunden i dag, vid antal 1. Fakturor och offerter hämtar priserna ur listorna i nästa steg.', ['currency' => $currency])">
+    <x-ui.card :title="__('Kundens pris idag')" :description="__('Så här prissätts en vara i :currency till kunden i dag, vid antal 1. Fakturor, offerter och order får samma pris när artikeln väljs.', ['currency' => $currency])">
         <input type="search" class="{{ $input }} max-w-xs" wire:model.live.debounce.300ms="search" placeholder="{{ __('Sök artikel') }}" aria-label="{{ __('Sök artikel') }}">
 
         @if($articles->isEmpty())

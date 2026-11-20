@@ -43,7 +43,7 @@
                             <td class="order-2 col-span-2 sm:py-2 sm:pr-4">{{ $document->customer?->name }}</td>
                             <td class="order-3 text-gray-600 tabular-nums sm:py-2 sm:pr-4 sm:text-inherit">{{ $document->document_date->toDateString() }}</td>
                             <td class="order-5 text-gray-600 tabular-nums sm:py-2 sm:pr-4 sm:text-inherit">@if($document->until_date)<span class="text-xs sm:hidden">{{ $isQuote ? __('Giltig till') : __('Leverans') }} </span>{{ $document->until_date->toDateString() }}@endif</td>
-                            <td class="order-4 text-right sm:py-2 sm:pr-4"><x-ui.amount :money="$document->total_ore" /></td>
+                            <td class="order-4 text-right sm:py-2 sm:pr-4"><x-ui.amount :money="App\Support\Money\Money::ofOre($document->total_ore->ore, $document->currency)" /></td>
                             <td class="order-1 text-right sm:py-2 sm:text-left"><x-ui.badge>{{ $document->status->label() }}</x-ui.badge></td>
                         </tr>
                     @endforeach

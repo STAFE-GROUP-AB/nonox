@@ -19,7 +19,11 @@ final class QuoteFingerprint
     {
         $quote->loadMissing('rows');
 
+        // A quote in another currency (ADR-082 decision 13) says so; a SEK quote's fingerprint is as before.
+        $currency = $quote->currency !== 'SEK' ? ['currency' => $quote->currency] : [];
+
         $content = [
+            ...$currency,
             'id' => $quote->id,
             'number' => $quote->number,
             'customer_id' => $quote->customer_id,

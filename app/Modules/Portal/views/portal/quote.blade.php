@@ -2,7 +2,8 @@
 
 @php
     $key = app(App\Modules\Portal\Support\PortalContext::class)->key();
-    $kr = fn (int $ore): string => App\Support\Money\Money::ofOre($ore)->format();
+    // In the quote's own currency (ADR-082 decision 13).
+    $kr = fn (int $ore): string => App\Support\Money\Money::ofOre($ore, $document->currency)->format();
     $qty = fn (string $quantity): string => rtrim(rtrim(str_replace('.', ',', $quantity), '0'), ',');
     $input = 'mt-1 block w-full rounded-lg border-gray-300 shadow-xs focus:border-gray-900 focus:ring-gray-900';
 @endphp
@@ -39,7 +40,7 @@
                 @endforeach
             </tbody>
         </table>
-        <p class="mt-4 text-right font-semibold tabular-nums">{{ __('Summa :amount', ['amount' => $document->total_ore->format()]) }}</p>
+        <p class="mt-4 text-right font-semibold tabular-nums">{{ __('Summa :amount', ['amount' => $kr($document->total_ore->ore)]) }}</p>
         @if($document->notes)
             <p class="mt-4 whitespace-pre-line text-sm text-gray-700">{{ $document->notes }}</p>
         @endif

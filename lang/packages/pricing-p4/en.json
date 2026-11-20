@@ -177,6 +177,6 @@
     "Rabatt på ordinarie pris": "Discount on the ordinary price",
     "Ordinarie pris är standardlistans pris för valutan, annars artikelns grundpris. En lista som följer en annan lista tar den listans pris.": "The ordinary price is the default list's price for the currency, otherwise the article's base price. A list that follows another list takes that list's price.",
     "Avsluta priset? Det började gälla i dag, så det arkiveras och finns kvar i historiken under Avslutade.": "End the price? It started to apply today, so it is archived and stays in the history under Ended.",
-    "Så här prissätts en vara i :currency till kunden i dag, vid antal 1. Fakturor och offerter hämtar priserna ur listorna i nästa steg.": "This is how an article is priced in :currency for the customer today, at quantity 1. Invoices and quotes get their prices from the lists in the next step.",
+    "Så här prissätts en vara i :currency till kunden i dag, vid antal 1. Fakturor, offerter och order får samma pris när artikeln väljs.": "This is how an article is priced in :currency for the customer today, at quantity 1. Invoices, quotes and orders get the same price when the article is picked.",
     "Kundens eller gruppens prislista": "The customer's or the group's price list"
 }

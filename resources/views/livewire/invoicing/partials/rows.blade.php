@@ -5,6 +5,9 @@
     The server calculates everything again when the document is saved.
     The unit is chosen from the company's unit register (ADR-071 §12.9).
     Cost centre and project (ADR-081 gap 6) show when the company has any.
+    Prices (ADR-082 P3): an editor that prices its rows gives the browser a
+    price table; each article row shows where its price came from, "Varför
+    detta pris?" explains it, and "Uppdatera priser" shows a diff first.
 --}}
 @php
     $cell = 'w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-md text-sm max-lg:min-h-11';
@@ -24,13 +27,15 @@
         'project' => (string) $article->defaultProject?->code,
     ]]);
     $dimensions = $rowDimensions ?? ['show' => false, 'costCenters' => [], 'projects' => [], 'customers' => []];
+    $pricing ??= ['enabled' => false, 'markers' => false, 'canExplain' => false, 'labels' => [], 'warnings' => []];
+    $pricingData = [...$pricing, 'watch' => $priceWatch ?? []];
     $dimensionData = [
         'projectCostCenters' => collect($dimensions['projects'])->map(fn (array $project): string => $project['cost_center'])->all(),
         'customers' => $dimensions['customers'],
     ];
 @endphp
 
-<div x-data="salesRows($wire.entangle('rows'), @js($articleMap), @js($negative), {{ isset($reverseCharge) ? "() => \$wire.reverseCharge || (\$wire.foreignSale !== '' && \$wire.foreignSale !== 'EU_CONSUMER_OSS')" : 'false' }}, {{ isset($withCurrency) ? '() => $wire.currency' : "() => 'SEK'" }}, @js($vatRules ?? []), @js((string) $defaultUnitId), @js($dimensionData), {{ isset($withCustomer) ? '() => $wire.customerId' : "() => ''" }})">
+<div x-data="salesRows($wire.entangle('rows'), @js($articleMap), @js($negative), {{ isset($reverseCharge) ? "() => \$wire.reverseCharge || (\$wire.foreignSale !== '' && \$wire.foreignSale !== 'EU_CONSUMER_OSS')" : 'false' }}, {{ isset($withCurrency) ? '() => $wire.currency' : "() => 'SEK'" }}, @js($vatRules ?? []), @js((string) $defaultUnitId), @js($dimensionData), {{ isset($withCustomer) ? '() => $wire.customerId' : "() => ''" }}, @js($pricingData))">
     <datalist id="article-options">
         @foreach($articles as $article)
             <option value="{{ $article->number }}">{{ $article->name }}</option>
@@ -62,7 +67,7 @@
                         <tr class="{{ $row }}">
                             <td class="{{ $field }} col-span-6 pr-10 sm:col-span-2 sm:pr-0">
                                 <span class="{{ $label }}" aria-hidden="true">{{ __('Artikel') }}</span>
-                                <input type="text" list="article-options" class="{{ $cell }}" x-model="row.article" x-on:change="fillArticle(index)" x-on:blur="fillArticle(index)" data-row-article :aria-label="'{{ __('Artikel, rad') }} ' + (index + 1)" autocomplete="off">
+                                <input type="text" list="article-options" class="{{ $cell }}" x-model="row.article" x-on:focus="rememberArticle(index)" x-on:change="fillArticle(index)" x-on:blur="fillArticle(index)" data-row-article :aria-label="'{{ __('Artikel, rad') }} ' + (index + 1)" autocomplete="off">
                             </td>
                             <td class="{{ $field }} col-span-6 sm:col-span-4 sm:pr-10 lg:min-w-56">
                                 <span class="{{ $label }}" aria-hidden="true">{{ __('Benämning') }}</span>
@@ -93,11 +98,11 @@
                             </td>
                             <td class="{{ $field }} col-span-3 sm:col-span-2">
                                 <span class="{{ $label }}" aria-hidden="true">{{ __('Antal') }}</span>
-                                <input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" x-model="row.quantity" :aria-label="'{{ __('Antal, rad') }} ' + (index + 1)">
+                                <input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" x-model="row.quantity" x-on:change="repriceRow(index)" :aria-label="'{{ __('Antal, rad') }} ' + (index + 1)">
                             </td>
                             <td class="{{ $field }} col-span-3 sm:col-span-2">
                                 <span class="{{ $label }}" aria-hidden="true">{{ __('Enhet') }}</span>
-                                <select class="{{ $cell }}" x-model="row.unit_id" :aria-label="'{{ __('Enhet, rad') }} ' + (index + 1)">
+                                <select class="{{ $cell }}" x-model="row.unit_id" x-on:change="repriceRow(index)" :aria-label="'{{ __('Enhet, rad') }} ' + (index + 1)">
                                     @foreach($units as $unit)
                                         <option value="{{ $unit->id }}">{{ $unit->code }}{{ $unit->isArchived() ? ' ('.__('arkiverad').')' : '' }}</option>
                                     @endforeach
@@ -105,7 +110,22 @@
                             </td>
                             <td class="{{ $field }} col-span-3 sm:col-span-2">
                                 <span class="{{ $label }}" aria-hidden="true">{{ __('À-pris') }}</span>
-                                <input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" x-model="row.price" :aria-label="'{{ __('Pris, rad') }} ' + (index + 1)">
+                                <input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" x-model="row.price" x-on:input="markManual(index)" :aria-label="'{{ __('Pris, rad') }} ' + (index + 1)">
+                                @if($pricing['enabled'])
+                                    {{-- Where the price came from (ADR-082 P3): a marker that opens "Varför detta pris?". --}}
+                                    <div class="mt-1 flex flex-wrap justify-end gap-1" x-show="row.article && ((markers && sourceLabel(row.price_source) !== '') || row.price === '' || priceWarnings(row).length > 0)" x-cloak>
+                                        <template x-if="markers && sourceLabel(row.price_source) !== '' && canExplain">
+                                            <button type="button" data-price-marker :data-price-source="row.price_source" class="rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset" :class="row.price_source === 'MANUAL' ? 'bg-gray-50 text-gray-700 ring-gray-300' : 'bg-accent-50 text-accent-800 ring-accent-200'" x-text="sourceLabel(row.price_source)" x-on:click="explain(index, $el)" title="{{ __('Varför detta pris?') }}" :aria-label="sourceLabel(row.price_source) + '. ' + @js(__('Varför detta pris? Rad')) + ' ' + (index + 1)"></button>
+                                        </template>
+                                        <template x-if="markers && sourceLabel(row.price_source) !== '' && ! canExplain">
+                                            <span data-price-marker :data-price-source="row.price_source" class="rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset bg-gray-50 text-gray-700 ring-gray-300" x-text="sourceLabel(row.price_source)"></span>
+                                        </template>
+                                        <p class="w-full text-right text-xs text-gray-500" x-show="row.price === ''">{{ __('Priset hämtas när du sparar.') }}</p>
+                                        <template x-for="warning in priceWarnings(row)" :key="warning">
+                                            <p class="w-full text-right text-xs text-amber-800" data-price-warning x-text="warningText(warning)"></p>
+                                        </template>
+                                    </div>
+                                @endif
                             </td>
                             <td class="{{ $field }} col-span-3 sm:col-span-2">
                                 <span class="{{ $label }}" aria-hidden="true">{{ __('Rabatt %') }}</span>
@@ -149,10 +169,81 @@
         </div>
         <div class="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
             <button type="button" class="inline-flex min-h-11 items-center text-sm font-medium text-accent-600 hover:text-accent-700 lg:inline lg:min-h-0" x-on:click="addRow()">+ {{ __('Lägg till rad') }}</button>
+            @if($pricing['enabled'])
+                <button type="button" class="inline-flex min-h-11 items-center text-sm font-medium text-accent-600 hover:text-accent-700 lg:inline lg:min-h-0" wire:click="previewPrices" x-on:click="rememberFocus($el)" wire:loading.attr="disabled" data-update-prices>{{ __('Uppdatera priser') }}</button>
+            @endif
             @if($canManageUnits)
                 <a href="{{ route('invoicing.units') }}" class="text-sm font-medium text-accent-700 underline">{{ __('Hantera enheter') }}</a>
             @endif
         </div>
+
+        @if($pricing['enabled'])
+            <div class="mt-3 rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-800" role="status" x-show="pricesStale" x-cloak>
+                {{ __('Kund, datum eller valuta har ändrats. Priserna på raderna ändras inte av sig själva.') }}
+                <button type="button" class="ml-1 font-medium text-accent-700 underline" wire:click="previewPrices" x-on:click="pricesStale = false; rememberFocus($el)">{{ __('Uppdatera priser') }}</button>
+            </div>
+        @endif
+
+        @if(($priceDiff ?? null) !== null)
+            {{-- "Uppdatera priser" shows what would change before anything changes (ADR-082 §6). --}}
+            <div class="mt-4 rounded-xl p-4 ring-1 ring-accent-200" role="region" aria-labelledby="price-diff-title" tabindex="-1" x-init="$nextTick(() => $el.focus())" data-price-diff>
+                <h3 id="price-diff-title" class="text-sm font-semibold text-gray-900">{{ __('Dagens priser') }}</h3>
+                <p class="mt-1 text-sm text-gray-600">{{ __('De här raderna får ett nytt pris. Priser som är skrivna för hand ändras inte.') }}</p>
+                <div class="mt-3 overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-gray-500">
+                                <th class="pb-1 pr-3 font-medium">{{ __('Rad') }}</th>
+                                <th class="pb-1 pr-3 font-medium">{{ __('Benämning') }}</th>
+                                <th class="pb-1 pr-3 text-right font-medium">{{ __('Nu') }}</th>
+                                <th class="pb-1 pr-3 text-right font-medium">{{ __('Nytt pris') }}</th>
+                                <th class="pb-1 font-medium">{{ __('Skäl') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($priceDiff as $change)
+                                <tr class="border-t border-gray-100">
+                                    <td class="py-1 pr-3 tabular-nums">{{ $change['line'] }}</td>
+                                    <td class="py-1 pr-3">{{ $change['description'] }}</td>
+                                    <td class="py-1 pr-3 text-right tabular-nums whitespace-nowrap">{{ $change['old'] }}</td>
+                                    <td class="py-1 pr-3 text-right font-semibold tabular-nums whitespace-nowrap">{{ $change['new'] }}</td>
+                                    <td class="py-1">{{ $change['source'] }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3 flex flex-wrap items-center gap-3">
+                    <x-button type="button" wire:click="applyPrices" x-on:click="returnFocusSoon()" wire:loading.attr="disabled">{{ count($priceDiff) === 1 ? __('Använd det nya priset') : __('Använd de :count nya priserna', ['count' => count($priceDiff)]) }}</x-button>
+                    <button type="button" class="text-sm text-gray-600 underline" wire:click="cancelPriceUpdate" x-on:click="returnFocusSoon()">{{ __('Avbryt') }}</button>
+                </div>
+            </div>
+        @endif
+
+        @if(($priceExplanation ?? null) !== null)
+            {{-- "Varför detta pris?": the row's explanation, names looked up when shown (ADR-082 §5). --}}
+            <div class="mt-4 rounded-xl p-4 ring-1 ring-gray-200" role="region" aria-labelledby="price-explanation-title" tabindex="-1" x-init="$nextTick(() => $el.focus())" data-price-explanation>
+                <div class="flex items-start justify-between gap-3">
+                    <h3 id="price-explanation-title" class="text-sm font-semibold text-gray-900">{{ __('Varför detta pris?') }} · {{ __('Rad :line', ['line' => $priceExplanation['line']]) }}@if($priceExplanation['description'] !== '') · {{ $priceExplanation['description'] }}@endif</h3>
+                    <button type="button" class="text-sm text-gray-600 underline" wire:click="closePriceExplanation" x-on:click="returnFocusSoon()">{{ __('Stäng') }}</button>
+                </div>
+                <p class="mt-2 text-sm text-gray-900"><span class="font-medium">{{ $priceExplanation['source'] }}.</span> {{ $priceExplanation['summary'] }}</p>
+                @foreach($priceExplanation['details'] as $detail)
+                    <p class="mt-1 text-sm text-gray-700">{{ $detail }}</p>
+                @endforeach
+                @foreach($priceExplanation['warnings'] as $warning)
+                    <p class="mt-1 text-sm text-amber-800">{{ $warning }}</p>
+                @endforeach
+                @if($priceExplanation['considered'] !== [])
+                    <p class="mt-3 text-xs font-medium text-gray-500">{{ __('Andra priser som prövades') }}</p>
+                    <ul class="mt-1 list-disc space-y-0.5 pl-5 text-sm text-gray-700">
+                        @foreach($priceExplanation['considered'] as $line)
+                            <li>{{ $line }}</li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+        @endif
 
         @foreach($errors->getMessages() as $key => $messages)
             @if(str_starts_with($key, 'rows'))

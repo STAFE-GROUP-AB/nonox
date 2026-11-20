@@ -12,7 +12,8 @@ use Dompdf\Options;
 
 /**
  * A quote (Offert) or an order confirmation (Orderbekräftelse) as a PDF, in
- * the same layout as invoices (ADR-002).
+ * the same layout as invoices (ADR-002). A document in another currency
+ * says so and shows its amounts in it.
  */
 final class SalesDocumentPdf
 {
@@ -31,7 +32,8 @@ final class SalesDocumentPdf
             'document' => $document,
             'company' => $company,
             'brand' => Brand::for($company),
-            'totals' => InvoiceCalculator::totals($document->rows->map(fn ($row): array => ['net' => $row->net_ore->ore, 'vat_rate' => $row->vat_rate])->all()),
+            // Only a SEK document is rounded to whole kronor (ADR-082 decision 13).
+            'totals' => InvoiceCalculator::totals($document->rows->map(fn ($row): array => ['net' => $row->net_ore->ore, 'vat_rate' => $row->vat_rate])->all(), roundToKronor: $document->currency === 'SEK'),
         ])->render());
         $pdf->setPaper('A4');
         $pdf->render();

@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.156
-- Datum: 2026-11-19
+- Version: 0.157
+- Datum: 2026-11-20
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -2101,6 +2101,69 @@ balances").
   (`invoice.issued`) och valutabelopp, avräknade kronor och kursdifferens vid
   betalning (`invoice.payment_registered`).
 - API och webhooks: se 5f; beloppen i `*_ore` är alltid kronor.
+
+### 5.3a Priser på fakturor, offerter och order (version 0.157, ADR-082 P3)
+
+([ADR-082](../adr/ADR-082-price-lists-and-customer-agreements.md))
+
+- Hur ett belopp på en kundfaktura uppstår: à-priset och rabatten på en rad
+  med en artikel föreslås av prismotorn (`PriceResolver`) för kunden, på
+  fakturadatumet (offertens eller orderns datum) och i dokumentets valuta,
+  i ordningen manuellt pris, kundens prisavtal, kundens prislista, kampanj
+  (det lägsta), valutans standardlista, artikelns grundpris, och till sist
+  grundpriset omräknat med Riksbankens kurs med en varning.
+  Alla rader i ett dokument prissätts i ett anrop när det sparas
+  (`DocumentPricing`); webbläsarens pristabell är bara ett förslag, och det
+  är serverns pris som sparas.
+- Priset **kopieras** till raden (`unit_price_ore`, `discount_bp`,
+  `net_ore`) tillsammans med källan (`price_source`) och en förklaring
+  (`price_explanation`: id:n, nycklar, trappsteg och belopp i minsta enhet,
+  aldrig namn eller fritext). Namnen på listor och avtal slås upp när
+  förklaringen visas ("Varför detta pris?"). En senare ändring av en
+  prislista eller ett avtal ändrar aldrig en sparad rad.
+- Ett pris som skrivs för hand sparas som det är skrivet med källan
+  `MANUAL` och ändras aldrig av prismotorn. Ett utkast som sparas igen
+  oförändrat, för samma kund, datum och valuta, behåller sina priser och
+  förklaringar. Byts kund, datum eller valuta behåller raderna exakt det
+  pris som visas: en rad vars pris skiljer sig från det nya sparas som
+  `MANUAL`, en rad med samma pris får prismotorns källa. Nya priser kommer
+  bara med "Uppdatera priser", som först visar skillnaden rad för rad.
+  Offert → order → faktura behåller offertens priser, källor och valuta;
+  för en offert vars giltighetstid har gått ut väljer användaren "Behåll
+  offertens priser" (förval) eller "Hämta dagens priser" efter att
+  skillnaden visats. "Uppdatera priser" på ett utkast skrivs inte i
+  behandlingshistoriken: ett utkast är inte räkenskapsinformation förrän
+  fakturan utfärdas, och det är den utfärdade fakturans rader, med källa och
+  förklaring, som bevaras.
+- En avtalad rabatt bakas in i à-priset, avrundat halvt uppåt en gång per
+  enhet (`folded_discount_bp` i förklaringen), i redigeringen och på den
+  sparade raden lika, och radens rabatt är bara en rabatt som skrivs ovanpå
+  (`manual_discount_bp`). TODO(legal-verify): P-L4, att en faktura med det
+  inbakade priset som à-pris och bara den skrivna rabatten som rabatt
+  uppfyller mervärdesskattelagen (2023:200) 17 kap. 24 § p. 9 (enhetspris
+  utan moms och prisnedsättningar som inte ingår i enhetspriset).
+- En lista med priser inklusive moms ger raden priset utan moms avrundat
+  nedåt (`floor(brutto × 10000 / (10000 + momssats))`,
+  `net_rounded_down` i förklaringen), så att en konsuments total inklusive
+  moms aldrig blir högre än det visade priset gånger antalet.
+  TODO(legal-verify): P-L1, om totalen i stället får vara upp till en öre
+  lägre och hur öresavrundning mot en konsument ska ske.
+- En utfärdad faktura och en kreditfaktura prissätts aldrig: raderna och
+  förklaringen låses av samma databastrigger som tidigare
+  (`invoice_rows_protect_issued`). En kreditfaktura kopierar raderna den
+  krediterar. `price_source` och `price_explanation` finns kvar på den
+  utfärdade fakturans rader så länge fakturan bevaras (BFL 7 kap.).
+  De ingår i dag inte i arkivpaketet (som har fakturan som PDF med à-pris
+  och rabatt) och inte i SIE (som inte bär priser); att ta med dem i
+  arkivpaketet är en uppföljning under punkt 28 i `docs/status/nummer-1.md`.
+- Offerter och order har en valuta (`sales_documents.currency`, standard
+  SEK). Priserna på raderna är i den valutan; bara en offert eller order i
+  SEK avrundas till hela kronor. Valutan följer med till ordern och till
+  fakturan, där kursen tas som för andra fakturor i utländsk valuta
+  (avsnitt 5.3). PDF:en visar valutan.
+- Ingen verifikation, nummerserie, bokföringsregel eller momsregel ändras:
+  priset når bokföringen bara som radens belopp när fakturan bokförs som
+  tidigare.
 
 ### 5.4 E-faktura via Peppol (modul)
 
@@ -6992,3 +7055,4 @@ påverkar bokföringen och fakturan:
 | 0.154 | 2026-11-19 | Samtycke till elektroniska handlingar vid signering (ADR-046 tillägg, lucka 7, paket S4): en versionerad text som varje undertecknare godkänner innan dokumentet visas, med version, textens SHA-256 och tid på undertecknarens rad (låsta av en databasutlösare), händelsen `CONSENTED` i kuvertets hashkedja och samtycket i bevishashen. Ingenting bokförs och ingen verifikation, numrering eller hashkedja för bokföringen ändras. |
 | 0.155 | 2026-11-19 | Bevarande och gallring av signeringar (avsnitt 5, ADR-046 tillägg 2026-11-18, lucka 11, paket S16): klasserna räkenskapsinformation (till och med 31 december sju år efter räkenskapsåret då affärshändelsen bokfördes, och minst företagets tid; datumet flyttas senare när en faktura, betalning, kreditfaktura eller kundförlust från offerten (också via dess arbetsorder), avtalet eller ÄTA:t bokförs i ett senare år), andra signerade dokument (7–25 år, förvalt 10) och inte signerade (12 månader); ett signerat avtal gallras inte medan det gäller. Triggrar vägrar ett tidigare datum, en lägre klass, ett datum under golvet och radering före datumet eller med bevarandespärr. `signing:prune` tar bort hela kuvert efter datumet och loggar `signing.envelope_deleted`. Ingen verifikation, inget underlag och ingen bokföringsregel ändras. |
 | 0.156 | 2026-11-19 | Kontoplanens hänvisning till BAS och årsrutinen (avsnitt 2): mallarna kontrollerade mot BAS officiella lista (49 namn rättade), och `bas:upgrade` flyttar företag till en ny BAS-version utan att skriva över egna kontonamn; `--fix-names` rättar en gång äldre företags namn som NONOX själv har sått (`previous-names.json`). Anläggningsregistret föreslår för nya tillgångar BAS 2026:s konton (datorer 1224, bilar 1226, båda med 1229 och 7832); sparade tillgångar byter aldrig konto. Bara `accounts.name` och `teams.bas_version` ändras; ingen verifikation, numrering eller hashkedja ändras. |
+| 0.157 | 2026-11-20 | Priser på fakturor, offerter och order (avsnitt 5.3a, ADR-082 P3): radernas à-pris och rabatt föreslås av prismotorn och kopieras till raden med källa och förklaring (id:n och belopp, inga namn); ett handskrivet pris behålls; byte av kund, datum eller valuta ändrar aldrig ett pris; ett sparat utkast prissätts om bara med "Uppdatera priser" efter en visad skillnad; offert → order → faktura behåller priserna, och en utgången offert frågar vilka priser som gäller. Avtalad rabatt bakas in i à-priset; priser inklusive moms avrundas nedåt till nettopris. Offerter och order får valuta som följer med till fakturan. En utfärdad faktura prissätts aldrig och låses av samma trigger som tidigare. Ingen verifikation, numrering eller bokföringsregel ändras. |

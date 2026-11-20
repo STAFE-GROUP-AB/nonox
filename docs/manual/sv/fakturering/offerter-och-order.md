@@ -20,9 +20,10 @@ Du hittar dem under **Försäljning → Offerter** och **Försäljning → Order
 2. Välj **Kund**.
 3. Kontrollera **Datum** och **Giltig till**. Offerten gäller 30 dagar från början.
 4. Fyll i **Er referens** och **Vår referens** om du vill.
-5. Fyll i raderna på samma sätt som på en faktura: artikelnummer eller fri text, antal, enhet, à-pris utan moms, rabatt och moms. **Enhet** väljs i företagets enhetslista.
-6. Skriv ett **Meddelande (frivilligt)** om kunden ska få veta något mer, till exempel vad som ingår.
-7. Tryck på **Spara**. Offerten får ett nummer, till exempel *Offert 12*.
+5. Kontrollera **Valuta**. Den är kundens valuta från början, och priserna på raderna skrivs i den.
+6. Fyll i raderna på samma sätt som på en faktura: artikelnummer eller fri text, antal, enhet, à-pris utan moms, rabatt och moms. **Enhet** väljs i företagets enhetslista. En artikel får kundens pris för offertens datum, se [Priser på fakturor, offerter och order](/manual/fakturering/priser-pa-raderna).
+7. Skriv ett **Meddelande (frivilligt)** om kunden ska få veta något mer, till exempel vad som ingår.
+8. Tryck på **Spara**. Offerten får ett nummer, till exempel *Offert 12*.
 
 En order skriver du likadant under **Försäljning → Order** med **Ny order**. I stället för **Giltig till** har en order ett **Leveransdatum**.
 
@@ -38,8 +39,10 @@ Kunden får dokumentet som PDF. Vill du se det först trycker du på **Öppna PD
 
 Öppna offerten och välj:
 
-- **Kunden tackade ja – gör order**: en ny order skapas med samma rader och dagens datum. Offerten får status *Godkänd, blev order*.
-- **Gör faktura**: ett fakturautkast skapas direkt från offerten eller ordern, med dagens datum som fakturadatum. För en order blir orderns leveransdatum fakturans leveransdatum. Offerten eller ordern får status *Fakturerad*.
+- **Kunden tackade ja – gör order**: en ny order skapas med samma rader, priser och valuta och dagens datum. Offerten får status *Godkänd, blev order*.
+- **Gör faktura**: ett fakturautkast skapas direkt från offerten eller ordern, med samma priser och valuta och dagens datum som fakturadatum. En faktura i annan valuta än kronor får Riksbankens kurs, som för andra fakturor i utländsk valuta. För en order blir orderns leveransdatum fakturans leveransdatum. Offerten eller ordern får status *Fakturerad*.
+
+Har offerten gått ut frågar NONOX först vilka priser som ska gälla: **Behåll offertens priser** eller **Hämta dagens priser**, som först visar vad som skulle ändras. Läs [Priser på fakturor, offerter och order](/manual/fakturering/priser-pa-raderna).
 
 Fakturautkastet öppnas så att du kan kontrollera det. Tryck sedan på **Skapa fakturan** som vanligt. Läs [Skapa en faktura](/manual/fakturering/skapa-en-faktura).
 
@@ -73,12 +76,19 @@ Ja, så länge den är öppen. Spara och skicka den igen.
 **Kan en offert bli flera fakturor, till exempel en delfaktura?**
 Nej, en offert eller order blir en faktura. Vill du dela upp den ändrar du raderna på fakturautkastet och skriver en ny faktura för resten.
 
+**Följer priserna med om en prislista har ändrats sedan offerten skrevs?**
+Ja. Kunden har tackat ja till offertens priser, så de följer med till ordern och fakturan oförändrade. Vill du ha dagens priser trycker du på **Uppdatera priser** på ordern eller fakturautkastet.
+
+**Kan jag skriva en offert i euro?**
+Ja. Välj **Valuta** på offerten. Priserna skrivs då i euro, summan avrundas inte till hela kronor, och PDF:en visar valutan.
+
 **Bokförs något när jag gör en order?**
 Nej. Bokföringen sker först när fakturan skapas.
 
 ## Läs också
 
 - [Skapa en faktura](/manual/fakturering/skapa-en-faktura)
+- [Priser på fakturor, offerter och order](/manual/fakturering/priser-pa-raderna)
 - [Artiklar](/manual/fakturering/artiklar)
 - [Avtalsfakturering](/manual/fakturering/avtalsfakturering)
 - [Logga och färger på fakturan](/manual/fakturering/logga-och-farger)

@@ -3,6 +3,9 @@
 
     $customer = $document->customer?->snapshot() ?? [];
     $kr = fn (int $ore): string => Money::ofOre($ore)->format(withCurrency: false);
+    // A quote or order in another currency (ADR-082 decision 13): its amounts are hundredths of that currency.
+    $currency = $document->currency;
+    $total = fn (int $minor): string => Money::ofOre($minor, $currency)->format();
     $qty = fn (string $quantity): string => rtrim(rtrim(str_replace('.', ',', $quantity), '0'), ',');
 @endphp
 <!doctype html>
@@ -41,6 +44,9 @@
                 <table class="meta">
                     <tr><td class="muted">{{ $document->isQuote() ? __('Offertnummer') : __('Ordernummer') }}</td><td class="right">{{ $document->number }}</td></tr>
                     <tr><td class="muted">{{ __('Datum') }}</td><td class="right">{{ $document->document_date->toDateString() }}</td></tr>
+                    @if($currency !== 'SEK')
+                        <tr><td class="muted">{{ __('Valuta') }}</td><td class="right">{{ $currency }}</td></tr>
+                    @endif
                     @if($document->until_date)
                         <tr><td class="muted">{{ $document->isQuote() ? __('Giltig till') : __('Leveransdatum') }}</td><td class="right">{{ $document->until_date->toDateString() }}</td></tr>
                     @endif
@@ -71,7 +77,7 @@
             <tr>
                 <th>{{ __('Benämning') }}</th>
                 <th class="right">{{ __('Antal') }}</th>
-                <th class="right">{{ __('À-pris') }}</th>
+                <th class="right">{{ $currency === 'SEK' ? __('À-pris') : __('À-pris, :currency', ['currency' => $currency]) }}</th>
                 <th class="right">{{ __('Rabatt') }}</th>
                 <th class="right">{{ __('Moms') }}</th>
                 <th class="right">{{ __('Belopp') }}</th>
@@ -103,7 +109,7 @@
                     @if($document->rounding_ore->ore !== 0)
                         <tr><td class="muted">{{ __('Öresavrundning') }}</td><td class="right">{{ $kr($document->rounding_ore->ore) }}</td></tr>
                     @endif
-                    <tr class="total"><td>{{ __('Summa') }}</td><td class="right">{{ $document->total_ore->format() }}</td></tr>
+                    <tr class="total"><td>{{ __('Summa') }}</td><td class="right">{{ $total($document->total_ore->ore) }}</td></tr>
                 </table>
             </td>
         </tr>

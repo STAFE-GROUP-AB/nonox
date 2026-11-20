@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models\Concerns;
 
+use App\Domain\Pricing\PriceSource;
 use App\Models\Account;
+use App\Models\Article;
 use App\Models\CostCenter;
 use App\Models\Project;
 use App\Support\Money\Money;
@@ -13,7 +15,10 @@ use App\Support\Money\Money;
  * A row of an invoice, quote or order, as input for another document of the
  * same kind (SalesRowInput), so a quote becomes an order and an order an
  * invoice row for row. Needs the account relation loaded, and on rows with
- * a cost centre or project (HasRowDimensions) those relations too.
+ * a cost centre or project (HasRowDimensions) those relations too. With
+ * the article relation loaded, the row names its article, so the next
+ * document can price it again (ADR-082 P3); its price source goes along,
+ * so a price typed by hand stays typed by hand.
  *
  * @property string $description
  * @property string $quantity
@@ -26,11 +31,33 @@ use App\Support\Money\Money;
 trait SalesRowFields
 {
     /**
-     * @return array{description: string, quantity: string, unit: string, unit_id: string, price: string, discount: string, vat_rate: int, account: ?int, labour: bool, vat_exemption: ?string, cost_center?: string, project?: string}
+     * @return array{description: string, quantity: string, unit: string, unit_id: string, price: string, discount: string, vat_rate: int, account: ?int, labour: bool, vat_exemption: ?string, cost_center?: string, project?: string, article?: string, price_source?: string}
      */
     public function asInput(): array
     {
-        return [...$this->salesRowInput(), ...$this->dimensionInput()];
+        return [...$this->salesRowInput(), ...$this->dimensionInput(), ...$this->pricingInput()];
+    }
+
+    /**
+     * The row's article number and price source, when known: only with the
+     * article relation loaded, so a caller that did not ask gets no query.
+     *
+     * @return array{article?: string, price_source?: string}
+     */
+    private function pricingInput(): array
+    {
+        $input = [];
+        $source = $this->getAttribute('price_source');
+
+        if ($this->getAttribute('article_id') !== null && $this->relationLoaded('article') && $this->getRelation('article') instanceof Article) {
+            $input['article'] = (string) $this->getRelation('article')->number;
+        }
+
+        if ($source instanceof PriceSource) {
+            $input['price_source'] = $source->value;
+        }
+
+        return $input;
     }
 
     /**

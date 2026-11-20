@@ -11,6 +11,8 @@ use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Invoicing\SalesRowInput;
 use App\Domain\Invoicing\TaxReduction;
 use App\Domain\Invoicing\VatExemptionReason;
+use App\Domain\Pricing\PriceContext;
+use App\Domain\Pricing\RowPriceSnapshot;
 use App\Domain\Vat\OssRates;
 use App\Domain\Vat\OssThreshold;
 use App\Models\Company;
@@ -61,6 +63,12 @@ use Illuminate\Validation\ValidationException;
  * mid rate. The invoice date is used for advance invoices (7 kap. 7 §: the
  * day the payment is received) and for construction services under
  * omvänd betalningsskyldighet (7 kap. 8 §: the invoice date) alike.
+ *
+ * Article rows are priced by the price engine (ADR-082 P3, SalesRowInput):
+ * for the customer, on the invoice date, in the invoice's currency. A row
+ * saved unchanged keeps the price and explanation it was saved with, as does
+ * a row carried from a quote or order ($carried); a credit invoice copies
+ * the rows it credits and is never priced.
  */
 class SaveDraftInvoice
 {
@@ -79,8 +87,9 @@ class SaveDraftInvoice
      *                                       currency (ISO 4217, optional: the draft's, otherwise SEK;
      *                                       prices are then in that currency) and exchange_rate
      *                                       (kronor per unit as typed, optional: Riksbanken's rate)
+     * @param  list<RowPriceSnapshot>  $carried  the priced rows of the quote or order the invoice is made from
      */
-    public function __invoke(User $user, Company $company, array $input, ?Invoice $draft = null): Invoice
+    public function __invoke(User $user, Company $company, array $input, ?Invoice $draft = null, array $carried = []): Invoice
     {
         $draft === null
             ? Gate::forUser($user)->authorize('create', [Invoice::class, $company])
@@ -130,7 +139,7 @@ class SaveDraftInvoice
 
         [$currency, $bookingRate] = $this->currency($validated, $draft, $original);
 
-        return DB::transaction(fn (): Invoice => CurrentCompany::run($company, function () use ($validated, $input, $user, $company, $draft, $original, $currency, $bookingRate): Invoice {
+        return DB::transaction(fn (): Invoice => CurrentCompany::run($company, function () use ($validated, $input, $user, $company, $draft, $original, $currency, $bookingRate, $carried): Invoice {
             // The draft is locked first, so a save never interleaves with its issue or approval (ADR-081 E21).
             if ($draft !== null && $draft->exists) {
                 $draft = Invoice::query()->whereKey($draft->id)->lockForUpdate()->firstOrFail();
@@ -155,7 +164,17 @@ class SaveDraftInvoice
             $rowInput = array_values(array_filter((array) $input['rows'], is_array(...)));
             // A credit invoice keeps the rows it copies; the customer's default dimensions are for new sales (ADR-081 gap 6).
             $isCredit = $draft?->isCredit() ?? false;
-            $rows = SalesRowInput::parse($rowInput, $isCredit, $isCredit ? null : $customer);
+            $pricing = $isCredit ? null : new PriceContext($company->id, $invoiceDate, $currency, $customer->id);
+            // The draft's own rows keep their prices only for the same customer, date and currency (ADR-082 §6, as built in P3).
+            $samePricing = $draft !== null && $draft->exists
+                && $draft->customer_id === $customer->id
+                && $draft->invoice_date->toDateString() === $invoiceDate->toDateString()
+                && $draft->invoice_currency === $currency;
+            $previous = $pricing === null ? [] : [
+                ...($samePricing ? RowPriceSnapshot::of($draft->rows()->get(), $currency) : []),
+                ...$carried,
+            ];
+            $rows = SalesRowInput::parse($rowInput, $isCredit, $isCredit ? null : $customer, $pricing, $previous);
             $reverseCharge = isset($validated['reverse_charge'])
                 ? (bool) $validated['reverse_charge']
                 : ($draft !== null && $draft->exists ? $draft->reverse_charge : $customer->reverse_charge_construction);

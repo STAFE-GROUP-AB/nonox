@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-20-priser-pa-fakturor-offerter-order",
+      "datum": "2026-11-20T15:30:00+01:00",
+      "rubrik": "Kundens pris på fakturor, offerter och order",
+      "beskrivning": "När du väljer en artikel på en faktura, offert eller order får raden kundens pris för datumet och valutan, med mängdpris när antalet räcker, och en etikett visar varifrån priset kommer. Knappen Uppdatera priser visar först vad som skulle ändras, och ett pris du skrivit själv ändras aldrig, inte heller när du byter kund eller datum. Offerter och order kan skrivas i en annan valuta, som följer med till fakturan.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-20-prislistor",
       "datum": "2026-11-20T15:25:00+01:00",
       "rubrik": "Prislistor, kampanjer och kundgrupper",

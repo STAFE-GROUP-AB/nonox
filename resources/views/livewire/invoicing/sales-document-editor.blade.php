@@ -29,6 +29,57 @@
                     </span>
                 </div>
                 <x-input-error for="document" class="mt-2" />
+                <x-input-error for="exchange_rate" class="mt-2" />
+                <x-input-error for="currency" class="mt-2" />
+
+                @if($expiredChoice !== null)
+                    {{-- An expired quote: which prices apply to the order or invoice (ADR-082 §6). --}}
+                    <div class="mt-5 rounded-xl p-4 ring-1 ring-accent-200" role="region" aria-labelledby="expired-choice-title" tabindex="-1" x-data x-init="$nextTick(() => $el.focus())" data-expired-choice>
+                        <h3 id="expired-choice-title" class="text-sm font-semibold text-gray-900">{{ __('Offerten gällde till :date. Vilka priser ska gälla?', ['date' => $document->until_date?->toDateString()]) }}</h3>
+                        <p class="mt-1 text-sm text-gray-600">{{ __('Kunden tackade ja till offertens priser. Du kan också hämta dagens priser; priser som är skrivna för hand ändras inte.') }}</p>
+
+                        @if($todaysDiff !== null)
+                            @if($todaysDiff === [])
+                                <p class="mt-3 text-sm text-gray-800">{{ __('Dagens priser är desamma som offertens.') }}</p>
+                            @else
+                                <div class="mt-3 overflow-x-auto">
+                                    <table class="w-full text-sm">
+                                        <thead>
+                                            <tr class="text-left text-gray-500">
+                                                <th class="pb-1 pr-3 font-medium">{{ __('Rad') }}</th>
+                                                <th class="pb-1 pr-3 font-medium">{{ __('Benämning') }}</th>
+                                                <th class="pb-1 pr-3 text-right font-medium">{{ __('Offertens pris') }}</th>
+                                                <th class="pb-1 pr-3 text-right font-medium">{{ __('Dagens pris') }}</th>
+                                                <th class="pb-1 font-medium">{{ __('Skäl') }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($todaysDiff as $change)
+                                                <tr class="border-t border-gray-100">
+                                                    <td class="py-1 pr-3 tabular-nums">{{ $change['line'] }}</td>
+                                                    <td class="py-1 pr-3">{{ $change['description'] }}</td>
+                                                    <td class="py-1 pr-3 text-right tabular-nums whitespace-nowrap">{{ $change['old'] }}</td>
+                                                    <td class="py-1 pr-3 text-right font-semibold tabular-nums whitespace-nowrap">{{ $change['new'] }}</td>
+                                                    <td class="py-1">{{ $change['source'] }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                        @endif
+
+                        <div class="mt-3 flex flex-wrap items-center gap-3">
+                            <x-button type="button" wire:click="{{ $expiredChoice === 'order' ? 'toOrder' : 'toInvoice' }}('keep')" wire:loading.attr="disabled">{{ __('Behåll offertens priser') }}</x-button>
+                            @if($todaysDiff === null)
+                                <button type="button" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:click="previewTodaysPrices" wire:loading.attr="disabled">{{ __('Hämta dagens priser') }}</button>
+                            @else
+                                <button type="button" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:click="{{ $expiredChoice === 'order' ? 'toOrder' : 'toInvoice' }}('today')" wire:loading.attr="disabled">{{ $expiredChoice === 'order' ? __('Gör order med dagens priser') : __('Gör faktura med dagens priser') }}</button>
+                            @endif
+                            <button type="button" class="text-sm text-gray-600 underline" wire:click="closeExpiredChoice">{{ __('Avbryt') }}</button>
+                        </div>
+                    </div>
+                @endif
             @endif
 
             @if($canSend)
@@ -60,7 +111,14 @@
                     @endif
                 </x-ui.field>
                 <x-ui.field for="document_date" :label="__('Datum')" error="document_date">
-                    <input id="document_date" type="date" class="{{ $input }} mt-1" wire:model="documentDate">
+                    <input id="document_date" type="date" class="{{ $input }} mt-1" wire:model.change="documentDate">
+                </x-ui.field>
+                <x-ui.field for="document_currency" :label="__('Valuta')" error="currency" :hint="$currency === 'SEK' ? __('Välj en annan valuta för att skriva priserna i den.') : __('Priserna skrivs i :currency. Valutan följer med till ordern och fakturan.', ['currency' => $currency])">
+                    <select id="document_currency" class="{{ $input }} mt-1" wire:model.change="currency">
+                        @foreach($currencies as $code)
+                            <option value="{{ $code }}">{{ $code }}</option>
+                        @endforeach
+                    </select>
                 </x-ui.field>
                 <x-ui.field for="document_until" :label="$isQuote ? __('Giltig till') : __('Leveransdatum')" error="until_date">
                     <input id="document_until" type="date" class="{{ $input }} mt-1" wire:model="untilDate">
@@ -74,7 +132,7 @@
             </div>
         </x-ui.card>
 
-        @include('livewire.invoicing.partials.rows', ['negative' => false, 'withCustomer' => true])
+        @include('livewire.invoicing.partials.rows', ['negative' => false, 'withCustomer' => true, 'withCurrency' => true, 'priceWatch' => ['customerId', 'documentDate', 'currency']])
 
         <x-ui.card>
             <x-ui.field for="document_notes" :label="__('Meddelande (frivilligt)')" error="notes">

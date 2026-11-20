@@ -77,6 +77,7 @@ class SalesDocument extends Model implements Signable
     /** @var array<string, mixed> */
     protected $attributes = [
         'status' => 'OPEN',
+        'currency' => 'SEK',
     ];
 
     /** @return array<string, string> */

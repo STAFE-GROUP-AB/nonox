@@ -356,6 +356,37 @@ issued invoice the explanation is frozen by the same trigger as the row.
   recurring invoice's own row prices are then only a display of the last run.
   Decision 9.
 
+**As built (P3), Lead decisions 2026-11-20 after review** (these replace the
+first bullet above where they differ):
+
+- **No silent re-pricing.** Changing customer, date or currency never changes
+  a row's price. The editor loads the new price table and clears the table's
+  mark on the rows, so each row keeps exactly the price shown; on save a row
+  whose price differs from the newly resolved one is stored as `MANUAL`, and
+  one that equals it gets the resolver's source. A notice offers "Uppdatera
+  priser", which shows the diff first. A changed quantity or unit re-prices
+  only a row whose price came from the table, never one typed by hand or
+  kept from before; leaving the article field unchanged never refills a
+  price. No undo toast is needed, since nothing changes by itself.
+- **A saved row keeps its price** only for the same customer, date and
+  currency as when it was saved (`RowPriceSnapshot`, currency in the key);
+  rows carried from a quote or order are kept whatever the new date.
+- **Agreed discounts are folded** into the unit price (rounded half up once
+  per unit, `folded_discount_bp` in the explanation) in the editor and on
+  the saved row alike, and the discount field holds only a discount typed on
+  top (decision 8), so the browser and the server always give the same
+  amount. This replaces "the invoice shows the ordinary price and the
+  discount" in §5; P-L4 stays open for a lawyer.
+- **Prices including VAT:** the row's net unit price is rounded down
+  (`floor(gross × 10000 / (10000 + VAT rate))`), so a consumer never pays
+  more than the shown price × quantity (P-L1, tolerance still open).
+- **Expired quote:** progressing a quote whose `until_date` has passed asks
+  "Behåll offertens priser" (default) or "Hämta dagens priser", which shows
+  the diff before the order or invoice is made.
+- **The editor's price table** holds only the articles on the rows and one
+  just picked, never the whole catalogue, and carries no source for a person
+  without `prices:view`.
+
 ### 7. Rounding rules
 
 `rounding_rule` on a list or a price update run (enum `PriceRounding`):
