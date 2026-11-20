@@ -1,0 +1,34 @@
+{
+    "description": "An agreement wins over a cheaper campaign unless it allows campaigns: the article item with its ladder, else the all-articles discount on the ordinary price.",
+    "articles": {
+        "A1": {"price_ore": 10000},
+        "A2": {"price_ore": 8000}
+    },
+    "lists": {
+        "SOMMAR": {"kind": "CAMPAIGN", "valid_from": "2026-06-01", "valid_to": "2026-06-30", "items": [
+            {"article": "A1", "price_minor": 6000},
+            {"article": "A2", "price_minor": 5000}
+        ]}
+    },
+    "customer": {},
+    "agreements": {
+        "PA1": {"valid_from": "2026-01-01", "allow_campaigns": false, "items": [
+            {"article": "A1", "price_minor": 7500},
+            {"article": "A1", "min_quantity_milli": 20000, "price_minor": 7000},
+            {"discount_bp": 500}
+        ]}
+    },
+    "cases": [
+        {
+            "context": {"date": "2026-06-15"},
+            "rows": [
+                {"key": "avtal", "article": "A1", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 7500, "discount_bp": 0, "source": "AGREEMENT", "agreement": "PA1", "item": "PA1#0", "tier_min_milli": 0, "warnings": []}},
+                {"key": "avtal-trappa", "article": "A1", "quantity_milli": 25000,
+                 "expected": {"unit_price_minor": 7000, "discount_bp": 0, "source": "AGREEMENT", "agreement": "PA1", "item": "PA1#1", "tier_min_milli": 20000, "warnings": []}},
+                {"key": "avtal-alla", "article": "A2", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 8000, "discount_bp": 500, "source": "AGREEMENT", "agreement": "PA1", "item": "PA1#2", "tier_min_milli": 0, "warnings": []}}
+            ]
+        }
+    ]
+}

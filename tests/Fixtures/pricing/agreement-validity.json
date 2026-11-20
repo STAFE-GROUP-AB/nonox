@@ -1,0 +1,31 @@
+{
+    "description": "Agreements price by their validity on the document date: an expired one is not used today but still answers what a past date cost; a draft never prices.",
+    "articles": {
+        "A1": {"price_ore": 10000}
+    },
+    "customer": {},
+    "agreements": {
+        "GAMMALT": {"valid_from": "2025-01-01", "valid_to": "2025-12-31", "items": [
+            {"article": "A1", "price_minor": 5000}
+        ]},
+        "UTKAST": {"valid_from": "2026-01-01", "status": "DRAFT", "items": [
+            {"article": "A1", "price_minor": 4000}
+        ]}
+    },
+    "cases": [
+        {
+            "context": {"date": "2026-03-15"},
+            "rows": [
+                {"key": "idag", "article": "A1", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 10000, "discount_bp": 0, "source": "BASE", "warnings": []}}
+            ]
+        },
+        {
+            "context": {"date": "2025-06-01"},
+            "rows": [
+                {"key": "forra-aret", "article": "A1", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 5000, "discount_bp": 0, "source": "AGREEMENT", "agreement": "GAMMALT", "item": "GAMMALT#0", "tier_min_milli": 0, "warnings": []}}
+            ]
+        }
+    ]
+}

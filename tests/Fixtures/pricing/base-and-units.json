@@ -1,0 +1,24 @@
+{
+    "description": "No lists or agreements: the base price, converted between the article's units; a unit that does not convert gives no price; a manual price is kept.",
+    "articles": {
+        "A1": {"price_ore": 14900, "unit": "st", "conversions": {"förp": "1/10"}},
+        "A2": {"price_ore": 25000, "unit": "kg"}
+    },
+    "cases": [
+        {
+            "context": {"date": "2026-03-15"},
+            "rows": [
+                {"key": "styck", "article": "A1", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 14900, "discount_bp": 0, "source": "BASE", "warnings": []}},
+                {"key": "forpackning", "article": "A1", "unit": "förp", "quantity_milli": 2000,
+                 "expected": {"unit_price_minor": 149000, "discount_bp": 0, "source": "BASE", "warnings": []}},
+                {"key": "gram", "article": "A2", "unit": "g", "quantity_milli": 500000,
+                 "expected": {"unit_price_minor": 25, "discount_bp": 0, "source": "BASE", "warnings": []}},
+                {"key": "fel-enhet", "article": "A1", "unit": "kg", "quantity_milli": 1000,
+                 "expected": {"discount_bp": 0, "warnings": ["unit_not_convertible", "no_price"]}},
+                {"key": "manuellt", "article": "A1", "quantity_milli": 1000, "manual_price_minor": 9999, "manual_discount_bp": 1000,
+                 "expected": {"unit_price_minor": 9999, "discount_bp": 1000, "source": "MANUAL", "warnings": []}}
+            ]
+        }
+    ]
+}

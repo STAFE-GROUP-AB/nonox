@@ -1,0 +1,50 @@
+{
+    "description": "The customer's own list wins per article, else its price group's list; a quantity ladder gives the whole quantity the highest step reached; a discount item shows the base price and the discount; a future item is not used before its date.",
+    "articles": {
+        "A1": {"price_ore": 10000},
+        "A2": {"price_ore": 20000},
+        "A3": {"price_ore": 5000}
+    },
+    "lists": {
+        "ATER": {"items": [
+            {"article": "A1", "price_minor": 9000},
+            {"article": "A1", "min_quantity_milli": 10000, "price_minor": 8000},
+            {"article": "A1", "min_quantity_milli": 50000, "price_minor": 7000},
+            {"article": "A2", "discount_bp": 1000}
+        ]},
+        "EGEN": {"items": [
+            {"article": "A3", "price_minor": 4000},
+            {"article": "A1", "price_minor": 100, "valid_from": "2026-04-01"}
+        ]}
+    },
+    "groups": {"G1": {"list": "ATER"}},
+    "customer": {"group": "G1", "list": "EGEN"},
+    "cases": [
+        {
+            "context": {"date": "2026-03-15"},
+            "rows": [
+                {"key": "ett", "article": "A1", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 9000, "discount_bp": 0, "source": "CUSTOMER_LIST", "list": "ATER", "item": "ATER#0", "tier_min_milli": 0, "warnings": []}},
+                {"key": "tio", "article": "A1", "quantity_milli": 10000,
+                 "expected": {"unit_price_minor": 8000, "discount_bp": 0, "source": "CUSTOMER_LIST", "list": "ATER", "item": "ATER#1", "tier_min_milli": 10000, "warnings": []}},
+                {"key": "tolv", "article": "A1", "quantity_milli": 12000,
+                 "expected": {"unit_price_minor": 8000, "discount_bp": 0, "source": "CUSTOMER_LIST", "list": "ATER", "item": "ATER#1", "tier_min_milli": 10000, "warnings": []}},
+                {"key": "nastan-femtio", "article": "A1", "quantity_milli": 49999,
+                 "expected": {"unit_price_minor": 8000, "discount_bp": 0, "source": "CUSTOMER_LIST", "list": "ATER", "item": "ATER#1", "tier_min_milli": 10000, "warnings": []}},
+                {"key": "femtio", "article": "A1", "quantity_milli": 50000,
+                 "expected": {"unit_price_minor": 7000, "discount_bp": 0, "source": "CUSTOMER_LIST", "list": "ATER", "item": "ATER#2", "tier_min_milli": 50000, "warnings": []}},
+                {"key": "rabatt", "article": "A2", "quantity_milli": 3000,
+                 "expected": {"unit_price_minor": 20000, "discount_bp": 1000, "source": "CUSTOMER_LIST", "list": "ATER", "item": "ATER#3", "tier_min_milli": 0, "warnings": []}},
+                {"key": "egen", "article": "A3", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 4000, "discount_bp": 0, "source": "CUSTOMER_LIST", "list": "EGEN", "item": "EGEN#0", "tier_min_milli": 0, "warnings": []}}
+            ]
+        },
+        {
+            "context": {"date": "2026-04-01"},
+            "rows": [
+                {"key": "framtida-pris-galler", "article": "A1", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 100, "discount_bp": 0, "source": "CUSTOMER_LIST", "list": "EGEN", "item": "EGEN#1", "tier_min_milli": 0, "warnings": []}}
+            ]
+        }
+    ]
+}

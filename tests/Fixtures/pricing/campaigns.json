@@ -1,0 +1,54 @@
+{
+    "description": "The lowest of the customer's list and the campaigns that reach it: campaigns for everyone or the customer's group, not another group's, not another channel's, not an ended one.",
+    "articles": {
+        "A1": {"price_ore": 10000},
+        "A2": {"price_ore": 10000},
+        "A3": {"price_ore": 10000}
+    },
+    "lists": {
+        "ATER": {"items": [
+            {"article": "A1", "price_minor": 8000},
+            {"article": "A2", "price_minor": 9500}
+        ]},
+        "ALLA": {"kind": "CAMPAIGN", "valid_from": "2026-05-01", "valid_to": "2026-05-31", "items": [
+            {"article": "A1", "price_minor": 9000},
+            {"article": "A2", "price_minor": 9000}
+        ]},
+        "GRUPP": {"kind": "CAMPAIGN", "valid_from": "2026-05-10", "valid_to": "2026-05-20", "groups": ["G1"], "items": [
+            {"article": "A2", "price_minor": 8500}
+        ]},
+        "ANNAN": {"kind": "CAMPAIGN", "valid_from": "2026-05-01", "valid_to": "2026-05-31", "groups": ["G2"], "items": [
+            {"article": "A2", "price_minor": 100}
+        ]},
+        "KASSA": {"kind": "CAMPAIGN", "valid_from": "2026-05-01", "valid_to": "2026-05-31", "channel": "POS", "items": [
+            {"article": "A3", "price_minor": 5000}
+        ]},
+        "APRIL": {"kind": "CAMPAIGN", "valid_from": "2026-04-01", "valid_to": "2026-04-30", "items": [
+            {"article": "A3", "price_minor": 1000}
+        ]}
+    },
+    "groups": {"G1": {"list": "ATER"}, "G2": {}},
+    "customer": {"group": "G1"},
+    "cases": [
+        {
+            "context": {"date": "2026-05-15"},
+            "rows": [
+                {"key": "listan-lagre", "article": "A1", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 8000, "discount_bp": 0, "source": "CUSTOMER_LIST", "list": "ATER", "item": "ATER#0", "tier_min_milli": 0, "warnings": []}},
+                {"key": "gruppkampanj", "article": "A2", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 8500, "discount_bp": 0, "source": "CAMPAIGN", "list": "GRUPP", "item": "GRUPP#0", "tier_min_milli": 0, "warnings": []}},
+                {"key": "kassakampanj-inte-har", "article": "A3", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 10000, "discount_bp": 0, "source": "BASE", "warnings": []}}
+            ]
+        },
+        {
+            "context": {"date": "2026-05-15", "channel": "POS", "no_customer": true},
+            "rows": [
+                {"key": "kassan", "article": "A3", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 5000, "discount_bp": 0, "source": "CAMPAIGN", "list": "KASSA", "item": "KASSA#0", "tier_min_milli": 0, "warnings": []}},
+                {"key": "kassan-utan-grupp", "article": "A2", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 9000, "discount_bp": 0, "source": "CAMPAIGN", "list": "ALLA", "item": "ALLA#1", "tier_min_milli": 0, "warnings": []}}
+            ]
+        }
+    ]
+}
