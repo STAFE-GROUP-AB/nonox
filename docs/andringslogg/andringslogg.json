@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-20-marginal-och-lagsta-tackningsgrad",
+      "datum": "2026-11-20T18:30:00+01:00",
+      "rubrik": "Marginal och lägsta täckningsgrad på fakturor, offerter och order",
+      "beskrivning": "Den som får se kostnader ser en varning på rader som säljs under kostnaden och täckningsbidraget under summan, och på utfärdade fakturor. Under Register → Prislistor kan företaget ange en lägsta täckningsgrad, som är avstängd från början: den varnar, och företaget kan också kräva att någon med behörighet godkänner priser som skrivits för hand innan dokumentet skickas eller skapas. Kostnaden visas inte för kunden.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-20-priser-pa-fakturor-offerter-order",
       "datum": "2026-11-20T15:30:00+01:00",
       "rubrik": "Kundens pris på fakturor, offerter och order",

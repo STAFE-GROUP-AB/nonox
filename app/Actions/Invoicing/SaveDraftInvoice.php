@@ -12,6 +12,7 @@ use App\Domain\Invoicing\SalesRowInput;
 use App\Domain\Invoicing\TaxReduction;
 use App\Domain\Invoicing\VatExemptionReason;
 use App\Domain\Pricing\PriceContext;
+use App\Domain\Pricing\PriceFloor;
 use App\Domain\Pricing\RowPriceSnapshot;
 use App\Domain\Vat\OssRates;
 use App\Domain\Vat\OssThreshold;
@@ -313,6 +314,11 @@ class SaveDraftInvoice
 
             foreach ($buyerDeductions as $buyer) {
                 InvoiceTaxReductionBuyer::create(['invoice_id' => $invoice->id, ...$buyer]);
+            }
+
+            // Everyone who changes an invoice draft counts as one of its preparers for an approval of prices under the floor too (ADR-082 §9, DraftEditors); only a company with a floor keeps the entry.
+            if ($draft !== null && ! $invoice->isCredit() && PriceFloor::of($company)->isOn()) {
+                Audit::record('invoice.draft_saved', $invoice, ['rows' => count($rows)], $company, $user);
             }
 
             // Everyone who saves a credit draft counts as one of its preparers in an approval (ADR-081 E21, DraftEditors).

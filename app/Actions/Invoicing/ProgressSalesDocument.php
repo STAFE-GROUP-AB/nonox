@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Invoicing;
 
 use App\Domain\Invoicing\SalesDocumentStatus;
+use App\Domain\Pricing\PriceFloorGuard;
 use App\Domain\Pricing\PriceSource;
 use App\Domain\Pricing\RowPriceSnapshot;
 use App\Models\Company;
@@ -48,6 +49,9 @@ class ProgressSalesDocument
         }
 
         return $this->run($quote, function (Company $company) use ($user, $quote, $todaysPrices): SalesDocument {
+            // A quote whose rows changed after they were approved is not accepted as it stands (ADR-082 §9, P7).
+            PriceFloorGuard::ensureCleared($company, $quote);
+
             $order = ($this->saveDocument)($user, $company, SalesDocument::ORDER, [
                 ...$this->input($quote, $todaysPrices),
                 'document_date' => CarbonImmutable::today()->toDateString(),

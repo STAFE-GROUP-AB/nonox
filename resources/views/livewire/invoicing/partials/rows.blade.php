@@ -28,7 +28,7 @@
     ]]);
     $dimensions = $rowDimensions ?? ['show' => false, 'costCenters' => [], 'projects' => [], 'customers' => []];
     $pricing ??= ['enabled' => false, 'markers' => false, 'canExplain' => false, 'labels' => [], 'warnings' => []];
-    $pricingData = [...$pricing, 'watch' => $priceWatch ?? []];
+    $pricingData = [...$pricing, 'watch' => $priceWatch ?? [], 'margin' => $margin ?? false, 'marginInitial' => ($margin ?? false) ? ($marginAtOpen ?? []) : []];
     $dimensionData = [
         'projectCostCenters' => collect($dimensions['projects'])->map(fn (array $project): string => $project['cost_center'])->all(),
         'customers' => $dimensions['customers'],
@@ -125,6 +125,10 @@
                                             <p class="w-full text-right text-xs text-amber-800" data-price-warning x-text="warningText(warning)"></p>
                                         </template>
                                     </div>
+                                @endif
+                                @if($margin ?? false)
+                                    {{-- Under cost or under the floor (ADR-082 §9): a warning on the row, never a block here. --}}
+                                    <p class="mt-1 text-right text-xs" :class="marginRow(index)?.below_cost ? 'text-red-700' : 'text-amber-800'" x-show="marginRow(index)" x-cloak role="status" data-margin-warning x-text="marginRow(index)?.text"></p>
                                 @endif
                             </td>
                             <td class="{{ $field }} col-span-3 sm:col-span-2">
@@ -253,6 +257,10 @@
             @endif
         @endforeach
 
+        @if($margin ?? false)
+            <div class="mt-3 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status" aria-live="polite" x-show="margin.banner !== ''" x-cloak data-margin-banner x-text="margin.banner"></div>
+        @endif
+
         <template x-if="vatWarnings.length > 0">
             <div class="mt-3 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status" aria-live="polite" data-vat-warning>
                 <template x-for="warning in vatWarnings" :key="warning.line">
@@ -261,7 +269,7 @@
             </div>
         </template>
 
-        <div class="mt-6 flex justify-end">
+        <div class="mt-6 flex flex-col items-end gap-2">
             <dl class="w-full max-w-xs space-y-1 text-sm tabular-nums">
                 <div class="flex justify-between"><dt class="text-gray-600">{{ __('Summa exkl. moms') }}</dt><dd x-text="money(totals.net)"></dd></div>
                 <template x-for="group in totals.vatByRate.filter((group) => group.vat !== 0)" :key="group.rate">
@@ -269,7 +277,20 @@
                 </template>
                 <div class="flex justify-between" x-show="totals.rounding !== 0"><dt class="text-gray-600">{{ __('Öresavrundning') }}</dt><dd x-text="money(totals.rounding)"></dd></div>
                 <div class="flex justify-between border-t border-gray-200 pt-2 text-base font-semibold"><dt>{{ $negative ? __('Att kreditera') : __('Att betala') }}</dt><dd x-text="money(totals.total)"></dd></div>
+                @if($margin ?? false)
+                    {{-- Internal: only for prices:view-cost, never on the customer's PDF (ADR-082 §9). --}}
+                    <template x-if="margin.totals">
+                        <div class="space-y-1 border-t border-gray-100 pt-2 text-gray-700" data-margin-totals>
+                            <div class="flex justify-between"><dt>{{ __('Täckningsbidrag') }}</dt><dd x-text="margin.totals.contribution"></dd></div>
+                            <div class="flex justify-between"><dt>{{ __('Täckningsgrad') }}</dt><dd x-text="margin.totals.margin"></dd></div>
+                        </div>
+                    </template>
+                @endif
             </dl>
+            @if($margin ?? false)
+                <p class="w-full max-w-xs text-xs text-gray-500" x-show="margin.totals && margin.totals.uncosted > 0" x-cloak x-text="@js(__(':count rader saknar känd kostnad och räknas inte med.')).replace(':count', margin.totals?.uncosted ?? 0)"></p>
+                <p class="w-full max-w-xs text-xs text-gray-500" x-show="margin.note !== ''" x-cloak x-text="margin.note"></p>
+            @endif
         </div>
     </x-ui.card>
 </div>

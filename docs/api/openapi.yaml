@@ -4571,9 +4571,9 @@ paths:
       tags:
         - Kundfakturor
       summary: 'Issue (book) a draft invoice'
-      description: 'Makes the draft an invoice: the next gapless invoice number, an OCR reference, the customer frozen, and under fakturametoden a voucher in series B. Irreversible; a mistake is credited. Does not e-mail it (see /send). Books a voucher as the person behind the credential, so the credential also needs vouchers:create and vouchers:post. A credit invoice that the company''s own approval flow for credit invoices holds answers 422 on the field `invoice` until that version is approved in NONOX. Same Action as the app (IssueInvoice).'
+      description: 'Makes the draft an invoice: the next gapless invoice number, an OCR reference, the customer frozen, and under fakturametoden a voucher in series B. Irreversible; a mistake is credited. Does not e-mail it (see /send). Books a voucher as the person behind the credential, so the credential also needs vouchers:create and vouchers:post. A credit invoice that the company''s own approval flow for credit invoices holds answers 422 on the field `invoice` until that version is approved in NONOX. An invoice with a manual price under the company''s lowest contribution margin, when the company requires approval for it, also answers 422 on `invoice` until someone with prices:approve-below-floor has approved that version in NONOX. Same Action as the app (IssueInvoice).'
       x-sv-summary: 'Skapa (bokför) fakturan'
-      x-sv-description: 'Ger utkastet nummer och OCR och bokför det i serie B. Går inte att ångra, bara kreditera. Bokför en verifikation, så nyckeln eller appen behöver även vouchers:create och vouchers:post. En kreditfaktura som företagets eget attestflöde håller svarar 422 tills den versionen är attesterad i NONOX.'
+      x-sv-description: 'Ger utkastet nummer och OCR och bokför det i serie B. Går inte att ångra, bara kreditera. Bokför en verifikation, så nyckeln eller appen behöver även vouchers:create och vouchers:post. En kreditfaktura som företagets eget attestflöde håller svarar 422 tills den versionen är attesterad i NONOX. Det gör också en faktura med ett pris skrivet för hand under företagets lägsta täckningsgrad när företaget kräver godkännande för det.'
       security:
         - oauth2:
             - 'invoices:send'

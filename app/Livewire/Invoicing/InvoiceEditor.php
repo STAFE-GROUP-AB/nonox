@@ -16,6 +16,7 @@ use App\Domain\Invoicing\SalesRowInput;
 use App\Domain\Pricing\PriceContext;
 use App\Domain\Vat\OssThreshold;
 use App\Livewire\Concerns\ShowsToasts;
+use App\Livewire\Invoicing\Concerns\ChecksRowMargin;
 use App\Livewire\Invoicing\Concerns\EditsSalesRows;
 use App\Models\Company;
 use App\Models\Customer;
@@ -38,6 +39,7 @@ use Livewire\Component;
  */
 class InvoiceEditor extends Component
 {
+    use ChecksRowMargin;
     use EditsSalesRows;
     use ShowsToasts;
 
@@ -116,6 +118,10 @@ class InvoiceEditor extends Component
             $this->exchangeRate = (string) $invoice->bookingRate()?->format();
             $this->rateDate = $invoice->exchange_rate_source === 'riksbank' ? (string) $invoice->exchange_rate_date?->toDateString() : '';
             $this->rows = $this->rowsFrom($invoice->rows);
+
+            if (! $this->credit) {
+                $this->openMargin();
+            }
 
             return;
         }
@@ -197,6 +203,7 @@ class InvoiceEditor extends Component
 
         // The rows come back as saved: with the prices and sources the server decided (ADR-082 P3).
         $this->rows = $this->rowsFrom($invoice->load(['rows.account', 'rows.costCenter', 'rows.project', 'rows.article:id,number'])->rows);
+        $this->dispatch('price-floor-recheck');
         $this->toast(__('Utkastet är sparat.'));
     }
 
@@ -245,6 +252,7 @@ class InvoiceEditor extends Component
             'customers' => Customer::query()->where('is_active', true)->whereNull('processing_restricted_at')->orderBy('name')->get(['id', 'number', 'name']),
             'currencies' => self::CURRENCIES,
             ...$this->rowData(),
+            'margin' => ! $this->credit && $this->marginEnabled(),
             'vatRules' => $this->salesVatRules(),
             'ossThreshold' => $this->ossThreshold(),
             'vatUnregistered' => ! $this->company()->isVatRegistered(),

@@ -309,6 +309,8 @@ final class DatabaseGrants
         'pos_webhook_messages' => GrantDecision::ReadWrite,
         'price_agreement_items' => GrantDecision::ReadWrite,
         'price_agreements' => GrantDecision::ReadWrite,
+        // A decided approval of prices under the floor is a record of who approved what: it is withdrawn, never deleted (ADR-082 §9).
+        'price_floor_approvals' => GrantDecision::NoDelete,
         'price_list_items' => GrantDecision::ReadWrite,
         'price_list_price_group' => GrantDecision::ReadWrite,
         'price_lists' => GrantDecision::ReadWrite,

@@ -23,6 +23,9 @@ final class DraftEditors
     /** Saving a credit invoice draft. */
     public const array INVOICE_ACTIONS = ['invoice.draft_saved'];
 
+    /** Saving a quote or an order while the company has a price floor (ADR-082 §9). */
+    public const array SALES_DOCUMENT_ACTIONS = ['sales_document.saved'];
+
     /** Saving a purchase order and opening its next version (ADR-081 E10). */
     public const array PURCHASE_ORDER_ACTIONS = ['inventory.purchase_order_saved', 'inventory.purchase_order_revised'];
 

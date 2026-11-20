@@ -11,6 +11,7 @@ use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\VatExemption;
 use App\Domain\Company\VatPeriod;
 use App\Domain\Payables\PaymentBank;
+use App\Domain\Pricing\PriceFloorPolicy;
 use App\Support\Branding\FirmBranding;
 use App\Support\Demo\DemoMode;
 use App\Support\Hq\OperatorSync;
@@ -56,6 +57,8 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * @property ?CarbonImmutable $archived_at
  * @property bool $is_test_company
  * @property bool $separate_supplier_approval
+ * @property ?int $min_contribution_bp the lowest contribution margin of a sale in basis points; null = no floor (ADR-082 §9)
+ * @property PriceFloorPolicy $price_floor_policy what a manual price under that floor does
  * @property ?PaymentBank $payment_bank
  * @property ?string $bank_agreement_id
  * @property ?array<int, array{0: int, 1: int}> $asset_acquisition_accounts
@@ -154,6 +157,8 @@ class Company extends JetstreamTeam
             'preliminary_tax_monthly_ore' => 'integer',
             'employer_registered' => 'boolean',
             'separate_supplier_approval' => 'boolean',
+            'min_contribution_bp' => 'integer',
+            'price_floor_policy' => PriceFloorPolicy::class,
             'require_passkeys' => 'boolean',
             'is_accounting_firm' => 'boolean',
             'firm_brand_for_clients' => 'boolean',

@@ -76,7 +76,7 @@ class RunRecurringInvoice
             }
 
             if ($agreement->send_automatically) {
-                $invoice = ($this->issue)($user, $invoice);
+                $invoice = ($this->issue)($user, $invoice, automatic: true);
             }
 
             Audit::record('agreement.invoiced', $agreement, [

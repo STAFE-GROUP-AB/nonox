@@ -222,6 +222,17 @@ try {
             }, sessionId);
             page.clip = JSON.parse(box.value);
         }
+        // A page that fetches something after it opens (a margin check, a price table) gets up to ten seconds to show the expected text.
+        for (let wait = 0; wait < 20; wait++) {
+            const { result: now } = await send('Runtime.evaluate', { expression: 'document.body.innerText', returnByValue: true }, sessionId);
+
+            if (now.value.toLowerCase().includes(shot.expect.toLowerCase())) {
+                break;
+            }
+
+            await sleep(500);
+        }
+
         const { result: text } = await send('Runtime.evaluate', { expression: 'document.body.innerText', returnByValue: true }, sessionId);
 
         // Only the demo company may be on the page: anything else means the app is reading other data.

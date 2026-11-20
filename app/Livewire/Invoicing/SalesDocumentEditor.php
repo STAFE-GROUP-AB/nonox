@@ -9,6 +9,7 @@ use App\Actions\Invoicing\SaveSalesDocument;
 use App\Actions\Invoicing\SendSalesDocument;
 use App\Domain\Pricing\PriceContext;
 use App\Livewire\Concerns\ShowsToasts;
+use App\Livewire\Invoicing\Concerns\ChecksRowMargin;
 use App\Livewire\Invoicing\Concerns\EditsSalesRows;
 use App\Models\Company;
 use App\Models\Customer;
@@ -29,6 +30,7 @@ use Livewire\Component;
  */
 class SalesDocumentEditor extends Component
 {
+    use ChecksRowMargin;
     use EditsSalesRows;
     use ShowsToasts;
 
@@ -80,6 +82,7 @@ class SalesDocumentEditor extends Component
             $this->email = (string) ($document->sent_to ?? $document->customer?->email);
             $this->currency = $document->currency;
             $this->rows = $this->rowsFrom($document->rows);
+            $this->openMargin();
 
             return;
         }
@@ -146,6 +149,7 @@ class SalesDocumentEditor extends Component
         // The saved rows come back with their keys, so a row keeps what hangs on it (ADR-071 §4) at the next save.
         $this->rows = $this->rowsFrom($document->load(['rows.account', 'rows.costCenter', 'rows.project', 'rows.article:id,number'])->rows);
         $this->dispatch('sales-document-saved');
+        $this->dispatch('price-floor-recheck');
         $this->toast(__(':title är sparad.', ['title' => $document->title()]));
     }
 
@@ -234,6 +238,7 @@ class SalesDocumentEditor extends Component
             'customers' => Customer::query()->where('is_active', true)->whereNull('processing_restricted_at')->orderBy('name')->get(['id', 'number', 'name']),
             'currencies' => InvoiceEditor::CURRENCIES,
             ...$this->rowData(),
+            'margin' => $this->marginEnabled(),
             'vatRules' => $this->salesVatRules(),
             'routeBase' => $this->routeBase(),
         ]);

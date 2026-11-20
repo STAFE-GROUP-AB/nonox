@@ -7,6 +7,7 @@ namespace App\Actions\Invoicing;
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Invoicing\SalesRowInput;
 use App\Domain\Pricing\PriceContext;
+use App\Domain\Pricing\PriceFloor;
 use App\Domain\Pricing\RowPriceSnapshot;
 use App\Domain\Signing\SignedDocuments;
 use App\Models\Company;
@@ -132,6 +133,11 @@ class SaveSalesDocument
 
             foreach ($rows as $position => $row) {
                 SalesDocumentRow::create(['sales_document_id' => $document->id, 'position' => $position, 'line_key' => $lineKeys[$position], ...$row]);
+            }
+
+            // Everyone who changes a quote or an order counts as one of its preparers for an approval of prices under the floor (ADR-082 §9, DraftEditors); ids only.
+            if (! $isNew && PriceFloor::of($company)->isOn()) {
+                Audit::record('sales_document.saved', $document, ['rows' => count($rows)], $company, $user);
             }
 
             if ($isNew) {

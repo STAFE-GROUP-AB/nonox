@@ -19,6 +19,7 @@ use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\Ocr;
 use App\Domain\Invoicing\TaxReduction;
+use App\Domain\Pricing\PriceFloorGuard;
 use App\Domain\Vat\OssRates;
 use App\Domain\Vat\OssThreshold;
 use App\Jobs\StoreIssuedInvoicePdf;
@@ -59,11 +60,14 @@ class IssueInvoice
 {
     public function __construct(private readonly BookVoucher $bookVoucher) {}
 
-    public function __invoke(User $user, Invoice $invoice): Invoice
+    /**
+     * @param  bool  $automatic  issued by an agreement's own schedule, with no person to approve a price (RunRecurringInvoice); a person issuing a recurring draft is held like any other
+     */
+    public function __invoke(User $user, Invoice $invoice, bool $automatic = false): Invoice
     {
         Gate::forUser($user)->authorize('issue', $invoice);
 
-        return CurrentCompany::run($invoice->company_id, fn (): Invoice => DB::transaction(function () use ($user, $invoice): Invoice {
+        return CurrentCompany::run($invoice->company_id, fn (): Invoice => DB::transaction(function () use ($user, $invoice, $automatic): Invoice {
             /** @var Invoice $invoice */
             $invoice = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
             $invoice->load(['rows.account', 'rows.costCenter', 'rows.project']);
@@ -93,6 +97,11 @@ class IssueInvoice
 
             if (! $invoice->isCredit()) {
                 $this->ensureVatAllowed($company, $invoice);
+            }
+
+            // Manual prices under the company's floor wait for an approval of this version of the rows (ADR-082 §9, P7); only an agreement's own automatic issue is not held.
+            if (! $invoice->isCredit() && ! $automatic) {
+                PriceFloorGuard::ensureCleared($company, $invoice);
             }
 
             // ML 17 kap. 24 § p. 6: a full invoice carries the buyer's full name and address (#55).

@@ -182,6 +182,19 @@ final class ManufacturingBook
     }
 
     /**
+     * The cost per whole stock unit of an article as the costing uses it
+     * (valuation, own bill of materials, latest receipt, purchase price),
+     * material and labour together; null when none is known. Read by the
+     * margin check of ADR-082 §9.
+     */
+    public function articleUnitCostOre(int $articleId): ?int
+    {
+        $unit = $this->unitCostAt($articleId, 1);
+
+        return $unit['material'] === null ? null : $unit['material'] + ($unit['labour'] ?? 0);
+    }
+
+    /**
      * The cost per stock unit of a component, split into material and
      * labour (labour only for a sub-assembly costed from its own bill of
      * materials).

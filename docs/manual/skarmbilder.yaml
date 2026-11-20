@@ -168,6 +168,9 @@ fakturering/offerter-och-order: { foretag: konsult, rutt: invoicing.quotes.show,
 fakturering/priser-pa-raderna: { foretag: byra, rutt: invoicing.invoices.edit, modell: { tabell: invoices, dar: { your_reference: 'Månadsavtal 2026' } }, visa: '[data-row-cards]', text: Prisavtal }
 fakturering/varfor-detta-pris: { foretag: byra, rutt: invoicing.invoices.edit, modell: { tabell: invoices, dar: { your_reference: 'Månadsavtal 2026' } }, klick: ['[data-row-cards] tr:nth-child(3) [data-price-marker]'], visa: '[data-price-explanation]', text: Mängdpris från }
 fakturering/uppdatera-priser: { foretag: byra, rutt: invoicing.invoices.edit, modell: { tabell: invoices, dar: { your_reference: 'Månadsavtal 2026' } }, klick: ['[data-update-prices]'], visa: '[data-price-diff]', text: Dagens priser }
+fakturering/marginal-pa-raderna: { foretag: hantverkare, rutt: invoicing.invoices.edit, modell: { tabell: invoices, dar: { your_reference: 'Marginalvarning, kök' } }, visa: '[data-row-cards]', text: Under självkostnad }
+fakturering/pris-under-lagsta-tackningsgrad: { foretag: hantverkare, rutt: invoicing.invoices.edit, modell: { tabell: invoices, dar: { your_reference: 'Marginalvarning, kök' } }, del: '[data-floor-card]', text: Be om godkännande }
+fakturering/lagsta-tackningsgrad: { foretag: hantverkare, rutt: pricing.lists, del: '[data-floor-settings]', text: Lägsta täckningsgrad (%) }
 fakturering/avtalsfakturering: { foretag: konsult, rutt: invoicing.agreements.show, modell: { tabell: recurring_invoices } }
 fakturering/forsaljning-till-utlandet: { foretag: konsult, rutt: invoicing.invoices.show, modell: { tabell: invoices, dar: { foreign_sale: EU_SERVICES } } }
 

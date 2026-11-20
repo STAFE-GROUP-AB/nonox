@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Signing;
 
+use App\Domain\Pricing\PriceFloorGuard;
 use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\CompletionLinks;
 use App\Domain\Signing\EnvelopeStatus;
@@ -486,6 +487,11 @@ final class SendForSigning
     {
         $document = $this->types->documentFor(new SigningRequest($this->types->attributesFor($document)), lock: true);
         abort_unless($document instanceof Signable, 404);
+
+        // A quote with manual prices under the company's floor is sent only once this version of its rows is approved (ADR-082 §9, P7).
+        if ($document instanceof SalesDocument && $document->isQuote()) {
+            PriceFloorGuard::ensureClearedFor($document);
+        }
 
         if ($document instanceof SalesDocument && SignedDocuments::isQuoteSigned($document->id)) {
             throw ValidationException::withMessages(['document' => SignedDocuments::awaitsSeveralSigners($document, $this->types)

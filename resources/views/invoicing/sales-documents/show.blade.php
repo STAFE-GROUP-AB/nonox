@@ -4,6 +4,10 @@
     <div class="w-full py-6 px-4 sm:px-6 lg:px-10 space-y-6">
         <x-ui.page-heading :title="$document?->title() ?? ($isQuote ? __('Ny offert') : __('Ny order'))" />
         <livewire:invoicing.sales-document-editor :kind="$kind" :document="$document" />
+        {{-- Manual prices under the company's lowest contribution margin wait for an approval (ADR-082 §9). --}}
+        @if($document && $document->isOpen())
+            <livewire:pricing.floor-approval-card :type="$isQuote ? 'QUOTE' : 'ORDER'" :document-id="$document->id" :key="'floor-'.$document->id" />
+        @endif
         {{-- Bills of materials and costing per row (ADR-071 §4, §6): internal, only with Tillverkning on. --}}
         @if($document && app(App\Modules\ModuleManager::class)->isEnabled('manufacturing', auth()->user()->currentCompany()) && auth()->user()->hasTeamPermission(auth()->user()->currentCompany(), 'manufacturing:view'))
             <livewire:manufacturing.row-structures :document-id="$document->id" :key="'row-structures-'.$document->id" />
