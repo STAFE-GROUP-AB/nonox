@@ -358,3 +358,13 @@ it('refuses a customer list in another currency than the customer\'s', function 
 
     expect($customer->fresh()->price_list_id)->toBe($euro->id);
 });
+
+it('refuses to lengthen a running price into the next one', function () {
+    $list = ($this->save)();
+    $running = ($this->item)($list, ['valid_from' => '2026-01-01', 'valid_to' => '2026-12-31']);
+    ($this->item)($list, ['price' => '95', 'valid_from' => '2027-01-01']);
+
+    expect(fn () => ($this->item)($list, ['valid_from' => '2026-01-01', 'valid_to' => null], $running))->toThrow(ValidationException::class)
+        ->and(fn () => ($this->item)($list, ['valid_from' => '2026-01-01', 'valid_to' => '2027-02-01'], $running))->toThrow(ValidationException::class)
+        ->and($running->fresh()->valid_to->toDateString())->toBe('2026-12-31');
+});

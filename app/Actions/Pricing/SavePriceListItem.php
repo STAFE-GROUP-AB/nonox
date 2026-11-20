@@ -141,6 +141,8 @@ class SavePriceListItem
             throw ValidationException::withMessages(['valid_to' => __('Slutdatumet kan inte ligga före i går, för då ändras dagar som redan har gått.')]);
         }
 
+        $this->refuseOverlap($list, $article, $unit, $minQuantity, $item->valid_from?->toDateString(), $to, $item);
+
         $item->update(['valid_to' => $to]);
         Audit::record('price_list_item.ended', $item, ['price_list_id' => $list->id, 'article_id' => $article->id], $company, $user);
 

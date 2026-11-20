@@ -57,6 +57,7 @@ class PriceListItems extends Component
 
     public bool $showForm = false;
 
+    #[Locked]
     public ?int $editingId = null;
 
     /** @var array<string, mixed> */
