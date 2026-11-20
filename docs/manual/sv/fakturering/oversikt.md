@@ -20,6 +20,7 @@ Avsnittet är för dig som säljer och fakturerar, och för dig som sköter bokf
 - [Artiklar](/manual/fakturering/artiklar) – det du säljer, med pris, moms och intäktskonto.
 - [Prislistor](/manual/fakturering/prislistor) – egna priser per kundgrupp eller valuta, kampanjer och antalstrappor.
 - [Prisavtal](/manual/fakturering/prisavtal) – en kunds förhandlade priser för en period, signerade med namnteckning.
+- [Prisuppdatering](/manual/fakturering/prisuppdatering) – ändra många priser på en gång, med förhandsgranskning, och läs in priser från en fil.
 - [Logga och färger på fakturan](/manual/fakturering/logga-och-farger) – ge fakturor och offerter ditt eget utseende.
 
 ## Fakturor

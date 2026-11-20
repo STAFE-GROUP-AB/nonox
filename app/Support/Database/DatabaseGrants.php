@@ -314,6 +314,8 @@ final class DatabaseGrants
         'price_lists' => GrantDecision::ReadWrite,
         // A mass price update is kept once made: reverting is a status, and the prune only clears its stored file.
         'price_update_runs' => GrantDecision::NoDelete,
+        // The preview and diff of a mass price update; an unapplied preview's lines are pruned after seven days.
+        'price_update_run_lines' => GrantDecision::ReadWrite,
         'prior_year_size_figures' => GrantDecision::ReadWrite,
         // A project's billing plan (ADR-081 E8): milestones are removed while not invoiced.
         'project_billing_milestones' => GrantDecision::ReadWrite,

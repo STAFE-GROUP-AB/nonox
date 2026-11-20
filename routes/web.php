@@ -60,6 +60,7 @@ use App\Http\Middleware\EnsureHqAdmin;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Models\PriceAgreement;
 use App\Models\PriceList;
+use App\Models\PriceUpdateRun;
 use App\Models\SalesDocument;
 use App\Support\Developer\Guides;
 use App\Support\Guide\Guide;
@@ -316,6 +317,9 @@ Route::middleware([
         Route::view('/prisavtal', 'pricing.agreements')->name('pricing.agreements');
         Route::get('/prisavtal/{priceAgreement}', fn (PriceAgreement $priceAgreement) => view('pricing.agreement', ['priceAgreement' => $priceAgreement]))->whereNumber('priceAgreement')->name('pricing.agreements.show');
         Route::get('/prisavtal/{priceAgreement}/pdf', PriceAgreementPdfController::class)->whereNumber('priceAgreement')->name('pricing.agreements.pdf');
+        // Mass price update (ADR-082 P6): plan, preview, apply and revert; the run is bound within the company.
+        Route::view('/prislistor/prisuppdatering', 'pricing.updates')->name('pricing.updates');
+        Route::get('/prislistor/prisuppdatering/{priceUpdateRun}', fn (PriceUpdateRun $priceUpdateRun) => view('pricing.update', ['run' => $priceUpdateRun]))->whereNumber('priceUpdateRun')->name('pricing.updates.show');
 
         Route::view('/rapporter', 'accounting.reports')->name('accounting.reports');
         Route::view('/reskontra', 'accounting.ledgers')->name('accounting.ledgers');

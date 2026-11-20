@@ -78,6 +78,7 @@ use App\Models\PriceList;
 use App\Models\PriceListItem;
 use App\Models\PriceListPriceGroup;
 use App\Models\PriceUpdateRun;
+use App\Models\PriceUpdateRunLine;
 use App\Models\PriorYearSizeFigure;
 use App\Models\Project;
 use App\Models\ProjectBillingMilestone;
@@ -465,6 +466,7 @@ const COMPANY_SCOPED_MODELS = [
     PriceAgreementItem::class => 'p1PriceAgreementItemAttributes',
     ArticlePriceHistory::class => 'p1ArticlePriceHistoryAttributes',
     PriceUpdateRun::class => 'p1PriceUpdateRunAttributes',
+    PriceUpdateRunLine::class => 'p6PriceUpdateRunLineAttributes',
     Invoice::class => 'invoiceAttributes',
     InvoiceRow::class => 'invoiceRowAttributes',
     InvoicePayment::class => 'invoicePaymentAttributes',
@@ -2098,6 +2100,11 @@ function p1ArticlePriceHistoryAttributes(): array
 function p1PriceUpdateRunAttributes(): array
 {
     return ['kind' => 'PERCENT', 'scope' => ['article_ids' => []], 'rule' => ['percent_bp' => 400], 'effective_date' => '2027-01-01', 'created_by' => User::factory()->create()->id];
+}
+
+function p6PriceUpdateRunLineAttributes(): array
+{
+    return ['price_update_run_id' => PriceUpdateRun::create(p1PriceUpdateRunAttributes())->id, 'position' => 1, 'target' => 'BASE', 'article_id' => Article::create(articleAttributes())->id, 'old_minor' => 10_000, 'new_minor' => 10_400, 'valid_from' => '2027-01-01', 'status' => 'READY'];
 }
 
 function crmQuoteTemplateRowAttributes(): array

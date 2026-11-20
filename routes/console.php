@@ -33,6 +33,9 @@ Schedule::command('planning:prune-proposals')->dailyAt('04:35')->withoutOverlapp
 Schedule::command('inventory:prune-shipments')->dailyAt('04:38')->withoutOverlapping();
 // Source files of register imports (ADR-076): 30 days after a finished import, 7 after an unconfirmed preview.
 Schedule::command('register-import:prune')->dailyAt('04:40')->withoutOverlapping();
+// Mass price updates (ADR-082 §8): base prices dated today written just after midnight; price files kept two years.
+Schedule::command('pricing:apply-scheduled')->dailyAt('00:10')->withoutOverlapping();
+Schedule::command('pricing:prune-updates')->dailyAt('04:45')->withoutOverlapping();
 // The encrypted chat (ADR-045): expired chats in a file store, which does not expire them by itself.
 Schedule::command('chat:prune')->everyFiveMinutes()->withoutOverlapping();
 // NONOX API webhooks (ADR-032): retries whose wait is over.

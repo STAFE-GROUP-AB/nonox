@@ -7,6 +7,7 @@ namespace App\Livewire\Pricing;
 use App\Actions\Pricing\RetirePriceListItem;
 use App\Actions\Pricing\SavePriceListItem;
 use App\Domain\Pricing\PriceInput;
+use App\Domain\Pricing\PriceListExport;
 use App\Domain\Units\ArticleUnits;
 use App\Domain\Units\UnitConverter;
 use App\Livewire\Concerns\ShowsToasts;
@@ -17,16 +18,19 @@ use App\Models\PriceListItem;
 use App\Models\Unit;
 use App\Models\User;
 use App\Modules\Inventory\Domain\Quantity;
+use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * The prices of one list (ADR-082 §2, P4): per article a price or a discount,
@@ -204,6 +208,25 @@ class PriceListItems extends Component
             RetirePriceListItem::ENDED => __('Priset gäller till och med i går och finns kvar i historiken.'),
             default => __('Priset är arkiverat och finns kvar i historiken.'),
         });
+    }
+
+    /**
+     * The running and coming prices of the list as a file in the columns a
+     * price update reads (ADR-082 §8, P6): export, edit, import.
+     */
+    public function export(string $format): StreamedResponse
+    {
+        $list = $this->list();
+        $format = $format === 'xlsx' ? 'xlsx' : 'csv';
+        $contents = $format === 'xlsx' ? PriceListExport::xlsx($list) : PriceListExport::csv($list);
+
+        Audit::record('price_list.exported', $list, ['format' => $format], $this->company(), $this->user());
+
+        return response()->streamDownload(function () use ($contents): void {
+            echo $contents;
+        }, 'prislista-'.Str::slug($list->code).".{$format}", [
+            'Content-Type' => $format === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv; charset=UTF-8',
+        ]);
     }
 
     public function render(): View

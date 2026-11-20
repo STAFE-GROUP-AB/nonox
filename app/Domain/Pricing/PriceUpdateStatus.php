@@ -14,4 +14,14 @@ enum PriceUpdateStatus: string
     case Applied = 'APPLIED';
     case Scheduled = 'SCHEDULED';
     case Reverted = 'REVERTED';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Preview => __('Förhandsgranskning'),
+            self::Applied => __('Genomförd'),
+            self::Scheduled => __('Väntar på datum'),
+            self::Reverted => __('Återställd'),
+        };
+    }
 }

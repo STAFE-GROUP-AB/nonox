@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-20-prisuppdatering",
+      "datum": "2026-11-20T19:00:00+01:00",
+      "rubrik": "Prisuppdatering: ändra många priser på en gång",
+      "beskrivning": "Under Register → Prislistor → Prisuppdatering ändrar du grundpriser och priser i prislistor med en procent, ett belopp, två indextal du skriver in, eller från en CSV- eller Excel-fil, och ser varje nytt pris och varför ett pris inte kan ändras innan något sparas. Ett pris som redan gäller ändras inte i efterhand: det nya läggs in från det datum du väljer, och en uppdatering kan återställas till och med den dagen. En prislista kan exporteras till samma filformat, redigeras i ett kalkylprogram och läsas in igen.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-20-prisavtal",
       "datum": "2026-11-20T18:55:00+01:00",
       "rubrik": "Prisavtal med kunder",

@@ -58,6 +58,8 @@ fakturering/prislistor-kund: { foretag: hantverkare, rutt: invoicing.customers, 
 fakturering/prislistor-artikel: { foretag: hantverkare, rutt: invoicing.articles, klick: ['tbody tr:nth-child(1) button', 'text=Priser'] }
 fakturering/prisavtal: { foretag: hantverkare, rutt: pricing.agreements, text: Ramavtal snickeri }
 fakturering/prisavtal-avtal: { foretag: hantverkare, rutt: pricing.agreements.show, modell: { tabell: price_agreements, dar: { title: Ramavtal snickeri } }, text: Aktiverat för hand }
+fakturering/prisuppdatering: { foretag: hantverkare, rutt: pricing.updates }
+fakturering/prisuppdatering-forhandsgranskning: { foretag: hantverkare, rutt: pricing.updates.show, modell: { tabell: price_update_runs, dar: { status: PREVIEW } } }
 fakturering/enheter: { foretag: hantverkare, rutt: invoicing.units }
 fakturering/enheter-pa-artikeln: { foretag: hantverkare, rutt: invoicing.articles, klick: ['tbody tr:nth-child(3) button', 'text=Avancerad'], visa: '#article_stock_unit' }
 fakturering/rot-och-rut: { foretag: hantverkare, rutt: invoicing.invoices.show, modell: rot_invoice }

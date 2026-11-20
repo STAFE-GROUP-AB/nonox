@@ -107,6 +107,12 @@
                 <option value="avslutade">{{ __('Avslutade') }}</option>
                 <option value="alla">{{ __('Alla') }}</option>
             </select>
+            <span class="text-sm text-gray-700">{{ __('Exportera:') }}</span>
+            <button type="button" class="text-sm font-medium text-accent-700 underline" wire:click="export('csv')">{{ __('CSV') }}</button>
+            <button type="button" class="text-sm font-medium text-accent-700 underline" wire:click="export('xlsx')">{{ __('Excel') }}</button>
+            @if($canManage && ! $list->archived_at)
+                <a href="{{ route('pricing.updates') }}" class="text-sm font-medium text-accent-700 underline">{{ __('Prisuppdatering') }}</a>
+            @endif
         </div>
 
         @if($items->isEmpty())

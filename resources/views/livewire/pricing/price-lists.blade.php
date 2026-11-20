@@ -118,6 +118,7 @@
                 <x-button type="button" wire:click="create">{{ __('Ny prislista') }}</x-button>
             @endif
             <a href="{{ route('pricing.groups') }}" class="text-sm font-medium text-accent-700 underline">{{ __('Kundgrupper') }}</a>
+            <a href="{{ route('pricing.updates') }}" class="text-sm font-medium text-accent-700 underline">{{ __('Prisuppdatering') }}</a>
             <input type="search" class="{{ $input }} max-w-xs" wire:model.live.debounce.300ms="search" placeholder="{{ __('Sök på kod eller namn') }}" aria-label="{{ __('Sök prislista') }}">
             <select class="{{ $input }} max-w-44" wire:model.live="kind" aria-label="{{ __('Visa typ') }}">
                 <option value="">{{ __('Alla typer') }}</option>
