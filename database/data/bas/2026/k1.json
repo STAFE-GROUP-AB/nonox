@@ -13,19 +13,11 @@
     },
     {
       "number": 1220,
-      "name": "Inventarier och verktyg"
+      "name": "Inventarier, verktyg och installationer"
     },
     {
       "number": 1229,
-      "name": "Ackumulerade avskrivningar på inventarier och verktyg"
-    },
-    {
-      "number": 1250,
-      "name": "Datorer"
-    },
-    {
-      "number": 1259,
-      "name": "Ackumulerade avskrivningar på datorer"
+      "name": "Ackumulerade avskrivningar på inventarier, verktyg och installationer"
     },
     {
       "number": 1310,
@@ -33,7 +25,7 @@
     },
     {
       "number": 1350,
-      "name": "Andelar och värdepapper i andra företag"
+      "name": "Andra långfristiga värdepappersinnehav"
     },
     {
       "number": 1380,
@@ -85,7 +77,7 @@
     },
     {
       "number": 1930,
-      "name": "Företagskonto/checkkonto/affärskonto"
+      "name": "Företagskonto"
     },
     {
       "number": 1940,
@@ -105,7 +97,7 @@
     },
     {
       "number": 2019,
-      "name": "Årets resultat"
+      "name": "Årets resultat, delägare 1"
     },
     {
       "number": 2150,
@@ -133,7 +125,7 @@
     },
     {
       "number": 2614,
-      "name": "Utgående moms omvänd skattskyldighet, 25 %"
+      "name": "Utgående moms omvänd betalskyldighet, 25 %"
     },
     {
       "number": 2615,
@@ -145,7 +137,7 @@
     },
     {
       "number": 2624,
-      "name": "Utgående moms omvänd skattskyldighet, 12 %"
+      "name": "Utgående moms omvänd betalningsskyldighet 12 %"
     },
     {
       "number": 2631,
@@ -153,7 +145,7 @@
     },
     {
       "number": 2634,
-      "name": "Utgående moms omvänd skattskyldighet, 6 %"
+      "name": "Utgående moms omvänd betalningsskyldighet, 6 %"
     },
     {
       "number": 2640,
@@ -241,11 +233,11 @@
     },
     {
       "number": 3990,
-      "name": "Övriga ersättningar och intäkter"
+      "name": "Övriga ersättningar, bidrag och intäkter"
     },
     {
       "number": 4010,
-      "name": "Inköp material och varor"
+      "name": "Inköp av handelsvaror i Sverige"
     },
     {
       "number": 4910,
@@ -273,11 +265,11 @@
     },
     {
       "number": 5611,
-      "name": "Drivmedel för personbilar"
+      "name": "Drivmedel för personbilar, mc, m.m."
     },
     {
       "number": 5800,
-      "name": "Resekostnader"
+      "name": "Resekostnader (gruppkonto)"
     },
     {
       "number": 5810,
@@ -317,7 +309,7 @@
     },
     {
       "number": 6250,
-      "name": "Postbefordran"
+      "name": "Porto"
     },
     {
       "number": 6310,
@@ -341,7 +333,7 @@
     },
     {
       "number": 6970,
-      "name": "Tidningar, tidskrifter och facklitteratur"
+      "name": "Tidningar, facklitteratur, m.m."
     },
     {
       "number": 6981,
@@ -373,7 +365,7 @@
     },
     {
       "number": 7510,
-      "name": "Arbetsgivaravgifter"
+      "name": "Arbetsgivaravgifter 31,42 %"
     },
     {
       "number": 7690,
@@ -381,11 +373,7 @@
     },
     {
       "number": 7832,
-      "name": "Avskrivningar på inventarier och verktyg"
-    },
-    {
-      "number": 7834,
-      "name": "Avskrivningar på bilar och andra transportmedel"
+      "name": "Avskrivningar på inventarier, verktyg och installationer"
     },
     {
       "number": 7960,

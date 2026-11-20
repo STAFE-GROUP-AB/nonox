@@ -68,7 +68,7 @@ final class ClosingExtras extends DemoExtra
         ]);
 
         $this->purchase($c, $computers, CarbonImmutable::parse('2026-02-16'), '40188', 'Bärbar dator', 3_000_000, 600_000, [
-            ['account' => '1250', 'amount' => '24000.00', 'description' => 'Bärbar dator 14 tum', 'asset' => ['name' => 'Bärbar dator, Anna', 'category' => 'COMPUTERS', 'life_months' => 36]],
+            ['account' => '1224', 'amount' => '24000.00', 'description' => 'Bärbar dator 14 tum', 'asset' => ['name' => 'Bärbar dator, Anna', 'category' => 'COMPUTERS', 'life_months' => 36]],
         ]);
 
         $furniture = app(SaveSupplier::class)($c->user, $c->company, [

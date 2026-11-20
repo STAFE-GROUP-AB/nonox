@@ -4,18 +4,18 @@ import { acquisitionCandidates, accountNumber, categoryFor } from '../../resourc
 
 const settings = { ranges: [[1220, 1220], [1250, 1250], [1221, 1227]], threshold: 1_300_000 };
 const categories = [
-    { value: 'EQUIPMENT', label: 'Inventarier och verktyg', life: 60, asset: 1220 },
+    { value: 'EQUIPMENT', label: 'Inventarier, verktyg och installationer', life: 60, asset: 1220 },
     { value: 'COMPUTERS', label: 'Datorer', life: 36, asset: 1250 },
 ];
 
 test('reads the account number at the start of the field', () => {
-    assert.equal(accountNumber('1220 Inventarier och verktyg'), 1220);
+    assert.equal(accountNumber('1220 Inventarier, verktyg och installationer'), 1220);
     assert.equal(accountNumber('Inventarier'), null);
 });
 
 test('offers only debits on an acquisition account, and marks those under the threshold', () => {
     const rows = [
-        { account: '1220 Inventarier och verktyg', debit: '40 000', credit: '' },
+        { account: '1220 Inventarier, verktyg och installationer', debit: '40 000', credit: '' },
         { account: '2641', debit: '10 000', credit: '' },
         { account: '1229', debit: '5 000', credit: '' },
         { account: '1250 Datorer', debit: '9 000', credit: '' },
@@ -41,4 +41,18 @@ test('guesses the category from the account and its group', () => {
     assert.equal(categoryFor(1250, categories).value, 'COMPUTERS');
     assert.equal(categoryFor(1226, categories).value, 'EQUIPMENT');
     assert.equal(categoryFor(1110, categories).value, 'EQUIPMENT');
+});
+
+test('keeps accounts proposed before the BAS 2026 correction in their category', () => {
+    const all = [
+        { value: 'EQUIPMENT', asset: 1220 },
+        { value: 'COMPUTERS', asset: 1224 },
+        { value: 'MACHINERY', asset: 1210 },
+        { value: 'VEHICLES', asset: 1226 },
+    ];
+
+    assert.equal(categoryFor(1240, all).value, 'VEHICLES');
+    assert.equal(categoryFor(1250, all).value, 'COMPUTERS');
+    assert.equal(categoryFor(1224, all).value, 'COMPUTERS');
+    assert.equal(categoryFor(1221, all).value, 'EQUIPMENT');
 });

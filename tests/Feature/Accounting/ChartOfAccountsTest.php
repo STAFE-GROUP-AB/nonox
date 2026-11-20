@@ -38,7 +38,7 @@ it('shows the chart of accounts on /kontoplan', function () {
     $this->get(route('accounting.accounts'))
         ->assertOk()
         ->assertSee('Kontoplan')
-        ->assertSee('Företagskonto/checkkonto/affärskonto');
+        ->assertSeeInOrder(['1930', 'Företagskonto']);
 
     expect(route('accounting.accounts', absolute: false))->toBe('/kontoplan');
 });
@@ -132,7 +132,7 @@ it('renames and toggles accounts from the page with toasts', function () {
 it('searches by number and name and filters by class', function () {
     Livewire::test(ChartOfAccounts::class)
         ->set('search', '193')
-        ->assertSee('Företagskonto/checkkonto/affärskonto')
+        ->assertSeeHtmlInOrder(['1930</td>', 'Företagskonto'])
         ->assertDontSee('Kundfordringar')
         ->set('search', 'kundford')
         ->assertSee('Kundfordringar')

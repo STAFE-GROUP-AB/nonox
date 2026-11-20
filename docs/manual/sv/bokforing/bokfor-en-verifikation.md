@@ -37,7 +37,7 @@ Café Hörnet köper kontorsmaterial för 500 kr inklusive 25 % moms och betalar
 |---|---:|---:|
 | 6110 Kontorsmateriel | 400,00 | |
 | 2641 Debiterad ingående moms | 100,00 | |
-| 1930 Företagskonto/checkkonto/affärskonto | | 500,00 |
+| 1930 Företagskonto | | 500,00 |
 
 Kostnaden och momsen du får tillbaka står i debet, pengarna som lämnade banken i kredit. Exakt det här kan [konteringsmallen](/manual/bokforing/konteringsmallar) **Inköp med 25 % moms** fylla i åt dig: du skriver 500 och väljer kostnadskontot.
 

@@ -765,3 +765,37 @@ finns särskilda skäl".
   (förbättringsutgift, K2 chapter 10, K3 17.5) should be written off over the
   remaining life of the asset (chosen) or over a life of its own, and whether
   K2 and K3 differ here.
+
+## Fixed asset accounts follow BAS 2026 for new assets (2026-11-19)
+
+The categories proposed accounts that BAS 2026 does not have: computers on
+1250/1259/7835 and vehicles on 1240/1249/7834. Checked against BAS's own free
+list (`BAS_kontoplan_2026_v2.xlsx`, v 1.1): 1250 is a free account, 1259, 1249,
+7834 and 7835 do not exist, and 1240 is now a free account under Maskiner.
+BAS puts computers (not for production) on 1224 and vehicles (not for
+production) on 1226, both under 1220 Inventarier, verktyg och installationer
+with 1229 (accumulated depreciation) and 7832 (depreciation).
+
+- `AssetCategory::accounts()` now proposes 1224/1229/7832 for computers and
+  1226/1229/7832 for vehicles. Equipment, machinery, buildings and land are
+  unchanged.
+- The accounts are stored per asset (`fixed_assets.asset_account`,
+  `accumulated_account`, `expense_account`) and are only proposals for a new
+  asset. An existing asset therefore never switches accounts mid-life: its
+  running depreciation keeps posting to the accounts it started on. No
+  migration moves anything.
+- Purchases on 1240 and 1250 are still offered as register candidates
+  (`AssetCategory::LEGACY_ASSET_ACCOUNTS`), because older assets and purchases
+  may sit there.
+- A new purchase on a legacy asset account takes that account's own
+  companions, not the category's: 1240 brings 1249/7834 and 1250 brings
+  1259/7835 (`AssetCategory::accountsFor`), so under K3 the cost and its
+  accumulated depreciation stay on one balance sheet line (1240 on Maskiner,
+  1250 on Inventarier). They are free accounts or absent in BAS, so they are
+  created when missing with NONOX's own names ending "(eget konto)" and an
+  audit entry `fixed_asset.accounts_added`.
+- A vehicle on 1226 lands on the K3 line Inventarier, verktyg och
+  installationer (1220–1229) instead of Maskiner, as BAS intends. An old
+  vehicle on 1240 stays on the Maskiner line.
+- A company that wants an old asset on the new accounts does it by hand with
+  a voucher and a new asset; NONOX does not remap automatically.

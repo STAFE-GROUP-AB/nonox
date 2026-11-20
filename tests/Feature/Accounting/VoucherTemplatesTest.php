@@ -62,7 +62,7 @@ describe('in the editor', function () {
             ->assertSet('rows.0.debit', "1\u{00A0}000,00")
             ->assertSet('rows.1.account', '2641 Debiterad ingående moms')
             ->assertSet('rows.1.debit', '250,00')
-            ->assertSet('rows.2.account', '1930 Företagskonto/checkkonto/affärskonto')
+            ->assertSet('rows.2.account', '1930 Företagskonto')
             ->assertSet('rows.2.credit', "1\u{00A0}250,00")
             ->assertSet('description', 'Inköp med 25 % moms')
             ->assertDispatched('toast', message: 'Raderna är ifyllda. Välj kostnadskonto på den första raden.');

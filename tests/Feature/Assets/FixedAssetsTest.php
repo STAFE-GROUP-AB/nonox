@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Actions\Assets\FixedAssets;
+use App\Domain\Accounting\AccountType;
 use App\Domain\Assets\DepreciationPlan;
 use App\Livewire\Accounting\FixedAssetsPage;
+use App\Models\Account;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetDepreciation;
 use App\Models\Voucher;
@@ -57,6 +59,11 @@ it('plans linear depreciation that adds up exactly, whatever the rounding', func
 
 it('books a month of depreciation once, as one voucher, and catches up a missed month', function () {
     $machine = espressoMachine();
+    // An asset registered before the BAS 2026 correction keeps its accounts, and its depreciation keeps posting there.
+    foreach ([1250 => 'Datorer', 1259 => 'Ackumulerade avskrivningar på datorer', 7835 => 'Avskrivningar på datorer'] as $number => $name) {
+        Account::create(['number' => $number, 'name' => $name, 'type' => AccountType::forNumber($number)]);
+    }
+
     espressoMachine(['name' => 'Bärbar dator', 'category' => 'COMPUTERS', 'acquisition' => '18 000', 'life_months' => '36', 'asset_account' => '1250', 'accumulated_account' => '1259', 'expense_account' => '7835', 'depreciation_start' => '2026-03-01']);
 
     $voucher = $this->assets->depreciate($this->owner, $this->company, '2026-02');
@@ -109,6 +116,30 @@ it('keeps the plan of booked months and the booked depreciation itself', functio
         ->and(fn () => DB::table('fixed_asset_depreciations')->update(['amount_ore' => 1]))->toThrow(QueryException::class);
 });
 
+it('brings the legacy companions along when a legacy asset account is typed for a new asset, and never for an existing one', function () {
+    Account::create(['number' => 1240, 'name' => 'Eget konto 1240', 'type' => AccountType::forNumber(1240)]);
+
+    Livewire::test(FixedAssetsPage::class)
+        ->call('create')
+        ->set('form.asset_account', '1240')
+        ->assertSet('form.accumulated_account', '1249')
+        ->assertSet('form.expense_account', '7834')
+        ->set('form.asset_account', '1220')
+        ->assertSet('form.accumulated_account', '1249');
+
+    expect(Account::query()->whereIn('number', [1249, 7834])->count())->toBe(2);
+
+    $asset = espressoMachine();
+
+    Livewire::test(FixedAssetsPage::class)
+        ->call('edit', $asset->id)
+        ->set('form.asset_account', '1250')
+        ->assertSet('form.accumulated_account', '1229')
+        ->assertSet('form.expense_account', '7832');
+
+    expect(Account::query()->where('number', 1259)->exists())->toBeFalse();
+});
+
 it('is for those who close the year, and lists the register with book values', function () {
     $bookkeeper = Bookkeeping::member($this->company, 'bookkeeper');
 
@@ -123,7 +154,7 @@ it('is for those who close the year, and lists the register with book values', f
         ->assertDispatched('toast')
         ->call('create')
         ->set('form.category', 'COMPUTERS')
-        ->assertSet('form.expense_account', '7835')
+        ->assertSet('form.expense_account', '7832')
         ->assertSet('form.life_months', '36');
 
     $this->actingAs($bookkeeper);

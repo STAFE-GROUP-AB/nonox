@@ -148,7 +148,7 @@ it('runs a shared report again with the viewer\'s own scope, so sharing widens n
 
     expect(e18ByRow($limited))->toBe([
         '3001 Försäljning inom Sverige, 25 % moms' => -50_000,
-        '4010 Inköp material och varor' => 20_000,
+        '4010 Inköp av handelsvaror i Sverige' => 20_000,
         '5010 Lokalhyra' => 30_000,
     ])->and($owner['3001 Försäljning inom Sverige, 25 % moms'])->toBeLessThan(-50_000);
 

@@ -113,6 +113,7 @@ function audBsBookYear(User $owner, Company $company, FiscalYear $year): void
     audBsPost($owner, $company, '2026-11-30', 'Ränta', [1930 => 143_300, 8310 => -143_300]);
 
     // The fixed asset register: 36 000 kr over 36 months from January.
+    audBsAccount(1259);
     audBsAccount(7835);
     app(FixedAssets::class)->save($owner, $company, [
         'name' => 'Dator', 'category' => AssetCategory::Computers->value, 'acquired_on' => '2026-01-15',

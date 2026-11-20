@@ -57,9 +57,17 @@ export function acquisitionCandidates(rows, settings, kind) {
     return candidates;
 }
 
+/** Accounts proposed before the BAS 2026 correction keep their category: 124x vehicles, 125x computers (mirrors AcquisitionAccounts::categoryFor). */
+function legacyCategory(account, categories) {
+    const value = { 124: 'VEHICLES', 125: 'COMPUTERS' }[Math.floor(account / 10)];
+
+    return value === undefined ? undefined : categories.find((category) => category.value === value);
+}
+
 /** The category whose asset account this is, or whose account group it is in; otherwise the first. */
 export function categoryFor(account, categories) {
     return categories.find((category) => category.asset === account)
+        ?? legacyCategory(account, categories)
         ?? categories.find((category) => Math.floor(category.asset / 10) === Math.floor(account / 10))
         ?? categories[0];
 }

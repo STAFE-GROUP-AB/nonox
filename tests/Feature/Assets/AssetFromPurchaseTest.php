@@ -8,12 +8,15 @@ use App\Actions\Assets\FixedAssets;
 use App\Actions\Payables\RegisterSupplierInvoice;
 use App\Actions\Payables\SaveSupplier;
 use App\Actions\Payables\SaveSupplierInvoice;
+use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\VoucherSource;
+use App\Domain\AnnualReport\K3Schedule;
 use App\Domain\Assets\AcquisitionAccounts;
 use App\Domain\Assets\AssetCategory;
 use App\Livewire\Accounting\FixedAssetsPage;
 use App\Livewire\Accounting\VoucherEditor;
 use App\Livewire\Payables\SupplierInvoiceEditor;
+use App\Models\Account;
 use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\CostCenter;
@@ -179,7 +182,7 @@ it('lets only those who keep the register propose assets, and a bookkeeper post 
 });
 
 it('offers the register’s asset accounts by default and the company’s own once chosen', function () {
-    expect(AcquisitionAccounts::for($this->company)->ranges)->toBe([[1220, 1220], [1250, 1250], [1210, 1210], [1240, 1240]])
+    expect(AcquisitionAccounts::for($this->company)->ranges)->toBe([[1220, 1220], [1224, 1224], [1210, 1210], [1226, 1226], [1240, 1240], [1250, 1250]])
         ->and(AcquisitionAccounts::for($this->company)->contains(1229))->toBeFalse()
         ->and(AcquisitionAccounts::categoryFor(1221))->toBe(AssetCategory::Equipment)
         ->and(AcquisitionAccounts::categoryFor(1251))->toBe(AssetCategory::Computers);
@@ -243,7 +246,7 @@ it('never offers an asset on a credit note', function () {
 
 it('takes the proposal from the voucher editor, keeps it with the draft and shows the link both ways', function () {
     $rows = [
-        ['account' => '1220 Inventarier och verktyg', 'debit' => '40 000', 'credit' => '', 'description' => 'Espressomaskin', 'cost_center' => '', 'project' => '', 'asset' => machineProposal()],
+        ['account' => '1220 Inventarier, verktyg och installationer', 'debit' => '40 000', 'credit' => '', 'description' => 'Espressomaskin', 'cost_center' => '', 'project' => '', 'asset' => machineProposal()],
         ['account' => '2641', 'debit' => '10 000', 'credit' => '', 'description' => '', 'cost_center' => '', 'project' => ''],
         ['account' => '1930', 'debit' => '', 'credit' => '50 000', 'description' => '', 'cost_center' => '', 'project' => ''],
     ];
@@ -278,7 +281,7 @@ it('hides the offer from those who do not keep the register', function () {
 
 it('saves the settings from the register page', function () {
     Livewire::test(FixedAssetsPage::class)
-        ->assertSet('settings.accounts', '1220, 1250, 1210, 1240')
+        ->assertSet('settings.accounts', '1220, 1224, 1210, 1226, 1240, 1250')
         ->set('settings.accounts', '1220-1227')
         ->set('settings.threshold', '13 000')
         ->call('saveSettings')
@@ -302,4 +305,44 @@ it('takes the proposal from the supplier invoice editor', function () {
         ->assertHasNoErrors();
 
     expect(FixedAsset::query()->sole()->supplier_invoice_id)->not->toBeNull();
+});
+
+/** The K3 balance sheet line an account number sits on. */
+function k3LineOf(int $account): string
+{
+    foreach (K3Schedule::BALANCE as $line) {
+        foreach ($line['ranges'] as [$from, $to]) {
+            if ($account >= $from && $account <= $to) {
+                return $line['key'];
+            }
+        }
+    }
+
+    return 'none';
+}
+
+it('keeps a new purchase on a legacy account together with its depreciation on one K3 line', function (int $legacy, int $accumulated, int $expense, string $category, string $line) {
+    Account::create(['number' => $legacy, 'name' => "Eget konto {$legacy}", 'type' => AccountType::forNumber($legacy)]);
+
+    $draft = machinePurchase($this->owner, $this->company, machineProposal(['name' => 'Ny bil', 'category' => $category, 'life_months' => '60']), account: $legacy);
+    app(PostVoucher::class)($this->owner, $draft);
+    $asset = FixedAsset::query()->sole();
+
+    expect([$asset->asset_account, $asset->accumulated_account, $asset->expense_account])->toBe([$legacy, $accumulated, $expense])
+        ->and(Account::query()->where('number', $accumulated)->value('name'))->toEndWith('(eget konto)')
+        ->and(Account::query()->where('number', $expense)->value('name'))->toEndWith('(eget konto)')
+        ->and(k3LineOf($asset->asset_account))->toBe($line)
+        ->and(k3LineOf($asset->accumulated_account))->toBe($line)
+        ->and(AuditLog::query()->where('action', 'fixed_asset.accounts_added')->latest('id')->first()->payload['accounts'])->toBe([$accumulated, $expense]);
+})->with([
+    'a car on 1240' => [1240, 1249, 7834, 'VEHICLES', 'machinery'],
+    'a computer on 1250' => [1250, 1259, 7835, 'COMPUTERS', 'equipment'],
+]);
+
+it('puts the BAS 2026 accounts of every category on one K3 line', function () {
+    foreach (AssetCategory::cases() as $category) {
+        $accounts = $category->accounts();
+
+        expect(k3LineOf($accounts['accumulated'] ?? $accounts['asset']))->toBe(k3LineOf($accounts['asset']), $category->value);
+    }
 });

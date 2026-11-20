@@ -31,7 +31,7 @@ Med fakturametoden bokförs fakturan när den skapas, och betalningen när den k
 
 | Konto | Debet | Kredit |
 |---|---|---|
-| 1930 Företagskonto/checkkonto/affärskonto | det som betalats | |
+| 1930 Företagskonto | det som betalats | |
 | 1510 Kundfordringar | | det som betalats |
 
 ## Kontantmetoden

@@ -2300,6 +2300,7 @@
     "Datorer": "Computers",
     "Maskiner och andra tekniska anläggningar": "Machinery and other technical plant",
     "Bilar och andra transportmedel": "Cars and other vehicles",
+    "Bilar och transportmedel": "Cars and vehicles",
     "Anläggningar": "Fixed assets",
     "Inventarier, datorer, maskiner och bilar som skrivs av över flera år. Avskrivningen bokförs en gång i månaden.": "Equipment, computers, machinery and cars written off over several years. Depreciation is posted once a month.",
     "Kontoplanen saknar :accounts, som registret föreslår för tillgångar, avskrivningar och avyttringar.": "The chart of accounts lacks :accounts, which the register suggests for assets, depreciation and disposals.",
@@ -15013,5 +15014,6 @@
     ":filled av :total pass har ett förslag. Gjort :made.": ":filled of :total shifts have a proposal. Made :made.",
     ":minutes min rast": ":minutes min break",
     "Bemanningsmålen för hela företaget används inte för nya pass, eftersom avdelningarna har egna mål. Annars skulle samma behov räknas två gånger.": "The whole company's staffing targets are not used for new shifts, since the areas have their own. Otherwise the same need would be counted twice.",
-    "Ungefär :hours timmar av behovet fick inget nytt pass, eftersom ingen av passlängderna får plats där eller förslaget redan lagt :max nya pass den dagen. Lägg dem själv.": "About :hours hours of the demand got no new shift, since none of the shift lengths fits there or the proposal already added :max new shifts that day. Add them yourself."
+    "Ungefär :hours timmar av behovet fick inget nytt pass, eftersom ingen av passlängderna får plats där eller förslaget redan lagt :max nya pass den dagen. Lägg dem själv.": "About :hours hours of the demand got no new shift, since none of the shift lengths fits there or the proposal already added :max new shifts that day. Add them yourself.",
+    "Kontoplanen bygger på :version från BAS-kontogruppen, bas.se.": "The chart of accounts is based on :version from BAS-kontogruppen, bas.se."
 }

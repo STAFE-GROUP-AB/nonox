@@ -14,12 +14,10 @@
 #VALUTA SEK
 #KONTO 1210 "Maskiner och andra tekniska anl„ggningar"
 #KONTO 1219 "Ackumulerade avskrivningar p† maskiner och andra tekniska anl„ggningar"
-#KONTO 1220 "Inventarier och verktyg"
-#KONTO 1229 "Ackumulerade avskrivningar p† inventarier och verktyg"
-#KONTO 1250 "Datorer"
-#KONTO 1259 "Ackumulerade avskrivningar p† datorer"
+#KONTO 1220 "Inventarier, verktyg och installationer"
+#KONTO 1229 "Ackumulerade avskrivningar p† inventarier, verktyg och installationer"
 #KONTO 1310 "Andelar i koncernf”retag"
-#KONTO 1350 "Andelar och v„rdepapper i andra f”retag"
+#KONTO 1350 "Andra l†ngfristiga v„rdepappersinnehav"
 #KONTO 1380 "Andra l†ngfristiga fordringar"
 #KONTO 1410 "Lager av r†varor"
 #KONTO 1460 "Lager av handelsvaror"
@@ -32,7 +30,7 @@
 #KONTO 1790 "™vriga f”rutbetalda kostnader och upplupna int„kter"
 #KONTO 1910 "Kassa"
 #KONTO 1920 "PlusGiro"
-#KONTO 1930 "F”retagskonto/checkkonto/aff„rskonto"
+#KONTO 1930 "F”retagskonto"
 #KONTO 1940 "™vriga bankkonton"
 #KONTO 2081 "Aktiekapital"
 #KONTO 2086 "Reservfond"
@@ -45,12 +43,12 @@
 #KONTO 2440 "Leverant”rsskulder"
 #KONTO 2510 "Skatteskulder"
 #KONTO 2611 "Utg†ende moms p† f”rs„ljning inom Sverige, 25 %"
-#KONTO 2614 "Utg†ende moms omv„nd skattskyldighet, 25 %"
+#KONTO 2614 "Utg†ende moms omv„nd betalskyldighet, 25 %"
 #KONTO 2615 "Utg†ende moms import av varor, 25 %"
 #KONTO 2621 "Utg†ende moms p† f”rs„ljning inom Sverige, 12 %"
-#KONTO 2624 "Utg†ende moms omv„nd skattskyldighet, 12 %"
+#KONTO 2624 "Utg†ende moms omv„nd betalningsskyldighet 12 %"
 #KONTO 2631 "Utg†ende moms p† f”rs„ljning inom Sverige, 6 %"
-#KONTO 2634 "Utg†ende moms omv„nd skattskyldighet, 6 %"
+#KONTO 2634 "Utg†ende moms omv„nd betalningsskyldighet, 6 %"
 #KONTO 2640 "Ing†ende moms"
 #KONTO 2641 "Debiterad ing†ende moms"
 #KONTO 2645 "Ber„knad ing†ende moms p† f”rv„rv fr†n utlandet"
@@ -72,16 +70,16 @@
 #KONTO 3308 "F”rs„ljning tj„nster till annat EU-land"
 #KONTO 3740 "™res- och kronutj„mning"
 #KONTO 3960 "Valutakursvinster p† fordringar och skulder av r”relsekarakt„r"
-#KONTO 3990 "™vriga ers„ttningar och int„kter"
-#KONTO 4010 "Ink”p material och varor"
+#KONTO 3990 "™vriga ers„ttningar, bidrag och int„kter"
+#KONTO 4010 "Ink”p av handelsvaror i Sverige"
 #KONTO 4910 "F”r„ndring av lager av r†varor"
 #KONTO 5010 "Lokalhyra"
 #KONTO 5060 "St„dning och renh†llning"
 #KONTO 5410 "F”rbrukningsinventarier"
 #KONTO 5420 "Programvaror"
 #KONTO 5460 "F”rbrukningsmaterial"
-#KONTO 5611 "Drivmedel f”r personbilar"
-#KONTO 5800 "Resekostnader"
+#KONTO 5611 "Drivmedel f”r personbilar, mc, m.m."
+#KONTO 5800 "Resekostnader (gruppkonto)"
 #KONTO 5810 "Biljetter"
 #KONTO 5831 "Kost och logi i Sverige"
 #KONTO 5910 "Annonsering"
@@ -91,13 +89,13 @@
 #KONTO 6211 "Fast telefoni"
 #KONTO 6212 "Mobiltelefon"
 #KONTO 6230 "Datakommunikation"
-#KONTO 6250 "Postbefordran"
+#KONTO 6250 "Porto"
 #KONTO 6310 "F”retagsf”rs„kringar"
 #KONTO 6530 "Redovisningstj„nster"
 #KONTO 6540 "IT-tj„nster"
 #KONTO 6550 "Konsultarvoden"
 #KONTO 6570 "Bankkostnader"
-#KONTO 6970 "Tidningar, tidskrifter och facklitteratur"
+#KONTO 6970 "Tidningar, facklitteratur, m.m."
 #KONTO 6981 "F”reningsavgifter, avdragsgilla"
 #KONTO 6982 "F”reningsavgifter, ej avdragsgilla"
 #KONTO 6991 "™vriga externa kostnader, avdragsgilla"
@@ -105,10 +103,9 @@
 #KONTO 7010 "L”ner till kollektivanst„llda"
 #KONTO 7210 "L”ner till tj„nstem„n"
 #KONTO 7220 "L”ner till f”retagsledare"
-#KONTO 7510 "Arbetsgivaravgifter"
+#KONTO 7510 "Arbetsgivaravgifter 31,42 %"
 #KONTO 7690 "™vriga personalkostnader"
-#KONTO 7832 "Avskrivningar p† inventarier och verktyg"
-#KONTO 7834 "Avskrivningar p† bilar och andra transportmedel"
+#KONTO 7832 "Avskrivningar p† inventarier, verktyg och installationer"
 #KONTO 7960 "Valutakursf”rluster p† fordringar och skulder av r”relsekarakt„r"
 #KONTO 8010 "Utdelning p† andelar i koncernf”retag"
 #KONTO 8210 "Utdelningar p† andelar i andra f”retag"
@@ -126,8 +123,6 @@
 #KTYP 1219 T
 #KTYP 1220 T
 #KTYP 1229 T
-#KTYP 1250 T
-#KTYP 1259 T
 #KTYP 1310 T
 #KTYP 1350 T
 #KTYP 1380 T
@@ -218,7 +213,6 @@
 #KTYP 7510 K
 #KTYP 7690 K
 #KTYP 7832 K
-#KTYP 7834 K
 #KTYP 7960 K
 #KTYP 8010 K
 #KTYP 8210 K
@@ -261,4 +255,4 @@
    #TRANS 1930 {} 200.00
    #TRANS 3001 {} -200.00
 }
-#KSUMMA 2830053070
+#KSUMMA 2196535733

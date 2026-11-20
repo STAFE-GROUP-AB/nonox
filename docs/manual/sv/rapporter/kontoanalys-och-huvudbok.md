@@ -51,7 +51,7 @@ Utan valt konto visar huvudboken alla konton som har ett saldo eller har rört s
 Exempelbolaget AB vill kontrollera att bokföringen stämmer med banken för mars.
 
 1. Öppna **Saldobalans** med **Till och med** satt till 31 mars.
-2. Välj 1930 Företagskonto/checkkonto/affärskonto.
+2. Välj 1930 Företagskonto.
 3. Kontoanalysen visar varje in- och utbetalning i mars. Jämför **Utgående saldo** med kontoutdraget och raderna med bankens transaktioner.
 
 För en löpande avstämning med bankens saldo finns också [Bankavstämning](/manual/bank/bankavstamning).

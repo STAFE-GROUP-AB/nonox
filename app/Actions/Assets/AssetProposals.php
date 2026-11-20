@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Assets;
 
+use App\Domain\Accounting\AccountType;
 use App\Domain\Assets\AcquisitionAccounts;
 use App\Domain\Assets\AssetCategory;
 use App\Models\Account;
@@ -352,6 +353,35 @@ class AssetProposals
     }
 
     /**
+     * A purchase on a legacy asset account (1240, 1250) depreciates on the
+     * account pair NONOX used before; they are free accounts in BAS, so they are
+     * added with NONOX's own names when the chart lacks them.
+     *
+     * @param  array{asset: int, accumulated: ?int, expense: ?int}  $accounts
+     */
+    public static function ensureLegacyCompanions(Company $company, array $accounts, User $user): void
+    {
+        if (! isset(AssetCategory::LEGACY_COMPANIONS[$accounts['asset']])) {
+            return;
+        }
+
+        $added = [];
+
+        foreach ([$accounts['accumulated'], $accounts['expense']] as $number) {
+            if ($number === null || Account::query()->where('number', $number)->exists()) {
+                continue;
+            }
+
+            Account::create(['number' => $number, 'name' => AssetCategory::LEGACY_ACCOUNT_NAMES[$number], 'type' => AccountType::forNumber($number)]);
+            $added[] = $number;
+        }
+
+        if ($added !== []) {
+            Audit::record('fixed_asset.accounts_added', null, ['accounts' => $added], $company, $user);
+        }
+    }
+
+    /**
      * @param  array{acquisition_voucher_id?: ?string, acquisition_voucher_row_id?: ?int, supplier_invoice_id?: ?string}  $links
      *
      * @throws ValidationException
@@ -367,6 +397,9 @@ class AssetProposals
         $start = (string) ($data['depreciation_start'] ?? '');
         $start = $start !== '' ? $start : substr($acquiredOn, 0, 7);
 
+        $accounts = $category->accountsFor($account);
+        self::ensureLegacyCompanions($company, $accounts, $user);
+
         try {
             // Resolved here: FixedAssets books through PostVoucher, which itself creates assets through this class.
             return app(FixedAssets::class)->createFromPurchase($user, $company, [
@@ -379,8 +412,8 @@ class AssetProposals
                 'life_months' => $life,
                 'depreciation_start' => "{$start}-01",
                 'asset_account' => $account,
-                'accumulated_account' => $category->accounts()['accumulated'],
-                'expense_account' => $category->accounts()['expense'],
+                'accumulated_account' => $accounts['accumulated'],
+                'expense_account' => $accounts['expense'],
                 'cost_center' => $costCenter?->code,
                 'notes' => null,
             ], $links);

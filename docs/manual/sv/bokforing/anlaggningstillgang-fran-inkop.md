@@ -9,16 +9,16 @@ sokord: [anläggningstillgång, inventarier, investering, avskrivning, dator, ma
 
 När du köper något som ska användas i flera år – en dator, en maskin, inventarier – bokförs inköpet på ett anskaffningskonto och skrivs av över tiden. NONOX känner igen raden när du bokför och erbjuder att lägga in tillgången i anläggningsregistret direkt, så att avskrivningarna sedan kan bokföras därifrån varje månad.
 
-![En leverantörsfaktura för en dator. Raden på konto 1250 lägger in datorn i anläggningsregistret.](/bilder/manual/bokforing/anlaggningstillgang-fran-inkop.webp)
+![En leverantörsfaktura för en dator. Raden på ett anskaffningskonto lägger in datorn i anläggningsregistret.](/bilder/manual/bokforing/anlaggningstillgang-fran-inkop.webp)
 
 ## Så här gör du
 
-1. Bokför inköpet som vanligt under **Bokföring → Verifikationer → Ny verifikation**, med anskaffningen i debet på ett anskaffningskonto, till exempel 1220 Inventarier och verktyg eller 1250 Datorer.
+1. Bokför inköpet som vanligt under **Bokföring → Verifikationer → Ny verifikation**, med anskaffningen i debet på ett anskaffningskonto, till exempel 1220 Inventarier, verktyg och installationer eller 1224 Datorer (ej för produktion).
 2. Under raderna dyker rutan **Anläggningstillgångar** upp, med raden och beloppet.
 3. Välj **Skapa anläggningstillgång**.
 4. Fyll i eller kontrollera fälten:
    - **Benämning** – vad det är, till exempel "Bärbar dator till Anna".
-   - **Slag** – till exempel **Datorer** eller **Inventarier och verktyg**. Slaget föreslår nyttjandeperioden och avskrivningskontona.
+   - **Slag** – till exempel **Datorer** eller **Inventarier, verktyg och installationer**. Slaget föreslår nyttjandeperioden och avskrivningskontona.
    - **Nyttjandeperiod, månader** – hur länge tillgången skrivs av.
    - **Anskaffningsvärde, kr** – lämnas det tomt används radens belopp, som är utan moms.
    - **Anskaffningsdag** – lämnas den tom används verifikationens datum.
@@ -37,7 +37,7 @@ Avskrivningarna bokförs inte här, utan från registret under **Bokföring → 
 
 ## Bra att veta
 
-- Rutan visas bara för rader med ett belopp i debet på ett av företagets anskaffningskonton. Från början är det tillgångskontona för slagen i registret: 1210, 1220, 1240 och 1250. Byggnader (1110) och mark (1130) är inte med från början.
+- Rutan visas bara för rader med ett belopp i debet på ett av företagets anskaffningskonton. Från början är det tillgångskontona för slagen i registret: 1210, 1220, 1224 och 1226 (och 1240 och 1250 för tillgångar som lades upp före BAS 2026-rättelsen). Byggnader (1110) och mark (1130) är inte med från början.
 - Har företaget angett en gräns för inventarier av mindre värde visas ingen knapp för belopp under gränsen, bara en förklaring. Gränsen ändrar du under **Anläggningar**. Vilken gräns som är rätt för ditt företag är en redovisningsfråga; fråga din redovisningskonsult.
 - Rutan syns bara för den som sköter anläggningsregistret: ägare, administratörer och redovisningskonsulter. En bokförare kan bokföra inköpet, och tillgången läggs sedan in under **Anläggningar**.
 - Samma ruta finns när du registrerar en leverantörsfaktura med en rad på ett anskaffningskonto. Då skapas tillgången när fakturan registreras.

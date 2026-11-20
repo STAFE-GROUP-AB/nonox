@@ -132,4 +132,5 @@
             <div class="mt-6">{{ $accounts->links() }}</div>
         @endif
     </x-ui.card>
+    <p class="text-xs text-gray-500">{{ $basNotice }}</p>
 </div>

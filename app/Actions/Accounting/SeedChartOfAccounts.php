@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Accounting;
 
+use App\Actions\Company\CreateCompany;
 use App\Domain\Accounting\AccountType;
 use App\Domain\Company\LegalForm;
 use App\Domain\Company\ReportingFramework;
@@ -25,7 +26,7 @@ class SeedChartOfAccounts
 {
     public function __invoke(Company $company): int
     {
-        $template = $this->template($company->reporting_framework, $company->legal_form);
+        $template = $this->template($company->reporting_framework, $company->legal_form, UpgradeBasChart::year((string) ($company->bas_version ?: CreateCompany::BAS_VERSION)));
 
         return CurrentCompany::run($company, function () use ($template): int {
             $existing = Account::query()->pluck('number')->all();
@@ -50,15 +51,17 @@ class SeedChartOfAccounts
     }
 
     /** @return list<array{number: int, name: string}> */
-    public function template(ReportingFramework $framework, ?LegalForm $legalForm = null): array
+    public function template(ReportingFramework $framework, ?LegalForm $legalForm = null, ?string $year = null): array
     {
-        $accounts = $this->file($framework);
+        $year ??= UpgradeBasChart::year(CreateCompany::BAS_VERSION);
+
+        $accounts = $this->file($framework, $year);
 
         if (! in_array($legalForm, [LegalForm::Ef, LegalForm::Hb, LegalForm::Kb], true) || $framework === ReportingFramework::K1) {
             return $accounts;
         }
 
-        $ownerEquity = array_values(array_filter($this->file(ReportingFramework::K1), fn (array $account): bool => $account['number'] >= 2000 && $account['number'] < 2100));
+        $ownerEquity = array_values(array_filter($this->file(ReportingFramework::K1, $year), fn (array $account): bool => $account['number'] >= 2000 && $account['number'] < 2100));
         $rest = array_values(array_filter($accounts, fn (array $account): bool => $account['number'] < 2000 || $account['number'] >= 2100));
 
         $merged = [...$rest, ...$ownerEquity];
@@ -68,10 +71,10 @@ class SeedChartOfAccounts
     }
 
     /** @return list<array{number: int, name: string}> */
-    private function file(ReportingFramework $framework): array
+    private function file(ReportingFramework $framework, string $year): array
     {
-        $path = database_path('data/bas/2026/'.strtolower($framework->value).'.json');
-        $data = json_decode((string) file_get_contents($path), true);
+        $path = UpgradeBasChart::folder($year).'/'.strtolower($framework->value).'.json';
+        $data = is_file($path) ? json_decode((string) file_get_contents($path), true) : null;
 
         if (! is_array($data) || ! is_array($data['accounts'] ?? null)) {
             throw new RuntimeException("The BAS template {$path} could not be read.");

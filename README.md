@@ -95,7 +95,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - **Projektresultat:** intäkter, kostnader per grupp, täckningsbidrag och marginal per projekt, för hela projektet eller ett räkenskapsår och månad för månad, mot budgetens rader på projektet och mot kontraktssumman och den beräknade kostnaden. Ett klick på ett konto visar raderna bakom beloppet. En enhetschef ser bara sina egna projekt, utan personalkostnader.
 - **Analys:** egna frågor till bokföringsrader, budget, kund- och leverantörsfakturor och sammanräknad lön. Du grupperar i rader och kolumner, filtrerar, jämför med samma månader året innan och klickar dig ner till posterna bakom ett belopp. En enhetschef ser bara rader på sina egna enheter, utan personalkostnader, och lön visas aldrig per person: små eller dominerade grupper döljs.
 - **Pågående projekt och faktureringsplan:** upparbetat men ej fakturerat och fakturerat i förskott på projekt till fast pris utan arbetsorder vid bokslutet, med färdigställandegrad ur kostnaderna mot den beräknade totala kostnaden och två verifikationsutkast som du själv bokför. En faktureringsplan per projekt med delfaktureringar som blir fakturautkast med projektet på raden.
-- **Inställningar:** kontoplan enligt BAS 2026, verifikationsserier, kostnadsställen och projekt.
+- **Inställningar:** kontoplan enligt BAS 2026 (kontoplanen bygger på BAS kontoplan 2026 från BAS-kontogruppen, bas.se), verifikationsserier, kostnadsställen och projekt.
 - En bokförd verifikation kan aldrig ändras, och databasen själv vägrar. En kedja av kontrollsummor avslöjar ändringar i efterhand och kontrolleras varje natt.
 
 ### Lön (modul)

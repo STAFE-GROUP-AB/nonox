@@ -32,7 +32,7 @@ Med modulen **Bank** kopplar du företagets bankkonton till NONOX med BankID. D�
 4. Tryck på **Fortsätt till banken**.
 5. Du kommer till bankens egen sida. Godkänn med BankID där. Det är banken, inte NONOX, som frågar vilka konton som får läsas.
 6. Du kommer tillbaka till NONOX och ser *… är kopplad. Välj vilket konto i bokföringen varje bankkonto hör till, så hämtas transaktionerna.*
-7. Under banken listas bankkontona med namn och de fyra sista siffrorna. Välj för varje konto vilket konto i bokföringen det hör till i kolumnen **Konto i bokföringen**, till exempel *1930 Företagskonto/checkkonto/affärskonto*.
+7. Under banken listas bankkontona med namn och de fyra sista siffrorna. Välj för varje konto vilket konto i bokföringen det hör till i kolumnen **Konto i bokföringen**, till exempel *1930 Företagskonto*.
 
 Klart. Transaktionerna hämtas vid nästa hämtning, eller direkt om du trycker på **Hämta nu**.
 
