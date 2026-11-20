@@ -1,0 +1,21 @@
+{
+    "description": "A customer whose own list is the currency's default list: a discount item in it discounts the base price once (100 kr − 10 % = 90 kr), never the default list's own already discounted price.",
+    "articles": {
+        "A1": {"price_ore": 10000}
+    },
+    "lists": {
+        "BAS": {"default": true, "items": [
+            {"article": "A1", "discount_bp": 1000}
+        ]}
+    },
+    "customer": {"list": "BAS"},
+    "cases": [
+        {
+            "context": {"date": "2026-03-15"},
+            "rows": [
+                {"key": "en-rabatt", "article": "A1", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 10000, "discount_bp": 1000, "source": "CUSTOMER_LIST", "list": "BAS", "item": "BAS#0", "tier_min_milli": 0, "base_minor": 10000, "warnings": []}}
+            ]
+        }
+    ]
+}

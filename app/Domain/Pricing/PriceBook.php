@@ -503,6 +503,12 @@ final class PriceBook
             return null;
         }
 
+        // The default list is the ordinary price itself: its discount items discount the base price, however it was reached
+        // (as the currency's list, a customer's list, or an agreement's named list), never the ordinary price it gives.
+        if ($list->is_default_for_currency) {
+            $reference = fn (): ?PriceCandidate => $this->raw($row);
+        }
+
         $source = $this->listSource($list);
 
         if (in_array($list->id, $path, true) || count($path) >= self::MAX_DERIVED_DEPTH) {

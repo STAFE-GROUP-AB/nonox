@@ -1,0 +1,26 @@
+{
+    "description": "An agreement item that discounts the currency's default list by name: the default list's own discount applies once (100 kr − 10 % = 90 kr), and the agreement's 3 % is shown on that.",
+    "articles": {
+        "A1": {"price_ore": 10000}
+    },
+    "lists": {
+        "BAS": {"default": true, "items": [
+            {"article": "A1", "discount_bp": 1000}
+        ]}
+    },
+    "customer": {},
+    "agreements": {
+        "PA1": {"valid_from": "2026-01-01", "items": [
+            {"article": "A1", "discount_bp": 300, "base_list": "BAS"}
+        ]}
+    },
+    "cases": [
+        {
+            "context": {"date": "2026-03-15"},
+            "rows": [
+                {"key": "avtal-pa-baslistan", "article": "A1", "quantity_milli": 1000,
+                 "expected": {"unit_price_minor": 9000, "discount_bp": 300, "source": "AGREEMENT", "list": "BAS", "agreement": "PA1", "item": "PA1#0", "tier_min_milli": 0, "base_minor": 9000, "warnings": []}}
+            ]
+        }
+    ]
+}
