@@ -15,6 +15,7 @@ use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
 use App\Models\Article;
 use App\Models\Company;
+use App\Models\PriceList;
 use App\Models\Supplier;
 use App\Models\Unit;
 use App\Models\User;
@@ -431,6 +432,7 @@ class Articles extends Component
             'year' => $year->year,
             'revenueAccounts' => Account::query()->whereBetween('number', [3000, 3999])->where('is_active', true)->orderBy('number')->get(['number', 'name']),
             'canManage' => $this->user()->can('create', [Article::class, $this->company()]),
+            'canViewPrices' => $this->user()->can('viewAny', [PriceList::class, $this->company()]),
             'inventory' => $inventory,
             'planningView' => $inventory && $this->user()->hasTeamPermission($this->company(), InventoryModule::MRP_VIEW),
             'planningRun' => $inventory && $this->user()->hasTeamPermission($this->company(), InventoryModule::MRP_RUN),

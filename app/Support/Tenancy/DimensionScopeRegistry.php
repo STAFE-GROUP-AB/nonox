@@ -99,7 +99,7 @@ final class DimensionScopeRegistry
         'accounting.*', 'agreements.*', 'analysis.*', 'approvals.*', 'budgets.*', 'documents.*', 'projects.*', 'banking.*', 'boardroom.*', 'companies.*', 'connect.*', 'crm.*',
         'dashboard.*', 'fortnox.*', 'group.*', 'guide.*', 'import.*', 'inbox.*', 'inventory.*', 'invoicing.*',
         'kitchen.*', 'manufacturing.*', 'mileage.*', 'notifications.*', 'passport.*', 'payables.*', 'payroll.*',
-        'planning.*', 'portal.*', 'pos.*', 'privacy.*', 'saas.*', 'search', 'search.*', 'share-register.*',
+        'planning.*', 'portal.*', 'pos.*', 'pricing.*', 'privacy.*', 'saas.*', 'search', 'search.*', 'share-register.*',
         'signing.*', 'skatteverket.*', 'staff-ledger.*', 'tasks.*', 'vat.*', 'workOrders.*',
     ];
 

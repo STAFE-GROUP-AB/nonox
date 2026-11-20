@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-20-prislistor",
+      "datum": "2026-11-20T15:25:00+01:00",
+      "rubrik": "Prislistor, kampanjer och kundgrupper",
+      "beskrivning": "Under Register → Prislistor gör du prislistor för en kundgrupp eller för en annan valuta, kampanjer med start och slut, och listor som följer grundpriset med en procent och en avrundning. Priserna kan ha antalstrappor och datum, så en prishöjning kan förberedas, och kunderna läggs i kundgrupper. Kundens flik Priser och artikelns flik Priser visar vad varan kostar för kunden i dag och var artikeln prissätts; fakturor och offerter använder listorna i nästa steg.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-20-bas-kontoplan-hanvisning",
       "datum": "2026-11-20T02:08:00+01:00",
       "rubrik": "Kontoplanen anger att den bygger på BAS kontoplan 2026",

@@ -17,6 +17,7 @@ use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\NumberSeries;
+use App\Models\PriceList;
 use App\Models\User;
 use App\Models\VatNumberCheck;
 use App\Modules\ModuleManager;
@@ -53,6 +54,9 @@ class Customers extends Component
 
     /** @var array<string, string> */
     public array $form = [];
+
+    /** uppgifter or priser (ADR-082). */
+    public string $tab = 'uppgifter';
 
     public bool $reverseCharge = false;
 
@@ -99,6 +103,7 @@ class Customers extends Component
         $customer = Customer::query()->with(['defaultCostCenter:id,code', 'defaultProject:id,code'])->findOrFail($customerId);
 
         $this->editingId = $customer->id;
+        $this->tab = 'uppgifter';
         $this->form = array_map(fn (mixed $value): string => (string) $value, $customer->only(self::FIELDS));
         $this->form['personal_number'] = (string) $customer->personal_number;
         $this->form['default_cost_center'] = (string) $customer->defaultCostCenter?->code;
@@ -153,7 +158,7 @@ class Customers extends Component
 
     public function cancel(): void
     {
-        $this->reset('showForm', 'editingId', 'form', 'reverseCharge', 'foreignSale', 'registryResult', 'registryConflicts', 'registryFilled', 'registryNotice');
+        $this->reset('showForm', 'editingId', 'tab', 'form', 'reverseCharge', 'foreignSale', 'registryResult', 'registryConflicts', 'registryFilled', 'registryNotice');
     }
 
     public function save(SaveCustomer $save): void
@@ -225,6 +230,7 @@ class Customers extends Component
                 ->paginate(25),
             'year' => $year->year,
             'canManage' => $this->user()->can('create', [Customer::class, $this->company()]),
+            'canViewPrices' => $this->user()->can('viewAny', [PriceList::class, $this->company()]),
             'nextNumber' => NumberSeries::peek(NumberSeries::CUSTOMERS),
             'peppolOn' => app(ModuleManager::class)->isEnabled(PeppolModule::KEY, $this->company()),
             'dimensionChoices' => $this->showForm ? $this->dimensionChoices() : null,

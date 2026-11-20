@@ -51,6 +51,11 @@ fakturering/skicka-en-faktura: { foretag: konsult, rutt: invoicing.invoices.show
 fakturering/obetalda-fakturor: { foretag: hantverkare, rutt: invoicing.invoices.index, fraga: { visa: obetalda } }
 fakturering/kunder: { foretag: hantverkare, rutt: invoicing.customers }
 fakturering/artiklar: { foretag: hantverkare, rutt: invoicing.articles }
+fakturering/prislistor: { foretag: hantverkare, rutt: pricing.lists }
+fakturering/prislista-priser: { foretag: hantverkare, rutt: pricing.lists.show, modell: { tabell: price_lists, dar: { code: BYGG } } }
+fakturering/prislistor-kundgrupper: { foretag: hantverkare, rutt: pricing.groups }
+fakturering/prislistor-kund: { foretag: hantverkare, rutt: invoicing.customers, klick: ['ul li:nth-child(3) button', 'text=Priser'] }
+fakturering/prislistor-artikel: { foretag: hantverkare, rutt: invoicing.articles, klick: ['tbody tr:nth-child(1) button', 'text=Priser'] }
 fakturering/enheter: { foretag: hantverkare, rutt: invoicing.units }
 fakturering/enheter-pa-artikeln: { foretag: hantverkare, rutt: invoicing.articles, klick: ['tbody tr:nth-child(3) button', 'text=Avancerad'], visa: '#article_stock_unit' }
 fakturering/rot-och-rut: { foretag: hantverkare, rutt: invoicing.invoices.show, modell: rot_invoice }

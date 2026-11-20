@@ -2,8 +2,20 @@
 
 <div class="space-y-6">
     @if($showForm)
-        @include('livewire.invoicing.partials.customer-form')
-        @if($editingId)
+        @if($editingId && $canViewPrices)
+            <div class="flex gap-2" role="tablist" aria-label="{{ __('Kundens uppgifter') }}">
+                @foreach(['uppgifter' => __('Uppgifter'), 'priser' => __('Priser')] as $key => $label)
+                    <button type="button" role="tab" aria-selected="{{ $tab === $key ? 'true' : 'false' }}" wire:click="$set('tab', '{{ $key }}')" @class(['min-h-11 rounded-full px-4 py-2 text-sm font-semibold sm:min-h-0', 'bg-ink text-white' => $tab === $key, 'bg-white text-gray-700 ring-1 ring-stone-200 hover:ring-stone-300' => $tab !== $key])>{{ $label }}</button>
+                @endforeach
+            </div>
+        @endif
+        @if($tab === 'priser' && $editingId && $canViewPrices)
+            <livewire:pricing.customer-prices :customer-id="$editingId" :key="'customer-prices-'.$editingId" />
+            <div><button type="button" class="text-sm text-gray-600 underline" wire:click="cancel">{{ __('Stäng') }}</button></div>
+        @else
+            @include('livewire.invoicing.partials.customer-form')
+        @endif
+        @if($editingId && $tab !== 'priser')
         {{-- Kundportal (ADR-075): who has access to the customer's portal, while the module is on. --}}
         @if(App\Modules\Portal\Support\PortalPanels::showFor(auth()->user()))
             <livewire:portal.customer-panel :customer-id="$editingId" :key="'portal-customer-'.$editingId" />

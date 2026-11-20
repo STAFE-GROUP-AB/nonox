@@ -7,13 +7,17 @@
     @if($showForm)
         <x-ui.card :title="$editingId ? __('Ändra artikel') : __('Ny artikel')">
             <div class="mb-5 flex gap-2" role="tablist" aria-label="{{ __('Artikelns uppgifter') }}">
-                @foreach(['enkel' => __('Enkel'), 'avancerad' => __('Avancerad')] as $key => $label)
+                @foreach(['enkel' => __('Enkel'), 'avancerad' => __('Avancerad'), ...($editingId && $canViewPrices ? ['priser' => __('Priser')] : [])] as $key => $label)
                     <button type="button" role="tab" aria-selected="{{ $tab === $key ? 'true' : 'false' }}" wire:click="$set('tab', '{{ $key }}')" @class(['min-h-11 rounded-full px-4 py-2 text-sm font-semibold sm:min-h-0', 'bg-ink text-white' => $tab === $key, 'bg-white text-gray-700 ring-1 ring-stone-200 hover:ring-stone-300' => $tab !== $key])>{{ $label }}</button>
                 @endforeach
             </div>
             @if($aiRows !== [])
                 @include('livewire.invoicing.partials.article-ai-suggestion')
             @endif
+            @if($tab === 'priser' && $editingId && $canViewPrices)
+                <livewire:pricing.article-prices :article-id="$editingId" :key="'article-prices-'.$editingId" />
+                <div class="mt-6"><button type="button" class="text-sm text-gray-600 underline" wire:click="cancel">{{ __('Stäng') }}</button></div>
+            @else
             <form wire:submit="save" class="grid gap-4 sm:grid-cols-6">
                 @if($tab === 'enkel')
                     @if($inventory && $camera)
@@ -72,6 +76,7 @@
                     <button type="button" class="text-sm text-gray-600 underline" wire:click="cancel">{{ __('Avbryt') }}</button>
                 </div>
             </form>
+            @endif
         </x-ui.card>
     @endif
 

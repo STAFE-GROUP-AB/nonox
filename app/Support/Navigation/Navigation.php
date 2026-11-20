@@ -147,18 +147,20 @@ final class Navigation
             $crm ? [
                 'label' => __('Register'),
                 'route' => 'invoicing.articles',
-                'patterns' => ['invoicing.articles*', 'payables.suppliers*'],
+                'patterns' => ['invoicing.articles*', 'pricing.*', 'payables.suppliers*'],
                 'children' => fn (User $user, Company $company): array => [
                     ['label' => __('Artiklar'), 'route' => 'invoicing.articles'],
+                    ...($can('prices:view') ? [['label' => __('Prislistor'), 'route' => 'pricing.lists', 'active' => ['pricing.*']]] : []),
                     ['label' => __('Leverantörer'), 'route' => 'payables.suppliers'],
                 ],
             ] : [
                 'label' => __('Register'),
                 'route' => 'invoicing.customers',
-                'patterns' => ['invoicing.customers*', 'invoicing.articles*', 'payables.suppliers*'],
+                'patterns' => ['invoicing.customers*', 'invoicing.articles*', 'pricing.*', 'payables.suppliers*'],
                 'children' => fn (User $user, Company $company): array => [
                     ['label' => __('Kunder'), 'route' => 'invoicing.customers'],
                     ['label' => __('Artiklar'), 'route' => 'invoicing.articles'],
+                    ...($can('prices:view') ? [['label' => __('Prislistor'), 'route' => 'pricing.lists', 'active' => ['pricing.*']]] : []),
                     ['label' => __('Leverantörer'), 'route' => 'payables.suppliers'],
                 ],
             ],

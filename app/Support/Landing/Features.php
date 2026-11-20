@@ -55,6 +55,7 @@ final class Features
         'mobile_check_in' => ['name' => 'Mobil incheckning', 'status' => self::LIVE, 'readme' => 'med kod, personlig QR-kod eller mobil incheckning', 'module' => 'Personalliggare'],
         'registers' => ['name' => 'Kunder, artiklar och leverantörer', 'status' => self::LIVE, 'readme' => 'Kunder, artiklar och leverantörer med pris, moms och konto'],
         'units' => ['name' => 'Enheter på artiklar med exakta omräkningar', 'status' => self::LIVE, 'readme' => 'ett enhetsregister för hela företaget'],
+        'price_lists' => ['name' => 'Prislistor, kampanjer och kundgrupper', 'status' => self::LIVE, 'readme' => 'kampanjer med start och slut, och kanallistor för kassan eller kundportalen'],
         'company_lookup' => ['name' => 'Företagsuppgifter med organisationsnumret', 'status' => self::LIVE, 'readme' => 'namn, adress och företagsform hämtas ur NONOX företagsregister'],
         'payroll' => ['name' => 'Lön med skattetabeller', 'status' => self::LIVE, 'readme' => 'Skatteverkets skattetabeller, månads- och timlön', 'module' => 'Lön'],
         'hourly_pay' => ['name' => 'Timlön från godkända tidrapporter', 'status' => self::LIVE, 'readme' => 'Timlön räknas från godkända tidrapporter, även från personalliggaren', 'module' => 'Lön'],
