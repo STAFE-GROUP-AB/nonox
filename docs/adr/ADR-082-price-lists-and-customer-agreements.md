@@ -282,6 +282,21 @@ Within a list or agreement:
 - **Ties** (two items with the same specificity and step): the one with the
   latest `valid_from`, then the lowest id. Never random.
 
+Settled while building P2 (Lead, 2026-11-20):
+
+- **Manual discount on a discount item:** the agreed discount is folded into
+  the unit price and the manual discount goes in `discount_bp`; the
+  explanation records `folded_discount_bp`. P3's legal review (P-L4, how the
+  discount is shown on the invoice) must confirm this.
+- **Ended, superseded and terminated agreements** still price documents dated
+  inside their validity, so a past date gives the price it had; a terminated
+  agreement counts up to and including `terminated_on`.
+- **Customer list fallback:** an article the customer's own list does not
+  price falls back to the price group's list.
+- **Derived lists and currency:** a derived list takes its source only in the
+  same currency; a non-SEK list derived from the base price starts from the
+  converted base price.
+
 **Batch design (no N+1).** `resolveMany()` loads, for the whole request list,
 in a fixed number of queries regardless of N: (1) the customer with group, list
 and active agreements; (2) agreement items for the requested article ids (and
