@@ -10,6 +10,7 @@ use App\Domain\Pricing\PriceAgreementPdf;
 use App\Domain\Pricing\PriceAgreementStatus;
 use App\Domain\Pricing\PriceFloorPolicy;
 use App\Domain\Signing\Signable;
+use App\Domain\Signing\SigningDeadlines;
 use App\Domain\Signing\SigningHooks;
 use App\Modules\Crm\Models\Agreement;
 use App\Support\Tenancy\BelongsToCompany;
@@ -60,6 +61,9 @@ class PriceAgreement extends Model implements Signable
 
     /** The type on signing requests (at most ten characters, SignableTypes). */
     public const string SIGNING_TYPE = 'PRICE';
+
+    /** What replaces the reason of a manual activation when the customer is erased (GDPR art. 17): no personal data. */
+    public const string ERASED_REASON = 'Skälet är borttaget när kundens uppgifter raderades.';
 
     /** What may still be written once the agreement has left DRAFT: its life cycle, never its terms. */
     private const array LIFE_CYCLE = [
@@ -132,6 +136,12 @@ class PriceAgreement extends Model implements Signable
         }
 
         return $this->valid_to === null || $this->terminated_on->lessThan($this->valid_to) ? $this->terminated_on : $this->valid_to;
+    }
+
+    /** Whether it has ever been sent for signing: then it is kept with its signing history. */
+    public function hasBeenSent(): bool
+    {
+        return SigningRequest::query()->where('document_type', self::SIGNING_TYPE)->where('signable_id', (string) $this->id)->exists();
     }
 
     /** @return BelongsTo<Customer, $this> */
@@ -219,9 +229,17 @@ class PriceAgreement extends Model implements Signable
         return null;
     }
 
+    /**
+     * A link never outlives the agreement: when it ends within the usual
+     * link time, the link ends on its last day too. A later end leaves the
+     * usual link time. The signature is checked again when it arrives
+     * (PriceAgreementActivator).
+     */
     public function signingValidUntil(): ?CarbonImmutable
     {
-        return null;
+        $end = $this->valid_to;
+
+        return $end !== null && $end->lessThanOrEqualTo(CarbonImmutable::today()->addDays(SigningDeadlines::DEFAULT_DAYS)) ? $end : null;
     }
 
     public function signingDestination(): string

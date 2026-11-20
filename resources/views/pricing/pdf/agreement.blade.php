@@ -38,7 +38,8 @@
     <h2>{{ $agreement->title }}</h2>
 
     <table class="meta">
-        <tr><td class="muted" style="width: 40%">{{ __('Parter') }}</td><td>{{ $company->legal_name ?: $company->name }}@if($company->org_number) ({{ $company->org_number }})@endif {{ __('och') }} {{ $customer->name }}@if($customer->org_number) ({{ $customer->org_number }})@endif</td></tr>
+        <tr><td class="muted" style="width: 40%">{{ __('Säljare') }}</td><td>{{ $company->legal_name ?: $company->name }}@if($company->org_number) ({{ $company->org_number }})@endif</td></tr>
+        <tr><td class="muted">{{ __('Kund') }}</td><td>{{ $customer->name }}@if($customer->org_number) ({{ $customer->org_number }})@endif</td></tr>
         <tr><td class="muted">{{ __('Gäller från') }}</td><td>{{ $agreement->valid_from->toDateString() }}</td></tr>
         <tr><td class="muted">{{ __('Gäller till och med') }}</td><td>{{ $agreement->valid_to?->toDateString() ?? __('Tills vidare') }}</td></tr>
         <tr><td class="muted">{{ __('Valuta') }}</td><td>{{ __(':currency, priserna är exklusive moms', ['currency' => $agreement->currency]) }}</td></tr>
@@ -68,7 +69,7 @@
                         @if($item->price_minor !== null)
                             {{ App\Support\Money\Money::ofOre($item->price_minor, $agreement->currency)->format() }}
                         @elseif($item->basePriceList)
-                            {{ __(':percent % rabatt på prislistan :list', ['percent' => App\Domain\Pricing\PriceInput::basisPointsToPercent((int) $item->discount_bp), 'list' => $item->basePriceList->name]) }}
+                            {{ __(':percent % rabatt på prislistan :list, med listans pris den dag varan säljs.', ['percent' => App\Domain\Pricing\PriceInput::basisPointsToPercent((int) $item->discount_bp), 'list' => $item->basePriceList->name]) }}
                         @else
                             {{ __(':percent % rabatt på ordinarie pris', ['percent' => App\Domain\Pricing\PriceInput::basisPointsToPercent((int) $item->discount_bp)]) }}
                         @endif
@@ -77,10 +78,11 @@
             @endforeach
         </tbody>
     </table>
-    <p class="muted">{{ __('Ett pris från ett visst antal gäller hela antalet på raden. Ordinarie pris är det pris säljaren tar av kunder utan avtal på den dag varan säljs.') }}</p>
+    <p class="muted">{{ __('Ett pris från ett visst antal gäller hela antalet på raden.') }} {{ __('Ordinarie pris är säljarens standardpris i avtalets valuta (standardprislistan, annars artikelns grundpris) den dag varan säljs. Säljaren kan ändra det priset.') }}</p>
+    <p>{{ __('Prisavtalet anger bara priser och giltighetstid. Övriga villkor, till exempel uppsägningstid, betalningsvillkor och prisjustering, gäller enligt det ni i övrigt har avtalat.') }}</p>
 
     <div class="box">
-        <span class="muted">{{ __('Avtalet signeras elektroniskt. Ett signeringsbevis med dokumentets kontrollsumma (SHA-256) hör till avtalet.') }}</span>
+        <span class="muted">{{ __('Signeras avtalet elektroniskt hör ett signeringsbevis med dokumentets kontrollsumma (SHA-256) till avtalet.') }}</span>
     </div>
 </body>
 </html>

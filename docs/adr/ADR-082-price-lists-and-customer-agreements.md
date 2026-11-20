@@ -263,6 +263,40 @@ cycle:
   agreement between companies) and P-L6 (no index clause is modelled; a new
   version is the way to apply one).
 
+**Review fixes (P5), 2026-11-20:**
+
+- The database refuses only DELETE of a non-draft agreement and its items;
+  UPDATE of terms is refused by the model events, the policy and the actions,
+  not by a trigger (existing resolver tests adjust active terms directly).
+- The overlap check also counts an agreement AWAITING_SIGNATURE, both when
+  sending and when activating by hand, so two drafts for the same days cannot
+  both be out for signing.
+- `PriceAgreementActivator::activate` checks again under the row lock: the
+  end date has not passed, a version does not start in the past, and no
+  other agreement overlaps. A signature that fails these throws a
+  ValidationException, which rolls back the signing transaction; the signer
+  is told in Swedish to contact the sender. A signing link ends on the
+  agreement's last day when that comes within the usual link time.
+- A version may not start before today (send, manual activation and
+  signature), the same rule as termination, so superseding never rewrites
+  days that have passed. Chosen over "start it today" because it is simpler
+  and never changes what the customer signed: a version signed after its
+  start date is refused, and the user takes it back to draft, sets a new
+  date and sends it again.
+- A draft that was ever sent for signing cannot be deleted, so no signing
+  request points at a deleted row.
+- GDPR: the manual-activation reason is in the customer's register extract
+  (`prisavtal`) and is replaced by a fixed text when the customer is erased
+  (the agreement is kept; a customer with a price agreement is anonymised,
+  never deleted).
+- PDF: seller and customer rows, a definition of the ordinary price (the
+  seller's standard price in the agreement's currency on the day of sale,
+  which the seller can change), and a statement that the price agreement
+  covers prices and validity only.
+- `TODO(legal-verify)`: the notice period for an open-ended B2B price
+  agreement without a notice clause; the retention period for the
+  manual-activation reason (limitation of claims under the agreement).
+
 ### 5. Price resolution order (the resolver)
 
 `App\Domain\Pricing\PriceResolver` takes a `PriceContext` (company, customer

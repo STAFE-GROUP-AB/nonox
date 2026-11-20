@@ -185,7 +185,7 @@ it('refuses to activate an agreement without terms, one that has ended, or one o
     expect(fn () => app(ActivatePriceAgreement::class)($this->owner, $this->company, $overlapping, 'På papper.'))->toThrow(ValidationException::class, 'Två avtal för samma kund kan inte gälla samma dag');
 });
 
-it('freezes an agreement that has left draft: model, policy, action and database', function () {
+it('freezes an agreement that has left draft in the model, policy and actions, and the database refuses deleting it', function () {
     $agreement = p5Active();
     $item = $agreement->items()->firstOrFail();
 

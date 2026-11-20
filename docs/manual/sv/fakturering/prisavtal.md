@@ -53,23 +53,23 @@ Behöver något ändras innan kunden har signerat trycker du på **Tillbaka till
 
 ## Aktivera utan signering
 
-Har kunden godkänt avtalet på annat sätt, till exempel skrivit under på papper, trycker du på **Aktivera utan signering** på ett utkast. Skriv **Skäl**, till exempel *Kunden skrev under på papper den 3 mars*, och tryck på **Aktivera avtalet**. Skälet sparas med avtalet, tillsammans med vem som aktiverade det och när. Spara gärna det underskrivna pappret som underlag.
+Har kunden godkänt avtalet på annat sätt, till exempel skrivit under på papper eller godkänt det skriftligen på annat sätt, trycker du på **Aktivera utan signering** på ett utkast. Skriv **Skäl**, till exempel *Kunden skrev under på papper den 3 mars*, och tryck på **Aktivera avtalet**. Skälet sparas med avtalet, tillsammans med vem som aktiverade det och när. Spara gärna det underskrivna pappret som underlag. NONOX kontrollerar inte att kunden har godkänt avtalet; aktiveringen registrerar bara att du anger det. Skriv inte personnummer eller andra personuppgifter än nödvändigt i skälet.
 
-Ett avtal kan inte aktiveras utan minst ett pris, om slutdatumet redan har passerat, eller om kunden har ett annat prisavtal som gäller någon av samma dagar.
+Ett avtal kan inte skickas eller aktiveras utan minst ett pris, om slutdatumet redan har passerat, eller om kunden har ett annat prisavtal som gäller, eller väntar på underskrift, någon av samma dagar. Samma kontroll görs när kunden signerar: har avtalet hunnit löpa ut, eller har ett annat avtal för samma dagar börjat gälla, går det inte att signera och kunden ombeds kontakta dig. En länk för signering gäller som längst till avtalets sista dag.
 
 ## Ändra ett aktivt avtal
 
-Priserna i ett avtal som har skickats eller gällt ändras aldrig, så att du alltid kan se vad som var avtalat en viss dag. Tryck i stället på **Ändra avtal**. Då görs en ny version som ett utkast, med ett nytt nummer och samma priser, som börjar gälla i morgon. Ändra priserna och datumet, och skicka eller aktivera den nya versionen.
+Priserna i ett avtal som har skickats eller gällt ändras aldrig, så att du alltid kan se vad som var avtalat en viss dag. Tryck i stället på **Ändra avtal**. Då görs en ny version som ett utkast, med ett nytt nummer och samma priser, som börjar gälla i morgon. Ändra priserna och datumet, och skicka eller aktivera den nya versionen. En ny version ändrar bara priserna i NONOX; om kunden behöver godkänna ändringen avgörs av ert avtal.
 
-När den nya versionen blir aktiv blir den gamla **Ersatt** och gäller till och med dagen före. En ny version måste börja efter att den gamla började gälla.
+När den nya versionen blir aktiv blir den gamla **Ersatt** och gäller till och med dagen före. En ny version måste börja efter att den gamla började gälla, och den kan inte börja bakåt i tiden, för då skulle priser på dagar som redan har gått ändras. Signeras den efter sitt startdatum går den inte att aktivera; ta tillbaka den till utkast, välj ett nytt datum och skicka den igen. Statusarna visar vilka priser NONOX använder. De ändrar inte vad du och kunden har avtalat.
 
 ## Säg upp och upphörande
 
 Tryck på **Säg upp** på ett aktivt avtal och välj **Sista dag avtalet gäller**. Dagen kan inte ligga bakåt i tiden. Avtalet står sedan som **Uppsagt** och prissätter dokument till och med den dagen. Hur och när uppsägningen ska meddelas kunden avgörs av det ni har kommit överens om.
 
-Ett avtal med slutdatum blir **Upphört** morgonen efter sista dagen. Översikt påminner under **Att göra** 30 dagar innan ett aktivt avtal löper ut, om ingen ny version redan är på väg.
+Ett avtal med slutdatum blir **Upphört** morgonen efter sista dagen. Statusarna visar vilka priser NONOX använder. De ändrar inte vad du och kunden har avtalat. Översikt påminner under **Att göra** 30 dagar innan ett aktivt avtal löper ut, om ingen ny version redan är på väg.
 
-Ett avtal som har upphört, sagts upp eller ersatts prissätter fortfarande dokument som är daterade inom dess period. Bara ett utkast kan tas bort, med **Ta bort utkastet**.
+Ett avtal som har upphört, sagts upp eller ersatts prissätter fortfarande dokument som är daterade inom dess period. Bara ett utkast kan tas bort, med **Ta bort utkastet**, och bara om det aldrig har skickats för signering; ett utkast som har skickats finns kvar med signeringens historik.
 
 ## Koppla till avtalsregistret
 
@@ -86,7 +86,8 @@ Ett aktivt prisavtal går före kundens prislista. Har avtalet inget pris för e
 ## Bra att veta
 
 - Prisavtal bokför ingenting. Ett pris når bokföringen först när det står på en faktura som utfärdas, och ett pris på en faktura ändras aldrig av att ett avtal ändras.
-- Avtalet innehåller inga indexklausuler. Ska priserna räknas upp efter ett index gör du det med en ny version.
+- NONOX räknar inte upp priser efter index. Har ni avtalat om indexuppräkning gör du den med en ny version. En ny version ändrar bara priserna i NONOX; om kunden behöver godkänna ändringen avgörs av ert avtal.
+- PDF:en innehåller bara priser och period. Uppsägningstid och andra villkor avtalar ni separat.
 - Priserna i avtalet är exklusive moms.
 
 ## Vanliga frågor
@@ -101,5 +102,5 @@ Ingenting. En offert eller order behåller sina priser tills du själv trycker p
 
 - [Prislistor](/manual/fakturering/prislistor)
 - [Priser på fakturor, offerter och order](/manual/fakturering/priser-pa-raderna)
-- [Signering](/manual/crm/signering)
+- [Signering](/manual/signering/oversikt)
 - [Kunder](/manual/fakturering/kunder)

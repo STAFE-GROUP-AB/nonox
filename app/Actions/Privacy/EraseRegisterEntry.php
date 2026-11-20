@@ -12,6 +12,7 @@ use App\Events\CustomerAnonymised;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\PriceAgreement;
 use App\Models\RecurringInvoice;
 use App\Models\SalesDocument;
 use App\Models\Supplier;
@@ -60,7 +61,9 @@ class EraseRegisterEntry
                 // A shipment's delivery note is kept with its packages (ADR-081 E14), its recipient copy is erased below.
                 || Shipment::query()->where('customer_id', $customer->id)->exists()
                 // A signed agreement and its evidence are kept as proof of the contract (CRM, ADR-046; art. 17.3 e).
-                || SignedDocuments::customerHasSignedAgreement($customer->id);
+                || SignedDocuments::customerHasSignedAgreement($customer->id)
+                // A price agreement documents which prices the customer had (ADR-082 P5); its free-text reason is blanked below.
+                || PriceAgreement::query()->where('customer_id', $customer->id)->exists();
 
             if (! $used) {
                 $customer->delete();
@@ -70,6 +73,9 @@ class EraseRegisterEntry
             }
 
             Shipment::query()->where('customer_id', $customer->id)->update(['ship_to' => null]);
+            // The reason typed when a price agreement was activated by hand may name a person: it is replaced by a fixed
+            // text (a manual activation must keep a reason, database check); the agreement and who activated it are kept.
+            PriceAgreement::query()->where('customer_id', $customer->id)->whereNotNull('activation_reason')->update(['activation_reason' => PriceAgreement::ERASED_REASON]);
 
             $keepPersonalNumber = Invoice::query()->where('customer_id', $customer->id)->whereNotNull('tax_reduction')->exists();
 

@@ -15,6 +15,7 @@ use App\Models\IncomeTaxPartner;
 use App\Models\Invoice;
 use App\Models\K10Owner;
 use App\Models\MileageRoute;
+use App\Models\PriceAgreement;
 use App\Models\Project;
 use App\Models\SigningCopyRecipient;
 use App\Models\SigningDocumentVersion;
@@ -137,6 +138,18 @@ final class DataSubjectExport
                 ])->all(),
             // CRM (ADR-043): the customer's account and activities, when it has one.
             'crm' => CrmExport::forCustomer($customer),
+            // Price agreements (ADR-082 P5): period, status and how each became active, with the reason typed when activated by hand.
+            'prisavtal' => PriceAgreement::query()->where('customer_id', $customer->id)->orderBy('number')->get()
+                ->map(fn (PriceAgreement $agreement): array => [
+                    'nummer' => $agreement->reference(),
+                    'rubrik' => $agreement->title,
+                    'galler_fran' => $agreement->valid_from->toDateString(),
+                    'galler_till_och_med' => $agreement->lastDay()?->toDateString(),
+                    'status' => $agreement->status->value,
+                    'aktiverat' => $agreement->activated_at?->toIso8601String(),
+                    'aktiverat_genom' => $agreement->activation_method?->value,
+                    'skal_vid_aktivering' => $agreement->activation_reason,
+                ])->all(),
             // Stripe in NONOX Connect (ADR-080 step 2): the Stripe customers linked to the customer.
             'stripe' => StripeCustomerLink::query()->where('customer_id', $customer->id)->orderBy('id')->get()
                 ->map(fn (StripeCustomerLink $link): array => self::stripeCustomer($link))->all(),

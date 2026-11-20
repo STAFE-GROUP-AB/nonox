@@ -32,11 +32,31 @@ final class PriceAgreementActivator
         PriceAgreementStatus::Superseded,
     ];
 
+    /** Statuses another agreement may not overlap: those that price, and one out for signing (it may become active). */
+    public const array BLOCKING = [
+        PriceAgreementStatus::Active,
+        PriceAgreementStatus::Ended,
+        PriceAgreementStatus::Terminated,
+        PriceAgreementStatus::Superseded,
+        PriceAgreementStatus::AwaitingSignature,
+    ];
+
+    /**
+     * The caller holds the agreement's row lock. The end date, a version's
+     * start and the overlap are checked again here, so a signature that
+     * arrives after the agreement ended, or after another agreement for the
+     * same days became active, is refused: the ValidationException rolls
+     * back the signing transaction and the signer is told why.
+     *
+     * @throws ValidationException
+     */
     public function activate(PriceAgreement $agreement, PriceAgreementActivation $how, CarbonImmutable $at, ?string $documentSha256 = null, ?User $by = null, ?string $reason = null): void
     {
         if ($agreement->status === PriceAgreementStatus::Active) {
             return;
         }
+
+        $this->recheck($agreement, $how, CarbonImmutable::today());
 
         $superseded = $this->supersede($agreement);
 
@@ -87,6 +107,11 @@ final class PriceAgreementActivator
             if (! $agreement->valid_from->greaterThan($old->valid_from)) {
                 throw ValidationException::withMessages(['agreement' => __('En ny version måste börja gälla efter :date, då :reference började gälla.', ['date' => $old->valid_from->toDateString(), 'reference' => $old->reference()])]);
             }
+
+            // Ending the old version the day before must never change days that have passed.
+            if ($agreement->valid_from->lessThan($today->startOfDay())) {
+                throw ValidationException::withMessages(['agreement' => __('En ny version kan inte börja gälla bakåt i tiden, för då ändras priser på dagar som redan har gått. Välj i dag eller ett senare datum.')]);
+            }
         }
 
         $overlap = $this->overlapping($agreement);
@@ -114,11 +139,39 @@ final class PriceAgreementActivator
             ->where('customer_id', $agreement->customer_id)
             ->whereKeyNot($agreement->id)
             ->when($agreement->supersedes_id !== null, fn (Builder $query) => $query->whereKeyNot($agreement->supersedes_id))
-            ->whereIn('status', array_map(fn (PriceAgreementStatus $status): string => $status->value, self::PRICING))
+            ->whereIn('status', array_map(fn (PriceAgreementStatus $status): string => $status->value, self::BLOCKING))
             ->whereRaw("valid_from <= COALESCE(?::date, 'infinity'::date)", [$to])
             ->whereRaw("LEAST(COALESCE(valid_to, 'infinity'::date), COALESCE(terminated_on, 'infinity'::date)) >= ?::date", [$from])
             ->orderBy('valid_from')
             ->first();
+    }
+
+    /** @throws ValidationException */
+    private function recheck(PriceAgreement $agreement, PriceAgreementActivation $how, CarbonImmutable $today): void
+    {
+        $signed = $how === PriceAgreementActivation::Signed;
+        $refuse = fn (string $seller, string $signer) => throw ValidationException::withMessages(['document' => $signed ? $signer : $seller]);
+
+        if ($agreement->valid_to !== null && $agreement->valid_to->lessThan($today->startOfDay())) {
+            $refuse(
+                __('Avtalets slutdatum :date har redan passerat. Ändra perioden först.', ['date' => $agreement->valid_to->toDateString()]),
+                __('Prisavtalet kan inte längre signeras, eftersom dess sista giltighetsdag har passerat. Kontakta avsändaren.'),
+            );
+        }
+
+        if ($agreement->supersedes_id !== null && $agreement->valid_from->lessThan($today->startOfDay())) {
+            $refuse(
+                __('En ny version kan inte börja gälla bakåt i tiden, för då ändras priser på dagar som redan har gått. Välj i dag eller ett senare datum.'),
+                __('Prisavtalet kan inte längre signeras, eftersom det skulle ha börjat gälla ett datum som redan har passerat. Kontakta avsändaren.'),
+            );
+        }
+
+        if ($this->overlapping($agreement) !== null) {
+            $refuse(
+                __('Kunden har redan ett annat prisavtal som gäller någon av samma dagar.'),
+                __('Prisavtalet kan inte längre signeras, eftersom ett annat avtal för samma period har börjat gälla. Kontakta avsändaren.'),
+            );
+        }
     }
 
     /** The version being changed ends the day before this one starts; its id, or null when there is none to end. */

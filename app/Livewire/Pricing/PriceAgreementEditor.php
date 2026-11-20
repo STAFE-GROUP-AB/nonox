@@ -24,7 +24,6 @@ use App\Models\Company;
 use App\Models\PriceAgreement;
 use App\Models\PriceAgreementItem;
 use App\Models\PriceList;
-use App\Models\SigningRequest;
 use App\Models\Unit;
 use App\Models\User;
 use App\Modules\Crm\CrmModule;
@@ -290,18 +289,18 @@ class PriceAgreementEditor extends Component
         $user = $this->user();
         $article = ($this->item['article_id'] ?? '') === '' ? null : Article::query()->with('stockUnit')->find((int) $this->item['article_id']);
         $crm = app(ModuleManager::class)->isEnabled(CrmModule::KEY, $this->company());
+        $sent = $agreement->hasBeenSent();
 
         return view('livewire.pricing.price-agreement-editor', [
             'agreement' => $agreement,
             'items' => PriceAgreementPdf::items($agreement),
             'canManage' => $user->can('update', $agreement),
             'canChangeTerms' => $user->can('changeTerms', $agreement),
-            'canDelete' => $user->can('delete', $agreement),
+            'canDelete' => $user->can('delete', $agreement) && ! $sent,
             'crm' => $crm,
             'supersededBy' => PriceAgreement::query()->where('supersedes_id', $agreement->id)->orderByDesc('id')->first(['id', 'number', 'status']),
             'activatedBy' => $agreement->activated_by === null ? null : User::query()->whereKey($agreement->activated_by)->value('name'),
-            'showSigning' => in_array($agreement->status, [PriceAgreementStatus::Draft, PriceAgreementStatus::AwaitingSignature], true)
-                || SigningRequest::query()->where('document_type', PriceAgreement::SIGNING_TYPE)->where('signable_id', (string) $agreement->id)->exists(),
+            'showSigning' => $sent || in_array($agreement->status, [PriceAgreementStatus::Draft, PriceAgreementStatus::AwaitingSignature], true),
             'article' => $article,
             'articleMatches' => $this->showItemForm && $article === null && ($this->item['target'] ?? 'article') === 'article' ? $this->articleMatches() : collect(),
             'unitChoices' => $article === null ? collect() : $this->unitChoices($article),

@@ -115,15 +115,15 @@
     @endif
 
     @if($activating)
-        <x-ui.card :title="__('Aktivera utan signering')" :description="__('Använd det här när kunden har godkänt avtalet på annat sätt, till exempel skrivit under på papper. Skälet sparas med avtalet, tillsammans med vem som aktiverade det och när.')">
+        <x-ui.card :title="__('Aktivera utan signering')" :description="__('Använd det här när kunden har godkänt avtalet på annat sätt, till exempel skrivit under på papper eller godkänt det skriftligen på annat sätt. Skälet sparas med avtalet, tillsammans med vem som aktiverade det och när. NONOX kontrollerar inte att kunden har godkänt avtalet; aktiveringen registrerar bara att du anger det.')">
             <form wire:submit="activate" class="space-y-4">
-                <x-ui.field for="activation_reason" :label="__('Skäl')" error="reason">
+                <x-ui.field for="activation_reason" :label="__('Skäl')" error="reason" :hint="__('Skriv inte personnummer eller andra personuppgifter än nödvändigt.')">
                     <textarea id="activation_reason" rows="2" class="{{ $input }} mt-1" wire:model="reason" maxlength="500" placeholder="{{ __('Till exempel: Kunden skrev under avtalet på papper den 3 mars.') }}"></textarea>
                 </x-ui.field>
                 <x-input-error for="agreement" :field="'agreement'" />
                 <p class="text-sm text-gray-600">{{ __('När avtalet är aktivt går priserna inte att ändra. Fakturor, offerter och order till kunden som är daterade inom avtalets period får avtalets priser när en artikel väljs.') }}</p>
                 <div class="flex items-center gap-4">
-                    <x-button wire:loading.attr="disabled" wire:confirm="{{ __('Aktivera avtalet nu? Priserna låses och gäller för kunden från startdatumet.') }}">{{ __('Aktivera avtalet') }}</x-button>
+                    <x-button wire:loading.attr="disabled" wire:confirm="{{ __('Aktivera avtalet nu? Priserna låses och används på kundens dokument från startdatumet.') }}">{{ __('Aktivera avtalet') }}</x-button>
                     <button type="button" class="text-sm text-gray-600 underline" wire:click="cancelActivation">{{ __('Avbryt') }}</button>
                 </div>
             </form>
@@ -131,7 +131,7 @@
     @endif
 
     @if($terminating)
-        <x-ui.card :title="__('Säg upp avtalet')" :description="__('Avtalet gäller till och med den dag du väljer och upphör sedan. Dokument som redan har avtalets priser ändras inte.')">
+        <x-ui.card :title="__('Säg upp avtalet')" :description="__('NONOX använder avtalets priser till och med den dag du väljer. Det här registrerar bara uppsägningen i NONOX; själva avtalet med kunden sägs upp enligt de villkor ni har kommit överens om.')">
             <form wire:submit="terminate" class="flex flex-wrap items-end gap-4">
                 <x-ui.field for="terminate_on" :label="__('Sista dag avtalet gäller')" error="terminated_on">
                     <input id="terminate_on" type="date" class="{{ $input }} mt-1" wire:model="terminateOn" min="{{ $today->toDateString() }}">

@@ -18,6 +18,8 @@ use Illuminate\Validation\ValidationException;
  * Deletes a draft price agreement with its terms (ADR-082 P5). An agreement
  * that has been sent, signed or activated is never deleted (policy, model
  * event and a database trigger); it ends, is terminated or is superseded.
+ * Nor is a draft that was once sent for signing: its signing requests and
+ * envelopes point at it, so it stays (a draft never prices anything).
  */
 class DeletePriceAgreement
 {
@@ -34,6 +36,11 @@ class DeletePriceAgreement
 
             if (! $agreement->status->isDraft()) {
                 throw ValidationException::withMessages(['agreement' => __('Bara ett utkast kan tas bort. Ett avtal som har skickats eller gällt finns kvar i historiken.')]);
+            }
+
+            // A draft that was once sent keeps its signing history, which points at it.
+            if ($agreement->hasBeenSent()) {
+                throw ValidationException::withMessages(['agreement' => __('Utkastet har skickats för signering och finns kvar tillsammans med signeringens historik. Det kan inte tas bort, men det gäller aldrig utan att du skickar eller aktiverar det.')]);
             }
 
             $agreement->items()->get()->each->delete();
