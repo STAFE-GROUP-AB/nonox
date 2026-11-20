@@ -53,6 +53,10 @@ class ArchivePriceList
 
     private function refuseWhileInUse(PriceList $list): void
     {
+        if ($list->is_default_for_currency) {
+            throw ValidationException::withMessages(['list' => __('Listan är standardlista för :currency. Gör en annan lista till standard först, så får kunderna utan egen lista ett pris.', ['currency' => $list->currency])]);
+        }
+
         $customers = Customer::query()->where('price_list_id', $list->id)->count();
         $groups = CustomerPriceGroup::query()->where('price_list_id', $list->id)->whereNull('archived_at')->count();
         $followers = PriceList::query()->where('based_on_list_id', $list->id)->whereNull('archived_at')->count();

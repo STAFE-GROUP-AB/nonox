@@ -18,7 +18,7 @@ Prislistorna finns under **Register → Prislistor**. Du som bara ska se prisern
 
 1. Gå till **Register → Prislistor** och tryck på **Ny prislista**.
 2. Skriv en **Kod**, till exempel *BYGG*, och ett **Namn**, till exempel *Byggföretag*. Koden är kort och kan inte användas två gånger.
-3. Välj **Typ**: **Prislista** för en vanlig lista, **Kampanj** för ett pris som gäller en tid, eller **Kanalprislista** för kassan eller kundportalen.
+3. Välj **Typ**: **Prislista** för en vanlig lista, **Kampanj** för ett pris som gäller en tid, eller **Kanalprislista** för kassan eller kundportalen. Att kassan och kundportalen använder kanallistorna kommer i ett senare steg.
 4. Välj **Valuta** och om **Priserna anges** exklusive eller inklusive moms.
 5. Fyll i **Gäller från** och **Gäller till och med** om listan bara ska gälla en tid. För en kampanj måste du fylla i båda.
 6. Tryck på **Spara**. Öppna sedan listan genom att trycka på dess namn, så kan du lägga in priserna.
@@ -38,7 +38,7 @@ Tryck på namnet på listan, eller på **Priser**, för att öppna den. Tryck p�
 1. Sök artikeln på nummer eller benämning och välj den.
 2. Välj **Enhet**. Lämnar du den tom gäller artikelns egen försäljningsenhet. De andra enheterna är de som går att räkna om till artikelns enhet.
 3. Skriv **Från antal** om priset ska gälla från ett visst antal. Lämnar du fältet tomt gäller priset från första enheten.
-4. Välj om du vill ange ett **Pris** i listans valuta eller en **Rabatt på grundpriset**, och skriv beloppet eller procenten.
+4. Välj om du vill ange ett **Pris** i listans valuta eller en **Rabatt på ordinarie pris**, och skriv beloppet eller procenten. Ordinarie pris är standardlistans pris för valutan, annars artikelns grundpris; en lista som följer en annan lista tar den listans pris.
 5. Fyll i **Gäller från** och **Gäller till och med** om priset bara ska gälla en tid.
 6. Tryck på **Spara**.
 
@@ -46,7 +46,7 @@ Tryck på namnet på listan, eller på **Priser**, för att öppna den. Tryck p�
 
 **Antalstrappa.** Lägg in flera rader för samma artikel med olika **Från antal**, till exempel 595 kr, 560 kr från 40 och 530 kr från 100. Hela antalet får priset för det högsta steget det når: 120 timmar kostar 530 kr per timme för alla 120, inte bara för de sista 20.
 
-**Prishöjning.** Tryck på **Nytt pris från datum** på ett pris som gäller nu. Skriv det nya priset och dagen det börjar gälla. NONOX låter det gamla priset gälla till och med dagen före, så båda finns kvar i listan och du kan se vad varan kostade en viss dag.
+**Prishöjning.** Ett pris som har börjat gälla går inte att ändra, för då skulle historiken skrivas om. Tryck i stället på **Nytt pris från datum** på ett pris som gäller nu. Skriv det nya priset och dagen det börjar gälla. NONOX låter det gamla priset gälla till och med dagen före, så båda finns kvar i listan och du kan se vad varan kostade en viss dag.
 
 Två priser för samma artikel, enhet och antal får inte gälla samma dag. Försöker du spara ett som överlappar får du veta vilket pris det krockar med.
 
@@ -54,9 +54,9 @@ Två priser för samma artikel, enhet och antal får inte gälla samma dag. För
 
 Det finns ingen knapp som tar bort ett pris som har använts, eftersom du ska kunna se vad det kostade. I stället gäller:
 
-- Ett pris som inte har börjat gälla kan du **Ta bort**.
-- Ett pris som gäller nu kan du **Avsluta**. Det gäller till och med i går och finns kvar i historiken.
-- Ett pris som redan har tagit slut arkiveras och syns under **Avslutade** eller **Alla**.
+- Ett pris som inte har börjat gälla kan du **Ändra** eller **Ta bort**.
+- Ett pris som gäller nu kan du **Avsluta**. Det gäller till och med i går och finns kvar i historiken. Började det gälla i dag arkiveras det i stället.
+- Ett pris som har tagit slut eller arkiverats går inte att ändra. Det syns under **Avslutade** och **Alla**, och på artikelns flik Priser.
 
 Över listan väljer du vilka priser du ser: **Gäller nu och kommande**, **Bara kommande**, **Avslutade** eller **Alla**.
 

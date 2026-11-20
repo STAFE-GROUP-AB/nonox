@@ -42,6 +42,10 @@ class AssignCustomerPrices
                 throw ValidationException::withMessages(['price_list_id' => __('Välj en vanlig prislista.')]);
             }
 
+            if ($listId !== null && PriceList::query()->whereKey($listId)->value('currency') !== $customer->currency) {
+                throw ValidationException::withMessages(['price_list_id' => __('Listan är i en annan valuta än kundens (:currency). Välj en lista i kundens valuta.', ['currency' => $customer->currency])]);
+            }
+
             $customer->update(['price_group_id' => $groupId, 'price_list_id' => $listId]);
             Audit::record('customer.prices_assigned', $customer, ['price_group_id' => $groupId, 'price_list_id' => $listId], $company, $user);
 

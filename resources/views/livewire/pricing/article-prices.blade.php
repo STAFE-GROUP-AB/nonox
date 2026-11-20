@@ -75,7 +75,7 @@
                                 </td>
                                 <td class="py-2 text-gray-700">
                                     <span class="tabular-nums">{{ $item->valid_from === null && $item->valid_to === null ? __('Alltid') : ($item->valid_from?->toDateString() ?? '…').' – '.($item->valid_to?->toDateString() ?? '…') }}</span>
-                                    @if($item->valid_from !== null && $item->valid_from->toDateString() > $today)<x-ui.badge tone="warning" class="ms-1">{{ __('Kommande') }}</x-ui.badge>@endif
+                                    @if($item->valid_from !== null && $item->valid_from->toDateString() > $today)<x-ui.badge tone="warning" class="ms-1">{{ __('Kommande') }}</x-ui.badge>@elseif($item->archived_at || $item->priceList->archived_at || ($item->valid_to !== null && $item->valid_to->toDateString() < $today))<x-ui.badge class="ms-1">{{ __('Avslutad') }}</x-ui.badge>@endif
                                 </td>
                             </tr>
                         @endforeach

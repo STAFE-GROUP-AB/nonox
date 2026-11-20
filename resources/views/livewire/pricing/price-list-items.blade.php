@@ -67,7 +67,7 @@
                         <label for="item_mode" class="block text-sm font-medium text-gray-700">{{ __('Ange') }}</label>
                         <select id="item_mode" class="{{ $input }} mt-1" wire:model.live="form.mode">
                             <option value="price">{{ __('Pris i :currency', ['currency' => $list->currency]) }}</option>
-                            <option value="discount">{{ __('Rabatt på grundpriset') }}</option>
+                            <option value="discount">{{ __('Rabatt på ordinarie pris') }}</option>
                         </select>
                     </div>
                     @if($mode === 'price')
@@ -75,7 +75,7 @@
                             <input id="item_price" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="form.price" placeholder="149,00">
                         </x-ui.field>
                     @else
-                        <x-ui.field for="item_discount" :label="__('Rabatt, procent')" error="discount" class="sm:col-span-2">
+                        <x-ui.field for="item_discount" :label="__('Rabatt, procent')" error="discount" class="sm:col-span-2" :hint="__('Ordinarie pris är standardlistans pris för valutan, annars artikelns grundpris. En lista som följer en annan lista tar den listans pris.')">
                             <input id="item_discount" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="form.discount" placeholder="12,5">
                         </x-ui.field>
                     @endif
@@ -137,7 +137,9 @@
                         @foreach($items as $item)
                             @php
                                 $future = $item->valid_from !== null && $item->valid_from->toDateString() > $today;
-                                $ended = $item->valid_to !== null && $item->valid_to->toDateString() < $today;
+                                $archived = $item->archived_at !== null;
+                                $ended = $archived || ($item->valid_to !== null && $item->valid_to->toDateString() < $today);
+                                $startsToday = $item->valid_from !== null && $item->valid_from->toDateString() === $today;
                             @endphp
                             <tr wire:key="item-{{ $item->id }}">
                                 <td class="py-3 pr-4"><span class="font-semibold tabular-nums text-gray-900">{{ $item->article->number }}</span> {{ $item->article->name }}</td>
@@ -152,15 +154,17 @@
                                 <td class="py-3 pr-4 text-right tabular-nums text-gray-500">{{ $item->article->price_ore->format() }}</td>
                                 <td class="py-3 pr-4 text-gray-700">
                                     <span class="tabular-nums">{{ $item->valid_from === null && $item->valid_to === null ? __('Alltid') : ($item->valid_from?->toDateString() ?? '…').' – '.($item->valid_to?->toDateString() ?? '…') }}</span>
-                                    @if($future)<x-ui.badge tone="warning" class="ms-1">{{ __('Kommande') }}</x-ui.badge>@elseif($ended)<x-ui.badge class="ms-1">{{ __('Avslutad') }}</x-ui.badge>@endif
+                                    @if($future)<x-ui.badge tone="warning" class="ms-1">{{ __('Kommande') }}</x-ui.badge>@elseif($archived)<x-ui.badge class="ms-1">{{ __('Arkiverad') }}</x-ui.badge>@elseif($ended)<x-ui.badge class="ms-1">{{ __('Avslutad') }}</x-ui.badge>@endif
                                 </td>
                                 <td class="py-3 text-right whitespace-nowrap">
-                                    @if($canManage && ! $list->archived_at)
-                                        <button type="button" class="text-sm font-medium text-accent-700 hover:underline" wire:click="edit({{ $item->id }})">{{ __('Ändra') }}</button>
-                                        @if(! $ended && ! $future)
-                                            <button type="button" class="ms-3 text-sm font-medium text-accent-700 hover:underline" wire:click="raise({{ $item->id }})">{{ __('Nytt pris från datum') }}</button>
+                                    @if($canManage && ! $list->archived_at && ! $ended)
+                                        @if($future)
+                                            <button type="button" class="text-sm font-medium text-accent-700 hover:underline" wire:click="edit({{ $item->id }})">{{ __('Ändra') }}</button>
+                                            <button type="button" class="ms-3 text-sm font-medium text-gray-700 underline" wire:click="retire({{ $item->id }})" wire:confirm="{{ __('Ta bort priset? Det har inte börjat gälla.') }}">{{ __('Ta bort') }}</button>
+                                        @else
+                                            <button type="button" class="text-sm font-medium text-accent-700 hover:underline" wire:click="raise({{ $item->id }})">{{ __('Nytt pris från datum') }}</button>
+                                            <button type="button" class="ms-3 text-sm font-medium text-gray-700 underline" wire:click="retire({{ $item->id }})" wire:confirm="{{ $startsToday ? __('Avsluta priset? Det började gälla i dag, så det arkiveras och finns kvar i historiken under Avslutade.') : __('Avsluta priset? Det gäller till och med i går och finns kvar i historiken, så du kan se vad det kostade.') }}">{{ __('Avsluta') }}</button>
                                         @endif
-                                        <button type="button" class="ms-3 text-sm font-medium text-gray-700 underline" wire:click="retire({{ $item->id }})" wire:confirm="{{ $future ? __('Ta bort priset? Det har inte börjat gälla.') : __('Avsluta priset? Det gäller till och med i går och finns kvar i historiken, så du kan se vad det kostade.') }}">{{ $future ? __('Ta bort') : __('Avsluta') }}</button>
                                     @endif
                                 </td>
                             </tr>

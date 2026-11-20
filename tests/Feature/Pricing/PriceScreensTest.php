@@ -163,6 +163,7 @@ it('adds, changes and retires prices on a list page with toasts', function () {
         ->call('chooseArticle', $this->article->id)
         ->set('form.price', '89,50')
         ->set('form.min_quantity', '10')
+        ->set('form.valid_from', '2026-07-01')
         ->call('save')
         ->assertHasNoErrors()
         ->assertDispatched('toast', message: 'Priset är tillagt.', type: 'success')
@@ -271,7 +272,7 @@ it('shows the customer\'s group, own list and today\'s resolved prices on the cu
         ->call('save')
         ->assertDispatched('toast', message: 'Kundens priser är sparade.', type: 'success')
         ->assertSee('80,00')
-        ->assertSee('Kundens prislista');
+        ->assertSee('Kundens eller gruppens prislista');
 
     expect($customer->fresh()->price_group_id)->toBe($group->id);
 });
@@ -323,4 +324,40 @@ it('adds the tab Priser to the article and customer forms', function () {
     Livewire::test(Articles::class)->call('edit', $this->article->id)->assertSee('Priser')->set('tab', 'priser')->assertSeeLivewire(ArticlePrices::class);
     Livewire::test(Customers::class)->call('edit', $customer->id)->assertSee('Priser')->set('tab', 'priser')->assertSeeLivewire(CustomerPrices::class);
     Livewire::test(Customers::class)->call('edit', $customer->id)->set('tab', 'priser')->call('cancel')->assertSet('tab', 'uppgifter');
+});
+
+it('refuses to edit a price that has started and points to the new price from a date', function () {
+    $list = ($this->makeList)('ATER');
+    $running = ($this->makeItem)($list, $this->article, ['valid_from' => '2026-01-01']);
+
+    Livewire::test(PriceListItems::class, ['listId' => $list->id])
+        ->call('edit', $running->id)
+        ->assertDispatched('toast', type: 'error')
+        ->assertSet('showForm', false);
+});
+
+it('keeps ended and archived prices under Avslutade and Alla and on the article tab', function () {
+    $list = ($this->makeList)('ATER');
+    $running = ($this->makeItem)($list, $this->article, ['valid_from' => '2026-01-01']);
+    $today = ($this->makeItem)($list, $this->article, ['min_quantity' => '5', 'valid_from' => '2026-06-15']);
+    $page = Livewire::test(PriceListItems::class, ['listId' => $list->id]);
+
+    $page->call('retire', $running->id)->call('retire', $today->id)
+        ->assertSee('Inga priser i listan ännu')
+        ->set('show', 'avslutade')->assertSee('2026-06-14')->assertSee('Arkiverad')
+        ->set('show', 'alla')->assertSee('Arkiverad');
+
+    Livewire::test(ArticlePrices::class, ['articleId' => $this->article->id])->assertSee('Lista ATER')->assertSee('Avslutad');
+});
+
+it('leaves out articles with no base price and no list price from the customer preview', function () {
+    $component = app(SaveArticle::class)($this->owner, $this->company, ['number' => 'K-0', 'name' => 'Komponent utan pris', 'unit' => 'st', 'price' => '0', 'vat_rate' => 2500]);
+    $customer = Crm::customer($this->company, $this->owner, 'Kund AB');
+
+    Livewire::test(CustomerPrices::class, ['customerId' => $customer->id])->assertDontSee('Komponent utan pris')->assertSee('Skruv');
+
+    $list = ($this->makeList)('ATER');
+    ($this->makeItem)($list, $component, ['price' => '5']);
+
+    Livewire::test(CustomerPrices::class, ['customerId' => $customer->id])->assertSee('Komponent utan pris');
 });

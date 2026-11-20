@@ -20,6 +20,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use InvalidArgumentException;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
@@ -31,6 +32,7 @@ class ArticlePrices extends Component
 {
     private const int LIMIT = 100;
 
+    #[Locked]
     public int $articleId;
 
     public string $date = '';
@@ -54,11 +56,8 @@ class ArticlePrices extends Component
 
         $items = PriceListItem::query()
             ->where('article_id', $article->id)
-            ->whereNull('archived_at')
-            ->where(fn ($query) => $query->whereNull('valid_to')->orWhere('valid_to', '>=', $today))
-            ->whereHas('priceList', fn ($query) => $query->whereNull('archived_at'))
-            ->with(['priceList:id,code,name,currency,kind', 'unit:id,code'])
-            ->orderBy('price_list_id')->orderBy('min_quantity_milli')->orderBy('valid_from')
+            ->with(['priceList:id,code,name,currency,kind,archived_at', 'unit:id,code'])
+            ->orderBy('price_list_id')->orderBy('min_quantity_milli')->orderByDesc('valid_from')
             ->limit(self::LIMIT)
             ->get();
 

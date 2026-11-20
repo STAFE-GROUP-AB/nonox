@@ -23,6 +23,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -38,6 +39,7 @@ class PriceListItems extends Component
     use ShowsToasts;
     use WithPagination;
 
+    #[Locked]
     public int $listId;
 
     /** aktuella (running and coming), kommande, avslutade or alla. */
@@ -106,8 +108,19 @@ class PriceListItems extends Component
 
     public function edit(int $itemId): void
     {
+        $this->load($itemId, true);
+    }
+
+    private function load(int $itemId, bool $refuseStarted = false): void
+    {
         $item = PriceListItem::query()->where('price_list_id', $this->listId)->whereNull('archived_at')->findOrFail($itemId);
         $list = $this->list();
+
+        if ($refuseStarted && ($item->valid_from === null || $item->valid_from->lessThanOrEqualTo(CarbonImmutable::today()))) {
+            $this->toast(__('Priset har börjat gälla och kan inte ändras i efterhand. Använd Nytt pris från datum, så finns det gamla kvar i historiken.'), 'error');
+
+            return;
+        }
 
         $this->editingId = $item->id;
         $this->replacesId = null;
@@ -129,7 +142,7 @@ class PriceListItems extends Component
     /** A new price after a running one: the same article, unit and step, starting today. */
     public function raise(int $itemId): void
     {
-        $this->edit($itemId);
+        $this->load($itemId);
         $this->editingId = null;
         $this->replacesId = $itemId;
         $this->form['valid_from'] = CarbonImmutable::tomorrow()->toDateString();
@@ -200,14 +213,13 @@ class PriceListItems extends Component
 
         $items = PriceListItem::query()
             ->where('price_list_id', $list->id)
-            ->whereNull('archived_at')
             ->join('articles', 'articles.id', '=', 'price_list_items.article_id')
             ->select('price_list_items.*')
             ->with(['article:id,number,name,price_ore,unit', 'unit:id,code'])
             ->when($search !== '', fn ($query) => $query->where(fn ($inner) => $inner->where('articles.name', 'ilike', "%{$search}%")->orWhere('articles.number', 'ilike', "%{$search}%")))
-            ->when($this->show === 'kommande', fn ($query) => $query->where('price_list_items.valid_from', '>', $today))
-            ->when($this->show === 'avslutade', fn ($query) => $query->where('price_list_items.valid_to', '<', $today))
-            ->when($this->show === 'aktuella', fn ($query) => $query->where(fn ($inner) => $inner->whereNull('price_list_items.valid_to')->orWhere('price_list_items.valid_to', '>=', $today)))
+            ->when($this->show === 'kommande', fn ($query) => $query->whereNull('price_list_items.archived_at')->where('price_list_items.valid_from', '>', $today))
+            ->when($this->show === 'avslutade', fn ($query) => $query->where(fn ($inner) => $inner->whereNotNull('price_list_items.archived_at')->orWhere('price_list_items.valid_to', '<', $today)))
+            ->when($this->show === 'aktuella', fn ($query) => $query->whereNull('price_list_items.archived_at')->where(fn ($inner) => $inner->whereNull('price_list_items.valid_to')->orWhere('price_list_items.valid_to', '>=', $today)))
             ->when($this->sort === 'pris', fn ($query) => $query->orderBy('price_list_items.price_minor', $this->direction === 'desc' ? 'desc' : 'asc'))
             ->when($this->sort === 'fran', fn ($query) => $query->orderBy('price_list_items.valid_from', $this->direction === 'desc' ? 'desc' : 'asc'))
             ->when($this->sort === 'artikel', fn ($query) => $query->orderBy('articles.number', $this->direction === 'desc' ? 'desc' : 'asc'))

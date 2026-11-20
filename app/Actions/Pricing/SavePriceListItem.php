@@ -79,8 +79,12 @@ class SavePriceListItem
             $from = $validated['valid_from'] ?? null;
             $to = $validated['valid_to'] ?? null;
 
+            if ($item !== null && $this->hasStarted($item)) {
+                return $this->endStarted($item, $list, $article, $unit, $minQuantity, $priceMinor, $discountBp, $from, $to, $company, $user);
+            }
+
             if ($replaces !== null) {
-                $this->endReplaced($replaces, $list, $from, $company, $user);
+                $this->endReplaced($replaces, $list, $article, $unit, $minQuantity, $from, $company, $user);
             }
 
             $this->refuseOverlap($list, $article, $unit, $minQuantity, $from, $to, $item);
@@ -107,10 +111,50 @@ class SavePriceListItem
         }));
     }
 
-    private function endReplaced(PriceListItem $replaces, PriceList $list, ?string $from, Company $company, User $user): void
+    /** A price that has started to apply is history: only its end may be set (ADR-082 §11). */
+    private function hasStarted(PriceListItem $item): bool
+    {
+        return $item->valid_from === null || $item->valid_from->lessThanOrEqualTo(CarbonImmutable::today());
+    }
+
+    /** Only valid_to may differ on a price that has started, and never to a day that has passed; an ended price is read-only. */
+    private function endStarted(PriceListItem $item, PriceList $list, Article $article, ?Unit $unit, int $minQuantity, ?int $priceMinor, ?int $discountBp, ?string $from, ?string $to, Company $company, User $user): PriceListItem
+    {
+        $today = CarbonImmutable::today();
+
+        if ($item->valid_to !== null && $item->valid_to->lessThan($today)) {
+            throw ValidationException::withMessages(['valid_from' => __('Priset har tagit slut och kan inte ändras.')]);
+        }
+
+        $unchanged = $item->article_id === $article->id
+            && $item->unit_id === $unit?->id
+            && $item->min_quantity_milli === $minQuantity
+            && $item->price_minor === $priceMinor
+            && $item->discount_bp === $discountBp
+            && $item->valid_from?->toDateString() === $from;
+
+        if (! $unchanged) {
+            throw ValidationException::withMessages(['valid_from' => __('Priset har börjat gälla och kan inte ändras i efterhand. Använd Nytt pris från datum, så finns det gamla kvar i historiken.')]);
+        }
+
+        if ($to !== null && CarbonImmutable::parse($to)->lessThan($today->subDay())) {
+            throw ValidationException::withMessages(['valid_to' => __('Slutdatumet kan inte ligga före i går, för då ändras dagar som redan har gått.')]);
+        }
+
+        $item->update(['valid_to' => $to]);
+        Audit::record('price_list_item.ended', $item, ['price_list_id' => $list->id, 'article_id' => $article->id], $company, $user);
+
+        return $item;
+    }
+
+    private function endReplaced(PriceListItem $replaces, PriceList $list, Article $article, ?Unit $unit, int $minQuantity, ?string $from, Company $company, User $user): void
     {
         $replaced = PriceListItem::query()->where('price_list_id', $list->id)->whereNull('archived_at')->find($replaces->id)
             ?? throw new ModelNotFoundException;
+
+        if ($replaced->article_id !== $article->id || $replaced->unit_id !== $unit?->id || $replaced->min_quantity_milli !== $minQuantity) {
+            throw ValidationException::withMessages(['article_id' => __('Det nya priset måste gälla samma artikel, enhet och antal som det pris det följer.')]);
+        }
         $start = $from === null ? null : CarbonImmutable::parse($from);
 
         if ($start === null || ($replaced->valid_from !== null && $start->lessThanOrEqualTo($replaced->valid_from))) {

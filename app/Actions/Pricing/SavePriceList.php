@@ -215,6 +215,10 @@ class SavePriceList
             throw ValidationException::withMessages(['currency' => __('Valutan och momsgrunden kan inte ändras när listan har priser eller följs av en annan lista. Gör en ny lista.')]);
         }
 
+        if ($kind === PriceListKind::Campaign && PriceList::query()->where('based_on_list_id', $list->id)->exists()) {
+            throw ValidationException::withMessages(['kind' => __('Andra listor följer den här listan, och en lista kan inte följa en kampanj. Låt dem följa något annat först.')]);
+        }
+
         if ($kind !== PriceListKind::Standard && $list->kind === PriceListKind::Standard
             && (Customer::query()->where('price_list_id', $list->id)->exists() || CustomerPriceGroup::query()->where('price_list_id', $list->id)->exists())) {
             throw ValidationException::withMessages(['kind' => __('Listan används av kunder eller kundgrupper och måste förbli en vanlig prislista.')]);

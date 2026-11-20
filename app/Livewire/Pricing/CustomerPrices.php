@@ -15,11 +15,13 @@ use App\Models\Company;
 use App\Models\Customer;
 use App\Models\CustomerPriceGroup;
 use App\Models\PriceList;
+use App\Models\PriceListItem;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -33,6 +35,7 @@ class CustomerPrices extends Component
     use ShowsToasts;
     use WithPagination;
 
+    #[Locked]
     public int $customerId;
 
     public string $groupId = '';
@@ -83,6 +86,7 @@ class CustomerPrices extends Component
 
         $articles = Article::query()
             ->where('is_active', true)
+            ->where(fn ($query) => $query->where('price_ore', '>', 0)->orWhereIn('id', PriceListItem::query()->whereNull('archived_at')->select('article_id')))
             ->when($search !== '', fn ($query) => $query->where(fn ($inner) => $inner->where('name', 'ilike', "%{$search}%")->orWhere('number', 'ilike', "%{$search}%")))
             ->orderBy('number')
             ->paginate(10);
@@ -101,7 +105,7 @@ class CustomerPrices extends Component
             'resolved' => $resolved,
             'listCodes' => $listIds === [] ? collect() : PriceList::query()->whereIn('id', $listIds)->pluck('code', 'id'),
             'groups' => CustomerPriceGroup::query()->where(fn ($query) => $query->whereNull('archived_at')->orWhere('id', $customer->price_group_id))->orderBy('name')->get(['id', 'name']),
-            'lists' => PriceList::query()->where('kind', PriceListKind::Standard->value)->where(fn ($query) => $query->whereNull('archived_at')->orWhere('id', $customer->price_list_id))->orderBy('code')->get(['id', 'code', 'name', 'currency']),
+            'lists' => PriceList::query()->where('kind', PriceListKind::Standard->value)->where(fn ($query) => $query->where('currency', $customer->currency)->orWhere('id', $customer->price_list_id))->where(fn ($query) => $query->whereNull('archived_at')->orWhere('id', $customer->price_list_id))->orderBy('code')->get(['id', 'code', 'name', 'currency']),
             'canManage' => $this->user()->can('create', [PriceList::class, $this->company()]),
             'currency' => $context->currency,
         ]);

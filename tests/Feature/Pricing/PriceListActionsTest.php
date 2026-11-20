@@ -189,10 +189,10 @@ it('refuses overlapping periods for the same article, unit and step but not for 
 it('does not count the item itself, an archived one or another list as an overlap', function () {
     $list = ($this->save)();
     $other = ($this->save)(['code' => 'ANNAN']);
-    $first = ($this->item)($list, ['valid_from' => '2026-01-01']);
+    $first = ($this->item)($list, ['valid_from' => '2026-07-01']);
 
-    expect(($this->item)($list, ['valid_from' => '2026-01-01', 'price' => '95'], $first)->price_minor)->toBe(9500)
-        ->and(($this->item)($other, ['valid_from' => '2026-01-01'])->price_list_id)->toBe($other->id);
+    expect(($this->item)($list, ['valid_from' => '2026-07-01', 'price' => '95'], $first)->price_minor)->toBe(9500)
+        ->and(($this->item)($other, ['valid_from' => '2026-07-01'])->price_list_id)->toBe($other->id);
 
     $first->update(['archived_at' => now()]);
 
@@ -296,4 +296,65 @@ it('denies the bookkeeper and the auditor any change and allows the accountant',
     $accountant = Bookkeeping::member($this->company, 'accountant');
 
     expect(app(SavePriceList::class)($accountant, $this->company->fresh(), $input)->code)->toBe('NY');
+});
+
+it('lets only a price that has not started be edited, and only the end of a running one be set', function () {
+    $list = ($this->save)();
+    $future = ($this->item)($list, ['valid_from' => '2026-07-01']);
+    $running = ($this->item)($list, ['min_quantity' => '5', 'valid_from' => '2026-01-01']);
+    $ended = ($this->item)($list, ['min_quantity' => '9', 'valid_from' => '2026-01-01', 'valid_to' => '2026-02-01']);
+
+    expect(($this->item)($list, ['valid_from' => '2026-08-01', 'price' => '70'], $future)->price_minor)->toBe(7000);
+
+    foreach ([['price' => '70'], ['mode' => 'discount', 'discount' => '5'], ['valid_from' => '2026-02-01'], ['valid_from' => null]] as $change) {
+        expect(fn () => ($this->item)($list, ['min_quantity' => '5', 'valid_from' => '2026-01-01', ...$change], $running))->toThrow(ValidationException::class);
+    }
+
+    expect(fn () => ($this->item)($list, ['min_quantity' => '5', 'valid_from' => '2026-01-01', 'valid_to' => '2026-06-01'], $running))->toThrow(ValidationException::class)
+        ->and(fn () => ($this->item)($list, ['min_quantity' => '9', 'valid_from' => '2026-01-01', 'valid_to' => '2026-03-01'], $ended))->toThrow(ValidationException::class);
+
+    ($this->item)($list, ['min_quantity' => '5', 'valid_from' => '2026-01-01', 'valid_to' => '2026-06-30'], $running);
+
+    expect($running->fresh()->valid_to->toDateString())->toBe('2026-06-30')
+        ->and($running->fresh()->price_minor)->toBe(9000);
+});
+
+it('refuses to end a price that is not the one the new price follows', function () {
+    $list = ($this->save)();
+    $other = app(SaveArticle::class)($this->owner, $this->company, ['number' => 'A-2', 'name' => 'Mutter', 'unit' => 'st', 'price' => '10', 'vat_rate' => 2500]);
+    $running = ($this->item)($list, ['valid_from' => '2026-01-01']);
+    $unrelated = ($this->item)($list, ['article_id' => $other->id, 'valid_from' => '2026-01-01']);
+
+    expect(fn () => ($this->item)($list, ['price' => '99', 'valid_from' => '2026-07-01'], null, $unrelated))->toThrow(ValidationException::class)
+        ->and(fn () => ($this->item)($list, ['min_quantity' => '10', 'price' => '99', 'valid_from' => '2026-07-01'], null, $running))->toThrow(ValidationException::class)
+        ->and($unrelated->fresh()->valid_to)->toBeNull();
+});
+
+it('refuses to archive the default list of a currency', function () {
+    $list = ($this->save)(['is_default_for_currency' => true]);
+
+    expect(fn () => app(ArchivePriceList::class)($this->owner, $this->company, $list))->toThrow(ValidationException::class);
+
+    ($this->save)(['code' => 'ANNAN', 'is_default_for_currency' => true]);
+
+    expect(app(ArchivePriceList::class)($this->owner, $this->company, $list->fresh())->archived_at)->not->toBeNull();
+});
+
+it('refuses to make a list a campaign while other lists follow it', function () {
+    $list = ($this->save)();
+    ($this->save)(['code' => 'F', 'derived' => true, 'derived_percent' => '3', 'based_on_list_id' => $list->id]);
+
+    expect(fn () => ($this->save)(['kind' => 'CAMPAIGN', 'valid_from' => '2026-06-01', 'valid_to' => '2026-06-30'], $list))->toThrow(ValidationException::class);
+});
+
+it('refuses a customer list in another currency than the customer\'s', function () {
+    $euro = ($this->save)(['code' => 'EUR', 'currency' => 'EUR']);
+    $customer = Crm::customer($this->company, $this->owner, 'Kund');
+
+    expect(fn () => app(AssignCustomerPrices::class)($this->owner, $this->company, $customer, null, $euro->id))->toThrow(ValidationException::class);
+
+    $customer->update(['currency' => 'EUR']);
+    app(AssignCustomerPrices::class)($this->owner, $this->company, $customer->fresh(), null, $euro->id);
+
+    expect($customer->fresh()->price_list_id)->toBe($euro->id);
 });

@@ -39,7 +39,7 @@
         </form>
     </x-ui.card>
 
-    <x-ui.card :title="__('Kundens pris idag')" :description="__('Så här prissätts en vara i :currency till kunden i dag, vid antal 1. Fakturor och offerter använder samma regler.', ['currency' => $currency])">
+    <x-ui.card :title="__('Kundens pris idag')" :description="__('Så här prissätts en vara i :currency till kunden i dag, vid antal 1. Fakturor och offerter hämtar priserna ur listorna i nästa steg.', ['currency' => $currency])">
         <input type="search" class="{{ $input }} max-w-xs" wire:model.live.debounce.300ms="search" placeholder="{{ __('Sök artikel') }}" aria-label="{{ __('Sök artikel') }}">
 
         @if($articles->isEmpty())
@@ -74,7 +74,7 @@
                                 </td>
                                 <td class="py-3 text-gray-700">
                                     @if($price?->source)
-                                        {{ $price->source->label() }}@if(isset($price->explanation['list_id']) && $listCodes->has($price->explanation['list_id'])) <span class="text-gray-500">({{ $listCodes[$price->explanation['list_id']] }})</span>@endif
+                                        {{ $price->source === App\Domain\Pricing\PriceSource::CustomerList ? __('Kundens eller gruppens prislista') : $price->source->label() }}@if(isset($price->explanation['list_id']) && $listCodes->has($price->explanation['list_id'])) <span class="text-gray-500">({{ $listCodes[$price->explanation['list_id']] }})</span>@endif
                                     @endif
                                     @foreach($price?->warnings ?? [] as $warning)
                                         <x-ui.badge tone="warning" class="ms-1">{{ $warnings[$warning] ?? $warning }}</x-ui.badge>
