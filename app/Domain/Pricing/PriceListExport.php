@@ -57,7 +57,8 @@ final class PriceListExport
             $item->min_quantity_milli === 0 ? null : $item->min_quantity_milli / 1000,
             $item->price_minor === null ? null : $item->price_minor,
             $item->discount_bp === null ? null : $item->discount_bp,
-            (string) $item->valid_from?->toDateString(),
+            // A price that has started gets no start date, so a file read back in starts on the update's own date.
+            $item->valid_from !== null && $item->valid_from->greaterThan(CarbonImmutable::today()) ? $item->valid_from->toDateString() : '',
             (string) $item->valid_to?->toDateString(),
         ])->all());
     }

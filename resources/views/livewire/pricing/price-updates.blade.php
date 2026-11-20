@@ -28,7 +28,7 @@
                             @endforeach
                         </select>
                     </x-ui.field>
-                    <x-ui.field for="update_file" :label="__('Fil med priser')" error="file" class="sm:col-span-3" :hint="__('CSV eller Excel (.xlsx) med kolumnerna Artikelnummer och Pris eller Rabatt %. Enhet, Från antal och Gäller från är valfria. Exportera en prislista för att få en mall.')">
+                    <x-ui.field for="update_file" :label="__('Fil med priser')" error="file" class="sm:col-span-3" :hint="__('CSV eller Excel (.xlsx) med kolumnerna Artikelnummer och Pris eller Rabatt %. Enhet, Från antal och Gäller från är valfria. Högst 12 MB. Exportera en prislista för att få en mall.')">
                         <input id="update_file" type="file" accept=".csv,.txt,.xlsx" class="mt-1 block w-full text-sm text-gray-700" wire:model="file">
                         <div wire:loading wire:target="file" class="mt-1 text-sm text-gray-500">{{ __('Laddar upp filen …') }}</div>
                     </x-ui.field>
@@ -106,7 +106,7 @@
                             <input id="update_percent" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="form.percent" autocomplete="off">
                         </x-ui.field>
                     @elseif($kind === 'AMOUNT')
-                        <x-ui.field for="update_amount" :label="__('Ändring i kronor')" error="amount" class="sm:col-span-2" :hint="__('10 höjer med 10 kr, -5,50 sänker. Ändrar bara priser i kronor.')">
+                        <x-ui.field for="update_amount" :label="__('Ändring i kronor')" error="amount" class="sm:col-span-2" :hint="__('10 höjer med 10 kr, -5,50 sänker. Ändrar bara priser i kronor; i en lista med priser inklusive moms läggs beloppet till priset inklusive moms.')">
                             <input id="update_amount" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="form.amount" autocomplete="off">
                         </x-ui.field>
                     @else

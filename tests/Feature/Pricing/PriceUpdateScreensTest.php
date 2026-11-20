@@ -17,6 +17,7 @@ use App\Models\PriceUpdateRunLine;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -84,6 +85,13 @@ it('shows validation errors from the action on the form', function () {
     Livewire::test(PriceUpdates::class)
         ->set('form.kind', 'FILE')
         ->call('plan')
+        ->assertHasErrors(['file']);
+});
+
+it('stops an upload larger than 12 MB at the form', function () {
+    Livewire::test(PriceUpdates::class)
+        ->set('form.kind', 'FILE')
+        ->set('file', UploadedFile::fake()->create('priser.csv', 13_000))
         ->assertHasErrors(['file']);
 });
 

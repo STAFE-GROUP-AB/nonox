@@ -6,6 +6,7 @@ namespace App\Domain\Pricing;
 
 use App\Models\Article;
 use App\Models\ArticlePriceHistory;
+use App\Models\PriceList;
 use App\Models\PriceListItem;
 use App\Models\PriceUpdateRun;
 use App\Models\PriceUpdateRunLine;
@@ -39,6 +40,8 @@ final class PriceUpdateWriter
         if ($lines->isEmpty()) {
             return ['applied' => 0, 'skipped' => 0];
         }
+
+        self::lockLists($lines->pluck('price_list_id')->unique()->values()->all());
 
         $existing = collect();
 
@@ -221,6 +224,20 @@ final class PriceUpdateWriter
                 'updated_at' => $now,
             ]);
         }
+    }
+
+    /**
+     * Locks the lists' rows, so two updates (or an update and a revert) of the
+     * same list run one after the other: a new price for an article with no
+     * price yet has no item row to lock.
+     *
+     * @param  array<int, mixed>  $listIds
+     */
+    public static function lockLists(array $listIds): void
+    {
+        $ids = array_values(array_filter(array_map(fn (mixed $id): int => is_numeric($id) ? (int) $id : 0, $listIds)));
+
+        PriceList::query()->whereKey($ids)->orderBy('id')->lockForUpdate()->get(['id']);
     }
 
     public static function key(int $listId, int $articleId, ?int $unitId, int $minQuantityMilli): string

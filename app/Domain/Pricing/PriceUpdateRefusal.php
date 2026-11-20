@@ -16,6 +16,7 @@ enum PriceUpdateRefusal: string
     case UnitNotConvertible = 'UNIT_NOT_CONVERTIBLE';
     case BadPrice = 'BAD_PRICE';
     case NegativePrice = 'NEGATIVE_PRICE';
+    case PositiveToZero = 'POSITIVE_TO_ZERO';
     case PriceOrDiscount = 'PRICE_OR_DISCOUNT';
     case BadDiscount = 'BAD_DISCOUNT';
     case BadQuantity = 'BAD_QUANTITY';
@@ -39,6 +40,7 @@ enum PriceUpdateRefusal: string
             self::UnitNotConvertible => __('Enheten går inte att räkna om till artikelns enhet.'),
             self::BadPrice => __('Priset går inte att läsa. Skriv till exempel 149,00.'),
             self::NegativePrice => __('Priset blir lägre än noll.'),
+            self::PositiveToZero => __('Priset skulle bli 0 kr. Ett pris över noll blir aldrig noll av en prisuppdatering; ändra det för hand om varan ska vara gratis.'),
             self::PriceOrDiscount => __('Fyll i antingen pris eller rabatt, inte båda och inte ingen.'),
             self::BadDiscount => __('Rabatten ska vara en procent mellan 0 och 100.'),
             self::BadQuantity => __('Från antal går inte att läsa.'),

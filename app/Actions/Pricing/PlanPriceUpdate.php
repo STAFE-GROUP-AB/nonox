@@ -177,11 +177,12 @@ class PlanPriceUpdate
             'index_new' => ['nullable', 'string', 'max:20'],
             'rounding' => ['nullable', 'in:'.implode(',', array_column(PriceRounding::cases(), 'value'))],
             'effective_date' => ['required', 'date_format:Y-m-d'],
-            'file' => ['nullable', 'file', 'max:20480'],
+            // The upload itself stops at Livewire's 12 MB (its default temporary-upload rule, kept for every screen).
+            'file' => ['nullable', 'file', 'max:12288'],
         ], [
             'effective_date.required' => __('Välj från vilket datum de nya priserna ska gälla.'),
             'effective_date.date_format' => __('Skriv datumet som 2027-01-01.'),
-            'file.max' => __('Filen är större än 20 MB. Dela upp den i flera filer.'),
+            'file.max' => __('Filen är större än 12 MB. Dela upp den i flera filer.'),
         ])->validate();
 
         if ($validated['kind'] === 'FILE' && ! $file instanceof UploadedFile) {
@@ -375,10 +376,14 @@ class PlanPriceUpdate
             ->whereIn('price_list_id', $lists->pluck('id'))
             ->whereIn('article_id', $this->articleQuery($validated)->select('id'))
             ->whereNull('archived_at')
-            ->where(fn ($query) => $query->whereNull('valid_from')->orWhere('valid_from', '<=', $date))
             ->where(fn ($query) => $query->whereNull('valid_to')->orWhere('valid_to', '>=', $date))
             ->orderBy('price_list_id')->orderBy('article_id')->orderBy('unit_id')->orderBy('min_quantity_milli')
             ->get();
+
+        // Every running and later item, so a later price inside the new item's period is found now, not at apply.
+        $byKey = $items->groupBy(fn (PriceListItem $item): string => "{$item->price_list_id}|".$this->key($item->article_id, $item->unit_id, $item->min_quantity_milli));
+        $effectiveDay = CarbonImmutable::parse($date);
+        $items = $items->filter(fn (PriceListItem $item): bool => $item->valid_from === null || $item->valid_from->lessThanOrEqualTo($effectiveDay));
 
         foreach ($lists as $list) {
             $listItems = $items->where('price_list_id', $list->id)
@@ -409,6 +414,9 @@ class PlanPriceUpdate
                     $item->discount_bp !== null => $this->refused($line, PriceUpdateRefusal::DiscountItem),
                     $rule->kind === PriceUpdateKind::Amount && $list->currency !== 'SEK' => $this->refused($line, PriceUpdateRefusal::OtherCurrency),
                     $item->valid_from !== null && $item->valid_from->toDateString() === $date => $this->refused($line, PriceUpdateRefusal::SameStart),
+                    $byKey->get("{$list->id}|".$this->key($item->article_id, $item->unit_id, $item->min_quantity_milli), collect())
+                        ->contains(fn (PriceListItem $other): bool => $other->id !== $item->id && $other->valid_from !== null && $other->valid_from->greaterThan($effectiveDay)
+                            && ($item->valid_to === null || $other->valid_from->lessThanOrEqualTo($item->valid_to))) => $this->refused($line, PriceUpdateRefusal::FuturePriceExists),
                     default => $this->computed($rule, $rounding, $line),
                 };
             }
@@ -431,6 +439,10 @@ class PlanPriceUpdate
         }
 
         $new = $rounding->apply($unrounded);
+
+        if ($old > 0 && $new === 0) {
+            return $this->refused([...$line, 'unrounded_minor' => $unrounded, 'new_minor' => 0], PriceUpdateRefusal::PositiveToZero);
+        }
 
         return $this->flagged([
             ...$line,

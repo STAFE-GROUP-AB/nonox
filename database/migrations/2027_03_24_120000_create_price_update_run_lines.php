@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Schema;
  * Mass price update, "Prisuppdatering" (ADR-082 §8, P6). Additive only: one
  * line per price a run looks at (the preview and, once applied, the diff
  * that stays when the uploaded file is pruned after two years, decision 10),
- * and three nullable columns on the runs of P1. Ids, enums, dates and minor
+ * and four nullable columns on the runs of P1. Ids, enums, dates and minor
  * amounts only: a refused file row keeps the article number it named, never
  * a name or other free text.
  */

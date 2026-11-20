@@ -300,7 +300,7 @@ it('exports a list in the file format, guarded against formulas, and reads its o
 
     expect($csv)->toStartWith("\xEF\xBB\xBF")
         ->toContain('Artikelnummer;Benämning;Enhet;"Från antal";Pris;"Rabatt %";"Gäller från";"Gäller till"')
-        ->toContain('1001;Skruv;;;90,00;;2026-01-01;')
+        ->toContain('1001;Skruv;;;90,00;;;')
         ->toContain("'=HYPERLINK")
         ->toContain(';2,5;12,50;');
 
@@ -311,14 +311,14 @@ it('exports a list in the file format, guarded against formulas, and reads its o
     @unlink($path);
 
     expect(array_values($rows))->toBe([
-        ['article' => '1001', 'unit' => '', 'quantity' => '', 'price' => '90', 'discount' => '', 'from' => '2026-01-01'],
-        ['article' => '3001', 'unit' => '', 'quantity' => '2.5', 'price' => '12.5', 'discount' => '', 'from' => '2026-01-01'],
+        ['article' => '1001', 'unit' => '', 'quantity' => '', 'price' => '90', 'discount' => '', 'from' => ''],
+        ['article' => '3001', 'unit' => '', 'quantity' => '2.5', 'price' => '12.5', 'discount' => '', 'from' => ''],
     ]);
 
     $run = ($this->plan)(['kind' => 'FILE', 'list_ids' => [$this->list->id], 'effective_date' => '2026-07-01'], UploadedFile::fake()->createWithContent('lista.xlsx', $xlsx));
 
-    expect($run->counts)->toMatchArray(['unchanged' => 0, 'refused' => 2])
-        ->and(PriceUpdateRunLine::query()->where('price_update_run_id', $run->id)->pluck('reason')->unique()->values()->all())->toBe([PriceUpdateRefusal::DateInPast]);
+    expect($run->counts)->toMatchArray(['unchanged' => 2, 'refused' => 0, 'ready' => 0])
+        ->and(PriceUpdateRunLine::query()->where('price_update_run_id', $run->id)->pluck('valid_from')->map->toDateString()->unique()->values()->all())->toBe(['2026-07-01']);
 });
 
 it('needs price-lists:manage to plan, apply and revert', function () {
@@ -361,4 +361,55 @@ it('prunes an unapplied preview after seven days and a price file after two year
         ->and($file->file_deleted_at)->not->toBeNull()
         ->and(Storage::disk('local')->allFiles())->toBe([])
         ->and(PriceUpdateRunLine::query()->where('price_update_run_id', $file->id)->count())->toBe(1);
+});
+
+it('refuses to revert an update whose prices a later update replaced, until the later one is reverted', function () {
+    $a = ($this->apply)(($this->plan)(['percent' => '10', 'list_ids' => [$this->list->id], 'effective_date' => '2026-06-20']));
+    $b = ($this->apply)(($this->plan)(['percent' => '10', 'list_ids' => [$this->list->id], 'effective_date' => '2026-07-01']));
+
+    $x = PriceListItem::query()->where('price_update_run_id', $a->id)->sole();
+    $y = PriceListItem::query()->where('price_update_run_id', $b->id)->sole();
+
+    expect([$x->price_minor, $x->valid_from->toDateString(), $x->valid_to->toDateString()])->toBe([9_900, '2026-06-20', '2026-06-30'])
+        ->and([$y->price_minor, $y->valid_from->toDateString(), $y->valid_to])->toBe([10_890, '2026-07-01', null]);
+
+    try {
+        ($this->revert)($a);
+        $this->fail('The earlier update was reverted under a later one.');
+    } catch (ValidationException $exception) {
+        expect($exception->errors()['run'][0])->toContain('Återställ den senare uppdateringen först.');
+    }
+
+    expect($x->refresh()->archived_at)->toBeNull()
+        ->and($a->refresh()->status)->toBe(PriceUpdateStatus::Applied);
+
+    ($this->revert)($b);
+    expect($x->refresh()->valid_to)->toBeNull()
+        ->and($y->refresh()->archived_at)->not->toBeNull();
+
+    ($this->revert)($a);
+    $this->started->refresh();
+
+    expect([$this->started->price_minor, $this->started->valid_from->toDateString(), $this->started->valid_to, $this->started->archived_at])->toBe([9_000, '2026-01-01', null, null])
+        ->and($x->refresh()->archived_at)->not->toBeNull()
+        ->and(PriceListItem::query()->whereNull('archived_at')->pluck('id')->all())->toBe([$this->started->id]);
+});
+
+it('never lets an update turn a price above zero into zero', function () {
+    $run = ($this->plan)(['kind' => 'AMOUNT', 'amount' => '-0,30', 'base' => true]);
+
+    expect(p6Line($run, $this->nail->id)->reason)->toBe(PriceUpdateRefusal::PositiveToZero)
+        ->and(p6Line($run, $this->screw->id)->new_minor)->toBe(9_970);
+
+    $percent = ($this->plan)(['percent' => '-99,9', 'base' => true]);
+    expect(p6Line($percent, $this->nail->id)->reason)->toBe(PriceUpdateRefusal::PositiveToZero);
+});
+
+it('takes the effective date of an applied run from the prices it wrote', function () {
+    $run = ($this->plan)(['kind' => 'FILE', 'base' => true], p6Csv('Artikelnummer;Pris;Gäller från', '1001;110;2026-06-20', '1002;1;2026-07-10'));
+    expect($run->effective_date->toDateString())->toBe('2026-06-20');
+
+    $run = ($this->apply)($run, [p6Line($run, $this->screw->id)->id]);
+
+    expect($run->effective_date->toDateString())->toBe('2026-07-10');
 });

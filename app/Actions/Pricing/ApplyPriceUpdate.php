@@ -78,7 +78,11 @@ class ApplyPriceUpdate
                 'scheduled' => $waiting,
             ];
 
+            // The run takes effect on the earliest price it wrote or will write, so the revert window follows what was applied.
+            $effective = $run->lines()->whereIn('status', [PriceUpdateLineStatus::Applied->value, PriceUpdateLineStatus::Ready->value])->min('valid_from');
+
             $run->update([
+                'effective_date' => $effective ?? $run->effective_date->toDateString(),
                 'status' => $waiting > 0 ? PriceUpdateStatus::Scheduled : PriceUpdateStatus::Applied,
                 'counts' => $counts,
                 'applied_at' => $now,

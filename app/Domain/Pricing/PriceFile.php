@@ -107,6 +107,6 @@ final class PriceFile
     /** Takes away the apostrophe the export puts before a text that a spreadsheet would read as a formula. */
     private static function unguard(string $value): string
     {
-        return strlen($value) > 1 && $value[0] === "'" && in_array($value[1], ['=', '+', '-', '@'], true) ? substr($value, 1) : $value;
+        return strlen($value) > 1 && $value[0] === "'" && in_array($value[1], ['=', '+', '-', '@', "\t", "\r"], true) ? substr($value, 1) : $value;
     }
 }

@@ -464,7 +464,7 @@ index figures in v1. Decision 11.
   nothing else took the period, and sets base prices back with a new history
   row; it never deletes and never overwrites a price changed by someone else.
 - A file row may carry its own "Gäller från" (today or later); a file holds
-  at most 10 000 rows and 20 MB and is read through the register importer's
+  at most 10 000 rows and 12 MB (Livewire's upload limit, kept for every screen) and is read through the register importer's
   streaming reader. Export writes running and coming items in the same
   columns, guarding text against formulas.
 - Retention (decision 10): `pricing:prune-updates` deletes a run's file two

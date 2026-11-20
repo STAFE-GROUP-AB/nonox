@@ -30,8 +30,10 @@ use Illuminate\Validation\ValidationException;
  * §8). Nothing is deleted: the list items the run made are archived (they
  * stay in the history), the items it ended get back the end they had, and a
  * base price it wrote is set back with a new history row. A base price still
- * waiting for its date is simply never written. A price changed by someone
- * else after the run is left as it is and counted, never overwritten.
+ * waiting for its date is simply never written. A base price changed by
+ * someone else after the run is left as it is and counted; a list price
+ * changed since (by a later update, say) refuses the revert until that later
+ * change is undone, so no day is left without a price.
  */
 class RevertPriceUpdate
 {
@@ -73,6 +75,12 @@ class RevertPriceUpdate
     }
 
     /**
+     * Archives the items the run made and gives the items it ended their end
+     * back. Refused as a whole when anything has touched those prices since:
+     * an item the run made was ended or replaced (typically by a later price
+     * update), or another price now lies in the period. Undoing only part of
+     * it would leave days without a price, so the later change is undone first.
+     *
      * @param  Collection<int, PriceUpdateRunLine>  $lines
      * @return array{reverted: int, kept: int}
      */
@@ -82,48 +90,53 @@ class RevertPriceUpdate
             return ['reverted' => 0, 'kept' => 0];
         }
 
-        $made = PriceListItem::query()->where('price_update_run_id', $run->id)->whereNull('archived_at')->lockForUpdate()->get();
-        $others = collect();
+        PriceUpdateWriter::lockLists($lines->pluck('price_list_id')->unique()->values()->all());
+
+        $keyOf = fn (PriceListItem $item): string => PriceUpdateWriter::key($item->price_list_id, $item->article_id, $item->unit_id, $item->min_quantity_milli);
+        $items = collect();
 
         foreach ($lines->pluck('article_id')->unique()->chunk(1000) as $articleIds) {
-            $others = $others->merge(PriceListItem::query()
+            $items = $items->merge(PriceListItem::query()
                 ->whereIn('price_list_id', $lines->pluck('price_list_id')->unique()->values())
                 ->whereIn('article_id', $articleIds->values())
                 ->whereNull('archived_at')
-                ->where(fn ($query) => $query->whereNull('price_update_run_id')->orWhere('price_update_run_id', '<>', $run->id))
                 ->lockForUpdate()
                 ->get());
         }
 
-        $byKey = $others->groupBy(fn (PriceListItem $item): string => PriceUpdateWriter::key($item->price_list_id, $item->article_id, $item->unit_id, $item->min_quantity_milli));
+        $byKey = $items->groupBy($keyOf);
+        $archive = [];
         $restore = [];
-        $kept = 0;
 
         foreach ($lines as $line) {
-            if ($line->current_item_id === null) {
-                continue;
-            }
-
-            $items = $byKey->get(PriceUpdateWriter::key((int) $line->price_list_id, (int) $line->article_id, $line->unit_id, $line->min_quantity_milli), collect());
-            $current = $items->firstWhere('id', $line->current_item_id);
-            $endedByRun = $current !== null && $current->valid_to?->toDateString() === $line->valid_from->subDay()->toDateString();
+            $key = PriceUpdateWriter::key((int) $line->price_list_id, (int) $line->article_id, $line->unit_id, $line->min_quantity_milli);
+            $group = $byKey->get($key, collect());
             $from = $line->valid_from;
             $to = $line->valid_to;
-            $collides = $items->contains(fn (PriceListItem $item): bool => $item->id !== $line->current_item_id
-                && ($item->valid_to === null || $item->valid_to->greaterThanOrEqualTo($from))
-                && ($to === null || $item->valid_from === null || $item->valid_from->lessThanOrEqualTo($to)));
+            $made = $group->first(fn (PriceListItem $item): bool => $item->price_update_run_id === $run->id && $item->valid_from?->toDateString() === $from->toDateString());
+            $current = $line->current_item_id === null ? null : $group->firstWhere('id', $line->current_item_id);
 
-            if (! $endedByRun || $collides) {
-                $kept++;
+            $untouched = $made !== null
+                && $made->valid_to?->toDateString() === $to?->toDateString()
+                && ($line->current_item_id === null || ($current !== null && $current->valid_to?->toDateString() === $from->subDay()->toDateString()))
+                && ! $group->contains(fn (PriceListItem $item): bool => $item->id !== $made->id
+                    && $item->id !== $line->current_item_id
+                    && ($item->valid_to === null || $item->valid_to->greaterThanOrEqualTo($from))
+                    && ($to === null || $item->valid_from === null || $item->valid_from->lessThanOrEqualTo($to)));
 
-                continue;
+            if (! $untouched) {
+                throw ValidationException::withMessages(['run' => __('Ett pris som uppdateringen lade in har ändrats efteråt, till exempel av en senare prisuppdatering. Återställ den senare uppdateringen först.')]);
             }
 
-            $restore[(string) $line->valid_to?->toDateString()][] = $line->current_item_id;
+            $archive[] = $made->id;
+
+            if ($line->current_item_id !== null) {
+                $restore[(string) $to?->toDateString()][] = $line->current_item_id;
+            }
         }
 
-        foreach ($made->pluck('id')->chunk(1000) as $chunk) {
-            PriceListItem::query()->whereKey($chunk->values()->all())->update(['archived_at' => $now, 'updated_at' => $now]);
+        foreach (array_chunk($archive, 1000) as $chunk) {
+            PriceListItem::query()->whereKey($chunk)->update(['archived_at' => $now, 'updated_at' => $now]);
         }
 
         foreach ($restore as $end => $itemIds) {
@@ -132,7 +145,7 @@ class RevertPriceUpdate
             }
         }
 
-        return ['reverted' => $made->count(), 'kept' => $kept];
+        return ['reverted' => count($archive), 'kept' => 0];
     }
 
     /**

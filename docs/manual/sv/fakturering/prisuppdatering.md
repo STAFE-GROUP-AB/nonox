@@ -76,12 +76,12 @@ Välj **Från fil** och, under **Filen gäller**, grundpriserna eller en prislis
 | Från antal | nej | Priset gäller från det antalet, för en antalstrappa |
 | Gäller från | nej | Ett eget startdatum för raden, i dag eller senare, som 2027-01-01 |
 
-Kolumnerna Benämning och Gäller till får finnas i filen men läses inte. Det går bra med decimalkomma och mellanslag som tusentalsavgränsare. En fil får ha högst 10 000 rader med priser och vara högst 20 MB; dela upp en större fil.
+Kolumnerna Benämning och Gäller till får finnas i filen men läses inte. Det går bra med decimalkomma och mellanslag som tusentalsavgränsare. En fil får ha högst 10 000 rader med priser och vara högst 12 MB; dela upp en större fil.
 
 Varje rad visas i förhandsgranskningen med radnumret, och en rad som inte kan läsas förklaras, till exempel att artikeln inte finns, att priset inte går att läsa eller att samma artikel finns på en tidigare rad.
 
 > [!TIP]
-> Exportera listan först, ändra priserna i ditt kalkylprogram och läs in filen igen. Öppna listan under **Register → Prislistor** och tryck på **CSV** eller **Excel** vid **Exportera:**. Exporten har samma kolumner som inläsningen, med de priser som gäller nu och de som kommer. Ändra **Gäller från** till dagen de nya priserna ska börja gälla.
+> Exportera listan först, ändra priserna i ditt kalkylprogram och läs in filen igen. Öppna listan under **Register → Prislistor** och tryck på **CSV** eller **Excel** vid **Exportera:**. Exporten har samma kolumner som inläsningen, med de priser som gäller nu och de som kommer. Ett pris som redan gäller har ingen dag under **Gäller från**, så det nya priset börjar på dagen du väljer i formuläret.
 
 ## Återställ en uppdatering
 
