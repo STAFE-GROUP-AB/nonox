@@ -64,6 +64,8 @@ Det finns ingen knapp som tar bort ett pris som har använts, eftersom du ska ku
 
 En kampanj är en prislista av typen **Kampanj** med ett startdatum och ett slutdatum. Under **Kampanjen gäller för** väljer du kundgrupper, eller inga alls om den ska gälla alla kunder. Vid prissättningen vinner det lägsta priset av kundens lista och kampanjen, så en kund får aldrig ett sämre pris än kampanjens.
 
+En kampanj för alla kunder gäller också i kassan och på prisetiketterna, om ni har en kassa kopplad. Ska kampanjen inte nå konsumenter i butiken, rikta den till en kundgrupp. Säljer ni till konsumenter och visar kampanjpriset som en prissänkning ansvarar ni själva för att ange det tidigare priset enligt reglerna om prisinformation.
+
 I listan över prislistor syns kampanjens läge: **Pågår**, **Kommande** eller **Avslutad**.
 
 ## Standardlista för valutan
