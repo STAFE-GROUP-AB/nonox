@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Connect\Http\Controllers\Api\V1;
 
 use App\Actions\Invoicing\SaveArticle;
+use App\Domain\Pricing\PriceChangeSource;
 use App\Domain\Units\UnitRegister;
 use App\Models\Article;
 use App\Modules\Connect\Http\Controllers\Api\V1\Concerns\ActsAsCredential;
@@ -42,7 +43,7 @@ final class ArticleController
 
     public function store(Request $request, SaveArticle $save): JsonResponse
     {
-        $article = $save($this->user(), $this->company(), $this->input(ApiInput::body($request->json()->all())));
+        $article = $save($this->user(), $this->company(), $this->input(ApiInput::body($request->json()->all())), source: PriceChangeSource::Api);
 
         return CursorList::one(ApiPresenter::article($article->refresh()->load('account')), 201)
             ->header('Location', route('connect.api.articles.show', $article));
@@ -53,7 +54,7 @@ final class ArticleController
         $current = ApiPresenter::article($article->load('account'));
         $body = [...array_intersect_key($current, array_flip(['number', 'name', 'unit', 'price_ore', 'vat_rate', 'account', 'is_active'])), ...ApiInput::body($request->json()->all())];
 
-        $saved = $save($this->user(), $this->company(), $this->input($body, $article), $article);
+        $saved = $save($this->user(), $this->company(), $this->input($body, $article), $article, source: PriceChangeSource::Api);
 
         return CursorList::one(ApiPresenter::article($saved->refresh()->load('account')));
     }

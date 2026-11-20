@@ -105,7 +105,8 @@ final class JsonDumpWriter
         'voucher_attachments' => ['voucher_id', 'company_id', 'created_at', 'updated_at'],
         // external_ref (ADR-076) is the number in the previous program; the dump format (ADR-065) does not carry it yet.
         // default_cost_center_id and default_project_id (ADR-081 E6) are not in the dump format yet either.
-        'customers' => ['company_id', 'created_at', 'updated_at', 'external_ref', 'default_cost_center_id', 'default_project_id'],
+        // The price group and price list (ADR-082) point at registers the dump does not carry yet.
+        'customers' => ['company_id', 'created_at', 'updated_at', 'external_ref', 'default_cost_center_id', 'default_project_id', 'price_group_id', 'price_list_id'],
         'suppliers' => ['company_id', 'created_at', 'updated_at', 'external_ref'],
     ];
 

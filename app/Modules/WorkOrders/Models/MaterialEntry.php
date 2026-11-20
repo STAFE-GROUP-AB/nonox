@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\WorkOrders\Models;
 
+use App\Domain\Pricing\PriceSource;
 use App\Models\Article;
 use App\Models\Concerns\HasRegisterUnit;
 use App\Models\SupplierInvoiceRow;
@@ -45,6 +46,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?string $reversal_reason
  * @property ?string $invoice_id
  * @property ?int $created_by
+ * @property ?PriceSource $price_source where the price came from (ADR-082 §5)
+ * @property ?array<string, mixed> $price_explanation ids, enums, tiers and minor amounts only
  */
 class MaterialEntry extends Model
 {
@@ -60,6 +63,7 @@ class MaterialEntry extends Model
         'id', 'company_id', 'work_order_id', 'change_order_id', 'user_id', 'article_id', 'description', 'quantity_milli', 'unit', 'unit_id',
         'unit_cost_ore', 'unit_price_ore', 'vat_rate', 'billable', 'source', 'stock_location_id', 'supplier_invoice_row_id',
         'work_date', 'note', 'entered_at', 'reverses_id', 'reversal_reason', 'created_by',
+        'price_source', 'price_explanation',
     ];
 
     /** @return array<string, string> */
@@ -74,6 +78,8 @@ class MaterialEntry extends Model
             'source' => MaterialSource::class,
             'work_date' => 'immutable_date',
             'entered_at' => 'immutable_datetime',
+            'price_source' => PriceSource::class,
+            'price_explanation' => 'array',
         ];
     }
 

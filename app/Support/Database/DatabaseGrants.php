@@ -54,6 +54,8 @@ final class DatabaseGrants
         'archive_packages' => GrantDecision::ReadWrite,
         'article_images' => GrantDecision::ReadWrite,
         'article_location_settings' => GrantDecision::ReadWrite,
+        // The base price on every date it changed (ADR-082 §1): append-only, a trigger refuses every change and deletion.
+        'article_price_history' => GrantDecision::AppendOnly,
         'article_unit_conversions' => GrantDecision::ReadWrite,
         'articles' => GrantDecision::ReadWrite,
         'audit_logs' => GrantDecision::AppendOnly,
@@ -155,6 +157,9 @@ final class DatabaseGrants
         'customer_portal_payment_notes' => GrantDecision::NoDelete,
         'customer_portal_settings' => GrantDecision::NoDelete,
         'customer_portal_threads' => GrantDecision::ReadWrite,
+        // Prices (ADR-082): groups, lists, campaign targeting, items and agreements are ordinary registers;
+        // used ones are archived or superseded by the actions, unused ones may be removed.
+        'customer_price_groups' => GrantDecision::ReadWrite,
         'customers' => GrantDecision::ReadWrite,
         'deadline_calendar_feeds' => GrantDecision::ReadWrite,
         'deadline_reminders' => GrantDecision::ReadWrite,
@@ -302,6 +307,13 @@ final class DatabaseGrants
         'pos_sales' => GrantDecision::ReadWrite,
         'pos_stock_pushes' => GrantDecision::ReadWrite,
         'pos_webhook_messages' => GrantDecision::ReadWrite,
+        'price_agreement_items' => GrantDecision::ReadWrite,
+        'price_agreements' => GrantDecision::ReadWrite,
+        'price_list_items' => GrantDecision::ReadWrite,
+        'price_list_price_group' => GrantDecision::ReadWrite,
+        'price_lists' => GrantDecision::ReadWrite,
+        // A mass price update is kept once made: reverting is a status, and the prune only clears its stored file.
+        'price_update_runs' => GrantDecision::NoDelete,
         'prior_year_size_figures' => GrantDecision::ReadWrite,
         // A project's billing plan (ADR-081 E8): milestones are removed while not invoiced.
         'project_billing_milestones' => GrantDecision::ReadWrite,

@@ -238,6 +238,16 @@ class Article extends Model
         return $this->hasMany(InvoiceRow::class);
     }
 
+    /**
+     * Every change of the base price, oldest first (ADR-082 §1).
+     *
+     * @return HasMany<ArticlePriceHistory, $this>
+     */
+    public function priceHistory(): HasMany
+    {
+        return $this->hasMany(ArticlePriceHistory::class)->orderBy('id');
+    }
+
     /** @return BelongsTo<Supplier, $this> */
     public function defaultSupplier(): BelongsTo
     {

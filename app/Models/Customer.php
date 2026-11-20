@@ -9,6 +9,7 @@ use App\Models\Concerns\HasDefaultDimensions;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
 
@@ -37,6 +38,8 @@ use Illuminate\Validation\ValidationException;
  * @property ?CarbonImmutable $processing_restricted_at
  * @property ?string $peppol_id the customer's Peppol participant id, "0007:5561234567" (ADR-050)
  * @property string $invoice_delivery EMAIL or PEPPOL: how invoices go to the customer by default
+ * @property ?int $price_group_id the customer price group (ADR-082 §3)
+ * @property ?int $price_list_id the customer's own price list, which wins over the group's (ADR-082 §3)
  */
 class Customer extends Model
 {
@@ -68,6 +71,8 @@ class Customer extends Model
         'invoice_delivery',
         'default_cost_center_id',
         'default_project_id',
+        'price_group_id',
+        'price_list_id',
     ];
 
     /** @var array<string, mixed> */
@@ -118,6 +123,18 @@ class Customer extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    /** @return BelongsTo<CustomerPriceGroup, $this> */
+    public function priceGroup(): BelongsTo
+    {
+        return $this->belongsTo(CustomerPriceGroup::class, 'price_group_id');
+    }
+
+    /** @return BelongsTo<PriceList, $this> */
+    public function priceList(): BelongsTo
+    {
+        return $this->belongsTo(PriceList::class);
     }
 
     /** Restriction of processing (GDPR art. 18): stored, but not used for new documents. */

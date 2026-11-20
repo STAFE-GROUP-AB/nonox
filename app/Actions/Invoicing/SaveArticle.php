@@ -6,10 +6,12 @@ namespace App\Actions\Invoicing;
 
 use App\Actions\Units\ResolveArticleUnits;
 use App\Domain\Invoicing\InvoiceCalculator;
+use App\Domain\Pricing\PriceChangeSource;
 use App\Domain\Projects\DefaultDimensions;
 use App\Domain\Units\ArticleUnits;
 use App\Models\Account;
 use App\Models\Article;
+use App\Models\ArticlePriceHistory;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Inventory\Domain\PlanningMethod;
@@ -19,6 +21,7 @@ use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Brick\Math\BigRational;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -39,8 +42,9 @@ class SaveArticle
     /**
      * @param  array<string, mixed>  $input  number, name, unit (or the stock, purchase and sales unit ids and material size, ADR-071 §12), price (kronor as written), vat_rate, account (number, optional), default_cost_center and default_project (codes, optional), and any of the advanced fields in ArticleDetails::KEYS
      * @param  bool  $import  an importer: a unit text naming an archived unit is used instead of refused (ADR-071 §12.9)
+     * @param  ?PriceChangeSource  $source  where a change of the base price comes from, for its history (ADR-082 §1); an import by default when $import, else the form
      */
-    public function __invoke(User $user, Company $company, array $input, ?Article $article = null, bool $import = false): Article
+    public function __invoke(User $user, Company $company, array $input, ?Article $article = null, bool $import = false, ?PriceChangeSource $source = null): Article
     {
         $article === null
             ? Gate::forUser($user)->authorize('create', [Article::class, $company])
@@ -74,7 +78,9 @@ class SaveArticle
             throw ValidationException::withMessages(['price' => __('Priset går inte att läsa. Skriv till exempel 149,00.')]);
         }
 
-        return DB::transaction(fn (): Article => CurrentCompany::run($company, function () use ($validated, $input, $price, $article, $company, $user, $import): Article {
+        $source ??= $import ? PriceChangeSource::Import : PriceChangeSource::Form;
+
+        return DB::transaction(fn (): Article => CurrentCompany::run($company, function () use ($validated, $input, $price, $article, $company, $user, $import, $source): Article {
             $rate = (int) $validated['vat_rate'];
             $number = (int) ($validated['account'] ?? self::DEFAULT_ACCOUNTS[$rate]);
             $account = Account::query()->where('number', $number)->first()
@@ -96,6 +102,8 @@ class SaveArticle
                 ...DefaultDimensions::fromInput($input),
             ];
 
+            $oldPrice = $article?->price_ore->ore;
+
             if ($article === null) {
                 $article = Article::create($attributes);
                 Audit::record('article.created', $article, ['number' => $article->number, 'name' => $article->name], $company, $user);
@@ -104,10 +112,32 @@ class SaveArticle
                 Audit::record('article.updated', $article, ['number' => $article->number, 'name' => $article->name], $company, $user);
             }
 
+            $this->recordPriceChange($article, $oldPrice, $price->ore, $source, $user);
+
             $this->saveConversions($article->load('stockUnit'), $units['manual']);
 
             return $article;
         }));
+    }
+
+    /**
+     * Keeps the base price on every date it changed (ADR-082 §1): a new
+     * article's first price too, so the history starts where the article does.
+     */
+    private function recordPriceChange(Article $article, ?int $oldPrice, int $newPrice, PriceChangeSource $source, User $user): void
+    {
+        if ($oldPrice === $newPrice) {
+            return;
+        }
+
+        ArticlePriceHistory::create([
+            'article_id' => $article->id,
+            'old_price_ore' => $oldPrice,
+            'new_price_ore' => $newPrice,
+            'valid_from' => CarbonImmutable::today()->toDateString(),
+            'source' => $source,
+            'changed_by' => $user->id,
+        ]);
     }
 
     /**

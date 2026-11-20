@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Pricing\PriceSource;
 use App\Models\Concerns\HasRegisterUnit;
 use App\Models\Concerns\HasRowDimensions;
 use App\Models\Concerns\SalesRowFields;
@@ -31,6 +32,8 @@ use Illuminate\Support\Str;
  * @property Money $net_ore
  * @property int $position
  * @property ?string $line_key
+ * @property ?PriceSource $price_source where the price came from (ADR-082 §5)
+ * @property ?array<string, mixed> $price_explanation ids, enums, tiers and minor amounts only
  */
 class SalesDocumentRow extends Model
 {
@@ -59,6 +62,8 @@ class SalesDocumentRow extends Model
         'line_key',
         'cost_center_id',
         'project_id',
+        'price_source',
+        'price_explanation',
     ];
 
     /** @return array<string, string> */
@@ -70,6 +75,8 @@ class SalesDocumentRow extends Model
             'discount_bp' => 'integer',
             'vat_rate' => 'integer',
             'position' => 'integer',
+            'price_source' => PriceSource::class,
+            'price_explanation' => 'array',
         ];
     }
 

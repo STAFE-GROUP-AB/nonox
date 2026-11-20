@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Crm\Models;
 
+use App\Domain\Pricing\PriceSource;
 use App\Models\Article;
 use App\Models\Concerns\HasRegisterUnit;
 use App\Support\Tenancy\BelongsToCompany;
@@ -26,6 +27,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $vat_rate basis points
  * @property int $discount_bp
  * @property int $position
+ * @property ?PriceSource $price_source where the price came from (ADR-082 §5)
+ * @property ?array<string, mixed> $price_explanation ids, enums, tiers and minor amounts only
  */
 class QuoteTemplateRow extends Model
 {
@@ -47,6 +50,8 @@ class QuoteTemplateRow extends Model
         'vat_rate',
         'discount_bp',
         'position',
+        'price_source',
+        'price_explanation',
     ];
 
     /** @return array<string, string> */
@@ -57,6 +62,8 @@ class QuoteTemplateRow extends Model
             'vat_rate' => 'integer',
             'discount_bp' => 'integer',
             'position' => 'integer',
+            'price_source' => PriceSource::class,
+            'price_explanation' => 'array',
         ];
     }
 

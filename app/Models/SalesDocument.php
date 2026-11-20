@@ -46,6 +46,7 @@ use LogicException;
  * @property ?CarbonImmutable $sent_at
  * @property ?string $sent_to
  * @property ?int $created_by
+ * @property string $currency ISO 4217, SEK by default (ADR-082 decision 13)
  */
 class SalesDocument extends Model implements Signable
 {
@@ -70,6 +71,7 @@ class SalesDocument extends Model implements Signable
         'notes',
         'from_quote_id',
         'created_by',
+        'currency',
     ];
 
     /** @var array<string, mixed> */

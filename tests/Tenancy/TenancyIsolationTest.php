@@ -16,6 +16,7 @@ use App\Models\ApprovalPolicyStep;
 use App\Models\ApprovalRequest;
 use App\Models\ArchivePackage;
 use App\Models\Article;
+use App\Models\ArticlePriceHistory;
 use App\Models\BankFileImport;
 use App\Models\BankReconciliation;
 use App\Models\BankTransaction;
@@ -32,6 +33,7 @@ use App\Models\ConnectAddon;
 use App\Models\CorporateGroup;
 use App\Models\CostCenter;
 use App\Models\Customer;
+use App\Models\CustomerPriceGroup;
 use App\Models\DeadlineCalendarFeed;
 use App\Models\DeadlineReminder;
 use App\Models\DeferredTaxItem;
@@ -70,6 +72,12 @@ use App\Models\NumberSeries;
 use App\Models\OpeningBalance;
 use App\Models\PaymentResponse;
 use App\Models\PaymentResponseImport;
+use App\Models\PriceAgreement;
+use App\Models\PriceAgreementItem;
+use App\Models\PriceList;
+use App\Models\PriceListItem;
+use App\Models\PriceListPriceGroup;
+use App\Models\PriceUpdateRun;
 use App\Models\PriorYearSizeFigure;
 use App\Models\Project;
 use App\Models\ProjectBillingMilestone;
@@ -448,6 +456,15 @@ const COMPANY_SCOPED_MODELS = [
     Customer::class => ['number' => 1, 'name' => 'Hemlig kund AB', 'payment_terms_days' => 30],
     Article::class => 'articleAttributes',
     Unit::class => ['code' => 'rulle', 'name' => 'Rulle', 'dimension' => 'OTHER'],
+    // Price lists and customer price agreements (ADR-082 P1); the tenancy test of its own is tests/Tenancy/PricingTenancyTest.php.
+    PriceList::class => 'p1PriceListAttributes',
+    PriceListItem::class => 'p1PriceListItemAttributes',
+    CustomerPriceGroup::class => 'p1PriceGroupAttributes',
+    PriceListPriceGroup::class => 'p1PriceListPriceGroupAttributes',
+    PriceAgreement::class => 'p1PriceAgreementAttributes',
+    PriceAgreementItem::class => 'p1PriceAgreementItemAttributes',
+    ArticlePriceHistory::class => 'p1ArticlePriceHistoryAttributes',
+    PriceUpdateRun::class => 'p1PriceUpdateRunAttributes',
     Invoice::class => 'invoiceAttributes',
     InvoiceRow::class => 'invoiceRowAttributes',
     InvoicePayment::class => 'invoicePaymentAttributes',
@@ -2034,6 +2051,55 @@ function crmAgreementAttributes(): array
     return ['account_id' => CrmAccount::create(['name' => 'Hemligt prospekt AB'])->id, 'title' => 'Hemligt avtal', 'kind' => 'SERVICE', 'start_date' => '2026-01-01', 'value_period' => 'MONTH'];
 }
 
+function p1PriceListAttributes(): array
+{
+    return ['code' => 'H'.random_int(1, 1_000_000), 'name' => 'Hemlig prislista', 'created_by' => User::factory()->create()->id];
+}
+
+function p1PriceListItemAttributes(): array
+{
+    return ['price_list_id' => PriceList::create(p1PriceListAttributes())->id, 'article_id' => Article::create(articleAttributes())->id, 'price_minor' => 41_200];
+}
+
+function p1PriceGroupAttributes(): array
+{
+    return ['code' => 'G'.random_int(1, 1_000_000), 'name' => 'Hemlig prisgrupp'];
+}
+
+function p1PriceListPriceGroupAttributes(): array
+{
+    return [
+        'price_list_id' => PriceList::create([...p1PriceListAttributes(), 'kind' => 'CAMPAIGN', 'valid_from' => '2026-06-01', 'valid_to' => '2026-06-30'])->id,
+        'customer_price_group_id' => CustomerPriceGroup::create(p1PriceGroupAttributes())->id,
+    ];
+}
+
+function p1PriceAgreementAttributes(): array
+{
+    return [
+        'number' => random_int(1, 1_000_000),
+        'customer_id' => Customer::create(['number' => random_int(1, 1_000_000), 'name' => 'Hemlig kund AB', 'payment_terms_days' => 30])->id,
+        'title' => 'Hemligt prisavtal',
+        'valid_from' => '2026-01-01',
+        'created_by' => User::factory()->create()->id,
+    ];
+}
+
+function p1PriceAgreementItemAttributes(): array
+{
+    return ['price_agreement_id' => PriceAgreement::create(p1PriceAgreementAttributes())->id, 'applies_to_all' => true, 'discount_bp' => 500];
+}
+
+function p1ArticlePriceHistoryAttributes(): array
+{
+    return ['article_id' => Article::create(articleAttributes())->id, 'new_price_ore' => 41_200, 'valid_from' => '2026-03-01', 'source' => 'FORM'];
+}
+
+function p1PriceUpdateRunAttributes(): array
+{
+    return ['kind' => 'PERCENT', 'scope' => ['article_ids' => []], 'rule' => ['percent_bp' => 400], 'effective_date' => '2027-01-01', 'created_by' => User::factory()->create()->id];
+}
+
 function crmQuoteTemplateRowAttributes(): array
 {
     return ['template_id' => CrmQuoteTemplate::create(['name' => 'Hemlig mall', 'validity_days' => 30])->id, 'description' => 'Hemlig rad', 'quantity' => '1'];
@@ -2666,10 +2732,10 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [WorkshopWaitingFlag::class, MrpRun::class, PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class, StripeObject::class, DocumentVersion::class, SigningDocumentVersion::class, SigningField::class, SigningFieldValue::class, SigningDownloadEvent::class, SigningTemplateRole::class];
+const NEVER_UPDATED = [ArticlePriceHistory::class, WorkshopWaitingFlag::class, MrpRun::class, PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class, StripeObject::class, DocumentVersion::class, SigningDocumentVersion::class, SigningField::class, SigningFieldValue::class, SigningDownloadEvent::class, SigningTemplateRole::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [ApprovalRequest::class, ApprovalDecision::class, ApprovalDelegation::class, WorkshopTimeEntry::class, WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, SigningDocumentVersion::class, SigningField::class, SigningFieldValue::class, SigningDownloadEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class, PurchaseMatchResult::class, ProjectWipSnapshot::class];
+const APPEND_ONLY = [ArticlePriceHistory::class, ApprovalRequest::class, ApprovalDecision::class, ApprovalDelegation::class, WorkshopTimeEntry::class, WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, SigningDocumentVersion::class, SigningField::class, SigningFieldValue::class, SigningDownloadEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class, PurchaseMatchResult::class, ProjectWipSnapshot::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

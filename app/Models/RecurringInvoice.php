@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\Invoicing\AgreementStatus;
+use App\Domain\Pricing\RecurringPriceMode;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
@@ -35,6 +36,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property Money $net_ore
  * @property Money $total_ore
  * @property int $created_by
+ * @property RecurringPriceMode $price_mode FIXED keeps the row prices; FOLLOW_PRICES prices the rows on each run (ADR-082 §6)
  */
 class RecurringInvoice extends Model
 {
@@ -58,6 +60,7 @@ class RecurringInvoice extends Model
         'our_reference',
         'notes',
         'created_by',
+        'price_mode',
     ];
 
     /** @var array<string, mixed> */
@@ -77,6 +80,7 @@ class RecurringInvoice extends Model
             'next_invoice_date' => 'immutable_date',
             'end_date' => 'immutable_date',
             'status' => AgreementStatus::class,
+            'price_mode' => RecurringPriceMode::class,
             'send_automatically' => 'boolean',
             'net_ore' => MoneyCast::class,
             'total_ore' => MoneyCast::class,

@@ -71,6 +71,8 @@ final class StoredFiles
         'signing_documents' => 'path',
         // The PDF of a signing template (ADR-046 S14).
         'signing_templates' => 'path',
+        // The price file a mass price update was made from (ADR-082 §8, P6).
+        'price_update_runs' => 'file_path',
     ];
 
     /**

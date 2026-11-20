@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Domain\Company\CompanyRole;
 use App\Modules\Connect\Support\ConnectAccess;
 use App\Modules\ModuleManager;
 use App\Modules\ModuleRegistry;
@@ -196,6 +197,11 @@ class User extends Authenticatable implements PasskeyUser
         $registry = app(ModuleRegistry::class);
         $module = $registry->moduleForPermission($permission);
 
+        // A core permission core gives a module's role (CompanyRole::MODULE_ROLE_PERMISSIONS) holds only while that module is on.
+        if ($module === null && $team instanceof Company && ! $this->moduleRoleIsOn($team, $permission, $registry)) {
+            return false;
+        }
+
         if ($module === null || ! $team instanceof Company) {
             return $this->jetstreamHasTeamPermission($team, $permission);
         }
@@ -211,6 +217,32 @@ class User extends Authenticatable implements PasskeyUser
         }
 
         return $this->jetstreamHasTeamPermission($team, $permission);
+    }
+
+    /**
+     * False only when the permission is one core gives a module role, the
+     * user holds the company through such a role, and its module is off.
+     */
+    private function moduleRoleIsOn(Company $company, string $permission, ModuleRegistry $registry): bool
+    {
+        $granted = array_keys(array_filter(
+            CompanyRole::MODULE_ROLE_PERMISSIONS,
+            fn (array $permissions): bool => in_array($permission, $permissions, true),
+        ));
+
+        if ($granted === [] || $this->ownsTeam($company)) {
+            return true;
+        }
+
+        $role = $this->teamRole($company)?->key;
+
+        if (! in_array($role, $granted, true)) {
+            return true;
+        }
+
+        $module = $registry->moduleForRole((string) $role);
+
+        return $module !== null && app(ModuleManager::class)->isEnabled($module->key(), $company);
     }
 
     public function hidesPanel(string $panel, Company $company): bool

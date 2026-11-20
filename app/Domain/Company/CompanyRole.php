@@ -38,6 +38,21 @@ enum CompanyRole: string
         'signing:settings', 'signing:privacy',
         // Setting and lifting a legal hold on a signing: owner, admin and accountant, as documents:hold (owner decision 2026-11-19).
         'signing:hold',
+        // Prices (ADR-082, core, owner-approved 2026-11-20).
+        'prices:view', 'price-lists:manage', 'price-agreements:manage', 'prices:view-cost', 'prices:approve-below-floor',
+    ];
+
+    /**
+     * Core permissions a module's own role gets while that module is on
+     * (AGENTS.md §4). A module may only hand out its own permissions
+     * (ModuleRegistry), so these are decided here, in core: the CRM seller
+     * (CrmModule::ROLE) sees prices and makes price agreements (ADR-082).
+     * User::hasTeamPermission refuses them while the role's module is off.
+     *
+     * @var array<string, list<string>>
+     */
+    public const array MODULE_ROLE_PERMISSIONS = [
+        'sales' => ['prices:view', 'price-agreements:manage'],
     ];
 
     public function label(): string
@@ -84,6 +99,7 @@ enum CompanyRole: string
                 'analysis:view', 'analysis:share',
                 'documents:view', 'documents:manage', 'documents:hold',
                 'signing:hold',
+                'prices:view', 'price-lists:manage', 'price-agreements:manage', 'prices:view-cost', 'prices:approve-below-floor',
             ],
             self::Bookkeeper => [
                 'vouchers:create', 'vouchers:post', 'vouchers:correct', 'vouchers:view',
@@ -96,6 +112,7 @@ enum CompanyRole: string
                 'projects:view',
                 'analysis:view',
                 'documents:view', 'documents:manage',
+                'prices:view', 'price-agreements:manage', 'prices:view-cost',
             ],
             self::Approver => [
                 'supplier-invoices:approve', 'payments:approve',
@@ -111,6 +128,7 @@ enum CompanyRole: string
                 'projects:view',
                 'analysis:view', 'analysis:share',
                 'documents:view',
+                'prices:view', 'prices:view-cost',
             ],
             // Project results with their budget (ADR-081 E7) and the analysis view (E17), both inside the member's own units.
             self::UnitManager => [

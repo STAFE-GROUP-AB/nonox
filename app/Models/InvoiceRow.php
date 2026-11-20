@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Pricing\PriceSource;
 use App\Models\Concerns\HasRegisterUnit;
 use App\Models\Concerns\HasRowDimensions;
 use App\Models\Concerns\SalesRowFields;
@@ -33,6 +34,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?int $foreign_net_minor
  * @property ?string $vat_exemption why a row sold in Sweden carries 0 % VAT (VatExemptionReason, #54)
  * @property ?string $vat_exemption_text the exemption printed on the invoice
+ * @property ?PriceSource $price_source where the price came from (ADR-082 §5)
+ * @property ?array<string, mixed> $price_explanation ids, enums, tiers and minor amounts only
  */
 class InvoiceRow extends Model
 {
@@ -63,6 +66,8 @@ class InvoiceRow extends Model
         'vat_exemption_text',
         'cost_center_id',
         'project_id',
+        'price_source',
+        'price_explanation',
     ];
 
     /** @return array<string, string> */
@@ -75,6 +80,8 @@ class InvoiceRow extends Model
             'discount_bp' => 'integer',
             'vat_rate' => 'integer',
             'position' => 'integer',
+            'price_source' => PriceSource::class,
+            'price_explanation' => 'array',
             'foreign_unit_price_minor' => 'integer',
             'foreign_net_minor' => 'integer',
         ];

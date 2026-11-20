@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Pricing\PriceSource;
 use App\Models\Concerns\HasRegisterUnit;
 use App\Models\Concerns\SalesRowFields;
 use App\Support\Money\Money;
@@ -26,6 +27,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $account_id
  * @property Money $net_ore
  * @property int $position
+ * @property ?PriceSource $price_source where the price came from (ADR-082 §5)
+ * @property ?array<string, mixed> $price_explanation ids, enums, tiers and minor amounts only
  */
 class RecurringInvoiceRow extends Model
 {
@@ -48,6 +51,8 @@ class RecurringInvoiceRow extends Model
         'account_id',
         'net_ore',
         'position',
+        'price_source',
+        'price_explanation',
     ];
 
     /** @return array<string, string> */
@@ -59,6 +64,8 @@ class RecurringInvoiceRow extends Model
             'discount_bp' => 'integer',
             'vat_rate' => 'integer',
             'position' => 'integer',
+            'price_source' => PriceSource::class,
+            'price_explanation' => 'array',
         ];
     }
 
