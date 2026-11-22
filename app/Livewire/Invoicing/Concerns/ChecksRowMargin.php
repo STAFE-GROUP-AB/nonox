@@ -91,7 +91,7 @@ trait ChecksRowMargin
             $typed = [];
 
             foreach ($lines as $position => $line) {
-                if ($line['manual'] && $line['article_id'] !== null) {
+                if ($line['manual'] && ($line['article_id'] !== null || $line['lowers'])) {
                     $typed[] = $indexes[$position] + 1;
                 }
             }
@@ -117,7 +117,7 @@ trait ChecksRowMargin
      * free-text rows with a readable quantity and price. Two queries.
      *
      * @param  array<int|string, array<mixed>>  $rows
-     * @return array{0: list<array{article_id: ?int, quantity: string, unit: string, net_ore: int, manual: bool}>, 1: list<int>} the lines, and the editor's row index of each
+     * @return array{0: list<array{article_id: ?int, quantity: string, unit: string, net_ore: int, manual: bool, lowers: bool}>, 1: list<int>} the lines, and the editor's row index of each
      */
     private function marginLines(array $rows): array
     {
@@ -143,11 +143,13 @@ trait ChecksRowMargin
             }
 
             $number = trim((string) ($row['article'] ?? ''));
+            $net = InvoiceCalculator::rowNet($price, $quantity, $discount)->ore;
             $lines[] = [
                 'article_id' => $number === '' ? null : $articles->get($number),
                 'quantity' => $quantity,
                 'unit' => (string) $units->get((int) ($row['unit_id'] ?? 0), ''),
-                'net_ore' => InvoiceCalculator::rowNet($price, $quantity, $discount)->ore,
+                'net_ore' => $net,
+                'lowers' => $net < 0 || $discount > 0,
                 'manual' => DocumentMargin::isManual($number === '' ? null : (int) $articles->get($number), ($row['price_source'] ?? '') === 'MANUAL' ? PriceSource::Manual : null, $discount),
             ];
             $indexes[] = (int) $index;

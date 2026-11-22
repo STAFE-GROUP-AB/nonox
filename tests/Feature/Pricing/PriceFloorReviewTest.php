@@ -36,7 +36,7 @@ beforeEach(function () {
     Storage::fake('local');
     Mail::fake();
 
-    $this->scenario = PricingScenario::build(['articles' => ['A1' => ['price_ore' => 10000]], 'customer' => []]);
+    $this->scenario = PricingScenario::build(['articles' => ['A1' => ['price_ore' => 10000]], 'rate' => ['currency' => 'EUR', 'date' => '2026-03-13', 'micros' => 11_000_000], 'customer' => []]);
     $this->owner = $this->scenario->owner;
     $this->company = $this->scenario->company;
     $this->customer = $this->scenario->customer;
@@ -199,4 +199,46 @@ it('refuses a floor of 0 percent', function () {
     }
 
     expect(app(SetPriceFloor::class)($this->owner, $this->company, '0,01', PriceFloorPolicy::Warn)->min_contribution_bp)->toBe(1);
+});
+
+it('holds a free-text discount row in another currency, as in kronor, but not freight', function () {
+    $discounted = r7Quote([r7Row(), ['description' => 'Rabatt', 'quantity' => '1', 'price' => '-8,00', 'vat_rate' => 2500]], currency: 'EUR');
+    $freight = r7Quote([r7Row(), ['description' => 'Frakt', 'quantity' => '1', 'price' => '1,00', 'vat_rate' => 2500]], currency: 'EUR');
+
+    expect($discounted->rows->first()->price_source->value)->toBe('CONVERTED')
+        ->and(PriceFloorGuard::state($this->company, $discounted->fresh())->lines)->toBe([2])
+        ->and(PriceFloorGuard::state($this->company, $freight->fresh())->needed)->toBeFalse();
+});
+
+it('does not let someone who edited a quote while the floor was off approve it once it is on', function () {
+    app(SetPriceFloor::class)($this->owner, $this->company, null, PriceFloorPolicy::Warn);
+    $this->company = $this->company->fresh();
+
+    $quote = r7Quote([r7Row(['price' => '95,00', 'price_source' => 'MANUAL'])]);
+    r7Quote([r7Row(['price' => '90,00', 'price_source' => 'MANUAL'])], $quote->fresh(), by: $this->accountant);
+    $invoice = r7Invoice([r7Row(['price' => '95,00', 'price_source' => 'MANUAL'])]);
+    app(SaveDraftInvoice::class)($this->accountant, $this->company, ['customer_id' => $this->customer->id, 'invoice_date' => '2026-03-15', 'rows' => [r7Row(['price' => '90,00', 'price_source' => 'MANUAL'])]], $invoice);
+
+    app(SetPriceFloor::class)($this->owner, $this->company, '15', PriceFloorPolicy::RequireApproval);
+    $this->company = $this->company->fresh();
+
+    foreach ([[PriceFloorDocument::Quote, $quote], [PriceFloorDocument::Invoice, $invoice]] as [$type, $document]) {
+        $approval = app(RequestPriceFloorApproval::class)($this->writer, $this->company, $type, $document->id);
+
+        expect(fn () => app(DecidePriceFloorApproval::class)($this->accountant, $this->company, $approval->id, true))->toThrow(ValidationException::class, 'skrivit');
+    }
+});
+
+it('lets freight and a comment row through when only a list price sits under the floor', function () {
+    // The list price 100,00 is 5 % over a cost of 95,00, under the floor of 15 %: a list price only warns.
+    Article::query()->whereKey($this->scenario->articles['A1'])->update(['purchase_price_ore' => 9500]);
+
+    $freight = r7Invoice([r7Row(), ['description' => 'Frakt', 'quantity' => '1', 'price' => '10,00', 'vat_rate' => 2500]]);
+    $comment = r7Invoice([r7Row(), ['description' => 'Se bifogad specifikation', 'quantity' => '1', 'price' => '0,00', 'vat_rate' => 2500]]);
+    $discount = r7Invoice([r7Row(), ['description' => 'Rabatt', 'quantity' => '1', 'price' => '-5,00', 'vat_rate' => 2500]]);
+
+    expect(PriceFloorGuard::state($this->company, $freight->fresh())->needed)->toBeFalse()
+        ->and(PriceFloorGuard::state($this->company, $comment->fresh())->needed)->toBeFalse()
+        ->and(PriceFloorGuard::state($this->company, $discount->fresh())->needed)->toBeTrue()
+        ->and(PriceFloorGuard::state($this->company, $discount->fresh())->lines)->toBe([2]);
 });

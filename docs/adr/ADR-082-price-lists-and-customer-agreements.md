@@ -478,6 +478,14 @@ index figures in v1. Decision 11.
   quote can still be edited; its changed rows are simply not approved, so it
   cannot be accepted or made an order until they are. Credit invoices are not
   held.
+- **Only rows that lower the margin hold the document as a whole:** negative
+  rows, rows with a typed discount and typed prices under the floor. A positive
+  free-text row (freight) or a row of 0 kr holds nothing.
+- **The customer portal** hides a sent quote or order whose manual prices are
+  not approved in the rows it has now (`PriceFloorGuard::heldIds`, rows, costs
+  and approvals loaded once), both the document and its PDF; `sent_at` is kept.
+- **An agreement sent automatically** (`RunRecurringInvoice`, `automatic: true`)
+  is not guarded by the floor: the agreement itself is the price authority.
 - **Other currencies.** The margin cannot be checked in a currency other than
   kronor, so while the company requires approval every typed price on an
   article row of such a document needs it.

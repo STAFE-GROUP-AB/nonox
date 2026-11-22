@@ -91,7 +91,7 @@ På en utfärdad faktura visar kortet **Täckningsbidrag** samma siffror. Margin
 
 Företaget kan också ange en **lägsta täckningsgrad** under **Register → Prislistor**. Den är avstängd som standard. När den är på varnar NONOX för varje rad under gränsen, också för den som inte får se kostnader, men utan att säga vad något kostar. Läs [Prislistor](/manual/fakturering/prislistor).
 
-Har företaget valt **Kräv godkännande innan dokumentet skickas** gäller det priser du har skrivit själv (**Manuellt pris**), en rabatt du har skrivit ovanpå ett pris från en lista, och rader utan artikel. Priser från prislistor och prisavtal, utan egen rabatt, varnar bara. Är hela dokumentets täckningsgrad under gränsen, till exempel för att en rad med minuspris dras av, krävs godkännande så snart någon rad är skriven för hand. Då går det inte att skicka en offert eller order, eller skapa en faktura, förrän priserna är godkända:
+Har företaget valt **Kräv godkännande innan dokumentet skickas** gäller det priser du har skrivit själv (**Manuellt pris**), en rabatt du har skrivit ovanpå ett pris från en lista, och rader utan artikel. Priser från prislistor och prisavtal, utan egen rabatt, varnar bara. Är hela dokumentets täckningsgrad under gränsen, till exempel för att en rad med minuspris (en rabattrad) dras av, krävs godkännande om en sådan rad, en rad med egen rabatt eller ett handskrivet pris under gränsen finns på dokumentet. En rad med bara en frakt eller en kommentar på 0 kr stoppar ingenting. Då går det inte att skicka en offert eller order, eller skapa en faktura, förrän priserna är godkända:
 
 1. Under raderna står *Priset på rad … ligger under lägsta täckningsgrad.* På sidan för dokumentet finns kortet **Priser under lägsta täckningsgrad**. Tryck på **Be om godkännande**.
 2. Någon med behörigheten att godkänna priser under lägsta täckningsgrad öppnar dokumentet och trycker på **Godkänn priserna**, eller på **Avslå** med ett skäl i fältet **Skäl (krävs om du avslår)**.
@@ -101,7 +101,7 @@ Den som har skrivit eller ändrat dokumentet, eller begärt godkännandet, kan i
 
 ![Kortet Priser under lägsta täckningsgrad på ett fakturautkast, med knappen Be om godkännande.](/bilder/manual/fakturering/pris-under-lagsta-tackningsgrad.webp)
 
-En offert måste vara godkänd innan den skickas, skickas för signering eller godkänns av kunden, och en offert vars rader ändrats efter godkännandet kan inte bli en order förrän de godkänns på nytt. Kunden får bara veta att avsändaren måste titta på offerten.
+En offert måste vara godkänd innan den skickas, skickas för signering eller godkänns av kunden, och en offert vars rader ändrats efter godkännandet kan inte bli en order förrän de godkänns på nytt. Kunden får bara veta att avsändaren måste titta på offerten. En skickad offert vars rader ändrats efter godkännandet, och därför inte är godkänd, visas inte i kundportalen, varken själva offerten eller PDF:en, förrän priserna är godkända igen.
 
 Ett dokument i en annan valuta än kronor kan inte marginalkontrolleras, eftersom kostnaderna är i kronor. Slår företaget på att godkännande krävs gäller det därför varje pris på en artikelrad som är skrivet för hand i en annan valuta, hur högt det än är.
 

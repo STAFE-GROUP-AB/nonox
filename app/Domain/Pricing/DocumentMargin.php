@@ -27,8 +27,11 @@ use Carbon\CarbonImmutable;
  * A row is manual when a person typed its price, a discount on top of a list
  * price, or the row itself (free text). Negative rows (a discount row, a
  * return) lower the sales of the document, so the document's contribution
- * margin is judged as a whole too: a manual row on a document whose margin is
- * under the floor needs approval even when no single row is.
+ * margin is judged as a whole too: a manual row that lowers the margin (a
+ * negative row, a discounted row, a typed price under the floor) on a
+ * document whose margin is under the floor needs approval even when no single
+ * row is. A positive free-text row (freight) or a row of 0 kr lowers nothing
+ * and holds nothing.
  *
  * A fixed number of queries whatever the number of rows (ArticleCostBook).
  */
@@ -37,7 +40,7 @@ final readonly class DocumentMargin
     /**
      * @param  array<int, RowMargin>  $rows  by the caller's row index
      * @param  list<int>  $manualBelowFloor  the indexes of manual rows with a cost whose own margin is under the floor
-     * @param  list<int>  $manualRows  the indexes of every manual row
+     * @param  list<int>  $loweringRows  the indexes of manual rows that lower the margin: negative or discounted rows and typed prices under the floor (in another currency: every typed article row)
      * @param  bool  $unchecked  a document in another currency: no margin, only the manual article rows are known
      */
     public function __construct(
@@ -47,22 +50,23 @@ final readonly class DocumentMargin
         public int $costOre,
         public int $uncosted,
         public PriceFloor $floor,
-        public array $manualRows = [],
+        public array $loweringRows = [],
         public bool $unchecked = false,
     ) {}
 
     /**
-     * @param  list<array{article_id: ?int, quantity: string, unit: string, net_ore: int, manual: bool}>  $lines  by index; a free-text row has no article
+     * @param  list<array{article_id: ?int, quantity: string, unit: string, net_ore: int, manual: bool, lowers?: bool}>  $lines  by index; a free-text row has no article; lowers: a negative or discounted row
+     * @param  ?ArticleCostBook  $book  the costs of every article of the lines, when the caller has loaded them for many documents
      */
-    public static function assess(Company $company, array $lines, ?CarbonImmutable $date = null): self
+    public static function assess(Company $company, array $lines, ?CarbonImmutable $date = null, ?ArticleCostBook $book = null): self
     {
         $floor = PriceFloor::of($company);
         $ids = array_values(array_filter(array_column($lines, 'article_id')));
-        $book = ArticleCostBook::for($company, $ids, $date);
+        $book ??= ArticleCostBook::for($company, $ids, $date);
 
         $rows = [];
         $manualBelow = [];
-        $manualRows = [];
+        $lowering = [];
         $net = 0;
         $cost = 0;
         $uncosted = 0;
@@ -76,8 +80,8 @@ final readonly class DocumentMargin
             $row = RowMargin::of($line['net_ore'], $rowCost, $floor->minimumBp);
             $rows[$index] = $row;
 
-            if ($line['manual']) {
-                $manualRows[] = $index;
+            if ($line['manual'] && ($line['lowers'] ?? false)) {
+                $lowering[] = $index;
             }
 
             if ($rowCost === null) {
@@ -93,14 +97,15 @@ final readonly class DocumentMargin
 
             if ($line['manual'] && $row->belowFloor) {
                 $manualBelow[] = $index;
+                $lowering[] = $index;
             }
         }
 
-        return new self($rows, $manualBelow, $net, $cost, $uncosted, $floor, $manualRows);
+        return new self($rows, $manualBelow, $net, $cost, $uncosted, $floor, array_values(array_unique($lowering)));
     }
 
     /** A saved invoice, quote or order, from its stored rows. */
-    public static function ofDocument(Company $company, Invoice|SalesDocument $document): self
+    public static function ofDocument(Company $company, Invoice|SalesDocument $document, ?ArticleCostBook $book = null): self
     {
         $rows = $document->relationLoaded('rows') ? $document->rows : $document->rows()->get();
         $foreign = $document instanceof Invoice ? $document->invoice_currency !== 'SEK' : $document->currency !== 'SEK';
@@ -113,6 +118,7 @@ final readonly class DocumentMargin
                 'unit' => (string) $row->unit,
                 'net_ore' => $row->net_ore->ore,
                 'manual' => self::isManual($row->article_id, $row->price_source, $row->discount_bp),
+                'lowers' => $row->net_ore->ore < 0 || $row->discount_bp > 0,
             ];
         }
 
@@ -120,7 +126,8 @@ final readonly class DocumentMargin
             $typed = [];
 
             foreach ($lines as $index => $line) {
-                if ($line['manual'] && $line['article_id'] !== null) {
+                // A typed article price cannot be compared with a cost in kronor; a discount or negative row lowers what is sold.
+                if ($line['manual'] && ($line['article_id'] !== null || $line['lowers'])) {
                     $typed[] = $index;
                 }
             }
@@ -128,7 +135,7 @@ final readonly class DocumentMargin
             return new self([], [], 0, 0, 0, PriceFloor::of($company), $typed, true);
         }
 
-        return self::assess($company, $lines);
+        return self::assess($company, $lines, null, $book);
     }
 
     /**
@@ -169,21 +176,21 @@ final readonly class DocumentMargin
         }
 
         if ($this->unchecked) {
-            return $this->manualRows !== [];
+            return $this->loweringRows !== [];
         }
 
-        return $this->manualBelowFloor !== [] || ($this->documentBelowFloor() && $this->manualRows !== []);
+        return $this->manualBelowFloor !== [] || ($this->documentBelowFloor() && $this->loweringRows !== []);
     }
 
     /**
      * The rows that need the approval, as indexes: the manual rows under the
-     * floor, else every manual row (the document as a whole is under the floor,
-     * or it is in another currency).
+     * floor, else the manual rows that lower the margin (the document as a
+     * whole is under the floor, or it is in another currency).
      *
      * @return list<int>
      */
     public function approvalRows(): array
     {
-        return $this->manualBelowFloor !== [] && ! $this->unchecked ? $this->manualBelowFloor : $this->manualRows;
+        return $this->manualBelowFloor !== [] && ! $this->unchecked ? $this->manualBelowFloor : $this->loweringRows;
     }
 }

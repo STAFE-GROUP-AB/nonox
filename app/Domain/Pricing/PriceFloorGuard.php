@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\PriceFloorApproval;
 use App\Models\SalesDocument;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -30,6 +31,56 @@ final class PriceFloorGuard
         }
 
         return ! ($document instanceof Invoice && $document->isCredit());
+    }
+
+    /**
+     * The sent documents among $documents whose manual prices still wait for
+     * an approval of the rows they have now, in a fixed number of queries
+     * whatever their number (rows, costs and approvals are each loaded once).
+     * Used to keep a changed, unapproved quote out of the customer portal.
+     *
+     * @param  EloquentCollection<int, SalesDocument>  $documents
+     * @return list<string>
+     */
+    public static function heldIds(Company $company, EloquentCollection $documents): array
+    {
+        if (! PriceFloor::of($company)->requiresApproval() || $documents->isEmpty()) {
+            return [];
+        }
+
+        $documents->loadMissing('rows');
+        $articleIds = [];
+
+        foreach ($documents as $document) {
+            foreach ($document->rows as $row) {
+                if ($row->article_id !== null) {
+                    $articleIds[] = $row->article_id;
+                }
+            }
+        }
+
+        $book = ArticleCostBook::for($company, $articleIds);
+        $approved = PriceFloorApproval::query()
+            ->whereIn('document_id', $documents->pluck('id')->all())
+            ->where('status', PriceFloorApprovalStatus::Approved->value)
+            ->get(['document_id', 'document_type', 'fingerprint'])
+            ->groupBy('document_id');
+        $held = [];
+
+        foreach ($documents as $document) {
+            if (! DocumentMargin::ofDocument($company, $document, $book)->needsApproval()) {
+                continue;
+            }
+
+            $type = PriceFloorDocument::of($document);
+            $fingerprint = PriceFloorFingerprint::of($document);
+
+            if (! ($approved->get($document->id) ?? collect())->contains(fn (PriceFloorApproval $approval): bool => $approval->document_type === $type && $approval->fingerprint === $fingerprint)) {
+                $held[] = $document->id;
+            }
+        }
+
+        return $held;
     }
 
     /** As ensureCleared(), loading the company of the document. */
