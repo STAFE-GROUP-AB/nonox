@@ -118,8 +118,8 @@ final class EnvelopeTimestamper
         try {
             return $this->finish($envelope->id, $current->id, $step, $written, $now);
         } catch (Throwable $exception) {
-            // Nothing was committed: the file is not referenced by any row and goes.
-            Storage::disk(SigningRequest::DISK)->delete($written['path']);
+            // Nothing was committed: the file goes, unless a row holds it after all.
+            self::deleteUnheld($written['path']);
 
             throw $exception;
         }
@@ -157,25 +157,46 @@ final class EnvelopeTimestamper
             ->first();
     }
 
-    /** The directory of a company's long-term validation files: listed by the sweep and the envelope deletion. */
+    /** The directory of a company's long-term validation files, one directory per envelope inside it. */
     public static function directory(int $companyId): string
     {
         return 'crm-signing/'.$companyId.'/ltv';
     }
 
-    /**
-     * The file name is decided by the envelope, the input version and the step, so a retry overwrites the file an
-     * interrupted attempt left, and a leftover is found by its name (EnvelopeDeletion, signing:prune-engine-work).
-     */
-    public static function pathFor(int $companyId, string $envelopeId, int $inputVersionId, string $step): string
+    /** The directory of one envelope's long-term validation files: deleted with the envelope (EnvelopeDeletion). */
+    public static function envelopeDirectory(int $companyId, string $envelopeId): string
     {
-        return self::directory($companyId).'/'.$envelopeId.'-v'.$inputVersionId.'-'.strtolower($step).'-tidsstampel.pdf';
+        return self::directory($companyId).'/'.$envelopeId;
     }
 
-    /** Whether a path on the signing disk has the shape pathFor() gives (the sweep touches nothing else). */
+    /**
+     * A new, unique file in the envelope's directory: two attempts, or a retry, never write the same path, so no
+     * attempt can overwrite or delete a file another one stored. A file an interrupted attempt left is removed with
+     * the envelope, or by signing:prune-engine-work once it is a day old and no row holds it.
+     */
+    public static function newPath(int $companyId, string $envelopeId): string
+    {
+        return self::envelopeDirectory($companyId, $envelopeId).'/'.Str::uuid()->toString().'-tidsstampel.pdf';
+    }
+
+    /** Whether a path on the signing disk has the shape newPath() gives (the sweep touches nothing else). */
     public static function isLongTermFile(string $path): bool
     {
-        return preg_match('#^crm-signing/\d+/ltv/[0-9a-f-]{36}-v\d+-(validation_data|document_timestamp)-tidsstampel\.pdf$#', $path) === 1;
+        return preg_match('#^crm-signing/\d+/ltv/[0-9a-f-]{36}/[0-9a-f-]{36}-tidsstampel\.pdf$#', $path) === 1;
+    }
+
+    /** The envelope id in a long-term validation path, or null when it is not one. */
+    public static function envelopeOf(string $path): ?string
+    {
+        return self::isLongTermFile($path) ? explode('/', $path)[3] : null;
+    }
+
+    /** Deletes a file this class wrote, but never one a version row holds. */
+    private static function deleteUnheld(string $path): void
+    {
+        if (! SigningDocumentVersion::query()->withoutGlobalScopes()->where('path', $path)->exists()) {
+            Storage::disk(SigningRequest::DISK)->delete($path);
+        }
     }
 
     /** A pruned or erased envelope has lost its signers (and is deleted itself); its file is never extended. */
@@ -219,13 +240,7 @@ final class EnvelopeTimestamper
             }
 
             $newest = $this->newestTimestamp($result, $envelope, $step);
-            $path = self::pathFor($envelope->company_id, $envelope->id, $current->id, $step);
-
-            // Never overwrite a file a version row already holds; a retry of the same step overwrites its own leftover.
-            if (SigningDocumentVersion::query()->where('path', $path)->exists()) {
-                throw new PdfEngineException(PdfEngineFailure::InvalidResponse, detail: 'path in use');
-            }
-
+            $path = self::newPath($envelope->company_id, $envelope->id);
             $disk->put($path, $bytes);
 
             return ['path' => $path, 'bytes' => strlen($bytes), 'sha256' => hash('sha256', $bytes), 'newest' => $newest];
@@ -264,9 +279,7 @@ final class EnvelopeTimestamper
      */
     private function finish(string $envelopeId, int $inputVersionId, string $step, array $written, CarbonImmutable $now): string
     {
-        $disk = Storage::disk(SigningRequest::DISK);
-
-        return DB::transaction(function () use ($envelopeId, $inputVersionId, $step, $written, $now, $disk): string {
+        return DB::transaction(function () use ($envelopeId, $inputVersionId, $step, $written, $now): string {
             $envelope = SigningEnvelope::query()->whereKey($envelopeId)->lockForUpdate()->first();
 
             // Deleted meanwhile (pruned, erased), out of retention, or another worker added a version first: this file is not used.
@@ -276,12 +289,12 @@ final class EnvelopeTimestamper
                 || self::newestFile($envelope->id)?->id !== $inputVersionId
                 || ($step === self::STEP_VALIDATION_DATA && $envelope->ltv_level !== null)
             ) {
-                DB::afterCommit(fn () => $disk->delete($written['path']));
+                DB::afterCommit(fn () => self::deleteUnheld($written['path']));
 
                 return self::NOTHING;
             }
 
-            DB::afterRollBack(fn () => $disk->delete($written['path']));
+            DB::afterRollBack(fn () => self::deleteUnheld($written['path']));
 
             $version = SigningDocumentVersion::create([
                 'envelope_id' => $envelope->id,

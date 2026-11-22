@@ -3093,7 +3093,10 @@ Follow-up after the S10 re-check (accepted, low): on `QUEUE_CONNECTION=sync`, a 
   period); no screen to trigger a renewal by hand; no configurable trust roots
   for collection (the OS list and the file's own self-issued certificates);
   signing:verify checks each version's hash, not that each starts with the one
-  before (checked when it is written).
+  before (checked when it is written). Follow-up (jurist): when a certificate
+  was revoked after the newest timestamp, store the validation data anyway (it
+  proves validity at timestamp time); today nothing is stored and the file
+  stays B-T.
 - **Tests:** `tests/Feature/Signing/LongTermValidationTest.php` (B-LT after a
   B-T seal with the byte prefix, version row, audit and `signing:verify`;
   renewal to B-LTA by the nightly command and idempotence; the algorithm date;
@@ -3154,10 +3157,20 @@ Follow-up after the S10 re-check (accepted, low): on `QUEUE_CONNECTION=sync`, a 
   are sent, on the files they resolve then, and send a download link
   (`CompletionLinks`) instead of attachments when the files are now over the
   mail limit.
-- **Leftover files.** An S11 file is named by envelope, input version and step
-  (`crm-signing/{company}/ltv/{envelope}-v{version}-{step}-tidsstampel.pdf`),
-  so a retry overwrites what an interrupted attempt left, and a path a version
-  row holds is never overwritten. Any exception in `finish()` deletes the file.
-  `signing:prune-engine-work` removes such files older than a day that no
-  version row holds, and `EnvelopeDeletion` deletes an envelope's leftovers by
-  their name.
+- **Leftover files.** Every S11 file has a new, unique name in the
+  envelope's own directory (`crm-signing/{company}/ltv/{envelope}/{uuid}-tidsstampel.pdf`,
+  `EnvelopeTimestamper::newPath`), so two attempts or a retry never write the
+  same path and none can overwrite or delete a file another one stored. (A
+  deterministic name was tried first; the re-check found that a retry, a
+  concurrent attempt and the sweep could then meet on one path.) An exception
+  in `finish()`, and an attempt that finds it is not needed, delete the file
+  only when no version row holds it. `EnvelopeDeletion` deletes the envelope's
+  directory after the commit (no company-wide listing).
+  `signing:prune-engine-work` lists the `ltv/` files, drops the paths a version
+  row holds in the database (in chunks of 500) before it asks for any file's
+  age, and deletes a file older than a day only after checking again, under
+  the envelope's row lock (which an attempt holds while it stores its
+  version), that no row holds it.
+- **Known limit (mail).** A mail job that is retried after it issued a late
+  download link issues another one: link tokens are stored only as hashes, so
+  the first cannot be reused. Both links work and expire as usual.

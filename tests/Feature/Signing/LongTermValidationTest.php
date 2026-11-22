@@ -538,40 +538,60 @@ it('sends a link instead of attachments when the files grew past the mail limit 
         ->and(SigningDownloadLink::query()->where('envelope_id', $envelope->id)->where('email', 'info@foretaget.test')->exists())->toBeFalse();
 });
 
-it('names each long-term validation file by envelope, input version and step, and cleans up files no version holds', function () {
+it('writes every long-term validation file under a new name in the envelope\'s directory, so a retry never touches an earlier file', function () {
+    $this->engine->failValidationData = new PdfEngineException(PdfEngineFailure::ValidationDataUnavailable);
     $envelope = s11Complete($this->owner, $this->company);
-    [$sealed, $extended] = s11Versions($envelope);
     $disk = Storage::disk(SigningRequest::DISK);
 
-    expect($extended->path)->toBe(EnvelopeTimestamper::pathFor($this->company->id, $envelope->id, $sealed->id, EnvelopeTimestamper::STEP_VALIDATION_DATA))
-        ->and(EnvelopeTimestamper::isLongTermFile($extended->path))->toBeTrue()
-        ->and(EnvelopeTimestamper::isLongTermFile('crm-signing/'.$this->company->id.'/avtal.pdf'))->toBeFalse();
+    // What an attempt interrupted between writing its file and storing its row leaves behind.
+    $leftover = EnvelopeTimestamper::newPath($this->company->id, $envelope->id);
+    $disk->put($leftover, '%PDF-left');
 
-    // A file left by an attempt that never stored its row: removed after a day, the held one and a fresh one kept.
-    $old = EnvelopeTimestamper::pathFor($this->company->id, $envelope->id, $extended->id, EnvelopeTimestamper::STEP_DOCUMENT_TIMESTAMP);
-    $recent = EnvelopeTimestamper::pathFor($this->company->id, $envelope->id, $extended->id + 1, EnvelopeTimestamper::STEP_DOCUMENT_TIMESTAMP);
+    $this->travel(1)->days();
+    $this->engine->failValidationData = null;
+    expect(app(EnvelopeTimestamper::class)->attempt($envelope->id))->toBe(EnvelopeTimestamper::EXTENDED);
+    [, $extended] = s11Versions($envelope);
+
+    expect($extended->path)->not->toBe($leftover)
+        ->and(str_starts_with($extended->path, EnvelopeTimestamper::envelopeDirectory($this->company->id, $envelope->id).'/'))->toBeTrue()
+        ->and(EnvelopeTimestamper::isLongTermFile($extended->path))->toBeTrue()
+        ->and(EnvelopeTimestamper::envelopeOf($extended->path))->toBe($envelope->id)
+        ->and(EnvelopeTimestamper::isLongTermFile('crm-signing/'.$this->company->id.'/avtal.pdf'))->toBeFalse()
+        ->and(EnvelopeTimestamper::newPath($this->company->id, $envelope->id))->not->toBe(EnvelopeTimestamper::newPath($this->company->id, $envelope->id))
+        ->and($disk->get($leftover))->toBe('%PDF-left');
+});
+
+it('sweeps a long-term validation file only when no version holds it and it is older than a day', function () {
+    $envelope = s11Complete($this->owner, $this->company);
+    [, $extended] = s11Versions($envelope);
+    $disk = Storage::disk(SigningRequest::DISK);
+
+    $old = EnvelopeTimestamper::newPath($this->company->id, $envelope->id);
+    $recent = EnvelopeTimestamper::newPath($this->company->id, $envelope->id);
     $disk->put($old, '%PDF-left');
     $disk->put($recent, '%PDF-left');
     touch($disk->path($old), time() - 2 * 86400);
     touch($disk->path($extended->path), time() - 2 * 86400);
 
-    $this->artisan('signing:prune-engine-work')->assertSuccessful();
+    $this->artisan('signing:prune-engine-work')->expectsOutputToContain('Tog bort 1 kvarlämnade filer från långtidsvalidering.')->assertSuccessful();
 
     expect($disk->exists($old))->toBeFalse()
         ->and($disk->exists($recent))->toBeTrue()
         ->and($disk->exists($extended->path))->toBeTrue();
 });
 
-it('deletes an envelope\'s leftover long-term validation files with the envelope', function () {
+it('deletes the envelope\'s long-term validation directory with the envelope', function () {
     $envelope = s11Send($this->owner, $this->company);
+    $other = s11Send($this->owner, $this->company);
     $disk = Storage::disk(SigningRequest::DISK);
-    $leftover = EnvelopeTimestamper::pathFor($this->company->id, $envelope->id, 1, EnvelopeTimestamper::STEP_VALIDATION_DATA);
-    $other = EnvelopeTimestamper::pathFor($this->company->id, '00000000-0000-0000-0000-000000000000', 1, EnvelopeTimestamper::STEP_VALIDATION_DATA);
+    $leftover = EnvelopeTimestamper::newPath($this->company->id, $envelope->id);
+    $kept = EnvelopeTimestamper::newPath($this->company->id, $other->id);
     $disk->put($leftover, '%PDF-left');
-    $disk->put($other, '%PDF-left');
+    $disk->put($kept, '%PDF-left');
 
     EnvelopeDeletion::delete($envelope->refresh(), EnvelopeDeletion::ERASURE, $this->owner);
 
     expect($disk->exists($leftover))->toBeFalse()
-        ->and($disk->exists($other))->toBeTrue();
+        ->and($disk->directoryExists(EnvelopeTimestamper::envelopeDirectory($this->company->id, $envelope->id)))->toBeFalse()
+        ->and($disk->exists($kept))->toBeTrue();
 });

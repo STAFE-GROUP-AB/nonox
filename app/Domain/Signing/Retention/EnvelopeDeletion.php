@@ -58,7 +58,6 @@ final class EnvelopeDeletion
                 ...$requests->pluck('document_path')->all(),
                 ...$requests->pluck('signed_document_path')->all(),
                 ...$versions->pluck('path')->all(),
-                ...self::longTermLeftovers($envelope),
             ], fn (mixed $path): bool => is_string($path) && $path !== '')));
             $hashes = array_values(array_unique([$envelope->document_sha256, ...$versions->pluck('sha256')->all()]));
 
@@ -82,6 +81,10 @@ final class EnvelopeDeletion
 
             self::deleteStandaloneDocument($envelope);
             self::deleteFiles($envelope->company_id, $paths, $hashes);
+
+            // The envelope's long-term validation directory (ADR-046 S11), with any file an interrupted attempt left.
+            $longTerm = EnvelopeTimestamper::envelopeDirectory($envelope->company_id, $envelope->id);
+            DB::afterCommit(fn () => Storage::disk(SigningRequest::DISK)->deleteDirectory($longTerm));
         });
     }
 
@@ -153,27 +156,6 @@ final class EnvelopeDeletion
                 Storage::disk(SigningRequest::DISK)->deleteDirectory($directory);
             }
         });
-    }
-
-    /**
-     * Long-term validation files of the envelope that no version row holds (an attempt interrupted before it was
-     * stored, ADR-046 S11): found by their name, which starts with the envelope id.
-     *
-     * @return list<string>
-     */
-    private static function longTermLeftovers(SigningEnvelope $envelope): array
-    {
-        $directory = EnvelopeTimestamper::directory($envelope->company_id);
-        $disk = Storage::disk(SigningRequest::DISK);
-
-        if (! $disk->directoryExists($directory)) {
-            return [];
-        }
-
-        return array_values(array_filter(
-            $disk->files($directory),
-            fn (string $path): bool => EnvelopeTimestamper::isLongTermFile($path) && str_starts_with(basename($path), $envelope->id.'-v'),
-        ));
     }
 
     /** A standalone document (module Signering) goes with its last envelope: the row, and its file once committed. */

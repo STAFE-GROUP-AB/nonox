@@ -22,7 +22,8 @@ use Illuminate\Support\Facades\Storage;
  * Also long-term validation files (ADR-046 S11) on the signing disk that no
  * version row holds and that are older than a day: an attempt that was
  * interrupted between writing its file and storing its row. Only names that
- * EnvelopeTimestamper::pathFor gives are touched.
+ * EnvelopeTimestamper::newPath gives are touched, and each is checked again
+ * under its envelope's row lock before it is deleted.
  */
 class PruneSigningEngineWorkCommand extends Command
 {
@@ -87,21 +88,47 @@ class PruneSigningEngineWorkCommand extends Command
                 continue;
             }
 
-            $old = array_values(array_filter($disk->files($directory), fn (string $path): bool => EnvelopeTimestamper::isLongTermFile($path) && $disk->lastModified($path) < $before));
+            $files = array_values(array_filter($disk->allFiles($directory), fn (string $path): bool => EnvelopeTimestamper::isLongTermFile($path)));
 
-            if ($old === []) {
-                continue;
-            }
+            // Held paths are filtered out in the database first, in chunks; the age is asked only of the rest.
+            foreach (array_chunk($files, 500) as $chunk) {
+                $held = DB::table('signing_document_versions')->whereIn('path', $chunk)->pluck('path')->all();
 
-            // Across companies on purpose: the paths name their company, and only files no row holds go.
-            $held = DB::table('signing_document_versions')->whereIn('path', $old)->pluck('path')->all();
+                foreach (array_diff($chunk, $held) as $path) {
+                    if ($disk->lastModified($path) >= $before) {
+                        continue;
+                    }
 
-            foreach (array_diff($old, $held) as $path) {
-                $disk->delete($path);
-                $removed++;
+                    $removed += $this->deleteIfUnheld($path) ? 1 : 0;
+                }
             }
         }
 
         $this->comment("Tog bort {$removed} kvarlämnade filer från långtidsvalidering.");
+    }
+
+    /**
+     * Under the envelope's row lock, which an attempt holds while it stores its version: deleted only when no row
+     * holds the path then. Across companies on purpose: the path names its envelope.
+     */
+    private function deleteIfUnheld(string $path): bool
+    {
+        $envelopeId = EnvelopeTimestamper::envelopeOf($path);
+
+        if ($envelopeId === null) {
+            return false;
+        }
+
+        return DB::transaction(function () use ($path, $envelopeId): bool {
+            DB::table('signing_envelopes')->where('id', $envelopeId)->lockForUpdate()->first(['id']);
+
+            if (DB::table('signing_document_versions')->where('path', $path)->exists()) {
+                return false;
+            }
+
+            Storage::disk(SigningRequest::DISK)->delete($path);
+
+            return true;
+        });
     }
 }
