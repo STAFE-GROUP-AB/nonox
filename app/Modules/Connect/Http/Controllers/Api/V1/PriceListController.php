@@ -293,7 +293,7 @@ final class PriceListController
 
         $parsed = CarbonImmutable::createFromFormat('!Y-m-d', $from);
 
-        if ($parsed === false) {
+        if ($parsed === null) {
             return null;
         }
 
