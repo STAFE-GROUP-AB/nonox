@@ -1,6 +1,6 @@
 # ADR-046: CRM stage 3, signing, quote templates and the agreement register
 
-- Status: **Implemented, waiting for the owner's review** (2026-11-04)
+- Status: **Implemented, waiting for the owner's review** (2026-11-04); the 2026-11-18 amendment is **Accepted, implemented** (2026-11-22, S21), see "Launch status" at the end of this file
 - Amendment 2026-11-18 "best in class": **Accepted** (owner 2026-11-18: all recommended defaults, except decision 16: no BankID driver for now; see the end of this file)
 - Builds on: ADR-043 (CRM, stage 3 of its plan), ADR-011 (quotes, orders,
   invoices, recurring invoices), ADR-002 (PDF), ADR-032 (API, webhooks),
@@ -3514,3 +3514,16 @@ Before sealing, long-term validation (S10–S11) or the verify page (S12) is swi
   goes into the PDF every recipient gets. Verify article numbers against the
   consolidated text of (EU) No 910/2014 as amended by (EU) 2024/1183; never
   claim a level in NONOX's own name before these are answered.
+
+## Launch status (2026-11-22, S21): Accepted, implemented
+
+The amendment of 2026-11-18 is built, with one decision deferred by the owner: **S18, a BankID driver, is not built** (owner decision 16, no BankID for now). Packages S1 to S17 and S19 to S21 are in. The manual section `docs/manual/sv/signering/`, the landing page (cards "Signering" and "Signering av egna dokument", `Features` keys `signing_documents`, `signing_fields`, `signing_templates`), the README, the comparison row in `docs/migration/jamforelse.json` and the changelog describe what is built.
+
+**Built but off on the hosted service (nonox.app).** These are usable when self-hosting and are described in the manual as "vid egen drift"; no public text may say they are on at nonox.app:
+
+- S10, the PAdES seal and the timestamp.
+- S11, long-term validation (nightly re-stamping).
+- S12, the public verify page `/kontrollera`.
+- S17, signing at an external provider (CSC API v2).
+
+**Go-live conditions, already stated above:** a lawyer answers the eIDAS question on trusted services (whether NONOX's own seal, the verify page and the provider flow may be offered as described, and with which wording), and the per-installation and per-company switches named in S10, S12 and S17 are then turned on. Until then every public text keeps the line that the signature is a simple electronic signature, not BankID and not a qualified signature.

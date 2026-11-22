@@ -104,6 +104,8 @@ final class Features
         'manufacturing_planning' => ['name' => 'Planeringskalender med leveransprognos och avvikelser', 'status' => self::LIVE, 'readme' => 'Planeringskalender för verkstaden', 'module' => 'Tillverkning'],
         'manufacturing_wall_screen' => ['name' => 'Storskärm i verkstaden med dagens arbete, förseningar och leveranser', 'status' => self::LIVE, 'readme' => 'Storskärm i verkstaden', 'module' => 'Tillverkning'],
         'signing_documents' => ['name' => 'Egna PDF-dokument för signering med namnteckning', 'status' => self::LIVE, 'readme' => 'Signering av egna PDF-dokument: flera undertecknare i vald ordning', 'module' => 'Signering'],
+        'signing_fields' => ['name' => 'Fält i PDF:en per undertecknare: underskrift, datum och textfält', 'status' => self::LIVE, 'readme' => 'Fält placeras i PDF:en per undertecknare', 'module' => 'Signering'],
+        'signing_templates' => ['name' => 'Signeringsmallar med roller och massutskick till många mottagare', 'status' => self::LIVE, 'readme' => 'Mallar med roller och massutskick', 'module' => 'Signering'],
         'crm' => ['name' => 'CRM med nyckeltal ur bokföringen', 'status' => self::LIVE, 'readme' => 'Kunder och prospekt med kontaktpersoner', 'module' => 'CRM'],
         'crm_activities' => ['name' => 'Aktiviteter med nästa steg', 'status' => self::LIVE, 'readme' => 'Aktiviteter med nästa steg', 'module' => 'CRM'],
         'crm_key_figures' => ['name' => 'Nyckeltal per kund ur bokföringen', 'status' => self::LIVE, 'readme' => 'Nyckeltal ur bokföringen per kund', 'module' => 'CRM'],
