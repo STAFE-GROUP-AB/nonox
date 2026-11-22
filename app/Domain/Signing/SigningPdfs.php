@@ -7,6 +7,7 @@ namespace App\Domain\Signing;
 use App\Domain\Signing\Pdf\PdfScripts;
 use App\Domain\Signing\Seal\SealCertificateInfo;
 use App\Models\Company;
+use App\Models\SigningDocumentVersion;
 use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Support\Branding\Brand;
@@ -68,6 +69,8 @@ final class SigningPdfs
             'company' => $company,
             'brand' => Brand::for($company),
             'title' => (string) $envelope->title,
+            // With fields the copy is the filled-in version, whose SHA-256 is not the one above (S10 review).
+            'withFields' => SigningDocumentVersion::query()->where('envelope_id', $envelope->id)->where('kind', SigningDocumentVersion::AFTER_SIGNER)->exists(),
         ])->render());
     }
 

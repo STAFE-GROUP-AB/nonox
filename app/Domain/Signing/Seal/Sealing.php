@@ -20,15 +20,21 @@ use App\Support\Instance\InstanceSettings;
  * switches it on after installing the PDF engine. It also needs the engine
  * and a seal certificate (the company's own, else the instance's).
  *
- * TODO(legal-verify): whether sealing customers' documents makes the operator
- * a (non-qualified) trust service provider under eIDAS art. 3(16) with the
- * duties of art. 19 and supervision by PTS; until answered the hosted service
- * keeps the switch off (ADR-046 gap 5, "Legal items").
+ * TODO(legal-verify): om driftbolaget, när det förvarar företagets
+ * förseglingsnyckel och skapar stämplar åt företaget, tillhandahåller en
+ * betrodd tjänst (förvaltning av utrustning för skapande av elektroniska
+ * stämplar på distans, art. 3.16 i eIDAS i lydelsen enligt (EU) 2024/1183)
+ * med krav enligt art. 19 och 19a och tillsyn av PTS; verifiera punkt och
+ * artikelnummer mot den konsoliderade texten. Until answered the hosted
+ * service keeps the switch off (ADR-046 gap 5, "Legal items").
  */
 final class Sealing
 {
-    /** The longest the queue waits for a timestamp server before sealing without one (gap 5: 24 hours). */
+    /** The longest the queue waits for a timestamp server before sealing without one (gap 5: 24 hours; the default is one, legal review F5). */
     public const int MAX_RETRY_HOURS = 24;
+
+    /** The default wait for a timestamp server (legal review F5): an hour, so the copies are not held back long. */
+    public const int DEFAULT_RETRY_HOURS = 1;
 
     public static function switchedOn(): bool
     {
@@ -48,6 +54,15 @@ final class Sealing
         return SealCertificates::forCompany($companyId);
     }
 
+    /**
+     * Whether a completed envelope of the company is to be sealed: switched on, the engine installed and a
+     * certificate available. Decrypts nothing (it runs in the signing transaction). Must run inside the company.
+     */
+    public static function applies(int $companyId): bool
+    {
+        return self::switchedOn() && app(PdfEngine::class)->isInstalled() && SealCertificates::available($companyId);
+    }
+
     /** @return list<string> the configured RFC 3161 servers, in order */
     public static function timestampUrls(): array
     {
@@ -59,9 +74,9 @@ final class Sealing
         return max(1, min(60, (int) config('nonox.signing.timestamp.timeout', 10)));
     }
 
-    /** Hours the queue keeps trying a timestamp server before sealing without a timestamp (0–24). */
+    /** Hours the queue keeps trying a timestamp server before sealing without a timestamp (0–24, default 1). */
     public static function retryHours(): int
     {
-        return max(0, min(self::MAX_RETRY_HOURS, (int) config('nonox.signing.seal.retry_hours', self::MAX_RETRY_HOURS)));
+        return max(0, min(self::MAX_RETRY_HOURS, (int) config('nonox.signing.seal.retry_hours', self::DEFAULT_RETRY_HOURS)));
     }
 }

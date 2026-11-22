@@ -35,7 +35,7 @@ class SigningSealCertificateCommand extends Command
 
     public function handle(): int
     {
-        $path = SealCertificates::instancePath();
+        $path = (string) config('nonox.signing.seal.instance_pkcs12', '');
 
         if ($path === '') {
             $this->error('NONOX_SIGNING_SEAL_PKCS12 är tom: ange var filen ska ligga.');
@@ -44,10 +44,10 @@ class SigningSealCertificateCommand extends Command
         }
 
         $directory = dirname($path);
-        $public = realpath(public_path()) ?: public_path();
 
-        if (str_starts_with((realpath($directory) ?: $directory).DIRECTORY_SEPARATOR, rtrim($public, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR)) {
-            $this->error('Filen får inte ligga i den publika webbroten. Välj en sökväg utanför public/.');
+        // The same rule SealCertificates uses to read it: absolute, no "..", and never inside public/ (resolved).
+        if (! SealCertificates::usablePath($path)) {
+            $this->error('Sökvägen måste vara absolut, utan "..", och får inte ligga i den publika webbroten. Välj en sökväg utanför public/.');
 
             return self::FAILURE;
         }
@@ -121,6 +121,7 @@ class SigningSealCertificateCommand extends Command
         }
 
         $this->comment('Försegling används först när den är påslagen i /hq och PDF-motorn är installerad.');
+        $this->comment('Kör php artisan queue:restart så att köarbetarna läser det nya certifikatet.');
 
         return self::SUCCESS;
     }

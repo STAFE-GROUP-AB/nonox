@@ -160,18 +160,46 @@ final class SealCertificates
         return $instance instanceof SealCredentials && ! $instance->info->isExpired($now) ? $instance : null;
     }
 
+    /**
+     * Whether the company has a seal certificate now, decided from the rows and the file system alone: the
+     * company's own active certificate that has not expired, or a configured, readable instance seal file. Never
+     * decrypts or parses a key, so it is safe inside the signing transaction (ADR-046 S10 review); the job reads
+     * the key and gives the seal up when it cannot. Must run inside the company.
+     */
+    public static function available(int $companyId, ?CarbonImmutable $now = null): bool
+    {
+        $own = SigningSealCertificate::query()->where('company_id', $companyId)->active()->where('not_after', '>', $now ?? CarbonImmutable::now())->exists();
+
+        if ($own) {
+            return true;
+        }
+
+        $path = self::instancePath();
+
+        return $path !== '' && (string) config('nonox.signing.seal.instance_password', '') !== '' && is_file($path) && ! is_link($path) && is_readable($path);
+    }
+
     /** The instance's self-signed seal, when its file and password are configured and readable. */
     public static function instance(): ?SealCredentials
     {
         $path = self::instancePath();
         $password = (string) config('nonox.signing.seal.instance_password', '');
-        $cacheKey = $path.'|'.hash('sha256', $password);
+
+        if ($path === '' || $password === '' || ! is_file($path) || is_link($path) || ! is_readable($path)) {
+            return null;
+        }
+
+        // A file replaced by signing:seal-certificate --force is noticed by its time and size (a worker lives long).
+        clearstatcache(true, $path);
+        $cacheKey = $path.'|'.hash('sha256', $password).'|'.(int) filemtime($path).'|'.(int) filesize($path);
 
         if (array_key_exists($cacheKey, self::$instance)) {
             return self::$instance[$cacheKey];
         }
 
-        if ($path === '' || $password === '' || ! is_file($path) || is_link($path) || ! is_readable($path) || (int) filesize($path) > self::MAX_BYTES) {
+        self::$instance = [];
+
+        if ((int) filesize($path) > self::MAX_BYTES) {
             return self::$instance[$cacheKey] = null;
         }
 
@@ -187,10 +215,73 @@ final class SealCertificates
         return self::$instance[$cacheKey] = new SealCredentials(SealCredentials::INSTANCE, $info, $bytes, $password);
     }
 
-    /** The configured path of the instance seal's PKCS#12 file. */
+    /**
+     * The configured path of the instance seal's PKCS#12 file, or '' when it is not usable: it must be absolute,
+     * have no ".." segment and lie outside the public web root (resolved with realpath, so a symlinked or
+     * relative way into public/ is refused too).
+     */
     public static function instancePath(): string
     {
-        return (string) config('nonox.signing.seal.instance_pkcs12', '');
+        $path = (string) config('nonox.signing.seal.instance_pkcs12', '');
+
+        return self::usablePath($path) ? $path : '';
+    }
+
+    /** Whether a path may hold the instance seal: absolute, no "..", and not inside public/. */
+    public static function usablePath(string $path): bool
+    {
+        if ($path === '' || ! str_starts_with($path, DIRECTORY_SEPARATOR) || in_array('..', explode(DIRECTORY_SEPARATOR, $path), true)) {
+            return false;
+        }
+
+        return ! self::insidePublic($path);
+    }
+
+    /** Whether a path resolves into the public web root, through the nearest directory that exists. */
+    public static function insidePublic(string $path): bool
+    {
+        $public = realpath(public_path());
+
+        if ($public === false) {
+            return false;
+        }
+
+        $existing = $path;
+        $rest = '';
+
+        while (! file_exists($existing) && $existing !== dirname($existing)) {
+            $rest = DIRECTORY_SEPARATOR.basename($existing).$rest;
+            $existing = dirname($existing);
+        }
+
+        $resolved = (realpath($existing) ?: $existing).$rest;
+
+        return $resolved === $public || str_starts_with($resolved.DIRECTORY_SEPARATOR, rtrim($public, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR);
+    }
+
+    /**
+     * Whether a certificate's subject names the company: its O equals the company's legal name, or its
+     * organizationIdentifier holds the organisation number (for example NTRSE-5561234567). Nothing here verifies
+     * the certificate; a mismatch only warns (ADR-046 S10, legal review F2).
+     */
+    public static function namesCompany(string $subject, ?string $legalName, ?string $orgNumber): bool
+    {
+        $digits = preg_replace('/\D/', '', (string) $orgNumber) ?? '';
+        $name = mb_strtolower(trim((string) $legalName));
+
+        foreach (explode(', ', $subject) as $part) {
+            [$key, $value] = array_pad(explode('=', $part, 2), 2, '');
+
+            if ($key === 'O' && $name !== '' && mb_strtolower(trim($value)) === $name) {
+                return true;
+            }
+
+            if (in_array($key, ['organizationIdentifier', '2.5.4.97'], true) && strlen($digits) >= 10 && str_contains(preg_replace('/\D/', '', $value) ?? '', substr($digits, -10))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Forgets the instance seal read in this process (after the command made a new one, and in tests). */

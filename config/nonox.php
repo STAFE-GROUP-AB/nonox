@@ -181,12 +181,12 @@ return [
          * below is used, made by `php artisan signing:seal-certificate` (the file 0600, its
          * directory 0700, outside the web root). Without a timestamp server the seal is
          * PAdES B-B; with one, B-T. When no server answers, the queue keeps trying for
-         * retry_hours (at most 24) and then seals without a timestamp.
+         * retry_hours (default 1, at most 24) and then seals without a timestamp.
          */
         'seal' => [
             'instance_pkcs12' => env('NONOX_SIGNING_SEAL_PKCS12', storage_path('app/signing-seal/instance-seal.p12')),
             'instance_password' => env('NONOX_SIGNING_SEAL_PASSWORD', ''),
-            'retry_hours' => (int) env('NONOX_SIGNING_SEAL_RETRY_HOURS', 24),
+            'retry_hours' => (int) env('NONOX_SIGNING_SEAL_RETRY_HOURS', 1),
         ],
     ],
 

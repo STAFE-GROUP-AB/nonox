@@ -60,20 +60,27 @@
     @if(! empty($seal))
         <h2>{{ $b('Försegling') }}</h2>
         <table class="meta">
-            <tr><td class="muted" style="width: 38%">{{ $b('Förseglad av') }}</td><td>{{ $seal['name'] }}</td></tr>
-            <tr><td class="muted">{{ $b('Utfärdare') }}</td><td>{{ $seal['selfSigned'] ? $b('Självsignerat certifikat') : $seal['issuer'] }}</td></tr>
+            <tr><td class="muted" style="width: 38%">{{ $b('Namn i certifikatet') }}</td><td>{{ $seal['name'] }}</td></tr>
+            <tr><td class="muted">{{ $b('Utfärdare') }}</td><td>{{ $seal['selfSigned'] ? $b('Självsignerat certifikat – namnet är inte kontrollerat') : $seal['issuer'].' ('.$b('inte kontrollerat av NONOX').')' }}</td></tr>
             <tr><td class="muted">{{ $b('Certifikatets fingeravtryck (SHA-256)') }}</td><td class="mono">{{ $seal['fingerprint'] }}</td></tr>
         </table>
 
         <div class="box">
-            <span class="muted">{!! App\Domain\Signing\SigningPdfs::bilingualBlock('Den här sidan lades till efter att alla hade signerat, och sedan förseglades hela filen med en elektronisk stämpel (PAdES). Stämpeln visar att filen inte har ändrats sedan den förseglades och vem som förseglade den. Den är inte undertecknarnas underskrift: varje underskrift är en enkel elektronisk underskrift. Dokumentet som signerades finns oförändrat som den första versionen i filen, och kontrollsumman ovan gäller den versionen. Förseglingens nivå och en eventuell tidsstämpel visas i PDF-läsarens panel för underskrifter. Det fullständiga signeringsbeviset för varje underskrift finns hos avsändaren.') !!}</span>
+            <span class="muted">{!! App\Domain\Signing\SigningPdfs::bilingualBlock('Den här sidan lades till efter att alla hade signerat, och sedan förseglades hela filen med en elektronisk stämpel (PAdES). Stämpeln visar att filen inte har ändrats sedan den förseglades och med vilket certifikat den förseglades. Vem som står bakom certifikatet visar den bara om certifikatet är utfärdat av en utfärdare som PDF-läsaren litar på. Den är inte undertecknarnas underskrift: varje underskrift är en enkel elektronisk underskrift. Dokumentet som signerades finns oförändrat som den första versionen i filen, och kontrollsumman ovan gäller den versionen. Förseglingens nivå och en eventuell tidsstämpel visas i PDF-läsarens panel för underskrifter. Det fullständiga signeringsbeviset för varje underskrift finns hos avsändaren.') !!}</span>
+            @if(($seal['source'] ?? null) === App\Domain\Signing\Seal\SealCredentials::INSTANCE)
+                <span class="muted">{!! App\Domain\Signing\SigningPdfs::bilingualBlock('Stämpeln gjordes med certifikatet för den installation av NONOX som avsändaren använder. Den som driver installationen intygar inte dokumentets innehåll.') !!}</span>
+            @endif
             @if($seal['selfSigned'])
                 <span class="muted">{!! App\Domain\Signing\SigningPdfs::bilingualBlock('Stämpelns certifikat är självsignerat. PDF-läsare visar därför stämpeln som en underskrift med okänd giltighet; det betyder inte att filen har ändrats.') !!}</span>
             @endif
         </div>
     @else
         <div class="box">
+            @if(! empty($withFields))
+            <span class="muted">{!! App\Domain\Signing\SigningPdfs::bilingualBlock('En sammanställning för den som får en kopia. Varje underskrift är en enkel elektronisk underskrift. Undertecknarna fyllde i fält i dokumentet, så filen du har fått är dokumentet med deras värden ifyllda och har en annan kontrollsumma. Dokumentet som skickades finns oförändrat som den första versionen i filen, och kontrollsumman ovan gäller den versionen. Det fullständiga signeringsbeviset för varje underskrift finns hos avsändaren.') !!}</span>
+            @else
             <span class="muted">{!! App\Domain\Signing\SigningPdfs::bilingualBlock('En sammanställning för den som får en kopia. Varje underskrift är en enkel elektronisk underskrift, och PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Det fullständiga signeringsbeviset för varje underskrift finns hos avsändaren.') !!}</span>
+            @endif
         </div>
     @endif
 </body>

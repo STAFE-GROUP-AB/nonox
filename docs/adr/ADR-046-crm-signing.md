@@ -2799,7 +2799,8 @@ unchanged.
   `nonox.signing.timestamp.timeout`, default 10 s), else B-B. When no server
   answers the job releases itself (1, 2, 4 … at most 60 minutes) and the
   envelope shows "Förseglas"; after `nonox.signing.seal.retry_hours` (default
-  and at most 24) it seals at B-B, the audit entry says
+  1, at most 24; shortened from 24 by the legal review, F5) it seals at B-B,
+  the audit entry says
   `without_timestamp: true` and the sender gets a notice. Any other transient
   engine failure is retried in the same window; a permanent one (bad
   credentials, refused file, not installed, a changed file, the switch turned
@@ -2882,19 +2883,75 @@ unchanged.
   password); the /hq switch; the settings page and the envelope page),
   `tests/Tenancy/SigningSealTenancyTest.php`, and the tenancy catalogue.
   Every certificate is generated at runtime; none is committed.
-- `TODO(legal-verify)`: (1) the trust-service item of gap 5 (eIDAS art.
-  3(16), art. 19, supervision by PTS) still gates the hosted service; (2) a
-  company's own seal certificate attests the company's origin and the file's
-  integrity, not a signer's will: the appended page, the settings card and the
-  manual say "Den är inte undertecknarnas underskrift", and the jurist should
-  confirm the wording; (3) whether the instance's self-signed seal, which says
-  "NONOX – försegling" or the operator's name, may be presented to recipients
-  at all on the hosted service, and with which wording; (4) the terms of use of
-  any free public timestamp service before it is configured (gap 5,
-  "Timestamp server", option 2); (5) how long the public facts of a retired
-  certificate are kept (`docs/gdpr/lagringstider.md`); (6) whether delaying
-  the completion mails up to 24 hours for a timestamp is acceptable for a
-  signer who expects their copy at once.
+- `TODO(legal-verify)`: (1) om driftbolaget, när det förvarar företagets
+  förseglingsnyckel och skapar stämplar åt företaget, tillhandahåller en
+  betrodd tjänst (förvaltning av utrustning för skapande av elektroniska
+  stämplar på distans, art. 3.16 i eIDAS i lydelsen enligt (EU) 2024/1183)
+  med krav enligt art. 19 och 19a och tillsyn av PTS; verifiera punkt och
+  artikelnummer mot den konsoliderade texten. This still gates the hosted
+  service. (2) A company's own seal certificate attests the company's origin
+  and the file's integrity, not a signer's will: the appended page, the
+  settings card and the manual say "Den är inte undertecknarnas underskrift",
+  and the jurist should confirm the wording. With the key on the operator's
+  server it is doubtful that the seal meets art. 36(c) (created with data the
+  creator can use under its sole control), so no text may ever call it
+  "avancerad" (advanced). (3) Whether the instance's self-signed seal, which
+  says "NONOX – försegling" or the operator's name, may be presented to
+  recipients at all on the hosted service, and with which wording. (4) The
+  terms of use of any free public timestamp service before it is configured
+  (gap 5, "Timestamp server", option 2). (5) How long the public facts of a
+  retired certificate are kept (`docs/gdpr/lagringstider.md`, awaiting a
+  decision on the proposal there). (6) Whether holding back the completion
+  mails while waiting for a timestamp (now an hour by default) is acceptable
+  for a signer who expects their copy at once; the duty to confirm receipt and
+  provide the contract terms in a form that can be stored (lagen (2002:562)
+  om elektronisk handel, 11 §) may apply, but whether it reaches this case is
+  uncertain. (7) NONOX never verifies the name in a seal certificate: a
+  self-signed one (or one uploaded in another company's name) can carry any
+  name. The page and the settings say "Namn i certifikatet" and "namnet är
+  inte kontrollerat", the upload warns when O or organizationIdentifier does
+  not match the company, and `signing:seal-certificate` asks for the
+  operator's own name; whether this is enough against impersonation, and
+  whether an upload in another company's name should be refused, is for the
+  jurist.
+
+#### S10 review fixes (2026-11-22)
+
+- **Unique job.** `SealSigningEnvelope` is `ShouldBeUnique` on the envelope
+  id, so `signing:seal-check` never stacks a second chain on an envelope that
+  waits for a timestamp. Read in the installed framework's
+  `CallQueuedHandler::call`: the unique lock is released after a run only
+  when the job was not released, so it survives `release()` and an uncaught
+  exception; `CallQueuedHandler::failed` releases it. `uniqueFor` (the retry
+  window plus three hours) bounds a lock left by a lost job. `backoff()`
+  (1, 5, 15, 30, 60 minutes) applies to uncaught exceptions.
+- **Signing can never break.** `EnvelopeSealer::start` decides from rows and
+  files only (`Sealing::applies`, `SealCertificates::available`: an active,
+  unexpired company row, or a configured readable instance file) and decrypts
+  nothing inside the signing transaction. The job is queued after the
+  transaction by `EnvelopeSealer::queue` (`SignAtLink`, `SignInSession`),
+  which never throws (errors are reported), so with a sync queue a failing
+  seal neither shows the signer an error nor skips their copy or the
+  follow-up. A key that cannot be decrypted gives the seal up as
+  `CERTIFICATE_UNREADABLE`; it never falls back to another certificate.
+- **Instance seal.** Its cache key includes the file's mtime and size, so a
+  long-lived worker notices a replaced file; the command and
+  `docs/juridik/egen-drift.md` remind to run `queue:restart`. The path must be
+  absolute, have no ".." segment and resolve (`realpath` of the nearest
+  existing directory) outside `realpath(public_path())`; the reader
+  (`SealCertificates::instancePath`) uses the same rule.
+- **Copies.** A sealed envelope's COPY files are the sealed file only (it ends
+  with the summary); the separate summary would tell recipients to compare a
+  hash the sealed file never has. An unsealed envelope with fields gets a
+  summary that says the attached file is the filled-in version with another
+  checksum, and that the checksum shown is the sent version's.
+- **Wording (legal review F1, F2, F7, F8).** "med vilket certifikat den
+  förseglades", "Namn i certifikatet", "Självsignerat certifikat – namnet är
+  inte kontrollerat" or the issuer "(inte kontrollerat av NONOX)", the
+  instance sentence ("Stämpeln gjordes med certifikatet för den installation
+  av NONOX som avsändaren använder. Den som driver installationen intygar inte
+  dokumentets innehåll."), the name warning at upload and on the settings
+  card, and "signing record (evidence)" in English.
 
 ### Cross-reference (2026-11-20): customer price agreements (ADR-082 P5)
 

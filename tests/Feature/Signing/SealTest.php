@@ -42,6 +42,9 @@ use App\Support\Instance\InstanceSettings;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Bus\UniqueLock;
+use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -252,7 +255,7 @@ it('seals at B-T with a configured timestamp server', function () {
         ->and($this->engine->sealed[0]['timestampUrls'])->toBe(['https://tsa.example.test/tsr']);
 });
 
-it('waits for a timestamp server for a day, mails nothing meanwhile, then seals at B-B and tells the sender', function () {
+it('waits for a timestamp server for an hour by default, mails nothing meanwhile, then seals at B-B and tells the sender', function () {
     Notification::fake();
     config(['nonox.signing.timestamp.urls' => ['https://tsa.example.test/tsr']]);
     s10SwitchOn();
@@ -267,10 +270,10 @@ it('waits for a timestamp server for a day, mails nothing meanwhile, then seals 
         ->and(s10Mails('info@foretaget.test'))->toBe([]);
 
     $sealer = app(EnvelopeSealer::class);
-    $this->travel(23)->hours();
+    $this->travel(50)->minutes();
     expect($sealer->attempt($envelope->id))->toBe(EnvelopeSealer::RETRY);
 
-    $this->travel(2)->hours();
+    $this->travel(15)->minutes();
     expect($sealer->attempt($envelope->id))->toBe(EnvelopeSealer::SEALED);
 
     $envelope->refresh();
@@ -334,9 +337,21 @@ it('queues a seal again that a worker lost, and the job releases itself while it
     $this->artisan('signing:seal-check')->assertSuccessful();
     Queue::assertPushed(SealSigningEnvelope::class, 1);
 
+    // While the first job holds its unique lock (waiting for a timestamp), the check stacks no second chain.
     $this->travel(16)->minutes();
     $this->artisan('signing:seal-check')->assertSuccessful();
+    Queue::assertPushed(SealSigningEnvelope::class, 1);
+
+    // A job that was lost for good (its lock gone) is queued again.
+    (new UniqueLock(app(Cache::class)))->release(new SealSigningEnvelope($this->company->id, $envelope->id));
+    $this->artisan('signing:seal-check')->assertSuccessful();
     Queue::assertPushed(SealSigningEnvelope::class, 2);
+
+    $job = new SealSigningEnvelope($this->company->id, $envelope->id);
+    expect($job)->toBeInstanceOf(ShouldBeUnique::class)
+        ->and($job->uniqueId())->toBe($envelope->id)
+        ->and($job->backoff())->toBe([60, 300, 900, 1800, 3600])
+        ->and($job->uniqueFor())->toBe(4 * 3600);
 
     expect(SealSigningEnvelope::delay(1))->toBe(60)->and(SealSigningEnvelope::delay(3))->toBe(240)->and(SealSigningEnvelope::delay(30))->toBe(3600);
 });
@@ -394,6 +409,9 @@ it('appends the summary page with the seal and no addresses, never a level', fun
     ])->render();
 
     expect($html)->toContain('Försegling')->toContain('Den är inte undertecknarnas underskrift')->toContain('okänd giltighet')
+        ->toContain('Namn i certifikatet')->toContain('Självsignerat certifikat – namnet är inte kontrollerat')
+        ->toContain('med vilket certifikat den förseglades')->not->toContain('vem som förseglade')
+        ->toContain('Den som driver installationen intygar inte dokumentets innehåll')
         ->toContain($instance->info->fingerprintSha256)
         ->not->toContain('anna@example.test')->not->toContain('203.0.113.7')->not->toContain('B-B')->not->toContain('B-T');
 });
@@ -595,4 +613,99 @@ it('shows the seal on the envelope page', function () {
         ->assertSee('Försegling')
         ->assertSee('PAdES B-B')
         ->assertSee('Förseglingen har ingen tidsstämpel.');
+});
+
+it('decides at completion without decrypting a key, and a key that cannot be decrypted never breaks a signature', function () {
+    s10SwitchOn();
+    config(['nonox.signing.seal.instance_password' => '']);
+    SealCertificates::forget();
+    DB::table('signing_seal_certificates')->insert([
+        'company_id' => $this->company->id, 'subject' => 'CN=Trasig', 'issuer' => 'CN=Trasig', 'serial' => '01',
+        'not_before' => now()->subDay(), 'not_after' => now()->addYear(), 'fingerprint_sha256' => str_repeat('c', 64),
+        'self_signed' => true, 'pkcs12' => 'inte-krypterat', 'password' => 'inte-krypterat', 'created_at' => now(), 'updated_at' => now(),
+    ]);
+
+    $envelope = s10Send($this->owner, $this->company, [['email' => 'anna@example.test', 'step' => 1, 'verification' => 'NONE']]);
+    $signed = s10Sign('anna@example.test');
+
+    $envelope->refresh();
+    expect($signed->refresh()->status->value)->toBe('SIGNED')
+        ->and($envelope->followed_up_at)->not->toBeNull()
+        ->and($envelope->seal_status)->toBe(SealStatus::Failed)
+        ->and($envelope->seal_failure)->toBe(EnvelopeSealer::CERTIFICATE_UNREADABLE)
+        ->and(s10Mails('anna@example.test'))->toHaveCount(1)
+        ->and(s10Mails('info@foretaget.test'))->toHaveCount(1);
+});
+
+it('never lets the seal\'s dispatch throw into the signature', function () {
+    s10SwitchOn();
+    $envelope = s10Send($this->owner, $this->company, [['email' => 'anna@example.test', 'step' => 1, 'verification' => 'NONE']]);
+    config(['queue.default' => 'saknas-s10']);
+
+    $signed = s10Sign('anna@example.test');
+
+    expect($signed->refresh()->status->value)->toBe('SIGNED')
+        ->and($envelope->refresh()->seal_status)->toBe(SealStatus::Pending);
+});
+
+it('refuses an instance seal path that is relative, has "..", or resolves into public/', function () {
+    foreach (['public/seal/x.p12', base_path('storage/../public/x.p12'), public_path('seal/x.p12')] as $path) {
+        config(['nonox.signing.seal.instance_pkcs12' => $path]);
+
+        expect(SealCertificates::instancePath())->toBe('');
+        $this->artisan('signing:seal-certificate')->assertFailed();
+    }
+
+    expect(file_exists(public_path('x.p12')))->toBeFalse()->and(is_dir(public_path('seal')))->toBeFalse();
+});
+
+it('notices a replaced instance seal file without being told', function () {
+    $path = $this->sealDir.'/instance.p12';
+    $before = SealCertificates::instance()?->info->fingerprintSha256;
+
+    $other = s10Pkcs12(name: 'Ny installationsförsegling');
+    file_put_contents($path, $other['pkcs12']);
+    touch($path, time() + 5);
+    config(['nonox.signing.seal.instance_password' => $other['password']]);
+
+    expect(SealCertificates::instance()?->info->fingerprintSha256)->not->toBe($before)
+        ->and(SealCertificates::instance()?->info->subject)->toContain('Ny installationsförsegling');
+});
+
+it('gives copy recipients of a sealed envelope the sealed file only, which carries the summary', function () {
+    s10SwitchOn();
+    $envelope = s10Send($this->owner, $this->company, [['email' => 'anna@example.test', 'step' => 1, 'verification' => 'NONE']]);
+    s10Sign('anna@example.test');
+    $envelope->refresh();
+
+    $files = CompletionFiles::forEnvelope($envelope, 'COPY');
+    expect($files)->toHaveCount(1)->and($files[0]['path'])->toBe($envelope->sealed_path);
+});
+
+it('does not promise a matching checksum when the copy is the filled-in version', function () {
+    $envelope = s10Send($this->owner, $this->company, [['email' => 'anna@example.test', 'step' => 1, 'verification' => 'NONE']]);
+    $view = fn (bool $withFields): string => view('signing.summary', [
+        'envelope' => $envelope, 'signers' => collect(), 'company' => $this->company, 'brand' => Brand::for($this->company),
+        'title' => 'Avtal', 'withFields' => $withFields,
+    ])->render();
+
+    expect($view(true))->toContain('har en annan kontrollsumma')->not->toContain('PDF:en är oförändrad')
+        ->and($view(false))->toContain('PDF:en är oförändrad');
+});
+
+it('warns, but does not refuse, a certificate whose name is not the company\'s', function () {
+    $other = s10Pkcs12();
+
+    Livewire::test(SigningSealSettings::class, ['company' => $this->company])
+        ->set('certificate', UploadedFile::fake()->createWithContent('annan.p12', $other['pkcs12']))
+        ->set('password', $other['password'])
+        ->call('upload')
+        ->assertHasNoErrors()
+        ->assertSee('Namnet i certifikatet stämmer inte med företagets namn eller organisationsnummer');
+
+    expect(SigningSealCertificate::query()->count())->toBe(1)
+        ->and(SealCertificates::namesCompany('CN=X, O=Snickeri Demo AB, C=SE', 'Snickeri Demo AB', null))->toBeTrue()
+        ->and(SealCertificates::namesCompany('CN=X, organizationIdentifier=NTRSE-5561234567', 'Annat AB', '556123-4567'))->toBeTrue()
+        ->and(SealCertificates::namesCompany('CN=X, O=Annat AB', 'Snickeri Demo AB', '556123-4567'))->toBeFalse()
+        ->and(SealCertificates::namesCompany('CN=X', 'Snickeri Demo AB', null))->toBeFalse();
 });

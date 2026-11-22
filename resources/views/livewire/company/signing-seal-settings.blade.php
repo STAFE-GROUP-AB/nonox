@@ -3,7 +3,7 @@
     $date = fn ($value): string => $value === null ? '–' : $value->setTimezone($zone)->format('Y-m-d');
 @endphp
 
-<x-ui.card :title="__('Försegling av signerade dokument')" :description="__('När alla har signerat kan dokumentet förseglas med en elektronisk stämpel (PAdES). Stämpeln visar att filen inte har ändrats sedan den förseglades och vem som förseglade den. Den är inte undertecknarnas underskrift.')" data-testid="signing-seal-settings">
+<x-ui.card :title="__('Försegling av signerade dokument')" :description="__('När alla har signerat kan dokumentet förseglas med en elektronisk stämpel (PAdES). Stämpeln visar att filen inte har ändrats sedan den förseglades och med vilket certifikat den förseglades. Den är inte undertecknarnas underskrift.')" data-testid="signing-seal-settings">
     <div class="space-y-3 text-sm text-gray-700" data-testid="signing-seal-status">
         @if(! $switchedOn)
             <p role="note" class="rounded-2xl bg-paper px-4 py-3 ring-1 ring-stone-200" data-testid="signing-seal-off">{{ __('Försegling är inte påslagen i den här installationen. Signerade dokument skickas utan försegling, som tidigare. Du kan ändå ladda upp företagets certifikat i förväg.') }}</p>
@@ -15,7 +15,7 @@
 
         <p data-testid="signing-seal-timestamp">
             @if($timestampServers > 0)
-                {{ __('Förseglingen får en tidsstämpel från en tidsstämpelserver (PAdES B-T). Svarar ingen server inom ett dygn förseglas dokumentet utan tidsstämpel (PAdES B-B), och du får ett meddelande.') }}
+                {{ __('Förseglingen får en tidsstämpel från en tidsstämpelserver (PAdES B-T). Svarar ingen server förseglas dokumentet utan tidsstämpel (PAdES B-B) när väntetiden är slut, som förvalt är en timme, och du får ett meddelande.') }}
             @else
                 {{ __('Ingen tidsstämpelserver är inställd i installationen, så förseglingen får ingen tidsstämpel (PAdES B-B).') }}
             @endif
@@ -26,10 +26,13 @@
     @if($active)
         <dl class="mt-2 grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[12rem_1fr]" data-testid="signing-seal-active">
             <dt class="text-gray-600">{{ __('Företagets eget certifikat') }}</dt><dd class="text-gray-900 break-words">{{ $active->subject }}</dd>
-            <dt class="text-gray-600">{{ __('Utfärdare') }}</dt><dd class="text-gray-900 break-words">{{ $active->self_signed ? __('Självsignerat certifikat') : $active->issuer }}</dd>
+            <dt class="text-gray-600">{{ __('Utfärdare') }}</dt><dd class="text-gray-900 break-words">{{ $active->self_signed ? __('Självsignerat certifikat – namnet är inte kontrollerat') : $active->issuer.' ('.__('inte kontrollerat av NONOX').')' }}</dd>
             <dt class="text-gray-600">{{ __('Giltigt') }}</dt><dd class="tabular-nums text-gray-900">{{ $date($active->not_before) }} – {{ $date($active->not_after) }}</dd>
             <dt class="text-gray-600">{{ __('Fingeravtryck (SHA-256)') }}</dt><dd class="font-mono text-xs break-all text-gray-900">{{ $active->fingerprint_sha256 }}</dd>
         </dl>
+        @if($nameMismatch)
+            <p class="mt-2 text-sm font-semibold text-gray-900" role="status" data-testid="signing-seal-name-warning">{{ __('Namnet i certifikatet stämmer inte med företagets namn eller organisationsnummer. Den som öppnar dokumentet ser namnet i certifikatet, och NONOX kontrollerar inte vem som står bakom det. Kontrollera att det är företagets eget certifikat.') }}</p>
+        @endif
         @if($active->isExpired())
             <p class="mt-2 text-sm font-semibold text-red-700" role="status">{{ __('Certifikatet har gått ut. Dokumenten förseglas med installationens certifikat tills du laddar upp ett nytt.') }}</p>
         @elseif($active->expiresSoon())
@@ -39,7 +42,7 @@
     @elseif($instance)
         <dl class="mt-2 grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[12rem_1fr]" data-testid="signing-seal-instance">
             <dt class="text-gray-600">{{ __('Installationens certifikat') }}</dt><dd class="text-gray-900 break-words">{{ $instance->subject }}</dd>
-            <dt class="text-gray-600">{{ __('Utfärdare') }}</dt><dd class="text-gray-900">{{ $instance->selfSigned ? __('Självsignerat certifikat') : $instance->issuer }}</dd>
+            <dt class="text-gray-600">{{ __('Utfärdare') }}</dt><dd class="text-gray-900">{{ $instance->selfSigned ? __('Självsignerat certifikat – namnet är inte kontrollerat') : $instance->issuer.' ('.__('inte kontrollerat av NONOX').')' }}</dd>
             <dt class="text-gray-600">{{ __('Giltigt till') }}</dt><dd class="tabular-nums text-gray-900">{{ $date($instance->notAfter) }}</dd>
         </dl>
         @if($instance->selfSigned)

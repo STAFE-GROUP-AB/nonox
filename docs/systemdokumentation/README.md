@@ -1798,7 +1798,7 @@ balances").
   den signerade versionens byte är de första i den förseglade filen. Nivån är
   PAdES B-T med en tidsstämpel (RFC 3161) från installationens
   tidsstämpelservrar, annars B-B; svarar ingen server försöker kön igen i upp
-  till ett dygn och förseglar sedan med B-B. Den förseglade filen sparas i
+  till en timme (inställbart, högst ett dygn) och förseglar sedan med B-B. Den förseglade filen sparas i
   `signing_document_versions` (`SEALED`) med sin SHA-256 och kontrolleras av
   `signing:verify` som alla andra versioner. På kuvertet sparas nivån,
   filen, dess SHA-256, certifikatets fingeravtryck och tiden, en gång

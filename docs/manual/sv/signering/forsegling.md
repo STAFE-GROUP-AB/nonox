@@ -7,7 +7,7 @@ sokord: [försegling, försegla, stämpel, elektronisk stämpel, sigill, PAdES, 
 
 # Försegling av signerade dokument
 
-När alla har signerat kan NONOX försegla dokumentet innan kopiorna skickas. Försegling betyder att filen får en elektronisk stämpel (PAdES) som visar att filen inte har ändrats sedan den förseglades och vilket certifikat som förseglade den. Det gäller alla signeringar: offerter, avtal, ÄTA och egna dokument.
+När alla har signerat kan NONOX försegla dokumentet innan kopiorna skickas. Försegling betyder att filen får en elektronisk stämpel (PAdES) som visar att filen inte har ändrats sedan den förseglades och vilket certifikat som förseglade filen. Vem som står bakom certifikatet visar stämpeln bara om certifikatet är utfärdat av en utfärdare som PDF-läsaren litar på. Det gäller alla signeringar: offerter, avtal, ÄTA och egna dokument.
 
 Stämpeln är **inte undertecknarnas underskrift**. Varje underskrift är fortfarande en enkel elektronisk underskrift. Stämpeln skyddar filen efter att signeringen är klar.
 
@@ -18,7 +18,7 @@ Stämpeln är **inte undertecknarnas underskrift**. Varje underskrift är fortfa
 
 ## Vad som händer när alla har signerat
 
-1. NONOX lägger till en sida sist i dokumentet med en sammanställning av signeringen: dokumentets kontrollsumma, undertecknarnas namn, när och hur de skrev under, och vem som förseglade filen. Sidan har inga e-postadresser, IP-adresser eller webbläsare.
+1. NONOX lägger till en sida sist i dokumentet med en sammanställning av signeringen: dokumentets kontrollsumma, undertecknarnas namn, när och hur de skrev under, och vilket certifikat som förseglade filen. Sidan har inga e-postadresser, IP-adresser eller webbläsare.
 2. Hela filen förseglas. Dokumentet som signerades finns kvar oförändrat som den första versionen i filen, så dess kontrollsumma stämmer fortfarande.
 3. Kopiorna skickas med den förseglade filen till undertecknarna, kopiemottagarna och företaget. Kopiorna väntar tills förseglingen är klar.
 
@@ -28,9 +28,9 @@ På sidan för signeringen, under **Signering → Alla signeringar**, visar ruta
 
 Har installationen en tidsstämpelserver får förseglingen en tidsstämpel som visar när den gjordes (nivån **PAdES B-T**). Utan tidsstämpelserver blir nivån **PAdES B-B**, och tiden i förseglingen är bara serverns egen klocka.
 
-Svarar ingen tidsstämpelserver försöker NONOX igen i upp till ett dygn. Under tiden står det **Förseglas** på signeringen och kopiorna väntar. Efter ett dygn förseglas dokumentet utan tidsstämpel, kopiorna skickas och den som skickade dokumentet får ett meddelande.
+Svarar ingen tidsstämpelserver försöker NONOX igen i upp till en timme (den som driver installationen kan ändra tiden). Under tiden står det **Förseglas** på signeringen och kopiorna väntar. Därefter förseglas dokumentet utan tidsstämpel, kopiorna skickas och den som skickade dokumentet får ett meddelande.
 
-Går förseglingen inte alls, till exempel för att certifikatet inte går att läsa, skickas kopiorna utan försegling och den som skickade dokumentet får ett meddelande. Signeringen gäller ändå.
+Går förseglingen inte alls, till exempel för att certifikatet inte går att läsa, skickas kopiorna utan försegling och den som skickade dokumentet får ett meddelande. Underskrifterna påverkas inte av att förseglingen saknas.
 
 ## Vilket certifikat som används
 
@@ -39,7 +39,9 @@ Under **Inställningar för företaget → Signering** visar rutan **Försegling
 - **Företagets eget certifikat**, om företaget har laddat upp ett som fortfarande gäller.
 - Annars **Installationens certifikat**, som den som driver installationen har skapat.
 
-Installationens certifikat är oftast självsignerat. Då visar PDF-läsare förseglingen som en underskrift med okänd giltighet. Det betyder inte att filen har ändrats, bara att läsaren inte känner igen den som utfärdade certifikatet.
+Installationens certifikat är oftast självsignerat. Då visar PDF-läsare förseglingen som en underskrift med okänd giltighet. Det betyder inte att filen har ändrats, bara att läsaren inte känner igen den som utfärdade certifikatet. Sidan i dokumentet säger då också att stämpeln gjordes med certifikatet för den installation av NONOX som avsändaren använder, och att den som driver installationen inte intygar dokumentets innehåll.
+
+NONOX kontrollerar inte namnet i ett certifikat. Stämmer namnet inte med företagets namn eller organisationsnummer visar sidan en varning, men certifikatet används ändå.
 
 ## Så här laddar du upp företagets eget certifikat
 

@@ -62,6 +62,11 @@ final class CompletionFiles
         $files = [['name' => $envelope->document_name, 'path' => SigningFields::finalVersion($envelope), 'make' => null]];
 
         if ($kind === SigningDownloadLink::COPY) {
+            // A sealed file has the summary as its last page (ADR-046 S10); a separate one would only repeat it.
+            if ($envelope->sealed_path !== null) {
+                return $files;
+            }
+
             $files[] = ['name' => (string) __('Sammanstallning-av-signeringen.pdf'), 'path' => null, 'make' => fn (): string => SigningPdfs::envelopeSummary($envelope)];
 
             return $files;

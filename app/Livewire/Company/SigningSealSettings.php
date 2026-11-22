@@ -72,7 +72,7 @@ class SigningSealSettings extends Component
             ]);
 
             $bytes = (string) file_get_contents((string) $this->certificate?->getRealPath());
-            $manage->upload($this->user(), $company, $bytes, $this->password);
+            $certificate = $manage->upload($this->user(), $company, $bytes, $this->password);
         } catch (ValidationException $exception) {
             $this->forgetUpload();
 
@@ -80,7 +80,10 @@ class SigningSealSettings extends Component
         }
 
         $this->forgetUpload();
-        $this->toast(__('Förseglingscertifikatet är uppladdat. Det används för dokument som signeras från och med nu.'));
+        // A certificate in another name is not refused (a self-signed one is allowed), only warned about (legal review F2).
+        $this->toast(SealCertificates::namesCompany($certificate->subject, $company->legal_name, $company->org_number)
+            ? __('Förseglingscertifikatet är uppladdat. Det används för dokument som signeras från och med nu.')
+            : __('Förseglingscertifikatet är uppladdat, men namnet i det stämmer inte med företagets namn eller organisationsnummer. Kontrollera att det är företagets eget certifikat.'));
     }
 
     public function retire(int $certificateId, ManageSealCertificates $manage): void
@@ -103,6 +106,7 @@ class SigningSealSettings extends Component
 
         return view('livewire.company.signing-seal-settings', [
             'active' => $active,
+            'nameMismatch' => $active instanceof SigningSealCertificate && ! SealCertificates::namesCompany($active->subject, $company->legal_name, $company->org_number),
             'retired' => $retired,
             'instance' => $instance?->info,
             'switchedOn' => Sealing::switchedOn(),

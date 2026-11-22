@@ -17,10 +17,13 @@ use App\Models\SigningDocumentVersion;
 use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Support\Audit\Audit;
+use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
  * Seals the finished file of a completed envelope (ADR-046 amendment, gap 5,
@@ -36,8 +39,8 @@ use Illuminate\Support\Str;
  * (SigningFields::finalVersion, CompletionFiles).
  *
  * Level: B-T when a timestamp server is configured, B-B otherwise. When no
- * server answers, the queue tries again for up to 24 hours (configurable
- * lower) and the envelope shows "Förseglas"; after that it is sealed at B-B
+ * server answers, the queue tries again for an hour by default (at most 24
+ * hours, set by the installation) and the envelope shows "Förseglas"; after that it is sealed at B-B
  * and the sender is told. Never a higher level than reached is stored.
  *
  * The completion mails of an envelope that is being sealed wait for the
@@ -69,6 +72,8 @@ final class EnvelopeSealer
 
     public const string JOB_FAILED = 'JOB_FAILED';
 
+    public const string CERTIFICATE_UNREADABLE = 'CERTIFICATE_UNREADABLE';
+
     /** Why a seal failed, in plain Swedish, for the envelope page. */
     public static function failureLabel(string $code): string
     {
@@ -77,6 +82,7 @@ final class EnvelopeSealer
             self::SWITCHED_OFF => __('försegling stängdes av i installationen'),
             self::FILE_CHANGED => __('det signerade dokumentet i lagringen stämde inte med sin kontrollsumma'),
             self::JOB_FAILED => __('förseglingen gick inte att slutföra'),
+            self::CERTIFICATE_UNREADABLE => __('företagets förseglingscertifikat gick inte att läsa'),
             default => rtrim(PdfEngineFailure::tryFrom($code)?->message() ?? __('förseglingen gick inte att slutföra'), '.'),
         };
     }
@@ -88,20 +94,38 @@ final class EnvelopeSealer
 
     /**
      * At completion, in the signing transaction: the attributes that mark the envelope for sealing when sealing
-     * applies (switched on, the engine installed, a usable certificate), and the job, queued after the commit.
+     * applies (switched on, the engine installed, a certificate available). Decides from rows and files only and
+     * decrypts nothing, so it cannot break a signature; the job is queued by queue() after the transaction.
      * Must run inside the company.
      *
      * @return array<string, mixed>
      */
     public static function start(SigningEnvelope $envelope): array
     {
-        if (! Sealing::credentialsFor($envelope->company_id) instanceof SealCredentials) {
-            return [];
+        return Sealing::applies($envelope->company_id) ? ['seal_status' => SealStatus::Pending] : [];
+    }
+
+    /**
+     * After the signing transaction (SignAtLink, SignInSession): queues the seal of the signer's envelope when it
+     * is PENDING. Never throws: the signature is saved, and with a sync queue a failing seal must not turn the
+     * signer's success into an error page or skip their copy and the follow-up. A seal that could not be queued
+     * is queued again by signing:seal-check.
+     */
+    public static function queue(int $companyId, ?string $envelopeId): void
+    {
+        if ($envelopeId === null) {
+            return;
         }
 
-        SealSigningEnvelope::dispatch($envelope->company_id, $envelope->id)->afterCommit();
+        try {
+            $pending = CurrentCompany::run($companyId, fn (): bool => SigningEnvelope::query()->whereKey($envelopeId)->where('seal_status', SealStatus::Pending->value)->exists());
 
-        return ['seal_status' => SealStatus::Pending];
+            if ($pending) {
+                SealSigningEnvelope::dispatch($companyId, $envelopeId);
+            }
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     /**
@@ -126,7 +150,12 @@ final class EnvelopeSealer
             return $this->fail($envelope->id, PdfEngineFailure::NotInstalled->value);
         }
 
-        $credentials = SealCertificates::forCompany($envelope->company_id);
+        try {
+            $credentials = SealCertificates::forCompany($envelope->company_id);
+        } catch (DecryptException) {
+            // The stored key cannot be decrypted (a changed APP_KEY): never sealed with another certificate instead.
+            return $this->fail($envelope->id, self::CERTIFICATE_UNREADABLE);
+        }
 
         if (! $credentials instanceof SealCredentials) {
             return $this->fail($envelope->id, self::NO_CERTIFICATE);
