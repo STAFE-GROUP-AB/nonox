@@ -33,11 +33,15 @@ final class FakeSignatureProvider implements SignatureProvider
     /** @var list<array{step: string, provider_id: int}> */
     public static array $calls = [];
 
+    /** Called at the start of the next collect() (a test's parallel request). */
+    public static ?\Closure $beforeCollect = null;
+
     public static function reset(): void
     {
         self::$failNext = null;
         self::$wrongSignatureNext = false;
         self::$calls = [];
+        self::$beforeCollect = null;
     }
 
     public function key(): string
@@ -71,6 +75,12 @@ final class FakeSignatureProvider implements SignatureProvider
     public function collect(ProviderRun $run, array $callback): ProviderStep
     {
         self::$calls[] = ['step' => 'collect', 'provider_id' => $run->config->id];
+
+        if (self::$beforeCollect instanceof \Closure) {
+            $hook = self::$beforeCollect;
+            self::$beforeCollect = null;
+            $hook();
+        }
 
         if (self::$failNext instanceof ProviderFailure) {
             $failure = self::$failNext;

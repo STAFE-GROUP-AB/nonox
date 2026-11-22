@@ -112,8 +112,9 @@ installationen på den själv.
 **Integritetspolicyn, ny mening i avsnittet om när {foretag} är personuppgiftsbiträde:**
 
 > Skriver du under hos en extern tjänst för underskrift som avsändaren använder, loggar du in hos
-> tjänsten och skriver under där enligt tjänstens egna villkor. Ditt certifikat, med de uppgifter
-> tjänsten har lagt i det, läggs in i det signerade dokumentet som alla mottagare får.
+> tjänsten och skriver under där. Hur tjänsten behandlar dina uppgifter står i tjänstens villkor och
+> integritetspolicy. Ditt certifikat, med de uppgifter tjänsten har lagt i det (ofta namn och
+> personnummer), läggs in i det signerade dokumentet som alla undertecknare och kopiemottagare får.
 
 ## D. Underbiträden
 
@@ -121,7 +122,8 @@ Ingen ändring i version 1.9. En tidsstämpeltjänst (lucka 5) får bara en kont
 dokumentet och inga personuppgifter. En signeringstjänst som får undertecknarens identitet
 (lucka 12, till exempel BankID) ska namnges i `docs/juridik/underbitraden.md` innan den slås på.
 Med paket S17 lägger företaget själv in tjänsten och har eget avtal med den; tjänsten är då en
-mottagare som företaget har valt och inte driftbolagets underbiträde. Sluter driftbolaget i stället
+mottagare som företaget har valt och inte driftbolagets underbiträde; om den är företagets biträde
+eller självständigt ansvarig är en öppen fråga (se nedan). Sluter driftbolaget i stället
 avtalet (ägarbeslut 2 och 17 i ADR-046-tillägget: avgifter via NONOX Connect) ska tjänsten namnges
 där innan funktionen slås på i den driftade tjänsten.
 

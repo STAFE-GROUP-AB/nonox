@@ -166,9 +166,17 @@ final class CscProvider implements SignatureProvider
             'numSignatures' => '1',
             'hashes' => rtrim(strtr(base64_encode($digest), '+/', '-_'), '='),
             'hashAlgorithmOID' => self::SHA256_OID,
-            // A fixed text: the document's title is not sent to the provider (data minimisation).
-            'description' => $run->language === 'en' ? 'Signing a document in NONOX' : 'Underskrift av ett dokument i NONOX',
+            // A fixed text with the document code the signer saw in NONOX; never the title or anything personal (data minimisation).
+            'description' => self::description($run),
         ], $verifier));
+    }
+
+    /** The authorisation's description (8.4.2, at most 500 characters): a fixed text and the document code. */
+    public static function description(ProviderRun $run): string
+    {
+        $code = $run->documentCode === '' ? '' : ($run->language === 'en' ? " (document code {$run->documentCode})" : " (dokumentkod {$run->documentCode})");
+
+        return ($run->language === 'en' ? 'Signing a document in NONOX' : 'Underskrift av ett dokument i NONOX').$code;
     }
 
     /** After the service authorization: the signer's first usable credential and its certificate chain. */

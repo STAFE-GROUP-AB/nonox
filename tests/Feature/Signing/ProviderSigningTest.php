@@ -13,6 +13,7 @@ use App\Domain\Signing\Chain\ChainVerifier;
 use App\Domain\Signing\Pdf\FakePdfEngine;
 use App\Domain\Signing\Providers\FakeSignatureProvider;
 use App\Domain\Signing\Providers\ProviderFailure;
+use App\Domain\Signing\Providers\ProviderRun;
 use App\Domain\Signing\SigningEventType;
 use App\Domain\Signing\SigningPdfs;
 use App\Domain\Signing\SigningStatus;
@@ -261,8 +262,11 @@ it('signs at the provider: the signer\'s own signature becomes their revision, e
     SigningConsentFixture::give($sent['request']);
     $this->get("/signera/{$sent['token']}")->assertOk()
         ->assertSee('Fortsätt till Testtjänsten')
-        ->assertSee('Testtjänsten anger att underskriften är en kvalificerad elektronisk underskrift.')
-        ->assertSee('NONOX anger inte själv någon nivå för underskriften.')
+        // The level the company states is never shown to the signer (legal review F1); the document code is (F7).
+        ->assertDontSee('kvalificerad')
+        ->assertSee(ProviderRun::documentCode($sent['request']->document_sha256))
+        ->assertSee('Kontrollera att samma kod visas hos tjänsten')
+        ->assertSee('ofta ditt namn och ditt personnummer')
         ->assertSee(route('signing.provider.start', ['token' => $sent['token']]), false);
 
     $this->get('/signera/leverantor/retur?state=okand&code=x')->assertStatus(410);
@@ -325,11 +329,17 @@ it('signs at the provider: the signer\'s own signature becomes their revision, e
         ->and(json_encode($audits->pluck('payload')))->not->toContain('Anna')
         ->and(json_encode($audits->pluck('payload')))->not->toContain('Testsson');
 
-    // The signing certificate names the provider's claim, never one of NONOX's own.
+    // The signing certificate shows no level (F1–F3), and both the company's and the service's own name (F6).
     $html = view('signing.certificate', ['request' => $request->load(['events', 'providerSignature']), 'company' => $this->company, 'brand' => Brand::for($this->company), 'title' => 'Offert'])->render();
 
-    expect($html)->toContain('Testtjänsten anger att underskriften är en kvalificerad elektronisk underskrift.')
-        ->and($html)->toContain('Test Testsson');
+    expect($html)->toContain('Undertecknarens namnteckning och godkännande i NONOX är en enkel elektronisk underskrift.')
+        ->and($html)->toContain('Den underskriften är en separat underskrift i den signerade PDF:en (PAdES)')
+        ->and($html)->toContain('Tjänstens namn enligt tjänsten')
+        ->and($html)->toContain('Testtjänst för underskrift')
+        ->and($html)->toContain('Test Testsson')
+        ->and(mb_strtolower($html))->not->toContain('kvalificerad')
+        ->and($html)->not->toContain('Nivå enligt tjänsten')
+        ->and($session->provider_service_name)->toBe('Testtjänst för underskrift');
 });
 
 it('refuses a provider signer at the ordinary signing form', function () {
@@ -343,7 +353,36 @@ it('refuses a provider signer at the ordinary signing form', function () {
     expect($sent['request']->refresh()->status)->toBe(SigningStatus::Pending);
 });
 
-it('refuses a callback in another browser, and ends the run', function () {
+it('refuses a callback in another browser without revealing the link or ending the signer\'s run', function () {
+    s17Switch(true);
+    $provider = s17Provider($this);
+    $sent = s17Send($this, "PROVIDER:{$provider->id}");
+    auth()->logout();
+    CurrentCompany::set($this->company);
+    SigningConsentFixture::give($sent['request']);
+    $start = $this->post("/signera/{$sent['token']}/leverantor", s17Form($sent['request']->refresh()))->assertOk();
+    $state = s17State($start->getContent());
+    $browser = session()->all();
+
+    $this->flushSession();
+    $this->get('/signera/leverantor/retur?'.http_build_query(['state' => $state, 'code' => 'kod-1']))
+        ->assertStatus(410)
+        ->assertDontSee($sent['token']);
+
+    $session = SigningProviderSession::query()->sole();
+
+    expect($session->step)->toBe(SigningProviderSession::SERVICE)
+        ->and($session->state_hash)->toBe(hash('sha256', $state))
+        ->and($session->getRawOriginal('secrets'))->not->toBeNull()
+        ->and($sent['request']->refresh()->status)->toBe(SigningStatus::Pending);
+
+    // The signer's own browser can still go on.
+    $this->withSession($browser)->get('/signera/leverantor/retur?'.http_build_query(['state' => $state, 'code' => 'kod-1']))->assertRedirect();
+
+    expect($session->refresh()->step)->toBe(SigningProviderSession::CREDENTIAL);
+});
+
+it('never ends a run that another request moved on while this one failed', function () {
     s17Switch(true);
     $provider = s17Provider($this);
     $sent = s17Send($this, "PROVIDER:{$provider->id}");
@@ -352,16 +391,43 @@ it('refuses a callback in another browser, and ends the run', function () {
     SigningConsentFixture::give($sent['request']);
     $start = $this->post("/signera/{$sent['token']}/leverantor", s17Form($sent['request']->refresh()))->assertOk();
 
-    $this->flushSession();
+    // A parallel callback moves the run to a new state while this request is at the provider, which then fails.
+    FakeSignatureProvider::$beforeCollect = function (): void {
+        DB::table('signing_provider_sessions')->update(['state_hash' => str_repeat('b', 64)]);
+    };
+    FakeSignatureProvider::$failNext = new ProviderFailure(ProviderFailure::UNREACHABLE);
+
     $this->get('/signera/leverantor/retur?'.http_build_query(['state' => s17State($start->getContent()), 'code' => 'kod-1']))
         ->assertRedirect("/signera/{$sent['token']}");
 
     $session = SigningProviderSession::query()->sole();
 
-    expect($session->step)->toBe(SigningProviderSession::FAILED)
-        ->and($session->failure)->toBe(ProviderFailure::WRONG_BROWSER)
-        ->and($session->getRawOriginal('secrets'))->toBeNull()
-        ->and($sent['request']->refresh()->status)->toBe(SigningStatus::Pending);
+    expect($session->step)->toBe(SigningProviderSession::SERVICE)
+        ->and($session->state_hash)->toBe(str_repeat('b', 64))
+        ->and($session->failure)->toBeNull();
+});
+
+it('deletes the prepared file of a run that a new start supersedes', function () {
+    s17Switch(true);
+    $provider = s17Provider($this);
+    $sent = s17Send($this, "PROVIDER:{$provider->id}");
+    auth()->logout();
+    CurrentCompany::set($this->company);
+    SigningConsentFixture::give($sent['request']);
+    $start = $this->post("/signera/{$sent['token']}/leverantor", s17Form($sent['request']->refresh()))->assertOk();
+    $this->get('/signera/leverantor/retur?'.http_build_query(['state' => s17State($start->getContent()), 'code' => 'kod-1']))->assertRedirect();
+    $first = SigningProviderSession::query()->sole();
+    $prepared = (string) $first->prepared_path;
+
+    expect(Storage::disk('local')->exists($prepared))->toBeTrue();
+
+    $this->post("/signera/{$sent['token']}/leverantor", s17Form($sent['request']->refresh()))->assertOk();
+    $first->refresh();
+
+    expect($first->step)->toBe(SigningProviderSession::FAILED)
+        ->and($first->failure)->toBe(ProviderFailure::SUPERSEDED)
+        ->and($first->prepared_path)->toBeNull()
+        ->and(Storage::disk('local')->exists($prepared))->toBeFalse();
 });
 
 it('ends the run when the signer cancels at the provider or the provider signs something else', function (string $case) {

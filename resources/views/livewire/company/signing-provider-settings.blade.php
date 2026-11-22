@@ -12,7 +12,8 @@
         @else
             <p data-testid="signing-provider-on">{{ __('Underskrift hos extern tjänst är påslagen. Välj tjänsten som kontroll för en undertecknare när du skickar ett dokument.') }}</p>
         @endif
-        <p>{{ __('NONOX anger inte själv någon nivå för underskriften. Den nivå du väljer nedan visas som tjänstens uppgift, så välj den som står i ert avtal med tjänsten.') }}</p>
+        <p>{{ __('NONOX anger inte själv någon nivå för underskriften och kontrollerar den inte. Nivån du väljer sparas som företagets uppgift och visas inte för undertecknare eller mottagare.') }}</p>
+        <p>{{ __('Certifikatet kan innehålla undertecknarens personnummer och följer med den signerade PDF:en till alla mottagare. Företaget ansvarar för att det är motiverat (3 kap. 10 § dataskyddslagen).') }}</p>
         <p>{{ __('Registrera den här returadressen hos tjänsten:') }} <span class="font-mono text-xs break-all text-gray-900" data-testid="signing-provider-return-url">{{ $returnUrl }}</span></p>
     </div>
 

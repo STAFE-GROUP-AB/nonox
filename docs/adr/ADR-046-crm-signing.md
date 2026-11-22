@@ -3339,8 +3339,9 @@ Before sealing, long-term validation (S10–S11) or the verify page (S12) is swi
   in `ProviderStep::completed()`. The registry is config-driven
   (`nonox.signing.providers.drivers`: `csc`, `fake`); the fake driver is
   offered only where `nonox.signing.providers.allow_fake` is true (tests).
-  `SignatureLevel` (SES, AES, QES) is shown only as "<tjänst> anger att
-  underskriften är en …" (principle 4).
+  `SignatureLevel` (SES, AES, QES) is stored as the company's own statement
+  and shown only in the company's settings, never to signers or recipients
+  (legal review F1/F2; principle 4).
 - **Per-company configuration**: `signing_providers` (migration
   `2027_03_28_100000_create_signing_providers.php`): driver, name shown to
   signers, base URL, the OAuth URL and the service's own name and region from
@@ -3455,10 +3456,26 @@ Before sealing, long-term validation (S10–S11) or the verify page (S12) is swi
   `signing.provider_retired`, `signing.provider_started`,
   `signing.provider_signed`, `signing.provider_failed`.
 - **Certificate and summary.** The signing certificate of a provider signer
-  lists the service, "Nivå enligt tjänsten", the certificate's name, issuer,
-  serial and SHA-256, and a paragraph that the signer also signed at the
-  service and that NONOX itself states no level. The envelope summary names
-  the method.
+  lists the company's name for the service, the name the service itself
+  reported ("Tjänstens namn enligt tjänsten", `provider_service_name` on the
+  run, migration `2027_03_28_100100`, fixed by a trigger), the certificate's
+  name, issuer, serial and SHA-256. Its box starts "Undertecknarens
+  namnteckning och godkännande i NONOX är en enkel elektronisk underskrift"
+  and adds that the signature at the service is a separate signature in the
+  PDF, for which NONOX states no level. No level is shown (F1–F3). The
+  envelope summary names the method.
+- **Document code (F7).** The signing page shows the first eight hex digits
+  of the shown version's SHA-256 ("1A2B 3C4D", `ProviderRun::documentCode`)
+  before "Fortsätt till …", with a line to check that the service shows the
+  same code; the CSC driver sends it in the credential authorisation's
+  `description` (no personal data).
+- **Review fixes (2026-11-22).** A callback in another browser answers the
+  closed-link page (no link to the signer) and leaves the run untouched, so a
+  stranger holding the state can neither learn the link nor end the run
+  (R1). A failure ends a run only if its state is still the one the request
+  answered, so a duplicate callback never ends a run another request moved
+  on (R2). A superseded run's prepared file is deleted after the commit
+  (R3).
 - **Not built:** provider costs through NONOX Connect (decision 2; no billing
   here); the operator-held agreement model (the company enters its own
   client credentials); choosing among several credentials (the first usable
@@ -3478,7 +3495,10 @@ Before sealing, long-term validation (S10–S11) or the verify page (S12) is swi
   showing the level the company states ("<tjänst> anger att underskriften är
   en kvalificerad elektronisk underskrift") is acceptable, and whether NONOX
   should verify the provider against the EU trust list (art. 22) before
-  showing it; (3) the provider's role: a trust service provider (art. 3(19),
+  showing it; until answered the level is shown only in the company's
+  settings. A future option: read the certificate's QcStatements
+  (qcCompliance, QcSSCD; ETSI EN 319 412-5) only to warn the sender of a
+  mismatch with the stated level, never to confirm a level; (3) the provider's role: a trust service provider (art. 3(19),
   qualified art. 3(20)) with its own obligations (art. 19, 24), and under
   GDPR the company's processor or an independent controller; and if the
   operator company contracts the provider and charges through NONOX Connect,
@@ -3487,7 +3507,9 @@ Before sealing, long-term validation (S10–S11) or the verify page (S12) is swi
   NONOX, as the application that creates the signature with the remote
   device, needs anything under art. 29 (requirements for qualified signature
   creation devices) or the CEN EN 419 241 / ETSI TS 119 432 profiles the
-  provider relies on; (5) the information to the signer (art. 13–14) when
+  provider relies on, and whether the document code shown in NONOX and sent
+  in the authorisation's description (what you see is what you sign) is
+  enough, given that NONOX cannot see what the service displays; (5) the information to the signer (art. 13–14) when
   the provider's certificate, which may carry a personal identity number,
   goes into the PDF every recipient gets. Verify article numbers against the
   consolidated text of (EU) No 910/2014 as amended by (EU) 2024/1183; never

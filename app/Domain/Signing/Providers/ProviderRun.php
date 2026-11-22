@@ -25,7 +25,20 @@ final class ProviderRun
         public string $state,
         public readonly string $language,
         #[SensitiveParameter] public array $secrets = [],
+        public readonly string $documentCode = '',
     ) {}
+
+    /**
+     * A short code for the document the signer was shown (ADR-046 S17, legal review F7): the first eight hex digits
+     * of its SHA-256, upper case, in two groups ("1A2B 3C4D"). Shown on the signing page and sent to the provider,
+     * so the signer can see that the service signs the document they read. No personal data.
+     */
+    public static function documentCode(string $sha256): string
+    {
+        $hex = strtoupper(substr($sha256, 0, 8));
+
+        return substr($hex, 0, 4).' '.substr($hex, 4, 4);
+    }
 
     /** @return array<string, mixed> */
     public function __debugInfo(): array

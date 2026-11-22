@@ -31,7 +31,7 @@ function s17CscConfig(string $base = S17_BASE): SigningProvider
 
 function s17CscRun(?SigningProvider $config = null, array $secrets = []): ProviderRun
 {
-    return new ProviderRun($config ?? s17CscConfig(), 'https://nonox.example/signera/leverantor/retur', 'tillstand-1', 'sv', $secrets);
+    return new ProviderRun($config ?? s17CscConfig(), 'https://nonox.example/signera/leverantor/retur', 'tillstand-1', 'sv', $secrets, ProviderRun::documentCode(str_repeat('ab12', 16)));
 }
 
 /** @return array{0: string, 1: string} a self-signed certificate (base64 DER) and its DER */
@@ -174,7 +174,7 @@ it('runs the CSC v2 flow: service authorisation, credentials/list, credential au
         'hashAlgorithmOID' => '2.16.840.1.101.3.4.2.1',
         'state' => 'tillstand-2',
         'code_challenge_method' => 'S256',
-    ])->and($query['description'])->not->toContain('Offert');
+    ])->and($query['description'])->toBe('Underskrift av ett dokument i NONOX (dokumentkod AB12 AB12)');
 
     $signature = $driver->collect($run, ['code' => 'kod-2', 'state' => 'tillstand-2']);
 

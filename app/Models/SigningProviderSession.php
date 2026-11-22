@@ -41,6 +41,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?CarbonImmutable $certificate_not_after
  * @property SignatureLevel $claimed_level
  * @property string $provider_name
+ * @property ?string $provider_service_name the name the service itself reported (CSC info), as configured when the run began
  * @property ?int $signed_version_id
  * @property ?string $failure
  * @property CarbonImmutable $expires_at
@@ -72,6 +73,7 @@ class SigningProviderSession extends Model
         'shown_sha256',
         'claimed_level',
         'provider_name',
+        'provider_service_name',
         'expires_at',
     ];
 

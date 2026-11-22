@@ -108,7 +108,7 @@ final class SignWithProvider
             }, SignAtLink::ATTEMPTS);
 
             $state = self::state();
-            $run = new ProviderRun($config, self::redirectUri(), $state, $request->language === 'en' ? 'en' : 'sv');
+            $run = new ProviderRun($config, self::redirectUri(), $state, $request->language === 'en' ? 'en' : 'sv', documentCode: ProviderRun::documentCode($shown->sha256));
 
             try {
                 $step = ProviderRegistry::for($config)->start($run);
@@ -126,9 +126,11 @@ final class SignWithProvider
                 $request->document(lock: true);
                 $locked = $this->links->lockUsable($request);
 
-                // One run per signer: an earlier one that is still running ends here.
+                // One run per signer: an earlier one that is still running ends here, and its prepared file goes after the commit.
                 foreach (SigningProviderSession::query()->where('signing_request_id', $locked->id)->whereIn('step', [SigningProviderSession::SERVICE, SigningProviderSession::CREDENTIAL])->lockForUpdate()->get() as $earlier) {
                     $this->end($earlier, ProviderFailure::SUPERSEDED);
+                    $ended = $earlier->id;
+                    DB::afterCommit(fn () => $this->removePrepared($ended));
                 }
 
                 $session = SigningProviderSession::create([
@@ -140,6 +142,7 @@ final class SignWithProvider
                     'shown_sha256' => $shown->sha256,
                     'claimed_level' => $config->claimed_level,
                     'provider_name' => $config->name,
+                    'provider_service_name' => $config->service_name,
                     'expires_at' => CarbonImmutable::now()->addMinutes(self::minutes()),
                 ]);
 
@@ -199,13 +202,19 @@ final class SignWithProvider
 
                 $callback = array_filter(array_map(fn (mixed $value): ?string => is_string($value) ? $value : null, $query), is_string(...));
                 $next = self::state();
-                $run = new ProviderRun($config, self::redirectUri(), $next, $signer->language === 'en' ? 'en' : 'sv', (array) ($session->secrets['driver'] ?? []));
+                $run = new ProviderRun($config, self::redirectUri(), $next, $signer->language === 'en' ? 'en' : 'sv', (array) ($session->secrets['driver'] ?? []), ProviderRun::documentCode($session->shown_sha256));
                 $step = ProviderRegistry::for($config)->collect($run, $callback);
 
                 return $session->step === SigningProviderSession::SERVICE
                     ? $this->authorize($session, $signer, $config, $run, $step, $next, $browser, $stateHash, $token)
                     : $this->finish($session, $signer, $step, $token, $ip, $userAgent, $browser, $stateHash);
             } catch (ProviderFailure $failure) {
+                // Whoever holds the state in another browser learns nothing (no link to the signing page) and
+                // cannot end the signer's run: it is left for the signer's own browser, or to expire.
+                if ($failure->reason === ProviderFailure::WRONG_BROWSER) {
+                    return ['redirect' => '', 'token' => null, 'signed' => false, 'error' => $failure->message()];
+                }
+
                 $this->fail($session, $failure->reason, $browser, $stateHash);
 
                 return ['redirect' => '', 'token' => $token === '' ? null : $token, 'signed' => false, 'error' => $failure->message()];
@@ -416,10 +425,12 @@ final class SignWithProvider
     {
         $this->forget($browser, $stateHash);
 
-        $ended = DB::transaction(function () use ($session, $reason): bool {
+        $ended = DB::transaction(function () use ($session, $reason, $stateHash): bool {
             $locked = SigningProviderSession::query()->whereKey($session->id)->lockForUpdate()->first();
 
-            if (! $locked instanceof SigningProviderSession || ! $locked->isRunning()) {
+            // A duplicate or parallel callback with the same state never ends a run that another request has
+            // moved on (a new state) or is finishing: only the step this request answered is ended.
+            if (! $locked instanceof SigningProviderSession || ! $locked->isRunning() || $locked->state_hash === null || ! hash_equals($locked->state_hash, $stateHash)) {
                 return false;
             }
 

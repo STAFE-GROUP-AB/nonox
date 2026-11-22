@@ -12,6 +12,7 @@ use App\Domain\Signing\Fields\PageImages;
 use App\Domain\Signing\Fields\SignerFields;
 use App\Domain\Signing\Fields\SigningFields;
 use App\Domain\Signing\Providers\ProviderRegistry;
+use App\Domain\Signing\Providers\ProviderRun;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SigningConsent;
 use App\Domain\Signing\SigningEnvelopes;
@@ -523,7 +524,7 @@ final class SigningPageController
         });
     }
 
-    /** @return ?array{name: string, claim: string, usable: bool} */
+    /** @return ?array{name: string, code: string, usable: bool} the level the company states is never shown here (legal review F1) */
     private function providerFor(SigningRequest $request): ?array
     {
         if ($request->verification !== SignerCheck::Provider || $request->signing_provider_id === null) {
@@ -538,7 +539,8 @@ final class SigningPageController
 
         return [
             'name' => $provider->name,
-            'claim' => $provider->claimed_level->claim($provider->name),
+            // The code of the version the signer is shown and signs (legal review F7), also sent to the provider.
+            'code' => ProviderRun::documentCode((string) (SigningFields::latestVersion((string) $request->envelope_id)->sha256 ?? $request->document_sha256)),
             'usable' => $provider->retired_at === null && ProviderRegistry::usable() && in_array($provider->driver, ProviderRegistry::keys(), true),
         ];
     }
