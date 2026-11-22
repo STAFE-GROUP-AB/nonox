@@ -137,6 +137,21 @@ describe('saving', function () {
         Livewire::test(PriceLists::class)->set('kind', 'CAMPAIGN')->call('create')->set('form.kind', 'CHANNEL')->assertSet('form.channel', 'POS');
     });
 
+    it('does not carry a fallback channel into a campaign when a standard list is edited into one', function () {
+        $standard = ($this->save)(['code' => 'STD', 'kind' => 'STANDARD', 'valid_from' => null, 'valid_to' => null]);
+        $campaign = ($this->save)(['code' => 'KPOS', 'channel' => 'POS']);
+
+        Livewire::test(PriceLists::class)->call('edit', $standard->id)
+            ->set('form.kind', 'CAMPAIGN')->assertSet('form.channel', '')
+            ->set('form.valid_from', '2026-06-01')->set('form.valid_to', '2026-06-30')
+            ->call('save')->assertHasNoErrors();
+
+        expect($standard->fresh()->channel)->toBeNull();
+
+        Livewire::test(PriceLists::class)->call('edit', $campaign->id)
+            ->set('form.kind', 'CAMPAIGN')->assertSet('form.channel', 'POS');
+    });
+
     it('refuses an unknown channel and still ignores a channel on a standard list', function () {
         expect(fn () => ($this->save)(['channel' => 'MOON']))->toThrow(ValidationException::class);
         expect(($this->save)(['code' => 'S', 'kind' => 'STANDARD', 'valid_from' => null, 'valid_to' => null, 'channel' => 'POS'])->channel)->toBeNull();

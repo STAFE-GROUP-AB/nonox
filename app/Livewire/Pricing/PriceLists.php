@@ -72,7 +72,8 @@ class PriceLists extends Component
         $kind = (string) ($this->form['kind'] ?? '');
 
         if ($kind === PriceListKind::Campaign->value) {
-            $this->form['channel'] = $this->editingId !== null && in_array($channel, ['POS', 'SALES'], true) ? $channel : '';
+            $wasCampaign = $this->editingId !== null && PriceList::query()->whereKey($this->editingId)->where('kind', PriceListKind::Campaign->value)->exists();
+            $this->form['channel'] = $wasCampaign && in_array($channel, ['POS', 'SALES'], true) ? $channel : '';
         } elseif ($kind === PriceListKind::Channel->value) {
             $this->form['channel'] = in_array($channel, ['POS', 'PORTAL'], true) ? $channel : PriceChannel::Pos->value;
         }
