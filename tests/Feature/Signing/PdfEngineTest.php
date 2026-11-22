@@ -406,7 +406,7 @@ it('serialises the health without paths or secrets', function () {
 
     expect($round->usable())->toBeTrue()
         ->and($round->canStampCjk())->toBeTrue()
-        ->and($round->selfTest)->toBe(['inspect' => true, 'render' => true, 'stamp' => true, 'append' => true, 'seal' => true]);
+        ->and($round->selfTest)->toBe(['inspect' => true, 'render' => true, 'stamp' => true, 'append' => true, 'seal' => true, 'validation_data' => true]);
 });
 
 it('checks the incremental-update promise itself and discards an output that rewrote the original', function () {
