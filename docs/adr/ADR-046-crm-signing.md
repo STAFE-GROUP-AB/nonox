@@ -3014,7 +3014,10 @@ Follow-up after the S10 re-check (accepted, low): on `QUEUE_CONNECTION=sync`, a 
   revocation hard-fail (`PdfEngineFailure::ValidationDataUnavailable`,
   transient: nothing is written when data is missing), and fetches only http(s)
   to public addresses (filtering resolver, a numeric host checked before
-  connecting, no redirects, `Content-Length` over 20 MB refused,
+  connecting, no redirects, an answer over 20 MB refused (by its
+  `Content-Length`, and in any case while it is read: a `ClientResponse`
+  subclass reads in chunks and stops at the cap, since aiohttp 3.14.5's own
+  `read()` takes the whole body before any trace fires),
   `FetchLimits`): revocation addresses come from certificates a company may
   upload, so this is the SSRF guard. Verified with a listening loopback
   responder that the guard stops the request (no hit) and that without it the
@@ -3100,16 +3103,24 @@ Follow-up after the S10 re-check (accepted, low): on `QUEUE_CONNECTION=sync`, a 
   moved; a changed file, pruned signers, a missing envelope; the trigger and
   the check; the unique job and `failed()`; the schedule; the envelope page),
   and three real-engine tests in `PdfEngineRealTest`.
-- `TODO(legal-verify)`: (1) The trust-service item of gap 5 covers S11 too:
-  re-timestamping customers' documents and preserving their seals may be
-  "preservation services for electronic seals" and the creation of time
-  stamps under eIDAS art. 3.16 (as amended by (EU) 2024/1183); still gates the
-  hosted service. (2) Whether a document timestamp from a non-qualified TSA
+- `TODO(legal-verify)`: (1) S11 does not create time stamps (the TSA does).
+  Whether preserving companies' sealed documents with validation data and
+  renewed document timestamps is a trust service under art. 3(16) as amended
+  by (EU) 2024/1183 — "preservation of electronic seals" or "electronic
+  archiving" (art. 3(48)) — with duties under art. 19 and 19a when provided to
+  others; qualified preservation (art. 34, 40) and qualified archiving
+  (art. 45j–45k) are not claimed. Verify letters and article numbers against
+  the consolidated text. Still gates the hosted service. (2) Whether a document timestamp from a non-qualified TSA
   adds evidential value worth the renewals, or only a qualified one (art. 41(2))
   does; and the terms of use of any public TSA for renewals at volume
   (gap 5, option 2). (3) Whether renewing timestamps during a legal hold that
-  outlasts the retention period is lawful processing (it only adds hashes and
-  public certificate data, no personal data, but the file is kept). (4) Which
+  outlasts the retention period is lawful processing: it adds hashes and
+  public certificate data, and each renewal stores a new full copy of the file
+  (signers' names and titles on the summary page); the copies are deleted with
+  the envelope. Analysis for the jurist: BFL 7 kap. 2 § is a minimum, not a
+  maximum; GDPR art. 5.1(e), 17(3)(e) and 18(2) allow keeping the file, and
+  renewing its timestamps, during a hold with a documented reason, and the hold
+  is lifted when the claim ends. (4) Which
   algorithm end dates an installation should set (ETSI TS 119 312 / SOG-IS
   guidance are technical, not law; none is set by default and none invented).
   (5) The manual's wording "så att förseglingen kan kontrolleras även efter
@@ -3117,3 +3128,36 @@ Follow-up after the S10 re-check (accepted, low): on `QUEUE_CONNECTION=sync`, a 
   certifikaten har gått ut": the jurist should confirm they promise no more
   than B-LT/B-LTA technically give (a validator still needs a trust decision
   about the seal certificate).
+
+#### S11 review fixes (2026-11-22)
+
+- **Nightly selection in SQL.** Every condition of `validationDataDue` and
+  `renewalDue` is in the query before the limit (`LongTermValidation::due`):
+  the retry rhythm (validation data nightly for seven days after sealing, then
+  weekly), a 20-hour backoff for renewals, renewal due within
+  `renew_months`, "a timestamp that outlives retention is not renewed unless
+  held" (`(timestamp_valid_until AT TIME ZONE 'Europe/Stockholm')::date <=
+  retention_until`), ordered by `ltv_attempted_at NULLS FIRST`. Envelopes that
+  keep failing are not selected again within the rhythm and never crowd out a
+  newer due one.
+- **Revoked certificates.** Verified with a throwaway CA and a CRL served on
+  the loopback address (`tests/Support/pdf-engine/revocation_check.py`): with
+  hard-fail collection a revoked certificate raised `RevokedError`, which was
+  answered as `validation_data_unavailable`. It is now `certificate_revoked`
+  (`PdfEngineFailure::CertificateRevoked`, "Ett certifikat i filen är spärrat
+  av sin utfärdare, så valideringsdata läggs inte till.") and is not retried.
+- **Size cap while reading.** See the engine bullet above; exercised with a
+  chunked 200 MB answer without `Content-Length`, which stops at 20 MB.
+- **Copies.** `CompletionFiles::forSigner` gives a one-signer envelope's signer
+  and the company `SigningFields::finalVersion` (the newest S11 version).
+  `SignedDocumentMail` and `SigningEnvelopeMail` check the size again when they
+  are sent, on the files they resolve then, and send a download link
+  (`CompletionLinks`) instead of attachments when the files are now over the
+  mail limit.
+- **Leftover files.** An S11 file is named by envelope, input version and step
+  (`crm-signing/{company}/ltv/{envelope}-v{version}-{step}-tidsstampel.pdf`),
+  so a retry overwrites what an interrupted attempt left, and a path a version
+  row holds is never overwritten. Any exception in `finish()` deletes the file.
+  `signing:prune-engine-work` removes such files older than a day that no
+  version row holds, and `EnvelopeDeletion` deletes an envelope's leftovers by
+  their name.

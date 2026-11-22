@@ -44,6 +44,9 @@ enum PdfEngineFailure: string
     /** Validation data (certificates, OCSP answers, CRLs) for long-term validation could not be collected (ADR-046 S11); may come later. */
     case ValidationDataUnavailable = 'validation_data_unavailable';
 
+    /** A certificate in the file is revoked by its issuer, so no validation data is written for it (ADR-046 S11). */
+    case CertificateRevoked = 'certificate_revoked';
+
     /** A seal level this engine does not make yet. */
     case UnsupportedLevel = 'unsupported_level';
 
@@ -81,6 +84,7 @@ enum PdfEngineFailure: string
             self::BadCredentials => __('Förseglingscertifikatet eller dess lösenord gick inte att läsa.'),
             self::TimestampUnavailable => __('Ingen tidsstämpelserver svarade.'),
             self::ValidationDataUnavailable => __('Valideringsdata för certifikaten gick inte att hämta.'),
+            self::CertificateRevoked => __('Ett certifikat i filen är spärrat av sin utfärdare, så valideringsdata läggs inte till.'),
             self::UnsupportedLevel => __('Den förseglingsnivån stöds inte ännu.'),
             self::NotIncremental => __('PDF-motorn ändrade originalet i stället för att lägga till en ny version, och resultatet kastades.'),
             self::Memory => __('PDF-motorn fick slut på minne.'),

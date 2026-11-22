@@ -65,7 +65,7 @@ exit is a crash. stderr is not part of the protocol and is never logged.
 | `append_pages` | Appends another PDF's pages (the certificate) as an incremental update. |
 | `seal` | PAdES signature (`/ETSI.CAdES.detached`) at B-B, or B-T with a timestamp from the first configured server that answers. B-LT and B-LTA are the next two operations (S11). |
 | `timestamp` | A document timestamp (RFC 3161) as an incremental update. |
-| `add_validation_data` | Since S11 (protocol 1, additive). Long-term validation, B-LT: a DSS with a VRI entry per signature, holding the certificates, OCSP answers and CRLs for every signature and timestamp in the file, as one incremental update. Optional `fetch_timeout` (1–60 s, default 10). Answers `timestamps`: every timestamp in the written file, oldest first, as `{kind: "signature"\|"document", at, certificate_not_after, md_algorithm}`. Refuses a file without a signature (`invalid_request`); answers `validation_data_unavailable` and writes nothing when the data cannot be collected. |
+| `add_validation_data` | Since S11 (protocol 1, additive). Long-term validation, B-LT: a DSS with a VRI entry per signature, holding the certificates, OCSP answers and CRLs for every signature and timestamp in the file, as one incremental update. Optional `fetch_timeout` (1–60 s, default 10). Answers `timestamps`: every timestamp in the written file, oldest first, as `{kind: "signature"\|"document", at, certificate_not_after, md_algorithm}`. Refuses a file without a signature (`invalid_request`); answers `validation_data_unavailable`, or `certificate_revoked` for a certificate its issuer has revoked, and writes nothing when the data cannot be collected. |
 | `archive_timestamp` | Since S11. B-LTA: the validation data of everything in the file (the newest timestamp included), then a document timestamp from the first configured server that answers, as incremental updates. Takes `timestamp_urls`, `timestamp_timeout`, `fetch_timeout` and `md_algorithm` (`sha256`, `sha384` or `sha512`); answers like `add_validation_data`, plus `timestamp_url`. `validation_data_unavailable` or `timestamp_unavailable` when a step cannot be done. |
 | `validate` | Integrity, cryptographic validity and coverage of every signature and document timestamp, with no trust roots and no network. |
 
@@ -84,7 +84,7 @@ addresses come from certificates a company may upload, so only http(s) to a
 public address is fetched: the resolver drops loopback, private, link-local and
 other non-global addresses (Python's `ipaddress.is_global`), an address written
 as a number is checked before connecting, redirects are never followed, an
-answer that announces more than 20 MB is refused, and pyhanko-certvalidator's
+answer larger than 20 MB is refused (when announced, and in any case while it is read), and pyhanko-certvalidator's
 `FetchLimits` cap the requests (40 in all, 10 for issuer certificates, 2 URLs
 per object). Redirects from a timestamp server are never followed either, and
 a timestamp answer is capped at 1 MB.
@@ -200,9 +200,16 @@ before use, and exercised by `PdfEngineRealTest`:
   `ValidationContext(extra_trust_roots=, other_certs=, allow_fetching=True, revocation_mode="hard-fail", fetcher_backend=)`;
   `pyhanko_certvalidator.fetchers.aiohttp_fetchers.AIOHttpFetcherBackend(session=, per_request_timeout=, limits=FetchLimits(...))`
   with a `LazySession` subclass whose aiohttp session has a filtering `ThreadedResolver` and a
-  `TraceConfig` (`on_request_start`, `on_request_redirect`, `on_request_end`). aiohttp reports
-  `on_response_chunk_received` only after the whole body is read (`ClientResponse.read` in aiohttp
-  3.14.5), so the size cap relies on `Content-Length` and, beyond it, on the helper's memory limit.
+  `TraceConfig` (`on_request_start`, `on_request_redirect`, `on_request_end`), and
+  `ClientSession(response_class=)` with a `ClientResponse` subclass whose `read()` reads
+  `content.iter_chunked()` and stops at 20 MB: aiohttp 3.14.5's own `ClientResponse.read` takes the
+  whole body before `on_response_chunk_received` fires, so a trace cannot cap it. Exercised by
+  `PdfEngineRealTest` with a chunked answer without `Content-Length`
+  (`tests/Support/pdf-engine/fetch_cap_check.py`).
+- `pyhanko_certvalidator.errors.RevokedError` from hard-fail collection is answered as
+  `certificate_revoked` (exercised with a CRL from a throwaway CA,
+  `tests/Support/pdf-engine/revocation_check.py`); any other failure is
+  `validation_data_unavailable`.
   `PdfTimeStamper.timestamp_pdf(writer, md_algorithm, output=)` is called without a validation
   context; the new timestamp's own validation data is added at the next renewal, the order
   pyHanko's `update_archival_timestamp_chain` uses.

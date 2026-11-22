@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Signing\Seal;
 
 use App\Domain\Signing\Pdf\PdfEngine;
+use App\Domain\Signing\Pdf\PdfEngineFailure;
 use App\Domain\Signing\Pdf\SealLevel;
 use App\Domain\Signing\Pdf\SidecarPdfEngine;
 use App\Domain\Signing\Pdf\TimestampFact;
@@ -13,6 +14,7 @@ use App\Jobs\TimestampSigningEnvelope;
 use App\Models\SigningEnvelope;
 use App\Support\Tenancy\CompanyScope;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Throwable;
 
@@ -54,6 +56,9 @@ final class LongTermValidation
 
     /** Days after sealing during which validation data that was not available is tried every night; weekly after. */
     public const int DAILY_RETRY_DAYS = 7;
+
+    /** Hours before an attempt that did not succeed is tried again (validation data in the first week, renewals). */
+    public const int RETRY_HOURS = 20;
 
     /** Envelopes queued per night and kind; the rest come the next night. */
     public const int BATCH = 500;
@@ -124,6 +129,11 @@ final class LongTermValidation
             return false;
         }
 
+        // A renewal that did not succeed is tried again the next night, not at once.
+        if ($envelope->ltv_attempted_at !== null && $envelope->ltv_attempted_at->greaterThan($now->subHours(self::RETRY_HOURS))) {
+            return false;
+        }
+
         // A timestamp that is reliable past the last day the file is kept needs no successor (never a reason to keep it longer).
         return $envelope->retention_hold
             || $envelope->retention_until === null
@@ -145,41 +155,58 @@ final class LongTermValidation
 
         $recent = $envelope->sealed_at !== null && $envelope->sealed_at->greaterThan($now->subDays(self::DAILY_RETRY_DAYS));
 
-        return $envelope->ltv_attempted_at->lessThanOrEqualTo($recent ? $now->subHours(20) : $now->subDays(7));
+        return $envelope->ltv_attempted_at->lessThanOrEqualTo($recent ? $now->subHours(self::RETRY_HOURS) : $now->subDays(7));
     }
 
     /**
-     * The envelopes of every company that are due tonight, ids only. Across companies on purpose (ADR-046 S11):
-     * each job runs inside its own company and checks again under a lock.
+     * The envelopes of every company that are due tonight, ids only, at most BATCH of each kind. Across companies on
+     * purpose (ADR-046 S11): each job runs inside its own company and checks again under a lock. Every condition of
+     * validationDataDue() and renewalDue() is in the query, so envelopes that keep failing (tried within the retry
+     * rhythm) are not selected and never crowd out others; the least recently tried come first.
      *
      * @return Collection<int, SigningEnvelope>
      */
-    public static function due(?CarbonImmutable $now = null): Collection
+    public static function due(?CarbonImmutable $now = null, int $batch = self::BATCH): Collection
     {
         $now ??= CarbonImmutable::now();
         $today = $now->setTimezone(SigningRetention::ZONE)->toDateString();
         $columns = ['id', 'company_id', 'seal_status', 'seal_level', 'sealed_at', 'ltv_level', 'ltv_attempted_at', 'timestamp_valid_until', 'retention_until', 'retention_hold'];
-        $withinRetention = fn ($query) => $query->where('retention_hold', true)->orWhere('retention_until', '>=', $today);
+        $withinRetention = fn (Builder $query) => $query
+            ->where(fn (Builder $retention) => $retention->where('retention_hold', true)->orWhere('retention_until', '>=', $today))
+            // A revoked certificate stays revoked: not tried again every night.
+            ->where(fn (Builder $failure) => $failure->whereNull('ltv_failure')->orWhere('ltv_failure', '<>', PdfEngineFailure::CertificateRevoked->value));
+        $recentlySealed = $now->subDays(self::DAILY_RETRY_DAYS);
+        $retryAfter = $now->subHours(self::RETRY_HOURS);
+        $weeklyAfter = $now->subDays(7);
 
-        return CompanyScope::bypass(function () use ($now, $columns, $withinRetention): Collection {
+        return CompanyScope::bypass(function () use ($now, $batch, $columns, $withinRetention, $recentlySealed, $retryAfter, $weeklyAfter): Collection {
             $validationData = SigningEnvelope::query()
                 ->where('seal_status', SealStatus::Sealed->value)
                 ->where('seal_level', SealLevel::B_T->value)
                 ->whereNull('ltv_level')
                 ->where($withinRetention)
+                ->where(fn (Builder $query) => $query
+                    ->whereNull('ltv_attempted_at')
+                    ->orWhere(fn (Builder $recent) => $recent->where('sealed_at', '>', $recentlySealed)->where('ltv_attempted_at', '<=', $retryAfter))
+                    ->orWhere('ltv_attempted_at', '<=', $weeklyAfter))
+                // Static SQL: NULLS FIRST has no query-builder form.
+                ->orderByRaw('ltv_attempted_at ASC NULLS FIRST')
                 ->orderBy('sealed_at')
-                ->limit(self::BATCH)
-                ->get($columns)
-                ->filter(fn (SigningEnvelope $envelope): bool => self::validationDataDue($envelope, $now));
+                ->limit($batch)
+                ->get($columns);
 
             $renewals = SigningEnvelope::query()
                 ->whereNotNull('ltv_level')
                 ->where('timestamp_valid_until', '<=', $now->addMonthsNoOverflow(self::renewMonths()))
                 ->where($withinRetention)
+                ->where(fn (Builder $query) => $query->whereNull('ltv_attempted_at')->orWhere('ltv_attempted_at', '<=', $retryAfter))
+                // A timestamp reliable past the last day the file is kept needs no successor, unless the file is held.
+                // Static SQL: the Stockholm date of a timestamptz against a date column.
+                ->where(fn (Builder $query) => $query->where('retention_hold', true)->orWhereRaw("(timestamp_valid_until AT TIME ZONE 'Europe/Stockholm')::date <= retention_until"))
+                ->orderByRaw('ltv_attempted_at ASC NULLS FIRST')
                 ->orderBy('timestamp_valid_until')
-                ->limit(self::BATCH)
-                ->get($columns)
-                ->filter(fn (SigningEnvelope $envelope): bool => self::renewalDue($envelope, $now));
+                ->limit($batch)
+                ->get($columns);
 
             return $validationData->concat($renewals)->values();
         });

@@ -7,6 +7,7 @@ namespace App\Mail;
 use App\Domain\Signing\CompletionFiles;
 use App\Domain\Signing\CompletionLinks;
 use App\Models\Company;
+use App\Models\SigningDownloadLink;
 use App\Models\SigningEnvelope;
 use App\Support\Branding\Brand;
 use App\Support\Tenancy\CurrentCompany;
@@ -60,6 +61,11 @@ class SigningEnvelopeMail extends Mailable implements ShouldBeEncrypted
         $this->locale($language === 'en' ? 'en' : 'sv');
     }
 
+    /** A link issued when the mail is sent because the files grew past the mail limit after it was queued (ADR-046 S11). */
+    private ?string $lateToken = null;
+
+    private bool $sizeChecked = false;
+
     public function envelope(): Envelope
     {
         $company = Company::query()->findOrFail($this->companyId);
@@ -81,6 +87,7 @@ class SigningEnvelopeMail extends Mailable implements ShouldBeEncrypted
     {
         $company = Company::query()->findOrFail($this->companyId);
         $envelope = $this->signingEnvelope();
+        $token = $this->token($envelope);
 
         return new Content(view: 'mail.signing.envelope', with: [
             'kind' => $this->kind,
@@ -91,25 +98,56 @@ class SigningEnvelopeMail extends Mailable implements ShouldBeEncrypted
             'signers' => $envelope->signers->count(),
             'toSigner' => $this->toSigner,
             'controller' => $this->controller($company),
-            'downloadUrl' => $this->downloadToken === null ? null : CompletionLinks::url($this->downloadToken),
-            'expires' => $this->downloadToken === null ? null : CurrentCompany::run($this->companyId, fn (): ?CarbonImmutable => CompletionLinks::find($this->downloadToken)?->expires_at->setTimezone(config('app.timezone'))),
+            'downloadUrl' => $token === null ? null : CompletionLinks::url($token),
+            'expires' => $token === null ? null : CurrentCompany::run($this->companyId, fn (): ?CarbonImmutable => CompletionLinks::find($token)?->expires_at->setTimezone(config('app.timezone'))),
         ]);
     }
 
     /** @return list<Attachment> */
     public function attachments(): array
     {
-        if (! in_array($this->kind, [self::COPY, self::COMPANY], true) || $this->downloadToken !== null) {
+        if (! in_array($this->kind, [self::COPY, self::COMPANY], true)) {
             return [];
         }
 
         $envelope = $this->signingEnvelope();
+
+        if ($this->token($envelope) !== null) {
+            return [];
+        }
+
         $companyId = $this->companyId;
         // With fields (ADR-046 S6) the finished document is the version with every signer's values; copy recipients and the
         // other signers get the summary only, the full certificates go to the company (CompletionFiles).
         $files = CurrentCompany::run($companyId, fn (): array => CompletionFiles::forEnvelope($envelope, $this->kind));
 
         return array_map(fn (array $file): Attachment => Attachment::fromData(fn (): string => CurrentCompany::run($companyId, fn (): string => CompletionFiles::bytes($file)), $file['name'])->withMime('application/pdf'), $files);
+    }
+
+    /**
+     * The download link: the one decided when the mail was queued, else one issued now when the files resolved at
+     * sending are above the mail limit (they may have grown meanwhile, for example by long-term validation, S11).
+     */
+    private function token(SigningEnvelope $envelope): ?string
+    {
+        if ($this->downloadToken !== null || ! in_array($this->kind, [self::COPY, self::COMPANY], true)) {
+            return $this->downloadToken;
+        }
+
+        if (! $this->sizeChecked) {
+            $this->sizeChecked = true;
+            $email = (string) ($this->to[0]['address'] ?? '');
+
+            $this->lateToken = $email === '' ? null : CurrentCompany::run($this->companyId, fn (): ?string => CompletionLinks::issueIf(
+                CompletionFiles::tooLargeForMail(CompletionFiles::forEnvelope($envelope, $this->kind)),
+                $envelope,
+                $this->kind === self::COMPANY ? SigningDownloadLink::COMPANY : SigningDownloadLink::COPY,
+                $email,
+                $this->language,
+            ));
+        }
+
+        return $this->lateToken;
     }
 
     /** The controller as the signing page names it: the company, with its organisation number and e-mail when it has them. */

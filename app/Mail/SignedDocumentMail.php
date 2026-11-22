@@ -8,6 +8,8 @@ use App\Domain\Signing\CompletionFiles;
 use App\Domain\Signing\CompletionLinks;
 use App\Domain\Signing\SigningPdfs;
 use App\Models\Company;
+use App\Models\SigningDownloadLink;
+use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Support\Branding\Brand;
 use App\Support\Tenancy\CurrentCompany;
@@ -41,6 +43,11 @@ class SignedDocumentMail extends Mailable implements ShouldBeEncrypted
         $this->locale($language === 'en' ? 'en' : 'sv');
     }
 
+    /** A link issued when the mail is sent because the files grew past the mail limit after it was queued (ADR-046 S11). */
+    private ?string $lateToken = null;
+
+    private bool $sizeChecked = false;
+
     public function envelope(): Envelope
     {
         $company = Company::query()->findOrFail($this->companyId);
@@ -56,6 +63,7 @@ class SignedDocumentMail extends Mailable implements ShouldBeEncrypted
     public function content(): Content
     {
         $company = Company::query()->findOrFail($this->companyId);
+        $token = $this->token();
 
         return new Content(view: 'mail.signing.signed', with: [
             'request' => $this->request(),
@@ -63,8 +71,8 @@ class SignedDocumentMail extends Mailable implements ShouldBeEncrypted
             'color' => Brand::readable(Brand::for($company)->color),
             'title' => SigningPdfs::title($this->request()),
             'toSigner' => $this->toSigner,
-            'downloadUrl' => $this->downloadToken === null ? null : CompletionLinks::url($this->downloadToken),
-            'expires' => $this->downloadToken === null ? null : CurrentCompany::run($this->companyId, fn (): ?CarbonImmutable => CompletionLinks::find($this->downloadToken)?->expires_at->setTimezone(config('app.timezone'))),
+            'downloadUrl' => $token === null ? null : CompletionLinks::url($token),
+            'expires' => $token === null ? null : CurrentCompany::run($this->companyId, fn (): ?CarbonImmutable => CompletionLinks::find($token)?->expires_at->setTimezone(config('app.timezone'))),
         ]);
     }
 
@@ -76,7 +84,7 @@ class SignedDocumentMail extends Mailable implements ShouldBeEncrypted
      */
     public function attachments(): array
     {
-        if ($this->downloadToken !== null) {
+        if ($this->token() !== null) {
             return [];
         }
 
@@ -84,6 +92,33 @@ class SignedDocumentMail extends Mailable implements ShouldBeEncrypted
         $files = CurrentCompany::run($this->companyId, fn (): array => CompletionFiles::forSigner($request));
 
         return array_map(fn (array $file): Attachment => Attachment::fromData(fn (): string => CurrentCompany::run($this->companyId, fn (): string => CompletionFiles::bytes($file)), $file['name'])->withMime('application/pdf'), $files);
+    }
+
+    /**
+     * The download link: the one decided when the mail was queued, else one issued now when the files resolved at
+     * sending are above the mail limit (they may have grown meanwhile, for example by long-term validation, S11).
+     */
+    private function token(): ?string
+    {
+        if ($this->downloadToken !== null) {
+            return $this->downloadToken;
+        }
+
+        if (! $this->sizeChecked) {
+            $this->sizeChecked = true;
+            $email = (string) ($this->to[0]['address'] ?? '');
+            $request = $this->request();
+
+            $this->lateToken = $email === '' || $request->envelope_id === null ? null : CurrentCompany::run($this->companyId, function () use ($request, $email): ?string {
+                $envelope = SigningEnvelope::query()->find($request->envelope_id);
+
+                return $envelope instanceof SigningEnvelope
+                    ? CompletionLinks::issueIf(CompletionFiles::tooLargeForMail(CompletionFiles::forSigner($request)), $envelope, $this->toSigner ? SigningDownloadLink::SIGNER : SigningDownloadLink::COMPANY, $email, $this->language, $request)
+                    : null;
+            });
+        }
+
+        return $this->lateToken;
     }
 
     private function request(): SigningRequest

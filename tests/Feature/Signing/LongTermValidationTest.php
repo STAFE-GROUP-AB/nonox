@@ -5,23 +5,28 @@ declare(strict_types=1);
 use App\Actions\Signing\SendForSigning;
 use App\Actions\Signing\SignAtLink;
 use App\Domain\Signing\Chain\ChainVerifier;
+use App\Domain\Signing\CompletionFiles;
 use App\Domain\Signing\Fields\SigningFields;
 use App\Domain\Signing\Pdf\FakePdfEngine;
 use App\Domain\Signing\Pdf\PdfEngineException;
 use App\Domain\Signing\Pdf\PdfEngineFailure;
 use App\Domain\Signing\Pdf\SealLevel;
 use App\Domain\Signing\Pdf\TimestampFact;
+use App\Domain\Signing\Retention\EnvelopeDeletion;
 use App\Domain\Signing\Seal\EnvelopeTimestamper;
 use App\Domain\Signing\Seal\LongTermValidation;
 use App\Domain\Signing\Seal\SealCertificates;
 use App\Domain\Signing\Seal\SealStatus;
 use App\Domain\Signing\SigningPdfs;
 use App\Jobs\TimestampSigningEnvelope;
+use App\Mail\SignedDocumentMail;
+use App\Mail\SigningEnvelopeMail;
 use App\Mail\SigningRequestMail;
 use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\InstanceSetting;
 use App\Models\SigningDocumentVersion;
+use App\Models\SigningDownloadLink;
 use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Models\User;
@@ -440,4 +445,133 @@ it('shows the long-term validation on the envelope page', function () {
         ->assertSee('Valideringsdata har lagts till i filen (PAdES B-LT)')
         ->assertSee('slutar gälla 2031-03-15')
         ->assertSee((string) $newest?->sha256);
+});
+
+/** Sends a one-signer envelope without signing it. */
+function s11Send(User $user, Company $company): SigningEnvelope
+{
+    $path = tempnam(sys_get_temp_dir(), 's11');
+    file_put_contents($path, PdfEngineFixtures::pdf(2));
+
+    try {
+        $document = app(StoreSigningDocument::class)($user, $company, $path, 'Avtal 2026.pdf', 'Samarbetsavtal');
+    } finally {
+        @unlink($path);
+    }
+
+    assert($document instanceof SigningDocument);
+
+    return app(SendForSigning::class)->envelope($user, $company, $document, ['signers' => [['email' => 'bertil@example.test', 'step' => 1, 'verification' => 'NONE']]], minSigners: 1);
+}
+
+it('never lets envelopes that keep failing crowd out a newer due one, for validation data and for renewals', function () {
+    Queue::fake([TimestampSigningEnvelope::class]);
+    $envelopes = collect(range(1, 4))->map(fn (): SigningEnvelope => s11Complete($this->owner, $this->company));
+    $fresh = $envelopes->last();
+    $failing = $envelopes->take(3)->pluck('id')->all();
+    $now = CarbonImmutable::now();
+
+    // Validation data: three tried an hour ago without success, one never tried. The same query as the nightly run,
+    // with a batch of one or two instead of 500.
+    DB::table('signing_envelopes')->whereIn('id', $failing)->update(['ltv_failure' => 'validation_data_unavailable', 'ltv_attempted_at' => $now->subHour()]);
+
+    expect(LongTermValidation::due(batch: 2)->pluck('id')->all())->toBe([$fresh->id])
+        ->and(LongTermValidation::due(batch: 1)->pluck('id')->all())->toBe([$fresh->id]);
+
+    // The next night they are due again, but the one never tried still comes first.
+    DB::table('signing_envelopes')->whereIn('id', $failing)->update(['ltv_attempted_at' => $now->subHours(25)]);
+    expect(LongTermValidation::due(batch: 1)->pluck('id')->all())->toBe([$fresh->id])
+        ->and(LongTermValidation::due(batch: 10)->pluck('id')->sort()->values()->all())->toBe($envelopes->pluck('id')->sort()->values()->all());
+
+    // Renewals: three tried an hour ago without success, one tried three days ago; all four close to expiry.
+    DB::table('signing_envelopes')->whereIn('id', $envelopes->pluck('id')->all())->update(['ltv_level' => 'B_LT', 'ltv_failure' => null, 'timestamp_valid_until' => $now->addMonth(), 'ltv_attempted_at' => $now->subDays(3)]);
+    DB::table('signing_envelopes')->whereIn('id', $failing)->update(['ltv_failure' => 'timestamp_unavailable', 'ltv_attempted_at' => $now->subHour()]);
+
+    expect(LongTermValidation::due(batch: 2)->pluck('id')->all())->toBe([$fresh->id])
+        ->and(LongTermValidation::renewalDue($fresh->refresh()))->toBeTrue()
+        ->and(LongTermValidation::renewalDue(SigningEnvelope::query()->findOrFail($failing[0])))->toBeFalse();
+});
+
+it('stops trying a revoked certificate and says why', function () {
+    $this->engine->failValidationData = new PdfEngineException(PdfEngineFailure::CertificateRevoked);
+    $envelope = s11Complete($this->owner, $this->company);
+
+    expect($envelope->ltv_failure)->toBe('certificate_revoked')
+        ->and(EnvelopeTimestamper::failureLabel('certificate_revoked'))->toContain('spärrat');
+
+    $this->travel(8)->days();
+    expect(LongTermValidation::due()->pluck('id')->all())->not->toContain($envelope->id);
+});
+
+it('gives a single signer and the company the newest long-term validation version', function () {
+    $envelope = s11Complete($this->owner, $this->company);
+    $signer = SigningRequest::query()->where('envelope_id', $envelope->id)->sole();
+    $newest = EnvelopeTimestamper::newestFile($envelope->id);
+
+    expect($newest?->kind)->toBe(SigningDocumentVersion::TIMESTAMPED)
+        ->and(CompletionFiles::forSigner($signer)[0]['path'])->toBe($newest?->path)
+        ->and(CompletionFiles::forEnvelope($envelope, SigningDownloadLink::COMPANY)[0]['path'])->toBe($newest?->path);
+});
+
+it('sends a link instead of attachments when the files grew past the mail limit after the mail was queued', function () {
+    $envelope = s11Complete($this->owner, $this->company);
+    $signer = SigningRequest::query()->where('envelope_id', $envelope->id)->sole();
+    config(['nonox.signing.mail_attachment_limit_bytes' => 100]);
+
+    $own = (new SignedDocumentMail($signer->id, $this->company->id, true))->to('anna@example.test');
+    $own->render();
+
+    expect($own->attachments())->toBe([])
+        ->and(SigningDownloadLink::query()->where('envelope_id', $envelope->id)->where('kind', SigningDownloadLink::SIGNER)->where('email', 'anna@example.test')->count())->toBe(1);
+
+    $copy = (new SigningEnvelopeMail($envelope->id, $this->company->id, SigningEnvelopeMail::COPY))->to('revisor@example.test');
+    $copy->render();
+
+    expect($copy->attachments())->toBe([])
+        ->and(SigningDownloadLink::query()->where('envelope_id', $envelope->id)->where('kind', SigningDownloadLink::COPY)->where('email', 'revisor@example.test')->count())->toBe(1);
+
+    // Under the limit the files are attached and no link is made.
+    config(['nonox.signing.mail_attachment_limit_bytes' => CompletionFiles::MAIL_LIMIT_BYTES]);
+    $small = (new SignedDocumentMail($signer->id, $this->company->id, false))->to('info@foretaget.test');
+    $small->render();
+    expect($small->attachments())->toHaveCount(2)
+        ->and(SigningDownloadLink::query()->where('envelope_id', $envelope->id)->where('email', 'info@foretaget.test')->exists())->toBeFalse();
+});
+
+it('names each long-term validation file by envelope, input version and step, and cleans up files no version holds', function () {
+    $envelope = s11Complete($this->owner, $this->company);
+    [$sealed, $extended] = s11Versions($envelope);
+    $disk = Storage::disk(SigningRequest::DISK);
+
+    expect($extended->path)->toBe(EnvelopeTimestamper::pathFor($this->company->id, $envelope->id, $sealed->id, EnvelopeTimestamper::STEP_VALIDATION_DATA))
+        ->and(EnvelopeTimestamper::isLongTermFile($extended->path))->toBeTrue()
+        ->and(EnvelopeTimestamper::isLongTermFile('crm-signing/'.$this->company->id.'/avtal.pdf'))->toBeFalse();
+
+    // A file left by an attempt that never stored its row: removed after a day, the held one and a fresh one kept.
+    $old = EnvelopeTimestamper::pathFor($this->company->id, $envelope->id, $extended->id, EnvelopeTimestamper::STEP_DOCUMENT_TIMESTAMP);
+    $recent = EnvelopeTimestamper::pathFor($this->company->id, $envelope->id, $extended->id + 1, EnvelopeTimestamper::STEP_DOCUMENT_TIMESTAMP);
+    $disk->put($old, '%PDF-left');
+    $disk->put($recent, '%PDF-left');
+    touch($disk->path($old), time() - 2 * 86400);
+    touch($disk->path($extended->path), time() - 2 * 86400);
+
+    $this->artisan('signing:prune-engine-work')->assertSuccessful();
+
+    expect($disk->exists($old))->toBeFalse()
+        ->and($disk->exists($recent))->toBeTrue()
+        ->and($disk->exists($extended->path))->toBeTrue();
+});
+
+it('deletes an envelope\'s leftover long-term validation files with the envelope', function () {
+    $envelope = s11Send($this->owner, $this->company);
+    $disk = Storage::disk(SigningRequest::DISK);
+    $leftover = EnvelopeTimestamper::pathFor($this->company->id, $envelope->id, 1, EnvelopeTimestamper::STEP_VALIDATION_DATA);
+    $other = EnvelopeTimestamper::pathFor($this->company->id, '00000000-0000-0000-0000-000000000000', 1, EnvelopeTimestamper::STEP_VALIDATION_DATA);
+    $disk->put($leftover, '%PDF-left');
+    $disk->put($other, '%PDF-left');
+
+    EnvelopeDeletion::delete($envelope->refresh(), EnvelopeDeletion::ERASURE, $this->owner);
+
+    expect($disk->exists($leftover))->toBeFalse()
+        ->and($disk->exists($other))->toBeTrue();
 });

@@ -35,7 +35,7 @@
       "id": "2026-11-22-signering-langtidsvalidering",
       "datum": "2026-11-22T17:00:00+01:00",
       "rubrik": "Långtidsvalidering av förseglade dokument vid egen drift",
-      "beskrivning": "Ett förseglat dokument med tidsstämpel får nu valideringsdata för certifikaten, och varje natt läggs en ny tidsstämpel till innan den senaste slutar gälla, så att förseglingen kan kontrolleras även efter många år. Det gäller bara dokument som fortfarande ska bevaras eller har bevarandespärr, och varje ny version börjar med den förra filen oförändrad. Liksom förseglingen är det avstängt tills det slås på för installationen, och i den driftade tjänsten tills en juristgranskning är klar.",
+      "beskrivning": "Ett förseglat dokument med tidsstämpel får nu valideringsdata för certifikaten, och varje natt läggs en ny tidsstämpel till innan den senaste slutar vara tillförlitlig. Då går det att kontrollera att förseglingen gjordes med ett certifikat som gällde vid tidsstämpeln, även sedan certifikaten har gått ut; vem som står bakom certifikatet visar det bara om den som kontrollerar litar på utfärdaren. Liksom förseglingen är det avstängt tills det slås på för installationen, och i den driftade tjänsten tills frågan om betrodda tjänster enligt eIDAS är besvarad.",
       "typ": "Nytt",
       "omrade": "Avtal"
     },

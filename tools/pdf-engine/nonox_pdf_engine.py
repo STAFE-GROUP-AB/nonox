@@ -805,8 +805,9 @@ def op_timestamp(request):
 # certificate: so only http(s) to public addresses is fetched (the resolver
 # drops loopback, private, link-local and other non-global addresses, and an
 # address written as a number is checked before connecting), redirects are
-# never followed, an answer that announces more than 20 MB is refused, and
-# pyhanko-certvalidator's FetchLimits bound the number of requests.
+# never followed, an answer larger than 20 MB is refused (when it announces it,
+# and in any case while it is read), and pyhanko-certvalidator's FetchLimits
+# bound the number of requests.
 
 MAX_FETCH_RESPONSE_BYTES = 20 * 1024 * 1024
 MD_ALGORITHMS = ('sha256', 'sha384', 'sha512')
@@ -852,9 +853,21 @@ def public_fetch_backend(timeout):
         if length is not None and length > MAX_FETCH_RESPONSE_BYTES:
             raise aiohttp.ClientError('a revocation answer is too large')
 
-    async def on_response_chunk_received(session, context, params):
-        if len(params.chunk) > MAX_FETCH_RESPONSE_BYTES:
-            raise aiohttp.ClientError('a revocation answer is too large')
+    class CappedResponse(aiohttp.ClientResponse):
+        """aiohttp's ClientResponse.read() (3.14.5) reads the whole body before any trace fires, so the body is read
+        here in chunks and the read stops as soon as it passes the cap, whatever the headers say (chunked, no length).
+        The bytes are then handed to the parent's read(), which finds _body set and only releases the connection."""
+
+        async def read(self):
+            if self._body is None:
+                received = bytearray()
+                async for chunk in self.content.iter_chunked(64 * 1024):
+                    received.extend(chunk)
+                    if len(received) > MAX_FETCH_RESPONSE_BYTES:
+                        self.close()
+                        raise aiohttp.ClientError('a revocation answer is too large')
+                self._body = bytes(received)
+            return await super().read()
 
     class PublicSession(LazySession):
         def get_session(self):
@@ -863,8 +876,8 @@ def public_fetch_backend(timeout):
                 trace.on_request_start.append(on_request_start)
                 trace.on_request_redirect.append(on_request_redirect)
                 trace.on_request_end.append(on_request_end)
-                trace.on_response_chunk_received.append(on_response_chunk_received)
                 self._session = aiohttp.ClientSession(
+                    response_class=CappedResponse,
                     connector=aiohttp.TCPConnector(ssl=ssl.create_default_context(cafile=certifi.where()), resolver=PublicResolver()),
                     trace_configs=[trace],
                 )
@@ -959,6 +972,11 @@ def with_validation_data(data, timeout):
     except MemoryError:
         raise
     except Exception as error:  # a revocation address that does not answer, or a path that cannot be built
+        from pyhanko_certvalidator.errors import RevokedError
+
+        if isinstance(error, RevokedError):
+            # Hard-fail collection meets a certificate its issuer has revoked: never written as validation data.
+            raise EngineError('certificate_revoked', 'a certificate in the file is revoked')
         raise EngineError('validation_data_unavailable', f'validation data could not be collected ({type(error).__name__})')
 
     writer = writer_for(data)

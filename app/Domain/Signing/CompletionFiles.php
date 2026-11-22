@@ -37,13 +37,14 @@ final class CompletionFiles
     public static function forSigner(SigningRequest $request): array
     {
         $document = SignerFields::shownVersion($request)->path ?? $request->document_path;
-        $envelope = $request->envelope_id === null ? null : SigningEnvelope::query()->find($request->envelope_id, ['id', 'sealed_path']);
+        $envelope = $request->envelope_id === null ? null : SigningEnvelope::query()->find($request->envelope_id, ['id', 'sealed_path', 'ltv_level', 'document_path']);
 
         // A sealed envelope with one signer (ADR-046 S10): the signer gets the sealed file, which is their version
-        // with the summary page and the seal added. With several signers each signer's own copy stays the version
-        // they were shown, and the sealed file goes to everyone in the envelope copies.
+        // with the summary page and the seal added, or its newest long-term validation version (S11), which starts
+        // with it. With several signers each signer's own copy stays the version they were shown, and the finished
+        // file goes to everyone in the envelope copies.
         if ($envelope instanceof SigningEnvelope && $envelope->sealed_path !== null && ! SigningEnvelopes::hasSeveralSigners($envelope->id)) {
-            $document = $envelope->sealed_path;
+            $document = SigningFields::finalVersion($envelope);
         }
 
         $files = [['name' => $request->document_name, 'path' => $document, 'make' => null]];

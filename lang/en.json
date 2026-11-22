@@ -15150,9 +15150,9 @@
     "PDF-motorn hittade ingen ny tidsstämpel i filen": "the PDF engine found no new timestamp in the file",
     "långtidsvalideringen gick inte att slutföra": "the long-term validation could not be completed",
     "Långtidsvalidering (:level): filen har valideringsdata och en dokumenttidsstämpel från :date.": "Long-term validation (:level): the file has validation data and a document timestamp from :date.",
-    "En ny tidsstämpel läggs till innan den slutar gälla :date, så länge dokumentet bevaras.": "A new timestamp is added before it stops being valid on :date, for as long as the document is kept.",
-    "Valideringsdata har lagts till i filen (:level), så förseglingen kan kontrolleras även när certifikaten har gått ut.": "Validation data has been added to the file (:level), so the seal can be checked even after the certificates have expired.",
-    "En dokumenttidsstämpel läggs till innan tidsstämpeln slutar gälla :date, så länge dokumentet bevaras.": "A document timestamp is added before the timestamp stops being valid on :date, for as long as the document is kept.",
     "Senaste försöket att lägga till valideringsdata eller en ny tidsstämpel lyckades inte (:reason). NONOX försöker igen.": "The last attempt to add validation data or a new timestamp did not succeed (:reason). NONOX will try again.",
-    "SHA-256 för den senaste versionen, som du laddar ner: :hash": "SHA-256 of the latest version, the one you download: :hash"
+    "SHA-256 för den senaste versionen, som du laddar ner: :hash": "SHA-256 of the latest version, the one you download: :hash",
+    "NONOX försöker lägga till en ny tidsstämpel före :date (då tidsstämpelserverns certifikat går ut eller ett datum som installationen har angett), så länge dokumentet bevaras och försegling är påslagen.": "NONOX will try to add a new timestamp before :date (when the timestamp server's certificate expires, or a date the installation has set), for as long as the document is kept and sealing is switched on.",
+    "Valideringsdata har lagts till i filen (:level): certifikaten och deras spärrstatus. Med dem går det att kontrollera att certifikaten gällde när tidsstämpeln gjordes, även sedan de har gått ut, så länge tidsstämpeln är tillförlitlig.": "Validation data has been added to the file (:level): the certificates and their revocation status. With them it can be checked that the certificates were valid when the timestamp was made, even after they have expired, for as long as the timestamp is reliable.",
+    "Ett certifikat i filen är spärrat av sin utfärdare, så valideringsdata läggs inte till.": "A certificate in the file has been revoked by its issuer, so no validation data is added."
 }

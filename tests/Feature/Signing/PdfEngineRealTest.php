@@ -426,3 +426,27 @@ it('writes nothing when a revocation address a certificate names cannot be used,
         ->toThrow(fn (PdfEngineException $e) => expect($e->failure)->toBe(PdfEngineFailure::ValidationDataUnavailable)->and($e->failure->isTransient())->toBeTrue());
     expect(file_exists($this->pdfDir.'/lt.pdf'))->toBeFalse();
 });
+
+it('stops reading a revocation answer at 20 MB even without a Content-Length (ADR-046 S11)', function () {
+    s5RealEngine($this);
+    $result = Illuminate\Support\Facades\Process::timeout(120)->run([PdfEngineFixtures::python(), '-I', base_path('tests/Support/pdf-engine/fetch_cap_check.py'), base_path('tools/pdf-engine/nonox_pdf_engine.py')]);
+    $answer = json_decode($result->output(), true);
+
+    expect($result->successful())->toBeTrue()
+        ->and($answer['small'] ?? null)->toBe(1024 * 1024)
+        ->and($answer['large'] ?? null)->toBe('ClientError: a revocation answer is too large');
+});
+
+it('answers certificate_revoked, not "unavailable", for a revoked certificate, and writes nothing (ADR-046 S11)', function (string $state, bool $ok, ?string $code) {
+    s5RealEngine($this);
+    $result = Illuminate\Support\Facades\Process::timeout(120)->run([PdfEngineFixtures::python(), '-I', base_path('tests/Support/pdf-engine/revocation_check.py'), base_path('tools/pdf-engine/nonox_pdf_engine.py'), $state]);
+    $answer = json_decode($result->output(), true);
+
+    expect($result->successful())->toBeTrue()
+        ->and($answer['ok'] ?? null)->toBe($ok)
+        ->and($answer['code'] ?? null)->toBe($code)
+        ->and(PdfEngineFailure::fromHelperCode('certificate_revoked'))->toBe(PdfEngineFailure::CertificateRevoked);
+})->with([
+    'not revoked' => ['good', true, null],
+    'revoked' => ['revoked', false, 'certificate_revoked'],
+]);

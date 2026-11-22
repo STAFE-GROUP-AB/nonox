@@ -18,6 +18,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
  * Adds long-term validation to a sealed file (ADR-046 amendment, gap 5,
@@ -114,7 +115,14 @@ final class EnvelopeTimestamper
             return $this->recordFailure($envelope->id, self::FILE_CHANGED, $now);
         }
 
-        return $this->finish($envelope->id, $current->id, $step, $written, $now);
+        try {
+            return $this->finish($envelope->id, $current->id, $step, $written, $now);
+        } catch (Throwable $exception) {
+            // Nothing was committed: the file is not referenced by any row and goes.
+            Storage::disk(SigningRequest::DISK)->delete($written['path']);
+
+            throw $exception;
+        }
     }
 
     /** Records why an attempt did not succeed; audited only when the reason changes, so nightly retries do not fill the log. */
@@ -147,6 +155,27 @@ final class EnvelopeTimestamper
             ->whereIn('kind', [SigningDocumentVersion::SEALED, SigningDocumentVersion::TIMESTAMPED])
             ->orderByDesc('id')
             ->first();
+    }
+
+    /** The directory of a company's long-term validation files: listed by the sweep and the envelope deletion. */
+    public static function directory(int $companyId): string
+    {
+        return 'crm-signing/'.$companyId.'/ltv';
+    }
+
+    /**
+     * The file name is decided by the envelope, the input version and the step, so a retry overwrites the file an
+     * interrupted attempt left, and a leftover is found by its name (EnvelopeDeletion, signing:prune-engine-work).
+     */
+    public static function pathFor(int $companyId, string $envelopeId, int $inputVersionId, string $step): string
+    {
+        return self::directory($companyId).'/'.$envelopeId.'-v'.$inputVersionId.'-'.strtolower($step).'-tidsstampel.pdf';
+    }
+
+    /** Whether a path on the signing disk has the shape pathFor() gives (the sweep touches nothing else). */
+    public static function isLongTermFile(string $path): bool
+    {
+        return preg_match('#^crm-signing/\d+/ltv/[0-9a-f-]{36}-v\d+-(validation_data|document_timestamp)-tidsstampel\.pdf$#', $path) === 1;
     }
 
     /** A pruned or erased envelope has lost its signers (and is deleted itself); its file is never extended. */
@@ -190,7 +219,13 @@ final class EnvelopeTimestamper
             }
 
             $newest = $this->newestTimestamp($result, $envelope, $step);
-            $path = 'crm-signing/'.$envelope->company_id.'/'.Str::uuid()->toString().'-tidsstampel.pdf';
+            $path = self::pathFor($envelope->company_id, $envelope->id, $current->id, $step);
+
+            // Never overwrite a file a version row already holds; a retry of the same step overwrites its own leftover.
+            if (SigningDocumentVersion::query()->where('path', $path)->exists()) {
+                throw new PdfEngineException(PdfEngineFailure::InvalidResponse, detail: 'path in use');
+            }
+
             $disk->put($path, $bytes);
 
             return ['path' => $path, 'bytes' => strlen($bytes), 'sha256' => hash('sha256', $bytes), 'newest' => $newest];

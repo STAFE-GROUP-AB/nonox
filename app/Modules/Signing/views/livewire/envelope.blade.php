@@ -134,14 +134,14 @@
                 <p class="mt-2 text-sm text-gray-700" data-testid="signing-ltv">
                     {{ __('Långtidsvalidering (:level): filen har valideringsdata och en dokumenttidsstämpel från :date.', ['level' => $envelope->ltv_level->label(), 'date' => $envelope->last_timestamp_at?->setTimezone($zone)->format('Y-m-d')]) }}
                     @if($envelope->timestamp_valid_until)
-                        {{ __('En ny tidsstämpel läggs till innan den slutar gälla :date, så länge dokumentet bevaras.', ['date' => $envelope->timestamp_valid_until->setTimezone($zone)->format('Y-m-d')]) }}
+                        {{ __('NONOX försöker lägga till en ny tidsstämpel före :date (då tidsstämpelserverns certifikat går ut eller ett datum som installationen har angett), så länge dokumentet bevaras och försegling är påslagen.', ['date' => $envelope->timestamp_valid_until->setTimezone($zone)->format('Y-m-d')]) }}
                     @endif
                 </p>
             @elseif($envelope->ltv_level === App\Domain\Signing\Pdf\SealLevel::B_LT)
                 <p class="mt-2 text-sm text-gray-700" data-testid="signing-ltv">
-                    {{ __('Valideringsdata har lagts till i filen (:level), så förseglingen kan kontrolleras även när certifikaten har gått ut.', ['level' => $envelope->ltv_level->label()]) }}
+                    {{ __('Valideringsdata har lagts till i filen (:level): certifikaten och deras spärrstatus. Med dem går det att kontrollera att certifikaten gällde när tidsstämpeln gjordes, även sedan de har gått ut, så länge tidsstämpeln är tillförlitlig.', ['level' => $envelope->ltv_level->label()]) }}
                     @if($envelope->timestamp_valid_until)
-                        {{ __('En dokumenttidsstämpel läggs till innan tidsstämpeln slutar gälla :date, så länge dokumentet bevaras.', ['date' => $envelope->timestamp_valid_until->setTimezone($zone)->format('Y-m-d')]) }}
+                        {{ __('NONOX försöker lägga till en ny tidsstämpel före :date (då tidsstämpelserverns certifikat går ut eller ett datum som installationen har angett), så länge dokumentet bevaras och försegling är påslagen.', ['date' => $envelope->timestamp_valid_until->setTimezone($zone)->format('Y-m-d')]) }}
                     @endif
                 </p>
             @endif

@@ -34,24 +34,24 @@ Går förseglingen inte alls, till exempel för att certifikatet inte går att l
 
 ## Långtidsvalidering
 
-Certifikat och tidsstämplar gäller bara en viss tid. För att förseglingen ska kunna kontrolleras även efter många år gör NONOX två saker med ett dokument som har förseglats med tidsstämpel:
+Certifikat och tidsstämplar gäller bara en viss tid. För att det ska gå att kontrollera förseglingen även sedan certifikaten har gått ut gör NONOX två saker med ett dokument som har förseglats med tidsstämpel. Vem som står bakom ett självsignerat certifikat visar valideringsdata inte; se ovan.
 
-1. Direkt efter förseglingen läggs **valideringsdata** till i filen: certifikaten och uppgifter om att de inte var spärrade (nivån **PAdES B-LT**). Uppgifterna hämtas från de adresser som certifikaten anger. Går de inte att hämta försöker NONOX igen varje natt den första veckan och sedan en gång i veckan.
-2. Varje natt kontrollerar NONOX när den senaste tidsstämpeln slutar gälla. Är det mindre än tolv månader kvar läggs en ny tidsstämpel över hela filen (nivån **PAdES B-LTA**), och så vidare så länge dokumentet ska bevaras. Den som driver installationen kan ändra hur lång tid i förväg det görs.
+1. Direkt efter förseglingen läggs **valideringsdata** till i filen: certifikaten och uppgifter om deras spärrstatus (OCSP-svar och spärrlistor) (nivån **PAdES B-LT**). Uppgifterna hämtas från de adresser som certifikaten anger. Går de inte att hämta försöker NONOX igen varje natt den första veckan och sedan en gång i veckan. Är ett certifikat spärrat av sin utfärdare läggs ingen valideringsdata till, och NONOX försöker inte igen.
+2. Varje natt kontrollerar NONOX när den senaste tidsstämpeln slutar vara tillförlitlig (när tidsstämpelserverns certifikat går ut, eller ett datum som den som driver installationen har angett för hashalgoritmen). Är det mindre än tolv månader kvar läggs en ny tidsstämpel över hela filen (nivån **PAdES B-LTA**), och så vidare så länge dokumentet ska bevaras. Den som driver installationen kan ändra hur lång tid i förväg det görs.
 
-Varje gång blir det en ny version av filen som börjar med den förra versionen oförändrad, så att varje kopia som redan har skickats fortfarande går att kontrollera. Filen som du laddar ner är alltid den senaste versionen.
+Varje gång blir det en ny version av filen som börjar med den förra versionen oförändrad, så en kopia som redan har skickats stämmer fortfarande med början av den nya filen. Kopior som redan har skickats får däremot inte själva valideringsdata eller nya tidsstämplar. Den som vill kunna kontrollera förseglingen efter lång tid behöver den senaste versionen, som är den du laddar ner.
 
 Långtidsvalideringen görs bara för dokument som fortfarande ska bevaras eller har bevarandespärr, se [bevarande och radering](/manual/signering/bevarande-och-radering). Den förlänger aldrig bevarandetiden. Ett dokument som har förseglats utan tidsstämpel (**PAdES B-B**) får ingen långtidsvalidering.
 
 I rutan **Försegling** på sidan för signeringen står det:
 
-- **Valideringsdata har lagts till i filen (PAdES B-LT)** när valideringsdata finns i filen, och vilket datum den första nya tidsstämpeln behövs senast.
-- **Långtidsvalidering (PAdES B-LTA)** när filen har en tidsstämpel över valideringsdata, med datumet för den senaste tidsstämpeln och när nästa behövs senast.
+- **Valideringsdata har lagts till i filen (PAdES B-LT): certifikaten och deras spärrstatus.** när valideringsdata finns i filen, och före vilket datum NONOX försöker lägga till en ny tidsstämpel.
+- **Långtidsvalidering (PAdES B-LTA)** när filen har en tidsstämpel över valideringsdata, med datumet för den senaste tidsstämpeln och före vilket datum NONOX försöker lägga till nästa.
 - **SHA-256 för den senaste versionen, som du laddar ner** med den senaste versionens kontrollsumma. Kontrollsumman för den förseglade filen står kvar.
 - Att det senaste försöket inte lyckades och varför, om det inte gick. NONOX försöker igen.
 
 > [!NOTE]
-> Långtidsvalidering kräver samma sak som försegling: PDF-motorn, och att försegling är påslagen för installationen. Dessutom måste installationen ha en tidsstämpelserver.
+> Långtidsvalidering kräver samma sak som försegling: PDF-motorn, och att försegling är påslagen för installationen. Dessutom måste installationen ha en tidsstämpelserver. I den driftade tjänsten är den avstängd, se ovan.
 
 ## Vilket certifikat som används
 
