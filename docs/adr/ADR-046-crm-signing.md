@@ -3307,7 +3307,7 @@ Follow-up after the S10 re-check (accepted, low): on `QUEUE_CONNECTION=sync`, a 
   download link issues another one: link tokens are stored only as hashes, so
   the first cannot be reused. Both links work and expire as usual.
 
-Before sealing, long-term validation (S10–S11) or the verify page (S12) is switched on in the hosted service (jurist, 2026-11-22): the eIDAS trust-service question must be answered; the certificate issuers (OCSP) and the timestamp server are added as recipients in `docs/juridik/integritetspolicy.md` and `docs/juridik/underbitraden.md`; the verify-page sentences in `docs/juridik/utkast-1.9-signering.md` are in force; and the legal version is bumped in that same deploy. `VerifyLookup::NOTICE_FROM` must not be earlier than the day the signing page's notice about the verify page went live.
+Before sealing, long-term validation (S10–S11) or the verify page (S12) is switched on in the hosted service (jurist, 2026-11-22): the eIDAS trust-service question must be answered; the PDF engine runs in an OS sandbox (bubblewrap or Landlock) as a user that cannot read `.env` or storage outside its work directory (external security report 2026-11-22, see docs/drift/pdf-motorn.md "Säkerhet"); the certificate issuers (OCSP) and the timestamp server are added as recipients in `docs/juridik/integritetspolicy.md` and `docs/juridik/underbitraden.md`; the verify-page sentences in `docs/juridik/utkast-1.9-signering.md` are in force; and the legal version is bumped in that same deploy. `VerifyLookup::NOTICE_FROM` must not be earlier than the day the signing page's notice about the verify page went live.
 
 ### S17 as built (2026-11-22): the provider framework and the CSC API v2 driver
 
