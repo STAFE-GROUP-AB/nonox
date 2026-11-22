@@ -11396,7 +11396,7 @@ paths:
       tags:
         - Signering
       summary: 'List envelopes'
-      description: 'Every envelope the credential''s person may see, by the rule of the screen Signering: standalone documents with signing:view (a confidential one only to its sender and with signing:manage), quotes with invoices:view, agreements with crm:view and an ÄTA with work-orders:view. While the Signering module is off only signed standalone documents are listed. status is OUT, COMPLETED, DECLINED, VOIDED or EXPIRED (an envelope out past its last day). Each envelope carries its recipients and copy recipients; a link is never returned.'
+      description: 'Every envelope the credential''s person may see (updated_at moves with every step of a recipient, so updated_since sees progress), by the rule of the screen Signering: standalone documents with signing:view (a confidential one only to its sender and with signing:manage), quotes with invoices:view, agreements with crm:view and an ÄTA with work-orders:view. While the Signering module is off only signed standalone documents are listed. status is OUT, COMPLETED, DECLINED, VOIDED or EXPIRED (an envelope out past its last day). Each envelope carries its recipients and copy recipients; a link is never returned.'
       x-sv-summary: 'Lista signeringskuvert'
       x-sv-description: 'Alla kuvert personen får se, enligt samma regel som sidan Signering. Ett konfidentiellt kuvert ses bara av avsändaren och med signing:manage.'
       security:

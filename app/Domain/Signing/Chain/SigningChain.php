@@ -12,6 +12,7 @@ use App\Models\SigningRequest;
 use App\Support\Audit\Audit;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
+use Illuminate\Support\Facades\DB;
 use stdClass;
 
 /**
@@ -231,6 +232,9 @@ final class SigningChain
 
         $event->hash = EventHash::ofEvent($event);
         $event->save();
+
+        // Progress moves the envelope's updated_at, so that updated_since in the API sees a signer's step (ADR-046 S19). No trigger guards that column, also on a finished envelope.
+        DB::table('signing_envelopes')->where('id', $envelope->id)->update(['updated_at' => CarbonImmutable::now()->format('Y-m-d H:i:sP')]);
 
         // The trigger moved the counter in the row; this copy follows it.
         $envelope->forceFill(['next_sequence' => $event->sequence + 1, 'last_hash' => $event->hash])->syncOriginal();

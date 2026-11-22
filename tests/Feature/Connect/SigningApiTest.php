@@ -16,6 +16,7 @@ use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Models\User;
 use App\Modules\Connect\Models\ConnectWebhookDelivery;
+use App\Modules\Connect\Webhooks\WebhookDispatcher;
 use App\Modules\Connect\Webhooks\WebhookEvents;
 use App\Modules\ModuleManager;
 use App\Modules\Signing\Actions\ManageSigningTemplates;
@@ -28,6 +29,7 @@ use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -650,4 +652,74 @@ it('sends a quote from a quote template, with the quote named and the roles mapp
         ->assertJsonPath('data.quote_id', $quote->id)
         ->assertJsonPath('data.template_id', $template->id)
         ->assertJsonPath('data.recipients.0.email', 'inkop@kontorshuset.test');
+});
+
+it('never lets a failing webhook fan-out break a signature, the next step\'s mail or the reminder run', function () {
+    Exceptions::fake();
+    Connect::webhook($this->owner, $this->company, ['signing.recipient_signed', 'signing.completed', 'signing.expired']);
+    app()->bind(WebhookDispatcher::class, fn () => throw new RuntimeException('Kön är nere.'));
+
+    $document = s19Upload($this->owner, $this->company);
+    $id = s19Send($this, $this->send, s19Body($document), 'z-1')->assertCreated()->json('data.id');
+
+    // The first signer signs although the fan-out throws; the second step is opened and mailed.
+    $signed = s19Sign('anna@example.test');
+    expect($signed->status->value)->toBe('SIGNED');
+    Mail::assertQueued(SigningRequestMail::class, fn (SigningRequestMail $mail): bool => $mail->hasTo('bo@example.test'));
+    Exceptions::assertReported(RuntimeException::class);
+    expect(s19Deliveries($this->company))->toHaveCount(0);
+
+    // The reminder run still expires an envelope whose announcement fails.
+    $late = s19Send($this, $this->send, s19Body(s19Upload($this->owner, $this->company, 'Sent'), ['expires_on' => '2026-06-20', 'signers' => [['email' => 'carin@example.test', 'step' => 1]]]), 'z-2')->assertCreated()->json('data.id');
+    $this->travelTo(CarbonImmutable::parse('2026-06-22 10:00:00'));
+    $result = CurrentCompany::run($this->company, fn () => app(SigningReminders::class)->run(CarbonImmutable::now()));
+    expect($result['expired'])->toBe(1);
+    $this->withToken($this->view)->getJson("/api/v1/signing/envelopes/{$late}")->assertJsonPath('data.status', 'EXPIRED');
+});
+
+it('moves the envelope\'s updated_at with every step of a recipient, also when it finishes', function () {
+    $id = s19Send($this, $this->send, s19Body(s19Upload($this->owner, $this->company), ['signers' => [['email' => 'anna@example.test', 'step' => 1]]]), 'u-1')->assertCreated()->json('data.id');
+    $since = fn (string $time) => $this->withToken($this->view)->getJson('/api/v1/signing/envelopes?updated_since='.urlencode($time))->assertOk();
+
+    $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
+    $since('2026-06-15T11:00:00+00:00')->assertJsonCount(0, 'data');
+
+    s19Sign('anna@example.test');
+
+    expect($this->withToken($this->view)->getJson("/api/v1/signing/envelopes/{$id}")->json('data.status'))->toBe('COMPLETED');
+    $since('2026-06-15T11:00:00+00:00')->assertJsonCount(1, 'data');
+    $since('2026-06-15T13:00:00+00:00')->assertJsonCount(0, 'data');
+});
+
+it('answers 422 for the wrong shape of a field, never 500 or a silent drop', function () {
+    $document = s19Upload($this->owner, $this->company);
+    $template = app(ManageSigningTemplates::class)->create($this->owner, $this->company, [
+        'name' => 'Form', 'document_type' => 'DOCUMENT',
+        'roles' => [['label' => 'Part', 'step' => 1, 'verification' => 'NONE', 'internal' => false]],
+        'fields' => [['signer' => 0, 'type' => 'SIGNATURE', 'page' => 1, 'x' => 5000, 'y' => 5000, 'width' => 20000, 'height' => 2000, 'label' => 'U', 'required' => true]],
+    ], s19Upload($this->owner, $this->company, 'Mallfil'));
+    $send = fn (array $recipient, string $key) => s19Send($this, $this->send, ['template_id' => $template->id, 'recipients' => ['part' => $recipient]], $key);
+
+    $send(['email' => ['a@example.test']], 'sh-1')->assertUnprocessable();
+    $send(['email' => 'a@example.test', 'access_code' => ['x']], 'sh-2')->assertUnprocessable();
+    $send(['email' => 'a@example.test', 'language' => ['sv']], 'sh-3')->assertUnprocessable();
+    $send(['email' => 'a@example.test', 'language' => 'de'], 'sh-4')->assertUnprocessable();
+    s19Send($this, $this->send, ['template_id' => $template->id, 'recipients' => 'a@example.test'], 'sh-5')->assertUnprocessable();
+    s19Send($this, $this->send, ['document_id' => [$document->id], 'signers' => [['email' => 'a@example.test', 'step' => 1]]], 'sh-6')->assertUnprocessable();
+    s19Send($this, $this->send, ['template_id' => [1]], 'sh-7')->assertUnprocessable();
+
+    $upload = fn (array $extra, string $key) => $this->withToken($this->send)->withHeader('Idempotency-Key', $key)
+        ->post('/api/v1/signing/documents', ['file' => UploadedFile::fake()->createWithContent('a.pdf', PdfEngineFixtures::pdf(1)), ...$extra], ['Accept' => 'application/json']);
+    $upload(['title' => ['x']], 'sh-8')->assertUnprocessable();
+    $upload(['title' => 'A', 'customer_id' => 'abc'], 'sh-9')->assertUnprocessable();
+    $upload(['title' => 'A', 'supplier_id' => ['1']], 'sh-10')->assertUnprocessable();
+    $upload(['title' => 'A', 'customer_id' => '99999'], 'sh-11')->assertUnprocessable();
+    expect(CurrentCompany::run($this->company, fn () => SigningDocument::query()->count()))->toBe(2);
+});
+
+it('lets the API switch automatic reminders on, and leaves them off otherwise', function () {
+    $on = s19Send($this, $this->send, s19Body(s19Upload($this->owner, $this->company), ['auto_reminders' => true, 'reminder_days' => 7]), 'ar-1')->assertCreated()
+        ->assertJsonPath('data.auto_reminders', true)->assertJsonPath('data.reminder_interval_days', 7);
+    s19Send($this, $this->send, s19Body(s19Upload($this->owner, $this->company, 'Två')), 'ar-2')->assertCreated()->assertJsonPath('data.auto_reminders', false);
+    expect($on->json('data.id'))->not->toBeNull();
 });

@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response as PlainResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -51,14 +52,20 @@ final class SigningDocumentController
             throw ValidationException::withMessages(['file' => __('Skicka PDF-filen i fältet file (multipart/form-data).')]);
         }
 
+        $input = Validator::make($request->all(), [
+            'title' => ['required', 'string', 'max:255'],
+            'customer_id' => ['nullable', 'integer'],
+            'supplier_id' => ['nullable', 'integer'],
+        ])->validate();
+
         $document = $store(
             $this->user(),
             $this->company(),
             $file->getRealPath(),
             $file->getClientOriginalName(),
-            (string) $request->input('title', ''),
-            $this->id($request->input('customer_id')),
-            $this->id($request->input('supplier_id')),
+            (string) $input['title'],
+            $this->id($input['customer_id'] ?? null),
+            $this->id($input['supplier_id'] ?? null),
         );
 
         return CursorList::one(SigningPresenter::document($document), 201)

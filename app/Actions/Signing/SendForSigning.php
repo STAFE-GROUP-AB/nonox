@@ -401,7 +401,8 @@ final class SendForSigning
     /**
      * The reminder choice of a send: off unless the sender switched it on
      * (ADR-046 principle 9; the signing panel's tick box is on by default,
-     * the API and the ÄTA flow never switch it on), every 1, 2, 3 or 7 days
+     * the API may switch it on with auto_reminders, since a reminder the sender
+     * chose is allowed; the ÄTA flow never does), every 1, 2, 3 or 7 days
      * (default 3, owner decision 13) or once before the deadline.
      *
      * @param  array<string, mixed>  $validated

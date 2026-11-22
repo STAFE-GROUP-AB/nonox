@@ -51,6 +51,7 @@ use App\Modules\Connect\Sftp\Http\UploadHookController;
 use App\Modules\Connect\Sftp\SieFileUploaded;
 use App\Modules\Connect\Support\ConnectAccess;
 use App\Modules\Connect\Support\ConnectScopes;
+use App\Modules\Connect\Webhooks\QueueSigningWebhooks;
 use App\Modules\Connect\Webhooks\WebhookDispatcher;
 use App\Modules\Inventory\Events\StockChanged;
 use App\Modules\ModuleRegistry;
@@ -115,7 +116,7 @@ class ConnectServiceProvider extends ServiceProvider
         Event::listen(SieFileUploaded::class, [WebhookDispatcher::class, 'sieUploaded']);
         Event::listen(StockChanged::class, [WebhookDispatcher::class, 'stockChanged']);
         Event::listen(QuoteSigned::class, [WebhookDispatcher::class, 'quoteSigned']);
-        Event::listen(SigningEnvelopeChanged::class, [WebhookDispatcher::class, 'signingChanged']);
+        Event::listen(SigningEnvelopeChanged::class, [QueueSigningWebhooks::class, 'handle']);
         Event::listen(PeppolTransmissionChanged::class, [WebhookDispatcher::class, 'peppolTransmissionChanged']);
         Event::listen(PriceListChanged::class, [WebhookDispatcher::class, 'priceListChanged']);
         Event::listen(PriceAgreementActivated::class, [WebhookDispatcher::class, 'priceAgreementActivated']);

@@ -144,6 +144,19 @@ final class SigningEnvelopeController
         $company = $this->company();
         $body = $request->json()->all();
 
+        // Shapes first: an array where a string is expected is a 422, never a cast (and a 500).
+        Validator::make($body, [
+            'template_id' => ['nullable', 'string', 'max:64'],
+            'document_id' => ['nullable', 'string', 'max:64'],
+            'quote_id' => ['nullable', 'string', 'max:64'],
+            'agreement_id' => ['nullable', 'integer'],
+            'recipients' => ['nullable', 'array'],
+            'recipients.*' => ['array'],
+            'recipients.*.email' => ['required', 'string', 'email', 'max:255'],
+            'recipients.*.language' => ['nullable', 'string', 'in:sv,en'],
+            'recipients.*.access_code' => ['nullable', 'string', 'max:255'],
+        ])->validate();
+
         $template = $this->template($body);
         $created = null;
 
