@@ -265,7 +265,7 @@ it('signs at the provider: the signer\'s own signature becomes their revision, e
         // The level the company states is never shown to the signer (legal review F1); the document code is (F7).
         ->assertDontSee('kvalificerad')
         ->assertSee(ProviderRun::documentCode($sent['request']->document_sha256))
-        ->assertSee('Kontrollera att samma kod visas hos tjänsten')
+        ->assertSee('Visar tjänsten en dokumentkod ska den vara samma som här.')
         ->assertSee('ofta ditt namn och ditt personnummer')
         ->assertSee(route('signing.provider.start', ['token' => $sent['token']]), false);
 

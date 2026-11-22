@@ -35,7 +35,7 @@ En undertecknare som skriver under hos tjänsten kan inte ha egna fält i dokume
 ## Det här ser undertecknaren
 
 1. Undertecknaren öppnar länken, godkänner att handlingen skrivs under elektroniskt och läser dokumentet som vanligt.
-2. Undertecknaren ser en **Dokumentkod** (till exempel 1A2B 3C4D), fyller i namn och bekräftelse och klickar på **Fortsätt till** följt av tjänstens namn. Samma kod skickas till tjänsten, så att undertecknaren kan kontrollera att det är rätt dokument som skrivs under där.
+2. Undertecknaren ser en **Dokumentkod** (till exempel 1A2B 3C4D), fyller i namn och bekräftelse och klickar på **Fortsätt till** följt av tjänstens namn. Samma kod skickas till tjänsten, och visar tjänsten den kan undertecknaren kontrollera att det är rätt dokument som skrivs under där.
 3. Hos tjänsten loggar undertecknaren in och väljer sitt certifikat. Sedan kommer undertecknaren tillbaka till NONOX en kort stund.
 4. Undertecknaren skickas till tjänsten igen och godkänner underskriften av just det här dokumentet.
 5. NONOX kontrollerar underskriften, lägger in den i PDF:en och visar **Tack! Dokumentet är signerat.**

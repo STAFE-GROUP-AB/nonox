@@ -147,7 +147,7 @@
             @if($provider ?? null)
                 <div class="mt-3 rounded-lg bg-stone-50 p-3 text-sm text-gray-700 ring-1 ring-stone-200" data-testid="signing-provider-note">
                     <p>{{ __('Du skriver under hos :provider med ditt eget certifikat. Fyll i formuläret och fortsätt, så skickas du dit och sedan tillbaka hit.', ['provider' => $provider['name']]) }}</p>
-                    <p class="mt-1">{{ __('Dokumentkod:') }} <span class="font-mono font-semibold tracking-wider text-gray-900" data-testid="signing-document-code">{{ $provider['code'] }}</span>. {{ __('Kontrollera att samma kod visas hos tjänsten innan du skriver under där.') }}</p>
+                    <p class="mt-1">{{ __('Dokumentkod:') }} <span class="font-mono font-semibold tracking-wider text-gray-900" data-testid="signing-document-code">{{ $provider['code'] }}</span>. {{ __('Visar tjänsten en dokumentkod ska den vara samma som här. Är den inte det, skriv inte under och kontakta avsändaren.') }}</p>
                 </div>
             @endif
 
