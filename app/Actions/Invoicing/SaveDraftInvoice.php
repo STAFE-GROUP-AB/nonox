@@ -315,6 +315,11 @@ class SaveDraftInvoice
                 InvoiceTaxReductionBuyer::create(['invoice_id' => $invoice->id, ...$buyer]);
             }
 
+            // Everyone who changes an invoice draft counts as one of its preparers for an approval of prices under the floor too (ADR-082 §9, DraftEditors); kept also while the floor is off, since it may be switched on later.
+            if ($draft !== null && ! $invoice->isCredit()) {
+                Audit::record('invoice.draft_saved', $invoice, ['rows' => count($rows)], $company, $user);
+            }
+
             // Everyone who saves a credit draft counts as one of its preparers in an approval (ADR-081 E21, DraftEditors).
             if ($draft !== null && $invoice->isCredit()) {
                 Audit::record('invoice.draft_saved', $invoice, ['rows' => count($rows)], $company, $user);

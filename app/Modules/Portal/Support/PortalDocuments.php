@@ -6,8 +6,12 @@ namespace App\Modules\Portal\Support;
 
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\SalesDocumentStatus;
+use App\Domain\Pricing\PriceFloor;
+use App\Domain\Pricing\PriceFloorGuard;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\SalesDocument;
+use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
@@ -48,9 +52,35 @@ final class PortalDocuments
     /** @return Builder<SalesDocument> */
     public function salesDocuments(): Builder
     {
+        $held = $this->held();
+
         return SalesDocument::query()
             ->where('customer_id', $this->context->customer()->id)
-            ->whereNotNull('sent_at');
+            ->whereNotNull('sent_at')
+            ->when($held !== [], fn (Builder $query) => $query->whereNotIn('id', $held));
+    }
+
+    /**
+     * Sent quotes and orders changed after they were sent, whose manual prices
+     * under the company's floor are not approved in the rows they have now
+     * (ADR-082 §9): they stay sent, but the customer sees neither the document
+     * nor its PDF until they are approved again. Nothing is read for a company
+     * without a floor that requires approval; otherwise the rows, costs and
+     * approvals are loaded once, whatever the number of documents.
+     *
+     * @return list<string>
+     */
+    private function held(): array
+    {
+        $company = Company::query()->find(CurrentCompany::id());
+
+        if (! $company instanceof Company || ! PriceFloor::of($company)->requiresApproval()) {
+            return [];
+        }
+
+        $documents = SalesDocument::query()->where('customer_id', $this->context->customer()->id)->whereNotNull('sent_at')->get();
+
+        return PriceFloorGuard::heldIds($company, $documents);
     }
 
     public function salesDocument(string $id): SalesDocument

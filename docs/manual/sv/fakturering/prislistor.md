@@ -105,6 +105,17 @@ Saknas priset i kundens valuta räknas grundpriset om med Riksbankens kurs för 
 > [!NOTE]
 > Fakturor, offerter och order fyller i kundens pris ur listorna när du väljer en artikel, och visar varifrån priset kommer. Läs [Priser på fakturor, offerter och order](/manual/fakturering/priser-pa-raderna). Ett pris på en faktura som redan är utfärdad ändras aldrig av att en prislista ändras.
 
+## Lägsta täckningsgrad
+
+Längst ned på sidan **Prislistor** finns kortet **Lägsta täckningsgrad**. Skriv en procent, till exempel 15, i **Lägsta täckningsgrad (%)** och välj vad som händer under gränsen i **Under täckningsgraden**:
+
+- **Varna bara** visar en varning på raden.
+- **Kräv godkännande innan dokumentet skickas** gäller priser och rabatter som skrivs för hand på fakturor, offerter och order. Någon med behörigheten att godkänna priser under lägsta täckningsgrad måste godkänna dem innan dokumentet kan skickas eller skapas. Priser från prislistor och prisavtal varnar bara.
+
+Procenten kan vara från 0,01 till 99. Lämna fältet tomt för att stänga av lägsta täckningsgrad, som den är från början. Att ändra den kräver behörigheten att hantera prislistor. Läs [Priser på fakturor, offerter och order](/manual/fakturering/priser-pa-raderna) för hur det ser ut när du skriver en faktura.
+
+![Kortet Lägsta täckningsgrad längst ned på Prislistor.](/bilder/manual/fakturering/lagsta-tackningsgrad.webp)
+
 ## Bra att veta
 
 - Prislistor bokför ingenting. Ett pris når bokföringen först när det står på en faktura som utfärdas.

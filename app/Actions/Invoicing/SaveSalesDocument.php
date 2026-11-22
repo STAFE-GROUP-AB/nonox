@@ -134,6 +134,11 @@ class SaveSalesDocument
                 SalesDocumentRow::create(['sales_document_id' => $document->id, 'position' => $position, 'line_key' => $lineKeys[$position], ...$row]);
             }
 
+            // Everyone who changes a quote or an order counts as one of its preparers for an approval of prices under the floor (ADR-082 §9, DraftEditors), also while the floor is off: it may be switched on later. Ids only.
+            if (! $isNew) {
+                Audit::record('sales_document.saved', $document, ['rows' => count($rows)], $company, $user);
+            }
+
             if ($isNew) {
                 Audit::record($kind === SalesDocument::QUOTE ? 'quote.created' : 'order.created', $document, [
                     'number' => $document->number,

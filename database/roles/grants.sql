@@ -257,6 +257,7 @@ BEGIN
         ('pos_webhook_messages', 'SELECT, INSERT, UPDATE, DELETE'),
         ('price_agreement_items', 'SELECT, INSERT, UPDATE, DELETE'),
         ('price_agreements', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('price_floor_approvals', 'SELECT, INSERT, UPDATE'),
         ('price_list_items', 'SELECT, INSERT, UPDATE, DELETE'),
         ('price_list_price_group', 'SELECT, INSERT, UPDATE, DELETE'),
         ('price_lists', 'SELECT, INSERT, UPDATE, DELETE'),

@@ -35,6 +35,8 @@ En order skriver du likadant under **Försäljning → Order** med **Ny order**.
 
 Kunden får dokumentet som PDF. Vill du se det först trycker du på **Öppna PDF**.
 
+Har företaget slagit på **Kräv godkännande innan dokumentet skickas** och en rad har ett pris du har skrivit själv under lägsta täckningsgrad, måste priserna godkännas först. Läs avsnittet om marginal och lägsta täckningsgrad i [Priser på fakturor, offerter och order](/manual/fakturering/priser-pa-raderna).
+
 ## När kunden tackar ja
 
 Öppna offerten och välj:

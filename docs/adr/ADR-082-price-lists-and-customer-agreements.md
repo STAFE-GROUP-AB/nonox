@@ -572,6 +572,52 @@ index figures in v1. Decision 11.
 - Cost and margin are **never** shown on customer PDFs, in the portal or in the
   API without the cost permission.
 
+**As built (P7), 2026-11-20** (after the cold review):
+
+- **What counts as manual.** A typed price (source MANUAL), a discount typed on
+  top of a list or agreement price (`discount_bp` above 0, since an agreed
+  discount is folded into the price), and a row without an article. Only
+  those can be held; a list or agreement price without a typed discount only
+  warns. The floor is judged per row and for the document as a whole: a
+  negative row (a discount row, a return) lowers the sales, and a manual row
+  on a document under the floor needs approval even when no single row is.
+- **Approval is a small record of its own** (`price_floor_approvals`), not an
+  ADR-081 subject: the engine needs a configured policy and about ten
+  cross-cutting edits per subject. It is for one version of the rows, the
+  fingerprint of customer, date, currency and every row's article, unit,
+  quantity, price, discount and source. The writer, anyone who changed the
+  draft (`invoice.draft_saved`, `sales_document.saved`, written while the
+  company has a floor) and the requester cannot decide it while
+  `separate_supplier_approval` is on.
+- **Where it holds.** `IssueInvoice` (also a recurring draft issued by a
+  person; only `RunRecurringInvoice`'s automatic issue is exempt),
+  `SendSalesDocument` (locked, in a transaction), `SendForSigning` for a quote,
+  quote acceptance in the portal (`SignInSession::accept`, which tells the
+  customer nothing of the floor) and `ProgressSalesDocument::toOrder`. A sent
+  quote can still be edited; its changed rows are simply not approved, so it
+  cannot be accepted or made an order until they are. Credit invoices are not
+  held.
+- **Only rows that lower the margin hold the document as a whole:** every
+  negative row (typed or at a list price), rows with a typed discount and typed
+  prices under the floor. A return takes cost back only for an article that is also sold
+  on the document, up to the cost sold (quantity converted to the stock unit) and
+  never more than the row's own amount, so a partial return keeps its margin and
+  a return can never raise it (a cost that changed since the sale included). A positive
+  free-text row (freight) or a row of 0 kr holds nothing.
+- **The customer portal** hides a sent quote or order whose manual prices are
+  not approved in the rows it has now (`PriceFloorGuard::heldIds`, rows, costs
+  and approvals loaded once), both the document and its PDF; `sent_at` is kept.
+- **An agreement sent automatically** (`RunRecurringInvoice`, `automatic: true`)
+  is not guarded by the floor: the agreement itself is the price authority.
+- **Other currencies.** The margin cannot be checked in a currency other than
+  kronor, so while the company requires approval every typed price on an
+  article row of such a document needs it.
+- **Floor of 0 %** is refused (minimum 0,01 %): below cost and below zero
+  would otherwise tell anyone cost by elimination. `marginCheck` answers a
+  role that can edit documents but lacks `prices:view-cost` only with the
+  floor, never a cost; no such role exists today, but if one is added it could
+  probe the floor by editing prices, which should be weighed then.
+
 ### 10. Where the resolver is used
 
 | Consumer | Channel | How |

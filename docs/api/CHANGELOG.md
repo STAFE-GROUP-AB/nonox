@@ -13,6 +13,22 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-20: lägsta täckningsgrad stoppar ibland `issue`
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-20: the lowest contribution margin can hold `issue`
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Ändrat
+- `POST /invoices/{invoice}/issue`: en faktura med ett pris skrivet för hand under företagets lägsta täckningsgrad svarar nu 422 på fältet `invoice` tills någon med behörigheten att godkänna priser under lägsta täckningsgrad har godkänt den versionen i NONOX, om företaget har slagit på att godkännande krävs. Lägsta täckningsgrad är avstängd som standard, så ett företag som inte har satt den märker ingen skillnad. Kostnad och marginal finns inte i API:et.
+<!-- /lang -->
+<!-- lang:en -->
+### Changed
+- `POST /invoices/{invoice}/issue`: an invoice with a manual price under the company's lowest contribution margin now answers 422 on the field `invoice` until someone with the permission to approve prices under the lowest contribution margin has approved that version in NONOX, if the company has switched on that approval is required. The lowest contribution margin is off by default, so a company that has not set it sees no difference. Cost and margin are not in the API.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-18: flyttorder och platsen På väg
 <!-- /lang -->
 <!-- lang:en -->

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Signing;
 
+use App\Domain\Pricing\PriceFloorGuard;
 use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
@@ -16,6 +17,7 @@ use App\Domain\Signing\SigningStatus;
 use App\Domain\Signing\SigningToken;
 use App\Events\QuoteSigned;
 use App\Jobs\FollowUpSigning;
+use App\Models\Company;
 use App\Models\SalesDocument;
 use App\Models\SigningRequest;
 use App\Support\Audit\Audit;
@@ -74,6 +76,13 @@ final class SignInSession
 
         $signed = CurrentCompany::run($document->signingCompanyId(), fn (): SigningRequest => DB::transaction(function () use ($document, $signer, $name, $acceptanceText, $fingerprintShown): SigningRequest {
             $locked = $this->lockOpen($document, $fingerprintShown);
+
+            // Rows changed after the quote was approved and sent are not what the customer may accept (ADR-082 §9, P7).
+            // The customer is told nothing of the floor, only that the sender has to look at it first.
+            if ($locked instanceof SalesDocument && $locked->isQuote() && ! PriceFloorGuard::state(Company::query()->findOrFail($locked->company_id), $locked)->cleared()) {
+                throw ValidationException::withMessages(['document' => __('Offerten kan inte godkännas just nu. Kontakta avsändaren.')]);
+            }
+
             $request = $this->record($locked, $signer);
 
             $request->forceFill([

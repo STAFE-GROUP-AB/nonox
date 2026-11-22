@@ -15,6 +15,7 @@
 import { formatOre } from './money.js';
 import { rowNet, totals } from './sales-math.js';
 import { ratePercent, salesRowVatWarnings } from './vat-rate-check.js';
+import { marginPayload, marginSignature } from './margin-check.js';
 import { afterContextChange, fromTier, quantityMilli, shouldFillPrice, tierFor } from './price-table.js';
 
 /**
@@ -49,6 +50,11 @@ document.addEventListener('alpine:init', () => {
         warningTexts: pricing.warnings ?? {},
         priceTable: {},
         pricesStale: false,
+        // Margin and floor warnings (ADR-082 §9): what the server last said about the rows, asked for after they change.
+        marginOn: pricing.margin ?? false,
+        margin: { rows: {}, totals: null, banner: '', note: '' },
+        marginSeen: '',
+        marginTimer: null,
         // The article each row had when its article field got focus, so leaving the field unchanged keeps the price.
         articleAtFocus: {},
         // Where focus goes back to when "Varför detta pris?" or "Uppdatera priser" closes.
@@ -72,6 +78,42 @@ document.addEventListener('alpine:init', () => {
             }
 
             this.loadPrices(false);
+
+            if (this.marginOn && this.$wire && typeof this.$wire.marginCheck === 'function') {
+                this.$watch('rows', () => this.scheduleMargin());
+                this.$wire.$watch('currency', () => this.scheduleMargin(true));
+
+                // A saved document opens with the answer already there; a new one asks once it has rows.
+                if (pricing.marginInitial && Object.keys(pricing.marginInitial).length > 0) {
+                    this.margin = pricing.marginInitial;
+                    this.marginSeen = marginSignature(this.rows);
+                } else {
+                    this.scheduleMargin(true);
+                }
+            }
+        },
+
+        /** Asks the server about the margin a moment after a row's article, quantity, unit, price or discount changed; at once when the page opens. */
+        scheduleMargin(force = false) {
+            const signature = marginSignature(this.rows);
+
+            if (!force && signature === this.marginSeen) {
+                return;
+            }
+
+            clearTimeout(this.marginTimer);
+            this.marginTimer = setTimeout(async () => {
+                this.marginSeen = signature;
+                const answer = await this.$wire.marginCheck(marginPayload(this.rows));
+
+                if (answer && marginSignature(this.rows) === signature) {
+                    this.margin = answer;
+                }
+            }, force ? 0 : 500);
+        },
+
+        marginRow(index) {
+            return this.margin.rows[index] ?? null;
         },
 
         /**

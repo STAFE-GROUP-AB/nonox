@@ -74,6 +74,7 @@ use App\Models\PaymentResponse;
 use App\Models\PaymentResponseImport;
 use App\Models\PriceAgreement;
 use App\Models\PriceAgreementItem;
+use App\Models\PriceFloorApproval;
 use App\Models\PriceList;
 use App\Models\PriceListItem;
 use App\Models\PriceListPriceGroup;
@@ -463,6 +464,8 @@ const COMPANY_SCOPED_MODELS = [
     CustomerPriceGroup::class => 'p1PriceGroupAttributes',
     PriceListPriceGroup::class => 'p1PriceListPriceGroupAttributes',
     PriceAgreement::class => 'p1PriceAgreementAttributes',
+    // Margin and floor approvals (ADR-082 P7); the tenancy test of its own is tests/Tenancy/PriceFloorTenancyTest.php.
+    PriceFloorApproval::class => 'p7PriceFloorApprovalAttributes',
     PriceAgreementItem::class => 'p1PriceAgreementItemAttributes',
     ArticlePriceHistory::class => 'p1ArticlePriceHistoryAttributes',
     PriceUpdateRun::class => 'p1PriceUpdateRunAttributes',
@@ -2084,6 +2087,16 @@ function p1PriceAgreementAttributes(): array
         'title' => 'Hemligt prisavtal',
         'valid_from' => '2026-01-01',
         'created_by' => User::factory()->create()->id,
+    ];
+}
+
+function p7PriceFloorApprovalAttributes(): array
+{
+    return [
+        'document_type' => 'INVOICE',
+        'document_id' => (string) Str::uuid(),
+        'fingerprint' => str_repeat('a', 64),
+        'requested_by' => User::factory()->create()->id,
     ];
 }
 

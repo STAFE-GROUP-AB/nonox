@@ -5,5 +5,9 @@
             <iframe src="{{ route('invoicing.invoices.pdf', $invoice) }}" title="{{ $invoice->title() }}" class="h-192 w-full rounded-xl border border-gray-200 bg-white"></iframe>
             <livewire:invoicing.invoice-actions :invoice="$invoice" />
         </div>
+        {{-- Contribution of the invoice, for people with prices:view-cost (ADR-082 §9); not on the PDF. --}}
+        @unless($invoice->isDraft() || $invoice->isCredit())
+            <livewire:pricing.document-margin-card type="INVOICE" :document-id="$invoice->id" :key="'margin-'.$invoice->id" />
+        @endunless
     </div>
 </x-app-layout>
