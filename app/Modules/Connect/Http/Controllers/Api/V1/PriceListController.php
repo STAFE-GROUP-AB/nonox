@@ -18,6 +18,7 @@ use App\Modules\Connect\Http\Resources\PricePresenter;
 use App\Modules\Connect\Support\ApiInput;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\DeadlockException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -149,9 +150,11 @@ final class PriceListController
                     $saved[$index] = $save($this->user(), $this->company(), $list, $input, null, $replaces);
                 } catch (ValidationException $exception) {
                     $errors[] = ['index' => $index, 'errors' => $exception->errors()];
-                } catch (AuthorizationException|ModelNotFoundException $exception) {
+                } catch (AuthorizationException|DeadlockException|ModelNotFoundException $exception) {
                     throw $exception;
-                } catch (Throwable) {
+                } catch (Throwable $exception) {
+                    report($exception);
+
                     $errors[] = ['index' => $index, 'errors' => ['row' => [__('Raden kunde inte sparas.')]]];
                 }
             }

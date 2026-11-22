@@ -18,6 +18,7 @@ use App\Modules\Connect\Http\Resources\CursorList;
 use App\Modules\Connect\Http\Resources\PricePresenter;
 use App\Modules\Connect\Support\ApiInput;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\DeadlockException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -139,9 +140,11 @@ final class PriceAgreementController
                 $saved[$index] = $save($this->user(), $this->company(), $model, $this->itemInput(is_array($row) ? $row : [], $articles, $units));
             } catch (ValidationException $exception) {
                 $errors[] = ['index' => $index, 'errors' => $exception->errors()];
-            } catch (AuthorizationException|ModelNotFoundException $exception) {
+            } catch (AuthorizationException|DeadlockException|ModelNotFoundException $exception) {
                 throw $exception;
-            } catch (Throwable) {
+            } catch (Throwable $exception) {
+                report($exception);
+
                 $errors[] = ['index' => $index, 'errors' => ['row' => [__('Raden kunde inte sparas.')]]];
             }
         }
