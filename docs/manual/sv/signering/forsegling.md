@@ -41,7 +41,7 @@ Under **Inställningar för företaget → Signering** visar rutan **Försegling
 
 Installationens certifikat är oftast självsignerat. Då visar PDF-läsare förseglingen som en underskrift med okänd giltighet. Det betyder inte att filen har ändrats, bara att läsaren inte känner igen den som utfärdade certifikatet. Sidan i dokumentet säger då också att stämpeln gjordes med certifikatet för den installation av NONOX som avsändaren använder, och att den som driver installationen inte intygar dokumentets innehåll.
 
-NONOX kontrollerar inte namnet i ett certifikat. Stämmer namnet inte med företagets namn eller organisationsnummer visar sidan en varning, men certifikatet används ändå.
+NONOX kontrollerar inte namnet i ett certifikat. Stämmer namnet inte med företagets namn eller organisationsnummer visar inställningarna en varning när certifikatet laddas upp, men certifikatet används ändå. I dokumentet står namnet som det är i certifikatet, med texten att det inte är kontrollerat.
 
 ## Så här laddar du upp företagets eget certifikat
 
