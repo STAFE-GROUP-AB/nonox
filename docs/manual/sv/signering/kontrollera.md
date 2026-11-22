@@ -25,13 +25,13 @@ Bara den som har behörigheten att ändra signeringens inställningar kan göra 
 2. I rutan **Kontrollsidan för signerade dokument** kryssar du i **Låt mottagare kontrollera filer på kontrollsidan**.
 3. Tryck på **Spara**.
 
-Inställningen gäller företagets alla signeringar som är klara, också tidigare. Slår du av den svarar sidan som om filerna inte fanns, och nya signeringsbevis får ingen QR-kod.
+Inställningen gäller signeringar som blev klara från och med 23 november 2026, då signeringssidan började berätta om kontrollsidan. Skickar ni en fil som andra också kan ha, till exempel en standardmall, kan den som har filen se ert företagsnamn och att den har signerats. Slår du av den svarar sidan som om filerna inte fanns, och nya signeringsbevis får ingen QR-kod.
 
 ## Så här kontrollerar du en fil
 
 1. Öppna sidan, eller skanna QR-koden på signeringsbeviset eller på sammanställningen.
 2. Under **Välj fil** väljer du PDF-filen på din dator eller telefon.
-3. Sidan svarar direkt: **Filen är oförändrad** eller **Filen finns inte hos NONOX**.
+3. Sidan svarar direkt: **Filen är oförändrad**, **Filen finns inte hos NONOX** eller, om samma fil har skickats för signering mer än en gång, **NONOX har en fil med den här kontrollsumman**.
 
 **Filen lämnar aldrig din enhet.** Din webbläsare räknar ut filens kontrollsumma (SHA-256), ett fingeravtryck på 64 tecken, och bara de tecknen skickas till NONOX. Inte filens namn eller innehåll. NONOX sparar inte kontrollsumman. Din IP-adress används i högst en minut för att begränsa antalet kontroller och finns annars bara i webbserverns vanliga åtkomstlogg.
 
@@ -39,7 +39,7 @@ QR-koden på signeringsbeviset och på sammanställningen innehåller kontrollsu
 
 ## Vad sidan svarar
 
-Sidan svarar bara för signeringar där alla har signerat, och bara när kontrollsumman finns i en enda signering. Då visar den:
+Sidan svarar bara för signeringar där alla har signerat och som blev klara från och med 23 november 2026, och bara när kontrollsumman finns i en enda signering. Då visar den:
 
 - **Företag**: avsändarens namn.
 - **Filen är**: originalet som skickades för signering, versionen efter att en undertecknare har signerat, den förseglade filen eller den omstämplade filen.

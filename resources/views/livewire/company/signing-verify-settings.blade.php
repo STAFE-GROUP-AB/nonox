@@ -8,7 +8,7 @@
             <input id="signing-verify-enabled" type="checkbox" wire:model="enabled" class="mt-1 h-5 w-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500">
             <label for="signing-verify-enabled" class="font-medium text-gray-800">{{ __('Låt mottagare kontrollera filer på kontrollsidan') }}</label>
         </div>
-        <p>{{ __('Av: kontrollsidan svarar som om filen inte fanns, och signeringsbevisen får ingen QR-kod. Gäller signeringar som är klara, också tidigare.') }}</p>
+        <p>{{ __('Av: kontrollsidan svarar som om filen inte fanns, och signeringsbevisen får ingen QR-kod. Gäller signeringar som blev klara från och med 23 november 2026, då signeringssidan började berätta om kontrollsidan. Skickar ni en fil som andra också kan ha, till exempel en standardmall, kan den som har filen se ert företagsnamn och att den har signerats.') }}</p>
 
         <x-button wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
     </form>

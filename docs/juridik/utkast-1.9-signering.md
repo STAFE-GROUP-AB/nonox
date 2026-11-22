@@ -85,7 +85,7 @@ betrodda tjänster enligt eIDAS. Sidan är avstängd för varje företag tills f
 
 > Med kontrollsidan, om företaget har slagit på den: svar till den som har en kopia av ett
 > signerat dokument om att filen är oförändrad, med företagets namn, antal undertecknare och
-> kontrollsätt.
+> kontrollsätt, när alla hade signerat och om filen är förseglad.
 
 **Integritetspolicyn, ny mening om besökare på de öppna sidorna:**
 

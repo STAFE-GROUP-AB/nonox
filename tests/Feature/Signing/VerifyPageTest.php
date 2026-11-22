@@ -25,6 +25,7 @@ use App\Modules\Signing\SigningModule;
 use App\Support\Audit\Audit;
 use App\Support\Instance\InstanceSettings;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
@@ -132,7 +133,7 @@ function s12Json(array $answer): string
 }
 
 beforeEach(function () {
-    $this->travelTo(now()->addMinutes(10)->startOfMinute());
+    $this->travelTo(CarbonImmutable::parse('2026-11-24 10:00:00', 'Europe/Stockholm'));
     Storage::fake('local');
     Mail::fake();
     FakePdfEngine::install();
@@ -315,6 +316,20 @@ it('details a hash that another company has with the page off as one signing: th
     $answer = s12Check($this, $mine->refresh()->document_sha256);
 
     expect($answer['status'])->toBe('one')->and(s12Json($answer))->toContain('Snickeri Demo AB')->not->toContain('Annat Bolag');
+});
+
+it('answers like a miss for an envelope completed before the notice date', function () {
+    s12Switch();
+    $this->travelTo(CarbonImmutable::parse('2026-11-22 23:50:00', 'Europe/Stockholm'));
+    $early = s12Send($this->owner, $this->company, [['email' => 'anna@example.test', 'step' => 1, 'verification' => 'NONE']]);
+    s12Sign('anna@example.test');
+    $this->travelTo(CarbonImmutable::parse('2026-11-23 00:10:00', 'Europe/Stockholm'));
+    $late = s12Send($this->owner, $this->company, [['email' => 'bo@example.test', 'step' => 1, 'verification' => 'NONE']]);
+    s12Sign('bo@example.test', 'Bo');
+    auth()->logout();
+
+    expect(s12Check($this, $early->refresh()->document_sha256))->toBe(s12Check($this, hash('sha256', 'saknas')))
+        ->and(s12Check($this, $late->refresh()->document_sha256)['status'])->toBe('one');
 });
 
 it('answers exactly like not found for a company that has the page off', function () {

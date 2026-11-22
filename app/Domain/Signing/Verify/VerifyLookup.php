@@ -14,6 +14,7 @@ use App\Models\SigningDocumentVersion;
 use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Support\Tenancy\CompanyScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
@@ -23,8 +24,8 @@ use Illuminate\Support\Collection;
  * address or IP address (owner decision 11), never the document's title,
  * never an internal id.
  *
- * Only a completed envelope of a company that has switched the page on is
- * answered; anything else is "not found", exactly alike. Details are given
+ * Only an envelope completed on or after NOTICE_FROM, of a company that has
+ * switched the page on, is answered; anything else is "not found", exactly alike. Details are given
  * only when the hash is in exactly one envelope; in more than one (the same
  * PDF sent twice, by one company or two) the answer says so and nothing else.
  *
@@ -35,6 +36,12 @@ use Illuminate\Support\Collection;
  */
 final class VerifyLookup
 {
+    /**
+     * The day the signing page started telling signers about the Verify page. Only envelopes completed at or
+     * after this moment are answered, so no signer is covered who was not told (legal re-check, N1).
+     */
+    public const string NOTICE_FROM = '2026-11-23 00:00:00 Europe/Stockholm';
+
     public const string ONE = 'one';
 
     public const string MANY = 'many';
@@ -53,6 +60,7 @@ final class VerifyLookup
             ->whereIn('envelope_id', fn ($query) => $query->select('signing_envelopes.id')->from('signing_envelopes')
                 ->join('teams', 'teams.id', '=', 'signing_envelopes.company_id')
                 ->where('signing_envelopes.status', EnvelopeStatus::Completed->value)
+                ->where('signing_envelopes.completed_at', '>=', CarbonImmutable::parse(self::NOTICE_FROM))
                 ->where('teams.signing_verify_enabled', true))
             ->distinct()->limit(2)->pluck('envelope_id')->all());
 
