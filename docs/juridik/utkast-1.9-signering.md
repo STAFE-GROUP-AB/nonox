@@ -76,6 +76,26 @@ och en ny mening sist i stycket:
 > räkenskapsinformation eller bevis om ett avtal. Vill du få ut eller radera uppgifter om en
 > signering vänder du dig till det företag som skickade dokumentet.
 
+## C2. Kontrollsidan (ADR-046 tillägg, lucka 6, paket S12)
+
+Gäller först när kontrollsidan slås på i den driftade tjänsten, vilket väntar på svaret på frågan om
+betrodda tjänster enligt eIDAS. Sidan är avstängd för varje företag tills företaget själv slår på den.
+
+**Personuppgiftsbiträdesavtalet, avsnitt 1 (Behandlingen), ny mening efter signeringen:**
+
+> Med kontrollsidan, om företaget har slagit på den: svar till den som har en kopia av ett
+> signerat dokument om att filen är oförändrad, med företagets namn, antal undertecknare och
+> kontrollsätt, när alla hade signerat och om filen är förseglad.
+
+**Integritetspolicyn, ny mening om besökare på de öppna sidorna:**
+
+> Besöker du kontrollsidan skickar din webbläsare bara filens kontrollsumma. Vi sparar inte
+> kontrollsumman. Din IP-adress används för att begränsa antalet kontroller och finns kvar högst
+> en minut, och i webbserverns åtkomstlogg som annan trafik (artikel 6.1 f).
+
+De gällande texterna i `docs/juridik/personuppgiftsbitradesavtal.md` och `integritetspolicyn` ändras inte
+före versionsbytet; en ändring kräver höjd `LegalPageController::VERSION`.
+
 ## D. Underbiträden
 
 Ingen ändring i version 1.9. En tidsstämpeltjänst (lucka 5) får bara en kontrollsumma av
@@ -103,3 +123,11 @@ Ny mening i avsnittet om tillåten användning:
 - TODO(legal-verify): om ett uppladdat dokument som aldrig skickas kan gallras efter 90 dagar.
 - TODO(legal-verify): om en signeringstjänst med BankID är biträde eller självständigt
   personuppgiftsansvarig.
+- TODO(legal-verify): om svaret på kontrollsidan (företagets namn, antal undertecknare och
+  kontrollsätt, till den som har filen) är personuppgifter för den som har filen, särskilt när
+  företagsnamnet är en enskild näringsidkares namn, och om intresseavvägningen enligt artikel 6.1 f
+  håller (företagets och mottagarens intresse av att kunna kontrollera ett dokument mot den
+  registrerades intresse).
+- TODO(legal-verify): om kontrollsidan är en tjänst för validering som är en betrodd tjänst enligt
+  eIDAS artikel 3.16 i lydelsen enligt förordning (EU) 2024/1183 (se också artikel 3.41); verifiera
+  punkten mot den konsoliderade texten.

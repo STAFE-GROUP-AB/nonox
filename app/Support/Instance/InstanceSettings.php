@@ -56,6 +56,12 @@ final class InstanceSettings
      */
     public const string SIGNING_SEAL_ENABLED = 'signing.seal_enabled';
 
+    /**
+     * The public Verify page /kontrollera (ADR-046 S12) answers on this installation. Off by default: the hosted
+     * service keeps it off, like sealing, until the eIDAS trust-service question is answered (owner decision 2026-11-18).
+     */
+    public const string SIGNING_VERIFY_ENABLED = 'signing.verify_enabled';
+
     /** @var array<string, mixed> the defaults, which are also the only keys */
     public const array DEFAULTS = [
         self::OPERATOR => null,
@@ -66,6 +72,7 @@ final class InstanceSettings
         self::MIGRATION_GUIDES_PUBLIC => false,
         self::STRIPE_ENABLED => false,
         self::SIGNING_SEAL_ENABLED => false,
+        self::SIGNING_VERIFY_ENABLED => false,
     ];
 
     /** @var ?array<string, mixed> */
@@ -154,6 +161,12 @@ final class InstanceSettings
     public function signingSealEnabled(): bool
     {
         return (bool) $this->get(self::SIGNING_SEAL_ENABLED);
+    }
+
+    /** Whether the public Verify page /kontrollera answers on this installation (ADR-046 S12). */
+    public function signingVerifyEnabled(): bool
+    {
+        return (bool) $this->get(self::SIGNING_VERIFY_ENABLED);
     }
 
     /** Whether strangers may try NONOX on a demo company (ADR-077). */

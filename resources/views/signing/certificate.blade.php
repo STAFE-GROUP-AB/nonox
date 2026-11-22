@@ -47,6 +47,8 @@
         <tr><td class="muted">{{ $b('Avsändare') }}</td><td>{{ $company->legal_name ?: $company->name }}@if($company->org_number) ({{ $company->org_number }})@endif</td></tr>
     </table>
 
+    @include('signing.verify-box', ['hash' => $request->document_sha256, 'company' => $company, 'b' => $b])
+
     <h2>{{ $b('Underskrift') }}</h2>
     <table class="meta">
         <tr><td class="muted" style="width: 38%">{{ $b('Namn') }}</td><td>{{ $request->signer_name }}</td></tr>

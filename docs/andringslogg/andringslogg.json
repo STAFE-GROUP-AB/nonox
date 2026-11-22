@@ -40,6 +40,14 @@
       "omrade": "Avtal"
     },
     {
+      "id": "2026-11-22-signering-kontrollsida",
+      "datum": "2026-11-22T16:41:00+01:00",
+      "rubrik": "Kontrollsida för signerade dokument vid egen drift",
+      "beskrivning": "På /kontrollera kan den som har en kopia av ett signerat dokument kontrollera att filen är oförändrad. Webbläsaren räknar ut kontrollsumman så att filen aldrig lämnar enheten, och signeringsbeviset får en QR-kod. Sidan är avstängd för installationen och för varje företag tills den slås på (Inställningar för företaget → Signering), och i den driftade tjänsten tills en juristgranskning är klar.",
+      "typ": "Nytt",
+      "omrade": "Avtal"
+    },
+    {
       "id": "2026-11-22-signering-forsegling",
       "datum": "2026-11-22T14:30:00+01:00",
       "rubrik": "Försegling av signerade dokument vid egen drift",
