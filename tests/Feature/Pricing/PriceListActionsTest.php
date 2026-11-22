@@ -368,3 +368,23 @@ it('refuses to lengthen a running price into the next one', function () {
         ->and(fn () => ($this->item)($list, ['valid_from' => '2026-01-01', 'valid_to' => '2027-02-01'], $running))->toThrow(ValidationException::class)
         ->and($running->fresh()->valid_to->toDateString())->toBe('2026-12-31');
 });
+
+it('refuses to end a started price back in time when a new price replaces it, and allows today, the future and a chained one', function () {
+    $list = ($this->save)();
+    $running = ($this->item)($list, ['valid_from' => '2026-01-01']);
+
+    expect(fn () => ($this->item)($list, ['price' => '120,00', 'valid_from' => '2026-03-01'], null, $running))->toThrow(ValidationException::class)
+        ->and($running->fresh()->valid_to)->toBeNull();
+
+    $today = ($this->item)($list, ['price' => '95,00', 'valid_from' => '2026-06-15'], null, $running);
+    expect($running->fresh()->valid_to->toDateString())->toBe('2026-06-14');
+
+    ($this->item)($list, ['price' => '99,00', 'valid_from' => '2026-09-01'], null, $today);
+    expect($today->fresh()->valid_to->toDateString())->toBe('2026-08-31');
+
+    $chained = ($this->item)($list, ['min_quantity' => '5', 'valid_from' => '2026-01-01']);
+    $next = app(SavePriceListItem::class)($this->owner, $this->company, $list, ['article_id' => $this->article->id, 'mode' => 'price', 'price' => '70,00', 'min_quantity' => '5', 'valid_from' => '2026-02-01'], null, $chained, [$chained->id]);
+
+    expect($chained->fresh()->valid_to->toDateString())->toBe('2026-01-31')
+        ->and($next->valid_from->toDateString())->toBe('2026-02-01');
+});

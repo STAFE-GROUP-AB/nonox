@@ -163,6 +163,17 @@ it('lets a new price take over from a running one with replace_running', functio
     expect($running->fresh()->valid_to->toDateString())->toBe('2026-06-30');
 });
 
+it('refuses replace_running when it would end a started price back in time', function () {
+    $list = p9List();
+    $running = p9Item($list, ['valid_from' => '2026-01-01']);
+
+    $this->withToken($this->lists)->withHeader('Idempotency-Key', 'byt-3')->postJson("/api/v1/price-lists/{$list->id}/items", ['items' => [
+        ['article' => 'A-1', 'price_minor' => 9000, 'valid_from' => '2026-03-01', 'replace_running' => true],
+    ]])->assertUnprocessable()->assertJsonPath('data.failed', 1);
+
+    expect($running->fresh()->valid_to)->toBeNull();
+});
+
 it('denies the writes without the manage scope and the reads without prices:view', function () {
     $list = p9List();
     $none = Connect::apiKey($this->owner, $this->company, ['invoices:view']);

@@ -36,9 +36,10 @@ class SavePriceListItem
 {
     /**
      * @param  ?PriceListItem  $replaces  the running price this new one follows: it ends the day before the new one starts
+     * @param  list<int>  $chainedIds  ids of prices made by the same file import: only these may be ended in the past, so a price history in one file can be chained
      * @param  array<string, mixed>  $input  article_id, unit_id (null = the article's sales unit), min_quantity (text), mode (price or discount), price (text, in the list's currency) or discount (percent text), valid_from, valid_to (Y-m-d)
      */
-    public function __invoke(User $user, Company $company, PriceList $list, array $input, ?PriceListItem $item = null, ?PriceListItem $replaces = null): PriceListItem
+    public function __invoke(User $user, Company $company, PriceList $list, array $input, ?PriceListItem $item = null, ?PriceListItem $replaces = null, array $chainedIds = []): PriceListItem
     {
         if ((int) $list->company_id !== (int) $company->id || ($item !== null && (int) $item->price_list_id !== (int) $list->id)) {
             throw new ModelNotFoundException;
@@ -60,7 +61,7 @@ class SavePriceListItem
             'valid_to.after_or_equal' => __('Slutdatumet kan inte ligga före startdatumet.'),
         ])->validate();
 
-        $saved = DB::transaction(fn (): PriceListItem => CurrentCompany::run($company, function () use ($validated, $company, $user, $list, $item, $replaces): PriceListItem {
+        $saved = DB::transaction(fn (): PriceListItem => CurrentCompany::run($company, function () use ($validated, $company, $user, $list, $item, $replaces, $chainedIds): PriceListItem {
             $list = PriceList::query()->whereKey($list->id)->lockForUpdate()->firstOrFail();
 
             if ($list->archived_at !== null) {
@@ -85,7 +86,7 @@ class SavePriceListItem
             }
 
             if ($replaces !== null) {
-                $this->endReplaced($replaces, $list, $article, $unit, $minQuantity, $from, $company, $user);
+                $this->endReplaced($replaces, $list, $article, $unit, $minQuantity, $from, $company, $user, $chainedIds);
             }
 
             $this->refuseOverlap($list, $article, $unit, $minQuantity, $from, $to, $item);
@@ -154,7 +155,8 @@ class SavePriceListItem
         return $item;
     }
 
-    private function endReplaced(PriceListItem $replaces, PriceList $list, Article $article, ?Unit $unit, int $minQuantity, ?string $from, Company $company, User $user): void
+    /** @param  list<int>  $chainedIds */
+    private function endReplaced(PriceListItem $replaces, PriceList $list, Article $article, ?Unit $unit, int $minQuantity, ?string $from, Company $company, User $user, array $chainedIds = []): void
     {
         $replaced = PriceListItem::query()->where('price_list_id', $list->id)->whereNull('archived_at')->find($replaces->id)
             ?? throw new ModelNotFoundException;
@@ -169,6 +171,13 @@ class SavePriceListItem
         }
 
         if ($replaced->valid_to === null || $replaced->valid_to->greaterThanOrEqualTo($start)) {
+            // A price that has started to apply is history: it may be ended from today, never back in time (the rule of endStarted).
+            $started = $replaced->valid_from === null || $replaced->valid_from->lessThanOrEqualTo(CarbonImmutable::today());
+
+            if ($started && $start->subDay()->lessThan(CarbonImmutable::today()->subDay()) && ! in_array($replaced->id, $chainedIds, true)) {
+                throw ValidationException::withMessages(['valid_from' => __('Det gamla priset har börjat gälla och kan inte avslutas före i går. Det nya priset måste börja i dag eller senare.')]);
+            }
+
             $replaced->update(['valid_to' => $start->subDay()->toDateString()]);
             Audit::record('price_list_item.ended', $replaced, ['price_list_id' => $list->id, 'article_id' => $replaced->article_id], $company, $user);
         }

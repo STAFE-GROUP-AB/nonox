@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Migration\Import\Actions;
 
 use App\Migration\Import\Jobs\RunRegisterImport;
+use App\Migration\Import\RegisterKind;
+use App\Models\Company;
+use App\Models\PriceList;
 use App\Models\RegisterImport;
 use App\Models\User;
 use App\Support\Tenancy\CurrentCompany;
@@ -23,6 +26,11 @@ class ConfirmRegisterImport
     public function __invoke(User $user, RegisterImport $import): RegisterImport
     {
         Gate::forUser($user)->authorize('confirm', $import);
+
+        // The permission to upload may have been taken away since the file was read.
+        if ($import->registerKind() === RegisterKind::PriceLists) {
+            Gate::forUser($user)->authorize('create', [PriceList::class, Company::query()->findOrFail($import->company_id)]);
+        }
 
         return CurrentCompany::run($import->company_id, function () use ($user, $import): RegisterImport {
             // Two clicks, or two tabs: only the request that changes ANALYSED to RUNNING starts the job.

@@ -17,6 +17,7 @@ use App\Models\RegisterImportPreset;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Files\PrivateFile;
+use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -351,7 +352,7 @@ class AnalyseRegisterImport
             'ref' => mb_substr((string) ($values['external_ref'] ?? $values['party_ref'] ?? $values['number'] ?? $values['list_code'] ?? ''), 0, 40),
             'number' => isset($values['org_number']) ? (string) $values['org_number'] : (isset($values['personal_number']) ? str_repeat('•', 6).substr($digits((string) $values['personal_number']), -4) : ''),
             'city' => mb_substr((string) ($values['city'] ?? ''), 0, 40),
-            'amount' => isset($values['remaining']) ? self::kronor((int) $values['remaining']) : (isset($values['list_code'], $values['price']) ? number_format($values['price'] / 100, 2, ',', ' ').' '.($values['currency'] ?? '') : null),
+            'amount' => isset($values['remaining']) ? self::kronor((int) $values['remaining']) : (isset($values['list_code'], $values['price']) ? Money::ofOre((int) $values['price'], (string) $values['currency'])->format() : null),
             'errors' => $plan->errors,
             'warnings' => $warnings,
         ];

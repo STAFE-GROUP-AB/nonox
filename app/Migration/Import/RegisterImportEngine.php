@@ -71,7 +71,7 @@ final class RegisterImportEngine
     /** @var array<string, string> codes of lists the file would create => currency */
     private array $newLists = [];
 
-    /** @var array<string, list<array{from: ?string, to: ?string, price: ?int}>> "list|article|quantity" => the price periods there are, in the files so far and in the books */
+    /** @var array<string, list<array{from: ?string, to: ?string, price: ?int, booked: bool}>> "list|article|quantity" => the price periods there are, in the files so far and in the books */
     private array $periods = [];
 
     private ?string $path = null;
@@ -211,7 +211,7 @@ final class RegisterImportEngine
         $periods = $this->periods[$key] ?? [];
 
         foreach ($periods as $period) {
-            if ($period['from'] === $from && $period['to'] === null && $period['price'] === $values['price']) {
+            if ($period['from'] === $from && $period['price'] === $values['price']) {
                 return new RowPlan($line, RowPlan::EXISTS, $values, [], $warnings, null, $list['id'] ?? null);
             }
         }
@@ -224,6 +224,11 @@ final class RegisterImportEngine
 
             // A later start ends the price that runs without an end date; anything else overlaps.
             if (count($overlapping) === 1 && $from !== null && $open['to'] === null && ($open['from'] === null || $open['from'] < $from)) {
+                // A price already in the books that has started cannot be ended back in time; one made by this file can.
+                if ($open['booked'] && ($open['from'] === null || $open['from'] <= CarbonImmutable::today()->toDateString()) && $from < CarbonImmutable::today()->toDateString()) {
+                    return new RowPlan($line, RowPlan::ERROR, $values, [__('Det gamla priset har börjat gälla och kan inte avslutas före i går. Det nya priset måste börja i dag eller senare.')], $warnings);
+                }
+
                 $replaces = $open;
             } else {
                 return new RowPlan($line, RowPlan::ERROR, $values, [__('Artikeln :number har redan ett pris i listan :code för samma antal som gäller samtidigt. Ange ett startdatum efter det gamla prisets, och ordna filen med äldsta pris först.', ['number' => mb_substr((string) $values['article'], 0, 40), 'code' => $code])], $warnings);
@@ -234,7 +239,7 @@ final class RegisterImportEngine
             $this->periods[$key] = array_map(fn (array $period): array => $period === $replaces ? [...$period, 'to' => CarbonImmutable::parse((string) $from)->subDay()->toDateString()] : $period, $periods);
         }
 
-        $this->periods[$key][] = ['from' => $from, 'to' => null, 'price' => $values['price']];
+        $this->periods[$key][] = ['from' => $from, 'to' => null, 'price' => $values['price'], 'booked' => false];
 
         if ($list === null) {
             $this->newLists[$code] = $currency;
@@ -408,6 +413,7 @@ final class RegisterImportEngine
                 'from' => $item->valid_from?->toDateString(),
                 'to' => $item->valid_to?->toDateString(),
                 'price' => $item->price_minor,
+                'booked' => true,
             ];
         }
     }

@@ -64,6 +64,9 @@ final class RegisterImportRunner
     /** @var array<string, PriceList> lists found or created by this run, by code */
     private array $priceLists = [];
 
+    /** @var list<int> ids of the prices this run has made: the only ones a later row of the file may end in the past */
+    private array $madeItems = [];
+
     /** Runs the import for the current company context; the caller has set it. */
     public function run(RegisterImport $import, Company $company, User $user): RegisterImport
     {
@@ -255,13 +258,14 @@ final class RegisterImportRunner
                 ->where(fn ($query) => $query->whereNull('valid_from')->orWhere('valid_from', '<', $from))
                 ->first();
 
-            ($this->savePriceListItem)($user, $company, $list, [
+            $made = ($this->savePriceListItem)($user, $company, $list, [
                 'article_id' => $values['article_id'],
                 'min_quantity' => $values['quantity_milli'] === 0 ? '' : rtrim(rtrim(number_format($values['quantity_milli'] / 1000, 3, ',', ''), '0'), ','),
                 'mode' => 'price',
                 'price' => number_format($values['price'] / 100, 2, ',', ''),
                 'valid_from' => $from,
-            ], null, $replaces);
+            ], null, $replaces, $this->madeItems);
+            $this->madeItems[] = $made->id;
 
             return $list;
         });

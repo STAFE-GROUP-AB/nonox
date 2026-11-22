@@ -15045,5 +15045,6 @@
     "Prislistan :code har valutan :list, inte :file.": "Price list :code has the currency :list, not :file.",
     "Prislistan :code är arkiverad. Återställ den först.": "Price list :code is archived. Restore it first.",
     "Prislistans kod": "Price list code",
-    "Prislistor och priser": "Price lists and prices"
+    "Prislistor och priser": "Price lists and prices",
+    "Det gamla priset har börjat gälla och kan inte avslutas före i går. Det nya priset måste börja i dag eller senare.": "The old price has started to apply and cannot be ended before yesterday. The new price must start today or later."
 }

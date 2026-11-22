@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Invoicing\SaveArticle;
+use App\Migration\Import\Actions\ConfirmRegisterImport;
 use App\Migration\Import\RegisterKind;
 use App\Models\PriceList;
 use App\Models\PriceListItem;
@@ -11,6 +12,7 @@ use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\Bookkeeping;
 use Tests\Support\RegisterImports;
@@ -161,4 +163,47 @@ it('never sees another company\'s articles or lists', function () {
         ->and($import->report['rows'][0]['errors'][0])->toContain('X-9')
         ->and(CurrentCompany::run($this->company, fn () => PriceList::query()->pluck('code')->sort()->values()->all()))->toBe(['HEMLIG'])
         ->and(CurrentCompany::run($other, fn () => PriceListItem::query()->count()))->toBe(0);
+});
+
+it('refuses at the preview to end a price that has started back in time', function () {
+    ($this->run)("ATER;SEK;A-1;;90,00;2026-01-01\n");
+    $import = ($this->run)("ATER;SEK;A-1;;120,00;2026-03-01\n");
+
+    expect($import->report['counts'])->toMatchArray(['error' => 1, 'create' => 0])
+        ->and($import->report['rows'][0]['errors'][0])->toContain('kan inte avslutas före i går')
+        ->and(($this->items)())->toHaveCount(1)
+        ->and(($this->items)()->first()->valid_to)->toBeNull();
+});
+
+it('lets a new price start today or later, and chains a history inside one file', function () {
+    ($this->run)("ATER;SEK;A-1;;90,00;2026-01-01\n");
+    ($this->run)("ATER;SEK;A-1;;95,00;2026-06-15\n");
+    $chain = ($this->run)("ATER;SEK;A-2;;10,00;2026-01-01\nATER;SEK;A-2;;12,00;2026-03-01\nATER;SEK;A-2;;14,00;2026-05-01\n");
+    $items = ($this->items)();
+
+    expect($chain->result)->toMatchArray(['created' => 3, 'error_count' => 0])
+        ->and($items[0]->valid_to->toDateString())->toBe('2026-06-14')
+        ->and($items->where('price_minor', 1000)->first()->valid_to->toDateString())->toBe('2026-02-28')
+        ->and($items->where('price_minor', 1200)->first()->valid_to->toDateString())->toBe('2026-04-30')
+        ->and($items->where('price_minor', 1400)->first()->valid_to)->toBeNull();
+});
+
+it('reads a file again after the first run ended a price without false errors', function () {
+    $file = "ATER;SEK;A-1;;90,00;2026-01-01\nATER;SEK;A-1;;95,00;2026-09-01\n";
+    ($this->run)($file);
+    $again = ($this->run)($file."ATER;SEK;A-2;;5,00;\n");
+
+    expect($again->report['counts'])->toMatchArray(['exists' => 2, 'error' => 0, 'create' => 1])
+        ->and(($this->items)())->toHaveCount(3);
+});
+
+it('checks the permission to manage price lists again when the file is confirmed', function () {
+    $import = RegisterImports::upload($this->owner, $this->company, RegisterKind::PriceLists, RegisterImports::contents($this->header."ATER;SEK;A-1;;90,00;\n"));
+    $import = RegisterImports::analyse($this->owner, $import);
+
+    Gate::before(fn ($user, string $ability, array $arguments) => $ability === 'create' && ($arguments[0] ?? null) === PriceList::class ? false : null);
+
+    expect(fn () => app(ConfirmRegisterImport::class)($this->owner, $import))->toThrow(AuthorizationException::class)
+        ->and(CurrentCompany::run($this->company, fn () => RegisterImport::query()->findOrFail($import->id)->status))->toBe(RegisterImport::ANALYSED)
+        ->and(($this->items)())->toHaveCount(0);
 });

@@ -46,7 +46,7 @@ Tryck på namnet på listan, eller på **Priser**, för att öppna den. Tryck p�
 
 **Antalstrappa.** Lägg in flera rader för samma artikel med olika **Från antal**, till exempel 595 kr, 560 kr från 40 och 530 kr från 100. Hela antalet får priset för det högsta steget det når: 120 timmar kostar 530 kr per timme för alla 120, inte bara för de sista 20.
 
-**Prishöjning.** Ett pris som har börjat gälla går inte att ändra, för då skulle historiken skrivas om. Tryck i stället på **Nytt pris från datum** på ett pris som gäller nu. Skriv det nya priset och dagen det börjar gälla. NONOX låter det gamla priset gälla till och med dagen före, så båda finns kvar i listan och du kan se vad varan kostade en viss dag.
+**Prishöjning.** Ett pris som har börjat gälla går inte att ändra, för då skulle historiken skrivas om. Tryck i stället på **Nytt pris från datum** på ett pris som gäller nu. Skriv det nya priset och dagen det börjar gälla. NONOX låter det gamla priset gälla till och med dagen före, så båda finns kvar i listan och du kan se vad varan kostade en viss dag. Det nya priset måste börja i dag eller senare, för ett pris som redan har börjat gälla kan inte avslutas bakåt i tiden.
 
 Två priser för samma artikel, enhet och antal får inte gälla samma dag. Försöker du spara ett som överlappar får du veta vilket pris det krockar med.
 

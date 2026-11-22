@@ -944,3 +944,5 @@ Known and accepted at launch; none blocks the feature.
   and no supplier or customer-group filters.
 - **Open legal items:** P-L1 to P-L7 above stay `TODO(legal-verify)` until a
   lawyer has read them.
+
+Rule added in P10 review: a price that has started to apply may be ended only from yesterday onwards, also when a new price replaces it (screen, API `replace_running` and file import alike). The file import may chain prices made by the same file, which allows a history with past dates.

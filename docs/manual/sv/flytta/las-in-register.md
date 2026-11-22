@@ -63,6 +63,7 @@ Filen har en rad per pris, med kolumnerna **Prislistans kod**, **Valuta**, **Art
 - Priset är i listans valuta, med eller utan moms som listan är inställd, och i artikelns enhet. En lista som skapas av filen är utan moms. Är priserna i filen konsumentpriser med moms, skapa listan med priser inklusive moms under **Register → Prislistor** innan du läser in filen, så läses priserna mot den. Ett belopp som kan läsas på två sätt, till exempel 1,234, avvisas.
 - Ett pris som redan finns i listan med samma artikel, antal, startdatum och belopp hoppas över.
 - Ett pris med ett senare startdatum avslutar det pris som gäller utan slutdatum, som **Nytt pris från datum** gör på skärmen. Lägg priserna i datumordning med det äldsta först. Två priser för samma artikel och antal som skulle gälla samtidigt är ett fel på den raden.
+- Ett pris som redan finns i NONOX och har börjat gälla kan bara avslutas från i dag eller senare. Ett nytt pris med ett startdatum som ligger före i dag är därför ett fel på raden, eftersom dagarna emellan annars skulle få ett pris som aldrig gällde. Priser som står i samma fil får däremot följa på varandra med datum bakåt i tiden, så att du kan läsa in en hel prishistorik.
 - Ett pris som har börjat gälla kan inte ändras genom att läsa in en ny fil, bara avslutas av ett nytt pris från ett senare datum.
 
 Vill du ändra många priser i befintliga listor och se vad som ändras innan det sparas, använd [Prisuppdatering](/manual/fakturering/prisuppdatering).
