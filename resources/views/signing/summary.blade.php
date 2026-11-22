@@ -44,6 +44,8 @@
         <tr><td class="muted">{{ $b('Signerat av alla') }}</td><td>{{ $time($envelope->completed_at) }}</td></tr>
     </table>
 
+    @include('signing.verify-box', ['hash' => $envelope->document_sha256, 'b' => $b])
+
     <h2>{{ $b('Undertecknare') }}</h2>
     <table class="meta">
         <tr><th class="muted">{{ $b('Steg') }}</th><th class="muted">{{ $b('Namn') }}</th><th class="muted">{{ $b('Signerad') }}</th><th class="muted">{{ $b('Sätt') }}</th></tr>

@@ -9,6 +9,7 @@ use App\Domain\Signing\SigningHooks;
 use App\Domain\Signing\SigningToken;
 use App\Http\Controllers\Signing\SigningCopyController;
 use App\Http\Controllers\Signing\SigningPageController;
+use App\Http\Controllers\Signing\VerifyPageController;
 use App\Http\Middleware\WithoutAuditRequest;
 use App\Livewire\Signing\SigningPanel;
 use App\Models\PriceAgreement;
@@ -71,6 +72,9 @@ class SigningServiceProvider extends ServiceProvider
             Limit::perMinute(10)->by('ip:'.$request->ip()),
         ]);
 
+        // The public Verify page (ADR-046 S12): 20 checks a minute per IP address. The limiter keeps the address for a minute and never a hash.
+        RateLimiter::for('signing-verify-page', fn (Request $request): Limit => Limit::perMinute(20)->by('signing-verify-page:'.$request->ip()));
+
         // The page images of a document with fields (ADR-046 S6): up to 100 pages are fetched as the signer scrolls,
         // so they have their own, wider limit per link and per IP address instead of the page's 60 a minute.
         RateLimiter::for('signing-pages', fn (Request $request): array => [
@@ -80,6 +84,12 @@ class SigningServiceProvider extends ServiceProvider
 
         Route::middleware(['web', 'throttle:signing-pages', WithoutAuditRequest::class])->group(function (): void {
             Route::get('/signera/{token}/sida/{page}', [SigningPageController::class, 'pageImage'])->where('token', SigningToken::PATTERN)->where('page', '[1-9][0-9]{0,2}')->name('signing.page');
+        });
+
+        // The public Verify page (ADR-046 S12): off (404) until the instance setting signing.verify_enabled is on.
+        Route::middleware(['web', 'throttle:crm-signing', WithoutAuditRequest::class])->group(function (): void {
+            Route::get('/kontrollera', [VerifyPageController::class, 'show'])->name('signing.verifyPage');
+            Route::post('/kontrollera', [VerifyPageController::class, 'check'])->middleware('throttle:signing-verify-page')->name('signing.verifyCheck');
         });
 
         // The finished files of a signing when they were too large to attach (ADR-046 S13): its own token, valid 30 days.

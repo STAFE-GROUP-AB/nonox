@@ -58,6 +58,8 @@ class Settings extends Component implements SpansCompanies
 
     public bool $signingSealEnabled = false;
 
+    public bool $signingVerifyEnabled = false;
+
     public function mount(): void
     {
         $this->fill(self::stored());
@@ -79,6 +81,7 @@ class Settings extends Component implements SpansCompanies
             'migration_guides_public' => $this->migrationGuidesPublic,
             'stripe_enabled' => $this->stripeEnabled,
             'signing_seal_enabled' => $this->signingSealEnabled,
+            'signing_verify_enabled' => $this->signingVerifyEnabled,
         ]);
 
         $this->fill(self::stored());
@@ -241,7 +244,7 @@ class Settings extends Component implements SpansCompanies
         });
     }
 
-    /** @return array{operatorCompanyId: string, waitlistOpen: bool, registrationOpen: bool, securityContact: string, demoEnabled: bool, migrationGuidesPublic: bool, stripeEnabled: bool, signingSealEnabled: bool} */
+    /** @return array{operatorCompanyId: string, waitlistOpen: bool, registrationOpen: bool, securityContact: string, demoEnabled: bool, migrationGuidesPublic: bool, stripeEnabled: bool, signingSealEnabled: bool, signingVerifyEnabled: bool} */
     private static function stored(): array
     {
         $settings = InstanceSettings::current();
@@ -257,6 +260,7 @@ class Settings extends Component implements SpansCompanies
             'migrationGuidesPublic' => $settings->migrationGuidesPublic(),
             'stripeEnabled' => $settings->stripeEnabled(),
             'signingSealEnabled' => $settings->signingSealEnabled(),
+            'signingVerifyEnabled' => $settings->signingVerifyEnabled(),
         ];
     }
 }

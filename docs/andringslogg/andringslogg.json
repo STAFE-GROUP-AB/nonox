@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-22-signering-kontrollsida",
+      "datum": "2026-11-22T16:41:00+01:00",
+      "rubrik": "Kontrollsida för signerade dokument vid egen drift",
+      "beskrivning": "På /kontrollera kan vem som helst kontrollera att en PDF är oförändrad jämfört med ett signerat dokument som NONOX har sparat. Din webbläsare räknar ut filens kontrollsumma, så filen lämnar aldrig din enhet, och signeringsbeviset och sammanställningen får en QR-kod till sidan. Sidan är avstängd tills den slås på för installationen, och i den driftade tjänsten tills en juristgranskning är klar.",
+      "typ": "Nytt",
+      "omrade": "Avtal"
+    },
+    {
       "id": "2026-11-22-signering-forsegling",
       "datum": "2026-11-22T14:30:00+01:00",
       "rubrik": "Försegling av signerade dokument vid egen drift",

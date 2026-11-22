@@ -54,6 +54,7 @@ final class UpdateInstanceSettings
             'migration_guides_public' => ['sometimes', 'boolean'],
             'stripe_enabled' => ['sometimes', 'boolean'],
             'signing_seal_enabled' => ['sometimes', 'boolean'],
+            'signing_verify_enabled' => ['sometimes', 'boolean'],
         ], [], [
             'operator_company_id' => __('driftbolag'),
             'security_contact' => __('säkerhetskontakt'),
@@ -79,6 +80,7 @@ final class UpdateInstanceSettings
             InstanceSettings::MIGRATION_GUIDES_PUBLIC => array_key_exists('migration_guides_public', $validated) ? (bool) $validated['migration_guides_public'] : (bool) InstanceSettings::current()->get(InstanceSettings::MIGRATION_GUIDES_PUBLIC),
             InstanceSettings::STRIPE_ENABLED => array_key_exists('stripe_enabled', $validated) ? (bool) $validated['stripe_enabled'] : InstanceSettings::current()->stripeEnabled(),
             InstanceSettings::SIGNING_SEAL_ENABLED => array_key_exists('signing_seal_enabled', $validated) ? (bool) $validated['signing_seal_enabled'] : InstanceSettings::current()->signingSealEnabled(),
+            InstanceSettings::SIGNING_VERIFY_ENABLED => array_key_exists('signing_verify_enabled', $validated) ? (bool) $validated['signing_verify_enabled'] : InstanceSettings::current()->signingVerifyEnabled(),
         ];
 
         $changed = array_keys(array_filter($new, fn (mixed $value, string $key): bool => $before[$key] !== $value, ARRAY_FILTER_USE_BOTH));

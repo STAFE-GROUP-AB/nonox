@@ -2971,6 +2971,99 @@ unchanged.
   dokumentets innehåll."), the name warning at upload and on the settings
   card, and "signing record (evidence)" in English.
 
+### S12 as built (2026-11-22): the Verify page
+
+- **Off by default, with a switch of its own.** The owner decision of
+  2026-11-18 keeps S10–S12 off on the hosted service until the eIDAS
+  trust-service question is answered. S12 needs no PDF engine or certificate
+  (it depends on S2 only), so a self-hoster may want the page without sealing:
+  the instance setting is `signing.verify_enabled`
+  (`InstanceSettings::SIGNING_VERIFY_ENABLED`, /hq → Inställningar,
+  "Kontrollsidan för signerade dokument"), `false` by default everywhere, and
+  separate from `signing.seal_enabled`. Off means `GET` and `POST /kontrollera`
+  answer 404 as if the route did not exist, and the certificate and summary
+  carry no QR code (`VerifyLink::url` returns null), so no link leads nowhere.
+  The hosted service keeps it off until the legal item below is answered. With
+  sealing off and the page on, the page still answers for the original, the
+  versions after each signer and (when they exist) the sealed and timestamped
+  files: it only reads `signing_document_versions`.
+- **Page and script.** `app/Http/Controllers/Signing/VerifyPageController.php`,
+  `resources/views/signing/verify.blade.php`, `resources/js/verify.js` (the
+  DOM) and `resources/js/verify-core.js` (Web Crypto SHA-256, the 64-hex
+  check, the fragment reader; tested in `tests/js/verify.test.mjs`). The
+  file input has no `name` and there is no `<form>`; the script posts
+  `{"sha256": "<64 hex>"}` as JSON with `fetch`, CSRF token in the header,
+  `referrerPolicy: no-referrer`. A hash in the fragment (`#sha256=…`, from the
+  QR code) is read in the browser, removed from the address bar and looked up;
+  the answer then says it concerns the link's hash and not a file. CSP as on
+  the signing page (`script-src 'self'`, `connect-src 'self'`,
+  `frame-ancestors 'none'`, `frame-src 'none'`, `form-action 'none'`); no
+  inline script, no third-party script. `verify.js` is in `vite.config.js`.
+- **The lookup** (`app/Domain/Signing/Verify/VerifyLookup.php`) is inside
+  `CompanyScope::bypass` with a comment naming this amendment: one indexed
+  query on `signing_document_versions.sha256` (newest first, at most 8 rows),
+  one for their envelopes; a hit then reads the company's name, the envelope's
+  signer rows and the latest `signing.verified` audit entry (five queries,
+  fixed, whatever the number of signers; a miss is one). Only envelopes that
+  are completed, declined or voided are answered, also for archived companies
+  and with the module off. A draft, an envelope still out (so not the file
+  after a signer either) or an expired one is "not found": the amendment lists
+  the three finished states only, and a file whose signing is still open is not
+  evidence yet. A deleted envelope has no rows.
+- **The answer** has one shape for a hit and a miss: `found`, `heading`,
+  `lines` (label and value pairs). A hit shows the company's name, the
+  document title, which version it is (original, after the signer in step n,
+  sealed, re-timestamped), the state and its time, "x of y have signed", the
+  check methods of the signers who signed (counts per method), the seal level
+  or "no seal", and whether the latest nightly `signing:verify` run found the
+  envelope changed (and when it ran; "not checked yet" if it never ran).
+  Never a name, e-mail address, IP address, internal id or file path. Two
+  decisions beyond the amendment, both towards saying less: the title of a
+  confidential envelope (S7) is replaced by "Konfidentiellt dokument", and when
+  the same hash is in several envelopes (the same PDF sent twice, possibly by
+  different companies) only the newest answerable one is shown with a note
+  that the same file is in several signings, never a count or a list.
+  Response time is not padded: a miss does less work than a hit, so timing can
+  tell the two apart; this reveals only what the answer itself says, and the
+  throttle limits probing. A visitor cannot enumerate: the key is a 256-bit
+  hash.
+- **Input and throttle.** The request body is read raw (the trim middleware
+  must not turn `"hash\n"` into a valid hash) and must be exactly
+  `{"sha256": "<64 lowercase hex>"}`; anything else is 422 with a fixed message.
+  Throttle `signing-verify-page`, 20 a minute per IP address, on `POST` only
+  (the page itself shares `crm-signing`, 60 a minute). The route group uses
+  `WithoutAuditRequest`, nothing is written to the audit log or the application
+  log, and the hash is never stored: the rate limiter keeps the address for a
+  minute and no hash.
+- **QR code and link** (`VerifyLink`, `signing/verify-box.blade.php`) on the
+  signing certificate (the hash of the file the signer signed) and the envelope
+  summary, including the page appended before sealing (the hash of the
+  original, which is what those documents print). `bacon/bacon-qr-code`
+  (BSD-2-Clause, already installed through Fortify) through the existing
+  `QrSvg`, embedded as an SVG data URI that Dompdf renders. The link is
+  `/kontrollera#sha256=<hash>`; the fragment never travels to a server. The
+  QR code is made when the PDF is made: a certificate made while the page was
+  off has none. The sealed file's own hash cannot be printed inside it, so the
+  visitor chooses the file for that.
+- **Texts.** Swedish with an English line for the privacy note and the PDF
+  box; English translations in `lang/packages/signing-s12/en.json`. The words
+  are "kontrollera att filen är oförändrad"; the page says it does not check
+  who signed or whether a signature is valid. Manual:
+  `docs/manual/sv/signering/kontrollera.md`; GDPR register and retention
+  table updated.
+- **Not built:** a page language switch (the page is Swedish with one English
+  line, like the signing page); padding the response time; showing the
+  certificate's signers by name (owner decision 11).
+- `TODO(legal-verify)`: (1) whether the page is "validation" in the sense of
+  eIDAS art. 3(16)(a) (the existing item above); (2) whether answering
+  "found" for a file that anyone could hold, with the company's name and the
+  document title, is a disclosure the signers and the company have been told
+  about (art. 13/14; the consent text and privacy notice should say that a
+  file's checksum can be matched on a public page); (3) whether the page's
+  answer for a declined or withdrawn envelope may state it (the amendment says
+  it may; check against the signers' expectations); (4) whether hiding the
+  title only for confidential envelopes is enough.
+
 ### Cross-reference (2026-11-20): customer price agreements (ADR-082 P5)
 
 A customer price agreement ("Prisavtal", `App\Models\PriceAgreement`) is a
