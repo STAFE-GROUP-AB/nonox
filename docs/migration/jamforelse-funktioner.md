@@ -135,4 +135,4 @@ Leverantörsbetalningar är det enda Vitec anger för bankkopplingen, och raden 
 
 ### Prislistor och kundavtal (kontrollerat 2026-11-22)
 
-NONOX har raden som Finns (prislistor, kampanjer, kundgrupper och prisavtal, ADR-082). Fortnox, Visma Spiris, Bokio, Björn Lundén och Kleer står kvar som Anges ej: Fortnox faktureringssida (fortnox.se/produkt/fakturering) nämner bara en länk till sin prislista, inte prislistor eller kundpriser som funktion, och de övriga leverantörernas sidor har inte lästs för den här raden. Pyramid-värdet är oförändrat (se tabellen ovan).
+NONOX har raden som Finns (prislistor, kampanjer, kundgrupper och prisavtal, ADR-082). Fortnox, Visma Spiris, Bokio, Björn Lundén, Kleer och Accounted står kvar som Anges ej. Fortnox faktureringssida (fortnox.se/produkt/fakturering) lästes 2026-11-22 och beskriver inte prislistor eller kundpriser som en funktion; ordet prislista förekommer bara som länk till Fortnox egna priser. De övriga leverantörernas sidor har inte lästs för den här raden, och raden visas därför bara på sidan Alternativ till Pyramid (checked_for). Pyramid-värdet är oförändrat (se tabellen ovan).

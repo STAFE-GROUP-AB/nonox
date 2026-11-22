@@ -60,7 +60,7 @@ Välj **Prislistor och priser** för att läsa in priser till en eller flera pri
 Filen har en rad per pris, med kolumnerna **Prislistans kod**, **Valuta**, **Artikelnummer**, **Från antal**, **Pris** och **Gäller från**. Fälten Från antal och Gäller från kan vara tomma: ett tomt antal betyder från första enheten och ett tomt datum betyder att priset gäller från början.
 
 - En lista vars kod inte finns skapas som en vanlig prislista med koden som namn, i filens valuta. Du kan byta namn på den efteråt. Finns listan redan måste valutan vara densamma, och en arkiverad lista kan inte få nya priser.
-- Priset är i listans valuta, med eller utan moms som listan är inställd, och i artikelns enhet. En lista som skapas av filen är utan moms. Ett belopp som kan läsas på två sätt, till exempel 1,234, avvisas.
+- Priset är i listans valuta, med eller utan moms som listan är inställd, och i artikelns enhet. En lista som skapas av filen är utan moms. Är priserna i filen konsumentpriser med moms, skapa listan med priser inklusive moms under **Register → Prislistor** innan du läser in filen, så läses priserna mot den. Ett belopp som kan läsas på två sätt, till exempel 1,234, avvisas.
 - Ett pris som redan finns i listan med samma artikel, antal, startdatum och belopp hoppas över.
 - Ett pris med ett senare startdatum avslutar det pris som gäller utan slutdatum, som **Nytt pris från datum** gör på skärmen. Lägg priserna i datumordning med det äldsta först. Två priser för samma artikel och antal som skulle gälla samtidigt är ett fel på den raden.
 - Ett pris som har börjat gälla kan inte ändras genom att läsa in en ny fil, bara avslutas av ett nytt pris från ett senare datum.
