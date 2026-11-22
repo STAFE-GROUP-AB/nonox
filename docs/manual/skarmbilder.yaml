@@ -330,6 +330,10 @@ signering/falt-i-dokumentet-mobil: { foretag: konsult, rutt: signing.new, fraga:
 signering/mallar: { foretag: konsult, rutt: signing.templates, text: Samarbetsavtal med två parter }
 signering/mall-roller: { foretag: konsult, rutt: signing.template, modell: { tabell: signing_templates, dar: { name: 'Standardoffert med motpart' } }, text: Lägg till roll }
 signering/skicka-fran-mall: { foretag: konsult, rutt: signing.new, del: '[data-testid=signing-wizard-templates]', text: Börja från en mall }
+# Bulk send (S15): the list, a preview waiting for its confirmation and the result of a finished run. The demo has one of each.
+signering/massutskick: { foretag: konsult, rutt: signing.bulk-sends, text: Nytt massutskick }
+signering/massutskick-forhandsgranskning: { foretag: konsult, rutt: signing.bulk-send, modell: { tabell: signing_bulk_sends, dar: { status: PREVIEW } }, text: Kontroll av raderna }
+signering/massutskick-resultat: { foretag: konsult, rutt: signing.bulk-send, modell: { tabell: signing_bulk_sends, dar: { status: COMPLETED } }, text: Resultat per rad }
 crm/offertmallar: { foretag: konsult, rutt: crm.quoteTemplates, klick: ['text=Ändra'] }
 crm/avtal: { foretag: konsult, rutt: crm.agreements, fraga: { visa: alla } }
 crm/avtalets-kort: { foretag: konsult, rutt: crm.agreements.show, modell: { tabell: crm_agreements, dar: { title: 'Supportavtal 2026' } } }

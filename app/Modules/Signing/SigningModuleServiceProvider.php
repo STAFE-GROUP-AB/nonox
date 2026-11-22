@@ -7,6 +7,8 @@ namespace App\Modules\Signing;
 use App\Domain\Signing\SignableTypes;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Modules\ModuleRegistry;
+use App\Modules\Signing\Livewire\BulkSendPage;
+use App\Modules\Signing\Livewire\BulkSendsPage;
 use App\Modules\Signing\Livewire\EnvelopePage;
 use App\Modules\Signing\Livewire\EnvelopesPage;
 use App\Modules\Signing\Livewire\SendWizard;
@@ -53,6 +55,8 @@ class SigningModuleServiceProvider extends ServiceProvider
         Livewire::component('signing.wizard', SendWizard::class);
         Livewire::component('signing.templates', TemplatesPage::class);
         Livewire::component('signing.template', TemplatePage::class);
+        Livewire::component('signing.bulk-sends', BulkSendsPage::class);
+        Livewire::component('signing.bulk-send', BulkSendPage::class);
 
         Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.SigningModule::KEY])
             ->group(__DIR__.'/routes/web.php');

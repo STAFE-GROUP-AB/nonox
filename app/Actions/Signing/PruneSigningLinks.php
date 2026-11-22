@@ -16,6 +16,8 @@ use App\Models\SigningDownloadLink;
 use App\Models\SigningEnvelope;
 use App\Models\SigningEvent;
 use App\Models\SigningRequest;
+use App\Modules\Signing\Actions\ManageSigningBulkSends;
+use App\Modules\Signing\Models\SigningBulkSend;
 use App\Support\Audit\Audit;
 use App\Support\Files\StoredFiles;
 use App\Support\Tenancy\CurrentCompany;
@@ -53,6 +55,16 @@ final class PruneSigningLinks
     }
 
     /**
+     * Bulk sends (ADR-046 S15): a preview nobody confirmed within a day is thrown away with its rows (the addresses
+     * and access codes in them), and a finished run's result list goes after AFTER_MONTHS. Rows cascade.
+     */
+    private function pruneBulkSends(CarbonImmutable $today): void
+    {
+        SigningBulkSend::query()->where('status', SigningBulkSend::PREVIEW)->where('created_at', '<', CarbonImmutable::now()->subHours(ManageSigningBulkSends::PREVIEW_HOURS))->delete();
+        SigningBulkSend::query()->whereIn('status', [SigningBulkSend::COMPLETED, SigningBulkSend::CANCELLED])->where('finished_at', '<', $today->subMonthsNoOverflow(self::AFTER_MONTHS))->delete();
+    }
+
+    /**
      * @return array{links: int, envelopes: int, documents: int} the unsigned links, the whole envelopes past their
      *                                                           retention and the never-sent documents deleted
      */
@@ -65,6 +77,8 @@ final class PruneSigningLinks
         if ($companyId !== null) {
             SigningRetention::backfill($companyId);
         }
+
+        $this->pruneBulkSends($today);
 
         $envelopes = $this->pruneExpiredRetention($today);
         // A held envelope (bevarandespärr) keeps every row; the database refuses it too.

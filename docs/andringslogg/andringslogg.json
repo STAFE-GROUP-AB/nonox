@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-22-signering-massutskick",
+      "datum": "2026-11-22T12:20:00+01:00",
+      "rubrik": "Massutskick för signering",
+      "beskrivning": "Under Signering → Massutskick skickar du samma dokument för signering till många: välj en mall och en CSV- eller Excelfil med en rad per signering. Du ser och kontrollerar varje rad innan något skickas, och först när du bekräftar skapas signeringarna i bakgrunden, högst 500 per massutskick och inom företagets e-postkvot. Efteråt visar en lista vad som hände med varje rad; filen sparas inte.",
+      "typ": "Nytt",
+      "omrade": "Avtal"
+    },
+    {
       "id": "2026-11-22-kampanj-kanal",
       "datum": "2026-11-22T09:55:00+01:00",
       "rubrik": "Kampanjer kan riktas mot en kanal",

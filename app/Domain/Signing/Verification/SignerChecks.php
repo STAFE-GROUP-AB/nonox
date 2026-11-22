@@ -128,6 +128,17 @@ final class SignerChecks
      */
     public static function hashAccessCode(mixed $code, string $field): string
     {
+        return Hash::make(self::validAccessCode($code, $field));
+    }
+
+    /**
+     * The rules for an access code without hashing it (bcrypt is slow on purpose): the trimmed code, or a refusal.
+     * The bulk send's preview checks every row with this and hashes only when an envelope is made (ADR-046 S15).
+     *
+     * @throws ValidationException
+     */
+    public static function validAccessCode(mixed $code, string $field): string
+    {
         $code = is_string($code) ? trim($code) : '';
 
         if (mb_strlen($code) < self::ACCESS_CODE_MIN || mb_strlen($code) > self::ACCESS_CODE_MAX || strlen($code) > self::ACCESS_CODE_MAX_BYTES || preg_match('/^[^\p{C}]+$/u', $code) !== 1) {
@@ -142,7 +153,7 @@ final class SignerChecks
             throw ValidationException::withMessages([$field => __('Koden är för lätt att gissa. Välj en annan, eller tryck på Föreslå kod.')]);
         }
 
-        return Hash::make($code);
+        return $code;
     }
 
     /** "Föreslå kod": ten random characters that are easy to read out (about 57 bits). */

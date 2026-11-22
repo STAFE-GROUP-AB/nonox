@@ -44,4 +44,16 @@ final class MailQuota
             RateLimiter::hit($key, 3600);
         }
     }
+
+    /** How many more mails the company may send this hour (ADR-046 S15: a bulk send waits instead of failing). */
+    public static function remaining(Company $company, string $kind): int
+    {
+        return max(0, RateLimiter::remaining("mail-quota:{$kind}:{$company->id}", self::LIMITS[$kind]));
+    }
+
+    /** Seconds until the oldest of this hour's mails stops counting; 0 when nothing is held back. */
+    public static function availableIn(Company $company, string $kind): int
+    {
+        return RateLimiter::availableIn("mail-quota:{$kind}:{$company->id}");
+    }
 }

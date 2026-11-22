@@ -407,6 +407,9 @@ final class DatabaseGrants
         // Templates with roles (ADR-046 S14): a used template is archived by the action, never deleted; an unused one may be.
         'signing_template_roles' => GrantDecision::ReadWrite,
         'signing_templates' => GrantDecision::ReadWrite,
+        // Bulk send (ADR-046 S15): runs and rows are written, emptied and pruned by the app.
+        'signing_bulk_sends' => GrantDecision::ReadWrite,
+        'signing_bulk_send_rows' => GrantDecision::ReadWrite,
         'signing_link_tokens' => GrantDecision::ReadWrite,
         // Signer checks (ADR-046 S3): a code row only gains attempts and its verified_at (trigger); it goes with its signer row or company by cascade.
         'signing_verification_codes' => GrantDecision::NoDelete,

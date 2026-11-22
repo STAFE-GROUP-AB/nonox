@@ -190,5 +190,6 @@
     "{1} 1 nås inte eftersom hen inte har någon inloggning.|[2,*] :count nås inte eftersom de inte har någon inloggning.": "{1} 1 nås inte eftersom hen inte har någon inloggning.|[2,*] :count nås inte eftersom de inte har någon inloggning.",
     "{1} Meddelandet når 1 person.|[2,*] Meddelandet når :count personer.": "{1} Meddelandet når 1 person.|[2,*] Meddelandet når :count personer.",
     "{1} 1 nås inte|[2,*] :count nås inte": "{1} 1 nås inte|[2,*] :count nås inte",
-    "{1} Nytt pass: täcker 1 timme med för få i schemat|[2,*] Nytt pass: täcker :count timmar med för få i schemat": "{1} Nytt pass: täcker 1 timme med för få i schemat|[2,*] Nytt pass: täcker :count timmar med för få i schemat"
+    "{1} Nytt pass: täcker 1 timme med för få i schemat|[2,*] Nytt pass: täcker :count timmar med för få i schemat": "{1} Nytt pass: täcker 1 timme med för få i schemat|[2,*] Nytt pass: täcker :count timmar med för få i schemat",
+    "{1} En rad har ett fel och skickas inte. Rätta den i filen och läs in den i ett eget massutskick.|[2,*] :count rader har fel och skickas inte. Rätta dem i filen och läs in dem i ett eget massutskick.": "{1} En rad har ett fel och skickas inte. Rätta den i filen och läs in den i ett eget massutskick.|[2,*] :count rader har fel och skickas inte. Rätta dem i filen och läs in dem i ett eget massutskick."
 }

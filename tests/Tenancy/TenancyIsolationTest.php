@@ -342,6 +342,8 @@ use App\Modules\Saas\Stripe\Models\StripeCustomerLink;
 use App\Modules\Saas\Stripe\Models\StripeEvent;
 use App\Modules\Saas\Stripe\Models\StripeObject;
 use App\Modules\Saas\Stripe\Models\StripeSyncRun;
+use App\Modules\Signing\Models\SigningBulkSend;
+use App\Modules\Signing\Models\SigningBulkSendRow;
 use App\Modules\Signing\Models\SigningDocument;
 use App\Modules\Signing\Models\SigningTemplate;
 use App\Modules\Signing\Models\SigningTemplateRole;
@@ -696,6 +698,9 @@ const COMPANY_SCOPED_MODELS = [
     // Templates with roles (ADR-046 S14); the tenancy test of its own is tests/Tenancy/SigningTemplatesTenancyTest.php.
     SigningTemplate::class => ['name' => 'Hemlig mall', 'document_type' => 'QUOTE'],
     SigningTemplateRole::class => 's14SigningTemplateRoleAttributes',
+    // Bulk send (ADR-046 S15); the tenancy test of its own is tests/Tenancy/SigningBulkSendTenancyTest.php.
+    SigningBulkSend::class => ['status' => 'PREVIEW'],
+    SigningBulkSendRow::class => 's15SigningBulkSendRowAttributes',
     // The stored issued invoice PDF and the customer portal (ADR-075).
     InvoiceDocument::class => 'invoiceDocumentAttributes',
     PortalContact::class => 'portalContactAttributes',
@@ -2249,6 +2254,13 @@ function s6SigningFieldAttributes(): array
     return ['envelope_id' => $envelope->id, 'signing_request_id' => $signer->id, 'type' => 'TEXT', 'page' => 1, 'x' => 1000, 'y' => 1000, 'width' => 10000, 'height' => 2000, 'page_width' => 59528, 'page_height' => 84189, 'label' => 'Hemligt fält', 'position' => 1];
 }
 
+function s15SigningBulkSendRowAttributes(): array
+{
+    $run = SigningBulkSend::create(['status' => 'PREVIEW']);
+
+    return ['bulk_send_id' => $run->id, 'row_number' => 2, 'status' => 'INVALID', 'reason' => 'Hemlig rad'];
+}
+
 function s14SigningTemplateRoleAttributes(): array
 {
     $template = SigningTemplate::create(['name' => 'Hemlig mall', 'document_type' => 'QUOTE']);
@@ -2752,7 +2764,7 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [ArticlePriceHistory::class, WorkshopWaitingFlag::class, MrpRun::class, PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class, StripeObject::class, DocumentVersion::class, SigningDocumentVersion::class, SigningField::class, SigningFieldValue::class, SigningDownloadEvent::class, SigningTemplateRole::class];
+const NEVER_UPDATED = [ArticlePriceHistory::class, WorkshopWaitingFlag::class, MrpRun::class, PurchaseOrderVersion::class, ProductionPlanRun::class, ProductionPlanSlot::class, ProductionPlanForecast::class, WorkOrderContactAttempt::class, VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class, ConsumptionRun::class, SaleConsumption::class, PortalInvitation::class, PortalMessage::class, PortalAttachment::class, PortalEvent::class, PortalPaymentNote::class, SaasCustomerMonth::class, SaasEstimate::class, StripeObject::class, DocumentVersion::class, SigningDocumentVersion::class, SigningField::class, SigningFieldValue::class, SigningDownloadEvent::class, SigningTemplateRole::class, SigningBulkSendRow::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
 const APPEND_ONLY = [ArticlePriceHistory::class, ApprovalRequest::class, ApprovalDecision::class, ApprovalDelegation::class, WorkshopTimeEntry::class, WorkOrderTimeEntry::class, WorkOrderMaterialEntry::class, WorkOrderContactAttempt::class, VatNumberCheck::class, TaxAccountPosting::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, FixedAssetAddition::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class, ProductionOrderIssue::class, ProductionLabourEntry::class, BoardroomShareEvent::class, BomRow::class, WasteEntry::class, WasteMeasurement::class, StaffMeal::class, InvoiceDocument::class, CrmSigningEvent::class, SigningDocumentVersion::class, SigningField::class, SigningFieldValue::class, SigningDownloadEvent::class, K3Transition::class, SaasContractVersion::class, SaasCorrection::class, PurchaseMatchResult::class, ProjectWipSnapshot::class];

@@ -9,9 +9,13 @@ use App\Actions\Signing\SendForSigning;
 use App\Actions\Signing\SignAtLink;
 use App\Domain\Signing\SigningConsent;
 use App\Domain\Signing\SigningPdfs;
+use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Modules\ModuleManager;
+use App\Modules\Signing\Actions\ManageSigningBulkSends;
 use App\Modules\Signing\Actions\ManageSigningTemplates;
+use App\Modules\Signing\Models\SigningBulkSend;
+use App\Modules\Signing\Models\SigningBulkSendRow;
 use App\Modules\Signing\Models\SigningDocument;
 use App\Modules\Signing\Models\SigningTemplate;
 use App\Modules\Signing\SigningModule;
@@ -52,29 +56,32 @@ final class SigningDocumentsExtras extends DemoExtra
                 // Uploaded and not sent yet: shown under "Uppladdade dokument som inte är skickade" in the wizard's first step.
                 $draft = $this->document($c, 'Samarbetsavtal, utkast', 'Samarbetsavtal', 'Parterna samarbetar kring utveckling av en gemensam tjänst.');
 
-                $this->templates($c, $draft);
+                $template = $this->templates($c, $draft);
+                $this->bulkSend($c, $template);
 
                 $send = app(SendForSigning::class);
 
                 $signedEnvelope = $send->envelope($c->user, $c->company, $nda, ['signers' => [['email' => 'karin.exempelsson@kunden-exempel.test', 'step' => 1, 'verification' => 'NONE']], 'copies' => [['email' => 'avtal@exempelbolaget.test', 'name' => 'Avtalsarkivet']]], minSigners: 1);
                 $this->sign($signedEnvelope->id, 'Karin Exempelsson', 'VD');
 
-                $send->envelope($c->user, $c->company, $lease, ['signers' => [
+                $leaseEnvelope = $send->envelope($c->user, $c->company, $lease, ['signers' => [
                     ['email' => 'anna.exempelsson@fastighet-exempel.test', 'step' => 1, 'verification' => 'EMAIL_CODE'],
                     ['email' => 'bo.exempelsson@fastighet-exempel.test', 'step' => 2, 'verification' => 'EMAIL_CODE'],
                 ], 'auto_reminders' => true, 'reminder_days' => 3], minSigners: 1);
 
-                $send->envelope($c->user, $c->company, $employment, ['signers' => [['email' => 'eva.exempelsson@example.test', 'step' => 1, 'verification' => 'EMAIL_CODE']], 'confidential' => true], minSigners: 1);
+                $employmentEnvelope = $send->envelope($c->user, $c->company, $employment, ['signers' => [['email' => 'eva.exempelsson@example.test', 'step' => 1, 'verification' => 'EMAIL_CODE']], 'confidential' => true], minSigners: 1);
+
+                $this->finishedBulkSend($c, $template, [$signedEnvelope, $leaseEnvelope, $employmentEnvelope]);
             });
         });
     }
 
     /** Two templates (ADR-046 S14): one for the draft's kind of document, with two roles, and one for quotes. Roles and settings only, so the demo needs no PDF engine. */
-    private function templates(DemoContext $c, SigningDocument $draft): void
+    private function templates(DemoContext $c, SigningDocument $draft): SigningTemplate
     {
         $templates = app(ManageSigningTemplates::class);
 
-        $templates->create($c->user, $c->company, [
+        $document = $templates->create($c->user, $c->company, [
             'name' => 'Samarbetsavtal med två parter',
             'document_type' => SigningTemplate::DOCUMENT,
             'roles' => [
@@ -98,6 +105,57 @@ final class SigningDocumentsExtras extends DemoExtra
             'auto_reminders' => true,
             'reminder_days' => 7,
         ]);
+
+        return $document;
+    }
+
+    /** A bulk send waiting for its confirmation (ADR-046 S15): four rows, one with a faulty address, as the manual's screenshots show it. Nothing is sent. */
+    private function bulkSend(DemoContext $c, SigningTemplate $template): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'demo-bulk');
+        file_put_contents($file, implode("\n", [
+            'Kund e-post;Kund namn;Kund språk;Säljare e-post',
+            'karin.exempelsson@kunden-exempel.test;Karin Exempelsson;sv;saljare@exempelbolaget.test',
+            'olof.exempelsson@bygg-exempel.test;Olof Exempelsson;sv;saljare@exempelbolaget.test',
+            'anna.exempelsson@fastighet-exempel;Anna Exempelsson;sv;saljare@exempelbolaget.test',
+            'sam.exempelsson@studio-exempel.test;Sam Exempelsson;en;saljare@exempelbolaget.test',
+        ])."\n");
+
+        try {
+            app(ManageSigningBulkSends::class)->prepare($c->user, $c->company, $template, $file);
+        } finally {
+            @unlink($file);
+        }
+    }
+
+    /**
+     * A finished bulk send for the result list of the manual (ADR-046 S15). Written straight into the tables, with the
+     * envelopes the demo already made standing in for the ones a run would have made: the demo sends no mail.
+     *
+     * @param  list<SigningEnvelope>  $envelopes
+     */
+    private function finishedBulkSend(DemoContext $c, SigningTemplate $template, array $envelopes): void
+    {
+        $run = SigningBulkSend::create([
+            'company_id' => $c->company->id,
+            'template_id' => $template->id,
+            'status' => SigningBulkSend::COMPLETED,
+            'total_rows' => 4,
+            'valid_rows' => 4,
+            'invalid_rows' => 0,
+            'sent_count' => 3,
+            'failed_count' => 1,
+            'created_by' => $c->user->id,
+            'confirmed_at' => now()->subDays(2),
+            'started_at' => now()->subDays(2),
+            'finished_at' => now()->subDays(2)->addMinutes(3),
+        ]);
+
+        foreach ($envelopes as $index => $envelope) {
+            SigningBulkSendRow::create(['company_id' => $c->company->id, 'bulk_send_id' => $run->id, 'row_number' => $index + 2, 'status' => SigningBulkSendRow::SENT, 'envelope_id' => $envelope->id, 'processed_at' => now()->subDays(2)]);
+        }
+
+        SigningBulkSendRow::create(['company_id' => $c->company->id, 'bulk_send_id' => $run->id, 'row_number' => 5, 'status' => SigningBulkSendRow::FAILED, 'reason' => 'E-postkvoten tog slut. Läs in raden i ett nytt massutskick.', 'processed_at' => now()->subDays(2)]);
     }
 
     private function document(DemoContext $c, string $title, string $heading, string $text): SigningDocument

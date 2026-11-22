@@ -331,6 +331,8 @@ BEGIN
         ('signing_fields', 'SELECT, INSERT, UPDATE, DELETE'),
         ('signing_template_roles', 'SELECT, INSERT, UPDATE, DELETE'),
         ('signing_templates', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('signing_bulk_sends', 'SELECT, INSERT, UPDATE, DELETE'),
+        ('signing_bulk_send_rows', 'SELECT, INSERT, UPDATE, DELETE'),
         ('signing_link_tokens', 'SELECT, INSERT, UPDATE, DELETE'),
         ('signing_verification_codes', 'SELECT, INSERT, UPDATE'),
         ('skatteverket_events', 'SELECT, INSERT, UPDATE, DELETE'),

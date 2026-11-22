@@ -137,6 +137,9 @@ final class SigningModule implements IsNew, Module
                         ['label' => __('Skicka dokument'), 'route' => 'signing.new', 'active' => ['signing.new']],
                         ['label' => __('Mallar'), 'route' => 'signing.templates', 'active' => ['signing.templates', 'signing.template', 'signing.template.new']],
                     ] : []),
+                    ...($user->hasTeamPermission($company, self::MANAGE) ? [
+                        ['label' => __('Massutskick'), 'route' => 'signing.bulk-sends', 'active' => ['signing.bulk-sends', 'signing.bulk-send', 'signing.bulk-sends.example']],
+                    ] : []),
                 ],
             ],
         ];
