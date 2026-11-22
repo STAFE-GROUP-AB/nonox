@@ -13353,6 +13353,20 @@ components:
         unit_price_minor:
           type: integer
           description: 'The price as written, in hundredths of the invoice currency (equal to unit_price_ore for SEK).'
+        price_source:
+          type:
+            - string
+            - 'null'
+          enum:
+            - MANUAL
+            - AGREEMENT
+            - CUSTOMER_LIST
+            - CAMPAIGN
+            - CURRENCY_LIST
+            - BASE
+            - CONVERTED
+            - null
+          description: 'Where the price came from (ADR-082). MANUAL for a price you wrote, unless it equals the price the engine resolved, then that source. Null on a row without an article.'
         discount_bp:
           type: integer
           description: 'Discount in basis points (1000 is 10 %).'
@@ -13686,7 +13700,7 @@ components:
           type:
             - string
             - 'null'
-          description: 'Article number. Its name, price and VAT rate are used for fields left out.'
+          description: 'Article number. Its name and VAT rate are used for fields left out. A row with an article and no unit_price_ore or unit_price_minor is priced by the price engine (price agreement, price list, campaign, the currency''s list or the base price, for the invoice''s customer, date and currency).'
         description:
           type: string
           maxLength: 255
@@ -13708,7 +13722,7 @@ components:
           description: 'Price in öre, for an invoice in SEK.'
         unit_price_minor:
           type: integer
-          description: 'Price in hundredths of the invoice currency; required when invoice_currency is not SEK (article prices are kronor and are not used).'
+          description: 'Price in hundredths of the invoice currency. Required on a row without an article when invoice_currency is not SEK. On an article row it may be left out, and the price engine then prices the row in the invoice currency (see article). A price you write is kept.'
         discount_bp:
           type: integer
           minimum: 0

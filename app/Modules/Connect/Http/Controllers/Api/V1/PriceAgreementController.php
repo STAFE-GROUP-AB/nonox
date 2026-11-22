@@ -17,8 +17,10 @@ use App\Modules\Connect\Http\Controllers\Api\V1\Concerns\ActsAsCredential;
 use App\Modules\Connect\Http\Resources\CursorList;
 use App\Modules\Connect\Http\Resources\PricePresenter;
 use App\Modules\Connect\Support\ApiInput;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection as SupportCollection;
@@ -26,6 +28,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * Customer price agreements over the API (ADR-082 P9, ADR-032): the same
@@ -126,7 +129,7 @@ final class PriceAgreementController
             throw ValidationException::withMessages(['items' => __('Högst :limit villkor i taget.', ['limit' => PriceListController::BULK_LIMIT])]);
         }
 
-        $articles = Article::query()->whereIn('number', array_values(array_filter(array_map(fn (mixed $row): string => is_array($row) ? trim((string) ($row['article'] ?? '')) : '', $rows))))->pluck('id', 'number');
+        $articles = Article::query()->whereIn('number', array_values(array_filter(array_map(fn (mixed $row): string => is_array($row) && is_string($row['article'] ?? null) ? trim($row['article']) : '', $rows))))->pluck('id', 'number');
         $units = UnitRegister::load();
         $saved = [];
         $errors = [];
@@ -136,6 +139,10 @@ final class PriceAgreementController
                 $saved[$index] = $save($this->user(), $this->company(), $model, $this->itemInput(is_array($row) ? $row : [], $articles, $units));
             } catch (ValidationException $exception) {
                 $errors[] = ['index' => $index, 'errors' => $exception->errors()];
+            } catch (AuthorizationException|ModelNotFoundException $exception) {
+                throw $exception;
+            } catch (Throwable) {
+                $errors[] = ['index' => $index, 'errors' => ['row' => [__('Raden kunde inte sparas.')]]];
             }
         }
 
@@ -198,7 +205,7 @@ final class PriceAgreementController
     private function itemInput(array $row, SupportCollection $articles, UnitRegister $units): array
     {
         $all = ($row['target'] ?? 'article') === 'all';
-        $number = trim((string) ($row['article'] ?? ''));
+        $number = is_string($row['article'] ?? null) ? trim($row['article']) : '';
         $articleId = $all ? null : ($number === '' ? ($row['article_id'] ?? null) : $articles->get($number));
 
         if (! $all && ! is_int($articleId)) {

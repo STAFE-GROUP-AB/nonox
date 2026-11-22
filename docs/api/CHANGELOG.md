@@ -29,7 +29,7 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 - Nya scopes: `prices:view`, `prices:view-cost`, `price-lists:manage` och `price-agreements:manage`.
 
 ### Ändrat
-- `POST /invoices` och `PATCH /invoices/{invoice}`: en rad med `article` men utan `unit_price_ore` eller `unit_price_minor` prissätts nu av prismotorn (prisavtal, prislista, kampanj, valutans lista eller grundpris för kunden, datumet och valutan), i stället för att alltid få artikelns grundpris. En rad med skrivet pris behåller det och får `price_source: MANUAL`. En faktura i annan valuta än kronor får det pris prismotorn hittar i den valutan, eller grundpriset omräknat. Finns inget pris svarar anropet 422 på raden.
+- `POST /invoices` och `PATCH /invoices/{invoice}`: en rad med `article` men utan `unit_price_ore` eller `unit_price_minor` prissätts nu av prismotorn (prisavtal, prislista, kampanj, valutans lista eller grundpris för kunden, datumet och valutan), i stället för att alltid få artikelns grundpris. En rad med skrivet pris behåller det; `price_source` är `MANUAL` om inte priset är samma som det prismotorn hittar. En faktura i annan valuta än kronor får det pris prismotorn hittar i den valutan, eller grundpriset omräknat. Finns inget pris svarar anropet 422 på raden.
 <!-- /lang -->
 <!-- lang:en -->
 ### Added
@@ -41,7 +41,7 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 - New scopes: `prices:view`, `prices:view-cost`, `price-lists:manage` and `price-agreements:manage`.
 
 ### Changed
-- `POST /invoices` and `PATCH /invoices/{invoice}`: a row with `article` but without `unit_price_ore` or `unit_price_minor` is now priced by the price engine (the customer's price agreement, price list, campaign, the currency's list or the base price, for the customer, the date and the currency), instead of always getting the article's base price. A row with a typed price keeps it and gets `price_source: MANUAL`. An invoice in a currency other than kronor gets the price the engine finds in that currency, or the base price converted. When there is no price the call answers 422 on the row.
+- `POST /invoices` and `PATCH /invoices/{invoice}`: a row with `article` but without `unit_price_ore` or `unit_price_minor` is now priced by the price engine (the customer's price agreement, price list, campaign, the currency's list or the base price, for the customer, the date and the currency), instead of always getting the article's base price. A row with a typed price keeps it; `price_source` is `MANUAL` unless it equals the resolved price. An invoice in a currency other than kronor gets the price the engine finds in that currency, or the base price converted. When there is no price the call answers 422 on the row.
 <!-- /lang -->
 
 <!-- lang:sv -->

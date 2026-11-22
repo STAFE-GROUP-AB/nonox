@@ -358,3 +358,23 @@ it('reads the lists in a fixed number of queries however many rows there are', f
 
     expect($many)->toBe($few)->and($agreement->id)->toBeInt();
 });
+
+it('keeps the saved rows when a later row has an unreadable date, and refuses an array as article', function () {
+    $list = p9List();
+
+    $this->withToken($this->lists)->withHeader('Idempotency-Key', 'rob-1')->postJson("/api/v1/price-lists/{$list->id}/items", ['items' => [
+        ['article' => 'A-1', 'price_minor' => 8000],
+        ['article' => 'A-2', 'price_minor' => 100, 'valid_from' => 'nonsense', 'replace_running' => true],
+        ['article' => ['A-1'], 'price_minor' => 100],
+    ]])->assertOk()
+        ->assertJsonPath('data.saved', 1)
+        ->assertJsonPath('data.failed', 2)
+        ->assertJsonPath('data.errors.0.index', 1)
+        ->assertJsonPath('data.errors.1.index', 2);
+
+    $agreement = app(SavePriceAgreement::class)($this->owner, $this->company, ['customer_id' => $this->customer->id, 'title' => 'A', 'currency' => 'SEK', 'valid_from' => '2026-06-01']);
+    $this->withToken($this->key)->withHeader('Idempotency-Key', 'rob-2')->postJson("/api/v1/price-agreements/{$agreement->id}/items", ['items' => [
+        ['article' => ['A-1'], 'price_minor' => 1],
+        ['article' => 'A-1', 'price_minor' => 1],
+    ]])->assertOk()->assertJsonPath('data.saved', 1)->assertJsonPath('data.errors.0.index', 0);
+});

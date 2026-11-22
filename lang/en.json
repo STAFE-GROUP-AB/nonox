@@ -15034,5 +15034,6 @@
     "Skriv varje rad som artikelnummer:antal:enhet.": "Write each row as article_number:quantity:unit.",
     "Priser i en prislista har lagts till, ändrats eller tagits bort": "Prices in a price list were added, changed or removed",
     "Ett prisavtal med en kund har blivit aktivt": "A price agreement with a customer became active",
-    "Ett prisavtal med en kund har upphört att gälla": "A price agreement with a customer stopped applying"
+    "Ett prisavtal med en kund har upphört att gälla": "A price agreement with a customer stopped applying",
+    "Raden kunde inte sparas.": "The row could not be saved."
 }

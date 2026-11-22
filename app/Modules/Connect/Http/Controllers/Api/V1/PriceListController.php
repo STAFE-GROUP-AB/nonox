@@ -17,14 +17,17 @@ use App\Modules\Connect\Http\Resources\CursorList;
 use App\Modules\Connect\Http\Resources\PricePresenter;
 use App\Modules\Connect\Support\ApiInput;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * Price lists over the API (ADR-082 P9, ADR-032): the same Actions as the
@@ -133,7 +136,7 @@ final class PriceListController
             throw ValidationException::withMessages(['items' => __('Högst :limit priser i taget.', ['limit' => self::BULK_LIMIT])]);
         }
 
-        $articles = Article::query()->whereIn('number', array_values(array_filter(array_map(fn (mixed $row): string => is_array($row) ? trim((string) ($row['article'] ?? '')) : '', $rows))))->pluck('id', 'number');
+        $articles = Article::query()->whereIn('number', array_values(array_filter(array_map(fn (mixed $row): string => is_array($row) && is_string($row['article'] ?? null) ? trim($row['article']) : '', $rows))))->pluck('id', 'number');
         $units = UnitRegister::load();
         $saved = [];
         $errors = [];
@@ -146,6 +149,10 @@ final class PriceListController
                     $saved[$index] = $save($this->user(), $this->company(), $list, $input, null, $replaces);
                 } catch (ValidationException $exception) {
                     $errors[] = ['index' => $index, 'errors' => $exception->errors()];
+                } catch (AuthorizationException|ModelNotFoundException $exception) {
+                    throw $exception;
+                } catch (Throwable) {
+                    $errors[] = ['index' => $index, 'errors' => ['row' => [__('Raden kunde inte sparas.')]]];
                 }
             }
         });
@@ -237,7 +244,7 @@ final class PriceListController
      */
     private function itemInput(array $row, SupportCollection $articles, UnitRegister $units): array
     {
-        $number = trim((string) ($row['article'] ?? ''));
+        $number = is_string($row['article'] ?? null) ? trim($row['article']) : '';
         $articleId = $number === '' ? ($row['article_id'] ?? null) : $articles->get($number);
 
         if (! is_int($articleId)) {
@@ -280,11 +287,17 @@ final class PriceListController
         $from = $input['valid_from'] ?? null;
         $minimum = PriceInput::quantityMilli((string) $input['min_quantity']);
 
-        if (! is_string($from) || $minimum === null) {
+        if (! is_string($from) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $from) !== 1 || $minimum === null) {
             return null;
         }
 
-        $start = CarbonImmutable::parse($from)->toDateString();
+        $parsed = CarbonImmutable::createFromFormat('!Y-m-d', $from);
+
+        if ($parsed === false) {
+            return null;
+        }
+
+        $start = $parsed->toDateString();
 
         return PriceListItem::query()
             ->where('price_list_id', $list->id)
