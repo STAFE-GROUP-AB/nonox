@@ -107,13 +107,13 @@ Inget uppskattat pris för Business Studio publiceras någonstans (beslut av äg
 | Tidrapportering | Tillval | ORDER "Tidrapportering" +79 kr, plus 19 kr per extra användare (portal.novaoffice.se/Order); BS/tillvalsmoduler/tidrapportering |
 | Fakturering i utländsk valuta | Tillval | ORDER "Valutaorder" +79 kr; BS/tillvalsmoduler/valutaorder (även Intrastat vid export, som NONOX inte har) |
 | Elektronisk signering (enkel elektronisk underskrift) | Större paket | BS/tillvalsmoduler/e-signering-scrive (tjänsten levereras av Scrive) finns i Business Studio (offert) men inte på Novas sidor. NONOX signering är en enkel elektronisk underskrift, inte BankID |
-
-Signering (ADR-046 S21): raden omfattar också fält i PDF:en per undertecknare och mallar med roller och massutskick. Inga nya leverantörsuppgifter har lagts till: ingen leverantörs egen sida har lästs för dessa delar, så konkurrenternas värden är oförändrade (`unknown`). Försegling, kontrollsida och underskrift hos extern tjänst är avstängda i den driftade tjänsten och ingår därför inte i jämförelsen.
 | Variantartiklar | Tillval (NONOX: Finns inte) | ORDER "Variantartiklar" +99 kr; BS/tillvalsmoduler/variantartiklar |
 | Prislistor och kundavtal | Ingår | NO/basfunktioner "Prislistor", "Kundavtal", "Prishantering - flera nivåer". Motsägelse: BS/foretagspaket/handelspaket-business-studio (och Novas Handelspaket, +99 kr) nämner också prislistor, så det är oklart om Nova bara har dem i bas eller i Handelspaketet; raden visar bara det Novas egen baslista säger |
 | Kassasystem | Större paket (NONOX: Finns inte) | BS/tillvalsmoduler/kassa-och-betalkort och BS/foretagspaket/butikspaket-business-studio finns i Business Studio men inte på Novas sidor. NONOX har ingen egen kassa; kopplingarna till Zettle och Onslip är byggda men inte i drift |
 | EDI-order | Större paket (NONOX: Finns inte) | BS/tillvalsmoduler/edi-order (offert), inte på Novas sidor |
 | E-handel | Större paket (NONOX: Finns inte) | BS/tillvalsmoduler/e-handel (offert), inte på Novas sidor. NONOX har bara API:t |
+
+Signering (ADR-046 S21): raden Elektronisk signering omfattar nu också fält i PDF:en per undertecknare och mallar med roller och massutskick (nycklarna `signing_fields` och `signing_templates`). Inga leverantörsuppgifter har ändrats: Pyramids värde (Större paket) bygger fortfarande på källan ovan, och övriga leverantörer står kvar som `unknown` eftersom ingen av deras egna sidor har lästs för raden. Försegling, kontrollsida och underskrift hos extern tjänst är avstängda i den driftade tjänsten och ingår inte i jämförelsen.
 
 De nya raderna har fältet `checked_for` i `jamforelse.json`: en lista med de leverantörer vars sidor faktiskt lästes för raden. En rad med `checked_for` visas bara på sidan "Alternativ till <leverantör>" för en leverantör i listan, aldrig på startsidan eller branschsidorna, eftersom övriga leverantörers sidor inte lästs för raderna. Värdet "Större paket" betyder att funktionen finns i leverantörens större paket (Business Studio eller Hybrid Cloud) med pris på offert.
 
