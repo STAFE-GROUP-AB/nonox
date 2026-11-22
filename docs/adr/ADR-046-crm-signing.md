@@ -3018,10 +3018,12 @@ unchanged.
   script, no third-party script. `verify.js` is in `vite.config.js`.
 - **The lookup** (`app/Domain/Signing/Verify/VerifyLookup.php`) is inside
   `CompanyScope::bypass` with a comment naming this amendment. Decisions
-  2026-11-22: only a **completed** envelope is answered, and only one completed
-  on or after `VerifyLookup::NOTICE_FROM` (2026-11-23 00:00 Europe/Stockholm, the
+  2026-11-22: only a **completed** envelope is answered, and only one sent
+  (`sent_at`, else `created_at`, which `SigningEnvelopes` sets when the envelope is
+  created) on or after `VerifyLookup::NOTICE_FROM` (2026-11-23 00:00 Europe/Stockholm, the
   day the signing page started telling signers about the Verify page; legal
-  re-check N1), filtered in the same subquery (a draft, an envelope
+  re-check N1; the texts print the date from the constant through
+  `VerifyLookup::noticeDate()`), filtered in the same subquery (a draft, an envelope
   still out, so not the file after a signer either, an expired, declined or
   withdrawn one is "not found"), and the title is **never** shown, so there is
   nothing to hide for a confidential envelope. The status and the company's

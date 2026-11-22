@@ -9,6 +9,7 @@ use App\Domain\Signing\Pdf\FakePdfEngine;
 use App\Domain\Signing\Seal\SealCertificates;
 use App\Domain\Signing\SigningPdfs;
 use App\Domain\Signing\Verify\VerifyLink;
+use App\Domain\Signing\Verify\VerifyLookup;
 use App\Livewire\Company\SigningVerifySettings;
 use App\Mail\SigningRequestMail;
 use App\Models\AuditLog;
@@ -318,18 +319,30 @@ it('details a hash that another company has with the page off as one signing: th
     expect($answer['status'])->toBe('one')->and(s12Json($answer))->toContain('Snickeri Demo AB')->not->toContain('Annat Bolag');
 });
 
-it('answers like a miss for an envelope completed before the notice date', function () {
+it('answers like a miss for an envelope sent before the notice date, even when it was completed after it', function () {
     s12Switch();
     $this->travelTo(CarbonImmutable::parse('2026-11-22 23:50:00', 'Europe/Stockholm'));
     $early = s12Send($this->owner, $this->company, [['email' => 'anna@example.test', 'step' => 1, 'verification' => 'NONE']]);
-    s12Sign('anna@example.test');
     $this->travelTo(CarbonImmutable::parse('2026-11-23 00:10:00', 'Europe/Stockholm'));
+    s12Sign('anna@example.test');
     $late = s12Send($this->owner, $this->company, [['email' => 'bo@example.test', 'step' => 1, 'verification' => 'NONE']]);
     s12Sign('bo@example.test', 'Bo');
     auth()->logout();
 
-    expect(s12Check($this, $early->refresh()->document_sha256))->toBe(s12Check($this, hash('sha256', 'saknas')))
+    expect($early->refresh()->status->value)->toBe('COMPLETED')
+        ->and($early->completed_at?->greaterThan(CarbonImmutable::parse(VerifyLookup::NOTICE_FROM)))->toBeTrue()
+        ->and(s12Check($this, $early->document_sha256))->toBe(s12Check($this, hash('sha256', 'saknas')))
         ->and(s12Check($this, $late->refresh()->document_sha256)['status'])->toBe('one');
+});
+
+it('prints the cutoff date from the constant in the company card and in the manual', function () {
+    $date = VerifyLookup::noticeDate();
+
+    expect($date)->toBe('23 november 2026');
+
+    Livewire::test(SigningVerifySettings::class, ['company' => $this->company])->assertSee("skickades från och med {$date}");
+
+    expect(file_get_contents(base_path('docs/manual/sv/signering/kontrollera.md')))->toContain("skickades från och med {$date}");
 });
 
 it('answers exactly like not found for a company that has the page off', function () {

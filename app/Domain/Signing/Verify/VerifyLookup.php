@@ -24,8 +24,8 @@ use Illuminate\Support\Collection;
  * address or IP address (owner decision 11), never the document's title,
  * never an internal id.
  *
- * Only an envelope completed on or after NOTICE_FROM, of a company that has
- * switched the page on, is answered; anything else is "not found", exactly alike. Details are given
+ * Only a completed envelope sent on or after NOTICE_FROM, of a company that
+ * has switched the page on, is answered; anything else is "not found", exactly alike. Details are given
  * only when the hash is in exactly one envelope; in more than one (the same
  * PDF sent twice, by one company or two) the answer says so and nothing else.
  *
@@ -37,8 +37,9 @@ use Illuminate\Support\Collection;
 final class VerifyLookup
 {
     /**
-     * The day the signing page started telling signers about the Verify page. Only envelopes completed at or
-     * after this moment are answered, so no signer is covered who was not told (legal re-check, N1).
+     * The day the signing page started telling signers about the Verify page. Only envelopes sent at or after
+     * this moment (sent_at, else created_at) and completed are answered, so no signer is covered who was not
+     * told when they signed (legal re-check, N1). The texts print this date through noticeDate().
      */
     public const string NOTICE_FROM = '2026-11-23 00:00:00 Europe/Stockholm';
 
@@ -47,6 +48,12 @@ final class VerifyLookup
     public const string MANY = 'many';
 
     public const string NONE = 'none';
+
+    /** The cutoff date for the texts, in the app's language ("23 november 2026"). */
+    public static function noticeDate(): string
+    {
+        return CarbonImmutable::parse(self::NOTICE_FROM)->translatedFormat('j F Y');
+    }
 
     /**
      * @return array{status: string, found: bool, heading: string, lines: list<array{string, string}>}
@@ -60,7 +67,7 @@ final class VerifyLookup
             ->whereIn('envelope_id', fn ($query) => $query->select('signing_envelopes.id')->from('signing_envelopes')
                 ->join('teams', 'teams.id', '=', 'signing_envelopes.company_id')
                 ->where('signing_envelopes.status', EnvelopeStatus::Completed->value)
-                ->where('signing_envelopes.completed_at', '>=', CarbonImmutable::parse(self::NOTICE_FROM))
+                ->whereRaw('coalesce(signing_envelopes.sent_at, signing_envelopes.created_at) >= ?', [CarbonImmutable::parse(self::NOTICE_FROM)->toIso8601String()])
                 ->where('teams.signing_verify_enabled', true))
             ->distinct()->limit(2)->pluck('envelope_id')->all());
 
