@@ -442,8 +442,8 @@ it('shows the long-term validation on the envelope page', function () {
     $newest = EnvelopeTimestamper::newestFile($envelope->id);
 
     Livewire::test(EnvelopePage::class, ['envelopeId' => $envelope->id])
-        ->assertSee('Valideringsdata har lagts till i filen (PAdES B-LT)')
-        ->assertSee('slutar gälla 2031-03-15')
+        ->assertSee('Valideringsdata har lagts till i filen (PAdES B-LT): certifikaten och deras spärrstatus.')
+        ->assertSee('NONOX försöker lägga till en ny tidsstämpel före 2031-03-15')
         ->assertSee((string) $newest?->sha256);
 });
 
