@@ -937,12 +937,29 @@ Known and accepted at launch; none blocks the feature.
 - **Customer portal:** the portal's `held()` loads every sent document instead
   of only those the page shows.
 - **Campaigns have no channel field:** a campaign cannot be aimed at one sales
-  channel; only channel lists can.
+  channel; only channel lists can. *Owner decision 2026-11-22: build it (P11
+  below).*
 - **Refunds and the margin floor:** whether a refund or credit should be
   checked against the lowest contribution margin is an owner decision.
+  *Owner decision 2026-11-22 (Lead's recommendation): no. A credit note or
+  refund corrects a sale that has already been made and priced; holding it
+  would hold back the correction itself. Who may credit is already governed by
+  `invoices:credit`; a general approval step for credits belongs to the
+  approval queue (ADR-067), not to the margin floor.*
 - **Mass update (P6):** no `MARGIN` rule (set the price from a target margin)
   and no supplier or customer-group filters.
 - **Open legal items:** P-L1 to P-L7 above stay `TODO(legal-verify)` until a
   lawyer has read them.
 
 Rule added in P10 review: a price that has started to apply may be ended only from yesterday onwards, also when a new price replaces it (screen, API `replace_running` and file import alike). The file import may chain prices made by the same file, which allows a history with past dates.
+
+## P11: a channel on campaigns (owner 2026-11-22)
+
+A CAMPAIGN list may name one channel (`price_lists.channel`, the existing
+column), or none. No channel keeps today's behaviour: the campaign applies
+wherever its customers or groups apply. With a channel, the resolver uses the
+campaign only when the document's channel (`PriceContext::$channel`) is the
+same, so a till campaign never reaches an invoice and a portal campaign never
+reaches the till. The till sync and the labels count only campaigns without a
+channel or with POS. The campaign screen, the API (`channel` on a CAMPAIGN
+list) and the file import take the field.
