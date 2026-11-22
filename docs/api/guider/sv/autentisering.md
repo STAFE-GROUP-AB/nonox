@@ -77,11 +77,11 @@ GET https://nonox.app/anslut?response_type=code
 | `client_id` | Appens id. |
 | `redirect_uri` | En av appens registrerade adresser, exakt. |
 | `scope` | Behörigheterna, åtskilda med mellanslag. Se [Behörigheter](behorigheter.md). |
-| `state` | Ett slumpvärde som kommer tillbaka oförändrat. Kontrollera det mot CSRF. |
+| `state` | Obligatoriskt. Ett slumpvärde som kommer tillbaka oförändrat. Kontrollera det mot CSRF. |
 | `code_challenge` | BASE64URL(SHA-256(code_verifier)). |
 | `code_challenge_method` | Alltid `S256`. |
 
-Saknas `code_challenge`, eller är metoden inte `S256`, skickas personen tillbaka med `error=invalid_request`. Är `client_id` eller `redirect_uri` fel visas felet på sidan och personen skickas **inte** tillbaka, så att en falsk adress aldrig får ett svar.
+Saknas `state` eller `code_challenge`, eller är metoden inte `S256`, skickas personen tillbaka med `error=invalid_request`. Är `client_id` eller `redirect_uri` fel visas felet på sidan och personen skickas **inte** tillbaka, så att en falsk adress aldrig får ett svar.
 
 ## Godkännandet och passkey
 

@@ -13,6 +13,22 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-22: `state` krävs vid godkännandet
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-22: `state` is required at authorization
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Ändrat (säkerhet)
+- `GET /anslut` kräver nu `state`. En begäran utan `state`, eller med ett tomt värde, skickas tillbaka till appen med `error=invalid_request` innan godkännandet visas. Alla exempel i dokumentationen har alltid skickat `state`; en app som följer dem påverkas inte. Ändringen görs inom v1 eftersom den är en säkerhetshärdning (RFC 6749 §10.12).
+<!-- /lang -->
+<!-- lang:en -->
+### Changed (security)
+- `GET /anslut` now requires `state`. A request without `state`, or with an empty value, is sent back to the app with `error=invalid_request` before the consent screen is shown. Every example in the documentation has always sent `state`; an app that follows them is unaffected. The change is made within v1 because it is a security hardening (RFC 6749 §10.12).
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-22: signering (dokument, mallar, kuvert och webhooks)
 <!-- /lang -->
 <!-- lang:en -->

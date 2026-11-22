@@ -66,7 +66,7 @@ https://nonox.app/anslut?response_type=code
   &code_challenge_method=S256
 ```
 
-Personen loggar in om det behövs, ser på svenska vad appen ber om, väljer ett av sina företag där hen är ägare eller administratör och godkänner med sin passkey. Saknas `code_challenge` eller är metoden inte `S256` skickas personen tillbaka med `error=invalid_request`. Avböjer hen kommer `error=access_denied`. Godkännandet visas varje gång – också för en app som har godkänts tidigare.
+Personen loggar in om det behövs, ser på svenska vad appen ber om, väljer ett av sina företag där hen är ägare eller administratör och godkänner med sin passkey. Saknas `state` eller `code_challenge`, eller är metoden inte `S256`, skickas personen tillbaka med `error=invalid_request`. Avböjer hen kommer `error=access_denied`. Godkännandet visas varje gång – också för en app som har godkänts tidigare.
 
 **3. Byt koden mot tokens** (koden gäller i tio minuter och kan användas en gång)
 

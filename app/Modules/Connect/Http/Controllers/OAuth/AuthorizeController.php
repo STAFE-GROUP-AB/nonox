@@ -18,7 +18,9 @@ use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
  * The OAuth 2.0 authorization endpoint, /anslut (ADR-032). Checks the app's
  * request with league/oauth2-server (known client, registered redirect URI,
  * known scopes), then insists on what the library leaves optional:
- * response_type=code and a PKCE challenge with S256, for every app. The
+ * response_type=code, a PKCE challenge with S256 and a state value (the
+ * CSRF guard of RFC 6749 §10.12, required even though PKCE already binds the
+ * code to the app), for every app. The
  * request is kept in the session and the consent screen shown; nothing is
  * ever approved without it, not even for an app approved before.
  */
@@ -40,6 +42,12 @@ final class AuthorizeController
 
         if ($authRequest->getCodeChallenge() === null || $authRequest->getCodeChallengeMethod() !== 'S256') {
             return $this->redirectWithError($authRequest, 'invalid_request', 'PKCE with code_challenge_method=S256 is required.');
+        }
+
+        $state = $authRequest->getState();
+
+        if ($state === null || trim($state) === '') {
+            return $this->redirectWithError($authRequest, 'invalid_request', 'state is required.');
         }
 
         $token = PendingAuthorization::put($authRequest);

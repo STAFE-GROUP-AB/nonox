@@ -57,6 +57,23 @@ it('refuses a request without PKCE, with plain PKCE or for another response type
         ->assertOk()->assertViewIs('connect::consent-failed');
 });
 
+it('refuses a request without a state value and keeps nothing for it', function (?string $state) {
+    [$owner] = Connect::company();
+    [$app] = Connect::app();
+    $pkce = Connect::pkce();
+    $query = Connect::authorizeQuery($app, 'vouchers:view', $pkce['challenge']);
+    unset($query['state']);
+
+    if ($state !== null) {
+        $query['state'] = $state;
+    }
+
+    $this->actingAs($owner)->get('/anslut?'.http_build_query($query))
+        ->assertRedirect()
+        ->assertRedirectContains('error=invalid_request')
+        ->assertSessionMissing('connect.pending');
+})->with(['missing' => [null], 'empty' => [''], 'blank' => ['   ']]);
+
 it('accepts only the authorization code and refresh token grants at the token endpoint', function (string $grant) {
     $this->post('/oauth/token', ['grant_type' => $grant, 'client_id' => 'x', 'client_secret' => 'y', 'username' => 'a', 'password' => 'b'])
         ->assertStatus(400)

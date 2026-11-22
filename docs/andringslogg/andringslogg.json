@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-22-oauth-state",
+      "datum": "2026-11-22T21:06:00+01:00",
+      "rubrik": "Appar måste skicka state när de ber om åtkomst",
+      "beskrivning": "När en app ber om åtkomst till ett företag via NONOX API måste begäran nu ha ett state-värde, som skyddar mot förfalskade förfrågningar. En begäran utan det skickas tillbaka till appen innan godkännandet visas. Tack till en extern säkerhetsgranskare som rapporterade det enligt vår säkerhetspolicy.",
+      "typ": "Säkerhet",
+      "omrade": "Connect/API"
+    },
+    {
       "id": "2026-11-22-signering-langtidsvalidering",
       "datum": "2026-11-22T17:00:00+01:00",
       "rubrik": "Långtidsvalidering av förseglade dokument vid egen drift",

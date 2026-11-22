@@ -77,11 +77,11 @@ GET https://nonox.app/anslut?response_type=code
 | `client_id` | The app's id. |
 | `redirect_uri` | One of the app's registered URIs, exactly. |
 | `scope` | The scopes, separated by spaces. See [Scopes](behorigheter.md). |
-| `state` | A random value that comes back unchanged. Check it against CSRF. |
+| `state` | Required. A random value that comes back unchanged. Check it against CSRF. |
 | `code_challenge` | BASE64URL(SHA-256(code_verifier)). |
 | `code_challenge_method` | Always `S256`. |
 
-Without `code_challenge`, or with a method other than `S256`, the person is sent back with `error=invalid_request`. A wrong `client_id` or `redirect_uri` is shown on the page and the person is **not** redirected, so a forged address never gets an answer.
+Without `state` or `code_challenge`, or with a method other than `S256`, the person is sent back with `error=invalid_request`. A wrong `client_id` or `redirect_uri` is shown on the page and the person is **not** redirected, so a forged address never gets an answer.
 
 ## Consent and passkey
 
