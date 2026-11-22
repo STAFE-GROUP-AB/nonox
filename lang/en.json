@@ -15046,5 +15046,10 @@
     "Prislistan :code är arkiverad. Återställ den först.": "Price list :code is archived. Restore it first.",
     "Prislistans kod": "Price list code",
     "Prislistor och priser": "Price lists and prices",
-    "Det gamla priset har börjat gälla och kan inte avslutas före i går. Det nya priset måste börja i dag eller senare.": "The old price has started to apply and cannot be ended before yesterday. The new price must start today or later."
+    "Det gamla priset har börjat gälla och kan inte avslutas före i går. Det nya priset måste börja i dag eller senare.": "The old price has started to apply and cannot be ended before yesterday. The new price must start today or later.",
+    "Kassan": "The till",
+    "Kanal": "Channel",
+    "Alla kanaler": "All channels",
+    "Fakturor och offerter": "Invoices and quotes",
+    "Återkommande fakturor": "Recurring invoices"
 }

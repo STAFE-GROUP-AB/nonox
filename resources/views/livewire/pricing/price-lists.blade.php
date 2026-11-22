@@ -48,6 +48,15 @@
                 @endif
 
                 @if($kind === 'CAMPAIGN')
+                    <x-ui.field for="list_campaign_channel" :label="__('Kanal')" error="channel" class="sm:col-span-3">
+                        <select id="list_campaign_channel" class="{{ $input }} mt-1" wire:model="form.channel">
+                            <option value="">{{ __('Alla kanaler') }}</option>
+                            @foreach(App\Domain\Pricing\PriceChannel::cases() as $channel)
+                                <option value="{{ $channel->value }}">{{ $channel->label() }}</option>
+                            @endforeach
+                        </select>
+                    </x-ui.field>
+
                     <fieldset class="sm:col-span-6">
                         <legend class="text-sm font-medium text-gray-700">{{ __('Kampanjen gäller för') }}</legend>
                         <p class="mt-1 text-sm text-gray-500">{{ __('Välj inga grupper om kampanjen gäller alla kunder.') }}</p>
@@ -172,7 +181,7 @@
                                             {{ $list->priceGroups->isEmpty() ? __('För alla kunder') : __('För :groups', ['groups' => $list->priceGroups->pluck('name')->implode(', ')]) }}
                                         @endif
                                         @if($list->channel)
-                                            {{ $list->channel === App\Domain\Pricing\PriceChannel::Pos ? __('Kassan') : __('Kundportalen') }}
+                                            {{ $list->channel->label() }}
                                         @endif
                                     </span>
                                 </td>

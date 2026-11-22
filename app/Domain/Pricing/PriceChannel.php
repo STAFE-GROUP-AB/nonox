@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Domain\Pricing;
 
 /**
- * Where a price is asked for (ADR-082 §5 and §10). A CHANNEL or CAMPAIGN list
- * may be tied to one channel (the till or the portal); the resolver gets the
- * channel of the document it prices.
+ * Where a price is asked for (ADR-082 §5 and §10). A CHANNEL list must be, and a
+ * CAMPAIGN list may be, tied to one channel; the resolver gets the channel of the
+ * document it prices.
  */
 enum PriceChannel: string
 {
@@ -16,4 +16,15 @@ enum PriceChannel: string
     case Pos = 'POS';
     case Recurring = 'RECURRING';
     case WorkOrder = 'WORK_ORDER';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Sales => __('Fakturor och offerter'),
+            self::Portal => __('Kundportalen'),
+            self::Pos => __('Kassan'),
+            self::Recurring => __('Återkommande fakturor'),
+            self::WorkOrder => __('Arbetsorder'),
+        };
+    }
 }

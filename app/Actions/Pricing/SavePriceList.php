@@ -113,7 +113,7 @@ class SavePriceList
                 'based_on_list_id' => $basedOn?->id,
                 'derived_percent_bp' => $percent,
                 'rounding_rule' => $derived ? PriceRounding::from((string) ($validated['rounding_rule'] ?? 'NONE')) : PriceRounding::None,
-                'channel' => $kind === PriceListKind::Channel ? PriceChannel::from((string) $validated['channel']) : null,
+                'channel' => $this->channel($kind, $validated),
             ];
 
             if ($default) {
@@ -152,6 +152,23 @@ class SavePriceList
         if ($kind === PriceListKind::Channel && ! in_array($validated['channel'] ?? null, [PriceChannel::Pos->value, PriceChannel::Portal->value], true)) {
             throw ValidationException::withMessages(['channel' => __('Välj om kanalprislistan gäller kassan eller kundportalen.')]);
         }
+    }
+
+    /**
+     * A channel list always names its channel; a campaign may name one (every
+     * PriceChannel case, the resolver gets the document's channel) or none.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    private function channel(PriceListKind $kind, array $validated): ?PriceChannel
+    {
+        $channel = (string) ($validated['channel'] ?? '');
+
+        if ($kind === PriceListKind::Channel || ($kind === PriceListKind::Campaign && $channel !== '')) {
+            return PriceChannel::from($channel);
+        }
+
+        return null;
     }
 
     private function percent(string $input): int

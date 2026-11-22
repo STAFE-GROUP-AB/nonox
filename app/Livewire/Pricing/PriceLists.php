@@ -99,7 +99,7 @@ class PriceLists extends Component
             'code' => '', 'name' => '', 'kind' => in_array($this->kind, ['CAMPAIGN', 'CHANNEL'], true) ? $this->kind : PriceListKind::Standard->value,
             'currency' => 'SEK', 'prices_include_vat' => false, 'valid_from' => '', 'valid_to' => '',
             'is_default_for_currency' => false, 'derived' => false, 'derived_percent' => '', 'based_on_list_id' => '',
-            'rounding_rule' => PriceRounding::None->value, 'channel' => PriceChannel::Pos->value, 'group_ids' => [],
+            'rounding_rule' => PriceRounding::None->value, 'channel' => $this->kind === 'CAMPAIGN' ? '' : PriceChannel::Pos->value, 'group_ids' => [],
         ];
         $this->showForm = true;
         $this->resetErrorBag();
@@ -123,7 +123,7 @@ class PriceLists extends Component
             'derived_percent' => $list->derived_percent_bp === null ? '' : PriceInput::basisPointsToPercent($list->derived_percent_bp),
             'based_on_list_id' => (string) $list->based_on_list_id,
             'rounding_rule' => $list->rounding_rule->value,
-            'channel' => $list->channel->value ?? PriceChannel::Pos->value,
+            'channel' => $list->channel->value ?? ($list->kind === PriceListKind::Campaign ? '' : PriceChannel::Pos->value),
             'group_ids' => $list->priceGroups->pluck('id')->map(fn (int $id): string => (string) $id)->all(),
         ];
         $this->showForm = true;

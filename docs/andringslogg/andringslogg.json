@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-22-kampanj-kanal",
+      "datum": "2026-11-22T09:55:00+01:00",
+      "rubrik": "Kampanjer kan riktas mot en kanal",
+      "beskrivning": "Under Kanal på en kampanj väljer du om den ska gälla alla kanaler eller bara en, till exempel kassan eller fakturor och offerter. En kampanj för kassan når inte fakturorna, och en kampanj för fakturor når inte kassan eller prisetiketterna. Samma fält finns som channel på kampanjer i API:t.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-22-prislistor-lansering",
       "datum": "2026-11-22T05:45:00+01:00",
       "rubrik": "Läs in prislistor från en fil, och prislistor i alla branschexempel",

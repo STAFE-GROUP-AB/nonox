@@ -938,7 +938,7 @@ Known and accepted at launch; none blocks the feature.
   of only those the page shows.
 - **Campaigns have no channel field:** a campaign cannot be aimed at one sales
   channel; only channel lists can. *Owner decision 2026-11-22: build it (P11
-  below).*
+  below). P11 is built.*
 - **Refunds and the margin floor:** whether a refund or credit should be
   checked against the lowest contribution margin is an owner decision.
   *Owner decision 2026-11-22 (Lead's recommendation): no. A credit note or
@@ -963,3 +963,16 @@ same, so a till campaign never reaches an invoice and a portal campaign never
 reaches the till. The till sync and the labels count only campaigns without a
 channel or with POS. The campaign screen, the API (`channel` on a CAMPAIGN
 list) and the file import take the field.
+
+Built as follows. Any PriceChannel case is allowed on a campaign (SALES,
+PORTAL, POS, RECURRING, WORK_ORDER): the resolver already received the
+document's channel, so no case needed special handling, and `SavePriceList`
+only stopped forcing the channel to null for campaigns (empty means none; a
+channel list still needs POS or PORTAL). `PriceBook::bestCampaign` skips a
+campaign whose channel differs from `PriceContext::$channel`; it reads a
+column already on the loaded list, so the query count is unchanged. The till
+sync and the labels price through `ChannelPrices`, which asks for the POS
+channel, so they take only campaigns without a channel or with POS without any
+change; the nightly sync is date-driven and hash-based and has no
+save-triggered path for campaigns. The register file import creates only
+STANDARD lists, so it has no channel column.

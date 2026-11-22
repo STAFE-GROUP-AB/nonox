@@ -13,6 +13,22 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-22: kanal på kampanjer
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-22: a channel on campaigns
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Nytt
+- `channel` kan sättas på prislistor av typen `CAMPAIGN` (`SALES`, `PORTAL`, `POS`, `RECURRING` eller `WORK_ORDER`; utelämnat eller `null` betyder alla kanaler). En kampanj med kanal gäller bara när priset efterfrågas i den kanalen. Kanalprislistor kräver fortfarande `POS` eller `PORTAL`.
+<!-- /lang -->
+<!-- lang:en -->
+### New
+- `channel` can be set on price lists of type `CAMPAIGN` (`SALES`, `PORTAL`, `POS`, `RECURRING` or `WORK_ORDER`; omitted or `null` means all channels). A campaign with a channel applies only when the price is asked for in that channel. Channel lists still require `POS` or `PORTAL`.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-22: prislistor, prisavtal och prisuppslag
 <!-- /lang -->
 <!-- lang:en -->
