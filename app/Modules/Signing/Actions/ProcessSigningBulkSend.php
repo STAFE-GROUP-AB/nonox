@@ -17,6 +17,7 @@ use App\Modules\Signing\Models\SigningBulkSendRow;
 use App\Modules\Signing\Models\SigningDocument;
 use App\Modules\Signing\Models\SigningTemplate;
 use App\Modules\Signing\SigningModule;
+use App\Modules\Signing\Support\TemplateFingerprint;
 use App\Support\MailQuota;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -85,6 +86,12 @@ final class ProcessSigningBulkSend
             return;
         }
 
+        if ($run->template_fingerprint === null || ! hash_equals($run->template_fingerprint, TemplateFingerprint::of($template))) {
+            $this->runs->stop($run, 'signing.bulk_send_cancelled', __('Massutskicket stoppades: mallen ändrades efter förhandsgranskningen.'), $company, null);
+
+            return;
+        }
+
         $this->settleStale($run);
 
         $needed = $this->mailsPerEnvelope($template);
@@ -105,6 +112,8 @@ final class ProcessSigningBulkSend
             }
 
             if (SigningBulkSend::query()->whereKey($run->id)->value('status') !== SigningBulkSend::RUNNING) {
+                $this->count($run);
+
                 return;
             }
 
@@ -207,10 +216,14 @@ final class ProcessSigningBulkSend
 
             $this->settle($row, SigningBulkSendRow::SENT, null, $envelope);
         } catch (ValidationException $exception) {
+            if ($this->alreadySent($row, $document)) {
+                return;
+            }
+
             $this->discard($user, $company, $document);
 
             if (MailQuota::remaining($company, 'documents') < $needed) {
-                SigningBulkSendRow::query()->whereKey($row->id)->update(['status' => SigningBulkSendRow::PENDING, 'document_id' => null]);
+                SigningBulkSendRow::query()->whereKey($row->id)->where('status', SigningBulkSendRow::PROCESSING)->update(['status' => SigningBulkSendRow::PENDING, 'document_id' => null]);
 
                 return;
             }
@@ -218,9 +231,32 @@ final class ProcessSigningBulkSend
             $this->settle($row, SigningBulkSendRow::FAILED, Str::limit((string) collect($exception->errors())->flatten()->first(), 250, ''));
         } catch (Throwable $exception) {
             report($exception);
+
+            if ($this->alreadySent($row, $document)) {
+                return;
+            }
+
             $this->discard($user, $company, $document);
             $this->settle($row, SigningBulkSendRow::FAILED, __('Något gick fel när dokumentet skulle skickas. Gör en ny körning med den här raden.'));
         }
+    }
+
+    /** An envelope exists for the row's document: the row was sent, whatever went wrong after, and is settled as sent. */
+    private function alreadySent(SigningBulkSendRow $row, ?SigningDocument $document): bool
+    {
+        if (! $document instanceof SigningDocument) {
+            return false;
+        }
+
+        $envelope = SigningEnvelope::query()->where('document_type', SigningDocument::SIGNING_TYPE)->where('signable_id', $document->id)->first();
+
+        if (! $envelope instanceof SigningEnvelope) {
+            return false;
+        }
+
+        $this->settle($row, SigningBulkSendRow::SENT, null, $envelope);
+
+        return true;
     }
 
     /** The row's own copy of the template's file, as an ordinary unsent document the send then uses. */
@@ -266,7 +302,7 @@ final class ProcessSigningBulkSend
 
     private function settle(SigningBulkSendRow $row, string $status, ?string $reason, ?SigningEnvelope $envelope = null): void
     {
-        SigningBulkSendRow::query()->whereKey($row->id)->update([
+        SigningBulkSendRow::query()->whereKey($row->id)->where('status', SigningBulkSendRow::PROCESSING)->update([
             'status' => $status,
             'reason' => $reason,
             'envelope_id' => $envelope?->id,

@@ -32,10 +32,12 @@ avtal" under CRM och läggs till för alla:
 
 > Med signering: e-postadressen länken eller kopian gick till, namn och titel, namnteckning eller
 > initialer (krypterade), uppgifter som undertecknaren fyller i fält i dokumentet, tidpunkter,
-> IP-adress och webbläsare, hur undertecknaren kontrollerades (bara kontrollsummor av koder),
+> IP-adress och webbläsare, hur undertecknaren kontrollerades (kontrollsummor av koder; en åtkomstkod ur ett massutskick finns krypterad i klartext bara tills signeringen har skickats, se nedan),
 > händelserna i en hashkedja, ett eventuellt skäl att avböja, och dokumentet med dess versioner
 > och kontrollsummor. Ett dokument som den personuppgiftsansvarige laddar upp kan innehålla
 > vilka uppgifter som helst; den personuppgiftsansvarige bestämmer innehållet och ändamålet.
+>
+> Med massutskick för signering: undertecknarnas e-postadresser, frivilliga namn, språk och åtkomstkoder ur en fil som den personuppgiftsansvarige laddar upp. Filen sparas inte; uppgifterna sparas krypterade bara tills signeringen har skickats eller massutskicket har avslutats. Det som finns kvar är en resultatlista utan adresser, som raderas efter tolv månader.
 
 **Lagringstid**, ny mening (eller i bilagan om lagringstider):
 
@@ -79,6 +81,12 @@ och en ny mening sist i stycket:
 Ingen ändring i version 1.9. En tidsstämpeltjänst (lucka 5) får bara en kontrollsumma av
 dokumentet och inga personuppgifter. En signeringstjänst som får undertecknarens identitet
 (lucka 12, till exempel BankID) ska namnges i `docs/juridik/underbitraden.md` innan den slås på.
+
+## E. Användarvillkoren (läggs till vid versionsbytet, ändra inte de gällande villkoren förrän då)
+
+Ny mening i avsnittet om tillåten användning:
+
+> Massutskick för signering får inte användas för marknadsföring utan stöd i marknadsföringslagen eller för skräppost.
 
 ## Frågor till juristen
 

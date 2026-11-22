@@ -10,6 +10,7 @@ use App\Domain\Signing\Fields\PageImages;
 use App\Domain\Signing\Retention\EnvelopeDeletion;
 use App\Domain\Signing\Retention\SigningRetention;
 use App\Domain\Signing\SigningStatus;
+use App\Models\Company;
 use App\Models\SigningDocumentVersion;
 use App\Models\SigningDownloadCode;
 use App\Models\SigningDownloadLink;
@@ -61,6 +62,12 @@ final class PruneSigningLinks
     private function pruneBulkSends(CarbonImmutable $today): void
     {
         SigningBulkSend::query()->where('status', SigningBulkSend::PREVIEW)->where('created_at', '<', CarbonImmutable::now()->subHours(ManageSigningBulkSends::PREVIEW_HOURS))->delete();
+        $company = Company::query()->find(CurrentCompany::id());
+
+        if ($company instanceof Company) {
+            app(ManageSigningBulkSends::class)->tidy($company, CarbonImmutable::now());
+        }
+
         SigningBulkSend::query()->whereIn('status', [SigningBulkSend::COMPLETED, SigningBulkSend::CANCELLED])->where('finished_at', '<', $today->subMonthsNoOverflow(self::AFTER_MONTHS))->delete();
     }
 

@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $invalid_rows
  * @property int $sent_count
  * @property int $failed_count
+ * @property ?string $template_fingerprint
  * @property ?int $created_by
  * @property ?CarbonImmutable $confirmed_at
  * @property ?CarbonImmutable $started_at
@@ -53,7 +54,7 @@ class SigningBulkSend extends Model
     protected $dateFormat = 'Y-m-d H:i:sP';
 
     /** @var list<string> */
-    protected $fillable = ['company_id', 'template_id', 'status', 'total_rows', 'valid_rows', 'invalid_rows', 'sent_count', 'failed_count', 'created_by', 'confirmed_at', 'started_at', 'finished_at'];
+    protected $fillable = ['company_id', 'template_id', 'status', 'total_rows', 'valid_rows', 'invalid_rows', 'sent_count', 'failed_count', 'template_fingerprint', 'created_by', 'confirmed_at', 'started_at', 'finished_at'];
 
     /** @return array<string, string> */
     protected function casts(): array

@@ -69,7 +69,7 @@
                                 <td class="py-3 pr-3"><x-ui.badge :tone="$statusTone($run->status)">{{ $statusLabel($run->status) }}</x-ui.badge></td>
                                 <td class="py-3 pr-3 text-right tabular-nums">{{ $run->total_rows }}</td>
                                 <td class="py-3 pr-3 text-right tabular-nums">{{ $run->sent_count }}</td>
-                                <td class="py-3 pr-3 text-right tabular-nums">{{ $run->status === 'PREVIEW' ? '–' : $run->total_rows - $run->sent_count }}</td>
+                                <td class="py-3 pr-3 text-right tabular-nums">{{ $run->status === 'PREVIEW' ? '–' : $run->invalid_rows + $run->failed_count }}</td>
                                 <td class="py-3">{{ $run->creator?->name ?? '–' }}</td>
                             </tr>
                         @endforeach

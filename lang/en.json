@@ -15125,5 +15125,9 @@
     "Språket för rollen :role ska vara sv eller en.": "The language for the role :role must be sv or en.",
     "Åtkomstkod för rollen :role: :why": "Access code for the role :role: :why",
     "Samma e-postadress står på mer än en roll. Varje undertecknare behöver en egen.": "The same e-mail address is on more than one role. Every signer needs their own.",
-    "Samma undertecknare som på rad :row. Dubbletten skickas inte.": "The same signers as on row :row. The duplicate is not sent."
+    "Samma undertecknare som på rad :row. Dubbletten skickas inte.": "The same signers as on row :row. The duplicate is not sent.",
+    "Massutskicket stoppades: ett fel gjorde att det inte gick att fortsätta.": "The bulk send was stopped: an error made it impossible to continue.",
+    "Massutskicket stoppades: mallen ändrades efter förhandsgranskningen.": "The bulk send was stopped: the template was changed after the preview.",
+    "Massutskicket avbröts automatiskt: det kom inte vidare på :days dagar.": "The bulk send was cancelled automatically: it made no progress in :days days.",
+    "Mallen har ändrats sedan förhandsgranskningen. Ta bort förhandsgranskningen och läs in filen igen.": "The template has changed since the preview. Remove the preview and read the file in again."
 }

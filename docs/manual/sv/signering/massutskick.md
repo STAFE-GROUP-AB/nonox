@@ -42,7 +42,7 @@ Tryck på **Läs in och granska** under **Fil med en rad per signering**. Då l�
 
 En rad skickas inte om en e-postadress saknas eller inte är giltig, om språket inte är `sv` eller `en`, om åtkomstkoden är för enkel, om samma e-postadress står på två roller eller om samma undertecknare redan finns på en rad högre upp (en dubblett). Rätta dessa rader i filen och läs in dem i ett eget massutskick. Fler än 500 rader går inte; dela upp filen.
 
-Visa **Bara de som inte skickas** för att se felen. Välj **Ta bort förhandsgranskningen** om du vill börja om. En förhandsgranskning som ingen bekräftat tas bort av sig själv efter ett dygn.
+Visa **Bara de som inte skickas** för att se felen. Välj **Ta bort förhandsgranskningen** om du vill börja om. En förhandsgranskning som ingen bekräftat tas bort av sig själv natten efter att den blivit ett dygn gammal.
 
 ## Skicka
 
@@ -54,7 +54,7 @@ NONOX skickar signeringarna i bakgrunden, så du kan lämna sidan. Sidan visar h
 
 ### E-postkvoten
 
-Ett företag kan skicka högst 300 dokument-e-postmeddelanden i timmen. Räcker inte kvoten för hela massutskicket varnar förhandsgranskningen. Utskicket väntar då och fortsätter av sig självt när kvoten släpper, så inga rader misslyckas bara för att kvoten är slut. Du kan **Avbryta massutskicket** när som helst. Det som redan skickats ligger kvar, och raderna som återstår skickas inte.
+Ett företag kan skicka högst 300 dokument-e-postmeddelanden i timmen. Räcker inte kvoten för hela massutskicket varnar förhandsgranskningen. Utskicket väntar då och fortsätter av sig självt när kvoten släpper, så inga rader misslyckas bara för att kvoten är slut. Du kan välja **Avbryt massutskicket** när som helst. Det som redan skickats ligger kvar, och raderna som återstår skickas inte.
 
 ## Resultat per rad
 
@@ -63,8 +63,15 @@ Under **Resultat per rad** ser du för varje rad om signeringen **Skickad** (med
 ## Vad som sparas
 
 - **Filen** sparas inte. Den läses en gång och tas bort.
-- **Adresser och koder** i raderna ligger krypterade bara tills raden är skickad eller massutskicket är avslutat. Sedan tas de bort.
+- **Adresser och koder** i raderna ligger krypterade bara tills raden är skickad eller massutskicket är avslutat. Sedan tas de bort. Ett massutskick som inte kommer vidare avbryts automatiskt efter sju dagar, och uppgifterna i raderna tas då bort.
+- **Mallen** måste vara oförändrad från förhandsgranskningen till utskicket. Har den ändrats vägrar NONOX att skicka, eller stoppar ett utskick som pågår, med en förklaring. Ta bort förhandsgranskningen och läs in filen igen.
 - **Resultatlistan** (radens nummer, status, orsak och vilken signering den blev) sparas i tolv månader och tas sedan bort. Själva signeringarna bevaras enligt vanliga regler, se *Bevarande och radering*.
+
+## Ditt ansvar
+
+<!-- TODO(legal-verify): om en erbjudandesignering som skickas i massutskick är marknadsföring enligt marknadsföringslagen 19 §. -->
+
+Företaget ansvarar för adresserna i filen: att det har rätt att använda dem för signeringen och att mottagarna får veta vem som behandlar deras uppgifter och varför (dataskyddsförordningen artikel 14). Signeringsmejlet visar företagets namn som avsändare. Massutskick är till för avtal och handlingar som mottagarna väntar sig, inte för att sälja: ett erbjudande som skickas till privatpersoner som inte bett om det kan vara marknadsföring och kräver då samtycke eller att mottagaren redan är kund (marknadsföringslagen 19 §).
 
 ## Vem får göra vad
 

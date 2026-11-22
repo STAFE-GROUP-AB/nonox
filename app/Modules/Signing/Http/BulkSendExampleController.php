@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Modules\Signing\Models\SigningTemplate;
 use App\Modules\Signing\SigningModule;
 use App\Modules\Signing\Support\BulkSendRows;
+use App\Support\Csv;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
@@ -47,8 +48,8 @@ final class BulkSendExampleController
         }
 
         $handle = fopen('php://temp', 'r+') ?: throw new \RuntimeException('No temporary stream.');
-        fputcsv($handle, BulkSendRows::headersFor($found), ';');
-        fputcsv($handle, $values, ';');
+        fputcsv($handle, Csv::row(BulkSendRows::headersFor($found)), ';');
+        fputcsv($handle, Csv::row($values), ';');
         rewind($handle);
         $csv = "\xEF\xBB\xBF".stream_get_contents($handle);
         fclose($handle);
