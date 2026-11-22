@@ -91,7 +91,7 @@ trait ChecksRowMargin
             $typed = [];
 
             foreach ($lines as $position => $line) {
-                if ($line['manual'] && ($line['article_id'] !== null || $line['lowers'])) {
+                if ($line['net_ore'] < 0 || ($line['manual'] && ($line['article_id'] !== null || $line['lowers']))) {
                     $typed[] = $indexes[$position] + 1;
                 }
             }

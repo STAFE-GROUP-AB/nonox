@@ -40,7 +40,7 @@ final readonly class DocumentMargin
     /**
      * @param  array<int, RowMargin>  $rows  by the caller's row index
      * @param  list<int>  $manualBelowFloor  the indexes of manual rows with a cost whose own margin is under the floor
-     * @param  list<int>  $loweringRows  the indexes of manual rows that lower the margin: negative or discounted rows and typed prices under the floor (in another currency: every typed article row)
+     * @param  list<int>  $loweringRows  the indexes of manual rows that lower the margin: every negative row, discounted rows and typed prices under the floor (in another currency: every typed article row)
      * @param  bool  $unchecked  a document in another currency: no margin, only the manual article rows are known
      */
     public function __construct(
@@ -72,15 +72,18 @@ final readonly class DocumentMargin
         $uncosted = 0;
 
         foreach ($lines as $index => $line) {
-            $negative = str_starts_with(ltrim($line['quantity']), '-') || $line['net_ore'] < 0;
-            $rowCost = $line['article_id'] === null || $negative || BigDecimal::of($line['quantity'] === '' ? '0' : $line['quantity'])->isZero()
+            // A return (negative quantity, negative amount) of an article with a known cost takes its cost back, so a real partial return keeps the margin; a discount row (negative price) has no cost.
+            $returned = str_starts_with(ltrim($line['quantity']), '-');
+            $costable = $returned ? $line['net_ore'] < 0 : $line['net_ore'] >= 0;
+            $rowCost = $line['article_id'] === null || ! $costable || BigDecimal::of($line['quantity'] === '' ? '0' : $line['quantity'])->isZero()
                 ? null
                 : $book->costOf((int) $line['article_id'], $line['quantity'], $line['unit']);
 
             $row = RowMargin::of($line['net_ore'], $rowCost, $floor->minimumBp);
             $rows[$index] = $row;
 
-            if ($line['manual'] && ($line['lowers'] ?? false)) {
+            // Every negative row lowers the margin, typed or not: a return at a list price too.
+            if ($line['net_ore'] < 0 || ($line['manual'] && ($line['lowers'] ?? false))) {
                 $lowering[] = $index;
             }
 
@@ -127,7 +130,7 @@ final readonly class DocumentMargin
 
             foreach ($lines as $index => $line) {
                 // A typed article price cannot be compared with a cost in kronor; a discount or negative row lowers what is sold.
-                if ($line['manual'] && ($line['article_id'] !== null || $line['lowers'])) {
+                if ($line['net_ore'] < 0 || ($line['manual'] && ($line['article_id'] !== null || $line['lowers']))) {
                     $typed[] = $index;
                 }
             }

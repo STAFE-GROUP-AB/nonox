@@ -11,6 +11,7 @@ use App\Actions\Pricing\RequestPriceFloorApproval;
 use App\Actions\Pricing\SetPriceFloor;
 use App\Actions\Signing\SendForSigning;
 use App\Actions\Signing\SignInSession;
+use App\Domain\Pricing\DocumentMargin;
 use App\Domain\Pricing\PriceFloorDocument;
 use App\Domain\Pricing\PriceFloorGuard;
 use App\Domain\Pricing\PriceFloorPolicy;
@@ -36,7 +37,7 @@ beforeEach(function () {
     Storage::fake('local');
     Mail::fake();
 
-    $this->scenario = PricingScenario::build(['articles' => ['A1' => ['price_ore' => 10000]], 'rate' => ['currency' => 'EUR', 'date' => '2026-03-13', 'micros' => 11_000_000], 'customer' => []]);
+    $this->scenario = PricingScenario::build(['articles' => ['A1' => ['price_ore' => 10000], 'A2' => ['price_ore' => 10000]], 'rate' => ['currency' => 'EUR', 'date' => '2026-03-13', 'micros' => 11_000_000], 'customer' => []]);
     $this->owner = $this->scenario->owner;
     $this->company = $this->scenario->company;
     $this->customer = $this->scenario->customer;
@@ -241,4 +242,30 @@ it('lets freight and a comment row through when only a list price sits under the
         ->and(PriceFloorGuard::state($this->company, $comment->fresh())->needed)->toBeFalse()
         ->and(PriceFloorGuard::state($this->company, $discount->fresh())->needed)->toBeTrue()
         ->and(PriceFloorGuard::state($this->company, $discount->fresh())->lines)->toBe([2]);
+});
+
+it('holds a return of another article at its list price, in kronor and in euro', function () {
+    // A2 has no known cost: -1 of it at the list price lowers 200,00 off the sales of 200,00 of A1 (cost 160,00).
+    foreach (['SEK', 'EUR'] as $currency) {
+        $quote = r7Quote([
+            r7Row(['quantity' => '2', 'price' => $currency === 'SEK' ? '100,00' : '9,09', 'price_source' => 'MANUAL']),
+            r7Row(['article' => 'A2', 'description' => 'Retur A2', 'quantity' => '-1']),
+        ], currency: $currency);
+        $state = PriceFloorGuard::state($this->company, $quote->fresh());
+
+        expect($state->needed)->toBeTrue($currency)->and($state->lines)->toContain(2);
+    }
+});
+
+it('lets a real partial return of the same article keep its margin', function () {
+    $invoice = r7Invoice([
+        r7Row(['quantity' => '2', 'price' => '100,00', 'price_source' => 'MANUAL']),
+        r7Row(['quantity' => '-1', 'price' => '100,00', 'price_source' => 'MANUAL']),
+    ]);
+    $margin = DocumentMargin::ofDocument($this->company, $invoice->fresh());
+
+    expect($margin->netOre)->toBe(10000)
+        ->and($margin->costOre)->toBe(8000)
+        ->and($margin->marginBp())->toBe(2000)
+        ->and($margin->needsApproval())->toBeFalse();
 });
