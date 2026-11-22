@@ -191,10 +191,10 @@ final class EnvelopeTimestamper
         return self::isLongTermFile($path) ? explode('/', $path)[3] : null;
     }
 
-    /** Deletes a file this class wrote, but never one a version row holds. */
+    /** Deletes a file this class wrote, but never one a version row holds. Runs inside the company, whose directory the path is in. */
     private static function deleteUnheld(string $path): void
     {
-        if (! SigningDocumentVersion::query()->withoutGlobalScopes()->where('path', $path)->exists()) {
+        if (! SigningDocumentVersion::query()->where('path', $path)->exists()) {
             Storage::disk(SigningRequest::DISK)->delete($path);
         }
     }
