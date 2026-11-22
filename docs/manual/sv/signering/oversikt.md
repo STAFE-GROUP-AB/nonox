@@ -43,13 +43,24 @@ Då kan inga nya dokument skickas, och öppna länkar för egna dokument slutar 
 
 Ett system utanför NONOX kan ladda upp en PDF, skicka den för signering, påminna, flytta sista dag, dra tillbaka kuvertet och hämta det färdiga dokumentet och signeringsbevisen genom [API:t](/utvecklare). Ett anrop skickar ett kuvert till de personer det namnger; ingenting skickas efter en regel eller i bulk. Länken går bara till undertecknarens egen e-postadress och lämnas aldrig ut. Webhooks `signing.recipient_signed`, `signing.completed`, `signing.declined` och `signing.expired` talar om när något händer, med bara id, antal och tider. Ett konfidentiellt kuvert syns i API:t och i webhooks bara för avsändaren och den som får hantera signering. Nycklarna får behörigheterna *Se signeringar*, *Skicka för signering* och *Hantera signering*.
 
-## Läs också
+## Det här finns i signeringen
 
-- [Skicka ett dokument för signering](/manual/signering/skicka-dokument)
-- [Fält i dokumentet](/manual/signering/falt-i-dokumentet)
-- [Alla signeringar](/manual/signering/alla-signeringar)
-- [Bevarande och radering av signeringar](/manual/signering/bevarande-och-radering)
-- [Försegling av signerade dokument](/manual/signering/forsegling)
-- [Kontrollera att ett signerat dokument är oförändrat](/manual/signering/kontrollera)
-- [Underskrift hos extern tjänst](/manual/signering/extern-tjanst)
-- [Signera offerter och avtal](/manual/crm/signering)
+| Du vill | Läs |
+|---|---|
+| Skicka en PDF till en eller flera undertecknare, i steg, med kopiemottagare, kontroll av undertecknaren, sista dag och påminnelser | [Skicka ett dokument för signering](/manual/signering/skicka-dokument) |
+| Placera underskrift, datum och textfält i PDF:en per undertecknare | [Fält i dokumentet](/manual/signering/falt-i-dokumentet) |
+| Spara ett upplägg med roller och använda det igen | [Mallar för signering](/manual/signering/mallar) |
+| Skicka samma dokument till många mottagare ur en fil | [Massutskick](/manual/signering/massutskick) |
+| Följa, påminna, ändra sista dag och dra tillbaka, och se signeringsbevisen | [Alla signeringar](/manual/signering/alla-signeringar) |
+| Veta hur länge en signering sparas, spärra gallring, ge registerutdrag eller radera för en undertecknare | [Bevarande och radering av signeringar](/manual/signering/bevarande-och-radering) |
+| Signera offerter och avtal, med samtycke till elektroniska handlingar och mejlen när alla har signerat | [Signera offerter och avtal](/manual/crm/signering) |
+
+## Vid egen drift
+
+Tre delar är byggda men avstängda i den driftade tjänsten på nonox.app, tills en jurist har svarat på frågan om betrodd tjänst enligt eIDAS. De kan användas när du driver NONOX själv, och du slår på dem för installationen.
+
+- [Försegling av signerade dokument](/manual/signering/forsegling), med elektronisk stämpel, tidsstämpel och långtidsvalidering.
+- [Kontrollera att ett signerat dokument är oförändrat](/manual/signering/kontrollera), en offentlig kontrollsida.
+- [Underskrift hos extern tjänst](/manual/signering/extern-tjanst), där undertecknaren skriver under med sitt eget certifikat.
+
+BankID finns inte i NONOX Signering.

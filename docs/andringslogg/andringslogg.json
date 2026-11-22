@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-22-signering-lansering",
+      "datum": "2026-11-22T21:52:00+01:00",
+      "rubrik": "Signering av egna dokument: samlad manual och startsida",
+      "beskrivning": "Manualen om Signering samlar nu allt: flera undertecknare i steg, fält i dokumentet, mallar med roller, massutskick, bevarande och API. Startsidan och jämförelsen visar signeringen, och försegling, kontrollsida och extern tjänst beskrivs som något som bara finns vid egen drift och inte är påslaget på nonox.app.",
+      "typ": "Förbättrat",
+      "omrade": "Avtal"
+    },
+    {
       "id": "2026-11-22-oauth-state",
       "datum": "2026-11-22T21:06:00+01:00",
       "rubrik": "Appar måste skicka state när de ber om åtkomst",

@@ -113,6 +113,8 @@ Inget uppskattat pris för Business Studio publiceras någonstans (beslut av äg
 | EDI-order | Större paket (NONOX: Finns inte) | BS/tillvalsmoduler/edi-order (offert), inte på Novas sidor |
 | E-handel | Större paket (NONOX: Finns inte) | BS/tillvalsmoduler/e-handel (offert), inte på Novas sidor. NONOX har bara API:t |
 
+Signering (ADR-046 S21): raden Elektronisk signering omfattar nu också fält i PDF:en per undertecknare och mallar med roller och massutskick (nycklarna `signing_fields` och `signing_templates`). Inga leverantörsuppgifter har ändrats: Pyramids värde (Större paket) bygger fortfarande på källan ovan, och övriga leverantörer står kvar som `unknown` eftersom ingen av deras egna sidor har lästs för raden. Försegling, kontrollsida och underskrift hos extern tjänst är avstängda i den driftade tjänsten och ingår inte i jämförelsen.
+
 De nya raderna har fältet `checked_for` i `jamforelse.json`: en lista med de leverantörer vars sidor faktiskt lästes för raden. En rad med `checked_for` visas bara på sidan "Alternativ till <leverantör>" för en leverantör i listan, aldrig på startsidan eller branschsidorna, eftersom övriga leverantörers sidor inte lästs för raderna. Värdet "Större paket" betyder att funktionen finns i leverantörens större paket (Business Studio eller Hybrid Cloud) med pris på offert.
 
 ### Rader med kontroll per leverantör (lästa 2026-11-19)
