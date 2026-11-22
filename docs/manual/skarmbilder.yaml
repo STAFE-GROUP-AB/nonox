@@ -175,7 +175,7 @@ fakturering/uppdatera-priser: { foretag: byra, rutt: invoicing.invoices.edit, mo
 fakturering/marginal-pa-raderna: { foretag: hantverkare, rutt: invoicing.invoices.edit, modell: { tabell: invoices, dar: { your_reference: 'Marginalvarning, kök' } }, visa: '[data-row-cards]', text: Under självkostnad }
 fakturering/pris-under-lagsta-tackningsgrad: { foretag: hantverkare, rutt: invoicing.invoices.edit, modell: { tabell: invoices, dar: { your_reference: 'Marginalvarning, kök' } }, del: '[data-floor-card]', text: Be om godkännande }
 fakturering/lagsta-tackningsgrad: { foretag: hantverkare, rutt: pricing.lists, del: '[data-floor-settings]', text: Lägsta täckningsgrad (%) }
-fakturering/avtalsfakturering: { foretag: konsult, rutt: invoicing.agreements.show, modell: { tabell: recurring_invoices } }
+fakturering/avtalsfakturering: { foretag: konsult, rutt: invoicing.agreements.show, modell: { tabell: recurring_invoices }, visa: 'text=Följ prislistan' }
 fakturering/forsaljning-till-utlandet: { foretag: konsult, rutt: invoicing.invoices.show, modell: { tabell: invoices, dar: { foreign_sale: EU_SERVICES } } }
 
 moms/oss: { foretag: butik, rutt: vat.euReports, visa: 'text=OSS, försäljning till privatpersoner i andra EU-länder' }

@@ -138,7 +138,7 @@ class CreateInvoiceBasis
                 throw ValidationException::withMessages(['work_order' => __('Registrera arbetade timmar. Skatteverket kräver antalet timmar även vid fast pris.')]);
             }
 
-            $invoice = ($this->save)($user, $company, $draft->input($invoiceDate, implode(', ', array_unique($descriptions))));
+            $invoice = ($this->save)($user, $company, $draft->input($invoiceDate, implode(', ', array_unique($descriptions))), null, $draft->snapshots());
 
             WorkOrderInvoice::create([
                 'work_order_id' => $workOrder->id,

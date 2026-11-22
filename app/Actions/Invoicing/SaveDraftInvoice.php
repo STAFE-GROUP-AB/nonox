@@ -11,6 +11,7 @@ use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Invoicing\SalesRowInput;
 use App\Domain\Invoicing\TaxReduction;
 use App\Domain\Invoicing\VatExemptionReason;
+use App\Domain\Pricing\PriceChannel;
 use App\Domain\Pricing\PriceContext;
 use App\Domain\Pricing\RowPriceSnapshot;
 use App\Domain\Vat\OssRates;
@@ -86,7 +87,9 @@ class SaveDraftInvoice
      *                                       customer's default)),
      *                                       currency (ISO 4217, optional: the draft's, otherwise SEK;
      *                                       prices are then in that currency) and exchange_rate
-     *                                       (kronor per unit as typed, optional: Riksbanken's rate)
+     *                                       (kronor per unit as typed, optional: Riksbanken's rate),
+     *                                       price_channel (a PriceChannel, optional: SALES; a recurring invoice
+     *                                       that follows the price lists says RECURRING)
      * @param  list<RowPriceSnapshot>  $carried  the priced rows of the quote or order the invoice is made from
      */
     public function __invoke(User $user, Company $company, array $input, ?Invoice $draft = null, array $carried = []): Invoice
@@ -117,6 +120,7 @@ class SaveDraftInvoice
             'tax_reduction_buyers.*.customer_id' => ['required', 'integer'],
             'tax_reduction_buyers.*.share_bp' => ['required', 'integer', 'min:1', 'max:10000'],
             'currency' => ['nullable', 'string', 'regex:/^[A-Za-z]{3}$/'],
+            'price_channel' => ['nullable', Rule::enum(PriceChannel::class)],
             'exchange_rate' => ['nullable', 'string', 'max:20'],
             'rows' => ['required', 'array', 'min:1'],
             'rows.*.description' => ['required', 'string', 'max:255'],
@@ -164,7 +168,7 @@ class SaveDraftInvoice
             $rowInput = array_values(array_filter((array) $input['rows'], is_array(...)));
             // A credit invoice keeps the rows it copies; the customer's default dimensions are for new sales (ADR-081 gap 6).
             $isCredit = $draft?->isCredit() ?? false;
-            $pricing = $isCredit ? null : new PriceContext($company->id, $invoiceDate, $currency, $customer->id);
+            $pricing = $isCredit ? null : new PriceContext($company->id, $invoiceDate, $currency, $customer->id, PriceChannel::tryFrom((string) ($validated['price_channel'] ?? '')) ?? PriceChannel::Sales);
             // The draft's own rows keep their prices only for the same customer, date and currency (ADR-082 §6, as built in P3).
             $samePricing = $draft !== null && $draft->exists
                 && $draft->customer_id === $customer->id

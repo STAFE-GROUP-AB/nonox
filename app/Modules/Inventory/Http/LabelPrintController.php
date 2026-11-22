@@ -10,6 +10,7 @@ use App\Modules\Inventory\Actions\LabelTemplates;
 use App\Modules\Inventory\Actions\PrintLabels;
 use App\Modules\Inventory\Labels\LabelData;
 use App\Modules\Inventory\Labels\LabelKind;
+use App\Modules\Inventory\Labels\LabelPrices;
 use App\Modules\Inventory\Labels\LabelRenderer;
 use App\Modules\Inventory\Models\LabelTemplate;
 use App\Modules\Inventory\Models\StockLocation;
@@ -70,7 +71,7 @@ final class LabelPrintController
 
         $labels = $labelTemplate->kind === LabelKind::Location
             ? StockLocation::query()->where('is_active', true)->orderBy('sort_key')->limit(3)->get()->map(fn (StockLocation $location): LabelData => LabelData::forLocation($location))->all()
-            : Article::query()->where('is_active', true)->orderByDesc('is_stock_item')->orderBy('number')->limit(3)->get()->map(fn (Article $article): LabelData => LabelData::forArticle($article, $withPrices, $labelTemplate->property_keys ?? []))->all();
+            : $this->sampleArticles($labelTemplate, $withPrices);
 
         if ($labels === []) {
             $labels = [LabelData::sample($labelTemplate->kind)];
@@ -80,6 +81,15 @@ final class LabelPrintController
         $result = app(LabelRenderer::class)->pdf($labelTemplate, array_values($labels), 1, $logo);
 
         return $this->pdf($result['pdf'], 'provsida-etiketter.pdf');
+    }
+
+    /** @return list<LabelData> */
+    private function sampleArticles(LabelTemplate $labelTemplate, bool $withPrices): array
+    {
+        $articles = Article::query()->where('is_active', true)->orderByDesc('is_stock_item')->orderBy('number')->limit(3)->get();
+        $prices = $withPrices ? LabelPrices::gross($articles) : [];
+
+        return array_values($articles->map(fn (Article $article): LabelData => LabelData::forArticle($article, $withPrices, $labelTemplate->property_keys ?? [], $prices[$article->id] ?? null))->all());
     }
 
     private function pdf(string $pdf, string $filename): Response

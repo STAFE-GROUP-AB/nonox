@@ -19,7 +19,7 @@ Med modulen **Kassakopplingar** kopplar du Zettle till NONOX. Modulen kräver La
 - **Försäljningen kommer in direkt.** Zettle skickar varje köp till NONOX. Varje köp sparas en gång, även om Zettle skickar det igen.
 - **Varorna dras från lagret.** Varje rad kopplas till en lagerförd artikel och dras från kassans lagerställe.
 - **Lagersaldot skickas till Zettle.** När du tar emot en leverans, inventerar eller kasserar skickas ändringen till Zettle. NONOX skickar ändringen, inte hela saldot, så en försäljning i kassan under tiden skrivs aldrig över. Det som Zettle själv har sålt skickas inte tillbaka.
-- **Artiklarna läggs upp i Zettle.** Nya och ändrade artiklar skickas med namn, pris inklusive moms, momssats, EAN och artikelnummer. Inget tas bort i Zettle.
+- **Artiklarna läggs upp i Zettle.** Nya och ändrade artiklar skickas med namn, pris inklusive moms, momssats, EAN och artikelnummer. Priset är det som gäller i kassan i dag enligt [prislistorna](/manual/fakturering/prislistor), och det skickas om när det ändras, till exempel när en kampanj börjar eller slutar. Inget tas bort i Zettle.
 - **Varje dag blir ett verifikationsutkast** i serie K. Det bokförs inte förrän du gör det.
 
 ## Koppla Zettle
@@ -39,7 +39,12 @@ Under **Inställningar** vid kassan väljer du:
 - **Artiklar** – *Från NONOX till kassan*, eller *Båda hållen*. Båda hållen kopplar först kassans befintliga produkter till artiklar med samma EAN, streckkod, SKU eller artikelnummer, så att inget läggs upp två gånger.
 - **Skicka nya och ändrade artiklar till kassan.**
 - **Skicka lagerändringar till kassan.** Zettle räknar hela styck. En ändring på en halv enhet skickas inte och syns i loggen.
+- **Prislista för kassan** – välj en kanalprislista för kassan, eller **Ingen kanalprislista**. Kassans pris är det lägsta av den listan och kampanjer som gäller kassan, alltså kampanjer för kassan och kampanjer utan vald kanal. Saknas ett pris används företagets standardprislista, annars artikelns grundpris. En kampanj du gör under **Register → Prislistor** har ingen vald kanal. Gäller den alla kunder når den därför också kassan och etiketterna. En kampanj som bara gäller vissa kundgrupper når inte kassan. Priset räknas fram för kassan utan kund, i kronor och för dagens datum, och skickas varje natt strax efter midnatt. Ändrar du en prislista och vill ha priset i kassan direkt, välj **Skicka artiklar nu**. En kanalprislista skapar du under **Register → Prislistor** med typen **Kanalprislista** och **Gäller för** inställt på **Kassan**.
 - **Lagerställe för kassan** – försäljningen dras härifrån, och bara ändringar här skickas till Zettle. Lämnar du det tomt används artikelns standardlagerställe.
+
+## Priser och lagen om prisinformation
+
+Kassans priser och kampanjpriser skickas som de är. NONOX visar inte det tidigare lägsta priset under de senaste 30 dagarna vid en kampanj och räknar inte fram något jämförpris. Är kunderna konsumenter behöver du själv se till att reglerna om prisinformation följs i kassan. Det är inte utrett i NONOX än.
 
 ## Omatchade rader
 

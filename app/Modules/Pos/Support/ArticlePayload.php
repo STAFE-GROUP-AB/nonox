@@ -10,12 +10,23 @@ use App\Models\Article;
  * What a till needs to know about an article, in NONOX's terms: the
  * article's price is excluding VAT (AGENTS.md §7), tills show prices
  * including VAT, so the gross price is the net price plus VAT at the
- * article's rate, rounded half up to öre.
+ * article's rate, rounded half up to öre. When SyncProducts has priced the
+ * article through the price engine (ADR-082 §10: the POS channel's list and
+ * campaigns), that gross price is the one sent.
  */
 final class ArticlePayload
 {
+    /** The attribute SyncProducts sets with the gross price the price engine gave the till (never saved). */
+    public const string CHANNEL_PRICE = 'pos_gross_ore';
+
     public static function grossOre(Article $article): int
     {
+        $channel = $article->getAttribute(self::CHANNEL_PRICE);
+
+        if (is_int($channel)) {
+            return $channel;
+        }
+
         return $article->price_ore->plus($article->price_ore->percent($article->vat_rate))->ore;
     }
 

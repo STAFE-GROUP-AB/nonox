@@ -11,7 +11,10 @@ use InvalidArgumentException;
  * The document a price is asked for (ADR-082 §5): which company, which
  * customer (none for the till), on which date (the voucher date for invoices,
  * the document date for quotes and orders, the sale date for tills), in
- * which currency and through which channel. The customer's price group and
+ * which currency and through which channel. A till or a label names the
+ * CHANNEL price list of its channel in $channelListId (ADR-082 §10); it is
+ * used like the customer's own list, after it, and only when it is a valid,
+ * not archived CHANNEL list of the same channel and currency. The customer's price group and
  * price list are read from the customer; nothing here is free text.
  */
 final readonly class PriceContext
@@ -26,6 +29,7 @@ final readonly class PriceContext
         string $currency = 'SEK',
         public ?int $customerId = null,
         public PriceChannel $channel = PriceChannel::Sales,
+        public ?int $channelListId = null,
     ) {
         $currency = strtoupper(trim($currency));
 

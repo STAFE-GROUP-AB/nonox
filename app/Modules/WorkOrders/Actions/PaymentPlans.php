@@ -141,7 +141,7 @@ class PaymentPlans
             // An a conto invoice reserves no time entries; it claims the labour hours recorded and not yet claimed (review P1-2).
             $draft->claimLabourMinutes($invoiceDate ?? CarbonImmutable::today());
 
-            $invoice = ($this->save)($user, $company, $draft->input($invoiceDate ?? CarbonImmutable::today(), $workOrder->title));
+            $invoice = ($this->save)($user, $company, $draft->input($invoiceDate ?? CarbonImmutable::today(), $workOrder->title), null, $draft->snapshots());
 
             WorkOrderInvoice::create([
                 'work_order_id' => $workOrder->id,

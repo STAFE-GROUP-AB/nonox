@@ -6,6 +6,12 @@ namespace App\Modules\WorkOrders\Actions;
 
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Domain\Pricing\DocumentPricing;
+use App\Domain\Pricing\PriceChannel;
+use App\Domain\Pricing\PriceContext;
+use App\Domain\Pricing\PriceRequest;
+use App\Domain\Pricing\PriceResolver;
+use App\Domain\Pricing\PriceSource;
 use App\Domain\Units\UnitRegister;
 use App\Models\Article;
 use App\Models\Company;
@@ -44,8 +50,8 @@ use Illuminate\Validation\ValidationException;
  *
  * The unit is one of the company's register (ADR-071 §12.9); material
  * from stock is always in the article's stock unit, the unit Lager moves.
- * The sales price is the article's price, or the cost with the work order's
- * mark-up. Only a manager may type prices; a field worker never sees them.
+ * The sales price is the price engine's for the work order's customer on the
+ * work date (ADR-082 §10), or the cost with the work order's mark-up. Only a manager may type prices; a field worker never sees them.
  * Material is never ROT or RUT labour (AO-R13).
  */
 class RecordMaterial
@@ -123,6 +129,8 @@ class RecordMaterial
 
                 if ($manager && filled($validated['unit_price'] ?? null)) {
                     $attributes['unit_price_ore'] = (int) Input::money($validated['unit_price'], 'unit_price');
+                    $attributes['price_source'] = PriceSource::Manual->value;
+                    $attributes['price_explanation'] = ['source' => PriceSource::Manual->value];
                 } elseif (! isset($attributes['unit_price_ore'])) {
                     $attributes['unit_price_ore'] = (int) round($attributes['unit_cost_ore'] * (10_000 + $workOrder->material_markup_bp) / 10_000);
                 }
@@ -222,6 +230,8 @@ class RecordMaterial
             $units->assertSelectable(['unit_id' => $unit->id], array_filter([$article?->sales_unit_id, $article?->stock_unit_id]));
         }
 
+        $priced = $article instanceof Article ? $this->priced($workOrder, $article, $unit->id, $quantity, (string) $validated['work_date'], $vatRate) : null;
+
         return [
             'article_id' => $article?->id,
             'description' => mb_substr($description, 0, 255),
@@ -229,10 +239,33 @@ class RecordMaterial
             'unit' => $units->snapshot($unit, $article, $validated['unit'] ?? null),
             'unit_id' => $unit->id,
             'unit_cost_ore' => $article->purchase_price_ore ?? 0,
-            ...($article !== null && $article->price_ore->ore > 0 ? ['unit_price_ore' => $article->price_ore->ore] : []),
+            ...($priced !== null ? [
+                'unit_price_ore' => $priced['unit_price_minor'],
+                'price_source' => $priced['source']->value,
+                'price_explanation' => $priced['explanation'],
+            ] : []),
             'vat_rate' => $vatRate,
             'stock_location_id' => $source === MaterialSource::Stock ? (int) $validated['location_id'] : null,
         ];
+    }
+
+    /**
+     * The price the price engine gives the work order's customer for the
+     * article on the work date, channel WORK_ORDER (ADR-082 §10); an agreed
+     * discount is folded into the unit price, as on an invoice row. Null
+     * when there is no price above zero: the cost with the mark-up is used.
+     *
+     * @return ?array{unit_price_minor: int, discount_bp: int, source: PriceSource, explanation: array<string, mixed>}
+     */
+    private function priced(WorkOrder $workOrder, Article $article, int $unitId, int $quantityMilli, string $workDate, int $vatRate): ?array
+    {
+        $resolved = app(PriceResolver::class)->resolve(
+            new PriceContext($workOrder->company_id, $workDate, 'SEK', $workOrder->customer_id, PriceChannel::WorkOrder),
+            new PriceRequest('material', $article->id, $quantityMilli, $unitId),
+        );
+        $price = DocumentPricing::withDiscount($resolved, null, $vatRate);
+
+        return $price === null || $price['unit_price_minor'] <= 0 ? null : $price;
     }
 
     /**

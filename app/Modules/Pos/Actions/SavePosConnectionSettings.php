@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Pos\Actions;
 
+use App\Domain\Pricing\PriceChannel;
+use App\Domain\Pricing\PriceListKind;
 use App\Models\Company;
+use App\Models\PriceList;
 use App\Models\User;
 use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Pos\Models\PosConnection;
@@ -18,7 +21,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * A till connection's own settings (ADR-042): which way articles go, whether
  * articles and stock are sent to the till, the stock location sales are
- * taken from, and (Onslip) which product group each VAT rate goes to.
+ * taken from, the CHANNEL price list the till's prices come from (ADR-082), and (Onslip) which product group each VAT rate goes to.
  */
 class SavePosConnectionSettings
 {
@@ -34,11 +37,13 @@ class SavePosConnectionSettings
             'push_products' => ['required', 'boolean'],
             'push_stock' => ['required', 'boolean'],
             'location_id' => ['nullable', 'integer'],
+            'price_list_id' => ['nullable', 'integer'],
             'product_groups' => ['nullable', 'array'],
             'product_groups.*' => ['nullable', 'integer', 'min:1'],
         ], [], [
             'sync_direction' => __('riktning för artiklar'),
             'location_id' => __('lagerställe'),
+            'price_list_id' => __('prislista'),
         ])->validate();
 
         return CurrentCompany::run($company, function () use ($user, $company, $connection, $validated): PosConnection {
@@ -46,6 +51,12 @@ class SavePosConnectionSettings
 
             if ($locationId !== null && ! StockLocation::query()->whereKey($locationId)->where('is_active', true)->exists()) {
                 throw ValidationException::withMessages(['location_id' => __('Välj ett aktivt lagerställe.')]);
+            }
+
+            $priceListId = isset($validated['price_list_id']) ? (int) $validated['price_list_id'] : null;
+
+            if ($priceListId !== null && ! PriceList::query()->whereKey($priceListId)->where('kind', PriceListKind::Channel->value)->where('channel', PriceChannel::Pos->value)->where('currency', 'SEK')->whereNull('archived_at')->exists()) {
+                throw ValidationException::withMessages(['price_list_id' => __('Välj en kanalprislista för kassan i kronor.')]);
             }
 
             $groups = [];
@@ -67,6 +78,7 @@ class SavePosConnectionSettings
                     'push_products' => (bool) $validated['push_products'],
                     'push_stock' => $connection->provider->supportsStock() && (bool) $validated['push_stock'],
                     'product_groups' => $groups,
+                    'price_list_id' => $priceListId,
                 ],
             ])->save();
 

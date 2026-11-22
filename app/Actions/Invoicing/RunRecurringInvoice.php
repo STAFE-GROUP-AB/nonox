@@ -4,13 +4,21 @@ declare(strict_types=1);
 
 namespace App\Actions\Invoicing;
 
+use App\Actions\Tasks\SaveTask;
 use App\Domain\Invoicing\AgreementStatus;
+use App\Domain\Invoicing\InvoiceCalculator;
+use App\Domain\Pricing\PriceChannel;
+use App\Domain\Pricing\PriceSource;
+use App\Domain\Pricing\RecurringPriceMode;
+use App\Domain\Tasks\TaskPriority;
+use App\Domain\Tasks\TaskType;
 use App\Events\RecurringInvoiceStatusChanged;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceRow;
+use App\Models\Task;
 use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Peppol\Actions\SendInvoiceViaPeppol;
@@ -18,6 +26,8 @@ use App\Modules\Peppol\PeppolModule;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -28,7 +38,10 @@ use Illuminate\Validation\ValidationException;
  * Makes the agreement's next invoice, dated on its next invoice date, and
  * moves that date one interval on. The invoice is a draft to check, or, if
  * the agreement says so, issued (booked) and emailed to the customer. Past
- * the end date the agreement ends.
+ * the end date the agreement ends. An agreement that follows the price lists
+ * (price_mode FOLLOW_PRICES, "Följ prislistan") prices its article rows for
+ * the customer on the run date through the price engine, channel RECURRING,
+ * and stores the source and explanation on the invoice rows.
  */
 class RunRecurringInvoice
 {
@@ -54,15 +67,25 @@ class RunRecurringInvoice
             }
 
             $date = $agreement->next_invoice_date;
+            $follows = $agreement->price_mode === RecurringPriceMode::FollowPrices;
+            $agreementRows = $agreement->rows()->with($follows ? ['account', 'article'] : ['account'])->get();
             $invoice = ($this->saveDraft)($user, $company, [
                 'customer_id' => $agreement->customer_id,
                 'invoice_date' => $date->toDateString(),
                 'your_reference' => $agreement->your_reference,
                 'our_reference' => $agreement->our_reference,
                 'notes' => $agreement->notes,
-                'rows' => $agreement->rows()->with('account')->get()->map(fn (RecurringInvoiceRow $row): array => $row->asInput())->all(),
+                'rows' => $agreementRows->map(fn (RecurringInvoiceRow $row): array => $follows ? self::followingRow($row) : $row->asInput())->all(),
+                ...($follows ? ['price_channel' => PriceChannel::Recurring->value] : []),
             ]);
             $invoice->forceFill(['recurring_invoice_id' => $agreement->id])->save();
+
+            // A followed article row that comes out at 0 kr (no price, or a 100 % discount) is not sent by itself: the draft waits for a person (audited).
+            $held = $follows && $invoice->rows()->whereNotNull('article_id')->where('net_ore', 0)->exists();
+
+            if ($follows) {
+                $this->showLastRun($agreement, $agreementRows, $invoice);
+            }
 
             $next = $agreement->dateAfter($date);
             $ended = $agreement->end_date !== null && $next->greaterThan($agreement->end_date);
@@ -75,7 +98,15 @@ class RunRecurringInvoice
                 Event::dispatch(new RecurringInvoiceStatusChanged($company->id, $agreement->id, $user->id, AgreementStatus::Ended->value));
             }
 
-            if ($agreement->send_automatically) {
+            if ($held) {
+                Audit::record('agreement.held_as_draft', $agreement, ['number' => $agreement->number, 'invoice_id' => $invoice->id, 'reason' => 'zero_price', 'send_automatically' => $agreement->send_automatically], $company, $user);
+
+                if ($agreement->send_automatically) {
+                    $this->warn($user, $company, $agreement, $invoice);
+                }
+            }
+
+            if ($agreement->send_automatically && ! $held) {
                 $invoice = ($this->issue)($user, $invoice, automatic: true);
             }
 
@@ -90,7 +121,7 @@ class RunRecurringInvoice
             return $invoice;
         }));
 
-        if ($agreement->send_automatically) {
+        if ($agreement->send_automatically && ! $invoice->isDraft()) {
             CurrentCompany::run($agreement->company_id, function () use ($user, $agreement, $invoice): void {
                 $customer = Customer::query()->findOrFail($agreement->customer_id);
 
@@ -106,6 +137,83 @@ class RunRecurringInvoice
         }
 
         return $invoice;
+    }
+
+    /**
+     * The held draft shows up under "Att göra" on the Översikt as a task for the
+     * person who made the agreement (ADR-028), once per draft. Without the right
+     * to make tasks the draft and the audit entry remain.
+     */
+    private function warn(User $user, Company $company, RecurringInvoice $agreement, Invoice $invoice): void
+    {
+        $exists = Task::query()->where('subject_type', 'invoice')->where('subject_id', (string) $invoice->id)->open()->exists();
+
+        if ($exists) {
+            return;
+        }
+
+        try {
+            app(SaveTask::class)($user, $company, [
+                'title' => __('Kontrollera fakturautkastet från avtal :number: en rad blev 0 kr', ['number' => $agreement->number]),
+                'type' => TaskType::Invoices->value,
+                'priority' => TaskPriority::High->value,
+                'assignee_id' => $user->id,
+                'subject_type' => 'invoice',
+                'subject_id' => (string) $invoice->id,
+            ]);
+        } catch (AuthorizationException) {
+            // The audit entry and the draft itself remain.
+        }
+    }
+
+    /**
+     * A row that follows the price lists (ADR-082 §6, decision 9): an article
+     * row is priced on the run date, so it gives no price and no source of
+     * its own; a free row keeps the price it was written with.
+     *
+     * @return array<string, mixed>
+     */
+    private static function followingRow(RecurringInvoiceRow $row): array
+    {
+        $input = $row->asInput();
+
+        // A price typed on the agreement's row stays (it is marked MANUAL), as does a free row.
+        if ($row->article_id === null || ! isset($input['article']) || $row->price_source === PriceSource::Manual) {
+            return $input;
+        }
+
+        return [...array_diff_key($input, ['price_source' => true]), 'price' => ''];
+    }
+
+    /**
+     * The agreement's own rows then only show the prices of the last run: the
+     * rows the run priced from the price lists copy the invoice's prices, and
+     * the agreement's totals follow.
+     *
+     * @param  Collection<int, RecurringInvoiceRow>  $rows
+     */
+    private function showLastRun(RecurringInvoice $agreement, Collection $rows, Invoice $invoice): void
+    {
+        $invoiceRows = $invoice->rows()->orderBy('position')->get()->values();
+
+        foreach ($rows->values() as $index => $row) {
+            $made = $invoiceRows->get($index);
+
+            if ($row->article_id === null || $made === null || $row->price_source === PriceSource::Manual) {
+                continue;
+            }
+
+            $row->forceFill([
+                'unit_price_ore' => $made->unit_price_ore,
+                'discount_bp' => $made->discount_bp,
+                'net_ore' => $made->net_ore,
+                'price_source' => $made->price_source,
+                'price_explanation' => $made->price_explanation,
+            ])->save();
+        }
+
+        $totals = InvoiceCalculator::totals($rows->map(fn (RecurringInvoiceRow $row): array => ['net' => $row->net_ore->ore, 'vat_rate' => $row->vat_rate])->all());
+        $agreement->forceFill(['net_ore' => $totals['net'], 'total_ore' => $totals['total']]);
     }
 
     /**

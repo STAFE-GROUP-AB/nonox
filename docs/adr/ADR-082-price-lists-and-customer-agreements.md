@@ -472,6 +472,36 @@ first bullet above where they differ):
   just picked, never the whole catalogue, and carries no source for a person
   without `prices:view`.
 
+**As built (P8): other consumers of the price engine.**
+
+- **Recurring invoices:** `price_mode` is set in the agreement editor ("Fast
+  pris" / "Följ prislistan"). With FOLLOW_PRICES the run asks the resolver for
+  the article rows through `SaveDraftInvoice` (new input `price_channel`,
+  RECURRING) on the run date; the agreement's own rows then copy the last
+  run's price, source and explanation and the agreement's totals follow. Free
+  rows keep their price. The editor now loads the rows' articles, so an
+  agreement saved from it keeps the article on its rows.
+- **CRM quote templates:** article rows are sent without a price, so the quote
+  is priced for the customer by SaveSalesDocument (SALES). Template rows have no
+  price of their own on article rows, so there is nothing to mark manual.
+- **Work-order material:** the sales price of an article is the resolver's
+  (channel WORK_ORDER, the work order's customer, the work date, an agreed
+  discount folded in); a manager-typed price is stored MANUAL; the cost plus
+  mark-up stays the fallback.
+- **Tills and labels:** `PriceContext::$channelListId` names the CHANNEL list a
+  till uses; it is used after the customer's own and group list, only if it is
+  a valid, unarchived CHANNEL list of the same channel and currency, and never
+  one of another company. A till connection names it in its settings
+  (`price_list_id`). `ChannelPrices` prices articles for POS, no customer, SEK,
+  today, as a gross price; `SyncProducts` pushes it (the payload hash includes
+  it, so a change is sent once) and `pricing:sync-channels` runs nightly at
+  00:05. `LabelPrices` gives labels the same price.
+- **P-L2 and P-L3 are not implemented:** no earlier "lowest price in the last
+  30 days" and no new jämförpris is computed or shown for campaign prices on
+  tills and labels, because the resolver prices a single date and list-item and
+  base-price history is not complete enough to give it. Both stay open for a
+  lawyer (TODO(legal-verify) in `ChannelPrices` and `LabelPrices`).
+
 ### 7. Rounding rules
 
 `rounding_rule` on a list or a price update run (enum `PriceRounding`):
@@ -807,6 +837,14 @@ and `lagringstider.md` get a line in P4.
 - **P-L5 Signed price agreement as an agreement.** That an e-signed price
   agreement through NONOX signering is valid as written agreement between
   companies (same assessment as ADR-046; no new question expected).
+- **P-L7 Price changes in running subscriptions (P8).** TODO(legal-verify):
+  unilateral price-change clauses in consumer subscriptions (avtalsvillkorslagen,
+  duty to give notice); "Följ prislistan" changes the price of the next invoice
+  without any notice, and the manual says only that the customer's approval is
+  decided by the company's agreement.
+- **P-L2 (P8 detail).** TODO(legal-verify): the exact section (7 a § prisinformationslagen?)
+  and its exceptions for announcing a price reduction to consumers; the manual
+  tells the company it is responsible for stating the earlier price.
 - **P-L6 Index clauses.** No legal rule is assumed for how an index clause is
   applied; the user supplies the figures and the clause text.
 

@@ -7,7 +7,10 @@ namespace App\Actions\Invoicing;
 use App\Domain\Invoicing\AgreementStatus;
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Invoicing\SalesRowInput;
+use App\Domain\Pricing\PriceSource;
+use App\Domain\Pricing\RecurringPriceMode;
 use App\Events\RecurringInvoiceChanged;
+use App\Models\Article;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\NumberSeries;
@@ -34,7 +37,7 @@ use Illuminate\Validation\ValidationException;
 class SaveRecurringInvoice
 {
     /**
-     * @param  array<string, mixed>  $input  customer_id, name, interval_months, next_invoice_date, end_date, send_automatically, your_reference, our_reference, notes, rows,
+     * @param  array<string, mixed>  $input  customer_id, name, interval_months, next_invoice_date, end_date, send_automatically, price_mode (FIXED or FOLLOW_PRICES, ADR-082 decision 9; empty keeps the agreement's), your_reference, our_reference, notes, rows,
      *                                       effective_from (optional "Gäller från" for NONOX SaaS, ADR-080; passed on in the event only)
      */
     public function __invoke(User $user, Company $company, array $input, ?RecurringInvoice $agreement = null): RecurringInvoice
@@ -53,6 +56,7 @@ class SaveRecurringInvoice
             'your_reference' => ['nullable', 'string', 'max:255'],
             'our_reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'price_mode' => ['nullable', Rule::enum(RecurringPriceMode::class)],
             // "Gäller från" within a sane horizon (ADR-080 review 3): at most ten years back and two years ahead.
             'effective_from' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:'.CarbonImmutable::today()->subYears(10)->toDateString(), 'before_or_equal:'.CarbonImmutable::today()->addYears(2)->toDateString()],
             'rows' => ['required', 'array', 'min:1'],
@@ -88,6 +92,8 @@ class SaveRecurringInvoice
 
             // validate() keeps only fields with rules, so the rows are read from the input itself.
             $rows = SalesRowInput::parse(array_values(array_filter((array) $input['rows'], is_array(...))));
+            $mode = RecurringPriceMode::tryFrom((string) ($validated['price_mode'] ?? '')) ?? ($agreement !== null ? $agreement->price_mode : RecurringPriceMode::Fixed);
+            $rows = $mode === RecurringPriceMode::FollowPrices ? $this->marked($rows, array_values(array_filter((array) $input['rows'], is_array(...))), $agreement) : $rows;
             $totals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => $row['net_ore'], 'vat_rate' => $row['vat_rate']], $rows));
             $next = CarbonImmutable::parse($validated['next_invoice_date']);
 
@@ -105,6 +111,7 @@ class SaveRecurringInvoice
                 'your_reference' => $validated['your_reference'] ?? null,
                 'our_reference' => $validated['our_reference'] ?? null,
                 'notes' => $validated['notes'] ?? null,
+                'price_mode' => $validated['price_mode'] ?? ($isNew ? RecurringPriceMode::Fixed->value : $agreement->price_mode->value),
             ])->forceFill([
                 'net_ore' => $totals['net'],
                 'total_ore' => $totals['total'],
@@ -132,11 +139,58 @@ class SaveRecurringInvoice
                 'interval_months' => $agreement->interval_months,
                 'next_invoice_date' => $next->toDateString(),
                 'total_ore' => $totals['total'],
+                'price_mode' => $agreement->price_mode->value,
             ], $company, $user);
 
             Event::dispatch(new RecurringInvoiceChanged($company->id, $agreement->id, $user->id, $isNew, $validated['effective_from'] ?? null));
 
             return $agreement->load('rows');
         }));
+    }
+
+    /**
+     * On an agreement that follows the price lists, an article row whose
+     * price a person typed is MANUAL and is never re-priced by a run. A
+     * price equal to the article's base price, or left empty, is not typed
+     * by hand and follows the lists; a price equal to a stored row's keeps
+     * that row's source, none included (a row that has not run yet, or one saved
+     * while the agreement had fixed prices, so switching to FOLLOW_PRICES makes
+     * the unchanged rows follow), and a changed price is MANUAL.
+     *
+     * @param  list<array<string, mixed>>  $rows  parsed rows
+     * @param  list<array<string, mixed>>  $input  the rows as sent, in the same order
+     * @return list<array<string, mixed>>
+     */
+    private function marked(array $rows, array $input, ?RecurringInvoice $agreement): array
+    {
+        $articleIds = array_values(array_filter(array_map(fn (array $row): ?int => $row['article_id'], $rows)));
+
+        if ($articleIds === []) {
+            return $rows;
+        }
+
+        $base = Article::query()->whereIn('id', $articleIds)->get(['id', 'company_id', 'price_ore'])->mapWithKeys(fn (Article $article): array => [$article->id => $article->price_ore->ore]);
+        $stored = $agreement?->exists === true ? $agreement->rows()->whereIn('article_id', $articleIds)->get() : collect();
+
+        foreach ($rows as $index => $row) {
+            if ($row['article_id'] === null) {
+                continue;
+            }
+
+            $price = (int) $row['unit_price_ore'];
+            $typedManual = ($input[$index]['price_source'] ?? '') === PriceSource::Manual->value;
+            $same = $stored->first(fn (RecurringInvoiceRow $old): bool => $old->article_id === $row['article_id'] && $old->unit_price_ore->ore === $price);
+
+            if ($same !== null && ($same->price_source === PriceSource::Manual || ! $typedManual)) {
+                $rows[$index] = [...$row, 'price_source' => $same->price_source?->value, 'price_explanation' => $same->price_explanation];
+
+                continue;
+            }
+
+            $followsLists = $price === 0 || (int) ($base[$row['article_id']] ?? -1) === $price;
+            $rows[$index] = [...$row, 'price_source' => $followsLists && ! $typedManual ? null : PriceSource::Manual->value, 'price_explanation' => $followsLists && ! $typedManual ? null : ['source' => PriceSource::Manual->value]];
+        }
+
+        return $rows;
     }
 }

@@ -21,7 +21,7 @@ Arbetsorder är en modul. Ägaren slår på den under **Inställningar → Modul
 2. Välj **Kund** och skriv en **Rubrik**, till exempel Badrumsrenovering. Rubriken blir typ av arbete på fakturan.
 3. Under **Platsen** skriver du adressen och, om det behövs, **Portkod och nycklar**. De sparas krypterat och tas bort automatiskt när arbetsordern avslutas.
 4. Välj **Prisform** under **Pris**:
-   - **Löpande räkning** – timmar till priset för varje typ av arbete, och material till försäljningspriset.
+   - **Löpande räkning** – timmar till priset för varje typ av arbete, och material till försäljningspriset. Försäljningspriset för en artikel är kundens pris enligt prisavtal, prislistor och kampanjer på dagen materialet registreras, annars artikelns grundpris, och annars inköpspriset med **Påslag på material, procent**. Priset ligger kvar på materialraden även om prislistan ändras senare, och en chef kan skriva ett eget pris, som då markeras som manuellt.
    - **Fast pris** – skriv **Fast pris exklusive moms** och, för ROT eller RUT, **Varav arbete exklusive moms**.
    - **Löpande räkning med ungefärligt pris** – skriv **Ungefärligt pris inklusive moms**. NONOX varnar när huvudarbetet går över 15 procent av det, eller över **Annan avtalad gräns, procent** om ni har kommit överens om en annan.
 5. Bocka i vilka som är **Utförare** på jobbet och klicka på **Spara arbetsordern**.

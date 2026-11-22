@@ -9,7 +9,7 @@ sokord: [offertmall, mall, standardoffert, prislista, offert, artiklar]
 
 # Offertmallar
 
-En offertmall är en offert du skickar ofta: samma artiklar, samma villkor och samma giltighet. Gör en ny offert från mallen så är allt ifyllt, med dagens priser från artikelregistret.
+En offertmall är en offert du skickar ofta: samma artiklar, samma villkor och samma giltighet. Gör en ny offert från mallen så är allt ifyllt, med dagens priser för kunden.
 
 ![Offertmallar med mallens rader, inledning och villkor.](/bilder/manual/crm/offertmallar.webp)
 
@@ -25,7 +25,7 @@ Mallarna kräver modulen CRM och att du får skapa offerter.
 
 ## Priser från artikelregistret
 
-En rad med en artikel sparar inget pris. När du gör en offert från mallen hämtas artikelns namn, enhet, pris och moms från artikelregistret den dagen. Ändrar du priset på artikeln gäller det nya priset i nästa offert. Vill du ha en egen benämning skriver du den i **Egen benämning (frivilligt)**.
+En rad med en artikel sparar inget pris. När du gör en offert från mallen hämtas artikelns namn, enhet och moms från artikelregistret den dagen, och priset blir kundens pris den dagen enligt kundens prisavtal, prislistor och kampanjer, annars artikelns grundpris. Offertraden visar varifrån priset kommer, som på en vanlig offert. Ändras priset senare gäller det nya priset i nästa offert. En fri rad behåller det pris du skrev i mallen. Vill du ha en egen benämning skriver du den i **Egen benämning (frivilligt)**.
 
 Har en artikel i mallen arkiverats går det inte att göra en offert från mallen förrän du har ändrat den, så att ingen offert får ett gammalt pris.
 

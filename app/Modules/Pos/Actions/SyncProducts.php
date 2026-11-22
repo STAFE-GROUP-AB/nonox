@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Pos\Actions;
 
+use App\Domain\Pricing\ChannelPrices;
 use App\Models\Article;
 use App\Modules\Pos\Models\PosConnection;
 use App\Modules\Pos\Models\PosProductLink;
@@ -44,11 +45,22 @@ class SyncProducts
             }
 
             $links = PosProductLink::query()->where('pos_connection_id', $connection->id)->get()->keyBy('article_id');
-            $articles = Article::query()
+            $active = Article::query()
                 ->where('is_active', true)
                 ->when($articleIds !== null, fn ($query) => $query->whereKey($articleIds))
                 ->orderBy('id')
-                ->get()
+                ->get();
+
+            // The price the till shows is the price engine's for the POS channel today (ADR-082 §10), in a fixed number of queries.
+            $prices = app(ChannelPrices::class)->gross($active, $connection->priceListId());
+
+            foreach ($active as $article) {
+                if (isset($prices[$article->id])) {
+                    $article->setAttribute(ArticlePayload::CHANNEL_PRICE, $prices[$article->id]);
+                }
+            }
+
+            $articles = $active
                 ->filter(fn (Article $article): bool => $links->get($article->id)?->pushed_hash !== ArticlePayload::hash($article))
                 ->values();
 

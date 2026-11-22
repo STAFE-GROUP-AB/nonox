@@ -18,7 +18,7 @@ Prislistorna finns under **Register → Prislistor**. Du som bara ska se prisern
 
 1. Gå till **Register → Prislistor** och tryck på **Ny prislista**.
 2. Skriv en **Kod**, till exempel *BYGG*, och ett **Namn**, till exempel *Byggföretag*. Koden är kort och kan inte användas två gånger.
-3. Välj **Typ**: **Prislista** för en vanlig lista, **Kampanj** för ett pris som gäller en tid, eller **Kanalprislista** för kassan eller kundportalen. Att kassan och kundportalen använder kanallistorna kommer i ett senare steg.
+3. Välj **Typ**: **Prislista** för en vanlig lista, **Kampanj** för ett pris som gäller en tid, eller **Kanalprislista** för kassan eller kundportalen. Kassan använder den kanallista du väljer vid kopplingen under **Kassa** (se [Kassa: Zettle](/manual/lager/kassa-zettle)), och etiketterna visar kassans pris. Att kundportalen använder kanallistorna kommer i ett senare steg.
 4. Välj **Valuta** och om **Priserna anges** exklusive eller inklusive moms.
 5. Fyll i **Gäller från** och **Gäller till och med** om listan bara ska gälla en tid. För en kampanj måste du fylla i båda.
 6. Tryck på **Spara**. Öppna sedan listan genom att trycka på dess namn, så kan du lägga in priserna.
@@ -65,6 +65,8 @@ Det finns ingen knapp som tar bort ett pris som har använts, eftersom du ska ku
 ## Kampanjer
 
 En kampanj är en prislista av typen **Kampanj** med ett startdatum och ett slutdatum. Under **Kampanjen gäller för** väljer du kundgrupper, eller inga alls om den ska gälla alla kunder. Vid prissättningen vinner det lägsta priset av kundens lista och kampanjen, så en kund får aldrig ett sämre pris än kampanjens.
+
+En kampanj för alla kunder gäller också i kassan och på prisetiketterna, om ni har en kassa kopplad. Ska kampanjen inte nå konsumenter i butiken, rikta den till en kundgrupp. Säljer ni till konsumenter och visar kampanjpriset som en prissänkning ansvarar ni själva för att ange det tidigare priset enligt reglerna om prisinformation.
 
 I listan över prislistor syns kampanjens läge: **Pågår**, **Kommande** eller **Avslutad**.
 
