@@ -93,6 +93,13 @@
                         <p id="hq-signing-verify-enabled-hint" class="text-sm text-gray-600">{{ __('På: sidan /kontrollera visar om en fil är oförändrad jämfört med ett färdigt signerat dokument som NONOX har sparat, för de företag som själva har slagit på den (Inställningar för företaget → Signering), och deras signeringsbevis får en QR-kod till sidan. Av: sidan finns inte (404) och bevisen har ingen QR-kod. I den driftade tjänsten: sätt på först när juristen har svarat på frågan om betrodda tjänster enligt eIDAS.') }}</p>
                     </div>
                 </div>
+                <div class="flex items-start gap-3">
+                    <input id="hq-signing-providers-enabled" type="checkbox" wire:model="signingProvidersEnabled" class="mt-1 h-5 w-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" aria-describedby="hq-signing-providers-enabled-hint">
+                    <div>
+                        <label for="hq-signing-providers-enabled" class="text-sm font-medium text-gray-800">{{ __('Underskrift hos extern tjänst') }}</label>
+                        <p id="hq-signing-providers-enabled-hint" class="text-sm text-gray-600">{{ __('På: ett företag som har lagt in en tjänst för underskrift (CSC API v2) under Inställningar för företaget → Signering kan låta en undertecknare skriva under där, med sitt eget certifikat. Kräver PDF-motorn. Av: ingen undertecknare kan skickas till en extern tjänst. I den driftade tjänsten: sätt på först när driftbolaget har avtal med en tjänst och juristen har svarat på frågorna om avancerade och kvalificerade underskrifter.') }}</p>
+                    </div>
+                </div>
             </div>
         </x-ui.card>
 

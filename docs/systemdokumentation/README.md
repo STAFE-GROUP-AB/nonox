@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.159
+- Version: 0.160
 - Datum: 2026-11-22
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -1839,6 +1839,41 @@ balances").
   `signing.long_term_validation_failed` med id:n, nivå, steg, datum och
   koder. Den förseglade filen, undertecknarnas bevis och hashkedjan ändras
   inte. Signeringen bokför ingenting och ingen bokföringsregel ändras.
+- Underskrift hos extern tjänst (version 0.160,
+  [ADR-046](../adr/ADR-046-crm-signing.md) tillägg 2026-11-18, lucka 12,
+  paket S17). Avstängd tills den slås på för installationen i /hq
+  (`signing.providers_enabled`), och kräver PDF-motorn och att företaget har
+  lagt in en tjänst (Cloud Signature Consortiums API v2) i
+  `signing_providers` (klient-id och klienthemlighet krypterade; en rad byts
+  men ändras aldrig, databasutlösare). Avsändaren väljer tjänsten som
+  undertecknarens kontroll (`verification = PROVIDER`,
+  `signing_provider_id`, fast från sändningen; databasutlösare och
+  kontrollvillkor). En sådan undertecknare har inga egna fält. När
+  undertecknaren fortsätter till tjänsten kontrolleras formuläret som vid en
+  vanlig underskrift, och en körning sparas i `signing_provider_sessions`
+  (steg `SERVICE`, `CREDENTIAL`, `DONE` eller `FAILED`, bara framåt;
+  databasutlösare). Efter inloggningen hos tjänsten förbereder PDF-motorn
+  undertecknarens PAdES-underskrift över den senaste versionen och räknar
+  fram kontrollsumman av dess signerade attribut; tjänsten skriver under
+  just den efter att undertecknaren har godkänt. Motorn kontrollerar
+  underskriften mot certifikatet och lägger in den som en inkrementell
+  uppdatering, och filen kontrolleras igen (intakt, giltig, samma
+  certifikat). I samma transaktion som underskriften sparas filen som
+  `AFTER_SIGNER` i `signing_document_versions` (den måste börja med den
+  visade versionens exakta byte, och den versionen måste fortfarande vara
+  den senaste), körningen blir `DONE` med certifikatets namn, utfärdare,
+  serienummer, fingeravtryck och giltighetstid, och hashkedjan får
+  `PROVIDER_SIGNED` med körningens id, nivån som företaget anger för
+  tjänsten, certifikatets fingeravtryck och båda versionernas SHA-256.
+  Försegling, kopior och `signing:verify` använder versionen som vilken
+  annan version som helst. Körningens krypterade arbetsdata (formulär och
+  tjänstens nycklar) och den förberedda filen töms när den är klar eller
+  avbryts; en körning som aldrig blev klar tas bort av `signing:prune` en dag
+  efter att den gick ut. NONOX anger aldrig själv en nivå för underskriften,
+  bara företagets uppgift om tjänstens. Behandlingshistoriken får
+  `signing.provider_added`, `_retired`, `_started`, `_signed` och `_failed`
+  med id:n, typ av tjänst, nivå och koder. Signeringen bokför ingenting och
+  ingen bokföringsregel ändras.
 - Samtycke till elektroniska handlingar (version 0.154,
   [ADR-046](../adr/ADR-046-crm-signing.md) tillägg 2026-11-18, lucka 7, paket
   S4): innan dokumentet visas via en signeringslänk godkänner varje
@@ -7112,3 +7147,4 @@ påverkar bokföringen och fakturan:
 | 0.157 | 2026-11-20 | Priser på fakturor, offerter och order (avsnitt 5.3a, ADR-082 P3): radernas à-pris och rabatt föreslås av prismotorn och kopieras till raden med källa och förklaring (id:n och belopp, inga namn); ett handskrivet pris behålls; byte av kund, datum eller valuta ändrar aldrig ett pris; ett sparat utkast prissätts om bara med "Uppdatera priser" efter en visad skillnad; offert → order → faktura behåller priserna, och en utgången offert frågar vilka priser som gäller. Avtalad rabatt bakas in i à-priset; priser inklusive moms avrundas nedåt till nettopris. Offerter och order får valuta som följer med till fakturan. En utfärdad faktura prissätts aldrig och låses av samma trigger som tidigare. Ingen verifikation, numrering eller bokföringsregel ändras. |
 | 0.158 | 2026-11-22 | Försegling av signerade dokument (ADR-046 tillägg, lucka 5, paket S10): avstängd tills den slås på i /hq; den färdiga filen (den signerade versionen med en sammanställningssida) förseglas med PAdES B-B eller B-T som inkrementella uppdateringar och sparas som `SEALED` i `signing_document_versions`; kopiorna väntar på förseglingen; företagets eget förseglingscertifikat sparas krypterat i `signing_seal_certificates`. Ingenting bokförs och ingen verifikation, numrering eller hashkedja ändras. |
 | 0.159 | 2026-11-22 | Långtidsvalidering av förseglade filer (ADR-046 tillägg, lucka 5, paket S11): efter en försegling med tidsstämpel läggs valideringsdata till (PAdES B-LT), och `signing:timestamp` lägger varje natt till en dokumenttidsstämpel (PAdES B-LTA) innan den senaste tidsstämpeln slutar vara tillförlitlig, bara inom bevarandetiden eller under bevarandespärr; varje fil är en inkrementell uppdatering som sparas som `TIMESTAMPED` i `signing_document_versions`. Avstängd så länge försegling är avstängd. Ingenting bokförs och ingen verifikation, numrering eller hashkedja ändras. |
+| 0.160 | 2026-11-22 | Underskrift hos extern tjänst (ADR-046 tillägg, lucka 12, paket S17): en undertecknare kan skriva under hos en tjänst med Cloud Signature Consortiums API v2 som företaget har lagt in; underskriften (PAdES) läggs in i undertecknarens version, som sparas som `AFTER_SIGNER`, och hashkedjan får `PROVIDER_SIGNED`. Avstängd tills den slås på för installationen. Ingenting bokförs och ingen verifikation, numrering eller hashkedja för bokföringen ändras. |

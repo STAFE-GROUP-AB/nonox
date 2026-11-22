@@ -88,6 +88,20 @@ interface PdfEngine
      */
     public function archiveTimestamp(string $pdfPath, string $outputPath, array $timestampUrls, string $mdAlgorithm = 'sha256'): LongTermResult;
 
+    /**
+     * An external signature, step one (ADR-046 S17): an incremental update with an empty PAdES signature for the
+     * signer's certificate, and the digest of its signed attributes, which a signing provider then signs. The
+     * output starts with the input's bytes. Run inspect()->assertAcceptable() on an outside PDF first.
+     */
+    public function prepareExternalSignature(string $pdfPath, string $outputPath, ExternalSignatureRequest $request): PreparedSignature;
+
+    /**
+     * An external signature, step two (ADR-046 S17): the provider's signature value (over $prepared->digest) put
+     * into the placeholder of the prepared file. The helper checks the value against the certificate first
+     * (SignatureInvalid otherwise). $pdfPath is the file that was prepared, whose bytes the output must start with.
+     */
+    public function finishExternalSignature(string $pdfPath, PreparedSignature $prepared, ExternalSignatureRequest $request, string $signature, string $outputPath): PdfFileResult;
+
     /** Integrity and coverage of every signature and document timestamp in the file (no trust check, no network). */
     public function validate(string $pdfPath): ValidationReport;
 }

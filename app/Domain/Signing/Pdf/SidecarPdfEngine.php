@@ -376,6 +376,80 @@ final class SidecarPdfEngine implements PdfEngine
         return $result;
     }
 
+    public function prepareExternalSignature(string $pdfPath, string $outputPath, ExternalSignatureRequest $request): PreparedSignature
+    {
+        $this->guardPdf($pdfPath, PdfLimits::MAX_BYTES + PdfLimits::FINISHED_FILE_SLACK_BYTES);
+        $this->guardOutput($outputPath);
+
+        $result = null;
+
+        $this->withWorkDirectory(function (string $work) use ($pdfPath, $outputPath, $request, &$result): void {
+            $copied = [];
+            $answer = $this->run($work, 'prepare_external_signature', [
+                'output' => 'output.pdf',
+                ...$request->toRequest(),
+            ], ['input' => [$pdfPath, 'input.pdf']], copied: $copied);
+
+            $this->copyOut($work, (string) ($answer['output'] ?? ''), $outputPath, false, $copied['input']);
+            $prepared = (array) ($answer['prepared'] ?? []);
+            $digest = base64_decode((string) ($prepared['digest'] ?? ''), true);
+            $documentDigest = hex2bin((string) ($prepared['document_digest'] ?? ''));
+            $attributes = base64_decode((string) ($prepared['signed_attributes'] ?? ''), true);
+
+            if ($digest === false || strlen($digest) !== 32 || $documentDigest === false || $attributes === false || $attributes === '' || ! hash_equals(hash('sha256', $attributes, true), $digest)) {
+                @unlink($outputPath);
+
+                throw new PdfEngineException(PdfEngineFailure::InvalidResponse, detail: 'prepared');
+            }
+
+            $result = new PreparedSignature(
+                $outputPath,
+                (int) ($answer['bytes'] ?? 0),
+                (string) ($answer['sha256'] ?? ''),
+                $digest,
+                $documentDigest,
+                (int) ($prepared['reserved_start'] ?? 0),
+                (int) ($prepared['reserved_end'] ?? 0),
+                $attributes,
+                $request->algorithm,
+                (string) ($answer['certificate_sha256'] ?? ''),
+            );
+        });
+
+        /** @var PreparedSignature $result */
+        return $result;
+    }
+
+    public function finishExternalSignature(string $pdfPath, PreparedSignature $prepared, ExternalSignatureRequest $request, string $signature, string $outputPath): PdfFileResult
+    {
+        $this->guardPdf($pdfPath, PdfLimits::MAX_BYTES + PdfLimits::FINISHED_FILE_SLACK_BYTES);
+        $this->guardPdf($prepared->path, PdfLimits::MAX_BYTES + PdfLimits::FINISHED_FILE_SLACK_BYTES);
+        $this->guardOutput($outputPath);
+
+        if ($signature === '' || strlen($signature) > 2048) {
+            throw new PdfEngineException(PdfEngineFailure::SignatureInvalid);
+        }
+
+        $result = null;
+
+        $this->withWorkDirectory(function (string $work) use ($pdfPath, $prepared, $request, $signature, $outputPath, &$result): void {
+            $copied = [];
+            $answer = $this->run($work, 'finish_external_signature', [
+                'output' => 'output.pdf',
+                ...$request->toRequest(),
+                ...$prepared->toRequest(),
+                'prepared_sha256' => $prepared->sha256,
+                'signature' => base64_encode($signature),
+            ], ['input' => [$pdfPath, 'input.pdf'], 'prepared' => [$prepared->path, 'prepared.pdf']], copied: $copied);
+
+            $this->copyOut($work, (string) ($answer['output'] ?? ''), $outputPath, false, $copied['input']);
+            $result = new PdfFileResult($outputPath, (int) ($answer['bytes'] ?? 0), (string) ($answer['sha256'] ?? ''));
+        });
+
+        /** @var PdfFileResult $result */
+        return $result;
+    }
+
     public function validate(string $pdfPath): ValidationReport
     {
         $this->guardPdf($pdfPath, PdfLimits::MAX_BYTES + PdfLimits::FINISHED_FILE_SLACK_BYTES);
@@ -458,9 +532,9 @@ final class SidecarPdfEngine implements PdfEngine
     private function run(string $work, string $operation, #[SensitiveParameter] array $params, array $inputs, ?int $timeout = null, array &$copied = []): array
     {
         foreach ($inputs as $key => [$source, $name]) {
-            $copied[$key] = $this->copyIn($source, $work.DIRECTORY_SEPARATOR.$name, $key === 'input' || $key === 'appendix');
+            $copied[$key] = $this->copyIn($source, $work.DIRECTORY_SEPARATOR.$name, in_array($key, ['input', 'appendix', 'prepared'], true));
 
-            if (in_array($key, ['input', 'appendix'], true)) {
+            if (in_array($key, ['input', 'appendix', 'prepared'], true)) {
                 $params[$key] = $name;
             }
         }

@@ -4,7 +4,7 @@
 openapi: 3.1.0
 info:
   title: 'NONOX API'
-  version: 1.10.0
+  version: 1.11.0
   description: |-
     The public API of NONOX Ekonomisystem, an open-source Swedish bookkeeping system.
 
@@ -16941,10 +16941,12 @@ components:
             - en
         verification:
           type: string
+          description: 'PROVIDER: the recipient signs at an external signing service the company has configured (chosen in the app only; not accepted when sending over the API).'
           enum:
             - NONE
             - EMAIL_CODE
             - ACCESS_CODE
+            - PROVIDER
         locked:
           type: boolean
           description: 'Locked out by failed checks until the sender unlocks the link in NONOX.'

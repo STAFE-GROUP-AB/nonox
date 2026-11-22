@@ -42,6 +42,8 @@ enum SigningEventType: string
     /** Consent to electronic records (gap 7, S4): accepted (version and the text's SHA-256), or refused (version only). */
     case Consented = 'CONSENTED';
     case ConsentRefused = 'CONSENT_REFUSED';
+    /** The signer signed at an external provider (gap 12, S17): the run, the stated level and the certificate's fingerprint. */
+    case ProviderSigned = 'PROVIDER_SIGNED';
 
     /** A step of the signer's own link (the six of ADR-046), not an event of the envelope's chain. */
     public function isSignerStep(): bool
@@ -72,6 +74,7 @@ enum SigningEventType: string
             self::FieldRejected => __('Värden för fält som hör till någon annan togs inte emot'),
             self::Consented => __('Undertecknaren godkände att handlingen skrivs under elektroniskt'),
             self::ConsentRefused => __('Undertecknaren vill inte skriva under elektroniskt'),
+            self::ProviderSigned => __('Undertecknaren skrev under hos en extern tjänst för underskrift'),
         };
     }
 }

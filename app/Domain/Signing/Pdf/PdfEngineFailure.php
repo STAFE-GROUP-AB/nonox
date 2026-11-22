@@ -47,6 +47,9 @@ enum PdfEngineFailure: string
     /** A certificate in the file is revoked by its issuer, so no validation data is written for it (ADR-046 S11). */
     case CertificateRevoked = 'certificate_revoked';
 
+    /** An external signature value does not verify against the signer's certificate and the prepared digest (ADR-046 S17). */
+    case SignatureInvalid = 'signature_invalid';
+
     /** A seal level this engine does not make yet. */
     case UnsupportedLevel = 'unsupported_level';
 
@@ -85,6 +88,7 @@ enum PdfEngineFailure: string
             self::TimestampUnavailable => __('Ingen tidsstämpelserver svarade.'),
             self::ValidationDataUnavailable => __('Valideringsdata för certifikaten gick inte att hämta.'),
             self::CertificateRevoked => __('Ett certifikat i filen är spärrat av sin utfärdare, så valideringsdata läggs inte till.'),
+            self::SignatureInvalid => __('Underskriften från tjänsten stämmer inte med dokumentet.'),
             self::UnsupportedLevel => __('Den förseglingsnivån stöds inte ännu.'),
             self::NotIncremental => __('PDF-motorn ändrade originalet i stället för att lägga till en ny version, och resultatet kastades.'),
             self::Memory => __('PDF-motorn fick slut på minne.'),

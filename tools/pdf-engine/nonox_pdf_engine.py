@@ -43,6 +43,15 @@
 # sign.validation.generic_cms.extract_tst_data_iter, sign._session_scope.run_and_release,
 # PdfTimeStamper.async_timestamp_pdf(validation_context=...), and
 # pyhanko_certvalidator.fetchers.aiohttp_fetchers.AIOHttpFetcherBackend(session, limits=FetchLimits).
+#
+# External signatures (ADR-046 S17, a signing provider), pyHanko's interrupted
+# signing, read in the installed pyHanko 0.38.1: sign.signers.ExternalSigner
+# (a fixed signature value), PdfSigner.async_digest_doc_for_signing (returns a
+# PreparedByteRangeDigest with document_digest, reserved_region_start and
+# reserved_region_end), Signer.signed_attrs(data_digest, 'sha256',
+# use_pades=True), Signer.async_sign_prescribed_attributes (signs
+# signed_attrs.dump()), and PdfTBSDocument.async_finish_signing(output,
+# prepared_digest, signature_cms).
 
 import base64
 import hashlib
@@ -64,6 +73,8 @@ OPERATIONS = (
     'timestamp',
     'add_validation_data',
     'archive_timestamp',
+    'prepare_external_signature',
+    'finish_external_signature',
     'validate',
 )
 FONT_FILES = {
@@ -73,6 +84,12 @@ FONT_FILES = {
     'cjk-bold': 'NotoSansCJKsc-Bold.otf',
 }
 SEAL_LEVELS = ('B_B', 'B_T')
+EXTERNAL_MECHANISMS = ('sha256_rsa', 'sha256_ecdsa')
+MAX_EXTERNAL_CERTIFICATES = 10
+MAX_CERTIFICATE_BYTES = 16 * 1024
+MAX_SIGNATURE_BYTES = 2048
+# The placeholder signature value used to size the signature container: larger than any RSA-8192 or ECDSA value.
+EXTERNAL_PLACEHOLDER_BYTES = 1100
 # Actions that send data out of the document or open another file or resource.
 EXTERNAL_ACTIONS = ('/SubmitForm', '/ImportData', '/GoToR', '/GoToE')
 # The certificate pages appended to a finished file may take it past max_pages by this much.
@@ -1061,6 +1078,194 @@ def op_archive_timestamp(request):
         }
 
     raise EngineError('timestamp_unavailable', f'no timestamp server answered ({type(last_error).__name__})')
+
+
+def external_certificates(request):
+    from asn1crypto import x509
+
+    values = request.get('certificates')
+    if not isinstance(values, list) or not 1 <= len(values) <= MAX_EXTERNAL_CERTIFICATES:
+        raise EngineError('invalid_request', 'certificates must list one to ten certificates')
+    certificates = []
+    for value in values:
+        if not isinstance(value, str):
+            raise EngineError('invalid_request', 'a certificate must be base64')
+        try:
+            der = base64.b64decode(value, validate=True)
+        except ValueError:
+            raise EngineError('invalid_request', 'a certificate is not base64')
+        if not der or len(der) > MAX_CERTIFICATE_BYTES:
+            raise EngineError('invalid_request', 'a certificate is too large')
+        try:
+            certificate = x509.Certificate.load(der)
+            certificate.native  # parses the whole structure now, not later
+        except Exception:
+            raise EngineError('bad_credentials', 'a certificate could not be read')
+        certificates.append(certificate)
+    return certificates
+
+
+def external_signer(request, signature_value):
+    from asn1crypto import algos
+    from pyhanko.sign import signers
+    from pyhanko_certvalidator.registry import SimpleCertificateStore
+
+    mechanism = request.get('signature_mechanism')
+    if mechanism not in EXTERNAL_MECHANISMS:
+        raise EngineError('invalid_request', 'unsupported signature mechanism')
+    certificates = external_certificates(request)
+    signer = signers.ExternalSigner(
+        certificates[0],
+        SimpleCertificateStore.from_certs(certificates),
+        signature_value=signature_value,
+        signature_mechanism=algos.SignedDigestAlgorithm({'algorithm': mechanism}),
+    )
+    return signer, certificates
+
+
+def op_prepare_external_signature(request):
+    """ADR-046 S17, step one: an empty PAdES signature for the signer's certificate, and the digest to be signed."""
+    import asyncio
+
+    from pyhanko.sign import fields, signers
+
+    base = work_dir(request)
+    caps = limits(request)
+    source = inside(base, request.get('input'), True)
+    target = inside(base, request.get('output'), False)
+    data = read_pdf_bytes(source, caps['max_bytes'] + 10 * 1024 * 1024)
+
+    if page_count_of(writer_for(data)) > caps['max_pages'] + APPENDED_PAGES_ALLOWANCE:
+        raise EngineError('too_many_pages', 'the PDF has more pages than the limit')
+
+    signer, certificates = external_signer(request, EXTERNAL_PLACEHOLDER_BYTES)
+    meta = signers.PdfSignatureMetadata(
+        field_name=string_param(request, 'field_name', 60),
+        md_algorithm='sha256',
+        subfilter=fields.SigSeedSubFilter.PADES,
+        reason=string_param(request, 'reason', 200, required=False),
+    )
+
+    async def prepare():
+        output = io.BytesIO()
+        prepared, _, output = await signers.PdfSigner(meta, signer=signer).async_digest_doc_for_signing(writer_for(data), output=output)
+        attributes = await signer.signed_attrs(prepared.document_digest, 'sha256', use_pades=True)
+        return prepared, output.getvalue(), attributes.dump()
+
+    try:
+        prepared, written, attributes = asyncio.run(prepare())
+    except EngineError:
+        raise
+    except Exception:
+        raise EngineError('failed', 'the PDF could not be prepared for signing')
+
+    with open(target, 'wb') as handle:
+        handle.write(written)
+    written = ensure_incremental(data, target)
+
+    return {
+        'output': target,
+        'bytes': len(written),
+        'sha256': sha256(written),
+        'certificate_sha256': hashlib.sha256(certificates[0].dump()).hexdigest(),
+        'prepared': {
+            'digest': base64.b64encode(hashlib.sha256(attributes).digest()).decode(),
+            'document_digest': prepared.document_digest.hex(),
+            'reserved_start': prepared.reserved_region_start,
+            'reserved_end': prepared.reserved_region_end,
+            'signed_attributes': base64.b64encode(attributes).decode(),
+        },
+    }
+
+
+def verify_external_value(certificate, mechanism, digest, signature):
+    """The provider's value must verify against the certificate's key over exactly the prepared digest."""
+    from cryptography import x509 as cx509
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.asymmetric import ec, padding, rsa
+    from cryptography.hazmat.primitives.asymmetric.utils import Prehashed
+
+    key = cx509.load_der_x509_certificate(certificate.dump()).public_key()
+    try:
+        if mechanism == 'sha256_rsa' and isinstance(key, rsa.RSAPublicKey):
+            key.verify(signature, digest, padding.PKCS1v15(), Prehashed(hashes.SHA256()))
+        elif mechanism == 'sha256_ecdsa' and isinstance(key, ec.EllipticCurvePublicKey):
+            key.verify(signature, digest, ec.ECDSA(Prehashed(hashes.SHA256())))
+        else:
+            raise EngineError('signature_invalid', 'the key does not match the signature mechanism')
+    except InvalidSignature:
+        raise EngineError('signature_invalid', 'the signature does not verify')
+
+
+def op_finish_external_signature(request):
+    """ADR-046 S17, step two: the provider's value, checked, put into the placeholder of the prepared file."""
+    import asyncio
+
+    from asn1crypto import cms
+    from pyhanko.sign.signers.pdf_byterange import PreparedByteRangeDigest
+    from pyhanko.sign.signers.pdf_signer import PdfTBSDocument
+
+    base = work_dir(request)
+    caps = limits(request)
+    source = inside(base, request.get('input'), True)
+    prepared_path = inside(base, request.get('prepared'), True)
+    target = inside(base, request.get('output'), False)
+    original = read_pdf_bytes(source, caps['max_bytes'] + 10 * 1024 * 1024)
+    prepared = read_pdf_bytes(prepared_path, caps['max_bytes'] + 10 * 1024 * 1024)
+
+    if request.get('prepared_sha256') != sha256(prepared) or not prepared.startswith(original):
+        raise EngineError('not_incremental', 'the prepared file is not the one that was prepared')
+
+    try:
+        signature = base64.b64decode(str(request.get('signature', '')), validate=True)
+        attributes_der = base64.b64decode(str(request.get('signed_attributes', '')), validate=True)
+        document_digest = bytes.fromhex(str(request.get('document_digest', '')))
+    except ValueError:
+        raise EngineError('invalid_request', 'the prepared state is not valid')
+    if not signature or len(signature) > MAX_SIGNATURE_BYTES or not attributes_der or len(document_digest) != 32:
+        raise EngineError('invalid_request', 'the prepared state is not valid')
+
+    start = request.get('reserved_start')
+    end = request.get('reserved_end')
+    if not isinstance(start, int) or not isinstance(end, int) or not len(original) <= start < end <= len(prepared):
+        raise EngineError('invalid_request', 'the placeholder is outside the prepared revision')
+    if prepared[start:start + 1] != b'<' or prepared[end - 1:end] != b'>':
+        raise EngineError('invalid_request', 'the placeholder is not where the state says')
+    if hashlib.sha256(prepared[:start] + prepared[end:]).digest() != document_digest:
+        raise EngineError('not_incremental', 'the prepared file does not match its digest')
+
+    signer, certificates = external_signer(request, signature)
+    attributes = cms.CMSAttributes.load(attributes_der)
+    message_digest = [attribute['values'][0].native for attribute in attributes if attribute['type'].native == 'message_digest']
+    if message_digest != [document_digest]:
+        raise EngineError('invalid_request', 'the signed attributes do not name the prepared digest')
+
+    verify_external_value(certificates[0], request.get('signature_mechanism'), hashlib.sha256(attributes_der).digest(), signature)
+
+    async def finish():
+        content = await signer.async_sign_prescribed_attributes('sha256', signed_attrs=attributes)
+        output = io.BytesIO(prepared)
+        await PdfTBSDocument.async_finish_signing(output, PreparedByteRangeDigest(document_digest, start, end), content)
+        return output.getvalue()
+
+    try:
+        written = asyncio.run(finish())
+    except EngineError:
+        raise
+    except Exception:
+        raise EngineError('failed', 'the signature could not be put into the PDF')
+
+    with open(target, 'wb') as handle:
+        handle.write(written)
+    written = ensure_incremental(original, target)
+
+    return {
+        'output': target,
+        'bytes': len(written),
+        'sha256': sha256(written),
+        'certificate_sha256': hashlib.sha256(certificates[0].dump()).hexdigest(),
+    }
 
 
 def op_validate(request):

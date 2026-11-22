@@ -9,6 +9,7 @@ use App\Domain\Signing\Chain\SigningChain;
 use App\Domain\Signing\CompletionLinks;
 use App\Domain\Signing\EnvelopeStatus;
 use App\Domain\Signing\Fields\SigningFields;
+use App\Domain\Signing\Providers\ProviderRegistry;
 use App\Domain\Signing\RestrictsEnvelopes;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
@@ -27,6 +28,7 @@ use App\Models\Company;
 use App\Models\SalesDocument;
 use App\Models\SigningCopyRecipient;
 use App\Models\SigningEnvelope;
+use App\Models\SigningProvider;
 use App\Models\SigningRequest;
 use App\Models\User;
 use App\Modules\Crm\CrmModule;
@@ -114,19 +116,20 @@ final class SendForSigning
             'reminder_days' => ['nullable'],
             'create_invoice' => ['sometimes', 'boolean'],
             'deal_id' => ['nullable', 'integer'],
-            'verification' => ['nullable', 'string', 'in:'.self::checkValues()],
+            'verification' => ['nullable', 'string', 'regex:'.self::CHECK_PATTERN],
             'access_code' => ['nullable', 'string'],
             'language' => ['nullable', 'string', 'in:sv,en'],
         ], [], ['email' => __('e-post'), 'expires_on' => __('sista dag att signera'), 'verification' => __('kontroll av undertecknaren')])->validate();
 
         // Hashed before the transaction (bcrypt is slow on purpose); the plain code is never stored or logged.
-        $check = SignerCheck::from((string) ($validated['verification'] ?? SignerCheck::None->value));
+        [$check, $providerId] = self::check($company, $validated['verification'] ?? null, 'verification');
         $accessCode = $check === SignerCheck::AccessCode ? SignerChecks::hashAccessCode($input['access_code'] ?? null, 'access_code') : null;
 
         $today = CarbonImmutable::now(self::ZONE)->startOfDay();
         $expires = $this->expiry($document, $validated['expires_on'] ?? null, $today);
         $reminders = $this->reminders($validated);
         $fields = SigningFields::validate(is_array($input['fields'] ?? null) ? $input['fields'] : [], 1);
+        self::refuseProviderFields($fields, [$check]);
         // Fields need the page sizes: the PDF is made and measured now, before the quota and the transaction.
         $measured = $fields === [] ? null : CurrentCompany::run($company, fn (): array => $this->fields->measure($document, $fields));
 
@@ -134,7 +137,7 @@ final class SendForSigning
 
         $token = SigningToken::generate();
 
-        $request = DB::transaction(fn (): SigningRequest => CurrentCompany::run($company, function () use ($user, $company, $document, $validated, $expires, $token, $reminders, $check, $accessCode, $fields, $measured): SigningRequest {
+        $request = DB::transaction(fn (): SigningRequest => CurrentCompany::run($company, function () use ($user, $company, $document, $validated, $expires, $token, $reminders, $check, $providerId, $accessCode, $fields, $measured): SigningRequest {
             $document = $this->lockOpenDocument($document);
             $dealId = $this->deal($document, $validated['deal_id'] ?? null);
 
@@ -158,13 +161,14 @@ final class SendForSigning
                 'sent_by' => $user->id,
                 'verification' => $check->value,
                 'access_code_hash' => $accessCode,
+                'signing_provider_id' => $providerId,
                 'language' => (string) ($validated['language'] ?? 'sv'),
             ]);
 
             // Fields are placed before the envelope's first event; the trigger freezes them from then on.
             $this->fields->place($envelope, [$request], $fields, $measured);
 
-            $this->chain->record($request, SigningEventType::Sent, $user->id, payload: $check->required() ? ['verification' => $check->value] : null);
+            $this->chain->record($request, SigningEventType::Sent, $user->id, payload: $check !== SignerCheck::None ? ['verification' => $check->value] : null);
             Audit::record('crm.signing_sent', $request, ['signing_request_id' => $request->id, 'document_type' => $request->document_type, 'sales_document_id' => $request->sales_document_id, 'agreement_id' => $request->agreement_id, 'signable_id' => $request->signable_id, 'deal_id' => $dealId, 'verification' => $check->value], $company, $user);
 
             return $request;
@@ -207,13 +211,14 @@ final class SendForSigning
 
         $signerInput = array_values(array_filter((array) $validated['signers'], is_array(...)));
         $copyInput = array_values(array_filter((array) ($validated['copies'] ?? []), is_array(...)));
-        $signers = collect($signerInput)->map(function (array $signer, int $index): array {
-            $check = SignerCheck::from((string) ($signer['verification'] ?? SignerCheck::None->value));
+        $signers = collect($signerInput)->map(function (array $signer, int $index) use ($company): array {
+            [$check, $providerId] = self::check($company, $signer['verification'] ?? null, "signers.{$index}.verification");
 
             return [
                 'email' => mb_strtolower(trim((string) $signer['email'])),
                 'step' => (int) $signer['step'],
                 'verification' => $check->value,
+                'signing_provider_id' => $providerId,
                 'language' => (string) ($signer['language'] ?? 'sv') === 'en' ? 'en' : 'sv',
                 // Hashed before the transaction; the plain code is never stored or logged.
                 'access_code_hash' => $check === SignerCheck::AccessCode ? SignerChecks::hashAccessCode($signer['access_code'] ?? null, "signers.{$index}.access_code") : null,
@@ -228,6 +233,7 @@ final class SendForSigning
         $reminders = $this->reminders($validated);
         $first = (int) $signers->min('step');
         $fields = SigningFields::validate(is_array($input['fields'] ?? null) ? $input['fields'] : [], $signers->count());
+        self::refuseProviderFields($fields, array_values($signers->map(fn (array $signer): SignerCheck => SignerCheck::from($signer['verification']))->all()));
         $measured = $fields === [] ? null : CurrentCompany::run($company, fn (): array => $this->fields->measure($document, $fields));
 
         foreach (range(1, $signers->where('step', $first)->count() + ($notify ? $copies->count() : 0)) as $ignored) {
@@ -273,6 +279,7 @@ final class SendForSigning
                     'verification' => $signer['verification'],
                     'language' => $signer['language'],
                     'access_code_hash' => $signer['access_code_hash'],
+                    'signing_provider_id' => $signer['signing_provider_id'],
                 ]);
 
                 $created[] = $request;
@@ -384,10 +391,61 @@ final class SendForSigning
         }
     }
 
-    /** The signer checks a sender may choose (ADR-046 amendment, gap 3), for the in: rule. */
-    private static function checkValues(): string
+    /**
+     * A signer check as a sender chooses it (ADR-046 amendment, gap 3): NONE, EMAIL_CODE, ACCESS_CODE, or
+     * PROVIDER:<id> for signing at one of the company's external providers (gap 12, S17).
+     */
+    public const string CHECK_PATTERN = '/^(NONE|EMAIL_CODE|ACCESS_CODE|PROVIDER:[1-9][0-9]{0,18})$/';
+
+    /**
+     * The check and, for PROVIDER:<id>, the provider: an active configuration of this company, while external
+     * signing can be used on this installation (the /hq switch and the PDF engine). Another company's id is
+     * refused like an unknown one.
+     *
+     * @return array{0: SignerCheck, 1: ?int}
+     *
+     * @throws ValidationException
+     */
+    public static function check(Company $company, mixed $value, string $attribute): array
     {
-        return implode(',', array_map(fn (SignerCheck $check): string => $check->value, SignerCheck::choosable()));
+        $value = is_string($value) && $value !== '' ? $value : SignerCheck::None->value;
+
+        if (! str_starts_with($value, SignerCheck::Provider->value.':')) {
+            $check = SignerCheck::tryFrom($value);
+
+            if ($check === null || ! in_array($check, SignerCheck::choosable(), true)) {
+                throw ValidationException::withMessages([$attribute => __('Välj en kontroll av undertecknaren.')]);
+            }
+
+            return [$check, null];
+        }
+
+        $id = (int) substr($value, strlen(SignerCheck::Provider->value) + 1);
+        $usable = CurrentCompany::run($company, fn (): bool => in_array($id, array_map(fn (SigningProvider $provider): int => $provider->id, ProviderRegistry::choosable()), true));
+
+        if (! $usable) {
+            throw ValidationException::withMessages([$attribute => __('Den tjänsten för underskrift kan inte användas just nu. Välj en annan kontroll.')]);
+        }
+
+        return [SignerCheck::Provider, $id];
+    }
+
+    /**
+     * A signer who signs at a provider has no fields of their own: their PAdES signature is the last thing in
+     * their revision (ADR-046 S17).
+     *
+     * @param  list<array<string, mixed>>  $fields  from SigningFields::validate
+     * @param  list<SignerCheck>  $checks  per signer, in the order the fields name them
+     *
+     * @throws ValidationException
+     */
+    private static function refuseProviderFields(array $fields, array $checks): void
+    {
+        foreach ($fields as $field) {
+            if (($checks[(int) ($field['signer'] ?? -1)] ?? null) === SignerCheck::Provider) {
+                throw ValidationException::withMessages(['fields' => __('En undertecknare som skriver under hos en extern tjänst kan inte ha egna fält i dokumentet. Ta bort fälten eller välj en annan kontroll.')]);
+            }
+        }
     }
 
     /** The document's module (when it has one) must be on in the company. */
@@ -431,7 +489,7 @@ final class SendForSigning
             'signers' => ['required', 'array', 'min:'.$minSigners, 'max:'.SigningEnvelope::MAX_SIGNERS],
             'signers.*.email' => ['required', 'email', 'max:255'],
             'signers.*.step' => ['required', 'integer', 'min:1', 'max:'.SigningEnvelope::MAX_STEP],
-            'signers.*.verification' => ['nullable', 'string', 'in:'.self::checkValues()],
+            'signers.*.verification' => ['nullable', 'string', 'regex:'.self::CHECK_PATTERN],
             'signers.*.access_code' => ['nullable', 'string'],
             'signers.*.language' => ['nullable', 'string', 'in:sv,en'],
             'copies' => ['nullable', 'array', 'max:'.SigningEnvelope::MAX_COPIES],

@@ -263,6 +263,46 @@ final class FakePdfEngine implements PdfEngine
         return $facts;
     }
 
+    public function prepareExternalSignature(string $pdfPath, string $outputPath, ExternalSignatureRequest $request): PreparedSignature
+    {
+        $file = $this->append('prepare', $pdfPath, $outputPath, $request->fieldName);
+        $certificate = hash('sha256', $request->certificates[0]);
+        $documentDigest = hash('sha256', (string) file_get_contents($outputPath), true);
+        $attributes = 'fake-signed-attributes:'.bin2hex($documentDigest).':'.$certificate;
+
+        return new PreparedSignature($outputPath, $file->bytes, $file->sha256, hash('sha256', $attributes, true), $documentDigest, 0, 0, $attributes, $request->algorithm, $certificate);
+    }
+
+    /**
+     * The signature is checked as the helper does: for RSA it must be PKCS#1 v1.5 over the SHA-256 DigestInfo of the
+     * prepared digest, made with the certificate's key.
+     */
+    public function finishExternalSignature(string $pdfPath, PreparedSignature $prepared, ExternalSignatureRequest $request, string $signature, string $outputPath): PdfFileResult
+    {
+        $bytes = $this->read('finish_external_signature', $prepared->path, PdfLimits::MAX_BYTES + PdfLimits::FINISHED_FILE_SLACK_BYTES);
+        $original = (string) file_get_contents($pdfPath);
+
+        if (! str_starts_with($bytes, $original) || ! hash_equals($prepared->sha256, hash('sha256', $bytes))) {
+            throw new PdfEngineException(PdfEngineFailure::NotIncremental);
+        }
+
+        $certificate = "-----BEGIN CERTIFICATE-----\n".chunk_split(base64_encode($request->certificates[0]), 64, "\n")."-----END CERTIFICATE-----\n";
+        $decrypted = '';
+
+        if ($request->algorithm === 'sha256_rsa' && (! @openssl_public_decrypt($signature, $decrypted, $certificate, OPENSSL_PKCS1_PADDING) || ! str_ends_with((string) $decrypted, $prepared->digest))) {
+            throw new PdfEngineException(PdfEngineFailure::SignatureInvalid);
+        }
+
+        if (file_exists($outputPath)) {
+            throw new InvalidArgumentException('The output file already exists.');
+        }
+
+        $written = $bytes."\n% nonox-fake-signer {$request->fieldName} {$prepared->certificateSha256}\n%%EOF\n";
+        file_put_contents($outputPath, $written);
+
+        return new PdfFileResult($outputPath, strlen($written), hash('sha256', $written));
+    }
+
     public function validate(string $pdfPath): ValidationReport
     {
         $bytes = $this->read('validate', $pdfPath, PdfLimits::MAX_BYTES + PdfLimits::FINISHED_FILE_SLACK_BYTES);
@@ -274,6 +314,12 @@ final class FakePdfEngine implements PdfEngine
             for ($index = 1; $index <= $count; $index++) {
                 $signatures[] = ['field' => "Fake{$marker}{$index}", 'type' => $type, 'intact' => true, 'valid' => true, 'coverage' => 'ENTIRE_FILE', 'has_signature_timestamp' => false, 'certificate_sha256' => null];
             }
+        }
+
+        preg_match_all('/% nonox-fake-signer (\S+) ([0-9a-f]{64})\n/', $bytes, $matches, PREG_SET_ORDER);
+
+        foreach ($matches as $match) {
+            $signatures[] = ['field' => $match[1], 'type' => 'signature', 'intact' => true, 'valid' => true, 'coverage' => 'ENTIRE_REVISION', 'has_signature_timestamp' => false, 'certificate_sha256' => $match[2]];
         }
 
         return new ValidationReport(hash('sha256', $bytes), max(1, substr_count($bytes, '%%EOF')), $signatures);

@@ -15,6 +15,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * One link sent for signing (ADR-046): a quote, an agreement or any other
@@ -68,6 +69,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?int $portal_contact_id
  * @property SignerCheck $verification the check before the document is shown (ADR-046 amendment, gap 3)
  * @property ?string $access_code_hash Hash::make of the sender's access code; never shown or returned
+ * @property ?int $signing_provider_id the provider a PROVIDER signer signs with (ADR-046 S17), fixed from the insert
  * @property ?CarbonImmutable $verified_at the latest passed check
  * @property string $language sv or en: the language of the signer's mails (ADR-046 S13)
  * @property int $verification_failures
@@ -122,6 +124,7 @@ class SigningRequest extends Model
         'verification',
         'language',
         'access_code_hash',
+        'signing_provider_id',
     ];
 
     /** @var array<string, mixed> */
@@ -206,6 +209,18 @@ class SigningRequest extends Model
     public function envelope(): BelongsTo
     {
         return $this->belongsTo(SigningEnvelope::class, 'envelope_id');
+    }
+
+    /** @return BelongsTo<SigningProvider, $this> the provider a PROVIDER signer signs with (ADR-046 S17) */
+    public function signingProvider(): BelongsTo
+    {
+        return $this->belongsTo(SigningProvider::class, 'signing_provider_id');
+    }
+
+    /** @return HasOne<SigningProviderSession, $this> the finished provider signature of this signer (ADR-046 S17) */
+    public function providerSignature(): HasOne
+    {
+        return $this->hasOne(SigningProviderSession::class, 'signing_request_id')->where('step', SigningProviderSession::DONE);
     }
 
     /** @return HasMany<SigningLinkToken, $this> */

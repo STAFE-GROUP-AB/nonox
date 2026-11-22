@@ -6,10 +6,12 @@ namespace App\Http\Controllers\Signing;
 
 use App\Actions\Signing\RecordSigningConsent;
 use App\Actions\Signing\SignAtLink;
+use App\Actions\Signing\SignWithProvider;
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Signing\Fields\PageImages;
 use App\Domain\Signing\Fields\SignerFields;
 use App\Domain\Signing\Fields\SigningFields;
+use App\Domain\Signing\Providers\ProviderRegistry;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SigningConsent;
 use App\Domain\Signing\SigningEnvelopes;
@@ -23,6 +25,7 @@ use App\Models\Company;
 use App\Models\SalesDocument;
 use App\Models\SigningDocumentVersion;
 use App\Models\SigningField;
+use App\Models\SigningProvider;
 use App\Models\SigningRequest;
 use App\Models\SigningVerificationCode;
 use App\Support\Branding\Brand;
@@ -309,6 +312,70 @@ final class SigningPageController
         return $this->unavailable(SigningUnavailable::SIGNED, 200, $request->refresh(), signedNow: true);
     }
 
+    /**
+     * "Fortsätt till …" for a signer who signs at an external provider (ADR-046 S17): the form is checked as a
+     * signature would be, then the browser goes to the provider. Nothing is signed here.
+     */
+    public function startProvider(Request $http, string $token, SignWithProvider $provider): Response|RedirectResponse
+    {
+        $request = $this->links->find($token);
+
+        if (! $request instanceof SigningRequest) {
+            return $this->unavailable(SigningUnavailable::GONE, 404);
+        }
+
+        if (! SignerPass::has($http->session(), $request, $token)) {
+            return $this->checkExpired($request, $token);
+        }
+
+        try {
+            $started = $provider->begin($request, $token, $http->only(['name', 'title', 'accept', 'method', 'signature', 'typed_signature', 'document_sha256', 'acceptance_text', 'acceptance_mac', 'revision_sha256']), $http->session());
+        } catch (SigningUnavailable $unavailable) {
+            if ($unavailable->reason === SigningUnavailable::CHANGED) {
+                $this->links->revokeStale($request);
+            }
+
+            return $this->unavailable($unavailable->reason, 410, $request);
+        } catch (ValidationException $exception) {
+            return redirect()->route('signing.show', ['token' => $token])
+                ->withErrors($exception->errors())
+                ->withInput($http->except(['signature', 'initials', '_token']));
+        }
+
+        // The provider's own page, an https address outside NONOX: a plain navigation from an interim page, since the
+        // signing pages allow a form to post to NONOX only (form-action 'self' applies to a redirect after a post).
+        return $this->private(response()->view('signing.provider-redirect', ['url' => $started['url'], 'provider' => $started['provider']]), page: true);
+    }
+
+    /** Where a provider sends the browser back (ADR-046 S17): the next step at the provider, or the signing page. */
+    public function providerCallback(Request $http, SignWithProvider $provider): Response|RedirectResponse
+    {
+        try {
+            $next = $provider->callback($http->query(), $http->session(), $http->ip(), $http->userAgent());
+        } catch (SigningUnavailable $unavailable) {
+            return $this->unavailable($unavailable->reason, 410);
+        }
+
+        if ($next['redirect'] !== '') {
+            return redirect()->away($next['redirect']);
+        }
+
+        if ($next['token'] === null) {
+            // An unknown or used state: nothing about any document is shown.
+            return $this->unavailable(SigningUnavailable::GONE, 410);
+        }
+
+        if ($next['signed']) {
+            $request = $this->links->find($next['token']);
+
+            return $request instanceof SigningRequest
+                ? $this->unavailable(SigningUnavailable::SIGNED, 200, $request->refresh(), signedNow: true)
+                : redirect()->route('signing.show', ['token' => $next['token']]);
+        }
+
+        return redirect()->route('signing.show', ['token' => $next['token']])->withErrors(['provider' => (string) $next['error']]);
+    }
+
     public function decline(Request $http, string $token): Response|RedirectResponse
     {
         $request = $this->links->find($token);
@@ -449,9 +516,31 @@ final class SigningPageController
                 'several' => SigningEnvelopes::hasSeveralSigners($request->envelope_id),
                 // Fields in the PDF (ADR-046 S6): null for an envelope without fields, whose page is as it always was.
                 'fields' => SignerFields::for($request, $this->images),
+                // Signing at an external provider (ADR-046 S17): its name, the level the company states for it, and whether it can be used now.
+                'provider' => $this->providerFor($request),
                 'vat' => $quote instanceof SalesDocument ? InvoiceCalculator::totals($quote->rows->map(fn ($row): array => ['net' => $row->net_ore->ore, 'vat_rate' => $row->vat_rate])->all()) : null,
             ]), page: true);
         });
+    }
+
+    /** @return ?array{name: string, claim: string, usable: bool} */
+    private function providerFor(SigningRequest $request): ?array
+    {
+        if ($request->verification !== SignerCheck::Provider || $request->signing_provider_id === null) {
+            return null;
+        }
+
+        $provider = SigningProvider::query()->find($request->signing_provider_id);
+
+        if (! $provider instanceof SigningProvider) {
+            return null;
+        }
+
+        return [
+            'name' => $provider->name,
+            'claim' => $provider->claimed_level->claim($provider->name),
+            'usable' => $provider->retired_at === null && ProviderRegistry::usable() && in_array($provider->driver, ProviderRegistry::keys(), true),
+        ];
     }
 
     private function hasFields(SigningRequest $request): bool

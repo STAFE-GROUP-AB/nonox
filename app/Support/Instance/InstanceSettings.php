@@ -31,6 +31,10 @@ use Illuminate\Support\Facades\Schema;
  * - signing.seal_enabled: whether finished signed documents are sealed with
  *   PAdES (ADR-046 S10). Off by default, and off on the hosted service until
  *   the eIDAS trust-service question is answered.
+ * - signing.providers_enabled: whether a signer can be sent to an external
+ *   signing provider (ADR-046 S17). Off by default, and off on the hosted
+ *   service until a provider is contracted and gap 12's legal items are
+ *   answered.
  */
 final class InstanceSettings
 {
@@ -62,6 +66,13 @@ final class InstanceSettings
      */
     public const string SIGNING_VERIFY_ENABLED = 'signing.verify_enabled';
 
+    /**
+     * Signers can be sent to an external signing provider (ADR-046 S17, a CSC API v2 service). Off by default: the
+     * hosted service keeps it off until the operator company has a provider agreement and the legal items of gap 12
+     * are answered (owner decision 2026-11-18, as for sealing).
+     */
+    public const string SIGNING_PROVIDERS_ENABLED = 'signing.providers_enabled';
+
     /** @var array<string, mixed> the defaults, which are also the only keys */
     public const array DEFAULTS = [
         self::OPERATOR => null,
@@ -73,6 +84,7 @@ final class InstanceSettings
         self::STRIPE_ENABLED => false,
         self::SIGNING_SEAL_ENABLED => false,
         self::SIGNING_VERIFY_ENABLED => false,
+        self::SIGNING_PROVIDERS_ENABLED => false,
     ];
 
     /** @var ?array<string, mixed> */
@@ -167,6 +179,12 @@ final class InstanceSettings
     public function signingVerifyEnabled(): bool
     {
         return (bool) $this->get(self::SIGNING_VERIFY_ENABLED);
+    }
+
+    /** Whether signers can be sent to an external signing provider on this installation (ADR-046 S17). */
+    public function signingProvidersEnabled(): bool
+    {
+        return (bool) $this->get(self::SIGNING_PROVIDERS_ENABLED);
     }
 
     /** Whether strangers may try NONOX on a demo company (ADR-077). */

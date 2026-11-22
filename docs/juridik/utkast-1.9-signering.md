@@ -96,11 +96,34 @@ betrodda tjänster enligt eIDAS. Sidan är avstängd för varje företag tills f
 De gällande texterna i `docs/juridik/personuppgiftsbitradesavtal.md` och `integritetspolicyn` ändras inte
 före versionsbytet; en ändring kräver höjd `LegalPageController::VERSION`.
 
+## C3. Underskrift hos extern tjänst (ADR-046 tillägg, lucka 12, paket S17)
+
+Gäller först när funktionen slås på i den driftade tjänsten, vilket väntar på ett avtal med en tjänst
+och på svaren om avancerade och kvalificerade underskrifter. Vid egen drift slår den som driver
+installationen på den själv.
+
+**Personuppgiftsbiträdesavtalet, avsnitt 1 (Behandlingen), ny mening efter signeringen:**
+
+> Med underskrift hos en extern tjänst som den personuppgiftsansvarige har valt och har avtal med:
+> att skicka undertecknaren till tjänsten, att skicka tjänsten en kontrollsumma som räknats fram ur
+> dokumentet, att lägga in tjänstens underskrift och undertecknarens certifikat i det signerade
+> dokumentet och att spara certifikatets namn, utfärdare, serienummer och giltighetstid som bevis.
+
+**Integritetspolicyn, ny mening i avsnittet om när {foretag} är personuppgiftsbiträde:**
+
+> Skriver du under hos en extern tjänst för underskrift som avsändaren använder, loggar du in hos
+> tjänsten och skriver under där enligt tjänstens egna villkor. Ditt certifikat, med de uppgifter
+> tjänsten har lagt i det, läggs in i det signerade dokumentet som alla mottagare får.
+
 ## D. Underbiträden
 
 Ingen ändring i version 1.9. En tidsstämpeltjänst (lucka 5) får bara en kontrollsumma av
 dokumentet och inga personuppgifter. En signeringstjänst som får undertecknarens identitet
 (lucka 12, till exempel BankID) ska namnges i `docs/juridik/underbitraden.md` innan den slås på.
+Med paket S17 lägger företaget själv in tjänsten och har eget avtal med den; tjänsten är då en
+mottagare som företaget har valt och inte driftbolagets underbiträde. Sluter driftbolaget i stället
+avtalet (ägarbeslut 2 och 17 i ADR-046-tillägget: avgifter via NONOX Connect) ska tjänsten namnges
+där innan funktionen slås på i den driftade tjänsten.
 
 ## E. Användarvillkoren (läggs till vid versionsbytet, ändra inte de gällande villkoren förrän då)
 
@@ -131,3 +154,8 @@ Ny mening i avsnittet om tillåten användning:
 - TODO(legal-verify): om kontrollsidan är en tjänst för validering som är en betrodd tjänst enligt
   eIDAS artikel 3.16 i lydelsen enligt förordning (EU) 2024/1183 (se också artikel 3.41); verifiera
   punkten mot den konsoliderade texten.
+- TODO(legal-verify): om en tjänst för underskrift (CSC API v2) som företaget själv har avtal med är
+  företagets personuppgiftsbiträde eller självständigt personuppgiftsansvarig, och vad som gäller
+  om driftbolaget sluter avtalet och tar betalt via NONOX Connect (underbiträde, eller förmedling).
+- TODO(legal-verify): om meningarna i C3 räcker som information till undertecknaren (artikel 13 och 14),
+  när tjänsten lägger ett personnummer i certifikatet och certifikatet följer med till alla mottagare.

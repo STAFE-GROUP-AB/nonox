@@ -67,6 +67,8 @@ exit is a crash. stderr is not part of the protocol and is never logged.
 | `timestamp` | A document timestamp (RFC 3161) as an incremental update. |
 | `add_validation_data` | Since S11 (protocol 1, additive). Long-term validation, B-LT: a DSS with a VRI entry per signature, holding the certificates, OCSP answers and CRLs for every signature and timestamp in the file, as one incremental update. Optional `fetch_timeout` (1–60 s, default 10). Answers `timestamps`: every timestamp in the written file, oldest first, as `{kind: "signature"\|"document", at, certificate_not_after, md_algorithm}`. Refuses a file without a signature (`invalid_request`); answers `validation_data_unavailable`, or `certificate_revoked` for a certificate its issuer has revoked, and writes nothing when the data cannot be collected. |
 | `archive_timestamp` | Since S11. B-LTA: the validation data of everything in the file (the newest timestamp included), then a document timestamp from the first configured server that answers, as incremental updates. Takes `timestamp_urls`, `timestamp_timeout`, `fetch_timeout` and `md_algorithm` (`sha256`, `sha384` or `sha512`); answers like `add_validation_data`, plus `timestamp_url`. `validation_data_unavailable` or `timestamp_unavailable` when a step cannot be done. |
+| `prepare_external_signature` | Since S17 (protocol 1, additive). Step one of a signature made at a signing provider: an empty PAdES signature (`field_name`, `reason`) for the signer's certificate chain (`certificates`, base64 DER, end entity first, at most 10) and `signature_mechanism` (`sha256_rsa` or `sha256_ecdsa`), as an incremental update, with pyHanko's interrupted signing. Answers `certificate_sha256` and `prepared`: `digest` (base64 SHA-256 of the DER signed attributes, which the provider signs), `document_digest` (hex, over the byte range), `reserved_start`/`reserved_end` (the placeholder) and `signed_attributes` (base64 DER). Makes no network call. |
+| `finish_external_signature` | Since S17. Step two: takes `input` (the file that was prepared, whose bytes the output must start with), `prepared` (the prepared file) with `prepared_sha256`, the state from step one, the same certificates and mechanism, and `signature` (base64 raw value: PKCS#1 v1.5 for RSA, DER for ECDSA). Checks that the prepared file is unchanged and that its byte range still hashes to `document_digest`, that the signed attributes name that digest, and that the value verifies against the certificate's key over `digest` (`signature_invalid` otherwise); then builds the CMS and fills the placeholder. No network. |
 | `validate` | Integrity, cryptographic validity and coverage of every signature and document timestamp, with no trust roots and no network. |
 
 Every writing operation checks before it answers that the output starts with
@@ -213,6 +215,19 @@ before use, and exercised by `PdfEngineRealTest`:
   `PdfTimeStamper.timestamp_pdf(writer, md_algorithm, output=)` is called without a validation
   context; the new timestamp's own validation data is added at the next renewal, the order
   pyHanko's `update_archival_timestamp_chain` uses.
+- Since ADR-046 S17 (read in the installed pyHanko 0.38.1 and exercised by `PdfEngineRealTest`
+  with an RSA key signing the digest outside the helper, as a provider does): `signers.ExternalSigner(signing_cert,
+  cert_registry, signature_value=, signature_mechanism=)` (a fixed value; an int sizes the placeholder),
+  `PdfSigner(meta, signer=).async_digest_doc_for_signing(writer, output=)` returning a
+  `PreparedByteRangeDigest` (`document_digest`, `reserved_region_start`, `reserved_region_end`),
+  `Signer.signed_attrs(document_digest, "sha256", use_pades=True)`,
+  `Signer.async_sign_prescribed_attributes("sha256", signed_attrs=)` (which signs `signed_attrs.dump()`),
+  `PdfTBSDocument.async_finish_signing(output, PreparedByteRangeDigest(...), cms)`;
+  `pyhanko_certvalidator.registry.SimpleCertificateStore.from_certs`; and `cryptography`'s
+  `RSAPublicKey.verify(..., PKCS1v15(), Prehashed(SHA256()))` / `EllipticCurvePublicKey.verify(..., ECDSA(Prehashed(SHA256())))`
+  to check the provider's value before it is embedded. The ECDSA path was exercised only in a
+  scratch run (a raw ECDSA value over the prehashed digest), not in `PdfEngineRealTest` (PHP's OpenSSL
+  cannot sign a prehashed digest with ECDSA).
 
 ### Updating a pin
 

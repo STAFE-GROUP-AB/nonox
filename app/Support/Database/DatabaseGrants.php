@@ -411,6 +411,10 @@ final class DatabaseGrants
         'signing_bulk_sends' => GrantDecision::ReadWrite,
         'signing_bulk_send_rows' => GrantDecision::ReadWrite,
         'signing_link_tokens' => GrantDecision::ReadWrite,
+        // External signing (ADR-046 S17): a run moves forward and is emptied by update (trigger); abandoned runs are pruned, a finished one goes only with its signer.
+        'signing_provider_sessions' => GrantDecision::ReadWrite,
+        // A provider configuration is retired by update (its secret emptied, trigger), never deleted but with the company.
+        'signing_providers' => GrantDecision::NoDelete,
         // Seal certificates (ADR-046 S10): retired by update (the key emptied, trigger), never deleted but with the company.
         'signing_seal_certificates' => GrantDecision::NoDelete,
         // Signer checks (ADR-046 S3): a code row only gains attempts and its verified_at (trigger); it goes with its signer row or company by cascade.

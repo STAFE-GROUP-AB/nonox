@@ -36,6 +36,7 @@
             @if(auth()->user()->hasTeamPermission($team, 'signing:settings'))
                 <livewire:company.signing-seal-settings :company="$team" />
                 <livewire:company.signing-verify-settings :company="$team" />
+                <livewire:company.signing-provider-settings :company="$team" />
             @endif
             @if(auth()->user()->hasTeamPermission($team, 'signing:settings') || auth()->user()->hasTeamPermission($team, 'signing:hold'))
                 <livewire:company.signing-retention-settings :company="$team" />

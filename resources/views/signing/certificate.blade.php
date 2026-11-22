@@ -60,6 +60,13 @@
         @if($request->verification->required())
             <tr><td class="muted">{{ $b('Kontroll av undertecknaren') }}</td><td>{{ App\Domain\Signing\SigningPdfs::bilingualOf(fn () => $request->verification->evidence()) }}@if($request->verified_at), {{ $b('godkänd :time', ['time' => $time($request->verified_at)]) }}@endif</td></tr>
         @endif
+        @php($providerSignature = $request->verification === App\Domain\Signing\Verification\SignerCheck::Provider ? $request->providerSignature : null)
+        @if($providerSignature)
+            <tr><td class="muted">{{ $b('Underskrift hos extern tjänst') }}</td><td>{{ $providerSignature->provider_name }}</td></tr>
+            <tr><td class="muted">{{ $b('Nivå enligt tjänsten') }}</td><td>{{ App\Domain\Signing\SigningPdfs::bilingualOf(fn () => $providerSignature->claimed_level->label()) }}</td></tr>
+            <tr><td class="muted">{{ $b('Certifikat') }}</td><td>{{ $providerSignature->certificate_name }}, {{ $b('utfärdat av :issuer', ['issuer' => (string) $providerSignature->certificate_issuer]) }}, {{ $b('serienummer :serial', ['serial' => (string) $providerSignature->certificate_serial]) }}</td></tr>
+            <tr><td class="muted">{{ $b('Certifikatets kontrollsumma (SHA-256)') }}</td><td class="mono">{{ $providerSignature->certificate_sha256 }}</td></tr>
+        @endif
         @if($request->consent_at)
             <tr><td class="muted">{{ $b('Samtycke till elektroniska handlingar') }}</td><td>{{ $b('Version :version, godkänt :time', ['version' => (string) $request->consent_version, 'time' => $time($request->consent_at)]) }}</td></tr>
             <tr><td class="muted">{{ $b('Samtyckestextens kontrollsumma (SHA-256)') }}</td><td class="mono">{{ $request->consent_text_sha256 }}</td></tr>
@@ -84,7 +91,7 @@
     </table>
 
     <div class="box">
-        <span class="muted">{!! $request->channel === 'PORTAL' ? App\Domain\Signing\SigningPdfs::bilingualBlock('En enkel elektronisk underskrift. Den godkända PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Godkännandet gjordes i företagets kundportal i NONOX av en kontakt som hade loggat in med en engångskod till e-postadressen ovan.') : App\Domain\Signing\SigningPdfs::bilingualBlock('En enkel elektronisk underskrift. Den signerade PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Signeringen gjordes i NONOX via en personlig länk som skickades till e-postadressen ovan.') !!}@if($request->verification->required()){!! App\Domain\Signing\SigningPdfs::bilingualBlockOf(fn () => __('Innan dokumentet visades kontrollerades undertecknaren med :method. Kontrollen minskar risken att någon annan använt en vidarebefordrad länk; underskriften är fortfarande en enkel elektronisk underskrift.', ['method' => mb_strtolower($request->verification->evidence())])) !!}@endif</span>
+        <span class="muted">{!! $request->channel === 'PORTAL' ? App\Domain\Signing\SigningPdfs::bilingualBlock('En enkel elektronisk underskrift. Den godkända PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Godkännandet gjordes i företagets kundportal i NONOX av en kontakt som hade loggat in med en engångskod till e-postadressen ovan.') : App\Domain\Signing\SigningPdfs::bilingualBlock('En enkel elektronisk underskrift. Den signerade PDF:en är oförändrad: räkna fram dess SHA-256 och jämför med kontrollsumman ovan för att se att det är samma dokument. Signeringen gjordes i NONOX via en personlig länk som skickades till e-postadressen ovan.') !!}@if($request->verification->required()){!! App\Domain\Signing\SigningPdfs::bilingualBlockOf(fn () => __('Innan dokumentet visades kontrollerades undertecknaren med :method. Kontrollen minskar risken att någon annan använt en vidarebefordrad länk; underskriften är fortfarande en enkel elektronisk underskrift.', ['method' => mb_strtolower($request->verification->evidence())])) !!}@endif@if($providerSignature){!! App\Domain\Signing\SigningPdfs::bilingualBlockOf(fn () => __('Undertecknaren skrev också under dokumentet hos :provider med certifikatet ovan. Den underskriften finns i den signerade PDF:en (PAdES) och kan kontrolleras i en PDF-läsare. :claim NONOX anger inte själv någon nivå för den.', ['provider' => $providerSignature->provider_name, 'claim' => $providerSignature->claimed_level->claim($providerSignature->provider_name)])) !!}@endif</span>
     </div>
 </body>
 </html>

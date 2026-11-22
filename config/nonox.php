@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Domain\Signing\Providers\Csc\CscProvider;
+use App\Domain\Signing\Providers\FakeSignatureProvider;
+
 /*
  * Settings of the NONOX instance itself, not of a company (ADR-038).
  */
@@ -171,6 +174,23 @@ return [
             'urls' => array_values(array_filter(array_map('trim', explode(',', (string) env('NONOX_SIGNING_TIMESTAMP_URLS', ''))))),
             // Seconds to wait for one server's answer (1–60).
             'timeout' => (int) env('NONOX_SIGNING_TIMESTAMP_TIMEOUT', 10),
+        ],
+
+        /*
+         * External signing providers (ADR-046 amendment, gap 12, S17): the drivers a company may
+         * configure under Inställningar för företaget → Signering. "csc" is a remote signing service
+         * with the Cloud Signature Consortium API v2; "fake" exists for the test suite only and is
+         * offered only where allow_fake is true. Signers are sent to a provider only while the /hq
+         * switch "Underskrift hos extern tjänst" is on (off by default) and the PDF engine is installed.
+         * session_minutes bounds one signer's run (identification, authorisation, signature).
+         */
+        'providers' => [
+            'drivers' => [
+                'csc' => CscProvider::class,
+                'fake' => FakeSignatureProvider::class,
+            ],
+            'allow_fake' => (bool) env('NONOX_SIGNING_FAKE_PROVIDER', false),
+            'session_minutes' => (int) env('NONOX_SIGNING_PROVIDER_MINUTES', 30),
         ],
 
         /*

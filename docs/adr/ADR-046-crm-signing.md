@@ -1739,7 +1739,7 @@ cryptography, PDF signing, legal or security-critical logic. "Review":
 | S14 | Templates with roles: `signing_templates`, roles, fields per role, send from a template, quote and agreement templates for signing | 8 | S7, S8 | standard | technical | module pages, `signing_fields` (template side) |
 | S15 | Bulk send: CSV import with preview and validation, `signing_bulk_sends`, queued envelopes, quota | 8 | S14 | standard | technical + legal | module pages, queue job, mail quota |
 | S16 | Retention, register extract and erasure: classes and settings, `retention_until`, legal hold, pruning with the replaced delete trigger, `DataSubjectExport` and erasure, GDPR and DPA texts | 11 | S1, S2 | heavy | technical + legal | `PruneSigningLinks`, delete trigger, `DataSubjectExport`, `EraseRegisterEntry`, `docs/gdpr/*`, `docs/juridik/*` |
-| S17 | Provider framework and the CSC API v2 driver (+ fake): contract, registry, per-company encrypted configuration, SSRF checks, external signing through the engine | 12 | S3, S10 | heavy | technical + legal | new `app/Domain/Signing/Providers/*`, settings page, engine |
+| S17 | **Built 2026-11-22 (see "S17 as built").** Provider framework and the CSC API v2 driver (+ fake): contract, registry, per-company encrypted configuration, SSRF checks, external signing through the engine | 12 | S3, S10 | heavy | technical + legal | new `app/Domain/Signing/Providers/*`, settings page, engine |
 | S18 | **Deferred (owner 2026-11-18).** BankID driver: sign with QR code and same-device start, collect, encrypted evidence, masked personal number on the certificate; off in /hq until the agreement | 12 | S17 | heavy | technical + legal | `Providers/BankId/*`, signing page, certificate, `/hq` switch |
 | S19 | API and webhooks: Connect endpoints for envelopes, recipients, fields, documents and templates; idempotency keys; `signing.recipient_signed`, `signing.completed`, `signing.declined`, `signing.expired`; OpenAPI and the API changelog | 1, 8, 10 | S7, S14 | standard | technical | `app/Modules/Connect/Http/Controllers/Api/V1/*`, `WebhookEvents`, `docs/api/openapi.yaml` |
 | S20 | Branding and scripts: `Brand` on the page, mails and certificate; the instance signing host; the bilingual certificate; CJK in dompdf (script runs if needed); golden tests for Greek, Cyrillic and CJK | 5 | S5 | standard | technical | `SigningPdfs`, `certificate.blade.php`, mail views, `config/nonox.php` |
@@ -3308,3 +3308,187 @@ Follow-up after the S10 re-check (accepted, low): on `QUEUE_CONNECTION=sync`, a 
   the first cannot be reused. Both links work and expire as usual.
 
 Before sealing, long-term validation (S10–S11) or the verify page (S12) is switched on in the hosted service (jurist, 2026-11-22): the eIDAS trust-service question must be answered; the certificate issuers (OCSP) and the timestamp server are added as recipients in `docs/juridik/integritetspolicy.md` and `docs/juridik/underbitraden.md`; the verify-page sentences in `docs/juridik/utkast-1.9-signering.md` are in force; and the legal version is bumped in that same deploy. `VerifyLookup::NOTICE_FROM` must not be earlier than the day the signing page's notice about the verify page went live.
+
+### S17 as built (2026-11-22): the provider framework and the CSC API v2 driver
+
+- **Off until switched on.** A new instance setting `signing.providers_enabled`
+  (`InstanceSettings::SIGNING_PROVIDERS_ENABLED`, /hq → Inställningar,
+  "Underskrift hos extern tjänst") is `false` by default on every
+  installation, like sealing (S10). Decision: external signing gets its own
+  switch rather than riding on `signing.seal_enabled`, because its legal
+  questions (gap 12: a third party identifies the signer and makes the
+  signature; who contracts the provider) differ from the seal's
+  trust-service question, and the owner keeps the sealing features off on the
+  hosted service until the eIDAS question is answered. The hosted service
+  keeps this switch off until the operator company has an agreement with a
+  provider and the legal items below are answered. It also needs the PDF
+  engine (`ProviderRegistry::usable()`), and a sender can choose a provider
+  only for a company that has an active configuration
+  (`ProviderRegistry::choosable()`). A company may add its configuration in
+  advance while the switch is off.
+- **Contract and registry** (`app/Domain/Signing/Providers/`):
+  `SignatureProvider` with `key()`, `claimedLevel()`, `describe()` (checks a
+  configuration before it is saved), `signsDocumentDigest()`, `start()`,
+  `collect()` and `authorizeDigest()`; steps are `ProviderStep` (REDIRECT,
+  CERTIFICATE, SIGNATURE, and COMPLETED with evidence for a provider that does
+  not sign the PDF's digest, which is where a BankID driver (S18, deferred)
+  fits: `start()` would answer its QR/autostart step, `collect()` would be
+  polled, and `signsDocumentDigest()` is false). Gap 12's `evidence()` is not
+  a method: the evidence of a PAdES provider is the certificate's facts on
+  the run row and the signature in the PDF; a non-PAdES provider returns it
+  in `ProviderStep::completed()`. The registry is config-driven
+  (`nonox.signing.providers.drivers`: `csc`, `fake`); the fake driver is
+  offered only where `nonox.signing.providers.allow_fake` is true (tests).
+  `SignatureLevel` (SES, AES, QES) is shown only as "<tjänst> anger att
+  underskriften är en …" (principle 4).
+- **Per-company configuration**: `signing_providers` (migration
+  `2027_03_28_100000_create_signing_providers.php`): driver, name shown to
+  signers, base URL, the OAuth URL and the service's own name and region from
+  its info method, client id and client secret (`encrypted` cast, `$hidden`),
+  the level the company states under its agreement, created/retired by.
+  Replaced, never edited (trigger `signing_providers_protect`: only retiring
+  once, which empties the secret; check: retired ⇒ no secret). Grant
+  `NoDelete`. At most five active per company. Inställningar för företaget →
+  Signering → "Underskrift hos extern tjänst" (`SigningProviderSettings`,
+  `signing:settings`): status of the switch and the engine, the return
+  address to register (`/signera/leverantor/retur`, on the signing host when
+  there is one), the services, "Lägg till en tjänst" and "Sluta använda
+  tjänsten". The client secret is bound without live updates and emptied
+  right after "Lägg till tjänsten", accepted or not, so it never stays in the
+  component's state (tested on the snapshot).
+- **Signer flow.** The check is chosen per signer as `PROVIDER:<id>`
+  (`SendForSigning::check`, `CHECK_PATTERN`; another company's id, a retired
+  one or the switch off is refused like an unknown id). `crm_signing_requests`
+  got `signing_provider_id` (FK, check `(verification = 'PROVIDER') =
+  (signing_provider_id IS NOT NULL)`, fixed from the insert by the trigger
+  `crm_signing_requests_protect_provider`). `SignerCheck::required()` is now
+  true only for EMAIL_CODE and ACCESS_CODE: a PROVIDER signer sees the
+  document after the link and the consent, as with NONE; the provider is the
+  signature, not a pre-check. **A PROVIDER signer has no fields of their
+  own** (refused at sending and again when storing), so their PAdES
+  signature is the last thing in their revision; other signers' fields are
+  fine. The signing page's form posts to "Fortsätt till <tjänst>"
+  (`signing.provider.start`); the ordinary `SignAtLink::sign` refuses a
+  PROVIDER signer without a provider signature. The API still accepts only
+  NONE, EMAIL_CODE and ACCESS_CODE (validated in the controller); the
+  response enum gained `PROVIDER` (OpenAPI 1.11.0, API changelog).
+- **Run** (`SignWithProvider`, `signing_provider_sessions`): `begin()` checks
+  the form under the signer's lock exactly as a signature would
+  (`SignAtLink::validateForm` and `checkLocked`, split out of `sign()`),
+  remembers the latest version's SHA-256, ends any earlier run of the signer
+  (`superseded`), and stores a run with a fresh 256-bit OAuth state (only its
+  SHA-256 is stored and looked up, across companies, as the signing token);
+  the form, the link token and the driver's working data are in the
+  `encrypted:array` column `secrets`. The browser session also holds the
+  state's hash, so a callback in another browser is refused
+  (`wrong_browser`). The start answers an interim page with a meta refresh
+  and a link, not a 302, because the signing pages' CSP has `form-action
+  'self'`, which browsers apply to a redirect after a form post. After
+  identification the driver answers the certificate chain
+  (`ProviderCertificate`: at most 10, valid now, key type matching the
+  algorithm; only CN, issuer CN, serial, SHA-256 and expiry are kept, never
+  the subject's serialNumber attribute), the engine prepares the signature
+  over the version shown (still the latest, else `document_changed`) and the
+  prepared file goes to `crm-signing/{company}/provider/`; the browser goes to
+  the provider to authorise that digest. After authorisation the engine
+  checks the value, fills the placeholder, and `validate()` must find the
+  field `NonoxSigner<request id>` intact, valid and with the same
+  certificate; then `SignAtLink::sign(..., ProviderSigned)` stores it in the
+  signing transaction (`ProviderSignatures`: lock order document, signer,
+  run, envelope): an `AFTER_SIGNER` version that starts with the shown
+  version's bytes, the run `DONE` (secrets and state emptied), and the chain
+  event `PROVIDER_SIGNED` (run id, provider id, stated level, certificate
+  SHA-256, both versions' SHA-256). The seal, the copies and
+  `signing:verify` use the version like any other. Any failure ends the run
+  `FAILED` with a code, empties it, deletes the prepared file and sends the
+  signer back with a Swedish message; nothing is signed. The trigger
+  `signing_provider_sessions_protect` lets a run only move forward, sets its
+  facts once, lets a finished run only be emptied, and refuses deleting a
+  `DONE` run except by a cascade (with its signer or company).
+  `signing:prune` deletes runs that never finished a day after they expired,
+  with their files. Grant `ReadWrite`.
+- **Engine** (protocol 1, additive; `tools/pdf-engine/README.md`):
+  `prepareExternalSignature` and `finishExternalSignature` on `PdfEngine`,
+  the sidecar and the helper (`prepare_external_signature`,
+  `finish_external_signature`, pyHanko's interrupted signing), `NullPdfEngine`
+  throws, `FakePdfEngine` appends markers and checks an RSA value like the
+  helper (CI never needs Python). The helper checks the prepared file's
+  SHA-256 and byte range against the stored digest, that the signed
+  attributes name it, and the provider's value against the certificate's key
+  before embedding (`PdfEngineFailure::SignatureInvalid`). Exercised with the
+  real engine in `PdfEngineRealTest` (RSA).
+- **CSC API v2 driver** (`Providers/Csc/CscProvider`), read in CSC API
+  v2.0.0.2 (cloudsignatureconsortium.org, `csc-api-v2.0.0.2.pdf`, read
+  2026-11-22), sections 7.2, 8.1–8.4, 11.1, 11.4, 11.5, 11.10: `info`
+  (methods must include `credentials/list` and `signatures/signHash`;
+  `oauth2` base or `oauth2Issuer` with RFC 8414 metadata), service
+  authorization with the authorization code flow and PKCE S256
+  (`code_challenge` is REQUIRED in v2), `credentials/list` with
+  `credentialInfo`, `certificates=chain`, `certInfo`, `authInfo`,
+  `onlyValid` and no `userID` (user-specific token, note 27), the first
+  enabled credential with `auth/mode = oauth2code`, credential authorization
+  with `scope=credential`, `credentialID`, `numSignatures=1`, `hashes`
+  (base64url) and `hashAlgorithmOID`, and `signatures/signHash` with the
+  credential-scoped token in the Authorization header (8.4: "can be used
+  instead of a classical SAD"), `hashes` (base64), `hashAlgorithmOID` and
+  `signAlgo` from `key/algo` (rsaEncryption with the hash OID, as the
+  specification's example; sha256WithRSA; ecdsa-with-SHA256). The
+  document's title is never sent; the description is a fixed text.
+  Not supported: explicit authorization (a PIN or OTP typed into NONOX),
+  `signDoc`, asynchronous mode, RSASSA-PSS, signature qualifiers.
+  `TODO(verify-csc)`: (1) padding of base64url `hashes` in oauth2/authorize
+  (sent without); (2) the encoding of an ECDSA value from signHash (DER
+  assumed, a raw r‖s converted); (3) client authentication at the token
+  endpoint (the secret in the body, as the specification's example; some
+  services may require HTTP Basic). Each needs a real service; the suite runs
+  the driver against `Http::fake` only (`CscProviderTest`).
+- **SSRF.** Every server-side request goes through `ProviderHttp`, which
+  reuses the webhook guard (`WebhookAddress`, ADR-032): https only, no
+  credentials or fragment in the address, ports 443 or ≥ 1024, every resolved
+  address public unicast (loopback, private, link-local, CGNAT, IPv4-mapped,
+  6to4, Teredo, NAT64 and reserved ranges refused), then pinned with
+  `CURLOPT_RESOLVE` (DNS pinning), no redirects (a 3xx is refused), no proxy,
+  TLS verified, the answer capped at 1 MB, nothing logged. The check runs
+  before every request. The authorization endpoint the browser goes to must
+  be https; the token endpoint is checked server-side.
+- **Audit** (ids, driver, level and codes only): `signing.provider_added`,
+  `signing.provider_retired`, `signing.provider_started`,
+  `signing.provider_signed`, `signing.provider_failed`.
+- **Certificate and summary.** The signing certificate of a provider signer
+  lists the service, "Nivå enligt tjänsten", the certificate's name, issuer,
+  serial and SHA-256, and a paragraph that the signer also signed at the
+  service and that NONOX itself states no level. The envelope summary names
+  the method.
+- **Not built:** provider costs through NONOX Connect (decision 2; no billing
+  here); the operator-held agreement model (the company enters its own
+  client credentials); choosing among several credentials (the first usable
+  one is taken); a provider signer with own fields; revoking the provider's
+  tokens after use (they are short-lived and emptied); the API choosing a
+  provider; templates and bulk send with a provider role.
+- **Tests:** `tests/Feature/Signing/ProviderSigningTest.php`,
+  `tests/Feature/Signing/CscProviderTest.php`, two real-engine tests in
+  `PdfEngineRealTest`, `tests/Tenancy/SigningProviderTenancyTest.php`, the
+  tenancy catalogue, and the API refusal in `SigningApiTest`.
+- `TODO(legal-verify)`: (1) whether a signature made this way (a QTSP's
+  remote signature with the signer's qualified certificate, authorised by the
+  signer at the QTSP, embedded by NONOX as a PAdES signature) is an advanced
+  (art. 26) or qualified (art. 3(12), 25(2)) electronic signature of the
+  document, and whether NONOX's part (preparing the digest, embedding the
+  value) affects that, e.g. as a signature creation application; (2) whether
+  showing the level the company states ("<tjänst> anger att underskriften är
+  en kvalificerad elektronisk underskrift") is acceptable, and whether NONOX
+  should verify the provider against the EU trust list (art. 22) before
+  showing it; (3) the provider's role: a trust service provider (art. 3(19),
+  qualified art. 3(20)) with its own obligations (art. 19, 24), and under
+  GDPR the company's processor or an independent controller; and if the
+  operator company contracts the provider and charges through NONOX Connect,
+  whether it is the operator's sub-processor (then named in
+  `docs/juridik/underbitraden.md` before the hosted switch); (4) whether
+  NONOX, as the application that creates the signature with the remote
+  device, needs anything under art. 29 (requirements for qualified signature
+  creation devices) or the CEN EN 419 241 / ETSI TS 119 432 profiles the
+  provider relies on; (5) the information to the signer (art. 13–14) when
+  the provider's certificate, which may carry a personal identity number,
+  goes into the PDF every recipient gets. Verify article numbers against the
+  consolidated text of (EU) No 910/2014 as amended by (EU) 2024/1183; never
+  claim a level in NONOX's own name before these are answered.

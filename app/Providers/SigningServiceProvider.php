@@ -108,6 +108,9 @@ class SigningServiceProvider extends ServiceProvider
             Route::post('/signera/{token}/kontroll', [SigningPageController::class, 'verify'])->where('token', SigningToken::PATTERN)->middleware('throttle:signing-verify')->name('signing.verify');
             Route::post('/signera/{token}/samtycke', [SigningPageController::class, 'giveConsent'])->where('token', SigningToken::PATTERN)->middleware('throttle:crm-signing-submit')->name('signing.consent');
             Route::post('/signera/{token}/samtycke/avboj', [SigningPageController::class, 'refuseConsent'])->where('token', SigningToken::PATTERN)->middleware('throttle:crm-signing-submit')->name('signing.consentRefuse');
+            // Signing at an external provider (ADR-046 S17): start from the page; the provider sends the browser back to one fixed address.
+            Route::post('/signera/{token}/leverantor', [SigningPageController::class, 'startProvider'])->where('token', SigningToken::PATTERN)->middleware('throttle:crm-signing-submit')->name('signing.provider.start');
+            Route::get('/signera/leverantor/retur', [SigningPageController::class, 'providerCallback'])->middleware('throttle:crm-signing-submit')->name('signing.provider.callback');
             Route::post('/signera/{token}/avboj', [SigningPageController::class, 'decline'])->where('token', SigningToken::PATTERN)->middleware('throttle:crm-signing-submit')->name('signing.decline');
         });
     }

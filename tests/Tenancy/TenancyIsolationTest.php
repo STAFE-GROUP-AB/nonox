@@ -103,6 +103,8 @@ use App\Models\SigningEvent as CrmSigningEvent;
 use App\Models\SigningField;
 use App\Models\SigningFieldValue;
 use App\Models\SigningLinkToken;
+use App\Models\SigningProvider;
+use App\Models\SigningProviderSession;
 use App\Models\SigningRequest as CrmSigningRequest;
 use App\Models\SigningSealCertificate;
 use App\Models\SigningVerificationCode;
@@ -701,6 +703,9 @@ const COMPANY_SCOPED_MODELS = [
     SigningTemplateRole::class => 's14SigningTemplateRoleAttributes',
     // Seal certificates (ADR-046 S10); the tenancy test of its own is tests/Tenancy/SigningSealTenancyTest.php.
     SigningSealCertificate::class => 's10SigningSealCertificateAttributes',
+    // External signing providers and their runs (ADR-046 S17); the tenancy test of its own is tests/Tenancy/SigningProviderTenancyTest.php.
+    SigningProvider::class => ['driver' => 'csc', 'name' => 'Hemlig tjänst', 'base_url' => 'https://hemlig.example/csc/v2', 'client_id' => 'hemligt-id', 'client_secret' => 'hemligt', 'claimed_level' => 'QES'],
+    SigningProviderSession::class => 's17SigningProviderSessionAttributes',
     // Bulk send (ADR-046 S15); the tenancy test of its own is tests/Tenancy/SigningBulkSendTenancyTest.php.
     SigningBulkSend::class => ['status' => 'PREVIEW'],
     SigningBulkSendRow::class => 's15SigningBulkSendRowAttributes',
@@ -2255,6 +2260,14 @@ function s6SigningFieldAttributes(): array
     $signer = CrmSigningRequest::create([...crmSigningRequestAttributes(), 'envelope_id' => $envelope->id]);
 
     return ['envelope_id' => $envelope->id, 'signing_request_id' => $signer->id, 'type' => 'TEXT', 'page' => 1, 'x' => 1000, 'y' => 1000, 'width' => 10000, 'height' => 2000, 'page_width' => 59528, 'page_height' => 84189, 'label' => 'Hemligt fält', 'position' => 1];
+}
+
+function s17SigningProviderSessionAttributes(): array
+{
+    $provider = SigningProvider::create(['driver' => 'csc', 'name' => 'Hemlig tjänst', 'base_url' => 'https://hemlig.example/csc/v2', 'client_id' => 'hemligt-id', 'client_secret' => 'hemligt', 'claimed_level' => 'QES']);
+    $signer = CrmSigningRequest::create(crmSigningRequestAttributes());
+
+    return ['signing_request_id' => $signer->id, 'provider_id' => $provider->id, 'step' => 'SERVICE', 'state_hash' => hash('sha256', (string) random_int(0, PHP_INT_MAX)), 'secrets' => ['token' => 'hemlig'], 'shown_sha256' => str_repeat('0', 64), 'claimed_level' => 'QES', 'provider_name' => 'Hemlig tjänst', 'expires_at' => now()->addMinutes(30)];
 }
 
 function s10SigningSealCertificateAttributes(): array

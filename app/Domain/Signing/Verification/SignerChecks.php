@@ -7,6 +7,7 @@ namespace App\Domain\Signing\Verification;
 use App\Actions\Signing\SendForSigning;
 use App\Actions\Signing\SignAtLink;
 use App\Domain\Signing\Chain\SigningChain;
+use App\Domain\Signing\Providers\ProviderRegistry;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SigningEventType;
 use App\Domain\Signing\SigningFollowUp;
@@ -16,6 +17,7 @@ use App\Domain\Signing\SigningUnavailable;
 use App\Mail\SigningCodeMail;
 use App\Models\Company;
 use App\Models\SigningEnvelope;
+use App\Models\SigningProvider;
 use App\Models\SigningRequest;
 use App\Models\SigningVerificationCode;
 use App\Models\User;
@@ -157,6 +159,20 @@ final class SignerChecks
     }
 
     /** "Föreslå kod": ten random characters that are easy to read out (about 57 bits). */
+    /**
+     * The company's external providers a sender may choose as a signer's check (ADR-046 S17): "PROVIDER:<id>",
+     * "Underskrift hos <name>". None while external signing cannot be used. Runs inside the current company.
+     *
+     * @return list<array{value: string, label: string}>
+     */
+    public static function providerOptions(): array
+    {
+        return array_map(fn (SigningProvider $provider): array => [
+            'value' => SignerCheck::Provider->value.':'.$provider->id,
+            'label' => __('Underskrift hos :provider', ['provider' => $provider->name]),
+        ], ProviderRegistry::choosable());
+    }
+
     public static function suggestAccessCode(): string
     {
         $alphabet = self::SUGGEST_ALPHABET;

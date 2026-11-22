@@ -274,6 +274,8 @@ it('refuses an envelope that names no document, two, a document of someone else 
     s19Send($this, $this->send, s19Body($document, ['document_id' => '9b0a4f0e-4c1f-4f0e-8d1e-1d0c0f0e0a0b']), 'v-7')->assertNotFound();
     s19Send($this, $this->send, s19Body($document, ['template_id' => '9b0a4f0e-4c1f-4f0e-8d1e-1d0c0f0e0a0b']), 'v-8')->assertNotFound();
     s19Send($this, $this->send, s19Body($document, ['expires_on' => '2020-01-01']), 'v-9')->assertUnprocessable();
+    // Signing at an external provider (ADR-046 S17) is chosen in the app only.
+    s19Send($this, $this->send, s19Body($document, ['signers' => [['email' => 'a@example.test', 'step' => 1, 'verification' => 'PROVIDER:1']]]), 'v-9b')->assertUnprocessable()->assertJsonValidationErrors('signers.0.verification');
 
     // Nothing was made, mailed or announced by the refused ones.
     expect(CurrentCompany::run($this->company, fn () => SigningEnvelope::query()->count()))->toBe(0);

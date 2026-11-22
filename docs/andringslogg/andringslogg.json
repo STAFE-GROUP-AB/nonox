@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-22-signering-extern-tjanst",
+      "datum": "2026-11-22T20:20:00+01:00",
+      "rubrik": "Underskrift hos extern tjänst vid egen drift",
+      "beskrivning": "En undertecknare kan skriva under hos en tjänst för underskrift som företaget har avtal med (Cloud Signature Consortiums API, version 2), med sitt eget certifikat, och underskriften läggs in i den signerade PDF:en. Företaget lägger in tjänsten under Inställningar för företaget → Signering, och nivån på underskriften visas som tjänstens uppgift, aldrig som NONOX:s. Det kräver PDF-motorn och är avstängt tills det slås på för installationen, och i den driftade tjänsten tills det finns ett avtal med en tjänst och juristfrågorna är besvarade.",
+      "typ": "Nytt",
+      "omrade": "Avtal"
+    },
+    {
       "id": "2026-11-22-signering-langtidsvalidering",
       "datum": "2026-11-22T17:00:00+01:00",
       "rubrik": "Långtidsvalidering av förseglade dokument vid egen drift",

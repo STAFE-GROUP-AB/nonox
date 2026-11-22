@@ -72,6 +72,16 @@ final class NullPdfEngine implements PdfEngine
         throw PdfEngineException::notInstalled();
     }
 
+    public function prepareExternalSignature(string $pdfPath, string $outputPath, ExternalSignatureRequest $request): PreparedSignature
+    {
+        throw PdfEngineException::notInstalled();
+    }
+
+    public function finishExternalSignature(string $pdfPath, PreparedSignature $prepared, ExternalSignatureRequest $request, string $signature, string $outputPath): PdfFileResult
+    {
+        throw PdfEngineException::notInstalled();
+    }
+
     public function validate(string $pdfPath): ValidationReport
     {
         throw PdfEngineException::notInstalled();

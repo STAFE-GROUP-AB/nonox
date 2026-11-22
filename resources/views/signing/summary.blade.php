@@ -54,7 +54,7 @@
                 <td>{{ $signer->step }}</td>
                 <td>{{ $signer->signer_name }}@if($signer->signer_title), {{ $signer->signer_title }}@endif</td>
                 <td>{{ $time($signer->signed_at) }}</td>
-                <td>{{ $signer->signature_method === App\Models\SigningRequest::TYPED ? $b('Skrivet namn som underskrift') : $b('Ritad namnteckning') }}@if($signer->verification->required()) · {{ App\Domain\Signing\SigningPdfs::bilingualOf(fn () => $signer->verification->evidence()) }}@endif</td>
+                <td>{{ $signer->signature_method === App\Models\SigningRequest::TYPED ? $b('Skrivet namn som underskrift') : $b('Ritad namnteckning') }}@if($signer->verification !== App\Domain\Signing\Verification\SignerCheck::None) · {{ App\Domain\Signing\SigningPdfs::bilingualOf(fn () => $signer->verification->evidence()) }}@endif</td>
             </tr>
         @endforeach
     </table>
