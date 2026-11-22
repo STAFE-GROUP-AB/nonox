@@ -13,6 +13,36 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-22: signering (dokument, mallar, kuvert och webhooks)
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-22: signing (documents, templates, envelopes and webhooks)
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Nytt
+- Dokument: `GET`/`POST /signing/documents` (en PDF som `multipart/form-data` i fältet `file`, med `title`; samma kontroller som i appen), `GET`/`DELETE /signing/documents/{document}` och `GET /signing/documents/{document}/content`. Ett uppladdat dokument är uppladdarens; `signing:manage` ser allas.
+- Kuvert: `GET /signing/envelopes` (filter `status`, `document_type`, `document_id`, `quote_id`, `agreement_id`), `POST /signing/envelopes` (skapar och skickar ett kuvert med upp till 10 undertecknare i steg, upp till 10 kopiemottagare, sista dag, påminnelser, kontroll per undertecknare och fält i PDF:en; antingen för ett uppladdat dokument, en offert, ett avtal eller från en mall, där personerna namnges efter mallens roller), `GET`/`PATCH /signing/envelopes/{envelope}` (`PATCH` flyttar sista dag) och `POST /signing/envelopes/{envelope}/void`. Ett anrop skickar ett kuvert till de personer det namnger; det finns ingen sändning efter regel eller i bulk över API:t, och länken returneras aldrig.
+- Undertecknare och fält: `GET /signing/envelopes/{envelope}/recipients`, `GET /signing/envelopes/{envelope}/recipients/{recipient}`, `POST /signing/envelopes/{envelope}/recipients/{recipient}/remind` och `GET /signing/envelopes/{envelope}/fields`. Svaren har aldrig länk, åtkomstkod, IP-adress, ritad signatur eller avböjningsskäl.
+- Filer: `GET /signing/envelopes/{envelope}/document` (det färdiga dokumentet) och `GET /signing/envelopes/{envelope}/recipients/{recipient}/certificate` (signeringsbeviset), båda med `X-Content-SHA256`. En fil som har gallrats eller raderats svarar 404.
+- Mallar: `GET /signing/templates` och `GET /signing/templates/{template}` (läsning; mallar görs i appen). En konfidentiell mall som personen inte får se svarar 404, också när den anges som `template_id` i ett kuvert.
+- Ett konfidentiellt kuvert syns bara för avsändaren och med `signing:manage`, i listan, på alla undertecknar-, fält- och filadresser och i webhooks.
+- Webhooks `signing.recipient_signed`, `signing.completed`, `signing.declined` och `signing.expired`. De kräver `signing:view`, skickas bara till en prenumerant vars skapare får se kuvertet och innehåller bara id, antal, tider och hashar: inga namn, e-postadresser, IP-adresser, fältvärden eller avböjningsskäl.
+- Nya scopes: `signing:view`, `signing:send` och `signing:manage`. De två sista finns bara medan modulen Signering är på.
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+- Documents: `GET`/`POST /signing/documents` (a PDF as `multipart/form-data` in the field `file`, with `title`; the same checks as the app), `GET`/`DELETE /signing/documents/{document}` and `GET /signing/documents/{document}/content`. An uploaded document is its uploader's; `signing:manage` sees everyone's.
+- Envelopes: `GET /signing/envelopes` (filters `status`, `document_type`, `document_id`, `quote_id`, `agreement_id`), `POST /signing/envelopes` (creates and sends an envelope with up to 10 signers in steps, up to 10 copy recipients, a last day, reminders, a check per signer and fields in the PDF; for an uploaded document, a quote, an agreement or from a template, where the people are named by the template's roles), `GET`/`PATCH /signing/envelopes/{envelope}` (`PATCH` moves the last day) and `POST /signing/envelopes/{envelope}/void`. One call sends one envelope to the people it names; there is no sending by a rule or in bulk over the API, and the link is never returned.
+- Recipients and fields: `GET /signing/envelopes/{envelope}/recipients`, `GET /signing/envelopes/{envelope}/recipients/{recipient}`, `POST /signing/envelopes/{envelope}/recipients/{recipient}/remind` and `GET /signing/envelopes/{envelope}/fields`. The responses never carry a link, an access code, an IP address, a drawn signature or a decline reason.
+- Files: `GET /signing/envelopes/{envelope}/document` (the finished document) and `GET /signing/envelopes/{envelope}/recipients/{recipient}/certificate` (the signing certificate), both with `X-Content-SHA256`. A file that retention or an erasure has removed answers 404.
+- Templates: `GET /signing/templates` and `GET /signing/templates/{template}` (read only; templates are made in the app). A confidential template the person may not see answers 404, also when it is named as `template_id` in an envelope.
+- A confidential envelope is seen only by its sender and with `signing:manage`, in the list, on every recipient, field and file address and in webhooks.
+- Webhooks `signing.recipient_signed`, `signing.completed`, `signing.declined` and `signing.expired`. They need `signing:view`, are sent only to a subscriber whose creator may see the envelope, and carry only ids, counts, times and hashes: no names, e-mail addresses, IP addresses, field values or decline reasons.
+- New scopes: `signing:view`, `signing:send` and `signing:manage`. The last two exist only while the Signering module is on.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-22: kanal på kampanjer
 <!-- /lang -->
 <!-- lang:en -->

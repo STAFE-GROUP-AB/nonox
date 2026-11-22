@@ -17,10 +17,13 @@ use App\Actions\Payables\SaveSupplier;
 use App\Actions\Payables\SaveSupplierInvoice;
 use App\Actions\Pricing\SavePriceAgreement;
 use App\Actions\Pricing\SavePriceList;
+use App\Actions\Signing\SendForSigning;
 use App\Domain\Accounting\Dimension;
+use App\Domain\Signing\Pdf\FakePdfEngine;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\SalesDocument;
+use App\Models\SigningRequest;
 use App\Models\User;
 use App\Modules\Connect\Support\ConnectScopes;
 use App\Modules\Crm\Actions\LogActivity;
@@ -31,6 +34,9 @@ use App\Modules\Crm\Models\Account as CrmAccount;
 use App\Modules\Inventory\Actions\ArticleImages;
 use App\Modules\Inventory\InventoryModule;
 use App\Modules\ModuleManager;
+use App\Modules\Signing\Actions\ManageSigningTemplates;
+use App\Modules\Signing\Actions\StoreSigningDocument;
+use App\Modules\Signing\SigningModule;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -41,6 +47,7 @@ use Illuminate\Support\Facades\Storage;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Connect;
 use Tests\Support\Crm;
+use Tests\Support\PdfEngineFixtures;
 
 /*
  * AGENTS.md §13.2 for the public API (ADR-032): a credential for company A
@@ -92,6 +99,21 @@ function twoCompanies(): array
     $crmQuoteB = app(SaveSalesDocument::class)($ownerB, $b, SalesDocument::QUOTE, ['customer_id' => $customerB->id, 'document_date' => '2026-03-02', 'rows' => $invoiceRows]);
     $priceListB = app(SavePriceList::class)($ownerB, $b, ['code' => 'B', 'name' => 'B:s prislista', 'kind' => 'STANDARD', 'currency' => 'SEK']);
     $priceAgreementB = app(SavePriceAgreement::class)($ownerB, $b, ['customer_id' => $customerB->id, 'title' => 'B:s prisavtal', 'currency' => 'SEK', 'valid_from' => '2026-03-01']);
+    // Signering on in both, so a signing route answers 404 and not 403 for B's records.
+    FakePdfEngine::install();
+    app(ModuleManager::class)->enable(SigningModule::KEY, $b, $ownerB);
+    app(ModuleManager::class)->enable(SigningModule::KEY, $a, $ownerA);
+    $signingPdf = tempnam(sys_get_temp_dir(), 'sgn');
+    file_put_contents($signingPdf, PdfEngineFixtures::pdf(2));
+    $signingDocumentB = app(StoreSigningDocument::class)($ownerB, $b, $signingPdf, 'B.pdf', 'B:s dokument');
+    $signingTemplateB = app(ManageSigningTemplates::class)->create($ownerB, $b, [
+        'name' => 'B:s mall', 'document_type' => 'DOCUMENT',
+        'roles' => [['label' => 'Part', 'step' => 1, 'verification' => 'NONE', 'internal' => false]],
+        'fields' => [['signer' => 0, 'type' => 'SIGNATURE', 'page' => 1, 'x' => 5000, 'y' => 5000, 'width' => 20000, 'height' => 2000, 'label' => 'Underskrift', 'required' => true]],
+    ], app(StoreSigningDocument::class)($ownerB, $b, $signingPdf, 'Mall.pdf', 'B:s mallfil'));
+    $signingEnvelopeB = app(SendForSigning::class)->envelope($ownerB, $b, $signingDocumentB, ['signers' => [['email' => 'b@example.test', 'step' => 1]]], minSigners: 1);
+    $signingRecipientB = CurrentCompany::run($b, fn () => SigningRequest::query()->where('envelope_id', $signingEnvelopeB->id)->firstOrFail());
+    @unlink($signingPdf);
     $supplierInvoiceB = app(SaveSupplierInvoice::class)($ownerB, $b, ['supplier_id' => $supplierB->id, 'invoice_date' => '2026-03-03', 'total' => '125', 'vat' => '25', 'rows' => [['account' => '5410', 'amount' => '100']]]);
 
     // A has its own records too, so the lists are not empty by accident.
@@ -118,6 +140,7 @@ function twoCompanies(): array
             'article_image' => $imageB->id, 'crm_account' => $crmAccountB->id, 'crm_person' => $crmPersonB->id, 'crm_activity' => $crmActivityB->id,
             'crm_deal' => $crmDealB->id, 'crm_pipeline' => $crmPipelineB, 'crm_agreement' => $crmAgreementB->id, 'quote' => $crmQuoteB->id,
             'price_list' => $priceListB->id, 'price_agreement' => $priceAgreementB->id,
+            'signing_document' => $signingDocumentB->id, 'signing_template' => $signingTemplateB->id, 'signing_envelope' => $signingEnvelopeB->id, 'signing_recipient' => $signingRecipientB->id,
         ],
     ];
 }
@@ -186,6 +209,21 @@ function crossCompanyCalls(array $b): array
         ['POST', "/api/v1/price-agreements/{$b['price_agreement']}/items", ['items' => [['article' => 'B1', 'price_minor' => 1]]]],
         ['POST', "/api/v1/price-agreements/{$b['price_agreement']}/activate", ['reason' => 'Kapad avtal']],
         ['POST', "/api/v1/price-agreements/{$b['price_agreement']}/terminate", ['terminated_on' => '2026-12-31']],
+        ['GET', "/api/v1/signing/documents/{$b['signing_document']}"],
+        ['GET', "/api/v1/signing/documents/{$b['signing_document']}/content"],
+        ['DELETE', "/api/v1/signing/documents/{$b['signing_document']}"],
+        ['GET', "/api/v1/signing/templates/{$b['signing_template']}"],
+        ['GET', "/api/v1/signing/envelopes/{$b['signing_envelope']}"],
+        ['PATCH', "/api/v1/signing/envelopes/{$b['signing_envelope']}", ['expires_on' => '2026-12-31']],
+        ['POST', "/api/v1/signing/envelopes/{$b['signing_envelope']}/void"],
+        ['GET', "/api/v1/signing/envelopes/{$b['signing_envelope']}/recipients"],
+        ['GET', "/api/v1/signing/envelopes/{$b['signing_envelope']}/recipients/{$b['signing_recipient']}"],
+        ['POST', "/api/v1/signing/envelopes/{$b['signing_envelope']}/recipients/{$b['signing_recipient']}/remind"],
+        ['GET', "/api/v1/signing/envelopes/{$b['signing_envelope']}/recipients/{$b['signing_recipient']}/certificate"],
+        ['GET', "/api/v1/signing/envelopes/{$b['signing_envelope']}/fields"],
+        ['GET', "/api/v1/signing/envelopes/{$b['signing_envelope']}/document"],
+        ['POST', '/api/v1/signing/envelopes', ['document_id' => $b['signing_document'], 'signers' => [['email' => 'kapad@example.test', 'step' => 1]]]],
+        ['POST', '/api/v1/signing/envelopes', ['template_id' => $b['signing_template'], 'recipients' => ['part' => ['email' => 'kapad@example.test']]]],
         // Reports that take another company's fiscal year as a parameter.
         ['GET', "/api/v1/reports/trial-balance?fiscal_year_id={$b['fiscal_year']}"],
         ['GET', "/api/v1/reports/general-ledger?fiscal_year_id={$b['fiscal_year']}"],
@@ -246,7 +284,7 @@ it('shows the credential\'s own company, never the person\'s current one', funct
 });
 
 it('covers every API route that takes an id', function () {
-    $listed = collect(crossCompanyCalls(array_fill_keys(['voucher', 'posted', 'attachment', 'customer', 'supplier', 'fiscal_year', 'article', 'cost_center', 'project', 'invoice', 'issued', 'supplier_invoice', 'article_image', 'crm_account', 'crm_person', 'crm_activity', 'crm_deal', 'crm_pipeline', 'crm_agreement', 'quote', 'price_list', 'price_agreement'], 'X')))
+    $listed = collect(crossCompanyCalls(array_fill_keys(['voucher', 'posted', 'attachment', 'customer', 'supplier', 'fiscal_year', 'article', 'cost_center', 'project', 'invoice', 'issued', 'supplier_invoice', 'article_image', 'crm_account', 'crm_person', 'crm_activity', 'crm_deal', 'crm_pipeline', 'crm_agreement', 'quote', 'price_list', 'price_agreement', 'signing_document', 'signing_template', 'signing_envelope', 'signing_recipient'], 'X')))
         ->map(fn (array $call): string => $call[0].' '.preg_replace('/X/', '{}', explode('?', $call[1])[0]))
         ->unique()->values();
 

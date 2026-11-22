@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Signing\Chain;
 
 use App\Domain\Signing\SigningEventType;
+use App\Events\SigningEnvelopeChanged;
 use App\Models\SigningEnvelope;
 use App\Models\SigningEvent;
 use App\Models\SigningRequest;
@@ -74,7 +75,22 @@ final class SigningChain
             $this->start($envelope);
         }
 
-        return $this->append($envelope, $request->id, $type, $userId, $ip, $userAgent, $payload);
+        $event = $this->append($envelope, $request->id, $type, $userId, $ip, $userAgent, $payload);
+
+        // Announced once per step, after the transaction commits (ADR-046 S19): the webhooks read the saved state.
+        $change = match ($type) {
+            SigningEventType::Signed => SigningEnvelopeChanged::RECIPIENT_SIGNED,
+            SigningEventType::Completed => SigningEnvelopeChanged::COMPLETED,
+            SigningEventType::Declined => SigningEnvelopeChanged::DECLINED,
+            SigningEventType::Expired => SigningEnvelopeChanged::EXPIRED,
+            default => null,
+        };
+
+        if ($change !== null) {
+            event(new SigningEnvelopeChanged($envelope->company_id, $envelope->id, $request->id, $change));
+        }
+
+        return $event;
     }
 
     /**

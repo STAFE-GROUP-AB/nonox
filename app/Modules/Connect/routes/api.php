@@ -18,6 +18,9 @@ use App\Modules\Connect\Http\Controllers\Api\V1\PriceListController;
 use App\Modules\Connect\Http\Controllers\Api\V1\PriceResolveController;
 use App\Modules\Connect\Http\Controllers\Api\V1\ReferenceController;
 use App\Modules\Connect\Http\Controllers\Api\V1\ReportController;
+use App\Modules\Connect\Http\Controllers\Api\V1\SigningDocumentController;
+use App\Modules\Connect\Http\Controllers\Api\V1\SigningEnvelopeController;
+use App\Modules\Connect\Http\Controllers\Api\V1\SigningTemplateController;
 use App\Modules\Connect\Http\Controllers\Api\V1\SupplierController;
 use App\Modules\Connect\Http\Controllers\Api\V1\SupplierInvoiceController;
 use App\Modules\Connect\Http\Controllers\Api\V1\VatController;
@@ -219,4 +222,30 @@ Route::middleware('connect.scope:price-agreements:manage')->group(function () us
     Route::post('/price-agreements/{agreement}/items', [PriceAgreementController::class, 'storeItems'])->whereNumber('agreement')->middleware($idempotent)->name('price-agreements.items.store');
     Route::post('/price-agreements/{agreement}/activate', [PriceAgreementController::class, 'activate'])->whereNumber('agreement')->middleware($idempotent)->name('price-agreements.activate');
     Route::post('/price-agreements/{agreement}/terminate', [PriceAgreementController::class, 'terminate'])->whereNumber('agreement')->middleware($idempotent)->name('price-agreements.terminate');
+});
+
+// Signering (ADR-046 S19): documents, templates and envelopes. signing:view and signing:send are module permissions, false while the module is off;
+// the list and the files of signed standalone documents stay readable with signing:view (an archive). One envelope per call, to the recipients named in it (principle 9).
+Route::middleware('connect.scope:signing:view')->group(function (): void {
+    Route::get('/signing/envelopes', [SigningEnvelopeController::class, 'index'])->name('signing.envelopes.index');
+    Route::get('/signing/envelopes/{envelope}', [SigningEnvelopeController::class, 'show'])->whereUuid('envelope')->name('signing.envelopes.show');
+    Route::get('/signing/envelopes/{envelope}/recipients', [SigningEnvelopeController::class, 'recipients'])->whereUuid('envelope')->name('signing.envelopes.recipients.index');
+    Route::get('/signing/envelopes/{envelope}/recipients/{recipient}', [SigningEnvelopeController::class, 'recipient'])->whereUuid('envelope')->whereNumber('recipient')->name('signing.envelopes.recipients.show');
+    Route::get('/signing/envelopes/{envelope}/recipients/{recipient}/certificate', [SigningEnvelopeController::class, 'certificate'])->whereUuid('envelope')->whereNumber('recipient')->name('signing.envelopes.recipients.certificate');
+    Route::get('/signing/envelopes/{envelope}/fields', [SigningEnvelopeController::class, 'fields'])->whereUuid('envelope')->name('signing.envelopes.fields.index');
+    Route::get('/signing/envelopes/{envelope}/document', [SigningEnvelopeController::class, 'document'])->whereUuid('envelope')->name('signing.envelopes.document');
+});
+
+Route::middleware('connect.scope:signing:send')->group(function () use ($idempotent): void {
+    Route::get('/signing/documents', [SigningDocumentController::class, 'index'])->name('signing.documents.index');
+    Route::get('/signing/documents/{document}', [SigningDocumentController::class, 'show'])->whereUuid('document')->name('signing.documents.show');
+    Route::get('/signing/documents/{document}/content', [SigningDocumentController::class, 'content'])->whereUuid('document')->name('signing.documents.content');
+    Route::post('/signing/documents', [SigningDocumentController::class, 'store'])->middleware($idempotent)->defaults('connect.multipart', true)->name('signing.documents.store');
+    Route::delete('/signing/documents/{document}', [SigningDocumentController::class, 'destroy'])->whereUuid('document')->name('signing.documents.destroy');
+    Route::get('/signing/templates', [SigningTemplateController::class, 'index'])->name('signing.templates.index');
+    Route::get('/signing/templates/{template}', [SigningTemplateController::class, 'show'])->whereUuid('template')->name('signing.templates.show');
+    Route::post('/signing/envelopes', [SigningEnvelopeController::class, 'store'])->middleware($idempotent)->name('signing.envelopes.store');
+    Route::patch('/signing/envelopes/{envelope}', [SigningEnvelopeController::class, 'update'])->whereUuid('envelope')->name('signing.envelopes.update');
+    Route::post('/signing/envelopes/{envelope}/void', [SigningEnvelopeController::class, 'void'])->whereUuid('envelope')->middleware($idempotent)->name('signing.envelopes.void');
+    Route::post('/signing/envelopes/{envelope}/recipients/{recipient}/remind', [SigningEnvelopeController::class, 'remind'])->whereUuid('envelope')->whereNumber('recipient')->middleware($idempotent)->name('signing.envelopes.recipients.remind');
 });

@@ -10,6 +10,7 @@ use App\Events\PriceAgreementActivated;
 use App\Events\PriceAgreementEnded;
 use App\Events\PriceListChanged;
 use App\Events\QuoteSigned;
+use App\Events\SigningEnvelopeChanged;
 use App\Events\SupplierInvoiceApproved;
 use App\Events\VoucherPosted;
 use App\Http\Middleware\EnforceDimensionScope;
@@ -114,6 +115,7 @@ class ConnectServiceProvider extends ServiceProvider
         Event::listen(SieFileUploaded::class, [WebhookDispatcher::class, 'sieUploaded']);
         Event::listen(StockChanged::class, [WebhookDispatcher::class, 'stockChanged']);
         Event::listen(QuoteSigned::class, [WebhookDispatcher::class, 'quoteSigned']);
+        Event::listen(SigningEnvelopeChanged::class, [WebhookDispatcher::class, 'signingChanged']);
         Event::listen(PeppolTransmissionChanged::class, [WebhookDispatcher::class, 'peppolTransmissionChanged']);
         Event::listen(PriceListChanged::class, [WebhookDispatcher::class, 'priceListChanged']);
         Event::listen(PriceAgreementActivated::class, [WebhookDispatcher::class, 'priceAgreementActivated']);

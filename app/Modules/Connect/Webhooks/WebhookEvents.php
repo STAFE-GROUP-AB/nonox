@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\Connect\Webhooks;
 
+use App\Domain\Signing\SigningStatus;
+use App\Events\SigningEnvelopeChanged;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
 use App\Models\PriceAgreement;
 use App\Models\PriceList;
+use App\Models\SigningEnvelope;
 use App\Models\SigningRequest;
 use App\Models\SupplierInvoice;
 use App\Models\Voucher;
@@ -48,6 +51,10 @@ final class WebhookEvents
         'price_list.changed' => ['prices:view'],
         'price_agreement.activated' => ['prices:view'],
         'price_agreement.ended' => ['prices:view'],
+        'signing.recipient_signed' => ['signing:view'],
+        'signing.completed' => ['signing:view'],
+        'signing.declined' => ['signing:view'],
+        'signing.expired' => ['signing:view'],
     ];
 
     /** @return array<string, string> event => Swedish description */
@@ -68,6 +75,10 @@ final class WebhookEvents
             'price_list.changed' => __('Priser i en prislista har lagts till, ändrats eller tagits bort'),
             'price_agreement.activated' => __('Ett prisavtal med en kund har blivit aktivt'),
             'price_agreement.ended' => __('Ett prisavtal med en kund har upphört att gälla'),
+            'signing.recipient_signed' => __('En undertecknare har signerat ett dokument (Signering)'),
+            'signing.completed' => __('Alla undertecknare har signerat ett dokument (Signering)'),
+            'signing.declined' => __('En undertecknare har avböjt att signera ett dokument (Signering)'),
+            'signing.expired' => __('Sista dag att signera ett dokument har passerat (Signering)'),
         ];
     }
 
@@ -406,5 +417,54 @@ final class WebhookEvents
             'signature_method' => $request->signature_method,
             'document_sha256' => $request->document_sha256,
         ];
+    }
+
+    /**
+     * Must run inside the company (ADR-046 S19). Ids, counts and times only:
+     * never an e-mail address, a name, a title, a decline reason, the signer's
+     * IP address or any field value. `signed_document_sha256` is the hash of
+     * the signer's certificate, as `document_sha256` is of the document's PDF.
+     *
+     * @return ?array<string, mixed>
+     */
+    public static function signing(string $envelopeId, int $signingRequestId, string $change): ?array
+    {
+        $envelope = SigningEnvelope::query()->with('signers:id,envelope_id,step,status')->find($envelopeId);
+        $signer = SigningRequest::query()->where('envelope_id', $envelopeId)->find($signingRequestId);
+
+        if (! $envelope instanceof SigningEnvelope || ! $signer instanceof SigningRequest) {
+            return null;
+        }
+
+        $data = [
+            'envelope_id' => $envelope->id,
+            'document_type' => $envelope->document_type,
+            'quote_id' => $envelope->sales_document_id,
+            'agreement_id' => $envelope->agreement_id,
+            'signable_id' => $envelope->signable_id,
+            'document_sha256' => $envelope->document_sha256,
+            'recipients' => $envelope->signers->count(),
+            'recipients_signed' => $envelope->signers->where('status', SigningStatus::Signed)->count(),
+        ];
+
+        return match ($change) {
+            SigningEnvelopeChanged::RECIPIENT_SIGNED => [
+                ...$data,
+                'recipient_id' => $signer->id,
+                'step' => $signer->step,
+                'signed_at' => $signer->signed_at?->toAtomString(),
+                'signature_method' => $signer->signature_method,
+                'signed_document_sha256' => $signer->signed_document_sha256,
+            ],
+            SigningEnvelopeChanged::COMPLETED => [...$data, 'completed_at' => $envelope->completed_at?->toAtomString()],
+            SigningEnvelopeChanged::DECLINED => [...$data, 'recipient_id' => $signer->id, 'step' => $signer->step, 'declined_at' => $signer->declined_at?->toAtomString()],
+            SigningEnvelopeChanged::EXPIRED => [
+                ...$data,
+                'deadline_at' => $envelope->deadline_at?->toAtomString(),
+                'expired_at' => $envelope->expired_at?->toAtomString(),
+                'recipients_pending' => $envelope->signers->where('status', SigningStatus::Pending)->count(),
+            ],
+            default => null,
+        };
     }
 }

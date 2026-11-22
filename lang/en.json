@@ -15129,5 +15129,20 @@
     "Massutskicket stoppades: ett fel gjorde att det inte gick att fortsätta.": "The bulk send was stopped: an error made it impossible to continue.",
     "Massutskicket stoppades: mallen ändrades efter förhandsgranskningen.": "The bulk send was stopped: the template was changed after the preview.",
     "Massutskicket avbröts automatiskt: det kom inte vidare på :days dagar.": "The bulk send was cancelled automatically: it made no progress in :days days.",
-    "Mallen har ändrats sedan förhandsgranskningen. Ta bort förhandsgranskningen och läs in filen igen.": "The template has changed since the preview. Remove the preview and read the file in again."
+    "Mallen har ändrats sedan förhandsgranskningen. Ta bort förhandsgranskningen och läs in filen igen.": "The template has changed since the preview. Remove the preview and read the file in again.",
+    "Läsa signeringar: dokument, kuvert, undertecknare, fält, mallar och de signerade filerna": "Read signings: documents, envelopes, signers, fields, templates and the signed files",
+    "Ladda upp dokument och skicka dem för signering, påminna, ändra sista dag och dra tillbaka egna kuvert": "Upload documents and send them for signing, remind, move the last day and withdraw own envelopes",
+    "Se, påminna och dra tillbaka alla kuvert, även konfidentiella, och läsa alla mallar": "See, remind and withdraw all envelopes, also confidential ones, and read all templates",
+    "En undertecknare har signerat ett dokument (Signering)": "A signer has signed a document (Signering)",
+    "Alla undertecknare har signerat ett dokument (Signering)": "All signers have signed a document (Signering)",
+    "En undertecknare har avböjt att signera ett dokument (Signering)": "A signer has declined to sign a document (Signering)",
+    "Sista dag att signera ett dokument har passerat (Signering)": "The last day to sign a document has passed (Signering)",
+    "Skicka PDF-filen i fältet file (multipart/form-data).": "Send the PDF in the field file (multipart/form-data).",
+    "Skriv sista dag att signera som ÅÅÅÅ-MM-DD.": "Write the last day to sign as YYYY-MM-DD.",
+    "Ange exakt ett av document_id, quote_id, agreement_id och template_id.": "Give exactly one of document_id, quote_id, agreement_id and template_id.",
+    "En mall för ett eget dokument har sin egen fil. Skicka inte med document_id, quote_id eller agreement_id.": "A template for a document of your own has its own file. Do not send document_id, quote_id or agreement_id.",
+    "Skriv vilken offert eller vilket avtal mallen ska skickas för.": "Say which quote or agreement the template is to be sent for.",
+    "Skriv recipients som ett objekt med en person per roll i mallen: :roles.": "Write recipients as an object with one person per role of the template: :roles.",
+    "Mallen har inte rollen :role.": "The template has no role :role.",
+    "Skriv vem som är :role.": "Say who is :role."
 }

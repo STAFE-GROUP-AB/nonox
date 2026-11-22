@@ -47,6 +47,7 @@ use LogicException;
  * @property ?int $uploaded_by
  * @property ?CarbonImmutable $archived_at
  * @property ?CarbonImmutable $created_at
+ * @property ?CarbonImmutable $updated_at
  */
 class SigningDocument extends Model implements RestrictsEnvelopes, Signable
 {

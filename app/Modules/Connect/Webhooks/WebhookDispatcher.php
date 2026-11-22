@@ -10,9 +10,11 @@ use App\Events\PriceAgreementActivated;
 use App\Events\PriceAgreementEnded;
 use App\Events\PriceListChanged;
 use App\Events\QuoteSigned;
+use App\Events\SigningEnvelopeChanged;
 use App\Events\SupplierInvoiceApproved;
 use App\Events\VoucherPosted;
 use App\Models\Company;
+use App\Models\SigningEnvelope;
 use App\Models\User;
 use App\Modules\Connect\ConnectModule;
 use App\Modules\Connect\Models\ConnectWebhook;
@@ -25,6 +27,7 @@ use App\Modules\Peppol\Domain\TransmissionStatus;
 use App\Modules\Peppol\Events\PeppolTransmissionChanged;
 use App\Modules\Planning\Events\PeriodAttested;
 use App\Modules\Planning\Events\PeriodPublished;
+use App\Modules\Signing\Support\EnvelopeVisibility;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Closure;
@@ -88,6 +91,38 @@ final class WebhookDispatcher
         $this->dispatch($event->companyId, 'quote.signed', fn (): ?array => WebhookEvents::quoteSigned($event->signingRequestId));
     }
 
+    /**
+     * Signing (ADR-046 S19): ids, counts and times only. A subscriber gets an
+     * event only for an envelope its creator may see right now (the rule of
+     * the envelope list: a confidential envelope reaches only its sender and
+     * signing:manage), so a webhook never reveals what the API would hide.
+     */
+    public function signingChanged(SigningEnvelopeChanged $event): void
+    {
+        $type = match ($event->change) {
+            SigningEnvelopeChanged::RECIPIENT_SIGNED => 'signing.recipient_signed',
+            SigningEnvelopeChanged::COMPLETED => 'signing.completed',
+            SigningEnvelopeChanged::DECLINED => 'signing.declined',
+            SigningEnvelopeChanged::EXPIRED => 'signing.expired',
+            default => null,
+        };
+
+        if ($type === null) {
+            return;
+        }
+
+        $this->dispatch(
+            $event->companyId,
+            $type,
+            fn (): ?array => WebhookEvents::signing($event->envelopeId, $event->signingRequestId, $event->change),
+            function (User $creator, Company $company) use ($event): bool {
+                $envelope = SigningEnvelope::query()->find($event->envelopeId);
+
+                return $envelope instanceof SigningEnvelope && ConnectAccess::without(fn (): bool => EnvelopeVisibility::allows($creator, $company, $envelope));
+            },
+        );
+    }
+
     /** Prices (ADR-082 P9): ids and dates only. */
     public function priceListChanged(PriceListChanged $event): void
     {
@@ -120,8 +155,9 @@ final class WebhookDispatcher
 
     /**
      * @param  Closure(): ?array<string, mixed>  $data
+     * @param  ?Closure(User, Company): bool  $mayReceive  a further rule per subscriber, run inside the company
      */
-    private function dispatch(int $companyId, string $type, Closure $data): void
+    private function dispatch(int $companyId, string $type, Closure $data, ?Closure $mayReceive = null): void
     {
         $company = Company::query()->find($companyId);
 
@@ -129,9 +165,10 @@ final class WebhookDispatcher
             return;
         }
 
-        $queued = CurrentCompany::run($company, function () use ($company, $type, $data): array {
+        $queued = CurrentCompany::run($company, function () use ($company, $type, $data, $mayReceive): array {
             $webhooks = ConnectWebhook::query()->active()->whereJsonContains('events', $type)->with('creator')->get()
-                ->filter(fn (ConnectWebhook $webhook): bool => $this->creatorMaySend($webhook->creator, $company, $type));
+                ->filter(fn (ConnectWebhook $webhook): bool => $this->creatorMaySend($webhook->creator, $company, $type)
+                    && (! $mayReceive instanceof Closure || ($webhook->creator instanceof User && $mayReceive($webhook->creator, $company))));
 
             if ($webhooks->isEmpty()) {
                 return [];

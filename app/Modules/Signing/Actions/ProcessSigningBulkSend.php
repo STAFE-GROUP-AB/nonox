@@ -8,7 +8,6 @@ use App\Actions\Signing\SendForSigning;
 use App\Jobs\RunSigningBulkSend;
 use App\Models\Company;
 use App\Models\SigningEnvelope;
-use App\Models\SigningField;
 use App\Models\SigningRequest;
 use App\Models\User;
 use App\Modules\ModuleManager;
@@ -18,9 +17,9 @@ use App\Modules\Signing\Models\SigningDocument;
 use App\Modules\Signing\Models\SigningTemplate;
 use App\Modules\Signing\SigningModule;
 use App\Modules\Signing\Support\TemplateFingerprint;
+use App\Modules\Signing\Support\TemplateSend;
 use App\Support\MailQuota;
 use App\Support\Tenancy\CurrentCompany;
-use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -144,32 +143,11 @@ final class ProcessSigningBulkSend
             throw new \LogicException('The stored file of a signing template is missing or has changed.');
         }
 
-        $indexOf = [];
-
-        foreach ($template->roles->values() as $index => $role) {
-            $indexOf[$role->key] = $index;
-        }
-
-        $fields = $template->fields->map(fn (SigningField $field): array => [
-            'signer' => $indexOf[(string) $field->role_key] ?? 0,
-            'type' => $field->type->value,
-            'page' => $field->page,
-            'x' => $field->x,
-            'y' => $field->y,
-            'width' => $field->width,
-            'height' => $field->height,
-            'label' => $field->label,
-            'required' => $field->required,
-            'options' => (array) ($field->options ?? []),
-            'group_key' => $field->group_key,
-            'rules' => (array) ($field->rules ?? []),
-        ])->values()->all();
-
         return [
             'bytes' => $bytes,
-            'fields' => $fields,
-            'expires_on' => $template->deadline_days === null ? null : CarbonImmutable::now((string) config('app.timezone'))->addDays($template->deadline_days)->format('Y-m-d'),
-            'reminders' => ['auto_reminders' => $template->auto_reminders, 'reminder_days' => $template->reminder_days === null ? 'single' : (string) $template->reminder_days],
+            'fields' => TemplateSend::fields($template),
+            'expires_on' => TemplateSend::expiresOn($template),
+            'reminders' => TemplateSend::reminders($template),
             'copies' => (array) ($template->copies ?? []),
         ];
     }

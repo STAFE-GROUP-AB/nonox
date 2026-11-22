@@ -39,6 +39,10 @@ Offerter, avtal och ÄTA i listan syns bara för den som får se dem: offerter f
 
 Då kan inga nya dokument skickas, och öppna länkar för egna dokument slutar fungera. Signerade egna dokument, med signeringsbevis, går fortfarande att läsa med behörigheten att se signeringar, under **Signering → Signeringsarkiv**. Signeringen av offerter, avtal och ÄTA påverkas inte.
 
+## Från ett annat program (API)
+
+Ett system utanför NONOX kan ladda upp en PDF, skicka den för signering, påminna, flytta sista dag, dra tillbaka kuvertet och hämta det färdiga dokumentet och signeringsbevisen genom [API:t](/utvecklare). Ett anrop skickar ett kuvert till de personer det namnger; ingenting skickas efter en regel eller i bulk. Länken går bara till undertecknarens egen e-postadress och lämnas aldrig ut. Webhooks `signing.recipient_signed`, `signing.completed`, `signing.declined` och `signing.expired` talar om när något händer, med bara id, antal och tider. Ett konfidentiellt kuvert syns i API:t och i webhooks bara för avsändaren och den som får hantera signering. Nycklarna får behörigheterna *Se signeringar*, *Skicka för signering* och *Hantera signering*.
+
 ## Läs också
 
 - [Skicka ett dokument för signering](/manual/signering/skicka-dokument)

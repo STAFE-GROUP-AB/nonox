@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-22-api-signering",
+      "datum": "2026-11-22T14:20:00+01:00",
+      "rubrik": "Signering i API:et",
+      "beskrivning": "Ett system utanför NONOX kan nu ladda upp en PDF, skicka den för signering med flera undertecknare i steg, påminna, flytta sista dag, dra tillbaka kuvertet och hämta det färdiga dokumentet och signeringsbevisen, också från en mall. Ett anrop skickar ett kuvert till de personer det namnger, och ett konfidentiellt kuvert syns bara för avsändaren och den som får hantera signering. Fyra nya webhooks meddelar när en undertecknare har signerat, när alla har signerat, när någon har avböjt och när sista dag har passerat.",
+      "typ": "Nytt",
+      "omrade": "Connect/API"
+    },
+    {
       "id": "2026-11-22-signering-massutskick",
       "datum": "2026-11-22T12:20:00+01:00",
       "rubrik": "Massutskick för signering",

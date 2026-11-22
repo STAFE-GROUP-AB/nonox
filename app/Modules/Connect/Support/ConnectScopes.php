@@ -40,6 +40,9 @@ final class ConnectScopes
         'prices:view-cost',
         'price-lists:manage',
         'price-agreements:manage',
+        'signing:view',
+        'signing:send',
+        'signing:manage',
     ];
 
     /** @return array<string, string> scope => Swedish description, for the consent screen and API keys */
@@ -70,6 +73,9 @@ final class ConnectScopes
             'prices:view-cost' => __('Se artiklarnas kostnad vid prisuppslag'),
             'price-lists:manage' => __('Lägga till och ändra prislistor och priser i dem'),
             'price-agreements:manage' => __('Lägga till, ändra, aktivera och säga upp prisavtal med kunder'),
+            'signing:view' => __('Läsa signeringar: dokument, kuvert, undertecknare, fält, mallar och de signerade filerna'),
+            'signing:send' => __('Ladda upp dokument och skicka dem för signering, påminna, ändra sista dag och dra tillbaka egna kuvert'),
+            'signing:manage' => __('Se, påminna och dra tillbaka alla kuvert, även konfidentiella, och läsa alla mallar'),
         ];
     }
 
@@ -87,6 +93,7 @@ final class ConnectScopes
         'inventory' => ['inventory:view', 'inventory:manage'],
         'crm' => ['crm:view', 'crm:manage'],
         'prices' => ['prices:view', 'prices:view-cost', 'price-lists:manage', 'price-agreements:manage'],
+        'signing' => ['signing:view', 'signing:send', 'signing:manage'],
     ];
 
     /** @return array<string, string> group key => Swedish name */
@@ -100,6 +107,7 @@ final class ConnectScopes
             'inventory' => __('Lager'),
             'crm' => __('CRM'),
             'prices' => __('Priser'),
+            'signing' => __('Signering'),
         ];
     }
 

@@ -112,6 +112,10 @@ tags:
     x-en-name: Prices
     description: 'Price lists, customer price agreements and the price lookup the invoice editor uses.'
     x-sv-description: 'Prislistor, kundernas prisavtal och prisuppslaget som fakturaredigeraren använder.'
+  - name: Signering
+    x-en-name: Signing
+    description: 'Documents, templates and envelopes for signing with one or more signers, and the signing.* webhooks. A person decides what is sent: one envelope per call, to the people it names. Needs the Signering module for sending.'
+    x-sv-description: 'Dokument, mallar och kuvert för signering med en eller flera undertecknare, och webhooks för signering. En människa bestämmer vad som skickas: ett kuvert per anrop.'
 security:
   - oauth2: []
   - apiKey: []
@@ -10884,6 +10888,1504 @@ paths:
           $ref: '#/components/responses/Unprocessable'
         429:
           $ref: '#/components/responses/TooManyRequests'
+  /signing/documents:
+    get:
+      operationId: listSigningDocuments
+      tags:
+        - Signering
+      summary: 'List documents for signing'
+      description: 'The PDFs uploaded for signing, sent or not. As in the send wizard an uploaded document is its uploader''s, and signing:manage sees everyone''s: any other document is not found. Needs signing:send, which no one has while the Signering module is off.'
+      x-sv-summary: 'Lista dokument för signering'
+      x-sv-description: 'PDF-filer som laddats upp för signering, skickade eller inte. Ett uppladdat dokument är uppladdarens, och signing:manage ser allas.'
+      security:
+        - oauth2:
+            - 'signing:send'
+        - apiKey:
+            - 'signing:send'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:send'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SigningDocument'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: uploadSigningDocument
+      tags:
+        - Signering
+      summary: 'Upload a document for signing'
+      description: 'Uploads a PDF as multipart/form-data in the field `file`, with a `title`. The file is checked for what it really is, never for what the client says: the %PDF- header, the type by content, then the PDF engine, which refuses a file with more than 100 pages, encryption, JavaScript, launch actions, embedded files or actions that send data out. A refused file is never cleaned up. The file never changes; a new file is a new document. At most 200 uploaded documents may wait unsent. Needs signing:send.'
+      x-sv-summary: 'Ladda upp ett dokument för signering'
+      x-sv-description: 'Laddar upp en PDF som multipart/form-data i fältet file, med en title. Filen kontrolleras efter vad den är, inte efter vad klienten säger. Filen ändras aldrig.'
+      security:
+        - oauth2:
+            - 'signing:send'
+        - apiKey:
+            - 'signing:send'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:send'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - title
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: 'The PDF, at most 20 MB and 100 pages.'
+                title:
+                  type: string
+                  maxLength: 255
+                  description: 'The document''s title in NONOX (not shown to the signers).'
+                customer_id:
+                  type: integer
+                  description: 'A customer of the company the document belongs to; needs the right to see customers.'
+                supplier_id:
+                  type: integer
+                  description: 'A supplier the document belongs to; needs the right to see suppliers.'
+            encoding:
+              file:
+                contentType: 'application/pdf'
+      responses:
+        201:
+          description: 'The document.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+            Location:
+              description: 'The address of the new resource.'
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SigningDocument'
+              examples:
+                example:
+                  value:
+                    id: '01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22'
+                    title: 'Hyresavtal'
+                    file_name: 'Hyresavtal.pdf'
+                    sha256: '9f2c4d7a1e3b5c6d8f0a2b4c6d8e0f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e'
+                    bytes: 84213
+                    page_count: 4
+                    customer_id: 18
+                    supplier_id: null
+                    uploaded_by: 3
+                    archived_at: null
+                    created_at: '2026-11-22T08:55:00+01:00'
+                    updated_at: '2026-11-22T08:55:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/signing/documents/{document}':
+    parameters:
+      - name: document
+        in: path
+        required: true
+        description: 'Document id.'
+        schema:
+          type: string
+          format: uuid
+        example: 01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22
+    get:
+      operationId: getSigningDocument
+      tags:
+        - Signering
+      summary: 'Get a document for signing'
+      description: 'One uploaded document. Needs signing:send.'
+      x-sv-summary: 'Hämta ett dokument för signering'
+      x-sv-description: 'Ett uppladdat dokument.'
+      security:
+        - oauth2:
+            - 'signing:send'
+        - apiKey:
+            - 'signing:send'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:send'
+      responses:
+        200:
+          description: 'The document.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SigningDocument'
+              examples:
+                example:
+                  value:
+                    id: '01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22'
+                    title: 'Hyresavtal'
+                    file_name: 'Hyresavtal.pdf'
+                    sha256: '9f2c4d7a1e3b5c6d8f0a2b4c6d8e0f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e'
+                    bytes: 84213
+                    page_count: 4
+                    customer_id: 18
+                    supplier_id: null
+                    uploaded_by: 3
+                    archived_at: null
+                    created_at: '2026-11-22T08:55:00+01:00'
+                    updated_at: '2026-11-22T08:55:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    delete:
+      operationId: deleteSigningDocument
+      tags:
+        - Signering
+      summary: 'Delete an unsent document'
+      description: 'Deletes a document that has not been sent in an envelope; one that has been sent is refused (422), since its envelope refers to it. The uploader removes their own, signing:manage anyone''s. Needs signing:send.'
+      x-sv-summary: 'Ta bort ett dokument som inte är skickat'
+      x-sv-description: 'Tar bort ett dokument som inte skickats. Ett skickat dokument kan inte tas bort.'
+      security:
+        - oauth2:
+            - 'signing:send'
+        - apiKey:
+            - 'signing:send'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:send'
+      responses:
+        204:
+          description: 'Deleted.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/signing/documents/{document}/content':
+    parameters:
+      - name: document
+        in: path
+        required: true
+        description: 'Document id.'
+        schema:
+          type: string
+          format: uuid
+        example: 01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22
+    get:
+      operationId: downloadSigningDocument
+      tags:
+        - Signering
+      summary: 'Download the uploaded file'
+      description: 'The PDF as uploaded, byte for byte. X-Content-SHA256 lets you verify it against sha256 in the metadata. Needs signing:send.'
+      x-sv-summary: 'Hämta den uppladdade filen'
+      x-sv-description: 'Den uppladdade PDF-filen, byte för byte. X-Content-SHA256 låter dig kontrollera den mot sha256.'
+      security:
+        - oauth2:
+            - 'signing:send'
+        - apiKey:
+            - 'signing:send'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:send'
+      responses:
+        200:
+          description: 'The file.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            X-Content-SHA256:
+              $ref: '#/components/headers/ContentSha256'
+            Content-Disposition:
+              description: 'attachment; filename="…"'
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /signing/templates:
+    get:
+      operationId: listSigningTemplates
+      tags:
+        - Signering
+      summary: 'List templates for signing'
+      description: 'The company''s templates (roles, steps, checks and defaults; a PDF template also has fields). A confidential template is seen only by its maker and with signing:manage; archived ones are left out unless include_archived is true. Needs signing:send. Templates are made and changed in NONOX, where the fields are placed on the document.'
+      x-sv-summary: 'Lista signeringsmallar'
+      x-sv-description: 'Företagets mallar. En konfidentiell mall ses bara av den som gjort den och med signing:manage. Mallar skapas och ändras i NONOX.'
+      security:
+        - oauth2:
+            - 'signing:send'
+        - apiKey:
+            - 'signing:send'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:send'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: document_type
+          in: query
+          required: false
+          description: 'DOCUMENT, QUOTE or AGREEMENT.'
+          schema:
+          type: string
+        - name: include_archived
+          in: query
+          required: false
+          description: 'true to include archived templates.'
+          schema:
+          type: boolean
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SigningTemplate'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/signing/templates/{template}':
+    parameters:
+      - name: template
+        in: path
+        required: true
+        description: 'Template id.'
+        schema:
+          type: string
+          format: uuid
+        example: 01a2036b-9c33-7d10-8a44-5b6c7d8e9f01
+    get:
+      operationId: getSigningTemplate
+      tags:
+        - Signering
+      summary: 'Get a template for signing'
+      description: 'One template with its roles, fields and copy recipients. A template the credential''s person may not see answers 404, as another company''s does.'
+      x-sv-summary: 'Hämta en signeringsmall'
+      x-sv-description: 'En mall med roller, fält och kopiemottagare. En mall personen inte får se svarar 404.'
+      security:
+        - oauth2:
+            - 'signing:send'
+        - apiKey:
+            - 'signing:send'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:send'
+      responses:
+        200:
+          description: 'The template.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SigningTemplateDetail'
+              examples:
+                example:
+                  value:
+                    id: '01a2036b-9c33-7d10-8a44-5b6c7d8e9f01'
+                    name: 'Samarbetsavtal'
+                    document_type: 'DOCUMENT'
+                    file_name: 'Samarbetsavtal.pdf'
+                    sha256: '9f2c4d7a1e3b5c6d8f0a2b4c6d8e0f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e'
+                    bytes: 84213
+                    page_count: 4
+                    deadline_days: 14
+                    auto_reminders: true
+                    reminder_days: 2
+                    language: 'sv'
+                    confidential: false
+                    archived_at: null
+                    created_at: '2026-11-20T10:00:00+01:00'
+                    updated_at: '2026-11-20T10:00:00+01:00'
+                    copy_recipients:
+                      - email: 'arkiv@example.com'
+                        name: 'Arkivet'
+                        language: 'sv'
+                    roles:
+                      - key: 'saljare'
+                        label: 'Säljare'
+                        step: 1
+                        verification: 'NONE'
+                        internal: true
+                      - key: 'kund'
+                        label: 'Kund'
+                        step: 2
+                        verification: 'EMAIL_CODE'
+                        internal: false
+                    fields:
+                      - id: 12
+                        recipient_id: null
+                        type: 'SIGNATURE'
+                        page: 1
+                        x: 5000
+                        y: 5000
+                        width: 20000
+                        height: 2000
+                        page_width: 59528
+                        page_height: 84189
+                        label: 'Kundens underskrift'
+                        required: true
+                        options: null
+                        group_key: null
+                        rules: null
+                        role_key: 'kund'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /signing/envelopes:
+    get:
+      operationId: listSigningEnvelopes
+      tags:
+        - Signering
+      summary: 'List envelopes'
+      description: 'Every envelope the credential''s person may see, by the rule of the screen Signering: standalone documents with signing:view (a confidential one only to its sender and with signing:manage), quotes with invoices:view, agreements with crm:view and an ÄTA with work-orders:view. While the Signering module is off only signed standalone documents are listed. status is OUT, COMPLETED, DECLINED, VOIDED or EXPIRED (an envelope out past its last day). Each envelope carries its recipients and copy recipients; a link is never returned.'
+      x-sv-summary: 'Lista signeringskuvert'
+      x-sv-description: 'Alla kuvert personen får se, enligt samma regel som sidan Signering. Ett konfidentiellt kuvert ses bara av avsändaren och med signing:manage.'
+      security:
+        - oauth2:
+            - 'signing:view'
+        - apiKey:
+            - 'signing:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: status
+          in: query
+          required: false
+          description: 'OUT, COMPLETED, DECLINED, VOIDED or EXPIRED.'
+          schema:
+          type: string
+        - name: document_type
+          in: query
+          required: false
+          description: 'DOCUMENT, QUOTE, AGREEMENT or ATA.'
+          schema:
+          type: string
+        - name: document_id
+          in: query
+          required: false
+          description: 'The envelopes of one uploaded document.'
+          schema:
+          type: string
+          format: uuid
+        - name: quote_id
+          in: query
+          required: false
+          description: 'The envelopes of one quote.'
+          schema:
+          type: string
+          format: uuid
+        - name: agreement_id
+          in: query
+          required: false
+          description: 'The envelopes of one agreement.'
+          schema:
+          type: integer
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SigningEnvelope'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createSigningEnvelope
+      tags:
+        - Signering
+      summary: 'Create and send an envelope'
+      description: 'Creates an envelope and sends it: exactly one of `document_id` (an uploaded document), `quote_id`, `agreement_id` or `template_id`. Up to 10 signers with a step 1 to 10 (the same step signs in parallel; a step opens when everyone on the step before has signed; only the first step''s links are mailed now), up to 10 copy recipients, a last day (`expires_on`, at most 90 days; default 30), reminders, a check per signer (`NONE`, `EMAIL_CODE` or `ACCESS_CODE` with `access_code`, stored only as a hash), and optionally fields placed in the PDF (`signer` is the index in `signers`; every signer needs a signature field when any are placed). From a template the people are named by the template''s roles in `recipients` (an object keyed by role key) and the template''s steps, checks, fields and defaults apply; `expires_on`, `copies`, `notify_copies` and `confidential` may be given to override. The same checks, mail quota and rules as the screen apply (a quote needs the quote screen''s rights; only an uploaded document can be confidential). One envelope per call, to the people it names: there is no way to send by a rule or in bulk over the API, and the link goes only to the signer''s own address and is never returned. Needs signing:send; a quote also needs invoices:create and invoices:send, an agreement crm:manage.'
+      x-sv-summary: 'Skapa och skicka ett kuvert'
+      x-sv-description: 'Skapar ett kuvert och skickar det: exakt ett av document_id, quote_id, agreement_id eller template_id. Högst 10 undertecknare i steg, högst 10 kopiemottagare, sista dag, påminnelser, kontroll per undertecknare och fält i PDF:en. Från en mall namnges personerna efter mallens roller. Samma kontroller som i appen gäller. Länken returneras aldrig.'
+      security:
+        - oauth2:
+            - 'signing:send'
+        - apiKey:
+            - 'signing:send'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:send'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SigningEnvelopeInput'
+            examples:
+              document:
+                summary: 'An uploaded document, two signers in order'
+                value:
+                  document_id: '01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22'
+                  signers:
+                    - email: 'anna@example.com'
+                      step: 1
+                    - email: 'bo@example.com'
+                      step: 2
+                      verification: 'ACCESS_CODE'
+                      access_code: 'orange-4711'
+                  copies:
+                    - email: 'arkiv@example.com'
+                      name: 'Arkivet'
+                  expires_on: '2026-12-21'
+              template:
+                summary: 'From a template, the people named by role'
+                value:
+                  template_id: '01a2036b-9c33-7d10-8a44-5b6c7d8e9f01'
+                  recipients:
+                    saljare:
+                      email: 'saljare@example.com'
+                    kund:
+                      email: 'kund@example.com'
+                      language: 'en'
+      responses:
+        201:
+          description: 'The envelope, sent.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+            Location:
+              description: 'The address of the new resource.'
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SigningEnvelope'
+              examples:
+                example:
+                  value:
+                    id: '01a2036b-9b87-7314-8d5f-c297baf24ea0'
+                    document_type: 'DOCUMENT'
+                    quote_id: null
+                    agreement_id: null
+                    document_id: '01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22'
+                    signable_id: '01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22'
+                    template_id: null
+                    status: 'OUT'
+                    current_step: 1
+                    confidential: false
+                    auto_reminders: true
+                    reminder_interval_days: null
+                    deadline_at: '2026-12-21T23:59:59+01:00'
+                    sent_at: '2026-11-22T09:00:00+01:00'
+                    completed_at: null
+                    declined_at: null
+                    voided_at: null
+                    expired_at: null
+                    document_name: 'Hyresavtal.pdf'
+                    document_sha256: '9f2c4d7a1e3b5c6d8f0a2b4c6d8e0f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e'
+                    created_by: 3
+                    recipients:
+                      - id: 501
+                        envelope_id: '01a2036b-9b87-7314-8d5f-c297baf24ea0'
+                        step: 1
+                        status: 'PENDING'
+                        email: 'anna@example.com'
+                        language: 'sv'
+                        verification: 'NONE'
+                        locked: false
+                        opened_at: null
+                        signed_at: null
+                        signer_name: null
+                        signer_title: null
+                        signature_method: null
+                        signed_document_sha256: null
+                        declined_at: null
+                        revoked_at: null
+                        reminder_count: 0
+                        last_reminded_at: null
+                        has_certificate: false
+                    copy_recipients:
+                      - id: 71
+                        email: 'arkiv@example.com'
+                        name: 'Arkivet'
+                        sent_at: null
+                    created_at: '2026-11-22T09:00:00+01:00'
+                    updated_at: '2026-11-22T09:00:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/signing/envelopes/{envelope}':
+    parameters:
+      - name: envelope
+        in: path
+        required: true
+        description: 'Envelope id.'
+        schema:
+          type: string
+          format: uuid
+        example: 01a2036b-9b87-7314-8d5f-c297baf24ea0
+    get:
+      operationId: getSigningEnvelope
+      tags:
+        - Signering
+      summary: 'Get an envelope'
+      description: 'One envelope with its recipients (status, step, check, who has signed and when; never a link, a code, an IP address or a drawn signature) and copy recipients. An envelope the credential''s person may not see answers 404.'
+      x-sv-summary: 'Hämta ett signeringskuvert'
+      x-sv-description: 'Ett kuvert med undertecknare och kopiemottagare. Aldrig länk, kod, IP-adress eller ritad signatur.'
+      security:
+        - oauth2:
+            - 'signing:view'
+        - apiKey:
+            - 'signing:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:view'
+      responses:
+        200:
+          description: 'The envelope.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SigningEnvelope'
+              examples:
+                example:
+                  value:
+                    id: '01a2036b-9b87-7314-8d5f-c297baf24ea0'
+                    document_type: 'DOCUMENT'
+                    quote_id: null
+                    agreement_id: null
+                    document_id: '01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22'
+                    signable_id: '01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22'
+                    template_id: null
+                    status: 'OUT'
+                    current_step: 1
+                    confidential: false
+                    auto_reminders: true
+                    reminder_interval_days: null
+                    deadline_at: '2026-12-21T23:59:59+01:00'
+                    sent_at: '2026-11-22T09:00:00+01:00'
+                    completed_at: null
+                    declined_at: null
+                    voided_at: null
+                    expired_at: null
+                    document_name: 'Hyresavtal.pdf'
+                    document_sha256: '9f2c4d7a1e3b5c6d8f0a2b4c6d8e0f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e'
+                    created_by: 3
+                    recipients:
+                      - id: 501
+                        envelope_id: '01a2036b-9b87-7314-8d5f-c297baf24ea0'
+                        step: 1
+                        status: 'PENDING'
+                        email: 'anna@example.com'
+                        language: 'sv'
+                        verification: 'NONE'
+                        locked: false
+                        opened_at: null
+                        signed_at: null
+                        signer_name: null
+                        signer_title: null
+                        signature_method: null
+                        signed_document_sha256: null
+                        declined_at: null
+                        revoked_at: null
+                        reminder_count: 0
+                        last_reminded_at: null
+                        has_certificate: false
+                    copy_recipients:
+                      - id: 71
+                        email: 'arkiv@example.com'
+                        name: 'Arkivet'
+                        sent_at: null
+                    created_at: '2026-11-22T09:00:00+01:00'
+                    updated_at: '2026-11-22T09:00:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    patch:
+      operationId: updateSigningEnvelope
+      tags:
+        - Signering
+      summary: 'Move the last day'
+      description: 'Moves the last day of an envelope that is out; the signers who can sign now are told by e-mail. An envelope that is finished, withdrawn or expired is refused (422). Needs signing:send and the right to act on the envelope: one''s own, or anyone''s with signing:manage.'
+      x-sv-summary: 'Ändra sista dag'
+      x-sv-description: 'Ändrar sista dag för ett kuvert som är ute. De som kan signera nu får ett mejl.'
+      security:
+        - oauth2:
+            - 'signing:send'
+        - apiKey:
+            - 'signing:send'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:send'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - expires_on
+              properties:
+                expires_on:
+                  type: string
+                  format: date
+                  description: 'The new last day to sign (Y-m-d), within 90 days.'
+            examples:
+              example:
+                value:
+                  expires_on: '2026-12-31'
+      responses:
+        200:
+          description: 'The envelope.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SigningEnvelope'
+              examples:
+                example:
+                  value:
+                    id: '01a2036b-9b87-7314-8d5f-c297baf24ea0'
+                    document_type: 'DOCUMENT'
+                    quote_id: null
+                    agreement_id: null
+                    document_id: '01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22'
+                    signable_id: '01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22'
+                    template_id: null
+                    status: 'OUT'
+                    current_step: 1
+                    confidential: false
+                    auto_reminders: true
+                    reminder_interval_days: null
+                    deadline_at: '2026-12-21T23:59:59+01:00'
+                    sent_at: '2026-11-22T09:00:00+01:00'
+                    completed_at: null
+                    declined_at: null
+                    voided_at: null
+                    expired_at: null
+                    document_name: 'Hyresavtal.pdf'
+                    document_sha256: '9f2c4d7a1e3b5c6d8f0a2b4c6d8e0f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e'
+                    created_by: 3
+                    recipients:
+                      - id: 501
+                        envelope_id: '01a2036b-9b87-7314-8d5f-c297baf24ea0'
+                        step: 1
+                        status: 'PENDING'
+                        email: 'anna@example.com'
+                        language: 'sv'
+                        verification: 'NONE'
+                        locked: false
+                        opened_at: null
+                        signed_at: null
+                        signer_name: null
+                        signer_title: null
+                        signature_method: null
+                        signed_document_sha256: null
+                        declined_at: null
+                        revoked_at: null
+                        reminder_count: 0
+                        last_reminded_at: null
+                        has_certificate: false
+                    copy_recipients:
+                      - id: 71
+                        email: 'arkiv@example.com'
+                        name: 'Arkivet'
+                        sent_at: null
+                    created_at: '2026-11-22T09:00:00+01:00'
+                    updated_at: '2026-11-22T09:00:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/signing/envelopes/{envelope}/void':
+    parameters:
+      - name: envelope
+        in: path
+        required: true
+        description: 'Envelope id.'
+        schema:
+          type: string
+          format: uuid
+        example: 01a2036b-9b87-7314-8d5f-c297baf24ea0
+    post:
+      operationId: voidSigningEnvelope
+      tags:
+        - Signering
+      summary: 'Withdraw an envelope'
+      description: 'Withdraws an envelope that is out: every open link is revoked and answers that the document has been withdrawn. An envelope that is already signed, declined or withdrawn is refused (422). Needs signing:send and the right to act on the envelope.'
+      x-sv-summary: 'Dra tillbaka ett kuvert'
+      x-sv-description: 'Drar tillbaka ett kuvert som är ute. Alla öppna länkar återkallas.'
+      security:
+        - oauth2:
+            - 'signing:send'
+        - apiKey:
+            - 'signing:send'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:send'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        200:
+          description: 'The envelope, now VOIDED.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SigningEnvelope'
+              examples:
+                example:
+                  value:
+                    id: '01a2036b-9b87-7314-8d5f-c297baf24ea0'
+                    document_type: 'DOCUMENT'
+                    quote_id: null
+                    agreement_id: null
+                    document_id: '01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22'
+                    signable_id: '01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22'
+                    template_id: null
+                    status: 'OUT'
+                    current_step: 1
+                    confidential: false
+                    auto_reminders: true
+                    reminder_interval_days: null
+                    deadline_at: '2026-12-21T23:59:59+01:00'
+                    sent_at: '2026-11-22T09:00:00+01:00'
+                    completed_at: null
+                    declined_at: null
+                    voided_at: null
+                    expired_at: null
+                    document_name: 'Hyresavtal.pdf'
+                    document_sha256: '9f2c4d7a1e3b5c6d8f0a2b4c6d8e0f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e'
+                    created_by: 3
+                    recipients:
+                      - id: 501
+                        envelope_id: '01a2036b-9b87-7314-8d5f-c297baf24ea0'
+                        step: 1
+                        status: 'PENDING'
+                        email: 'anna@example.com'
+                        language: 'sv'
+                        verification: 'NONE'
+                        locked: false
+                        opened_at: null
+                        signed_at: null
+                        signer_name: null
+                        signer_title: null
+                        signature_method: null
+                        signed_document_sha256: null
+                        declined_at: null
+                        revoked_at: null
+                        reminder_count: 0
+                        last_reminded_at: null
+                        has_certificate: false
+                    copy_recipients:
+                      - id: 71
+                        email: 'arkiv@example.com'
+                        name: 'Arkivet'
+                        sent_at: null
+                    created_at: '2026-11-22T09:00:00+01:00'
+                    updated_at: '2026-11-22T09:00:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/signing/envelopes/{envelope}/recipients':
+    parameters:
+      - name: envelope
+        in: path
+        required: true
+        description: 'Envelope id.'
+        schema:
+          type: string
+          format: uuid
+        example: 01a2036b-9b87-7314-8d5f-c297baf24ea0
+    get:
+      operationId: listSigningRecipients
+      tags:
+        - Signering
+      summary: 'List the recipients of an envelope'
+      description: 'The signers in step order. Needs signing:view and the right to see the envelope.'
+      x-sv-summary: 'Lista undertecknarna i ett kuvert'
+      x-sv-description: 'Undertecknarna i stegordning.'
+      security:
+        - oauth2:
+            - 'signing:view'
+        - apiKey:
+            - 'signing:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:view'
+      responses:
+        200:
+          description: 'The recipients.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SigningRecipient'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/signing/envelopes/{envelope}/recipients/{recipient}':
+    parameters:
+      - name: envelope
+        in: path
+        required: true
+        description: 'Envelope id.'
+        schema:
+          type: string
+          format: uuid
+        example: 01a2036b-9b87-7314-8d5f-c297baf24ea0
+      - name: recipient
+        in: path
+        required: true
+        description: 'Recipient id.'
+        schema:
+          type: integer
+        example: 501
+    get:
+      operationId: getSigningRecipient
+      tags:
+        - Signering
+      summary: 'Get a recipient'
+      description: 'One signer of the envelope.'
+      x-sv-summary: 'Hämta en undertecknare'
+      x-sv-description: 'En undertecknare i kuvertet.'
+      security:
+        - oauth2:
+            - 'signing:view'
+        - apiKey:
+            - 'signing:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:view'
+      responses:
+        200:
+          description: 'The recipient.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SigningRecipient'
+              examples:
+                example:
+                  value:
+                    id: 501
+                    envelope_id: '01a2036b-9b87-7314-8d5f-c297baf24ea0'
+                    step: 1
+                    status: 'SIGNED'
+                    email: 'anna@example.com'
+                    language: 'sv'
+                    verification: 'NONE'
+                    locked: false
+                    opened_at: '2026-11-22T09:05:00+01:00'
+                    signed_at: '2026-11-22T09:06:10+01:00'
+                    signer_name: 'Anna Andersson'
+                    signer_title: null
+                    signature_method: 'DRAWN'
+                    signed_document_sha256: '4a1c7e9b2d5f8a0c3e6b9d2f5a8c1e4b7d0a3c6e9f2b5d8a1c4e7b0d3f6a9c2e'
+                    declined_at: null
+                    revoked_at: null
+                    reminder_count: 1
+                    last_reminded_at: '2026-11-23T09:00:00+01:00'
+                    has_certificate: true
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/signing/envelopes/{envelope}/recipients/{recipient}/remind':
+    parameters:
+      - name: envelope
+        in: path
+        required: true
+        description: 'Envelope id.'
+        schema:
+          type: string
+          format: uuid
+        example: 01a2036b-9b87-7314-8d5f-c297baf24ea0
+      - name: recipient
+        in: path
+        required: true
+        description: 'Recipient id.'
+        schema:
+          type: integer
+        example: 501
+    post:
+      operationId: remindSigningRecipient
+      tags:
+        - Signering
+      summary: 'Remind a recipient'
+      description: 'Mails a reminder to a signer who can sign now, as "Påminn nu" does: at most once an hour per signer, and not to someone whose step has not opened or who has signed (422). Needs signing:send and the right to act on the envelope.'
+      x-sv-summary: 'Påminn en undertecknare'
+      x-sv-description: 'Mejlar en påminnelse till en undertecknare som kan signera nu, högst en gång i timmen.'
+      security:
+        - oauth2:
+            - 'signing:send'
+        - apiKey:
+            - 'signing:send'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:send'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        200:
+          description: 'The recipient, with the new reminder_count.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SigningRecipient'
+              examples:
+                example:
+                  value:
+                    id: 501
+                    envelope_id: '01a2036b-9b87-7314-8d5f-c297baf24ea0'
+                    step: 1
+                    status: 'SIGNED'
+                    email: 'anna@example.com'
+                    language: 'sv'
+                    verification: 'NONE'
+                    locked: false
+                    opened_at: '2026-11-22T09:05:00+01:00'
+                    signed_at: '2026-11-22T09:06:10+01:00'
+                    signer_name: 'Anna Andersson'
+                    signer_title: null
+                    signature_method: 'DRAWN'
+                    signed_document_sha256: '4a1c7e9b2d5f8a0c3e6b9d2f5a8c1e4b7d0a3c6e9f2b5d8a1c4e7b0d3f6a9c2e'
+                    declined_at: null
+                    revoked_at: null
+                    reminder_count: 1
+                    last_reminded_at: '2026-11-23T09:00:00+01:00'
+                    has_certificate: true
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/signing/envelopes/{envelope}/recipients/{recipient}/certificate':
+    parameters:
+      - name: envelope
+        in: path
+        required: true
+        description: 'Envelope id.'
+        schema:
+          type: string
+          format: uuid
+        example: 01a2036b-9b87-7314-8d5f-c297baf24ea0
+      - name: recipient
+        in: path
+        required: true
+        description: 'Recipient id.'
+        schema:
+          type: integer
+        example: 501
+    get:
+      operationId: downloadSigningCertificate
+      tags:
+        - Signering
+      summary: 'Download a signer''s certificate'
+      description: 'The signing certificate of one signer who has signed: a PDF with the evidence of the signature. 404 before the signature, and after retention or an erasure has removed it. X-Content-SHA256 matches signed_document_sha256 on the recipient. Needs signing:view and the right to see the envelope.'
+      x-sv-summary: 'Hämta en undertecknares signeringsbevis'
+      x-sv-description: 'Signeringsbeviset för en undertecknare som har signerat. 404 före signaturen och efter gallring eller radering.'
+      security:
+        - oauth2:
+            - 'signing:view'
+        - apiKey:
+            - 'signing:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:view'
+      responses:
+        200:
+          description: 'The certificate.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            X-Content-SHA256:
+              $ref: '#/components/headers/ContentSha256'
+            Content-Disposition:
+              description: 'attachment; filename="…"'
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/signing/envelopes/{envelope}/fields':
+    parameters:
+      - name: envelope
+        in: path
+        required: true
+        description: 'Envelope id.'
+        schema:
+          type: string
+          format: uuid
+        example: 01a2036b-9b87-7314-8d5f-c297baf24ea0
+    get:
+      operationId: listSigningFields
+      tags:
+        - Signering
+      summary: 'List the fields of an envelope'
+      description: 'The fields placed in the document, by recipient, in 1/100 PDF points from the page''s lower left corner. The values the signers filled in are not returned; they are in the finished document.'
+      x-sv-summary: 'Lista fälten i ett kuvert'
+      x-sv-description: 'Fälten som placerats i dokumentet, per undertecknare. Värdena undertecknarna fyllt i returneras inte.'
+      security:
+        - oauth2:
+            - 'signing:view'
+        - apiKey:
+            - 'signing:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:view'
+      responses:
+        200:
+          description: 'The fields.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SigningField'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/signing/envelopes/{envelope}/document':
+    parameters:
+      - name: envelope
+        in: path
+        required: true
+        description: 'Envelope id.'
+        schema:
+          type: string
+          format: uuid
+        example: 01a2036b-9b87-7314-8d5f-c297baf24ea0
+    get:
+      operationId: downloadSigningDocumentFinished
+      tags:
+        - Signering
+      summary: 'Download the finished document'
+      description: 'The PDF that was sent for signing, with every signer''s field values once they have signed. A confidential envelope is not found by anyone who may not see it. 404 after retention has removed the file. X-Content-SHA256 is the file''s hash. Needs signing:view and the right to see the envelope.'
+      x-sv-summary: 'Hämta det färdiga dokumentet'
+      x-sv-description: 'PDF:en som skickades för signering, med varje undertecknares fältvärden när de har signerat.'
+      security:
+        - oauth2:
+            - 'signing:view'
+        - apiKey:
+            - 'signing:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'signing:view'
+      responses:
+        200:
+          description: 'The file.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            X-Content-SHA256:
+              $ref: '#/components/headers/ContentSha256'
+            Content-Disposition:
+              description: 'attachment; filename="…"'
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
 webhooks:
   voucher.posted:
     post:
@@ -11723,6 +13225,258 @@ webhooks:
       responses:
         2XX:
           description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
+  signing.recipient_signed:
+    post:
+      operationId: signingRecipientSigned
+      summary: 'A recipient signed'
+      x-sv-summary: 'En undertecknare har signerat'
+      description: 'Sent when one signer has signed (not only the last): the envelope, the signer and the hash of the signer''s certificate, with counts. No name, e-mail address, IP address or field value. The webhook needs signing:view, and is sent only to a subscriber whose creator may see the envelope (the rule of the envelope list, so a confidential envelope reaches only its sender and holders of signing:manage). Sent as an HTTPS POST to every active webhook of the company that subscribes to `signing.recipient_signed`. Verify `Nonox-Signature` over the raw body before trusting it, reject a timestamp more than five minutes from your clock, and store `Nonox-Event-Id` to ignore duplicates. Answer 2xx within 10 seconds. Anything else is retried after 1, 5 and 15 minutes and 1, 3, 6 and 13 hours; then the webhook is turned off and the companys owner is e-mailed. Redirects are never followed.'
+      x-sv-description: 'Skickas när en undertecknare har signerat. Bara id, antal, tid och hash; inga namn eller adresser. Skickas med HTTPS POST till varje webhook som prenumererar på `signing.recipient_signed`. Kontrollera Nonox-Signature och använd Nonox-Event-Id mot dubbletter. Svara 2xx inom 10 sekunder.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+        - name: Nonox-Event-Type
+          in: header
+          required: true
+          description: 'The event type, as `type` in the body.'
+          schema:
+            type: string
+          example: signing.recipient_signed
+        - name: User-Agent
+          in: header
+          required: true
+          schema:
+            type: string
+          example: 'NONOX-Webhooks/1.0 (+https://github.com/STAFE-GROUP-AB/nonox)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: 7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a
+                  type: signing.recipient_signed
+                  created_at: '2026-11-22T09:06:11+01:00'
+                  company_id: 42
+                  data:
+                    envelope_id: '01a2036b-9b87-7314-8d5f-c297baf24ea0'
+                    document_type: 'DOCUMENT'
+                    quote_id: null
+                    agreement_id: null
+                    signable_id: '01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22'
+                    document_sha256: '9f2c4d7a1e3b5c6d8f0a2b4c6d8e0f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e'
+                    recipients: 2
+                    recipients_signed: 1
+                    recipient_id: 501
+                    step: 1
+                    signed_at: '2026-11-22T09:06:10+01:00'
+                    signature_method: 'DRAWN'
+                    signed_document_sha256: '4a1c7e9b2d5f8a0c3e6b9d2f5a8c1e4b7d0a3c6e9f2b5d8a1c4e7b0d3f6a9c2e'
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
+  signing.completed:
+    post:
+      operationId: signingCompleted
+      summary: 'Everyone has signed'
+      x-sv-summary: 'Alla har signerat'
+      description: 'Sent once, when the last signer has signed and the envelope is completed. Fetch the finished document and the certificates with the API. The webhook needs signing:view, and is sent only to a subscriber whose creator may see the envelope (the rule of the envelope list, so a confidential envelope reaches only its sender and holders of signing:manage). Sent as an HTTPS POST to every active webhook of the company that subscribes to `signing.completed`. Verify `Nonox-Signature` over the raw body before trusting it, reject a timestamp more than five minutes from your clock, and store `Nonox-Event-Id` to ignore duplicates. Answer 2xx within 10 seconds. Anything else is retried after 1, 5 and 15 minutes and 1, 3, 6 and 13 hours; then the webhook is turned off and the companys owner is e-mailed. Redirects are never followed.'
+      x-sv-description: 'Skickas en gång, när den sista undertecknaren har signerat. Hämta det färdiga dokumentet med API:t. Skickas med HTTPS POST till varje webhook som prenumererar på `signing.completed`. Kontrollera Nonox-Signature och använd Nonox-Event-Id mot dubbletter. Svara 2xx inom 10 sekunder.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+        - name: Nonox-Event-Type
+          in: header
+          required: true
+          description: 'The event type, as `type` in the body.'
+          schema:
+            type: string
+          example: signing.completed
+        - name: User-Agent
+          in: header
+          required: true
+          schema:
+            type: string
+          example: 'NONOX-Webhooks/1.0 (+https://github.com/STAFE-GROUP-AB/nonox)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: 7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a
+                  type: signing.completed
+                  created_at: '2026-11-22T09:06:11+01:00'
+                  company_id: 42
+                  data:
+                    envelope_id: '01a2036b-9b87-7314-8d5f-c297baf24ea0'
+                    document_type: 'DOCUMENT'
+                    quote_id: null
+                    agreement_id: null
+                    signable_id: '01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22'
+                    document_sha256: '9f2c4d7a1e3b5c6d8f0a2b4c6d8e0f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e'
+                    recipients: 2
+                    recipients_signed: 2
+                    completed_at: '2026-11-22T09:20:00+01:00'
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
+  signing.declined:
+    post:
+      operationId: signingDeclined
+      summary: 'A recipient declined'
+      x-sv-summary: 'En undertecknare har avböjt'
+      description: 'Sent when a signer declines, which ends the envelope. The reason stays with the sender and is not part of the event. The webhook needs signing:view, and is sent only to a subscriber whose creator may see the envelope (the rule of the envelope list, so a confidential envelope reaches only its sender and holders of signing:manage). Sent as an HTTPS POST to every active webhook of the company that subscribes to `signing.declined`. Verify `Nonox-Signature` over the raw body before trusting it, reject a timestamp more than five minutes from your clock, and store `Nonox-Event-Id` to ignore duplicates. Answer 2xx within 10 seconds. Anything else is retried after 1, 5 and 15 minutes and 1, 3, 6 and 13 hours; then the webhook is turned off and the companys owner is e-mailed. Redirects are never followed.'
+      x-sv-description: 'Skickas när en undertecknare avböjer, vilket avslutar kuvertet. Skälet följer inte med. Skickas med HTTPS POST till varje webhook som prenumererar på `signing.declined`. Kontrollera Nonox-Signature och använd Nonox-Event-Id mot dubbletter. Svara 2xx inom 10 sekunder.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+        - name: Nonox-Event-Type
+          in: header
+          required: true
+          description: 'The event type, as `type` in the body.'
+          schema:
+            type: string
+          example: signing.declined
+        - name: User-Agent
+          in: header
+          required: true
+          schema:
+            type: string
+          example: 'NONOX-Webhooks/1.0 (+https://github.com/STAFE-GROUP-AB/nonox)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: 7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a
+                  type: signing.declined
+                  created_at: '2026-11-22T09:06:11+01:00'
+                  company_id: 42
+                  data:
+                    envelope_id: '01a2036b-9b87-7314-8d5f-c297baf24ea0'
+                    document_type: 'DOCUMENT'
+                    quote_id: null
+                    agreement_id: null
+                    signable_id: '01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22'
+                    document_sha256: '9f2c4d7a1e3b5c6d8f0a2b4c6d8e0f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e'
+                    recipients: 2
+                    recipients_signed: 1
+                    recipient_id: 502
+                    step: 2
+                    declined_at: '2026-11-22T09:30:00+01:00'
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
+  signing.expired:
+    post:
+      operationId: signingExpired
+      summary: 'The last day passed'
+      x-sv-summary: 'Sista dag har passerat'
+      description: 'Sent once, when the last day to sign has passed and the envelope is out of time. It is announced when NONOX notes the expiry, within the hour after the deadline. The webhook needs signing:view, and is sent only to a subscriber whose creator may see the envelope (the rule of the envelope list, so a confidential envelope reaches only its sender and holders of signing:manage). Sent as an HTTPS POST to every active webhook of the company that subscribes to `signing.expired`. Verify `Nonox-Signature` over the raw body before trusting it, reject a timestamp more than five minutes from your clock, and store `Nonox-Event-Id` to ignore duplicates. Answer 2xx within 10 seconds. Anything else is retried after 1, 5 and 15 minutes and 1, 3, 6 and 13 hours; then the webhook is turned off and the companys owner is e-mailed. Redirects are never followed.'
+      x-sv-description: 'Skickas en gång, när sista dag har passerat och kuvertet har gått ut. Skickas med HTTPS POST till varje webhook som prenumererar på `signing.expired`. Kontrollera Nonox-Signature och använd Nonox-Event-Id mot dubbletter. Svara 2xx inom 10 sekunder.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+        - name: Nonox-Event-Type
+          in: header
+          required: true
+          description: 'The event type, as `type` in the body.'
+          schema:
+            type: string
+          example: signing.expired
+        - name: User-Agent
+          in: header
+          required: true
+          schema:
+            type: string
+          example: 'NONOX-Webhooks/1.0 (+https://github.com/STAFE-GROUP-AB/nonox)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: 7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a
+                  type: signing.expired
+                  created_at: '2026-11-22T09:06:11+01:00'
+                  company_id: 42
+                  data:
+                    envelope_id: '01a2036b-9b87-7314-8d5f-c297baf24ea0'
+                    document_type: 'DOCUMENT'
+                    quote_id: null
+                    agreement_id: null
+                    signable_id: '01a2036b-9a11-7f2c-9e55-3a7d7f0b1c22'
+                    document_sha256: '9f2c4d7a1e3b5c6d8f0a2b4c6d8e0f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e'
+                    recipients: 2
+                    recipients_signed: 1
+                    deadline_at: '2026-12-21T23:59:59+01:00'
+                    expired_at: '2026-12-22T00:10:00+01:00'
+                    recipients_pending: 1
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
 components:
   securitySchemes:
     oauth2:
@@ -11758,6 +13512,9 @@ components:
             'prices:view-cost': 'See articles'' cost in price lookups'
             'price-lists:manage': 'Create and change price lists and the prices in them'
             'price-agreements:manage': 'Create, change, activate and terminate price agreements with customers'
+            'signing:view': 'Read signings: documents, envelopes, signers, fields, templates and the signed files'
+            'signing:send': 'Upload documents and send them for signing, remind, move the last day and withdraw own envelopes'
+            'signing:manage': 'See, remind and withdraw everyone''s envelopes, also confidential ones, and read all templates'
           x-revocationUrl: 'https://nonox.app/oauth/revoke'
       x-sv-scopes:
         'vouchers:view': 'Läsa verifikationer, underlag, kontoplan, räkenskapsår och perioder, kostnadsställen, projekt, verifikationsserier och momskoder'
@@ -11784,6 +13541,9 @@ components:
         'prices:view-cost': 'Se artiklarnas kostnad vid prisuppslag'
         'price-lists:manage': 'Lägga till och ändra prislistor och priser i dem'
         'price-agreements:manage': 'Lägga till, ändra, aktivera och säga upp prisavtal med kunder'
+        'signing:view': 'Läsa signeringar: dokument, kuvert, undertecknare, fält, mallar och de signerade filerna'
+        'signing:send': 'Ladda upp dokument och skicka dem för signering, påminna, ändra sista dag och dra tillbaka egna kuvert'
+        'signing:manage': 'Se, påminna och dra tillbaka allas kuvert, även konfidentiella, och läsa alla mallar'
     apiKey:
       type: http
       scheme: bearer
@@ -15098,6 +16858,10 @@ components:
             - price_list.changed
             - price_agreement.activated
             - price_agreement.ended
+            - signing.recipient_signed
+            - signing.completed
+            - signing.declined
+            - signing.expired
           description: 'Open enum: new event types may be added within v1.'
         created_at:
           type: string
@@ -15107,6 +16871,551 @@ components:
         data:
           type: object
       description: 'A webhook delivery body. Events are thin: ids, references, dates and amounts, never personal data; fetch the record through the API for more.'
+    SigningDocument:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        file_name:
+          type: string
+        sha256:
+          type: string
+          description: 'SHA-256 of the file, which is the document''s fingerprint.'
+        bytes:
+          type: integer
+        page_count:
+          type: integer
+        customer_id:
+          type:
+            - integer
+            - 'null'
+        supplier_id:
+          type:
+            - integer
+            - 'null'
+        uploaded_by:
+          type:
+            - integer
+            - 'null'
+        archived_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    SigningRecipient:
+      type: object
+      description: 'One signer. Never a link, a token, an access code, an IP address, a browser, a drawn signature or a decline reason.'
+      properties:
+        id:
+          type: integer
+        envelope_id:
+          type: string
+          format: uuid
+        step:
+          type: integer
+          minimum: 1
+          maximum: 10
+        status:
+          type: string
+          enum:
+            - PENDING
+            - SIGNED
+            - DECLINED
+            - EXPIRED
+            - REVOKED
+        email:
+          type: string
+        language:
+          type: string
+          enum:
+            - sv
+            - en
+        verification:
+          type: string
+          enum:
+            - NONE
+            - EMAIL_CODE
+            - ACCESS_CODE
+        locked:
+          type: boolean
+          description: 'Locked out by failed checks until the sender unlocks the link in NONOX.'
+        opened_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        signed_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        signer_name:
+          type:
+            - string
+            - 'null'
+        signer_title:
+          type:
+            - string
+            - 'null'
+        signature_method:
+          type:
+            - string
+            - 'null'
+          enum:
+            - DRAWN
+            - TYPED
+            - null
+        signed_document_sha256:
+          type:
+            - string
+            - 'null'
+          description: 'SHA-256 of the signer''s certificate (the file at the certificate route).'
+        declined_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        revoked_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        reminder_count:
+          type: integer
+        last_reminded_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        has_certificate:
+          type: boolean
+    SigningCopyRecipient:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type:
+            - string
+            - 'null'
+        sent_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+    SigningEnvelope:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        document_type:
+          type: string
+          enum:
+            - DOCUMENT
+            - QUOTE
+            - AGREEMENT
+            - ATA
+        quote_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        agreement_id:
+          type:
+            - integer
+            - 'null'
+        document_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+          description: 'The uploaded document, for document_type DOCUMENT.'
+        signable_id:
+          type:
+            - string
+            - 'null'
+        template_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+          description: 'The template the envelope was sent from, when it was.'
+        status:
+          type: string
+          enum:
+            - OUT
+            - COMPLETED
+            - DECLINED
+            - VOIDED
+            - EXPIRED
+        current_step:
+          type: integer
+        confidential:
+          type: boolean
+        auto_reminders:
+          type: boolean
+        reminder_interval_days:
+          type:
+            - integer
+            - 'null'
+        deadline_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        sent_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        declined_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        voided_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        expired_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        document_name:
+          type: string
+        document_sha256:
+          type: string
+        created_by:
+          type:
+            - integer
+            - 'null'
+        recipients:
+          type: array
+          items:
+            $ref: '#/components/schemas/SigningRecipient'
+        copy_recipients:
+          type: array
+          items:
+            $ref: '#/components/schemas/SigningCopyRecipient'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    SigningField:
+      type: object
+      properties:
+        id:
+          type: integer
+        recipient_id:
+          type:
+            - integer
+            - 'null'
+        type:
+          type: string
+          enum:
+            - SIGNATURE
+            - INITIALS
+            - NAME
+            - DATE
+            - TEXT
+            - NUMBER
+            - CHECKBOX
+            - DROPDOWN
+            - RADIO
+        page:
+          type: integer
+        x:
+          type: integer
+          description: '1/100 PDF points from the page''s lower left corner.'
+        y:
+          type: integer
+        width:
+          type: integer
+        height:
+          type: integer
+        page_width:
+          type: integer
+        page_height:
+          type: integer
+        label:
+          type: string
+        required:
+          type: boolean
+        options:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+        group_key:
+          type:
+            - string
+            - 'null'
+        rules:
+          type:
+            - object
+            - 'null'
+    SigningTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        document_type:
+          type: string
+          enum:
+            - DOCUMENT
+            - QUOTE
+            - AGREEMENT
+        file_name:
+          type:
+            - string
+            - 'null'
+        sha256:
+          type:
+            - string
+            - 'null'
+        bytes:
+          type:
+            - integer
+            - 'null'
+        page_count:
+          type:
+            - integer
+            - 'null'
+        deadline_days:
+          type:
+            - integer
+            - 'null'
+        auto_reminders:
+          type: boolean
+        reminder_days:
+          type:
+            - integer
+            - 'null'
+        language:
+          type: string
+        confidential:
+          type: boolean
+        archived_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    SigningTemplateDetail:
+      allOf:
+        - $ref: '#/components/schemas/SigningTemplate'
+        - type: object
+          properties:
+            copy_recipients:
+              type: array
+              items:
+                type: object
+                properties:
+                  email:
+                    type: string
+                  name:
+                    type:
+                      - string
+                      - 'null'
+                  language:
+                    type: string
+            roles:
+              type: array
+              items:
+                type: object
+                properties:
+                  key:
+                    type: string
+                  label:
+                    type: string
+                  step:
+                    type: integer
+                  verification:
+                    type: string
+                  internal:
+                    type: boolean
+            fields:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/SigningField'
+                  - type: object
+                    properties:
+                      role_key:
+                        type:
+                          - string
+                          - 'null'
+    SigningEnvelopeInput:
+      type: object
+      description: 'Exactly one of document_id, quote_id, agreement_id and template_id. Without a template: signers (1 to 10). With a template: recipients keyed by the template''s role keys, and the template''s steps, checks and fields apply.'
+      properties:
+        document_id:
+          type: string
+          format: uuid
+        quote_id:
+          type: string
+          format: uuid
+        agreement_id:
+          type: integer
+        template_id:
+          type: string
+          format: uuid
+        signers:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items:
+            type: object
+            required:
+              - email
+              - step
+            properties:
+              email:
+                type: string
+                format: email
+              step:
+                type: integer
+                minimum: 1
+                maximum: 10
+              verification:
+                type: string
+                enum:
+                  - NONE
+                  - EMAIL_CODE
+                  - ACCESS_CODE
+              access_code:
+                type: string
+                description: 'Needed for ACCESS_CODE; stored only as a hash and never returned.'
+              language:
+                type: string
+                enum:
+                  - sv
+                  - en
+        recipients:
+          type: object
+          description: 'With template_id: one person per role of the template, keyed by the role key.'
+          additionalProperties:
+            type: object
+            required:
+              - email
+            properties:
+              email:
+                type: string
+                format: email
+              language:
+                type: string
+                enum:
+                  - sv
+                  - en
+              access_code:
+                type: string
+        copies:
+          type: array
+          maxItems: 10
+          items:
+            type: object
+            required:
+              - email
+            properties:
+              email:
+                type: string
+                format: email
+              name:
+                type: string
+              language:
+                type: string
+        notify_copies:
+          type: boolean
+          description: 'Tell the copy recipients now, not only when the document is signed.'
+        expires_on:
+          type: string
+          format: date
+          description: 'The last day to sign; at most 90 days ahead, default 30 (or the template''s).'
+        auto_reminders:
+          type: boolean
+        reminder_days:
+          description: '1, 2, 3 or 7 days between reminders; left out for one reminder two days before the last day.'
+        confidential:
+          type: boolean
+          description: 'Only an uploaded document can be confidential; seen only by the sender and with signing:manage.'
+        create_invoice:
+          type: boolean
+          description: 'For a quote: also make a draft invoice once signed.'
+        deal_id:
+          type: integer
+          description: 'An open CRM deal of the account that is won when the document is signed.'
+        fields:
+          type: array
+          maxItems: 200
+          items:
+            type: object
+            required:
+              - signer
+              - type
+              - page
+              - x
+              - y
+              - width
+              - height
+              - label
+            properties:
+              signer:
+                type: integer
+                description: 'The index in signers.'
+              type:
+                type: string
+              page:
+                type: integer
+              x:
+                type: integer
+              y:
+                type: integer
+              width:
+                type: integer
+              height:
+                type: integer
+              label:
+                type: string
+              required:
+                type: boolean
+              options:
+                type: array
+                items:
+                  type: string
+              group_key:
+                type: string
+              rules:
+                type: object
     CrmAccount:
       type: object
       properties:
