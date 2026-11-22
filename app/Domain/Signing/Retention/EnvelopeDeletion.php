@@ -47,6 +47,9 @@ final class EnvelopeDeletion
     public static function delete(SigningEnvelope $envelope, string $reason, ?User $user = null): void
     {
         DB::transaction(function () use ($envelope, $reason, $user): void {
+            // The row lock first, so a long-term validation version (ADR-046 S11) is either committed before the
+            // versions are read here, or finds the envelope gone and removes its own file.
+            SigningEnvelope::query()->whereKey($envelope->id)->lockForUpdate()->first(['id']);
             $requests = SigningRequest::query()->where('envelope_id', $envelope->id)->get(['id', 'document_path', 'signed_document_path']);
             $versions = SigningDocumentVersion::query()->where('envelope_id', $envelope->id)->get(['id', 'path', 'sha256']);
             $paths = array_values(array_unique(array_filter([

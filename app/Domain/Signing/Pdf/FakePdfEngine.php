@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Signing\Pdf;
 
+use Carbon\CarbonImmutable;
 use InvalidArgumentException;
 
 /**
@@ -35,6 +36,18 @@ final class FakePdfEngine implements PdfEngine
     /** @var list<array{level: string, timestampUrls: list<string>, fieldName: string}> every seal asked for, without its secrets */
     public array $sealed = [];
 
+    /** Thrown by addValidationData(): validation data that cannot be collected (ADR-046 S11 tests). */
+    public ?PdfEngineException $failValidationData = null;
+
+    /** Thrown by archiveTimestamp(): a timestamp server or validation data that is not there (ADR-046 S11 tests). */
+    public ?PdfEngineException $failArchiveTimestamp = null;
+
+    /** The TSA certificate expiry every timestamp reports; three years from now when null. */
+    public ?CarbonImmutable $tsaCertificateNotAfter = null;
+
+    /** When a B-T seal's signature timestamp says it was made; now when null. */
+    public ?CarbonImmutable $sealTimestampAt = null;
+
     public static function install(): self
     {
         $fake = new self;
@@ -61,7 +74,7 @@ final class FakePdfEngine implements PdfEngine
             return new PdfEngineHealth('fake', false, false, problems: [PdfEngineFailure::NotInstalled->message()], checkedAt: now()->toIso8601String());
         }
 
-        $checks = $selfTest ? ['inspect' => true, 'render' => true, 'stamp' => true, 'append' => true, 'seal' => true] : null;
+        $checks = $selfTest ? ['inspect' => true, 'render' => true, 'stamp' => true, 'append' => true, 'seal' => true, 'validation_data' => true] : null;
 
         return new PdfEngineHealth(
             driver: 'fake',
@@ -187,12 +200,75 @@ final class FakePdfEngine implements PdfEngine
         return new PdfFileResult($file->path, $file->bytes, $file->sha256, timestampUrl: $timestampUrls[0]);
     }
 
+    public function addValidationData(string $pdfPath, string $outputPath): LongTermResult
+    {
+        $failure = $this->failValidationData;
+
+        if ($failure instanceof PdfEngineException) {
+            $this->record('add_validation_data', $pdfPath);
+
+            throw $failure;
+        }
+
+        $file = $this->append('dss', $pdfPath, $outputPath, 'vri');
+        array_pop($this->calls);
+        $this->record('add_validation_data', $pdfPath);
+
+        return new LongTermResult($file->path, $file->bytes, $file->sha256, $this->timestampFacts((string) file_get_contents($file->path)));
+    }
+
+    public function archiveTimestamp(string $pdfPath, string $outputPath, array $timestampUrls, string $mdAlgorithm = 'sha256'): LongTermResult
+    {
+        if ($timestampUrls === []) {
+            throw new InvalidArgumentException('Give at least one timestamp URL.');
+        }
+
+        TimestampServers::assertAllowed($timestampUrls);
+        $failure = $this->failArchiveTimestamp;
+
+        if ($failure instanceof PdfEngineException) {
+            $this->record('archive_timestamp', $pdfPath);
+
+            throw $failure;
+        }
+
+        $file = $this->append('archive', $pdfPath, $outputPath, $mdAlgorithm.' '.CarbonImmutable::now()->utc()->format('Y-m-d\TH:i:s.u\Z'));
+        array_pop($this->calls);
+        $this->record('archive_timestamp', $pdfPath);
+
+        return new LongTermResult($file->path, $file->bytes, $file->sha256, $this->timestampFacts((string) file_get_contents($file->path)), $timestampUrls[0]);
+    }
+
+    /**
+     * The timestamps in a file the fake wrote: a B-T seal's signature timestamp and every archive timestamp, at the
+     * time written in its marker, each with the TSA certificate expiry the test set.
+     *
+     * @return list<TimestampFact>
+     */
+    private function timestampFacts(string $bytes): array
+    {
+        $facts = [];
+        $notAfter = $this->tsaCertificateNotAfter ?? CarbonImmutable::now()->addYears(3);
+
+        if (preg_match('/% nonox-fake-seal B_T\n/', $bytes) === 1) {
+            $facts[] = new TimestampFact(TimestampFact::SIGNATURE, $this->sealTimestampAt ?? CarbonImmutable::now()->utc(), $notAfter, 'sha256');
+        }
+
+        preg_match_all('/% nonox-fake-archive ([a-z0-9]+) (\S+)\n/', $bytes, $matches, PREG_SET_ORDER);
+
+        foreach ($matches as $match) {
+            $facts[] = new TimestampFact(TimestampFact::DOCUMENT, CarbonImmutable::parse($match[2]), $notAfter, $match[1]);
+        }
+
+        return $facts;
+    }
+
     public function validate(string $pdfPath): ValidationReport
     {
         $bytes = $this->read('validate', $pdfPath, PdfLimits::MAX_BYTES + PdfLimits::FINISHED_FILE_SLACK_BYTES);
         $signatures = [];
 
-        foreach (['seal' => 'signature', 'timestamp' => 'timestamp'] as $marker => $type) {
+        foreach (['seal' => 'signature', 'timestamp' => 'timestamp', 'archive' => 'timestamp'] as $marker => $type) {
             $count = substr_count($bytes, "% nonox-fake-{$marker}");
 
             for ($index = 1; $index <= $count; $index++) {

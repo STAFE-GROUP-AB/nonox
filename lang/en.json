@@ -15144,5 +15144,15 @@
     "Skriv vilken offert eller vilket avtal mallen ska skickas för.": "Say which quote or agreement the template is to be sent for.",
     "Skriv recipients som ett objekt med en person per roll i mallen: :roles.": "Write recipients as an object with one person per role of the template: :roles.",
     "Mallen har inte rollen :role.": "The template has no role :role.",
-    "Skriv vem som är :role.": "Say who is :role."
+    "Skriv vem som är :role.": "Say who is :role.",
+    "Valideringsdata för certifikaten gick inte att hämta.": "The validation data for the certificates could not be fetched.",
+    "den förseglade filen i lagringen stämde inte med sin kontrollsumma": "the sealed file in storage did not match its checksum",
+    "PDF-motorn hittade ingen ny tidsstämpel i filen": "the PDF engine found no new timestamp in the file",
+    "långtidsvalideringen gick inte att slutföra": "the long-term validation could not be completed",
+    "Långtidsvalidering (:level): filen har valideringsdata och en dokumenttidsstämpel från :date.": "Long-term validation (:level): the file has validation data and a document timestamp from :date.",
+    "En ny tidsstämpel läggs till innan den slutar gälla :date, så länge dokumentet bevaras.": "A new timestamp is added before it stops being valid on :date, for as long as the document is kept.",
+    "Valideringsdata har lagts till i filen (:level), så förseglingen kan kontrolleras även när certifikaten har gått ut.": "Validation data has been added to the file (:level), so the seal can be checked even after the certificates have expired.",
+    "En dokumenttidsstämpel läggs till innan tidsstämpeln slutar gälla :date, så länge dokumentet bevaras.": "A document timestamp is added before the timestamp stops being valid on :date, for as long as the document is kept.",
+    "Senaste försöket att lägga till valideringsdata eller en ny tidsstämpel lyckades inte (:reason). NONOX försöker igen.": "The last attempt to add validation data or a new timestamp did not succeed (:reason). NONOX will try again.",
+    "SHA-256 för den senaste versionen, som du laddar ner: :hash": "SHA-256 of the latest version, the one you download: :hash"
 }

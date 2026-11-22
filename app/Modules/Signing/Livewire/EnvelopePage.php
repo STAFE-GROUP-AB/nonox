@@ -12,6 +12,7 @@ use App\Actions\Signing\SigningReminders;
 use App\Domain\Documents\LegalHoldReason;
 use App\Domain\Signing\EnvelopeStatus;
 use App\Domain\Signing\Retention\SigningRetention;
+use App\Domain\Signing\Seal\EnvelopeTimestamper;
 use App\Domain\Signing\Signable;
 use App\Domain\Signing\SignableTypes;
 use App\Domain\Signing\SigningDeadlines;
@@ -193,6 +194,8 @@ class EnvelopePage extends Component
             // An agreement that still runs keeps its evidence while it runs (ADR-046 S16 review).
             'running' => $envelope->status === EnvelopeStatus::Completed && SigningRetention::agreementState($envelope)['running'],
             'years' => SigningRetention::years($envelope->company_id),
+            // The file downloaded once long-term validation (ADR-046 S11) has extended the sealed one.
+            'newestSha256' => $envelope->ltv_level === null ? null : EnvelopeTimestamper::newestFile($envelope->id)?->sha256,
         ]);
     }
 

@@ -273,12 +273,26 @@ final class SigningFields
 
     /**
      * The path of the finished document of an envelope, for the copies and the company's own file link: the
-     * sealed file once the envelope is sealed (ADR-046 S10), else the version after the last signer who filled in
-     * fields, else the PDF that was sent (an envelope without fields).
+     * sealed file once the envelope is sealed (ADR-046 S10), and its newest long-term validation version once there is
+     * one (S11: the sealed file with validation data and document timestamps added, which starts with its bytes),
+     * else the version after the last signer who filled in fields, else the PDF that was sent (an envelope without
+     * fields).
      */
     public static function finalVersion(SigningEnvelope $envelope): string
     {
-        return $envelope->sealed_path ?? self::signedVersion($envelope);
+        if ($envelope->sealed_path === null) {
+            return self::signedVersion($envelope);
+        }
+
+        if ($envelope->ltv_level === null) {
+            return $envelope->sealed_path;
+        }
+
+        return SigningDocumentVersion::query()
+            ->where('envelope_id', $envelope->id)
+            ->where('kind', SigningDocumentVersion::TIMESTAMPED)
+            ->orderByDesc('id')
+            ->value('path') ?? $envelope->sealed_path;
     }
 
     /**

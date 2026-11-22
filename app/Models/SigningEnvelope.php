@@ -67,6 +67,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?int $seal_certificate_id the company's own certificate, null for the instance seal
  * @property ?CarbonImmutable $sealed_at
  * @property ?CarbonImmutable $last_timestamp_at the newest timestamp in the file (S10 signature timestamp; S11 document timestamps)
+ * @property ?SealLevel $ltv_level long-term validation reached (ADR-046 S11): B_LT with validation data, B_LTA with a document timestamp over it; only moves up
+ * @property ?CarbonImmutable $timestamp_valid_until until when the newest timestamp in the file can be relied on (its TSA certificate, or the configured end of its hash algorithm)
+ * @property ?string $ltv_failure why the last long-term validation attempt did not succeed (a PdfEngineFailure value, FILE_CHANGED or JOB_FAILED)
+ * @property ?CarbonImmutable $ltv_attempted_at
  * @property ?string $seal_failure why it could not be sealed (a PdfEngineFailure value or NO_CERTIFICATE, NOT_INSTALLED, JOB_FAILED)
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
@@ -131,6 +135,9 @@ class SigningEnvelope extends Model
             'seal_certificate_id' => 'integer',
             'sealed_at' => 'immutable_datetime',
             'last_timestamp_at' => 'immutable_datetime',
+            'ltv_level' => SealLevel::class,
+            'timestamp_valid_until' => 'immutable_datetime',
+            'ltv_attempted_at' => 'immutable_datetime',
             'reminder_interval_days' => 'integer',
             'expired_at' => 'immutable_datetime',
             'next_sequence' => 'integer',

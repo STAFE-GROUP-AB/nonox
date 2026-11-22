@@ -130,8 +130,31 @@
                         {{ __('Dokumentet kunde inte förseglas, så kopiorna skickades utan försegling (:reason).', ['reason' => App\Domain\Signing\Seal\EnvelopeSealer::failureLabel((string) $envelope->seal_failure)]) }}
                 @endswitch
             </p>
+            @if($envelope->ltv_level === App\Domain\Signing\Pdf\SealLevel::B_LTA)
+                <p class="mt-2 text-sm text-gray-700" data-testid="signing-ltv">
+                    {{ __('Långtidsvalidering (:level): filen har valideringsdata och en dokumenttidsstämpel från :date.', ['level' => $envelope->ltv_level->label(), 'date' => $envelope->last_timestamp_at?->setTimezone($zone)->format('Y-m-d')]) }}
+                    @if($envelope->timestamp_valid_until)
+                        {{ __('En ny tidsstämpel läggs till innan den slutar gälla :date, så länge dokumentet bevaras.', ['date' => $envelope->timestamp_valid_until->setTimezone($zone)->format('Y-m-d')]) }}
+                    @endif
+                </p>
+            @elseif($envelope->ltv_level === App\Domain\Signing\Pdf\SealLevel::B_LT)
+                <p class="mt-2 text-sm text-gray-700" data-testid="signing-ltv">
+                    {{ __('Valideringsdata har lagts till i filen (:level), så förseglingen kan kontrolleras även när certifikaten har gått ut.', ['level' => $envelope->ltv_level->label()]) }}
+                    @if($envelope->timestamp_valid_until)
+                        {{ __('En dokumenttidsstämpel läggs till innan tidsstämpeln slutar gälla :date, så länge dokumentet bevaras.', ['date' => $envelope->timestamp_valid_until->setTimezone($zone)->format('Y-m-d')]) }}
+                    @endif
+                </p>
+            @endif
+            @if($envelope->ltv_failure)
+                <p class="mt-2 text-sm text-gray-700" data-testid="signing-ltv-failure">
+                    {{ __('Senaste försöket att lägga till valideringsdata eller en ny tidsstämpel lyckades inte (:reason). NONOX försöker igen.', ['reason' => App\Domain\Signing\Seal\EnvelopeTimestamper::failureLabel($envelope->ltv_failure)]) }}
+                </p>
+            @endif
             @if($envelope->sealed_sha256)
                 <p class="mt-2 break-all text-xs text-gray-600">{{ __('SHA-256 för den förseglade filen: :hash', ['hash' => $envelope->sealed_sha256]) }}</p>
+            @endif
+            @if($newestSha256)
+                <p class="mt-1 break-all text-xs text-gray-600" data-testid="signing-ltv-sha256">{{ __('SHA-256 för den senaste versionen, som du laddar ner: :hash', ['hash' => $newestSha256]) }}</p>
             @endif
         </x-ui.card>
     @endif

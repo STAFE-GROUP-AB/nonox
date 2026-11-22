@@ -327,6 +327,11 @@ final class EnvelopeSealer
 
             $this->followUp->afterSeal($envelope, $withoutTimestamp ? SigningFollowUp::SEALED_WITHOUT_TIMESTAMP : null);
 
+            // Long-term validation (S11) starts from a seal with a signature timestamp; queued after the commit, never throws.
+            if ($sealed['level'] === SealLevel::B_T) {
+                DB::afterCommit(fn () => LongTermValidation::queue($envelope->company_id, $envelope->id));
+            }
+
             return self::SEALED;
         });
     }

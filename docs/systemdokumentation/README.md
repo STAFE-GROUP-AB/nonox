@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.158
+- Version: 0.159
 - Datum: 2026-11-22
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -1814,6 +1814,31 @@ balances").
   `signing.seal_certificate_expiry_task` med id:n, nivå och koder, aldrig
   nyckel, lösenord eller namn. Signeringen bokför ingenting och ingen
   bokföringsregel ändras.
+- Långtidsvalidering av förseglade filer (version 0.159,
+  [ADR-046](../adr/ADR-046-crm-signing.md) tillägg 2026-11-18, lucka 5, paket
+  S11). Körs bara när försegling är påslagen, PDF-motorn finns och
+  installationen har tidsstämpelservrar. Efter en försegling med tidsstämpel
+  (B-T) läggs valideringsdata till i filen (certifikat, OCSP-svar och
+  spärrlistor i ett DSS med VRI, PAdES B-LT); data hämtas bara från publika
+  http(s)-adresser som certifikaten anger, och saknas något skrivs ingenting.
+  Varje natt lägger `signing:timestamp` till en dokumenttidsstämpel (PAdES
+  B-LTA), med valideringsdata för allt före den, när den senaste
+  tidsstämpeln slutar vara tillförlitlig inom tolv månader (inställbart):
+  när tidsstämpelserverns certifikat går ut eller, om installationen har
+  angett det, när hashalgoritmen slutar gälla. Bara kuvert som fortfarande
+  ska bevaras eller har bevarandespärr förlängs, och en tidsstämpel som
+  räcker längre än bevarandetiden förnyas inte; bevarandetiden ändras
+  aldrig. Varje ny fil är en inkrementell uppdatering som börjar med den
+  föregående filens exakta byte (kontrolleras av motorn och igen i PHP),
+  sparas som `TIMESTAMPED` i `signing_document_versions` och kontrolleras av
+  `signing:verify` som alla andra versioner. På kuvertet sparas nivån
+  (`ltv_level`, går bara uppåt), när den senaste tidsstämpeln slutar vara
+  tillförlitlig (`timestamp_valid_until`, ändras bara med en nyare
+  tidsstämpel) och det senaste misslyckade försöket (databasutlösare).
+  Behandlingshistoriken får `signing.long_term_validation` och
+  `signing.long_term_validation_failed` med id:n, nivå, steg, datum och
+  koder. Den förseglade filen, undertecknarnas bevis och hashkedjan ändras
+  inte. Signeringen bokför ingenting och ingen bokföringsregel ändras.
 - Samtycke till elektroniska handlingar (version 0.154,
   [ADR-046](../adr/ADR-046-crm-signing.md) tillägg 2026-11-18, lucka 7, paket
   S4): innan dokumentet visas via en signeringslänk godkänner varje
@@ -7086,3 +7111,4 @@ påverkar bokföringen och fakturan:
 | 0.156 | 2026-11-19 | Kontoplanens hänvisning till BAS och årsrutinen (avsnitt 2): mallarna kontrollerade mot BAS officiella lista (49 namn rättade), och `bas:upgrade` flyttar företag till en ny BAS-version utan att skriva över egna kontonamn; `--fix-names` rättar en gång äldre företags namn som NONOX själv har sått (`previous-names.json`). Anläggningsregistret föreslår för nya tillgångar BAS 2026:s konton (datorer 1224, bilar 1226, båda med 1229 och 7832); sparade tillgångar byter aldrig konto. Bara `accounts.name` och `teams.bas_version` ändras; ingen verifikation, numrering eller hashkedja ändras. |
 | 0.157 | 2026-11-20 | Priser på fakturor, offerter och order (avsnitt 5.3a, ADR-082 P3): radernas à-pris och rabatt föreslås av prismotorn och kopieras till raden med källa och förklaring (id:n och belopp, inga namn); ett handskrivet pris behålls; byte av kund, datum eller valuta ändrar aldrig ett pris; ett sparat utkast prissätts om bara med "Uppdatera priser" efter en visad skillnad; offert → order → faktura behåller priserna, och en utgången offert frågar vilka priser som gäller. Avtalad rabatt bakas in i à-priset; priser inklusive moms avrundas nedåt till nettopris. Offerter och order får valuta som följer med till fakturan. En utfärdad faktura prissätts aldrig och låses av samma trigger som tidigare. Ingen verifikation, numrering eller bokföringsregel ändras. |
 | 0.158 | 2026-11-22 | Försegling av signerade dokument (ADR-046 tillägg, lucka 5, paket S10): avstängd tills den slås på i /hq; den färdiga filen (den signerade versionen med en sammanställningssida) förseglas med PAdES B-B eller B-T som inkrementella uppdateringar och sparas som `SEALED` i `signing_document_versions`; kopiorna väntar på förseglingen; företagets eget förseglingscertifikat sparas krypterat i `signing_seal_certificates`. Ingenting bokförs och ingen verifikation, numrering eller hashkedja ändras. |
+| 0.159 | 2026-11-22 | Långtidsvalidering av förseglade filer (ADR-046 tillägg, lucka 5, paket S11): efter en försegling med tidsstämpel läggs valideringsdata till (PAdES B-LT), och `signing:timestamp` lägger varje natt till en dokumenttidsstämpel (PAdES B-LTA) innan den senaste tidsstämpeln slutar vara tillförlitlig, bara inom bevarandetiden eller under bevarandespärr; varje fil är en inkrementell uppdatering som sparas som `TIMESTAMPED` i `signing_document_versions`. Avstängd så länge försegling är avstängd. Ingenting bokförs och ingen verifikation, numrering eller hashkedja ändras. |

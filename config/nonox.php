@@ -188,6 +188,31 @@ return [
             'instance_password' => env('NONOX_SIGNING_SEAL_PASSWORD', ''),
             'retry_hours' => (int) env('NONOX_SIGNING_SEAL_RETRY_HOURS', 1),
         ],
+
+        /*
+         * Long-term validation of sealed files (ADR-046 amendment, gap 5, S11). Inert unless
+         * sealing is switched on, the engine is installed and timestamp servers are set.
+         * After a B-T seal the validation data (DSS) is added (B-LT); the nightly
+         * signing:timestamp adds a document timestamp (B-LTA) to a file whose newest
+         * timestamp stops being reliable within renew_months (1–60, default 12), for files
+         * still within retention or under a legal hold. A timestamp stops being reliable
+         * when its TSA certificate expires, or earlier on the date set here for its hash
+         * algorithm (NONOX_SIGNING_LTV_ALGORITHM_VALID_UNTIL, e.g. "sha256=2035-12-31"; none
+         * is set by default: which dates apply is for the operator to decide from current
+         * algorithm guidance, ADR-046 S11). md_algorithm is the hash of new document
+         * timestamps (sha256, sha384 or sha512). fetch_timeout is the seconds per OCSP, CRL
+         * or certificate request (1–60).
+         */
+        'ltv' => [
+            'renew_months' => (int) env('NONOX_SIGNING_LTV_RENEW_MONTHS', 12),
+            'md_algorithm' => env('NONOX_SIGNING_LTV_MD_ALGORITHM', 'sha256'),
+            'algorithm_valid_until' => collect(explode(',', (string) env('NONOX_SIGNING_LTV_ALGORITHM_VALID_UNTIL', '')))
+                ->map(fn (string $pair): array => array_map('trim', explode('=', $pair, 2)))
+                ->filter(fn (array $pair): bool => count($pair) === 2 && $pair[0] !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $pair[1]) === 1)
+                ->mapWithKeys(fn (array $pair): array => [strtolower($pair[0]) => $pair[1]])
+                ->all(),
+            'fetch_timeout' => (int) env('NONOX_SIGNING_LTV_FETCH_TIMEOUT', 10),
+        ],
     ],
 
 ];

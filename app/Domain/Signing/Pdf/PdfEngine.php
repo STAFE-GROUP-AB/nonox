@@ -71,6 +71,23 @@ interface PdfEngine
      */
     public function timestamp(string $pdfPath, string $outputPath, array $timestampUrls): PdfFileResult;
 
+    /**
+     * Long-term validation, B-LT (ADR-046 S11): a DSS with a VRI entry per signature, holding the certificates,
+     * OCSP answers and CRLs needed to validate every signature and timestamp in the file later. Fetches only from
+     * public http(s) addresses the certificates name; throws ValidationDataUnavailable when one does not answer, so
+     * nothing incomplete is written.
+     */
+    public function addValidationData(string $pdfPath, string $outputPath): LongTermResult;
+
+    /**
+     * Long-term validation, B-LTA (ADR-046 S11): the validation data of everything in the file (the newest timestamp
+     * included), then a document timestamp over it from the first configured server that answers.
+     *
+     * @param  list<string>  $timestampUrls
+     * @param  string  $mdAlgorithm  sha256, sha384 or sha512
+     */
+    public function archiveTimestamp(string $pdfPath, string $outputPath, array $timestampUrls, string $mdAlgorithm = 'sha256'): LongTermResult;
+
     /** Integrity and coverage of every signature and document timestamp in the file (no trust check, no network). */
     public function validate(string $pdfPath): ValidationReport;
 }

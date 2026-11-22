@@ -62,6 +62,16 @@ final class NullPdfEngine implements PdfEngine
         throw PdfEngineException::notInstalled();
     }
 
+    public function addValidationData(string $pdfPath, string $outputPath): LongTermResult
+    {
+        throw PdfEngineException::notInstalled();
+    }
+
+    public function archiveTimestamp(string $pdfPath, string $outputPath, array $timestampUrls, string $mdAlgorithm = 'sha256'): LongTermResult
+    {
+        throw PdfEngineException::notInstalled();
+    }
+
     public function validate(string $pdfPath): ValidationReport
     {
         throw PdfEngineException::notInstalled();

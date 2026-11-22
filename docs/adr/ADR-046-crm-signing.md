@@ -2991,3 +2991,129 @@ companies is ADR-082's legal item P-L5 (`TODO(legal-verify)`). Retention
 follows this ADR's rules; a price agreement adds no retention class of its own.
 
 Follow-up after the S10 re-check (accepted, low): on `QUEUE_CONNECTION=sync`, a seal waiting for a timestamp server keeps its unique lock, so during a timestamp outage the copies wait until `uniqueFor` (about 4 h) instead of about 1 h. It only affects sync installations with sealing switched on; the hosted service runs Redis and has sealing off.
+
+### S11 as built (2026-11-22): long-term validation
+
+- **Inert until switched on.** `LongTermValidation::applies()`: sealing switched
+  on (`signing.seal_enabled`, off on the hosted service until the trust-service
+  item is answered), the engine installed and `nonox.signing.timestamp.urls`
+  set. Otherwise the job, the command and the seal hook do nothing and record
+  nothing. A B-B seal is never extended: B-LT presupposes B-T.
+- **Engine.** Two operations on `PdfEngine` and in the helper (protocol 1,
+  additive; documented in `tools/pdf-engine/README.md`):
+  `addValidationData` (`add_validation_data`: a DSS with a VRI entry per
+  signature, every signature's and timestamp's certificates, OCSP answers and
+  CRLs, in one incremental update) and `archiveTimestamp`
+  (`archive_timestamp`: the validation data of everything in the file, the
+  newest timestamp included, then a document timestamp from the first
+  configured server, the order pyHanko's `update_archival_timestamp_chain`
+  uses). Both answer every timestamp in the written file (kind, time, TSA
+  certificate expiry, hash algorithm; `TimestampFact`, `LongTermResult`).
+  Collection uses the OS trust list plus the self-issued certificates in the
+  file's own CMS structures as path ends (collecting, not judging),
+  revocation hard-fail (`PdfEngineFailure::ValidationDataUnavailable`,
+  transient: nothing is written when data is missing), and fetches only http(s)
+  to public addresses (filtering resolver, a numeric host checked before
+  connecting, no redirects, `Content-Length` over 20 MB refused,
+  `FetchLimits`): revocation addresses come from certificates a company may
+  upload, so this is the SSRF guard. Verified with a listening loopback
+  responder that the guard stops the request (no hit) and that without it the
+  request is made. `NullPdfEngine` throws; `FakePdfEngine` appends markers and
+  reports facts the test sets. The helper's self-test adds validation data to
+  its throwaway seal. `PdfEngineRealTest` runs both operations against a local
+  test TSA (`tests/Support/pdf-engine/test_tsa.py`, pyHanko's
+  `DummyTimeStamper`, RSA, 127.0.0.1 only).
+- **Migration** `2027_03_27_100000_add_long_term_validation_to_signing_envelopes`:
+  on `signing_envelopes` `ltv_level` (`B_LT`, `B_LTA`; check: only on a
+  `SEALED` envelope with `seal_level = B_T`), `timestamp_valid_until`,
+  `ltv_failure`, `ltv_attempted_at`; the trigger
+  `signing_envelopes_protect_ltv`: the level only moves up
+  (`NULL → B_LT | B_LTA`, `B_LT → B_LTA`), and `timestamp_valid_until` changes
+  only from `NULL` or together with a later `last_timestamp_at` (which S10's
+  trigger already lets move only later). `seal_level`, `sealed_path` and
+  `sealed_sha256` stay what the seal produced; the level reached is
+  `ltv_level ?? seal_level`. No new table, so no grant or tenancy-catalogue
+  change.
+- **Flow.** `EnvelopeSealer::finish` queues `TimestampSigningEnvelope` after
+  the commit when the seal is B-T (`LongTermValidation::queue`, never throws).
+  `EnvelopeTimestamper::attempt` does one step when it is due: validation data
+  (B-LT) for a B-T seal without it, or a document timestamp (B-LTA) when
+  `timestamp_valid_until` is within `nonox.signing.ltv.renew_months`
+  (default 12, 1–60). The input is the newest file (newest `TIMESTAMPED`, else
+  `SEALED`), read once and checked against its SHA-256 (`FILE_CHANGED`
+  otherwise); the output must be longer and start with exactly its bytes
+  (engine and PHP), and a renewal must carry a document timestamp newer than
+  `last_timestamp_at`. The file is a new `TIMESTAMPED` row in
+  `signing_document_versions` (so `signing:verify` checks it), stored under a
+  row lock in one transaction with the envelope's columns and the audit entry,
+  after checking again that the envelope exists, is still within retention and
+  that no other version came first (otherwise the file is deleted).
+  `timestamp_valid_until` is the newest timestamp's TSA certificate expiry, or
+  earlier the end of the day set for its hash algorithm in
+  `NONOX_SIGNING_LTV_ALGORITHM_VALID_UNTIL` (none by default).
+  `SigningFields::finalVersion` (downloads, the API, copies made later) now
+  gives the newest `TIMESTAMPED` file.
+- **Nightly** `signing:timestamp` (02:40): `LongTermValidation::due()`, across
+  companies with ids only, each job in its own company: B-T seals without
+  validation data (retried nightly for seven days after sealing, then weekly)
+  and renewals that are due; 500 of each per night.
+- **Retention, erasure, legal hold.** Only an envelope within its retention
+  (`retention_until` today or later) or under a legal hold is extended, and a
+  timestamp that is reliable past `retention_until` is not renewed (unless
+  held). Nothing here writes `retention_until` or the class, so timestamping
+  never extends retention. An envelope without signer rows (pruned) is never
+  extended, a deleted one has no row. `EnvelopeDeletion::delete` now takes the
+  envelope's row lock before it reads the versions, so a version committed
+  concurrently is deleted with the envelope, or the job finds the envelope
+  gone and removes its own file.
+- **Unique and idempotent.** `TimestampSigningEnvelope` is `ShouldBeUnique` on
+  the envelope id (`uniqueFor` six hours), `WithoutOverlapping` per envelope,
+  three tries with backoff (5, 30 minutes) for uncaught exceptions only;
+  engine failures are recorded on the envelope (`ltv_failure`,
+  `ltv_attempted_at`) and the next night tries again; `failed()` records
+  `JOB_FAILED`. A step is taken only while it is due. No key is decrypted:
+  long-term validation needs no seal key.
+- **Audit** (ids, enums, dates and codes only): `signing.long_term_validation`
+  (`envelope_id`, `version_id`, `step`, `level`, `timestamp_valid_until`) and
+  `signing.long_term_validation_failed` (`envelope_id`, `failure`), the latter
+  only when the reason changes, so nightly retries do not fill the log.
+- **Screens.** The envelope page's "Försegling" card states B-LT ("Valideringsdata
+  har lagts till i filen (PAdES B-LT)") or B-LTA ("Långtidsvalidering (PAdES
+  B-LTA)"; the word only for B-LTA, as "Marketing" requires), when the next
+  timestamp is due, the last failure, and the newest version's SHA-256 next to
+  the sealed file's. Manual: `docs/manual/sv/signering/forsegling.md`,
+  "Långtidsvalidering". Self-hosting: `docs/juridik/egen-drift.md`,
+  `docs/drift/pdf-motorn.md`.
+- **Not built:** the new timestamp's own validation data is added at the next
+  renewal, not right after it (as pyHanko does); no B-LTA directly after the
+  seal (only when renewal is due, so a TSA is asked once per envelope and
+  period); no screen to trigger a renewal by hand; no configurable trust roots
+  for collection (the OS list and the file's own self-issued certificates);
+  signing:verify checks each version's hash, not that each starts with the one
+  before (checked when it is written).
+- **Tests:** `tests/Feature/Signing/LongTermValidationTest.php` (B-LT after a
+  B-T seal with the byte prefix, version row, audit and `signing:verify`;
+  renewal to B-LTA by the nightly command and idempotence; the algorithm date;
+  unavailable validation data, audited once, retried; the retry rhythm; B-B
+  never extended; inert when switched off, without engine or without servers;
+  retention, a timestamp outliving retention, legal hold, retention never
+  moved; a changed file, pruned signers, a missing envelope; the trigger and
+  the check; the unique job and `failed()`; the schedule; the envelope page),
+  and three real-engine tests in `PdfEngineRealTest`.
+- `TODO(legal-verify)`: (1) The trust-service item of gap 5 covers S11 too:
+  re-timestamping customers' documents and preserving their seals may be
+  "preservation services for electronic seals" and the creation of time
+  stamps under eIDAS art. 3.16 (as amended by (EU) 2024/1183); still gates the
+  hosted service. (2) Whether a document timestamp from a non-qualified TSA
+  adds evidential value worth the renewals, or only a qualified one (art. 41(2))
+  does; and the terms of use of any public TSA for renewals at volume
+  (gap 5, option 2). (3) Whether renewing timestamps during a legal hold that
+  outlasts the retention period is lawful processing (it only adds hashes and
+  public certificate data, no personal data, but the file is kept). (4) Which
+  algorithm end dates an installation should set (ETSI TS 119 312 / SOG-IS
+  guidance are technical, not law; none is set by default and none invented).
+  (5) The manual's wording "så att förseglingen kan kontrolleras även efter
+  många år" and the card's "så förseglingen kan kontrolleras även när
+  certifikaten har gått ut": the jurist should confirm they promise no more
+  than B-LT/B-LTA technically give (a validator still needs a trust decision
+  about the seal certificate).

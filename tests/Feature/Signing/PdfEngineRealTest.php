@@ -11,6 +11,8 @@ use App\Domain\Signing\Pdf\SealRequest;
 use App\Domain\Signing\Pdf\SidecarPdfEngine;
 use App\Domain\Signing\Pdf\StampImage;
 use App\Domain\Signing\Pdf\StampText;
+use App\Domain\Signing\Pdf\TimestampFact;
+use Symfony\Component\Process\Process;
 use Tests\Support\PdfEngineFixtures;
 
 /*
@@ -54,7 +56,8 @@ it('reports the pinned versions and passes its self-test', function () {
         ->and($lock)->toContain('pyhanko=='.$health->versions['pyhanko'])
         ->and($lock)->toContain('pypdfium2=='.$health->versions['pypdfium2'])
         ->and($health->selfTest['seal'])->toBeTrue()
-        ->and($health->selfTest['append'])->toBeTrue();
+        ->and($health->selfTest['append'])->toBeTrue()
+        ->and($health->selfTest['validation_data'])->toBeTrue();
 });
 
 it('inspects pages, sizes and revisions of a plain PDF', function () {
@@ -314,4 +317,112 @@ it('stamps from the crop box: a stamp at (0, 0) on a cropped page lands in its v
     }
 
     expect($page->widthPt)->toBe(350.0)->and($page->heightPt)->toBe(550.0)->and($dark)->toBeGreaterThan(10);
+});
+
+/**
+ * A throwaway RFC 3161 server on 127.0.0.1 (tests/Support/pdf-engine/test_tsa.py, ADR-046 S11) for the
+ * long-term validation tests; stopped after the test. Its URL is configured as the instance's only server.
+ */
+function s11TestTsa(object $test, int $days = 30): string
+{
+    $process = new Process([PdfEngineFixtures::python(), '-I', base_path('tests/Support/pdf-engine/test_tsa.py'), (string) $days]);
+    $process->start();
+    $port = null;
+
+    foreach (range(1, 300) as $ignored) {
+        if (preg_match('/^(\d+)\n/', $process->getOutput(), $match) === 1) {
+            $port = (int) $match[1];
+
+            break;
+        }
+
+        if (! $process->isRunning()) {
+            break;
+        }
+
+        usleep(20_000);
+    }
+
+    if ($port === null) {
+        $process->stop(0);
+        $test->markTestSkipped('The test timestamp server did not start.');
+    }
+
+    $test->tsa = $process;
+    $url = "http://127.0.0.1:{$port}/";
+    config(['nonox.signing.timestamp.urls' => [$url]]);
+
+    return $url;
+}
+
+afterEach(function () {
+    if (isset($this->tsa) && $this->tsa instanceof Process) {
+        $this->tsa->stop(0);
+    }
+});
+
+it('adds validation data (B-LT) and document timestamps (B-LTA) as incremental updates that keep every earlier file and validate (ADR-046 S11)', function () {
+    $engine = s5RealEngine($this);
+    $url = s11TestTsa($this, days: 40);
+    $path = PdfEngineFixtures::write($this->pdfDir, 'document.pdf', PdfEngineFixtures::pdf(1));
+    $key = PdfEngineFixtures::pkcs12();
+
+    $sealed = $engine->seal($path, $this->pdfDir.'/sealed.pdf', new SealRequest(SealLevel::B_T, $key['pkcs12'], $key['password'], timestampUrls: [$url]));
+    $lt = $engine->addValidationData($sealed->path, $this->pdfDir.'/lt.pdf');
+    $lta = $engine->archiveTimestamp($lt->path, $this->pdfDir.'/lta.pdf', [$url]);
+    $renewed = $engine->archiveTimestamp($lta->path, $this->pdfDir.'/lta2.pdf', [$url], 'sha384');
+
+    $bytes = fn (string $file): string => (string) file_get_contents($file);
+    $report = $engine->validate($renewed->path);
+
+    expect($sealed->level)->toBe(SealLevel::B_T)
+        ->and(str_starts_with($bytes($lt->path), $bytes($sealed->path)))->toBeTrue()
+        ->and(str_starts_with($bytes($lta->path), $bytes($lt->path)))->toBeTrue()
+        ->and(str_starts_with($bytes($renewed->path), $bytes($lta->path)))->toBeTrue()
+        ->and($lt->sha256)->toBe(hash('sha256', $bytes($lt->path)))
+        ->and(str_contains($bytes($lt->path), '/DSS'))->toBeTrue()
+        ->and(str_contains($bytes($lt->path), '/VRI'))->toBeTrue()
+        ->and($lt->timestamps)->toHaveCount(1)
+        ->and($lt->newest()?->kind)->toBe(TimestampFact::SIGNATURE)
+        ->and($lt->newest()?->certificateNotAfter->greaterThan(now()->addDays(39)))->toBeTrue()
+        ->and($lta->timestampUrl)->toBe($url)
+        ->and($lta->newest()?->kind)->toBe(TimestampFact::DOCUMENT)
+        ->and($renewed->timestamps)->toHaveCount(3)
+        ->and($renewed->newest()?->mdAlgorithm)->toBe('sha384')
+        ->and($report->allIntact())->toBeTrue()
+        ->and(collect($report->signatures)->pluck('type')->all())->toBe(['signature', 'timestamp', 'timestamp']);
+});
+
+it('reports that no timestamp server answered for a document timestamp, so the renewal is tried again (ADR-046 S11)', function () {
+    $engine = s5RealEngine($this);
+    $url = s11TestTsa($this);
+    $path = PdfEngineFixtures::write($this->pdfDir, 'document.pdf', PdfEngineFixtures::pdf(1));
+    $key = PdfEngineFixtures::pkcs12();
+    $sealed = $engine->seal($path, $this->pdfDir.'/sealed.pdf', new SealRequest(SealLevel::B_T, $key['pkcs12'], $key['password'], timestampUrls: [$url]));
+    config(['nonox.signing.timestamp.urls' => ['http://127.0.0.1:9/tsa'], 'nonox.signing.timestamp.timeout' => 2]);
+
+    expect(fn () => $engine->archiveTimestamp($sealed->path, $this->pdfDir.'/lta.pdf', ['http://127.0.0.1:9/tsa']))
+        ->toThrow(fn (PdfEngineException $e) => expect($e->failure)->toBe(PdfEngineFailure::TimestampUnavailable));
+    expect(file_exists($this->pdfDir.'/lta.pdf'))->toBeFalse();
+});
+
+it('writes nothing when a revocation address a certificate names cannot be used, here a loopback address (ADR-046 S11)', function () {
+    $engine = s5RealEngine($this);
+    $path = PdfEngineFixtures::write($this->pdfDir, 'document.pdf', PdfEngineFixtures::pdf(1));
+    // A seal certificate issued by a test CA, naming an OCSP responder on the loopback address (port 9 refuses).
+    $caKey = openssl_pkey_new(['private_key_type' => OPENSSL_KEYTYPE_EC, 'curve_name' => 'prime256v1']);
+    $caCsr = openssl_csr_new(['commonName' => 'NONOX test CA'], $caKey, ['digest_alg' => 'sha256']);
+    $config = tempnam($this->pdfDir, 'openssl');
+    file_put_contents($config, "[ca]\nbasicConstraints=critical,CA:TRUE\n[leaf]\nauthorityInfoAccess=OCSP;URI:http://127.0.0.1:9/ocsp\n");
+    $ca = openssl_csr_sign($caCsr, null, $caKey, 30, ['digest_alg' => 'sha256', 'config' => $config, 'x509_extensions' => 'ca']);
+    $key = openssl_pkey_new(['private_key_type' => OPENSSL_KEYTYPE_EC, 'curve_name' => 'prime256v1']);
+    $csr = openssl_csr_new(['commonName' => 'NONOX test seal'], $key, ['digest_alg' => 'sha256']);
+    $leaf = openssl_csr_sign($csr, $ca, $caKey, 10, ['digest_alg' => 'sha256', 'config' => $config, 'x509_extensions' => 'leaf']);
+    openssl_pkcs12_export($leaf, $pkcs12, $key, 'pw', ['extracerts' => [$ca]]);
+
+    $sealed = $engine->seal($path, $this->pdfDir.'/sealed.pdf', new SealRequest(SealLevel::B_B, (string) $pkcs12, 'pw'));
+
+    expect(fn () => $engine->addValidationData($sealed->path, $this->pdfDir.'/lt.pdf'))
+        ->toThrow(fn (PdfEngineException $e) => expect($e->failure)->toBe(PdfEngineFailure::ValidationDataUnavailable)->and($e->failure->isTransient())->toBeTrue());
+    expect(file_exists($this->pdfDir.'/lt.pdf'))->toBeFalse();
 });

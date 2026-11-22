@@ -28,6 +28,8 @@ Schedule::command('uploads:prune-temporary')->dailyAt('04:25')->withoutOverlappi
 Schedule::command('signing:prune-engine-work')->hourlyAt(17)->withoutOverlapping();
 // The PAdES seal (ADR-046 S10): expiry to-dos for company seal certificates, and seals a lost job left PENDING.
 Schedule::command('signing:seal-check')->hourlyAt(23)->withoutOverlapping();
+// Long-term validation of sealed files (ADR-046 S11): validation data after a B-T seal, and a document timestamp before the newest one stops being reliable.
+Schedule::command('signing:timestamp')->dailyAt('02:40')->withoutOverlapping();
 // The customer portal's invitations, inactive and disabled contacts, events and closed questions (ADR-075).
 Schedule::command('portal:prune')->dailyAt('04:20')->withoutOverlapping();
 Schedule::command('connect:prune')->dailyAt('04:25')->withoutOverlapping();

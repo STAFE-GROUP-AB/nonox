@@ -45,6 +45,9 @@ final class SidecarPdfEngine implements PdfEngine
 
     private const int MAX_STDERR_BYTES = 64 * 1024;
 
+    /** The hash algorithms a document timestamp may use (ADR-046 S11). */
+    public const array MD_ALGORITHMS = ['sha256', 'sha384', 'sha512'];
+
     private const array REFUSAL_CODES = ['not_pdf', 'too_large', 'too_many_pages', 'encrypted', 'unreadable'];
 
     public function __construct(
@@ -309,6 +312,68 @@ final class SidecarPdfEngine implements PdfEngine
         TimestampServers::assertAllowed($timestampUrls);
 
         return $this->writeOne('timestamp', ['output' => 'output.pdf', 'timestamp_urls' => $timestampUrls], ['input' => [$pdfPath, 'input.pdf']], $outputPath);
+    }
+
+    public function addValidationData(string $pdfPath, string $outputPath): LongTermResult
+    {
+        $this->guardPdf($pdfPath, PdfLimits::MAX_BYTES + PdfLimits::FINISHED_FILE_SLACK_BYTES);
+        $this->guardOutput($outputPath);
+
+        return $this->writeLongTerm('add_validation_data', ['output' => 'output.pdf', 'fetch_timeout' => self::fetchTimeout()], $pdfPath, $outputPath);
+    }
+
+    public function archiveTimestamp(string $pdfPath, string $outputPath, array $timestampUrls, string $mdAlgorithm = 'sha256'): LongTermResult
+    {
+        $this->guardPdf($pdfPath, PdfLimits::MAX_BYTES + PdfLimits::FINISHED_FILE_SLACK_BYTES);
+        $this->guardOutput($outputPath);
+
+        if ($timestampUrls === [] || count($timestampUrls) > 5) {
+            throw new InvalidArgumentException('Give one to five timestamp URLs.');
+        }
+
+        foreach ($timestampUrls as $url) {
+            if (! SealRequest::isTimestampUrl($url)) {
+                throw new InvalidArgumentException('A timestamp URL must be http(s).');
+            }
+        }
+
+        if (! in_array($mdAlgorithm, self::MD_ALGORITHMS, true)) {
+            throw new InvalidArgumentException('The hash algorithm must be sha256, sha384 or sha512.');
+        }
+
+        TimestampServers::assertAllowed($timestampUrls);
+
+        return $this->writeLongTerm('archive_timestamp', [
+            'output' => 'output.pdf',
+            'timestamp_urls' => $timestampUrls,
+            'timestamp_timeout' => max(1, min(60, (int) config('nonox.signing.timestamp.timeout', 10))),
+            'fetch_timeout' => self::fetchTimeout(),
+            'md_algorithm' => $mdAlgorithm,
+        ], $pdfPath, $outputPath);
+    }
+
+    /** Seconds per OCSP, CRL or certificate request when validation data is collected (1–60, default 10). */
+    private static function fetchTimeout(): int
+    {
+        return max(1, min(60, (int) config('nonox.signing.ltv.fetch_timeout', 10)));
+    }
+
+    /**
+     * @param  array<string, mixed>  $params
+     */
+    private function writeLongTerm(string $operation, array $params, string $pdfPath, string $outputPath): LongTermResult
+    {
+        $result = null;
+
+        $this->withWorkDirectory(function (string $work) use ($operation, $params, $pdfPath, $outputPath, &$result): void {
+            $copied = [];
+            $answer = $this->run($work, $operation, $params, ['input' => [$pdfPath, 'input.pdf']], copied: $copied);
+            $this->copyOut($work, (string) ($answer['output'] ?? ''), $outputPath, false, $copied['input']);
+            $result = LongTermResult::fromAnswer($outputPath, $answer);
+        });
+
+        /** @var LongTermResult $result */
+        return $result;
     }
 
     public function validate(string $pdfPath): ValidationReport

@@ -58,13 +58,15 @@ exit is a crash. stderr is not part of the protocol and is never logged.
 | Operation | What it does |
 |---|---|
 | `health` | Python, pyHanko, pypdfium2 and protocol versions; which fonts are present. |
-| `selftest` | Builds a one-page PDF and runs inspect, render, stamp, append, seal (B-B with a throwaway key) and validate on it. |
+| `selftest` | Builds a one-page PDF and runs inspect, render, stamp, append, seal (B-B with a throwaway key), validate and add_validation_data on it. |
 | `inspect` | Size, SHA-256, pages and sizes, PDF version, revisions, signatures; JavaScript, launch actions, embedded files, XFA and external actions (`SubmitForm`, `ImportData`, `GoToR`, `GoToE`, `RichMedia`), found by walking every object reachable from the trailer, `/Parent` included. Refuses encrypted files and files over the limits. |
 | `render_pages` | PNG per page with PDFium, at most 4 000 000 pixels per page. |
 | `stamp` | Text (Noto Sans, or Noto Sans CJK for Chinese, Japanese and Korean, shaped by HarfBuzz and embedded as a subset) and PNG images, as an incremental update. |
 | `append_pages` | Appends another PDF's pages (the certificate) as an incremental update. |
-| `seal` | PAdES signature (`/ETSI.CAdES.detached`) at B-B, or B-T with a timestamp from the first configured server that answers. B-LT and B-LTA come with S11. |
+| `seal` | PAdES signature (`/ETSI.CAdES.detached`) at B-B, or B-T with a timestamp from the first configured server that answers. B-LT and B-LTA are the next two operations (S11). |
 | `timestamp` | A document timestamp (RFC 3161) as an incremental update. |
+| `add_validation_data` | Since S11 (protocol 1, additive). Long-term validation, B-LT: a DSS with a VRI entry per signature, holding the certificates, OCSP answers and CRLs for every signature and timestamp in the file, as one incremental update. Optional `fetch_timeout` (1–60 s, default 10). Answers `timestamps`: every timestamp in the written file, oldest first, as `{kind: "signature"\|"document", at, certificate_not_after, md_algorithm}`. Refuses a file without a signature (`invalid_request`); answers `validation_data_unavailable` and writes nothing when the data cannot be collected. |
+| `archive_timestamp` | Since S11. B-LTA: the validation data of everything in the file (the newest timestamp included), then a document timestamp from the first configured server that answers, as incremental updates. Takes `timestamp_urls`, `timestamp_timeout`, `fetch_timeout` and `md_algorithm` (`sha256`, `sha384` or `sha512`); answers like `add_validation_data`, plus `timestamp_url`. `validation_data_unavailable` or `timestamp_unavailable` when a step cannot be done. |
 | `validate` | Integrity, cryptographic validity and coverage of every signature and document timestamp, with no trust roots and no network. |
 
 Every writing operation checks before it answers that the output starts with
@@ -73,10 +75,26 @@ the input's exact bytes; otherwise it deletes the output and answers
 
 The helper caps its own memory (`RLIMIT_AS`) and CPU time (`RLIMIT_CPU`) where
 the operating system allows it (Linux; macOS ignores `RLIMIT_AS`). It makes no
-network calls except to the timestamp servers named in a `seal` or `timestamp`
-request, which NONOX takes from instance configuration only
-(`NONOX_SIGNING_TIMESTAMP_URLS`; any other URL is refused in PHP). Redirects
-are never followed, and a timestamp answer is capped at 1 MB.
+network calls except to the timestamp servers named in a `seal`, `timestamp`
+or `archive_timestamp` request, which NONOX takes from instance configuration
+only (`NONOX_SIGNING_TIMESTAMP_URLS`; any other URL is refused in PHP), and,
+for `add_validation_data` and `archive_timestamp`, to the OCSP, CRL and
+issuer-certificate addresses that the certificates in the file name. Those
+addresses come from certificates a company may upload, so only http(s) to a
+public address is fetched: the resolver drops loopback, private, link-local and
+other non-global addresses (Python's `ipaddress.is_global`), an address written
+as a number is checked before connecting, redirects are never followed, an
+answer that announces more than 20 MB is refused, and pyhanko-certvalidator's
+`FetchLimits` cap the requests (40 in all, 10 for issuer certificates, 2 URLs
+per object). Redirects from a timestamp server are never followed either, and
+a timestamp answer is capped at 1 MB.
+
+Validation data is collected, not judged: the self-issued certificates found in
+the file's own CMS structures are accepted as path ends besides the operating
+system's trust list, so a self-signed seal or test TSA gets its certificate in
+the DSS. Revocation checking is hard-fail, so nothing is written when an
+address does not answer. A chain whose root is neither in the file nor in the
+operating system's trust list cannot be collected, and the file stays at B-T.
 
 ## Versions and licences (verified 2026-11-18)
 
@@ -171,6 +189,23 @@ before use, and exercised by `PdfEngineRealTest`:
   `validate_pdf_timestamp(embedded, validation_context=)`; status fields `intact`,
   `valid`, `coverage`, `timestamp_validity`, `signing_cert`;
   `pyhanko_certvalidator.ValidationContext(trust_roots=[], allow_fetching=False)`.
+
+- Since ADR-046 S11 (read in the installed pyHanko 0.38.1 and pyhanko-certvalidator
+  0.33.0, and exercised by `PdfEngineRealTest` with a local test TSA,
+  `tests/Support/pdf-engine/test_tsa.py`): `pyhanko.sign.validation.dss.collect_validation_info(embedded, context)`
+  (async) and `DocumentSecurityStore.supply_dss_in_writer(writer, sig_contents, paths=, validation_context=)`
+  (the two halves of `add_validation_info`, so that every signature's data goes into one
+  revision); `pyhanko.sign._session_scope.run_and_release` (releases the fetchers' session);
+  `pyhanko.sign.general.extract_certificate_info`, `pyhanko.sign.validation.generic_cms.extract_tst_data_iter`;
+  `ValidationContext(extra_trust_roots=, other_certs=, allow_fetching=True, revocation_mode="hard-fail", fetcher_backend=)`;
+  `pyhanko_certvalidator.fetchers.aiohttp_fetchers.AIOHttpFetcherBackend(session=, per_request_timeout=, limits=FetchLimits(...))`
+  with a `LazySession` subclass whose aiohttp session has a filtering `ThreadedResolver` and a
+  `TraceConfig` (`on_request_start`, `on_request_redirect`, `on_request_end`). aiohttp reports
+  `on_response_chunk_received` only after the whole body is read (`ClientResponse.read` in aiohttp
+  3.14.5), so the size cap relies on `Content-Length` and, beyond it, on the helper's memory limit.
+  `PdfTimeStamper.timestamp_pdf(writer, md_algorithm, output=)` is called without a validation
+  context; the new timestamp's own validation data is added at the next renewal, the order
+  pyHanko's `update_archival_timestamp_chain` uses.
 
 ### Updating a pin
 

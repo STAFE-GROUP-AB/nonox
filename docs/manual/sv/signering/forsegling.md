@@ -2,7 +2,7 @@
 beskrivning: Försegla signerade dokument med en elektronisk stämpel (PAdES) och en tidsstämpel, och ladda upp företagets eget förseglingscertifikat.
 ordning: 35
 roller: [owner, admin]
-sokord: [försegling, försegla, stämpel, elektronisk stämpel, sigill, PAdES, tidsstämpel, certifikat, förseglingscertifikat, p12, pfx, PKCS#12, äkthet, oförändrad, integritet]
+sokord: [försegling, försegla, stämpel, elektronisk stämpel, sigill, PAdES, tidsstämpel, långtidsvalidering, valideringsdata, B-LTA, certifikat, förseglingscertifikat, p12, pfx, PKCS#12, äkthet, oförändrad, integritet]
 ---
 
 # Försegling av signerade dokument
@@ -31,6 +31,27 @@ Har installationen en tidsstämpelserver får förseglingen en tidsstämpel som 
 Svarar ingen tidsstämpelserver försöker NONOX igen i upp till en timme (den som driver installationen kan ändra tiden). Under tiden står det **Förseglas** på signeringen och kopiorna väntar. Därefter förseglas dokumentet utan tidsstämpel, kopiorna skickas och den som skickade dokumentet får ett meddelande.
 
 Går förseglingen inte alls, till exempel för att certifikatet inte går att läsa, skickas kopiorna utan försegling och den som skickade dokumentet får ett meddelande. Underskrifterna påverkas inte av att förseglingen saknas.
+
+## Långtidsvalidering
+
+Certifikat och tidsstämplar gäller bara en viss tid. För att förseglingen ska kunna kontrolleras även efter många år gör NONOX två saker med ett dokument som har förseglats med tidsstämpel:
+
+1. Direkt efter förseglingen läggs **valideringsdata** till i filen: certifikaten och uppgifter om att de inte var spärrade (nivån **PAdES B-LT**). Uppgifterna hämtas från de adresser som certifikaten anger. Går de inte att hämta försöker NONOX igen varje natt den första veckan och sedan en gång i veckan.
+2. Varje natt kontrollerar NONOX när den senaste tidsstämpeln slutar gälla. Är det mindre än tolv månader kvar läggs en ny tidsstämpel över hela filen (nivån **PAdES B-LTA**), och så vidare så länge dokumentet ska bevaras. Den som driver installationen kan ändra hur lång tid i förväg det görs.
+
+Varje gång blir det en ny version av filen som börjar med den förra versionen oförändrad, så att varje kopia som redan har skickats fortfarande går att kontrollera. Filen som du laddar ner är alltid den senaste versionen.
+
+Långtidsvalideringen görs bara för dokument som fortfarande ska bevaras eller har bevarandespärr, se [bevarande och radering](/manual/signering/bevarande-och-radering). Den förlänger aldrig bevarandetiden. Ett dokument som har förseglats utan tidsstämpel (**PAdES B-B**) får ingen långtidsvalidering.
+
+I rutan **Försegling** på sidan för signeringen står det:
+
+- **Valideringsdata har lagts till i filen (PAdES B-LT)** när valideringsdata finns i filen, och vilket datum den första nya tidsstämpeln behövs senast.
+- **Långtidsvalidering (PAdES B-LTA)** när filen har en tidsstämpel över valideringsdata, med datumet för den senaste tidsstämpeln och när nästa behövs senast.
+- **SHA-256 för den senaste versionen, som du laddar ner** med den senaste versionens kontrollsumma. Kontrollsumman för den förseglade filen står kvar.
+- Att det senaste försöket inte lyckades och varför, om det inte gick. NONOX försöker igen.
+
+> [!NOTE]
+> Långtidsvalidering kräver samma sak som försegling: PDF-motorn, och att försegling är påslagen för installationen. Dessutom måste installationen ha en tidsstämpelserver.
 
 ## Vilket certifikat som används
 

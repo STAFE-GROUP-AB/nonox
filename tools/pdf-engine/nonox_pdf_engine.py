@@ -36,6 +36,13 @@
 # PdfTimeStamper.timestamp_pdf; sign.timestamps.HTTPTimeStamper;
 # sign.validation.validate_pdf_signature, validate_pdf_timestamp;
 # pyhanko_certvalidator.ValidationContext.
+#
+# Long-term validation (ADR-046 S11), read in the installed pyHanko 0.38.1 and
+# pyhanko-certvalidator 0.33.0: sign.validation.dss.collect_validation_info,
+# DocumentSecurityStore.supply_dss_in_writer, sign.general.extract_certificate_info,
+# sign.validation.generic_cms.extract_tst_data_iter, sign._session_scope.run_and_release,
+# PdfTimeStamper.async_timestamp_pdf(validation_context=...), and
+# pyhanko_certvalidator.fetchers.aiohttp_fetchers.AIOHttpFetcherBackend(session, limits=FetchLimits).
 
 import base64
 import hashlib
@@ -55,6 +62,8 @@ OPERATIONS = (
     'append_pages',
     'seal',
     'timestamp',
+    'add_validation_data',
+    'archive_timestamp',
     'validate',
 )
 FONT_FILES = {
@@ -775,6 +784,267 @@ def op_timestamp(request):
     raise EngineError('timestamp_unavailable', f'no timestamp server answered ({type(last_error).__name__})')
 
 
+# --- Long-term validation (ADR-046 S11) ---------------------------------------
+#
+# B-LT adds a DSS (document security store) with VRI entries: the certificates,
+# OCSP answers and CRLs needed to validate every signature and timestamp in the
+# file later, when the certificates may have expired or been revoked. B-LTA adds
+# a document timestamp over the file with that DSS; before each new one, the
+# validation data of everything in the file (the previous document timestamp
+# included) is added first, the order pyHanko's update_archival_timestamp_chain
+# uses.
+#
+# Validation data is COLLECTED, not judged: the self-issued certificates found
+# in the file's own CMS structures are accepted as path ends besides the
+# operating system's trust list, so a self-signed seal gets its certificate in
+# the DSS. Revocation checking is hard-fail: when an OCSP or CRL address that a
+# certificate names does not answer, nothing is written and the answer is
+# validation_data_unavailable, so NONOX never claims B-LT for incomplete data.
+#
+# Revocation addresses come from certificates, and a company may upload its own
+# certificate: so only http(s) to public addresses is fetched (the resolver
+# drops loopback, private, link-local and other non-global addresses, and an
+# address written as a number is checked before connecting), redirects are
+# never followed, an answer that announces more than 20 MB is refused, and
+# pyhanko-certvalidator's FetchLimits bound the number of requests.
+
+MAX_FETCH_RESPONSE_BYTES = 20 * 1024 * 1024
+MD_ALGORITHMS = ('sha256', 'sha384', 'sha512')
+
+
+def public_fetch_backend(timeout):
+    import ipaddress
+    import socket
+    import ssl
+
+    import aiohttp
+    import certifi
+    from aiohttp.resolver import ThreadedResolver
+    from pyhanko_certvalidator.fetchers.aiohttp_fetchers import AIOHttpFetcherBackend
+    from pyhanko_certvalidator.fetchers.aiohttp_fetchers.util import LazySession
+    from pyhanko_certvalidator.fetchers.api import FetchLimits
+
+    def is_public(host):
+        """True or False for an address, None for a name (the resolver checks what it resolves to)."""
+        try:
+            return ipaddress.ip_address(host.strip('[]')).is_global
+        except ValueError:
+            return None
+
+    class PublicResolver(ThreadedResolver):
+        async def resolve(self, host, port=0, family=socket.AF_INET):
+            results = await super().resolve(host, port, family)
+            public = [result for result in results if is_public(result['host']) is True]
+            if not public:
+                raise OSError('a revocation address is not public')
+            return public
+
+    async def on_request_start(session, context, params):
+        url = params.url
+        if url.scheme not in ('http', 'https') or not url.host or is_public(url.host) is False:
+            raise aiohttp.ClientError('a revocation address is not public')
+
+    async def on_request_redirect(session, context, params):
+        raise aiohttp.ClientError('redirects are not followed')
+
+    async def on_request_end(session, context, params):
+        length = params.response.content_length
+        if length is not None and length > MAX_FETCH_RESPONSE_BYTES:
+            raise aiohttp.ClientError('a revocation answer is too large')
+
+    async def on_response_chunk_received(session, context, params):
+        if len(params.chunk) > MAX_FETCH_RESPONSE_BYTES:
+            raise aiohttp.ClientError('a revocation answer is too large')
+
+    class PublicSession(LazySession):
+        def get_session(self):
+            if self._session is None:
+                trace = aiohttp.TraceConfig()
+                trace.on_request_start.append(on_request_start)
+                trace.on_request_redirect.append(on_request_redirect)
+                trace.on_request_end.append(on_request_end)
+                trace.on_response_chunk_received.append(on_response_chunk_received)
+                self._session = aiohttp.ClientSession(
+                    connector=aiohttp.TCPConnector(ssl=ssl.create_default_context(cafile=certifi.where()), resolver=PublicResolver()),
+                    trace_configs=[trace],
+                )
+            return self._session
+
+    return AIOHttpFetcherBackend(
+        session=PublicSession(),
+        per_request_timeout=timeout,
+        limits=FetchLimits(max_requests=40, max_cert_requests=10, max_aia_urls_per_object=2),
+    )
+
+
+def cms_tokens(reader):
+    """Every CMS structure in the file: each signature and its timestamp tokens, and each document timestamp."""
+    from pyhanko.sign.validation.generic_cms import extract_tst_data_iter
+
+    tokens = []
+    for embedded in reader.embedded_signatures:
+        if embedded.sig_object_type == '/DocTimeStamp':
+            tokens.append(('document', embedded.signed_data))
+            continue
+        tokens.append(('signature_cms', embedded.signed_data))
+        for signed in (False, True):
+            for token in extract_tst_data_iter(embedded.signer_info, signed=signed):
+                tokens.append(('content' if signed else 'signature', token))
+    return tokens
+
+
+def timestamp_facts(reader):
+    """When each timestamp in the file was made, until when its TSA certificate is valid, and its hash algorithm; oldest first."""
+    from pyhanko.sign.general import extract_certificate_info
+
+    facts = []
+    for kind, token in cms_tokens(reader):
+        if kind not in ('signature', 'document'):
+            continue
+        tst_info = token['encap_content_info']['content'].parsed
+        certificate = extract_certificate_info(token).signer_cert
+        facts.append({
+            'kind': kind,
+            'at': tst_info['gen_time'].native.isoformat(),
+            'certificate_not_after': certificate['tbs_certificate']['validity']['not_after'].native.isoformat(),
+            'md_algorithm': tst_info['message_imprint']['hash_algorithm']['algorithm'].native,
+        })
+    facts.sort(key=lambda fact: fact['at'])
+    return facts
+
+
+def collection_context(reader, timeout):
+    from pyhanko.sign.general import extract_certificate_info
+    from pyhanko_certvalidator import ValidationContext
+
+    certificates = []
+    for _kind, token in cms_tokens(reader):
+        info = extract_certificate_info(token)
+        certificates.append(info.signer_cert)
+        certificates.extend(info.other_certs)
+    self_issued = [certificate for certificate in certificates if certificate.self_signed != 'no']
+
+    return ValidationContext(
+        extra_trust_roots=self_issued or None,
+        other_certs=certificates,
+        allow_fetching=True,
+        revocation_mode='hard-fail',
+        fetcher_backend=public_fetch_backend(timeout),
+    )
+
+
+def with_validation_data(data, timeout):
+    """The file with a DSS (and a VRI entry per signature) for everything in it, as one incremental update."""
+    import asyncio
+
+    from pyhanko.pdf_utils.reader import PdfFileReader
+    from pyhanko.sign._session_scope import run_and_release
+    from pyhanko.sign.validation.dss import DocumentSecurityStore, collect_validation_info
+
+    try:
+        reader = PdfFileReader(io.BytesIO(data), strict=False)
+        embedded = list(reader.embedded_signatures)
+    except Exception:
+        raise EngineError('unreadable', 'the PDF structure could not be read')
+    if not embedded:
+        raise EngineError('invalid_request', 'the PDF has no signature or timestamp to add validation data for')
+
+    context = collection_context(reader, timeout)
+
+    async def collect():
+        return [(signature, await collect_validation_info(signature, context)) for signature in embedded]
+
+    try:
+        collected = asyncio.run(run_and_release(collect(), context))
+    except MemoryError:
+        raise
+    except Exception as error:  # a revocation address that does not answer, or a path that cannot be built
+        raise EngineError('validation_data_unavailable', f'validation data could not be collected ({type(error).__name__})')
+
+    writer = writer_for(data)
+    for signature, paths in collected:
+        DocumentSecurityStore.supply_dss_in_writer(
+            writer,
+            signature.pkcs7_content.hex().encode('ascii'),
+            paths=paths,
+            validation_context=context,
+        )
+    output = io.BytesIO()
+    writer.write(output)
+    return output.getvalue()
+
+
+def facts_of(written):
+    from pyhanko.pdf_utils.reader import PdfFileReader
+
+    return timestamp_facts(PdfFileReader(io.BytesIO(written), strict=False))
+
+
+def op_add_validation_data(request):
+    base = work_dir(request)
+    caps = limits(request)
+    source = inside(base, request.get('input'), True)
+    target = inside(base, request.get('output'), False)
+    data = read_pdf_bytes(source, caps['max_bytes'] + 10 * 1024 * 1024)
+
+    if page_count_of(writer_for(data)) > caps['max_pages'] + APPENDED_PAGES_ALLOWANCE:
+        raise EngineError('too_many_pages', 'the PDF has more pages than the limit')
+
+    updated = with_validation_data(data, int_param(request, 'fetch_timeout', 10, 1, 60))
+    with open(target, 'wb') as handle:
+        handle.write(updated)
+
+    written = ensure_incremental(data, target)
+    return {'output': target, 'bytes': len(written), 'sha256': sha256(written), 'timestamps': facts_of(written)}
+
+
+def op_archive_timestamp(request):
+    base = work_dir(request)
+    caps = limits(request)
+    source = inside(base, request.get('input'), True)
+    target = inside(base, request.get('output'), False)
+    data = read_pdf_bytes(source, caps['max_bytes'] + 10 * 1024 * 1024)
+
+    if page_count_of(writer_for(data)) > caps['max_pages'] + APPENDED_PAGES_ALLOWANCE:
+        raise EngineError('too_many_pages', 'the PDF has more pages than the limit')
+
+    md_algorithm = request.get('md_algorithm', 'sha256')
+    if md_algorithm not in MD_ALGORITHMS:
+        raise EngineError('invalid_request', 'md_algorithm must be sha256, sha384 or sha512')
+
+    candidates = timestampers(request)
+    if not candidates:
+        raise EngineError('invalid_request', 'a document timestamp needs at least one timestamp URL')
+
+    # First the validation data of everything already in the file, the last timestamp included.
+    with_dss = with_validation_data(data, int_param(request, 'fetch_timeout', 10, 1, 60))
+
+    from pyhanko.sign import signers
+
+    last_error = None
+    for timestamper in candidates:
+        writer = writer_for(with_dss)
+        try:
+            with open(target, 'wb') as handle:
+                signers.PdfTimeStamper(timestamper).timestamp_pdf(writer, md_algorithm, output=handle)
+        except Exception as error:
+            last_error = error
+            if os.path.exists(target):
+                os.remove(target)
+            continue
+
+        written = ensure_incremental(data, target)
+        return {
+            'output': target,
+            'bytes': len(written),
+            'sha256': sha256(written),
+            'timestamp_url': timestamper.url,
+            'timestamps': facts_of(written),
+        }
+
+    raise EngineError('timestamp_unavailable', f'no timestamp server answered ({type(last_error).__name__})')
+
+
 def op_validate(request):
     base = work_dir(request)
     caps = limits(request)
@@ -818,7 +1088,7 @@ def op_validate(request):
 
 
 def op_selftest(request):
-    """Builds a one-page PDF and runs inspect, render, stamp, append, seal and validate on it."""
+    """Builds a one-page PDF and runs inspect, render, stamp, append, seal, validate and add_validation_data on it."""
     base = work_dir(request)
 
     from datetime import datetime, timedelta, timezone
@@ -918,6 +1188,12 @@ def op_selftest(request):
     })
     report = op_validate({**common, 'input': sealed})['signatures']
     checks['seal'] = len(report) == 1 and report[0]['intact'] and report[0]['valid']
+
+    # ADR-046 S11: validation data for the throwaway self-signed seal (its own root: nothing is fetched).
+    with_dss = inside(base, 'selftest-validation-data.pdf', False)
+    added = op_add_validation_data({**common, 'input': sealed, 'output': with_dss})
+    with open(with_dss, 'rb') as handle:
+        checks['validation_data'] = added['bytes'] > 0 and b'/DSS' in handle.read()
 
     return {'checks': checks, 'passed': all(value is not False for value in checks.values())}
 

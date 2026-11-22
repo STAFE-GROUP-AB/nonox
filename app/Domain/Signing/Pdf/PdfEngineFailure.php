@@ -41,6 +41,9 @@ enum PdfEngineFailure: string
     /** No timestamp server answered; the caller may retry later. */
     case TimestampUnavailable = 'timestamp_unavailable';
 
+    /** Validation data (certificates, OCSP answers, CRLs) for long-term validation could not be collected (ADR-046 S11); may come later. */
+    case ValidationDataUnavailable = 'validation_data_unavailable';
+
     /** A seal level this engine does not make yet. */
     case UnsupportedLevel = 'unsupported_level';
 
@@ -61,7 +64,7 @@ enum PdfEngineFailure: string
     /** Whether trying the same call again later can succeed. */
     public function isTransient(): bool
     {
-        return in_array($this, [self::Timeout, self::Crashed, self::TimestampUnavailable, self::Memory], true);
+        return in_array($this, [self::Timeout, self::Crashed, self::TimestampUnavailable, self::ValidationDataUnavailable, self::Memory], true);
     }
 
     /** A plain Swedish sentence for a screen or a log; never the file's content. */
@@ -77,6 +80,7 @@ enum PdfEngineFailure: string
             self::FontMissing => __('Ett typsnitt som PDF-motorn behöver saknas. Kör scripts/fetch-signing-fonts.sh.'),
             self::BadCredentials => __('Förseglingscertifikatet eller dess lösenord gick inte att läsa.'),
             self::TimestampUnavailable => __('Ingen tidsstämpelserver svarade.'),
+            self::ValidationDataUnavailable => __('Valideringsdata för certifikaten gick inte att hämta.'),
             self::UnsupportedLevel => __('Den förseglingsnivån stöds inte ännu.'),
             self::NotIncremental => __('PDF-motorn ändrade originalet i stället för att lägga till en ny version, och resultatet kastades.'),
             self::Memory => __('PDF-motorn fick slut på minne.'),
