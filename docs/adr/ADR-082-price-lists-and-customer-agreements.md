@@ -480,8 +480,10 @@ index figures in v1. Decision 11.
   held.
 - **Only rows that lower the margin hold the document as a whole:** every
   negative row (typed or at a list price), rows with a typed discount and typed
-  prices under the floor. A return of an article with a known cost takes its cost
-  back, so a partial return of the same article keeps its margin. A positive
+  prices under the floor. A return takes cost back only for an article that is also sold
+  on the document, up to the cost sold (quantity converted to the stock unit) and
+  never more than the row's own amount, so a partial return keeps its margin and
+  a return can never raise it (a cost that changed since the sale included). A positive
   free-text row (freight) or a row of 0 kr holds nothing.
 - **The customer portal** hides a sent quote or order whose manual prices are
   not approved in the rows it has now (`PriceFloorGuard::heldIds`, rows, costs

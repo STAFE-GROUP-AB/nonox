@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Invoicing\IssueInvoice;
 use App\Actions\Invoicing\ProgressSalesDocument;
+use App\Actions\Invoicing\SaveArticle;
 use App\Actions\Invoicing\SaveDraftInvoice;
 use App\Actions\Invoicing\SaveSalesDocument;
 use App\Actions\Pricing\DecidePriceFloorApproval;
@@ -268,4 +269,45 @@ it('lets a real partial return of the same article keep its margin', function ()
         ->and($margin->costOre)->toBe(8000)
         ->and($margin->marginBp())->toBe(2000)
         ->and($margin->needsApproval())->toBeFalse();
+});
+
+it('never lets a return raise the margin: an article that cost more than it sold for', function () {
+    $e1 = app(SaveArticle::class)($this->owner, $this->company, ['number' => 'E1', 'name' => 'E1', 'unit' => 'st', 'price' => '300,00', 'vat_rate' => 2500, 'purchase_price' => '600,00']);
+    $invoice = r7Invoice([
+        r7Row(['quantity' => '10', 'price' => '95,00', 'price_source' => 'MANUAL']),
+        r7Row(['article' => 'E1', 'description' => 'Retur E1', 'quantity' => '-1']),
+    ]);
+    $margin = DocumentMargin::ofDocument($this->company, $invoice->fresh());
+
+    // E1 is not sold here, so its cost is not taken back: the return only lowers the sales.
+    expect($e1->id)->not->toBeNull()
+        ->and($margin->costOre)->toBe(80_000)
+        ->and($margin->netOre)->toBe(95_000 - 30_000)
+        ->and($margin->needsApproval())->toBeTrue();
+});
+
+it('does not inflate the margin of a return of an expensive article that was sold', function () {
+    app(SaveArticle::class)($this->owner, $this->company, ['number' => 'E2', 'name' => 'E2', 'unit' => 'st', 'price' => '10,00', 'vat_rate' => 2500, 'purchase_price' => '5000,00']);
+    $invoice = r7Invoice([
+        r7Row(['article' => 'E2', 'quantity' => '2', 'price' => '10,00', 'price_source' => 'MANUAL']),
+        r7Row(['article' => 'E2', 'quantity' => '-1', 'price' => '10,00', 'price_source' => 'MANUAL']),
+    ]);
+    $margin = DocumentMargin::ofDocument($this->company, $invoice->fresh());
+
+    // Sold 2 (net 20, cost 10 000), returned 1 (net -10): cost back capped at the row's amount, so the margin is not above the sale's.
+    expect($margin->netOre)->toBe(1_000)
+        ->and($margin->contributionOre())->toBeLessThanOrEqual(1_000)
+        ->and($margin->marginBp())->toBeLessThanOrEqual(10_000);
+});
+
+it('takes back only the cost of the quantity sold when more is returned', function () {
+    $invoice = r7Invoice([
+        r7Row(['quantity' => '2', 'price' => '100,00', 'price_source' => 'MANUAL']),
+        r7Row(['quantity' => '-5', 'price' => '100,00', 'price_source' => 'MANUAL']),
+    ]);
+    $margin = DocumentMargin::ofDocument($this->company, $invoice->fresh());
+
+    // Sold cost 160,00 is all that comes back, never 400,00.
+    expect($margin->costOre)->toBe(0)
+        ->and($margin->netOre)->toBe(20_000 - 50_000);
 });

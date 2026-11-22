@@ -71,13 +71,29 @@ final readonly class DocumentMargin
         $cost = 0;
         $uncosted = 0;
 
+        // What the document sells of each article, as cost: a return takes cost back only up to this (ADR-082 §9).
+        $soldCost = [];
+
+        foreach ($lines as $line) {
+            if ($line['article_id'] !== null && $line['net_ore'] >= 0 && ! str_starts_with(ltrim($line['quantity']), '-') && BigDecimal::of($line['quantity'] === '' ? '0' : $line['quantity'])->isPositive()) {
+                $soldCost[$line['article_id']] = ($soldCost[$line['article_id']] ?? 0) + (int) $book->costOf((int) $line['article_id'], $line['quantity'], $line['unit']);
+            }
+        }
+
         foreach ($lines as $index => $line) {
-            // A return (negative quantity, negative amount) of an article with a known cost takes its cost back, so a real partial return keeps the margin; a discount row (negative price) has no cost.
+            // A return (negative quantity, negative amount) of an article sold on the document takes its cost back, up to the cost sold and the row's amount, so a real partial return keeps the margin and a return never raises it; any other negative row has no cost.
             $returned = str_starts_with(ltrim($line['quantity']), '-');
             $costable = $returned ? $line['net_ore'] < 0 : $line['net_ore'] >= 0;
             $rowCost = $line['article_id'] === null || ! $costable || BigDecimal::of($line['quantity'] === '' ? '0' : $line['quantity'])->isZero()
                 ? null
                 : $book->costOf((int) $line['article_id'], $line['quantity'], $line['unit']);
+
+            if ($rowCost !== null && $returned) {
+                // Only the quantity sold on this document takes its cost back, and never more than the row's own amount: a return can never raise the margin.
+                $take = min(-$rowCost, $soldCost[$line['article_id']] ?? 0, -$line['net_ore']);
+                $soldCost[$line['article_id']] = ($soldCost[$line['article_id']] ?? 0) - $take;
+                $rowCost = -$take;
+            }
 
             $row = RowMargin::of($line['net_ore'], $rowCost, $floor->minimumBp);
             $rows[$index] = $row;
