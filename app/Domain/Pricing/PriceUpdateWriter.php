@@ -104,6 +104,11 @@ final class PriceUpdateWriter
         self::mark($applied, PriceUpdateLineStatus::Applied, null, $now);
         self::mark($skipped, PriceUpdateLineStatus::Skipped, PriceUpdateRefusal::ChangedSince, $now);
 
+        // The webhooks hear once per list, from the earliest day the new prices start.
+        foreach (collect($newItems)->groupBy('price_list_id') as $listId => $written) {
+            PriceAnnouncer::listChanged((int) $run->company_id, (int) $listId, (string) $written->min('valid_from'));
+        }
+
         return ['applied' => count($applied), 'skipped' => count($skipped)];
     }
 

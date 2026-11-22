@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Pricing;
 
+use App\Domain\Pricing\PriceAnnouncer;
 use App\Domain\Pricing\PriceChangeSource;
 use App\Domain\Pricing\PriceUpdateLineStatus;
 use App\Domain\Pricing\PriceUpdateStatus;
@@ -143,6 +144,10 @@ class RevertPriceUpdate
             foreach (array_chunk($itemIds, 1000) as $chunk) {
                 PriceListItem::query()->whereKey($chunk)->update(['valid_to' => $end === '' ? null : $end, 'updated_at' => $now]);
             }
+        }
+
+        foreach ($lines->pluck('price_list_id')->unique() as $listId) {
+            PriceAnnouncer::listChanged((int) $run->company_id, (int) $listId, $run->effective_date->toDateString());
         }
 
         return ['reverted' => count($archive), 'kept' => 0];

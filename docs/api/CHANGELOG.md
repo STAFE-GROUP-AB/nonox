@@ -13,6 +13,38 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-22: prislistor, prisavtal och prisuppslag
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-22: price lists, price agreements and price lookup
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Nytt
+- Prislistor: `GET`/`POST /price-lists`, `GET`/`PATCH /price-lists/{priceList}`, `GET /price-lists/{priceList}/items` och `POST /price-lists/{priceList}/items`. Det sista tar upp till 1 000 priser i ett anrop och validerar varje rad för sig med samma regler som i appen; svaret (`201`, `200` eller `422`) visar de sparade priserna och de avvisade raderna med position och skäl. Kräver `prices:view` för att läsa och `price-lists:manage` för att skriva.
+- Prisavtal: `GET`/`POST /price-agreements`, `GET`/`PATCH /price-agreements/{agreement}`, `POST /price-agreements/{agreement}/items` (villkor, upp till 1 000 per anrop), `POST /price-agreements/{agreement}/activate` (aktiverar utan signering, skäl krävs) och `POST /price-agreements/{agreement}/terminate`. Att skicka ett avtal för signering görs i appen. Kräver `prices:view` och `price-agreements:manage`.
+- `GET /prices/resolve`: vilket pris en kund får för upp till 500 artikelrader (`rows[]=artikelnummer:antal:enhet`), från samma prismotor som fakturaredigeraren, med `price_source`, förklaring och varningar. `unit_cost_minor` följer med bara för en nyckel som också har `prices:view-cost`.
+- `price_source` på raderna i fakturasvaret (`MANUAL`, `AGREEMENT`, `CUSTOMER_LIST`, `CAMPAIGN`, `CURRENCY_LIST`, `BASE` eller `CONVERTED`; `null` på rader utan artikel).
+- Webhooks `price_list.changed`, `price_agreement.activated` och `price_agreement.ended`. De kräver `prices:view` och innehåller bara id, valuta och datum.
+- Nya scopes: `prices:view`, `prices:view-cost`, `price-lists:manage` och `price-agreements:manage`.
+
+### Ändrat
+- `POST /invoices` och `PATCH /invoices/{invoice}`: en rad med `article` men utan `unit_price_ore` eller `unit_price_minor` prissätts nu av prismotorn (prisavtal, prislista, kampanj, valutans lista eller grundpris för kunden, datumet och valutan), i stället för att alltid få artikelns grundpris. En rad med skrivet pris behåller det och får `price_source: MANUAL`. En faktura i annan valuta än kronor får det pris prismotorn hittar i den valutan, eller grundpriset omräknat. Finns inget pris svarar anropet 422 på raden.
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+- Price lists: `GET`/`POST /price-lists`, `GET`/`PATCH /price-lists/{priceList}`, `GET /price-lists/{priceList}/items` and `POST /price-lists/{priceList}/items`. The last takes up to 1,000 prices in one call and validates each row on its own with the same rules as the app; the response (`201`, `200` or `422`) lists the saved prices and the refused rows with position and reasons. Needs `prices:view` to read and `price-lists:manage` to write.
+- Price agreements: `GET`/`POST /price-agreements`, `GET`/`PATCH /price-agreements/{agreement}`, `POST /price-agreements/{agreement}/items` (terms, up to 1,000 per call), `POST /price-agreements/{agreement}/activate` (activates without a signature, a reason is required) and `POST /price-agreements/{agreement}/terminate`. Sending an agreement for signing is done in the app. Needs `prices:view` and `price-agreements:manage`.
+- `GET /prices/resolve`: which price a customer gets for up to 500 article rows (`rows[]=article_number:quantity:unit`), from the same price engine as the invoice editor, with `price_source`, an explanation and warnings. `unit_cost_minor` is added only for a key that also has `prices:view-cost`.
+- `price_source` on the rows of the invoice response (`MANUAL`, `AGREEMENT`, `CUSTOMER_LIST`, `CAMPAIGN`, `CURRENCY_LIST`, `BASE` or `CONVERTED`; `null` on rows without an article).
+- Webhooks `price_list.changed`, `price_agreement.activated` and `price_agreement.ended`. They need `prices:view` and carry only ids, currency and dates.
+- New scopes: `prices:view`, `prices:view-cost`, `price-lists:manage` and `price-agreements:manage`.
+
+### Changed
+- `POST /invoices` and `PATCH /invoices/{invoice}`: a row with `article` but without `unit_price_ore` or `unit_price_minor` is now priced by the price engine (the customer's price agreement, price list, campaign, the currency's list or the base price, for the customer, the date and the currency), instead of always getting the article's base price. A row with a typed price keeps it and gets `price_source: MANUAL`. An invoice in a currency other than kronor gets the price the engine finds in that currency, or the base price converted. When there is no price the call answers 422 on the row.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-20: lägsta täckningsgrad stoppar ibland `issue`
 <!-- /lang -->
 <!-- lang:en -->

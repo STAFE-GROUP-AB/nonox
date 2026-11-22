@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Pricing;
 
+use App\Domain\Pricing\PriceAnnouncer;
 use App\Domain\Pricing\PriceInput;
 use App\Domain\Units\ArticleUnits;
 use App\Domain\Units\UnitConverter;
@@ -59,7 +60,7 @@ class SavePriceListItem
             'valid_to.after_or_equal' => __('Slutdatumet kan inte ligga före startdatumet.'),
         ])->validate();
 
-        return DB::transaction(fn (): PriceListItem => CurrentCompany::run($company, function () use ($validated, $company, $user, $list, $item, $replaces): PriceListItem {
+        $saved = DB::transaction(fn (): PriceListItem => CurrentCompany::run($company, function () use ($validated, $company, $user, $list, $item, $replaces): PriceListItem {
             $list = PriceList::query()->whereKey($list->id)->lockForUpdate()->firstOrFail();
 
             if ($list->archived_at !== null) {
@@ -109,6 +110,10 @@ class SavePriceListItem
 
             return $item;
         }));
+
+        PriceAnnouncer::listChanged($company->id, $list->id, $saved->valid_from?->toDateString());
+
+        return $saved;
     }
 
     /** A price that has started to apply is history: only its end may be set (ADR-082 §11). */

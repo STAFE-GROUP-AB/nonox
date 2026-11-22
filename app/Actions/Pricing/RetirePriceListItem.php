@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Pricing;
 
+use App\Domain\Pricing\PriceAnnouncer;
 use App\Models\Company;
 use App\Models\PriceList;
 use App\Models\PriceListItem;
@@ -36,7 +37,7 @@ class RetirePriceListItem
             throw new ModelNotFoundException;
         }
 
-        return DB::transaction(fn (): string => CurrentCompany::run($company, function () use ($company, $user, $item): string {
+        $result = DB::transaction(fn (): string => CurrentCompany::run($company, function () use ($company, $user, $item): string {
             Gate::forUser($user)->authorize('update', PriceList::query()->findOrFail($item->price_list_id));
 
             $today = CarbonImmutable::today();
@@ -67,5 +68,9 @@ class RetirePriceListItem
 
             return self::ARCHIVED;
         }));
+
+        PriceAnnouncer::listChanged($company->id, $item->price_list_id, CarbonImmutable::today()->toDateString());
+
+        return $result;
     }
 }

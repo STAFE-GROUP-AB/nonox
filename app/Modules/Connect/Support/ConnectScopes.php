@@ -36,6 +36,10 @@ final class ConnectScopes
         'inventory:manage',
         'crm:view',
         'crm:manage',
+        'prices:view',
+        'prices:view-cost',
+        'price-lists:manage',
+        'price-agreements:manage',
     ];
 
     /** @return array<string, string> scope => Swedish description, for the consent screen and API keys */
@@ -62,6 +66,10 @@ final class ConnectScopes
             'inventory:manage' => __('Skapa inleveranser och ta emot varor i lagret, och se inköpspriser'),
             'crm:view' => __('Läsa CRM: kunder och prospekt, kontaktpersoner, aktiviteter och affärer'),
             'crm:manage' => __('Lägga till och ändra kunder och prospekt, kontaktpersoner, aktiviteter och affärer i CRM'),
+            'prices:view' => __('Läsa prislistor, prisavtal och slå upp vilket pris en kund får'),
+            'prices:view-cost' => __('Se artiklarnas kostnad vid prisuppslag'),
+            'price-lists:manage' => __('Lägga till och ändra prislistor och priser i dem'),
+            'price-agreements:manage' => __('Lägga till, ändra, aktivera och säga upp prisavtal med kunder'),
         ];
     }
 
@@ -78,6 +86,7 @@ final class ConnectScopes
         'planning' => ['planning:view'],
         'inventory' => ['inventory:view', 'inventory:manage'],
         'crm' => ['crm:view', 'crm:manage'],
+        'prices' => ['prices:view', 'prices:view-cost', 'price-lists:manage', 'price-agreements:manage'],
     ];
 
     /** @return array<string, string> group key => Swedish name */
@@ -90,6 +99,7 @@ final class ConnectScopes
             'planning' => __('Planering'),
             'inventory' => __('Lager'),
             'crm' => __('CRM'),
+            'prices' => __('Priser'),
         ];
     }
 

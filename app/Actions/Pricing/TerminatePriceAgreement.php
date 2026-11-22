@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Pricing;
 
 use App\Domain\Pricing\PriceAgreementStatus;
+use App\Events\PriceAgreementEnded;
 use App\Models\Company;
 use App\Models\PriceAgreement;
 use App\Models\User;
@@ -56,6 +57,7 @@ class TerminatePriceAgreement
 
             $locked->forceFill(['status' => PriceAgreementStatus::Terminated, 'terminated_on' => $day->toDateString()])->save();
             Audit::record('price_agreement.terminated', $locked, ['price_agreement_id' => $locked->id, 'terminated_on' => $day->toDateString()], $company, $user);
+            event(new PriceAgreementEnded($company->id, $locked->id, PriceAgreementEnded::TERMINATED, $day->toDateString()));
 
             return $locked;
         }));

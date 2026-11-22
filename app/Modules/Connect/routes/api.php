@@ -13,6 +13,9 @@ use App\Modules\Connect\Http\Controllers\Api\V1\InventoryController;
 use App\Modules\Connect\Http\Controllers\Api\V1\InvoiceController;
 use App\Modules\Connect\Http\Controllers\Api\V1\PaymentController;
 use App\Modules\Connect\Http\Controllers\Api\V1\PlanningController;
+use App\Modules\Connect\Http\Controllers\Api\V1\PriceAgreementController;
+use App\Modules\Connect\Http\Controllers\Api\V1\PriceListController;
+use App\Modules\Connect\Http\Controllers\Api\V1\PriceResolveController;
 use App\Modules\Connect\Http\Controllers\Api\V1\ReferenceController;
 use App\Modules\Connect\Http\Controllers\Api\V1\ReportController;
 use App\Modules\Connect\Http\Controllers\Api\V1\SupplierController;
@@ -192,4 +195,28 @@ Route::middleware('connect.scope:crm:manage')->group(function () use ($idempoten
     Route::post('/crm/agreements', [CrmSigningController::class, 'storeAgreement'])->middleware($idempotent)->name('crm.agreements.store');
     Route::patch('/crm/agreements/{agreement}', [CrmSigningController::class, 'updateAgreement'])->whereNumber('agreement')->name('crm.agreements.update');
     Route::post('/crm/agreements/{agreement}/signing', [CrmSigningController::class, 'sendAgreement'])->whereNumber('agreement')->middleware($idempotent)->name('crm.agreements.signing.store');
+});
+
+// Priser (ADR-082 P9): price lists, customer price agreements and the price lookup the editors use.
+Route::middleware('connect.scope:prices:view')->group(function (): void {
+    Route::get('/price-lists', [PriceListController::class, 'index'])->name('price-lists.index');
+    Route::get('/price-lists/{priceList}', [PriceListController::class, 'show'])->whereNumber('priceList')->name('price-lists.show');
+    Route::get('/price-lists/{priceList}/items', [PriceListController::class, 'items'])->whereNumber('priceList')->name('price-lists.items.index');
+    Route::get('/price-agreements', [PriceAgreementController::class, 'index'])->name('price-agreements.index');
+    Route::get('/price-agreements/{agreement}', [PriceAgreementController::class, 'show'])->whereNumber('agreement')->name('price-agreements.show');
+    Route::get('/prices/resolve', PriceResolveController::class)->name('prices.resolve');
+});
+
+Route::middleware('connect.scope:price-lists:manage')->group(function () use ($idempotent): void {
+    Route::post('/price-lists', [PriceListController::class, 'store'])->middleware($idempotent)->name('price-lists.store');
+    Route::patch('/price-lists/{priceList}', [PriceListController::class, 'update'])->whereNumber('priceList')->name('price-lists.update');
+    Route::post('/price-lists/{priceList}/items', [PriceListController::class, 'storeItems'])->whereNumber('priceList')->middleware($idempotent)->name('price-lists.items.store');
+});
+
+Route::middleware('connect.scope:price-agreements:manage')->group(function () use ($idempotent): void {
+    Route::post('/price-agreements', [PriceAgreementController::class, 'store'])->middleware($idempotent)->name('price-agreements.store');
+    Route::patch('/price-agreements/{agreement}', [PriceAgreementController::class, 'update'])->whereNumber('agreement')->name('price-agreements.update');
+    Route::post('/price-agreements/{agreement}/items', [PriceAgreementController::class, 'storeItems'])->whereNumber('agreement')->middleware($idempotent)->name('price-agreements.items.store');
+    Route::post('/price-agreements/{agreement}/activate', [PriceAgreementController::class, 'activate'])->whereNumber('agreement')->middleware($idempotent)->name('price-agreements.activate');
+    Route::post('/price-agreements/{agreement}/terminate', [PriceAgreementController::class, 'terminate'])->whereNumber('agreement')->middleware($idempotent)->name('price-agreements.terminate');
 });

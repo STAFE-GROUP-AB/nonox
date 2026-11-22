@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-22-api-prislistor-prisavtal",
+      "datum": "2026-11-22T04:30:00+01:00",
+      "rubrik": "Prislistor och prisavtal i API:et",
+      "beskrivning": "Ett system utanför NONOX kan nu läsa och skriva prislistor och prisavtal, lägga in tusentals priser i ett anrop och fråga vilket pris en kund får för upp till 500 rader med samma prismotor som fakturaredigeraren. En fakturarad utan pris som skapas via API:et prissätts nu för kunden, och tre nya webhooks meddelar när priser i en lista ändras och när ett prisavtal blir aktivt eller upphör. Kostnaden visas bara för nycklar som har behörigheten att se den.",
+      "typ": "Nytt",
+      "omrade": "Connect/API"
+    },
+    {
       "id": "2026-11-20-priser-i-avtal-kassa-etiketter-arbetsorder",
       "datum": "2026-11-22T03:05:00+01:00",
       "rubrik": "Prislistorna i avtal, offertmallar, arbetsorder, kassa och etiketter",

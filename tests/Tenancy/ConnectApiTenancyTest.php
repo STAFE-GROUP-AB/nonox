@@ -15,6 +15,8 @@ use App\Actions\Payables\PaySupplierInvoice;
 use App\Actions\Payables\RegisterSupplierInvoice;
 use App\Actions\Payables\SaveSupplier;
 use App\Actions\Payables\SaveSupplierInvoice;
+use App\Actions\Pricing\SavePriceAgreement;
+use App\Actions\Pricing\SavePriceList;
 use App\Domain\Accounting\Dimension;
 use App\Models\Company;
 use App\Models\FiscalYear;
@@ -88,6 +90,8 @@ function twoCompanies(): array
     $crmPipelineB = $crmDealB->pipeline_id;
     $crmAgreementB = app(SaveAgreement::class)($ownerB, $b, ['account_id' => $crmAccountB->id, 'title' => 'B:s avtal', 'kind' => 'SERVICE', 'start_date' => '2026-01-01', 'notice_months' => 0, 'value_period' => 'MONTH']);
     $crmQuoteB = app(SaveSalesDocument::class)($ownerB, $b, SalesDocument::QUOTE, ['customer_id' => $customerB->id, 'document_date' => '2026-03-02', 'rows' => $invoiceRows]);
+    $priceListB = app(SavePriceList::class)($ownerB, $b, ['code' => 'B', 'name' => 'B:s prislista', 'kind' => 'STANDARD', 'currency' => 'SEK']);
+    $priceAgreementB = app(SavePriceAgreement::class)($ownerB, $b, ['customer_id' => $customerB->id, 'title' => 'B:s prisavtal', 'currency' => 'SEK', 'valid_from' => '2026-03-01']);
     $supplierInvoiceB = app(SaveSupplierInvoice::class)($ownerB, $b, ['supplier_id' => $supplierB->id, 'invoice_date' => '2026-03-03', 'total' => '125', 'vat' => '25', 'rows' => [['account' => '5410', 'amount' => '100']]]);
 
     // A has its own records too, so the lists are not empty by accident.
@@ -113,6 +117,7 @@ function twoCompanies(): array
             'project' => $projectB->id, 'invoice' => $invoiceB->id, 'issued' => $issuedB->id, 'supplier_invoice' => $supplierInvoiceB->id,
             'article_image' => $imageB->id, 'crm_account' => $crmAccountB->id, 'crm_person' => $crmPersonB->id, 'crm_activity' => $crmActivityB->id,
             'crm_deal' => $crmDealB->id, 'crm_pipeline' => $crmPipelineB, 'crm_agreement' => $crmAgreementB->id, 'quote' => $crmQuoteB->id,
+            'price_list' => $priceListB->id, 'price_agreement' => $priceAgreementB->id,
         ],
     ];
 }
@@ -172,6 +177,15 @@ function crossCompanyCalls(array $b): array
         ['POST', "/api/v1/crm/agreements/{$b['crm_agreement']}/signing", ['email' => 'kapad@exempel.se']],
         ['GET', "/api/v1/quotes/{$b['quote']}/signing"],
         ['POST', "/api/v1/quotes/{$b['quote']}/signing", ['email' => 'kapad@exempel.se']],
+        ['GET', "/api/v1/price-lists/{$b['price_list']}"],
+        ['PATCH', "/api/v1/price-lists/{$b['price_list']}", ['name' => 'Kapad']],
+        ['GET', "/api/v1/price-lists/{$b['price_list']}/items"],
+        ['POST', "/api/v1/price-lists/{$b['price_list']}/items", ['items' => [['article' => 'B1', 'price_minor' => 1]]]],
+        ['GET', "/api/v1/price-agreements/{$b['price_agreement']}"],
+        ['PATCH', "/api/v1/price-agreements/{$b['price_agreement']}", ['title' => 'Kapad']],
+        ['POST', "/api/v1/price-agreements/{$b['price_agreement']}/items", ['items' => [['article' => 'B1', 'price_minor' => 1]]]],
+        ['POST', "/api/v1/price-agreements/{$b['price_agreement']}/activate", ['reason' => 'Kapad avtal']],
+        ['POST', "/api/v1/price-agreements/{$b['price_agreement']}/terminate", ['terminated_on' => '2026-12-31']],
         // Reports that take another company's fiscal year as a parameter.
         ['GET', "/api/v1/reports/trial-balance?fiscal_year_id={$b['fiscal_year']}"],
         ['GET', "/api/v1/reports/general-ledger?fiscal_year_id={$b['fiscal_year']}"],
@@ -232,7 +246,7 @@ it('shows the credential\'s own company, never the person\'s current one', funct
 });
 
 it('covers every API route that takes an id', function () {
-    $listed = collect(crossCompanyCalls(array_fill_keys(['voucher', 'posted', 'attachment', 'customer', 'supplier', 'fiscal_year', 'article', 'cost_center', 'project', 'invoice', 'issued', 'supplier_invoice', 'article_image', 'crm_account', 'crm_person', 'crm_activity', 'crm_deal', 'crm_pipeline', 'crm_agreement', 'quote'], 'X')))
+    $listed = collect(crossCompanyCalls(array_fill_keys(['voucher', 'posted', 'attachment', 'customer', 'supplier', 'fiscal_year', 'article', 'cost_center', 'project', 'invoice', 'issued', 'supplier_invoice', 'article_image', 'crm_account', 'crm_person', 'crm_activity', 'crm_deal', 'crm_pipeline', 'crm_agreement', 'quote', 'price_list', 'price_agreement'], 'X')))
         ->map(fn (array $call): string => $call[0].' '.preg_replace('/X/', '{}', explode('?', $call[1])[0]))
         ->unique()->values();
 

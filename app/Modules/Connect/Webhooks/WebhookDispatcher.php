@@ -6,6 +6,9 @@ namespace App\Modules\Connect\Webhooks;
 
 use App\Events\InvoicePaid;
 use App\Events\InvoiceSent;
+use App\Events\PriceAgreementActivated;
+use App\Events\PriceAgreementEnded;
+use App\Events\PriceListChanged;
 use App\Events\QuoteSigned;
 use App\Events\SupplierInvoiceApproved;
 use App\Events\VoucherPosted;
@@ -83,6 +86,22 @@ final class WebhookDispatcher
     public function quoteSigned(QuoteSigned $event): void
     {
         $this->dispatch($event->companyId, 'quote.signed', fn (): ?array => WebhookEvents::quoteSigned($event->signingRequestId));
+    }
+
+    /** Prices (ADR-082 P9): ids and dates only. */
+    public function priceListChanged(PriceListChanged $event): void
+    {
+        $this->dispatch($event->companyId, 'price_list.changed', fn (): ?array => WebhookEvents::priceListChanged($event->priceListId, $event->changedFrom));
+    }
+
+    public function priceAgreementActivated(PriceAgreementActivated $event): void
+    {
+        $this->dispatch($event->companyId, 'price_agreement.activated', fn (): ?array => WebhookEvents::priceAgreementActivated($event->priceAgreementId));
+    }
+
+    public function priceAgreementEnded(PriceAgreementEnded $event): void
+    {
+        $this->dispatch($event->companyId, 'price_agreement.ended', fn (): ?array => WebhookEvents::priceAgreementEnded($event->priceAgreementId, $event->reason, $event->lastDay));
     }
 
     /** Peppol (ADR-050): handed to the network, or given up; a delivery confirmation is not an event of its own. */

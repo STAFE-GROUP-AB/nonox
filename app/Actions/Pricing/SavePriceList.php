@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Pricing;
 
+use App\Domain\Pricing\PriceAnnouncer;
 use App\Domain\Pricing\PriceChannel;
 use App\Domain\Pricing\PriceInput;
 use App\Domain\Pricing\PriceListKind;
@@ -76,7 +77,7 @@ class SavePriceList
             'currency' => __('valuta'),
         ])->validate();
 
-        return DB::transaction(fn (): PriceList => CurrentCompany::run($company, function () use ($validated, $company, $user, $list): PriceList {
+        $saved = DB::transaction(fn (): PriceList => CurrentCompany::run($company, function () use ($validated, $company, $user, $list): PriceList {
             $kind = PriceListKind::from((string) $validated['kind']);
             $currency = (string) $validated['currency'];
             $includesVat = (bool) ($validated['prices_include_vat'] ?? false);
@@ -133,6 +134,12 @@ class SavePriceList
 
             return $list;
         }));
+
+        if ($list !== null) {
+            PriceAnnouncer::listChanged($company->id, $saved->id);
+        }
+
+        return $saved;
     }
 
     /** @param  array<string, mixed>  $validated */

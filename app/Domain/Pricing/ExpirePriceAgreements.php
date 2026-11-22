@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Pricing;
 
+use App\Events\PriceAgreementEnded;
 use App\Models\PriceAgreement;
 use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\Models\Agreement;
@@ -54,6 +55,7 @@ final class ExpirePriceAgreements
 
                     $locked->forceFill(['status' => PriceAgreementStatus::Ended])->save();
                     Audit::record('price_agreement.ended', $locked, ['price_agreement_id' => $locked->id, 'valid_to' => $end->toDateString()]);
+                    event(new PriceAgreementEnded($locked->company_id, $locked->id, PriceAgreementEnded::EXPIRED, $end->toDateString()));
 
                     return 1;
                 });

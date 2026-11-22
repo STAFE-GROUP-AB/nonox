@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Pricing;
 
+use App\Domain\Pricing\PriceAnnouncer;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\CustomerPriceGroup;
@@ -34,7 +35,7 @@ class ArchivePriceList
 
         Gate::forUser($user)->authorize('update', $list);
 
-        return DB::transaction(fn (): PriceList => CurrentCompany::run($company, function () use ($company, $user, $list, $archive): PriceList {
+        $saved = DB::transaction(fn (): PriceList => CurrentCompany::run($company, function () use ($company, $user, $list, $archive): PriceList {
             if (! $archive) {
                 $list->update(['archived_at' => null]);
                 Audit::record('price_list.restored', $list, [], $company, $user);
@@ -49,6 +50,10 @@ class ArchivePriceList
 
             return $list;
         }));
+
+        PriceAnnouncer::listChanged($company->id, $saved->id, CarbonImmutable::today()->toDateString());
+
+        return $saved;
     }
 
     private function refuseWhileInUse(PriceList $list): void

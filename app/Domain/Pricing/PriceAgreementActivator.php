@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Pricing;
 
+use App\Events\PriceAgreementActivated;
+use App\Events\PriceAgreementEnded;
 use App\Models\Company;
 use App\Models\PriceAgreement;
 use App\Models\PriceAgreementItem;
@@ -77,6 +79,8 @@ final class PriceAgreementActivator
             'method' => $how->value,
             'superseded_id' => $superseded,
         ], $company, $by);
+
+        event(new PriceAgreementActivated($agreement->company_id, $agreement->id));
     }
 
     /**
@@ -202,6 +206,8 @@ final class PriceAgreementActivator
             'status' => PriceAgreementStatus::Superseded,
             'valid_to' => $old->valid_to === null || $old->valid_to->greaterThan($end) ? $end : $old->valid_to,
         ])->save();
+
+        event(new PriceAgreementEnded($old->company_id, $old->id, PriceAgreementEnded::SUPERSEDED, $old->valid_to?->toDateString()));
 
         return $old->id;
     }

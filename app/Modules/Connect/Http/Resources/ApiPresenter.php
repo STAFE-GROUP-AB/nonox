@@ -366,6 +366,8 @@ final class ApiPresenter
                 // Hundredths of the invoice's currency, as written on the invoice; equal to the öre for SEK.
                 'unit_price_minor' => $row->foreign_unit_price_minor ?? $row->unit_price_ore->ore,
                 'discount_bp' => $row->discount_bp,
+                // Where the price came from (ADR-082): MANUAL, AGREEMENT, CUSTOMER_LIST, CAMPAIGN, CURRENCY_LIST, BASE or CONVERTED; null on a row without an article.
+                'price_source' => $row->price_source?->value,
                 'vat_rate' => $row->vat_rate,
                 'account' => $row->account?->number,
                 'net_ore' => $row->net_ore->ore,

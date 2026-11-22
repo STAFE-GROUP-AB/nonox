@@ -6,6 +6,8 @@ namespace App\Modules\Connect\Webhooks;
 
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
+use App\Models\PriceAgreement;
+use App\Models\PriceList;
 use App\Models\SigningRequest;
 use App\Models\SupplierInvoice;
 use App\Models\Voucher;
@@ -43,6 +45,9 @@ final class WebhookEvents
         'quote.signed' => ['invoices:view'],
         'invoice.peppol_sent' => ['invoices:view'],
         'invoice.peppol_failed' => ['invoices:view'],
+        'price_list.changed' => ['prices:view'],
+        'price_agreement.activated' => ['prices:view'],
+        'price_agreement.ended' => ['prices:view'],
     ];
 
     /** @return array<string, string> event => Swedish description */
@@ -60,6 +65,9 @@ final class WebhookEvents
             'quote.signed' => __('En offert har signerats via en signeringslänk (CRM)'),
             'invoice.peppol_sent' => __('En kundfaktura har lämnats till Peppol-nätverket som e-faktura (Peppol)'),
             'invoice.peppol_failed' => __('En e-faktura via Peppol kunde inte levereras (Peppol)'),
+            'price_list.changed' => __('Priser i en prislista har lagts till, ändrats eller tagits bort'),
+            'price_agreement.activated' => __('Ett prisavtal med en kund har blivit aktivt'),
+            'price_agreement.ended' => __('Ett prisavtal med en kund har upphört att gälla'),
         ];
     }
 
@@ -159,6 +167,62 @@ final class WebhookEvents
             'sha256' => $transmission->xml_sha256,
             'sent_at' => $transmission->sent_at?->toAtomString(),
             'failed_at' => $transmission->failed_at?->toAtomString(),
+        ];
+    }
+
+    /**
+     * Must run inside the company. Ids and a date only: the receiver fetches
+     * the prices from the API with its own credential (ADR-082 P9).
+     *
+     * @return ?array<string, mixed>
+     */
+    public static function priceListChanged(int $priceListId, ?string $changedFrom): ?array
+    {
+        $list = PriceList::query()->find($priceListId, ['id', 'currency']);
+
+        if (! $list instanceof PriceList) {
+            return null;
+        }
+
+        return [
+            'price_list_id' => $list->id,
+            'currency' => $list->currency,
+            'changed_from' => $changedFrom,
+        ];
+    }
+
+    /** @return ?array<string, mixed> */
+    public static function priceAgreementActivated(int $priceAgreementId): ?array
+    {
+        $agreement = PriceAgreement::query()->find($priceAgreementId);
+
+        if (! $agreement instanceof PriceAgreement) {
+            return null;
+        }
+
+        return [
+            'price_agreement_id' => $agreement->id,
+            'customer_id' => $agreement->customer_id,
+            'valid_from' => $agreement->valid_from->toDateString(),
+            'valid_to' => $agreement->valid_to?->toDateString(),
+            'activated_at' => $agreement->activated_at?->toAtomString(),
+        ];
+    }
+
+    /** @return ?array<string, mixed> */
+    public static function priceAgreementEnded(int $priceAgreementId, string $reason, ?string $lastDay): ?array
+    {
+        $agreement = PriceAgreement::query()->find($priceAgreementId);
+
+        if (! $agreement instanceof PriceAgreement) {
+            return null;
+        }
+
+        return [
+            'price_agreement_id' => $agreement->id,
+            'customer_id' => $agreement->customer_id,
+            'reason' => $reason,
+            'last_day' => $lastDay,
         ];
     }
 

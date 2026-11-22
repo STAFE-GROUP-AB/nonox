@@ -108,6 +108,10 @@ tags:
     x-en-name: CRM
     description: 'Accounts (prospects and customers), contact people with their role and legal basis, and activities with a next step. Needs the CRM module.'
     x-sv-description: 'Kunder och prospekt, kontaktpersoner med roll och rättslig grund, och aktiviteter.'
+  - name: Priser
+    x-en-name: Prices
+    description: 'Price lists, customer price agreements and the price lookup the invoice editor uses.'
+    x-sv-description: 'Prislistor, kundernas prisavtal och prisuppslaget som fakturaredigeraren använder.'
 security:
   - oauth2: []
   - apiKey: []
@@ -9498,6 +9502,1388 @@ paths:
           $ref: '#/components/responses/Unprocessable'
         429:
           $ref: '#/components/responses/TooManyRequests'
+  /price-lists:
+    get:
+      operationId: listPriceLists
+      tags:
+        - Priser
+      summary: 'List price lists'
+      description: 'Price lists, campaigns and channel lists, with their currency, period, derivation and the customer price groups a campaign is for. Archived lists are left out unless include_archived=1. Filter on currency (ISO 4217), valid_on (lists whose period covers the day) and article (an article number: lists that hold a price for it). Needs prices:view.'
+      x-sv-summary: 'Lista prislistor'
+      x-sv-description: 'Prislistor, kampanjer och kanallistor med valuta, period, härledning och kundprisgrupper. Filtrera på currency, valid_on och article.'
+      security:
+        - oauth2:
+            - 'prices:view'
+        - apiKey:
+            - 'prices:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'prices:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: valid_on
+          in: query
+          required: false
+          description: 'Only what applies on this day (Y-m-d).'
+          schema:
+            type: string
+            format: date
+        - name: article
+          in: query
+          required: false
+          description: 'Only what concerns the article with this number.'
+          schema:
+            type: string
+        - name: currency
+          in: query
+          required: false
+          description: 'Only lists in this currency.'
+          schema:
+            type: string
+            pattern: '^[A-Za-z]{3}$'
+        - name: include_archived
+          in: query
+          required: false
+          description: 'Set to 1 to include archived lists.'
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PriceList'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      -
+                        id: 7
+                        code: 'ÅF'
+                        name: 'Återförsäljare'
+                        kind: 'STANDARD'
+                        currency: 'SEK'
+                        prices_include_vat: false
+                        valid_from: null
+                        valid_to: null
+                        is_default_for_currency: false
+                        based_on_list_id: null
+                        derived_percent_bp: null
+                        rounding_rule: 'NONE'
+                        channel: null
+                        group_ids: []
+                        archived: false
+                        created_at: '2026-11-22T09:00:00+01:00'
+                        updated_at: '2026-11-22T09:00:00+01:00'
+                    meta:
+                      limit: 50
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createPriceList
+      tags:
+        - Priser
+      summary: 'Create a price list'
+      description: 'Makes a price list with the same rules as the screen: a code unique in the company, a type (STANDARD, CAMPAIGN or CHANNEL), a currency, optionally derived from another list of the same currency by derived_percent_bp (hundredths of a percent, -1250 is 12,5 % lower) with a rounding rule. A campaign needs both dates; a channel list needs channel POS or PORTAL. Needs price-lists:manage.'
+      x-sv-summary: 'Skapa prislista'
+      x-sv-description: 'Skapar en prislista med samma regler som i appen: unik kod, typ, valuta och eventuellt härledd från en annan lista.'
+      security:
+        - oauth2:
+            - 'price-lists:manage'
+        - apiKey:
+            - 'price-lists:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'price-lists:manage'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceListInput'
+            examples:
+              example:
+                value:
+                  code: 'ÅF'
+                  name: 'Återförsäljare'
+                  kind: 'STANDARD'
+                  currency: 'SEK'
+      responses:
+        201:
+          description: 'The price list.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PriceList'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 7
+                      code: 'ÅF'
+                      name: 'Återförsäljare'
+                      kind: 'STANDARD'
+                      currency: 'SEK'
+                      prices_include_vat: false
+                      valid_from: null
+                      valid_to: null
+                      is_default_for_currency: false
+                      based_on_list_id: null
+                      derived_percent_bp: null
+                      rounding_rule: 'NONE'
+                      channel: null
+                      group_ids: []
+                      archived: false
+                      created_at: '2026-11-22T09:00:00+01:00'
+                      updated_at: '2026-11-22T09:00:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/price-lists/{priceList}':
+    parameters:
+      - name: priceList
+        in: path
+        required: true
+        description: 'Price list id.'
+        schema:
+          type: integer
+        example: 7
+    get:
+      operationId: getPriceList
+      tags:
+        - Priser
+      summary: 'Get a price list'
+      description: 'One price list by id. Needs prices:view.'
+      x-sv-summary: 'Hämta prislista'
+      x-sv-description: 'En prislista, utifrån id.'
+      security:
+        - oauth2:
+            - 'prices:view'
+        - apiKey:
+            - 'prices:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'prices:view'
+      responses:
+        200:
+          description: 'The price list.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PriceList'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 7
+                      code: 'ÅF'
+                      name: 'Återförsäljare'
+                      kind: 'STANDARD'
+                      currency: 'SEK'
+                      prices_include_vat: false
+                      valid_from: null
+                      valid_to: null
+                      is_default_for_currency: false
+                      based_on_list_id: null
+                      derived_percent_bp: null
+                      rounding_rule: 'NONE'
+                      channel: null
+                      group_ids: []
+                      archived: false
+                      created_at: '2026-11-22T09:00:00+01:00'
+                      updated_at: '2026-11-22T09:00:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    patch:
+      operationId: updatePriceList
+      tags:
+        - Priser
+      summary: 'Change a price list'
+      description: 'Changes the given fields of a price list; the rest are kept. Changing the currency or the VAT basis of a list that already has prices is refused, as on the screen. A webhook price_list.changed follows. Needs price-lists:manage.'
+      x-sv-summary: 'Ändra prislista'
+      x-sv-description: 'Ändrar de angivna fälten i en prislista; resten behålls.'
+      security:
+        - oauth2:
+            - 'price-lists:manage'
+        - apiKey:
+            - 'price-lists:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'price-lists:manage'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceListInput'
+            examples:
+              example:
+                value:
+                  name: 'Återförsäljare 2027'
+      responses:
+        200:
+          description: 'The price list.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PriceList'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 7
+                      code: 'ÅF'
+                      name: 'Återförsäljare'
+                      kind: 'STANDARD'
+                      currency: 'SEK'
+                      prices_include_vat: false
+                      valid_from: null
+                      valid_to: null
+                      is_default_for_currency: false
+                      based_on_list_id: null
+                      derived_percent_bp: null
+                      rounding_rule: 'NONE'
+                      channel: null
+                      group_ids: []
+                      archived: false
+                      created_at: '2026-11-22T09:00:00+01:00'
+                      updated_at: '2026-11-22T09:00:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/price-lists/{priceList}/items':
+    parameters:
+      - name: priceList
+        in: path
+        required: true
+        description: 'Price list id.'
+        schema:
+          type: integer
+        example: 7
+    get:
+      operationId: listPriceListItems
+      tags:
+        - Priser
+      summary: 'List the prices of a price list'
+      description: 'The prices in a list: one row per article, unit, quantity step and period, as a price in the list''s currency (price_minor) or a discount on the base price (discount_bp). Archived prices are left out. Filter on article (number) and valid_on. Needs prices:view.'
+      x-sv-summary: 'Lista priserna i en prislista'
+      x-sv-description: 'Priserna i en prislista: ett pris eller en rabatt per artikel, enhet, antalstrappa och period.'
+      security:
+        - oauth2:
+            - 'prices:view'
+        - apiKey:
+            - 'prices:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'prices:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: valid_on
+          in: query
+          required: false
+          description: 'Only what applies on this day (Y-m-d).'
+          schema:
+            type: string
+            format: date
+        - name: article
+          in: query
+          required: false
+          description: 'Only what concerns the article with this number.'
+          schema:
+            type: string
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PriceListItem'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      -
+                        id: 91
+                        price_list_id: 7
+                        article_id: 12
+                        article: 'A-1'
+                        unit_id: null
+                        unit: null
+                        min_quantity: '0'
+                        price_minor: 8000
+                        discount_bp: null
+                        valid_from: null
+                        valid_to: null
+                        archived: false
+                        updated_at: '2026-11-22T09:00:00+01:00'
+                    meta:
+                      limit: 50
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createPriceListItems
+      tags:
+        - Priser
+      summary: 'Add prices to a price list'
+      description: 'Adds up to 1 000 prices in one call, each row on its own with the same validation as the screen''s file import: the article (by number), the unit (by code, default the article''s sales unit), min_quantity (a quantity step, "0" for the first), and either price_minor (an integer in the list''s minor unit) or discount_bp (basis points), with valid_from and valid_to. A price whose period overlaps a running one for the same article, unit and step is refused; set replace_running to true on a row to end the running price the day before the new one starts. The response lists the saved prices and the refused rows with their position (index) and reasons. 201 when every row was saved, 200 when some were, 422 when none were. One webhook price_list.changed is sent for the call. Needs price-lists:manage.'
+      x-sv-summary: 'Lägg till priser i en prislista'
+      x-sv-description: 'Lägger till upp till 1 000 priser i ett anrop. Varje rad valideras för sig; svaret visar vilka rader som sparades och vilka som avvisades.'
+      security:
+        - oauth2:
+            - 'price-lists:manage'
+        - apiKey:
+            - 'price-lists:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'price-lists:manage'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceListItemsInput'
+            examples:
+              example:
+                value:
+                  items:
+                    - article: 'A-1'
+                      price_minor: 8000
+                    - article: 'A-1'
+                      min_quantity: '10'
+                      price_minor: 7500
+                    - article: 'A-2'
+                      discount_bp: 1000
+                      valid_from: '2027-01-01'
+      responses:
+        201:
+          description: 'Every row was saved (200 when only some were, 422 when none were; the body is the same).'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PriceListItemsResult'
+              examples:
+                example:
+                  value:
+                    data:
+                      saved: 3
+                      failed: 0
+                      items: []
+                      errors: []
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /price-agreements:
+    get:
+      operationId: listPriceAgreements
+      tags:
+        - Priser
+      summary: 'List price agreements'
+      description: 'Customer price agreements without their terms (fetch one agreement for its items). Filter on customer_id, status (DRAFT, AWAITING_SIGNATURE, ACTIVE, ENDED, TERMINATED or SUPERSEDED), currency and valid_on (agreements that apply on the day, taking a termination into account). Needs prices:view.'
+      x-sv-summary: 'Lista prisavtal'
+      x-sv-description: 'Kundernas prisavtal utan villkor (hämta ett avtal för dess villkor). Filtrera på customer_id, status, currency och valid_on.'
+      security:
+        - oauth2:
+            - 'prices:view'
+        - apiKey:
+            - 'prices:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'prices:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: valid_on
+          in: query
+          required: false
+          description: 'Only what applies on this day (Y-m-d).'
+          schema:
+            type: string
+            format: date
+        - name: customer_id
+          in: query
+          required: false
+          description: 'The agreements of one customer.'
+          schema:
+            type: integer
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [DRAFT, AWAITING_SIGNATURE, ACTIVE, ENDED, TERMINATED, SUPERSEDED]
+        - name: currency
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: '^[A-Za-z]{3}$'
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PriceAgreement'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      -
+                        id: 5
+                        number: 1
+                        reference: 'PA-1'
+                        customer_id: 18
+                        title: 'Ramavtal 2027'
+                        currency: 'SEK'
+                        status: 'ACTIVE'
+                        valid_from: '2027-01-01'
+                        valid_to: '2027-12-31'
+                        terminated_on: null
+                        allow_campaigns: false
+                        crm_agreement_id: null
+                        supersedes_id: null
+                        signed_at: null
+                        activation_method: 'MANUAL'
+                        activated_at: '2026-11-22T09:00:00+01:00'
+                        created_at: '2026-11-22T08:00:00+01:00'
+                        updated_at: '2026-11-22T09:00:00+01:00'
+                    meta:
+                      limit: 50
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createPriceAgreement
+      tags:
+        - Priser
+      summary: 'Create a price agreement'
+      description: 'Makes a draft price agreement for a customer (numbered PA-1, PA-2 and so on per company). Add its terms with POST /price-agreements/{agreement}/items, then activate it. Sending an agreement for signing is done in NONOX. Needs price-agreements:manage.'
+      x-sv-summary: 'Skapa prisavtal'
+      x-sv-description: 'Skapar ett utkast till prisavtal för en kund. Lägg till villkor med items och aktivera sedan.'
+      security:
+        - oauth2:
+            - 'price-agreements:manage'
+        - apiKey:
+            - 'price-agreements:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'price-agreements:manage'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceAgreementInput'
+            examples:
+              example:
+                value:
+                  customer_id: 18
+                  title: 'Ramavtal 2027'
+                  currency: 'SEK'
+                  valid_from: '2027-01-01'
+                  valid_to: '2027-12-31'
+      responses:
+        201:
+          description: 'The agreement.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PriceAgreement'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 5
+                      number: 1
+                      reference: 'PA-1'
+                      customer_id: 18
+                      title: 'Ramavtal 2027'
+                      currency: 'SEK'
+                      status: 'ACTIVE'
+                      valid_from: '2027-01-01'
+                      valid_to: '2027-12-31'
+                      terminated_on: null
+                      allow_campaigns: false
+                      crm_agreement_id: null
+                      supersedes_id: null
+                      signed_at: null
+                      activation_method: 'MANUAL'
+                      activated_at: '2026-11-22T09:00:00+01:00'
+                      created_at: '2026-11-22T08:00:00+01:00'
+                      updated_at: '2026-11-22T09:00:00+01:00'
+                      items:
+                        - id: 31
+                          price_agreement_id: 5
+                          target: 'article'
+                          article_id: 12
+                          article: 'A-1'
+                          unit_id: null
+                          unit: null
+                          min_quantity: '0'
+                          price_minor: 9000
+                          discount_bp: null
+                          base_price_list_id: null
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/price-agreements/{agreement}':
+    parameters:
+      - name: agreement
+        in: path
+        required: true
+        description: 'Price agreement id.'
+        schema:
+          type: integer
+        example: 5
+    get:
+      operationId: getPriceAgreement
+      tags:
+        - Priser
+      summary: 'Get a price agreement'
+      description: 'One agreement with its terms (items). Needs prices:view.'
+      x-sv-summary: 'Hämta prisavtal'
+      x-sv-description: 'Ett prisavtal med dess villkor.'
+      security:
+        - oauth2:
+            - 'prices:view'
+        - apiKey:
+            - 'prices:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'prices:view'
+      responses:
+        200:
+          description: 'The agreement.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PriceAgreement'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 5
+                      number: 1
+                      reference: 'PA-1'
+                      customer_id: 18
+                      title: 'Ramavtal 2027'
+                      currency: 'SEK'
+                      status: 'ACTIVE'
+                      valid_from: '2027-01-01'
+                      valid_to: '2027-12-31'
+                      terminated_on: null
+                      allow_campaigns: false
+                      crm_agreement_id: null
+                      supersedes_id: null
+                      signed_at: null
+                      activation_method: 'MANUAL'
+                      activated_at: '2026-11-22T09:00:00+01:00'
+                      created_at: '2026-11-22T08:00:00+01:00'
+                      updated_at: '2026-11-22T09:00:00+01:00'
+                      items:
+                        - id: 31
+                          price_agreement_id: 5
+                          target: 'article'
+                          article_id: 12
+                          article: 'A-1'
+                          unit_id: null
+                          unit: null
+                          min_quantity: '0'
+                          price_minor: 9000
+                          discount_bp: null
+                          base_price_list_id: null
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    patch:
+      operationId: updatePriceAgreement
+      tags:
+        - Priser
+      summary: 'Change a draft price agreement'
+      description: 'Changes the given fields of a draft; the rest are kept. An agreement that has been sent or activated is frozen (403): make a new version in NONOX. Needs price-agreements:manage.'
+      x-sv-summary: 'Ändra utkast till prisavtal'
+      x-sv-description: 'Ändrar de angivna fälten i ett utkast. Ett skickat eller aktivt avtal är fryst.'
+      security:
+        - oauth2:
+            - 'price-agreements:manage'
+        - apiKey:
+            - 'price-agreements:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'price-agreements:manage'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceAgreementInput'
+            examples:
+              example:
+                value:
+                  title: 'Ramavtal 2027, justerat'
+      responses:
+        200:
+          description: 'The agreement.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PriceAgreement'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 5
+                      number: 1
+                      reference: 'PA-1'
+                      customer_id: 18
+                      title: 'Ramavtal 2027'
+                      currency: 'SEK'
+                      status: 'ACTIVE'
+                      valid_from: '2027-01-01'
+                      valid_to: '2027-12-31'
+                      terminated_on: null
+                      allow_campaigns: false
+                      crm_agreement_id: null
+                      supersedes_id: null
+                      signed_at: null
+                      activation_method: 'MANUAL'
+                      activated_at: '2026-11-22T09:00:00+01:00'
+                      created_at: '2026-11-22T08:00:00+01:00'
+                      updated_at: '2026-11-22T09:00:00+01:00'
+                      items:
+                        - id: 31
+                          price_agreement_id: 5
+                          target: 'article'
+                          article_id: 12
+                          article: 'A-1'
+                          unit_id: null
+                          unit: null
+                          min_quantity: '0'
+                          price_minor: 9000
+                          discount_bp: null
+                          base_price_list_id: null
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/price-agreements/{agreement}/items':
+    parameters:
+      - name: agreement
+        in: path
+        required: true
+        description: 'Price agreement id.'
+        schema:
+          type: integer
+        example: 5
+    post:
+      operationId: createPriceAgreementItems
+      tags:
+        - Priser
+      summary: 'Add terms to a draft price agreement'
+      description: 'Adds up to 1 000 terms to a draft, each row on its own: target "article" (the article by number) or "all" (a discount on every article), unit (code), min_quantity, and either price_minor or discount_bp, and for a discount optionally base_price_list_id to take it from a named list. The response is the same as for price list items (201, 200 or 422 with the refused rows by index). Needs price-agreements:manage.'
+      x-sv-summary: 'Lägg till villkor i ett prisavtal'
+      x-sv-description: 'Lägger till upp till 1 000 villkor i ett utkast, varje rad för sig. Svaret visar sparade och avvisade rader.'
+      security:
+        - oauth2:
+            - 'price-agreements:manage'
+        - apiKey:
+            - 'price-agreements:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'price-agreements:manage'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceAgreementItemsInput'
+            examples:
+              example:
+                value:
+                  items:
+                    - article: 'A-1'
+                      price_minor: 9000
+                    - target: 'all'
+                      discount_bp: 500
+      responses:
+        201:
+          description: 'Every row was saved (200 when only some were, 422 when none were; the body is the same).'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PriceAgreementItemsResult'
+              examples:
+                example:
+                  value:
+                    data:
+                      saved: 2
+                      failed: 0
+                      items: []
+                      errors: []
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/price-agreements/{agreement}/activate':
+    parameters:
+      - name: agreement
+        in: path
+        required: true
+        description: 'Price agreement id.'
+        schema:
+          type: integer
+        example: 5
+    post:
+      operationId: activatePriceAgreement
+      tags:
+        - Priser
+      summary: 'Activate a price agreement'
+      description: 'Activates a draft without a signature, for example when the customer signed on paper. reason (5 to 500 characters) is required and kept on the agreement with who activated it and when. The agreement needs at least one term, must not have ended and must not overlap another of the customer''s agreements. A webhook price_agreement.activated follows. Needs price-agreements:manage.'
+      x-sv-summary: 'Aktivera prisavtal'
+      x-sv-description: 'Aktiverar ett utkast utan signering, till exempel när kunden skrivit under på papper. Skäl krävs.'
+      security:
+        - oauth2:
+            - 'price-agreements:manage'
+        - apiKey:
+            - 'price-agreements:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'price-agreements:manage'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceAgreementActivation'
+            examples:
+              example:
+                value:
+                  reason: 'Undertecknat på papper 2026-11-20.'
+      responses:
+        200:
+          description: 'The agreement, now ACTIVE.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PriceAgreement'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 5
+                      number: 1
+                      reference: 'PA-1'
+                      customer_id: 18
+                      title: 'Ramavtal 2027'
+                      currency: 'SEK'
+                      status: 'ACTIVE'
+                      valid_from: '2027-01-01'
+                      valid_to: '2027-12-31'
+                      terminated_on: null
+                      allow_campaigns: false
+                      crm_agreement_id: null
+                      supersedes_id: null
+                      signed_at: null
+                      activation_method: 'MANUAL'
+                      activated_at: '2026-11-22T09:00:00+01:00'
+                      created_at: '2026-11-22T08:00:00+01:00'
+                      updated_at: '2026-11-22T09:00:00+01:00'
+                      items:
+                        - id: 31
+                          price_agreement_id: 5
+                          target: 'article'
+                          article_id: 12
+                          article: 'A-1'
+                          unit_id: null
+                          unit: null
+                          min_quantity: '0'
+                          price_minor: 9000
+                          discount_bp: null
+                          base_price_list_id: null
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/price-agreements/{agreement}/terminate':
+    parameters:
+      - name: agreement
+        in: path
+        required: true
+        description: 'Price agreement id.'
+        schema:
+          type: integer
+        example: 5
+    post:
+      operationId: terminatePriceAgreement
+      tags:
+        - Priser
+      summary: 'Terminate a price agreement'
+      description: 'Ends an active agreement on terminated_on (Y-m-d), the last day it applies. The day cannot be in the past, since documents already priced keep their meaning, and cannot be after the agreement''s own end. A webhook price_agreement.ended follows. Needs price-agreements:manage.'
+      x-sv-summary: 'Säg upp prisavtal'
+      x-sv-description: 'Avslutar ett aktivt avtal på sista dagen det gäller. Dagen kan inte ligga bakåt i tiden.'
+      security:
+        - oauth2:
+            - 'price-agreements:manage'
+        - apiKey:
+            - 'price-agreements:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'price-agreements:manage'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceAgreementTermination'
+            examples:
+              example:
+                value:
+                  terminated_on: '2026-12-31'
+      responses:
+        200:
+          description: 'The agreement, now TERMINATED.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PriceAgreement'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 5
+                      number: 1
+                      reference: 'PA-1'
+                      customer_id: 18
+                      title: 'Ramavtal 2027'
+                      currency: 'SEK'
+                      status: 'ACTIVE'
+                      valid_from: '2027-01-01'
+                      valid_to: '2027-12-31'
+                      terminated_on: null
+                      allow_campaigns: false
+                      crm_agreement_id: null
+                      supersedes_id: null
+                      signed_at: null
+                      activation_method: 'MANUAL'
+                      activated_at: '2026-11-22T09:00:00+01:00'
+                      created_at: '2026-11-22T08:00:00+01:00'
+                      updated_at: '2026-11-22T09:00:00+01:00'
+                      items:
+                        - id: 31
+                          price_agreement_id: 5
+                          target: 'article'
+                          article_id: 12
+                          article: 'A-1'
+                          unit_id: null
+                          unit: null
+                          min_quantity: '0'
+                          price_minor: 9000
+                          discount_bp: null
+                          base_price_list_id: null
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /prices/resolve:
+    get:
+      operationId: resolvePrices
+      tags:
+        - Priser
+      summary: 'Resolve prices'
+      description: 'Asks the same price engine as the invoice and quote editors which price a customer gets for up to 500 article rows: a manual price is never asked for here, then the customer''s price agreement, price list, campaigns, the currency''s list and the base price, in that order. Each row returns the unit price in the currency''s minor unit, the discount, the source (AGREEMENT, CUSTOMER_LIST, CAMPAIGN, CURRENCY_LIST, BASE or CONVERTED), whether the list''s prices include VAT, a structured explanation (ids and amounts, never text) and warnings. unit_price_minor is null where no price exists (see warnings). unit_cost_minor, the article''s cost per unit in kronor, is added only for a credential that also has prices:view-cost. Needs prices:view.'
+      x-sv-summary: 'Slå upp priser'
+      x-sv-description: 'Frågar samma prismotor som fakturaredigeraren vilket pris en kund får för upp till 500 rader. Kostnad visas bara med prices:view-cost.'
+      security:
+        - oauth2:
+            - 'prices:view'
+        - apiKey:
+            - 'prices:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'prices:view'
+      parameters:
+        - name: rows[]
+          in: query
+          required: true
+          description: 'One to 500 rows, each article_number:quantity:unit. The quantity defaults to 1 and the unit to the article''s sales unit, so "A-1", "A-1:10" and "A-1:10:kg" are all valid.'
+          schema:
+            type: array
+            minItems: 1
+            maxItems: 500
+            items:
+              type: string
+          style: form
+          explode: true
+        - name: customer
+          in: query
+          required: false
+          description: 'Customer id; without it the price is the one anyone gets.'
+          schema:
+            type: integer
+        - name: date
+          in: query
+          required: false
+          description: 'The day the price applies (Y-m-d), default today.'
+          schema:
+            type: string
+            format: date
+        - name: currency
+          in: query
+          required: false
+          description: 'ISO 4217 code, default SEK.'
+          schema:
+            type: string
+            pattern: '^[A-Za-z]{3}$'
+        - name: channel
+          in: query
+          required: false
+          description: 'Where the price is asked for: SALES (default), PORTAL, POS, RECURRING or WORK_ORDER.'
+          schema:
+            type: string
+            enum: [SALES, PORTAL, POS, RECURRING, WORK_ORDER]
+        - name: channel_list
+          in: query
+          required: false
+          description: 'The id of a channel list (a till or portal list) to price from.'
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 'The resolved rows, in the order asked.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PriceResolution'
+              examples:
+                example:
+                  value:
+                    data:
+                      customer_id: 18
+                      date: '2026-11-22'
+                      currency: 'SEK'
+                      channel: 'SALES'
+                      rows:
+                        - row: 0
+                          article: 'A-1'
+                          article_id: 12
+                          quantity: '10'
+                          unit: 'st'
+                          unit_price_minor: 9000
+                          discount_bp: 0
+                          currency: 'SEK'
+                          price_source: 'AGREEMENT'
+                          prices_include_vat: false
+                          gross_unit_price_minor: null
+                          explanation:
+                            source: 'AGREEMENT'
+                            agreement_id: 5
+                          warnings: []
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
 webhooks:
   voucher.posted:
     post:
@@ -10169,6 +11555,174 @@ webhooks:
       responses:
         2XX:
           description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
+  price_list.changed:
+    post:
+      operationId: priceListChanged
+      summary: 'Prices in a price list changed'
+      x-sv-summary: 'Priser i en prislista har ändrats'
+      description: "Sent after prices in a list were added, changed, ended or restored, the list itself was changed or archived, or a mass price update was applied or reverted: the list id, its currency and changed_from, the first day the change can be seen in prices (null when it applies from the start). A call that changes many prices sends one event per list. Fetch the prices with `GET /price-lists/{id}/items?valid_on=`; the event never carries a price. The webhook needs prices:view. Sent as an HTTPS POST to every active webhook of the company that subscribes to `price_list.changed`. Verify `Nonox-Signature` over the raw body before trusting it, reject a timestamp more than five minutes from your clock, and store `Nonox-Event-Id` to ignore duplicates (a delivery whose answer was lost is sent again). Answer 2xx within 10 seconds. Anything else is retried after 1, 5 and 15 minutes and 1, 3, 6 and 13 hours (eight attempts over about 23 hours); then the webhook is turned off and the company's owner is e-mailed. Redirects are never followed."
+      x-sv-description: 'Skickas när priser i en prislista har lagts till, ändrats, avslutats eller återställts, eller listan själv har ändrats: id, valuta och första dag ändringen syns i priserna. Hämta priserna med API:et. Skickas med HTTPS POST till varje webhook som prenumererar på `price_list.changed`. Kontrollera Nonox-Signature, avvisa tidsstämplar äldre än fem minuter och använd Nonox-Event-Id mot dubbletter. Svara 2xx inom 10 sekunder; annars försöker NONOX igen i ungefär ett dygn och stänger sedan av webhooken.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+        - name: Nonox-Event-Type
+          in: header
+          required: true
+          description: 'The event type, as `type` in the body.'
+          schema:
+            type: string
+          example: price_list.changed
+        - name: User-Agent
+          in: header
+          required: true
+          schema:
+            type: string
+          example: 'NONOX-Webhooks/1.0 (+https://github.com/STAFE-GROUP-AB/nonox)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: 7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a
+                  type: price_list.changed
+                  created_at: '2026-11-22T08:15:43+01:00'
+                  company_id: 42
+                  data:
+                    price_list_id: 7
+                    currency: SEK
+                    changed_from: '2026-11-22'
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
+  price_agreement.activated:
+    post:
+      operationId: priceAgreementActivated
+      summary: 'A price agreement became active'
+      x-sv-summary: 'Ett prisavtal har blivit aktivt'
+      description: "Sent after a customer price agreement became active, signed at its link or activated by hand: ids and dates only, never the title or the reason. Fetch the agreement with `GET /price-agreements/{id}`. The webhook needs prices:view. Sent as an HTTPS POST to every active webhook of the company that subscribes to `price_agreement.activated`. Verify `Nonox-Signature` over the raw body before trusting it, reject a timestamp more than five minutes from your clock, and store `Nonox-Event-Id` to ignore duplicates (a delivery whose answer was lost is sent again). Answer 2xx within 10 seconds. Anything else is retried after 1, 5 and 15 minutes and 1, 3, 6 and 13 hours (eight attempts over about 23 hours); then the webhook is turned off and the company's owner is e-mailed. Redirects are never followed."
+      x-sv-description: 'Skickas när ett prisavtal har blivit aktivt, signerat eller aktiverat för hand: bara id och datum. Skickas med HTTPS POST till varje webhook som prenumererar på `price_agreement.activated`. Kontrollera Nonox-Signature, avvisa tidsstämplar äldre än fem minuter och använd Nonox-Event-Id mot dubbletter. Svara 2xx inom 10 sekunder; annars försöker NONOX igen i ungefär ett dygn och stänger sedan av webhooken.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+        - name: Nonox-Event-Type
+          in: header
+          required: true
+          description: 'The event type, as `type` in the body.'
+          schema:
+            type: string
+          example: price_agreement.activated
+        - name: User-Agent
+          in: header
+          required: true
+          schema:
+            type: string
+          example: 'NONOX-Webhooks/1.0 (+https://github.com/STAFE-GROUP-AB/nonox)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: 7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a
+                  type: price_agreement.activated
+                  created_at: '2026-11-22T08:15:43+01:00'
+                  company_id: 42
+                  data:
+                    price_agreement_id: 5
+                    customer_id: 18
+                    valid_from: '2027-01-01'
+                    valid_to: '2027-12-31'
+                    activated_at: '2026-11-22T08:15:42+01:00'
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
+  price_agreement.ended:
+    post:
+      operationId: priceAgreementEnded
+      summary: 'A price agreement stopped applying'
+      x-sv-summary: 'Ett prisavtal har upphört'
+      description: "Sent when a customer price agreement stops applying: terminated (reason `terminated`, last_day the day it was ended on), expired because its last day passed (`expired`) or replaced by a new version (`superseded`, last_day the day before the new one starts). Ids, the reason and the date only. The webhook needs prices:view. Sent as an HTTPS POST to every active webhook of the company that subscribes to `price_agreement.ended`. Verify `Nonox-Signature` over the raw body before trusting it, reject a timestamp more than five minutes from your clock, and store `Nonox-Event-Id` to ignore duplicates (a delivery whose answer was lost is sent again). Answer 2xx within 10 seconds. Anything else is retried after 1, 5 and 15 minutes and 1, 3, 6 and 13 hours (eight attempts over about 23 hours); then the webhook is turned off and the company's owner is e-mailed. Redirects are never followed."
+      x-sv-description: 'Skickas när ett prisavtal slutar gälla: uppsagt, utgånget eller ersatt av en ny version. Bara id, orsak och sista dag. Skickas med HTTPS POST till varje webhook som prenumererar på `price_agreement.ended`. Kontrollera Nonox-Signature, avvisa tidsstämplar äldre än fem minuter och använd Nonox-Event-Id mot dubbletter. Svara 2xx inom 10 sekunder; annars försöker NONOX igen i ungefär ett dygn och stänger sedan av webhooken.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+        - name: Nonox-Event-Type
+          in: header
+          required: true
+          description: 'The event type, as `type` in the body.'
+          schema:
+            type: string
+          example: price_agreement.ended
+        - name: User-Agent
+          in: header
+          required: true
+          schema:
+            type: string
+          example: 'NONOX-Webhooks/1.0 (+https://github.com/STAFE-GROUP-AB/nonox)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: 7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a
+                  type: price_agreement.ended
+                  created_at: '2026-11-22T08:15:43+01:00'
+                  company_id: 42
+                  data:
+                    price_agreement_id: 5
+                    customer_id: 18
+                    reason: terminated
+                    last_day: '2026-12-31'
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
 components:
   securitySchemes:
     oauth2:
@@ -10200,6 +11754,10 @@ components:
             'inventory:manage': 'Create goods receipts and receive goods into stock, and see purchase prices'
             'crm:view': 'Read the CRM: accounts (prospects and customers), contact people and activities'
             'crm:manage': 'Create and change accounts, contact people and activities in the CRM'
+            'prices:view': 'Read price lists, price agreements and look up which price a customer gets'
+            'prices:view-cost': 'See articles'' cost in price lookups'
+            'price-lists:manage': 'Create and change price lists and the prices in them'
+            'price-agreements:manage': 'Create, change, activate and terminate price agreements with customers'
           x-revocationUrl: 'https://nonox.app/oauth/revoke'
       x-sv-scopes:
         'vouchers:view': 'Läsa verifikationer, underlag, kontoplan, räkenskapsår och perioder, kostnadsställen, projekt, verifikationsserier och momskoder'
@@ -10222,6 +11780,10 @@ components:
         'inventory:manage': 'Skapa inleveranser och ta emot varor i lagret, och se inköpspriser'
         'crm:view': 'Läsa CRM: kunder och prospekt, kontaktpersoner, aktiviteter och affärer'
         'crm:manage': 'Lägga till och ändra kunder och prospekt, kontaktpersoner, aktiviteter och affärer i CRM'
+        'prices:view': 'Läsa prislistor, prisavtal och slå upp vilket pris en kund får'
+        'prices:view-cost': 'Se artiklarnas kostnad vid prisuppslag'
+        'price-lists:manage': 'Lägga till och ändra prislistor och priser i dem'
+        'price-agreements:manage': 'Lägga till, ändra, aktivera och säga upp prisavtal med kunder'
     apiKey:
       type: http
       scheme: bearer
@@ -13519,6 +15081,9 @@ components:
             - quote.signed
             - invoice.peppol_sent
             - invoice.peppol_failed
+            - price_list.changed
+            - price_agreement.activated
+            - price_agreement.ended
           description: 'Open enum: new event types may be added within v1.'
         created_at:
           type: string
@@ -14437,6 +16002,429 @@ components:
         updated_at:
           type: string
           format: date-time
+    PriceList:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+          enum: [STANDARD, CAMPAIGN, CHANNEL]
+        currency:
+          type: string
+        prices_include_vat:
+          type: boolean
+        valid_from:
+          type: [string, 'null']
+          format: date
+        valid_to:
+          type: [string, 'null']
+          format: date
+        is_default_for_currency:
+          type: boolean
+        based_on_list_id:
+          type: [integer, 'null']
+        derived_percent_bp:
+          type: [integer, 'null']
+          description: 'A derived list follows its base by this many hundredths of a percent (-1250 is 12,5 % lower); null for a list with its own prices only.'
+        rounding_rule:
+          type: string
+        channel:
+          type: [string, 'null']
+          enum: [SALES, PORTAL, POS, RECURRING, WORK_ORDER, null]
+        group_ids:
+          type: array
+          items:
+            type: integer
+          description: 'The customer price groups a campaign is for; none means everyone.'
+        archived:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PriceListInput:
+      type: object
+      description: 'Every field is required when creating (except those marked optional); on PATCH only the given fields change.'
+      properties:
+        code:
+          type: string
+          maxLength: 20
+        name:
+          type: string
+          maxLength: 100
+        kind:
+          type: string
+          enum: [STANDARD, CAMPAIGN, CHANNEL]
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        prices_include_vat:
+          type: boolean
+        valid_from:
+          type: [string, 'null']
+          format: date
+        valid_to:
+          type: [string, 'null']
+          format: date
+        is_default_for_currency:
+          type: boolean
+        based_on_list_id:
+          type: [integer, 'null']
+        derived_percent_bp:
+          type: [integer, 'null']
+          description: 'Makes the list derived: its prices follow the base list (or the base price) by this many hundredths of a percent, between -9900 and 100000.'
+        rounding_rule:
+          type: string
+        channel:
+          type: [string, 'null']
+          enum: [POS, PORTAL, null]
+        group_ids:
+          type: array
+          items:
+            type: integer
+    PriceListItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        price_list_id:
+          type: integer
+        article_id:
+          type: integer
+        article:
+          type: [string, 'null']
+          description: 'The article number.'
+        unit_id:
+          type: [integer, 'null']
+        unit:
+          type: [string, 'null']
+          description: 'The unit code; null means the article''s sales unit.'
+        min_quantity:
+          type: string
+          description: 'The quantity step this price starts at, as decimal text ("0" is the first).'
+        price_minor:
+          type: [integer, 'null']
+          description: 'The price in the list''s currency in hundredths (öre for SEK); null for a discount.'
+        discount_bp:
+          type: [integer, 'null']
+          description: 'A discount on the base price in basis points; null for a price.'
+        valid_from:
+          type: [string, 'null']
+          format: date
+        valid_to:
+          type: [string, 'null']
+          format: date
+        archived:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+    PriceListItemRow:
+      type: object
+      description: 'One price to add. Give price_minor or discount_bp, not both.'
+      properties:
+        article:
+          type: string
+          description: 'The article number.'
+        unit:
+          type: string
+          description: 'A unit code of the company''s unit register; default the article''s sales unit.'
+        min_quantity:
+          type: string
+          description: 'The quantity step, default "0".'
+        price_minor:
+          type: integer
+        discount_bp:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        valid_from:
+          type: [string, 'null']
+          format: date
+        valid_to:
+          type: [string, 'null']
+          format: date
+        replace_running:
+          type: boolean
+          description: 'End the running price for the same article, unit and step the day before valid_from.'
+    PriceListItemsInput:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/PriceListItemRow'
+    PriceListItemsResult:
+      type: object
+      properties:
+        saved:
+          type: integer
+        failed:
+          type: integer
+        items:
+          type: array
+          description: 'The saved prices; index is the position of the row in the request.'
+          items:
+            allOf:
+              - $ref: '#/components/schemas/PriceListItem'
+              - type: object
+                properties:
+                  index:
+                    type: integer
+        errors:
+          type: array
+          description: 'The refused rows: their position and the reasons per field.'
+          items:
+            $ref: '#/components/schemas/PriceRowErrors'
+    PriceRowErrors:
+      type: object
+      properties:
+        index:
+          type: integer
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    PriceAgreement:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: integer
+        reference:
+          type: string
+          description: 'PA-1, PA-2 and so on per company.'
+        customer_id:
+          type: integer
+        title:
+          type: string
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [DRAFT, AWAITING_SIGNATURE, ACTIVE, ENDED, TERMINATED, SUPERSEDED]
+        valid_from:
+          type: string
+          format: date
+        valid_to:
+          type: [string, 'null']
+          format: date
+        terminated_on:
+          type: [string, 'null']
+          format: date
+        allow_campaigns:
+          type: boolean
+        crm_agreement_id:
+          type: [integer, 'null']
+        supersedes_id:
+          type: [integer, 'null']
+        signed_at:
+          type: [string, 'null']
+          format: date-time
+        activation_method:
+          type: [string, 'null']
+        activated_at:
+          type: [string, 'null']
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          description: 'The terms; only on a single agreement, not in lists.'
+          items:
+            $ref: '#/components/schemas/PriceAgreementItem'
+    PriceAgreementInput:
+      type: object
+      description: 'customer_id, title, currency and valid_from are required when creating; on PATCH only the given fields change.'
+      properties:
+        customer_id:
+          type: integer
+        title:
+          type: string
+          maxLength: 150
+        currency:
+          type: string
+          pattern: '^[A-Za-z]{3}$'
+        valid_from:
+          type: string
+          format: date
+        valid_to:
+          type: [string, 'null']
+          format: date
+        allow_campaigns:
+          type: boolean
+        crm_agreement_id:
+          type: [integer, 'null']
+    PriceAgreementItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        price_agreement_id:
+          type: integer
+        target:
+          type: string
+          enum: [article, all]
+        article_id:
+          type: [integer, 'null']
+        article:
+          type: [string, 'null']
+        unit_id:
+          type: [integer, 'null']
+        unit:
+          type: [string, 'null']
+        min_quantity:
+          type: string
+        price_minor:
+          type: [integer, 'null']
+        discount_bp:
+          type: [integer, 'null']
+        base_price_list_id:
+          type: [integer, 'null']
+    PriceAgreementItemRow:
+      type: object
+      description: 'One term. Give price_minor or discount_bp, not both; target "all" takes a discount only.'
+      properties:
+        target:
+          type: string
+          enum: [article, all]
+          default: article
+        article:
+          type: string
+        unit:
+          type: string
+        min_quantity:
+          type: string
+        price_minor:
+          type: integer
+        discount_bp:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        base_price_list_id:
+          type: [integer, 'null']
+    PriceAgreementItemsInput:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/PriceAgreementItemRow'
+    PriceAgreementItemsResult:
+      type: object
+      properties:
+        saved:
+          type: integer
+        failed:
+          type: integer
+        items:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/PriceAgreementItem'
+              - type: object
+                properties:
+                  index:
+                    type: integer
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/PriceRowErrors'
+    PriceAgreementActivation:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    PriceAgreementTermination:
+      type: object
+      required:
+        - terminated_on
+      properties:
+        terminated_on:
+          type: string
+          format: date
+    PriceResolution:
+      type: object
+      properties:
+        customer_id:
+          type: [integer, 'null']
+        date:
+          type: string
+          format: date
+        currency:
+          type: string
+        channel:
+          type: string
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/PriceResolvedRow'
+    PriceResolvedRow:
+      type: object
+      properties:
+        row:
+          type: integer
+          description: 'The position of the row in rows[].'
+        article:
+          type: string
+        article_id:
+          type: integer
+        quantity:
+          type: string
+        unit:
+          type: string
+        unit_price_minor:
+          type: [integer, 'null']
+          description: 'The net unit price in the currency''s hundredths; null where no price exists.'
+        discount_bp:
+          type: integer
+        currency:
+          type: string
+        price_source:
+          type: [string, 'null']
+          enum: [MANUAL, AGREEMENT, CUSTOMER_LIST, CAMPAIGN, CURRENCY_LIST, BASE, CONVERTED, null]
+        prices_include_vat:
+          type: boolean
+        gross_unit_price_minor:
+          type: [integer, 'null']
+          description: 'The price including VAT as the list gives it, when the list''s prices include VAT.'
+        explanation:
+          type: object
+          description: 'Ids, amounts and the candidates that lost, as keys and numbers. Not for display.'
+        warnings:
+          type: array
+          items:
+            type: string
+            description: 'no_price, converted_currency, no_exchange_rate, unit_not_convertible or unknown_article.'
+        unit_cost_minor:
+          type: [integer, 'null']
+          description: 'The article''s cost for one unit in öre; only with prices:view-cost, and only in SEK.'
 x-oauth:
   description: 'OAuth 2.0 endpoints, outside /api/v1. Documented here for reference; they are not part of `paths`.'
   x-sv-description: 'OAuth-adresserna, utanför /api/v1.'

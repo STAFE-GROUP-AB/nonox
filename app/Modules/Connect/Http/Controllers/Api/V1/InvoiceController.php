@@ -166,6 +166,12 @@ final class InvoiceController
         ]);
     }
 
+    /** @param  array<mixed>  $row */
+    private function priceGiven(array $row): bool
+    {
+        return ($row['unit_price_ore'] ?? null) !== null || ($row['unit_price_minor'] ?? null) !== null;
+    }
+
     /**
      * The API's body as SaveDraftInvoice reads it: öre to kronor, basis
      * points to percent, and an article's price, text and VAT rate when a
@@ -221,10 +227,13 @@ final class InvoiceController
                 'quantity' => ApiInput::quantity($row['quantity'] ?? 1, "rows.{$index}.quantity"),
                 'unit_id' => $unitId,
                 'unit' => is_string($row['unit'] ?? null) ? $row['unit'] : null,
-                // Article prices are kronor, so an invoice in another currency needs its own price.
-                'price' => $foreign
-                    ? ApiInput::kronor($row['unit_price_minor'] ?? 0, "rows.{$index}.unit_price_minor")
-                    : ApiInput::kronor($row['unit_price_ore'] ?? $row['unit_price_minor'] ?? $article?->price_ore->ore ?? 0, "rows.{$index}.unit_price_ore"),
+                // An article row without a price is priced by the price engine (ADR-082 P9): the agreement, price list, campaign or base price for this customer, date and currency. A typed price is kept as typed.
+                'price' => $this->priceGiven($row) || $article === null
+                    ? ($foreign
+                        ? ApiInput::kronor($row['unit_price_minor'] ?? 0, "rows.{$index}.unit_price_minor")
+                        : ApiInput::kronor($row['unit_price_ore'] ?? $row['unit_price_minor'] ?? 0, "rows.{$index}.unit_price_ore"))
+                    : '',
+                'price_source' => $this->priceGiven($row) && ($row['price_source'] ?? null) === 'MANUAL' ? 'MANUAL' : null,
                 'discount' => ApiInput::percent($row['discount_bp'] ?? 0, "rows.{$index}.discount_bp"),
                 'vat_rate' => $row['vat_rate'] ?? ($article === null ? 2500 : $article->vat_rate),
                 'account' => $row['account'] ?? null,
